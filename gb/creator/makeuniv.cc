@@ -172,7 +172,9 @@ usage:
       for (x=0; x<Sdata.numstars; x++)	/* star2 */
 	if (x!=star) {
 	  /* find inverse of distance squared */
-	  att = 10*UNIVSIZE / Distsq(Stars[star]->xpos, Stars[star]->ypos, Stars[x]->xpos, Stars[x]->ypos);
+	  double dx = Stars[star]->xpos - Stars[x]->xpos;
+	  double dy = Stars[star]->ypos - Stars[x]->ypos;
+	  att = 10*UNIVSIZE / (dx*dx + dy*dy);
 	  xspeed[star] += att * (Stars[star]->xpos - Stars[x]->xpos);
 	  if (Stars[star]->xpos>UNIVSIZE || Stars[star]->xpos< -UNIVSIZE)
 	    xspeed[star] *= -1;

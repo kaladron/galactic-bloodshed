@@ -39,7 +39,7 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       break;
     case ScopeLevel::LEVEL_STAR:
       g.out << std::format("Star {}\n", prin_aimed_at(s));
-      if (auto dist = sqrt(Distsq(xf, yf, str.xpos(), str.ypos()));
+      if (auto dist = std::hypot(xf - str.xpos(), yf - str.ypos());
           dist <= tele_range(s.type(), s.tech())) {
         auto star_handle = g.entity_manager.get_star(aimed_at.snum);
         auto& star = *star_handle;
@@ -54,8 +54,8 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       g.out << std::format("Planet {}\n", prin_aimed_at(s));
       const auto& p =
           *g.entity_manager.peek_planet(aimed_at.snum, aimed_at.pnum);
-      if (auto dist = sqrt(
-              Distsq(xf, yf, str.xpos() + p.xpos(), str.ypos() + p.ypos()));
+      if (auto dist = std::hypot(xf - (str.xpos() + p.xpos()),
+                                 yf - (str.ypos() + p.ypos()));
           dist <= tele_range(s.type(), s.tech())) {
         auto star_handle = g.entity_manager.get_star(aimed_at.snum);
         auto& star = *star_handle;
@@ -843,8 +843,8 @@ void DispOrders(EntityManager& em, int Playernum, int Governor,
    * destination */
   if (ship.hyper_drive().on) {
     const auto& dest_star = *em.peek_star(ship.deststar());
-    double dist = sqrt(
-        Distsq(ship.xpos(), ship.ypos(), dest_star.xpos(), dest_star.ypos()));
+    double dist = std::hypot(ship.xpos() - dest_star.xpos(),
+                             ship.ypos() - dest_star.ypos());
     auto distfac = HYPER_DIST_FACTOR * (ship.tech() + 100.0);
 
     double fuse =

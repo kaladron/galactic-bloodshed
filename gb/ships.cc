@@ -579,8 +579,8 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
     if (s.hyper_drive().ready) {
       const auto* dest_star = em.peek_star(s.deststar());
       if (!dest_star) return;
-      dist = std::sqrt(
-          Distsq(s.xpos(), s.ypos(), dest_star->xpos(), dest_star->ypos()));
+      dist = std::hypot(s.xpos() - dest_star->xpos(),
+                        s.ypos() - dest_star->ypos());
       distfac = HYPER_DIST_FACTOR * (s.tech() + 100.0);
       if (s.mounted() && dist > distfac)
         fuse = HYPER_DRIVE_FUEL_USE * std::sqrt(s.mass()) * (dist / distfac);
@@ -657,14 +657,14 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
       const auto* ost = em.peek_star(s.storbits());
       const auto* opl = em.peek_planet(s.storbits(), s.pnumorbits());
       if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        dist = std::sqrt(Distsq(s.xpos(), s.ypos(), ost->xpos() + opl->xpos(),
-                                ost->ypos() + opl->ypos()));
+        dist = std::hypot(s.xpos() - (ost->xpos() + opl->xpos()),
+                          s.ypos() - (ost->ypos() + opl->ypos()));
         if (dist > PLORBITSIZE) {
           s.whatorbits() = ScopeLevel::LEVEL_STAR;
           s.protect().planet = 0;
         }
       } else if (s.whatorbits() == ScopeLevel::LEVEL_STAR) {
-        dist = std::sqrt(Distsq(s.xpos(), s.ypos(), ost->xpos(), ost->ypos()));
+        dist = std::hypot(s.xpos() - ost->xpos(), s.ypos() - ost->ypos());
         if (dist > SYSTEMSIZE) {
           s.whatorbits() = ScopeLevel::LEVEL_UNIV;
           s.protect().evade = 0;
@@ -696,9 +696,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
             // TODO(jeffbailey): Prove that this is impossible.
             break;
         }
-        /*			if (std::sqrt( (double)Distsq(s.xpos, s.ypos,
-           xdest,
-           ydest))
+        /*			if (std::hypot(s.xpos - xdest, s.ypos - ydest)
                    <= DIST_TO_LAND || !(dsh->alive)) {
                            destlevel = ScopeLevel::LEVEL_UNIV;
                                                    s.whatdest=ScopeLevel::LEVEL_UNIV;
@@ -723,7 +721,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         const auto& dest_planet = *em.peek_planet(deststar, destpnum);
         xdest = dest_star.xpos() + dest_planet.xpos();
         ydest = dest_star.ypos() + dest_planet.ypos();
-        if (std::sqrt(Distsq(s.xpos(), s.ypos(), xdest, ydest)) <= DIST_TO_LAND)
+        if (std::hypot(s.xpos() - xdest, s.ypos() - ydest) <= DIST_TO_LAND)
           destlevel = ScopeLevel::LEVEL_UNIV;
       }
       auto dst = em.get_star(deststar);
@@ -732,7 +730,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
       const auto* dpl = em.peek_planet(deststar, destpnum);
       const auto* opl = em.peek_planet(s.storbits(), s.pnumorbits());
       if (!dpl || !opl) return;
-      truedist = movedist = std::sqrt(Distsq(s.xpos(), s.ypos(), xdest, ydest));
+      truedist = movedist = std::hypot(s.xpos() - xdest, s.ypos() - ydest);
       /* Save some unneccesary calculation and domain errors for atan2
             Maarten */
       if (truedist < DIST_TO_LAND && s.whatorbits() == destlevel &&
@@ -778,17 +776,16 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         s.xpos() += xdest;
         s.ypos() += ydest;
       }
-      /***** check if far enough away from object it's orbiting to break orbit
-       * *****/
+      // Check if far enough away from object it's orbiting to break orbit
       if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        dist = std::sqrt(Distsq(s.xpos(), s.ypos(), ost->xpos() + opl->xpos(),
-                                ost->ypos() + opl->ypos()));
+        dist = std::hypot(s.xpos() - (ost->xpos() + opl->xpos()),
+                          s.ypos() - (ost->ypos() + opl->ypos()));
         if (dist > PLORBITSIZE) {
           s.whatorbits() = ScopeLevel::LEVEL_STAR;
           s.protect().planet = 0;
         }
       } else if (s.whatorbits() == ScopeLevel::LEVEL_STAR) {
-        dist = std::sqrt(Distsq(s.xpos(), s.ypos(), ost->xpos(), ost->ypos()));
+        dist = std::hypot(s.xpos() - ost->xpos(), s.ypos() - ost->ypos());
         if (dist > SYSTEMSIZE) {
           s.whatorbits() = ScopeLevel::LEVEL_UNIV;
           s.protect().evade = 0;
@@ -796,13 +793,12 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         }
       }
 
-      /*******   check for arriving at destination *******/
+      // Check for arriving at destination
       if (destlevel == ScopeLevel::LEVEL_STAR ||
           (destlevel == ScopeLevel::LEVEL_PLAN &&
            (s.storbits() != deststar ||
             s.whatorbits() == ScopeLevel::LEVEL_UNIV))) {
-        stardist =
-            std::sqrt(Distsq(s.xpos(), s.ypos(), dst->xpos(), dst->ypos()));
+        stardist = std::hypot(s.xpos() - dst->xpos(), s.ypos() - dst->ypos());
         if (stardist <= SYSTEMSIZE * 1.5) {
           s.whatorbits() = ScopeLevel::LEVEL_STAR;
           s.protect().planet = 0;
@@ -829,9 +825,9 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         }
       } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
                  deststar == s.storbits()) {
-        /* headed for a planet in the same system, & not already there.. */
-        dist = std::sqrt(Distsq(s.xpos(), s.ypos(), dst->xpos() + dpl->xpos(),
-                                dst->ypos() + dpl->ypos()));
+        // Headed for a planet in the same system, & not already there.
+        dist = std::hypot(s.xpos() - (dst->xpos() + dpl->xpos()),
+                          s.ypos() - (dst->ypos() + dpl->ypos()));
         if (dist <= PLORBITSIZE) {
           if (!checking_fuel &&
               (s.popn() || s.type() == ShipType::OTYPE_PROBE)) {
@@ -864,7 +860,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
             push_telegram(s.owner(), s.governor(), telegram.str());
         }
       } else if (destlevel == ScopeLevel::LEVEL_SHIP) {
-        dist = std::sqrt(Distsq(s.xpos(), s.ypos(), dsh->xpos(), dsh->ypos()));
+        dist = std::hypot(s.xpos() - dsh->xpos(), s.ypos() - dsh->ypos());
         if (dist <= PLORBITSIZE) {
           if (dsh->whatorbits() == ScopeLevel::LEVEL_PLAN) {
             s.whatorbits() = ScopeLevel::LEVEL_PLAN;

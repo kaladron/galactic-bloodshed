@@ -466,7 +466,7 @@ void ShipTacticalItem::report_tactical(
     if (target->x() == x_ && target->y() == y_) continue;
 
     double range = gun_range(s);
-    double dist = sqrt(Distsq(x_, y_, target->x(), target->y()));
+    double dist = std::hypot(x_ - target->x(), y_ - target->y());
     if (dist >= range) continue;
 
     // Build firing ship parameters
@@ -621,7 +621,7 @@ void PlanetTacticalItem::report_tactical(
     if (target->x() == x_ && target->y() == y_) continue;
 
     double range = gun_range(*race);
-    double dist = sqrt(Distsq(x_, y_, target->x(), target->y()));
+    double dist = std::hypot(x_ - target->x(), y_ - target->y());
     if (dist >= range) continue;
 
     // Build firing ship parameters from planet perspective

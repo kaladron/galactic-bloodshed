@@ -276,8 +276,8 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
           (target->whatorbits() == ScopeLevel::LEVEL_STAR ||
            target->whatorbits() == ScopeLevel::LEVEL_PLAN) &&
           ship.storbits() == target->storbits() && target->alive()) {
-        auto range = std::sqrt(
-            Distsq(ship.xpos(), ship.ypos(), target->xpos(), target->ypos()));
+        auto range = std::hypot(ship.xpos() - target->xpos(),
+                                ship.ypos() - target->ypos());
         auto i = int_rand(0, round_rand((2. / ((double)(shipbody(*target)))) *
                                         (double)(aimed_at.intensity) /
                                         (range / PLORBITSIZE + 1.0)));
@@ -303,9 +303,8 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
           entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
       if (!star || !planet) break;
 
-      double range = std::sqrt(Distsq(ship.xpos(), ship.ypos(),
-                                      star->xpos() + planet->xpos(),
-                                      star->ypos() + planet->ypos()));
+      double range = std::hypot(ship.xpos() - (star->xpos() + planet->xpos()),
+                                ship.ypos() - (star->ypos() + planet->ypos()));
 
       int i = range > PLORBITSIZE ? PLORBITSIZE * aimed_at.intensity / range
                                   : aimed_at.intensity;
@@ -686,8 +685,8 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
     Ship* target = target_handle.get();
     if (!target) return;
 
-    auto dist = std::sqrt(
-        Distsq(ship.xpos(), ship.ypos(), target->xpos(), target->ypos()));
+    auto dist =
+        std::hypot(ship.xpos() - target->xpos(), ship.ypos() - target->ypos());
     if (dist <= ((double)ship.speed() * STRIKE_DISTANCE_FACTOR *
                  (100.0 - (double)ship.damage()) / 100.0)) {
       /* do the attack */

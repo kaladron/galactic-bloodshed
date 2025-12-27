@@ -153,7 +153,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
   }
 
   /* compute the distance */
-  dist = sqrt(Distsq(x_0, y_0, x_1, y_1));
+  dist = std::hypot(x_0 - x_1, y_0 - y_1);
 
   if (dist <= DIST_TO_LAND) {
     g.out << "That ship is within 10.0 units of the destination.\n";

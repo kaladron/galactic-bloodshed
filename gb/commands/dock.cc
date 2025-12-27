@@ -145,7 +145,7 @@ void dock(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    Dist = sqrt((double)Distsq(s2.xpos(), s2.ypos(), s.xpos(), s.ypos()));
+    Dist = std::hypot(s2.xpos() - s.xpos(), s2.ypos() - s.ypos());
     fuel = 0.05 + Dist * 0.025 * (Assault ? 2.0 : 1.0) * sqrt((double)s.mass());
 
     if (Dist > DIST_TO_DOCK) {

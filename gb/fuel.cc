@@ -120,7 +120,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
       effective_segment_number = 1;
     double x_0 = tmpship.xpos();
     double y_0 = tmpship.ypos();
-    double tmpdist = sqrt(Distsq(x_0, y_0, x_1, y_1));
+    double tmpdist = std::hypot(x_0 - x_1, y_0 - y_1);
     switch (tmpship.whatdest()) {
       case ScopeLevel::LEVEL_STAR:
         if (tmpdist <= SYSTEMSIZE) trip_resolved = true;

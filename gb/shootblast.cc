@@ -47,8 +47,8 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
         ShipType::STYPE_MISSILE) /* missiles hit at point blank range */
       return 0.0;
 
-    double dist = std::sqrt(
-        Distsq(attacker.xpos(), attacker.ypos(), target.xpos(), target.ypos()));
+    double dist = std::hypot(attacker.xpos() - target.xpos(),
+                             attacker.ypos() - target.ypos());
     if (attacker.type() ==
         ShipType::STYPE_MINE) { /* compute the effective range */
       dist *= dist / 200.0;     /* mines are very effective inside 200 */

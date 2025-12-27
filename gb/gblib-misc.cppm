@@ -145,22 +145,6 @@ export double tech_prod(const money_t investment, const population_t popn) {
 }
 
 /**
- * @brief Calculates the squared distance between two points in a 2D space.
- *
- * This function calculates the squared distance between two points (x1, y1) and
- * (x2, y2) in a 2D space.
- *
- * @param x1 The x-coordinate of the first point.
- * @param y1 The y-coordinate of the first point.
- * @param x2 The x-coordinate of the second point.
- * @param y2 The y-coordinate of the second point.
- * @return The squared distance between the two points.
- */
-export double Distsq(double x1, double y1, double x2, double y2) {
-  return ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
-}
-
-/**
  * @brief Calculates the positive modulus of two integers.
  *
  * This function calculates the modulus of the given integers `a` and `b`, and

@@ -109,7 +109,7 @@ void distance(const command_t& argv, GameObj& g) {
     y1 = star->ypos();
   }
   /* compute the distance */
-  dist = sqrt(Distsq(x0, y0, x1, y1));
+  dist = std::hypot(x0 - x1, y0 - y1);
   g.out << std::format("Distance = {}\n", dist);
 }
 }  // namespace GB::commands

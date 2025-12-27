@@ -45,8 +45,9 @@ void order_VN(EntityManager& em, Ship& ship) {
     if (s != ship.storbits()) {
       const auto& star_s = *em.peek_star(s);
       const auto& star_min = *em.peek_star(min);
-      if (Distsq(star_s.xpos(), star_s.ypos(), ship.xpos(), ship.ypos()) <
-          Distsq(star_min.xpos(), star_min.ypos(), ship.xpos(), ship.ypos())) {
+      if (std::hypot(star_s.xpos() - ship.xpos(), star_s.ypos() - ship.ypos()) <
+          std::hypot(star_min.xpos() - ship.xpos(),
+                     star_min.ypos() - ship.ypos())) {
         min2 = min;
         min = s;
       }

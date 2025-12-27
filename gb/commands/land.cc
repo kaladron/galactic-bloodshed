@@ -108,8 +108,7 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
     }
 
     /* check to see if close enough to land */
-    Dist = std::sqrt(
-        (double)Distsq(s2_check->xpos(), s2_check->ypos(), s.xpos(), s.ypos()));
+    Dist = std::hypot(s2_check->xpos() - s.xpos(), s2_check->ypos() - s.ypos());
     if (Dist > DIST_TO_DOCK) {
       g.out << std::format("{} must be {} or closer to {}.\n",
                            ship_to_string(s), DIST_TO_DOCK,
@@ -229,8 +228,8 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
                        star->get_name(), star->get_planet_name(s.pnumorbits()),
                        p.gravity());
 
-  Dist = std::sqrt((double)Distsq(star->xpos() + p.xpos(),
-                                  star->ypos() + p.ypos(), s.xpos(), s.ypos()));
+  Dist = std::hypot((star->xpos() + p.xpos()) - s.xpos(),
+                    (star->ypos() + p.ypos()) - s.ypos());
   g.out << std::format("Distance to planet: {:.2f}.\n", Dist);
 
   if (Dist > DIST_TO_LAND) {

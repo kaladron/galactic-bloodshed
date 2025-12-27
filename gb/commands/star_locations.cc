@@ -27,8 +27,7 @@ void star_locations(const command_t& argv, GameObj& g) {
 
   for (auto star_handle : StarList(g.entity_manager)) {
     const auto& star = *star_handle;
-    auto dist =
-        std::sqrt(Distsq(star.xpos(), star.ypos(), g.lastx[1], g.lasty[1]));
+    auto dist = std::hypot(star.xpos() - g.lastx[1], star.ypos() - g.lasty[1]);
     if (std::floor(dist) <= max_dist) {
       table.add_row(
           {std::format("{}", star.star_id()), std::string(star.get_name()),

@@ -457,8 +457,8 @@ std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,
   const auto* star_to = em.peek_star(to);
   const auto* star_from = em.peek_star(from);
 
-  double dist = sqrt(Distsq(star_to->xpos(), star_to->ypos(), star_from->xpos(),
-                            star_from->ypos()));
+  double dist = std::hypot(star_to->xpos() - star_from->xpos(),
+                           star_to->ypos() - star_from->ypos());
 
   int junk = (int)(dist / 10000.0);
   junk *= 10000;

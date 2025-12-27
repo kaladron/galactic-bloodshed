@@ -252,6 +252,14 @@ target_sources(
           VN.cc)
 target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module dallib)
 
+# Create session library (Service Layer)
+add_library(session)
+target_sources(
+  session
+  PUBLIC FILE_SET CXX_MODULES FILES services/session.cppm
+  PRIVATE services/session.cc)
+target_link_libraries(session PUBLIC gblib asio_module)
+
 add_library(commands)
 target_sources(
   commands
@@ -349,6 +357,10 @@ add_test(NAME GB_scnlib_test COMMAND scnlib_test)
 add_executable(asio_test asio_test.cc)
 target_link_libraries(asio_test PRIVATE asio_module)
 add_test(NAME GB_asio_test COMMAND asio_test)
+
+add_executable(session_test session_test.cc)
+target_link_libraries(session_test PRIVATE gblib session)
+add_test(NAME GB_session_test COMMAND session_test)
 
 add_executable(shlmisc_test shlmisc_test.cc)
 target_link_libraries(shlmisc_test PRIVATE gblib SQLite::SQLite3)

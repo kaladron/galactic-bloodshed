@@ -75,11 +75,74 @@ Cross-cutting concerns should have **no dependencies on any architecture layer**
 
 ---
 
+## Module Structure
+
+Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. Each layer is typically a separate module:
+
+### Standalone Modules
+
+**These are independent modules that don't belong to gblib:**
+
+- **`dallib`** (Data Access Layer) - `gb/dal/dallib.cppm`
+  - Database, JsonStore, Schema classes
+  - Only layer that knows about SQLite
+  
+- **`commands`** (Application Layer) - `gb/commands/commands.cppm`
+  - All player commands
+  - Exports command functions in `GB::commands` namespace
+  
+- **`session`** (Service Layer) - `gb/services/session.cppm`
+  - SessionRegistry abstract interface
+  - Session class for client connections
+  - Network I/O with Asio (imported via `asio` module)
+  
+- **`asio`** (Third-party wrapper) - `gb/third_party/asio.cppm`
+  - Module wrapper for Boost.Asio networking library
+  - Re-exports in `asio::` namespace
+
+### gblib Module Partitions
+
+**The `gblib` module contains cross-cutting concerns as partitions:**
+
+- **`gblib:types`** - Core type definitions (player_t, shipnum_t, etc.)
+- **`gblib:gameobj`** - GameObj context passed to commands
+- **`gblib:services`** - EntityManager (core game service)
+- **`gblib:repositories`** - Repository pattern implementations
+- **`gblib:race`**, **`gblib:ships`**, **`gblib:star`**, **`gblib:planet`**, etc. - Entity structures
+- **`gblib:tweakables`** - Game configuration constants
+- **`gblib:misc`**, **`gblib:shlmisc`** - Utility functions
+- **Game logic partitions**: `gblib:doplanet`, `gblib:doship`, `gblib:fire`, etc.
+
+### Module Dependencies
+
+```
+commands --> gblib
+         --> session (for SessionRegistry*)
+
+session --> gblib (for types, EntityManager)
+        --> asio (for networking)
+
+gblib:services --> dallib (for Database)
+gblib:repositories --> dallib (for JsonStore)
+
+dalib --> (no dependencies, just SQLite)
+```
+
+### Why This Structure?
+
+1. **`dallib` is standalone** - It's the foundation; no other modules depend on internal DAL types
+2. **`commands` is standalone** - Application layer imports what it needs from service/core layers
+3. **`session` is standalone** - Network session management is a service, not part of core game logic
+4. **`gblib` contains shared types** - Everything else uses these fundamental types
+5. **Clear boundaries** - Module imports enforce architectural constraints at compile time
+
+---
+
 ## Layer Details
 
 ### Layer 1: Data Access Layer (DAL)
 **Location**: `gb/dal/`  
-**Module**: `gblib:dal`
+**Module**: `dallib` (standalone module)
 
 The DAL is the **only** layer that knows about SQLite or any database implementation details.
 
@@ -243,7 +306,9 @@ struct meta<Ship> {
 
 ### Layer 3: Service Layer
 **Location**: `gb/services/`  
-**Module**: `gblib:services`
+**Modules**: 
+- `gblib:services` - Core game service (EntityManager)
+- `session` - Session management (standalone module)
 
 Services contain business logic and coordinate operations across multiple repositories.
 
@@ -342,7 +407,7 @@ void GameDataService::colonize_planet(Ship& ship, Planet& planet, player_t playe
 
 ### Layer 4: Application Layer (Commands)
 **Location**: `gb/commands/`  
-**Module**: `commands`
+**Module**: `commands` (standalone module)
 
 Commands handle user interaction and translate user input into service calls.
 
@@ -779,13 +844,13 @@ void command(const command_t& argv, GameObj& g) {
 ```
 gb/
 ├── dal/
-│   ├── gblib-dal.cppm           # DAL module interface
+│   ├── dallib.cppm               # DAL module interface (standalone)
 │   ├── database.cc              # Database connection management
 │   ├── json_store.cc            # Generic JSON storage
 │   └── schema.cc                # Schema initialization
 │
 ├── repositories/
-│   ├── gblib-repositories.cppm  # Repository module interface
+│   ├── gblib-repositories.cppm  # Repository module partition
 │   ├── race_repository.cc       # Race entity persistence
 │   ├── ship_repository.cc       # Ship entity persistence
 │   ├── planet_repository.cc     # Planet entity persistence
@@ -796,12 +861,19 @@ gb/
 │   └── power_repository.cc      # Power report persistence
 │
 ├── services/
-│   ├── gblib-services.cppm      # Service module interface
-│   └── game_data_service.cc     # Main game data service
+│   ├── gblib-services.cppm      # Service module partition
+│   ├── entity_manager.cc        # EntityManager service
+│   ├── session.cppm             # Session module interface (standalone)
+│   └── session.cc               # Session implementation
 │
 ├── commands/
-│   ├── commands.cppm            # Command module interface
+│   ├── commands.cppm            # Command module interface (standalone)
 │   └── *.cc                     # Individual command implementations
+│
+├── third_party/
+│   ├── asio.cppm                # Asio module wrapper (standalone)
+│   ├── scnlib.cppm              # scnlib module wrapper
+│   └── glaze_json.cppm          # Glaze JSON module wrapper
 │
 ├── tests/
 │   ├── dal_tests/               # DAL unit tests

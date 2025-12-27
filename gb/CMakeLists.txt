@@ -336,6 +336,10 @@ add_executable(invariant_log_test invariant_log_test.cc)
 target_link_libraries(invariant_log_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_invariant_log_test COMMAND invariant_log_test)
 
+add_executable(estimate_test estimate_test.cc)
+target_link_libraries(estimate_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_estimate_test COMMAND estimate_test)
+
 add_executable(build_test build_test.cc)
 target_link_libraries(build_test PRIVATE dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_build_test COMMAND build_test)

@@ -184,36 +184,32 @@ export constexpr double logscale(const int x) {
   return log10((double)x + 1.0) / 2.0;
 }
 
-namespace {
-int round_perc(const int data, const Race& r, const player_t p) {
-  int k = 101 - MIN(r.translate[p - 1], 100);
-  return (data / k) * k;
-}
-}  // namespace
-
-export std::string Estimate_f(const double data, const Race& r,
-                              const player_t p) {
+/**
+ * @brief Formats a numeric value as an estimated string with K/M suffixes.
+ *
+ * Provides translated estimates of numeric values based on the observer's
+ * translation capability. Values are rounded based on translation level
+ * and formatted with K (thousands) or M (millions) suffixes for readability.
+ *
+ * @tparam T Arithmetic type (int, double, float, etc.)
+ * @param data The numeric value to estimate
+ * @param r The observing race
+ * @param p The player number being observed
+ * @return Formatted string with K/M suffix, or "?" if translation too low
+ */
+export template <typename T>
+  requires std::is_arithmetic_v<T>
+std::string estimate(const T data, const Race& r, const player_t p) {
   if (r.translate[p - 1] > 10) {
-    int est = round_perc((int)data, r, p);
+    int k = 101 - std::min(r.translate[p - 1], 100);
+    int est = (std::abs(static_cast<int>(data)) / k) * k;
     if (est < 1000) return std::format("{}", est);
-    if (est < 10000)
+    if (est < 10000) {
       return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
-    if (est < 1000000)
+    }
+    if (est < 1000000) {
       return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
-
-    return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
-  }
-  return "?";
-}
-
-export std::string Estimate_i(const int data, const Race& r, const player_t p) {
-  if (r.translate[p - 1] > 10) {
-    int est = round_perc((int)data, r, p);
-    if (std::abs(est) < 1000) return std::format("{}", est);
-    if (std::abs(est) < 10000)
-      return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
-    if (std::abs(est) < 1000000)
-      return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
+    }
 
     return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
   }

@@ -116,14 +116,14 @@ void block(const command_t& argv, GameObj& g) {
       if (!power_ptr) continue;
 
       table.add_row({std::format("{}", r->Playernum), std::string(r->name),
-                     Estimate_i(power_ptr->troops, *race, r->Playernum),
-                     Estimate_i(power_ptr->popn, *race, r->Playernum),
-                     Estimate_i(power_ptr->money, *race, r->Playernum),
-                     Estimate_i(power_ptr->ships_owned, *race, r->Playernum),
-                     Estimate_i(power_ptr->planets_owned, *race, r->Playernum),
-                     Estimate_i(power_ptr->resource, *race, r->Playernum),
-                     Estimate_i(power_ptr->fuel, *race, r->Playernum),
-                     Estimate_i(power_ptr->destruct, *race, r->Playernum),
+                     estimate(power_ptr->troops, *race, r->Playernum),
+                     estimate(power_ptr->popn, *race, r->Playernum),
+                     estimate(power_ptr->money, *race, r->Playernum),
+                     estimate(power_ptr->ships_owned, *race, r->Playernum),
+                     estimate(power_ptr->planets_owned, *race, r->Playernum),
+                     estimate(power_ptr->resource, *race, r->Playernum),
+                     estimate(power_ptr->fuel, *race, r->Playernum),
+                     estimate(power_ptr->destruct, *race, r->Playernum),
                      std::format("{}%", race->translate[r->Playernum - 1])});
     }
 
@@ -162,18 +162,17 @@ void block(const command_t& argv, GameObj& g) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i || Power_blocks.members[i - 1] == 0) continue;
 
-      table.add_row(
-          {std::format("{}", i), std::string(block_i->name),
-           std::format("{}", Power_blocks.members[i - 1]),
-           Estimate_i((int)(Power_blocks.money[i - 1]), *race, i),
-           Estimate_i((int)(Power_blocks.popn[i - 1]), *race, i),
-           Estimate_i((int)(Power_blocks.ships_owned[i - 1]), *race, i),
-           Estimate_i((int)(Power_blocks.systems_owned[i - 1]), *race, i),
-           Estimate_i((int)(Power_blocks.resource[i - 1]), *race, i),
-           Estimate_i((int)(Power_blocks.fuel[i - 1]), *race, i),
-           Estimate_i((int)(Power_blocks.destruct[i - 1]), *race, i),
-           Estimate_i((int)(Power_blocks.VPs[i - 1]), *race, i),
-           std::format("{}%", race->translate[i - 1])});
+      table.add_row({std::format("{}", i), std::string(block_i->name),
+                     std::format("{}", Power_blocks.members[i - 1]),
+                     estimate(Power_blocks.money[i - 1], *race, i),
+                     estimate(Power_blocks.popn[i - 1], *race, i),
+                     estimate(Power_blocks.ships_owned[i - 1], *race, i),
+                     estimate(Power_blocks.systems_owned[i - 1], *race, i),
+                     estimate(Power_blocks.resource[i - 1], *race, i),
+                     estimate(Power_blocks.fuel[i - 1], *race, i),
+                     estimate(Power_blocks.destruct[i - 1], *race, i),
+                     estimate(Power_blocks.VPs[i - 1], *race, i),
+                     std::format("{}%", race->translate[i - 1])});
     }
 
     g.out << table << "\n";

@@ -33,18 +33,17 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
     know_col = std::format("{}%", race.translate[i - 1]);
   }
 
-  table.add_row({rank_col, std::format("[{:2d}]", i),
-                 alliance_them + alliance_us, std::string(r.name),
-                 Estimate_i((int)r.victory_score, race, i),
-                 Estimate_i((int)power_ptr->troops, race, i),
-                 Estimate_i((int)power_ptr->popn, race, i),
-                 Estimate_i((int)power_ptr->money, race, i),
-                 Estimate_i((int)power_ptr->ships_owned, race, i),
-                 Estimate_i((int)power_ptr->planets_owned, race, i),
-                 Estimate_i((int)power_ptr->resource, race, i),
-                 Estimate_i((int)power_ptr->fuel, race, i),
-                 Estimate_i((int)power_ptr->destruct, race, i),
-                 Estimate_i((int)r.morale, race, i), know_col});
+  table.add_row(
+      {rank_col, std::format("[{:2d}]", i), alliance_them + alliance_us,
+       std::string(r.name), estimate(r.victory_score, race, i),
+       estimate(power_ptr->troops, race, i), estimate(power_ptr->popn, race, i),
+       estimate(power_ptr->money, race, i),
+       estimate(power_ptr->ships_owned, race, i),
+       estimate(power_ptr->planets_owned, race, i),
+       estimate(power_ptr->resource, race, i),
+       estimate(power_ptr->fuel, race, i),
+       estimate(power_ptr->destruct, race, i), estimate(r.morale, race, i),
+       know_col});
 }
 }  // namespace
 

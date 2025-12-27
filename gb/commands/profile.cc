@@ -151,55 +151,50 @@ void profile(const command_t& argv, GameObj& g) {
   if (race->translate[p - 1] > 50) {
     g.out << std::format("{}\t  Planet Conditions\n",
                          r->Metamorph ? "Metamorphic Race" : "Normal Race\t");
-    g.out << std::format("Fert:    {}",
-                         Estimate_i((int)(r->fertilize), *race, p));
+    g.out << std::format("Fert:    {}", estimate(r->fertilize, *race, p));
     g.out << std::format("\t\t  Temp:\t{}\n",
-                         Estimate_i((int)(r->conditions[TEMP]), *race, p));
+                         estimate(r->conditions[TEMP], *race, p));
     g.out << std::format("Rate:    {}%%",
-                         Estimate_f(r->birthrate * 100.0, *race, p));
+                         estimate(r->birthrate * 100.0, *race, p));
   } else {
     g.out << "Unknown Race\t\t  Planet Conditions\n";
-    g.out << std::format("Fert:    {}",
-                         Estimate_i((int)(r->fertilize), *race, p));
+    g.out << std::format("Fert:    {}", estimate(r->fertilize, *race, p));
     g.out << std::format("\t\t  Temp:\t{}\n",
-                         Estimate_i((int)(r->conditions[TEMP]), *race, p));
-    g.out << std::format("Rate:    {}", Estimate_f(r->birthrate, *race, p));
+                         estimate(r->conditions[TEMP], *race, p));
+    g.out << std::format("Rate:    {}", estimate(r->birthrate, *race, p));
   }
   g.out << std::format("\t\t  methane  {}%\t\tRanges:\n",
-                       Estimate_i((int)(r->conditions[METHANE]), *race, p));
-  g.out << std::format("Mass:    {}", Estimate_f(r->mass, *race, p));
+                       estimate(r->conditions[METHANE], *race, p));
+  g.out << std::format("Mass:    {}", estimate(r->mass, *race, p));
   g.out << std::format("\t\t  oxygen   {}%",
-                       Estimate_i((int)(r->conditions[OXYGEN]), *race, p));
-  g.out << std::format("\t\t  guns:   {}\n",
-                       Estimate_f(gun_range(*r), *race, p));
-  g.out << std::format("Fight:   {}", Estimate_i((int)(r->fighters), *race, p));
+                       estimate(r->conditions[OXYGEN], *race, p));
+  g.out << std::format("\t\t  guns:   {}\n", estimate(gun_range(*r), *race, p));
+  g.out << std::format("Fight:   {}", estimate(r->fighters, *race, p));
   g.out << std::format("\t\t  helium   {}%",
-                       Estimate_i((int)(r->conditions[HELIUM]), *race, p));
+                       estimate(r->conditions[HELIUM], *race, p));
   g.out << std::format(
       "\t\t  space:  {}\n",
-      Estimate_f(tele_range(ShipType::OTYPE_STELE, r->tech), *race, p));
-  g.out << std::format("Metab:   {}", Estimate_f(r->metabolism, *race, p));
+      estimate(tele_range(ShipType::OTYPE_STELE, r->tech), *race, p));
+  g.out << std::format("Metab:   {}", estimate(r->metabolism, *race, p));
   g.out << std::format("\t\t  nitrogen {}%",
-                       Estimate_i((int)(r->conditions[NITROGEN]), *race, p));
+                       estimate(r->conditions[NITROGEN], *race, p));
   g.out << std::format(
       "\t\t  ground: {}\n",
-      Estimate_f(tele_range(ShipType::OTYPE_GTELE, r->tech), *race, p));
-  g.out << std::format("Sexes:   {}",
-                       Estimate_i((int)(r->number_sexes), *race, p));
+      estimate(tele_range(ShipType::OTYPE_GTELE, r->tech), *race, p));
+  g.out << std::format("Sexes:   {}", estimate(r->number_sexes, *race, p));
   g.out << std::format("\t\t  CO2      {}%\n",
-                       Estimate_i((int)(r->conditions[CO2]), *race, p));
+                       estimate(r->conditions[CO2], *race, p));
   g.out << std::format("Explore: {}%",
-                       Estimate_f(r->adventurism * 100.0, *race, p));
+                       estimate(r->adventurism * 100.0, *race, p));
   g.out << std::format("\t\t  hydrogen {}%\n",
-                       Estimate_i((int)(r->conditions[HYDROGEN]), *race, p));
-  g.out << std::format("Avg Int: {}", Estimate_i((int)(r->IQ), *race, p));
+                       estimate(r->conditions[HYDROGEN], *race, p));
+  g.out << std::format("Avg Int: {}", estimate(r->IQ, *race, p));
   g.out << std::format("\t\t  sulfer   {}%\n",
-                       Estimate_i((int)(r->conditions[SULFUR]), *race, p));
-  g.out << std::format("Tech:    {}", Estimate_f(r->tech, *race, p));
+                       estimate(r->conditions[SULFUR], *race, p));
+  g.out << std::format("Tech:    {}", estimate(r->tech, *race, p));
   g.out << std::format("\t\t  other    {}%",
-                       Estimate_i((int)(r->conditions[OTHER]), *race, p));
-  g.out << std::format("\t\tMorale:   {}\n",
-                       Estimate_i((int)(r->morale), *race, p));
+                       estimate(r->conditions[OTHER], *race, p));
+  g.out << std::format("\t\tMorale:   {}\n", estimate(r->morale, *race, p));
   g.out << std::format("Sector type preference : {}\n",
                        race->translate[p - 1] > 80 ? Desnames[r->likesbest]
                                                    : " ? ");

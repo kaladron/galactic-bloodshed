@@ -101,6 +101,15 @@ public:
   starnum_t snum() const {
     return snum_;
   }
+  planetnum_t pnum() const {
+    return pnum_;
+  }
+  shipnum_t shipno() const {
+    return shipno_;
+  }
+  ScopeLevel level() const {
+    return level_;
+  }
 
   void set_player(player_t p) {
     player_ = p;
@@ -113,6 +122,15 @@ public:
   }
   void set_snum(starnum_t s) {
     snum_ = s;
+  }
+  void set_pnum(planetnum_t p) {
+    pnum_ = p;
+  }
+  void set_shipno(shipnum_t s) {
+    shipno_ = s;
+  }
+  void set_level(ScopeLevel l) {
+    level_ = l;
   }
 
   // Access EntityManager for commands
@@ -172,10 +190,4 @@ private:
   ScopeLevel level_ = ScopeLevel::LEVEL_UNIV;
 
   std::function<void(std::shared_ptr<Session>)> on_disconnect_;
-
-  static constexpr int COMMAND_BURST_SIZE = 100;
-  static constexpr int MAX_COMMAND_LEN = 512;
-  static constexpr std::size_t MAX_WRITE_QUEUE_SIZE = 1024 * 1024;  // 1MB
-  static constexpr std::size_t MAX_INPUT_QUEUE_SIZE = 1000;         // Commands
-  static constexpr std::time_t IDLE_TIMEOUT_SECONDS = 3600;         // 1 hour
 };

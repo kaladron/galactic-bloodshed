@@ -20,13 +20,23 @@ public:
   double lasty[2] = {0.0, 0.0};
   double zoom[2] = {1.0, 0.5};                ///< last coords for zoom
   ScopeLevel level = ScopeLevel::LEVEL_PLAN;  ///< what directory level
-  starnum_t snum;    ///< what star system obj # (level=0)
-  planetnum_t pnum;  ///< number of planet
-  shipnum_t shipno;  ///< # of ship
-  std::stringstream out;
+  starnum_t snum;                 ///< what star system obj # (level=0)
+  planetnum_t pnum;               ///< number of planet
+  shipnum_t shipno;               ///< # of ship
+  std::ostream& out;              ///< Output stream (reference, not owned)
   EntityManager& entity_manager;  ///< Entity lifecycle manager
 
-  explicit GameObj(EntityManager& em) : entity_manager(em) {}
+  // Constructor for new Server-based architecture (output is Session's buffer)
+  GameObj(EntityManager& em, std::ostream& output)
+      : out(output), entity_manager(em) {}
+
+  // Constructor for legacy DescriptorData (maintains compatibility)
+  explicit GameObj(EntityManager& em)
+      : out(internal_stream_), entity_manager(em) {}
+
   GameObj(const GameObj&) = delete;
   GameObj& operator=(const GameObj&) = delete;
+
+private:
+  std::stringstream internal_stream_;  ///< Used by legacy constructor
 };

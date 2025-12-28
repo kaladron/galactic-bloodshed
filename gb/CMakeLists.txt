@@ -346,7 +346,7 @@ target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
                                        scnlib_module tabulate_module)
 
 add_executable(GB GB_server.cc)
-target_link_libraries(GB PRIVATE gblib commands SQLite::SQLite3 glaze::glaze)
+target_link_libraries(GB PRIVATE gblib commands asio_module session SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB)
 
 # Test targets
@@ -361,6 +361,10 @@ add_test(NAME GB_asio_test COMMAND asio_test)
 add_executable(session_test session_test.cc)
 target_link_libraries(session_test PRIVATE gblib session)
 add_test(NAME GB_session_test COMMAND session_test)
+
+add_executable(server_test server_test.cc)
+target_link_libraries(server_test PRIVATE gblib session asio_module dallib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_server_test COMMAND server_test)
 
 add_executable(shlmisc_test shlmisc_test.cc)
 target_link_libraries(shlmisc_test PRIVATE gblib SQLite::SQLite3)

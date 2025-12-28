@@ -2,9 +2,11 @@
 // Use of this source code is governed by a license that can be
 // found in the COPYING file.
 
+import asio;
 import commands;
 import dallib;
 import gblib;
+import session;
 import std.compat;
 
 #include "gb/GB_server.h"
@@ -25,6 +27,49 @@ import std.compat;
 #include <cstdlib>
 
 #include "gb/files.h"
+
+// Server class - implements SessionRegistry interface for the application layer
+class Server : public SessionRegistry {
+public:
+  Server(asio::io_context& io, int port, EntityManager& em);
+
+  void run();
+  void shutdown();
+
+  // SessionRegistry interface
+  void for_each_session(std::function<void(Session&)> fn) override;
+  bool update_in_progress() const override {
+    return update_flag_;
+  }
+  void set_update_in_progress(bool v) {
+    update_flag_ = v;
+  }
+
+  EntityManager& entity_manager() {
+    return entity_manager_;
+  }
+
+private:
+  void do_accept();
+  void schedule_next_event();
+  void on_timer();
+  void process_commands();
+  void check_idle_sessions();
+  void remove_session(std::shared_ptr<Session> session);
+
+  asio::io_context& io_;
+  asio::ip::tcp::acceptor acceptor_;
+  asio::steady_timer timer_;
+  asio::signal_set signals_;  // For graceful shutdown on SIGINT/SIGTERM
+  EntityManager& entity_manager_;
+
+  std::set<std::shared_ptr<Session>> sessions_;
+  bool shutdown_flag_ = false;
+  bool update_flag_ = false;
+
+  time_t go_time_ = 0;
+  std::chrono::steady_clock::time_point last_quota_update_;
+};
 
 static bool shutdown_flag = false;
 
@@ -51,9 +96,11 @@ static void initialize_block_data(EntityManager&);
 static void make_nonblocking(int);
 static struct timeval update_quotas(struct timeval, struct timeval);
 static bool process_output(DescriptorData&);
-static void welcome_user(DescriptorData&);
+static void welcome_user(Session&);
+static void welcome_user_legacy(DescriptorData&);  // Legacy for old shovechars
 static void process_commands();
-static bool do_command(DescriptorData&, std::string_view);
+static bool do_command(Session&, std::string_view);
+static bool do_command_legacy(DescriptorData&, std::string_view);  // Legacy
 static void goodbye_user(DescriptorData&);
 static void dump_users(DescriptorData&);
 static void close_sockets(int, EntityManager&);
@@ -66,8 +113,6 @@ static void save_command(DescriptorData&, const std::string&);
 
 static void check_connect(DescriptorData&, std::string_view);
 static struct timeval timeval_sub(struct timeval now, struct timeval then);
-
-constexpr int MAX_COMMAND_LEN = 512;
 
 using CommandFunction = void (*)(const command_t&, GameObj&);
 
@@ -358,6 +403,165 @@ std::string do_prompt(GameObj& g) {
 }
 }  // namespace
 
+// ============================================================================
+// Server class implementation
+// ============================================================================
+
+Server::Server(asio::io_context& io, int port, EntityManager& em)
+    : io_(io),
+      acceptor_(io, asio::ip::tcp::endpoint(asio::ip::tcp::v6(), port)),
+      timer_(io), signals_(io, SIGINT, SIGTERM), entity_manager_(em),
+      last_quota_update_(std::chrono::steady_clock::now()) {
+  // Set socket options (equivalent to old setsockopt calls)
+  acceptor_.set_option(asio::socket_base::reuse_address(true));
+  acceptor_.set_option(asio::socket_base::keep_alive(true));
+
+  // Handle signals for graceful shutdown (replaces set_signals())
+  signals_.async_wait([this](asio::error_code ec, int signum) {
+    if (!ec) {
+      std::println(stderr, "Received signal {}, shutting down...", signum);
+      shutdown();
+    }
+  });
+}
+
+void Server::run() {
+  do_accept();
+  schedule_next_event();
+  io_.run();
+}
+
+void Server::shutdown() {
+  shutdown_flag_ = true;
+  signals_.cancel();
+  timer_.cancel();
+  acceptor_.close();
+  for (auto& session : sessions_) {
+    session->disconnect();
+  }
+}
+
+void Server::do_accept() {
+  acceptor_.async_accept(
+      [this](asio::error_code ec, asio::ip::tcp::socket socket) {
+        if (ec) {
+          if (!shutdown_flag_) {
+            std::println(stderr, "Accept error: {}", ec.message());
+          }
+          return;
+        }
+
+        auto session = std::make_shared<Session>(
+            std::move(socket), entity_manager_,
+            [this](std::shared_ptr<Session> s) { remove_session(s); });
+        sessions_.insert(session);
+        welcome_user(*session);
+        session->start();
+
+        do_accept();  // Accept next connection
+      });
+}
+
+void Server::schedule_next_event() {
+  timer_.expires_after(std::chrono::milliseconds(100));  // 100ms tick
+  timer_.async_wait([this](asio::error_code ec) {
+    if (ec || shutdown_flag_) return;
+    on_timer();
+    schedule_next_event();
+  });
+}
+
+void Server::on_timer() {
+  // Update quotas (rate limiting for commands)
+  auto now = std::chrono::steady_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+      now - last_quota_update_);
+  if (elapsed.count() >= COMMAND_TIME_MSEC) {
+    int nslices = elapsed.count() / COMMAND_TIME_MSEC;
+    for (auto& session : sessions_) {
+      session->add_quota(COMMANDS_PER_TIME * nslices);
+    }
+    last_quota_update_ = now;
+  }
+
+  // Process pending commands from all sessions
+  process_commands();
+
+  // Check for idle sessions (disconnect after IDLE_TIMEOUT_SECONDS)
+  check_idle_sessions();
+
+  // --- Time-based game events (updates/segments) ---
+  // This replaces the timing logic from shovechars()
+  // do_next_thing() calls either do_segment() or do_update() based on game
+  // state
+  time_t current_time = std::time(nullptr);
+  const auto* state = entity_manager_.peek_server_state();
+  if (state && go_time_ == 0) {
+    if (current_time >= state->next_update_time) {
+      go_time_ = current_time +
+                 (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
+    } else if (current_time >= state->next_segment_time &&
+               state->nsegments_done < state->segments) {
+      go_time_ = current_time +
+                 (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
+    }
+  }
+  if (go_time_ > 0 && current_time >= go_time_) {
+    do_next_thing(entity_manager_);
+    go_time_ = 0;
+  }
+}
+
+void Server::check_idle_sessions() {
+  time_t now = std::time(nullptr);
+  for (auto& session : sessions_) {
+    if (session->connected() &&
+        (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
+      std::println(stderr, "Disconnecting idle session (timeout)");
+      session->out() << "Connection timed out due to inactivity.\n";
+      session->disconnect();
+    }
+  }
+}
+
+void Server::process_commands() {
+  // Execute pending commands for all sessions
+  for (auto& session : sessions_) {
+    while (session->quota() > 0 && session->has_pending_input()) {
+      std::string command = session->pop_input();
+      session->use_quota();
+      session->touch();
+
+      if (!do_command(*session, command)) {
+        session->disconnect();
+        break;
+      }
+    }
+  }
+
+  // Flush all dirty output buffers to network
+  // This handles both direct command output AND cross-player notifications
+  for (auto& session : sessions_) {
+    session->flush_to_network();
+  }
+}
+
+void Server::for_each_session(std::function<void(Session&)> fn) {
+  for (auto& session : sessions_) {
+    fn(*session);
+  }
+}
+
+void Server::remove_session(std::shared_ptr<Session> session) {
+  if (session->connected()) {
+    std::println(stderr, "DISCONNECT Race={} Governor={}", session->player(),
+                 session->governor());
+  } else {
+    std::println(stderr, "DISCONNECT never connected");
+  }
+  sessions_.erase(session);
+}
+
 int main(int argc, char** argv) {
   // Create Database and EntityManager for dependency injection
   Database database{PKGSTATEDIR "gb.db"};
@@ -522,7 +726,8 @@ static int shovechars(int port, EntityManager& entity_manager) {
       else
         FD_SET(d.descriptor, &input_set);
       // Is there anything in the output queue?
-      if (!d.output.empty() || !d.out.str().empty())
+      auto& sstream = dynamic_cast<std::stringstream&>(d.out);
+      if (!d.output.empty() || !sstream.str().empty())
         FD_SET(d.descriptor, &output_set);
     }
 
@@ -540,7 +745,7 @@ static int shovechars(int port, EntityManager& entity_manager) {
           descriptor_list.emplace_back(sock, entity_manager);
           auto& newd = descriptor_list.back();
           make_nonblocking(newd.descriptor);
-          welcome_user(newd);
+          welcome_user_legacy(newd);
         } catch (const std::runtime_error&) {
           perror("new_connection");
           return sock;
@@ -703,28 +908,36 @@ static void make_nonblocking(int s) {
   }
 }
 
-static void welcome_user(DescriptorData& d) {
-  FILE* f;
-  char* p;
+static void welcome_user(Session& session) {
+  session.out() << std::format("***   Welcome to Galactic Bloodshed {} ***\n"
+                               "Please enter your password:\n",
+                               GB_VERSION);
 
+  if (auto f = std::ifstream(WELCOME_FILE)) {
+    std::string line;
+    while (std::getline(f, line)) {
+      session.out() << line << "\n";
+    }
+  }
+
+  // Immediately flush welcome message (before command loop starts)
+  session.flush_to_network();
+}
+
+// Legacy version for old shovechars() - will be removed in Step 4
+static void welcome_user_legacy(DescriptorData& d) {
   std::string welcome_msg = std::format(
       "***   Welcome to Galactic Bloodshed {} ***\nPlease enter your "
       "password:\n",
       GB_VERSION);
   queue_string(d, welcome_msg);
 
-  if ((f = fopen(WELCOME_FILE, "r")) != nullptr) {
-    char line_buf[2047];
-    while (fgets(line_buf, sizeof line_buf, f)) {
-      for (p = line_buf; *p; p++)
-        if (*p == '\n') {
-          *p = '\0';
-          break;
-        }
-      queue_string(d, line_buf);
+  if (auto f = std::ifstream(WELCOME_FILE)) {
+    std::string line;
+    while (std::getline(f, line)) {
+      queue_string(d, line);
       queue_string(d, "\n");
     }
-    fclose(f);
   }
 }
 
@@ -794,7 +1007,7 @@ static void process_commands() {
         d.quota--;
         nprocessed++;
 
-        if (!do_command(d, t)) {
+        if (!do_command_legacy(d, t)) {
           shutdownsock(d);
           break;
         }
@@ -808,11 +1021,55 @@ static void process_commands() {
 
 /** Main processing loop. When command strings are sent from the client,
    they are processed here. Responses are sent back to the client via
-   notify.
+   session.out().
    */
-static bool do_command(DescriptorData& d, std::string_view comm) {
+static bool do_command(Session& session, std::string_view comm) {
   /* check to see if there are a few words typed out, usually for the help
    * command */
+  auto argv = make_command_t(comm);
+
+  if (argv[0] == "quit") {
+    session.out() << "Goodbye!\n";
+    return false;
+  }
+  if (session.connected() && argv[0] == "who") {
+    // TODO: Implement who command for Session
+    session.out() << "WHO command not yet implemented in new system.\n";
+  } else if (session.connected() && session.god() && argv[0] == "emulate") {
+    // TODO: Implement emulate command for Session
+    session.out() << "EMULATE command not yet implemented in new system.\n";
+  } else {
+    if (session.connected()) {
+      /* GB command parser - create temporary GameObj */
+      GameObj g(session.entity_manager(), session.out());
+      g.player = session.player();
+      g.governor = session.governor();
+      g.snum = session.snum();
+      g.pnum = session.pnum();
+      g.shipno = session.shipno();
+      g.level = session.level();
+      g.race = session.entity_manager().peek_race(g.player);
+      // TODO: Add session_registry pointer when available
+
+      process_command(g, argv);
+
+      // Copy any state changes back to session
+      session.set_snum(g.snum);
+      session.set_pnum(g.pnum);
+      session.set_shipno(g.shipno);
+      session.set_level(g.level);
+    } else {
+      // TODO: Implement check_connect for Session
+      session.out() << "Login not yet implemented in new system. Please use "
+                       "old client.\n";
+      return false;
+    }
+  }
+  return true;
+}
+
+// Legacy version for old shovechars() - will be removed in Step 4
+static bool do_command_legacy(DescriptorData& d, std::string_view comm) {
   auto argv = make_command_t(comm);
 
   if (argv[0] == "quit") {
@@ -836,9 +1093,7 @@ static bool do_command(DescriptorData& d, std::string_view comm) {
       /* GB command parser */
       process_command(d, argv);
     } else {
-      check_connect(
-          d, comm); /* Logs player into the game, connects
-                          if the password given by *command is a player's */
+      check_connect(d, comm);
       if (!d.connected) {
         goodbye_user(d);
       } else {

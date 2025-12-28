@@ -164,10 +164,13 @@ void queue_string(DescriptorData& d, const std::string& b) {
 
 //* Push contents of the stream to the queues
 void strstr_to_queue(DescriptorData& d) {
-  if (d.out.str().empty()) return;
-  queue_string(d, d.out.str());
-  d.out.clear();
-  d.out.str("");
+  // Legacy DescriptorData uses GameObj's internal_stream_
+  // Cast back to stringstream to access .str()
+  auto& sstream = dynamic_cast<std::stringstream&>(d.out);
+  if (sstream.str().empty()) return;
+  queue_string(d, sstream.str());
+  sstream.clear();
+  sstream.str("");
 }
 
 /*utilities for dealing with ship lists */

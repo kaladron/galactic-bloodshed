@@ -12,8 +12,8 @@ module commands;
 namespace GB::commands {
 /*! Ship vs ship */
 void fire(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount;
   int cew;
   // This is called from dock.cc.

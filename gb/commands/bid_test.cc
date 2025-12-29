@@ -105,12 +105,12 @@ int main() {
 
   // Create GameObj for player 1 (bidder)
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   std::println("Test 1: Place initial bid on commodity");
   {
@@ -177,12 +177,12 @@ int main() {
     int previous_bid = c_before->bid;
 
     GameObj g2(em);
-    g2.player = 1;
-    g2.governor = 0;
+    g2.set_player(1);
+    g2.set_governor(0);
     g2.race = em.peek_race(1);
-    g2.level = ScopeLevel::LEVEL_PLAN;
-    g2.snum = 0;
-    g2.pnum = 0;
+    g2.set_level(ScopeLevel::LEVEL_PLAN);
+    g2.set_snum(0);
+    g2.set_pnum(0);
 
     command_t argv = {"bid", "1", "5000"};
     GB::commands::bid(argv, g2);

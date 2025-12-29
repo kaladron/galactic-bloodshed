@@ -66,11 +66,11 @@ int main() {
 
   // Create GameObj for player 1
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
 
   std::println("Test 1: Dump exploration data to another player");
   {
@@ -102,11 +102,11 @@ int main() {
   }
   {
     GameObj g2(em);
-    g2.player = 1;
-    g2.governor = 0;
+    g2.set_player(1);
+    g2.set_governor(0);
     g2.race = em.peek_race(1);
-    g2.level = ScopeLevel::LEVEL_STAR;
-    g2.snum = 0;
+    g2.set_level(ScopeLevel::LEVEL_STAR);
+    g2.set_snum(0);
 
     command_t argv = {"dump", "Recipient"};
     GB::commands::dump(argv, g2);

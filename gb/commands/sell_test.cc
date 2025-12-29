@@ -81,12 +81,12 @@ int main() {
 
   // Create GameObj
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   std::println("Test 1: Sell resources");
   {
@@ -148,12 +148,12 @@ int main() {
   }
   {
     GameObj g2(em);
-    g2.player = 1;
-    g2.governor = 0;
+    g2.set_player(1);
+    g2.set_governor(0);
     g2.race = em.peek_race(1);
-    g2.level = ScopeLevel::LEVEL_PLAN;
-    g2.snum = 0;
-    g2.pnum = 0;
+    g2.set_level(ScopeLevel::LEVEL_PLAN);
+    g2.set_snum(0);
+    g2.set_pnum(0);
 
     const auto* p_before = em.peek_planet(0, 0);
     int resource_before = p_before->info(0).resource;

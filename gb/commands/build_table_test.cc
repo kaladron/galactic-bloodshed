@@ -30,10 +30,10 @@ int main() {
 
   // Create GameObj for testing
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_UNIV;  // Scope doesn't matter for "build ?"
+  g.set_level(ScopeLevel::LEVEL_UNIV);  // Scope doesn't matter for "build ?"
 
   // Test 1: "build ?" displays ship list table
   {

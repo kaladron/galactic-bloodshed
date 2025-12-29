@@ -12,8 +12,8 @@ module commands;
 
 namespace GB::commands {
 void block(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   player_t p;
 
   const auto* race = g.race;

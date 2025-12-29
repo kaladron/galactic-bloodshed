@@ -40,8 +40,8 @@ void test_toggle_database_persistence() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);  // Set race pointer like production does
 
   // TEST 1: Display all toggle settings (no argument)

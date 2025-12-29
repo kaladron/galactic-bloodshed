@@ -62,8 +62,8 @@ int getcount(const command_t& argv, const size_t elem) {
 }
 
 bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   if (planet.slaved_to() && planet.slaved_to() != Playernum) {
     std::string message = std::format("This planet is enslaved by player {}.\n",
                                       planet.slaved_to());
@@ -175,8 +175,8 @@ void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel) {
 
 void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
                          double load_fuel, int load_crew) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   newship->speed() = newship->max_speed();
   newship->owner() = Playernum;
   newship->governor() = Governor;

@@ -31,7 +31,7 @@ void victory(const command_t& argv, GameObj& g) {
       tabulate::FontAlign::center);    // [Race]
   table.column(3).format().width(15);  // Name
 
-  if (g.god) {
+  if (g.god()) {
     table.column(4).format().width(6).font_align(
         tabulate::FontAlign::right);  // Score
     table.column(5).format().width(6).font_align(
@@ -47,7 +47,7 @@ void victory(const command_t& argv, GameObj& g) {
 
   // Add header row
   tabulate::Table::Row_t header = {"No.", "", "Race", "Name"};
-  if (g.god) {
+  if (g.god()) {
     header.insert(header.end(),
                   {"Score", "Tech", "IQ", "Password", "Gov Pass"});
   }
@@ -65,7 +65,7 @@ void victory(const command_t& argv, GameObj& g) {
         std::format("[{}]", vic.racenum), std::format("{:.15}", vic.name)};
 
     // Add god-only columns
-    if (g.god) {
+    if (g.god()) {
       const auto* race = g.entity_manager.peek_race(vic.racenum);
       if (!race) continue;
 

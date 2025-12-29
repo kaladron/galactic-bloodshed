@@ -14,8 +14,8 @@ module commands;
 namespace GB::commands {
 /* declare that you wish to be included in the alliance block */
 void unpledge(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
 
   if (Governor) {
     g.out << "Only leaders may pledge.\n";

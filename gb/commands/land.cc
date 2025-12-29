@@ -172,8 +172,8 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
  * @param APcount The number of action points available for the player.
  */
 void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   int numdest = 0;
   int strength;
   double fuel;
@@ -197,7 +197,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     g.out << "This ship is not equipped to land.\n";
     return;
   }
-  if ((s.storbits() != g.snum) || (s.pnumorbits() != g.pnum)) {
+  if ((s.storbits() != g.snum()) || (s.pnumorbits() != g.pnum())) {
     g.out << "You have to cs to the planet it orbits.\n";
     return;
   }
@@ -364,7 +364,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
 
 namespace GB::commands {
 void land(const command_t& argv, GameObj& g) {
-  governor_t Governor = g.governor;
+  governor_t Governor = g.governor();
   ap_t APcount = 1;
 
   if (argv.size() < 2) {

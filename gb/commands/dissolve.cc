@@ -13,8 +13,8 @@ module commands;
 
 namespace GB::commands {
 void dissolve(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   if (!DISSOLVE) {
     g.out << "Dissolve has been disabled. Please notify diety.\n";
     return;

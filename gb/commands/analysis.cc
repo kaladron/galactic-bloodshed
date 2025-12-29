@@ -51,7 +51,7 @@ void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
 // std::optional to make this more type-safe.
 void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
                  starnum_t Starnum, planetnum_t Planetnum) {
-  player_t Playernum = g.player;
+  player_t Playernum = g.player();
 
   std::array<struct anal_sect, CARE> Res;
   std::array<struct anal_sect, CARE> Eff;
@@ -297,7 +297,7 @@ void analysis(const command_t& argv, GameObj& g) {
   int do_player = -1;
   auto mode = Mode::top_five;
 
-  auto where = Place{g.level, g.snum, g.pnum};
+  auto where = Place{g.level(), g.snum(), g.pnum()};
 
   bool skipped_first = false;
 

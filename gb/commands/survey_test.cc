@@ -88,12 +88,12 @@ void test_survey_no_args_planet_scope() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
 
   // TEST: Survey command with no arguments - should show full planet survey
   std::println("  Testing: survey (no args) at planet scope");
@@ -161,12 +161,12 @@ void test_survey_sector_mode_no_args() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
 
   // TEST: Use 'map' command (mode=1) with no arguments - THIS IS THE BUG!
   // Previously this would access argv[1] without checking argv.size()
@@ -251,12 +251,12 @@ void test_survey_sector_range_with_header() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
 
   // TEST: Survey specific sector range in non-CSP mode
   std::println("  Testing: survey 0:2,0:2 (should show header)");
@@ -315,11 +315,11 @@ void test_survey_star_scope() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 1;
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
 
   // TEST: Survey command at star scope
   std::println("  Testing: survey at star scope");

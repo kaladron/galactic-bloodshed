@@ -44,12 +44,12 @@ void test_bless_technology() {
 
   // Setup GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
-  g.god = true;  // Must be god to use bless
+  g.set_player(1);
+  g.set_governor(0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+  g.set_god(true);  // Must be god to use bless
 
   // Execute bless command: bless 1 technology 5
   command_t argv = {"bless", "1", "technology", "5"};
@@ -96,12 +96,12 @@ void test_bless_money() {
 
   // Setup GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
-  g.god = true;
+  g.set_player(1);
+  g.set_governor(0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+  g.set_god(true);
 
   // Execute: bless 1 money 1000
   command_t argv = {"bless", "1", "money", "1000"};
@@ -145,12 +145,12 @@ void test_bless_requires_god() {
 
   // Setup GameObj without god privilege
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
-  g.god = false;  // NOT a god
+  g.set_player(1);
+  g.set_governor(0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+  g.set_god(false);  // NOT a god
 
   // Try to execute bless without god privilege
   command_t argv = {"bless", "1", "technology", "5"};
@@ -186,12 +186,12 @@ void test_bless_requires_planet_scope() {
 
   // Setup GameObj at wrong scope
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_UNIV;  // Wrong scope!
-  g.snum = 0;
-  g.pnum = 0;
-  g.god = true;
+  g.set_player(1);
+  g.set_governor(0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);  // Wrong scope!
+  g.set_snum(0);
+  g.set_pnum(0);
+  g.set_god(true);
 
   // Try to execute bless at wrong scope
   command_t argv = {"bless", "1", "technology", "5"};

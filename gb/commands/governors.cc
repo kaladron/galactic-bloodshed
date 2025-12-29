@@ -78,8 +78,8 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 
 namespace GB::commands {
 void governors(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   governor_t gov;
 
   auto race = g.entity_manager.get_race(Playernum);

@@ -9,13 +9,13 @@ module commands;
 
 namespace GB::commands {
 void dump(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 10;
   player_t player;
   int star_id;
 
-  const auto* star = g.entity_manager.peek_star(g.snum);
+  const auto* star = g.entity_manager.peek_star(g.snum());
   if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) return;
 
   if (!(player = get_player(g.entity_manager, argv[1]))) {
@@ -76,7 +76,7 @@ void dump(const command_t& argv, GameObj& g) {
     }
   }
 
-  deductAPs(g, APcount, g.snum);
+  deductAPs(g, APcount, g.snum());
 
   warn_race(g.entity_manager, player,
             std::format("{} [{}] has given you exploration data.\n",

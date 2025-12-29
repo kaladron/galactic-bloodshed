@@ -9,15 +9,15 @@ module commands;
 
 namespace GB::commands {
 void page(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  ap_t APcount = g.god ? 0 : 1;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
+  ap_t APcount = g.god() ? 0 : 1;
   player_t i;
   int who;
   int gov;
   int to_block;
 
-  const auto& star = *g.entity_manager.peek_star(g.snum);
+  const auto& star = *g.entity_manager.peek_star(g.snum());
   if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) return;
 
   gov = 0;  // TODO(jeffbailey): Init to zero.
@@ -41,12 +41,12 @@ void page(const command_t& argv, GameObj& g) {
     if (argv.size() > 1) gov = std::stoi(argv[2]);
   }
 
-  switch (g.level) {
+  switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
       g.out << "You can't make pages at universal scope.\n";
       break;
     default:
-      const auto& star = *g.entity_manager.peek_star(g.snum);
+      const auto& star = *g.entity_manager.peek_star(g.snum());
       if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
         return;
       }
@@ -74,6 +74,6 @@ void page(const command_t& argv, GameObj& g) {
       g.out << "Request sent.\n";
       break;
   }
-  deductAPs(g, APcount, g.snum);
+  deductAPs(g, APcount, g.snum());
 }
 }  // namespace GB::commands

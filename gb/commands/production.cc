@@ -12,8 +12,8 @@ module commands;
 
 namespace {
 void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
 
   const auto& star_ref = *g.entity_manager.peek_star(star);
   if (!isset(star_ref.explored(), Playernum)) return;

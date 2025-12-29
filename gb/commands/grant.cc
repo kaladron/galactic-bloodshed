@@ -13,8 +13,8 @@ module commands;
 
 namespace GB::commands {
 void grant(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   // ap_t APcount = 0; TODO(jeffbailey);
   governor_t gov;
 
@@ -38,11 +38,11 @@ void grant(const command_t& argv, GameObj& g) {
   auto& race = *race_handle;
 
   if (argv[2] == "star") {
-    if (g.level != ScopeLevel::LEVEL_STAR) {
+    if (g.level() != ScopeLevel::LEVEL_STAR) {
       g.out << "Please cs to the star system first.\n";
       return;
     }
-    int snum = g.snum;
+    int snum = g.snum();
     auto star_handle = g.entity_manager.get_star(snum);
     if (!star_handle.get()) {
       g.out << "Star not found.\n";

@@ -11,8 +11,8 @@ module commands;
 
 namespace GB::commands {
 void distance(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   double x0;
   double y0;
   double x1;

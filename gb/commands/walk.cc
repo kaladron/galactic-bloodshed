@@ -9,8 +9,8 @@ module commands;
 
 namespace GB::commands {
 void walk(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   const ap_t APcount = 1;
 
   char long_buf[1024], short_buf[256];

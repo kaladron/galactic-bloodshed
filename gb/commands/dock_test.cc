@@ -86,11 +86,11 @@ int main() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);  // Set race pointer like production
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;  // At star 0
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);  // At star 0
 
   std::println("Test 1: Dock ship #1 with ship #2");
   {

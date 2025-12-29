@@ -63,12 +63,12 @@ int main() {
 
   // Create GameObj
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   // Test move command - 'k' moves south (y+1)
   command_t argv = {"move", "5,5", "k", "500"};

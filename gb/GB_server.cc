@@ -281,46 +281,46 @@ connection_password parse_connect(const std::string_view message) {
  * \return Prompt string for display to the user
  */
 std::string do_prompt(GameObj& g) {
-  player_t Playernum = g.player;
+  player_t Playernum = g.player();
   std::stringstream prompt;
 
   const auto* universe = g.entity_manager.peek_universe();
-  switch (g.level) {
+  switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / )\n", universe->AP[Playernum - 1]);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
-      auto star = g.entity_manager.get_star(g.snum);
+      auto star = g.entity_manager.get_star(g.snum());
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1} )\n", star_ref.AP(Playernum - 1),
                             star_ref.get_name());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
-      auto star = g.entity_manager.get_star(g.snum);
+      auto star = g.entity_manager.get_star(g.snum());
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/{2} )\n", star_ref.AP(Playernum - 1),
                             star_ref.get_name(),
-                            star_ref.get_planet_name(g.pnum));
+                            star_ref.get_planet_name(g.pnum()));
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
       break;  // That's the rest of this function.
   }
 
-  const auto* s = g.entity_manager.peek_ship(g.shipno);
+  const auto* s = g.entity_manager.peek_ship(g.shipno());
   if (!s) return " ( [?] /#? )\n";
   switch (s->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [[0]] /#{1} )\n", universe->AP[Playernum - 1],
-                            g.shipno);
+                            g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       auto star = g.entity_manager.get_star(s->storbits());
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
                             star_ref.AP(Playernum - 1), star_ref.get_name(),
-                            g.shipno);
+                            g.shipno());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
@@ -328,7 +328,7 @@ std::string do_prompt(GameObj& g) {
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/{2}/#{3} )\n",
                             star_ref.AP(Playernum - 1), star_ref.get_name(),
-                            star_ref.get_planet_name(g.pnum), g.shipno);
+                            star_ref.get_planet_name(g.pnum()), g.shipno());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -345,14 +345,14 @@ std::string do_prompt(GameObj& g) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] /#{1}/#{2} )\n",
                             universe->AP[Playernum - 1], s->destshipno(),
-                            g.shipno);
+                            g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
                             star->AP(Playernum - 1), star->get_name(),
-                            s->destshipno(), g.shipno);
+                            s->destshipno(), g.shipno());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
@@ -360,8 +360,8 @@ std::string do_prompt(GameObj& g) {
       if (!star) return " ( [?] /?/?/#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
                             star->AP(Playernum - 1), star->get_name(),
-                            star->get_planet_name(g.pnum), s->destshipno(),
-                            g.shipno);
+                            star->get_planet_name(g.pnum()), s->destshipno(),
+                            g.shipno());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -376,14 +376,14 @@ std::string do_prompt(GameObj& g) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
                             universe->AP[Playernum - 1], s->destshipno(),
-                            g.shipno);
+                            g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
                             star->AP(Playernum - 1), star->get_name(),
-                            s->destshipno(), g.shipno);
+                            s->destshipno(), g.shipno());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
@@ -391,8 +391,8 @@ std::string do_prompt(GameObj& g) {
       if (!star) return " ( [?] /?/?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
                             star->AP(Playernum - 1), star->get_name(),
-                            star->get_planet_name(g.pnum), s->destshipno(),
-                            g.shipno);
+                            star->get_planet_name(g.pnum()), s->destshipno(),
+                            g.shipno());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_SHIP:
@@ -861,7 +861,7 @@ static struct timeval update_quotas(struct timeval last,
 static void shutdownsock(DescriptorData& d) {
   if (d.connected) {
     std::println(stderr, "DISCONNECT {0} Race={1} Governor={2}", d.descriptor,
-                 d.player, d.governor);
+                 d.player(), d.governor());
   } else {
     std::println(stderr, "DISCONNECT {0} never connected", d.descriptor);
   }
@@ -953,8 +953,8 @@ static void help_user(GameObj& g) {
           *p = '\0';
           break;
         }
-      notify(g.player, g.governor, line_buf);
-      notify(g.player, g.governor, "\n");
+      notify(g.player(), g.governor(), line_buf);
+      notify(g.player(), g.governor(), "\n");
     }
     fclose(f);
   }
@@ -1042,22 +1042,22 @@ static bool do_command(Session& session, std::string_view comm) {
     if (session.connected()) {
       /* GB command parser - create temporary GameObj */
       GameObj g(session.entity_manager(), session.out());
-      g.player = session.player();
-      g.governor = session.governor();
-      g.snum = session.snum();
-      g.pnum = session.pnum();
-      g.shipno = session.shipno();
-      g.level = session.level();
-      g.race = session.entity_manager().peek_race(g.player);
+      g.set_player(session.player());
+      g.set_governor(session.governor());
+      g.set_snum(session.snum());
+      g.set_pnum(session.pnum());
+      g.set_shipno(session.shipno());
+      g.set_level(session.level());
+      g.race = session.entity_manager().peek_race(g.player());
       // TODO: Add session_registry pointer when available
 
       process_command(g, argv);
 
       // Copy any state changes back to session
-      session.set_snum(g.snum);
-      session.set_pnum(g.pnum);
-      session.set_shipno(g.shipno);
-      session.set_level(g.level);
+      session.set_snum(g.snum());
+      session.set_pnum(g.pnum());
+      session.set_shipno(g.shipno());
+      session.set_level(g.level());
     } else {
       // TODO: Implement check_connect for Session
       session.out() << "Login not yet implemented in new system. Please use "
@@ -1078,14 +1078,14 @@ static bool do_command_legacy(DescriptorData& d, std::string_view comm) {
   }
   if (d.connected && argv[0] == "who") {
     dump_users(d);
-  } else if (d.connected && d.god && argv[0] == "emulate") {
-    d.player = std::stoi(argv[1]);
-    d.governor = std::stoi(argv[2]);
-    const auto* race = d.entity_manager.peek_race(d.player);
+  } else if (d.connected && d.god() && argv[0] == "emulate") {
+    d.set_player(std::stoi(argv[1]));
+    d.set_governor(std::stoi(argv[2]));
+    const auto* race = d.entity_manager.peek_race(d.player());
     if (race) {
-      std::string emulate_msg =
-          std::format("Emulating {} \"{}\" [{},{}]\n", race->name,
-                      race->governor[d.governor].name, d.player, d.governor);
+      std::string emulate_msg = std::format(
+          "Emulating {} \"{}\" [{},{}]\n", race->name,
+          race->governor[d.governor()].name, d.player(), d.governor());
       queue_string(d, emulate_msg);
     }
   } else {
@@ -1139,7 +1139,7 @@ static void check_connect(DescriptorData& d, std::string_view message) {
   /* check to see if this player is already connected, if so, nuke the
    * descriptor */
   for (auto& d0 : descriptor_list) {
-    if (d0.connected && d0.player == Playernum && d0.governor == Governor) {
+    if (d0.connected && d0.player() == Playernum && d0.governor() == Governor) {
       queue_string(d, "Connection refused.\n");
       return;
     }
@@ -1150,28 +1150,28 @@ static void check_connect(DescriptorData& d, std::string_view message) {
              d.descriptor);
   d.connected = true;
 
-  d.god = race.God;
-  d.player = Playernum;
-  d.governor = Governor;
+  d.set_god(race.God);
+  d.set_player(Playernum);
+  d.set_governor(Governor);
   d.race =
       d.entity_manager.peek_race(Playernum);  // Set race pointer for GameObj
 
   // Initialize scope to default or safe values
-  d.level = race.governor[Governor].deflevel;
-  d.snum = race.governor[Governor].defsystem;
-  d.pnum = race.governor[Governor].defplanetnum;
-  d.shipno = 0;
+  d.set_level(race.governor[Governor].deflevel);
+  d.set_snum(race.governor[Governor].defsystem);
+  d.set_pnum(race.governor[Governor].defplanetnum);
+  d.set_shipno(0);
 
   // Validate and clamp star number
   const auto* universe = d.entity_manager.peek_universe();
-  if (d.snum >= universe->numstars) {
-    d.snum = 0;  // Default to first star if invalid
+  if (d.snum() >= universe->numstars) {
+    d.set_snum(0);  // Default to first star if invalid
   }
 
   // Validate and clamp planet number
-  const auto* init_star = d.entity_manager.peek_star(d.snum);
-  if (init_star && d.pnum >= init_star->numplanets()) {
-    d.pnum = 0;  // Default to first planet if invalid
+  const auto* init_star = d.entity_manager.peek_star(d.snum());
+  if (init_star && d.pnum() >= init_star->numplanets()) {
+    d.set_pnum(0);  // Default to first planet if invalid
   }
 
   std::string login_msg =
@@ -1345,27 +1345,28 @@ static void dump_users(DescriptorData& e) {
   (void)time(&now);
   std::string players_msg = std::format("Current Players: {}", ctime(&now));
   queue_string(e, players_msg);
-  if (e.player) {
-    const auto* r = e.entity_manager.peek_race(e.player);
+  if (e.player()) {
+    const auto* r = e.entity_manager.peek_race(e.player());
     if (!r) return;
     God = r->God;
   } else
     return;
 
   for (auto& d : descriptor_list) {
-    if (d.connected && !d.god) {
-      const auto* r = d.entity_manager.peek_race(d.player);
+    if (d.connected && !d.god()) {
+      const auto* r = d.entity_manager.peek_race(d.player());
       if (!r) continue;
-      if (!r->governor[d.governor].toggle.invisible || e.player == d.player ||
-          God) {
-        std::string temp = std::format("\"{}\"", r->governor[d.governor].name);
-        const auto& star = *d.entity_manager.peek_star(d.snum);
+      if (!r->governor[d.governor()].toggle.invisible ||
+          e.player() == d.player() || God) {
+        std::string temp =
+            std::format("\"{}\"", r->governor[d.governor()].name);
+        const auto& star = *d.entity_manager.peek_star(d.snum());
         std::string user_info = std::format(
             "{:20.20s} {:20.20s} [{:2d},{:2d}] {:4d}s idle {:4.4s} {} {}\n",
-            r->name, temp, d.player, d.governor, now - d.last_time,
+            r->name, temp, d.player(), d.governor(), now - d.last_time,
             God ? star.get_name() : "    ",
-            (r->governor[d.governor].toggle.gag ? "GAG" : "   "),
-            (r->governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
+            (r->governor[d.governor()].toggle.gag ? "GAG" : "   "),
+            (r->governor[d.governor()].toggle.invisible ? "INVISIBLE" : ""));
         queue_string(e, user_info);
       } else if (!God) /* deity lurks around */
         coward_count++;
@@ -1396,7 +1397,7 @@ static void dump_users(DescriptorData& e) {
  * @param argv The command arguments.
  */
 static void process_command(GameObj& g, const command_t& argv) {
-  const auto* race = g.entity_manager.peek_race(g.player);
+  const auto* race = g.entity_manager.peek_race(g.player());
   if (!race) {
     g.out << "Error: Could not find your race.\n";
     return;
@@ -1491,12 +1492,12 @@ static void help(const command_t& argv, GameObj& g) {
             break;
           }
         strcat(help_buf, "\n");
-        notify(g.player, g.governor, help_buf);
+        notify(g.player(), g.governor(), help_buf);
       }
       fclose(f);
-      notify(g.player, g.governor, "----\nFinished.\n");
+      notify(g.player(), g.governor(), "----\nFinished.\n");
     } else
-      notify(g.player, g.governor, "Help on that subject unavailable.\n");
+      notify(g.player(), g.governor(), "Help on that subject unavailable.\n");
   }
 }
 

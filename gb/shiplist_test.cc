@@ -131,9 +131,9 @@ int main() {
 
   // Create GameObj for scope-based tests
   GameObj g(em);
-  g.player = 1;
-  g.snum = 0;
-  g.pnum = 0;
+  g.set_player(1);
+  g.set_snum(0);
+  g.set_pnum(0);
   g.race = em.peek_race(1);
 
   // Test 2: Scope iteration at universe level
@@ -176,9 +176,9 @@ int main() {
     ships_repo.save(star_ship2);
 
     GameObj g_star(em);
-    g_star.player = 1;
-    g_star.level = ScopeLevel::LEVEL_STAR;
-    g_star.snum = 5;
+    g_star.set_player(1);
+    g_star.set_level(ScopeLevel::LEVEL_STAR);
+    g_star.set_snum(5);
     g_star.race = em.peek_race(1);
 
     ShipList list(em, g_star, ShipList::IterationType::Scope);
@@ -209,10 +209,10 @@ int main() {
     ships_repo.save(planet_ship);
 
     GameObj g_plan(em);
-    g_plan.player = 1;
-    g_plan.level = ScopeLevel::LEVEL_PLAN;
-    g_plan.snum = 10;
-    g_plan.pnum = 3;
+    g_plan.set_player(1);
+    g_plan.set_level(ScopeLevel::LEVEL_PLAN);
+    g_plan.set_snum(10);
+    g_plan.set_pnum(3);
     g_plan.race = em.peek_race(1);
 
     ShipList list(em, g_plan, ShipList::IterationType::Scope);
@@ -468,9 +468,9 @@ int main() {
 
     // Create GameObj for scope-based iteration
     GameObj g(em);
-    g.player = 1;
-    g.level = ScopeLevel::LEVEL_STAR;
-    g.snum = 5;
+    g.set_player(1);
+    g.set_level(ScopeLevel::LEVEL_STAR);
+    g.set_snum(5);
 
     const ShipList ships(em, g, ShipList::IterationType::Scope);
 

@@ -10,8 +10,8 @@ module commands;
 
 namespace GB::commands {
 void move_popn(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   PopulationType what =
       (argv[0] == "move") ? PopulationType::CIV : PopulationType::MIL;
   int Assault;
@@ -32,16 +32,16 @@ void move_popn(const command_t& argv, GameObj& g) {
   double astrength;
   double dstrength;
 
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "Wrong scope\n";
     return;
   }
-  const auto& star = *g.entity_manager.peek_star(g.snum);
+  const auto& star = *g.entity_manager.peek_star(g.snum());
   if (!star.control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
     return;
@@ -63,7 +63,7 @@ void move_popn(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto smap_handle = g.entity_manager.get_sectormap(g.snum, g.pnum);
+  auto smap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
   if (!smap_handle.get()) {
     g.out << "Sector map not found.\n";
     return;
@@ -153,7 +153,7 @@ void move_popn(const command_t& argv, GameObj& g) {
     }
 
     if (Assault) {
-      ground_assaults[Playernum - 1][sect2.get_owner() - 1][g.snum] += 1;
+      ground_assaults[Playernum - 1][sect2.get_owner() - 1][g.snum()] += 1;
       auto race_handle = g.entity_manager.get_race(Playernum);
       auto alien_handle = g.entity_manager.get_race(sect2.get_owner());
       if (!race_handle.get() || !alien_handle.get()) {
@@ -237,7 +237,7 @@ void move_popn(const command_t& argv, GameObj& g) {
 
       std::string telegram = std::format(
           "/{}/{}: {} [{}] {}({},{}) assaults {} [{}] {}({},{}) {}\n",
-          star.get_name(), star.get_planet_name(g.pnum), race.name, Playernum,
+          star.get_name(), star.get_planet_name(g.pnum()), race.name, Playernum,
           Dessymbols[sect.get_condition()], x, y, alien.name, alien.Playernum,
           Dessymbols[sect2.get_condition()], x2, y2,
           (sect2.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
@@ -303,7 +303,7 @@ void move_popn(const command_t& argv, GameObj& g) {
       done = 1;
     }
 
-    deductAPs(g, APcost, g.snum);
+    deductAPs(g, APcost, g.snum());
     x = x2;
     y = y2; /* get ready for the next round */
   }

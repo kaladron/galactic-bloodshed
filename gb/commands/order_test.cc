@@ -45,10 +45,10 @@ int main() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);  // Set race pointer like production
-  g.level = ScopeLevel::LEVEL_UNIV;
+  g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println("Test 1: Set ship defense order");
   {

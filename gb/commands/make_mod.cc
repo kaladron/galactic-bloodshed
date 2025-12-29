@@ -9,8 +9,8 @@ module commands;
 
 namespace GB::commands {
 void make_mod(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   int mode;
   if (argv[0] == "make")
     mode = 0;
@@ -21,12 +21,12 @@ void make_mod(const command_t& argv, GameObj& g) {
   char shipc;
   double cost0;
 
-  if (g.level != ScopeLevel::LEVEL_SHIP) {
+  if (g.level() != ScopeLevel::LEVEL_SHIP) {
     g.out << "You have to change scope to an installation.\n";
     return;
   }
 
-  auto dirship_handle = g.entity_manager.get_ship(g.shipno);
+  auto dirship_handle = g.entity_manager.get_ship(g.shipno());
   if (!dirship_handle.get()) {
     g.out << "Illegal dir value.\n";
     return;
@@ -190,7 +190,7 @@ void make_mod(const command_t& argv, GameObj& g) {
     dirship.size() = ship_size(dirship);
     dirship.complexity() = complexity(dirship);
 
-    dirship.shipclass() = std::format("mod {}", g.shipno);
+    dirship.shipclass() = std::format("mod {}", g.shipno());
 
     notify(Playernum, Governor,
            std::format("Factory designated to produce {}s.\n", Shipnames[*i]));

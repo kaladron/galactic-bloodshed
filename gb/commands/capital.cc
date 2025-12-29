@@ -15,7 +15,7 @@ namespace GB::commands {
 void capital(const command_t& argv, GameObj& g) {
   const ap_t kAPCost = 50;
 
-  if (g.governor) {
+  if (g.governor()) {
     g.out << "Only the leader may designate the capital.\n";
     return;
   }
@@ -55,7 +55,7 @@ void capital(const command_t& argv, GameObj& g) {
       return;
     }
 
-    if (!enufAP(g.player, g.governor, star->AP(g.player - 1), kAPCost)) {
+    if (!enufAP(g.player(), g.governor(), star->AP(g.player() - 1), kAPCost)) {
       return;
     }
     if (s->type() != ShipType::OTYPE_GOV) {
@@ -66,7 +66,7 @@ void capital(const command_t& argv, GameObj& g) {
     deductAPs(g, kAPCost, snum);
 
     // Get race for modification (RAII auto-saves on scope exit)
-    auto race_handle = g.entity_manager.get_race(g.player);
+    auto race_handle = g.entity_manager.get_race(g.player());
     auto& race_mut = *race_handle;
     race_mut.Gov_ship = shipno;
   }

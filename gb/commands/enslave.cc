@@ -13,8 +13,8 @@ module commands;
 
 namespace GB::commands {
 void enslave(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   ap_t APcount = 2;
   int aliens = 0;
   int def = 0;

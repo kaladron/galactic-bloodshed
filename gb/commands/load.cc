@@ -13,8 +13,8 @@ int landed_on(const Ship& s, const shipnum_t shipno) {
 }
 
 void do_transporter(const Race& race, GameObj& g, Ship* s) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
 
   Playernum = race.Playernum;
 
@@ -22,7 +22,7 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     g.out << "Origin ship not landed.\n";
     return;
   }
-  if (s->storbits() != g.snum || s->pnumorbits() != g.pnum) {
+  if (s->storbits() != g.snum() || s->pnumorbits() != g.pnum()) {
     notify(Playernum, Governor,
            "Change scope to the planet the ship is landed on!\n");
     return;
@@ -117,8 +117,8 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
 
 void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
                               Sector& sect, PopulationType what, int people) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   double astrength;
   double dstrength;
   int oldowner;
@@ -137,7 +137,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
            "You have to unload to assault alien sectors.\n");
     return;
   }
-  ground_assaults[Playernum - 1][sect.get_owner() - 1][g.snum] += 1;
+  ground_assaults[Playernum - 1][sect.get_owner() - 1][g.snum()] += 1;
 
   auto race_handle = g.entity_manager.get_race(Playernum);
   if (!race_handle.get()) {
@@ -159,7 +159,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
       MIN(race.translate[sect.get_owner() - 1] + 5, 100);
 
   oldowner = (int)sect.get_owner();
-  const auto& star = *g.entity_manager.peek_star(g.snum);
+  const auto& star = *g.entity_manager.peek_star(g.snum());
   oldgov = star.governor(sect.get_owner() - 1);
 
   if (what == PopulationType::CIV)
@@ -237,9 +237,9 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   }
   std::string telegram = std::format(
       "/{}/{}: {} [{}] {} assaults {} [{}] {}({},{}) {}\n", star.get_name(),
-      star.get_planet_name(g.pnum), race.name, Playernum, ship_to_string(*ship),
-      alien.name, alien.Playernum, Dessymbols[sect.get_condition()],
-      ship->land_x(), ship->land_y(),
+      star.get_planet_name(g.pnum()), race.name, Playernum,
+      ship_to_string(*ship), alien.name, alien.Playernum,
+      Dessymbols[sect.get_condition()], ship->land_x(), ship->land_y(),
       (sect.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
 
   if (sect.get_owner() == Playernum) {
@@ -284,8 +284,8 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
 
 namespace GB::commands {
 void load(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 0;
   int mode = argv[0] == "load" ? 0 : 1;  // load or unload
   char commod;
@@ -345,7 +345,7 @@ void load(const command_t& argv, GameObj& g) {
       notify(Playernum, Governor,
              std::format("{} at {},{}\n", ship_to_string(s), s.land_x(),
                          s.land_y()));
-      if (s.storbits() != g.snum || s.pnumorbits() != g.pnum) {
+      if (s.storbits() != g.snum() || s.pnumorbits() != g.pnum()) {
         notify(Playernum, Governor,
                "Change scope to the planet this ship is landed on.\n");
 
@@ -414,12 +414,12 @@ void load(const command_t& argv, GameObj& g) {
     Sector* sect_ptr = nullptr;
 
     if (!sh) {
-      planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+      planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
       p_ptr = planet_handle->get();
     }
 
     if (!sh && (commod == 'c' || commod == 'm')) {
-      sectormap_handle = g.entity_manager.get_sectormap(g.snum, g.pnum);
+      sectormap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
       sect_ptr = &sectormap_handle->get()->get(s.land_x(), s.land_y());
     }
 

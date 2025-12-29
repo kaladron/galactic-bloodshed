@@ -9,18 +9,18 @@ module commands;
 
 namespace GB::commands {
 void sell(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   ap_t APcount = 20;
 
   if (!MARKET) return;
 
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to be in a planet scope to sell.\n";
     return;
   }
-  auto snum = g.snum;
-  auto pnum = g.pnum;
+  auto snum = g.snum();
+  auto pnum = g.pnum();
   if (argv.size() < 3) {
     g.out << "Syntax: sell <commodity> <amount>\n";
     return;

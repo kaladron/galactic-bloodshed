@@ -53,8 +53,8 @@ public:
   time_t last_time{};
   int quota{};
   bool operator==(const DescriptorData& rhs) const noexcept {
-    return descriptor == rhs.descriptor && player == rhs.player &&
-           governor == rhs.governor;
+    return descriptor == rhs.descriptor && player() == rhs.player() &&
+           governor() == rhs.governor();
   }
 };
 

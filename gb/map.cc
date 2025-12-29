@@ -9,8 +9,8 @@ module gblib;
 
 void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
               const Planet& p) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   int iq = 0;
   char shiplocs[MAX_X][MAX_Y] = {};
 

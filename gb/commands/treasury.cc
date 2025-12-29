@@ -10,7 +10,7 @@ module commands;
 
 namespace GB::commands {
 void treasury(const command_t&, GameObj& g) {
-  governor_t Governor = g.governor;
+  governor_t Governor = g.governor();
 
   const auto& gov = g.race->governor[Governor];
   money_t total_income = gov.income + gov.profit_market;

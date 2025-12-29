@@ -85,11 +85,11 @@ int main() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);  // Set race pointer like production
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;  // At star 0
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);  // At star 0
 
   std::println("Test 1: Orbit command displays ship at star");
   {
@@ -110,7 +110,7 @@ int main() {
   std::println("Test 2: Orbit at universe level");
   {
     // Change scope to universe level
-    g.level = ScopeLevel::LEVEL_UNIV;
+    g.set_level(ScopeLevel::LEVEL_UNIV);
 
     command_t argv = {"orbit"};
     GB::commands::orbit(argv, g);
@@ -141,10 +141,10 @@ int main() {
     races2.save(race);
 
     GameObj g2(em2);
-    g2.player = 1;
-    g2.governor = 0;
+    g2.set_player(1);
+    g2.set_governor(0);
     g2.race = em2.peek_race(1);
-    g2.level = ScopeLevel::LEVEL_UNIV;
+    g2.set_level(ScopeLevel::LEVEL_UNIV);
 
     command_t argv = {"orbit"};
     GB::commands::orbit(argv, g2);

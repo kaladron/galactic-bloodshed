@@ -33,7 +33,7 @@ private:
 
 void Place::getplace2(GameObj& g, std::string_view string,
                       const bool ignoreexpl) {
-  const player_t Playernum = g.player;
+  const player_t Playernum = g.player();
 
   if (err || string.empty()) return;
 
@@ -90,7 +90,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
         if (substr == star->get_name()) {
           level = ScopeLevel::LEVEL_STAR;
           snum = i;
-          if (ignoreexpl || isset(star->explored(), Playernum) || g.god) {
+          if (ignoreexpl || isset(star->explored(), Playernum) || g.god()) {
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }
@@ -121,7 +121,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
             err = true;
             return;
           }
-          if (ignoreexpl || p->info(Playernum - 1).explored || g.god) {
+          if (ignoreexpl || p->info(Playernum - 1).explored || g.god()) {
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }
@@ -179,12 +179,12 @@ std::string Place::to_string() {
 }
 
 Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
-    : level(g.level), snum(g.snum), pnum(g.pnum),
+    : level(g.level()), snum(g.snum()), pnum(g.pnum()),
       entity_manager(&g.entity_manager) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
 
-  if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno;
+  if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno();
 
   if (string.empty()) {
     return;
@@ -212,8 +212,8 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
         err = true;
         return;
       }
-      if ((ship->owner() == Playernum || ignoreexpl || g.god) &&
-          (ship->alive() || g.god)) {
+      if ((ship->owner() == Playernum || ignoreexpl || g.god()) &&
+          (ship->alive() || g.god())) {
         level = ScopeLevel::LEVEL_SHIP;
         shipno = ship->number();
         snum = ship->storbits();

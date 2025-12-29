@@ -83,69 +83,69 @@ int main() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);  // Set race pointer like production
 
   std::println("Test 1: cs command switches to universe scope");
   {
-    g.level = ScopeLevel::LEVEL_STAR;
-    g.snum = 0;
+    g.set_level(ScopeLevel::LEVEL_STAR);
+    g.set_snum(0);
 
     command_t argv = {"cs", "/"};
     GB::commands::cs(argv, g);
 
-    assert(g.level == ScopeLevel::LEVEL_UNIV);
+    assert(g.level() == ScopeLevel::LEVEL_UNIV);
     std::println("    ✓ Switched to universe scope");
   }
 
   std::println("Test 2: cs command switches to star scope by name");
   {
-    g.level = ScopeLevel::LEVEL_UNIV;
+    g.set_level(ScopeLevel::LEVEL_UNIV);
 
     command_t argv = {"cs", "Beta"};
     GB::commands::cs(argv, g);
 
-    assert(g.level == ScopeLevel::LEVEL_STAR);
-    assert(g.snum == 1);
+    assert(g.level() == ScopeLevel::LEVEL_STAR);
+    assert(g.snum() == 1);
     std::println("    ✓ Switched to star Beta (1) scope");
   }
 
   std::println("Test 3: cs command switches to star scope by name");
   {
-    g.level = ScopeLevel::LEVEL_UNIV;
+    g.set_level(ScopeLevel::LEVEL_UNIV);
 
     command_t argv = {"cs", "Alpha"};
     GB::commands::cs(argv, g);
 
-    assert(g.level == ScopeLevel::LEVEL_STAR);
-    assert(g.snum == 0);
+    assert(g.level() == ScopeLevel::LEVEL_STAR);
+    assert(g.snum() == 0);
     std::println("    ✓ Switched to star Alpha (0) scope");
   }
 
   std::println("Test 4: cs command rejects invalid star name");
   {
-    g.level = ScopeLevel::LEVEL_UNIV;
+    g.set_level(ScopeLevel::LEVEL_UNIV);
 
     command_t argv = {"cs", "NonExistent"};
     GB::commands::cs(argv, g);
 
     // Should still be at universe level
-    assert(g.level == ScopeLevel::LEVEL_UNIV);
+    assert(g.level() == ScopeLevel::LEVEL_UNIV);
     std::println("    ✓ Rejected invalid star name");
   }
 
   std::println("Test 5: cs command switches to planet scope");
   {
-    g.level = ScopeLevel::LEVEL_STAR;
-    g.snum = 0;
+    g.set_level(ScopeLevel::LEVEL_STAR);
+    g.set_snum(0);
 
     command_t argv = {"cs", "AlphaPrime"};
     GB::commands::cs(argv, g);
 
-    assert(g.level == ScopeLevel::LEVEL_PLAN);
-    assert(g.snum == 0);
-    assert(g.pnum == 0);
+    assert(g.level() == ScopeLevel::LEVEL_PLAN);
+    assert(g.snum() == 0);
+    assert(g.pnum() == 0);
     std::println("    ✓ Switched to planet AlphaPrime scope");
   }
 

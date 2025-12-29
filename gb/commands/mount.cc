@@ -9,8 +9,8 @@ module commands;
 
 namespace GB::commands {
 void mount(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   bool mnt;
   mnt = argv[0] == "mount";
 

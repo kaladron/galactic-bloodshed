@@ -15,8 +15,8 @@ module commands;
 
 namespace GB::commands {
 void dock(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = (argv[0] == "dock") ? 0 : 1;
   int Assault = (argv[0] == "assault") ? 1 : 0;
   population_t boarders = 0;
@@ -462,10 +462,10 @@ void dock(const command_t& argv, GameObj& g) {
                          ship_to_string(s2)));
     }
 
-    if (g.level == ScopeLevel::LEVEL_UNIV)
+    if (g.level() == ScopeLevel::LEVEL_UNIV)
       deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
     else
-      deductAPs(g, APcount, g.snum);
+      deductAPs(g, APcount, g.snum());
 
     s.notified() = s2.notified() = 0;
   }

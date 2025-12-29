@@ -66,12 +66,12 @@ int main() {
 
   // Create GameObj for testing
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = star_id;
-  g.pnum = 0;
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(star_id);
+  g.set_pnum(0);
 
   // Test: Build a probe on planet
   {

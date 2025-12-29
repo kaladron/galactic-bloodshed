@@ -13,8 +13,8 @@ module commands;
 
 namespace GB::commands {
 void capture(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   const ap_t APcount = 1;
   shipnum_t orig_shipno = 0;  // Store original ship number for messages
   player_t oldowner;
@@ -37,8 +37,8 @@ void capture(const command_t& argv, GameObj& g) {
     g.out << "Capture what?\n";
     return;
   }
-  if (Governor &&
-      g.entity_manager.peek_star(g.snum)->governor(Playernum - 1) != Governor) {
+  if (Governor && g.entity_manager.peek_star(g.snum())->governor(
+                      Playernum - 1) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }

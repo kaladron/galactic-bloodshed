@@ -16,7 +16,7 @@ void invite(const command_t& argv, GameObj& g) {
 
   player_t n;
 
-  if (g.governor) {
+  if (g.governor()) {
     g.out << "Only leaders may invite.\n";
     return;
   }
@@ -24,12 +24,12 @@ void invite(const command_t& argv, GameObj& g) {
     g.out << "No such player.\n";
     return;
   }
-  if (n == g.player) {
+  if (n == g.player()) {
     g.out << "Not needed, you are the leader.\n";
     return;
   }
 
-  const auto* race = g.entity_manager.peek_race(g.player);
+  const auto* race = g.entity_manager.peek_race(g.player());
   if (!race) {
     g.out << "Race not found.\n";
     return;
@@ -40,7 +40,7 @@ void invite(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto block_handle = g.entity_manager.get_block(g.player);
+  auto block_handle = g.entity_manager.get_block(g.player());
   if (!block_handle.get()) {
     g.out << "Block not found.\n";
     return;
@@ -51,19 +51,19 @@ void invite(const command_t& argv, GameObj& g) {
   if (mode) {
     setbit(block.invite, n);
     buf = std::format("{} [{}] has invited you to join {}\n", race->name,
-                      g.player, block.name);
+                      g.player(), block.name);
     warn_race(g.entity_manager, n, buf);
     buf = std::format("{} [{}] has been invited to join {} [{}]\n", alien->name,
-                      n, block.name, g.player);
-    warn_race(g.entity_manager, g.player, buf);
+                      n, block.name, g.player());
+    warn_race(g.entity_manager, g.player(), buf);
   } else {
     clrbit(block.invite, n);
     buf = std::format("You have been blackballed from {} [{}]\n", block.name,
-                      g.player);
+                      g.player());
     warn_race(g.entity_manager, n, buf);
     buf = std::format("{} [{}] has been blackballed from {} [{}]\n",
-                      alien->name, n, block.name, g.player);
-    warn_race(g.entity_manager, g.player, buf);
+                      alien->name, n, block.name, g.player());
+    warn_race(g.entity_manager, g.player(), buf);
   }
   post(g.entity_manager, buf, NewsType::DECLARATION);
 }

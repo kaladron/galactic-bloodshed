@@ -9,8 +9,8 @@ module commands;
 
 namespace GB::commands {
 void order(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 1;
 
   if (argv.size() == 1) { /* display all ship orders */

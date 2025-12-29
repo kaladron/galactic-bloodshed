@@ -71,13 +71,13 @@ struct BuildTestFixture {
 
   void init_game_obj(GameObj& g, ScopeLevel level = ScopeLevel::LEVEL_PLAN,
                      shipnum_t shipno = 0) {
-    g.player = 1;
-    g.governor = 0;
+    g.set_player(1);
+    g.set_governor(0);
     g.race = em.peek_race(1);
-    g.level = level;
-    g.snum = star_id;
-    g.pnum = planet_id;
-    g.shipno = shipno;
+    g.set_level(level);
+    g.set_snum(star_id);
+    g.set_pnum(planet_id);
+    g.set_shipno(shipno);
   }
 
   int count_ships() {

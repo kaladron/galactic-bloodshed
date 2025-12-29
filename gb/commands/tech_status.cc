@@ -18,8 +18,8 @@ struct returns {
 
 void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
                       tabulate::Table& table, returns& totals) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
 
   if (!isset(star.explored(), Playernum) ||
       (Governor && star.governor(Playernum - 1) != Governor)) {
@@ -56,7 +56,7 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
 
 namespace GB::commands {
 void tech_status(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
+  const player_t Playernum = g.player();
 
   const auto& sdata = *g.entity_manager.peek_universe();
 

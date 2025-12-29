@@ -10,8 +10,8 @@ module commands;
 
 namespace GB::commands {
 void arm(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   int mode;
   if (argv[0] == "arm") {
     mode = 1;
@@ -22,16 +22,16 @@ void arm(const command_t& argv, GameObj& g) {
   int amount = 0;
   money_t cost = 0;
 
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "Change scope to planet level first.\n";
     return;
   }
-  const auto& star = *g.entity_manager.peek_star(g.snum);
+  const auto& star = *g.entity_manager.peek_star(g.snum());
   if (!star.control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
     return;
@@ -54,7 +54,7 @@ void arm(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto smap_handle = g.entity_manager.get_sectormap(g.snum, g.pnum);
+  auto smap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
   if (!smap_handle.get()) {
     g.out << "Sector map not found.\n";
     return;

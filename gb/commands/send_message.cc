@@ -9,14 +9,14 @@ module commands;
 
 namespace GB::commands {
 void send_message(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   bool postit = argv[0] == "post";
   ap_t APcount;
   if (postit) {
     APcount = 0;
   } else {
-    APcount = g.god ? 0 : 1;
+    APcount = g.god() ? 0 : 1;
   }
   int who;
   player_t i;
@@ -87,7 +87,7 @@ void send_message(const command_t& argv, GameObj& g) {
     APcount *= !alien->God;
   }
 
-  switch (g.level) {
+  switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
       g.out << "You can't send messages from universal scope.\n";
       return;
@@ -98,7 +98,7 @@ void send_message(const command_t& argv, GameObj& g) {
 
     default:
       if (!enufAP(Playernum, Governor,
-                  g.entity_manager.peek_star(g.snum)->AP(Playernum - 1),
+                  g.entity_manager.peek_star(g.snum())->AP(Playernum - 1),
                   APcount))
         return;
       break;
@@ -190,6 +190,6 @@ void send_message(const command_t& argv, GameObj& g) {
     }
   }
   g.out << "Message sent.\n";
-  deductAPs(g, APcount, g.snum);
+  deductAPs(g, APcount, g.snum());
 }
 }  // namespace GB::commands

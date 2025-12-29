@@ -12,20 +12,20 @@ module commands;
 namespace GB::commands {
 /** Deity fix-it utilities */
 void fix(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  if (!g.god) {
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
+  if (!g.god()) {
     notify(Playernum, Governor,
            "This command is only available to the deity.\n");
     return;
   }
 
   if (argv[1] == "planet") {
-    if (g.level != ScopeLevel::LEVEL_PLAN) {
+    if (g.level() != ScopeLevel::LEVEL_PLAN) {
       g.out << "Change scope to the planet first.\n";
       return;
     }
-    auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+    auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
     if (!planet_handle.get()) {
       g.out << "Planet not found.\n";
       return;
@@ -96,12 +96,12 @@ void fix(const command_t& argv, GameObj& g) {
     return;
   }
   if (argv[1] == "ship") {
-    if (g.level != ScopeLevel::LEVEL_SHIP) {
+    if (g.level() != ScopeLevel::LEVEL_SHIP) {
       notify(Playernum, Governor,
              "Change scope to the ship you wish to fix.\n");
       return;
     }
-    auto ship_handle = g.entity_manager.get_ship(g.shipno);
+    auto ship_handle = g.entity_manager.get_ship(g.shipno());
     if (!ship_handle.get()) {
       g.out << "Ship not found.\n";
       return;

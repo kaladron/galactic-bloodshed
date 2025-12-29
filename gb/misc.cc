@@ -13,7 +13,7 @@ constexpr int MAX_OUTPUT = 32768;  // don't change this
 void notify_race(const player_t race, const std::string& message) {
   if (update_flag) return;
   for (auto& d : descriptor_list) {
-    if (d.connected && d.player == race) {
+    if (d.connected && d.player() == race) {
       queue_string(d, message);
     }
   }
@@ -23,7 +23,7 @@ bool notify(const player_t race, const governor_t gov,
             const std::string& message) {
   if (update_flag) return false;
   for (auto& d : descriptor_list)
-    if (d.connected && d.player == race && d.governor == gov) {
+    if (d.connected && d.player() == race && d.governor() == gov) {
       strstr_to_queue(d);  // Ensuring anything queued up is flushed out.
       queue_string(d, message);
       return true;
@@ -34,9 +34,9 @@ bool notify(const player_t race, const governor_t gov,
 void d_think(EntityManager& entity_manager, const player_t Playernum,
              const governor_t Governor, const std::string& message) {
   for (auto& d : descriptor_list) {
-    if (d.connected && d.player == Playernum && d.governor != Governor) {
-      const auto* race = entity_manager.peek_race(d.player);
-      if (race && !race->governor[d.governor].toggle.gag) {
+    if (d.connected && d.player() == Playernum && d.governor() != Governor) {
+      const auto* race = entity_manager.peek_race(d.player());
+      if (race && !race->governor[d.governor()].toggle.gag) {
         queue_string(d, message);
       }
     }
@@ -46,9 +46,9 @@ void d_think(EntityManager& entity_manager, const player_t Playernum,
 void d_broadcast(EntityManager& entity_manager, const player_t Playernum,
                  const governor_t Governor, const std::string& message) {
   for (auto& d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor)) {
-      const auto* race = entity_manager.peek_race(d.player);
-      if (race && !race->governor[d.governor].toggle.gag) {
+    if (d.connected && !(d.player() == Playernum && d.governor() == Governor)) {
+      const auto* race = entity_manager.peek_race(d.player());
+      if (race && !race->governor[d.governor()].toggle.gag) {
         queue_string(d, message);
       }
     }
@@ -58,7 +58,7 @@ void d_broadcast(EntityManager& entity_manager, const player_t Playernum,
 void d_shout(const player_t Playernum, const governor_t Governor,
              const std::string& message) {
   for (auto& d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor)) {
+    if (d.connected && !(d.player() == Playernum && d.governor() == Governor)) {
       queue_string(d, message);
     }
   }
@@ -71,11 +71,11 @@ void d_announce(EntityManager& entity_manager, const player_t Playernum,
   if (!star_ptr) return;
 
   for (auto& d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        d.snum == star) {
-      const auto* race = entity_manager.peek_race(d.player);
-      if (race && (isset(star_ptr->inhabited(), d.player) || race->God) &&
-          !race->governor[d.governor].toggle.gag) {
+    if (d.connected && !(d.player() == Playernum && d.governor() == Governor) &&
+        d.snum() == star) {
+      const auto* race = entity_manager.peek_race(d.player());
+      if (race && (isset(star_ptr->inhabited(), d.player()) || race->God) &&
+          !race->governor[d.governor()].toggle.gag) {
         queue_string(d, message);
       }
     }
@@ -119,8 +119,8 @@ void notify_star(EntityManager& entity_manager, const player_t a,
   if (!star_ptr) return;
 
   for (auto& d : descriptor_list)
-    if (d.connected && (d.player != a || d.governor != g) &&
-        isset(star_ptr->inhabited(), d.player)) {
+    if (d.connected && (d.player() != a || d.governor() != g) &&
+        isset(star_ptr->inhabited(), d.player())) {
       queue_string(d, message);
     }
 }

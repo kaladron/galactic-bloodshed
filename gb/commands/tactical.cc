@@ -282,7 +282,7 @@ void ShipTacticalItem::add_tactical_target_row(
   }
 
   // Don't show ships we own and are authorized for
-  if (s.owner() == g.player && authorized(g.governor, s)) {
+  if (s.owner() == g.player() && authorized(g.governor(), s)) {
     return;
   }
 
@@ -384,7 +384,7 @@ void ShipTacticalItem::report_tactical(
     GameObj& g, TacticalContext& ctx,
     const std::vector<std::unique_ptr<TacticalItem>>& items,
     const TacticalParams& params) const {
-  const auto* race = g.entity_manager.peek_race(g.player);
+  const auto* race = g.entity_manager.peek_race(g.player());
   if (!race) return;
 
   const auto& s = *ship_;
@@ -425,7 +425,7 @@ void ShipTacticalItem::report_tactical(
   header_table[0].format().font_style({tabulate::FontStyle::bold});
 
   // Add data row polymorphically
-  add_tactical_header_row(header_table, g, g.player, params);
+  add_tactical_header_row(header_table, g, g.player(), params);
 
   g.out << "\n" << header_table << "\n";
 
@@ -541,7 +541,7 @@ void PlanetTacticalItem::report_tactical(
     GameObj& g, TacticalContext& ctx,
     const std::vector<std::unique_ptr<TacticalItem>>& items,
     const TacticalParams& params) const {
-  const auto* race = g.entity_manager.peek_race(g.player);
+  const auto* race = g.entity_manager.peek_race(g.player());
   if (!race) return;
 
   // Create header summary table
@@ -580,7 +580,7 @@ void PlanetTacticalItem::report_tactical(
   header_table[0].format().font_style({tabulate::FontStyle::bold});
 
   // Add data row polymorphically
-  add_tactical_header_row(header_table, g, g.player, params);
+  add_tactical_header_row(header_table, g, g.player(), params);
 
   g.out << "\n" << header_table << "\n";
 
@@ -653,7 +653,7 @@ void PlanetTacticalItem::report_tactical(
 void generate_tactical_reports(
     GameObj& g, TacticalContext& ctx,
     const std::vector<std::unique_ptr<TacticalItem>>& items) {
-  const auto* race = g.entity_manager.peek_race(g.player);
+  const auto* race = g.entity_manager.peek_race(g.player());
   if (!race) {
     g.out << "Race not found.\n";
     return;
@@ -661,7 +661,7 @@ void generate_tactical_reports(
 
   for (const auto& item : items) {
     // Check if this item should generate a tactical report
-    if (!item->should_report_tactical(g.player, g.governor)) {
+    if (!item->should_report_tactical(g.player(), g.governor())) {
       continue;
     }
 
@@ -724,9 +724,9 @@ void tactical(const command_t& argv, GameObj& g) {
 
         // Then collect ships/planets in the same area based on ship's location
         if (ship->whatorbits() == ScopeLevel::LEVEL_STAR) {
-          star_get_tactical_items(g, items, g.player, ship->storbits());
+          star_get_tactical_items(g, items, g.player(), ship->storbits());
         } else if (ship->whatorbits() == ScopeLevel::LEVEL_PLAN) {
-          plan_get_tactical_items(g, items, g.player, ship->storbits(),
+          plan_get_tactical_items(g, items, g.player(), ship->storbits(),
                                   ship->pnumorbits());
         }
 
@@ -741,31 +741,31 @@ void tactical(const command_t& argv, GameObj& g) {
   }
 
   // Collect items based on current scope
-  switch (g.level) {
+  switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
       g.out << "You can't do tactical from universe level.\n";
       return;
 
     case ScopeLevel::LEVEL_PLAN:
-      plan_get_tactical_items(g, items, g.player, g.snum, g.pnum);
+      plan_get_tactical_items(g, items, g.player(), g.snum(), g.pnum());
       break;
 
     case ScopeLevel::LEVEL_STAR:
-      star_get_tactical_items(g, items, g.player, g.snum);
+      star_get_tactical_items(g, items, g.player(), g.snum());
       break;
 
     case ScopeLevel::LEVEL_SHIP:
-      if (g.shipno == 0) {
+      if (g.shipno() == 0) {
         g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
                  "scope to a ship.\n";
         return;
       }
 
       {
-        const auto* scoped_ship = g.entity_manager.peek_ship(g.shipno);
+        const auto* scoped_ship = g.entity_manager.peek_ship(g.shipno());
         if (!scoped_ship) {
           g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
-                               g.shipno);
+                               g.shipno());
           return;
         }
 
@@ -776,9 +776,10 @@ void tactical(const command_t& argv, GameObj& g) {
         // "Enemy ships will only appear on tactical display if they are in the
         // same scope as the calling ship")
         if (scoped_ship->whatorbits() == ScopeLevel::LEVEL_STAR) {
-          star_get_tactical_items(g, items, g.player, scoped_ship->storbits());
+          star_get_tactical_items(g, items, g.player(),
+                                  scoped_ship->storbits());
         } else if (scoped_ship->whatorbits() == ScopeLevel::LEVEL_PLAN) {
-          plan_get_tactical_items(g, items, g.player, scoped_ship->storbits(),
+          plan_get_tactical_items(g, items, g.player(), scoped_ship->storbits(),
                                   scoped_ship->pnumorbits());
         }
       }

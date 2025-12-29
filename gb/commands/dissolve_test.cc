@@ -54,9 +54,9 @@ int main() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_UNIV;
+  g.set_player(1);
+  g.set_governor(0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println("Test 1: Dissolve race with correct passwords");
   {

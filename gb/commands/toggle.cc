@@ -40,8 +40,8 @@ void display_toggles(GameObj& g, const Race::gov& governor, const Race& race) {
 
 namespace GB::commands {
 void toggle(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   // TODO(jeffbailey): ap_t APcount = 0;
 
   auto race_handle = g.entity_manager.get_race(Playernum);

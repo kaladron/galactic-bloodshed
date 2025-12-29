@@ -94,13 +94,13 @@ player_t get_player(EntityManager& em, const std::string& name) {
 }
 
 void allocateAPs(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   // TODO(jeffbailey): ap_t APcount = 0;
   ap_t maxalloc;
   ap_t alloc;
 
-  if (g.level == ScopeLevel::LEVEL_UNIV) {
+  if (g.level() == ScopeLevel::LEVEL_UNIV) {
     std::string scope_msg =
         "Change scope to the system you which to transfer global APs to.\n";
     notify(Playernum, Governor, scope_msg);
@@ -115,7 +115,7 @@ void allocateAPs(const command_t& argv, GameObj& g) {
 
   auto univ_handle = g.entity_manager.get_universe();
   auto& univ = *univ_handle;
-  const auto& star = *g.entity_manager.peek_star(g.snum);
+  const auto& star = *g.entity_manager.peek_star(g.snum());
   maxalloc =
       std::min(univ.AP[Playernum - 1], LIMIT_APs - star.AP(Playernum - 1));
   if (alloc > maxalloc) {
@@ -125,7 +125,7 @@ void allocateAPs(const command_t& argv, GameObj& g) {
     return;
   }
   univ.AP[Playernum - 1] -= alloc;
-  auto star_handle = g.entity_manager.get_star(g.snum);
+  auto star_handle = g.entity_manager.get_star(g.snum());
   auto& star_write = *star_handle;
   star_write.AP(Playernum - 1) =
       std::min(LIMIT_APs, star.AP(Playernum - 1) + alloc);
@@ -139,7 +139,7 @@ void deductAPs(const GameObj& g, ap_t APs, ScopeLevel level) {
   if (level == ScopeLevel::LEVEL_UNIV) {
     auto univ_handle = g.entity_manager.get_universe();
     auto& univ = *univ_handle;
-    univ.AP[g.player - 1] = std::max(0u, univ.AP[g.player - 1] - APs);
+    univ.AP[g.player() - 1] = std::max(0u, univ.AP[g.player() - 1] - APs);
     return;
   }
 }
@@ -154,13 +154,13 @@ void deductAPs(const GameObj& g, ap_t APs, starnum_t snum) {
   }
 
   auto& star = *star_handle;
-  if (star.AP(g.player - 1) >= APs)
-    star.AP(g.player - 1) -= APs;
+  if (star.AP(g.player() - 1) >= APs)
+    star.AP(g.player() - 1) -= APs;
   else {
-    star.AP(g.player - 1) = 0;
+    star.AP(g.player() - 1) = 0;
     std::string cheater_msg = "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
                               "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";
-    notify(g.player, g.governor, cheater_msg);
+    notify(g.player(), g.governor(), cheater_msg);
   }
 }
 

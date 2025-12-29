@@ -83,10 +83,10 @@ int main() {
 
   // Setup GameObj
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;
+  g.set_player(1);
+  g.set_governor(0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
   g.race = em.peek_race(1);
 
   // Execute fire command

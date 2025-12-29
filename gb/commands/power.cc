@@ -49,7 +49,7 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
 
 namespace GB::commands {
 void power(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
+  player_t Playernum = g.player();
   // TODO(jeffbailey): Need to stop using -1 here for UB
   player_t p = -1;
 

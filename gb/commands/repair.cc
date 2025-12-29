@@ -14,7 +14,7 @@ module commands;
 
 namespace GB::commands {
 void repair(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
+  const player_t Playernum = g.player();
   int hix;
   int lowy;
   int hiy;
@@ -22,15 +22,16 @@ void repair(const command_t& argv, GameObj& g) {
 
   std::unique_ptr<Place> where;
   if (argv.size() == 1) { /* no args */
-    where = std::make_unique<Place>(g.level, g.snum, g.pnum);
+    where = std::make_unique<Place>(g.level(), g.snum(), g.pnum());
   } else {
     /* repairing a sector */
     if (isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) {
-      if (g.level != ScopeLevel::LEVEL_PLAN) {
+      if (g.level() != ScopeLevel::LEVEL_PLAN) {
         g.out << "There are no sectors here.\n";
         return;
       }
-      where = std::make_unique<Place>(ScopeLevel::LEVEL_PLAN, g.snum, g.pnum);
+      where =
+          std::make_unique<Place>(ScopeLevel::LEVEL_PLAN, g.snum(), g.pnum());
 
     } else {
       where = std::make_unique<Place>(g, argv[1]);

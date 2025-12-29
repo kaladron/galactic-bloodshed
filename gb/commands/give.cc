@@ -9,8 +9,8 @@ module commands;
 
 namespace GB::commands {
 void give(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 5;
   player_t who;
 
@@ -83,7 +83,7 @@ void give(const command_t& argv, GameObj& g) {
       break;
     }
     default: {
-      const auto& star = *g.entity_manager.peek_star(g.snum);
+      const auto& star = *g.entity_manager.peek_star(g.snum());
       if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
         return;
       }
@@ -126,7 +126,7 @@ void give(const command_t& argv, GameObj& g) {
       deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
       return;
     default:
-      deductAPs(g, APcount, g.snum);
+      deductAPs(g, APcount, g.snum());
       break;
   }
   g.out << "Owner changed.\n";

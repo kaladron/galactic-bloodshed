@@ -9,7 +9,7 @@ module commands;
 
 namespace GB::commands {
 void motto(const command_t& argv, GameObj& g) {
-  if (g.governor) {
+  if (g.governor()) {
     g.out << "You are not authorized to do this.\n";
     return;
   }
@@ -21,7 +21,7 @@ void motto(const command_t& argv, GameObj& g) {
   std::string message = ss_message.str();
 
   // Get block for modification (RAII auto-saves on scope exit)
-  auto block_handle = g.entity_manager.get_block(g.player);
+  auto block_handle = g.entity_manager.get_block(g.player());
   if (!block_handle.get()) {
     g.out << "Block not found.\n";
     return;

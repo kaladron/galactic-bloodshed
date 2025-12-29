@@ -71,8 +71,8 @@ void add_ship_spec_row(tabulate::Table& table, ShipType i, const Race& race) {
 
 namespace GB::commands {
 void build(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   // TODO(jeffbailey): Fix unused ap_t APcount = 1;
   char c;
   int j;
@@ -172,13 +172,13 @@ void build(const command_t& argv, GameObj& g) {
     return;
   }
 
-  level = g.level;
+  level = g.level();
   if (level != ScopeLevel::LEVEL_SHIP && level != ScopeLevel::LEVEL_PLAN) {
     g.out << "You must change scope to a ship or planet to build.\n";
     return;
   }
-  starnum_t snum = g.snum;
-  planetnum_t pnum = g.pnum;
+  starnum_t snum = g.snum();
+  planetnum_t pnum = g.pnum();
   const auto& race = *g.race;
   count = 0; /* this used used to reset count in the loop */
   std::optional<ShipType> what;
@@ -269,7 +269,7 @@ void build(const command_t& argv, GameObj& g) {
       }
       case ScopeLevel::LEVEL_SHIP: {
         if (!count) { /* initialize loop variables */
-          const auto* builder_ptr = g.entity_manager.peek_ship(g.shipno);
+          const auto* builder_ptr = g.entity_manager.peek_ship(g.shipno());
           if (!builder_ptr) {
             g.out << "Ship not found.\n";
             return;

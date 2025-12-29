@@ -48,12 +48,12 @@ int main() {
 
   // Create GameObj for sender
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;
-  g.god = false;
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.set_god(false);
 
   // Test sending a regular message: send_message 2 Hello World
   command_t argv = {"send_message", "2", "Hello", "World"};

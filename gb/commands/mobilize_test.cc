@@ -42,11 +42,11 @@ void test_mobilize_database_persistence() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
+  g.set_player(1);
+  g.set_governor(0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
 
   // TEST 1: Display current mobilization (no argument)
   std::println("  Testing: Display current mobilization");

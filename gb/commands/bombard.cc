@@ -11,8 +11,8 @@ module commands;
 namespace GB::commands {
 /*! Ship vs planet */
 void bombard(const command_t& argv, GameObj& g) {
-  int Playernum = g.player;
-  int Governor = g.governor;
+  int Playernum = g.player();
+  int Governor = g.governor();
   ap_t APcount = 1;
   int x;
   int y;

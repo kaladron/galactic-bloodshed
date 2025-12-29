@@ -9,8 +9,8 @@ module commands;
 
 namespace {
 void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
 
   const auto& star_ref = *g.entity_manager.peek_star(star);
   if (!isset(star_ref.explored(), Playernum)) return;
@@ -49,7 +49,7 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
 
 namespace GB::commands {
 void colonies(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
+  const player_t Playernum = g.player();
 
   g.out << "          ========== Colonization Report ==========\n";
   g.out << "  Planet     gov sec tech    popn  x   res  "

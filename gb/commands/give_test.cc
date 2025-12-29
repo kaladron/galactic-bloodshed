@@ -86,12 +86,12 @@ int main() {
 
   // Create GameObj for testing
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = star_id;
-  g.pnum = 0;
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(star_id);
+  g.set_pnum(0);
 
   // Test: Give ship to another player
   {
@@ -161,7 +161,7 @@ int main() {
     em.clear_cache();
 
     // Try as non-leader governor
-    g.governor = 1;
+    g.set_governor(1);
 
     command_t argv = {"give", "Receiver", std::to_string(ship2_id)};
     GB::commands::give(argv, g);
@@ -183,7 +183,7 @@ int main() {
 
   // Test: Try to give ship with crew (should fail unless God)
   {
-    g.governor = 0;  // Reset to leader
+    g.set_governor(0);  // Reset to leader
 
     // Create ship with crew
     auto ship3_handle = em.create_ship();

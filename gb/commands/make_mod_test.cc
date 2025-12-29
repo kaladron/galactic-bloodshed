@@ -78,12 +78,12 @@ int main() {
 
   // Create GameObj for command execution - must be at SHIP scope
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
+  g.set_player(1);
+  g.set_governor(0);
   g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_SHIP;
-  g.shipno = 1;  // Factory is ship #1
-  g.snum = 0;
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);  // Factory is ship #1
+  g.set_snum(0);
 
   std::println("Test 1: Set factory to produce fighters (make f)");
   {

@@ -12,17 +12,17 @@ module commands;
 
 namespace GB::commands {
 void technology(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 1;
 
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << std::format("scope must be a planet ({}).\n",
-                         static_cast<int>(g.level));
+                         static_cast<int>(g.level()));
     return;
   }
 
-  const auto* star = g.entity_manager.peek_star(g.snum);
+  const auto* star = g.entity_manager.peek_star(g.snum());
   if (!star) {
     g.out << "Star not found.\n";
     return;
@@ -37,7 +37,7 @@ void technology(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
     return;
@@ -63,7 +63,7 @@ void technology(const command_t& argv, GameObj& g) {
   auto& p = *planet_handle;
   p.info(Playernum - 1).tech_invest = invest;
 
-  deductAPs(g, APcount, g.snum);
+  deductAPs(g, APcount, g.snum());
 
   g.out << std::format(
       "   New (ideal) tech production: {:.3f} (this planet)\n",

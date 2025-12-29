@@ -9,8 +9,8 @@ module commands;
 
 namespace {
 int jettison_check(GameObj& g, int amt, int max) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   if (amt == 0) amt = max;
   if (amt < 0) {
     g.out << "Nice try.\n";
@@ -26,8 +26,8 @@ int jettison_check(GameObj& g, int amt, int max) {
 
 namespace GB::commands {
 void jettison(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 0;
   int amt;
   char commod;

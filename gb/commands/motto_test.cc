@@ -31,8 +31,8 @@ void test_motto_database_persistence() {
 
   // Create GameObj for command execution
   GameObj g(em);
-  g.player = 1;
-  g.governor = 0;  // Must be governor 0 to set motto
+  g.set_player(1);
+  g.set_governor(0);  // Must be governor 0 to set motto
 
   // TEST 1: Set a motto
   std::println("  Testing: Set motto");
@@ -82,7 +82,7 @@ void test_motto_database_persistence() {
   // TEST 4: Non-governor should be rejected
   std::println("  Testing: Non-governor authorization check");
   {
-    g.governor = 1;  // Change to non-zero governor
+    g.set_governor(1);  // Change to non-zero governor
     command_t cmd = {"motto", "Should", "Fail"};
     GB::commands::motto(cmd, g);
 

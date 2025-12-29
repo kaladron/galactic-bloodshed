@@ -56,6 +56,7 @@ private:
   void process_commands();
   void check_idle_sessions();
   void remove_session(std::shared_ptr<Session> session);
+  bool do_command(Session& session, std::string_view comm);
 
   asio::io_context& io_;
   asio::ip::tcp::acceptor acceptor_;
@@ -99,8 +100,8 @@ static bool process_output(DescriptorData&);
 static void welcome_user(Session&);
 static void welcome_user_legacy(DescriptorData&);  // Legacy for old shovechars
 static void process_commands();
-static bool do_command(Session&, std::string_view);
 static bool do_command_legacy(DescriptorData&, std::string_view);  // Legacy
+static void check_connect(Session&, std::string_view);
 static void goodbye_user(DescriptorData&);
 static void dump_users(DescriptorData&);
 static void close_sockets(int, EntityManager&);
@@ -436,7 +437,10 @@ void Server::shutdown() {
   signals_.cancel();
   timer_.cancel();
   acceptor_.close();
-  for (auto& session : sessions_) {
+  // Copy sessions to avoid iterator invalidation during disconnect
+  std::vector<std::shared_ptr<Session>> all_sessions(sessions_.begin(),
+                                                     sessions_.end());
+  for (auto& session : all_sessions) {
     session->disconnect();
   }
 }
@@ -452,7 +456,7 @@ void Server::do_accept() {
         }
 
         auto session = std::make_shared<Session>(
-            std::move(socket), entity_manager_,
+            std::move(socket), entity_manager_, *this,
             [this](std::shared_ptr<Session> s) { remove_session(s); });
         sessions_.insert(session);
         welcome_user(*session);
@@ -514,17 +518,26 @@ void Server::on_timer() {
 
 void Server::check_idle_sessions() {
   time_t now = std::time(nullptr);
+  std::vector<std::shared_ptr<Session>> to_disconnect;
+
   for (auto& session : sessions_) {
     if (session->connected() &&
         (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
       std::println(stderr, "Disconnecting idle session (timeout)");
       session->out() << "Connection timed out due to inactivity.\n";
-      session->disconnect();
+      to_disconnect.push_back(session);
     }
+  }
+
+  // Disconnect after iteration to avoid iterator invalidation
+  for (auto& session : to_disconnect) {
+    session->disconnect();
   }
 }
 
 void Server::process_commands() {
+  std::vector<std::shared_ptr<Session>> to_disconnect;
+
   // Execute pending commands for all sessions
   for (auto& session : sessions_) {
     while (session->quota() > 0 && session->has_pending_input()) {
@@ -533,10 +546,22 @@ void Server::process_commands() {
       session->touch();
 
       if (!do_command(*session, command)) {
-        session->disconnect();
+        to_disconnect.push_back(session);
         break;
       }
     }
+  }
+
+  // Disconnect sessions that returned false (quit command, etc.)
+  // Do this before flushing to avoid sending output to disconnected sessions
+  for (auto& session : to_disconnect) {
+    session->disconnect();
+  }
+
+  // Check if shutdown was requested during command processing
+  if (shutdown_flag_) {
+    shutdown();
+    return;  // Don't flush output, server is shutting down
   }
 
   // Flush all dirty output buffers to network
@@ -645,15 +670,15 @@ int main(int argc, char** argv) {
   initialize_block_data(entity_manager);  // Ensure self-invite/self-pledge
   compute_power_blocks(entity_manager);   // Calculate alliance power stats
 
-  // Start server
-  set_signals();
-  int sock = shovechars(port, entity_manager);
+  // Start server using new Asio-based Server class
+  asio::io_context io;
+  Server server(io, port, entity_manager);
+  post(entity_manager, "Server started\n", NewsType::ANNOUNCE);
+  server.run();
 
   // Save final state before shutdown
   server_state_handle.save();
 
-  // Shutdown
-  close_sockets(sock, entity_manager);
   std::println("Going down.");
   return 0;
 }
@@ -1023,7 +1048,7 @@ static void process_commands() {
    they are processed here. Responses are sent back to the client via
    session.out().
    */
-static bool do_command(Session& session, std::string_view comm) {
+bool Server::do_command(Session& session, std::string_view comm) {
   /* check to see if there are a few words typed out, usually for the help
    * command */
   auto argv = make_command_t(comm);
@@ -1033,11 +1058,29 @@ static bool do_command(Session& session, std::string_view comm) {
     return false;
   }
   if (session.connected() && argv[0] == "who") {
-    // TODO: Implement who command for Session
-    session.out() << "WHO command not yet implemented in new system.\n";
+    // TODO(Step 4B or 5): Implement who command using SessionRegistry
+    // Original dump_users() implementation:
+    //   - Print "Current Players: " + ctime(&now)
+    //   - Iterate descriptor_list: for each d where d.connected && !d.god():
+    //     - Load race r = peek_race(d.player())
+    //     - If !r->governor[d.governor()].toggle.invisible || requester.god ||
+    //     same_player:
+    //       - Print: "{:20.20s} {:20.20s} [{:2d},{:2d}] {:4d}s idle {:4.4s} {}
+    //       {}\n"
+    //         with: race.name, governor.name in quotes, player, governor,
+    //         idle_seconds, star_name (god only), GAG flag, INVISIBLE flag
+    //     - Else: count as "coward"
+    //     - If idle > DISCONNECT_TIME: set d.connected = false
+    //   - Print "And N coward(s)." or "Finished."
+    session.out() << "WHO command not yet implemented.\n";
   } else if (session.connected() && session.god() && argv[0] == "emulate") {
-    // TODO: Implement emulate command for Session
-    session.out() << "EMULATE command not yet implemented in new system.\n";
+    // TODO(Step 4B or 5): Implement emulate command using Session
+    // Original implementation:
+    //   - Parse argv[1] as player number, argv[2] as governor number
+    //   - Call d.set_player(player) and d.set_governor(governor)
+    //   - Load race = peek_race(d.player())
+    //   - Print "Emulating {race.name} \"{gov.name}\" [{player},{governor}]\n"
+    session.out() << "EMULATE command not yet implemented.\n";
   } else {
     if (session.connected()) {
       /* GB command parser - create temporary GameObj */
@@ -1049,20 +1092,54 @@ static bool do_command(Session& session, std::string_view comm) {
       g.set_shipno(session.shipno());
       g.set_level(session.level());
       g.race = session.entity_manager().peek_race(g.player());
-      // TODO: Add session_registry pointer when available
+      // TODO(Step 5/6): Add g.session_registry = &session.registry() when
+      // commands need cross-player notifications
 
       process_command(g, argv);
+
+      // Check if @@shutdown command was executed
+      if (shutdown_flag) {
+        shutdown_flag_ = true;
+      }
 
       // Copy any state changes back to session
       session.set_snum(g.snum());
       session.set_pnum(g.pnum());
       session.set_shipno(g.shipno());
       session.set_level(g.level());
+
+      // Flush GameObj output to session (GameObj.out is a stringstream)
+      session.out() << g.out.str();
     } else {
-      // TODO: Implement check_connect for Session
-      session.out() << "Login not yet implemented in new system. Please use "
-                       "old client.\n";
-      return false;
+      // Handle login
+      check_connect(session, comm);
+      if (!session.connected()) {
+        session.out() << "Goodbye!\n";
+        return false;
+      }
+      // Login successful - check for telegrams and set home scope
+      GameObj g(session.entity_manager(), session.out());
+      g.set_player(session.player());
+      g.set_governor(session.governor());
+      g.set_snum(session.snum());
+      g.set_pnum(session.pnum());
+      g.set_shipno(session.shipno());
+      g.set_level(session.level());
+      g.race = session.entity_manager().peek_race(g.player());
+
+      check_for_telegrams(g);
+
+      command_t call_cs = {"cs"};
+      process_command(g, call_cs);
+
+      // Copy scope back
+      session.set_snum(g.snum());
+      session.set_pnum(g.pnum());
+      session.set_shipno(g.shipno());
+      session.set_level(g.level());
+
+      // Flush GameObj output to session
+      session.out() << g.out.str();
     }
   }
   return true;
@@ -1105,6 +1182,111 @@ static bool do_command_legacy(DescriptorData& d, std::string_view comm) {
     }
   }
   return true;
+}
+
+static void check_connect(Session& session, std::string_view message) {
+  auto [race_password, gov_password] = parse_connect(message);
+
+  if (EXTERNAL_TRIGGER) {
+    if (race_password == SEGMENT_PASSWORD) {
+      do_segment(session.entity_manager(), 1, 0);
+      return;
+    } else if (race_password == UPDATE_PASSWORD) {
+      do_update(session.entity_manager(), true);
+      return;
+    }
+  }
+
+  auto [Playernum, Governor] =
+      getracenum(session.entity_manager(), race_password, gov_password);
+
+  if (!Playernum) {
+    session.out() << "Connection refused.\n";
+    std::println(stderr, "FAILED CONNECT {},{}\n", race_password, gov_password);
+    return;
+  }
+
+  auto race_handle = session.entity_manager().get_race(Playernum);
+  if (!race_handle.get()) {
+    session.out() << "Connection refused.\n";
+    return;
+  }
+  const auto& race = race_handle.read();
+
+  // Check if player is already connected
+  bool already_connected = false;
+  session.registry().for_each_session([&](Session& s) {
+    if (s.connected() && s.player() == Playernum && s.governor() == Governor) {
+      already_connected = true;
+    }
+  });
+
+  if (already_connected) {
+    session.out() << "Connection refused.\n";
+    return;
+  }
+
+  std::print(stderr, "CONNECTED {} \"{}\" [{},{}]\n", race.name,
+             race.governor[Governor].name, Playernum, Governor);
+  session.set_connected(true);
+  session.set_god(race.God);
+  session.set_player(Playernum);
+  session.set_governor(Governor);
+
+  // Initialize scope to default or safe values
+  session.set_level(race.governor[Governor].deflevel);
+  session.set_snum(race.governor[Governor].defsystem);
+  session.set_pnum(race.governor[Governor].defplanetnum);
+  session.set_shipno(0);
+
+  // Validate and clamp star number
+  const auto* universe = session.entity_manager().peek_universe();
+  if (session.snum() >= universe->numstars) {
+    session.set_snum(0);  // Default to first star if invalid
+  }
+
+  // Validate and clamp planet number
+  const auto* init_star = session.entity_manager().peek_star(session.snum());
+  if (init_star && session.pnum() >= init_star->numplanets()) {
+    session.set_pnum(0);  // Default to first planet if invalid
+  }
+
+  // Send login messages
+  session.out() << std::format("\n{} \"{}\" [{},{}] logged on.\n", race.name,
+                               race.governor[Governor].name, Playernum,
+                               Governor);
+  session.out() << std::format(
+      "You are {}.\n",
+      race.governor[Governor].toggle.invisible ? "invisible" : "visible");
+
+  // Display time
+  GameObj temp_g(session.entity_manager(), session.out());
+  temp_g.set_player(Playernum);
+  temp_g.set_governor(Governor);
+  temp_g.race = session.entity_manager().peek_race(Playernum);
+  GB_time({}, temp_g);
+
+  session.out() << std::format("\nLast login      : {}",
+                               ctime(&(race.governor[Governor].login)));
+
+  // Update login time
+  auto& race_mut = *race_handle;
+  race_mut.governor[Governor].login = time(nullptr);
+
+  if (!race.Gov_ship) {
+    session.out()
+        << "You have no Governmental Center.  No action points will be "
+           "produced\nuntil you build one and designate a capital.\n";
+  } else {
+    session.out() << std::format("Government Center #{} is active.\n",
+                                 race.Gov_ship);
+  }
+  session.out() << std::format("     Morale: {}\n", race.morale);
+
+  GB::commands::treasury({}, temp_g);
+
+  // Flush temp_g output to session
+  session.out() << temp_g.out.str();
 }
 
 static void check_connect(DescriptorData& d, std::string_view message) {

@@ -48,6 +48,7 @@ public:
 export class Session : public std::enable_shared_from_this<Session> {
 public:
   Session(asio::ip::tcp::socket socket, EntityManager& em,
+          SessionRegistry& registry,
           std::function<void(std::shared_ptr<Session>)> on_disconnect);
   ~Session() = default;
 
@@ -138,6 +139,11 @@ public:
     return entity_manager_;
   }
 
+  // Access SessionRegistry for cross-player notifications
+  SessionRegistry& registry() {
+    return registry_;
+  }
+
   // Rate limiting
   int quota() const {
     return quota_;
@@ -175,6 +181,7 @@ private:
   std::deque<std::string> input_queue_;
 
   EntityManager& entity_manager_;  // For creating GameObj on demand if needed
+  SessionRegistry& registry_;      // For cross-player notifications
   bool connected_ = false;
   bool writing_ = false;
   int quota_ = COMMAND_BURST_SIZE;

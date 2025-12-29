@@ -1058,28 +1058,65 @@ bool Server::do_command(Session& session, std::string_view comm) {
     return false;
   }
   if (session.connected() && argv[0] == "who") {
-    // TODO(Step 4B or 5): Implement who command using SessionRegistry
-    // Original dump_users() implementation:
-    //   - Print "Current Players: " + ctime(&now)
-    //   - Iterate descriptor_list: for each d where d.connected && !d.god():
-    //     - Load race r = peek_race(d.player())
-    //     - If !r->governor[d.governor()].toggle.invisible || requester.god ||
-    //     same_player:
-    //       - Print: "{:20.20s} {:20.20s} [{:2d},{:2d}] {:4d}s idle {:4.4s} {}
-    //       {}\n"
-    //         with: race.name, governor.name in quotes, player, governor,
-    //         idle_seconds, star_name (god only), GAG flag, INVISIBLE flag
-    //     - Else: count as "coward"
-    //     - If idle > DISCONNECT_TIME: set d.connected = false
-    //   - Print "And N coward(s)." or "Finished."
+#if 0  // TODO(Step 4B or 5): Restore and convert to SessionRegistry
+    // Original dump_users() implementation from origin/main:
+    time_t now;
+    int God = 0;
+    int coward_count = 0;
+
+    (void)time(&now);
+    std::string players_msg = std::format("Current Players: {}", ctime(&now));
+    queue_string(e, players_msg);
+    if (e.player) {
+      const auto* r = e.entity_manager.peek_race(e.player);
+      if (!r) return;
+      God = r->God;
+    } else
+      return;
+
+    for (auto& d : descriptor_list) {
+      if (d.connected && !d.god) {
+        const auto* r = d.entity_manager.peek_race(d.player);
+        if (!r) continue;
+        if (!r->governor[d.governor].toggle.invisible || e.player == d.player ||
+            God) {
+          std::string temp = std::format("\"{}\"", r->governor[d.governor].name);
+          const auto& star = *d.entity_manager.peek_star(d.snum);
+          std::string user_info = std::format(
+              "{:20.20s} {:20.20s} [{:2d},{:2d}] {:4d}s idle {:4.4s} {} {}\n",
+              r->name, temp, d.player, d.governor, now - d.last_time,
+              God ? star.get_name() : "    ",
+              (r->governor[d.governor].toggle.gag ? "GAG" : "   "),
+              (r->governor[d.governor].toggle.invisible ? "INVISIBLE" : ""));
+          queue_string(e, user_info);
+        } else if (!God) /* deity lurks around */
+          coward_count++;
+
+        if ((now - d.last_time) > DISCONNECT_TIME) d.connected = false;
+      }
+    }
+    if (SHOW_COWARDS) {
+      std::string coward_msg = std::format("And {} coward{}.\n", coward_count,
+                                           (coward_count == 1) ? "" : "s");
+      queue_string(e, coward_msg);
+    } else {
+      queue_string(e, "Finished.\n");
+    }
+#endif
     session.out() << "WHO command not yet implemented.\n";
   } else if (session.connected() && session.god() && argv[0] == "emulate") {
-    // TODO(Step 4B or 5): Implement emulate command using Session
-    // Original implementation:
-    //   - Parse argv[1] as player number, argv[2] as governor number
-    //   - Call d.set_player(player) and d.set_governor(governor)
-    //   - Load race = peek_race(d.player())
-    //   - Print "Emulating {race.name} \"{gov.name}\" [{player},{governor}]\n"
+#if 0  // TODO(Step 4B or 5): Restore and convert to Session
+    // Original emulate implementation from origin/main:
+    d.player = std::stoi(argv[1]);
+    d.governor = std::stoi(argv[2]);
+    const auto* race = d.entity_manager.peek_race(d.player);
+    if (race) {
+      std::string emulate_msg =
+          std::format("Emulating {} \"{}\" [{},{}]\n", race->name,
+                      race->governor[d.governor].name, d.player, d.governor);
+      queue_string(d, emulate_msg);
+    }
+#endif
     session.out() << "EMULATE command not yet implemented.\n";
   } else {
     if (session.connected()) {

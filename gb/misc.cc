@@ -6,10 +6,6 @@ import std;
 
 module gblib;
 
-namespace {
-constexpr int MAX_OUTPUT = 32768;  // don't change this
-}
-
 #if 0   // TODO(Step 6): Restore and convert to
         // SessionRegistry::for_each_session()
 // Original implementation - preserved for restoration in Step 6
@@ -237,42 +233,6 @@ void add_to_queue(std::deque<std::string>& q, const std::string& b) {
   if (b.empty()) return;
 
   q.emplace_back(b);
-}
-
-int flush_queue(std::deque<std::string>& q, int n) {
-  int really_flushed = 0;
-
-  const std::string flushed_message = "<Output Flushed>\n";
-  n += flushed_message.size();
-
-  while (n > 0 && !q.empty()) {
-    auto& p = q.front();
-    n -= p.size();
-    really_flushed += p.size();
-    q.pop_front();
-  }
-  q.emplace_back(flushed_message);
-  really_flushed -= flushed_message.size();
-  return really_flushed;
-}
-
-void queue_string(DescriptorData& d, const std::string& b) {
-  if (b.empty()) return;
-  int space = MAX_OUTPUT - d.output_size - b.size();
-  if (space < 0) d.output_size -= flush_queue(d.output, -space);
-  add_to_queue(d.output, b);
-  d.output_size += b.size();
-}
-
-//* Push contents of the stream to the queues
-void strstr_to_queue(DescriptorData& d) {
-  // Legacy DescriptorData uses GameObj's internal_stream_
-  // Cast back to stringstream to access .str()
-  auto& sstream = dynamic_cast<std::stringstream&>(d.out);
-  if (sstream.str().empty()) return;
-  queue_string(d, sstream.str());
-  sstream.clear();
-  sstream.str("");
 }
 
 /*utilities for dealing with ship lists */

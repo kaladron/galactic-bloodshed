@@ -10,6 +10,9 @@ namespace {
 constexpr int MAX_OUTPUT = 32768;  // don't change this
 }
 
+#if 0   // TODO(Step 6): Restore and convert to
+        // SessionRegistry::for_each_session()
+// Original implementation - preserved for restoration in Step 6
 void notify_race(const player_t race, const std::string& message) {
   if (update_flag) return;
   for (auto& d : descriptor_list) {
@@ -82,7 +85,6 @@ void d_announce(EntityManager& entity_manager, const player_t Playernum,
   }
 }
 
-// New implementation using EntityManager
 void warn_race(EntityManager& entity_manager, const player_t who,
                const std::string& message) {
   const auto* race = entity_manager.peek_race(who);
@@ -97,8 +99,81 @@ void warn(const player_t who, const governor_t governor,
   if (!notify(who, governor, message) && !notify(who, 0, message))
     push_telegram(who, governor, message);
 }
+#endif  // End of original implementations
 
-// New implementation using EntityManager
+// TODO(Step 6): Restore notification functions with SessionRegistry
+// Temporary stubs - cross-player notifications won't work until Step 6
+// These functions iterate over descriptor_list which will be removed.
+// The real implementations are preserved above in #if 0 block.
+
+void notify_race([[maybe_unused]] const player_t race,
+                 [[maybe_unused]] const std::string& message) {
+  if (update_flag) return;
+  // Stubbed - will be restored in Step 6 with
+  // SessionRegistry::for_each_session()
+}
+
+bool notify([[maybe_unused]] const player_t race,
+            [[maybe_unused]] const governor_t gov,
+            [[maybe_unused]] const std::string& message) {
+  if (update_flag) return false;
+  // Stubbed - will be restored in Step 6 with SessionRegistry::notify_player()
+  return false;  // Player not found (expected when stubbed)
+}
+
+void d_think([[maybe_unused]] EntityManager& entity_manager,
+             [[maybe_unused]] const player_t Playernum,
+             [[maybe_unused]] const governor_t Governor,
+             [[maybe_unused]] const std::string& message) {
+  // Stubbed - will be restored in Step 6 with
+  // SessionRegistry::for_each_session()
+}
+
+void d_broadcast([[maybe_unused]] EntityManager& entity_manager,
+                 [[maybe_unused]] const player_t Playernum,
+                 [[maybe_unused]] const governor_t Governor,
+                 [[maybe_unused]] const std::string& message) {
+  // Stubbed - will be restored in Step 6 with
+  // SessionRegistry::for_each_session()
+}
+
+void d_shout([[maybe_unused]] const player_t Playernum,
+             [[maybe_unused]] const governor_t Governor,
+             [[maybe_unused]] const std::string& message) {
+  // Stubbed - will be restored in Step 6 with
+  // SessionRegistry::for_each_session()
+}
+
+void d_announce([[maybe_unused]] EntityManager& entity_manager,
+                [[maybe_unused]] const player_t Playernum,
+                [[maybe_unused]] const governor_t Governor,
+                [[maybe_unused]] const starnum_t star,
+                [[maybe_unused]] const std::string& message) {
+  // Stubbed - will be restored in Step 6 with
+  // SessionRegistry::for_each_session()
+}
+
+void warn_race(EntityManager& entity_manager, const player_t who,
+               const std::string& message) {
+  const auto* race = entity_manager.peek_race(who);
+  if (!race) return;
+
+  // Delegates to warn() which is stubbed, so this just pushes telegrams
+  for (int i = 0; i <= MAXGOVERNORS; i++)
+    if (race->governor[i].active) warn(who, i, message);
+}
+
+void warn(const player_t who, const governor_t governor,
+          const std::string& message) {
+  // Since notify() is stubbed to always return false, this always pushes
+  // telegrams
+  if (!notify(who, governor, message) && !notify(who, 0, message))
+    push_telegram(who, governor, message);
+}
+
+#if 0   // TODO(Step 6): Restore and convert to
+        // SessionRegistry::for_each_session()
+// Original implementations - preserved for restoration in Step 6
 void warn_star(EntityManager& entity_manager, const player_t a,
                const starnum_t star, const std::string& message) {
   const auto* star_ptr = entity_manager.peek_star(star);
@@ -123,6 +198,33 @@ void notify_star(EntityManager& entity_manager, const player_t a,
         isset(star_ptr->inhabited(), d.player())) {
       queue_string(d, message);
     }
+}
+#endif  // End of original implementations
+
+// TODO(Step 6): Restore with SessionRegistry
+// Temporary stubs for warn_star and notify_star
+// New implementation using EntityManager
+void warn_star(EntityManager& entity_manager, const player_t a,
+               const starnum_t star, const std::string& message) {
+  const auto* star_ptr = entity_manager.peek_star(star);
+  if (!star_ptr) return;
+
+  // Delegates to warn_race() which pushes telegrams (notify is stubbed)
+  // Iterate through all potential players in the inhabited bitmap
+  for (player_t p = 1; p <= entity_manager.num_races(); p++) {
+    if (p != a && isset(star_ptr->inhabited(), p)) {
+      warn_race(entity_manager, p, message);
+    }
+  }
+}
+
+void notify_star([[maybe_unused]] EntityManager& entity_manager,
+                 [[maybe_unused]] const player_t a,
+                 [[maybe_unused]] const governor_t g,
+                 [[maybe_unused]] const starnum_t star,
+                 [[maybe_unused]] const std::string& message) {
+  // Stubbed - will be restored in Step 6 with
+  // SessionRegistry::for_each_session()
 }
 
 void adjust_morale(Race& winner, Race& loser, int amount) {

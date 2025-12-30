@@ -11,17 +11,10 @@ import std.compat;
 
 #include "gb/GB_server.h"
 
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <unistd.h>
 
 #include <cctype>
-#include <cerrno>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -82,38 +75,17 @@ static std::string start_buf;
 static std::string update_buf;
 static std::string segment_buf;
 
-static void set_signals();
 static void help(const command_t&, GameObj&);
 static void process_command(GameObj&, const command_t& argv);
-static int shovechars(int, EntityManager&);
 
 static void GB_time(const command_t&, GameObj&);
 static void GB_schedule(const command_t&, GameObj&);
 static void do_update(EntityManager&, bool = false);
 static void do_segment(EntityManager&, int, int);
-static int make_socket(int);
-static void shutdownsock(DescriptorData&);
 static void initialize_block_data(EntityManager&);
-static void make_nonblocking(int);
-static struct timeval update_quotas(struct timeval, struct timeval);
-static bool process_output(DescriptorData&);
 static void welcome_user(Session&);
-static void welcome_user_legacy(DescriptorData&);  // Legacy for old shovechars
-static void process_commands();
-static bool do_command_legacy(DescriptorData&, std::string_view);  // Legacy
 static void check_connect(Session&, std::string_view);
-static void goodbye_user(DescriptorData&);
-static void dump_users(DescriptorData&);
-static void close_sockets(int, EntityManager&);
-static bool process_input(DescriptorData&);
-static void force_output();
 static void help_user(GameObj&);
-static int msec_diff(struct timeval, struct timeval);
-static struct timeval msec_add(struct timeval, int);
-static void save_command(DescriptorData&, const std::string&);
-
-static void check_connect(DescriptorData&, std::string_view);
-static struct timeval timeval_sub(struct timeval now, struct timeval then);
 
 using CommandFunction = void (*)(const command_t&, GameObj&);
 
@@ -682,151 +654,6 @@ int main(int argc, char** argv) {
   std::println("Going down.");
   return 0;
 }
-
-static void set_signals() {
-  signal(SIGPIPE, SIG_IGN);
-}
-
-static struct timeval timeval_sub(struct timeval now, struct timeval then) {
-  now.tv_sec -= then.tv_sec;
-  now.tv_usec -= then.tv_usec;
-  if (now.tv_usec < 0) {
-    now.tv_usec += 1000000;
-    now.tv_sec--;
-  }
-  return now;
-}
-
-static int msec_diff(struct timeval now, struct timeval then) {
-  return ((now.tv_sec - then.tv_sec) * 1000 +
-          (now.tv_usec - then.tv_usec) / 1000);
-}
-
-static struct timeval msec_add(struct timeval t, int x) {
-  t.tv_sec += x / 1000;
-  t.tv_usec += (x % 1000) * 1000;
-  if (t.tv_usec >= 1000000) {
-    t.tv_sec += t.tv_usec / 1000000;
-    t.tv_usec = t.tv_usec % 1000000;
-  }
-  return t;
-}
-
-static int shovechars(int port, EntityManager& entity_manager) {
-  fd_set input_set;
-  fd_set output_set;
-  struct timeval last_slice;
-  struct timeval current_time;
-  struct timeval next_slice;
-  struct timeval timeout;
-  struct timeval slice_timeout;
-  time_t now;
-  time_t go_time = 0;
-
-  int sock = make_socket(port);
-  gettimeofday(&last_slice, nullptr);
-
-  if (!shutdown_flag)
-    post(entity_manager, "Server started\n", NewsType::ANNOUNCE);
-
-  while (!shutdown_flag) {
-    fflush(stdout);
-    gettimeofday(&current_time, nullptr);
-    last_slice = update_quotas(last_slice, current_time);
-
-    process_commands();
-
-    if (shutdown_flag) break;
-    timeout.tv_sec = 30;
-    timeout.tv_usec = 0;
-    next_slice = msec_add(last_slice, COMMAND_TIME_MSEC);
-    slice_timeout = timeval_sub(next_slice, current_time);
-
-    FD_ZERO(&input_set);
-    FD_ZERO(&output_set);
-    FD_SET(sock, &input_set);
-    for (auto& d : descriptor_list) {
-      if (!d.input.empty())
-        timeout = slice_timeout;
-      else
-        FD_SET(d.descriptor, &input_set);
-      // Is there anything in the output queue?
-      auto& sstream = dynamic_cast<std::stringstream&>(d.out);
-      if (!d.output.empty() || !sstream.str().empty())
-        FD_SET(d.descriptor, &output_set);
-    }
-
-    if (select(FD_SETSIZE, &input_set, &output_set, nullptr, &timeout) < 0) {
-      if (errno != EINTR) {
-        perror("select");
-        return sock;
-      }
-      (void)time(&now);
-    } else {
-      (void)time(&now);
-
-      if (FD_ISSET(sock, &input_set)) {
-        try {
-          descriptor_list.emplace_back(sock, entity_manager);
-          auto& newd = descriptor_list.back();
-          make_nonblocking(newd.descriptor);
-          welcome_user_legacy(newd);
-        } catch (const std::runtime_error&) {
-          perror("new_connection");
-          return sock;
-        }
-      }
-
-      // Use iterator loop to handle removal during iteration
-      for (auto it = descriptor_list.begin(); it != descriptor_list.end();) {
-        auto& d = *it;
-        bool should_remove = false;
-
-        if (FD_ISSET(d.descriptor, &input_set)) {
-          /*      d->last_time = now; */
-          if (!process_input(d)) {
-            should_remove = true;
-          }
-        }
-
-        if (!should_remove && FD_ISSET(d.descriptor, &output_set)) {
-          if (!process_output(d)) {
-            should_remove = true;
-          }
-        }
-
-        if (should_remove) {
-          shutdownsock(d);
-          // shutdownsock removes the element, so iterator is invalidated
-          // Restart from beginning since list structure changed
-          it = descriptor_list.begin();
-        } else {
-          ++it;
-        }
-      }
-    }
-    if (go_time == 0) {
-      const auto* state = entity_manager.peek_server_state();
-      if (state) {
-        if (now >= state->next_update_time) {
-          go_time =
-              now + (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
-        }
-        if (now >= state->next_segment_time &&
-            state->nsegments_done < state->segments) {
-          go_time =
-              now + (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
-        }
-      }
-    }
-    if (go_time > 0 && now >= go_time) {
-      do_next_thing(entity_manager);
-      go_time = 0;
-    }
-  }
-  return sock;
-}
-
 void do_next_thing(EntityManager& entity_manager) {
   const auto* state = entity_manager.peek_server_state();
   if (!state) return;
@@ -835,102 +662,6 @@ void do_next_thing(EntityManager& entity_manager) {
     do_segment(entity_manager, 0, 1);
   else
     do_update(entity_manager, false);
-}
-
-static int make_socket(int port) {
-  int s;
-  struct sockaddr_in6 server;
-  int opt;
-
-  s = socket(AF_INET6, SOCK_STREAM, 0);
-  if (s < 0) {
-    perror("creating stream socket");
-    exit(3);
-  }
-  opt = 1;
-  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) < 0) {
-    perror("setsockopt");
-    exit(1);
-  }
-  if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, /* GVC */
-                 (char*)&opt, sizeof(opt)) < 0) {
-    perror("setsockopt");
-    exit(1);
-  }
-  memset(&server, 0, sizeof(server));
-  server.sin6_family = AF_INET6;
-  server.sin6_addr = in6addr_any;
-  server.sin6_port = htons(port);
-  if (bind(s, (struct sockaddr*)&server, sizeof(server))) {
-    perror("binding stream socket");
-    close(s);
-    exit(4);
-  }
-  listen(s, 5);
-  return s;
-}
-
-static struct timeval update_quotas(struct timeval last,
-                                    struct timeval current) {
-  int nslices = msec_diff(current, last) / COMMAND_TIME_MSEC;
-
-  if (nslices > 0) {
-    for (auto& d : descriptor_list) {
-      d.quota += COMMANDS_PER_TIME * nslices;
-      if (d.quota > COMMAND_BURST_SIZE) d.quota = COMMAND_BURST_SIZE;
-    }
-  }
-  return msec_add(last, nslices * COMMAND_TIME_MSEC);
-}
-
-static void shutdownsock(DescriptorData& d) {
-  if (d.connected) {
-    std::println(stderr, "DISCONNECT {0} Race={1} Governor={2}", d.descriptor,
-                 d.player(), d.governor());
-  } else {
-    std::println(stderr, "DISCONNECT {0} never connected", d.descriptor);
-  }
-  shutdown(d.descriptor, 2);
-  close(d.descriptor);
-  descriptor_list.remove(d);
-}
-
-static bool process_output(DescriptorData& d) {
-  // Flush the stringstream buffer into the output queue.
-  strstr_to_queue(d);
-
-  while (!d.output.empty()) {
-    auto& cur = d.output.front();
-    ssize_t cnt = write(d.descriptor, cur.c_str(), cur.size());
-    if (cnt < 0) {
-      if (errno == EWOULDBLOCK) return true;
-      d.connected = false;
-      return false;
-    }
-    d.output_size -= cnt;
-    if (cnt == cur.size()) {  // We output the entire block
-      d.output.pop_front();
-      continue;
-    }
-    // We only output part of it, so we don't clear it out.
-    cur.erase(cnt);
-    d.output.pop_front();
-    d.output.push_front(cur);
-    break;
-  }
-  return true;
-}
-
-static void force_output() {
-  for (auto& d : descriptor_list)
-    if (d.connected) (void)process_output(d);
-}
-
-static void make_nonblocking(int s) {
-  if (fcntl(s, F_SETFL, O_NDELAY) == -1) {
-    perror("make_nonblocking: fcntl");
-    exit(0);
-  }
 }
 
 static void welcome_user(Session& session) {
@@ -947,23 +678,6 @@ static void welcome_user(Session& session) {
 
   // Immediately flush welcome message (before command loop starts)
   session.flush_to_network();
-}
-
-// Legacy version for old shovechars() - will be removed in Step 4
-static void welcome_user_legacy(DescriptorData& d) {
-  std::string welcome_msg = std::format(
-      "***   Welcome to Galactic Bloodshed {} ***\nPlease enter your "
-      "password:\n",
-      GB_VERSION);
-  queue_string(d, welcome_msg);
-
-  if (auto f = std::ifstream(WELCOME_FILE)) {
-    std::string line;
-    while (std::getline(f, line)) {
-      queue_string(d, line);
-      queue_string(d, "\n");
-    }
-  }
 }
 
 static void help_user(GameObj& g) {
@@ -983,65 +697,6 @@ static void help_user(GameObj& g) {
     }
     fclose(f);
   }
-}
-
-static void goodbye_user(DescriptorData& d) {
-  if (d.connected) /* this can happen, especially after updates */
-    if (write(d.descriptor, LEAVE_MESSAGE, strlen(LEAVE_MESSAGE)) < 0) {
-      perror("write error");
-      exit(-1);
-    }
-}
-
-static void save_command(DescriptorData& d, const std::string& command) {
-  add_to_queue(d.input, command);
-}
-
-static bool process_input(DescriptorData& d) {
-  std::array<char, 2048> input_buf;
-
-  ssize_t got = read(d.descriptor, input_buf.data(), input_buf.size());
-  if (got <= 0) return false;
-
-  for (ssize_t i = 0; i < got; ++i) {
-    char c = input_buf[i];
-    if (c == '\n') {
-      if (!d.raw_input.empty()) {
-        save_command(d, d.raw_input);
-        d.raw_input.clear();
-      }
-    } else if (d.raw_input.size() < MAX_COMMAND_LEN - 1 &&
-               std::isprint(static_cast<unsigned char>(c))) {
-      d.raw_input += c;
-    }
-  }
-  return true;
-}
-
-static void process_commands() {
-  int nprocessed;
-  time_t now;
-
-  (void)time(&now);
-
-  do {
-    nprocessed = 0;
-    for (auto& d : descriptor_list) {
-      if (d.quota > 0 && !d.input.empty()) {
-        auto& t = d.input.front();
-        d.quota--;
-        nprocessed++;
-
-        if (!do_command_legacy(d, t)) {
-          shutdownsock(d);
-          break;
-        }
-        d.last_time = now; /* experimental code */
-        d.input.pop_front();
-        d.last_time = now; /* experimental code */
-      }
-    }
-  } while (nprocessed > 0);
 }
 
 /** Main processing loop. When command strings are sent from the client,
@@ -1182,45 +837,6 @@ bool Server::do_command(Session& session, std::string_view comm) {
   return true;
 }
 
-// Legacy version for old shovechars() - will be removed in Step 4
-static bool do_command_legacy(DescriptorData& d, std::string_view comm) {
-  auto argv = make_command_t(comm);
-
-  if (argv[0] == "quit") {
-    goodbye_user(d);
-    return false;
-  }
-  if (d.connected && argv[0] == "who") {
-    dump_users(d);
-  } else if (d.connected && d.god() && argv[0] == "emulate") {
-    d.set_player(std::stoi(argv[1]));
-    d.set_governor(std::stoi(argv[2]));
-    const auto* race = d.entity_manager.peek_race(d.player());
-    if (race) {
-      std::string emulate_msg = std::format(
-          "Emulating {} \"{}\" [{},{}]\n", race->name,
-          race->governor[d.governor()].name, d.player(), d.governor());
-      queue_string(d, emulate_msg);
-    }
-  } else {
-    if (d.connected) {
-      /* GB command parser */
-      process_command(d, argv);
-    } else {
-      check_connect(d, comm);
-      if (!d.connected) {
-        goodbye_user(d);
-      } else {
-        check_for_telegrams(d);
-        /* set the scope to home upon login */
-        command_t call_cs = {"cs"};
-        process_command(d, call_cs);
-      }
-    }
-  }
-  return true;
-}
-
 static void check_connect(Session& session, std::string_view message) {
   auto [race_password, gov_password] = parse_connect(message);
 
@@ -1326,103 +942,6 @@ static void check_connect(Session& session, std::string_view message) {
   session.out() << temp_g.out.str();
 }
 
-static void check_connect(DescriptorData& d, std::string_view message) {
-  auto [race_password, gov_password] = parse_connect(message);
-
-  if (EXTERNAL_TRIGGER) {
-    if (race_password == SEGMENT_PASSWORD) {
-      do_segment(d.entity_manager, 1, 0);
-      return;
-    } else if (race_password == UPDATE_PASSWORD) {
-      do_update(d.entity_manager, true);
-      return;
-    }
-  }
-
-  auto [Playernum, Governor] =
-      getracenum(d.entity_manager, race_password, gov_password);
-
-  if (!Playernum) {
-    queue_string(d, "Connection refused.\n");
-    std::println(stderr, "FAILED CONNECT {0},{1} on descriptor {2}\n",
-                 race_password.c_str(), gov_password.c_str(), d.descriptor);
-    return;
-  }
-
-  auto race_handle = d.entity_manager.get_race(Playernum);
-  if (!race_handle.get()) {
-    queue_string(d, "Connection refused.\n");
-    return;
-  }
-  const auto& race = race_handle.read();
-  /* check to see if this player is already connected, if so, nuke the
-   * descriptor */
-  for (auto& d0 : descriptor_list) {
-    if (d0.connected && d0.player() == Playernum && d0.governor() == Governor) {
-      queue_string(d, "Connection refused.\n");
-      return;
-    }
-  }
-
-  std::print(stderr, "CONNECTED {0} \"{1}\" [{2},{3}] on descriptor {4}\n",
-             race.name, race.governor[Governor].name, Playernum, Governor,
-             d.descriptor);
-  d.connected = true;
-
-  d.set_god(race.God);
-  d.set_player(Playernum);
-  d.set_governor(Governor);
-  d.race =
-      d.entity_manager.peek_race(Playernum);  // Set race pointer for GameObj
-
-  // Initialize scope to default or safe values
-  d.set_level(race.governor[Governor].deflevel);
-  d.set_snum(race.governor[Governor].defsystem);
-  d.set_pnum(race.governor[Governor].defplanetnum);
-  d.set_shipno(0);
-
-  // Validate and clamp star number
-  const auto* universe = d.entity_manager.peek_universe();
-  if (d.snum() >= universe->numstars) {
-    d.set_snum(0);  // Default to first star if invalid
-  }
-
-  // Validate and clamp planet number
-  const auto* init_star = d.entity_manager.peek_star(d.snum());
-  if (init_star && d.pnum() >= init_star->numplanets()) {
-    d.set_pnum(0);  // Default to first planet if invalid
-  }
-
-  std::string login_msg =
-      std::format("\n{} \"{}\" [{},{}] logged on.\n", race.name,
-                  race.governor[Governor].name, Playernum, Governor);
-  notify_race(Playernum, login_msg);
-  std::string visibility_msg = std::format(
-      "You are {}.\n",
-      race.governor[Governor].toggle.invisible ? "invisible" : "visible");
-  notify(Playernum, Governor, visibility_msg);
-
-  GB_time({}, d);
-  std::string last_login_msg = std::format(
-      "\nLast login      : {}", ctime(&(race.governor[Governor].login)));
-  notify(Playernum, Governor, last_login_msg);
-  auto& race_mut = *race_handle;
-  race_mut.governor[Governor].login = time(nullptr);
-  if (!race.Gov_ship) {
-    std::string no_gov_msg =
-        "You have no Governmental Center.  No action points will be "
-        "produced\nuntil you build one and designate a capital.\n";
-    notify(Playernum, Governor, no_gov_msg);
-  } else {
-    std::string gov_msg =
-        std::format("Government Center #{} is active.\n", race.Gov_ship);
-    notify(Playernum, Governor, gov_msg);
-  }
-  std::string morale_msg = std::format("     Morale: {}\n", race.morale);
-  notify(Playernum, Governor, morale_msg);
-  GB::commands::treasury({}, d);
-}
-
 static void do_update(EntityManager& entity_manager, bool force) {
   time_t clk = time(nullptr);
   struct stat stbuf;
@@ -1437,7 +956,6 @@ static void do_update(EntityManager& entity_manager, bool force) {
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       notify_race(i, update_msg);
-    force_output();
   }
 
   if (state.segments <= 1) {
@@ -1484,7 +1002,6 @@ static void do_update(EntityManager& entity_manager, bool force) {
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       notify_race(i, finish_msg);
-    force_output();
   }
 }
 
@@ -1505,7 +1022,6 @@ static void do_segment(EntityManager& entity_manager, int override,
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       notify_race(i, movement_msg);
-    force_output();
   }
   if (override) {
     state.next_segment_time =
@@ -1536,69 +1052,6 @@ static void do_segment(EntityManager& entity_manager, int override,
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       notify_race(i, segment_msg);
-    force_output();
-  }
-}
-
-static void close_sockets(int sock, EntityManager& entity_manager) {
-  /* post message into news file */
-  const char* shutdown_message = "Shutdown ordered by deity - Bye\n";
-  post(entity_manager, shutdown_message, NewsType::ANNOUNCE);
-
-  for (auto& d : descriptor_list) {
-    if (write(d.descriptor, shutdown_message, strlen(shutdown_message)) < 0) {
-      perror("write error");
-      exit(-1);
-    }
-    if (shutdown(d.descriptor, 2) < 0) perror("shutdown");
-    close(d.descriptor);
-  }
-  close(sock);
-}
-
-static void dump_users(DescriptorData& e) {
-  time_t now;
-  int God = 0;
-  int coward_count = 0;
-
-  (void)time(&now);
-  std::string players_msg = std::format("Current Players: {}", ctime(&now));
-  queue_string(e, players_msg);
-  if (e.player()) {
-    const auto* r = e.entity_manager.peek_race(e.player());
-    if (!r) return;
-    God = r->God;
-  } else
-    return;
-
-  for (auto& d : descriptor_list) {
-    if (d.connected && !d.god()) {
-      const auto* r = d.entity_manager.peek_race(d.player());
-      if (!r) continue;
-      if (!r->governor[d.governor()].toggle.invisible ||
-          e.player() == d.player() || God) {
-        std::string temp =
-            std::format("\"{}\"", r->governor[d.governor()].name);
-        const auto& star = *d.entity_manager.peek_star(d.snum());
-        std::string user_info = std::format(
-            "{:20.20s} {:20.20s} [{:2d},{:2d}] {:4d}s idle {:4.4s} {} {}\n",
-            r->name, temp, d.player(), d.governor(), now - d.last_time,
-            God ? star.get_name() : "    ",
-            (r->governor[d.governor()].toggle.gag ? "GAG" : "   "),
-            (r->governor[d.governor()].toggle.invisible ? "INVISIBLE" : ""));
-        queue_string(e, user_info);
-      } else if (!God) /* deity lurks around */
-        coward_count++;
-
-      if ((now - d.last_time) > DISCONNECT_TIME) d.connected = false;
-    }
-  }
-  if (SHOW_COWARDS) {
-    std::string coward_msg = std::format("And {} coward{}.\n", coward_count,
-                                         (coward_count == 1) ? "" : "s");
-    queue_string(e, coward_msg);
-  } else {
-    queue_string(e, "Finished.\n");
   }
 }
 

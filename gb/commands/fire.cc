@@ -40,7 +40,7 @@ void fire(const command_t& argv, GameObj& g) {
   if (argv.size() < 3) {
     std::string msg =
         "Syntax: '" + argv[0] + " <ship> <target> [<strength>]'.\n";
-    notify(Playernum, Governor, msg);
+    g.out << msg;
     return;
   }
 
@@ -51,9 +51,8 @@ void fire(const command_t& argv, GameObj& g) {
     if (!ship_matches_filter(argv[1], from)) continue;
     if (!authorized(Governor, from)) continue;
     if (!from.active()) {
-      notify(Playernum, Governor,
-             std::format("{} is irradiated and inactive.\n",
-                         ship_to_string(from)));
+      g.out << std::format("{} is irradiated and inactive.\n",
+                           ship_to_string(from));
       continue;
     }
     if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
@@ -69,13 +68,11 @@ void fire(const command_t& argv, GameObj& g) {
     }
     if (cew) {
       if (!from.cew()) {
-        notify(Playernum, Governor,
-               "That ship is not equipped to fire CEWs.\n");
+        g.out << "That ship is not equipped to fire CEWs.\n";
         continue;
       }
       if (!from.mounted()) {
-        notify(Playernum, Governor,
-               "You need to have a crystal mounted to fire CEWs.\n");
+        g.out << "You need to have a crystal mounted to fire CEWs.\n";
         continue;
       }
     }
@@ -102,9 +99,8 @@ void fire(const command_t& argv, GameObj& g) {
 
     if (from.type() == ShipType::OTYPE_AFV) {
       if (!landed(from)) {
-        notify(Playernum, Governor,
-               std::format("{} isn't landed on a planet!\n",
-                           ship_to_string(from)));
+        g.out << std::format("{} isn't landed on a planet!\n",
+                             ship_to_string(from));
         continue;
       }
       if (!landed(*to)) {
@@ -117,10 +113,9 @@ void fire(const command_t& argv, GameObj& g) {
     if (landed(from) && landed(*to)) {
       if ((from.storbits() != to->storbits()) ||
           (from.pnumorbits() != to->pnumorbits())) {
-        notify(Playernum, Governor,
-               "Landed ships can only attack other "
-               "landed ships if they are on the same "
-               "planet!\n");
+        g.out << "Landed ships can only attack other "
+                 "landed ships if they are on the same "
+                 "planet!\n";
         continue;
       }
       const auto* p =
@@ -133,18 +128,15 @@ void fire(const command_t& argv, GameObj& g) {
     }
     if (cew) {
       if (from.fuel() < (double)from.cew()) {
-        notify(Playernum, Governor,
-               std::format("You need {} fuel to fire CEWs.\n", from.cew()));
+        g.out << std::format("You need {} fuel to fire CEWs.\n", from.cew());
         continue;
       }
       if (landed(from) || landed(*to)) {
-        notify(Playernum, Governor,
-               "CEWs cannot originate from or targeted "
-               "to ships landed on planets.\n");
+        g.out << "CEWs cannot originate from or targeted "
+                 "to ships landed on planets.\n";
         continue;
       }
-      notify(Playernum, Governor,
-             std::format("CEW strength {}.\n", from.cew()));
+      g.out << std::format("CEW strength {}.\n", from.cew());
       strength = from.cew() / 2;
 
     } else {
@@ -157,10 +149,9 @@ void fire(const command_t& argv, GameObj& g) {
 
       if (strength > maxstrength) {
         strength = maxstrength;
-        notify(Playernum, Governor,
-               std::format("{} set to {}\n",
-                           (laser_on(from) ? "Laser strength" : "Guns"),
-                           strength));
+        g.out << std::format("{} set to {}\n",
+                             (laser_on(from) ? "Laser strength" : "Guns"),
+                             strength);
       }
     }
 
@@ -169,7 +160,7 @@ void fire(const command_t& argv, GameObj& g) {
       check_overload(g.entity_manager, from, cew, &strength);
 
     if (strength <= 0) {
-      notify(Playernum, Governor, "No attack.\n");
+      g.out << "No attack.\n";
       continue;
     }
 
@@ -199,7 +190,7 @@ void fire(const command_t& argv, GameObj& g) {
     notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
                 short_buf);
     warn(to_ship.owner(), to_ship.governor(), long_buf);
-    notify(Playernum, Governor, long_buf);
+    g.out << long_buf;
     /* defending ship retaliates */
 
     strength = 0;
@@ -224,7 +215,7 @@ void fire(const command_t& argv, GameObj& g) {
         if (!from.alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
         notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
                     short_buf);
-        notify(Playernum, Governor, long_buf);
+        g.out << long_buf;
         warn(to_ship.owner(), to_ship.governor(), long_buf);
       }
     }
@@ -263,7 +254,7 @@ void fire(const command_t& argv, GameObj& g) {
               post(g.entity_manager, short_buf, NewsType::COMBAT);
             notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
                         short_buf);
-            notify(Playernum, Governor, long_buf);
+            g.out << long_buf;
             warn(ship.owner(), ship.governor(), long_buf);
           }
         }

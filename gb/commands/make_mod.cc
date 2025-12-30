@@ -56,94 +56,78 @@ void make_mod(const command_t& argv, GameObj& g) {
         g.out << "No ship type specified.\n";
         return;
       }
-      notify(Playernum, Governor,
-             "  --- Current Production Specifications ---\n");
-      notify(Playernum, Governor,
-             std::format("{}\t\t\tArmor:    {:4d}\t\tGuns:",
-                         (dirship.on() ? "Online" : "Offline"),
-                         dirship.armor()));
+      g.out << "  --- Current Production Specifications ---\n";
+      g.out << std::format("{}\t\t\tArmor:    {:4d}\t\tGuns:",
+                           (dirship.on() ? "Online" : "Offline"),
+                           dirship.armor());
       if (Shipdata[dirship.build_type()][ABIL_PRIMARY] &&
           dirship.primtype() != GTYPE_NONE) {
-        notify(Playernum, Governor,
-               std::format("{:3}{:c}", dirship.primary(),
-                           (dirship.primtype() == GTYPE_LIGHT    ? 'L'
-                            : dirship.primtype() == GTYPE_MEDIUM ? 'M'
-                            : dirship.primtype() == GTYPE_HEAVY  ? 'H'
-                                                                 : 'N')));
+        g.out << std::format("{:3}{:c}", dirship.primary(),
+                             (dirship.primtype() == GTYPE_LIGHT    ? 'L'
+                              : dirship.primtype() == GTYPE_MEDIUM ? 'M'
+                              : dirship.primtype() == GTYPE_HEAVY  ? 'H'
+                                                                   : 'N'));
       }
       if (Shipdata[dirship.build_type()][ABIL_SECONDARY] &&
           dirship.sectype() != GTYPE_NONE) {
-        notify(Playernum, Governor,
-               std::format("/{:}{:c}", dirship.secondary(),
-                           (dirship.sectype() == GTYPE_LIGHT    ? 'L'
-                            : dirship.sectype() == GTYPE_MEDIUM ? 'M'
-                            : dirship.sectype() == GTYPE_HEAVY  ? 'H'
-                                                                : 'N')));
+        g.out << std::format("/{:}{:c}", dirship.secondary(),
+                             (dirship.sectype() == GTYPE_LIGHT    ? 'L'
+                              : dirship.sectype() == GTYPE_MEDIUM ? 'M'
+                              : dirship.sectype() == GTYPE_HEAVY  ? 'H'
+                                                                  : 'N'));
       }
       g.out << "\n";
-      notify(Playernum, Governor,
-             std::format("Ship:  {:<16.16s}\tCrew:     {:4d}",
-                         Shipnames[dirship.build_type()], dirship.max_crew()));
+      g.out << std::format("Ship:  {:<16.16s}\tCrew:     {:4d}",
+                           Shipnames[dirship.build_type()], dirship.max_crew());
       if (Shipdata[dirship.build_type()][ABIL_MOUNT]) {
-        notify(Playernum, Governor,
-               std::format("\t\tXtal Mount: {}\n",
-                           (dirship.mount() ? "yes" : "no")));
+        g.out << std::format("\t\tXtal Mount: {}\n",
+                             (dirship.mount() ? "yes" : "no"));
       } else {
         g.out << "\n";
       }
-      notify(Playernum, Governor,
-             std::format("Class: {}\t\tFuel:     {:4d}", dirship.shipclass(),
-                         dirship.max_fuel()));
+      g.out << std::format("Class: {}\t\tFuel:     {:4d}", dirship.shipclass(),
+                           dirship.max_fuel());
       if (Shipdata[dirship.build_type()][ABIL_JUMP]) {
-        notify(Playernum, Governor,
-               std::format("\t\tHyperdrive: {}\n",
-                           (dirship.hyper_drive().has ? "yes" : "no")));
+        g.out << std::format("\t\tHyperdrive: {}\n",
+                             (dirship.hyper_drive().has ? "yes" : "no"));
       } else {
         g.out << "\n";
       }
-      notify(Playernum, Governor,
-             std::format("Cost:  {} r\t\tCargo:    {:4}", dirship.build_cost(),
-                         dirship.max_resource()));
+      g.out << std::format("Cost:  {} r\t\tCargo:    {:4}",
+                           dirship.build_cost(), dirship.max_resource());
       if (Shipdata[dirship.build_type()][ABIL_LASER]) {
-        notify(Playernum, Governor,
-               std::format("\t\tCombat Lasers: {}\n",
-                           (dirship.laser() ? "yes" : "no")));
+        g.out << std::format("\t\tCombat Lasers: {}\n",
+                             (dirship.laser() ? "yes" : "no"));
       } else {
         g.out << "\n";
       }
-      notify(Playernum, Governor,
-             std::format("Mass:  {:.1f}\t\tHanger:   {:4}", dirship.base_mass(),
-                         dirship.max_hanger()));
+      g.out << std::format("Mass:  {:.1f}\t\tHanger:   {:4}",
+                           dirship.base_mass(), dirship.max_hanger());
       if (Shipdata[dirship.build_type()][ABIL_CEW]) {
-        notify(Playernum, Governor,
-               std::format("\t\tCEW: {}\n", (dirship.cew() ? "yes" : "no")));
+        g.out << std::format("\t\tCEW: {}\n", (dirship.cew() ? "yes" : "no"));
       } else {
         g.out << "\n";
       }
-      notify(Playernum, Governor,
-             std::format("Size:  {:<6d}\t\tDestruct: {:4d}", dirship.size(),
-                         dirship.max_destruct()));
+      g.out << std::format("Size:  {:<6d}\t\tDestruct: {:4d}", dirship.size(),
+                           dirship.max_destruct());
       if (Shipdata[dirship.build_type()][ABIL_CEW] && dirship.cew()) {
-        notify(Playernum, Governor,
-               std::format("\t\t   Opt Range: {:4d}\n", dirship.cew_range()));
+        g.out << std::format("\t\t   Opt Range: {:4d}\n", dirship.cew_range());
       } else {
         g.out << "\n";
       }
-      notify(Playernum, Governor,
-             std::format("Tech:  {:.1f} ({:.1f})\tSpeed:    {:4d}",
-                         dirship.complexity(), race.tech, dirship.max_speed()));
+      g.out << std::format("Tech:  {:.1f} ({:.1f})\tSpeed:    {:4d}",
+                           dirship.complexity(), race.tech,
+                           dirship.max_speed());
       if (Shipdata[dirship.build_type()][ABIL_CEW] && dirship.cew()) {
-        notify(Playernum, Governor,
-               std::format("\t\t   Energy:    {:4d}\n", dirship.cew()));
+        g.out << std::format("\t\t   Energy:    {:4d}\n", dirship.cew());
       } else {
         g.out << "\n";
       }
 
       if (race.tech < dirship.complexity()) {
-        notify(Playernum, Governor,
-               "Your engineering capability is not "
-               "advanced enough to produce this "
-               "design.\n");
+        g.out << "Your engineering capability is not "
+                 "advanced enough to produce this "
+                 "design.\n";
       }
       return;
     }
@@ -192,11 +176,9 @@ void make_mod(const command_t& argv, GameObj& g) {
 
     dirship.shipclass() = std::format("mod {}", g.shipno());
 
-    notify(Playernum, Governor,
-           std::format("Factory designated to produce {}s.\n", Shipnames[*i]));
-    notify(Playernum, Governor,
-           std::format("Design complexity {:.1f} ({:.1f}).\n",
-                       dirship.complexity(), race.tech));
+    g.out << std::format("Factory designated to produce {}s.\n", Shipnames[*i]);
+    g.out << std::format("Design complexity {:.1f} ({:.1f}).\n",
+                         dirship.complexity(), race.tech);
     if (dirship.complexity() > race.tech)
       g.out << "You can't produce this design yet!\n";
 
@@ -351,20 +333,17 @@ void make_mod(const command_t& argv, GameObj& g) {
   }
 
   dirship.build_cost() = race.God ? 0 : (int)cost0;
-  notify(Playernum, Governor,
-         std::format("The current cost of the ship is {} resources.\n",
-                     dirship.build_cost()));
+  g.out << std::format("The current cost of the ship is {} resources.\n",
+                       dirship.build_cost());
   dirship.size() = ship_size(dirship);
   dirship.base_mass() = getmass(dirship);
-  notify(
-      Playernum, Governor,
-      std::format("The current base mass of the ship is {:.1f} - size is {}.\n",
-                  dirship.base_mass(), dirship.size()));
+  g.out << std::format(
+      "The current base mass of the ship is {:.1f} - size is {}.\n",
+      dirship.base_mass(), dirship.size());
   dirship.complexity() = complexity(dirship);
-  notify(Playernum, Governor,
-         std::format("Ship complexity is {:.1f} (you have {:.1f} engineering "
-                     "technology).\n",
-                     dirship.complexity(), race.tech));
+  g.out << std::format("Ship complexity is {:.1f} (you have {:.1f} engineering "
+                       "technology).\n",
+                       dirship.complexity(), race.tech);
 
   /* Restore size to what it was before.  Maarten */
   dirship.size() = size;

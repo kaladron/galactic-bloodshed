@@ -30,8 +30,8 @@ void insurgency(const command_t& argv, GameObj& g) {
     return;
   }
   /*  if(argv.size()<3) {
-        notify(Playernum, Governor, "The correct syntax is 'insurgency <race>
-    <money>'\n");
+        g.out << "The correct syntax is 'insurgency <race>
+    <money>'\n";
         return;
     }*/
   if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) return;

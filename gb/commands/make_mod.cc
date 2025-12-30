@@ -9,8 +9,6 @@ module commands;
 
 namespace GB::commands {
 void make_mod(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player();
-  const governor_t Governor = g.governor();
   int mode;
   if (argv[0] == "make")
     mode = 0;

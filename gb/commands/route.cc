@@ -11,7 +11,6 @@ namespace GB::commands {
 void route(const command_t& argv, GameObj& g) {
   // TODO(jeffbailey): This seems to segfault with no args.
   player_t Playernum = g.player();
-  governor_t Governor = g.governor();
   // TODO(jeffbailey): ap_t APcount = 0;
   int i;
   int x;

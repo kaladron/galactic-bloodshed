@@ -49,8 +49,6 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
 
 namespace GB::commands {
 void colonies(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player();
-
   g.out << "          ========== Colonization Report ==========\n";
   g.out << "  Planet     gov sec tech    popn  x   res  "
            "des  fuel  tax  cmpt/tox mob  Aliens\n";

@@ -14,7 +14,6 @@ int landed_on(const Ship& s, const shipnum_t shipno) {
 
 void do_transporter(const Race& race, GameObj& g, Ship* s) {
   player_t Playernum = g.player();
-  governor_t Governor = g.governor();
 
   Playernum = race.Playernum;
 

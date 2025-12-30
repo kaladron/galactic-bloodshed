@@ -12,8 +12,6 @@ module commands;
 namespace GB::commands {
 /** Deity fix-it utilities */
 void fix(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
   if (!g.god()) {
     g.out << "This command is only available to the deity.\n";
     return;

@@ -11,7 +11,6 @@ module commands;
 namespace GB::commands {
 void explore(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
-  const governor_t Governor = g.governor();
   int starq = -1;
 
   if (argv.size() == 2) {

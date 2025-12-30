@@ -10,8 +10,6 @@ module commands;
 namespace GB::commands {
 /* upgrade ship characteristics */
 void upgrade(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player();
-  const governor_t Governor = g.governor();
   // TODO(jeffbailey): Fix unused ap_t APcount = 1;
   int value;
   int oldcost;

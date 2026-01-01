@@ -26,6 +26,31 @@
 
 module;
 
+import std;
+
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <linux/version.h>
+#include <net/if.h>
+#include <netdb.h>
+#include <netinet/tcp.h>
+#include <poll.h>
+#include <pthread.h>
+#include <signal.h>
+#include <string.h>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
+#include <sys/ioctl.h>
+#include <sys/timerfd.h>
+#include <sys/uio.h>
+#include <sys/un.h>
+#include <termio.h>
+#include <time.h>
+#include <cassert>
+#include <climits>
+#include <cstddef>
+
 #include <boost/asio.hpp>
 
 export module asio;

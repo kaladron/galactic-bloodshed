@@ -3,6 +3,7 @@
 export module commands;
 
 import gblib;
+import session; // For SessionRegistry full definition
 
 namespace GB::commands {
 export void analysis(const command_t&, GameObj&);

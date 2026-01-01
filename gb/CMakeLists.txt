@@ -100,11 +100,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(tabulate)
 
 # Fetch Boost (includes Asio)
+# PATCH_COMMAND strips standard library #includes for C++ module compatibility.
+# Keeps #include <boost/...> and #include <openssl/...>, removes all other <...> includes.
 FetchContent_Declare(
   Boost
   URL https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.xz
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   EXCLUDE_FROM_ALL
+  PATCH_COMMAND bash ${CMAKE_SOURCE_DIR}/cmake/strip_std_includes.sh
 )
 FetchContent_MakeAvailable(Boost)
 
@@ -260,6 +263,14 @@ target_sources(
   PRIVATE services/session.cc)
 target_link_libraries(session PUBLIC gblib asio_module)
 
+# Create notification library (Service Layer)
+add_library(notification)
+target_sources(
+  notification
+  PUBLIC FILE_SET CXX_MODULES FILES services/notification.cppm
+  PRIVATE services/notification.cc)
+target_link_libraries(notification PUBLIC gblib session)
+
 add_library(commands)
 target_sources(
   commands
@@ -342,7 +353,7 @@ target_sources(
           commands/walk.cc
           commands/whois.cc
           commands/zoom.cc)
-target_link_libraries(commands PRIVATE gblib SQLite::SQLite3 glaze::glaze
+target_link_libraries(commands PRIVATE gblib session notification SQLite::SQLite3 glaze::glaze
                                        scnlib_module tabulate_module)
 
 add_executable(GB GB_server.cc)
@@ -365,6 +376,10 @@ add_test(NAME GB_session_test COMMAND session_test)
 add_executable(server_test server_test.cc)
 target_link_libraries(server_test PRIVATE gblib session asio_module dallib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_server_test COMMAND server_test)
+
+add_executable(notification_test notification_test.cc)
+target_link_libraries(notification_test PRIVATE gblib session notification dallib)
+add_test(NAME GB_notification_test COMMAND notification_test)
 
 add_executable(shlmisc_test shlmisc_test.cc)
 target_link_libraries(shlmisc_test PRIVATE gblib SQLite::SQLite3)

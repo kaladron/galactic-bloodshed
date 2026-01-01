@@ -5,7 +5,8 @@
 #ifndef GB_SERVER_H
 #define GB_SERVER_H
 
-void do_next_thing(EntityManager&);
+void do_next_thing(EntityManager&,
+                   void*);  // void* is actually SessionRegistry*
 void compute_power_blocks(EntityManager&);
 
 #endif  // GB_SERVER_H

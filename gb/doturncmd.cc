@@ -92,10 +92,12 @@ static void finalize_turn(TurnState& state, int update);
  * ship movement and combat to happen more frequently than economic/tech growth.
  *
  * @param entity_manager Database entity manager for persistent storage
+ * @param session_registry Optional pointer to session registry for
+ * notifications (void* is actually SessionRegistry*)
  * @param update 1 for full update with production/tech, 0 for movement only
  *               TODO: Should be bool for type safety
  */
-void do_turn(EntityManager& entity_manager, int update) {
+void do_turn(EntityManager& entity_manager, void*, int update) {
   TurnState state(
       entity_manager);  // Create turn-local state with EntityManager ref
 
@@ -656,13 +658,8 @@ static void finalize_turn(TurnState& state, int update) {
     }
   }
 
-  for (auto race_handle : RaceList(state.entity_manager)) {
-    if (update) {
-      notify_race(race_handle->Playernum, "Finished with update.\n");
-    } else {
-      notify_race(race_handle->Playernum, "Finished with movement segment.\n");
-    }
-  }
+  // Note: Notification to players about update/segment completion is now
+  // handled by the caller (do_update/do_segment in GB_server.cc)
 }
 
 /* routine for number of AP's to add to each player in ea. system,scaled

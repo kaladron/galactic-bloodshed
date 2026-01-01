@@ -15,6 +15,8 @@ public:
   std::stringstream out;          ///< Output stream (temporary - Step 4A)
   const Race* race = nullptr;     ///< Pointer to current player's race (valid
                                   ///< during command execution)
+  void* session_registry = nullptr;  ///< For notifications (null in tests) -
+                                     ///< actually SessionRegistry*
 
   // Public utility fields (direct access retained for legacy code patterns)
   double lastx[2] = {0.0, 0.0};

@@ -3,6 +3,8 @@
 module;
 
 import gblib;
+import notification;
+import session; // For SessionRegistry full definition
 import std;
 
 module commands;
@@ -80,10 +82,16 @@ void announce(const command_t& argv, GameObj& g) {
 
   switch (mode) {
     case Communicate::ANN:
-      d_announce(g.entity_manager, Playernum, Governor, g.snum(), msg);
+      if (g.session_registry) {
+        d_announce(*static_cast<SessionRegistry*>(g.session_registry),
+                   g.entity_manager, Playernum, Governor, g.snum(), msg);
+      }
       break;
     case Communicate::BROADCAST:
-      d_broadcast(g.entity_manager, Playernum, Governor, msg);
+      if (g.session_registry) {
+        d_broadcast(*static_cast<SessionRegistry*>(g.session_registry),
+                    g.entity_manager, Playernum, Governor, msg);
+      }
       break;
     case Communicate::SHOUT:
       d_shout(Playernum, Governor, msg);

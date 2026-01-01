@@ -2,7 +2,9 @@
 
 module;
 
+import session; // For SessionRegistry full definition - import before gblib
 import gblib;
+import notification;
 import std.compat;
 
 module commands;
@@ -62,13 +64,26 @@ void page(const command_t& argv, GameObj& g) {
           return;
         }
         uint64_t allied_members = block_player->invite & block_player->pledge;
-        for (i = 1; i <= g.entity_manager.num_races(); i++)
-          if (isset(allied_members, i) && i != Playernum) notify_race(i, msg);
+        for (i = 1; i <= g.entity_manager.num_races(); i++) {
+          if (isset(allied_members, i) && i != Playernum) {
+            if (g.session_registry) {
+              static_cast<SessionRegistry*>(g.session_registry)
+                  ->notify_race(i, msg);
+            }
+          }
+        }
       } else {
-        if (argv.size() > 1)
-          notify(who, gov, msg);
-        else
-          notify_race(who, msg);
+        if (argv.size() > 1) {
+          if (g.session_registry) {
+            static_cast<SessionRegistry*>(g.session_registry)
+                ->notify_player(who, gov, msg);
+          }
+        } else {
+          if (g.session_registry) {
+            static_cast<SessionRegistry*>(g.session_registry)
+                ->notify_race(who, msg);
+          }
+        }
       }
 
       g.out << "Request sent.\n";

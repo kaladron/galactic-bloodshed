@@ -3,6 +3,8 @@
 module;
 
 import gblib;
+import notification;
+import session; // For SessionRegistry full definition
 import std;
 
 module commands;
@@ -158,7 +160,10 @@ void send_message(const command_t& argv, GameObj& g) {
         block->name, who);
     for (i = 1; i <= g.entity_manager.num_races(); i++) {
       if (isset(allied_members, i)) {
-        notify_race(i, block_msg);
+        if (g.session_registry) {
+          static_cast<SessionRegistry*>(g.session_registry)
+              ->notify_race(i, block_msg);
+        }
         push_telegram_race(g.entity_manager, i, msg);
       }
     }
@@ -178,7 +183,10 @@ void send_message(const command_t& argv, GameObj& g) {
       notify(who, gov, notice);
     } else {
       push_telegram_race(g.entity_manager, who, msg);
-      notify_race(who, notice);
+      if (g.session_registry) {
+        static_cast<SessionRegistry*>(g.session_registry)
+            ->notify_race(who, notice);
+      }
     }
 
     auto alien_handle = g.entity_manager.get_race(who);

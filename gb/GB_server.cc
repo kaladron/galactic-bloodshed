@@ -80,8 +80,10 @@ static void process_command(GameObj&, const command_t& argv);
 
 static void GB_time(const command_t&, GameObj&);
 static void GB_schedule(const command_t&, GameObj&);
-static void do_update(EntityManager&, bool = false);
-static void do_segment(EntityManager&, int, int);
+static void do_update(EntityManager&, void*,
+                      bool = false);  // void* is actually SessionRegistry*
+static void do_segment(EntityManager&, void*, int,
+                       int);  // void* is actually SessionRegistry*
 static void initialize_block_data(EntityManager&);
 static void welcome_user(Session&);
 static void check_connect(Session&, std::string_view);
@@ -483,7 +485,7 @@ void Server::on_timer() {
     }
   }
   if (go_time_ > 0 && current_time >= go_time_) {
-    do_next_thing(entity_manager_);
+    do_next_thing(entity_manager_, this);
     go_time_ = 0;
   }
 }
@@ -654,14 +656,16 @@ int main(int argc, char** argv) {
   std::println("Going down.");
   return 0;
 }
-void do_next_thing(EntityManager& entity_manager) {
+void do_next_thing(
+    EntityManager& entity_manager,
+    void* session_registry) {  // void* is actually SessionRegistry*
   const auto* state = entity_manager.peek_server_state();
   if (!state) return;
 
   if (state->nsegments_done < state->segments)
-    do_segment(entity_manager, 0, 1);
+    do_segment(entity_manager, session_registry, 0, 1);
   else
-    do_update(entity_manager, false);
+    do_update(entity_manager, session_registry, false);
 }
 
 static void welcome_user(Session& session) {
@@ -784,8 +788,7 @@ bool Server::do_command(Session& session, std::string_view comm) {
       g.set_shipno(session.shipno());
       g.set_level(session.level());
       g.race = session.entity_manager().peek_race(g.player());
-      // TODO(Step 5/6): Add g.session_registry = &session.registry() when
-      // commands need cross-player notifications
+      g.session_registry = &session.registry();
 
       process_command(g, argv);
 
@@ -842,10 +845,10 @@ static void check_connect(Session& session, std::string_view message) {
 
   if (EXTERNAL_TRIGGER) {
     if (race_password == SEGMENT_PASSWORD) {
-      do_segment(session.entity_manager(), 1, 0);
+      do_segment(session.entity_manager(), &session.registry(), 1, 0);
       return;
     } else if (race_password == UPDATE_PASSWORD) {
-      do_update(session.entity_manager(), true);
+      do_update(session.entity_manager(), &session.registry(), true);
       return;
     }
   }
@@ -917,6 +920,7 @@ static void check_connect(Session& session, std::string_view message) {
   temp_g.set_player(Playernum);
   temp_g.set_governor(Governor);
   temp_g.race = session.entity_manager().peek_race(Playernum);
+  temp_g.session_registry = &session.registry();
   GB_time({}, temp_g);
 
   session.out() << std::format("\nLast login      : {}",
@@ -942,7 +946,9 @@ static void check_connect(Session& session, std::string_view message) {
   session.out() << temp_g.out.str();
 }
 
-static void do_update(EntityManager& entity_manager, bool force) {
+static void do_update(EntityManager& entity_manager, void* session_registry_ptr,
+                      bool force) {  // void* is actually SessionRegistry*
+  auto* session_registry = static_cast<SessionRegistry*>(session_registry_ptr);
   time_t clk = time(nullptr);
   struct stat stbuf;
 
@@ -953,9 +959,9 @@ static void do_update(EntityManager& entity_manager, bool force) {
   bool fakeit = (!force && stat(nogofl.data(), &stbuf) >= 0);
 
   std::string update_msg = std::format("{}DOING UPDATE...\n", ctime(&clk));
-  if (!fakeit) {
+  if (!fakeit && session_registry) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
-      notify_race(i, update_msg);
+      session_registry->notify_race(i, update_msg);
   }
 
   if (state.segments <= 1) {
@@ -993,20 +999,22 @@ static void do_update(EntityManager& entity_manager, bool force) {
              ctime(&state.next_segment_time));
 
   update_flag = true;
-  if (!fakeit) do_turn(entity_manager, 1);
+  if (!fakeit) do_turn(entity_manager, session_registry, 1);
   update_flag = false;
   clk = time(nullptr);
   std::string finish_msg =
       std::format("{}Update {} finished\n", ctime(&clk), nupdates_done);
   handle_victory(entity_manager);
-  if (!fakeit) {
+  if (!fakeit && session_registry) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
-      notify_race(i, finish_msg);
+      session_registry->notify_race(i, finish_msg);
   }
 }
 
-static void do_segment(EntityManager& entity_manager, int override,
-                       int segment) {
+static void do_segment(EntityManager& entity_manager,
+                       void* session_registry_ptr, int override,
+                       int segment) {  // void* is actually SessionRegistry*
+  auto* session_registry = static_cast<SessionRegistry*>(session_registry_ptr);
   time_t clk = time(nullptr);
   struct stat stbuf;
 
@@ -1019,9 +1027,9 @@ static void do_segment(EntityManager& entity_manager, int override,
   if (!override && state.segments <= 1) return;
 
   std::string movement_msg = std::format("{}DOING MOVEMENT...\n", ctime(&clk));
-  if (!fakeit) {
+  if (!fakeit && session_registry) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
-      notify_race(i, movement_msg);
+      session_registry->notify_race(i, movement_msg);
   }
   if (override) {
     state.next_segment_time =
@@ -1040,7 +1048,7 @@ static void do_segment(EntityManager& entity_manager, int override,
   }
 
   update_flag = true;
-  if (!fakeit) do_turn(entity_manager, 0);
+  if (!fakeit) do_turn(entity_manager, session_registry, 0);
   update_flag = false;
   segment_buf = std::format("Last Segment {0:2d} : {1}", state.nsegments_done,
                             ctime(&clk));
@@ -1049,9 +1057,9 @@ static void do_segment(EntityManager& entity_manager, int override,
              ctime(&state.next_segment_time));
   clk = time(nullptr);
   std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));
-  if (!fakeit) {
+  if (!fakeit && session_registry) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
-      notify_race(i, segment_msg);
+      session_registry->notify_race(i, segment_msg);
   }
 }
 
@@ -1088,9 +1096,12 @@ static void process_command(GameObj& g, const command_t& argv) {
     shutdown_flag = true;
     g.out << "Doing shutdown.\n";
   } else if (argv[0] == "@@update" && God)
-    do_update(g.entity_manager, true);
+    do_update(g.entity_manager,
+              static_cast<SessionRegistry*>(g.session_registry), true);
   else if (argv[0] == "@@segment" && God)
-    do_segment(g.entity_manager, 1, std::stoi(argv[1]));
+    do_segment(g.entity_manager,
+               static_cast<SessionRegistry*>(g.session_registry), 1,
+               std::stoi(argv[1]));
   else {
     g.out << "'" << argv[0] << "':illegal command error.\n";
   }

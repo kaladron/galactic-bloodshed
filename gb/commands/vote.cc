@@ -59,7 +59,7 @@ void check_votes(GameObj& g) {
   /* Is Update/Movement vote unanimous now? */
   if (nvotes > 0 && nvotes == yays && nays == 0) {
     /* Do it... */
-    do_next_thing(g.entity_manager);
+    do_next_thing(g.entity_manager, g.session_registry);
   }
 }
 }  // namespace

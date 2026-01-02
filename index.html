@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Bloodshed | The Legend Returns</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Font Assignments */
+        .font-header { font-family: 'Orbitron', sans-serif; }
+        .font-mono-retro { font-family: 'Share Tech Mono', monospace; }
+        .font-pixel { font-family: 'VT323', monospace; }
+
+        /* Future-Retro Color Palette */
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-magenta: #ff00ff;
+            --deep-space: #050510;
+            --grid-color: rgba(0, 243, 255, 0.15);
+        }
+
+        body {
+            background-color: var(--deep-space);
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        /* Scanline Effect */
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(18, 16, 16, 0) 50%,
+                rgba(0, 0, 0, 0.25) 50%
+            );
+            background-size: 100% 4px;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        /* CRT Flicker Animation */
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            5% { opacity: 0.95; }
+            10% { opacity: 0.9; }
+            15% { opacity: 0.95; }
+            20% { opacity: 0.99; }
+            50% { opacity: 0.95; }
+            55% { opacity: 0.9; }
+            60% { opacity: 0.99; }
+            100% { opacity: 0.95; }
+        }
+        .crt-flicker {
+            animation: flicker 0.15s infinite;
+        }
+
+        /* Retro Grid Background */
+        .retro-grid {
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center center;
+            transform: perspective(500px) rotateX(60deg);
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            bottom: -30vh;
+            left: 0;
+            z-index: -1;
+            opacity: 0.2;
+            mask-image: linear-gradient(to bottom, transparent, black);
+        }
+
+        /* Neon Text Utilities */
+        .text-glow-cyan {
+            text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan);
+        }
+        .text-glow-magenta {
+            text-shadow: 0 0 5px var(--neon-magenta), 0 0 10px var(--neon-magenta);
+        }
+        .box-glow-cyan {
+            box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 5px var(--neon-cyan);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--neon-cyan); 
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-magenta); 
+        }
+    </style>
+</head>
+<body class="antialiased scanlines relative">
+
+    <!-- Retro 3D Grid Background -->
+    <div class="retro-grid"></div>
+
+    <!-- Navigation -->
+    <nav class="w-full py-6 px-4 md:px-8 flex justify-between items-center bg-black/80 backdrop-blur-md border-b border-cyan-500/30 sticky top-0 z-40">
+        <div class="font-header font-black text-xl md:text-2xl tracking-widest italic bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-magenta-500 text-glow-cyan">
+            GB<span class="text-white not-italic text-sm ml-2 opacity-70">2026</span>
+        </div>
+        <div class="hidden md:flex gap-8 font-mono-retro text-cyan-300">
+            <a href="#about" class="hover:text-fuchsia-400 hover:text-glow-magenta transition-all">DATA.LOG</a>
+            <a href="#history" class="hover:text-fuchsia-400 hover:text-glow-magenta transition-all">TIMELINE</a>
+            <a href="#features" class="hover:text-fuchsia-400 hover:text-glow-magenta transition-all">SPECS</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="min-h-screen flex flex-col justify-center items-center text-center px-4 relative overflow-hidden">
+        <!-- Background Starfield (CSS) -->
+        <div class="absolute inset-0 z-[-2] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIxIiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjUiLz48Y2lyY2xlIGN4PSIxNTAiIGN5PSIxMjAiIHI9IjEuNSIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC43Ii8+PC9zdmc+')] opacity-60 animate-[pulse_4s_infinite]"></div>
+
+        <div class="relative z-10 crt-flicker">
+            <h2 class="font-mono-retro text-cyan-400 tracking-[0.5em] text-sm md:text-lg mb-4 uppercase">System Reboot Initiated...</h2>
+            
+            <!-- CSS Logo -->
+            <h1 class="font-header text-5xl md:text-8xl lg:text-9xl font-black italic tracking-tighter leading-none mb-2">
+                <span class="block text-transparent bg-clip-text bg-gradient-to-b from-white to-cyan-400 text-glow-cyan drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">GALACTIC</span>
+                <span class="block text-transparent bg-clip-text bg-gradient-to-t from-fuchsia-600 to-fuchsia-300 text-glow-magenta drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] transform -skew-x-12">BLOODSHED</span>
+            </h1>
+
+            <p class="font-mono-retro text-gray-300 mt-8 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed border-l-4 border-cyan-500 pl-4 bg-black/50">
+                The Original 4X Multiplayer Space Strategy Game. <br>
+                <span class="text-fuchsia-400 font-bold">Reborn.</span>
+            </p>
+
+            <div class="mt-12 flex flex-col md:flex-row gap-6 justify-center">
+                <a href="#about" class="px-8 py-4 bg-transparent border-2 border-fuchsia-500 text-fuchsia-500 font-header font-bold tracking-wider hover:bg-fuchsia-500 hover:text-black transition-all duration-300 hover:box-shadow-[0_0_20px_#ff00ff] uppercase">
+                    Initialize System
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 px-4 md:px-8 bg-black/90 relative border-t border-cyan-900">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-end mb-12 border-b border-gray-700 pb-4">
+                <h2 class="font-header text-3xl md:text-5xl text-white mr-4">SYSTEM <span class="text-cyan-400">OVERVIEW</span></h2>
+                <span class="font-mono-retro text-fuchsia-500 mb-2">/root/readme.md</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="font-mono-retro text-lg text-gray-300 leading-8 space-y-6">
+                    <p>
+                        <strong class="text-cyan-300">GB (Galactic Bloodshed)</strong> is a piece of Internet history. It is one of the original update-based client-server multi-player <span class="text-fuchsia-400">4X</span> strategy games.
+                    </p>
+                    <p>
+                        Expand your empire and exterminate your opponents as you explore the galaxy and exploit its many resources. Representing the origins of the genre, GB is about <span class="text-cyan-300">pure strategy</span>, complex race design, and immense scale.
+                    </p>
+                    <p>
+                        Originally written in 1989 as an alternative to 'Empire', GB appealed to hardcore sci-fi fans who wanted a universe that felt vast, dangerous, and scientifically grounded.
+                    </p>
+                </div>
+                
+                <!-- Terminal Graphic -->
+                <div class="bg-gray-900 border border-gray-700 p-2 rounded shadow-2xl relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-full h-6 bg-gray-800 flex items-center px-2 space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="font-mono-retro text-xs text-gray-400 ml-2">term://gb-server</span>
+                    </div>
+                    <div class="mt-6 p-4 font-pixel text-green-400 text-sm md:text-base leading-snug h-64 overflow-y-hidden whitespace-pre-wrap">
+      *** Galactic Bloodshed ver Standard GB 6.0 ***
+
+      Fri Jan  2 21:56:07 2026
+      Port 2010
+      30min minutes between updates
+      3 segments/update
+Last Update   0 : Thu Jan  1 00:00:00 1970
+Last Segment  0 : Thu Jan  1 00:00:00 1970
+      Next Update 1  : Fri Jan  2 22:26:07 2026
+      Next Segment   : Fri Jan  2 22:06:07 2026<span class="animate-pulse">_</span>
+                    </div>
+                    <!-- Glitch Overlay -->
+                    <div class="absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-20 transition-opacity pointer-events-none mix-blend-overlay"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- History Timeline -->
+    <section id="history" class="py-24 px-4 relative overflow-hidden">
+        <div class="max-w-4xl mx-auto relative z-10">
+            <h2 class="font-header text-4xl md:text-6xl text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 to-cyan-500">CHRONOLOGY</h2>
+
+            <div class="relative border-l-2 border-cyan-500/30 ml-4 md:ml-12 space-y-16">
+                
+                <!-- 1989 -->
+                <div class="relative pl-8 md:pl-12 group">
+                    <div class="absolute -left-[9px] top-2 w-4 h-4 bg-black border-2 border-cyan-500 rounded-full group-hover:bg-cyan-500 group-hover:box-shadow-[0_0_10px_#00f3ff] transition-all"></div>
+                    <h3 class="font-header text-3xl text-white mb-2 group-hover:text-cyan-300 transition-colors">1989</h3>
+                    <p class="font-mono-retro text-gray-400 text-lg">The Genesis. First written by Unix hacks in the US as a sci-fi alternative to Empire. Played via telnet terminals.</p>
+                </div>
+
+                <!-- 1992 -->
+                <div class="relative pl-8 md:pl-12 group">
+                    <div class="absolute -left-[9px] top-2 w-4 h-4 bg-black border-2 border-fuchsia-500 rounded-full group-hover:bg-fuchsia-500 group-hover:box-shadow-[0_0_10px_#ff00ff] transition-all"></div>
+                    <h3 class="font-header text-3xl text-white mb-2 group-hover:text-fuchsia-300 transition-colors">1992</h3>
+                    <p class="font-mono-retro text-gray-400 text-lg">The Golden Age. The "HUT" version released by Finnish developers becomes the definitive, most stable version. The last major release before the long cryosleep.</p>
+                </div>
+
+                <!-- 2026 -->
+                <div class="relative pl-8 md:pl-12 group">
+                    <div class="absolute -left-[11px] top-0 w-6 h-6 bg-cyan-400 rounded-full animate-pulse box-glow-cyan"></div>
+                    <h3 class="font-header text-4xl md:text-5xl text-white mb-2 text-glow-cyan">2026</h3>
+                    <p class="font-mono-retro text-cyan-100 text-xl border-2 border-cyan-500/50 bg-cyan-900/20 p-6 rounded mt-4">
+                        <span class="font-bold text-cyan-300">SYSTEM REBOOT.</span> The code has been exhumed. Modern C++, Python clients, and a persistent universe. The bloodshed resumes.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="py-20 bg-gradient-to-b from-black to-gray-900 px-4">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="font-header text-3xl md:text-4xl text-center mb-12 text-gray-300">CORE <span class="text-fuchsia-500">MODULES</span></h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="bg-gray-800/50 border border-gray-600 hover:border-cyan-400 p-8 hover:-translate-y-2 transition-transform duration-300">
+                    <div class="text-cyan-400 font-header text-xl mb-4">RACE GEN</div>
+                    <p class="font-mono-retro text-gray-400">Design your species from the DNA up. Mesomorphs, gas-breathers, crystalline entities. Your biology dictates your strategy.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="bg-gray-800/50 border border-gray-600 hover:border-fuchsia-400 p-8 hover:-translate-y-2 transition-transform duration-300">
+                    <div class="text-fuchsia-400 font-header text-xl mb-4">STRATEGIC DEPTH</div>
+                    <p class="font-mono-retro text-gray-400">Complex economies, logistical supply chains, and granular ship design. Victory requires logistical mastery, not just firepower.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="bg-gray-800/50 border border-gray-600 hover:border-cyan-400 p-8 hover:-translate-y-2 transition-transform duration-300">
+                    <div class="text-cyan-400 font-header text-xl mb-4">MODERN DB</div>
+                    <p class="font-mono-retro text-gray-400">A persistent universe powered by a modern SQL database, eliminating the data corruption bugs of the 1990s. Stable and enduring.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-gray-800 bg-black text-center font-mono-retro text-gray-500">
+        <p class="mb-4">&copy; 1989 - 2026 Galactic Bloodshed Project</p>
+        <p class="text-xs">
+            EST. CONNECTION <span class="text-green-500">●</span> 
+            PING: <span class="text-green-500">12ms</span> 
+            <span class="mx-2">|</span>
+            <a href="#" class="hover:text-cyan-400 transition-colors">GITHUB</a>
+            <span class="mx-2">|</span>
+            <a href="#" class="hover:text-cyan-400 transition-colors">DISCORD</a>
+        </p>
+    </footer>
+
+</body>
+</html>

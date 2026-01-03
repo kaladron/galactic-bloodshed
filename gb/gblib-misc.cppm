@@ -15,22 +15,19 @@ import :types;
 
 import std.compat;
 
-export void notify_race(player_t, const std::string&);
-export bool notify(player_t, governor_t, const std::string&);
-export void d_think(EntityManager&, player_t, governor_t, const std::string&);
-export void d_broadcast(EntityManager&, player_t, governor_t,
-                        const std::string&);
-export void d_shout(player_t, governor_t, const std::string&);
-export void d_announce(EntityManager&, player_t, governor_t, starnum_t,
-                       const std::string&);
-// New signature using EntityManager
-export void warn_race(EntityManager&, player_t, const std::string&);
+// Note: Notification functions moved to gb/services/notification.{cppm,cc}
+// - d_broadcast, d_announce, d_think, d_shout
+// - warn_player, warn_race
+// notify_race and notify_player are now methods on SessionRegistry
+
+// Compatibility wrappers for turn processing code (delegates to telegrams)
 export void warn(player_t, governor_t, const std::string&);
-// New signature using EntityManager
+export bool notify(player_t, governor_t, const std::string&);
+export void warn_race(EntityManager&, player_t, const std::string&);
 export void warn_star(EntityManager&, player_t, starnum_t, const std::string&);
-// New signature using EntityManager
 export void notify_star(EntityManager&, player_t, governor_t, starnum_t,
                         const std::string&);
+
 export void adjust_morale(Race&, Race&, int);
 
 export void add_to_queue(std::deque<std::string>&, const std::string&);

@@ -95,6 +95,11 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. E
   - SessionRegistry abstract interface
   - Session class for client connections
   - Network I/O with Asio (imported via `asio` module)
+
+- **`notification`** (Service Layer) - `gb/services/notification.cppm`
+  - Cross-player message routing with game logic
+  - Respects gag toggles, star inhabitance, update_in_progress
+  - Functions: d_broadcast, d_announce, d_think, d_shout, warn_player, warn_race
   
 - **`asio`** (Third-party wrapper) - `gb/third_party/asio.cppm`
   - Module wrapper for Boost.Asio networking library
@@ -118,6 +123,10 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. E
 ```
 commands --> gblib
          --> session (for SessionRegistry*)
+         --> notification (for cross-player messaging)
+
+notification --> session (for SessionRegistry)
+             --> gblib (for EntityManager, types)
 
 session --> gblib (for types, EntityManager)
         --> asio (for networking)
@@ -864,7 +873,9 @@ gb/
 │   ├── gblib-services.cppm      # Service module partition
 │   ├── entity_manager.cc        # EntityManager service
 │   ├── session.cppm             # Session module interface (standalone)
-│   └── session.cc               # Session implementation
+│   ├── session.cc               # Session implementation
+│   ├── notification.cppm        # Notification module interface (standalone)
+│   └── notification.cc          # Cross-player messaging implementation
 │
 ├── commands/
 │   ├── commands.cppm            # Command module interface (standalone)

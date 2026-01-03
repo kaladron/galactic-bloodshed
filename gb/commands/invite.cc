@@ -6,6 +6,8 @@ module;
 
 import gblib;
 import std.compat;
+import notification;
+import session;
 
 module commands;
 
@@ -52,18 +54,18 @@ void invite(const command_t& argv, GameObj& g) {
     setbit(block.invite, n);
     buf = std::format("{} [{}] has invited you to join {}\n", race->name,
                       g.player(), block.name);
-    warn_race(g.entity_manager, n, buf);
+    warn_race(get_session_registry(g), g.entity_manager, n, buf);
     buf = std::format("{} [{}] has been invited to join {} [{}]\n", alien->name,
                       n, block.name, g.player());
-    warn_race(g.entity_manager, g.player(), buf);
+    warn_race(get_session_registry(g), g.entity_manager, g.player(), buf);
   } else {
     clrbit(block.invite, n);
     buf = std::format("You have been blackballed from {} [{}]\n", block.name,
                       g.player());
-    warn_race(g.entity_manager, n, buf);
+    warn_race(get_session_registry(g), g.entity_manager, n, buf);
     buf = std::format("{} [{}] has been blackballed from {} [{}]\n",
                       alien->name, n, block.name, g.player());
-    warn_race(g.entity_manager, g.player(), buf);
+    warn_race(get_session_registry(g), g.entity_manager, g.player(), buf);
   }
   post(g.entity_manager, buf, NewsType::DECLARATION);
 }

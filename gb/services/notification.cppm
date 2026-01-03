@@ -9,8 +9,19 @@
 export module notification;
 
 import session; // SessionRegistry is in standalone session module
-import gblib;   // For types, EntityManager
+import gblib;   // For types, EntityManager, GameObj
 import std;
+
+/// Helper to get SessionRegistry from GameObj
+/// GameObj stores it as void* to avoid circular dependency, this casts it
+/// safely
+export inline SessionRegistry& get_session_registry(GameObj& g) {
+  // Lazy init for tests
+  if (g.session_registry_ptr == nullptr) {
+    g.session_registry_ptr = &get_default_session_registry();
+  }
+  return *static_cast<SessionRegistry*>(g.session_registry_ptr);
+}
 
 // Note: EntityManager is already available via gblib import
 

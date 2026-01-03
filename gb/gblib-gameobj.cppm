@@ -15,19 +15,26 @@ public:
   std::stringstream out;          ///< Output stream (temporary - Step 4A)
   const Race* race = nullptr;     ///< Pointer to current player's race (valid
                                   ///< during command execution)
-  void* session_registry = nullptr;  ///< For notifications (null in tests) -
-                                     ///< actually SessionRegistry*
+
+  // Opaque SessionRegistry pointer (actual type hidden to avoid circular
+  // dependency) Access via get_session_registry(g) from notification module
+  void* session_registry_ptr = nullptr;
 
   // Public utility fields (direct access retained for legacy code patterns)
   double lastx[2] = {0.0, 0.0};
   double lasty[2] = {0.0, 0.0};
-  double zoom[2] = {1.0, 0.5};  ///< last coords for zoom
+  double zoom[2] = {0.5, 0.5};  ///< last coords for zoom
 
   // Constructor for new Server-based architecture
+  // Takes void* to avoid circular dependency (session imports gblib)
+  explicit GameObj(EntityManager& em, void* registry)
+      : entity_manager(em), session_registry_ptr(registry) {}
+
+  // Constructor for tests (lazy-inits to default registry on first use)
   explicit GameObj(EntityManager& em) : entity_manager(em) {}
 
-  // Legacy constructor maintained for compatibility
-  GameObj(EntityManager& em, std::ostream& /* unused */) : entity_manager(em) {}
+  // Legacy constructor maintained for compatibility during migration
+  GameObj(EntityManager& em, std::ostream& /* unused */) : GameObj(em) {}
 
   GameObj(const GameObj&) = delete;
   GameObj& operator=(const GameObj&) = delete;

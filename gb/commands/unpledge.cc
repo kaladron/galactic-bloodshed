@@ -6,6 +6,7 @@ module;
 
 import gblib;
 import std;
+import notification;
 
 #include "gb/GB_server.h"
 
@@ -47,10 +48,11 @@ void unpledge(const command_t& argv, GameObj& g) {
   clrbit(block.pledge, Playernum);
   std::string quit_notification = std::format(
       "{} [{}] has quit {} [{}].\n", race->name, Playernum, block.name, n);
-  warn_race(g.entity_manager, n, quit_notification);
+  warn_race(get_session_registry(g), g.entity_manager, n, quit_notification);
   std::string player_notification =
       std::format("You have quit {}\n", block.name);
-  warn_race(g.entity_manager, Playernum, player_notification);
+  warn_race(get_session_registry(g), g.entity_manager, Playernum,
+            player_notification);
 
   switch (int_rand(1, 20)) {
     case 1: {

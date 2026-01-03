@@ -44,6 +44,31 @@ public:
   bool notify_player(player_t race, governor_t gov, const std::string& message);
 };
 
+/// Null implementation of SessionRegistry for tests (does nothing)
+export class NullSessionRegistry : public SessionRegistry {
+public:
+  void for_each_session(std::function<void(Session&)>) override {
+    // No sessions in test mode
+  }
+
+  bool update_in_progress() const override {
+    return false;  // Never in update mode during tests
+  }
+
+  NullSessionRegistry() = default;  // Public constructor for singleton
+};
+
+/// Get singleton NullSessionRegistry instance for tests
+export inline SessionRegistry& get_null_session_registry() {
+  static NullSessionRegistry null_registry;
+  return null_registry;
+}
+
+/// Get default SessionRegistry for GameObj (used when not explicitly set)
+export inline SessionRegistry& get_default_session_registry() {
+  return get_null_session_registry();
+}
+
 /// Represents a single client connection
 export class Session : public std::enable_shared_from_this<Session> {
 public:

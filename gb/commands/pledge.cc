@@ -8,6 +8,8 @@ module;
 
 import gblib;
 import std.compat;
+import notification;
+import session;
 
 #include "gb/GB_server.h"
 

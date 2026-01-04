@@ -54,3 +54,13 @@ export void warn_player(SessionRegistry& registry, player_t who, governor_t gov,
 /// Warn all governors of a race
 export void warn_race(SessionRegistry& registry, EntityManager& em,
                       player_t who, const std::string& message);
+
+/// Send message to all players who inhabit a star system
+export void notify_star(SessionRegistry& registry, EntityManager& em,
+                        player_t sender, governor_t sender_gov, starnum_t star,
+                        const std::string& message);
+
+/// Send message to all governors of all players who inhabit a star system
+export void warn_star(SessionRegistry& registry, EntityManager& em,
+                      player_t sender, starnum_t star,
+                      const std::string& message);

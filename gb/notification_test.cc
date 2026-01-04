@@ -335,6 +335,125 @@ void test_warn_race_all_governors() {
   std::println("  ✓ warn_race all governors tests passed (partial)");
 }
 
+void test_notify_star() {
+  std::println("Testing notify_star functionality...");
+
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  // Create races
+  Race race1 = create_race(1);
+  Race race2 = create_race(2);
+  Race race3 = create_race(3);
+
+  RaceRepository races(store);
+  races.save(race1);
+  races.save(race2);
+  races.save(race3);
+
+  // Create star with inhabitants 1 and 2
+  star_struct star = create_star(5);
+  setbit(star.inhabited, 1u);
+  setbit(star.inhabited, 2u);
+
+  StarRepository stars(store);
+  stars.save(star);
+
+  MockRegistry registry(false);  // Not in update mode
+  auto session1_0 = std::make_shared<MockSession>(1, 0, 5, true, false);
+  auto session1_1 = std::make_shared<MockSession>(1, 1, 5, true, false);
+  auto session2_0 = std::make_shared<MockSession>(2, 0, 5, true, false);
+  auto session3_0 = std::make_shared<MockSession>(3, 0, 5, true, false);
+
+  registry.add_session(session1_0);
+  registry.add_session(session1_1);
+  registry.add_session(session2_0);
+  registry.add_session(session3_0);
+
+  // Notify star from player 1, governor 0
+  // Just verify it doesn't crash - telegram verification not yet implemented
+  notify_star(registry, em, 1, 0, 5, "Test message\n");
+
+  std::println("  ✓ notify_star executes without crashing");
+}
+
+void test_warn_star() {
+  std::println("Testing warn_star functionality...");
+
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  // Create races
+  Race race1 = create_race(1);
+  Race race2 = create_race(2);
+
+  RaceRepository races(store);
+  races.save(race1);
+  races.save(race2);
+
+  // Create star with inhabitants 1 and 2
+  star_struct star = create_star(7);
+  setbit(star.inhabited, 1u);
+  setbit(star.inhabited, 2u);
+  star.governor[0] = 0;  // Player 1 default governor
+  star.governor[1] = 0;  // Player 2 default governor
+
+  StarRepository stars(store);
+  stars.save(star);
+
+  MockRegistry registry(false);
+
+  // warn_star should notify all race governors at the star
+  // Just verify it doesn't crash
+  warn_star(registry, em, 1, 7, "Warning message\n");
+
+  std::println("  ✓ warn_star executes without crashing");
+}
+
+void test_telegram_star() {
+  std::println("Testing telegram_star helper function...");
+
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  // Create races with multiple governors
+  Race race1 = create_race(1);
+  race1.governor[0].active = true;
+  race1.governor[1].active = true;
+  race1.governor[2].active = false;  // Inactive
+
+  Race race2 = create_race(2);
+  race2.governor[0].active = true;
+  race2.governor[1].active = true;
+
+  RaceRepository races(store);
+  races.save(race1);
+  races.save(race2);
+
+  // Create star with both races
+  star_struct star = create_star(10);
+  setbit(star.inhabited, 1u);
+  setbit(star.inhabited, 2u);
+
+  StarRepository stars(store);
+  stars.save(star);
+
+  // Send telegram from player 1, governor 0
+  // Just verify it doesn't crash - telegram files written to disk, not testable
+  // yet
+  telegram_star(em, 10, 1, 0, "Telegram from P1G0\n");
+
+  std::println("  ✓ telegram_star executes without crashing");
+  std::println(
+      "  (Note: Telegram delivery verification pending SQLite migration)");
+}
+
 int main() {
   std::println("Running notification service comprehensive tests...\n");
 
@@ -344,6 +463,9 @@ int main() {
   test_d_broadcast_gag_filtering();
   test_warn_player_update_suppression();
   test_warn_race_all_governors();
+  test_notify_star();
+  test_warn_star();
+  test_telegram_star();
 
   std::println("\n✅ All notification service tests passed!");
   return 0;

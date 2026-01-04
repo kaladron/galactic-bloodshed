@@ -758,8 +758,8 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
       std::format("{} detonated at {}\n", ship_to_string(ship),
                   prin_ship_orbits(entity_manager, ship));
   post(entity_manager, postmsg, NewsType::COMBAT);
-  notify_star(entity_manager, ship.owner(), ship.governor(), ship.storbits(),
-              postmsg);
+  telegram_star(entity_manager, ship.storbits(), ship.owner(), ship.governor(),
+                postmsg);
   ShipList shiplist(entity_manager, sh);
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;
@@ -771,7 +771,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
       if (s2sresult) {
         auto const& [damage, short_buf, long_buf] = *s2sresult;
         post(entity_manager, short_buf, NewsType::COMBAT);
-        warn(s.owner(), s.governor(), long_buf);
+        push_telegram(s.owner(), s.governor(), long_buf);
       }
     }
   }
@@ -815,11 +815,11 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     for (auto race_handle : RaceList(entity_manager)) {
       const auto& race = race_handle.read();
       if (result.nuked[race.Playernum - 1]) {
-        warn(race.Playernum, star->governor(race.Playernum - 1),
-             telegram.str());
+        push_telegram(race.Playernum, star->governor(race.Playernum - 1),
+                      telegram.str());
       }
     }
-    notify(ship.owner(), ship.governor(), telegram.str());
+    push_telegram(ship.owner(), ship.governor(), telegram.str());
   }
 
   entity_manager.kill_ship(ship.owner(), ship);

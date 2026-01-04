@@ -10,66 +10,19 @@ module gblib;
 // - d_broadcast, d_announce, d_think, d_shout (free functions with game logic)
 // - warn_player, warn_race (free functions with game logic)
 // - notify_race, notify_player (methods on SessionRegistry interface)
+// - notify_star, warn_star (free functions with game logic)
 
-// Compatibility wrappers for turn processing code that doesn't have
-// SessionRegistry These just push telegrams since turn processing doesn't have
-// real-time notifications
-void warn(player_t who, governor_t governor, const std::string& message) {
-  push_telegram(who, governor, message);
-}
-
-bool notify(player_t race, governor_t gov, const std::string& message) {
-  // Turn processing can't do real-time notifications, so use telegram
-  push_telegram(race, gov, message);
-  return false;  // Indicates not delivered in real-time
-}
-
-void warn_race(EntityManager& entity_manager, player_t who,
-               const std::string& message) {
-  const auto* race = entity_manager.peek_race(who);
-  if (!race) return;
-
-  // Send telegrams to all active governors
-  for (int i = 0; i <= MAXGOVERNORS; i++) {
-    if (race->governor[i].active) {
-      push_telegram(who, i, message);
-    }
-  }
-}
-
-void warn_star(EntityManager& entity_manager, player_t a, starnum_t star,
-               const std::string& message) {
-  const auto* star_ptr = entity_manager.peek_star(star);
+void telegram_star(EntityManager& em, starnum_t star, player_t sender,
+                   governor_t sender_gov, const std::string& message) {
+  const auto* star_ptr = em.peek_star(star);
   if (!star_ptr) return;
 
-  // Send telegrams to all players in the star system
-  for (player_t p = 1; p <= entity_manager.num_races(); p++) {
-    if (p != a && isset(star_ptr->inhabited(), p)) {
-      // Send to all active governors
-      const auto* race = entity_manager.peek_race(p);
+  for (player_t p = 1; p <= em.num_races(); p++) {
+    if ((p != sender || sender_gov != 0) && isset(star_ptr->inhabited(), p)) {
+      const auto* race = em.peek_race(p);
       if (race) {
         for (int i = 0; i <= MAXGOVERNORS; i++) {
-          if (race->governor[i].active) {
-            push_telegram(p, i, message);
-          }
-        }
-      }
-    }
-  }
-}
-
-void notify_star(EntityManager& entity_manager, player_t a, governor_t g,
-                 starnum_t star, const std::string& message) {
-  const auto* star_ptr = entity_manager.peek_star(star);
-  if (!star_ptr) return;
-
-  // Send telegrams to all players in the star system (except sender)
-  for (player_t p = 1; p <= entity_manager.num_races(); p++) {
-    if ((p != a || g != 0) && isset(star_ptr->inhabited(), p)) {
-      const auto* race = entity_manager.peek_race(p);
-      if (race) {
-        for (int i = 0; i <= MAXGOVERNORS; i++) {
-          if (race->governor[i].active && !(p == a && i == g)) {
+          if (race->governor[i].active && !(p == sender && i == sender_gov)) {
             push_telegram(p, i, message);
           }
         }

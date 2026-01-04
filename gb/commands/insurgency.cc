@@ -2,7 +2,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import scnlib;
 import std;
 
@@ -111,7 +113,7 @@ void insurgency(const command_t& argv, GameObj& g) {
         "A revolt on /{}/{} instigated by {} [{}] costs you {} sector{}\n",
         star.get_name(), star.get_planet_name(g.pnum()), g.race->name,
         Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
-    warn(who, star.governor(who - 1), long_msg);
+    warn_player(get_session_registry(g), who, star.governor(who - 1), long_msg);
     p.info(Playernum - 1).tax = p.info(who - 1).tax;
     /* you inherit their tax rate (insurgency wars he he ) */
     post(g.entity_manager,
@@ -126,7 +128,7 @@ void insurgency(const command_t& argv, GameObj& g) {
     long_msg += std::format("A revolt on /{}/{} instigated by {} [{}] fails\n",
                             star.get_name(), star.get_planet_name(g.pnum()),
                             g.race->name, Playernum);
-    warn(who, star.governor(who - 1), long_msg);
+    warn_player(get_session_registry(g), who, star.governor(who - 1), long_msg);
     post(g.entity_manager,
          std::format("/{}/{}: Failed insurgency by {} [{}] against {} [{}]\n",
                      star.get_name(), star.get_planet_name(g.pnum()),

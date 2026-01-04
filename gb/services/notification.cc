@@ -93,3 +93,57 @@ void warn_race(SessionRegistry& registry, EntityManager& em, player_t who,
     }
   }
 }
+
+void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
+                 governor_t sender_gov, starnum_t star,
+                 const std::string& message) {
+  const auto* star_ptr = em.peek_star(star);
+  if (!star_ptr) return;
+
+  // During updates, use telegram fallback
+  if (registry.update_in_progress()) {
+    for (player_t p = 1; p <= em.num_races(); p++) {
+      if ((p != sender || sender_gov != 0) && isset(star_ptr->inhabited(), p)) {
+        const auto* race = em.peek_race(p);
+        if (race) {
+          for (int i = 0; i <= MAXGOVERNORS; i++) {
+            if (race->governor[i].active && !(p == sender && i == sender_gov)) {
+              push_telegram(p, i, message);
+            }
+          }
+        }
+      }
+    }
+    return;
+  }
+
+  // Try real-time delivery
+  for (player_t p = 1; p <= em.num_races(); p++) {
+    if ((p != sender || sender_gov != 0) && isset(star_ptr->inhabited(), p)) {
+      const auto* race = em.peek_race(p);
+      if (race) {
+        for (int i = 0; i <= MAXGOVERNORS; i++) {
+          if (race->governor[i].active && !(p == sender && i == sender_gov)) {
+            // Try real-time, fall back to telegram if not delivered
+            if (!registry.notify_player(p, i, message)) {
+              push_telegram(p, i, message);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void warn_star(SessionRegistry& registry, EntityManager& em, player_t sender,
+               starnum_t star, const std::string& message) {
+  const auto* star_ptr = em.peek_star(star);
+  if (!star_ptr) return;
+
+  // Send to all players in the star system (except sender)
+  for (player_t p = 1; p <= em.num_races(); p++) {
+    if (p != sender && isset(star_ptr->inhabited(), p)) {
+      warn_race(registry, em, p, message);
+    }
+  }
+}

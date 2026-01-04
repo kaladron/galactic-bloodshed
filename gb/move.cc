@@ -104,13 +104,13 @@ void mech_defend(const GameObj& g, int* people, PopulationType type,
           char long_buf[1024], short_buf[256];
           mech_attack_people(g.entity_manager, ship, &civ, &mil, *alien_ptr,
                              *g.race, s2, true, long_buf, short_buf);
-          notify(g.player(), g.governor(), long_buf);
-          warn(alien_ptr->Playernum, oldgov, long_buf);
+          push_telegram(g.player(), g.governor(), long_buf);
+          push_telegram(alien_ptr->Playernum, oldgov, long_buf);
           if (civ + mil) {
             people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
                                *alien_ptr, s2, x2, y2, long_buf, short_buf);
-            notify(g.player(), g.governor(), long_buf);
-            warn(alien_ptr->Playernum, oldgov, long_buf);
+            push_telegram(g.player(), g.governor(), long_buf);
+            push_telegram(alien_ptr->Playernum, oldgov, long_buf);
           }
         }
       }

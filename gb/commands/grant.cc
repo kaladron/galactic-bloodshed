@@ -6,7 +6,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std.compat;
 
 module commands;
@@ -49,9 +51,10 @@ void grant(const command_t& argv, GameObj& g) {
       return;
     }
     star_handle->governor(Playernum - 1) = gov;
-    warn(Playernum, gov,
-         std::format("\"{}\" has granted you control of the /{} star system.\n",
-                     race.governor[Governor].name, star_handle->get_name()));
+    warn_player(
+        get_session_registry(g), Playernum, gov,
+        std::format("\"{}\" has granted you control of the /{} star system.\n",
+                    race.governor[Governor].name, star_handle->get_name()));
   } else if (argv[2] == "ship") {
     ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
     for (auto ship_handle : ships) {
@@ -61,10 +64,11 @@ void grant(const command_t& argv, GameObj& g) {
       if (!authorized(Governor, ship)) continue;
 
       ship.governor() = gov;
-      warn(Playernum, gov,
-           std::format("\"{}\" granted you {} at {}\n",
-                       race.governor[Governor].name, ship_to_string(ship),
-                       prin_ship_orbits(g.entity_manager, ship)));
+      warn_player(get_session_registry(g), Playernum, gov,
+                  std::format("\"{}\" granted you {} at {}\n",
+                              race.governor[Governor].name,
+                              ship_to_string(ship),
+                              prin_ship_orbits(g.entity_manager, ship)));
       g.out << std::format("{} granted to \"{}\"\n", ship_to_string(ship),
                            race.governor[gov].name);
     }
@@ -90,13 +94,13 @@ void grant(const command_t& argv, GameObj& g) {
       g.out << std::format("{} money deducted from \"{}\".\n", -amount,
                            race.governor[gov].name);
     if (amount >= 0)
-      warn(Playernum, gov,
-           std::format("\"{}\" granted you {} money.\n",
-                       race.governor[Governor].name, amount));
+      warn_player(get_session_registry(g), Playernum, gov,
+                  std::format("\"{}\" granted you {} money.\n",
+                              race.governor[Governor].name, amount));
     else
-      warn(Playernum, gov,
-           std::format("\"{}\" docked you {} money.\n",
-                       race.governor[Governor].name, -amount));
+      warn_player(get_session_registry(g), Playernum, gov,
+                  std::format("\"{}\" docked you {} money.\n",
+                              race.governor[Governor].name, -amount));
     race.governor[Governor].money -= amount;
     race.governor[gov].money += amount;
     return;

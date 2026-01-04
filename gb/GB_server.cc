@@ -705,8 +705,7 @@ static void help_user(GameObj& g) {
           *p = '\0';
           break;
         }
-      notify(g.player(), g.governor(), line_buf);
-      notify(g.player(), g.governor(), "\n");
+      g.out << line_buf << "\n";
     }
     fclose(f);
   }
@@ -1194,12 +1193,12 @@ static void help(const command_t& argv, GameObj& g) {
             break;
           }
         strcat(help_buf, "\n");
-        notify(g.player(), g.governor(), help_buf);
+        g.out << help_buf;
       }
       fclose(f);
-      notify(g.player(), g.governor(), "----\nFinished.\n");
+      g.out << "----\nFinished.\n";
     } else
-      notify(g.player(), g.governor(), "Help on that subject unavailable.\n");
+      g.out << "Help on that subject unavailable.\n";
   }
 }
 

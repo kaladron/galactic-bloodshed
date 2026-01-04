@@ -169,15 +169,16 @@ void send_message(const command_t& argv, GameObj& g) {
     const auto star_msg = std::format(
         "{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
         race.governor[Governor].name, Playernum, Governor, star_ref.get_name());
-    notify_star(g.entity_manager, Playernum, Governor, star, star_msg);
-    warn_star(g.entity_manager, Playernum, star, msg);
+    notify_star(get_session_registry(g), g.entity_manager, Playernum, Governor,
+                star, star_msg);
+    warn_star(get_session_registry(g), g.entity_manager, Playernum, star, msg);
   } else {
     int gov;
     if (who == Playernum) APcount = 0;
     if (std::isdigit(*argv[2].c_str()) && (gov = std::stoi(argv[2])) >= 0 &&
         gov <= MAXGOVERNORS) {
       push_telegram(who, gov, msg);
-      notify(who, gov, notice);
+      get_session_registry(g).notify_player(who, gov, notice);
     } else {
       push_telegram_race(g.entity_manager, who, msg);
       get_session_registry(g).notify_race(who, notice);

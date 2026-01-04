@@ -2,7 +2,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std;
 
 module commands;
@@ -104,7 +106,7 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     telegram += std::format("{} gave your ship {} the following:\n",
                             ship_to_string(*s), ship_to_string(s2));
     telegram += tele_lines;
-    warn(s2.owner(), s2.governor(), telegram);
+    warn_player(get_session_registry(g), s2.owner(), s2.governor(), telegram);
   }
 }
 
@@ -181,7 +183,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
                 &dstrength, &casualties, &casualties2, &casualties3);
   sect.set_popn(temp_popn);
   sect.set_troops(temp_troops);
-  notify(
+  get_session_registry(g).notify_player(
       Playernum, Governor,
       std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength, dstrength));
 
@@ -191,8 +193,9 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
     if (race.absorb) {
       absorbed = int_rand(0, old2popn + old3popn);
       g.out << std::format("{} alien bodies absorbed.\n", absorbed);
-      notify(oldowner, oldgov,
-             std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
+      get_session_registry(g).notify_player(
+          oldowner, oldgov,
+          std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
     }
     if (what == PopulationType::CIV)
       sect.set_popn(people + absorbed);
@@ -206,8 +209,9 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
     absorbed = 0;
     if (alien.absorb) {
       absorbed = int_rand(0, oldpopn - people);
-      notify(oldowner, oldgov,
-             std::format("{} alien bodies absorbed.\n", absorbed));
+      get_session_registry(g).notify_player(
+          oldowner, oldgov,
+          std::format("{} alien bodies absorbed.\n", absorbed));
       g.out << std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed);
       sect.set_popn(sect.get_popn() + absorbed);
     }
@@ -259,7 +263,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
                           casualties2, casualties3, casualties,
                           what == PopulationType::CIV ? "civ" : "mil");
-  warn(oldowner, oldgov, telegram);
+  warn_player(get_session_registry(g), oldowner, oldgov, telegram);
   g.out << std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
                        casualties, what == PopulationType::CIV ? "civ" : "mil",
                        casualties2, casualties3);
@@ -299,7 +303,7 @@ void load(const command_t& argv, GameObj& g) {
       continue;
     }
     if (!s.active()) {
-      notify(
+      get_session_registry(g).notify_player(
           Playernum, Governor,
           std::format("{} is irradiated and inactive.\n", ship_to_string(s)));
 
@@ -673,11 +677,12 @@ void load(const command_t& argv, GameObj& g) {
         auto s2_owner = s2_ptr->owner();
         auto s2_gov = s2_ptr->governor();
         auto s2_name = ship_to_string(*s2_ptr);
-        warn(s2_owner, s2_gov,
-             std::format(
-                 "Audio-vibatory-physio-molecular transport device #{} gave "
-                 "your ship {} the following:\n{}",
-                 ship_to_string(s), s2_name, tele_lines));
+        warn_player(
+            get_session_registry(g), s2_owner, s2_gov,
+            std::format(
+                "Audio-vibatory-physio-molecular transport device #{} gave "
+                "your ship {} the following:\n{}",
+                ship_to_string(s), s2_name, tele_lines));
       }
     }
 

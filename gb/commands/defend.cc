@@ -2,7 +2,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import scnlib;
 import std;
 
@@ -152,8 +154,9 @@ void defend(const command_t& argv, GameObj& g) {
 
   p.info(Playernum - 1).destruct -= strength;
   if (!to->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
-  notify_star(g.entity_manager, Playernum, Governor, to->storbits(), short_buf);
-  warn(to->owner(), to->governor(), long_buf);
+  notify_star(get_session_registry(g), g.entity_manager, Playernum, Governor,
+              to->storbits(), short_buf);
+  warn_player(get_session_registry(g), to->owner(), to->governor(), long_buf);
   g.out << long_buf;
 
   /* defending ship retaliates */
@@ -176,10 +179,11 @@ void defend(const command_t& argv, GameObj& g) {
         use_destruct(*to, strength);
 
       post(g.entity_manager, short_buf, NewsType::COMBAT);
-      notify_star(g.entity_manager, Playernum, Governor, to->storbits(),
-                  short_buf);
+      notify_star(get_session_registry(g), g.entity_manager, Playernum,
+                  Governor, to->storbits(), short_buf);
       g.out << long_buf;
-      warn(to->owner(), to->governor(), long_buf);
+      warn_player(get_session_registry(g), to->owner(), to->governor(),
+                  long_buf);
     }
   }
 
@@ -208,10 +212,11 @@ void defend(const command_t& argv, GameObj& g) {
           else
             use_destruct(ship_mut, strength);
           post(g.entity_manager, short_buf, NewsType::COMBAT);
-          notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
-                      short_buf);
+          notify_star(get_session_registry(g), g.entity_manager, Playernum,
+                      Governor, ship->storbits(), short_buf);
           g.out << long_buf;
-          warn(ship->owner(), ship->governor(), long_buf);
+          warn_player(get_session_registry(g), ship->owner(), ship->governor(),
+                      long_buf);
         }
       }
     }

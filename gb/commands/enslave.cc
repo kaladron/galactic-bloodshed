@@ -7,6 +7,8 @@
 module;
 
 import gblib;
+import session;
+import notification;
 import std;
 
 module commands;
@@ -136,6 +138,7 @@ void enslave(const command_t& argv, GameObj& g) {
 
   for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info(i - 1).numsectsowned && i != Playernum)
-      warn(i, star.governor(i - 1), telegram.str());
+      warn_player(get_session_registry(g), i, star.governor(i - 1),
+                  telegram.str());
 }
 }  // namespace GB::commands

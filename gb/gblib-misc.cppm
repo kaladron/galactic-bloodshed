@@ -17,20 +17,16 @@ import std.compat;
 
 // Note: Notification functions moved to gb/services/notification.{cppm,cc}
 // - d_broadcast, d_announce, d_think, d_shout
-// - warn_player, warn_race
+// - warn_player, warn_race, notify_star, warn_star
 // notify_race and notify_player are now methods on SessionRegistry
-
-// Compatibility wrappers for turn processing code (delegates to telegrams)
-export void warn(player_t, governor_t, const std::string&);
-export bool notify(player_t, governor_t, const std::string&);
-export void warn_race(EntityManager&, player_t, const std::string&);
-export void warn_star(EntityManager&, player_t, starnum_t, const std::string&);
-export void notify_star(EntityManager&, player_t, governor_t, starnum_t,
-                        const std::string&);
 
 export void adjust_morale(Race&, Race&, int);
 
 export void add_to_queue(std::deque<std::string>&, const std::string&);
+
+// Helper for turn processing: send telegram to all inhabitants of a star
+export void telegram_star(EntityManager&, starnum_t, player_t sender,
+                          governor_t sender_gov, const std::string& message);
 
 // Diagnostic logging for invariant violations
 export constexpr bool kDebugInvariants = true;

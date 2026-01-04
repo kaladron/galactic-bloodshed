@@ -6,7 +6,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std.compat;
 
 #include <strings.h>
@@ -378,7 +380,7 @@ void dock(const command_t& argv, GameObj& g) {
             std::format("(Your boobytrap gave them {}% damage.)\n", booby);
         g.out << std::format("Their boobytrap gave you {}% damage!)\n", booby);
       }
-      notify(
+      get_session_registry(g).notify_player(
           Playernum, Governor,
           std::format("Damage taken:  You: {}% (now {}%)\n", dam, s.damage()));
       if (!s.alive()) {
@@ -425,7 +427,7 @@ void dock(const command_t& argv, GameObj& g) {
           "Crew casualties: Yours: {} {}    Theirs: {} mil/{} civ\n",
           casualties, what == PopulationType::MIL ? "mil" : "civ", casualties3,
           casualties2);
-      warn(old2owner, old2gov, telegram);
+      warn_player(get_session_registry(g), old2owner, old2gov, telegram);
       auto news = std::format(
           "{} {} {} at {}.\n", ship_to_string(s),
           s2.alive() ? (s2.owner() == Playernum ? "CAPTURED" : "assaulted")
@@ -433,7 +435,8 @@ void dock(const command_t& argv, GameObj& g) {
           ship_to_string(s2), prin_ship_orbits(g.entity_manager, s));
       if (s2.owner() == Playernum || !s2.alive())
         post(g.entity_manager, news, NewsType::COMBAT);
-      notify_star(g.entity_manager, Playernum, Governor, s.storbits(), news);
+      notify_star(get_session_registry(g), g.entity_manager, Playernum,
+                  Governor, s.storbits(), news);
     } else {
       g.out << std::format("{} docked with {}.\n", ship_to_string(s),
                            ship_to_string(s2));

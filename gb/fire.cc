@@ -51,10 +51,10 @@ void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
         dispshiploc(entity_manager, ship), ship_to_string(ship));
     entity_manager.kill_ship(ship.owner(), ship);
     *strength = 0;
-    warn(ship.owner(), ship.governor(), message);
+    push_telegram(ship.owner(), ship.governor(), message);
     post(entity_manager, message, NewsType::COMBAT);
-    notify_star(entity_manager, ship.owner(), ship.governor(), ship.storbits(),
-                message);
+    telegram_star(entity_manager, ship.storbits(), ship.owner(),
+                  ship.governor(), message);
   } else if (int_rand(0, *strength) >
              (int)((1.0 - .01 * ship.damage()) * ship.tech() / 4.0)) {
     std::string message =
@@ -63,7 +63,7 @@ void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
     ship.fire_laser() = 0;
     ship.mounted() = 0;
     *strength = 0;
-    warn(ship.owner(), ship.governor(), message);
+    push_telegram(ship.owner(), ship.governor(), message);
   }
 }
 

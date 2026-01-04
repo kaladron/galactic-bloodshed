@@ -6,7 +6,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std.compat;
 
 module commands;
@@ -24,9 +26,10 @@ void dissolve(const command_t& argv, GameObj& g) {
     g.out << "Only the leader may dissolve the race. The "
              "leader has been notified of your "
              "attempt!!!\n";
-    notify(Playernum, 0,
-           std::format("Governor #{} has attempted to dissolve this race.\n",
-                       Governor));
+    get_session_registry(g).notify_player(
+        Playernum, 0,
+        std::format("Governor #{} has attempted to dissolve this race.\n",
+                    Governor));
     return;
   }
 

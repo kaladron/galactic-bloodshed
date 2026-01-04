@@ -296,6 +296,7 @@ target_sources(
           commands/distance.cc
           commands/dock.cc
           commands/dump.cc
+          commands/emulate.cc
           commands/enslave.cc
           commands/examine.cc
           commands/explore.cc
@@ -351,6 +352,7 @@ target_sources(
           commands/victory.cc
           commands/vote.cc
           commands/walk.cc
+          commands/who.cc
           commands/whois.cc
           commands/zoom.cc)
 target_link_libraries(commands PRIVATE gblib session notification SQLite::SQLite3 glaze::glaze
@@ -380,6 +382,14 @@ add_test(NAME GB_server_test COMMAND server_test)
 add_executable(notification_test notification_test.cc)
 target_link_libraries(notification_test PRIVATE gblib session notification dallib)
 add_test(NAME GB_notification_test COMMAND notification_test)
+
+add_executable(who_test who_test.cc)
+target_link_libraries(who_test PRIVATE gblib dallib)
+add_test(NAME GB_who_test COMMAND who_test)
+
+add_executable(emulate_test emulate_test.cc)
+target_link_libraries(emulate_test PRIVATE gblib dallib)
+add_test(NAME GB_emulate_test COMMAND emulate_test)
 
 add_executable(shlmisc_test shlmisc_test.cc)
 target_link_libraries(shlmisc_test PRIVATE gblib SQLite::SQLite3)

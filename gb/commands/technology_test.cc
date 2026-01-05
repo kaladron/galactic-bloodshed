@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -15,16 +16,14 @@ void test_technology_database_persistence() {
   std::println("Test: technology command database persistence");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a race
   Race race{};
   race.Playernum = 1;
   race.Guest = 0;  // Not a guest
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -49,13 +48,12 @@ void test_technology_database_persistence() {
   planets.save(planet);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
-  g.race = em.peek_race(1);  // Set race pointer like production does
 
   // TEST 1: Display current tech investment (no argument)
   std::println("  Testing: Display current tech investment");
@@ -169,7 +167,7 @@ void test_technology_database_persistence() {
   std::println("  Testing: Reject unauthorized governor");
   {
     // Change star governor to 1 (not matching g.governor() = 0)
-    auto star_handle = em.get_star(1);
+    auto star_handle = ctx.em.get_star(1);
     auto& star_mod = *star_handle;
     star_mod.governor(0) = 1;  // Different governor
 

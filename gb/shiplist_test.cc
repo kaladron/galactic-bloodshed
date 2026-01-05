@@ -1,22 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
+import test;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager for accessing entities
-  EntityManager em(db);
+  // Create test context
+  TestContext ctx;
 
   // Create JsonStore for repository operations
-  JsonStore store(db);
+  JsonStore store(ctx.db);
 
   // Create a test race
   Race race{};
@@ -63,7 +59,7 @@ int main() {
 
   // Test 1: Nested iteration (follows nextship linked list)
   {
-    ShipList list(em, 1);  // Start at ship 1, nested iteration
+    ShipList list(ctx.em, 1);  // Start at ship 1, nested iteration
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -113,7 +109,7 @@ int main() {
     ships_repo.save(inner2);
 
     // Iterate over ships contained in cargo (ship 5's nextship chain)
-    ShipList list(em, cargo.ships());
+    ShipList list(ctx.em, cargo.ships());
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -130,15 +126,16 @@ int main() {
   }
 
   // Create GameObj for scope-based tests
-  GameObj g(em);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
   g.set_player(1);
   g.set_snum(0);
   g.set_pnum(0);
-  g.race = em.peek_race(1);
+  g.race = ctx.em.peek_race(1);
 
   // Test 2: Scope iteration at universe level
   {
-    ShipList list(em, g, ShipList::IterationType::Scope);
+    ShipList list(ctx.em, g, ShipList::IterationType::Scope);
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -175,13 +172,14 @@ int main() {
     ships_repo.save(star_ship1);
     ships_repo.save(star_ship2);
 
-    GameObj g_star(em);
+    auto* registry = get_test_session_registry();
+    GameObj g_star(ctx.em, registry);
     g_star.set_player(1);
     g_star.set_level(ScopeLevel::LEVEL_STAR);
     g_star.set_snum(5);
-    g_star.race = em.peek_race(1);
+    g_star.race = ctx.em.peek_race(1);
 
-    ShipList list(em, g_star, ShipList::IterationType::Scope);
+    ShipList list(ctx.em, g_star, ShipList::IterationType::Scope);
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -208,14 +206,15 @@ int main() {
 
     ships_repo.save(planet_ship);
 
-    GameObj g_plan(em);
+    auto* registry = get_test_session_registry();
+    GameObj g_plan(ctx.em, registry);
     g_plan.set_player(1);
     g_plan.set_level(ScopeLevel::LEVEL_PLAN);
     g_plan.set_snum(10);
     g_plan.set_pnum(3);
-    g_plan.race = em.peek_race(1);
+    g_plan.race = ctx.em.peek_race(1);
 
-    ShipList list(em, g_plan, ShipList::IterationType::Scope);
+    ShipList list(ctx.em, g_plan, ShipList::IterationType::Scope);
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -231,7 +230,7 @@ int main() {
 
   // Test 3: Modify ship via handle
   {
-    ShipList list(em, 1, ShipList::IterationType::Nested);
+    ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
     auto it = list.begin();
     ShipHandle handle = *it;
     Ship& ship = *handle;
@@ -242,14 +241,14 @@ int main() {
 
   // Verify modification persisted
   {
-    const auto* ship = em.peek_ship(1);
+    const auto* ship = ctx.em.peek_ship(1);
     assert(ship->fuel() >= 100.0);
     std::println("✓ Test 3 passed: Ship modification persisted via RAII");
   }
 
   // Test 3b: Multiple ships modified in sequence
   {
-    ShipList list(em, 1, ShipList::IterationType::Nested);
+    ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
     for (auto handle : list) {
       Ship& ship = *handle;
       ship.fuel() += 50.0;
@@ -260,9 +259,9 @@ int main() {
 
   // Verify all modifications persisted
   {
-    const auto* ship1 = em.peek_ship(1);
-    const auto* ship2 = em.peek_ship(2);
-    const auto* ship3 = em.peek_ship(3);
+    const auto* ship1 = ctx.em.peek_ship(1);
+    const auto* ship2 = ctx.em.peek_ship(2);
+    const auto* ship3 = ctx.em.peek_ship(3);
     assert(ship1->fuel() >= 150.0);  // 100 from test 3 + 50 from test 3b
     assert(ship2->fuel() >= 50.0);
     assert(ship3->fuel() >= 50.0);
@@ -274,7 +273,7 @@ int main() {
 
   // Test 3c: Read-only access via peek()
   {
-    ShipList list(em, 1, ShipList::IterationType::Nested);
+    ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
     auto it = list.begin();
     ShipHandle handle = *it;
 
@@ -358,7 +357,7 @@ int main() {
 
   // Test 4d: Filtering during iteration
   {
-    ShipList list(em, 1, ShipList::IterationType::Nested);
+    ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
     int factory_count = 0;
     int probe_count = 0;
 
@@ -379,7 +378,7 @@ int main() {
     std::println("\nTest 5: Const iteration (read-only)");
 
     // Create a const ShipList using const reference
-    const ShipList ships_const(em, 1);
+    const ShipList ships_const(ctx.em, 1);
 
     // Iterate with const iterators - should use peek_ship internally
     int count = 0;
@@ -398,25 +397,25 @@ int main() {
     // Verify ships weren't marked dirty by THIS iteration
     // (they were already modified by Test 3b, so we just check we didn't change
     // them further)
-    const auto* check1 = em.peek_ship(1);
-    const auto* check2 = em.peek_ship(2);
-    const auto* check3 = em.peek_ship(3);
+    const auto* check1 = ctx.em.peek_ship(1);
+    const auto* check2 = ctx.em.peek_ship(2);
+    const auto* check3 = ctx.em.peek_ship(3);
     double fuel1_before = check1->fuel();
     double fuel2_before = check2->fuel();
     double fuel3_before = check3->fuel();
 
     // Do another const iteration - fuel should remain unchanged
     {
-      const ShipList ships_const2(em, 1);
+      const ShipList ships_const2(ctx.em, 1);
       for (const Ship* ship : ships_const2) {
         [[maybe_unused]] auto fuel = ship->fuel();
       }
     }
 
     // Fuel should still be the same (const iteration doesn't mark dirty)
-    assert(em.peek_ship(1)->fuel() == fuel1_before);
-    assert(em.peek_ship(2)->fuel() == fuel2_before);
-    assert(em.peek_ship(3)->fuel() == fuel3_before);
+    assert(ctx.em.peek_ship(1)->fuel() == fuel1_before);
+    assert(ctx.em.peek_ship(2)->fuel() == fuel2_before);
+    assert(ctx.em.peek_ship(3)->fuel() == fuel3_before);
 
     std::println("✓ Test 5 passed: Const iteration is truly read-only");
   }
@@ -426,13 +425,13 @@ int main() {
     std::println("\nTest 5b: Const vs mutable iteration comparison");
 
     // Get current fuel values before test
-    double fuel1_initial = em.peek_ship(1)->fuel();
-    double fuel2_initial = em.peek_ship(2)->fuel();
-    double fuel3_initial = em.peek_ship(3)->fuel();
+    double fuel1_initial = ctx.em.peek_ship(1)->fuel();
+    double fuel2_initial = ctx.em.peek_ship(2)->fuel();
+    double fuel3_initial = ctx.em.peek_ship(3)->fuel();
 
     // First, use const iteration - should NOT mark dirty
     {
-      const ShipList ships_const(em, 1);
+      const ShipList ships_const(ctx.em, 1);
       for (const Ship* ship : ships_const) {
         // Just reading data
         [[maybe_unused]] auto fuel = ship->fuel();
@@ -440,13 +439,13 @@ int main() {
     }
 
     // Ships should still have same fuel (not marked dirty)
-    assert(em.peek_ship(1)->fuel() == fuel1_initial);
-    assert(em.peek_ship(2)->fuel() == fuel2_initial);
-    assert(em.peek_ship(3)->fuel() == fuel3_initial);
+    assert(ctx.em.peek_ship(1)->fuel() == fuel1_initial);
+    assert(ctx.em.peek_ship(2)->fuel() == fuel2_initial);
+    assert(ctx.em.peek_ship(3)->fuel() == fuel3_initial);
 
     // Now use mutable iteration and actually modify
     {
-      ShipList ships_mutable(em, 1);
+      ShipList ships_mutable(ctx.em, 1);
       for (auto ship_handle : ships_mutable) {
         Ship& ship = *ship_handle;
         ship.fuel() += 50.0;  // Modify ship
@@ -454,9 +453,9 @@ int main() {
     }  // Ships auto-save here
 
     // Ships should now have modified fuel
-    assert(em.peek_ship(1)->fuel() == fuel1_initial + 50.0);
-    assert(em.peek_ship(2)->fuel() == fuel2_initial + 50.0);
-    assert(em.peek_ship(3)->fuel() == fuel3_initial + 50.0);
+    assert(ctx.em.peek_ship(1)->fuel() == fuel1_initial + 50.0);
+    assert(ctx.em.peek_ship(2)->fuel() == fuel2_initial + 50.0);
+    assert(ctx.em.peek_ship(3)->fuel() == fuel3_initial + 50.0);
 
     std::println(
         "✓ Test 5b passed: Const iteration doesn't mark dirty, mutable does");
@@ -467,12 +466,13 @@ int main() {
     std::println("\nTest 5c: Const scope-based iteration");
 
     // Create GameObj for scope-based iteration
-    GameObj g(em);
+    auto* registry = get_test_session_registry();
+    GameObj g(ctx.em, registry);
     g.set_player(1);
     g.set_level(ScopeLevel::LEVEL_STAR);
     g.set_snum(5);
 
-    const ShipList ships(em, g, ShipList::IterationType::Scope);
+    const ShipList ships(ctx.em, g, ShipList::IterationType::Scope);
 
     int count = 0;
     for (const Ship* ship : ships) {
@@ -492,7 +492,7 @@ int main() {
     // Get count of all ships before adding dead ones
     int alive_count = 0;
     {
-      ShipList alive_ships(em, ShipList::IterationType::AllAlive);
+      ShipList alive_ships(ctx.em, ShipList::IterationType::AllAlive);
       for ([[maybe_unused]] auto handle : alive_ships) {
         alive_count++;
       }
@@ -511,7 +511,7 @@ int main() {
     ships_repo.save(dead_ship);
 
     // All iteration should include dead ships
-    ShipList all_ships(em, ShipList::IterationType::All);
+    ShipList all_ships(ctx.em, ShipList::IterationType::All);
     int all_count = 0;
     bool found_dead = false;
     for (auto handle : all_ships) {
@@ -533,7 +533,7 @@ int main() {
   {
     std::println("\nTest 7: IterationType::AllAlive");
 
-    ShipList alive_ships(em, ShipList::IterationType::AllAlive);
+    ShipList alive_ships(ctx.em, ShipList::IterationType::AllAlive);
     int alive_count = 0;
     bool found_dead = false;
     for (auto handle : alive_ships) {
@@ -556,7 +556,7 @@ int main() {
     std::println("\nTest 7b: Const All/AllAlive iteration");
 
     // Const All iteration
-    const ShipList all_const(em, ShipList::IterationType::All);
+    const ShipList all_const(ctx.em, ShipList::IterationType::All);
     int all_count = 0;
     for (const Ship* ship : all_const) {
       assert(ship != nullptr);
@@ -566,7 +566,7 @@ int main() {
     std::println("  Const All iteration found {} ships", all_count);
 
     // Const AllAlive iteration
-    const ShipList alive_const(em, ShipList::IterationType::AllAlive);
+    const ShipList alive_const(ctx.em, ShipList::IterationType::AllAlive);
     int alive_count = 0;
     for (const Ship* ship : alive_const) {
       assert(ship != nullptr);

@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race
   Race race{};
@@ -59,10 +58,9 @@ int main() {
   }
 
   // Create GameObj
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
@@ -72,19 +70,19 @@ int main() {
   GB::commands::arm(argv, g);
 
   // Verify changes persisted
-  em.clear_cache();
-  const auto* saved_smap = em.peek_sectormap(0, 0);
+  ctx.em.clear_cache();
+  const auto* saved_smap = ctx.em.peek_sectormap(0, 0);
   assert(saved_smap);
   const auto& saved_sect = saved_smap->get(5, 5);
 
   assert(saved_sect.get_troops() == 100);
   assert(saved_sect.get_popn() == 900);
 
-  const auto* saved_planet = em.peek_planet(0, 0);
+  const auto* saved_planet = ctx.em.peek_planet(0, 0);
   assert(saved_planet);
   assert(saved_planet->troops() == 100);
 
-  const auto* saved_race = em.peek_race(1);
+  const auto* saved_race = ctx.em.peek_race(1);
   assert(saved_race);
   assert(saved_race->governor[0].money == 0);
 
@@ -92,8 +90,8 @@ int main() {
   command_t argv2 = {"disarm", "5,5", "50"};
   GB::commands::arm(argv2, g);
 
-  em.clear_cache();
-  saved_smap = em.peek_sectormap(0, 0);
+  ctx.em.clear_cache();
+  saved_smap = ctx.em.peek_sectormap(0, 0);
   const auto& saved_sect2 = saved_smap->get(5, 5);
   assert(saved_sect2.get_troops() == 50);
   assert(saved_sect2.get_popn() == 950);

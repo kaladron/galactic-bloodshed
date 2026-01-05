@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -15,9 +16,7 @@ void test_motto_database_persistence() {
   std::println("Test: motto command database persistence");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a block with initial empty motto
   block b{};
@@ -25,13 +24,14 @@ void test_motto_database_persistence() {
   b.name = "Test Alliance";
   b.motto = "";  // Initially empty
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   BlockRepository blocks(store);
   blocks.save(b);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_governor(0);  // Must be governor 0 to set motto
 
   // TEST 1: Set a motto

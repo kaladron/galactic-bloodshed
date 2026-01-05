@@ -3,19 +3,16 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create universe with 1 star and 2 ships at universe level
   universe_struct us{};
@@ -84,10 +81,9 @@ int main() {
   ships_repo.save(ship2);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);  // Set race pointer like production
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);  // At star 0
 
@@ -99,7 +95,7 @@ int main() {
     GB::commands::orbit(argv, g);
 
     // Verify ship is still the same (not modified)
-    const auto* saved_ship = em.peek_ship(1);
+    const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
     assert(saved_ship->owner() == 1);
     assert(saved_ship->whatorbits() == ScopeLevel::LEVEL_STAR);
@@ -116,11 +112,11 @@ int main() {
     GB::commands::orbit(argv, g);
 
     // Verify ships are still unchanged
-    const auto* saved_ship = em.peek_ship(1);
+    const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
     assert(saved_ship->owner() == 1);
 
-    const auto* saved_ship2 = em.peek_ship(2);
+    const auto* saved_ship2 = ctx.em.peek_ship(2);
     assert(saved_ship2 != nullptr);
     assert(saved_ship2->owner() == 1);
     assert(saved_ship2->whatorbits() == ScopeLevel::LEVEL_UNIV);
@@ -140,7 +136,8 @@ int main() {
     RaceRepository races2(store2);
     races2.save(race);
 
-    GameObj g2(em2);
+    auto* registry = get_test_session_registry();
+    GameObj g2(em2, registry);
     g2.set_player(1);
     g2.set_governor(0);
     g2.race = em2.peek_race(1);

@@ -3,6 +3,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -10,9 +11,7 @@ import std;
 
 int main() {
   // Initialize database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create a test race
   Race race{};
@@ -24,7 +23,7 @@ int main() {
   race.tech = 500.0;  // High tech to build any ship
   race.pods = false;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -65,10 +64,9 @@ int main() {
   }
 
   // Create GameObj for testing
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(star_id);
   g.set_pnum(0);
@@ -83,14 +81,14 @@ int main() {
     // instead of output messages.
 
     // Verify planet resources were deducted
-    em.clear_cache();
-    const auto* planet_verify = em.peek_planet(star_id, 0);
+    ctx.em.clear_cache();
+    const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
     assert(planet_verify);
     assert(planet_verify->info(0).resource <
            10000);  // Resources should be deducted
 
     // Verify ship was created (it should be ship #1)
-    const auto* ship = em.peek_ship(1);
+    const auto* ship = ctx.em.peek_ship(1);
     assert(ship);
     assert(ship->type() == ShipType::OTYPE_PROBE);
     assert(ship->owner() == 1);
@@ -106,7 +104,7 @@ int main() {
   // Test: Build with insufficient resources
   {
     // Drain resources completely
-    auto planet_handle2 = em.get_planet(star_id, 0);
+    auto planet_handle2 = ctx.em.get_planet(star_id, 0);
     auto& planet2 = *planet_handle2;
     planet2.info(0).resource = 0;  // No resources
   }

@@ -3,19 +3,16 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager and JsonStore
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create universe with 1 star
   universe_struct us{};
@@ -120,10 +117,9 @@ int main() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);  // Set race pointer like production
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
@@ -135,7 +131,7 @@ int main() {
 
     // The map command just displays output, doesn't modify data
     // Verify planet data is unchanged
-    const auto* saved_planet = em.peek_planet(0, 0);
+    const auto* saved_planet = ctx.em.peek_planet(0, 0);
     assert(saved_planet != nullptr);
     assert(saved_planet->Maxx() == 5);
     assert(saved_planet->Maxy() == 5);
@@ -152,7 +148,7 @@ int main() {
     GB::commands::map(argv, g);
 
     // Verify data unchanged
-    const auto* saved_planet = em.peek_planet(0, 0);
+    const auto* saved_planet = ctx.em.peek_planet(0, 0);
     assert(saved_planet != nullptr);
     std::println("    ✓ Map with planet argument works");
   }
@@ -238,7 +234,8 @@ int main() {
     RaceRepository races2(store2);
     races2.save(race);
 
-    GameObj g2(em2);
+    auto* registry = get_test_session_registry();
+    GameObj g2(em2, registry);
     g2.set_player(1);
     g2.set_governor(0);
     g2.race = em2.peek_race(1);

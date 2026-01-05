@@ -3,6 +3,7 @@
 
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -97,7 +98,8 @@ struct BuildTestFixture {
 // CRITICAL: Tests x,y coordinate persistence across loop iterations
 void test_planet_multiple_builds() {
   BuildTestFixture fixture;
-  GameObj g(fixture.em);
+  auto* registry = get_test_session_registry();
+  GameObj g(fixture.em, registry);
   fixture.init_game_obj(g);
 
   int initial_resource = fixture.get_planet()->info(0).resource;
@@ -185,7 +187,8 @@ void test_factory_multiple_builds() {
   ships_repo.save(factory_data);
   shipnum_t factory_num = factory_data.number();
 
-  GameObj g(fixture.em);
+  auto* registry = get_test_session_registry();
+  GameObj g(fixture.em, registry);
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, factory_num);
 
   // Factory builds 3 ships
@@ -213,7 +216,8 @@ void test_factory_multiple_builds() {
 // Test: Invalid sector coordinates
 void test_invalid_coordinates() {
   BuildTestFixture fixture;
-  GameObj g(fixture.em);
+  auto* registry = get_test_session_registry();
+  GameObj g(fixture.em, registry);
   fixture.init_game_obj(g);
 
   // Out of bounds - negative
@@ -249,7 +253,8 @@ void test_invalid_coordinates() {
 // Test: Wrong scope level
 void test_wrong_scope() {
   BuildTestFixture fixture;
-  GameObj g(fixture.em);
+  auto* registry = get_test_session_registry();
+  GameObj g(fixture.em, registry);
   fixture.init_game_obj(g, ScopeLevel::LEVEL_UNIV);
 
   command_t argv = {"build", ":", "5,5", "1"};
@@ -264,7 +269,8 @@ void test_wrong_scope() {
 // Test: Ship cannot be built by planet
 void test_invalid_ship_for_planet() {
   BuildTestFixture fixture;
-  GameObj g(fixture.em);
+  auto* registry = get_test_session_registry();
+  GameObj g(fixture.em, registry);
   fixture.init_game_obj(g);
 
   // Try to build a ship type that can't be built on planets
@@ -294,7 +300,8 @@ void test_insufficient_hanger_space() {
   ships_repo.save(builder_data);
   shipnum_t builder_num = builder_data.number();
 
-  GameObj g(fixture.em);
+  auto* registry = get_test_session_registry();
+  GameObj g(fixture.em, registry);
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, builder_num);
 
   // Try to build a ship that's too big

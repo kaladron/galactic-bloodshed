@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race
   Race race{};
@@ -74,95 +73,93 @@ int main() {
 
   // Link ship to planet
   {
-    auto planet_handle = em.get_planet(0, 0);
+    auto planet_handle = ctx.em.get_planet(0, 0);
     auto& p = *planet_handle;
     p.ships() = 1;
   }
 
   // Create GameObj
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
 
   std::println("Test 1: Sell resources");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int initial_resource = p_before->info(0).resource;
 
     command_t argv = {"sell", "r", "100"};
     GB::commands::sell(argv, g);
 
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).resource == initial_resource - 100);
     std::println("✓ Resources sold and deducted from planet");
   }
 
   std::println("Test 2: Sell fuel");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int initial_fuel = p_before->info(0).fuel;
 
     command_t argv = {"sell", "f", "50"};
     GB::commands::sell(argv, g);
 
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).fuel == initial_fuel - 50);
     std::println("✓ Fuel sold and deducted from planet");
   }
 
   std::println("Test 3: Sell destruct");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int initial_destruct = p_before->info(0).destruct;
 
     command_t argv = {"sell", "d", "25"};
     GB::commands::sell(argv, g);
 
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).destruct == initial_destruct - 25);
     std::println("✓ Destruct sold and deducted from planet");
   }
 
   std::println("Test 4: Sell crystals");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int initial_crystals = p_before->info(0).crystals;
 
     command_t argv = {"sell", "x", "10"};
     GB::commands::sell(argv, g);
 
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).crystals == initial_crystals - 10);
     std::println("✓ Crystals sold and deducted from planet");
   }
 
   std::println("Test 5: Guest race cannot sell");
   {
-    auto race_handle = em.get_race(1);
+    auto race_handle = ctx.em.get_race(1);
     auto& r = *race_handle;
     r.Guest = true;
   }
   {
-    GameObj g2(em);
-    g2.set_player(1);
-    g2.set_governor(0);
-    g2.race = em.peek_race(1);
+    auto* registry = get_test_session_registry();
+    GameObj g2(ctx.em, registry);
+    ctx.setup_game_obj(g2);
     g2.set_level(ScopeLevel::LEVEL_PLAN);
     g2.set_snum(0);
     g2.set_pnum(0);
 
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int resource_before = p_before->info(0).resource;
 
     command_t argv = {"sell", "r", "50"};
     GB::commands::sell(argv, g2);
 
     // Should not have changed
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).resource == resource_before);
     std::println("✓ Guest race blocked from selling");
   }

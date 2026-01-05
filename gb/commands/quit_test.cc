@@ -3,14 +3,13 @@
 import commands;
 import dallib;
 import gblib;
+import test;
 import std;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create test race
   Race race{};
@@ -19,14 +18,13 @@ int main() {
   race.Guest = false;
   race.governor[0].active = true;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
 
   // Test quit command
   command_t quit_argv = {"quit"};

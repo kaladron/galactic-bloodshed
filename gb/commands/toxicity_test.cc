@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race via repository
   Race race{};
@@ -42,14 +41,14 @@ int main() {
 
   // Test: Set toxicity threshold to 0
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
     p.info(0).tox_thresh = 0;
   }
 
   // Verify: Threshold saved
   {
-    const auto* saved = em.peek_planet(1, 0);
+    const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(0).tox_thresh == 0);
     std::println("✓ Toxicity threshold 0 saved correctly");
@@ -57,14 +56,14 @@ int main() {
 
   // Test: Set threshold to 100
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
     p.info(0).tox_thresh = 100;
   }
 
   // Verify: Threshold updated
   {
-    const auto* saved = em.peek_planet(1, 0);
+    const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(0).tox_thresh == 100);
     std::println("✓ Toxicity threshold 100 saved correctly");
@@ -72,14 +71,14 @@ int main() {
 
   // Test: Set threshold to mid-range value
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
     p.info(0).tox_thresh = 75;
   }
 
   // Verify: Mid-range threshold saved
   {
-    const auto* saved = em.peek_planet(1, 0);
+    const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(0).tox_thresh == 75);
     std::println("✓ Toxicity threshold 75 saved correctly");
@@ -94,8 +93,8 @@ int main() {
 
   // Verify: Both planets have correct thresholds
   {
-    const auto* p1 = em.peek_planet(1, 0);
-    const auto* p2 = em.peek_planet(1, 1);
+    const auto* p1 = ctx.em.peek_planet(1, 0);
+    const auto* p2 = ctx.em.peek_planet(1, 1);
     assert(p1);
     assert(p2);
     assert(p1->info(0).tox_thresh == 75);

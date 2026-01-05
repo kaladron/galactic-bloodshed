@@ -30,12 +30,6 @@ public:
   explicit GameObj(EntityManager& em, void* registry)
       : entity_manager(em), session_registry_ptr(registry) {}
 
-  // Constructor for tests (lazy-inits to default registry on first use)
-  explicit GameObj(EntityManager& em) : entity_manager(em) {}
-
-  // Legacy constructor maintained for compatibility during migration
-  GameObj(EntityManager& em, std::ostream& /* unused */) : GameObj(em) {}
-
   GameObj(const GameObj&) = delete;
   GameObj& operator=(const GameObj&) = delete;
 

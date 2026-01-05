@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race
   Race race{};
@@ -62,10 +61,9 @@ int main() {
   }
 
   // Create GameObj
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
@@ -75,8 +73,8 @@ int main() {
   GB::commands::move_popn(argv, g);
 
   // Verify population moved
-  em.clear_cache();
-  const auto* saved_smap = em.peek_sectormap(0, 0);
+  ctx.em.clear_cache();
+  const auto* saved_smap = ctx.em.peek_sectormap(0, 0);
   assert(saved_smap);
 
   const auto& source_sect = saved_smap->get(5, 5);

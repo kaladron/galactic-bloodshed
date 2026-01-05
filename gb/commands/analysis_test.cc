@@ -2,19 +2,16 @@
 
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager and JsonStore
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create universe with 1 star
   universe_struct us{};
@@ -141,13 +138,12 @@ int main() {
   sectormap_repo.save_map(smap);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
-  g.race = em.peek_race(1);
 
   std::println("\n========== Analysis Command Output Test ==========\n");
 

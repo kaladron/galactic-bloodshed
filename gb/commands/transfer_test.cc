@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test races
   Race race1{};
@@ -69,24 +68,23 @@ int main() {
   planets_repo.save(planet);
 
   // Create GameObj for player 1
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
 
   std::println("Test 1: Transfer resources");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_resource_before = p_before->info(0).resource;
     int p2_resource_before = p_before->info(1).resource;
 
     command_t argv = {"transfer", "Receiver", "r", "100"};
     GB::commands::transfer(argv, g);
 
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).resource == p1_resource_before - 100);
     assert(p_after->info(1).resource == p2_resource_before + 100);
     std::println("✓ Resources transferred");
@@ -94,14 +92,14 @@ int main() {
 
   std::println("Test 2: Transfer fuel");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_fuel_before = p_before->info(0).fuel;
     int p2_fuel_before = p_before->info(1).fuel;
 
     command_t argv = {"transfer", "Receiver", "f", "75"};
     GB::commands::transfer(argv, g);
 
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).fuel == p1_fuel_before - 75);
     assert(p_after->info(1).fuel == p2_fuel_before + 75);
     std::println("✓ Fuel transferred");
@@ -109,14 +107,14 @@ int main() {
 
   std::println("Test 3: Transfer destruct");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_destruct_before = p_before->info(0).destruct;
     int p2_destruct_before = p_before->info(1).destruct;
 
     command_t argv = {"transfer", "Receiver", "d", "50"};
     GB::commands::transfer(argv, g);
 
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).destruct == p1_destruct_before - 50);
     assert(p_after->info(1).destruct == p2_destruct_before + 50);
     std::println("✓ Destruct transferred");
@@ -124,14 +122,14 @@ int main() {
 
   std::println("Test 4: Transfer crystals");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_crystals_before = p_before->info(0).crystals;
     int p2_crystals_before = p_before->info(1).crystals;
 
     command_t argv = {"transfer", "Receiver", "x", "10"};
     GB::commands::transfer(argv, g);
 
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).crystals == p1_crystals_before - 10);
     assert(p_after->info(1).crystals == p2_crystals_before + 10);
     std::println("✓ Crystals transferred");
@@ -139,7 +137,7 @@ int main() {
 
   std::println("Test 5: Cannot transfer more than available");
   {
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_resource_before = p_before->info(0).resource;
     int p2_resource_before = p_before->info(1).resource;
 
@@ -148,7 +146,7 @@ int main() {
     GB::commands::transfer(argv, g);
 
     // Should not have changed (command fails with error message)
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(0).resource == p1_resource_before);
     assert(p_after->info(1).resource == p2_resource_before);
     std::println("✓ Transfer prevented when insufficient resources");

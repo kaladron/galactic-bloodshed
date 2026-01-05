@@ -3,18 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
+  // Create test context
+  TestContext ctx;
 
   // Create test race
   Race race{};
@@ -23,7 +20,7 @@ int main() {
   race.governor[0].active = true;
 
   // Save race via repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -44,25 +41,24 @@ int main() {
   ships_repo.save(ship);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);  // Set race pointer like production
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println("Test 1: Set ship defense order");
   {
     // Clear cache to ensure we get fresh data
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     command_t argv = {"order", "#1", "defense", "on"};
     GB::commands::order(argv, g);
 
     // Clear cache again to force reload from database
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     // Verify defense order was set
-    const auto* saved_ship = em.peek_ship(1);
+    const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
     std::println("    Ship found: number={}, protect.planet={}",
                  saved_ship->number(), saved_ship->protect().planet);
@@ -74,16 +70,16 @@ int main() {
   std::println("\nTest 2: Turn defense order off");
   {
     // Clear cache to ensure we get fresh data
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     command_t argv = {"order", "#1", "defense", "off"};
     GB::commands::order(argv, g);
 
     // Clear cache again to force reload from database
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     // Verify defense was turned off
-    const auto* saved_ship = em.peek_ship(1);
+    const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
     assert(saved_ship->protect().planet == 0);
     std::println("    ✓ Defense order turned off: protect.planet={}",
@@ -97,7 +93,7 @@ int main() {
     GB::commands::order(argv, g);
 
     // Verify ship state unchanged
-    const auto* saved_ship = em.peek_ship(1);
+    const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
     assert(saved_ship->protect().planet == 0);  // Still off from previous test
     std::println("    ✓ Display orders works without modification");

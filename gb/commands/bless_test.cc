@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -13,9 +14,7 @@ import std;
 
 // Test bless command - technology blessing
 void test_bless_technology() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create a race via repository (simulating universe creation)
   Race race{};
@@ -24,7 +23,7 @@ void test_bless_technology() {
   race.mass = 1.0;
   race.metabolism = 1.0;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository race_repo(store);
   race_repo.save(race);
 
@@ -43,9 +42,9 @@ void test_bless_technology() {
   planet_repo.save(planet);
 
   // Setup GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
@@ -56,8 +55,8 @@ void test_bless_technology() {
   GB::commands::bless(argv, g);
 
   // Verify race technology was increased
-  em.clear_cache();
-  const auto* blessed_race = em.peek_race(1);
+  ctx.em.clear_cache();
+  const auto* blessed_race = ctx.em.peek_race(1);
   assert(blessed_race);
   assert(blessed_race->tech == 15.0);  // 10 + 5
 
@@ -66,9 +65,7 @@ void test_bless_technology() {
 
 // Test bless command - money blessing
 void test_bless_money() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   Race race{};
   race.Playernum = 1;
@@ -77,7 +74,7 @@ void test_bless_money() {
   race.metabolism = 1.0;
   race.governor[0].money = 100;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository race_repo(store);
   race_repo.save(race);
 
@@ -95,9 +92,9 @@ void test_bless_money() {
   planet_repo.save(planet);
 
   // Setup GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
@@ -108,8 +105,8 @@ void test_bless_money() {
   GB::commands::bless(argv, g);
 
   // Verify money was added
-  em.clear_cache();
-  const auto* blessed_race = em.peek_race(1);
+  ctx.em.clear_cache();
+  const auto* blessed_race = ctx.em.peek_race(1);
   assert(blessed_race);
   assert(blessed_race->governor[0].money == 1100);  // 100 + 1000
 
@@ -118,9 +115,7 @@ void test_bless_money() {
 
 // Test bless command - requires god privilege
 void test_bless_requires_god() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   Race race{};
   race.Playernum = 1;
@@ -128,7 +123,7 @@ void test_bless_requires_god() {
   race.mass = 1.0;
   race.metabolism = 1.0;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository race_repo(store);
   race_repo.save(race);
 
@@ -144,9 +139,9 @@ void test_bless_requires_god() {
   planet_repo.save(planet);
 
   // Setup GameObj without god privilege
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
@@ -157,8 +152,8 @@ void test_bless_requires_god() {
   GB::commands::bless(argv, g);
 
   // Verify tech unchanged and error message output
-  em.clear_cache();
-  const auto* race_ptr = em.peek_race(1);
+  ctx.em.clear_cache();
+  const auto* race_ptr = ctx.em.peek_race(1);
   assert(race_ptr);
   assert(race_ptr->tech == 10.0);  // Unchanged
 
@@ -170,9 +165,7 @@ void test_bless_requires_god() {
 
 // Test bless command - requires planet scope
 void test_bless_requires_planet_scope() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   Race race{};
   race.Playernum = 1;
@@ -180,14 +173,14 @@ void test_bless_requires_planet_scope() {
   race.mass = 1.0;
   race.metabolism = 1.0;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository race_repo(store);
   race_repo.save(race);
 
   // Setup GameObj at wrong scope
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);  // Wrong scope!
   g.set_snum(0);
   g.set_pnum(0);
@@ -198,8 +191,8 @@ void test_bless_requires_planet_scope() {
   GB::commands::bless(argv, g);
 
   // Verify tech unchanged and error message
-  em.clear_cache();
-  const auto* race_ptr = em.peek_race(1);
+  ctx.em.clear_cache();
+  const auto* race_ptr = ctx.em.peek_race(1);
   assert(race_ptr);
   assert(race_ptr->tech == 10.0);  // Unchanged
 

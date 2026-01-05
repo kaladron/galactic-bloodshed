@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
+  // Create test context
+  TestContext ctx;
 
-  // Create EntityManager
-  EntityManager em(db);
+  JsonStore store(ctx.db);
 
   // Create test race via repository
   Race race{};
@@ -30,7 +28,6 @@ int main() {
   // correctly
 
   // Save via repositories
-  JsonStore store(db);
   RaceRepository races(store);
   races.save(race);
 
@@ -42,7 +39,7 @@ int main() {
   universe_repo.save(sdata);
 
   // Load race into EntityManager cache to ensure getracenum can find it
-  const auto* loaded_race = em.peek_race(1);
+  const auto* loaded_race = ctx.em.peek_race(1);
   assert(loaded_race != nullptr);
   assert(loaded_race->password == "testpass");
   std::println("Race loaded into EntityManager: player={}, password={}",
@@ -53,9 +50,9 @@ int main() {
   assert(loaded_race->governor[0].password == "govpass");
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println("Test 1: Dissolve race with correct passwords");
@@ -65,10 +62,10 @@ int main() {
     std::println("Command output: {}", g.out.str());
 
     // Clear cache to force reload from database
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     // Verify race was dissolved
-    const auto* saved_race = em.peek_race(1);
+    const auto* saved_race = ctx.em.peek_race(1);
     assert(saved_race != nullptr);
     std::println("DEBUG: Race dissolved = {}", saved_race->dissolved);
     std::println("DEBUG: Race name = {}", saved_race->name);
@@ -81,7 +78,7 @@ int main() {
     // ship->owner should be 0
     //
     // Verify ship was destroyed (alive flag should be false)
-    // const auto* saved_ship = em.peek_ship(1);
+    // const auto* saved_ship = ctx.em.peek_ship(1);
     // assert(saved_ship != nullptr);
     // assert(saved_ship->alive == false || saved_ship->owner == 0);
     // std::println("    ✓ Ship destroyed or ownership removed");

@@ -3,6 +3,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -10,9 +11,7 @@ import std;
 
 int main() {
   // Initialize database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create two test races - one giving, one receiving
   Race race1{};
@@ -31,13 +30,13 @@ int main() {
   race2.God = false;
   setbit<std::uint64_t>(race2.allied, 1U);  // Mutually allied with race 1
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race1);
   races.save(race2);
 
   // Clear cache so EntityManager picks up races from database
-  em.clear_cache();
+  ctx.em.clear_cache();
 
   // Create a test star
   star_struct star_data{};
@@ -82,13 +81,12 @@ int main() {
   const shipnum_t ship_id = ship.number();
 
   // Flush entities to ensure they're in the database
-  em.flush_all();
+  ctx.em.flush_all();
 
   // Create GameObj for testing
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(star_id);
   g.set_pnum(0);
@@ -97,7 +95,7 @@ int main() {
   {
     // Debug: Check what races exist
     std::println("Available races:");
-    for (auto race_handle : RaceList(em)) {
+    for (auto race_handle : RaceList(ctx.em)) {
       const auto& race = race_handle.read();
       std::println("  Player {}: {}", race.Playernum, race.name);
     }
@@ -115,8 +113,8 @@ int main() {
     // not g.out. In tests, we verify success by checking the database.
 
     // Verify ship ownership changed
-    em.clear_cache();
-    const auto* ship_verify = em.peek_ship(ship_id);
+    ctx.em.clear_cache();
+    const auto* ship_verify = ctx.em.peek_ship(ship_id);
     assert(ship_verify);
     std::println("Ship owner: {} (expected 2)", ship_verify->owner());
     std::println("Ship governor: {} (expected 0)", ship_verify->governor());
@@ -124,12 +122,12 @@ int main() {
     assert(ship_verify->governor() == 0);  // Given to leader
 
     // Verify planet exploration bit set for receiver
-    const auto* planet_verify = em.peek_planet(star_id, 0);
+    const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
     assert(planet_verify);
     assert(planet_verify->info(1).explored == 1);  // Race 2 (index 1)
 
     // Verify star exploration bit set for receiver
-    const auto* star_verify = em.peek_star(star_id);
+    const auto* star_verify = ctx.em.peek_star(star_id);
     assert(star_verify);
     assert(isset<std::uint64_t>(star_verify->explored(), 2U));
 
@@ -142,7 +140,7 @@ int main() {
   // Test: Try to give ship from non-governor (should fail)
   {
     // Create another ship owned by race 1
-    auto ship2_handle = em.create_ship();
+    auto ship2_handle = ctx.em.create_ship();
     auto& ship2 = *ship2_handle;
     ship2.owner() = 1;
     ship2.governor() = 0;
@@ -158,7 +156,7 @@ int main() {
     std::println("Ship2 ID: {}", ship2_id);
 
     // Ship is auto-saved when handle goes out of scope
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     // Try as non-leader governor
     g.set_governor(1);
@@ -172,8 +170,8 @@ int main() {
     g.out.str("");
 
     // Verify ship ownership unchanged
-    em.clear_cache();
-    const auto* ship2_verify = em.peek_ship(ship2_id);
+    ctx.em.clear_cache();
+    const auto* ship2_verify = ctx.em.peek_ship(ship2_id);
     assert(ship2_verify);
     std::println("Ship2 owner: {} (expected 1)", ship2_verify->owner());
     assert(ship2_verify->owner() == 1);  // Still owned by race 1
@@ -186,7 +184,7 @@ int main() {
     g.set_governor(0);  // Reset to leader
 
     // Create ship with crew
-    auto ship3_handle = em.create_ship();
+    auto ship3_handle = ctx.em.create_ship();
     auto& ship3 = *ship3_handle;
     ship3.owner() = 1;
     ship3.governor() = 0;
@@ -201,7 +199,7 @@ int main() {
     const shipnum_t ship3_id = ship3.number();
 
     // Ship is auto-saved when handle goes out of scope
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     command_t argv = {"give", "Receiver", std::to_string(ship3_id)};
     GB::commands::give(argv, g);
@@ -211,7 +209,7 @@ int main() {
     g.out.str("");
 
     // Verify ship ownership unchanged
-    const auto* ship3_verify = em.peek_ship(ship3_id);
+    const auto* ship3_verify = ctx.em.peek_ship(ship3_id);
     assert(ship3_verify);
     assert(ship3_verify->owner() == 1);  // Still owned by race 1
 

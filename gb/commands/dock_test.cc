@@ -3,18 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
+  // Create test context
+  TestContext ctx;
 
   // Create test race
   Race race{};
@@ -27,7 +24,7 @@ int main() {
   race.morale = 100;
 
   // Save race via repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -85,28 +82,27 @@ int main() {
   ships_repo.save(ship2);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);  // Set race pointer like production
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);  // At star 0
 
   std::println("Test 1: Dock ship #1 with ship #2");
   {
     // Clear cache to ensure we get fresh data
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     // dock #1 #2
     command_t argv = {"dock", "#1", "#2"};
     GB::commands::dock(argv, g);
 
     // Clear cache to force reload from database
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     // Verify both ships are now docked
-    const auto* saved_ship1 = em.peek_ship(1);
-    const auto* saved_ship2 = em.peek_ship(2);
+    const auto* saved_ship1 = ctx.em.peek_ship(1);
+    const auto* saved_ship2 = ctx.em.peek_ship(2);
     assert(saved_ship1 != nullptr);
     assert(saved_ship2 != nullptr);
 
@@ -133,10 +129,10 @@ int main() {
   std::println("Test 2: Verify docked ships persist after cache clear");
   {
     // Already cleared above, but let's verify again
-    em.clear_cache();
+    ctx.em.clear_cache();
 
-    const auto* ship1_check = em.peek_ship(1);
-    const auto* ship2_check = em.peek_ship(2);
+    const auto* ship1_check = ctx.em.peek_ship(1);
+    const auto* ship2_check = ctx.em.peek_ship(2);
 
     assert(ship1_check != nullptr);
     assert(ship2_check != nullptr);

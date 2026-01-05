@@ -3,18 +3,14 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create test race with multiple governors via repository
   Race race{};
@@ -27,15 +23,14 @@ int main() {
   race.governor[1].name = "SubGov";
 
   // Save race via repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);  // Set race pointer like production
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println("Test 1: Grant money to governor");
@@ -44,7 +39,7 @@ int main() {
     GB::commands::grant(argv, g);
 
     // Verify money was transferred
-    const auto* saved_race = em.peek_race(1);
+    const auto* saved_race = ctx.em.peek_race(1);
     assert(saved_race != nullptr);
     assert(saved_race->governor[0].money == 800);  // 1000 - 200
     assert(saved_race->governor[1].money == 700);  // 500 + 200

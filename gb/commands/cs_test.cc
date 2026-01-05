@@ -3,19 +3,16 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager and JsonStore
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create universe with 2 stars
   universe_struct us{};
@@ -28,7 +25,7 @@ int main() {
 
   // Verify universe was saved and can be loaded
   {
-    const auto* loaded = em.peek_universe();
+    const auto* loaded = ctx.em.peek_universe();
     if (!loaded) {
       std::println("ERROR: Universe not found immediately after save!");
       return 1;
@@ -82,10 +79,9 @@ int main() {
   planets_repo.save(planet);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);  // Set race pointer like production
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
 
   std::println("Test 1: cs command switches to universe scope");
   {

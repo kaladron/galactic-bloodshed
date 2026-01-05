@@ -3,6 +3,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -10,11 +11,8 @@ import std;
 
 int main() {
   // Initialize in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race
   Race race{};
@@ -78,16 +76,15 @@ int main() {
   ships.save(ship);
 
   // Create GameObj
-  GameObj g(em);
-  g.set_player(1);
-  g.set_governor(0);
-  g.race = em.peek_race(1);
+  auto* registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
 
   // Initialize Sdata for AP tracking - star AP is managed by EntityManager
-  auto star_handle = em.get_star(0);
+  auto star_handle = ctx.em.get_star(0);
   auto& star_data = *star_handle;
   star_data.AP(0) = 100;
 
@@ -99,7 +96,7 @@ int main() {
   std::println("Command output: {}", g.out.str());
 
   // Verify ship is no longer docked and has fuel consumed
-  const auto* launched_ship = em.peek_ship(1);
+  const auto* launched_ship = ctx.em.peek_ship(1);
   assert(launched_ship);
   std::println("Ship docked status: {}", launched_ship->docked());
   std::println("Ship whatdest: {}",
@@ -109,7 +106,7 @@ int main() {
   assert(launched_ship->fuel() < 1000.0);  // Fuel consumed
 
   // Verify planet is now explored
-  const auto* explored_planet = em.peek_planet(0, 0);
+  const auto* explored_planet = ctx.em.peek_planet(0, 0);
   assert(explored_planet);
   assert(explored_planet->explored() == 1);
 

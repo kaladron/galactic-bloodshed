@@ -49,6 +49,12 @@ public:
   bool god() const {
     return god_;
   }
+  bool disconnect_requested() const {
+    return disconnect_requested_;
+  }
+  bool shutdown_requested() const {
+    return shutdown_requested_;
+  }
   starnum_t snum() const {
     return snum_;
   }
@@ -72,6 +78,12 @@ public:
   void set_god(bool g) {
     god_ = g;
   }
+  void set_disconnect_requested(bool value) {
+    disconnect_requested_ = value;
+  }
+  void set_shutdown_requested(bool value) {
+    shutdown_requested_ = value;
+  }
   void set_snum(starnum_t s) {
     snum_ = s;
   }
@@ -90,6 +102,8 @@ private:
   player_t player_ = 0;
   governor_t governor_ = 0;
   bool god_ = false;
+  bool disconnect_requested_ = false;
+  bool shutdown_requested_ = false;
   starnum_t snum_ = 0;
   planetnum_t pnum_ = 0;
   shipnum_t shipno_ = 0;

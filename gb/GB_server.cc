@@ -66,7 +66,7 @@ private:
   std::chrono::steady_clock::time_point last_quota_update_;
 };
 
-static bool shutdown_flag = false;
+bool shutdown_flag = false;  // Used by shutdown command
 
 static time_t last_update_time;
 static time_t last_segment_time;
@@ -76,7 +76,6 @@ static std::string start_buf;
 static std::string update_buf;
 static std::string segment_buf;
 
-static void help(const command_t&, GameObj&);
 static void process_command(GameObj&, const command_t& argv);
 
 static void GB_time(const command_t&, GameObj&);
@@ -88,7 +87,6 @@ static void do_segment(EntityManager&, void*, int,
 static void initialize_block_data(EntityManager&);
 static void welcome_user(Session&);
 static void check_connect(Session&, std::string_view);
-static void help_user(GameObj&);
 
 using CommandFunction = void (*)(const command_t&, GameObj&);
 
@@ -133,7 +131,7 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"give", GB::commands::give},  // TODO(jeffbailey): !guest
       {"governors", GB::commands::governors},
       {"grant", GB::commands::grant},
-      {"help", help},
+      {"help", GB::commands::help},
       {"highlight", GB::commands::highlight},
       {"identify", GB::commands::whois},
       {"invite", GB::commands::invite},
@@ -159,6 +157,8 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"profile", GB::commands::profile},
       {"post", GB::commands::send_message},
       {"production", GB::commands::production},
+      {"purge", GB::commands::purge},
+      {"quit", GB::commands::quit},
       {"relation", GB::commands::relation},
       {"read", GB::commands::read_messages},
       {"repair", GB::commands::repair},
@@ -167,6 +167,7 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"route", GB::commands::route},
       {"schedule", GB_schedule},
       {"scrap", GB::commands::scrap},
+      {"@@shutdown", GB::commands::shutdown},
       {"send", GB::commands::send_message},
       {"shout", GB::commands::announce},
       {"survey", GB::commands::survey},
@@ -693,24 +694,6 @@ static void welcome_user(Session& session) {
   session.flush_to_network();
 }
 
-static void help_user(GameObj& g) {
-  FILE* f;
-  char* p;
-
-  if ((f = fopen(HELP_FILE, "r")) != nullptr) {
-    char line_buf[2047];
-    while (fgets(line_buf, sizeof line_buf, f)) {
-      for (p = line_buf; *p; p++)
-        if (*p == '\n') {
-          *p = '\0';
-          break;
-        }
-      g.out << line_buf << "\n";
-    }
-    fclose(f);
-  }
-}
-
 /** Main processing loop. When command strings are sent from the client,
    they are processed here. Responses are sent back to the client via
    session.out().
@@ -720,14 +703,34 @@ bool Server::do_command(Session& session, std::string_view comm) {
    * command */
   auto argv = make_command_t(comm);
 
-  if (argv[0] == "quit") {
-    session.out() << "Goodbye!\n";
-    return false;
-  }
   if (session.connected() && argv[0] == "who") {
     GB::commands::who(argv, session);
   } else if (session.connected() && session.god() && argv[0] == "emulate") {
     GB::commands::emulate(argv, session);
+  } else if (session.connected() && session.god() && argv[0] == "@@update") {
+    const auto* race = session.entity_manager().peek_race(session.player());
+    if (!race || !race->God) {
+      session.out() << "Only deity can use this command.\n";
+    } else {
+      session.out() << "Starting update...\n";
+      session.flush_to_network();
+      do_update(session.entity_manager(), &session.registry(), true);
+      session.out() << "Update completed.\n";
+    }
+  } else if (session.connected() && session.god() && argv[0] == "@@segment") {
+    const auto* race = session.entity_manager().peek_race(session.player());
+    if (!race || !race->God) {
+      session.out() << "Only deity can use this command.\n";
+    } else {
+      int seg_num = 0;
+      if (argv.size() > 1) {
+        seg_num = std::stoi(argv[1]);
+      }
+      session.out() << "Starting segment movement...\n";
+      session.flush_to_network();
+      do_segment(session.entity_manager(), &session.registry(), 1, seg_num);
+      session.out() << "Segment completed.\n";
+    }
   } else {
     if (session.connected()) {
       /* GB command parser - create temporary GameObj */
@@ -743,8 +746,14 @@ bool Server::do_command(Session& session, std::string_view comm) {
       process_command(g, argv);
 
       // Check if @@shutdown command was executed
-      if (shutdown_flag) {
+      if (g.shutdown_requested()) {
         shutdown_flag_ = true;
+      }
+
+      // Check if disconnect was requested
+      if (g.disconnect_requested()) {
+        session.out() << g.out.str();
+        return false;
       }
 
       // Copy any state changes back to session
@@ -895,8 +904,8 @@ static void check_connect(Session& session, std::string_view message) {
   session.out() << temp_g.out.str();
 }
 
-static void do_update(EntityManager& entity_manager, void* session_registry_ptr,
-                      bool force) {  // void* is actually SessionRegistry*
+void do_update(EntityManager& entity_manager, void* session_registry_ptr,
+               bool force) {  // void* is actually SessionRegistry*
   auto* session_registry = static_cast<SessionRegistry*>(session_registry_ptr);
   time_t clk = time(nullptr);
   struct stat stbuf;
@@ -967,9 +976,9 @@ static void do_update(EntityManager& entity_manager, void* session_registry_ptr,
   }
 }
 
-static void do_segment(EntityManager& entity_manager,
-                       void* session_registry_ptr, int override,
-                       int segment) {  // void* is actually SessionRegistry*
+void do_segment(EntityManager& entity_manager, void* session_registry_ptr,
+                int override,
+                int segment) {  // void* is actually SessionRegistry*
   auto* session_registry = static_cast<SessionRegistry*>(session_registry_ptr);
   time_t clk = time(nullptr);
   struct stat stbuf;
@@ -1047,23 +1056,11 @@ static void process_command(GameObj& g, const command_t& argv) {
   }
   g.race = race;
 
-  bool God = g.race->God;
-
   const auto& commands = getCommands();
   auto command = commands.find(argv[0]);
   if (command != commands.end()) {
     command->second(argv, g);
-  } else if (argv[0] == "purge" && God)
-    purge(g.entity_manager);
-  else if (argv[0] == "@@shutdown" && God) {
-    shutdown_flag = true;
-    g.out << "Doing shutdown.\n";
-  } else if (argv[0] == "@@update" && God)
-    do_update(g.entity_manager, &get_session_registry(g), true);
-  else if (argv[0] == "@@segment" && God)
-    do_segment(g.entity_manager, &get_session_registry(g), 1,
-               std::stoi(argv[1]));
-  else {
+  } else {
     g.out << "'" << argv[0] << "':illegal command error.\n";
   }
 
@@ -1116,33 +1113,6 @@ static void GB_schedule(const command_t&, GameObj& g) {
       ctime(&state->next_segment_time));
   g.out << std::format("Next Update {0:3d} : {1}", nupdates_done + 1,
                        ctime(&state->next_update_time));
-}
-
-static void help(const command_t& argv, GameObj& g) {
-  FILE* f;
-  char file[1024];
-  char* p;
-
-  if (argv.size() == 1) {
-    help_user(g);
-  } else {
-    sprintf(file, "%s/%s.md", HELPDIR, argv[1].c_str());
-    if ((f = fopen(file, "r")) != nullptr) {
-      char help_buf[2047];
-      while (fgets(help_buf, sizeof help_buf, f)) {
-        for (p = help_buf; *p; p++)
-          if (*p == '\n') {
-            *p = '\0';
-            break;
-          }
-        strcat(help_buf, "\n");
-        g.out << help_buf;
-      }
-      fclose(f);
-      g.out << "----\nFinished.\n";
-    } else
-      g.out << "Help on that subject unavailable.\n";
-  }
 }
 
 void compute_power_blocks(EntityManager& entity_manager) {

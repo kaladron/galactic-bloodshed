@@ -305,6 +305,7 @@ target_sources(
           commands/give.cc
           commands/governors.cc
           commands/grant.cc
+          commands/help.cc
           commands/highlight.cc
           commands/insurgency.cc
           commands/invite.cc
@@ -329,6 +330,8 @@ target_sources(
           commands/production.cc
           commands/profile.cc
           commands/proj_fuel.cc
+          commands/purge.cc
+          commands/quit.cc
           commands/read_messages.cc
           commands/relation.cc
           commands/repair.cc
@@ -338,6 +341,7 @@ target_sources(
           commands/scrap.cc
           commands/sell.cc
           commands/send_message.cc
+          commands/shutdown.cc
           commands/star_locations.cc
           commands/survey.cc
           commands/tax.cc
@@ -720,6 +724,18 @@ add_test(NAME GB_give_test COMMAND give_test)
 add_executable(help_test help_test.cc)
 target_link_libraries(help_test PRIVATE gblib)
 add_test(NAME GB_help_test COMMAND help_test)
+
+add_executable(quit_test commands/quit_test.cc)
+target_link_libraries(quit_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_quit_test COMMAND quit_test)
+
+add_executable(purge_test commands/purge_test.cc)
+target_link_libraries(purge_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_purge_test COMMAND purge_test)
+
+add_executable(shutdown_test commands/shutdown_test.cc)
+target_link_libraries(shutdown_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_shutdown_test COMMAND shutdown_test)
 
 add_executable(load_test commands/load_test.cc)
 target_link_libraries(load_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)

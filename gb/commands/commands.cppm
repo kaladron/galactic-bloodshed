@@ -12,6 +12,12 @@ namespace GB::commands {
 export void who(const command_t&, Session&);
 export void emulate(const command_t&, Session&);
 
+// God commands
+export void help(const command_t&, GameObj&);
+export void quit(const command_t&, GameObj&);
+export void purge(const command_t&, GameObj&);
+export void shutdown(const command_t&, GameObj&);
+
 // Regular commands (take GameObj&)
 export void analysis(const command_t&, GameObj&);
 export void announce(const command_t&, GameObj&);

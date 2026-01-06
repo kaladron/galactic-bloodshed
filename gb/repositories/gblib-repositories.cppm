@@ -976,3 +976,69 @@ public:
     return db.news_purge_all();
   }
 };
+// ============================================================================
+// TelegramRepository - Repository for telegram items
+// Delegates all SQL operations to the DAL layer
+// ============================================================================
+export struct TelegramItem {
+  int id{0};
+  player_t recipient_player{0};
+  governor_t recipient_governor{0};
+  std::string message;
+  int64_t timestamp{0};
+};
+
+export class TelegramRepository {
+private:
+  Database& db;
+
+public:
+  explicit TelegramRepository(Database& database) : db(database) {}
+
+  // Add telegram and return auto-generated ID
+  std::optional<int> add(player_t player, governor_t governor,
+                         std::string_view message) {
+    auto now = std::chrono::system_clock::now();
+    auto timestamp =
+        std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
+            .count();
+
+    return db.telegram_add(player, governor, std::string(message), timestamp);
+  }
+
+  // Get all telegrams for a specific recipient
+  std::vector<TelegramItem> get(player_t player, governor_t governor) {
+    auto tuples = db.telegram_get(player, governor);
+
+    std::vector<TelegramItem> items;
+    items.reserve(tuples.size());
+
+    for (const auto& [id, recv_player, recv_governor, message, timestamp] :
+         tuples) {
+      TelegramItem item;
+      item.id = id;
+      item.recipient_player = recv_player;
+      item.recipient_governor = recv_governor;
+      item.message = message;
+      item.timestamp = timestamp;
+      items.push_back(std::move(item));
+    }
+
+    return items;
+  }
+
+  // Delete all telegrams for a specific governor (delete on read behavior)
+  void delete_for_governor(player_t player, governor_t governor) {
+    db.telegram_delete_for_governor(player, governor);
+  }
+
+  // Count telegrams for a specific recipient
+  int count(player_t player, governor_t governor) {
+    return db.telegram_count(player, governor);
+  }
+
+  // Delete all telegrams (for purge command)
+  bool purge_all() {
+    return db.telegram_purge_all();
+  }
+};

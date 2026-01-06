@@ -236,6 +236,131 @@ bool Database::news_purge_all() {
   return result == SQLITE_OK;
 }
 
+// Telegram operations implementation
+std::optional<int> Database::telegram_add(int player, int governor,
+                                          const std::string& message,
+                                          int64_t timestamp) {
+  if (!conn) return std::nullopt;
+
+  const char* sql = R"(
+    INSERT INTO tbl_telegram (recipient_player, recipient_governor, message, timestamp)
+    VALUES (?, ?, ?, ?)
+  )";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return std::nullopt;
+  }
+
+  sqlite3_bind_int(stmt, 1, player);
+  sqlite3_bind_int(stmt, 2, governor);
+  sqlite3_bind_text(stmt, 3, message.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int64(stmt, 4, timestamp);
+
+  int result = sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
+
+  if (result != SQLITE_DONE) {
+    return std::nullopt;
+  }
+
+  return static_cast<int>(sqlite3_last_insert_rowid(conn));
+}
+
+std::vector<std::tuple<int, int, int, std::string, int64_t>>
+Database::telegram_get(int player, int governor) {
+  std::vector<std::tuple<int, int, int, std::string, int64_t>> items;
+  if (!conn) return items;
+
+  const char* sql = R"(
+    SELECT id, recipient_player, recipient_governor, message, timestamp
+    FROM tbl_telegram
+    WHERE recipient_player = ? AND recipient_governor = ?
+    ORDER BY timestamp ASC, id ASC
+  )";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return items;
+  }
+
+  sqlite3_bind_int(stmt, 1, player);
+  sqlite3_bind_int(stmt, 2, governor);
+
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    int id = sqlite3_column_int(stmt, 0);
+    int recv_player = sqlite3_column_int(stmt, 1);
+    int recv_governor = sqlite3_column_int(stmt, 2);
+    const char* msg_text =
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+    std::string message = msg_text ? msg_text : "";
+    int64_t ts = sqlite3_column_int64(stmt, 4);
+    items.emplace_back(id, recv_player, recv_governor, std::move(message), ts);
+  }
+
+  sqlite3_finalize(stmt);
+  return items;
+}
+
+bool Database::telegram_delete_for_governor(int player, int governor) {
+  if (!conn) return false;
+
+  const char* sql = R"(
+    DELETE FROM tbl_telegram
+    WHERE recipient_player = ? AND recipient_governor = ?
+  )";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return false;
+  }
+
+  sqlite3_bind_int(stmt, 1, player);
+  sqlite3_bind_int(stmt, 2, governor);
+
+  int result = sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
+
+  return result == SQLITE_DONE;
+}
+
+int Database::telegram_count(int player, int governor) {
+  if (!conn) return 0;
+
+  const char* sql = R"(
+    SELECT COUNT(*) FROM tbl_telegram
+    WHERE recipient_player = ? AND recipient_governor = ?
+  )";
+
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return 0;
+  }
+
+  sqlite3_bind_int(stmt, 1, player);
+  sqlite3_bind_int(stmt, 2, governor);
+
+  int count = 0;
+  if (sqlite3_step(stmt) == SQLITE_ROW) {
+    count = sqlite3_column_int(stmt, 0);
+  }
+
+  sqlite3_finalize(stmt);
+  return count;
+}
+
+bool Database::telegram_purge_all() {
+  if (!conn) return false;
+
+  const char* sql = "DELETE FROM tbl_telegram";
+  char* err_msg = nullptr;
+  int result = sqlite3_exec(conn, sql, nullptr, nullptr, &err_msg);
+  if (err_msg) {
+    sqlite3_free(err_msg);
+  }
+  return result == SQLITE_OK;
+}
+
 int Database::count_non_asteroid_planets() {
   if (!conn) return 0;
 

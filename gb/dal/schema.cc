@@ -66,6 +66,15 @@ void initialize_schema(Database& db) {
 
   CREATE INDEX idx_news_type ON tbl_news(type);
   CREATE INDEX idx_news_timestamp ON tbl_news(type, timestamp);
+
+  CREATE TABLE tbl_telegram(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipient_player INT NOT NULL,
+    recipient_governor INT NOT NULL,
+    message TEXT NOT NULL,
+    timestamp INT NOT NULL);
+
+  CREATE INDEX idx_telegram_recipient ON tbl_telegram(recipient_player, recipient_governor);
 )";
 
   char* err_msg = nullptr;

@@ -50,6 +50,16 @@ public:
   bool news_purge_type(int type);
   bool news_purge_all();
 
+  // Telegram operations - SQL queries encapsulated in DAL
+  std::optional<int> telegram_add(int player, int governor,
+                                  const std::string& message,
+                                  int64_t timestamp);
+  std::vector<std::tuple<int, int, int, std::string, int64_t>>
+  telegram_get(int player, int governor);
+  bool telegram_delete_for_governor(int player, int governor);
+  int telegram_count(int player, int governor);
+  bool telegram_purge_all();
+
   // Planet queries
   int count_non_asteroid_planets();
 };

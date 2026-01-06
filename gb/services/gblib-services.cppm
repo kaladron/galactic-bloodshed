@@ -113,6 +113,7 @@ export class EntityManager {
   UniverseRepository universe_repo;
   ServerStateRepository server_state_repo;
   NewsRepository news;
+  TelegramRepository telegrams;
 
   // In-memory cache (only one copy of each entity)
   std::unordered_map<player_t, std::unique_ptr<Race>> race_cache;
@@ -195,6 +196,14 @@ public:
   int get_latest_news_id(NewsType type);
   void purge_news_type(NewsType type);
   void purge_all_news();
+
+  // Telegram operations (service layer)
+  void post_telegram(player_t player, governor_t governor,
+                     std::string_view message);
+  std::vector<TelegramItem> get_telegrams(player_t player, governor_t governor);
+  void delete_telegrams(player_t player, governor_t governor);
+  bool has_telegrams(player_t player, governor_t governor);
+  void purge_all_telegrams();
 
   // Flush all dirty entities to database
   void flush_all();

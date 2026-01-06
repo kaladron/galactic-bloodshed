@@ -118,7 +118,7 @@ EntityManager::EntityManager(Database& database)
     : db(database), store(database), races(store), ships(store), planets(store),
       stars(store), sectors(store), commods(store), blocks(store),
       powers(store), universe_repo(store), server_state_repo(store),
-      news(database) {}
+      news(database), telegrams(database) {}
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
@@ -758,4 +758,27 @@ void EntityManager::purge_news_type(NewsType type) {
 
 void EntityManager::purge_all_news() {
   news.purge_all();
+}
+
+// Telegram operations (Service Layer)
+void EntityManager::post_telegram(player_t player, governor_t governor,
+                                  std::string_view message) {
+  telegrams.add(player, governor, message);
+}
+
+std::vector<TelegramItem> EntityManager::get_telegrams(player_t player,
+                                                       governor_t governor) {
+  return telegrams.get(player, governor);
+}
+
+void EntityManager::delete_telegrams(player_t player, governor_t governor) {
+  telegrams.delete_for_governor(player, governor);
+}
+
+bool EntityManager::has_telegrams(player_t player, governor_t governor) {
+  return telegrams.count(player, governor) > 0;
+}
+
+void EntityManager::purge_all_telegrams() {
+  telegrams.purge_all();
 }

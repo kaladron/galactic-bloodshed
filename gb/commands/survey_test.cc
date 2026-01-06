@@ -86,7 +86,7 @@ void test_survey_no_args_planet_scope() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -156,7 +156,7 @@ void test_survey_sector_mode_no_args() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -243,7 +243,7 @@ void test_survey_sector_range_with_header() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -304,7 +304,7 @@ void test_survey_star_scope() {
   stars.save(star);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_STAR);

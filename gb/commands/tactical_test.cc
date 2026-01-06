@@ -94,7 +94,7 @@ void test_tactical_planet_scope() {
   state.em.clear_cache();
 
   // Create GameObj for tactical command
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g_tactical(state.em, registry);
 
   g_tactical.set_player(1);
@@ -136,7 +136,7 @@ void test_tactical_ship_scope() {
   state.em.clear_cache();
 
   // Create GameObj for tactical command
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g_tactical(state.em, registry);
   g_tactical.set_player(1);
   g_tactical.set_governor(0);
@@ -174,7 +174,7 @@ void test_tactical_star_scope() {
   state.em.clear_cache();
 
   // Create GameObj for tactical command
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g_tactical(state.em, registry);
 
   g_tactical.set_player(1);

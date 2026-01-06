@@ -98,7 +98,7 @@ struct BuildTestFixture {
 // CRITICAL: Tests x,y coordinate persistence across loop iterations
 void test_planet_multiple_builds() {
   BuildTestFixture fixture;
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
   fixture.init_game_obj(g);
 
@@ -187,7 +187,7 @@ void test_factory_multiple_builds() {
   ships_repo.save(factory_data);
   shipnum_t factory_num = factory_data.number();
 
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, factory_num);
 
@@ -216,7 +216,7 @@ void test_factory_multiple_builds() {
 // Test: Invalid sector coordinates
 void test_invalid_coordinates() {
   BuildTestFixture fixture;
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
   fixture.init_game_obj(g);
 
@@ -253,7 +253,7 @@ void test_invalid_coordinates() {
 // Test: Wrong scope level
 void test_wrong_scope() {
   BuildTestFixture fixture;
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
   fixture.init_game_obj(g, ScopeLevel::LEVEL_UNIV);
 
@@ -269,7 +269,7 @@ void test_wrong_scope() {
 // Test: Ship cannot be built by planet
 void test_invalid_ship_for_planet() {
   BuildTestFixture fixture;
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
   fixture.init_game_obj(g);
 
@@ -300,7 +300,7 @@ void test_insufficient_hanger_space() {
   ships_repo.save(builder_data);
   shipnum_t builder_num = builder_data.number();
 
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, builder_num);
 

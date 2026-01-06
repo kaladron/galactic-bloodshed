@@ -135,7 +135,7 @@ void give(const command_t& argv, GameObj& g) {
   std::string givemsg = std::format("{} [{}] gave you {} at {}.\n", race.name,
                                     Playernum, ship_to_string(ship),
                                     prin_ship_orbits(g.entity_manager, ship));
-  warn_player(get_session_registry(g), who, 0, givemsg);
+  warn_player(g.session_registry, who, 0, givemsg);
 
   if (!race.God) {
     std::string postmsg = std::format("{} [{}] gives {} [{}] a ship.\n",

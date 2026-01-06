@@ -82,19 +82,18 @@ void announce(const command_t& argv, GameObj& g) {
 
   switch (mode) {
     case Communicate::ANN:
-      d_announce(get_session_registry(g), g.entity_manager, Playernum, Governor,
+      d_announce(g.session_registry, g.entity_manager, Playernum, Governor,
                  g.snum(), msg);
       break;
     case Communicate::BROADCAST:
-      d_broadcast(get_session_registry(g), g.entity_manager, Playernum,
-                  Governor, msg);
+      d_broadcast(g.session_registry, g.entity_manager, Playernum, Governor,
+                  msg);
       break;
     case Communicate::SHOUT:
-      d_shout(get_session_registry(g), Playernum, Governor, msg);
+      d_shout(g.session_registry, g.entity_manager, Playernum, Governor, msg);
       break;
     case Communicate::THINK:
-      d_think(get_session_registry(g), g.entity_manager, Playernum, Governor,
-              msg);
+      d_think(g.session_registry, g.entity_manager, Playernum, Governor, msg);
       break;
     case Communicate::UNKNOWN:  // Impossible
       break;

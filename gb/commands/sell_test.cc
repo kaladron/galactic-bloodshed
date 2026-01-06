@@ -79,7 +79,7 @@ int main() {
   }
 
   // Create GameObj
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -145,7 +145,7 @@ int main() {
     r.Guest = true;
   }
   {
-    auto* registry = get_test_session_registry();
+    auto& registry = get_test_session_registry();
     GameObj g2(ctx.em, registry);
     ctx.setup_game_obj(g2);
     g2.set_level(ScopeLevel::LEVEL_PLAN);

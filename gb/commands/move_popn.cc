@@ -209,7 +209,7 @@ void move_popn(const command_t& argv, GameObj& g) {
         if (race.absorb) {
           absorbed = int_rand(0, old2popn + old3popn);
           g.out << std::format("{} alien bodies absorbed.\n", absorbed);
-          get_session_registry(g).notify_player(
+          g.session_registry.notify_player(
               old2owner, old2gov,
               std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
         }
@@ -224,7 +224,7 @@ void move_popn(const command_t& argv, GameObj& g) {
         absorbed = 0;
         if (alien.absorb) {
           absorbed = int_rand(0, oldpopn - people);
-          get_session_registry(g).notify_player(
+          g.session_registry.notify_player(
               old2owner, old2gov,
               std::format("{} alien bodies absorbed.\n", absorbed));
           g.out << std::format("Metamorphs have absorbed {} bodies!!!\n",
@@ -278,7 +278,7 @@ void move_popn(const command_t& argv, GameObj& g) {
       telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
                               casualties2, casualties3, casualties,
                               what == PopulationType::CIV ? "civ" : "mil");
-      warn_player(get_session_registry(g), old2owner, old2gov, telegram);
+      warn_player(g.session_registry, old2owner, old2gov, telegram);
       g.out << std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
                            casualties,
                            what == PopulationType::CIV ? "civ" : "mil",

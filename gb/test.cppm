@@ -10,15 +10,14 @@
 
 export module test;
 
-import gblib;
-import dallib;
-import session; // For NullSessionRegistry
+import gblib;  // For SessionRegistry, types, EntityManager
+import dallib; // For Database, initialize_schema
 import std;
 
-// Get singleton test registry (returns void* to match GameObj constructor)
-// Uses NullSessionRegistry from session module - a no-op registry for tests
-export inline void* get_test_session_registry() {
-  return &get_null_session_registry();
+// Get singleton test registry
+// Uses NullSessionRegistry from gblib - a no-op registry for tests
+export inline SessionRegistry& get_test_session_registry() {
+  return get_null_session_registry();
 }
 
 /// Test context providing database, entity manager, and GameObj factory
@@ -26,7 +25,7 @@ export inline void* get_test_session_registry() {
 /// Usage pattern:
 /// ```cpp
 /// TestContext ctx;
-/// auto* registry = get_test_session_registry();
+/// auto& registry = get_test_session_registry();
 /// GameObj g(ctx.em, registry);
 /// ctx.setup_game_obj(g);
 /// ```

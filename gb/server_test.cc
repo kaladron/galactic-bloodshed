@@ -50,8 +50,12 @@ int main() {
     // Create a mock implementation to test the interface
     class TestRegistry : public SessionRegistry {
     public:
-      void for_each_session(std::function<void(Session&)>) override {
+      void notify_race(player_t, const std::string&) override {
         call_count++;
+      }
+      bool notify_player(player_t, governor_t, const std::string&) override {
+        call_count++;
+        return true;
       }
       bool update_in_progress() const override {
         return false;
@@ -60,9 +64,7 @@ int main() {
     };
 
     TestRegistry registry;
-    registry.for_each_session([](Session&) {
-      // Mock callback
-    });
+    registry.notify_race(1, "Test message");
 
     assert(registry.call_count == 1);
     std::println(std::cerr, "✓ SessionRegistry interface works");

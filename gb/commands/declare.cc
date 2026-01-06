@@ -77,7 +77,7 @@ void declare(const command_t& argv, GameObj& g) {
         g.out << "Good for you.\n";
       }
       warn_race(
-          get_session_registry(g), g.entity_manager, n,
+          g.session_registry, g.entity_manager, n,
           std::format(" Player #{} ({}) has declared an alliance with you!\n",
                       Playernum, race.name));
       news_msg = std::format("{} [{}] declares ALLIANCE with {} [{}].\n",
@@ -92,7 +92,7 @@ void declare(const command_t& argv, GameObj& g) {
       g.out << "Done.\n";
 
       warn_race(
-          get_session_registry(g), g.entity_manager, n,
+          g.session_registry, g.entity_manager, n,
           std::format(" Player #{} ({}) has declared neutrality with you!\n",
                       Playernum, race.name));
       news_msg =
@@ -109,7 +109,7 @@ void declare(const command_t& argv, GameObj& g) {
       } else {
         g.out << "Give 'em hell!\n";
       }
-      warn_race(get_session_registry(g), g.entity_manager, n,
+      warn_race(g.session_registry, g.entity_manager, n,
                 std::format(" Player #{} ({}) has declared war against you!\n",
                             Playernum, race.name));
       switch (int_rand(1, 5)) {
@@ -148,7 +148,7 @@ void declare(const command_t& argv, GameObj& g) {
   }
 
   post(g.entity_manager, news_msg, NewsType::DECLARATION);
-  warn_race(get_session_registry(g), g.entity_manager, Playernum, news_msg);
+  warn_race(g.session_registry, g.entity_manager, Playernum, news_msg);
 
   /* They, of course, learn more about you */
   alien.translate[Playernum - 1] =

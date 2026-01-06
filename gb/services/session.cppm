@@ -4,70 +4,17 @@
 /// \brief Client session management for the game server
 ///
 /// Part of the Service Layer. Provides:
-/// - SessionRegistry: Abstract interface for iterating over sessions
 /// - Session: Individual client connection with async I/O
+/// - SessionRegistry interface is in gblib (cross-cutting concern)
 
 export module session;
 
-import gblib;
+import gblib; // For SessionRegistry, types, EntityManager
 import asio;
 import std;
 
-export class Session;
-
-/// Abstract interface for session management (enables testing without sockets)
-export class SessionRegistry {
-public:
-  virtual ~SessionRegistry() = default;
-
-  // Rule of 5 - make non-copyable, non-movable
-  SessionRegistry() = default;
-  SessionRegistry(const SessionRegistry&) = delete;
-  SessionRegistry& operator=(const SessionRegistry&) = delete;
-  SessionRegistry(SessionRegistry&&) = delete;
-  SessionRegistry& operator=(SessionRegistry&&) = delete;
-
-  /// Iterate over all connected sessions
-  virtual void for_each_session(std::function<void(Session&)> fn) = 0;
-
-  /// Check if updates are in progress (suppress notifications during updates)
-  virtual bool update_in_progress() const = 0;
-
-  // Non-virtual notification methods (implemented using for_each_session)
-  // These are on SessionRegistry because they only need session iteration,
-  // not game logic like telegram fallback or race lookups.
-
-  /// Send message to all governors of a race
-  void notify_race(player_t race, const std::string& message);
-
-  /// Send message to a specific player's governor, returns true if delivered
-  bool notify_player(player_t race, governor_t gov, const std::string& message);
-};
-
-/// Null implementation of SessionRegistry for tests (does nothing)
-export class NullSessionRegistry : public SessionRegistry {
-public:
-  void for_each_session(std::function<void(Session&)>) override {
-    // No sessions in test mode
-  }
-
-  bool update_in_progress() const override {
-    return false;  // Never in update mode during tests
-  }
-
-  NullSessionRegistry() = default;  // Public constructor for singleton
-};
-
-/// Get singleton NullSessionRegistry instance for tests
-export inline SessionRegistry& get_null_session_registry() {
-  static NullSessionRegistry null_registry;
-  return null_registry;
-}
-
-/// Get default SessionRegistry for GameObj (used when not explicitly set)
-export inline SessionRegistry& get_default_session_registry() {
-  return get_null_session_registry();
-}
+// SessionRegistry interface and helpers are in gblib as cross-cutting concerns
+// Commands should import gblib to access them
 
 /// Represents a single client connection
 export class Session : public std::enable_shared_from_this<Session> {

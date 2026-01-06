@@ -6,23 +6,27 @@ import std;
 
 module notification;
 
-import session; // SessionRegistry, Session
-import gblib;   // EntityManager, types
+import gblib; // EntityManager, SessionRegistry, types, push_telegram
 
-// Note: notify_race() and notify_player() are now methods on SessionRegistry
-// (defined in session.cc). This file contains only functions with game logic.
+// Complex notification functions implemented using SessionRegistry primitives.
+// These iterate over races/governors and use notify_player() for delivery.
+// This avoids needing direct Session access, breaking the circular dependency.
 
 void d_broadcast(SessionRegistry& registry, EntityManager& em, player_t sender,
                  governor_t sender_gov, const std::string& message) {
-  registry.for_each_session([&](Session& session) {
-    if (session.connected() &&
-        !(session.player() == sender && session.governor() == sender_gov)) {
-      const auto* race = em.peek_race(session.player());
-      if (race && !race->governor[session.governor()].toggle.gag) {
-        session.out() << message;
-      }
+  // Send to all connected players except sender, respecting gag settings
+  for (player_t p = 1; p <= em.num_races(); p++) {
+    const auto* race = em.peek_race(p);
+    if (!race) continue;
+
+    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
+      if (!race->governor[g].active) continue;
+      if (p == sender && g == sender_gov) continue;
+      if (race->governor[g].toggle.gag) continue;
+
+      registry.notify_player(p, g, message);
     }
-  });
+  }
 }
 
 void d_announce(SessionRegistry& registry, EntityManager& em, player_t sender,
@@ -31,55 +35,71 @@ void d_announce(SessionRegistry& registry, EntityManager& em, player_t sender,
   const auto* star_ptr = em.peek_star(star);
   if (!star_ptr) return;
 
-  registry.for_each_session([&](Session& session) {
-    if (session.connected() &&
-        !(session.player() == sender && session.governor() == sender_gov) &&
-        session.snum() == star) {
-      const auto* race = em.peek_race(session.player());
-      if (race &&
-          (isset(star_ptr->inhabited(), session.player()) || race->God) &&
-          !race->governor[session.governor()].toggle.gag) {
-        session.out() << message;
-      }
+  // Send to players who inhabit this star system, respecting gag
+  for (player_t p = 1; p <= em.num_races(); p++) {
+    const auto* race = em.peek_race(p);
+    if (!race) continue;
+
+    // Must inhabit the star (or be God)
+    if (!isset(star_ptr->inhabited(), p) && !race->God) continue;
+
+    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
+      if (!race->governor[g].active) continue;
+      if (p == sender && g == sender_gov) continue;
+      if (race->governor[g].toggle.gag) continue;
+
+      registry.notify_player(p, g, message);
     }
-  });
+  }
 }
 
 void d_think(SessionRegistry& registry, EntityManager& em, player_t race_num,
              governor_t sender_gov, const std::string& message) {
-  registry.for_each_session([&](Session& session) {
-    if (session.connected() && session.player() == race_num &&
-        session.governor() != sender_gov) {
-      const auto* race = em.peek_race(session.player());
-      if (race && !race->governor[session.governor()].toggle.gag) {
-        session.out() << message;
-      }
-    }
-  });
+  const auto* race = em.peek_race(race_num);
+  if (!race) return;
+
+  // Send to other governors of the same race, respecting gag
+  for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
+    if (!race->governor[g].active) continue;
+    if (g == sender_gov) continue;
+    if (race->governor[g].toggle.gag) continue;
+
+    registry.notify_player(race_num, g, message);
+  }
 }
 
-void d_shout(SessionRegistry& registry, player_t sender, governor_t sender_gov,
-             const std::string& message) {
-  registry.for_each_session([&](Session& session) {
-    if (session.connected() &&
-        !(session.player() == sender && session.governor() == sender_gov)) {
-      session.out() << message;
+void d_shout(SessionRegistry& registry, EntityManager& em, player_t sender,
+             governor_t sender_gov, const std::string& message) {
+  // Send to all connected players except sender (ignores gag)
+  for (player_t p = 1; p <= em.num_races(); p++) {
+    const auto* race = em.peek_race(p);
+    if (!race) continue;
+
+    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
+      if (!race->governor[g].active) continue;
+      if (p == sender && g == sender_gov) continue;
+
+      registry.notify_player(p, g, message);
     }
-  });
+  }
 }
 
 void warn_player(SessionRegistry& registry, player_t who, governor_t gov,
                  const std::string& message) {
-  // During updates, skip real-time (matches original update_flag behavior)
+  // During updates, skip real-time delivery
   if (registry.update_in_progress()) {
     push_telegram(who, gov, message);
     return;
   }
-  // Try real-time, fall back to telegram if not connected
-  if (!registry.notify_player(who, gov, message) &&
-      !registry.notify_player(who, 0, message)) {
-    push_telegram(who, gov, message);
-  }
+
+  // Try real-time delivery to the specific governor
+  if (registry.notify_player(who, gov, message)) return;
+
+  // Fall back to governor 0 if different
+  if (gov != 0 && registry.notify_player(who, 0, message)) return;
+
+  // No one connected, use telegram
+  push_telegram(who, gov, message);
 }
 
 void warn_race(SessionRegistry& registry, EntityManager& em, player_t who,
@@ -87,9 +107,9 @@ void warn_race(SessionRegistry& registry, EntityManager& em, player_t who,
   const auto* race = em.peek_race(who);
   if (!race) return;
 
-  for (int i = 0; i <= MAXGOVERNORS; i++) {
-    if (race->governor[i].active) {
-      warn_player(registry, who, i, message);
+  for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
+    if (race->governor[g].active) {
+      warn_player(registry, who, g, message);
     }
   }
 }
@@ -100,36 +120,38 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
   const auto* star_ptr = em.peek_star(star);
   if (!star_ptr) return;
 
-  // During updates, use telegram fallback
+  // During updates, use telegram for all
   if (registry.update_in_progress()) {
     for (player_t p = 1; p <= em.num_races(); p++) {
-      if ((p != sender || sender_gov != 0) && isset(star_ptr->inhabited(), p)) {
-        const auto* race = em.peek_race(p);
-        if (race) {
-          for (int i = 0; i <= MAXGOVERNORS; i++) {
-            if (race->governor[i].active && !(p == sender && i == sender_gov)) {
-              push_telegram(p, i, message);
-            }
-          }
-        }
+      if (p == sender && sender_gov == 0) continue;
+      if (!isset(star_ptr->inhabited(), p)) continue;
+
+      const auto* race = em.peek_race(p);
+      if (!race) continue;
+
+      for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
+        if (!race->governor[g].active) continue;
+        if (p == sender && g == sender_gov) continue;
+        push_telegram(p, g, message);
       }
     }
     return;
   }
 
-  // Try real-time delivery
+  // Try real-time, fall back to telegram
   for (player_t p = 1; p <= em.num_races(); p++) {
-    if ((p != sender || sender_gov != 0) && isset(star_ptr->inhabited(), p)) {
-      const auto* race = em.peek_race(p);
-      if (race) {
-        for (int i = 0; i <= MAXGOVERNORS; i++) {
-          if (race->governor[i].active && !(p == sender && i == sender_gov)) {
-            // Try real-time, fall back to telegram if not delivered
-            if (!registry.notify_player(p, i, message)) {
-              push_telegram(p, i, message);
-            }
-          }
-        }
+    if (p == sender && sender_gov == 0) continue;
+    if (!isset(star_ptr->inhabited(), p)) continue;
+
+    const auto* race = em.peek_race(p);
+    if (!race) continue;
+
+    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
+      if (!race->governor[g].active) continue;
+      if (p == sender && g == sender_gov) continue;
+
+      if (!registry.notify_player(p, g, message)) {
+        push_telegram(p, g, message);
       }
     }
   }
@@ -140,10 +162,11 @@ void warn_star(SessionRegistry& registry, EntityManager& em, player_t sender,
   const auto* star_ptr = em.peek_star(star);
   if (!star_ptr) return;
 
-  // Send to all players in the star system (except sender)
+  // Send to all players who inhabit the star system (except sender)
   for (player_t p = 1; p <= em.num_races(); p++) {
-    if (p != sender && isset(star_ptr->inhabited(), p)) {
-      warn_race(registry, em, p, message);
-    }
+    if (p == sender) continue;
+    if (!isset(star_ptr->inhabited(), p)) continue;
+
+    warn_race(registry, em, p, message);
   }
 }

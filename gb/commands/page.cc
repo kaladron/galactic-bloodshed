@@ -66,14 +66,14 @@ void page(const command_t& argv, GameObj& g) {
         uint64_t allied_members = block_player->invite & block_player->pledge;
         for (i = 1; i <= g.entity_manager.num_races(); i++) {
           if (isset(allied_members, i) && i != Playernum) {
-            get_session_registry(g).notify_race(i, msg);
+            g.session_registry.notify_race(i, msg);
           }
         }
       } else {
         if (argv.size() > 1) {
-          get_session_registry(g).notify_player(who, gov, msg);
+          g.session_registry.notify_player(who, gov, msg);
         } else {
-          get_session_registry(g).notify_race(who, msg);
+          g.session_registry.notify_race(who, msg);
         }
       }
 

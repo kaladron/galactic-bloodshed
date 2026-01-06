@@ -106,7 +106,7 @@ void fire(const command_t& argv, GameObj& g) {
         continue;
       }
       if (!landed(*to)) {
-        get_session_registry(g).notify_player(
+        g.session_registry.notify_player(
             Playernum, Governor,
             std::format("{} isn't landed on a planet!\n", ship_to_string(*to)));
         continue;
@@ -189,9 +189,9 @@ void fire(const command_t& argv, GameObj& g) {
       use_destruct(from, strength);
 
     if (!to_ship.alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
-    notify_star(get_session_registry(g), g.entity_manager, Playernum, Governor,
+    notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
                 from.storbits(), short_buf);
-    warn_player(get_session_registry(g), to_ship.owner(), to_ship.governor(),
+    warn_player(g.session_registry, to_ship.owner(), to_ship.governor(),
                 long_buf);
     g.out << long_buf;
     /* defending ship retaliates */
@@ -216,11 +216,11 @@ void fire(const command_t& argv, GameObj& g) {
         else
           use_destruct(to_ship, strength);
         if (!from.alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
-        notify_star(get_session_registry(g), g.entity_manager, Playernum,
-                    Governor, from.storbits(), short_buf);
+        notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                    from.storbits(), short_buf);
         g.out << long_buf;
-        warn_player(get_session_registry(g), to_ship.owner(),
-                    to_ship.governor(), long_buf);
+        warn_player(g.session_registry, to_ship.owner(), to_ship.governor(),
+                    long_buf);
       }
     }
     /* protecting ships retaliate individually if damage was inflicted */
@@ -256,10 +256,10 @@ void fire(const command_t& argv, GameObj& g) {
               use_destruct(ship, strength);
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(get_session_registry(g), g.entity_manager, Playernum,
+            notify_star(g.session_registry, g.entity_manager, Playernum,
                         Governor, from.storbits(), short_buf);
             g.out << long_buf;
-            warn_player(get_session_registry(g), ship.owner(), ship.governor(),
+            warn_player(g.session_registry, ship.owner(), ship.governor(),
                         long_buf);
           }
         }

@@ -52,7 +52,7 @@ void grant(const command_t& argv, GameObj& g) {
     }
     star_handle->governor(Playernum - 1) = gov;
     warn_player(
-        get_session_registry(g), Playernum, gov,
+        g.session_registry, Playernum, gov,
         std::format("\"{}\" has granted you control of the /{} star system.\n",
                     race.governor[Governor].name, star_handle->get_name()));
   } else if (argv[2] == "ship") {
@@ -64,7 +64,7 @@ void grant(const command_t& argv, GameObj& g) {
       if (!authorized(Governor, ship)) continue;
 
       ship.governor() = gov;
-      warn_player(get_session_registry(g), Playernum, gov,
+      warn_player(g.session_registry, Playernum, gov,
                   std::format("\"{}\" granted you {} at {}\n",
                               race.governor[Governor].name,
                               ship_to_string(ship),
@@ -94,11 +94,11 @@ void grant(const command_t& argv, GameObj& g) {
       g.out << std::format("{} money deducted from \"{}\".\n", -amount,
                            race.governor[gov].name);
     if (amount >= 0)
-      warn_player(get_session_registry(g), Playernum, gov,
+      warn_player(g.session_registry, Playernum, gov,
                   std::format("\"{}\" granted you {} money.\n",
                               race.governor[Governor].name, amount));
     else
-      warn_player(get_session_registry(g), Playernum, gov,
+      warn_player(g.session_registry, Playernum, gov,
                   std::format("\"{}\" docked you {} money.\n",
                               race.governor[Governor].name, -amount));
     race.governor[Governor].money -= amount;

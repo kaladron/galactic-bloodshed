@@ -8,9 +8,11 @@ import gblib;
 import std.compat;
 
 #include <strings.h>
+#include <sys/stat.h>
 #include <cassert>
+#include <cstdio>
 
-#include "gb/GB_server.h"
+#include "gb/files.h"
 
 module gblib;
 
@@ -92,12 +94,11 @@ static void finalize_turn(TurnState& state, int update);
  * ship movement and combat to happen more frequently than economic/tech growth.
  *
  * @param entity_manager Database entity manager for persistent storage
- * @param session_registry Optional pointer to session registry for
- * notifications (void* is actually SessionRegistry*)
+ * @param session_registry Session registry for notifications
  * @param update 1 for full update with production/tech, 0 for movement only
  *               TODO: Should be bool for type safety
  */
-void do_turn(EntityManager& entity_manager, void*, int update) {
+void do_turn(EntityManager& entity_manager, SessionRegistry&, int update) {
   TurnState state(
       entity_manager);  // Create turn-local state with EntityManager ref
 
@@ -895,4 +896,194 @@ static void output_ground_attacks(TurnState& state) {
       }
     }
   }
+}
+
+void compute_power_blocks(EntityManager& entity_manager) {
+  /* compute alliance block power */
+  Power_blocks.time = time(nullptr);
+  for (auto race_i_handle : RaceList(entity_manager)) {
+    const auto& race_i = race_i_handle.read();
+    const player_t i = race_i.Playernum;
+
+    const auto* block_i = entity_manager.peek_block(i);
+    if (!block_i) continue;
+
+    uint64_t allied_members = block_i->invite & block_i->pledge;
+    Power_blocks.members[i - 1] = 0;
+    Power_blocks.sectors_owned[i - 1] = 0;
+    Power_blocks.popn[i - 1] = 0;
+    Power_blocks.ships_owned[i - 1] = 0;
+    Power_blocks.resource[i - 1] = 0;
+    Power_blocks.fuel[i - 1] = 0;
+    Power_blocks.destruct[i - 1] = 0;
+    Power_blocks.money[i - 1] = 0;
+    Power_blocks.systems_owned[i - 1] = block_i->systems_owned;
+    Power_blocks.VPs[i - 1] = block_i->VPs;
+
+    for (auto race_j_handle : RaceList(entity_manager)) {
+      const auto& race_j = race_j_handle.read();
+      const player_t j = race_j.Playernum;
+
+      if (isset(allied_members, j)) {
+        const auto* power_ptr = entity_manager.peek_power(j);
+        if (!power_ptr) continue;
+        Power_blocks.members[i - 1] += 1;
+        Power_blocks.sectors_owned[i - 1] += power_ptr->sectors_owned;
+        Power_blocks.money[i - 1] += power_ptr->money;
+        Power_blocks.popn[i - 1] += power_ptr->popn;
+        Power_blocks.ships_owned[i - 1] += power_ptr->ships_owned;
+        Power_blocks.resource[i - 1] += power_ptr->resource;
+        Power_blocks.fuel[i - 1] += power_ptr->fuel;
+        Power_blocks.destruct[i - 1] += power_ptr->destruct;
+      }
+    }
+  }
+}
+
+// --- Update/Segment state (previously in GB_server.cc) ---
+namespace {
+ScheduleInfo schedule_info;
+}  // namespace
+
+const ScheduleInfo& get_schedule_info() {
+  return schedule_info;
+}
+
+void set_server_start_time(std::time_t start_time) {
+  schedule_info.start_buf =
+      std::format("Server started  : {}", ctime(&start_time));
+}
+
+void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
+               bool force) {
+  time_t clk = time(nullptr);
+  struct stat stbuf;
+
+  // Get server state handle (will auto-save on scope exit)
+  auto state_handle = entity_manager.get_server_state();
+  auto& state = *state_handle;
+
+  bool fakeit = (!force && stat(nogofl.data(), &stbuf) >= 0);
+
+  std::string update_msg = std::format("{}DOING UPDATE...\n", ctime(&clk));
+  if (!fakeit) {
+    for (auto i = 1; i <= entity_manager.num_races(); i++)
+      session_registry.notify_race(i, update_msg);
+    // Flush immediately so players see the message before long-running
+    // do_turn()
+    session_registry.flush_all();
+  }
+
+  if (state.segments <= 1) {
+    /* Disables movement segments. */
+    state.next_segment_time = clk + (144 * 3600);
+    state.nsegments_done = state.segments;
+  } else {
+    if (force)
+      state.next_segment_time =
+          clk + state.update_time_minutes * 60 / state.segments;
+    else
+      state.next_segment_time = state.next_update_time +
+                                state.update_time_minutes * 60 / state.segments;
+    state.nsegments_done = 1;
+  }
+  if (force)
+    state.next_update_time = clk + state.update_time_minutes * 60;
+  else
+    state.next_update_time += state.update_time_minutes * 60;
+
+  if (!fakeit) schedule_info.nupdates_done++;
+
+  Power_blocks.time = clk;
+  schedule_info.last_update_time = clk;
+  schedule_info.update_buf = std::format(
+      "Last Update {0:3d} : {1}", schedule_info.nupdates_done, ctime(&clk));
+  std::print(stderr, "{}", ctime(&clk));
+  std::print(stderr, "Next Update {0:3d} : {1}",
+             schedule_info.nupdates_done + 1, ctime(&state.next_update_time));
+  schedule_info.last_segment_time = clk;
+  schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",
+                                          state.nsegments_done, ctime(&clk));
+  std::print(stderr, "{}", ctime(&clk));
+  std::print(stderr, "Next Segment {0:2d} : {1}",
+             state.nsegments_done == state.segments ? 1
+                                                    : state.nsegments_done + 1,
+             ctime(&state.next_segment_time));
+
+  session_registry.set_update_in_progress(true);
+  if (!fakeit) do_turn(entity_manager, session_registry, 1);
+  session_registry.set_update_in_progress(false);
+  clk = time(nullptr);
+  std::string finish_msg = std::format("{}Update {} finished\n", ctime(&clk),
+                                       schedule_info.nupdates_done);
+  handle_victory(entity_manager);
+  if (!fakeit) {
+    for (auto i = 1; i <= entity_manager.num_races(); i++)
+      session_registry.notify_race(i, finish_msg);
+  }
+}
+
+void do_segment(EntityManager& entity_manager,
+                SessionRegistry& session_registry, int override, int segment) {
+  time_t clk = time(nullptr);
+  struct stat stbuf;
+
+  // Get server state handle (will auto-save on scope exit)
+  auto state_handle = entity_manager.get_server_state();
+  auto& state = *state_handle;
+
+  bool fakeit = (!override && stat(nogofl.data(), &stbuf) >= 0);
+
+  if (!override && state.segments <= 1) return;
+
+  std::string movement_msg = std::format("{}DOING MOVEMENT...\n", ctime(&clk));
+  if (!fakeit) {
+    for (auto i = 1; i <= entity_manager.num_races(); i++)
+      session_registry.notify_race(i, movement_msg);
+    // Flush immediately so players see the message before long-running
+    // do_turn()
+    session_registry.flush_all();
+  }
+  if (override) {
+    state.next_segment_time =
+        clk + state.update_time_minutes * 60 / state.segments;
+    if (segment) {
+      state.nsegments_done = segment;
+      state.next_update_time = clk + state.update_time_minutes * 60 *
+                                         (state.segments - segment + 1) /
+                                         state.segments;
+    } else {
+      state.nsegments_done++;
+    }
+  } else {
+    state.next_segment_time += state.update_time_minutes * 60 / state.segments;
+    state.nsegments_done++;
+  }
+
+  session_registry.set_update_in_progress(true);
+  if (!fakeit) do_turn(entity_manager, session_registry, 0);
+  session_registry.set_update_in_progress(false);
+  schedule_info.last_segment_time = clk;
+  schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",
+                                          state.nsegments_done, ctime(&clk));
+  std::print(stderr, "{0}", ctime(&clk));
+  std::print(stderr, "Next Segment {0:2d} : {1}", state.nsegments_done,
+             ctime(&state.next_segment_time));
+  clk = time(nullptr);
+  std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));
+  if (!fakeit) {
+    for (auto i = 1; i <= entity_manager.num_races(); i++)
+      session_registry.notify_race(i, segment_msg);
+  }
+}
+
+void do_next_thing(EntityManager& entity_manager,
+                   SessionRegistry& session_registry) {
+  const auto* state = entity_manager.peek_server_state();
+  if (!state) return;
+
+  if (state->nsegments_done < state->segments)
+    do_segment(entity_manager, session_registry, 0, 1);
+  else
+    do_update(entity_manager, session_registry, false);
 }

@@ -117,7 +117,7 @@ int main() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);  // Set race pointer like production
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -234,7 +234,7 @@ int main() {
     RaceRepository races2(store2);
     races2.save(race);
 
-    auto* registry = get_test_session_registry();
+    auto& registry = get_test_session_registry();
     GameObj g2(em2, registry);
     g2.set_player(1);
     g2.set_governor(0);

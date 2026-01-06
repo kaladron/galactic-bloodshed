@@ -28,7 +28,7 @@ void test_name_ship_persistence() {
   ships.save(ship);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
@@ -73,7 +73,7 @@ void test_name_race_persistence() {
   races.save(race);
 
   // Create GameObj for command execution (leader, not governor)
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_governor(0);  // Must be leader (governor 0)
@@ -122,7 +122,7 @@ void test_name_star_persistence() {
   stars_repo.save(star);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_STAR);
@@ -172,7 +172,7 @@ void test_name_planet_persistence() {
   stars_repo.save(star);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);

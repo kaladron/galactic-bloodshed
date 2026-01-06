@@ -80,7 +80,7 @@ void dump(const command_t& argv, GameObj& g) {
 
   deductAPs(g, APcount, g.snum());
 
-  warn_race(get_session_registry(g), g.entity_manager, player,
+  warn_race(g.session_registry, g.entity_manager, player,
             std::format("{} [{}] has given you exploration data.\n",
                         g.race->name, Playernum));
   g.out << "Exploration Data transferred.\n";

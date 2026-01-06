@@ -128,13 +128,12 @@ void bombard(const command_t& argv, GameObj& g) {
       use_destruct(from, strength);
 
     post(g.entity_manager, short_buf, NewsType::COMBAT);
-    notify_star(get_session_registry(g), g.entity_manager, Playernum, Governor,
+    notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
                 from.storbits(), short_buf);
     for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
       if (result.nuked[i - 1]) {
         const auto* star = g.entity_manager.peek_star(from.storbits());
-        warn_player(get_session_registry(g), i, star->governor(i - 1),
-                    long_buf);
+        warn_player(g.session_registry, i, star->governor(i - 1), long_buf);
       }
     }
     g.out << long_buf;
@@ -156,12 +155,11 @@ void bombard(const command_t& argv, GameObj& g) {
             shoot_planet_to_ship(g.entity_manager, alien, from, strength,
                                  long_buf, short_buf);
             const auto* star = g.entity_manager.peek_star(from.storbits());
-            warn_player(get_session_registry(g), i, star->governor(i - 1),
-                        long_buf);
+            warn_player(g.session_registry, i, star->governor(i - 1), long_buf);
             g.out << long_buf;
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(get_session_registry(g), g.entity_manager, Playernum,
+            notify_star(g.session_registry, g.entity_manager, Playernum,
                         Governor, from.storbits(), short_buf);
           }
       }
@@ -191,9 +189,9 @@ void bombard(const command_t& argv, GameObj& g) {
               use_destruct(ship, strength);
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(get_session_registry(g), g.entity_manager, Playernum,
+            notify_star(g.session_registry, g.entity_manager, Playernum,
                         Governor, from.storbits(), short_buf);
-            warn_player(get_session_registry(g), ship.owner(), ship.governor(),
+            warn_player(g.session_registry, ship.owner(), ship.governor(),
                         long_buf);
             g.out << long_buf;
           }

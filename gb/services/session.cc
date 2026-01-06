@@ -129,30 +129,3 @@ std::string Session::pop_input() {
   input_queue_.pop_front();
   return line;
 }
-
-// SessionRegistry non-virtual methods
-// These write directly to session output buffers.
-// Buffers are flushed by Server after command processing.
-
-void SessionRegistry::notify_race(player_t race, const std::string& message) {
-  if (update_in_progress()) return;
-  for_each_session([&](Session& session) {
-    if (session.connected() && session.player() == race) {
-      session.out() << message;
-    }
-  });
-}
-
-bool SessionRegistry::notify_player(player_t race, governor_t gov,
-                                    const std::string& message) {
-  if (update_in_progress()) return false;
-  bool delivered = false;
-  for_each_session([&](Session& session) {
-    if (session.connected() && session.player() == race &&
-        session.governor() == gov) {
-      session.out() << message;
-      delivered = true;
-    }
-  });
-  return delivered;
-}

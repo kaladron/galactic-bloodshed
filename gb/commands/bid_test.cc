@@ -103,7 +103,7 @@ int main() {
   }
 
   // Create GameObj for player 1 (bidder)
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -174,7 +174,7 @@ int main() {
     const auto* c_before = ctx.em.peek_commod(1);
     int previous_bid = c_before->bid;
 
-    auto* registry = get_test_session_registry();
+    auto& registry = get_test_session_registry();
     GameObj g2(ctx.em, registry);
     ctx.setup_game_obj(g2);
     g2.set_level(ScopeLevel::LEVEL_PLAN);

@@ -42,7 +42,7 @@ void test_bless_technology() {
   planet_repo.save(planet);
 
   // Setup GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -92,7 +92,7 @@ void test_bless_money() {
   planet_repo.save(planet);
 
   // Setup GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -139,7 +139,7 @@ void test_bless_requires_god() {
   planet_repo.save(planet);
 
   // Setup GameObj without god privilege
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -178,7 +178,7 @@ void test_bless_requires_planet_scope() {
   race_repo.save(race);
 
   // Setup GameObj at wrong scope
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);  // Wrong scope!

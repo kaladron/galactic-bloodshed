@@ -44,7 +44,7 @@ int main() {
   stars.save(star);
 
   // Create GameObj for sender
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_STAR);

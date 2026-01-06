@@ -193,7 +193,7 @@ void place_bid(const command_t& argv, GameObj& g) {
     std::string bid_message = std::format(
         "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
         c.amount, c.type, bid0, g.race->name, g.player());
-    get_session_registry(g).notify_player(c.bidder, c.bidder_gov, bid_message);
+    g.session_registry.notify_player(c.bidder, c.bidder_gov, bid_message);
   }
   c.bid = bid0;
   c.bidder = g.player();

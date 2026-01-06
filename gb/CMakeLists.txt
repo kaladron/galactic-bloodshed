@@ -224,6 +224,7 @@ target_sources(
          repositories/gblib-repositories.cppm
          services/gblib-services.cppm
          gblib-sector.cppm
+         gblib-sessionregistry.cppm
          gblib-ships.cppm
          gblib-shipfilter.cppm
          gblib-shlmisc.cppm

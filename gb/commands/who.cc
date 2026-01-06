@@ -27,43 +27,43 @@ void who(const command_t& /* argv */, Session& session) {
   tabulate::Table table;
   table.add_row({"Race", "Governor", "Player", "Idle", "Star", "Flags"});
 
-  // Iterate over all sessions
-  session.registry().for_each_session([&](Session& s) {
-    if (s.connected() && !s.god()) {
-      const auto* r = s.entity_manager().peek_race(s.player());
-      if (!r) return;
+  // Get all connected sessions as metadata (no Session type exposure)
+  for (const auto& info : session.registry().get_connected_sessions()) {
+    if (info.god) continue;  // Skip god sessions
 
-      // Check if this player should be visible
-      bool is_visible = !r->governor[s.governor()].toggle.invisible ||
-                        s.player() == session.player() || is_god;
+    const auto* r = session.entity_manager().peek_race(info.player);
+    if (!r) continue;
 
-      if (is_visible) {
-        std::string gov_name =
-            std::format("\"{}\"", r->governor[s.governor()].name);
-        const auto* star = s.entity_manager().peek_star(s.snum());
-        std::string star_name = is_god && star ? star->get_name() : "";
-        std::time_t idle_seconds = now - s.last_time();
-        std::string player_gov =
-            std::format("[{},{}]", s.player(), s.governor());
-        std::string idle_str = std::format("{}s", idle_seconds);
+    // Check if this player should be visible
+    bool is_visible = !r->governor[info.governor].toggle.invisible ||
+                      info.player == session.player() || is_god;
 
-        std::vector<std::string> flags;
-        if (r->governor[s.governor()].toggle.gag) flags.push_back("GAG");
-        if (r->governor[s.governor()].toggle.invisible)
-          flags.push_back("INVISIBLE");
-        std::string flags_str;
-        for (std::size_t i = 0; i < flags.size(); ++i) {
-          if (i > 0) flags_str += " ";
-          flags_str += flags[i];
-        }
+    if (is_visible) {
+      std::string gov_name =
+          std::format("\"{}\"", r->governor[info.governor].name);
+      const auto* star = session.entity_manager().peek_star(info.snum);
+      std::string star_name = is_god && star ? star->get_name() : "";
+      std::time_t idle_seconds = now - info.last_time;
+      std::string player_gov =
+          std::format("[{},{}]", info.player, info.governor);
+      std::string idle_str = std::format("{}s", idle_seconds);
 
-        table.add_row(
-            {r->name, gov_name, player_gov, idle_str, star_name, flags_str});
-      } else if (!is_god) {
-        coward_count++;  // Non-God player sees someone invisible
+      std::vector<std::string> flags;
+      if (r->governor[info.governor].toggle.gag) flags.push_back("GAG");
+      if (r->governor[info.governor].toggle.invisible)
+        flags.push_back("INVISIBLE");
+      std::string flags_str;
+      for (std::size_t i = 0; i < flags.size(); ++i) {
+        if (i > 0) flags_str += " ";
+        flags_str += flags[i];
       }
+
+      table.add_row(
+          {r->name, gov_name, player_gov, idle_str, star_name, flags_str});
+    } else if (!is_god) {
+      coward_count++;  // Non-God player sees someone invisible
     }
-  });
+  }
 
   session.out() << table << "\n";
 

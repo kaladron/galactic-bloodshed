@@ -62,22 +62,16 @@ public:
     sessions_.push_back(session);
   }
 
-  void for_each_session(std::function<void(Session&)> fn) override {
-    // This is a problem - fn expects Session& but we have MockSession
-    // For testing, we need a different approach
-    // We'll override the notification methods directly
-  }
-
   bool update_in_progress() const override {
     return update_in_progress_;
   }
 
-  void set_update_in_progress(bool val) {
+  void set_update_in_progress(bool val) override {
     update_in_progress_ = val;
   }
 
   // Override notification methods for testing
-  void notify_race(player_t race, const std::string& message) {
+  void notify_race(player_t race, const std::string& message) override {
     for (auto& session : sessions_) {
       if (session->connected() && session->player() == race) {
         session->out() << message;
@@ -86,7 +80,7 @@ public:
   }
 
   bool notify_player(player_t race, governor_t gov,
-                     const std::string& message) {
+                     const std::string& message) override {
     for (auto& session : sessions_) {
       if (session->connected() && session->player() == race &&
           session->governor() == gov) {

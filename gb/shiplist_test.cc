@@ -126,7 +126,7 @@ int main() {
   }
 
   // Create GameObj for scope-based tests
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   g.set_player(1);
   g.set_snum(0);
@@ -172,7 +172,7 @@ int main() {
     ships_repo.save(star_ship1);
     ships_repo.save(star_ship2);
 
-    auto* registry = get_test_session_registry();
+    auto& registry = get_test_session_registry();
     GameObj g_star(ctx.em, registry);
     g_star.set_player(1);
     g_star.set_level(ScopeLevel::LEVEL_STAR);
@@ -206,7 +206,7 @@ int main() {
 
     ships_repo.save(planet_ship);
 
-    auto* registry = get_test_session_registry();
+    auto& registry = get_test_session_registry();
     GameObj g_plan(ctx.em, registry);
     g_plan.set_player(1);
     g_plan.set_level(ScopeLevel::LEVEL_PLAN);
@@ -466,7 +466,7 @@ int main() {
     std::println("\nTest 5c: Const scope-based iteration");
 
     // Create GameObj for scope-based iteration
-    auto* registry = get_test_session_registry();
+    auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
     g.set_player(1);
     g.set_level(ScopeLevel::LEVEL_STAR);

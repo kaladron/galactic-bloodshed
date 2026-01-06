@@ -34,7 +34,7 @@ void test_highlight_database_persistence() {
   races_repo.save(race2);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   // TEST 1: Set highlight to player 2

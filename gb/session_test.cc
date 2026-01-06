@@ -29,18 +29,17 @@ public:
   std::vector<SessionData> sessions;
   bool update_flag = false;
 
-  void for_each_session(std::function<void(Session&)>) override {
-    // Can't create real Session objects without sockets, so this is
-    // tested indirectly through the notification methods
+  void notify_race(player_t race, const std::string& message) override {
+    if (update_in_progress()) return;
+    for (auto& session : sessions) {
+      if (session.connected && session.player == race) {
+        session.output << message;
+      }
+    }
   }
 
-  bool update_in_progress() const override {
-    return update_flag;
-  }
-
-  // Test helper: simulate notify_player logic
-  bool test_notify_player(player_t race, governor_t gov,
-                          const std::string& message) {
+  bool notify_player(player_t race, governor_t gov,
+                     const std::string& message) override {
     if (update_in_progress()) return false;
     bool delivered = false;
     for (auto& session : sessions) {
@@ -53,14 +52,18 @@ public:
     return delivered;
   }
 
-  // Test helper: simulate notify_race logic
+  bool update_in_progress() const override {
+    return update_flag;
+  }
+
+  // Aliases for the old test helper names (for minimal test changes)
+  bool test_notify_player(player_t race, governor_t gov,
+                          const std::string& message) {
+    return notify_player(race, gov, message);
+  }
+
   void test_notify_race(player_t race, const std::string& message) {
-    if (update_in_progress()) return;
-    for (auto& session : sessions) {
-      if (session.connected && session.player == race) {
-        session.output << message;
-      }
-    }
+    notify_race(race, message);
   }
 };
 

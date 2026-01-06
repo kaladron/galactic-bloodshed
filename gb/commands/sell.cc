@@ -122,7 +122,7 @@ void sell(const command_t& argv, GameObj& g) {
                   amount, item, g.race->name, Playernum);
   post(g.entity_manager, buf, NewsType::TRANSFER);
   for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-    get_session_registry(g).notify_race(i, buf);
+    g.session_registry.notify_race(i, buf);
   }
 
   Commod c{};

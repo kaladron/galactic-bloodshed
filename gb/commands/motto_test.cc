@@ -29,7 +29,7 @@ void test_motto_database_persistence() {
   blocks.save(b);
 
   // Create GameObj for command execution
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_governor(0);  // Must be governor 0 to set motto

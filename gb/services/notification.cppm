@@ -8,26 +8,12 @@
 
 export module notification;
 
-import session; // SessionRegistry is in standalone session module
-import gblib;   // For types, EntityManager, GameObj
+import gblib; // For SessionRegistry, types, EntityManager
 import std;
 
-/// Helper to get SessionRegistry from GameObj
-/// GameObj stores it as void* to avoid circular dependency, this casts it
-/// safely
-export inline SessionRegistry& get_session_registry(GameObj& g) {
-  // Lazy init for tests
-  if (g.session_registry_ptr == nullptr) {
-    g.session_registry_ptr = &get_default_session_registry();
-  }
-  return *static_cast<SessionRegistry*>(g.session_registry_ptr);
-}
-
-// Note: EntityManager is already available via gblib import
-
-// Note: notify_race() and notify_player() are now methods on SessionRegistry
-// (see session.cppm). They only need session iteration, not game logic.
-// The functions below have game logic (gag checks, telegram fallback, etc.)
+// Note: SessionRegistry and its basic notify methods are in gblib
+// (cross-cutting). The functions below add game logic (gag checks, telegram
+// fallback, star-based routing).
 
 /// Broadcast message to all connected clients (except sender), respects gag
 export void d_broadcast(SessionRegistry& registry, EntityManager& em,
@@ -44,8 +30,9 @@ export void d_think(SessionRegistry& registry, EntityManager& em, player_t race,
                     governor_t sender_gov, const std::string& message);
 
 /// Shout message to all clients (ignores gag)
-export void d_shout(SessionRegistry& registry, player_t sender,
-                    governor_t sender_gov, const std::string& message);
+export void d_shout(SessionRegistry& registry, EntityManager& em,
+                    player_t sender, governor_t sender_gov,
+                    const std::string& message);
 
 /// Warn a specific player's governor, falls back to governor 0, then telegram
 export void warn_player(SessionRegistry& registry, player_t who, governor_t gov,

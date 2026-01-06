@@ -160,7 +160,7 @@ void send_message(const command_t& argv, GameObj& g) {
         block->name, who);
     for (i = 1; i <= g.entity_manager.num_races(); i++) {
       if (isset(allied_members, i)) {
-        get_session_registry(g).notify_race(i, block_msg);
+        g.session_registry.notify_race(i, block_msg);
         push_telegram_race(g.entity_manager, i, msg);
       }
     }
@@ -169,19 +169,19 @@ void send_message(const command_t& argv, GameObj& g) {
     const auto star_msg = std::format(
         "{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
         race.governor[Governor].name, Playernum, Governor, star_ref.get_name());
-    notify_star(get_session_registry(g), g.entity_manager, Playernum, Governor,
-                star, star_msg);
-    warn_star(get_session_registry(g), g.entity_manager, Playernum, star, msg);
+    notify_star(g.session_registry, g.entity_manager, Playernum, Governor, star,
+                star_msg);
+    warn_star(g.session_registry, g.entity_manager, Playernum, star, msg);
   } else {
     int gov;
     if (who == Playernum) APcount = 0;
     if (std::isdigit(*argv[2].c_str()) && (gov = std::stoi(argv[2])) >= 0 &&
         gov <= MAXGOVERNORS) {
       push_telegram(who, gov, msg);
-      get_session_registry(g).notify_player(who, gov, notice);
+      g.session_registry.notify_player(who, gov, notice);
     } else {
       push_telegram_race(g.entity_manager, who, msg);
-      get_session_registry(g).notify_race(who, notice);
+      g.session_registry.notify_race(who, notice);
     }
 
     auto alien_handle = g.entity_manager.get_race(who);

@@ -57,7 +57,7 @@ void transfer(const command_t& argv, GameObj& g) {
           "{} {} resources transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);
       g.out << message;
-      warn_race(get_session_registry(g), g.entity_manager, player, message);
+      warn_race(g.session_registry, g.entity_manager, player, message);
     } break;
     case 'x':
     case '&': {
@@ -71,7 +71,7 @@ void transfer(const command_t& argv, GameObj& g) {
           "{} {} crystal(s) transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);
       g.out << message;
-      warn_race(get_session_registry(g), g.entity_manager, player, message);
+      warn_race(g.session_registry, g.entity_manager, player, message);
     } break;
     case 'f': {
       if (give > planet.info(Playernum - 1).fuel) {
@@ -84,7 +84,7 @@ void transfer(const command_t& argv, GameObj& g) {
           std::format("{} {} fuel transferred from player {} to player #{}\n",
                       starplanet, give, Playernum, player);
       g.out << message;
-      warn_race(get_session_registry(g), g.entity_manager, player, message);
+      warn_race(g.session_registry, g.entity_manager, player, message);
     } break;
     case 'd': {
       if (give > planet.info(Playernum - 1).destruct) {
@@ -98,7 +98,7 @@ void transfer(const command_t& argv, GameObj& g) {
           "{} {} destruct transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);
       g.out << message;
-      warn_race(get_session_registry(g), g.entity_manager, player, message);
+      warn_race(g.session_registry, g.entity_manager, player, message);
     } break;
     default:
       g.out << "What?\n";

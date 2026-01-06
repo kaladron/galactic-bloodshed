@@ -51,7 +51,7 @@ void test_designate_capital() {
   ships_repo.save(ship);
 
   // Execute command
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);  // Set race pointer like production
 
@@ -86,7 +86,7 @@ void test_governor_cannot_designate() {
   races_repo.save(race);
 
   // Execute command as governor (not leader)
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_governor(1);             // Not the leader
@@ -142,7 +142,7 @@ void test_ship_not_landed() {
   ships_repo.save(ship);
 
   // Execute command
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);  // Set race pointer like production
 
@@ -184,7 +184,7 @@ void test_query_capital() {
   ships_repo.save(ship);
 
   // Execute command without argument (query mode)
-  auto* registry = get_test_session_registry();
+  auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);  // Set race pointer like production
 

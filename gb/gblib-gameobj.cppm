@@ -4,6 +4,7 @@ export module gblib:gameobj;
 
 import :types;
 import :race;
+import :sessionregistry;  // For SessionRegistry interface
 import std.compat;
 
 // Forward declaration for EntityManager (defined in gblib:services)
@@ -15,10 +16,7 @@ public:
   std::stringstream out;          ///< Output stream (temporary - Step 4A)
   const Race* race = nullptr;     ///< Pointer to current player's race (valid
                                   ///< during command execution)
-
-  // Opaque SessionRegistry pointer (actual type hidden to avoid circular
-  // dependency) Access via get_session_registry(g) from notification module
-  void* session_registry_ptr = nullptr;
+  SessionRegistry& session_registry;  ///< Session registry for notifications
 
   // Public utility fields (direct access retained for legacy code patterns)
   double lastx[2] = {0.0, 0.0};
@@ -26,9 +24,8 @@ public:
   double zoom[2] = {0.5, 0.5};  ///< last coords for zoom
 
   // Constructor for new Server-based architecture
-  // Takes void* to avoid circular dependency (session imports gblib)
-  explicit GameObj(EntityManager& em, void* registry)
-      : entity_manager(em), session_registry_ptr(registry) {}
+  explicit GameObj(EntityManager& em, SessionRegistry& registry)
+      : entity_manager(em), session_registry(registry) {}
 
   GameObj(const GameObj&) = delete;
   GameObj& operator=(const GameObj&) = delete;

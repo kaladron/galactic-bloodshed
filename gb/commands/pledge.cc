@@ -11,8 +11,6 @@ import std.compat;
 import notification;
 import session;
 
-#include "gb/GB_server.h"
-
 module commands;
 
 namespace GB::commands {
@@ -49,10 +47,10 @@ void pledge(const command_t& argv, GameObj& g) {
   auto& block = *block_handle;
 
   setbit(block.pledge, Playernum);
-  warn_race(get_session_registry(g), g.entity_manager, n,
+  warn_race(g.session_registry, g.entity_manager, n,
             std::format("{} [{}] has pledged {}.\n", g.race->name, Playernum,
                         block.name));
-  warn_race(get_session_registry(g), g.entity_manager, Playernum,
+  warn_race(g.session_registry, g.entity_manager, Playernum,
             std::format("You have pledged allegiance to {}.\n", block.name));
 
   std::string msg;

@@ -10,8 +10,6 @@ import notification;
 import session;
 import std.compat;
 
-#include "gb/GB_server.h"
-
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -30,14 +28,19 @@ public:
   void run();
   void shutdown();
 
-  // SessionRegistry interface
-  void for_each_session(std::function<void(Session&)> fn) override;
+  // SessionRegistry interface - notification primitives
+  void notify_race(player_t race, const std::string& message) override;
+  bool notify_player(player_t race, governor_t gov,
+                     const std::string& message) override;
   bool update_in_progress() const override {
     return update_flag_;
   }
-  void set_update_in_progress(bool v) {
+  void set_update_in_progress(bool v) override {
     update_flag_ = v;
   }
+  void flush_all() override;
+  bool is_connected(player_t race, governor_t gov) const override;
+  std::vector<SessionInfo> get_connected_sessions() const override;
 
   EntityManager& entity_manager() {
     return entity_manager_;
@@ -68,22 +71,10 @@ private:
 
 bool shutdown_flag = false;  // Used by shutdown command
 
-static time_t last_update_time;
-static time_t last_segment_time;
-static unsigned int nupdates_done; /* number of updates so far */
-
-static std::string start_buf;
-static std::string update_buf;
-static std::string segment_buf;
-
 static void process_command(GameObj&, const command_t& argv);
 
 static void GB_time(const command_t&, GameObj&);
 static void GB_schedule(const command_t&, GameObj&);
-static void do_update(EntityManager&, void*,
-                      bool = false);  // void* is actually SessionRegistry*
-static void do_segment(EntityManager&, void*, int,
-                       int);  // void* is actually SessionRegistry*
 static void initialize_block_data(EntityManager&);
 static void welcome_user(Session&);
 static void check_connect(Session&, std::string_view);
@@ -487,7 +478,7 @@ void Server::on_timer() {
     }
   }
   if (go_time_ > 0 && current_time >= go_time_) {
-    do_next_thing(entity_manager_, this);
+    do_next_thing(entity_manager_, *this);
     go_time_ = 0;
   }
 }
@@ -547,10 +538,58 @@ void Server::process_commands() {
   }
 }
 
-void Server::for_each_session(std::function<void(Session&)> fn) {
+void Server::notify_race(player_t race, const std::string& message) {
+  if (update_in_progress()) return;
   for (auto& session : sessions_) {
-    fn(*session);
+    if (session->connected() && session->player() == race) {
+      session->out() << message;
+    }
   }
+}
+
+bool Server::notify_player(player_t race, governor_t gov,
+                           const std::string& message) {
+  if (update_in_progress()) return false;
+  bool delivered = false;
+  for (auto& session : sessions_) {
+    if (session->connected() && session->player() == race &&
+        session->governor() == gov) {
+      session->out() << message;
+      delivered = true;
+    }
+  }
+  return delivered;
+}
+
+void Server::flush_all() {
+  for (auto& session : sessions_) {
+    session->flush_to_network();
+  }
+}
+
+bool Server::is_connected(player_t race, governor_t gov) const {
+  for (const auto& session : sessions_) {
+    if (session->connected() && session->player() == race &&
+        session->governor() == gov) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::vector<SessionInfo> Server::get_connected_sessions() const {
+  std::vector<SessionInfo> result;
+  for (const auto& session : sessions_) {
+    if (session->connected()) {
+      result.push_back({.player = session->player(),
+                        .governor = session->governor(),
+                        .snum = session->snum(),
+                        .connected = true,
+                        .god = session->god(),
+                        .last_time = session->last_time()});
+    }
+  }
+  return result;
 }
 
 void Server::remove_session(std::shared_ptr<Session> session) {
@@ -611,7 +650,7 @@ int main(int argc, char** argv) {
   std::cerr << "      Port " << port << '\n';
   std::cerr << "      " << update_time << " minutes between updates" << '\n';
   std::cerr << "      " << state.segments << " segments/update" << '\n';
-  start_buf = std::format("Server started  : {0}", ctime(&clk));
+  set_server_start_time(clk);
 
   // Initialize state from database or set defaults if first run
   if (state.next_update_time == 0) {
@@ -629,15 +668,13 @@ int main(int argc, char** argv) {
       state.nsegments_done = state.segments;
     }
   }
-  update_buf = std::format("Last Update {:3d} : {}", nupdates_done,
-                           ctime(&last_update_time));
-  segment_buf = std::format("Last Segment {0:2d} : {1}", state.nsegments_done,
-                            ctime(&last_segment_time));
 
-  std::print(stderr, "{}", update_buf);
-  std::print(stderr, "{}", segment_buf);
+  // Print initial schedule status
+  std::print(stderr, "Last Update {:3d} : {}", 0, ctime(&clk));
+  std::print(stderr, "Last Segment {0:2d} : {1}", state.nsegments_done,
+             ctime(&clk));
   srandom(getpid());
-  std::print(stderr, "      Next Update {0}  : {1}", nupdates_done + 1,
+  std::print(stderr, "      Next Update {0}  : {1}", 1,
              ctime(&state.next_update_time));
   std::print(stderr, "      Next Segment   : {0}",
              ctime(&state.next_segment_time));
@@ -665,17 +702,6 @@ int main(int argc, char** argv) {
 
   std::println("Going down.");
   return 0;
-}
-void do_next_thing(
-    EntityManager& entity_manager,
-    void* session_registry) {  // void* is actually SessionRegistry*
-  const auto* state = entity_manager.peek_server_state();
-  if (!state) return;
-
-  if (state->nsegments_done < state->segments)
-    do_segment(entity_manager, session_registry, 0, 1);
-  else
-    do_update(entity_manager, session_registry, false);
 }
 
 static void welcome_user(Session& session) {
@@ -714,7 +740,7 @@ bool Server::do_command(Session& session, std::string_view comm) {
     } else {
       session.out() << "Starting update...\n";
       session.flush_to_network();
-      do_update(session.entity_manager(), &session.registry(), true);
+      do_update(session.entity_manager(), session.registry(), true);
       session.out() << "Update completed.\n";
     }
   } else if (session.connected() && session.god() && argv[0] == "@@segment") {
@@ -728,13 +754,13 @@ bool Server::do_command(Session& session, std::string_view comm) {
       }
       session.out() << "Starting segment movement...\n";
       session.flush_to_network();
-      do_segment(session.entity_manager(), &session.registry(), 1, seg_num);
+      do_segment(session.entity_manager(), session.registry(), 1, seg_num);
       session.out() << "Segment completed.\n";
     }
   } else {
     if (session.connected()) {
       /* GB command parser - create temporary GameObj */
-      GameObj g(session.entity_manager(), &session.registry());
+      GameObj g(session.entity_manager(), session.registry());
       g.set_player(session.player());
       g.set_governor(session.governor());
       g.set_snum(session.snum());
@@ -772,7 +798,7 @@ bool Server::do_command(Session& session, std::string_view comm) {
         return false;
       }
       // Login successful - check for telegrams and set home scope
-      GameObj g(session.entity_manager(), &session.registry());
+      GameObj g(session.entity_manager(), session.registry());
       g.set_player(session.player());
       g.set_governor(session.governor());
       g.set_snum(session.snum());
@@ -804,10 +830,10 @@ static void check_connect(Session& session, std::string_view message) {
 
   if (EXTERNAL_TRIGGER) {
     if (race_password == SEGMENT_PASSWORD) {
-      do_segment(session.entity_manager(), &session.registry(), 1, 0);
+      do_segment(session.entity_manager(), session.registry(), 1, 0);
       return;
     } else if (race_password == UPDATE_PASSWORD) {
-      do_update(session.entity_manager(), &session.registry(), true);
+      do_update(session.entity_manager(), session.registry(), true);
       return;
     }
   }
@@ -829,19 +855,12 @@ static void check_connect(Session& session, std::string_view message) {
   const auto& race = race_handle.read();
 
   // Check if player is already connected
-  bool already_connected = false;
-  session.registry().for_each_session([&](Session& s) {
-    if (s.connected() && s.player() == Playernum && s.governor() == Governor) {
-      already_connected = true;
-    }
-  });
-
-  if (already_connected) {
+  if (session.registry().is_connected(Playernum, Governor)) {
     session.out() << "Connection refused.\n";
     return;
   }
 
-  std::print(stderr, "CONNECTED {} \"{}\" [{},{}]\n", race.name,
+  std::print(stderr, "CONNECTED {} \"{}\" [{},{}]\\n", race.name,
              race.governor[Governor].name, Playernum, Governor);
   session.set_connected(true);
   session.set_god(race.God);
@@ -875,7 +894,7 @@ static void check_connect(Session& session, std::string_view message) {
       race.governor[Governor].toggle.invisible ? "invisible" : "visible");
 
   // Display time
-  GameObj temp_g(session.entity_manager(), &session.registry());
+  GameObj temp_g(session.entity_manager(), session.registry());
   temp_g.set_player(Playernum);
   temp_g.set_governor(Governor);
   temp_g.race = session.entity_manager().peek_race(Playernum);
@@ -902,137 +921,6 @@ static void check_connect(Session& session, std::string_view message) {
 
   // Flush temp_g output to session
   session.out() << temp_g.out.str();
-}
-
-void do_update(EntityManager& entity_manager, void* session_registry_ptr,
-               bool force) {  // void* is actually SessionRegistry*
-  auto* session_registry = static_cast<SessionRegistry*>(session_registry_ptr);
-  time_t clk = time(nullptr);
-  struct stat stbuf;
-
-  // Get server state handle (will auto-save on scope exit)
-  auto state_handle = entity_manager.get_server_state();
-  auto& state = *state_handle;
-
-  bool fakeit = (!force && stat(nogofl.data(), &stbuf) >= 0);
-
-  std::string update_msg = std::format("{}DOING UPDATE...\n", ctime(&clk));
-  if (!fakeit && session_registry) {
-    for (auto i = 1; i <= entity_manager.num_races(); i++)
-      session_registry->notify_race(i, update_msg);
-    // Flush immediately so players see the message before long-running
-    // do_turn()
-    session_registry->for_each_session(
-        [](Session& s) { s.flush_to_network(); });
-  }
-
-  if (state.segments <= 1) {
-    /* Disables movement segments. */
-    state.next_segment_time = clk + (144 * 3600);
-    state.nsegments_done = state.segments;
-  } else {
-    if (force)
-      state.next_segment_time =
-          clk + state.update_time_minutes * 60 / state.segments;
-    else
-      state.next_segment_time = state.next_update_time +
-                                state.update_time_minutes * 60 / state.segments;
-    state.nsegments_done = 1;
-  }
-  if (force)
-    state.next_update_time = clk + state.update_time_minutes * 60;
-  else
-    state.next_update_time += state.update_time_minutes * 60;
-
-  if (!fakeit) nupdates_done++;
-
-  Power_blocks.time = clk;
-  update_buf =
-      std::format("Last Update {0:3d} : {1}", nupdates_done, ctime(&clk));
-  std::print(stderr, "{}", ctime(&clk));
-  std::print(stderr, "Next Update {0:3d} : {1}", nupdates_done + 1,
-             ctime(&state.next_update_time));
-  segment_buf = std::format("Last Segment {0:2d} : {1}", state.nsegments_done,
-                            ctime(&clk));
-  std::print(stderr, "{}", ctime(&clk));
-  std::print(stderr, "Next Segment {0:2d} : {1}",
-             state.nsegments_done == state.segments ? 1
-                                                    : state.nsegments_done + 1,
-             ctime(&state.next_segment_time));
-
-  // Cast session_registry to get Server* for setting update flag
-  if (session_registry)
-    static_cast<Server*>(session_registry)->set_update_in_progress(true);
-  if (!fakeit) do_turn(entity_manager, session_registry, 1);
-  if (session_registry)
-    static_cast<Server*>(session_registry)->set_update_in_progress(false);
-  clk = time(nullptr);
-  std::string finish_msg =
-      std::format("{}Update {} finished\n", ctime(&clk), nupdates_done);
-  handle_victory(entity_manager);
-  if (!fakeit && session_registry) {
-    for (auto i = 1; i <= entity_manager.num_races(); i++)
-      session_registry->notify_race(i, finish_msg);
-  }
-}
-
-void do_segment(EntityManager& entity_manager, void* session_registry_ptr,
-                int override,
-                int segment) {  // void* is actually SessionRegistry*
-  auto* session_registry = static_cast<SessionRegistry*>(session_registry_ptr);
-  time_t clk = time(nullptr);
-  struct stat stbuf;
-
-  // Get server state handle (will auto-save on scope exit)
-  auto state_handle = entity_manager.get_server_state();
-  auto& state = *state_handle;
-
-  bool fakeit = (!override && stat(nogofl.data(), &stbuf) >= 0);
-
-  if (!override && state.segments <= 1) return;
-
-  std::string movement_msg = std::format("{}DOING MOVEMENT...\n", ctime(&clk));
-  if (!fakeit && session_registry) {
-    for (auto i = 1; i <= entity_manager.num_races(); i++)
-      session_registry->notify_race(i, movement_msg);
-    // Flush immediately so players see the message before long-running
-    // do_turn()
-    session_registry->for_each_session(
-        [](Session& s) { s.flush_to_network(); });
-  }
-  if (override) {
-    state.next_segment_time =
-        clk + state.update_time_minutes * 60 / state.segments;
-    if (segment) {
-      state.nsegments_done = segment;
-      state.next_update_time = clk + state.update_time_minutes * 60 *
-                                         (state.segments - segment + 1) /
-                                         state.segments;
-    } else {
-      state.nsegments_done++;
-    }
-  } else {
-    state.next_segment_time += state.update_time_minutes * 60 / state.segments;
-    state.nsegments_done++;
-  }
-
-  // Cast session_registry to get Server* for setting update flag
-  if (session_registry)
-    static_cast<Server*>(session_registry)->set_update_in_progress(true);
-  if (!fakeit) do_turn(entity_manager, session_registry, 0);
-  if (session_registry)
-    static_cast<Server*>(session_registry)->set_update_in_progress(false);
-  segment_buf = std::format("Last Segment {0:2d} : {1}", state.nsegments_done,
-                            ctime(&clk));
-  std::print(stderr, "{0}", ctime(&clk));
-  std::print(stderr, "Next Segment {0:2d} : {1}", state.nsegments_done,
-             ctime(&state.next_segment_time));
-  clk = time(nullptr);
-  std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));
-  if (!fakeit && session_registry) {
-    for (auto i = 1; i <= entity_manager.num_races(); i++)
-      session_registry->notify_race(i, segment_msg);
-  }
 }
 
 /**
@@ -1090,9 +978,10 @@ static void GB_time(const command_t&, GameObj& g) {
     g.out << "Server state unavailable.\n";
     return;
   }
-  g.out << start_buf;
-  g.out << update_buf;
-  g.out << segment_buf;
+  const auto& sched = get_schedule_info();
+  g.out << sched.start_buf;
+  g.out << sched.update_buf;
+  g.out << sched.segment_buf;
   g.out << std::format("Current time    : {0}", ctime(&clk));
 }
 
@@ -1103,6 +992,7 @@ static void GB_schedule(const command_t&, GameObj& g) {
     g.out << "Server state unavailable.\n";
     return;
   }
+  const auto& sched = get_schedule_info();
   g.out << std::format("{0} minute update intervals\n",
                        state->update_time_minutes);
   g.out << std::format("{0} movement segments per update\n", state->segments);
@@ -1111,48 +1001,6 @@ static void GB_schedule(const command_t&, GameObj& g) {
       "Next Segment {0:2d} : {1}",
       state->nsegments_done == state->segments ? 1 : state->nsegments_done + 1,
       ctime(&state->next_segment_time));
-  g.out << std::format("Next Update {0:3d} : {1}", nupdates_done + 1,
+  g.out << std::format("Next Update {0:3d} : {1}", sched.nupdates_done + 1,
                        ctime(&state->next_update_time));
-}
-
-void compute_power_blocks(EntityManager& entity_manager) {
-  /* compute alliance block power */
-  Power_blocks.time = time(nullptr);
-  for (auto race_i_handle : RaceList(entity_manager)) {
-    const auto& race_i = race_i_handle.read();
-    const player_t i = race_i.Playernum;
-
-    const auto* block_i = entity_manager.peek_block(i);
-    if (!block_i) continue;
-
-    uint64_t allied_members = block_i->invite & block_i->pledge;
-    Power_blocks.members[i - 1] = 0;
-    Power_blocks.sectors_owned[i - 1] = 0;
-    Power_blocks.popn[i - 1] = 0;
-    Power_blocks.ships_owned[i - 1] = 0;
-    Power_blocks.resource[i - 1] = 0;
-    Power_blocks.fuel[i - 1] = 0;
-    Power_blocks.destruct[i - 1] = 0;
-    Power_blocks.money[i - 1] = 0;
-    Power_blocks.systems_owned[i - 1] = block_i->systems_owned;
-    Power_blocks.VPs[i - 1] = block_i->VPs;
-
-    for (auto race_j_handle : RaceList(entity_manager)) {
-      const auto& race_j = race_j_handle.read();
-      const player_t j = race_j.Playernum;
-
-      if (isset(allied_members, j)) {
-        const auto* power_ptr = entity_manager.peek_power(j);
-        if (!power_ptr) continue;
-        Power_blocks.members[i - 1] += 1;
-        Power_blocks.sectors_owned[i - 1] += power_ptr->sectors_owned;
-        Power_blocks.money[i - 1] += power_ptr->money;
-        Power_blocks.popn[i - 1] += power_ptr->popn;
-        Power_blocks.ships_owned[i - 1] += power_ptr->ships_owned;
-        Power_blocks.resource[i - 1] += power_ptr->resource;
-        Power_blocks.fuel[i - 1] += power_ptr->fuel;
-        Power_blocks.destruct[i - 1] += power_ptr->destruct;
-      }
-    }
-  }
 }

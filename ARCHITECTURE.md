@@ -92,9 +92,14 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. E
   - Exports command functions in `GB::commands` namespace
   
 - **`session`** (Service Layer) - `gb/services/session.cppm`
-  - SessionRegistry abstract interface
   - Session class for client connections
+  - NullSessionRegistry for testing
   - Network I/O with Asio (imported via `asio` module)
+  
+- **`gblib:sessionregistry`** (Cross-cutting) - `gb/gblib-sessionregistry.cppm`
+  - SessionRegistry abstract interface (notification primitives)
+  - SessionInfo struct for type-erased session metadata
+  - Used by commands and services without depending on Session type
 
 - **`notification`** (Service Layer) - `gb/services/notification.cppm`
   - Cross-player message routing with game logic
@@ -111,39 +116,43 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. E
 
 - **`gblib:types`** - Core type definitions (player_t, shipnum_t, etc.)
 - **`gblib:gameobj`** - GameObj context passed to commands
+- **`gblib:sessionregistry`** - SessionRegistry interface and SessionInfo struct
 - **`gblib:services`** - EntityManager (core game service)
 - **`gblib:repositories`** - Repository pattern implementations
 - **`gblib:race`**, **`gblib:ships`**, **`gblib:star`**, **`gblib:planet`**, etc. - Entity structures
 - **`gblib:tweakables`** - Game configuration constants
+- **`gblib:doturncmd`** - Turn processing (do_update, do_segment, do_next_thing, ScheduleInfo)
 - **`gblib:misc`**, **`gblib:shlmisc`** - Utility functions
 - **Game logic partitions**: `gblib:doplanet`, `gblib:doship`, `gblib:fire`, etc.
 
 ### Module Dependencies
 
 ```
-commands --> gblib
-         --> session (for SessionRegistry*)
+commands --> gblib (for GameObj, EntityManager, SessionRegistry interface)
          --> notification (for cross-player messaging)
+         --> session (only for who/emulate commands that need Session&)
 
-notification --> session (for SessionRegistry)
-             --> gblib (for EntityManager, types)
+notification --> gblib (for EntityManager, SessionRegistry interface, types)
 
-session --> gblib (for types, EntityManager)
+session --> gblib (for types, SessionRegistry interface)
         --> asio (for networking)
+
+gblib:sessionregistry --> gblib:types (for player_t, governor_t, etc.)
 
 gblib:services --> dallib (for Database)
 gblib:repositories --> dallib (for JsonStore)
 
-dalib --> (no dependencies, just SQLite)
+dallib --> (no dependencies, just SQLite)
 ```
 
 ### Why This Structure?
 
 1. **`dallib` is standalone** - It's the foundation; no other modules depend on internal DAL types
 2. **`commands` is standalone** - Application layer imports what it needs from service/core layers
-3. **`session` is standalone** - Network session management is a service, not part of core game logic
-4. **`gblib` contains shared types** - Everything else uses these fundamental types
-5. **Clear boundaries** - Module imports enforce architectural constraints at compile time
+3. **`session` is standalone** - Concrete Session class with Asio networking is isolated from game logic
+4. **`gblib:sessionregistry` is a partition** - Abstract interface for notifications lives in gblib so commands don't need to import session module
+5. **`gblib` contains shared types** - Everything else uses these fundamental types
+6. **Clear boundaries** - Module imports enforce architectural constraints at compile time
 
 ---
 

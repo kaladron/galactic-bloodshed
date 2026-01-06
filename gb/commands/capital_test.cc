@@ -3,6 +3,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -10,10 +11,8 @@ import std;
 
 // Test designating a capital ship
 void test_designate_capital() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager entity_manager(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create race
   Race race{};
@@ -52,16 +51,15 @@ void test_designate_capital() {
   ships_repo.save(ship);
 
   // Execute command
-  GameObj g(entity_manager);
-  g.player = 1;
-  g.governor = 0;
-  g.race = entity_manager.peek_race(1);  // Set race pointer like production
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
 
   command_t argv{"capital", "1"};
   GB::commands::capital(argv, g);
 
   // Verify race Gov_ship was updated through EntityManager
-  const auto* updated_race = entity_manager.peek_race(1);
+  const auto* updated_race = ctx.em.peek_race(1);
   assert(updated_race != nullptr);
   assert(updated_race->Gov_ship == 1);
 
@@ -75,10 +73,8 @@ void test_designate_capital() {
 
 // Test non-leader attempting to designate capital
 void test_governor_cannot_designate() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager entity_manager(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create race
   Race race{};
@@ -90,10 +86,11 @@ void test_governor_cannot_designate() {
   races_repo.save(race);
 
   // Execute command as governor (not leader)
-  GameObj g(entity_manager);
-  g.player = 1;
-  g.governor = 1;                        // Not the leader
-  g.race = entity_manager.peek_race(1);  // Set race pointer like production
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_governor(1);             // Not the leader
+  g.race = ctx.em.peek_race(1);  // Set race pointer like production
 
   command_t argv{"capital", "1"};
   GB::commands::capital(argv, g);
@@ -108,10 +105,8 @@ void test_governor_cannot_designate() {
 
 // Test ship not landed
 void test_ship_not_landed() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager entity_manager(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create race
   Race race{};
@@ -147,10 +142,9 @@ void test_ship_not_landed() {
   ships_repo.save(ship);
 
   // Execute command
-  GameObj g(entity_manager);
-  g.player = 1;
-  g.governor = 0;
-  g.race = entity_manager.peek_race(1);  // Set race pointer like production
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
 
   command_t argv{"capital", "1"};
   GB::commands::capital(argv, g);
@@ -165,10 +159,8 @@ void test_ship_not_landed() {
 
 // Test querying current capital without changing
 void test_query_capital() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager entity_manager(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create race with existing capital ship
   Race race{};
@@ -192,10 +184,9 @@ void test_query_capital() {
   ships_repo.save(ship);
 
   // Execute command without argument (query mode)
-  GameObj g(entity_manager);
-  g.player = 1;
-  g.governor = 0;
-  g.race = entity_manager.peek_race(1);  // Set race pointer like production
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
 
   command_t argv{"capital"};  // No ship number argument
   GB::commands::capital(argv, g);

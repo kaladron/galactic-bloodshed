@@ -3,18 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
+  // Create test context
+  TestContext ctx;
 
   // Create test race with enough tech for upgrades
   Race race{};
@@ -28,7 +25,7 @@ int main() {
   race.God = false;
 
   // Save race via repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -80,19 +77,18 @@ int main() {
   ships_repo.save(ship);
 
   // Create GameObj for command execution - must be at SHIP scope
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_SHIP;  // Must be at ship scope for upgrade
-  g.shipno = 1;
-  g.snum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_SHIP);  // Must be at ship scope for upgrade
+  g.set_shipno(1);
+  g.set_snum(0);
 
   std::println("Test 1: Upgrade ship armor");
   {
-    em.clear_cache();
-    g.race = em.peek_race(1);  // Re-fetch after cache clear
-    const auto* ship_before = em.peek_ship(1);
+    ctx.em.clear_cache();
+    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
+    const auto* ship_before = ctx.em.peek_ship(1);
     assert(ship_before != nullptr);
     int initial_armor = ship_before->armor();
     int initial_resource = ship_before->resource();
@@ -104,9 +100,9 @@ int main() {
     GB::commands::upgrade(argv, g);
 
     // Clear cache to force reload from database
-    em.clear_cache();
+    ctx.em.clear_cache();
 
-    const auto* ship_after = em.peek_ship(1);
+    const auto* ship_after = ctx.em.peek_ship(1);
     assert(ship_after != nullptr);
     std::println("    After: armor={}, resource={}", ship_after->armor(),
                  ship_after->resource());
@@ -119,9 +115,9 @@ int main() {
 
   std::println("Test 2: Upgrade ship speed");
   {
-    em.clear_cache();
-    g.race = em.peek_race(1);  // Re-fetch after cache clear
-    const auto* ship_before = em.peek_ship(1);
+    ctx.em.clear_cache();
+    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
+    const auto* ship_before = ctx.em.peek_ship(1);
     assert(ship_before != nullptr);
     int initial_speed = ship_before->max_speed();
     int initial_resource = ship_before->resource();
@@ -132,9 +128,9 @@ int main() {
     command_t argv = {"upgrade", "speed", "9"};
     GB::commands::upgrade(argv, g);
 
-    em.clear_cache();
+    ctx.em.clear_cache();
 
-    const auto* ship_after = em.peek_ship(1);
+    const auto* ship_after = ctx.em.peek_ship(1);
     assert(ship_after != nullptr);
     std::println("    After: max_speed={}, resource={}",
                  ship_after->max_speed(), ship_after->resource());
@@ -147,9 +143,9 @@ int main() {
 
   std::println("Test 3: Verify upgrades persist after cache clear");
   {
-    em.clear_cache();
+    ctx.em.clear_cache();
 
-    const auto* ship_check = em.peek_ship(1);
+    const auto* ship_check = ctx.em.peek_ship(1);
     assert(ship_check != nullptr);
 
     // Values should still reflect upgrades

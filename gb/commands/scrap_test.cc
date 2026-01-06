@@ -3,18 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
+  // Create test context
+  TestContext ctx;
 
   // Create test race
   Race race{};
@@ -27,7 +24,7 @@ int main() {
   race.morale = 100;
 
   // Save race via repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -132,29 +129,28 @@ int main() {
   ships_repo.save(ship2);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
 
   std::println("Test 1: Scrap a docked ship and verify resources transfer");
   {
     // Hold a race handle to keep the race in cache during the test
     // This prevents kill_ship() from evicting the race when its internal handle
     // is released
-    auto race_handle = em.get_race(1);
+    auto race_handle = ctx.em.get_race(1);
     g.race = &race_handle.read();  // Set g.race to point to the cached race
 
-    const auto* carrier_before = em.peek_ship(1);
+    const auto* carrier_before = ctx.em.peek_ship(1);
     assert(carrier_before != nullptr);
     int initial_resource = carrier_before->resource();
     double initial_fuel = carrier_before->fuel();
     std::println("    Carrier before: resource={}, fuel={:.0f}",
                  initial_resource, initial_fuel);
 
-    const auto* scrap_ship = em.peek_ship(2);
+    const auto* scrap_ship = ctx.em.peek_ship(2);
     assert(scrap_ship != nullptr);
     std::println("    Ship to scrap: resource={}, fuel={:.0f}, build_cost={}",
                  scrap_ship->resource(), scrap_ship->fuel(),
@@ -165,16 +161,16 @@ int main() {
     GB::commands::scrap(argv, g);
 
     // Clear cache to force reload from database
-    em.clear_cache();
+    ctx.em.clear_cache();
 
     // Verify ship 2 is dead
-    const auto* scrapped = em.peek_ship(2);
+    const auto* scrapped = ctx.em.peek_ship(2);
     assert(scrapped != nullptr);
     assert(scrapped->alive() == 0);
     std::println("    ✓ Ship 2 is now dead (alive={})", scrapped->alive());
 
     // Verify carrier received resources
-    const auto* carrier_after = em.peek_ship(1);
+    const auto* carrier_after = ctx.em.peek_ship(1);
     assert(carrier_after != nullptr);
     std::println("    Carrier after: resource={}, fuel={:.0f}",
                  carrier_after->resource(), carrier_after->fuel());

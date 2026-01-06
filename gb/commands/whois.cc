@@ -12,7 +12,7 @@ void whois(const command_t& argv, GameObj& g) {
   // TODO(jeffbailey): ap_t APcount = 0;
 
   if (argv.size() <= 1) {
-    whois({"whois", std::to_string(g.player)}, g);
+    whois({"whois", std::to_string(g.player())}, g);
     return;
   }
 
@@ -32,9 +32,9 @@ void whois(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    if (j == g.player) {
-      g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j, g.governor, race->name,
-                           race->governor[g.governor].name);
+    if (j == g.player()) {
+      g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j, g.governor(),
+                           race->name, race->governor[g.governor()].name);
     } else {
       g.out << std::format("[{:2d}] {}\n", j, race->name);
     }

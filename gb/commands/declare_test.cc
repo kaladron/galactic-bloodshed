@@ -3,18 +3,14 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create two test races via repository
   Race race1{};
@@ -28,7 +24,7 @@ int main() {
   race2.governor[0].active = true;
 
   // Save races via repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race1);
   races.save(race2);
@@ -42,10 +38,10 @@ int main() {
   universe_repo.save(sdata);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_UNIV;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println("Test 1: Declare alliance");
   {
@@ -53,8 +49,8 @@ int main() {
     GB::commands::declare(argv, g);
 
     // Verify alliance was set
-    const auto* saved_race1 = em.peek_race(1);
-    const auto* saved_race2 = em.peek_race(2);
+    const auto* saved_race1 = ctx.em.peek_race(1);
+    const auto* saved_race2 = ctx.em.peek_race(2);
     assert(saved_race1 != nullptr);
     assert(saved_race2 != nullptr);
     assert(isset(saved_race1->allied, 2U));
@@ -70,7 +66,7 @@ int main() {
     GB::commands::declare(argv, g);
 
     // Verify war was declared
-    const auto* saved_race1 = em.peek_race(1);
+    const auto* saved_race1 = ctx.em.peek_race(1);
     assert(saved_race1 != nullptr);
     assert(isset(saved_race1->atwar, 2U));
     assert(!isset(saved_race1->allied, 2U));
@@ -83,7 +79,7 @@ int main() {
     GB::commands::declare(argv, g);
 
     // Verify neutrality was set
-    const auto* saved_race1 = em.peek_race(1);
+    const auto* saved_race1 = ctx.em.peek_race(1);
     assert(saved_race1 != nullptr);
     assert(!isset(saved_race1->atwar, 2U));
     assert(!isset(saved_race1->allied, 2U));

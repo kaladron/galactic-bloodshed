@@ -3,19 +3,16 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create two test races (attacker and defender)
   Race attacker{};
@@ -97,24 +94,23 @@ int main() {
   ship.build_cost = 100;
   ship.destruct = 0;
 
-  auto ship_handle = em.create_ship(ship);
+  auto ship_handle = ctx.em.create_ship(ship);
   ship_handle.save();
 
   // Create GameObj for attacker
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   // Execute capture command - simulate: capture #1 50 military
   command_t argv = {"capture", "#1", "50", "military"};
   GB::commands::capture(argv, g);
 
   // Verify changes persisted
-  const auto* captured_ship = em.peek_ship(1);
+  const auto* captured_ship = ctx.em.peek_ship(1);
   assert(captured_ship);
 
   // The ship should either be captured (owner changed) or damaged from combat
@@ -122,7 +118,7 @@ int main() {
   // 1. Ship still exists or was destroyed
   // 2. Sector population changed
 
-  const auto* final_smap = em.peek_sectormap(0, 0);
+  const auto* final_smap = ctx.em.peek_sectormap(0, 0);
   assert(final_smap);
   const auto& final_sector = final_smap->get(5, 5);
 

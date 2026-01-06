@@ -8,13 +8,15 @@ module;
 
 import gblib;
 import std.compat;
+import notification;
+import session;
 
 module commands;
 
 namespace GB::commands {
 void declare(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   const ap_t APcount = 1;
   player_t n;
   int d_mod;
@@ -41,14 +43,14 @@ void declare(const command_t& argv, GameObj& g) {
   if ((int)universe->AP[Playernum - 1] >= APcount) {
     deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
     /* otherwise use current star */
-  } else if ((g.level == ScopeLevel::LEVEL_STAR ||
-              g.level == ScopeLevel::LEVEL_PLAN)) {
-    const auto& star = *g.entity_manager.peek_star(g.snum);
+  } else if ((g.level() == ScopeLevel::LEVEL_STAR ||
+              g.level() == ScopeLevel::LEVEL_PLAN)) {
+    const auto& star = *g.entity_manager.peek_star(g.snum());
     if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
       g.out << std::format("You don't have enough AP's ({})\n", APcount);
       return;
     }
-    deductAPs(g, APcount, g.snum);
+    deductAPs(g, APcount, g.snum());
   } else {
     g.out << std::format("You don't have enough AP's ({})\n", APcount);
     return;
@@ -75,7 +77,7 @@ void declare(const command_t& argv, GameObj& g) {
         g.out << "Good for you.\n";
       }
       warn_race(
-          g.entity_manager, n,
+          g.session_registry, g.entity_manager, n,
           std::format(" Player #{} ({}) has declared an alliance with you!\n",
                       Playernum, race.name));
       news_msg = std::format("{} [{}] declares ALLIANCE with {} [{}].\n",
@@ -90,7 +92,7 @@ void declare(const command_t& argv, GameObj& g) {
       g.out << "Done.\n";
 
       warn_race(
-          g.entity_manager, n,
+          g.session_registry, g.entity_manager, n,
           std::format(" Player #{} ({}) has declared neutrality with you!\n",
                       Playernum, race.name));
       news_msg =
@@ -107,7 +109,7 @@ void declare(const command_t& argv, GameObj& g) {
       } else {
         g.out << "Give 'em hell!\n";
       }
-      warn_race(g.entity_manager, n,
+      warn_race(g.session_registry, g.entity_manager, n,
                 std::format(" Player #{} ({}) has declared war against you!\n",
                             Playernum, race.name));
       switch (int_rand(1, 5)) {
@@ -146,7 +148,7 @@ void declare(const command_t& argv, GameObj& g) {
   }
 
   post(g.entity_manager, news_msg, NewsType::DECLARATION);
-  warn_race(g.entity_manager, Playernum, news_msg);
+  warn_race(g.session_registry, g.entity_manager, Playernum, news_msg);
 
   /* They, of course, learn more about you */
   alien.translate[Playernum - 1] =

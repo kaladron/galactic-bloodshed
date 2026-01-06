@@ -22,4 +22,3 @@ export unsigned char ground_assaults[MAXPLAYERS][MAXPLAYERS][NUMSTARS];
 export power_blocks Power_blocks;
 
 export bool update_flag = false;
-export std::list<DescriptorData> descriptor_list;

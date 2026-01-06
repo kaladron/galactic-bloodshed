@@ -6,123 +6,29 @@ import std;
 
 module gblib;
 
-namespace {
-constexpr int MAX_OUTPUT = 32768;  // don't change this
-}
+// Note: Notification functions moved to gb/services/notification.{cppm,cc}
+// - d_broadcast, d_announce, d_think, d_shout (free functions with game logic)
+// - warn_player, warn_race (free functions with game logic)
+// - notify_race, notify_player (methods on SessionRegistry interface)
+// - notify_star, warn_star (free functions with game logic)
 
-void notify_race(const player_t race, const std::string& message) {
-  if (update_flag) return;
-  for (auto& d : descriptor_list) {
-    if (d.connected && d.player == race) {
-      queue_string(d, message);
-    }
-  }
-}
+void telegram_star(EntityManager& em, starnum_t star, player_t sender,
+                   governor_t sender_gov, const std::string& message) {
+  const auto* star_ptr = em.peek_star(star);
+  if (!star_ptr) return;
 
-bool notify(const player_t race, const governor_t gov,
-            const std::string& message) {
-  if (update_flag) return false;
-  for (auto& d : descriptor_list)
-    if (d.connected && d.player == race && d.governor == gov) {
-      strstr_to_queue(d);  // Ensuring anything queued up is flushed out.
-      queue_string(d, message);
-      return true;
-    }
-  return false;
-}
-
-void d_think(EntityManager& entity_manager, const player_t Playernum,
-             const governor_t Governor, const std::string& message) {
-  for (auto& d : descriptor_list) {
-    if (d.connected && d.player == Playernum && d.governor != Governor) {
-      const auto* race = entity_manager.peek_race(d.player);
-      if (race && !race->governor[d.governor].toggle.gag) {
-        queue_string(d, message);
+  for (player_t p = 1; p <= em.num_races(); p++) {
+    if ((p != sender || sender_gov != 0) && isset(star_ptr->inhabited(), p)) {
+      const auto* race = em.peek_race(p);
+      if (race) {
+        for (int i = 0; i <= MAXGOVERNORS; i++) {
+          if (race->governor[i].active && !(p == sender && i == sender_gov)) {
+            push_telegram(p, i, message);
+          }
+        }
       }
     }
   }
-}
-
-void d_broadcast(EntityManager& entity_manager, const player_t Playernum,
-                 const governor_t Governor, const std::string& message) {
-  for (auto& d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor)) {
-      const auto* race = entity_manager.peek_race(d.player);
-      if (race && !race->governor[d.governor].toggle.gag) {
-        queue_string(d, message);
-      }
-    }
-  }
-}
-
-void d_shout(const player_t Playernum, const governor_t Governor,
-             const std::string& message) {
-  for (auto& d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor)) {
-      queue_string(d, message);
-    }
-  }
-}
-
-void d_announce(EntityManager& entity_manager, const player_t Playernum,
-                const governor_t Governor, const starnum_t star,
-                const std::string& message) {
-  const auto* star_ptr = entity_manager.peek_star(star);
-  if (!star_ptr) return;
-
-  for (auto& d : descriptor_list) {
-    if (d.connected && !(d.player == Playernum && d.governor == Governor) &&
-        d.snum == star) {
-      const auto* race = entity_manager.peek_race(d.player);
-      if (race && (isset(star_ptr->inhabited(), d.player) || race->God) &&
-          !race->governor[d.governor].toggle.gag) {
-        queue_string(d, message);
-      }
-    }
-  }
-}
-
-// New implementation using EntityManager
-void warn_race(EntityManager& entity_manager, const player_t who,
-               const std::string& message) {
-  const auto* race = entity_manager.peek_race(who);
-  if (!race) return;
-
-  for (int i = 0; i <= MAXGOVERNORS; i++)
-    if (race->governor[i].active) warn(who, i, message);
-}
-
-void warn(const player_t who, const governor_t governor,
-          const std::string& message) {
-  if (!notify(who, governor, message) && !notify(who, 0, message))
-    push_telegram(who, governor, message);
-}
-
-// New implementation using EntityManager
-void warn_star(EntityManager& entity_manager, const player_t a,
-               const starnum_t star, const std::string& message) {
-  const auto* star_ptr = entity_manager.peek_star(star);
-  if (!star_ptr) return;
-
-  // Iterate through all potential players in the inhabited bitmap
-  for (player_t p = 1; p <= entity_manager.num_races(); p++) {
-    if (p != a && isset(star_ptr->inhabited(), p)) {
-      warn_race(entity_manager, p, message);
-    }
-  }
-}
-
-void notify_star(EntityManager& entity_manager, const player_t a,
-                 const governor_t g, const starnum_t star,
-                 const std::string& message) {
-  const auto* star_ptr = entity_manager.peek_star(star);
-  if (!star_ptr) return;
-
-  for (auto& d : descriptor_list)
-    if (d.connected && (d.player != a || d.governor != g) &&
-        isset(star_ptr->inhabited(), d.player)) {
-      queue_string(d, message);
-    }
 }
 
 void adjust_morale(Race& winner, Race& loser, int amount) {
@@ -135,39 +41,6 @@ void add_to_queue(std::deque<std::string>& q, const std::string& b) {
   if (b.empty()) return;
 
   q.emplace_back(b);
-}
-
-int flush_queue(std::deque<std::string>& q, int n) {
-  int really_flushed = 0;
-
-  const std::string flushed_message = "<Output Flushed>\n";
-  n += flushed_message.size();
-
-  while (n > 0 && !q.empty()) {
-    auto& p = q.front();
-    n -= p.size();
-    really_flushed += p.size();
-    q.pop_front();
-  }
-  q.emplace_back(flushed_message);
-  really_flushed -= flushed_message.size();
-  return really_flushed;
-}
-
-void queue_string(DescriptorData& d, const std::string& b) {
-  if (b.empty()) return;
-  int space = MAX_OUTPUT - d.output_size - b.size();
-  if (space < 0) d.output_size -= flush_queue(d.output, -space);
-  add_to_queue(d.output, b);
-  d.output_size += b.size();
-}
-
-//* Push contents of the stream to the queues
-void strstr_to_queue(DescriptorData& d) {
-  if (d.out.str().empty()) return;
-  queue_string(d, d.out.str());
-  d.out.clear();
-  d.out.str("");
 }
 
 /*utilities for dealing with ship lists */

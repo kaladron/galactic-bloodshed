@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race
   Race race{};
@@ -67,21 +66,20 @@ int main() {
   }
 
   // Create GameObj
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   // Test repair command
   command_t argv = {"repair", "3:5,3:5"};
   GB::commands::repair(argv, g);
 
   // Verify sectors were repaired
-  em.clear_cache();
-  const auto* saved_smap = em.peek_sectormap(0, 0);
+  ctx.em.clear_cache();
+  const auto* saved_smap = ctx.em.peek_sectormap(0, 0);
   assert(saved_smap);
 
   const auto& sect1 = saved_smap->get(3, 3);
@@ -97,7 +95,7 @@ int main() {
   assert(!sect3.is_wasted());
 
   // Verify planet resources decreased
-  const auto* saved_planet = em.peek_planet(0, 0);
+  const auto* saved_planet = ctx.em.peek_planet(0, 0);
   assert(saved_planet);
   assert(saved_planet->info(0).resource == 1000 - (3 * SECTOR_REPAIR_COST));
 

@@ -3,19 +3,16 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager and JsonStore
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create universe with 1 star
   universe_struct us{};
@@ -120,13 +117,12 @@ int main() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);  // Set race pointer like production
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   std::println("Test 1: Map command at planet level displays map");
   {
@@ -135,7 +131,7 @@ int main() {
 
     // The map command just displays output, doesn't modify data
     // Verify planet data is unchanged
-    const auto* saved_planet = em.peek_planet(0, 0);
+    const auto* saved_planet = ctx.em.peek_planet(0, 0);
     assert(saved_planet != nullptr);
     assert(saved_planet->Maxx() == 5);
     assert(saved_planet->Maxy() == 5);
@@ -145,14 +141,14 @@ int main() {
   std::println("Test 2: Map command with explicit planet argument");
   {
     // Change to star level
-    g.level = ScopeLevel::LEVEL_STAR;
-    g.snum = 0;
+    g.set_level(ScopeLevel::LEVEL_STAR);
+    g.set_snum(0);
 
     command_t argv = {"map", "/TestStar/0"};
     GB::commands::map(argv, g);
 
     // Verify data unchanged
-    const auto* saved_planet = em.peek_planet(0, 0);
+    const auto* saved_planet = ctx.em.peek_planet(0, 0);
     assert(saved_planet != nullptr);
     std::println("    ✓ Map with planet argument works");
   }
@@ -160,7 +156,7 @@ int main() {
   std::println("Test 3: Map command rejects ship scope");
   {
     // Set to ship scope - should be rejected
-    g.level = ScopeLevel::LEVEL_SHIP;
+    g.set_level(ScopeLevel::LEVEL_SHIP);
 
     command_t argv = {"map"};
     GB::commands::map(argv, g);
@@ -203,9 +199,9 @@ int main() {
     }
     sector_repo.save_map(usmap);
 
-    g.level = ScopeLevel::LEVEL_PLAN;
-    g.snum = 1;
-    g.pnum = 0;
+    g.set_level(ScopeLevel::LEVEL_PLAN);
+    g.set_snum(1);
+    g.set_pnum(0);
 
     command_t argv = {"map"};
     GB::commands::map(argv, g);
@@ -217,7 +213,7 @@ int main() {
   std::println("Test 5: Map at universe/star level falls back to orbit");
   {
     // At universe or star level, map command calls orbit instead
-    g.level = ScopeLevel::LEVEL_UNIV;
+    g.set_level(ScopeLevel::LEVEL_UNIV);
 
     command_t argv = {"map"};
     GB::commands::map(argv, g);
@@ -238,11 +234,12 @@ int main() {
     RaceRepository races2(store2);
     races2.save(race);
 
-    GameObj g2(em2);
-    g2.player = 1;
-    g2.governor = 0;
+    auto& registry = get_test_session_registry();
+    GameObj g2(em2, registry);
+    g2.set_player(1);
+    g2.set_governor(0);
     g2.race = em2.peek_race(1);
-    g2.level = ScopeLevel::LEVEL_UNIV;
+    g2.set_level(ScopeLevel::LEVEL_UNIV);
 
     command_t argv = {"map"};
     GB::commands::map(argv, g2);

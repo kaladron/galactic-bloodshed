@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test races
   Race race1{};
@@ -65,17 +64,16 @@ int main() {
   planets_repo.save(planet);
 
   // Create GameObj for player 1
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
 
   std::println("Test 1: Dump exploration data to another player");
   {
     // Before dump: player 2 hasn't explored the planet
-    const auto* p_before = em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(0, 0);
     assert(!p_before->info(1).explored);
 
     // Execute dump command
@@ -83,7 +81,7 @@ int main() {
     GB::commands::dump(argv, g);
 
     // Verify: player 2 should now have exploration data
-    const auto* p_after = em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(1).explored);
     std::println("✓ Player 2 received exploration data");
 
@@ -96,17 +94,16 @@ int main() {
   std::println("Test 2: Guest race cannot dump");
   {
     // Make player 1 a guest
-    auto race_handle = em.get_race(1);
+    auto race_handle = ctx.em.get_race(1);
     auto& r = *race_handle;
     r.Guest = true;
   }
   {
-    GameObj g2(em);
-    g2.player = 1;
-    g2.governor = 0;
-    g2.race = em.peek_race(1);
-    g2.level = ScopeLevel::LEVEL_STAR;
-    g2.snum = 0;
+    auto& registry = get_test_session_registry();
+    GameObj g2(ctx.em, registry);
+    ctx.setup_game_obj(g2);
+    g2.set_level(ScopeLevel::LEVEL_STAR);
+    g2.set_snum(0);
 
     command_t argv = {"dump", "Recipient"};
     GB::commands::dump(argv, g2);

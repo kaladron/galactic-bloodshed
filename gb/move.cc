@@ -84,33 +84,33 @@ void mech_defend(const GameObj& g, int* people, PopulationType type,
     mil = *people;
 
   // Use g.race for read-only access, get mutable handle only when needed
-  auto race_handle = g.entity_manager.get_race(g.player);
+  auto race_handle = g.entity_manager.get_race(g.player());
   if (!race_handle.get()) return;
 
   ShipList shiplist(g.entity_manager, p.ships());
   for (auto ship_handle : shiplist) {
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
-    if (ship.owner() != g.player && ship.type() == ShipType::OTYPE_AFV &&
+    if (ship.owner() != g.player() && ship.type() == ShipType::OTYPE_AFV &&
         landed(ship) && retal_strength(ship) && (ship.land_x() == x2) &&
         (ship.land_y() == y2)) {
       const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
       if (!alien_ptr) continue;
       if (!isset(g.race->allied, ship.owner()) ||
-          !isset(alien_ptr->allied, g.player)) {
+          !isset(alien_ptr->allied, g.player())) {
         const auto* star = g.entity_manager.peek_star(ship.storbits());
         while ((civ + mil) > 0 && retal_strength(ship)) {
           oldgov = star->governor(alien_ptr->Playernum - 1);
           char long_buf[1024], short_buf[256];
           mech_attack_people(g.entity_manager, ship, &civ, &mil, *alien_ptr,
                              *g.race, s2, true, long_buf, short_buf);
-          notify(g.player, g.governor, long_buf);
-          warn(alien_ptr->Playernum, oldgov, long_buf);
+          push_telegram(g.player(), g.governor(), long_buf);
+          push_telegram(alien_ptr->Playernum, oldgov, long_buf);
           if (civ + mil) {
             people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
                                *alien_ptr, s2, x2, y2, long_buf, short_buf);
-            notify(g.player, g.governor, long_buf);
-            warn(alien_ptr->Playernum, oldgov, long_buf);
+            push_telegram(g.player(), g.governor(), long_buf);
+            push_telegram(alien_ptr->Playernum, oldgov, long_buf);
           }
         }
       }

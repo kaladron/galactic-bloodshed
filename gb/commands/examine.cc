@@ -46,7 +46,7 @@ void examine(const command_t& argv, GameObj& g) {
     return;
   }
   const auto& star = *g.entity_manager.peek_star(ship->storbits());
-  if (isclr(star.inhabited(), g.player)) {
+  if (isclr(star.inhabited(), g.player())) {
     g.out << "That ship it not visible to you.\n";
     return;
   }

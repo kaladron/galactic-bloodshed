@@ -7,6 +7,8 @@
 module;
 
 import gblib;
+import session;
+import notification;
 import std;
 import tabulate;
 #include "gb/files.h"
@@ -19,7 +21,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   std::string outmsg =
       std::format("*** Transferring [{0},{1}]'s ownings to [{2},{3}] ***\n\n",
                   race.Playernum, src_gov, race.Playernum, tgt_gov);
-  notify(race.Playernum, (governor_t)0, outmsg);
+  push_telegram(race.Playernum, (governor_t)0, outmsg);
 
   /*  First do stars....  */
 
@@ -28,7 +30,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
     if (star.governor(race.Playernum - 1) == src_gov) {
       star.governor(race.Playernum - 1) = tgt_gov;
       outmsg = std::format("Changed juridiction of /{0}...\n", star.get_name());
-      notify(race.Playernum, 0, outmsg);
+      push_telegram(race.Playernum, 0, outmsg);
     }
   }
 
@@ -42,7 +44,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
       ship->governor() = tgt_gov;
       outmsg = std::format("Changed ownership of {0}{1}...\n",
                            Shipltrs[ship->type()], i);
-      notify(race.Playernum, 0, outmsg);
+      push_telegram(race.Playernum, 0, outmsg);
     }
   }
 
@@ -50,7 +52,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 
   outmsg =
       std::format("Transferring {0} money...\n", race.governor[src_gov].money);
-  notify(race.Playernum, 0, outmsg);
+  push_telegram(race.Playernum, 0, outmsg);
   race.governor[tgt_gov].money =
       race.governor[tgt_gov].money + race.governor[src_gov].money;
   race.governor[src_gov].money = 0;
@@ -63,7 +65,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   outmsg =
       std::format("\n*** Governor [{0},{1}]'s powers have been REVOKED ***\n",
                   race.Playernum, src_gov);
-  notify(race.Playernum, 0, outmsg);
+  push_telegram(race.Playernum, 0, outmsg);
 
   // TODO(jeffbailey): Use C++17 Filesystem stuff when available
   std::string rm_telegram_file =
@@ -78,8 +80,8 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 
 namespace GB::commands {
 void governors(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   governor_t gov;
 
   auto race = g.entity_manager.get_race(Playernum);

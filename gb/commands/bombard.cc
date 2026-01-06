@@ -2,7 +2,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import scnlib;
 import std;
 
@@ -11,8 +13,8 @@ module commands;
 namespace GB::commands {
 /*! Ship vs planet */
 void bombard(const command_t& argv, GameObj& g) {
-  int Playernum = g.player;
-  int Governor = g.governor;
+  int Playernum = g.player();
+  int Governor = g.governor();
   ap_t APcount = 1;
   int x;
   int y;
@@ -126,12 +128,12 @@ void bombard(const command_t& argv, GameObj& g) {
       use_destruct(from, strength);
 
     post(g.entity_manager, short_buf, NewsType::COMBAT);
-    notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
-                short_buf);
+    notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                from.storbits(), short_buf);
     for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
       if (result.nuked[i - 1]) {
         const auto* star = g.entity_manager.peek_star(from.storbits());
-        warn(i, star->governor(i - 1), long_buf);
+        warn_player(g.session_registry, i, star->governor(i - 1), long_buf);
       }
     }
     g.out << long_buf;
@@ -153,12 +155,12 @@ void bombard(const command_t& argv, GameObj& g) {
             shoot_planet_to_ship(g.entity_manager, alien, from, strength,
                                  long_buf, short_buf);
             const auto* star = g.entity_manager.peek_star(from.storbits());
-            warn(i, star->governor(i - 1), long_buf);
+            warn_player(g.session_registry, i, star->governor(i - 1), long_buf);
             g.out << long_buf;
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
-                        short_buf);
+            notify_star(g.session_registry, g.entity_manager, Playernum,
+                        Governor, from.storbits(), short_buf);
           }
       }
     }
@@ -187,9 +189,10 @@ void bombard(const command_t& argv, GameObj& g) {
               use_destruct(ship, strength);
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.entity_manager, Playernum, Governor, from.storbits(),
-                        short_buf);
-            warn(ship.owner(), ship.governor(), long_buf);
+            notify_star(g.session_registry, g.entity_manager, Playernum,
+                        Governor, from.storbits(), short_buf);
+            warn_player(g.session_registry, ship.owner(), ship.governor(),
+                        long_buf);
             g.out << long_buf;
           }
         }

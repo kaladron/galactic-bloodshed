@@ -10,6 +10,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -93,12 +94,16 @@ void test_tactical_planet_scope() {
   state.em.clear_cache();
 
   // Create GameObj for tactical command
-  GameObj g_tactical(state.em);
-  g_tactical.player = 1;
-  g_tactical.governor = 0;
-  g_tactical.level = ScopeLevel::LEVEL_PLAN;
-  g_tactical.snum = 1;
-  g_tactical.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g_tactical(state.em, registry);
+
+  g_tactical.set_player(1);
+
+  g_tactical.set_governor(0);
+  g_tactical.set_level(ScopeLevel::LEVEL_PLAN);
+  g_tactical.set_snum(1);
+  g_tactical.set_pnum(0);
+
   g_tactical.race = state.em.peek_race(1);
 
   // Run standalone tactical command
@@ -131,13 +136,14 @@ void test_tactical_ship_scope() {
   state.em.clear_cache();
 
   // Create GameObj for tactical command
-  GameObj g_tactical(state.em);
-  g_tactical.player = 1;
-  g_tactical.governor = 0;
-  g_tactical.level = ScopeLevel::LEVEL_SHIP;
-  g_tactical.snum = 1;
-  g_tactical.pnum = 0;
-  g_tactical.shipno = 1;
+  auto& registry = get_test_session_registry();
+  GameObj g_tactical(state.em, registry);
+  g_tactical.set_player(1);
+  g_tactical.set_governor(0);
+  g_tactical.set_level(ScopeLevel::LEVEL_SHIP);
+  g_tactical.set_snum(1);
+  g_tactical.set_pnum(0);
+  g_tactical.set_shipno(1);
   g_tactical.race = state.em.peek_race(1);
 
   // Run standalone tactical command
@@ -168,12 +174,16 @@ void test_tactical_star_scope() {
   state.em.clear_cache();
 
   // Create GameObj for tactical command
-  GameObj g_tactical(state.em);
-  g_tactical.player = 1;
-  g_tactical.governor = 0;
-  g_tactical.level = ScopeLevel::LEVEL_STAR;
-  g_tactical.snum = 1;
-  g_tactical.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g_tactical(state.em, registry);
+
+  g_tactical.set_player(1);
+
+  g_tactical.set_governor(0);
+  g_tactical.set_level(ScopeLevel::LEVEL_STAR);
+  g_tactical.set_snum(1);
+  g_tactical.set_pnum(0);
+
   g_tactical.race = state.em.peek_race(1);
 
   // Run standalone tactical command

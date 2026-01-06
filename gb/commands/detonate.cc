@@ -9,8 +9,7 @@ module commands;
 
 namespace GB::commands {
 void detonate(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const governor_t Governor = g.governor();
 
   if (argv.size() < 3) {
     g.out << std::format("Syntax: '{}' <mine>'\n", argv[0]);

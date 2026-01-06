@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race
   Race race{};
@@ -105,14 +104,13 @@ int main() {
   ships_repo.save(shuttle);
 
   // Create GameObj
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
-  g.shipno = 1;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+  g.set_shipno(1);
 
   std::println("Test 1: Land ship on planet coordinates");
   {
@@ -123,7 +121,7 @@ int main() {
     std::string output = g.out.str();
     std::println("Command output: {}", output);
 
-    const auto* s = em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(1);
     assert(s != nullptr);
     // Ship should be docked after landing
     assert(s->docked());
@@ -135,14 +133,14 @@ int main() {
   std::println("Test 2: Cannot land docked ship");
   {
     // Ship is already docked from test 1
-    const auto* s_before = em.peek_ship(1);
+    const auto* s_before = ctx.em.peek_ship(1);
     bool was_docked = s_before->docked();
 
     command_t argv = {"land", "#1", "3,3"};
     GB::commands::land(argv, g);
 
     // Should still be at original location
-    const auto* s_after = em.peek_ship(1);
+    const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->docked() == was_docked);
     std::println("✓ Cannot re-land already docked ship");
   }
@@ -154,7 +152,7 @@ int main() {
 
     // Reset shuttle to undocked state
     {
-      auto s_handle = em.get_ship(1);
+      auto s_handle = ctx.em.get_ship(1);
       auto& s = *s_handle;
       s.docked() = false;
       s.whatorbits() = ScopeLevel::LEVEL_PLAN;
@@ -194,7 +192,7 @@ int main() {
     std::string output = g.out.str();
     std::println("Command output: {}", output);
 
-    const auto* shuttle_after = em.peek_ship(1);
+    const auto* shuttle_after = ctx.em.peek_ship(1);
     assert(shuttle_after->docked());
     std::println("✓ Ship can land on friendly carrier");
   }

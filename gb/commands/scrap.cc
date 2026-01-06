@@ -23,7 +23,7 @@ void scrap(const command_t& argv, GameObj& g) {
     Ship& s = *ship_handle;
 
     if (!ship_matches_filter(argv[1], s)) continue;
-    if (!authorized(g.governor, s)) continue;
+    if (!authorized(g.governor(), s)) continue;
 
     if (s.max_crew() && !s.popn()) {
       g.out << "Can't scrap that ship - no crew.\n";
@@ -39,7 +39,7 @@ void scrap(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    if (!enufAP(g.player, g.governor, star->AP(g.player - 1), APcount)) {
+    if (!enufAP(g.player(), g.governor(), star->AP(g.player() - 1), APcount)) {
       continue;
     }
 
@@ -141,7 +141,7 @@ void scrap(const command_t& argv, GameObj& g) {
 
       if (s.popn() + s.troops()) {
         if (s.whatdest() == ScopeLevel::LEVEL_PLAN && sect != nullptr &&
-            sect->get_owner() > 0 && sect->get_owner() != g.player) {
+            sect->get_owner() > 0 && sect->get_owner() != g.player()) {
           g.out << "You don't own this sector; no crew can be recovered.\n";
         } else {
           g.out << std::format("Population/Troops recovery: {}/{}.\n", s.popn(),
@@ -168,7 +168,7 @@ void scrap(const command_t& argv, GameObj& g) {
 
       if (s.crystals() + s.mounted()) {
         if (s.whatdest() == ScopeLevel::LEVEL_PLAN && sect != nullptr &&
-            sect->get_owner() > 0 && sect->get_owner() != g.player) {
+            sect->get_owner() > 0 && sect->get_owner() != g.player()) {
           g.out << "You don't own this sector; no crystals can be recovered.\n";
         } else {
           xtalval = s.crystals() + s.mounted();
@@ -195,7 +195,7 @@ void scrap(const command_t& argv, GameObj& g) {
     }
     deductAPs(g, APcount, s.storbits());
 
-    g.entity_manager.kill_ship(g.player, s);
+    g.entity_manager.kill_ship(g.player(), s);
 
     if (docked(s) && s2 != nullptr) {
       s2->crystals() += xtalval;
@@ -217,24 +217,24 @@ void scrap(const command_t& argv, GameObj& g) {
           g.entity_manager.get_planet(s.storbits(), s.pnumorbits());
       if (planet_handle.get() && landed(s) && sect != nullptr) {
         auto& planet = *planet_handle;
-        if (sect->get_owner() == g.player) {
+        if (sect->get_owner() == g.player()) {
           sect->set_popn(sect->get_popn() + troopval);
           sect->set_popn(sect->get_popn() + crewval);
         } else if (sect->get_owner() == 0) {
-          sect->set_owner(g.player);
+          sect->set_owner(g.player());
           sect->set_popn(sect->get_popn() + crewval);
           sect->set_troops(sect->get_troops() + troopval);
-          planet.info(g.player - 1).numsectsowned++;
-          planet.info(g.player - 1).popn += crewval;
-          planet.info(g.player - 1).popn += troopval;
+          planet.info(g.player() - 1).numsectsowned++;
+          planet.info(g.player() - 1).popn += crewval;
+          planet.info(g.player() - 1).popn += troopval;
           g.out << std::format("Sector {},{} Colonized.\n", s.land_x(),
                                s.land_y());
         }
-        planet.info(g.player - 1).resource += scrapval;
+        planet.info(g.player() - 1).resource += scrapval;
         planet.popn() += crewval;
-        planet.info(g.player - 1).destruct += destval;
-        planet.info(g.player - 1).fuel += static_cast<int>(fuelval);
-        planet.info(g.player - 1).crystals += xtalval;
+        planet.info(g.player() - 1).destruct += destval;
+        planet.info(g.player() - 1).fuel += static_cast<int>(fuelval);
+        planet.info(g.player() - 1).crystals += xtalval;
       }
     }
 

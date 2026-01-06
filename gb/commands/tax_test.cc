@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -15,9 +16,7 @@ void test_tax_database_persistence() {
   std::println("Test: tax command database persistence");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a race with government ship
   Race race{};
@@ -25,7 +24,7 @@ void test_tax_database_persistence() {
   race.Gov_ship = 100;  // Has government center
   race.Guest = 0;       // Not a guest
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -49,13 +48,14 @@ void test_tax_database_persistence() {
   planets.save(planet);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
-  g.race = em.peek_race(g.player);  // Set race pointer like production does
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+  g.race =
+      ctx.em.peek_race(g.player());  // Set race pointer like production does
 
   // TEST 1: Display current tax rate (no argument)
   std::println("  Testing: Display current tax rate");

@@ -3,18 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
+  // Create test context
+  TestContext ctx;
 
   // Create test race with enough tech
   Race race{};
@@ -29,7 +26,7 @@ int main() {
   race.pods = true;  // Allow pod building
 
   // Save race via repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -77,26 +74,25 @@ int main() {
   ships_repo.save(factory);
 
   // Create GameObj for command execution - must be at SHIP scope
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_SHIP;
-  g.shipno = 1;  // Factory is ship #1
-  g.snum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);  // Factory is ship #1
+  g.set_snum(0);
 
   std::println("Test 1: Set factory to produce fighters (make f)");
   {
-    em.clear_cache();
-    g.race = em.peek_race(1);  // Re-fetch after cache clear
+    ctx.em.clear_cache();
+    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
 
     // make f (fighter)
     command_t argv = {"make", "f"};
     GB::commands::make_mod(argv, g);
 
-    em.clear_cache();
+    ctx.em.clear_cache();
 
-    const auto* factory_check = em.peek_ship(1);
+    const auto* factory_check = ctx.em.peek_ship(1);
     assert(factory_check != nullptr);
     std::println("    Factory build_type now = {}",
                  static_cast<int>(factory_check->build_type()));
@@ -108,9 +104,9 @@ int main() {
 
   std::println("Test 2: Modify factory design (modify armor 50)");
   {
-    em.clear_cache();
-    g.race = em.peek_race(1);  // Re-fetch after cache clear
-    const auto* factory_before = em.peek_ship(1);
+    ctx.em.clear_cache();
+    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
+    const auto* factory_before = ctx.em.peek_ship(1);
     assert(factory_before != nullptr);
     int initial_armor = factory_before->armor();
     std::println("    Before: armor={}", initial_armor);
@@ -119,9 +115,9 @@ int main() {
     command_t argv = {"modify", "armor", "50"};
     GB::commands::make_mod(argv, g);
 
-    em.clear_cache();
+    ctx.em.clear_cache();
 
-    const auto* factory_after = em.peek_ship(1);
+    const auto* factory_after = ctx.em.peek_ship(1);
     assert(factory_after != nullptr);
     std::println("    After: armor={}", factory_after->armor());
 
@@ -132,16 +128,16 @@ int main() {
 
   std::println("Test 3: Modify factory design (modify speed 9)");
   {
-    em.clear_cache();
-    g.race = em.peek_race(1);  // Re-fetch after cache clear
+    ctx.em.clear_cache();
+    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
 
     // modify speed 9
     command_t argv = {"modify", "speed", "9"};
     GB::commands::make_mod(argv, g);
 
-    em.clear_cache();
+    ctx.em.clear_cache();
 
-    const auto* factory_check = em.peek_ship(1);
+    const auto* factory_check = ctx.em.peek_ship(1);
     assert(factory_check != nullptr);
     std::println("    After: max_speed={}", factory_check->max_speed());
 
@@ -152,9 +148,9 @@ int main() {
 
   std::println("Test 4: Verify factory settings persist after cache clear");
   {
-    em.clear_cache();
+    ctx.em.clear_cache();
 
-    const auto* factory_final = em.peek_ship(1);
+    const auto* factory_final = ctx.em.peek_ship(1);
     assert(factory_final != nullptr);
 
     std::println("    Final factory settings:");

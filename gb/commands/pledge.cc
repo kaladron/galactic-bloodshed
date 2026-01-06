@@ -8,16 +8,16 @@ module;
 
 import gblib;
 import std.compat;
-
-#include "gb/GB_server.h"
+import notification;
+import session;
 
 module commands;
 
 namespace GB::commands {
 /* declare that you wish to be included in the alliance block */
 void pledge(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   int n;
 
   if (Governor) {
@@ -47,10 +47,10 @@ void pledge(const command_t& argv, GameObj& g) {
   auto& block = *block_handle;
 
   setbit(block.pledge, Playernum);
-  warn_race(g.entity_manager, n,
+  warn_race(g.session_registry, g.entity_manager, n,
             std::format("{} [{}] has pledged {}.\n", g.race->name, Playernum,
                         block.name));
-  warn_race(g.entity_manager, Playernum,
+  warn_race(g.session_registry, g.entity_manager, Playernum,
             std::format("You have pledged allegiance to {}.\n", block.name));
 
   std::string msg;

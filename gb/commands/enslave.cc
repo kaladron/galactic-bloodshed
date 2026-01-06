@@ -7,14 +7,16 @@
 module;
 
 import gblib;
+import session;
+import notification;
 import std;
 
 module commands;
 
 namespace GB::commands {
 void enslave(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   ap_t APcount = 2;
   int aliens = 0;
   int def = 0;
@@ -136,6 +138,6 @@ void enslave(const command_t& argv, GameObj& g) {
 
   for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info(i - 1).numsectsowned && i != Playernum)
-      warn(i, star.governor(i - 1), telegram.str());
+      warn_player(g.session_registry, i, star.governor(i - 1), telegram.str());
 }
 }  // namespace GB::commands

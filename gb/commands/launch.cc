@@ -2,15 +2,17 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std;
 
 module commands;
 
 namespace GB::commands {
 void launch(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 1;
 
   if (argv.size() < 2) {
@@ -208,7 +210,7 @@ void launch(const command_t& argv, GameObj& g) {
           star.get_name(), star.get_planet_name(s.pnumorbits()));
       for (player_t i = 1; i <= g.entity_manager.num_races(); i++)
         if (p.info(i - 1).numsectsowned && i != Playernum) {
-          notify(i, star.governor(i - 1), observed);
+          g.session_registry.notify_player(i, star.governor(i - 1), observed);
         }
 
       g.out << std::format("{} launched from planet,", ship_to_string(s));

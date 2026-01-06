@@ -2,19 +2,16 @@
 
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager and JsonStore
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test races
   Race race1{};
@@ -92,11 +89,10 @@ int main() {
   Power_blocks.ships_owned[1] = 20;
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_UNIV;
-  g.race = em.peek_race(1);
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println("========== Block Command Tests ==========\n");
 

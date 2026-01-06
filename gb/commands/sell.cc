@@ -3,24 +3,26 @@
 module;
 
 import gblib;
+import notification;
+import session; // For SessionRegistry full definition
 import std;
 
 module commands;
 
 namespace GB::commands {
 void sell(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   ap_t APcount = 20;
 
   if (!MARKET) return;
 
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to be in a planet scope to sell.\n";
     return;
   }
-  auto snum = g.snum;
-  auto pnum = g.pnum;
+  auto snum = g.snum();
+  auto pnum = g.pnum();
   if (argv.size() < 3) {
     g.out << "Syntax: sell <commodity> <amount>\n";
     return;
@@ -119,8 +121,9 @@ void sell(const command_t& argv, GameObj& g) {
       std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", commodno,
                   amount, item, g.race->name, Playernum);
   post(g.entity_manager, buf, NewsType::TRANSFER);
-  for (player_t i = 1; i <= g.entity_manager.num_races(); i++)
-    notify_race(i, buf);
+  for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
+    g.session_registry.notify_race(i, buf);
+  }
 
   Commod c{};
   c.owner = Playernum;

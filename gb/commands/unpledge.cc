@@ -6,16 +6,15 @@ module;
 
 import gblib;
 import std;
-
-#include "gb/GB_server.h"
+import notification;
 
 module commands;
 
 namespace GB::commands {
 /* declare that you wish to be included in the alliance block */
 void unpledge(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
 
   if (Governor) {
     g.out << "Only leaders may pledge.\n";
@@ -47,10 +46,11 @@ void unpledge(const command_t& argv, GameObj& g) {
   clrbit(block.pledge, Playernum);
   std::string quit_notification = std::format(
       "{} [{}] has quit {} [{}].\n", race->name, Playernum, block.name, n);
-  warn_race(g.entity_manager, n, quit_notification);
+  warn_race(g.session_registry, g.entity_manager, n, quit_notification);
   std::string player_notification =
       std::format("You have quit {}\n", block.name);
-  warn_race(g.entity_manager, Playernum, player_notification);
+  warn_race(g.session_registry, g.entity_manager, Playernum,
+            player_notification);
 
   switch (int_rand(1, 20)) {
     case 1: {

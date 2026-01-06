@@ -2,7 +2,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std;
 
 module commands;
@@ -13,8 +15,7 @@ int landed_on(const Ship& s, const shipnum_t shipno) {
 }
 
 void do_transporter(const Race& race, GameObj& g, Ship* s) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
 
   Playernum = race.Playernum;
 
@@ -22,9 +23,8 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     g.out << "Origin ship not landed.\n";
     return;
   }
-  if (s->storbits() != g.snum || s->pnumorbits() != g.pnum) {
-    notify(Playernum, Governor,
-           "Change scope to the planet the ship is landed on!\n");
+  if (s->storbits() != g.snum() || s->pnumorbits() != g.pnum()) {
+    g.out << "Change scope to the planet the ship is landed on!\n";
     return;
   }
   if (s->damage()) {
@@ -32,20 +32,20 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     return;
   }
   if (!std::holds_alternative<TransportData>(s->special())) {
-    notify(Playernum, Governor, "Transport device not configured.\n");
+    g.out << "Transport device not configured.\n";
     return;
   }
   auto transport = std::get<TransportData>(s->special());
 
   auto s2_handle = g.entity_manager.get_ship(transport.target);
   if (!s2_handle.get()) {
-    notify(Playernum, Governor, "The hopper seems to be blocked.\n");
+    g.out << "The hopper seems to be blocked.\n";
     return;
   }
   auto& s2 = *s2_handle;
 
   if (!s2.alive() || s2.type() != ShipType::OTYPE_TRANSDEV || !s2.on()) {
-    notify(Playernum, Governor, "The target device is not receiving.\n");
+    g.out << "The target device is not receiving.\n";
     return;
   }
   if (!landed(s2)) {
@@ -57,28 +57,25 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     return;
   }
 
-  notify(Playernum, Governor, "Zap\07!\n"); /* ^G */
+  g.out << "Zap\07!\n"; /* ^G */
   /* send stuff to other ship (could be transport device) */
   std::string tele_lines;
   if (s->resource()) {
     rcv_resource(s2, (int)s->resource());
-    notify(Playernum, Governor,
-           std::format("{} resources transferred.\n", s->resource()));
+    g.out << std::format("{} resources transferred.\n", s->resource());
     tele_lines += std::format("{} Resources\n", s->resource());
     use_resource(*s, (int)s->resource());
   }
   if (s->fuel()) {
     rcv_fuel(s2, s->fuel());
-    notify(Playernum, Governor,
-           std::format("{} fuel transferred.\n", s->fuel()));
+    g.out << std::format("{} fuel transferred.\n", s->fuel());
     tele_lines += std::format("{} Fuel\n", s->fuel());
     use_fuel(*s, s->fuel());
   }
 
   if (s->destruct()) {
     rcv_destruct(s2, (int)s->destruct());
-    notify(Playernum, Governor,
-           std::format("{} destruct transferred.\n", s->destruct()));
+    g.out << std::format("{} destruct transferred.\n", s->destruct());
     tele_lines += std::format("{} Destruct\n", s->destruct());
     use_destruct(*s, (int)s->destruct());
   }
@@ -87,8 +84,7 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     s2.mass() += s->popn() * race.mass;
     s2.popn() += s->popn();
 
-    notify(Playernum, Governor,
-           std::format("{} population transferred.\n", s->popn()));
+    g.out << std::format("{} population transferred.\n", s->popn());
     tele_lines +=
         std::format("{} {}\n", s->popn(),
                     race.Metamorph ? "tons of biomass" : "population");
@@ -99,8 +95,7 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
   if (s->crystals()) {
     s2.crystals() += s->crystals();
 
-    notify(Playernum, Governor,
-           std::format("{} crystal(s) transferred.\n", s->crystals()));
+    g.out << std::format("{} crystal(s) transferred.\n", s->crystals());
     tele_lines += std::format("{} crystal(s)\n", s->crystals());
 
     s->crystals() = 0;
@@ -111,14 +106,14 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     telegram += std::format("{} gave your ship {} the following:\n",
                             ship_to_string(*s), ship_to_string(s2));
     telegram += tele_lines;
-    warn(s2.owner(), s2.governor(), telegram);
+    warn_player(g.session_registry, s2.owner(), s2.governor(), telegram);
   }
 }
 
 void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
                               Sector& sect, PopulationType what, int people) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   double astrength;
   double dstrength;
   int oldowner;
@@ -133,22 +128,21 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   int defense;
 
   if (people <= 0) {
-    notify(Playernum, Governor,
-           "You have to unload to assault alien sectors.\n");
+    g.out << "You have to unload to assault alien sectors.\n";
     return;
   }
-  ground_assaults[Playernum - 1][sect.get_owner() - 1][g.snum] += 1;
+  ground_assaults[Playernum - 1][sect.get_owner() - 1][g.snum()] += 1;
 
   auto race_handle = g.entity_manager.get_race(Playernum);
   if (!race_handle.get()) {
-    notify(Playernum, Governor, "Race not found.\n");
+    g.out << "Race not found.\n";
     return;
   }
   auto& race = *race_handle;
 
   auto alien_handle = g.entity_manager.get_race(sect.get_owner());
   if (!alien_handle.get()) {
-    notify(Playernum, Governor, "Alien race not found.\n");
+    g.out << "Alien race not found.\n";
     return;
   }
   auto& alien = *alien_handle;
@@ -159,7 +153,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
       MIN(race.translate[sect.get_owner() - 1] + 5, 100);
 
   oldowner = (int)sect.get_owner();
-  const auto& star = *g.entity_manager.peek_star(g.snum);
+  const auto& star = *g.entity_manager.peek_star(g.snum());
   oldgov = star.governor(sect.get_owner() - 1);
 
   if (what == PopulationType::CIV)
@@ -167,17 +161,14 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   else
     ship->troops() -= people;
   ship->mass() -= people * race.mass;
-  notify(Playernum, Governor,
-         std::format("{} {} unloaded...\n", people,
-                     what == PopulationType::CIV ? "civ" : "mil"));
-  notify(Playernum, Governor,
-         std::format("Crew compliment {} civ  {} mil\n", ship->popn(),
-                     ship->troops()));
+  g.out << std::format("{} {} unloaded...\n", people,
+                       what == PopulationType::CIV ? "civ" : "mil");
+  g.out << std::format("Crew compliment {} civ  {} mil\n", ship->popn(),
+                       ship->troops());
 
-  notify(Playernum, Governor,
-         std::format("{} {} assault {} civ/{} mil\n", people,
-                     what == PopulationType::CIV ? "civ" : "mil",
-                     sect.get_popn(), sect.get_troops()));
+  g.out << std::format("{} {} assault {} civ/{} mil\n", people,
+                       what == PopulationType::CIV ? "civ" : "mil",
+                       sect.get_popn(), sect.get_troops());
   oldpopn = people;
   old2popn = sect.get_popn();
   old3popn = sect.get_troops();
@@ -192,7 +183,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
                 &dstrength, &casualties, &casualties2, &casualties3);
   sect.set_popn(temp_popn);
   sect.set_troops(temp_troops);
-  notify(
+  g.session_registry.notify_player(
       Playernum, Governor,
       std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength, dstrength));
 
@@ -201,10 +192,10 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
     absorbed = 0;
     if (race.absorb) {
       absorbed = int_rand(0, old2popn + old3popn);
-      notify(Playernum, Governor,
-             std::format("{} alien bodies absorbed.\n", absorbed));
-      notify(oldowner, oldgov,
-             std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
+      g.out << std::format("{} alien bodies absorbed.\n", absorbed);
+      g.session_registry.notify_player(
+          oldowner, oldgov,
+          std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
     }
     if (what == PopulationType::CIV)
       sect.set_popn(people + absorbed);
@@ -218,16 +209,15 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
     absorbed = 0;
     if (alien.absorb) {
       absorbed = int_rand(0, oldpopn - people);
-      notify(oldowner, oldgov,
-             std::format("{} alien bodies absorbed.\n", absorbed));
-      notify(Playernum, Governor,
-             std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
+      g.session_registry.notify_player(
+          oldowner, oldgov,
+          std::format("{} alien bodies absorbed.\n", absorbed));
+      g.out << std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed);
       sect.set_popn(sect.get_popn() + absorbed);
     }
     /* load them back up */
-    notify(Playernum, Governor,
-           std::format("Loading {} {}\n", people,
-                       what == PopulationType::CIV ? "civ" : "mil"));
+    g.out << std::format("Loading {} {}\n", people,
+                         what == PopulationType::CIV ? "civ" : "mil");
     if (what == PopulationType::CIV)
       ship->popn() += people;
     else
@@ -237,25 +227,25 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   }
   std::string telegram = std::format(
       "/{}/{}: {} [{}] {} assaults {} [{}] {}({},{}) {}\n", star.get_name(),
-      star.get_planet_name(g.pnum), race.name, Playernum, ship_to_string(*ship),
-      alien.name, alien.Playernum, Dessymbols[sect.get_condition()],
-      ship->land_x(), ship->land_y(),
+      star.get_planet_name(g.pnum()), race.name, Playernum,
+      ship_to_string(*ship), alien.name, alien.Playernum,
+      Dessymbols[sect.get_condition()], ship->land_x(), ship->land_y(),
       (sect.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
 
   if (sect.get_owner() == Playernum) {
-    notify(Playernum, Governor, "VICTORY! The sector is yours!\n");
+    g.out << "VICTORY! The sector is yours!\n";
     telegram += "Sector CAPTURED!\n";
     if (people) {
-      notify(Playernum, Governor,
-             std::format("{} {} move in.\n", people,
-                         what == PopulationType::CIV ? "civilians" : "troops"));
+      g.out << std::format("{} {} move in.\n", people,
+                           what == PopulationType::CIV ? "civilians"
+                                                       : "troops");
     }
     planet.info(Playernum - 1).numsectsowned++;
     planet.info(Playernum - 1).mob_points += sect.get_mobilization();
     planet.info(oldowner - 1).numsectsowned--;
     planet.info(oldowner - 1).mob_points -= sect.get_mobilization();
   } else {
-    notify(Playernum, Governor, "The invasion was repulsed; try again.\n");
+    g.out << "The invasion was repulsed; try again.\n";
     telegram += "You fought them off!\n";
   }
   if (!(sect.get_popn() + sect.get_troops() + people)) {
@@ -264,8 +254,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
     race.translate[oldowner - 1] = MIN(race.translate[oldowner - 1] + 5, 100);
   }
   if (!people) {
-    notify(Playernum, Governor,
-           "Oh no! They killed your party to the last man!\n");
+    g.out << "Oh no! They killed your party to the last man!\n";
     /* increase modifier */
     alien.translate[Playernum - 1] =
         MIN(alien.translate[Playernum - 1] + 5, 100);
@@ -274,18 +263,17 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
                           casualties2, casualties3, casualties,
                           what == PopulationType::CIV ? "civ" : "mil");
-  warn(oldowner, oldgov, telegram);
-  notify(Playernum, Governor,
-         std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
-                     casualties, what == PopulationType::CIV ? "civ" : "mil",
-                     casualties2, casualties3));
+  warn_player(g.session_registry, oldowner, oldgov, telegram);
+  g.out << std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
+                       casualties, what == PopulationType::CIV ? "civ" : "mil",
+                       casualties2, casualties3);
 }
 }  // namespace
 
 namespace GB::commands {
 void load(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 0;
   int mode = argv[0] == "load" ? 0 : 1;  // load or unload
   char commod;
@@ -315,7 +303,7 @@ void load(const command_t& argv, GameObj& g) {
       continue;
     }
     if (!s.active()) {
-      notify(
+      g.session_registry.notify_player(
           Playernum, Governor,
           std::format("{} is irradiated and inactive.\n", ship_to_string(s)));
 
@@ -332,8 +320,7 @@ void load(const command_t& argv, GameObj& g) {
         continue;
     }
     if (!s.docked()) {
-      notify(Playernum, Governor,
-             std::format("{} is not landed or docked.\n", ship_to_string(s)));
+      g.out << std::format("{} is not landed or docked.\n", ship_to_string(s));
 
       continue;
     } /* ship has a recipient */
@@ -342,19 +329,16 @@ void load(const command_t& argv, GameObj& g) {
     Ship* s2_ptr = nullptr;
 
     if (s.whatdest() == ScopeLevel::LEVEL_PLAN) {
-      notify(Playernum, Governor,
-             std::format("{} at {},{}\n", ship_to_string(s), s.land_x(),
-                         s.land_y()));
-      if (s.storbits() != g.snum || s.pnumorbits() != g.pnum) {
-        notify(Playernum, Governor,
-               "Change scope to the planet this ship is landed on.\n");
+      g.out << std::format("{} at {},{}\n", ship_to_string(s), s.land_x(),
+                           s.land_y());
+      if (s.storbits() != g.snum() || s.pnumorbits() != g.pnum()) {
+        g.out << "Change scope to the planet this ship is landed on.\n";
 
         continue;
       }
     } else { /* ship is docked */
       if (!s.destshipno()) {
-        notify(Playernum, Governor,
-               std::format("{} is not docked.\n", ship_to_string(s)));
+        g.out << std::format("{} is not docked.\n", ship_to_string(s));
 
         continue;
       }
@@ -372,25 +356,21 @@ void load(const command_t& argv, GameObj& g) {
         s.docked() = 0;
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
 
-        notify(Playernum, Governor,
-               std::format("{} is not docked.\n", ship_to_string(*s2_ptr)));
+        g.out << std::format("{} is not docked.\n", ship_to_string(*s2_ptr));
 
         continue;
       }
       if (overloaded(*s2_ptr) &&
           s2_ptr->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-        notify(Playernum, Governor,
-               std::format("{} is overloaded!\n", ship_to_string(*s2_ptr)));
+        g.out << std::format("{} is overloaded!\n", ship_to_string(*s2_ptr));
 
         continue;
       }
-      notify(Playernum, Governor,
-             std::format("{} docked with {}\n", ship_to_string(s),
-                         ship_to_string(*s2_ptr)));
+      g.out << std::format("{} docked with {}\n", ship_to_string(s),
+                           ship_to_string(*s2_ptr));
       sh = 1;
       if (s2_ptr->owner() != Playernum) {
-        notify(Playernum, Governor,
-               std::format("Player {} owns that ship.\n", s2_ptr->owner()));
+        g.out << std::format("Player {} owns that ship.\n", s2_ptr->owner());
         diff = 1;
       }
     }
@@ -414,12 +394,12 @@ void load(const command_t& argv, GameObj& g) {
     Sector* sect_ptr = nullptr;
 
     if (!sh) {
-      planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+      planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
       p_ptr = planet_handle->get();
     }
 
     if (!sh && (commod == 'c' || commod == 'm')) {
-      sectormap_handle = g.entity_manager.get_sectormap(g.snum, g.pnum);
+      sectormap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
       sect_ptr = &sectormap_handle->get()->get(s.land_x(), s.land_y());
     }
 
@@ -511,9 +491,8 @@ void load(const command_t& argv, GameObj& g) {
     }
 
     if (amt < lolim || amt > uplim) {
-      notify(Playernum, Governor,
-             std::format("you can only transfer between {} and {}.\n", lolim,
-                         uplim));
+      g.out << std::format("you can only transfer between {} and {}.\n", lolim,
+                           uplim);
       continue;
     }
 
@@ -530,8 +509,7 @@ void load(const command_t& argv, GameObj& g) {
           transfercrew = 1;
         } else if (sect_ptr->get_owner() &&
                    sect_ptr->get_owner() != Playernum) {
-          notify(Playernum, Governor,
-                 "That sector is already occupied by another player!\n");
+          g.out << "That sector is already occupied by another player!\n";
           /* fight a land battle */
           unload_onto_alien_sector(g, *p_ptr, &s, *sect_ptr,
                                    PopulationType::CIV, -amt);
@@ -543,9 +521,8 @@ void load(const command_t& argv, GameObj& g) {
             p_ptr->info(Playernum - 1).mob_points +=
                 sect_ptr->get_mobilization();
             sect_ptr->set_owner(Playernum);
-            notify(Playernum, Governor,
-                   std::format("sector {},{} COLONIZED.\n", s.land_x(),
-                               s.land_y()));
+            g.out << std::format("sector {},{} COLONIZED.\n", s.land_x(),
+                                 s.land_y());
           }
           sect_ptr->set_popn(sect_ptr->get_popn() - amt);
           p_ptr->popn() -= amt;
@@ -555,17 +532,15 @@ void load(const command_t& argv, GameObj& g) {
             p_ptr->info(Playernum - 1).mob_points -=
                 sect_ptr->get_mobilization();
             sect_ptr->set_owner(0);
-            notify(Playernum, Governor,
-                   std::format("sector {},{} evacuated.\n", s.land_x(),
-                               s.land_y()));
+            g.out << std::format("sector {},{} evacuated.\n", s.land_x(),
+                                 s.land_y());
           }
         }
         if (transfercrew) {
           s.popn() += amt;
           s.mass() += amt * race.mass;
-          notify(Playernum, Governor,
-                 std::format("crew complement of {} is now {}.\n",
-                             ship_to_string(s), s.popn()));
+          g.out << std::format("crew complement of {} is now {}.\n",
+                               ship_to_string(s), s.popn());
         }
         break;
       case 'm':
@@ -576,8 +551,7 @@ void load(const command_t& argv, GameObj& g) {
           transfercrew = 1;
         } else if (sect_ptr->get_owner() &&
                    sect_ptr->get_owner() != Playernum) {
-          notify(Playernum, Governor,
-                 "That sector is already occupied by another player!\n");
+          g.out << "That sector is already occupied by another player!\n";
           unload_onto_alien_sector(g, *p_ptr, &s, *sect_ptr,
                                    PopulationType::MIL, -amt);
           return;
@@ -588,9 +562,8 @@ void load(const command_t& argv, GameObj& g) {
             p_ptr->info(Playernum - 1).mob_points +=
                 sect_ptr->get_mobilization();
             sect_ptr->set_owner(Playernum);
-            notify(Playernum, Governor,
-                   std::format("sector {},{} OCCUPIED.\n", s.land_x(),
-                               s.land_y()));
+            g.out << std::format("sector {},{} OCCUPIED.\n", s.land_x(),
+                                 s.land_y());
           }
           sect_ptr->set_troops(sect_ptr->get_troops() - amt);
           p_ptr->troops() -= amt;
@@ -600,17 +573,15 @@ void load(const command_t& argv, GameObj& g) {
             p_ptr->info(Playernum - 1).mob_points -=
                 sect_ptr->get_mobilization();
             sect_ptr->set_owner(0);
-            notify(Playernum, Governor,
-                   std::format("sector {},{} evacuated.\n", s.land_x(),
-                               s.land_y()));
+            g.out << std::format("sector {},{} evacuated.\n", s.land_x(),
+                                 s.land_y());
           }
         }
         if (transfercrew) {
           s.troops() += amt;
           s.mass() += amt * race.mass;
-          notify(Playernum, Governor,
-                 std::format("troop complement of {} is now {}.\n",
-                             ship_to_string(s), s.troops()));
+          g.out << std::format("troop complement of {} is now {}.\n",
+                               ship_to_string(s), s.troops());
         }
         break;
       case 'd':
@@ -623,14 +594,13 @@ void load(const command_t& argv, GameObj& g) {
 
         s.destruct() += amt;
         s.mass() += amt * MASS_DESTRUCT;
-        notify(Playernum, Governor,
-               std::format("{} destruct transferred.\n", amt));
+        g.out << std::format("{} destruct transferred.\n", amt);
         if (!max_crew(s)) {
-          notify(Playernum, Governor, std::format("\n{} ", ship_to_string(s)));
+          g.out << std::format("\n{} ", ship_to_string(s));
           if (s.destruct()) {
-            notify(Playernum, Governor, "now boobytrapped.\n");
+            g.out << "now boobytrapped.\n";
           } else {
-            notify(Playernum, Governor, "no longer boobytrapped.\n");
+            g.out << "no longer boobytrapped.\n";
           }
         }
         break;
@@ -640,8 +610,7 @@ void load(const command_t& argv, GameObj& g) {
         } else
           p_ptr->info(Playernum - 1).crystals -= amt;
         s.crystals() += amt;
-        notify(Playernum, Governor,
-               std::format("{} crystal(s) transferred.\n", amt));
+        g.out << std::format("{} crystal(s) transferred.\n", amt);
         break;
       case 'f':
         if (sh) {
@@ -651,7 +620,7 @@ void load(const command_t& argv, GameObj& g) {
         } else
           p_ptr->info(Playernum - 1).fuel -= amt;
         rcv_fuel(s, (double)amt);
-        notify(Playernum, Governor, std::format("{} fuel transferred.\n", amt));
+        g.out << std::format("{} fuel transferred.\n", amt);
         break;
       case 'r':
         if (sh) {
@@ -661,8 +630,7 @@ void load(const command_t& argv, GameObj& g) {
         } else
           p_ptr->info(Playernum - 1).resource -= amt;
         rcv_resource(s, amt);
-        notify(Playernum, Governor,
-               std::format("{} resources transferred.\n", amt));
+        g.out << std::format("{} resources transferred.\n", amt);
         break;
       default:
         g.out << "No such commodity.\n";
@@ -674,36 +642,30 @@ void load(const command_t& argv, GameObj& g) {
       std::string tele_lines;
       switch (commod) {
         case 'r':
-          notify(Playernum, Governor,
-                 std::format("{} resources transferred.\n", amt));
+          g.out << std::format("{} resources transferred.\n", amt);
           tele_lines += std::format("{} Resources\n", amt);
           break;
         case 'f':
-          notify(Playernum, Governor,
-                 std::format("{} fuel transferred.\n", amt));
+          g.out << std::format("{} fuel transferred.\n", amt);
           tele_lines += std::format("{} Fuel\n", amt);
           break;
         case 'd':
-          notify(Playernum, Governor,
-                 std::format("{} destruct transferred.\n", amt));
+          g.out << std::format("{} destruct transferred.\n", amt);
           tele_lines += std::format("{} Destruct\n", amt);
           break;
         case 'x':
         case '&':
-          notify(Playernum, Governor,
-                 std::format("{} crystals transferred.\n", amt));
+          g.out << std::format("{} crystals transferred.\n", amt);
           tele_lines += std::format("{} Crystal(s)\n", amt);
           break;
         case 'c':
-          notify(Playernum, Governor,
-                 std::format("{} popn transferred.\n", amt));
+          g.out << std::format("{} popn transferred.\n", amt);
           tele_lines +=
               std::format("{} {}\n", amt,
                           race.Metamorph ? "tons of biomass" : "population");
           break;
         case 'm':
-          notify(Playernum, Governor,
-                 std::format("{} military transferred.\n", amt));
+          g.out << std::format("{} military transferred.\n", amt);
           tele_lines +=
               std::format("{} {}\n", amt,
                           race.Metamorph ? "tons of biomass" : "population");
@@ -715,11 +677,12 @@ void load(const command_t& argv, GameObj& g) {
         auto s2_owner = s2_ptr->owner();
         auto s2_gov = s2_ptr->governor();
         auto s2_name = ship_to_string(*s2_ptr);
-        warn(s2_owner, s2_gov,
-             std::format(
-                 "Audio-vibatory-physio-molecular transport device #{} gave "
-                 "your ship {} the following:\n{}",
-                 ship_to_string(s), s2_name, tele_lines));
+        warn_player(
+            g.session_registry, s2_owner, s2_gov,
+            std::format(
+                "Audio-vibatory-physio-molecular transport device #{} gave "
+                "your ship {} the following:\n{}",
+                ship_to_string(s), s2_name, tele_lines));
       }
     }
 

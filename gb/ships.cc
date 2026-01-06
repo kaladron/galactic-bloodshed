@@ -443,8 +443,8 @@ double complexity(ShipType type) {
 }
 
 bool testship(const Ship& s, GameObj& g) {
-  const player_t playernum = g.player;
-  const governor_t governor = g.governor;
+  const player_t playernum = g.player();
+  const governor_t governor = g.governor();
   if (!s.alive()) {
     g.out << std::format("{} has been destroyed.\n", ship_to_string(s));
     return true;

@@ -424,7 +424,7 @@ bool should_report_ship(const Ship& s, player_t player_num, governor_t governor,
 void ship_report(GameObj& g, RstContext& ctx, const Ship& s,
                  const ReportSet& rep_on) {
   // Check if this ship should be reported
-  if (!should_report_ship(s, g.player, g.governor, rep_on)) {
+  if (!should_report_ship(s, g.player(), g.governor(), rep_on)) {
     return;
   }
 
@@ -534,7 +534,7 @@ void rst(const command_t& argv, GameObj& g) {
                       std::inserter(report_types, report_types.end()));
   }
 
-  switch (g.level) {
+  switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV: {
       const auto* universe = g.entity_manager.peek_universe();
       const ShipList univ_ships(g.entity_manager, universe->ships);
@@ -544,30 +544,30 @@ void rst(const command_t& argv, GameObj& g) {
 
       for (auto star_handle : StarList(g.entity_manager)) {
         const auto& star = *star_handle;
-        report_star_ships(g, ctx, g.player, star.star_id(), report_types);
+        report_star_ships(g, ctx, g.player(), star.star_id(), report_types);
       }
       break;
     }
 
     case ScopeLevel::LEVEL_PLAN:
-      report_planet_ships(g, ctx, g.player, g.snum, g.pnum, report_types);
+      report_planet_ships(g, ctx, g.player(), g.snum(), g.pnum(), report_types);
       break;
 
     case ScopeLevel::LEVEL_STAR:
-      report_star_ships(g, ctx, g.player, g.snum, report_types);
+      report_star_ships(g, ctx, g.player(), g.snum(), report_types);
       break;
 
     case ScopeLevel::LEVEL_SHIP: {
-      if (g.shipno == 0) {
+      if (g.shipno() == 0) {
         g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
                  "scope to a ship.\n";
         return;
       }
 
-      const auto* scoped_ship = g.entity_manager.peek_ship(g.shipno);
+      const auto* scoped_ship = g.entity_manager.peek_ship(g.shipno());
       if (!scoped_ship) {
         g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
-                             g.shipno);
+                             g.shipno());
         return;
       }
 

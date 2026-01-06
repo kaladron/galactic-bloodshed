@@ -2,7 +2,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import scnlib;
 import std;
 
@@ -13,8 +15,8 @@ module commands;
 namespace GB::commands {
 /*! Planet vs ship */
 void defend(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 1;
   int strength;
   int retal;
@@ -23,7 +25,7 @@ void defend(const command_t& argv, GameObj& g) {
   if (!DEFENSE) return;
 
   /* get the planet from the players current scope */
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to set scope to the planet first.\n";
     return;
   }
@@ -32,7 +34,7 @@ void defend(const command_t& argv, GameObj& g) {
     g.out << "Syntax: 'defend <ship> <sector> [<strength>]'.\n";
     return;
   }
-  const auto& star = *g.entity_manager.peek_star(g.snum);
+  const auto& star = *g.entity_manager.peek_star(g.snum());
   if (Governor && star.governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized to do that in this system.\n";
     return;
@@ -48,7 +50,7 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
     return;
@@ -77,7 +79,7 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (to->storbits() != g.snum || to->pnumorbits() != g.pnum) {
+  if (to->storbits() != g.snum() || to->pnumorbits() != g.pnum()) {
     g.out << "Target is not in orbit around this planet.\n";
     return;
   }
@@ -106,7 +108,7 @@ void defend(const command_t& argv, GameObj& g) {
   }
 
   /* check to see if you own the sector */
-  auto smap_handle = g.entity_manager.get_sectormap(g.snum, g.pnum);
+  auto smap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
   if (!smap_handle.get()) {
     g.out << "Sector map not found.\n";
     return;
@@ -152,8 +154,9 @@ void defend(const command_t& argv, GameObj& g) {
 
   p.info(Playernum - 1).destruct -= strength;
   if (!to->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
-  notify_star(g.entity_manager, Playernum, Governor, to->storbits(), short_buf);
-  warn(to->owner(), to->governor(), long_buf);
+  notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+              to->storbits(), short_buf);
+  warn_player(g.session_registry, to->owner(), to->governor(), long_buf);
   g.out << long_buf;
 
   /* defending ship retaliates */
@@ -176,10 +179,10 @@ void defend(const command_t& argv, GameObj& g) {
         use_destruct(*to, strength);
 
       post(g.entity_manager, short_buf, NewsType::COMBAT);
-      notify_star(g.entity_manager, Playernum, Governor, to->storbits(),
-                  short_buf);
+      notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                  to->storbits(), short_buf);
       g.out << long_buf;
-      warn(to->owner(), to->governor(), long_buf);
+      warn_player(g.session_registry, to->owner(), to->governor(), long_buf);
     }
   }
 
@@ -208,15 +211,16 @@ void defend(const command_t& argv, GameObj& g) {
           else
             use_destruct(ship_mut, strength);
           post(g.entity_manager, short_buf, NewsType::COMBAT);
-          notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
-                      short_buf);
+          notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                      ship->storbits(), short_buf);
           g.out << long_buf;
-          warn(ship->owner(), ship->governor(), long_buf);
+          warn_player(g.session_registry, ship->owner(), ship->governor(),
+                      long_buf);
         }
       }
     }
   }
 
-  deductAPs(g, APcount, g.snum);
+  deductAPs(g, APcount, g.snum());
 }
 }  // namespace GB::commands

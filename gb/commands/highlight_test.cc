@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -15,9 +16,7 @@ void test_highlight_database_persistence() {
   std::println("Test: highlight command database persistence");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create two races (player 1 and player 2)
   Race race1{};
@@ -29,16 +28,15 @@ void test_highlight_database_persistence() {
   race2.Playernum = 2;
   race2.name = "Player 2";
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races_repo(store);
   races_repo.save(race1);
   races_repo.save(race2);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
   // TEST 1: Set highlight to player 2
   std::println("  Testing: Set highlight to player 2");
   {

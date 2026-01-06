@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create payer race via repository
   Race payer{};
@@ -34,8 +33,8 @@ int main() {
 
   // Test: Pay 500 from player 1 to player 2
   {
-    auto payer_handle = em.get_race(1);
-    auto payee_handle = em.get_race(2);
+    auto payer_handle = ctx.em.get_race(1);
+    auto payee_handle = ctx.em.get_race(2);
     auto& p = *payer_handle;
     auto& a = *payee_handle;
 
@@ -46,8 +45,8 @@ int main() {
 
   // Verify: Money transferred
   {
-    const auto* saved_payer = em.peek_race(1);
-    const auto* saved_payee = em.peek_race(2);
+    const auto* saved_payer = ctx.em.peek_race(1);
+    const auto* saved_payee = ctx.em.peek_race(2);
     assert(saved_payer);
     assert(saved_payee);
     assert(saved_payer->governor[0].money == 9500);
@@ -57,8 +56,8 @@ int main() {
 
   // Test: Large transfer
   {
-    auto payer_handle = em.get_race(1);
-    auto payee_handle = em.get_race(2);
+    auto payer_handle = ctx.em.get_race(1);
+    auto payee_handle = ctx.em.get_race(2);
     auto& p = *payer_handle;
     auto& a = *payee_handle;
 
@@ -69,8 +68,8 @@ int main() {
 
   // Verify: Large transfer completed
   {
-    const auto* saved_payer = em.peek_race(1);
-    const auto* saved_payee = em.peek_race(2);
+    const auto* saved_payer = ctx.em.peek_race(1);
+    const auto* saved_payee = ctx.em.peek_race(2);
     assert(saved_payer);
     assert(saved_payee);
     assert(saved_payer->governor[0].money == 4500);
@@ -80,8 +79,8 @@ int main() {
 
   // Test: Transfer from governor (not leader)
   {
-    auto payer_handle = em.get_race(1);
-    auto payee_handle = em.get_race(2);
+    auto payer_handle = ctx.em.get_race(1);
+    auto payee_handle = ctx.em.get_race(2);
     auto& p = *payer_handle;
     auto& a = *payee_handle;
 
@@ -92,8 +91,8 @@ int main() {
 
   // Verify: Governor transfer completed
   {
-    const auto* saved_payer = em.peek_race(1);
-    const auto* saved_payee = em.peek_race(2);
+    const auto* saved_payer = ctx.em.peek_race(1);
+    const auto* saved_payee = ctx.em.peek_race(2);
     assert(saved_payer);
     assert(saved_payee);
     assert(saved_payer->governor[1].money == 4000);
@@ -104,8 +103,8 @@ int main() {
   // Test: Multiple sequential transfers
   {
     for (int i = 0; i < 5; i++) {
-      auto payer_handle = em.get_race(1);
-      auto payee_handle = em.get_race(2);
+      auto payer_handle = ctx.em.get_race(1);
+      auto payee_handle = ctx.em.get_race(2);
       auto& p = *payer_handle;
       auto& a = *payee_handle;
 
@@ -117,8 +116,8 @@ int main() {
 
   // Verify: All transfers accumulated
   {
-    const auto* saved_payer = em.peek_race(1);
-    const auto* saved_payee = em.peek_race(2);
+    const auto* saved_payer = ctx.em.peek_race(1);
+    const auto* saved_payee = ctx.em.peek_race(2);
     assert(saved_payer);
     assert(saved_payee);
     assert(saved_payer->governor[0].money == 4000);  // 4500 - 500
@@ -128,14 +127,14 @@ int main() {
 
   // Test: Zero balance scenarios
   {
-    auto payer_handle = em.get_race(1);
+    auto payer_handle = ctx.em.get_race(1);
     auto& p = *payer_handle;
     p.governor[0].money = 0;
   }
 
   // Verify: Zero balance saved
   {
-    const auto* saved = em.peek_race(1);
+    const auto* saved = ctx.em.peek_race(1);
     assert(saved);
     assert(saved->governor[0].money == 0);
     std::println("✓ Zero balance saved correctly");

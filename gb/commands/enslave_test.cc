@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race
   Race race{};
@@ -74,21 +73,20 @@ int main() {
   ships.save(oap);
 
   // Create GameObj
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_UNIV;
-  g.snum = 0;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   // Test enslave command
   command_t argv = {"enslave", "1"};
   GB::commands::enslave(argv, g);
 
   // Verify planet was enslaved
-  em.clear_cache();
-  const auto* saved_planet = em.peek_planet(0, 0);
+  ctx.em.clear_cache();
+  const auto* saved_planet = ctx.em.peek_planet(0, 0);
   assert(saved_planet);
   assert(saved_planet->slaved_to() == 1);
 

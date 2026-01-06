@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -15,9 +16,7 @@ void test_survey_no_args_planet_scope() {
   std::println("Test: survey command with no arguments at planet scope");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a race
   Race race{};
@@ -36,7 +35,7 @@ void test_survey_no_args_planet_scope() {
   race.conditions[OTHER] = 2;
   race.conditions[TEMP] = 280;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -87,13 +86,12 @@ void test_survey_no_args_planet_scope() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
 
   // TEST: Survey command with no arguments - should show full planet survey
   std::println("  Testing: survey (no args) at planet scope");
@@ -118,9 +116,7 @@ void test_survey_sector_mode_no_args() {
   std::println("Test: survey command in CSP mode with no arguments");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a race
   Race race{};
@@ -130,7 +126,7 @@ void test_survey_sector_mode_no_args() {
   race.God = false;
   race.tech = 50.0;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -160,13 +156,12 @@ void test_survey_sector_mode_no_args() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
 
   // TEST: Use 'map' command (mode=1) with no arguments - THIS IS THE BUG!
   // Previously this would access argv[1] without checking argv.size()
@@ -188,9 +183,7 @@ void test_survey_sector_range_with_header() {
   std::println("Test: survey command with sector range shows header");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a race
   Race race{};
@@ -201,7 +194,7 @@ void test_survey_sector_range_with_header() {
   race.tech = 50.0;
   race.conditions[TEMP] = 280;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -250,13 +243,12 @@ void test_survey_sector_range_with_header() {
   sector_repo.save_map(smap);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
 
   // TEST: Survey specific sector range in non-CSP mode
   std::println("  Testing: survey 0:2,0:2 (should show header)");
@@ -281,9 +273,7 @@ void test_survey_star_scope() {
   std::println("Test: survey command at star scope");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a race
   Race race{};
@@ -293,7 +283,7 @@ void test_survey_star_scope() {
   race.God = false;
   race.tech = 60.0;  // Above TECH_SEE_STABILITY (50)
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -314,12 +304,11 @@ void test_survey_star_scope() {
   stars.save(star);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 1;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
 
   // TEST: Survey command at star scope
   std::println("  Testing: survey at star scope");

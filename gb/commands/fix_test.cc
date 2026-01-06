@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -14,12 +15,10 @@ import std;
 // Test 1: Database persistence for fixing ship fuel
 void test_fix_ship_fuel_persistence() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   ShipRepository ships(store);
 
   // Create a ship with low fuel
@@ -34,16 +33,16 @@ void test_fix_ship_fuel_persistence() {
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
-  em.clear_cache();
+  ctx.em.clear_cache();
   {
-    const auto* s = em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(1);
     assert(s);
     assert(s->fuel() == 50.0);
   }
 
   // 4. Simulate fixing fuel via EntityManager
   {
-    auto ship_handle = em.get_ship(1);
+    auto ship_handle = ctx.em.get_ship(1);
     assert(ship_handle.get());
     auto& s = *ship_handle;
     s.fuel() = 200.0;  // Fill to max
@@ -51,8 +50,8 @@ void test_fix_ship_fuel_persistence() {
   }
 
   // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_ship = em.peek_ship(1);
+  ctx.em.clear_cache();
+  const auto* final_ship = ctx.em.peek_ship(1);
   assert(final_ship);
   assert(final_ship->fuel() == 200.0);
 
@@ -62,12 +61,10 @@ void test_fix_ship_fuel_persistence() {
 // Test 2: Database persistence for fixing ship damage
 void test_fix_ship_damage_persistence() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   ShipRepository ships(store);
 
   // Create a damaged ship
@@ -81,16 +78,16 @@ void test_fix_ship_damage_persistence() {
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
-  em.clear_cache();
+  ctx.em.clear_cache();
   {
-    const auto* s = em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(1);
     assert(s);
     assert(s->damage() == 75);
   }
 
   // 4. Simulate fixing damage via EntityManager
   {
-    auto ship_handle = em.get_ship(1);
+    auto ship_handle = ctx.em.get_ship(1);
     assert(ship_handle.get());
     auto& s = *ship_handle;
     s.damage() = 0;  // Fully repair
@@ -98,8 +95,8 @@ void test_fix_ship_damage_persistence() {
   }
 
   // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_ship = em.peek_ship(1);
+  ctx.em.clear_cache();
+  const auto* final_ship = ctx.em.peek_ship(1);
   assert(final_ship);
   assert(final_ship->damage() == 0);
 
@@ -109,12 +106,10 @@ void test_fix_ship_damage_persistence() {
 // Test 3: Database persistence for resurrecting ship
 void test_fix_ship_alive_persistence() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   ShipRepository ships(store);
 
   // Create a dead ship
@@ -128,9 +123,9 @@ void test_fix_ship_alive_persistence() {
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
-  em.clear_cache();
+  ctx.em.clear_cache();
   {
-    const auto* s = em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(1);
     assert(s);
     assert(s->alive() == 0);
     assert(s->damage() == 100);
@@ -138,7 +133,7 @@ void test_fix_ship_alive_persistence() {
 
   // 4. Simulate resurrecting ship via EntityManager
   {
-    auto ship_handle = em.get_ship(1);
+    auto ship_handle = ctx.em.get_ship(1);
     assert(ship_handle.get());
     auto& s = *ship_handle;
     s.alive() = 1;
@@ -147,8 +142,8 @@ void test_fix_ship_alive_persistence() {
   }
 
   // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_ship = em.peek_ship(1);
+  ctx.em.clear_cache();
+  const auto* final_ship = ctx.em.peek_ship(1);
   assert(final_ship);
   assert(final_ship->alive() == 1);
   assert(final_ship->damage() == 0);
@@ -159,12 +154,10 @@ void test_fix_ship_alive_persistence() {
 // Test 4: Database persistence for fixing planet temperature
 void test_fix_planet_temp_persistence() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   PlanetRepository planets(store);
 
   // Create planet
@@ -177,16 +170,16 @@ void test_fix_planet_temp_persistence() {
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
-  em.clear_cache();
+  ctx.em.clear_cache();
   {
-    const auto* p = em.peek_planet(1, 0);
+    const auto* p = ctx.em.peek_planet(1, 0);
     assert(p);
     assert(p->conditions(TEMP) == 50);
   }
 
   // 4. Simulate fixing temperature via EntityManager
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     assert(planet_handle.get());
     auto& p = *planet_handle;
     p.conditions(TEMP) = 100;  // Set to 100
@@ -194,8 +187,8 @@ void test_fix_planet_temp_persistence() {
   }
 
   // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_planet = em.peek_planet(1, 0);
+  ctx.em.clear_cache();
+  const auto* final_planet = ctx.em.peek_planet(1, 0);
   assert(final_planet);
   assert(final_planet->conditions(TEMP) == 100);
 
@@ -205,12 +198,10 @@ void test_fix_planet_temp_persistence() {
 // Test 5: Database persistence for fixing planet oxygen
 void test_fix_planet_oxygen_persistence() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   PlanetRepository planets(store);
 
   // Create planet
@@ -223,16 +214,16 @@ void test_fix_planet_oxygen_persistence() {
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
-  em.clear_cache();
+  ctx.em.clear_cache();
   {
-    const auto* p = em.peek_planet(1, 0);
+    const auto* p = ctx.em.peek_planet(1, 0);
     assert(p);
     assert(p->conditions(OXYGEN) == 10);
   }
 
   // 4. Simulate fixing oxygen via EntityManager
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     assert(planet_handle.get());
     auto& p = *planet_handle;
     p.conditions(OXYGEN) = 50;  // Increase oxygen
@@ -240,8 +231,8 @@ void test_fix_planet_oxygen_persistence() {
   }
 
   // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_planet = em.peek_planet(1, 0);
+  ctx.em.clear_cache();
+  const auto* final_planet = ctx.em.peek_planet(1, 0);
   assert(final_planet);
   assert(final_planet->conditions(OXYGEN) == 50);
 
@@ -251,12 +242,10 @@ void test_fix_planet_oxygen_persistence() {
 // Test 6: Database persistence for fixing planet position
 void test_fix_planet_position_persistence() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   PlanetRepository planets(store);
 
   // Create planet
@@ -270,9 +259,9 @@ void test_fix_planet_position_persistence() {
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
-  em.clear_cache();
+  ctx.em.clear_cache();
   {
-    const auto* p = em.peek_planet(1, 0);
+    const auto* p = ctx.em.peek_planet(1, 0);
     assert(p);
     assert(p->xpos() == 100.0);
     assert(p->ypos() == 200.0);
@@ -280,7 +269,7 @@ void test_fix_planet_position_persistence() {
 
   // 4. Simulate fixing position via EntityManager
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     assert(planet_handle.get());
     auto& p = *planet_handle;
     p.xpos() = 500.0;
@@ -289,8 +278,8 @@ void test_fix_planet_position_persistence() {
   }
 
   // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_planet = em.peek_planet(1, 0);
+  ctx.em.clear_cache();
+  const auto* final_planet = ctx.em.peek_planet(1, 0);
   assert(final_planet);
   assert(final_planet->xpos() == 500.0);
   assert(final_planet->ypos() == 600.0);

@@ -2,15 +2,17 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std;
 
 module commands;
 
 namespace GB::commands {
 void give(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 5;
   player_t who;
 
@@ -83,7 +85,7 @@ void give(const command_t& argv, GameObj& g) {
       break;
     }
     default: {
-      const auto& star = *g.entity_manager.peek_star(g.snum);
+      const auto& star = *g.entity_manager.peek_star(g.snum());
       if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
         return;
       }
@@ -126,14 +128,14 @@ void give(const command_t& argv, GameObj& g) {
       deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
       return;
     default:
-      deductAPs(g, APcount, g.snum);
+      deductAPs(g, APcount, g.snum());
       break;
   }
   g.out << "Owner changed.\n";
   std::string givemsg = std::format("{} [{}] gave you {} at {}.\n", race.name,
                                     Playernum, ship_to_string(ship),
                                     prin_ship_orbits(g.entity_manager, ship));
-  warn(who, 0, givemsg);
+  warn_player(g.session_registry, who, 0, givemsg);
 
   if (!race.God) {
     std::string postmsg = std::format("{} [{}] gives {} [{}] a ship.\n",

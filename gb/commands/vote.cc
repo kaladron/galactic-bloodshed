@@ -4,8 +4,7 @@ module;
 
 import gblib;
 import std;
-
-#include "gb/GB_server.h"
+import notification;
 
 module commands;
 
@@ -21,10 +20,10 @@ void show_votes(GameObj& g) {
     nvotes++;
     if (race->votes) {
       yays++;
-      if (g.god) g.out << std::format("  {0} voted go.\n", race->name);
+      if (g.god()) g.out << std::format("  {0} voted go.\n", race->name);
     } else {
       nays++;
-      if (g.god) g.out << std::format("  {0} voted wait.\n", race->name);
+      if (g.god()) g.out << std::format("  {0} voted wait.\n", race->name);
     }
   }
   g.out << std::format("  Total votes = {0}, Go = {1}, Wait = {2}.\n", nvotes,
@@ -59,18 +58,18 @@ void check_votes(GameObj& g) {
   /* Is Update/Movement vote unanimous now? */
   if (nvotes > 0 && nvotes == yays && nays == 0) {
     /* Do it... */
-    do_next_thing(g.entity_manager);
+    do_next_thing(g.entity_manager, g.session_registry);
   }
 }
 }  // namespace
 
 namespace GB::commands {
 void vote(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
+  const player_t Playernum = g.player();
 
   auto race = g.entity_manager.get_race(Playernum);
 
-  if (g.god) {
+  if (g.god()) {
     g.out << "Your vote doesn't count, however, here is the count.\n";
     show_votes(g);
     return;

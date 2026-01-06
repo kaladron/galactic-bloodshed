@@ -3,6 +3,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -10,9 +11,7 @@ import std;
 
 int main() {
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create test race
   Race race{};
@@ -21,7 +20,7 @@ int main() {
   race.governor[0].active = true;
   race.governor[0].toggle.highlight = true;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -51,7 +50,7 @@ int main() {
   attacker.mass = 100.0;
   attacker.build_cost = 100;
 
-  auto attacker_handle = em.create_ship(attacker);
+  auto attacker_handle = ctx.em.create_ship(attacker);
   attacker_handle.save();
 
   // Create target ship
@@ -71,7 +70,7 @@ int main() {
   target.mass = 50.0;
   target.build_cost = 50;
 
-  auto target_handle = em.create_ship(target);
+  auto target_handle = ctx.em.create_ship(target);
   target_handle.save();
 
   // Create target race
@@ -82,23 +81,22 @@ int main() {
   races.save(target_race);
 
   // Setup GameObj
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;
-  g.race = em.peek_race(1);
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
 
   // Execute fire command
   command_t argv = {"fire", "#1", "#2", "10"};
   GB::commands::fire(argv, g);
 
   // Verify ships still exist in database (persisted via EntityManager)
-  const auto* ship1 = em.peek_ship(1);
+  const auto* ship1 = ctx.em.peek_ship(1);
   assert(ship1);
   assert(ship1->number() == 1);
 
-  const auto* ship2 = em.peek_ship(2);
+  const auto* ship2 = ctx.em.peek_ship(2);
   assert(ship2);
   assert(ship2->number() == 2);
 

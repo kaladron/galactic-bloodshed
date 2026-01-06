@@ -43,7 +43,7 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
           dist <= tele_range(s.type(), s.tech())) {
         auto star_handle = g.entity_manager.get_star(aimed_at.snum);
         auto& star = *star_handle;
-        setbit(star.explored(), g.player);
+        setbit(star.explored(), g.player());
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
@@ -59,11 +59,11 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
           dist <= tele_range(s.type(), s.tech())) {
         auto star_handle = g.entity_manager.get_star(aimed_at.snum);
         auto& star = *star_handle;
-        setbit(star.explored(), g.player);
+        setbit(star.explored(), g.player());
         auto planet_handle =
             g.entity_manager.get_planet(aimed_at.snum, aimed_at.pnum);
         auto& planet = *planet_handle;
-        planet.info(g.player - 1).explored = 1;
+        planet.info(g.player() - 1).explored = 1;
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
@@ -535,7 +535,7 @@ void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
 }
 
 void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
-  player_t Playernum = g.player;
+  player_t Playernum = g.player();
   if (!has_switch(ship)) {
     g.out << "This ship does not have an on/off setting.\n";
     return;
@@ -691,8 +691,8 @@ void give_orders(GameObj& g, const command_t& argv, int /* APcount */,
 }
 
 void DispOrdersHeader(int Playernum, int Governor) {
-  notify(Playernum, Governor,
-         "    #       name       sp orbits     destin     options\n");
+  push_telegram(Playernum, Governor,
+                "    #       name       sp orbits     destin     options\n");
 }
 
 void DispOrders(EntityManager& em, int Playernum, int Governor,
@@ -838,7 +838,7 @@ void DispOrders(EntityManager& em, int Playernum, int Governor,
   }
 
   buffer << "\n";
-  notify(Playernum, Governor, buffer.str());
+  push_telegram(Playernum, Governor, buffer.str());
   /* if hyper space is on estimate how much fuel it will cost to get to the
    * destination */
   if (ship.hyper_drive().on) {
@@ -853,11 +853,12 @@ void DispOrders(EntityManager& em, int Playernum, int Governor,
             : HYPER_DRIVE_FUEL_USE * sqrt(ship.mass()) * (dist / distfac) *
                   (dist / distfac);
 
-    notify(Playernum, Governor,
-           std::format("  *** distance {:.0f} - jump will cost {:.1f}f ***\n",
-                       dist, fuse));
+    push_telegram(
+        Playernum, Governor,
+        std::format("  *** distance {:.0f} - jump will cost {:.1f}f ***\n",
+                    dist, fuse));
     if (ship.max_fuel() < fuse)
-      notify(Playernum, Governor,
-             "Your ship cannot carry enough fuel to do this jump.\n");
+      push_telegram(Playernum, Governor,
+                    "Your ship cannot carry enough fuel to do this jump.\n");
   }
 }

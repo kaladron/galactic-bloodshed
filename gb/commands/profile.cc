@@ -10,7 +10,7 @@ module commands;
 
 namespace GB::commands {
 void profile(const command_t& argv, GameObj& g) {
-  const auto* race = g.entity_manager.peek_race(g.player);
+  const auto* race = g.entity_manager.peek_race(g.player());
   if (!race) {
     g.out << "Race not found.\n";
     return;
@@ -25,10 +25,10 @@ void profile(const command_t& argv, GameObj& g) {
     }
     g.out << std::format("Personal: {}\n", race->info);
     const auto& homestar =
-        *g.entity_manager.peek_star(race->governor[g.governor].homesystem);
+        *g.entity_manager.peek_star(race->governor[g.governor()].homesystem);
     g.out << std::format(
         "Default Scope: /{}/{}\n", homestar.get_name(),
-        homestar.get_planet_name(race->governor[g.governor].homeplanetnum));
+        homestar.get_planet_name(race->governor[g.governor()].homeplanetnum));
     if (race->Gov_ship == 0)
       g.out << "NO DESIGNATED CAPITAL!!\n";
     else

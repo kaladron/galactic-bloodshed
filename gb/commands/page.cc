@@ -2,22 +2,24 @@
 
 module;
 
+import session; // For SessionRegistry full definition - import before gblib
 import gblib;
+import notification;
 import std.compat;
 
 module commands;
 
 namespace GB::commands {
 void page(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
-  ap_t APcount = g.god ? 0 : 1;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
+  ap_t APcount = g.god() ? 0 : 1;
   player_t i;
   int who;
   int gov;
   int to_block;
 
-  const auto& star = *g.entity_manager.peek_star(g.snum);
+  const auto& star = *g.entity_manager.peek_star(g.snum());
   if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) return;
 
   gov = 0;  // TODO(jeffbailey): Init to zero.
@@ -41,12 +43,12 @@ void page(const command_t& argv, GameObj& g) {
     if (argv.size() > 1) gov = std::stoi(argv[2]);
   }
 
-  switch (g.level) {
+  switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
       g.out << "You can't make pages at universal scope.\n";
       break;
     default:
-      const auto& star = *g.entity_manager.peek_star(g.snum);
+      const auto& star = *g.entity_manager.peek_star(g.snum());
       if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
         return;
       }
@@ -62,18 +64,22 @@ void page(const command_t& argv, GameObj& g) {
           return;
         }
         uint64_t allied_members = block_player->invite & block_player->pledge;
-        for (i = 1; i <= g.entity_manager.num_races(); i++)
-          if (isset(allied_members, i) && i != Playernum) notify_race(i, msg);
+        for (i = 1; i <= g.entity_manager.num_races(); i++) {
+          if (isset(allied_members, i) && i != Playernum) {
+            g.session_registry.notify_race(i, msg);
+          }
+        }
       } else {
-        if (argv.size() > 1)
-          notify(who, gov, msg);
-        else
-          notify_race(who, msg);
+        if (argv.size() > 1) {
+          g.session_registry.notify_player(who, gov, msg);
+        } else {
+          g.session_registry.notify_race(who, msg);
+        }
       }
 
       g.out << "Request sent.\n";
       break;
   }
-  deductAPs(g, APcount, g.snum);
+  deductAPs(g, APcount, g.snum());
 }
 }  // namespace GB::commands

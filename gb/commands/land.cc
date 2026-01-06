@@ -2,11 +2,11 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import scnlib;
 import std;
-
-#include "gb/GB_server.h"
 
 module commands;
 
@@ -172,8 +172,8 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
  * @param APcount The number of action points available for the player.
  */
 void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   int numdest = 0;
   int strength;
   double fuel;
@@ -197,7 +197,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     g.out << "This ship is not equipped to land.\n";
     return;
   }
-  if ((s.storbits() != g.snum) || (s.pnumorbits() != g.pnum)) {
+  if ((s.storbits() != g.snum()) || (s.pnumorbits() != g.pnum())) {
     g.out << "You have to cs to the planet it orbits.\n";
     return;
   }
@@ -265,9 +265,10 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
             shoot_planet_to_ship(g.entity_manager, alien, s, strength, long_buf,
                                  short_buf);
             post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.entity_manager, 0, 0, s.storbits(), short_buf);
-            warn(i, star->governor(i - 1), long_buf);
-            notify(s.owner(), s.governor(), long_buf);
+            notify_star(g.session_registry, g.entity_manager, 0, 0,
+                        s.storbits(), short_buf);
+            warn_player(g.session_registry, i, star->governor(i - 1), long_buf);
+            g.session_registry.notify_player(s.owner(), s.governor(), long_buf);
             p.info(i - 1).destruct -= strength;
           }
         }
@@ -294,7 +295,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     for (auto race_handle : RaceList(g.entity_manager)) {
       const auto i = race_handle->Playernum;
       if (p.info(i - 1).numsectsowned || i == Playernum)
-        warn(i, star->governor(i - 1), buf);
+        warn_player(g.session_registry, i, star->governor(i - 1), buf);
     }
     if (roll)
       g.out << std::format("Ship damage {}% (you rolled a {})\n",
@@ -355,7 +356,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
   for (auto race_handle : RaceList(g.entity_manager)) {
     const auto i = race_handle->Playernum;
     if (p.info(i - 1).numsectsowned && i != Playernum) {
-      notify(i, star->governor(i - 1), landing_msg);
+      g.session_registry.notify_player(i, star->governor(i - 1), landing_msg);
     }
   }
   g.out << std::format("{} landed on planet.\n", ship_to_string(s));
@@ -364,7 +365,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
 
 namespace GB::commands {
 void land(const command_t& argv, GameObj& g) {
-  governor_t Governor = g.governor;
+  governor_t Governor = g.governor();
   ap_t APcount = 1;
 
   if (argv.size() < 2) {

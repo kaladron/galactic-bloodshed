@@ -3,8 +3,22 @@
 export module commands;
 
 import gblib;
+import session; // For SessionRegistry full definition
 
 namespace GB::commands {
+// Server-level commands (take Session& instead of GameObj&)
+// TODO(Step 9): Convert these to (const command_t&, GameObj&) after GameObj can
+// access Session
+export void who(const command_t&, Session&);
+export void emulate(const command_t&, Session&);
+
+// God commands
+export void help(const command_t&, GameObj&);
+export void quit(const command_t&, GameObj&);
+export void purge(const command_t&, GameObj&);
+export void shutdown(const command_t&, GameObj&);
+
+// Regular commands (take GameObj&)
 export void analysis(const command_t&, GameObj&);
 export void announce(const command_t&, GameObj&);
 export void arm(const command_t&, GameObj&);

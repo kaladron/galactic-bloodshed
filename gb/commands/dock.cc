@@ -6,7 +6,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std.compat;
 
 #include <strings.h>
@@ -15,8 +17,8 @@ module commands;
 
 namespace GB::commands {
 void dock(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = (argv[0] == "dock") ? 0 : 1;
   int Assault = (argv[0] == "assault") ? 1 : 0;
   population_t boarders = 0;
@@ -69,8 +71,7 @@ void dock(const command_t& argv, GameObj& g) {
     }
     if (!Assault) {
       if (s.docked() || s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-        notify(Playernum, Governor,
-               std::format("{} is already docked.\n", ship_to_string(s)));
+        g.out << std::format("{} is already docked.\n", ship_to_string(s));
         continue;
       }
     } else if (s.docked()) {
@@ -95,13 +96,11 @@ void dock(const command_t& argv, GameObj& g) {
     }
 
     if (Assault && (what == PopulationType::CIV) && !s.popn()) {
-      notify(Playernum, Governor,
-             "You have no crew on this ship to assault with.\n");
+      g.out << "You have no crew on this ship to assault with.\n";
       continue;
     }
     if (Assault && (what == PopulationType::MIL) && !s.troops()) {
-      notify(Playernum, Governor,
-             "You have no troops on this ship to assault with.\n");
+      g.out << "You have no troops on this ship to assault with.\n";
       continue;
     }
 
@@ -135,13 +134,12 @@ void dock(const command_t& argv, GameObj& g) {
     }
 
     if (Assault && (s2.type() == ShipType::OTYPE_VN)) {
-      notify(Playernum, Governor, "You can't assault Von Neumann machines.\n");
+      g.out << "You can't assault Von Neumann machines.\n";
       continue;
     }
 
     if (s2.docked() || (s.whatorbits() == ScopeLevel::LEVEL_SHIP)) {
-      notify(Playernum, Governor,
-             std::format("{} is already docked.\n", ship_to_string(s2)));
+      g.out << std::format("{} is already docked.\n", ship_to_string(s2));
       continue;
     }
 
@@ -149,9 +147,8 @@ void dock(const command_t& argv, GameObj& g) {
     fuel = 0.05 + Dist * 0.025 * (Assault ? 2.0 : 1.0) * sqrt((double)s.mass());
 
     if (Dist > DIST_TO_DOCK) {
-      notify(Playernum, Governor,
-             std::format("{} must be {:.2f} or closer to {}.\n",
-                         ship_to_string(s), DIST_TO_DOCK, ship_to_string(s2)));
+      g.out << std::format("{} must be {:.2f} or closer to {}.\n",
+                           ship_to_string(s), DIST_TO_DOCK, ship_to_string(s2));
       continue;
     }
     if (s.docked() && Assault) {
@@ -166,18 +163,15 @@ void dock(const command_t& argv, GameObj& g) {
     }
 
     if (fuel > s.fuel()) {
-      notify(Playernum, Governor, "Not enough fuel.\n");
+      g.out << "Not enough fuel.\n";
       continue;
     }
-    notify(Playernum, Governor,
-           std::format("Distance to {}: {:.2f}.\n", ship_to_string(s2), Dist));
-    notify(Playernum, Governor,
-           std::format("This maneuver will take {:.2f} fuel (of {:.2f}.)\n\n",
-                       fuel, s.fuel()));
+    g.out << std::format("Distance to {}: {:.2f}.\n", ship_to_string(s2), Dist);
+    g.out << std::format("This maneuver will take {:.2f} fuel (of {:.2f}.)\n\n",
+                         fuel, s.fuel());
 
     if (s2.docked() && !Assault) {
-      notify(Playernum, Governor,
-             std::format("{} is already docked.\n", ship_to_string(s2)));
+      g.out << std::format("{} is already docked.\n", ship_to_string(s2));
       return;
     }
     /* defending fire gets defensive fire */
@@ -232,8 +226,7 @@ void dock(const command_t& argv, GameObj& g) {
 
       /* Allow assault of crewless ships. */
       if (s2.max_crew() && boarders <= 0) {
-        notify(Playernum, Governor,
-               std::format("Illegal number of boarders ({}).\n", boarders));
+        g.out << std::format("Illegal number of boarders ({}).\n", boarders);
         continue;
       }
       old2owner = s2.owner();
@@ -243,18 +236,15 @@ void dock(const command_t& argv, GameObj& g) {
       else if (what == PopulationType::CIV)
         s.popn() -= boarders;
       s.mass() -= boarders * race.mass;
-      notify(Playernum, Governor,
-             std::format(
-                 "Boarding strength :{:.2f}       Defense strength: {:.2f}.\n",
-                 bstrength =
-                     boarders *
-                     (what == PopulationType::MIL ? 10 * race.fighters : 1) *
-                     .01 * race.tech *
-                     morale_factor((double)(race.morale - alien.morale)),
-                 b2strength =
-                     (s2.popn() + 10 * s2.troops() * alien.fighters) * .01 *
-                     alien.tech *
-                     morale_factor((double)(alien.morale - race.morale))));
+      g.out << std::format(
+          "Boarding strength :{:.2f}       Defense strength: {:.2f}.\n",
+          bstrength = boarders *
+                      (what == PopulationType::MIL ? 10 * race.fighters : 1) *
+                      .01 * race.tech *
+                      morale_factor((double)(race.morale - alien.morale)),
+          b2strength = (s2.popn() + 10 * s2.troops() * alien.fighters) * .01 *
+                       alien.tech *
+                       morale_factor((double)(alien.morale - race.morale)));
     }
 
     /* the ship moves into position, regardless of success of attack */
@@ -388,66 +378,56 @@ void dock(const command_t& argv, GameObj& g) {
       if (!s2.max_crew() && s2.destruct()) {
         telegram +=
             std::format("(Your boobytrap gave them {}% damage.)\n", booby);
-        notify(Playernum, Governor,
-               std::format("Their boobytrap gave you {}% damage!)\n", booby));
+        g.out << std::format("Their boobytrap gave you {}% damage!)\n", booby);
       }
-      notify(
+      g.session_registry.notify_player(
           Playernum, Governor,
           std::format("Damage taken:  You: {}% (now {}%)\n", dam, s.damage()));
       if (!s.alive()) {
-        notify(Playernum, Governor,
-               "              YOUR SHIP WAS DESTROYED!!!\n");
+        g.out << "              YOUR SHIP WAS DESTROYED!!!\n";
         telegram += "              Their ship DESTROYED!!!\n";
       }
-      notify(Playernum, Governor,
-             std::format("              Them: {}% (now {}%)\n", dam2,
-                         s2.damage()));
+      g.out << std::format("              Them: {}% (now {}%)\n", dam2,
+                           s2.damage());
       if (!s2.alive()) {
-        notify(Playernum, Governor,
-               "              Their ship DESTROYED!!!  Boarders are dead.\n");
+        g.out << "              Their ship DESTROYED!!!  Boarders are dead.\n";
         telegram += "              YOUR SHIP WAS DESTROYED!!!\n";
       }
       if (s.alive()) {
         if (s2.owner() == Playernum) {
           telegram += "CAPTURED!\n";
-          notify(Playernum, Governor, "VICTORY! the ship is yours!\n");
+          g.out << "VICTORY! the ship is yours!\n";
           if (boarders) {
-            notify(Playernum, Governor,
-                   std::format("{} boarders move in.\n", boarders));
+            g.out << std::format("{} boarders move in.\n", boarders);
           }
           capture_stuff(s2, g);
         } else if (s2.popn() + s2.troops()) {
-          notify(Playernum, Governor,
-                 "The boarding was repulsed; try again.\n");
+          g.out << "The boarding was repulsed; try again.\n";
           telegram += "You fought them off!\n";
         }
       } else {
-        notify(Playernum, Governor,
-               "The assault was too much for your bucket of bolts.\n");
+        g.out << "The assault was too much for your bucket of bolts.\n";
         telegram += "The assault was too much for their ship..\n";
       }
       if (s2.alive()) {
         if (s2.max_crew() && !boarders) {
-          notify(Playernum, Governor,
-                 "Oh no! They killed your boarding party to the last man!\n");
+          g.out << "Oh no! They killed your boarding party to the last man!\n";
         }
         if (!s.popn() && !s.troops()) {
           telegram += "You killed all their crew!\n";
         }
       } else {
-        notify(Playernum, Governor,
-               "The assault weakened their ship too much!\n");
+        g.out << "The assault weakened their ship too much!\n";
         telegram += "Your ship was weakened too much!\n";
       }
       telegram += std::format(
           "Casualties: Yours: {} mil/{} civ    Theirs: {} {}\n", casualties3,
           casualties2, casualties, what == PopulationType::MIL ? "mil" : "civ");
-      notify(Playernum, Governor,
-             std::format(
-                 "Crew casualties: Yours: {} {}    Theirs: {} mil/{} civ\n",
-                 casualties, what == PopulationType::MIL ? "mil" : "civ",
-                 casualties3, casualties2));
-      warn(old2owner, old2gov, telegram);
+      g.out << std::format(
+          "Crew casualties: Yours: {} {}    Theirs: {} mil/{} civ\n",
+          casualties, what == PopulationType::MIL ? "mil" : "civ", casualties3,
+          casualties2);
+      warn_player(g.session_registry, old2owner, old2gov, telegram);
       auto news = std::format(
           "{} {} {} at {}.\n", ship_to_string(s),
           s2.alive() ? (s2.owner() == Playernum ? "CAPTURED" : "assaulted")
@@ -455,17 +435,17 @@ void dock(const command_t& argv, GameObj& g) {
           ship_to_string(s2), prin_ship_orbits(g.entity_manager, s));
       if (s2.owner() == Playernum || !s2.alive())
         post(g.entity_manager, news, NewsType::COMBAT);
-      notify_star(g.entity_manager, Playernum, Governor, s.storbits(), news);
+      notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                  s.storbits(), news);
     } else {
-      notify(Playernum, Governor,
-             std::format("{} docked with {}.\n", ship_to_string(s),
-                         ship_to_string(s2)));
+      g.out << std::format("{} docked with {}.\n", ship_to_string(s),
+                           ship_to_string(s2));
     }
 
-    if (g.level == ScopeLevel::LEVEL_UNIV)
+    if (g.level() == ScopeLevel::LEVEL_UNIV)
       deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
     else
-      deductAPs(g, APcount, g.snum);
+      deductAPs(g, APcount, g.snum());
 
     s.notified() = s2.notified() = 0;
   }

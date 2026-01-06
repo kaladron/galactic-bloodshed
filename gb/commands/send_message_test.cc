@@ -3,19 +3,16 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create two test races (sender and receiver)
   Race sender{};
@@ -47,20 +44,19 @@ int main() {
   stars.save(star);
 
   // Create GameObj for sender
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;
-  g.god = false;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.set_god(false);
 
   // Test sending a regular message: send_message 2 Hello World
   command_t argv = {"send_message", "2", "Hello", "World"};
   GB::commands::send_message(argv, g);
 
   // Verify translation modifier increased
-  const auto* updated_receiver = em.peek_race(2);
+  const auto* updated_receiver = ctx.em.peek_race(2);
   assert(updated_receiver);
 
   // Translation should have increased by 2 (from 50 to 52)

@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -15,9 +16,7 @@ void test_toggle_database_persistence() {
   std::println("Test: toggle command database persistence");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a race
   Race race{};
@@ -34,15 +33,14 @@ void test_toggle_database_persistence() {
   race.governor[0].toggle.invisible = false;
   race.monitor = false;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);  // Set race pointer like production does
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);  // Set race pointer like production does
 
   // TEST 1: Display all toggle settings (no argument)
   std::println("  Testing: Display all toggle settings");
@@ -196,13 +194,13 @@ void test_toggle_database_persistence() {
   std::println("  Testing: Toggle monitor setting (God mode)");
   {
     // First set race as God
-    auto race_handle = em.get_race(1);
+    auto race_handle = ctx.em.get_race(1);
     auto& race_mod = *race_handle;
     race_mod.God = 1;
     // Auto-saves when scope exits
 
     // Update g.race pointer
-    g.race = em.peek_race(1);
+    g.race = ctx.em.peek_race(1);
 
     command_t cmd = {"toggle", "monitor"};
     GB::commands::toggle(cmd, g);

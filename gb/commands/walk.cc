@@ -2,15 +2,17 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std;
 
 module commands;
 
 namespace GB::commands {
 void walk(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player;
-  const governor_t Governor = g.governor;
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
   const ap_t APcount = 1;
 
   char long_buf[1024], short_buf[256];
@@ -113,19 +115,21 @@ void walk(const command_t& argv, GameObj& g) {
                (strength1 = retal_strength(*ship))) {
           use_destruct(ship2, strength);
           g.out << long_buf;
-          warn(ship2.owner(), ship2.governor(), long_buf);
+          warn_player(g.session_registry, ship2.owner(), ship2.governor(),
+                      long_buf);
           if (!ship2.alive())
             post(g.entity_manager, short_buf, NewsType::COMBAT);
-          notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
-                      short_buf);
+          notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                      ship->storbits(), short_buf);
           if (strength1) {
             use_destruct(*ship, strength1);
             g.out << long_buf;
-            warn(ship2.owner(), ship2.governor(), long_buf);
+            warn_player(g.session_registry, ship2.owner(), ship2.governor(),
+                        long_buf);
             if (!ship2.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
-                        short_buf);
+            notify_star(g.session_registry, g.entity_manager, Playernum,
+                        Governor, ship->storbits(), short_buf);
           }
         }
       }
@@ -150,18 +154,18 @@ void walk(const command_t& argv, GameObj& g) {
         mech_attack_people(g.entity_manager, *ship, &civ, &mil, *g.race, *alien,
                            sect, false, long_buf, short_buf);
         g.out << long_buf;
-        warn(alien->Playernum, oldgov, long_buf);
-        notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
-                    short_buf);
+        warn_player(g.session_registry, alien->Playernum, oldgov, long_buf);
+        notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                    ship->storbits(), short_buf);
         post(g.entity_manager, short_buf, NewsType::COMBAT);
 
         people_attack_mech(g.entity_manager, *ship, sect.get_popn(),
                            sect.get_troops(), *alien, *g.race, sect, x, y,
                            long_buf, short_buf);
         g.out << long_buf;
-        warn(alien->Playernum, oldgov, long_buf);
-        notify_star(g.entity_manager, Playernum, Governor, ship->storbits(),
-                    short_buf);
+        warn_player(g.session_registry, alien->Playernum, oldgov, long_buf);
+        notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                    ship->storbits(), short_buf);
         if (!ship->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
 
         sect.set_popn(civ);
@@ -191,7 +195,7 @@ void walk(const command_t& argv, GameObj& g) {
     use_fuel(*ship, AFV_FUEL_COST);
     for (auto i = 1; i <= g.entity_manager.num_races(); i++)
       if (i != Playernum && p.info(i - 1).numsectsowned)
-        notify(i, star.governor(i - 1), moving);
+        g.session_registry.notify_player(i, star.governor(i - 1), moving);
   }
   deductAPs(g, APcount, ship->storbits());
 }

@@ -3,6 +3,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -10,9 +11,7 @@ import std;
 
 int main() {
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create test race
   Race race{};
@@ -21,7 +20,7 @@ int main() {
   race.governor[0].active = true;
   race.governor[0].toggle.highlight = true;
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
@@ -74,7 +73,7 @@ int main() {
   attacker.mass = 100.0;
   attacker.build_cost = 100;
 
-  auto attacker_handle = em.create_ship(attacker);
+  auto attacker_handle = ctx.em.create_ship(attacker);
   attacker_handle.save();
 
   // Create target race
@@ -85,13 +84,12 @@ int main() {
   races.save(target_race);
 
   // Setup GameObj
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
-  g.race = em.peek_race(1);
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   // Execute bombard command on sector 5,5 with strength 10
   command_t argv = {"bombard", "#1", "5,5", "10"};
@@ -99,15 +97,15 @@ int main() {
 
   // Verify ship and planet still exist in database (persisted via
   // EntityManager)
-  const auto* ship = em.peek_ship(1);
+  const auto* ship = ctx.em.peek_ship(1);
   assert(ship);
   assert(ship->number() == 1);
 
-  const auto* planet_after = em.peek_planet(0, 0);
+  const auto* planet_after = ctx.em.peek_planet(0, 0);
   assert(planet_after);
 
   // Verify sector map persisted
-  const auto* smap_after = em.peek_sectormap(0, 0);
+  const auto* smap_after = ctx.em.peek_sectormap(0, 0);
   assert(smap_after);
 
   // Test passed - command executed and data persisted via RAII

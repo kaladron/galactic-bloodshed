@@ -2,7 +2,9 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std;
 import tabulate;
 
@@ -50,13 +52,13 @@ void add_commodity_row(tabulate::Table& table, const Commod* c, GameObj& g) {
   auto rate = (double)c->bid / (double)c->amount;
   const auto* star_to = g.entity_manager.peek_star(c->star_to);
   std::string player_details =
-      (c->bidder == g.player)
+      (c->bidder == g.player())
           ? std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
                         star_to->get_planet_name(c->planet_to))
           : "";
 
   auto [cost, dist] =
-      shipping_cost(g.entity_manager, c->star_from, g.snum, c->bid);
+      shipping_cost(g.entity_manager, c->star_from, g.snum(), c->bid);
 
   table.add_row({std::format("{}", c->id), c->deliver ? "*" : "",
                  std::format("{}", c->amount), std::format("{}", c->type),
@@ -115,20 +117,20 @@ void list_commodities_by_type(const command_t& argv, GameObj& g) {
 
 // Place a bid on a commodity lot
 void place_bid(const command_t& argv, GameObj& g) {
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to be in a planet scope to buy.\n";
     return;
   }
-  auto snum = g.snum;
-  auto pnum = g.pnum;
+  auto snum = g.snum();
+  auto pnum = g.pnum();
   const auto* star = g.entity_manager.peek_star(snum);
-  if (g.governor && star->governor(g.player - 1) != g.governor) {
+  if (g.governor() && star->governor(g.player() - 1) != g.governor()) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
   const auto* p = g.entity_manager.peek_planet(snum, pnum);
 
-  if (p->slaved_to() && p->slaved_to() != g.player) {
+  if (p->slaved_to() && p->slaved_to() != g.player()) {
     g.out << std::format("This planet is enslaved to player {}.\n",
                          p->slaved_to());
     return;
@@ -137,7 +139,7 @@ void place_bid(const command_t& argv, GameObj& g) {
   const ShipList kShiplist(g.entity_manager, p->ships());
   bool ok = false;
   for (const Ship* s : kShiplist) {
-    if (s->alive() && (s->owner() == g.player) && !s->damage() &&
+    if (s->alive() && (s->owner() == g.player()) && !s->damage() &&
         Shipdata[s->type()][ABIL_PORT]) {
       ok = true;
       break;
@@ -162,8 +164,8 @@ void place_bid(const command_t& argv, GameObj& g) {
     g.out << "No such lot for sale.\n";
     return;
   }
-  if (c_peek->owner == g.player &&
-      (c_peek->star_from != g.snum || c_peek->planet_from != g.pnum)) {
+  if (c_peek->owner == g.player() &&
+      (c_peek->star_from != g.snum() || c_peek->planet_from != g.pnum())) {
     g.out << "You can only set a minimum price for your "
              "lot from the location it was sold.\n";
     return;
@@ -178,7 +180,7 @@ void place_bid(const command_t& argv, GameObj& g) {
     return;
   }
   // Need to check money via g.race->governor
-  if (bid0 > g.race->governor[g.governor].money) {
+  if (bid0 > g.race->governor[g.governor()].money) {
     g.out << "Sorry, no buying on credit allowed.\n";
     return;
   }
@@ -190,12 +192,12 @@ void place_bid(const command_t& argv, GameObj& g) {
   if (c.bidder) {
     std::string bid_message = std::format(
         "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
-        c.amount, c.type, bid0, g.race->name, g.player);
-    notify(c.bidder, c.bidder_gov, bid_message);
+        c.amount, c.type, bid0, g.race->name, g.player());
+    g.session_registry.notify_player(c.bidder, c.bidder_gov, bid_message);
   }
   c.bid = bid0;
-  c.bidder = g.player;
-  c.bidder_gov = g.governor;
+  c.bidder = g.player();
+  c.bidder_gov = g.governor();
   c.star_to = snum;
   c.planet_to = pnum;
   auto [shipping, dist] =

@@ -67,8 +67,8 @@ ShipList::ShipList(EntityManager& em, shipnum_t start, IterationType type)
 
 ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
     : em(&em), start_ship(1),  // Start from ship #1 for scope-based iteration
-      iteration_type(type), scope_level(g.level), snum(g.snum), pnum(g.pnum),
-      player(g.player) {}
+      iteration_type(type), scope_level(g.level()), snum(g.snum()),
+      pnum(g.pnum()), player(g.player()) {}
 
 // Constructor for All/AllAlive iteration (all ships in game)
 ShipList::ShipList(EntityManager& em, IterationType type)

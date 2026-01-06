@@ -25,6 +25,7 @@ export import :race;
 export import :rand;
 export import :repositories;
 export import :services;
+export import :sessionregistry;  // Cross-cutting session interface
 export import :ships;
 export import :shipfilter;
 export import :shlmisc;

@@ -3,6 +3,7 @@
 
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -10,9 +11,7 @@ import std;
 
 int main() {
   // Initialize database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Create a test race
   Race race{};
@@ -24,16 +23,15 @@ int main() {
   race.tech = 500.0;  // High tech to build any ship
   race.pods = true;   // Can build pods
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
   // Create GameObj for testing
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_UNIV;  // Scope doesn't matter for "build ?"
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_UNIV);  // Scope doesn't matter for "build ?"
 
   // Test 1: "build ?" displays ship list table
   {

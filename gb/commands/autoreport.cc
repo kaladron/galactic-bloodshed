@@ -14,13 +14,13 @@ module commands;
 
 namespace GB::commands {
 void autoreport(const command_t& argv, GameObj& g) {
-  const auto* star = g.entity_manager.peek_star(g.snum);
+  const auto* star = g.entity_manager.peek_star(g.snum());
   if (!star) {
     g.out << "Star not found.\n";
     return;
   }
 
-  if (g.governor && star->governor(g.player - 1) != g.governor) {
+  if (g.governor() && star->governor(g.player() - 1) != g.governor()) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
@@ -30,12 +30,12 @@ void autoreport(const command_t& argv, GameObj& g) {
 
   switch (argv.size()) {
     case 1:
-      if (g.level != ScopeLevel::LEVEL_PLAN) {
+      if (g.level() != ScopeLevel::LEVEL_PLAN) {
         g.out << "Scope must be a planet.\n";
         return;
       }
-      snum = g.snum;
-      pnum = g.pnum;
+      snum = g.snum();
+      pnum = g.pnum();
       break;
     case 2: {
       Place place{g, argv[1]};
@@ -59,10 +59,10 @@ void autoreport(const command_t& argv, GameObj& g) {
   }
 
   auto& p = *planet_handle;
-  if (p.info(g.player - 1).autorep) {
-    p.info(g.player - 1).autorep = 0;
+  if (p.info(g.player() - 1).autorep) {
+    p.info(g.player() - 1).autorep = 0;
   } else {
-    p.info(g.player - 1).autorep = TELEG_MAX_AUTO;
+    p.info(g.player() - 1).autorep = TELEG_MAX_AUTO;
   }
 
   // Get star name for output message
@@ -70,6 +70,6 @@ void autoreport(const command_t& argv, GameObj& g) {
   g.out << std::format("Autoreport on {0} has been {1}.\n",
                        target_star ? target_star->get_planet_name(pnum)
                                    : "Unknown",
-                       (p.info(g.player - 1).autorep ? "set" : "unset"));
+                       (p.info(g.player() - 1).autorep ? "set" : "unset"));
 }
 }  // namespace GB::commands

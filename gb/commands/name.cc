@@ -10,8 +10,8 @@ module commands;
 namespace GB::commands {
 void name(const command_t& argv, GameObj& g) {
   ap_t APcount = 0;
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   char* ch;
   int spaces;
   unsigned char check = 0;
@@ -52,8 +52,8 @@ void name(const command_t& argv, GameObj& g) {
   }
 
   if (argv[1] == "ship") {
-    if (g.level == ScopeLevel::LEVEL_SHIP) {
-      auto ship = g.entity_manager.get_ship(g.shipno);
+    if (g.level() == ScopeLevel::LEVEL_SHIP) {
+      auto ship = g.entity_manager.get_ship(g.shipno());
       if (!ship.get()) {
         g.out << "Ship not found.\n";
         return;
@@ -66,8 +66,8 @@ void name(const command_t& argv, GameObj& g) {
     return;
   }
   if (argv[1] == "class") {
-    if (g.level == ScopeLevel::LEVEL_SHIP) {
-      auto ship = g.entity_manager.get_ship(g.shipno);
+    if (g.level() == ScopeLevel::LEVEL_SHIP) {
+      auto ship = g.entity_manager.get_ship(g.shipno());
       if (!ship.get()) {
         g.out << "Ship not found.\n";
         return;
@@ -98,12 +98,12 @@ void name(const command_t& argv, GameObj& g) {
     block.name = namebuf;
     g.out << "Done.\n";
   } else if (argv[1] == "star") {
-    if (g.level == ScopeLevel::LEVEL_STAR) {
+    if (g.level() == ScopeLevel::LEVEL_STAR) {
       if (!g.race->God) {
         g.out << "Only dieties may name a star.\n";
         return;
       }
-      auto star = g.entity_manager.get_star(g.snum);
+      auto star = g.entity_manager.get_star(g.snum());
       if (!star.get()) {
         g.out << "Star not found.\n";
         return;
@@ -114,18 +114,18 @@ void name(const command_t& argv, GameObj& g) {
       return;
     }
   } else if (argv[1] == "planet") {
-    if (g.level == ScopeLevel::LEVEL_PLAN) {
+    if (g.level() == ScopeLevel::LEVEL_PLAN) {
       if (!g.race->God) {
         g.out << "Only deity can rename planets.\n";
         return;
       }
-      auto star = g.entity_manager.get_star(g.snum);
+      auto star = g.entity_manager.get_star(g.snum());
       if (!star.get()) {
         g.out << "Star not found.\n";
         return;
       }
-      star->set_planet_name(g.pnum, namebuf);
-      deductAPs(g, APcount, g.snum);
+      star->set_planet_name(g.pnum(), namebuf);
+      deductAPs(g, APcount, g.snum());
     } else {
       g.out << "You have to 'cs' to a planet to name it.\n";
       return;

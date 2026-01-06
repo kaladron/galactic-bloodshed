@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -15,9 +16,7 @@ void test_autoreport_database_persistence() {
   std::println("Test: autoreport command database persistence");
 
   // Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // Setup: Create a star
   star_struct star{};
@@ -26,7 +25,7 @@ void test_autoreport_database_persistence() {
   star.pnames.push_back("Test Planet");
   star.governor[0] = 0;  // Player 1 (index 0) governor 0
 
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   StarRepository stars(store);
   stars.save(star);
 
@@ -41,12 +40,12 @@ void test_autoreport_database_persistence() {
   planets.save(planet);
 
   // Create GameObj for command execution
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 1;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
 
   // TEST 1: Toggle autoreport ON
   std::println("  Testing: Toggle autoreport ON");

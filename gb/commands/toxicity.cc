@@ -26,25 +26,25 @@ void toxicity(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  const auto& star = *g.entity_manager.peek_star(g.snum);
-  if (!enufAP(g.player, g.governor, star.AP(g.player - 1), APcount)) {
+  const auto& star = *g.entity_manager.peek_star(g.snum());
+  if (!enufAP(g.player(), g.governor(), star.AP(g.player() - 1), APcount)) {
     return;
   }
 
-  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
     return;
   }
   auto& p = *planet_handle;
-  p.info(g.player - 1).tox_thresh = thresh;
-  deductAPs(g, APcount, g.snum);
+  p.info(g.player() - 1).tox_thresh = thresh;
+  deductAPs(g, APcount, g.snum());
 
   g.out << std::format(" New threshold is: {}\n",
-                       p.info(g.player - 1).tox_thresh);
+                       p.info(g.player() - 1).tox_thresh);
 }
 }  // namespace GB::commands

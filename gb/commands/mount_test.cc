@@ -6,6 +6,7 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
@@ -14,12 +15,10 @@ import std;
 // Test 1: Database persistence for mounting crystals
 void test_mount_persistence() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   ShipRepository ships(store);
 
   // Create a ship with crystal mount capability
@@ -34,9 +33,9 @@ void test_mount_persistence() {
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
-  em.clear_cache();
+  ctx.em.clear_cache();
   {
-    const auto* s = em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(1);
     assert(s);
     assert(s->crystals() == 2);
     assert(s->mounted() == 0);
@@ -44,7 +43,7 @@ void test_mount_persistence() {
 
   // 4. Simulate mounting a crystal via EntityManager
   {
-    auto ship_handle = em.get_ship(1);
+    auto ship_handle = ctx.em.get_ship(1);
     assert(ship_handle.get());
     auto& s = *ship_handle;
     s.mounted() = 1;
@@ -53,8 +52,8 @@ void test_mount_persistence() {
   }
 
   // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_ship = em.peek_ship(1);
+  ctx.em.clear_cache();
+  const auto* final_ship = ctx.em.peek_ship(1);
   assert(final_ship);
   assert(final_ship->mounted() == 1);
   assert(final_ship->crystals() == 1);
@@ -65,12 +64,10 @@ void test_mount_persistence() {
 // Test 2: Database persistence for dismounting crystals
 void test_dismount_persistence() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   ShipRepository ships(store);
 
   // Create a ship with mounted crystal
@@ -87,9 +84,9 @@ void test_dismount_persistence() {
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
-  em.clear_cache();
+  ctx.em.clear_cache();
   {
-    const auto* s = em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(1);
     assert(s);
     assert(s->crystals() == 1);
     assert(s->mounted() == 1);
@@ -99,7 +96,7 @@ void test_dismount_persistence() {
 
   // 4. Simulate dismounting crystal via EntityManager
   {
-    auto ship_handle = em.get_ship(1);
+    auto ship_handle = ctx.em.get_ship(1);
     assert(ship_handle.get());
     auto& s = *ship_handle;
     s.mounted() = 0;
@@ -111,8 +108,8 @@ void test_dismount_persistence() {
   }
 
   // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_ship = em.peek_ship(1);
+  ctx.em.clear_cache();
+  const auto* final_ship = ctx.em.peek_ship(1);
   assert(final_ship);
   assert(final_ship->mounted() == 0);
   assert(final_ship->crystals() == 2);
@@ -125,12 +122,10 @@ void test_dismount_persistence() {
 // Test 3: Edge case - cannot mount without crystals
 void test_mount_no_crystals() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   ShipRepository ships(store);
 
   // Create a ship without crystals
@@ -145,8 +140,8 @@ void test_mount_no_crystals() {
   ships.save(ship);
 
   // 3. Verify cannot mount (command validation)
-  em.clear_cache();
-  const auto* s = em.peek_ship(1);
+  ctx.em.clear_cache();
+  const auto* s = ctx.em.peek_ship(1);
   assert(s);
   assert(s->crystals() == 0);
   assert(s->mounted() == 0);
@@ -158,12 +153,10 @@ void test_mount_no_crystals() {
 // Test 4: Edge case - cannot dismount if crystal storage full
 void test_dismount_full_storage() {
   // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   // 2. Create test entities via Repository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   ShipRepository ships(store);
 
   // Create a ship with max crystals and one mounted
@@ -179,8 +172,8 @@ void test_dismount_full_storage() {
   ships.save(ship);
 
   // 3. Verify state
-  em.clear_cache();
-  const auto* s = em.peek_ship(1);
+  ctx.em.clear_cache();
+  const auto* s = ctx.em.peek_ship(1);
   assert(s);
   assert(s->crystals() == 127);
   assert(s->mounted() == 1);

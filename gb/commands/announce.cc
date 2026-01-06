@@ -3,6 +3,8 @@
 module;
 
 import gblib;
+import notification;
+import session; // For SessionRegistry full definition
 import std;
 
 module commands;
@@ -28,8 +30,8 @@ Communicate get_mode(const std::string& mode) {
 
 namespace GB::commands {
 void announce(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
 
   Communicate mode = get_mode(argv[0]);
   if (mode == Communicate::UNKNOWN) {
@@ -60,12 +62,12 @@ void announce(const command_t& argv, GameObj& g) {
   //  message.assign_range(argv | std::views::drop(1) | std::views::join_with('
   //  '));
 
-  switch (g.level) {
+  switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
       if (mode == Communicate::ANN) mode = Communicate::BROADCAST;
       break;
     default: {
-      const auto& star = *g.entity_manager.peek_star(g.snum);
+      const auto& star = *g.entity_manager.peek_star(g.snum());
       if ((mode == Communicate::ANN) &&
           !(!!isset(star.inhabited(), Playernum) || race->God)) {
         g.out << "You do not inhabit this system or have diety privileges.\n";
@@ -80,16 +82,18 @@ void announce(const command_t& argv, GameObj& g) {
 
   switch (mode) {
     case Communicate::ANN:
-      d_announce(g.entity_manager, Playernum, Governor, g.snum, msg);
+      d_announce(g.session_registry, g.entity_manager, Playernum, Governor,
+                 g.snum(), msg);
       break;
     case Communicate::BROADCAST:
-      d_broadcast(g.entity_manager, Playernum, Governor, msg);
+      d_broadcast(g.session_registry, g.entity_manager, Playernum, Governor,
+                  msg);
       break;
     case Communicate::SHOUT:
-      d_shout(Playernum, Governor, msg);
+      d_shout(g.session_registry, g.entity_manager, Playernum, Governor, msg);
       break;
     case Communicate::THINK:
-      d_think(g.entity_manager, Playernum, Governor, msg);
+      d_think(g.session_registry, g.entity_manager, Playernum, Governor, msg);
       break;
     case Communicate::UNKNOWN:  // Impossible
       break;

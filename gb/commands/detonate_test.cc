@@ -3,19 +3,16 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std;
 
 #include <cassert>
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-
-  // Create EntityManager
-  EntityManager em(db);
-  JsonStore store(db);
+  // Create test context
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race
   Race race{};
@@ -48,7 +45,7 @@ int main() {
   mine.docked = false;
   mine.destruct = 10;  // Mine charge
 
-  auto mine_handle = em.create_ship(mine);
+  auto mine_handle = ctx.em.create_ship(mine);
   mine_handle.save();
 
   // Create target ship nearby
@@ -66,23 +63,22 @@ int main() {
   target.armor = 10;
   target.damage = 0;
 
-  auto target_handle = em.create_ship(target);
+  auto target_handle = ctx.em.create_ship(target);
   target_handle.save();
 
   // Create GameObj
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_STAR;
-  g.snum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
 
   // Execute detonate command: detonate #1
   command_t argv = {"detonate", "#1", ""};
   GB::commands::detonate(argv, g);
 
   // Verify mine was detonated (destroyed)
-  const auto* detonated_mine = em.peek_ship(1);
+  const auto* detonated_mine = ctx.em.peek_ship(1);
 
   // Mine should be destroyed after detonation
   if (detonated_mine) {
@@ -91,7 +87,7 @@ int main() {
 
   // Target ship may or may not be destroyed depending on distance/damage
   // calculations Just verify the system didn't crash
-  const auto* affected_target = em.peek_ship(2);
+  const auto* affected_target = ctx.em.peek_ship(2);
   // Target exists in some state (alive or destroyed)
 
   std::println("✓ detonate command: Mine detonation persisted to database");

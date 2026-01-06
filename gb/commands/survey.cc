@@ -181,25 +181,25 @@ std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
 
   if (argv.size() == 1) {
     // No args - use current scope
-    return Place(g.level, g.snum, g.pnum);
+    return Place(g.level(), g.snum(), g.pnum());
   }
 
   // Parse argument to determine survey type
   if (argv[1].empty()) {
-    return Place(g.level, g.snum, g.pnum);
+    return Place(g.level(), g.snum(), g.pnum());
   }
 
   if ((std::isdigit(argv[1][0]) && argv[1].contains(',')) ||
       ((argv[1][0] == '-') && (all = true))) {
     // Sector range or full survey
-    if (g.level != ScopeLevel::LEVEL_PLAN) {
+    if (g.level() != ScopeLevel::LEVEL_PLAN) {
       g.out << "There are no sectors here.\n";
       return std::nullopt;
     }
     if (!all) {
       range_arg = argv[1];
     }
-    return Place(ScopeLevel::LEVEL_PLAN, g.snum, g.pnum);
+    return Place(ScopeLevel::LEVEL_PLAN, g.snum(), g.pnum());
   }
 
   // Survey a named location
@@ -249,10 +249,10 @@ void survey_planet_sectors(GameObj& g, const Place& where,
       p.Maxx(), std::vector<SectorShipData>(p.Maxy()));
   bool inhere = false;  // Track if player has presence on planet
   if (is_csp_format) {
-    inhere = p.info(g.player - 1).numsectsowned > 0;
+    inhere = p.info(g.player() - 1).numsectsowned > 0;
     const ShipList kShips(g.entity_manager, p.ships());
     for (const Ship* shipa : kShips) {
-      if (shipa->owner() == g.player &&
+      if (shipa->owner() == g.player() &&
           (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE))) {
         inhere = true;
       }
@@ -280,7 +280,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
     rows.push_back({.x = x,
                     .y = y,
                     .sector = &s,
-                    .desshow_char = desshow(g.player, g.governor, race, s),
+                    .desshow_char = desshow(g.player(), g.governor(), race, s),
                     .compat = compat,
                     .toxic = p.conditions(TOXIC),
                     .ship_data = ship_data});
@@ -289,7 +289,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   // Render the complete survey
   if (is_csp_format) {
     render_csp_survey(g.out, p, star, star.get_planet_name(where.pnum),
-                      g.player, race, all, inhere, rows);
+                      g.player(), race, all, inhere, rows);
   } else {
     render_human_survey(g.out, race, rows);
   }
@@ -358,8 +358,9 @@ void survey_planet_overview(GameObj& g, const Place& where) {
                        race.Metamorph ? "biomass" : "popltn",
                        race.Metamorph ? "biomass" : "popltn");
   g.out << std::format("{:10}  {:14} {:9}  {:7}{:11}\n",
-                       p.info(g.player - 1).fuel, p.info(g.player - 1).resource,
-                       p.info(g.player - 1).destruct, p.popn(), p.maxpopn());
+                       p.info(g.player() - 1).fuel,
+                       p.info(g.player() - 1).resource,
+                       p.info(g.player() - 1).destruct, p.popn(), p.maxpopn());
   if (p.slaved_to()) {
     g.out << std::format("This planet ENSLAVED to player {}!\n", p.slaved_to());
   }

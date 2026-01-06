@@ -10,8 +10,7 @@ module commands;
 namespace GB::commands {
 void route(const command_t& argv, GameObj& g) {
   // TODO(jeffbailey): This seems to segfault with no args.
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
   // TODO(jeffbailey): ap_t APcount = 0;
   int i;
   int x;
@@ -22,11 +21,11 @@ void route(const command_t& argv, GameObj& g) {
   unsigned char unload;
   const char* c;
 
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to 'cs' to a planet to examine routes.\n";
     return;
   }
-  auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
     return;

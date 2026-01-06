@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test races
   Race race1{};
@@ -79,7 +78,7 @@ int main() {
 
   // Link ship to planet
   {
-    auto planet_handle = em.get_planet(0, 0);
+    auto planet_handle = ctx.em.get_planet(0, 0);
     auto& p = *planet_handle;
     p.ships() = 1;
   }
@@ -104,17 +103,16 @@ int main() {
   }
 
   // Create GameObj for player 1 (bidder)
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);
-  g.level = ScopeLevel::LEVEL_PLAN;
-  g.snum = 0;
-  g.pnum = 0;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   std::println("Test 1: Place initial bid on commodity");
   {
-    const auto* c_before = em.peek_commod(1);
+    const auto* c_before = ctx.em.peek_commod(1);
     std::println("  Before: bid={}, bidder={}", c_before->bid,
                  c_before->bidder);
 
@@ -122,7 +120,7 @@ int main() {
     GB::commands::bid(argv, g);
     std::println("  Output: {}", g.out.str());
 
-    const auto* c_after = em.peek_commod(1);
+    const auto* c_after = ctx.em.peek_commod(1);
     std::println("  After: bid={}, bidder={}", c_after->bid, c_after->bidder);
     assert(c_after->bid == 1000);
     assert(c_after->bidder == 1);
@@ -134,7 +132,7 @@ int main() {
 
   std::println("Test 2: Raise existing bid");
   {
-    const auto* c_before = em.peek_commod(1);
+    const auto* c_before = ctx.em.peek_commod(1);
     int previous_bid = c_before->bid;
 
     // Need to bid at least (1 + UP_BID) times the current bid
@@ -143,7 +141,7 @@ int main() {
     command_t argv = {"bid", "1", std::to_string(new_bid)};
     GB::commands::bid(argv, g);
 
-    const auto* c_after = em.peek_commod(1);
+    const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == new_bid);
     assert(c_after->bidder == 1);
     std::println("✓ Bid raised successfully");
@@ -151,7 +149,7 @@ int main() {
 
   std::println("Test 3: Cannot bid less than minimum");
   {
-    const auto* c_before = em.peek_commod(1);
+    const auto* c_before = ctx.em.peek_commod(1);
     int previous_bid = c_before->bid;
 
     // Try to bid less than required
@@ -159,7 +157,7 @@ int main() {
     GB::commands::bid(argv, g);
 
     // Bid should not change
-    const auto* c_after = em.peek_commod(1);
+    const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == previous_bid);
     std::println("✓ Low bid rejected");
   }
@@ -168,27 +166,26 @@ int main() {
   {
     // Make player 1 a guest
     {
-      auto race_handle = em.get_race(1);
+      auto race_handle = ctx.em.get_race(1);
       auto& r = *race_handle;
       r.Guest = true;
     }
 
-    const auto* c_before = em.peek_commod(1);
+    const auto* c_before = ctx.em.peek_commod(1);
     int previous_bid = c_before->bid;
 
-    GameObj g2(em);
-    g2.player = 1;
-    g2.governor = 0;
-    g2.race = em.peek_race(1);
-    g2.level = ScopeLevel::LEVEL_PLAN;
-    g2.snum = 0;
-    g2.pnum = 0;
+    auto& registry = get_test_session_registry();
+    GameObj g2(ctx.em, registry);
+    ctx.setup_game_obj(g2);
+    g2.set_level(ScopeLevel::LEVEL_PLAN);
+    g2.set_snum(0);
+    g2.set_pnum(0);
 
     command_t argv = {"bid", "1", "5000"};
     GB::commands::bid(argv, g2);
 
     // Bid should not change
-    const auto* c_after = em.peek_commod(1);
+    const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == previous_bid);
     std::println("✓ Guest race blocked from bidding");
   }

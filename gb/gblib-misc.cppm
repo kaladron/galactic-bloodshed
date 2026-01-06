@@ -2,15 +2,6 @@
 
 module;
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <cerrno>
-#include <cstdio>
-
 export module gblib:misc;
 
 import :gameobj;
@@ -24,61 +15,18 @@ import :types;
 
 import std.compat;
 
-export class DescriptorData : public GameObj {
-public:
-  DescriptorData(int sock, EntityManager& em) : GameObj{em} {
-    // TODO(jeffbailey): Pull the fprintf stuff out of this constructor
-    struct sockaddr_in6 addr;
-    socklen_t addr_len = sizeof(addr);
+// Note: Notification functions moved to gb/services/notification.{cppm,cc}
+// - d_broadcast, d_announce, d_think, d_shout
+// - warn_player, warn_race, notify_star, warn_star
+// notify_race and notify_player are now methods on SessionRegistry
 
-    descriptor = accept(sock, (struct sockaddr*)&addr, &addr_len);
-    // TODO(jeffbailey): The original code didn't error on EINTR or EMFILE, but
-    // also didn't halt processing on an invalid socket.  Need to evaluate the
-    // cases we should handle here properly.
-    if (descriptor <= 0) throw std::runtime_error(std::string{strerror(errno)});
-
-    char addrstr[INET6_ADDRSTRLEN];
-    inet_ntop(AF_INET6, &addr.sin6_addr, addrstr, sizeof(addrstr));
-    // TODO(jeffbailey): There used to be custom access check stuff here.
-    // It should be replaced with TCP wrappers or something similar
-    fprintf(stderr, "ACCEPT from %s(%d) on descriptor %d\n", addrstr,
-            ntohs(addr.sin6_port), descriptor);
-  }
-  int descriptor;
-  bool connected{};
-  ssize_t output_size{};
-  std::deque<std::string> output;
-  std::deque<std::string> input;
-  std::string raw_input;
-  time_t last_time{};
-  int quota{};
-  bool operator==(const DescriptorData& rhs) const noexcept {
-    return descriptor == rhs.descriptor && player == rhs.player &&
-           governor == rhs.governor;
-  }
-};
-
-export void notify_race(player_t, const std::string&);
-export bool notify(player_t, governor_t, const std::string&);
-export void d_think(EntityManager&, player_t, governor_t, const std::string&);
-export void d_broadcast(EntityManager&, player_t, governor_t,
-                        const std::string&);
-export void d_shout(player_t, governor_t, const std::string&);
-export void d_announce(EntityManager&, player_t, governor_t, starnum_t,
-                       const std::string&);
-// New signature using EntityManager
-export void warn_race(EntityManager&, player_t, const std::string&);
-export void warn(player_t, governor_t, const std::string&);
-// New signature using EntityManager
-export void warn_star(EntityManager&, player_t, starnum_t, const std::string&);
-// New signature using EntityManager
-export void notify_star(EntityManager&, player_t, governor_t, starnum_t,
-                        const std::string&);
 export void adjust_morale(Race&, Race&, int);
 
-export void queue_string(DescriptorData&, const std::string&);
 export void add_to_queue(std::deque<std::string>&, const std::string&);
-export void strstr_to_queue(DescriptorData&);
+
+// Helper for turn processing: send telegram to all inhabitants of a star
+export void telegram_star(EntityManager&, starnum_t, player_t sender,
+                          governor_t sender_gov, const std::string& message);
 
 // Diagnostic logging for invariant violations
 export constexpr bool kDebugInvariants = true;
@@ -88,9 +36,10 @@ void log_invariant_violation(
     std::string_view entity, std::string_view field, T attempted, U clamped_to,
     std::source_location loc = std::source_location::current()) {
   if constexpr (kDebugInvariants) {
-    std::print(
-        stderr, "[INVARIANT] {}::{}: attempted {}, clamped to {} (at {}:{})\n",
-        entity, field, attempted, clamped_to, loc.file_name(), loc.line());
+    std::print(std::cerr,
+               "[INVARIANT] {}::{}: attempted {}, clamped to {} (at {}:{})\n",
+               entity, field, attempted, clamped_to, loc.file_name(),
+               loc.line());
   }
 }
 

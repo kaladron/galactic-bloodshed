@@ -2,15 +2,17 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std.compat;
 
 module commands;
 
 namespace GB::commands {
 void pay(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   // TODO(jeffbailey): ap_t APcount = 0;
   int who;
   int amount;
@@ -50,8 +52,9 @@ void pay(const command_t& argv, GameObj& g) {
 
   race.governor[Governor].money -= amount;
   alien.governor[0].money += amount;
-  warn(who, 0,
-       std::format("{} [{}] payed you {}.\n", race.name, Playernum, amount));
+  warn_player(
+      g.session_registry, who, 0,
+      std::format("{} [{}] payed you {}.\n", race.name, Playernum, amount));
   g.out << std::format("{} payed to {} [{}].\n", amount, alien.name, who);
 
   post(g.entity_manager,

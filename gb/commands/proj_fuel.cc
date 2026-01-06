@@ -37,7 +37,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     g.out << "Ship not found.\n";
     return;
   }
-  if (ship->owner() != g.player) {
+  if (ship->owner() != g.player()) {
     g.out << "You do not own this ship.\n";
     return;
   }
@@ -124,7 +124,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
       g.out << "Destination ship not found.\n";
       return;
     }
-    if (tmpship->owner() != g.player) {
+    if (tmpship->owner() != g.player()) {
       g.out << "Nice try.\n";
       return;
     }

@@ -3,16 +3,15 @@
 import dallib;
 import dallib;
 import gblib;
+import test;
 import commands;
 import std.compat;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create test race via repository
   Race race{};
@@ -57,7 +56,7 @@ int main() {
 
   // Test: Set route destination
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
     p.info(0).route[0].set = 1;
     p.info(0).route[0].dest_star = 2;
@@ -70,7 +69,7 @@ int main() {
 
   // Verify: Route was saved
   {
-    const auto* saved = em.peek_planet(1, 0);
+    const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(0).route[0].set == 1);
     assert(saved->info(0).route[0].dest_star == 2);
@@ -84,14 +83,14 @@ int main() {
 
   // Test: Deactivate route
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
     p.info(0).route[0].set = 0;
   }
 
   // Verify: Route deactivated
   {
-    const auto* saved = em.peek_planet(1, 0);
+    const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(0).route[0].set == 0);
     std::println("✓ Route deactivation saved correctly");
@@ -99,7 +98,7 @@ int main() {
 
   // Test: Multiple routes
   {
-    auto planet_handle = em.get_planet(1, 0);
+    auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
     for (int i = 0; i < MAX_ROUTES; i++) {
       p.info(0).route[i].set = 1;
@@ -111,7 +110,7 @@ int main() {
 
   // Verify: All routes saved
   {
-    const auto* saved = em.peek_planet(1, 0);
+    const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     for (int i = 0; i < MAX_ROUTES; i++) {
       assert(saved->info(0).route[i].set == 1);

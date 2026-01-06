@@ -6,15 +6,17 @@
 
 module;
 
+import session;
 import gblib;
+import notification;
 import std.compat;
 
 module commands;
 
 namespace GB::commands {
 void grant(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   // ap_t APcount = 0; TODO(jeffbailey);
   governor_t gov;
 
@@ -38,20 +40,21 @@ void grant(const command_t& argv, GameObj& g) {
   auto& race = *race_handle;
 
   if (argv[2] == "star") {
-    if (g.level != ScopeLevel::LEVEL_STAR) {
+    if (g.level() != ScopeLevel::LEVEL_STAR) {
       g.out << "Please cs to the star system first.\n";
       return;
     }
-    int snum = g.snum;
+    int snum = g.snum();
     auto star_handle = g.entity_manager.get_star(snum);
     if (!star_handle.get()) {
       g.out << "Star not found.\n";
       return;
     }
     star_handle->governor(Playernum - 1) = gov;
-    warn(Playernum, gov,
-         std::format("\"{}\" has granted you control of the /{} star system.\n",
-                     race.governor[Governor].name, star_handle->get_name()));
+    warn_player(
+        g.session_registry, Playernum, gov,
+        std::format("\"{}\" has granted you control of the /{} star system.\n",
+                    race.governor[Governor].name, star_handle->get_name()));
   } else if (argv[2] == "ship") {
     ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
     for (auto ship_handle : ships) {
@@ -61,10 +64,11 @@ void grant(const command_t& argv, GameObj& g) {
       if (!authorized(Governor, ship)) continue;
 
       ship.governor() = gov;
-      warn(Playernum, gov,
-           std::format("\"{}\" granted you {} at {}\n",
-                       race.governor[Governor].name, ship_to_string(ship),
-                       prin_ship_orbits(g.entity_manager, ship)));
+      warn_player(g.session_registry, Playernum, gov,
+                  std::format("\"{}\" granted you {} at {}\n",
+                              race.governor[Governor].name,
+                              ship_to_string(ship),
+                              prin_ship_orbits(g.entity_manager, ship)));
       g.out << std::format("{} granted to \"{}\"\n", ship_to_string(ship),
                            race.governor[gov].name);
     }
@@ -90,13 +94,13 @@ void grant(const command_t& argv, GameObj& g) {
       g.out << std::format("{} money deducted from \"{}\".\n", -amount,
                            race.governor[gov].name);
     if (amount >= 0)
-      warn(Playernum, gov,
-           std::format("\"{}\" granted you {} money.\n",
-                       race.governor[Governor].name, amount));
+      warn_player(g.session_registry, Playernum, gov,
+                  std::format("\"{}\" granted you {} money.\n",
+                              race.governor[Governor].name, amount));
     else
-      warn(Playernum, gov,
-           std::format("\"{}\" docked you {} money.\n",
-                       race.governor[Governor].name, -amount));
+      warn_player(g.session_registry, Playernum, gov,
+                  std::format("\"{}\" docked you {} money.\n",
+                              race.governor[Governor].name, -amount));
     race.governor[Governor].money -= amount;
     race.governor[gov].money += amount;
     return;

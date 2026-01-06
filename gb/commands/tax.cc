@@ -11,15 +11,15 @@ module commands;
 
 namespace GB::commands {
 void tax(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player;
-  governor_t Governor = g.governor;
+  player_t Playernum = g.player();
+  governor_t Governor = g.governor();
   ap_t APcount = 0;
 
-  if (g.level != ScopeLevel::LEVEL_PLAN) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "scope must be a planet.\n";
     return;
   }
-  const auto* star = g.entity_manager.peek_star(g.snum);
+  const auto* star = g.entity_manager.peek_star(g.snum());
   if (!star) {
     g.out << "Star not found.\n";
     return;
@@ -40,7 +40,7 @@ void tax(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto planet = g.entity_manager.get_planet(g.snum, g.pnum);
+  auto planet = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet.get()) {
     g.out << "Planet not found.\n";
     return;
@@ -62,7 +62,7 @@ void tax(const command_t& argv, GameObj& g) {
   planet->info(Playernum - 1).newtax = sum_tax;
   // Auto-saves when planet goes out of scope
 
-  deductAPs(g, APcount, g.snum);
+  deductAPs(g, APcount, g.snum());
   g.out << "Set.\n";
 }
 }  // namespace GB::commands

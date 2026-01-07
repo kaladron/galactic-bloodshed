@@ -11,7 +11,6 @@ import session;
 import notification;
 import std;
 import tabulate;
-#include "gb/files.h"
 
 module commands;
 

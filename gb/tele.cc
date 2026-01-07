@@ -7,8 +7,6 @@ module;
 
 import std;
 
-#include "gb/files.h"
-
 module gblib;
 
 /**

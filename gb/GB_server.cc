@@ -18,8 +18,6 @@ import std.compat;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/files.h"
-
 // Server class - implements SessionRegistry interface for the application layer
 class Server : public SessionRegistry {
 public:

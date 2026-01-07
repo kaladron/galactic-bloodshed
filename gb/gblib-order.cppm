@@ -7,5 +7,5 @@ import :types;
 
 export void DispOrders(EntityManager& em, int Playernum, int Governor,
                        const Ship& ship);
-export void DispOrdersHeader(int Playernum, int Governor);
+export void DispOrdersHeader(EntityManager& em, int Playernum, int Governor);
 export void give_orders(GameObj&, const command_t&, int, Ship&);

@@ -8,11 +8,8 @@
 #define PATH(file) PKGDATADIR #file
 #define DIRPATH(dir, file) PKGSTATEDIR dir #file
 #define DATA(file) PKGSTATEDIR #file
-#define TELE(file) DIRPATH("Tele/", file)
 
 inline constexpr auto EXAM_FL = PATH(exam.dat);
-inline constexpr auto TELEGRAMDIR = DATA(Tele);
-inline constexpr auto TELEGRAMFL = DATA(tele);
 
 #define PLANETLIST PATH(planet.list)
 #define STARLIST PATH(star.list)

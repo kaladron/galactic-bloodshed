@@ -202,13 +202,13 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
     case '#': {
       auto shipnum = string_to_shipnum(string);
       if (!shipnum) {
-        DontOwnErr(Playernum, Governor, shipno);
+        DontOwnErr(g.entity_manager, Playernum, Governor, shipno);
         err = true;
         return;
       }
       const auto* ship = g.entity_manager.peek_ship(*shipnum);
       if (!ship) {
-        DontOwnErr(Playernum, Governor, shipno);
+        DontOwnErr(g.entity_manager, Playernum, Governor, shipno);
         err = true;
         return;
       }

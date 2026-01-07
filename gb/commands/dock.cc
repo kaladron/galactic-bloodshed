@@ -84,13 +84,14 @@ void dock(const command_t& argv, GameObj& g) {
 
     if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       const auto* universe = g.entity_manager.peek_universe();
-      if (!enufAP(Playernum, Governor, universe->AP[Playernum - 1], APcount)) {
+      if (!enufAP(g.entity_manager, Playernum, Governor,
+                  universe->AP[Playernum - 1], APcount)) {
         continue;
       }
     } else {
       const auto* star_ptr = g.entity_manager.peek_star(s.storbits());
-      if (!star_ptr ||
-          !enufAP(Playernum, Governor, star_ptr->AP(Playernum - 1), APcount)) {
+      if (!star_ptr || !enufAP(g.entity_manager, Playernum, Governor,
+                               star_ptr->AP(Playernum - 1), APcount)) {
         continue;
       }
     }
@@ -427,7 +428,8 @@ void dock(const command_t& argv, GameObj& g) {
           "Crew casualties: Yours: {} {}    Theirs: {} mil/{} civ\n",
           casualties, what == PopulationType::MIL ? "mil" : "civ", casualties3,
           casualties2);
-      warn_player(g.session_registry, old2owner, old2gov, telegram);
+      warn_player(g.session_registry, g.entity_manager, old2owner, old2gov,
+                  telegram);
       auto news = std::format(
           "{} {} {} at {}.\n", ship_to_string(s),
           s2.alive() ? (s2.owner() == Playernum ? "CAPTURED" : "assaulted")

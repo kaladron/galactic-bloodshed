@@ -150,7 +150,8 @@ void move_popn(const command_t& argv, GameObj& g) {
       APcost =
           MOVE_FACTOR * ((int)std::log10(1.0 + (double)people) + Assault) + 1;
 
-    if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcost)) {
+    if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+                APcost)) {
       return;
     }
 
@@ -278,7 +279,8 @@ void move_popn(const command_t& argv, GameObj& g) {
       telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
                               casualties2, casualties3, casualties,
                               what == PopulationType::CIV ? "civ" : "mil");
-      warn_player(g.session_registry, old2owner, old2gov, telegram);
+      warn_player(g.session_registry, g.entity_manager, old2owner, old2gov,
+                  telegram);
       g.out << std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
                            casualties,
                            what == PopulationType::CIV ? "civ" : "mil",

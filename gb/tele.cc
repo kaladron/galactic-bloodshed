@@ -14,27 +14,14 @@ module gblib;
 /**
  * \brief Sends a message to everyone from person to person
  *
+ * \param em EntityManager for telegram operations
  * \param recipient The recipient player
  * \param gov The governor of the recipient player
  * \param msg The message to send
  */
-void push_telegram(const player_t recipient, const governor_t gov,
-                   std::string_view msg) {
-  std::string telefl = std::format("{}.{}.{}", TELEGRAMFL, recipient, gov);
-
-  std::ofstream telegram_file(telefl, std::ios::app);
-  if (!telegram_file.is_open()) {
-    std::cerr << std::format("Failed to open telegram file {} \n", telefl);
-    return;
-  }
-  auto now = std::chrono::system_clock::now();
-  auto current_time = std::chrono::system_clock::to_time_t(now);
-  auto* current_tm = std::localtime(&current_time);
-
-  telegram_file << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}\n",
-                               current_tm->tm_mon + 1, current_tm->tm_mday,
-                               current_tm->tm_hour, current_tm->tm_min,
-                               current_tm->tm_sec, msg);
+void push_telegram(EntityManager& em, const player_t recipient,
+                   const governor_t gov, std::string_view msg) {
+  em.post_telegram(recipient, gov, msg);
 }
 
 /**
@@ -76,7 +63,7 @@ void push_telegram_race(EntityManager& em, const player_t recipient,
   if (!race) return;
 
   for (governor_t j = 0; j <= MAXGOVERNORS; j++)
-    if (race->governor[j].active) push_telegram(recipient, j, msg);
+    if (race->governor[j].active) push_telegram(em, recipient, j, msg);
 }
 
 /**
@@ -84,41 +71,34 @@ void push_telegram_race(EntityManager& em, const player_t recipient,
  *
  * \param g Game object
  *
- * \description The first byte in each telegram is the sending player number or
- * 254 to denote an autoreport. Then the time send, then the message, then
- * terminated by TELEG_DELIM.
+ * \description Retrieves telegrams from database, displays them, then deletes
+ * them (delete-on-read behavior).
  */
 void teleg_read(GameObj& g) {
-  std::string telegram_file =
-      std::format("{0}.{1}.{2}", TELEGRAMFL, g.player(), g.governor());
-
   g.out << "Telegrams:\n";
 
-  std::filesystem::path telegram_path(telegram_file);
-  if (!std::filesystem::exists(telegram_path)) {
-    g.out << std::format(" None.\n", telegram_file);
+  // Get all telegrams for this governor
+  auto telegrams = g.entity_manager.get_telegrams(g.player(), g.governor());
+
+  if (telegrams.empty()) {
+    g.out << " None.\n";
     return;
   }
 
-  if (std::filesystem::file_size(telegram_path) == 0) {
-    g.out << std::format(" None.\n", telegram_file);
-    return;
+  // Display telegrams with timestamps
+  for (const auto& telegram : telegrams) {
+    auto timestamp_time = static_cast<time_t>(telegram.timestamp);
+    auto* tm = std::localtime(&timestamp_time);
+    g.out << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
+                         tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min,
+                         tm->tm_sec, telegram.message);
+    if (!telegram.message.empty() && telegram.message.back() != '\n') {
+      g.out << "\n";
+    }
   }
 
-  std::ifstream teleg_read_fd(telegram_file);
-  if (!teleg_read_fd.is_open()) {
-    g.out << std::format("Error: Failed to open telegram file {}.\n",
-                         telegram_file);
-    return;
-  }
-
-  std::string line;
-  while (std::getline(teleg_read_fd, line)) {
-    g.out << line << "\n";
-  }
-
-  teleg_read_fd.close();
-  std::ofstream truncate_file(telegram_file, std::ios::trunc);
+  // Delete telegrams after reading (delete-on-read behavior)
+  g.entity_manager.delete_telegrams(g.player(), g.governor());
 }
 
 /**
@@ -175,12 +155,7 @@ void news_read(NewsType type, GameObj& g) {
  * \arg g Game object
  */
 void check_for_telegrams(GameObj& g) {
-  std::string filename =
-      std::format("{}.{}.{}", TELEGRAMFL, g.player(), g.governor());
-
-  std::filesystem::path filePath(filename);
-  std::error_code ec;
-  if (std::filesystem::file_size(filePath, ec) != 0 && !ec) {
+  if (g.entity_manager.has_telegrams(g.player(), g.governor())) {
     g.out << "You have telegram(s) waiting. Use 'read' to read them.\n";
   }
 }

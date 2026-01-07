@@ -263,11 +263,12 @@ static void process_market(TurnState& state, int update) {
             star_handle.get() ? star_handle->get_name() : "unknown",
             star_handle.get() ? star_handle->get_planet_name(c.planet_to)
                               : "unknown");
-        push_telegram(c.bidder, c.bidder_gov, purchased_msg);
+        push_telegram(state.entity_manager, c.bidder, c.bidder_gov,
+                      purchased_msg);
         std::string sold_msg = std::format(
             "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
             c.type, bidder_race->name, c.bidder, c.bid);
-        push_telegram(c.owner, c.governor, sold_msg);
+        push_telegram(state.entity_manager, c.owner, c.governor, sold_msg);
         c.owner = c.governor = 0;
         c.bidder = c.bidder_gov = 0;
       } else {

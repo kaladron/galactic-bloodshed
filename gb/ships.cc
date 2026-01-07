@@ -451,7 +451,7 @@ bool testship(const Ship& s, GameObj& g) {
   }
 
   if (s.owner() != playernum || !authorized(governor, s)) {
-    DontOwnErr(playernum, governor, s.number());
+    DontOwnErr(g.entity_manager, playernum, governor, s.number());
     return true;
   }
 
@@ -592,7 +592,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         std::string telegram = std::format(
             "{} at system {} does not have {:.1f}f to do hyperspace jump.",
             ship_to_string(s), prin_ship_orbits(em, s), fuse);
-        if (send_messages) push_telegram(s.owner(), s.governor(), telegram);
+        if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
         s.hyper_drive().on = 0;
         return;
       }
@@ -611,7 +611,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
       s.hyper_drive().charge = 0;
       std::string telegram = std::format("{} arrived at {}.", ship_to_string(s),
                                          prin_ship_orbits(em, s));
-      if (send_messages) push_telegram(s.owner(), s.governor(), telegram);
+      if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
     } else if (s.mounted()) {
       s.hyper_drive().ready = 1;
       s.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
@@ -634,7 +634,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
            s.type() == ShipType::OTYPE_BERS)) {
         std::string telegram =
             std::format("{} has been lost in deep space.", ship_to_string(s));
-        if (send_messages) push_telegram(s.owner(), s.governor(), telegram);
+        if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
         if (send_messages) em.kill_ship((int)(s.owner()), s);
       }
       return;
@@ -759,7 +759,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         std::string telegram = std::format(
             "{} at {} lost sight of destination ship #{}.", ship_to_string(s),
             prin_ship_orbits(em, s), s.destshipno());
-        if (send_messages) push_telegram(s.owner(), s.governor(), telegram);
+        if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
         return;
       }
       if (truedist > DIST_TO_LAND) {
@@ -818,7 +818,8 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
             std::string telegram =
                 std::format("{} arrived at {}.", ship_to_string(s),
                             prin_ship_orbits(em, s));
-            if (send_messages) push_telegram(s.owner(), s.governor(), telegram);
+            if (send_messages)
+              push_telegram(em, s.owner(), s.governor(), telegram);
           }
           if (s.whatdest() == ScopeLevel::LEVEL_STAR)
             s.whatdest() = ScopeLevel::LEVEL_UNIV;
@@ -857,7 +858,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
                 "\nEnslavement of the planet is now possible.");
           }
           if (send_messages && s.type() != ShipType::OTYPE_VN)
-            push_telegram(s.owner(), s.governor(), telegram.str());
+            push_telegram(em, s.owner(), s.governor(), telegram.str());
         }
       } else if (destlevel == ScopeLevel::LEVEL_SHIP) {
         dist = std::hypot(s.xpos() - dsh->xpos(), s.ypos() - dsh->ypos());
@@ -883,7 +884,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
 void msg_OOF(EntityManager& em, const Ship& s) {
   std::string telegram = std::format(
       "{} is out of fuel at {}.", ship_to_string(s), prin_ship_orbits(em, s));
-  push_telegram(s.owner(), s.governor(), telegram);
+  push_telegram(em, s.owner(), s.governor(), telegram);
 }
 
 /* followable: returns 1 iff s1 can follow s2 */

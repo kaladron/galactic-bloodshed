@@ -37,7 +37,8 @@ void mobilize(const command_t& argv, GameObj& g) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+              APcount)) {
     return;
   }
 

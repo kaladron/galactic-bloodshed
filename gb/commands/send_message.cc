@@ -99,7 +99,7 @@ void send_message(const command_t& argv, GameObj& g) {
       return;
 
     default:
-      if (!enufAP(Playernum, Governor,
+      if (!enufAP(g.entity_manager, Playernum, Governor,
                   g.entity_manager.peek_star(g.snum())->AP(Playernum - 1),
                   APcount))
         return;
@@ -177,7 +177,7 @@ void send_message(const command_t& argv, GameObj& g) {
     if (who == Playernum) APcount = 0;
     if (std::isdigit(*argv[2].c_str()) && (gov = std::stoi(argv[2])) >= 0 &&
         gov <= MAXGOVERNORS) {
-      push_telegram(who, gov, msg);
+      push_telegram(g.entity_manager, who, gov, msg);
       g.session_registry.notify_player(who, gov, notice);
     } else {
       push_telegram_race(g.entity_manager, who, msg);

@@ -52,7 +52,8 @@ void enslave(const command_t& argv, GameObj& g) {
   }
   const auto& star = star_handle.read();
 
-  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
+  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+              APcount)) {
     return;
   }
 
@@ -138,6 +139,7 @@ void enslave(const command_t& argv, GameObj& g) {
 
   for (auto i = 1; i < MAXPLAYERS; i++)
     if (p.info(i - 1).numsectsowned && i != Playernum)
-      warn_player(g.session_registry, i, star.governor(i - 1), telegram.str());
+      warn_player(g.session_registry, g.entity_manager, i, star.governor(i - 1),
+                  telegram.str());
 }
 }  // namespace GB::commands

@@ -23,7 +23,7 @@ void telegram_star(EntityManager& em, starnum_t star, player_t sender,
       if (race) {
         for (int i = 0; i <= MAXGOVERNORS; i++) {
           if (race->governor[i].active && !(p == sender && i == sender_gov)) {
-            push_telegram(p, i, message);
+            push_telegram(em, p, i, message);
           }
         }
       }

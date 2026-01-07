@@ -37,16 +37,18 @@ bool in_list(const player_t playernum, const std::string_view list,
   return false;
 }
 
-void DontOwnErr(int Playernum, int Governor, shipnum_t shipno) {
+void DontOwnErr(EntityManager& em, int Playernum, int Governor,
+                shipnum_t shipno) {
   std::string error_msg = std::format("You don't own ship #{}.\n", shipno);
-  push_telegram(Playernum, Governor, error_msg);
+  push_telegram(em, Playernum, Governor, error_msg);
 }
 
-bool enufAP(player_t Playernum, governor_t Governor, ap_t have, ap_t needed) {
+bool enufAP(EntityManager& em, player_t Playernum, governor_t Governor,
+            ap_t have, ap_t needed) {
   if (have < needed) {
     std::string ap_msg =
         std::format("You don't have {} action points there.\n", needed);
-    push_telegram(Playernum, Governor, ap_msg);
+    push_telegram(em, Playernum, Governor, ap_msg);
     return false;
   }
   return true;
@@ -103,12 +105,12 @@ void allocateAPs(const command_t& argv, GameObj& g) {
   if (g.level() == ScopeLevel::LEVEL_UNIV) {
     std::string scope_msg =
         "Change scope to the system you which to transfer global APs to.\n";
-    push_telegram(Playernum, Governor, scope_msg);
+    push_telegram(g.entity_manager, Playernum, Governor, scope_msg);
     return;
   }
   alloc = std::stoi(argv[1]);
   if (alloc <= 0) {
-    push_telegram(Playernum, Governor,
+    push_telegram(g.entity_manager, Playernum, Governor,
                   "You must specify a positive amount of APs to allocate.\n");
     return;
   }
@@ -121,7 +123,7 @@ void allocateAPs(const command_t& argv, GameObj& g) {
   if (alloc > maxalloc) {
     std::string max_msg =
         std::format("Illegal value ({}) - maximum = {}\n", alloc, maxalloc);
-    push_telegram(Playernum, Governor, max_msg);
+    push_telegram(g.entity_manager, Playernum, Governor, max_msg);
     return;
   }
   univ.AP[Playernum - 1] -= alloc;
@@ -130,7 +132,7 @@ void allocateAPs(const command_t& argv, GameObj& g) {
   star_write.AP(Playernum - 1) =
       std::min(LIMIT_APs, star.AP(Playernum - 1) + alloc);
   std::string allocated_msg = "Allocated\n";
-  push_telegram(Playernum, Governor, allocated_msg);
+  push_telegram(g.entity_manager, Playernum, Governor, allocated_msg);
 }
 
 void deductAPs(const GameObj& g, ap_t APs, ScopeLevel level) {
@@ -160,7 +162,7 @@ void deductAPs(const GameObj& g, ap_t APs, starnum_t snum) {
     star.AP(g.player() - 1) = 0;
     std::string cheater_msg = "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
                               "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";
-    push_telegram(g.player(), g.governor(), cheater_msg);
+    push_telegram(g.entity_manager, g.player(), g.governor(), cheater_msg);
   }
 }
 

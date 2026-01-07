@@ -44,7 +44,9 @@ void sell(const command_t& argv, GameObj& g) {
     return;
   }
   APcount = MIN(APcount, amount);
-  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) return;
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+              APcount))
+    return;
 
   auto planet_handle = g.entity_manager.get_planet(snum, pnum);
   auto& p = *planet_handle;

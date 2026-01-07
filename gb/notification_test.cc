@@ -279,7 +279,7 @@ void test_warn_player_update_suppression() {
 
   // Track telegrams (we need to mock push_telegram, but it's a free function)
   // For now, we'll verify the function doesn't crash and moves on
-  warn_player(registry, 1, 0, "Update in progress message\n");
+  warn_player(registry, em, 1, 0, "Update in progress message\n");
 
   // Test 2: When update is NOT in progress, should try real-time
   registry.set_update_in_progress(false);

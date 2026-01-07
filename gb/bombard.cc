@@ -50,7 +50,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
       std::string notice =
           std::format("Bombardment of {} cancelled, PDNs are present.\n",
                       prin_ship_orbits(entity_manager, ship));
-      push_telegram(ship.owner(), ship.governor(), notice);
+      push_telegram(entity_manager, ship.owner(), ship.governor(), notice);
       return 0;
     }
   }
@@ -92,7 +92,8 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
       telegram << std::format("Planet /{}/{} has been saturation bombed.\n",
                               star->get_name(),
                               star->get_planet_name(ship.pnumorbits()));
-      push_telegram(ship.owner(), ship.governor(), telegram.str());
+      push_telegram(entity_manager, ship.owner(), ship.governor(),
+                    telegram.str());
     }
     return 0;
   }
@@ -106,7 +107,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
       std::string telegram =
           std::format("Bulletin\n\n {}{} {} has no weapons to bombard with.\n",
                       Shipltrs[ship.type()], ship.number(), ship.name());
-      push_telegram(ship.owner(), ship.governor(), telegram);
+      push_telegram(entity_manager, ship.owner(), ship.governor(), telegram);
     }
     return 0;
   }
@@ -131,7 +132,8 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   telegram_report << std::format(
       "sector {},{} (owner {}). {} sectors destroyed.\n", x, y, oldown,
       numdest);
-  push_telegram(ship.owner(), ship.governor(), telegram_report.str());
+  push_telegram(entity_manager, ship.owner(), ship.governor(),
+                telegram_report.str());
 
   /* notify other player. */
   std::stringstream telegram_alert;
@@ -143,7 +145,8 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
 
   for (player_t i = 1; i <= entity_manager.num_races(); i++)
     if (result.nuked[i - 1] && i != ship.owner())
-      push_telegram(i, star->governor(i - 1), telegram_alert.str());
+      push_telegram(entity_manager, i, star->governor(i - 1),
+                    telegram_alert.str());
 
   std::string combatpost =
       std::format("{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type()],

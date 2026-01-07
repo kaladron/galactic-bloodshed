@@ -46,7 +46,8 @@ void declare(const command_t& argv, GameObj& g) {
   } else if ((g.level() == ScopeLevel::LEVEL_STAR ||
               g.level() == ScopeLevel::LEVEL_PLAN)) {
     const auto& star = *g.entity_manager.peek_star(g.snum());
-    if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
+    if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+                APcount)) {
       g.out << std::format("You don't have enough AP's ({})\n", APcount);
       return;
     }

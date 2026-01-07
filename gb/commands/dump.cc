@@ -18,7 +18,9 @@ void dump(const command_t& argv, GameObj& g) {
   int star_id;
 
   const auto* star = g.entity_manager.peek_star(g.snum());
-  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) return;
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+              APcount))
+    return;
 
   if (!(player = get_player(g.entity_manager, argv[1]))) {
     g.out << "No such player.\n";

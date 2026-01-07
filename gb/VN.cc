@@ -164,7 +164,7 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   }
 
   push_telegram_race(em, f, buf);
-  if (f != ship.owner()) push_telegram(ship.owner(), ship.governor(), buf);
+  if (f != ship.owner()) push_telegram(em, ship.owner(), ship.governor(), buf);
 }
 
 /*  planet_doVN() -- called by doplanet() */
@@ -288,7 +288,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
             s2.mounted() = 1;
             auto buf = std::format("{0} constructed {1}.", ship_to_string(ship),
                                    ship_to_string(s2));
-            push_telegram(ship.owner(), ship.governor(), buf);
+            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
             if (std::holds_alternative<MindData>(s2.special())) {
               auto mind = std::get<MindData>(s2.special());
               mind.tampered = 0;

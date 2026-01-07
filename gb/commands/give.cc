@@ -59,7 +59,7 @@ void give(const command_t& argv, GameObj& g) {
   auto& ship = *ship_handle;
 
   if (ship.owner() != Playernum || !ship.alive()) {
-    DontOwnErr(Playernum, Governor, *shipno);
+    DontOwnErr(g.entity_manager, Playernum, Governor, *shipno);
     return;
   }
   if (ship.type() == ShipType::STYPE_POD) {
@@ -79,14 +79,16 @@ void give(const command_t& argv, GameObj& g) {
   switch (ship.whatorbits()) {
     case ScopeLevel::LEVEL_UNIV: {
       const auto* univ = g.entity_manager.peek_universe();
-      if (!enufAP(Playernum, Governor, univ->AP[Playernum - 1], APcount)) {
+      if (!enufAP(g.entity_manager, Playernum, Governor,
+                  univ->AP[Playernum - 1], APcount)) {
         return;
       }
       break;
     }
     default: {
       const auto& star = *g.entity_manager.peek_star(g.snum());
-      if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
+      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+                  APcount)) {
         return;
       }
       break;
@@ -135,7 +137,7 @@ void give(const command_t& argv, GameObj& g) {
   std::string givemsg = std::format("{} [{}] gave you {} at {}.\n", race.name,
                                     Playernum, ship_to_string(ship),
                                     prin_ship_orbits(g.entity_manager, ship));
-  warn_player(g.session_registry, who, 0, givemsg);
+  warn_player(g.session_registry, g.entity_manager, who, 0, givemsg);
 
   if (!race.God) {
     std::string postmsg = std::format("{} [{}] gives {} [{}] a ship.\n",

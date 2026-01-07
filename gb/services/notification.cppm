@@ -35,7 +35,8 @@ export void d_shout(SessionRegistry& registry, EntityManager& em,
                     const std::string& message);
 
 /// Warn a specific player's governor, falls back to governor 0, then telegram
-export void warn_player(SessionRegistry& registry, player_t who, governor_t gov,
+export void warn_player(SessionRegistry& registry, EntityManager& em,
+                        player_t who, governor_t gov,
                         const std::string& message);
 
 /// Warn all governors of a race

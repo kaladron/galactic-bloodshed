@@ -106,7 +106,8 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     telegram += std::format("{} gave your ship {} the following:\n",
                             ship_to_string(*s), ship_to_string(s2));
     telegram += tele_lines;
-    warn_player(g.session_registry, s2.owner(), s2.governor(), telegram);
+    warn_player(g.session_registry, g.entity_manager, s2.owner(), s2.governor(),
+                telegram);
   }
 }
 
@@ -263,7 +264,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
                           casualties2, casualties3, casualties,
                           what == PopulationType::CIV ? "civ" : "mil");
-  warn_player(g.session_registry, oldowner, oldgov, telegram);
+  warn_player(g.session_registry, g.entity_manager, oldowner, oldgov, telegram);
   g.out << std::format("Casualties: You: {} {}, Them: {} civ/{} mil\n",
                        casualties, what == PopulationType::CIV ? "civ" : "mil",
                        casualties2, casualties3);
@@ -311,12 +312,14 @@ void load(const command_t& argv, GameObj& g) {
     }
     if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       const auto* universe = g.entity_manager.peek_universe();
-      if (!enufAP(Playernum, Governor, universe->AP[Playernum - 1], APcount)) {
+      if (!enufAP(g.entity_manager, Playernum, Governor,
+                  universe->AP[Playernum - 1], APcount)) {
         continue;
       }
     } else {
       const auto* star = g.entity_manager.peek_star(s.storbits());
-      if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount))
+      if (!enufAP(g.entity_manager, Playernum, Governor,
+                  star->AP(Playernum - 1), APcount))
         continue;
     }
     if (!s.docked()) {
@@ -678,7 +681,7 @@ void load(const command_t& argv, GameObj& g) {
         auto s2_gov = s2_ptr->governor();
         auto s2_name = ship_to_string(*s2_ptr);
         warn_player(
-            g.session_registry, s2_owner, s2_gov,
+            g.session_registry, g.entity_manager, s2_owner, s2_gov,
             std::format(
                 "Audio-vibatory-physio-molecular transport device #{} gave "
                 "your ship {} the following:\n{}",

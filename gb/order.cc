@@ -690,8 +690,8 @@ void give_orders(GameObj& g, const command_t& argv, int /* APcount */,
   ship.notified() = 0;
 }
 
-void DispOrdersHeader(int Playernum, int Governor) {
-  push_telegram(Playernum, Governor,
+void DispOrdersHeader(EntityManager& em, int Playernum, int Governor) {
+  push_telegram(em, Playernum, Governor,
                 "    #       name       sp orbits     destin     options\n");
 }
 
@@ -838,7 +838,7 @@ void DispOrders(EntityManager& em, int Playernum, int Governor,
   }
 
   buffer << "\n";
-  push_telegram(Playernum, Governor, buffer.str());
+  push_telegram(em, Playernum, Governor, buffer.str());
   /* if hyper space is on estimate how much fuel it will cost to get to the
    * destination */
   if (ship.hyper_drive().on) {
@@ -854,11 +854,11 @@ void DispOrders(EntityManager& em, int Playernum, int Governor,
                   (dist / distfac);
 
     push_telegram(
-        Playernum, Governor,
+        em, Playernum, Governor,
         std::format("  *** distance {:.0f} - jump will cost {:.1f}f ***\n",
                     dist, fuse));
     if (ship.max_fuel() < fuse)
-      push_telegram(Playernum, Governor,
+      push_telegram(em, Playernum, Governor,
                     "Your ship cannot carry enough fuel to do this jump.\n");
   }
 }

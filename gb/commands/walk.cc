@@ -62,7 +62,8 @@ void walk(const command_t& argv, GameObj& g) {
   }
   const auto& star = star_handle.read();
 
-  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
+  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+              APcount)) {
     return;
   }
   auto planet_handle =
@@ -115,8 +116,8 @@ void walk(const command_t& argv, GameObj& g) {
                (strength1 = retal_strength(*ship))) {
           use_destruct(ship2, strength);
           g.out << long_buf;
-          warn_player(g.session_registry, ship2.owner(), ship2.governor(),
-                      long_buf);
+          warn_player(g.session_registry, g.entity_manager, ship2.owner(),
+                      ship2.governor(), long_buf);
           if (!ship2.alive())
             post(g.entity_manager, short_buf, NewsType::COMBAT);
           notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
@@ -124,8 +125,8 @@ void walk(const command_t& argv, GameObj& g) {
           if (strength1) {
             use_destruct(*ship, strength1);
             g.out << long_buf;
-            warn_player(g.session_registry, ship2.owner(), ship2.governor(),
-                        long_buf);
+            warn_player(g.session_registry, g.entity_manager, ship2.owner(),
+                        ship2.governor(), long_buf);
             if (!ship2.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);
             notify_star(g.session_registry, g.entity_manager, Playernum,
@@ -154,7 +155,8 @@ void walk(const command_t& argv, GameObj& g) {
         mech_attack_people(g.entity_manager, *ship, &civ, &mil, *g.race, *alien,
                            sect, false, long_buf, short_buf);
         g.out << long_buf;
-        warn_player(g.session_registry, alien->Playernum, oldgov, long_buf);
+        warn_player(g.session_registry, g.entity_manager, alien->Playernum,
+                    oldgov, long_buf);
         notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
                     ship->storbits(), short_buf);
         post(g.entity_manager, short_buf, NewsType::COMBAT);
@@ -163,7 +165,8 @@ void walk(const command_t& argv, GameObj& g) {
                            sect.get_troops(), *alien, *g.race, sect, x, y,
                            long_buf, short_buf);
         g.out << long_buf;
-        warn_player(g.session_registry, alien->Playernum, oldgov, long_buf);
+        warn_player(g.session_registry, g.entity_manager, alien->Playernum,
+                    oldgov, long_buf);
         notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
                     ship->storbits(), short_buf);
         if (!ship->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);

@@ -212,7 +212,8 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     return;
   }
 
-  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+              APcount)) {
     return;
   }
 
@@ -267,7 +268,8 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
             post(g.entity_manager, short_buf, NewsType::COMBAT);
             notify_star(g.session_registry, g.entity_manager, 0, 0,
                         s.storbits(), short_buf);
-            warn_player(g.session_registry, i, star->governor(i - 1), long_buf);
+            warn_player(g.session_registry, g.entity_manager, i,
+                        star->governor(i - 1), long_buf);
             g.session_registry.notify_player(s.owner(), s.governor(), long_buf);
             p.info(i - 1).destruct -= strength;
           }
@@ -295,7 +297,8 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     for (auto race_handle : RaceList(g.entity_manager)) {
       const auto i = race_handle->Playernum;
       if (p.info(i - 1).numsectsowned || i == Playernum)
-        warn_player(g.session_registry, i, star->governor(i - 1), buf);
+        warn_player(g.session_registry, g.entity_manager, i,
+                    star->governor(i - 1), buf);
     }
     if (roll)
       g.out << std::format("Ship damage {}% (you rolled a {})\n",

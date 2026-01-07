@@ -67,7 +67,7 @@ bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
   if (planet.slaved_to() && planet.slaved_to() != Playernum) {
     std::string message = std::format("This planet is enslaved by player {}.\n",
                                       planet.slaved_to());
-    push_telegram(Playernum, Governor, message);
+    push_telegram(g.entity_manager, Playernum, Governor, message);
     return false;
   }
   if (Governor && star.governor(Playernum - 1) != Governor) {
@@ -290,7 +290,7 @@ void create_ship_by_planet(EntityManager& entity_manager, int Playernum,
   if (newship.type() == ShipType::OTYPE_TOXWC) {
     std::string message = std::format("Toxin concentration on planet was {}%,",
                                       planet.conditions(TOXIC));
-    push_telegram(Playernum, Governor, message);
+    push_telegram(entity_manager, Playernum, Governor, message);
     unsigned char toxic_amount;
     if (planet.conditions(TOXIC) > TOXMAX)
       toxic_amount = TOXMAX;
@@ -299,20 +299,20 @@ void create_ship_by_planet(EntityManager& entity_manager, int Playernum,
     newship.special() = WasteData{.toxic = toxic_amount};
     planet.conditions(TOXIC) -= toxic_amount;
     std::string toxMsg = std::format(" now {}%.\n", planet.conditions(TOXIC));
-    push_telegram(Playernum, Governor, toxMsg);
+    push_telegram(entity_manager, Playernum, Governor, toxMsg);
   }
   std::string message =
       std::format("{} built at a cost of {} resources.\n",
                   ship_to_string(newship).c_str(), newship.build_cost());
-  push_telegram(Playernum, Governor, message);
+  push_telegram(entity_manager, Playernum, Governor, message);
 
   std::string techMsg = std::format("Technology {:.1f}.\n", newship.tech());
-  push_telegram(Playernum, Governor, techMsg);
+  push_telegram(entity_manager, Playernum, Governor, techMsg);
 
   std::string locMsg =
       std::format("{} is on sector {},{}.\n", ship_to_string(newship).c_str(),
                   newship.land_x(), newship.land_y());
-  push_telegram(Playernum, Governor, locMsg);
+  push_telegram(entity_manager, Playernum, Governor, locMsg);
 }
 
 void create_ship_by_ship(EntityManager& entity_manager, int Playernum,
@@ -374,10 +374,10 @@ void create_ship_by_ship(EntityManager& entity_manager, int Playernum,
   std::string message =
       std::format("{} built at a cost of {} resources.\n",
                   ship_to_string(*newship).c_str(), newship->build_cost());
-  push_telegram(Playernum, Governor, message);
+  push_telegram(entity_manager, Playernum, Governor, message);
 
   std::string techMsg = std::format("Technology {:.1f}.\n", newship->tech());
-  push_telegram(Playernum, Governor, techMsg);
+  push_telegram(entity_manager, Playernum, Governor, techMsg);
 }
 
 void Getship(Ship* s, ShipType i, const Race& r) {

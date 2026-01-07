@@ -23,7 +23,9 @@ void transfer(const command_t& argv, GameObj& g) {
   }
 
   const auto* star = g.entity_manager.peek_star(g.snum());
-  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) return;
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+              APcount))
+    return;
 
   auto player = get_player(g.entity_manager, argv[1]);
   if (player == 0) {

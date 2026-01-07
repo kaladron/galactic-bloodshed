@@ -26,8 +26,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         CACHE STRING "Path to the package state directory")
     # Create the development state directory and subdirectories
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/gamedata")
-    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/gamedata/News")
-    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/gamedata/Tele")
     message(STATUS "Debug build: Using build state directory: ${PKGSTATEDIR}")
 else()
     # Production mode: use install directory
@@ -756,6 +754,10 @@ add_test(NAME GB_send_message_test COMMAND send_message_test)
 add_executable(news_test news_test.cc)
 target_link_libraries(news_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_news_test COMMAND news_test)
+
+add_executable(telegram_test telegram_test.cc)
+target_link_libraries(telegram_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_telegram_test COMMAND telegram_test)
 
 add_executable(analysis_test commands/analysis_test.cc)
 target_link_libraries(analysis_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)

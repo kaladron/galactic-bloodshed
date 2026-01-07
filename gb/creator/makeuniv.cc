@@ -215,17 +215,6 @@ usage:
     }
   }
 
-  /*
-   * Telegram files: directory and a file for each player. */
-  mkdir(TELEGRAMDIR, 00770);
-#if 0  
-  /* Why is this not needed any more? */
-  for (i=1; i<MAXPLAYERS; i++) {
-    sprintf(str, "%s.%d", TELEGRAMFL, i );
-    EmptyFile(str) ;
-    }
-#endif
-
   PrintStatistics();
 
   return 0;

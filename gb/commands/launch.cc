@@ -139,14 +139,15 @@ void launch(const command_t& argv, GameObj& g) {
       auto& s2 = *s2_handle;
       if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
         const universe_struct* univ_data = g.entity_manager.peek_universe();
-        if (!enufAP(Playernum, Governor, univ_data->AP[Playernum - 1],
-                    APcount)) {
+        if (!enufAP(g.entity_manager, Playernum, Governor,
+                    univ_data->AP[Playernum - 1], APcount)) {
           continue;
         }
         deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
       } else {
         const auto& star = *g.entity_manager.peek_star(s.storbits());
-        if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
+        if (!enufAP(g.entity_manager, Playernum, Governor,
+                    star.AP(Playernum - 1), APcount)) {
           continue;
         }
         deductAPs(g, APcount, s.storbits());
@@ -162,7 +163,8 @@ void launch(const command_t& argv, GameObj& g) {
     } else {
       const auto* star_ptr = g.entity_manager.peek_star(s.storbits());
       const auto& star = *star_ptr;
-      if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) {
+      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+                  APcount)) {
         return;
       }
       deductAPs(g, APcount, s.storbits());

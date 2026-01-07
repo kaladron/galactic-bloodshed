@@ -39,7 +39,8 @@ void scrap(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    if (!enufAP(g.player(), g.governor(), star->AP(g.player() - 1), APcount)) {
+    if (!enufAP(g.entity_manager, g.player(), g.governor(),
+                star->AP(g.player() - 1), APcount)) {
       continue;
     }
 

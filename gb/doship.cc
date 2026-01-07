@@ -158,7 +158,8 @@ void do_pod(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       } else {
         telegram_buf << std::format("\tno spores have survived.");
       }
-      push_telegram(ship.owner(), ship.governor(), telegram_buf.str());
+      push_telegram(entity_manager, ship.owner(), ship.governor(),
+                    telegram_buf.str());
       entity_manager.kill_ship(ship.owner(), ship);
       return;
     }
@@ -176,7 +177,7 @@ void do_pod(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       std::string telegram =
           std::format("{} has decayed at {}\n", ship_to_string(ship),
                       prin_ship_orbits(entity_manager, ship));
-      push_telegram(ship.owner(), ship.governor(), telegram);
+      push_telegram(entity_manager, ship.owner(), ship.governor(), telegram);
       entity_manager.kill_ship(ship.owner(), ship);
       return;
     }
@@ -217,8 +218,8 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       for (auto race_handle : RaceList(entity_manager)) {
         const auto& race = race_handle.read();
         if (planet->info(race.Playernum - 1).numsectsowned)
-          push_telegram(race.Playernum, star->governor(race.Playernum - 1),
-                        telegram);
+          push_telegram(entity_manager, race.Playernum,
+                        star->governor(race.Playernum - 1), telegram);
       }
     }
   }
@@ -251,8 +252,8 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
         for (auto race_handle : RaceList(entity_manager)) {
           const auto& race = race_handle.read();
           if (planet->info(race.Playernum - 1).numsectsowned)
-            push_telegram(race.Playernum, star->governor(race.Playernum - 1),
-                          telegram);
+            push_telegram(entity_manager, race.Playernum,
+                          star->governor(race.Playernum - 1), telegram);
         }
       }
     }
@@ -293,8 +294,10 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
                                       ship_to_string(*target));
           entity_manager.kill_ship(ship.owner(), *target);
         }
-        push_telegram(target->owner(), target->governor(), telegram_buf.str());
-        push_telegram(ship.owner(), ship.governor(), telegram_buf.str());
+        push_telegram(entity_manager, target->owner(), target->governor(),
+                      telegram_buf.str());
+        push_telegram(entity_manager, ship.owner(), ship.governor(),
+                      telegram_buf.str());
       }
     } break;
     case ScopeLevel::LEVEL_PLAN: {
@@ -657,7 +660,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       auto result = shoot_ship_to_planet(
           entity_manager, ship, p, (int)ship.destruct(), bombx, bomby, smap, 0,
           GTYPE_HEAVY, long_buf, short_buf);
-      push_telegram(ship.owner(), ship.governor(), long_buf);
+      push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
       entity_manager.kill_ship(ship.owner(), ship);
       std::string sectors_destroyed_msg = std::format(
           "{} dropped on {}.\n\t{} sectors destroyed.\n", ship_to_string(ship),
@@ -667,7 +670,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
         const auto& race = race_handle.read();
         if (p.info(race.Playernum - 1).numsectsowned &&
             race.Playernum != ship.owner()) {
-          push_telegram(race.Playernum,
+          push_telegram(entity_manager, race.Playernum,
                         star ? star->governor(race.Playernum - 1) : 0,
                         sectors_destroyed_msg);
         }
@@ -693,8 +696,9 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       auto s2sresult = shoot_ship_to_ship(entity_manager, ship, *target,
                                           (int)ship.destruct(), 0);
       auto const& [damage, short_buf, long_buf] = *s2sresult;
-      push_telegram(ship.owner(), ship.governor(), long_buf);
-      push_telegram(target->owner(), target->governor(), long_buf);
+      push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
+      push_telegram(entity_manager, target->owner(), target->governor(),
+                    long_buf);
       entity_manager.kill_ship(ship.owner(), ship);
       post(entity_manager, short_buf, NewsType::COMBAT);
     }
@@ -771,7 +775,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
       if (s2sresult) {
         auto const& [damage, short_buf, long_buf] = *s2sresult;
         post(entity_manager, short_buf, NewsType::COMBAT);
-        push_telegram(s.owner(), s.governor(), long_buf);
+        push_telegram(entity_manager, s.owner(), s.governor(), long_buf);
       }
     }
   }
@@ -815,11 +819,12 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     for (auto race_handle : RaceList(entity_manager)) {
       const auto& race = race_handle.read();
       if (result.nuked[race.Playernum - 1]) {
-        push_telegram(race.Playernum, star->governor(race.Playernum - 1),
-                      telegram.str());
+        push_telegram(entity_manager, race.Playernum,
+                      star->governor(race.Playernum - 1), telegram.str());
       }
     }
-    push_telegram(ship.owner(), ship.governor(), telegram.str());
+    push_telegram(entity_manager, ship.owner(), ship.governor(),
+                  telegram.str());
   }
 
   entity_manager.kill_ship(ship.owner(), ship);
@@ -864,8 +869,9 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
       auto const& s2sresult =
           shoot_ship_to_ship(entity_manager, ship, target, numdest, 0);
       auto [damage, short_buf, long_buf] = *s2sresult;
-      push_telegram(ship.owner(), ship.governor(), long_buf);
-      push_telegram(target.owner(), target.governor(), long_buf);
+      push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
+      push_telegram(entity_manager, target.owner(), target.governor(),
+                    long_buf);
       post(entity_manager, short_buf, NewsType::COMBAT);
     }
   }

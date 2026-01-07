@@ -14,7 +14,7 @@ void order(const command_t& argv, GameObj& g) {
   ap_t APcount = 1;
 
   if (argv.size() == 1) { /* display all ship orders */
-    DispOrdersHeader(Playernum, Governor);
+    DispOrdersHeader(g.entity_manager, Playernum, Governor);
     const ShipList kShips(g.entity_manager, g, ShipList::IterationType::Scope);
     for (const Ship* ship : kShips) {
       if (ship->owner() == Playernum && authorized(Governor, *ship)) {
@@ -22,7 +22,7 @@ void order(const command_t& argv, GameObj& g) {
       }
     }
   } else if (argv.size() >= 2) {
-    DispOrdersHeader(Playernum, Governor);
+    DispOrdersHeader(g.entity_manager, Playernum, Governor);
     ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
     for (auto ship_handle : ships) {
       Ship& ship = *ship_handle;

@@ -36,7 +36,9 @@ void insurgency(const command_t& argv, GameObj& g) {
     <money>'\n";
         return;
     }*/
-  if (!enufAP(Playernum, Governor, star.AP(Playernum - 1), APcount)) return;
+  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+              APcount))
+    return;
   if (!(who = get_player(g.entity_manager, argv[1]))) {
     g.out << "No such player.\n";
     return;
@@ -113,7 +115,8 @@ void insurgency(const command_t& argv, GameObj& g) {
         "A revolt on /{}/{} instigated by {} [{}] costs you {} sector{}\n",
         star.get_name(), star.get_planet_name(g.pnum()), g.race->name,
         Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
-    warn_player(g.session_registry, who, star.governor(who - 1), long_msg);
+    warn_player(g.session_registry, g.entity_manager, who,
+                star.governor(who - 1), long_msg);
     p.info(Playernum - 1).tax = p.info(who - 1).tax;
     /* you inherit their tax rate (insurgency wars he he ) */
     post(g.entity_manager,
@@ -128,7 +131,8 @@ void insurgency(const command_t& argv, GameObj& g) {
     long_msg += std::format("A revolt on /{}/{} instigated by {} [{}] fails\n",
                             star.get_name(), star.get_planet_name(g.pnum()),
                             g.race->name, Playernum);
-    warn_player(g.session_registry, who, star.governor(who - 1), long_msg);
+    warn_player(g.session_registry, g.entity_manager, who,
+                star.governor(who - 1), long_msg);
     post(g.entity_manager,
          std::format("/{}/{}: Failed insurgency by {} [{}] against {} [{}]\n",
                      star.get_name(), star.get_planet_name(g.pnum()),

@@ -84,11 +84,11 @@ void d_shout(SessionRegistry& registry, EntityManager& em, player_t sender,
   }
 }
 
-void warn_player(SessionRegistry& registry, player_t who, governor_t gov,
-                 const std::string& message) {
+void warn_player(SessionRegistry& registry, EntityManager& em, player_t who,
+                 governor_t gov, const std::string& message) {
   // During updates, skip real-time delivery
   if (registry.update_in_progress()) {
-    push_telegram(who, gov, message);
+    push_telegram(em, who, gov, message);
     return;
   }
 
@@ -99,7 +99,7 @@ void warn_player(SessionRegistry& registry, player_t who, governor_t gov,
   if (gov != 0 && registry.notify_player(who, 0, message)) return;
 
   // No one connected, use telegram
-  push_telegram(who, gov, message);
+  push_telegram(em, who, gov, message);
 }
 
 void warn_race(SessionRegistry& registry, EntityManager& em, player_t who,
@@ -109,7 +109,7 @@ void warn_race(SessionRegistry& registry, EntityManager& em, player_t who,
 
   for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
     if (race->governor[g].active) {
-      warn_player(registry, who, g, message);
+      warn_player(registry, em, who, g, message);
     }
   }
 }
@@ -132,7 +132,7 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
       for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
         if (!race->governor[g].active) continue;
         if (p == sender && g == sender_gov) continue;
-        push_telegram(p, g, message);
+        push_telegram(em, p, g, message);
       }
     }
     return;
@@ -151,7 +151,7 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
       if (p == sender && g == sender_gov) continue;
 
       if (!registry.notify_player(p, g, message)) {
-        push_telegram(p, g, message);
+        push_telegram(em, p, g, message);
       }
     }
   }

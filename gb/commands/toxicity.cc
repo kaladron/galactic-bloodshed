@@ -31,7 +31,8 @@ void toxicity(const command_t& argv, GameObj& g) {
     return;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum());
-  if (!enufAP(g.player(), g.governor(), star.AP(g.player() - 1), APcount)) {
+  if (!enufAP(g.entity_manager, g.player(), g.governor(),
+              star.AP(g.player() - 1), APcount)) {
     return;
   }
 

@@ -21,7 +21,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   std::string outmsg =
       std::format("*** Transferring [{0},{1}]'s ownings to [{2},{3}] ***\n\n",
                   race.Playernum, src_gov, race.Playernum, tgt_gov);
-  push_telegram(race.Playernum, (governor_t)0, outmsg);
+  push_telegram(entity_manager, race.Playernum, (governor_t)0, outmsg);
 
   /*  First do stars....  */
 
@@ -30,7 +30,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
     if (star.governor(race.Playernum - 1) == src_gov) {
       star.governor(race.Playernum - 1) = tgt_gov;
       outmsg = std::format("Changed juridiction of /{0}...\n", star.get_name());
-      push_telegram(race.Playernum, 0, outmsg);
+      push_telegram(entity_manager, race.Playernum, 0, outmsg);
     }
   }
 
@@ -44,7 +44,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
       ship->governor() = tgt_gov;
       outmsg = std::format("Changed ownership of {0}{1}...\n",
                            Shipltrs[ship->type()], i);
-      push_telegram(race.Playernum, 0, outmsg);
+      push_telegram(entity_manager, race.Playernum, 0, outmsg);
     }
   }
 
@@ -52,7 +52,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 
   outmsg =
       std::format("Transferring {0} money...\n", race.governor[src_gov].money);
-  push_telegram(race.Playernum, 0, outmsg);
+  push_telegram(entity_manager, race.Playernum, 0, outmsg);
   race.governor[tgt_gov].money =
       race.governor[tgt_gov].money + race.governor[src_gov].money;
   race.governor[src_gov].money = 0;
@@ -65,16 +65,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   outmsg =
       std::format("\n*** Governor [{0},{1}]'s powers have been REVOKED ***\n",
                   race.Playernum, src_gov);
-  push_telegram(race.Playernum, 0, outmsg);
-
-  // TODO(jeffbailey): Use C++17 Filesystem stuff when available
-  std::string rm_telegram_file =
-      std::format("rm {0}.{1}.{2}", TELEGRAMFL, race.Playernum, src_gov);
-  if (std::system(rm_telegram_file.c_str()) <
-      0) { /*  Remove the telegram file too....  */
-    std::perror("gaaaaaaaah");
-    std::exit(-1);
-  }
+  push_telegram(entity_manager, race.Playernum, 0, outmsg);
 }
 }  // namespace
 

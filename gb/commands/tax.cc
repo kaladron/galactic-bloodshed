@@ -36,7 +36,8 @@ void tax(const command_t& argv, GameObj& g) {
     g.out << "Sorry, but you can't do this when you are a guest.\n";
     return;
   }
-  if (!enufAP(Playernum, Governor, star->AP(Playernum - 1), APcount)) {
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+              APcount)) {
     return;
   }
 

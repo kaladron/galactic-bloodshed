@@ -62,7 +62,7 @@ void capture(const command_t& argv, GameObj& g) {
         continue;
       }
       if (!enufAP(
-              Playernum, Governor,
+              g.entity_manager, Playernum, Governor,
               g.entity_manager.peek_star(ship.storbits())->AP(Playernum - 1),
               APcount)) {
         continue;
@@ -322,7 +322,8 @@ void capture(const command_t& argv, GameObj& g) {
             what == PopulationType::CIV ? "civ" : "mil", casualties1,
             casualties2);
       }
-      warn_player(g.session_registry, oldowner, oldgov, telegram);
+      warn_player(g.session_registry, g.entity_manager, oldowner, oldgov,
+                  telegram);
       if (ship.owner() != oldowner || !ship.alive()) {
         auto short_msg = std::format(
             "{}: {} [{}] {} {}\n", dispshiploc(g.entity_manager, ship),

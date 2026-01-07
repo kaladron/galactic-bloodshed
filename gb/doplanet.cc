@@ -50,7 +50,7 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
       std::string teleg_buf =
           std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
                       prin_ship_orbits(entity_manager, ship));
-      push_telegram(ship.owner(), ship.governor(), teleg_buf);
+      push_telegram(entity_manager, ship.owner(), ship.governor(), teleg_buf);
     }
     ship.special() = terraform;
   } else if (bounced) {
@@ -71,14 +71,14 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap,
   const auto* race = entity_manager.peek_race(ship.owner());
   if (s.get_condition() == race->likesbest) {
     std::string buf = std::format(" T{} is full of zealots!!!", ship.number());
-    push_telegram(ship.owner(), ship.governor(), buf);
+    push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
     return;
   }
 
   if (s.get_condition() == SectorType::SEC_GAS) {
     std::string buf =
         std::format(" T{} is trying to terraform gas.", ship.number());
-    push_telegram(ship.owner(), ship.governor(), buf);
+    push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
     return;
   }
 
@@ -118,7 +118,7 @@ void plow(Ship* ship, Planet& planet, SectorMap& smap,
     if (s.get_fert() >= 100) {
       std::string buf =
           std::format(" K{} is full of zealots!!!", ship->number());
-      push_telegram(ship->owner(), ship->governor(), buf);
+      push_telegram(entity_manager, ship->owner(), ship->governor(), buf);
     }
     use_fuel(*ship, FUEL_COST_PLOW);
     if ((random() & 01) && (planet.conditions(TOXIC) < 100))
@@ -126,11 +126,11 @@ void plow(Ship* ship, Planet& planet, SectorMap& smap,
   }
 }
 
-void do_dome(Ship* ship, SectorMap& smap) {
+void do_dome(EntityManager& entity_manager, Ship* ship, SectorMap& smap) {
   auto& s = smap.get(ship->land_x(), ship->land_y());
   if (s.get_eff() >= 100) {
     std::string buf = std::format(" Y{} is full of zealots!!!", ship->number());
-    push_telegram(ship->owner(), ship->governor(), buf);
+    push_telegram(entity_manager, ship->owner(), ship->governor(), buf);
     return;
   }
   int adjust = round_rand(.05 * (100. - (double)ship->damage()) *
@@ -240,11 +240,13 @@ void do_recover(EntityManager& entity_manager, const Star& star,
         telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
                                     star.get_name(),
                                     star.get_planet_name(planetnum));
-        push_telegram(i, star.governor(i - 1), telegram_buf.str());
+        push_telegram(entity_manager, i, star.governor(i - 1),
+                      telegram_buf.str());
         telegram_buf.str("");
         telegram_buf << std::format("{:<14} {:>5} {:>5} {:>5} {:>5}\n", "",
                                     "res", "destr", "fuel", "xtal");
-        push_telegram(i, star.governor(i - 1), telegram_buf.str());
+        push_telegram(entity_manager, i, star.governor(i - 1),
+                      telegram_buf.str());
       }
     /* First: give the loot the the conquerers */
     for (i = 1; i <= entity_manager.num_races() && owners > 1; i++)
@@ -279,7 +281,8 @@ void do_recover(EntityManager& entity_manager, const Star& star,
                                       race->name, res, des, fuel, crystals);
           for (j = 1; j <= entity_manager.num_races(); j++) {
             if (isset(ownerbits, j)) {
-              push_telegram(j, star.governor(j - 1), telegram_buf.str());
+              push_telegram(entity_manager, j, star.governor(j - 1),
+                            telegram_buf.str());
             }
           }
         }
@@ -308,13 +311,15 @@ void do_recover(EntityManager& entity_manager, const Star& star,
                                        stolenfuel, stolencrystals);
         for (j = 1; j <= entity_manager.num_races(); j++) {
           if (isset(ownerbits, j)) {
-            push_telegram(j, star.governor(j - 1), first_telegram.str());
-            push_telegram(j, star.governor(j - 1), second_telegram.str());
+            push_telegram(entity_manager, j, star.governor(j - 1),
+                          first_telegram.str());
+            push_telegram(entity_manager, j, star.governor(j - 1),
+                          second_telegram.str());
           }
         }
       }
     } else {
-      push_telegram(1, 0, "Bug in stealing resources\n");
+      push_telegram(entity_manager, 1, 0, "Bug in stealing resources\n");
     }
     /* Next: take all the loot away from the losers */
     for (i = 2; i <= entity_manager.num_races(); i++)
@@ -412,29 +417,29 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             }
           } else if (ship.on()) {
             std::string buf = std::format("K{} is not landed.", ship.number());
-            push_telegram(ship.owner(), ship.governor(), buf);
+            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           } else {
             std::string buf =
                 std::format("K{} is not switched on.", ship.number());
-            push_telegram(ship.owner(), ship.governor(), buf);
+            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           }
           break;
         case ShipType::OTYPE_DOME:
           if (ship.on() && landed(ship)) {
             if (ship.resource() >= RES_COST_DOME)
-              do_dome(&ship, smap);
+              do_dome(entity_manager, &ship, smap);
             else {
               std::string buf = std::format(
                   "Y{} does not have enough resources.", ship.number());
-              push_telegram(ship.owner(), ship.governor(), buf);
+              push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
             }
           } else if (ship.on()) {
             std::string buf = std::format("Y{} is not landed.", ship.number());
-            push_telegram(ship.owner(), ship.governor(), buf);
+            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           } else {
             std::string buf =
                 std::format("Y{} is not switched on.", ship.number());
-            push_telegram(ship.owner(), ship.governor(), buf);
+            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           }
           break;
         case ShipType::OTYPE_WPLANT:
@@ -447,16 +452,18 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               if (ship.resource() < RES_COST_WPLANT) {
                 std::string buf = std::format(
                     "W{} does not have enough resources.", ship.number());
-                push_telegram(ship.owner(), ship.governor(), buf);
+                push_telegram(entity_manager, ship.owner(), ship.governor(),
+                              buf);
               } else {
                 std::string buf = std::format("W{} does not have enough fuel.",
                                               ship.number());
-                push_telegram(ship.owner(), ship.governor(), buf);
+                push_telegram(entity_manager, ship.owner(), ship.governor(),
+                              buf);
               }
             }
           else {
             std::string buf = std::format("W{} is not landed.", ship.number());
-            push_telegram(ship.owner(), ship.governor(), buf);
+            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           }
           break;
         case ShipType::OTYPE_QUARRY:
@@ -479,7 +486,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               buf = std::format("q{} does not have workers aboard.",
                                 ship.number());
             }
-            push_telegram(ship.owner(), ship.governor(), buf);
+            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           }
           break;
         default:
@@ -670,7 +677,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         telegram_buf << std::format("ENSLAVED to player {}\n",
                                     planet.slaved_to());
       }
-      push_telegram(i, star.governor(i - 1), telegram_buf.str());
+      push_telegram(entity_manager, i, star.governor(i - 1),
+                    telegram_buf.str());
     }
   }
 
@@ -691,7 +699,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
                    << TELEG_DELIM;
       for (i = 1; i <= entity_manager.num_races(); i++) {
         if (planet.info(i - 1).numsectsowned) {
-          push_telegram(i, star.governor(i - 1), telegram_buf.str());
+          push_telegram(entity_manager, i, star.governor(i - 1),
+                        telegram_buf.str());
         }
       }
     }
@@ -787,7 +796,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         telegram_buf << "Productions now go to their rightful owners.\n";
         for (i = 1; i <= entity_manager.num_races(); i++) {
           if (planet.info(i - 1).numsectsowned) {
-            push_telegram(i, star.governor(i - 1), telegram_buf.str());
+            push_telegram(entity_manager, i, star.governor(i - 1),
+                          telegram_buf.str());
           }
         }
       }

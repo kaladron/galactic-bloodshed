@@ -37,7 +37,7 @@ bool in_list(const player_t playernum, const std::string_view list,
   return false;
 }
 
-void DontOwnErr(EntityManager& em, int Playernum, int Governor,
+void DontOwnErr(EntityManager& em, player_t Playernum, governor_t Governor,
                 shipnum_t shipno) {
   std::string error_msg = std::format("You don't own ship #{}.\n", shipno);
   push_telegram(em, Playernum, Governor, error_msg);

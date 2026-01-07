@@ -237,7 +237,7 @@ bool Database::news_purge_all() {
 }
 
 // Telegram operations implementation
-std::optional<int> Database::telegram_add(int player, int governor,
+std::optional<int> Database::telegram_add(player_t player, governor_t governor,
                                           const std::string& message,
                                           int64_t timestamp) {
   if (!conn) return std::nullopt;
@@ -268,7 +268,7 @@ std::optional<int> Database::telegram_add(int player, int governor,
 }
 
 std::vector<std::tuple<int, int, int, std::string, int64_t>>
-Database::telegram_get(int player, int governor) {
+Database::telegram_get(player_t player, governor_t governor) {
   std::vector<std::tuple<int, int, int, std::string, int64_t>> items;
   if (!conn) return items;
 
@@ -302,7 +302,8 @@ Database::telegram_get(int player, int governor) {
   return items;
 }
 
-bool Database::telegram_delete_for_governor(int player, int governor) {
+bool Database::telegram_delete_for_governor(player_t player,
+                                            governor_t governor) {
   if (!conn) return false;
 
   const char* sql = R"(
@@ -324,7 +325,7 @@ bool Database::telegram_delete_for_governor(int player, int governor) {
   return result == SQLITE_DONE;
 }
 
-int Database::telegram_count(int player, int governor) {
+int Database::telegram_count(player_t player, governor_t governor) {
   if (!conn) return 0;
 
   const char* sql = R"(

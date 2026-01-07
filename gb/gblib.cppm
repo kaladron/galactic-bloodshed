@@ -2,6 +2,8 @@
 
 export module gblib;
 
+export import strong_id;  // Third-party strong type ID system
+
 export import :bombard;
 export import :build;
 export import :csp;

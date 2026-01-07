@@ -166,6 +166,12 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES third_party/asio.cppm)
 target_link_libraries(asio_module PUBLIC asio_standalone)
 
+# Create strong_id module wrapper library
+add_library(strong_id_module)
+target_sources(
+  strong_id_module
+  PUBLIC FILE_SET CXX_MODULES FILES third_party/strong_id.cppm)
+
 # Create test utilities module (standalone - not part of gblib)
 add_library(test_module)
 target_sources(
@@ -259,7 +265,7 @@ target_sources(
           tele.cc
           victory.cc
           VN.cc)
-target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module dallib)
+target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module strong_id_module dallib)
 
 # Create session library (Service Layer)
 add_library(session)

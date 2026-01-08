@@ -2,6 +2,8 @@
 
 module;
 
+import strong_id;
+import glaze.core;
 import glaze.json;
 
 export module gblib:repositories;
@@ -73,6 +75,28 @@ public:
 
 // Glaze reflection for Race (must be in global glz namespace)
 namespace glz {
+// Glaze reflection for strong ID types - serialize as underlying value
+// This allows ID<Tag, T> to serialize/deserialize as plain integers
+// Added BEFORE changing governor_t to ensure serialization works
+template <FixedString Tag, typename T>
+struct from<JSON, ID<Tag, T>> {
+  template <auto Opts>
+  static void op(ID<Tag, T>& id, is_context auto&& ctx, auto&& it, auto&& end) {
+    T val{};
+    parse<JSON>::op<Opts>(val, ctx, it, end);
+    id = ID<Tag, T>{val};
+  }
+};
+
+template <FixedString Tag, typename T>
+struct to<JSON, ID<Tag, T>> {
+  template <auto Opts>
+  static void op(const ID<Tag, T>& id, is_context auto&& ctx, auto&& b,
+                 auto&& ix) noexcept {
+    serialize<JSON>::op<Opts>(id.value, ctx, b, ix);
+  }
+};
+
 template <>
 struct meta<toggletype> {
   using T = toggletype;

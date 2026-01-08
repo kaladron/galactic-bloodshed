@@ -19,10 +19,9 @@ void d_broadcast(SessionRegistry& registry, EntityManager& em, player_t sender,
     const auto* race = em.peek_race(p);
     if (!race) continue;
 
-    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
-      if (!race->governor[g].active) continue;
+    for (auto [g, gov] : race->active_governors()) {
       if (p == sender && g == sender_gov) continue;
-      if (race->governor[g].toggle.gag) continue;
+      if (gov.toggle.gag) continue;
 
       registry.notify_player(p, g, message);
     }

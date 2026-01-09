@@ -67,9 +67,8 @@ std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
   for (auto race_handle : RaceList(entity_manager)) {
     const auto& race = race_handle.read();
     if (racepass == race.password) {
-      for (governor_t j = 0; j <= MAXGOVERNORS; ++j) {
-        if (!race.governor[j.value].password.empty() &&
-            govpass == race.governor[j.value].password) {
+      for (auto [j, gov] : race.all_governors()) {
+        if (!gov.password.empty() && govpass == gov.password) {
           return {race.Playernum, j};
         }
       }

@@ -107,6 +107,7 @@ Race create_race(player_t player, bool god = false) {
   race.Playernum = player;
   race.Guest = false;
   race.God = god;
+  // Note: Manual loop for modification - iterator returns const references
   for (governor_t i{0}; i <= MAXGOVERNORS; ++i) {
     race.governor[i.value].active = true;
     race.governor[i.value].toggle.gag = false;

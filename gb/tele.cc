@@ -60,8 +60,8 @@ void push_telegram_race(EntityManager& em, const player_t recipient,
   const auto* race = em.peek_race(recipient);
   if (!race) return;
 
-  for (governor_t j = 0; j <= MAXGOVERNORS; ++j)
-    if (race->governor[j.value].active) push_telegram(em, recipient, j, msg);
+  for (auto [j, gov] : race->active_governors())
+    push_telegram(em, recipient, j, msg);
 }
 
 /**

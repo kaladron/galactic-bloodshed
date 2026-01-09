@@ -94,20 +94,19 @@ void governors(const command_t& argv, GameObj& g) {
     }
     table[0].format().font_style({tabulate::FontStyle::bold});
 
-    for (governor_t i = 0; i <= MAXGOVERNORS; i++) {
-      std::string status =
-          race->governor[i.value].active ? "ACTIVE" : "INACTIVE";
-      std::string login_time = std::ctime(&race->governor[i.value].login);
+    for (auto [i, gov] : race->all_governors()) {
+      std::string status = gov.active ? "ACTIVE" : "INACTIVE";
+      std::string login_time = std::ctime(&gov.login);
       // Remove trailing newline from ctime
       if (!login_time.empty() && login_time.back() == '\n') {
         login_time.pop_back();
       }
 
-      std::vector<std::string> row = {
-          std::format("{}", i), std::string(race->governor[i.value].name),
-          status, std::format("{}", race->governor[i.value].money), login_time};
+      std::vector<std::string> row = {std::format("{}", i.value),
+                                      std::string(gov.name), status,
+                                      std::format("{}", gov.money), login_time};
       if (Governor == 0) {
-        row.emplace_back(race->governor[i.value].password);
+        row.emplace_back(gov.password);
       }
       table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
     }

@@ -35,7 +35,7 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum());
-  if (Governor && star.governor(Playernum - 1) != Governor) {
+  if (Governor != 0 && star.governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized to do that in this system.\n";
     return;
   }

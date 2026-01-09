@@ -70,7 +70,7 @@ bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
     push_telegram(g.entity_manager, Playernum, Governor, message);
     return false;
   }
-  if (Governor && star.governor(Playernum - 1) != Governor) {
+  if (Governor != 0 && star.governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return false;
   }
@@ -256,8 +256,8 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
                        load_fuel);
 }
 
-void create_ship_by_planet(EntityManager& entity_manager, int Playernum,
-                           int Governor, const Race& race, Ship& newship,
+void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
+                           governor_t Governor, const Race& race, Ship& newship,
                            Planet& planet, int snum, int pnum, int x, int y) {
   int shipno;
 
@@ -315,8 +315,8 @@ void create_ship_by_planet(EntityManager& entity_manager, int Playernum,
   push_telegram(entity_manager, Playernum, Governor, locMsg);
 }
 
-void create_ship_by_ship(EntityManager& entity_manager, int Playernum,
-                         int Governor, const Race& race, bool outside,
+void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
+                         governor_t Governor, const Race& race, bool outside,
                          Planet* planet, Ship* newship, Ship* builder) {
   // Ship number will be assigned by EntityManager when created
   int shipno = entity_manager.num_ships() + 1;

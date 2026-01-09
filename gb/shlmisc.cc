@@ -12,7 +12,7 @@ import std.compat;
 module gblib;
 
 bool authorized(const governor_t Governor, const Ship& ship) {
-  return (!Governor || ship.governor() == Governor);
+  return (Governor == 0 || ship.governor() == Governor);
 }
 
 /**
@@ -37,7 +37,7 @@ bool in_list(const player_t playernum, const std::string_view list,
   return false;
 }
 
-void DontOwnErr(EntityManager& em, int Playernum, int Governor,
+void DontOwnErr(EntityManager& em, player_t Playernum, governor_t Governor,
                 shipnum_t shipno) {
   std::string error_msg = std::format("You don't own ship #{}.\n", shipno);
   push_telegram(em, Playernum, Governor, error_msg);
@@ -67,9 +67,8 @@ std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
   for (auto race_handle : RaceList(entity_manager)) {
     const auto& race = race_handle.read();
     if (racepass == race.password) {
-      for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
-        if (!race.governor[j].password.empty() &&
-            govpass == race.governor[j].password) {
+      for (auto [j, gov] : race.all_governors()) {
+        if (!gov.password.empty() && govpass == gov.password) {
           return {race.Playernum, j};
         }
       }

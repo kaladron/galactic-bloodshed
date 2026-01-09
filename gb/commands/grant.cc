@@ -31,7 +31,7 @@ void grant(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (!g.race->governor[gov].active) {
+  if (!g.race->governor[gov.value].active) {
     g.out << "That governor is not active.\n";
     return;
   }
@@ -54,7 +54,8 @@ void grant(const command_t& argv, GameObj& g) {
     warn_player(
         g.session_registry, g.entity_manager, Playernum, gov,
         std::format("\"{}\" has granted you control of the /{} star system.\n",
-                    race.governor[Governor].name, star_handle->get_name()));
+                    race.governor[Governor.value].name,
+                    star_handle->get_name()));
   } else if (argv[2] == "ship") {
     ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
     for (auto ship_handle : ships) {
@@ -66,11 +67,11 @@ void grant(const command_t& argv, GameObj& g) {
       ship.governor() = gov;
       warn_player(g.session_registry, g.entity_manager, Playernum, gov,
                   std::format("\"{}\" granted you {} at {}\n",
-                              race.governor[Governor].name,
+                              race.governor[Governor.value].name,
                               ship_to_string(ship),
                               prin_ship_orbits(g.entity_manager, ship)));
       g.out << std::format("{} granted to \"{}\"\n", ship_to_string(ship),
-                           race.governor[gov].name);
+                           race.governor[gov.value].name);
     }
   } else if (argv[2] == "money") {
     long amount = 0;
@@ -79,30 +80,30 @@ void grant(const command_t& argv, GameObj& g) {
       return;
     }
     amount = std::stoi(argv[3]);
-    if (amount < 0 && Governor) {
+    if (amount < 0 && Governor != 0) {
       g.out << "Only leaders may make take away money.\n";
       return;
     }
-    if (amount > race.governor[Governor].money)
-      amount = race.governor[Governor].money;
-    else if (-amount > race.governor[gov].money)
-      amount = -race.governor[gov].money;
+    if (amount > race.governor[Governor.value].money)
+      amount = race.governor[Governor.value].money;
+    else if (-amount > race.governor[gov.value].money)
+      amount = -race.governor[gov.value].money;
     if (amount >= 0)
       g.out << std::format("{} money granted to \"{}\".\n", amount,
-                           race.governor[gov].name);
+                           race.governor[gov.value].name);
     else
       g.out << std::format("{} money deducted from \"{}\".\n", -amount,
-                           race.governor[gov].name);
+                           race.governor[gov.value].name);
     if (amount >= 0)
       warn_player(g.session_registry, g.entity_manager, Playernum, gov,
                   std::format("\"{}\" granted you {} money.\n",
-                              race.governor[Governor].name, amount));
+                              race.governor[Governor.value].name, amount));
     else
       warn_player(g.session_registry, g.entity_manager, Playernum, gov,
                   std::format("\"{}\" docked you {} money.\n",
-                              race.governor[Governor].name, -amount));
-    race.governor[Governor].money -= amount;
-    race.governor[gov].money += amount;
+                              race.governor[Governor.value].name, -amount));
+    race.governor[Governor.value].money -= amount;
+    race.governor[gov.value].money += amount;
     return;
   } else
     g.out << "You can't grant that.\n";

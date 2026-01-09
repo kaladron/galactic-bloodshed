@@ -248,7 +248,7 @@ static std::string DispStar(const GameObj& g, const ScopeLevel level,
   }
 
   std::stringstream ss;
-  if (r.governor[g.governor()].toggle.color) {
+  if (r.governor[g.governor().value].toggle.color) {
     char stand = (isset(star.explored(), g.player()) ? g.player() : 0) + '?';
     ss << std::format("{} {} {} 0 * ", stand, x, y);
     stand = (isset(star.inhabited(), g.player()) ? g.player() : 0) + '?';
@@ -285,7 +285,7 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
   }
   std::stringstream ss;
 
-  if (r.governor[g.governor()].toggle.color) {
+  if (r.governor[g.governor().value].toggle.color) {
     char stand = (p.info(g.player() - 1).explored ? g.player() : 0) + '?';
     ss << std::format("{} {} {} 0 {} ", stand, x, y,
                       (stand > '0' ? Psymbol[p.type()] : '?'));
@@ -298,7 +298,7 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
     stand = p.info(g.player() - 1).numsectsowned ? 1 : 0;
     ss << std::format("{} {}", stand, name);
   }
-  if (r.governor[g.governor()].toggle.compat &&
+  if (r.governor[g.governor().value].toggle.compat &&
       p.info(g.player() - 1).explored) {
     ss << std::format("({})", (int)p.compatibility(r));
   }
@@ -430,12 +430,13 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
 
       /* (magnification) */
       if (x >= 0 && y >= 0) {
-        if (r.governor[g.governor()].toggle.color) {
+        if (r.governor[g.governor().value].toggle.color) {
           sprintf(string, "%c %d %d %d %c %c %lu;", (char)(ship->owner() + '?'),
                   x, y, wm, Shipltrs[ship->type()], (char)(ship->owner() + '?'),
                   ship->number());
         } else {
-          stand = (ship->owner() == r.governor[g.governor()].toggle.highlight);
+          stand = (ship->owner() ==
+                   r.governor[g.governor().value].toggle.highlight);
           sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
                   Shipltrs[ship->type()], stand, ship->number());
         }
@@ -453,14 +454,14 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
       if (ship->whatorbits() != ScopeLevel::LEVEL_UNIV ||
           ((ship->owner() == g.player()) || g.god()))
         if (x >= 0 && y >= 0) {
-          if (r.governor[g.governor()].toggle.color) {
+          if (r.governor[g.governor().value].toggle.color) {
             sprintf(string, "%c %d %d %d %c %c %lu;",
                     (char)(ship->owner() + '?'), x, y, wm,
                     Shipltrs[ship->type()], (char)(ship->owner() + '?'),
                     ship->number());
           } else {
-            stand =
-                (ship->owner() == r.governor[g.governor()].toggle.highlight);
+            stand = (ship->owner() ==
+                     r.governor[g.governor().value].toggle.highlight);
             sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
                     Shipltrs[ship->type()], stand, ship->number());
           }

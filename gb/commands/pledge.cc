@@ -20,7 +20,7 @@ void pledge(const command_t& argv, GameObj& g) {
   const governor_t Governor = g.governor();
   int n;
 
-  if (Governor) {
+  if (Governor != 0) {
     g.out << "Only leaders may pledge.\n";
     return;
   }

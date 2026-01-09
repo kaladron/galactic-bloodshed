@@ -76,7 +76,7 @@ void mech_defend(const GameObj& g, int* people, PopulationType type,
                  const Planet& p, int x2, int y2, const Sector& s2) {
   population_t civ = 0;
   population_t mil = 0;
-  int oldgov;
+  governor_t oldgov;
 
   if (type == PopulationType::CIV)
     civ = *people;

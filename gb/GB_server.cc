@@ -859,16 +859,16 @@ static void check_connect(Session& session, std::string_view message) {
   }
 
   std::print(stderr, "CONNECTED {} \"{}\" [{},{}]\\n", race.name,
-             race.governor[Governor].name, Playernum, Governor);
+             race.governor[Governor.value].name, Playernum, Governor);
   session.set_connected(true);
   session.set_god(race.God);
   session.set_player(Playernum);
   session.set_governor(Governor);
 
   // Initialize scope to default or safe values
-  session.set_level(race.governor[Governor].deflevel);
-  session.set_snum(race.governor[Governor].defsystem);
-  session.set_pnum(race.governor[Governor].defplanetnum);
+  session.set_level(race.governor[Governor.value].deflevel);
+  session.set_snum(race.governor[Governor.value].defsystem);
+  session.set_pnum(race.governor[Governor.value].defplanetnum);
   session.set_shipno(0);
 
   // Validate and clamp star number
@@ -885,11 +885,11 @@ static void check_connect(Session& session, std::string_view message) {
 
   // Send login messages
   session.out() << std::format("\n{} \"{}\" [{},{}] logged on.\n", race.name,
-                               race.governor[Governor].name, Playernum,
+                               race.governor[Governor.value].name, Playernum,
                                Governor);
   session.out() << std::format(
       "You are {}.\n",
-      race.governor[Governor].toggle.invisible ? "invisible" : "visible");
+      race.governor[Governor.value].toggle.invisible ? "invisible" : "visible");
 
   // Display time
   GameObj temp_g(session.entity_manager(), session.registry());
@@ -899,11 +899,11 @@ static void check_connect(Session& session, std::string_view message) {
   GB_time({}, temp_g);
 
   session.out() << std::format("\nLast login      : {}",
-                               ctime(&(race.governor[Governor].login)));
+                               ctime(&(race.governor[Governor.value].login)));
 
   // Update login time
   auto& race_mut = *race_handle;
-  race_mut.governor[Governor].login = time(nullptr);
+  race_mut.governor[Governor.value].login = time(nullptr);
 
   if (!race.Gov_ship) {
     session.out()

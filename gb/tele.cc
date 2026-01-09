@@ -60,8 +60,8 @@ void push_telegram_race(EntityManager& em, const player_t recipient,
   const auto* race = em.peek_race(recipient);
   if (!race) return;
 
-  for (governor_t j = 0; j <= MAXGOVERNORS; j++)
-    if (race->governor[j].active) push_telegram(em, recipient, j, msg);
+  for (auto [j, gov] : race->active_governors())
+    push_telegram(em, recipient, j, msg);
 }
 
 /**
@@ -120,7 +120,7 @@ void news_read(NewsType type, GameObj& g) {
 
   // Get the last news ID this governor has read for this type
   int last_read_id =
-      race.governor[g.governor()].newspos[std::to_underlying(type)];
+      race.governor[g.governor().value].newspos[std::to_underlying(type)];
 
   // Get all news since last read
   auto news_items = g.entity_manager.get_news_since(type, last_read_id);
@@ -144,7 +144,8 @@ void news_read(NewsType type, GameObj& g) {
 
   // Update the last read position to the latest ID
   int latest_id = g.entity_manager.get_latest_news_id(type);
-  race.governor[g.governor()].newspos[std::to_underlying(type)] = latest_id;
+  race.governor[g.governor().value].newspos[std::to_underlying(type)] =
+      latest_id;
 }
 
 /**

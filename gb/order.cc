@@ -690,12 +690,13 @@ void give_orders(GameObj& g, const command_t& argv, int /* APcount */,
   ship.notified() = 0;
 }
 
-void DispOrdersHeader(EntityManager& em, int Playernum, int Governor) {
+void DispOrdersHeader(EntityManager& em, player_t Playernum,
+                      governor_t Governor) {
   push_telegram(em, Playernum, Governor,
                 "    #       name       sp orbits     destin     options\n");
 }
 
-void DispOrders(EntityManager& em, int Playernum, int Governor,
+void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
                 const Ship& ship) {
   if (ship.owner() != Playernum || !authorized(Governor, ship) || !ship.alive())
     return;

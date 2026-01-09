@@ -90,7 +90,121 @@ public:
     unsigned long profit_market{0};
     time_t login{0}; /* last login for this governor */
   } governor[MAXGOVERNORS + 1];
+
+  // Iterate over active governors only
+  auto active_governors() const;
+
+  // Iterate over all governors (active or not)
+  auto all_governors() const;
 };
+
+// Entry returned when iterating over governors (const version)
+export struct GovernorEntry {
+  governor_t id;
+  const Race::gov& data;
+};
+
+// Range class for iterating over active governors only
+export class ActiveGovernorRange {
+  const Race* race_;
+
+public:
+  explicit ActiveGovernorRange(const Race* r) : race_(r) {}
+
+  class Iterator {
+    const Race* race_;
+    int current_;  // Use int internally for array access
+
+    void advance_to_active() {
+      while (current_ <= MAXGOVERNORS && !race_->governor[current_].active) {
+        ++current_;
+      }
+    }
+
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = GovernorEntry;
+    using difference_type = std::ptrdiff_t;
+
+    Iterator(const Race* r, int start) : race_(r), current_(start) {
+      advance_to_active();
+    }
+
+    GovernorEntry operator*() const {
+      return {static_cast<governor_t>(current_), race_->governor[current_]};
+    }
+
+    Iterator& operator++() {
+      ++current_;
+      advance_to_active();
+      return *this;
+    }
+
+    bool operator==(const Iterator& other) const {
+      return current_ == other.current_;
+    }
+    bool operator!=(const Iterator& other) const {
+      return current_ != other.current_;
+    }
+  };
+
+  Iterator begin() const {
+    return Iterator(race_, 0);
+  }
+  Iterator end() const {
+    return Iterator(race_, MAXGOVERNORS + 1);
+  }
+};
+
+// Range class for iterating over ALL governors (active or not)
+export class AllGovernorRange {
+  const Race* race_;
+
+public:
+  explicit AllGovernorRange(const Race* r) : race_(r) {}
+
+  class Iterator {
+    const Race* race_;
+    int current_;
+
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = GovernorEntry;
+    using difference_type = std::ptrdiff_t;
+
+    Iterator(const Race* r, int start) : race_(r), current_(start) {}
+
+    GovernorEntry operator*() const {
+      return {static_cast<governor_t>(current_), race_->governor[current_]};
+    }
+
+    Iterator& operator++() {
+      ++current_;
+      return *this;
+    }
+    bool operator==(const Iterator& other) const {
+      return current_ == other.current_;
+    }
+    bool operator!=(const Iterator& other) const {
+      return current_ != other.current_;
+    }
+  };
+
+  Iterator begin() const {
+    return Iterator(race_, 0);
+  }
+  Iterator end() const {
+    return Iterator(race_, MAXGOVERNORS + 1);
+  }
+};
+
+inline auto Race::active_governors() const {
+  return ActiveGovernorRange(this);
+}
+
+inline auto Race::all_governors() const {
+  return AllGovernorRange(this);
+}
 
 export struct power {
   int id{0};           // Power entry ID for database persistence

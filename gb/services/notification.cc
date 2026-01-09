@@ -19,10 +19,9 @@ void d_broadcast(SessionRegistry& registry, EntityManager& em, player_t sender,
     const auto* race = em.peek_race(p);
     if (!race) continue;
 
-    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
-      if (!race->governor[g].active) continue;
+    for (auto [g, gov] : race->active_governors()) {
       if (p == sender && g == sender_gov) continue;
-      if (race->governor[g].toggle.gag) continue;
+      if (gov.toggle.gag) continue;
 
       registry.notify_player(p, g, message);
     }
@@ -43,10 +42,9 @@ void d_announce(SessionRegistry& registry, EntityManager& em, player_t sender,
     // Must inhabit the star (or be God)
     if (!isset(star_ptr->inhabited(), p) && !race->God) continue;
 
-    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
-      if (!race->governor[g].active) continue;
+    for (auto [g, gov] : race->active_governors()) {
       if (p == sender && g == sender_gov) continue;
-      if (race->governor[g].toggle.gag) continue;
+      if (gov.toggle.gag) continue;
 
       registry.notify_player(p, g, message);
     }
@@ -59,10 +57,9 @@ void d_think(SessionRegistry& registry, EntityManager& em, player_t race_num,
   if (!race) return;
 
   // Send to other governors of the same race, respecting gag
-  for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
-    if (!race->governor[g].active) continue;
+  for (auto [g, gov] : race->active_governors()) {
     if (g == sender_gov) continue;
-    if (race->governor[g].toggle.gag) continue;
+    if (gov.toggle.gag) continue;
 
     registry.notify_player(race_num, g, message);
   }
@@ -75,8 +72,7 @@ void d_shout(SessionRegistry& registry, EntityManager& em, player_t sender,
     const auto* race = em.peek_race(p);
     if (!race) continue;
 
-    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
-      if (!race->governor[g].active) continue;
+    for (auto [g, gov] : race->active_governors()) {
       if (p == sender && g == sender_gov) continue;
 
       registry.notify_player(p, g, message);
@@ -107,10 +103,8 @@ void warn_race(SessionRegistry& registry, EntityManager& em, player_t who,
   const auto* race = em.peek_race(who);
   if (!race) return;
 
-  for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
-    if (race->governor[g].active) {
-      warn_player(registry, em, who, g, message);
-    }
+  for (auto [g, gov] : race->active_governors()) {
+    warn_player(registry, em, who, g, message);
   }
 }
 
@@ -129,8 +123,7 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
       const auto* race = em.peek_race(p);
       if (!race) continue;
 
-      for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
-        if (!race->governor[g].active) continue;
+      for (auto [g, gov] : race->active_governors()) {
         if (p == sender && g == sender_gov) continue;
         push_telegram(em, p, g, message);
       }
@@ -146,8 +139,7 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
     const auto* race = em.peek_race(p);
     if (!race) continue;
 
-    for (governor_t g = 0; g <= MAXGOVERNORS; g++) {
-      if (!race->governor[g].active) continue;
+    for (auto [g, gov] : race->active_governors()) {
       if (p == sender && g == sender_gov) continue;
 
       if (!registry.notify_player(p, g, message)) {

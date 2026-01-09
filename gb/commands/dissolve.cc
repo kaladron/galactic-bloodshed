@@ -22,7 +22,7 @@ void dissolve(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (Governor) {
+  if (Governor != 0) {
     g.out << "Only the leader may dissolve the race. The "
              "leader has been notified of your "
              "attempt!!!\n";

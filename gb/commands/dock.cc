@@ -61,7 +61,7 @@ void dock(const command_t& argv, GameObj& g) {
     Ship& s = *ship_handle;
 
     if (!ship_matches_filter(argv[1], s)) continue;
-    if (Governor && s.governor() != Governor) continue;
+    if (Governor != 0 && s.governor() != Governor) continue;
 
     shipno = s.number();
 

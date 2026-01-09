@@ -23,7 +23,7 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
 
     if (pl.info(Playernum - 1).explored &&
         pl.info(Playernum - 1).numsectsowned &&
-        (!Governor || star_ref.governor(Playernum - 1) == Governor)) {
+        (Governor == 0 || star_ref.governor(Playernum - 1) == Governor)) {
       const auto star4 = std::string(star_ref.get_name()).substr(0, 4);
       const auto planet4 =
           std::string(star_ref.get_planet_name(i)).substr(0, 4);

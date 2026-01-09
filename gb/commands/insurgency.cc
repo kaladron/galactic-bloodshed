@@ -81,7 +81,7 @@ void insurgency(const command_t& argv, GameObj& g) {
     g.out << "You have to use a positive amount of money.\n";
     return;
   }
-  if (g.race->governor[Governor].money < amount) {
+  if (g.race->governor[Governor.value].money < amount) {
     g.out << "Nice try.\n";
     return;
   }
@@ -143,6 +143,6 @@ void insurgency(const command_t& argv, GameObj& g) {
 
   // Need mutable access for money deduction
   auto race_handle = g.entity_manager.get_race(Playernum);
-  race_handle->governor[Governor].money -= amount;
+  race_handle->governor[Governor.value].money -= amount;
 }
 }  // namespace GB::commands

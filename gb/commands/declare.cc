@@ -22,7 +22,7 @@ void declare(const command_t& argv, GameObj& g) {
   int d_mod;
   std::string news_msg;
 
-  if (Governor) {
+  if (Governor != 0) {
     g.out << "Only leaders may declare.\n";
     return;
   }

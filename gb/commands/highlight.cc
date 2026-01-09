@@ -24,6 +24,6 @@ void highlight(const command_t& argv, GameObj& g) {
   // Get race for modification (RAII auto-saves on scope exit)
   auto race_handle = g.entity_manager.get_race(g.player());
   auto& race = *race_handle;
-  race.governor[g.governor()].toggle.highlight = n;
+  race.governor[g.governor().value].toggle.highlight = n;
 }
 }  // namespace GB::commands

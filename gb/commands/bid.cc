@@ -124,7 +124,7 @@ void place_bid(const command_t& argv, GameObj& g) {
   auto snum = g.snum();
   auto pnum = g.pnum();
   const auto* star = g.entity_manager.peek_star(snum);
-  if (g.governor() && star->governor(g.player() - 1) != g.governor()) {
+  if (g.governor() != 0 && star->governor(g.player() - 1) != g.governor()) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
@@ -180,7 +180,7 @@ void place_bid(const command_t& argv, GameObj& g) {
     return;
   }
   // Need to check money via g.race->governor
-  if (bid0 > g.race->governor[g.governor()].money) {
+  if (bid0 > g.race->governor[g.governor().value].money) {
     g.out << "Sorry, no buying on credit allowed.\n";
     return;
   }

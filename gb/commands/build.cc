@@ -252,7 +252,7 @@ void build(const command_t& argv, GameObj& g) {
         }
         create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
                               newship, planet, snum, pnum, x, y);
-        if (race.governor[Governor].toggle.autoload &&
+        if (race.governor[Governor.value].toggle.autoload &&
             what != ShipType::OTYPE_TRANSDEV && !race.God)
           autoload_at_planet(Playernum, &newship, &planet, sector, &load_crew,
                              &load_fuel);
@@ -376,7 +376,7 @@ void build(const command_t& argv, GameObj& g) {
             }
             create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
                                   newship, planet, snum, pnum, x, y);
-            if (race.governor[Governor].toggle.autoload &&
+            if (race.governor[Governor.value].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God) {
               autoload_at_planet(Playernum, &newship, &planet, sector,
                                  &load_crew, &load_fuel);
@@ -396,7 +396,7 @@ void build(const command_t& argv, GameObj& g) {
             }
             create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
                                 true, &planet, &newship, &*builder);
-            if (race.governor[Governor].toggle.autoload &&
+            if (race.governor[Governor.value].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
             else {
@@ -418,7 +418,7 @@ void build(const command_t& argv, GameObj& g) {
             }
             create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
                                 false, nullptr, &newship, &*builder);
-            if (race.governor[Governor].toggle.autoload &&
+            if (race.governor[Governor.value].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
             else {

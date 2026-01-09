@@ -39,8 +39,8 @@ void capture(const command_t& argv, GameObj& g) {
     g.out << "Capture what?\n";
     return;
   }
-  if (Governor && g.entity_manager.peek_star(g.snum())->governor(
-                      Playernum - 1) != Governor) {
+  if (Governor != 0 && g.entity_manager.peek_star(g.snum())->governor(
+                           Playernum - 1) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }

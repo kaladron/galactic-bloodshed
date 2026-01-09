@@ -138,6 +138,13 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES third_party/glaze_json.cppm)
 target_link_libraries(glaze_json_module PUBLIC glaze::glaze)
 
+# Create glaze core module wrapper library (for customization templates)
+add_library(glaze_core_module)
+target_sources(
+  glaze_core_module
+  PUBLIC FILE_SET CXX_MODULES FILES third_party/glaze_core.cppm)
+target_link_libraries(glaze_core_module PUBLIC glaze::glaze)
+
 # Create glaze TOML module wrapper library
 add_library(glaze_toml_module)
 target_sources(
@@ -190,13 +197,21 @@ target_link_libraries(enrol PRIVATE gblib SQLite::SQLite3 glaze::glaze scnlib_mo
 add_executable(racegen GB_racegen.cc enroll.cc racegen.cc)
 target_link_libraries(racegen PRIVATE gblib dallib SQLite::SQLite3 glaze::glaze)
 
+# Create types module as a standalone foundational library
+# This contains basic type definitions used across all layers
+add_library(types_module)
+target_sources(
+  types_module
+  PUBLIC FILE_SET CXX_MODULES FILES types.cppm)
+target_link_libraries(types_module PUBLIC strong_id_module)
+
 # Create dallib as a separate library for Data Access Layer
 add_library(dallib)
 target_sources(
   dallib
   PUBLIC FILE_SET CXX_MODULES FILES dal/dallib.cppm
   PRIVATE dal/database.cc dal/json_store.cc dal/schema.cc)
-target_link_libraries(dallib PUBLIC SQLite::SQLite3)
+target_link_libraries(dallib PUBLIC SQLite::SQLite3 types_module)
 
 add_library(gblib)
 target_sources(
@@ -265,7 +280,7 @@ target_sources(
           tele.cc
           victory.cc
           VN.cc)
-target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module strong_id_module dallib)
+target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module)
 
 # Create session library (Service Layer)
 add_library(session)
@@ -462,6 +477,10 @@ add_test(NAME GB_block_json_test COMMAND block_json_test)
 add_executable(power_json_test power_json_test.cc)
 target_link_libraries(power_json_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_power_json_test COMMAND power_json_test)
+
+add_executable(strong_id_json_test strong_id_json_test.cc)
+target_link_libraries(strong_id_json_test PRIVATE gblib glaze_core_module glaze::glaze)
+add_test(NAME GB_strong_id_json_test COMMAND strong_id_json_test)
 
 add_executable(star_test star_test.cc)
 target_link_libraries(star_test PRIVATE gblib)

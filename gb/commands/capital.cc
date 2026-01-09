@@ -15,7 +15,7 @@ namespace GB::commands {
 void capital(const command_t& argv, GameObj& g) {
   const ap_t kAPCost = 50;
 
-  if (g.governor()) {
+  if (g.governor() != 0) {
     g.out << "Only the leader may designate the capital.\n";
     return;
   }

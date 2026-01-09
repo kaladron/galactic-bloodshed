@@ -76,9 +76,10 @@ void announce(const command_t& argv, GameObj& g) {
     }
   }
 
-  std::string msg = std::format("{} \"{}\" [{},{}] {} {}\n", g.race->name,
-                                g.race->governor[Governor].name, Playernum,
-                                Governor, std::to_underlying(mode), message);
+  std::string msg =
+      std::format("{} \"{}\" [{},{}] {} {}\n", g.race->name,
+                  g.race->governor[Governor.value].name, Playernum, Governor,
+                  std::to_underlying(mode), message);
 
   switch (mode) {
     case Communicate::ANN:

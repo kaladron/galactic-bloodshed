@@ -34,7 +34,7 @@ void whois(const command_t& argv, GameObj& g) {
 
     if (j == g.player()) {
       g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j, g.governor(),
-                           race->name, race->governor[g.governor()].name);
+                           race->name, race->governor[g.governor().value].name);
     } else {
       g.out << std::format("[{:2d}] {}\n", j, race->name);
     }

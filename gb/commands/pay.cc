@@ -21,7 +21,7 @@ void pay(const command_t& argv, GameObj& g) {
     g.out << "No such player.\n";
     return;
   }
-  if (Governor) {
+  if (Governor != 0) {
     g.out << "You are not authorized to do that.\n";
     return;
   }
@@ -45,12 +45,12 @@ void pay(const command_t& argv, GameObj& g) {
     g.out << "Nice try. Your attempt has been duly noted.\n";
     return;
   }
-  if (race.governor[Governor].money < amount) {
+  if (race.governor[Governor.value].money < amount) {
     g.out << "You don't have that much money to give!\n";
     return;
   }
 
-  race.governor[Governor].money -= amount;
+  race.governor[Governor.value].money -= amount;
   alien.governor[0].money += amount;
   warn_player(
       g.session_registry, g.entity_manager, who, 0,

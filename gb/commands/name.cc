@@ -89,7 +89,7 @@ void name(const command_t& argv, GameObj& g) {
   }
   if (argv[1] == "block") {
     /* name your alliance block */
-    if (Governor) {
+    if (Governor != 0) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
@@ -131,7 +131,7 @@ void name(const command_t& argv, GameObj& g) {
       return;
     }
   } else if (argv[1] == "race") {
-    if (Governor) {
+    if (Governor != 0) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
@@ -148,9 +148,9 @@ void name(const command_t& argv, GameObj& g) {
       g.out << "Race not found.\n";
       return;
     }
-    race->governor[Governor].name = namebuf;
+    race->governor[Governor.value].name = namebuf;
     g.out << std::format("Name changed to `{}'.\n",
-                         race->governor[Governor].name);
+                         race->governor[Governor.value].name);
   } else {
     g.out << "I don't know what you mean.\n";
     return;

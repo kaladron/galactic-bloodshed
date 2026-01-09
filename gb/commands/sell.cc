@@ -28,7 +28,7 @@ void sell(const command_t& argv, GameObj& g) {
     return;
   }
   const auto* star = g.entity_manager.peek_star(snum);
-  if (Governor && star->governor(Playernum - 1) != Governor) {
+  if (Governor != 0 && star->governor(Playernum - 1) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }

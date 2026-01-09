@@ -822,25 +822,27 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         planet.info(player - 1).prod_money =
             round_rand(INCOME_FACTOR * (double)planet.info(player - 1).tax *
                        (double)planet.info(player - 1).popn);
-        race.governor[gov_idx].money += planet.info(player - 1).prod_money;
+        race.governor[gov_idx.value].money +=
+            planet.info(player - 1).prod_money;
         planet.info(player - 1).tax +=
             std::min((int)planet.info(player - 1).newtax -
                          (int)planet.info(player - 1).tax,
                      5);
       } else
         planet.info(player - 1).prod_money = 0;
-      race.governor[gov_idx].income += planet.info(player - 1).prod_money;
+      race.governor[gov_idx.value].income += planet.info(player - 1).prod_money;
 
       /* do tech investments */
       if (race.Gov_ship) {
-        if (race.governor[gov_idx].money >=
+        if (race.governor[gov_idx.value].money >=
             planet.info(player - 1).tech_invest) {
           planet.info(player - 1).prod_tech =
               tech_prod((int)(planet.info(player - 1).tech_invest),
                         (int)(planet.info(player - 1).popn));
-          race.governor[gov_idx].money -= planet.info(player - 1).tech_invest;
+          race.governor[gov_idx.value].money -=
+              planet.info(player - 1).tech_invest;
           race.tech += planet.info(player - 1).prod_tech;
-          race.governor[gov_idx].cost_tech +=
+          race.governor[gov_idx.value].cost_tech +=
               planet.info(player - 1).tech_invest;
         } else
           planet.info(player - 1).prod_tech = 0;

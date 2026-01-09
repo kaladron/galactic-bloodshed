@@ -6,6 +6,7 @@ module;
 
 export module dallib;
 
+import types;
 import std.compat;
 
 export class Database {
@@ -51,13 +52,13 @@ public:
   bool news_purge_all();
 
   // Telegram operations - SQL queries encapsulated in DAL
-  std::optional<int> telegram_add(int player, int governor,
+  std::optional<int> telegram_add(player_t player, governor_t governor,
                                   const std::string& message,
                                   int64_t timestamp);
   std::vector<std::tuple<int, int, int, std::string, int64_t>>
-  telegram_get(int player, int governor);
-  bool telegram_delete_for_governor(int player, int governor);
-  int telegram_count(int player, int governor);
+  telegram_get(player_t player, governor_t governor);
+  bool telegram_delete_for_governor(player_t player, governor_t governor);
+  int telegram_count(player_t player, governor_t governor);
   bool telegram_purge_all();
 
   // Planet queries

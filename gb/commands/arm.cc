@@ -84,14 +84,14 @@ void arm(const command_t& argv, GameObj& g) {
     }
     /*    enlist_cost = ENLIST_TROOP_COST * amount; */
     money_t enlist_cost = g.race->fighters * amount;
-    if (enlist_cost > g.race->governor[Governor].money) {
+    if (enlist_cost > g.race->governor[Governor.value].money) {
       g.out << std::format("You need {} money to enlist {} troops.\n",
                            enlist_cost, amount);
       return;
     }
     auto race_handle = g.entity_manager.get_race(Playernum);
     auto& race_mut = *race_handle;
-    race_mut.governor[Governor].money -= enlist_cost;
+    race_mut.governor[Governor.value].money -= enlist_cost;
 
     cost = std::max(1U, amount / (sect.get_mobilization() + 1));
     sect.set_troops(sect.get_troops() + amount);

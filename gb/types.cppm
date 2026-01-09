@@ -10,7 +10,7 @@ export using shipnum_t = std::uint64_t;
 export using starnum_t = std::uint32_t;
 export using planetnum_t = std::uint32_t;
 export using player_t = std::uint32_t;
-export using governor_t = std::uint32_t;
+export using governor_t = ID<"governor">;
 export using segments_t = std::uint32_t;
 
 export using ap_t = std::uint32_t;

@@ -9,7 +9,7 @@ module commands;
 
 namespace GB::commands {
 void motto(const command_t& argv, GameObj& g) {
-  if (g.governor()) {
+  if (g.governor() != 0) {
     g.out << "You are not authorized to do this.\n";
     return;
   }

@@ -12,7 +12,7 @@ import std.compat;
 module gblib;
 
 bool authorized(const governor_t Governor, const Ship& ship) {
-  return (!Governor || ship.governor() == Governor);
+  return (Governor == 0 || ship.governor() == Governor);
 }
 
 /**
@@ -67,9 +67,9 @@ std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
   for (auto race_handle : RaceList(entity_manager)) {
     const auto& race = race_handle.read();
     if (racepass == race.password) {
-      for (governor_t j = 0; j <= MAXGOVERNORS; j++) {
-        if (!race.governor[j].password.empty() &&
-            govpass == race.governor[j].password) {
+      for (governor_t j = 0; j <= MAXGOVERNORS; ++j) {
+        if (!race.governor[j.value].password.empty() &&
+            govpass == race.governor[j.value].password) {
           return {race.Playernum, j};
         }
       }

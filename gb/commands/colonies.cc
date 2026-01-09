@@ -20,7 +20,7 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
 
     if (!pl.info(Playernum - 1).explored ||
         !pl.info(Playernum - 1).numsectsowned ||
-        (Governor && star_ref.governor(Playernum - 1) != Governor)) {
+        (Governor != 0 && star_ref.governor(Playernum - 1) != Governor)) {
       continue;
     }
 

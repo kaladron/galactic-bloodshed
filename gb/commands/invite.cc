@@ -18,7 +18,7 @@ void invite(const command_t& argv, GameObj& g) {
 
   player_t n;
 
-  if (g.governor()) {
+  if (g.governor() != 0) {
     g.out << "Only leaders may invite.\n";
     return;
   }

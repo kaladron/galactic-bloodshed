@@ -33,7 +33,7 @@ void dump(const command_t& argv, GameObj& g) {
     g.out << "Cheater!\n";
     return;
   }
-  if (Governor) {
+  if (Governor != 0) {
     g.out << "Only leaders are allowed to use dump.\n";
     return;
   }

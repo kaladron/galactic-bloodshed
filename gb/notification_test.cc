@@ -108,8 +108,8 @@ Race create_race(player_t player, bool god = false) {
   race.Guest = false;
   race.God = god;
   for (governor_t i{0}; i <= MAXGOVERNORS; ++i) {
-    race.governor[i].active = true;
-    race.governor[i].toggle.gag = false;
+    race.governor[i.value].active = true;
+    race.governor[i.value].toggle.gag = false;
   }
   return race;
 }

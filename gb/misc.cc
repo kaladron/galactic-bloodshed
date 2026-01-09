@@ -22,7 +22,8 @@ void telegram_star(EntityManager& em, starnum_t star, player_t sender,
       const auto* race = em.peek_race(p);
       if (race) {
         for (governor_t i{0}; i <= MAXGOVERNORS; ++i) {
-          if (race->governor[i].active && !(p == sender && i == sender_gov)) {
+          if (race->governor[i.value].active &&
+              !(p == sender && i == sender_gov)) {
             push_telegram(em, p, i, message);
           }
         }

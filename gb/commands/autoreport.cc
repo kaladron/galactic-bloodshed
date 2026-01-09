@@ -20,7 +20,7 @@ void autoreport(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (g.governor() && star->governor(g.player() - 1) != g.governor()) {
+  if (g.governor() != 0 && star->governor(g.player() - 1) != g.governor()) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }

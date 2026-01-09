@@ -47,7 +47,7 @@ void send_message(const command_t& argv, GameObj& g) {
     }
     const auto& race = *race_ptr;
     msg = std::format("{} \"{}\" [{},{}]: ", race.name,
-                      race.governor[Governor].name, Playernum, Governor);
+                      race.governor[Governor.value].name, Playernum, Governor);
     for (j = 1; j < argv.size(); j++)
       msg += argv[j] + " ";
     msg += "\n";
@@ -122,16 +122,16 @@ void send_message(const command_t& argv, GameObj& g) {
       return;
     }
     msg = std::format("{} \"{}\" [{},{}] to {} [{}]: ", race.name,
-                      race.governor[Governor].name, Playernum, Governor,
+                      race.governor[Governor.value].name, Playernum, Governor,
                       block->name, who);
   } else if (to_star) {
     const auto& star_ref = *g.entity_manager.peek_star(star);
     msg = std::format("{} \"{}\" [{},{}] to inhabitants of {}: ", race.name,
-                      race.governor[Governor].name, Playernum, Governor,
+                      race.governor[Governor.value].name, Playernum, Governor,
                       star_ref.get_name());
   } else {
     msg = std::format("{} \"{}\" [{},{}]: ", race.name,
-                      race.governor[Governor].name, Playernum, Governor);
+                      race.governor[Governor.value].name, Playernum, Governor);
   }
 
   if (to_star || to_block || std::isdigit(*argv[2].c_str()))
@@ -146,7 +146,7 @@ void send_message(const command_t& argv, GameObj& g) {
   /* post it */
   const auto notice = std::format(
       "{} \"{}\" [{},{}] has sent you a telegram. Use `read' to read it.\n",
-      race.name, race.governor[Governor].name, Playernum, Governor);
+      race.name, race.governor[Governor.value].name, Playernum, Governor);
   if (to_block) {
     const auto* block = g.entity_manager.peek_block(who);
     if (!block) {
@@ -156,7 +156,7 @@ void send_message(const command_t& argv, GameObj& g) {
     std::uint64_t allied_members = (block->invite & block->pledge);
     const auto block_msg = std::format(
         "{} \"{}\" [{},{}] sends a message to {} [{}] alliance block.\n",
-        race.name, race.governor[Governor].name, Playernum, Governor,
+        race.name, race.governor[Governor.value].name, Playernum, Governor,
         block->name, who);
     for (i = 1; i <= g.entity_manager.num_races(); i++) {
       if (isset(allied_members, i)) {
@@ -166,9 +166,10 @@ void send_message(const command_t& argv, GameObj& g) {
     }
   } else if (to_star) {
     const auto& star_ref = *g.entity_manager.peek_star(star);
-    const auto star_msg = std::format(
-        "{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
-        race.governor[Governor].name, Playernum, Governor, star_ref.get_name());
+    const auto star_msg =
+        std::format("{} \"{}\" [{},{}] sends a stargram to {}.\n", race.name,
+                    race.governor[Governor.value].name, Playernum, Governor,
+                    star_ref.get_name());
     notify_star(g.session_registry, g.entity_manager, Playernum, Governor, star,
                 star_msg);
     warn_star(g.session_registry, g.entity_manager, Playernum, star, msg);

@@ -35,12 +35,12 @@ void who(const command_t& /* argv */, Session& session) {
     if (!r) continue;
 
     // Check if this player should be visible
-    bool is_visible = !r->governor[info.governor].toggle.invisible ||
+    bool is_visible = !r->governor[info.governor.value].toggle.invisible ||
                       info.player == session.player() || is_god;
 
     if (is_visible) {
       std::string gov_name =
-          std::format("\"{}\"", r->governor[info.governor].name);
+          std::format("\"{}\"", r->governor[info.governor.value].name);
       const auto* star = session.entity_manager().peek_star(info.snum);
       std::string star_name = is_god && star ? star->get_name() : "";
       std::time_t idle_seconds = now - info.last_time;
@@ -49,8 +49,8 @@ void who(const command_t& /* argv */, Session& session) {
       std::string idle_str = std::format("{}s", idle_seconds);
 
       std::vector<std::string> flags;
-      if (r->governor[info.governor].toggle.gag) flags.push_back("GAG");
-      if (r->governor[info.governor].toggle.invisible)
+      if (r->governor[info.governor.value].toggle.gag) flags.push_back("GAG");
+      if (r->governor[info.governor.value].toggle.invisible)
         flags.push_back("INVISIBLE");
       std::string flags_str;
       for (std::size_t i = 0; i < flags.size(); ++i) {

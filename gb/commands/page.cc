@@ -56,9 +56,9 @@ void page(const command_t& argv, GameObj& g) {
         return;
       }
 
-      auto msg = std::format("{} \"{}\" page(s) you from the {} star system.\n",
-                             g.race->name, g.race->governor[Governor].name,
-                             star.get_name());
+      auto msg = std::format(
+          "{} \"{}\" page(s) you from the {} star system.\n", g.race->name,
+          g.race->governor[Governor.value].name, star.get_name());
 
       if (to_block) {
         const auto* block_player = g.entity_manager.peek_block(Playernum);

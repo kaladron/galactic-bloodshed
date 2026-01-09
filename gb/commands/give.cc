@@ -20,7 +20,7 @@ void give(const command_t& argv, GameObj& g) {
     g.out << "No such player.\n";
     return;
   }
-  if (Governor) {
+  if (Governor != 0) {
     g.out << "You are not authorized to do that.\n";
     return;
   }

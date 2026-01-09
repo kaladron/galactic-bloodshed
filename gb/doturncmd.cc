@@ -227,14 +227,14 @@ static void process_market(TurnState& state, int update) {
       auto owner_race = state.entity_manager.get_race(c.owner);
 
       if (c.owner && c.bidder && bidder_race.get() && owner_race.get() &&
-          (bidder_race->governor[c.bidder_gov].money >= c.bid)) {
-        bidder_race->governor[c.bidder_gov].money -= c.bid;
-        owner_race->governor[c.governor].money += c.bid;
+          (bidder_race->governor[c.bidder_gov.value].money >= c.bid)) {
+        bidder_race->governor[c.bidder_gov.value].money -= c.bid;
+        owner_race->governor[c.governor.value].money += c.bid;
         auto [cost, dist] =
             shipping_cost(state.entity_manager, c.star_to, c.star_from, c.bid);
-        bidder_race->governor[c.bidder_gov].cost_market += c.bid + cost;
-        owner_race->governor[c.governor].profit_market += c.bid;
-        maintain(*bidder_race, bidder_race->governor[c.bidder_gov], cost);
+        bidder_race->governor[c.bidder_gov.value].cost_market += c.bid + cost;
+        owner_race->governor[c.governor.value].profit_market += c.bid;
+        maintain(*bidder_race, bidder_race->governor[c.bidder_gov.value], cost);
 
         auto planet_handle =
             state.entity_manager.get_planet(c.star_to, c.planet_to);
@@ -269,10 +269,13 @@ static void process_market(TurnState& state, int update) {
             "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
             c.type, bidder_race->name, c.bidder, c.bid);
         push_telegram(state.entity_manager, c.owner, c.governor, sold_msg);
-        c.owner = c.governor = 0;
-        c.bidder = c.bidder_gov = 0;
+        c.owner = 0;
+        c.governor = 0;
+        c.bidder = 0;
+        c.bidder_gov = 0;
       } else {
-        c.bidder = c.bidder_gov = 0;
+        c.bidder = 0;
+        c.bidder_gov = 0;
         c.bid = 0;
       }
       if (!c.owner) {
@@ -318,11 +321,11 @@ static void process_ship_turns(TurnState& state, int update) {
           if (!race_handle.get()) continue;
 
           if (ship_handle->popn()) {
-            race_handle->governor[ship_handle->governor()].maintain +=
+            race_handle->governor[ship_handle->governor().value].maintain +=
                 ship_handle->build_cost();
           }
           if (ship_handle->troops()) {
-            race_handle->governor[ship_handle->governor()].maintain +=
+            race_handle->governor[ship_handle->governor().value].maintain +=
                 UPDATE_TROOP_COST * ship_handle->troops();
           }
         }

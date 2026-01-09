@@ -142,9 +142,11 @@ void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
   if (s.get_troops()) {
     auto race_handle = entity_manager.get_race(s.get_owner());
     if (race_handle.get() &&
-        race_handle->governor[star.governor(s.get_owner() - 1)].maintain) {
-      (*race_handle).governor[star.governor(s.get_owner() - 1)].maintain +=
-          UPDATE_TROOP_COST * s.get_troops();
+        race_handle->governor[star.governor(s.get_owner() - 1).value]
+            .maintain) {
+      (*race_handle)
+          .governor[star.governor(s.get_owner() - 1).value]
+          .maintain += UPDATE_TROOP_COST * s.get_troops();
     }
   }
 

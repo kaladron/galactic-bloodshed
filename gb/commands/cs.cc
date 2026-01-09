@@ -20,11 +20,11 @@ void cs(const command_t& argv, GameObj& g) {
       return;
     }
 
-    g.set_level(g.race->governor[Governor].deflevel);
-    g.set_snum(g.race->governor[Governor].defsystem);
+    g.set_level(g.race->governor[Governor.value].deflevel);
+    g.set_snum(g.race->governor[Governor.value].defsystem);
     if (g.snum() >= universe->numstars) g.set_snum(universe->numstars - 1);
     const auto& star = *g.entity_manager.peek_star(g.snum());
-    g.set_pnum(g.race->governor[Governor].defplanetnum);
+    g.set_pnum(g.race->governor[Governor.value].defplanetnum);
     if (g.pnum() >= star.numplanets()) g.set_pnum(star.numplanets() - 1);
     g.set_shipno(0);
     g.lastx[0] = g.lasty[0] = 0.0;
@@ -146,9 +146,9 @@ void cs(const command_t& argv, GameObj& g) {
     }
 
     auto race_handle = g.entity_manager.get_race(Playernum);
-    race_handle->governor[Governor].deflevel = where.level;
-    race_handle->governor[Governor].defsystem = where.snum;
-    race_handle->governor[Governor].defplanetnum = where.pnum;
+    race_handle->governor[Governor.value].deflevel = where.level;
+    race_handle->governor[Governor.value].defsystem = where.snum;
+    race_handle->governor[Governor.value].defplanetnum = where.pnum;
 
     std::string where_str = where.to_string();
     g.out << "New home system is " << where_str << "\n";

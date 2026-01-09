@@ -27,7 +27,7 @@ void move_popn(const command_t& argv, GameObj& g) {
   int old2popn;
   int old3popn;
   int old2owner;
-  int old2gov;
+  governor_t old2gov;
   int absorbed;
   int n;
   int done;

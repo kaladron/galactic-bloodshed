@@ -118,7 +118,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   double astrength;
   double dstrength;
   int oldowner;
-  int oldgov;
+  governor_t oldgov;
   int oldpopn;
   int old2popn;
   int old3popn;

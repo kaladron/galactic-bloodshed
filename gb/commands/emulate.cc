@@ -31,7 +31,7 @@ void emulate(const command_t& argv, Session& session) {
     } else if (new_gov < 0 || new_gov > MAXGOVERNORS) {
       session.out() << std::format("Invalid governor {}. Must be 0-{}.\n",
                                    new_gov, MAXGOVERNORS);
-    } else if (!race->governor[new_gov].active) {
+    } else if (!race->governor[new_gov.value].active) {
       session.out() << std::format("Governor {} is not active.\n", new_gov);
     } else {
       // Switch to new player/governor
@@ -40,8 +40,8 @@ void emulate(const command_t& argv, Session& session) {
       session.set_god(false);  // When emulating, act as normal player
 
       session.out() << std::format("Emulating {} \"{}\" [{},{}]\n", race->name,
-                                   race->governor[new_gov].name, new_player,
-                                   new_gov);
+                                   race->governor[new_gov.value].name,
+                                   new_player, new_gov);
     }
   } catch (const std::exception& /* e */) {
     session.out() << "Invalid player or governor number.\n";

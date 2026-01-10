@@ -45,7 +45,7 @@ import std;
 #include <sys/timerfd.h>
 #include <sys/uio.h>
 #include <sys/un.h>
-#include <termio.h>
+#include <termios.h>
 #include <time.h>
 #include <cassert>
 #include <climits>

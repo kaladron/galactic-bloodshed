@@ -90,7 +90,7 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
   }
   const auto& planet = planet_handle.read();
 
-  if (!planet.info(Playernum - 1).explored) {
+  if (!planet.info(g.player()).explored) {
     return;
   }
 
@@ -98,7 +98,7 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
 
   const auto& smap = *g.entity_manager.peek_sectormap(Starnum, Planetnum);
   for (auto& sect : smap) {
-    auto p = sect.get_owner();
+    auto p = sect.get_owner().value;
 
     PlayEff[p] += sect.get_eff();
     PlayMob[p] += sect.get_mobilization();
@@ -247,7 +247,7 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
   table[0].format().font_style({tabulate::FontStyle::bold});
 
   // Add player rows
-  for (player_t p = 0; p <= g.entity_manager.num_races(); p++) {
+  for (int p = 0; p <= g.entity_manager.num_races().value; p++) {
     if (PlayTSect[p] != 0) {
       std::vector<std::string> row = {
           std::format("{}", p),

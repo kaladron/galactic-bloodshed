@@ -89,52 +89,52 @@ int main() {
   std::println("Test 1: Sell resources");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
-    int initial_resource = p_before->info(0).resource;
+    int initial_resource = p_before->info(player_t{1}).resource;
 
     command_t argv = {"sell", "r", "100"};
     GB::commands::sell(argv, g);
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(0).resource == initial_resource - 100);
+    assert(p_after->info(player_t{1}).resource == initial_resource - 100);
     std::println("✓ Resources sold and deducted from planet");
   }
 
   std::println("Test 2: Sell fuel");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
-    int initial_fuel = p_before->info(0).fuel;
+    int initial_fuel = p_before->info(player_t{1}).fuel;
 
     command_t argv = {"sell", "f", "50"};
     GB::commands::sell(argv, g);
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(0).fuel == initial_fuel - 50);
+    assert(p_after->info(player_t{1}).fuel == initial_fuel - 50);
     std::println("✓ Fuel sold and deducted from planet");
   }
 
   std::println("Test 3: Sell destruct");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
-    int initial_destruct = p_before->info(0).destruct;
+    int initial_destruct = p_before->info(player_t{1}).destruct;
 
     command_t argv = {"sell", "d", "25"};
     GB::commands::sell(argv, g);
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(0).destruct == initial_destruct - 25);
+    assert(p_after->info(player_t{1}).destruct == initial_destruct - 25);
     std::println("✓ Destruct sold and deducted from planet");
   }
 
   std::println("Test 4: Sell crystals");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
-    int initial_crystals = p_before->info(0).crystals;
+    int initial_crystals = p_before->info(player_t{1}).crystals;
 
     command_t argv = {"sell", "x", "10"};
     GB::commands::sell(argv, g);
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(0).crystals == initial_crystals - 10);
+    assert(p_after->info(player_t{1}).crystals == initial_crystals - 10);
     std::println("✓ Crystals sold and deducted from planet");
   }
 
@@ -153,14 +153,14 @@ int main() {
     g2.set_pnum(0);
 
     const auto* p_before = ctx.em.peek_planet(0, 0);
-    int resource_before = p_before->info(0).resource;
+    int resource_before = p_before->info(player_t{1}).resource;
 
     command_t argv = {"sell", "r", "50"};
     GB::commands::sell(argv, g2);
 
     // Should not have changed
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(0).resource == resource_before);
+    assert(p_after->info(player_t{1}).resource == resource_before);
     std::println("✓ Guest race blocked from selling");
   }
 

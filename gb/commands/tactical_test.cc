@@ -8,7 +8,6 @@
 /// current scope.
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -60,8 +59,8 @@ void setup_test_universe(TestState& state) {
   planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.popn() = 1000;
-  planet.info(0).numsectsowned = 10;
-  planet.info(0).explored = 1;  // Player 1 has explored this planet
+  planet.info(player_t{1}).numsectsowned = 10;
+  planet.info(player_t{1}).explored = 1;  // Player 1 has explored this planet
 
   PlanetRepository planets(state.store);
   planets.save(planet);

@@ -60,13 +60,13 @@ void fire(const command_t& argv, GameObj& g) {
     if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       const auto& universe = *g.entity_manager.peek_universe();
       if (!enufAP(g.entity_manager, Playernum, Governor,
-                  universe.AP[Playernum - 1], APcount)) {
+                  universe.AP[Playernum.value - 1], APcount)) {
         continue;
       }
     } else {
       const auto* star = g.entity_manager.peek_star(from.storbits());
-      if (!enufAP(g.entity_manager, Playernum, Governor,
-                  star->AP(Playernum - 1), APcount)) {
+      if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
+                  APcount)) {
         continue;
       }
     }

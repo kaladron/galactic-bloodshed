@@ -136,7 +136,7 @@ int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
       do_damage(em, race.Playernum, ship, race.tech, strength, hits, 0,
                 GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
   sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
-          race.Playernum, ship.alive() ? "attacked" : "DESTROYED",
+          race.Playernum.value, ship.alive() ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);
   strcat(long_msg, damage_msg.c_str());
@@ -210,7 +210,7 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
         double fac =
             SECTOR_DAMAGE * (double)strength * (double)caliber / (d + 1.);
 
-        if (s.get_owner()) {
+        if (s.get_owner() != 0) {
           population_t kills = 0;
           if (s.get_popn()) {
             kills = int_rand(0, ((int)(fac / 10.0) * s.get_popn())) /
@@ -241,7 +241,7 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
 
         if (round_rand(fac) >
             Defensedata[s.get_condition()] * int_rand(0, 10)) {
-          if (s.get_owner()) result.nuked[s.get_owner() - 1] = 1;
+          if (s.get_owner() != 0) result.nuked[s.get_owner().value - 1] = 1;
           s.set_popn(0);
           s.set_troops(int_rand(0, (int)s.get_troops()));
           if (!s.get_troops()) /* troops may survive this */
@@ -260,7 +260,8 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
           s.set_resource(std::max(0, (int)s.get_resource() - (int)fac));
         }
       }
-      if (s.get_owner()) sum_mob[s.get_owner() - 1] += s.get_mobilization();
+      if (s.get_owner() != 0)
+        sum_mob[s.get_owner().value - 1] += s.get_mobilization();
     }
   }
   auto num_sectors = pl.Maxx() * pl.Maxy();
@@ -276,7 +277,7 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
       ((double)result.numdest / (double)(pl.Maxx() * pl.Maxy()));
 
   sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
-          dispshiploc(em, ship).c_str(), oldowner);
+          dispshiploc(em, ship).c_str(), oldowner.value);
   strcpy(long_msg, short_msg);
   std::string msg = std::format("\t{} sectors destroyed\n", result.numdest);
   strcat(long_msg, msg.c_str());

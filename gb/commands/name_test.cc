@@ -4,7 +4,6 @@
 /// \brief Test name command database persistence
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;

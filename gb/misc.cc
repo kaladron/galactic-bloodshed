@@ -34,7 +34,7 @@ void telegram_star(EntityManager& em, starnum_t star, player_t sender,
 void adjust_morale(Race& winner, Race& loser, int amount) {
   winner.morale += amount;
   loser.morale -= amount;
-  winner.points[loser.Playernum] += amount;
+  winner.points[loser.Playernum.value - 1] += amount;
 }
 
 void add_to_queue(std::deque<std::string>& q, const std::string& b) {

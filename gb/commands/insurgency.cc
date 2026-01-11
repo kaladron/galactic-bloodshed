@@ -15,7 +15,7 @@ void insurgency(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   ap_t APcount = 10;
-  int who;
+  player_t who{0};
   int eligible;
   int them = 0;
   double x;
@@ -36,10 +36,11 @@ void insurgency(const command_t& argv, GameObj& g) {
     <money>'\n";
         return;
     }*/
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
               APcount))
     return;
-  if (!(who = get_player(g.entity_manager, argv[1]))) {
+  who = get_player(g.entity_manager, argv[1]);
+  if (who.value == 0) {
     g.out << "No such player.\n";
     return;
   }
@@ -56,8 +57,8 @@ void insurgency(const command_t& argv, GameObj& g) {
   them = 0;
   PlanetList planets(g.entity_manager, g.snum(), star);
   for (auto planet_handle : planets) {
-    eligible += planet_handle->info(Playernum - 1).popn;
-    them += planet_handle->info(who - 1).popn;
+    eligible += planet_handle->info(Playernum).popn;
+    them += planet_handle->info(who).popn;
   }
   if (!eligible) {
     g.out << "You must have population in the star system to attempt "
@@ -71,7 +72,7 @@ void insurgency(const command_t& argv, GameObj& g) {
   }
   auto& p = *planet_handle;
 
-  if (!p.info(who - 1).popn) {
+  if (!p.info(who).popn) {
     g.out << "This player does not occupy this planet.\n";
     return;
   }
@@ -86,13 +87,13 @@ void insurgency(const command_t& argv, GameObj& g) {
     return;
   }
 
-  x = INSURG_FACTOR * (double)amount * (double)p.info(who - 1).tax /
-      (double)p.info(who - 1).popn;
+  x = INSURG_FACTOR * (double)amount * (double)p.info(who).tax /
+      (double)p.info(who).popn;
   x *= morale_factor((double)(g.race->morale - alien->morale));
   x *= morale_factor((double)(eligible - them) / 50.0);
   x *= morale_factor(10.0 *
-                     (double)(g.race->fighters * p.info(Playernum - 1).troops -
-                              alien->fighters * p.info(who - 1).troops)) /
+                     (double)(g.race->fighters * p.info(Playernum).troops -
+                              alien->fighters * p.info(who).troops)) /
        50.0;
   g.out << std::format("x = {}\n", x);
   chance = round_rand(200.0 * std::atan((double)x) / 3.14159265);
@@ -103,8 +104,8 @@ void insurgency(const command_t& argv, GameObj& g) {
       "chance is {}%\n",
       star.get_name(), star.get_planet_name(g.pnum()), g.race->name, Playernum,
       alien->name, who, star.get_name(), eligible, Playernum, them, who,
-      g.race->morale, Playernum, alien->morale, who, amount,
-      p.info(who - 1).popn, p.info(who - 1).tax, chance);
+      g.race->morale, Playernum, alien->morale, who, amount, p.info(who).popn,
+      p.info(who).tax, chance);
   if (success(chance)) {
     changed_hands =
         revolt(p, g.entity_manager, g.snum(), g.pnum(), who, Playernum);
@@ -115,9 +116,9 @@ void insurgency(const command_t& argv, GameObj& g) {
         "A revolt on /{}/{} instigated by {} [{}] costs you {} sector{}\n",
         star.get_name(), star.get_planet_name(g.pnum()), g.race->name,
         Playernum, changed_hands, (changed_hands == 1) ? "" : "s");
-    warn_player(g.session_registry, g.entity_manager, who,
-                star.governor(who - 1), long_msg);
-    p.info(Playernum - 1).tax = p.info(who - 1).tax;
+    warn_player(g.session_registry, g.entity_manager, who, star.governor(who),
+                long_msg);
+    p.info(Playernum).tax = p.info(who).tax;
     /* you inherit their tax rate (insurgency wars he he ) */
     post(g.entity_manager,
          std::format(
@@ -131,8 +132,8 @@ void insurgency(const command_t& argv, GameObj& g) {
     long_msg += std::format("A revolt on /{}/{} instigated by {} [{}] fails\n",
                             star.get_name(), star.get_planet_name(g.pnum()),
                             g.race->name, Playernum);
-    warn_player(g.session_registry, g.entity_manager, who,
-                star.governor(who - 1), long_msg);
+    warn_player(g.session_registry, g.entity_manager, who, star.governor(who),
+                long_msg);
     post(g.entity_manager,
          std::format("/{}/{}: Failed insurgency by {} [{}] against {} [{}]\n",
                      star.get_name(), star.get_planet_name(g.pnum()),

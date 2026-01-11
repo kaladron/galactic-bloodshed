@@ -19,12 +19,12 @@ int main() {
 
   // Create some test races
   RaceRepository races(store);
-  for (player_t i = 1; i <= 3; i++) {
+  for (player_t i{1}; i <= 3; i = player_t{i.value + 1}) {
     Race race{};
     race.Playernum = i;
-    race.name = std::format("TestRace{}", i);
+    race.name = std::format("TestRace{}", i.value);
     race.Guest = false;
-    race.governor[0].money = i * 1000;
+    race.governor[0].money = i.value * 1000;
     races.save(race);
   }
 
@@ -76,7 +76,7 @@ int main() {
     std::vector<player_t> seen_players;
 
     // Test iteration pattern that mirrors RaceList behavior
-    for (player_t i = 1; i <= em.num_races(); i++) {
+    for (player_t i{1}; i <= em.num_races(); i = player_t{i.value + 1}) {
       auto race_handle = em.get_race(i);
       if (!race_handle.get()) continue;
 
@@ -85,14 +85,14 @@ int main() {
 
       // Verify the race knows its own player number
       assert(race_handle->Playernum == i);
-      assert(race_handle->governor[0].money == i * 1000);
+      assert(race_handle->governor[0].money == i.value * 1000);
     }
 
     assert(count == 3);
     assert(seen_players.size() == 3);
-    assert(seen_players[0] == 1);
-    assert(seen_players[1] == 2);
-    assert(seen_players[2] == 3);
+    assert(seen_players[0] == player_t{1});
+    assert(seen_players[1] == player_t{2});
+    assert(seen_players[2] == player_t{3});
     std::println("  RaceList: iterated {} races, all have correct Playernum",
                  count);
   }
@@ -163,12 +163,13 @@ int main() {
     // Simulate what doturncmd.cc does with state.Power[i-1]
     std::array<int, 3> power_values{};
 
-    for (player_t i = 1; i <= em.num_races(); i++) {
+    for (player_t i{1}; i <= em.num_races(); i = player_t{i.value + 1}) {
       auto race_handle = em.get_race(i);
       if (!race_handle.get()) continue;
 
       // Use Playernum for array indexing instead of loop variable
-      power_values[race_handle->Playernum - 1] = race_handle->governor[0].money;
+      power_values[race_handle->Playernum.value - 1] =
+          race_handle->governor[0].money;
     }
 
     assert(power_values[0] == 1000);

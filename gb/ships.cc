@@ -243,16 +243,17 @@ private:
         the target Planet */
 static int do_merchant(EntityManager& em, Ship& s, Planet& p,
                        std::stringstream& telegram) {
-  int i = s.owner() - 1;
+  player_t owner = s.owner();
   int j = s.merchant() - 1; /* try to speed things up a bit */
 
-  if (!s.merchant() || !p.info(i).route[j].set) /* not on shipping route */
+  if (!s.merchant() || !p.info(owner).route[j].set) /* not on shipping route */
     return 0;
   /* check to see if the sector is owned by the player */
   const auto* smap = em.peek_sectormap(s.storbits(), s.pnumorbits());
   if (!smap) return 0;
-  const auto& sect = smap->get(p.info(i).route[j].x, p.info(i).route[j].y);
-  if (sect.get_owner() && (sect.get_owner() != s.owner())) {
+  const auto& sect =
+      smap->get(p.info(owner).route[j].x, p.info(owner).route[j].y);
+  if (sect.get_owner() != 0 && (sect.get_owner() != s.owner())) {
     return 0;
   }
 
@@ -263,8 +264,8 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
       telegram << "\t\tNot enough fuel to land!\n";
       return 1;
     }
-    s.land_x() = p.info(i).route[j].x;
-    s.land_y() = p.info(i).route[j].y;
+    s.land_x() = p.info(owner).route[j].x;
+    s.land_y() = p.info(owner).route[j].y;
     telegram << std::format("\t\tLanded on sector {},{}\n", s.land_x(),
                             s.land_y());
     const auto& star = *em.peek_star(s.storbits());
@@ -277,34 +278,34 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
     s.destpnum() = s.pnumorbits();
   }
   /* load and unload supplies specified by the planet */
-  char load = p.info(i).route[j].load;
-  char unload = p.info(i).route[j].unload;
+  char load = p.info(owner).route[j].load;
+  char unload = p.info(owner).route[j].unload;
   if (load) {
     telegram << "\t\t";
     if (Fuel(load)) {
       int amount = (int)s.max_fuel() - (int)s.fuel();
-      if (amount > p.info(i).fuel) amount = p.info(i).fuel;
-      p.info(i).fuel -= amount;
+      if (amount > p.info(owner).fuel) amount = p.info(owner).fuel;
+      p.info(owner).fuel -= amount;
       rcv_fuel(s, (double)amount);
       telegram << std::format("{}f ", amount);
     }
     if (Resources(load)) {
       int amount = (int)s.max_resource() - (int)s.resource();
-      if (amount > p.info(i).resource) amount = p.info(i).resource;
-      p.info(i).resource -= amount;
+      if (amount > p.info(owner).resource) amount = p.info(owner).resource;
+      p.info(owner).resource -= amount;
       rcv_resource(s, amount);
       telegram << std::format("{}r ", amount);
     }
     if (Crystals(load)) {
-      int amount = p.info(i).crystals;
-      p.info(i).crystals -= amount;
+      int amount = p.info(owner).crystals;
+      p.info(owner).crystals -= amount;
       s.crystals() += amount;
       telegram << std::format("{}x ", amount);
     }
     if (Destruct(load)) {
       int amount = (int)s.max_destruct() - (int)s.destruct();
-      if (amount > p.info(i).destruct) amount = p.info(i).destruct;
-      p.info(i).destruct -= amount;
+      if (amount > p.info(owner).destruct) amount = p.info(owner).destruct;
+      p.info(owner).destruct -= amount;
       rcv_destruct(s, amount);
       telegram << std::format("{}d ", amount);
     }
@@ -314,25 +315,25 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
     telegram << "\t\t";
     if (Fuel(unload)) {
       int amount = (int)s.fuel();
-      p.info(i).fuel += amount;
+      p.info(owner).fuel += amount;
       telegram << std::format("{}f ", amount);
       use_fuel(s, (double)amount);
     }
     if (Resources(unload)) {
       int amount = s.resource();
-      p.info(i).resource += amount;
+      p.info(owner).resource += amount;
       telegram << std::format("{}r ", amount);
       use_resource(s, amount);
     }
     if (Crystals(unload)) {
       int amount = s.crystals();
-      p.info(i).crystals += amount;
+      p.info(owner).crystals += amount;
       telegram << std::format("{}x ", amount);
       s.crystals() -= amount;
     }
     if (Destruct(unload)) {
       int amount = s.destruct();
-      p.info(i).destruct += amount;
+      p.info(owner).destruct += amount;
       telegram << std::format("{}d ", amount);
       use_destruct(s, amount);
     }
@@ -347,8 +348,8 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
   }
   /* ship is ready to fly - order the ship to its next destination */
   s.whatdest() = ScopeLevel::LEVEL_PLAN;
-  s.deststar() = p.info(i).route[j].dest_star;
-  s.destpnum() = p.info(i).route[j].dest_planet;
+  s.deststar() = p.info(owner).route[j].dest_star;
+  s.destpnum() = p.info(owner).route[j].dest_planet;
   s.docked() = 0;
   use_fuel(s, fuel);
   telegram << std::format("\t\tDestination set to {}\n", prin_ship_dest(s));
@@ -809,7 +810,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
               (s.popn() || s.type() == ShipType::OTYPE_PROBE)) {
             if (!isset(dst->inhabited(), s.owner())) {
               auto dst_handle = em.get_star(deststar);
-              dst_handle->governor(s.owner() - 1) = s.governor();
+              dst_handle->governor(s.owner()) = s.governor();
             }
             setbit(dst->explored(), s.owner());
             setbit(dst->inhabited(), s.owner());
@@ -834,7 +835,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
               (s.popn() || s.type() == ShipType::OTYPE_PROBE)) {
             auto planet_handle = em.get_planet(deststar, destpnum);
             if (planet_handle.get()) {
-              (*planet_handle).info(s.owner() - 1).explored = 1;
+              (*planet_handle).info(s.owner()).explored = 1;
             }
             setbit(dst->explored(), s.owner());
             setbit(dst->inhabited(), s.owner());

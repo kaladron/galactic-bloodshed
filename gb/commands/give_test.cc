@@ -47,7 +47,7 @@ int main() {
   star_data.ypos = 100.0;
   star_data.pnames = {"TestPlanet"};  // Star has 1 planet
   Star star{star_data};
-  star.AP(0) = 100;  // Give race 1 (index 0) enough action points
+  star.AP(player_t{1}) = 100;  // Give race 1 enough action points
   setbit<std::uint64_t>(star.explored(), 1U);  // Mark explored by race 1
   StarRepository stars_repo(store);
   stars_repo.save(star);
@@ -124,7 +124,7 @@ int main() {
     // Verify planet exploration bit set for receiver
     const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
     assert(planet_verify);
-    assert(planet_verify->info(1).explored == 1);  // Race 2 (index 1)
+    assert(planet_verify->info(player_t{2}).explored == 1);  // Race 2
 
     // Verify star exploration bit set for receiver
     const auto* star_verify = ctx.em.peek_star(star_id);

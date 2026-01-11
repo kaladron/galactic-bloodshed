@@ -52,7 +52,7 @@ void enslave(const command_t& argv, GameObj& g) {
   }
   const auto& star = star_handle.read();
 
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
               APcount)) {
     return;
   }
@@ -68,17 +68,17 @@ void enslave(const command_t& argv, GameObj& g) {
     return;
   }
   auto& p = *planet_handle;
-  if (p.info(Playernum - 1).numsectsowned == 0) {
+  if (p.info(Playernum).numsectsowned == 0) {
     g.out << "You don't have a garrison on the planet.\n";
     return;
   }
 
   /* add up forces attacking, defending */
   attack = aliens = def = 0;
-  for (auto i = 1; i < MAXPLAYERS; i++) {
-    if (p.info(i - 1).numsectsowned && i != Playernum) {
+  for (player_t i = 1; i < MAXPLAYERS; i++) {
+    if (p.info(i).numsectsowned && i != Playernum) {
       aliens = 1;
-      def += p.info(i - 1).destruct;
+      def += p.info(i).destruct;
     }
   }
 
@@ -137,9 +137,9 @@ void enslave(const command_t& argv, GameObj& g) {
     g.out << "You needed more weapons bearing on the planet...\n";
   }
 
-  for (auto i = 1; i < MAXPLAYERS; i++)
-    if (p.info(i - 1).numsectsowned && i != Playernum)
-      warn_player(g.session_registry, g.entity_manager, i, star.governor(i - 1),
+  for (player_t i{1}; i.value < MAXPLAYERS; ++i)
+    if (p.info(i).numsectsowned && i != Playernum)
+      warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
                   telegram.str());
 }
 }  // namespace GB::commands

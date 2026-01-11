@@ -22,9 +22,9 @@ void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
   ship.whatdest() = ScopeLevel::LEVEL_PLAN;
   const auto* universe = em.peek_universe();
   if (random() & 01)
-    ship.deststar() = universe->VN_index1[mind.target - 1];
+    ship.deststar() = universe->VN_index1[mind.target.value - 1];
   else
-    ship.deststar() = universe->VN_index2[mind.target - 1];
+    ship.deststar() = universe->VN_index2[mind.target.value - 1];
   const auto& star = *em.peek_star(ship.deststar());
   ship.destpnum() = int_rand(0, star.numplanets() - 1);
   if (ship.hyper_drive().has && ship.mounted()) {
@@ -123,11 +123,11 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
      we are engaged in building up resources/fuel. */
   /* steal resources from other players */
   /* permute list of people to steal from */
-  std::array<int, MAXPLAYERS + 1> nums;
-  for (int i = 1; i <= em.num_races(); i++)
-    nums[i] = i;
-  for (int i = 1; i <= em.num_races(); i++) {
-    int f = int_rand(1, em.num_races());
+  std::array<player_t, MAXPLAYERS + 1> nums;
+  for (int i = 1; i <= em.num_races().value; i++)
+    nums[i] = player_t{i};
+  for (int i = 1; i <= em.num_races().value; i++) {
+    int f = int_rand(1, em.num_races().value);
     std::swap(nums[i], nums[f]);
   }
 
@@ -138,16 +138,17 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
 
   player_t f = 0;
   for (player_t i = 1; i <= em.num_races(); i++)
-    if (planet_handle->info(nums[i] - 1).resource) f = nums[i];
+    if (planet_handle->info(player_t{nums[i.value]}).resource)
+      f = player_t{nums[i.value]};
 
   // No resources to steal
   if (f == 0) return;
 
   // Steal the resources
 
-  auto prod = std::min(planet_handle->info(f - 1).resource,
+  auto prod = std::min(planet_handle->info(f).resource,
                        Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
-  planet_handle->info(f - 1).resource -= prod;
+  planet_handle->info(f).resource -= prod;
 
   std::string buf;
 

@@ -36,15 +36,17 @@ struct TurnState {
   // Bounds-checked accessors for star population data (delegate to stats)
   unsigned long& star_popn(starnum_t star, player_t player) noexcept {
     assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
-    assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
-    return stats.starpopns[star][player - 1];
+    assert(player.value >= 1 && player.value <= MAXPLAYERS &&
+           "Player index out of bounds");
+    return stats.starpopns[star][player.value - 1];
   }
 
   const unsigned long& star_popn(starnum_t star,
                                  player_t player) const noexcept {
     assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
-    assert(player >= 1 && player <= MAXPLAYERS && "Player index out of bounds");
-    return stats.starpopns[star][player - 1];
+    assert(player.value >= 1 && player.value <= MAXPLAYERS &&
+           "Player index out of bounds");
+    return stats.starpopns[star][player.value - 1];
   }
 };
 
@@ -180,12 +182,13 @@ static void process_races(TurnState& state, int update) {
         }
       }
       /* add VN program */
-      state.stats.VN_brain.Total_mad += sdata_handle->VN_hitlist[player - 1];
+      state.stats.VN_brain.Total_mad +=
+          sdata_handle->VN_hitlist[player.value - 1];
       /* find out who they're most mad at */
       if (state.stats.VN_brain.Most_mad > 0 &&
           sdata_handle->VN_hitlist[state.stats.VN_brain.Most_mad - 1] <=
-              sdata_handle->VN_hitlist[player - 1]) {
-        state.stats.VN_brain.Most_mad = player;
+              sdata_handle->VN_hitlist[player.value - 1]) {
+        state.stats.VN_brain.Most_mad = player.value;
       }
     }
     if (VOTING) {
@@ -226,7 +229,8 @@ static void process_market(TurnState& state, int update) {
       auto bidder_race = state.entity_manager.get_race(c.bidder);
       auto owner_race = state.entity_manager.get_race(c.owner);
 
-      if (c.owner && c.bidder && bidder_race.get() && owner_race.get() &&
+      if (c.owner != 0 && c.bidder != 0 && bidder_race.get() &&
+          owner_race.get() &&
           (bidder_race->governor[c.bidder_gov.value].money >= c.bid)) {
         bidder_race->governor[c.bidder_gov.value].money -= c.bid;
         owner_race->governor[c.governor.value].money += c.bid;
@@ -241,16 +245,16 @@ static void process_market(TurnState& state, int update) {
         if (planet_handle.get()) {
           switch (c.type) {
             case CommodType::RESOURCE:
-              planet_handle->info(c.bidder - 1).resource += c.amount;
+              planet_handle->info(c.bidder).resource += c.amount;
               break;
             case CommodType::FUEL:
-              planet_handle->info(c.bidder - 1).fuel += c.amount;
+              planet_handle->info(c.bidder).fuel += c.amount;
               break;
             case CommodType::DESTRUCT:
-              planet_handle->info(c.bidder - 1).destruct += c.amount;
+              planet_handle->info(c.bidder).destruct += c.amount;
               break;
             case CommodType::CRYSTAL:
-              planet_handle->info(c.bidder - 1).crystals += c.amount;
+              planet_handle->info(c.bidder).crystals += c.amount;
               break;
           }
         }
@@ -278,7 +282,7 @@ static void process_market(TurnState& state, int update) {
         c.bidder_gov = 0;
         c.bid = 0;
       }
-      if (!c.owner) {
+      if (c.owner == player_t{0}) {
         // Commodity is dead - delete it after handle releases
         state.entity_manager.delete_commod(c.id);
       }
@@ -440,17 +444,17 @@ static void process_abms_and_missiles(TurnState& state, int update) {
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
 
-        if (planet_handle->info(player - 1).numsectsowned) {
+        if (planet_handle->info(player).numsectsowned) {
           setbit(inhabited[star], player);
           setbit(star_handle->inhabited(), player);
         }
         if (planet_handle->type() != PlanetType::ASTEROID &&
-            (planet_handle->info(player - 1).numsectsowned >
+            (planet_handle->info(player).numsectsowned >
              planet_handle->Maxx() * planet_handle->Maxy() / 2)) {
           race_handle->controlled_planets++;
         }
 
-        if (planet_handle->info(player - 1).numsectsowned) {
+        if (planet_handle->info(player).numsectsowned) {
           race_handle->planet_points += planet_handle->get_points();
         }
       }
@@ -468,7 +472,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
 
-        if (state.stats.starpopns[star][player - 1]) {
+        if (state.stats.starpopns[star][player.value - 1]) {
           setbit(star_handle->inhabited(), player);
         } else {
           clrbit(star_handle->inhabited(), player);
@@ -476,24 +480,26 @@ static void process_abms_and_missiles(TurnState& state, int update) {
 
         if (isset(star_handle->inhabited(), player)) {
           ap_t APs =
-              star_handle->AP(player - 1) +
-              APadd(
-                  static_cast<int>(state.stats.starnumships[star][player - 1]),
-                  state.stats.starpopns[star][player - 1], *race_handle, state);
+              star_handle->AP(player) +
+              APadd(static_cast<int>(
+                        state.stats.starnumships[star][player.value - 1]),
+                    state.stats.starpopns[star][player.value - 1], *race_handle,
+                    state);
           if (APs < LIMIT_APs) {
-            star_handle->AP(player - 1) = APs;
+            star_handle->AP(player) = APs;
           } else {
-            star_handle->AP(player - 1) = LIMIT_APs;
+            star_handle->AP(player) = LIMIT_APs;
           }
         }
         /* compute victory points for the block */
         if (inhabited[star] != 0) {
-          const auto* block_player = state.entity_manager.peek_block(player);
+          const auto* block_player =
+              state.entity_manager.peek_block(player.value);
           if (block_player) {
             uint64_t allied_members =
                 block_player->invite & block_player->pledge;
             if ((inhabited[star] | allied_members) == allied_members) {
-              auto block_handle = state.entity_manager.get_block(player);
+              auto block_handle = state.entity_manager.get_block(player.value);
               block_handle->systems_owned++;
             }
           }
@@ -507,14 +513,15 @@ static void process_abms_and_missiles(TurnState& state, int update) {
     auto sdata_handle = state.entity_manager.get_universe();
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
-      auto block_handle = state.entity_manager.get_block(player);
+      auto block_handle = state.entity_manager.get_block(player.value);
       block_handle->systems_owned = 0; /*recount systems owned*/
       if (governed(*race_handle, state)) {
-        ap_t APs = sdata_handle->AP[player - 1] + race_handle->planet_points;
+        ap_t APs =
+            sdata_handle->AP[player.value - 1] + race_handle->planet_points;
         if (APs < LIMIT_APs) {
-          sdata_handle->AP[player - 1] = APs;
+          sdata_handle->AP[player.value - 1] = APs;
         } else {
-          sdata_handle->AP[player - 1] = LIMIT_APs;
+          sdata_handle->AP[player.value - 1] = LIMIT_APs;
         }
       }
     }
@@ -540,11 +547,11 @@ static void update_victory_scores(TurnState& state, int update) {
 
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
-      victory[player - 1].morale = race_handle->morale;
-      victory[player - 1].money = race_handle->governor[0].money;
+      victory[player.value - 1].morale = race_handle->morale;
+      victory[player.value - 1].money = race_handle->governor[0].money;
       for (auto& governor : race_handle->governor) {
         if (governor.active) {
-          victory[player - 1].money += governor.money;
+          victory[player.value - 1].money += governor.money;
         }
       }
     }
@@ -556,16 +563,16 @@ static void update_victory_scores(TurnState& state, int update) {
                       *star_handle)) {
         for (auto race_handle : RaceList(state.entity_manager)) {
           const player_t player = race_handle->Playernum;
-          if (!planet_handle->info(player - 1).explored) {
+          if (!planet_handle->info(player).explored) {
             continue;
           }
-          victory[player - 1].numsects +=
-              static_cast<int>(planet_handle->info(player - 1).numsectsowned);
-          victory[player - 1].res += planet_handle->info(player - 1).resource;
-          victory[player - 1].des +=
-              static_cast<int>(planet_handle->info(player - 1).destruct);
-          victory[player - 1].fuel +=
-              static_cast<int>(planet_handle->info(player - 1).fuel);
+          victory[player.value - 1].numsects +=
+              static_cast<int>(planet_handle->info(player).numsectsowned);
+          victory[player.value - 1].res += planet_handle->info(player).resource;
+          victory[player.value - 1].des +=
+              static_cast<int>(planet_handle->info(player).destruct);
+          victory[player.value - 1].fuel +=
+              static_cast<int>(planet_handle->info(player).fuel);
         }
       } /* end of planet searchings */
     } /* end of star searchings */
@@ -573,26 +580,27 @@ static void update_victory_scores(TurnState& state, int update) {
     const ShipList ships(state.entity_manager,
                          ShipList::IterationType::AllAlive);
     for (const Ship* ship : ships) {
-      victory[ship->owner() - 1].shipcost += ship->build_cost();
-      victory[ship->owner() - 1].shiptech += ship->tech();
-      victory[ship->owner() - 1].res += ship->resource();
-      victory[ship->owner() - 1].des += ship->destruct();
-      victory[ship->owner() - 1].fuel += ship->fuel();
+      victory[ship->owner().value - 1].shipcost += ship->build_cost();
+      victory[ship->owner().value - 1].shiptech += ship->tech();
+      victory[ship->owner().value - 1].res += ship->resource();
+      victory[ship->owner().value - 1].des += ship->destruct();
+      victory[ship->owner().value - 1].fuel += ship->fuel();
     }
     /* now that we have the info.. calculate the raw score */
 
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
       race_handle->victory_score =
-          (VICT_SECT * victory[player - 1].numsects) +
-          (VICT_SHIP * (victory[player - 1].shipcost +
-                        (VICT_TECH * victory[player - 1].shiptech))) +
-          (VICT_RES * (victory[player - 1].res + victory[player - 1].des)) +
-          (VICT_FUEL * victory[player - 1].fuel) +
-          (VICT_MONEY * static_cast<int>(victory[player - 1].money));
+          (VICT_SECT * victory[player.value - 1].numsects) +
+          (VICT_SHIP * (victory[player.value - 1].shipcost +
+                        (VICT_TECH * victory[player.value - 1].shiptech))) +
+          (VICT_RES *
+           (victory[player.value - 1].res + victory[player.value - 1].des)) +
+          (VICT_FUEL * victory[player.value - 1].fuel) +
+          (VICT_MONEY * static_cast<int>(victory[player.value - 1].money));
       race_handle->victory_score /= VICT_DIVISOR;
       race_handle->victory_score = static_cast<int>(
-          morale_factor(static_cast<double>(victory[player - 1].morale)) *
+          morale_factor(static_cast<double>(victory[player.value - 1].morale)) *
           race_handle->victory_score);
     }
   } /* end of if (update) */
@@ -607,14 +615,14 @@ static void finalize_turn(TurnState& state, int update) {
 
       /* collective intelligence */
       if (race_handle->collective_iq) {
-        double x =
-            ((2. / 3.14159265) *
-             atan(static_cast<double>(state.stats.Power[player - 1].popn) /
-                  MESO_POP_SCALE));
+        double x = ((2. / 3.14159265) *
+                    atan(static_cast<double>(
+                             state.stats.Power[player.value - 1].popn) /
+                         MESO_POP_SCALE));
         race_handle->IQ = race_handle->IQ_limit * x * x;
       }
       race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;
-      race_handle->morale += state.stats.Power[player - 1].planets_owned;
+      race_handle->morale += state.stats.Power[player.value - 1].planets_owned;
       make_discoveries(state.entity_manager, *race_handle);
       race_handle->turn += 1;
       if (race_handle->controlled_planets >=
@@ -627,11 +635,11 @@ static void finalize_turn(TurnState& state, int update) {
       if (race_handle->controlled_planets >=
           planet_count * VICTORY_PERCENT / 200) {
         for (auto other_race : RaceList(state.entity_manager)) {
-          other_race->translate[player - 1] = 100;
+          other_race->translate[player.value - 1] = 100;
         }
       }
 
-      auto block_handle = state.entity_manager.get_block(player);
+      auto block_handle = state.entity_manager.get_block(player.value);
       block_handle->VPs = 10L * block_handle->systems_owned;
       if (MARKET) {
         for (auto& governor : race_handle->governor) {
@@ -649,10 +657,10 @@ static void finalize_turn(TurnState& state, int update) {
     compute_power_blocks(state.entity_manager);
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
-      state.stats.Power[player - 1].money = 0;
+      state.stats.Power[player.value - 1].money = 0;
       for (auto& governor : race_handle->governor) {
         if (governor.active) {
-          state.stats.Power[player - 1].money += governor.money;
+          state.stats.Power[player.value - 1].money += governor.money;
         }
       }
     }
@@ -889,13 +897,13 @@ static void output_ground_attacks(TurnState& state) {
         const auto& race_j = *race_j_handle;
         const player_t j = race_j.Playernum;
 
-        if (ground_assaults[i - 1][j - 1][star_num]) {
+        if (ground_assaults[i.value - 1][j.value - 1][star_num]) {
           std::string assault_news =
               std::format("{}: {} [{}] assaults {} [{}] {} times.\n",
                           star.get_name(), race_i.name, i, race_j.name, j,
-                          ground_assaults[i - 1][j - 1][star_num]);
+                          ground_assaults[i.value - 1][j.value - 1][star_num]);
           post(em, assault_news, NewsType::COMBAT);
-          ground_assaults[i - 1][j - 1][star_num] = 0;
+          ground_assaults[i.value - 1][j.value - 1][star_num] = 0;
         }
       }
     }
@@ -909,36 +917,36 @@ void compute_power_blocks(EntityManager& entity_manager) {
     const auto& race_i = race_i_handle.read();
     const player_t i = race_i.Playernum;
 
-    const auto* block_i = entity_manager.peek_block(i);
+    const auto* block_i = entity_manager.peek_block(i.value);
     if (!block_i) continue;
 
     uint64_t allied_members = block_i->invite & block_i->pledge;
-    Power_blocks.members[i - 1] = 0;
-    Power_blocks.sectors_owned[i - 1] = 0;
-    Power_blocks.popn[i - 1] = 0;
-    Power_blocks.ships_owned[i - 1] = 0;
-    Power_blocks.resource[i - 1] = 0;
-    Power_blocks.fuel[i - 1] = 0;
-    Power_blocks.destruct[i - 1] = 0;
-    Power_blocks.money[i - 1] = 0;
-    Power_blocks.systems_owned[i - 1] = block_i->systems_owned;
-    Power_blocks.VPs[i - 1] = block_i->VPs;
+    Power_blocks.members[i.value - 1] = 0;
+    Power_blocks.sectors_owned[i.value - 1] = 0;
+    Power_blocks.popn[i.value - 1] = 0;
+    Power_blocks.ships_owned[i.value - 1] = 0;
+    Power_blocks.resource[i.value - 1] = 0;
+    Power_blocks.fuel[i.value - 1] = 0;
+    Power_blocks.destruct[i.value - 1] = 0;
+    Power_blocks.money[i.value - 1] = 0;
+    Power_blocks.systems_owned[i.value - 1] = block_i->systems_owned;
+    Power_blocks.VPs[i.value - 1] = block_i->VPs;
 
     for (auto race_j_handle : RaceList(entity_manager)) {
       const auto& race_j = race_j_handle.read();
       const player_t j = race_j.Playernum;
 
       if (isset(allied_members, j)) {
-        const auto* power_ptr = entity_manager.peek_power(j);
+        const auto* power_ptr = entity_manager.peek_power(j.value);
         if (!power_ptr) continue;
-        Power_blocks.members[i - 1] += 1;
-        Power_blocks.sectors_owned[i - 1] += power_ptr->sectors_owned;
-        Power_blocks.money[i - 1] += power_ptr->money;
-        Power_blocks.popn[i - 1] += power_ptr->popn;
-        Power_blocks.ships_owned[i - 1] += power_ptr->ships_owned;
-        Power_blocks.resource[i - 1] += power_ptr->resource;
-        Power_blocks.fuel[i - 1] += power_ptr->fuel;
-        Power_blocks.destruct[i - 1] += power_ptr->destruct;
+        Power_blocks.members[i.value - 1] += 1;
+        Power_blocks.sectors_owned[i.value - 1] += power_ptr->sectors_owned;
+        Power_blocks.money[i.value - 1] += power_ptr->money;
+        Power_blocks.popn[i.value - 1] += power_ptr->popn;
+        Power_blocks.ships_owned[i.value - 1] += power_ptr->ships_owned;
+        Power_blocks.resource[i.value - 1] += power_ptr->resource;
+        Power_blocks.fuel[i.value - 1] += power_ptr->fuel;
+        Power_blocks.destruct[i.value - 1] += power_ptr->destruct;
       }
     }
   }

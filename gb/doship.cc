@@ -71,7 +71,7 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
   rcv_popn(ship, add, race->mass);
 }
 
-void do_meta_infect(int who, starnum_t star, planetnum_t pnum, Planet& p,
+void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
                     EntityManager& entity_manager, TurnStats& stats) {
   auto smap_handle = entity_manager.get_sectormap(star, pnum);
   if (!smap_handle.get()) return;
@@ -88,10 +88,10 @@ void do_meta_infect(int who, starnum_t star, planetnum_t pnum, Planet& p,
   if (!who_race) return;
 
   // Check if infection fails
-  if (owner && owner == who) {
+  if (owner != 0 && owner == who) {
     return;  // Already owned by us
   }
-  if (owner) {
+  if (owner != 0) {
     // Sector owned by someone else - check if we can take it
     const auto* owner_race = entity_manager.peek_race(owner);
     double fighters = owner_race ? owner_race->fighters : 1.0;
@@ -102,8 +102,8 @@ void do_meta_infect(int who, starnum_t star, planetnum_t pnum, Planet& p,
   }
 
   // Infection succeeds
-  p.info(who - 1).explored = 1;
-  p.info(who - 1).numsectsowned += 1;
+  p.info(who).explored = 1;
+  p.info(who).numsectsowned += 1;
   smap.get(x, y).set_troops(0);
   smap.get(x, y).set_popn(who_race->number_sexes);
   smap.get(x, y).set_owner(who);
@@ -113,7 +113,7 @@ void do_meta_infect(int who, starnum_t star, planetnum_t pnum, Planet& p,
   }
 }
 
-int infect_planet(int who, starnum_t star, planetnum_t pnum,
+int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
                   EntityManager& entity_manager, TurnStats& stats) {
   if (success(SPORE_SUCCESS_RATE)) {
     auto planet_handle = entity_manager.get_planet(star, pnum);
@@ -217,9 +217,9 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
     if (star && planet) {
       for (auto race_handle : RaceList(entity_manager)) {
         const auto& race = race_handle.read();
-        if (planet->info(race.Playernum - 1).numsectsowned)
+        if (planet->info(race.Playernum).numsectsowned)
           push_telegram(entity_manager, race.Playernum,
-                        star->governor(race.Playernum - 1), telegram);
+                        star->governor(race.Playernum), telegram);
       }
     }
   }
@@ -251,9 +251,9 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
       if (star && planet) {
         for (auto race_handle : RaceList(entity_manager)) {
           const auto& race = race_handle.read();
-          if (planet->info(race.Playernum - 1).numsectsowned)
+          if (planet->info(race.Playernum).numsectsowned)
             push_telegram(entity_manager, race.Playernum,
-                          star->governor(race.Playernum - 1), telegram);
+                          star->governor(race.Playernum), telegram);
         }
       }
     }
@@ -395,7 +395,7 @@ void doship(Ship& ship, int update, EntityManager& entity_manager,
   /*ship is active */
   ship.active() = 1;
 
-  if (!ship.owner()) ship.alive() = 0;
+  if (ship.owner() == 0) ship.alive() = 0;
 
   if (ship.alive()) {
     /* repair radiation */
@@ -470,28 +470,28 @@ void doship(Ship& ship, int update, EntityManager& entity_manager,
         auto planet_handle =
             entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
         if (planet_handle.get()) {
-          planet_handle->info(ship.owner() - 1).explored = 1;
+          planet_handle->info(ship.owner()).explored = 1;
         }
       }
     }
 
     /* add ships, popn to total count to add AP's */
     if (update) {
-      stats.Power[ship.owner() - 1].ships_owned++;
-      stats.Power[ship.owner() - 1].resource += ship.resource();
-      stats.Power[ship.owner() - 1].fuel += ship.fuel();
-      stats.Power[ship.owner() - 1].destruct += ship.destruct();
-      stats.Power[ship.owner() - 1].popn += ship.popn();
-      stats.Power[ship.owner() - 1].troops += ship.troops();
+      stats.Power[ship.owner().value - 1].ships_owned++;
+      stats.Power[ship.owner().value - 1].resource += ship.resource();
+      stats.Power[ship.owner().value - 1].fuel += ship.fuel();
+      stats.Power[ship.owner().value - 1].destruct += ship.destruct();
+      stats.Power[ship.owner().value - 1].popn += ship.popn();
+      stats.Power[ship.owner().value - 1].troops += ship.troops();
     }
 
     if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      stats.Sdatanumships[ship.owner() - 1]++;
-      stats.Sdatapopns[ship.owner()] += ship.popn();
+      stats.Sdatanumships[ship.owner().value - 1]++;
+      stats.Sdatapopns[ship.owner().value] += ship.popn();
     } else {
-      stats.starnumships[ship.storbits()][ship.owner() - 1]++;
+      stats.starnumships[ship.storbits()][ship.owner().value - 1]++;
       /* add popn of ships to popn */
-      stats.starpopns[ship.storbits()][ship.owner() - 1] += ship.popn();
+      stats.starpopns[ship.storbits()][ship.owner().value - 1] += ship.popn();
       /* set inhabited for ship */
       /* only if manned or probe.  Maarten */
       if (ship.popn() || ship.type() == ShipType::OTYPE_PROBE) {
@@ -540,7 +540,8 @@ void doship(Ship& ship, int update, EntityManager& entity_manager,
           case ShipType::OTYPE_BERS:
             if (std::holds_alternative<MindData>(ship.special())) {
               auto mind = std::get<MindData>(ship.special());
-              if (!mind.progenitor) {
+              if (mind.progenitor == 0) {
+                // TODO(jeffbailey): Why is setting this to 1 correct?
                 mind.progenitor = 1;
                 ship.special() = mind;
               }
@@ -597,7 +598,7 @@ void doown(Ship& ship, EntityManager& entity_manager) {
 }
 
 void domissile(Ship& ship, EntityManager& entity_manager) {
-  if (!ship.alive() || !ship.owner()) return;
+  if (!ship.alive() || ship.owner() == 0) return;
   if (!ship.on() || ship.docked()) return;
 
   /* check to see if it has arrived at it's destination */
@@ -668,10 +669,10 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       const auto* star = entity_manager.peek_star(ship.storbits());
       for (auto race_handle : RaceList(entity_manager)) {
         const auto& race = race_handle.read();
-        if (p.info(race.Playernum - 1).numsectsowned &&
+        if (p.info(race.Playernum).numsectsowned &&
             race.Playernum != ship.owner()) {
           push_telegram(entity_manager, race.Playernum,
-                        star ? star->governor(race.Playernum - 1) : 0,
+                        star ? star->governor(race.Playernum) : 0,
                         sectors_destroyed_msg);
         }
       }
@@ -706,7 +707,8 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
 }
 
 void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
-  if (ship.type() != ShipType::STYPE_MINE || !ship.alive() || !ship.owner()) {
+  if (ship.type() != ShipType::STYPE_MINE || !ship.alive() ||
+      ship.owner() == 0) {
     return;
   }
 
@@ -818,9 +820,9 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
 
     for (auto race_handle : RaceList(entity_manager)) {
       const auto& race = race_handle.read();
-      if (result.nuked[race.Playernum - 1]) {
+      if (result.nuked[race.Playernum.value - 1]) {
         push_telegram(entity_manager, race.Playernum,
-                      star->governor(race.Playernum - 1), telegram.str());
+                      star->governor(race.Playernum), telegram.str());
       }
     }
     push_telegram(entity_manager, ship.owner(), ship.governor(),
@@ -831,7 +833,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
 }
 
 void doabm(Ship& ship, EntityManager& entity_manager) {
-  if (!ship.alive() || !ship.owner()) return;
+  if (!ship.alive() || ship.owner() == 0) return;
   if (!ship.on() || !ship.retaliate() || !ship.destruct()) return;
 
   if (landed(ship)) {

@@ -40,7 +40,7 @@ void scrap(const command_t& argv, GameObj& g) {
     }
 
     if (!enufAP(g.entity_manager, g.player(), g.governor(),
-                star->AP(g.player() - 1), APcount)) {
+                star->AP(g.player()), APcount)) {
       continue;
     }
 
@@ -225,17 +225,17 @@ void scrap(const command_t& argv, GameObj& g) {
           sect->set_owner(g.player());
           sect->set_popn(sect->get_popn() + crewval);
           sect->set_troops(sect->get_troops() + troopval);
-          planet.info(g.player() - 1).numsectsowned++;
-          planet.info(g.player() - 1).popn += crewval;
-          planet.info(g.player() - 1).popn += troopval;
+          planet.info(g.player()).numsectsowned++;
+          planet.info(g.player()).popn += crewval;
+          planet.info(g.player()).popn += troopval;
           g.out << std::format("Sector {},{} Colonized.\n", s.land_x(),
                                s.land_y());
         }
-        planet.info(g.player() - 1).resource += scrapval;
+        planet.info(g.player()).resource += scrapval;
         planet.popn() += crewval;
-        planet.info(g.player() - 1).destruct += destval;
-        planet.info(g.player() - 1).fuel += static_cast<int>(fuelval);
-        planet.info(g.player() - 1).crystals += xtalval;
+        planet.info(g.player()).destruct += destval;
+        planet.info(g.player()).fuel += static_cast<int>(fuelval);
+        planet.info(g.player()).crystals += xtalval;
       }
     }
 

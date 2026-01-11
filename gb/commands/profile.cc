@@ -147,8 +147,8 @@ void profile(const command_t& argv, GameObj& g) {
     g.out << "*** Deity Status ***\n";
   }
   g.out << std::format("Personal: {}\n", r->info);
-  g.out << std::format("%%Know:  {}%\n", race->translate[p - 1]);
-  if (race->translate[p - 1] > 50) {
+  g.out << std::format("%%Know:  {}%\n", race->translate[p.value - 1]);
+  if (race->translate[p.value - 1] > 50) {
     g.out << std::format("{}\t  Planet Conditions\n",
                          r->Metamorph ? "Metamorphic Race" : "Normal Race\t");
     g.out << std::format("Fert:    {}", estimate(r->fertilize, *race, p));
@@ -195,8 +195,8 @@ void profile(const command_t& argv, GameObj& g) {
   g.out << std::format("\t\t  other    {}%",
                        estimate(r->conditions[OTHER], *race, p));
   g.out << std::format("\t\tMorale:   {}\n", estimate(r->morale, *race, p));
-  g.out << std::format("Sector type preference : {}\n",
-                       race->translate[p - 1] > 80 ? Desnames[r->likesbest]
-                                                   : " ? ");
+  g.out << std::format(
+      "Sector type preference : {}\n",
+      race->translate[p.value - 1] > 80 ? Desnames[r->likesbest] : " ? ");
 }
 }  // namespace GB::commands

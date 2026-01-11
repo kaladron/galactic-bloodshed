@@ -18,13 +18,14 @@ namespace GB::commands {
 void pledge(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
-  int n;
+  player_t n;
 
   if (Governor != 0) {
     g.out << "Only leaders may pledge.\n";
     return;
   }
-  if (!(n = get_player(g.entity_manager, argv[1]))) {
+  n = get_player(g.entity_manager, argv[1]);
+  if (n == player_t{0}) {
     g.out << "No such player.\n";
     return;
   }
@@ -39,7 +40,7 @@ void pledge(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto block_handle = g.entity_manager.get_block(n);
+  auto block_handle = g.entity_manager.get_block(n.value);
   if (!block_handle.get()) {
     g.out << "Block not found.\n";
     return;

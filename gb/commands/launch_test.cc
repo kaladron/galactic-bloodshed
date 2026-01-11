@@ -86,7 +86,7 @@ int main() {
   // Initialize Sdata for AP tracking - star AP is managed by EntityManager
   auto star_handle = ctx.em.get_star(0);
   auto& star_data = *star_handle;
-  star_data.AP(0) = 100;
+  star_data.AP(player_t{1}) = 100;
 
   // Test launching the ship
   command_t cmd{"launch", "#1"};

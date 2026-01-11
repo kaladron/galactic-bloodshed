@@ -252,7 +252,7 @@ std::optional<int> Database::telegram_add(player_t player, governor_t governor,
     return std::nullopt;
   }
 
-  sqlite3_bind_int(stmt, 1, player);
+  sqlite3_bind_int(stmt, 1, player.value);
   sqlite3_bind_int(stmt, 2, governor.value);
   sqlite3_bind_text(stmt, 3, message.c_str(), -1, SQLITE_TRANSIENT);
   sqlite3_bind_int64(stmt, 4, timestamp);
@@ -284,7 +284,7 @@ Database::telegram_get(player_t player, governor_t governor) {
     return items;
   }
 
-  sqlite3_bind_int(stmt, 1, player);
+  sqlite3_bind_int(stmt, 1, player.value);
   sqlite3_bind_int(stmt, 2, governor.value);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -316,7 +316,7 @@ bool Database::telegram_delete_for_governor(player_t player,
     return false;
   }
 
-  sqlite3_bind_int(stmt, 1, player);
+  sqlite3_bind_int(stmt, 1, player.value);
   sqlite3_bind_int(stmt, 2, governor.value);
 
   int result = sqlite3_step(stmt);
@@ -338,7 +338,7 @@ int Database::telegram_count(player_t player, governor_t governor) {
     return 0;
   }
 
-  sqlite3_bind_int(stmt, 1, player);
+  sqlite3_bind_int(stmt, 1, player.value);
   sqlite3_bind_int(stmt, 2, governor.value);
 
   int count = 0;

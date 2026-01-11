@@ -39,7 +39,7 @@ int main() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  planet.info(0).destruct = 1000;
+  planet.info(player_t{1}).destruct = 1000;
 
   PlanetRepository planets(store);
   planets.save(planet);

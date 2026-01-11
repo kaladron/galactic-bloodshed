@@ -140,14 +140,14 @@ void launch(const command_t& argv, GameObj& g) {
       if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
         const universe_struct* univ_data = g.entity_manager.peek_universe();
         if (!enufAP(g.entity_manager, Playernum, Governor,
-                    univ_data->AP[Playernum - 1], APcount)) {
+                    univ_data->AP[Playernum.value - 1], APcount)) {
           continue;
         }
         deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
       } else {
         const auto& star = *g.entity_manager.peek_star(s.storbits());
-        if (!enufAP(g.entity_manager, Playernum, Governor,
-                    star.AP(Playernum - 1), APcount)) {
+        if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
+                    APcount)) {
           continue;
         }
         deductAPs(g, APcount, s.storbits());
@@ -163,7 +163,7 @@ void launch(const command_t& argv, GameObj& g) {
     } else {
       const auto* star_ptr = g.entity_manager.peek_star(s.storbits());
       const auto& star = *star_ptr;
-      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
                   APcount)) {
         return;
       }
@@ -211,8 +211,8 @@ void launch(const command_t& argv, GameObj& g) {
           "{} observed launching from planet /{}/{}.\n", ship_to_string(s),
           star.get_name(), star.get_planet_name(s.pnumorbits()));
       for (player_t i = 1; i <= g.entity_manager.num_races(); i++)
-        if (p.info(i - 1).numsectsowned && i != Playernum) {
-          g.session_registry.notify_player(i, star.governor(i - 1), observed);
+        if (p.info(i).numsectsowned && i != Playernum) {
+          g.session_registry.notify_player(i, star.governor(i), observed);
         }
 
       g.out << std::format("{} launched from planet,", ship_to_string(s));

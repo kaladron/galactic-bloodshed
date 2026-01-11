@@ -62,7 +62,7 @@ void walk(const command_t& argv, GameObj& g) {
   }
   const auto& star = star_handle.read();
 
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
               APcount)) {
     return;
   }
@@ -138,10 +138,10 @@ void walk(const command_t& argv, GameObj& g) {
     if (!ship->alive()) break;
   }
   /* if the sector is occupied by non-aligned player, attack them first */
-  if (ship->popn() && ship->alive() && sect.get_owner() &&
+  if (ship->popn() && ship->alive() && sect.get_owner() != 0 &&
       sect.get_owner() != Playernum) {
     auto oldowner = sect.get_owner();
-    auto oldgov = star.governor(sect.get_owner() - 1);
+    auto oldgov = star.governor(sect.get_owner());
     const auto* alien = g.entity_manager.peek_race(oldowner);
     if (!alien) return;
     if (!isset(g.race->allied, oldowner) || !isset(alien->allied, Playernum)) {
@@ -174,8 +174,7 @@ void walk(const command_t& argv, GameObj& g) {
         sect.set_popn(civ);
         sect.set_troops(mil);
         if (sect.is_empty()) {
-          p.info(sect.get_owner() - 1).mob_points -=
-              (int)sect.get_mobilization();
+          p.info(sect.get_owner()).mob_points -= (int)sect.get_mobilization();
           sect.set_owner(0);
         }
       }
@@ -184,7 +183,7 @@ void walk(const command_t& argv, GameObj& g) {
 
   int succ = 0;
   if ((sect.get_owner() == Playernum ||
-       isset(g.race->allied, sect.get_owner()) || !sect.get_owner()) &&
+       isset(g.race->allied, sect.get_owner()) || sect.get_owner() == 0) &&
       ship->alive())
     succ = 1;
 
@@ -196,9 +195,10 @@ void walk(const command_t& argv, GameObj& g) {
     ship->land_x() = x;
     ship->land_y() = y;
     use_fuel(*ship, AFV_FUEL_COST);
-    for (auto i = 1; i <= g.entity_manager.num_races(); i++)
-      if (i != Playernum && p.info(i - 1).numsectsowned)
-        g.session_registry.notify_player(i, star.governor(i - 1), moving);
+    for (player_t i{1}; i <= g.entity_manager.num_races();
+         i = player_t{i.value + 1})
+      if (i != Playernum && p.info(i).numsectsowned)
+        g.session_registry.notify_player(i, star.governor(i), moving);
   }
   deductAPs(g, APcount, ship->storbits());
 }

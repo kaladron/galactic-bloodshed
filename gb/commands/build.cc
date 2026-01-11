@@ -245,7 +245,7 @@ void build(const command_t& argv, GameObj& g) {
         auto& sectormap = **sectormap_handle;
         auto& sector = sectormap.get(x, y);
         if ((shipcost = newship.build_cost()) >
-            planet.info(Playernum - 1).resource) {
+            planet.info(Playernum).resource) {
           g.out << std::format("You need {}r to construct this ship.\n",
                                shipcost);
           return;
@@ -369,7 +369,7 @@ void build(const command_t& argv, GameObj& g) {
             auto& sectormap = **sectormap_handle;
             auto& sector = sectormap.get(x, y);
             if ((shipcost = newship.build_cost()) >
-                planet.info(Playernum - 1).resource) {
+                planet.info(Playernum).resource) {
               g.out << std::format("You need {}r to construct this ship.\n",
                                    shipcost);
               return;

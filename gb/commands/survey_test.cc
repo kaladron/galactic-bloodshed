@@ -72,10 +72,10 @@ void test_survey_no_args_planet_scope() {
   planet.conditions(TEMP) = 280;
   planet.conditions(RTEMP) = 280;
   planet.conditions(TOXIC) = 15;
-  planet.info(0).numsectsowned = 5;
-  planet.info(0).fuel = 1000;
-  planet.info(0).resource = 2000;
-  planet.info(0).destruct = 100;
+  planet.info(player_t{1}).numsectsowned = 5;
+  planet.info(player_t{1}).fuel = 1000;
+  planet.info(player_t{1}).resource = 2000;
+  planet.info(player_t{1}).destruct = 100;
 
   PlanetRepository planets(store);
   planets.save(planet);
@@ -145,7 +145,7 @@ void test_survey_sector_mode_no_args() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  planet.info(0).numsectsowned = 5;
+  planet.info(player_t{1}).numsectsowned = 5;
 
   PlanetRepository planets(store);
   planets.save(planet);
@@ -214,7 +214,7 @@ void test_survey_sector_range_with_header() {
   planet.Maxx() = 10;
   planet.Maxy() = 10;
   planet.conditions(TOXIC) = 10;
-  planet.info(0).numsectsowned = 5;
+  planet.info(player_t{1}).numsectsowned = 5;
 
   PlanetRepository planets(store);
   planets.save(planet);

@@ -118,18 +118,17 @@ void allocateAPs(const command_t& argv, GameObj& g) {
   auto& univ = *univ_handle;
   const auto& star = *g.entity_manager.peek_star(g.snum());
   maxalloc =
-      std::min(univ.AP[Playernum - 1], LIMIT_APs - star.AP(Playernum - 1));
+      std::min(univ.AP[Playernum.value - 1], LIMIT_APs - star.AP(Playernum));
   if (alloc > maxalloc) {
     std::string max_msg =
         std::format("Illegal value ({}) - maximum = {}\n", alloc, maxalloc);
     push_telegram(g.entity_manager, Playernum, Governor, max_msg);
     return;
   }
-  univ.AP[Playernum - 1] -= alloc;
+  univ.AP[Playernum.value - 1] -= alloc;
   auto star_handle = g.entity_manager.get_star(g.snum());
   auto& star_write = *star_handle;
-  star_write.AP(Playernum - 1) =
-      std::min(LIMIT_APs, star.AP(Playernum - 1) + alloc);
+  star_write.AP(Playernum) = std::min(LIMIT_APs, star.AP(Playernum) + alloc);
   std::string allocated_msg = "Allocated\n";
   push_telegram(g.entity_manager, Playernum, Governor, allocated_msg);
 }
@@ -140,7 +139,8 @@ void deductAPs(const GameObj& g, ap_t APs, ScopeLevel level) {
   if (level == ScopeLevel::LEVEL_UNIV) {
     auto univ_handle = g.entity_manager.get_universe();
     auto& univ = *univ_handle;
-    univ.AP[g.player() - 1] = std::max(0u, univ.AP[g.player() - 1] - APs);
+    univ.AP[g.player().value - 1] =
+        std::max(0u, univ.AP[g.player().value - 1] - APs);
     return;
   }
 }
@@ -155,10 +155,10 @@ void deductAPs(const GameObj& g, ap_t APs, starnum_t snum) {
   }
 
   auto& star = *star_handle;
-  if (star.AP(g.player() - 1) >= APs)
-    star.AP(g.player() - 1) -= APs;
+  if (star.AP(g.player()) >= APs)
+    star.AP(g.player()) -= APs;
   else {
-    star.AP(g.player() - 1) = 0;
+    star.AP(g.player()) = 0;
     std::string cheater_msg = "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
                               "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";
     push_telegram(g.entity_manager, g.player(), g.governor(), cheater_msg);

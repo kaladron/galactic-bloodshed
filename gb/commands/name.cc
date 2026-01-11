@@ -93,7 +93,7 @@ void name(const command_t& argv, GameObj& g) {
       g.out << "You are not authorized to do this.\n";
       return;
     }
-    auto block_handle = g.entity_manager.get_block(Playernum);
+    auto block_handle = g.entity_manager.get_block(Playernum.value);
     auto& block = *block_handle;
     block.name = namebuf;
     g.out << "Done.\n";

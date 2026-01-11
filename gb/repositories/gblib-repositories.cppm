@@ -226,11 +226,11 @@ RaceRepository::deserialize(const std::string& json_str) const {
 }
 
 std::optional<Race> RaceRepository::find_by_player(player_t player) {
-  return find(player);
+  return find(player.value);
 }
 
 bool RaceRepository::save(const Race& race) {
-  return Repository<Race>::save(race.Playernum, race);
+  return Repository<Race>::save(race.Playernum.value, race);
 }
 
 // Glaze reflection for Ship special function data structures
@@ -811,7 +811,7 @@ public:
     return find(id);
   }
   bool save(const block& b) {
-    return Repository<block>::save(b.Playernum, b);
+    return Repository<block>::save(b.Playernum.value, b);
   }
 
 protected:

@@ -36,7 +36,7 @@ void unpledge(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto block_handle = g.entity_manager.get_block(n);
+  auto block_handle = g.entity_manager.get_block(n.value);
   if (!block_handle.get()) {
     g.out << "Block not found.\n";
     return;

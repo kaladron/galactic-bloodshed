@@ -26,7 +26,7 @@ void move_popn(const command_t& argv, GameObj& g) {
   int oldpopn;
   int old2popn;
   int old3popn;
-  int old2owner;
+  player_t old2owner;
   governor_t old2gov;
   int absorbed;
   int n;
@@ -137,7 +137,7 @@ void move_popn(const command_t& argv, GameObj& g) {
       return;
     }
 
-    if (sect2.get_owner() && (sect2.get_owner() != Playernum))
+    if ((sect2.get_owner() != 0) && (sect2.get_owner() != Playernum))
       Assault = 1;
     else
       Assault = 0;
@@ -150,13 +150,14 @@ void move_popn(const command_t& argv, GameObj& g) {
       APcost =
           MOVE_FACTOR * ((int)std::log10(1.0 + (double)people) + Assault) + 1;
 
-    if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+    if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
                 APcost)) {
       return;
     }
 
     if (Assault) {
-      ground_assaults[Playernum - 1][sect2.get_owner() - 1][g.snum()] += 1;
+      ground_assaults[Playernum.value - 1][sect2.get_owner().value - 1]
+                     [g.snum()] += 1;
       auto race_handle = g.entity_manager.get_race(Playernum);
       auto alien_handle = g.entity_manager.get_race(sect2.get_owner());
       if (!race_handle.get() || !alien_handle.get()) {
@@ -165,13 +166,13 @@ void move_popn(const command_t& argv, GameObj& g) {
       auto& race = *race_handle;
       auto& alien = *alien_handle;
       /* races find out about each other */
-      alien.translate[Playernum - 1] =
-          MIN(alien.translate[Playernum - 1] + 5, 100);
-      race.translate[sect2.get_owner() - 1] =
-          MIN(race.translate[sect2.get_owner() - 1] + 5, 100);
+      alien.translate[Playernum.value - 1] =
+          MIN(alien.translate[Playernum.value - 1] + 5, 100);
+      race.translate[sect2.get_owner().value - 1] =
+          MIN(race.translate[sect2.get_owner().value - 1] + 5, 100);
 
-      old2owner = (int)(sect2.get_owner());
-      old2gov = star.governor(sect2.get_owner() - 1);
+      old2owner = sect2.get_owner();
+      old2gov = star.governor(sect2.get_owner());
       if (what == PopulationType::CIV)
         sect.set_popn(std::max(0L, sect.get_popn() - people));
       else if (what == PopulationType::MIL)
@@ -254,8 +255,8 @@ void move_popn(const command_t& argv, GameObj& g) {
                                what == PopulationType::CIV ? "civilians"
                                                            : "troops");
         }
-        planet.info(Playernum - 1).mob_points += (int)sect2.get_mobilization();
-        planet.info(old2owner - 1).mob_points -= (int)sect2.get_mobilization();
+        planet.info(Playernum).mob_points += (int)sect2.get_mobilization();
+        planet.info(old2owner).mob_points -= (int)sect2.get_mobilization();
       } else {
         g.out << std::format("The invasion was repulsed; try again.\n");
         telegram += "You fought them off!\n";
@@ -265,15 +266,15 @@ void move_popn(const command_t& argv, GameObj& g) {
       if (!(sect.get_popn() + sect.get_troops() + people)) {
         telegram += "You killed all of them!\n";
         /* increase modifier */
-        race.translate[old2owner - 1] =
-            MIN(race.translate[old2owner - 1] + 5, 100);
+        race.translate[old2owner.value - 1] =
+            MIN(race.translate[old2owner.value - 1] + 5, 100);
       }
       if (!people) {
         g.out << std::format(
             "Oh no! They killed your party to the last man!\n");
         /* increase modifier */
-        alien.translate[Playernum - 1] =
-            MIN(alien.translate[Playernum - 1] + 5, 100);
+        alien.translate[Playernum.value - 1] =
+            MIN(alien.translate[Playernum.value - 1] + 5, 100);
       }
 
       telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
@@ -293,13 +294,13 @@ void move_popn(const command_t& argv, GameObj& g) {
         sect.set_troops(sect.get_troops() - people);
         sect2.set_troops(sect2.get_troops() + people);
       }
-      if (!sect2.get_owner())
-        planet.info(Playernum - 1).mob_points += (int)sect2.get_mobilization();
+      if (sect2.get_owner() == player_t{0})
+        planet.info(Playernum).mob_points += (int)sect2.get_mobilization();
       sect2.set_owner(Playernum);
     }
 
     if (sect.is_empty()) {
-      planet.info(Playernum - 1).mob_points -= (int)sect.get_mobilization();
+      planet.info(Playernum).mob_points -= (int)sect.get_mobilization();
       sect.set_owner(0);
     }
 

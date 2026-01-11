@@ -50,7 +50,7 @@ void grant(const command_t& argv, GameObj& g) {
       g.out << "Star not found.\n";
       return;
     }
-    star_handle->governor(Playernum - 1) = gov;
+    star_handle->governor(Playernum) = gov;
     warn_player(
         g.session_registry, g.entity_manager, Playernum, gov,
         std::format("\"{}\" has granted you control of the /{} star system.\n",

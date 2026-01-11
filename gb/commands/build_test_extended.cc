@@ -53,8 +53,8 @@ struct BuildTestFixture {
     planet.Maxy() = 10;
     planet.xpos() = 0.0;
     planet.ypos() = 0.0;
-    planet.info(0).resource = 50000;  // Plenty for multiple builds
-    planet.info(0).fuel = 10000;
+    planet.info(player_t{1}).resource = 50000;  // Plenty for multiple builds
+    planet.info(player_t{1}).fuel = 10000;
     PlanetRepository planets_repo(store);
     planets_repo.save(planet);
     planet_id = 0;
@@ -102,7 +102,7 @@ void test_planet_multiple_builds() {
   GameObj g(fixture.em, registry);
   fixture.init_game_obj(g);
 
-  int initial_resource = fixture.get_planet()->info(0).resource;
+  int initial_resource = fixture.get_planet()->info(player_t{1}).resource;
 
   // Build 5 probes at sector 5,5
   command_t argv = {"build", ":", "5,5", "5"};
@@ -152,7 +152,7 @@ void test_planet_multiple_builds() {
   const auto* planet = fixture.get_planet();
   int cost_per_probe = Shipcost(ShipType::OTYPE_PROBE, *g.race);
   int expected_resource = initial_resource - (5 * cost_per_probe);
-  assert(planet->info(0).resource == expected_resource);
+  assert(planet->info(player_t{1}).resource == expected_resource);
 
   std::println("✓ Planet multiple builds test passed");
 }

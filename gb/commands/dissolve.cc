@@ -54,7 +54,7 @@ void dissolve(const command_t& argv, GameObj& g) {
 
   auto [player, governor] = getracenum(g.entity_manager, racepass, govpass);
 
-  if (!player) {
+  if (player.value == 0) {
     g.out << "Password mismatch, self-destruct not initiated!\n";
     return;
   }
@@ -74,19 +74,18 @@ void dissolve(const command_t& argv, GameObj& g) {
     for (auto planet_handle :
          PlanetList(g.entity_manager, star.star_id(), star)) {
       auto& pl = *planet_handle;
-      if (pl.info(Playernum - 1).explored &&
-          pl.info(Playernum - 1).numsectsowned) {
-        pl.info(Playernum - 1).fuel = 0;
-        pl.info(Playernum - 1).destruct = 0;
-        pl.info(Playernum - 1).resource = 0;
-        pl.info(Playernum - 1).popn = 0;
-        pl.info(Playernum - 1).troops = 0;
-        pl.info(Playernum - 1).tax = 0;
-        pl.info(Playernum - 1).newtax = 0;
-        pl.info(Playernum - 1).crystals = 0;
-        pl.info(Playernum - 1).numsectsowned = 0;
-        pl.info(Playernum - 1).explored = 0;
-        pl.info(Playernum - 1).autorep = 0;
+      if (pl.info(Playernum).explored && pl.info(Playernum).numsectsowned) {
+        pl.info(Playernum).fuel = 0;
+        pl.info(Playernum).destruct = 0;
+        pl.info(Playernum).resource = 0;
+        pl.info(Playernum).popn = 0;
+        pl.info(Playernum).troops = 0;
+        pl.info(Playernum).tax = 0;
+        pl.info(Playernum).newtax = 0;
+        pl.info(Playernum).crystals = 0;
+        pl.info(Playernum).numsectsowned = 0;
+        pl.info(Playernum).explored = 0;
+        pl.info(Playernum).autorep = 0;
       }
 
       auto smap_handle =

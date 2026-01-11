@@ -39,8 +39,8 @@ void capture(const command_t& argv, GameObj& g) {
     g.out << "Capture what?\n";
     return;
   }
-  if (Governor != 0 && g.entity_manager.peek_star(g.snum())->governor(
-                           Playernum - 1) != Governor) {
+  if (Governor != 0 &&
+      g.entity_manager.peek_star(g.snum())->governor(Playernum) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
@@ -61,10 +61,9 @@ void capture(const command_t& argv, GameObj& g) {
 
         continue;
       }
-      if (!enufAP(
-              g.entity_manager, Playernum, Governor,
-              g.entity_manager.peek_star(ship.storbits())->AP(Playernum - 1),
-              APcount)) {
+      if (!enufAP(g.entity_manager, Playernum, Governor,
+                  g.entity_manager.peek_star(ship.storbits())->AP(Playernum),
+                  APcount)) {
         continue;
       }
 
@@ -302,7 +301,7 @@ void capture(const command_t& argv, GameObj& g) {
       if (ship.alive()) {
         if (sect.get_popn() + sect.get_troops() + boarders) {
           telegram += "You killed all the aliens in this sector!\n";
-          p.info(Playernum - 1).mob_points -= sect.get_mobilization();
+          p.info(Playernum).mob_points -= sect.get_mobilization();
         }
         if (!boarders) {
           g.out << "Oh no! They killed your party to the last man!\n";

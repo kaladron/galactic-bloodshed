@@ -4,7 +4,6 @@
 /// \brief Unit tests for bless command
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;

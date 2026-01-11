@@ -64,13 +64,13 @@ int getcount(const command_t& argv, const size_t elem) {
 bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  if (planet.slaved_to() && planet.slaved_to() != Playernum) {
+  if (planet.slaved_to() != 0 && planet.slaved_to() != Playernum) {
     std::string message = std::format("This planet is enslaved by player {}.\n",
                                       planet.slaved_to());
     push_telegram(g.entity_manager, Playernum, Governor, message);
     return false;
   }
-  if (Governor != 0 && star.governor(Playernum - 1) != Governor) {
+  if (Governor != 0 && star.governor(Playernum) != Governor) {
     g.out << "You are not authorized in this system.\n";
     return false;
   }
@@ -157,13 +157,14 @@ std::optional<ScopeLevel> build_at_ship(GameObj& g, Ship* builder,
   return (builder->whatorbits());
 }
 
-void autoload_at_planet(int Playernum, Ship* s, Planet* planet, Sector& sector,
-                        int* crew, double* fuel) {
+void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
+                        Sector& sector, int* crew, double* fuel) {
   *crew = MIN(s->max_crew(), sector.get_popn());
-  *fuel = MIN((double)s->max_fuel(), (double)planet->info(Playernum - 1).fuel);
+  *fuel = MIN((double)s->max_fuel(),
+              (double)planet->info(Playernum.value - 1).fuel);
   sector.set_popn(sector.get_popn() - *crew);
   if (!sector.get_popn() && !sector.get_troops()) sector.set_owner(0);
-  planet->info(Playernum - 1).fuel -= (int)(*fuel);
+  planet->info(Playernum).fuel -= (int)(*fuel);
 }
 
 void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel) {
@@ -209,13 +210,12 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   newship->on() = 0;
   switch (newship->type()) {
     case ShipType::OTYPE_VN:
-      newship->special() =
-          MindData{.progenitor = static_cast<unsigned char>(Playernum),
-                   .target = 0,
-                   .generation = 1,
-                   .busy = 1,
-                   .tampered = 0,
-                   .who_killed = 0};
+      newship->special() = MindData{.progenitor = Playernum,
+                                    .target = 0,
+                                    .generation = 1,
+                                    .busy = 1,
+                                    .tampered = 0,
+                                    .who_killed = 0};
       break;
     case ShipType::STYPE_MINE:
       newship->special() = TriggerData{.radius = 100}; /* trigger radius */
@@ -278,7 +278,7 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   newship.storbits() = snum;
   newship.pnumorbits() = pnum;
   newship.docked() = 1;
-  planet.info(Playernum - 1).resource -= newship.build_cost();
+  planet.info(Playernum).resource -= newship.build_cost();
 
   // Ship number will be assigned by EntityManager when created
   shipno = entity_manager.num_ships() + 1;
@@ -408,8 +408,7 @@ void Getship(Ship* s, ShipType i, const Race& r) {
   s->mass() = getmass(*s);
   s->build_cost() = r.God ? 0 : (int)cost(*s);
   if (s->type() == ShipType::OTYPE_VN || s->type() == ShipType::OTYPE_BERS) {
-    s->special() =
-        MindData{.progenitor = static_cast<unsigned char>(r.Playernum)};
+    s->special() = MindData{.progenitor = r.Playernum};
   }
 }
 

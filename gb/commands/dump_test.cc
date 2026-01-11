@@ -74,7 +74,7 @@ int main() {
   {
     // Before dump: player 2 hasn't explored the planet
     const auto* p_before = ctx.em.peek_planet(0, 0);
-    assert(!p_before->info(1).explored);
+    assert(!p_before->info(player_t{2}).explored);
 
     // Execute dump command
     command_t argv = {"dump", "Recipient"};
@@ -82,7 +82,7 @@ int main() {
 
     // Verify: player 2 should now have exploration data
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(1).explored);
+    assert(p_after->info(player_t{2}).explored);
     std::println("✓ Player 2 received exploration data");
 
     // Verify output message

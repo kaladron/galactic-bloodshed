@@ -24,7 +24,7 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
   if (!race.governor[Governor.value].toggle.geography) {
     /* traverse ship list on planet; find out if we can look at
        ships here. */
-    iq = !!p.info(Playernum - 1).numsectsowned;
+    iq = !!p.info(Playernum).numsectsowned;
 
     const ShipList shiplist(g.entity_manager, p.ships());
     for (const Ship* s : shiplist) {
@@ -47,27 +47,27 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
         (sector.get_owner() == race.governor[Governor.value].toggle.highlight);
     if (shiplocs[sector.get_x()][sector.get_y()] && iq) {
       if (race.governor[Governor.value].toggle.color)
-        g.out << std::format("{}{}", (char)(sector.get_owner() + '?'),
+        g.out << std::format("{}{}", (char)(sector.get_owner().value + '?'),
                              shiplocs[sector.get_x()][sector.get_y()]);
       else {
         if (owned1 && race.governor[Governor.value].toggle.inverse)
-          g.out << std::format("1{}{}", (char)(sector.get_owner() + '?'),
+          g.out << std::format("1{}{}", (char)(sector.get_owner().value + '?'),
                                shiplocs[sector.get_x()][sector.get_y()]);
 
         else
-          g.out << std::format("0{}{}", (char)(sector.get_owner() + '?'),
+          g.out << std::format("0{}{}", (char)(sector.get_owner().value + '?'),
                                shiplocs[sector.get_x()][sector.get_y()]);
       }
     } else {
       if (race.governor[Governor.value].toggle.color) {
-        g.out << std::format("{}{}", (char)(sector.get_owner() + '?'),
+        g.out << std::format("{}{}", (char)(sector.get_owner().value + '?'),
                              desshow(Playernum, Governor, race, sector));
       } else {
         if (owned1 && race.governor[Governor.value].toggle.inverse) {
-          g.out << std::format("1{}{}", (char)(sector.get_owner() + '?'),
+          g.out << std::format("1{}{}", (char)(sector.get_owner().value + '?'),
                                desshow(Playernum, Governor, race, sector));
         } else {
-          g.out << std::format("0{}{}", (char)(sector.get_owner() + '?'),
+          g.out << std::format("0{}{}", (char)(sector.get_owner().value + '?'),
                                desshow(Playernum, Governor, race, sector));
         }
       }
@@ -79,12 +79,11 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
 
   g.out << std::format(
       "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", Planet_types[p.type()],
-      race.Metamorph ? "covered" : "owned",
-      p.info(Playernum - 1).numsectsowned);
+      race.Metamorph ? "covered" : "owned", p.info(Playernum).numsectsowned);
   if (p.explored() || race.tech >= TECH_EXPLORE) {
     bool f = false;
     for (auto i = 1U; i < MAXPLAYERS; i++) {
-      if (p.info(i - 1).numsectsowned != 0 && i != Playernum) {
+      if (p.info(i).numsectsowned != 0 && i != Playernum.value) {
         f = true;
         g.out << std::format("{}{}", isset(race.atwar, i) ? '*' : ' ', i);
       }
@@ -96,33 +95,32 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
   g.out << "\n";
   g.out << std::format(
       "              Guns : {:<3}             Mob Points : {}\n",
-      p.info(Playernum - 1).guns, p.info(Playernum - 1).mob_points);
+      p.info(Playernum).guns, p.info(Playernum).mob_points);
   g.out << std::format(
       "      Mobilization : {:<3} ({:<3})     Compatibility: {:.2f}%",
-      p.info(Playernum - 1).comread, p.info(Playernum - 1).mob_set,
+      p.info(Playernum).comread, p.info(Playernum).mob_set,
       p.compatibility(race));
   if (p.conditions(TOXIC) > 50) {
     g.out << std::format("    ({}% TOXIC)\n", p.conditions(TOXIC));
   }
   g.out << "\n";
   g.out << std::format("Resource stockpile : {:<9}    Fuel stockpile: {}\n",
-                       p.info(Playernum - 1).resource,
-                       p.info(Playernum - 1).fuel);
+                       p.info(Playernum).resource, p.info(Playernum).fuel);
   g.out << std::format(
       "      Destruct cap : {:<9} {:>18}: {:<5} ({:<5}/{:<})\n",
-      p.info(Playernum - 1).destruct,
+      p.info(Playernum).destruct,
       race.Metamorph ? "Tons of biomass" : "Total Population",
-      p.info(Playernum - 1).popn, p.popn(),
+      p.info(Playernum).popn, p.popn(),
       round_rand(.01 * (100. - p.conditions(TOXIC)) * p.maxpopn()));
   g.out << std::format("          Crystals : {:<9} {:>18}: {:<5} ({:<5})\n",
-                       p.info(Playernum - 1).crystals, "Ground forces",
-                       p.info(Playernum - 1).troops, p.troops());
+                       p.info(Playernum).crystals, "Ground forces",
+                       p.info(Playernum).troops, p.troops());
   g.out << std::format("{} Total Resource Deposits     Tax rate {}%  New {}%\n",
-                       p.total_resources(), p.info(Playernum - 1).tax,
-                       p.info(Playernum - 1).newtax);
+                       p.total_resources(), p.info(Playernum).tax,
+                       p.info(Playernum).newtax);
   g.out << std::format("Estimated Production Next Update : {:.2f}\n",
-                       p.info(Playernum - 1).est_production);
-  if (p.slaved_to()) {
+                       p.info(Playernum).est_production);
+  if (p.slaved_to() != 0) {
     g.out << std::format("      ENSLAVED to player {};\n", p.slaved_to());
   }
 }
@@ -162,16 +160,16 @@ char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
     return CHAR_NEUTRAL_TROOPS;
   }
 
-  if (s.get_owner() && !r.governor[Governor.value].toggle.geography &&
+  if (s.get_owner() != 0 && !r.governor[Governor.value].toggle.geography &&
       !r.governor[Governor.value].toggle.color) {
     if (!r.governor[Governor.value].toggle.inverse ||
         s.get_owner() != r.governor[Governor.value].toggle.highlight) {
       if (!r.governor[Governor.value].toggle.double_digits)
-        return (s.get_owner() % 10) + '0';
+        return (s.get_owner().value % 10) + '0';
 
-      if (s.get_owner() < 10 || s.get_x() % 2)
-        return (s.get_owner() % 10) + '0';
-      return (s.get_owner() / 10) + '0';
+      if (s.get_owner().value < 10 || s.get_x() % 2)
+        return (s.get_owner().value % 10) + '0';
+      return (s.get_owner().value / 10) + '0';
     }
   }
 

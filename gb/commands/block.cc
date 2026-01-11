@@ -17,7 +17,8 @@ void block(const command_t& argv, GameObj& g) {
   const auto* race = g.race;
 
   if (argv.size() == 3 && argv[1] == "player") {
-    if (!(p = get_player(g.entity_manager, argv[2]))) {
+    p = get_player(g.entity_manager, argv[2]);
+    if (p == 0) {
       g.out << "No such player.\n";
       return;
     }
@@ -29,7 +30,7 @@ void block(const command_t& argv, GameObj& g) {
     // Flag for finding a block
     bool found_any = false;
     g.out << std::format("Race #{} [{}] is a member of ", p, r->name);
-    for (int i = 1; i <= g.entity_manager.num_races(); i++) {
+    for (int i = 1; i <= g.entity_manager.num_races().value; i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (isset(block_i->pledge, p) && isset(block_i->invite, p)) {
@@ -44,7 +45,7 @@ void block(const command_t& argv, GameObj& g) {
 
     found_any = false;
     g.out << std::format("Race #{} [{}] has been invited to join ", p, r->name);
-    for (int i = 1; i <= g.entity_manager.num_races(); i++) {
+    for (int i = 1; i <= g.entity_manager.num_races().value; i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (!isset(block_i->pledge, p) && isset(block_i->invite, p)) {
@@ -59,7 +60,7 @@ void block(const command_t& argv, GameObj& g) {
 
     found_any = false;
     g.out << std::format("Race #{} [{}] has pledged ", p, r->name);
-    for (int i = 1; i <= g.entity_manager.num_races(); i++) {
+    for (int i = 1; i <= g.entity_manager.num_races().value; i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i) continue;
       if (isset(block_i->pledge, p) && !isset(block_i->invite, p)) {
@@ -72,12 +73,13 @@ void block(const command_t& argv, GameObj& g) {
     else
       g.out << "\n";
   } else if (argv.size() > 1) {
-    if (!(p = get_player(g.entity_manager, argv[1]))) {
+    p = get_player(g.entity_manager, argv[1]);
+    if (p == 0) {
       g.out << "No such player,\n";
       return;
     }
     /* list the players who are in this alliance block */
-    const auto* block_p = g.entity_manager.peek_block(p);
+    const auto* block_p = g.entity_manager.peek_block(p.value);
     if (!block_p) {
       g.out << "Block not found.\n";
       return;
@@ -110,19 +112,20 @@ void block(const command_t& argv, GameObj& g) {
       if (!isset(allied_members, i)) continue;
       const auto* r = g.entity_manager.peek_race(i);
       if (!r || r->dissolved) continue;
-      const auto* power_ptr = g.entity_manager.peek_power(r->Playernum);
+      const auto* power_ptr = g.entity_manager.peek_power(r->Playernum.value);
       if (!power_ptr) continue;
 
-      table.add_row({std::format("{}", r->Playernum), std::string(r->name),
-                     estimate(power_ptr->troops, *race, r->Playernum),
-                     estimate(power_ptr->popn, *race, r->Playernum),
-                     estimate(power_ptr->money, *race, r->Playernum),
-                     estimate(power_ptr->ships_owned, *race, r->Playernum),
-                     estimate(power_ptr->planets_owned, *race, r->Playernum),
-                     estimate(power_ptr->resource, *race, r->Playernum),
-                     estimate(power_ptr->fuel, *race, r->Playernum),
-                     estimate(power_ptr->destruct, *race, r->Playernum),
-                     std::format("{}%", race->translate[r->Playernum - 1])});
+      table.add_row(
+          {std::format("{}", r->Playernum), std::string(r->name),
+           estimate(power_ptr->troops, *race, r->Playernum),
+           estimate(power_ptr->popn, *race, r->Playernum),
+           estimate(power_ptr->money, *race, r->Playernum),
+           estimate(power_ptr->ships_owned, *race, r->Playernum),
+           estimate(power_ptr->planets_owned, *race, r->Playernum),
+           estimate(power_ptr->resource, *race, r->Playernum),
+           estimate(power_ptr->fuel, *race, r->Playernum),
+           estimate(power_ptr->destruct, *race, r->Playernum),
+           std::format("{}%", race->translate[r->Playernum.value - 1])});
     }
 
     g.out << table << "\n";
@@ -156,21 +159,22 @@ void block(const command_t& argv, GameObj& g) {
                    "fuel", "dest", "VPs", "know"});
     table[0].format().font_style({tabulate::FontStyle::bold});
 
-    for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
+    for (int i = 1; i <= g.entity_manager.num_races().value; i++) {
       const auto* block_i = g.entity_manager.peek_block(i);
       if (!block_i || Power_blocks.members[i - 1] == 0) continue;
 
-      table.add_row({std::format("{}", i), std::string(block_i->name),
-                     std::format("{}", Power_blocks.members[i - 1]),
-                     estimate(Power_blocks.money[i - 1], *race, i),
-                     estimate(Power_blocks.popn[i - 1], *race, i),
-                     estimate(Power_blocks.ships_owned[i - 1], *race, i),
-                     estimate(Power_blocks.systems_owned[i - 1], *race, i),
-                     estimate(Power_blocks.resource[i - 1], *race, i),
-                     estimate(Power_blocks.fuel[i - 1], *race, i),
-                     estimate(Power_blocks.destruct[i - 1], *race, i),
-                     estimate(Power_blocks.VPs[i - 1], *race, i),
-                     std::format("{}%", race->translate[i - 1])});
+      table.add_row(
+          {std::format("{}", i), std::string(block_i->name),
+           std::format("{}", Power_blocks.members[i - 1]),
+           estimate(Power_blocks.money[i - 1], *race, player_t{i}),
+           estimate(Power_blocks.popn[i - 1], *race, player_t{i}),
+           estimate(Power_blocks.ships_owned[i - 1], *race, player_t{i}),
+           estimate(Power_blocks.systems_owned[i - 1], *race, player_t{i}),
+           estimate(Power_blocks.resource[i - 1], *race, player_t{i}),
+           estimate(Power_blocks.fuel[i - 1], *race, player_t{i}),
+           estimate(Power_blocks.destruct[i - 1], *race, player_t{i}),
+           estimate(Power_blocks.VPs[i - 1], *race, player_t{i}),
+           std::format("{}%", race->translate[i - 1])});
     }
 
     g.out << table << "\n";

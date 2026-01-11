@@ -204,18 +204,20 @@ public:
 
   // Array accessors with bounds checking
   [[nodiscard]] const plinfo& info(player_t player) const {
-    if (player >= MAXPLAYERS) {
-      throw std::runtime_error(std::format(
-          "Player number {} out of range (max {})", player, MAXPLAYERS));
+    if (player.value < 1 || player.value > MAXPLAYERS) {
+      throw std::runtime_error(
+          std::format("Player number {} out of range (valid: 1-{})",
+                      player.value, MAXPLAYERS));
     }
-    return data_.info[player];
+    return data_.info[player.value - 1];
   }
   plinfo& info(player_t player) {
-    if (player >= MAXPLAYERS) {
-      throw std::runtime_error(std::format(
-          "Player number {} out of range (max {})", player, MAXPLAYERS));
+    if (player.value < 1 || player.value > MAXPLAYERS) {
+      throw std::runtime_error(
+          std::format("Player number {} out of range (valid: 1-{})",
+                      player.value, MAXPLAYERS));
     }
-    return data_.info[player];
+    return data_.info[player.value - 1];
   }
 
   [[nodiscard]] int conditions(Conditions cond) const {

@@ -21,28 +21,26 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
   for (auto i = 0; i < star_ref.numplanets(); i++) {
     const auto& pl = *g.entity_manager.peek_planet(star, i);
 
-    if (pl.info(Playernum - 1).explored &&
-        pl.info(Playernum - 1).numsectsowned &&
-        (Governor == 0 || star_ref.governor(Playernum - 1) == Governor)) {
+    if (pl.info(Playernum).explored && pl.info(Playernum).numsectsowned &&
+        (Governor == 0 || star_ref.governor(Playernum) == Governor)) {
       const auto star4 = std::string(star_ref.get_name()).substr(0, 4);
       const auto planet4 =
           std::string(star_ref.get_planet_name(i)).substr(0, 4);
 
-      std::string autorep = pl.info(Playernum - 1).autorep ? "*" : " ";
+      std::string autorep = pl.info(Playernum).autorep ? "*" : " ";
 
-      table.add_row(
-          {std::string(1, Psymbol[pl.type()]),
-           std::format("{}/{}", star4, planet4), autorep,
-           std::format("{}", star_ref.governor(Playernum - 1)),
-           std::format("{:.4f}", pl.info(Playernum - 1).prod_tech),
-           std::format("{}", pl.total_resources()),
-           std::format("{}", pl.info(Playernum - 1).prod_crystals),
-           std::format("{}", pl.info(Playernum - 1).prod_res),
-           std::format("{}", pl.info(Playernum - 1).prod_dest),
-           std::format("{}", pl.info(Playernum - 1).prod_fuel),
-           std::format("{}", pl.info(Playernum - 1).prod_money),
-           std::format("{}", pl.info(Playernum - 1).tox_thresh),
-           std::format("{:.2f}", pl.info(Playernum - 1).est_production)});
+      table.add_row({std::string(1, Psymbol[pl.type()]),
+                     std::format("{}/{}", star4, planet4), autorep,
+                     std::format("{}", star_ref.governor(Playernum)),
+                     std::format("{:.4f}", pl.info(Playernum).prod_tech),
+                     std::format("{}", pl.total_resources()),
+                     std::format("{}", pl.info(Playernum).prod_crystals),
+                     std::format("{}", pl.info(Playernum).prod_res),
+                     std::format("{}", pl.info(Playernum).prod_dest),
+                     std::format("{}", pl.info(Playernum).prod_fuel),
+                     std::format("{}", pl.info(Playernum).prod_money),
+                     std::format("{}", pl.info(Playernum).tox_thresh),
+                     std::format("{:.2f}", pl.info(Playernum).est_production)});
     }
   }
 }

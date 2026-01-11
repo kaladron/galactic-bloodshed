@@ -20,7 +20,7 @@ void send_message(const command_t& argv, GameObj& g) {
   } else {
     APcount = g.god() ? 0 : 1;
   }
-  int who;
+  player_t who;
   player_t i;
   int j;
   int to_block;
@@ -57,7 +57,8 @@ void send_message(const command_t& argv, GameObj& g) {
   if (argv[1] == "block") {
     to_block = 1;
     g.out << "Sending message to alliance block.\n";
-    if (!(who = get_player(g.entity_manager, argv[2]))) {
+    who = get_player(g.entity_manager, argv[2]);
+    if (who == player_t{0}) {
       g.out << "No such alliance block.\n";
       return;
     }
@@ -77,7 +78,8 @@ void send_message(const command_t& argv, GameObj& g) {
     }
     star = where.snum;
   } else {
-    if (!(who = get_player(g.entity_manager, argv[1]))) {
+    who = get_player(g.entity_manager, argv[1]);
+    if (who == player_t{0}) {
       g.out << "No such player.\n";
       return;
     }
@@ -100,8 +102,7 @@ void send_message(const command_t& argv, GameObj& g) {
 
     default:
       if (!enufAP(g.entity_manager, Playernum, Governor,
-                  g.entity_manager.peek_star(g.snum())->AP(Playernum - 1),
-                  APcount))
+                  g.entity_manager.peek_star(g.snum())->AP(Playernum), APcount))
         return;
       break;
   }
@@ -116,7 +117,7 @@ void send_message(const command_t& argv, GameObj& g) {
 
   /* send the message */
   if (to_block) {
-    const auto* block = g.entity_manager.peek_block(who);
+    const auto* block = g.entity_manager.peek_block(who.value);
     if (!block) {
       g.out << "Block not found.\n";
       return;
@@ -148,7 +149,7 @@ void send_message(const command_t& argv, GameObj& g) {
       "{} \"{}\" [{},{}] has sent you a telegram. Use `read' to read it.\n",
       race.name, race.governor[Governor.value].name, Playernum, Governor);
   if (to_block) {
-    const auto* block = g.entity_manager.peek_block(who);
+    const auto* block = g.entity_manager.peek_block(who.value);
     if (!block) {
       g.out << "Block not found.\n";
       return;
@@ -157,7 +158,7 @@ void send_message(const command_t& argv, GameObj& g) {
     const auto block_msg = std::format(
         "{} \"{}\" [{},{}] sends a message to {} [{}] alliance block.\n",
         race.name, race.governor[Governor.value].name, Playernum, Governor,
-        block->name, who);
+        block->name, who.value);
     for (i = 1; i <= g.entity_manager.num_races(); i++) {
       if (isset(allied_members, i)) {
         g.session_registry.notify_race(i, block_msg);
@@ -189,8 +190,8 @@ void send_message(const command_t& argv, GameObj& g) {
     if (alien_handle.get()) {
       auto& alien = *alien_handle;
       /* translation modifier increases */
-      alien.translate[Playernum - 1] =
-          std::min(alien.translate[Playernum - 1] + 2, 100);
+      alien.translate[Playernum.value - 1] =
+          std::min(alien.translate[Playernum.value - 1] + 2, 100);
     }
   }
   g.out << "Message sent.\n";

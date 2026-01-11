@@ -75,7 +75,8 @@ int main() {
   RaceRepository races{store};
   ShipRepository ships{store};
 
-  if ((Playernum = entity_manager.num_races() + 1) >= MAXPLAYERS) {
+  if ((Playernum = player_t{entity_manager.num_races().value + 1}) >=
+      player_t{MAXPLAYERS}) {
     std::println("There are already {} players; No more allowed.",
                  MAXPLAYERS - 1);
     return -1;
@@ -171,7 +172,7 @@ int main() {
           if (planet_ptr->type() == ppref && star_ptr->numplanets() != 1) {
             vacant = 1;
             for (i = 1; i <= Playernum; i++)
-              if (planet_ptr->info(i - 1).numsectsowned) vacant = 0;
+              if (planet_ptr->info(player_t{i}).numsectsowned) vacant = 0;
             if (vacant && planet_ptr->conditions(RTEMP) >= -50 &&
                 planet_ptr->conditions(RTEMP) <= 50) {
               found = 1;
@@ -250,7 +251,7 @@ int main() {
 
   for (i = 0; i < MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */
-    if ((i == (Playernum - 1) || Playernum == 1) || race.God)
+    if ((i == (Playernum.value - 1) || Playernum == 1) || race.God)
       race.translate[i] = 100; /* you can talk to own race */
     else
       race.translate[i] = 1;
@@ -373,7 +374,7 @@ int main() {
       race.likes[j] = (double)k / 100.0;
     }
   std::println("Numraces = {}", entity_manager.num_races());
-  Playernum = race.Playernum = entity_manager.num_races() + 1;
+  Playernum = race.Playernum = player_t{entity_manager.num_races().value + 1};
 
   /* build a capital ship to run the government */
   {
@@ -398,7 +399,7 @@ int main() {
     ss.land_y = (char)secttypes[i].y;
 
     ss.owner = Playernum;
-    ss.race = Playernum;
+    ss.race = Playernum.value;
 
     ss.tech = 100.0;
 
@@ -475,9 +476,9 @@ int main() {
     return -1;
   }
   auto& planet = *planet_handle;
-  planet.info(Playernum - 1).numsectsowned = 1;
+  planet.info(Playernum).numsectsowned = 1;
   planet.explored() = 0;
-  planet.info(Playernum - 1).explored = 1;
+  planet.info(Playernum).explored = 1;
 
   sect.set_popn(race.number_sexes);
   planet.popn() = race.number_sexes;
@@ -496,7 +497,7 @@ int main() {
   auto& star_ref = *star_handle;
   setbit(star_ref.explored(), Playernum);
   setbit(star_ref.inhabited(), Playernum);
-  star_ref.AP(Playernum - 1) = 5;
+  star_ref.AP(Playernum) = 5;
 
   std::println("\nYou are player {}.\n", Playernum);
   std::println("Your race has been created on sector {},{} on", secttypes[i].x,

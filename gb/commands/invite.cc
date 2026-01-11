@@ -22,7 +22,8 @@ void invite(const command_t& argv, GameObj& g) {
     g.out << "Only leaders may invite.\n";
     return;
   }
-  if (!(n = get_player(g.entity_manager, argv[1]))) {
+  n = get_player(g.entity_manager, argv[1]);
+  if (n.value == 0) {
     g.out << "No such player.\n";
     return;
   }
@@ -42,7 +43,7 @@ void invite(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto block_handle = g.entity_manager.get_block(g.player());
+  auto block_handle = g.entity_manager.get_block(g.player().value);
   if (!block_handle.get()) {
     g.out << "Block not found.\n";
     return;

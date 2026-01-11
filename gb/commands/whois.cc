@@ -12,7 +12,7 @@ void whois(const command_t& argv, GameObj& g) {
   // TODO(jeffbailey): ap_t APcount = 0;
 
   if (argv.size() <= 1) {
-    whois({"whois", std::to_string(g.player())}, g);
+    whois({"whois", std::to_string(g.player().value)}, g);
     return;
   }
 
@@ -20,7 +20,7 @@ void whois(const command_t& argv, GameObj& g) {
        std::ranges::subrange(argv.begin() + 1, argv.end())) {
     const auto j = std::stoi(player);
 
-    if (j < 1 || j > g.entity_manager.num_races()) {
+    if (j < 1 || j > g.entity_manager.num_races().value) {
       g.out << std::format("Identify: Invalid player number #{}. Try again.\n",
                            j);
       continue;

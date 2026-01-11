@@ -63,7 +63,7 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
         auto planet_handle =
             g.entity_manager.get_planet(aimed_at.snum, aimed_at.pnum);
         auto& planet = *planet_handle;
-        planet.info(g.player() - 1).explored = 1;
+        planet.info(g.player()).explored = 1;
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
@@ -591,14 +591,14 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
           g.entity_manager.get_planet(ship.deststar(), ship.destpnum());
       auto& planet = *planet_handle;
       oncost = 2 * ship.build_cost();
-      if (planet.info(Playernum - 1).resource < oncost) {
+      if (planet.info(Playernum).resource < oncost) {
         g.out << std::format(
             "You don't have {} resources on the planet to activate this "
             "factory.\n",
             oncost);
         return;
       }
-      planet.info(Playernum - 1).resource -= oncost;
+      planet.info(Playernum).resource -= oncost;
     }
     g.out << std::format("Factory activated at a cost of {} resources.\n",
                          oncost);

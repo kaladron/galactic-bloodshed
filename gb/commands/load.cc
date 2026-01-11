@@ -117,7 +117,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   governor_t Governor = g.governor();
   double astrength;
   double dstrength;
-  int oldowner;
+  player_t oldowner;
   governor_t oldgov;
   int oldpopn;
   int old2popn;
@@ -132,7 +132,8 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
     g.out << "You have to unload to assault alien sectors.\n";
     return;
   }
-  ground_assaults[Playernum - 1][sect.get_owner() - 1][g.snum()] += 1;
+  ground_assaults[Playernum.value - 1][sect.get_owner().value - 1][g.snum()] +=
+      1;
 
   auto race_handle = g.entity_manager.get_race(Playernum);
   if (!race_handle.get()) {
@@ -149,13 +150,14 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   auto& alien = *alien_handle;
 
   /* races find out about each other */
-  alien.translate[Playernum - 1] = MIN(alien.translate[Playernum - 1] + 5, 100);
-  race.translate[sect.get_owner() - 1] =
-      MIN(race.translate[sect.get_owner() - 1] + 5, 100);
+  alien.translate[Playernum.value - 1] =
+      MIN(alien.translate[Playernum.value - 1] + 5, 100);
+  race.translate[sect.get_owner().value - 1] =
+      MIN(race.translate[sect.get_owner().value - 1] + 5, 100);
 
-  oldowner = (int)sect.get_owner();
+  oldowner = sect.get_owner();
   const auto& star = *g.entity_manager.peek_star(g.snum());
-  oldgov = star.governor(sect.get_owner() - 1);
+  oldgov = star.governor(sect.get_owner());
 
   if (what == PopulationType::CIV)
     ship->popn() -= people;
@@ -241,10 +243,10 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
                            what == PopulationType::CIV ? "civilians"
                                                        : "troops");
     }
-    planet.info(Playernum - 1).numsectsowned++;
-    planet.info(Playernum - 1).mob_points += sect.get_mobilization();
-    planet.info(oldowner - 1).numsectsowned--;
-    planet.info(oldowner - 1).mob_points -= sect.get_mobilization();
+    planet.info(Playernum).numsectsowned++;
+    planet.info(Playernum).mob_points += sect.get_mobilization();
+    planet.info(oldowner).numsectsowned--;
+    planet.info(oldowner).mob_points -= sect.get_mobilization();
   } else {
     g.out << "The invasion was repulsed; try again.\n";
     telegram += "You fought them off!\n";
@@ -252,13 +254,14 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   if (!(sect.get_popn() + sect.get_troops() + people)) {
     telegram += "You killed all of them!\n";
     /* increase modifier */
-    race.translate[oldowner - 1] = MIN(race.translate[oldowner - 1] + 5, 100);
+    race.translate[oldowner.value - 1] =
+        MIN(race.translate[oldowner.value - 1] + 5, 100);
   }
   if (!people) {
     g.out << "Oh no! They killed your party to the last man!\n";
     /* increase modifier */
-    alien.translate[Playernum - 1] =
-        MIN(alien.translate[Playernum - 1] + 5, 100);
+    alien.translate[Playernum.value - 1] =
+        MIN(alien.translate[Playernum.value - 1] + 5, 100);
   }
 
   telegram += std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
@@ -313,13 +316,13 @@ void load(const command_t& argv, GameObj& g) {
     if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       const auto* universe = g.entity_manager.peek_universe();
       if (!enufAP(g.entity_manager, Playernum, Governor,
-                  universe->AP[Playernum - 1], APcount)) {
+                  universe->AP[Playernum.value - 1], APcount)) {
         continue;
       }
     } else {
       const auto* star = g.entity_manager.peek_star(s.storbits());
-      if (!enufAP(g.entity_manager, Playernum, Governor,
-                  star->AP(Playernum - 1), APcount))
+      if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
+                  APcount))
         continue;
     }
     if (!s.docked()) {
@@ -417,7 +420,7 @@ void load(const command_t& argv, GameObj& g) {
                        : -MIN(s.crystals(),
                               max_crystals(*s2_ptr) - s2_ptr->crystals());
         } else {
-          uplim = MIN(p_ptr->info(Playernum - 1).crystals,
+          uplim = MIN(p_ptr->info(Playernum).crystals,
                       max_crystals(s) - s.crystals());
           lolim = -s.crystals();
         }
@@ -449,7 +452,7 @@ void load(const command_t& argv, GameObj& g) {
           lolim =
               -MIN(s.destruct(), max_destruct(*s2_ptr) - s2_ptr->destruct());
         } else {
-          uplim = MIN(p_ptr->info(Playernum - 1).destruct,
+          uplim = MIN(p_ptr->info(Playernum).destruct,
                       max_destruct(s) - s.destruct());
           lolim = -s.destruct();
         }
@@ -462,7 +465,7 @@ void load(const command_t& argv, GameObj& g) {
           lolim =
               -MIN((int)s.fuel(), (int)max_fuel(*s2_ptr) - (int)s2_ptr->fuel());
         } else {
-          uplim = MIN((int)p_ptr->info(Playernum - 1).fuel,
+          uplim = MIN((int)p_ptr->info(Playernum).fuel,
                       (int)max_fuel(s) - (int)s.fuel());
           lolim = -(int)s.fuel();
         }
@@ -483,7 +486,7 @@ void load(const command_t& argv, GameObj& g) {
             lolim =
                 -MIN(s.resource(), max_resource(*s2_ptr) - s2_ptr->resource());
         } else {
-          uplim = MIN(p_ptr->info(Playernum - 1).resource,
+          uplim = MIN(p_ptr->info(Playernum).resource,
                       max_resource(s) - s.resource());
           lolim = -s.resource();
         }
@@ -510,7 +513,7 @@ void load(const command_t& argv, GameObj& g) {
           if (!landed_on(s, s2_ptr->number()))
             s2_ptr->mass() -= amt * race.mass;
           transfercrew = 1;
-        } else if (sect_ptr->get_owner() &&
+        } else if (sect_ptr->get_owner() != 0 &&
                    sect_ptr->get_owner() != Playernum) {
           g.out << "That sector is already occupied by another player!\n";
           /* fight a land battle */
@@ -520,20 +523,18 @@ void load(const command_t& argv, GameObj& g) {
         } else {
           transfercrew = 1;
           if (!sect_ptr->get_popn() && !sect_ptr->get_troops() && amt < 0) {
-            p_ptr->info(Playernum - 1).numsectsowned++;
-            p_ptr->info(Playernum - 1).mob_points +=
-                sect_ptr->get_mobilization();
+            p_ptr->info(Playernum).numsectsowned++;
+            p_ptr->info(Playernum).mob_points += sect_ptr->get_mobilization();
             sect_ptr->set_owner(Playernum);
             g.out << std::format("sector {},{} COLONIZED.\n", s.land_x(),
                                  s.land_y());
           }
           sect_ptr->set_popn(sect_ptr->get_popn() - amt);
           p_ptr->popn() -= amt;
-          p_ptr->info(Playernum - 1).popn -= amt;
+          p_ptr->info(Playernum).popn -= amt;
           if (!sect_ptr->get_popn() && !sect_ptr->get_troops()) {
-            p_ptr->info(Playernum - 1).numsectsowned--;
-            p_ptr->info(Playernum - 1).mob_points -=
-                sect_ptr->get_mobilization();
+            p_ptr->info(Playernum).numsectsowned--;
+            p_ptr->info(Playernum).mob_points -= sect_ptr->get_mobilization();
             sect_ptr->set_owner(0);
             g.out << std::format("sector {},{} evacuated.\n", s.land_x(),
                                  s.land_y());
@@ -552,7 +553,7 @@ void load(const command_t& argv, GameObj& g) {
           if (!landed_on(s, s2_ptr->number()))
             s2_ptr->mass() -= amt * race.mass;
           transfercrew = 1;
-        } else if (sect_ptr->get_owner() &&
+        } else if (sect_ptr->get_owner() != 0 &&
                    sect_ptr->get_owner() != Playernum) {
           g.out << "That sector is already occupied by another player!\n";
           unload_onto_alien_sector(g, *p_ptr, &s, *sect_ptr,
@@ -561,20 +562,18 @@ void load(const command_t& argv, GameObj& g) {
         } else {
           transfercrew = 1;
           if (sect_ptr->is_empty() && amt < 0) {
-            p_ptr->info(Playernum - 1).numsectsowned++;
-            p_ptr->info(Playernum - 1).mob_points +=
-                sect_ptr->get_mobilization();
+            p_ptr->info(Playernum).numsectsowned++;
+            p_ptr->info(Playernum).mob_points += sect_ptr->get_mobilization();
             sect_ptr->set_owner(Playernum);
             g.out << std::format("sector {},{} OCCUPIED.\n", s.land_x(),
                                  s.land_y());
           }
           sect_ptr->set_troops(sect_ptr->get_troops() - amt);
           p_ptr->troops() -= amt;
-          p_ptr->info(Playernum - 1).troops -= amt;
+          p_ptr->info(Playernum).troops -= amt;
           if (sect_ptr->is_empty()) {
-            p_ptr->info(Playernum - 1).numsectsowned--;
-            p_ptr->info(Playernum - 1).mob_points -=
-                sect_ptr->get_mobilization();
+            p_ptr->info(Playernum).numsectsowned--;
+            p_ptr->info(Playernum).mob_points -= sect_ptr->get_mobilization();
             sect_ptr->set_owner(0);
             g.out << std::format("sector {},{} evacuated.\n", s.land_x(),
                                  s.land_y());
@@ -593,7 +592,7 @@ void load(const command_t& argv, GameObj& g) {
           if (!landed_on(s, s2_ptr->number()))
             s2_ptr->mass() -= amt * MASS_DESTRUCT;
         } else
-          p_ptr->info(Playernum - 1).destruct -= amt;
+          p_ptr->info(Playernum).destruct -= amt;
 
         s.destruct() += amt;
         s.mass() += amt * MASS_DESTRUCT;
@@ -611,7 +610,7 @@ void load(const command_t& argv, GameObj& g) {
         if (sh) {
           s2_ptr->crystals() -= amt;
         } else
-          p_ptr->info(Playernum - 1).crystals -= amt;
+          p_ptr->info(Playernum).crystals -= amt;
         s.crystals() += amt;
         g.out << std::format("{} crystal(s) transferred.\n", amt);
         break;
@@ -621,7 +620,7 @@ void load(const command_t& argv, GameObj& g) {
           if (!landed_on(s, s2_ptr->number()))
             s2_ptr->mass() -= (double)amt * MASS_FUEL;
         } else
-          p_ptr->info(Playernum - 1).fuel -= amt;
+          p_ptr->info(Playernum).fuel -= amt;
         rcv_fuel(s, (double)amt);
         g.out << std::format("{} fuel transferred.\n", amt);
         break;
@@ -631,7 +630,7 @@ void load(const command_t& argv, GameObj& g) {
           if (!landed_on(s, s2_ptr->number()))
             s2_ptr->mass() -= amt * MASS_RESOURCE;
         } else
-          p_ptr->info(Playernum - 1).resource -= amt;
+          p_ptr->info(Playernum).resource -= amt;
         rcv_resource(s, amt);
         g.out << std::format("{} resources transferred.\n", amt);
         break;

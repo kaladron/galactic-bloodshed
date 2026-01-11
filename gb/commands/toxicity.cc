@@ -31,8 +31,8 @@ void toxicity(const command_t& argv, GameObj& g) {
     return;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum());
-  if (!enufAP(g.entity_manager, g.player(), g.governor(),
-              star.AP(g.player() - 1), APcount)) {
+  if (!enufAP(g.entity_manager, g.player(), g.governor(), star.AP(g.player()),
+              APcount)) {
     return;
   }
 
@@ -42,10 +42,10 @@ void toxicity(const command_t& argv, GameObj& g) {
     return;
   }
   auto& p = *planet_handle;
-  p.info(g.player() - 1).tox_thresh = thresh;
+  p.info(g.player()).tox_thresh = thresh;
   deductAPs(g, APcount, g.snum());
 
   g.out << std::format(" New threshold is: {}\n",
-                       p.info(g.player() - 1).tox_thresh);
+                       p.info(g.player()).tox_thresh);
 }
 }  // namespace GB::commands

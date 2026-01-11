@@ -124,13 +124,13 @@ void place_bid(const command_t& argv, GameObj& g) {
   auto snum = g.snum();
   auto pnum = g.pnum();
   const auto* star = g.entity_manager.peek_star(snum);
-  if (g.governor() != 0 && star->governor(g.player() - 1) != g.governor()) {
+  if (g.governor() != 0 && star->governor(g.player()) != g.governor()) {
     g.out << "You are not authorized in this system.\n";
     return;
   }
   const auto* p = g.entity_manager.peek_planet(snum, pnum);
 
-  if (p->slaved_to() && p->slaved_to() != g.player()) {
+  if (p->slaved_to() != 0 && p->slaved_to() != g.player()) {
     g.out << std::format("This planet is enslaved to player {}.\n",
                          p->slaved_to());
     return;
@@ -160,7 +160,7 @@ void place_bid(const command_t& argv, GameObj& g) {
 
   // First peek to validate the lot
   const auto* c_peek = g.entity_manager.peek_commod(lot);
-  if (!c_peek || !c_peek->owner) {
+  if (!c_peek || c_peek->owner == 0) {
     g.out << "No such lot for sale.\n";
     return;
   }
@@ -189,7 +189,7 @@ void place_bid(const command_t& argv, GameObj& g) {
   auto& c = *commod_handle;
 
   /* notify the previous bidder that he was just outbidded */
-  if (c.bidder) {
+  if (c.bidder != 0) {
     std::string bid_message = std::format(
         "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
         c.amount, c.type, bid0, g.race->name, g.player());

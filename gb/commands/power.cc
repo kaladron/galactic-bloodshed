@@ -22,15 +22,15 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
                             : isset(r.atwar, race.Playernum) ? "-"
                                                              : " ";
 
-  const auto* power_ptr = em.peek_power(i);
+  const auto* power_ptr = em.peek_power(i.value);
   if (!power_ptr) return;
 
   std::string know_col;
   if (race.God) {
     const auto* universe = em.peek_universe();
-    know_col = std::format("{}", universe->VN_hitlist[i - 1]);
+    know_col = std::format("{}", universe->VN_hitlist[i.value - 1]);
   } else {
-    know_col = std::format("{}%", race.translate[i - 1]);
+    know_col = std::format("{}%", race.translate[i.value - 1]);
   }
 
   table.add_row(
@@ -49,14 +49,15 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
 
 namespace GB::commands {
 void power(const command_t& argv, GameObj& g) {
-  // TODO(jeffbailey): Need to stop using -1 here for UB
-  player_t p = -1;
+  std::optional<player_t> target_player;
 
   if (argv.size() >= 2) {
-    if (!(p = get_player(g.entity_manager, argv[1]))) {
+    player_t p = get_player(g.entity_manager, argv[1]);
+    if (p == 0) {
       g.out << "No such player,\n";
       return;
     }
+    target_player = p;
   }
 
   const auto* race = g.race;
@@ -107,20 +108,20 @@ void power(const command_t& argv, GameObj& g) {
     int rank = 0;
     for (const auto& vic : vicvec) {
       rank++;
-      p = vic.racenum;
+      player_t p = vic.racenum;
       const auto* r = g.entity_manager.peek_race(p);
       if (!r) continue;
-      if (!r->dissolved && race->translate[p - 1] >= 10) {
+      if (!r->dissolved && race->translate[p.value - 1] >= 10) {
         add_power_row(table, g.entity_manager, *race, *r, p, rank);
       }
     }
   } else {
-    const auto* r = g.entity_manager.peek_race(p);
+    const auto* r = g.entity_manager.peek_race(target_player.value());
     if (!r) {
       g.out << "Race not found.\n";
       return;
     }
-    add_power_row(table, g.entity_manager, *race, *r, p, 0);
+    add_power_row(table, g.entity_manager, *race, *r, target_player.value(), 0);
   }
 
   g.out << table << "\n";

@@ -85,13 +85,13 @@ void dock(const command_t& argv, GameObj& g) {
     if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
       const auto* universe = g.entity_manager.peek_universe();
       if (!enufAP(g.entity_manager, Playernum, Governor,
-                  universe->AP[Playernum - 1], APcount)) {
+                  universe->AP[Playernum.value - 1], APcount)) {
         continue;
       }
     } else {
       const auto* star_ptr = g.entity_manager.peek_star(s.storbits());
       if (!star_ptr || !enufAP(g.entity_manager, Playernum, Governor,
-                               star_ptr->AP(Playernum - 1), APcount)) {
+                               star_ptr->AP(Playernum), APcount)) {
         continue;
       }
     }
@@ -350,17 +350,17 @@ void dock(const command_t& argv, GameObj& g) {
       }
 
       /* races find out about each other */
-      alien.translate[Playernum - 1] =
-          MIN(alien.translate[Playernum - 1] + 5, 100);
-      race.translate[old2owner - 1] =
-          MIN(race.translate[old2owner - 1] + 5, 100);
+      alien.translate[Playernum.value - 1] =
+          MIN(alien.translate[Playernum.value - 1] + 5, 100);
+      race.translate[old2owner.value - 1] =
+          MIN(race.translate[old2owner.value - 1] + 5, 100);
 
       if (!boarders && (s2.popn() + s2.troops())) /* boarding party killed */
-        alien.translate[Playernum - 1] =
-            MIN(alien.translate[Playernum - 1] + 25, 100);
+        alien.translate[Playernum.value - 1] =
+            MIN(alien.translate[Playernum.value - 1] + 25, 100);
       if (s2.owner() == Playernum) /* captured ship */
-        race.translate[old2owner - 1] =
-            MIN(race.translate[old2owner - 1] + 25, 100);
+        race.translate[old2owner.value - 1] =
+            MIN(race.translate[old2owner.value - 1] + 25, 100);
     } else {
       s.docked() = 1;
       s.whatdest() = ScopeLevel::LEVEL_SHIP;

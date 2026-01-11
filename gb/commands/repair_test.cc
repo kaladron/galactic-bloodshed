@@ -36,8 +36,8 @@ int main() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  planet.info(0).numsectsowned = 5;
-  planet.info(0).resource = 1000;
+  planet.info(player_t{1}).numsectsowned = 5;
+  planet.info(player_t{1}).resource = 1000;
 
   PlanetRepository planets(store);
   planets.save(planet);
@@ -97,7 +97,8 @@ int main() {
   // Verify planet resources decreased
   const auto* saved_planet = ctx.em.peek_planet(0, 0);
   assert(saved_planet);
-  assert(saved_planet->info(0).resource == 1000 - (3 * SECTOR_REPAIR_COST));
+  assert(saved_planet->info(player_t{1}).resource ==
+         1000 - (3 * SECTOR_REPAIR_COST));
 
   std::println("repair_test passed!");
   return 0;

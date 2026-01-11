@@ -14,9 +14,10 @@ module commands;
 
 namespace GB::commands {
 void highlight(const command_t& argv, GameObj& g) {
-  player_t n = 0;
+  player_t n{0};
 
-  if (!(n = get_player(g.entity_manager, argv[1]))) {
+  n = get_player(g.entity_manager, argv[1]);
+  if (n.value == 0) {
     g.out << "No such player.\n";
     return;
   }

@@ -34,7 +34,7 @@ int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
     if (s.get_owner() != victim || s.get_popn() == 0) continue;
 
     // Revolt rate is a function of tax rate.
-    if (!success(pl.info(victim - 1).tax)) continue;
+    if (!success(pl.info(victim).tax)) continue;
 
     if (long_rand(1, s.get_popn()) <=
         10L * victim_race->fighters * s.get_troops())
@@ -44,10 +44,10 @@ int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
     s.set_owner(agent);                     /* enemy gets it */
     s.set_popn(long_rand(1, s.get_popn())); /* some people killed */
     s.set_troops(0);                        /* all troops destroyed */
-    pl.info(victim - 1).numsectsowned -= 1;
-    pl.info(agent - 1).numsectsowned += 1;
-    pl.info(victim - 1).mob_points -= s.get_mobilization();
-    pl.info(agent - 1).mob_points += s.get_mobilization();
+    pl.info(victim).numsectsowned -= 1;
+    pl.info(agent).numsectsowned += 1;
+    pl.info(victim).mob_points -= s.get_mobilization();
+    pl.info(agent).mob_points += s.get_mobilization();
     revolted_sectors++;
   }
 

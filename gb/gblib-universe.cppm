@@ -47,65 +47,65 @@ public:
 
   // Action Point (AP) methods
   ap_t get_AP(player_t p) const {
-    if (p < 1 || p > MAXPLAYERS) return 0;
-    return data->AP[p - 1];
+    if (p.value < 1 || p.value > MAXPLAYERS) return 0;
+    return data->AP[p.value - 1];
   }
 
   void set_AP(player_t p, ap_t value) {
-    if (p < 1 || p > MAXPLAYERS) return;
-    data->AP[p - 1] = value;
+    if (p.value < 1 || p.value > MAXPLAYERS) return;
+    data->AP[p.value - 1] = value;
   }
 
   void deduct_AP(player_t p, ap_t amount) {
-    if (p < 1 || p > MAXPLAYERS) return;
-    data->AP[p - 1] =
-        (data->AP[p - 1] > amount) ? (data->AP[p - 1] - amount) : 0;
+    if (p.value < 1 || p.value > MAXPLAYERS) return;
+    data->AP[p.value - 1] =
+        (data->AP[p.value - 1] > amount) ? (data->AP[p.value - 1] - amount) : 0;
   }
 
   void add_AP(player_t p, ap_t amount) {
-    if (p < 1 || p > MAXPLAYERS) return;
-    data->AP[p - 1] += amount;
+    if (p.value < 1 || p.value > MAXPLAYERS) return;
+    data->AP[p.value - 1] += amount;
   }
 
   // VN (Von Neumann) tracking methods
   unsigned short get_VN_hitlist(player_t p) const {
-    if (p < 1 || p > MAXPLAYERS) return 0;
-    return data->VN_hitlist[p - 1];
+    if (p.value < 1 || p.value > MAXPLAYERS) return 0;
+    return data->VN_hitlist[p.value - 1];
   }
 
   void set_VN_hitlist(player_t p, unsigned short value) {
-    if (p < 1 || p > MAXPLAYERS) return;
-    data->VN_hitlist[p - 1] = value;
+    if (p.value < 1 || p.value > MAXPLAYERS) return;
+    data->VN_hitlist[p.value - 1] = value;
   }
 
   void increment_VN_hitlist(player_t p) {
-    if (p < 1 || p > MAXPLAYERS) return;
-    data->VN_hitlist[p - 1]++;
+    if (p.value < 1 || p.value > MAXPLAYERS) return;
+    data->VN_hitlist[p.value - 1]++;
   }
 
   void decrement_VN_hitlist(player_t p) {
-    if (p < 1 || p > MAXPLAYERS) return;
-    if (data->VN_hitlist[p - 1] > 0) data->VN_hitlist[p - 1]--;
+    if (p.value < 1 || p.value > MAXPLAYERS) return;
+    if (data->VN_hitlist[p.value - 1] > 0) data->VN_hitlist[p.value - 1]--;
   }
 
   int get_VN_index1(player_t p) const {
-    if (p < 1 || p > MAXPLAYERS) return 0;
-    return data->VN_index1[p - 1];
+    if (p.value < 1 || p.value > MAXPLAYERS) return 0;
+    return data->VN_index1[p.value - 1];
   }
 
   void set_VN_index1(player_t p, int value) {
-    if (p < 1 || p > MAXPLAYERS) return;
-    data->VN_index1[p - 1] = value;
+    if (p.value < 1 || p.value > MAXPLAYERS) return;
+    data->VN_index1[p.value - 1] = value;
   }
 
   int get_VN_index2(player_t p) const {
-    if (p < 1 || p > MAXPLAYERS) return 0;
-    return data->VN_index2[p - 1];
+    if (p.value < 1 || p.value > MAXPLAYERS) return 0;
+    return data->VN_index2[p.value - 1];
   }
 
   void set_VN_index2(player_t p, int value) {
-    if (p < 1 || p > MAXPLAYERS) return;
-    data->VN_index2[p - 1] = value;
+    if (p.value < 1 || p.value > MAXPLAYERS) return;
+    data->VN_index2[p.value - 1] = value;
   }
 
   // Direct access to underlying struct (for migration compatibility)

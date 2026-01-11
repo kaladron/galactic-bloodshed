@@ -22,32 +22,32 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
   const governor_t Governor = g.governor();
 
   if (!isset(star.explored(), Playernum) ||
-      (Governor != 0 && star.governor(Playernum - 1) != Governor)) {
+      (Governor != 0 && star.governor(Playernum) != Governor)) {
     return;
   };
 
   for (planetnum_t i = 0; i < star.numplanets(); i++) {
     const auto* pl = g.entity_manager.peek_planet(snum, i);
-    if (!pl || !pl->info(Playernum - 1).explored ||
-        !pl->info(Playernum - 1).numsectsowned) {
+    if (!pl || !pl->info(Playernum).explored ||
+        !pl->info(Playernum).numsectsowned) {
       continue;
     }
 
     std::string location =
         std::format("{}/{}{}", star.get_name(), star.get_planet_name(i),
-                    (pl->info(Playernum - 1).autorep ? "*" : ""));
+                    (pl->info(Playernum).autorep ? "*" : ""));
 
-    auto gain = tech_prod(pl->info(Playernum - 1).tech_invest,
-                          pl->info(Playernum - 1).popn);
-    auto max_gain = tech_prod(pl->info(Playernum - 1).prod_res,
-                              pl->info(Playernum - 1).popn);
+    auto gain =
+        tech_prod(pl->info(Playernum).tech_invest, pl->info(Playernum).popn);
+    auto max_gain =
+        tech_prod(pl->info(Playernum).prod_res, pl->info(Playernum).popn);
 
-    table.add_row({location, std::format("{}", pl->info(Playernum - 1).popn),
-                   std::format("{}", pl->info(Playernum - 1).tech_invest),
+    table.add_row({location, std::format("{}", pl->info(Playernum).popn),
+                   std::format("{}", pl->info(Playernum).tech_invest),
                    std::format("{:.3f}", gain),
                    std::format("{:.3f}", max_gain)});
 
-    totals.invest += pl->info(Playernum - 1).tech_invest;
+    totals.invest += pl->info(Playernum).tech_invest;
     totals.gain += gain;
     totals.max_gain += max_gain;
   }
@@ -105,7 +105,7 @@ void tech_status(const command_t& argv, GameObj& g) {
 
   g.out << table << "\n";
 
-  const auto* power_ptr = g.entity_manager.peek_power(Playernum);
+  const auto* power_ptr = g.entity_manager.peek_power(Playernum.value);
   if (!power_ptr) {
     g.out << "       Total Popn:  unknown\n";
   } else {

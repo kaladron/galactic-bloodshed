@@ -33,8 +33,8 @@ void test_mobilize_database_persistence() {
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.info(0).comread = 20;  // Current mobilization
-  planet.info(0).mob_set = 20;  // Mobilization quota
+  planet.info(player_t{1}).comread = 20;  // Current mobilization
+  planet.info(player_t{1}).mob_set = 20;  // Mobilization quota
 
   PlanetRepository planets(store);
   planets.save(planet);
@@ -68,8 +68,9 @@ void test_mobilize_database_persistence() {
     // Verify database: mob_set should be 50
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).mob_set == 50);
-    std::println("    ✓ Database: mob_set = {}", saved->info(0).mob_set);
+    assert(saved->info(player_t{1}).mob_set == 50);
+    std::println("    ✓ Database: mob_set = {}",
+                 saved->info(player_t{1}).mob_set);
   }
 
   // TEST 3: Set mobilization to maximum (100%)
@@ -81,8 +82,9 @@ void test_mobilize_database_persistence() {
     // Verify database
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).mob_set == 100);
-    std::println("    ✓ Database: mob_set = {}", saved->info(0).mob_set);
+    assert(saved->info(player_t{1}).mob_set == 100);
+    std::println("    ✓ Database: mob_set = {}",
+                 saved->info(player_t{1}).mob_set);
   }
 
   // TEST 4: Set mobilization to minimum (0%)
@@ -94,8 +96,9 @@ void test_mobilize_database_persistence() {
     // Verify database
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).mob_set == 0);
-    std::println("    ✓ Database: mob_set = {}", saved->info(0).mob_set);
+    assert(saved->info(player_t{1}).mob_set == 0);
+    std::println("    ✓ Database: mob_set = {}",
+                 saved->info(player_t{1}).mob_set);
   }
 
   // TEST 5: Reject illegal value (>100)
@@ -112,9 +115,9 @@ void test_mobilize_database_persistence() {
     // Verify database: should still be 0 from previous test
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).mob_set == 0);
+    assert(saved->info(player_t{1}).mob_set == 0);
     std::println("    ✓ Database: mob_set unchanged = {}",
-                 saved->info(0).mob_set);
+                 saved->info(player_t{1}).mob_set);
   }
 
   std::println("  ✅ All mobilize database persistence tests passed!");

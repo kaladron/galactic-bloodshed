@@ -18,11 +18,12 @@ void dump(const command_t& argv, GameObj& g) {
   int star_id;
 
   const auto* star = g.entity_manager.peek_star(g.snum());
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
               APcount))
     return;
 
-  if (!(player = get_player(g.entity_manager, argv[1]))) {
+  player = get_player(g.entity_manager, argv[1]);
+  if (player.value == 0) {
     g.out << "No such player.\n";
     return;
   }
@@ -50,8 +51,8 @@ void dump(const command_t& argv, GameObj& g) {
         for (auto planet_handle :
              PlanetList(g.entity_manager, star_id, current_star)) {
           auto& planet = *planet_handle;
-          if (planet.info(Playernum - 1).explored) {
-            planet.info(player - 1).explored = 1;
+          if (planet.info(Playernum).explored) {
+            planet.info(player).explored = 1;
           }
         }
       }
@@ -71,8 +72,8 @@ void dump(const command_t& argv, GameObj& g) {
           for (auto planet_handle :
                PlanetList(g.entity_manager, star_id, current_star)) {
             auto& planet = *planet_handle;
-            if (planet.info(Playernum - 1).explored) {
-              planet.info(player - 1).explored = 1;
+            if (planet.info(Playernum).explored) {
+              planet.info(player).explored = 1;
             }
           }
         }

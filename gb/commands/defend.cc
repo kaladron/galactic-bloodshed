@@ -35,7 +35,7 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum());
-  if (Governor != 0 && star.governor(Playernum - 1) != Governor) {
+  if (Governor != 0 && star.governor(Playernum) != Governor) {
     g.out << "You are not authorized to do that in this system.\n";
     return;
   }
@@ -46,7 +46,7 @@ void defend(const command_t& argv, GameObj& g) {
   }
   auto toship = *toshiptmp;
 
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
               APcount)) {
     return;
   }
@@ -58,12 +58,12 @@ void defend(const command_t& argv, GameObj& g) {
   }
   auto& p = *planet_handle;
 
-  if (!p.info(Playernum - 1).numsectsowned) {
+  if (!p.info(Playernum).numsectsowned) {
     g.out << "You do not occupy any sectors here.\n";
     return;
   }
 
-  if (p.slaved_to() && p.slaved_to() != Playernum) {
+  if (p.slaved_to() != 0 && p.slaved_to() != Playernum) {
     g.out << "This planet is enslaved.\n";
     return;
   }
@@ -124,15 +124,14 @@ void defend(const command_t& argv, GameObj& g) {
   if (argv.size() >= 4)
     strength = std::stoi(argv[3]);
   else
-    strength = p.info(Playernum - 1).guns;
+    strength = p.info(Playernum).guns;
 
-  strength = MIN(strength, p.info(Playernum - 1).destruct);
-  strength = MIN(strength, p.info(Playernum - 1).guns);
+  strength = MIN(strength, p.info(Playernum).destruct);
+  strength = MIN(strength, p.info(Playernum).guns);
 
   if (strength <= 0) {
-    g.out << std::format("No attack - {} guns, {}d\n",
-                         p.info(Playernum - 1).guns,
-                         p.info(Playernum - 1).destruct);
+    g.out << std::format("No attack - {} guns, {}d\n", p.info(Playernum).guns,
+                         p.info(Playernum).destruct);
     return;
   }
 
@@ -153,7 +152,7 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
 
-  p.info(Playernum - 1).destruct -= strength;
+  p.info(Playernum).destruct -= strength;
   if (!to->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
   notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
               to->storbits(), short_buf);

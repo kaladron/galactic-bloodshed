@@ -613,25 +613,25 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     /* add ship to VN shit list */
     if (std::holds_alternative<MindData>(ship.special())) {
       auto mind = std::get<MindData>(ship.special());
-      Sdata.VN_hitlist[mind.who_killed - 1] += 1;
+      Sdata.VN_hitlist[mind.who_killed.value - 1] += 1;
     }
 
     /* keep track of where these VN's were shot up */
-    if (Sdata.VN_index1[Playernum - 1] == -1)
+    if (Sdata.VN_index1[Playernum.value - 1] == -1)
       /* there's no star in the first index */
-      Sdata.VN_index1[Playernum - 1] = ship.storbits();
-    else if (Sdata.VN_index2[Playernum - 1] == -1)
+      Sdata.VN_index1[Playernum.value - 1] = ship.storbits();
+    else if (Sdata.VN_index2[Playernum.value - 1] == -1)
       /* there's no star in the second index */
-      Sdata.VN_index2[Playernum - 1] = ship.storbits();
+      Sdata.VN_index2[Playernum.value - 1] = ship.storbits();
     else {
       /* pick an index to supplant */
       std::random_device rd;
       std::mt19937 gen(rd());
       std::uniform_int_distribution<int> dis(0, 1);
       if (dis(gen))
-        Sdata.VN_index1[Playernum - 1] = ship.storbits();
+        Sdata.VN_index1[Playernum.value - 1] = ship.storbits();
       else
-        Sdata.VN_index2[Playernum - 1] = ship.storbits();
+        Sdata.VN_index2[Playernum.value - 1] = ship.storbits();
     }
     // Sdata auto-saves when handle goes out of scope
   }

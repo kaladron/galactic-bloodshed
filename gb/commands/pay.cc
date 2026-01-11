@@ -14,10 +14,11 @@ void pay(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   // TODO(jeffbailey): ap_t APcount = 0;
-  int who;
+  player_t who;
   int amount;
 
-  if (!(who = get_player(g.entity_manager, argv[1]))) {
+  who = get_player(g.entity_manager, argv[1]);
+  if (who == player_t{0}) {
     g.out << "No such player.\n";
     return;
   }

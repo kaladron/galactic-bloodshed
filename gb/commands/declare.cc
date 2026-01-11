@@ -27,7 +27,8 @@ void declare(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if (!(n = get_player(g.entity_manager, argv[1]))) {
+  n = get_player(g.entity_manager, argv[1]);
+  if (n.value == 0) {
     g.out << "No such player.\n";
     return;
   }
@@ -40,13 +41,13 @@ void declare(const command_t& argv, GameObj& g) {
   }
 
   /* enufAPs would print something */
-  if ((int)universe->AP[Playernum - 1] >= APcount) {
+  if ((int)universe->AP[Playernum.value - 1] >= APcount) {
     deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
     /* otherwise use current star */
   } else if ((g.level() == ScopeLevel::LEVEL_STAR ||
               g.level() == ScopeLevel::LEVEL_PLAN)) {
     const auto& star = *g.entity_manager.peek_star(g.snum());
-    if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+    if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
                 APcount)) {
       g.out << std::format("You don't have enough AP's ({})\n", APcount);
       return;
@@ -152,7 +153,7 @@ void declare(const command_t& argv, GameObj& g) {
   warn_race(g.session_registry, g.entity_manager, Playernum, news_msg);
 
   /* They, of course, learn more about you */
-  alien.translate[Playernum - 1] =
-      MIN(alien.translate[Playernum - 1] + d_mod, 100);
+  alien.translate[Playernum.value - 1] =
+      MIN(alien.translate[Playernum.value - 1] + d_mod, 100);
 }
 }  // namespace GB::commands

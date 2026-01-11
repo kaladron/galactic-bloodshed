@@ -212,7 +212,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     return;
   }
 
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
               APcount)) {
     return;
   }
@@ -252,15 +252,15 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
      */
     for (auto alien_race_handle : RaceList(g.entity_manager)) {
       const auto i = alien_race_handle->Playernum;
-      if (s.alive() && i != Playernum && p.info(i - 1).popn &&
-          p.info(i - 1).guns && p.info(i - 1).destruct) {
+      if (s.alive() && i != Playernum && p.info(i).popn && p.info(i).guns &&
+          p.info(i).destruct) {
         if (isset(alien_race_handle->atwar, s.owner())) {
           /* attack the landing ship - need mutable access for shoot function */
           auto alien_handle = g.entity_manager.get_race(i);
           if (!alien_handle.get()) continue;
           auto& alien = *alien_handle;
           /* attack the landing ship */
-          strength = MIN((int)p.info(i - 1).guns, (int)p.info(i - 1).destruct);
+          strength = MIN((int)p.info(i).guns, (int)p.info(i).destruct);
           if (strength) {
             char long_buf[1024], short_buf[256];
             shoot_planet_to_ship(g.entity_manager, alien, s, strength, long_buf,
@@ -269,9 +269,9 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
             notify_star(g.session_registry, g.entity_manager, 0, 0,
                         s.storbits(), short_buf);
             warn_player(g.session_registry, g.entity_manager, i,
-                        star->governor(i - 1), long_buf);
+                        star->governor(i), long_buf);
             g.session_registry.notify_player(s.owner(), s.governor(), long_buf);
-            p.info(i - 1).destruct -= strength;
+            p.info(i).destruct -= strength;
           }
         }
       }
@@ -296,9 +296,9 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
         ship_to_string(s), x, y, numdest);
     for (auto race_handle : RaceList(g.entity_manager)) {
       const auto i = race_handle->Playernum;
-      if (p.info(i - 1).numsectsowned || i == Playernum)
-        warn_player(g.session_registry, g.entity_manager, i,
-                    star->governor(i - 1), buf);
+      if (p.info(i).numsectsowned || i == Playernum)
+        warn_player(g.session_registry, g.entity_manager, i, star->governor(i),
+                    buf);
     }
     if (roll)
       g.out << std::format("Ship damage {}% (you rolled a {})\n",
@@ -332,7 +332,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
 
   if (sector.is_wasted()) {
     g.out << "Warning: That sector is a wasteland!\n";
-  } else if (sector.get_owner() && sector.get_owner() != Playernum) {
+  } else if (sector.get_owner() != 0 && sector.get_owner() != Playernum) {
     // Use g.race for current player (already set by process_command)
     const auto* alien = g.entity_manager.peek_race(sector.get_owner());
     if (!alien) return;  // Should never happen but be safe
@@ -358,8 +358,8 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
                   star->get_planet_name(s.pnumorbits()));
   for (auto race_handle : RaceList(g.entity_manager)) {
     const auto i = race_handle->Playernum;
-    if (p.info(i - 1).numsectsowned && i != Playernum) {
-      g.session_registry.notify_player(i, star->governor(i - 1), landing_msg);
+    if (p.info(i).numsectsowned && i != Playernum) {
+      g.session_registry.notify_player(i, star->governor(i), landing_msg);
     }
   }
   g.out << std::format("{} landed on planet.\n", ship_to_string(s));

@@ -99,7 +99,7 @@ public:
     return Iterator(em_, 1, count_);
   }
   Iterator end() {
-    return Iterator(em_, count_ + 1, count_);
+    return Iterator(em_, count_.value + 1, count_);
   }
 
 private:
@@ -260,7 +260,7 @@ public:
     void advance_to_valid() {
       while (current_ <= end_) {
         const auto* c = em_->peek_commod(current_);
-        if (c && c->owner && c->amount) {
+        if (c && c->owner.value && c->amount) {
           return;  // Found valid commodity
         }
         ++current_;

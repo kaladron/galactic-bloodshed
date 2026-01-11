@@ -198,7 +198,7 @@ void plan_get_tactical_items(GameObj& g,
   double y = star->ypos() + planet->ypos();
   items.push_back(std::make_unique<PlanetTacticalItem>(planet, x, y));
 
-  if (planet->info(player_num - 1).explored) {
+  if (planet->info(player_num).explored) {
     const ShipList ships(g.entity_manager, planet->ships());
     for (const Ship* ship : ships) {
       add_tactical_ship(items, ship);
@@ -505,10 +505,9 @@ void PlanetTacticalItem::add_tactical_header_row(
       "(planet){}", star ? star->get_planet_name(p.planet_order()) : "Unknown");
 
   table.add_row({"", "", name_str, std::format("{:.0f}", params.tech),
-                 std::format("{}M", p.info(player_num - 1).guns), "", "",
-                 std::format("{}", p.info(player_num - 1).destruct),
-                 std::format("{}", p.info(player_num - 1).fuel), "", "", "",
-                 ""});
+                 std::format("{}M", p.info(player_num).guns), "", "",
+                 std::format("{}", p.info(player_num).destruct),
+                 std::format("{}", p.info(player_num).fuel), "", "", "", ""});
 }
 
 void PlanetTacticalItem::add_tactical_target_row(
@@ -534,7 +533,7 @@ TacticalParams PlanetTacticalItem::get_tactical_params(const Race& race) const {
 bool PlanetTacticalItem::should_report_tactical(player_t player_num,
                                                 governor_t) const {
   // Report on planets where we own sectors
-  return planet_->info(player_num - 1).numsectsowned != 0;
+  return planet_->info(player_num).numsectsowned != 0;
 }
 
 void PlanetTacticalItem::report_tactical(

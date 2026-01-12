@@ -168,7 +168,7 @@ void test_technology_database_persistence() {
     // Change star governor to 1 (not matching g.governor() = 0)
     auto star_handle = ctx.em.get_star(1);
     auto& star_mod = *star_handle;
-    star_mod.governor(0) = 1;  // Different governor
+    star_mod.governor(1) = 1;  // Different governor
 
     // Update GameObj governor to non-zero
     g.set_governor(2);  // Not matching star's governor[0] = 1

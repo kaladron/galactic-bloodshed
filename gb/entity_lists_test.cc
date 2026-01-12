@@ -19,7 +19,7 @@ int main() {
 
   // Create some test races
   RaceRepository races(store);
-  for (player_t i{1}; i <= 3; i = player_t{i.value + 1}) {
+  for (player_t i{1}; i <= 3; ++i) {
     Race race{};
     race.Playernum = i;
     race.name = std::format("TestRace{}", i.value);
@@ -75,8 +75,7 @@ int main() {
     int count = 0;
     std::vector<player_t> seen_players;
 
-    // Test iteration pattern that mirrors RaceList behavior
-    for (player_t i{1}; i <= em.num_races(); i = player_t{i.value + 1}) {
+    for (player_t i{1}; i <= em.num_races(); ++i) {
       auto race_handle = em.get_race(i);
       if (!race_handle.get()) continue;
 
@@ -163,7 +162,7 @@ int main() {
     // Simulate what doturncmd.cc does with state.Power[i-1]
     std::array<int, 3> power_values{};
 
-    for (player_t i{1}; i <= em.num_races(); i = player_t{i.value + 1}) {
+    for (player_t i{1}; i <= em.num_races(); ++i) {
       auto race_handle = em.get_race(i);
       if (!race_handle.get()) continue;
 

@@ -49,9 +49,9 @@ int main() {
   planet.Maxx() = 10;
   planet.Maxy() = 10;
   planet.popn() = 1000;
-  planet.info(0).numsectsowned = 1;
-  planet.info(0).popn = 1000;
-  planet.info(0).resource = 500;
+  planet.info(player_t{1}).numsectsowned = 1;
+  planet.info(player_t{1}).popn = 1000;
+  planet.info(player_t{1}).resource = 500;
 
   // Save planet via repository
   PlanetRepository planets_repo(store);

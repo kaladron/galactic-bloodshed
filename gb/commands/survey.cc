@@ -37,9 +37,9 @@ std::string_view get_tox(int toxicity) {
 
 // Ship location data for CSP output
 struct ShipLocInfo {
-  int shipno;
+  shipnum_t shipno;
   char ltr;
-  unsigned char owner;
+  player_t owner;
 };
 
 struct SectorShipData {
@@ -130,9 +130,9 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
     out << std::format(
         "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", GB::csp::CSP_CLIENT,
         GB::csp::CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(),
-        planet_name, p.info(player - 1).resource, p.info(player - 1).fuel,
-        p.info(player - 1).destruct, p.popn(), p.maxpopn(), p.conditions(TOXIC),
-        p.compatibility(race), p.slaved_to());
+        planet_name, p.info(player).resource, p.info(player).fuel,
+        p.info(player).destruct, p.popn(), p.maxpopn(), p.conditions(TOXIC),
+        p.compatibility(race), p.slaved_to().value);
   }
 
   // Write sector rows
@@ -249,7 +249,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
       p.Maxx(), std::vector<SectorShipData>(p.Maxy()));
   bool inhere = false;  // Track if player has presence on planet
   if (is_csp_format) {
-    inhere = p.info(g.player() - 1).numsectsowned > 0;
+    inhere = p.info(g.player()).numsectsowned > 0;
     const ShipList kShips(g.entity_manager, p.ships());
     for (const Ship* shipa : kShips) {
       if (shipa->owner() == g.player() &&
@@ -358,10 +358,9 @@ void survey_planet_overview(GameObj& g, const Place& where) {
                        race.Metamorph ? "biomass" : "popltn",
                        race.Metamorph ? "biomass" : "popltn");
   g.out << std::format("{:10}  {:14} {:9}  {:7}{:11}\n",
-                       p.info(g.player() - 1).fuel,
-                       p.info(g.player() - 1).resource,
-                       p.info(g.player() - 1).destruct, p.popn(), p.maxpopn());
-  if (p.slaved_to()) {
+                       p.info(g.player()).fuel, p.info(g.player()).resource,
+                       p.info(g.player()).destruct, p.popn(), p.maxpopn());
+  if (p.slaved_to() != 0) {
     g.out << std::format("This planet ENSLAVED to player {}!\n", p.slaved_to());
   }
 }

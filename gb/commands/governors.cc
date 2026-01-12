@@ -26,8 +26,8 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 
   for (auto star_handle : StarList(entity_manager)) {
     auto& star = *star_handle;
-    if (star.governor(race.Playernum - 1) == src_gov) {
-      star.governor(race.Playernum - 1) = tgt_gov;
+    if (star.governor(race.Playernum) == src_gov) {
+      star.governor(race.Playernum) = tgt_gov;
       outmsg = std::format("Changed juridiction of /{0}...\n", star.get_name());
       push_telegram(entity_manager, race.Playernum, 0, outmsg);
     }

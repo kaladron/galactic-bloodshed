@@ -24,7 +24,8 @@ void relation(const command_t& argv, GameObj& g) {
   if (argv.size() == 1) {
     q = Playernum;
   } else {
-    if (!(q = get_player(g.entity_manager, argv[1]))) {
+    q = get_player(g.entity_manager, argv[1]);
+    if (q == player_t{0}) {
       g.out << "No such player.\n";
       return;
     }
@@ -45,12 +46,12 @@ void relation(const command_t& argv, GameObj& g) {
     if (!r || r->Playernum == race->Playernum) continue;
     g.out << std::format(
         "{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n", r->Playernum,
-        ((race->God || (race->translate[r->Playernum - 1] > 30)) &&
+        ((race->God || (race->translate[r->Playernum.value - 1] > 30)) &&
          r->Metamorph && (Playernum == q))
             ? "Morph"
             : "     ",
-        race->translate[r->Playernum - 1], r->name, allied(*race, r->Playernum),
-        allied(*r, q));
+        race->translate[r->Playernum.value - 1], r->name,
+        allied(*race, r->Playernum), allied(*r, q));
   }
 }
 }  // namespace GB::commands

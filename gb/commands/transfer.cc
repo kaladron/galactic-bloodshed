@@ -23,7 +23,7 @@ void transfer(const command_t& argv, GameObj& g) {
   }
 
   const auto* star = g.entity_manager.peek_star(g.snum());
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
               APcount))
     return;
 
@@ -49,12 +49,12 @@ void transfer(const command_t& argv, GameObj& g) {
       std::format("{}/{}:", star->get_name(), star->get_planet_name(g.pnum()));
   switch (commod) {
     case 'r': {
-      if (give > planet.info(Playernum - 1).resource) {
+      if (give > planet.info(Playernum).resource) {
         g.out << std::format("You don't have {} on this planet.\n", give);
         return;
       }
-      planet.info(Playernum - 1).resource -= give;
-      planet.info(player - 1).resource += give;
+      planet.info(Playernum).resource -= give;
+      planet.info(player).resource += give;
       std::string message = std::format(
           "{} {} resources transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);
@@ -63,12 +63,12 @@ void transfer(const command_t& argv, GameObj& g) {
     } break;
     case 'x':
     case '&': {
-      if (give > planet.info(Playernum - 1).crystals) {
+      if (give > planet.info(Playernum).crystals) {
         g.out << std::format("You don't have {} on this planet.\n", give);
         return;
       }
-      planet.info(Playernum - 1).crystals -= give;
-      planet.info(player - 1).crystals += give;
+      planet.info(Playernum).crystals -= give;
+      planet.info(player).crystals += give;
       std::string message = std::format(
           "{} {} crystal(s) transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);
@@ -76,12 +76,12 @@ void transfer(const command_t& argv, GameObj& g) {
       warn_race(g.session_registry, g.entity_manager, player, message);
     } break;
     case 'f': {
-      if (give > planet.info(Playernum - 1).fuel) {
+      if (give > planet.info(Playernum).fuel) {
         g.out << std::format("You don't have {} fuel on this planet.\n", give);
         return;
       }
-      planet.info(Playernum - 1).fuel -= give;
-      planet.info(player - 1).fuel += give;
+      planet.info(Playernum).fuel -= give;
+      planet.info(player).fuel += give;
       std::string message =
           std::format("{} {} fuel transferred from player {} to player #{}\n",
                       starplanet, give, Playernum, player);
@@ -89,13 +89,13 @@ void transfer(const command_t& argv, GameObj& g) {
       warn_race(g.session_registry, g.entity_manager, player, message);
     } break;
     case 'd': {
-      if (give > planet.info(Playernum - 1).destruct) {
+      if (give > planet.info(Playernum).destruct) {
         g.out << std::format("You don't have {} destruct on this planet.\n",
                              give);
         return;
       }
-      planet.info(Playernum - 1).destruct -= give;
-      planet.info(player - 1).destruct += give;
+      planet.info(Playernum).destruct -= give;
+      planet.info(player).destruct += give;
       std::string message = std::format(
           "{} {} destruct transferred from player {} to player #{}\n",
           starplanet, give, Playernum, player);

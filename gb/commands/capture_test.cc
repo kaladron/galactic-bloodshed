@@ -54,7 +54,7 @@ int main() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  planet.info(0).mob_points = 0;
+  planet.info(player_t{1}).mob_points = 0;
 
   PlanetRepository planets(store);
   planets.save(planet);

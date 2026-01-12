@@ -65,20 +65,20 @@ int main() {
   planet.Maxx() = 5;
   planet.Maxy() = 5;
   planet.explored() = true;
-  planet.info(0).numsectsowned = 3;
-  planet.info(0).guns = 10;
-  planet.info(0).mob_points = 100;
-  planet.info(0).comread = 50;
-  planet.info(0).mob_set = 75;
-  planet.info(0).resource = 1000;
-  planet.info(0).fuel = 500;
-  planet.info(0).destruct = 25;
-  planet.info(0).popn = 5000;
-  planet.info(0).crystals = 10;
-  planet.info(0).troops = 200;
-  planet.info(0).tax = 10;
-  planet.info(0).newtax = 12;
-  planet.info(0).est_production = 150.5;
+  planet.info(player_t{1}).numsectsowned = 3;
+  planet.info(player_t{1}).guns = 10;
+  planet.info(player_t{1}).mob_points = 100;
+  planet.info(player_t{1}).comread = 50;
+  planet.info(player_t{1}).mob_set = 75;
+  planet.info(player_t{1}).resource = 1000;
+  planet.info(player_t{1}).fuel = 500;
+  planet.info(player_t{1}).destruct = 25;
+  planet.info(player_t{1}).popn = 5000;
+  planet.info(player_t{1}).crystals = 10;
+  planet.info(player_t{1}).troops = 200;
+  planet.info(player_t{1}).tax = 10;
+  planet.info(player_t{1}).newtax = 12;
+  planet.info(player_t{1}).est_production = 150.5;
   planet.conditions(TOXIC) = 25;
 
   // Save planet
@@ -186,7 +186,7 @@ int main() {
     uplanet.Maxx() = 3;
     uplanet.Maxy() = 3;
     uplanet.explored() = true;
-    uplanet.info(0).numsectsowned = 1;
+    uplanet.info(player_t{1}).numsectsowned = 1;
     planets_repo.save(uplanet);
 
     // Create minimal sectormap

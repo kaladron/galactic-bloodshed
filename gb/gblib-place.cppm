@@ -121,7 +121,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
             err = true;
             return;
           }
-          if (ignoreexpl || p->info(Playernum - 1).explored || g.god()) {
+          if (ignoreexpl || p->info(Playernum).explored || g.god()) {
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }

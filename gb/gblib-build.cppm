@@ -30,7 +30,7 @@ can_build_on_sector(EntityManager& entity_manager, int what, const Race& race,
                     const Planet& planet, const Sector& sector,
                     const Coordinates& c);
 export int getcount(const command_t& argv, size_t elem);
-export void autoload_at_planet(int Playernum, Ship* s, Planet* planet,
+export void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
                                Sector& sector, int* crew, double* fuel);
 export void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel);
 export void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,

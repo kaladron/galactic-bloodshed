@@ -115,12 +115,12 @@ export struct AimedAtData {
 };
 
 export struct MindData {
-  unsigned char progenitor; /* the originator of the strain */
-  unsigned char target;     /* who to kill (for Berserkers) */
+  player_t progenitor; /* the originator of the strain */
+  player_t target;     /* who to kill (for Berserkers) */
   unsigned char generation;
   unsigned char busy;     /* currently occupied */
   unsigned char tampered; /* recently tampered with? */
-  unsigned char who_killed;
+  player_t who_killed;
 };
 
 export struct PodData {
@@ -199,7 +199,7 @@ export struct ship_struct {
   std::string name;        ///< name of ship (optional)
   std::string shipclass;   ///< shipclass of ship - designated by player
 
-  unsigned char race{0}; /* race type - used when you gain alien
+  player_t race{0}; /* race type - used when you gain alien
                          ships during revolts and whatnot - usually
                          equal to owner */
   double xpos{0.0};
@@ -348,10 +348,10 @@ public:
     return data_.shipclass;
   }
 
-  [[nodiscard]] unsigned char race() const {
+  [[nodiscard]] player_t race() const {
     return data_.race;
   }
-  unsigned char& race() {
+  player_t& race() {
     return data_.race;
   }
 

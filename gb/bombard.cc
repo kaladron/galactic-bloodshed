@@ -63,7 +63,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   bool found = false;
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
     Sector& sect = sector_wrap;
-    if (sect.get_owner() && sect.get_owner() != ship.owner() &&
+    if (sect.get_owner() != 0 && sect.get_owner() != ship.owner() &&
         (sect.get_condition() != SectorType::SEC_WASTED)) {
       if (isset(r.atwar, sect.get_owner()) ||
           (ship.type() == ShipType::OTYPE_BERS &&
@@ -144,9 +144,8 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
       Shipltrs[ship.type()], ship.number(), ship.name(), x, y, numdest);
 
   for (player_t i = 1; i <= entity_manager.num_races(); i++)
-    if (result.nuked[i - 1] && i != ship.owner())
-      push_telegram(entity_manager, i, star->governor(i - 1),
-                    telegram_alert.str());
+    if (result.nuked[i.value - 1] && i != ship.owner())
+      push_telegram(entity_manager, i, star->governor(i), telegram_alert.str());
 
   std::string combatpost =
       std::format("{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type()],

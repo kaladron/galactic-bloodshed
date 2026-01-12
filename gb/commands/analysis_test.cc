@@ -61,8 +61,8 @@ int main() {
   planet.Maxx() = 5;
   planet.Maxy() = 5;
   planet.explored() = true;
-  planet.info(0).explored = true;  // Player 1 has explored
-  planet.info(1).explored = true;  // Player 2 has explored
+  planet.info(player_t{1}).explored = true;  // Player 1 has explored
+  planet.info(player_t{2}).explored = true;  // Player 2 has explored
 
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);

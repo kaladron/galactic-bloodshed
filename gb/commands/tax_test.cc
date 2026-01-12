@@ -4,7 +4,6 @@
 /// \brief Test tax command database persistence
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -41,8 +40,8 @@ void test_tax_database_persistence() {
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.info(0).tax = 10;     // Current tax rate
-  planet.info(0).newtax = 10;  // Target tax rate
+  planet.info(player_t{1}).tax = 10;     // Current tax rate
+  planet.info(player_t{1}).newtax = 10;  // Target tax rate
 
   PlanetRepository planets(store);
   planets.save(planet);
@@ -86,8 +85,9 @@ void test_tax_database_persistence() {
     // Verify database: newtax should be 25
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).newtax == 25);
-    std::println("    ✓ Database: newtax = {}", saved->info(0).newtax);
+    assert(saved->info(player_t{1}).newtax == 25);
+    std::println("    ✓ Database: newtax = {}",
+                 saved->info(player_t{1}).newtax);
   }
 
   // TEST 3: Set tax rate to maximum (100%)
@@ -99,8 +99,9 @@ void test_tax_database_persistence() {
     // Verify database
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).newtax == 100);
-    std::println("    ✓ Database: newtax = {}", saved->info(0).newtax);
+    assert(saved->info(player_t{1}).newtax == 100);
+    std::println("    ✓ Database: newtax = {}",
+                 saved->info(player_t{1}).newtax);
     g.out.str("");  // Clear output
   }
 
@@ -113,8 +114,9 @@ void test_tax_database_persistence() {
     // Verify database
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).newtax == 0);
-    std::println("    ✓ Database: newtax = {}", saved->info(0).newtax);
+    assert(saved->info(player_t{1}).newtax == 0);
+    std::println("    ✓ Database: newtax = {}",
+                 saved->info(player_t{1}).newtax);
     g.out.str("");  // Clear output
   }
 
@@ -132,9 +134,9 @@ void test_tax_database_persistence() {
     // Verify database: should still be 0 from previous test
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).newtax == 0);
+    assert(saved->info(player_t{1}).newtax == 0);
     std::println("    ✓ Database: newtax unchanged = {}",
-                 saved->info(0).newtax);
+                 saved->info(player_t{1}).newtax);
   }
 
   std::println("  ✅ All tax database persistence tests passed!");

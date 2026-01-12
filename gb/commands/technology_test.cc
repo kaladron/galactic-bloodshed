@@ -4,7 +4,6 @@
 /// \brief Test technology command database persistence
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -41,8 +40,8 @@ void test_technology_database_persistence() {
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.info(0).tech_invest = 100;  // Initial investment
-  planet.info(0).popn = 1000;        // Population for tech production calc
+  planet.info(player_t{1}).tech_invest = 100;  // Initial investment
+  planet.info(player_t{1}).popn = 1000;  // Population for tech production calc
 
   PlanetRepository planets(store);
   planets.save(planet);
@@ -84,9 +83,9 @@ void test_technology_database_persistence() {
     // Verify database: tech_invest should be 500
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).tech_invest == 500);
+    assert(saved->info(player_t{1}).tech_invest == 500);
     std::println("    ✓ Database: tech_invest = {}",
-                 saved->info(0).tech_invest);
+                 saved->info(player_t{1}).tech_invest);
   }
 
   // TEST 3: Set tech investment to 0
@@ -98,9 +97,9 @@ void test_technology_database_persistence() {
     // Verify database
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).tech_invest == 0);
+    assert(saved->info(player_t{1}).tech_invest == 0);
     std::println("    ✓ Database: tech_invest = {}",
-                 saved->info(0).tech_invest);
+                 saved->info(player_t{1}).tech_invest);
     g.out.str("");
   }
 
@@ -113,9 +112,9 @@ void test_technology_database_persistence() {
     // Verify database
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).tech_invest == 10000);
+    assert(saved->info(player_t{1}).tech_invest == 10000);
     std::println("    ✓ Database: tech_invest = {}",
-                 saved->info(0).tech_invest);
+                 saved->info(player_t{1}).tech_invest);
     g.out.str("");
   }
 
@@ -133,9 +132,9 @@ void test_technology_database_persistence() {
     // Verify database: should still be 10000 from previous test
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).tech_invest == 10000);
+    assert(saved->info(player_t{1}).tech_invest == 10000);
     std::println("    ✓ Database: tech_invest unchanged = {}",
-                 saved->info(0).tech_invest);
+                 saved->info(player_t{1}).tech_invest);
     g.out.str("");
   }
 
@@ -154,9 +153,9 @@ void test_technology_database_persistence() {
     // Verify database: should still be 10000 (no change)
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).tech_invest == 10000);
+    assert(saved->info(player_t{1}).tech_invest == 10000);
     std::println("    ✓ Database: tech_invest unchanged = {}",
-                 saved->info(0).tech_invest);
+                 saved->info(player_t{1}).tech_invest);
 
     // Restore correct scope for further tests
     g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -169,7 +168,7 @@ void test_technology_database_persistence() {
     // Change star governor to 1 (not matching g.governor() = 0)
     auto star_handle = ctx.em.get_star(1);
     auto& star_mod = *star_handle;
-    star_mod.governor(0) = 1;  // Different governor
+    star_mod.governor(1) = 1;  // Different governor
 
     // Update GameObj governor to non-zero
     g.set_governor(2);  // Not matching star's governor[0] = 1
@@ -185,9 +184,9 @@ void test_technology_database_persistence() {
     // Verify database: should still be 10000 (no change)
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
-    assert(saved->info(0).tech_invest == 10000);
+    assert(saved->info(player_t{1}).tech_invest == 10000);
     std::println("    ✓ Database: tech_invest unchanged = {}",
-                 saved->info(0).tech_invest);
+                 saved->info(player_t{1}).tech_invest);
 
     // Restore for cleanup
     g.set_governor(0);

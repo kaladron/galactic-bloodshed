@@ -253,19 +253,20 @@ std::string do_prompt(GameObj& g) {
   const auto* universe = g.entity_manager.peek_universe();
   switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] / )\n", universe->AP[Playernum - 1]);
+      prompt << std::format(" ( [{0}] / )\n",
+                            universe->AP[Playernum.value - 1]);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       auto star = g.entity_manager.get_star(g.snum());
       const auto& star_ref = star.read();
-      prompt << std::format(" ( [{0}] /{1} )\n", star_ref.AP(Playernum - 1),
+      prompt << std::format(" ( [{0}] /{1} )\n", star_ref.AP(Playernum),
                             star_ref.get_name());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       auto star = g.entity_manager.get_star(g.snum());
       const auto& star_ref = star.read();
-      prompt << std::format(" ( [{0}] /{1}/{2} )\n", star_ref.AP(Playernum - 1),
+      prompt << std::format(" ( [{0}] /{1}/{2} )\n", star_ref.AP(Playernum),
                             star_ref.get_name(),
                             star_ref.get_planet_name(g.pnum()));
       return prompt.str();
@@ -278,22 +279,21 @@ std::string do_prompt(GameObj& g) {
   if (!s) return " ( [?] /#? )\n";
   switch (s->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [[0]] /#{1} )\n", universe->AP[Playernum - 1],
-                            g.shipno());
+      prompt << std::format(" ( [[0]] /#{1} )\n",
+                            universe->AP[Playernum.value - 1], g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       auto star = g.entity_manager.get_star(s->storbits());
       const auto& star_ref = star.read();
-      prompt << std::format(" ( [{0}] /{1}/#{2} )\n",
-                            star_ref.AP(Playernum - 1), star_ref.get_name(),
-                            g.shipno());
+      prompt << std::format(" ( [{0}] /{1}/#{2} )\n", star_ref.AP(Playernum),
+                            star_ref.get_name(), g.shipno());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       auto star = g.entity_manager.get_star(s->storbits());
       const auto& star_ref = star.read();
       prompt << std::format(" ( [{0}] /{1}/{2}/#{3} )\n",
-                            star_ref.AP(Playernum - 1), star_ref.get_name(),
+                            star_ref.AP(Playernum), star_ref.get_name(),
                             star_ref.get_planet_name(g.pnum()), g.shipno());
       return prompt.str();
     }
@@ -310,22 +310,21 @@ std::string do_prompt(GameObj& g) {
   switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] /#{1}/#{2} )\n",
-                            universe->AP[Playernum - 1], s->destshipno(),
+                            universe->AP[Playernum.value - 1], s->destshipno(),
                             g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/#?/#? )\n";
-      prompt << std::format(" ( [{0}] /{1}/#{2}/#{3} )\n",
-                            star->AP(Playernum - 1), star->get_name(),
-                            s->destshipno(), g.shipno());
+      prompt << std::format(" ( [{0}] /{1}/#{2}/#{3} )\n", star->AP(Playernum),
+                            star->get_name(), s->destshipno(), g.shipno());
       return prompt.str();
     }
     case ScopeLevel::LEVEL_PLAN: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/?/#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
-                            star->AP(Playernum - 1), star->get_name(),
+                            star->AP(Playernum), star->get_name(),
                             star->get_planet_name(g.pnum()), s->destshipno(),
                             g.shipno());
       return prompt.str();
@@ -341,14 +340,14 @@ std::string do_prompt(GameObj& g) {
   switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
-                            universe->AP[Playernum - 1], s->destshipno(),
+                            universe->AP[Playernum.value - 1], s->destshipno(),
                             g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
-                            star->AP(Playernum - 1), star->get_name(),
+                            star->AP(Playernum), star->get_name(),
                             s->destshipno(), g.shipno());
       return prompt.str();
     }
@@ -356,7 +355,7 @@ std::string do_prompt(GameObj& g) {
       const auto* star = g.entity_manager.peek_star(s->storbits());
       if (!star) return " ( [?] /?/?/ /../#?/#? )\n";
       prompt << std::format(" ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
-                            star->AP(Playernum - 1), star->get_name(),
+                            star->AP(Playernum), star->get_name(),
                             star->get_planet_name(g.pnum()), s->destshipno(),
                             g.shipno());
       return prompt.str();
@@ -839,7 +838,7 @@ static void check_connect(Session& session, std::string_view message) {
   auto [Playernum, Governor] =
       getracenum(session.entity_manager(), race_password, gov_password);
 
-  if (!Playernum) {
+  if (Playernum == 0) {
     session.out() << "Connection refused.\n";
     std::println(stderr, "FAILED CONNECT {},{}\n", race_password, gov_password);
     return;
@@ -962,9 +961,9 @@ static void initialize_block_data(EntityManager& entity_manager) {
   for (auto race_handle : RaceList(entity_manager)) {
     const auto& race = race_handle.read();
     const player_t i = race.Playernum;
-    auto block_handle = entity_manager.get_block(i);
-    setbit(block_handle->invite, i - 1);
-    setbit(block_handle->pledge, i - 1);
+    auto block_handle = entity_manager.get_block(i.value);
+    setbit(block_handle->invite, i);
+    setbit(block_handle->pledge, i);
   }
 }
 

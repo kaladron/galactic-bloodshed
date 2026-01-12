@@ -102,7 +102,7 @@ export struct vnbrain {
 };
 
 export struct sectinfo {
-  char explored;      /* sector has been explored */
+  player_t explored;  /* sector has been explored */
   unsigned char VN;   /* this sector has a VN */
   unsigned char done; /* this sector has been updated */
 };

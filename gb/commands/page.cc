@@ -15,12 +15,12 @@ void page(const command_t& argv, GameObj& g) {
   governor_t Governor = g.governor();
   ap_t APcount = g.god() ? 0 : 1;
   player_t i;
-  int who;
+  player_t who;
   int gov;
   int to_block;
 
   const auto& star = *g.entity_manager.peek_star(g.snum());
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
               APcount))
     return;
 
@@ -32,7 +32,8 @@ void page(const command_t& argv, GameObj& g) {
     who = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
     gov = 0;  // TODO(jeffbailey): Init to zero to be sure it's initialized.
   } else {
-    if (!(who = get_player(g.entity_manager, argv[1]))) {
+    who = get_player(g.entity_manager, argv[1]);
+    if (who == player_t{0}) {
       g.out << "No such player.\n";
       return;
     }
@@ -51,7 +52,7 @@ void page(const command_t& argv, GameObj& g) {
       break;
     default:
       const auto& star = *g.entity_manager.peek_star(g.snum());
-      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
                   APcount)) {
         return;
       }
@@ -61,7 +62,7 @@ void page(const command_t& argv, GameObj& g) {
           g.race->governor[Governor.value].name, star.get_name());
 
       if (to_block) {
-        const auto* block_player = g.entity_manager.peek_block(Playernum);
+        const auto* block_player = g.entity_manager.peek_block(Playernum.value);
         if (!block_player) {
           g.out << "Block not found.\n";
           return;

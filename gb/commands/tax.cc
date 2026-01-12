@@ -36,7 +36,7 @@ void tax(const command_t& argv, GameObj& g) {
     g.out << "Sorry, but you can't do this when you are a guest.\n";
     return;
   }
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
               APcount)) {
     return;
   }
@@ -49,8 +49,8 @@ void tax(const command_t& argv, GameObj& g) {
 
   if (argv.size() < 2) {
     g.out << std::format("Current tax rate: {}%    Target: {}%\n",
-                         planet->info(Playernum - 1).tax,
-                         planet->info(Playernum - 1).newtax);
+                         planet->info(Playernum).tax,
+                         planet->info(Playernum).newtax);
     return;
   }
 
@@ -60,7 +60,7 @@ void tax(const command_t& argv, GameObj& g) {
     g.out << "Illegal value.\n";
     return;
   }
-  planet->info(Playernum - 1).newtax = sum_tax;
+  planet->info(Playernum).newtax = sum_tax;
   // Auto-saves when planet goes out of scope
 
   deductAPs(g, APcount, g.snum());

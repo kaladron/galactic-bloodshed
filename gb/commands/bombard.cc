@@ -45,7 +45,7 @@ void bombard(const command_t& argv, GameObj& g) {
       continue;
     }
     const auto* star = g.entity_manager.peek_star(from.storbits());
-    if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+    if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
                 APcount)) {
       continue;
     }
@@ -134,8 +134,8 @@ void bombard(const command_t& argv, GameObj& g) {
     for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
       if (result.nuked[i - 1]) {
         const auto* star = g.entity_manager.peek_star(from.storbits());
-        warn_player(g.session_registry, g.entity_manager, i,
-                    star->governor(i - 1), long_buf);
+        warn_player(g.session_registry, g.entity_manager, i, star->governor(i),
+                    long_buf);
       }
     }
     g.out << long_buf;
@@ -143,22 +143,22 @@ void bombard(const command_t& argv, GameObj& g) {
     if (DEFENSE) {
       /* planet retaliates - AFVs are immune to this */
       if (result.numdest && from.type() != ShipType::OTYPE_AFV) {
-        for (auto i = 1; i <= g.entity_manager.num_races(); i++)
-          if (result.nuked[i - 1] && !p.slaved_to()) {
+        for (player_t i = 1; i <= g.entity_manager.num_races(); i++)
+          if (result.nuked[i.value - 1] && p.slaved_to() == 0) {
             /* add planet defense strength */
             auto alien_handle = g.entity_manager.get_race(i);
             if (!alien_handle.get()) continue;
             Race& alien = *alien_handle;
 
-            strength = MIN(p.info(i - 1).destruct, p.info(i - 1).guns);
+            strength = MIN(p.info(i).destruct, p.info(i).guns);
 
-            p.info(i - 1).destruct -= strength;
+            p.info(i).destruct -= strength;
 
             shoot_planet_to_ship(g.entity_manager, alien, from, strength,
                                  long_buf, short_buf);
             const auto* star = g.entity_manager.peek_star(from.storbits());
             warn_player(g.session_registry, g.entity_manager, i,
-                        star->governor(i - 1), long_buf);
+                        star->governor(i), long_buf);
             g.out << long_buf;
             if (!from.alive())
               post(g.entity_manager, short_buf, NewsType::COMBAT);

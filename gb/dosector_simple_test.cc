@@ -52,10 +52,10 @@ Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
   planet.conditions(TOXIC) = 0;
 
   // Initialize player info
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    planet.info(i).tax = 0;
-    planet.info(i).mob_set = 0;
-    planet.info(i).resource = 0;
+  for (int i = 1; i <= MAXPLAYERS; i++) {
+    planet.info(player_t{i}).tax = 0;
+    planet.info(player_t{i}).mob_set = 0;
+    planet.info(player_t{i}).resource = 0;
   }
 
   return planet;
@@ -233,10 +233,10 @@ void test_planet_creation() {
   assert(asteroid.type() == PlanetType::ASTEROID);
 
   // Test player info initialization
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    assert(planet.info(i).tax == 0);
-    assert(planet.info(i).mob_set == 0);
-    assert(planet.info(i).resource == 0);
+  for (int i = 1; i <= MAXPLAYERS; i++) {
+    assert(planet.info(player_t{i}).tax == 0);
+    assert(planet.info(player_t{i}).mob_set == 0);
+    assert(planet.info(player_t{i}).resource == 0);
   }
 }
 

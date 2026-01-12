@@ -30,7 +30,7 @@ void explore(const command_t& argv, GameObj& g) {
   const auto& sdata = *g.entity_manager.peek_universe();
   g.out << "         ========== Exploration Report ==========\n";
   g.out << std::format(" Global action points : [{:2}]\n",
-                       sdata.AP[Playernum - 1]);
+                       sdata.AP[Playernum.value - 1]);
 
   for (auto star_handle : StarList(g.entity_manager)) {
     const auto& star_ref = *star_handle;
@@ -39,11 +39,10 @@ void explore(const command_t& argv, GameObj& g) {
         // Output star header
         if (g.race->tech >= TECH_SEE_STABILITY) {
           g.out << std::format("\n{} ({:2})[{:2}]\n", star_ref.get_name(),
-                               star_ref.stability(),
-                               star_ref.AP(Playernum - 1));
+                               star_ref.stability(), star_ref.AP(Playernum));
         } else {
           g.out << std::format("\n{} (/?/?)[{:2}]\n", star_ref.get_name(),
-                               star_ref.AP(Playernum - 1));
+                               star_ref.AP(Playernum));
         }
 
         // Create planet table for this star
@@ -70,14 +69,14 @@ void explore(const command_t& argv, GameObj& g) {
           std::string attrs;
           std::string type_col;
           std::string compat_col;
-          if (pl.info(Playernum - 1).explored) {
-            if (pl.info(Playernum - 1).explored) attrs += "Ex ";
-            if (pl.info(Playernum - 1).autorep) attrs += "Rep ";
-            if (pl.info(Playernum - 1).numsectsowned) attrs += "Inhab ";
-            if (pl.slaved_to()) attrs += "SLAVED ";
+          if (pl.info(Playernum).explored) {
+            if (pl.info(Playernum).explored) attrs += "Ex ";
+            if (pl.info(Playernum).autorep) attrs += "Rep ";
+            if (pl.info(Playernum).numsectsowned) attrs += "Inhab ";
+            if (pl.slaved_to() != 0) attrs += "SLAVED ";
 
-            for (int j = 1; j <= g.entity_manager.num_races(); j++) {
-              if (j != Playernum && pl.info(j - 1).numsectsowned) {
+            for (player_t j{1}; j <= g.entity_manager.num_races(); ++j) {
+              if (j != Playernum && pl.info(j).numsectsowned) {
                 attrs += std::format("{} ", j);
               }
             }

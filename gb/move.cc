@@ -100,7 +100,7 @@ void mech_defend(const GameObj& g, int* people, PopulationType type,
           !isset(alien_ptr->allied, g.player())) {
         const auto* star = g.entity_manager.peek_star(ship.storbits());
         while ((civ + mil) > 0 && retal_strength(ship)) {
-          oldgov = star->governor(alien_ptr->Playernum - 1);
+          oldgov = star->governor(alien_ptr->Playernum);
           char long_buf[1024], short_buf[256];
           mech_attack_people(g.entity_manager, ship, &civ, &mil, *alien_ptr,
                              *g.race, s2, true, long_buf, short_buf);
@@ -160,7 +160,7 @@ void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
   sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(em, ship).c_str(),
           ship_to_string(ship).c_str(),
           (*civ + *mil) ? "attacked" : "slaughtered", alien.name.c_str(),
-          alien.Playernum);
+          alien.Playernum.value);
   strcpy(long_msg, short_msg);
   std::string battle_msg = std::format(
       "\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n", sect.get_x(),
@@ -207,7 +207,7 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   }
   auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
   sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
-          race.name.c_str(), race.Playernum,
+          race.name.c_str(), race.Playernum.value,
           ship.alive() ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());
   strcpy(long_msg, short_msg);

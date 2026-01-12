@@ -45,39 +45,39 @@ int main() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  planet.info(0).route[0].set = 0;
-  planet.info(0).route[0].dest_star = 0;
-  planet.info(0).route[0].dest_planet = 0;
-  planet.info(0).route[0].x = 0;
-  planet.info(0).route[0].y = 0;
-  planet.info(0).route[0].load = 0;
-  planet.info(0).route[0].unload = 0;
+  planet.info(player_t{1}).route[0].set = 0;
+  planet.info(player_t{1}).route[0].dest_star = 0;
+  planet.info(player_t{1}).route[0].dest_planet = 0;
+  planet.info(player_t{1}).route[0].x = 0;
+  planet.info(player_t{1}).route[0].y = 0;
+  planet.info(player_t{1}).route[0].load = 0;
+  planet.info(player_t{1}).route[0].unload = 0;
   planets.save(planet);
 
   // Test: Set route destination
   {
     auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
-    p.info(0).route[0].set = 1;
-    p.info(0).route[0].dest_star = 2;
-    p.info(0).route[0].dest_planet = 0;
-    p.info(0).route[0].x = 5;
-    p.info(0).route[0].y = 5;
-    p.info(0).route[0].load = M_FUEL | M_RESOURCES;
-    p.info(0).route[0].unload = M_DESTRUCT;
+    p.info(player_t{1}).route[0].set = 1;
+    p.info(player_t{1}).route[0].dest_star = 2;
+    p.info(player_t{1}).route[0].dest_planet = 0;
+    p.info(player_t{1}).route[0].x = 5;
+    p.info(player_t{1}).route[0].y = 5;
+    p.info(player_t{1}).route[0].load = M_FUEL | M_RESOURCES;
+    p.info(player_t{1}).route[0].unload = M_DESTRUCT;
   }
 
   // Verify: Route was saved
   {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
-    assert(saved->info(0).route[0].set == 1);
-    assert(saved->info(0).route[0].dest_star == 2);
-    assert(saved->info(0).route[0].dest_planet == 0);
-    assert(saved->info(0).route[0].x == 5);
-    assert(saved->info(0).route[0].y == 5);
-    assert(saved->info(0).route[0].load == (M_FUEL | M_RESOURCES));
-    assert(saved->info(0).route[0].unload == M_DESTRUCT);
+    assert(saved->info(player_t{1}).route[0].set == 1);
+    assert(saved->info(player_t{1}).route[0].dest_star == 2);
+    assert(saved->info(player_t{1}).route[0].dest_planet == 0);
+    assert(saved->info(player_t{1}).route[0].x == 5);
+    assert(saved->info(player_t{1}).route[0].y == 5);
+    assert(saved->info(player_t{1}).route[0].load == (M_FUEL | M_RESOURCES));
+    assert(saved->info(player_t{1}).route[0].unload == M_DESTRUCT);
     std::println("✓ Route destination saved correctly");
   }
 
@@ -85,14 +85,14 @@ int main() {
   {
     auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
-    p.info(0).route[0].set = 0;
+    p.info(player_t{1}).route[0].set = 0;
   }
 
   // Verify: Route deactivated
   {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
-    assert(saved->info(0).route[0].set == 0);
+    assert(saved->info(player_t{1}).route[0].set == 0);
     std::println("✓ Route deactivation saved correctly");
   }
 
@@ -101,10 +101,10 @@ int main() {
     auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
     for (int i = 0; i < MAX_ROUTES; i++) {
-      p.info(0).route[i].set = 1;
-      p.info(0).route[i].dest_star = 2;
-      p.info(0).route[i].dest_planet = 0;
-      p.info(0).route[i].load = M_FUEL;
+      p.info(player_t{1}).route[i].set = 1;
+      p.info(player_t{1}).route[i].dest_star = 2;
+      p.info(player_t{1}).route[i].dest_planet = 0;
+      p.info(player_t{1}).route[i].load = M_FUEL;
     }
   }
 
@@ -113,8 +113,8 @@ int main() {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     for (int i = 0; i < MAX_ROUTES; i++) {
-      assert(saved->info(0).route[i].set == 1);
-      assert(saved->info(0).route[i].load == M_FUEL);
+      assert(saved->info(player_t{1}).route[i].set == 1);
+      assert(saved->info(player_t{1}).route[i].load == M_FUEL);
     }
     std::println("✓ Multiple routes saved correctly");
   }

@@ -66,7 +66,7 @@ void arm(const command_t& argv, GameObj& g) {
     return;
   }
   if (mode) {
-    max_allowed = MIN(sect.get_popn(), planet.info(Playernum - 1).destruct *
+    max_allowed = MIN(sect.get_popn(), planet.info(Playernum).destruct *
                                            (sect.get_mobilization() + 1));
     if (argv.size() < 3)
       amount = max_allowed;
@@ -97,10 +97,10 @@ void arm(const command_t& argv, GameObj& g) {
     sect.set_troops(sect.get_troops() + amount);
     sect.set_popn(sect.get_popn() - amount);
     planet.popn() -= amount;
-    planet.info(Playernum - 1).popn -= amount;
+    planet.info(Playernum).popn -= amount;
     planet.troops() += amount;
-    planet.info(Playernum - 1).troops += amount;
-    planet.info(Playernum - 1).destruct -= cost;
+    planet.info(Playernum).troops += amount;
+    planet.info(Playernum).destruct -= cost;
     g.out << std::format(
         "{} population armed at a cost of {} (now {} civilians, {} military)\n",
         amount, cost, sect.get_popn(), sect.get_troops());
@@ -120,8 +120,8 @@ void arm(const command_t& argv, GameObj& g) {
     sect.set_troops(sect.get_troops() - amount);
     planet.popn() += amount;
     planet.troops() -= amount;
-    planet.info(Playernum - 1).popn += amount;
-    planet.info(Playernum - 1).troops -= amount;
+    planet.info(Playernum).popn += amount;
+    planet.info(Playernum).troops -= amount;
     g.out << std::format("{} troops disarmed (now {} civilians, {} military)\n",
                          amount, sect.get_popn(), sect.get_troops());
   }

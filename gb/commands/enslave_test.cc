@@ -45,11 +45,11 @@ int main() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  planet.info(0).numsectsowned = 5;
-  planet.info(1).popn = 1000;
-  planet.info(1).numsectsowned = 5;
-  planet.info(0).destruct = 1000;
-  planet.info(1).destruct = 100;
+  planet.info(player_t{1}).numsectsowned = 5;
+  planet.info(player_t{2}).popn = 1000;
+  planet.info(player_t{2}).numsectsowned = 5;
+  planet.info(player_t{1}).destruct = 1000;
+  planet.info(player_t{2}).destruct = 100;
   planet.slaved_to() = 0;
   planet.ships() = 1;
 

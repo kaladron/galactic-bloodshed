@@ -36,21 +36,21 @@ int main() {
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.info(0).tox_thresh = 50;  // Default threshold
+  planet.info(player_t{1}).tox_thresh = 50;  // Default threshold
   planets.save(planet);
 
   // Test: Set toxicity threshold to 0
   {
     auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
-    p.info(0).tox_thresh = 0;
+    p.info(player_t{1}).tox_thresh = 0;
   }
 
   // Verify: Threshold saved
   {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
-    assert(saved->info(0).tox_thresh == 0);
+    assert(saved->info(player_t{1}).tox_thresh == 0);
     std::println("✓ Toxicity threshold 0 saved correctly");
   }
 
@@ -58,14 +58,14 @@ int main() {
   {
     auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
-    p.info(0).tox_thresh = 100;
+    p.info(player_t{1}).tox_thresh = 100;
   }
 
   // Verify: Threshold updated
   {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
-    assert(saved->info(0).tox_thresh == 100);
+    assert(saved->info(player_t{1}).tox_thresh == 100);
     std::println("✓ Toxicity threshold 100 saved correctly");
   }
 
@@ -73,14 +73,14 @@ int main() {
   {
     auto planet_handle = ctx.em.get_planet(1, 0);
     auto& p = *planet_handle;
-    p.info(0).tox_thresh = 75;
+    p.info(player_t{1}).tox_thresh = 75;
   }
 
   // Verify: Mid-range threshold saved
   {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
-    assert(saved->info(0).tox_thresh == 75);
+    assert(saved->info(player_t{1}).tox_thresh == 75);
     std::println("✓ Toxicity threshold 75 saved correctly");
   }
 
@@ -88,7 +88,7 @@ int main() {
   Planet planet2{};
   planet2.star_id() = 1;
   planet2.planet_order() = 1;
-  planet2.info(0).tox_thresh = 25;
+  planet2.info(player_t{1}).tox_thresh = 25;
   planets.save(planet2);
 
   // Verify: Both planets have correct thresholds
@@ -97,8 +97,8 @@ int main() {
     const auto* p2 = ctx.em.peek_planet(1, 1);
     assert(p1);
     assert(p2);
-    assert(p1->info(0).tox_thresh == 75);
-    assert(p2->info(0).tox_thresh == 25);
+    assert(p1->info(player_t{1}).tox_thresh == 75);
+    assert(p2->info(player_t{1}).tox_thresh == 25);
     std::println(
         "✓ Multiple planets with different thresholds saved correctly");
   }

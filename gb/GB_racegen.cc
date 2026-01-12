@@ -35,8 +35,8 @@ int enroll_valid_race() {
   EntityManager entity_manager{database};
   JsonStore store{database};
 
-  auto Playernum = entity_manager.num_races() + 1;
-  if ((Playernum == 1) && (race_info.priv_type != P_GOD)) {
+  auto Playernum = player_t{entity_manager.num_races().value + 1};
+  if ((Playernum == player_t{1}) && (race_info.priv_type != P_GOD)) {
     sprintf(race_info.rejection,
             "The first race enrolled must have God privileges.\n");
     return 1;
@@ -258,9 +258,9 @@ found_planet:
     ships.save(s);
   }
 
-  planet.info(Playernum - 1).numsectsowned = 1;
+  planet.info(Playernum).numsectsowned = 1;
   planet.explored() = 0;
-  planet.info(Playernum - 1).explored = 1;
+  planet.info(Playernum).explored = 1;
 
   // (approximate)
   planet.maxpopn() =
@@ -277,7 +277,7 @@ found_planet:
   auto& star_data = *star_handle;
   setbit(star_data.explored(), Playernum);
   setbit(star_data.inhabited(), Playernum);
-  star_data.AP(Playernum - 1) = 5;
+  star_data.AP(Playernum) = 5;
   // star_handle will auto-save when it goes out of scope
 
   std::cout << std::format(

@@ -79,9 +79,9 @@ int main() {
   assert(retrieved->explored() == 0b101010);
   assert(retrieved->inhabited() == 0b110011);
 
-  // Verify governor array using accessor
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    assert(retrieved->governor(i) == i + 1);
+  // Verify governor array using accessor (player_t is 1-indexed)
+  for (int i = 1; i <= MAXPLAYERS; i++) {
+    assert(retrieved->governor(player_t{i}) == i);
   }
 
   // Verify AP array - need to get underlying struct for this

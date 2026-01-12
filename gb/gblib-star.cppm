@@ -92,20 +92,40 @@ public:
     return star_struct.ypos;
   }
 
+  // Action points (player_t is 1-indexed, array is 0-indexed)
   ap_t& AP(player_t playernum) {
-    return star_struct.AP[playernum];
+    if (playernum.value == 0 || playernum.value > MAXPLAYERS) {
+      throw std::out_of_range(std::format(
+          "Invalid player number {} for Star::AP", playernum.value));
+    }
+    return star_struct.AP[playernum.value - 1];
   }
+  // Action points (player_t is 1-indexed, array is 0-indexed)
   [[nodiscard]] ap_t AP(player_t playernum) const {
-    return star_struct.AP[playernum];
+    if (playernum.value == 0 || playernum.value > MAXPLAYERS) {
+      throw std::out_of_range(std::format(
+          "Invalid player number {} for Star::AP", playernum.value));
+    }
+    return star_struct.AP[playernum.value - 1];
   }
 
-  // which subordinate maintains the system
+  // which subordinate maintains the system (player_t is 1-indexed, array is
+  // 0-indexed)
   governor_t& governor(player_t playernum) {
-    return star_struct.governor[playernum];
+    if (playernum.value == 0 || playernum.value > MAXPLAYERS) {
+      throw std::out_of_range(std::format(
+          "Invalid player number {} for Star::governor", playernum.value));
+    }
+    return star_struct.governor[playernum.value - 1];
   }
-  // which subordinate maintains the system
+  // which subordinate maintains the system (player_t is 1-indexed, array is
+  // 0-indexed)
   [[nodiscard]] governor_t governor(player_t playernum) const {
-    return star_struct.governor[playernum];
+    if (playernum.value == 0 || playernum.value > MAXPLAYERS) {
+      throw std::out_of_range(std::format(
+          "Invalid player number {} for Star::governor", playernum.value));
+    }
+    return star_struct.governor[playernum.value - 1];
   }
 
   /* 1st ship in orbit */

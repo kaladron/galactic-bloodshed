@@ -45,9 +45,9 @@ int main() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  planet.info(0).numsectsowned = 1;
-  planet.info(0).guns = 50;
-  planet.info(0).destruct = 100;
+  planet.info(player_t{1}).numsectsowned = 1;
+  planet.info(player_t{1}).guns = 50;
+  planet.info(player_t{1}).destruct = 100;
   planet.xpos() = 0.0;
   planet.ypos() = 0.0;
 
@@ -99,7 +99,7 @@ int main() {
   ctx.em.clear_cache();
   const auto* saved_planet = ctx.em.peek_planet(0, 0);
   assert(saved_planet);
-  assert(saved_planet->info(0).destruct < 100);
+  assert(saved_planet->info(player_t{1}).destruct < 100);
 
   std::println("defend_test passed!");
   return 0;

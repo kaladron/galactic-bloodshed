@@ -446,7 +446,7 @@ void report_planet_ships(GameObj& g, RstContext& ctx, player_t player_num,
   const auto* planet = g.entity_manager.peek_planet(snum, pnum);
   if (!planet) return;
 
-  if (planet->info(player_num - 1).explored) {
+  if (planet->info(player_num).explored) {
     const ShipList ships(g.entity_manager, planet->ships());
     for (const Ship* ship : ships) {
       ship_report(g, ctx, *ship, rep_on);

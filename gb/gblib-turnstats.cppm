@@ -70,7 +70,7 @@ export struct TurnStats {
   std::array<double, MAXPLAYERS> Compat{};
 
   // Claims flag (set if any sector ownership changes)
-  unsigned char Claims{};
+  bool Claims{};
 
   // VN brain state (VN AI state per turn)
   vnbrain VN_brain{};

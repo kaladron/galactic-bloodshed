@@ -16,7 +16,8 @@ void give(const command_t& argv, GameObj& g) {
   ap_t APcount = 5;
   player_t who;
 
-  if (!(who = get_player(g.entity_manager, argv[1]))) {
+  who = get_player(g.entity_manager, argv[1]);
+  if (who.value == 0) {
     g.out << "No such player.\n";
     return;
   }
@@ -80,14 +81,14 @@ void give(const command_t& argv, GameObj& g) {
     case ScopeLevel::LEVEL_UNIV: {
       const auto* univ = g.entity_manager.peek_universe();
       if (!enufAP(g.entity_manager, Playernum, Governor,
-                  univ->AP[Playernum - 1], APcount)) {
+                  univ->AP[Playernum.value - 1], APcount)) {
         return;
       }
       break;
     }
     default: {
       const auto& star = *g.entity_manager.peek_star(g.snum());
-      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum - 1),
+      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
                   APcount)) {
         return;
       }
@@ -117,7 +118,7 @@ void give(const command_t& argv, GameObj& g) {
       auto planet_handle =
           g.entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
       auto& planet = *planet_handle;
-      planet.info(who - 1).explored = 1;
+      planet.info(who).explored = 1;
       break;
     }
     default:

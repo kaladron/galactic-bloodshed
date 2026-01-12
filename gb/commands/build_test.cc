@@ -47,8 +47,8 @@ int main() {
   planet.Maxy() = 10;
   planet.xpos() = 0.0;
   planet.ypos() = 0.0;
-  planet.info(0).resource = 10000;  // Plenty of resources
-  planet.info(0).fuel = 1000;
+  planet.info(player_t{1}).resource = 10000;  // Plenty of resources
+  planet.info(player_t{1}).fuel = 1000;
 
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);
@@ -84,7 +84,7 @@ int main() {
     ctx.em.clear_cache();
     const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
     assert(planet_verify);
-    assert(planet_verify->info(0).resource <
+    assert(planet_verify->info(player_t{1}).resource <
            10000);  // Resources should be deducted
 
     // Verify ship was created (it should be ship #1)
@@ -106,7 +106,7 @@ int main() {
     // Drain resources completely
     auto planet_handle2 = ctx.em.get_planet(star_id, 0);
     auto& planet2 = *planet_handle2;
-    planet2.info(0).resource = 0;  // No resources
+    planet2.info(player_t{1}).resource = 0;  // No resources
   }
 
   {

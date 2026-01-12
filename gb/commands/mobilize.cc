@@ -37,7 +37,7 @@ void mobilize(const command_t& argv, GameObj& g) {
     g.out << "You are not authorized to do this here.\n";
     return;
   }
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum - 1),
+  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
               APcount)) {
     return;
   }
@@ -50,8 +50,8 @@ void mobilize(const command_t& argv, GameObj& g) {
 
   if (argv.size() < 2) {
     g.out << std::format("Current mobilization: {}    Quota: {}\n",
-                         planet->info(Playernum - 1).comread,
-                         planet->info(Playernum - 1).mob_set);
+                         planet->info(Playernum).comread,
+                         planet->info(Playernum).mob_set);
     return;
   }
   int sum_mob = std::stoi(argv[1]);
@@ -60,7 +60,7 @@ void mobilize(const command_t& argv, GameObj& g) {
     g.out << "Illegal value.\n";
     return;
   }
-  planet->info(Playernum - 1).mob_set = sum_mob;
+  planet->info(Playernum).mob_set = sum_mob;
   deductAPs(g, APcount, g.snum());
 }
 }  // namespace GB::commands

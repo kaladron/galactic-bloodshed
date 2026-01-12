@@ -13,6 +13,7 @@ import :tweakables;
 import :universe;
 import :types;
 
+import strong_id;
 import std.compat;
 
 // Note: Notification functions moved to gb/services/notification.{cppm,cc}
@@ -77,6 +78,36 @@ bool isclr(const T target, const Unsigned auto pos)
   return !isset(target, pos);
 }
 
+// Overloads for ID types (player_t, governor_t, etc.)
+// These handle the .value extraction and cast to unsigned automatically
+export template <typename T, FixedString Tag, typename IDValueType>
+void setbit(T& target, const ID<Tag, IDValueType> id)
+  requires Unsigned<T> && std::integral<IDValueType>
+{
+  setbit(target, static_cast<unsigned>(id.value));
+}
+
+export template <typename T, FixedString Tag, typename IDValueType>
+void clrbit(T& target, const ID<Tag, IDValueType> id)
+  requires Unsigned<T> && std::integral<IDValueType>
+{
+  clrbit(target, static_cast<unsigned>(id.value));
+}
+
+export template <typename T, FixedString Tag, typename IDValueType>
+bool isset(const T target, const ID<Tag, IDValueType> id)
+  requires Unsigned<T> && std::integral<IDValueType>
+{
+  return isset(target, static_cast<unsigned>(id.value));
+}
+
+export template <typename T, FixedString Tag, typename IDValueType>
+bool isclr(const T target, const ID<Tag, IDValueType> id)
+  requires Unsigned<T> && std::integral<IDValueType>
+{
+  return isclr(target, static_cast<unsigned>(id.value));
+}
+
 export template <typename T, typename U>
 constexpr auto MIN(const T& x, const U& y) {
   return (x < y) ? x : y;
@@ -133,8 +164,8 @@ export constexpr double logscale(const int x) {
 export template <typename T>
   requires std::is_arithmetic_v<T>
 std::string estimate(const T data, const Race& r, const player_t p) {
-  if (r.translate[p - 1] > 10) {
-    int k = 101 - std::min(r.translate[p - 1], 100);
+  if (r.translate[p.value - 1] > 10) {
+    int k = 101 - std::min(r.translate[p.value - 1], 100);
     int est = (std::abs(static_cast<int>(data)) / k) * k;
     if (est < 1000) return std::format("{}", est);
     if (est < 10000) {

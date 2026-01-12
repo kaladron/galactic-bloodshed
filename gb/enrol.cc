@@ -399,7 +399,7 @@ int main() {
     ss.land_y = (char)secttypes[i].y;
 
     ss.owner = Playernum;
-    ss.race = Playernum.value;
+    ss.race = Playernum;
 
     ss.tech = 100.0;
 

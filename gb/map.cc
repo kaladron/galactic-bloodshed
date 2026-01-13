@@ -7,6 +7,16 @@ import std;
 
 module gblib;
 
+namespace {
+// Converts a sector's owner ID to a printable ASCII character.
+// Owner 0 → '?', Owner 1 → '@', Owner 2 → 'A', etc.
+// This allows player numbers to be displayed as readable characters in map
+// output.
+char get_owner_char(const Sector& sector) {
+  return (char)(sector.get_owner().value + '?');
+}
+}  // namespace
+
 void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
               const Planet& p) {
   player_t Playernum = g.player();
@@ -47,27 +57,27 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
         (sector.get_owner() == race.governor[Governor.value].toggle.highlight);
     if (shiplocs[sector.get_x()][sector.get_y()] && iq) {
       if (race.governor[Governor.value].toggle.color)
-        g.out << std::format("{}{}", (char)(sector.get_owner().value + '?'),
+        g.out << std::format("{}{}", get_owner_char(sector),
                              shiplocs[sector.get_x()][sector.get_y()]);
       else {
         if (owned1 && race.governor[Governor.value].toggle.inverse)
-          g.out << std::format("1{}{}", (char)(sector.get_owner().value + '?'),
+          g.out << std::format("1{}{}", get_owner_char(sector),
                                shiplocs[sector.get_x()][sector.get_y()]);
 
         else
-          g.out << std::format("0{}{}", (char)(sector.get_owner().value + '?'),
+          g.out << std::format("0{}{}", get_owner_char(sector),
                                shiplocs[sector.get_x()][sector.get_y()]);
       }
     } else {
       if (race.governor[Governor.value].toggle.color) {
-        g.out << std::format("{}{}", (char)(sector.get_owner().value + '?'),
+        g.out << std::format("{}{}", get_owner_char(sector),
                              desshow(Playernum, Governor, race, sector));
       } else {
         if (owned1 && race.governor[Governor.value].toggle.inverse) {
-          g.out << std::format("1{}{}", (char)(sector.get_owner().value + '?'),
+          g.out << std::format("1{}{}", get_owner_char(sector),
                                desshow(Playernum, Governor, race, sector));
         } else {
-          g.out << std::format("0{}{}", (char)(sector.get_owner().value + '?'),
+          g.out << std::format("0{}{}", get_owner_char(sector),
                                desshow(Playernum, Governor, race, sector));
         }
       }

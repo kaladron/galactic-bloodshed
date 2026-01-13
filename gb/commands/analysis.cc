@@ -51,8 +51,6 @@ void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
 // std::optional to make this more type-safe.
 void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
                  starnum_t Starnum, planetnum_t Planetnum) {
-  player_t Playernum = g.player();
-
   std::array<struct anal_sect, CARE> Res;
   std::array<struct anal_sect, CARE> Eff;
   std::array<struct anal_sect, CARE> Frt;

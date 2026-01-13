@@ -134,7 +134,6 @@ void capture(const command_t& argv, GameObj& g) {
       olddtroops = ship.troops();
       oldowner = ship.owner();
       oldgov = ship.governor();
-      orig_shipno = ship.number();
 
       shipdam = 0;
       casualties = 0;

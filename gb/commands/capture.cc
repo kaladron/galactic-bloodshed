@@ -18,7 +18,6 @@ void capture(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   const ap_t APcount = 1;
-  shipnum_t orig_shipno = 0;  // Store original ship number for messages
   player_t oldowner;
   governor_t oldgov;
   int shipdam = 0;

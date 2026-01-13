@@ -312,7 +312,6 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     // Normal landing
     auto smap_handle =
         g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
-    auto& smap = *smap_handle;
 
     s.land_x() = x;
     s.land_y() = y;

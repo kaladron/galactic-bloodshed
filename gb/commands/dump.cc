@@ -38,7 +38,6 @@ void dump(const command_t& argv, GameObj& g) {
     g.out << "Only leaders are allowed to use dump.\n";
     return;
   }
-  const auto& sdata = *g.entity_manager.peek_universe();
 
   if (argv.size() < 3) {
     for (auto current_star_handle : StarList(g.entity_manager)) {

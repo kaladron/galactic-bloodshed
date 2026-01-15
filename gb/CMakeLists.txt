@@ -64,8 +64,11 @@ endif()
 add_definitions(-DDOCDIR="${DOCDIR}")
 add_definitions(-DHELPDIR="${HELPDIR}")
 
-# Require dot, treat the other components as optional
-find_package(Doxygen OPTIONAL_COMPONENTS dot)
+# Make Doxygen optional - gracefully skip documentation if not found
+find_package(Doxygen QUIET OPTIONAL_COMPONENTS dot)
+if(NOT DOXYGEN_FOUND)
+  message(STATUS "Doxygen not found - documentation generation will be skipped")
+endif()
 
 # Bring in
 include(FetchContent)

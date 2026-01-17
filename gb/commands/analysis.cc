@@ -49,8 +49,9 @@ void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
 // FIXME: ThisPlayer uses -1 to mean "all players", 0 for "unoccupied", and
 // positive values for specific players. Consider using std::variant or
 // std::optional to make this more type-safe.
-void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
-                 starnum_t Starnum, planetnum_t Planetnum) {
+void do_analysis(GameObj& g, int ThisPlayer, Mode mode,
+                 std::optional<SectorType> sector_type, starnum_t Starnum,
+                 planetnum_t Planetnum) {
   std::array<struct anal_sect, CARE> Res;
   std::array<struct anal_sect, CARE> Eff;
   std::array<struct anal_sect, CARE> Frt;
@@ -120,7 +121,7 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
       TotalCrys++;
     }
 
-    if (sector_type == -1 || sector_type == sect.get_condition()) {
+    if (!sector_type || *sector_type == sect.get_condition()) {
       if (ThisPlayer < 0 || ThisPlayer == p) {
         insert(mode, Res,
                {.x = sect.get_x(),
@@ -169,37 +170,38 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
                         star.get_planet_name(Planetnum));
   header << std::format("{} {}",
                         (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
-  switch (sector_type) {
-    case -1:
-      header << " of all";
-      break;
-    case SectorType::SEC_SEA:
-      header << " Ocean";
-      break;
-    case SectorType::SEC_LAND:
-      header << " Land";
-      break;
-    case SectorType::SEC_MOUNT:
-      header << " Mountain";
-      break;
-    case SectorType::SEC_GAS:
-      header << " Gas";
-      break;
-    case SectorType::SEC_ICE:
-      header << " Ice";
-      break;
-    case SectorType::SEC_FOREST:
-      header << " Forest";
-      break;
-    case SectorType::SEC_DESERT:
-      header << " Desert";
-      break;
-    case SectorType::SEC_PLATED:
-      header << " Plated";
-      break;
-    case SectorType::SEC_WASTED:
-      header << " Wasted";
-      break;
+  if (!sector_type.has_value()) {
+    header << " of all";
+  } else {
+    switch (*sector_type) {
+      case SectorType::SEC_SEA:
+        header << " Ocean";
+        break;
+      case SectorType::SEC_LAND:
+        header << " Land";
+        break;
+      case SectorType::SEC_MOUNT:
+        header << " Mountain";
+        break;
+      case SectorType::SEC_GAS:
+        header << " Gas";
+        break;
+      case SectorType::SEC_ICE:
+        header << " Ice";
+        break;
+      case SectorType::SEC_FOREST:
+        header << " Forest";
+        break;
+      case SectorType::SEC_DESERT:
+        header << " Desert";
+        break;
+      case SectorType::SEC_PLATED:
+        header << " Plated";
+        break;
+      case SectorType::SEC_WASTED:
+        header << " Wasted";
+        break;
+    }
   }
   if (ThisPlayer < 0)
     header << " sectors.\n";
@@ -291,7 +293,7 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode, int sector_type,
 
 namespace GB::commands {
 void analysis(const command_t& argv, GameObj& g) {
-  int sector_type = -1; /* -1 does analysis on all types */
+  std::optional<SectorType> sector_type;  // nullopt does analysis on all types
   int do_player = -1;
   auto mode = Mode::top_five;
 
@@ -346,7 +348,7 @@ void analysis(const command_t& argv, GameObj& g) {
           sector_type = SectorType::SEC_WASTED;
           break;
       }
-      if (sector_type != -1) {
+      if (sector_type.has_value()) {
         continue;
       }
     }

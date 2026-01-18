@@ -368,15 +368,7 @@ void analysis(const command_t& argv, GameObj& g) {
 
   auto where = Place{g.level(), g.snum(), g.pnum()};
 
-  bool skipped_first = false;
-
-  for (const auto& arg : argv) {
-    // Skip the name of the command
-    if (!skipped_first) {
-      skipped_first = true;
-      continue;
-    }
-
+  for (const auto& arg : argv | std::views::drop(1)) {
     // Top or bottom five
     if (arg == "-") {
       mode = Mode::BottomFive;

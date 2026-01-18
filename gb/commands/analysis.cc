@@ -10,16 +10,16 @@ module commands;
 
 static constexpr int CARE = 5;
 
-struct anal_sect {
+namespace {
+struct AnalSect {
   unsigned int x, y;
   unsigned int des;
   resource_t value = -1;  // -1 means not set
 };
 
-namespace {
 enum class Mode {
-  top_five,
-  bottom_five
+  TopFive,
+  BottomFive
 };
 
 enum class PlayerFilterMode {
@@ -69,24 +69,24 @@ struct PlayerFilter {
   }
 };
 
-void insert(Mode mode, std::array<struct anal_sect, CARE>& arr, anal_sect in) {
-  for (int i = 0; i < CARE; i++) {
-    if ((mode == Mode::top_five && arr[i].value < in.value) ||
-        (mode == Mode::bottom_five &&
-         (arr[i].value > in.value || arr[i].value == -1))) {
-      for (int j = CARE - 1; j > i; j--)
-        arr[j] = arr[j - 1];
-      arr[i] = in;
-      return;
-    }
+void insert(Mode mode, std::array<struct AnalSect, CARE>& arr, AnalSect in) {
+  auto* insertion_point = std::ranges::find_if(arr, [&](const auto& elem) {
+    return (mode == Mode::TopFive && elem.value < in.value) ||
+           (mode == Mode::BottomFive &&
+            (elem.value > in.value || elem.value == -1));
+  });
+
+  if (insertion_point != arr.end()) {
+    std::shift_right(insertion_point, arr.end(), 1);
+    *insertion_point = in;
   }
 }
 
-void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
-              const std::string& name) {
+void print_top(GameObj& g, const std::array<struct AnalSect, CARE> kArr,
+               const std::string& name) {
   g.out << std::format("{:>8}:", name);
 
-  for (const auto& as : arr) {
+  for (const auto& as : kArr) {
     if (as.value == -1) continue;
     g.out << std::format("{:>5}{}({:>2},{:>2})", as.value, Dessymbols[as.des],
                          as.x, as.y);
@@ -94,51 +94,55 @@ void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
   g.out << "\n";
 }
 
+struct PlayerSectorStats {
+  int crys = 0;
+  int troops = 0;
+  int popn = 0;
+  int mob = 0;
+  int eff = 0;
+  int res = 0;
+  int t_sect = 0;
+  int wasted_sect = 0;
+  std::array<int, SectorType::SEC_WASTED + 1> sect{};
+};
+
 struct SectorStats {
-  int TotalCrys = 0;
-  std::array<int, MAXPLAYERS + 1> PlayCrys{};
-  int TotalTroops = 0;
-  std::array<int, MAXPLAYERS + 1> PlayTroops{};
-  int TotalPopn = 0;
-  std::array<int, MAXPLAYERS + 1> PlayPopn{};
-  int TotalMob = 0;
-  std::array<int, MAXPLAYERS + 1> PlayMob{};
-  int TotalEff = 0;
-  std::array<int, MAXPLAYERS + 1> PlayEff{};
-  int TotalRes = 0;
-  std::array<int, MAXPLAYERS + 1> PlayRes{};
-  int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1]{};
-  std::array<int, MAXPLAYERS + 1> PlayTSect{};
-  std::array<int, MAXPLAYERS + 1> WastedSect{};
-  std::array<int, SectorType::SEC_WASTED + 1> Sect{};
+  int total_crys = 0;
+  int total_troops = 0;
+  int total_popn = 0;
+  int total_mob = 0;
+  int total_eff = 0;
+  int total_res = 0;
+  std::array<int, SectorType::SEC_WASTED + 1> sect{};
+  std::array<PlayerSectorStats, MAXPLAYERS + 1> players{};
 };
 
 SectorStats accumulate_statistics(GameObj& g, const SectorMap& smap) {
   SectorStats stats;
 
-  for (auto& sect : smap) {
+  for (const auto& sect : smap) {
     auto p = sect.get_owner().value;
 
-    stats.PlayEff[p] += sect.get_eff();
-    stats.PlayMob[p] += sect.get_mobilization();
-    stats.PlayRes[p] += sect.get_resource();
-    stats.PlayPopn[p] += sect.get_popn();
-    stats.PlayTroops[p] += sect.get_troops();
-    stats.PlaySect[p][sect.get_condition()]++;
-    stats.PlayTSect[p]++;
-    stats.TotalEff += sect.get_eff();
-    stats.TotalMob += sect.get_mobilization();
-    stats.TotalRes += sect.get_resource();
-    stats.TotalPopn += sect.get_popn();
-    stats.TotalTroops += sect.get_troops();
-    stats.Sect[sect.get_condition()]++;
+    stats.players[p].eff += sect.get_eff();
+    stats.players[p].mob += sect.get_mobilization();
+    stats.players[p].res += sect.get_resource();
+    stats.players[p].popn += sect.get_popn();
+    stats.players[p].troops += sect.get_troops();
+    stats.players[p].sect[sect.get_condition()]++;
+    stats.players[p].t_sect++;
+    stats.total_eff += sect.get_eff();
+    stats.total_mob += sect.get_mobilization();
+    stats.total_res += sect.get_resource();
+    stats.total_popn += sect.get_popn();
+    stats.total_troops += sect.get_troops();
+    stats.sect[sect.get_condition()]++;
 
     if (sect.is_wasted()) {
-      stats.WastedSect[p]++;
+      stats.players[p].wasted_sect++;
     }
     if (sect.get_crystals() && g.race->tech >= TECH_CRYSTAL) {
-      stats.PlayCrys[p]++;
-      stats.TotalCrys++;
+      stats.players[p].crys++;
+      stats.total_crys++;
     }
   }
 
@@ -146,13 +150,13 @@ SectorStats accumulate_statistics(GameObj& g, const SectorMap& smap) {
 }
 
 struct TopSectorLists {
-  std::array<struct anal_sect, CARE> Res;
-  std::array<struct anal_sect, CARE> Eff;
-  std::array<struct anal_sect, CARE> Frt;
-  std::array<struct anal_sect, CARE> Mob;
-  std::array<struct anal_sect, CARE> Troops;
-  std::array<struct anal_sect, CARE> Popn;
-  std::array<struct anal_sect, CARE> mPopn;
+  std::array<struct AnalSect, CARE> res;
+  std::array<struct AnalSect, CARE> eff;
+  std::array<struct AnalSect, CARE> frt;
+  std::array<struct AnalSect, CARE> mob;
+  std::array<struct AnalSect, CARE> troops;
+  std::array<struct AnalSect, CARE> popn;
+  std::array<struct AnalSect, CARE> m_popn;
 };
 
 TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
@@ -161,41 +165,41 @@ TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
                                 std::optional<SectorType> sector_type) {
   TopSectorLists tops;
 
-  for (auto& sect : smap) {
+  for (const auto& sect : smap) {
     if (!sector_type || *sector_type == sect.get_condition()) {
       if (filter.matches(sect.get_owner())) {
-        insert(mode, tops.Res,
+        insert(mode, tops.res,
                {.x = sect.get_x(),
                 .y = sect.get_y(),
                 .des = sect.get_condition(),
                 .value = sect.get_resource()});
-        insert(mode, tops.Eff,
+        insert(mode, tops.eff,
                {.x = sect.get_x(),
                 .y = sect.get_y(),
                 .des = sect.get_condition(),
                 .value = sect.get_eff()});
-        insert(mode, tops.Mob,
+        insert(mode, tops.mob,
                {.x = sect.get_x(),
                 .y = sect.get_y(),
                 .des = sect.get_condition(),
                 .value = sect.get_mobilization()});
-        insert(mode, tops.Frt,
+        insert(mode, tops.frt,
                {.x = sect.get_x(),
                 .y = sect.get_y(),
                 .des = sect.get_condition(),
                 .value = sect.get_fert()});
-        insert(mode, tops.Popn,
+        insert(mode, tops.popn,
                {.x = sect.get_x(),
                 .y = sect.get_y(),
                 .des = sect.get_condition(),
                 .value = sect.get_popn()});
-        insert(mode, tops.Troops,
+        insert(mode, tops.troops,
                {.x = sect.get_x(),
                 .y = sect.get_y(),
                 .des = sect.get_condition(),
                 .value = sect.get_troops()});
         insert(
-            mode, tops.mPopn,
+            mode, tops.m_popn,
             {.x = sect.get_x(),
              .y = sect.get_y(),
              .des = sect.get_condition(),
@@ -222,7 +226,7 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
     return;
   }
 
-  auto TotalSect = planet.Maxx() * planet.Maxy();
+  auto total_sect = planet.Maxx() * planet.Maxy();
 
   const auto& smap = *g.entity_manager.peek_sectormap(Starnum, Planetnum);
 
@@ -236,8 +240,8 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
   const auto& star = *g.entity_manager.peek_star(Starnum);
   header << std::format("\nAnalysis of /{}/{}:\n", star.get_name(),
                         star.get_planet_name(Planetnum));
-  header << std::format("{} {}",
-                        (mode == Mode::top_five ? "Highest" : "Lowest"), CARE);
+  header << std::format("{} {}", (mode == Mode::TopFive ? "Highest" : "Lowest"),
+                        CARE);
   if (!sector_type.has_value()) {
     header << " of all";
   } else {
@@ -274,13 +278,13 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
   header << filter.describe();
   g.out << header.str();
 
-  PrintTop(g, tops.Troops, "Troops");
-  PrintTop(g, tops.Res, "Res");
-  PrintTop(g, tops.Eff, "Eff");
-  PrintTop(g, tops.Frt, "Frt");
-  PrintTop(g, tops.Mob, "Mob");
-  PrintTop(g, tops.Popn, "Popn");
-  PrintTop(g, tops.mPopn, "^Popn");
+  print_top(g, tops.troops, "Troops");
+  print_top(g, tops.res, "Res");
+  print_top(g, tops.eff, "Eff");
+  print_top(g, tops.frt, "Frt");
+  print_top(g, tops.mob, "Mob");
+  print_top(g, tops.popn, "Popn");
+  print_top(g, tops.m_popn, "^Popn");
 
   g.out << "\n";
 
@@ -311,20 +315,20 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
 
   // Add player rows
   for (int p = 0; p <= g.entity_manager.num_races().value; p++) {
-    if (stats.PlayTSect[p] != 0) {
+    if (stats.players[p].t_sect != 0) {
       std::vector<std::string> row = {
           std::format("{}", p),
-          std::format("{}", stats.PlayTSect[p]),
-          std::format("{}", stats.PlayPopn[p]),
-          std::format("{}", stats.PlayTroops[p]),
-          std::format("{:.1f}", static_cast<double>(stats.PlayEff[p]) /
-                                    stats.PlayTSect[p]),
-          std::format("{:.1f}", static_cast<double>(stats.PlayMob[p]) /
-                                    stats.PlayTSect[p]),
-          std::format("{}", stats.PlayRes[p]),
-          std::format("{}", stats.PlayCrys[p])};
+          std::format("{}", stats.players[p].t_sect),
+          std::format("{}", stats.players[p].popn),
+          std::format("{}", stats.players[p].troops),
+          std::format("{:.1f}", static_cast<double>(stats.players[p].eff) /
+                                    stats.players[p].t_sect),
+          std::format("{:.1f}", static_cast<double>(stats.players[p].mob) /
+                                    stats.players[p].t_sect),
+          std::format("{}", stats.players[p].res),
+          std::format("{}", stats.players[p].crys)};
       for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-        row.push_back(std::format("{}", stats.PlaySect[p][i]));
+        row.push_back(std::format("{}", stats.players[p].sect[i]));
       }
       table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
     }
@@ -333,15 +337,15 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
   // Add totals row
   std::vector<std::string> totals = {
       "Tl",
-      std::format("{}", TotalSect),
-      std::format("{}", stats.TotalPopn),
-      std::format("{}", stats.TotalTroops),
-      std::format("{:.1f}", static_cast<double>(stats.TotalEff) / TotalSect),
-      std::format("{:.1f}", static_cast<double>(stats.TotalMob) / TotalSect),
-      std::format("{}", stats.TotalRes),
-      std::format("{}", stats.TotalCrys)};
+      std::format("{}", total_sect),
+      std::format("{}", stats.total_popn),
+      std::format("{}", stats.total_troops),
+      std::format("{:.1f}", static_cast<double>(stats.total_eff) / total_sect),
+      std::format("{:.1f}", static_cast<double>(stats.total_mob) / total_sect),
+      std::format("{}", stats.total_res),
+      std::format("{}", stats.total_crys)};
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    totals.push_back(std::format("{}", stats.Sect[i]));
+    totals.push_back(std::format("{}", stats.sect[i]));
   }
   table.add_row(tabulate::Table::Row_t(totals.begin(), totals.end()));
 
@@ -360,7 +364,7 @@ namespace GB::commands {
 void analysis(const command_t& argv, GameObj& g) {
   std::optional<SectorType> sector_type;  // nullopt does analysis on all types
   auto filter = PlayerFilter::all_players();
-  auto mode = Mode::top_five;
+  auto mode = Mode::TopFive;
 
   auto where = Place{g.level(), g.snum(), g.pnum()};
 
@@ -375,7 +379,7 @@ void analysis(const command_t& argv, GameObj& g) {
 
     // Top or bottom five
     if (arg == "-") {
-      mode = Mode::bottom_five;
+      mode = Mode::BottomFive;
       continue;
     }
 
@@ -411,6 +415,9 @@ void analysis(const command_t& argv, GameObj& g) {
           break;
         case CHAR_WASTED:
           sector_type = SectorType::SEC_WASTED;
+          break;
+        default:
+          // Not a sector type, continue to player number check below.
           break;
       }
       if (sector_type.has_value()) {

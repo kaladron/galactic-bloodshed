@@ -11,9 +11,17 @@
 lowest five sectors in each sector category and a summary of 
 holdings, yours and alien, on the planet. The sector categories 
 reported are troops, resources, efficiency, fertilization, 
-mobilization, population, and population capacity. You can not 
-analyze a planet you have not explored or have received 
-information about.
+mobilization, population, and population capacity (^Popn). 
+
+    The population capacity (^Popn) shows the maximum population 
+each sector could support for YOUR race, based on your race's 
+compatibility with the planet and sector type preferences. This 
+helps you identify good expansion targets, regardless of who 
+currently owns the sector.
+
+    You can not analyze a planet you have not explored or have 
+received information about.
+
     If a '-' is specified, the lowest five sectors will be 
 reported. All additional parameters are completely optional, but 
 when specified, restrict the type of sector reported:

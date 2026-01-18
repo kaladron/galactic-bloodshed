@@ -22,8 +22,55 @@ enum class Mode {
   bottom_five
 };
 
+enum class PlayerFilterMode {
+  AllPlayers,
+  Unoccupied,
+  SpecificPlayer
+};
+
+struct PlayerFilter {
+  PlayerFilterMode mode;
+  std::optional<player_t> player;
+
+  static PlayerFilter all_players() {
+    return {.mode = PlayerFilterMode::AllPlayers, .player = std::nullopt};
+  }
+
+  static PlayerFilter unoccupied() {
+    return {.mode = PlayerFilterMode::Unoccupied, .player = std::nullopt};
+  }
+
+  static PlayerFilter specific(player_t p) {
+    return {.mode = PlayerFilterMode::SpecificPlayer, .player = p};
+  }
+
+  [[nodiscard]] bool matches(player_t owner) const {
+    switch (mode) {
+      case PlayerFilterMode::AllPlayers:
+        return true;
+      case PlayerFilterMode::Unoccupied:
+        return owner.value == 0;
+      case PlayerFilterMode::SpecificPlayer:
+        return player.has_value() && owner == *player;
+    }
+    return false;
+  }
+
+  [[nodiscard]] std::string describe() const {
+    switch (mode) {
+      case PlayerFilterMode::AllPlayers:
+        return " sectors.\n";
+      case PlayerFilterMode::Unoccupied:
+        return " sectors that are unoccupied.\n";
+      case PlayerFilterMode::SpecificPlayer:
+        return std::format(" sectors owned by {}.\n", player->value);
+    }
+    return " sectors.\n";
+  }
+};
+
 void insert(Mode mode, std::array<struct anal_sect, CARE>& arr, anal_sect in) {
-  for (int i = 0; i < CARE; i++)
+  for (int i = 0; i < CARE; i++) {
     if ((mode == Mode::top_five && arr[i].value < in.value) ||
         (mode == Mode::bottom_five &&
          (arr[i].value > in.value || arr[i].value == -1))) {
@@ -32,6 +79,7 @@ void insert(Mode mode, std::array<struct anal_sect, CARE>& arr, anal_sect in) {
       arr[i] = in;
       return;
     }
+  }
 }
 
 void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
@@ -46,20 +94,7 @@ void PrintTop(GameObj& g, const std::array<struct anal_sect, CARE> arr,
   g.out << "\n";
 }
 
-// FIXME: ThisPlayer uses -1 to mean "all players", 0 for "unoccupied", and
-// positive values for specific players. Consider using std::variant or
-// std::optional to make this more type-safe.
-void do_analysis(GameObj& g, int ThisPlayer, Mode mode,
-                 std::optional<SectorType> sector_type, starnum_t Starnum,
-                 planetnum_t Planetnum) {
-  std::array<struct anal_sect, CARE> Res;
-  std::array<struct anal_sect, CARE> Eff;
-  std::array<struct anal_sect, CARE> Frt;
-  std::array<struct anal_sect, CARE> Mob;
-  std::array<struct anal_sect, CARE> Troops;
-  std::array<struct anal_sect, CARE> Popn;
-  std::array<struct anal_sect, CARE> mPopn;
-
+struct SectorStats {
   int TotalCrys = 0;
   std::array<int, MAXPLAYERS + 1> PlayCrys{};
   int TotalTroops = 0;
@@ -72,16 +107,110 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode,
   std::array<int, MAXPLAYERS + 1> PlayEff{};
   int TotalRes = 0;
   std::array<int, MAXPLAYERS + 1> PlayRes{};
-  int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1];
+  int PlaySect[MAXPLAYERS + 1][SectorType::SEC_WASTED + 1]{};
   std::array<int, MAXPLAYERS + 1> PlayTSect{};
   std::array<int, MAXPLAYERS + 1> WastedSect{};
   std::array<int, SectorType::SEC_WASTED + 1> Sect{};
+};
 
-  for (int p = 0; p <= g.entity_manager.num_races(); p++) {
-    for (int i = 0; i <= SectorType::SEC_WASTED; i++)
-      PlaySect[p][i] = 0;
+SectorStats accumulate_statistics(GameObj& g, const SectorMap& smap) {
+  SectorStats stats;
+
+  for (auto& sect : smap) {
+    auto p = sect.get_owner().value;
+
+    stats.PlayEff[p] += sect.get_eff();
+    stats.PlayMob[p] += sect.get_mobilization();
+    stats.PlayRes[p] += sect.get_resource();
+    stats.PlayPopn[p] += sect.get_popn();
+    stats.PlayTroops[p] += sect.get_troops();
+    stats.PlaySect[p][sect.get_condition()]++;
+    stats.PlayTSect[p]++;
+    stats.TotalEff += sect.get_eff();
+    stats.TotalMob += sect.get_mobilization();
+    stats.TotalRes += sect.get_resource();
+    stats.TotalPopn += sect.get_popn();
+    stats.TotalTroops += sect.get_troops();
+    stats.Sect[sect.get_condition()]++;
+
+    if (sect.is_wasted()) {
+      stats.WastedSect[p]++;
+    }
+    if (sect.get_crystals() && g.race->tech >= TECH_CRYSTAL) {
+      stats.PlayCrys[p]++;
+      stats.TotalCrys++;
+    }
   }
 
+  return stats;
+}
+
+struct TopSectorLists {
+  std::array<struct anal_sect, CARE> Res;
+  std::array<struct anal_sect, CARE> Eff;
+  std::array<struct anal_sect, CARE> Frt;
+  std::array<struct anal_sect, CARE> Mob;
+  std::array<struct anal_sect, CARE> Troops;
+  std::array<struct anal_sect, CARE> Popn;
+  std::array<struct anal_sect, CARE> mPopn;
+};
+
+TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
+                                const Planet& planet, Mode mode,
+                                const PlayerFilter& filter,
+                                std::optional<SectorType> sector_type) {
+  TopSectorLists tops;
+
+  for (auto& sect : smap) {
+    if (!sector_type || *sector_type == sect.get_condition()) {
+      if (filter.matches(sect.get_owner())) {
+        insert(mode, tops.Res,
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_resource()});
+        insert(mode, tops.Eff,
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_eff()});
+        insert(mode, tops.Mob,
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_mobilization()});
+        insert(mode, tops.Frt,
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_fert()});
+        insert(mode, tops.Popn,
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_popn()});
+        insert(mode, tops.Troops,
+               {.x = sect.get_x(),
+                .y = sect.get_y(),
+                .des = sect.get_condition(),
+                .value = sect.get_troops()});
+        insert(
+            mode, tops.mPopn,
+            {.x = sect.get_x(),
+             .y = sect.get_y(),
+             .des = sect.get_condition(),
+             .value = maxsupport(*g.race, sect, planet.compatibility(*g.race),
+                                 planet.conditions(TOXIC))});
+      }
+    }
+  }
+
+  return tops;
+}
+
+void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
+                 std::optional<SectorType> sector_type, starnum_t Starnum,
+                 planetnum_t Planetnum) {
   auto planet_handle = g.entity_manager.get_planet(Starnum, Planetnum);
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
@@ -96,73 +225,12 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode,
   auto TotalSect = planet.Maxx() * planet.Maxy();
 
   const auto& smap = *g.entity_manager.peek_sectormap(Starnum, Planetnum);
-  for (auto& sect : smap) {
-    auto p = sect.get_owner().value;
 
-    PlayEff[p] += sect.get_eff();
-    PlayMob[p] += sect.get_mobilization();
-    PlayRes[p] += sect.get_resource();
-    PlayPopn[p] += sect.get_popn();
-    PlayTroops[p] += sect.get_troops();
-    PlaySect[p][sect.get_condition()]++;
-    PlayTSect[p]++;
-    TotalEff += sect.get_eff();
-    TotalMob += sect.get_mobilization();
-    TotalRes += sect.get_resource();
-    TotalPopn += sect.get_popn();
-    TotalTroops += sect.get_troops();
-    Sect[sect.get_condition()]++;
+  // Accumulate statistics for all sectors
+  auto stats = accumulate_statistics(g, smap);
 
-    if (sect.is_wasted()) {
-      WastedSect[p]++;
-    }
-    if (sect.get_crystals() && g.race->tech >= TECH_CRYSTAL) {
-      PlayCrys[p]++;
-      TotalCrys++;
-    }
-
-    if (!sector_type || *sector_type == sect.get_condition()) {
-      if (ThisPlayer < 0 || ThisPlayer == p) {
-        insert(mode, Res,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_resource()});
-        insert(mode, Eff,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_eff()});
-        insert(mode, Mob,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_mobilization()});
-        insert(mode, Frt,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_fert()});
-        insert(mode, Popn,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_popn()});
-        insert(mode, Troops,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_troops()});
-        insert(
-            mode, mPopn,
-            {.x = sect.get_x(),
-             .y = sect.get_y(),
-             .des = sect.get_condition(),
-             .value = maxsupport(*g.race, sect, planet.compatibility(*g.race),
-                                 planet.conditions(TOXIC))});
-      }
-    }
-  }
+  // Find top sectors matching the filter
+  auto tops = find_top_sectors(g, smap, planet, mode, filter, sector_type);
 
   std::stringstream header;
   const auto& star = *g.entity_manager.peek_star(Starnum);
@@ -203,21 +271,16 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode,
         break;
     }
   }
-  if (ThisPlayer < 0)
-    header << " sectors.\n";
-  else if (ThisPlayer == 0)
-    header << " sectors that are unoccupied.\n";
-  else
-    header << std::format(" sectors owned by {}.\n", ThisPlayer);
+  header << filter.describe();
   g.out << header.str();
 
-  PrintTop(g, Troops, "Troops");
-  PrintTop(g, Res, "Res");
-  PrintTop(g, Eff, "Eff");
-  PrintTop(g, Frt, "Frt");
-  PrintTop(g, Mob, "Mob");
-  PrintTop(g, Popn, "Popn");
-  PrintTop(g, mPopn, "^Popn");
+  PrintTop(g, tops.Troops, "Troops");
+  PrintTop(g, tops.Res, "Res");
+  PrintTop(g, tops.Eff, "Eff");
+  PrintTop(g, tops.Frt, "Frt");
+  PrintTop(g, tops.Mob, "Mob");
+  PrintTop(g, tops.Popn, "Popn");
+  PrintTop(g, tops.mPopn, "^Popn");
 
   g.out << "\n";
 
@@ -248,18 +311,20 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode,
 
   // Add player rows
   for (int p = 0; p <= g.entity_manager.num_races().value; p++) {
-    if (PlayTSect[p] != 0) {
+    if (stats.PlayTSect[p] != 0) {
       std::vector<std::string> row = {
           std::format("{}", p),
-          std::format("{}", PlayTSect[p]),
-          std::format("{}", PlayPopn[p]),
-          std::format("{}", PlayTroops[p]),
-          std::format("{:.1f}", static_cast<double>(PlayEff[p]) / PlayTSect[p]),
-          std::format("{:.1f}", static_cast<double>(PlayMob[p]) / PlayTSect[p]),
-          std::format("{}", PlayRes[p]),
-          std::format("{}", PlayCrys[p])};
+          std::format("{}", stats.PlayTSect[p]),
+          std::format("{}", stats.PlayPopn[p]),
+          std::format("{}", stats.PlayTroops[p]),
+          std::format("{:.1f}", static_cast<double>(stats.PlayEff[p]) /
+                                    stats.PlayTSect[p]),
+          std::format("{:.1f}", static_cast<double>(stats.PlayMob[p]) /
+                                    stats.PlayTSect[p]),
+          std::format("{}", stats.PlayRes[p]),
+          std::format("{}", stats.PlayCrys[p])};
       for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-        row.push_back(std::format("{}", PlaySect[p][i]));
+        row.push_back(std::format("{}", stats.PlaySect[p][i]));
       }
       table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
     }
@@ -269,14 +334,14 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode,
   std::vector<std::string> totals = {
       "Tl",
       std::format("{}", TotalSect),
-      std::format("{}", TotalPopn),
-      std::format("{}", TotalTroops),
-      std::format("{:.1f}", static_cast<double>(TotalEff) / TotalSect),
-      std::format("{:.1f}", static_cast<double>(TotalMob) / TotalSect),
-      std::format("{}", TotalRes),
-      std::format("{}", TotalCrys)};
+      std::format("{}", stats.TotalPopn),
+      std::format("{}", stats.TotalTroops),
+      std::format("{:.1f}", static_cast<double>(stats.TotalEff) / TotalSect),
+      std::format("{:.1f}", static_cast<double>(stats.TotalMob) / TotalSect),
+      std::format("{}", stats.TotalRes),
+      std::format("{}", stats.TotalCrys)};
   for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    totals.push_back(std::format("{}", Sect[i]));
+    totals.push_back(std::format("{}", stats.Sect[i]));
   }
   table.add_row(tabulate::Table::Row_t(totals.begin(), totals.end()));
 
@@ -294,7 +359,7 @@ void do_analysis(GameObj& g, int ThisPlayer, Mode mode,
 namespace GB::commands {
 void analysis(const command_t& argv, GameObj& g) {
   std::optional<SectorType> sector_type;  // nullopt does analysis on all types
-  int do_player = -1;
+  auto filter = PlayerFilter::all_players();
   auto mode = Mode::top_five;
 
   auto where = Place{g.level(), g.snum(), g.pnum()};
@@ -355,11 +420,17 @@ void analysis(const command_t& argv, GameObj& g) {
 
     // Player number
     if (std::isdigit(arg[0])) {
-      do_player = std::stoi(arg);
-      if (do_player > g.entity_manager.num_races()) {
+      int player_num = std::stoi(arg);
+      if (player_num > g.entity_manager.num_races()) {
         g.out << "No such player #.\n";
         return;
       }
+      if (player_num == 0) {
+        filter = PlayerFilter::unoccupied();
+      } else {
+        filter = PlayerFilter::specific(player_t{player_num});
+      }
+      continue;
     }
 
     // Scope
@@ -381,12 +452,13 @@ void analysis(const command_t& argv, GameObj& g) {
       g.out << "You can only analyze planets.\n";
       break;
     case ScopeLevel::LEVEL_PLAN:
-      do_analysis(g, do_player, mode, sector_type, where.snum, where.pnum);
+      do_analysis(g, filter, mode, sector_type, where.snum, where.pnum);
       break;
     case ScopeLevel::LEVEL_STAR: {
       const auto& star = *g.entity_manager.peek_star(where.snum);
-      for (planetnum_t pnum = 0; pnum < star.numplanets(); pnum++)
-        do_analysis(g, do_player, mode, sector_type, where.snum, pnum);
+      for (planetnum_t pnum = 0; pnum < star.numplanets(); pnum++) {
+        do_analysis(g, filter, mode, sector_type, where.snum, pnum);
+      }
       break;
     }
   }

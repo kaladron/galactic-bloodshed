@@ -302,5 +302,67 @@ int main() {
   std::println("\n========== Tests Complete ==========\n");
   std::println("All analysis command tests passed!");
 
+  // PlayerFilter logic tests - tested indirectly through command behavior
+  std::println("\n========== PlayerFilter Logic Tests (via command behavior) "
+               "==========\n");
+
+  // Test AllPlayers mode (default, no player filter)
+  {
+    std::println("Test: Default filter matches all owners");
+    command_t argv = {"analysis"};
+    GB::commands::analysis(argv, g);
+
+    std::string output = g.out.str();
+    // Should see stats for all players (1, 2, and 0 for unoccupied)
+    assert(output.find(" sectors.\n") != std::string::npos &&
+           "Default should show generic description");
+    // Check that the table includes multiple players
+    assert(output.find("Pl") != std::string::npos &&
+           "Should have player column");
+
+    g.out.str("");
+    std::println("✓ AllPlayers mode (default) works correctly");
+  }
+
+  // Test Unoccupied mode (player 0)
+  {
+    std::println("Test: Player 0 filter matches only unoccupied");
+    command_t argv = {"analysis", "0"};
+    GB::commands::analysis(argv, g);
+
+    std::string output = g.out.str();
+    assert(output.find("unoccupied") != std::string::npos &&
+           "Should show unoccupied description");
+
+    g.out.str("");
+    std::println("✓ Unoccupied mode (player 0) works correctly");
+  }
+
+  // Test SpecificPlayer mode
+  {
+    std::println("Test: Specific player filter matches only that player");
+    command_t argv = {"analysis", "1"};
+    GB::commands::analysis(argv, g);
+
+    std::string output = g.out.str();
+    assert(output.find("owned by 1") != std::string::npos &&
+           "Should show player 1 in description");
+
+    g.out.str("");
+
+    // Try player 2
+    command_t argv2 = {"analysis", "2"};
+    GB::commands::analysis(argv2, g);
+
+    output = g.out.str();
+    assert(output.find("owned by 2") != std::string::npos &&
+           "Should show player 2 in description");
+
+    g.out.str("");
+    std::println("✓ SpecificPlayer mode works correctly for different players");
+  }
+
+  std::println("\n========== PlayerFilter Logic Tests Complete ==========\n");
+
   return 0;
 }

@@ -358,6 +358,32 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
   g.out << table << "\n";
 }
 
+// Parse a single character into a sector type
+std::optional<SectorType> parse_sector_type(char c) {
+  static const std::unordered_map<char, SectorType> kSectorTypes = {
+      {CHAR_SEA, SectorType::SEC_SEA},
+      {CHAR_LAND, SectorType::SEC_LAND},
+      {CHAR_MOUNT, SectorType::SEC_MOUNT},
+      {CHAR_GAS, SectorType::SEC_GAS},
+      {CHAR_ICE, SectorType::SEC_ICE},
+      {CHAR_FOREST, SectorType::SEC_FOREST},
+      {'d', SectorType::SEC_DESERT},  // 'd' instead of '-' to avoid mode flag
+      {CHAR_PLATED, SectorType::SEC_PLATED},
+      {CHAR_WASTED, SectorType::SEC_WASTED},
+  };
+
+  if (auto it = kSectorTypes.find(c); it != kSectorTypes.end()) {
+    return it->second;
+  }
+  return std::nullopt;
+}
+
+// Parse a string as a player number
+std::optional<int> parse_player_number(const std::string& arg) {
+  if (arg.empty() || !std::isdigit(arg[0])) return std::nullopt;
+  return std::stoi(arg);
+}
+
 }  // namespace
 
 namespace GB::commands {
@@ -369,63 +395,29 @@ void analysis(const command_t& argv, GameObj& g) {
   auto where = Place{g.level(), g.snum(), g.pnum()};
 
   for (const auto& arg : argv | std::views::drop(1)) {
-    // Top or bottom five
+    // Mode flag: "-" switches to bottom five
     if (arg == "-") {
       mode = Mode::BottomFive;
       continue;
     }
 
-    // Sector type
+    // Sector type (single character)
     if (arg.length() == 1) {
-      switch (arg[0]) {
-        case CHAR_SEA:
-          sector_type = SectorType::SEC_SEA;
-          break;
-        case CHAR_LAND:
-          sector_type = SectorType::SEC_LAND;
-          break;
-        case CHAR_MOUNT:
-          sector_type = SectorType::SEC_MOUNT;
-          break;
-        case CHAR_GAS:
-          sector_type = SectorType::SEC_GAS;
-          break;
-        case CHAR_ICE:
-          sector_type = SectorType::SEC_ICE;
-          break;
-        case CHAR_FOREST:
-          sector_type = SectorType::SEC_FOREST;
-          break;
-        case 'd':  // Use 'd' instead of '-' to avoid confusion with mode flag
-          sector_type = SectorType::SEC_DESERT;
-          break;
-        case CHAR_PLATED:
-          sector_type = SectorType::SEC_PLATED;
-          break;
-        case CHAR_WASTED:
-          sector_type = SectorType::SEC_WASTED;
-          break;
-        default:
-          // Not a sector type, continue to player number check below.
-          break;
-      }
-      if (sector_type.has_value()) {
+      if (auto st = parse_sector_type(arg[0])) {
+        sector_type = st;
         continue;
       }
     }
 
     // Player number
-    if (std::isdigit(arg[0])) {
-      int player_num = std::stoi(arg);
-      if (player_num > g.entity_manager.num_races()) {
+    if (auto player_num = parse_player_number(arg)) {
+      if (*player_num > g.entity_manager.num_races()) {
         g.out << "No such player #.\n";
         return;
       }
-      if (player_num == 0) {
-        filter = PlayerFilter::unoccupied();
-      } else {
-        filter = PlayerFilter::specific(player_t{player_num});
-      }
+      filter = (*player_num == 0)
+                   ? PlayerFilter::unoccupied()
+                   : PlayerFilter::specific(player_t{*player_num});
       continue;
     }
 
@@ -433,7 +425,12 @@ void analysis(const command_t& argv, GameObj& g) {
     Place maybe_where{g, arg};
     if (!maybe_where.err) {
       where = maybe_where;
+      continue;
     }
+
+    // Nothing matched - unrecognized argument
+    g.out << std::format("Unrecognized argument: {}\n", arg);
+    return;
   }
 
   if (where.err) {

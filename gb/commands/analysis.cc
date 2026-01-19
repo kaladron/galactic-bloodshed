@@ -396,10 +396,7 @@ void analysis(const command_t& argv, GameObj& g) {
         case CHAR_FOREST:
           sector_type = SectorType::SEC_FOREST;
           break;
-          /*  Must use 'd' to do an analysis on */
-          /*  desert sectors to avoid confusion */
-        /*  with the '-' for the mode type    */
-        case 'd':
+        case 'd':  // Use 'd' instead of '-' to avoid confusion with mode flag
           sector_type = SectorType::SEC_DESERT;
           break;
         case CHAR_PLATED:

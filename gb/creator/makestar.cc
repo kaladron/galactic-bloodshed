@@ -308,8 +308,7 @@ Star Makestar(Database& db, starnum_t snum) {
       throw std::runtime_error("No PlanetType left, bailing");
     }
     std::optional<SectorMap> smap_opt;
-    auto planet =
-        makeplanet(db, dist, star.temperature, type, snum, i, smap_opt);
+    auto planet = makeplanet(dist, star.temperature, type, snum, i, smap_opt);
     auto& smap = *smap_opt;
 
     planet.xpos() = xpos;

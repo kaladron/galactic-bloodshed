@@ -769,7 +769,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   ShipList shiplist(entity_manager, sh);
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;
-    if (sh != ship.number() && s.alive() &&
+    if (s.number() != ship.number() && s.alive() &&
         (s.type() != ShipType::OTYPE_CANIST) &&
         (s.type() != ShipType::OTYPE_GREEN)) {
       auto s2sresult = shoot_ship_to_ship(entity_manager, ship, s,

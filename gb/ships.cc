@@ -121,7 +121,6 @@ long repair(const Ship& s) {
 
 int getdefense(EntityManager& em, const Ship& ship) {
   if (landed(ship)) {
-    const auto& p = *em.peek_planet(ship.storbits(), ship.pnumorbits());
     const auto* smap = em.peek_sectormap(ship.storbits(), ship.pnumorbits());
     if (!smap) return 0;
     const auto& sect = smap->get(ship.land_x(), ship.land_y());

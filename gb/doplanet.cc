@@ -164,8 +164,7 @@ void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
     s.set_fert(0);
 }
 
-void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet,
-                  TurnStats& stats) {
+void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet) {
   if (ship->whatdest() == ScopeLevel::LEVEL_PLAN &&
       ship->whatorbits() == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
       ship->storbits() == ship->deststar() &&
@@ -393,7 +392,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
           if (!ship.destruct() || !ship.bombard())
             planet_doVN(ship, planet, smap, entity_manager, stats);
           else
-            do_berserker(entity_manager, &ship, planet, stats);
+            do_berserker(entity_manager, &ship, planet);
           break;
         case ShipType::OTYPE_TERRA:
           if ((ship.on() && landed(ship) && ship.popn())) {

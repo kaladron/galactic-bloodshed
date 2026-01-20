@@ -95,6 +95,7 @@ else()
   message(STATUS "clang-format not found, 'format' and 'format-fix' targets disabled")
 endif()
 
+add_subdirectory(third_party)
 add_subdirectory(gb)
 add_subdirectory(data)
 add_subdirectory(docs)

@@ -396,6 +396,16 @@ void test_data_consistency() {
   // Plated sectors should have higher compatibility
   assert(race.likes[SectorType::SEC_PLATED] > race.likes[SectorType::SEC_LAND]);
 
+  // Plated sectors should support more population
+  population_t land_support = maxsupport(race, land_sector, 100.0, 0);
+  population_t plated_support = maxsupport(race, plated_sector, 100.0, 0);
+  assert(plated_support > land_support);
+
+  // Verify sector properties are as expected
+  assert(!land_sector.is_plated());
+  assert(plated_sector.is_plated());
+  assert(plated_sector.get_eff() == 100);
+
   // Test planet-star relationships
   auto star = createTestStar();
   auto planet = createTestPlanet(10, 10);

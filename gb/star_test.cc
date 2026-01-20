@@ -43,7 +43,7 @@ int main() {
     // Out of bounds - should throw exception
     bool caught_exception = false;
     try {
-      star.get_planet_name(2);
+      (void)star.get_planet_name(2);
     } catch (const std::runtime_error& e) {
       caught_exception = true;
       std::string msg = e.what();
@@ -71,7 +71,7 @@ int main() {
     // Out of bounds - should throw exception
     bool caught_exception = false;
     try {
-      star.planet_name_isset(99);
+      (void)star.planet_name_isset(99);
     } catch (const std::runtime_error& e) {
       caught_exception = true;
     }
@@ -133,7 +133,7 @@ int main() {
     // Out of bounds access should throw
     bool caught_exception = false;
     try {
-      star.get_planet_name(0);
+      (void)star.get_planet_name(0);
     } catch (const std::runtime_error& e) {
       caught_exception = true;
     }
@@ -142,7 +142,7 @@ int main() {
     // planet_name_isset should also throw
     caught_exception = false;
     try {
-      star.planet_name_isset(0);
+      (void)star.planet_name_isset(0);
     } catch (const std::runtime_error& e) {
       caught_exception = true;
     }

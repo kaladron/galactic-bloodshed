@@ -58,8 +58,6 @@ namespace GB::commands {
 void tech_status(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
 
-  const auto& sdata = *g.entity_manager.peek_universe();
-
   g.out << "             ========== Technology Report ==========\n\n";
 
   // Create table

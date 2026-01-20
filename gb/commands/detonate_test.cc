@@ -23,9 +23,10 @@ int main() {
   RaceRepository races(store);
   races.save(race);
 
-  // Create star
+  // Create star with ship list pointing to mine (ship #1)
   star_struct star{};
   star.star_id = 0;
+  star.ships = 1;  // Head of ship list
 
   StarRepository stars(store);
   stars.save(star);
@@ -44,6 +45,9 @@ int main() {
   mine.alive = true;
   mine.docked = false;
   mine.destruct = 10;  // Mine charge
+  mine.nextship = 2;   // Link to target ship
+  mine.size = 10;      // Ship size for combat calculations
+  mine.tech = 10.0;    // Tech level for range calculations
 
   auto mine_handle = ctx.em.create_ship(mine);
   mine_handle.save();
@@ -62,6 +66,8 @@ int main() {
   target.alive = true;
   target.armor = 10;
   target.damage = 0;
+  target.nextship = 0;  // End of ship list
+  target.size = 20;     // Ship size for combat calculations
 
   auto target_handle = ctx.em.create_ship(target);
   target_handle.save();
@@ -85,10 +91,11 @@ int main() {
     assert(!detonated_mine->alive());
   }
 
-  // Target ship may or may not be destroyed depending on distance/damage
-  // calculations Just verify the system didn't crash
+  // Target ship should be affected by the detonation
   const auto* affected_target = ctx.em.peek_ship(2);
-  // Target exists in some state (alive or destroyed)
+  assert(affected_target != nullptr);
+  // Target should either be destroyed or damaged
+  assert(!affected_target->alive() || affected_target->damage() > 0);
 
   std::println("✓ detonate command: Mine detonation persisted to database");
   return 0;

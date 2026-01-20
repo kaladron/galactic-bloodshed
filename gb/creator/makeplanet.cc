@@ -233,8 +233,8 @@ void Makesurface(const Planet& p, SectorMap& smap) {
 }
 }  // namespace
 
-Planet makeplanet(Database& db, double dist, short stemp, PlanetType type,
-                  starnum_t star_id, planetnum_t planet_order,
+Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
+                  planetnum_t planet_order,
                   std::optional<SectorMap>& out_smap) {
   Planet planet{type};
 

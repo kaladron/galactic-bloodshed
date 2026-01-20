@@ -96,7 +96,6 @@ static void finalize_turn(TurnState& state, int update);
  * ship movement and combat to happen more frequently than economic/tech growth.
  *
  * @param entity_manager Database entity manager for persistent storage
- * @param session_registry Session registry for notifications
  * @param update 1 for full update with production/tech, 0 for movement only
  *               TODO: Should be bool for type safety
  */

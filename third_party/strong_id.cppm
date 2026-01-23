@@ -98,6 +98,11 @@ public:
     lhs.value = rhs.value;
     rhs.value = temp;
   }
+
+  // STREAM OUTPUT
+  friend std::ostream& operator<<(std::ostream& os, const ID& id) {
+    return os << id.value;
+  }
 };
 
 // -----------------------------------------------------------------------------

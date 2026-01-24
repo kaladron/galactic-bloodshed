@@ -84,7 +84,7 @@ int main() {
   smap.get(0, 0).set_eff(80);
   smap.get(0, 0).set_mobilization(50);
   smap.get(0, 0).set_resource(100);
-  smap.get(0, 0).set_popn(1000);
+  smap.get(0, 0).set_popn_exact(1000);
   smap.get(0, 0).set_troops(10);
   smap.get(0, 0).set_condition(SectorType::SEC_LAND);
 
@@ -92,7 +92,7 @@ int main() {
   smap.get(1, 0).set_eff(90);
   smap.get(1, 0).set_mobilization(60);
   smap.get(1, 0).set_resource(150);
-  smap.get(1, 0).set_popn(2000);
+  smap.get(1, 0).set_popn_exact(2000);
   smap.get(1, 0).set_troops(20);
   smap.get(1, 0).set_condition(SectorType::SEC_MOUNT);
 
@@ -100,7 +100,7 @@ int main() {
   smap.get(2, 0).set_eff(70);
   smap.get(2, 0).set_mobilization(40);
   smap.get(2, 0).set_resource(80);
-  smap.get(2, 0).set_popn(500);
+  smap.get(2, 0).set_popn_exact(500);
   smap.get(2, 0).set_troops(5);
   smap.get(2, 0).set_condition(SectorType::SEC_FOREST);
 
@@ -109,7 +109,7 @@ int main() {
   smap.get(0, 1).set_eff(60);
   smap.get(0, 1).set_mobilization(30);
   smap.get(0, 1).set_resource(50);
-  smap.get(0, 1).set_popn(800);
+  smap.get(0, 1).set_popn_exact(800);
   smap.get(0, 1).set_troops(8);
   smap.get(0, 1).set_condition(SectorType::SEC_SEA);
 
@@ -117,7 +117,7 @@ int main() {
   smap.get(1, 1).set_eff(50);
   smap.get(1, 1).set_mobilization(25);
   smap.get(1, 1).set_resource(40);
-  smap.get(1, 1).set_popn(600);
+  smap.get(1, 1).set_popn_exact(600);
   smap.get(1, 1).set_troops(6);
   smap.get(1, 1).set_condition(SectorType::SEC_ICE);
 

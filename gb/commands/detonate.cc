@@ -11,8 +11,8 @@ namespace GB::commands {
 void detonate(const command_t& argv, GameObj& g) {
   const governor_t Governor = g.governor();
 
-  if (argv.size() < 3) {
-    g.out << std::format("Syntax: '{}' <mine>'\n", argv[0]);
+  if (argv.size() < 2) {
+    g.out << std::format("Syntax: '{}' <mine>\n", argv[0]);
     return;
   }
 

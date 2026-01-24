@@ -95,7 +95,7 @@ void arm(const command_t& argv, GameObj& g) {
 
     cost = std::max(1U, amount / (sect.get_mobilization() + 1));
     sect.set_troops(sect.get_troops() + amount);
-    sect.set_popn(sect.get_popn() - amount);
+    sect.subtract_popn(amount);
     planet.popn() -= amount;
     planet.info(Playernum).popn -= amount;
     planet.troops() += amount;
@@ -116,7 +116,7 @@ void arm(const command_t& argv, GameObj& g) {
       }
       amount = MIN(sect.get_troops(), amount);
     }
-    sect.set_popn(sect.get_popn() + amount);
+    sect.add_popn(amount);
     sect.set_troops(sect.get_troops() - amount);
     planet.popn() += amount;
     planet.troops() -= amount;

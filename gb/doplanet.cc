@@ -87,7 +87,7 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap,
     s.set_condition(race->likesbest);
     s.set_eff(0);
     s.set_mobilization(0);
-    s.set_popn(0);
+    s.clear_popn();
     s.set_troops(0);
     s.set_owner(0);
     use_fuel(ship, FUEL_COST_TERRA);
@@ -529,18 +529,21 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         p.set_resource(p.get_resource() + 1);
         p.set_fert(p.get_fert() * 0.8);
         if (star.nova_stage() == 14) {
-          p.set_popn(0);
+          p.clear_popn();
           p.set_owner(0);
           p.set_troops(0);
-        } else
-          p.set_popn(round_rand((double)p.get_popn() * .50));
+        } else {
+          // Nova damage: kill approximately 50% of the population
+          auto deaths = round_rand((double)p.get_popn() * .50);
+          p.subtract_popn(deaths);
+        }
       }
       stats.Sectinfo[p.get_x()][p.get_y()].done = 1;
     }
 
     if ((!p.get_popn() && !p.get_troops()) || p.get_owner() == 0) {
       p.set_owner(0);
-      p.set_popn(0);
+      p.clear_popn();
       p.set_troops(0);
     }
 
@@ -608,7 +611,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
                  p.get_condition() == explore_race->likesbest)) {
               /*  explorations have found an island */
               stats.Claims = true;
-              p.set_popn(explore_race->number_sexes);
+              p.set_popn_exact(explore_race->number_sexes);
               p.set_owner(i);
               stats.tot_captured = 1;
             } else
@@ -628,7 +631,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     nukey = int_rand(0, (int)planet.Maxy() - 1);
     auto& p = smap.get(nukex, nukey);
     p.set_condition(SectorType::SEC_WASTED);
-    p.set_popn(0);
+    p.clear_popn();
     p.set_owner(0);
     p.set_troops(0);
   }
@@ -733,7 +736,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       stats.Power[p.get_owner().value - 1].sum_mob += p.get_mobilization();
       stats.starpopns[starnum][p.get_owner().value - 1] += p.get_popn();
     } else {
-      p.set_popn(0);
+      p.clear_popn();
       p.set_troops(0);
     }
     planet.total_resources() += p.get_resource();
@@ -763,7 +766,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
                            int_rand(0, (int)planet.Maxy() - 1));
         if (p.get_popn() + p.get_troops()) {
           p.set_owner(0);
-          p.set_popn(0);
+          p.clear_popn();
           p.set_troops(0);
           p.set_condition(SectorType::SEC_WASTED);
         }
@@ -774,7 +777,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         if (stats.Stinfo[starnum][planetnum].intimidated && random() & 01) {
           if (p.get_owner() == planet.slaved_to()) {
             p.set_owner(0);
-            p.set_popn(0);
+            p.clear_popn();
             p.set_troops(0);
             p.set_condition(SectorType::SEC_WASTED);
           }

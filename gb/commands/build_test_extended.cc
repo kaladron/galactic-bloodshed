@@ -63,7 +63,7 @@ struct BuildTestFixture {
     {
       SectorMap smap(planet, true);  // Initialize empty sectors
       smap.get(5, 5).set_owner(1);
-      smap.get(5, 5).set_popn(100);
+      smap.get(5, 5).set_popn_exact(100);
       smap.get(5, 5).set_condition(SectorType::SEC_LAND);
       SectorRepository sectors_repo(store);
       sectors_repo.save_map(smap);

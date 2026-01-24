@@ -233,7 +233,7 @@ void test_survey_sector_range_with_header() {
       s.set_fert(60);
       s.set_resource(40);
       s.set_troops(100);
-      s.set_popn(1000);
+      s.set_popn_exact(1000);
       s.set_crystals(false);
     }
   }

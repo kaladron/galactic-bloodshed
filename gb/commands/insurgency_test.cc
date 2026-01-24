@@ -65,7 +65,7 @@ int main() {
     SectorMap smap(planet, true);
     for (int i = 0; i < 5; i++) {
       smap.get(i, 0).set_owner(2);
-      smap.get(i, 0).set_popn(200);
+      smap.get(i, 0).set_popn_exact(200);
       smap.get(i, 0).set_condition(SectorType::SEC_MOUNT);
     }
 

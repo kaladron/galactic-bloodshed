@@ -75,7 +75,7 @@ int main() {
   // Test 4: Update sector using setters
   std::println("Test 4: Update sector...");
   retrieved->set_eff(90);
-  retrieved->set_popn(15000);
+  retrieved->set_popn_exact(15000);
   retrieved->set_crystals(150);
   saved = repo.save_sector(*retrieved, test_planet.star_id(),
                            test_planet.planet_order(), 5, 7);
@@ -184,7 +184,7 @@ int main() {
       sec.set_y(y);
       sec.set_eff(50 + x + y);
       sec.set_fert(40);
-      sec.set_popn(1000 + (x + y));  // Simple population value
+      sec.set_popn_exact(1000 + (x + y));  // Simple population value
       sec.set_owner(1);
       sec.set_type((x + y) % 2 == 0 ? SectorType::SEC_LAND
                                     : SectorType::SEC_SEA);
@@ -221,8 +221,8 @@ int main() {
   for (int y = 0; y < 3; y++) {
     for (int x = 0; x < 3; x++) {
       auto& sec = loaded_map.get(x, y);
-      sec.set_eff(sec.get_eff() + 10);     // Increase efficiency by 10
-      sec.set_popn(sec.get_popn() + 500);  // Add population
+      sec.set_eff(sec.get_eff() + 10);  // Increase efficiency by 10
+      sec.add_popn(500);                // Add population
     }
   }
 

@@ -63,7 +63,7 @@ int main() {
   {
     SectorMap smap(planet, true);  // Initialize empty sectors
     smap.get(5, 5).set_owner(2);   // Defender owns the sector
-    smap.get(5, 5).set_popn(50);
+    smap.get(5, 5).set_popn_exact(50);
     smap.get(5, 5).set_troops(100);  // Defender has troops
     smap.get(5, 5).set_condition(SectorType::SEC_LAND);
     SectorRepository sectors(store);

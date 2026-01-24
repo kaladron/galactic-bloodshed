@@ -18,14 +18,14 @@ void move_popn(const command_t& argv, GameObj& g) {
       (argv[0] == "move") ? PopulationType::CIV : PopulationType::MIL;
   int Assault;
   int APcost; /* unfriendly movement */
-  int casualties;
-  int casualties2;
-  int casualties3;
+  population_t casualties;
+  population_t casualties2;
+  population_t casualties3;
 
-  int people;
-  int oldpopn;
-  int old2popn;
-  int old3popn;
+  population_t people;
+  population_t oldpopn;
+  population_t old2popn;
+  population_t old3popn;
   player_t old2owner;
   governor_t old2gov;
   int absorbed;
@@ -174,7 +174,7 @@ void move_popn(const command_t& argv, GameObj& g) {
       old2owner = sect2.get_owner();
       old2gov = star.governor(sect2.get_owner());
       if (what == PopulationType::CIV)
-        sect.set_popn(std::max(0L, sect.get_popn() - people));
+        sect.subtract_popn(people);
       else if (what == PopulationType::MIL)
         sect.set_troops(std::max(0L, sect.get_troops() - people));
 
@@ -198,7 +198,7 @@ void move_popn(const command_t& argv, GameObj& g) {
           alien_handle.read().likes[sect2.get_condition()], &astrength,
           &dstrength, &casualties, &casualties2, &casualties3);
 
-      sect2.set_popn(sect2_popn);
+      sect2.set_popn_exact(sect2_popn);
       sect2.set_troops(sect2_troops);
 
       g.out << std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength,
@@ -216,9 +216,9 @@ void move_popn(const command_t& argv, GameObj& g) {
               std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
         }
         if (what == PopulationType::CIV)
-          sect2.set_popn(people + absorbed);
+          sect2.set_popn_exact(people + absorbed);
         else if (what == PopulationType::MIL) {
-          sect2.set_popn(absorbed);
+          sect2.set_popn_exact(absorbed);
           sect2.set_troops(people);
         }
         adjust_morale(race, alien, (int)alien.fighters);
@@ -231,10 +231,10 @@ void move_popn(const command_t& argv, GameObj& g) {
               std::format("{} alien bodies absorbed.\n", absorbed));
           g.out << std::format("Metamorphs have absorbed {} bodies!!!\n",
                                absorbed);
-          sect2.set_popn(sect2.get_popn() + absorbed);
+          sect2.add_popn(absorbed);
         }
         if (what == PopulationType::CIV)
-          sect.set_popn(sect.get_popn() + people);
+          sect.add_popn(people);
         else if (what == PopulationType::MIL)
           sect.set_troops(sect.get_troops() + people);
         adjust_morale(alien, race, (int)race.fighters);
@@ -288,8 +288,8 @@ void move_popn(const command_t& argv, GameObj& g) {
                            casualties2, casualties3);
     } else {
       if (what == PopulationType::CIV) {
-        sect.set_popn(sect.get_popn() - people);
-        sect2.set_popn(sect2.get_popn() + people);
+        sect.subtract_popn(people);
+        sect2.add_popn(people);
       } else if (what == PopulationType::MIL) {
         sect.set_troops(sect.get_troops() - people);
         sect2.set_troops(sect2.get_troops() + people);

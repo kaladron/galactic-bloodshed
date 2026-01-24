@@ -97,7 +97,7 @@ int main() {
       if (x == 0 && y == 0) {
         s.set_condition(SectorType::SEC_LAND);
         s.set_owner(1);
-        s.set_popn(100);
+        s.set_popn_exact(100);
       } else if (x == 1 && y == 1) {
         s.set_condition(SectorType::SEC_SEA);
         s.set_owner(0);

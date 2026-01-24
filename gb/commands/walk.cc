@@ -171,7 +171,7 @@ void walk(const command_t& argv, GameObj& g) {
                     ship->storbits(), short_buf);
         if (!ship->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
 
-        sect.set_popn(civ);
+        sect.set_popn_exact(civ);
         sect.set_troops(mil);
         if (sect.is_empty()) {
           p.info(sect.get_owner()).mob_points -= (int)sect.get_mobilization();

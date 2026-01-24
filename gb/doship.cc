@@ -105,7 +105,7 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
   p.info(who).explored = 1;
   p.info(who).numsectsowned += 1;
   smap.get(x, y).set_troops(0);
-  smap.get(x, y).set_popn(who_race->number_sexes);
+  smap.get(x, y).set_popn_exact(who_race->number_sexes);
   smap.get(x, y).set_owner(who);
   smap.get(x, y).set_condition(smap.get(x, y).get_type());
   if (POD_TERRAFORM) {
@@ -779,6 +779,8 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
         post(entity_manager, short_buf, NewsType::COMBAT);
         push_telegram(entity_manager, s.owner(), s.governor(), long_buf);
       }
+      // Explicitly save the modified ship
+      ship_handle.save();
     }
   }
 

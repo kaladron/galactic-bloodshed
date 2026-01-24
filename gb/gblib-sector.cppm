@@ -126,9 +126,7 @@ public:
   void set_resource(resource_t val) noexcept {
     data_.resource = val;
   }
-  void set_popn(population_t val) noexcept {
-    data_.popn = val;
-  }
+
   void set_troops(population_t val) noexcept {
     data_.troops = val;
   }
@@ -171,6 +169,35 @@ public:
   /// Clear ownership if sector is empty (no popn or troops)
   void clear_owner_if_empty() noexcept {
     if (is_empty()) data_.owner = 0;
+  }
+
+  /// Population operations with invariant protection
+  /// Add population to sector, saturating at a reasonable max
+  void add_popn(population_t amount) noexcept;
+
+  /// Remove population from sector, clamping to zero.
+  /// Logs if amount > current population (invariant violation).
+  void subtract_popn(population_t amount) noexcept;
+
+  /// Atomically transfer population from this sector to another.
+  /// Logs if transfer amount exceeds source population.
+  void transfer_popn_to(Sector& dest, population_t amount) noexcept;
+
+  /// Check if sector has minimum population
+  [[nodiscard]] bool has_popn(population_t min) const noexcept {
+    return data_.popn >= min;
+  }
+
+  /// Clear all population from sector
+  void clear_popn() noexcept {
+    data_.popn = 0;
+  }
+
+  /// Set population to exact value (used during initialization/loading).
+  /// This is the only public population setter - used when loading state
+  /// from database or initializing colonization.
+  void set_popn_exact(population_t val) noexcept {
+    data_.popn = val;
   }
 
   // Struct conversion methods - FOR SERIALIZATION USE ONLY

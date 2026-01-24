@@ -80,8 +80,10 @@ int main() {
   g.set_snum(0);
 
   // Execute detonate command: detonate #1
-  command_t argv = {"detonate", "#1", ""};
+  command_t argv = {"detonate", "#1"};
   GB::commands::detonate(argv, g);
+
+  std::println("Command output: {}", g.out.str());
 
   // Verify mine was detonated (destroyed)
   const auto* detonated_mine = ctx.em.peek_ship(1);

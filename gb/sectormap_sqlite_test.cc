@@ -20,7 +20,7 @@ void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
       sector.set_mobilization(10 + y);
       sector.set_crystals(x * 10);
       sector.set_resource(y * 20);
-      sector.set_popn(base_popn * (x + 1) * (y + 1));
+      sector.set_popn_exact(base_popn * (x + 1) * (y + 1));
       sector.set_troops(x + y);
       sector.set_owner((x + y) % 2 + 1);
       sector.set_race(sector.get_owner());
@@ -103,7 +103,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     for (int i = 0; i < 4; i++) {
       auto& sector = smap.get(i, i);
       sector.set_eff(95);
-      sector.set_popn(77777);
+      sector.set_popn_exact(77777);
     }
     // Handle auto-saves when going out of scope
   }
@@ -202,7 +202,7 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
       sector.set_x(x);
       sector.set_y(y);
       sector.set_eff(99);
-      sector.set_popn(12345);
+      sector.set_popn_exact(12345);
       sector.set_type(SectorType::SEC_SEA);
       sector.set_condition(SectorType::SEC_SEA);
     }

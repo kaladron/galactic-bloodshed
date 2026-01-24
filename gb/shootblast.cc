@@ -216,9 +216,9 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
             kills = int_rand(0, ((int)(fac / 10.0) * s.get_popn())) /
                     (1 + s.is_plated());
             if (kills > s.get_popn())
-              s.set_popn(0);
+              s.clear_popn();
             else
-              s.set_popn(s.get_popn() - kills);
+              s.subtract_popn(kills);
           }
           if (s.get_troops() &&
               (fac > 5.0 * (double)Defensedata[s.get_condition()])) {
@@ -242,7 +242,7 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
         if (round_rand(fac) >
             Defensedata[s.get_condition()] * int_rand(0, 10)) {
           if (s.get_owner() != 0) result.nuked[s.get_owner().value - 1] = 1;
-          s.set_popn(0);
+          s.clear_popn();
           s.set_troops(int_rand(0, (int)s.get_troops()));
           if (!s.get_troops()) /* troops may survive this */
             s.set_owner(0);

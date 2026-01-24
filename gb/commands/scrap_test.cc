@@ -61,7 +61,7 @@ int main() {
   SectorMap smap(planet, true);
   auto& sector = smap.get(5, 5);
   sector.set_owner(1);
-  sector.set_popn(100);
+  sector.set_popn_exact(100);
   sector.set_resource(50);
   sector.set_eff(100);
 

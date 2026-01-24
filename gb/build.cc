@@ -162,7 +162,7 @@ void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
   *crew = MIN(s->max_crew(), sector.get_popn());
   *fuel = MIN((double)s->max_fuel(),
               (double)planet->info(Playernum.value - 1).fuel);
-  sector.set_popn(sector.get_popn() - *crew);
+  sector.subtract_popn(*crew);
   if (!sector.get_popn() && !sector.get_troops()) sector.set_owner(0);
   planet->info(Playernum).fuel -= (int)(*fuel);
 }

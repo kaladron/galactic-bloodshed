@@ -173,7 +173,7 @@ found_planet:
 
   sect.set_owner(Playernum);
   sect.set_race(Playernum);
-  sect.set_popn(race->number_sexes);
+  sect.set_popn_exact(race->number_sexes);
   planet.popn() = race->number_sexes;
   sect.set_fert(100);
   sect.set_eff(10);

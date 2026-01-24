@@ -41,9 +41,9 @@ int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
       continue;
 
     // Revolt successful.
-    s.set_owner(agent);                     /* enemy gets it */
-    s.set_popn(long_rand(1, s.get_popn())); /* some people killed */
-    s.set_troops(0);                        /* all troops destroyed */
+    s.set_owner(agent);                              /* enemy gets it */
+    s.subtract_popn(long_rand(0, s.get_popn() - 1)); /* some people killed */
+    s.set_troops(0);                                 /* all troops destroyed */
     pl.info(victim).numsectsowned -= 1;
     pl.info(agent).numsectsowned += 1;
     pl.info(victim).mob_points -= s.get_mobilization();

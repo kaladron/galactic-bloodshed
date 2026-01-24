@@ -174,6 +174,7 @@ target_sources(
           planet.cc
           utils/rand.cc
           sectormap.cc
+          sector.cc
           ships.cc
           entitylists.cc
           shlmisc.cc

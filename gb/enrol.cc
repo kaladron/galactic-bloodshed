@@ -480,7 +480,7 @@ int main() {
   planet.explored() = 0;
   planet.info(Playernum).explored = 1;
 
-  sect.set_popn(race.number_sexes);
+  sect.set_popn_exact(race.number_sexes);
   planet.popn() = race.number_sexes;
   sect.set_troops(0);
   planet.troops() = 0;

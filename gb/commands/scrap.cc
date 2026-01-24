@@ -219,11 +219,11 @@ void scrap(const command_t& argv, GameObj& g) {
       if (planet_handle.get() && landed(s) && sect != nullptr) {
         auto& planet = *planet_handle;
         if (sect->get_owner() == g.player()) {
-          sect->set_popn(sect->get_popn() + troopval);
-          sect->set_popn(sect->get_popn() + crewval);
+          sect->add_popn(troopval);
+          sect->add_popn(crewval);
         } else if (sect->get_owner() == 0) {
           sect->set_owner(g.player());
-          sect->set_popn(sect->get_popn() + crewval);
+          sect->add_popn(crewval);
           sect->set_troops(sect->get_troops() + troopval);
           planet.info(g.player()).numsectsowned++;
           planet.info(g.player()).popn += crewval;

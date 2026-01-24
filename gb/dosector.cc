@@ -33,8 +33,7 @@ void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
                            std::numeric_limits<population_t>::max());
     if (!move) return;
     *people -= move;
-    pd.set_popn(pd.get_popn() + move);
-    ps.set_popn(ps.get_popn() - move);
+    ps.transfer_popn_to(pd, move);
     pd.set_owner(ps.get_owner());
     stats.tot_captured++;
     stats.Claims = true;
@@ -135,7 +134,7 @@ void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
                               const Planet& planet, TurnStats& stats) {
   auto maxsup = maxsupport(race, s, stats.Compat[s.get_owner().value - 1],
                            planet.conditions(TOXIC));
-  s.set_popn(s.get_popn() + calculatePopulationChange(race, s, maxsup));
+  s.add_popn(calculatePopulationChange(race, s, maxsup));
 
   // Handle troops maintenance costs - get mutable race for governor update
   if (s.get_troops()) {

@@ -72,7 +72,7 @@ Coordinates get_move(const Planet& planet, const char direction,
   }
 }
 
-void mech_defend(const GameObj& g, int* people, PopulationType type,
+void mech_defend(const GameObj& g, population_t* people, PopulationType type,
                  const Planet& p, int x2, int y2, const Sector& s2) {
   population_t civ = 0;
   population_t mil = 0;
@@ -227,11 +227,12 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   strcat(long_msg, casualties_msg.c_str());
 }
 
-void ground_attack(const Race& race, const Race& alien, int* people,
+void ground_attack(const Race& race, const Race& alien, population_t* people,
                    PopulationType what, population_t* civ, population_t* mil,
                    unsigned int def1, unsigned int def2, double alikes,
                    double dlikes, double* astrength, double* dstrength,
-                   int* casualties, int* casualties2, int* casualties3) {
+                   population_t* casualties, population_t* casualties2,
+                   population_t* casualties3) {
   int casualty_scale;
 
   *astrength = (double)(*people * race.fighters *

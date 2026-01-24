@@ -141,7 +141,7 @@ void capture(const command_t& argv, GameObj& g) {
       casualties2 = 0;
 
       if (what == PopulationType::CIV)
-        sect.set_popn(sect.get_popn() - boarders);
+        sect.subtract_popn(boarders);
       else if (what == PopulationType::MIL)
         sect.set_troops(sect.get_troops() - boarders);
 
@@ -212,7 +212,7 @@ void capture(const command_t& argv, GameObj& g) {
         ship.governor() = Governor;
         if (what == PopulationType::CIV) {
           ship.popn() = std::min(boarders, max_crew(ship));
-          sect.set_popn(sect.get_popn() + boarders - ship.popn());
+          sect.add_popn(boarders - ship.popn());  // Return excess boarders
           ship.mass() += ship.popn() * race.mass;
         } else if (what == PopulationType::MIL) {
           ship.troops() = std::min(boarders, max_mil(ship));
@@ -230,7 +230,7 @@ void capture(const command_t& argv, GameObj& g) {
         /* unoccupied ships and factories don't count */
       } else { /* retreat */
         if (what == PopulationType::CIV)
-          sect.set_popn(sect.get_popn() + boarders);
+          sect.add_popn(boarders);
         else if (what == PopulationType::MIL)
           sect.set_troops(sect.get_troops() + boarders);
       }

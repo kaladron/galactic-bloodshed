@@ -112,19 +112,20 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
 }
 
 void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
-                              Sector& sect, PopulationType what, int people) {
+                              Sector& sect, PopulationType what,
+                              population_t people) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   double astrength;
   double dstrength;
   player_t oldowner;
   governor_t oldgov;
-  int oldpopn;
-  int old2popn;
-  int old3popn;
-  int casualties;
-  int casualties2;
-  int casualties3;
+  population_t oldpopn;
+  population_t old2popn;
+  population_t old3popn;
+  population_t casualties;
+  population_t casualties2;
+  population_t casualties3;
   int absorbed;
   int defense;
 
@@ -184,7 +185,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
                 1.0 - (double)ship->damage() / 100.0,
                 alien_handle.read().likes[sect.get_condition()], &astrength,
                 &dstrength, &casualties, &casualties2, &casualties3);
-  sect.set_popn(temp_popn);
+  sect.set_popn_exact(temp_popn);
   sect.set_troops(temp_troops);
   g.session_registry.notify_player(
       Playernum, Governor,
@@ -201,9 +202,9 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
           std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
     }
     if (what == PopulationType::CIV)
-      sect.set_popn(people + absorbed);
+      sect.set_popn_exact(people + absorbed);
     else if (what == PopulationType::MIL) {
-      sect.set_popn(absorbed);
+      sect.set_popn_exact(absorbed);
       sect.set_troops(people);
     }
     sect.set_owner(Playernum);
@@ -216,7 +217,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
           oldowner, oldgov,
           std::format("{} alien bodies absorbed.\n", absorbed));
       g.out << std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed);
-      sect.set_popn(sect.get_popn() + absorbed);
+      sect.add_popn(absorbed);
     }
     /* load them back up */
     g.out << std::format("Loading {} {}\n", people,
@@ -529,7 +530,7 @@ void load(const command_t& argv, GameObj& g) {
             g.out << std::format("sector {},{} COLONIZED.\n", s.land_x(),
                                  s.land_y());
           }
-          sect_ptr->set_popn(sect_ptr->get_popn() - amt);
+          sect_ptr->subtract_popn(amt);
           p_ptr->popn() -= amt;
           p_ptr->info(Playernum).popn -= amt;
           if (!sect_ptr->get_popn() && !sect_ptr->get_troops()) {

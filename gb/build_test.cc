@@ -29,7 +29,7 @@ int main() {
   // Create a normal sector owned by the race with population
   Sector good_sector{};
   good_sector.set_owner(1);
-  good_sector.set_popn(100);
+  good_sector.set_popn_exact(100);
   good_sector.set_condition(SectorType::SEC_LAND);
 
   // Test 1: Success case - can build on owned sector with population
@@ -44,7 +44,7 @@ int main() {
   {
     Sector no_pop_sector{};
     no_pop_sector.set_owner(1);
-    no_pop_sector.set_popn(0);
+    no_pop_sector.clear_popn();
     no_pop_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
                                       no_pop_sector, {0, 0});
@@ -57,7 +57,7 @@ int main() {
   {
     Sector wasted_sector{};
     wasted_sector.set_owner(1);
-    wasted_sector.set_popn(100);
+    wasted_sector.set_popn_exact(100);
     wasted_sector.set_condition(SectorType::SEC_WASTED);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
                                       wasted_sector, {0, 0});
@@ -70,7 +70,7 @@ int main() {
   {
     Sector alien_sector{};
     alien_sector.set_owner(2);  // Different player
-    alien_sector.set_popn(100);
+    alien_sector.set_popn_exact(100);
     alien_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
                                       alien_sector, {0, 0});
@@ -85,7 +85,7 @@ int main() {
     god_race.God = true;
     Sector alien_sector{};
     alien_sector.set_owner(2);
-    alien_sector.set_popn(100);
+    alien_sector.set_popn_exact(100);
     alien_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, god_race,
                                       planet, alien_sector, {0, 0});

@@ -285,7 +285,7 @@ void test_sectormap_functionality() {
       sector.set_x(x);
       sector.set_y(y);
       sector.set_owner(1);
-      sector.set_popn(100 * (x + y));
+      sector.set_popn_exact(100 * (x + y));
       sector.set_condition(SectorType::SEC_LAND);
 
       // Verify the sector was set correctly

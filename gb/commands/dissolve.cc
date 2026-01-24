@@ -95,7 +95,7 @@ void dissolve(const command_t& argv, GameObj& g) {
         if (s.get_owner() == Playernum) {
           s.set_owner(0);
           s.set_troops(0);
-          s.set_popn(0);
+          s.clear_popn();
           if (waste) s.set_condition(SectorType::SEC_WASTED);
         }
       }

@@ -46,7 +46,7 @@ int main() {
   {
     SectorMap smap(planet, true);
     smap.get(5, 5).set_condition(SectorType::SEC_LAND);
-    smap.get(5, 5).set_popn(100);
+    smap.get(5, 5).set_popn_exact(100);
     smap.get(5, 5).set_owner(2);  // Owned by race 2
     smap.get(5, 5).set_troops(10);
 

@@ -54,10 +54,32 @@ int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
   return revolted_sectors;
 }
 
+/**
+ * @brief Updates the orbital position of a planet and its orbiting ships.
+ *
+ * This function calculates the new orbital position of a planet based on
+ * Kepler's Third Law for circular orbits ($T^2 \propto r^3$).
+ *
+ * The orbit is counter-clockwise. While subtracting from the angular phase
+ * usually results in clockwise rotation in standard Cartesian systems, Galactic
+ * Bloodshed uses a left-handed coordinate system where Y increases downwards.
+ * In this system, decreasing the angle results in counter-clockwise motion.
+ *
+ * It also moves all ships currently in orbit around the planet by the same
+ * displacement. Turn statistics and system inhabited status are updated as
+ * part of the movement process.
+ *
+ * @param entity_manager The entity manager for accessing star and ship data.
+ * @param starnum The unique identifier of the star system.
+ * @param planet The planet object to be moved.
+ * @param planetnum The index of the planet within its star system.
+ * @param stats Structure for tracking turn-based statistics.
+ */
 void moveplanet(EntityManager& entity_manager, const starnum_t starnum,
                 Planet& planet, const planetnum_t planetnum, TurnStats& stats) {
-  if (planet.popn() || planet.ships())
+  if (planet.popn() || planet.ships()) {
     stats.Stinfo[starnum][planetnum].inhab = 1;
+  }
 
   auto star_handle = entity_manager.get_star(starnum);
   auto& star = *star_handle;
@@ -65,18 +87,14 @@ void moveplanet(EntityManager& entity_manager, const starnum_t starnum,
   stats.StarsExpl[starnum] = !!(star.explored());
 
   star.inhabited() = 0;
-  if (!stats.StarsExpl[starnum]) return; /* no one's explored the star yet */
 
-  double dist = std::hypot((double)(planet.ypos()), (double)(planet.xpos()));
+  double dist = std::hypot(planet.ypos(), planet.xpos());
 
-  double phase = std::atan2((double)(planet.ypos()), (double)(planet.xpos()));
-  double period =
-      dist * std::sqrt((double)(dist / (SYSTEMGRAVCONST * star.gravity())));
-  /* keppler's law */
+  double phase = std::atan2(planet.ypos(), planet.xpos());
+  double period = dist * std::sqrt((dist / (SYSTEMGRAVCONST * star.gravity())));
 
-  double xadd = dist * std::cos((double)(-1. / period + phase)) - planet.xpos();
-  double yadd = dist * std::sin((double)(-1. / period + phase)) - planet.ypos();
-  /* one update time unit - planets orbit counter-clockwise */
+  double xadd = (dist * std::cos(((-1. / period) + phase))) - planet.xpos();
+  double yadd = (dist * std::sin(((-1. / period) + phase))) - planet.ypos();
 
   /* adjust ships in orbit around the planet */
   for (auto ship_handle : ShipList(entity_manager, planet.ships())) {

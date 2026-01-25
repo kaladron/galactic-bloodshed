@@ -66,6 +66,31 @@ export bool Crystals(int x) {
 
 export std::vector<Victory> create_victory_list(EntityManager&);
 
+/**
+ * @brief Calculate the maximum population a sector can support for a given
+ * race.
+ *
+ * Determines the carrying capacity of a sector based on multiple factors
+ * including the race's preference for the sector type, sector productivity
+ * (efficiency and fertility), race-planet compatibility, and environmental
+ * toxicity.
+ *
+ * @param r The race that owns or would own the sector
+ * @param s The sector being evaluated
+ * @param c Compatibility factor (0.0-100.0) representing how well the race
+ * adapts to the planet's overall conditions
+ * @param toxic Toxicity level (0-100) of the planet - higher values reduce
+ * capacity
+ *
+ * @return Maximum population the sector can support. Returns 0 if the race
+ * cannot inhabit this sector type (likes value is 0).
+ *
+ * @note The calculation incorporates:
+ *       - Race preference: r.likes[sector_type] must be non-zero
+ *       - Sector productivity: (efficiency + 1) * fertility
+ *       - Compatibility: Scaled by race's adaptation to planet conditions
+ *       - Toxicity penalty: Reduces capacity as (100 - toxic)%
+ */
 export constexpr auto maxsupport(const Race& r, const Sector& s, const double c,
                                  const int toxic) {
   if (r.likes[s.get_condition()] == 0) return 0L;

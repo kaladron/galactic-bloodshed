@@ -93,7 +93,7 @@ void updateEfficiency(Sector& s, const Race& race, const Planet& planet) {
     int chance = round_rand((100.0 - (double)planet.info(s.get_owner()).tax) *
                             race.likes[s.get_condition()]);
     if (success(chance)) {
-      s.set_eff(s.get_eff() + round_rand(race.metabolism));
+      s.improve_efficiency(round_rand(race.metabolism));
       if (s.get_eff() >= 100) s.plate();
     }
   } else {

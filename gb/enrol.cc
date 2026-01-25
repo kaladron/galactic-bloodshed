@@ -467,7 +467,7 @@ int main() {
   sect.set_owner(Playernum);
   sect.set_race(Playernum);
   sect.set_fert(100);
-  sect.set_eff(10);
+  sect.set_efficiency_bounded(10);
 
   // Get planet handle for final modifications
   auto planet_handle = entity_manager.get_planet(star, pnum);

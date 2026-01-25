@@ -299,7 +299,7 @@ void test_sectormap_functionality() {
 
   // Test boundary conditions
   auto& corner_sector = smap.get(0, 0);
-  corner_sector.set_eff(100);
+  corner_sector.set_efficiency_bounded(100);
   corner_sector.set_fert(50);
   corner_sector.set_resource(1000);
 

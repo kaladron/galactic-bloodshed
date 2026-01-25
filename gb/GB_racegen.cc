@@ -176,7 +176,7 @@ found_planet:
   sect.set_popn_exact(race->number_sexes);
   planet.popn() = race->number_sexes;
   sect.set_fert(100);
-  sect.set_eff(10);
+  sect.set_efficiency_bounded(10);
   sect.set_troops(0);
   planet.troops() = 0;
 

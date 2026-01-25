@@ -63,7 +63,7 @@ int main() {
   sector.set_owner(1);
   sector.set_popn_exact(100);
   sector.set_resource(50);
-  sector.set_eff(100);
+  sector.set_efficiency_bounded(100);
 
   // Save sector map using Repository (DAL layer)
   SectorRepository sector_repo(store);

@@ -228,7 +228,7 @@ void test_survey_sector_range_with_header() {
       s.set_type(SectorType::SEC_LAND);
       s.set_owner(1);
       s.set_race(1);
-      s.set_eff(50);
+      s.set_efficiency_bounded(50);
       s.set_mobilization(10);
       s.set_fert(60);
       s.set_resource(40);

@@ -111,9 +111,6 @@ public:
   void set_y(unsigned int val) noexcept {
     data_.y = val;
   }
-  void set_eff(unsigned int val) noexcept {
-    data_.eff = val;
-  }
   void set_fert(unsigned int val) noexcept {
     data_.fert = val;
   }
@@ -125,6 +122,32 @@ public:
   }
   void set_resource(resource_t val) noexcept {
     data_.resource = val;
+  }
+
+  /// Resource operations with invariant protection
+  /// Add resources to sector (no max limit)
+  void add_resource(resource_t amount) noexcept;
+
+  /// Remove resources from sector, clamping to zero.
+  /// Logs if amount > current resource (invariant violation).
+  void subtract_resource(resource_t amount) noexcept;
+
+  /// Efficiency operations with bounds (0-100)
+  /// Set efficiency to exact value, clamping to 0-100 bounds.
+  /// Logs if input is out of valid range.
+  void set_efficiency_bounded(int eff) noexcept;
+
+  /// Improve efficiency by delta, saturating at 100.
+  /// Logs if delta is negative (use degrade_efficiency instead).
+  void improve_efficiency(int delta) noexcept;
+
+  /// Degrade efficiency by delta, bottoming at 0.
+  /// Logs if attempted degradation exceeds current efficiency.
+  void degrade_efficiency(int delta) noexcept;
+
+  /// Clear efficiency to 0 (e.g., after terraforming or devastation)
+  void clear_efficiency() noexcept {
+    data_.eff = 0;
   }
 
   void set_troops(population_t val) noexcept {

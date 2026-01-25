@@ -246,7 +246,7 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
           s.set_troops(int_rand(0, (int)s.get_troops()));
           if (!s.get_troops()) /* troops may survive this */
             s.set_owner(0);
-          s.set_eff(0);
+          s.clear_efficiency();
           s.set_resource(s.get_resource() / ((int)fac + 1));
           s.set_mobilization(0);
           s.set_fert(0); /*all is lost !*/
@@ -255,9 +255,9 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
           result.numdest++;
         } else {
           s.set_fert(std::max(0, (int)s.get_fert() - (int)fac));
-          s.set_eff(std::max(0, (int)s.get_eff() - (int)fac));
+          s.degrade_efficiency(std::lround(fac));
           s.set_mobilization(std::max(0, (int)s.get_mobilization() - (int)fac));
-          s.set_resource(std::max(0, (int)s.get_resource() - (int)fac));
+          s.subtract_resource(std::lround(fac));
         }
       }
       if (s.get_owner() != 0)

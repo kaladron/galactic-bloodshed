@@ -73,3 +73,73 @@ void Sector::transfer_popn_to(Sector& dest, population_t amount) noexcept {
   data_.popn -= amount;
   dest.add_popn(amount);
 }
+// Resource operation implementations
+void Sector::add_resource(resource_t amount) noexcept {
+  if (amount == 0) return;
+  data_.resource += amount;
+}
+
+void Sector::subtract_resource(resource_t amount) noexcept {
+  if (amount == 0) return;
+
+  // Log if trying to subtract more than available
+  if (amount > data_.resource) {
+    log_invariant_violation("Sector", "resource",
+                            std::format("subtract {}", amount), "clamped to 0");
+    data_.resource = 0;
+  } else {
+    data_.resource -= amount;
+  }
+}
+
+// Efficiency operation implementations (0-100 bounds)
+void Sector::set_efficiency_bounded(int eff) noexcept {
+  if (eff < 0 || eff > 100) {
+    log_invariant_violation(
+        "Sector", "eff", std::format("{}", eff),
+        std::format("clamped to {}", std::clamp(eff, 0, 100)));
+  }
+  data_.eff = std::clamp(eff, 0, 100);
+}
+
+void Sector::improve_efficiency(int delta) noexcept {
+  if (delta == 0) return;
+
+  if (delta < 0) {
+    log_invariant_violation(
+        "Sector", "eff",
+        std::format("improve_efficiency with negative delta {}", delta),
+        "use degrade_efficiency instead");
+    return;
+  }
+
+  int new_eff = static_cast<int>(data_.eff) + delta;
+  if (new_eff > 100) {
+    log_invariant_violation("Sector", "eff",
+                            std::format("{} + {}", data_.eff, delta),
+                            "saturated to 100");
+    data_.eff = 100;
+  } else {
+    data_.eff = new_eff;
+  }
+}
+
+void Sector::degrade_efficiency(int delta) noexcept {
+  if (delta == 0) return;
+
+  if (delta < 0) {
+    log_invariant_violation(
+        "Sector", "eff",
+        std::format("degrade_efficiency with negative delta {}", delta),
+        "use improve_efficiency instead");
+    return;
+  }
+
+  // Normal operation: degrade by delta, clamping to zero
+  // Don't log if delta exceeds current eff - this is expected in combat
+  if (delta > static_cast<int>(data_.eff)) {
+    data_.eff = 0;
+  } else {
+    data_.eff -= delta;
+  }
+}

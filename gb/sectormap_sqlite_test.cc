@@ -15,7 +15,7 @@ void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
       auto& sector = smap.get(x, y);
       sector.set_x(x);
       sector.set_y(y);
-      sector.set_eff(base_eff + (x * y));
+      sector.set_efficiency_bounded(base_eff + (x * y));
       sector.set_fert(30 + x);
       sector.set_mobilization(10 + y);
       sector.set_crystals(x * 10);
@@ -102,7 +102,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     // Modify some sectors
     for (int i = 0; i < 4; i++) {
       auto& sector = smap.get(i, i);
-      sector.set_eff(95);
+      sector.set_efficiency_bounded(95);
       sector.set_popn_exact(77777);
     }
     // Handle auto-saves when going out of scope
@@ -150,7 +150,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
            "Multiple handles should reference same cached data");
 
     // Modify via handle1
-    (*handle1).get(7, 5).set_eff(42);
+    (*handle1).get(7, 5).set_efficiency_bounded(42);
 
     // Should see change via handle2 (same underlying object)
     assert((*handle2).get(7, 5).get_eff() == 42);
@@ -201,7 +201,7 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
       auto& sector = smap2.get(x, y);
       sector.set_x(x);
       sector.set_y(y);
-      sector.set_eff(99);
+      sector.set_efficiency_bounded(99);
       sector.set_popn_exact(12345);
       sector.set_type(SectorType::SEC_SEA);
       sector.set_condition(SectorType::SEC_SEA);

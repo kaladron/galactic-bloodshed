@@ -85,7 +85,7 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap,
   if (success((100 - (int)ship.damage()) * ship.popn() / ship.max_crew())) {
     /* only condition can be terraformed, type doesn't change */
     s.set_condition(race->likesbest);
-    s.set_eff(0);
+    s.clear_efficiency();
     s.set_mobilization(0);
     s.clear_popn();
     s.set_troops(0);
@@ -135,8 +135,7 @@ void do_dome(EntityManager& entity_manager, Ship* ship, SectorMap& smap) {
   }
   int adjust = round_rand(.05 * (100. - (double)ship->damage()) *
                           (double)ship->popn() / ship->max_crew());
-  s.set_eff(s.get_eff() + adjust);
-  s.set_eff(std::min<unsigned int>(s.get_eff(), 100));
+  s.improve_efficiency(adjust);
   use_resource(*ship, RES_COST_DOME);
 }
 

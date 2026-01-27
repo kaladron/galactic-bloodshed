@@ -66,28 +66,14 @@ int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
  * In this system, decreasing the angle results in counter-clockwise motion.
  *
  * It also moves all ships currently in orbit around the planet by the same
- * displacement. Turn statistics and system inhabited status are updated as
- * part of the movement process.
+ * displacement.
  *
- * @param entity_manager The entity manager for accessing star and ship data.
- * @param starnum The unique identifier of the star system.
+ * @param entity_manager The entity manager for accessing ship data.
+ * @param star The star that the planet orbits.
  * @param planet The planet object to be moved.
- * @param planetnum The index of the planet within its star system.
- * @param stats Structure for tracking turn-based statistics.
  */
-void moveplanet(EntityManager& entity_manager, const starnum_t starnum,
-                Planet& planet, const planetnum_t planetnum, TurnStats& stats) {
-  if (planet.popn() || planet.ships()) {
-    stats.Stinfo[starnum][planetnum].inhab = 1;
-  }
-
-  auto star_handle = entity_manager.get_star(starnum);
-  auto& star = *star_handle;
-  stats.StarsInhab[starnum] = !!(star.inhabited());
-  stats.StarsExpl[starnum] = !!(star.explored());
-
-  star.inhabited() = 0;
-
+void moveplanet(EntityManager& entity_manager, const Star& star,
+                Planet& planet) {
   double dist = std::hypot(planet.ypos(), planet.xpos());
 
   double phase = std::atan2(planet.ypos(), planet.xpos());

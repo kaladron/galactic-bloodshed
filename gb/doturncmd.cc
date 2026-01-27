@@ -138,14 +138,19 @@ static void process_stars_and_planets(TurnState& state, int update) {
 
     if (update) {
       fix_stability(state.entity_manager, *star_handle); /* nova */
+
+      state.stats.StarsInhab[star] = !!(star_handle->inhabited());
+      state.stats.StarsExpl[star] = !!(star_handle->explored());
     }
 
     for (auto planet_handle :
          PlanetList(state.entity_manager, star, *star_handle)) {
       const planetnum_t pnum = planet_handle->planet_order();
       if (update) {
-        moveplanet(state.entity_manager, star, *planet_handle, pnum,
-                   state.stats);
+        if (planet_handle->popn() || planet_handle->ships()) {
+          state.stats.Stinfo[star][pnum].inhab = 1;
+        }
+        moveplanet(state.entity_manager, *star_handle, *planet_handle);
       }
       if (!star_handle->planet_name_isset(pnum)) {
         star_handle->set_planet_name(pnum, std::format("NULL-{}", pnum));
@@ -439,14 +444,13 @@ static void process_abms_and_missiles(TurnState& state, int update) {
 
     for (auto planet_handle :
          PlanetList(state.entity_manager, star, *star_handle)) {
-      /* store occupation for VPs */
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
 
         if (planet_handle->info(player).numsectsowned) {
           setbit(inhabited[star], player);
-          setbit(star_handle->inhabited(), player);
         }
+
         if (planet_handle->type() != PlanetType::ASTEROID &&
             (planet_handle->info(player).numsectsowned >
              planet_handle->Maxx() * planet_handle->Maxy() / 2)) {
@@ -466,18 +470,15 @@ static void process_abms_and_missiles(TurnState& state, int update) {
       }
     }
 
-    /* do AP's for ea. player  */
     if (update) {
+      // Build inhabited bitmap from starpopns and calculate APs
+      star_handle->inhabited() = 0;
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
 
         if (state.stats.starpopns[star][player.value - 1]) {
           setbit(star_handle->inhabited(), player);
-        } else {
-          clrbit(star_handle->inhabited(), player);
-        }
 
-        if (isset(star_handle->inhabited(), player)) {
           ap_t APs =
               star_handle->AP(player) +
               APadd(static_cast<int>(
@@ -490,7 +491,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
             star_handle->AP(player) = LIMIT_APs;
           }
         }
-        /* compute victory points for the block */
+        // Compute victory points for the block
         if (inhabited[star] != 0) {
           const auto* block_player =
               state.entity_manager.peek_block(player.value);

@@ -7,9 +7,6 @@ module;
 import gblib;
 import std;
 
-#include <ctype.h>
-#include <strings.h>
-
 module commands;
 
 namespace GB::commands {
@@ -25,7 +22,7 @@ void repair(const command_t& argv, GameObj& g) {
     where = std::make_unique<Place>(g.level(), g.snum(), g.pnum());
   } else {
     /* repairing a sector */
-    if (isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) {
+    if (std::isdigit(argv[1][0]) && argv[1].find(',') != std::string::npos) {
       if (g.level() != ScopeLevel::LEVEL_PLAN) {
         g.out << "There are no sectors here.\n";
         return;
@@ -60,7 +57,7 @@ void repair(const command_t& argv, GameObj& g) {
     return;
   }
   auto& smap = *smap_handle;
-  if (isdigit(argv[1][0]) && index(argv[1].c_str(), ',') != nullptr) {
+  if (std::isdigit(argv[1][0]) && argv[1].find(',') != std::string::npos) {
     // translate from lowx:hix,lowy:hiy
     auto coords = get4args(argv[1]);
     if (!coords) {

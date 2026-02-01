@@ -6,7 +6,7 @@ import :gameobj;
 import :ships;
 import :turnstats;
 
-export void doship(Ship&, int, EntityManager&, TurnStats& stats);
+export void doship(Ship&, bool update, EntityManager&, TurnStats& stats);
 export void domass(Ship&, EntityManager&);
 export void doown(Ship&, EntityManager&);
 export void domissile(Ship&, EntityManager&);

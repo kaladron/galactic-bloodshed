@@ -9,7 +9,7 @@ import std;
 
 class SessionRegistry;
 
-export void do_turn(EntityManager&, SessionRegistry&, int);
+export void do_turn(EntityManager&, SessionRegistry&, bool update);
 export void do_next_thing(EntityManager&, SessionRegistry&);
 export void do_update(EntityManager&, SessionRegistry&, bool = false);
 export void do_segment(EntityManager&, SessionRegistry&, int, int);

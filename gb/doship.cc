@@ -390,7 +390,7 @@ void do_oap(Ship& ship, TurnStats& stats) {
 }
 }  // namespace
 
-void doship(Ship& ship, int update, EntityManager& entity_manager,
+void doship(Ship& ship, bool update, EntityManager& entity_manager,
             TurnStats& stats) {
   /*ship is active */
   ship.active() = 1;

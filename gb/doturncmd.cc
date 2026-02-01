@@ -71,16 +71,16 @@ static bool governed(const Race&, const TurnState&);
 static void make_discoveries(EntityManager&, Race&);
 static void output_ground_attacks(TurnState& state);
 static void process_ships(TurnState& state);
-static void process_stars_and_planets(TurnState& state, int update);
-static void process_races(TurnState& state, int update);
-static void process_market(TurnState& state, int update);
+static void process_stars_and_planets(TurnState& state, bool update);
+static void process_races(TurnState& state, bool update);
+static void process_market(TurnState& state, bool update);
 static void process_ship_masses_and_ownership(TurnState& state);
-static void process_ship_turns(TurnState& state, int update);
+static void process_ship_turns(TurnState& state, bool update);
 static void prepare_dead_ships(TurnState& state);
 static void insert_ships_into_lists(TurnState& state);
-static void process_abms_and_missiles(TurnState& state, int update);
-static void update_victory_scores(TurnState& state, int update);
-static void finalize_turn(TurnState& state, int update);
+static void process_abms_and_missiles(TurnState& state, bool update);
+static void update_victory_scores(TurnState& state, bool update);
+static void finalize_turn(TurnState& state, bool update);
 
 /**
  * Process one game turn - either a movement segment or a full update.
@@ -96,10 +96,10 @@ static void finalize_turn(TurnState& state, int update);
  * ship movement and combat to happen more frequently than economic/tech growth.
  *
  * @param entity_manager Database entity manager for persistent storage
- * @param update 1 for full update with production/tech, 0 for movement only
- *               TODO: Should be bool for type safety
+ * @param update true for full update with production/tech, false for movement
+ * only
  */
-void do_turn(EntityManager& entity_manager, SessionRegistry&, int update) {
+void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
   TurnState state(
       entity_manager);  // Create turn-local state with EntityManager ref
 
@@ -132,7 +132,7 @@ static void process_ships(TurnState& state) {
   }
 }
 
-static void process_stars_and_planets(TurnState& state, int update) {
+static void process_stars_and_planets(TurnState& state, bool update) {
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;
 
@@ -162,7 +162,7 @@ static void process_stars_and_planets(TurnState& state, int update) {
   }
 }
 
-static void process_races(TurnState& state, int update) {
+static void process_races(TurnState& state, bool update) {
   state.stats.VN_brain.Most_mad = 0; /* not mad at anyone for starts */
 
   // Get universe data for VN hitlist
@@ -217,9 +217,9 @@ static void process_races(TurnState& state, int update) {
  * - Removes sold/expired commodities
  *
  * @param state Turn state with entity data
- * @param update 1 to process market, 0 to skip (movement segment only)
+ * @param update true to process market, false to skip (movement segment only)
  */
-static void process_market(TurnState& state, int update) {
+static void process_market(TurnState& state, bool update) {
   if (MARKET && update) {
     /* reset market - note: CommodList filters out null/invalid entries */
     for (auto commod_handle : CommodList(state.entity_manager)) {
@@ -303,7 +303,7 @@ static void process_ship_masses_and_ownership(TurnState& state) {
   }
 }
 
-static void process_ship_turns(TurnState& state, int update) {
+static void process_ship_turns(TurnState& state, bool update) {
   /* do all ships one turn - do slower ships first */
   for (int j = 0; j <= 9; j++) {
     for (auto ship_handle :
@@ -418,7 +418,7 @@ static void insert_ships_into_lists(TurnState& state) {
   }
 }
 
-static void process_abms_and_missiles(TurnState& state, int update) {
+static void process_abms_and_missiles(TurnState& state, bool update) {
   /* put ABMs and surviving missiles here because ABMs need to have the missile
      in the shiplist of the target planet  Maarten */
   for (auto ship_handle :
@@ -530,7 +530,7 @@ static void process_abms_and_missiles(TurnState& state, int update) {
   /* here is where we do victory calculations. */
 }
 
-static void update_victory_scores(TurnState& state, int update) {
+static void update_victory_scores(TurnState& state, bool update) {
   if (update) {
     struct victstruct {
       int numsects{0};
@@ -606,7 +606,7 @@ static void update_victory_scores(TurnState& state, int update) {
   } /* end of if (update) */
 }
 
-static void finalize_turn(TurnState& state, int update) {
+static void finalize_turn(TurnState& state, bool update) {
   const planetnum_t planet_count =
       state.entity_manager.peek_universe()->planet_count;
   if (update) {
@@ -1023,7 +1023,7 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
              ctime(&state.next_segment_time));
 
   session_registry.set_update_in_progress(true);
-  if (!fakeit) do_turn(entity_manager, session_registry, 1);
+  if (!fakeit) do_turn(entity_manager, session_registry, true);
   session_registry.set_update_in_progress(false);
   clk = time(nullptr);
   std::string finish_msg = std::format("{}Update {} finished\n", ctime(&clk),
@@ -1073,7 +1073,7 @@ void do_segment(EntityManager& entity_manager,
   }
 
   session_registry.set_update_in_progress(true);
-  if (!fakeit) do_turn(entity_manager, session_registry, 0);
+  if (!fakeit) do_turn(entity_manager, session_registry, false);
   session_registry.set_update_in_progress(false);
   schedule_info.last_segment_time = clk;
   schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",

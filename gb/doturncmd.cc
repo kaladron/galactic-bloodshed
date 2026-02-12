@@ -7,10 +7,8 @@ module;
 import gblib;
 import std.compat;
 
-#include <strings.h>
 #include <sys/stat.h>
 #include <cassert>
-#include <cstdio>
 
 #include "gb/files.h"
 
@@ -1010,14 +1008,14 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
   schedule_info.last_update_time = clk;
   schedule_info.update_buf = std::format(
       "Last Update {0:3d} : {1}", schedule_info.nupdates_done, ctime(&clk));
-  std::print(stderr, "{}", ctime(&clk));
-  std::print(stderr, "Next Update {0:3d} : {1}",
+  std::print(std::cerr, "{}", ctime(&clk));
+  std::print(std::cerr, "Next Update {0:3d} : {1}",
              schedule_info.nupdates_done + 1, ctime(&state.next_update_time));
   schedule_info.last_segment_time = clk;
   schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",
                                           state.nsegments_done, ctime(&clk));
-  std::print(stderr, "{}", ctime(&clk));
-  std::print(stderr, "Next Segment {0:2d} : {1}",
+  std::print(std::cerr, "{}", ctime(&clk));
+  std::print(std::cerr, "Next Segment {0:2d} : {1}",
              state.nsegments_done == state.segments ? 1
                                                     : state.nsegments_done + 1,
              ctime(&state.next_segment_time));
@@ -1078,8 +1076,8 @@ void do_segment(EntityManager& entity_manager,
   schedule_info.last_segment_time = clk;
   schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",
                                           state.nsegments_done, ctime(&clk));
-  std::print(stderr, "{0}", ctime(&clk));
-  std::print(stderr, "Next Segment {0:2d} : {1}", state.nsegments_done,
+  std::print(std::cerr, "{0}", ctime(&clk));
+  std::print(std::cerr, "Next Segment {0:2d} : {1}", state.nsegments_done,
              ctime(&state.next_segment_time));
   clk = time(nullptr);
   std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));

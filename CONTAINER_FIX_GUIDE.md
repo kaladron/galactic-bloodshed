@@ -2,76 +2,64 @@
 
 ## TL;DR - What You Need to Do
 
-**Yes, you should fix this in the container instead of using `--user root`!** Here's what needs to change in your container image (`ghcr.io/kaladron/cpp-image/dev-env:latest`).
+**YES, you should fix this in the container instead of using `--user root`!**
+
+Your container **already creates a user** with proper sudo access, but uses **UID 1000** instead of the **UID 1001** that GitHub Actions expects.
 
 ## The Problem
 
-GitHub Actions mounts workspace directories with the runner user's UID (typically 1001). Your container runs as a different user by default, causing permission conflicts. The current workaround (`--user root`) works but violates the principle of least privilege.
-
-## The Solution: Two Approaches
-
-### Option 1: Set Default User to UID 1001 (Recommended)
-
-Add this to your Dockerfile:
-
+Your container's Dockerfile has:
 ```dockerfile
-# Create a user that matches GitHub Actions runner UID
-RUN groupadd -g 1001 runner && \
-    useradd -m -u 1001 -g runner runner
+ARG USER_UID=1000  # ← GitHub Actions needs 1001
+ARG USER_GID=$USER_UID
 
-# Switch to the runner user
-USER 1001
+# ... creates vscode user with UID 1000 ...
+USER $USERNAME  # ← Runs as UID 1000
 ```
 
-**Place this near the end of your Dockerfile**, after installing all system packages but before any USER-specific setup.
+GitHub Actions mounts workspace directories with UID 1001, causing permission conflicts. The current workaround (`--user root`) works but violates the principle of least privilege.
 
-### Option 2: Make Directories World-Writable (Less secure, but simpler)
+## Solution Options
 
-If you need the container to work with multiple UIDs:
+### Option 1: Change Default UID to 1001 (Recommended - Easiest!)
 
-```dockerfile
-# Make common working directories writable by all users
-RUN mkdir -p /workspace && \
-    chmod 777 /workspace
-```
-
-Then set `WORKDIR /workspace` and ensure temp directories are writable.
-
-## Detailed Implementation (Option 1 - Recommended)
-
-Here's a complete example for your Dockerfile:
+**Simplest fix!** Just change one line in your Dockerfile:
 
 ```dockerfile
-# ... existing Dockerfile content ...
-# (all your LLVM, CMake, dependencies, etc.)
+# BEFORE:
+ARG USER_UID=1000
 
-# Near the end, before the final USER directive:
-
-# Create runner user matching GitHub Actions UID/GID
-RUN groupadd -g 1001 runner && \
-    useradd -m -u 1001 -g runner -s /bin/bash runner && \
-    # Give runner user sudo access if needed for dev work
-    echo "runner ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner && \
-    chmod 0440 /etc/sudoers.d/runner
-
-# Create directories that might be needed and set ownership
-RUN mkdir -p /workspace /home/runner/.cache && \
-    chown -R runner:runner /home/runner
-
-# Set the default user
-USER runner
-
-# Set working directory
-WORKDIR /home/runner
+# AFTER:
+ARG USER_UID=1001
 ```
 
-## After Updating the Container
+**That's it!** Your existing user creation logic will use UID 1001. Rebuild and push.
 
-Once you rebuild and push the updated container:
+**Why this is best:**
+- ✅ Minimal change (1 line)
+- ✅ Works for both GitHub Actions and local dev
+- ✅ Keeps all your existing user setup
+- ✅ No changes to devcontainer needed
 
-### 1. Remove the `--user root` workaround
+### Option 2: Build with --build-arg
 
-In `.github/workflows/ci.yml`, change:
+Keep your Dockerfile as-is, but when building for CI, use:
+
+```bash
+docker build \
+  --build-arg USER_UID=1001 \
+  -t ghcr.io/kaladron/cpp-image/dev-env:latest \
+  .
+```
+
+**Why use this:**
+- ✅ Doesn't change default UID (stays 1000 for local dev)
+- ⚠️ Need to remember build arg every time
+- ⚠️ May confuse developers who rebuild locally
+
+### Option 3: Use --user 1001 in Workflow
+
+Don't change the container, but in `.github/workflows/ci.yml`:
 
 ```yaml
 container:
@@ -79,54 +67,55 @@ container:
   credentials:
     username: ${{ github.actor }}
     password: ${{ secrets.GITHUB_TOKEN }}
-  options: --user root  # ← Remove this line
+  options: --user 1001:1001  # ← Changed from "root"
 ```
 
-To:
+**Why use this:**
+- ✅ No container rebuild needed
+- ✅ Safer than `--user root`
+- ⚠️ Container still has UID 1000 user, but we override it
+- ⚠️ May cause issues if scripts assume `$HOME` or username
+
+### Option 4: Keep Using Root (Not Recommended)
+
+The current workaround works but violates security best practices:
 
 ```yaml
-container:
-  image: ghcr.io/kaladron/cpp-image/dev-env:latest
-  credentials:
-    username: ${{ github.actor }}
-    password: ${{ secrets.GITHUB_TOKEN }}
-  # No options needed - container already runs as UID 1001
+options: --user root  # ← Current workaround
 ```
 
-### 2. Update the Install Dependencies Step (Important!)
+**Why avoid this:**
+- ❌ Violates principle of least privilege
+- ❌ Security risk if any step has vulnerabilities
+- ⚠️ Only use as temporary solution
 
-Since the container will no longer run as root by default, you'll need to use `sudo` for system package installations:
+## Bonus Optimization: Bake Dependencies Into Container
 
-```yaml
-- name: Install dependencies
-  run: |
-    sudo apt-get update
-    sudo apt-get install -y libsqlite3-dev
-    # Create symlinks (these may also need sudo depending on permissions)
-    sudo ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld
-    sudo ln -sf /usr/bin/lld-22 /usr/bin/lld
-    sudo ln -sf /usr/bin/clang-scan-deps-22 /usr/bin/clang-scan-deps
-    sudo ln -sf /usr/bin/clang-format-22 /usr/bin/clang-format
-    sudo mkdir -p /lib/share/libc++
-    sudo ln -sf /usr/lib/llvm-22/share/libc++/v1 /lib/share/libc++/v1
+Your CI workflow runs these steps on **every** CI run:
+
+```bash
+apt-get update
+apt-get install -y libsqlite3-dev
+ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld
+ln -sf /usr/bin/lld-22 /usr/bin/lld
+ln -sf /usr/bin/clang-scan-deps-22 /usr/bin/clang-scan-deps
+ln -sf /usr/bin/clang-format-22 /usr/bin/clang-format
+mkdir -p /lib/share/libc++
+ln -sf /usr/lib/llvm-22/share/libc++/v1 /lib/share/libc++/v1
 ```
 
-**OR BETTER**: Move these installations/symlinks into the Dockerfile itself so they're baked into the container!
+**Move these into your Dockerfile** for much faster CI!
 
-## Even Better: Bake Dependencies Into Container
-
-The ideal solution is to move the "Install dependencies" step entirely into your container build:
+Add this to your Dockerfile, **after the LLVM installation and before the USER switch**:
 
 ```dockerfile
-# In your Dockerfile, add:
+# Install project-specific dependencies and create symlinks
 RUN apt-get update && \
-    apt-get install -y libsqlite3-dev && \
-    # Create symlinks for lld linker
+    apt-get install -y --no-install-recommends libsqlite3-dev && \
+    # Create symlinks for LLVM tools
     ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld && \
     ln -sf /usr/bin/lld-22 /usr/bin/lld && \
-    # Update clang-scan-deps
     ln -sf /usr/bin/clang-scan-deps-22 /usr/bin/clang-scan-deps && \
-    # Create symlink for clang-format
     ln -sf /usr/bin/clang-format-22 /usr/bin/clang-format && \
     # Create C++ standard library modules symlink
     mkdir -p /lib/share/libc++ && \
@@ -134,90 +123,149 @@ RUN apt-get update && \
     # Clean up to reduce image size
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# This should go BEFORE your existing USER $USERNAME line
 ```
 
-Then you can **completely remove** the "Install dependencies" step from your CI workflow!
+Then **delete the entire "Install dependencies" step** from your CI workflow!
 
-## Complete Dockerfile Example Structure
+## Complete Dockerfile Example
+
+Here's what your Dockerfile should look like with all recommendations:
 
 ```dockerfile
-FROM ubuntu:24.04
+# ... your existing content up to LLVM installation ...
 
-# Install system packages and build tools
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    ninja-build \
-    clang-22 \
-    libc++-22-dev \
-    libc++abi-22-dev \
-    lld-22 \
-    libsqlite3-dev \
-    git \
-    # ... other dependencies ...
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Install LLVM apt repository and full clang 22 toolchain plus ninja-build
+# ... your existing LLVM installation code ...
 
-# Create all necessary symlinks
-RUN ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld && \
+# Install project-specific dependencies and create symlinks
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libsqlite3-dev && \
+    ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld && \
     ln -sf /usr/bin/lld-22 /usr/bin/lld && \
     ln -sf /usr/bin/clang-scan-deps-22 /usr/bin/clang-scan-deps && \
     ln -sf /usr/bin/clang-format-22 /usr/bin/clang-format && \
     mkdir -p /lib/share/libc++ && \
-    ln -sf /usr/lib/llvm-22/share/libc++/v1 /lib/share/libc++/v1
+    ln -sf /usr/lib/llvm-22/share/libc++/v1 /lib/share/libc++/v1 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Create runner user (matching GitHub Actions UID)
-RUN groupadd -g 1001 runner && \
-    useradd -m -u 1001 -g runner -s /bin/bash runner && \
-    echo "runner ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner && \
-    chmod 0440 /etc/sudoers.d/runner
+# ... your existing oh-my-zsh installation ...
 
-# Switch to runner user
-USER runner
-WORKDIR /home/runner
+# Update CA certificates
+RUN update-ca-certificates
 
-# Set environment variables if needed
-ENV CXX=clang++-22
-ENV CC=clang-22
+# Change default UID to match GitHub Actions
+ARG USERNAME=vscode
+ARG USER_UID=1001  # ← Changed from 1000
+ARG USER_GID=$USER_UID
+
+# ... rest of your existing user creation code stays the same ...
+
+USER $USERNAME
 ```
 
-## Benefits of This Approach
+## After Container Update
 
-1. **Security**: Follows principle of least privilege - no root access needed
-2. **Simplicity**: Cleaner CI workflow with fewer steps
-3. **Speed**: No package installation on every CI run
-4. **Consistency**: Same environment everywhere (CI, devcontainer, local)
-5. **Debugging**: Easier to reproduce CI issues locally
+### If Using Option 1 (Changed UID to 1001):
 
-## Migration Steps
+Update `.github/workflows/ci.yml`:
 
-1. **Update your container Dockerfile** with the changes above
-2. **Rebuild the container**: `docker build -t ghcr.io/kaladron/cpp-image/dev-env:latest .`
-3. **Push to registry**: `docker push ghcr.io/kaladron/cpp-image/dev-env:latest`
-4. **Update `.github/workflows/ci.yml`**: Remove `options: --user root` and simplify/remove install step
-5. **Test**: Push a commit and verify CI passes
-6. **Update `.devcontainer/devcontainer.json`** if needed (should work automatically since it uses same image)
+```yaml
+container:
+  image: ghcr.io/kaladron/cpp-image/dev-env:latest
+  credentials:
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+  # Remove: options: --user root
+```
+
+If you baked dependencies in:
+```yaml
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v4
+  
+  # DELETE the "Install dependencies" step entirely!
+  
+  - name: Configure CMake
+    # ... rest of your workflow ...
+```
+
+If dependencies aren't baked in, add `sudo`:
+```yaml
+- name: Install dependencies
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y libsqlite3-dev
+    # ... etc
+```
+
+### If Using Option 2 (Build Arg):
+
+Same as Option 1, but remember to build with `--build-arg USER_UID=1001`.
+
+### If Using Option 3 (--user 1001):
+
+Just change the one line in ci.yml:
+```yaml
+options: --user 1001:1001  # Changed from "root"
+```
+
+Keep the "Install dependencies" step as-is (no sudo needed since running as root-like).
 
 ## Testing Your Container Changes Locally
 
 Before pushing to the registry:
 
 ```bash
-# Build the container
-docker build -t test-container .
+# Build the container (with UID 1001 if using Option 1 or 2)
+docker build --build-arg USER_UID=1001 -t test-container .
 
 # Test that it runs as UID 1001
 docker run --rm test-container id
-# Should output: uid=1001(runner) gid=1001(runner) groups=1001(runner)
+# Should output: uid=1001(vscode) gid=1001(vscode) groups=1001(vscode)
 
 # Test file permissions work
 docker run --rm -v $(pwd):/workspace test-container bash -c "cd /workspace && touch test.txt && rm test.txt"
 # Should succeed without permission errors
 
 # Test building your project
-docker run --rm -v $(pwd):/workspace test-container bash -c "cd /workspace && cmake -B build && cmake --build build"
+docker run --rm -v $(pwd):/workspace -w /workspace test-container bash -c "cmake -B build && cmake --build build"
 ```
 
-## Questions or Issues?
+## Benefits of Proper Solution
 
-If you run into any issues updating the container, let me know and I can help troubleshoot!
+1. **Security**: Follows principle of least privilege - no root access needed
+2. **Speed**: No package installation on every CI run (if dependencies baked in)
+3. **Simplicity**: Cleaner CI workflow with fewer steps
+4. **Consistency**: Same environment everywhere (CI, devcontainer, local)
+5. **Debugging**: Easier to reproduce CI issues locally
+6. **Maintainability**: Fewer moving parts in the workflow
+
+## Migration Checklist
+
+- [ ] Decide which option (1, 2, or 3) to use
+- [ ] If Option 1: Change `ARG USER_UID=1001` in Dockerfile
+- [ ] If Option 2: Update build command to use `--build-arg USER_UID=1001`
+- [ ] **Recommended**: Add libsqlite3-dev and symlinks to Dockerfile
+- [ ] Rebuild container: `docker build -t ghcr.io/kaladron/cpp-image/dev-env:latest .`
+- [ ] Test locally (see commands above)
+- [ ] Push to registry: `docker push ghcr.io/kaladron/cpp-image/dev-env:latest`
+- [ ] Update `.github/workflows/ci.yml` (remove `--user root` or change to `--user 1001:1001`)
+- [ ] If dependencies baked in: Delete "Install dependencies" step
+- [ ] If dependencies not baked in: Add `sudo` before commands
+- [ ] Test: Push a commit and verify CI passes
+- [ ] Update `.devcontainer/devcontainer.json` if needed (should work automatically)
+
+## Recommendation
+
+**Use Option 1** (change default UID to 1001) + bake in dependencies. This gives you:
+- Simplest implementation
+- Best security
+- Fastest CI
+- Most consistent across environments
+
+## Questions?
+
+If you have questions about any of these options, feel free to ask!

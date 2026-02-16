@@ -50,6 +50,9 @@ compile_commands.json
 !WHATSNEW.md
 !DEVELOPERGUIDE.md
 !ARCHITECTURE.md
+!CONTAINER_FIX_GUIDE.md
+!CONTAINER_SOLUTION.md
+!CONTAINER_CHANGES_NEEDED.md
 # And all help files
 !help/*.md
 

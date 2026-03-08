@@ -41,9 +41,8 @@ void relation(const command_t& argv, GameObj& g) {
                        race->name);
   g.out << " #       know             Race name       Yours        Theirs\n";
   g.out << " -       ----             ---------       -----        ------\n";
-  for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-    const auto* r = g.entity_manager.peek_race(i);
-    if (!r || r->Playernum == race->Playernum) continue;
+  for (const Race* r : RaceList::readonly(g.entity_manager)) {
+    if (r->Playernum == race->Playernum) continue;
     g.out << std::format(
         "{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n", r->Playernum,
         ((race->God || (race->translate[r->Playernum.value - 1] > 30)) &&

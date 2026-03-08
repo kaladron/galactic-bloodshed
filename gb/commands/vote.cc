@@ -14,9 +14,8 @@ void show_votes(GameObj& g) {
   int nays = 0;
   int yays = 0;
 
-  for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-    const auto* race = g.entity_manager.peek_race(i);
-    if (!race || race->God || race->Guest) continue;
+  for (const Race* race : RaceList::readonly(g.entity_manager)) {
+    if (race->God || race->Guest) continue;
     nvotes++;
     if (race->votes) {
       yays++;
@@ -45,9 +44,8 @@ void check_votes(GameObj& g) {
   int nays = 0;
   int yays = 0;
   int nvotes = 0;
-  for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-    const auto* r = g.entity_manager.peek_race(i);
-    if (!r || r->God || r->Guest) continue;
+  for (const Race* r : RaceList::readonly(g.entity_manager)) {
+    if (r->God || r->Guest) continue;
     nvotes++;
     if (r->votes) {
       yays++;

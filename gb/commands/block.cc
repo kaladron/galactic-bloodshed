@@ -108,10 +108,8 @@ void block(const command_t& argv, GameObj& g) {
                    "fuel", "dest", "know"});
     table[0].format().font_style({tabulate::FontStyle::bold});
 
-    for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-      if (!isset(allied_members, i)) continue;
-      const auto* r = g.entity_manager.peek_race(i);
-      if (!r || r->dissolved) continue;
+    for (const Race* r : RaceList::readonly(g.entity_manager)) {
+      if (!isset(allied_members, r->Playernum) || r->dissolved) continue;
       const auto* power_ptr = g.entity_manager.peek_power(r->Playernum.value);
       if (!power_ptr) continue;
 

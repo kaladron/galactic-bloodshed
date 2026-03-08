@@ -255,6 +255,28 @@ g.out << std::format("{:<15} {:>5} {:>5}\n", name, crew, tech);
 
 **IMPORTANT:** The codebase is migrating from global arrays and direct file I/O to an EntityManager-based architecture. Use the new patterns below for all new code.
 
+#### Entity List Iteration Pattern
+
+Use entity list helpers when scanning collections managed by `EntityManager`:
+
+```cpp
+// Read-only iteration: prefer ::readonly(...)
+for (const Race* race : RaceList::readonly(g.entity_manager)) {
+  g.out << std::format("{}\n", race->name);
+}
+
+// Mutable iteration: use the writable list form
+for (auto race_handle : RaceList(g.entity_manager)) {
+  race_handle->tech += 1.0;
+}
+```
+
+Rules:
+- Use `XxxList::readonly(...)` for read-only iteration over `RaceList`, `StarList`, `PlanetList`, `CommodList`, and new `ShipList` call sites.
+- Do not introduce new `const XxxList` loops for read-only access; they are transitional and being removed.
+- Keep numeric loops when the code genuinely needs explicit indices for side arrays or bookkeeping.
+- Keep mutable loops in the RAII handle form so auto-save behavior is preserved.
+
 #### Modern Pattern: EntityManager (Use This!)
 
 The `EntityManager` provides centralized, RAII-based entity lifecycle management:

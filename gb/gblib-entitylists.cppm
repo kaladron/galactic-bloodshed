@@ -9,6 +9,11 @@
  * entities with automatic save-on-scope-exit semantics through EntityHandle.
  *
  * Usage:
+ *   // Read-only iteration is explicit and cheap
+ *   for (const Race* race : RaceList::readonly(entity_manager)) {
+ *     observe(*race);
+ *   }
+ *
  *   // Iterate over all races with RAII auto-save
  *   for (auto race_handle : RaceList(entity_manager)) {
  *     race_handle->tech += 1.0;  // Marks dirty, will auto-save
@@ -30,6 +35,12 @@
  * ShipList::IterationType::AllAlive)) { ship_handle->fuel += 10;  // Marks
  * dirty, will auto-save
  *   }
+ *
+ * Conventions:
+ *   - Prefer `XxxList::readonly(...)` for read-only iteration.
+ *   - Use `XxxList(...)` only when you need mutable RAII handles.
+ *   - Keep explicit numeric loops only when caller logic needs stable indices
+ *     for side arrays or bookkeeping.
  */
 
 export module gblib:entitylists;
@@ -548,8 +559,8 @@ private:
  * Provides automatic save-on-scope-exit semantics through ShipHandle.
  *
  * Usage:
- *   // Read-only iteration (const ShipList)
- *   const ShipList ships(g.entity_manager, ship.ships);
+ *   // Read-only iteration
+ *   auto ships = ShipList::readonly(g.entity_manager, ship.ships);
  *   for (const Ship* ship : ships) {
  *     g.out << ship->name << "\n";  // Read-only, no modifications allowed
  *   }

@@ -31,6 +31,9 @@ public:
   void commit();
   void rollback();
 
+  // Run lightweight SQLite maintenance
+  void optimize();
+
   // Check if database is open
   bool is_open() const {
     return conn != nullptr;

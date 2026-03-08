@@ -52,6 +52,9 @@ int main() {
     db.begin_transaction();
     db.rollback();
     std::println("✓ Can rollback transaction");
+
+    db.optimize();
+    std::println("✓ Can optimize database");
   }
 
   // Test 4: Move semantics

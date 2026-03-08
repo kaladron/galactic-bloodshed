@@ -208,6 +208,9 @@ public:
   // Flush all dirty entities to database
   void flush_all();
 
+  // Run database maintenance after turn processing
+  void optimize();
+
   // Clear cache (for testing or after turn processing)
   void clear_cache();
 

@@ -118,6 +118,9 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
 
   finalize_turn(state, update);
 
+  // Run SQLite maintenance after turn writes complete.
+  entity_manager.optimize();
+
   // Clear cache to free memory after turn completes
   entity_manager.clear_cache();
 }

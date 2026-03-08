@@ -120,6 +120,21 @@ void Database::rollback() {
   }
 }
 
+void Database::optimize() {
+  if (!conn) {
+    throw std::runtime_error("Database not open");
+  }
+
+  char* errmsg = nullptr;
+  int rc = sqlite3_exec(conn, "PRAGMA optimize;", nullptr, nullptr, &errmsg);
+  if (rc != SQLITE_OK) {
+    std::string error = errmsg ? errmsg : "Unknown error";
+    sqlite3_free(errmsg);
+    throw std::runtime_error(
+        std::format("Failed to optimize database: {}", error));
+  }
+}
+
 // News operations implementation
 std::optional<int> Database::news_add(int type, const std::string& message,
                                       int64_t timestamp) {

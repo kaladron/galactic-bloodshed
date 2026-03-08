@@ -520,6 +520,10 @@ void EntityManager::flush_all() {
   }
 }
 
+void EntityManager::optimize() {
+  db.optimize();
+}
+
 void EntityManager::clear_cache() {
   // Clear entities that have no active handles (refcount == 0)
   // Keep entities with active handles to avoid breaking those handles

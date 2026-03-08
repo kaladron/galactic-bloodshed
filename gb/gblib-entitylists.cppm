@@ -44,33 +44,178 @@ import :star;
 import :planet;
 import :ships;
 
-/**
- * Iterator class for races (1-indexed, 1..num_races).
- * Returns EntityHandle<Race> for RAII auto-save behavior.
- *
- * Skips any race slots that don't exist (sparse iteration).
- */
-export class RaceList {
+export template <typename Entity>
+struct EntityListTraits;
+
+export template <typename Derived>
+class ReadonlyFactory {
 public:
-  explicit RaceList(EntityManager& em) : em_(&em), count_(em.num_races()) {}
+  template <typename... Args>
+  static const Derived readonly(Args&&... args) {
+    return Derived(std::forward<Args>(args)...);
+  }
+};
+
+export template <>
+struct EntityListTraits<Race> {
+  using index_type = player_t;
+
+  static index_type count(EntityManager& em) {
+    return em.num_races();
+  }
+
+  static constexpr index_type first_index() {
+    return index_type{1};
+  }
+
+  static index_type end_index(index_type count) {
+    return index_type{count.value + 1};
+  }
+
+  static index_type next(index_type current) {
+    ++current;
+    return current;
+  }
+
+  static EntityHandle<Race> get(EntityManager& em, index_type index) {
+    return em.get_race(index);
+  }
+
+  static const Race* peek(EntityManager& em, index_type index) {
+    return em.peek_race(index);
+  }
+
+  static bool is_valid(const Race* entity) {
+    return entity != nullptr;
+  }
+};
+
+export template <>
+struct EntityListTraits<Star> {
+  using index_type = starnum_t;
+
+  static index_type count(EntityManager& em) {
+    return em.peek_universe()->numstars;
+  }
+
+  static constexpr index_type first_index() {
+    return index_type{0};
+  }
+
+  static index_type end_index(index_type count) {
+    return count;
+  }
+
+  static index_type next(index_type current) {
+    ++current;
+    return current;
+  }
+
+  static EntityHandle<Star> get(EntityManager& em, index_type index) {
+    return em.get_star(index);
+  }
+
+  static const Star* peek(EntityManager& em, index_type index) {
+    return em.peek_star(index);
+  }
+
+  static bool is_valid([[maybe_unused]] const Star* entity) {
+    return true;
+  }
+};
+
+export template <>
+struct EntityListTraits<Commod> {
+  using index_type = int;
+
+  static index_type count(EntityManager& em) {
+    return em.num_commods();
+  }
+
+  static constexpr index_type first_index() {
+    return 1;
+  }
+
+  static index_type end_index(index_type count) {
+    return count + 1;
+  }
+
+  static index_type next(index_type current) {
+    return current + 1;
+  }
+
+  static EntityHandle<Commod> get(EntityManager& em, index_type index) {
+    return em.get_commod(index);
+  }
+
+  static const Commod* peek(EntityManager& em, index_type index) {
+    return em.peek_commod(index);
+  }
+
+  static bool is_valid(const Commod* entity) {
+    return entity && entity->owner.value && entity->amount;
+  }
+};
+
+export template <>
+struct EntityListTraits<Planet> {
+  using primary_key_type = starnum_t;
+  using index_type = planetnum_t;
+
+  static constexpr index_type first_index() {
+    return index_type{0};
+  }
+
+  static index_type end_index(index_type count) {
+    return count;
+  }
+
+  static index_type next(index_type current) {
+    ++current;
+    return current;
+  }
+
+  static EntityHandle<Planet> get(EntityManager& em, primary_key_type primary,
+                                  index_type index) {
+    return em.get_planet(primary, index);
+  }
+
+  static const Planet* peek(EntityManager& em, primary_key_type primary,
+                            index_type index) {
+    return em.peek_planet(primary, index);
+  }
+
+  static bool is_valid([[maybe_unused]] const Planet* entity) {
+    return true;
+  }
+};
+
+export template <typename Entity, typename Derived>
+class SimpleEntityList : public ReadonlyFactory<Derived> {
+public:
+  using traits_type = EntityListTraits<Entity>;
+  using index_type = typename traits_type::index_type;
+
+  explicit SimpleEntityList(EntityManager& em)
+      : em_(&em), count_(traits_type::count(em)) {}
 
   class Iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = EntityHandle<Race>;
+    using value_type = EntityHandle<Entity>;
     using difference_type = std::ptrdiff_t;
 
-    Iterator(EntityManager* em, player_t current, player_t end)
+    Iterator(EntityManager* em, index_type current, index_type end)
         : em_(em), current_(current), end_(end) {
       advance_to_valid();
     }
 
-    EntityHandle<Race> operator*() {
-      return em_->get_race(current_);
+    value_type operator*() {
+      return traits_type::get(*em_, current_);
     }
 
     Iterator& operator++() {
-      ++current_;
+      current_ = traits_type::next(current_);
       advance_to_valid();
       return *this;
     }
@@ -85,137 +230,264 @@ public:
 
   private:
     void advance_to_valid() {
-      while (current_ <= end_ && !em_->peek_race(current_)) {
-        ++current_;
+      while (current_ != end_ &&
+             !traits_type::is_valid(traits_type::peek(*em_, current_))) {
+        current_ = traits_type::next(current_);
       }
     }
 
     EntityManager* em_;
-    player_t current_;
-    player_t end_;
+    index_type current_;
+    index_type end_;
+  };
+
+  class ConstIterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const Entity*;
+    using difference_type = std::ptrdiff_t;
+
+    ConstIterator(EntityManager* em, index_type current, index_type end)
+        : em_(em), current_(current), end_(end) {
+      advance_to_valid();
+    }
+
+    const Entity* operator*() const {
+      return traits_type::peek(*em_, current_);
+    }
+
+    ConstIterator& operator++() {
+      current_ = traits_type::next(current_);
+      advance_to_valid();
+      return *this;
+    }
+
+    bool operator!=(const ConstIterator& other) const {
+      return current_ != other.current_;
+    }
+
+    bool operator==(const ConstIterator& other) const {
+      return current_ == other.current_;
+    }
+
+  private:
+    void advance_to_valid() {
+      while (current_ != end_ &&
+             !traits_type::is_valid(traits_type::peek(*em_, current_))) {
+        current_ = traits_type::next(current_);
+      }
+    }
+
+    EntityManager* em_;
+    index_type current_;
+    index_type end_;
   };
 
   Iterator begin() {
-    return Iterator(em_, 1, count_);
+    return {em_, traits_type::first_index(), traits_type::end_index(count_)};
   }
+
   Iterator end() {
-    return Iterator(em_, count_.value + 1, count_);
+    const auto endIndex = traits_type::end_index(count_);
+    return {em_, endIndex, endIndex};
+  }
+
+  ConstIterator begin() const {
+    return {em_, traits_type::first_index(), traits_type::end_index(count_)};
+  }
+
+  ConstIterator end() const {
+    const auto endIndex = traits_type::end_index(count_);
+    return {em_, endIndex, endIndex};
+  }
+
+  ConstIterator cbegin() const {
+    return begin();
+  }
+
+  ConstIterator cend() const {
+    return end();
   }
 
 private:
   EntityManager* em_;
-  player_t count_;
+  index_type count_;
+};
+
+export template <typename Entity, typename Derived>
+class CompositeEntityList : public ReadonlyFactory<Derived> {
+public:
+  using traits_type = EntityListTraits<Entity>;
+  using primary_key_type = typename traits_type::primary_key_type;
+  using index_type = typename traits_type::index_type;
+
+  CompositeEntityList(EntityManager& em, primary_key_type primary_key,
+                      index_type count)
+      : em_(&em), primary_key_(primary_key), count_(count) {}
+
+  class Iterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = EntityHandle<Entity>;
+    using difference_type = std::ptrdiff_t;
+
+    Iterator(EntityManager* em, primary_key_type primary_key,
+             index_type current, index_type end)
+        : em_(em), primary_key_(primary_key), current_(current), end_(end) {
+      advance_to_valid();
+    }
+
+    value_type operator*() {
+      return traits_type::get(*em_, primary_key_, current_);
+    }
+
+    Iterator& operator++() {
+      current_ = traits_type::next(current_);
+      advance_to_valid();
+      return *this;
+    }
+
+    bool operator!=(const Iterator& other) const {
+      return current_ != other.current_;
+    }
+
+    bool operator==(const Iterator& other) const {
+      return current_ == other.current_;
+    }
+
+  private:
+    void advance_to_valid() {
+      while (current_ != end_ && !traits_type::is_valid(traits_type::peek(
+                                     *em_, primary_key_, current_))) {
+        current_ = traits_type::next(current_);
+      }
+    }
+
+    EntityManager* em_;
+    primary_key_type primary_key_;
+    index_type current_;
+    index_type end_;
+  };
+
+  class ConstIterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const Entity*;
+    using difference_type = std::ptrdiff_t;
+
+    ConstIterator(EntityManager* em, primary_key_type primary_key,
+                  index_type current, index_type end)
+        : em_(em), primary_key_(primary_key), current_(current), end_(end) {
+      advance_to_valid();
+    }
+
+    const Entity* operator*() const {
+      return traits_type::peek(*em_, primary_key_, current_);
+    }
+
+    ConstIterator& operator++() {
+      current_ = traits_type::next(current_);
+      advance_to_valid();
+      return *this;
+    }
+
+    bool operator!=(const ConstIterator& other) const {
+      return current_ != other.current_;
+    }
+
+    bool operator==(const ConstIterator& other) const {
+      return current_ == other.current_;
+    }
+
+  private:
+    void advance_to_valid() {
+      while (current_ != end_ && !traits_type::is_valid(traits_type::peek(
+                                     *em_, primary_key_, current_))) {
+        current_ = traits_type::next(current_);
+      }
+    }
+
+    EntityManager* em_;
+    primary_key_type primary_key_;
+    index_type current_;
+    index_type end_;
+  };
+
+  Iterator begin() {
+    return {em_, primary_key_, traits_type::first_index(),
+            traits_type::end_index(count_)};
+  }
+
+  Iterator end() {
+    const auto endIndex = traits_type::end_index(count_);
+    return {em_, primary_key_, endIndex, endIndex};
+  }
+
+  ConstIterator begin() const {
+    return {em_, primary_key_, traits_type::first_index(),
+            traits_type::end_index(count_)};
+  }
+
+  ConstIterator end() const {
+    const auto endIndex = traits_type::end_index(count_);
+    return {em_, primary_key_, endIndex, endIndex};
+  }
+
+  ConstIterator cbegin() const {
+    return begin();
+  }
+
+  ConstIterator cend() const {
+    return end();
+  }
+
+private:
+  EntityManager* em_;
+  primary_key_type primary_key_;
+  index_type count_;
+};
+
+/**
+ * Iterator class for races (1-indexed, 1..num_races).
+ * Returns EntityHandle<Race> for RAII auto-save behavior.
+ *
+ * Skips any race slots that don't exist (sparse iteration).
+ */
+export class RaceList : public SimpleEntityList<Race, RaceList> {
+public:
+  using Base = SimpleEntityList<Race, RaceList>;
+  using Base::Base;
+  using Iterator = typename Base::Iterator;
+  using ConstIterator = typename Base::ConstIterator;
 };
 
 /**
  * Iterator class for stars (0-indexed, 0..numstars-1).
  * Returns EntityHandle<Star> for RAII auto-save behavior.
  */
-export class StarList {
+export class StarList : public SimpleEntityList<Star, StarList> {
 public:
-  explicit StarList(EntityManager& em)
-      : em_(&em), count_(em.peek_universe()->numstars) {}
-
-  class Iterator {
-  public:
-    using iterator_category = std::forward_iterator_tag;
-    using value_type = EntityHandle<Star>;
-    using difference_type = std::ptrdiff_t;
-
-    Iterator(EntityManager* em, starnum_t current,
-             [[maybe_unused]] starnum_t end)
-        : em_(em), current_(current) {}
-
-    EntityHandle<Star> operator*() {
-      return em_->get_star(current_);
-    }
-
-    Iterator& operator++() {
-      ++current_;
-      return *this;
-    }
-
-    bool operator!=(const Iterator& other) const {
-      return current_ != other.current_;
-    }
-
-    bool operator==(const Iterator& other) const {
-      return current_ == other.current_;
-    }
-
-  private:
-    EntityManager* em_;
-    starnum_t current_;
-  };
-
-  Iterator begin() {
-    return Iterator(em_, 0, count_);
-  }
-  Iterator end() {
-    return Iterator(em_, count_, count_);
-  }
-
-private:
-  EntityManager* em_;
-  starnum_t count_;
+  using Base = SimpleEntityList<Star, StarList>;
+  using Base::Base;
+  using Iterator = typename Base::Iterator;
+  using ConstIterator = typename Base::ConstIterator;
 };
 
 /**
  * Iterator class for planets of a star (0-indexed, 0..numplanets-1).
  * Returns EntityHandle<Planet> for RAII auto-save behavior.
  */
-export class PlanetList {
+export class PlanetList : public CompositeEntityList<Planet, PlanetList> {
 public:
+  using Base = CompositeEntityList<Planet, PlanetList>;
+  using Iterator = typename Base::Iterator;
+  using ConstIterator = typename Base::ConstIterator;
+
   PlanetList(EntityManager& em, starnum_t star, planetnum_t numplanets)
-      : em_(&em), star_(star), count_(numplanets) {}
+      : Base(em, star, numplanets) {}
 
   PlanetList(EntityManager& em, starnum_t star, const Star& star_data)
-      : em_(&em), star_(star), count_(star_data.numplanets()) {}
-
-  class Iterator {
-  public:
-    using iterator_category = std::forward_iterator_tag;
-    using value_type = EntityHandle<Planet>;
-    using difference_type = std::ptrdiff_t;
-
-    Iterator(EntityManager* em, starnum_t star, planetnum_t current,
-             [[maybe_unused]] planetnum_t end)
-        : em_(em), star_(star), current_(current) {}
-
-    EntityHandle<Planet> operator*() {
-      return em_->get_planet(star_, current_);
-    }
-
-    Iterator& operator++() {
-      ++current_;
-      return *this;
-    }
-
-    bool operator!=(const Iterator& other) const {
-      return current_ != other.current_;
-    }
-
-    bool operator==(const Iterator& other) const {
-      return current_ == other.current_;
-    }
-
-  private:
-    EntityManager* em_;
-    starnum_t star_;
-    planetnum_t current_;
-  };
-
-  Iterator begin() {
-    return Iterator(em_, star_, 0, count_);
-  }
-  Iterator end() {
-    return Iterator(em_, star_, count_, count_);
-  }
-
-private:
-  EntityManager* em_;
-  starnum_t star_;
-  planetnum_t count_;
+      : Base(em, star, star_data.numplanets()) {}
 };
 
 /**
@@ -223,65 +495,12 @@ private:
  * Returns EntityHandle<Commod> for RAII auto-save behavior.
  * Only returns valid commodities (non-null, has owner, has amount).
  */
-export class CommodList {
+export class CommodList : public SimpleEntityList<Commod, CommodList> {
 public:
-  explicit CommodList(EntityManager& em) : em_(&em), count_(em.num_commods()) {}
-
-  class Iterator {
-  public:
-    using iterator_category = std::forward_iterator_tag;
-    using value_type = EntityHandle<Commod>;
-    using difference_type = std::ptrdiff_t;
-
-    Iterator(EntityManager* em, int current, int end)
-        : em_(em), current_(current), end_(end) {
-      advance_to_valid();
-    }
-
-    EntityHandle<Commod> operator*() {
-      return em_->get_commod(current_);
-    }
-
-    Iterator& operator++() {
-      ++current_;
-      advance_to_valid();
-      return *this;
-    }
-
-    bool operator!=(const Iterator& other) const {
-      return current_ != other.current_;
-    }
-
-    bool operator==(const Iterator& other) const {
-      return current_ == other.current_;
-    }
-
-  private:
-    void advance_to_valid() {
-      while (current_ <= end_) {
-        const auto* c = em_->peek_commod(current_);
-        if (c && c->owner.value && c->amount) {
-          return;  // Found valid commodity
-        }
-        ++current_;
-      }
-    }
-
-    EntityManager* em_;
-    int current_;
-    int end_;
-  };
-
-  Iterator begin() {
-    return {em_, 1, count_};
-  }
-  Iterator end() {
-    return {em_, count_ + 1, count_};
-  }
-
-private:
-  EntityManager* em_;
-  int count_;
+  using Base = SimpleEntityList<Commod, CommodList>;
+  using Base::Base;
+  using Iterator = typename Base::Iterator;
+  using ConstIterator = typename Base::ConstIterator;
 };
 
 // ============================================================================
@@ -342,7 +561,7 @@ private:
  *     s.fuel += 10;  // Marks dirty, will auto-save
  *   }
  */
-export class ShipList {
+export class ShipList : public ReadonlyFactory<ShipList> {
 public:
   enum class IterationType {
     Nested,   ///< Follow ship.ships linked list

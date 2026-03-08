@@ -148,6 +148,28 @@ int main() {
                  count);
   }
 
+  // Test 2a: Scope iteration without GameObj defaults to universe scope
+  {
+    ShipList list(ctx.em, 1, ShipList::IterationType::Scope);
+    int mutable_count = 0;
+    for (auto handle : list) {
+      mutable_count++;
+      assert(handle->alive());
+    }
+    assert(mutable_count == 6);
+
+    const ShipList readonly_list(ctx.em, 1, ShipList::IterationType::Scope);
+    int readonly_count = 0;
+    for (const Ship* ship : readonly_list) {
+      readonly_count++;
+      assert(ship->alive());
+    }
+    assert(readonly_count == 6);
+
+    std::println(
+        "✓ Test 2a passed: Scope iteration without GameObj defaults to UNIV");
+  }
+
   // Test 2b: Scope iteration at star level
   {
     // Create ships at specific star

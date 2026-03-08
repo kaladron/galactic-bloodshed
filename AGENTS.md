@@ -14,6 +14,12 @@
 - **Dependencies**: Minimal - SQLite3, glaze (JSON), scnlib (parsing)
 - **License**: Apache-2.0
 
+## 🤖 Agent Skills
+
+- **Commit messages**: Use `.github/skills/generate-commit-message/SKILL.md` when asked to draft a commit message or commit summary.
+- **Required workflow**: Always inspect the current git diff first so the proposed message covers the full change set, including tests and refactors.
+- **Output format**: Return commit message suggestions in markdown.
+
 ## 🔨 Building the Project
 
 ### Prerequisites

@@ -62,8 +62,7 @@ void ShipHandle::save() {
 // ShipList constructors
 
 ShipList::ShipList(EntityManager& em, shipnum_t start, IterationType type)
-    : em(&em), start_ship(start), iteration_type(type),
-      scope_level(ScopeLevel::LEVEL_UNIV) {}
+    : em(&em), start_ship(start), iteration_type(type) {}
 
 ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
     : em(&em), start_ship(1),  // Start from ship #1 for scope-based iteration
@@ -72,8 +71,7 @@ ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
 
 // Constructor for All/AllAlive iteration (all ships in game)
 ShipList::ShipList(EntityManager& em, IterationType type)
-    : em(&em), start_ship(1), iteration_type(type),
-      scope_level(ScopeLevel::LEVEL_UNIV) {}
+    : em(&em), start_ship(1), iteration_type(type) {}
 
 // ShipList iterator methods
 

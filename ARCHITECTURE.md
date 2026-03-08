@@ -4,6 +4,38 @@
 
 Galactic Bloodshed uses a clean **n-tier architecture** with clear separation of concerns. Each layer has a single responsibility and communicates only with adjacent layers through well-defined interfaces.
 
+The current implementation is centered on a repository-backed `EntityManager` service rather than a generic `GameDataService`. That is intentional: the codebase needs a pragmatic persistence boundary for game entities, not a large abstraction framework.
+
+## Persistence API Guarantees
+
+These are the architectural guarantees the project is converging toward. Some are already true in code today; the remaining cleanup work is tracked in [plan-database.md](plan-database.md).
+
+1. **SQLite details stay in the DAL.** Raw `sqlite3_*` calls, pragmas, SQL statements, and connection lifecycle belong in `dallib` only.
+2. **Repositories own serialization and table-specific persistence.** A repository may know how a `Race`, `Ship`, or `Planet` maps to storage, but it must not contain game rules.
+3. **EntityManager is the game-facing persistence interface.** Commands and core game logic should load, cache, iterate, mutate, and flush entities through `EntityManager` rather than talking to repositories directly.
+4. **Writable access is RAII-based.** `get_*()` returns a handle whose lifetime controls persistence, and modifications are auto-saved when the handle leaves scope.
+5. **Read-only access is explicit.** `peek_*()` and readonly iterators exist so callers can traverse state without paying writable-handle overhead or implying mutation.
+6. **Lookup semantics are consistent.** The target API is that entity lookup failures are treated as service-layer errors, with user-input paths translating those errors into clear command output.
+7. **Iteration semantics are consistent.** Read-only loops should use explicit readonly patterns; mutable loops should use handle-based patterns.
+
+## Layer Responsibilities
+
+### Data Access Layer
+- Owns SQLite connections, pragmas, transactions, schema creation, and SQL execution.
+- Must not know game rules or command behavior.
+
+### Repository Layer
+- Owns entity-specific persistence, serialization, deserialization, and storage keys.
+- May expose entity-specific queries, but not game-policy decisions.
+
+### Service Layer
+- Owns entity identity, caching, lifecycle management, persistence orchestration, and multi-entity game operations.
+- Is the layer that should present a stable, game-friendly API to commands and turn processing.
+
+### Application Layer
+- Owns parsing, validation of user input, command-scoped error handling, and user-visible output.
+- Must not talk to DAL or repository types directly.
+
 ## Architecture Layers
 
 ```
@@ -337,82 +369,57 @@ Services contain business logic and coordinate operations across multiple reposi
 - Provide high-level game operations
 - Transaction management for complex operations
 
-#### Key Component: GameDataService
+#### Key Component: EntityManager
 
 ```cpp
-export class GameDataService {
-  RaceRepository& races;
-  ShipRepository& ships;
-  PlanetRepository& planets;
-  StarRepository& stars;
-  SectorRepository& sectors;
-  CommodRepository& commods;
-  Database& db;
-  
+export class EntityManager {
 public:
-  GameDataService(/* all repositories */, Database& database);
-  
-  // Entity access (replaces free functions)
-  Race get_race(player_t player);
-  void save_race(const Race& race);
-  
-  std::optional<Ship> get_ship(shipnum_t num);
-  std::optional<Ship> get_ship(const std::string& identifier);
-  void save_ship(const Ship& ship);
-  
-  Planet get_planet(starnum_t star, planetnum_t pnum);
-  void save_planet(const Planet& planet, const Star& star, planetnum_t pnum);
-  
-  Star get_star(starnum_t star);
-  void save_star(const Star& star, starnum_t num);
-  
-  Sector get_sector(const Planet& planet, int x, int y);
-  SectorMap get_sector_map(const Planet& planet);
-  void save_sector_map(const SectorMap& map, const Planet& planet);
-  
-  // Complex business operations
-  Ship build_ship(const ShipType& type, player_t owner, const Location& loc);
-  void transfer_ship(Ship& ship, player_t new_owner);
-  void update_planet_production(Planet& planet, const Star& star);
-  void process_ship_movement(Ship& ship, const Destination& dest);
-  
-  // Multi-entity operations (with transactions)
-  void colonize_planet(Ship& ship, Planet& planet, player_t player);
-  void transfer_resources(Ship& from, Ship& to, const Resources& amount);
+  explicit EntityManager(Database& database);
+
+  // Writable access with RAII persistence
+  EntityHandle<Race> get_race(player_t player);
+  EntityHandle<Ship> get_ship(shipnum_t num);
+  EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
+  EntityHandle<Star> get_star(starnum_t num);
+
+  // Read-only access
+  const Race* peek_race(player_t player);
+  const Ship* peek_ship(shipnum_t num);
+  const Planet* peek_planet(starnum_t star, planetnum_t pnum);
+  const Star* peek_star(starnum_t num);
+
+  // Batch persistence / cache lifecycle
+  void flush_all();
+  void clear_cache();
+  player_t num_races();
+  shipnum_t num_ships();
 };
 ```
 
-#### Complex Operations Example
+`EntityManager` is the practical service boundary for the game. It coordinates repositories, caches loaded entities, provides RAII handles for mutation, and exposes read-only access for inspection and iteration.
 
-Services handle operations that touch multiple entities:
+#### RAII Entity Access
 
 ```cpp
-void GameDataService::colonize_planet(Ship& ship, Planet& planet, player_t player) {
-  db.begin_transaction();
-  try {
-    // Check business rules
-    if (ship.type != OTYPE_COL) {
-      throw std::runtime_error("Only colony ships can colonize");
-    }
-    
-    // Update planet
-    planet.info[player-1].explored = true;
-    planet.slaved_to = player;
-    save_planet(planet, get_star(planet.star), planet.planet_id);
-    
-    // Update ship
-    ship.whatdest = ScopeLevel::LEVEL_PLAN;
-    ship.deststar = planet.star;
-    ship.destpnum = planet.planet_id;
-    save_ship(ship);
-    
-    db.commit();
-  } catch (...) {
-    db.rollback();
-    throw;
-  }
-}
+auto ship_handle = g.entity_manager.get_ship(shipno);
+auto& ship = *ship_handle;
+ship.fuel() += 10.0;
+// Auto-save happens when ship_handle goes out of scope
 ```
+
+#### Read-Only Access
+
+```cpp
+const auto* race = g.entity_manager.peek_race(g.player);
+g.out << std::format("Race: {}\n", race->name);
+```
+
+#### Service Layer Responsibilities In Practice
+- Coordinate repositories behind a game-specific API.
+- Preserve identity/caching guarantees for loaded entities.
+- Support batch flushing after turn processing.
+- Host game-facing persistence operations like entity deletion, news/telegram posting, and other multi-entity actions.
+- Avoid exposing DAL internals upward.
 
 #### Design Principles
 - **Business logic centralization**: All game rules in one place
@@ -449,7 +456,7 @@ struct GameObj {
   planetnum_t pnum;       // Current planet
   shipnum_t shipno;       // Current ship
   
-  GameDataService& data;  // Service layer access
+  EntityManager& entity_manager;  // Service layer access
   std::ostream& out;      // Output stream
 };
 ```
@@ -478,16 +485,17 @@ void examine(const command_t& argv, GameObj& g) {
   }
   
   // 3. Call service layer
-  auto ship = g.data.get_ship(argv[1]);
+  auto shipno = string_to_shipnum(argv[1]);
+  const auto* ship = g.entity_manager.peek_ship(shipno);
   if (!ship) {
     g.out << "Ship not found.\n";
     return;
   }
   
   // 4. Format and display output
-  g.out << std::format("Ship #{}: {}\n", ship->shipnum, ship->name);
-  g.out << std::format("Owner: {}\n", ship->owner);
-  g.out << std::format("Fuel: {}\n", ship->fuel);
+  g.out << std::format("Ship #{}: {}\n", ship->number(), ship->name());
+  g.out << std::format("Owner: {}\n", ship->owner());
+  g.out << std::format("Fuel: {}\n", ship->fuel());
   // ... more output
 }
 
@@ -509,8 +517,8 @@ void examine(const command_t& argv, GameObj& g) {
 
 ```
 Command (examine.cc)
-    ↓ g.data.get_ship(shipnum)
-Service (GameDataService)
+  ↓ g.entity_manager.peek_ship(shipnum)
+Service (EntityManager)
     ↓ ships.find_by_number(shipnum)
 Repository (ShipRepository)
     ↓ store.retrieve("tbl_ship", shipnum)
@@ -524,9 +532,11 @@ Database (SQLite)
 
 ```
 Command (build.cc)
-    ↓ g.data.save_planet(planet, star, pnum)
-Service (GameDataService)
-    ↓ planets.save_at_location(planet, star, pnum)
+  ↓ planet_handle = g.entity_manager.get_planet(star, pnum)
+Service (EntityManager)
+  ↓ planets.find_by_location(star, pnum)
+  ↓ [caller mutates *planet_handle]
+  ↓ [handle destructor triggers save]
 Repository (PlanetRepository)
     ↓ serialize(planet)
     ↓ store.store("tbl_planet", id, json)
@@ -539,22 +549,19 @@ Database (SQLite)
 
 ```
 Command (build.cc)
-    ↓ g.data.build_ship(type, owner, location)
-Service (GameDataService)
+  ↓ g.entity_manager.create_ship(init_data)
+Service (EntityManager)
     ↓ [Check tech requirements]
-    ↓ [Calculate costs]
-    ↓ ships.get_next_ship_number()
-    ↓ [Create ship object]
-    ↓ ships.save_ship(new_ship)
-    ↓ planets.find_by_location(...)
+  ↓ [Create ship object]
+  ↓ ships.next_ship_number()
+  ↓ ships.save(new_ship)
+  ↓ planets.find_by_location(...)
     ↓ [Deduct resources from planet]
-    ↓ planets.save_at_location(planet, ...)
+  ↓ [planet handle persists changes]
 Repository Layer
     ↓ [Multiple repository operations]
 DAL (JsonStore)
-    ↓ [Transaction: BEGIN]
-    ↓ [Multiple SQL statements]
-    ↓ [Transaction: COMMIT]
+  ↓ [Multiple SQL statements]
 Database (SQLite)
 ```
 
@@ -618,23 +625,13 @@ export class ShipRepository { /* ... */ };
 Database db(PKGSTATEDIR "gb.db");
 initialize_schema(db);
 
-JsonStore store(db);
+// Create service boundary
+EntityManager entity_manager(db);
 
-// Create repositories
-RaceRepository races(store);
-ShipRepository ships(store);
-PlanetRepository planets(store);
-StarRepository stars(store);
-SectorRepository sectors(store);
-// ... other repositories
-
-// Create service
-GameDataService game_data(races, ships, planets, stars, sectors, db);
-
-// Commands receive GameDataService via GameObj
+// Commands receive EntityManager via GameObj
 GameObj game_context{
   .player = current_player,
-  .data = game_data,
+  .entity_manager = entity_manager,
   .out = player_output_stream
 };
 
@@ -703,17 +700,13 @@ assert(retrieved->owner == ship.owner);
 
 **Service Tests**
 ```cpp
-// Mock repositories
-MockRaceRepository races;
-MockShipRepository ships;
-GameDataService service(races, ships, ...);
+Database db(":memory:");
+initialize_schema(db);
+EntityManager em(db);
 
-// Test business logic
-EXPECT_CALL(ships, find_by_number(123))
-  .WillOnce(Return(test_ship));
-
-auto result = service.get_ship(123);
-assert(result.has_value());
+// Test service-layer behavior
+const auto* result = em.peek_ship(123);
+assert(result == nullptr || result->number() == 123);
 ```
 
 **Command Tests**
@@ -721,10 +714,10 @@ assert(result.has_value());
 // Integration test with real service
 Database db(":memory:");
 initialize_schema(db);
-// ... create repositories and service
+EntityManager em(db);
 
 std::ostringstream output;
-GameObj g{.player = 1, .data = service, .out = output};
+GameObj g{.player = 1, .entity_manager = em, .out = output};
 
 GB::commands::examine({"examine", "123"}, g);
 
@@ -804,7 +797,7 @@ void command(const command_t& argv, GameObj& g) {
 
 // GOOD: Command uses service
 void command(const command_t& argv, GameObj& g) {
-  auto ship = g.data.get_ship(shipnum);  // YES!
+  const auto* ship = g.entity_manager.peek_ship(shipnum);  // YES!
 }
 ```
 
@@ -818,11 +811,15 @@ class ShipRepository {
 };
 
 // GOOD: Service contains game rules
-class GameDataService {
+class EntityPolicyService {
   bool can_build_ship(const Race& race) {  // YES!
     return race.tech >= 10;
   }
 };
+
+// In current code, this kind of logic may live in free functions or service
+// helpers that operate on EntityManager-backed entities. The rule is the same:
+// keep policy out of repositories.
 ```
 
 ### ❌ Don't Use Global State
@@ -849,11 +846,43 @@ void command(const command_t& argv, GameObj& g) {
 
 // GOOD: Separated concerns
 void command(const command_t& argv, GameObj& g) {
-  auto ship = g.data.get_ship(num);        // Data access
-  bool can_do = g.data.check_rules(ship);  // Business logic
+  const auto* ship = g.entity_manager.peek_ship(num);  // Data access
+  bool can_do = check_rules(*ship);                   // Business logic
   g.out << format_ship(ship);               // Presentation
 }
 ```
+
+## Iterator Cleanup Direction
+
+The persistence API is intentionally moving toward two distinct iteration modes:
+
+1. **Readonly iteration** for reporting, scans, and validation.
+2. **Writable iteration** for mutation with RAII persistence.
+
+### Target Patterns
+
+```cpp
+for (const Race* race : RaceList::readonly(entity_manager)) {
+  // Read-only traversal
+}
+
+for (auto race_handle : RaceList{entity_manager}) {
+  race_handle->tech += 1.0;
+}
+```
+
+### Why This Matters
+- It makes mutation visible at the call site.
+- It avoids accidental writable-handle use in read-only loops.
+- It gives the service layer a more coherent, ORM-like interface without hiding too much behavior.
+
+## What This Is Not
+
+This architecture is not trying to become a generic ORM.
+
+- There is no goal of a database-agnostic query DSL.
+- There is no goal of runtime mapping metadata or automatic relationship loading.
+- The goal is a strong game-specific persistence API built around repositories, entity identity, caching, and RAII saves.
 
 ---
 

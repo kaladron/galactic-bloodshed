@@ -90,8 +90,10 @@ void fire(const command_t& argv, GameObj& g) {
       g.out << "Get real.\n";
       continue;
     }
-    const auto* to = g.entity_manager.peek_ship(toship);
-    if (!to) {
+    const Ship* to;
+    try {
+      to = g.entity_manager.peek_ship(toship);
+    } catch (const EntityNotFoundError&) {
       continue;
     }
 
@@ -170,9 +172,6 @@ void fire(const command_t& argv, GameObj& g) {
 
     // Get target ship for modification using RAII
     auto to_handle = g.entity_manager.get_ship(toship);
-    if (!to_handle.get()) {
-      continue;
-    }
     Ship& to_ship = *to_handle;
 
     auto s2sresult =

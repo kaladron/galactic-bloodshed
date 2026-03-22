@@ -78,16 +78,33 @@ int main() {
   assert(retrieved_ship3->name() == "TestShip3");
   assert(retrieved_ship3->type() == ShipType::STYPE_FIGHTER);
 
-  // Test that retrieving a non-existent ship returns nullptr
-  const auto* non_existent_ship = entity_manager.peek_ship(999);
-  assert(!non_existent_ship);
+  // Test that retrieving a non-existent ship throws EntityNotFoundError
+  bool threw = false;
+  try {
+    entity_manager.peek_ship(999);
+  } catch (const EntityNotFoundError&) {
+    threw = true;
+  }
+  assert(threw);
 
-  // Test that retrieving with invalid ship number returns nullptr
-  const auto* invalid_ship = entity_manager.peek_ship(0);
-  assert(!invalid_ship);
+  // Test that retrieving with invalid ship number (0) throws
+  // EntityNotFoundError
+  threw = false;
+  try {
+    entity_manager.peek_ship(0);
+  } catch (const EntityNotFoundError&) {
+    threw = true;
+  }
+  assert(threw);
 
-  const auto* negative_ship = entity_manager.peek_ship(-1);
-  assert(!negative_ship);
+  // Test that retrieving with negative ship number throws EntityNotFoundError
+  threw = false;
+  try {
+    entity_manager.peek_ship(-1);
+  } catch (const EntityNotFoundError&) {
+    threw = true;
+  }
+  assert(threw);
 
   std::println("Numships and ship storage test passed!");
   std::println("Initial count: {}, Final count: {}", initial_count,

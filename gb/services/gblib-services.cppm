@@ -149,6 +149,7 @@ public:
   explicit EntityManager(Database& database);
 
   // Get entity handles (load from DB if not cached)
+  // Throws EntityNotFoundError if entity not found
   EntityHandle<Race> get_race(player_t player);
   EntityHandle<Ship> get_ship(shipnum_t num);
   EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
@@ -160,6 +161,7 @@ public:
   EntityHandle<ServerState> get_server_state();
 
   // Direct access for read-only operations (no RAII overhead)
+  // Throws EntityNotFoundError if entity not found
   const Race* peek_race(player_t player);
   const Ship* peek_ship(shipnum_t num);
   const Planet* peek_planet(starnum_t star, planetnum_t pnum);

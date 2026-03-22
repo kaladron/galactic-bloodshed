@@ -24,12 +24,13 @@ void enslave(const command_t& argv, GameObj& g) {
 
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno) return;
-  auto ship_handle = g.entity_manager.get_ship(*shipno);
-
-  if (!ship_handle.get()) {
+  try {
+    g.entity_manager.peek_ship(*shipno);
+  } catch (const EntityNotFoundError&) {
     g.out << "Ship not found.\n";
     return;
   }
+  auto ship_handle = g.entity_manager.get_ship(*shipno);
   auto* s = ship_handle.get();
   if (testship(*s, g)) {
     return;

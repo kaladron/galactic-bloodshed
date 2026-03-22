@@ -22,9 +22,16 @@ void test_name_ship_persistence() {
   ship.number() = 1;
   ship.name() = "Old Ship Name";
 
+  // Setup: Create a race for player 1
+  Race race{};
+  race.Playernum = 1;
+  race.name = "Test Race";
+
   JsonStore store(ctx.db);
   ShipRepository ships(store);
+  RaceRepository races(store);
   ships.save(ship);
+  races.save(race);
 
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();

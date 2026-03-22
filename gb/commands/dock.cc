@@ -116,11 +116,13 @@ void dock(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    auto s2_handle = g.entity_manager.get_ship(ship2no);
-    if (!s2_handle.get()) {
+    try {
+      g.entity_manager.peek_ship(ship2no);
+    } catch (const EntityNotFoundError&) {
       g.out << "The ship wasn't found.\n";
       return;
     }
+    auto s2_handle = g.entity_manager.get_ship(ship2no);
     Ship& s2 = *s2_handle;
 
     if (!Assault && testship(s2, g)) {

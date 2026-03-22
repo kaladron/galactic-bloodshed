@@ -122,17 +122,25 @@ EntityManager::EntityManager(Database& database)
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
-  return get_entity_impl<Race>(
+  auto handle = get_entity_impl<Race>(
       this, player, race_cache, race_refcount,
       [this](player_t p) { return races.find_by_player(p); },
       [this](const Race& r) { races.save(r); },
       [this](player_t p) { release_race(p); });
+  if (!handle.get()) {
+    throw EntityNotFoundError(std::format("Race not found: player={}", player));
+  }
+  return handle;
 }
 
 const Race* EntityManager::peek_race(player_t player) {
-  return peek_entity_impl<Race>(
+  const auto* race = peek_entity_impl<Race>(
       player, race_cache, race_refcount,
       [this](player_t p) { return races.find_by_player(p); });
+  if (!race) {
+    throw EntityNotFoundError(std::format("Race not found: player={}", player));
+  }
+  return race;
 }
 
 void EntityManager::release_race(player_t player) {
@@ -141,17 +149,25 @@ void EntityManager::release_race(player_t player) {
 
 // Ship entity methods
 EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
-  return get_entity_impl<Ship>(
+  auto handle = get_entity_impl<Ship>(
       this, num, ship_cache, ship_refcount,
       [this](shipnum_t n) { return ships.find_by_number(n); },
       [this](const Ship& s) { ships.save(s); },
       [this](shipnum_t n) { release_ship(n); });
+  if (!handle.get()) {
+    throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
+  }
+  return handle;
 }
 
 const Ship* EntityManager::peek_ship(shipnum_t num) {
-  return peek_entity_impl<Ship>(
+  const auto* ship = peek_entity_impl<Ship>(
       num, ship_cache, ship_refcount,
       [this](shipnum_t n) { return ships.find_by_number(n); });
+  if (!ship) {
+    throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
+  }
+  return ship;
 }
 
 void EntityManager::release_ship(shipnum_t num) {

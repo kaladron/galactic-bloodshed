@@ -34,8 +34,10 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
     return;
   }
 
-  const auto* s2_check = g.entity_manager.peek_ship(*ship2tmp);
-  if (!s2_check) {
+  const Ship* s2_check;
+  try {
+    s2_check = g.entity_manager.peek_ship(*ship2tmp);
+  } catch (const EntityNotFoundError&) {
     g.out << std::format("Ship #{} wasn't found.\n", *ship2tmp);
     return;
   }
@@ -83,10 +85,6 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
     remove_sh_plan(g.entity_manager, s);
     /* get the target ship with write access for modification */
     auto s2_handle = g.entity_manager.get_ship(ship2no);
-    if (!s2_handle.get()) {
-      g.out << "This shouldn't happen: Target ship no longer exists.\n";
-      return;
-    }
     auto& s2 = *s2_handle;
     insert_sh_ship(&s, &s2);
     /* increase mass of mothership */

@@ -32,8 +32,10 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     g.out << std::format("rst: no such ship #{}\n", *shipno);
     return;
   }
-  const auto* ship = g.entity_manager.peek_ship(*shipno);
-  if (!ship) {
+  const Ship* ship;
+  try {
+    ship = g.entity_manager.peek_ship(*shipno);
+  } catch (const EntityNotFoundError&) {
     g.out << "Ship not found.\n";
     return;
   }

@@ -52,11 +52,13 @@ void give(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto ship_handle = g.entity_manager.get_ship(*shipno);
-  if (!ship_handle.get()) {
+  try {
+    g.entity_manager.peek_ship(*shipno);
+  } catch (const EntityNotFoundError&) {
     g.out << "No such ship.\n";
     return;
   }
+  auto ship_handle = g.entity_manager.get_ship(*shipno);
   auto& ship = *ship_handle;
 
   if (ship.owner() != Playernum || !ship.alive()) {

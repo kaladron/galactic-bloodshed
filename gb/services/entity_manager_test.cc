@@ -211,11 +211,17 @@ void test_entity_manager_read_only_access() {
 
   std::println("  ✓ peek_race() provides read-only access to cached entity");
 
-  // Peek non-existent entity
-  const Race* null_ptr = em.peek_race(999);
-  assert(null_ptr == nullptr);
+  // Peek non-existent entity - should throw EntityNotFoundError
+  bool threw = false;
+  try {
+    em.peek_race(999);
+  } catch (const EntityNotFoundError&) {
+    threw = true;
+  }
+  assert(threw);
 
-  std::println("  ✓ peek_*() returns nullptr for non-cached entities");
+  std::println(
+      "  ✓ peek_*() throws EntityNotFoundError for non-existent entities");
 }
 
 void test_entity_manager_flush_all() {

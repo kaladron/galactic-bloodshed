@@ -39,8 +39,10 @@ void distance(const command_t& argv, GameObj& g) {
   y1 = 0.0;
   /* get position in absolute units */
   if (from.level == ScopeLevel::LEVEL_SHIP) {
-    const auto* ship = g.entity_manager.peek_ship(from.shipno);
-    if (!ship) {
+    const Ship* ship;
+    try {
+      ship = g.entity_manager.peek_ship(from.shipno);
+    } catch (const EntityNotFoundError&) {
       g.out << "Ship not found.\n";
       return;
     }
@@ -74,8 +76,10 @@ void distance(const command_t& argv, GameObj& g) {
   }
 
   if (to.level == ScopeLevel::LEVEL_SHIP) {
-    const auto* ship = g.entity_manager.peek_ship(to.shipno);
-    if (!ship) {
+    const Ship* ship;
+    try {
+      ship = g.entity_manager.peek_ship(to.shipno);
+    } catch (const EntityNotFoundError&) {
       g.out << "Ship not found.\n";
       return;
     }

@@ -30,12 +30,13 @@ void examine(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto ship = g.entity_manager.get_ship(*shipno);
-
-  if (!ship.get()) {
+  try {
+    g.entity_manager.peek_ship(*shipno);
+  } catch (const EntityNotFoundError&) {
     g.out << "Ship not found.\n";
     return;
   }
+  auto ship = g.entity_manager.get_ship(*shipno);
 
   if (!ship->alive()) {
     g.out << "that ship is dead.\n";

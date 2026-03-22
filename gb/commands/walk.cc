@@ -26,11 +26,13 @@ void walk(const command_t& argv, GameObj& g) {
     g.out << "Bad ship number.\n";
     return;
   }
-  auto ship_handle = g.entity_manager.get_ship(*shipno);
-  if (!ship_handle.get()) {
+  try {
+    g.entity_manager.peek_ship(*shipno);
+  } catch (const EntityNotFoundError&) {
     g.out << "No such ship.\n";
     return;
   }
+  auto ship_handle = g.entity_manager.get_ship(*shipno);
   auto* ship = ship_handle.get();
   if (testship(*ship, g)) {
     g.out << "You do not control this ship.\n";

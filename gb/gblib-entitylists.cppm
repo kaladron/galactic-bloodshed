@@ -65,6 +65,9 @@ public:
   static const Derived readonly(Args&&... args) {
     return Derived(std::forward<Args>(args)...);
   }
+
+protected:
+  ReadonlyFactory() = default;
 };
 
 export template <>
@@ -207,9 +210,11 @@ public:
   using traits_type = EntityListTraits<Entity>;
   using index_type = typename traits_type::index_type;
 
+protected:
   explicit SimpleEntityList(EntityManager& em)
       : em_(&em), count_(traits_type::count(em)) {}
 
+public:
   class Iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -332,10 +337,12 @@ public:
   using primary_key_type = typename traits_type::primary_key_type;
   using index_type = typename traits_type::index_type;
 
+protected:
   CompositeEntityList(EntityManager& em, primary_key_type primary_key,
                       index_type count)
       : em_(&em), primary_key_(primary_key), count_(count) {}
 
+public:
   class Iterator {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -467,9 +474,10 @@ private:
 export class RaceList : public SimpleEntityList<Race, RaceList> {
 public:
   using Base = SimpleEntityList<Race, RaceList>;
-  using Base::Base;
   using Iterator = typename Base::Iterator;
   using ConstIterator = typename Base::ConstIterator;
+
+  explicit RaceList(EntityManager& em) : Base(em) {}
 };
 
 /**
@@ -479,9 +487,10 @@ public:
 export class StarList : public SimpleEntityList<Star, StarList> {
 public:
   using Base = SimpleEntityList<Star, StarList>;
-  using Base::Base;
   using Iterator = typename Base::Iterator;
   using ConstIterator = typename Base::ConstIterator;
+
+  explicit StarList(EntityManager& em) : Base(em) {}
 };
 
 /**
@@ -509,9 +518,10 @@ public:
 export class CommodList : public SimpleEntityList<Commod, CommodList> {
 public:
   using Base = SimpleEntityList<Commod, CommodList>;
-  using Base::Base;
   using Iterator = typename Base::Iterator;
   using ConstIterator = typename Base::ConstIterator;
+
+  explicit CommodList(EntityManager& em) : Base(em) {}
 };
 
 // ============================================================================

@@ -266,9 +266,9 @@ void test_ship_list_patterns(EntityManager& em) {
     const Ship* s1 = em.peek_ship(1);
     const Ship* s2 = em.peek_ship(2);
     const Ship* s3 = em.peek_ship(3);
-    assert(s1 && s1->fuel() == 150.0);
-    assert(s2 && s2->fuel() == 250.0);
-    assert(s3 && s3->fuel() == 350.0);
+    assert(s1->fuel() == 150.0);
+    assert(s2->fuel() == 250.0);
+    assert(s3->fuel() == 350.0);
     std::println("    Verified modifications were auto-saved");
   }
 
@@ -283,7 +283,7 @@ void test_ship_list_patterns(EntityManager& em) {
   em.clear_cache();
   {
     const Ship* s1 = em.peek_ship(1);
-    assert(s1 && s1->fuel() == 175.0);
+    assert(s1->fuel() == 175.0);
     std::println("    Verified dereference pattern modifications");
   }
 }

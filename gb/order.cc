@@ -215,11 +215,13 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
     Place where{g, argv[3], true};
     if (!where.err) {
       if (where.level == ScopeLevel::LEVEL_SHIP) {
-        auto tmpship_handle = g.entity_manager.get_ship(where.shipno);
-        if (!tmpship_handle.get()) {
+        try {
+          g.entity_manager.peek_ship(where.shipno);
+        } catch (const EntityNotFoundError&) {
           g.out << "Warning: that ship is out of range.\n";
           return;
         }
+        auto tmpship_handle = g.entity_manager.get_ship(where.shipno);
         auto& tmpship = *tmpship_handle;
         if (!followable(g.entity_manager, ship, tmpship)) {
           g.out << "Warning: that ship is out of range.\n";
@@ -552,10 +554,6 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
     unsigned int oncost = 0;
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
       auto s2_handle = g.entity_manager.get_ship(ship.destshipno());
-      if (!s2_handle.get()) {
-        g.out << "Ship not found.\n";
-        return;
-      }
       auto& s2 = *s2_handle;
       if (s2.type() == ShipType::STYPE_HABITAT) {
         oncost = HAB_FACT_ON_COST * ship.build_cost();

@@ -61,19 +61,16 @@ int main() {
 
   // Test that we can retrieve the ships
   const auto* retrieved_ship1 = entity_manager.peek_ship(1);
-  assert(retrieved_ship1);
   assert(retrieved_ship1->number() == 1);
   assert(retrieved_ship1->name() == "TestShip1");
   assert(retrieved_ship1->type() == ShipType::STYPE_SHUTTLE);
 
   const auto* retrieved_ship2 = entity_manager.peek_ship(2);
-  assert(retrieved_ship2);
   assert(retrieved_ship2->number() == 2);
   assert(retrieved_ship2->name() == "TestShip2");
   assert(retrieved_ship2->type() == ShipType::STYPE_CARGO);
 
   const auto* retrieved_ship3 = entity_manager.peek_ship(3);
-  assert(retrieved_ship3);
   assert(retrieved_ship3->number() == 3);
   assert(retrieved_ship3->name() == "TestShip3");
   assert(retrieved_ship3->type() == ShipType::STYPE_FIGHTER);

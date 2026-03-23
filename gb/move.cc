@@ -85,7 +85,6 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
 
   // Use g.race for read-only access, get mutable handle only when needed
   auto race_handle = g.entity_manager.get_race(g.player());
-  if (!race_handle.get()) return;
 
   ShipList shiplist(g.entity_manager, p.ships());
   for (auto ship_handle : shiplist) {
@@ -95,7 +94,6 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
         landed(ship) && retal_strength(ship) && (ship.land_x() == x2) &&
         (ship.land_y() == y2)) {
       const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
-      if (!alien_ptr) continue;
       if (!isset(g.race->allied, ship.owner()) ||
           !isset(alien_ptr->allied, g.player())) {
         const auto* star = g.entity_manager.peek_star(ship.storbits());

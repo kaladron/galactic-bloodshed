@@ -36,7 +36,6 @@ void test_mount_persistence() {
   ctx.em.clear_cache();
   {
     const auto* s = ctx.em.peek_ship(1);
-    assert(s);
     assert(s->crystals() == 2);
     assert(s->mounted() == 0);
   }
@@ -44,7 +43,6 @@ void test_mount_persistence() {
   // 4. Simulate mounting a crystal via EntityManager
   {
     auto ship_handle = ctx.em.get_ship(1);
-    assert(ship_handle.get());
     auto& s = *ship_handle;
     s.mounted() = 1;
     s.crystals()--;
@@ -54,7 +52,6 @@ void test_mount_persistence() {
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
-  assert(final_ship);
   assert(final_ship->mounted() == 1);
   assert(final_ship->crystals() == 1);
 
@@ -87,7 +84,6 @@ void test_dismount_persistence() {
   ctx.em.clear_cache();
   {
     const auto* s = ctx.em.peek_ship(1);
-    assert(s);
     assert(s->crystals() == 1);
     assert(s->mounted() == 1);
     assert(s->hyper_drive().charge == 50);
@@ -97,7 +93,6 @@ void test_dismount_persistence() {
   // 4. Simulate dismounting crystal via EntityManager
   {
     auto ship_handle = ctx.em.get_ship(1);
-    assert(ship_handle.get());
     auto& s = *ship_handle;
     s.mounted() = 0;
     s.crystals()++;
@@ -110,7 +105,6 @@ void test_dismount_persistence() {
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
-  assert(final_ship);
   assert(final_ship->mounted() == 0);
   assert(final_ship->crystals() == 2);
   assert(final_ship->hyper_drive().charge == 0);
@@ -142,7 +136,6 @@ void test_mount_no_crystals() {
   // 3. Verify cannot mount (command validation)
   ctx.em.clear_cache();
   const auto* s = ctx.em.peek_ship(1);
-  assert(s);
   assert(s->crystals() == 0);
   assert(s->mounted() == 0);
   // Command should detect no crystals and not modify ship
@@ -174,7 +167,6 @@ void test_dismount_full_storage() {
   // 3. Verify state
   ctx.em.clear_cache();
   const auto* s = ctx.em.peek_ship(1);
-  assert(s);
   assert(s->crystals() == 127);
   assert(s->mounted() == 1);
   // Command should detect full storage and not allow dismount

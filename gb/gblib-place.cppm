@@ -44,8 +44,10 @@ void Place::getplace2(GameObj& g, std::string_view string,
         err = true;
         return;
       case ScopeLevel::LEVEL_SHIP: {
-        const auto* ship = g.entity_manager.peek_ship(shipno);
-        if (!ship) {
+        const Ship* ship = nullptr;
+        try {
+          ship = g.entity_manager.peek_ship(shipno);
+        } catch (const EntityNotFoundError&) {
           g.out << "Ship not found.\n";
           err = true;
           return;
@@ -206,8 +208,10 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
         err = true;
         return;
       }
-      const auto* ship = g.entity_manager.peek_ship(*shipnum);
-      if (!ship) {
+      const Ship* ship = nullptr;
+      try {
+        ship = g.entity_manager.peek_ship(*shipnum);
+      } catch (const EntityNotFoundError&) {
         DontOwnErr(g.entity_manager, Playernum, Governor, shipno);
         err = true;
         return;

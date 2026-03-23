@@ -337,6 +337,10 @@ add_executable(shipfilter_test shipfilter_test.cc)
 target_link_libraries(shipfilter_test PRIVATE gblib dallib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_shipfilter_test COMMAND shipfilter_test)
 
+add_executable(doship_repair_test doship_repair_test.cc)
+target_link_libraries(doship_repair_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_doship_repair_test COMMAND doship_repair_test)
+
 add_executable(gblib_test gblib_test.cc)
 target_link_libraries(gblib_test PRIVATE gblib SQLite::SQLite3)
 add_test(NAME GB_gblib_test COMMAND gblib_test)

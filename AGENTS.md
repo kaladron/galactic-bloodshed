@@ -304,25 +304,29 @@ const auto* smap = g.entity_manager.peek_sectormap(star_id, planet_num);
 **IMPORTANT:** `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError` instead of returning nullptr. Star/planet indices are always contiguous (0 to N-1), so by the time code has a valid star/planet number, the entity must exist or data is corrupt. These exceptions represent programming errors or data corruption, not expected conditions.
 
 **Read-Write Access (get methods - RAII with auto-save):**
+
+For **validated/internal IDs** (e.g., `g.player`), no try/catch is needed:
 ```cpp
-// Get entity for modification (auto-saves on scope exit)
+// Validated ID path: g.player is always valid
 auto race_handle = g.entity_manager.get_race(g.player);
-if (!race_handle.get()) {
-    g.out << "Race not found.\n";
-    return;
-}
-
-// Read-only access without marking dirty
-const auto& race_read = race_handle.read();
-g.out << std::format("Current tech: {}\n", race_read.tech);
-
-// Modification access (marks dirty, triggers auto-save)
 auto& race = *race_handle;
-race.tech += 10.5;
+race.tech += 10.5;  // Guaranteed valid, no null check
 // Auto-saves when race_handle goes out of scope
+```
 
-// Explicit early save if needed
-race_handle.save();
+For **user-input IDs**, wrap in try/catch:
+```cpp
+// User provides a player number as command argument
+player_t target_player{user_input};
+try {
+  auto race_handle = g.entity_manager.get_race(target_player);
+  auto& race = *race_handle;
+  race.tech += 10.5;
+  // Auto-saves on scope exit
+} catch (const EntityNotFoundError&) {
+  g.out << "Player not found.\n";
+  return;
+}
 ```
 
 **Available EntityManager Methods:**
@@ -402,7 +406,8 @@ The `GameObj& g` parameter provides:
 **Key Pattern**: `g.race` is pre-populated before any command executes in production:
 - For **read-only** access to current player's race: Use `g.race->field` directly
 - For **modifications** to current player's race: Use `g.entity_manager.get_race(g.player)` for RAII (no null check needed)
-- For **other players' races**: Use `peek_race(id)` or `get_race(id)` with null checks
+- For **other entities with validated IDs**: No try/catch needed; IDs are pre-validated by game logic
+- For **user-input IDs**: Wrap in try/catch to handle `EntityNotFoundError`
 - **In tests**: Set `g.race = entity_manager.peek_race(g.player);` after creating GameObj to match production behavior
 
 ### Writing Tests
@@ -628,20 +633,26 @@ These recipes provide step-by-step instructions for common tasks.
    ```
 
 ### Read from Database
-Use EntityManager for all entity access:
-```cpp
-// Read-only access (peek methods)
-const auto* race = g.entity_manager.peek_race(g.player);
-const auto* star = g.entity_manager.peek_star(star_id);
-const auto* planet = g.entity_manager.peek_planet(star_id, planet_num);
+Use EntityManager for all entity access. All `peek_*()` methods throw `EntityNotFoundError` on failure.
 
-// Always check for null
-if (!race) {
-  g.out << "Race not found.\n";
+For **validated/internal IDs** (e.g., `g.player` or IDs from iteration):
+```cpp
+// No try/catch needed - these IDs are guaranteed valid
+const auto* race = g.entity_manager.peek_race(g.player);
+const auto* star = g.entity_manager.peek_star(star_id);  // star_id from iteration
+```
+
+For **user-input IDs**, wrap in try/catch:
+```cpp
+// User provided a ship number as a command argument
+try {
+  const auto* ship = g.entity_manager.peek_ship(user_provided_id);
+  // Use ship
+} catch (const EntityNotFoundError&) {
+  g.out << "Ship not found.\n";
   return;
 }
 ```
-Always check pointers before use. On failure: print message and return early.
 
 **Note:** `peek_*()` methods return cached pointers from EntityManager's internal cache, so repeated calls to the same entity are efficient.
 

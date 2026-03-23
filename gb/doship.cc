@@ -13,7 +13,7 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
   const auto* state = entity_manager.peek_server_state();
   if (!state) return;  // Can't repair without knowing segments
 
-  double maxrep = REPAIR_RATE / (double)state->segments;
+  double maxrep = REPAIR_RATE / static_cast<double>(state->segments);
 
   /* stations repair for free, and ships docked with them */
   int cost = [&ship, &maxrep, &entity_manager]() {
@@ -28,25 +28,26 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
         return 0;
       }
     }
-    maxrep *= (double)(ship.popn()) / (double)ship.max_crew();
-    return (int)(0.005 * maxrep * shipcost(ship));
+    maxrep *=
+        static_cast<double>(ship.popn()) / static_cast<double>(ship.max_crew());
+    return static_cast<int>(0.005 * maxrep * shipcost(ship));
   }();
 
   if (cost <= ship.resource()) {
     use_resource(ship, cost);
-    int drep = (int)maxrep;
-    ship.damage() = std::max(0, (int)(ship.damage()) - drep);
+    int drep = static_cast<int>(maxrep);
+    ship.damage() = std::max(0, static_cast<int>(ship.damage()) - drep);
   } else {
     /* use up all of the ships resources */
-    int drep = (int)(maxrep * ((double)ship.resource() / (int)cost));
+    int drep = static_cast<int>(maxrep * (static_cast<double>(ship.resource()) /
+                                          static_cast<double>(cost)));
     use_resource(ship, ship.resource());
-    ship.damage() = std::max(0, (int)(ship.damage()) - drep);
+    ship.damage() = std::max(0, static_cast<int>(ship.damage()) - drep);
   }
 }
 
 void do_habitat(Ship& ship, EntityManager& entity_manager) {
   const auto* race = entity_manager.peek_race(ship.owner());
-  if (!race) return;
 
   /* In v5.0+ Habitats make resources out of fuel */
   if (ship.on()) {
@@ -364,7 +365,7 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
     auto planet_handle =
         entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
     const auto* race = entity_manager.peek_race(ship.owner());
-    if (!planet_handle.get() || !race) return;
+    if (!planet_handle.get()) return;
     auto& p = *planet_handle;
 
     if (ship.fuel() >= 3.0) {
@@ -737,7 +738,6 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   bool rad = false;
   if (!detonate) {
     const auto* race = entity_manager.peek_race(ship.owner());
-    if (!race) return;
 
     const ShipList kShiplist(entity_manager, sh);
     for (const Ship* s_ptr : kShiplist) {

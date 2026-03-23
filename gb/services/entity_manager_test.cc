@@ -222,6 +222,50 @@ void test_entity_manager_read_only_access() {
 
   std::println(
       "  ✓ peek_*() throws EntityNotFoundError for non-existent entities");
+
+  // Get non-existent entity - should throw EntityNotFoundError
+  threw = false;
+  try {
+    em.get_race(999);
+  } catch (const EntityNotFoundError&) {
+    threw = true;
+  }
+  assert(threw);
+
+  std::println(
+      "  ✓ get_race() throws EntityNotFoundError for non-existent entities");
+}
+
+void test_entity_manager_get_ship_throws() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println("Test: EntityManager get_ship() throwing on non-existent ship");
+
+  // Try to get non-existent ship - should throw EntityNotFoundError
+  bool threw = false;
+  try {
+    em.get_ship(999);
+  } catch (const EntityNotFoundError&) {
+    threw = true;
+  }
+  assert(threw);
+
+  std::println(
+      "  ✓ get_ship() throws EntityNotFoundError for non-existent ships");
+
+  // Try to peek non-existent ship - should also throw
+  threw = false;
+  try {
+    em.peek_ship(999);
+  } catch (const EntityNotFoundError&) {
+    threw = true;
+  }
+  assert(threw);
+
+  std::println(
+      "  ✓ peek_ship() throws EntityNotFoundError for non-existent ships");
 }
 
 void test_entity_manager_flush_all() {
@@ -826,6 +870,7 @@ int main() {
   test_entity_manager_composite_keys();
   test_entity_manager_create_delete();
   test_entity_manager_read_only_access();
+  test_entity_manager_get_ship_throws();
   test_entity_manager_flush_all();
   test_entity_manager_clear_cache();
   test_entity_manager_singleton_universe();

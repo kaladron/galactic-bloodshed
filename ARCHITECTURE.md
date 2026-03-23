@@ -461,11 +461,12 @@ struct GameObj {
 };
 ```
 
-**Race Access Pattern**: `g.race` is populated before command execution in production:
-- **Read-only checks**: Use `g.race->field` directly (always valid in production)
-- **Modifications**: Use `g.entity_manager.get_race(g.player)` for RAII (no null check needed)
-- **Other players**: Use `peek_race(id)` or `get_race(id)` with null checks
-- **In tests**: Set `g.race = entity_manager.peek_race(g.player);` after creating GameObj
+**Entity Access Pattern**: All EntityManager methods throw `EntityNotFoundError` on failure:
+- **Validated IDs** (e.g., `g.player`, IDs from iteration): No try/catch needed.
+- **User-input IDs**: Wrap in try/catch to handle `EntityNotFoundError`.
+- **Read-only checks**: Use `g.race->field` directly (always valid in production).
+- **Modifications**: Use `g.entity_manager.get_race(g.player)` for RAII (no null check needed for validated IDs).
+- **In tests**: Set `g.race = entity_manager.peek_race(g.player);` after creating GameObj.
 
 **Command Pattern**
 ```cpp

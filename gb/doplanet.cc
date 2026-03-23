@@ -206,7 +206,8 @@ void do_recover(EntityManager& entity_manager, const Star& star,
         if (isset(ownerbits, j)) {
           const auto* race_i = entity_manager.peek_race(i);
           const auto* race_j = entity_manager.peek_race(j);
-          if (!isset(race_i->allied, j) || !isset(race_j->allied, i))
+          if (!race_i || !race_j || !isset(race_i->allied, j) ||
+              !isset(race_j->allied, i))
             all_buddies_here = 0;
         }
     } else {        /* Player i owns no sectors */

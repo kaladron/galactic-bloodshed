@@ -35,22 +35,6 @@ compile_commands.json
 **/__pycache__
 
 # Ignore all .md files
-*.md
-
-# Except these:
-!README.md
-!AGENTS.md
-!CONTRIBUTING.md
-!LICENSE.md
-!NEWS.md
-!OVERVIEW.md
-!SETUP.md
-!TODO.md
-!USERGUIDE.md
-!WHATSNEW.md
-!DEVELOPERGUIDE.md
-!ARCHITECTURE.md
-# And all help files
-!help/*.md
+plan*.md
 
 _codeql_detected_source_root

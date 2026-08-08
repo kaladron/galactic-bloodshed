@@ -80,7 +80,8 @@ int main() {
     const auto* saved_ship = em.peek_ship(ship.number());
     assert(saved_ship);
 
-    std::println(std::cout, "  Damage:    {} -> {}", damage_before, saved_ship->damage());
+    std::println(std::cout, "  Damage:    {} -> {}", damage_before,
+                 saved_ship->damage());
     std::println(std::cout, "  Resources: {} -> {}", resources_before,
                  saved_ship->resource());
 
@@ -134,7 +135,8 @@ int main() {
     const auto* saved_ship = em.peek_ship(ship.number());
     assert(saved_ship);
 
-    std::println(std::cout, "  Damage:    {} -> {}", damage_before, saved_ship->damage());
+    std::println(std::cout, "  Damage:    {} -> {}", damage_before,
+                 saved_ship->damage());
     std::println(std::cout, "  Resources: {} -> {}", resources_before,
                  saved_ship->resource());
 
@@ -242,7 +244,8 @@ int main() {
     const auto* saved_ship = em.peek_ship(ship.number());
     assert(saved_ship);
 
-    std::println(std::cout, "  Damage:    {} -> {}", damage_before, saved_ship->damage());
+    std::println(std::cout, "  Damage:    {} -> {}", damage_before,
+                 saved_ship->damage());
     std::println(std::cout, "  Resources: {} -> {}", resources_before,
                  saved_ship->resource());
 
@@ -255,6 +258,8 @@ int main() {
   }
 
   std::println(std::cout, "=== All do_repair tests completed ===");
-  std::println(std::cout, "Review output above to verify repair logic is functioning correctly.");
+  std::println(
+      std::cout,
+      "Review output above to verify repair logic is functioning correctly.");
   return 0;
 }

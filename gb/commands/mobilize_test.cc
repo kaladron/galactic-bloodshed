@@ -11,8 +11,6 @@ import std;
 /// \file mobilize_test.cc
 /// \brief Test mobilize command database persistence
 
-
-
 void test_mobilize_database_persistence() {
   std::println(std::cout, "Test: mobilize command database persistence");
 
@@ -121,7 +119,8 @@ void test_mobilize_database_persistence() {
                  saved->info(player_t{1}).mob_set);
   }
 
-  std::println(std::cout, "  ✅ All mobilize database persistence tests passed!");
+  std::println(std::cout,
+               "  ✅ All mobilize database persistence tests passed!");
 }
 
 int main() {

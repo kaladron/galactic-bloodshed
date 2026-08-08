@@ -168,7 +168,8 @@ int main() {
   std::println(std::cout, "Find non-existent star...");
   auto not_found = repo.find_by_number(999);
   assert(!not_found.has_value() && "Should not find non-existent star");
-  std::println(std::cout, "  ✓ Correctly returns nullopt for non-existent star");
+  std::println(std::cout,
+               "  ✓ Correctly returns nullopt for non-existent star");
 
   // List all star IDs
   std::println(std::cout, "List all star IDs...");

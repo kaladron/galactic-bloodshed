@@ -142,7 +142,8 @@ int main() {
         return -1;
     }
 
-    std::println(std::cout, "Looking for type {} planet...", static_cast<int>(ppref));
+    std::println(std::cout, "Looking for type {} planet...",
+                 static_cast<int>(ppref));
 
     /* find first planet of right type */
     count = 0;
@@ -197,7 +198,8 @@ int main() {
       for (found = 1, i = PlanetType::EARTH; i <= PlanetType::DESERT; i++)
         found &= not_found[i];
       if (found) {
-        std::println(std::cout, "Looks like there aren't any free planets left.  bye..");
+        std::println(std::cout,
+                     "Looks like there aren't any free planets left.  bye..");
         return -1;
       } else
         std::println(std::cout, "  Try a different one...");
@@ -312,7 +314,8 @@ int main() {
   }
   auto& smap = *smap_handle;
 
-  std::println(std::cout, "\nChoose a primary sector preference. This race will prefer to "
+  std::println(std::cout,
+               "\nChoose a primary sector preference. This race will prefer to "
                "live\non this type of sector.");
 
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
@@ -327,8 +330,8 @@ int main() {
   // Temporarily show sectors during selection (no need to persist)
   for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
-      std::println(std::cout, 
-          "({:2d}): {} ({}, {}) ({}, {} sectors)", i,
+      std::println(
+          std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", i,
           get_sector_char(
               smap.get(secttypes[i].x, secttypes[i].y).get_condition()),
           secttypes[i].x, secttypes[i].y, Desnames[i], secttypes[i].count);
@@ -443,12 +446,12 @@ int main() {
     ss.number = shipno;
     if (const auto* storbit_star = entity_manager.peek_star(ss.storbits);
         storbit_star) {
-      std::println(std::cout, "Created on sector {},{} on /{}/{}", ss.land_x, ss.land_y,
-                   storbit_star->get_name(),
+      std::println(std::cout, "Created on sector {},{} on /{}/{}", ss.land_x,
+                   ss.land_y, storbit_star->get_name(),
                    storbit_star->get_planet_name(ss.pnumorbits));
     } else {
-      std::println(std::cout, "Created on sector {},{} on an unknown location", ss.land_x,
-                   ss.land_y);
+      std::println(std::cout, "Created on sector {},{} on an unknown location",
+                   ss.land_x, ss.land_y);
     }
     Ship s{ss};  // Construct Ship from POD
     if (!ships.save(s)) {
@@ -501,8 +504,8 @@ int main() {
   star_ref.AP(Playernum) = 5;
 
   std::println(std::cout, "\nYou are player {}.\n", Playernum);
-  std::println(std::cout, "Your race has been created on sector {},{} on", secttypes[i].x,
-               secttypes[i].y);
+  std::println(std::cout, "Your race has been created on sector {},{} on",
+               secttypes[i].x, secttypes[i].y);
   if (const auto* home_star = entity_manager.peek_star(star); home_star) {
     std::println(std::cout, "{}/{}.\n", home_star->get_name(),
                  home_star->get_planet_name(pnum));

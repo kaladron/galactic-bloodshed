@@ -10,8 +10,6 @@ import std;
 // CommodRepository, BlockRepository, PowerRepository, UniverseRepository,
 // and ServerStateRepository
 
-
-
 void test_commod_repository() {
   // Setup
   Database db(":memory:");

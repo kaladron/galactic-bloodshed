@@ -80,7 +80,8 @@ int main() {
     // Now should return 6 (next after max)
     next_id = store.find_next_available_id("test_table");
     assert(next_id == 6);
-    std::println(std::cout, "✓ After filling gap, returns next ID after max (6)");
+    std::println(std::cout,
+                 "✓ After filling gap, returns next ID after max (6)");
   }
 
   // Remove entry
@@ -145,7 +146,8 @@ int main() {
     retrieved = store.retrieve_multi("multi_key_table", keys);
     assert(retrieved.has_value());
     assert(retrieved->find("Mars") != std::string::npos);
-    std::println(std::cout, "✓ Multiple entries with composite keys work correctly");
+    std::println(std::cout,
+                 "✓ Multiple entries with composite keys work correctly");
   }
 
   // Empty table behavior
@@ -180,9 +182,12 @@ int main() {
 
     std::vector<std::pair<std::string, int>> non_existent_keys = {
         {"star_id", 999}, {"planet_order", 999}};
-    auto non_existent_multi = store.retrieve_multi("multi_key_table", non_existent_keys);
+    auto non_existent_multi =
+        store.retrieve_multi("multi_key_table", non_existent_keys);
     assert(!non_existent_multi.has_value());
-    std::println(std::cout, "✓ retrieve_multi on non-existent composite key returns nullopt");
+    std::println(
+        std::cout,
+        "✓ retrieve_multi on non-existent composite key returns nullopt");
 
     // Empty keys vector returns nullopt
     std::vector<std::pair<std::string, int>> empty_keys;
@@ -193,8 +198,10 @@ int main() {
 
   // Update overwrite on composite keys
   {
-    std::vector<std::pair<std::string, int>> keys = {{"star_id", 10}, {"planet_order", 3}};
-    std::string updated_json = R"({"type": "planet", "name": "Earth v2", "popn": 5000})";
+    std::vector<std::pair<std::string, int>> keys = {{"star_id", 10},
+                                                     {"planet_order", 3}};
+    std::string updated_json =
+        R"({"type": "planet", "name": "Earth v2", "popn": 5000})";
 
     bool stored = store.store_multi("multi_key_table", keys, updated_json);
     assert(stored);
@@ -202,7 +209,8 @@ int main() {
     auto retrieved = store.retrieve_multi("multi_key_table", keys);
     assert(retrieved.has_value());
     assert(*retrieved == updated_json);
-    std::println(std::cout, "✓ store_multi overwrites existing composite key entry");
+    std::println(std::cout,
+                 "✓ store_multi overwrites existing composite key entry");
   }
 
   // Transaction rollback with JsonStore
@@ -215,7 +223,8 @@ int main() {
     db.rollback();
     auto retrieved = store.retrieve("test_table", 888);
     assert(!retrieved.has_value());
-    std::println(std::cout, "✓ JsonStore respects database transaction rollback");
+    std::println(std::cout,
+                 "✓ JsonStore respects database transaction rollback");
   }
 
   std::println(std::cout, "\nAll JsonStore tests passed!");

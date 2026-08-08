@@ -5,9 +5,9 @@
 
 module;
 
+#include "gb/files.h"
 #include <sys/stat.h>
 #include <cassert>
-#include "gb/files.h"
 
 import std;
 import gblib;
@@ -618,8 +618,8 @@ static void finalize_turn(TurnState& state, bool update) {
       if (race_handle->collective_iq) {
         double x = ((2. / 3.14159265) *
                     std::atan(static_cast<double>(
-                             state.stats.Power[player.value - 1].popn) /
-                         MESO_POP_SCALE));
+                                  state.stats.Power[player.value - 1].popn) /
+                              MESO_POP_SCALE));
         race_handle->IQ = race_handle->IQ_limit * x * x;
       }
       race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;
@@ -1009,14 +1009,16 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
 
   Power_blocks.time = clk;
   schedule_info.last_update_time = clk;
-  schedule_info.update_buf = std::format(
-      "Last Update {0:3d} : {1}", schedule_info.nupdates_done, std::ctime(&clk));
+  schedule_info.update_buf =
+      std::format("Last Update {0:3d} : {1}", schedule_info.nupdates_done,
+                  std::ctime(&clk));
   std::print(std::cerr, "{}", std::ctime(&clk));
   std::print(std::cerr, "Next Update {0:3d} : {1}",
-             schedule_info.nupdates_done + 1, std::ctime(&state.next_update_time));
+             schedule_info.nupdates_done + 1,
+             std::ctime(&state.next_update_time));
   schedule_info.last_segment_time = clk;
-  schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",
-                                          state.nsegments_done, std::ctime(&clk));
+  schedule_info.segment_buf = std::format(
+      "Last Segment {0:2d} : {1}", state.nsegments_done, std::ctime(&clk));
   std::print(std::cerr, "{}", std::ctime(&clk));
   std::print(std::cerr, "Next Segment {0:2d} : {1}",
              state.nsegments_done == state.segments ? 1
@@ -1027,8 +1029,8 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
   if (!fakeit) do_turn(entity_manager, session_registry, true);
   session_registry.set_update_in_progress(false);
   clk = std::time(nullptr);
-  std::string finish_msg = std::format("{}Update {} finished\n", std::ctime(&clk),
-                                       schedule_info.nupdates_done);
+  std::string finish_msg = std::format(
+      "{}Update {} finished\n", std::ctime(&clk), schedule_info.nupdates_done);
   handle_victory(entity_manager);
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
@@ -1049,7 +1051,8 @@ void do_segment(EntityManager& entity_manager,
 
   if (!override && state.segments <= 1) return;
 
-  std::string movement_msg = std::format("{}DOING MOVEMENT...\n", std::ctime(&clk));
+  std::string movement_msg =
+      std::format("{}DOING MOVEMENT...\n", std::ctime(&clk));
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       session_registry.notify_race(i, movement_msg);
@@ -1077,13 +1080,14 @@ void do_segment(EntityManager& entity_manager,
   if (!fakeit) do_turn(entity_manager, session_registry, false);
   session_registry.set_update_in_progress(false);
   schedule_info.last_segment_time = clk;
-  schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",
-                                          state.nsegments_done, std::ctime(&clk));
+  schedule_info.segment_buf = std::format(
+      "Last Segment {0:2d} : {1}", state.nsegments_done, std::ctime(&clk));
   std::print(std::cerr, "{0}", std::ctime(&clk));
   std::print(std::cerr, "Next Segment {0:2d} : {1}", state.nsegments_done,
              std::ctime(&state.next_segment_time));
   clk = std::time(nullptr);
-  std::string segment_msg = std::format("{}Segment finished\n", std::ctime(&clk));
+  std::string segment_msg =
+      std::format("{}Segment finished\n", std::ctime(&clk));
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       session_registry.notify_race(i, segment_msg);

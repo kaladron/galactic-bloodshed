@@ -131,6 +131,7 @@ int main() {
     assert(captured_ship->owner() == 1 || captured_ship->owner() == 2);
   }
 
-  std::println(std::cout, "✓ capture command: Ship combat and persistence verified");
+  std::println(std::cout,
+               "✓ capture command: Ship combat and persistence verified");
   return 0;
 }

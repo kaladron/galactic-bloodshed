@@ -61,11 +61,14 @@ void test_entity_manager_caching() {
     auto handle2 = em.get_race(1);
     assert(handle1.get() == handle2.get());
     assert(first_ptr == handle2.get());
-    std::println(std::cout, "  ✓ Multiple get calls return same cached instance");
+    std::println(std::cout,
+                 "  ✓ Multiple get calls return same cached instance");
 
     handle2->name = "Modified in Handle 2";
     assert(handle1->name == "Modified in Handle 2");
-    std::println(std::cout, "  ✓ Modifications visible across all handles (same instance)");
+    std::println(
+        std::cout,
+        "  ✓ Modifications visible across all handles (same instance)");
   }
 
   em.clear_cache();
@@ -93,7 +96,9 @@ void test_entity_manager_composite_keys() {
     auto p1 = em.get_planet(1, 2);
     auto p2 = em.get_planet(1, 2);
     assert(p1.get() == p2.get());
-    std::println(std::cout, "  ✓ Multiple handles to same planet return identical instance");
+    std::println(
+        std::cout,
+        "  ✓ Multiple handles to same planet return identical instance");
 
     p1->popn() = 20000;
   }
@@ -132,7 +137,8 @@ void test_entity_manager_create_delete() {
     threw = true;
   }
   assert(threw);
-  std::println(std::cout, "  ✓ delete_ship() removes ship from cache and database");
+  std::println(std::cout,
+               "  ✓ delete_ship() removes ship from cache and database");
 }
 
 void test_entity_manager_read_only_access() {
@@ -152,7 +158,8 @@ void test_entity_manager_read_only_access() {
   const auto* peek_race = em.peek_race(1);
   assert(peek_race != nullptr);
   assert(peek_race->name == "ReadOnly Race");
-  std::println(std::cout, "  ✓ peek_race() provides read-only access to cached entity");
+  std::println(std::cout,
+               "  ✓ peek_race() provides read-only access to cached entity");
 
   bool peek_threw = false;
   try {
@@ -161,7 +168,9 @@ void test_entity_manager_read_only_access() {
     peek_threw = true;
   }
   assert(peek_threw);
-  std::println(std::cout, "  ✓ peek_*() throws EntityNotFoundError for non-existent entities");
+  std::println(
+      std::cout,
+      "  ✓ peek_*() throws EntityNotFoundError for non-existent entities");
 
   bool get_threw = false;
   try {
@@ -170,7 +179,9 @@ void test_entity_manager_read_only_access() {
     get_threw = true;
   }
   assert(get_threw);
-  std::println(std::cout, "  ✓ get_race() throws EntityNotFoundError for non-existent entities");
+  std::println(
+      std::cout,
+      "  ✓ get_race() throws EntityNotFoundError for non-existent entities");
 }
 
 void test_entity_manager_get_ship_throws() {
@@ -178,7 +189,8 @@ void test_entity_manager_get_ship_throws() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout, "Test: EntityManager get_ship() throwing on non-existent ship");
+  std::println(std::cout,
+               "Test: EntityManager get_ship() throwing on non-existent ship");
 
   bool get_threw = false;
   try {
@@ -187,7 +199,9 @@ void test_entity_manager_get_ship_throws() {
     get_threw = true;
   }
   assert(get_threw);
-  std::println(std::cout, "  ✓ get_ship() throws EntityNotFoundError for non-existent ships");
+  std::println(
+      std::cout,
+      "  ✓ get_ship() throws EntityNotFoundError for non-existent ships");
 
   bool peek_threw = false;
   try {
@@ -196,7 +210,9 @@ void test_entity_manager_get_ship_throws() {
     peek_threw = true;
   }
   assert(peek_threw);
-  std::println(std::cout, "  ✓ peek_ship() throws EntityNotFoundError for non-existent ships");
+  std::println(
+      std::cout,
+      "  ✓ peek_ship() throws EntityNotFoundError for non-existent ships");
 }
 
 void test_entity_manager_flush_all() {
@@ -221,7 +237,8 @@ void test_entity_manager_flush_all() {
   auto direct_read = races.find_by_player(1);
   assert(direct_read.has_value());
   assert(direct_read->tech == 100.0);
-  std::println(std::cout, "  ✓ flush_all() saves all cached entities immediately");
+  std::println(std::cout,
+               "  ✓ flush_all() saves all cached entities immediately");
 }
 
 void test_entity_manager_clear_cache() {
@@ -243,7 +260,8 @@ void test_entity_manager_clear_cache() {
 
   em.clear_cache();
   assert(handle->tech == 100.0);
-  std::println(std::cout, "  ✓ clear_cache() preserves entities with active handles");
+  std::println(std::cout,
+               "  ✓ clear_cache() preserves entities with active handles");
 
   const auto* peek = em.peek_race(1);
   assert(peek != nullptr);
@@ -349,20 +367,27 @@ void test_entity_manager_get_player() {
   assert(p1_by_num.has_value() && *p1_by_num == 1);
   auto p2_by_num = em.find_player_by_name("2");
   assert(p2_by_num.has_value() && *p2_by_num == 2);
-  std::println(std::cout, "  ✓ find_player_by_name finds race by number string");
+  std::println(std::cout,
+               "  ✓ find_player_by_name finds race by number string");
 
   assert(!em.find_player_by_name("").has_value());
-  std::println(std::cout, "  ✓ find_player_by_name returns nullopt for empty string");
+  std::println(std::cout,
+               "  ✓ find_player_by_name returns nullopt for empty string");
 
   assert(!em.find_player_by_name("Unknown").has_value());
-  std::println(std::cout, "  ✓ find_player_by_name returns nullopt for non-existent race");
+  std::println(std::cout,
+               "  ✓ find_player_by_name returns nullopt for non-existent race");
 
   assert(!em.find_player_by_name("999").has_value());
-  std::println(std::cout, "  ✓ find_player_by_name returns nullopt for out-of-range number");
+  std::println(
+      std::cout,
+      "  ✓ find_player_by_name returns nullopt for out-of-range number");
 
   assert(!em.find_player_by_name("0").has_value());
   assert(!em.find_player_by_name("-1").has_value());
-  std::println(std::cout, "  ✓ find_player_by_name returns nullopt for invalid player number");
+  std::println(
+      std::cout,
+      "  ✓ find_player_by_name returns nullopt for invalid player number");
 }
 
 void test_entity_manager_kill_ship() {
@@ -437,7 +462,8 @@ void test_entity_manager_kill_ship() {
 
   auto univ_handle = em.get_universe();
   assert(univ_handle->VN_index1[1] == 5);
-  std::println(std::cout, "  ✓ VN tracking (VN_hitlist and VN_index) updated correctly");
+  std::println(std::cout,
+               "  ✓ VN tracking (VN_hitlist and VN_index) updated correctly");
 
   ship_struct pod_data{};
   pod_data.number = 300;
@@ -489,7 +515,8 @@ void test_entity_manager_kill_ship_gov_ship() {
 
   auto v_handle = em.get_race(1);
   assert(v_handle->Gov_ship == 0);
-  std::println(std::cout, "  ✓ Gov_ship field cleared when government ship is killed");
+  std::println(std::cout,
+               "  ✓ Gov_ship field cleared when government ship is killed");
 }
 
 void test_peek_star_throws_on_not_found() {
@@ -497,7 +524,8 @@ void test_peek_star_throws_on_not_found() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout, "Test: peek_star throws EntityNotFoundError on not found");
+  std::println(std::cout,
+               "Test: peek_star throws EntityNotFoundError on not found");
 
   bool threw = false;
   try {
@@ -507,7 +535,8 @@ void test_peek_star_throws_on_not_found() {
     std::println(std::cout, "  ✓ Exception caught for invalid star_id");
   }
   assert(threw);
-  std::println(std::cout, "  ✓ peek_star throws EntityNotFoundError for invalid star_id");
+  std::println(std::cout,
+               "  ✓ peek_star throws EntityNotFoundError for invalid star_id");
 }
 
 void test_peek_planet_throws_on_not_found() {
@@ -515,7 +544,8 @@ void test_peek_planet_throws_on_not_found() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout, "Test: peek_planet throws EntityNotFoundError on not found");
+  std::println(std::cout,
+               "Test: peek_planet throws EntityNotFoundError on not found");
 
   bool threw = false;
   try {
@@ -525,7 +555,8 @@ void test_peek_planet_throws_on_not_found() {
     std::println(std::cout, "  ✓ Exception caught for invalid planet");
   }
   assert(threw);
-  std::println(std::cout, "  ✓ peek_planet throws EntityNotFoundError for invalid planet");
+  std::println(std::cout,
+               "  ✓ peek_planet throws EntityNotFoundError for invalid planet");
 }
 
 void test_peek_sectormap_throws_on_not_found() {
@@ -533,7 +564,8 @@ void test_peek_sectormap_throws_on_not_found() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout, "Test: peek_sectormap throws EntityNotFoundError on not found");
+  std::println(std::cout,
+               "Test: peek_sectormap throws EntityNotFoundError on not found");
 
   bool threw = false;
   try {
@@ -543,7 +575,9 @@ void test_peek_sectormap_throws_on_not_found() {
     std::println(std::cout, "  ✓ Exception caught for invalid planet");
   }
   assert(threw);
-  std::println(std::cout, "  ✓ peek_sectormap throws EntityNotFoundError for invalid planet");
+  std::println(
+      std::cout,
+      "  ✓ peek_sectormap throws EntityNotFoundError for invalid planet");
 }
 
 void test_peek_increments_refcount() {
@@ -551,7 +585,8 @@ void test_peek_increments_refcount() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout, "Test: peek increments refcount (pointers remain valid)");
+  std::println(std::cout,
+               "Test: peek increments refcount (pointers remain valid)");
 
   JsonStore store(db);
   star_struct raw_star{};
@@ -573,7 +608,8 @@ void test_peek_increments_refcount() {
 
     std::string peek_name_after = peek1->get_name();
     assert(peek_name_after == "ModifiedStar");
-    std::println(std::cout, "  ✓ peek pointer remains valid after get/release cycle");
+    std::println(std::cout,
+                 "  ✓ peek pointer remains valid after get/release cycle");
   }
 
   {
@@ -601,7 +637,8 @@ void test_peek_increments_refcount() {
     }
 
     assert(peek_race->name == "TestRace");
-    std::println(std::cout, "  ✓ peek on race also increments refcount correctly");
+    std::println(std::cout,
+                 "  ✓ peek on race also increments refcount correctly");
   }
 
   {
@@ -622,7 +659,8 @@ void test_peek_increments_refcount() {
     }
 
     assert(peek_ship != nullptr);
-    std::println(std::cout, "  ✓ peek on ship also increments refcount correctly");
+    std::println(std::cout,
+                 "  ✓ peek on ship also increments refcount correctly");
   }
 
   std::println(std::cout, "  ✅ All peek refcount tests passed");
@@ -770,7 +808,8 @@ void test_entity_manager_create_ship() {
   assert(peek->name() == "Discovery");
   assert(peek->owner() == 1);
   assert(peek->fuel() == 100.0);
-  std::println(std::cout, "  ✓ create_ship allocated ID and persisted successfully");
+  std::println(std::cout,
+               "  ✓ create_ship allocated ID and persisted successfully");
 }
 
 int main() {

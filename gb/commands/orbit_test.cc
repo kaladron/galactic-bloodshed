@@ -119,10 +119,13 @@ int main() {
     assert(saved_ship2 != nullptr);
     assert(saved_ship2->owner() == 1);
     assert(saved_ship2->whatorbits() == ScopeLevel::LEVEL_UNIV);
-    std::println(std::cout, "    ✓ Universe-level orbit displays stars and ships in transit");
+    std::println(
+        std::cout,
+        "    ✓ Universe-level orbit displays stars and ships in transit");
   }
 
-  std::println(std::cout, "Orbit at universe level with no universe (edge case)");
+  std::println(std::cout,
+               "Orbit at universe level with no universe (edge case)");
   {
     // Create a new EntityManager with no universe
     Database db2(":memory:");

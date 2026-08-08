@@ -162,7 +162,8 @@ int main() {
   }
 
   std::println(std::cout, "\n✅ All load command tests passed!");
-  std::println(std::cout, "The load command correctly transfers cargo and persists "
+  std::println(std::cout,
+               "The load command correctly transfers cargo and persists "
                "changes via EntityManager.");
   return 0;
 }

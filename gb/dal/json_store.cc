@@ -7,7 +7,6 @@ module;
 import std;
 #undef stdout
 
-
 module dallib;
 
 JsonStore::JsonStore(Database& database) : db(database) {}

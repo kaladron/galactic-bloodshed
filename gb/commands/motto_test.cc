@@ -11,8 +11,6 @@ import std;
 /// \file motto_test.cc
 /// \brief Test motto command database persistence
 
-
-
 void test_motto_database_persistence() {
   std::println(std::cout, "Test: motto command database persistence");
 

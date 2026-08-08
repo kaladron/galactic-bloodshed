@@ -153,7 +153,8 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
 
-  std::println(std::cout, "\n========== Analysis Command Output Test ==========\n");
+  std::println(std::cout,
+               "\n========== Analysis Command Output Test ==========\n");
 
   std::println(std::cout, "Basic analysis (all sectors)");
   {
@@ -466,7 +467,8 @@ int main() {
   std::println(std::cout, "All analysis command tests passed!");
 
   // PlayerFilter logic tests - tested indirectly through command behavior
-  std::println(std::cout, "\n========== PlayerFilter Logic Tests (via command behavior) "
+  std::println(std::cout,
+               "\n========== PlayerFilter Logic Tests (via command behavior) "
                "==========\n");
 
   // Test AllPlayers mode (default, no player filter)
@@ -503,7 +505,8 @@ int main() {
 
   // Test SpecificPlayer mode
   {
-    std::println(std::cout, "Test: Specific player filter matches only that player");
+    std::println(std::cout,
+                 "Test: Specific player filter matches only that player");
     command_t argv = {"analysis", "1"};
     GB::commands::analysis(argv, g);
 
@@ -522,10 +525,12 @@ int main() {
            "Should show player 2 in description");
 
     g.out.str("");
-    std::println(std::cout, "✓ SpecificPlayer mode works correctly for different players");
+    std::println(std::cout,
+                 "✓ SpecificPlayer mode works correctly for different players");
   }
 
-  std::println(std::cout, "\n========== PlayerFilter Logic Tests Complete ==========\n");
+  std::println(std::cout,
+               "\n========== PlayerFilter Logic Tests Complete ==========\n");
 
   return 0;
 }

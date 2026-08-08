@@ -11,8 +11,6 @@ import std;
 /// \file fix_test.cc
 /// \brief Unit tests for fix command (deity utilities)
 
-
-
 // Database persistence for fixing ship fuel
 void test_fix_ship_fuel_persistence() {
   // 1. Create in-memory database

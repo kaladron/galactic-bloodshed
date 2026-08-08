@@ -75,7 +75,8 @@ int main() {
                                       alien_sector, {0, 0});
     assert(!result.has_value());
     assert(result.error() == "You don't own that sector.\n");
-    std::println(std::cout, "Test 4 passed: Rejects sector owned by another player");
+    std::println(std::cout,
+                 "Test 4 passed: Rejects sector owned by another player");
   }
 
   // Success - God can build on alien sector
@@ -102,10 +103,12 @@ int main() {
       assert(!result.has_value());
       assert(result.error().find("cannot be built on a planet") !=
              std::string::npos);
-      std::println(std::cout, "Test 6 passed: Rejects ship type that can't be built on "
+      std::println(std::cout,
+                   "Test 6 passed: Rejects ship type that can't be built on "
                    "planets");
     } else {
-      std::println(std::cout, "Test 6 skipped: HABITAT can be built on planets in this "
+      std::println(std::cout,
+                   "Test 6 skipped: HABITAT can be built on planets in this "
                    "configuration");
     }
   }
@@ -115,7 +118,8 @@ int main() {
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
                                       good_sector, {5, 5});
     assert(result.has_value());
-    std::println(std::cout, "Test 7 passed: Can build quarry at empty location");
+    std::println(std::cout,
+                 "Test 7 passed: Can build quarry at empty location");
   }
 
   // Fail - quarry already exists at location (3rd ship in list)
@@ -163,7 +167,9 @@ int main() {
                                       good_sector, {3, 3});
     assert(!result.has_value());
     assert(result.error() == "There already is a quarry here.\n");
-    std::println(std::cout, "Test 8 passed: Rejects duplicate quarry at same location (3rd ship "
+    std::println(
+        std::cout,
+        "Test 8 passed: Rejects duplicate quarry at same location (3rd ship "
         "in list)");
   }
 
@@ -173,7 +179,9 @@ int main() {
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
                                       good_sector, {4, 4});
     assert(result.has_value());
-    std::println(std::cout, "Test 9 passed: Can build quarry at different location than existing");
+    std::println(
+        std::cout,
+        "Test 9 passed: Can build quarry at different location than existing");
   }
 
   // Success - dead quarry at location doesn't block
@@ -195,7 +203,8 @@ int main() {
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
                                       good_sector, {7, 7});
     assert(result.has_value());
-    std::println(std::cout, "Test 10 passed: Dead quarry doesn't block new construction");
+    std::println(std::cout,
+                 "Test 10 passed: Dead quarry doesn't block new construction");
   }
 
   std::println(std::cout, "\nAll can_build_on_sector tests passed!");

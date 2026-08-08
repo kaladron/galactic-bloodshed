@@ -15,7 +15,6 @@ import std;
 /// The tactical command shows a combat display of ships and planets in the
 /// current scope.
 
-
 #include <cstddef>
 
 // Setup common game state used by all tests
@@ -160,7 +159,8 @@ void test_tactical_ship_scope() {
   assert(tactical_output.find("TestPlanet") != std::string::npos &&
          "Tactical at ship scope should show surrounding planet");
 
-  std::println(std::cout, "  ✓ Ship scope produces tactical output with surrounding area");
+  std::println(std::cout,
+               "  ✓ Ship scope produces tactical output with surrounding area");
   std::println(std::cout, "  Output:\n{}", tactical_output);
 }
 

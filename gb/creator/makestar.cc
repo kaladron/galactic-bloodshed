@@ -14,13 +14,10 @@ import std;
 import dallib;
 import gblib;
 
-#include "gb/creator/makestar.h"
 #include "gb/creator/makeplanet.h"
+#include "gb/creator/makestar.h"
 #include "gb/creator/makeuniv.h"
 #include "gb/files.h"
-
-
-
 
 static const double PLANET_DIST_MAX = 1900.0;
 static const double PLANET_DIST_MIN = 100.0;

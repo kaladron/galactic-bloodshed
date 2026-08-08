@@ -138,7 +138,8 @@ int main() {
 
     const auto* factory_check = ctx.em.peek_ship(1);
     assert(factory_check != nullptr);
-    std::println(std::cout, "    After: max_speed={}", factory_check->max_speed());
+    std::println(std::cout, "    After: max_speed={}",
+                 factory_check->max_speed());
 
     // Speed should be set (capped to max of 9)
     assert(factory_check->max_speed() <= 9);
@@ -158,8 +159,10 @@ int main() {
                  static_cast<int>(ShipType::STYPE_FIGHTER));
     std::println(std::cout, "      armor = {}", factory_final->armor());
     std::println(std::cout, "      max_speed = {}", factory_final->max_speed());
-    std::println(std::cout, "      build_cost = {}", factory_final->build_cost());
-    std::println(std::cout, "      complexity = {:.1f}", factory_final->complexity());
+    std::println(std::cout, "      build_cost = {}",
+                 factory_final->build_cost());
+    std::println(std::cout, "      complexity = {:.1f}",
+                 factory_final->complexity());
 
     assert(factory_final->build_type() == ShipType::STYPE_FIGHTER);
     assert(factory_final->armor() == 50);

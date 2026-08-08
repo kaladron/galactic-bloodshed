@@ -11,8 +11,6 @@ import std;
 /// \file bless_test.cc
 /// \brief Unit tests for bless command
 
-
-
 // Test bless command - technology blessing
 void test_bless_technology() {
   TestContext ctx;

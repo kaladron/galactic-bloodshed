@@ -136,7 +136,8 @@ int main() {
   auto not_found = repo.find_sector(test_planet.star_id(),
                                     test_planet.planet_order(), 99, 99);
   assert(!not_found.has_value() && "Should not find non-existent sector");
-  std::println(std::cout, "  ✓ Correctly returns nullopt for non-existent sector");
+  std::println(std::cout,
+               "  ✓ Correctly returns nullopt for non-existent sector");
 
   // Sectors on different planets don't interfere
   std::println(std::cout, "Different planets...");
@@ -298,7 +299,8 @@ int main() {
   // Default-constructed sector_struct should have zero/default values
   assert(empty.popn == 0);
   assert(empty.owner == 0);
-  std::println(std::cout, "  ✓ load() returns default sector_struct for non-existent");
+  std::println(std::cout,
+               "  ✓ load() returns default sector_struct for non-existent");
 
   // Round-trip test with both new methods
   std::println(std::cout, "Round-trip test (save then load)...");

@@ -11,8 +11,6 @@ import std;
 /// \file autoreport_test.cc
 /// \brief Test autoreport command database persistence
 
-
-
 void test_autoreport_database_persistence() {
   std::println(std::cout, "Test: autoreport command database persistence");
 
@@ -102,7 +100,8 @@ void test_autoreport_database_persistence() {
                  saved->info(player_t{1}).autorep);
   }
 
-  std::println(std::cout, "  ✅ All autoreport database persistence tests passed!");
+  std::println(std::cout,
+               "  ✅ All autoreport database persistence tests passed!");
 }
 
 int main() {

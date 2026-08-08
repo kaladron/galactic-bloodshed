@@ -11,8 +11,8 @@ export struct star_struct {
   std::string name;                /* name of star */
   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
   ap_t AP[MAXPLAYERS];             /* action pts alotted */
-  std::uint64_t explored;               /* who's been here 64 bits*/
-  std::uint64_t inhabited;              /* who lives here now 64 bits*/
+  std::uint64_t explored;          /* who's been here 64 bits*/
+  std::uint64_t inhabited;         /* who lives here now 64 bits*/
   double xpos, ypos;
 
   std::vector<std::string>

@@ -257,7 +257,8 @@ void test_d_broadcast_gag_filtering() {
   // needs Session objects, not MockSession. We'll need to refactor the
   // test approach or test at a higher level.
 
-  std::println(std::cout, "  ✓ d_broadcast gag filtering tests passed (placeholder)");
+  std::println(std::cout,
+               "  ✓ d_broadcast gag filtering tests passed (placeholder)");
 }
 
 void test_warn_player_update_suppression() {
@@ -291,11 +292,14 @@ void test_warn_player_update_suppression() {
   // This should deliver to session since update is not in progress
   // (Note: actual implementation would call registry.notify_player)
 
-  std::println(std::cout, "  ✓ warn_player update suppression tests passed (partial)");
+  std::println(std::cout,
+               "  ✓ warn_player update suppression tests passed (partial)");
 }
 
 void test_warn_race_all_governors() {
-  std::println(std::cout, "Testing warn_race calls warn_player for all active governors...");
+  std::println(
+      std::cout,
+      "Testing warn_race calls warn_player for all active governors...");
 
   Database db(":memory:");
   initialize_schema(db);
@@ -444,11 +448,14 @@ void test_telegram_star() {
   telegram_star(em, 10, 1, 0, "Telegram from P1G0\n");
 
   std::println(std::cout, "  ✓ telegram_star executes without crashing");
-  std::println(std::cout, "  (Note: Telegram delivery verification pending SQLite migration)");
+  std::println(
+      std::cout,
+      "  (Note: Telegram delivery verification pending SQLite migration)");
 }
 
 int main() {
-  std::println(std::cout, "Running notification service comprehensive tests...\n");
+  std::println(std::cout,
+               "Running notification service comprehensive tests...\n");
 
   test_notify_player_basic();
   test_notify_race_basic();

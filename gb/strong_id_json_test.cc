@@ -11,7 +11,6 @@ import std;
 // This validates the glz::meta<ID<Tag,T>> specialization BEFORE
 // we change governor_t to use it.
 
-
 // Create a test ID type (don't use governor_t yet - it's still std::uint32_t)
 using test_id_t = ID<"test", int>;
 
@@ -59,7 +58,8 @@ int main() {
     auto result = glz::write_json(id);
     assert(result.has_value());
     assert(result.value() == "42");
-    std::println(std::cout, "✓ Strong ID serializes as plain integer: {}", result.value());
+    std::println(std::cout, "✓ Strong ID serializes as plain integer: {}",
+                 result.value());
   }
 
   // Read ID from JSON
@@ -68,7 +68,8 @@ int main() {
     auto ec = glz::read_json(id, "123");
     assert(!ec);
     assert(id.value == 123);
-    std::println(std::cout, "✓ Strong ID deserializes from plain integer: {}", id.value);
+    std::println(std::cout, "✓ Strong ID deserializes from plain integer: {}",
+                 id.value);
   }
 
   // Round-trip struct containing ID
@@ -97,6 +98,7 @@ int main() {
     std::println(std::cout, "✓ Backward compatible with existing JSON format");
   }
 
-  std::println(std::cout, "\n✅ All strong ID JSON serialization tests passed!");
+  std::println(std::cout,
+               "\n✅ All strong ID JSON serialization tests passed!");
   return 0;
 }

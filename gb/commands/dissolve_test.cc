@@ -42,7 +42,8 @@ int main() {
   const auto* loaded_race = ctx.em.peek_race(1);
   assert(loaded_race != nullptr);
   assert(loaded_race->password == "testpass");
-  std::println(std::cout, "Race loaded into EntityManager: player={}, password={}",
+  std::println(std::cout,
+               "Race loaded into EntityManager: player={}, password={}",
                loaded_race->Playernum, loaded_race->password);
   std::println(std::cout, "Governor 0: active={}, password='{}'",
                loaded_race->governor[0].active,
@@ -67,7 +68,8 @@ int main() {
     // Verify race was dissolved
     const auto* saved_race = ctx.em.peek_race(1);
     assert(saved_race != nullptr);
-    std::println(std::cout, "DEBUG: Race dissolved = {}", saved_race->dissolved);
+    std::println(std::cout, "DEBUG: Race dissolved = {}",
+                 saved_race->dissolved);
     std::println(std::cout, "DEBUG: Race name = {}", saved_race->name);
     assert(saved_race->dissolved == true);
     std::println(std::cout, "    ✓ Race dissolved flag set to true");

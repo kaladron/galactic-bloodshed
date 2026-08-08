@@ -11,8 +11,6 @@ import std;
 /// \file name_test.cc
 /// \brief Test name command database persistence
 
-
-
 void test_name_ship_persistence() {
   std::println(std::cout, "Test: name command - ship naming");
 
@@ -148,7 +146,8 @@ void test_name_star_persistence() {
     auto saved = stars_repo.find_by_number(1);
     assert(saved.has_value());
     assert(saved->get_name() == "Alpha Centauri");
-    std::println(std::cout, "    ✓ Database: star name = '{}'", saved->get_name());
+    std::println(std::cout, "    ✓ Database: star name = '{}'",
+                 saved->get_name());
   }
 
   std::println(std::cout, "  ✅ Star naming test passed!");

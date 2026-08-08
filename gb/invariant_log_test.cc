@@ -22,7 +22,8 @@ int main() {
   log_invariant_violation("Race", "tech", -1.0, 0.0);
 
   std::println(std::cout, "Invariant logging test passed!");
-  std::println(std::cout, "Note: If kDebugInvariants is true, you should see [INVARIANT] "
+  std::println(std::cout,
+               "Note: If kDebugInvariants is true, you should see [INVARIANT] "
                "messages above.");
 
   return 0;

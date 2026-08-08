@@ -9,8 +9,6 @@ import std;
 /// \file shipfilter_test.cc
 /// \brief Test ship filtering helper functions
 
-
-
 int main() {
   // Test parse_ship_selection
   {

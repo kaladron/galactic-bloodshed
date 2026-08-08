@@ -11,8 +11,6 @@ import std;
 /// \file tax_test.cc
 /// \brief Test tax command database persistence
 
-
-
 void test_tax_database_persistence() {
   std::println(std::cout, "Test: tax command database persistence");
 

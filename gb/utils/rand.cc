@@ -9,7 +9,6 @@ module;
 
 import std;
 
-
 module gblib;
 
 /* double double_rand() this returns a random number between 0 and 1 */

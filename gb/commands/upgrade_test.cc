@@ -103,13 +103,13 @@ int main() {
 
     const auto* ship_after = ctx.em.peek_ship(1);
     assert(ship_after != nullptr);
-    std::println(std::cout, "    After: armor={}, resource={}", ship_after->armor(),
-                 ship_after->resource());
+    std::println(std::cout, "    After: armor={}, resource={}",
+                 ship_after->armor(), ship_after->resource());
 
     // Armor should have increased (up to max of 100)
     assert(ship_after->armor() >= initial_armor);
-    std::println(std::cout, "    ✓ Armor upgrade applied (was {}, now {})", initial_armor,
-                 ship_after->armor());
+    std::println(std::cout, "    ✓ Armor upgrade applied (was {}, now {})",
+                 initial_armor, ship_after->armor());
   }
 
   std::println(std::cout, "Upgrade ship speed");
@@ -120,8 +120,8 @@ int main() {
     assert(ship_before != nullptr);
     int initial_speed = ship_before->max_speed();
     int initial_resource = ship_before->resource();
-    std::println(std::cout, "    Before: max_speed={}, resource={}", initial_speed,
-                 initial_resource);
+    std::println(std::cout, "    Before: max_speed={}, resource={}",
+                 initial_speed, initial_resource);
 
     // upgrade speed 9 (max is 9)
     command_t argv = {"upgrade", "speed", "9"};
@@ -136,8 +136,8 @@ int main() {
 
     // Speed should have increased
     assert(ship_after->max_speed() >= initial_speed);
-    std::println(std::cout, "    ✓ Speed upgrade applied (was {}, now {})", initial_speed,
-                 ship_after->max_speed());
+    std::println(std::cout, "    ✓ Speed upgrade applied (was {}, now {})",
+                 initial_speed, ship_after->max_speed());
   }
 
   std::println(std::cout, "Verify upgrades persist after cache clear");
@@ -148,9 +148,9 @@ int main() {
     assert(ship_check != nullptr);
 
     // Values should still reflect upgrades
-    std::println(std::cout, "    Final values: armor={}, max_speed={}, resource={}",
-                 ship_check->armor(), ship_check->max_speed(),
-                 ship_check->resource());
+    std::println(
+        std::cout, "    Final values: armor={}, max_speed={}, resource={}",
+        ship_check->armor(), ship_check->max_speed(), ship_check->resource());
 
     std::println(std::cout, "    ✓ Upgrades persisted to database");
   }

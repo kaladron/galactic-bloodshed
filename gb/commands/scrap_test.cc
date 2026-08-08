@@ -151,9 +151,9 @@ int main() {
 
     const auto* scrap_ship = ctx.em.peek_ship(2);
     assert(scrap_ship != nullptr);
-    std::println(std::cout, "    Ship to scrap: resource={}, fuel={:.0f}, build_cost={}",
-                 scrap_ship->resource(), scrap_ship->fuel(),
-                 scrap_ship->build_cost());
+    std::println(
+        std::cout, "    Ship to scrap: resource={}, fuel={:.0f}, build_cost={}",
+        scrap_ship->resource(), scrap_ship->fuel(), scrap_ship->build_cost());
 
     // scrap #2
     command_t argv = {"scrap", "#2"};
@@ -166,7 +166,8 @@ int main() {
     const auto* scrapped = ctx.em.peek_ship(2);
     assert(scrapped != nullptr);
     assert(scrapped->alive() == 0);
-    std::println(std::cout, "    ✓ Ship 2 is now dead (alive={})", scrapped->alive());
+    std::println(std::cout, "    ✓ Ship 2 is now dead (alive={})",
+                 scrapped->alive());
 
     // Verify carrier received resources
     const auto* carrier_after = ctx.em.peek_ship(1);

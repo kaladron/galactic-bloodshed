@@ -11,8 +11,6 @@ import std;
 /// \file toggle_test.cc
 /// \brief Test toggle command database persistence
 
-
-
 void test_toggle_database_persistence() {
   std::println(std::cout, "Test: toggle command database persistence");
 

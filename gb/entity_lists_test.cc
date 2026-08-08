@@ -8,8 +8,6 @@ import std;
 
 // Test for RaceList, StarList, and PlanetList iteration helpers
 
-
-
 namespace {
 
 void populate_base_entities(EntityManager& em, JsonStore& store) {
@@ -118,7 +116,8 @@ void test_race_list_readonly(EntityManager& em) {
   assert(seen_players[0] == player_t{1});
   assert(seen_players[1] == player_t{2});
   assert(seen_players[2] == player_t{3});
-  std::println(std::cout, "  RaceList: iterated {} races, all have correct Playernum",
+  std::println(std::cout,
+               "  RaceList: iterated {} races, all have correct Playernum",
                count);
 }
 
@@ -141,7 +140,8 @@ void test_star_list_readonly(EntityManager& em) {
   assert(seen_stars.size() == 2);
   assert(seen_stars[0] == 0);
   assert(seen_stars[1] == 1);
-  std::println(std::cout, "  StarList: iterated {} stars, all have correct star_id",
+  std::println(std::cout,
+               "  StarList: iterated {} stars, all have correct star_id",
                count);
 }
 
@@ -169,7 +169,8 @@ void test_planet_list_readonly(EntityManager& em) {
   }
 
   assert(total_planets == 3);
-  std::println(std::cout, "  PlanetList: iterated {} total planets across all stars",
+  std::println(std::cout,
+               "  PlanetList: iterated {} total planets across all stars",
                total_planets);
 }
 
@@ -246,8 +247,8 @@ void test_ship_list_patterns(EntityManager& em) {
 
   assert(count == 3);
   assert(total_fuel == 100.0 + 200.0 + 300.0);
-  std::println(std::cout, "    Read-only iteration: {} ships, total fuel = {}", count,
-               total_fuel);
+  std::println(std::cout, "    Read-only iteration: {} ships, total fuel = {}",
+               count, total_fuel);
 
   std::println(std::cout, "  Testing mutable ShipList (with modifications)...");
   count = 0;
@@ -274,7 +275,8 @@ void test_ship_list_patterns(EntityManager& em) {
     std::println(std::cout, "    Verified modifications were auto-saved");
   }
 
-  std::println(std::cout, "  Testing mutable ShipList with dereference pattern...");
+  std::println(std::cout,
+               "  Testing mutable ShipList with dereference pattern...");
   ShipList shiplist(em, 1);
 
   for (auto ship_handle : shiplist) {

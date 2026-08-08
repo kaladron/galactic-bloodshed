@@ -18,8 +18,6 @@ import gblib;
 import notification;
 import session;
 
-
-
 // Server class - implements SessionRegistry interface for the application layer
 class Server : public SessionRegistry {
 public:
@@ -610,13 +608,16 @@ int main(int argc, char** argv) {
   auto server_state_handle = entity_manager.get_server_state();
   auto& state = *server_state_handle;
 
-  std::println(std::cout, "      ***   Galactic Bloodshed ver {0} ***", GB_VERSION);
+  std::println(std::cout, "      ***   Galactic Bloodshed ver {0} ***",
+               GB_VERSION);
   std::println(std::cout, "");
   std::time_t clk = std::time(nullptr);
   std::print("      {0}", std::ctime(&clk));
   if (EXTERNAL_TRIGGER) {
-    std::println(std::cout, "      The update  password is '%s'.", UPDATE_PASSWORD);
-    std::println(std::cout, "      The segment password is '%s'.", SEGMENT_PASSWORD);
+    std::println(std::cout, "      The update  password is '%s'.",
+                 UPDATE_PASSWORD);
+    std::println(std::cout, "      The segment password is '%s'.",
+                 SEGMENT_PASSWORD);
   }
   int port;
   std::chrono::minutes update_time;  // Local for command parsing
@@ -899,8 +900,9 @@ static void check_connect(Session& session, std::string_view message) {
   temp_g.race = session.entity_manager().peek_race(Playernum);
   GB_time({}, temp_g);
 
-  session.out() << std::format("\nLast login      : {}",
-                               std::ctime(&(race.governor[Governor.value].login)));
+  session.out() << std::format(
+      "\nLast login      : {}",
+      std::ctime(&(race.governor[Governor.value].login)));
 
   // Update login time
   auto& race_mut = *race_handle;

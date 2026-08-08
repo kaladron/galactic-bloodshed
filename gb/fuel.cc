@@ -54,7 +54,7 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
       (state->segments == 1)
           ? state->next_update_time +
                 (static_cast<std::time_t>((segs - 1) *
-                                     (state->update_time_minutes * 60)))
+                                          (state->update_time_minutes * 60)))
           : state->next_segment_time +
                 ((segs - 1) * (state->update_time_minutes / state->segments) *
                  60);

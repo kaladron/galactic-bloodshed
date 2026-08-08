@@ -11,10 +11,9 @@ import std;
 /// \file survey_test.cc
 /// \brief Test survey command for edge cases and output formatting
 
-
-
 void test_survey_no_args_planet_scope() {
-  std::println(std::cout, "Test: survey command with no arguments at planet scope");
+  std::println(std::cout,
+               "Test: survey command with no arguments at planet scope");
 
   // Create in-memory database
   TestContext ctx;
@@ -166,7 +165,8 @@ void test_survey_sector_mode_no_args() {
 
   // TEST: Use 'map' command (mode=1) with no arguments - THIS IS THE BUG!
   // Previously this would access argv[1] without checking argv.size()
-  std::println(std::cout, "  Testing: map (no args) at planet scope - bug fix check");
+  std::println(std::cout,
+               "  Testing: map (no args) at planet scope - bug fix check");
   {
     command_t cmd = {"map"};  // map uses mode=1
     GB::commands::survey(cmd, g);
@@ -174,14 +174,16 @@ void test_survey_sector_mode_no_args() {
     // Should not crash and should produce valid output
     std::string out_str = g.out.str();
     // The command should work without segfaulting
-    std::println(std::cout, "    ✓ Command executed without crash (bug fix verified)");
+    std::println(std::cout,
+                 "    ✓ Command executed without crash (bug fix verified)");
   }
 
   std::println(std::cout, "  ✅ Survey CSP mode test passed!");
 }
 
 void test_survey_sector_range_with_header() {
-  std::println(std::cout, "Test: survey command with sector range shows header");
+  std::println(std::cout,
+               "Test: survey command with sector range shows header");
 
   // Create in-memory database
   TestContext ctx;

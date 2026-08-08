@@ -76,7 +76,9 @@ int main() {
       caught_exception = true;
     }
     assert(caught_exception);
-    std::println(std::cout, "  ✓ planet_name_isset works correctly and throws on out of bounds");
+    std::println(
+        std::cout,
+        "  ✓ planet_name_isset works correctly and throws on out of bounds");
   }
 
   // set_planet_name with auto-resize
@@ -147,7 +149,9 @@ int main() {
     }
     assert(caught_exception);
 
-    std::println(std::cout, "  ✓ Empty star works correctly with exception-based bounds checking");
+    std::println(
+        std::cout,
+        "  ✓ Empty star works correctly with exception-based bounds checking");
   }
 
   // numplanets() reflects vector size

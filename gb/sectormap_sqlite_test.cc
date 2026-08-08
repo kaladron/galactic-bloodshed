@@ -69,7 +69,8 @@ void verify_sectormap_equal(const SectorMap& original,
 }
 
 void test_entitymanager_sectormap(EntityManager& em, Database& db) {
-  std::println(std::cout, "=== Testing EntityManager get_sectormap/peek_sectormap ===");
+  std::println(std::cout,
+               "=== Testing EntityManager get_sectormap/peek_sectormap ===");
 
   // First, we need to create and save a planet so EntityManager can find it
   JsonStore store(db);

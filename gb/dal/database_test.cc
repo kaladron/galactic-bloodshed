@@ -66,7 +66,8 @@ int main() {
     auto news_after_rollback = db.news_get_since(1, 0);
     assert(news_after_rollback.size() == 1);
     assert(std::get<2>(news_after_rollback[0]) == "Committed news");
-    std::println(std::cout, "✓ Transaction rollback discards uncommitted changes");
+    std::println(std::cout,
+                 "✓ Transaction rollback discards uncommitted changes");
 
     db.optimize();
     std::println(std::cout, "✓ Can optimize database");
@@ -137,7 +138,8 @@ int main() {
     auto t2 = db.telegram_add(p1, g0, "Fleet arriving soon", 1050);
     auto t3 = db.telegram_add(p1, g1, "Governor 1 secret dispatch", 1100);
     auto t4 = db.telegram_add(p2, g0, "Message for Player 2", 1200);
-    assert(t1.has_value() && t2.has_value() && t3.has_value() && t4.has_value());
+    assert(t1.has_value() && t2.has_value() && t3.has_value() &&
+           t4.has_value());
     std::println(std::cout, "✓ telegram_add successfully stores messages");
 
     // Test telegram_count
@@ -145,7 +147,8 @@ int main() {
     assert(db.telegram_count(p1, g1) == 1);
     assert(db.telegram_count(p2, g0) == 1);
     assert(db.telegram_count(player_t{99}, g0) == 0);
-    std::println(std::cout, "✓ telegram_count returns correct counts per recipient");
+    std::println(std::cout,
+                 "✓ telegram_count returns correct counts per recipient");
 
     // Test telegram_get
     auto p1_g0_msgs = db.telegram_get(p1, g0);
@@ -158,14 +161,16 @@ int main() {
 
     assert(std::get<0>(p1_g0_msgs[1]) == *t2);
     assert(std::get<3>(p1_g0_msgs[1]) == "Fleet arriving soon");
-    std::println(std::cout, "✓ telegram_get retrieves messages in chronological order");
+    std::println(std::cout,
+                 "✓ telegram_get retrieves messages in chronological order");
 
     // Test telegram_delete_for_governor
     assert(db.telegram_delete_for_governor(p1, g0));
     assert(db.telegram_count(p1, g0) == 0);
     assert(db.telegram_count(p1, g1) == 1);  // Other governor untouched
     assert(db.telegram_count(p2, g0) == 1);  // Other player untouched
-    std::println(std::cout, "✓ telegram_delete_for_governor removes only target recipient messages");
+    std::println(std::cout, "✓ telegram_delete_for_governor removes only "
+                            "target recipient messages");
 
     // Test telegram_purge_all
     assert(db.telegram_purge_all());
@@ -184,17 +189,24 @@ int main() {
 
     // Store planet JSON using JsonStore
     JsonStore store(db);
-    std::vector<std::pair<std::string, int>> k1 = {{"star_id", 0}, {"planet_order", 0}};
-    std::vector<std::pair<std::string, int>> k2 = {{"star_id", 0}, {"planet_order", 1}};
-    std::vector<std::pair<std::string, int>> k3 = {{"star_id", 0}, {"planet_order", 2}};
+    std::vector<std::pair<std::string, int>> k1 = {{"star_id", 0},
+                                                   {"planet_order", 0}};
+    std::vector<std::pair<std::string, int>> k2 = {{"star_id", 0},
+                                                   {"planet_order", 1}};
+    std::vector<std::pair<std::string, int>> k3 = {{"star_id", 0},
+                                                   {"planet_order", 2}};
 
     // PlanetType enum serializes as string (e.g. "ASTEROID")
-    store.store_multi("tbl_planet", k1, R"({"type": "EARTH", "name": "Earth"})");
-    store.store_multi("tbl_planet", k2, R"({"type": "ASTEROID", "name": "Asteroid1"})");
-    store.store_multi("tbl_planet", k3, R"({"type": "FOREST", "name": "Forest"})");
+    store.store_multi("tbl_planet", k1,
+                      R"({"type": "EARTH", "name": "Earth"})");
+    store.store_multi("tbl_planet", k2,
+                      R"({"type": "ASTEROID", "name": "Asteroid1"})");
+    store.store_multi("tbl_planet", k3,
+                      R"({"type": "FOREST", "name": "Forest"})");
 
     assert(db.count_non_asteroid_planets() == 2);
-    std::println(std::cout, "✓ count_non_asteroid_planets excludes type 7 asteroids");
+    std::println(std::cout,
+                 "✓ count_non_asteroid_planets excludes type 7 asteroids");
   }
 
   // Move semantics

@@ -26,10 +26,12 @@ int main() {
   {
     const auto* loaded = ctx.em.peek_universe();
     if (!loaded) {
-      std::println(std::cout, "ERROR: Universe not found immediately after save!");
+      std::println(std::cout,
+                   "ERROR: Universe not found immediately after save!");
       return 1;
     }
-    std::println(std::cout, "Universe loaded successfully: {} stars", loaded->numstars);
+    std::println(std::cout, "Universe loaded successfully: {} stars",
+                 loaded->numstars);
   }
 
   // Create test race

@@ -9,9 +9,6 @@ import std;
 import dallib;
 import gblib;
 
-
-
-
 namespace {
 constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {
     PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,
@@ -62,7 +59,8 @@ int enroll_valid_race() {
   while (last_star_left >= 0) {
     star = indirect[int_rand(0, last_star_left)];
     int i = 0;
-    while (indirect[i] != star) i++;
+    while (indirect[i] != star)
+      i++;
 
     const auto* star_obj = entity_manager.peek_star(star);
     auto numplanets = star_obj->numplanets();
@@ -70,8 +68,7 @@ int enroll_valid_race() {
     for (pnum = 0; pnum < numplanets; pnum++) {
       const auto* pl = entity_manager.peek_planet(star, pnum);
       if (pl->type() == ppref) {
-        if (pl->popn() == 0)
-          goto found_planet;
+        if (pl->popn() == 0) goto found_planet;
       }
     }
     /*

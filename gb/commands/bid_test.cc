@@ -120,7 +120,8 @@ int main() {
     std::println(std::cout, "  Output: {}", g.out.str());
 
     const auto* c_after = ctx.em.peek_commod(1);
-    std::println(std::cout, "  After: bid={}, bidder={}", c_after->bid, c_after->bidder);
+    std::println(std::cout, "  After: bid={}, bidder={}", c_after->bid,
+                 c_after->bidder);
     assert(c_after->bid == 1000);
     assert(c_after->bidder == 1);
     assert(c_after->bidder_gov == 0);

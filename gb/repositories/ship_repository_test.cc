@@ -160,7 +160,8 @@ int main() {
   std::println(std::cout, "Find non-existent ship...");
   auto not_found = repo.find_by_number(999);
   assert(!not_found.has_value() && "Should not find non-existent ship");
-  std::println(std::cout, "  ✓ Correctly returns nullopt for non-existent ship");
+  std::println(std::cout,
+               "  ✓ Correctly returns nullopt for non-existent ship");
 
   // List ships
   std::println(std::cout, "List ships...");

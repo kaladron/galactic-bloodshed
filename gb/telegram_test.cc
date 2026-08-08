@@ -117,7 +117,8 @@ int main() {
   assert(p4g0[0].message == "Broadcast to all governors\n");
   assert(p4g1[0].message == "Broadcast to all governors\n");
   assert(p4g2[0].message == "Broadcast to all governors\n");
-  std::println(std::cout, "  ✓ push_telegram_race() broadcasts to all active governors");
+  std::println(std::cout,
+               "  ✓ push_telegram_race() broadcasts to all active governors");
 
   // Purge all telegrams
   std::println(std::cout, "\nTest 9: Purge all telegrams");
@@ -131,7 +132,8 @@ int main() {
   std::println(std::cout, "  ✓ All telegrams purged successfully");
 
   // Test with special characters and long messages
-  std::println(std::cout, "\nTest 10: Test special characters and long messages");
+  std::println(std::cout,
+               "\nTest 10: Test special characters and long messages");
   std::string special_msg = "Special chars: <>|&;$`\"'\\n\ttest\n";
   em.post_telegram(5, 0, special_msg);
   auto special_telegrams = em.get_telegrams(5, 0);
@@ -194,7 +196,8 @@ int main() {
   assert(!em.has_telegrams(8, 0));
   assert(em.has_telegrams(8, 1));  // Different governor still has telegrams
   assert(em.has_telegrams(9, 0));  // Different player still has telegrams
-  std::println(std::cout, "  ✓ Selective deletion doesn't affect other recipients");
+  std::println(std::cout,
+               "  ✓ Selective deletion doesn't affect other recipients");
 
   std::println(std::cout, "\n✅ All telegram system tests passed!");
   return 0;

@@ -11,7 +11,6 @@ import std;
 import tabulate;
 #undef stdout
 
-
 module commands;
 
 namespace {

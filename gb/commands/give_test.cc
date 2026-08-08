@@ -115,8 +115,10 @@ int main() {
     ctx.em.clear_cache();
     const auto* ship_verify = ctx.em.peek_ship(ship_id);
     assert(ship_verify);
-    std::println(std::cout, "Ship owner: {} (expected 2)", ship_verify->owner());
-    std::println(std::cout, "Ship governor: {} (expected 0)", ship_verify->governor());
+    std::println(std::cout, "Ship owner: {} (expected 2)",
+                 ship_verify->owner());
+    std::println(std::cout, "Ship governor: {} (expected 0)",
+                 ship_verify->governor());
     assert(ship_verify->owner() == 2);
     assert(ship_verify->governor() == 0);  // Given to leader
 
@@ -130,7 +132,8 @@ int main() {
     assert(star_verify);
     assert(isset<std::uint64_t>(star_verify->explored(), 2U));
 
-    std::println(std::cout, "Give command test passed: Ship ownership transferred");
+    std::println(std::cout,
+                 "Give command test passed: Ship ownership transferred");
 
     // Clear output for next test
     g.out.str("");
@@ -172,10 +175,12 @@ int main() {
     ctx.em.clear_cache();
     const auto* ship2_verify = ctx.em.peek_ship(ship2_id);
     assert(ship2_verify);
-    std::println(std::cout, "Ship2 owner: {} (expected 1)", ship2_verify->owner());
+    std::println(std::cout, "Ship2 owner: {} (expected 1)",
+                 ship2_verify->owner());
     assert(ship2_verify->owner() == 1);  // Still owned by race 1
 
-    std::println(std::cout, "Give command test passed: Non-governor cannot give");
+    std::println(std::cout,
+                 "Give command test passed: Non-governor cannot give");
   }
 
   // Test: Try to give ship with crew (should fail unless God)
@@ -212,7 +217,8 @@ int main() {
     assert(ship3_verify);
     assert(ship3_verify->owner() == 1);  // Still owned by race 1
 
-    std::println(std::cout, "Give command test passed: Cannot give ship with crew");
+    std::println(std::cout,
+                 "Give command test passed: Cannot give ship with crew");
   }
 
   std::println(std::cout, "\nAll give command tests passed!");

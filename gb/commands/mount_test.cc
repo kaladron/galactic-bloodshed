@@ -11,8 +11,6 @@ import std;
 /// \file mount_test.cc
 /// \brief Unit tests for mount command
 
-
-
 // Database persistence for mounting crystals
 void test_mount_persistence() {
   // 1. Create in-memory database

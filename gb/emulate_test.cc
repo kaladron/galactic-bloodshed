@@ -52,6 +52,8 @@ int main() {
   assert(saved->governor[1].name == "Governor1");
 
   std::println(std::cout, "EMULATE prerequisite test passed!");
-  std::println(std::cout, "Note: Full command testing requires MockSession implementation.");
+  std::println(
+      std::cout,
+      "Note: Full command testing requires MockSession implementation.");
   return 0;
 }

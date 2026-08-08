@@ -28,7 +28,8 @@ static int enroll_player_race(const char* failure_filename) {
   static int successful_enroll_in_fix_mode = 0;
 
   while ((n = critique_to_file(nullptr, 1, 1))) {
-    std::println(std::cout, "Race ({}) unacceptable, for the following reason{}:",
+    std::println(std::cout,
+                 "Race ({}) unacceptable, for the following reason{}:",
                  race_info.name, (n > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 1);
     if (recursing) {
@@ -42,7 +43,8 @@ static int enroll_player_race(const char* failure_filename) {
     if (n == 1) /* enroll anyway */
       break;
     if (n == 2) { /* fix */
-      std::println(std::cout, R"(Recursive racegen.  "Enroll" or "Quit" to exit.)");
+      std::println(std::cout,
+                   R"(Recursive racegen.  "Enroll" or "Quit" to exit.)");
       recursing = 1;
       modify_print_loop(1);
       please_quit = recursing = 0;
@@ -157,7 +159,8 @@ int enroll(int argc, const char* argv[]) {
   if (std::strcmp(race_info.address, TO) != 0)
     ret = enroll_player_race(argv[1]);
   else if ((ret = critique_to_file(nullptr, 1, 0))) {
-    std::println(std::cout, "Race ({}) unacceptable, for the following reason{}:",
+    std::println(std::cout,
+                 "Race ({}) unacceptable, for the following reason{}:",
                  race_info.name, (ret > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 0);
   } else if ((ret = enroll_valid_race()))
@@ -202,7 +205,7 @@ void process(int argc, const char* argv[]) {
   }
   fclose(f);
 
-  std::println(std::cout, "Enrolled {} race{}; {} failure{} saved in file {}.", nenrolled,
-               (nenrolled != 1) ? 's' : '\0', n - nenrolled,
+  std::println(std::cout, "Enrolled {} race{}; {} failure{} saved in file {}.",
+               nenrolled, (nenrolled != 1) ? 's' : '\0', n - nenrolled,
                (n - nenrolled != 1) ? 's' : '\0', argv[2]);
 }

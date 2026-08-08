@@ -98,7 +98,9 @@ int main() {
     assert(p2);
     assert(p1->info(player_t{1}).tox_thresh == 75);
     assert(p2->info(player_t{1}).tox_thresh == 25);
-    std::println(std::cout, "✓ Multiple planets with different thresholds saved correctly");
+    std::println(
+        std::cout,
+        "✓ Multiple planets with different thresholds saved correctly");
   }
 
   std::println(std::cout, "All toxicity tests passed!");

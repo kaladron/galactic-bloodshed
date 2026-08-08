@@ -34,8 +34,8 @@ void name(const command_t& argv, GameObj& g) {
   ch = string;
   spaces = 0;
   while (*ch != '\0') {
-    check |=
-        ((!std::isalnum(*ch) && !(*ch == ' ') && !(*ch == '.')) || (*ch == '/'));
+    check |= ((!std::isalnum(*ch) && !(*ch == ' ') && !(*ch == '.')) ||
+              (*ch == '/'));
     ch++;
     if (*ch == ' ') spaces++;
   }

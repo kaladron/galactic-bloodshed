@@ -10,8 +10,6 @@ import std;
 
 // Test for "build ?" ship list table display
 
-
-
 int main() {
   // Initialize database
   TestContext ctx;

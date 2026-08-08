@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Extended test coverage for build command
 
-
-
 #include <cassert>
 #undef stdout
 #undef stdin

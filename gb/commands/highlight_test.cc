@@ -11,8 +11,6 @@ import std;
 /// \file highlight_test.cc
 /// \brief Test highlight command database persistence
 
-
-
 void test_highlight_database_persistence() {
   std::println(std::cout, "Test: highlight command database persistence");
 
@@ -95,7 +93,8 @@ void test_highlight_database_persistence() {
     assert(saved->governor[0].toggle.highlight == 2);  // Should still be 2
   }
 
-  std::println(std::cout, "  ✅ All highlight database persistence tests passed!");
+  std::println(std::cout,
+               "  ✅ All highlight database persistence tests passed!");
 }
 
 int main() {

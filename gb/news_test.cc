@@ -34,12 +34,14 @@ int main() {
   auto announce_items = news_repo.get_since(NewsType::ANNOUNCE, 0);
   assert(announce_items.size() == 1);
   assert(announce_items[0].message == "Server started\n");
-  std::println(std::cout, "Retrieved {} announcement(s)", announce_items.size());
+  std::println(std::cout, "Retrieved {} announcement(s)",
+               announce_items.size());
 
   auto combat_items = news_repo.get_since(NewsType::COMBAT, 0);
   assert(combat_items.size() == 1);
   assert(combat_items[0].message == "Battle between races!\n");
-  std::println(std::cout, "Retrieved {} combat news item(s)", combat_items.size());
+  std::println(std::cout, "Retrieved {} combat news item(s)",
+               combat_items.size());
 
   // Get latest ID
   int latest_announce_id = news_repo.get_latest_id(NewsType::ANNOUNCE);

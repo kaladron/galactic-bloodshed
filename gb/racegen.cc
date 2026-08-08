@@ -3,9 +3,9 @@
 /// \file racegen.cc
 /// \brief Interactive race generator.
 
-#include <cstdarg>
 #include <strings.h>
 #include <unistd.h>
+#include <cstdarg>
 
 import std;
 import gblib;
@@ -1202,7 +1202,8 @@ static void send2(int, const char**) {
 
   fflush(stdout);
   printf("Mailing race to %s : ", race_info.address);
-  std::sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, race_info.address);
+  std::sprintf(sys, "cat %s | %s %s", race_info.password, MAILER,
+               race_info.address);
   if (std::system(sys) < 0) {
     perror("gaaaaaaah");
     std::exit(-1);

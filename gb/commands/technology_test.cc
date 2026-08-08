@@ -11,8 +11,6 @@ import std;
 /// \file technology_test.cc
 /// \brief Test technology command database persistence
 
-
-
 void test_technology_database_persistence() {
   std::println(std::cout, "Test: technology command database persistence");
 
@@ -181,7 +179,8 @@ void test_technology_database_persistence() {
     // Verify error message
     std::string out_str = g.out.str();
     assert(out_str.find("not authorized") != std::string::npos);
-    std::println(std::cout, "    ✓ Error message correct for unauthorized governor");
+    std::println(std::cout,
+                 "    ✓ Error message correct for unauthorized governor");
 
     // Verify database: should still be 10000 (no change)
     auto saved = planets.find_by_location(1, 0);
@@ -195,7 +194,8 @@ void test_technology_database_persistence() {
     g.out.str("");
   }
 
-  std::println(std::cout, "  ✅ All technology database persistence tests passed!");
+  std::println(std::cout,
+               "  ✅ All technology database persistence tests passed!");
 }
 
 int main() {

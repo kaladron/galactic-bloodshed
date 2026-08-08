@@ -13,10 +13,6 @@ import gblib;
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makestar.h"
 
-
-
-
-
 /*             @   o   O   #   ~   .   (   -    */
 static const int xmin[] = {15, 2, 4, 4, 26, 12, 12, 12};
 static const int xmax[] = {23, 4, 8, 8, 32, 20, 20, 20};

@@ -120,7 +120,8 @@ int main() {
     assert(result.find("You need") != std::string::npos);
     g.out.str("");
 
-    std::println(std::cout, "Build command test passed: Insufficient resources");
+    std::println(std::cout,
+                 "Build command test passed: Insufficient resources");
   }
 
   std::println(std::cout, "\nAll build command tests passed!");

@@ -51,6 +51,8 @@ int main() {
   assert(!saved->governor[0].toggle.gag);
 
   std::println(std::cout, "WHO prerequisite test passed!");
-  std::println(std::cout, "Note: Full command testing requires MockSession implementation.");
+  std::println(
+      std::cout,
+      "Note: Full command testing requires MockSession implementation.");
   return 0;
 }

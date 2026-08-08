@@ -11,8 +11,6 @@ import std;
 /// \file server_test.cc
 /// \brief Tests for the Server class (Step 3 of Asio migration)
 
-
-
 int main() {
   std::println(std::cout, "=== Server Test ===\n");
 

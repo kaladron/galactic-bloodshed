@@ -193,7 +193,8 @@ int main() {
     assert(registry.sessions[0].output.str().empty());
     assert(registry.sessions[1].output.str() == "Test\n");
 
-    std::println(std::cout, "✓ Disconnected sessions don't receive notifications");
+    std::println(std::cout,
+                 "✓ Disconnected sessions don't receive notifications");
   }
 
   // notify_player to wrong player/governor returns false
@@ -213,7 +214,8 @@ int main() {
     assert(registry.sessions[0].output.str().empty());
     assert(registry.sessions[1].output.str().empty());
 
-    std::println(std::cout, "✓ notify_player to non-existent player returns false");
+    std::println(std::cout,
+                 "✓ notify_player to non-existent player returns false");
   }
 
   // notify_race to race with no sessions
@@ -232,7 +234,8 @@ int main() {
     assert(registry.sessions[0].output.str().empty());
     assert(registry.sessions[1].output.str().empty());
 
-    std::println(std::cout, "✓ notify_race to race with no sessions (no crash)");
+    std::println(std::cout,
+                 "✓ notify_race to race with no sessions (no crash)");
   }
 
   // Multiple messages to same session accumulate
@@ -276,7 +279,8 @@ int main() {
     assert(registry.sessions[1].output.str() == "Duplicate login\n");
     assert(registry.sessions[2].output.str().empty());
 
-    std::println(std::cout, "✓ notify_player delivers to multiple matching sessions");
+    std::println(std::cout,
+                 "✓ notify_player delivers to multiple matching sessions");
   }
 
   // Empty message is still delivered
@@ -328,10 +332,13 @@ int main() {
   }
 
   std::println(std::cout, "\n✅ All session module tests passed!");
-  std::println(std::cout, "\nNote: These tests validate SessionRegistry notification logic.");
+  std::println(
+      std::cout,
+      "\nNote: These tests validate SessionRegistry notification logic.");
   std::println(std::cout, "Async I/O behavior (read/write/disconnect) is "
                           "tested via integration tests");
-  std::println(std::cout, "with real network sockets and requires a running server.");
+  std::println(std::cout,
+               "with real network sockets and requires a running server.");
 
   return 0;
 }

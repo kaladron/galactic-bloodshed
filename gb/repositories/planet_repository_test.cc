@@ -57,7 +57,8 @@ int main() {
   std::println(std::cout, "✓ Basic planet save/retrieve works");
 
   // Save planet with conditions
-  std::println(std::cout, "\nTest 2: Save planet with atmospheric conditions...");
+  std::println(std::cout,
+               "\nTest 2: Save planet with atmospheric conditions...");
   Planet planet2(PlanetType::ICEBALL);
   planet2.star_id() = 2;       // Star 2
   planet2.planet_order() = 1;  // Planet 1

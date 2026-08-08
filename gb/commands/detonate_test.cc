@@ -98,6 +98,7 @@ int main() {
   // Target should either be destroyed or damaged
   assert(!affected_target->alive() || affected_target->damage() > 0);
 
-  std::println(std::cout, "✓ detonate command: Mine detonation persisted to database");
+  std::println(std::cout,
+               "✓ detonate command: Mine detonation persisted to database");
   return 0;
 }

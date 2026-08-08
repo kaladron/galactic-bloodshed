@@ -7,8 +7,6 @@ import std;
 /// \file help_test.cc
 /// \brief Test that help files exist and can be read
 
-
-
 // Test that help files exist in the HELPDIR with .md extension
 void test_help_files_exist() {
   std::println(std::cout, "Test: Help files exist with .md extension");

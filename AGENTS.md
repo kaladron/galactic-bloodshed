@@ -17,6 +17,7 @@
 ## 🤖 Agent Skills
 
 - **Commit messages**: Use `.github/skills/generate-commit-message/SKILL.md` when asked to draft a commit message or commit summary.
+- **Code formatting**: Always run `clang-format -i` on modified C++ files (`.cc`, `.cppm`, `.h`, `.hpp`) before committing or pushing changes (see `.github/skills/clang-format/SKILL.md`).
 - **Required workflow**: Always inspect the current git diff first so the proposed message covers the full change set, including tests and refactors.
 - **Output format**: Return commit message suggestions in markdown.
 

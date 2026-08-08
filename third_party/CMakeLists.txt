@@ -19,7 +19,7 @@ FetchContent_MakeAvailable(glaze)
 FetchContent_Declare(
   scn
   GIT_REPOSITORY https://github.com/eliaskosunen/scnlib.git
-  GIT_TAG v3.0.1
+  GIT_TAG v4.0.1
   GIT_SHALLOW TRUE
   EXCLUDE_FROM_ALL)
 

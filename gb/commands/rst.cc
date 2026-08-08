@@ -11,8 +11,10 @@
 module;
 
 import gblib;
-import std.compat;
+import scnlib;
+import std;
 import tabulate;
+#undef stdout
 
 module commands;
 
@@ -492,12 +494,20 @@ void rst(const command_t& argv, GameObj& g) {
   shipnum_t n_ships = g.entity_manager.num_ships();
 
   if (argv.size() >= 2) {
-    if (*argv[1].c_str() == '#' || isdigit(*argv[1].c_str())) {
+    if (*argv[1].c_str() == '#' || std::isdigit(*argv[1].c_str())) {
       /* report on a couple ships */
       int l = 1;
       while (l < MAXARGS && *argv[l].c_str() != '\0') {
-        shipnum_t shipno;
-        sscanf(argv[l].c_str() + (*argv[l].c_str() == '#'), "%lu", &shipno);
+        std::string_view arg_sv = argv[l];
+        if (!arg_sv.empty() && arg_sv.front() == '#') {
+          arg_sv.remove_prefix(1);
+        }
+        auto scan_res = scn::scan<shipnum_t>(arg_sv, "{}");
+        if (!scan_res) {
+          g.out << std::format("rst: invalid ship argument {}\n", argv[l]);
+          return;
+        }
+        shipnum_t shipno = scan_res->value();
         if (shipno > n_ships || shipno < 1) {
           g.out << std::format("rst: no such ship #{} \n", shipno);
           return;

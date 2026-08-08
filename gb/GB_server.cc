@@ -1,22 +1,24 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
+/// \file GB_server.cc
+/// \brief Main game server executable.
+
+#include <sys/stat.h>
+#include <unistd.h>
+#include <cctype>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+
+import std;
 import asio;
 import commands;
 import dallib;
 import gblib;
 import notification;
 import session;
-import std.compat;
 
-#include <sys/stat.h>
-#include <unistd.h>
 
-#include <cctype>
-#include <csignal>
-#include <cstdio>
-#include <cstdlib>
 
 // Server class - implements SessionRegistry interface for the application layer
 class Server : public SessionRegistry {
@@ -63,7 +65,7 @@ private:
   bool shutdown_flag_ = false;
   bool update_flag_ = false;
 
-  time_t go_time_ = 0;
+  std::time_t go_time_ = 0;
   std::chrono::steady_clock::time_point last_quota_update_;
 };
 
@@ -207,7 +209,7 @@ namespace {
 command_t make_command_t(std::string_view message) {
   command_t argv;
 
-  size_t position;
+  std::size_t position;
   while ((position = message.find(' ')) != std::string_view::npos) {
     if (position == 0) {
       message.remove_prefix(1);
@@ -462,7 +464,7 @@ void Server::on_timer() {
   // This replaces the timing logic from shovechars()
   // do_next_thing() calls either do_segment() or do_update() based on game
   // state
-  time_t current_time = std::time(nullptr);
+  std::time_t current_time = std::time(nullptr);
   const auto* state = entity_manager_.peek_server_state();
   if (state && go_time_ == 0) {
     if (current_time >= state->next_update_time) {
@@ -481,7 +483,7 @@ void Server::on_timer() {
 }
 
 void Server::check_idle_sessions() {
-  time_t now = std::time(nullptr);
+  std::time_t now = std::time(nullptr);
   std::vector<std::shared_ptr<Session>> to_disconnect;
 
   for (auto& session : sessions_) {
@@ -608,13 +610,13 @@ int main(int argc, char** argv) {
   auto server_state_handle = entity_manager.get_server_state();
   auto& state = *server_state_handle;
 
-  std::println("      ***   Galactic Bloodshed ver {0} ***", GB_VERSION);
-  std::println();
-  time_t clk = time(nullptr);
-  std::print("      {0}", ctime(&clk));
+  std::println(std::cout, "      ***   Galactic Bloodshed ver {0} ***", GB_VERSION);
+  std::println(std::cout, "");
+  std::time_t clk = std::time(nullptr);
+  std::print("      {0}", std::ctime(&clk));
   if (EXTERNAL_TRIGGER) {
-    std::println("      The update  password is '%s'.", UPDATE_PASSWORD);
-    std::println("      The segment password is '%s'.", SEGMENT_PASSWORD);
+    std::println(std::cout, "      The update  password is '%s'.", UPDATE_PASSWORD);
+    std::println(std::cout, "      The segment password is '%s'.", SEGMENT_PASSWORD);
   }
   int port;
   std::chrono::minutes update_time;  // Local for command parsing
@@ -667,14 +669,14 @@ int main(int argc, char** argv) {
   }
 
   // Print initial schedule status
-  std::print(stderr, "Last Update {:3d} : {}", 0, ctime(&clk));
+  std::print(stderr, "Last Update {:3d} : {}", 0, std::ctime(&clk));
   std::print(stderr, "Last Segment {0:2d} : {1}", state.nsegments_done,
-             ctime(&clk));
+             std::ctime(&clk));
   srandom(getpid());
   std::print(stderr, "      Next Update {0}  : {1}", 1,
-             ctime(&state.next_update_time));
+             std::ctime(&state.next_update_time));
   std::print(stderr, "      Next Segment   : {0}",
-             ctime(&state.next_segment_time));
+             std::ctime(&state.next_segment_time));
 
   // Verify universe is initialized (created by makeuniv)
   const auto* universe = entity_manager.peek_universe();
@@ -697,7 +699,7 @@ int main(int argc, char** argv) {
   // Save final state before shutdown
   server_state_handle.save();
 
-  std::println("Going down.");
+  std::println(std::cout, "Going down.");
   return 0;
 }
 
@@ -898,11 +900,11 @@ static void check_connect(Session& session, std::string_view message) {
   GB_time({}, temp_g);
 
   session.out() << std::format("\nLast login      : {}",
-                               ctime(&(race.governor[Governor.value].login)));
+                               std::ctime(&(race.governor[Governor.value].login)));
 
   // Update login time
   auto& race_mut = *race_handle;
-  race_mut.governor[Governor.value].login = time(nullptr);
+  race_mut.governor[Governor.value].login = std::time(nullptr);
 
   if (!race.Gov_ship) {
     session.out()
@@ -969,7 +971,7 @@ static void initialize_block_data(EntityManager& entity_manager) {
 
 /* report back the update status */
 static void GB_time(const command_t&, GameObj& g) {
-  time_t clk = time(nullptr);
+  std::time_t clk = std::time(nullptr);
   const auto* state = g.entity_manager.peek_server_state();
   if (!state) {
     g.out << "Server state unavailable.\n";
@@ -979,11 +981,11 @@ static void GB_time(const command_t&, GameObj& g) {
   g.out << sched.start_buf;
   g.out << sched.update_buf;
   g.out << sched.segment_buf;
-  g.out << std::format("Current time    : {0}", ctime(&clk));
+  g.out << std::format("Current time    : {0}", std::ctime(&clk));
 }
 
 static void GB_schedule(const command_t&, GameObj& g) {
-  time_t clk = time(nullptr);
+  std::time_t clk = std::time(nullptr);
   const auto* state = g.entity_manager.peek_server_state();
   if (!state) {
     g.out << "Server state unavailable.\n";
@@ -993,11 +995,11 @@ static void GB_schedule(const command_t&, GameObj& g) {
   g.out << std::format("{0} minute update intervals\n",
                        state->update_time_minutes);
   g.out << std::format("{0} movement segments per update\n", state->segments);
-  g.out << std::format("Current time    : {0}", ctime(&clk));
+  g.out << std::format("Current time    : {0}", std::ctime(&clk));
   g.out << std::format(
       "Next Segment {0:2d} : {1}",
       state->nsegments_done == state->segments ? 1 : state->nsegments_done + 1,
-      ctime(&state->next_segment_time));
+      std::ctime(&state->next_segment_time));
   g.out << std::format("Next Update {0:3d} : {1}", sched.nupdates_done + 1,
-                       ctime(&state->next_update_time));
+                       std::ctime(&state->next_update_time));
 }

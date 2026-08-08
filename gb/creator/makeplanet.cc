@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// \file makeplanet.cc makes one planet
-
-import dallib;
-import gblib;
-import std;
-
-#include "gb/creator/makeplanet.h"
+/// \file makeplanet.cc
+/// \brief Generates individual planets for star systems.
 
 #include <sqlite3.h>
-#include <strings.h>
-
 #include <cstdlib>
 
+import std;
+import dallib;
+import gblib;
+
+#include "gb/creator/makeplanet.h"
 #include "gb/creator/makestar.h"
+
+
+
+
 
 /*             @   o   O   #   ~   .   (   -    */
 static const int xmin[] = {15, 2, 4, 4, 26, 12, 12, 12};
@@ -179,7 +181,7 @@ int SectTemp(const Planet& p, const int y) {
 
   int temp = p.conditions(TEMP);
   int mid = ((p.Maxy() + 1) / 2) - 1;
-  int dy = abs(y - mid);
+  int dy = std::abs(y - mid);
 
   temp -= TFAC * dy * dy;
   return temp;

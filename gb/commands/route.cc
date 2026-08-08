@@ -3,7 +3,9 @@
 module;
 
 import gblib;
-import std.compat;
+import scnlib;
+import std;
+#undef stdout
 
 module commands;
 
@@ -13,8 +15,6 @@ void route(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   // TODO(jeffbailey): ap_t APcount = 0;
   int i;
-  int x;
-  int y;
   unsigned char star;
   unsigned char planet;
   unsigned char load;
@@ -133,7 +133,12 @@ void route(const command_t& argv, GameObj& g) {
       return;
     }
     if (argv[2] == "land") {
-      sscanf(argv[3].c_str(), "%d,%d", &x, &y);
+      auto scan_res = scn::scan<int, int>(argv[3], "{},{}");
+      if (!scan_res) {
+        g.out << "Bad sector coordinates.\n";
+        return;
+      }
+      auto [x, y] = scan_res->values();
       if (x < 0 || x > p.Maxx() - 1 || y < 0 || y > p.Maxy() - 1) {
         g.out << "Bad sector coordinates.\n";
         return;

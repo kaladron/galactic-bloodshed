@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// declare.c -- declare alliance, neutrality, war, the basic thing.
+/// \file unpledge.cc
+/// \brief Withdraw pledge to an alliance block.
 
 module;
 
-import gblib;
 import std;
+import gblib;
 import notification;
 
 module commands;

@@ -7,6 +7,7 @@ import gblib;
 import notification;
 import std;
 import tabulate;
+#undef stdout
 
 module commands;
 

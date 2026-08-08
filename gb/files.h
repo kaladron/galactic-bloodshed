@@ -1,6 +1,7 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
+
+/// \file files.h
+/// \brief Path definitions for game data and state files.
 
 #ifndef FILES_H
 #define FILES_H
@@ -14,6 +15,6 @@ inline constexpr auto EXAM_FL = PATH(exam.dat);
 #define PLANETLIST PATH(planet.list)
 #define STARLIST PATH(star.list)
 
-inline constexpr std::string_view nogofl = PKGSTATEDIR "nogo";
+inline constexpr const char* nogofl = PKGSTATEDIR "nogo";
 
 #endif  // FILES_H

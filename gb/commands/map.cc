@@ -3,7 +3,8 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
+#undef stdout
 
 module commands;
 

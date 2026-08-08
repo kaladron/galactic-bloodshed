@@ -64,7 +64,7 @@ export struct TurnStats {
   unsigned long prod_mob{};
 
   // Inhabited sectors bitmap (one per star)
-  std::array<uint64_t, NUMSTARS> inhabited{};
+  std::array<std::uint64_t, NUMSTARS> inhabited{};
 
   // Compatibility values per player (computed at planet start)
   std::array<double, MAXPLAYERS> Compat{};

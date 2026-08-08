@@ -1,12 +1,11 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/*  load.c -- load/unload stuff */
+/// \file load.cc
+/// \brief Load and unload fuel/cargo handling.
 
 module;
 
-import std.compat;
+import std;
 
 module gblib;
 

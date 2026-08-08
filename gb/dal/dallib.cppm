@@ -3,11 +3,14 @@
 module;
 
 #include <sqlite3.h>
+#undef stdout
+#undef stdin
+#undef stderr
 
 export module dallib;
 
-import types;
-import std.compat;
+export import types;
+import std;
 
 export class Database {
   sqlite3* conn = nullptr;
@@ -47,8 +50,8 @@ public:
 
   // News operations - SQL queries encapsulated in DAL
   std::optional<int> news_add(int type, const std::string& message,
-                              int64_t timestamp);
-  std::vector<std::tuple<int, int, std::string, int64_t>>
+                              std::int64_t timestamp);
+  std::vector<std::tuple<int, int, std::string, std::int64_t>>
   news_get_since(int type, int since_id);
   int news_get_latest_id(int type);
   bool news_purge_type(int type);
@@ -57,8 +60,8 @@ public:
   // Telegram operations - SQL queries encapsulated in DAL
   std::optional<int> telegram_add(player_t player, governor_t governor,
                                   const std::string& message,
-                                  int64_t timestamp);
-  std::vector<std::tuple<int, int, int, std::string, int64_t>>
+                                  std::int64_t timestamp);
+  std::vector<std::tuple<int, int, int, std::string, std::int64_t>>
   telegram_get(player_t player, governor_t governor);
   bool telegram_delete_for_governor(player_t player, governor_t governor);
   int telegram_count(player_t player, governor_t governor);
@@ -75,7 +78,7 @@ export struct NewsItem {
   int id{0};
   int type{0};  // NewsType as int
   std::string message;
-  int64_t timestamp{0};
+  std::int64_t timestamp{0};
 };
 
 export class JsonStore {

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-
-// \file power.c display power report
+/// \file power.cc
+/// \brief Display power report command.
 
 module;
 
 import gblib;
 import std;
 import tabulate;
+#undef stdout
 
 module commands;
 

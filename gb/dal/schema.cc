@@ -6,7 +6,8 @@ module;
 
 #include <cstdio>
 
-import std.compat;
+import std;
+#undef stdout
 
 module dallib;
 

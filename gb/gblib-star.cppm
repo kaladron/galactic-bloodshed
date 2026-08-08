@@ -11,8 +11,8 @@ export struct star_struct {
   std::string name;                /* name of star */
   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
   ap_t AP[MAXPLAYERS];             /* action pts alotted */
-  uint64_t explored;               /* who's been here 64 bits*/
-  uint64_t inhabited;              /* who lives here now 64 bits*/
+  std::uint64_t explored;               /* who's been here 64 bits*/
+  std::uint64_t inhabited;              /* who lives here now 64 bits*/
   double xpos, ypos;
 
   std::vector<std::string>
@@ -60,17 +60,17 @@ public:
   };
 
   // This is used both as a boolean and a setter.
-  uint64_t& explored() {
+  std::uint64_t& explored() {
     return star_struct.explored;
   }
-  [[nodiscard]] uint64_t explored() const {
+  [[nodiscard]] std::uint64_t explored() const {
     return star_struct.explored;
   }
 
-  uint64_t& inhabited() {
+  std::uint64_t& inhabited() {
     return star_struct.inhabited;
   }
-  [[nodiscard]] uint64_t inhabited() const {
+  [[nodiscard]] std::uint64_t inhabited() const {
     return star_struct.inhabited;
   }
 

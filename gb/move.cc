@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file move.cc
+/// \brief Move population and assault aliens on target sector.
+
 module;
 
-/*  move.c -- move population and assault aliens on target sector */
-
-import std.compat;
+import std;
 
 module gblib;
 
@@ -155,21 +156,21 @@ void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
   cas_mil = MIN(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
-  sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(em, ship).c_str(),
+  std::sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(em, ship).c_str(),
           ship_to_string(ship).c_str(),
           (*civ + *mil) ? "attacked" : "slaughtered", alien.name.c_str(),
           alien.Playernum.value);
-  strcpy(long_msg, short_msg);
+  std::strcpy(long_msg, short_msg);
   std::string battle_msg = std::format(
       "\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n", sect.get_x(),
       sect.get_y(), Desnames[sect.get_condition()], strength, oldciv, oldmil);
-  strcat(long_msg, battle_msg.c_str());
+  std::strcat(long_msg, battle_msg.c_str());
   std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
                                        astrength, dstrength);
-  strcat(long_msg, attack_msg.c_str());
+  std::strcat(long_msg, attack_msg.c_str());
   std::string casualties_msg =
       std::format("\t{} civ/{} mil killed.\n", cas_civ, cas_mil);
-  strcat(long_msg, casualties_msg.c_str());
+  std::strcat(long_msg, casualties_msg.c_str());
 }
 
 void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
@@ -193,7 +194,7 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
               (race.likes[sect.get_condition()] + 1.0) *
               ((double)Defensedata[sect.get_condition()] + 1.0) *
               morale_factor((double)(race.morale - alien.morale));
-  ammo = (int)log10((double)astrength + 1.0) - 1;
+  ammo = (int)std::log10((double)astrength + 1.0) - 1;
   ammo = std::min(strength, std::max(0, ammo));
   use_destruct(ship, ammo);
   damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
@@ -204,25 +205,25 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
     em.kill_ship(race.Playernum, ship);
   }
   auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
-  sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
+  std::sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
           race.name.c_str(), race.Playernum.value,
           ship.alive() ? "attacked" : "DESTROYED",
           ship_to_string(ship).c_str());
-  strcpy(long_msg, short_msg);
+  std::strcpy(long_msg, short_msg);
   std::string assault_msg = std::format(
       "\tBattle at {},{} {}: {} civ/{} mil assault {}\n", x, y,
       Desnames[sect.get_condition()], civ, mil, Shipnames[ship.type()]);
-  strcat(long_msg, assault_msg.c_str());
+  std::strcat(long_msg, assault_msg.c_str());
   std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
                                        astrength, dstrength);
-  strcat(long_msg, attack_msg.c_str());
+  std::strcat(long_msg, attack_msg.c_str());
   std::string damage_msg = std::format(
       "\t{}% damage inflicted for a total of {}%\n", damage, ship.damage());
-  strcat(long_msg, damage_msg.c_str());
+  std::strcat(long_msg, damage_msg.c_str());
   std::string casualties_msg =
       std::format("\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",
                   cas_civ, cas_mil, pdam, sdam);
-  strcat(long_msg, casualties_msg.c_str());
+  std::strcat(long_msg, casualties_msg.c_str());
 }
 
 void ground_attack(const Race& race, const Race& alien, population_t* people,

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/*  order.c -- give orders to ship */
+/// \file order.cc
+/// \brief Give orders to ships.
 
 module;
 
-import gblib;
-import std.compat;
+import std;
 
 module gblib;
 
@@ -96,13 +96,16 @@ void order_scatter(GameObj& g, const command_t& /*argv*/, Ship& ship) {
 }
 
 void order_impact(GameObj& g, const command_t& argv, Ship& ship) {
-  int x;
-  int y;
   if (ship.type() != ShipType::STYPE_MISSILE) {
     g.out << "Only missiles can be designated for this.\n";
     return;
   }
-  sscanf(argv[3].c_str(), "%d,%d", &x, &y);
+  int x = 0;
+  int y = 0;
+  if (std::sscanf(argv[3].c_str(), "%d,%d", &x, &y) != 2) {
+    g.out << "Usage: order <ship> designate <x>,<y>\n";
+    return;
+  }
   ship.special() = ImpactData{.x = static_cast<unsigned char>(x),
                               .y = static_cast<unsigned char>(y),
                               .scatter = 0};
@@ -135,11 +138,10 @@ void order_jump(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_protect(GameObj& g, const command_t& argv, Ship& ship) {
-  int j;
-  if (argv.size() > 3)
-    sscanf(argv[3].c_str() + (argv[3][0] == '#'), "%d", &j);
-  else
-    j = 0;
+  int j = 0;
+  if (argv.size() > 3) {
+    std::sscanf(argv[3].c_str() + (argv[3][0] == '#'), "%d", &j);
+  }
   if (j == ship.number()) {
     g.out << "You can't do that.\n";
     return;
@@ -848,8 +850,8 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
 
     double fuse =
         ship.mounted() && dist > distfac
-            ? HYPER_DRIVE_FUEL_USE * sqrt(ship.mass()) * (dist / distfac)
-            : HYPER_DRIVE_FUEL_USE * sqrt(ship.mass()) * (dist / distfac) *
+            ? HYPER_DRIVE_FUEL_USE * std::sqrt(ship.mass()) * (dist / distfac)
+            : HYPER_DRIVE_FUEL_USE * std::sqrt(ship.mass()) * (dist / distfac) *
                   (dist / distfac);
 
     push_telegram(

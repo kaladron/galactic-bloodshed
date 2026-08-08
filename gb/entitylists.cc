@@ -10,6 +10,7 @@ import :types;
 import :services;
 import :gameobj;
 import :ships;
+#undef stdout
 
 // ShipHandle implementation using Pimpl to hide EntityHandle<Ship>
 

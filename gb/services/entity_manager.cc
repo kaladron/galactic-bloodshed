@@ -2,7 +2,8 @@
 
 module;
 
-import std.compat;
+import std;
+#undef stdout
 
 module gblib;
 
@@ -570,7 +571,7 @@ EntityManager::find_player_by_name(const std::string& name) {
 
   if (name.empty()) return std::nullopt;
 
-  if (isdigit(name[0])) {
+  if (std::isdigit(name[0])) {
     if ((rnum = std::stoi(name)) < 1 || rnum > num_races()) return std::nullopt;
     return rnum;
   }
@@ -594,7 +595,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   ship.alive() = 0;
   ship.notified() = 0; /* prepare the ship for recycling */
 
-  if (ship.type() != ShipType::STYPE_POD &&
+  if (ship.owner() != 0 && ship.type() != ShipType::STYPE_POD &&
       ship.type() != ShipType::OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
     auto victim_handle = get_race(ship.owner());

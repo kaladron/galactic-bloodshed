@@ -5,6 +5,7 @@ module;
 import gblib;
 import session;
 import std;
+#undef stdout
 
 module commands;
 

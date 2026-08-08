@@ -1,13 +1,13 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/*  orbit.c -- display orbits of planets (graphic representation) */
+/// \file orbit.cc
+/// \brief Display orbits of planets (graphic representation).
 
 module;
 
+import std;
 import gblib;
-import std.compat;
+import scnlib;
 
 module commands;
 
@@ -55,14 +55,19 @@ void orbit(const command_t& argv, GameObj& g) {
           case 'p':
             DontDispPlanets = 1;
             break;
-          default:
-            if (sscanf(argv[flag].c_str() + 1, "%d", &DontDispNum) != 1) {
+          default: {
+            auto scan_res =
+                scn::scan<int>(std::string_view(argv[flag]).substr(1), "{}");
+            if (scan_res) {
+              DontDispNum = scan_res->value();
+            } else {
               g.out << std::format("Bad number {}.\n",
                                    std::string_view(argv[flag]).substr(1));
               DontDispNum = -1;
             }
-            if (DontDispNum) DontDispNum--; /* make a '1' into a '0' */
+            if (DontDispNum > 0) DontDispNum--; /* make a '1' into a '0' */
             break;
+          }
         }
     }
 
@@ -85,7 +90,7 @@ void orbit(const command_t& argv, GameObj& g) {
   }
 
   /* orbit type of map */
-  sprintf(output, "#");
+  std::sprintf(output, "#");
 
   const auto* race_ptr = g.entity_manager.peek_race(g.player());
   if (!race_ptr) {
@@ -106,7 +111,7 @@ void orbit(const command_t& argv, GameObj& g) {
         if (DontDispNum != star_ref.star_id()) {
           std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, star_ref,
                                       DontDispStars, Race);
-          strcat(output, star.c_str());
+          std::strcat(output, star.c_str());
         }
       }
       if (!DontDispShips) {
@@ -117,7 +122,7 @@ void orbit(const command_t& argv, GameObj& g) {
           if (DontDispNum != s.number()) {
             shipbuf[0] = '\0';
             DispShip(g, g.entity_manager, *where, &s, Race, shipbuf);
-            strcat(output, shipbuf);
+            std::strcat(output, shipbuf);
           }
         }
       }
@@ -131,7 +136,7 @@ void orbit(const command_t& argv, GameObj& g) {
       }
       std::string star =
           DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars, Race);
-      strcat(output, star.c_str());
+      std::strcat(output, star.c_str());
 
       for (planetnum_t i = 0; i < star_ptr->numplanets(); i++)
         if (DontDispNum != i) {
@@ -140,7 +145,7 @@ void orbit(const command_t& argv, GameObj& g) {
           std::string planet =
               DispPlanet(g, ScopeLevel::LEVEL_STAR, *p,
                          star_ptr->get_planet_name(i), DontDispPlanets, Race);
-          strcat(output, planet.c_str());
+          std::strcat(output, planet.c_str());
         }
       /* check to see if you have ships at orbiting the star, if so you can
          see enemy ships */
@@ -167,7 +172,7 @@ void orbit(const command_t& argv, GameObj& g) {
             if ((s.owner() == g.player()) || iq) {
               shipbuf[0] = '\0';
               DispShip(g, g.entity_manager, *where, &s, Race, shipbuf);
-              strcat(output, shipbuf);
+              std::strcat(output, shipbuf);
             }
           }
         }
@@ -187,7 +192,7 @@ void orbit(const command_t& argv, GameObj& g) {
       std::string planet = DispPlanet(g, ScopeLevel::LEVEL_PLAN, *p,
                                       plan_star->get_planet_name(where->pnum),
                                       DontDispPlanets, Race);
-      strcat(output, planet.c_str());
+      std::strcat(output, planet.c_str());
 
       /* check to see if you have ships at landed or
          orbiting the planet, if so you can see orbiting enemy ships */
@@ -210,7 +215,7 @@ void orbit(const command_t& argv, GameObj& g) {
               if ((s.owner() == g.player()) || iq) {
                 shipbuf[0] = '\0';
                 DispShip(g, g.entity_manager, *where, &s, Race, shipbuf, *p);
-                strcat(output, shipbuf);
+                std::strcat(output, shipbuf);
               }
             }
           }
@@ -221,7 +226,7 @@ void orbit(const command_t& argv, GameObj& g) {
       g.out << "Bad scope.\n";
       return;
   }
-  strcat(output, "\n");
+  std::strcat(output, "\n");
   g.out << output;
 }
 }  // namespace GB::commands
@@ -432,15 +437,15 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
       /* (magnification) */
       if (x >= 0 && y >= 0) {
         if (r.governor[g.governor().value].toggle.color) {
-          sprintf(string, "%c %d %d %d %c %c %lu;",
-                  (char)(ship->owner().value + '?'), x, y, wm,
-                  Shipltrs[ship->type()], (char)(ship->owner().value + '?'),
-                  ship->number());
+          std::sprintf(string, "%c %d %d %d %c %c %lu;",
+                       (char)(ship->owner().value + '?'), x, y, wm,
+                       Shipltrs[ship->type()],
+                       (char)(ship->owner().value + '?'), ship->number());
         } else {
           stand = (ship->owner() ==
                    r.governor[g.governor().value].toggle.highlight);
-          sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                  Shipltrs[ship->type()], stand, ship->number());
+          std::sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
+                       Shipltrs[ship->type()], stand, ship->number());
         }
       }
       break;
@@ -457,15 +462,15 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
           ((ship->owner() == g.player()) || g.god()))
         if (x >= 0 && y >= 0) {
           if (r.governor[g.governor().value].toggle.color) {
-            sprintf(string, "%c %d %d %d %c %c %lu;",
-                    (char)(ship->owner().value + '?'), x, y, wm,
-                    Shipltrs[ship->type()], (char)(ship->owner().value + '?'),
-                    ship->number());
+            std::sprintf(string, "%c %d %d %d %c %c %lu;",
+                         (char)(ship->owner().value + '?'), x, y, wm,
+                         Shipltrs[ship->type()],
+                         (char)(ship->owner().value + '?'), ship->number());
           } else {
             stand = (ship->owner() ==
                      r.governor[g.governor().value].toggle.highlight);
-            sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                    Shipltrs[ship->type()], stand, ship->number());
+            std::sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
+                         Shipltrs[ship->type()], stand, ship->number());
           }
         }
       break;

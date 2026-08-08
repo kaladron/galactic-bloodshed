@@ -11,8 +11,10 @@
 module;
 
 import gblib;
-import std.compat;
+import scnlib;
+import std;
 import tabulate;
+#undef stdout
 
 module commands;
 
@@ -686,7 +688,7 @@ void tactical(const command_t& argv, GameObj& g) {
 
   // Parse arguments
   if (argv.size() == 3) {
-    if (isdigit(argv[2][0])) {
+    if (std::isdigit(argv[2][0])) {
       // Filter by player number
       ctx.filter_player = std::stoi(argv[2]);
     } else {
@@ -700,12 +702,20 @@ void tactical(const command_t& argv, GameObj& g) {
 
   // Handle specific ship number(s)
   if (argv.size() >= 2) {
-    if (*argv[1].c_str() == '#' || isdigit(*argv[1].c_str())) {
+    if (*argv[1].c_str() == '#' || std::isdigit(*argv[1].c_str())) {
       shipnum_t n_ships = g.entity_manager.num_ships();
       int l = 1;
       while (l < MAXARGS && *argv[l].c_str() != '\0') {
-        shipnum_t shipno;
-        sscanf(argv[l].c_str() + (*argv[l].c_str() == '#'), "%lu", &shipno);
+        std::string_view arg_sv = argv[l];
+        if (!arg_sv.empty() && arg_sv.front() == '#') {
+          arg_sv.remove_prefix(1);
+        }
+        auto scan_res = scn::scan<shipnum_t>(arg_sv, "{}");
+        if (!scan_res) {
+          g.out << std::format("tactical: invalid ship argument {}\n", argv[l]);
+          return;
+        }
+        shipnum_t shipno = scan_res->value();
         if (shipno > n_ships || shipno < 1) {
           g.out << std::format("tactical: no such ship #{} \n", shipno);
           return;

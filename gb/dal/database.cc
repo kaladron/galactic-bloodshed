@@ -2,9 +2,11 @@
 
 module;
 
-import std.compat;
-
 #include <sqlite3.h>
+
+import std;
+#undef stdout
+
 
 module dallib;
 
@@ -137,7 +139,7 @@ void Database::optimize() {
 
 // News operations implementation
 std::optional<int> Database::news_add(int type, const std::string& message,
-                                      int64_t timestamp) {
+                                      std::int64_t timestamp) {
   if (!conn) return std::nullopt;
 
   const char* sql = R"(
@@ -164,9 +166,9 @@ std::optional<int> Database::news_add(int type, const std::string& message,
   return static_cast<int>(sqlite3_last_insert_rowid(conn));
 }
 
-std::vector<std::tuple<int, int, std::string, int64_t>>
+std::vector<std::tuple<int, int, std::string, std::int64_t>>
 Database::news_get_since(int type, int since_id) {
-  std::vector<std::tuple<int, int, std::string, int64_t>> items;
+  std::vector<std::tuple<int, int, std::string, std::int64_t>> items;
   if (!conn) return items;
 
   const char* sql = R"(
@@ -190,7 +192,7 @@ Database::news_get_since(int type, int since_id) {
     const char* msg_text =
         reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
     std::string message = msg_text ? msg_text : "";
-    int64_t ts = sqlite3_column_int64(stmt, 3);
+    std::int64_t ts = sqlite3_column_int64(stmt, 3);
     items.emplace_back(id, news_type, std::move(message), ts);
   }
 
@@ -254,7 +256,7 @@ bool Database::news_purge_all() {
 // Telegram operations implementation
 std::optional<int> Database::telegram_add(player_t player, governor_t governor,
                                           const std::string& message,
-                                          int64_t timestamp) {
+                                          std::int64_t timestamp) {
   if (!conn) return std::nullopt;
 
   const char* sql = R"(
@@ -282,9 +284,9 @@ std::optional<int> Database::telegram_add(player_t player, governor_t governor,
   return static_cast<int>(sqlite3_last_insert_rowid(conn));
 }
 
-std::vector<std::tuple<int, int, int, std::string, int64_t>>
+std::vector<std::tuple<int, int, int, std::string, std::int64_t>>
 Database::telegram_get(player_t player, governor_t governor) {
-  std::vector<std::tuple<int, int, int, std::string, int64_t>> items;
+  std::vector<std::tuple<int, int, int, std::string, std::int64_t>> items;
   if (!conn) return items;
 
   const char* sql = R"(
@@ -309,7 +311,7 @@ Database::telegram_get(player_t player, governor_t governor) {
     const char* msg_text =
         reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
     std::string message = msg_text ? msg_text : "";
-    int64_t ts = sqlite3_column_int64(stmt, 4);
+    std::int64_t ts = sqlite3_column_int64(stmt, 4);
     items.emplace_back(id, recv_player, recv_governor, std::move(message), ts);
   }
 

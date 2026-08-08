@@ -1,8 +1,7 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-// enroll - racegen interface for Galactic Bloodshed race enrollment program.
+/// \file enroll.cc
+/// \brief Racegen interface for player race enrollment program.
 
 #include "gb/enroll.h"
 
@@ -29,12 +28,12 @@ static int enroll_player_race(const char* failure_filename) {
   static int successful_enroll_in_fix_mode = 0;
 
   while ((n = critique_to_file(nullptr, 1, 1))) {
-    std::println("Race ({}) unacceptable, for the following reason{}:",
+    std::println(std::cout, "Race ({}) unacceptable, for the following reason{}:",
                  race_info.name, (n > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 1);
     if (recursing) {
-      std::println("\"Quit\" to break out of fix mode.");
-      std::println("Enroll failed.");
+      std::println(std::cout, "\"Quit\" to break out of fix mode.");
+      std::println(std::cout, "Enroll failed.");
       return 1;
     }
     if (race_info.status == STATUS_ENROLLED) return 0;
@@ -43,7 +42,7 @@ static int enroll_player_race(const char* failure_filename) {
     if (n == 1) /* enroll anyway */
       break;
     if (n == 2) { /* fix */
-      std::println(R"(Recursive racegen.  "Enroll" or "Quit" to exit.)");
+      std::println(std::cout, R"(Recursive racegen.  "Enroll" or "Quit" to exit.)");
       recursing = 1;
       modify_print_loop(1);
       please_quit = recursing = 0;
@@ -55,13 +54,13 @@ static int enroll_player_race(const char* failure_filename) {
     }
     if (failure_filename != nullptr) {
       if (nullptr == fopen(failure_filename, "w+")) {
-        std::println("Warning: unable to open failures file \"{}\".",
+        std::println(std::cout, "Warning: unable to open failures file \"{}\".",
                      failure_filename);
-        std::println("Race not saved to failures file.");
+        std::println(std::cout, "Race not saved to failures file.");
       } else {
         // print_to_file(f, 0) ; // TODO(jeffbailey): What was this supposed to
         // do?
-        std::println("Race appended to failures file \"{}\".",
+        std::println(std::cout, "Race appended to failures file \"{}\".",
                      failure_filename);
         // fclose(f) ;
       }
@@ -71,7 +70,7 @@ static int enroll_player_race(const char* failure_filename) {
 
     g = fopen(TMP, "w");
     if (g == nullptr) {
-      std::println("Unable to open file \"{}\".", TMP);
+      std::println(std::cout, "Unable to open file \"{}\".", TMP);
       return 1;
     }
     std::println(g, "To: {}", race_info.address);
@@ -92,12 +91,12 @@ static int enroll_player_race(const char* failure_filename) {
 
     std::print("Sending critique to {} via {}...", race_info.address, MAILER);
     fflush(stdout);
-    sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
+    std::sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
     if (system(c) < 0) {
       perror("gaaaaaah");
-      exit(-1);
+      std::exit(-1);
     }
-    std::println("done.");
+    std::println(std::cout, "done.");
 
     return 1;
   }
@@ -111,7 +110,7 @@ static int enroll_player_race(const char* failure_filename) {
 
   g = fopen(TMP, "w");
   if (g == nullptr) {
-    std::println("Unable to open file \"{}\".", TMP);
+    std::println(std::cout, "Unable to open file \"{}\".", TMP);
     return 0;
   }
   std::println(g, "To: {}", race_info.address);
@@ -131,12 +130,12 @@ static int enroll_player_race(const char* failure_filename) {
 
   std::print("Sending acceptance to {} via {}...", race_info.address, MAILER);
   fflush(stdout);
-  sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
+  std::sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
   if (system(c) < 0) {
     perror("gaaaaaah");
-    exit(-1);
+    std::exit(-1);
   }
-  std::println("done.");
+  std::println(std::cout, "done.");
 
   return 0;
 }
@@ -148,23 +147,23 @@ int enroll(int argc, const char* argv[]) {
   if (argc < 2) argv[1] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
   g = fopen(argv[1], "w+");
   if (g == nullptr)
-    std::println("Unable to open failures file \"{}\".", argv[1]);
+    std::println(std::cout, "Unable to open failures file \"{}\".", argv[1]);
   fclose(g);
   bcopy(&race_info, &last, sizeof(struct x));
 
   /*
    * race.address will be unequal to TO in the instance that this is a
    * race submission mailed from somebody other than the moderator.  */
-  if (strcmp(race_info.address, TO) != 0)
+  if (std::strcmp(race_info.address, TO) != 0)
     ret = enroll_player_race(argv[1]);
   else if ((ret = critique_to_file(nullptr, 1, 0))) {
-    std::println("Race ({}) unacceptable, for the following reason{}:",
+    std::println(std::cout, "Race ({}) unacceptable, for the following reason{}:",
                  race_info.name, (ret > 1) ? 's' : '\0');
     critique_to_file(stdout, 1, 0);
   } else if ((ret = enroll_valid_race()))
     critique_to_file(stdout, 1, 0);
 
-  if (ret) std::println("Enroll failed.");
+  if (ret) std::println(std::cout, "Enroll failed.");
   return ret;
 }
 
@@ -180,14 +179,14 @@ void process(int argc, const char* argv[]) {
   if (argc < 2) argv[1] = DEFAULT_ENROLLMENT_FILENAME;
   f = fopen(argv[1], "r");
   if (f == nullptr) {
-    std::println("Unable to open races file \"{}\".", argv[1]);
+    std::println(std::cout, "Unable to open races file \"{}\".", argv[1]);
     return;
   }
 
   if (argc < 3) argv[2] = DEFAULT_ENROLLMENT_FAILURE_FILENAME;
   g = fopen(argv[2], "w");
   if (g == nullptr)
-    std::println("Unable to open failures file \"{}\".", argv[2]);
+    std::println(std::cout, "Unable to open failures file \"{}\".", argv[2]);
   fclose(g);
 
   n = 0;
@@ -195,7 +194,7 @@ void process(int argc, const char* argv[]) {
   while (!feof(f)) {
     if (!load_from_file(f)) continue;
     n++;
-    std::println("{}, from {}", race_info.name, race_info.address);
+    std::println(std::cout, "{}, from {}", race_info.name, race_info.address);
     /* We need the side effects: */
     last_npoints = npoints;
     npoints = STARTING_POINTS - cost_of_race();
@@ -203,7 +202,7 @@ void process(int argc, const char* argv[]) {
   }
   fclose(f);
 
-  std::println("Enrolled {} race{}; {} failure{} saved in file {}.", nenrolled,
+  std::println(std::cout, "Enrolled {} race{}; {} failure{} saved in file {}.", nenrolled,
                (nenrolled != 1) ? 's' : '\0', n - nenrolled,
                (n - nenrolled != 1) ? 's' : '\0', argv[2]);
 }

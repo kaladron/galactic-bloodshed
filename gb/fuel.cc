@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file fuel.cc
+/// \brief Fuel consumption and travel time estimation functions.
+
 module;
 
-/* fuel.c -- See estimations in fuel consumption and travel time. */
-
-import std.compat;
+import std;
 
 module gblib;
 
@@ -49,10 +50,10 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
     return;
   }
 
-  time_t effective_time =
+  std::time_t effective_time =
       (state->segments == 1)
           ? state->next_update_time +
-                (static_cast<time_t>((segs - 1) *
+                (static_cast<std::time_t>((segs - 1) *
                                      (state->update_time_minutes * 60)))
           : state->next_segment_time +
                 ((segs - 1) * (state->update_time_minutes / state->segments) *
@@ -138,16 +139,16 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
         (trip_resolved == 0)) {
       if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP) {
         for (shipnum_t i = 1; i <= Num_ships; i++)
-          free(ships[i]);
-        free(ships);
+          std::free(ships[i]);
+        std::free(ships);
       }
       return {false, number_segments};
     }
   }
   if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP || tmpship.ships()) {
     for (shipnum_t i = 1; i <= Num_ships; i++)
-      free(ships[i]);
-    free(ships);
+      std::free(ships[i]);
+    std::free(ships);
   }
   return {true, number_segments};
 }

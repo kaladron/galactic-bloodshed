@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file fire.c
+/// \file fire.cc
 /// \brief Fire at ship or planet from ship or planet
 
 module;
 
 import std;
+#undef stdout
 
 module gblib;
 

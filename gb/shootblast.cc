@@ -2,7 +2,8 @@
 
 module;
 
-import std.compat;
+import std;
+#undef stdout
 
 module gblib;
 
@@ -135,11 +136,11 @@ int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
   auto [damage, damage_msg] =
       do_damage(em, race.Playernum, ship, race.tech, strength, hits, 0,
                 GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
-  sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
-          race.Playernum.value, ship.alive() ? "attacked" : "DESTROYED",
-          ship_to_string(ship).c_str());
-  strcpy(long_msg, short_msg);
-  strcat(long_msg, damage_msg.c_str());
+  std::sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
+               race.Playernum.value, ship.alive() ? "attacked" : "DESTROYED",
+               ship_to_string(ship).c_str());
+  std::strcpy(long_msg, short_msg);
+  std::strcat(long_msg, damage_msg.c_str());
 
   return damage;
 }
@@ -276,11 +277,11 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
       (100 - pl.conditions(TOXIC)) *
       ((double)result.numdest / (double)(pl.Maxx() * pl.Maxy()));
 
-  sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
-          dispshiploc(em, ship).c_str(), oldowner.value);
-  strcpy(long_msg, short_msg);
+  std::sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
+               dispshiploc(em, ship).c_str(), oldowner.value);
+  std::strcpy(long_msg, short_msg);
   std::string msg = std::format("\t{} sectors destroyed\n", result.numdest);
-  strcat(long_msg, msg.c_str());
+  std::strcat(long_msg, msg.c_str());
   return result;
 }
 

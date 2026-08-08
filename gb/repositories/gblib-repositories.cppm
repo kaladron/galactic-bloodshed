@@ -16,7 +16,7 @@ import :star;
 import :planet;
 import :sector;
 import :universe;
-import std.compat;
+import std;
 
 // Base template for repositories
 // Provides common CRUD operations for entity types
@@ -1009,7 +1009,7 @@ export struct TelegramItem {
   player_t recipient_player{0};
   governor_t recipient_governor{0};
   std::string message;
-  int64_t timestamp{0};
+  std::int64_t timestamp{0};
 };
 
 export class TelegramRepository {

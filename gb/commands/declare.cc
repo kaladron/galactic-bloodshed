@@ -1,13 +1,12 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* declare.c -- declare alliance, neutrality, war, the basic thing. */
+/// \file declare.cc
+/// \brief Declare alliance, neutrality, war, and relations.
 
 module;
 
+import std;
 import gblib;
-import std.compat;
 import notification;
 import session;
 

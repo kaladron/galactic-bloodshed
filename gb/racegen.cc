@@ -1,13 +1,13 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
+/// \file racegen.cc
+/// \brief Interactive race generator.
+
+#include <cstdarg>
 #include <strings.h>
 #include <unistd.h>
 
-#include <cstdarg>
-
-import std.compat;
+import std;
 import gblib;
 
 #include "gb/racegen.h"
@@ -50,12 +50,12 @@ int main(int, char**) {
   if (argc > 1) {
     if ((argv[1][0] == '-') && (isserver = (argv[1][1] == 's'))) {
       if (argc > 2)
-        port = atoi(argv[2]);
+        port = std::atoi(argv[2]);
       else
         port = 2020;
       if (port == 0) {
         printf("Syntax: racegen [-s [port]]\n");
-        exit(0);
+        std::exit(0);
       }
     } else {
       printf("Syntax: racegen [-s [port]]\n");
@@ -70,7 +70,7 @@ int main(int, char**) {
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       fprintf(stderr, "server: can't open stream socket");
-      exit(0);
+      std::exit(0);
     }
     bzero((char*)&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -79,7 +79,7 @@ int main(int, char**) {
 
     if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
       fprintf(stderr, "server: can't bind local address");
-      exit(0);
+      std::exit(0);
     }
 
     listen(sockfd, 5);
@@ -87,7 +87,7 @@ int main(int, char**) {
     if (fork()) {
       printf("Racegen set up on port %d\n", port);
       printf("Now accepting connections.\n\n");
-      exit(0);
+      std::exit(0);
     }
 
     for (;;) {
@@ -99,7 +99,7 @@ int main(int, char**) {
         dup2(fd, 0);
         do_racegen();
         close(fd);
-        exit(0);
+        std::exit(0);
       }
       close(fd);
     }
@@ -336,7 +336,7 @@ int cost_of_race() {
 #define ROUND(f) ((int)(0.5 + (f)))
   for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
     cost_info.attr[i] =
-        (exp(attr[i].e_fudge * (race_info.attr[i] - attr[i].e_hinge)) *
+        (std::exp(attr[i].e_fudge * (race_info.attr[i] - attr[i].e_hinge)) *
              attr[i].e_factor +
          race_info.attr[i] * attr[i].l_factor);
   for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
@@ -353,7 +353,7 @@ int cost_of_race() {
     if (race_info.compat[i] != 0.0) race_info.n_sector_types += 1;
     /* Get the base costs: */
     cost_info.compat[i] =
-        race_info.compat[i] * 0.5 + 10.8 * log(1.0 + race_info.compat[i]);
+        race_info.compat[i] * 0.5 + 10.8 * std::log(1.0 + race_info.compat[i]);
   }
   for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++)
     for (j = i + 1; j <= LAST_SECTOR_TYPE; j++)
@@ -394,7 +394,7 @@ static void metamorph() {
   /* IQ is more expensive due to collective intelligence: */
   attr[A_IQ].cov[COL_IQ] = 0.00 / ATTR_RANGE(COL_IQ);
 
-  strcpy(attr[A_IQ].print_name, "IQ Limit");
+  std::strcpy(attr[A_IQ].print_name, "IQ Limit");
 }
 
 static void normal() {
@@ -418,14 +418,14 @@ static void normal() {
   /* However, a large IQ is easier with high mass; (lot of brain space): */
   attr[A_IQ].cov[MASS] = -0.25 / ATTR_RANGE(MASS);
 
-  strcpy(attr[A_IQ].print_name, "IQ");
+  std::strcpy(attr[A_IQ].print_name, "IQ");
 }
 
 static void fix_up_iq() {
   if (race_info.attr[COL_IQ] == 1.0)
-    strcpy(attr[A_IQ].print_name, "IQ Limit");
+    std::strcpy(attr[A_IQ].print_name, "IQ Limit");
   else
-    strcpy(attr[A_IQ].print_name, "IQ");
+    std::strcpy(attr[A_IQ].print_name, "IQ");
 }
 
 /**************
@@ -490,7 +490,7 @@ int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race) {
 
   /*
    * Check for valid name:  */
-  if (0 == strlen(race_info.name)) {
+  if (0 == std::strlen(race_info.name)) {
     FPRINTF(f, "Use a non-empty name.\n");
     nerrors += 1;
   }
@@ -559,21 +559,21 @@ int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race) {
   if (rigorous_checking) {
     /*
      * Any rejection notice is an error: */
-    if (strlen(race_info.rejection)) {
+    if (std::strlen(race_info.rejection)) {
       FPRINTF(f, "%s", race_info.rejection);
       nerrors += 1;
     }
     /*
      * Check for valid password: */
-    if (MIN_PASSWORD_LENGTH > strlen(race_info.password)) {
+    if (MIN_PASSWORD_LENGTH > std::strlen(race_info.password)) {
       FPRINTF(f, "Passwords are required to be at least %d characters long.\n",
               MIN_PASSWORD_LENGTH);
       nerrors += 1;
-    } else if (!strcmp(race_info.password, "XXXX")) {
+    } else if (!std::strcmp(race_info.password, "XXXX")) {
       FPRINTF(f, "You must change your password from the default.\n");
       nerrors += 1;
     }
-    if (!strcmp(race_info.address, "Unknown")) {
+    if (!std::strcmp(race_info.address, "Unknown")) {
       FPRINTF(f, "You must change your email address.\n");
       nerrors += 1;
     }
@@ -636,9 +636,9 @@ static void initialize() {
   race_info.home_planet_type = H_EARTH;
   race_info.n_sector_types = 1;
   race_info.compat[S_PLATED] = 100;
-  strcpy(race_info.name, "Unknown");
-  strcpy(race_info.address, "Unknown");
-  strcpy(race_info.password, "XXXX");
+  std::strcpy(race_info.name, "Unknown");
+  std::strcpy(race_info.address, "Unknown");
+  std::strcpy(race_info.password, "XXXX");
   normal();
   bcopy(&race_info, &last, sizeof(struct x));
   cost_of_race();
@@ -676,7 +676,7 @@ static void help(int argc, const char* argv[]) {
   } else {
     helpp = load = modify = print = save = send2 = quit = 0;
     for (i = 1; i < argc; i++) {
-      j = strlen(argv[i]);
+      j = std::strlen(argv[i]);
 #ifdef PRIV
       if (!strncasecmp(argv[i], "enroll", j) && (!isserver))
         enroll = 1;
@@ -845,11 +845,11 @@ int load_from_file(std::FILE* g) {
 
   do {
     FSCANF(g, " %s", buf);
-    if (0 == strcmp(buf, "From:")) {
+    if (0 == std::strcmp(buf, "From:")) {
       FSCANF(g, " %s", buf);
-      strcpy(from_address, buf);
+      std::strcpy(from_address, buf);
     }
-  } while (strcmp(buf, START_RECORD_STRING));
+  } while (std::strcmp(buf, START_RECORD_STRING));
 
   race_info.status = STATUS_BALANCED;
   FSCANF(g, " %s", race_info.address);
@@ -869,7 +869,7 @@ int load_from_file(std::FILE* g) {
     FSCANF(g, " %lf", &race_info.compat[i]);
   do {
     FSCANF(g, " %s", buf);
-  } while (strcmp(buf, END_RECORD_STRING));
+  } while (std::strcmp(buf, END_RECORD_STRING));
   return 0;
 premature_end_of_file:
   printf("Error: premature end of file.\n");
@@ -902,15 +902,15 @@ static void load(int argc, const char* argv[]) {
     if (i == 1) return;
   }
   if (argc > 1)
-    strcpy(c, argv[1]);
+    std::strcpy(c, argv[1]);
   else if (!race_info.filename[0])
-    strcpy(c, SAVETO);
+    std::strcpy(c, SAVETO);
   if (load_from_filename(c)) {
     printf("Load from file \"%s\" failed.\n", c);
     bcopy(&last, &race_info, sizeof(struct x));
   } else {
     printf("Loaded race from file \"%s\".\n", c);
-    strcpy(race_info.filename, c);
+    std::strcpy(race_info.filename, c);
     altered = false;
     changed = true;
   }
@@ -926,7 +926,7 @@ static int modify(int argc, const char* argv[]) {
     help(2, help_strings);
     return -1;
   }
-  j = strlen(argv[1]);
+  j = std::strlen(argv[1]);
 
   bcopy(&race_info, &last, sizeof(struct x));
 
@@ -935,15 +935,15 @@ static int modify(int argc, const char* argv[]) {
   for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
     if (!strncasecmp(argv[1], attr[i].print_name, j)) {
       if (attr[i].is_integral == 2) { /* Boolean attribute. */
-        j = strlen(argv[2]);
+        j = std::strlen(argv[2]);
         if (!strncasecmp(argv[2], "no", j))
           f = 0.0;
         else if (!strncasecmp(argv[2], "yes", j))
           f = 1.0;
         else
-          f = atof(argv[2]);
+          f = std::atof(argv[2]);
       } else
-        f = atof(argv[2]);
+        f = std::atof(argv[2]);
 
       race_info.attr[i] = f;
       fix_up_iq();
@@ -953,14 +953,14 @@ static int modify(int argc, const char* argv[]) {
   /*
    * Check for name modification:  */
   if (!strncasecmp(argv[1], "name", j)) {
-    strcpy(race_info.name, argv[2]);
+    std::strcpy(race_info.name, argv[2]);
     return critique_modification();
   }
 
   /*
    * Check for from-address modification:  */
   if (!strncasecmp(argv[1], "address", j)) {
-    strcpy(race_info.address, argv[2]);
+    std::strcpy(race_info.address, argv[2]);
     return critique_modification();
   }
 
@@ -968,13 +968,13 @@ static int modify(int argc, const char* argv[]) {
   /*
    * Check for privilege modification:  */
   if (!strncasecmp(argv[1], "privilege", j)) {
-    j = strlen(argv[2]);
+    j = std::strlen(argv[2]);
     for (i = FIRST_PRIV_TYPE; i <= LAST_PRIV_TYPE; i++)
       if (!strncasecmp(argv[2], priv_print_name[i], j)) {
         race_info.priv_type = i;
         return critique_modification();
       }
-    race_info.priv_type = atof(argv[2]);
+    race_info.priv_type = std::atof(argv[2]);
     return critique_modification();
   }
 #endif
@@ -982,7 +982,7 @@ static int modify(int argc, const char* argv[]) {
   /*
    * Check for planet modification:  */
   if (!strncasecmp(argv[1], "planet", j)) {
-    j = strlen(argv[2]);
+    j = std::strlen(argv[2]);
     for (i = FIRST_HOME_PLANET_TYPE; i <= LAST_HOME_PLANET_TYPE; i++)
       if (!strncasecmp(argv[2], planet_print_name[i], j)) {
         if (i == H_JOVIAN) {
@@ -1002,14 +1002,14 @@ static int modify(int argc, const char* argv[]) {
   /*
    * Check for password modification:  */
   if (!strncasecmp(argv[1], "password", j)) {
-    strcpy(race_info.password, argv[2]);
+    std::strcpy(race_info.password, argv[2]);
     return critique_modification();
   }
 
   /*
    * Check for race modification:  */
   if (!strncasecmp(argv[1], "race", j)) {
-    j = strlen(argv[2]);
+    j = std::strlen(argv[2]);
     for (i = FIRST_RACE_TYPE; i <= LAST_RACE_TYPE; i++)
       if (!strncasecmp(argv[2], race_print_name[i], j)) {
         if (i == R_METAMORPH) {
@@ -1040,7 +1040,7 @@ static int modify(int argc, const char* argv[]) {
     else
 #endif
         if (!strncasecmp(argv[1], sector_print_name[i], j)) {
-      race_info.compat[i] = atof(argv[2]);
+      race_info.compat[i] = std::atof(argv[2]);
       return critique_modification();
     }
 
@@ -1154,9 +1154,9 @@ static void print(int argc, const char* argv[]) {
 
 static void save(int argc, const char* argv[]) {
   if (argc > 1)
-    strcpy(race_info.filename, argv[1]);
+    std::strcpy(race_info.filename, argv[1]);
   else if (!race_info.filename[0])
-    strcpy(race_info.filename, SAVETO);
+    std::strcpy(race_info.filename, SAVETO);
   if (print_to_filename(race_info.filename, 0)) {
     printf("Saved race to file \"%s\".\n", race_info.filename);
     altered = false;
@@ -1183,10 +1183,10 @@ static void send2(int, const char**) {
 
   fflush(stdout);
   printf("Mailing race to %s : ", TO);
-  sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, TO);
-  if (system(sys) < 0) {
+  std::sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, TO);
+  if (std::system(sys) < 0) {
     perror("gaaaaaaah");
-    exit(-1);
+    std::exit(-1);
   }
   printf("done.\n");
 
@@ -1202,10 +1202,10 @@ static void send2(int, const char**) {
 
   fflush(stdout);
   printf("Mailing race to %s : ", race_info.address);
-  sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, race_info.address);
-  if (system(sys) < 0) {
+  std::sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, race_info.address);
+  if (std::system(sys) < 0) {
     perror("gaaaaaaah");
-    exit(-1);
+    std::exit(-1);
   }
   printf("done.\n");
   unlink(race_info.password);
@@ -1238,7 +1238,7 @@ int Dialogue(const char* prompt, ...) {
   fflush(stdout);
   while (fgets(input, INPUTSIZE, stdin) != nullptr) {
     if (argc == 0) return -1;
-    len = strlen(input) - 1;
+    len = std::strlen(input) - 1;
 
     for (i = 0; i < argc; i++)
       if (!strncasecmp(argv[i], input, len)) return i;
@@ -1258,7 +1258,7 @@ static void quit(int, const char**) {
 
   if (please_quit) { /* This could happen if ^c is hit while here. */
     if (isserver) close(fd);
-    exit(0);
+    std::exit(0);
   }
   please_quit = true;
   if (altered) {
@@ -1290,7 +1290,7 @@ static void execute(int argc, const char** argv) {
     printf("Type \"help\" for help.\n");
     return;
   }
-  i = strlen(argv[0]);
+  i = std::strlen(argv[0]);
 #ifdef PRIV
   if (!strncasecmp(argv[0], "enroll", i) && !isserver)
     enroll(argc, argv);
@@ -1352,7 +1352,7 @@ void modify_print_loop(int) {
 #endif
     fflush(stdout);
     com = fgets(buf, BUFSIZE, stdin);
-    buf[strlen(buf) - 1] = '\0';
+    buf[std::strlen(buf) - 1] = '\0';
 
     for (i = 0; i < 4; i++) {
       while (*com && (*com == ' '))

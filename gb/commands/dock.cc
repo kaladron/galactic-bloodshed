@@ -1,17 +1,15 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/*  dock.c -- dock a ship and..... assault -- a very un-PC version of dock */
+/// \file dock.cc
+/// \brief Dock a ship or assault target.
 
 module;
 
-import session;
+import std;
 import gblib;
 import notification;
-import std.compat;
-
-#include <strings.h>
+import scnlib;
+import session;
 
 module commands;
 
@@ -147,7 +145,7 @@ void dock(const command_t& argv, GameObj& g) {
     }
 
     Dist = std::hypot(s2.xpos() - s.xpos(), s2.ypos() - s.ypos());
-    fuel = 0.05 + Dist * 0.025 * (Assault ? 2.0 : 1.0) * sqrt((double)s.mass());
+    fuel = 0.05 + Dist * 0.025 * (Assault ? 2.0 : 1.0) * std::sqrt((double)s.mass());
 
     if (Dist > DIST_TO_DOCK) {
       g.out << std::format("{} must be {:.2f} or closer to {}.\n",
@@ -214,7 +212,10 @@ void dock(const command_t& argv, GameObj& g) {
       Race& race = *race_ptr;
 
       if (argv.size() >= 4) {
-        sscanf(argv[3].c_str(), "%lu", &boarders);
+        auto scan_res = scn::scan<population_t>(argv[3], "{}");
+        if (scan_res) {
+          boarders = scan_res->value();
+        }
         if ((what == PopulationType::MIL) && (boarders > s.troops()))
           boarders = s.troops();
         else if ((what == PopulationType::CIV) && (boarders > s.popn()))

@@ -6,6 +6,7 @@ import gblib;
 import std;
 import notification;
 import session;
+#undef stdout
 
 module commands;
 

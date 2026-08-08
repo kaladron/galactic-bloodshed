@@ -6,7 +6,9 @@
 module;
 
 import gblib;
-import std.compat;
+import scnlib;
+import std;
+#undef stdout
 
 module commands;
 
@@ -16,17 +18,19 @@ void zoom(const command_t& argv, GameObj& g) {
   int i = (g.level() == ScopeLevel::LEVEL_UNIV);
 
   if (argv.size() > 1) {
-    double num;
-    double denom;
-    if (sscanf(argv[1].c_str(), "%lf/%lf", &num, &denom) == 2) {
-      /* num/denom format */
+    auto scan_res = scn::scan<double, double>(argv[1], "{}/{}");
+    if (scan_res) {
+      auto [num, denom] = scan_res->values();
       if (denom == 0.0) {
         g.out << "Illegal denominator value.\n";
-      } else
+      } else {
         g.zoom[i] = num / denom;
+      }
     } else {
-      /* one number */
-      g.zoom[i] = num;
+      auto single_res = scn::scan<double>(argv[1], "{}");
+      if (single_res) {
+        g.zoom[i] = single_res->value();
+      }
     }
   }
 

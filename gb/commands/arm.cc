@@ -5,6 +5,7 @@ module;
 import gblib;
 import scnlib;
 import std;
+#undef stdout
 
 module commands;
 

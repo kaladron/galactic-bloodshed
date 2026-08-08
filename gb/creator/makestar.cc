@@ -1,27 +1,26 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* makestar.c -- create, name, position, and make planets for a star. */
-
-// G.O.D. [1] > methane melts at -182C
-// G.O.D. [1] > it boils at -164
-// G.O.D. [1] > ammonia melts at -78C
-// G.O.D. [1] > boils at -33
-
-import dallib;
-import gblib;
-import std.compat;
-
-#include "gb/creator/makestar.h"
+/// \file makestar.cc
+/// \brief Create, name, position, and make planets for a star.
+///
+/// Atmospheric physics reference:
+/// - Methane melts at -182C, boils at -164C
+/// - Ammonia melts at -78C, boils at -33C
 
 #include <sqlite3.h>
-#include <stdio.h>
-#include <strings.h>
+#include <cstdio>
 
+import std;
+import dallib;
+import gblib;
+
+#include "gb/creator/makestar.h"
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makeuniv.h"
 #include "gb/files.h"
+
+
+
 
 static const double PLANET_DIST_MAX = 1900.0;
 static const double PLANET_DIST_MIN = 100.0;
@@ -168,7 +167,7 @@ static void rand_list(int n, int* list) /* mix up the numbers 0 thru n */
 void Makeplanet_init() {
   numplist = ReadNameList(PNames, 1000, 20, PLANETLIST);
   rand_list(numplist, planet_list);
-  if (numplist < 0) exit(0);
+  if (numplist < 0) std::exit(0);
   namepcount = 0;
 }
 
@@ -184,7 +183,7 @@ static const char* NextPlanetName(int i) {
 void Makestar_init() {
   numslist = ReadNameList(SNames, 1000, 20, STARLIST);
   rand_list(numslist, star_list);
-  if (numslist < 0) exit(0);
+  if (numslist < 0) std::exit(0);
   namestcount = 0;
 }
 
@@ -202,7 +201,7 @@ static char* NextStarName() {
     std::putchar('\010'); /* ^H */
   if (scanf("%14[^\n]", buf) < 0) {
     perror("Cannot read input");
-    exit(-1);
+    std::exit(-1);
   }
   std::getchar();
 
@@ -250,8 +249,8 @@ Star Makestar(Database& db, starnum_t snum) {
 
     temperature = Temperature(dist, star.temperature);
     angle = 2.0 * std::numbers::pi * double_rand();
-    xpos = dist * sin(angle);
-    ypos = dist * cos(angle);
+    xpos = dist * std::sin(angle);
+    ypos = dist * std::cos(angle);
 
     star.pnames.push_back(NextPlanetName(i));
 
@@ -334,7 +333,7 @@ Star Makestar(Database& db, starnum_t snum) {
      * Tabulate statistics for this star's planets. */
     for (y = 0; y < planet.Maxy(); y++)
       for (x = 0; x < planet.Maxx(); x++) {
-        uint8_t d = smap.get(x, y).get_condition();
+        std::uint8_t d = smap.get(x, y).get_condition();
         planet.total_resources() += smap.get(x, y).get_resource();
         Resource[type] += smap.get(x, y).get_resource();
         Numsects[type][d]++;

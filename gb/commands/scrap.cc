@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/* scrap.c -- turn a ship to junk */
+/// \file scrap.cc
+/// \brief Scrap ships for raw materials.
 
 module;
 
-import gblib;
 import std;
+import gblib;
 
 module commands;
 

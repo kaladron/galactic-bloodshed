@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-module;
+/// \file doship.cc
+/// \brief Execute single ship turn processing.
 
-/* doship -- do one ship turn. */
+module;
 
 import std;
 

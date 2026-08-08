@@ -2,7 +2,7 @@
 
 export module gblib:types;
 
-import std.compat;
+import std;
 
 // Re-export basic types from standalone types module
 export import types;
@@ -110,8 +110,8 @@ export struct sectinfo {
 export struct ServerState {
   int id{1};                     // Always 1 - singleton entity
   unsigned long segments{1};     // Number of movement segments
-  time_t next_update_time{0};    // Next update timestamp
-  time_t next_segment_time{0};   // Next segment timestamp
+  std::time_t next_update_time{0};    // Next update timestamp
+  std::time_t next_segment_time{0};   // Next segment timestamp
   int update_time_minutes{10};   // Interval between updates in minutes
   segments_t nsegments_done{0};  // Segments completed this update
 };
@@ -121,7 +121,7 @@ export struct Commod {
   player_t owner;
   governor_t governor;
   CommodType type;
-  uint64_t amount;
+  std::uint64_t amount;
   bool deliver; /* whether the lot is ready for shipping or not */
   money_t bid;
   player_t bidder;

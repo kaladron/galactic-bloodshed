@@ -6,6 +6,7 @@
 module;
 
 import std;
+#undef stdout
 
 module gblib;
 
@@ -85,7 +86,7 @@ void teleg_read(GameObj& g) {
 
   // Display telegrams with timestamps
   for (const auto& telegram : telegrams) {
-    auto timestamp_time = static_cast<time_t>(telegram.timestamp);
+    auto timestamp_time = static_cast<std::time_t>(telegram.timestamp);
     auto* tm = std::localtime(&timestamp_time);
     g.out << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
                          tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min,
@@ -132,7 +133,7 @@ void news_read(NewsType type, GameObj& g) {
 
   // Display news items with timestamps
   for (const auto& item : news_items) {
-    auto timestamp_time = static_cast<time_t>(item.timestamp);
+    auto timestamp_time = static_cast<std::time_t>(item.timestamp);
     auto* tm = std::localtime(&timestamp_time);
     g.out << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
                          tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min,

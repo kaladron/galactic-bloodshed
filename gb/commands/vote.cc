@@ -5,6 +5,7 @@ module;
 import gblib;
 import std;
 import notification;
+#undef stdout
 
 module commands;
 

@@ -1,8 +1,6 @@
-// Copyright 2019 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/// \file mobilize.c
+/// \file mobilize.cc
 /// \brief Persuade people to build military stuff.
 
 /*
@@ -14,7 +12,8 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
+#undef stdout
 
 module commands;
 

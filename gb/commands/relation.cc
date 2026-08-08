@@ -1,13 +1,12 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* relation.c -- state relations among players */
+/// \file relation.cc
+/// \brief Display relations among players.
 
 module;
 
+import std;
 import gblib;
-import std.compat;
 
 module commands;
 

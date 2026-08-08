@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/* doturn -- does one turn. */
+/// \file doturncmd.cc
+/// \brief Execute one turn / segment update.
 
 module;
 
-import gblib;
-import std.compat;
-
 #include <sys/stat.h>
 #include <cassert>
-
 #include "gb/files.h"
+
+import std;
+import gblib;
 
 module gblib;
 
@@ -438,7 +438,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
   }
 
   // Local inhabited bitmap - tracks which players inhabit each star this turn
-  std::array<uint64_t, NUMSTARS> inhabited{};
+  std::array<std::uint64_t, NUMSTARS> inhabited{};
 
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;
@@ -497,7 +497,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
           const auto* block_player =
               state.entity_manager.peek_block(player.value);
           if (block_player) {
-            uint64_t allied_members =
+            std::uint64_t allied_members =
                 block_player->invite & block_player->pledge;
             if ((inhabited[star] | allied_members) == allied_members) {
               auto block_handle = state.entity_manager.get_block(player.value);
@@ -617,7 +617,7 @@ static void finalize_turn(TurnState& state, bool update) {
       /* collective intelligence */
       if (race_handle->collective_iq) {
         double x = ((2. / 3.14159265) *
-                    atan(static_cast<double>(
+                    std::atan(static_cast<double>(
                              state.stats.Power[player.value - 1].popn) /
                          MESO_POP_SCALE));
         race_handle->IQ = race_handle->IQ_limit * x * x;
@@ -683,7 +683,7 @@ static ap_t APadd(const int sh, const population_t popn, const Race& race,
                   const TurnState& state) {
   ap_t APs;
 
-  APs = round_rand((double)sh / 10.0 + 5. * log10(1.0 + (double)popn));
+  APs = round_rand((double)sh / 10.0 + 5. * std::log10(1.0 + (double)popn));
 
   if (governed(race, state)) return APs;
   /* dont have an active gov center */
@@ -913,7 +913,7 @@ static void output_ground_attacks(TurnState& state) {
 
 void compute_power_blocks(EntityManager& entity_manager) {
   /* compute alliance block power */
-  Power_blocks.time = time(nullptr);
+  Power_blocks.time = std::time(nullptr);
   for (auto race_i_handle : RaceList(entity_manager)) {
     const auto& race_i = race_i_handle.read();
     const player_t i = race_i.Playernum;
@@ -921,7 +921,7 @@ void compute_power_blocks(EntityManager& entity_manager) {
     const auto* block_i = entity_manager.peek_block(i.value);
     if (!block_i) continue;
 
-    uint64_t allied_members = block_i->invite & block_i->pledge;
+    std::uint64_t allied_members = block_i->invite & block_i->pledge;
     Power_blocks.members[i.value - 1] = 0;
     Power_blocks.sectors_owned[i.value - 1] = 0;
     Power_blocks.popn[i.value - 1] = 0;
@@ -964,21 +964,21 @@ const ScheduleInfo& get_schedule_info() {
 
 void set_server_start_time(std::time_t start_time) {
   schedule_info.start_buf =
-      std::format("Server started  : {}", ctime(&start_time));
+      std::format("Server started  : {}", std::ctime(&start_time));
 }
 
 void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
                bool force) {
-  time_t clk = time(nullptr);
+  std::time_t clk = std::time(nullptr);
   struct stat stbuf;
 
   // Get server state handle (will auto-save on scope exit)
   auto state_handle = entity_manager.get_server_state();
   auto& state = *state_handle;
 
-  bool fakeit = (!force && stat(nogofl.data(), &stbuf) >= 0);
+  bool fakeit = (!force && stat(nogofl, &stbuf) >= 0);
 
-  std::string update_msg = std::format("{}DOING UPDATE...\n", ctime(&clk));
+  std::string update_msg = std::format("{}DOING UPDATE...\n", std::ctime(&clk));
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       session_registry.notify_race(i, update_msg);
@@ -1010,24 +1010,24 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
   Power_blocks.time = clk;
   schedule_info.last_update_time = clk;
   schedule_info.update_buf = std::format(
-      "Last Update {0:3d} : {1}", schedule_info.nupdates_done, ctime(&clk));
-  std::print(std::cerr, "{}", ctime(&clk));
+      "Last Update {0:3d} : {1}", schedule_info.nupdates_done, std::ctime(&clk));
+  std::print(std::cerr, "{}", std::ctime(&clk));
   std::print(std::cerr, "Next Update {0:3d} : {1}",
-             schedule_info.nupdates_done + 1, ctime(&state.next_update_time));
+             schedule_info.nupdates_done + 1, std::ctime(&state.next_update_time));
   schedule_info.last_segment_time = clk;
   schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",
-                                          state.nsegments_done, ctime(&clk));
-  std::print(std::cerr, "{}", ctime(&clk));
+                                          state.nsegments_done, std::ctime(&clk));
+  std::print(std::cerr, "{}", std::ctime(&clk));
   std::print(std::cerr, "Next Segment {0:2d} : {1}",
              state.nsegments_done == state.segments ? 1
                                                     : state.nsegments_done + 1,
-             ctime(&state.next_segment_time));
+             std::ctime(&state.next_segment_time));
 
   session_registry.set_update_in_progress(true);
   if (!fakeit) do_turn(entity_manager, session_registry, true);
   session_registry.set_update_in_progress(false);
-  clk = time(nullptr);
-  std::string finish_msg = std::format("{}Update {} finished\n", ctime(&clk),
+  clk = std::time(nullptr);
+  std::string finish_msg = std::format("{}Update {} finished\n", std::ctime(&clk),
                                        schedule_info.nupdates_done);
   handle_victory(entity_manager);
   if (!fakeit) {
@@ -1038,18 +1038,18 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
 
 void do_segment(EntityManager& entity_manager,
                 SessionRegistry& session_registry, int override, int segment) {
-  time_t clk = time(nullptr);
+  std::time_t clk = std::time(nullptr);
   struct stat stbuf;
 
   // Get server state handle (will auto-save on scope exit)
   auto state_handle = entity_manager.get_server_state();
   auto& state = *state_handle;
 
-  bool fakeit = (!override && stat(nogofl.data(), &stbuf) >= 0);
+  bool fakeit = (!override && stat(nogofl, &stbuf) >= 0);
 
   if (!override && state.segments <= 1) return;
 
-  std::string movement_msg = std::format("{}DOING MOVEMENT...\n", ctime(&clk));
+  std::string movement_msg = std::format("{}DOING MOVEMENT...\n", std::ctime(&clk));
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       session_registry.notify_race(i, movement_msg);
@@ -1078,12 +1078,12 @@ void do_segment(EntityManager& entity_manager,
   session_registry.set_update_in_progress(false);
   schedule_info.last_segment_time = clk;
   schedule_info.segment_buf = std::format("Last Segment {0:2d} : {1}",
-                                          state.nsegments_done, ctime(&clk));
-  std::print(std::cerr, "{0}", ctime(&clk));
+                                          state.nsegments_done, std::ctime(&clk));
+  std::print(std::cerr, "{0}", std::ctime(&clk));
   std::print(std::cerr, "Next Segment {0:2d} : {1}", state.nsegments_done,
-             ctime(&state.next_segment_time));
-  clk = time(nullptr);
-  std::string segment_msg = std::format("{}Segment finished\n", ctime(&clk));
+             std::ctime(&state.next_segment_time));
+  clk = std::time(nullptr);
+  std::string segment_msg = std::format("{}Segment finished\n", std::ctime(&clk));
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       session_registry.notify_race(i, segment_msg);

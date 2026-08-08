@@ -6,6 +6,7 @@ module;
 
 import asio;
 import std;
+#undef stdout
 
 module session;
 

@@ -5,6 +5,7 @@ module;
 import gblib;
 import std;
 import tabulate;
+#undef stdout
 
 module commands;
 

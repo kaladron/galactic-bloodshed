@@ -7,6 +7,7 @@ import std;
 module notification;
 
 import gblib; // EntityManager, SessionRegistry, types, push_telegram
+#undef stdout
 
 // Complex notification functions implemented using SessionRegistry primitives.
 // These iterate over races/governors and use notify_player() for delivery.

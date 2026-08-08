@@ -52,8 +52,8 @@ public:
 
   int translate[MAXPLAYERS]{}; /* translation mod for each player */
 
-  uint64_t atwar{0};
-  uint64_t allied{0};
+  std::uint64_t atwar{0};
+  std::uint64_t allied{0};
 
   shipnum_t Gov_ship{0};                /* Shipnumber of government ship. */
   long morale{0};                       /* race's morale level */
@@ -88,7 +88,7 @@ public:
     unsigned long cost_tech{0};
     unsigned long cost_market{0};
     unsigned long profit_market{0};
-    time_t login{0}; /* last login for this governor */
+    std::time_t login{0}; /* last login for this governor */
   } governor[MAXGOVERNORS + 1];
 
   // Iterate over active governors only
@@ -225,10 +225,10 @@ export struct block {
   player_t Playernum;
   std::string name;
   std::string motto;
-  uint64_t invite;
-  uint64_t pledge;
-  uint64_t atwar;
-  uint64_t allied;
+  std::uint64_t invite;
+  std::uint64_t pledge;
+  std::uint64_t atwar;
+  std::uint64_t allied;
   unsigned short next;
   unsigned short systems_owned;
   unsigned long VPs;
@@ -236,7 +236,7 @@ export struct block {
 };
 
 export struct power_blocks {
-  time_t time;
+  std::time_t time;
   unsigned long members[MAXPLAYERS];
   unsigned long troops[MAXPLAYERS];   /* total troops */
   unsigned long popn[MAXPLAYERS];     /* total population */

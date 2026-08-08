@@ -5,7 +5,8 @@ module;
 import session; // For SessionRegistry full definition - import before gblib
 import gblib;
 import notification;
-import std.compat;
+import std;
+#undef stdout
 
 module commands;
 
@@ -67,7 +68,7 @@ void page(const command_t& argv, GameObj& g) {
           g.out << "Block not found.\n";
           return;
         }
-        uint64_t allied_members = block_player->invite & block_player->pledge;
+        std::uint64_t allied_members = block_player->invite & block_player->pledge;
         for (i = 1; i <= g.entity_manager.num_races(); i++) {
           if (isset(allied_members, i) && i != Playernum) {
             g.session_registry.notify_race(i, msg);

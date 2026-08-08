@@ -2,13 +2,11 @@
 
 module;
 
-import session;
 import gblib;
 import notification;
 import scnlib;
+import session;
 import std;
-
-#include <strings.h>
 
 module commands;
 

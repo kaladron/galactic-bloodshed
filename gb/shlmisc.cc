@@ -1,13 +1,11 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /// \file shlmisc.cc
 /// \brief Miscellaneous stuff included in the shell.
 
 module;
 
-import std.compat;
+import std;
 
 module gblib;
 
@@ -83,7 +81,7 @@ player_t get_player(EntityManager& em, const std::string& name) {
 
   if (name.empty()) return 0;
 
-  if (isdigit(name[0])) {
+  if (std::isdigit(name[0])) {
     if ((rnum = std::stoi(name)) < 1 || rnum > em.num_races()) return 0;
     return rnum;
   }

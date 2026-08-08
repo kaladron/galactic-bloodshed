@@ -2,9 +2,11 @@
 
 module;
 
-import std.compat;
-
 #include <sqlite3.h>
+
+import std;
+#undef stdout
+
 
 module dallib;
 
@@ -131,7 +133,7 @@ bool JsonStore::store_multi(
   // Build REPLACE INTO statement with named columns
   std::string columns;
   std::string placeholders;
-  for (size_t i = 0; i < keys.size(); ++i) {
+  for (std::size_t i = 0; i < keys.size(); ++i) {
     if (i > 0) {
       columns += ", ";
       placeholders += ", ";
@@ -150,7 +152,7 @@ bool JsonStore::store_multi(
   if (rc != SQLITE_OK) return false;
 
   // Bind key values
-  for (size_t i = 0; i < keys.size(); ++i) {
+  for (std::size_t i = 0; i < keys.size(); ++i) {
     sqlite3_bind_int(stmt, static_cast<int>(i + 1), keys[i].second);
   }
   // Bind JSON data
@@ -170,7 +172,7 @@ std::optional<std::string> JsonStore::retrieve_multi(
 
   // Build WHERE clause with all keys
   std::string where;
-  for (size_t i = 0; i < keys.size(); ++i) {
+  for (std::size_t i = 0; i < keys.size(); ++i) {
     if (i > 0) where += " AND ";
     where += std::format("{} = ?", keys[i].first);
   }
@@ -182,7 +184,7 @@ std::optional<std::string> JsonStore::retrieve_multi(
   if (rc != SQLITE_OK) return std::nullopt;
 
   // Bind key values
-  for (size_t i = 0; i < keys.size(); ++i) {
+  for (std::size_t i = 0; i < keys.size(); ++i) {
     sqlite3_bind_int(stmt, static_cast<int>(i + 1), keys[i].second);
   }
 

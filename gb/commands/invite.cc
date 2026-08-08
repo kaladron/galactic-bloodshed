@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// declare.c -- declare alliance, neutrality, war, the basic thing.
+/// \file invite.cc
+/// \brief Invite players to join an alliance block.
 
 module;
 
+import std;
 import gblib;
-import std.compat;
 import notification;
 import session;
 

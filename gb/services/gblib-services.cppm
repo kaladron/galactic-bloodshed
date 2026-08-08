@@ -5,7 +5,7 @@ export module gblib:services;
 import dallib;
 import :repositories;
 import :types;
-import std.compat;
+import std;
 
 // Exception thrown when an entity is not found in the database
 // This represents a programming error or data corruption, not an expected
@@ -20,7 +20,7 @@ public:
 namespace std {
 template <>
 struct hash<std::pair<starnum_t, planetnum_t>> {
-  size_t operator()(const std::pair<starnum_t, planetnum_t>& p) const {
+  std::size_t operator()(const std::pair<starnum_t, planetnum_t>& p) const {
     return std::hash<starnum_t>{}(p.first) ^
            (std::hash<planetnum_t>{}(p.second) << 1);
   }

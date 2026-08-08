@@ -7,6 +7,7 @@ import scnlib;
 import std;
 import notification;
 import session;
+#undef stdout
 
 module commands;
 

@@ -43,7 +43,7 @@ export import :globals;
 export import :types;
 
 export constexpr double morale_factor(const double x) {
-  return (atan((double)x / 10000.) / 3.14159565 + .5);
+  return (std::atan((double)x / 10000.) / 3.14159565 + .5);
 }
 
 export constexpr int M_FUEL = 0x1;

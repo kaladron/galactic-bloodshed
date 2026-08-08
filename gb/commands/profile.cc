@@ -3,8 +3,9 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
 import tabulate;
+#undef stdout
 
 module commands;
 

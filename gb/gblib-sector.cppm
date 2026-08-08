@@ -273,21 +273,21 @@ public:
   }
 
   Sector& get(const int x, const int y) {
-    return grid_.at(static_cast<size_t>(x + (y * maxx_)));
+    return grid_.at(static_cast<std::size_t>(x + (y * maxx_)));
   }
 
   [[nodiscard]] const Sector& get(const int x, const int y) const {
-    return grid_.at(static_cast<size_t>(x + (y * maxx_)));
+    return grid_.at(static_cast<std::size_t>(x + (y * maxx_)));
   }
 
   // Set from sector_struct
   void set(const int x, const int y, const sector_struct& s) {
-    grid_.at(static_cast<size_t>(x + (y * maxx_))) = Sector(s);
+    grid_.at(static_cast<std::size_t>(x + (y * maxx_))) = Sector(s);
   }
 
   // Set from Sector - extract struct and reconstruct
   void set(const int x, const int y, const Sector& s) {
-    grid_.at(static_cast<size_t>(x + (y * maxx_))) = Sector(s.to_struct());
+    grid_.at(static_cast<std::size_t>(x + (y * maxx_))) = Sector(s.to_struct());
   }
 
   void put(Sector&& s) {

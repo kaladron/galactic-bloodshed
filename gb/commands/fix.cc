@@ -6,6 +6,7 @@ module;
 
 import gblib;
 import std;
+#undef stdout
 
 module commands;
 

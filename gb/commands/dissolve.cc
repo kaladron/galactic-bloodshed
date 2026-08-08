@@ -1,15 +1,14 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* dissolve.c -- commit suicide, nuke all ships and sectors; */
+/// \file dissolve.cc
+/// \brief Dissolve empire, destroying all ships and sectors.
 
 module;
 
-import session;
+import std;
 import gblib;
 import notification;
-import std.compat;
+import session;
 
 module commands;
 

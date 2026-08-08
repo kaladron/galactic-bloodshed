@@ -2,7 +2,8 @@
 
 module;
 
-import std.compat;
+import std;
+#undef stdout
 
 module gblib;
 
@@ -56,7 +57,7 @@ can_build_on_sector(EntityManager& entity_manager, const int what,
 
 // Used for optional parameters.  If the element requested exists, use
 // it.  If the number is negative, return zero instead.
-int getcount(const command_t& argv, const size_t elem) {
+int getcount(const command_t& argv, const std::size_t elem) {
   int count = argv.size() > elem ? std::stoi(argv[elem]) : 1;
   return std::max(count, 0);
 }
@@ -462,7 +463,7 @@ std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,
   int junk = (int)(dist / 10000.0);
   junk *= 10000;
 
-  double factor = 1.0 - exp(-(double)junk / MERCHANT_LENGTH);
+  double factor = 1.0 - std::exp(-(double)junk / MERCHANT_LENGTH);
 
   money_t fcost = std::round(factor * (double)value);
   return {fcost, dist};

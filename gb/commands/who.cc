@@ -6,6 +6,7 @@ import gblib;
 import session;
 import tabulate;
 import std;
+#undef stdout
 
 module commands;
 

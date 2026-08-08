@@ -2,13 +2,15 @@
 
 module;
 
+#include "gb/files.h"
+#include <cstdio>
+
 import gblib;
 import scnlib;
 import std;
 import tabulate;
+#undef stdout
 
-#include "gb/files.h"
-#include <cstdio>
 
 module commands;
 

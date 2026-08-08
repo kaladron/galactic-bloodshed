@@ -6,6 +6,7 @@ import gblib;
 import notification;
 import session; // For SessionRegistry full definition
 import std;
+#undef stdout
 
 module commands;
 

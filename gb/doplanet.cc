@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/*  doplanet.c -- do one turn on a planet. */
-
 module;
-
-import gblib;
-import std;
-
-#include <strings.h>
-
 #include <cstdlib>
+
+import std;
+import gblib;
 
 module gblib;
 
@@ -194,7 +189,7 @@ void do_recover(EntityManager& entity_manager, const Star& star,
   int stolencrystals = 0;
   int all_buddies_here = 1;
 
-  uint64_t ownerbits = 0;
+  std::uint64_t ownerbits = 0;
 
   const planetnum_t planetnum = planet.planet_order();
 

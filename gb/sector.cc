@@ -1,10 +1,13 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-module gblib;
+/// \file sector.cc
+/// \brief Sector domain object implementations.
+
+module;
 
 import std;
+
+module gblib;
 
 std::ostream& operator<<(std::ostream& os, const Sector& s) {
   os << "Efficiency: " << s.get_eff() << std::endl;

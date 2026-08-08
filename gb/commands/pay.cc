@@ -5,7 +5,8 @@ module;
 import session;
 import gblib;
 import notification;
-import std.compat;
+import std;
+#undef stdout
 
 module commands;
 

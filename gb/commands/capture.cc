@@ -1,15 +1,14 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
+
+/// \file capture.cc
+/// \brief Capture ship command.
 
 module;
 
-import session;
+import std;
 import gblib;
 import notification;
-import std;
-
-#include <strings.h>
+import session;
 
 module commands;
 

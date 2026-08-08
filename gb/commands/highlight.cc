@@ -1,14 +1,12 @@
-// Copyright 2019 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
 /// \file highlight.cc
 /// \brief Toggle highlight option on a player.
 
 module;
 
+import std;
 import gblib;
-import std.compat;
 
 module commands;
 

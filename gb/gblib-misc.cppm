@@ -14,7 +14,7 @@ import :universe;
 import :types;
 
 import strong_id;
-import std.compat;
+import std;
 
 // Note: Notification functions moved to gb/services/notification.{cppm,cc}
 // - d_broadcast, d_announce, d_think, d_shout
@@ -145,7 +145,7 @@ export int mod(int a, int b) {
  * \return Float 0.0 - 1.0 (logscaleOB 0.5 - .95)
  */
 export constexpr double logscale(const int x) {
-  return log10((double)x + 1.0) / 2.0;
+  return std::log10((double)x + 1.0) / 2.0;
 }
 
 /**

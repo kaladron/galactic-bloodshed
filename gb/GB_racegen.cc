@@ -1,16 +1,16 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-import gblib;
-import dallib;
-import std;
-
-#include <strings.h>
-
-#include <cstdio>
+/// \file GB_racegen.cc
+/// \brief Helper functions for race generation and enrollment.
 
 #include "gb/racegen.h"
+
+import std;
+import dallib;
+import gblib;
+
+
+
 
 namespace {
 constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {
@@ -37,13 +37,14 @@ int enroll_valid_race() {
 
   auto Playernum = player_t{entity_manager.num_races().value + 1};
   if ((Playernum == player_t{1}) && (race_info.priv_type != P_GOD)) {
-    sprintf(race_info.rejection,
-            "The first race enrolled must have God privileges.\n");
+    std::sprintf(race_info.rejection,
+                 "The first race enrolled must have God privileges.\n");
     return 1;
   }
   if (Playernum >= MAXPLAYERS) {
-    sprintf(race_info.rejection,
-            "There are already %d players; No more allowed.\n", MAXPLAYERS - 1);
+    std::sprintf(race_info.rejection,
+                 "There are already %d players; No more allowed.\n",
+                 MAXPLAYERS - 1);
     race_info.status = STATUS_UNENROLLABLE;
     return 1;
   }
@@ -57,23 +58,19 @@ int enroll_valid_race() {
   auto ppref = planet_translate[race_info.home_planet_type];
   std::array<int, NUMSTARS> indirect;
   std::ranges::iota(indirect, 0);
-  auto last_star_left = numstars - 1;
+  starnum_t last_star_left = numstars - 1;
   while (last_star_left >= 0) {
-    auto i = int_rand(0, last_star_left);
-    star = indirect[i];
+    star = indirect[int_rand(0, last_star_left)];
+    int i = 0;
+    while (indirect[i] != star) i++;
 
-    std::cout << ".";
+    const auto* star_obj = entity_manager.peek_star(star);
+    auto numplanets = star_obj->numplanets();
 
-    const auto* star_ptr = entity_manager.peek_star(star);
-    // Skip over inhabited stars and stars with few planets. */
-    if ((star_ptr->numplanets() < 2) || star_ptr->inhabited()) {
-    } else {
-      /* look for uninhabited planets */
-      for (pnum = 0; pnum < star_ptr->numplanets(); pnum++) {
-        const auto* planet_ptr = entity_manager.peek_planet(star, pnum);
-        if ((planet_ptr->type() == ppref) &&
-            (planet_ptr->conditions(RTEMP) >= -200) &&
-            (planet_ptr->conditions(RTEMP) <= 100))
+    for (pnum = 0; pnum < numplanets; pnum++) {
+      const auto* pl = entity_manager.peek_planet(star, pnum);
+      if (pl->type() == ppref) {
+        if (pl->popn() == 0)
           goto found_planet;
       }
     }
@@ -85,9 +82,9 @@ int enroll_valid_race() {
   /*
    * If we get here, then we did not find any good planet. */
   std::cout << " failed!\n";
-  sprintf(race_info.rejection,
-          "Didn't find any free %s; choose another home planet type.\n",
-          planet_print_name[race_info.home_planet_type]);
+  std::sprintf(race_info.rejection,
+               "Didn't find any free %s; choose another home planet type.\n",
+               planet_print_name[race_info.home_planet_type]);
   race_info.status = STATUS_UNENROLLABLE;
   return 1;
 

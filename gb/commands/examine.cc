@@ -1,23 +1,22 @@
-// Copyright 2014 The Galactic Bloodshed Authors. All rights reserved.
-// Use of this source code is governed by a license that can be
-// found in the COPYING file.
+// SPDX-License-Identifier: Apache-2.0
 
-/* examine -- check out an object */
+/// \file examine.cc
+/// \brief Examine an entity or object in detail.
 
 module;
 
-import gblib;
-import std.compat;
-
 #include "gb/files.h"
+
+import std;
+import gblib;
 
 module commands;
 
 namespace GB::commands {
 void examine(const command_t& argv, GameObj& g) {
   const ap_t APcount = 0;
-  FILE* fd;
-  char ch;
+  std::FILE* fd;
+  int ch;
 
   if (argv.size() < 2) {
     g.out << "Examine what?\n";
@@ -52,25 +51,25 @@ void examine(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
-    perror(EXAM_FL);
+  if ((fd = std::fopen(EXAM_FL, "r")) == nullptr) {
+    std::perror(EXAM_FL);
     return;
   }
 
   /* look through ship data file */
   for (int t = 0; t <= ship->type(); t++)
-    while (fgetc(fd) != '~')
+    while (std::fgetc(fd) != '~')
       ;
 
   /* look through ship data file */
   g.out << "\n";
   /* give report */
   std::stringstream ss;
-  while ((ch = fgetc(fd)) != '~') {
-    ss << ch;
+  while ((ch = std::fgetc(fd)) != '~' && ch != -1) {
+    ss << static_cast<char>(ch);
   }
   g.out << ss.str();
-  fclose(fd);
+  std::fclose(fd);
 
   if (!ship->examined()) {
     if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV)

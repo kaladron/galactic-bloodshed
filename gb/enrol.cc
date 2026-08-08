@@ -6,6 +6,7 @@ import std;
 import gblib;
 import dallib;
 import scnlib;
+#undef stdout
 
 namespace GB::enrol {
 
@@ -77,7 +78,7 @@ int main() {
 
   if ((Playernum = player_t{entity_manager.num_races().value + 1}) >=
       player_t{MAXPLAYERS}) {
-    std::println("There are already {} players; No more allowed.",
+    std::println(std::cout, "There are already {} players; No more allowed.",
                  MAXPLAYERS - 1);
     return -1;
   }
@@ -94,7 +95,7 @@ int main() {
   idx = idx_result->value();
 
   if (idx <= 0 || idx > RACIAL_TYPES) {
-    std::println("Bad racial index.");
+    std::println(std::cout, "Bad racial index.");
     return 1;
   }
   idx = idx - 1;
@@ -105,7 +106,7 @@ int main() {
     return -1;
   }
   const auto& Sdata = *universe_ptr;
-  std::println("There is still space for player {}.", Playernum);
+  std::println(std::cout, "There is still space for player {}.", Playernum);
 
   do {
     std::print("\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
@@ -137,11 +138,11 @@ int main() {
         ppref = PlanetType::FOREST;
         break;
       default:
-        std::println("Oh well.");
+        std::println(std::cout, "Oh well.");
         return -1;
     }
 
-    std::println("Looking for type {} planet...", static_cast<int>(ppref));
+    std::println(std::cout, "Looking for type {} planet...", static_cast<int>(ppref));
 
     /* find first planet of right type */
     count = 0;
@@ -191,15 +192,15 @@ int main() {
     }
 
     if (!found) {
-      std::println("planet type not found in any free systems.");
+      std::println(std::cout, "planet type not found in any free systems.");
       not_found[ppref] = 1;
       for (found = 1, i = PlanetType::EARTH; i <= PlanetType::DESERT; i++)
         found &= not_found[i];
       if (found) {
-        std::println("Looks like there aren't any free planets left.  bye..");
+        std::println(std::cout, "Looks like there aren't any free planets left.  bye..");
         return -1;
       } else
-        std::println("  Try a different one...");
+        std::println(std::cout, "  Try a different one...");
       found = 0;
     }
 
@@ -281,14 +282,14 @@ int main() {
     race.number_sexes = Sexes(idx);
     race.metabolism = Metabolism(idx);
 
-    std::println("{}", race.Metamorph ? "METAMORPHIC" : "");
-    std::println("       Birthrate: {:.3f}", race.birthrate);
-    std::println("Fighting ability: {}", race.fighters);
-    std::println("              IQ: {}", race.IQ);
-    std::println("      Metabolism: {:.2f}", race.metabolism);
-    std::println("     Adventurism: {:.2f}", race.adventurism);
-    std::println("            Mass: {:.2f}", race.mass);
-    std::println(" Number of sexes: {} (min req'd for colonization)",
+    std::println(std::cout, "{}", race.Metamorph ? "METAMORPHIC" : "");
+    std::println(std::cout, "       Birthrate: {:.3f}", race.birthrate);
+    std::println(std::cout, "Fighting ability: {}", race.fighters);
+    std::println(std::cout, "              IQ: {}", race.IQ);
+    std::println(std::cout, "      Metabolism: {:.2f}", race.metabolism);
+    std::println(std::cout, "     Adventurism: {:.2f}", race.adventurism);
+    std::println(std::cout, "            Mass: {:.2f}", race.mass);
+    std::println(std::cout, " Number of sexes: {} (min req'd for colonization)",
                  race.number_sexes);
 
     std::print("\n\nLook OK(y/n)?");
@@ -311,7 +312,7 @@ int main() {
   }
   auto& smap = *smap_handle;
 
-  std::println("\nChoose a primary sector preference. This race will prefer to "
+  std::println(std::cout, "\nChoose a primary sector preference. This race will prefer to "
                "live\non this type of sector.");
 
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
@@ -326,7 +327,7 @@ int main() {
   // Temporarily show sectors during selection (no need to persist)
   for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
     if (secttypes[i].here) {
-      std::println(
+      std::println(std::cout, 
           "({:2d}): {} ({}, {}) ({}, {} sectors)", i,
           get_sector_char(
               smap.get(secttypes[i].x, secttypes[i].y).get_condition()),
@@ -348,7 +349,7 @@ int main() {
 
     if (i < SectorType::SEC_SEA || i > SectorType::SEC_WASTED ||
         !secttypes[i].here) {
-      std::println("There are none of that type here..");
+      std::println(std::cout, "There are none of that type here..");
     } else
       found = 1;
   } while (!found);
@@ -358,7 +359,7 @@ int main() {
   race.likes[i] = 1.0;
   race.likes[SectorType::SEC_PLATED] = 1.0;
   race.likes[SectorType::SEC_WASTED] = 0.0;
-  std::println("\nEnter compatibilities of other sectors -");
+  std::println(std::cout, "\nEnter compatibilities of other sectors -");
   for (j = SectorType::SEC_SEA; j < SectorType::SEC_PLATED; j++)
     if (i != j) {
       std::print("{:6s} ({:3d} sectors) :", Desnames[j], secttypes[j].count);
@@ -373,7 +374,7 @@ int main() {
       k = compat_result->value();
       race.likes[j] = (double)k / 100.0;
     }
-  std::println("Numraces = {}", entity_manager.num_races());
+  std::println(std::cout, "Numraces = {}", entity_manager.num_races());
   Playernum = race.Playernum = player_t{entity_manager.num_races().value + 1};
 
   /* build a capital ship to run the government */
@@ -382,7 +383,7 @@ int main() {
     shipnum_t shipno;
 
     shipno = ships.next_ship_number();
-    std::println("Creating government ship {}...", shipno);
+    std::println(std::cout, "Creating government ship {}...", shipno);
     race.Gov_ship = shipno;
 
     ss.type = ShipType::OTYPE_GOV;
@@ -442,11 +443,11 @@ int main() {
     ss.number = shipno;
     if (const auto* storbit_star = entity_manager.peek_star(ss.storbits);
         storbit_star) {
-      std::println("Created on sector {},{} on /{}/{}", ss.land_x, ss.land_y,
+      std::println(std::cout, "Created on sector {},{} on /{}/{}", ss.land_x, ss.land_y,
                    storbit_star->get_name(),
                    storbit_star->get_planet_name(ss.pnumorbits));
     } else {
-      std::println("Created on sector {},{} on an unknown location", ss.land_x,
+      std::println(std::cout, "Created on sector {},{} on an unknown location", ss.land_x,
                    ss.land_y);
     }
     Ship s{ss};  // Construct Ship from POD
@@ -499,14 +500,14 @@ int main() {
   setbit(star_ref.inhabited(), Playernum);
   star_ref.AP(Playernum) = 5;
 
-  std::println("\nYou are player {}.\n", Playernum);
-  std::println("Your race has been created on sector {},{} on", secttypes[i].x,
+  std::println(std::cout, "\nYou are player {}.\n", Playernum);
+  std::println(std::cout, "Your race has been created on sector {},{} on", secttypes[i].x,
                secttypes[i].y);
   if (const auto* home_star = entity_manager.peek_star(star); home_star) {
-    std::println("{}/{}.\n", home_star->get_name(),
+    std::println(std::cout, "{}/{}.\n", home_star->get_name(),
                  home_star->get_planet_name(pnum));
   } else {
-    std::println("Unknown star/planet.\n");
+    std::println(std::cout, "Unknown star/planet.\n");
   }
   return 0;
 }

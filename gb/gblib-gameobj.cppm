@@ -5,7 +5,7 @@ export module gblib:gameobj;
 import :types;
 import :race;
 import :sessionregistry;  // For SessionRegistry interface
-import std.compat;
+import std;
 
 // Forward declaration for EntityManager (defined in gblib:services)
 export class EntityManager;

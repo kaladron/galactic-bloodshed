@@ -3,7 +3,8 @@
 module;
 
 import gblib;
-import std.compat;
+import std;
+#undef stdout
 
 module commands;
 
@@ -16,19 +17,17 @@ void name(const command_t& argv, GameObj& g) {
   int spaces;
   unsigned char check = 0;
   char string[1024];
-  char tmp[128];
-
-  if (argv.size() < 3 || !isalnum(argv[2][0])) {
+  if (argv.size() < 3 || !std::isalnum(argv[2][0])) {
     g.out << "Illegal name format.\n";
     return;
   }
 
   std::string namebuf = argv[2];
-  for (int i = 3; i < argv.size(); i++) {
-    sprintf(tmp, " %s", argv[i].c_str());
-    namebuf += tmp;
+  for (std::size_t i = 3; i < argv.size(); i++) {
+    namebuf += " ";
+    namebuf += argv[i];
   }
-  sprintf(string, "%s", namebuf.c_str());
+  std::sprintf(string, "%s", namebuf.c_str());
 
   /* make sure there are no ^'s or '/' in name,
     also make sure the name has at least 1 character in it */
@@ -36,7 +35,7 @@ void name(const command_t& argv, GameObj& g) {
   spaces = 0;
   while (*ch != '\0') {
     check |=
-        ((!isalnum(*ch) && !(*ch == ' ') && !(*ch == '.')) || (*ch == '/'));
+        ((!std::isalnum(*ch) && !(*ch == ' ') && !(*ch == '.')) || (*ch == '/'));
     ch++;
     if (*ch == ' ') spaces++;
   }

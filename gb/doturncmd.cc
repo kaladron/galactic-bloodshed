@@ -150,7 +150,7 @@ static void process_stars_and_planets(TurnState& state, bool update) {
       const planetnum_t pnum = planet_handle->planet_order();
       if (update) {
         if (planet_handle->popn() || planet_handle->ships()) {
-          state.stats.Stinfo[star.value][pnum].inhab = 1;
+          state.stats.Stinfo[star.value][pnum.value].inhab = 1;
         }
         moveplanet(state.entity_manager, *star_handle, *planet_handle);
       }
@@ -635,14 +635,14 @@ static void finalize_turn(TurnState& state, bool update) {
       make_discoveries(state.entity_manager, *race_handle);
       race_handle->turn += 1;
       if (race_handle->controlled_planets >=
-          planet_count * VICTORY_PERCENT / 100) {
+          planet_count.value * VICTORY_PERCENT / 100) {
         race_handle->victory_turns++;
       } else {
         race_handle->victory_turns = 0;
       }
 
       if (race_handle->controlled_planets >=
-          planet_count * VICTORY_PERCENT / 200) {
+          planet_count.value * VICTORY_PERCENT / 200) {
         for (auto other_race : RaceList(state.entity_manager)) {
           other_race->translate[player.value - 1] = 100;
         }
@@ -802,7 +802,8 @@ void handle_victory(EntityManager& em) {
     win_category[i - 1] = 0;
     const auto* race = em.peek_race(i);
     if (!race) continue;
-    if (race->controlled_planets >= planet_count * VICTORY_PERCENT / 100) {
+    if (race->controlled_planets >=
+        planet_count.value * VICTORY_PERCENT / 100) {
       win_category[i - 1] = LITTLE_WINNER;
     }
     if (race->victory_turns >= VICTORY_UPDATES) {

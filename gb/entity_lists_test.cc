@@ -32,7 +32,7 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     star_struct ss{};
     ss.star_id = s;
     ss.name = std::format("Star{}", s);
-    for (planetnum_t p = 0; p <= s; p++) {
+    for (planetnum_t p = 0; p.value <= s.value; p++) {
       ss.pnames.push_back(std::format("Planet{}-{}", s, p));
     }
     Star star(ss);

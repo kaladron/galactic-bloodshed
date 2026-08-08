@@ -172,7 +172,7 @@ void launch(const command_t& argv, GameObj& g) {
 
       /* adjust x,ypos to absolute coords */
       auto planet_handle =
-          g.entity_manager.get_planet(s.storbits(), (int)s.pnumorbits());
+          g.entity_manager.get_planet(s.storbits(), s.pnumorbits());
       auto& p = *planet_handle;
       g.out << std::format("Planet /{}/{} has gravity field of {:.2f}\n",
                            star.get_name(),

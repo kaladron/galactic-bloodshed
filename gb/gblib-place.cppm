@@ -197,7 +197,9 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
       return;
     case '/':
       level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */
-      snum = pnum = shipno = 0;
+      snum = 0;
+      pnum = 0;
+      shipno = 0;
       string.remove_prefix(1);
       getplace2(g, string, ignoreexpl);
       return;
@@ -230,7 +232,9 @@ Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
     case '-':
       /* no destination */
       level = ScopeLevel::LEVEL_UNIV;
-      snum = pnum = shipno = 0;
+      snum = 0;
+      pnum = 0;
+      shipno = 0;
       return;
     default:
       getplace2(g, string, ignoreexpl);

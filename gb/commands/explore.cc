@@ -89,8 +89,9 @@ void explore(const command_t& argv, GameObj& g) {
             attrs = "No Data";
           }
 
-          table.add_row({std::format("{}", i + 1), star_ref.get_planet_name(i),
-                         attrs, type_col, compat_col});
+          table.add_row({std::format("{}", i.value + 1),
+                         star_ref.get_planet_name(i), attrs, type_col,
+                         compat_col});
         }
 
         g.out << table << "\n";

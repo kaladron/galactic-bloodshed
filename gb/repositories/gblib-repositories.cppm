@@ -631,17 +631,17 @@ public:
   SectorRepository(JsonStore& store);
 
   // New domain-specific methods working with sector_struct
-  [[nodiscard]] sector_struct load(starnum_t star_id, std::size_t planet_order,
+  [[nodiscard]] sector_struct load(starnum_t star_id, planetnum_t planet_order,
                                    std::size_t x, std::size_t y);
 
-  void save(starnum_t star_id, std::size_t planet_order, std::size_t x,
+  void save(starnum_t star_id, planetnum_t planet_order, std::size_t x,
             std::size_t y, const sector_struct& sector);
 
   // Legacy methods (for backward compatibility during migration)
-  std::optional<Sector> find_sector(starnum_t star_id, int planet_order, int x,
-                                    int y);
-  bool save_sector(const Sector& sector, starnum_t star_id, int planet_order,
-                   int x, int y);
+  std::optional<Sector> find_sector(starnum_t star_id, planetnum_t planet_order,
+                                    int x, int y);
+  bool save_sector(const Sector& sector, starnum_t star_id,
+                   planetnum_t planet_order, int x, int y);
 
   // Bulk operations for sector maps
   SectorMap load_map(const Planet& planet);
@@ -680,7 +680,7 @@ SectorRepository::deserialize(const std::string& json_str) const {
 
 // New methods working directly with sector_struct
 sector_struct SectorRepository::load(starnum_t star_id,
-                                     std::size_t planet_order, std::size_t x,
+                                     planetnum_t planet_order, std::size_t x,
                                      std::size_t y) {
   // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND
   // ypos=?
@@ -697,7 +697,7 @@ sector_struct SectorRepository::load(starnum_t star_id,
   return data;
 }
 
-void SectorRepository::save(starnum_t star_id, std::size_t planet_order,
+void SectorRepository::save(starnum_t star_id, planetnum_t planet_order,
                             std::size_t x, std::size_t y,
                             const sector_struct& sector) {
   auto result = glz::write_json(sector);
@@ -716,8 +716,8 @@ void SectorRepository::save(starnum_t star_id, std::size_t planet_order,
 
 // Legacy methods (for backward compatibility)
 std::optional<Sector> SectorRepository::find_sector(starnum_t star_id,
-                                                    int planet_order, int x,
-                                                    int y) {
+                                                    planetnum_t planet_order,
+                                                    int x, int y) {
   // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND
   // ypos=?
   auto json = store.retrieve_multi(table_name, {{"star_id", star_id},
@@ -729,7 +729,7 @@ std::optional<Sector> SectorRepository::find_sector(starnum_t star_id,
 }
 
 bool SectorRepository::save_sector(const Sector& sector, starnum_t star_id,
-                                   int planet_order, int x, int y) {
+                                   planetnum_t planet_order, int x, int y) {
   auto json = serialize(sector);
   if (!json) return false;
 

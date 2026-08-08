@@ -9,7 +9,7 @@ import std;
 export using commodnum_t = std::int64_t;
 export using shipnum_t = std::uint64_t;
 export using starnum_t = ID<"star", std::uint32_t>;
-export using planetnum_t = std::uint32_t;
+export using planetnum_t = ID<"planet", std::uint32_t>;
 export using player_t = ID<"player">;
 export using governor_t = ID<"governor">;
 

@@ -36,27 +36,27 @@ public:
   }
 
   [[nodiscard]] const std::string& get_planet_name(planetnum_t pnum) const {
-    if (pnum >= star_struct.pnames.size()) {
+    if (pnum.value >= star_struct.pnames.size()) {
       throw std::runtime_error(std::format(
           "Planet number {} out of range for star '{}' (has {} planets)", pnum,
           star_struct.name, star_struct.pnames.size()));
     }
-    return star_struct.pnames[pnum];
+    return star_struct.pnames[pnum.value];
   }
   void set_planet_name(planetnum_t pnum, std::string_view name) {
     // Resize vector if necessary to accommodate the planet number
-    if (pnum >= star_struct.pnames.size()) {
-      star_struct.pnames.resize(pnum + 1);
+    if (pnum.value >= star_struct.pnames.size()) {
+      star_struct.pnames.resize(pnum.value + 1);
     }
-    star_struct.pnames[pnum] = name;
+    star_struct.pnames[pnum.value] = name;
   }
   [[nodiscard]] bool planet_name_isset(planetnum_t pnum) const {
-    if (pnum >= star_struct.pnames.size()) {
+    if (pnum.value >= star_struct.pnames.size()) {
       throw std::runtime_error(std::format(
           "Planet number {} out of range for star '{}' (has {} planets)", pnum,
           star_struct.name, star_struct.pnames.size()));
     }
-    return !star_struct.pnames[pnum].empty();
+    return !star_struct.pnames[pnum.value].empty();
   };
 
   // This is used both as a boolean and a setter.

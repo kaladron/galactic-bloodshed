@@ -201,10 +201,13 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
   if (++timer.count < DISSIPATE) {
     ship.special() = timer;
-    if (stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add < -90)
-      stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add = -100;
+    if (stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add <
+        -90)
+      stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add =
+          -100;
     else
-      stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add -= 10;
+      stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add -=
+          10;
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
 
@@ -236,10 +239,13 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
 
     if (++timer.count < DISSIPATE) {
       ship.special() = timer;
-      if (stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add > 90)
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add = 100;
+      if (stats.Stinfo[ship.storbits().value][ship.pnumorbits().value]
+              .temp_add > 90)
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add =
+            100;
       else
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add += 10;
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add +=
+            10;
     } else { /* timer expired; destroy canister */
       entity_manager.kill_ship(ship.owner(), ship);
       std::string telegram =
@@ -314,7 +320,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
                                   : aimed_at.intensity;
 
       i = round_rand(.01 * (100.0 - (double)(ship.damage())) * (double)i);
-      stats.Stinfo[ship.storbits().value][aimed_at.pnum].temp_add += i;
+      stats.Stinfo[ship.storbits().value][aimed_at.pnum.value].temp_add += i;
     } break;
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
@@ -384,7 +390,8 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
 void do_oap(Ship& ship, TurnStats& stats) {
   /* "indimidate" the planet below, for enslavement purposes. */
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN)
-    stats.Stinfo[ship.storbits().value][ship.pnumorbits()].intimidated = 1;
+    stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].intimidated =
+        1;
 }
 
 void doship(Ship& ship, bool update, EntityManager& entity_manager,
@@ -510,7 +517,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
           ship.deststar() == ship.storbits() &&
           ship.destpnum() == ship.pnumorbits()) {
         /* ship bombards planet */
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits()].inhab = 1;
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].inhab = 1;
       }
 
       /* repair ship by the amount of crew it has */

@@ -76,11 +76,11 @@ public:
     bool active{false};
     ScopeLevel deflevel{ScopeLevel::LEVEL_UNIV};
     starnum_t defsystem{0};
-    unsigned int defplanetnum{0}; /* current default */
+    planetnum_t defplanetnum{0}; /* current default */
     ScopeLevel homelevel{ScopeLevel::LEVEL_UNIV};
     starnum_t homesystem{0};
-    unsigned int homeplanetnum{0}; /* home place */
-    unsigned long newspos[4]{};    /* news file pointers */
+    planetnum_t homeplanetnum{0}; /* home place */
+    unsigned long newspos[4]{};   /* news file pointers */
     toggletype toggle{};
     money_t money{0};
     unsigned long income{0};

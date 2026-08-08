@@ -508,9 +508,9 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 
   /* check for space mirrors (among other things) warming the planet */
   /* if a change in any artificial warming/cooling trends */
-  planet.conditions(TEMP) = planet.conditions(RTEMP) +
-                            stats.Stinfo[starnum.value][planetnum].temp_add +
-                            int_rand(-5, 5);
+  planet.conditions(TEMP) =
+      planet.conditions(RTEMP) +
+      stats.Stinfo[starnum.value][planetnum.value].temp_add + int_rand(-5, 5);
 
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
     Sector& p = sector_wrap;
@@ -645,7 +645,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       telegram_buf << std::format("\nFrom /{}/{}\n", star.get_name(),
                                   star.get_planet_name(planetnum));
 
-      if (stats.Stinfo[starnum.value][planetnum].temp_add) {
+      if (stats.Stinfo[starnum.value][planetnum.value].temp_add) {
         telegram_buf << std::format("Temp: {} to {}\n",
                                     planet.conditions(RTEMP),
                                     planet.conditions(TEMP));
@@ -772,7 +772,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       /* now nuke all sectors belonging to former master */
       for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
         Sector& p = sector_wrap;
-        if (stats.Stinfo[starnum.value][planetnum].intimidated && success(50)) {
+        if (stats.Stinfo[starnum.value][planetnum.value].intimidated &&
+            success(50)) {
           if (p.get_owner() == planet.slaved_to()) {
             p.set_owner(0);
             p.clear_popn();

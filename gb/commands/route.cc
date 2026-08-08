@@ -120,7 +120,8 @@ void route(const command_t& argv, GameObj& g) {
         }
         p.info(Playernum).route[i - 1].dest_star =
             static_cast<unsigned char>(where.snum.value);
-        p.info(Playernum).route[i - 1].dest_planet = where.pnum;
+        p.info(Playernum).route[i - 1].dest_planet =
+            static_cast<unsigned char>(where.pnum.value);
         g.out << "Set.\n";
       } else {
         g.out << "Illegal destination.\n";

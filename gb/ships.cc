@@ -572,7 +572,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
   double fuse;
   ScopeLevel destlevel;
   starnum_t deststar = 0;
-  int destpnum = 0;
+  planetnum_t destpnum = 0;
   Ship* dsh;
 
   if (s.hyper_drive().has && s.hyper_drive().on) { /* do a hyperspace jump */

@@ -189,12 +189,12 @@ int main() {
 
     // Store planet JSON using JsonStore
     JsonStore store(db);
-    std::vector<std::pair<std::string, int>> k1 = {{"star_id", 0},
-                                                   {"planet_order", 0}};
-    std::vector<std::pair<std::string, int>> k2 = {{"star_id", 0},
-                                                   {"planet_order", 1}};
-    std::vector<std::pair<std::string, int>> k3 = {{"star_id", 0},
-                                                   {"planet_order", 2}};
+    std::vector<std::pair<std::string, KeyValue>> k1 = {{"star_id", 0},
+                                                        {"planet_order", 0}};
+    std::vector<std::pair<std::string, KeyValue>> k2 = {{"star_id", 0},
+                                                        {"planet_order", 1}};
+    std::vector<std::pair<std::string, KeyValue>> k3 = {{"star_id", 0},
+                                                        {"planet_order", 2}};
 
     // PlanetType enum serializes as string (e.g. "ASTEROID")
     store.store_multi("tbl_planet", k1,

@@ -81,6 +81,23 @@ export struct NewsItem {
   std::int64_t timestamp{0};
 };
 
+export struct KeyValue {
+  std::variant<std::uint32_t, std::int32_t, std::uint64_t, std::int64_t, double,
+               std::string>
+      val;
+
+  template <typename T>
+    requires std::integral<T>
+  constexpr KeyValue(T v) : val(v) {}
+
+  template <FixedString Tag, typename T>
+  constexpr KeyValue(ID<Tag, T> id) : val(id.value) {}
+
+  constexpr KeyValue(double v) : val(v) {}
+  KeyValue(std::string v) : val(std::move(v)) {}
+  KeyValue(const char* v) : val(std::string(v)) {}
+};
+
 export class JsonStore {
   Database& db;
 
@@ -88,9 +105,9 @@ public:
   explicit JsonStore(Database& database);
 
   // Generic CRUD operations
-  bool store(const std::string& table, int id, const std::string& json);
-  std::optional<std::string> retrieve(const std::string& table, int id);
-  bool remove(const std::string& table, int id);
+  bool store(const std::string& table, KeyValue id, const std::string& json);
+  std::optional<std::string> retrieve(const std::string& table, KeyValue id);
+  bool remove(const std::string& table, KeyValue id);
 
   // ID management
   std::vector<int> list_ids(const std::string& table);
@@ -98,11 +115,11 @@ public:
 
   // Multi-key operations (for Sector, Planet with composite keys)
   bool store_multi(const std::string& table,
-                   const std::vector<std::pair<std::string, int>>& keys,
+                   const std::vector<std::pair<std::string, KeyValue>>& keys,
                    const std::string& json);
   std::optional<std::string>
   retrieve_multi(const std::string& table,
-                 const std::vector<std::pair<std::string, int>>& keys);
+                 const std::vector<std::pair<std::string, KeyValue>>& keys);
 };
 
 // Schema initialization

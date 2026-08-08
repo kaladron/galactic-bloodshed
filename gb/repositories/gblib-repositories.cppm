@@ -44,21 +44,21 @@ public:
   Repository& operator=(Repository&&) = default;
 
   // Save entity with given ID
-  bool save(int id, const T& entity) {
+  bool save(KeyValue id, const T& entity) {
     auto json = serialize(entity);
     if (!json) return false;
     return store.store(table_name, id, *json);
   }
 
   // Find entity by ID
-  std::optional<T> find(int id) {
+  std::optional<T> find(KeyValue id) {
     auto json = store.retrieve(table_name, id);
     if (!json) return std::nullopt;
     return deserialize(*json);
   }
 
   // Remove entity by ID
-  bool remove(int id) {
+  bool remove(KeyValue id) {
     return store.remove(table_name, id);
   }
 
@@ -527,9 +527,8 @@ PlanetRepository::deserialize(const std::string& json_str) const {
 std::optional<Planet> PlanetRepository::find_by_location(starnum_t star,
                                                          planetnum_t pnum) {
   // Use multi-key retrieval: WHERE star_id=? AND planet_order=?
-  std::vector<std::pair<std::string, int>> keys = {{"star_id", star},
-                                                   {"planet_order", pnum}};
-  auto json = store.retrieve_multi(table_name, keys);
+  auto json = store.retrieve_multi(table_name,
+                                   {{"star_id", star}, {"planet_order", pnum}});
   if (!json) return std::nullopt;
   return deserialize(*json);
 }
@@ -544,9 +543,8 @@ bool PlanetRepository::save_planet_impl(const Planet& planet, starnum_t star,
   if (!json) return false;
 
   // Use composite key (star_id, planet_order) - no 'id' column
-  std::vector<std::pair<std::string, int>> keys = {{"star_id", star},
-                                                   {"planet_order", pnum}};
-  return store.store_multi(table_name, keys, *json);
+  return store.store_multi(table_name,
+                           {{"star_id", star}, {"planet_order", pnum}}, *json);
 }
 
 // Glaze reflection for star_struct
@@ -640,10 +638,10 @@ public:
             std::size_t y, const sector_struct& sector);
 
   // Legacy methods (for backward compatibility during migration)
-  std::optional<Sector> find_sector(int star_id, int planet_order, int x,
+  std::optional<Sector> find_sector(starnum_t star_id, int planet_order, int x,
                                     int y);
-  bool save_sector(const Sector& sector, int star_id, int planet_order, int x,
-                   int y);
+  bool save_sector(const Sector& sector, starnum_t star_id, int planet_order,
+                   int x, int y);
 
   // Bulk operations for sector maps
   SectorMap load_map(const Planet& planet);
@@ -686,12 +684,10 @@ sector_struct SectorRepository::load(starnum_t star_id,
                                      std::size_t y) {
   // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND
   // ypos=?
-  std::vector<std::pair<std::string, int>> keys = {
-      {"star_id", static_cast<int>(star_id)},
-      {"planet_order", static_cast<int>(planet_order)},
-      {"xpos", static_cast<int>(x)},
-      {"ypos", static_cast<int>(y)}};
-  auto json = store.retrieve_multi(table_name, keys);
+  auto json = store.retrieve_multi(table_name, {{"star_id", star_id},
+                                                {"planet_order", planet_order},
+                                                {"xpos", x},
+                                                {"ypos", y}});
 
   sector_struct data{};
   if (json) {
@@ -710,41 +706,40 @@ void SectorRepository::save(starnum_t star_id, std::size_t planet_order,
   }
 
   // Use multi-key storage: star_id, planet_order, xpos, ypos
-  std::vector<std::pair<std::string, int>> keys = {
-      {"star_id", static_cast<int>(star_id)},
-      {"planet_order", static_cast<int>(planet_order)},
-      {"xpos", static_cast<int>(x)},
-      {"ypos", static_cast<int>(y)}};
-  store.store_multi(table_name, keys, *result);
+  store.store_multi(table_name,
+                    {{"star_id", star_id},
+                     {"planet_order", planet_order},
+                     {"xpos", x},
+                     {"ypos", y}},
+                    *result);
 }
 
 // Legacy methods (for backward compatibility)
-std::optional<Sector>
-SectorRepository::find_sector(int star_id, int planet_order, int x, int y) {
+std::optional<Sector> SectorRepository::find_sector(starnum_t star_id,
+                                                    int planet_order, int x,
+                                                    int y) {
   // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND
   // ypos=?
-  std::vector<std::pair<std::string, int>> keys = {
-      {"star_id", star_id},
-      {"planet_order", planet_order},
-      {"xpos", x},
-      {"ypos", y}};
-  auto json = store.retrieve_multi(table_name, keys);
+  auto json = store.retrieve_multi(table_name, {{"star_id", star_id},
+                                                {"planet_order", planet_order},
+                                                {"xpos", x},
+                                                {"ypos", y}});
   if (!json) return std::nullopt;
   return deserialize(*json);
 }
 
-bool SectorRepository::save_sector(const Sector& sector, int star_id,
+bool SectorRepository::save_sector(const Sector& sector, starnum_t star_id,
                                    int planet_order, int x, int y) {
   auto json = serialize(sector);
   if (!json) return false;
 
   // Use multi-key storage: star_id, planet_order, xpos, ypos
-  std::vector<std::pair<std::string, int>> keys = {
-      {"star_id", star_id},
-      {"planet_order", planet_order},
-      {"xpos", x},
-      {"ypos", y}};
-  return store.store_multi(table_name, keys, *json);
+  return store.store_multi(table_name,
+                           {{"star_id", star_id},
+                            {"planet_order", planet_order},
+                            {"xpos", x},
+                            {"ypos", y}},
+                           *json);
 }
 
 SectorMap SectorRepository::load_map(const Planet& planet) {

@@ -55,6 +55,12 @@ int main() {
   assert(player_names[player1] == "Alice");
   assert(player_names[player2] == "Bob");
 
+  // Test to_underlying and underlying_type_t
+  static_assert(std::is_same_v<underlying_type_t<playernum_t>, int>);
+  static_assert(std::is_same_v<underlying_type_t<int>, int>);
+  assert(to_underlying(player1) == 1);
+  assert(to_underlying(42) == 42);
+
   std::println(std::cout, "All strong_id tests passed!");
   return 0;
 }

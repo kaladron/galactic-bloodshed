@@ -116,8 +116,8 @@ int main() {
     sqlite3_finalize(stmt);
 
     // Store with composite key
-    std::vector<std::pair<std::string, int>> keys = {{"star_id", 10},
-                                                     {"planet_order", 3}};
+    std::vector<std::pair<std::string, KeyValue>> keys = {{"star_id", 10},
+                                                          {"planet_order", 3}};
     std::string json = R"({"type": "planet", "name": "Earth"})";
 
     bool stored = store.store_multi("multi_key_table", keys, json);
@@ -180,7 +180,7 @@ int main() {
     assert(!non_existent.has_value());
     std::println(std::cout, "✓ retrieve on non-existent key returns nullopt");
 
-    std::vector<std::pair<std::string, int>> non_existent_keys = {
+    std::vector<std::pair<std::string, KeyValue>> non_existent_keys = {
         {"star_id", 999}, {"planet_order", 999}};
     auto non_existent_multi =
         store.retrieve_multi("multi_key_table", non_existent_keys);
@@ -190,7 +190,7 @@ int main() {
         "✓ retrieve_multi on non-existent composite key returns nullopt");
 
     // Empty keys vector returns nullopt
-    std::vector<std::pair<std::string, int>> empty_keys;
+    std::vector<std::pair<std::string, KeyValue>> empty_keys;
     auto empty_result = store.retrieve_multi("multi_key_table", empty_keys);
     assert(!empty_result.has_value());
     std::println(std::cout, "✓ retrieve_multi with empty keys returns nullopt");
@@ -198,8 +198,8 @@ int main() {
 
   // Update overwrite on composite keys
   {
-    std::vector<std::pair<std::string, int>> keys = {{"star_id", 10},
-                                                     {"planet_order", 3}};
+    std::vector<std::pair<std::string, KeyValue>> keys = {{"star_id", 10},
+                                                          {"planet_order", 3}};
     std::string updated_json =
         R"({"type": "planet", "name": "Earth v2", "popn": 5000})";
 

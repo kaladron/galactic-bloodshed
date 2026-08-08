@@ -105,6 +105,32 @@ public:
   }
 };
 
+/**
+ * @brief Extract the underlying value from a strong ID (or return primitive
+ * as-is).
+ */
+export template <typename T>
+constexpr auto to_underlying(T&& v) noexcept {
+  if constexpr (requires { v.value; }) {
+    return v.value;
+  } else {
+    return std::forward<T>(v);
+  }
+}
+
+export template <typename T>
+struct underlying_type {
+  using type = T;
+};
+
+export template <FixedString Tag, typename T>
+struct underlying_type<ID<Tag, T>> {
+  using type = T;
+};
+
+export template <typename T>
+using underlying_type_t = typename underlying_type<T>::type;
+
 // -----------------------------------------------------------------------------
 // 3. Standard Library Specializations
 // -----------------------------------------------------------------------------

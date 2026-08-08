@@ -105,6 +105,12 @@ export inline constexpr int NUMABILS = (ABIL_MAINTAIN + 1);
 
 export inline constexpr int SHIP_NAMESIZE = 18;
 
+export struct ShipExam {
+  ShipType ship_type{ShipType::STYPE_POD};
+  std::string name;
+  std::string description;
+};
+
 // Special ship function data structures (converted from union members)
 export struct AimedAtData {
   shipnum_t shipno; /* aimed at what ship */

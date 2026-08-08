@@ -112,6 +112,7 @@ export class EntityManager {
   PowerRepository powers;
   UniverseRepository universe_repo;
   ServerStateRepository server_state_repo;
+  ShipExamRepository ship_exams;
   NewsRepository news;
   TelegramRepository telegrams;
 
@@ -127,6 +128,7 @@ export class EntityManager {
   std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
   std::unordered_map<int, std::unique_ptr<block>> block_cache;
   std::unordered_map<int, std::unique_ptr<power>> power_cache;
+  std::unordered_map<ShipType, std::unique_ptr<ShipExam>> ship_exam_cache;
   std::unique_ptr<universe_struct> global_universe_cache;  // Singleton
   std::unique_ptr<ServerState> server_state_cache;         // Singleton
 
@@ -139,6 +141,7 @@ export class EntityManager {
   std::unordered_map<int, int> commod_refcount;
   std::unordered_map<int, int> block_refcount;
   std::unordered_map<int, int> power_refcount;
+  std::unordered_map<ShipType, int> ship_exam_refcount;
   int global_universe_refcount = 0;
   int server_state_refcount = 0;
 
@@ -159,6 +162,7 @@ public:
   EntityHandle<power> get_power(int id);
   EntityHandle<universe_struct> get_universe();
   EntityHandle<ServerState> get_server_state();
+  EntityHandle<ShipExam> get_ship_exam(ShipType ship_type);
 
   // Direct access for read-only operations (no RAII overhead)
   // Throws EntityNotFoundError if entity not found
@@ -171,6 +175,7 @@ public:
   const power* peek_power(int id);
   const universe_struct* peek_universe();
   const ServerState* peek_server_state();
+  const ShipExam* peek_ship_exam(ShipType ship_type);
 
   // Sector map operations (cached with RAII like other entities)
   EntityHandle<SectorMap> get_sectormap(starnum_t star, planetnum_t pnum);
@@ -228,4 +233,5 @@ private:
   void release_universe();
   void release_server_state();
   void release_sectormap(starnum_t star, planetnum_t pnum);
+  void release_ship_exam(ShipType ship_type);
 };

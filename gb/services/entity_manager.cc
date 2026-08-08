@@ -119,7 +119,7 @@ EntityManager::EntityManager(Database& database)
     : db(database), store(database), races(store), ships(store), planets(store),
       stars(store), sectors(store), commods(store), blocks(store),
       powers(store), universe_repo(store), server_state_repo(store),
-      news(database), telegrams(database) {}
+      ship_exams(store), news(database), telegrams(database) {}
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
@@ -490,6 +490,68 @@ void EntityManager::release_server_state() {
   }
 }
 
+namespace {
+std::string load_default_ship_description(ShipType ship_type) {
+  int type_val = std::to_underlying(ship_type);
+  if (type_val >= 0 && type_val < NUMSTYPES) {
+    return std::format("{}\n", Shipnames[type_val]);
+  }
+  return "Unknown ship type.\n";
+}
+}  // namespace
+
+EntityHandle<ShipExam> EntityManager::get_ship_exam(ShipType ship_type) {
+  auto handle = get_entity_impl<ShipExam>(
+      this, ship_type, ship_exam_cache, ship_exam_refcount,
+      [this](ShipType type) -> std::optional<ShipExam> {
+        auto existing = ship_exams.find_by_type(type);
+        if (existing) return existing;
+        int type_val = std::to_underlying(type);
+        if (type_val >= 0 && type_val < NUMSTYPES) {
+          ShipExam new_exam{.ship_type = type,
+                            .name = Shipnames[type_val],
+                            .description = load_default_ship_description(type)};
+          ship_exams.save(new_exam);
+          return new_exam;
+        }
+        return std::nullopt;
+      },
+      [this](const ShipExam& exam) { ship_exams.save(exam); },
+      [this](ShipType type) { release_ship_exam(type); });
+  if (!handle.get()) {
+    throw EntityNotFoundError(std::format("ShipExam not found: ship_type={}",
+                                          std::to_underlying(ship_type)));
+  }
+  return handle;
+}
+
+const ShipExam* EntityManager::peek_ship_exam(ShipType ship_type) {
+  const auto* exam = peek_entity_impl<ShipExam>(
+      ship_type, ship_exam_cache, ship_exam_refcount,
+      [this](ShipType type) -> std::optional<ShipExam> {
+        auto existing = ship_exams.find_by_type(type);
+        if (existing) return existing;
+        int type_val = std::to_underlying(type);
+        if (type_val >= 0 && type_val < NUMSTYPES) {
+          ShipExam new_exam{.ship_type = type,
+                            .name = Shipnames[type_val],
+                            .description = load_default_ship_description(type)};
+          ship_exams.save(new_exam);
+          return new_exam;
+        }
+        return std::nullopt;
+      });
+  if (!exam) {
+    throw EntityNotFoundError(std::format("ShipExam not found: ship_type={}",
+                                          std::to_underlying(ship_type)));
+  }
+  return exam;
+}
+
+void EntityManager::release_ship_exam(ShipType ship_type) {
+  release_entity_impl<ShipExam>(ship_type, ship_exam_cache, ship_exam_refcount);
+}
+
 // Query methods
 int EntityManager::num_commods() {
   // Count commods by listing all IDs in the database
@@ -527,6 +589,8 @@ void EntityManager::flush_all() {
                           [this](const block& b) { blocks.save(b); });
   flush_cache_impl<power>(power_cache,
                           [this](const power& p) { powers.save(p); });
+  flush_cache_impl<ShipExam>(ship_exam_cache,
+                             [this](const ShipExam& e) { ship_exams.save(e); });
 
   if (global_universe_cache) {
     universe_repo.save(*global_universe_cache);
@@ -552,6 +616,7 @@ void EntityManager::clear_cache() {
   clear_cache_impl<Commod>(commod_cache, commod_refcount);
   clear_cache_impl<block>(block_cache, block_refcount);
   clear_cache_impl<power>(power_cache, power_refcount);
+  clear_cache_impl<ShipExam>(ship_exam_cache, ship_exam_refcount);
 
   // Clear global universe_struct if no active handles
   if (global_universe_refcount == 0) {

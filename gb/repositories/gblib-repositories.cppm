@@ -187,6 +187,26 @@ struct meta<power> {
              "sectors_owned", &T::sectors_owned, "money", &T::money, "sum_mob",
              &T::sum_mob, "sum_eff", &T::sum_eff);
 };
+
+// Glaze reflection for ServerState
+template <>
+struct meta<ServerState> {
+  using T = ServerState;
+  static constexpr auto value =
+      object("id", &T::id, "segments", &T::segments, "next_update_time",
+             &T::next_update_time, "next_segment_time", &T::next_segment_time,
+             "update_time_minutes", &T::update_time_minutes, "nsegments_done",
+             &T::nsegments_done, "welcome_message", &T::welcome_message);
+};
+
+// Glaze reflection for ShipExam
+template <>
+struct meta<ShipExam> {
+  using T = ShipExam;
+  static constexpr auto value =
+      object("ship_type", &T::ship_type, "name", &T::name, "description",
+             &T::description);
+};
 }  // namespace glz
 
 // RaceRepository - provides type-safe access to Race entities
@@ -939,6 +959,82 @@ protected:
     auto result = glz::read_json(state, json_str);
     if (!result) {
       return state;
+    }
+    return std::nullopt;
+  }
+};
+
+// ============================================================================
+// ShipExamRepository - Repository for ship examination descriptions
+// ============================================================================
+export class ShipExamRepository : public Repository<ShipExam> {
+public:
+  explicit ShipExamRepository(JsonStore& store)
+      : Repository<ShipExam>(store, "tbl_ship_exam") {}
+
+  // Domain-specific methods
+  std::optional<ShipExam> find_by_type(ShipType ship_type) {
+    return find(std::to_underlying(ship_type));
+  }
+  bool save(const ShipExam& exam) {
+    return Repository<ShipExam>::save(std::to_underlying(exam.ship_type), exam);
+  }
+
+  bool seed_from_file(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+      return false;
+    }
+    std::string content((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+    file.close();
+
+    std::vector<std::string> sections;
+    std::size_t start = 0;
+    std::size_t end = content.find('~');
+    while (end != std::string::npos) {
+      sections.push_back(content.substr(start, end - start));
+      start = end + 1;
+      end = content.find('~', start);
+    }
+    if (start < content.size()) {
+      sections.push_back(content.substr(start));
+    }
+
+    int type = 0;
+    for (const auto& section : sections) {
+      auto first = section.find_first_not_of(" \t\n\r");
+      if (first == std::string::npos) continue;
+      auto last = section.find_last_not_of(" \t\n\r");
+      std::string trimmed = section.substr(first, (last - first + 1));
+
+      if (type < NUMSTYPES) {
+        ShipType stype = static_cast<ShipType>(type);
+        ShipExam exam{.ship_type = stype,
+                      .name = std::string(Shipnames[type]),
+                      .description = trimmed};
+        save(exam);
+        type++;
+      }
+    }
+    return type > 0;
+  }
+
+protected:
+  std::optional<std::string> serialize(const ShipExam& exam) const override {
+    auto result = glz::write_json(exam);
+    if (result.has_value()) {
+      return result.value();
+    }
+    return std::nullopt;
+  }
+
+  std::optional<ShipExam>
+  deserialize(const std::string& json_str) const override {
+    ShipExam exam{};
+    auto result = glz::read_json(exam, json_str);
+    if (!result) {
+      return exam;
     }
     return std::nullopt;
   }

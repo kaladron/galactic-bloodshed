@@ -74,7 +74,7 @@ static void process_command(GameObj&, const command_t& argv);
 static void GB_time(const command_t&, GameObj&);
 static void GB_schedule(const command_t&, GameObj&);
 static void initialize_block_data(EntityManager&);
-static void welcome_user(Session&);
+static void welcome_user(Session&, EntityManager&);
 static void check_connect(Session&, std::string_view);
 
 using CommandFunction = void (*)(const command_t&, GameObj&);
@@ -423,7 +423,7 @@ void Server::do_accept() {
             std::move(socket), entity_manager_, *this,
             [this](std::shared_ptr<Session> s) { remove_session(s); });
         sessions_.insert(session);
-        welcome_user(*session);
+        welcome_user(*session, entity_manager_);
         session->start();
 
         do_accept();  // Accept next connection
@@ -704,15 +704,16 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-static void welcome_user(Session& session) {
+static void welcome_user(Session& session, EntityManager& entity_manager) {
   session.out() << std::format("***   Welcome to Galactic Bloodshed {} ***\n"
                                "Please enter your password:\n",
                                GB_VERSION);
 
-  if (auto f = std::ifstream(WELCOME_FILE)) {
-    std::string line;
-    while (std::getline(f, line)) {
-      session.out() << line << "\n";
+  const auto* state = entity_manager.peek_server_state();
+  if (state && !state->welcome_message.empty()) {
+    session.out() << state->welcome_message;
+    if (!state->welcome_message.ends_with('\n')) {
+      session.out() << "\n";
     }
   }
 

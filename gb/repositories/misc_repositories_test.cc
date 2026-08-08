@@ -259,6 +259,7 @@ void test_server_state_repository() {
   state.next_segment_time = 1734900000;  // Earlier timestamp
   state.update_time_minutes = 60;
   state.nsegments_done = 3;
+  state.welcome_message = "Welcome to Galactic Bloodshed!";
 
   // Save and retrieve server state
   assert(repo.save(state));
@@ -270,17 +271,20 @@ void test_server_state_repository() {
   assert(retrieved->next_segment_time == 1734900000);
   assert(retrieved->update_time_minutes == 60);
   assert(retrieved->nsegments_done == 3);
+  assert(retrieved->welcome_message == "Welcome to Galactic Bloodshed!");
 
   // Update server state
   state.segments = 15;
   state.nsegments_done = 7;
   state.update_time_minutes = 120;
+  state.welcome_message = "Updated welcome message!";
   assert(repo.save(state));
   retrieved = repo.get_state();
   assert(retrieved.has_value());
   assert(retrieved->segments == 15);
   assert(retrieved->nsegments_done == 7);
   assert(retrieved->update_time_minutes == 120);
+  assert(retrieved->welcome_message == "Updated welcome message!");
 
   // Timestamps are preserved
   assert(retrieved->next_update_time == 1735000000);
@@ -292,6 +296,69 @@ void test_server_state_repository() {
   std::println(std::cout, "✓ All ServerStateRepository tests passed");
 }
 
+void test_ship_exam_repository() {
+  // Setup
+  Database db(":memory:");
+  initialize_schema(db);
+  JsonStore store(db);
+  ShipExamRepository repo(store);
+
+  // Test data
+  ShipExam exam1{
+      .ship_type = ShipType::STYPE_POD,
+      .name = "Spore pod",
+      .description = "A small seed pod grown to colonize other planets."};
+
+  // Save and retrieve
+  assert(repo.save(exam1));
+  auto retrieved = repo.find_by_type(ShipType::STYPE_POD);
+  assert(retrieved.has_value());
+  assert(retrieved->ship_type == ShipType::STYPE_POD);
+  assert(retrieved->name == "Spore pod");
+  assert(retrieved->description ==
+         "A small seed pod grown to colonize other planets.");
+
+  // Update
+  exam1.description = "Updated spore pod description.";
+  assert(repo.save(exam1));
+  retrieved = repo.find_by_type(ShipType::STYPE_POD);
+  assert(retrieved.has_value());
+  assert(retrieved->description == "Updated spore pod description.");
+
+  // Multiple ship exams
+  ShipExam exam2{.ship_type = ShipType::STYPE_SHUTTLE,
+                 .name = "Shuttle",
+                 .description = "Short range transport craft."};
+  assert(repo.save(exam2));
+  assert(repo.find_by_type(ShipType::STYPE_POD).has_value());
+  assert(repo.find_by_type(ShipType::STYPE_SHUTTLE).has_value());
+
+  // Non-existent ship exam
+  auto none = repo.find_by_type(static_cast<ShipType>(999));
+  assert(!none.has_value());
+
+  // Remove
+  assert(repo.remove(std::to_underlying(ShipType::STYPE_POD)));
+  assert(!repo.find_by_type(ShipType::STYPE_POD).has_value());
+  assert(repo.find_by_type(ShipType::STYPE_SHUTTLE).has_value());
+
+  // Test seed_from_file using PKGDATADIR exam.dat
+  {
+    Database seed_db(":memory:");
+    initialize_schema(seed_db);
+    JsonStore seed_store(seed_db);
+    ShipExamRepository seed_repo(seed_store);
+    bool seeded = seed_repo.seed_from_file(PKGDATADIR "exam.dat");
+    if (seeded) {
+      auto pod_exam = seed_repo.find_by_type(ShipType::STYPE_POD);
+      assert(pod_exam.has_value());
+      assert(pod_exam->description.find("Spore Pod") != std::string::npos);
+    }
+  }
+
+  std::println(std::cout, "✓ All ShipExamRepository tests passed");
+}
+
 int main() {
   std::println(std::cout, "Running miscellaneous repository tests...\n");
 
@@ -300,6 +367,7 @@ int main() {
   test_power_repository();
   test_universe_repository();
   test_server_state_repository();
+  test_ship_exam_repository();
 
   std::println(std::cout, "\n✅ All miscellaneous repository tests passed!");
   return 0;

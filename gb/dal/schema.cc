@@ -59,6 +59,10 @@ void initialize_schema(Database& db) {
     id INT PRIMARY KEY NOT NULL,
     data TEXT NOT NULL);
 
+  CREATE TABLE tbl_ship_exam(
+    id INT PRIMARY KEY NOT NULL,
+    data TEXT NOT NULL);
+
   CREATE TABLE tbl_news(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type INT NOT NULL,

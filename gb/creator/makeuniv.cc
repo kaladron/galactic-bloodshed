@@ -221,6 +221,9 @@ usage:
       b.Playernum = i;
       block_repo.save(b);
     }
+
+    ShipExamRepository exam_repo(store);
+    exam_repo.seed_from_file(EXAM_FL);
   }
 
   PrintStatistics();

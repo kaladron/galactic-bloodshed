@@ -114,6 +114,7 @@ export struct ServerState {
   std::time_t next_segment_time{0};  // Next segment timestamp
   int update_time_minutes{10};       // Interval between updates in minutes
   segments_t nsegments_done{0};      // Segments completed this update
+  std::string welcome_message{};  // Welcome message shown to connecting players
 };
 
 export struct Commod {

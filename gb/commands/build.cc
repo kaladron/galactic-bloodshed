@@ -2,9 +2,6 @@
 
 module;
 
-#include "gb/files.h"
-#include <cstdio>
-
 import gblib;
 import scnlib;
 import std;
@@ -75,7 +72,6 @@ void build(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   // TODO(jeffbailey): Fix unused ap_t APcount = 1;
-  char c;
   int j;
   int m;
   int n;
@@ -88,7 +84,6 @@ void build(const command_t& argv, GameObj& g) {
   double load_fuel;
   double tech;
 
-  FILE* fd;
   std::optional<Ship> builder;
   Ship newship;
 
@@ -123,22 +118,13 @@ void build(const command_t& argv, GameObj& g) {
     else if (!Shipdata[*i][ABIL_PROGRAMMED])
       g.out << "This ship type has not been programmed.\n";
     else {
-      if ((fd = fopen(EXAM_FL, "r")) == nullptr) {
-        perror(EXAM_FL);
-        return;
+      const auto* exam = g.entity_manager.peek_ship_exam(*i);
+      if (exam && !exam->description.empty()) {
+        g.out << "\n" << exam->description;
+        if (!exam->description.ends_with('\n')) {
+          g.out << "\n";
+        }
       }
-      /* look through ship description file */
-      g.out << "\n";
-      for (j = 0; j <= i; j++)
-        while (fgetc(fd) != '~')
-          ;
-      /* Give description */
-      std::stringstream ss;
-      while ((c = fgetc(fd)) != '~') {
-        ss << c;
-      }
-      g.out << ss.str();
-      fclose(fd);
       /* Built where? */
       if (Shipdata[*i][ABIL_BUILD] & 1) {
         g.out << "\nCan be constructed on planet.";

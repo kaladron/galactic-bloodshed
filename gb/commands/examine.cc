@@ -5,8 +5,6 @@
 
 module;
 
-#include "gb/files.h"
-
 import std;
 import gblib;
 
@@ -15,8 +13,6 @@ module commands;
 namespace GB::commands {
 void examine(const command_t& argv, GameObj& g) {
   const ap_t APcount = 0;
-  std::FILE* fd;
-  int ch;
 
   if (argv.size() < 2) {
     g.out << "Examine what?\n";
@@ -51,25 +47,13 @@ void examine(const command_t& argv, GameObj& g) {
     return;
   }
 
-  if ((fd = std::fopen(EXAM_FL, "r")) == nullptr) {
-    std::perror(EXAM_FL);
-    return;
+  const auto* exam = g.entity_manager.peek_ship_exam(ship->type());
+  if (exam && !exam->description.empty()) {
+    g.out << "\n" << exam->description;
+    if (!exam->description.ends_with('\n')) {
+      g.out << "\n";
+    }
   }
-
-  /* look through ship data file */
-  for (int t = 0; t <= ship->type(); t++)
-    while (std::fgetc(fd) != '~')
-      ;
-
-  /* look through ship data file */
-  g.out << "\n";
-  /* give report */
-  std::stringstream ss;
-  while ((ch = std::fgetc(fd)) != '~' && ch != -1) {
-    ss << static_cast<char>(ch);
-  }
-  g.out << ss.str();
-  std::fclose(fd);
 
   if (!ship->examined()) {
     if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV)

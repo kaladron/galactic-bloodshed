@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file motto_test.cc
-/// \brief Test motto command database persistence
-
-import dallib;
 import dallib;
 import gblib;
 import test;
@@ -12,8 +8,13 @@ import std;
 
 #include <cassert>
 
+/// \file motto_test.cc
+/// \brief Test motto command database persistence
+
+
+
 void test_motto_database_persistence() {
-  std::println("Test: motto command database persistence");
+  std::println(std::cout, "Test: motto command database persistence");
 
   // Create in-memory database
   TestContext ctx;
@@ -35,7 +36,7 @@ void test_motto_database_persistence() {
   g.set_governor(0);  // Must be governor 0 to set motto
 
   // TEST 1: Set a motto
-  std::println("  Testing: Set motto");
+  std::println(std::cout, "  Testing: Set motto");
   {
     command_t cmd = {"motto", "For", "the", "Empire!"};
     GB::commands::motto(cmd, g);
@@ -43,7 +44,7 @@ void test_motto_database_persistence() {
     // Verify output message
     std::string out_str = g.out.str();
     assert(out_str.find("Done") != std::string::npos);
-    std::println("    ✓ Output message correct");
+    std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output
 
     // Verify database: motto should be set
@@ -51,11 +52,11 @@ void test_motto_database_persistence() {
     assert(saved.has_value());
     std::string saved_motto = saved->motto;
     assert(saved_motto.find("For the Empire!") != std::string::npos);
-    std::println("    ✓ Database: motto = '{}'", saved->motto);
+    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
   }
 
   // TEST 2: Change the motto
-  std::println("  Testing: Change motto");
+  std::println(std::cout, "  Testing: Change motto");
   {
     command_t cmd = {"motto", "Victory", "or", "Death"};
     GB::commands::motto(cmd, g);
@@ -65,22 +66,22 @@ void test_motto_database_persistence() {
     assert(saved.has_value());
     std::string saved_motto = saved->motto;
     assert(saved_motto.find("Victory or Death") != std::string::npos);
-    std::println("    ✓ Database: motto = '{}'", saved->motto);
+    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
   }
 
   // TEST 3: Set empty motto
-  std::println("  Testing: Clear motto with single space");
+  std::println(std::cout, "  Testing: Clear motto with single space");
   {
     command_t cmd = {"motto", " "};
     GB::commands::motto(cmd, g);
 
     auto saved = blocks.find_by_id(1);
     assert(saved.has_value());
-    std::println("    ✓ Database: motto = '{}'", saved->motto);
+    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
   }
 
   // TEST 4: Non-governor should be rejected
-  std::println("  Testing: Non-governor authorization check");
+  std::println(std::cout, "  Testing: Non-governor authorization check");
   {
     g.set_governor(1);  // Change to non-zero governor
     command_t cmd = {"motto", "Should", "Fail"};
@@ -88,15 +89,15 @@ void test_motto_database_persistence() {
 
     std::string out_str = g.out.str();
     assert(out_str.find("not authorized") != std::string::npos);
-    std::println("    ✓ Authorization check works");
+    std::println(std::cout, "    ✓ Authorization check works");
     g.out.str("");
   }
 
-  std::println("  ✅ All motto database persistence tests passed!");
+  std::println(std::cout, "  ✅ All motto database persistence tests passed!");
 }
 
 int main() {
   test_motto_database_persistence();
-  std::println("\n✅ All tests passed!");
+  std::println(std::cout, "\n✅ All tests passed!");
   return 0;
 }

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -63,6 +62,6 @@ int main() {
 
   // Database connection will be cleaned up automatically by Sql destructor
 
-  std::println("Commod SQLite JSON storage test passed!");
+  std::println(std::cout, "Commod SQLite JSON storage test passed!");
   return 0;
 }

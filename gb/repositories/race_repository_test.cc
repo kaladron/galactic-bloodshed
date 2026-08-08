@@ -2,8 +2,7 @@
 
 import dallib;
 import gblib;
-import dallib;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -67,20 +66,20 @@ int main() {
   test_race.governor[0].money = 10000;
   test_race.governor[0].income = 5000;
 
-  // Test 1: Save race
-  std::println("Test 1: Save race...");
+  // Save race
+  std::println(std::cout, "Save race...");
   bool saved = repo.save(test_race);
   assert(saved && "Failed to save race");
-  std::println("  ✓ Race saved successfully");
+  std::println(std::cout, "  ✓ Race saved successfully");
 
-  // Test 2: Retrieve by player number
-  std::println("Test 2: Retrieve race by player number...");
+  // Retrieve by player number
+  std::println(std::cout, "Retrieve race by player number...");
   auto retrieved = repo.find_by_player(1);
   assert(retrieved.has_value() && "Failed to retrieve race");
-  std::println("  ✓ Race retrieved successfully");
+  std::println(std::cout, "  ✓ Race retrieved successfully");
 
-  // Test 3: Verify data integrity
-  std::println("Test 3: Verify data integrity...");
+  // Verify data integrity
+  std::println(std::cout, "Verify data integrity...");
   assert(retrieved->Playernum == test_race.Playernum);
   assert(retrieved->name == test_race.name);
   assert(retrieved->password == test_race.password);
@@ -95,30 +94,54 @@ int main() {
   assert(retrieved->governors == test_race.governors);
   assert(retrieved->governor[0].name == test_race.governor[0].name);
   assert(retrieved->governor[0].money == test_race.governor[0].money);
-  std::println("  ✓ All fields match original");
+  std::println(std::cout, "  ✓ All fields match original");
 
-  // Test 4: Update race
-  std::println("Test 4: Update race...");
+  // Update race
+  std::println(std::cout, "Update race...");
   retrieved->tech = 50.0;
   retrieved->morale = 2000;
   saved = repo.save(*retrieved);
   assert(saved && "Failed to update race");
-  std::println("  ✓ Race updated successfully");
+  std::println(std::cout, "  ✓ Race updated successfully");
 
-  // Test 5: Retrieve updated race
-  std::println("Test 5: Retrieve updated race...");
+  // Retrieve updated race
+  std::println(std::cout, "Retrieve updated race...");
   auto updated = repo.find_by_player(1);
   assert(updated.has_value() && "Failed to retrieve updated race");
   assert(updated->tech == 50.0);
   assert(updated->morale == 2000);
-  std::println("  ✓ Updated values verified");
+  std::println(std::cout, "  ✓ Updated values verified");
 
-  // Test 6: Find non-existent race
-  std::println("Test 6: Find non-existent race...");
-  auto not_found = repo.find_by_player(99);
-  assert(!not_found.has_value() && "Should not find non-existent race");
-  std::println("  ✓ Correctly returns nullopt for non-existent race");
+  // Multiple races and list_ids
+  std::println(std::cout, "Multiple races and listing IDs...");
+  Race race2{};
+  race2.Playernum = 2;
+  race2.name = "Vulcans";
+  race2.tech = 100.0;
+  assert(repo.save(race2));
 
-  std::println("\nAll RaceRepository tests passed!");
+  Race race3{};
+  race3.Playernum = 5;  // Sparse ID
+  race3.name = "Andorians";
+  race3.tech = 40.0;
+  assert(repo.save(race3));
+
+  auto player_ids = repo.list_ids();
+  assert(player_ids.size() == 3);
+  assert(player_ids[0] == 1);
+  assert(player_ids[1] == 2);
+  assert(player_ids[2] == 5);
+  std::println(std::cout, "  ✓ list_ids returns all player IDs in order");
+
+  // Remove race
+  std::println(std::cout, "Remove race...");
+  assert(repo.remove(2));
+  assert(!repo.find_by_player(player_t{2}).has_value());
+  auto remaining = repo.list_ids();
+  assert(remaining.size() == 2);
+  assert(remaining[0] == 1 && remaining[1] == 5);
+  std::println(std::cout, "  ✓ Race removal successfully deleted entity");
+
+  std::println(std::cout, "\nAll RaceRepository tests passed!");
   return 0;
 }

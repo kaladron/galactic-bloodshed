@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -93,13 +92,13 @@ int main() {
   GB::commands::launch(cmd, g);
 
   // Print output for debugging
-  std::println("Command output: {}", g.out.str());
+  std::println(std::cout, "Command output: {}", g.out.str());
 
   // Verify ship is no longer docked and has fuel consumed
   const auto* launched_ship = ctx.em.peek_ship(1);
   assert(launched_ship);
-  std::println("Ship docked status: {}", launched_ship->docked());
-  std::println("Ship whatdest: {}",
+  std::println(std::cout, "Ship docked status: {}", launched_ship->docked());
+  std::println(std::cout, "Ship whatdest: {}",
                static_cast<int>(launched_ship->whatdest()));
   assert(launched_ship->docked() == 0);
   assert(launched_ship->whatdest() == ScopeLevel::LEVEL_UNIV);
@@ -110,10 +109,10 @@ int main() {
   assert(explored_planet);
   assert(explored_planet->explored() == 1);
 
-  std::println("✓ Ship launch persists to database");
-  std::println("✓ Ship fuel consumption calculated");
-  std::println("✓ Planet exploration updated");
-  std::println("All launch tests passed!");
+  std::println(std::cout, "✓ Ship launch persists to database");
+  std::println(std::cout, "✓ Ship fuel consumption calculated");
+  std::println(std::cout, "✓ Planet exploration updated");
+  std::println(std::cout, "All launch tests passed!");
 
   return 0;
 }

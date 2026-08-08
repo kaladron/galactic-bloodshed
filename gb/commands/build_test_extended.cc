@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 // Extended test coverage for build command
 
+
+
+#include <cassert>
+#undef stdout
+#undef stdin
+#undef stderr
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
 
 // Helper to create test infrastructure
 struct BuildTestFixture {

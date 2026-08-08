@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -90,6 +89,6 @@ int main() {
   assert(saved_planet);
   assert(saved_planet->slaved_to() == 1);
 
-  std::println("enslave_test passed!");
+  std::println(std::cout, "enslave_test passed!");
   return 0;
 }

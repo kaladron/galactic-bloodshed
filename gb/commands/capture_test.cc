@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -132,6 +131,6 @@ int main() {
     assert(captured_ship->owner() == 1 || captured_ship->owner() == 2);
   }
 
-  std::println("✓ capture command: Ship combat and persistence verified");
+  std::println(std::cout, "✓ capture command: Ship combat and persistence verified");
   return 0;
 }

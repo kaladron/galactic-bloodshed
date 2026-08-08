@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file fix_test.cc
-/// \brief Unit tests for fix command (deity utilities)
-
-import dallib;
 import dallib;
 import gblib;
 import test;
@@ -12,7 +8,12 @@ import std;
 
 #include <cassert>
 
-// Test 1: Database persistence for fixing ship fuel
+/// \file fix_test.cc
+/// \brief Unit tests for fix command (deity utilities)
+
+
+
+// Database persistence for fixing ship fuel
 void test_fix_ship_fuel_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -55,10 +56,10 @@ void test_fix_ship_fuel_persistence() {
   assert(final_ship);
   assert(final_ship->fuel() == 200.0);
 
-  std::println("✓ fix ship fuel persistence test passed");
+  std::println(std::cout, "✓ fix ship fuel persistence test passed");
 }
 
-// Test 2: Database persistence for fixing ship damage
+// Database persistence for fixing ship damage
 void test_fix_ship_damage_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -100,10 +101,10 @@ void test_fix_ship_damage_persistence() {
   assert(final_ship);
   assert(final_ship->damage() == 0);
 
-  std::println("✓ fix ship damage persistence test passed");
+  std::println(std::cout, "✓ fix ship damage persistence test passed");
 }
 
-// Test 3: Database persistence for resurrecting ship
+// Database persistence for resurrecting ship
 void test_fix_ship_alive_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -148,10 +149,10 @@ void test_fix_ship_alive_persistence() {
   assert(final_ship->alive() == 1);
   assert(final_ship->damage() == 0);
 
-  std::println("✓ fix ship alive persistence test passed");
+  std::println(std::cout, "✓ fix ship alive persistence test passed");
 }
 
-// Test 4: Database persistence for fixing planet temperature
+// Database persistence for fixing planet temperature
 void test_fix_planet_temp_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -192,10 +193,10 @@ void test_fix_planet_temp_persistence() {
   assert(final_planet);
   assert(final_planet->conditions(TEMP) == 100);
 
-  std::println("✓ fix planet temperature persistence test passed");
+  std::println(std::cout, "✓ fix planet temperature persistence test passed");
 }
 
-// Test 5: Database persistence for fixing planet oxygen
+// Database persistence for fixing planet oxygen
 void test_fix_planet_oxygen_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -236,10 +237,10 @@ void test_fix_planet_oxygen_persistence() {
   assert(final_planet);
   assert(final_planet->conditions(OXYGEN) == 50);
 
-  std::println("✓ fix planet oxygen persistence test passed");
+  std::println(std::cout, "✓ fix planet oxygen persistence test passed");
 }
 
-// Test 6: Database persistence for fixing planet position
+// Database persistence for fixing planet position
 void test_fix_planet_position_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -284,7 +285,7 @@ void test_fix_planet_position_persistence() {
   assert(final_planet->xpos() == 500.0);
   assert(final_planet->ypos() == 600.0);
 
-  std::println("✓ fix planet position persistence test passed");
+  std::println(std::cout, "✓ fix planet position persistence test passed");
 }
 
 int main() {
@@ -295,6 +296,6 @@ int main() {
   test_fix_planet_oxygen_persistence();
   test_fix_planet_position_persistence();
 
-  std::println("\n✅ All fix tests passed!");
+  std::println(std::cout, "\n✅ All fix tests passed!");
   return 0;
 }

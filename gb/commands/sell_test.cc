@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -86,7 +85,7 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
 
-  std::println("Test 1: Sell resources");
+  std::println(std::cout, "Sell resources");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int initial_resource = p_before->info(player_t{1}).resource;
@@ -96,10 +95,10 @@ int main() {
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).resource == initial_resource - 100);
-    std::println("✓ Resources sold and deducted from planet");
+    std::println(std::cout, "✓ Resources sold and deducted from planet");
   }
 
-  std::println("Test 2: Sell fuel");
+  std::println(std::cout, "Sell fuel");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int initial_fuel = p_before->info(player_t{1}).fuel;
@@ -109,10 +108,10 @@ int main() {
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).fuel == initial_fuel - 50);
-    std::println("✓ Fuel sold and deducted from planet");
+    std::println(std::cout, "✓ Fuel sold and deducted from planet");
   }
 
-  std::println("Test 3: Sell destruct");
+  std::println(std::cout, "Sell destruct");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int initial_destruct = p_before->info(player_t{1}).destruct;
@@ -122,10 +121,10 @@ int main() {
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).destruct == initial_destruct - 25);
-    std::println("✓ Destruct sold and deducted from planet");
+    std::println(std::cout, "✓ Destruct sold and deducted from planet");
   }
 
-  std::println("Test 4: Sell crystals");
+  std::println(std::cout, "Sell crystals");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int initial_crystals = p_before->info(player_t{1}).crystals;
@@ -135,10 +134,10 @@ int main() {
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).crystals == initial_crystals - 10);
-    std::println("✓ Crystals sold and deducted from planet");
+    std::println(std::cout, "✓ Crystals sold and deducted from planet");
   }
 
-  std::println("Test 5: Guest race cannot sell");
+  std::println(std::cout, "Guest race cannot sell");
   {
     auto race_handle = ctx.em.get_race(1);
     auto& r = *race_handle;
@@ -161,9 +160,9 @@ int main() {
     // Should not have changed
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).resource == resource_before);
-    std::println("✓ Guest race blocked from selling");
+    std::println(std::cout, "✓ Guest race blocked from selling");
   }
 
-  std::println("All sell tests passed!");
+  std::println(std::cout, "All sell tests passed!");
   return 0;
 }

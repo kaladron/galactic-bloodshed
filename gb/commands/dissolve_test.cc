@@ -4,7 +4,7 @@ import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -42,9 +42,9 @@ int main() {
   const auto* loaded_race = ctx.em.peek_race(1);
   assert(loaded_race != nullptr);
   assert(loaded_race->password == "testpass");
-  std::println("Race loaded into EntityManager: player={}, password={}",
+  std::println(std::cout, "Race loaded into EntityManager: player={}, password={}",
                loaded_race->Playernum, loaded_race->password);
-  std::println("Governor 0: active={}, password='{}'",
+  std::println(std::cout, "Governor 0: active={}, password='{}'",
                loaded_race->governor[0].active,
                loaded_race->governor[0].password);
   assert(loaded_race->governor[0].password == "govpass");
@@ -55,11 +55,11 @@ int main() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  std::println("Test 1: Dissolve race with correct passwords");
+  std::println(std::cout, "Dissolve race with correct passwords");
   {
     command_t argv = {"dissolve", "testpass", "govpass"};
     GB::commands::dissolve(argv, g);
-    std::println("Command output: {}", g.out.str());
+    std::println(std::cout, "Command output: {}", g.out.str());
 
     // Clear cache to force reload from database
     ctx.em.clear_cache();
@@ -67,10 +67,10 @@ int main() {
     // Verify race was dissolved
     const auto* saved_race = ctx.em.peek_race(1);
     assert(saved_race != nullptr);
-    std::println("DEBUG: Race dissolved = {}", saved_race->dissolved);
-    std::println("DEBUG: Race name = {}", saved_race->name);
+    std::println(std::cout, "DEBUG: Race dissolved = {}", saved_race->dissolved);
+    std::println(std::cout, "DEBUG: Race name = {}", saved_race->name);
     assert(saved_race->dissolved == true);
-    std::println("    ✓ Race dissolved flag set to true");
+    std::println(std::cout, "    ✓ Race dissolved flag set to true");
 
     // TODO: Re-enable ship destruction test after kill_ship() migrated to
     // EntityManager (Phase 3.7) Currently disabled because kill_ship() uses
@@ -81,9 +81,9 @@ int main() {
     // const auto* saved_ship = ctx.em.peek_ship(1);
     // assert(saved_ship != nullptr);
     // assert(saved_ship->alive == false || saved_ship->owner == 0);
-    // std::println("    ✓ Ship destroyed or ownership removed");
+    // std::println(std::cout, "    ✓ Ship destroyed or ownership removed");
   }
 
-  std::println("\n✅ All dissolve tests passed!");
+  std::println(std::cout, "\n✅ All dissolve tests passed!");
   return 0;
 }

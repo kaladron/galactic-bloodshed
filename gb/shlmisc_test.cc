@@ -21,7 +21,7 @@ void test_string_to_shipnum() {
   assert(!e);
   auto f = string_to_shipnum("");
   assert(!f);
-  std::println("✓ string_to_shipnum tests passed");
+  std::println(std::cout, "✓ string_to_shipnum tests passed");
 }
 
 // Tests for get4args
@@ -158,7 +158,7 @@ void test_colon_without_first_value() {
 }  // namespace
 
 int main() {
-  std::println("Running shlmisc tests...\n");
+  std::println(std::cout, "Running shlmisc tests...\n");
 
   // string_to_shipnum tests
   test_string_to_shipnum();
@@ -186,7 +186,7 @@ int main() {
   test_colon_without_second_value();
   test_colon_without_first_value();
 
-  std::println("✓ get4args tests passed");
-  std::println("\n✅ All shlmisc tests passed!");
+  std::println(std::cout, "✓ get4args tests passed");
+  std::println(std::cout, "\n✅ All shlmisc tests passed!");
   return 0;
 }

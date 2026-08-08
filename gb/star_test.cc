@@ -2,13 +2,13 @@
 
 import dallib;
 import gblib;
-import std.compat;
+import std;
 
 #include <cassert>
 
 int main() {
-  // Test 1: Basic star creation with vector of planet names
-  std::println("Test 1: Basic star creation with planet names...");
+  // Basic star creation with vector of planet names
+  std::println(std::cout, "Basic star creation with planet names...");
   {
     star_struct s{};
     s.name = "Sol";
@@ -23,11 +23,11 @@ int main() {
     assert(star.get_planet_name(0) == "Mercury");
     assert(star.get_planet_name(1) == "Venus");
     assert(star.get_planet_name(2) == "Earth");
-    std::println("  ✓ Basic creation and access works");
+    std::println(std::cout, "  ✓ Basic creation and access works");
   }
 
-  // Test 2: Bounds checking on get_planet_name (out of range throws exception)
-  std::println("Test 2: Bounds checking on get_planet_name...");
+  // Bounds checking on get_planet_name (out of range throws exception)
+  std::println(std::cout, "Bounds checking on get_planet_name...");
   {
     star_struct s{};
     s.name = "Test";
@@ -50,11 +50,11 @@ int main() {
       assert(msg.find("Planet number 2 out of range") != std::string::npos);
     }
     assert(caught_exception);
-    std::println("  ✓ Out of bounds access throws exception");
+    std::println(std::cout, "  ✓ Out of bounds access throws exception");
   }
 
-  // Test 3: planet_name_isset bounds checking (throws on out of bounds)
-  std::println("Test 3: planet_name_isset bounds checking...");
+  // planet_name_isset bounds checking (throws on out of bounds)
+  std::println(std::cout, "planet_name_isset bounds checking...");
   {
     star_struct s{};
     s.name = "Test";
@@ -76,12 +76,11 @@ int main() {
       caught_exception = true;
     }
     assert(caught_exception);
-    std::println(
-        "  ✓ planet_name_isset works correctly and throws on out of bounds");
+    std::println(std::cout, "  ✓ planet_name_isset works correctly and throws on out of bounds");
   }
 
-  // Test 4: set_planet_name with auto-resize
-  std::println("Test 4: set_planet_name with auto-resize...");
+  // set_planet_name with auto-resize
+  std::println(std::cout, "set_planet_name with auto-resize...");
   {
     star_struct s{};
     s.name = "Test";
@@ -101,11 +100,11 @@ int main() {
     assert(star.get_planet_name(3) == "");
     assert(star.get_planet_name(4) == "");
     assert(star.get_planet_name(5) == "Jupiter");
-    std::println("  ✓ Auto-resize works correctly");
+    std::println(std::cout, "  ✓ Auto-resize works correctly");
   }
 
-  // Test 5: Overwriting existing planet names
-  std::println("Test 5: Overwriting existing planet names...");
+  // Overwriting existing planet names
+  std::println(std::cout, "Overwriting existing planet names...");
   {
     star_struct s{};
     s.name = "Test";
@@ -117,11 +116,11 @@ int main() {
     star.set_planet_name(0, "NewName");
     assert(star.get_planet_name(0) == "NewName");
     assert(star.numplanets() == 1);  // Size unchanged
-    std::println("  ✓ Overwriting works correctly");
+    std::println(std::cout, "  ✓ Overwriting works correctly");
   }
 
-  // Test 6: Empty star (no planets, bounds checking throws)
-  std::println("Test 6: Empty star (no planets)...");
+  // Empty star (no planets, bounds checking throws)
+  std::println(std::cout, "Empty star (no planets)...");
   {
     star_struct s{};
     s.name = "EmptyStar";
@@ -148,12 +147,11 @@ int main() {
     }
     assert(caught_exception);
 
-    std::println(
-        "  ✓ Empty star works correctly with exception-based bounds checking");
+    std::println(std::cout, "  ✓ Empty star works correctly with exception-based bounds checking");
   }
 
-  // Test 7: numplanets() reflects vector size
-  std::println("Test 7: numplanets() reflects vector size...");
+  // numplanets() reflects vector size
+  std::println(std::cout, "numplanets() reflects vector size...");
   {
     star_struct s{};
     s.name = "Test";
@@ -171,9 +169,9 @@ int main() {
     // Modify through Star interface
     star2.set_planet_name(3, "P4");
     assert(star2.numplanets() == 4);
-    std::println("  ✓ numplanets() correctly reflects vector size");
+    std::println(std::cout, "  ✓ numplanets() correctly reflects vector size");
   }
 
-  std::println("\n✓ All Star class tests passed!");
+  std::println(std::cout, "\n✓ All Star class tests passed!");
   return 0;
 }

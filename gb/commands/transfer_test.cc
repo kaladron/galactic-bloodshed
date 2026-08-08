@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -75,7 +74,7 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
 
-  std::println("Test 1: Transfer resources");
+  std::println(std::cout, "Transfer resources");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_resource_before = p_before->info(player_t{1}).resource;
@@ -87,10 +86,10 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).resource == p1_resource_before - 100);
     assert(p_after->info(player_t{2}).resource == p2_resource_before + 100);
-    std::println("✓ Resources transferred");
+    std::println(std::cout, "✓ Resources transferred");
   }
 
-  std::println("Test 2: Transfer fuel");
+  std::println(std::cout, "Transfer fuel");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_fuel_before = p_before->info(player_t{1}).fuel;
@@ -102,10 +101,10 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).fuel == p1_fuel_before - 75);
     assert(p_after->info(player_t{2}).fuel == p2_fuel_before + 75);
-    std::println("✓ Fuel transferred");
+    std::println(std::cout, "✓ Fuel transferred");
   }
 
-  std::println("Test 3: Transfer destruct");
+  std::println(std::cout, "Transfer destruct");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_destruct_before = p_before->info(player_t{1}).destruct;
@@ -117,10 +116,10 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).destruct == p1_destruct_before - 50);
     assert(p_after->info(player_t{2}).destruct == p2_destruct_before + 50);
-    std::println("✓ Destruct transferred");
+    std::println(std::cout, "✓ Destruct transferred");
   }
 
-  std::println("Test 4: Transfer crystals");
+  std::println(std::cout, "Transfer crystals");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_crystals_before = p_before->info(player_t{1}).crystals;
@@ -132,10 +131,10 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).crystals == p1_crystals_before - 10);
     assert(p_after->info(player_t{2}).crystals == p2_crystals_before + 10);
-    std::println("✓ Crystals transferred");
+    std::println(std::cout, "✓ Crystals transferred");
   }
 
-  std::println("Test 5: Cannot transfer more than available");
+  std::println(std::cout, "Cannot transfer more than available");
   {
     const auto* p_before = ctx.em.peek_planet(0, 0);
     int p1_resource_before = p_before->info(player_t{1}).resource;
@@ -149,9 +148,9 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).resource == p1_resource_before);
     assert(p_after->info(player_t{2}).resource == p2_resource_before);
-    std::println("✓ Transfer prevented when insufficient resources");
+    std::println(std::cout, "✓ Transfer prevented when insufficient resources");
   }
 
-  std::println("All transfer tests passed!");
+  std::println(std::cout, "All transfer tests passed!");
   return 0;
 }

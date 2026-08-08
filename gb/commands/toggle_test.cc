@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file toggle_test.cc
-/// \brief Test toggle command database persistence
-
-import dallib;
 import dallib;
 import gblib;
 import test;
@@ -12,8 +8,13 @@ import std;
 
 #include <cassert>
 
+/// \file toggle_test.cc
+/// \brief Test toggle command database persistence
+
+
+
 void test_toggle_database_persistence() {
-  std::println("Test: toggle command database persistence");
+  std::println(std::cout, "Test: toggle command database persistence");
 
   // Create in-memory database
   TestContext ctx;
@@ -43,7 +44,7 @@ void test_toggle_database_persistence() {
   ctx.setup_game_obj(g);  // Set race pointer like production does
 
   // TEST 1: Display all toggle settings (no argument)
-  std::println("  Testing: Display all toggle settings");
+  std::println(std::cout, "  Testing: Display all toggle settings");
   {
     command_t cmd = {"toggle"};
     GB::commands::toggle(cmd, g);
@@ -58,12 +59,12 @@ void test_toggle_database_persistence() {
     assert(out_str.find("color") != std::string::npos);
     assert(out_str.find("compatibility") != std::string::npos);
     assert(out_str.find("VISIBLE") != std::string::npos);
-    std::println("    ✓ Output displays all toggles");
+    std::println(std::cout, "    ✓ Output displays all toggles");
     g.out.str("");  // Clear output for next test
   }
 
   // TEST 2: Toggle gag setting
-  std::println("  Testing: Toggle gag setting");
+  std::println(std::cout, "  Testing: Toggle gag setting");
   {
     command_t cmd = {"toggle", "gag"};
     GB::commands::toggle(cmd, g);
@@ -71,14 +72,14 @@ void test_toggle_database_persistence() {
     // Verify output
     std::string out_str = g.out.str();
     assert(out_str.find("gag is now on") != std::string::npos);
-    std::println("    ✓ Output message correct");
+    std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");
 
     // Verify database: gag should be true
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.gag == true);
-    std::println("    ✓ Database: gag = true");
+    std::println(std::cout, "    ✓ Database: gag = true");
 
     // Toggle again - should turn off
     GB::commands::toggle(cmd, g);
@@ -88,12 +89,12 @@ void test_toggle_database_persistence() {
     saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.gag == false);
-    std::println("    ✓ Database: gag = false after second toggle");
+    std::println(std::cout, "    ✓ Database: gag = false after second toggle");
     g.out.str("");
   }
 
   // TEST 3: Toggle inverse setting
-  std::println("  Testing: Toggle inverse setting");
+  std::println(std::cout, "  Testing: Toggle inverse setting");
   {
     command_t cmd = {"toggle", "inverse"};
     GB::commands::toggle(cmd, g);
@@ -102,12 +103,12 @@ void test_toggle_database_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.inverse == true);
-    std::println("    ✓ Database: inverse = true");
+    std::println(std::cout, "    ✓ Database: inverse = true");
     g.out.str("");
   }
 
   // TEST 4: Toggle double_digits setting
-  std::println("  Testing: Toggle double_digits setting");
+  std::println(std::cout, "  Testing: Toggle double_digits setting");
   {
     command_t cmd = {"toggle", "double_digits"};
     GB::commands::toggle(cmd, g);
@@ -116,12 +117,12 @@ void test_toggle_database_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.double_digits == true);
-    std::println("    ✓ Database: double_digits = true");
+    std::println(std::cout, "    ✓ Database: double_digits = true");
     g.out.str("");
   }
 
   // TEST 5: Toggle geography setting
-  std::println("  Testing: Toggle geography setting");
+  std::println(std::cout, "  Testing: Toggle geography setting");
   {
     command_t cmd = {"toggle", "geography"};
     GB::commands::toggle(cmd, g);
@@ -130,12 +131,12 @@ void test_toggle_database_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.geography == true);
-    std::println("    ✓ Database: geography = true");
+    std::println(std::cout, "    ✓ Database: geography = true");
     g.out.str("");
   }
 
   // TEST 6: Toggle autoload setting
-  std::println("  Testing: Toggle autoload setting");
+  std::println(std::cout, "  Testing: Toggle autoload setting");
   {
     command_t cmd = {"toggle", "autoload"};
     GB::commands::toggle(cmd, g);
@@ -144,12 +145,12 @@ void test_toggle_database_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.autoload == true);
-    std::println("    ✓ Database: autoload = true");
+    std::println(std::cout, "    ✓ Database: autoload = true");
     g.out.str("");
   }
 
   // TEST 7: Toggle color setting
-  std::println("  Testing: Toggle color setting");
+  std::println(std::cout, "  Testing: Toggle color setting");
   {
     command_t cmd = {"toggle", "color"};
     GB::commands::toggle(cmd, g);
@@ -158,12 +159,12 @@ void test_toggle_database_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.color == true);
-    std::println("    ✓ Database: color = true");
+    std::println(std::cout, "    ✓ Database: color = true");
     g.out.str("");
   }
 
   // TEST 8: Toggle compatibility setting
-  std::println("  Testing: Toggle compatibility setting");
+  std::println(std::cout, "  Testing: Toggle compatibility setting");
   {
     command_t cmd = {"toggle", "compatibility"};
     GB::commands::toggle(cmd, g);
@@ -172,12 +173,12 @@ void test_toggle_database_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.compat == true);
-    std::println("    ✓ Database: compat = true");
+    std::println(std::cout, "    ✓ Database: compat = true");
     g.out.str("");
   }
 
   // TEST 9: Toggle visible setting
-  std::println("  Testing: Toggle visible setting");
+  std::println(std::cout, "  Testing: Toggle visible setting");
   {
     command_t cmd = {"toggle", "visible"};
     GB::commands::toggle(cmd, g);
@@ -186,12 +187,12 @@ void test_toggle_database_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.invisible == true);
-    std::println("    ✓ Database: invisible = true");
+    std::println(std::cout, "    ✓ Database: invisible = true");
     g.out.str("");
   }
 
   // TEST 10: Toggle monitor setting (God only)
-  std::println("  Testing: Toggle monitor setting (God mode)");
+  std::println(std::cout, "  Testing: Toggle monitor setting (God mode)");
   {
     // First set race as God
     auto race_handle = ctx.em.get_race(1);
@@ -209,12 +210,12 @@ void test_toggle_database_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->monitor == true);
-    std::println("    ✓ Database: monitor = true (God mode)");
+    std::println(std::cout, "    ✓ Database: monitor = true (God mode)");
     g.out.str("");
   }
 
   // TEST 11: Reject invalid toggle option
-  std::println("  Testing: Reject invalid toggle option");
+  std::println(std::cout, "  Testing: Reject invalid toggle option");
   {
     command_t cmd = {"toggle", "invalid_option"};
     GB::commands::toggle(cmd, g);
@@ -222,14 +223,14 @@ void test_toggle_database_persistence() {
     // Verify error message
     std::string out_str = g.out.str();
     assert(out_str.find("No such option") != std::string::npos);
-    std::println("    ✓ Error message correct");
+    std::println(std::cout, "    ✓ Error message correct");
   }
 
-  std::println("  ✅ All toggle database persistence tests passed!");
+  std::println(std::cout, "  ✅ All toggle database persistence tests passed!");
 }
 
 int main() {
   test_toggle_database_persistence();
-  std::println("\n✅ All tests passed!");
+  std::println(std::cout, "\n✅ All tests passed!");
   return 0;
 }

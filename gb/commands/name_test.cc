@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file name_test.cc
-/// \brief Test name command database persistence
-
 import dallib;
 import gblib;
 import test;
@@ -11,8 +8,13 @@ import std;
 
 #include <cassert>
 
+/// \file name_test.cc
+/// \brief Test name command database persistence
+
+
+
 void test_name_ship_persistence() {
-  std::println("Test: name command - ship naming");
+  std::println(std::cout, "Test: name command - ship naming");
 
   // Create in-memory database
   TestContext ctx;
@@ -43,7 +45,7 @@ void test_name_ship_persistence() {
       ctx.em.peek_race(g.player());  // Set race pointer like production does
 
   // TEST: Rename ship
-  std::println("  Testing: Rename ship to 'USS Enterprise'");
+  std::println(std::cout, "  Testing: Rename ship to 'USS Enterprise'");
   {
     command_t cmd = {"name", "ship", "USS", "Enterprise"};
     GB::commands::name(cmd, g);
@@ -51,20 +53,20 @@ void test_name_ship_persistence() {
     // Verify output message
     std::string out_str = g.out.str();
     assert(out_str.find("Name set.") != std::string::npos);
-    std::println("    ✓ Output message correct");
+    std::println(std::cout, "    ✓ Output message correct");
 
     // Verify database
     auto saved = ships.find_by_number(1);
     assert(saved.has_value());
     assert(saved->name() == "USS Enterprise");
-    std::println("    ✓ Database: ship name = '{}'", saved->name());
+    std::println(std::cout, "    ✓ Database: ship name = '{}'", saved->name());
   }
 
-  std::println("  ✅ Ship naming test passed!");
+  std::println(std::cout, "  ✅ Ship naming test passed!");
 }
 
 void test_name_race_persistence() {
-  std::println("Test: name command - race naming");
+  std::println(std::cout, "Test: name command - race naming");
 
   // Create in-memory database
   TestContext ctx;
@@ -88,7 +90,7 @@ void test_name_race_persistence() {
       ctx.em.peek_race(g.player());  // Set race pointer like production does
 
   // TEST: Rename race
-  std::println("  Testing: Rename race to 'Klingons'");
+  std::println(std::cout, "  Testing: Rename race to 'Klingons'");
   {
     command_t cmd = {"name", "race", "Klingons"};
     GB::commands::name(cmd, g);
@@ -97,14 +99,14 @@ void test_name_race_persistence() {
     auto saved = races.find_by_player(1);
     assert(saved.has_value());
     assert(saved->name == "Klingons");
-    std::println("    ✓ Database: race name = '{}'", saved->name);
+    std::println(std::cout, "    ✓ Database: race name = '{}'", saved->name);
   }
 
-  std::println("  ✅ Race naming test passed!");
+  std::println(std::cout, "  ✅ Race naming test passed!");
 }
 
 void test_name_star_persistence() {
-  std::println("Test: name command - star naming");
+  std::println(std::cout, "Test: name command - star naming");
 
   // Create in-memory database
   TestContext ctx;
@@ -137,7 +139,7 @@ void test_name_star_persistence() {
       ctx.em.peek_race(g.player());  // Set race pointer like production does
 
   // TEST: Rename star
-  std::println("  Testing: Rename star to 'Alpha Centauri'");
+  std::println(std::cout, "  Testing: Rename star to 'Alpha Centauri'");
   {
     command_t cmd = {"name", "star", "Alpha", "Centauri"};
     GB::commands::name(cmd, g);
@@ -146,14 +148,14 @@ void test_name_star_persistence() {
     auto saved = stars_repo.find_by_number(1);
     assert(saved.has_value());
     assert(saved->get_name() == "Alpha Centauri");
-    std::println("    ✓ Database: star name = '{}'", saved->get_name());
+    std::println(std::cout, "    ✓ Database: star name = '{}'", saved->get_name());
   }
 
-  std::println("  ✅ Star naming test passed!");
+  std::println(std::cout, "  ✅ Star naming test passed!");
 }
 
 void test_name_planet_persistence() {
-  std::println("Test: name command - planet naming");
+  std::println(std::cout, "Test: name command - planet naming");
 
   // Create in-memory database
   TestContext ctx;
@@ -188,7 +190,7 @@ void test_name_planet_persistence() {
       ctx.em.peek_race(g.player());  // Set race pointer like production does
 
   // TEST: Rename planet
-  std::println("  Testing: Rename planet to 'New Earth'");
+  std::println(std::cout, "  Testing: Rename planet to 'New Earth'");
   {
     command_t cmd = {"name", "planet", "New", "Earth"};
     GB::commands::name(cmd, g);
@@ -197,11 +199,11 @@ void test_name_planet_persistence() {
     auto saved = stars_repo.find_by_number(1);
     assert(saved.has_value());
     assert(saved->get_planet_name(0) == "New Earth");
-    std::println("    ✓ Database: planet name = '{}'",
+    std::println(std::cout, "    ✓ Database: planet name = '{}'",
                  saved->get_planet_name(0));
   }
 
-  std::println("  ✅ Planet naming test passed!");
+  std::println(std::cout, "  ✅ Planet naming test passed!");
 }
 
 int main() {
@@ -209,6 +211,6 @@ int main() {
   test_name_race_persistence();
   test_name_star_persistence();
   test_name_planet_persistence();
-  std::println("\n✅ All name tests passed!");
+  std::println(std::cout, "\n✅ All name tests passed!");
   return 0;
 }

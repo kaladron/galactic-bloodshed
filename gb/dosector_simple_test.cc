@@ -2,9 +2,10 @@
 
 import dallib;
 import gblib;
-import std.compat;
+import std;
 
 #include <cassert>
+
 #include <cstring>
 
 namespace {

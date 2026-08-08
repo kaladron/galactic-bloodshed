@@ -2,8 +2,7 @@
 
 import dallib;
 import gblib;
-import dallib;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -41,22 +40,22 @@ int main() {
 
   Sector test_sector(test_data);
 
-  // Test 1: Save sector
-  std::println("Test 1: Save sector...");
+  // Save sector
+  std::println(std::cout, "Save sector...");
   bool saved = repo.save_sector(test_sector, test_planet.star_id(),
                                 test_planet.planet_order(), 5, 7);
   assert(saved && "Failed to save sector");
-  std::println("  ✓ Sector saved successfully");
+  std::println(std::cout, "  ✓ Sector saved successfully");
 
-  // Test 2: Retrieve sector by location
-  std::println("Test 2: Retrieve sector by location...");
+  // Retrieve sector by location
+  std::println(std::cout, "Retrieve sector by location...");
   auto retrieved =
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 5, 7);
   assert(retrieved.has_value() && "Failed to retrieve sector");
-  std::println("  ✓ Sector retrieved successfully");
+  std::println(std::cout, "  ✓ Sector retrieved successfully");
 
-  // Test 3: Verify data integrity using accessor methods
-  std::println("Test 3: Verify data integrity...");
+  // Verify data integrity using accessor methods
+  std::println(std::cout, "Verify data integrity...");
   assert(retrieved->get_x() == test_data.x);
   assert(retrieved->get_y() == test_data.y);
   assert(retrieved->get_eff() == test_data.eff);
@@ -70,30 +69,30 @@ int main() {
   assert(retrieved->get_race() == test_data.race);
   assert(retrieved->get_type() == test_data.type);
   assert(retrieved->get_condition() == test_data.condition);
-  std::println("  ✓ All fields match original");
+  std::println(std::cout, "  ✓ All fields match original");
 
-  // Test 4: Update sector using setters
-  std::println("Test 4: Update sector...");
+  // Update sector using setters
+  std::println(std::cout, "Update sector...");
   retrieved->set_efficiency_bounded(90);
   retrieved->set_popn_exact(15000);
   retrieved->set_crystals(150);
   saved = repo.save_sector(*retrieved, test_planet.star_id(),
                            test_planet.planet_order(), 5, 7);
   assert(saved && "Failed to update sector");
-  std::println("  ✓ Sector updated successfully");
+  std::println(std::cout, "  ✓ Sector updated successfully");
 
-  // Test 5: Retrieve updated sector
-  std::println("Test 5: Retrieve updated sector...");
+  // Retrieve updated sector
+  std::println(std::cout, "Retrieve updated sector...");
   auto updated =
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 5, 7);
   assert(updated.has_value() && "Failed to retrieve updated sector");
   assert(updated->get_eff() == 90);
   assert(updated->get_popn() == 15000);
   assert(updated->get_crystals() == 150);
-  std::println("  ✓ Updated values verified");
+  std::println(std::cout, "  ✓ Updated values verified");
 
-  // Test 6: Save multiple sectors...
-  std::println("Test 6: Save multiple sectors...");
+  // Save multiple sectors...
+  std::println(std::cout, "Save multiple sectors...");
   sector_struct data2{};
   data2.x = 3;
   data2.y = 4;
@@ -115,10 +114,10 @@ int main() {
   Sector sector3(data3);
   repo.save_sector(sector3, test_planet.star_id(), test_planet.planet_order(),
                    8, 2);
-  std::println("  ✓ Multiple sectors saved");
+  std::println(std::cout, "  ✓ Multiple sectors saved");
 
-  // Test 7: Retrieve different sectors
-  std::println("Test 7: Retrieve different sectors...");
+  // Retrieve different sectors
+  std::println(std::cout, "Retrieve different sectors...");
   auto sec2 =
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 3, 4);
   assert(sec2.has_value());
@@ -130,17 +129,17 @@ int main() {
   assert(sec3.has_value());
   assert(sec3->get_type() == SectorType::SEC_MOUNT);
   assert(sec3->get_x() == 8 && sec3->get_y() == 2);
-  std::println("  ✓ Different sectors retrieved correctly");
+  std::println(std::cout, "  ✓ Different sectors retrieved correctly");
 
-  // Test 8: Find non-existent sector
-  std::println("Test 8: Find non-existent sector...");
+  // Find non-existent sector
+  std::println(std::cout, "Find non-existent sector...");
   auto not_found = repo.find_sector(test_planet.star_id(),
                                     test_planet.planet_order(), 99, 99);
   assert(!not_found.has_value() && "Should not find non-existent sector");
-  std::println("  ✓ Correctly returns nullopt for non-existent sector");
+  std::println(std::cout, "  ✓ Correctly returns nullopt for non-existent sector");
 
-  // Test 9: Sectors on different planets don't interfere
-  std::println("Test 9: Different planets...");
+  // Sectors on different planets don't interfere
+  std::println(std::cout, "Different planets...");
   Planet planet2{};
   planet2.star_id() = 5;
   planet2.planet_order() = 2;
@@ -165,10 +164,10 @@ int main() {
   assert(p1_sec.has_value() && p2_sec.has_value());
   assert(p1_sec->get_owner() == 1);
   assert(p2_sec->get_owner() == 2);
-  std::println("  ✓ Sectors on different planets handled correctly");
+  std::println(std::cout, "  ✓ Sectors on different planets handled correctly");
 
-  // Test 10: Save and load SectorMap (bulk operation)
-  std::println("Test 10: Save and load SectorMap (bulk)...");
+  // Save and load SectorMap (bulk operation)
+  std::println(std::cout, "Save and load SectorMap (bulk)...");
   Planet small_planet{};
   small_planet.star_id() = 10;
   small_planet.planet_order() = 3;
@@ -194,10 +193,10 @@ int main() {
   // Save entire map
   bool map_saved = repo.save_map(test_map);
   assert(map_saved && "Failed to save sector map");
-  std::println("  ✓ SectorMap saved successfully");
+  std::println(std::cout, "  ✓ SectorMap saved successfully");
 
-  // Test 11: Load SectorMap
-  std::println("Test 11: Load SectorMap...");
+  // Load SectorMap
+  std::println(std::cout, "Load SectorMap...");
   SectorMap loaded_map = repo.load_map(small_planet);
 
   // Verify all sectors loaded correctly
@@ -214,10 +213,10 @@ int main() {
       assert(loaded.get_type() == original.get_type());
     }
   }
-  std::println("  ✓ SectorMap loaded and verified");
+  std::println(std::cout, "  ✓ SectorMap loaded and verified");
 
-  // Test 12: Update and save SectorMap...
-  std::println("Test 12: Update and save SectorMap...");
+  // Update and save SectorMap...
+  std::println(std::cout, "Update and save SectorMap...");
   for (int y = 0; y < 3; y++) {
     for (int x = 0; x < 3; x++) {
       auto& sec = loaded_map.get(x, y);
@@ -239,10 +238,10 @@ int main() {
       assert(updated.get_popn() == original.get_popn() + 500);
     }
   }
-  std::println("  ✓ SectorMap updates saved and verified");
+  std::println(std::cout, "  ✓ SectorMap updates saved and verified");
 
-  // Test 13: New load() method working with sector_struct directly
-  std::println("Test 13: New load() method (sector_struct)...");
+  // New load() method working with sector_struct directly
+  std::println(std::cout, "New load() method (sector_struct)...");
   sector_struct loaded_struct =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 5, 7);
   assert(loaded_struct.x == 5);
@@ -250,10 +249,10 @@ int main() {
   assert(loaded_struct.eff == 90);        // From Test 5 update
   assert(loaded_struct.popn == 15000);    // From Test 5 update
   assert(loaded_struct.crystals == 150);  // From Test 5 update
-  std::println("  ✓ load() returns sector_struct correctly");
+  std::println(std::cout, "  ✓ load() returns sector_struct correctly");
 
-  // Test 14: New save() method working with sector_struct directly
-  std::println("Test 14: New save() method (sector_struct)...");
+  // New save() method working with sector_struct directly
+  std::println(std::cout, "New save() method (sector_struct)...");
   sector_struct new_struct{};
   new_struct.x = 9;
   new_struct.y = 9;
@@ -271,10 +270,10 @@ int main() {
 
   repo.save(test_planet.star_id(), test_planet.planet_order(), 9, 9,
             new_struct);
-  std::println("  ✓ save() with sector_struct completed");
+  std::println(std::cout, "  ✓ save() with sector_struct completed");
 
-  // Test 15: Verify new save() persisted correctly using load()
-  std::println("Test 15: Verify save() persisted data...");
+  // Verify new save() persisted correctly using load()
+  std::println(std::cout, "Verify save() persisted data...");
   sector_struct verified =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 9, 9);
   assert(verified.x == new_struct.x);
@@ -290,19 +289,19 @@ int main() {
   assert(verified.race == new_struct.race);
   assert(verified.type == new_struct.type);
   assert(verified.condition == new_struct.condition);
-  std::println("  ✓ Data persisted and retrieved correctly");
+  std::println(std::cout, "  ✓ Data persisted and retrieved correctly");
 
-  // Test 16: Verify load() returns default sector_struct for non-existent
-  std::println("Test 16: load() with non-existent sector...");
+  // Verify load() returns default sector_struct for non-existent
+  std::println(std::cout, "load() with non-existent sector...");
   sector_struct empty =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 99, 99);
   // Default-constructed sector_struct should have zero/default values
   assert(empty.popn == 0);
   assert(empty.owner == 0);
-  std::println("  ✓ load() returns default sector_struct for non-existent");
+  std::println(std::cout, "  ✓ load() returns default sector_struct for non-existent");
 
-  // Test 17: Round-trip test with both new methods
-  std::println("Test 17: Round-trip test (save then load)...");
+  // Round-trip test with both new methods
+  std::println(std::cout, "Round-trip test (save then load)...");
   sector_struct roundtrip{};
   roundtrip.x = 1;
   roundtrip.y = 1;
@@ -323,8 +322,8 @@ int main() {
   assert(retrieved_rt.popn == roundtrip.popn);
   assert(retrieved_rt.owner == roundtrip.owner);
   assert(retrieved_rt.type == roundtrip.type);
-  std::println("  ✓ Round-trip save/load works correctly");
+  std::println(std::cout, "  ✓ Round-trip save/load works correctly");
 
-  std::println("\nAll SectorRepository tests passed!");
+  std::println(std::cout, "\nAll SectorRepository tests passed!");
   return 0;
 }

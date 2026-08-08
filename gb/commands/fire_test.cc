@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -101,6 +100,6 @@ int main() {
   assert(ship2->number() == 2);
 
   // Test passed - command executed and ships persisted via RAII
-  std::println("fire_test.cc: All assertions passed!");
+  std::println(std::cout, "fire_test.cc: All assertions passed!");
   return 0;
 }

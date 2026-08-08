@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -124,7 +123,7 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
 
-  std::println("Test 1: Map command at planet level displays map");
+  std::println(std::cout, "Map command at planet level displays map");
   {
     command_t argv = {"map"};
     GB::commands::map(argv, g);
@@ -135,10 +134,10 @@ int main() {
     assert(saved_planet != nullptr);
     assert(saved_planet->Maxx() == 5);
     assert(saved_planet->Maxy() == 5);
-    std::println("    ✓ Map display at planet level works");
+    std::println(std::cout, "    ✓ Map display at planet level works");
   }
 
-  std::println("Test 2: Map command with explicit planet argument");
+  std::println(std::cout, "Map command with explicit planet argument");
   {
     // Change to star level
     g.set_level(ScopeLevel::LEVEL_STAR);
@@ -150,10 +149,10 @@ int main() {
     // Verify data unchanged
     const auto* saved_planet = ctx.em.peek_planet(0, 0);
     assert(saved_planet != nullptr);
-    std::println("    ✓ Map with planet argument works");
+    std::println(std::cout, "    ✓ Map with planet argument works");
   }
 
-  std::println("Test 3: Map command rejects ship scope");
+  std::println(std::cout, "Map command rejects ship scope");
   {
     // Set to ship scope - should be rejected
     g.set_level(ScopeLevel::LEVEL_SHIP);
@@ -162,10 +161,10 @@ int main() {
     GB::commands::map(argv, g);
 
     // Should output "Bad scope." error
-    std::println("    ✓ Map correctly rejects ship scope");
+    std::println(std::cout, "    ✓ Map correctly rejects ship scope");
   }
 
-  std::println("Test 4: Map command with unstable star warning");
+  std::println(std::cout, "Map command with unstable star warning");
   {
     // Create an unstable star
     star_struct us{};
@@ -207,10 +206,10 @@ int main() {
     GB::commands::map(argv, g);
 
     // Should output unstable star warning
-    std::println("    ✓ Map displays unstable star warning");
+    std::println(std::cout, "    ✓ Map displays unstable star warning");
   }
 
-  std::println("Test 5: Map at universe/star level falls back to orbit");
+  std::println(std::cout, "Map at universe/star level falls back to orbit");
   {
     // At universe or star level, map command calls orbit instead
     g.set_level(ScopeLevel::LEVEL_UNIV);
@@ -219,10 +218,10 @@ int main() {
     GB::commands::map(argv, g);
 
     // This should fall through to orbit display
-    std::println("    ✓ Map at universe level falls back to orbit");
+    std::println(std::cout, "    ✓ Map at universe level falls back to orbit");
   }
 
-  std::println("Test 6: Map at universe level with no universe (edge case)");
+  std::println(std::cout, "Map at universe level with no universe (edge case)");
   {
     // Create a new EntityManager with no universe
     Database db2(":memory:");
@@ -245,9 +244,9 @@ int main() {
     GB::commands::map(argv, g2);
 
     // Should have printed error and not crashed
-    std::println("    ✓ Handled missing universe gracefully");
+    std::println(std::cout, "    ✓ Handled missing universe gracefully");
   }
 
-  std::println("\n✅ All map tests passed!");
+  std::println(std::cout, "\n✅ All map tests passed!");
   return 0;
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -68,7 +67,7 @@ void test_designate_capital() {
   assert(saved_race.has_value());
   assert(saved_race->Gov_ship == 1);
 
-  std::println("test_designate_capital passed!");
+  std::println(std::cout, "test_designate_capital passed!");
 }
 
 // Test non-leader attempting to designate capital
@@ -100,7 +99,7 @@ void test_governor_cannot_designate() {
   assert(saved_race.has_value());
   assert(saved_race->Gov_ship == 0);
 
-  std::println("test_governor_cannot_designate passed!");
+  std::println(std::cout, "test_governor_cannot_designate passed!");
 }
 
 // Test ship not landed
@@ -154,7 +153,7 @@ void test_ship_not_landed() {
   assert(saved_race.has_value());
   assert(saved_race->Gov_ship == 0);
 
-  std::println("test_ship_not_landed passed!");
+  std::println(std::cout, "test_ship_not_landed passed!");
 }
 
 // Test querying current capital without changing
@@ -194,7 +193,7 @@ void test_query_capital() {
   // Note: Without capturing output, we just verify it doesn't crash
   // The actual ship info is displayed through g.out
 
-  std::println("test_query_capital passed!");
+  std::println(std::cout, "test_query_capital passed!");
 }
 
 int main() {
@@ -203,6 +202,6 @@ int main() {
   test_ship_not_landed();
   test_query_capital();
 
-  std::println("All capital_test tests passed!");
+  std::println(std::cout, "All capital_test tests passed!");
   return 0;
 }

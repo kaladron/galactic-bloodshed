@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -46,7 +45,7 @@ int main() {
   ctx.setup_game_obj(g);  // Set race pointer like production
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  std::println("Test 1: Set ship defense order");
+  std::println(std::cout, "Set ship defense order");
   {
     // Clear cache to ensure we get fresh data
     ctx.em.clear_cache();
@@ -60,14 +59,14 @@ int main() {
     // Verify defense order was set
     const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
-    std::println("    Ship found: number={}, protect.planet={}",
+    std::println(std::cout, "    Ship found: number={}, protect.planet={}",
                  saved_ship->number(), saved_ship->protect().planet);
     assert(saved_ship->protect().planet == 1);
-    std::println("    ✓ Defense order set: protect.planet={}",
+    std::println(std::cout, "    ✓ Defense order set: protect.planet={}",
                  saved_ship->protect().planet);
   }
 
-  std::println("\nTest 2: Turn defense order off");
+  std::println(std::cout, "\nTest 2: Turn defense order off");
   {
     // Clear cache to ensure we get fresh data
     ctx.em.clear_cache();
@@ -82,11 +81,11 @@ int main() {
     const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
     assert(saved_ship->protect().planet == 0);
-    std::println("    ✓ Defense order turned off: protect.planet={}",
+    std::println(std::cout, "    ✓ Defense order turned off: protect.planet={}",
                  saved_ship->protect().planet);
   }
 
-  std::println("\nTest 3: Display all orders (no modifications)");
+  std::println(std::cout, "\nTest 3: Display all orders (no modifications)");
   {
     // This should just display orders without modifications
     command_t argv = {"order"};
@@ -96,9 +95,9 @@ int main() {
     const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
     assert(saved_ship->protect().planet == 0);  // Still off from previous test
-    std::println("    ✓ Display orders works without modification");
+    std::println(std::cout, "    ✓ Display orders works without modification");
   }
 
-  std::println("\n✅ All order tests passed!");
+  std::println(std::cout, "\n✅ All order tests passed!");
   return 0;
 }

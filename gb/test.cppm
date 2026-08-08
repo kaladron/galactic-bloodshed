@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-test.cppm
+/// \file test.cppm
 /// \brief Test utilities for command tests (standalone module - not part of
 /// gblib)
 ///

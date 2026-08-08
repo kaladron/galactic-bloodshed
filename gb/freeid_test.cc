@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -13,14 +12,14 @@ int main() {
   JsonStore store(db);
   ShipRepository ship_repo(store);
 
-  std::println("Testing gap-finding free ID management...");
+  std::println(std::cout, "Testing gap-finding free ID management...");
 
-  // Test 1: Empty table should return 1
+  // Empty table should return 1
   int id1 = ship_repo.next_available_id();
   assert(id1 == 1);
-  std::println("✓ Test 1: Empty table returns ID 1");
+  std::println(std::cout, "✓ Empty table returns ID 1");
 
-  // Test 2: Create ships at 1, 2, 3, verify next is 4
+  // Create ships at 1, 2, 3, verify next is 4
   Ship ship1{};
   ship1.number() = 1;
   ship1.owner() = 1;
@@ -44,15 +43,15 @@ int main() {
 
   int id2 = ship_repo.next_available_id();
   assert(id2 == 4);
-  std::println("✓ Test 2: Sequential IDs 1,2,3 -> next is 4");
+  std::println(std::cout, "✓ Sequential IDs 1,2,3 -> next is 4");
 
-  // Test 3: Delete ship 2, verify next is 2 (gap reuse)
+  // Delete ship 2, verify next is 2 (gap reuse)
   ship_repo.delete_ship(2);
   int id3 = ship_repo.next_available_id();
   assert(id3 == 2);
-  std::println("✓ Test 3: Delete ship 2 -> next reuses gap at 2");
+  std::println(std::cout, "✓ Delete ship 2 -> next reuses gap at 2");
 
-  // Test 4: Create ship at 2, verify next is 4 again
+  // Create ship at 2, verify next is 4 again
   Ship ship2b{};
   ship2b.number() = 2;
   ship2b.owner() = 1;
@@ -62,23 +61,23 @@ int main() {
 
   int id4 = ship_repo.next_available_id();
   assert(id4 == 4);
-  std::println("✓ Test 4: Fill gap at 2 -> next is 4");
+  std::println(std::cout, "✓ Fill gap at 2 -> next is 4");
 
-  // Test 5: Delete ships 1 and 3, verify next is 1 (smallest gap)
+  // Delete ships 1 and 3, verify next is 1 (smallest gap)
   ship_repo.delete_ship(1);
   ship_repo.delete_ship(3);
   int id5 = ship_repo.next_available_id();
   assert(id5 == 1);
-  std::println("✓ Test 5: Multiple gaps -> returns smallest (1)");
+  std::println(std::cout, "✓ Multiple gaps -> returns smallest (1)");
 
-  // Test 6: Test commodities work the same way
-  std::println("\nTesting commod ID management...");
+  // Test commodities work the same way
+  std::println(std::cout, "\nTesting commod ID management...");
 
   CommodRepository commod_repo(store);
 
   int cid1 = commod_repo.next_available_id();
   assert(cid1 == 1);
-  std::println("✓ Test 6: Empty commod table returns ID 1");
+  std::println(std::cout, "✓ Empty commod table returns ID 1");
 
   // Create some commods
   Commod c1{};
@@ -110,13 +109,13 @@ int main() {
 
   int cid2 = commod_repo.next_available_id();
   assert(cid2 == 3);
-  std::println("✓ Test 7: Commod IDs 1,2,4 -> next is 3 (gap)");
+  std::println(std::cout, "✓ Commod IDs 1,2,4 -> next is 3 (gap)");
 
   commod_repo.delete_commod(1);
   int cid3 = commod_repo.next_available_id();
   assert(cid3 == 1);
-  std::println("✓ Test 8: Delete commod 1 -> reuses gap at 1");
+  std::println(std::cout, "✓ Delete commod 1 -> reuses gap at 1");
 
-  std::println("\n✅ All free ID management tests passed!");
+  std::println(std::cout, "\n✅ All free ID management tests passed!");
   return 0;
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import std;
 
@@ -70,7 +69,7 @@ void verify_sectormap_equal(const SectorMap& original,
 }
 
 void test_entitymanager_sectormap(EntityManager& em, Database& db) {
-  std::println("=== Testing EntityManager get_sectormap/peek_sectormap ===");
+  std::println(std::cout, "=== Testing EntityManager get_sectormap/peek_sectormap ===");
 
   // First, we need to create and save a planet so EntityManager can find it
   JsonStore store(db);
@@ -108,7 +107,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     // Handle auto-saves when going out of scope
   }
 
-  std::println("  get_sectormap with RAII auto-save: PASSED");
+  std::println(std::cout, "  get_sectormap with RAII auto-save: PASSED");
 
   // Clear cache to force reload from DB
   em.clear_cache();
@@ -128,7 +127,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     assert(smap.get(5, 4).get_eff() == 25 + 5 * 4);  // base_eff + x*y
   }
 
-  std::println("  Update persistence verified: PASSED");
+  std::println(std::cout, "  Update persistence verified: PASSED");
 
   // Test peek_sectormap (read-only)
   {
@@ -139,7 +138,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     assert(smap_ptr->get(0, 0).get_eff() == 95);
   }
 
-  std::println("  peek_sectormap read-only access: PASSED");
+  std::println(std::cout, "  peek_sectormap read-only access: PASSED");
 
   // Test caching - multiple handles should reference same data
   {
@@ -156,7 +155,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     assert((*handle2).get(7, 5).get_eff() == 42);
   }
 
-  std::println("  Caching (single instance) verified: PASSED");
+  std::println(std::cout, "  Caching (single instance) verified: PASSED");
 
   // Test with non-existent planet
   {
@@ -165,11 +164,11 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
            "Non-existent planet should return null handle");
   }
 
-  std::println("  Non-existent planet handling: PASSED");
+  std::println(std::cout, "  Non-existent planet handling: PASSED");
 }
 
 void test_multiple_planets_isolation(EntityManager& em, Database& db) {
-  std::println("=== Testing multiple planets isolation ===");
+  std::println(std::cout, "=== Testing multiple planets isolation ===");
 
   // Create and save planets so EntityManager can find them
   JsonStore store(db);
@@ -223,7 +222,7 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   assert(reload2->get(0, 0).get_eff() == 99);
   assert(reload2->get(0, 0).get_popn() == 12345);
 
-  std::println("  Planet isolation: PASSED");
+  std::println(std::cout, "  Planet isolation: PASSED");
 }
 
 int main() {
@@ -241,6 +240,6 @@ int main() {
   test_entitymanager_sectormap(em, db);
   test_multiple_planets_isolation(em, db);
 
-  std::println("\nAll SectorMap tests passed!");
+  std::println(std::cout, "\nAll SectorMap tests passed!");
   return 0;
 }

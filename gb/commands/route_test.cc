@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -78,7 +77,7 @@ int main() {
     assert(saved->info(player_t{1}).route[0].y == 5);
     assert(saved->info(player_t{1}).route[0].load == (M_FUEL | M_RESOURCES));
     assert(saved->info(player_t{1}).route[0].unload == M_DESTRUCT);
-    std::println("✓ Route destination saved correctly");
+    std::println(std::cout, "✓ Route destination saved correctly");
   }
 
   // Test: Deactivate route
@@ -93,7 +92,7 @@ int main() {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(player_t{1}).route[0].set == 0);
-    std::println("✓ Route deactivation saved correctly");
+    std::println(std::cout, "✓ Route deactivation saved correctly");
   }
 
   // Test: Multiple routes
@@ -116,9 +115,9 @@ int main() {
       assert(saved->info(player_t{1}).route[i].set == 1);
       assert(saved->info(player_t{1}).route[i].load == M_FUEL);
     }
-    std::println("✓ Multiple routes saved correctly");
+    std::println(std::cout, "✓ Multiple routes saved correctly");
   }
 
-  std::println("All route tests passed!");
+  std::println(std::cout, "All route tests passed!");
   return 0;
 }

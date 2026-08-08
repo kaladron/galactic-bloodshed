@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -27,10 +26,10 @@ int main() {
   {
     const auto* loaded = ctx.em.peek_universe();
     if (!loaded) {
-      std::println("ERROR: Universe not found immediately after save!");
+      std::println(std::cout, "ERROR: Universe not found immediately after save!");
       return 1;
     }
-    std::println("Universe loaded successfully: {} stars", loaded->numstars);
+    std::println(std::cout, "Universe loaded successfully: {} stars", loaded->numstars);
   }
 
   // Create test race
@@ -84,7 +83,7 @@ int main() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);  // Set race pointer like production
 
-  std::println("Test 1: cs command switches to universe scope");
+  std::println(std::cout, "cs command switches to universe scope");
   {
     g.set_level(ScopeLevel::LEVEL_STAR);
     g.set_snum(0);
@@ -93,10 +92,10 @@ int main() {
     GB::commands::cs(argv, g);
 
     assert(g.level() == ScopeLevel::LEVEL_UNIV);
-    std::println("    ✓ Switched to universe scope");
+    std::println(std::cout, "    ✓ Switched to universe scope");
   }
 
-  std::println("Test 2: cs command switches to star scope by name");
+  std::println(std::cout, "cs command switches to star scope by name");
   {
     g.set_level(ScopeLevel::LEVEL_UNIV);
 
@@ -105,10 +104,10 @@ int main() {
 
     assert(g.level() == ScopeLevel::LEVEL_STAR);
     assert(g.snum() == 1);
-    std::println("    ✓ Switched to star Beta (1) scope");
+    std::println(std::cout, "    ✓ Switched to star Beta (1) scope");
   }
 
-  std::println("Test 3: cs command switches to star scope by name");
+  std::println(std::cout, "cs command switches to star scope by name");
   {
     g.set_level(ScopeLevel::LEVEL_UNIV);
 
@@ -117,10 +116,10 @@ int main() {
 
     assert(g.level() == ScopeLevel::LEVEL_STAR);
     assert(g.snum() == 0);
-    std::println("    ✓ Switched to star Alpha (0) scope");
+    std::println(std::cout, "    ✓ Switched to star Alpha (0) scope");
   }
 
-  std::println("Test 4: cs command rejects invalid star name");
+  std::println(std::cout, "cs command rejects invalid star name");
   {
     g.set_level(ScopeLevel::LEVEL_UNIV);
 
@@ -129,10 +128,10 @@ int main() {
 
     // Should still be at universe level
     assert(g.level() == ScopeLevel::LEVEL_UNIV);
-    std::println("    ✓ Rejected invalid star name");
+    std::println(std::cout, "    ✓ Rejected invalid star name");
   }
 
-  std::println("Test 5: cs command switches to planet scope");
+  std::println(std::cout, "cs command switches to planet scope");
   {
     g.set_level(ScopeLevel::LEVEL_STAR);
     g.set_snum(0);
@@ -143,9 +142,9 @@ int main() {
     assert(g.level() == ScopeLevel::LEVEL_PLAN);
     assert(g.snum() == 0);
     assert(g.pnum() == 0);
-    std::println("    ✓ Switched to planet AlphaPrime scope");
+    std::println(std::cout, "    ✓ Switched to planet AlphaPrime scope");
   }
 
-  std::println("\n✅ All cs tests passed!");
+  std::println(std::cout, "\n✅ All cs tests passed!");
   return 0;
 }

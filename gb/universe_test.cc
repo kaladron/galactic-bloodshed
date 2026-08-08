@@ -7,7 +7,7 @@ import std;
 #include <cassert>
 
 void test_universe_wrapper_accessors() {
-  std::println("Test: Universe wrapper accessors");
+  std::println(std::cout, "Test: Universe wrapper accessors");
 
   universe_struct u_data{};
   u_data.id = 1;
@@ -29,11 +29,11 @@ void test_universe_wrapper_accessors() {
   assert(universe.ships() == 50);
   assert(u_data.ships == 50);
 
-  std::println("  ✓ Basic accessors work");
+  std::println(std::cout, "  ✓ Basic accessors work");
 }
 
 void test_universe_AP_methods() {
-  std::println("Test: Universe AP (Action Points) methods");
+  std::println(std::cout, "Test: Universe AP (Action Points) methods");
 
   universe_struct u_data{};
   u_data.id = 1;
@@ -70,11 +70,11 @@ void test_universe_AP_methods() {
   universe.set_AP(MAXPLAYERS + 1, 999);  // Should be ignored
   assert(universe.get_AP(MAXPLAYERS + 1) == 0);
 
-  std::println("  ✓ AP methods work correctly");
+  std::println(std::cout, "  ✓ AP methods work correctly");
 }
 
 void test_universe_VN_methods() {
-  std::println("Test: Universe VN (Von Neumann) tracking methods");
+  std::println(std::cout, "Test: Universe VN (Von Neumann) tracking methods");
 
   universe_struct u_data{};
   u_data.id = 1;
@@ -112,11 +112,11 @@ void test_universe_VN_methods() {
   assert(universe.get_VN_hitlist(0) == 0);
   assert(universe.get_VN_index1(MAXPLAYERS + 1) == 0);
 
-  std::println("  ✓ VN tracking methods work correctly");
+  std::println(std::cout, "  ✓ VN tracking methods work correctly");
 }
 
 void test_universe_direct_access() {
-  std::println("Test: Universe direct access operators");
+  std::println(std::cout, "Test: Universe direct access operators");
 
   universe_struct u_data{};
   u_data.id = 1;
@@ -142,11 +142,11 @@ void test_universe_direct_access() {
   const universe_struct& const_ref = *const_universe;
   assert(const_ref.numstars == 75);
 
-  std::println("  ✓ Direct access operators work correctly");
+  std::println(std::cout, "  ✓ Direct access operators work correctly");
 }
 
 void test_universe_persistence() {
-  std::println("Test: Universe persistence with EntityManager");
+  std::println(std::cout, "Test: Universe persistence with EntityManager");
 
   Database db(":memory:");
   initialize_schema(db);
@@ -198,7 +198,7 @@ void test_universe_persistence() {
   assert(universe2->AP[1] == 2000);
   assert(universe2->VN_hitlist[0] == 5);
 
-  std::println("  ✓ Persistence with EntityManager works correctly");
+  std::println(std::cout, "  ✓ Persistence with EntityManager works correctly");
 }
 
 int main() {
@@ -208,6 +208,6 @@ int main() {
   test_universe_direct_access();
   test_universe_persistence();
 
-  std::println("\n✅ All Universe tests passed!");
+  std::println(std::cout, "\n✅ All Universe tests passed!");
   return 0;
 }

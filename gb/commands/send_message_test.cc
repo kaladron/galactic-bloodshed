@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -62,7 +61,7 @@ int main() {
   // Translation should have increased by 2 (from 50 to 52)
   assert(updated_receiver->translate[0] == 52);
 
-  std::println("✓ send_message command: Message sent and translation modifier "
+  std::println(std::cout, "✓ send_message command: Message sent and translation modifier "
                "persisted");
   return 0;
 }

@@ -153,16 +153,16 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
 
-  std::println("\n========== Analysis Command Output Test ==========\n");
+  std::println(std::cout, "\n========== Analysis Command Output Test ==========\n");
 
-  std::println("Test 1: Basic analysis (all sectors)");
+  std::println(std::cout, "Basic analysis (all sectors)");
   {
     command_t argv = {"analysis"};
     GB::commands::analysis(argv, g);
 
     std::string output = g.out.str();
-    std::println("\n--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "\n--- Output ---");
+    std::println(std::cout, "{}", output);
 
     // Bug fix verification: "owned by 4294967295" was shown when ThisPlayer
     // was player_t (unsigned) and -1 was used to mean "all players"
@@ -245,15 +245,15 @@ int main() {
     g.out.str("");  // Clear for next test
   }
 
-  std::println("\n========================================\n");
-  std::println("Test 2: Analysis with bottom 5 mode");
+  std::println(std::cout, "\n========================================\n");
+  std::println(std::cout, "Analysis with bottom 5 mode");
   {
     command_t argv = {"analysis", "-"};
     GB::commands::analysis(argv, g);
 
     std::string output = g.out.str();
-    std::println("\n--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "\n--- Output ---");
+    std::println(std::cout, "{}", output);
 
     // Verify "Lowest" appears (not "Highest")
     assert(output.find("Lowest") != std::string::npos &&
@@ -357,15 +357,15 @@ int main() {
     g.out.str("");
   }
 
-  std::println("\n========================================\n");
-  std::println("Test 3: Analysis filtered to ocean sectors only");
+  std::println(std::cout, "\n========================================\n");
+  std::println(std::cout, "Analysis filtered to ocean sectors only");
   {
     command_t argv = {"analysis", "."};  // . is sea
     GB::commands::analysis(argv, g);
 
     std::string output = g.out.str();
-    std::println("\n--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "\n--- Output ---");
+    std::println(std::cout, "{}", output);
 
     // Verify sector type filter is shown
     assert(output.find("Ocean") != std::string::npos &&
@@ -374,15 +374,15 @@ int main() {
     g.out.str("");
   }
 
-  std::println("\n========================================\n");
-  std::println("Test 4: Analysis filtered to land sectors only");
+  std::println(std::cout, "\n========================================\n");
+  std::println(std::cout, "Analysis filtered to land sectors only");
   {
     command_t argv = {"analysis", "*"};  // * is land
     GB::commands::analysis(argv, g);
 
     std::string output = g.out.str();
-    std::println("\n--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "\n--- Output ---");
+    std::println(std::cout, "{}", output);
 
     // Verify sector type filter is shown
     assert(output.find("Land") != std::string::npos &&
@@ -394,15 +394,15 @@ int main() {
     g.out.str("");
   }
 
-  std::println("\n========================================\n");
-  std::println("Test 5: Analysis filtered to mountain sectors only");
+  std::println(std::cout, "\n========================================\n");
+  std::println(std::cout, "Analysis filtered to mountain sectors only");
   {
     command_t argv = {"analysis", "^"};  // ^ is mountain
     GB::commands::analysis(argv, g);
 
     std::string output = g.out.str();
-    std::println("\n--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "\n--- Output ---");
+    std::println(std::cout, "{}", output);
 
     assert(output.find("Mountain") != std::string::npos &&
            "Mountain filter (^) should show 'Mountain' in output");
@@ -410,15 +410,15 @@ int main() {
     g.out.str("");
   }
 
-  std::println("\n========================================\n");
-  std::println("Test 6: Analysis filtered to desert sectors (special 'd')");
+  std::println(std::cout, "\n========================================\n");
+  std::println(std::cout, "Analysis filtered to desert sectors (special 'd')");
   {
     command_t argv = {"analysis", "d"};  // 'd' is desert (special case)
     GB::commands::analysis(argv, g);
 
     std::string output = g.out.str();
-    std::println("\n--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "\n--- Output ---");
+    std::println(std::cout, "{}", output);
 
     assert(output.find("Desert") != std::string::npos &&
            "Desert filter (d) should show 'Desert' in output");
@@ -426,15 +426,15 @@ int main() {
     g.out.str("");
   }
 
-  std::println("\n========================================\n");
-  std::println("Test 7: Analysis with player filter");
+  std::println(std::cout, "\n========================================\n");
+  std::println(std::cout, "Analysis with player filter");
   {
     command_t argv = {"analysis", "1"};  // Filter to player 1
     GB::commands::analysis(argv, g);
 
     std::string output = g.out.str();
-    std::println("\n--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "\n--- Output ---");
+    std::println(std::cout, "{}", output);
 
     assert(output.find("sectors owned by 1") != std::string::npos &&
            "Player filter should show 'sectors owned by 1' in output");
@@ -442,15 +442,15 @@ int main() {
     g.out.str("");
   }
 
-  std::println("\n========================================\n");
-  std::println("Test 8: Combined sector type and player filter");
+  std::println(std::cout, "\n========================================\n");
+  std::println(std::cout, "Combined sector type and player filter");
   {
     command_t argv = {"analysis", "*", "1"};  // Land sectors owned by player 1
     GB::commands::analysis(argv, g);
 
     std::string output = g.out.str();
-    std::println("\n--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "\n--- Output ---");
+    std::println(std::cout, "{}", output);
 
     assert(output.find("Land") != std::string::npos &&
            "Should filter by land sectors");
@@ -462,16 +462,16 @@ int main() {
     g.out.str("");
   }
 
-  std::println("\n========== Tests Complete ==========\n");
-  std::println("All analysis command tests passed!");
+  std::println(std::cout, "\n========== Tests Complete ==========\n");
+  std::println(std::cout, "All analysis command tests passed!");
 
   // PlayerFilter logic tests - tested indirectly through command behavior
-  std::println("\n========== PlayerFilter Logic Tests (via command behavior) "
+  std::println(std::cout, "\n========== PlayerFilter Logic Tests (via command behavior) "
                "==========\n");
 
   // Test AllPlayers mode (default, no player filter)
   {
-    std::println("Test: Default filter matches all owners");
+    std::println(std::cout, "Test: Default filter matches all owners");
     command_t argv = {"analysis"};
     GB::commands::analysis(argv, g);
 
@@ -484,12 +484,12 @@ int main() {
            "Should have player column");
 
     g.out.str("");
-    std::println("✓ AllPlayers mode (default) works correctly");
+    std::println(std::cout, "✓ AllPlayers mode (default) works correctly");
   }
 
   // Test Unoccupied mode (player 0)
   {
-    std::println("Test: Player 0 filter matches only unoccupied");
+    std::println(std::cout, "Test: Player 0 filter matches only unoccupied");
     command_t argv = {"analysis", "0"};
     GB::commands::analysis(argv, g);
 
@@ -498,12 +498,12 @@ int main() {
            "Should show unoccupied description");
 
     g.out.str("");
-    std::println("✓ Unoccupied mode (player 0) works correctly");
+    std::println(std::cout, "✓ Unoccupied mode (player 0) works correctly");
   }
 
   // Test SpecificPlayer mode
   {
-    std::println("Test: Specific player filter matches only that player");
+    std::println(std::cout, "Test: Specific player filter matches only that player");
     command_t argv = {"analysis", "1"};
     GB::commands::analysis(argv, g);
 
@@ -522,10 +522,10 @@ int main() {
            "Should show player 2 in description");
 
     g.out.str("");
-    std::println("✓ SpecificPlayer mode works correctly for different players");
+    std::println(std::cout, "✓ SpecificPlayer mode works correctly for different players");
   }
 
-  std::println("\n========== PlayerFilter Logic Tests Complete ==========\n");
+  std::println(std::cout, "\n========== PlayerFilter Logic Tests Complete ==========\n");
 
   return 0;
 }

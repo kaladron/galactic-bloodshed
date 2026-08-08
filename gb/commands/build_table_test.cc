@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// Test for "build ?" ship list table display
 
 import dallib;
 import gblib;
@@ -8,6 +7,10 @@ import commands;
 import std;
 
 #include <cassert>
+
+// Test for "build ?" ship list table display
+
+
 
 int main() {
   // Initialize database
@@ -33,7 +36,7 @@ int main() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);  // Scope doesn't matter for "build ?"
 
-  // Test 1: "build ?" displays ship list table
+  // "build ?" displays ship list table
   {
     command_t argv = {"build", "?"};
     GB::commands::build(argv, g);
@@ -41,9 +44,9 @@ int main() {
     std::string output = g.out.str();
 
     // Display output for visual verification
-    std::println("=== build ? output ===");
+    std::println(std::cout, "=== build ? output ===");
     std::print("{}", output);
-    std::println("=== end output ===");
+    std::println(std::cout, "=== end output ===");
 
     // Verify header is present
     assert(output.find("Default ship parameters") != std::string::npos);
@@ -66,14 +69,14 @@ int main() {
     assert(output.find(":") != std::string::npos);  // Probe letter
     assert(output.find("s") != std::string::npos);  // Shuttle letter
 
-    std::println("✓ build ? table display test passed");
+    std::println(std::cout, "✓ build ? table display test passed");
   }
 
   // Clear output buffer
   g.out.str("");
   g.out.clear();
 
-  // Test 2: "build ? :" shows detailed info for probe
+  // "build ? :" shows detailed info for probe
   {
     command_t argv = {"build", "?", ":"};
     GB::commands::build(argv, g);
@@ -81,9 +84,9 @@ int main() {
     std::string output = g.out.str();
 
     // Display output for visual verification
-    std::println("\n=== build ? : output ===");
+    std::println(std::cout, "\n=== build ? : output ===");
     std::print("{}", output);
-    std::println("=== end output ===");
+    std::println(std::cout, "=== end output ===");
 
     // Verify it shows probe-specific info
     // The table should show just the probe row
@@ -92,9 +95,9 @@ int main() {
     // Should describe where it can be built
     assert(output.find("Can be") != std::string::npos);
 
-    std::println("✓ build ? : (single ship) test passed");
+    std::println(std::cout, "✓ build ? : (single ship) test passed");
   }
 
-  std::println("\n✓ All build table tests passed!");
+  std::println(std::cout, "\n✓ All build table tests passed!");
   return 0;
 }

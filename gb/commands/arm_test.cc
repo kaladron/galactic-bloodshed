@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -96,6 +95,6 @@ int main() {
   assert(saved_sect2.get_troops() == 50);
   assert(saved_sect2.get_popn() == 950);
 
-  std::println("arm_test passed!");
+  std::println(std::cout, "arm_test passed!");
   return 0;
 }

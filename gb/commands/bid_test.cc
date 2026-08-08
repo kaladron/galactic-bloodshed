@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -110,27 +109,27 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
 
-  std::println("Test 1: Place initial bid on commodity");
+  std::println(std::cout, "Place initial bid on commodity");
   {
     const auto* c_before = ctx.em.peek_commod(1);
-    std::println("  Before: bid={}, bidder={}", c_before->bid,
+    std::println(std::cout, "  Before: bid={}, bidder={}", c_before->bid,
                  c_before->bidder);
 
     command_t argv = {"bid", "1", "1000"};
     GB::commands::bid(argv, g);
-    std::println("  Output: {}", g.out.str());
+    std::println(std::cout, "  Output: {}", g.out.str());
 
     const auto* c_after = ctx.em.peek_commod(1);
-    std::println("  After: bid={}, bidder={}", c_after->bid, c_after->bidder);
+    std::println(std::cout, "  After: bid={}, bidder={}", c_after->bid, c_after->bidder);
     assert(c_after->bid == 1000);
     assert(c_after->bidder == 1);
     assert(c_after->bidder_gov == 0);
     assert(c_after->star_to == 0);
     assert(c_after->planet_to == 0);
-    std::println("✓ Initial bid placed successfully");
+    std::println(std::cout, "✓ Initial bid placed successfully");
   }
 
-  std::println("Test 2: Raise existing bid");
+  std::println(std::cout, "Raise existing bid");
   {
     const auto* c_before = ctx.em.peek_commod(1);
     int previous_bid = c_before->bid;
@@ -144,10 +143,10 @@ int main() {
     const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == new_bid);
     assert(c_after->bidder == 1);
-    std::println("✓ Bid raised successfully");
+    std::println(std::cout, "✓ Bid raised successfully");
   }
 
-  std::println("Test 3: Cannot bid less than minimum");
+  std::println(std::cout, "Cannot bid less than minimum");
   {
     const auto* c_before = ctx.em.peek_commod(1);
     int previous_bid = c_before->bid;
@@ -159,10 +158,10 @@ int main() {
     // Bid should not change
     const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == previous_bid);
-    std::println("✓ Low bid rejected");
+    std::println(std::cout, "✓ Low bid rejected");
   }
 
-  std::println("Test 4: Guest race cannot bid");
+  std::println(std::cout, "Guest race cannot bid");
   {
     // Make player 1 a guest
     {
@@ -187,9 +186,9 @@ int main() {
     // Bid should not change
     const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == previous_bid);
-    std::println("✓ Guest race blocked from bidding");
+    std::println(std::cout, "✓ Guest race blocked from bidding");
   }
 
-  std::println("All bid tests passed!");
+  std::println(std::cout, "All bid tests passed!");
   return 0;
 }

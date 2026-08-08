@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file tax_test.cc
-/// \brief Test tax command database persistence
-
 import dallib;
 import gblib;
 import test;
@@ -11,8 +8,13 @@ import std;
 
 #include <cassert>
 
+/// \file tax_test.cc
+/// \brief Test tax command database persistence
+
+
+
 void test_tax_database_persistence() {
-  std::println("Test: tax command database persistence");
+  std::println(std::cout, "Test: tax command database persistence");
 
   // Create in-memory database
   TestContext ctx;
@@ -57,7 +59,7 @@ void test_tax_database_persistence() {
       ctx.em.peek_race(g.player());  // Set race pointer like production does
 
   // TEST 1: Display current tax rate (no argument)
-  std::println("  Testing: Display current tax rate");
+  std::println(std::cout, "  Testing: Display current tax rate");
   {
     command_t cmd = {"tax"};
     GB::commands::tax(cmd, g);
@@ -66,12 +68,12 @@ void test_tax_database_persistence() {
     std::string out_str = g.out.str();
     assert(out_str.find("Current tax rate: 10%") != std::string::npos);
     assert(out_str.find("Target: 10%") != std::string::npos);
-    std::println("    ✓ Output message correct");
+    std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output for next test
   }
 
   // TEST 2: Set new tax rate to 25%
-  std::println("  Testing: Set tax rate to 25%");
+  std::println(std::cout, "  Testing: Set tax rate to 25%");
   {
     command_t cmd = {"tax", "25"};
     GB::commands::tax(cmd, g);
@@ -79,19 +81,19 @@ void test_tax_database_persistence() {
     // Verify output message
     std::string out_str = g.out.str();
     assert(out_str.find("Set.") != std::string::npos);
-    std::println("    ✓ Output message correct");
+    std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output
 
     // Verify database: newtax should be 25
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).newtax == 25);
-    std::println("    ✓ Database: newtax = {}",
+    std::println(std::cout, "    ✓ Database: newtax = {}",
                  saved->info(player_t{1}).newtax);
   }
 
   // TEST 3: Set tax rate to maximum (100%)
-  std::println("  Testing: Set tax rate to 100%");
+  std::println(std::cout, "  Testing: Set tax rate to 100%");
   {
     command_t cmd = {"tax", "100"};
     GB::commands::tax(cmd, g);
@@ -100,13 +102,13 @@ void test_tax_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).newtax == 100);
-    std::println("    ✓ Database: newtax = {}",
+    std::println(std::cout, "    ✓ Database: newtax = {}",
                  saved->info(player_t{1}).newtax);
     g.out.str("");  // Clear output
   }
 
   // TEST 4: Set tax rate to minimum (0%)
-  std::println("  Testing: Set tax rate to 0%");
+  std::println(std::cout, "  Testing: Set tax rate to 0%");
   {
     command_t cmd = {"tax", "0"};
     GB::commands::tax(cmd, g);
@@ -115,13 +117,13 @@ void test_tax_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).newtax == 0);
-    std::println("    ✓ Database: newtax = {}",
+    std::println(std::cout, "    ✓ Database: newtax = {}",
                  saved->info(player_t{1}).newtax);
     g.out.str("");  // Clear output
   }
 
   // TEST 5: Reject illegal value (>100)
-  std::println("  Testing: Reject illegal value 150%");
+  std::println(std::cout, "  Testing: Reject illegal value 150%");
   {
     command_t cmd = {"tax", "150"};
     GB::commands::tax(cmd, g);
@@ -129,21 +131,21 @@ void test_tax_database_persistence() {
     // Verify error message
     std::string out_str = g.out.str();
     assert(out_str.find("Illegal value") != std::string::npos);
-    std::println("    ✓ Error message correct");
+    std::println(std::cout, "    ✓ Error message correct");
 
     // Verify database: should still be 0 from previous test
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).newtax == 0);
-    std::println("    ✓ Database: newtax unchanged = {}",
+    std::println(std::cout, "    ✓ Database: newtax unchanged = {}",
                  saved->info(player_t{1}).newtax);
   }
 
-  std::println("  ✅ All tax database persistence tests passed!");
+  std::println(std::cout, "  ✅ All tax database persistence tests passed!");
 }
 
 int main() {
   test_tax_database_persistence();
-  std::println("\n✅ All tests passed!");
+  std::println(std::cout, "\n✅ All tests passed!");
   return 0;
 }

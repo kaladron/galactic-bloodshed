@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file survey_test.cc
-/// \brief Test survey command for edge cases and output formatting
-
-import dallib;
 import dallib;
 import gblib;
 import test;
@@ -12,8 +8,13 @@ import std;
 
 #include <cassert>
 
+/// \file survey_test.cc
+/// \brief Test survey command for edge cases and output formatting
+
+
+
 void test_survey_no_args_planet_scope() {
-  std::println("Test: survey command with no arguments at planet scope");
+  std::println(std::cout, "Test: survey command with no arguments at planet scope");
 
   // Create in-memory database
   TestContext ctx;
@@ -94,7 +95,7 @@ void test_survey_no_args_planet_scope() {
   g.set_pnum(0);
 
   // TEST: Survey command with no arguments - should show full planet survey
-  std::println("  Testing: survey (no args) at planet scope");
+  std::println(std::cout, "  Testing: survey (no args) at planet scope");
   {
     command_t cmd = {"survey"};
     GB::commands::survey(cmd, g);
@@ -106,14 +107,14 @@ void test_survey_no_args_planet_scope() {
     assert(out_str.find("======== Planetary conditions: ========") !=
            std::string::npos);
     assert(out_str.find("atmosphere concentrations") != std::string::npos);
-    std::println("    ✓ Output contains planet survey information");
+    std::println(std::cout, "    ✓ Output contains planet survey information");
   }
 
-  std::println("  ✅ Survey with no args test passed!");
+  std::println(std::cout, "  ✅ Survey with no args test passed!");
 }
 
 void test_survey_sector_mode_no_args() {
-  std::println("Test: survey command in CSP mode with no arguments");
+  std::println(std::cout, "Test: survey command in CSP mode with no arguments");
 
   // Create in-memory database
   TestContext ctx;
@@ -165,7 +166,7 @@ void test_survey_sector_mode_no_args() {
 
   // TEST: Use 'map' command (mode=1) with no arguments - THIS IS THE BUG!
   // Previously this would access argv[1] without checking argv.size()
-  std::println("  Testing: map (no args) at planet scope - bug fix check");
+  std::println(std::cout, "  Testing: map (no args) at planet scope - bug fix check");
   {
     command_t cmd = {"map"};  // map uses mode=1
     GB::commands::survey(cmd, g);
@@ -173,14 +174,14 @@ void test_survey_sector_mode_no_args() {
     // Should not crash and should produce valid output
     std::string out_str = g.out.str();
     // The command should work without segfaulting
-    std::println("    ✓ Command executed without crash (bug fix verified)");
+    std::println(std::cout, "    ✓ Command executed without crash (bug fix verified)");
   }
 
-  std::println("  ✅ Survey CSP mode test passed!");
+  std::println(std::cout, "  ✅ Survey CSP mode test passed!");
 }
 
 void test_survey_sector_range_with_header() {
-  std::println("Test: survey command with sector range shows header");
+  std::println(std::cout, "Test: survey command with sector range shows header");
 
   // Create in-memory database
   TestContext ctx;
@@ -251,7 +252,7 @@ void test_survey_sector_range_with_header() {
   g.set_pnum(0);
 
   // TEST: Survey specific sector range in non-CSP mode
-  std::println("  Testing: survey 0:2,0:2 (should show header)");
+  std::println(std::cout, "  Testing: survey 0:2,0:2 (should show header)");
   {
     command_t cmd = {"survey", "0:2,0:2"};
     GB::commands::survey(cmd, g);
@@ -263,14 +264,14 @@ void test_survey_sector_range_with_header() {
     assert(out_str.find("owner") != std::string::npos);
     assert(out_str.find("xtals") != std::string::npos);
     assert(out_str.find("0,0") != std::string::npos);
-    std::println("    ✓ Output contains header and sector data");
+    std::println(std::cout, "    ✓ Output contains header and sector data");
   }
 
-  std::println("  ✅ Sector range with header test passed!");
+  std::println(std::cout, "  ✅ Sector range with header test passed!");
 }
 
 void test_survey_star_scope() {
-  std::println("Test: survey command at star scope");
+  std::println(std::cout, "Test: survey command at star scope");
 
   // Create in-memory database
   TestContext ctx;
@@ -311,7 +312,7 @@ void test_survey_star_scope() {
   g.set_snum(1);
 
   // TEST: Survey command at star scope
-  std::println("  Testing: survey at star scope");
+  std::println(std::cout, "  Testing: survey at star scope");
   {
     command_t cmd = {"survey"};
     GB::commands::survey(cmd, g);
@@ -324,10 +325,10 @@ void test_survey_star_scope() {
     assert(out_str.find("Instability") != std::string::npos);
     assert(out_str.find("45%") != std::string::npos);  // Stability value
     assert(out_str.find("planets are") != std::string::npos);
-    std::println("    ✓ Output contains star information");
+    std::println(std::cout, "    ✓ Output contains star information");
   }
 
-  std::println("  ✅ Star scope survey test passed!");
+  std::println(std::cout, "  ✅ Star scope survey test passed!");
 }
 
 int main() {
@@ -335,6 +336,6 @@ int main() {
   test_survey_sector_mode_no_args();
   test_survey_sector_range_with_header();
   test_survey_star_scope();
-  std::println("\n✅ All survey tests passed!");
+  std::println(std::cout, "\n✅ All survey tests passed!");
   return 0;
 }

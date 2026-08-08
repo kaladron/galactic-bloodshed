@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
-import std.compat;
-
-#include <sqlite3.h>
+import std;
 
 #include <cassert>
+
+#include <sqlite3.h>
 #include <cstring>
 
 int main() {
@@ -92,12 +91,12 @@ int main() {
   assert(retrieved.inhabited == test_star.inhabited);
 
   // Verify planet names
-  for (size_t i = 0; i < test_star.pnames.size(); i++) {
+  for (std::size_t i = 0; i < test_star.pnames.size(); i++) {
     assert(retrieved.pnames[i] == test_star.pnames[i]);
   }
 
   // Database connection will be cleaned up automatically by Sql destructor
 
-  std::println("Star SQLite storage test passed!");
+  std::println(std::cout, "Star SQLite storage test passed!");
   return 0;
 }

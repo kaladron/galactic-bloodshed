@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -70,7 +69,7 @@ int main() {
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
 
-  std::println("Test 1: Dump exploration data to another player");
+  std::println(std::cout, "Dump exploration data to another player");
   {
     // Before dump: player 2 hasn't explored the planet
     const auto* p_before = ctx.em.peek_planet(0, 0);
@@ -83,15 +82,15 @@ int main() {
     // Verify: player 2 should now have exploration data
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{2}).explored);
-    std::println("✓ Player 2 received exploration data");
+    std::println(std::cout, "✓ Player 2 received exploration data");
 
     // Verify output message
     std::string output = g.out.str();
     assert(output.find("Exploration Data transferred") != std::string::npos);
-    std::println("✓ Success message displayed");
+    std::println(std::cout, "✓ Success message displayed");
   }
 
-  std::println("Test 2: Guest race cannot dump");
+  std::println(std::cout, "Guest race cannot dump");
   {
     // Make player 1 a guest
     auto race_handle = ctx.em.get_race(1);
@@ -110,9 +109,9 @@ int main() {
 
     // Output should contain "Cheater!" but we can't directly test g.out
     // Command should return early without effect
-    std::println("✓ Guest race blocked from dumping");
+    std::println(std::cout, "✓ Guest race blocked from dumping");
   }
 
-  std::println("All dump tests passed!");
+  std::println(std::cout, "All dump tests passed!");
   return 0;
 }

@@ -45,7 +45,7 @@ int main() {
   std::string output =
       std::format("Player: {}, Ship: {}, Star: {}\n", player1, ship, star);
   assert(!output.empty());
-  std::println("{}", output);
+  std::println(std::cout, "{}", output);
 
   // Test hash support (for use in unordered containers)
   std::unordered_map<playernum_t, std::string> player_names;
@@ -55,6 +55,6 @@ int main() {
   assert(player_names[player1] == "Alice");
   assert(player_names[player2] == "Bob");
 
-  std::println("All strong_id tests passed!");
+  std::println(std::cout, "All strong_id tests passed!");
   return 0;
 }

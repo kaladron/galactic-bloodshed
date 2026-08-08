@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -88,7 +87,7 @@ int main() {
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);  // At star 0
 
-  std::println("Test 1: Dock ship #1 with ship #2");
+  std::println(std::cout, "Dock ship #1 with ship #2");
   {
     // Clear cache to ensure we get fresh data
     ctx.em.clear_cache();
@@ -106,11 +105,11 @@ int main() {
     assert(saved_ship1 != nullptr);
     assert(saved_ship2 != nullptr);
 
-    std::println("    Ship 1: docked={}, whatdest={}, destshipno={}",
+    std::println(std::cout, "    Ship 1: docked={}, whatdest={}, destshipno={}",
                  saved_ship1->docked(),
                  static_cast<int>(saved_ship1->whatdest()),
                  saved_ship1->destshipno());
-    std::println("    Ship 2: docked={}, whatdest={}, destshipno={}",
+    std::println(std::cout, "    Ship 2: docked={}, whatdest={}, destshipno={}",
                  saved_ship2->docked(),
                  static_cast<int>(saved_ship2->whatdest()),
                  saved_ship2->destshipno());
@@ -123,10 +122,10 @@ int main() {
     assert(saved_ship2->whatdest() == ScopeLevel::LEVEL_SHIP);
     assert(saved_ship2->destshipno() == 1);
 
-    std::println("    ✓ Both ships are now docked with each other");
+    std::println(std::cout, "    ✓ Both ships are now docked with each other");
   }
 
-  std::println("Test 2: Verify docked ships persist after cache clear");
+  std::println(std::cout, "Verify docked ships persist after cache clear");
   {
     // Already cleared above, but let's verify again
     ctx.em.clear_cache();
@@ -141,9 +140,9 @@ int main() {
     assert(ship1_check->destshipno() == 2);
     assert(ship2_check->destshipno() == 1);
 
-    std::println("    ✓ Docking status persisted to database");
+    std::println(std::cout, "    ✓ Docking status persisted to database");
   }
 
-  std::println("\n✅ All dock tests passed!");
+  std::println(std::cout, "\n✅ All dock tests passed!");
   return 0;
 }

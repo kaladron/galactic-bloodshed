@@ -35,6 +35,6 @@ int main() {
   assert(output.find("shutdown") != std::string::npos);
   assert(g.shutdown_requested());
 
-  std::println("✓ shutdown_test passed!");
+  std::println(std::cout, "✓ shutdown_test passed!");
   return 0;
 }

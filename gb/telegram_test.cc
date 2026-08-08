@@ -16,27 +16,27 @@ int main() {
   // Create EntityManager for accessing telegrams
   EntityManager em(db);
 
-  std::println("Running telegram system tests...\n");
+  std::println(std::cout, "Running telegram system tests...\n");
 
-  // Test 1: Post telegram using EntityManager
-  std::println("Test 1: Post telegram");
+  // Post telegram using EntityManager
+  std::println(std::cout, "Post telegram");
   em.post_telegram(1, 0, "First telegram to player 1, governor 0\n");
   em.post_telegram(1, 0, "Second telegram to player 1, governor 0\n");
   em.post_telegram(1, 1, "Telegram to player 1, governor 1\n");
   em.post_telegram(2, 0, "Telegram to player 2, governor 0\n");
-  std::println("  ✓ Posted 4 telegrams");
+  std::println(std::cout, "  ✓ Posted 4 telegrams");
 
-  // Test 2: Check if telegrams exist
-  std::println("\nTest 2: Check telegram existence");
+  // Check if telegrams exist
+  std::println(std::cout, "\nTest 2: Check telegram existence");
   assert(em.has_telegrams(1, 0));
   assert(em.has_telegrams(1, 1));
   assert(em.has_telegrams(2, 0));
   assert(!em.has_telegrams(3, 0));  // No telegrams for player 3
   assert(!em.has_telegrams(1, 2));  // No telegrams for governor 2
-  std::println("  ✓ has_telegrams() works correctly");
+  std::println(std::cout, "  ✓ has_telegrams() works correctly");
 
-  // Test 3: Retrieve telegrams
-  std::println("\nTest 3: Retrieve telegrams");
+  // Retrieve telegrams
+  std::println(std::cout, "\nTest 3: Retrieve telegrams");
   auto telegrams_p1g0 = em.get_telegrams(1, 0);
   assert(telegrams_p1g0.size() == 2);
   assert(telegrams_p1g0[0].message ==
@@ -45,51 +45,51 @@ int main() {
          "Second telegram to player 1, governor 0\n");
   assert(telegrams_p1g0[0].recipient_player == 1);
   assert(telegrams_p1g0[0].recipient_governor == 0);
-  std::println("  ✓ Retrieved 2 telegrams for player 1, governor 0");
+  std::println(std::cout, "  ✓ Retrieved 2 telegrams for player 1, governor 0");
 
   auto telegrams_p1g1 = em.get_telegrams(1, 1);
   assert(telegrams_p1g1.size() == 1);
   assert(telegrams_p1g1[0].message == "Telegram to player 1, governor 1\n");
-  std::println("  ✓ Retrieved 1 telegram for player 1, governor 1");
+  std::println(std::cout, "  ✓ Retrieved 1 telegram for player 1, governor 1");
 
   auto telegrams_p2g0 = em.get_telegrams(2, 0);
   assert(telegrams_p2g0.size() == 1);
   assert(telegrams_p2g0[0].message == "Telegram to player 2, governor 0\n");
-  std::println("  ✓ Retrieved 1 telegram for player 2, governor 0");
+  std::println(std::cout, "  ✓ Retrieved 1 telegram for player 2, governor 0");
 
-  // Test 4: Verify timestamps are set
-  std::println("\nTest 4: Verify timestamps");
+  // Verify timestamps are set
+  std::println(std::cout, "\nTest 4: Verify timestamps");
   for (const auto& telegram : telegrams_p1g0) {
     assert(telegram.timestamp > 0);
-    std::println("  ✓ Telegram ID {} has timestamp {}", telegram.id,
+    std::println(std::cout, "  ✓ Telegram ID {} has timestamp {}", telegram.id,
                  telegram.timestamp);
   }
 
-  // Test 5: Delete telegrams for specific governor
-  std::println("\nTest 5: Delete telegrams for governor");
+  // Delete telegrams for specific governor
+  std::println(std::cout, "\nTest 5: Delete telegrams for governor");
   em.delete_telegrams(1, 0);
   assert(!em.has_telegrams(1, 0));
   assert(em.has_telegrams(1, 1));  // Other governor still has telegrams
   assert(em.has_telegrams(2, 0));  // Other player still has telegrams
-  std::println("  ✓ Deleted telegrams for player 1, governor 0");
+  std::println(std::cout, "  ✓ Deleted telegrams for player 1, governor 0");
 
-  // Test 6: Verify deletion
-  std::println("\nTest 6: Verify deletion");
+  // Verify deletion
+  std::println(std::cout, "\nTest 6: Verify deletion");
   auto after_delete = em.get_telegrams(1, 0);
   assert(after_delete.empty());
-  std::println("  ✓ No telegrams remain after deletion");
+  std::println(std::cout, "  ✓ No telegrams remain after deletion");
 
-  // Test 7: Test push_telegram() function (high-level API)
-  std::println("\nTest 7: Test push_telegram() function");
+  // Test push_telegram() function (high-level API)
+  std::println(std::cout, "\nTest 7: Test push_telegram() function");
   push_telegram(em, 3, 0, "Message via push_telegram\n");
   assert(em.has_telegrams(3, 0));
   auto telegrams_p3g0 = em.get_telegrams(3, 0);
   assert(telegrams_p3g0.size() == 1);
   assert(telegrams_p3g0[0].message == "Message via push_telegram\n");
-  std::println("  ✓ push_telegram() works correctly");
+  std::println(std::cout, "  ✓ push_telegram() works correctly");
 
-  // Test 8: Test push_telegram_race() function (sends to all active governors)
-  std::println("\nTest 8: Test push_telegram_race() function");
+  // Test push_telegram_race() function (sends to all active governors)
+  std::println(std::cout, "\nTest 8: Test push_telegram_race() function");
 
   // Create a race with multiple active governors
   JsonStore store(db);
@@ -117,10 +117,10 @@ int main() {
   assert(p4g0[0].message == "Broadcast to all governors\n");
   assert(p4g1[0].message == "Broadcast to all governors\n");
   assert(p4g2[0].message == "Broadcast to all governors\n");
-  std::println("  ✓ push_telegram_race() broadcasts to all active governors");
+  std::println(std::cout, "  ✓ push_telegram_race() broadcasts to all active governors");
 
-  // Test 9: Purge all telegrams
-  std::println("\nTest 9: Purge all telegrams");
+  // Purge all telegrams
+  std::println(std::cout, "\nTest 9: Purge all telegrams");
   em.purge_all_telegrams();
   assert(!em.has_telegrams(1, 1));
   assert(!em.has_telegrams(2, 0));
@@ -128,16 +128,16 @@ int main() {
   assert(!em.has_telegrams(4, 0));
   assert(!em.has_telegrams(4, 1));
   assert(!em.has_telegrams(4, 2));
-  std::println("  ✓ All telegrams purged successfully");
+  std::println(std::cout, "  ✓ All telegrams purged successfully");
 
-  // Test 10: Test with special characters and long messages
-  std::println("\nTest 10: Test special characters and long messages");
+  // Test with special characters and long messages
+  std::println(std::cout, "\nTest 10: Test special characters and long messages");
   std::string special_msg = "Special chars: <>|&;$`\"'\\n\ttest\n";
   em.post_telegram(5, 0, special_msg);
   auto special_telegrams = em.get_telegrams(5, 0);
   assert(special_telegrams.size() == 1);
   assert(special_telegrams[0].message == special_msg);
-  std::println("  ✓ Special characters handled correctly");
+  std::println(std::cout, "  ✓ Special characters handled correctly");
 
   std::string long_msg(1000, 'X');
   long_msg += "\n";
@@ -145,18 +145,18 @@ int main() {
   auto long_telegrams = em.get_telegrams(5, 1);
   assert(long_telegrams.size() == 1);
   assert(long_telegrams[0].message == long_msg);
-  std::println("  ✓ Long messages (1000+ chars) handled correctly");
+  std::println(std::cout, "  ✓ Long messages (1000+ chars) handled correctly");
 
-  // Test 11: Test empty message handling
-  std::println("\nTest 11: Test empty message");
+  // Test empty message handling
+  std::println(std::cout, "\nTest 11: Test empty message");
   em.post_telegram(6, 0, "");
   auto empty_telegrams = em.get_telegrams(6, 0);
   assert(empty_telegrams.size() == 1);
   assert(empty_telegrams[0].message == "");
-  std::println("  ✓ Empty messages handled correctly");
+  std::println(std::cout, "  ✓ Empty messages handled correctly");
 
-  // Test 12: Test order preservation (FIFO)
-  std::println("\nTest 12: Test FIFO order preservation");
+  // Test order preservation (FIFO)
+  std::println(std::cout, "\nTest 12: Test FIFO order preservation");
   em.post_telegram(7, 0, "First\n");
   em.post_telegram(7, 0, "Second\n");
   em.post_telegram(7, 0, "Third\n");
@@ -168,10 +168,10 @@ int main() {
   // Timestamps should be in order (may be equal if added very quickly)
   assert(ordered_telegrams[0].timestamp <= ordered_telegrams[1].timestamp);
   assert(ordered_telegrams[1].timestamp <= ordered_telegrams[2].timestamp);
-  std::println("  ✓ Telegrams retrieved in FIFO order");
+  std::println(std::cout, "  ✓ Telegrams retrieved in FIFO order");
 
-  // Test 13: Test multiple recipients don't interfere
-  std::println("\nTest 13: Test recipient isolation");
+  // Test multiple recipients don't interfere
+  std::println(std::cout, "\nTest 13: Test recipient isolation");
   em.post_telegram(8, 0, "Player 8, Gov 0\n");
   em.post_telegram(8, 1, "Player 8, Gov 1\n");
   em.post_telegram(9, 0, "Player 9, Gov 0\n");
@@ -186,16 +186,16 @@ int main() {
   assert(p8g0_telegrams[0].message == "Player 8, Gov 0\n");
   assert(p8g1_telegrams[0].message == "Player 8, Gov 1\n");
   assert(p9g0_telegrams[0].message == "Player 9, Gov 0\n");
-  std::println("  ✓ Recipient isolation works correctly");
+  std::println(std::cout, "  ✓ Recipient isolation works correctly");
 
-  // Test 14: Delete one recipient's telegrams doesn't affect others
-  std::println("\nTest 14: Test selective deletion");
+  // Delete one recipient's telegrams doesn't affect others
+  std::println(std::cout, "\nTest 14: Test selective deletion");
   em.delete_telegrams(8, 0);
   assert(!em.has_telegrams(8, 0));
   assert(em.has_telegrams(8, 1));  // Different governor still has telegrams
   assert(em.has_telegrams(9, 0));  // Different player still has telegrams
-  std::println("  ✓ Selective deletion doesn't affect other recipients");
+  std::println(std::cout, "  ✓ Selective deletion doesn't affect other recipients");
 
-  std::println("\n✅ All telegram system tests passed!");
+  std::println(std::cout, "\n✅ All telegram system tests passed!");
   return 0;
 }

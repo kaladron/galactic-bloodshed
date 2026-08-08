@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
-import std.compat;
-
-#include <sqlite3.h>
+import std;
 
 #include <cassert>
+
+#include <sqlite3.h>
 
 int main() {
   // Initialize database using Database class (in-memory for testing)
@@ -50,6 +49,6 @@ int main() {
 
   // Database connection will be cleaned up automatically by Sql destructor
 
-  std::println("universe_struct SQLite JSON storage test passed!");
+  std::println(std::cout, "universe_struct SQLite JSON storage test passed!");
   return 0;
 }

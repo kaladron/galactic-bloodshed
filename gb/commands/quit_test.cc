@@ -34,6 +34,6 @@ int main() {
   assert(output.find("Goodbye!") != std::string::npos);
   assert(g.disconnect_requested());
 
-  std::println("✓ quit_test passed!");
+  std::println(std::cout, "✓ quit_test passed!");
   return 0;
 }

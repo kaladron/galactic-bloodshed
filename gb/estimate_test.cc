@@ -37,7 +37,7 @@ int main() {
 
   // Test with negative integer
   std::string result_neg = estimate(-42, *saved, 1);
-  assert(result_neg == "42");  // abs() is applied in the function
+  assert(result_neg == "42");  // std::abs() is applied in the function
 
   // Test with double values
   std::string result_double = estimate(42.7, *saved, 1);
@@ -62,6 +62,6 @@ int main() {
   std::string result_float = estimate(float_val, *saved, 1);
   assert(result_float == "42");
 
-  std::println("All estimate tests passed!");
+  std::println(std::cout, "All estimate tests passed!");
   return 0;
 }

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -16,8 +15,8 @@ int main() {
   JsonStore store(db);
   PlanetRepository repo(store);
 
-  // Test 1: Create and save a basic planet
-  std::println("Test 1: Save and retrieve basic planet...");
+  // Create and save a basic planet
+  std::println(std::cout, "Save and retrieve basic planet...");
   Planet planet1(PlanetType::EARTH);
   planet1.star_id() = 1;       // Star 1
   planet1.planet_order() = 2;  // Planet 2
@@ -55,10 +54,10 @@ int main() {
   assert(retrieved1->type() == PlanetType::MARS);
   assert(retrieved1->expltimer() == 5);
   assert(retrieved1->explored() == 1);
-  std::println("✓ Basic planet save/retrieve works");
+  std::println(std::cout, "✓ Basic planet save/retrieve works");
 
-  // Test 2: Save planet with conditions
-  std::println("\nTest 2: Save planet with atmospheric conditions...");
+  // Save planet with conditions
+  std::println(std::cout, "\nTest 2: Save planet with atmospheric conditions...");
   Planet planet2(PlanetType::ICEBALL);
   planet2.star_id() = 2;       // Star 2
   planet2.planet_order() = 1;  // Planet 1
@@ -92,10 +91,10 @@ int main() {
   assert(retrieved2->conditions(OTHER) == 3);
   assert(retrieved2->conditions(METHANE) == 1);
   assert(retrieved2->conditions(TOXIC) == 25);
-  std::println("✓ Atmospheric conditions preserved correctly");
+  std::println(std::cout, "✓ Atmospheric conditions preserved correctly");
 
-  // Test 3: Save planet with player info
-  std::println("\nTest 3: Save planet with player info...");
+  // Save planet with player info
+  std::println(std::cout, "\nTest 3: Save planet with player info...");
   Planet planet3(PlanetType::ASTEROID);
   planet3.star_id() = 3;       // Star 3
   planet3.planet_order() = 0;  // Planet 0
@@ -159,10 +158,10 @@ int main() {
   assert(retrieved3->info(1).guns == 10);
   assert(retrieved3->info(1).mob_points == 50000);
   assert(retrieved3->info(1).est_production == 2500.75);
-  std::println("✓ Player info preserved correctly");
+  std::println(std::cout, "✓ Player info preserved correctly");
 
-  // Test 4: Save planet with routes
-  std::println("\nTest 4: Save planet with shipping routes...");
+  // Save planet with routes
+  std::println(std::cout, "\nTest 4: Save planet with shipping routes...");
   Planet planet4(PlanetType::EARTH);
   planet4.star_id() = 4;       // Star 4
   planet4.planet_order() = 3;  // Planet 3
@@ -207,10 +206,10 @@ int main() {
   assert(retrieved4->info(1).route[1].unload == 0x0C);
   assert(retrieved4->info(1).route[1].x == 15);
   assert(retrieved4->info(1).route[1].y == 25);
-  std::println("✓ Shipping routes preserved correctly");
+  std::println(std::cout, "✓ Shipping routes preserved correctly");
 
-  // Test 5: Update existing planet
-  std::println("\nTest 5: Update existing planet...");
+  // Update existing planet
+  std::println(std::cout, "\nTest 5: Update existing planet...");
   retrieved1->popn() = 200000;
   retrieved1->troops() = 10000;
   // star_id already set from original creation
@@ -221,10 +220,10 @@ int main() {
   assert(updated->planet_order() == 2);
   assert(updated->popn() == 200000);
   assert(updated->troops() == 10000);
-  std::println("✓ Planet update works correctly");
+  std::println(std::cout, "✓ Planet update works correctly");
 
-  // Test 6: Multiple planets in same star system
-  std::println("\nTest 6: Multiple planets in same star...");
+  // Multiple planets in same star system
+  std::println(std::cout, "\nTest 6: Multiple planets in same star...");
   Planet planet5(PlanetType::GASGIANT);
   planet5.star_id() = 5;       // Star 5
   planet5.planet_order() = 0;  // Planet 0
@@ -253,16 +252,16 @@ int main() {
   assert(p6->planet_order() == 1);
   assert(p5->type() == PlanetType::GASGIANT);
   assert(p6->type() == PlanetType::WATER);
-  std::println("✓ Multiple planets per star works correctly");
+  std::println(std::cout, "✓ Multiple planets per star works correctly");
 
-  // Test 7: Non-existent planet returns nullopt
-  std::println("\nTest 7: Non-existent planet returns nullopt...");
+  // Non-existent planet returns nullopt
+  std::println(std::cout, "\nTest 7: Non-existent planet returns nullopt...");
   auto not_found = repo.find_by_location(99, 99);
   assert(!not_found.has_value());
-  std::println("✓ Non-existent planet correctly returns nullopt");
+  std::println(std::cout, "✓ Non-existent planet correctly returns nullopt");
 
-  // Test 8: Multiple players on same planet
-  std::println("\nTest 8: Multiple players on same planet...");
+  // Multiple players on same planet
+  std::println(std::cout, "\nTest 8: Multiple players on same planet...");
   Planet planet7(PlanetType::EARTH);
   planet7.star_id() = 6;       // Star 6
   planet7.planet_order() = 1;  // Planet 1
@@ -289,8 +288,8 @@ int main() {
   assert(retrieved7->info(2).popn == 30000);
   assert(retrieved7->info(3).fuel == 250);
   assert(retrieved7->info(3).popn == 10000);
-  std::println("✓ Multiple players per planet preserved correctly");
+  std::println(std::cout, "✓ Multiple players per planet preserved correctly");
 
-  std::println("\n✅ All PlanetRepository tests passed!");
+  std::println(std::cout, "\n✅ All PlanetRepository tests passed!");
   return 0;
 }

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -135,7 +134,7 @@ int main() {
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
 
-  std::println("Test 1: Scrap a docked ship and verify resources transfer");
+  std::println(std::cout, "Scrap a docked ship and verify resources transfer");
   {
     // Hold a race handle to keep the race in cache during the test
     // This prevents kill_ship() from evicting the race when its internal handle
@@ -147,12 +146,12 @@ int main() {
     assert(carrier_before != nullptr);
     int initial_resource = carrier_before->resource();
     double initial_fuel = carrier_before->fuel();
-    std::println("    Carrier before: resource={}, fuel={:.0f}",
+    std::println(std::cout, "    Carrier before: resource={}, fuel={:.0f}",
                  initial_resource, initial_fuel);
 
     const auto* scrap_ship = ctx.em.peek_ship(2);
     assert(scrap_ship != nullptr);
-    std::println("    Ship to scrap: resource={}, fuel={:.0f}, build_cost={}",
+    std::println(std::cout, "    Ship to scrap: resource={}, fuel={:.0f}, build_cost={}",
                  scrap_ship->resource(), scrap_ship->fuel(),
                  scrap_ship->build_cost());
 
@@ -167,24 +166,24 @@ int main() {
     const auto* scrapped = ctx.em.peek_ship(2);
     assert(scrapped != nullptr);
     assert(scrapped->alive() == 0);
-    std::println("    ✓ Ship 2 is now dead (alive={})", scrapped->alive());
+    std::println(std::cout, "    ✓ Ship 2 is now dead (alive={})", scrapped->alive());
 
     // Verify carrier received resources
     const auto* carrier_after = ctx.em.peek_ship(1);
     assert(carrier_after != nullptr);
-    std::println("    Carrier after: resource={}, fuel={:.0f}",
+    std::println(std::cout, "    Carrier after: resource={}, fuel={:.0f}",
                  carrier_after->resource(), carrier_after->fuel());
 
     // Resources should have increased (scrapval = build_cost/2 + resource)
     assert(carrier_after->resource() > initial_resource);
-    std::println("    ✓ Carrier resource increased from {} to {}",
+    std::println(std::cout, "    ✓ Carrier resource increased from {} to {}",
                  initial_resource, carrier_after->resource());
 
     // Carrier should be undocked after scrap
     assert(carrier_after->docked() == 0);
-    std::println("    ✓ Carrier is now undocked");
+    std::println(std::cout, "    ✓ Carrier is now undocked");
   }
 
-  std::println("\n✅ All scrap tests passed!");
+  std::println(std::cout, "\n✅ All scrap tests passed!");
   return 0;
 }

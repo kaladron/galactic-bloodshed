@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -66,7 +65,7 @@ int main() {
   g.set_snum(0);
   g.set_shipno(1);
 
-  std::println("Test 1: Jettison crystals");
+  std::println(std::cout, "Jettison crystals");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     int initial_crystals = s_before->crystals();
@@ -76,10 +75,10 @@ int main() {
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->crystals() == initial_crystals - 3);
-    std::println("✓ Crystals jettisoned");
+    std::println(std::cout, "✓ Crystals jettisoned");
   }
 
-  std::println("Test 2: Jettison crew");
+  std::println(std::cout, "Jettison crew");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     int initial_popn = s_before->popn();
@@ -91,10 +90,10 @@ int main() {
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->popn() == initial_popn - 5);
     assert(s_after->mass() == initial_mass - (5 * race.mass));
-    std::println("✓ Crew jettisoned with mass reduction");
+    std::println(std::cout, "✓ Crew jettisoned with mass reduction");
   }
 
-  std::println("Test 3: Jettison military");
+  std::println(std::cout, "Jettison military");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     int initial_troops = s_before->troops();
@@ -106,10 +105,10 @@ int main() {
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->troops() == initial_troops - 4);
     assert(s_after->mass() == initial_mass - (4 * race.mass));
-    std::println("✓ Military jettisoned with mass reduction");
+    std::println(std::cout, "✓ Military jettisoned with mass reduction");
   }
 
-  std::println("Test 4: Jettison destruct");
+  std::println(std::cout, "Jettison destruct");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     int initial_destruct = s_before->destruct();
@@ -119,10 +118,10 @@ int main() {
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->destruct() == initial_destruct - 10);
-    std::println("✓ Destruct jettisoned");
+    std::println(std::cout, "✓ Destruct jettisoned");
   }
 
-  std::println("Test 5: Jettison fuel");
+  std::println(std::cout, "Jettison fuel");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     double initial_fuel = s_before->fuel();
@@ -132,10 +131,10 @@ int main() {
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->fuel() == initial_fuel - 25);
-    std::println("✓ Fuel jettisoned");
+    std::println(std::cout, "✓ Fuel jettisoned");
   }
 
-  std::println("Test 6: Jettison resources");
+  std::println(std::cout, "Jettison resources");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     int initial_resource = s_before->resource();
@@ -145,9 +144,9 @@ int main() {
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->resource() == initial_resource - 30);
-    std::println("✓ Resources jettisoned");
+    std::println(std::cout, "✓ Resources jettisoned");
   }
 
-  std::println("All jettison tests passed!");
+  std::println(std::cout, "All jettison tests passed!");
   return 0;
 }

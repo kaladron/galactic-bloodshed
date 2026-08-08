@@ -4,7 +4,7 @@ import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -92,7 +92,7 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
 
-  std::println("Test 1: Load fuel from planet to ship");
+  std::println(std::cout, "Load fuel from planet to ship");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     const auto* p_before = ctx.em.peek_planet(0, 0);
@@ -106,10 +106,10 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(s_after->fuel() == initial_ship_fuel + 100);
     assert(p_after->info(player_t{1}).fuel == initial_planet_fuel - 100);
-    std::println("✓ Fuel loaded from planet to ship");
+    std::println(std::cout, "✓ Fuel loaded from planet to ship");
   }
 
-  std::println("Test 2: Load resources from planet to ship");
+  std::println(std::cout, "Load resources from planet to ship");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     const auto* p_before = ctx.em.peek_planet(0, 0);
@@ -124,10 +124,10 @@ int main() {
     assert(s_after->resource() == initial_ship_resource + 200);
     assert(p_after->info(player_t{1}).resource ==
            initial_planet_resource - 200);
-    std::println("✓ Resources loaded from planet to ship");
+    std::println(std::cout, "✓ Resources loaded from planet to ship");
   }
 
-  std::println("Test 3: Load destruct from planet to ship");
+  std::println(std::cout, "Load destruct from planet to ship");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     const auto* p_before = ctx.em.peek_planet(0, 0);
@@ -141,10 +141,10 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(s_after->destruct() == initial_ship_destruct + 50);
     assert(p_after->info(player_t{1}).destruct == initial_planet_destruct - 50);
-    std::println("✓ Destruct loaded from planet to ship");
+    std::println(std::cout, "✓ Destruct loaded from planet to ship");
   }
 
-  std::println("Test 4: Load crystals from planet to ship");
+  std::println(std::cout, "Load crystals from planet to ship");
   {
     const auto* s_before = ctx.em.peek_ship(1);
     const auto* p_before = ctx.em.peek_planet(0, 0);
@@ -158,11 +158,11 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(s_after->crystals() == initial_ship_crystals + 10);
     assert(p_after->info(player_t{1}).crystals == initial_planet_crystals - 10);
-    std::println("✓ Crystals loaded from planet to ship");
+    std::println(std::cout, "✓ Crystals loaded from planet to ship");
   }
 
-  std::println("\n✅ All load command tests passed!");
-  std::println("The load command correctly transfers cargo and persists "
+  std::println(std::cout, "\n✅ All load command tests passed!");
+  std::println(std::cout, "The load command correctly transfers cargo and persists "
                "changes via EntityManager.");
   return 0;
 }

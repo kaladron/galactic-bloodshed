@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -112,14 +111,14 @@ int main() {
   g.set_pnum(0);
   g.set_shipno(1);
 
-  std::println("Test 1: Land ship on planet coordinates");
+  std::println(std::cout, "Land ship on planet coordinates");
   {
     command_t argv = {"land", "#1", "5,5"};
     GB::commands::land(argv, g);
 
     // Check what the command output was
     std::string output = g.out.str();
-    std::println("Command output: {}", output);
+    std::println(std::cout, "Command output: {}", output);
 
     const auto* s = ctx.em.peek_ship(1);
     assert(s != nullptr);
@@ -127,10 +126,10 @@ int main() {
     assert(s->docked());
     assert(s->land_x() == 5);
     assert(s->land_y() == 5);
-    std::println("✓ Ship landed on planet coordinates");
+    std::println(std::cout, "✓ Ship landed on planet coordinates");
   }
 
-  std::println("Test 2: Cannot land docked ship");
+  std::println(std::cout, "Cannot land docked ship");
   {
     // Ship is already docked from test 1
     const auto* s_before = ctx.em.peek_ship(1);
@@ -142,10 +141,10 @@ int main() {
     // Should still be at original location
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->docked() == was_docked);
-    std::println("✓ Cannot re-land already docked ship");
+    std::println(std::cout, "✓ Cannot re-land already docked ship");
   }
 
-  std::println("Test 3: Create carrier and shuttle for friendly landing");
+  std::println(std::cout, "Create carrier and shuttle for friendly landing");
   {
     g.out.str("");  // Clear output from previous tests
     g.out.clear();
@@ -190,13 +189,13 @@ int main() {
 
     // Check what the command output was
     std::string output = g.out.str();
-    std::println("Command output: {}", output);
+    std::println(std::cout, "Command output: {}", output);
 
     const auto* shuttle_after = ctx.em.peek_ship(1);
     assert(shuttle_after->docked());
-    std::println("✓ Ship can land on friendly carrier");
+    std::println(std::cout, "✓ Ship can land on friendly carrier");
   }
 
-  std::println("All land tests passed!");
+  std::println(std::cout, "All land tests passed!");
   return 0;
 }

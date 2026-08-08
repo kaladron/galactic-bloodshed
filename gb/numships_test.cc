@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -103,8 +102,8 @@ int main() {
   }
   assert(threw);
 
-  std::println("Numships and ship storage test passed!");
-  std::println("Initial count: {}, Final count: {}", initial_count,
+  std::println(std::cout, "Numships and ship storage test passed!");
+  std::println(std::cout, "Initial count: {}, Final count: {}", initial_count,
                count_after_inserts);
   return 0;
 }

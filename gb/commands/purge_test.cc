@@ -34,6 +34,6 @@ int main() {
   std::string output = g.out.str();
   assert(output.find("Purged") != std::string::npos);
 
-  std::println("✓ purge_test passed!");
+  std::println(std::cout, "✓ purge_test passed!");
   return 0;
 }

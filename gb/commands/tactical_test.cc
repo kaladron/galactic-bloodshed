@@ -1,12 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file tactical_test.cc
-/// \brief Test tactical command functionality
-///
-/// This test verifies the standalone tactical.cc command works correctly.
-/// The tactical command shows a combat display of ships and planets in the
-/// current scope.
-
 import dallib;
 import gblib;
 import test;
@@ -14,6 +7,15 @@ import commands;
 import std;
 
 #include <cassert>
+
+/// \file tactical_test.cc
+/// \brief Test tactical command functionality
+///
+/// This test verifies the standalone tactical.cc command works correctly.
+/// The tactical command shows a combat display of ships and planets in the
+/// current scope.
+
+
 #include <cstddef>
 
 // Setup common game state used by all tests
@@ -84,7 +86,7 @@ void setup_test_universe(TestState& state) {
 
 /// Test tactical at planet scope - shows ships orbiting the planet
 void test_tactical_planet_scope() {
-  std::println("Test: Tactical at planet scope");
+  std::println(std::cout, "Test: Tactical at planet scope");
 
   TestState state;
   setup_test_universe(state);
@@ -118,15 +120,15 @@ void test_tactical_planet_scope() {
   assert(tactical_output.find("TestPlanet") != std::string::npos &&
          "Tactical at planet scope should show planet");
 
-  std::println("  ✓ Planet scope produces tactical output");
-  std::println("  Output:\n{}", tactical_output);
+  std::println(std::cout, "  ✓ Planet scope produces tactical output");
+  std::println(std::cout, "  Output:\n{}", tactical_output);
 }
 
 /// Test tactical at ship scope - shows surrounding area (planet + ships)
 /// Per documentation: "Enemy ships will only appear on tactical display
 /// if they are in the same scope as the calling ship."
 void test_tactical_ship_scope() {
-  std::println("Test: Tactical at ship scope");
+  std::println(std::cout, "Test: Tactical at ship scope");
 
   TestState state;
   setup_test_universe(state);
@@ -158,13 +160,13 @@ void test_tactical_ship_scope() {
   assert(tactical_output.find("TestPlanet") != std::string::npos &&
          "Tactical at ship scope should show surrounding planet");
 
-  std::println("  ✓ Ship scope produces tactical output with surrounding area");
-  std::println("  Output:\n{}", tactical_output);
+  std::println(std::cout, "  ✓ Ship scope produces tactical output with surrounding area");
+  std::println(std::cout, "  Output:\n{}", tactical_output);
 }
 
 /// Test tactical at star scope - shows planets and ships in the star system
 void test_tactical_star_scope() {
-  std::println("Test: Tactical at star scope");
+  std::println(std::cout, "Test: Tactical at star scope");
 
   TestState state;
   setup_test_universe(state);
@@ -198,17 +200,17 @@ void test_tactical_star_scope() {
   assert(tactical_output.find("TestPlanet") != std::string::npos &&
          "Tactical at star scope should show planet");
 
-  std::println("  ✓ Star scope produces tactical output");
-  std::println("  Output:\n{}", tactical_output);
+  std::println(std::cout, "  ✓ Star scope produces tactical output");
+  std::println(std::cout, "  Output:\n{}", tactical_output);
 }
 
 int main() {
-  std::println("=== Tactical Command Test ===\n");
+  std::println(std::cout, "=== Tactical Command Test ===\n");
 
   test_tactical_planet_scope();
   test_tactical_ship_scope();
   test_tactical_star_scope();
 
-  std::println("\n✅ All tactical tests passed!");
+  std::println(std::cout, "\n✅ All tactical tests passed!");
   return 0;
 }

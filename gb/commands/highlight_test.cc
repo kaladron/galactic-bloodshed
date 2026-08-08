@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file highlight_test.cc
-/// \brief Test highlight command database persistence
-
-import dallib;
 import dallib;
 import gblib;
 import test;
@@ -12,8 +8,13 @@ import std;
 
 #include <cassert>
 
+/// \file highlight_test.cc
+/// \brief Test highlight command database persistence
+
+
+
 void test_highlight_database_persistence() {
-  std::println("Test: highlight command database persistence");
+  std::println(std::cout, "Test: highlight command database persistence");
 
   // Create in-memory database
   TestContext ctx;
@@ -38,7 +39,7 @@ void test_highlight_database_persistence() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   // TEST 1: Set highlight to player 2
-  std::println("  Testing: Set highlight to player 2");
+  std::println(std::cout, "  Testing: Set highlight to player 2");
   {
     command_t cmd = {"highlight", "2"};
     GB::commands::highlight(cmd, g);
@@ -47,12 +48,12 @@ void test_highlight_database_persistence() {
     auto saved = races_repo.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.highlight == 2);
-    std::println("    ✓ Database: highlight = {}",
+    std::println(std::cout, "    ✓ Database: highlight = {}",
                  saved->governor[0].toggle.highlight);
   }
 
   // TEST 2: Change highlight to player 1 (self)
-  std::println("  Testing: Change highlight to player 1 (self)");
+  std::println(std::cout, "  Testing: Change highlight to player 1 (self)");
   {
     command_t cmd = {"highlight", "1"};
     GB::commands::highlight(cmd, g);
@@ -60,12 +61,12 @@ void test_highlight_database_persistence() {
     auto saved = races_repo.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.highlight == 1);
-    std::println("    ✓ Database: highlight = {}",
+    std::println(std::cout, "    ✓ Database: highlight = {}",
                  saved->governor[0].toggle.highlight);
   }
 
   // TEST 3: Change back to player 2
-  std::println("  Testing: Change back to player 2");
+  std::println(std::cout, "  Testing: Change back to player 2");
   {
     command_t cmd = {"highlight", "2"};
     GB::commands::highlight(cmd, g);
@@ -73,19 +74,19 @@ void test_highlight_database_persistence() {
     auto saved = races_repo.find_by_player(1);
     assert(saved.has_value());
     assert(saved->governor[0].toggle.highlight == 2);
-    std::println("    ✓ Database: highlight = {}",
+    std::println(std::cout, "    ✓ Database: highlight = {}",
                  saved->governor[0].toggle.highlight);
   }
 
   // TEST 4: Invalid player number
-  std::println("  Testing: Invalid player number");
+  std::println(std::cout, "  Testing: Invalid player number");
   {
     command_t cmd = {"highlight", "999"};
     GB::commands::highlight(cmd, g);
 
     std::string out_str = g.out.str();
     assert(out_str.find("No such player") != std::string::npos);
-    std::println("    ✓ Error message for invalid player");
+    std::println(std::cout, "    ✓ Error message for invalid player");
     g.out.str("");
 
     // Verify highlight wasn't changed
@@ -94,11 +95,11 @@ void test_highlight_database_persistence() {
     assert(saved->governor[0].toggle.highlight == 2);  // Should still be 2
   }
 
-  std::println("  ✅ All highlight database persistence tests passed!");
+  std::println(std::cout, "  ✅ All highlight database persistence tests passed!");
 }
 
 int main() {
   test_highlight_database_persistence();
-  std::println("\n✅ All tests passed!");
+  std::println(std::cout, "\n✅ All tests passed!");
   return 0;
 }

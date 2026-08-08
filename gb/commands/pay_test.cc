@@ -4,7 +4,7 @@ import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -50,7 +50,7 @@ int main() {
     assert(saved_payee);
     assert(saved_payer->governor[0].money == 9500);
     assert(saved_payee->governor[0].money == 1500);
-    std::println("✓ Money transfer saved correctly");
+    std::println(std::cout, "✓ Money transfer saved correctly");
   }
 
   // Test: Large transfer
@@ -73,7 +73,7 @@ int main() {
     assert(saved_payee);
     assert(saved_payer->governor[0].money == 4500);
     assert(saved_payee->governor[0].money == 6500);
-    std::println("✓ Large transfer saved correctly");
+    std::println(std::cout, "✓ Large transfer saved correctly");
   }
 
   // Test: Transfer from governor (not leader)
@@ -96,7 +96,7 @@ int main() {
     assert(saved_payee);
     assert(saved_payer->governor[1].money == 4000);
     assert(saved_payee->governor[0].money == 7500);
-    std::println("✓ Governor transfer saved correctly");
+    std::println(std::cout, "✓ Governor transfer saved correctly");
   }
 
   // Test: Multiple sequential transfers
@@ -121,7 +121,7 @@ int main() {
     assert(saved_payee);
     assert(saved_payer->governor[0].money == 4000);  // 4500 - 500
     assert(saved_payee->governor[0].money == 8000);  // 7500 + 500
-    std::println("✓ Multiple transfers accumulated correctly");
+    std::println(std::cout, "✓ Multiple transfers accumulated correctly");
   }
 
   // Test: Zero balance scenarios
@@ -136,9 +136,9 @@ int main() {
     const auto* saved = ctx.em.peek_race(1);
     assert(saved);
     assert(saved->governor[0].money == 0);
-    std::println("✓ Zero balance saved correctly");
+    std::println(std::cout, "✓ Zero balance saved correctly");
   }
 
-  std::println("All pay tests passed!");
+  std::println(std::cout, "All pay tests passed!");
   return 0;
 }

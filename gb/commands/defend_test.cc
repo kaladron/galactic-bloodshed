@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -101,6 +100,6 @@ int main() {
   assert(saved_planet);
   assert(saved_planet->info(player_t{1}).destruct < 100);
 
-  std::println("defend_test passed!");
+  std::println(std::cout, "defend_test passed!");
   return 0;
 }

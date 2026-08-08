@@ -12,7 +12,7 @@ int main() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println("=== Testing do_repair via doship() ===\n");
+  std::println(std::cout, "=== Testing do_repair via doship() ===\n");
 
   // Create ServerState with 1 segment for REPAIR_RATE division
   {
@@ -38,9 +38,9 @@ int main() {
     races.save(race);
   }
 
-  // Test 1: Basic repair scenario - ship with damage and crew
+  // Basic repair scenario - ship with damage and crew
   {
-    std::println("Test 1: Ship with crew and damage, sufficient resources");
+    std::println(std::cout, "Ship with crew and damage, sufficient resources");
 
     Ship ship{};
     ship.number() = 1;
@@ -80,8 +80,8 @@ int main() {
     const auto* saved_ship = em.peek_ship(ship.number());
     assert(saved_ship);
 
-    std::println("  Damage:    {} -> {}", damage_before, saved_ship->damage());
-    std::println("  Resources: {} -> {}", resources_before,
+    std::println(std::cout, "  Damage:    {} -> {}", damage_before, saved_ship->damage());
+    std::println(std::cout, "  Resources: {} -> {}", resources_before,
                  saved_ship->resource());
 
     // maxrep = REPAIR_RATE(25) / 1 segment * (20/20 crew) = 25.0
@@ -89,12 +89,12 @@ int main() {
     // drep = (int)25 = 25 -> damage: 50 - 25 = 25
     assert(saved_ship->damage() == 25);
     assert(saved_ship->resource() == 4988);
-    std::println("  ✓ Test passed\n");
+    std::println(std::cout, "  ✓ Test passed\n");
   }
 
-  // Test 2: Ship with low crew (less efficient repair)
+  // Ship with low crew (less efficient repair)
   {
-    std::println("Test 2: Ship with minimal crew and damage");
+    std::println(std::cout, "Ship with minimal crew and damage");
 
     Ship ship{};
     ship.number() = 2;
@@ -134,8 +134,8 @@ int main() {
     const auto* saved_ship = em.peek_ship(ship.number());
     assert(saved_ship);
 
-    std::println("  Damage:    {} -> {}", damage_before, saved_ship->damage());
-    std::println("  Resources: {} -> {}", resources_before,
+    std::println(std::cout, "  Damage:    {} -> {}", damage_before, saved_ship->damage());
+    std::println(std::cout, "  Resources: {} -> {}", resources_before,
                  saved_ship->resource());
 
     // maxrep = REPAIR_RATE(25) / 1 segment * (1/20 crew) = 1.25
@@ -144,12 +144,12 @@ int main() {
     // Resources unchanged because cost rounded to zero
     assert(saved_ship->damage() == 74);
     assert(saved_ship->resource() == 5000);
-    std::println("  ✓ Test passed\n");
+    std::println(std::cout, "  ✓ Test passed\n");
   }
 
-  // Test 3: Ship without damage (repair should not be triggered)
+  // Ship without damage (repair should not be triggered)
   {
-    std::println("Test 3: Ship with no damage");
+    std::println(std::cout, "Ship with no damage");
 
     Ship ship{};
     ship.number() = 3;
@@ -188,20 +188,20 @@ int main() {
     const auto* saved_ship = em.peek_ship(ship.number());
     assert(saved_ship);
 
-    std::println("  Damage:    0 -> {}", saved_ship->damage());
-    std::println("  Resources: {} -> {}", resources_before,
+    std::println(std::cout, "  Damage:    0 -> {}", saved_ship->damage());
+    std::println(std::cout, "  Resources: {} -> {}", resources_before,
                  saved_ship->resource());
 
     // No damage means do_repair is never called (guarded by ship.damage() check
     // in doship)
     assert(saved_ship->damage() == 0);
     assert(saved_ship->resource() == 5000);
-    std::println("  ✓ Correctly no repair (no damage)\n");
+    std::println(std::cout, "  ✓ Correctly no repair (no damage)\n");
   }
 
-  // Test 4: Factory type (has ABIL_REPAIR)
+  // Factory type (has ABIL_REPAIR)
   {
-    std::println("Test 4: Factory ship (has ABIL_REPAIR ability)");
+    std::println(std::cout, "Factory ship (has ABIL_REPAIR ability)");
 
     Ship ship{};
     ship.number() = 4;
@@ -242,8 +242,8 @@ int main() {
     const auto* saved_ship = em.peek_ship(ship.number());
     assert(saved_ship);
 
-    std::println("  Damage:    {} -> {}", damage_before, saved_ship->damage());
-    std::println("  Resources: {} -> {}", resources_before,
+    std::println(std::cout, "  Damage:    {} -> {}", damage_before, saved_ship->damage());
+    std::println(std::cout, "  Resources: {} -> {}", resources_before,
                  saved_ship->resource());
 
     // ABIL_REPAIR path: cost=0, maxrep = REPAIR_RATE(25) / 1 = 25.0
@@ -251,11 +251,10 @@ int main() {
     // No resources consumed (free repair for factories)
     assert(saved_ship->damage() == 35);
     assert(saved_ship->resource() == 5000);
-    std::println("  ✓ Test passed\n");
+    std::println(std::cout, "  ✓ Test passed\n");
   }
 
-  std::println("=== All do_repair tests completed ===");
-  std::println(
-      "Review output above to verify repair logic is functioning correctly.");
+  std::println(std::cout, "=== All do_repair tests completed ===");
+  std::println(std::cout, "Review output above to verify repair logic is functioning correctly.");
   return 0;
 }

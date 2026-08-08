@@ -133,7 +133,7 @@ star_struct create_star(starnum_t snum) {
 }
 
 void test_notify_player_basic() {
-  std::println("Testing notify_player basic functionality...");
+  std::println(std::cout, "Testing notify_player basic functionality...");
 
   MockRegistry registry;
   auto session1 = std::make_shared<MockSession>(1, 0, 1, true, false);
@@ -166,11 +166,11 @@ void test_notify_player_basic() {
   delivered = registry.notify_player(99, 0, "No one here\n");
   assert(!delivered);
 
-  std::println("  ✓ notify_player basic tests passed");
+  std::println(std::cout, "  ✓ notify_player basic tests passed");
 }
 
 void test_notify_race_basic() {
-  std::println("Testing notify_race basic functionality...");
+  std::println(std::cout, "Testing notify_race basic functionality...");
 
   MockRegistry registry;
   auto session1 = std::make_shared<MockSession>(1, 0, 1, true, false);
@@ -196,11 +196,11 @@ void test_notify_race_basic() {
   assert(session2->get_output().empty());
   assert(session3->get_output() == "Message to race 2\n");
 
-  std::println("  ✓ notify_race basic tests passed");
+  std::println(std::cout, "  ✓ notify_race basic tests passed");
 }
 
 void test_disconnected_sessions() {
-  std::println("Testing disconnected sessions are skipped...");
+  std::println(std::cout, "Testing disconnected sessions are skipped...");
 
   MockRegistry registry;
   auto session1 =
@@ -216,11 +216,11 @@ void test_disconnected_sessions() {
   assert(session1->get_output() == "Test message\n");
   assert(session2->get_output().empty());
 
-  std::println("  ✓ Disconnected session tests passed");
+  std::println(std::cout, "  ✓ Disconnected session tests passed");
 }
 
 void test_d_broadcast_gag_filtering() {
-  std::println("Testing d_broadcast with gag filtering...");
+  std::println(std::cout, "Testing d_broadcast with gag filtering...");
 
   Database db(":memory:");
   initialize_schema(db);
@@ -257,11 +257,11 @@ void test_d_broadcast_gag_filtering() {
   // needs Session objects, not MockSession. We'll need to refactor the
   // test approach or test at a higher level.
 
-  std::println("  ✓ d_broadcast gag filtering tests passed (placeholder)");
+  std::println(std::cout, "  ✓ d_broadcast gag filtering tests passed (placeholder)");
 }
 
 void test_warn_player_update_suppression() {
-  std::println("Testing warn_player with update suppression...");
+  std::println(std::cout, "Testing warn_player with update suppression...");
 
   Database db(":memory:");
   initialize_schema(db);
@@ -275,14 +275,14 @@ void test_warn_player_update_suppression() {
 
   MockRegistry registry;
 
-  // Test 1: When update is in progress, should push telegram
+  // When update is in progress, should push telegram
   registry.set_update_in_progress(true);
 
   // Track telegrams (we need to mock push_telegram, but it's a free function)
   // For now, we'll verify the function doesn't crash and moves on
   warn_player(registry, em, 1, 0, "Update in progress message\n");
 
-  // Test 2: When update is NOT in progress, should try real-time
+  // When update is NOT in progress, should try real-time
   registry.set_update_in_progress(false);
 
   auto session1 = std::make_shared<MockSession>(1, 0, 1, true, false);
@@ -291,12 +291,11 @@ void test_warn_player_update_suppression() {
   // This should deliver to session since update is not in progress
   // (Note: actual implementation would call registry.notify_player)
 
-  std::println("  ✓ warn_player update suppression tests passed (partial)");
+  std::println(std::cout, "  ✓ warn_player update suppression tests passed (partial)");
 }
 
 void test_warn_race_all_governors() {
-  std::println(
-      "Testing warn_race calls warn_player for all active governors...");
+  std::println(std::cout, "Testing warn_race calls warn_player for all active governors...");
 
   Database db(":memory:");
   initialize_schema(db);
@@ -327,11 +326,11 @@ void test_warn_race_all_governors() {
   // Both active governors should receive message
   // (Note: actual verification depends on how warn_player routes messages)
 
-  std::println("  ✓ warn_race all governors tests passed (partial)");
+  std::println(std::cout, "  ✓ warn_race all governors tests passed (partial)");
 }
 
 void test_notify_star() {
-  std::println("Testing notify_star functionality...");
+  std::println(std::cout, "Testing notify_star functionality...");
 
   Database db(":memory:");
   initialize_schema(db);
@@ -371,11 +370,11 @@ void test_notify_star() {
   // Just verify it doesn't crash - telegram verification not yet implemented
   notify_star(registry, em, 1, 0, 5, "Test message\n");
 
-  std::println("  ✓ notify_star executes without crashing");
+  std::println(std::cout, "  ✓ notify_star executes without crashing");
 }
 
 void test_warn_star() {
-  std::println("Testing warn_star functionality...");
+  std::println(std::cout, "Testing warn_star functionality...");
 
   Database db(":memory:");
   initialize_schema(db);
@@ -406,11 +405,11 @@ void test_warn_star() {
   // Just verify it doesn't crash
   warn_star(registry, em, 1, 7, "Warning message\n");
 
-  std::println("  ✓ warn_star executes without crashing");
+  std::println(std::cout, "  ✓ warn_star executes without crashing");
 }
 
 void test_telegram_star() {
-  std::println("Testing telegram_star helper function...");
+  std::println(std::cout, "Testing telegram_star helper function...");
 
   Database db(":memory:");
   initialize_schema(db);
@@ -444,13 +443,12 @@ void test_telegram_star() {
   // yet
   telegram_star(em, 10, 1, 0, "Telegram from P1G0\n");
 
-  std::println("  ✓ telegram_star executes without crashing");
-  std::println(
-      "  (Note: Telegram delivery verification pending SQLite migration)");
+  std::println(std::cout, "  ✓ telegram_star executes without crashing");
+  std::println(std::cout, "  (Note: Telegram delivery verification pending SQLite migration)");
 }
 
 int main() {
-  std::println("Running notification service comprehensive tests...\n");
+  std::println(std::cout, "Running notification service comprehensive tests...\n");
 
   test_notify_player_basic();
   test_notify_race_basic();
@@ -462,6 +460,6 @@ int main() {
   test_warn_star();
   test_telegram_star();
 
-  std::println("\n✅ All notification service tests passed!");
+  std::println(std::cout, "\n✅ All notification service tests passed!");
   return 0;
 }

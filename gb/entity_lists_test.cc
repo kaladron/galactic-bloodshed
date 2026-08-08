@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Test for RaceList, StarList, and PlanetList iteration helpers
-
 import dallib;
 import gblib;
-import std.compat;
+import std;
 
 #include <cassert>
+
+// Test for RaceList, StarList, and PlanetList iteration helpers
+
+
 
 namespace {
 
@@ -95,7 +97,7 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
 }
 
 void test_race_list_readonly(EntityManager& em) {
-  std::println("Testing RaceList...");
+  std::println(std::cout, "Testing RaceList...");
   int count = 0;
   std::vector<player_t> seen_players;
 
@@ -116,12 +118,12 @@ void test_race_list_readonly(EntityManager& em) {
   assert(seen_players[0] == player_t{1});
   assert(seen_players[1] == player_t{2});
   assert(seen_players[2] == player_t{3});
-  std::println("  RaceList: iterated {} races, all have correct Playernum",
+  std::println(std::cout, "  RaceList: iterated {} races, all have correct Playernum",
                count);
 }
 
 void test_star_list_readonly(EntityManager& em) {
-  std::println("Testing StarList...");
+  std::println(std::cout, "Testing StarList...");
   int count = 0;
   std::vector<starnum_t> seen_stars;
 
@@ -139,12 +141,12 @@ void test_star_list_readonly(EntityManager& em) {
   assert(seen_stars.size() == 2);
   assert(seen_stars[0] == 0);
   assert(seen_stars[1] == 1);
-  std::println("  StarList: iterated {} stars, all have correct star_id",
+  std::println(std::cout, "  StarList: iterated {} stars, all have correct star_id",
                count);
 }
 
 void test_planet_list_readonly(EntityManager& em) {
-  std::println("Testing PlanetList...");
+  std::println(std::cout, "Testing PlanetList...");
   int total_planets = 0;
 
   for (const Star* star : StarList::readonly(em)) {
@@ -167,14 +169,14 @@ void test_planet_list_readonly(EntityManager& em) {
   }
 
   assert(total_planets == 3);
-  std::println("  PlanetList: iterated {} total planets across all stars",
+  std::println(std::cout, "  PlanetList: iterated {} total planets across all stars",
                total_planets);
 }
 
 void test_commod_list_readonly(EntityManager& em) {
-  std::println("Testing CommodList...");
+  std::println(std::cout, "Testing CommodList...");
   int count = 0;
-  uint64_t total_amount = 0;
+  std::uint64_t total_amount = 0;
   std::vector<int> seen_ids;
 
   auto readonly_commods = CommodList::readonly(em);
@@ -194,11 +196,11 @@ void test_commod_list_readonly(EntityManager& em) {
   assert(seen_ids.size() == 2);
   assert(seen_ids[0] == 1);
   assert(seen_ids[1] == 4);
-  std::println("  CommodList: iterated {} valid commodities", count);
+  std::println(std::cout, "  CommodList: iterated {} valid commodities", count);
 }
 
 void test_playernum_indexing(EntityManager& em) {
-  std::println("Testing array indexing via Playernum...");
+  std::println(std::cout, "Testing array indexing via Playernum...");
   std::array<int, 3> power_values{};
 
   for (const Race* race : RaceList::readonly(em)) {
@@ -208,7 +210,7 @@ void test_playernum_indexing(EntityManager& em) {
   assert(power_values[0] == 1000);
   assert(power_values[1] == 2000);
   assert(power_values[2] == 3000);
-  std::println("  Array indexing via Playernum works correctly");
+  std::println(std::cout, "  Array indexing via Playernum works correctly");
 }
 
 void populate_ships(EntityManager& em, JsonStore& store) {
@@ -228,9 +230,9 @@ void populate_ships(EntityManager& em, JsonStore& store) {
 }
 
 void test_ship_list_patterns(EntityManager& em) {
-  std::println("Testing ShipList iteration patterns...");
+  std::println(std::cout, "Testing ShipList iteration patterns...");
 
-  std::println("  Testing ShipList::readonly()...");
+  std::println(std::cout, "  Testing ShipList::readonly()...");
   int count = 0;
   double total_fuel = 0.0;
 
@@ -244,10 +246,10 @@ void test_ship_list_patterns(EntityManager& em) {
 
   assert(count == 3);
   assert(total_fuel == 100.0 + 200.0 + 300.0);
-  std::println("    Read-only iteration: {} ships, total fuel = {}", count,
+  std::println(std::cout, "    Read-only iteration: {} ships, total fuel = {}", count,
                total_fuel);
 
-  std::println("  Testing mutable ShipList (with modifications)...");
+  std::println(std::cout, "  Testing mutable ShipList (with modifications)...");
   count = 0;
 
   for (auto ship : ShipList{em, 1}) {
@@ -259,7 +261,7 @@ void test_ship_list_patterns(EntityManager& em) {
   }
 
   assert(count == 3);
-  std::println("    Mutable iteration: modified {} ships", count);
+  std::println(std::cout, "    Mutable iteration: modified {} ships", count);
 
   em.clear_cache();
   {
@@ -269,10 +271,10 @@ void test_ship_list_patterns(EntityManager& em) {
     assert(s1->fuel() == 150.0);
     assert(s2->fuel() == 250.0);
     assert(s3->fuel() == 350.0);
-    std::println("    Verified modifications were auto-saved");
+    std::println(std::cout, "    Verified modifications were auto-saved");
   }
 
-  std::println("  Testing mutable ShipList with dereference pattern...");
+  std::println(std::cout, "  Testing mutable ShipList with dereference pattern...");
   ShipList shiplist(em, 1);
 
   for (auto ship_handle : shiplist) {
@@ -284,7 +286,7 @@ void test_ship_list_patterns(EntityManager& em) {
   {
     const Ship* s1 = em.peek_ship(1);
     assert(s1->fuel() == 175.0);
-    std::println("    Verified dereference pattern modifications");
+    std::println(std::cout, "    Verified dereference pattern modifications");
   }
 }
 
@@ -307,10 +309,10 @@ int run_all_tests() noexcept {
     populate_ships(em, store);
     test_ship_list_patterns(em);
 
-    std::println("All entity list tests passed!");
+    std::println(std::cout, "All entity list tests passed!");
     return 0;
   } catch (const std::exception& ex) {
-    std::println(std::cerr, "entity_lists_test failed: {}", ex.what());
+    std::println(std::cout, "entity_lists_test failed: {}", ex.what());
     return 1;
   }
 }

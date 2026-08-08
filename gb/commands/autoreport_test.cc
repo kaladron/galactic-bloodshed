@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file autoreport_test.cc
-/// \brief Test autoreport command database persistence
-
-import dallib;
 import dallib;
 import gblib;
 import test;
@@ -12,8 +8,13 @@ import std;
 
 #include <cassert>
 
+/// \file autoreport_test.cc
+/// \brief Test autoreport command database persistence
+
+
+
 void test_autoreport_database_persistence() {
-  std::println("Test: autoreport command database persistence");
+  std::println(std::cout, "Test: autoreport command database persistence");
 
   // Create in-memory database
   TestContext ctx;
@@ -48,7 +49,7 @@ void test_autoreport_database_persistence() {
   g.set_pnum(0);
 
   // TEST 1: Toggle autoreport ON
-  std::println("  Testing: Toggle autoreport ON");
+  std::println(std::cout, "  Testing: Toggle autoreport ON");
   {
     command_t cmd = {"autoreport"};
     GB::commands::autoreport(cmd, g);
@@ -56,19 +57,19 @@ void test_autoreport_database_persistence() {
     // Verify output message
     std::string out_str = g.out.str();
     assert(out_str.find("has been set") != std::string::npos);
-    std::println("    ✓ Output message correct");
+    std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output for next test
 
     // Verify database: autorep should be TELEG_MAX_AUTO (63)
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).autorep == TELEG_MAX_AUTO);
-    std::println("    ✓ Database: autorep = {} (ON)",
+    std::println(std::cout, "    ✓ Database: autorep = {} (ON)",
                  saved->info(player_t{1}).autorep);
   }
 
   // TEST 2: Toggle autoreport OFF
-  std::println("  Testing: Toggle autoreport OFF");
+  std::println(std::cout, "  Testing: Toggle autoreport OFF");
   {
     command_t cmd = {"autoreport"};
     GB::commands::autoreport(cmd, g);
@@ -76,19 +77,19 @@ void test_autoreport_database_persistence() {
     // Verify output message
     std::string out_str = g.out.str();
     assert(out_str.find("has been unset") != std::string::npos);
-    std::println("    ✓ Output message correct");
+    std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output
 
     // Verify database: autorep should be 0
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).autorep == 0);
-    std::println("    ✓ Database: autorep = {} (OFF)",
+    std::println(std::cout, "    ✓ Database: autorep = {} (OFF)",
                  saved->info(player_t{1}).autorep);
   }
 
   // TEST 3: Toggle back ON again
-  std::println("  Testing: Toggle back ON");
+  std::println(std::cout, "  Testing: Toggle back ON");
   {
     command_t cmd = {"autoreport"};
     GB::commands::autoreport(cmd, g);
@@ -97,15 +98,15 @@ void test_autoreport_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).autorep == TELEG_MAX_AUTO);
-    std::println("    ✓ Database: autorep = {} (ON)",
+    std::println(std::cout, "    ✓ Database: autorep = {} (ON)",
                  saved->info(player_t{1}).autorep);
   }
 
-  std::println("  ✅ All autoreport database persistence tests passed!");
+  std::println(std::cout, "  ✅ All autoreport database persistence tests passed!");
 }
 
 int main() {
   test_autoreport_database_persistence();
-  std::println("\n✅ All tests passed!");
+  std::println(std::cout, "\n✅ All tests passed!");
   return 0;
 }

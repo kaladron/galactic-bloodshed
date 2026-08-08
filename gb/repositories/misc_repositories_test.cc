@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
+import dallib;
+import gblib;
+import std;
+
+#include <cassert>
+
 // Test file for miscellaneous repositories:
 // CommodRepository, BlockRepository, PowerRepository, UniverseRepository,
 // and ServerStateRepository
 
-import dallib;
-import gblib;
-import dallib;
-import std.compat;
 
-#include <cassert>
 
 void test_commod_repository() {
   // Setup
@@ -34,7 +35,7 @@ void test_commod_repository() {
   c1.star_to = 8;
   c1.planet_to = 9;
 
-  // Test 1: Save and retrieve
+  // Save and retrieve
   assert(repo.save(c1));
   auto retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
@@ -43,14 +44,14 @@ void test_commod_repository() {
   assert(retrieved->amount == 100);
   assert(retrieved->bid == 75);
 
-  // Test 2: Update
+  // Update
   c1.amount = 200;
   assert(repo.save(c1));
   retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
   assert(retrieved->amount == 200);
 
-  // Test 3: Multiple commods
+  // Multiple commods
   Commod c2{};
   c2.id = 5;
   c2.owner = 10;
@@ -59,16 +60,16 @@ void test_commod_repository() {
   assert(repo.find_by_id(1).has_value());
   assert(repo.find_by_id(5).has_value());
 
-  // Test 4: Non-existent commod
+  // Non-existent commod
   auto none = repo.find_by_id(999);
   assert(!none.has_value());
 
-  // Test 5: Remove
+  // Remove
   assert(repo.remove(1));
   assert(!repo.find_by_id(1).has_value());
   assert(repo.find_by_id(5).has_value());  // Other still exists
 
-  std::println("✓ All CommodRepository tests passed");
+  std::println(std::cout, "✓ All CommodRepository tests passed");
 }
 
 void test_block_repository() {
@@ -92,7 +93,7 @@ void test_block_repository() {
   b1.VPs = 1000;
   b1.money = 5000;
 
-  // Test 1: Save and retrieve
+  // Save and retrieve
   assert(repo.save(b1));
   auto retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
@@ -101,7 +102,7 @@ void test_block_repository() {
   assert(retrieved->systems_owned == 10);
   assert(retrieved->VPs == 1000);
 
-  // Test 2: Update
+  // Update
   b1.VPs = 2000;
   b1.money = 10000;
   assert(repo.save(b1));
@@ -110,7 +111,7 @@ void test_block_repository() {
   assert(retrieved->VPs == 2000);
   assert(retrieved->money == 10000);
 
-  // Test 3: Multiple blocks
+  // Multiple blocks
   block b2{};
   b2.Playernum = 3;
   b2.name = "Beta Coalition";
@@ -119,11 +120,11 @@ void test_block_repository() {
   assert(repo.find_by_id(1).has_value());
   assert(repo.find_by_id(3).has_value());
 
-  // Test 4: Remove
+  // Remove
   assert(repo.remove(3));
   assert(!repo.find_by_id(3).has_value());
 
-  std::println("✓ All BlockRepository tests passed");
+  std::println(std::cout, "✓ All BlockRepository tests passed");
 }
 
 void test_power_repository() {
@@ -148,7 +149,7 @@ void test_power_repository() {
   p1.sum_eff = 85;
   p1.id = 1;
 
-  // Test 1: Save and retrieve
+  // Save and retrieve
   assert(repo.save(p1));
   auto retrieved = repo.find_by_id(1);
   assert(retrieved.has_value());
@@ -157,7 +158,7 @@ void test_power_repository() {
   assert(retrieved->ships_owned == 25);
   assert(retrieved->money == 10000);
 
-  // Test 2: Update
+  // Update
   p1.troops = 2000;
   p1.ships_owned = 30;
   assert(repo.save(p1));
@@ -166,7 +167,7 @@ void test_power_repository() {
   assert(retrieved->troops == 2000);
   assert(retrieved->ships_owned == 30);
 
-  // Test 3: Multiple power entries (one per player)
+  // Multiple power entries (one per player)
   power p2{};
   p2.id = 2;
   p2.troops = 500;
@@ -176,13 +177,13 @@ void test_power_repository() {
   assert(repo.find_by_id(1).has_value());
   assert(repo.find_by_id(2).has_value());
 
-  // Test 4: Gap finding
+  // Gap finding
   p1.id = 5;
   assert(repo.save(p1));
   int next_id = repo.next_available_id();
   assert(next_id == 3);  // Should find gap at 3
 
-  std::println("✓ All PowerRepository tests passed");
+  std::println(std::cout, "✓ All PowerRepository tests passed");
 }
 
 void test_universe_repository() {
@@ -209,7 +210,7 @@ void test_universe_repository() {
   sd.VN_index2[0] = 10;
   sd.VN_index2[1] = 15;
 
-  // Test 1: Save and retrieve global data
+  // Save and retrieve global data
   assert(repo.save(sd));
   auto retrieved = repo.get_global_data();
   assert(retrieved.has_value());
@@ -219,7 +220,7 @@ void test_universe_repository() {
   assert(retrieved->AP[5] == 50);
   assert(retrieved->VN_index1[0] == 5);
 
-  // Test 2: Update global data
+  // Update global data
   sd.numstars = 75;
   sd.ships = 200;
   assert(repo.save(sd));
@@ -228,12 +229,12 @@ void test_universe_repository() {
   assert(retrieved->numstars == 75);
   assert(retrieved->ships == 200);
 
-  // Test 3: Array preservation
+  // Array preservation
   for (int i = 0; i < MAXPLAYERS; i++) {
     assert(retrieved->AP[i] == i * 10);
   }
 
-  // Test 4: VN arrays preserved
+  // VN arrays preserved
   assert(retrieved->VN_hitlist[0] == 1);
   assert(retrieved->VN_hitlist[1] == 2);
   // Check VN_index values match what we set (including negative values)
@@ -242,7 +243,7 @@ void test_universe_repository() {
   assert(retrieved->VN_index2[0] == 10);
   assert(retrieved->VN_index2[1] == 15);
 
-  std::println("✓ All UniverseRepository tests passed");
+  std::println(std::cout, "✓ All UniverseRepository tests passed");
 }
 
 void test_server_state_repository() {
@@ -261,7 +262,7 @@ void test_server_state_repository() {
   state.update_time_minutes = 60;
   state.nsegments_done = 3;
 
-  // Test 1: Save and retrieve server state
+  // Save and retrieve server state
   assert(repo.save(state));
   auto retrieved = repo.get_state();
   assert(retrieved.has_value());
@@ -272,7 +273,7 @@ void test_server_state_repository() {
   assert(retrieved->update_time_minutes == 60);
   assert(retrieved->nsegments_done == 3);
 
-  // Test 2: Update server state
+  // Update server state
   state.segments = 15;
   state.nsegments_done = 7;
   state.update_time_minutes = 120;
@@ -283,18 +284,18 @@ void test_server_state_repository() {
   assert(retrieved->nsegments_done == 7);
   assert(retrieved->update_time_minutes == 120);
 
-  // Test 3: Timestamps are preserved
+  // Timestamps are preserved
   assert(retrieved->next_update_time == 1735000000);
   assert(retrieved->next_segment_time == 1734900000);
 
-  // Test 4: ID remains 1 (singleton)
+  // ID remains 1 (singleton)
   assert(retrieved->id == 1);
 
-  std::println("✓ All ServerStateRepository tests passed");
+  std::println(std::cout, "✓ All ServerStateRepository tests passed");
 }
 
 int main() {
-  std::println("Running miscellaneous repository tests...\n");
+  std::println(std::cout, "Running miscellaneous repository tests...\n");
 
   test_commod_repository();
   test_block_repository();
@@ -302,6 +303,6 @@ int main() {
   test_universe_repository();
   test_server_state_repository();
 
-  std::println("\n✅ All miscellaneous repository tests passed!");
+  std::println(std::cout, "\n✅ All miscellaneous repository tests passed!");
   return 0;
 }

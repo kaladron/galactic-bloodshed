@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -84,7 +83,7 @@ int main() {
   g.set_shipno(1);
   g.set_snum(0);
 
-  std::println("Test 1: Upgrade ship armor");
+  std::println(std::cout, "Upgrade ship armor");
   {
     ctx.em.clear_cache();
     g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
@@ -92,7 +91,7 @@ int main() {
     assert(ship_before != nullptr);
     int initial_armor = ship_before->armor();
     int initial_resource = ship_before->resource();
-    std::println("    Before: armor={}, resource={}", initial_armor,
+    std::println(std::cout, "    Before: armor={}, resource={}", initial_armor,
                  initial_resource);
 
     // upgrade armor 50
@@ -104,16 +103,16 @@ int main() {
 
     const auto* ship_after = ctx.em.peek_ship(1);
     assert(ship_after != nullptr);
-    std::println("    After: armor={}, resource={}", ship_after->armor(),
+    std::println(std::cout, "    After: armor={}, resource={}", ship_after->armor(),
                  ship_after->resource());
 
     // Armor should have increased (up to max of 100)
     assert(ship_after->armor() >= initial_armor);
-    std::println("    ✓ Armor upgrade applied (was {}, now {})", initial_armor,
+    std::println(std::cout, "    ✓ Armor upgrade applied (was {}, now {})", initial_armor,
                  ship_after->armor());
   }
 
-  std::println("Test 2: Upgrade ship speed");
+  std::println(std::cout, "Upgrade ship speed");
   {
     ctx.em.clear_cache();
     g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
@@ -121,7 +120,7 @@ int main() {
     assert(ship_before != nullptr);
     int initial_speed = ship_before->max_speed();
     int initial_resource = ship_before->resource();
-    std::println("    Before: max_speed={}, resource={}", initial_speed,
+    std::println(std::cout, "    Before: max_speed={}, resource={}", initial_speed,
                  initial_resource);
 
     // upgrade speed 9 (max is 9)
@@ -132,16 +131,16 @@ int main() {
 
     const auto* ship_after = ctx.em.peek_ship(1);
     assert(ship_after != nullptr);
-    std::println("    After: max_speed={}, resource={}",
+    std::println(std::cout, "    After: max_speed={}, resource={}",
                  ship_after->max_speed(), ship_after->resource());
 
     // Speed should have increased
     assert(ship_after->max_speed() >= initial_speed);
-    std::println("    ✓ Speed upgrade applied (was {}, now {})", initial_speed,
+    std::println(std::cout, "    ✓ Speed upgrade applied (was {}, now {})", initial_speed,
                  ship_after->max_speed());
   }
 
-  std::println("Test 3: Verify upgrades persist after cache clear");
+  std::println(std::cout, "Verify upgrades persist after cache clear");
   {
     ctx.em.clear_cache();
 
@@ -149,13 +148,13 @@ int main() {
     assert(ship_check != nullptr);
 
     // Values should still reflect upgrades
-    std::println("    Final values: armor={}, max_speed={}, resource={}",
+    std::println(std::cout, "    Final values: armor={}, max_speed={}, resource={}",
                  ship_check->armor(), ship_check->max_speed(),
                  ship_check->resource());
 
-    std::println("    ✓ Upgrades persisted to database");
+    std::println(std::cout, "    ✓ Upgrades persisted to database");
   }
 
-  std::println("\n✅ All upgrade tests passed!");
+  std::println(std::cout, "\n✅ All upgrade tests passed!");
   return 0;
 }

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -51,7 +50,7 @@ int main() {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(player_t{1}).tox_thresh == 0);
-    std::println("✓ Toxicity threshold 0 saved correctly");
+    std::println(std::cout, "✓ Toxicity threshold 0 saved correctly");
   }
 
   // Test: Set threshold to 100
@@ -66,7 +65,7 @@ int main() {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(player_t{1}).tox_thresh == 100);
-    std::println("✓ Toxicity threshold 100 saved correctly");
+    std::println(std::cout, "✓ Toxicity threshold 100 saved correctly");
   }
 
   // Test: Set threshold to mid-range value
@@ -81,7 +80,7 @@ int main() {
     const auto* saved = ctx.em.peek_planet(1, 0);
     assert(saved);
     assert(saved->info(player_t{1}).tox_thresh == 75);
-    std::println("✓ Toxicity threshold 75 saved correctly");
+    std::println(std::cout, "✓ Toxicity threshold 75 saved correctly");
   }
 
   // Test: Multiple planets with different thresholds
@@ -99,10 +98,9 @@ int main() {
     assert(p2);
     assert(p1->info(player_t{1}).tox_thresh == 75);
     assert(p2->info(player_t{1}).tox_thresh == 25);
-    std::println(
-        "✓ Multiple planets with different thresholds saved correctly");
+    std::println(std::cout, "✓ Multiple planets with different thresholds saved correctly");
   }
 
-  std::println("All toxicity tests passed!");
+  std::println(std::cout, "All toxicity tests passed!");
   return 0;
 }

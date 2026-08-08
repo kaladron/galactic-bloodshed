@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file mobilize_test.cc
-/// \brief Test mobilize command database persistence
-
-import dallib;
 import dallib;
 import gblib;
 import test;
@@ -12,8 +8,13 @@ import std;
 
 #include <cassert>
 
+/// \file mobilize_test.cc
+/// \brief Test mobilize command database persistence
+
+
+
 void test_mobilize_database_persistence() {
-  std::println("Test: mobilize command database persistence");
+  std::println(std::cout, "Test: mobilize command database persistence");
 
   // Create in-memory database
   TestContext ctx;
@@ -48,17 +49,17 @@ void test_mobilize_database_persistence() {
   g.set_pnum(0);
 
   // TEST 1: Display current mobilization (no argument)
-  std::println("  Testing: Display current mobilization");
+  std::println(std::cout, "  Testing: Display current mobilization");
   {
     command_t cmd = {"mobilize"};
     GB::commands::mobilize(cmd, g);
 
     // Note: mobilize uses notify() which doesn't go to g.out in test context
-    std::println("    ✓ Command executed (notification sent)");
+    std::println(std::cout, "    ✓ Command executed (notification sent)");
   }
 
   // TEST 2: Set new mobilization to 50%
-  std::println("  Testing: Set mobilization to 50%");
+  std::println(std::cout, "  Testing: Set mobilization to 50%");
   {
     command_t cmd = {"mobilize", "50"};
     GB::commands::mobilize(cmd, g);
@@ -69,12 +70,12 @@ void test_mobilize_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).mob_set == 50);
-    std::println("    ✓ Database: mob_set = {}",
+    std::println(std::cout, "    ✓ Database: mob_set = {}",
                  saved->info(player_t{1}).mob_set);
   }
 
   // TEST 3: Set mobilization to maximum (100%)
-  std::println("  Testing: Set mobilization to 100%");
+  std::println(std::cout, "  Testing: Set mobilization to 100%");
   {
     command_t cmd = {"mobilize", "100"};
     GB::commands::mobilize(cmd, g);
@@ -83,12 +84,12 @@ void test_mobilize_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).mob_set == 100);
-    std::println("    ✓ Database: mob_set = {}",
+    std::println(std::cout, "    ✓ Database: mob_set = {}",
                  saved->info(player_t{1}).mob_set);
   }
 
   // TEST 4: Set mobilization to minimum (0%)
-  std::println("  Testing: Set mobilization to 0%");
+  std::println(std::cout, "  Testing: Set mobilization to 0%");
   {
     command_t cmd = {"mobilize", "0"};
     GB::commands::mobilize(cmd, g);
@@ -97,12 +98,12 @@ void test_mobilize_database_persistence() {
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).mob_set == 0);
-    std::println("    ✓ Database: mob_set = {}",
+    std::println(std::cout, "    ✓ Database: mob_set = {}",
                  saved->info(player_t{1}).mob_set);
   }
 
   // TEST 5: Reject illegal value (>100)
-  std::println("  Testing: Reject illegal value 150%");
+  std::println(std::cout, "  Testing: Reject illegal value 150%");
   {
     command_t cmd = {"mobilize", "150"};
     GB::commands::mobilize(cmd, g);
@@ -110,21 +111,21 @@ void test_mobilize_database_persistence() {
     // Verify error message
     std::string out_str = g.out.str();
     assert(out_str.find("Illegal value") != std::string::npos);
-    std::println("    ✓ Error message correct");
+    std::println(std::cout, "    ✓ Error message correct");
 
     // Verify database: should still be 0 from previous test
     auto saved = planets.find_by_location(1, 0);
     assert(saved.has_value());
     assert(saved->info(player_t{1}).mob_set == 0);
-    std::println("    ✓ Database: mob_set unchanged = {}",
+    std::println(std::cout, "    ✓ Database: mob_set unchanged = {}",
                  saved->info(player_t{1}).mob_set);
   }
 
-  std::println("  ✅ All mobilize database persistence tests passed!");
+  std::println(std::cout, "  ✅ All mobilize database persistence tests passed!");
 }
 
 int main() {
   test_mobilize_database_persistence();
-  std::println("\n✅ All tests passed!");
+  std::println(std::cout, "\n✅ All tests passed!");
   return 0;
 }

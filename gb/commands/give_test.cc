@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -94,10 +93,10 @@ int main() {
   // Test: Give ship to another player
   {
     // Debug: Check what races exist
-    std::println("Available races:");
+    std::println(std::cout, "Available races:");
     for (auto race_handle : RaceList(ctx.em)) {
       const auto& race = race_handle.read();
-      std::println("  Player {}: {}", race.Playernum, race.name);
+      std::println(std::cout, "  Player {}: {}", race.Playernum, race.name);
     }
 
     command_t argv = {"give", "Receiver", std::to_string(ship_id)};
@@ -106,7 +105,7 @@ int main() {
     // Debug: Check for error messages
     std::string result = g.out.str();
     if (!result.empty()) {
-      std::println("Give command output: {}", result);
+      std::println(std::cout, "Give command output: {}", result);
     }
 
     // The give command uses notify() which sends to connected clients,
@@ -116,8 +115,8 @@ int main() {
     ctx.em.clear_cache();
     const auto* ship_verify = ctx.em.peek_ship(ship_id);
     assert(ship_verify);
-    std::println("Ship owner: {} (expected 2)", ship_verify->owner());
-    std::println("Ship governor: {} (expected 0)", ship_verify->governor());
+    std::println(std::cout, "Ship owner: {} (expected 2)", ship_verify->owner());
+    std::println(std::cout, "Ship governor: {} (expected 0)", ship_verify->governor());
     assert(ship_verify->owner() == 2);
     assert(ship_verify->governor() == 0);  // Given to leader
 
@@ -131,7 +130,7 @@ int main() {
     assert(star_verify);
     assert(isset<std::uint64_t>(star_verify->explored(), 2U));
 
-    std::println("Give command test passed: Ship ownership transferred");
+    std::println(std::cout, "Give command test passed: Ship ownership transferred");
 
     // Clear output for next test
     g.out.str("");
@@ -153,7 +152,7 @@ int main() {
     ship2.troops() = 0;
     ship2.ships() = 0;
     const shipnum_t ship2_id = ship2.number();
-    std::println("Ship2 ID: {}", ship2_id);
+    std::println(std::cout, "Ship2 ID: {}", ship2_id);
 
     // Ship is auto-saved when handle goes out of scope
     ctx.em.clear_cache();
@@ -165,7 +164,7 @@ int main() {
     GB::commands::give(argv, g);
 
     std::string result = g.out.str();
-    std::println("Non-leader output: {}", result);
+    std::println(std::cout, "Non-leader output: {}", result);
     assert(result.find("not authorized") != std::string::npos);
     g.out.str("");
 
@@ -173,10 +172,10 @@ int main() {
     ctx.em.clear_cache();
     const auto* ship2_verify = ctx.em.peek_ship(ship2_id);
     assert(ship2_verify);
-    std::println("Ship2 owner: {} (expected 1)", ship2_verify->owner());
+    std::println(std::cout, "Ship2 owner: {} (expected 1)", ship2_verify->owner());
     assert(ship2_verify->owner() == 1);  // Still owned by race 1
 
-    std::println("Give command test passed: Non-governor cannot give");
+    std::println(std::cout, "Give command test passed: Non-governor cannot give");
   }
 
   // Test: Try to give ship with crew (should fail unless God)
@@ -213,9 +212,9 @@ int main() {
     assert(ship3_verify);
     assert(ship3_verify->owner() == 1);  // Still owned by race 1
 
-    std::println("Give command test passed: Cannot give ship with crew");
+    std::println(std::cout, "Give command test passed: Cannot give ship with crew");
   }
 
-  std::println("\nAll give command tests passed!");
+  std::println(std::cout, "\nAll give command tests passed!");
   return 0;
 }

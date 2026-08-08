@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file mount_test.cc
-/// \brief Unit tests for mount command
-
-import dallib;
 import dallib;
 import gblib;
 import test;
@@ -12,7 +8,12 @@ import std;
 
 #include <cassert>
 
-// Test 1: Database persistence for mounting crystals
+/// \file mount_test.cc
+/// \brief Unit tests for mount command
+
+
+
+// Database persistence for mounting crystals
 void test_mount_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -55,10 +56,10 @@ void test_mount_persistence() {
   assert(final_ship->mounted() == 1);
   assert(final_ship->crystals() == 1);
 
-  std::println("✓ mount persistence test passed");
+  std::println(std::cout, "✓ mount persistence test passed");
 }
 
-// Test 2: Database persistence for dismounting crystals
+// Database persistence for dismounting crystals
 void test_dismount_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -110,10 +111,10 @@ void test_dismount_persistence() {
   assert(final_ship->hyper_drive().charge == 0);
   assert(final_ship->hyper_drive().ready == 0);
 
-  std::println("✓ dismount persistence test passed");
+  std::println(std::cout, "✓ dismount persistence test passed");
 }
 
-// Test 3: Edge case - cannot mount without crystals
+// Edge case - cannot mount without crystals
 void test_mount_no_crystals() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -140,10 +141,10 @@ void test_mount_no_crystals() {
   assert(s->mounted() == 0);
   // Command should detect no crystals and not modify ship
 
-  std::println("✓ mount no crystals edge case test passed");
+  std::println(std::cout, "✓ mount no crystals edge case test passed");
 }
 
-// Test 4: Edge case - cannot dismount if crystal storage full
+// Edge case - cannot dismount if crystal storage full
 void test_dismount_full_storage() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -171,7 +172,7 @@ void test_dismount_full_storage() {
   assert(s->mounted() == 1);
   // Command should detect full storage and not allow dismount
 
-  std::println("✓ dismount full storage edge case test passed");
+  std::println(std::cout, "✓ dismount full storage edge case test passed");
 }
 
 int main() {
@@ -180,6 +181,6 @@ int main() {
   test_mount_no_crystals();
   test_dismount_full_storage();
 
-  std::println("\n✅ All mount tests passed!");
+  std::println(std::cout, "\n✅ All mount tests passed!");
   return 0;
 }

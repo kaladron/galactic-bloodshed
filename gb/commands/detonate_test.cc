@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -83,7 +82,7 @@ int main() {
   command_t argv = {"detonate", "#1"};
   GB::commands::detonate(argv, g);
 
-  std::println("Command output: {}", g.out.str());
+  std::println(std::cout, "Command output: {}", g.out.str());
 
   // Verify mine was detonated (destroyed)
   const auto* detonated_mine = ctx.em.peek_ship(1);
@@ -99,6 +98,6 @@ int main() {
   // Target should either be destroyed or damaged
   assert(!affected_target->alive() || affected_target->damage() > 0);
 
-  std::println("✓ detonate command: Mine detonation persisted to database");
+  std::println(std::cout, "✓ detonate command: Mine detonation persisted to database");
   return 0;
 }

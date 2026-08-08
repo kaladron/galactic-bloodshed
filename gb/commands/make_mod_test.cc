@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -81,7 +80,7 @@ int main() {
   g.set_shipno(1);  // Factory is ship #1
   g.set_snum(0);
 
-  std::println("Test 1: Set factory to produce fighters (make f)");
+  std::println(std::cout, "Set factory to produce fighters (make f)");
   {
     ctx.em.clear_cache();
     g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
@@ -94,22 +93,22 @@ int main() {
 
     const auto* factory_check = ctx.em.peek_ship(1);
     assert(factory_check != nullptr);
-    std::println("    Factory build_type now = {}",
+    std::println(std::cout, "    Factory build_type now = {}",
                  static_cast<int>(factory_check->build_type()));
 
     // Factory should now be configured to build fighters
     assert(factory_check->build_type() == ShipType::STYPE_FIGHTER);
-    std::println("    ✓ Factory configured to produce fighters");
+    std::println(std::cout, "    ✓ Factory configured to produce fighters");
   }
 
-  std::println("Test 2: Modify factory design (modify armor 50)");
+  std::println(std::cout, "Modify factory design (modify armor 50)");
   {
     ctx.em.clear_cache();
     g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
     const auto* factory_before = ctx.em.peek_ship(1);
     assert(factory_before != nullptr);
     int initial_armor = factory_before->armor();
-    std::println("    Before: armor={}", initial_armor);
+    std::println(std::cout, "    Before: armor={}", initial_armor);
 
     // modify armor 50
     command_t argv = {"modify", "armor", "50"};
@@ -119,14 +118,14 @@ int main() {
 
     const auto* factory_after = ctx.em.peek_ship(1);
     assert(factory_after != nullptr);
-    std::println("    After: armor={}", factory_after->armor());
+    std::println(std::cout, "    After: armor={}", factory_after->armor());
 
     // Armor should now be 50
     assert(factory_after->armor() == 50);
-    std::println("    ✓ Factory armor modified to 50");
+    std::println(std::cout, "    ✓ Factory armor modified to 50");
   }
 
-  std::println("Test 3: Modify factory design (modify speed 9)");
+  std::println(std::cout, "Modify factory design (modify speed 9)");
   {
     ctx.em.clear_cache();
     g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
@@ -139,34 +138,34 @@ int main() {
 
     const auto* factory_check = ctx.em.peek_ship(1);
     assert(factory_check != nullptr);
-    std::println("    After: max_speed={}", factory_check->max_speed());
+    std::println(std::cout, "    After: max_speed={}", factory_check->max_speed());
 
     // Speed should be set (capped to max of 9)
     assert(factory_check->max_speed() <= 9);
-    std::println("    ✓ Factory speed modified");
+    std::println(std::cout, "    ✓ Factory speed modified");
   }
 
-  std::println("Test 4: Verify factory settings persist after cache clear");
+  std::println(std::cout, "Verify factory settings persist after cache clear");
   {
     ctx.em.clear_cache();
 
     const auto* factory_final = ctx.em.peek_ship(1);
     assert(factory_final != nullptr);
 
-    std::println("    Final factory settings:");
-    std::println("      build_type = {} (STYPE_FIGHTER={})",
+    std::println(std::cout, "    Final factory settings:");
+    std::println(std::cout, "      build_type = {} (STYPE_FIGHTER={})",
                  static_cast<int>(factory_final->build_type()),
                  static_cast<int>(ShipType::STYPE_FIGHTER));
-    std::println("      armor = {}", factory_final->armor());
-    std::println("      max_speed = {}", factory_final->max_speed());
-    std::println("      build_cost = {}", factory_final->build_cost());
-    std::println("      complexity = {:.1f}", factory_final->complexity());
+    std::println(std::cout, "      armor = {}", factory_final->armor());
+    std::println(std::cout, "      max_speed = {}", factory_final->max_speed());
+    std::println(std::cout, "      build_cost = {}", factory_final->build_cost());
+    std::println(std::cout, "      complexity = {:.1f}", factory_final->complexity());
 
     assert(factory_final->build_type() == ShipType::STYPE_FIGHTER);
     assert(factory_final->armor() == 50);
-    std::println("    ✓ Factory settings persisted to database");
+    std::println(std::cout, "    ✓ Factory settings persisted to database");
   }
 
-  std::println("\n✅ All make_mod tests passed!");
+  std::println(std::cout, "\n✅ All make_mod tests passed!");
   return 0;
 }

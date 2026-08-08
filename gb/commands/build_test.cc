@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -98,7 +97,7 @@ int main() {
     assert(ship->land_x() == 5);
     assert(ship->land_y() == 5);
 
-    std::println("Build command test passed: Probe built on planet");
+    std::println(std::cout, "Build command test passed: Probe built on planet");
   }
 
   // Test: Build with insufficient resources
@@ -117,13 +116,13 @@ int main() {
     // The build command should fail due to insufficient resources.
     // The error is written to g.out
     std::string result = g.out.str();
-    std::println("Build error output: {}", result);
+    std::println(std::cout, "Build error output: {}", result);
     assert(result.find("You need") != std::string::npos);
     g.out.str("");
 
-    std::println("Build command test passed: Insufficient resources");
+    std::println(std::cout, "Build command test passed: Insufficient resources");
   }
 
-  std::println("\nAll build command tests passed!");
+  std::println(std::cout, "\nAll build command tests passed!");
   return 0;
 }

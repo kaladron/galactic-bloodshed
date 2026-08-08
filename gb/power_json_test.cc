@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
-import std.compat;
-
-#include <sqlite3.h>
+import std;
 
 #include <cassert>
+
+#include <sqlite3.h>
 
 int main() {
   // Initialize database using Database class (in-memory for testing)
@@ -98,6 +97,6 @@ int main() {
   assert(loaded_power[1].sum_mob == test_power[1].sum_mob);
   assert(loaded_power[1].sum_eff == test_power[1].sum_eff);
 
-  std::println("All power JSON serialization tests passed!");
+  std::println(std::cout, "All power JSON serialization tests passed!");
   return 0;
 }

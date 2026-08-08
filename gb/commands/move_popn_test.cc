@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -83,6 +82,6 @@ int main() {
   const auto& dest_sect = saved_smap->get(5, 6);
   assert(dest_sect.get_popn() == 500);
 
-  std::println("move_popn_test passed!");
+  std::println(std::cout, "move_popn_test passed!");
   return 0;
 }

@@ -6,7 +6,7 @@ import std;
 #include <cassert>
 
 int main() {
-  std::println("Testing bit operation overloads for ID types...");
+  std::println(std::cout, "Testing bit operation overloads for ID types...");
 
   // Test with player_t
   std::uint64_t flags = 0;
@@ -43,6 +43,6 @@ int main() {
   setbit(flags, 3U);
   assert(isset(flags, 3U));
 
-  std::println("✓ All bit operation overload tests passed!");
+  std::println(std::cout, "✓ All bit operation overload tests passed!");
   return 0;
 }

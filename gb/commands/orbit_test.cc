@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -87,7 +86,7 @@ int main() {
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);  // At star 0
 
-  std::println("Test 1: Orbit command displays ship at star");
+  std::println(std::cout, "Orbit command displays ship at star");
   {
     // orbit command should display ships in current scope
     // This is a read-only display command
@@ -100,10 +99,10 @@ int main() {
     assert(saved_ship->owner() == 1);
     assert(saved_ship->whatorbits() == ScopeLevel::LEVEL_STAR);
     assert(saved_ship->storbits() == 0);
-    std::println("    ✓ Orbit display works correctly");
+    std::println(std::cout, "    ✓ Orbit display works correctly");
   }
 
-  std::println("Test 2: Orbit at universe level");
+  std::println(std::cout, "Orbit at universe level");
   {
     // Change scope to universe level
     g.set_level(ScopeLevel::LEVEL_UNIV);
@@ -120,11 +119,10 @@ int main() {
     assert(saved_ship2 != nullptr);
     assert(saved_ship2->owner() == 1);
     assert(saved_ship2->whatorbits() == ScopeLevel::LEVEL_UNIV);
-    std::println(
-        "    ✓ Universe-level orbit displays stars and ships in transit");
+    std::println(std::cout, "    ✓ Universe-level orbit displays stars and ships in transit");
   }
 
-  std::println("Test 3: Orbit at universe level with no universe (edge case)");
+  std::println(std::cout, "Orbit at universe level with no universe (edge case)");
   {
     // Create a new EntityManager with no universe
     Database db2(":memory:");
@@ -147,9 +145,9 @@ int main() {
     GB::commands::orbit(argv, g2);
 
     // Should have printed error and not crashed
-    std::println("    ✓ Handled missing universe gracefully");
+    std::println(std::cout, "    ✓ Handled missing universe gracefully");
   }
 
-  std::println("\n✅ All orbit tests passed!");
+  std::println(std::cout, "\n✅ All orbit tests passed!");
   return 0;
 }

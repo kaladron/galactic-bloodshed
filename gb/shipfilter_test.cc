@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
+import dallib;
+import gblib;
+import std;
+
+#include <cassert>
+
 /// \file shipfilter_test.cc
 /// \brief Test ship filtering helper functions
 
-import dallib;
-import dallib;
-import gblib;
-import std.compat;
 
-#include <cassert>
 
 int main() {
   // Test parse_ship_selection
@@ -73,9 +74,9 @@ int main() {
     fighter.alive() = true;
 
     // Test single ship type filter
-    std::println("Testing pod: type={}, Shipltrs[type]='{}'",
+    std::println(std::cout, "Testing pod: type={}, Shipltrs[type]='{}'",
                  static_cast<int>(pod.type()), Shipltrs[pod.type()]);
-    std::println("Filter 'p' matches pod: {}",
+    std::println(std::cout, "Filter 'p' matches pod: {}",
                  GB::ship_matches_filter("p", pod));
     assert(GB::ship_matches_filter("p", pod) == true);
     assert(GB::ship_matches_filter("p", destroyer) == false);
@@ -114,6 +115,6 @@ int main() {
     assert(GB::ship_matches_filter("", destroyer) == false);
   }
 
-  std::println("All shipfilter tests passed!");
+  std::println(std::cout, "All shipfilter tests passed!");
   return 0;
 }

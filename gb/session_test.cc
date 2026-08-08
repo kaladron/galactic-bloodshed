@@ -73,27 +73,25 @@ int main() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cerr, "Running session module tests...\n");
+  std::println(std::cout, "Running session module tests...\n");
 
-  // Test 1: SessionRegistry::notify_player returns false when no sessions
+  // SessionRegistry::notify_player returns false when no sessions
   {
     MockSessionRegistry registry;
     bool delivered = registry.notify_player(1, 0, "Hello");
     assert(!delivered);
-    std::println(std::cerr,
-                 "✓ Test 1: notify_player returns false with no sessions");
+    std::println(std::cout, "✓ notify_player returns false with no sessions");
   }
 
-  // Test 2: SessionRegistry::notify_race does nothing when no sessions
+  // SessionRegistry::notify_race does nothing when no sessions
   {
     MockSessionRegistry registry;
     registry.notify_race(1, "Broadcast message");
     assert(true);  // Should not crash
-    std::println(std::cerr,
-                 "✓ Test 2: notify_race with no sessions doesn't crash");
+    std::println(std::cout, "✓ notify_race with no sessions doesn't crash");
   }
 
-  // Test 3: notify_player with update in progress returns false
+  // notify_player with update in progress returns false
   {
     MockSessionRegistry registry;
     registry.update_flag = true;
@@ -105,11 +103,10 @@ int main() {
     delivered = registry.test_notify_player(1, 0, "Hello");
     assert(!delivered);  // Should still be false due to update flag
 
-    std::println(std::cerr,
-                 "✓ Test 3: notify_player returns false during update");
+    std::println(std::cout, "✓ notify_player returns false during update");
   }
 
-  // Test 4: notify_race during update does nothing
+  // notify_race during update does nothing
   {
     MockSessionRegistry registry;
     registry.sessions.push_back(
@@ -120,10 +117,10 @@ int main() {
 
     // Message should not be in buffer since update is in progress
     assert(registry.sessions[0].output.str().empty());
-    std::println(std::cerr, "✓ Test 4: notify_race suppressed during update");
+    std::println(std::cout, "✓ notify_race suppressed during update");
   }
 
-  // Test 5: notify_player delivers to correct session
+  // notify_player delivers to correct session
   {
     MockSessionRegistry registry;
 
@@ -150,11 +147,10 @@ int main() {
     assert(registry.sessions[1].output.str().empty());
     assert(registry.sessions[2].output.str().empty());
 
-    std::println(std::cerr,
-                 "✓ Test 5: notify_player delivers to correct session");
+    std::println(std::cout, "✓ notify_player delivers to correct session");
   }
 
-  // Test 6: notify_race delivers to all governors of a race
+  // notify_race delivers to all governors of a race
   {
     MockSessionRegistry registry;
 
@@ -173,11 +169,10 @@ int main() {
     assert(registry.sessions[1].output.str() == "Race 1 broadcast\n");
     assert(registry.sessions[2].output.str().empty());
 
-    std::println(std::cerr,
-                 "✓ Test 6: notify_race delivers to all governors of race");
+    std::println(std::cout, "✓ notify_race delivers to all governors of race");
   }
 
-  // Test 7: Disconnected sessions don't receive notifications
+  // Disconnected sessions don't receive notifications
   {
     MockSessionRegistry registry;
 
@@ -198,11 +193,10 @@ int main() {
     assert(registry.sessions[0].output.str().empty());
     assert(registry.sessions[1].output.str() == "Test\n");
 
-    std::println(std::cerr,
-                 "✓ Test 7: Disconnected sessions don't receive notifications");
+    std::println(std::cout, "✓ Disconnected sessions don't receive notifications");
   }
 
-  // Test 8: notify_player to wrong player/governor returns false
+  // notify_player to wrong player/governor returns false
   {
     MockSessionRegistry registry;
 
@@ -219,12 +213,10 @@ int main() {
     assert(registry.sessions[0].output.str().empty());
     assert(registry.sessions[1].output.str().empty());
 
-    std::println(
-        std::cerr,
-        "✓ Test 8: notify_player to non-existent player returns false");
+    std::println(std::cout, "✓ notify_player to non-existent player returns false");
   }
 
-  // Test 9: notify_race to race with no sessions
+  // notify_race to race with no sessions
   {
     MockSessionRegistry registry;
 
@@ -240,11 +232,10 @@ int main() {
     assert(registry.sessions[0].output.str().empty());
     assert(registry.sessions[1].output.str().empty());
 
-    std::println(std::cerr,
-                 "✓ Test 9: notify_race to race with no sessions (no crash)");
+    std::println(std::cout, "✓ notify_race to race with no sessions (no crash)");
   }
 
-  // Test 10: Multiple messages to same session accumulate
+  // Multiple messages to same session accumulate
   {
     MockSessionRegistry registry;
 
@@ -260,11 +251,10 @@ int main() {
     std::string expected = "Message 1\nMessage 2\nBroadcast\n";
     assert(registry.sessions[0].output.str() == expected);
 
-    std::println(std::cerr,
-                 "✓ Test 10: Multiple messages accumulate in output buffer");
+    std::println(std::cout, "✓ Multiple messages accumulate in output buffer");
   }
 
-  // Test 11: notify_player can deliver to multiple matching sessions
+  // notify_player can deliver to multiple matching sessions
   // (same player/governor logged in multiple times)
   {
     MockSessionRegistry registry;
@@ -286,12 +276,10 @@ int main() {
     assert(registry.sessions[1].output.str() == "Duplicate login\n");
     assert(registry.sessions[2].output.str().empty());
 
-    std::println(
-        std::cerr,
-        "✓ Test 11: notify_player delivers to multiple matching sessions");
+    std::println(std::cout, "✓ notify_player delivers to multiple matching sessions");
   }
 
-  // Test 12: Empty message is still delivered
+  // Empty message is still delivered
   {
     MockSessionRegistry registry;
 
@@ -304,10 +292,10 @@ int main() {
     // Buffer should be empty but delivery still succeeded
     assert(registry.sessions[0].output.str().empty());
 
-    std::println(std::cerr, "✓ Test 12: Empty message can be delivered");
+    std::println(std::cout, "✓ Empty message can be delivered");
   }
 
-  // Test 13: update_in_progress state transitions
+  // update_in_progress state transitions
   {
     MockSessionRegistry registry;
 
@@ -319,10 +307,10 @@ int main() {
     registry.update_flag = false;
     assert(!registry.update_in_progress());
 
-    std::println(std::cerr, "✓ Test 13: update_in_progress state management");
+    std::println(std::cout, "✓ update_in_progress state management");
   }
 
-  // Test 14: Long messages are handled correctly
+  // Long messages are handled correctly
   {
     MockSessionRegistry registry;
 
@@ -336,17 +324,14 @@ int main() {
     assert(delivered);
     assert(registry.sessions[0].output.str() == long_message);
 
-    std::println(std::cerr, "✓ Test 14: Long messages handled correctly");
+    std::println(std::cout, "✓ Long messages handled correctly");
   }
 
-  std::println(std::cerr, "\n✅ All session module tests passed!");
-  std::println(
-      std::cerr,
-      "\nNote: These tests validate SessionRegistry notification logic.");
-  std::println(std::cerr, "Async I/O behavior (read/write/disconnect) is "
+  std::println(std::cout, "\n✅ All session module tests passed!");
+  std::println(std::cout, "\nNote: These tests validate SessionRegistry notification logic.");
+  std::println(std::cout, "Async I/O behavior (read/write/disconnect) is "
                           "tested via integration tests");
-  std::println(std::cerr,
-               "with real network sockets and requires a running server.");
+  std::println(std::cout, "with real network sockets and requires a running server.");
 
   return 0;
 }

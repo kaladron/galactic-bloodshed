@@ -2,10 +2,10 @@
 
 import dallib;
 import gblib;
-import dallib;
-import std.compat;
+import std;
 
 #include <cassert>
+
 #include <cstring>
 
 int main() {
@@ -54,20 +54,20 @@ int main() {
   // Wrap in Star object
   Star test_star(test_star_data);
 
-  // Test 1: Save star
-  std::println("Test 1: Save star...");
+  // Save star
+  std::println(std::cout, "Save star...");
   bool saved = repo.save(test_star);
   assert(saved && "Failed to save star");
-  std::println("  ✓ Star saved successfully");
+  std::println(std::cout, "  ✓ Star saved successfully");
 
-  // Test 2: Retrieve by star number
-  std::println("Test 2: Retrieve star by number...");
+  // Retrieve by star number
+  std::println(std::cout, "Retrieve star by number...");
   auto retrieved = repo.find_by_number(1);
   assert(retrieved.has_value() && "Failed to retrieve star");
-  std::println("  ✓ Star retrieved successfully");
+  std::println(std::cout, "  ✓ Star retrieved successfully");
 
-  // Test 3: Verify data integrity using Star accessor methods
-  std::println("Test 3: Verify data integrity...");
+  // Verify data integrity using Star accessor methods
+  std::println(std::cout, "Verify data integrity...");
   assert(retrieved->get_name() == "Sol");
   assert(retrieved->xpos() == 100.5);
   assert(retrieved->ypos() == 200.75);
@@ -94,29 +94,29 @@ int main() {
   for (int i = 0; i < 8; i++) {
     assert(retrieved->get_planet_name(i) == test_star_data.pnames[i]);
   }
-  std::println("  ✓ All fields match original");
+  std::println(std::cout, "  ✓ All fields match original");
 
-  // Test 4: Update star using Star methods
-  std::println("Test 4: Update star...");
+  // Update star using Star methods
+  std::println(std::cout, "Update star...");
   retrieved->ships() = 100;
   retrieved->temperature() = 20;
   retrieved->stability() = 8;
   saved = repo.save(*retrieved);
   assert(saved && "Failed to update star");
-  std::println("  ✓ Star updated successfully");
+  std::println(std::cout, "  ✓ Star updated successfully");
 
-  // Test 5: Retrieve updated star
-  std::println("Test 5: Retrieve updated star...");
+  // Retrieve updated star
+  std::println(std::cout, "Retrieve updated star...");
   auto updated = repo.find_by_number(1);
   assert(updated.has_value() && "Failed to retrieve updated star");
   auto updated_data = updated->get_struct();
   assert(updated_data.ships == 100);
   assert(updated->temperature() == 20);
   assert(updated->stability() == 8);
-  std::println("  ✓ Updated values verified");
+  std::println(std::cout, "  ✓ Updated values verified");
 
-  // Test 6: Save multiple stars
-  std::println("Test 6: Save multiple stars...");
+  // Save multiple stars
+  std::println(std::cout, "Save multiple stars...");
   star_struct star2_data = test_star_data;
   star2_data.star_id = 2;
   star2_data.name = "Alpha Centauri";
@@ -133,49 +133,49 @@ int main() {
   Star star3(star3_data);
   repo.save(star3);
 
-  std::println("  ✓ Multiple stars saved");
+  std::println(std::cout, "  ✓ Multiple stars saved");
 
-  // Test 7: Retrieve second star
-  std::println("Test 7: Retrieve second star...");
+  // Retrieve second star
+  std::println(std::cout, "Retrieve second star...");
   auto star2_retrieved = repo.find_by_number(2);
   assert(star2_retrieved.has_value());
   assert(star2_retrieved->get_name() == "Alpha Centauri");
   assert(star2_retrieved->xpos() == 50.0);
-  std::println("  ✓ Second star retrieved correctly");
+  std::println(std::cout, "  ✓ Second star retrieved correctly");
 
-  // Test 8: Retrieve third star
-  std::println("Test 8: Retrieve third star...");
+  // Retrieve third star
+  std::println(std::cout, "Retrieve third star...");
   auto star3_retrieved = repo.find_by_number(5);
   assert(star3_retrieved.has_value());
   assert(star3_retrieved->get_name() == "Proxima");
   assert(star3_retrieved->xpos() == 200.0);
-  std::println("  ✓ Third star retrieved correctly");
+  std::println(std::cout, "  ✓ Third star retrieved correctly");
 
-  // Test 9: Next available star number (should find gap at 3)
-  std::println("Test 9: Next available star number...");
+  // Next available star number (should find gap at 3)
+  std::println(std::cout, "Next available star number...");
   int next_id = repo.next_available_id();
   assert(next_id == 3 && "Should return 3 (first gap)");
-  std::println("  ✓ Next star number is: {}", next_id);
+  std::println(std::cout, "  ✓ Next star number is: {}", next_id);
 
-  // Test 10: Remove a star
-  std::println("Test 10: Remove star...");
+  // Remove a star
+  std::println(std::cout, "Remove star...");
   repo.remove(2);
   auto deleted = repo.find_by_number(2);
   assert(!deleted.has_value() && "Star should be deleted");
-  std::println("  ✓ Star removed successfully");
+  std::println(std::cout, "  ✓ Star removed successfully");
 
-  // Test 11: Find non-existent star
-  std::println("Test 11: Find non-existent star...");
+  // Find non-existent star
+  std::println(std::cout, "Find non-existent star...");
   auto not_found = repo.find_by_number(999);
   assert(!not_found.has_value() && "Should not find non-existent star");
-  std::println("  ✓ Correctly returns nullopt for non-existent star");
+  std::println(std::cout, "  ✓ Correctly returns nullopt for non-existent star");
 
-  // Test 12: List all star IDs
-  std::println("Test 12: List all star IDs...");
+  // List all star IDs
+  std::println(std::cout, "List all star IDs...");
   auto ids = repo.list_ids();
   assert(ids.size() == 2 && "Should have 2 stars after deletion");
-  std::println("  ✓ Star count correct: {}", ids.size());
+  std::println(std::cout, "  ✓ Star count correct: {}", ids.size());
 
-  std::println("\nAll StarRepository tests passed!");
+  std::println(std::cout, "\nAll StarRepository tests passed!");
   return 0;
 }

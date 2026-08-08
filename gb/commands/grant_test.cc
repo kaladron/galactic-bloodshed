@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
-import std.compat;
+import std;
 
 #include <cassert>
 
@@ -33,7 +32,7 @@ int main() {
   ctx.setup_game_obj(g);  // Set race pointer like production
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  std::println("Test 1: Grant money to governor");
+  std::println(std::cout, "Grant money to governor");
   {
     command_t argv = {"grant", "1", "money", "200"};
     GB::commands::grant(argv, g);
@@ -43,10 +42,10 @@ int main() {
     assert(saved_race != nullptr);
     assert(saved_race->governor[0].money == 800);  // 1000 - 200
     assert(saved_race->governor[1].money == 700);  // 500 + 200
-    std::println("    ✓ Money granted: gov[0]={}, gov[1]={}",
+    std::println(std::cout, "    ✓ Money granted: gov[0]={}, gov[1]={}",
                  saved_race->governor[0].money, saved_race->governor[1].money);
   }
 
-  std::println("\n✅ All grant tests passed!");
+  std::println(std::cout, "\n✅ All grant tests passed!");
   return 0;
 }

@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file bless_test.cc
-/// \brief Unit tests for bless command
-
 import dallib;
 import gblib;
 import test;
@@ -10,6 +7,11 @@ import commands;
 import std;
 
 #include <cassert>
+
+/// \file bless_test.cc
+/// \brief Unit tests for bless command
+
+
 
 // Test bless command - technology blessing
 void test_bless_technology() {
@@ -59,7 +61,7 @@ void test_bless_technology() {
   assert(blessed_race);
   assert(blessed_race->tech == 15.0);  // 10 + 5
 
-  std::println("✓ bless technology test passed");
+  std::println(std::cout, "✓ bless technology test passed");
 }
 
 // Test bless command - money blessing
@@ -109,7 +111,7 @@ void test_bless_money() {
   assert(blessed_race);
   assert(blessed_race->governor[0].money == 1100);  // 100 + 1000
 
-  std::println("✓ bless money test passed");
+  std::println(std::cout, "✓ bless money test passed");
 }
 
 // Test bless command - requires god privilege
@@ -159,7 +161,7 @@ void test_bless_requires_god() {
   std::string out_str = g.out.str();
   assert(out_str.find("not privileged") != std::string::npos);
 
-  std::println("✓ bless requires god privilege test passed");
+  std::println(std::cout, "✓ bless requires god privilege test passed");
 }
 
 // Test bless command - requires planet scope
@@ -198,7 +200,7 @@ void test_bless_requires_planet_scope() {
   std::string out_str = g.out.str();
   assert(out_str.find("cs to the planet") != std::string::npos);
 
-  std::println("✓ bless requires planet scope test passed");
+  std::println(std::cout, "✓ bless requires planet scope test passed");
 }
 
 int main() {
@@ -207,6 +209,6 @@ int main() {
   test_bless_requires_god();
   test_bless_requires_planet_scope();
 
-  std::println("\n✅ All bless command tests passed!");
+  std::println(std::cout, "\n✅ All bless command tests passed!");
   return 0;
 }

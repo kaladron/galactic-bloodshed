@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import test;
 import commands;
@@ -91,6 +90,6 @@ int main() {
   assert(saved_race);
   assert(saved_race->governor[0].money == 5000);
 
-  std::println("insurgency_test passed!");
+  std::println(std::cout, "insurgency_test passed!");
   return 0;
 }

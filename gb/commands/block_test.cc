@@ -94,42 +94,42 @@ int main() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  std::println("========== Block Command Tests ==========\n");
+  std::println(std::cout, "========== Block Command Tests ==========\n");
 
-  std::println("Test 1: List all alliance blocks");
+  std::println(std::cout, "List all alliance blocks");
   {
     command_t argv = {"block"};
     GB::commands::block(argv, g);
 
     std::string output = g.out.str();
-    std::println("--- Output ---");
-    std::println("{}", output);
+    std::println(std::cout, "--- Output ---");
+    std::println(std::cout, "{}", output);
 
     // Verify header doesn't have trailing newline before ===
     // The old bug was: "as of Fri Dec 26...\n ==========" on two lines
     assert(output.find("==========\n #") != std::string::npos ||
            output.find("==========\n Pl") != std::string::npos ||
            output.find("==========\n#") != std::string::npos);
-    std::println("    ✓ Header line doesn't have spurious newline");
+    std::println(std::cout, "    ✓ Header line doesn't have spurious newline");
 
     // Bug fix verification: Block with zero VPs but members should appear
     assert(output.find("ZeroVPBlock") != std::string::npos &&
            "Bug: Block with zero VPs but members should appear in listing");
-    std::println("    ✓ Block with zero VPs but members appears");
+    std::println(std::cout, "    ✓ Block with zero VPs but members appears");
 
     // Block with non-zero VPs should also appear
     assert(output.find("HasVPsBlock") != std::string::npos &&
            "Block with non-zero VPs should appear in listing");
-    std::println("    ✓ Block with non-zero VPs appears");
+    std::println(std::cout, "    ✓ Block with non-zero VPs appears");
 
     // Empty block (no members) should NOT appear
     assert(output.find("EmptyBlock") == std::string::npos &&
            "Empty block (no members) should not appear in listing");
-    std::println("    ✓ Empty block (no members) correctly hidden");
+    std::println(std::cout, "    ✓ Empty block (no members) correctly hidden");
 
     g.out.str("");  // Clear for next test
   }
 
-  std::println("\n========== All Tests Passed ==========\n");
+  std::println(std::cout, "\n========== All Tests Passed ==========\n");
   return 0;
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import dallib;
 import gblib;
 import std;
 
@@ -69,7 +68,7 @@ int main() {
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
-  // Test 1: Basic ship kill
+  // Basic ship kill
   {
     ship_struct ship_data{};
     ship_data.owner = 2;
@@ -85,10 +84,10 @@ int main() {
 
     assert(ship.alive() == 0);
     assert(ship.notified() == 0);
-    std::println("✓ Test 1: Basic ship kill works");
+    std::println(std::cout, "✓ Basic ship kill works");
   }
 
-  // Test 2: MindData handling
+  // MindData handling
   {
     ship_struct ship_data{};
     ship_data.owner = 2;
@@ -107,10 +106,10 @@ int main() {
     assert(std::holds_alternative<MindData>(ship.special()));
     auto result_mind = std::get<MindData>(ship.special());
     assert(result_mind.who_killed == 1);
-    std::println("✓ Test 2: MindData who_killed tracking works");
+    std::println(std::cout, "✓ MindData who_killed tracking works");
   }
 
-  // Test 3: Gov_ship gets cleared when government ship is killed
+  // Gov_ship gets cleared when government ship is killed
   {
     ship_struct ship_data{};
     ship_data.owner = 2;
@@ -134,10 +133,10 @@ int main() {
     const auto* victim = em.peek_race(2);
     assert(victim);
     assert(victim->Gov_ship == 0);
-    std::println("✓ Test 3: Gov_ship cleared when government ship killed");
+    std::println(std::cout, "✓ Gov_ship cleared when government ship killed");
   }
 
-  // Test 4: Morale adjustment for non-VN kills
+  // Morale adjustment for non-VN kills
   {
     ship_struct ship_data{};
     ship_data.owner = 2;
@@ -160,10 +159,10 @@ int main() {
     // adjust_morale, but we can verify that the races were loaded and saved
     assert(attacker_after);
     assert(victim_after);
-    std::println("✓ Test 4: Morale adjustment occurs on kill");
+    std::println(std::cout, "✓ Morale adjustment occurs on kill");
   }
 
-  // Test 5: VN hitlist tracking
+  // VN hitlist tracking
   {
     ship_struct ship_data{};
     ship_data.owner = 2;
@@ -186,10 +185,10 @@ int main() {
     assert(universe_after->VN_hitlist[0] > 0);  // Player 1 (index 0)
     assert(universe_after->VN_index1[0] == 0 ||
            universe_after->VN_index2[0] == 0);
-    std::println("✓ Test 5: VN hitlist tracking works");
+    std::println(std::cout, "✓ VN hitlist tracking works");
   }
 
-  // Test 6: TOXWC increases planet toxicity
+  // TOXWC increases planet toxicity
   {
     ship_struct ship_data{};
     ship_data.owner = 2;
@@ -212,10 +211,10 @@ int main() {
     const auto* planet_after = em.peek_planet(0, 0);
     assert(planet_after);
     assert(planet_after->conditions(TOXIC) >= 30);  // Was 10, added 20
-    std::println("✓ Test 6: TOXWC increases planet toxicity on death");
+    std::println(std::cout, "✓ TOXWC increases planet toxicity on death");
   }
 
-  // Test 7: Docked ships get undocked (when one of two docked ships dies)
+  // Docked ships get undocked (when one of two docked ships dies)
   {
     shipnum_t ship1_num;
     shipnum_t ship2_num;
@@ -271,10 +270,10 @@ int main() {
     assert(ship1_after);
     assert(ship1_after->docked() == 0);
     assert(ship1_after->whatdest() == ScopeLevel::LEVEL_UNIV);
-    std::println("✓ Test 7: Docked ships get undocked when one dies");
+    std::println(std::cout, "✓ Docked ships get undocked when one dies");
   }
 
-  // Test 8: Recursive killing of landed ships
+  // Recursive killing of landed ships
   {
     shipnum_t carrier_num;
     shipnum_t fighter1_num;
@@ -345,9 +344,9 @@ int main() {
     assert(carrier_after->alive() == 0);
     assert(fighter1_after->alive() == 0);
     assert(fighter2_after->alive() == 0);
-    std::println("✓ Test 8: Recursive killing of landed ships works");
+    std::println(std::cout, "✓ Recursive killing of landed ships works");
   }
 
-  std::println("\n✅ All EntityManager::kill_ship() tests passed!");
+  std::println(std::cout, "\n✅ All EntityManager::kill_ship() tests passed!");
   return 0;
 }

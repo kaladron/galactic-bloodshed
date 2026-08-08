@@ -25,6 +25,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y libsqlite3-dev
+          git config --global --add safe.directory '*'
           # Create symlinks for lld linker (lld-22 -> lld)
           ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld
           ln -sf /usr/bin/lld-22 /usr/bin/lld

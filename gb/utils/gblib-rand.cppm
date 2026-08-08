@@ -2,6 +2,7 @@
 
 export module gblib:rand;
 
+export void seed_rand(unsigned int seed);
 export bool success(int x);
 export double double_rand();
 export int int_rand(int low, int high);

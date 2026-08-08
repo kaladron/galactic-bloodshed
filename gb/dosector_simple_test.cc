@@ -417,6 +417,79 @@ void test_data_consistency() {
   assert(star.numplanets() >= 0 && star.numplanets() <= MAXPLANETS);
 }
 
+void test_produce_and_troop_maintenance() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.governor[0].maintain = 0;
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  Planet planet = createTestPlanet(5, 5);
+
+  Sector s = createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 50, player_t{1});
+  TurnStats stats{};
+  stats.Compat[0] = 1.0;
+
+  produce(em, star, planet, s, stats);
+
+  const auto* updated_race = em.peek_race(player_t{1});
+  assert(updated_race != nullptr);
+  assert(updated_race->governor[0].maintain == UPDATE_TROOP_COST * 50);
+}
+
+void test_spread_population() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.adventurism = 1.0;
+  RaceRepository races(store);
+  races.save(race);
+
+  Planet planet = createTestPlanet(5, 5);
+  SectorMap smap(planet, true);
+
+  for (int y = 0; y < 5; y++) {
+    for (int x = 0; x < 5; x++) {
+      smap.get(x, y).set_owner(0);
+      smap.get(x, y).clear_popn();
+      smap.get(x, y).set_condition(SectorType::SEC_LAND);
+    }
+  }
+
+  auto& center = smap.get(2, 2);
+  center.set_x(2);
+  center.set_y(2);
+  center.set_owner(1);
+  center.set_popn_exact(10000);
+  center.set_fert(0);
+
+  TurnStats stats{};
+  stats.Compat[0] = 1.0;
+
+  spread(em, planet, center, smap, stats);
+
+  bool spread_occurred = false;
+  for (int y = 0; y < 5; y++) {
+    for (int x = 0; x < 5; x++) {
+      if ((x != 2 || y != 2) && smap.get(x, y).get_owner() == 1) {
+        spread_occurred = true;
+        break;
+      }
+    }
+  }
+  assert(spread_occurred);
+}
+
 }  // namespace
 
 int main() noexcept {
@@ -454,6 +527,14 @@ int main() noexcept {
 
     std::cout << "  Testing data consistency... ";
     test_data_consistency();
+    std::cout << "PASS\n";
+
+    std::cout << "  Testing produce and troop maintenance... ";
+    test_produce_and_troop_maintenance();
+    std::cout << "PASS\n";
+
+    std::cout << "  Testing population spread... ";
+    test_spread_population();
     std::cout << "PASS\n";
 
     std::cout << "All dosector tests passed!\n";

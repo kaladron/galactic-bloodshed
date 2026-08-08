@@ -140,9 +140,8 @@ void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
   // Handle troops maintenance costs - get mutable race for governor update
   if (s.get_troops()) {
     auto race_handle = entity_manager.get_race(s.get_owner());
-    if (race_handle.get() &&
-        race_handle->governor[star.governor(s.get_owner()).value].maintain) {
-      (*race_handle).governor[star.governor(s.get_owner()).value].maintain +=
+    if (race_handle.get()) {
+      race_handle->governor[star.governor(s.get_owner()).value].maintain +=
           UPDATE_TROOP_COST * s.get_troops();
     }
   }

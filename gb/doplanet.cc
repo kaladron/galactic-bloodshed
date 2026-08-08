@@ -8,7 +8,6 @@ import gblib;
 
 module gblib;
 
-namespace {
 bool moveship_onplanet(Ship& ship, const Planet& planet,
                        EntityManager& entity_manager) {
   if (!std::holds_alternative<TerraformData>(ship.special())) {
@@ -34,9 +33,10 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
   if (y >= planet.Maxy()) {
     bounced = true;
     y -= 2; /* bounce off of south pole! */
-  } else if (y < 0)
+  } else if (y < 0) {
     y = 1;
-  bounced = true; /* bounce off of north pole! */
+    bounced = true; /* bounce off of north pole! */
+  }
   if (planet.Maxy() == 1) y = 0;
   if (ship.shipclass()[terraform.index + 1] != '\0') {
     ++terraform.index;
@@ -86,7 +86,7 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap,
     s.set_troops(0);
     s.set_owner(0);
     use_fuel(ship, FUEL_COST_TERRA);
-    if ((random() & 01) && (planet.conditions(TOXIC) < 100))
+    if (success(50) && (planet.conditions(TOXIC) < 100))
       planet.conditions(TOXIC) += 1;
     if ((ship.fuel() < (double)FUEL_COST_TERRA) && (!ship.notified())) {
       ship.notified() = 1;
@@ -116,7 +116,7 @@ void plow(Ship* ship, Planet& planet, SectorMap& smap,
       push_telegram(entity_manager, ship->owner(), ship->governor(), buf);
     }
     use_fuel(*ship, FUEL_COST_PLOW);
-    if ((random() & 01) && (planet.conditions(TOXIC) < 100))
+    if (success(50) && (planet.conditions(TOXIC) < 100))
       planet.conditions(TOXIC) += 1;
   }
 }
@@ -328,12 +328,12 @@ double est_production(const Sector& s, EntityManager& entity_manager) {
   const auto* race = entity_manager.peek_race(s.get_owner());
   return (race->metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
 }
-}  // namespace
 
 int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
              TurnStats& stats) {
-  int nukex;
-  int nukey;
+  int nukex = 0;
+  int nukey = 0;
+  bool envir_damage = false;
   int o = 0;
   player_t i;
   double fadd;
@@ -373,6 +373,9 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   }
 
   auto smap_handle = entity_manager.get_sectormap(starnum, planetnum);
+  if (!smap_handle.get()) {
+    return 0;
+  }
   auto& smap = *smap_handle;
   for (auto ship_handle : ShipList(entity_manager, planet.ships())) {
     auto& ship = *ship_handle;
@@ -600,7 +603,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             o &= (stats.Sectinfo[p.get_x()][p.get_y()].explored != player_t{0});
             const auto* explore_race = entity_manager.peek_race(i);
             if (((stats.Sectinfo[p.get_x()][p.get_y()].explored == i) &&
-                 !(random() & 02)) &&
+                 success(50)) &&
                 (p.get_owner() == 0 &&
                  p.get_condition() != SectorType::SEC_WASTED &&
                  p.get_condition() == explore_race->likesbest)) {
@@ -621,7 +624,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 
   /* environment nukes a random sector */
   if (planet.conditions(TOXIC) > ENVIR_DAMAGE_TOX) {
-    // TODO(jeffbailey): Replace this with getrandom.
+    envir_damage = true;
     nukex = int_rand(0, (int)planet.Maxx() - 1);
     nukey = int_rand(0, (int)planet.Maxy() - 1);
     auto& p = smap.get(nukex, nukey);
@@ -664,7 +667,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             star.nova_stage());
       }
       /* remind the player that he should clean up the environment. */
-      if (planet.conditions(TOXIC) > ENVIR_DAMAGE_TOX) {
+      if (envir_damage) {
         telegram_buf << std::format("Environmental damage on sector {},{}\n",
                                     nukex, nukey);
       }
@@ -769,7 +772,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       /* now nuke all sectors belonging to former master */
       for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
         Sector& p = sector_wrap;
-        if (stats.Stinfo[starnum][planetnum].intimidated && random() & 01) {
+        if (stats.Stinfo[starnum][planetnum].intimidated && success(50)) {
           if (p.get_owner() == planet.slaved_to()) {
             p.set_owner(0);
             p.clear_popn();

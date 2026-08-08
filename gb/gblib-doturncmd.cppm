@@ -15,6 +15,7 @@ export void do_update(EntityManager&, SessionRegistry&, bool = false);
 export void do_segment(EntityManager&, SessionRegistry&, int, int);
 export void handle_victory(EntityManager&);
 export void compute_power_blocks(EntityManager&);
+export void fix_stability(EntityManager& em, Star& s);
 
 /// Schedule status info for display commands
 export struct ScheduleInfo {

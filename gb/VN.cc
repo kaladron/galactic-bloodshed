@@ -21,7 +21,7 @@ void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
   mind.target = stats.VN_brain.Most_mad;
   ship.whatdest() = ScopeLevel::LEVEL_PLAN;
   const auto* universe = em.peek_universe();
-  if (random() & 01)
+  if (success(50))
     ship.deststar() = universe->VN_index1[mind.target.value - 1];
   else
     ship.deststar() = universe->VN_index2[mind.target.value - 1];
@@ -205,7 +205,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
         rcv_fuel(ship, (double)prod);
       }
       /* now try to construct another machine */
-      ShipType shipbuild = (stats.VN_brain.Total_mad > 100 && random() & 01)
+      ShipType shipbuild = (stats.VN_brain.Total_mad > 100 && success(50))
                                ? ShipType::OTYPE_BERS
                                : ShipType::OTYPE_VN;
       if (ship.resource() >= Shipdata[shipbuild][ABIL_COST]) {
@@ -300,7 +300,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
             int n = int_rand(3, std::min(10, SHIP_NAMESIZE)); /* for name */
             s2.name()[n] = '\0';
             while (n--)
-              s2.name()[n] = (random() & 01) + '0';
+              s2.name()[n] = int_rand(0, 1) + '0';
             s2.owner() = 1;
             s2.governor() = 0;
             s2.active() = 1;
@@ -323,7 +323,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
                 MindData{.progenitor = ship_mind.progenitor,
                          .target = ship_mind.target,
                          .generation = ship_mind.generation,
-                         .busy = static_cast<unsigned char>(random() & 01),
+                         .busy = static_cast<unsigned char>(int_rand(0, 1)),
                          .tampered = ship_mind.tampered,
                          .who_killed = ship_mind.who_killed};
           }

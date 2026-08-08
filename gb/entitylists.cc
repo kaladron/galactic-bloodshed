@@ -181,13 +181,22 @@ bool ShipList::MutableIterator::operator!=(const MutableIterator& other) const {
 
 void ShipList::MutableIterator::advance_to_next_match() {
   while (current != 0) {
-    const auto* ship = em.peek_ship(current);
-    if (!ship) {
-      current = 0;
-      return;
+    const Ship* ship = nullptr;
+    try {
+      ship = em.peek_ship(current);
+    } catch (const EntityNotFoundError&) {
+      if (type == IterationType::Nested) {
+        current = 0;
+        return;
+      }
+      ++current;
+      if (current > em.num_ships()) {
+        current = 0;
+      }
+      continue;
     }
 
-    if (matches_scope(*ship)) {
+    if (ship && matches_scope(*ship)) {
       return;  // Found a matching ship
     }
 
@@ -252,8 +261,12 @@ ShipList::ConstIterator& ShipList::ConstIterator::operator++() {
 
   if (type == IterationType::Nested) {
     // Follow nextship linked list
-    const auto* ship = em.peek_ship(current);
-    current = ship ? ship->nextship() : 0;
+    try {
+      const auto* ship = em.peek_ship(current);
+      current = ship ? ship->nextship() : 0;
+    } catch (const EntityNotFoundError&) {
+      current = 0;
+    }
   } else {
     // Scope-based: increment to next ship number
     ++current;
@@ -268,7 +281,11 @@ ShipList::ConstIterator& ShipList::ConstIterator::operator++() {
 
 const Ship* ShipList::ConstIterator::operator*() const {
   // Use peek_ship to get read-only access without marking dirty
-  return em.peek_ship(current);
+  try {
+    return em.peek_ship(current);
+  } catch (const EntityNotFoundError&) {
+    return nullptr;
+  }
 }
 
 bool ShipList::ConstIterator::operator==(const ConstIterator& other) const {
@@ -281,13 +298,22 @@ bool ShipList::ConstIterator::operator!=(const ConstIterator& other) const {
 
 void ShipList::ConstIterator::advance_to_next_match() {
   while (current != 0) {
-    const auto* ship = em.peek_ship(current);
-    if (!ship) {
-      current = 0;
-      return;
+    const Ship* ship = nullptr;
+    try {
+      ship = em.peek_ship(current);
+    } catch (const EntityNotFoundError&) {
+      if (type == IterationType::Nested) {
+        current = 0;
+        return;
+      }
+      ++current;
+      if (current > em.num_ships()) {
+        current = 0;
+      }
+      continue;
     }
 
-    if (matches_scope(*ship)) {
+    if (ship && matches_scope(*ship)) {
       return;  // Found a matching ship
     }
 

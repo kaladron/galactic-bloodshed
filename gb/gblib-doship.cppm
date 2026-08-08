@@ -13,3 +13,12 @@ export void domissile(Ship&, EntityManager&);
 export void domine(Ship&, int, EntityManager&);
 export void doabm(Ship&, EntityManager&);
 export int do_weapon_plant(Ship&, EntityManager&);
+export void do_repair(Ship& ship, EntityManager& entity_manager);
+export void do_habitat(Ship& ship, EntityManager& entity_manager);
+export void do_pod(Ship& ship, EntityManager& entity_manager, TurnStats& stats);
+export void do_canister(Ship& ship, EntityManager& entity_manager,
+                        TurnStats& stats);
+export void do_greenhouse(Ship& ship, EntityManager& entity_manager,
+                          TurnStats& stats);
+export void do_mirror(Ship& ship, EntityManager& entity_manager,
+                      TurnStats& stats);

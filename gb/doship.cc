@@ -9,7 +9,6 @@ import std;
 
 module gblib;
 
-namespace {
 void do_repair(Ship& ship, EntityManager& entity_manager) {
   const auto* state = entity_manager.peek_server_state();
   if (!state) return;  // Can't repair without knowing segments
@@ -326,10 +325,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
           aimed_at.snum == ship.storbits()) {
         auto star_handle = entity_manager.get_star(aimed_at.snum);
         if (star_handle.get()) {
-          std::random_device rd;
-          std::mt19937 gen(rd());
-          std::uniform_int_distribution<> dis(0, 1);
-          star_handle->stability() += dis(gen);
+          star_handle->stability() += int_rand(0, 1);
         }
       }
       break;
@@ -390,7 +386,6 @@ void do_oap(Ship& ship, TurnStats& stats) {
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN)
     stats.Stinfo[ship.storbits()][ship.pnumorbits()].intimidated = 1;
 }
-}  // namespace
 
 void doship(Ship& ship, bool update, EntityManager& entity_manager,
             TurnStats& stats) {

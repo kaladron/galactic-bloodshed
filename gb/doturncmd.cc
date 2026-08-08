@@ -64,7 +64,6 @@ static constexpr void maintain(Race& r, Race::gov& governor,
 
 static ap_t APadd(const int, const population_t, const Race&, const TurnState&);
 static bool attack_planet(const Ship&);
-static void fix_stability(EntityManager&, Star&);
 static bool governed(const Race&, const TurnState&);
 static void make_discoveries(EntityManager&, Race&);
 static void output_ground_attacks(TurnState& state);
@@ -382,9 +381,9 @@ static void insert_ships_into_lists(TurnState& state) {
   }
 
   /* insert ship into the list of wherever it might be */
-  for (shipnum_t i = state.entity_manager.num_ships(); i >= 1; i--) {
-    auto ship_handle = state.entity_manager.get_ship(i);
-    if (ship_handle.get() && ship_handle->alive()) {
+  for (auto ship_handle :
+       ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
+    if (ship_handle->alive()) {
       switch (ship_handle->whatorbits()) {
         case ScopeLevel::LEVEL_UNIV: {
           auto sdata = state.entity_manager.get_universe();
@@ -392,25 +391,28 @@ static void insert_ships_into_lists(TurnState& state) {
           break;
         }
         case ScopeLevel::LEVEL_STAR: {
-          auto star = state.entity_manager.get_star(ship_handle->storbits());
-          if (star.get()) {
+          try {
+            auto star = state.entity_manager.get_star(ship_handle->storbits());
             insert_sh_star(*star, ship_handle.get());
+          } catch (const EntityNotFoundError&) {
           }
           break;
         }
         case ScopeLevel::LEVEL_PLAN: {
-          auto planet = state.entity_manager.get_planet(
-              ship_handle->storbits(), ship_handle->pnumorbits());
-          if (planet.get()) {
+          try {
+            auto planet = state.entity_manager.get_planet(
+                ship_handle->storbits(), ship_handle->pnumorbits());
             insert_sh_plan(*planet, ship_handle.get());
+          } catch (const EntityNotFoundError&) {
           }
           break;
         }
         case ScopeLevel::LEVEL_SHIP: {
-          auto dest_ship =
-              state.entity_manager.get_ship(ship_handle->destshipno());
-          if (dest_ship.get()) {
+          try {
+            auto dest_ship =
+                state.entity_manager.get_ship(ship_handle->destshipno());
             insert_sh_ship(ship_handle.get(), dest_ship.get());
+          } catch (const EntityNotFoundError&) {
           }
           break;
         }
@@ -501,7 +503,9 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
                 block_player->invite & block_player->pledge;
             if ((inhabited[star] | allied_members) == allied_members) {
               auto block_handle = state.entity_manager.get_block(player.value);
-              block_handle->systems_owned++;
+              if (block_handle.get()) {
+                block_handle->systems_owned++;
+              }
             }
           }
         }
@@ -515,7 +519,9 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
       auto block_handle = state.entity_manager.get_block(player.value);
-      block_handle->systems_owned = 0; /*recount systems owned*/
+      if (block_handle.get()) {
+        block_handle->systems_owned = 0; /*recount systems owned*/
+      }
       if (governed(*race_handle, state)) {
         ap_t APs =
             sdata_handle->AP[player.value - 1] + race_handle->planet_points;
@@ -641,7 +647,9 @@ static void finalize_turn(TurnState& state, bool update) {
       }
 
       auto block_handle = state.entity_manager.get_block(player.value);
-      block_handle->VPs = 10L * block_handle->systems_owned;
+      if (block_handle.get()) {
+        block_handle->VPs = 10L * block_handle->systems_owned;
+      }
       if (MARKET) {
         for (auto& governor : race_handle->governor) {
           if (governor.active) {
@@ -668,7 +676,9 @@ static void finalize_turn(TurnState& state, bool update) {
     // Save power data via EntityManager
     for (int i : std::views::iota(0, MAXPLAYERS)) {
       auto power_handle = state.entity_manager.get_power(i);
-      *power_handle = state.stats.Power[i];
+      if (power_handle.get()) {
+        *power_handle = state.stats.Power[i];
+      }
     }
   }
 

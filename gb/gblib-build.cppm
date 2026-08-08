@@ -19,8 +19,8 @@ export void Getship(Ship*, ShipType, const Race&);
 export std::optional<ScopeLevel>
 build_at_ship(GameObj& g, Ship* builder, starnum_t* snum, planetnum_t* pnum);
 export void create_ship_by_planet(EntityManager& entity_manager, player_t,
-                                  governor_t, const Race&, Ship&, Planet&, int,
-                                  int, int, int);
+                                  governor_t, const Race&, Ship&, Planet&,
+                                  starnum_t, planetnum_t, int, int);
 export bool can_build_at_planet(GameObj& g, const Star& star,
                                 const Planet& planet);
 export std::expected<void, std::string> can_build_this(ShipType what,

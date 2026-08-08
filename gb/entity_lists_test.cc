@@ -165,7 +165,7 @@ void test_planet_list_readonly(EntityManager& em) {
              static_cast<planetnum_t>(star_planet_count - 1));
     }
 
-    assert(star_planet_count == static_cast<int>(star_id + 1));
+    assert(star_planet_count == static_cast<int>(star_id.value + 1));
   }
 
   assert(total_planets == 3);

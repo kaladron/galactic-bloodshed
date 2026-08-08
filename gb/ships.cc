@@ -571,7 +571,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
   double distfac;
   double fuse;
   ScopeLevel destlevel;
-  int deststar = 0;
+  starnum_t deststar = 0;
   int destpnum = 0;
   Ship* dsh;
 

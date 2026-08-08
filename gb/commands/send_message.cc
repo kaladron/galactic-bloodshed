@@ -26,7 +26,7 @@ void send_message(const command_t& argv, GameObj& g) {
   int j;
   int to_block;
   int to_star;
-  int star;
+  starnum_t star = 0;
   int start;
   std::string msg;
 

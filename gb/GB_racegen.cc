@@ -56,8 +56,8 @@ int enroll_valid_race() {
   std::array<int, NUMSTARS> indirect;
   std::ranges::iota(indirect, 0);
   starnum_t last_star_left = numstars - 1;
-  while (last_star_left >= 0) {
-    star = indirect[int_rand(0, last_star_left)];
+  while (last_star_left.value >= 0) {
+    star = indirect[int_rand(0, last_star_left.value)];
     int i = 0;
     while (indirect[i] != star)
       i++;
@@ -73,7 +73,7 @@ int enroll_valid_race() {
     }
     /*
      * Since we are here, this star didn't work out: */
-    indirect[i] = indirect[last_star_left--];
+    indirect[i] = indirect[last_star_left.value--];
   }
 
   /*

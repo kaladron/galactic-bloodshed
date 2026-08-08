@@ -158,7 +158,7 @@ void move_popn(const command_t& argv, GameObj& g) {
 
     if (Assault) {
       ground_assaults[Playernum.value - 1][sect2.get_owner().value - 1]
-                     [g.snum()] += 1;
+                     [g.snum().value] += 1;
       auto race_handle = g.entity_manager.get_race(Playernum);
       auto alien_handle = g.entity_manager.get_race(sect2.get_owner());
       if (!race_handle.get() || !alien_handle.get()) {

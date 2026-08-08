@@ -201,10 +201,10 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
   if (++timer.count < DISSIPATE) {
     ship.special() = timer;
-    if (stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add < -90)
-      stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add = -100;
+    if (stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add < -90)
+      stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add = -100;
     else
-      stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add -= 10;
+      stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add -= 10;
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
 
@@ -236,10 +236,10 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
 
     if (++timer.count < DISSIPATE) {
       ship.special() = timer;
-      if (stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add > 90)
-        stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add = 100;
+      if (stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add > 90)
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add = 100;
       else
-        stats.Stinfo[ship.storbits()][ship.pnumorbits()].temp_add += 10;
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits()].temp_add += 10;
     } else { /* timer expired; destroy canister */
       entity_manager.kill_ship(ship.owner(), ship);
       std::string telegram =
@@ -314,7 +314,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
                                   : aimed_at.intensity;
 
       i = round_rand(.01 * (100.0 - (double)(ship.damage())) * (double)i);
-      stats.Stinfo[ship.storbits()][aimed_at.pnum].temp_add += i;
+      stats.Stinfo[ship.storbits().value][aimed_at.pnum].temp_add += i;
     } break;
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
@@ -384,7 +384,7 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
 void do_oap(Ship& ship, TurnStats& stats) {
   /* "indimidate" the planet below, for enslavement purposes. */
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN)
-    stats.Stinfo[ship.storbits()][ship.pnumorbits()].intimidated = 1;
+    stats.Stinfo[ship.storbits().value][ship.pnumorbits()].intimidated = 1;
 }
 
 void doship(Ship& ship, bool update, EntityManager& entity_manager,
@@ -457,7 +457,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
       /* to be able to map out worlds with this type of junk. Either a manned
        * ship, */
       /* or a probe, which is designed for this kind of work.  Maarten */
-      stats.StarsInhab[ship.storbits()] = 1;
+      stats.StarsInhab[ship.storbits().value] = 1;
       auto star_handle = entity_manager.get_star(ship.storbits());
       if (star_handle.get()) {
         setbit(star_handle->inhabited(), ship.owner());
@@ -486,13 +486,14 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
       stats.Sdatanumships[ship.owner().value - 1]++;
       stats.Sdatapopns[ship.owner().value] += ship.popn();
     } else {
-      stats.starnumships[ship.storbits()][ship.owner().value - 1]++;
+      stats.starnumships[ship.storbits().value][ship.owner().value - 1]++;
       /* add popn of ships to popn */
-      stats.starpopns[ship.storbits()][ship.owner().value - 1] += ship.popn();
+      stats.starpopns[ship.storbits().value][ship.owner().value - 1] +=
+          ship.popn();
       /* set inhabited for ship */
       /* only if manned or probe.  Maarten */
       if (ship.popn() || ship.type() == ShipType::OTYPE_PROBE) {
-        stats.StarsInhab[ship.storbits()] = 1;
+        stats.StarsInhab[ship.storbits().value] = 1;
         auto star_handle = entity_manager.get_star(ship.storbits());
         if (star_handle.get()) {
           setbit(star_handle->inhabited(), ship.owner());
@@ -509,7 +510,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
           ship.deststar() == ship.storbits() &&
           ship.destpnum() == ship.pnumorbits()) {
         /* ship bombards planet */
-        stats.Stinfo[ship.storbits()][ship.pnumorbits()].inhab = 1;
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits()].inhab = 1;
       }
 
       /* repair ship by the amount of crew it has */

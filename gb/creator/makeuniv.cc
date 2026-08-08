@@ -203,7 +203,7 @@ usage:
 
   StarRepository star_repo(store);
   for (starnum_t star = 0; star < Sdata.numstars; star++) {
-    star_repo.save(stars[star]);
+    star_repo.save(stars[star.value]);
   }
 
   // Initialize power and block array for all players

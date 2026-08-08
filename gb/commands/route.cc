@@ -118,7 +118,8 @@ void route(const command_t& argv, GameObj& g) {
           g.out << "You have to designate a planet.\n";
           return;
         }
-        p.info(Playernum).route[i - 1].dest_star = where.snum;
+        p.info(Playernum).route[i - 1].dest_star =
+            static_cast<unsigned char>(where.snum.value);
         p.info(Playernum).route[i - 1].dest_planet = where.pnum;
         g.out << "Set.\n";
       } else {

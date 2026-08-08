@@ -16,7 +16,7 @@ void dump(const command_t& argv, GameObj& g) {
   governor_t Governor = g.governor();
   ap_t APcount = 10;
   player_t player;
-  int star_id;
+  starnum_t star_id = 0;
 
   const auto* star = g.entity_manager.peek_star(g.snum());
   if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),

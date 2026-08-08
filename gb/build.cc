@@ -259,7 +259,8 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
 
 void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
                            governor_t Governor, const Race& race, Ship& newship,
-                           Planet& planet, int snum, int pnum, int x, int y) {
+                           Planet& planet, starnum_t snum, planetnum_t pnum,
+                           int x, int y) {
   int shipno;
 
   newship.tech() = race.tech;

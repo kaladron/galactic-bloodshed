@@ -25,7 +25,7 @@ void explore(const command_t& argv, GameObj& g) {
       g.out << std::format("Bad scope '{}'\n", argv[1]);
       return;
     }
-    starq = where.snum;
+    starq = static_cast<int>(where.snum.value);
   }
 
   const auto& sdata = *g.entity_manager.peek_universe();

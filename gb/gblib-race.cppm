@@ -75,10 +75,10 @@ public:
     std::string password;
     bool active{false};
     ScopeLevel deflevel{ScopeLevel::LEVEL_UNIV};
-    unsigned int defsystem{0};
+    starnum_t defsystem{0};
     unsigned int defplanetnum{0}; /* current default */
     ScopeLevel homelevel{ScopeLevel::LEVEL_UNIV};
-    unsigned int homesystem{0};
+    starnum_t homesystem{0};
     unsigned int homeplanetnum{0}; /* home place */
     unsigned long newspos[4]{};    /* news file pointers */
     toggletype toggle{};

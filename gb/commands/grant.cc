@@ -43,7 +43,7 @@ void grant(const command_t& argv, GameObj& g) {
       g.out << "Please cs to the star system first.\n";
       return;
     }
-    int snum = g.snum();
+    starnum_t snum = g.snum();
     auto star_handle = g.entity_manager.get_star(snum);
     if (!star_handle.get()) {
       g.out << "Star not found.\n";

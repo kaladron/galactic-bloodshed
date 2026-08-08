@@ -33,18 +33,20 @@ struct TurnState {
 
   // Bounds-checked accessors for star population data (delegate to stats)
   unsigned long& star_popn(starnum_t star, player_t player) noexcept {
-    assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
+    assert(star.value >= 0 && star.value < NUMSTARS &&
+           "Star index out of bounds");
     assert(player.value >= 1 && player.value <= MAXPLAYERS &&
            "Player index out of bounds");
-    return stats.starpopns[star][player.value - 1];
+    return stats.starpopns[star.value][player.value - 1];
   }
 
   const unsigned long& star_popn(starnum_t star,
                                  player_t player) const noexcept {
-    assert(star >= 0 && star < NUMSTARS && "Star index out of bounds");
+    assert(star.value >= 0 && star.value < NUMSTARS &&
+           "Star index out of bounds");
     assert(player.value >= 1 && player.value <= MAXPLAYERS &&
            "Player index out of bounds");
-    return stats.starpopns[star][player.value - 1];
+    return stats.starpopns[star.value][player.value - 1];
   }
 };
 
@@ -139,8 +141,8 @@ static void process_stars_and_planets(TurnState& state, bool update) {
     if (update) {
       fix_stability(state.entity_manager, *star_handle); /* nova */
 
-      state.stats.StarsInhab[star] = !!(star_handle->inhabited());
-      state.stats.StarsExpl[star] = !!(star_handle->explored());
+      state.stats.StarsInhab[star.value] = !!(star_handle->inhabited());
+      state.stats.StarsExpl[star.value] = !!(star_handle->explored());
     }
 
     for (auto planet_handle :
@@ -148,7 +150,7 @@ static void process_stars_and_planets(TurnState& state, bool update) {
       const planetnum_t pnum = planet_handle->planet_order();
       if (update) {
         if (planet_handle->popn() || planet_handle->ships()) {
-          state.stats.Stinfo[star][pnum].inhab = 1;
+          state.stats.Stinfo[star.value][pnum].inhab = 1;
         }
         moveplanet(state.entity_manager, *star_handle, *planet_handle);
       }
@@ -451,7 +453,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         const player_t player = race_handle->Playernum;
 
         if (planet_handle->info(player).numsectsowned) {
-          setbit(inhabited[star], player);
+          setbit(inhabited[star.value], player);
         }
 
         if (planet_handle->type() != PlanetType::ASTEROID &&
@@ -479,15 +481,15 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
 
-        if (state.stats.starpopns[star][player.value - 1]) {
+        if (state.stats.starpopns[star.value][player.value - 1]) {
           setbit(star_handle->inhabited(), player);
 
           ap_t APs =
               star_handle->AP(player) +
               APadd(static_cast<int>(
-                        state.stats.starnumships[star][player.value - 1]),
-                    state.stats.starpopns[star][player.value - 1], *race_handle,
-                    state);
+                        state.stats.starnumships[star.value][player.value - 1]),
+                    state.stats.starpopns[star.value][player.value - 1],
+                    *race_handle, state);
           if (APs < LIMIT_APs) {
             star_handle->AP(player) = APs;
           } else {
@@ -495,13 +497,13 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
           }
         }
         // Compute victory points for the block
-        if (inhabited[star] != 0) {
+        if (inhabited[star.value] != 0) {
           const auto* block_player =
               state.entity_manager.peek_block(player.value);
           if (block_player) {
             std::uint64_t allied_members =
                 block_player->invite & block_player->pledge;
-            if ((inhabited[star] | allied_members) == allied_members) {
+            if ((inhabited[star.value] | allied_members) == allied_members) {
               auto block_handle = state.entity_manager.get_block(player.value);
               if (block_handle.get()) {
                 block_handle->systems_owned++;
@@ -908,13 +910,13 @@ static void output_ground_attacks(TurnState& state) {
         const auto& race_j = *race_j_handle;
         const player_t j = race_j.Playernum;
 
-        if (ground_assaults[i.value - 1][j.value - 1][star_num]) {
-          std::string assault_news =
-              std::format("{}: {} [{}] assaults {} [{}] {} times.\n",
-                          star.get_name(), race_i.name, i, race_j.name, j,
-                          ground_assaults[i.value - 1][j.value - 1][star_num]);
+        if (ground_assaults[i.value - 1][j.value - 1][star_num.value]) {
+          std::string assault_news = std::format(
+              "{}: {} [{}] assaults {} [{}] {} times.\n", star.get_name(),
+              race_i.name, i, race_j.name, j,
+              ground_assaults[i.value - 1][j.value - 1][star_num.value]);
           post(em, assault_news, NewsType::COMBAT);
-          ground_assaults[i.value - 1][j.value - 1][star_num] = 0;
+          ground_assaults[i.value - 1][j.value - 1][star_num.value] = 0;
         }
       }
     }

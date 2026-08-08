@@ -103,7 +103,7 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
     return;
   }
 
-  stats.Stinfo[ship.storbits()][ship.pnumorbits()].inhab = 1;
+  stats.Stinfo[ship.storbits().value][ship.pnumorbits()].inhab = 1;
 
   /* launch if no assignment */
   if (!std::holds_alternative<MindData>(ship.special()) ||

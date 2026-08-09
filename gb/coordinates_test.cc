@@ -45,6 +45,19 @@ int main() {
   assert(p2.has_value());
   assert(p2->x == 12 && p2->y == -34);
 
+  auto p3 = Coordinates::parse("0,0");
+  assert(p3.has_value());
+  assert(p3->x == 0 && p3->y == 0);
+
+  // Parsing invalid strings
+  assert(!Coordinates::parse("").has_value());
+  assert(!Coordinates::parse("5").has_value());
+  assert(!Coordinates::parse("5,").has_value());
+  assert(!Coordinates::parse(",10").has_value());
+  assert(!Coordinates::parse("abc,10").has_value());
+  assert(!Coordinates::parse("5,xyz").has_value());
+  assert(!Coordinates::parse("5 10").has_value());
+
   // Formatting with std::format
   std::string formatted = std::format("{}", c1);
   assert(formatted == "5,10");

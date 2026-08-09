@@ -9,21 +9,10 @@ import std;
 
 module dallib;
 
-JsonStore::JsonStore(Database& database) : db(database) {}
-
-bool JsonStore::store(const std::string& table, KeyValue id,
-                      const std::string& json) {
-  if (!db.is_open()) return false;
-
-  std::string sql =
-      std::format("REPLACE INTO {} (id, data) VALUES (?, ?)", table);
-
-  sqlite3_stmt* stmt;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
-  if (rc != SQLITE_OK) return false;
-
+namespace {
+void bind_key(sqlite3_stmt* stmt, const KeyValue& key, int idx = 1) {
   std::visit(
-      [stmt, idx = 1](auto&& v) {
+      [stmt, idx](auto&& v) {
         using V = std::decay_t<decltype(v)>;
         if constexpr (std::is_same_v<V, std::uint32_t> ||
                       std::is_same_v<V, std::int32_t>) {
@@ -37,7 +26,31 @@ bool JsonStore::store(const std::string& table, KeyValue id,
           sqlite3_bind_text(stmt, idx, v.c_str(), -1, SQLITE_TRANSIENT);
         }
       },
-      id.val);
+      key.val);
+}
+
+void bind_keys(sqlite3_stmt* stmt,
+               const std::vector<std::pair<std::string, KeyValue>>& keys) {
+  for (std::size_t i = 0; i < keys.size(); ++i) {
+    bind_key(stmt, keys[i].second, static_cast<int>(i + 1));
+  }
+}
+}  // namespace
+
+JsonStore::JsonStore(Database& database) : db(database) {}
+
+bool JsonStore::store(const std::string& table, KeyValue id,
+                      const std::string& json) {
+  if (!db.is_open()) return false;
+
+  std::string sql =
+      std::format("REPLACE INTO {} (id, data) VALUES (?, ?)", table);
+
+  sqlite3_stmt* stmt;
+  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  if (rc != SQLITE_OK) return false;
+
+  bind_key(stmt, id);
   sqlite3_bind_text(stmt, 2, json.c_str(), -1, SQLITE_TRANSIENT);
 
   rc = sqlite3_step(stmt);
@@ -56,22 +69,7 @@ std::optional<std::string> JsonStore::retrieve(const std::string& table,
   int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) return std::nullopt;
 
-  std::visit(
-      [stmt, idx = 1](auto&& v) {
-        using V = std::decay_t<decltype(v)>;
-        if constexpr (std::is_same_v<V, std::uint32_t> ||
-                      std::is_same_v<V, std::int32_t>) {
-          sqlite3_bind_int(stmt, idx, static_cast<int>(v));
-        } else if constexpr (std::is_same_v<V, std::uint64_t> ||
-                             std::is_same_v<V, std::int64_t>) {
-          sqlite3_bind_int64(stmt, idx, static_cast<sqlite3_int64>(v));
-        } else if constexpr (std::is_same_v<V, double>) {
-          sqlite3_bind_double(stmt, idx, v);
-        } else if constexpr (std::is_same_v<V, std::string>) {
-          sqlite3_bind_text(stmt, idx, v.c_str(), -1, SQLITE_TRANSIENT);
-        }
-      },
-      id.val);
+  bind_key(stmt, id);
 
   std::optional<std::string> result;
   if (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -95,22 +93,7 @@ bool JsonStore::remove(const std::string& table, KeyValue id) {
   int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) return false;
 
-  std::visit(
-      [stmt, idx = 1](auto&& v) {
-        using V = std::decay_t<decltype(v)>;
-        if constexpr (std::is_same_v<V, std::uint32_t> ||
-                      std::is_same_v<V, std::int32_t>) {
-          sqlite3_bind_int(stmt, idx, static_cast<int>(v));
-        } else if constexpr (std::is_same_v<V, std::uint64_t> ||
-                             std::is_same_v<V, std::int64_t>) {
-          sqlite3_bind_int64(stmt, idx, static_cast<sqlite3_int64>(v));
-        } else if constexpr (std::is_same_v<V, double>) {
-          sqlite3_bind_double(stmt, idx, v);
-        } else if constexpr (std::is_same_v<V, std::string>) {
-          sqlite3_bind_text(stmt, idx, v.c_str(), -1, SQLITE_TRANSIENT);
-        }
-      },
-      id.val);
+  bind_key(stmt, id);
 
   rc = sqlite3_step(stmt);
   sqlite3_finalize(stmt);
@@ -195,26 +178,7 @@ bool JsonStore::store_multi(
   int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) return false;
 
-  // Bind key values
-  for (std::size_t i = 0; i < keys.size(); ++i) {
-    std::visit(
-        [stmt, idx = static_cast<int>(i + 1)](auto&& v) {
-          using V = std::decay_t<decltype(v)>;
-          if constexpr (std::is_same_v<V, std::uint32_t> ||
-                        std::is_same_v<V, std::int32_t>) {
-            sqlite3_bind_int(stmt, idx, static_cast<int>(v));
-          } else if constexpr (std::is_same_v<V, std::uint64_t> ||
-                               std::is_same_v<V, std::int64_t>) {
-            sqlite3_bind_int64(stmt, idx, static_cast<sqlite3_int64>(v));
-          } else if constexpr (std::is_same_v<V, double>) {
-            sqlite3_bind_double(stmt, idx, v);
-          } else if constexpr (std::is_same_v<V, std::string>) {
-            sqlite3_bind_text(stmt, idx, v.c_str(), -1, SQLITE_TRANSIENT);
-          }
-        },
-        keys[i].second.val);
-  }
-  // Bind JSON data
+  bind_keys(stmt, keys);
   sqlite3_bind_text(stmt, static_cast<int>(keys.size() + 1), json.c_str(), -1,
                     SQLITE_TRANSIENT);
 
@@ -242,25 +206,7 @@ std::optional<std::string> JsonStore::retrieve_multi(
   int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) return std::nullopt;
 
-  // Bind key values
-  for (std::size_t i = 0; i < keys.size(); ++i) {
-    std::visit(
-        [stmt, idx = static_cast<int>(i + 1)](auto&& v) {
-          using V = std::decay_t<decltype(v)>;
-          if constexpr (std::is_same_v<V, std::uint32_t> ||
-                        std::is_same_v<V, std::int32_t>) {
-            sqlite3_bind_int(stmt, idx, static_cast<int>(v));
-          } else if constexpr (std::is_same_v<V, std::uint64_t> ||
-                               std::is_same_v<V, std::int64_t>) {
-            sqlite3_bind_int64(stmt, idx, static_cast<sqlite3_int64>(v));
-          } else if constexpr (std::is_same_v<V, double>) {
-            sqlite3_bind_double(stmt, idx, v);
-          } else if constexpr (std::is_same_v<V, std::string>) {
-            sqlite3_bind_text(stmt, idx, v.c_str(), -1, SQLITE_TRANSIENT);
-          }
-        },
-        keys[i].second.val);
-  }
+  bind_keys(stmt, keys);
 
   std::optional<std::string> result;
   if (sqlite3_step(stmt) == SQLITE_ROW) {

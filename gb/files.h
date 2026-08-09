@@ -12,7 +12,6 @@
 
 inline constexpr auto EXAM_FL = PATH(exam.dat);
 
-
 #define PLANETLIST PATH(planet.list)
 #define STARLIST PATH(star.list)
 

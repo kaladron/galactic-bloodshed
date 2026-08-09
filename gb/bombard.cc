@@ -121,8 +121,9 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   ship.mass() -= str * MASS_DESTRUCT;
 
   char long_buf[1024], short_buf[256];
-  auto result = shoot_ship_to_planet(entity_manager, ship, planet, str, x, y,
-                                     smap, 0, 0, long_buf, short_buf);
+  auto result =
+      shoot_ship_to_planet(entity_manager, ship, planet, str, Coordinates{x, y},
+                           smap, 0, 0, long_buf, short_buf);
   /* (0=dont get smap) */
   auto numdest = std::max(result.numdest, 0);
 

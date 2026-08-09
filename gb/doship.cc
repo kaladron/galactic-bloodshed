@@ -664,8 +664,8 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       auto& smap = *smap_handle;
       char long_buf[1024], short_buf[256];
       auto result = shoot_ship_to_planet(
-          entity_manager, ship, p, (int)ship.destruct(), bombx, bomby, smap, 0,
-          GTYPE_HEAVY, long_buf, short_buf);
+          entity_manager, ship, p, (int)ship.destruct(),
+          Coordinates{bombx, bomby}, smap, 0, GTYPE_HEAVY, long_buf, short_buf);
       push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
       entity_manager.kill_ship(ship.owner(), ship);
       std::string sectors_destroyed_msg = std::format(
@@ -810,9 +810,9 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     auto& smap = *smap_handle;
 
     char long_buf[1024], short_buf[256];
-    auto result = shoot_ship_to_planet(entity_manager, ship, planet,
-                                       (int)(ship.destruct()), x, y, smap, 0,
-                                       GTYPE_LIGHT, long_buf, short_buf);
+    auto result = shoot_ship_to_planet(
+        entity_manager, ship, planet, (int)(ship.destruct()), Coordinates{x, y},
+        smap, 0, GTYPE_LIGHT, long_buf, short_buf);
 
     std::stringstream telegram;
     telegram << postmsg;

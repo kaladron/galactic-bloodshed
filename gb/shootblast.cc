@@ -149,11 +149,10 @@ int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
  * @return Result containing number of sectors destroyed and which players were
  * hit.
  */
-ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
-                                         Planet& pl, int strength, int x, int y,
-                                         SectorMap& smap, int ignore,
-                                         int caliber, char* long_msg,
-                                         char* short_msg) {
+ShootToPlanetResult
+shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
+                     int strength, Coordinates target_sector, SectorMap& smap,
+                     int ignore, int caliber, char* long_msg, char* short_msg) {
   ShootToPlanetResult result;
 
   if (strength <= 0) {
@@ -173,7 +172,7 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
     return result;
   }
 
-  if (x < 0 || x > pl.Maxx() - 1 || y < 0 || y > pl.Maxy() - 1) {
+  if (!pl.is_valid(target_sector)) {
     result.numdest = -1;
     return result;
   }
@@ -195,15 +194,16 @@ ShootToPlanetResult shoot_ship_to_planet(EntityManager& em, const Ship& ship,
       }
   }
 
-  auto& target = smap.get(x, y);
+  auto& target = smap.get(target_sector);
   player_t oldowner = target.get_owner();
 
   std::array<int, MAXPLAYERS> sum_mob{0};
 
   for (auto y2 = 0; y2 < pl.Maxy(); y2++) {
     for (auto x2 = 0; x2 < pl.Maxx(); x2++) {
-      int dx = std::min(std::abs(x2 - x), std::abs(x + (pl.Maxx() - 1) - x2));
-      int dy = std::abs(y2 - y);
+      int dx = std::min(std::abs(x2 - target_sector.x),
+                        std::abs(target_sector.x + (pl.Maxx() - 1) - x2));
+      int dy = std::abs(y2 - target_sector.y);
       double d = std::sqrt((double)(dx * dx + dy * dy));
       auto& s = smap.get(x2, y2);
 

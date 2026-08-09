@@ -115,9 +115,9 @@ void bombard(const command_t& argv, GameObj& g) {
     }
     SectorMap& smap = *smap_handle;
     char long_buf[1024], short_buf[256];
-    auto result = shoot_ship_to_planet(g.entity_manager, from, p, strength,
-                                       target_coords.x, target_coords.y, smap,
-                                       0, 0, long_buf, short_buf);
+    auto result =
+        shoot_ship_to_planet(g.entity_manager, from, p, strength, target_coords,
+                             smap, 0, 0, long_buf, short_buf);
 
     if (result.numdest < 0) {
       g.out << "Illegal attack.\n";

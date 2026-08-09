@@ -320,7 +320,7 @@ Star Makestar(Database& db, starnum_t snum) {
       printf("sect map(%dx%d):\n", planet.Maxx(), planet.Maxy());
       for (y = 0; y < planet.Maxy(); y++) {
         for (x = 0; x < planet.Maxx(); x++) {
-          std::putchar(get_sector_char(smap.get(x, y).get_condition()));
+          std::putchar(get_sector_char(smap.get({x, y}).get_condition()));
         }
         std::putchar('\n');
       }
@@ -330,11 +330,12 @@ Star Makestar(Database& db, starnum_t snum) {
      * Tabulate statistics for this star's planets. */
     for (y = 0; y < planet.Maxy(); y++)
       for (x = 0; x < planet.Maxx(); x++) {
-        std::uint8_t d = smap.get(x, y).get_condition();
-        planet.total_resources() += smap.get(x, y).get_resource();
-        Resource[type] += smap.get(x, y).get_resource();
+        const auto& sect = smap.get({x, y});
+        std::uint8_t d = sect.get_condition();
+        planet.total_resources() += sect.get_resource();
+        Resource[type] += sect.get_resource();
         Numsects[type][d]++;
-        Fertsects[type][d] += smap.get(x, y).get_fert();
+        Fertsects[type][d] += sect.get_fert();
       }
 
     // Save sectormap and planet to database after calculations

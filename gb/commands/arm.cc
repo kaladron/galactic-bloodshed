@@ -44,13 +44,13 @@ void arm(const command_t& argv, GameObj& g) {
     return;
   }
 
-  auto xy_result = scn::scan<int, int>(argv[1], "{},{}");
-  if (!xy_result) {
+  auto coords_opt = Coordinates::parse(argv[1]);
+  if (!coords_opt) {
     g.out << "Bad format for sector.\n";
     return;
   }
-  auto [x, y] = xy_result->values();
-  if (x < 0 || y < 0 || x > planet.Maxx() - 1 || y > planet.Maxy() - 1) {
+  const Coordinates coords = *coords_opt;
+  if (!planet.is_valid(coords)) {
     g.out << "Illegal coordinates.\n";
     return;
   }
@@ -61,7 +61,7 @@ void arm(const command_t& argv, GameObj& g) {
     return;
   }
   auto& smap = *smap_handle;
-  auto& sect = smap.get(x, y);
+  auto& sect = smap.get(coords);
   if (sect.get_owner() != Playernum) {
     g.out << "You don't own that sector.\n";
     return;

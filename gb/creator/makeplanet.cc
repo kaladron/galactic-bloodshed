@@ -108,17 +108,17 @@ int neighbors(SectorMap& smap, Coordinates coords, int type) {
   else if (r == smap.get_maxx())
     r = 0;
   if (coords.y > 0)
-    n += (smap.get(coords.x, coords.y - 1).get_type() == type) +
-         (smap.get(l, coords.y - 1).get_type() == type) +
-         (smap.get(r, coords.y - 1).get_type() == type);
+    n += (smap.get({coords.x, coords.y - 1}).get_type() == type) +
+         (smap.get({l, coords.y - 1}).get_type() == type) +
+         (smap.get({r, coords.y - 1}).get_type() == type);
 
-  n += (smap.get(l, coords.y).get_type() == type) +
-       (smap.get(r, coords.y).get_type() == type);
+  n += (smap.get({l, coords.y}).get_type() == type) +
+       (smap.get({r, coords.y}).get_type() == type);
 
   if (coords.y < smap.get_maxy() - 1)
-    n += (smap.get(coords.x, coords.y + 1).get_type() == type) +
-         (smap.get(l, coords.y + 1).get_type() == type) +
-         (smap.get(r, coords.y + 1).get_type() == type);
+    n += (smap.get({coords.x, coords.y + 1}).get_type() == type) +
+         (smap.get({l, coords.y + 1}).get_type() == type) +
+         (smap.get({r, coords.y + 1}).get_type() == type);
 
   return (n);
 }
@@ -153,7 +153,7 @@ void grow(SectorMap& smap, SectorType type, int n, int rate) {
   }
 
   for (auto& [x, y, sector_type] : worklist) {
-    auto& s = smap.get(x, y);
+    auto& s = smap.get({x, y});
     s.set_condition(sector_type);
     s.set_type(sector_type);
   }
@@ -257,7 +257,7 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
   SectorMap smap(planet, true);
   for (auto y = 0; y < planet.Maxy(); y++) {
     for (auto x = 0; x < planet.Maxx(); x++) {
-      auto& s = smap.get(x, y);
+      auto& s = smap.get({x, y});
       s.set_x(x);
       s.set_y(y);
       s.set_type(t);

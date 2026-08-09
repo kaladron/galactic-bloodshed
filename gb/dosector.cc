@@ -22,7 +22,7 @@ void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
   else if (xd > planet.Maxx() - 1)
     xd = 0;
 
-  auto& pd = smap.get(xd, yd);
+  auto& pd = smap.get({xd, yd});
 
   if (!pd.is_owned()) {
     const auto* race = entity_manager.peek_race(ps.get_owner());

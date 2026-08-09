@@ -405,6 +405,10 @@ add_executable(strong_id_json_test strong_id_json_test.cc)
 target_link_libraries(strong_id_json_test PRIVATE gblib glaze_core_module glaze::glaze)
 add_test(NAME GB_strong_id_json_test COMMAND strong_id_json_test)
 
+add_executable(coordinates_test coordinates_test.cc)
+target_link_libraries(coordinates_test PRIVATE gblib)
+add_test(NAME GB_coordinates_test COMMAND coordinates_test)
+
 add_executable(star_test star_test.cc)
 target_link_libraries(star_test PRIVATE gblib)
 add_test(NAME GB_star_test COMMAND star_test)

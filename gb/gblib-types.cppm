@@ -155,10 +155,80 @@ export struct Victory {
 };
 
 export struct Coordinates {
-  int x;
-  int y;
+  int x{0};
+  int y{0};
 
-  Coordinates(int x_, int y_) : x(x_), y(y_) {}
+  constexpr Coordinates() = default;
+  constexpr Coordinates(int x_, int y_) noexcept : x(x_), y(y_) {}
+
+  constexpr Coordinates operator+(const Coordinates& other) const noexcept {
+    return {x + other.x, y + other.y};
+  }
+  constexpr Coordinates operator-(const Coordinates& other) const noexcept {
+    return {x - other.x, y - other.y};
+  }
+  constexpr Coordinates& operator+=(const Coordinates& other) noexcept {
+    x += other.x;
+    y += other.y;
+    return *this;
+  }
+  constexpr Coordinates& operator-=(const Coordinates& other) noexcept {
+    x -= other.x;
+    y -= other.y;
+    return *this;
+  }
+
+  constexpr auto operator<=>(const Coordinates&) const = default;
+  constexpr bool operator==(const Coordinates&) const = default;
+
+  /**
+   * \brief Parse a string in the format "x,y" into a Coordinates object.
+   * \param str Input string view
+   * \return Coordinates if successfully parsed, empty optional otherwise.
+   */
+  static std::optional<Coordinates> parse(std::string_view str) {
+    int x_val = 0;
+    int y_val = 0;
+    auto comma_pos = str.find(',');
+    if (comma_pos == std::string_view::npos) return std::nullopt;
+
+    auto x_str = str.substr(0, comma_pos);
+    auto y_str = str.substr(comma_pos + 1);
+
+    while (!x_str.empty() &&
+           std::isspace(static_cast<unsigned char>(x_str.front())))
+      x_str.remove_prefix(1);
+    while (!x_str.empty() &&
+           std::isspace(static_cast<unsigned char>(x_str.back())))
+      x_str.remove_suffix(1);
+    while (!y_str.empty() &&
+           std::isspace(static_cast<unsigned char>(y_str.front())))
+      y_str.remove_prefix(1);
+    while (!y_str.empty() &&
+           std::isspace(static_cast<unsigned char>(y_str.back())))
+      y_str.remove_suffix(1);
+
+    if (x_str.empty() || y_str.empty()) return std::nullopt;
+
+    auto [p1, ec1] =
+        std::from_chars(x_str.data(), x_str.data() + x_str.size(), x_val);
+    if (ec1 != std::errc{} || p1 != x_str.data() + x_str.size())
+      return std::nullopt;
+
+    auto [p2, ec2] =
+        std::from_chars(y_str.data(), y_str.data() + y_str.size(), y_val);
+    if (ec2 != std::errc{} || p2 != y_str.data() + y_str.size())
+      return std::nullopt;
+
+    return Coordinates{x_val, y_val};
+  }
+};
+
+export template <>
+struct std::formatter<Coordinates> : std::formatter<std::string_view> {
+  auto format(const Coordinates& c, auto& ctx) const {
+    return std::format_to(ctx.out(), "{},{}", c.x, c.y);
+  }
 };
 
 /**

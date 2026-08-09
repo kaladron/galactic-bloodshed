@@ -6,8 +6,6 @@
 #ifndef RACEGEN_H
 #define RACEGEN_H
 
-#include <cstdio>
-
 #define GBVERSION "1.7.3"
 #ifdef VERSION
 #undef VERSION
@@ -181,12 +179,12 @@ struct x {
   char rejection[256]; /* Error if this is non-"" */
   char status;
 
-  double attr[N_ATTRIBUTES];
+  std::array<double, N_ATTRIBUTES> attr{};
   int race_type;
   int priv_type;
   int home_planet_type;
   int n_sector_types;
-  double compat[N_SECTOR_TYPES];
+  std::array<double, N_SECTOR_TYPES> compat{};
 };
 
 /**************

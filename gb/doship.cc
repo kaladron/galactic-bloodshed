@@ -77,10 +77,7 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
   auto smap_handle = entity_manager.get_sectormap(star, pnum);
   if (!smap_handle.get()) return;
   auto& smap = *smap_handle;
-  // TODO(jeffbailey): I'm pretty certain this memset is unnecessary, but this
-  // is so far away from any other uses of Sectinfo that I'm having trouble
-  // proving it.
-  std::memset(stats.Sectinfo.data(), 0, sizeof(stats.Sectinfo));
+  stats.Sectinfo = {};
   auto x = int_rand(0, p.Maxx() - 1);
   auto y = int_rand(0, p.Maxy() - 1);
   auto owner = smap.get(x, y).get_owner();

@@ -13,40 +13,33 @@ void name(const command_t& argv, GameObj& g) {
   ap_t APcount = 0;
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  char* ch;
-  int spaces;
-  unsigned char check = 0;
-  char string[1024];
+
   if (argv.size() < 3 || !std::isalnum(argv[2][0])) {
     g.out << "Illegal name format.\n";
     return;
   }
 
-  std::string namebuf = argv[2];
+  std::string formatted_name = argv[2];
   for (std::size_t i = 3; i < argv.size(); i++) {
-    namebuf += " ";
-    namebuf += argv[i];
+    formatted_name += " ";
+    formatted_name += argv[i];
   }
-  std::sprintf(string, "%s", namebuf.c_str());
 
   /* make sure there are no ^'s or '/' in name,
     also make sure the name has at least 1 character in it */
-  ch = string;
-  spaces = 0;
-  while (*ch != '\0') {
-    check |= ((!std::isalnum(*ch) && !(*ch == ' ') && !(*ch == '.')) ||
-              (*ch == '/'));
-    ch++;
-    if (*ch == ' ') spaces++;
-  }
+  bool has_invalid_char = std::ranges::any_of(formatted_name, [](char ch) {
+    return (!std::isalnum(ch) && ch != ' ' && ch != '.') || ch == '/';
+  });
+  auto spaces = std::ranges::count(formatted_name, ' ');
 
-  if (spaces == namebuf.size()) {
+  if (spaces == static_cast<long>(formatted_name.size())) {
     g.out << "Illegal name.\n";
     return;
   }
 
-  if (namebuf.size() < 1 || check) {
-    g.out << std::format("Illegal name {}.\n", check ? "form" : "length");
+  if (formatted_name.empty() || has_invalid_char) {
+    g.out << std::format("Illegal name {}.\n",
+                         has_invalid_char ? "form" : "length");
     return;
   }
 
@@ -57,7 +50,7 @@ void name(const command_t& argv, GameObj& g) {
         g.out << "Ship not found.\n";
         return;
       }
-      ship->name() = namebuf;
+      ship->name() = formatted_name;
       g.out << "Name set.\n";
       return;
     }
@@ -79,7 +72,7 @@ void name(const command_t& argv, GameObj& g) {
         g.out << "This factory is already on line.\n";
         return;
       }
-      ship->shipclass() = namebuf;
+      ship->shipclass() = formatted_name;
       g.out << "Class set.\n";
       return;
     }
@@ -94,7 +87,7 @@ void name(const command_t& argv, GameObj& g) {
     }
     auto block_handle = g.entity_manager.get_block(Playernum.value);
     auto& block = *block_handle;
-    block.name = namebuf;
+    block.name = formatted_name;
     g.out << "Done.\n";
   } else if (argv[1] == "star") {
     if (g.level() == ScopeLevel::LEVEL_STAR) {
@@ -107,7 +100,7 @@ void name(const command_t& argv, GameObj& g) {
         g.out << "Star not found.\n";
         return;
       }
-      star->set_name(namebuf);
+      star->set_name(formatted_name);
     } else {
       g.out << "You have to 'cs' to a star to name it.\n";
       return;
@@ -123,7 +116,7 @@ void name(const command_t& argv, GameObj& g) {
         g.out << "Star not found.\n";
         return;
       }
-      star->set_planet_name(g.pnum(), namebuf);
+      star->set_planet_name(g.pnum(), formatted_name);
       deductAPs(g, APcount, g.snum());
     } else {
       g.out << "You have to 'cs' to a planet to name it.\n";
@@ -139,7 +132,7 @@ void name(const command_t& argv, GameObj& g) {
       g.out << "Race not found.\n";
       return;
     }
-    race->name = namebuf;
+    race->name = formatted_name;
     g.out << std::format("Name changed to `{}'.\n", race->name);
   } else if (argv[1] == "governor") {
     auto race = g.entity_manager.get_race(Playernum);
@@ -147,7 +140,7 @@ void name(const command_t& argv, GameObj& g) {
       g.out << "Race not found.\n";
       return;
     }
-    race->governor[Governor.value].name = namebuf;
+    race->governor[Governor.value].name = formatted_name;
     g.out << std::format("Name changed to `{}'.\n",
                          race->governor[Governor.value].name);
   } else {

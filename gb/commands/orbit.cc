@@ -18,8 +18,10 @@ static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int,
                             const Race&);
 static std::string DispPlanet(const GameObj&, const ScopeLevel, const Planet&,
                               std::string_view, int, const Race&);
-static void DispShip(const GameObj&, EntityManager&, const Place&, const Ship*,
-                     const Race&, char*, const Planet& = Planet());
+static std::string DispShip(const GameObj&, EntityManager&, const Place&,
+                            const Ship*, const Race&);
+static std::string DispShip(const GameObj&, EntityManager&, const Place&,
+                            const Ship*, const Race&, const Planet&);
 
 namespace GB::commands {
 /* OPTIONS
@@ -37,7 +39,7 @@ void orbit(const command_t& argv, GameObj& g) {
   int DontDispPlanets;
   int DontDispShips;
   int DontDispStars;
-  char output[100000];
+  std::string system_map_text;
 
   DontDispPlanets = DontDispShips = DontDispStars = 0;
 
@@ -63,7 +65,7 @@ void orbit(const command_t& argv, GameObj& g) {
             } else {
               g.out << std::format("Bad number {}.\n",
                                    std::string_view(argv[flag]).substr(1));
-              DontDispNum = -1;
+              return;
             }
             if (DontDispNum > 0) DontDispNum--; /* make a '1' into a '0' */
             break;
@@ -90,7 +92,7 @@ void orbit(const command_t& argv, GameObj& g) {
   }
 
   /* orbit type of map */
-  std::sprintf(output, "#");
+  system_map_text = "#";
 
   const auto* race_ptr = g.entity_manager.peek_race(g.player());
   if (!race_ptr) {
@@ -111,18 +113,15 @@ void orbit(const command_t& argv, GameObj& g) {
         if (DontDispNum != star_ref.star_id()) {
           std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, star_ref,
                                       DontDispStars, Race);
-          std::strcat(output, star.c_str());
+          system_map_text += star;
         }
       }
       if (!DontDispShips) {
         ShipList ships(g.entity_manager, universe->ships);
-        char shipbuf[256];
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
           if (DontDispNum != s.number()) {
-            shipbuf[0] = '\0';
-            DispShip(g, g.entity_manager, *where, &s, Race, shipbuf);
-            std::strcat(output, shipbuf);
+            system_map_text += DispShip(g, g.entity_manager, *where, &s, Race);
           }
         }
       }
@@ -136,7 +135,7 @@ void orbit(const command_t& argv, GameObj& g) {
       }
       std::string star =
           DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars, Race);
-      std::strcat(output, star.c_str());
+      system_map_text += star;
 
       for (planetnum_t i = 0; i < star_ptr->numplanets(); i++)
         if (DontDispNum != i) {
@@ -145,7 +144,7 @@ void orbit(const command_t& argv, GameObj& g) {
           std::string planet =
               DispPlanet(g, ScopeLevel::LEVEL_STAR, *p,
                          star_ptr->get_planet_name(i), DontDispPlanets, Race);
-          std::strcat(output, planet.c_str());
+          system_map_text += planet;
         }
       /* check to see if you have ships at orbiting the star, if so you can
          see enemy ships */
@@ -164,15 +163,13 @@ void orbit(const command_t& argv, GameObj& g) {
       }
       if (!DontDispShips) {
         ShipList ships(g.entity_manager, star_ptr->ships());
-        char shipbuf[256];
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
           if (DontDispNum != s.number() &&
               !(s.owner() != g.player() && s.type() == ShipType::STYPE_MINE)) {
             if ((s.owner() == g.player()) || iq) {
-              shipbuf[0] = '\0';
-              DispShip(g, g.entity_manager, *where, &s, Race, shipbuf);
-              std::strcat(output, shipbuf);
+              system_map_text +=
+                  DispShip(g, g.entity_manager, *where, &s, Race);
             }
           }
         }
@@ -192,7 +189,7 @@ void orbit(const command_t& argv, GameObj& g) {
       std::string planet = DispPlanet(g, ScopeLevel::LEVEL_PLAN, *p,
                                       plan_star->get_planet_name(where->pnum),
                                       DontDispPlanets, Race);
-      std::strcat(output, planet.c_str());
+      system_map_text += planet;
 
       /* check to see if you have ships at landed or
          orbiting the planet, if so you can see orbiting enemy ships */
@@ -207,15 +204,13 @@ void orbit(const command_t& argv, GameObj& g) {
       }
       /* end check */
       if (!DontDispShips) {
-        char shipbuf[256];
         for (auto ship_handle : ships) {
           const Ship& s = ship_handle.peek();  // Read-only access
           if (DontDispNum != s.number()) {
             if (!landed(s)) {
               if ((s.owner() == g.player()) || iq) {
-                shipbuf[0] = '\0';
-                DispShip(g, g.entity_manager, *where, &s, Race, shipbuf, *p);
-                std::strcat(output, shipbuf);
+                system_map_text +=
+                    DispShip(g, g.entity_manager, *where, &s, Race, *p);
               }
             }
           }
@@ -226,8 +221,8 @@ void orbit(const command_t& argv, GameObj& g) {
       g.out << "Bad scope.\n";
       return;
   }
-  std::strcat(output, "\n");
-  g.out << output;
+  system_map_text += '\n';
+  g.out << system_map_text;
 }
 }  // namespace GB::commands
 
@@ -313,9 +308,9 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
   return ss.str();
 }
 
-static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
-                     const Ship* ship, const Race& r, char* string,
-                     const Planet& pl) {
+static std::string DispShip(const GameObj& g, EntityManager& em,
+                            const Place& where, const Ship* ship, const Race& r,
+                            const Planet& pl) {
   int x;
   int y;
   int wm;
@@ -324,9 +319,7 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
   double yt;
   double slope;
 
-  if (!ship->alive()) return;
-
-  *string = '\0';
+  if (!ship || !ship->alive()) return "";
 
   // Get star position for coordinate calculations
   const auto* where_star = (where.level != ScopeLevel::LEVEL_UNIV)
@@ -335,7 +328,7 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
 
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
-      if (!where_star) return;
+      if (!where_star) return "";
       x = (int)(SCALE + (SCALE * (ship->xpos() -
                                   (where_star->xpos() + pl.xpos()) - Lastx)) /
                             (PLORBITSIZE * Zoom));
@@ -344,7 +337,7 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
                             (PLORBITSIZE * Zoom));
       break;
     case ScopeLevel::LEVEL_STAR:
-      if (!where_star) return;
+      if (!where_star) return "";
       x = (int)(SCALE + (SCALE * (ship->xpos() - where_star->xpos() - Lastx)) /
                             (SYSTEMSIZE * Zoom));
       y = (int)(SCALE + (SCALE * (ship->ypos() - where_star->ypos() - Lasty)) /
@@ -356,7 +349,7 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
       break;
     case ScopeLevel::LEVEL_SHIP:
       // Ships can't orbit other ships; this case should never be reached.
-      return;
+      return "";
   }
 
   switch (ship->type()) {
@@ -437,15 +430,16 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
       /* (magnification) */
       if (x >= 0 && y >= 0) {
         if (r.governor[g.governor().value].toggle.color) {
-          std::sprintf(string, "%c %d %d %d %c %c %lu;",
-                       (char)(ship->owner().value + '?'), x, y, wm,
-                       Shipltrs[ship->type()],
-                       (char)(ship->owner().value + '?'), ship->number().value);
+          return std::format(
+              "{} {} {} {} {} {} {};", (char)(ship->owner().value + '?'), x, y,
+              wm, Shipltrs[ship->type()], (char)(ship->owner().value + '?'),
+              ship->number().value);
         } else {
           stand = (ship->owner() ==
                    r.governor[g.governor().value].toggle.highlight);
-          std::sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                       Shipltrs[ship->type()], stand, ship->number().value);
+          return std::format("{} {} {} {} {} {} {};", stand, x, y, wm,
+                             Shipltrs[ship->type()], stand,
+                             ship->number().value);
         }
       }
       break;
@@ -462,18 +456,26 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
           ((ship->owner() == g.player()) || g.god()))
         if (x >= 0 && y >= 0) {
           if (r.governor[g.governor().value].toggle.color) {
-            std::sprintf(string, "%c %d %d %d %c %c %lu;",
-                         (char)(ship->owner().value + '?'), x, y, wm,
-                         Shipltrs[ship->type()],
-                         (char)(ship->owner().value + '?'),
-                         ship->number().value);
+            return std::format(
+                "{} {} {} {} {} {} {};", (char)(ship->owner().value + '?'), x,
+                y, wm, Shipltrs[ship->type()],
+                (char)(ship->owner().value + '?'), ship->number().value);
           } else {
             stand = (ship->owner() ==
                      r.governor[g.governor().value].toggle.highlight);
-            std::sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                         Shipltrs[ship->type()], stand, ship->number().value);
+            return std::format("{} {} {} {} {} {} {};", stand, x, y, wm,
+                               Shipltrs[ship->type()], stand,
+                               ship->number().value);
           }
         }
       break;
   }
+  return "";
+}
+
+static std::string DispShip(const GameObj& g, EntityManager& em,
+                            const Place& where, const Ship* ship,
+                            const Race& r) {
+  static const Planet dummy_planet{};
+  return DispShip(g, em, where, ship, r, dummy_planet);
 }

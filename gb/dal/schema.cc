@@ -82,11 +82,12 @@ void initialize_schema(Database& db) {
   CREATE INDEX idx_telegram_recipient ON tbl_telegram(recipient_player, recipient_governor);
 )";
 
-  char* err_msg = nullptr;
+  char* raw_err = nullptr;
   int err =
-      sqlite3_exec(db.connection(), tbl_create, nullptr, nullptr, &err_msg);
+      sqlite3_exec(db.connection(), tbl_create, nullptr, nullptr, &raw_err);
+  std::unique_ptr<char, decltype(&sqlite3_free)> err_msg(raw_err, sqlite3_free);
   if (err != SQLITE_OK) {
-    std::println(stderr, "SQL error: {}", err_msg);
-    sqlite3_free(err_msg);
+    std::println(stderr, "SQL error: {}",
+                 err_msg ? err_msg.get() : "Unknown error");
   }
 }

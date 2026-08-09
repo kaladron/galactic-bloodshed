@@ -25,7 +25,7 @@ int printplaninfo = 0;
 int printstarinfo = 0;
 
 static int nstars = -1;
-static int occupied[100][100];
+static std::array<std::array<bool, 100>, 100> star_grid_occupancy{};
 static int planetlesschance = 0;
 
 // Local storage for universe creation - not the global Sdata/stars
@@ -241,6 +241,9 @@ void place_star(star_struct& star) {
     /* check to see if another star is nearby */
     i = 100 * ((int)star.xpos + UNIVSIZE) / (2 * UNIVSIZE);
     j = 100 * ((int)star.xpos + UNIVSIZE) / (2 * UNIVSIZE);
-    if (!occupied[i][j]) occupied[i][j] = found = 1;
+    if (!star_grid_occupancy[i][j]) {
+      star_grid_occupancy[i][j] = true;
+      found = 1;
+    }
   }
 }

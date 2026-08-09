@@ -3,11 +3,11 @@
 /// \file GB_racegen.cc
 /// \brief Helper functions for race generation and enrollment.
 
-#include "gb/racegen.h"
-
 import std;
 import dallib;
 import gblib;
+
+#include "gb/racegen.h"
 
 namespace {
 constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {
@@ -92,62 +92,62 @@ found_planet:
   auto planet_handle = entity_manager.get_planet(star, pnum);
   auto& planet = *planet_handle;
 
-  auto race = new Race{};
+  Race race{};
 
-  race->Playernum = Playernum;
-  race->God = (race_info.priv_type == P_GOD);
-  race->Guest = (race_info.priv_type == P_GUEST);
-  race->name = race_info.name;
-  race->password = race_info.password;
+  race.Playernum = Playernum;
+  race.God = (race_info.priv_type == P_GOD);
+  race.Guest = (race_info.priv_type == P_GUEST);
+  race.name = race_info.name;
+  race.password = race_info.password;
 
-  race->governor[0].password = "0";
-  race->governor[0].homelevel = race->governor[0].deflevel =
+  race.governor[0].password = "0";
+  race.governor[0].homelevel = race.governor[0].deflevel =
       ScopeLevel::LEVEL_PLAN;
-  race->governor[0].homesystem = race->governor[0].defsystem = star;
-  race->governor[0].homeplanetnum = race->governor[0].defplanetnum = pnum;
+  race.governor[0].homesystem = race.governor[0].defsystem = star;
+  race.governor[0].homeplanetnum = race.governor[0].defplanetnum = pnum;
   /* display options */
-  race->governor[0].toggle.highlight = Playernum;
-  race->governor[0].toggle.inverse = true;
-  race->governor[0].toggle.color = false;
-  race->governor[0].active = true;
+  race.governor[0].toggle.highlight = Playernum;
+  race.governor[0].toggle.inverse = true;
+  race.governor[0].toggle.color = false;
+  race.governor[0].active = true;
 
   for (auto i = 0; i <= OTHER; i++)
-    race->conditions[i] = planet.conditions(static_cast<Conditions>(i));
+    race.conditions[i] = planet.conditions(static_cast<Conditions>(i));
 
   for (auto i = 1; i <= MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */
-    if ((i == Playernum) || (Playernum == 1) || race->God)
-      race->translate[i - 1] = 100; /* you can talk to own race */
+    if ((i == Playernum) || (Playernum == 1) || race.God)
+      race.translate[i - 1] = 100; /* you can talk to own race */
     else
-      race->translate[i - 1] = 1;
+      race.translate[i - 1] = 1;
   }
 
   // Assign racial characteristics
-  race->absorb = (race_info.attr[ABSORB] != 0.0);
-  race->collective_iq = (race_info.attr[COL_IQ] != 0.0);
-  race->Metamorph = (race_info.race_type == R_METAMORPH);
-  race->pods = (race_info.attr[PODS] != 0.0);
+  race.absorb = (race_info.attr[ABSORB] != 0.0);
+  race.collective_iq = (race_info.attr[COL_IQ] != 0.0);
+  race.Metamorph = (race_info.race_type == R_METAMORPH);
+  race.pods = (race_info.attr[PODS] != 0.0);
 
-  race->fighters = race_info.attr[FIGHT];
+  race.fighters = race_info.attr[FIGHT];
   if (race_info.attr[COL_IQ] == 1.0)
-    race->IQ_limit = race_info.attr[A_IQ];
+    race.IQ_limit = race_info.attr[A_IQ];
   else
-    race->IQ = race_info.attr[A_IQ];
-  race->number_sexes = race_info.attr[SEXES];
+    race.IQ = race_info.attr[A_IQ];
+  race.number_sexes = race_info.attr[SEXES];
 
-  race->fertilize = race_info.attr[FERT] * 100;
+  race.fertilize = race_info.attr[FERT] * 100;
 
-  race->adventurism = race_info.attr[ADVENT];
-  race->birthrate = race_info.attr[BIRTH];
-  race->mass = race_info.attr[MASS];
-  race->metabolism = race_info.attr[METAB];
+  race.adventurism = race_info.attr[ADVENT];
+  race.birthrate = race_info.attr[BIRTH];
+  race.mass = race_info.attr[MASS];
+  race.metabolism = race_info.attr[METAB];
 
   // Assign sector compats and determine a primary sector type.
   for (auto i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++) {
-    race->likes[i] = race_info.compat[i] / 100.0;
+    race.likes[i] = race_info.compat[i] / 100.0;
     if ((100 == race_info.compat[i]) &&
         (1.0 == planet_compat_cov[race_info.home_planet_type][i]))
-      race->likesbest = i;
+      race.likesbest = i;
   }
 
   // Find sector to build capital on, and populate it
@@ -157,7 +157,7 @@ found_planet:
   Sector& sect = [&]() -> Sector& {
     for (auto shuffled = smap.shuffle(); const auto& sector_wrap : shuffled) {
       Sector& current_sect = sector_wrap.get();
-      if (current_sect.get_condition() == race->likesbest) {
+      if (current_sect.get_condition() == race.likesbest) {
         return current_sect;
       }
     }
@@ -167,21 +167,21 @@ found_planet:
 
   sect.set_owner(Playernum);
   sect.set_race(Playernum);
-  sect.set_popn_exact(race->number_sexes);
-  planet.popn() = race->number_sexes;
+  sect.set_popn_exact(race.number_sexes);
+  planet.popn() = race.number_sexes;
   sect.set_fert(100);
   sect.set_efficiency_bounded(10);
   sect.set_troops(0);
   planet.troops() = 0;
 
-  race->governors = 0;
+  race.governors = 0;
 
   // Build a capital ship to run the government
   {
     ship_struct ss{};  // POD struct for initialization
 
     auto shipno = shipnum_t{entity_manager.num_ships().value + 1};
-    race->Gov_ship = shipno;
+    race.Gov_ship = shipno;
     planet.ships() = shipno;
     ss.nextship = 0;
 
@@ -218,7 +218,7 @@ found_planet:
     ss.fuel = 0.0;
     ss.popn = Shipdata[ss.type][ABIL_MAXCREW];
     ss.troops = 0;
-    ss.mass = ss.base_mass + Shipdata[ss.type][ABIL_MAXCREW] * race->mass;
+    ss.mass = ss.base_mass + Shipdata[ss.type][ABIL_MAXCREW] * race.mass;
     ss.destruct = ss.resource = 0;
 
     ss.alive = 1;
@@ -257,11 +257,11 @@ found_planet:
 
   // (approximate)
   planet.maxpopn() =
-      maxsupport(*race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
+      maxsupport(race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
 
   // Save race using repository
   RaceRepository races(store);
-  races.save(*race);
+  races.save(race);
 
   // planet_handle and smap_handle will auto-save when they go out of scope
 

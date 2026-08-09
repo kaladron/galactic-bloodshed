@@ -25,100 +25,100 @@ export struct universe_struct {
 // Wrapper class for Universe data (like Star wraps star_struct)
 // Provides type-safe accessor methods instead of raw array access
 export class Universe {
-  universe_struct* data;
+  universe_struct& data;
 
 public:
-  explicit Universe(universe_struct& raw_data) : data(&raw_data) {}
+  explicit Universe(universe_struct& raw_data) : data(raw_data) {}
 
   // Basic accessors
   unsigned short numstars() const {
-    return data->numstars;
+    return data.numstars;
   }
   void set_numstars(unsigned short value) {
-    data->numstars = value;
+    data.numstars = value;
   }
 
   shipnum_t ships() const {
-    return data->ships;
+    return data.ships;
   }
   void set_ships(shipnum_t value) {
-    data->ships = value;
+    data.ships = value;
   }
 
   // Action Point (AP) methods
   ap_t get_AP(player_t p) const {
     if (p.value < 1 || p.value > MAXPLAYERS) return 0;
-    return data->AP[p.value - 1];
+    return data.AP[p.value - 1];
   }
 
   void set_AP(player_t p, ap_t value) {
     if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data->AP[p.value - 1] = value;
+    data.AP[p.value - 1] = value;
   }
 
   void deduct_AP(player_t p, ap_t amount) {
     if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data->AP[p.value - 1] =
-        (data->AP[p.value - 1] > amount) ? (data->AP[p.value - 1] - amount) : 0;
+    data.AP[p.value - 1] =
+        (data.AP[p.value - 1] > amount) ? (data.AP[p.value - 1] - amount) : 0;
   }
 
   void add_AP(player_t p, ap_t amount) {
     if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data->AP[p.value - 1] += amount;
+    data.AP[p.value - 1] += amount;
   }
 
   // VN (Von Neumann) tracking methods
   unsigned short get_VN_hitlist(player_t p) const {
     if (p.value < 1 || p.value > MAXPLAYERS) return 0;
-    return data->VN_hitlist[p.value - 1];
+    return data.VN_hitlist[p.value - 1];
   }
 
   void set_VN_hitlist(player_t p, unsigned short value) {
     if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data->VN_hitlist[p.value - 1] = value;
+    data.VN_hitlist[p.value - 1] = value;
   }
 
   void increment_VN_hitlist(player_t p) {
     if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data->VN_hitlist[p.value - 1]++;
+    data.VN_hitlist[p.value - 1]++;
   }
 
   void decrement_VN_hitlist(player_t p) {
     if (p.value < 1 || p.value > MAXPLAYERS) return;
-    if (data->VN_hitlist[p.value - 1] > 0) data->VN_hitlist[p.value - 1]--;
+    if (data.VN_hitlist[p.value - 1] > 0) data.VN_hitlist[p.value - 1]--;
   }
 
   int get_VN_index1(player_t p) const {
     if (p.value < 1 || p.value > MAXPLAYERS) return 0;
-    return data->VN_index1[p.value - 1];
+    return data.VN_index1[p.value - 1];
   }
 
   void set_VN_index1(player_t p, int value) {
     if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data->VN_index1[p.value - 1] = value;
+    data.VN_index1[p.value - 1] = value;
   }
 
   int get_VN_index2(player_t p) const {
     if (p.value < 1 || p.value > MAXPLAYERS) return 0;
-    return data->VN_index2[p.value - 1];
+    return data.VN_index2[p.value - 1];
   }
 
   void set_VN_index2(player_t p, int value) {
     if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data->VN_index2[p.value - 1] = value;
+    data.VN_index2[p.value - 1] = value;
   }
 
   // Direct access to underlying struct (for migration compatibility)
   universe_struct* operator->() {
-    return data;
+    return &data;
   }
   const universe_struct* operator->() const {
-    return data;
+    return &data;
   }
   universe_struct& operator*() {
-    return *data;
+    return data;
   }
   const universe_struct& operator*() const {
-    return *data;
+    return data;
   }
 };

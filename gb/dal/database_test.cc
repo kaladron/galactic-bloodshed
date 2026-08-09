@@ -228,11 +228,10 @@ int main() {
 
   // Destructor closes connection
   {
-    Database* db = new Database(":memory:");
-    assert(db->is_open());
-    delete db;
-    std::println(std::cout, "✓ Destructor closes connection");
+    Database db(":memory:");
+    assert(db.is_open());
   }
+  std::println(std::cout, "✓ Destructor closes connection");
 
   std::println(std::cout, "\nAll Database tests passed!");
   return 0;

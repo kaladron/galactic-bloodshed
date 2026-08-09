@@ -10,6 +10,36 @@ import std;
 module dallib;
 
 namespace {
+struct SqliteDeleter {
+  void operator()(char* ptr) const {
+    sqlite3_free(ptr);
+  }
+  void operator()(sqlite3_stmt* stmt) const {
+    sqlite3_finalize(stmt);
+  }
+};
+
+using SqliteErrorPtr = std::unique_ptr<char, SqliteDeleter>;
+using SqliteStmtPtr = std::unique_ptr<sqlite3_stmt, SqliteDeleter>;
+
+void exec_sql(sqlite3* db, const char* sql, const char* action_name) {
+  char* raw_errmsg = nullptr;
+  int rc = sqlite3_exec(db, sql, nullptr, nullptr, &raw_errmsg);
+  SqliteErrorPtr errmsg(raw_errmsg);
+  if (rc != SQLITE_OK) {
+    std::string error = errmsg ? errmsg.get() : "Unknown error";
+    throw std::runtime_error(std::format("{}: {}", action_name, error));
+  }
+}
+
+SqliteStmtPtr prepare_stmt(sqlite3* conn, const char* sql) {
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    return nullptr;
+  }
+  return SqliteStmtPtr(stmt);
+}
+
 // Apply SQLite pragmas for strict mode (from existing apply_sqlite_strict_mode)
 void apply_pragmas(sqlite3* db) {
   const char* pragmas[] = {
@@ -20,14 +50,7 @@ void apply_pragmas(sqlite3* db) {
   };
 
   for (const char* pragma : pragmas) {
-    char* errmsg = nullptr;
-    int rc = sqlite3_exec(db, pragma, nullptr, nullptr, &errmsg);
-    if (rc != SQLITE_OK) {
-      std::string error = errmsg ? errmsg : "Unknown error";
-      sqlite3_free(errmsg);
-      throw std::runtime_error(
-          std::format("Failed to apply pragma: {}", error));
-    }
+    exec_sql(db, pragma, "Failed to apply pragma");
   }
 }
 }  // namespace
@@ -80,60 +103,28 @@ void Database::begin_transaction() {
   if (!conn) {
     throw std::runtime_error("Database not open");
   }
-
-  char* errmsg = nullptr;
-  int rc = sqlite3_exec(conn, "BEGIN TRANSACTION", nullptr, nullptr, &errmsg);
-  if (rc != SQLITE_OK) {
-    std::string error = errmsg ? errmsg : "Unknown error";
-    sqlite3_free(errmsg);
-    throw std::runtime_error(
-        std::format("Failed to begin transaction: {}", error));
-  }
+  exec_sql(conn, "BEGIN TRANSACTION", "Failed to begin transaction");
 }
 
 void Database::commit() {
   if (!conn) {
     throw std::runtime_error("Database not open");
   }
-
-  char* errmsg = nullptr;
-  int rc = sqlite3_exec(conn, "COMMIT", nullptr, nullptr, &errmsg);
-  if (rc != SQLITE_OK) {
-    std::string error = errmsg ? errmsg : "Unknown error";
-    sqlite3_free(errmsg);
-    throw std::runtime_error(
-        std::format("Failed to commit transaction: {}", error));
-  }
+  exec_sql(conn, "COMMIT", "Failed to commit transaction");
 }
 
 void Database::rollback() {
   if (!conn) {
     throw std::runtime_error("Database not open");
   }
-
-  char* errmsg = nullptr;
-  int rc = sqlite3_exec(conn, "ROLLBACK", nullptr, nullptr, &errmsg);
-  if (rc != SQLITE_OK) {
-    std::string error = errmsg ? errmsg : "Unknown error";
-    sqlite3_free(errmsg);
-    throw std::runtime_error(
-        std::format("Failed to rollback transaction: {}", error));
-  }
+  exec_sql(conn, "ROLLBACK", "Failed to rollback transaction");
 }
 
 void Database::optimize() {
   if (!conn) {
     throw std::runtime_error("Database not open");
   }
-
-  char* errmsg = nullptr;
-  int rc = sqlite3_exec(conn, "PRAGMA optimize;", nullptr, nullptr, &errmsg);
-  if (rc != SQLITE_OK) {
-    std::string error = errmsg ? errmsg : "Unknown error";
-    sqlite3_free(errmsg);
-    throw std::runtime_error(
-        std::format("Failed to optimize database: {}", error));
-  }
+  exec_sql(conn, "PRAGMA optimize;", "Failed to optimize database");
 }
 
 // News operations implementation
@@ -146,18 +137,16 @@ std::optional<int> Database::news_add(int type, const std::string& message,
     VALUES (?, ?, ?)
   )";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return std::nullopt;
   }
 
-  sqlite3_bind_int(stmt, 1, type);
-  sqlite3_bind_text(stmt, 2, message.c_str(), -1, SQLITE_TRANSIENT);
-  sqlite3_bind_int64(stmt, 3, timestamp);
+  sqlite3_bind_int(stmt.get(), 1, type);
+  sqlite3_bind_text(stmt.get(), 2, message.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int64(stmt.get(), 3, timestamp);
 
-  int result = sqlite3_step(stmt);
-  sqlite3_finalize(stmt);
-
+  int result = sqlite3_step(stmt.get());
   if (result != SQLITE_DONE) {
     return std::nullopt;
   }
@@ -177,25 +166,24 @@ Database::news_get_since(int type, int since_id) {
     ORDER BY timestamp ASC, id ASC
   )";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return items;
   }
 
-  sqlite3_bind_int(stmt, 1, type);
-  sqlite3_bind_int(stmt, 2, since_id);
+  sqlite3_bind_int(stmt.get(), 1, type);
+  sqlite3_bind_int(stmt.get(), 2, since_id);
 
-  while (sqlite3_step(stmt) == SQLITE_ROW) {
-    int id = sqlite3_column_int(stmt, 0);
-    int news_type = sqlite3_column_int(stmt, 1);
+  while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    int id = sqlite3_column_int(stmt.get(), 0);
+    int news_type = sqlite3_column_int(stmt.get(), 1);
     const char* msg_text =
-        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 2));
     std::string message = msg_text ? msg_text : "";
-    std::int64_t ts = sqlite3_column_int64(stmt, 3);
+    std::int64_t ts = sqlite3_column_int64(stmt.get(), 3);
     items.emplace_back(id, news_type, std::move(message), ts);
   }
 
-  sqlite3_finalize(stmt);
   return items;
 }
 
@@ -206,19 +194,18 @@ int Database::news_get_latest_id(int type) {
     SELECT MAX(id) FROM tbl_news WHERE type = ?
   )";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return 0;
   }
 
-  sqlite3_bind_int(stmt, 1, type);
+  sqlite3_bind_int(stmt.get(), 1, type);
 
   int latest_id = 0;
-  if (sqlite3_step(stmt) == SQLITE_ROW) {
-    latest_id = sqlite3_column_int(stmt, 0);
+  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    latest_id = sqlite3_column_int(stmt.get(), 0);
   }
 
-  sqlite3_finalize(stmt);
   return latest_id;
 }
 
@@ -227,16 +214,14 @@ bool Database::news_purge_type(int type) {
 
   const char* sql = "DELETE FROM tbl_news WHERE type = ?";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return false;
   }
 
-  sqlite3_bind_int(stmt, 1, type);
+  sqlite3_bind_int(stmt.get(), 1, type);
 
-  int result = sqlite3_step(stmt);
-  sqlite3_finalize(stmt);
-
+  int result = sqlite3_step(stmt.get());
   return result == SQLITE_DONE;
 }
 
@@ -244,11 +229,9 @@ bool Database::news_purge_all() {
   if (!conn) return false;
 
   const char* sql = "DELETE FROM tbl_news";
-  char* err_msg = nullptr;
-  int result = sqlite3_exec(conn, sql, nullptr, nullptr, &err_msg);
-  if (err_msg) {
-    sqlite3_free(err_msg);
-  }
+  char* raw_err = nullptr;
+  int result = sqlite3_exec(conn, sql, nullptr, nullptr, &raw_err);
+  SqliteErrorPtr err_msg(raw_err);
   return result == SQLITE_OK;
 }
 
@@ -263,19 +246,17 @@ std::optional<int> Database::telegram_add(player_t player, governor_t governor,
     VALUES (?, ?, ?, ?)
   )";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return std::nullopt;
   }
 
-  sqlite3_bind_int(stmt, 1, player.value);
-  sqlite3_bind_int(stmt, 2, governor.value);
-  sqlite3_bind_text(stmt, 3, message.c_str(), -1, SQLITE_TRANSIENT);
-  sqlite3_bind_int64(stmt, 4, timestamp);
+  sqlite3_bind_int(stmt.get(), 1, player.value);
+  sqlite3_bind_int(stmt.get(), 2, governor.value);
+  sqlite3_bind_text(stmt.get(), 3, message.c_str(), -1, SQLITE_TRANSIENT);
+  sqlite3_bind_int64(stmt.get(), 4, timestamp);
 
-  int result = sqlite3_step(stmt);
-  sqlite3_finalize(stmt);
-
+  int result = sqlite3_step(stmt.get());
   if (result != SQLITE_DONE) {
     return std::nullopt;
   }
@@ -295,26 +276,25 @@ Database::telegram_get(player_t player, governor_t governor) {
     ORDER BY timestamp ASC, id ASC
   )";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return items;
   }
 
-  sqlite3_bind_int(stmt, 1, player.value);
-  sqlite3_bind_int(stmt, 2, governor.value);
+  sqlite3_bind_int(stmt.get(), 1, player.value);
+  sqlite3_bind_int(stmt.get(), 2, governor.value);
 
-  while (sqlite3_step(stmt) == SQLITE_ROW) {
-    int id = sqlite3_column_int(stmt, 0);
-    int recv_player = sqlite3_column_int(stmt, 1);
-    governor_t recv_governor{sqlite3_column_int(stmt, 2)};
+  while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    int id = sqlite3_column_int(stmt.get(), 0);
+    int recv_player = sqlite3_column_int(stmt.get(), 1);
+    governor_t recv_governor{sqlite3_column_int(stmt.get(), 2)};
     const char* msg_text =
-        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 3));
     std::string message = msg_text ? msg_text : "";
-    std::int64_t ts = sqlite3_column_int64(stmt, 4);
+    std::int64_t ts = sqlite3_column_int64(stmt.get(), 4);
     items.emplace_back(id, recv_player, recv_governor, std::move(message), ts);
   }
 
-  sqlite3_finalize(stmt);
   return items;
 }
 
@@ -327,17 +307,15 @@ bool Database::telegram_delete_for_governor(player_t player,
     WHERE recipient_player = ? AND recipient_governor = ?
   )";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return false;
   }
 
-  sqlite3_bind_int(stmt, 1, player.value);
-  sqlite3_bind_int(stmt, 2, governor.value);
+  sqlite3_bind_int(stmt.get(), 1, player.value);
+  sqlite3_bind_int(stmt.get(), 2, governor.value);
 
-  int result = sqlite3_step(stmt);
-  sqlite3_finalize(stmt);
-
+  int result = sqlite3_step(stmt.get());
   return result == SQLITE_DONE;
 }
 
@@ -349,20 +327,19 @@ int Database::telegram_count(player_t player, governor_t governor) {
     WHERE recipient_player = ? AND recipient_governor = ?
   )";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return 0;
   }
 
-  sqlite3_bind_int(stmt, 1, player.value);
-  sqlite3_bind_int(stmt, 2, governor.value);
+  sqlite3_bind_int(stmt.get(), 1, player.value);
+  sqlite3_bind_int(stmt.get(), 2, governor.value);
 
   int count = 0;
-  if (sqlite3_step(stmt) == SQLITE_ROW) {
-    count = sqlite3_column_int(stmt, 0);
+  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    count = sqlite3_column_int(stmt.get(), 0);
   }
 
-  sqlite3_finalize(stmt);
   return count;
 }
 
@@ -370,11 +347,9 @@ bool Database::telegram_purge_all() {
   if (!conn) return false;
 
   const char* sql = "DELETE FROM tbl_telegram";
-  char* err_msg = nullptr;
-  int result = sqlite3_exec(conn, sql, nullptr, nullptr, &err_msg);
-  if (err_msg) {
-    sqlite3_free(err_msg);
-  }
+  char* raw_err = nullptr;
+  int result = sqlite3_exec(conn, sql, nullptr, nullptr, &raw_err);
+  SqliteErrorPtr err_msg(raw_err);
   return result == SQLITE_OK;
 }
 
@@ -384,16 +359,15 @@ int Database::count_non_asteroid_planets() {
   const char* sql = "SELECT COUNT(*) FROM tbl_planet WHERE "
                     "json_extract(data, '$.type') != 'ASTEROID'";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
+  if (!stmt) {
     return 0;
   }
 
   int count = 0;
-  if (sqlite3_step(stmt) == SQLITE_ROW) {
-    count = sqlite3_column_int(stmt, 0);
+  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+    count = sqlite3_column_int(stmt.get(), 0);
   }
 
-  sqlite3_finalize(stmt);
   return count;
 }

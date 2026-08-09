@@ -5,10 +5,13 @@
 
 #include <strings.h>
 #include <unistd.h>
-#include <cstdarg>
 
 import std;
 import gblib;
+
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
 
 #include "gb/racegen.h"
 
@@ -72,7 +75,7 @@ int main(int, char**) {
       fprintf(stderr, "server: can't open stream socket");
       std::exit(0);
     }
-    bzero((char*)&serv_addr, sizeof(serv_addr));
+    serv_addr = {};
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(port);
@@ -441,7 +444,7 @@ int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race) {
   int nerrors = 0;
 
 #define FPRINTF                                                                \
-  if (f != nullptr) fprintf
+  if (f != nullptr) std::fprintf
 
   /*
    * Check for valid attributes: */
@@ -614,7 +617,7 @@ static int critique_modification() {
   race_info.rejection[0] = '\0';
   nerrors = critique_to_file(stdout, 0, IS_PLAYER);
   if (nerrors)
-    bcopy(&last, &race_info, sizeof(struct x));
+    race_info = last;
   else
     changed = altered = true;
   race_info.status = (nerrors == 0) ? STATUS_BALANCED : STATUS_UNBALANCED;
@@ -628,7 +631,7 @@ static int critique_modification() {
 static void initialize() {
   int i;
 
-  bzero(&race_info, sizeof(race_info));
+  race_info = {};
   for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
     race_info.attr[i] = attr[i].init;
   race_info.race_type = R_NORMAL;
@@ -640,7 +643,7 @@ static void initialize() {
   std::strcpy(race_info.address, "Unknown");
   std::strcpy(race_info.password, "XXXX");
   normal();
-  bcopy(&race_info, &last, sizeof(struct x));
+  last = race_info;
   cost_of_race();
   for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
     attr[i].l_fudge += -cost_info.attr[i];
@@ -896,7 +899,7 @@ static void load(int argc, const char* argv[]) {
   char c[64];
   int i;
 
-  bcopy(&race_info, &last, sizeof(struct x));
+  last = race_info;
   if (altered) {
     i = Dialogue("This race has been altered; load anyway?", "yes", "no", 0);
     if (i == 1) return;
@@ -907,7 +910,7 @@ static void load(int argc, const char* argv[]) {
     std::strcpy(c, SAVETO);
   if (load_from_filename(c)) {
     printf("Load from file \"%s\" failed.\n", c);
-    bcopy(&last, &race_info, sizeof(struct x));
+    race_info = last;
   } else {
     printf("Loaded race from file \"%s\".\n", c);
     std::strcpy(race_info.filename, c);
@@ -928,7 +931,7 @@ static int modify(int argc, const char* argv[]) {
   }
   j = std::strlen(argv[1]);
 
-  bcopy(&race_info, &last, sizeof(struct x));
+  last = race_info;
 
   /*
    * Check for attribute modification: */
@@ -986,7 +989,7 @@ static int modify(int argc, const char* argv[]) {
     for (i = FIRST_HOME_PLANET_TYPE; i <= LAST_HOME_PLANET_TYPE; i++)
       if (!strncasecmp(argv[2], planet_print_name[i], j)) {
         if (i == H_JOVIAN) {
-          bzero(race_info.compat, sizeof(race_info.compat));
+          race_info.compat = {};
           race_info.compat[S_GAS] = 100.0;
         } else if (race_info.home_planet_type == H_JOVIAN) {
           race_info.compat[S_PLATED] = 100.0;
@@ -1055,10 +1058,10 @@ static int modify(int argc, const char* argv[]) {
 
 void print_to_file(std::FILE* f, int verbose) {
 #define FPRINTF                                                                \
-  if (verbose) fprintf
+  if (verbose) std::fprintf
   int i;
 
-  if (!verbose) fprintf(f, START_RECORD_STRING);
+  if (!verbose) std::fprintf(f, START_RECORD_STRING);
 
   FPRINTF(f, "\nAddress  :");
   fprintf(f, " %s", race_info.address);
@@ -1167,7 +1170,7 @@ static void send2(int, const char**) {
   FILE* f;
   char sys[64];
 
-  bcopy(&race_info, &last, sizeof(struct x));
+  last = race_info;
   if (critique_to_file(stdout, 1, IS_PLAYER)) return;
 
   f = fopen(race_info.password, "w");

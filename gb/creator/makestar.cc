@@ -42,13 +42,14 @@ static int Fertsects[PlanetType::DESERT + 2][SectorType::SEC_PLATED + 1] = {
     },
 };
 static int numplist, namepcount;
-static char PNames[1000][20];
+static std::array<std::array<char, 20>, 1000> planet_names;
 static int planet_list[1000];
 static int numslist, namestcount;
-static char SNames[1000][20];
+static std::array<std::array<char, 20>, 1000> star_names;
 static int star_list[1000];
 
-static int ReadNameList(char ss[1000][20], int n, int m, const char* filename);
+static int ReadNameList(std::array<std::array<char, 20>, 1000>& ss, int n,
+                        int m, const char* filename);
 static void rand_list(int n, int* list);
 
 // TODO(jeffbailey): This should be syncd with the ones in GB_server.h:
@@ -103,7 +104,8 @@ void PrintStatistics() {
   }
 }
 
-static int ReadNameList(char ss[1000][20], int n, int m, const char* filename) {
+static int ReadNameList(std::array<std::array<char, 20>, 1000>& ss, int n,
+                        int m, const char* filename) {
   int i;
   int j;
   FILE* f = fopen(filename, "r");
@@ -162,7 +164,7 @@ static void rand_list(int n, int* list) /* mix up the numbers 0 thru n */
 }
 
 void Makeplanet_init() {
-  numplist = ReadNameList(PNames, 1000, 20, PLANETLIST);
+  numplist = ReadNameList(planet_names, 1000, 20, PLANETLIST);
   rand_list(numplist, planet_list);
   if (numplist < 0) std::exit(0);
   namepcount = 0;
@@ -172,13 +174,13 @@ static const char* NextPlanetName(int i) {
   const char* Numbers[] = {"1", "2",  "3",  "4",  "5",  "6",  "7", "8",
                            "9", "10", "11", "12", "13", "14", "15"};
   if (autoname_plan && (namepcount < numplist))
-    return PNames[planet_list[namepcount++]];
+    return planet_names[planet_list[namepcount++]].data();
 
   return Numbers[i];
 }
 
 void Makestar_init() {
-  numslist = ReadNameList(SNames, 1000, 20, STARLIST);
+  numslist = ReadNameList(star_names, 1000, 20, STARLIST);
   rand_list(numslist, star_list);
   if (numslist < 0) std::exit(0);
   namestcount = 0;
@@ -189,7 +191,7 @@ static char* NextStarName() {
   int i;
 
   if (autoname_star && (namestcount <= numslist))
-    return SNames[star_list[namestcount++]];
+    return star_names[star_list[namestcount++]].data();
 
   printf("Next star name:");
   for (i = 0; i < NAMESIZE - 4; i++)

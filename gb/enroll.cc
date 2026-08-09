@@ -3,15 +3,13 @@
 /// \file enroll.cc
 /// \brief Racegen interface for player race enrollment program.
 
-#include "gb/enroll.h"
-
 import std;
 import gblib;
 
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 
+#include "gb/enroll.h"
 #include "gb/racegen.h"
 
 static const char* DEFAULT_ENROLLMENT_FILENAME = "enroll.saves";
@@ -151,7 +149,7 @@ int enroll(int argc, const char* argv[]) {
   if (g == nullptr)
     std::println(std::cout, "Unable to open failures file \"{}\".", argv[1]);
   fclose(g);
-  bcopy(&race_info, &last, sizeof(struct x));
+  last = race_info;
 
   /*
    * race.address will be unequal to TO in the instance that this is a

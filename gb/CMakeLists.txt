@@ -481,6 +481,14 @@ add_executable(universe_test universe_test.cc)
 target_link_libraries(universe_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_universe_test COMMAND universe_test)
 
+add_executable(makeplanet_test creator/makeplanet_test.cc creator/makeplanet.cc creator/makestar.cc)
+target_link_libraries(makeplanet_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_makeplanet_test COMMAND makeplanet_test)
+
+add_executable(enroll_test enroll_test.cc GB_racegen.cc)
+target_link_libraries(enroll_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze scnlib_module)
+add_test(NAME GB_enroll_test COMMAND enroll_test)
+
 add_executable(autoreport_test commands/autoreport_test.cc)
 target_link_libraries(autoreport_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_autoreport_test COMMAND autoreport_test)
@@ -520,6 +528,10 @@ add_test(NAME GB_mobilize_test COMMAND mobilize_test)
 add_executable(name_test commands/name_test.cc)
 target_link_libraries(name_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_name_test COMMAND name_test)
+
+add_executable(power_command_test commands/power_test.cc)
+target_link_libraries(power_command_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze tabulate::tabulate)
+add_test(NAME GB_power_command_test COMMAND power_command_test)
 
 add_executable(declare_test commands/declare_test.cc)
 target_link_libraries(declare_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)

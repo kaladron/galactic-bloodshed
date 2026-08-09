@@ -9,7 +9,7 @@ import std;
 #include <cassert>
 
 /// \file name_test.cc
-/// \brief Test name command database persistence
+/// \brief Test name command database persistence and validation rules
 
 void test_name_ship_persistence() {
   std::println(std::cout, "Test: name command - ship naming");
@@ -205,11 +205,303 @@ void test_name_planet_persistence() {
   std::println(std::cout, "  ✅ Planet naming test passed!");
 }
 
+void test_name_invalid_formats() {
+  std::println(std::cout, "Test: name command - invalid input formats");
+
+  // Create in-memory database
+  TestContext ctx;
+
+  // Setup: Create a race
+  Race race{};
+  race.Playernum = 1;
+
+  JsonStore store(ctx.db);
+  RaceRepository races(store);
+  races.save(race);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.race = ctx.em.peek_race(g.player());
+
+  // TEST: Less than 3 arguments -> "Illegal name format."
+  {
+    g.out.str("");
+    command_t cmd = {"name", "ship"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Illegal name format.") != std::string::npos);
+  }
+
+  // TEST: First char of name not alphanumeric -> "Illegal name format."
+  {
+    g.out.str("");
+    command_t cmd = {"name", "ship", "!invalid"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Illegal name format.") != std::string::npos);
+  }
+
+  // TEST: Name containing slash or invalid special character -> "Illegal name
+  // form."
+  {
+    g.out.str("");
+    command_t cmd = {"name", "race", "Val/halla"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Illegal name form.") != std::string::npos);
+  }
+
+  // TEST: All spaces name (first character is space, fails isalnum) -> "Illegal
+  // name format."
+  {
+    g.out.str("");
+    command_t cmd = {"name", "race", " ", " "};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Illegal name format.") != std::string::npos);
+  }
+
+  std::println(std::cout, "  ✅ Invalid format validation test passed!");
+}
+
+void test_name_governor() {
+  std::println(std::cout, "Test: name command - governor naming");
+
+  // Create in-memory database
+  TestContext ctx;
+
+  // Setup: Create a race with initial governor name
+  Race race{};
+  race.Playernum = 1;
+  race.governor[0].name = "Old Gov";
+
+  JsonStore store(ctx.db);
+  RaceRepository races(store);
+  races.save(race);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_governor(0);
+  g.race = ctx.em.peek_race(g.player());
+
+  // TEST: Rename governor 0 to 'Grand Moff'
+  {
+    g.out.str("");
+    command_t cmd = {"name", "governor", "Grand", "Moff"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Name changed to `Grand Moff'.") !=
+           std::string::npos);
+
+    // Verify database update
+    auto saved = races.find_by_player(1);
+    assert(saved.has_value());
+    assert(saved->governor[0].name == "Grand Moff");
+  }
+
+  std::println(std::cout, "  ✅ Governor naming test passed!");
+}
+
+void test_name_block() {
+  std::println(std::cout,
+               "Test: name command - block naming and authorization");
+
+  // Create in-memory database
+  TestContext ctx;
+
+  // Setup: Create a race and alliance block
+  Race race{};
+  race.Playernum = 1;
+
+  block bdata{};
+  bdata.Playernum = 1;
+  bdata.name = "Old Alliance";
+
+  JsonStore store(ctx.db);
+  RaceRepository races(store);
+  races.save(race);
+
+  BlockRepository block_repo(store);
+  block_repo.save(bdata);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.race = ctx.em.peek_race(g.player());
+
+  // TEST: Leader (governor 0) can rename alliance block
+  {
+    g.set_governor(0);
+    g.out.str("");
+    command_t cmd = {"name", "block", "United", "Federation"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Done.") != std::string::npos);
+
+    // Verify block name updated in database
+    const auto* saved = ctx.em.peek_block(blocknum_t{1});
+    assert(saved != nullptr);
+    assert(saved->name == "United Federation");
+  }
+
+  // TEST: Non-leader governor (governor 1) is rejected
+  {
+    g.set_governor(1);
+    g.out.str("");
+    command_t cmd = {"name", "block", "Rebel", "Alliance"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("You are not authorized to do this.") !=
+           std::string::npos);
+  }
+
+  std::println(std::cout, "  ✅ Block naming test passed!");
+}
+
+void test_name_factory_class() {
+  std::println(std::cout, "Test: name command - factory ship class naming");
+
+  // Create in-memory database
+  TestContext ctx;
+
+  // Setup: Create race and ships (factory off-line and fighter)
+  Race race{};
+  race.Playernum = 1;
+
+  Ship factory{};
+  factory.number() = 1;
+  factory.owner() = 1;
+  factory.type() = ShipType::OTYPE_FACTORY;
+  factory.on() = false;
+  factory.shipclass() = "Basic";
+
+  Ship fighter{};
+  fighter.number() = 2;
+  fighter.owner() = 1;
+  fighter.type() = ShipType::STYPE_FIGHTER;
+
+  JsonStore store(ctx.db);
+  RaceRepository races(store);
+  ShipRepository ships(store);
+  races.save(race);
+  ships.save(factory);
+  ships.save(fighter);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.race = ctx.em.peek_race(g.player());
+
+  // TEST: Name class at factory off-line -> success
+  {
+    g.set_shipno(1);
+    g.out.str("");
+    command_t cmd = {"name", "class", "Battleship"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Class set.") != std::string::npos);
+
+    auto saved = ships.find_by_number(1);
+    assert(saved.has_value());
+    assert(saved->shipclass() == "Battleship");
+  }
+
+  // TEST: Name class when factory is on-line -> error
+  {
+    {
+      auto f_handle = ctx.em.get_ship(1);
+      f_handle->on() = true;
+    }
+    g.set_shipno(1);
+    g.out.str("");
+    command_t cmd = {"name", "class", "Cruiser"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("This factory is already on line.") !=
+           std::string::npos);
+  }
+
+  // TEST: Name class at non-factory ship -> error
+  {
+    g.set_shipno(2);
+    g.out.str("");
+    command_t cmd = {"name", "class", "Destroyer"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("You are not at a factory!") != std::string::npos);
+  }
+
+  std::println(std::cout, "  ✅ Factory class naming test passed!");
+}
+
+void test_name_permissions_and_scope() {
+  std::println(std::cout, "Test: name command - permissions and scope checks");
+
+  // Create in-memory database
+  TestContext ctx;
+
+  // Setup: Create non-god race and star with planet
+  Race race{};
+  race.Playernum = 1;
+  race.God = 0;  // Non-god race
+
+  star_struct star_data{};
+  star_data.star_id = 1;
+  star_data.name = "Star 1";
+  star_data.pnames.push_back("Planet 1");
+  Star star{star_data};
+
+  JsonStore store(ctx.db);
+  RaceRepository races(store);
+  StarRepository stars(store);
+  races.save(race);
+  stars.save(star);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.race = ctx.em.peek_race(g.player());
+
+  // TEST: Non-god naming star -> rejected
+  {
+    g.set_level(ScopeLevel::LEVEL_STAR);
+    g.set_snum(1);
+    g.out.str("");
+    command_t cmd = {"name", "star", "Forbidden"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Only dieties may name a star.") !=
+           std::string::npos);
+  }
+
+  // TEST: Non-god naming planet -> rejected
+  {
+    g.set_level(ScopeLevel::LEVEL_PLAN);
+    g.set_snum(1);
+    g.set_pnum(0);
+    g.out.str("");
+    command_t cmd = {"name", "planet", "Forbidden"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("Only deity can rename planets.") !=
+           std::string::npos);
+  }
+
+  // TEST: Naming ship when not at ship level -> wrong scope message
+  {
+    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.out.str("");
+    command_t cmd = {"name", "ship", "Enterprise"};
+    GB::commands::name(cmd, g);
+    assert(g.out.str().find("You have to 'cs' to a ship to name it.") !=
+           std::string::npos);
+  }
+
+  std::println(std::cout, "  ✅ Permissions and scope test passed!");
+}
+
 int main() {
   test_name_ship_persistence();
   test_name_race_persistence();
   test_name_star_persistence();
   test_name_planet_persistence();
+  test_name_invalid_formats();
+  test_name_governor();
+  test_name_block();
+  test_name_factory_class();
+  test_name_permissions_and_scope();
+
   std::println(std::cout, "\n✅ All name tests passed!");
   return 0;
 }

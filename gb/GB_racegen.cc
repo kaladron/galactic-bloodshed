@@ -16,19 +16,21 @@ constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {
     PlanetType::GASGIANT};
 }
 
+int enroll_valid_race(Database& database);
+
 /*
  * Returns 0 if successfully enrolled, or 1 if failure. */
 int enroll_valid_race() {
+  Database database{PKGSTATEDIR "gb.db"};
+  return enroll_valid_race(database);
+}
+
+/*
+ * Returns 0 if successfully enrolled, or 1 if failure. */
+int enroll_valid_race(Database& database) {
   int star;
   int pnum;
-  /*
-    if (race.status == STATUS_ENROLLED) {
-      sprintf(race.rejection, "This race has already been enrolled!\n") ;
-      return 1 ;
-      }
-  */
-  // Create Database and EntityManager for dependency injection
-  Database database{PKGSTATEDIR "gb.db"};
+
   EntityManager entity_manager{database};
   JsonStore store{database};
 

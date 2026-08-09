@@ -13,6 +13,7 @@ export using planetnum_t = ID<"planet", std::uint32_t>;
 export using player_t = ID<"player">;
 export using governor_t = ID<"governor">;
 export using blocknum_t = ID<"block", int>;
+export using powernum_t = ID<"power", int>;
 
 export using segments_t = std::uint32_t;
 export using ap_t = std::uint32_t;

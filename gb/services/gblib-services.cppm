@@ -127,7 +127,7 @@ export class EntityManager {
       sectormap_cache;
   std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
   std::unordered_map<blocknum_t, std::unique_ptr<block>> block_cache;
-  std::unordered_map<int, std::unique_ptr<power>> power_cache;
+  std::unordered_map<powernum_t, std::unique_ptr<power>> power_cache;
   std::unordered_map<ShipType, std::unique_ptr<ShipExam>> ship_exam_cache;
   std::unique_ptr<universe_struct> global_universe_cache;  // Singleton
   std::unique_ptr<ServerState> server_state_cache;         // Singleton
@@ -140,7 +140,7 @@ export class EntityManager {
   std::unordered_map<std::pair<starnum_t, planetnum_t>, int> sectormap_refcount;
   std::unordered_map<int, int> commod_refcount;
   std::unordered_map<blocknum_t, int> block_refcount;
-  std::unordered_map<int, int> power_refcount;
+  std::unordered_map<powernum_t, int> power_refcount;
   std::unordered_map<ShipType, int> ship_exam_refcount;
   int global_universe_refcount = 0;
   int server_state_refcount = 0;
@@ -159,7 +159,7 @@ public:
   EntityHandle<Star> get_star(starnum_t num);
   EntityHandle<Commod> get_commod(int id);
   EntityHandle<block> get_block(blocknum_t id);
-  EntityHandle<power> get_power(int id);
+  EntityHandle<power> get_power(powernum_t id);
   EntityHandle<universe_struct> get_universe();
   EntityHandle<ServerState> get_server_state();
   EntityHandle<ShipExam> get_ship_exam(ShipType ship_type);
@@ -172,7 +172,7 @@ public:
   const Star* peek_star(starnum_t num);
   const Commod* peek_commod(int id);
   const block* peek_block(blocknum_t id);
-  const power* peek_power(int id);
+  const power* peek_power(powernum_t id);
   const universe_struct* peek_universe();
   const ServerState* peek_server_state();
   const ShipExam* peek_ship_exam(ShipType ship_type);
@@ -229,7 +229,7 @@ private:
   void release_star(starnum_t num);
   void release_commod(int id);
   void release_block(blocknum_t id);
-  void release_power(int id);
+  void release_power(powernum_t id);
   void release_universe();
   void release_server_state();
   void release_sectormap(starnum_t star, planetnum_t pnum);

@@ -149,7 +149,7 @@ void test_power_repository() {
 
   // Save and retrieve
   assert(repo.save(p1));
-  auto retrieved = repo.find_by_id(1);
+  auto retrieved = repo.find_by_id(powernum_t{1});
   assert(retrieved.has_value());
   assert(retrieved->troops == 1000);
   assert(retrieved->popn == 5000);
@@ -160,7 +160,7 @@ void test_power_repository() {
   p1.troops = 2000;
   p1.ships_owned = 30;
   assert(repo.save(p1));
-  retrieved = repo.find_by_id(1);
+  retrieved = repo.find_by_id(powernum_t{1});
   assert(retrieved.has_value());
   assert(retrieved->troops == 2000);
   assert(retrieved->ships_owned == 30);
@@ -172,8 +172,8 @@ void test_power_repository() {
   p2.popn = 2000;
   p2.ships_owned = 10;
   assert(repo.save(p2));
-  assert(repo.find_by_id(1).has_value());
-  assert(repo.find_by_id(2).has_value());
+  assert(repo.find_by_id(powernum_t{1}).has_value());
+  assert(repo.find_by_id(powernum_t{2}).has_value());
 
   // Gap finding
   p1.id = 5;

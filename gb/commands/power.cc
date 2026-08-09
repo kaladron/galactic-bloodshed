@@ -23,7 +23,7 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
                             : isset(r.atwar, race.Playernum) ? "-"
                                                              : " ";
 
-  const auto* power_ptr = em.peek_power(i.value);
+  const auto* power_ptr = em.peek_power(powernum_t{i.value});
   if (!power_ptr) return;
 
   std::string know_col;

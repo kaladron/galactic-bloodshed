@@ -951,7 +951,7 @@ void compute_power_blocks(EntityManager& entity_manager) {
       const player_t j = race_j.Playernum;
 
       if (isset(allied_members, j)) {
-        const auto* power_ptr = entity_manager.peek_power(j.value);
+        const auto* power_ptr = entity_manager.peek_power(powernum_t{j.value});
         if (!power_ptr) continue;
         Power_blocks.members[i.value - 1] += 1;
         Power_blocks.sectors_owned[i.value - 1] += power_ptr->sectors_owned;

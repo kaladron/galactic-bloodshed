@@ -857,7 +857,7 @@ public:
       : Repository<power>(store, "tbl_power") {}
 
   // Domain-specific methods
-  std::optional<power> find_by_id(int id) {
+  std::optional<power> find_by_id(powernum_t id) {
     return find(id);
   }
   bool save(const power& p) {

@@ -360,21 +360,21 @@ void EntityManager::release_block(blocknum_t id) {
 }
 
 // Power entity methods
-EntityHandle<power> EntityManager::get_power(int id) {
+EntityHandle<power> EntityManager::get_power(powernum_t id) {
   return get_entity_impl<power>(
       this, id, power_cache, power_refcount,
-      [this](int i) { return powers.find_by_id(i); },
+      [this](powernum_t i) { return powers.find_by_id(i); },
       [this](const power& p) { powers.save(p); },
-      [this](int i) { release_power(i); });
+      [this](powernum_t i) { release_power(i); });
 }
 
-const power* EntityManager::peek_power(int id) {
+const power* EntityManager::peek_power(powernum_t id) {
   return peek_entity_impl<power>(
       id, power_cache, power_refcount,
-      [this](int i) { return powers.find_by_id(i); });
+      [this](powernum_t i) { return powers.find_by_id(i); });
 }
 
-void EntityManager::release_power(int id) {
+void EntityManager::release_power(powernum_t id) {
   release_entity_impl<power>(id, power_cache, power_refcount);
 }
 

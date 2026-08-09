@@ -111,7 +111,8 @@ void block(const command_t& argv, GameObj& g) {
 
     for (const Race* r : RaceList::readonly(g.entity_manager)) {
       if (!isset(allied_members, r->Playernum) || r->dissolved) continue;
-      const auto* power_ptr = g.entity_manager.peek_power(r->Playernum.value);
+      const auto* power_ptr =
+          g.entity_manager.peek_power(powernum_t{r->Playernum.value});
       if (!power_ptr) continue;
 
       table.add_row(

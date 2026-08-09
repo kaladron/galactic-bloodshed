@@ -759,23 +759,23 @@ void test_entity_manager_powers() {
   p.popn = 50000;
   repo.save(p);
 
-  const auto* peek = em.peek_power(1);
+  const auto* peek = em.peek_power(powernum_t{1});
   assert(peek != nullptr);
   assert(peek->troops == 1000);
   assert(peek->popn == 50000);
   std::println(std::cout, "  ✓ peek_power works");
 
   {
-    auto handle = em.get_power(1);
+    auto handle = em.get_power(powernum_t{1});
     handle->troops = 2500;
   }
 
-  auto updated = repo.find_by_id(1);
+  auto updated = repo.find_by_id(powernum_t{1});
   assert(updated.has_value());
   assert(updated->troops == 2500);
   std::println(std::cout, "  ✓ get_power auto-save persisted changes");
 
-  assert(em.peek_power(999) == nullptr);
+  assert(em.peek_power(powernum_t{999}) == nullptr);
   std::println(std::cout, "  ✓ peek_power returns nullptr for missing power");
 }
 

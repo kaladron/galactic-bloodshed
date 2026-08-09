@@ -67,7 +67,7 @@ int main() {
 
   // Retrieve from EntityManager
   for (int i = 0; i < MAXPLAYERS; i++) {
-    const auto* power_ptr = em.peek_power(i + 1);
+    const auto* power_ptr = em.peek_power(powernum_t{i + 1});
     assert(power_ptr);  // Should exist now
     loaded_power[i] = *power_ptr;
   }

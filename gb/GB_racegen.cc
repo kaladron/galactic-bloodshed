@@ -189,8 +189,7 @@ found_planet:
     const auto* star_ptr = entity_manager.peek_star(star);
     ss.xpos = star_ptr->xpos() + planet.xpos();
     ss.ypos = star_ptr->ypos() + planet.ypos();
-    ss.land_x = sect.get_x();
-    ss.land_y = sect.get_y();
+    ss.land_coords = sect.coords();
 
     ss.speed = 0;
     ss.owner = Playernum;

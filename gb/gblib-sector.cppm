@@ -7,8 +7,7 @@ import :planet;
 
 // POD struct containing all Sector data fields
 export struct sector_struct {
-  unsigned int x{0};
-  unsigned int y{0};
+  Coordinates coords{};
   unsigned int eff{0};          /* efficiency (0-100) */
   unsigned int fert{0};         /* max popn is proportional to this */
   unsigned int mobilization{0}; /* percent popn is mobilized for war */
@@ -35,14 +34,22 @@ public:
   // Constructor from sector_struct (for new pattern)
   explicit Sector(const sector_struct& s) : data_(s) {}
 
+  Sector(Coordinates coords_, unsigned int eff_, unsigned int fert_,
+         unsigned int mobilization_, unsigned int crystals_,
+         resource_t resource_, population_t popn_, population_t troops_,
+         player_t owner_, player_t race_, unsigned int type_,
+         unsigned int condition_)
+      : data_{coords_, eff_,    fert_,  mobilization_, crystals_, resource_,
+              popn_,   troops_, owner_, race_,         type_,     condition_} {}
+
   Sector(unsigned int x_, unsigned int y_, unsigned int eff_,
          unsigned int fert_, unsigned int mobilization_, unsigned int crystals_,
          resource_t resource_, population_t popn_, population_t troops_,
          player_t owner_, player_t race_, unsigned int type_,
          unsigned int condition_)
-      : data_{x_,        y_,        eff_,      fert_,   mobilization_,
-              crystals_, resource_, popn_,     troops_, owner_,
-              race_,     type_,     condition_} {}
+      : Sector(Coordinates{static_cast<int>(x_), static_cast<int>(y_)}, eff_,
+               fert_, mobilization_, crystals_, resource_, popn_, troops_,
+               owner_, race_, type_, condition_) {}
 
   Sector() = default;
   ~Sector() = default;
@@ -65,13 +72,13 @@ public:
 
   // Read accessors (const)
   [[nodiscard]] Coordinates coords() const noexcept {
-    return {static_cast<int>(data_.x), static_cast<int>(data_.y)};
+    return data_.coords;
   }
   [[nodiscard]] unsigned int get_x() const noexcept {
-    return data_.x;
+    return static_cast<unsigned int>(data_.coords.x);
   }
   [[nodiscard]] unsigned int get_y() const noexcept {
-    return data_.y;
+    return static_cast<unsigned int>(data_.coords.y);
   }
   [[nodiscard]] unsigned int get_eff() const noexcept {
     return data_.eff;
@@ -108,11 +115,14 @@ public:
   }
 
   // Write accessors (non-const)
+  void set_coords(Coordinates val) noexcept {
+    data_.coords = val;
+  }
   void set_x(unsigned int val) noexcept {
-    data_.x = val;
+    data_.coords.x = static_cast<int>(val);
   }
   void set_y(unsigned int val) noexcept {
-    data_.y = val;
+    data_.coords.y = static_cast<int>(val);
   }
   void set_fert(unsigned int val) noexcept {
     data_.fert = val;

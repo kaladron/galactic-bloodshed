@@ -62,8 +62,7 @@ void test_moveship_onplanet() {
 
   ship_struct sdata{
       .owner = player_t{1},
-      .land_x = 5,
-      .land_y = 5,
+      .land_coords = {5, 5},
       .special = TerraformData{.index = 0},
       .type = ShipType::OTYPE_TERRA,
       .active = 1,
@@ -99,8 +98,7 @@ void test_terraform_and_plow() {
   ship_struct sdata{
       .owner = player_t{1},
       .fuel = 100.0,
-      .land_x = 2,
-      .land_y = 2,
+      .land_coords = {2, 2},
       .max_crew = 100,
       .popn = 100,
       .special = TerraformData{.index = 0},

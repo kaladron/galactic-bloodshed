@@ -24,8 +24,7 @@ int main() {
 
   // Create a test sector using NEW PATTERN
   sector_struct test_data{};
-  test_data.x = 5;
-  test_data.y = 7;
+  test_data.coords = {5, 7};
   test_data.eff = 75;
   test_data.fert = 50;
   test_data.mobilization = 25;
@@ -56,8 +55,7 @@ int main() {
 
   // Verify data integrity using accessor methods
   std::println(std::cout, "Verify data integrity...");
-  assert(retrieved->get_x() == test_data.x);
-  assert(retrieved->get_y() == test_data.y);
+  assert(retrieved->coords() == test_data.coords);
   assert(retrieved->get_eff() == test_data.eff);
   assert(retrieved->get_fert() == test_data.fert);
   assert(retrieved->get_mobilization() == test_data.mobilization);
@@ -94,8 +92,7 @@ int main() {
   // Save multiple sectors...
   std::println(std::cout, "Save multiple sectors...");
   sector_struct data2{};
-  data2.x = 3;
-  data2.y = 4;
+  data2.coords = {3, 4};
   data2.eff = 60;
   data2.fert = 45;
   data2.owner = 1;
@@ -105,8 +102,7 @@ int main() {
                    3, 4);
 
   sector_struct data3{};
-  data3.x = 8;
-  data3.y = 2;
+  data3.coords = {8, 2};
   data3.eff = 80;
   data3.fert = 30;
   data3.owner = 1;
@@ -148,8 +144,7 @@ int main() {
   planet2.Maxy() = 10;
 
   sector_struct data_p2{};
-  data_p2.x = 5;
-  data_p2.y = 7;  // Same coordinates as sector on planet 1
+  data_p2.coords = {5, 7};  // Same coordinates as sector on planet 1
   data_p2.eff = 70;
   data_p2.fert = 50;
   data_p2.owner = 2;  // Different owner
@@ -245,8 +240,8 @@ int main() {
   std::println(std::cout, "New load() method (sector_struct)...");
   sector_struct loaded_struct =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 5, 7);
-  assert(loaded_struct.x == 5);
-  assert(loaded_struct.y == 7);
+  assert(loaded_struct.coords.x == 5);
+  assert(loaded_struct.coords.y == 7);
   assert(loaded_struct.eff == 90);        // From Test 5 update
   assert(loaded_struct.popn == 15000);    // From Test 5 update
   assert(loaded_struct.crystals == 150);  // From Test 5 update
@@ -255,8 +250,7 @@ int main() {
   // New save() method working with sector_struct directly
   std::println(std::cout, "New save() method (sector_struct)...");
   sector_struct new_struct{};
-  new_struct.x = 9;
-  new_struct.y = 9;
+  new_struct.coords = {9, 9};
   new_struct.eff = 95;
   new_struct.fert = 85;
   new_struct.mobilization = 30;
@@ -277,8 +271,7 @@ int main() {
   std::println(std::cout, "Verify save() persisted data...");
   sector_struct verified =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 9, 9);
-  assert(verified.x == new_struct.x);
-  assert(verified.y == new_struct.y);
+  assert(verified.coords == new_struct.coords);
   assert(verified.eff == new_struct.eff);
   assert(verified.fert == new_struct.fert);
   assert(verified.mobilization == new_struct.mobilization);
@@ -305,8 +298,7 @@ int main() {
   // Round-trip test with both new methods
   std::println(std::cout, "Round-trip test (save then load)...");
   sector_struct roundtrip{};
-  roundtrip.x = 1;
-  roundtrip.y = 1;
+  roundtrip.coords = {1, 1};
   roundtrip.eff = 42;
   roundtrip.fert = 73;
   roundtrip.popn = 12345;
@@ -317,8 +309,7 @@ int main() {
   sector_struct retrieved_rt =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 1, 1);
 
-  assert(retrieved_rt.x == roundtrip.x);
-  assert(retrieved_rt.y == roundtrip.y);
+  assert(retrieved_rt.coords == roundtrip.coords);
   assert(retrieved_rt.eff == roundtrip.eff);
   assert(retrieved_rt.fert == roundtrip.fert);
   assert(retrieved_rt.popn == roundtrip.popn);

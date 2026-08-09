@@ -77,8 +77,7 @@ int main() {
   ship.type = ShipType::STYPE_CARGO;
   ship.xpos = 0.0;
   ship.ypos = 0.0;
-  ship.land_x = 5;
-  ship.land_y = 5;
+  ship.land_coords = {5, 5};
   ship.whatorbits = ScopeLevel::LEVEL_PLAN;
   ship.storbits = 0;
   ship.pnumorbits = 0;

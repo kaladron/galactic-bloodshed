@@ -98,6 +98,12 @@ struct to<JSON, ID<Tag, T>> {
 };
 
 template <>
+struct meta<Coordinates> {
+  using T = Coordinates;
+  static constexpr auto value = object("x", &T::x, "y", &T::y);
+};
+
+template <>
 struct meta<toggletype> {
   using T = toggletype;
   static constexpr auto value =
@@ -349,10 +355,10 @@ struct meta<ship_struct> {
   static constexpr auto value = object(
       "number", &T::number, "owner", &T::owner, "governor", &T::governor,
       "name", &T::name, "shipclass", &T::shipclass, "race", &T::race, "xpos",
-      &T::xpos, "ypos", &T::ypos, "fuel", &T::fuel, "mass", &T::mass, "land_x",
-      &T::land_x, "land_y", &T::land_y, "destshipno", &T::destshipno,
-      "nextship", &T::nextship, "ships", &T::ships, "armor", &T::armor, "size",
-      &T::size, "max_crew", &T::max_crew, "max_resource", &T::max_resource,
+      &T::xpos, "ypos", &T::ypos, "fuel", &T::fuel, "mass", &T::mass,
+      "land_coords", &T::land_coords, "destshipno", &T::destshipno, "nextship",
+      &T::nextship, "ships", &T::ships, "armor", &T::armor, "size", &T::size,
+      "max_crew", &T::max_crew, "max_resource", &T::max_resource,
       "max_destruct", &T::max_destruct, "max_fuel", &T::max_fuel, "max_speed",
       &T::max_speed, "build_type", &T::build_type, "build_cost", &T::build_cost,
       "base_mass", &T::base_mass, "tech", &T::tech, "complexity",
@@ -616,7 +622,7 @@ template <>
 struct meta<sector_struct> {
   using T = sector_struct;
   static constexpr auto value = object(
-      "x", &T::x, "y", &T::y, "eff", &T::eff, "fert", &T::fert, "mobilization",
+      "coords", &T::coords, "eff", &T::eff, "fert", &T::fert, "mobilization",
       &T::mobilization, "crystals", &T::crystals, "resource", &T::resource,
       "popn", &T::popn, "troops", &T::troops, "owner", &T::owner, "race",
       &T::race, "type", &T::type, "condition", &T::condition);
@@ -630,18 +636,37 @@ export class SectorRepository : public Repository<Sector> {
 public:
   SectorRepository(JsonStore& store);
 
-  // New domain-specific methods working with sector_struct
+  // Domain-specific methods working with sector_struct and Coordinates
   [[nodiscard]] sector_struct load(starnum_t star_id, planetnum_t planet_order,
-                                   std::size_t x, std::size_t y);
+                                   Coordinates coords);
+  [[nodiscard]] sector_struct load(starnum_t star_id, planetnum_t planet_order,
+                                   std::size_t x, std::size_t y) {
+    return load(star_id, planet_order,
+                Coordinates{static_cast<int>(x), static_cast<int>(y)});
+  }
 
+  void save(starnum_t star_id, planetnum_t planet_order, Coordinates coords,
+            const sector_struct& sector);
   void save(starnum_t star_id, planetnum_t planet_order, std::size_t x,
-            std::size_t y, const sector_struct& sector);
+            std::size_t y, const sector_struct& sector) {
+    save(star_id, planet_order,
+         Coordinates{static_cast<int>(x), static_cast<int>(y)}, sector);
+  }
 
   // Legacy methods (for backward compatibility during migration)
   std::optional<Sector> find_sector(starnum_t star_id, planetnum_t planet_order,
-                                    int x, int y);
+                                    Coordinates coords);
+  std::optional<Sector> find_sector(starnum_t star_id, planetnum_t planet_order,
+                                    int x, int y) {
+    return find_sector(star_id, planet_order, Coordinates{x, y});
+  }
+
   bool save_sector(const Sector& sector, starnum_t star_id,
-                   planetnum_t planet_order, int x, int y);
+                   planetnum_t planet_order, Coordinates coords);
+  bool save_sector(const Sector& sector, starnum_t star_id,
+                   planetnum_t planet_order, int x, int y) {
+    return save_sector(sector, star_id, planet_order, Coordinates{x, y});
+  }
 
   // Bulk operations for sector maps
   SectorMap load_map(const Planet& planet);
@@ -678,16 +703,16 @@ SectorRepository::deserialize(const std::string& json_str) const {
   return std::nullopt;
 }
 
-// New methods working directly with sector_struct
+// Methods working directly with sector_struct & Coordinates
 sector_struct SectorRepository::load(starnum_t star_id,
-                                     planetnum_t planet_order, std::size_t x,
-                                     std::size_t y) {
+                                     planetnum_t planet_order,
+                                     Coordinates coords) {
   // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND
   // ypos=?
   auto json = store.retrieve_multi(table_name, {{"star_id", star_id},
                                                 {"planet_order", planet_order},
-                                                {"xpos", x},
-                                                {"ypos", y}});
+                                                {"xpos", coords.x},
+                                                {"ypos", coords.y}});
 
   sector_struct data{};
   if (json) {
@@ -698,8 +723,7 @@ sector_struct SectorRepository::load(starnum_t star_id,
 }
 
 void SectorRepository::save(starnum_t star_id, planetnum_t planet_order,
-                            std::size_t x, std::size_t y,
-                            const sector_struct& sector) {
+                            Coordinates coords, const sector_struct& sector) {
   auto result = glz::write_json(sector);
   if (!result.has_value()) {
     return;  // Serialization failed
@@ -709,27 +733,28 @@ void SectorRepository::save(starnum_t star_id, planetnum_t planet_order,
   store.store_multi(table_name,
                     {{"star_id", star_id},
                      {"planet_order", planet_order},
-                     {"xpos", x},
-                     {"ypos", y}},
+                     {"xpos", coords.x},
+                     {"ypos", coords.y}},
                     *result);
 }
 
 // Legacy methods (for backward compatibility)
 std::optional<Sector> SectorRepository::find_sector(starnum_t star_id,
                                                     planetnum_t planet_order,
-                                                    int x, int y) {
+                                                    Coordinates coords) {
   // Use multi-key retrieval: WHERE star_id=? AND planet_order=? AND xpos=? AND
   // ypos=?
   auto json = store.retrieve_multi(table_name, {{"star_id", star_id},
                                                 {"planet_order", planet_order},
-                                                {"xpos", x},
-                                                {"ypos", y}});
+                                                {"xpos", coords.x},
+                                                {"ypos", coords.y}});
   if (!json) return std::nullopt;
   return deserialize(*json);
 }
 
 bool SectorRepository::save_sector(const Sector& sector, starnum_t star_id,
-                                   planetnum_t planet_order, int x, int y) {
+                                   planetnum_t planet_order,
+                                   Coordinates coords) {
   auto json = serialize(sector);
   if (!json) return false;
 
@@ -737,8 +762,8 @@ bool SectorRepository::save_sector(const Sector& sector, starnum_t star_id,
   return store.store_multi(table_name,
                            {{"star_id", star_id},
                             {"planet_order", planet_order},
-                            {"xpos", x},
-                            {"ypos", y}},
+                            {"xpos", coords.x},
+                            {"ypos", coords.y}},
                            *json);
 }
 
@@ -763,12 +788,10 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
 bool SectorRepository::save_map(const SectorMap& map) {
   // Save all sectors in the map using map's stored planet identity
   bool all_saved = true;
-  for (int y = 0; y < map.get_maxy(); y++) {
-    for (int x = 0; x < map.get_maxx(); x++) {
-      const auto& sector = map.get(x, y);
-      if (!save_sector(sector, map.star_id(), map.planet_order(), x, y)) {
-        all_saved = false;
-      }
+  for (auto [coord, sector] : map.indexed_sectors()) {
+    if (!save_sector(sector, map.star_id(), map.planet_order(), coord.x,
+                     coord.y)) {
+      all_saved = false;
     }
   }
   return all_saved;

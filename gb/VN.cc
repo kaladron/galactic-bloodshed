@@ -219,8 +219,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
           ship_struct s2_data{
               .xpos = ship.xpos(),
               .ypos = ship.ypos(),
-              .land_x = ship.land_x(),
-              .land_y = ship.land_y(),
+              .land_coords = ship.land_coords(),
               .nextship = planet.ships(),
               .armor = static_cast<unsigned char>(ship.armor() + 1),
               .max_crew = static_cast<unsigned short>(

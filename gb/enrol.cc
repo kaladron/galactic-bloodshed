@@ -399,8 +399,7 @@ int main() {
     }
     ss.xpos = star_ptr->xpos() + planet_ptr2->xpos();
     ss.ypos = star_ptr->ypos() + planet_ptr2->ypos();
-    ss.land_x = (char)secttypes[i].x;
-    ss.land_y = (char)secttypes[i].y;
+    ss.land_coords = {secttypes[i].x, secttypes[i].y};
 
     ss.owner = Playernum;
     ss.race = Playernum;
@@ -446,12 +445,12 @@ int main() {
     ss.number = shipno;
     if (const auto* storbit_star = entity_manager.peek_star(ss.storbits);
         storbit_star) {
-      std::println(std::cout, "Created on sector {},{} on /{}/{}", ss.land_x,
-                   ss.land_y, storbit_star->get_name(),
+      std::println(std::cout, "Created on sector {} on /{}/{}", ss.land_coords,
+                   storbit_star->get_name(),
                    storbit_star->get_planet_name(ss.pnumorbits));
     } else {
-      std::println(std::cout, "Created on sector {},{} on an unknown location",
-                   ss.land_x, ss.land_y);
+      std::println(std::cout, "Created on sector {} on an unknown location",
+                   ss.land_coords);
     }
     Ship s{ss};  // Construct Ship from POD
     if (!ships.save(s)) {

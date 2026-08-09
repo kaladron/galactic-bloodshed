@@ -212,7 +212,7 @@ export struct ship_struct {
   double ypos{0.0};
   double fuel{0.0};
   double mass{0.0};
-  unsigned char land_x{0}, land_y{0};
+  Coordinates land_coords{0, 0};
 
   shipnum_t destshipno{0}; /* destination ship # */
   shipnum_t nextship{0};   /* next ship in linked list */
@@ -392,25 +392,24 @@ public:
   }
 
   [[nodiscard]] Coordinates land_coords() const noexcept {
-    return {static_cast<int>(data_.land_x), static_cast<int>(data_.land_y)};
+    return data_.land_coords;
   }
   void set_land_coords(const Coordinates c) noexcept {
-    data_.land_x = static_cast<unsigned char>(c.x);
-    data_.land_y = static_cast<unsigned char>(c.y);
+    data_.land_coords = c;
   }
 
-  [[nodiscard]] unsigned char land_x() const {
-    return data_.land_x;
+  [[nodiscard]] int land_x() const noexcept {
+    return data_.land_coords.x;
   }
-  unsigned char& land_x() {
-    return data_.land_x;
+  int& land_x() noexcept {
+    return data_.land_coords.x;
   }
 
-  [[nodiscard]] unsigned char land_y() const {
-    return data_.land_y;
+  [[nodiscard]] int land_y() const noexcept {
+    return data_.land_coords.y;
   }
-  unsigned char& land_y() {
-    return data_.land_y;
+  int& land_y() noexcept {
+    return data_.land_coords.y;
   }
 
   // Ship references

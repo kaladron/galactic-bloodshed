@@ -91,8 +91,7 @@ int main() {
 
   // Setting and checking coords
   sector_struct s_data{};
-  s_data.x = 3;
-  s_data.y = 4;
+  s_data.coords = {3, 4};
   s_data.eff = 85;
   smap.set(target_c, s_data);
 

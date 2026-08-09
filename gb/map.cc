@@ -42,8 +42,10 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
       if (s->owner() == Playernum && authorized(Governor, *s) &&
           (s->popn() || (s->type() == ShipType::OTYPE_PROBE)))
         iq = 1;
-      if (s->alive() && landed(*s))
-        shiplocs[s->land_x()][s->land_y()] = Shipltrs[s->type()];
+      if (s->alive() && landed(*s)) {
+        Coordinates land = s->land_coords();
+        shiplocs[land.x][land.y] = Shipltrs[s->type()];
+      }
     }
   }
   /* report that this is a planet map */
@@ -53,21 +55,21 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
   g.out << std::format("{};{};{};", p.Maxx(), p.Maxy(), show);
 
   /* send map data */
-  for (const auto& sector : *smap) {
+  for (auto [c, sector] : smap->indexed_sectors()) {
     bool owned1 =
         (sector.get_owner() == race.governor[Governor.value].toggle.highlight);
-    if (shiplocs[sector.get_x()][sector.get_y()] && iq) {
+    if (shiplocs[c.x][c.y] && iq) {
       if (race.governor[Governor.value].toggle.color)
         g.out << std::format("{}{}", get_owner_char(sector),
-                             shiplocs[sector.get_x()][sector.get_y()]);
+                             shiplocs[c.x][c.y]);
       else {
         if (owned1 && race.governor[Governor.value].toggle.inverse)
           g.out << std::format("1{}{}", get_owner_char(sector),
-                               shiplocs[sector.get_x()][sector.get_y()]);
+                               shiplocs[c.x][c.y]);
 
         else
           g.out << std::format("0{}{}", get_owner_char(sector),
-                               shiplocs[sector.get_x()][sector.get_y()]);
+                               shiplocs[c.x][c.y]);
       }
     } else {
       if (race.governor[Governor.value].toggle.color) {

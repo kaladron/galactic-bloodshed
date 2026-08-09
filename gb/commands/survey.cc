@@ -257,29 +257,28 @@ void survey_planet_sectors(GameObj& g, const Place& where,
           (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE))) {
         inhere = true;
       }
-      if (shipa->alive() && landed(*shipa) &&
-          shiplocs[shipa->land_x()][shipa->land_y()].count <
-              MAX_SHIPS_PER_SECTOR) {
-        auto& loc = shiplocs[shipa->land_x()][shipa->land_y()];
-        loc.ships[loc.count].shipno = shipa->number();
-        loc.ships[loc.count].owner = shipa->owner();
-        loc.ships[loc.count].ltr = Shipltrs[shipa->type()];
-        loc.count++;
+      if (shipa->alive() && landed(*shipa)) {
+        Coordinates land = shipa->land_coords();
+        if (shiplocs[land.x][land.y].count < MAX_SHIPS_PER_SECTOR) {
+          auto& loc = shiplocs[land.x][land.y];
+          loc.ships[loc.count].shipno = shipa->number();
+          loc.ships[loc.count].owner = shipa->owner();
+          loc.ships[loc.count].ltr = Shipltrs[shipa->type()];
+          loc.count++;
+        }
       }
     }
   }
 
   // Accumulate sector row data
   std::vector<SectorRowData> rows;
-  for (const auto& s : *smap) {
-    int x = s.get_x();
-    int y = s.get_y();
-    if (x < lowx || x > hix || y < lowy || y > hiy) continue;
+  for (auto [c, s] : smap->indexed_sectors()) {
+    if (c.x < lowx || c.x > hix || c.y < lowy || c.y > hiy) continue;
 
     const SectorShipData* ship_data =
-        (shiplocs[x][y].count > 0) ? &shiplocs[x][y] : nullptr;
-    rows.push_back({.x = x,
-                    .y = y,
+        (shiplocs[c.x][c.y].count > 0) ? &shiplocs[c.x][c.y] : nullptr;
+    rows.push_back({.x = c.x,
+                    .y = c.y,
                     .sector = &s,
                     .desshow_char = desshow(g.player(), g.governor(), race, s),
                     .compat = compat,

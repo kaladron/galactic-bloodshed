@@ -83,6 +83,7 @@ void build(const command_t& argv, GameObj& g) {
   int load_crew;
   double load_fuel;
   double tech;
+  Coordinates build_coords{0, 0};
 
   std::optional<Ship> builder;
   Ship newship;
@@ -203,21 +204,21 @@ void build(const command_t& argv, GameObj& g) {
             g.out << "You can't build that here.\n";
             return;
           }
-          auto xy_result = scn::scan<int, int>(argv[2], "{},{}");
-          if (!xy_result) {
+          auto coords_opt = Coordinates::parse(argv[2]);
+          if (!coords_opt) {
             g.out << "Invalid sector format. Use: x,y\n";
             return;
           }
-          std::tie(x, y) = xy_result->values();
-          if (x < 0 || x >= planet.Maxx() || y < 0 || y >= planet.Maxy()) {
+          build_coords = *coords_opt;
+          if (!planet.is_valid(build_coords)) {
             g.out << "Illegal sector.\n";
             return;
           }
           sectormap_handle = g.entity_manager.get_sectormap(snum, pnum);
           auto& sectormap = **sectormap_handle;
-          auto& sector = sectormap.get(x, y);
+          auto& sector = sectormap.get(build_coords);
           auto result = can_build_on_sector(g.entity_manager, *what, race,
-                                            planet, sector, {x, y});
+                                            planet, sector, build_coords);
           if (!result && !race.God) {
             g.out << result.error();
             return;
@@ -230,7 +231,7 @@ void build(const command_t& argv, GameObj& g) {
         }
         Planet& planet = **planet_handle;
         auto& sectormap = **sectormap_handle;
-        auto& sector = sectormap.get(x, y);
+        auto& sector = sectormap.get(build_coords);
         if ((shipcost = newship.build_cost()) >
             planet.info(Playernum).resource) {
           g.out << std::format("You need {}r to construct this ship.\n",
@@ -238,7 +239,8 @@ void build(const command_t& argv, GameObj& g) {
           return;
         }
         create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
-                              newship, planet, snum, pnum, x, y);
+                              newship, planet, snum, pnum, build_coords.x,
+                              build_coords.y);
         if (race.governor[Governor.value].toggle.autoload &&
             what != ShipType::OTYPE_TRANSDEV && !race.God)
           autoload_at_planet(Playernum, &newship, &planet, sector, &load_crew,

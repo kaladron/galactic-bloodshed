@@ -225,7 +225,11 @@ export struct Coordinates {
 };
 
 export template <>
-struct std::formatter<Coordinates> : std::formatter<std::string_view> {
+struct std::formatter<Coordinates> {
+  constexpr auto parse(std::format_parse_context& ctx) {
+    return ctx.begin();
+  }
+
   auto format(const Coordinates& c, auto& ctx) const {
     return std::format_to(ctx.out(), "{},{}", c.x, c.y);
   }

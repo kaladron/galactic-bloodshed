@@ -6,7 +6,7 @@ import std;
 #include <cassert>
 
 int main() {
-  std::println("=== Testing Coordinates ===");
+  std::println(std::cout, "=== Testing Coordinates ===");
 
   // Default constructor
   Coordinates c0{};
@@ -62,6 +62,6 @@ int main() {
   std::string formatted = std::format("{}", c1);
   assert(formatted == "5,10");
 
-  std::println("✓ All Coordinates unit tests passed!");
+  std::println(std::cout, "✓ All Coordinates unit tests passed!");
   return 0;
 }

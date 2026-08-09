@@ -56,8 +56,7 @@ int main() {
   afv.docked() = true;
   afv.storbits() = 0;
   afv.pnumorbits() = 0;
-  afv.land_x() = 5;
-  afv.land_y() = 5;
+  afv.set_land_coords({5, 5});
   afv.popn() = 10;
   afv.fuel() = 100.0;
   afv.max_fuel() = 200.0;
@@ -93,8 +92,7 @@ int main() {
   ctx.em.clear_cache();
   const auto* saved_ship = ctx.em.peek_ship(1);
   assert(saved_ship);
-  assert(saved_ship->land_x() == 5);
-  assert(saved_ship->land_y() == 6);
+  assert(saved_ship->land_coords() == Coordinates(5, 6));
   assert(saved_ship->fuel() < 100.0);
 
   std::println(std::cout, "walk_test passed!");

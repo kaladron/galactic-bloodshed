@@ -21,8 +21,6 @@ void capture(const command_t& argv, GameObj& g) {
   governor_t oldgov;
   int shipdam = 0;
   int booby = 0;
-  int x = -1;
-  int y = -1;
   PopulationType what;
   population_t olddpopn;
   population_t olddtroops;
@@ -65,9 +63,6 @@ void capture(const command_t& argv, GameObj& g) {
         continue;
       }
 
-      x = ship.land_x();
-      y = ship.land_y();
-
       auto planet_handle =
           g.entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
       auto& p = *planet_handle;
@@ -75,7 +70,7 @@ void capture(const command_t& argv, GameObj& g) {
       auto sectormap_handle =
           g.entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
       auto& smap = *sectormap_handle;
-      auto& sect = smap.get(x, y);
+      auto& sect = smap.get(ship.land_coords());
 
       if (sect.get_owner() != Playernum) {
         g.out << std::format(
@@ -246,8 +241,8 @@ void capture(const command_t& argv, GameObj& g) {
                ? " your ally"
                : (isset(alien->atwar, Playernum) ? " your enemy" : " neutral")),
           Playernum, race.name);
-      telegram += std::format("{} at sector {},{} [owner {}] !\n",
-                              ship_to_string(ship), x, y, sect.get_owner());
+      telegram += std::format("{} at sector {} [owner {}] !\n", ship,
+                              ship.land_coords(), sect.get_owner());
 
       if (booby) {
         telegram +=
@@ -267,15 +262,14 @@ void capture(const command_t& argv, GameObj& g) {
       if (!ship.alive()) {
         telegram += "              YOUR SHIP WAS DESTROYED!!!\n";
         g.out << "              Their ship DESTROYED!!!\n";
-        auto short_buf = std::format(
-            "{}: {} [{}] DESTROYED {}\n", dispshiploc(g.entity_manager, ship),
-            race.name, Playernum, ship_to_string(ship));
+        auto short_buf = std::format("{}: {} [{}] DESTROYED {}\n",
+                                     dispshiploc(g.entity_manager, ship),
+                                     race.name, Playernum, ship);
       }
 
       if (ship.owner() == Playernum) {
-        g.session_registry.notify_player(
-            oldowner, oldgov,
-            std::format("{} CAPTURED!\n", ship_to_string(ship)));
+        g.session_registry.notify_player(oldowner, oldgov,
+                                         std::format("{} CAPTURED!\n", ship));
         g.out << "VICTORY! The ship is yours!\n";
         if (what == PopulationType::CIV)
           g.out << std::format("{} boarders move in.\n",
@@ -284,16 +278,16 @@ void capture(const command_t& argv, GameObj& g) {
           g.out << std::format("{} troops move in.\n",
                                std::min(boarders, ship.troops()));
         capture_stuff(ship, g);
-        auto short_buf = std::format(
-            "{}: {} [{}] CAPTURED {}\n", dispshiploc(g.entity_manager, ship),
-            race.name, Playernum, ship_to_string(ship));
+        auto short_buf = std::format("{}: {} [{}] CAPTURED {}\n",
+                                     dispshiploc(g.entity_manager, ship),
+                                     race.name, Playernum, ship);
       } else if (ship.popn() + ship.troops()) {
         g.session_registry.notify_player(oldowner, oldgov,
                                          "You fought them off!\n");
         g.out << "The boarding was repulsed; try again.\n";
-        auto short_buf = std::format(
-            "{}: {} [{}] assaults {}\n", dispshiploc(g.entity_manager, ship),
-            race.name, Playernum, ship_to_string(ship));
+        auto short_buf = std::format("{}: {} [{}] assaults {}\n",
+                                     dispshiploc(g.entity_manager, ship),
+                                     race.name, Playernum, ship);
       }
       if (ship.alive()) {
         if (sect.get_popn() + sect.get_troops() + boarders) {
@@ -324,7 +318,7 @@ void capture(const command_t& argv, GameObj& g) {
         auto short_msg = std::format(
             "{}: {} [{}] {} {}\n", dispshiploc(g.entity_manager, ship),
             race.name, Playernum, (ship.alive() ? "assaults" : "DESTROYED"),
-            ship_to_string(ship));
+            ship);
         post(g.entity_manager, short_msg, NewsType::COMBAT);
         notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
                     ship.storbits(), short_msg);

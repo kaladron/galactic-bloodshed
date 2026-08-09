@@ -25,8 +25,8 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
     ship.special() = terraform;
   }
 
-  auto [x, y] = get_move(planet, ship.shipclass()[terraform.index],
-                         {ship.land_x(), ship.land_y()});
+  auto [x, y] =
+      get_move(planet, ship.shipclass()[terraform.index], ship.land_coords());
 
   bool bounced = false;
 
@@ -43,7 +43,7 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
     if ((ship.shipclass()[terraform.index + 1] == '\0') && (!ship.notified())) {
       ship.notified() = 1;
       std::string teleg_buf =
-          std::format("%{0} is out of orders at %{1}.", ship_to_string(ship),
+          std::format("%{0} is out of orders at %{1}.", ship,
                       prin_ship_orbits(entity_manager, ship));
       push_telegram(entity_manager, ship.owner(), ship.governor(), teleg_buf);
     }
@@ -52,8 +52,7 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
     ship.shipclass()[terraform.index] +=
         ((ship.shipclass()[terraform.index] > '5') ? -6 : 6);
   }
-  ship.land_x() = x;
-  ship.land_y() = y;
+  ship.set_land_coords({x, y});
   return true;
 }
 
@@ -61,7 +60,7 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
 void terraform(Ship& ship, Planet& planet, SectorMap& smap,
                EntityManager& entity_manager) {
   if (!moveship_onplanet(ship, planet, entity_manager)) return;
-  auto& s = smap.get(ship.land_x(), ship.land_y());
+  auto& s = smap.get(ship.land_coords());
 
   const auto* race = entity_manager.peek_race(ship.owner());
   if (s.get_condition() == race->likesbest) {
@@ -98,7 +97,7 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap,
 void plow(Ship* ship, Planet& planet, SectorMap& smap,
           EntityManager& entity_manager) {
   if (!moveship_onplanet(*ship, planet, entity_manager)) return;
-  auto& s = smap.get(ship->land_x(), ship->land_y());
+  auto& s = smap.get(ship->land_coords());
   const auto* race = entity_manager.peek_race(ship->owner());
   if ((race->likes[s.get_condition()]) && (s.get_fert() < 100)) {
     int adjust = round_rand(
@@ -122,7 +121,7 @@ void plow(Ship* ship, Planet& planet, SectorMap& smap,
 }
 
 void do_dome(EntityManager& entity_manager, Ship* ship, SectorMap& smap) {
-  auto& s = smap.get(ship->land_x(), ship->land_y());
+  auto& s = smap.get(ship->land_coords());
   if (s.get_eff() >= 100) {
     std::string buf = std::format(" Y{} is full of zealots!!!", ship->number());
     push_telegram(entity_manager, ship->owner(), ship->governor(), buf);
@@ -136,7 +135,7 @@ void do_dome(EntityManager& entity_manager, Ship* ship, SectorMap& smap) {
 
 void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
                EntityManager& entity_manager, TurnStats& stats) {
-  auto& s = smap.get(ship->land_x(), ship->land_y());
+  auto& s = smap.get(ship->land_coords());
 
   if ((ship->fuel() < (double)FUEL_COST_QUARRY)) {
     if (!ship->notified()) msg_OOF(entity_manager, *ship);

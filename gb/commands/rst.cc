@@ -356,7 +356,8 @@ void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
     if (s.whatdest() == ScopeLevel::LEVEL_SHIP)
       locstrn = std::format("D#{}", s.destshipno());
     else
-      locstrn = std::format("L{:2},{:<2}", s.land_x(), s.land_y());
+      locstrn =
+          std::format("L{:2},{:<2}", s.land_coords().x, s.land_coords().y);
   } else if (s.navigate().on) {
     locstrn =
         std::format("nav:{} ({})", s.navigate().bearing, s.navigate().turns);

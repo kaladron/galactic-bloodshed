@@ -60,8 +60,7 @@ int main() {
   ship.max_speed() = 5;  // CRITICAL: Ship needs speed_rating to be launchable
   ship.xpos() = 110.0;
   ship.ypos() = 220.0;
-  ship.land_x() = 5;
-  ship.land_y() = 5;
+  ship.set_land_coords({5, 5});
   ship.fuel() = 1000.0;
   ship.mass() = 100.0;
   ship.docked() = 1;

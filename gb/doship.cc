@@ -149,8 +149,7 @@ void do_pod(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
       auto i = int_rand(0, star->numplanets() - 1);
       std::stringstream telegram_buf;
-      telegram_buf << std::format("{} has warmed and exploded at {}\n",
-                                  ship_to_string(ship),
+      telegram_buf << std::format("{} has warmed and exploded at {}\n", ship,
                                   prin_ship_orbits(entity_manager, ship));
       if (infect_planet(ship.owner(), ship.storbits(), i, entity_manager,
                         stats)) {
@@ -176,7 +175,7 @@ void do_pod(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       }
 
       std::string telegram =
-          std::format("{} has decayed at {}\n", ship_to_string(ship),
+          std::format("{} has decayed at {}\n", ship,
                       prin_ship_orbits(entity_manager, ship));
       push_telegram(entity_manager, ship.owner(), ship.governor(), telegram);
       entity_manager.kill_ship(ship.owner(), ship);
@@ -290,15 +289,13 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
                                         (double)(aimed_at.intensity) /
                                         (range / PLORBITSIZE + 1.0)));
         std::stringstream telegram_buf;
-        telegram_buf << std::format("{} aimed at {}\n", ship_to_string(ship),
-                                    ship_to_string(*target));
+        telegram_buf << std::format("{} aimed at {}\n", ship, *target);
         target->damage() += i;
         if (i) {
           telegram_buf << std::format("{}% damage done.\n", i);
         }
         if (target->damage() >= 100) {
-          telegram_buf << std::format("{} DESTROYED!!!\n",
-                                      ship_to_string(*target));
+          telegram_buf << std::format("{} DESTROYED!!!\n", *target);
           entity_manager.kill_ship(ship.owner(), *target);
         }
         push_telegram(entity_manager, target->owner(), target->governor(),
@@ -654,9 +651,9 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       }();
 
       // TODO(jeffbailey): This doesn't actually notify anyone and should.
-      std::string bombdropmsg = std::format(
-          "{} dropped on sector {},{} at planet {}.\n", ship_to_string(ship),
-          bombx, bomby, prin_ship_orbits(entity_manager, ship));
+      std::string bombdropmsg =
+          std::format("{} dropped on sector {},{} at planet {}.\n", ship, bombx,
+                      bomby, prin_ship_orbits(entity_manager, ship));
 
       auto smap_handle =
           entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
@@ -668,9 +665,9 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
           Coordinates{bombx, bomby}, smap, 0, GTYPE_HEAVY, long_buf, short_buf);
       push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
       entity_manager.kill_ship(ship.owner(), ship);
-      std::string sectors_destroyed_msg = std::format(
-          "{} dropped on {}.\n\t{} sectors destroyed.\n", ship_to_string(ship),
-          prin_ship_orbits(entity_manager, ship), result.numdest);
+      std::string sectors_destroyed_msg =
+          std::format("{} dropped on {}.\n\t{} sectors destroyed.\n", ship,
+                      prin_ship_orbits(entity_manager, ship), result.numdest);
       const auto* star = entity_manager.peek_star(ship.storbits());
       for (auto race_handle : RaceList(entity_manager)) {
         const auto& race = race_handle.read();
@@ -683,7 +680,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
       }
       if (result.numdest) {
         std::string dropmsg =
-            std::format("{} dropped on {}.\n", ship_to_string(ship),
+            std::format("{} dropped on {}.\n", ship,
                         prin_ship_orbits(entity_manager, ship));
         post(entity_manager, dropmsg, NewsType::COMBAT);
       }
@@ -764,9 +761,8 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     return;
   }
 
-  std::string postmsg =
-      std::format("{} detonated at {}\n", ship_to_string(ship),
-                  prin_ship_orbits(entity_manager, ship));
+  std::string postmsg = std::format("{} detonated at {}\n", ship,
+                                    prin_ship_orbits(entity_manager, ship));
   post(entity_manager, postmsg, NewsType::COMBAT);
   telegram_star(entity_manager, ship.storbits(), ship.owner(), ship.governor(),
                 postmsg);
@@ -797,7 +793,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
 
     auto [x, y] = [&ship, &planet]() -> std::pair<int, int> {
       if (landed(ship)) {
-        return {ship.land_x(), ship.land_y()};
+        return {ship.land_coords().x, ship.land_coords().y};
       } else {
         int x = int_rand(0, (int)planet.Maxx() - 1);
         int y = int_rand(0, (int)planet.Maxy() - 1);

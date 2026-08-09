@@ -622,13 +622,12 @@ void give_orders(GameObj& g, const command_t& argv, int /* APcount */,
                  Ship& ship) {
   if (!ship.active()) {
     g.out << std::format("{} is irradiated ({}); it cannot be given orders.\n",
-                         ship_to_string(ship), ship.rad());
+                         ship, ship.rad());
     return;
   }
   if (ship.type() != ShipType::OTYPE_TRANSDEV && !ship.popn() &&
       max_crew(ship)) {
-    g.out << std::format("{} has no crew and is not a robotic ship.\n",
-                         ship_to_string(ship));
+    g.out << std::format("{} has no crew and is not a robotic ship.\n", ship);
     return;
   }
 
@@ -706,7 +705,8 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
     if (ship.whatdest() == ScopeLevel::LEVEL_SHIP)
       buffer << "D#" << ship.destshipno();
     else
-      buffer << std::format("L{:2d},{:2d}", ship.land_x(), ship.land_y());
+      buffer << std::format("L{:2d},{:2d}", ship.land_coords().x,
+                            ship.land_coords().y);
   else
     buffer << prin_ship_dest(ship);
 

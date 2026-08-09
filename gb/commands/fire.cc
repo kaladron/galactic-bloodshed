@@ -51,8 +51,7 @@ void fire(const command_t& argv, GameObj& g) {
     if (!ship_matches_filter(argv[1], from)) continue;
     if (!authorized(Governor, from)) continue;
     if (!from.active()) {
-      g.out << std::format("{} is irradiated and inactive.\n",
-                           ship_to_string(from));
+      g.out << std::format("{} is irradiated and inactive.\n", from);
       continue;
     }
     if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
@@ -103,14 +102,13 @@ void fire(const command_t& argv, GameObj& g) {
 
     if (from.type() == ShipType::OTYPE_AFV) {
       if (!landed(from)) {
-        g.out << std::format("{} isn't landed on a planet!\n",
-                             ship_to_string(from));
+        g.out << std::format("{} isn't landed on a planet!\n", from);
         continue;
       }
       if (!landed(*to)) {
         g.session_registry.notify_player(
             Playernum, Governor,
-            std::format("{} isn't landed on a planet!\n", ship_to_string(*to)));
+            std::format("{} isn't landed on a planet!\n", *to));
         continue;
       }
     }
@@ -124,8 +122,7 @@ void fire(const command_t& argv, GameObj& g) {
       }
       const auto* p =
           g.entity_manager.peek_planet(from.storbits(), from.pnumorbits());
-      if (!adjacent(*p, {from.land_x(), from.land_y()},
-                    {to->land_x(), to->land_y()})) {
+      if (!adjacent(*p, from.land_coords(), to->land_coords())) {
         g.out << "You are not adjacent to your target!\n";
         continue;
       }

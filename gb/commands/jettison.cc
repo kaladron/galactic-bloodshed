@@ -51,8 +51,7 @@ void jettison(const command_t& argv, GameObj& g) {
       continue;
     }
     if (!s.active()) {
-      g.out << std::format("{} is irradiated and inactive.\n",
-                           ship_to_string(s));
+      g.out << std::format("{} is irradiated and inactive.\n", s);
       continue;
     }
     if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
@@ -92,8 +91,8 @@ void jettison(const command_t& argv, GameObj& g) {
           ship.mass() -= amt * g.race->mass;
           g.out << std::format("{} crew {} into deep space.\n", amt,
                                (amt == 1) ? "hurls itself" : "hurl themselves");
-          g.out << std::format("Complement of {} is now {}.\n",
-                               ship_to_string(ship), ship.popn());
+          g.out << std::format("Complement of {} is now {}.\n", ship,
+                               ship.popn());
         }
         break;
       case 'm':
@@ -111,7 +110,7 @@ void jettison(const command_t& argv, GameObj& g) {
           use_destruct(ship, amt);
           g.out << std::format("{} destruct jettisoned.\n", amt);
           if (!max_crew(ship)) {
-            g.out << std::format("\n{} ", ship_to_string(ship));
+            g.out << std::format("\n{} ", ship);
             if (ship.destruct()) {
               g.out << "still boobytrapped.\n";
             } else {

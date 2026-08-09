@@ -335,14 +335,15 @@ void build(const command_t& argv, GameObj& g) {
                 g.out << "You can't build that here.\n";
                 return;
               }
-              x = builder->land_x();
-              y = builder->land_y();
+              Coordinates build_coords = builder->land_coords();
+              x = build_coords.x;
+              y = build_coords.y;
               what = builder->build_type();
               sectormap_handle = g.entity_manager.get_sectormap(snum, pnum);
               auto& sectormap = **sectormap_handle;
-              auto& sector = sectormap.get(x, y);
+              auto& sector = sectormap.get(build_coords);
               auto result = can_build_on_sector(g.entity_manager, *what, race,
-                                                planet, sector, {x, y});
+                                                planet, sector, build_coords);
               if (!result) {
                 g.out << result.error();
                 return;

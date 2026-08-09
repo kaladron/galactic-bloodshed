@@ -104,8 +104,7 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
 
   if (s2.owner() != s->owner()) {
     std::string telegram = "Audio-vibatory-physio-molecular transport device #";
-    telegram += std::format("{} gave your ship {} the following:\n",
-                            ship_to_string(*s), ship_to_string(s2));
+    telegram += std::format("{} gave your ship {} the following:\n", *s, s2);
     telegram += tele_lines;
     warn_player(g.session_registry, g.entity_manager, s2.owner(), s2.governor(),
                 telegram);
@@ -231,10 +230,9 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
     adjust_morale(alien, race, (int)race.fighters);
   }
   std::string telegram = std::format(
-      "/{}/{}: {} [{}] {} assaults {} [{}] {}({},{}) {}\n", star.get_name(),
-      star.get_planet_name(g.pnum()), race.name, Playernum,
-      ship_to_string(*ship), alien.name, alien.Playernum,
-      Dessymbols[sect.get_condition()], ship->land_x(), ship->land_y(),
+      "/{}/{}: {} [{}] {} assaults {} [{}] {}({}) {}\n", star.get_name(),
+      star.get_planet_name(g.pnum()), race.name, Playernum, *ship, alien.name,
+      alien.Playernum, Dessymbols[sect.get_condition()], ship->land_coords(),
       (sect.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
 
   if (sect.get_owner() == Playernum) {
@@ -311,7 +309,7 @@ void load(const command_t& argv, GameObj& g) {
     if (!s.active()) {
       g.session_registry.notify_player(
           Playernum, Governor,
-          std::format("{} is irradiated and inactive.\n", ship_to_string(s)));
+          std::format("{} is irradiated and inactive.\n", s));
 
       continue;
     }
@@ -328,7 +326,7 @@ void load(const command_t& argv, GameObj& g) {
         continue;
     }
     if (!s.docked()) {
-      g.out << std::format("{} is not landed or docked.\n", ship_to_string(s));
+      g.out << std::format("{} is not landed or docked.\n", s);
 
       continue;
     } /* ship has a recipient */
@@ -337,8 +335,7 @@ void load(const command_t& argv, GameObj& g) {
     Ship* s2_ptr = nullptr;
 
     if (s.whatdest() == ScopeLevel::LEVEL_PLAN) {
-      g.out << std::format("{} at {},{}\n", ship_to_string(s), s.land_x(),
-                           s.land_y());
+      g.out << std::format("{} at {}\n", s, s.land_coords());
       if (s.storbits() != g.snum() || s.pnumorbits() != g.pnum()) {
         g.out << "Change scope to the planet this ship is landed on.\n";
 
@@ -346,7 +343,7 @@ void load(const command_t& argv, GameObj& g) {
       }
     } else { /* ship is docked */
       if (s.destshipno() == 0) {
-        g.out << std::format("{} is not docked.\n", ship_to_string(s));
+        g.out << std::format("{} is not docked.\n", s);
 
         continue;
       }
@@ -364,18 +361,17 @@ void load(const command_t& argv, GameObj& g) {
         s.docked() = 0;
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
 
-        g.out << std::format("{} is not docked.\n", ship_to_string(*s2_ptr));
+        g.out << std::format("{} is not docked.\n", *s2_ptr);
 
         continue;
       }
       if (overloaded(*s2_ptr) &&
           s2_ptr->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-        g.out << std::format("{} is overloaded!\n", ship_to_string(*s2_ptr));
+        g.out << std::format("{} is overloaded!\n", *s2_ptr);
 
         continue;
       }
-      g.out << std::format("{} docked with {}\n", ship_to_string(s),
-                           ship_to_string(*s2_ptr));
+      g.out << std::format("{} docked with {}\n", s, *s2_ptr);
       sh = 1;
       if (s2_ptr->owner() != Playernum) {
         g.out << std::format("Player {} owns that ship.\n", s2_ptr->owner());
@@ -408,7 +404,7 @@ void load(const command_t& argv, GameObj& g) {
 
     if (!sh && (commod == 'c' || commod == 'm')) {
       sectormap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
-      sect_ptr = &sectormap_handle->get()->get(s.land_x(), s.land_y());
+      sect_ptr = &sectormap_handle->get()->get(s.land_coords());
     }
 
     switch (commod) {
@@ -528,8 +524,7 @@ void load(const command_t& argv, GameObj& g) {
             p_ptr->info(Playernum).numsectsowned++;
             p_ptr->info(Playernum).mob_points += sect_ptr->get_mobilization();
             sect_ptr->set_owner(Playernum);
-            g.out << std::format("sector {},{} COLONIZED.\n", s.land_x(),
-                                 s.land_y());
+            g.out << std::format("sector {} COLONIZED.\n", s.land_coords());
           }
           sect_ptr->subtract_popn(amt);
           p_ptr->popn() -= amt;
@@ -538,15 +533,14 @@ void load(const command_t& argv, GameObj& g) {
             p_ptr->info(Playernum).numsectsowned--;
             p_ptr->info(Playernum).mob_points -= sect_ptr->get_mobilization();
             sect_ptr->set_owner(0);
-            g.out << std::format("sector {},{} evacuated.\n", s.land_x(),
-                                 s.land_y());
+            g.out << std::format("sector {} evacuated.\n", s.land_coords());
           }
         }
         if (transfercrew) {
           s.popn() += amt;
           s.mass() += amt * race.mass;
-          g.out << std::format("crew complement of {} is now {}.\n",
-                               ship_to_string(s), s.popn());
+          g.out << std::format("crew complement of {} is now {}.\n", s,
+                               s.popn());
         }
         break;
       case 'm':
@@ -567,8 +561,7 @@ void load(const command_t& argv, GameObj& g) {
             p_ptr->info(Playernum).numsectsowned++;
             p_ptr->info(Playernum).mob_points += sect_ptr->get_mobilization();
             sect_ptr->set_owner(Playernum);
-            g.out << std::format("sector {},{} OCCUPIED.\n", s.land_x(),
-                                 s.land_y());
+            g.out << std::format("sector {} OCCUPIED.\n", s.land_coords());
           }
           sect_ptr->set_troops(sect_ptr->get_troops() - amt);
           p_ptr->troops() -= amt;
@@ -577,15 +570,14 @@ void load(const command_t& argv, GameObj& g) {
             p_ptr->info(Playernum).numsectsowned--;
             p_ptr->info(Playernum).mob_points -= sect_ptr->get_mobilization();
             sect_ptr->set_owner(0);
-            g.out << std::format("sector {},{} evacuated.\n", s.land_x(),
-                                 s.land_y());
+            g.out << std::format("sector {} evacuated.\n", s.land_coords());
           }
         }
         if (transfercrew) {
           s.troops() += amt;
           s.mass() += amt * race.mass;
-          g.out << std::format("troop complement of {} is now {}.\n",
-                               ship_to_string(s), s.troops());
+          g.out << std::format("troop complement of {} is now {}.\n", s,
+                               s.troops());
         }
         break;
       case 'd':
@@ -600,7 +592,7 @@ void load(const command_t& argv, GameObj& g) {
         s.mass() += amt * MASS_DESTRUCT;
         g.out << std::format("{} destruct transferred.\n", amt);
         if (!max_crew(s)) {
-          g.out << std::format("\n{} ", ship_to_string(s));
+          g.out << std::format("\n{} ", s);
           if (s.destruct()) {
             g.out << "now boobytrapped.\n";
           } else {
@@ -680,13 +672,12 @@ void load(const command_t& argv, GameObj& g) {
       if (!tele_lines.empty()) {
         auto s2_owner = s2_ptr->owner();
         auto s2_gov = s2_ptr->governor();
-        auto s2_name = ship_to_string(*s2_ptr);
         warn_player(
             g.session_registry, g.entity_manager, s2_owner, s2_gov,
             std::format(
                 "Audio-vibatory-physio-molecular transport device #{} gave "
                 "your ship {} the following:\n{}",
-                ship_to_string(s), s2_name, tele_lines));
+                s, *s2_ptr, tele_lines));
       }
     }
 

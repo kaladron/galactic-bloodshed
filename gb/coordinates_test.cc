@@ -121,7 +121,7 @@ int main() {
   Ship ship(shipdata);
   ship.set_land_coords({7, 2});
   assert(ship.land_coords() == Coordinates(7, 2));
-  assert(ship.land_x() == 7 && ship.land_y() == 2);
+  assert(ship.land_coords().x == 7 && ship.land_coords().y == 2);
 
   std::println(std::cout, "✓ All Coordinates & API Integration tests passed!");
   return 0;

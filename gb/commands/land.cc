@@ -54,8 +54,7 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
   }
   if (landed(s)) {
     if (!landed(*s2_check)) {
-      g.out << std::format("{} is not landed on a planet.\n",
-                           ship_to_string(*s2_check));
+      g.out << std::format("{} is not landed on a planet.\n", *s2_check);
       return;
     }
     if (s2_check->storbits() != s.storbits()) {
@@ -66,14 +65,12 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
       g.out << "These ships are not landed on the same planet.\n";
       return;
     }
-    if ((s2_check->land_x() != s.land_x()) ||
-        (s2_check->land_y() != s.land_y())) {
+    if (s2_check->land_coords() != s.land_coords()) {
       g.out << "These ships are not in the same sector.\n";
       return;
     }
     if (s.on()) {
-      g.out << std::format("{} must be turned off before loading.\n",
-                           ship_to_string(s));
+      g.out << std::format("{} must be turned off before loading.\n", s);
       return;
     }
     if (size(s) > hanger(*s2_check)) {
@@ -92,12 +89,10 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
     s2.mass() += s.mass();
     s2.hanger() += size(s);
     fuel = 0.0;
-    g.out << std::format("{} loaded onto {} using {} fuel.\n",
-                         ship_to_string(s), ship_to_string(s2), fuel);
+    g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2, fuel);
     s.docked() = 1;
   } else if (s.docked()) {
-    g.out << std::format("{} is already docked or landed.\n",
-                         ship_to_string(s));
+    g.out << std::format("{} is already docked or landed.\n", s);
     return;
   } else {
     /* Check if the ships are in the same scope level. Maarten */
@@ -109,9 +104,8 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
     /* check to see if close enough to land */
     Dist = std::hypot(s2_check->xpos() - s.xpos(), s2_check->ypos() - s.ypos());
     if (Dist > DIST_TO_DOCK) {
-      g.out << std::format("{} must be {} or closer to {}.\n",
-                           ship_to_string(s), DIST_TO_DOCK,
-                           ship_to_string(*s2_check));
+      g.out << std::format("{} must be {} or closer to {}.\n", s, DIST_TO_DOCK,
+                           *s2_check);
       return;
     }
     fuel = 0.05 + Dist * 0.025 * std::sqrt(s.mass());
@@ -147,8 +141,7 @@ void land_friendly(const command_t& argv, GameObj& g, Ship& s) {
     /* increase mass of mothership */
     s2.mass() += s.mass();
     s2.hanger() += size(s);
-    g.out << std::format("{} landed on {} using {} fuel.\n", ship_to_string(s),
-                         ship_to_string(s2), fuel);
+    g.out << std::format("{} landed on {} using {} fuel.\n", s, s2, fuel);
     s.docked() = 1;
   }
 }
@@ -179,7 +172,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
   double Dist;
 
   if (s.docked()) {
-    g.out << std::format("{} is docked.\n", ship_to_string(s));
+    g.out << std::format("{} is docked.\n", s);
     return;
   }
   auto coords_opt = Coordinates::parse(argv[2]);
@@ -189,7 +182,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
   }
   const Coordinates target_coords = *coords_opt;
   if (s.whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    g.out << std::format("{} doesn't orbit a planet.\n", ship_to_string(s));
+    g.out << std::format("{} doesn't orbit a planet.\n", s);
     return;
   }
   if (!Shipdata[s.type()][ABIL_CANLAND]) {
@@ -234,8 +227,8 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
 
   if (Dist > DIST_TO_LAND) {
     g.out << std::format(
-        "{} must be {:.3g} or closer to the planet ({:.2f}).\n",
-        ship_to_string(s), DIST_TO_LAND, Dist);
+        "{} must be {:.3g} or closer to the planet ({:.2f}).\n", s,
+        DIST_TO_LAND, Dist);
     return;
   }
 
@@ -292,7 +285,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     numdest = result.numdest;
     auto buf =
         std::format("BOOM!! {} crashes on sector {} with blast radius of {}.\n",
-                    ship_to_string(s), target_coords, numdest);
+                    s, target_coords, numdest);
     for (auto race_handle : RaceList(g.entity_manager)) {
       const auto i = race_handle->Playernum;
       if (p.info(i).numsectsowned || i == Playernum)
@@ -349,17 +342,16 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     deductAPs(g, APcount, s.storbits());
 
   /* send messages to anyone there */
-  auto landing_msg =
-      std::format("{} observed landing on sector {},{},planet /{}/{}.\n",
-                  ship_to_string(s), s.land_x(), s.land_y(), star->get_name(),
-                  star->get_planet_name(s.pnumorbits()));
+  auto landing_msg = std::format(
+      "{} observed landing on sector {},planet /{}/{}.\n", s, s.land_coords(),
+      star->get_name(), star->get_planet_name(s.pnumorbits()));
   for (auto race_handle : RaceList(g.entity_manager)) {
     const auto i = race_handle->Playernum;
     if (p.info(i).numsectsowned && i != Playernum) {
       g.session_registry.notify_player(i, star->governor(i), landing_msg);
     }
   }
-  g.out << std::format("{} landed on planet.\n", ship_to_string(s));
+  g.out << std::format("{} landed on planet.\n", s);
 }
 }  // namespace
 
@@ -382,8 +374,7 @@ void land(const command_t& argv, GameObj& g) {
     if (!authorized(Governor, s)) continue;
 
     if (overloaded(s)) {
-      g.out << std::format("{} is too overloaded to land.\n",
-                           ship_to_string(s));
+      g.out << std::format("{} is too overloaded to land.\n", s);
       continue;
     }
     if (s.type() == ShipType::OTYPE_QUARRY) {

@@ -69,8 +69,7 @@ int main() {
       ScopeLevel::LEVEL_PLAN;  // Important: must be PLAN for planet loading
   ship.deststar() = 0;
   ship.destpnum() = 0;
-  ship.land_x() = 5;
-  ship.land_y() = 5;
+  ship.set_land_coords({5, 5});
   ship.docked() = 1;  // CRITICAL: Ship must be docked to load/unload
   ship.fuel() = 100.0;
   ship.max_fuel() = 500.0;

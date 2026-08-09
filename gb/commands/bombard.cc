@@ -30,8 +30,7 @@ void bombard(const command_t& argv, GameObj& g) {
     if (!ship_matches_filter(argv[1], from)) continue;
     if (!authorized(Governor, from)) continue;
     if (!from.active()) {
-      g.out << std::format("{} is irradiated and inactive.\n",
-                           ship_to_string(from));
+      g.out << std::format("{} is irradiated and inactive.\n", from);
       continue;
     }
 

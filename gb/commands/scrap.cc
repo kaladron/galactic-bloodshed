@@ -59,8 +59,7 @@ void scrap(const command_t& argv, GameObj& g) {
 
     if (!s.docked()) {
       g.out << std::format(
-          "{} is not landed or docked.\nNo resources can be reclaimed.\n",
-          ship_to_string(s));
+          "{} is not landed or docked.\nNo resources can be reclaimed.\n", s);
     }
 
     // Handle docked ship - use optional since EntityHandle has no default
@@ -97,13 +96,12 @@ void scrap(const command_t& argv, GameObj& g) {
       smap_handle_opt =
           g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
       if (smap_handle_opt && smap_handle_opt->get()) {
-        sect = &smap_handle_opt->get()->get(s.land_x(), s.land_y());
+        sect = &smap_handle_opt->get()->get(s.land_coords());
       }
     }
 
     if (s.docked()) {
-      g.out << std::format("{}: original cost: {}\n", ship_to_string(s),
-                           shipcost(s));
+      g.out << std::format("{}: original cost: {}\n", s, shipcost(s));
       g.out << std::format("         scrap value{}: {} rp's.\n",
                            s.resource() ? "(with stockpile) " : "", scrapval);
 
@@ -229,8 +227,7 @@ void scrap(const command_t& argv, GameObj& g) {
           planet.info(g.player()).numsectsowned++;
           planet.info(g.player()).popn += crewval;
           planet.info(g.player()).popn += troopval;
-          g.out << std::format("Sector {},{} Colonized.\n", s.land_x(),
-                               s.land_y());
+          g.out << std::format("Sector {} Colonized.\n", s.land_coords());
         }
         planet.info(g.player()).resource += scrapval;
         planet.popn() += crewval;

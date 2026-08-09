@@ -112,11 +112,11 @@ void fix(const command_t& argv, GameObj& g) {
     } else if (argv[2] == "alive") {
       s.alive() = 1;
       s.damage() = 0;
-      g.out << std::format("{} resurrected\n", ship_to_string(s));
+      g.out << std::format("{} resurrected\n", s);
     } else if (argv[2] == "dead") {
       s.alive() = 0;
       s.damage() = 100;
-      g.out << std::format("{} destroyed\n", ship_to_string(s));
+      g.out << std::format("{} destroyed\n", s);
     } else {
       g.out << "No such option for 'fix ship'.\n";
       return;

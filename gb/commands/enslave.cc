@@ -40,7 +40,7 @@ void enslave(const command_t& argv, GameObj& g) {
     return;
   }
   if (s->whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    g.out << std::format("{} doesn't orbit a planet.\n", ship_to_string(*s));
+    g.out << std::format("{} doesn't orbit a planet.\n", *s);
     return;
   }
 
@@ -113,7 +113,7 @@ void enslave(const command_t& argv, GameObj& g) {
     p.slaved_to() = Playernum;
 
     /* send telegs to anyone there */
-    telegram << std::format("ENSLAVED by {}!!\n", ship_to_string(*s));
+    telegram << std::format("ENSLAVED by {}!!\n", *s);
     telegram << std::format("All material produced here will be\n"
                             "diverted to {} coffers.",
                             g.race->name);
@@ -127,8 +127,7 @@ void enslave(const command_t& argv, GameObj& g) {
         p.popn() * 0.001);
     g.out << std::format("enslaved population will revolt.\n");
   } else {
-    telegram << std::format("repulsed attempt at enslavement by {}!!\n",
-                            ship_to_string(*s));
+    telegram << std::format("repulsed attempt at enslavement by {}!!\n", *s);
     telegram << std::format(
         "Enslavement repulsed, defense/attack Ratio : {} to {}.\n", def,
         attack);

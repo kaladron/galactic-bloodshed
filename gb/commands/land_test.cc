@@ -124,8 +124,7 @@ int main() {
     assert(s != nullptr);
     // Ship should be docked after landing
     assert(s->docked());
-    assert(s->land_x() == 5);
-    assert(s->land_y() == 5);
+    assert(s->land_coords() == Coordinates(5, 5));
     std::println(std::cout, "✓ Ship landed on planet coordinates");
   }
 
@@ -155,8 +154,7 @@ int main() {
       auto& s = *s_handle;
       s.docked() = false;
       s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-      s.land_x() = 5;
-      s.land_y() = 5;
+      s.set_land_coords({5, 5});
     }
 
     // Create a carrier
@@ -177,8 +175,7 @@ int main() {
     carrier.pnumorbits() = 0;
     carrier.xpos() = 105.0;
     carrier.ypos() = 205.0;
-    carrier.land_x() = 5;
-    carrier.land_y() = 5;
+    carrier.set_land_coords({5, 5});
     carrier.docked() = true;  // Carrier is landed
 
     ships_repo.save(carrier);

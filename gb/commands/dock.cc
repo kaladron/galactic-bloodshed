@@ -69,7 +69,7 @@ void dock(const command_t& argv, GameObj& g) {
     }
     if (!Assault) {
       if (s.docked() || s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-        g.out << std::format("{} is already docked.\n", ship_to_string(s));
+        g.out << std::format("{} is already docked.\n", s);
         continue;
       }
     } else if (s.docked()) {
@@ -140,7 +140,7 @@ void dock(const command_t& argv, GameObj& g) {
     }
 
     if (s2.docked() || (s.whatorbits() == ScopeLevel::LEVEL_SHIP)) {
-      g.out << std::format("{} is already docked.\n", ship_to_string(s2));
+      g.out << std::format("{} is already docked.\n", s2);
       continue;
     }
 
@@ -149,8 +149,8 @@ void dock(const command_t& argv, GameObj& g) {
            Dist * 0.025 * (Assault ? 2.0 : 1.0) * std::sqrt((double)s.mass());
 
     if (Dist > DIST_TO_DOCK) {
-      g.out << std::format("{} must be {:.2f} or closer to {}.\n",
-                           ship_to_string(s), DIST_TO_DOCK, ship_to_string(s2));
+      g.out << std::format("{} must be {:.2f} or closer to {}.\n", s,
+                           DIST_TO_DOCK, s2);
       continue;
     }
     if (s.docked() && Assault) {
@@ -168,12 +168,12 @@ void dock(const command_t& argv, GameObj& g) {
       g.out << "Not enough fuel.\n";
       continue;
     }
-    g.out << std::format("Distance to {}: {:.2f}.\n", ship_to_string(s2), Dist);
+    g.out << std::format("Distance to {}: {:.2f}.\n", s2, Dist);
     g.out << std::format("This maneuver will take {:.2f} fuel (of {:.2f}.)\n\n",
                          fuel, s.fuel());
 
     if (s2.docked() && !Assault) {
-      g.out << std::format("{} is already docked.\n", ship_to_string(s2));
+      g.out << std::format("{} is already docked.\n", s2);
       return;
     }
     /* defending fire gets defensive fire */
@@ -376,9 +376,9 @@ void dock(const command_t& argv, GameObj& g) {
     }
 
     if (Assault) {
-      std::string telegram = std::format(
-          "{} ASSAULTED by {} at {}\n", ship_to_string(s2), ship_to_string(s),
-          prin_ship_orbits(g.entity_manager, s2));
+      std::string telegram =
+          std::format("{} ASSAULTED by {} at {}\n", s2, s,
+                      prin_ship_orbits(g.entity_manager, s2));
       telegram += std::format("Your damage: {}%, theirs: {}%.\n", dam2, dam);
       if (!s2.max_crew() && s2.destruct()) {
         telegram +=
@@ -435,17 +435,16 @@ void dock(const command_t& argv, GameObj& g) {
       warn_player(g.session_registry, g.entity_manager, old2owner, old2gov,
                   telegram);
       auto news = std::format(
-          "{} {} {} at {}.\n", ship_to_string(s),
+          "{} {} {} at {}.\n", s,
           s2.alive() ? (s2.owner() == Playernum ? "CAPTURED" : "assaulted")
                      : "DESTROYED",
-          ship_to_string(s2), prin_ship_orbits(g.entity_manager, s));
+          s2, prin_ship_orbits(g.entity_manager, s));
       if (s2.owner() == Playernum || !s2.alive())
         post(g.entity_manager, news, NewsType::COMBAT);
       notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
                   s.storbits(), news);
     } else {
-      g.out << std::format("{} docked with {}.\n", ship_to_string(s),
-                           ship_to_string(s2));
+      g.out << std::format("{} docked with {}.\n", s, s2);
     }
 
     if (g.level() == ScopeLevel::LEVEL_UNIV)

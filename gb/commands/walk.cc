@@ -192,9 +192,9 @@ void walk(const command_t& argv, GameObj& g) {
     succ = 1;
 
   if (ship->alive() && ship->popn() && succ) {
-    std::string moving = std::format(
-        "{} moving from {} to {} on {}.\n", ship_to_string(*ship), old_coords,
-        new_coords, dispshiploc(g.entity_manager, *ship));
+    std::string moving =
+        std::format("{} moving from {} to {} on {}.\n", *ship, old_coords,
+                    new_coords, dispshiploc(g.entity_manager, *ship));
     ship->set_land_coords(new_coords);
     use_fuel(*ship, AFV_FUEL_COST);
     for (player_t i{1}; i <= g.entity_manager.num_races();

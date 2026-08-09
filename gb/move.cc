@@ -148,7 +148,7 @@ void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
   *civ -= cas_civ;
   *mil -= cas_mil;
   std::sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(em, ship).c_str(),
-               ship_to_string(ship).c_str(),
+               std::format("{}", ship).c_str(),
                (*civ + *mil) ? "attacked" : "slaughtered", alien.name.c_str(),
                alien.Playernum.value);
   std::strcpy(long_msg, short_msg);
@@ -200,7 +200,7 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   std::sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
                race.name.c_str(), race.Playernum.value,
                ship.alive() ? "attacked" : "DESTROYED",
-               ship_to_string(ship).c_str());
+               std::format("{}", ship).c_str());
   std::strcpy(long_msg, short_msg);
   std::string assault_msg = std::format(
       "\tBattle at {} {}: {} civ/{} mil assault {}\n", target_coords,

@@ -124,7 +124,7 @@ int getdefense(EntityManager& em, const Ship& ship) {
   if (landed(ship)) {
     const auto* smap = em.peek_sectormap(ship.storbits(), ship.pnumorbits());
     if (!smap) return 0;
-    const auto& sect = smap->get(ship.land_x(), ship.land_y());
+    const auto& sect = smap->get(ship.land_coords());
     return (2 * Defensedata[sect.get_condition()]);
   }
   // No defense
@@ -147,13 +147,8 @@ void capture_stuff(const Ship& ship, GameObj& g) {
     s.owner() =
         ship.owner(); /* make sure he gets all of the ships landed on it */
     s.governor() = ship.governor();
-    g.out << ship_to_string(s) << " CAPTURED!\n";
+    g.out << std::format("{} CAPTURED!\n", s);
   }
-}
-
-std::string ship_to_string(const Ship& s) {
-  return std::format("{0}{1} {2} [{3}]", Shipltrs[s.type()], s.number(),
-                     s.name(), s.owner());
 }
 
 double getmass(const Ship& s) {
@@ -264,10 +259,8 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
       telegram << "\t\tNot enough fuel to land!\n";
       return 1;
     }
-    s.land_x() = p.info(owner).route[j].x;
-    s.land_y() = p.info(owner).route[j].y;
-    telegram << std::format("\t\tLanded on sector {},{}\n", s.land_x(),
-                            s.land_y());
+    s.set_land_coords({p.info(owner).route[j].x, p.info(owner).route[j].y});
+    telegram << std::format("\t\tLanded on sector {}\n", s.land_coords());
     const auto& star = *em.peek_star(s.storbits());
     s.xpos() = p.xpos() + star.xpos();
     s.ypos() = p.ypos() + star.ypos();
@@ -447,7 +440,7 @@ bool testship(const Ship& s, GameObj& g) {
   const player_t playernum = g.player();
   const governor_t governor = g.governor();
   if (!s.alive()) {
-    g.out << std::format("{} has been destroyed.\n", ship_to_string(s));
+    g.out << std::format("{} has been destroyed.\n", s);
     return true;
   }
 
@@ -457,8 +450,7 @@ bool testship(const Ship& s, GameObj& g) {
   }
 
   if (!s.active()) {
-    g.out << std::format("{} is irradiated {}% and inactive.\n",
-                         ship_to_string(s), s.rad());
+    g.out << std::format("{} is irradiated {}% and inactive.\n", s, s.rad());
     return true;
   }
 
@@ -591,8 +583,8 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
 
       if (s.fuel() < fuse) {
         std::string telegram = std::format(
-            "{} at system {} does not have {:.1f}f to do hyperspace jump.",
-            ship_to_string(s), prin_ship_orbits(em, s), fuse);
+            "{} at system {} does not have {:.1f}f to do hyperspace jump.", s,
+            prin_ship_orbits(em, s), fuse);
         if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
         s.hyper_drive().on = 0;
         return;
@@ -610,8 +602,8 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
       s.hyper_drive().on = 0;
       s.hyper_drive().ready = 0;
       s.hyper_drive().charge = 0;
-      std::string telegram = std::format("{} arrived at {}.", ship_to_string(s),
-                                         prin_ship_orbits(em, s));
+      std::string telegram =
+          std::format("{} arrived at {}.", s, prin_ship_orbits(em, s));
       if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
     } else if (s.mounted()) {
       s.hyper_drive().ready = 1;
@@ -634,7 +626,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
           (s.build_cost() <= 50 || s.type() == ShipType::OTYPE_VN ||
            s.type() == ShipType::OTYPE_BERS)) {
         std::string telegram =
-            std::format("{} has been lost in deep space.", ship_to_string(s));
+            std::format("{} has been lost in deep space.", s);
         if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
         if (send_messages) em.kill_ship((int)(s.owner()), s);
       }
@@ -757,9 +749,9 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
           !followable(em, s, *ships[s.destshipno().value])) {
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
         s.protect().evade = 0;
-        std::string telegram = std::format(
-            "{} at {} lost sight of destination ship #{}.", ship_to_string(s),
-            prin_ship_orbits(em, s), s.destshipno());
+        std::string telegram =
+            std::format("{} at {} lost sight of destination ship #{}.", s,
+                        prin_ship_orbits(em, s), s.destshipno());
         if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
         return;
       }
@@ -817,8 +809,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
           }
           if (s.type() != ShipType::OTYPE_VN) {
             std::string telegram =
-                std::format("{} arrived at {}.", ship_to_string(s),
-                            prin_ship_orbits(em, s));
+                std::format("{} arrived at {}.", s, prin_ship_orbits(em, s));
             if (send_messages)
               push_telegram(em, s.owner(), s.governor(), telegram);
           }
@@ -844,14 +835,14 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
           s.pnumorbits() = destpnum;
           std::stringstream telegram;
           if (dist <= (double)DIST_TO_LAND) {
-            telegram << std::format("{} within landing distance of {}.",
-                                    ship_to_string(s), prin_ship_orbits(em, s));
+            telegram << std::format("{} within landing distance of {}.", s,
+                                    prin_ship_orbits(em, s));
             auto dpl_handle = em.get_planet(deststar, destpnum);
             if (checking_fuel || !do_merchant(em, s, *dpl_handle, telegram))
               if (s.whatdest() == ScopeLevel::LEVEL_PLAN)
                 s.whatdest() = ScopeLevel::LEVEL_UNIV;
           } else {
-            telegram << std::format("{} arriving at {}.", ship_to_string(s),
+            telegram << std::format("{} arriving at {}.", s,
                                     prin_ship_orbits(em, s));
           }
           if (s.type() == ShipType::STYPE_OAP) {
@@ -883,8 +874,8 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
  *  code segments; so that code isn't duplicated.
  */
 void msg_OOF(EntityManager& em, const Ship& s) {
-  std::string telegram = std::format(
-      "{} is out of fuel at {}.", ship_to_string(s), prin_ship_orbits(em, s));
+  std::string telegram =
+      std::format("{} is out of fuel at {}.", s, prin_ship_orbits(em, s));
   push_telegram(em, s.owner(), s.governor(), telegram);
 }
 

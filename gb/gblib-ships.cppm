@@ -398,20 +398,6 @@ public:
     data_.land_coords = c;
   }
 
-  [[nodiscard]] int land_x() const noexcept {
-    return data_.land_coords.x;
-  }
-  int& land_x() noexcept {
-    return data_.land_coords.x;
-  }
-
-  [[nodiscard]] int land_y() const noexcept {
-    return data_.land_coords.y;
-  }
-  int& land_y() noexcept {
-    return data_.land_coords.y;
-  }
-
   // Ship references
   [[nodiscard]] shipnum_t destshipno() const {
     return data_.destshipno;
@@ -921,7 +907,6 @@ export int getdefense(EntityManager&, const Ship&);
 export bool landed(const Ship&);
 export bool laser_on(const Ship&);
 export void capture_stuff(const Ship&, GameObj&);
-export std::string ship_to_string(const Ship&);
 export double cost(const Ship&);
 export double getmass(const Ship&);
 export unsigned int ship_size(const Ship&);
@@ -959,6 +944,18 @@ export const char Shipltrs[] = {
     'O', 'c', 't', '!', '+', 'M', '=', '\\', '-', 'a', 'g', 'h',
     'v', 'V', '@', 'l', 'w', ':', 'G', 'F',  'T', ';', 'Z', '[',
     '^', 'P', 'q', 'K', 'Y', 'W', 'J', '&',  'R', 'b', 'L'};
+
+export template <>
+struct std::formatter<Ship> {
+  constexpr auto parse(std::format_parse_context& ctx) {
+    return ctx.begin();
+  }
+
+  auto format(const Ship& s, auto& ctx) const {
+    return std::format_to(ctx.out(), "{}{}{} [{}]", Shipltrs[s.type()],
+                          s.number(), s.name(), s.owner());
+  }
+};
 
 // table for [ABIL_BUILD]. (bd). sum the numbers to get the correct value.
 //      1 To allow it to be built on a planet.

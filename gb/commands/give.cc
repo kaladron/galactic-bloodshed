@@ -138,9 +138,9 @@ void give(const command_t& argv, GameObj& g) {
       break;
   }
   g.out << "Owner changed.\n";
-  std::string givemsg = std::format("{} [{}] gave you {} at {}.\n", race.name,
-                                    Playernum, ship_to_string(ship),
-                                    prin_ship_orbits(g.entity_manager, ship));
+  std::string givemsg =
+      std::format("{} [{}] gave you {} at {}.\n", race.name, Playernum, ship,
+                  prin_ship_orbits(g.entity_manager, ship));
   warn_player(g.session_registry, g.entity_manager, who, 0, givemsg);
 
   if (!race.God) {

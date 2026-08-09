@@ -94,8 +94,7 @@ int main() {
     assert(ship->whatorbits() == ScopeLevel::LEVEL_PLAN);
     assert(ship->storbits() == star_id);
     assert(ship->pnumorbits() == 0);
-    assert(ship->land_x() == 5);
-    assert(ship->land_y() == 5);
+    assert(ship->land_coords() == Coordinates(5, 5));
 
     std::println(std::cout, "Build command test passed: Probe built on planet");
   }

@@ -35,13 +35,12 @@ void launch(const command_t& argv, GameObj& g) {
     }
 
     if (!s.docked() && s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
-      g.out << std::format("{} is not landed or docked.\n", ship_to_string(s));
+      g.out << std::format("{} is not landed or docked.\n", s);
       continue;
     }
     if (!landed(s)) APcount = 0;
     if (landed(s) && s.resource() > max_resource(s)) {
-      g.out << std::format("{} is too overloaded to launch.\n",
-                           ship_to_string(s));
+      g.out << std::format("{} is too overloaded to launch.\n", s);
       continue;
     }
     if (s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
@@ -79,8 +78,7 @@ void launch(const command_t& argv, GameObj& g) {
                              star.get_planet_name(s.pnumorbits()));
       } else if (s2.whatorbits() == ScopeLevel::LEVEL_PLAN) {
         remove_sh_ship(g.entity_manager, s, s2);
-        g.out << std::format("{} launched from {}.\n", ship_to_string(s),
-                             ship_to_string(s2));
+        g.out << std::format("{} launched from {}.\n", s, s2);
         s.xpos() = s2.xpos();
         s.ypos() = s2.ypos();
         s.docked() = 0;
@@ -99,8 +97,7 @@ void launch(const command_t& argv, GameObj& g) {
                              star.get_planet_name(s.pnumorbits()));
       } else if (s2.whatorbits() == ScopeLevel::LEVEL_STAR) {
         remove_sh_ship(g.entity_manager, s, s2);
-        g.out << std::format("{} launched from {}.\n", ship_to_string(s),
-                             ship_to_string(s2));
+        g.out << std::format("{} launched from {}.\n", s, s2);
         s.xpos() = s2.xpos();
         s.ypos() = s2.ypos();
         s.docked() = 0;
@@ -114,8 +111,7 @@ void launch(const command_t& argv, GameObj& g) {
         g.out << std::format("Orbiting {}.\n", star.get_name());
       } else if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
         remove_sh_ship(g.entity_manager, s, s2);
-        g.out << std::format("{} launched from {}.\n", ship_to_string(s),
-                             ship_to_string(s2));
+        g.out << std::format("{} launched from {}.\n", s, s2);
         s.xpos() = s2.xpos();
         s.ypos() = s2.ypos();
         s.docked() = 0;
@@ -158,8 +154,7 @@ void launch(const command_t& argv, GameObj& g) {
       s2.docked() = 0;
       s2.whatdest() = ScopeLevel::LEVEL_UNIV;
       s2.destshipno() = 0;
-      g.out << std::format("{} undocked from {}.\n", ship_to_string(s),
-                           ship_to_string(s2));
+      g.out << std::format("{} undocked from {}.\n", s, s2);
     } else {
       const auto* star_ptr = g.entity_manager.peek_star(s.storbits());
       const auto& star = *star_ptr;
@@ -186,8 +181,8 @@ void launch(const command_t& argv, GameObj& g) {
       /* subtract fuel from ship */
       auto fuel = p.gravity() * s.mass() * LAUNCH_GRAV_MASS_FACTOR;
       if (s.fuel() < fuel) {
-        g.out << std::format("{} does not have enough fuel! ({:.1f})\n",
-                             ship_to_string(s), fuel);
+        g.out << std::format("{} does not have enough fuel! ({:.1f})\n", s,
+                             fuel);
         return;
       }
       use_fuel(s, fuel);
@@ -207,15 +202,15 @@ void launch(const command_t& argv, GameObj& g) {
            player to see a whole map */
         p.explored() = 1;
       }
-      std::string observed = std::format(
-          "{} observed launching from planet /{}/{}.\n", ship_to_string(s),
-          star.get_name(), star.get_planet_name(s.pnumorbits()));
+      std::string observed =
+          std::format("{} observed launching from planet /{}/{}.\n", s,
+                      star.get_name(), star.get_planet_name(s.pnumorbits()));
       for (player_t i = 1; i <= g.entity_manager.num_races(); i++)
         if (p.info(i).numsectsowned && i != Playernum) {
           g.session_registry.notify_player(i, star.governor(i), observed);
         }
 
-      g.out << std::format("{} launched from planet,", ship_to_string(s));
+      g.out << std::format("{} launched from planet,", s);
       g.out << std::format(" using {:.1f} fuel.\n", fuel);
 
       switch (s.type()) {

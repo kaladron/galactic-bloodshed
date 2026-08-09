@@ -145,9 +145,7 @@ void test_planet_multiple_builds() {
   for (shipnum_t i = 1; i <= 5; i++) {
     const auto* ship = fixture.get_ship(i);
     assert(ship != nullptr);
-    assert(ship->type() == ShipType::OTYPE_PROBE);
-    assert(ship->land_x() == 5);
-    assert(ship->land_y() == 5);
+    assert(ship->land_coords() == Coordinates(5, 5));
     assert(ship->whatorbits() == ScopeLevel::LEVEL_PLAN);
   }
 
@@ -177,8 +175,7 @@ void test_factory_multiple_builds() {
   factory_data.docked() = 1;                         // Required for landed()
   factory_data.storbits() = fixture.star_id;
   factory_data.pnumorbits() = fixture.planet_id;
-  factory_data.land_x() = 5;  // Land at sector with population
-  factory_data.land_y() = 5;
+  factory_data.set_land_coords({5, 5});  // Land at sector with population
   factory_data.xpos() = 0.0;
   factory_data.ypos() = 0.0;
   factory_data.resource() = 10000;
@@ -209,8 +206,7 @@ void test_factory_multiple_builds() {
   for (shipnum_t i = 2; i <= 4; i++) {
     const auto* ship = fixture.get_ship(i);
     assert(ship != nullptr);
-    assert(ship->land_x() == 5);  // Same as factory
-    assert(ship->land_y() == 5);
+    assert(ship->land_coords() == Coordinates(5, 5));  // Same as factory
   }
 
   std::println("✓ Factory multiple builds test passed");

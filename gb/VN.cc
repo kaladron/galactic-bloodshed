@@ -183,16 +183,17 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
         std::get<MindData>(ship.special()).busy) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
-      auto& s = smap.get(ship.land_x(), ship.land_y());
+      auto& s = smap.get(ship.land_coords());
       if (!(oldres = s.get_resource())) {
         /* move to another sector */
         xa = int_rand(-1, 1);
-        ship.land_x() = mod(ship.land_x() + xa, planet.Maxx());
-        ya = (ship.land_y() == 0)
+        ya = (ship.land_coords().y == 0)
                  ? 1
-                 : ((ship.land_y() == (planet.Maxy() - 1)) ? -1
-                                                           : int_rand(-1, 1));
-        ship.land_y() += ya;
+                 : ((ship.land_coords().y == (planet.Maxy() - 1))
+                        ? -1
+                        : int_rand(-1, 1));
+        ship.set_land_coords(
+            planet.wrap(ship.land_coords() + Coordinates{xa, ya}));
       } else {
         /* mine the sector */
         s.set_resource(s.get_resource() * VN_RES_TAKE);
@@ -286,8 +287,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
             s2.hyper_drive().ready = 1;
             s2.hyper_drive().charge = 0;
             s2.mounted() = 1;
-            auto buf = std::format("{0} constructed {1}.", ship_to_string(ship),
-                                   ship_to_string(s2));
+            auto buf = std::format("{0} constructed {1}.", ship, s2);
             push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
             if (std::holds_alternative<MindData>(s2.special())) {
               auto mind = std::get<MindData>(s2.special());
@@ -354,8 +354,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
               const auto& star = *entity_manager.peek_star(ship.storbits());
               ship.xpos() = star.xpos() + planet.xpos();
               ship.ypos() = star.ypos() + planet.ypos();
-              ship.land_x() = sect.get_x();
-              ship.land_y() = sect.get_y();
+              ship.set_land_coords(sect.coords());
               if (std::holds_alternative<MindData>(ship.special())) {
                 auto mind = std::get<MindData>(ship.special());
                 mind.busy = 1;

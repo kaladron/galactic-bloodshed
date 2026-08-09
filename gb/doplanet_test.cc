@@ -77,7 +77,7 @@ void test_moveship_onplanet() {
   // Move once: y should increase from 5 to 6, and bounced should NOT flip order
   bool moved = moveship_onplanet(ship, planet, em);
   assert(moved);
-  assert(ship.land_y() == 6);
+  assert(ship.land_coords().y == 6);
   assert(ship.shipclass()[0] == '2');
 }
 

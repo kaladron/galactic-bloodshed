@@ -77,9 +77,9 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   if (attacker.mode()) {
     auto [damage, damage_msg] =
         do_radiation(target, attacker.tech(), cew_strength, hits);
-    std::string short_msg = std::format(
-        "{}: {} {} {}\n", dispshiploc(em, target), ship_to_string(attacker),
-        target.alive() ? "attacked" : "DESTROYED", ship_to_string(target));
+    std::string short_msg =
+        std::format("{}: {} {} {}\n", dispshiploc(em, target), attacker,
+                    target.alive() ? "attacked" : "DESTROYED", target);
     std::string long_msg = short_msg;
     long_msg += damage_msg;
     return std::make_tuple(damage, short_msg, long_msg);
@@ -112,9 +112,9 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   auto [damage, damage_msg] = do_damage(
       em, attacker.owner(), target, (double)attacker.tech(), cew_strength, hits,
       defense, caliber, dist, weapon, hit_probability);
-  std::string short_msg = std::format(
-      "{}: {} {} {}\n", dispshiploc(em, target), ship_to_string(attacker),
-      target.alive() ? "attacked" : "DESTROYED", ship_to_string(target));
+  std::string short_msg =
+      std::format("{}: {} {} {}\n", dispshiploc(em, target), attacker,
+                  target.alive() ? "attacked" : "DESTROYED", target);
   std::string long_msg = short_msg;
   long_msg += damage_msg;
   return std::make_tuple(damage, short_msg, long_msg);
@@ -138,7 +138,7 @@ int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
                 GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
   std::sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
                race.Playernum.value, ship.alive() ? "attacked" : "DESTROYED",
-               ship_to_string(ship).c_str());
+               std::format("{}", ship).c_str());
   std::strcpy(long_msg, short_msg);
   std::strcat(long_msg, damage_msg.c_str());
 
@@ -277,8 +277,9 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
       (100 - pl.conditions(TOXIC)) *
       ((double)result.numdest / (double)(pl.Maxx() * pl.Maxy()));
 
-  std::sprintf(short_msg, "%s bombards %s [%d]\n", ship_to_string(ship).c_str(),
-               dispshiploc(em, ship).c_str(), oldowner.value);
+  std::sprintf(short_msg, "%s bombards %s [%d]\n",
+               std::format("{}", ship).c_str(), dispshiploc(em, ship).c_str(),
+               oldowner.value);
   std::strcpy(long_msg, short_msg);
   std::string msg = std::format("\t{} sectors destroyed\n", result.numdest);
   std::strcat(long_msg, msg.c_str());

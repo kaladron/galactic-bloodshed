@@ -241,7 +241,7 @@ void ShipTacticalItem::add_tactical_header_row(
   // Build landed location suffix
   std::string location_suffix;
   if (landed(s)) {
-    location_suffix = std::format(" ({},{})", s.land_x(), s.land_y());
+    location_suffix = std::format(" ({})", s.land_coords());
   }
 
   // Build inactive suffix
@@ -332,7 +332,7 @@ void ShipTacticalItem::add_tactical_target_row(
   // Build location string
   std::string loc_str;
   if (landed(s)) {
-    loc_str = std::format("({},{})", s.land_x(), s.land_y());
+    loc_str = std::format("{}", s.land_coords());
   }
 
   // Build status suffix

@@ -94,14 +94,14 @@ void defend(const command_t& argv, GameObj& g) {
   // even though the ship itself will be modified by taking damage.
   retal = check_retal_strength(*to);
 
-  auto xy_result = scn::scan<int, int>(argv[2], "{},{}");
-  if (!xy_result) {
+  auto coords_opt = Coordinates::parse(argv[2]);
+  if (!coords_opt) {
     g.out << "Bad format for sector.\n";
     return;
   }
-  auto [x, y] = xy_result->values();
+  const Coordinates sector_coords = *coords_opt;
 
-  if (x < 0 || x > p.Maxx() - 1 || y < 0 || y > p.Maxy() - 1) {
+  if (!p.is_valid(sector_coords)) {
     g.out << "Illegal sector.\n";
     return;
   }
@@ -113,7 +113,7 @@ void defend(const command_t& argv, GameObj& g) {
     return;
   }
   auto& smap = *smap_handle;
-  auto& sect = smap.get(x, y);
+  auto& sect = smap.get(sector_coords);
   if (sect.get_owner() != Playernum) {
     g.out << "Nice try.\n";
     return;
@@ -169,8 +169,9 @@ void defend(const command_t& argv, GameObj& g) {
     strength = retal;
     if (laser_on(*to)) check_overload(g.entity_manager, *to, 0, &strength);
 
-    auto result = shoot_ship_to_planet(g.entity_manager, *to, p, strength, x, y,
-                                       smap, 0, 0, long_buf, short_buf);
+    auto result = shoot_ship_to_planet(g.entity_manager, *to, p, strength,
+                                       sector_coords.x, sector_coords.y, smap,
+                                       0, 0, long_buf, short_buf);
     if (result.numdest < 0) {
       if (laser_on(*to))
         use_fuel(*to, 2.0 * (double)strength);
@@ -197,9 +198,9 @@ void defend(const command_t& argv, GameObj& g) {
           check_overload(g.entity_manager, const_cast<Ship&>(*ship), 0,
                          &strength);
 
-        auto result2 =
-            shoot_ship_to_planet(g.entity_manager, *ship, p, strength, x, y,
-                                 smap, 0, 0, long_buf, short_buf);
+        auto result2 = shoot_ship_to_planet(
+            g.entity_manager, *ship, p, strength, sector_coords.x,
+            sector_coords.y, smap, 0, 0, long_buf, short_buf);
         if (result2.numdest >= 0) {
           auto ship_mut_handle = g.entity_manager.get_ship(ship->number());
           if (!ship_mut_handle.get()) {

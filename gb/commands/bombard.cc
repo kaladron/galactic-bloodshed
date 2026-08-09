@@ -17,8 +17,6 @@ void bombard(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   ap_t APcount = 1;
-  int x;
-  int y;
 
   if (argv.size() < 2) {
     g.out << "Syntax: 'bombard <ship> [<x,y> [<strength>]]'.\n";
@@ -79,22 +77,23 @@ void bombard(const command_t& argv, GameObj& g) {
     }
     Planet& p = *p_handle;
 
+    Coordinates target_coords;
     if (argv.size() > 2) {
-      auto scan_result = scn::scan<int, int>(argv[2], "{},{}");
-      if (!scan_result) {
+      auto coords_opt = Coordinates::parse(argv[2]);
+      if (!coords_opt) {
         g.out << "Invalid sector format.\n";
         continue;
       }
-      std::tie(x, y) = scan_result->values();
-      if (x < 0 || x > p.Maxx() - 1 || y < 0 || y > p.Maxy() - 1) {
+      target_coords = *coords_opt;
+      if (!p.is_valid(target_coords)) {
         g.out << "Illegal sector.\n";
         continue;
       }
     } else {
-      x = int_rand(0, (int)p.Maxx() - 1);
-      y = int_rand(0, (int)p.Maxy() - 1);
+      target_coords = {int_rand(0, (int)p.Maxx() - 1),
+                       int_rand(0, (int)p.Maxy() - 1)};
     }
-    if (landed(from) && !adjacent(p, {from.land_x(), from.land_y()}, {x, y})) {
+    if (landed(from) && !adjacent(p, from.land_coords(), target_coords)) {
       g.out << "You are not adjacent to that sector.\n";
       continue;
     }
@@ -116,8 +115,9 @@ void bombard(const command_t& argv, GameObj& g) {
     }
     SectorMap& smap = *smap_handle;
     char long_buf[1024], short_buf[256];
-    auto result = shoot_ship_to_planet(g.entity_manager, from, p, strength, x,
-                                       y, smap, 0, 0, long_buf, short_buf);
+    auto result = shoot_ship_to_planet(g.entity_manager, from, p, strength,
+                                       target_coords.x, target_coords.y, smap,
+                                       0, 0, long_buf, short_buf);
 
     if (result.numdest < 0) {
       g.out << "Illegal attack.\n";

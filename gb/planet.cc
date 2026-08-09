@@ -31,7 +31,7 @@ int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
 
   auto smap_handle = entity_manager.get_sectormap(snum, pnum);
   auto& smap = *smap_handle;
-  for (auto& s : smap) {
+  for (auto [c, s] : smap.indexed_sectors()) {
     if (s.get_owner() != victim || s.get_popn() == 0) continue;
 
     // Revolt rate is a function of tax rate.
@@ -108,8 +108,8 @@ void moveplanet(EntityManager& entity_manager, const Star& star,
  */
 bool adjacent(const Planet& p, const Coordinates from, const Coordinates to) {
   if (std::abs(from.y - to.y) > 1) return false;
-  if (std::abs(from.x - to.x) <= 1) return true;
-  if (from.x == p.Maxx() - 1 && to.x == 0) return true;
-  if (from.x == 0 && to.x == p.Maxx() - 1) return true;
+  const int dx = std::abs(from.x - to.x);
+  if (dx <= 1) return true;
+  if (p.Maxx() > 0 && dx == p.Maxx() - 1) return true;
   return false;
 }

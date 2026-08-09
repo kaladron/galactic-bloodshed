@@ -23,58 +23,48 @@ module gblib;
  */
 Coordinates get_move(const Planet& planet, const char direction,
                      const Coordinates from) {
+  Coordinates offset{0, 0};
   switch (direction) {
     case '1':
-    case 'b': {
-      Coordinates to{from.x - 1, from.y + 1};
-      if (to.x == -1) to.x = planet.Maxx() - 1;
-      return to;
-    }
+    case 'b':
+      offset = {-1, 1};
+      break;
     case '2':
     case 'k':
-      return Coordinates{from.x, from.y + 1};
+      offset = {0, 1};
+      break;
     case '3':
-    case 'n': {
-      Coordinates to{from.x + 1, from.y + 1};
-      if (to.x == planet.Maxx()) to.x = 0;
-      return to;
-    }
+    case 'n':
+      offset = {1, 1};
+      break;
     case '4':
-    case 'h': {
-      Coordinates to{from.x - 1, from.y};
-      if (to.x == -1) to.x = planet.Maxx() - 1;
-      return to;
-    }
+    case 'h':
+      offset = {-1, 0};
+      break;
     case '6':
-    case 'l': {
-      Coordinates to{from.x + 1, from.y};
-      if (to.x == planet.Maxx()) to.x = 0;
-      return to;
-    }
+    case 'l':
+      offset = {1, 0};
+      break;
     case '7':
-    case 'y': {
-      Coordinates to{from.x - 1, from.y - 1};
-      if (to.x == -1) to.x = planet.Maxx() - 1;
-      return to;
-    }
+    case 'y':
+      offset = {-1, -1};
+      break;
     case '8':
-    case 'j': {
-      Coordinates to{from.x, from.y - 1};
-      return to;
-    }
+    case 'j':
+      offset = {0, -1};
+      break;
     case '9':
-    case 'u': {
-      Coordinates to{from.x + 1, from.y - 1};
-      if (to.x == planet.Maxx()) to.x = 0;
-      return to;
-    }
+    case 'u':
+      offset = {1, -1};
+      break;
     default:
-      return {from.x, from.y};
+      return from;
   }
+  return planet.wrap(from + offset);
 }
 
 void mech_defend(const GameObj& g, population_t* people, PopulationType type,
-                 const Planet& p, int x2, int y2, const Sector& s2) {
+                 const Planet& p, Coordinates target_coords, const Sector& s2) {
   population_t civ = 0;
   population_t mil = 0;
   governor_t oldgov;
@@ -92,8 +82,8 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
     if (ship.owner() != g.player() && ship.type() == ShipType::OTYPE_AFV &&
-        landed(ship) && retal_strength(ship) && (ship.land_x() == x2) &&
-        (ship.land_y() == y2)) {
+        landed(ship) && retal_strength(ship) &&
+        (ship.land_coords() == target_coords)) {
       const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
       if (!isset(g.race->allied, ship.owner()) ||
           !isset(alien_ptr->allied, g.player())) {
@@ -108,7 +98,8 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
                         long_buf);
           if (civ + mil) {
             people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
-                               *alien_ptr, s2, x2, y2, long_buf, short_buf);
+                               *alien_ptr, s2, target_coords, long_buf,
+                               short_buf);
             push_telegram(g.entity_manager, g.player(), g.governor(), long_buf);
             push_telegram(g.entity_manager, alien_ptr->Playernum, oldgov,
                           long_buf);
@@ -175,7 +166,8 @@ void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
 
 void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
                         const Race& race, const Race& alien, const Sector& sect,
-                        int x, int y, char* long_msg, char* short_msg) {
+                        Coordinates target_coords, char* long_msg,
+                        char* short_msg) {
   int strength;
   double astrength;
   double dstrength;
@@ -211,7 +203,7 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
                ship_to_string(ship).c_str());
   std::strcpy(long_msg, short_msg);
   std::string assault_msg = std::format(
-      "\tBattle at {},{} {}: {} civ/{} mil assault {}\n", x, y,
+      "\tBattle at {} {}: {} civ/{} mil assault {}\n", target_coords,
       Desnames[sect.get_condition()], civ, mil, Shipnames[ship.type()]);
   std::strcat(long_msg, assault_msg.c_str());
   std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",

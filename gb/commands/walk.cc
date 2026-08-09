@@ -166,8 +166,8 @@ void walk(const command_t& argv, GameObj& g) {
         post(g.entity_manager, short_buf, NewsType::COMBAT);
 
         people_attack_mech(g.entity_manager, *ship, sect.get_popn(),
-                           sect.get_troops(), *alien, *g.race, sect,
-                           new_coords.x, new_coords.y, long_buf, short_buf);
+                           sect.get_troops(), *alien, *g.race, sect, new_coords,
+                           long_buf, short_buf);
         g.out << long_buf;
         warn_player(g.session_registry, g.entity_manager, alien->Playernum,
                     oldgov, long_buf);

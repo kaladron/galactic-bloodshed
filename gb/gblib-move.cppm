@@ -17,8 +17,8 @@ export void ground_attack(const Race&, const Race&, population_t*,
                           double*, population_t*, population_t*, population_t*);
 
 export void mech_defend(const GameObj& g, population_t* people,
-                        PopulationType what, const Planet& p, int x2, int y2,
-                        const Sector& s2);
+                        PopulationType what, const Planet& p,
+                        Coordinates target_coords, const Sector& s2);
 
 export void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
                                population_t* mil, const Race& race,
@@ -27,5 +27,5 @@ export void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
 
 export void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
                                const Race& race, const Race& alien,
-                               const Sector& sect, int x, int y, char* long_msg,
-                               char* short_msg);
+                               const Sector& sect, Coordinates target_coords,
+                               char* long_msg, char* short_msg);

@@ -132,7 +132,7 @@ void move_popn(const command_t& argv, GameObj& g) {
                          what == PopulationType::CIV ? "population" : "troops");
 
     /* check for defending mechs */
-    mech_defend(g, &people, what, planet, next_coords.x, next_coords.y, sect2);
+    mech_defend(g, &people, what, planet, next_coords, sect2);
     if (!people) {
       g.out << "Attack aborted.\n";
       return;

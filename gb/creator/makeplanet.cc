@@ -98,27 +98,27 @@ void MakeEarthAtmosphere(Planet& planet, const int chance) {
 }
 
 //! Returns # of neighbors of a given designation that a sector has.
-int neighbors(SectorMap& smap, int x, int y, int type) {
-  int l = x - 1;
-  int r = x + 1; /* Left and right columns. */
-  int n = 0;     /* Number of neighbors so far. */
+int neighbors(SectorMap& smap, Coordinates coords, int type) {
+  int l = coords.x - 1;
+  int r = coords.x + 1; /* Left and right columns. */
+  int n = 0;            /* Number of neighbors so far. */
 
-  if (x == 0)
+  if (coords.x == 0)
     l = smap.get_maxx() - 1;
   else if (r == smap.get_maxx())
     r = 0;
-  if (y > 0)
-    n += (smap.get(x, y - 1).get_type() == type) +
-         (smap.get(l, y - 1).get_type() == type) +
-         (smap.get(r, y - 1).get_type() == type);
+  if (coords.y > 0)
+    n += (smap.get(coords.x, coords.y - 1).get_type() == type) +
+         (smap.get(l, coords.y - 1).get_type() == type) +
+         (smap.get(r, coords.y - 1).get_type() == type);
 
-  n +=
-      (smap.get(l, y).get_type() == type) + (smap.get(r, y).get_type() == type);
+  n += (smap.get(l, coords.y).get_type() == type) +
+       (smap.get(r, coords.y).get_type() == type);
 
-  if (y < smap.get_maxy() - 1)
-    n += (smap.get(x, y + 1).get_type() == type) +
-         (smap.get(l, y + 1).get_type() == type) +
-         (smap.get(r, y + 1).get_type() == type);
+  if (coords.y < smap.get_maxy() - 1)
+    n += (smap.get(coords.x, coords.y + 1).get_type() == type) +
+         (smap.get(l, coords.y + 1).get_type() == type) +
+         (smap.get(r, coords.y + 1).get_type() == type);
 
   return (n);
 }
@@ -145,7 +145,7 @@ void grow(SectorMap& smap, SectorType type, int n, int rate) {
   while (n-- > 0) {
     for (int x = 0; x < smap.get_maxx(); x++) {
       for (int y = 0; y < smap.get_maxy(); y++) {
-        if (neighbors(smap, x, y, type) >= rate) {
+        if (neighbors(smap, Coordinates{x, y}, type) >= rate) {
           worklist.emplace_back(std::make_tuple(x, y, type));
         }
       }

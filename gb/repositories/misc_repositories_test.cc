@@ -93,7 +93,7 @@ void test_block_repository() {
 
   // Save and retrieve
   assert(repo.save(b1));
-  auto retrieved = repo.find_by_id(1);
+  auto retrieved = repo.find_by_id(blocknum_t{1});
   assert(retrieved.has_value());
   assert(retrieved->Playernum == 1);
   assert(retrieved->name == "Alliance Alpha");
@@ -104,7 +104,7 @@ void test_block_repository() {
   b1.VPs = 2000;
   b1.money = 10000;
   assert(repo.save(b1));
-  retrieved = repo.find_by_id(1);
+  retrieved = repo.find_by_id(blocknum_t{1});
   assert(retrieved.has_value());
   assert(retrieved->VPs == 2000);
   assert(retrieved->money == 10000);
@@ -115,12 +115,12 @@ void test_block_repository() {
   b2.name = "Beta Coalition";
   b2.VPs = 500;
   assert(repo.save(b2));
-  assert(repo.find_by_id(1).has_value());
-  assert(repo.find_by_id(3).has_value());
+  assert(repo.find_by_id(blocknum_t{1}).has_value());
+  assert(repo.find_by_id(blocknum_t{3}).has_value());
 
   // Remove
-  assert(repo.remove(3));
-  assert(!repo.find_by_id(3).has_value());
+  assert(repo.remove(blocknum_t{3}));
+  assert(!repo.find_by_id(blocknum_t{3}).has_value());
 
   std::println(std::cout, "✓ All BlockRepository tests passed");
 }
@@ -304,10 +304,10 @@ void test_ship_exam_repository() {
   ShipExamRepository repo(store);
 
   // Test data
-  ShipExam exam1{
-      .ship_type = ShipType::STYPE_POD,
-      .name = "Spore pod",
-      .description = "A small seed pod grown to colonize other planets."};
+  ShipExam exam1{.ship_type = ShipType::STYPE_POD,
+                 .name = "Spore pod",
+                 .description =
+                     "A small seed pod grown to colonize other planets."};
 
   // Save and retrieve
   assert(repo.save(exam1));

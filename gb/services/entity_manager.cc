@@ -341,21 +341,21 @@ void EntityManager::release_commod(int id) {
 }
 
 // Block entity methods
-EntityHandle<block> EntityManager::get_block(int id) {
+EntityHandle<block> EntityManager::get_block(blocknum_t id) {
   return get_entity_impl<block>(
       this, id, block_cache, block_refcount,
-      [this](int i) { return blocks.find_by_id(i); },
+      [this](blocknum_t i) { return blocks.find_by_id(i); },
       [this](const block& b) { blocks.save(b); },
-      [this](int i) { release_block(i); });
+      [this](blocknum_t i) { release_block(i); });
 }
 
-const block* EntityManager::peek_block(int id) {
+const block* EntityManager::peek_block(blocknum_t id) {
   return peek_entity_impl<block>(
       id, block_cache, block_refcount,
-      [this](int i) { return blocks.find_by_id(i); });
+      [this](blocknum_t i) { return blocks.find_by_id(i); });
 }
 
-void EntityManager::release_block(int id) {
+void EntityManager::release_block(blocknum_t id) {
   release_entity_impl<block>(id, block_cache, block_refcount);
 }
 

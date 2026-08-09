@@ -723,23 +723,23 @@ void test_entity_manager_blocks() {
   b.VPs = 500;
   repo.save(b);
 
-  const auto* peek = em.peek_block(1);
+  const auto* peek = em.peek_block(blocknum_t{1});
   assert(peek != nullptr);
   assert(peek->name == "Test Alliance");
   assert(peek->VPs == 500);
   std::println(std::cout, "  ✓ peek_block works");
 
   {
-    auto handle = em.get_block(1);
+    auto handle = em.get_block(blocknum_t{1});
     handle->VPs = 1000;
   }
 
-  auto updated = repo.find_by_id(1);
+  auto updated = repo.find_by_id(blocknum_t{1});
   assert(updated.has_value());
   assert(updated->VPs == 1000);
   std::println(std::cout, "  ✓ get_block auto-save persisted changes");
 
-  assert(em.peek_block(999) == nullptr);
+  assert(em.peek_block(blocknum_t{999}) == nullptr);
   std::println(std::cout, "  ✓ peek_block returns nullptr for missing block");
 }
 

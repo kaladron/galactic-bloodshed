@@ -61,7 +61,7 @@ int main() {
   EntityManager em(db);
   block retrieved_blocks[MAXPLAYERS];
   for (int i = 0; i < MAXPLAYERS; i++) {
-    const auto* block_ptr = em.peek_block(i + 1);
+    const auto* block_ptr = em.peek_block(blocknum_t{i + 1});
     assert(block_ptr);  // Should exist now
     retrieved_blocks[i] = *block_ptr;
   }

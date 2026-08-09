@@ -822,7 +822,7 @@ public:
       : Repository<block>(store, "tbl_block") {}
 
   // Domain-specific methods
-  std::optional<block> find_by_id(int id) {
+  std::optional<block> find_by_id(blocknum_t id) {
     return find(id);
   }
   bool save(const block& b) {

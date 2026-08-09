@@ -149,7 +149,7 @@ static void process_stars_and_planets(TurnState& state, bool update) {
          PlanetList(state.entity_manager, star, *star_handle)) {
       const planetnum_t pnum = planet_handle->planet_order();
       if (update) {
-        if (planet_handle->popn() || planet_handle->ships()) {
+        if (planet_handle->popn() || planet_handle->ships() != 0) {
           state.stats.Stinfo[star.value][pnum.value].inhab = 1;
         }
         moveplanet(state.entity_manager, *star_handle, *planet_handle);
@@ -717,7 +717,7 @@ static ap_t APadd(const int sh, const population_t popn, const Race& race,
  * @return True if the race is governed, false otherwise.
  */
 static bool governed(const Race& race, const TurnState& state) {
-  if (!race.Gov_ship || race.Gov_ship > state.entity_manager.num_ships()) {
+  if (race.Gov_ship == 0 || race.Gov_ship > state.entity_manager.num_ships()) {
     return false;
   }
 

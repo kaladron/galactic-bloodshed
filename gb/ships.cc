@@ -675,7 +675,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
     } else { /*		navigate is off            */
       destlevel = s.whatdest();
       if (destlevel == ScopeLevel::LEVEL_SHIP) {
-        dsh = ships[s.destshipno()];
+        dsh = ships[s.destshipno().value];
         s.deststar() = dsh->storbits();
         s.destpnum() = dsh->pnumorbits();
         xdest = dsh->xpos();
@@ -754,7 +754,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         movedist -= PLORBITSIZE * 0.90;
 
       if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-          !followable(em, s, *ships[s.destshipno()])) {
+          !followable(em, s, *ships[s.destshipno().value])) {
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
         s.protect().evade = 0;
         std::string telegram = std::format(

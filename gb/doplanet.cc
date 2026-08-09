@@ -817,7 +817,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       auto gov_idx = star.governor(player);
 
       /* tax the population - set new tax rate when done */
-      if (race.Gov_ship) {
+      if (race.Gov_ship != 0) {
         planet.info(player).prod_money =
             round_rand(INCOME_FACTOR * (double)planet.info(player).tax *
                        (double)planet.info(player).popn);
@@ -829,7 +829,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       race.governor[gov_idx.value].income += planet.info(player).prod_money;
 
       /* do tech investments */
-      if (race.Gov_ship) {
+      if (race.Gov_ship != 0) {
         if (race.governor[gov_idx.value].money >=
             planet.info(player).tech_invest) {
           planet.info(player).prod_tech =

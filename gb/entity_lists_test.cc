@@ -222,8 +222,8 @@ void populate_ships(EntityManager& em, JsonStore& store) {
     ship.name() = std::format("Ship{}", i);
     ship.owner() = 1;
     ship.alive() = true;
-    ship.fuel() = 100.0 * i;
-    ship.nextship() = (i < 3) ? i + 1 : 0;
+    ship.fuel() = 100.0 * static_cast<double>(i.value);
+    ship.nextship() = (i.value < 3) ? shipnum_t{i.value + 1} : shipnum_t{0};
     ship_repo.save(ship);
   }
 

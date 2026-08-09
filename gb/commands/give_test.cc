@@ -99,7 +99,7 @@ int main() {
       std::println(std::cout, "  Player {}: {}", race.Playernum, race.name);
     }
 
-    command_t argv = {"give", "Receiver", std::to_string(ship_id)};
+    command_t argv = {"give", "Receiver", std::to_string(ship_id.value)};
     GB::commands::give(argv, g);
 
     // Debug: Check for error messages
@@ -163,7 +163,7 @@ int main() {
     // Try as non-leader governor
     g.set_governor(1);
 
-    command_t argv = {"give", "Receiver", std::to_string(ship2_id)};
+    command_t argv = {"give", "Receiver", std::to_string(ship2_id.value)};
     GB::commands::give(argv, g);
 
     std::string result = g.out.str();
@@ -205,7 +205,7 @@ int main() {
     // Ship is auto-saved when handle goes out of scope
     ctx.em.clear_cache();
 
-    command_t argv = {"give", "Receiver", std::to_string(ship3_id)};
+    command_t argv = {"give", "Receiver", std::to_string(ship3_id.value)};
     GB::commands::give(argv, g);
 
     std::string result = g.out.str();

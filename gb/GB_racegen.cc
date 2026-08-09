@@ -180,7 +180,7 @@ found_planet:
   {
     ship_struct ss{};  // POD struct for initialization
 
-    auto shipno = entity_manager.num_ships() + 1;
+    auto shipno = shipnum_t{entity_manager.num_ships().value + 1};
     race->Gov_ship = shipno;
     planet.ships() = shipno;
     ss.nextship = 0;

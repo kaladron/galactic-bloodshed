@@ -139,15 +139,15 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
         (trip_resolved == 0)) {
       if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP) {
         for (shipnum_t i = 1; i <= Num_ships; i++)
-          std::free(ships[i]);
+          std::free(ships[i.value]);
         std::free(ships);
       }
       return {false, number_segments};
     }
   }
-  if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP || tmpship.ships()) {
+  if (tmpship.whatdest() == ScopeLevel::LEVEL_SHIP || tmpship.ships() != 0) {
     for (shipnum_t i = 1; i <= Num_ships; i++)
-      std::free(ships[i]);
+      std::free(ships[i.value]);
     std::free(ships);
   }
   return {true, number_segments};

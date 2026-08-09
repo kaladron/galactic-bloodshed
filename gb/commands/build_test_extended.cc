@@ -84,7 +84,7 @@ struct BuildTestFixture {
     g.set_shipno(shipno);
   }
 
-  int count_ships() {
+  shipnum_t count_ships() {
     return em.num_ships();
   }
 
@@ -136,7 +136,7 @@ void test_planet_multiple_builds() {
   fixture.em.clear_cache();
 
   // Verify 5 ships were created
-  int ship_count = fixture.count_ships();
+  shipnum_t ship_count = fixture.count_ships();
   std::println("Expected 5 ships, got {}", ship_count);
   std::println("Assertion will check ship_count == 5");
   assert(ship_count == 5);
@@ -202,7 +202,7 @@ void test_factory_multiple_builds() {
   fixture.em.clear_cache();
 
   // Verify ships created (factory is ship 1, new ships are 2-4)
-  int ship_count = fixture.count_ships();
+  shipnum_t ship_count = fixture.count_ships();
   assert(ship_count == 4);  // 1 factory + 3 built ships
 
   // Verify all built ships at factory's landed coordinates (5,5)

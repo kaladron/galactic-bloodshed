@@ -345,7 +345,7 @@ void load(const command_t& argv, GameObj& g) {
         continue;
       }
     } else { /* ship is docked */
-      if (!s.destshipno()) {
+      if (s.destshipno() == 0) {
         g.out << std::format("{} is not docked.\n", ship_to_string(s));
 
         continue;

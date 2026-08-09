@@ -7,7 +7,7 @@ import :tweakables;
 import std;
 
 export struct star_struct {
-  unsigned short ships;            /* 1st ship in orbit */
+  shipnum_t ships{0};              /* 1st ship in orbit */
   std::string name;                /* name of star */
   governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
   ap_t AP[MAXPLAYERS];             /* action pts alotted */
@@ -78,6 +78,13 @@ public:
     return star_struct.pnames.size();
   }
 
+  shipnum_t& ships() {
+    return star_struct.ships;
+  }
+  [[nodiscard]] shipnum_t ships() const {
+    return star_struct.ships;
+  }
+
   double& xpos() {
     return star_struct.xpos;
   }
@@ -126,14 +133,6 @@ public:
           "Invalid player number {} for Star::governor", playernum.value));
     }
     return star_struct.governor[playernum.value - 1];
-  }
-
-  /* 1st ship in orbit */
-  unsigned short& ships() {
-    return star_struct.ships;
-  }
-  [[nodiscard]] unsigned short ships() const {
-    return star_struct.ships;
   }
 
   // how close to nova it is

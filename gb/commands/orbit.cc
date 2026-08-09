@@ -440,12 +440,12 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
           std::sprintf(string, "%c %d %d %d %c %c %lu;",
                        (char)(ship->owner().value + '?'), x, y, wm,
                        Shipltrs[ship->type()],
-                       (char)(ship->owner().value + '?'), ship->number());
+                       (char)(ship->owner().value + '?'), ship->number().value);
         } else {
           stand = (ship->owner() ==
                    r.governor[g.governor().value].toggle.highlight);
           std::sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                       Shipltrs[ship->type()], stand, ship->number());
+                       Shipltrs[ship->type()], stand, ship->number().value);
         }
       }
       break;
@@ -465,12 +465,13 @@ static void DispShip(const GameObj& g, EntityManager& em, const Place& where,
             std::sprintf(string, "%c %d %d %d %c %c %lu;",
                          (char)(ship->owner().value + '?'), x, y, wm,
                          Shipltrs[ship->type()],
-                         (char)(ship->owner().value + '?'), ship->number());
+                         (char)(ship->owner().value + '?'),
+                         ship->number().value);
           } else {
             stand = (ship->owner() ==
                      r.governor[g.governor().value].toggle.highlight);
             std::sprintf(string, "%d %d %d %d %c %d %lu;", stand, x, y, wm,
-                         Shipltrs[ship->type()], stand, ship->number());
+                         Shipltrs[ship->type()], stand, ship->number().value);
           }
         }
       break;

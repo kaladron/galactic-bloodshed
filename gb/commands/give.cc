@@ -75,7 +75,7 @@ void give(const command_t& argv, GameObj& g) {
     g.out << "You can't give this ship away while it has crew/mil on board.\n";
     return;
   }
-  if (ship.ships() && !race.God) {
+  if (ship.ships() != 0 && !race.God) {
     g.out
         << "You can't give away this ship, it has other ships loaded on it.\n";
     return;

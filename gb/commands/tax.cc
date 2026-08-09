@@ -29,7 +29,7 @@ void tax(const command_t& argv, GameObj& g) {
     g.out << "You are not authorized to do that here.\n";
     return;
   }
-  if (!g.race->Gov_ship) {
+  if (g.race->Gov_ship == 0) {
     g.out << "You have no government center active.\n";
     return;
   }

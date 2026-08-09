@@ -261,7 +261,7 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
                            governor_t Governor, const Race& race, Ship& newship,
                            Planet& planet, starnum_t snum, planetnum_t pnum,
                            int x, int y) {
-  int shipno;
+  shipnum_t shipno;
 
   newship.tech() = race.tech;
   const auto& star = *entity_manager.peek_star(snum);
@@ -283,7 +283,7 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   planet.info(Playernum).resource -= newship.build_cost();
 
   // Ship number will be assigned by EntityManager when created
-  shipno = entity_manager.num_ships() + 1;
+  shipno = shipnum_t{entity_manager.num_ships().value + 1};
   newship.number() = shipno;
   newship.owner() = Playernum;
   newship.governor() = Governor;
@@ -321,7 +321,7 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
                          governor_t Governor, const Race& race, bool outside,
                          Planet* planet, Ship* newship, Ship* builder) {
   // Ship number will be assigned by EntityManager when created
-  int shipno = entity_manager.num_ships() + 1;
+  shipnum_t shipno = shipnum_t{entity_manager.num_ships().value + 1};
   newship->number() = shipno;
   newship->owner() = Playernum;
   newship->governor() = Governor;

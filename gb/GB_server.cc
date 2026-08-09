@@ -909,7 +909,7 @@ static void check_connect(Session& session, std::string_view message) {
   auto& race_mut = *race_handle;
   race_mut.governor[Governor.value].login = std::time(nullptr);
 
-  if (!race.Gov_ship) {
+  if (race.Gov_ship == 0) {
     session.out()
         << "You have no Governmental Center.  No action points will be "
            "produced\nuntil you build one and designate a capital.\n";

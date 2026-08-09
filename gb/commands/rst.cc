@@ -502,12 +502,12 @@ void rst(const command_t& argv, GameObj& g) {
         if (!arg_sv.empty() && arg_sv.front() == '#') {
           arg_sv.remove_prefix(1);
         }
-        auto scan_res = scn::scan<shipnum_t>(arg_sv, "{}");
+        auto scan_res = scn::scan<underlying_type_t<shipnum_t>>(arg_sv, "{}");
         if (!scan_res) {
           g.out << std::format("rst: invalid ship argument {}\n", argv[l]);
           return;
         }
-        shipnum_t shipno = scan_res->value();
+        shipnum_t shipno{scan_res->value()};
         if (shipno > n_ships || shipno < 1) {
           g.out << std::format("rst: no such ship #{} \n", shipno);
           return;

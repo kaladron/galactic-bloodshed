@@ -53,8 +53,9 @@ void route(const command_t& argv, GameObj& g) {
         const auto* dest_star = g.entity_manager.peek_star(star);
         g.out << std::format(
             "{:2}  land {:2},{:2}   load: {}  unload: {}  -> {}/{}\n", i,
-            p.info(Playernum).route[i - 1].x, p.info(Playernum).route[i - 1].y,
-            load_flags, unload_flags, dest_star ? dest_star->get_name() : "???",
+            p.info(Playernum).route[i - 1].dest_coords.x,
+            p.info(Playernum).route[i - 1].dest_coords.y, load_flags,
+            unload_flags, dest_star ? dest_star->get_name() : "???",
             (dest_star && planet < dest_star->numplanets())
                 ? dest_star->get_planet_name(planet)
                 : "???");
@@ -90,7 +91,8 @@ void route(const command_t& argv, GameObj& g) {
       const auto* dest_star = g.entity_manager.peek_star(star);
       g.out << std::format(
           "{:2}  land {:2},{:2}   {}{}  -> {}/{}\n", i,
-          p.info(Playernum).route[i - 1].x, p.info(Playernum).route[i - 1].y,
+          p.info(Playernum).route[i - 1].dest_coords.x,
+          p.info(Playernum).route[i - 1].dest_coords.y,
           (load ? std::format("load: {}", load_flags) : std::string{}),
           (unload ? std::format("  unload: {}", unload_flags) : std::string{}),
           dest_star ? dest_star->get_name() : "???",
@@ -135,18 +137,17 @@ void route(const command_t& argv, GameObj& g) {
       return;
     }
     if (argv[2] == "land") {
-      auto scan_res = scn::scan<int, int>(argv[3], "{},{}");
-      if (!scan_res) {
+      auto coords_opt = Coordinates::parse(argv[3]);
+      if (!coords_opt) {
         g.out << "Bad sector coordinates.\n";
         return;
       }
-      auto [x, y] = scan_res->values();
-      if (x < 0 || x > p.Maxx() - 1 || y < 0 || y > p.Maxy() - 1) {
+      const Coordinates coords = *coords_opt;
+      if (!p.is_valid(coords)) {
         g.out << "Bad sector coordinates.\n";
         return;
       }
-      p.info(Playernum).route[i - 1].x = x;
-      p.info(Playernum).route[i - 1].y = y;
+      p.info(Playernum).route[i - 1].dest_coords = coords;
     } else if (argv[2] == "load") {
       p.info(Playernum).route[i - 1].load = 0;
       c = argv[3].c_str();

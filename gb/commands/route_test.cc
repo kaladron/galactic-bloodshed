@@ -47,8 +47,7 @@ int main() {
   planet.info(player_t{1}).route[0].set = 0;
   planet.info(player_t{1}).route[0].dest_star = 0;
   planet.info(player_t{1}).route[0].dest_planet = 0;
-  planet.info(player_t{1}).route[0].x = 0;
-  planet.info(player_t{1}).route[0].y = 0;
+  planet.info(player_t{1}).route[0].dest_coords = {0, 0};
   planet.info(player_t{1}).route[0].load = 0;
   planet.info(player_t{1}).route[0].unload = 0;
   planets.save(planet);
@@ -60,8 +59,7 @@ int main() {
     p.info(player_t{1}).route[0].set = 1;
     p.info(player_t{1}).route[0].dest_star = 2;
     p.info(player_t{1}).route[0].dest_planet = 0;
-    p.info(player_t{1}).route[0].x = 5;
-    p.info(player_t{1}).route[0].y = 5;
+    p.info(player_t{1}).route[0].dest_coords = {5, 5};
     p.info(player_t{1}).route[0].load = M_FUEL | M_RESOURCES;
     p.info(player_t{1}).route[0].unload = M_DESTRUCT;
   }
@@ -73,8 +71,7 @@ int main() {
     assert(saved->info(player_t{1}).route[0].set == 1);
     assert(saved->info(player_t{1}).route[0].dest_star == 2);
     assert(saved->info(player_t{1}).route[0].dest_planet == 0);
-    assert(saved->info(player_t{1}).route[0].x == 5);
-    assert(saved->info(player_t{1}).route[0].y == 5);
+    assert(saved->info(player_t{1}).route[0].dest_coords == Coordinates(5, 5));
     assert(saved->info(player_t{1}).route[0].load == (M_FUEL | M_RESOURCES));
     assert(saved->info(player_t{1}).route[0].unload == M_DESTRUCT);
     std::println(std::cout, "✓ Route destination saved correctly");

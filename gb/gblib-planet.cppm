@@ -18,8 +18,7 @@ export struct plroute {
   unsigned char dest_planet = 0;  // planet destination
   unsigned char load = 0;         // bit-field commodities to be loaded there
   unsigned char unload = 0;       // unloaded commodities
-  unsigned char x = 0;            // location that ship has to land on
-  unsigned char y = 0;
+  Coordinates dest_coords{0, 0};  // location that ship has to land on
 };
 
 export struct plinfo {          // planetary stockpiles

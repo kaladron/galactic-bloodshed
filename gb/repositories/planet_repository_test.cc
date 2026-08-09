@@ -177,16 +177,14 @@ int main() {
   planet4.info(1).route[0].dest_planet = 3;
   planet4.info(1).route[0].load = 0x0F;
   planet4.info(1).route[0].unload = 0xF0;
-  planet4.info(1).route[0].x = 10;
-  planet4.info(1).route[0].y = 20;
+  planet4.info(1).route[0].dest_coords = {10, 20};
 
   planet4.info(1).route[1].set = 1;
   planet4.info(1).route[1].dest_star = 7;
   planet4.info(1).route[1].dest_planet = 2;
   planet4.info(1).route[1].load = 0x03;
   planet4.info(1).route[1].unload = 0x0C;
-  planet4.info(1).route[1].x = 15;
-  planet4.info(1).route[1].y = 25;
+  planet4.info(1).route[1].dest_coords = {15, 25};
 
   assert(repo.save(planet4));
 
@@ -198,15 +196,13 @@ int main() {
   assert(retrieved4->info(1).route[0].dest_planet == 3);
   assert(retrieved4->info(1).route[0].load == 0x0F);
   assert(retrieved4->info(1).route[0].unload == 0xF0);
-  assert(retrieved4->info(1).route[0].x == 10);
-  assert(retrieved4->info(1).route[0].y == 20);
+  assert((retrieved4->info(1).route[0].dest_coords == Coordinates{10, 20}));
   assert(retrieved4->info(1).route[1].set == 1);
   assert(retrieved4->info(1).route[1].dest_star == 7);
   assert(retrieved4->info(1).route[1].dest_planet == 2);
   assert(retrieved4->info(1).route[1].load == 0x03);
   assert(retrieved4->info(1).route[1].unload == 0x0C);
-  assert(retrieved4->info(1).route[1].x == 15);
-  assert(retrieved4->info(1).route[1].y == 25);
+  assert((retrieved4->info(1).route[1].dest_coords == Coordinates{15, 25}));
   std::println(std::cout, "✓ Shipping routes preserved correctly");
 
   // Update existing planet

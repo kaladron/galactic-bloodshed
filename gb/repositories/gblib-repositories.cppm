@@ -451,8 +451,8 @@ struct meta<plroute> {
   using T = plroute;
   static constexpr auto value =
       object("set", &T::set, "dest_star", &T::dest_star, "dest_planet",
-             &T::dest_planet, "load", &T::load, "unload", &T::unload, "x",
-             &T::x, "y", &T::y);
+             &T::dest_planet, "load", &T::load, "unload", &T::unload,
+             "dest_coords", &T::dest_coords);
 };
 
 template <>

@@ -246,8 +246,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
   /* check to see if the sector is owned by the player */
   const auto* smap = em.peek_sectormap(s.storbits(), s.pnumorbits());
   if (!smap) return 0;
-  const auto& sect =
-      smap->get(p.info(owner).route[j].x, p.info(owner).route[j].y);
+  const auto& sect = smap->get(p.info(owner).route[j].dest_coords);
   if (sect.get_owner() != 0 && (sect.get_owner() != s.owner())) {
     return 0;
   }
@@ -259,7 +258,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
       telegram << "\t\tNot enough fuel to land!\n";
       return 1;
     }
-    s.set_land_coords({p.info(owner).route[j].x, p.info(owner).route[j].y});
+    s.set_land_coords(p.info(owner).route[j].dest_coords);
     telegram << std::format("\t\tLanded on sector {}\n", s.land_coords());
     const auto& star = *em.peek_star(s.storbits());
     s.xpos() = p.xpos() + star.xpos();

@@ -81,24 +81,22 @@ int main() {
   test_planet.info(1).route[0].dest_planet = 3;
   test_planet.info(1).route[0].load = 0x0F;
   test_planet.info(1).route[0].unload = 0xF0;
-  test_planet.info(1).route[0].x = 10;
-  test_planet.info(1).route[0].y = 20;
+  test_planet.info(1).route[0].dest_coords = {10, 20};
 
   test_planet.info(1).route[1].set = 1;
   test_planet.info(1).route[1].dest_star = 7;
   test_planet.info(1).route[1].dest_planet = 2;
   test_planet.info(1).route[1].load = 0x03;
   test_planet.info(1).route[1].unload = 0x0C;
-  test_planet.info(1).route[1].x = 15;
-  test_planet.info(1).route[1].y = 25;
+  test_planet.info(1).route[1].dest_coords = {15, 25};
 
   // Initialize plinfo for player 2 (to test multiple players)
   test_planet.info(2).fuel = 300;
   test_planet.info(2).destruct = 150;
   test_planet.info(2).resource = 5000;
-  test_planet.info(2).popn = 25000;
+  test_planet.info(2).popn = 20000;
   test_planet.info(2).troops = 1000;
-  test_planet.info(2).crystals = 50;
+  test_planet.info(2).crystals = 20;
 
   // Use Repository to create new objects - this is the DAL layer
   JsonStore store(db);
@@ -195,8 +193,8 @@ int main() {
   assert(retrieved.info(1).route[0].load == test_planet.info(1).route[0].load);
   assert(retrieved.info(1).route[0].unload ==
          test_planet.info(1).route[0].unload);
-  assert(retrieved.info(1).route[0].x == test_planet.info(1).route[0].x);
-  assert(retrieved.info(1).route[0].y == test_planet.info(1).route[0].y);
+  assert(retrieved.info(1).route[0].dest_coords ==
+         test_planet.info(1).route[0].dest_coords);
 
   assert(retrieved.info(1).route[1].set == test_planet.info(1).route[1].set);
   assert(retrieved.info(1).route[1].dest_star ==
@@ -206,8 +204,8 @@ int main() {
   assert(retrieved.info(1).route[1].load == test_planet.info(1).route[1].load);
   assert(retrieved.info(1).route[1].unload ==
          test_planet.info(1).route[1].unload);
-  assert(retrieved.info(1).route[1].x == test_planet.info(1).route[1].x);
-  assert(retrieved.info(1).route[1].y == test_planet.info(1).route[1].y);
+  assert(retrieved.info(1).route[1].dest_coords ==
+         test_planet.info(1).route[1].dest_coords);
 
   // Verify plinfo for player 2
   assert(retrieved.info(2).fuel == test_planet.info(2).fuel);

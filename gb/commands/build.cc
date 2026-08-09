@@ -239,8 +239,7 @@ void build(const command_t& argv, GameObj& g) {
           return;
         }
         create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
-                              newship, planet, snum, pnum, build_coords.x,
-                              build_coords.y);
+                              newship, planet, snum, pnum, build_coords);
         if (race.governor[Governor.value].toggle.autoload &&
             what != ShipType::OTYPE_TRANSDEV && !race.God)
           autoload_at_planet(Playernum, &newship, &planet, sector, &load_crew,
@@ -364,7 +363,8 @@ void build(const command_t& argv, GameObj& g) {
               return;
             }
             create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
-                                  newship, planet, snum, pnum, x, y);
+                                  newship, planet, snum, pnum,
+                                  Coordinates{x, y});
             if (race.governor[Governor.value].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God) {
               autoload_at_planet(Playernum, &newship, &planet, sector,

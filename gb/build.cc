@@ -260,15 +260,14 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
 void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
                            governor_t Governor, const Race& race, Ship& newship,
                            Planet& planet, starnum_t snum, planetnum_t pnum,
-                           int x, int y) {
+                           Coordinates land_coords) {
   shipnum_t shipno;
 
   newship.tech() = race.tech;
   const auto& star = *entity_manager.peek_star(snum);
   newship.xpos() = star.xpos() + planet.xpos();
   newship.ypos() = star.ypos() + planet.ypos();
-  newship.land_x() = x;
-  newship.land_y() = y;
+  newship.set_land_coords(land_coords);
   newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
                           (newship.type() == ShipType::OTYPE_PLOW))
                              ? "5"

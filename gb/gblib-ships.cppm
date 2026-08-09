@@ -391,6 +391,14 @@ public:
     return data_.mass;
   }
 
+  [[nodiscard]] Coordinates land_coords() const noexcept {
+    return {static_cast<int>(data_.land_x), static_cast<int>(data_.land_y)};
+  }
+  void set_land_coords(const Coordinates c) noexcept {
+    data_.land_x = static_cast<unsigned char>(c.x);
+    data_.land_y = static_cast<unsigned char>(c.y);
+  }
+
   [[nodiscard]] unsigned char land_x() const {
     return data_.land_x;
   }

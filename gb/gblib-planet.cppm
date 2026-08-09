@@ -132,6 +132,16 @@ public:
     return data_.Maxy;
   }
 
+  [[nodiscard]] constexpr bool is_valid(const Coordinates c) const noexcept {
+    return c.x >= 0 && c.y >= 0 && c.x < data_.Maxx && c.y < data_.Maxy;
+  }
+
+  [[nodiscard]] constexpr Coordinates wrap(const Coordinates c) const noexcept {
+    if (data_.Maxx == 0) return c;
+    int wrapped_x = (c.x % data_.Maxx + data_.Maxx) % data_.Maxx;
+    return {wrapped_x, c.y};
+  }
+
   [[nodiscard]] population_t popn() const {
     return data_.popn;
   }

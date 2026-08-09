@@ -64,6 +64,9 @@ public:
   auto operator<=>(const Sector&) const = delete;
 
   // Read accessors (const)
+  [[nodiscard]] Coordinates coords() const noexcept {
+    return {static_cast<int>(data_.x), static_cast<int>(data_.y)};
+  }
   [[nodiscard]] unsigned int get_x() const noexcept {
     return data_.x;
   }
@@ -272,12 +275,24 @@ public:
     return grid_.end();
   }
 
+  [[nodiscard]] bool in_bounds(const Coordinates c) const noexcept {
+    return c.x >= 0 && c.y >= 0 && c.x < maxx_ && c.y < maxy_;
+  }
+
   Sector& get(const int x, const int y) {
     return grid_.at(static_cast<std::size_t>(x + (y * maxx_)));
   }
 
   [[nodiscard]] const Sector& get(const int x, const int y) const {
     return grid_.at(static_cast<std::size_t>(x + (y * maxx_)));
+  }
+
+  Sector& get(const Coordinates c) {
+    return get(c.x, c.y);
+  }
+
+  [[nodiscard]] const Sector& get(const Coordinates c) const {
+    return get(c.x, c.y);
   }
 
   // Set from sector_struct
@@ -288,6 +303,118 @@ public:
   // Set from Sector - extract struct and reconstruct
   void set(const int x, const int y, const Sector& s) {
     grid_.at(static_cast<std::size_t>(x + (y * maxx_))) = Sector(s.to_struct());
+  }
+
+  void set(const Coordinates c, const sector_struct& s) {
+    set(c.x, c.y, s);
+  }
+
+  void set(const Coordinates c, const Sector& s) {
+    set(c.x, c.y, s);
+  }
+
+  // TODO(jeffbailey): Migrate to std::views::cartesian_product once supported
+  // by libc++
+  class CoordinatesView {
+  public:
+    class Iterator {
+    public:
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = Coordinates;
+      using difference_type = std::ptrdiff_t;
+
+      Iterator(int x, int y, int maxx) : x_(x), y_(y), maxx_(maxx) {}
+
+      Coordinates operator*() const {
+        return {x_, y_};
+      }
+      Iterator& operator++() {
+        ++x_;
+        if (x_ >= maxx_) {
+          x_ = 0;
+          ++y_;
+        }
+        return *this;
+      }
+      bool operator==(const Iterator& other) const {
+        return x_ == other.x_ && y_ == other.y_;
+      }
+
+    private:
+      int x_{0};
+      int y_{0};
+      int maxx_{0};
+    };
+
+    CoordinatesView(int maxx, int maxy) : maxx_(maxx), maxy_(maxy) {}
+    Iterator begin() const {
+      return Iterator(0, 0, maxx_);
+    }
+    Iterator end() const {
+      return Iterator(0, maxy_, maxx_);
+    }
+
+  private:
+    int maxx_{0};
+    int maxy_{0};
+  };
+
+  [[nodiscard]] CoordinatesView coordinates() const {
+    return CoordinatesView(maxx_, maxy_);
+  }
+
+  // TODO(jeffbailey): Migrate to std::views::enumerate / cartesian_product once
+  // supported by libc++
+  template <typename MapType, typename SectorRefType>
+  class IndexedSectorsViewImpl {
+  public:
+    class Iterator {
+    public:
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = std::pair<Coordinates, SectorRefType>;
+      using difference_type = std::ptrdiff_t;
+
+      Iterator(MapType* map, int x, int y) : map_(map), x_(x), y_(y) {}
+
+      value_type operator*() const {
+        return {Coordinates{x_, y_}, map_->get(x_, y_)};
+      }
+      Iterator& operator++() {
+        ++x_;
+        if (x_ >= map_->get_maxx()) {
+          x_ = 0;
+          ++y_;
+        }
+        return *this;
+      }
+      bool operator==(const Iterator& other) const {
+        return x_ == other.x_ && y_ == other.y_;
+      }
+
+    private:
+      MapType* map_{nullptr};
+      int x_{0};
+      int y_{0};
+    };
+
+    IndexedSectorsViewImpl(MapType& map) : map_(&map) {}
+    Iterator begin() const {
+      return Iterator(map_, 0, 0);
+    }
+    Iterator end() const {
+      return Iterator(map_, 0, map_->get_maxy());
+    }
+
+  private:
+    MapType* map_{nullptr};
+  };
+
+  auto indexed_sectors() {
+    return IndexedSectorsViewImpl<SectorMap, Sector&>(*this);
+  }
+
+  auto indexed_sectors() const {
+    return IndexedSectorsViewImpl<const SectorMap, const Sector&>(*this);
   }
 
   void put(Sector&& s) {

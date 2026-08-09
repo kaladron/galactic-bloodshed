@@ -77,13 +77,14 @@ void walk(const command_t& argv, GameObj& g) {
   }
   auto& p = *planet_handle;
 
-  auto [x, y] = get_move(p, argv[2][0], {ship->land_x(), ship->land_y()});
-  if (ship->land_x() == x && ship->land_y() == y) {
+  Coordinates old_coords = ship->land_coords();
+  Coordinates new_coords = get_move(p, argv[2][0], old_coords);
+  if (old_coords == new_coords) {
     g.out << "Illegal move.\n";
     return;
   }
-  if (x < 0 || y < 0 || x > p.Maxx() - 1 || y > p.Maxy() - 1) {
-    g.out << std::format("Illegal coordinates {},{}.\n", x, y);
+  if (!p.is_valid(new_coords)) {
+    g.out << std::format("Illegal coordinates {}.\n", new_coords);
     return;
   }
   auto smap_handle =
@@ -94,7 +95,7 @@ void walk(const command_t& argv, GameObj& g) {
   }
   auto& smap = *smap_handle;
   /* check to see if player is permited on the sector type */
-  auto& sect = smap.get(x, y);
+  auto& sect = smap.get(new_coords);
   if (!g.race->likes[sect.get_condition()]) {
     g.out << "Your ships cannot walk into that sector type!\n";
     return;
@@ -104,8 +105,8 @@ void walk(const command_t& argv, GameObj& g) {
   for (auto ship_handle : shiplist) {
     Ship& ship2 = *ship_handle;
     if (ship2.owner() != Playernum && ship2.type() == ShipType::OTYPE_AFV &&
-        landed(ship2) && retal_strength(ship2) && (ship2.land_x() == x) &&
-        (ship2.land_y() == y)) {
+        landed(ship2) && retal_strength(ship2) &&
+        (ship2.land_coords() == new_coords)) {
       auto alien_handle = g.entity_manager.get_race(ship2.owner());
       if (!alien_handle.get()) {
         continue;
@@ -165,8 +166,8 @@ void walk(const command_t& argv, GameObj& g) {
         post(g.entity_manager, short_buf, NewsType::COMBAT);
 
         people_attack_mech(g.entity_manager, *ship, sect.get_popn(),
-                           sect.get_troops(), *alien, *g.race, sect, x, y,
-                           long_buf, short_buf);
+                           sect.get_troops(), *alien, *g.race, sect,
+                           new_coords.x, new_coords.y, long_buf, short_buf);
         g.out << long_buf;
         warn_player(g.session_registry, g.entity_manager, alien->Playernum,
                     oldgov, long_buf);
@@ -191,12 +192,10 @@ void walk(const command_t& argv, GameObj& g) {
     succ = 1;
 
   if (ship->alive() && ship->popn() && succ) {
-    std::string moving =
-        std::format("{} moving from {},{} to {},{} on {}.\n",
-                    ship_to_string(*ship), ship->land_x(), ship->land_y(), x, y,
-                    dispshiploc(g.entity_manager, *ship));
-    ship->land_x() = x;
-    ship->land_y() = y;
+    std::string moving = std::format(
+        "{} moving from {} to {} on {}.\n", ship_to_string(*ship), old_coords,
+        new_coords, dispshiploc(g.entity_manager, *ship));
+    ship->set_land_coords(new_coords);
     use_fuel(*ship, AFV_FUEL_COST);
     for (player_t i{1}; i <= g.entity_manager.num_races();
          i = player_t{i.value + 1})

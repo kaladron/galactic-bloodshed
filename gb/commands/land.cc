@@ -182,12 +182,12 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     g.out << std::format("{} is docked.\n", ship_to_string(s));
     return;
   }
-  auto xy_result = scn::scan<int, int>(argv[2], "{},{}");
-  if (!xy_result) {
+  auto coords_opt = Coordinates::parse(argv[2]);
+  if (!coords_opt) {
     g.out << "Invalid coordinates format. Use: x,y\n";
     return;
   }
-  auto [x, y] = xy_result->values();
+  const Coordinates target_coords = *coords_opt;
   if (s.whatorbits() != ScopeLevel::LEVEL_PLAN) {
     g.out << std::format("{} doesn't orbit a planet.\n", ship_to_string(s));
     return;
@@ -241,7 +241,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
 
   fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
 
-  if ((x < 0) || (y < 0) || (x > p.Maxx() - 1) || (y > p.Maxy() - 1)) {
+  if (!p.is_valid(target_coords)) {
     g.out << "Illegal coordinates.\n";
     return;
   }
@@ -286,13 +286,14 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
         g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
     auto& smap = *smap_handle;
     char long_buf[1024], short_buf[256];
-    auto result = shoot_ship_to_planet(
-        g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.), x, y,
-        smap, 0, GTYPE_HEAVY, long_buf, short_buf);
+    auto result = shoot_ship_to_planet(g.entity_manager, s, p,
+                                       round_rand((double)(s.destruct()) / 3.),
+                                       target_coords.x, target_coords.y, smap,
+                                       0, GTYPE_HEAVY, long_buf, short_buf);
     numdest = result.numdest;
-    auto buf = std::format(
-        "BOOM!! {} crashes on sector {},{} with blast radius of {}.\n",
-        ship_to_string(s), x, y, numdest);
+    auto buf =
+        std::format("BOOM!! {} crashes on sector {} with blast radius of {}.\n",
+                    ship_to_string(s), target_coords, numdest);
     for (auto race_handle : RaceList(g.entity_manager)) {
       const auto i = race_handle->Playernum;
       if (p.info(i).numsectsowned || i == Playernum)
@@ -312,8 +313,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     auto smap_handle =
         g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
 
-    s.land_x() = x;
-    s.land_y() = y;
+    s.set_land_coords(target_coords);
     s.xpos() = p.xpos() + star->xpos();
     s.ypos() = p.ypos() + star->ypos();
     use_fuel(s, fuel);
@@ -326,7 +326,7 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
   auto smap_handle =
       g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
   auto& smap = *smap_handle;
-  auto& sector = smap.get(x, y);
+  auto& sector = smap.get(target_coords);
 
   if (sector.is_wasted()) {
     g.out << "Warning: That sector is a wasteland!\n";

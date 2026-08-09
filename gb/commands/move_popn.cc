@@ -55,13 +55,13 @@ void move_popn(const command_t& argv, GameObj& g) {
     g.out << "That planet has been enslaved!\n";
     return;
   }
-  auto xy_result = scn::scan<int, int>(argv[1], "{},{}");
-  if (!xy_result) {
+  auto from_opt = Coordinates::parse(argv[1]);
+  if (!from_opt) {
     g.out << "Bad format for sector.\n";
     return;
   }
-  auto [x, y] = xy_result->values();
-  if (x < 0 || y < 0 || x > planet.Maxx() - 1 || y > planet.Maxy() - 1) {
+  Coordinates curr_coords = *from_opt;
+  if (!planet.is_valid(curr_coords)) {
     g.out << "Origin coordinates illegal.\n";
     return;
   }
@@ -77,29 +77,29 @@ void move_popn(const command_t& argv, GameObj& g) {
   done = 0;
   n = 0;
   while (!done) {
-    auto& sect = smap.get(x, y);
+    auto& sect = smap.get(curr_coords);
     if (sect.get_owner() != Playernum) {
-      g.out << std::format("You don't own sector {},{}!\n", x, y);
+      g.out << std::format("You don't own sector {}!\n", curr_coords);
       return;
     }
-    auto [x2, y2] = get_move(planet, argv[2][n++], {x, y});
-    if (x == x2 && y == y2) {
+    Coordinates next_coords = get_move(planet, argv[2][n++], curr_coords);
+    if (curr_coords == next_coords) {
       g.out << "Finished.\n";
       return;
     }
 
-    if (x2 < 0 || y2 < 0 || x2 > planet.Maxx() - 1 || y2 > planet.Maxy() - 1) {
-      g.out << std::format("Illegal coordinates {},{}.\n", x2, y2);
+    if (!planet.is_valid(next_coords)) {
+      g.out << std::format("Illegal coordinates {}.\n", next_coords);
       return;
     }
 
-    if (!adjacent(planet, {x, y}, {x2, y2})) {
+    if (!adjacent(planet, curr_coords, next_coords)) {
       g.out << "Illegal move - to adjacent sectors only!\n";
       return;
     }
 
     /* ok, the move is legal */
-    auto& sect2 = smap.get(x2, y2);
+    auto& sect2 = smap.get(next_coords);
     if (argv.size() >= 4) {
       people = std::stoi(argv[3]);
       if (people < 0) {
@@ -120,11 +120,11 @@ void move_popn(const command_t& argv, GameObj& g) {
          (std::abs(people) > sect.get_troops())) ||
         people <= 0) {
       if (what == PopulationType::CIV)
-        g.out << std::format("Bad value - {} civilians in [{},{}]\n",
-                             sect.get_popn(), x, y);
+        g.out << std::format("Bad value - {} civilians in [{}]\n",
+                             sect.get_popn(), curr_coords);
       else if (what == PopulationType::MIL)
-        g.out << std::format("Bad value - {} troops in [{},{}]\n",
-                             sect.get_troops(), x, y);
+        g.out << std::format("Bad value - {} troops in [{}]\n",
+                             sect.get_troops(), curr_coords);
       return;
     }
 
@@ -132,7 +132,7 @@ void move_popn(const command_t& argv, GameObj& g) {
                          what == PopulationType::CIV ? "population" : "troops");
 
     /* check for defending mechs */
-    mech_defend(g, &people, what, planet, x2, y2, sect2);
+    mech_defend(g, &people, what, planet, next_coords.x, next_coords.y, sect2);
     if (!people) {
       g.out << "Attack aborted.\n";
       return;
@@ -242,10 +242,10 @@ void move_popn(const command_t& argv, GameObj& g) {
       }
 
       std::string telegram = std::format(
-          "/{}/{}: {} [{}] {}({},{}) assaults {} [{}] {}({},{}) {}\n",
-          star.get_name(), star.get_planet_name(g.pnum()), race.name, Playernum,
-          Dessymbols[sect.get_condition()], x, y, alien.name, alien.Playernum,
-          Dessymbols[sect2.get_condition()], x2, y2,
+          "/{}/{}: {} [{}] {}{} assaults {} [{}] {} {}\n", star.get_name(),
+          star.get_planet_name(g.pnum()), race.name, Playernum,
+          Dessymbols[sect.get_condition()], curr_coords, alien.name,
+          alien.Playernum, Dessymbols[sect2.get_condition()], next_coords,
           (sect2.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
 
       if (sect2.get_owner() == Playernum) {
@@ -311,8 +311,7 @@ void move_popn(const command_t& argv, GameObj& g) {
     }
 
     deductAPs(g, APcost, g.snum());
-    x = x2;
-    y = y2; /* get ready for the next round */
+    curr_coords = next_coords; /* get ready for the next round */
   }
   g.out << "Finished.\n";
 }

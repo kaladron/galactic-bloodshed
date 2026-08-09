@@ -70,8 +70,7 @@ void launch(const command_t& argv, GameObj& g) {
         s.deststar() = s2.deststar();
         s.xpos() = s2.xpos();
         s.ypos() = s2.ypos();
-        s.land_x() = s2.land_x();
-        s.land_y() = s2.land_y();
+        s.set_land_coords(s2.land_coords());
         s.docked() = 1;
         s.whatdest() = ScopeLevel::LEVEL_PLAN;
         s2.mass() -= s.mass();

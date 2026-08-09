@@ -34,11 +34,6 @@ module gblib;
  */
 int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
                       const Race& r) {
-  int x;
-  int y;
-  int x2 = -1;
-  int y2;
-
   // Get star for telegrams - lookup once for efficiency
   const auto* star = entity_manager.peek_star(ship.storbits());
   if (!star) return 0;
@@ -61,7 +56,9 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   auto& smap = *smap_handle;
 
   /* look for someone to bombard-check for war */
-  bool found = false;
+  std::optional<Coordinates> war_target;
+  std::optional<Coordinates> fallback_target;
+
   for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
     Sector& sect = sector_wrap;
     if (sect.get_owner() != 0 && sect.get_owner() != ship.owner() &&
@@ -70,20 +67,16 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
           (ship.type() == ShipType::OTYPE_BERS &&
            std::holds_alternative<MindData>(ship.special()) &&
            sect.get_owner() == std::get<MindData>(ship.special()).target)) {
-        found = true;
+        war_target = sect.coords();
         break;
       }
-      x = x2 = sect.get_x();
-      y = y2 = sect.get_y();
+      fallback_target = sect.coords();
     }
   }
-  if (x2 != -1) {
-    x = x2; /* no one we're at war with; bomb someone else. */
-    y = y2;
-    found = true;
-  }
 
-  if (!found) {
+  auto target = war_target.has_value() ? war_target : fallback_target;
+
+  if (!target.has_value()) {
     /* there were no sectors worth bombing. */
     if (!ship.notified()) {
       ship.notified() = 1;
@@ -116,14 +109,13 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   // Enemy planet retaliates along with defending forces
 
   // save owner of destroyed sector
-  auto oldown = smap.get(x, y).get_owner();
+  auto oldown = smap.get(*target).get_owner();
   ship.destruct() -= str;
   ship.mass() -= str * MASS_DESTRUCT;
 
   char long_buf[1024], short_buf[256];
-  auto result =
-      shoot_ship_to_planet(entity_manager, ship, planet, str, Coordinates{x, y},
-                           smap, 0, 0, long_buf, short_buf);
+  auto result = shoot_ship_to_planet(entity_manager, ship, planet, str, *target,
+                                     smap, 0, 0, long_buf, short_buf);
   /* (0=dont get smap) */
   auto numdest = std::max(result.numdest, 0);
 
@@ -132,7 +124,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   telegram_report << std::format("REPORT from ship #{}\n\n", ship.number());
   telegram_report << short_buf;
   telegram_report << std::format(
-      "sector {},{} (owner {}). {} sectors destroyed.\n", x, y, oldown,
+      "sector {} (owner {}). {} sectors destroyed.\n", *target, oldown,
       numdest);
   push_telegram(entity_manager, ship.owner(), ship.governor(),
                 telegram_report.str());
@@ -142,8 +134,8 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   telegram_alert << std::format("ALERT from planet /{}/{}\n", star->get_name(),
                                 star->get_planet_name(ship.pnumorbits()));
   telegram_alert << std::format(
-      "{}{} {} bombarded sector {},{}; {} sectors destroyed.\n",
-      Shipltrs[ship.type()], ship.number(), ship.name(), x, y, numdest);
+      "{}{} {} bombarded sector {}; {} sectors destroyed.\n",
+      Shipltrs[ship.type()], ship.number(), ship.name(), *target, numdest);
 
   for (player_t i = 1; i <= entity_manager.num_races(); i++)
     if (result.nuked[i.value - 1] && i != ship.owner())

@@ -267,9 +267,9 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   }
   auto num_sectors = pl.Maxx() * pl.Maxy();
   for (auto i = 1; i <= em.num_races(); i++) {
-    pl.info(i - 1).mob_points = sum_mob[i - 1];
-    pl.info(i - 1).comread = sum_mob[i - 1] / num_sectors;
-    pl.info(i - 1).guns = planet_guns(sum_mob[i - 1]);
+    pl.info(player_t{i}).mob_points = sum_mob[i - 1];
+    pl.info(player_t{i}).comread = sum_mob[i - 1] / num_sectors;
+    pl.info(player_t{i}).guns = planet_guns(sum_mob[i - 1]);
   }
 
   /* planet toxicity goes up a bit */

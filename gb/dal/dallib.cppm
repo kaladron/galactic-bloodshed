@@ -12,6 +12,18 @@ export module dallib;
 export import types;
 import std;
 
+export class SqliteError : public std::runtime_error {
+  int code_{0};
+
+public:
+  explicit SqliteError(const std::string& msg, int code = 0)
+      : std::runtime_error(msg), code_(code) {}
+
+  int code() const noexcept {
+    return code_;
+  }
+};
+
 export class Database {
   sqlite3* conn = nullptr;
 

@@ -227,6 +227,29 @@ int main() {
                  "✓ JsonStore respects database transaction rollback");
   }
 
+  // Database error handling (SqliteError exception)
+  {
+    bool caught_retrieve_error = false;
+    try {
+      store.retrieve("non_existent_table", 1);
+    } catch (const SqliteError& e) {
+      caught_retrieve_error = true;
+      assert(e.code() != 0);
+    }
+    assert(caught_retrieve_error);
+    std::println(std::cout,
+                 "✓ SqliteError thrown on non-existent table retrieve");
+
+    bool caught_store_error = false;
+    try {
+      store.store("non_existent_table", 1, R"({"test": 1})");
+    } catch (const SqliteError& e) {
+      caught_store_error = true;
+    }
+    assert(caught_store_error);
+    std::println(std::cout, "✓ SqliteError thrown on non-existent table store");
+  }
+
   std::println(std::cout, "\nAll JsonStore tests passed!");
   return 0;
 }

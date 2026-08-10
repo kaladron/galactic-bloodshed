@@ -87,7 +87,8 @@ void initialize_schema(Database& db) {
       sqlite3_exec(db.connection(), tbl_create, nullptr, nullptr, &raw_err);
   std::unique_ptr<char, decltype(&sqlite3_free)> err_msg(raw_err, sqlite3_free);
   if (err != SQLITE_OK) {
-    std::println(stderr, "SQL error: {}",
-                 err_msg ? err_msg.get() : "Unknown error");
+    throw SqliteError(std::format("Failed to initialize database schema: {}",
+                                  err_msg ? err_msg.get() : "Unknown error"),
+                      err);
   }
 }

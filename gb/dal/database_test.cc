@@ -233,6 +233,30 @@ int main() {
   }
   std::println(std::cout, "✓ Destructor closes connection");
 
+  // SqliteError exception throwing
+  {
+    Database db1(":memory:");
+    Database db2(std::move(db1));  // db1 is now closed/moved-from
+
+    bool caught_news_add_error = false;
+    try {
+      db1.news_add(1, "Test Message", 100);
+    } catch (const SqliteError& e) {
+      caught_news_add_error = true;
+    }
+    assert(caught_news_add_error);
+
+    bool caught_schema_error = false;
+    try {
+      initialize_schema(db1);
+    } catch (const SqliteError& e) {
+      caught_schema_error = true;
+    }
+    assert(caught_schema_error);
+
+    std::println(std::cout, "✓ Database throws SqliteError on database errors");
+  }
+
   std::println(std::cout, "\nAll Database tests passed!");
   return 0;
 }

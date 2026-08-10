@@ -45,9 +45,11 @@ public:
 
   // Save entity with given ID
   bool save(KeyValue id, const T& entity) {
-    auto json = serialize(entity);
-    if (!json) return false;
-    return store.store(table_name, id, *json);
+    return serialize(entity)
+        .transform([this, id](const auto& json) {
+          return store.store(table_name, id, json);
+        })
+        .value_or(false);
   }
 
   // Find entity by ID
@@ -767,10 +769,11 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
   // database For now, we'll load sectors individually
   for (int y = 0; y < planet.Maxy(); y++) {
     for (int x = 0; x < planet.Maxx(); x++) {
-      auto sector = find_sector(planet.star_id(), planet.planet_order(), x, y);
-      if (sector.has_value()) {
-        smap.put(std::move(*sector));
-      }
+      find_sector(planet.star_id(), planet.planet_order(), x, y)
+          .and_then([&smap](Sector&& sector) -> std::optional<bool> {
+            smap.put(std::move(sector));
+            return true;
+          });
     }
   }
 

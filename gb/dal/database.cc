@@ -28,14 +28,16 @@ void exec_sql(sqlite3* db, const char* sql, const char* action_name) {
   SqliteErrorPtr errmsg(raw_errmsg);
   if (rc != SQLITE_OK) {
     std::string error = errmsg ? errmsg.get() : "Unknown error";
-    throw std::runtime_error(std::format("{}: {}", action_name, error));
+    throw SqliteError(std::format("{}: {}", action_name, error), rc);
   }
 }
 
 SqliteStmtPtr prepare_stmt(sqlite3* conn, const char* sql) {
   sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-    return nullptr;
+  int rc = sqlite3_prepare_v2(conn, sql, -1, &stmt, nullptr);
+  if (rc != SQLITE_OK) {
+    throw SqliteError(
+        std::format("SQLite prepare error: {}", sqlite3_errmsg(conn)), rc);
   }
   return SqliteStmtPtr(stmt);
 }
@@ -63,8 +65,8 @@ Database::Database(const std::string& path) {
       sqlite3_close(conn);
       conn = nullptr;
     }
-    throw std::runtime_error(
-        std::format("Failed to open database '{}': {}", path, error));
+    throw SqliteError(
+        std::format("Failed to open database '{}': {}", path, error), rc);
   }
 
   // Apply SQLite pragmas for performance and safety
@@ -101,28 +103,28 @@ Database& Database::operator=(Database&& other) noexcept {
 
 void Database::begin_transaction() {
   if (!conn) {
-    throw std::runtime_error("Database not open");
+    throw SqliteError("Database not open");
   }
   exec_sql(conn, "BEGIN TRANSACTION", "Failed to begin transaction");
 }
 
 void Database::commit() {
   if (!conn) {
-    throw std::runtime_error("Database not open");
+    throw SqliteError("Database not open");
   }
   exec_sql(conn, "COMMIT", "Failed to commit transaction");
 }
 
 void Database::rollback() {
   if (!conn) {
-    throw std::runtime_error("Database not open");
+    throw SqliteError("Database not open");
   }
   exec_sql(conn, "ROLLBACK", "Failed to rollback transaction");
 }
 
 void Database::optimize() {
   if (!conn) {
-    throw std::runtime_error("Database not open");
+    throw SqliteError("Database not open");
   }
   exec_sql(conn, "PRAGMA optimize;", "Failed to optimize database");
 }
@@ -130,7 +132,9 @@ void Database::optimize() {
 // News operations implementation
 std::optional<int> Database::news_add(int type, const std::string& message,
                                       std::int64_t timestamp) {
-  if (!conn) return std::nullopt;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = R"(
     INSERT INTO tbl_news (type, message, timestamp)
@@ -138,9 +142,6 @@ std::optional<int> Database::news_add(int type, const std::string& message,
   )";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return std::nullopt;
-  }
 
   sqlite3_bind_int(stmt.get(), 1, type);
   sqlite3_bind_text(stmt.get(), 2, message.c_str(), -1, SQLITE_TRANSIENT);
@@ -148,7 +149,9 @@ std::optional<int> Database::news_add(int type, const std::string& message,
 
   int result = sqlite3_step(stmt.get());
   if (result != SQLITE_DONE) {
-    return std::nullopt;
+    throw SqliteError(std::format("SQLite step error inserting news item: {}",
+                                  sqlite3_errmsg(conn)),
+                      result);
   }
 
   return static_cast<int>(sqlite3_last_insert_rowid(conn));
@@ -156,8 +159,11 @@ std::optional<int> Database::news_add(int type, const std::string& message,
 
 std::vector<std::tuple<int, int, std::string, std::int64_t>>
 Database::news_get_since(int type, int since_id) {
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
+
   std::vector<std::tuple<int, int, std::string, std::int64_t>> items;
-  if (!conn) return items;
 
   const char* sql = R"(
     SELECT id, type, message, timestamp
@@ -167,14 +173,12 @@ Database::news_get_since(int type, int since_id) {
   )";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return items;
-  }
 
   sqlite3_bind_int(stmt.get(), 1, type);
   sqlite3_bind_int(stmt.get(), 2, since_id);
 
-  while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+  int step_rc;
+  while ((step_rc = sqlite3_step(stmt.get())) == SQLITE_ROW) {
     int id = sqlite3_column_int(stmt.get(), 0);
     int news_type = sqlite3_column_int(stmt.get(), 1);
     const char* msg_text =
@@ -184,62 +188,79 @@ Database::news_get_since(int type, int since_id) {
     items.emplace_back(id, news_type, std::move(message), ts);
   }
 
+  if (step_rc != SQLITE_DONE) {
+    throw SqliteError(std::format("SQLite step error retrieving news items: {}",
+                                  sqlite3_errmsg(conn)),
+                      step_rc);
+  }
+
   return items;
 }
 
 int Database::news_get_latest_id(int type) {
-  if (!conn) return 0;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = R"(
     SELECT MAX(id) FROM tbl_news WHERE type = ?
   )";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return 0;
-  }
 
   sqlite3_bind_int(stmt.get(), 1, type);
 
   int latest_id = 0;
-  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+  int step_rc = sqlite3_step(stmt.get());
+  if (step_rc == SQLITE_ROW) {
     latest_id = sqlite3_column_int(stmt.get(), 0);
+  } else if (step_rc != SQLITE_DONE) {
+    throw SqliteError(
+        std::format("SQLite step error retrieving latest news ID: {}",
+                    sqlite3_errmsg(conn)),
+        step_rc);
   }
 
   return latest_id;
 }
 
 bool Database::news_purge_type(int type) {
-  if (!conn) return false;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = "DELETE FROM tbl_news WHERE type = ?";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return false;
-  }
 
   sqlite3_bind_int(stmt.get(), 1, type);
 
   int result = sqlite3_step(stmt.get());
-  return result == SQLITE_DONE;
+  if (result != SQLITE_DONE) {
+    throw SqliteError(std::format("SQLite step error purging news type: {}",
+                                  sqlite3_errmsg(conn)),
+                      result);
+  }
+  return true;
 }
 
 bool Database::news_purge_all() {
-  if (!conn) return false;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = "DELETE FROM tbl_news";
-  char* raw_err = nullptr;
-  int result = sqlite3_exec(conn, sql, nullptr, nullptr, &raw_err);
-  SqliteErrorPtr err_msg(raw_err);
-  return result == SQLITE_OK;
+  exec_sql(conn, sql, "Failed to purge news");
+  return true;
 }
 
 // Telegram operations implementation
 std::optional<int> Database::telegram_add(player_t player, governor_t governor,
                                           const std::string& message,
                                           std::int64_t timestamp) {
-  if (!conn) return std::nullopt;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = R"(
     INSERT INTO tbl_telegram (recipient_player, recipient_governor, message, timestamp)
@@ -247,9 +268,6 @@ std::optional<int> Database::telegram_add(player_t player, governor_t governor,
   )";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return std::nullopt;
-  }
 
   sqlite3_bind_int(stmt.get(), 1, player.value);
   sqlite3_bind_int(stmt.get(), 2, governor.value);
@@ -258,7 +276,9 @@ std::optional<int> Database::telegram_add(player_t player, governor_t governor,
 
   int result = sqlite3_step(stmt.get());
   if (result != SQLITE_DONE) {
-    return std::nullopt;
+    throw SqliteError(std::format("SQLite step error inserting telegram: {}",
+                                  sqlite3_errmsg(conn)),
+                      result);
   }
 
   return static_cast<int>(sqlite3_last_insert_rowid(conn));
@@ -266,8 +286,11 @@ std::optional<int> Database::telegram_add(player_t player, governor_t governor,
 
 std::vector<std::tuple<int, int, int, std::string, std::int64_t>>
 Database::telegram_get(player_t player, governor_t governor) {
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
+
   std::vector<std::tuple<int, int, int, std::string, std::int64_t>> items;
-  if (!conn) return items;
 
   const char* sql = R"(
     SELECT id, recipient_player, recipient_governor, message, timestamp
@@ -277,14 +300,12 @@ Database::telegram_get(player_t player, governor_t governor) {
   )";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return items;
-  }
 
   sqlite3_bind_int(stmt.get(), 1, player.value);
   sqlite3_bind_int(stmt.get(), 2, governor.value);
 
-  while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+  int step_rc;
+  while ((step_rc = sqlite3_step(stmt.get())) == SQLITE_ROW) {
     int id = sqlite3_column_int(stmt.get(), 0);
     int recv_player = sqlite3_column_int(stmt.get(), 1);
     governor_t recv_governor{sqlite3_column_int(stmt.get(), 2)};
@@ -295,12 +316,20 @@ Database::telegram_get(player_t player, governor_t governor) {
     items.emplace_back(id, recv_player, recv_governor, std::move(message), ts);
   }
 
+  if (step_rc != SQLITE_DONE) {
+    throw SqliteError(std::format("SQLite step error retrieving telegrams: {}",
+                                  sqlite3_errmsg(conn)),
+                      step_rc);
+  }
+
   return items;
 }
 
 bool Database::telegram_delete_for_governor(player_t player,
                                             governor_t governor) {
-  if (!conn) return false;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = R"(
     DELETE FROM tbl_telegram
@@ -308,19 +337,23 @@ bool Database::telegram_delete_for_governor(player_t player,
   )";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return false;
-  }
 
   sqlite3_bind_int(stmt.get(), 1, player.value);
   sqlite3_bind_int(stmt.get(), 2, governor.value);
 
   int result = sqlite3_step(stmt.get());
-  return result == SQLITE_DONE;
+  if (result != SQLITE_DONE) {
+    throw SqliteError(std::format("SQLite step error deleting telegrams: {}",
+                                  sqlite3_errmsg(conn)),
+                      result);
+  }
+  return true;
 }
 
 int Database::telegram_count(player_t player, governor_t governor) {
-  if (!conn) return 0;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = R"(
     SELECT COUNT(*) FROM tbl_telegram
@@ -328,45 +361,52 @@ int Database::telegram_count(player_t player, governor_t governor) {
   )";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return 0;
-  }
 
   sqlite3_bind_int(stmt.get(), 1, player.value);
   sqlite3_bind_int(stmt.get(), 2, governor.value);
 
   int count = 0;
-  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+  int step_rc = sqlite3_step(stmt.get());
+  if (step_rc == SQLITE_ROW) {
     count = sqlite3_column_int(stmt.get(), 0);
+  } else if (step_rc != SQLITE_DONE) {
+    throw SqliteError(std::format("SQLite step error counting telegrams: {}",
+                                  sqlite3_errmsg(conn)),
+                      step_rc);
   }
 
   return count;
 }
 
 bool Database::telegram_purge_all() {
-  if (!conn) return false;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = "DELETE FROM tbl_telegram";
-  char* raw_err = nullptr;
-  int result = sqlite3_exec(conn, sql, nullptr, nullptr, &raw_err);
-  SqliteErrorPtr err_msg(raw_err);
-  return result == SQLITE_OK;
+  exec_sql(conn, sql, "Failed to purge telegrams");
+  return true;
 }
 
 int Database::count_non_asteroid_planets() {
-  if (!conn) return 0;
+  if (!conn) {
+    throw SqliteError("Database connection is not open");
+  }
 
   const char* sql = "SELECT COUNT(*) FROM tbl_planet WHERE "
                     "json_extract(data, '$.type') != 'ASTEROID'";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-  if (!stmt) {
-    return 0;
-  }
 
   int count = 0;
-  if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+  int step_rc = sqlite3_step(stmt.get());
+  if (step_rc == SQLITE_ROW) {
     count = sqlite3_column_int(stmt.get(), 0);
+  } else if (step_rc != SQLITE_DONE) {
+    throw SqliteError(
+        std::format("SQLite step error counting non-asteroid planets: {}",
+                    sqlite3_errmsg(conn)),
+        step_rc);
   }
 
   return count;

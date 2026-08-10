@@ -45,11 +45,10 @@ public:
 
   // Save entity with given ID
   bool save(KeyValue id, const T& entity) {
-    return serialize(entity)
-        .transform([this, id](const auto& json) {
-          return store.store(table_name, id, json);
-        })
-        .value_or(false);
+    if (auto json = serialize(entity)) {
+      return store.store(table_name, id, *json);
+    }
+    return false;
   }
 
   // Find entity by ID
@@ -721,16 +720,14 @@ SectorRepository::deserialize(const std::string& json_str) const {
 sector_struct SectorRepository::load(starnum_t star_id,
                                      planetnum_t planet_order,
                                      Coordinates coords) {
-  return store
-      .retrieve_multi(table_name, sector_keys(star_id, planet_order, coords))
-      .and_then([](const auto& json) -> std::optional<sector_struct> {
-        sector_struct data{};
-        if (!glz::read_json(data, json)) {
-          return data;
-        }
-        return std::nullopt;
-      })
-      .value_or(sector_struct{});
+  if (auto json = store.retrieve_multi(
+          table_name, sector_keys(star_id, planet_order, coords))) {
+    sector_struct data{};
+    if (!glz::read_json(data, *json)) {
+      return data;
+    }
+  }
+  return sector_struct{};
 }
 
 void SectorRepository::save(starnum_t star_id, planetnum_t planet_order,
@@ -769,11 +766,10 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
   // database For now, we'll load sectors individually
   for (int y = 0; y < planet.Maxy(); y++) {
     for (int x = 0; x < planet.Maxx(); x++) {
-      find_sector(planet.star_id(), planet.planet_order(), x, y)
-          .and_then([&smap](Sector&& sector) -> std::optional<bool> {
-            smap.put(std::move(sector));
-            return true;
-          });
+      if (auto sector =
+              find_sector(planet.star_id(), planet.planet_order(), x, y)) {
+        smap.put(std::move(*sector));
+      }
     }
   }
 

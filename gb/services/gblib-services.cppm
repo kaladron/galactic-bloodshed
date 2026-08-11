@@ -235,3 +235,17 @@ private:
   void release_sectormap(starnum_t star, planetnum_t pnum);
   void release_ship_exam(ShipType ship_type);
 };
+
+export inline void record_vn_destruction_site(int& index1, int& index2,
+                                              int star_id,
+                                              bool supplant_first) {
+  if (index1 == -1) {
+    index1 = star_id;
+  } else if (index2 == -1) {
+    index2 = star_id;
+  } else if (supplant_first) {
+    index1 = star_id;
+  } else {
+    index2 = star_id;
+  }
+}

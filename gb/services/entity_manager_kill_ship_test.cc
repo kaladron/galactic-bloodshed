@@ -347,6 +347,31 @@ int main() {
     std::println(std::cout, "✓ Recursive killing of landed ships works");
   }
 
+  // Deterministic testing of record_vn_destruction_site
+  {
+    int index1{-1};
+    int index2{-1};
+
+    // Slot 1 empty -> recorded in index1
+    record_vn_destruction_site(index1, index2, 10, true);
+    assert(index1 == 10 && index2 == -1);
+
+    // Slot 2 empty -> recorded in index2
+    record_vn_destruction_site(index1, index2, 20, false);
+    assert(index1 == 10 && index2 == 20);
+
+    // Both slots filled -> supplant slot 1 when supplant_first is true
+    record_vn_destruction_site(index1, index2, 30, true);
+    assert(index1 == 30 && index2 == 20);
+
+    // Both slots filled -> supplant slot 2 when supplant_first is false
+    record_vn_destruction_site(index1, index2, 40, false);
+    assert(index1 == 30 && index2 == 40);
+
+    std::println(std::cout,
+                 "✓ record_vn_destruction_site deterministic test works");
+  }
+
   std::println(std::cout, "\n✅ All EntityManager::kill_ship() tests passed!");
   return 0;
 }

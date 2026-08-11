@@ -703,22 +703,10 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     }
 
     /* keep track of where these VN's were shot up */
-    if (Sdata.VN_index1[Playernum.value - 1] == -1)
-      /* there's no star in the first index */
-      Sdata.VN_index1[Playernum.value - 1] = ship.storbits().value;
-    else if (Sdata.VN_index2[Playernum.value - 1] == -1)
-      /* there's no star in the second index */
-      Sdata.VN_index2[Playernum.value - 1] = ship.storbits().value;
-    else {
-      /* pick an index to supplant */
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      std::uniform_int_distribution<int> dis(0, 1);
-      if (dis(gen))
-        Sdata.VN_index1[Playernum.value - 1] = ship.storbits().value;
-      else
-        Sdata.VN_index2[Playernum.value - 1] = ship.storbits().value;
-    }
+    record_vn_destruction_site(Sdata.VN_index1[Playernum.value - 1],
+                               Sdata.VN_index2[Playernum.value - 1],
+                               static_cast<int>(ship.storbits().value),
+                               int_rand(0, 1) == 0);
     // Sdata auto-saves when handle goes out of scope
   }
 

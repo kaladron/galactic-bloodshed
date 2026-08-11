@@ -1171,7 +1171,6 @@ static void save(int argc, const char* argv[]) {
 
 static void send2(int, const char**) {
   FILE* f;
-  char sys[64];
 
   last = race_info;
   if (critique_to_file(stdout, 1, IS_PLAYER)) return;
@@ -1189,8 +1188,9 @@ static void send2(int, const char**) {
 
   fflush(stdout);
   printf("Mailing race to %s : ", TO);
-  std::sprintf(sys, "cat %s | %s %s", race_info.password, MAILER, TO);
-  if (std::system(sys) < 0) {
+  std::string sys =
+      std::format("cat {} | {} {}", race_info.password, MAILER, TO);
+  if (std::system(sys.c_str()) < 0) {
     perror("gaaaaaaah");
     std::exit(-1);
   }
@@ -1208,9 +1208,9 @@ static void send2(int, const char**) {
 
   fflush(stdout);
   printf("Mailing race to %s : ", race_info.address);
-  std::sprintf(sys, "cat %s | %s %s", race_info.password, MAILER,
-               race_info.address);
-  if (std::system(sys) < 0) {
+  sys = std::format("cat {} | {} {}", race_info.password, MAILER,
+                    race_info.address);
+  if (std::system(sys.c_str()) < 0) {
     perror("gaaaaaaah");
     std::exit(-1);
   }

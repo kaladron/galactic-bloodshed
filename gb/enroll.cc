@@ -19,7 +19,6 @@ static const char* DEFAULT_ENROLLMENT_FAILURE_FILENAME = "failures.saves";
  * Returns: 0 if the race was successfully enrolled, or 1 if not.
  */
 static int enroll_player_race(const char* failure_filename) {
-  char c[128];
   FILE* g;
   int n;
   static int recursing = 0;
@@ -91,8 +90,9 @@ static int enroll_player_race(const char* failure_filename) {
 
     std::print("Sending critique to {} via {}...", race_info.address, MAILER);
     fflush(stdout);
-    std::sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
-    if (system(c) < 0) {
+    std::string cmd =
+        std::format("cat {} | {} {}", TMP, MAILER, race_info.address);
+    if (system(cmd.c_str()) < 0) {
       perror("gaaaaaah");
       std::exit(-1);
     }
@@ -130,8 +130,9 @@ static int enroll_player_race(const char* failure_filename) {
 
   std::print("Sending acceptance to {} via {}...", race_info.address, MAILER);
   fflush(stdout);
-  std::sprintf(c, "cat %s | %s %s", TMP, MAILER, race_info.address);
-  if (system(c) < 0) {
+  std::string cmd =
+      std::format("cat {} | {} {}", TMP, MAILER, race_info.address);
+  if (system(cmd.c_str()) < 0) {
     perror("gaaaaaah");
     std::exit(-1);
   }

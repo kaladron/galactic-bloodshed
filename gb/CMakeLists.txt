@@ -489,6 +489,14 @@ add_executable(enroll_test enroll_test.cc GB_racegen.cc)
 target_link_libraries(enroll_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze scnlib_module)
 add_test(NAME GB_enroll_test COMMAND enroll_test)
 
+add_executable(shootblast_test shootblast_test.cc)
+target_link_libraries(shootblast_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_shootblast_test COMMAND shootblast_test)
+
+add_executable(ground_attack_test ground_attack_test.cc)
+target_link_libraries(ground_attack_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_ground_attack_test COMMAND ground_attack_test)
+
 add_executable(autoreport_test commands/autoreport_test.cc)
 target_link_libraries(autoreport_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_autoreport_test COMMAND autoreport_test)

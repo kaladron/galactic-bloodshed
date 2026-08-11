@@ -83,9 +83,53 @@ void test_enroll_max_players() {
   std::println(std::cout, "  ✓ Max player limit enforcement passed");
 }
 
+void test_enroll_no_free_planet_type() {
+  std::println(std::cout, "Test: No free home planet type rejection");
+
+  Database db(":memory:");
+  initialize_schema(db);
+  JsonStore store(db);
+
+  // Setup: Create universe with 1 star, 1 planet of type MARS
+  universe_struct us{};
+  us.id = 1;
+  us.numstars = 1;
+  UniverseRepository univ_repo(store);
+  univ_repo.save(us);
+
+  star_struct ss{};
+  ss.star_id = 0;
+  ss.name = "Sol";
+  ss.pnames.emplace_back("MarsPlanet");
+  Star star(ss);
+  StarRepository star_repo(store);
+  star_repo.save(star);
+
+  Planet planet{PlanetType::MARS};
+  planet.star_id() = 0;
+  planet.planet_order() = 0;
+  PlanetRepository planet_repo(store);
+  planet_repo.save(planet);
+
+  // Prepare race_info seeking EARTH planet (type 0)
+  race_info = x{};
+  race_info.priv_type = P_GOD;
+  race_info.home_planet_type = H_EARTH;
+
+  int result = enroll_valid_race(db);
+
+  assert(result == 1);
+  assert(race_info.status == STATUS_UNENROLLABLE);
+  assert(std::string(race_info.rejection).find("Didn't find any free Earth") !=
+         std::string::npos);
+
+  std::println(std::cout, "  ✓ No free home planet type rejection passed");
+}
+
 int main() {
   test_enroll_first_race_god_requirement();
   test_enroll_max_players();
+  test_enroll_no_free_planet_type();
 
   std::println(std::cout, "\n✅ All enroll tests passed!");
   return 0;

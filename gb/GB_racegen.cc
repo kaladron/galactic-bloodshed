@@ -55,27 +55,19 @@ int enroll_valid_race(Database& database) {
                            planet_print_name[race_info.home_planet_type]);
 
   auto ppref = planet_translate[race_info.home_planet_type];
-  std::array<int, NUMSTARS> indirect;
-  std::ranges::iota(indirect, 0);
-  starnum_t last_star_left = numstars - 1;
-  while (last_star_left.value >= 0) {
-    star = indirect[int_rand(0, last_star_left.value)];
-    int i = 0;
-    while (indirect[i] != star)
-      i++;
-
-    const auto* star_obj = entity_manager.peek_star(star);
+  for (int cand_star : shuffled_indices(numstars)) {
+    const auto* star_obj = entity_manager.peek_star(cand_star);
     auto numplanets = star_obj->numplanets();
 
     for (pnum = 0; pnum < numplanets; pnum++) {
-      const auto* pl = entity_manager.peek_planet(star, pnum);
+      const auto* pl = entity_manager.peek_planet(cand_star, pnum);
       if (pl->type() == ppref) {
-        if (pl->popn() == 0) goto found_planet;
+        if (pl->popn() == 0) {
+          star = cand_star;
+          goto found_planet;
+        }
       }
     }
-    /*
-     * Since we are here, this star didn't work out: */
-    indirect[i] = indirect[last_star_left.value--];
   }
 
   /*

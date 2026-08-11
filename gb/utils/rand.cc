@@ -18,6 +18,10 @@ std::mt19937& get_rng() {
 }
 }  // namespace
 
+std::mt19937& game_rng() {
+  return get_rng();
+}
+
 void seed_rand(unsigned int seed) {
   get_rng().seed(seed);
   srandom(seed);

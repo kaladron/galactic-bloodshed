@@ -36,15 +36,13 @@ int enroll_valid_race(Database& database) {
 
   auto Playernum = player_t{entity_manager.num_races().value + 1};
   if ((Playernum == player_t{1}) && (race_info.priv_type != P_GOD)) {
-    std::sprintf(race_info.rejection,
-                 "The first race enrolled must have God privileges.\n");
+    race_info.rejection = "The first race enrolled must have God privileges.\n";
     return 1;
   }
   if (Playernum >= MAXPLAYERS) {
-    std::sprintf(race_info.rejection,
-                 "There are already %d players; No more allowed.\n",
-                 MAXPLAYERS - 1);
-    race_info.status = STATUS_UNENROLLABLE;
+    race_info.rejection = std::format(
+        "There are already {} players; No more allowed.\n", MAXPLAYERS - 1);
+    race_info.status = EnrollmentStatus::UNENROLLABLE;
     return 1;
   }
 
@@ -73,10 +71,10 @@ int enroll_valid_race(Database& database) {
   /*
    * If we get here, then we did not find any good planet. */
   std::cout << " failed!\n";
-  std::sprintf(race_info.rejection,
-               "Didn't find any free %s; choose another home planet type.\n",
-               planet_print_name[race_info.home_planet_type]);
-  race_info.status = STATUS_UNENROLLABLE;
+  race_info.rejection =
+      std::format("Didn't find any free {}; choose another home planet type.\n",
+                  planet_print_name[race_info.home_planet_type]);
+  race_info.status = EnrollmentStatus::UNENROLLABLE;
   return 1;
 
 found_planet:
@@ -271,6 +269,6 @@ found_planet:
       "Player {} ({}) created on sector {},{} on {}/{}.\\n", Playernum,
       race_info.name, sect.get_x(), sect.get_y(), star_data.get_name(),
       star_data.get_planet_name(pnum));
-  race_info.status = STATUS_ENROLLED;
+  race_info.status = EnrollmentStatus::ENROLLED;
   return 0;
 }

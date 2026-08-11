@@ -35,7 +35,7 @@ static int enroll_player_race(const char* failure_filename) {
       std::println(std::cout, "Enroll failed.");
       return 1;
     }
-    if (race_info.status == STATUS_ENROLLED) return 0;
+    if (race_info.status == EnrollmentStatus::ENROLLED) return 0;
     n = Dialogue("Abort, enroll anyway, fix, mail rejection?", "abort",
                  "enroll", "fix", "mail", 0);
     if (n == 1) /* enroll anyway */

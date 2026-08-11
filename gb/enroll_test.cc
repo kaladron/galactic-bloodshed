@@ -76,9 +76,8 @@ void test_enroll_max_players() {
 
   // Verify: Enrollment rejected due to max players limit
   assert(result == 1);
-  assert(race_info.status == STATUS_UNENROLLABLE);
-  assert(std::string(race_info.rejection).find("No more allowed.") !=
-         std::string::npos);
+  assert(race_info.status == EnrollmentStatus::UNENROLLABLE);
+  assert(race_info.rejection.find("No more allowed.") != std::string::npos);
 
   std::println(std::cout, "  ✓ Max player limit enforcement passed");
 }
@@ -119,8 +118,8 @@ void test_enroll_no_free_planet_type() {
   int result = enroll_valid_race(db);
 
   assert(result == 1);
-  assert(race_info.status == STATUS_UNENROLLABLE);
-  assert(std::string(race_info.rejection).find("Didn't find any free Earth") !=
+  assert(race_info.status == EnrollmentStatus::UNENROLLABLE);
+  assert(race_info.rejection.find("Didn't find any free Earth") !=
          std::string::npos);
 
   std::println(std::cout, "  ✓ No free home planet type rejection passed");

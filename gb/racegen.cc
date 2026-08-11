@@ -337,16 +337,16 @@ int cost_of_race() {
   int sum = 0;
 
 #define ROUND(f) ((int)(0.5 + (f)))
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
+  for (i = 0; i < N_ATTRIBUTES; i++)
     cost_info.attr[i] =
         (std::exp(attr[i].e_fudge * (race_info.attr[i] - attr[i].e_hinge)) *
              attr[i].e_factor +
          race_info.attr[i] * attr[i].l_factor);
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
-    for (j = FIRST_ATTRIBUTE; j <= LAST_ATTRIBUTE; j++)
+  for (i = 0; i < N_ATTRIBUTES; i++)
+    for (j = 0; j < N_ATTRIBUTES; j++)
       if (attr[i].cov[j] != 0.0)
         cost_info.attr[i] *= (1.0 + attr[i].cov[j] * race_info.attr[j]);
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
+  for (i = 0; i < N_ATTRIBUTES; i++)
     sum += (cost_info.attr[i] = ROUND(cost_info.attr[i] + attr[i].l_fudge));
 
   sum += (cost_info.home_planet_type = planet_cost[race_info.home_planet_type]);
@@ -448,7 +448,7 @@ int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race) {
 
   /*
    * Check for valid attributes: */
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++) {
+  for (i = 0; i < N_ATTRIBUTES; i++) {
     if ((attr[i].is_integral == 2) && (race_info.attr[i] != 0.0) &&
         (race_info.attr[i] != 1.0)) {
       FPRINTF(f, "%s is boolean valued.  Use \"yes\" or \"no\".\n",
@@ -562,8 +562,8 @@ int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race) {
   if (rigorous_checking) {
     /*
      * Any rejection notice is an error: */
-    if (std::strlen(race_info.rejection)) {
-      FPRINTF(f, "%s", race_info.rejection);
+    if (!race_info.rejection.empty()) {
+      FPRINTF(f, "%s", race_info.rejection.c_str());
       nerrors += 1;
     }
     /*
@@ -605,8 +605,10 @@ int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race) {
       nerrors += 1;
     }
   }
-  if (race_info.status >= 0)
-    race_info.status = (nerrors == 0) ? STATUS_BALANCED : STATUS_UNBALANCED;
+  if (race_info.status == EnrollmentStatus::UNBALANCED ||
+      race_info.status == EnrollmentStatus::BALANCED)
+    race_info.status = (nerrors == 0) ? EnrollmentStatus::BALANCED
+                                      : EnrollmentStatus::UNBALANCED;
   return nerrors;
 #undef FPRINTF
 }
@@ -614,13 +616,14 @@ int critique_to_file(std::FILE* f, int rigorous_checking, int is_player_race) {
 static int critique_modification() {
   int nerrors;
 
-  race_info.rejection[0] = '\0';
+  race_info.rejection.clear();
   nerrors = critique_to_file(stdout, 0, IS_PLAYER);
   if (nerrors)
     race_info = last;
   else
     changed = altered = true;
-  race_info.status = (nerrors == 0) ? STATUS_BALANCED : STATUS_UNBALANCED;
+  race_info.status = (nerrors == 0) ? EnrollmentStatus::BALANCED
+                                    : EnrollmentStatus::UNBALANCED;
   return nerrors;
 }
 
@@ -632,7 +635,7 @@ static void initialize() {
   int i;
 
   race_info = {};
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
+  for (i = 0; i < N_ATTRIBUTES; i++)
     race_info.attr[i] = attr[i].init;
   race_info.race_type = R_NORMAL;
   race_info.priv_type = P_NORMAL;
@@ -645,7 +648,7 @@ static void initialize() {
   normal();
   last = race_info;
   cost_of_race();
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
+  for (i = 0; i < N_ATTRIBUTES; i++)
     attr[i].l_fudge += -cost_info.attr[i];
   cost_of_race();
 #ifdef ENROLL
@@ -757,7 +760,7 @@ static void help(int argc, const char* argv[]) {
     printf("\t\t                  | modify <sectortype> <value>\n");
 
     printf("\t\t   <attribute>  ::= %s", attr[0].print_name);
-    for (i = FIRST_ATTRIBUTE + 1; i < LAST_ATTRIBUTE; i++) {
+    for (i = 1; i < N_ATTRIBUTES; i++) {
       printf(" | %s", attr[i].print_name);
       if ((i % 3) == 2) printf("\n\t\t                 ");
     }
@@ -854,7 +857,7 @@ int load_from_file(std::FILE* g) {
     }
   } while (std::strcmp(buf, START_RECORD_STRING));
 
-  race_info.status = STATUS_BALANCED;
+  race_info.status = EnrollmentStatus::BALANCED;
   FSCANF(g, " %s", race_info.address);
   FSCANF(g, " %s", race_info.name);
   FSCANF(g, " %s", race_info.password);
@@ -865,7 +868,7 @@ int load_from_file(std::FILE* g) {
     normal();
   else
     metamorph();
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
+  for (i = 0; i < N_ATTRIBUTES; i++)
     FSCANF(g, " %lf", &race_info.attr[i]);
   fix_up_iq();
   for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++)
@@ -935,7 +938,7 @@ static int modify(int argc, const char* argv[]) {
 
   /*
    * Check for attribute modification: */
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++)
+  for (i = 0; i < N_ATTRIBUTES; i++)
     if (!strncasecmp(argv[1], attr[i].print_name, j)) {
       if (attr[i].is_integral == 2) { /* Boolean attribute. */
         j = std::strlen(argv[2]);
@@ -1104,7 +1107,7 @@ void print_to_file(std::FILE* f, int verbose) {
   FPRINTF(f, "\n");
 
   FPRINTF(f, "Attributes:\n");
-  for (i = FIRST_ATTRIBUTE; i <= LAST_ATTRIBUTE; i++) {
+  for (i = 0; i < N_ATTRIBUTES; i++) {
     FPRINTF(f, "%13.13s:", attr[i].print_name);
     if (verbose && (attr[i].is_integral == 2))
       fprintf(f, (race_info.attr[i] > 0.0) ? "  yes   " : "   no   ");

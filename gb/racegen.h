@@ -40,20 +40,22 @@ int Dialogue(const char*, ...);
 /**************
  * Attributes, attribute names, and parameters for attribute costs.
  */
-#define FIRST_ATTRIBUTE 0
-#define ADVENT FIRST_ATTRIBUTE
-#define ABSORB (ADVENT + 1)
-#define BIRTH (ABSORB + 1)
-#define COL_IQ (BIRTH + 1)
-#define FERT (COL_IQ + 1)
-#define A_IQ (FERT + 1)
-#define FIGHT (A_IQ + 1)
-#define PODS (FIGHT + 1)
-#define MASS (PODS + 1)
-#define SEXES (MASS + 1)
-#define METAB (SEXES + 1)
-#define LAST_ATTRIBUTE (METAB)
-#define N_ATTRIBUTES (LAST_ATTRIBUTE + 1)
+enum RaceAttribute : int {
+  ADVENT = 0,
+  ABSORB,
+  BIRTH,
+  COL_IQ,
+  FERT,
+  A_IQ,
+  FIGHT,
+  PODS,
+  MASS,
+  SEXES,
+  METAB,
+  N_ATTRIBUTES
+};
+
+extern const char* attr_name[N_ATTRIBUTES];
 
 typedef struct {
   int number;
@@ -163,10 +165,12 @@ extern const int n_sector_types_cost[N_SECTOR_TYPES];
 extern const double compat_cov[N_SECTOR_TYPES][N_SECTOR_TYPES];
 extern const double planet_compat_cov[N_HOME_PLANET_TYPES][N_SECTOR_TYPES];
 
-#define STATUS_ENROLLED -2
-#define STATUS_UNENROLLABLE -1
-#define STATUS_UNBALANCED 0
-#define STATUS_BALANCED 1
+enum class EnrollmentStatus {
+  ENROLLED = -2,
+  UNENROLLABLE = -1,
+  UNBALANCED = 0,
+  BALANCED = 1,
+};
 
 /**************
  * Structure for holding information about a race.
@@ -176,8 +180,8 @@ struct x {
   char filename[64];
   char name[64];
   char password[64];
-  char rejection[256]; /* Error if this is non-"" */
-  char status;
+  std::string rejection; /* Error if this is non-"" */
+  EnrollmentStatus status{EnrollmentStatus::UNBALANCED};
 
   std::array<double, N_ATTRIBUTES> attr{};
   int race_type;

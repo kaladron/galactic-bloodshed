@@ -343,8 +343,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
           } else {
             /* find a place on the planet to land */
             bool found = false;
-            for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
-              Sector& sect = sector_wrap;
+            for (Sector& sect : smap.shuffle()) {
               if (sect.get_resource() == 0) continue;
               found = true;
               ship.docked() = 1;

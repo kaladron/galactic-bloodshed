@@ -87,6 +87,17 @@ void order_VN(EntityManager& em, Ship& ship) {
 }
 }  // namespace
 
+std::optional<player_t>
+select_victim_to_steal_from(const Planet& planet,
+                            std::span<const player_t> race_order) {
+  for (player_t candidate : race_order) {
+    if (planet.info(candidate).resource > 0) {
+      return candidate;
+    }
+  }
+  return std::nullopt;
+}
+
 /*  do_VN() -- called by doship() */
 void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   if (!landed(ship)) {
@@ -123,26 +134,22 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
      we are engaged in building up resources/fuel. */
   /* steal resources from other players */
   /* permute list of people to steal from */
-  std::array<player_t, MAXPLAYERS + 1> nums;
-  for (int i = 1; i <= em.num_races().value; i++)
-    nums[i] = player_t{i};
-  for (int i = 1; i <= em.num_races().value; i++) {
-    int f = int_rand(1, em.num_races().value);
-    std::swap(nums[i], nums[f]);
+  auto candidate_ids = shuffled_indices(1, em.num_races().value + 1);
+  std::vector<player_t> race_order;
+  race_order.reserve(candidate_ids.size());
+  for (int id : candidate_ids) {
+    race_order.push_back(player_t{id});
   }
 
   auto planet_handle = em.get_planet(ship.storbits(), ship.pnumorbits());
 
   // Loop through permuted vector until someone has resources on
   // this planet to steal
-
-  player_t f = 0;
-  for (player_t i = 1; i <= em.num_races(); i++)
-    if (planet_handle->info(player_t{nums[i.value]}).resource)
-      f = player_t{nums[i.value]};
+  auto victim = select_victim_to_steal_from(*planet_handle, race_order);
 
   // No resources to steal
-  if (f == 0) return;
+  if (!victim) return;
+  player_t f = *victim;
 
   // Steal the resources
 

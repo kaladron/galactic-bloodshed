@@ -437,6 +437,10 @@ add_executable(berserker_bombard_test berserker_bombard_test.cc)
 target_link_libraries(berserker_bombard_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_berserker_bombard_test COMMAND berserker_bombard_test)
 
+add_executable(vn_steal_test vn_steal_test.cc)
+target_link_libraries(vn_steal_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_vn_steal_test COMMAND vn_steal_test)
+
 add_executable(json_store_test dal/json_store_test.cc)
 target_link_libraries(json_store_test PRIVATE dallib)
 add_test(NAME GB_json_store_test COMMAND json_store_test)

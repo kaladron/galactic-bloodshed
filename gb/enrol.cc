@@ -8,6 +8,8 @@ import dallib;
 import scnlib;
 #undef stdout
 
+#include "gb/enroll.h"
+
 namespace GB::enrol {
 
 struct stype {
@@ -54,9 +56,6 @@ int main() {
   int pnum = 0;
   int star = 0;
   int found = 0;
-  int check;
-  int vacant;
-  int count;
   int i;
   int j;
   player_t Playernum;
@@ -146,50 +145,15 @@ int main() {
                  static_cast<int>(ppref));
 
     /* find first planet of right type */
-    count = 0;
     found = 0;
 
-    for (star = 0; star < Sdata.numstars && !found && count < 100;) {
-      const auto* star_ptr = entity_manager.peek_star(star);
-      if (!star_ptr) {
-        count++;
-        star = int_rand(0, Sdata.numstars - 1);
-        continue;
-      }
-
-      check = 1;
-      /* skip over inhabited stars - or stars with just one planet! */
-      if (star_ptr->inhabited() != 0 || star_ptr->numplanets() < 2) check = 0;
-
-      /* look for uninhabited planets */
-      if (check) {
-        pnum = 0;
-        while (!found && pnum < star_ptr->numplanets()) {
-          const auto* planet_ptr = entity_manager.peek_planet(star, pnum);
-          if (!planet_ptr) {
-            pnum++;
-            continue;
-          }
-
-          if (planet_ptr->type() == ppref && star_ptr->numplanets() != 1) {
-            vacant = 1;
-            for (i = 1; i <= Playernum; i++)
-              if (planet_ptr->info(player_t{i}).numsectsowned) vacant = 0;
-            if (vacant && planet_ptr->conditions(RTEMP) >= -50 &&
-                planet_ptr->conditions(RTEMP) <= 50) {
-              found = 1;
-            }
-          }
-          if (!found) {
-            pnum++;
-          }
-        }
-      }
-
-      if (!found) {
-        count++;
-        star = int_rand(0, Sdata.numstars - 1);
-      }
+    auto cand_stars = shuffled_indices(Sdata.numstars);
+    auto found_loc = find_suitable_enrol_planet(
+        entity_manager, Sdata.numstars, Playernum.value, ppref, cand_stars);
+    if (found_loc) {
+      star = found_loc->first;
+      pnum = found_loc->second;
+      found = 1;
     }
 
     if (!found) {
@@ -318,8 +282,7 @@ int main() {
                "\nChoose a primary sector preference. This race will prefer to "
                "live\non this type of sector.");
 
-  for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
-    Sector& sector = sector_wrap;
+  for (Sector& sector : smap.shuffle()) {
     secttypes[sector.get_condition()].count++;
     if (!secttypes[sector.get_condition()].here) {
       secttypes[sector.get_condition()].here = true;

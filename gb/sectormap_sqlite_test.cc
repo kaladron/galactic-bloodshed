@@ -226,6 +226,76 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   std::println(std::cout, "  Planet isolation: PASSED");
 }
 
+void test_sectormap_random_and_shuffle() {
+  std::println(std::cout, "=== Testing SectorMap shuffle and get_random ===");
+
+  Planet test_planet{PlanetType::EARTH};
+  test_planet.star_id() = 1;
+  test_planet.planet_order() = 0;
+  test_planet.Maxx() = 5;
+  test_planet.Maxy() = 4;
+
+  SectorMap smap(test_planet, true);
+  populate_sectormap(smap, test_planet, 10, 100);
+
+  // 1. Test deterministic shuffle using explicit engine seed (collecting
+  // Sector& view results)
+  std::mt19937 mock_rng1(42);
+  std::mt19937 mock_rng2(42);
+
+  std::vector<std::pair<int, int>> coords1;
+  for (Sector& s : smap.shuffle(mock_rng1)) {
+    coords1.push_back({s.get_x(), s.get_y()});
+  }
+
+  std::vector<std::pair<int, int>> coords2;
+  for (Sector& s : smap.shuffle(mock_rng2)) {
+    coords2.push_back({s.get_x(), s.get_y()});
+  }
+
+  assert(coords1.size() == 20);
+  assert(coords2.size() == 20);
+  assert(coords1 == coords2);
+
+  // Verify all sectors are present without duplicates in shuffled output
+  std::set<std::pair<int, int>> unique_coords(coords1.begin(), coords1.end());
+  assert(unique_coords.size() == 20);
+
+  // 2. Verify direct mutation through the returned Sector& view references
+  for (Sector& s : smap.shuffle(mock_rng1)) {
+    s.set_fert(99);
+  }
+  for (int x = 0; x < 5; ++x) {
+    for (int y = 0; y < 4; ++y) {
+      assert(smap.get(x, y).get_fert() == 99);
+    }
+  }
+
+  // 3. Test get_random with deterministic mock engine
+  std::mt19937 mock_rng3(999);
+  auto& rand_sector = smap.get_random(mock_rng3);
+  assert(rand_sector.get_x() >= 0 && rand_sector.get_x() < 5);
+  assert(rand_sector.get_y() >= 0 && rand_sector.get_y() < 4);
+
+  // 4. Test production game_rng() integration with seed_rand
+  seed_rand(12345);
+  std::vector<std::pair<int, int>> prod_coords1;
+  for (Sector& s : smap.shuffle()) {
+    prod_coords1.push_back({s.get_x(), s.get_y()});
+  }
+
+  seed_rand(12345);
+  std::vector<std::pair<int, int>> prod_coords2;
+  for (Sector& s : smap.shuffle()) {
+    prod_coords2.push_back({s.get_x(), s.get_y()});
+  }
+
+  assert(prod_coords1.size() == 20);
+  assert(prod_coords1 == prod_coords2);
+
+  std::println(std::cout, "  SectorMap shuffle and get_random: PASSED");
+}
+
 int main() {
   // CRITICAL: Always create in-memory database BEFORE calling
   // initialize_schema()
@@ -240,6 +310,7 @@ int main() {
   // Run all tests
   test_entitymanager_sectormap(em, db);
   test_multiple_planets_isolation(em, db);
+  test_sectormap_random_and_shuffle();
 
   std::println(std::cout, "\nAll SectorMap tests passed!");
   return 0;

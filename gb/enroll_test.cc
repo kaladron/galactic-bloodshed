@@ -6,6 +6,7 @@ import gblib;
 
 #include <cassert>
 
+#include "gb/enroll.h"
 #include "gb/racegen.h"
 
 int enroll_valid_race(Database& db);
@@ -125,10 +126,99 @@ void test_enroll_no_free_planet_type() {
   std::println(std::cout, "  ✓ No free home planet type rejection passed");
 }
 
+void test_find_suitable_enrol_planet() {
+  std::println(std::cout,
+               "Test: Deterministic find_suitable_enrol_planet exact search");
+
+  Database db(":memory:");
+  initialize_schema(db);
+  JsonStore store(db);
+  EntityManager em(db);
+
+  StarRepository star_repo(store);
+  PlanetRepository planet_repo(store);
+
+  // Setup multiple stars:
+  // Star 0: Inhabited -> skip
+  star_struct ss0{};
+  ss0.star_id = 0;
+  ss0.inhabited = 1;
+  ss0.pnames = {"P1", "P2"};
+  Star star0(ss0);
+  star_repo.save(star0);
+
+  // Star 1: Only 1 planet -> skip
+  star_struct ss1{};
+  ss1.star_id = 1;
+  ss1.inhabited = 0;
+  ss1.pnames = {"P1"};
+  Star star1(ss1);
+  star_repo.save(star1);
+
+  // Star 2: 2 planets, candidate Earth planet at pnum 1 (valid)
+  star_struct ss2{};
+  ss2.star_id = 2;
+  ss2.inhabited = 0;
+  ss2.pnames = {"P1", "P2"};
+  Star star2(ss2);
+  star_repo.save(star2);
+
+  Planet p2_0{PlanetType::MARS};
+  p2_0.star_id() = 2;
+  p2_0.planet_order() = 0;
+  planet_repo.save(p2_0);
+
+  Planet p2_1{PlanetType::EARTH};
+  p2_1.star_id() = 2;
+  p2_1.planet_order() = 1;
+  p2_1.conditions(RTEMP) = 20;
+  planet_repo.save(p2_1);
+
+  // Star 3: 2 planets, candidate Earth planet at pnum 0 (valid)
+  star_struct ss3{};
+  ss3.star_id = 3;
+  ss3.inhabited = 0;
+  ss3.pnames = {"P1", "P2"};
+  Star star3(ss3);
+  star_repo.save(star3);
+
+  Planet p3_0{PlanetType::EARTH};
+  p3_0.star_id() = 3;
+  p3_0.planet_order() = 0;
+  p3_0.conditions(RTEMP) = 15;
+  planet_repo.save(p3_0);
+
+  Planet p3_1{PlanetType::MARS};
+  p3_1.star_id() = 3;
+  p3_1.planet_order() = 1;
+  planet_repo.save(p3_1);
+
+  // Test 1: Given order [0, 1, 3, 2], should skip 0 and 1, and select Star 3
+  // (first valid candidate in order)
+  std::vector<int> order1 = {0, 1, 3, 2};
+  auto res1 = find_suitable_enrol_planet(em, 4, 1, PlanetType::EARTH, order1);
+  assert(res1.has_value());
+  assert(res1->first == 3 && res1->second == 0);
+
+  // Test 2: Given order [0, 1, 2, 3], should skip 0 and 1, and select Star 2
+  // (first valid candidate in order)
+  std::vector<int> order2 = {0, 1, 2, 3};
+  auto res2 = find_suitable_enrol_planet(em, 4, 1, PlanetType::EARTH, order2);
+  assert(res2.has_value());
+  assert(res2->first == 2 && res2->second == 1);
+
+  // Test 3: Looking for DESERT -> no matching planet -> returns std::nullopt
+  auto res3 = find_suitable_enrol_planet(em, 4, 1, PlanetType::DESERT, order2);
+  assert(!res3.has_value());
+
+  std::println(std::cout, "  ✓ find_suitable_enrol_planet exact search passed");
+}
+
 int main() {
   test_enroll_first_race_god_requirement();
   test_enroll_max_players();
   test_enroll_no_free_planet_type();
+  test_find_suitable_enrol_planet();
 
   std::println(std::cout, "\n✅ All enroll tests passed!");
   return 0;

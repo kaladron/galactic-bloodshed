@@ -59,8 +59,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   std::optional<Coordinates> war_target;
   std::optional<Coordinates> fallback_target;
 
-  for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
-    Sector& sect = sector_wrap;
+  for (Sector& sect : smap.shuffle()) {
     if (sect.get_owner() != 0 && sect.get_owner() != ship.owner() &&
         (sect.get_condition() != SectorType::SEC_WASTED)) {
       if (isset(r.atwar, sect.get_owner()) ||

@@ -205,6 +205,76 @@ void test_doplanet_full_cycle() {
   assert(planet.info(player_t{1}).numsectsowned == 100);
 }
 
+void test_exploration_island_discovery() {
+  seed_rand(123);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.likesbest = SectorType::SEC_LAND;
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.expltimer() = 0;  // Trigger exploration check this cycle
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  SectorMap initial_smap(planet, true);
+  for (int y = 0; y < 10; y++) {
+    for (int x = 0; x < 10; x++) {
+      auto& s = initial_smap.get(x, y);
+      s.set_x(x);
+      s.set_y(y);
+      s.set_owner(0);
+      s.clear_popn();
+      s.set_condition(SectorType::SEC_SEA);
+    }
+  }
+
+  // Player 1 owns one sector at (0, 0)
+  auto& s_owned = initial_smap.get(0, 0);
+  s_owned.set_owner(1);
+  s_owned.set_popn_exact(100);
+  s_owned.set_condition(SectorType::SEC_LAND);
+
+  // Set up multiple vacant eligible candidate island sectors that have been
+  // explored by player 1
+  for (int x = 1; x <= 4; ++x) {
+    auto& cand = initial_smap.get(x, 0);
+    cand.set_condition(SectorType::SEC_LAND);
+  }
+
+  SectorRepository sectors(store);
+  sectors.save_map(initial_smap);
+
+  TurnStats stats{};
+  stats.Compat[0] = 1.0;
+  // Mark candidate sectors as already explored by player 1
+  for (int x = 1; x <= 4; ++x) {
+    stats.Sectinfo[x][0].explored = player_t{1};
+  }
+
+  int result = doplanet(em, star, planet, stats);
+  assert(result != 0);
+
+  // Verify that an island was claimed (stats.Claims == true)
+  assert(stats.Claims == true);
+  assert(stats.tot_captured == 1);
+
+  // Verify that EXACTLY 1 additional sector was claimed (1 owned + 1 new island
+  // = 2 total), proving that iteration stopped after claiming the first island
+  assert(planet.info(player_t{1}).numsectsowned == 2);
+}
+
 }  // namespace
 
 int main() noexcept {
@@ -225,6 +295,10 @@ int main() noexcept {
 
     std::cout << "  Testing doplanet full cycle... ";
     test_doplanet_full_cycle();
+    std::cout << "PASS\n";
+
+    std::cout << "  Testing exploration island discovery... ";
+    test_exploration_island_discovery();
     std::cout << "PASS\n";
 
     std::cout << "All doplanet tests passed!\n";

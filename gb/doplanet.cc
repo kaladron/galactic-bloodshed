@@ -511,8 +511,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       planet.conditions(RTEMP) +
       stats.Stinfo[starnum.value][planetnum.value].temp_add + int_rand(-5, 5);
 
-  for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
-    Sector& p = sector_wrap;
+  for (Sector& p : smap.shuffle()) {
     if (p.get_owner() != 0 && (p.get_popn() || p.get_troops())) {
       allmod = 1;
       if (!star.nova_stage()) {
@@ -595,9 +594,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         while (!stats.Claims && !allexp && timer > 0) {
           timer -= 1;
           o = 1;
-          for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
-            if (stats.Claims) break;
-            Sector& p = sector_wrap;
+          for (Sector& p : smap.shuffle()) {
             /* find out if all sectors have been explored */
             o &= (stats.Sectinfo[p.get_x()][p.get_y()].explored != player_t{0});
             const auto* explore_race = entity_manager.peek_race(i);
@@ -611,8 +608,10 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               p.set_popn_exact(explore_race->number_sexes);
               p.set_owner(i);
               stats.tot_captured = 1;
-            } else
+              break;
+            } else {
               explore(planet, p, p.get_x(), p.get_y(), i, stats);
+            }
           }
           allexp |= o; /* all sectors explored for this player */
         }
@@ -715,8 +714,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     planet.info(i).troops = 0;
   }
 
-  for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
-    Sector& p = sector_wrap;
+  for (Sector& p : smap.shuffle()) {
     if (p.get_owner() != 0) {
       planet.info(p.get_owner()).numsectsowned++;
       planet.info(p.get_owner()).troops += p.get_troops();
@@ -769,8 +767,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         }
       }
       /* now nuke all sectors belonging to former master */
-      for (auto shuffled = smap.shuffle(); auto& sector_wrap : shuffled) {
-        Sector& p = sector_wrap;
+      for (Sector& p : smap.shuffle()) {
         if (stats.Stinfo[starnum.value][planetnum.value].intimidated &&
             success(50)) {
           if (p.get_owner() == planet.slaved_to()) {

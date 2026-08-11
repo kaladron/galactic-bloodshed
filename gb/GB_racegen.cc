@@ -147,8 +147,7 @@ found_planet:
   auto& smap = *smap_handle;
 
   Sector& sect = [&]() -> Sector& {
-    for (auto shuffled = smap.shuffle(); const auto& sector_wrap : shuffled) {
-      Sector& current_sect = sector_wrap.get();
+    for (Sector& current_sect : smap.shuffle()) {
       if (current_sect.get_condition() == race.likesbest) {
         return current_sect;
       }

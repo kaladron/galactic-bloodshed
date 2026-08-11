@@ -437,10 +437,27 @@ public:
   [[nodiscard]] int get_maxy() const {
     return maxy_;
   }
+  template <typename URBG>
+  Sector& get_random(URBG& g) {
+    std::uniform_int_distribution<int> dis_x(0, maxx_ - 1);
+    std::uniform_int_distribution<int> dis_y(0, maxy_ - 1);
+    return get(dis_x(g), dis_y(g));
+  }
   Sector& get_random();
-  // TODO(jeffbailey): Don't expose the underlying vector.
-  std::vector<std::reference_wrapper<Sector>>
-  shuffle();  /// Randomizes the order of the SectorMap.
+
+  template <typename URBG>
+  [[nodiscard]] auto shuffle(URBG& g) {
+    std::vector<std::size_t> indices(grid_.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::ranges::shuffle(indices, g);
+
+    return std::views::all(std::move(indices)) |
+           std::views::transform(
+               [this](std::size_t idx) -> Sector& { return grid_[idx]; });
+  }
+  [[nodiscard]] auto shuffle() {
+    return shuffle(game_rng());
+  }  /// Randomizes the order of the SectorMap.
 
   SectorMap(SectorMap&) = delete;
   ~SectorMap() = default;

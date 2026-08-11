@@ -50,7 +50,6 @@ static int star_list[1000];
 
 static int ReadNameList(std::array<std::array<char, 20>, 1000>& ss, int n,
                         int m, const char* filename);
-static void rand_list(int n, int* list);
 
 // TODO(jeffbailey): This should be syncd with the ones in GB_server.h:
 static const char* Nametypes[] = {"Earth",   "Asteroid", "Airless",
@@ -132,41 +131,25 @@ out:
   return i;
 }
 
-static void rand_list(int n, int* list) /* mix up the numbers 0 thru n */
-{
-  short nums[1000];
-  short k;
-  short kk;
-  short ii;
+void set_planet_list_permutation(const std::vector<int>& indices) {
+  int copy_len = std::min<int>(indices.size(), 1000);
+  for (int i = 0; i < copy_len; ++i) {
+    planet_list[i] = indices[i];
+  }
+}
 
-  for (int i = 0; i <= n; i++)
-    nums[i] = 0;
-  for (int j = 0; j <= n; j++) {
-    int i = k = int_rand(0, n);
-    while (nums[k] != 0)
-      k += nums[k];
-    list[j] = k;
-    if (k == n) {
-      nums[k] = -n;
-      kk = 0;
-    } else {
-      nums[k] = 1;
-      kk = k + 1;
-    }
-    /* K is now the next position in the list after the most recent number. */
-    /* Go through the list, making each pointer point to k.  */
-    while (i != k) {
-      ii = i + nums[i];
-      nums[i] = kk - i;
-      i = ii;
-    }
+void set_star_list_permutation(const std::vector<int>& indices) {
+  int copy_len = std::min<int>(indices.size(), 1000);
+  for (int i = 0; i < copy_len; ++i) {
+    star_list[i] = indices[i];
   }
 }
 
 void Makeplanet_init() {
   numplist = ReadNameList(planet_names, 1000, 20, PLANETLIST);
-  rand_list(numplist, planet_list);
   if (numplist < 0) std::exit(0);
+  auto shuffled = shuffled_indices(numplist + 1);
+  set_planet_list_permutation(shuffled);
   namepcount = 0;
 }
 
@@ -181,8 +164,9 @@ static const char* NextPlanetName(int i) {
 
 void Makestar_init() {
   numslist = ReadNameList(star_names, 1000, 20, STARLIST);
-  rand_list(numslist, star_list);
   if (numslist < 0) std::exit(0);
+  auto shuffled = shuffled_indices(numslist + 1);
+  set_star_list_permutation(shuffled);
   namestcount = 0;
 }
 

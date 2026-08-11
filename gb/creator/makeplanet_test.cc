@@ -77,9 +77,29 @@ void test_makeplanet_types() {
   }
 }
 
+void test_permutation_setters() {
+  std::println(
+      std::cout,
+      "Test: set_planet_list_permutation and set_star_list_permutation");
+
+  std::vector<int> perm = {3, 1, 0, 2};
+  set_planet_list_permutation(perm);
+  set_star_list_permutation(perm);
+
+  // Test that shuffled_indices generates complete permutation
+  auto rand_perm = shuffled_indices(10);
+  assert(rand_perm.size() == 10);
+  std::set<int> seen(rand_perm.begin(), rand_perm.end());
+  assert(seen.size() == 10);
+
+  std::println(std::cout,
+               "  ✓ Permutation setters and shuffled_indices passed");
+}
+
 int main() {
   test_temperature_calculation();
   test_makeplanet_types();
+  test_permutation_setters();
 
   std::println(std::cout, "\n✅ All makeplanet tests passed!");
   return 0;

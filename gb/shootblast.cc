@@ -120,12 +120,11 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   return std::make_tuple(damage, short_msg, long_msg);
 }
 
-int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
-                         int strength, char* long_msg, char* short_msg) {
-  if (strength <= 0) return -1;
-  if (!ship.alive()) return -1;
-
-  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return -1;
+std::optional<std::tuple<int, std::string, std::string>>
+shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship, int strength) {
+  if (strength <= 0) return std::nullopt;
+  if (!ship.alive()) return std::nullopt;
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return std::nullopt;
 
   auto [evade, speed, body] = ship_disposition(ship);
 
@@ -136,46 +135,32 @@ int shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
   auto [damage, damage_msg] =
       do_damage(em, race.Playernum, ship, race.tech, strength, hits, 0,
                 GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
-  std::sprintf(short_msg, "%s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
-               race.Playernum.value, ship.alive() ? "attacked" : "DESTROYED",
-               std::format("{}", ship).c_str());
-  std::strcpy(long_msg, short_msg);
-  std::strcat(long_msg, damage_msg.c_str());
 
-  return damage;
+  std::string short_msg = std::format(
+      "{} [{}] {} {}\n", dispshiploc(em, ship), race.Playernum.value,
+      ship.alive() ? "attacked" : "DESTROYED", ship);
+  std::string long_msg = short_msg + damage_msg;
+
+  return std::make_tuple(damage, short_msg, long_msg);
 }
 
 /**
  * @return Result containing number of sectors destroyed and which players were
  * hit.
  */
-ShootToPlanetResult
+std::optional<
+    std::tuple<int, std::array<char, MAXPLAYERS>, std::string, std::string>>
 shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
                      int strength, Coordinates target_sector, SectorMap& smap,
-                     int ignore, int caliber, char* long_msg, char* short_msg) {
-  ShootToPlanetResult result;
+                     int ignore, int caliber) {
+  if (strength <= 0) return std::nullopt;
+  if (!(ship.alive() || ignore)) return std::nullopt;
+  if (has_switch(ship) && !ship.on()) return std::nullopt;
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return std::nullopt;
+  if (!pl.is_valid(target_sector)) return std::nullopt;
 
-  if (strength <= 0) {
-    result.numdest = -1;
-    return result;
-  }
-  if (!(ship.alive() || ignore)) {
-    result.numdest = -1;
-    return result;
-  }
-  if (has_switch(ship) && !ship.on()) {
-    result.numdest = -1;
-    return result;
-  }
-  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    result.numdest = -1;
-    return result;
-  }
-
-  if (!pl.is_valid(target_sector)) {
-    result.numdest = -1;
-    return result;
-  }
+  int numdest{0};
+  std::array<char, MAXPLAYERS> nuked{};
 
   double r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
@@ -242,7 +227,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 
         if (round_rand(fac) >
             Defensedata[s.get_condition()] * int_rand(0, 10)) {
-          if (s.get_owner() != 0) result.nuked[s.get_owner().value - 1] = 1;
+          if (s.get_owner() != 0) nuked[s.get_owner().value - 1] = 1;
           s.clear_popn();
           s.set_troops(int_rand(0, (int)s.get_troops()));
           if (!s.get_troops()) /* troops may survive this */
@@ -253,7 +238,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
           s.set_fert(0); /*all is lost !*/
           s.set_crystals(int_rand(0, (int)s.get_crystals()));
           s.set_condition(SectorType::SEC_WASTED);
-          result.numdest++;
+          numdest++;
         } else {
           s.set_fert(std::max(0, (int)s.get_fert() - (int)fac));
           s.degrade_efficiency(std::lround(fac));
@@ -273,17 +258,14 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   }
 
   /* planet toxicity goes up a bit */
-  pl.conditions(TOXIC) +=
-      (100 - pl.conditions(TOXIC)) *
-      ((double)result.numdest / (double)(pl.Maxx() * pl.Maxy()));
+  pl.conditions(TOXIC) += (100 - pl.conditions(TOXIC)) *
+                          ((double)numdest / (double)(pl.Maxx() * pl.Maxy()));
 
-  std::sprintf(short_msg, "%s bombards %s [%d]\n",
-               std::format("{}", ship).c_str(), dispshiploc(em, ship).c_str(),
-               oldowner.value);
-  std::strcpy(long_msg, short_msg);
-  std::string msg = std::format("\t{} sectors destroyed\n", result.numdest);
-  std::strcat(long_msg, msg.c_str());
-  return result;
+  std::string short_msg = std::format("{} bombards {} [{}]\n", ship,
+                                      dispshiploc(em, ship), oldowner.value);
+  std::string long_msg =
+      short_msg + std::format("\t{} sectors destroyed\n", numdest);
+  return std::make_tuple(numdest, nuked, short_msg, long_msg);
 }
 
 static std::pair<int, std::string> do_radiation(Ship& ship, double tech,

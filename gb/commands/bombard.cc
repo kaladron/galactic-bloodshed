@@ -113,38 +113,37 @@ void bombard(const command_t& argv, GameObj& g) {
       continue;
     }
     SectorMap& smap = *smap_handle;
-    char long_buf[1024], short_buf[256];
-    auto result =
-        shoot_ship_to_planet(g.entity_manager, from, p, strength, target_coords,
-                             smap, 0, 0, long_buf, short_buf);
+    auto opt_result = shoot_ship_to_planet(g.entity_manager, from, p, strength,
+                                           target_coords, smap, 0, 0);
 
-    if (result.numdest < 0) {
+    if (!opt_result) {
       g.out << "Illegal attack.\n";
       continue;
     }
+    auto [numdest, nuked, short_msg, long_msg] = *opt_result;
 
     if (laser_on(from))
       use_fuel(from, 2.0 * (double)strength);
     else
       use_destruct(from, strength);
 
-    post(g.entity_manager, short_buf, NewsType::COMBAT);
+    post(g.entity_manager, short_msg, NewsType::COMBAT);
     notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-                from.storbits(), short_buf);
+                from.storbits(), short_msg);
     for (auto i = 1; i <= g.entity_manager.num_races(); i++) {
-      if (result.nuked[i - 1]) {
+      if (nuked[i - 1]) {
         const auto* star = g.entity_manager.peek_star(from.storbits());
         warn_player(g.session_registry, g.entity_manager, i, star->governor(i),
-                    long_buf);
+                    long_msg);
       }
     }
-    g.out << long_buf;
+    g.out << long_msg;
 
     if (DEFENSE) {
       /* planet retaliates - AFVs are immune to this */
-      if (result.numdest && from.type() != ShipType::OTYPE_AFV) {
+      if (numdest && from.type() != ShipType::OTYPE_AFV) {
         for (player_t i = 1; i <= g.entity_manager.num_races(); i++)
-          if (result.nuked[i.value - 1] && p.slaved_to() == 0) {
+          if (nuked[i.value - 1] && p.slaved_to() == 0) {
             /* add planet defense strength */
             auto alien_handle = g.entity_manager.get_race(i);
             if (!alien_handle.get()) continue;
@@ -154,23 +153,25 @@ void bombard(const command_t& argv, GameObj& g) {
 
             p.info(i).destruct -= strength;
 
-            shoot_planet_to_ship(g.entity_manager, alien, from, strength,
-                                 long_buf, short_buf);
-            const auto* star = g.entity_manager.peek_star(from.storbits());
-            warn_player(g.session_registry, g.entity_manager, i,
-                        star->governor(i), long_buf);
-            g.out << long_buf;
-            if (!from.alive())
-              post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.session_registry, g.entity_manager, Playernum,
-                        Governor, from.storbits(), short_buf);
+            if (auto p2s_opt = shoot_planet_to_ship(g.entity_manager, alien,
+                                                    from, strength)) {
+              auto [p_damage, p_short, p_long] = *p2s_opt;
+              const auto* star = g.entity_manager.peek_star(from.storbits());
+              warn_player(g.session_registry, g.entity_manager, i,
+                          star->governor(i), p_long);
+              g.out << p_long;
+              if (!from.alive())
+                post(g.entity_manager, p_short, NewsType::COMBAT);
+              notify_star(g.session_registry, g.entity_manager, Playernum,
+                          Governor, from.storbits(), p_short);
+            }
           }
       }
     }
 
     /* protecting ships retaliate individually if damage was inflicted */
     /* AFVs are immune to this */
-    if (result.numdest && from.alive() && from.type() != ShipType::OTYPE_AFV) {
+    if (numdest && from.alive() && from.type() != ShipType::OTYPE_AFV) {
       ShipList shiplist(g.entity_manager, p.ships());
       for (auto ship_handle : shiplist) {
         Ship& ship = *ship_handle;

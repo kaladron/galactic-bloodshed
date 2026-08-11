@@ -254,15 +254,16 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
           /* attack the landing ship */
           strength = MIN((int)p.info(i).guns, (int)p.info(i).destruct);
           if (strength) {
-            char long_buf[1024], short_buf[256];
-            shoot_planet_to_ship(g.entity_manager, alien, s, strength, long_buf,
-                                 short_buf);
-            post(g.entity_manager, short_buf, NewsType::COMBAT);
-            notify_star(g.session_registry, g.entity_manager, 0, 0,
-                        s.storbits(), short_buf);
-            warn_player(g.session_registry, g.entity_manager, i,
-                        star->governor(i), long_buf);
-            g.session_registry.notify_player(s.owner(), s.governor(), long_buf);
+            if (auto p2s_opt = shoot_planet_to_ship(g.entity_manager, alien, s,
+                                                    strength)) {
+              auto [p_damage, p_short, p_long] = *p2s_opt;
+              post(g.entity_manager, p_short, NewsType::COMBAT);
+              notify_star(g.session_registry, g.entity_manager, 0, 0,
+                          s.storbits(), p_short);
+              warn_player(g.session_registry, g.entity_manager, i,
+                          star->governor(i), p_long);
+              g.session_registry.notify_player(s.owner(), s.governor(), p_long);
+            }
             p.info(i).destruct -= strength;
           }
         }
@@ -278,11 +279,10 @@ void land_planet(const command_t& argv, GameObj& g, Ship& s, ap_t APcount) {
     auto smap_handle =
         g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
     auto& smap = *smap_handle;
-    char long_buf[1024], short_buf[256];
-    auto result = shoot_ship_to_planet(
+    auto result_opt = shoot_ship_to_planet(
         g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.),
-        target_coords, smap, 0, GTYPE_HEAVY, long_buf, short_buf);
-    numdest = result.numdest;
+        target_coords, smap, 0, GTYPE_HEAVY);
+    numdest = result_opt ? std::get<0>(*result_opt) : 0;
     auto buf =
         std::format("BOOM!! {} crashes on sector {} with blast radius of {}.\n",
                     s, target_coords, numdest);

@@ -113,16 +113,17 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   ship.destruct() -= str;
   ship.mass() -= str * MASS_DESTRUCT;
 
-  char long_buf[1024], short_buf[256];
-  auto result = shoot_ship_to_planet(entity_manager, ship, planet, str, *target,
-                                     smap, 0, 0, long_buf, short_buf);
+  auto opt_result = shoot_ship_to_planet(entity_manager, ship, planet, str,
+                                         *target, smap, 0, 0);
+  if (!opt_result) return 0;
+  auto [raw_numdest, nuked, short_msg, long_msg] = *opt_result;
   /* (0=dont get smap) */
-  auto numdest = std::max(result.numdest, 0);
+  auto numdest = std::max(raw_numdest, 0);
 
   /* tell the bombarding player about it.. */
   std::stringstream telegram_report;
   telegram_report << std::format("REPORT from ship #{}\n\n", ship.number());
-  telegram_report << short_buf;
+  telegram_report << short_msg;
   telegram_report << std::format(
       "sector {} (owner {}). {} sectors destroyed.\n", *target, oldown,
       numdest);
@@ -138,7 +139,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
       Shipltrs[ship.type()], ship.number(), ship.name(), *target, numdest);
 
   for (player_t i = 1; i <= entity_manager.num_races(); i++)
-    if (result.nuked[i.value - 1] && i != ship.owner())
+    if (nuked[i.value - 1] && i != ship.owner())
       push_telegram(entity_manager, i, star->governor(i), telegram_alert.str());
 
   std::string combatpost =

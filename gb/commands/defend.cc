@@ -141,22 +141,21 @@ void defend(const command_t& argv, GameObj& g) {
   }
   auto& race = *race_handle;
 
-  char long_buf[1024], short_buf[256];
-  damage = shoot_planet_to_ship(g.entity_manager, race, *to, strength, long_buf,
-                                short_buf);
-
-  if (damage < 0) {
+  auto p2s_opt = shoot_planet_to_ship(g.entity_manager, race, *to, strength);
+  if (!p2s_opt) {
     g.out << std::format("Target out of range  {}!\n", SYSTEMSIZE);
     return;
   }
+  auto [p_damage, p_short, p_long] = *p2s_opt;
+  damage = p_damage;
 
   p.info(Playernum).destruct -= strength;
-  if (!to->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
+  if (!to->alive()) post(g.entity_manager, p_short, NewsType::COMBAT);
   notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-              to->storbits(), short_buf);
+              to->storbits(), p_short);
   warn_player(g.session_registry, g.entity_manager, to->owner(), to->governor(),
-              long_buf);
-  g.out << long_buf;
+              p_long);
+  g.out << p_long;
 
   /* defending ship retaliates */
 
@@ -169,21 +168,20 @@ void defend(const command_t& argv, GameObj& g) {
     strength = retal;
     if (laser_on(*to)) check_overload(g.entity_manager, *to, 0, &strength);
 
-    auto result =
-        shoot_ship_to_planet(g.entity_manager, *to, p, strength, sector_coords,
-                             smap, 0, 0, long_buf, short_buf);
-    if (result.numdest < 0) {
+    if (auto result_opt = shoot_ship_to_planet(
+            g.entity_manager, *to, p, strength, sector_coords, smap, 0, 0)) {
+      auto [_, __, short_msg, long_msg] = *result_opt;
       if (laser_on(*to))
         use_fuel(*to, 2.0 * (double)strength);
       else
         use_destruct(*to, strength);
 
-      post(g.entity_manager, short_buf, NewsType::COMBAT);
+      post(g.entity_manager, short_msg, NewsType::COMBAT);
       notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-                  to->storbits(), short_buf);
-      g.out << long_buf;
+                  to->storbits(), short_msg);
+      g.out << long_msg;
       warn_player(g.session_registry, g.entity_manager, to->owner(),
-                  to->governor(), long_buf);
+                  to->governor(), long_msg);
     }
   }
 
@@ -198,10 +196,10 @@ void defend(const command_t& argv, GameObj& g) {
           check_overload(g.entity_manager, const_cast<Ship&>(*ship), 0,
                          &strength);
 
-        auto result2 = shoot_ship_to_planet(g.entity_manager, *ship, p,
-                                            strength, sector_coords, smap, 0, 0,
-                                            long_buf, short_buf);
-        if (result2.numdest >= 0) {
+        if (auto result2_opt =
+                shoot_ship_to_planet(g.entity_manager, *ship, p, strength,
+                                     sector_coords, smap, 0, 0)) {
+          auto [_, __, short_msg2, long_msg2] = *result2_opt;
           auto ship_mut_handle = g.entity_manager.get_ship(ship->number());
           if (!ship_mut_handle.get()) {
             continue;
@@ -211,12 +209,12 @@ void defend(const command_t& argv, GameObj& g) {
             use_fuel(ship_mut, 2.0 * (double)strength);
           else
             use_destruct(ship_mut, strength);
-          post(g.entity_manager, short_buf, NewsType::COMBAT);
+          post(g.entity_manager, short_msg2, NewsType::COMBAT);
           notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-                      ship->storbits(), short_buf);
-          g.out << long_buf;
+                      ship->storbits(), short_msg2);
+          g.out << long_msg2;
           warn_player(g.session_registry, g.entity_manager, ship->owner(),
-                      ship->governor(), long_buf);
+                      ship->governor(), long_msg2);
         }
       }
     }

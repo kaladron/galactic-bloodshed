@@ -90,19 +90,20 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
         const auto* star = g.entity_manager.peek_star(ship.storbits());
         while ((civ + mil) > 0 && retal_strength(ship)) {
           oldgov = star->governor(alien_ptr->Playernum);
-          char long_buf[1024], short_buf[256];
-          mech_attack_people(g.entity_manager, ship, &civ, &mil, *alien_ptr,
-                             *g.race, s2, true, long_buf, short_buf);
+          auto [short_buf, long_buf] =
+              mech_attack_people(g.entity_manager, ship, &civ, &mil, *alien_ptr,
+                                 *g.race, s2, true);
           push_telegram(g.entity_manager, g.player(), g.governor(), long_buf);
           push_telegram(g.entity_manager, alien_ptr->Playernum, oldgov,
                         long_buf);
           if (civ + mil) {
-            people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
-                               *alien_ptr, s2, target_coords, long_buf,
-                               short_buf);
-            push_telegram(g.entity_manager, g.player(), g.governor(), long_buf);
+            auto [short_buf2, long_buf2] =
+                people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
+                                   *alien_ptr, s2, target_coords);
+            push_telegram(g.entity_manager, g.player(), g.governor(),
+                          long_buf2);
             push_telegram(g.entity_manager, alien_ptr->Playernum, oldgov,
-                          long_buf);
+                          long_buf2);
           }
         }
       }
@@ -111,10 +112,10 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
   *people = civ + mil;
 }
 
-void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
-                        population_t* mil, const Race& race, const Race& alien,
-                        const Sector& sect, bool ignore, char* long_msg,
-                        char* short_msg) {
+std::tuple<std::string, std::string>
+mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
+                   population_t* mil, const Race& race, const Race& alien,
+                   const Sector& sect, bool ignore) {
   auto oldciv = *civ;
   auto oldmil = *mil;
 
@@ -147,27 +148,25 @@ void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
   cas_mil = MIN(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
-  std::sprintf(short_msg, "%s: %s %s %s [%d]\n", dispshiploc(em, ship).c_str(),
-               std::format("{}", ship).c_str(),
-               (*civ + *mil) ? "attacked" : "slaughtered", alien.name.c_str(),
-               alien.Playernum.value);
-  std::strcpy(long_msg, short_msg);
-  std::string battle_msg = std::format(
-      "\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n", sect.get_x(),
-      sect.get_y(), Desnames[sect.get_condition()], strength, oldciv, oldmil);
-  std::strcat(long_msg, battle_msg.c_str());
-  std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
-                                       astrength, dstrength);
-  std::strcat(long_msg, attack_msg.c_str());
-  std::string casualties_msg =
-      std::format("\t{} civ/{} mil killed.\n", cas_civ, cas_mil);
-  std::strcat(long_msg, casualties_msg.c_str());
+  std::string short_msg =
+      std::format("{}: {} {} {} [{}]\n", dispshiploc(em, ship), ship,
+                  (*civ + *mil) ? "attacked" : "slaughtered", alien.name,
+                  alien.Playernum.value);
+  std::string long_msg =
+      short_msg +
+      std::format("\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n"
+                  "\tAttack: {:.3f}   Defense: {:.3f}.\n"
+                  "\t{} civ/{} mil killed.\n",
+                  sect.get_x(), sect.get_y(), Desnames[sect.get_condition()],
+                  strength, oldciv, oldmil, astrength, dstrength, cas_civ,
+                  cas_mil);
+  return std::make_tuple(short_msg, long_msg);
 }
 
-void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
-                        const Race& race, const Race& alien, const Sector& sect,
-                        Coordinates target_coords, char* long_msg,
-                        char* short_msg) {
+std::tuple<std::string, std::string>
+people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
+                   const Race& race, const Race& alien, const Sector& sect,
+                   Coordinates target_coords) {
   int strength;
   double astrength;
   double dstrength;
@@ -197,25 +196,19 @@ void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
     em.kill_ship(race.Playernum, ship);
   }
   auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
-  std::sprintf(short_msg, "%s: %s [%d] %s %s\n", dispshiploc(em, ship).c_str(),
-               race.name.c_str(), race.Playernum.value,
-               ship.alive() ? "attacked" : "DESTROYED",
-               std::format("{}", ship).c_str());
-  std::strcpy(long_msg, short_msg);
-  std::string assault_msg = std::format(
-      "\tBattle at {} {}: {} civ/{} mil assault {}\n", target_coords,
-      Desnames[sect.get_condition()], civ, mil, Shipnames[ship.type()]);
-  std::strcat(long_msg, assault_msg.c_str());
-  std::string attack_msg = std::format("\tAttack: {:.3f}   Defense: {:.3f}.\n",
-                                       astrength, dstrength);
-  std::strcat(long_msg, attack_msg.c_str());
-  std::string damage_msg = std::format(
-      "\t{}% damage inflicted for a total of {}%\n", damage, ship.damage());
-  std::strcat(long_msg, damage_msg.c_str());
-  std::string casualties_msg =
-      std::format("\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",
-                  cas_civ, cas_mil, pdam, sdam);
-  std::strcat(long_msg, casualties_msg.c_str());
+  std::string short_msg = std::format(
+      "{}: {} [{}] {} {}\n", dispshiploc(em, ship), race.name,
+      race.Playernum.value, ship.alive() ? "attacked" : "DESTROYED", ship);
+  std::string long_msg =
+      short_msg +
+      std::format("\tBattle at {} {}: {} civ/{} mil assault {}\n"
+                  "\tAttack: {:.3f}   Defense: {:.3f}.\n"
+                  "\t{}% damage inflicted for a total of {}%\n"
+                  "\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",
+                  target_coords, Desnames[sect.get_condition()], civ, mil,
+                  Shipnames[ship.type()], astrength, dstrength, damage,
+                  ship.damage(), cas_civ, cas_mil, pdam, sdam);
+  return std::make_tuple(short_msg, long_msg);
 }
 
 void ground_attack(const Race& race, const Race& alien, population_t* people,

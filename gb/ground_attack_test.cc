@@ -52,15 +52,12 @@ void test_mech_attack_people() {
   population_t civ = 100;
   population_t mil = 50;
 
-  char long_buf[1024] = {0};
-  char short_buf[256] = {0};
+  auto [short_buf, long_buf] =
+      mech_attack_people(em, ship, &civ, &mil, race, alien, sect, true);
 
-  mech_attack_people(em, ship, &civ, &mil, race, alien, sect, true, long_buf,
-                     short_buf);
-
-  assert(std::strlen(short_buf) > 0);
-  assert(std::strlen(long_buf) > 0);
-  assert(std::string(long_buf).find("Battle at") != std::string::npos);
+  assert(!short_buf.empty());
+  assert(!long_buf.empty());
+  assert(long_buf.find("Battle at") != std::string::npos);
 
   std::println(
       std::cout,
@@ -107,15 +104,12 @@ void test_people_attack_mech() {
   ship.guns() = PRIMARY;
   ship.primary() = 5;
 
-  char long_buf[1024] = {0};
-  char short_buf[256] = {0};
+  auto [short_buf, long_buf] = people_attack_mech(
+      em, ship, 100, 50, race, alien, sect, Coordinates{1, 1});
 
-  people_attack_mech(em, ship, 100, 50, race, alien, sect, Coordinates{1, 1},
-                     long_buf, short_buf);
-
-  assert(std::strlen(short_buf) > 0);
-  assert(std::strlen(long_buf) > 0);
-  assert(std::string(long_buf).find("assault") != std::string::npos);
+  assert(!short_buf.empty());
+  assert(!long_buf.empty());
+  assert(long_buf.find("assault") != std::string::npos);
 
   std::println(std::cout, "  ✓ people_attack_mech passed (ship damage={})",
                ship.damage());

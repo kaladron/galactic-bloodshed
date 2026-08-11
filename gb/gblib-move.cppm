@@ -20,12 +20,12 @@ export void mech_defend(const GameObj& g, population_t* people,
                         PopulationType what, const Planet& p,
                         Coordinates target_coords, const Sector& s2);
 
-export void mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
-                               population_t* mil, const Race& race,
-                               const Race& alien, const Sector& sect,
-                               bool ignore, char* long_msg, char* short_msg);
+export std::tuple<std::string, std::string>
+mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
+                   population_t* mil, const Race& race, const Race& alien,
+                   const Sector& sect, bool ignore);
 
-export void people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
-                               const Race& race, const Race& alien,
-                               const Sector& sect, Coordinates target_coords,
-                               char* long_msg, char* short_msg);
+export std::tuple<std::string, std::string>
+people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
+                   const Race& race, const Race& alien, const Sector& sect,
+                   Coordinates target_coords);

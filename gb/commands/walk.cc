@@ -16,8 +16,6 @@ void walk(const command_t& argv, GameObj& g) {
   const governor_t Governor = g.governor();
   const ap_t APcount = 1;
 
-  char long_buf[1024], short_buf[256];
-
   if (argv.size() < 2) {
     g.out << "Walk what?\n";
     return;
@@ -119,22 +117,36 @@ void walk(const command_t& argv, GameObj& g) {
         while ((strength = retal_strength(ship2)) &&
                (strength1 = retal_strength(*ship))) {
           use_destruct(ship2, strength);
-          g.out << long_buf;
+          std::string short_msg =
+              std::format("{} AFV #{} attacked by AFV #{}\n",
+                          dispshiploc(g.entity_manager, ship2), ship2.number(),
+                          ship->number());
+          std::string long_msg =
+              short_msg + std::format("\t{} fired guns on AFV #{}\n",
+                                      ship->number(), ship2.number());
+          g.out << long_msg;
           warn_player(g.session_registry, g.entity_manager, ship2.owner(),
-                      ship2.governor(), long_buf);
+                      ship2.governor(), long_msg);
           if (!ship2.alive())
-            post(g.entity_manager, short_buf, NewsType::COMBAT);
+            post(g.entity_manager, short_msg, NewsType::COMBAT);
           notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-                      ship->storbits(), short_buf);
+                      ship->storbits(), short_msg);
           if (strength1) {
             use_destruct(*ship, strength1);
-            g.out << long_buf;
+            std::string short_msg2 =
+                std::format("{} AFV #{} retaliated against AFV #{}\n",
+                            dispshiploc(g.entity_manager, *ship),
+                            ship->number(), ship2.number());
+            std::string long_msg2 =
+                short_msg2 + std::format("\t{} fired guns on AFV #{}\n",
+                                         ship2.number(), ship->number());
+            g.out << long_msg2;
             warn_player(g.session_registry, g.entity_manager, ship2.owner(),
-                        ship2.governor(), long_buf);
+                        ship2.governor(), long_msg2);
             if (!ship2.alive())
-              post(g.entity_manager, short_buf, NewsType::COMBAT);
+              post(g.entity_manager, short_msg2, NewsType::COMBAT);
             notify_star(g.session_registry, g.entity_manager, Playernum,
-                        Governor, ship->storbits(), short_buf);
+                        Governor, ship->storbits(), short_msg2);
           }
         }
       }
@@ -156,8 +168,8 @@ void walk(const command_t& argv, GameObj& g) {
       while ((sect.get_popn() + sect.get_troops()) && retal_strength(*ship)) {
         auto civ = sect.get_popn();
         auto mil = sect.get_troops();
-        mech_attack_people(g.entity_manager, *ship, &civ, &mil, *g.race, *alien,
-                           sect, false, long_buf, short_buf);
+        auto [short_buf, long_buf] = mech_attack_people(
+            g.entity_manager, *ship, &civ, &mil, *g.race, *alien, sect, false);
         g.out << long_buf;
         warn_player(g.session_registry, g.entity_manager, alien->Playernum,
                     oldgov, long_buf);
@@ -165,15 +177,16 @@ void walk(const command_t& argv, GameObj& g) {
                     ship->storbits(), short_buf);
         post(g.entity_manager, short_buf, NewsType::COMBAT);
 
-        people_attack_mech(g.entity_manager, *ship, sect.get_popn(),
-                           sect.get_troops(), *alien, *g.race, sect, new_coords,
-                           long_buf, short_buf);
-        g.out << long_buf;
+        auto [short_buf2, long_buf2] = people_attack_mech(
+            g.entity_manager, *ship, sect.get_popn(), sect.get_troops(), *alien,
+            *g.race, sect, new_coords);
+        g.out << long_buf2;
         warn_player(g.session_registry, g.entity_manager, alien->Playernum,
-                    oldgov, long_buf);
+                    oldgov, long_buf2);
         notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-                    ship->storbits(), short_buf);
-        if (!ship->alive()) post(g.entity_manager, short_buf, NewsType::COMBAT);
+                    ship->storbits(), short_buf2);
+        if (!ship->alive())
+          post(g.entity_manager, short_buf2, NewsType::COMBAT);
 
         sect.set_popn_exact(civ);
         sect.set_troops(mil);

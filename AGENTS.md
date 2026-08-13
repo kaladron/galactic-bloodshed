@@ -18,8 +18,37 @@
 
 - **Commit messages**: Use `.github/skills/generate-commit-message/SKILL.md` when asked to draft a commit message or commit summary.
 - **Code formatting**: Always run `clang-format -i` on modified C++ files (`.cc`, `.cppm`, `.h`, `.hpp`) before committing or pushing changes (see `.github/skills/clang-format/SKILL.md`).
+- **Atomic commit workflow**: Use `.github/skills/atomic-commit-workflow/SKILL.md` for bite-sized (~200 LOC) commits with in-commit tests and verification.
+- **Command implementation**: Use `.github/skills/command-implementation/SKILL.md` when adding or migrating player commands using `CommandDescriptor`.
+- **Command test matrix**: Use `.github/skills/command-test-matrix/SKILL.md` when writing 4-way command tests.
 - **Required workflow**: Always inspect the current git diff first so the proposed message covers the full change set, including tests and refactors.
 - **Output format**: Return commit message suggestions in markdown.
+
+## 🧭 Workflow & Development Principles
+
+### 1. Bite-Sized Commits (~200 LOC per Commit)
+- Aim for approximately **150–250 lines of code changed per commit**.
+- Keep changes atomic, focused on a single responsibility, and easy to review.
+- Every commit must compile cleanly (`ninja -C build`) and pass 100% of tests (`(cd build && ctest)`).
+
+### 2. In-Commit Testing (Never Defer Tests)
+- **Every commit** that introduces new features, refactors, helper methods, or command descriptors **MUST include its unit tests in the exact same commit**.
+- Never separate implementation into one commit and tests into a later commit.
+
+### 3. Plain English Architecture Documentation
+- `ARCHITECTURE.md` is for humans and AI agents to understand how systems work conceptually.
+- Explain designs in **clear, concise plain English** accompanied by high-level lifecycle diagrams.
+- **Do NOT** dump large struct definitions or boilerplate code blocks into `ARCHITECTURE.md`. If a design is too complicated to explain simply in English, it is too complicated.
+- Update `ARCHITECTURE.md` **incrementally** as new systems/patterns are introduced rather than deferring all documentation to the end of a project.
+
+### 4. Context Refresh & Plan Anchoring Protocol
+- AI agents will experience context compression and truncation across multi-commit workflows.
+- **Always re-anchor** by reading the active plan artifact and `ARCHITECTURE.md` before beginning work on a new commit or phase.
+
+### 5. Code Hygiene & Style Conventions
+- **Comment placement**: Explanatory comments belong at the **top of a code stanza**, not trailing at the end of statements.
+- **No Hungarian / `k` prefixes**: Use standard snake_case naming for constants and descriptors (e.g. `capital_cmd`, not `kCapitalCmd`).
+- **No migration comments**: Never leave temporary migration commentary in production code (e.g. state preconditions cleanly rather than documenting past refactors).
 
 ## 🔨 Building the Project
 
@@ -143,58 +172,49 @@ void example(const command_t& argv, GameObj& g) {
 ### Core Patterns
 
 #### Command Implementation Pattern
+Commands use declarative metadata (`CommandDescriptor`) paired with a thin domain handler (`bool (*)(const command_t&, GameObj&)`). Preconditions, scopes, and fixed AP pre-checks/deductions are handled automatically by `dispatch_command()`.
+
 ```cpp
-void commandname(const command_t& argv, GameObj& g) {
-    // 1. Validate scope/permissions
-    if (g.level != ScopeLevel::LEVEL_SHIP && g.level != ScopeLevel::LEVEL_PLAN) {
-        g.out << "Invalid scope. Must be at ship or planet.\n";
-        return;
+namespace GB::commands {
+
+/// Handler returns true on success (triggers AP deduction), false on domain error (0 AP deducted).
+bool commandname_impl(const command_t& argv, GameObj& g) {
+    // 1. Domain argument parsing and validation
+    auto target = parse_target(argv[1]);
+    if (!target) {
+        g.out << "Invalid target specified.\n";
+        return false;
     }
     
-    // 2. Parse arguments and validate
-    if (argv.size() < 2) {
-        g.out << "Usage: commandname <arg>\n";
-        return;
-    }
-    
-    // 3. Access current player's race (read-only)
-    // In production: g.race is always set by process_command()
-    // Use g.race-> directly for read-only access
-    if (g.race->some_field) {
-        // Use g.race-> for read-only checks
-    }
-    
-    // For other entities (read-only):
-    const auto* star = g.entity_manager.peek_star(g.snum);
+    // 2. Access entities via EntityManager (read-only peek)
+    const auto* star = g.entity_manager.peek_star(g.snum());
     if (!star) {
         g.out << "Star not found.\n";
-        return;
+        return false;
     }
     
-    // For modifying current player's race:
-    // In production, g.race exists (set by process_command)
-    // In tests, g.race is null, but get_race() still works
-    // No null check needed for current player
-    auto race_handle = g.entity_manager.get_race(g.player);
-    auto& race = *race_handle;
-    race.tech += 10.5;  // Marks dirty, will auto-save
+    // 3. Mutate entities via RAII handle two-step pattern
+    auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
+    auto& planet = *planet_handle;
+    planet.popn += 1000;  // Auto-saves when planet_handle goes out of scope
     
-    // For modifying other entities:
-    auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
-    if (!planet_handle.get()) {
-        g.out << "Planet not found.\n";
-        return;
-    }
-    
-    // 4. Perform game logic
-    auto& planet = *planet_handle;  // Marks dirty, will auto-save
-    planet.popn += 1000;
-    
-    // 5. Write output to player
+    // 4. Player output through g.out
     g.out << std::format("Success: population now {}\n", planet.popn);
-    
-    // 6. Auto-save happens when handles go out of scope
+    return true;
 }
+
+export constexpr CommandDescriptor commandname_cmd{
+    .name = "commandname",
+    .roles = {.no_guests = true},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::fixed_star(1),
+    .min_args = 2,
+    .syntax = "commandname <target>",
+    .description = "Perform a planetary action",
+    .handler = &commandname_impl,
+};
+
+}  // namespace GB::commands
 ```
 
 #### ⚠️ CRITICAL: EntityHandle Lifetime Rule
@@ -594,9 +614,9 @@ The project includes a Python client for connecting to the game server. See [`cl
 These recipes provide step-by-step instructions for common tasks.
 
 ### Add a New Command
-1. **Export in `gb/commands/commands.cppm`**:
+1. **Export descriptor in `gb/commands/commands.cppm`**:
    ```cpp
-   export void foo(const command_t&, GameObj&);
+   export extern const CommandDescriptor foo_cmd;
    ```
 
 2. **Create `gb/commands/foo.cc`**:
@@ -608,11 +628,24 @@ These recipes provide step-by-step instructions for common tasks.
    module commands;
 
    namespace GB::commands {
-   void foo(const command_t& argv, GameObj& g) {
-     // Validate g.level, parse argv
-     // Use g.entity_manager to access entities
-     // Write to g.out, return early on errors
+
+   bool foo_impl(const command_t& argv, GameObj& g) {
+     // Domain argument parsing & entity logic via g.entity_manager
+     // Return true on success (triggers AP deduction), false on domain error
+     return true;
    }
+
+   export constexpr CommandDescriptor foo_cmd{
+       .name = "foo",
+       .roles = {},
+       .scopes = AllowedScopes::planet_only(),
+       .ap = APCost::fixed_star(1),
+       .min_args = 1,
+       .syntax = "foo",
+       .description = "Example command",
+       .handler = &foo_impl,
+   };
+
    }  // namespace GB::commands
    ```
 
@@ -621,13 +654,14 @@ These recipes provide step-by-step instructions for common tasks.
    PRIVATE commands/foo.cc
    ```
 
-4. **Wire it in `gb/GB_server.cc::getCommands()`**:
+4. **Register in `gb/commands/registry.cc` (or `GB_server.cc`)**:
    ```cpp
-   {"foo", GB::commands::foo},
-   {"f", GB::commands::foo},  // Optional alias
+   {"foo", &GB::commands::foo_cmd},
    ```
 
-5. **Build and test**:
+5. **Add 4-Way Unit Test Suite in `gb/commands/foo_test.cc`** (see `command-test-matrix` skill)
+
+6. **Build and test**:
    ```bash
    ninja -C build
    (cd build && ctest)

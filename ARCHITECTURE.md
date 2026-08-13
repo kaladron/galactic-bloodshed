@@ -432,83 +432,92 @@ g.out << std::format("Race: {}\n", race->name);
 
 ### Layer 4: Application Layer (Commands)
 **Location**: `gb/commands/`  
-**Module**: `commands` (standalone module)
+**Module**: `commands` (standalone module with `:spec` partition)
 
-Commands handle user interaction and translate user input into service calls.
+The application layer handles player interaction, input parsing, command dispatch, and formatted output.
 
-#### Responsibilities
-- Parse user input
-- Validate command arguments
-- Call service layer methods
-- Format output for users
-- Handle command-specific errors
+#### Core Concepts
 
-#### Structure
+1. **Declarative Command Metadata (`CommandDescriptor`)**:
+   Instead of writing manual permission and scope checks inside each command handler, commands declare their requirements up front:
+   - **Role & Privilege Rules**: Restricts execution based on player roles (e.g. deity-only, prohibiting guest races, leader-only Governor 0, or star system control).
+   - **Allowed Scopes**: Restricts execution to valid game scopes (Universe, Star, Planet, Ship, or combinations).
+   - **Action Point (AP) Costs**: Specifies whether a command is free, costs fixed AP (deducted from Star or Universe), or computes dynamic costs per action.
+   - **Syntax & Argument Requirements**: Defines minimum argument counts and usage syntax strings.
 
-**GameObj Context**
-```cpp
-struct GameObj {
-  player_t player;        // Current player
-  governor_t governor;    // Current governor
-  const Race* race;       // Current player's race (set by process_command, always valid)
-  ScopeLevel level;       // Current scope level
-  starnum_t snum;         // Current star
-  planetnum_t pnum;       // Current planet
-  shipnum_t shipno;       // Current ship
-  
-  EntityManager& entity_manager;  // Service layer access
-  std::ostream& out;      // Output stream
-};
+2. **Centralized Dispatch & Transactional APs**:
+   The dispatch pipeline (`dispatch_command()`) centralizes all preconditions before invoking the command handler:
+   - Verifies permissions, valid scope, and minimum arguments.
+   - Pre-checks that the player has sufficient AP to pay the command's fixed cost.
+   - Invokes the command handler (`bool (*)(const command_t& argv, GameObj& g)`).
+   - Deducts fixed AP **only** when the handler returns `true`. If the handler returns `false` due to domain errors or invalid input, no AP is deducted.
+   - Dynamic commands (e.g. multi-ship combat or movement) deduct AP per-action using atomic helpers (`g.deduct_ap()` / `g.deduct_univ_ap()`).
+
+3. **Command Lifecycle**:
+
+```mermaid
+flowchart TD
+    Cmd[Player Inputs Command String] --> Parse[Server Parses argv]
+    Parse --> Lookup[Registry Resolves CommandDescriptor]
+    Lookup --> Roles{Role Check}
+    Roles -- Fail --> ErrRole[Output Permission Error]
+    Roles -- Pass --> Scope{Scope Check}
+    Scope -- Fail --> ErrScope[Output Scope Error]
+    Scope -- Pass --> APPre{Fixed AP Pre-check}
+    APPre -- Insufficient --> ErrAP[Output Insufficient AP]
+    APPre -- Pass --> Exec[Execute Handler]
+    
+    Exec --> Result{Return true?}
+    Result -- false --> NoAP[No AP Deducted]
+    Result -- true --> CheckModel{AP Model}
+    
+    CheckModel -- Fixed Star / Univ --> DeductFixed[Dispatcher Deducts Fixed AP]
+    CheckModel -- Dynamic --> DoneDyn[Done - AP deducted per action via g.deduct_ap]
+    CheckModel -- Free --> DoneFree[Done - 0 AP]
 ```
 
-**Entity Access Pattern**: All EntityManager methods throw `EntityNotFoundError` on failure:
-- **Validated IDs** (e.g., `g.player`, IDs from iteration): No try/catch needed.
-- **User-input IDs**: Wrap in try/catch to handle `EntityNotFoundError`.
-- **Read-only checks**: Use `g.race->field` directly (always valid in production).
-- **Modifications**: Use `g.entity_manager.get_race(g.player)` for RAII (no null check needed for validated IDs).
-- **In tests**: Set `g.race = entity_manager.peek_race(g.player);` after creating GameObj.
+#### Command Pattern Example
 
-**Command Pattern**
+Command handlers focus strictly on domain logic and output formatting, while their descriptor pairs them with their validation rules:
+
 ```cpp
 namespace GB::commands {
 
-void examine(const command_t& argv, GameObj& g) {
-  // 1. Validate scope and permissions
-  if (g.level != ScopeLevel::LEVEL_SHIP) {
-    g.out << "Must be scoped to a ship.\n";
-    return;
-  }
-  
-  // 2. Parse arguments
-  if (argv.size() < 2) {
-    g.out << "Usage: examine <ship>\n";
-    return;
-  }
-  
-  // 3. Call service layer
+bool examine_impl(const command_t& argv, GameObj& g) {
   auto shipno = string_to_shipnum(argv[1]);
-  const auto* ship = g.entity_manager.peek_ship(shipno);
+  if (!shipno) {
+    g.out << "Specify a valid ship number.\n";
+    return false;
+  }
+  const auto* ship = g.entity_manager.peek_ship(*shipno);
   if (!ship) {
     g.out << "Ship not found.\n";
-    return;
+    return false;
   }
-  
-  // 4. Format and display output
   g.out << std::format("Ship #{}: {}\n", ship->number(), ship->name());
-  g.out << std::format("Owner: {}\n", ship->owner());
-  g.out << std::format("Fuel: {}\n", ship->fuel());
-  // ... more output
+  return true;
 }
+
+export constexpr CommandDescriptor examine_cmd{
+    .name = "examine",
+    .roles = {},
+    .scopes = AllowedScopes::ship_only(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "examine <ship>",
+    .description = "Examine ship systems and cargo",
+    .handler = &examine_impl
+};
 
 } // namespace GB::commands
 ```
 
 #### Design Principles
-- **Thin layer**: Minimal logic, mostly I/O
-- **Service delegation**: All data operations via service
-- **User-focused**: Output formatted for humans
-- **Early returns**: Fail fast with clear messages
-- **No direct data access**: Never touch repositories or DAL
+- **Declarative constraints**: Validation rules are declared in metadata rather than written procedurally in handlers.
+- **Uniform signature**: Every command handler conforms to `bool (*)(const command_t& argv, GameObj& g)`.
+- **Fail-safe AP transactions**: AP is never lost on failed commands or invalid arguments.
+- **Thin handlers**: Handlers focus purely on user interaction and service layer delegation.
+- **No direct data access**: All state mutation goes through `EntityManager` RAII handles.
 
 ---
 

@@ -205,6 +205,7 @@ add_library(commands)
 target_sources(
   commands
   PUBLIC FILE_SET CXX_MODULES FILES commands/commands.cppm
+                                    commands/command_spec.cppm
   PRIVATE commands/analysis.cc
           commands/announce.cc
           commands/arm.cc
@@ -222,6 +223,7 @@ target_sources(
           commands/declare.cc
           commands/defend.cc
           commands/detonate.cc
+          commands/dispatch.cc
           commands/dissolve.cc
           commands/distance.cc
           commands/dock.cc
@@ -750,6 +752,10 @@ add_test(NAME GB_block_test COMMAND block_test)
 add_executable(examine_test commands/examine_test.cc)
 target_link_libraries(examine_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_examine_test COMMAND examine_test)
+
+add_executable(dispatch_pipeline_test commands/dispatch_pipeline_test.cc)
+target_link_libraries(dispatch_pipeline_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_dispatch_pipeline_test COMMAND dispatch_pipeline_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

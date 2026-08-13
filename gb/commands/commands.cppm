@@ -2,6 +2,8 @@
 
 export module commands;
 
+export import :spec;
+
 import gblib;
 import session; // For SessionRegistry full definition
 

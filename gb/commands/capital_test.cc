@@ -1,37 +1,39 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file capital_test.cc
+/// \brief Unit tests for capital command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-// Test designating a capital ship
-void test_designate_capital() {
+namespace {
+
+// Test designating capital ship successfully
+void test_designate_capital_success() {
   TestContext ctx;
   JsonStore store(ctx.db);
+  RaceRepository races(store);
+  StarRepository stars(store);
+  ShipRepository ships(store);
 
-  // Create race
   Race race{};
   race.Playernum = 1;
-  race.name = "Test Race";
+  race.name = "TestRace";
   race.Gov_ship = 0;
+  races.save(race);
 
-  RaceRepository races_repo(store);
-  races_repo.save(race);
-
-  // Create star
   star_struct star{};
   star.star_id = 1;
-  star.name = "Test Star";
-  star.AP[0] = 100;  // Sufficient AP for player 1
+  star.name = "TestStar";
+  star.AP[0] = 100;
+  Star s_entity{star};
+  stars.save(s_entity);
 
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Create government ship landed on planet
   Ship ship{};
   ship.number() = 1;
   ship.type() = ShipType::OTYPE_GOV;
@@ -44,164 +46,132 @@ void test_designate_capital() {
   ship.ypos() = 10.0;
   ship.alive() = true;
   ship.active() = true;
-  ship.docked() = true;  // Required for landed() check
+  ship.docked() = true;
+  ships.save(ship);
 
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship);
-
-  // Execute command
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);  // Set race pointer like production
-
-  command_t argv{"capital", "1"};
-  GB::commands::capital(argv, g);
-
-  // Verify race Gov_ship was updated through EntityManager
-  const auto* updated_race = ctx.em.peek_race(1);
-  assert(updated_race != nullptr);
-  assert(updated_race->Gov_ship == 1);
-
-  // Also verify it was persisted to database
-  auto saved_race = races_repo.find_by_player(1);
-  assert(saved_race.has_value());
-  assert(saved_race->Gov_ship == 1);
-
-  std::println(std::cout, "test_designate_capital passed!");
-}
-
-// Test non-leader attempting to designate capital
-void test_governor_cannot_designate() {
-  TestContext ctx;
-  JsonStore store(ctx.db);
-
-  // Create race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Test Race";
-  race.Gov_ship = 0;
-
-  RaceRepository races_repo(store);
-  races_repo.save(race);
-
-  // Execute command as governor (not leader)
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_governor(1);             // Not the leader
-  g.race = ctx.em.peek_race(1);  // Set race pointer like production
+  g.set_snum(1);
 
-  command_t argv{"capital", "1"};
-  GB::commands::capital(argv, g);
+  // 1. Happy Path: Leader designates capital (deducts 50 AP)
+  ctx.assert_dispatch_success(g, {"capital", "1"},
+                              /*expected_star_ap_deducted=*/50);
+  assert(ctx.em.peek_race(1)->Gov_ship == 1);
+  assert(ctx.em.peek_star(1)->AP(1) == 50);
 
-  // Verify Gov_ship was NOT updated
-  auto saved_race = races_repo.find_by_player(1);
-  assert(saved_race.has_value());
-  assert(saved_race->Gov_ship == 0);
-
-  std::println(std::cout, "test_governor_cannot_designate passed!");
+  // 2. Query mode: Free inquiry (0 AP)
+  ctx.assert_dispatch_success(g, {"capital"}, /*expected_star_ap_deducted=*/0);
+  assert(ctx.em.peek_star(1)->AP(1) == 50);
 }
 
-// Test ship not landed
-void test_ship_not_landed() {
+// Test capital designation rejection due to insufficient AP
+void test_capital_insufficient_ap() {
   TestContext ctx;
   JsonStore store(ctx.db);
+  RaceRepository races(store);
+  StarRepository stars(store);
+  ShipRepository ships(store);
 
-  // Create race
   Race race{};
   race.Playernum = 1;
-  race.name = "Test Race";
+  race.name = "TestRace";
   race.Gov_ship = 0;
+  races.save(race);
 
-  RaceRepository races_repo(store);
-  races_repo.save(race);
-
-  // Create star
   star_struct star{};
   star.star_id = 1;
-  star.name = "Test Star";
-  star.AP[0] = 100;
+  star.name = "TestStar";
+  star.AP[0] = 20;  // Need 50
+  Star s_entity{star};
+  stars.save(s_entity);
 
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Create ship NOT landed (in orbit)
   Ship ship{};
   ship.number() = 1;
   ship.type() = ShipType::OTYPE_GOV;
   ship.owner() = 1;
   ship.governor() = 0;
   ship.storbits() = 1;
-  ship.whatorbits() = ScopeLevel::LEVEL_STAR;  // Orbiting star, not landed
+  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+  ship.alive() = true;
+  ship.active() = true;
+  ship.docked() = true;
+  ships.save(ship);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_snum(1);
+
+  // Insufficient AP: Rejected with 0 AP deducted
+  ctx.assert_dispatch_rejected(g, {"capital", "1"});
+  assert(ctx.em.peek_race(1)->Gov_ship == 0);
+  assert(ctx.em.peek_star(1)->AP(1) == 20);
+}
+
+// Test capital designation permissions and landed ship checks
+void test_capital_role_and_domain_errors() {
+  TestContext ctx;
+  JsonStore store(ctx.db);
+  RaceRepository races(store);
+  StarRepository stars(store);
+  ShipRepository ships(store);
+
+  Race race{};
+  race.Playernum = 1;
+  race.name = "TestRace";
+  race.Gov_ship = 0;
+  races.save(race);
+
+  star_struct star{};
+  star.star_id = 1;
+  star.name = "TestStar";
+  star.AP[0] = 100;
+  Star s_entity{star};
+  stars.save(s_entity);
+
+  // Ship not landed (orbiting star)
+  Ship ship{};
+  ship.number() = 1;
+  ship.type() = ShipType::OTYPE_GOV;
+  ship.owner() = 1;
+  ship.governor() = 0;
+  ship.storbits() = 1;
+  ship.whatorbits() = ScopeLevel::LEVEL_STAR;
   ship.whatdest() = ScopeLevel::LEVEL_STAR;
   ship.alive() = true;
   ship.active() = true;
+  ship.docked() = false;
+  ships.save(ship);
 
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship);
-
-  // Execute command
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);  // Set race pointer like production
 
-  command_t argv{"capital", "1"};
-  GB::commands::capital(argv, g);
+  // 1. Role Rejection: Governor 1 cannot designate capital
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_snum(1);
+  ctx.assert_dispatch_rejected(g, {"capital", "1"});
+  assert(ctx.em.peek_race(1)->Gov_ship == 0);
+  assert(g.out.str().contains(
+      "Only the leader (Governor 0) may use this command."));
 
-  // Verify Gov_ship was NOT updated
-  auto saved_race = races_repo.find_by_player(1);
-  assert(saved_race.has_value());
-  assert(saved_race->Gov_ship == 0);
-
-  std::println(std::cout, "test_ship_not_landed passed!");
+  // 2. Domain Error: Ship is not landed
+  g.out.str("");
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_snum(1);
+  ctx.assert_dispatch_rejected(g, {"capital", "1"});
+  assert(ctx.em.peek_race(1)->Gov_ship == 0);
+  assert(g.out.str().contains("Try landing this ship first!"));
 }
 
-// Test querying current capital without changing
-void test_query_capital() {
-  TestContext ctx;
-  JsonStore store(ctx.db);
-
-  // Create race with existing capital ship
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Test Race";
-  race.Gov_ship = 42;
-
-  RaceRepository races_repo(store);
-  races_repo.save(race);
-
-  // Create the capital ship
-  Ship ship{};
-  ship.number() = 42;
-  ship.type() = ShipType::OTYPE_GOV;
-  ship.owner() = 1;
-  ship.name() = "Capital Ship";
-  ship.alive() = true;
-  ship.active() = true;
-
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship);
-
-  // Execute command without argument (query mode)
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);  // Set race pointer like production
-
-  command_t argv{"capital"};  // No ship number argument
-  GB::commands::capital(argv, g);
-
-  // Note: Without capturing output, we just verify it doesn't crash
-  // The actual ship info is displayed through g.out
-
-  std::println(std::cout, "test_query_capital passed!");
-}
+}  // namespace
 
 int main() {
-  test_designate_capital();
-  test_governor_cannot_designate();
-  test_ship_not_landed();
-  test_query_capital();
+  test_designate_capital_success();
+  test_capital_insufficient_ap();
+  test_capital_role_and_domain_errors();
 
-  std::println(std::cout, "All capital_test tests passed!");
+  std::println(std::cout, "✓ capital_test passed!");
   return 0;
 }

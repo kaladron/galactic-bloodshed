@@ -5,28 +5,24 @@
 
 module;
 
-import std;
 import gblib;
+import std;
 
 module commands;
 
 namespace GB::commands {
-void capital(const command_t& argv, GameObj& g) {
+
+bool capital(const command_t& argv, GameObj& g) {
   const ap_t kAPCost = 50;
 
-  if (g.governor() != 0) {
-    g.out << "Only the leader may designate the capital.\n";
-    return;
-  }
-
   shipnum_t shipno = 0;
-  if (argv.size() != 2)
+  if (argv.size() != 2) {
     shipno = g.race->Gov_ship;
-  else {
+  } else {
     auto shiptmp = string_to_shipnum(argv[1]);
     if (!shiptmp) {
       g.out << "Specify a valid ship number.\n";
-      return;
+      return false;
     }
     shipno = *shiptmp;
   }
@@ -34,36 +30,30 @@ void capital(const command_t& argv, GameObj& g) {
   const auto* s = g.entity_manager.peek_ship(shipno);
   if (!s) {
     g.out << "Change the capital to be what ship?\n";
-    return;
+    return false;
   }
 
   if (argv.size() == 2) {
     starnum_t snum = s->storbits();
     if (testship(*s, g)) {
       g.out << "You can't do that!\n";
-      return;
+      return false;
     }
     if (!landed(*s)) {
       g.out << "Try landing this ship first!\n";
-      return;
+      return false;
     }
 
-    const auto* star = g.entity_manager.peek_star(snum);
-    if (!star) {
-      g.out << "Star not found.\n";
-      return;
-    }
-
-    if (!enufAP(g.entity_manager, g.player(), g.governor(),
-                star->AP(g.player()), kAPCost)) {
-      return;
-    }
     if (s->type() != ShipType::OTYPE_GOV) {
       g.out << std::format("That ship is not a {}.\n",
                            Shipnames[ShipType::OTYPE_GOV]);
-      return;
+      return false;
     }
-    deductAPs(g, kAPCost, snum);
+
+    if (!g.deduct_ap(snum, kAPCost)) {
+      g.out << std::format("You don't have {} action points there.\n", kAPCost);
+      return false;
+    }
 
     // Get race for modification (RAII auto-saves on scope exit)
     auto race_handle = g.entity_manager.get_race(g.player());
@@ -74,5 +64,18 @@ void capital(const command_t& argv, GameObj& g) {
   g.out << std::format("Efficiency of governmental center: {:.0f}%.\n",
                        ((double)s->popn() / (double)max_crew(*s)) *
                            (100 - (double)s->damage()));
+  return true;
 }
+
+const CommandDescriptor capital_cmd{
+    .name = "capital",
+    .roles = {.leader_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 1,
+    .syntax = "capital [<ship>]",
+    .description = "Query or designate your governmental center (capital ship)",
+    .handler = &capital,
+};
+
 }  // namespace GB::commands

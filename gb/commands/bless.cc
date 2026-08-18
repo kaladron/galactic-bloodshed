@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file bless.cc
+/// \brief Bestow divine blessings upon a player.
+
 module;
 
 import session;
@@ -11,36 +14,24 @@ import std;
 module commands;
 
 namespace GB::commands {
-void bless(const command_t& argv, GameObj& g) {
+
+bool bless(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
-  // TODO(jeffbailey): ap_t APcount = 0;
   int amount;
   int Mod;
   char commod;
 
-  if (!g.god()) {
-    g.out << "You are not privileged to use this command.\n";
-    return;
-  }
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "Please cs to the planet in question.\n";
-    return;
-  }
   player_t who = std::stoi(argv[1]);
   if (who < 1 || who > g.entity_manager.num_races()) {
     g.out << "No such player number.\n";
-    return;
-  }
-  if (argv.size() < 3) {
-    g.out << "Syntax: bless <player> <what> <+amount>\n";
-    return;
+    return false;
   }
   amount = std::stoi(argv[3]);
 
   auto race_handle = g.entity_manager.get_race(who);
   if (!race_handle.get()) {
     g.out << "Race not found.\n";
-    return;
+    return false;
   }
   auto& race = *race_handle;
   /* race characteristics? */
@@ -170,13 +161,13 @@ void bless(const command_t& argv, GameObj& g) {
         std::format("Deity set your plated preference to {}%\n", amount));
   } else
     Mod = 0;
-  if (Mod) return;
+  if (Mod) return true;
   /* ok, must be the planet then */
   commod = argv[2][0];
   auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& planet = *planet_handle;
   if (argv[2] == "explorebit") {
@@ -184,7 +175,7 @@ void bless(const command_t& argv, GameObj& g) {
     auto star_handle = g.entity_manager.get_star(g.snum());
     if (!star_handle.get()) {
       g.out << "Star not found.\n";
-      return;
+      return false;
     }
     auto& star = *star_handle;
     setbit(star.explored(), who);
@@ -196,7 +187,7 @@ void bless(const command_t& argv, GameObj& g) {
     const auto* star_ptr = g.entity_manager.peek_star(g.snum());
     if (!star_ptr) {
       g.out << "Star not found.\n";
-      return;
+      return false;
     }
     warn_player(g.session_registry, g.entity_manager, who, 0,
                 std::format("Deity reset your explored bit at /{}/{}.\n",
@@ -208,7 +199,7 @@ void bless(const command_t& argv, GameObj& g) {
     const auto* star_ptr = g.entity_manager.peek_star(g.snum());
     if (!star_ptr) {
       g.out << "Star not found.\n";
-      return;
+      return false;
     }
     warn_player(
         g.session_registry, g.entity_manager, who, 0,
@@ -219,7 +210,7 @@ void bless(const command_t& argv, GameObj& g) {
     auto star_handle = g.entity_manager.get_star(g.snum());
     if (!star_handle.get()) {
       g.out << "Star not found.\n";
-      return;
+      return false;
     }
     auto& star = *star_handle;
     setbit(star.inhabited(), Playernum);
@@ -231,7 +222,7 @@ void bless(const command_t& argv, GameObj& g) {
     const auto* star_ptr = g.entity_manager.peek_star(g.snum());
     if (!star_ptr) {
       g.out << "Star not found.\n";
-      return;
+      return false;
     }
     warn_player(
         g.session_registry, g.entity_manager, who, 0,
@@ -243,7 +234,7 @@ void bless(const command_t& argv, GameObj& g) {
     const auto* star_ptr = g.entity_manager.peek_star(g.snum());
     if (!star_ptr) {
       g.out << "Star not found.\n";
-      return;
+      return false;
     }
     switch (commod) {
       case 'r':
@@ -278,7 +269,7 @@ void bless(const command_t& argv, GameObj& g) {
         auto star_handle = g.entity_manager.get_star(g.snum());
         if (!star_handle.get()) {
           g.out << "Star not found.\n";
-          return;
+          return false;
         }
         auto& star = *star_handle;
         star.AP(who) += amount;
@@ -289,8 +280,21 @@ void bless(const command_t& argv, GameObj& g) {
       }
       default:
         g.out << "No such commodity.\n";
-        return;
+        return false;
     }
   }
+  return true;
 }
+
+const CommandDescriptor bless_cmd{
+    .name = "bless",
+    .roles = {.god_only = true},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::free(),
+    .min_args = 4,
+    .syntax = "bless <player> <what> <+amount>",
+    .description = "Bestow divine blessings upon a player (deity only)",
+    .handler = &bless,
+};
+
 }  // namespace GB::commands

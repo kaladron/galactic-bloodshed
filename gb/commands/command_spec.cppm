@@ -104,4 +104,16 @@ export struct CommandDescriptor {
 export bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
                              const command_t& argv);
 
+/// Validates command descriptor invariants (non-empty name, non-null handler,
+/// valid scopes, syntax present when args required, and AP amount consistency).
+export bool validate_command_descriptor(const CommandDescriptor& desc,
+                                        std::string* error = nullptr);
+
+/// Retrieve the global command descriptor registry.
+export const std::unordered_map<std::string_view, const CommandDescriptor*>&
+get_command_registry();
+
+/// Look up a command descriptor by name or alias.
+export const CommandDescriptor* find_command_descriptor(std::string_view name);
+
 }  // namespace GB::commands

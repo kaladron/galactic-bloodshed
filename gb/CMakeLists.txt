@@ -266,6 +266,7 @@ target_sources(
           commands/purge.cc
           commands/quit.cc
           commands/read_messages.cc
+          commands/registry.cc
           commands/relation.cc
           commands/repair.cc
           commands/route.cc
@@ -761,6 +762,10 @@ add_test(NAME GB_dispatch_pipeline_test COMMAND dispatch_pipeline_test)
 add_executable(gameobj_ap_test gameobj_ap_test.cc)
 target_link_libraries(gameobj_ap_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_gameobj_ap_test COMMAND gameobj_ap_test)
+
+add_executable(command_registry_test commands/command_registry_test.cc)
+target_link_libraries(command_registry_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_command_registry_test COMMAND command_registry_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

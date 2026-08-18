@@ -43,6 +43,11 @@ public:
 
   TestContext() : db(":memory:"), em(db) {
     initialize_schema(db);
+    universe_struct u{};
+    u.id = 1;
+    JsonStore store(db);
+    UniverseRepository universe_repo(store);
+    universe_repo.save(u);
   }
 
   /// Setup a GameObj for testing.

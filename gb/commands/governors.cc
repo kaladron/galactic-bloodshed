@@ -5,10 +5,10 @@
 
 module;
 
-import std;
 import gblib;
 import notification;
 import session;
+import std;
 import tabulate;
 
 module commands;
@@ -22,7 +22,6 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   push_telegram(entity_manager, race.Playernum, (governor_t)0, outmsg);
 
   /*  First do stars....  */
-
   for (auto star_handle : StarList(entity_manager)) {
     auto& star = *star_handle;
     if (star.governor(race.Playernum) == src_gov) {
@@ -47,7 +46,6 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   }
 
   /*  And money too....  */
-
   outmsg = std::format("Transferring {0} money...\n",
                        race.governor[src_gov.value].money);
   push_telegram(entity_manager, race.Playernum, 0, outmsg);
@@ -56,7 +54,6 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   race.governor[src_gov.value].money = 0;
 
   /* And last but not least, flag the governor as inactive.... */
-
   race.governor[src_gov.value].active = false;
   race.governor[src_gov.value].password = "";
   race.governor[src_gov.value].name = "";
@@ -68,14 +65,14 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 }  // namespace
 
 namespace GB::commands {
-void governors(const command_t& argv, GameObj& g) {
+
+bool governors(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   governor_t gov;
 
   auto race = g.entity_manager.get_race(Playernum);
-  if (Governor != 0 ||
-      argv.size() < 3) { /* the only thing governors can do with this */
+  if (Governor != 0 || argv.size() < 3) {
     tabulate::Table table;
     table.format().hide_border().column_separator("  ");
 
@@ -93,31 +90,36 @@ void governors(const command_t& argv, GameObj& g) {
     }
     table[0].format().font_style({tabulate::FontStyle::bold});
 
-    for (auto [i, gov] : race->all_governors()) {
-      std::string status = gov.active ? "ACTIVE" : "INACTIVE";
-      std::string login_time = std::ctime(&gov.login);
+    for (auto [i, g_entry] : race->all_governors()) {
+      std::string status = g_entry.active ? "ACTIVE" : "INACTIVE";
+      std::string login_time = std::ctime(&g_entry.login);
       // Remove trailing newline from ctime
       if (!login_time.empty() && login_time.back() == '\n') {
         login_time.pop_back();
       }
 
-      std::vector<std::string> row = {std::format("{}", i.value),
-                                      std::string(gov.name), status,
-                                      std::format("{}", gov.money), login_time};
+      std::vector<std::string> row = {
+          std::format("{}", i.value), std::string(g_entry.name), status,
+          std::format("{}", g_entry.money), login_time};
       if (Governor == 0) {
-        row.emplace_back(gov.password);
+        row.emplace_back(g_entry.password);
       }
       table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
     }
     g.out << table << "\n";
-  } else if ((gov = std::stoi(argv[1])) > MAXGOVERNORS) {
+    return true;
+  }
+
+  if ((gov = std::stoi(argv[1])) > MAXGOVERNORS) {
     g.out << "No such governor.\n";
-    return;
-  } else if (argv[0] == "appoint") {
+    return false;
+  }
+
+  if (argv[0] == "appoint") {
     /* Syntax: 'appoint <gov> <password>' */
     if (race->governor[gov.value].active) {
       g.out << "That governor is already appointed.\n";
-      return;
+      return false;
     }
     race->governor[gov.value].active = true;
     race->governor[gov.value].homelevel = race->governor[gov.value].deflevel =
@@ -130,55 +132,79 @@ void governors(const command_t& argv, GameObj& g) {
     race->governor[gov.value].toggle.highlight = Playernum;
     race->governor[gov.value].toggle.inverse = 1;
     race->governor[gov.value].password = argv[2];
-    // Auto-saves via EntityHandle RAII
     g.out << "Governor activated.\n";
-    return;
-  } else if (argv[0] == "revoke") {
+    return true;
+  }
+
+  if (argv[0] == "revoke") {
     governor_t j;
     if (gov == 0) {
       g.out << "You can't revoke your leadership!\n";
-      return;
+      return false;
     }
     if (!race->governor[gov.value].active) {
       g.out << "That governor is not active.\n";
-      return;
+      return false;
     }
     if (argv.size() < 4)
       j = 0;
     else
-      j = std::stoul(argv[3]); /* who gets this governors stuff */
+      j = std::stoul(argv[3]);
     if (j > MAXGOVERNORS) {
       g.out << "You can't give stuff to that governor!\n";
-      return;
+      return false;
     }
     if (race->governor[gov.value].password != argv[2]) {
       g.out << "Incorrect password.\n";
-      return;
+      return false;
     }
     if (!race->governor[j.value].active || j == gov) {
       g.out << "Bad target governor.\n";
-      return;
+      return false;
     }
-    do_revoke(*race, gov, j, g.entity_manager); /* give stuff from gov to j */
+    do_revoke(*race, gov, j, g.entity_manager);
     g.out << "Done.\n";
-    return;
-  } else if (argv[2] == "password") {
+    return true;
+  }
+
+  if (argv[2] == "password") {
     if (race->Guest) {
       g.out << "Guest races cannot change passwords.\n";
-      return;
+      return false;
     }
     if (argv.size() < 4) {
       g.out << "You must give a password.\n";
-      return;
+      return false;
     }
     if (!race->governor[gov.value].active) {
       g.out << "That governor is inactive.\n";
-      return;
+      return false;
     }
     race->governor[gov.value].password = argv[3];
     g.out << "Password changed.\n";
-    return;
-  } else
-    g.out << "Bad option.\n";
+    return true;
+  }
+
+  g.out << "Bad option.\n";
+  return false;
 }
+
+namespace {
+constexpr std::array<std::string_view, 2> kGovernorsAliases{"appoint",
+                                                            "revoke"};
+}
+
+const CommandDescriptor governors_cmd{
+    .name = "governors",
+    .aliases = kGovernorsAliases,
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "governors | appoint <gov> <password> | revoke <gov> <password> "
+              "[<target>]",
+    .description = "List, appoint, or revoke race governors",
+    .handler = &governors,
+};
+
 }  // namespace GB::commands

@@ -1,21 +1,30 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file purge.cc
+/// \brief Purge all galactic news items.
+
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void purge([[maybe_unused]] const command_t& argv, GameObj& g) {
-  if (!g.race->God) {
-    g.out << "Only deity can use this command.\n";
-    return;
-  }
 
+bool purge(const command_t&, GameObj& g) {
   ::purge(g.entity_manager);
   g.out << "Purged all news.\n";
+  return true;
 }
+
+const CommandDescriptor purge_cmd{
+    .name = "purge",
+    .roles = {.god_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .description = "Purge all galactic news items (deity only)",
+    .handler = &purge,
+};
+
 }  // namespace GB::commands

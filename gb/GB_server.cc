@@ -764,6 +764,7 @@ bool Server::do_command(Session& session, std::string_view comm) {
       GameObj g(session.entity_manager(), session.registry());
       g.set_player(session.player());
       g.set_governor(session.governor());
+      g.set_god(session.god());
       g.set_snum(session.snum());
       g.set_pnum(session.pnum());
       g.set_shipno(session.shipno());
@@ -802,6 +803,7 @@ bool Server::do_command(Session& session, std::string_view comm) {
       GameObj g(session.entity_manager(), session.registry());
       g.set_player(session.player());
       g.set_governor(session.governor());
+      g.set_god(session.god());
       g.set_snum(session.snum());
       g.set_pnum(session.pnum());
       g.set_shipno(session.shipno());
@@ -939,6 +941,8 @@ static void check_connect(Session& session, std::string_view message) {
  * @param argv The command arguments.
  */
 static void process_command(GameObj& g, const command_t& argv) {
+  if (argv.empty()) return;
+
   const auto* race = g.entity_manager.peek_race(g.player());
   if (!race) {
     g.out << "Error: Could not find your race.\n";
@@ -946,12 +950,19 @@ static void process_command(GameObj& g, const command_t& argv) {
   }
   g.race = race;
 
-  const auto& commands = getCommands();
-  auto command = commands.find(argv[0]);
-  if (command != commands.end()) {
-    command->second(argv, g);
+  // Dual-mode dispatch:
+  // 1. Check modern CommandDescriptor registry first
+  if (const auto* desc = GB::commands::find_command_descriptor(argv[0])) {
+    GB::commands::dispatch_command(g, *desc, argv);
   } else {
-    g.out << "'" << argv[0] << "':illegal command error.\n";
+    // 2. Fall back to legacy command table for unmigrated commands
+    const auto& commands = getCommands();
+    auto command = commands.find(argv[0]);
+    if (command != commands.end()) {
+      command->second(argv, g);
+    } else {
+      g.out << "'" << argv[0] << "':illegal command error.\n";
+    }
   }
 
   /* compute the prompt and send to the player */

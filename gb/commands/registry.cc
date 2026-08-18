@@ -69,8 +69,25 @@ build_registry() {
   static const std::unordered_map<std::string_view, const CommandDescriptor*>
       registry = [] {
         std::unordered_map<std::string_view, const CommandDescriptor*> map;
-        // As player commands are migrated across subsequent commits, their
-        // descriptors will be registered in this table.
+        auto reg = [&](const CommandDescriptor& desc) {
+          std::string err;
+          if (!validate_command_descriptor(desc, &err)) {
+            throw std::logic_error(err);
+          }
+          map[desc.name] = &desc;
+          for (const auto& alias : desc.aliases) {
+            map[alias] = &desc;
+          }
+        };
+
+        reg(shutdown_cmd);
+        reg(purge_cmd);
+        reg(bless_cmd);
+        reg(capital_cmd);
+        reg(governors_cmd);
+        reg(help_cmd);
+        reg(quit_cmd);
+
         return map;
       }();
   return registry;

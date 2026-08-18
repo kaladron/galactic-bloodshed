@@ -15,10 +15,14 @@ export void who(const command_t&, Session&);
 export void emulate(const command_t&, Session&);
 
 // God commands
-export void help(const command_t&, GameObj&);
-export void quit(const command_t&, GameObj&);
-export void purge(const command_t&, GameObj&);
-export void shutdown(const command_t&, GameObj&);
+export bool help(const command_t&, GameObj&);
+export extern const CommandDescriptor help_cmd;
+export bool quit(const command_t&, GameObj&);
+export extern const CommandDescriptor quit_cmd;
+export bool purge(const command_t&, GameObj&);
+export extern const CommandDescriptor purge_cmd;
+export bool shutdown(const command_t&, GameObj&);
+export extern const CommandDescriptor shutdown_cmd;
 
 // Regular commands (take GameObj&)
 export void analysis(const command_t&, GameObj&);
@@ -26,12 +30,14 @@ export void announce(const command_t&, GameObj&);
 export void arm(const command_t&, GameObj&);
 export void autoreport(const command_t&, GameObj&);
 export void bid(const command_t& argv, GameObj&);
-export void bless(const command_t&, GameObj&);
+export bool bless(const command_t&, GameObj&);
+export extern const CommandDescriptor bless_cmd;
 export void block(const command_t&, GameObj&);
 export void bombard(const command_t&, GameObj&);
 export void build(const command_t&, GameObj&);
 export void capture(const command_t&, GameObj&);
-export void capital(const command_t&, GameObj&);
+export bool capital(const command_t&, GameObj&);
+export extern const CommandDescriptor capital_cmd;
 export void center(const command_t&, GameObj&);
 export void colonies(const command_t&, GameObj&);
 export void cs(const command_t&, GameObj&);
@@ -48,7 +54,8 @@ export void explore(const command_t&, GameObj&);
 export void fire(const command_t&, GameObj&);
 export void fix(const command_t&, GameObj&);
 export void give(const command_t&, GameObj&);
-export void governors(const command_t&, GameObj&);
+export bool governors(const command_t&, GameObj&);
+export extern const CommandDescriptor governors_cmd;
 export void grant(const command_t&, GameObj&);
 export void highlight(const command_t&, GameObj&);
 export void insurgency(const command_t&, GameObj&);

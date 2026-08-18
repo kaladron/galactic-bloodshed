@@ -719,19 +719,26 @@ const auto* result = em.peek_ship(123);
 assert(result == nullptr || result->number() == 123);
 ```
 
-**Command Tests**
+**Command Tests: The 4-Way Test Matrix**
+
+Command unit tests use `TestContext` to verify player commands across four standard execution paths:
+
+1. **Happy Path**: Valid arguments, authorized role, correct scope, and sufficient Action Points (AP). The command executes, returns `true`, and deducts the exact declared AP cost.
+2. **Insufficient AP**: Player has fewer AP than required. The dispatch pipeline rejects execution prior to calling the domain handler and deducts 0 AP.
+3. **Scope & Role Rejection**: Unauthorized roles (such as guests on restricted commands or non-leaders on governor commands) or invalid scope levels (e.g. planetary commands executed at universe scope) are rejected with 0 AP deducted.
+4. **Domain Error**: Invalid game conditions (e.g. targeting a non-existent ship) cause the command handler to return `false`, aborting the action with 0 AP deducted.
+
 ```cpp
-// Integration test with real service
-Database db(":memory:");
-initialize_schema(db);
-EntityManager em(db);
+TestContext ctx;
+auto& registry = get_test_session_registry();
+GameObj g(ctx.em, registry);
+ctx.setup_game_obj(g, player_t{1}, governor_t{0});
 
-std::ostringstream output;
-GameObj g{.player = 1, .entity_manager = em, .out = output};
+// Happy Path: Executes and verifies AP deduction
+ctx.assert_dispatch_success(g, tax_cmd, {"tax", "15"}, /*expected_star_ap_deducted=*/1);
 
-GB::commands::examine({"examine", "123"}, g);
-
-assert(output.str().contains("Ship #123"));
+// Insufficient AP / Role Rejection: Rejected with 0 AP deducted
+ctx.assert_dispatch_rejected(g, tax_cmd, {"tax", "15"});
 ```
 
 ---

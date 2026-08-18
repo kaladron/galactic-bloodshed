@@ -86,7 +86,7 @@ add_library(test_module)
 target_sources(
   test_module
   PUBLIC FILE_SET CXX_MODULES FILES test.cppm)
-target_link_libraries(test_module PUBLIC gblib dallib session)
+target_link_libraries(test_module PUBLIC gblib dallib session commands)
 
 # Executable targets
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
@@ -766,6 +766,10 @@ add_test(NAME GB_gameobj_ap_test COMMAND gameobj_ap_test)
 add_executable(command_registry_test commands/command_registry_test.cc)
 target_link_libraries(command_registry_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_command_registry_test COMMAND command_registry_test)
+
+add_executable(test_context_test test_context_test.cc)
+target_link_libraries(test_context_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_test_context_test COMMAND test_context_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

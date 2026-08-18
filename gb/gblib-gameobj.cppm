@@ -88,6 +88,19 @@ public:
     level_ = l;
   }
 
+  /// Deduct action points for a star system.
+  /// \param snum Star system number.
+  /// \param amount Number of AP to deduct.
+  /// \return true if deduction was successful (or 0 cost / god mode), false if
+  /// insufficient AP or star not found.
+  bool deduct_ap(starnum_t snum, ap_t amount);
+
+  /// Deduct global universe action points.
+  /// \param amount Number of AP to deduct.
+  /// \return true if deduction was successful (or 0 cost / god mode), false if
+  /// insufficient AP or universe not found.
+  bool deduct_univ_ap(ap_t amount);
+
 private:
   // All state stored locally
   player_t player_ = 0;

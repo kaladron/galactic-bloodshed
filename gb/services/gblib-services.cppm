@@ -51,11 +51,25 @@ public:
     // Note: EntityManager will be notified via release mechanism
   }
 
-  // Delete copy, allow move
+  // Delete copy, allow move with proper nulling of moved-from source
   EntityHandle(const EntityHandle&) = delete;
   EntityHandle& operator=(const EntityHandle&) = delete;
-  EntityHandle(EntityHandle&&) noexcept = default;
-  EntityHandle& operator=(EntityHandle&&) noexcept = default;
+  EntityHandle(EntityHandle&& other) noexcept
+      : manager(other.manager), entity(std::exchange(other.entity, nullptr)),
+        save_fn(std::move(other.save_fn)),
+        dirty(std::exchange(other.dirty, false)) {}
+  EntityHandle& operator=(EntityHandle&& other) noexcept {
+    if (this != &other) {
+      if (dirty && entity) {
+        save_fn(*entity);
+      }
+      manager = other.manager;
+      entity = std::exchange(other.entity, nullptr);
+      save_fn = std::move(other.save_fn);
+      dirty = std::exchange(other.dirty, false);
+    }
+    return *this;
+  }
 
   // Non-const access marks entity as dirty
   T& operator*() {

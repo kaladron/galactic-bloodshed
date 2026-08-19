@@ -14,11 +14,12 @@ import session;
 module commands;
 
 namespace GB::commands {
-void dock(const command_t& argv, GameObj& g) {
+
+namespace {
+
+bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  ap_t APcount = (argv[0] == "dock") ? 0 : 1;
-  int Assault = (argv[0] == "assault") ? 1 : 0;
   population_t boarders = 0;
   int dam = 0;
   int dam2 = 0;
@@ -36,10 +37,11 @@ void dock(const command_t& argv, GameObj& g) {
   double bstrength = 0;
   double b2strength = 0;
   double Dist;
+  bool any_docked = false;
 
   if (argv.size() < 3) {
-    g.out << "Dock with what?\n";
-    return;
+    g.out << (Assault ? "Assault what?\n" : "Dock with what?\n");
+    return false;
   }
   if (argv.size() < 5)
     what = PopulationType::MIL;
@@ -50,7 +52,7 @@ void dock(const command_t& argv, GameObj& g) {
       what = PopulationType::MIL;
     else {
       g.out << "Assault with what?\n";
-      return;
+      return false;
     }
   }
 
@@ -80,17 +82,17 @@ void dock(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      const auto* universe = g.entity_manager.peek_universe();
-      if (!enufAP(g.entity_manager, Playernum, Governor,
-                  universe->AP[Playernum.value - 1], APcount)) {
-        continue;
-      }
-    } else {
-      const auto* star_ptr = g.entity_manager.peek_star(s.storbits());
-      if (!star_ptr || !enufAP(g.entity_manager, Playernum, Governor,
-                               star_ptr->AP(Playernum), APcount)) {
-        continue;
+    if (Assault) {
+      if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+        if (!g.deduct_univ_ap(1)) {
+          g.out << "You need 1 universe action point.\n";
+          continue;
+        }
+      } else {
+        if (!g.deduct_ap(s.storbits(), 1)) {
+          g.out << "You don't have 1 action points there.\n";
+          continue;
+        }
       }
     }
 
@@ -106,6 +108,7 @@ void dock(const command_t& argv, GameObj& g) {
     auto shiptmp = string_to_shipnum(argv[2]);
     if (!shiptmp) {
       g.out << "Invalid ship number.\n";
+      continue;
     }
     ship2no = *shiptmp;
 
@@ -118,14 +121,14 @@ void dock(const command_t& argv, GameObj& g) {
       g.entity_manager.peek_ship(ship2no);
     } catch (const EntityNotFoundError&) {
       g.out << "The ship wasn't found.\n";
-      return;
+      return any_docked;
     }
     auto s2_handle = g.entity_manager.get_ship(ship2no);
     Ship& s2 = *s2_handle;
 
     if (!Assault && testship(s2, g)) {
       g.out << "You are not authorized to do this.\n";
-      return;
+      return any_docked;
     }
 
     /* Check if ships are on same scope level. Maarten */
@@ -174,11 +177,11 @@ void dock(const command_t& argv, GameObj& g) {
 
     if (s2.docked() && !Assault) {
       g.out << std::format("{} is already docked.\n", s2);
-      return;
+      return any_docked;
     }
     /* defending fire gets defensive fire */
     if (Assault) {
-      // Set the command to be distinctive here.  In the target function,
+      // Set the command to be distinctive here. In the target function,
       // APcount is set to 0 and cew is set to 3.
       command_t fire_argv{"fire-from-dock", std::format("#{0}", ship2no),
                           std::format("#{0}", shipno)};
@@ -187,7 +190,7 @@ void dock(const command_t& argv, GameObj& g) {
         continue;
       }
       if (!s2.alive()) {
-        return;
+        return any_docked;
       }
     }
 
@@ -205,7 +208,7 @@ void dock(const command_t& argv, GameObj& g) {
       race_handle_opt = g.entity_manager.get_race(Playernum);
       if (!alien_handle_opt->get() || !race_handle_opt->get()) {
         g.out << "Race data not found.\n";
-        return;
+        return any_docked;
       }
       alien_ptr = alien_handle_opt->get();
       race_ptr = race_handle_opt->get();
@@ -447,12 +450,43 @@ void dock(const command_t& argv, GameObj& g) {
       g.out << std::format("{} docked with {}.\n", s, s2);
     }
 
-    if (g.level() == ScopeLevel::LEVEL_UNIV)
-      deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
-    else
-      deductAPs(g, APcount, g.snum());
-
     s.notified() = s2.notified() = 0;
+    any_docked = true;
   }
+
+  return any_docked;
 }
+
+}  // namespace
+
+bool dock(const command_t& argv, GameObj& g) {
+  return do_dock(argv, g, false);
+}
+
+bool assault(const command_t& argv, GameObj& g) {
+  return do_dock(argv, g, true);
+}
+
+const CommandDescriptor dock_cmd{
+    .name = "dock",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "dock <ship> <target_ship>",
+    .description = "Dock a ship with another ship",
+    .handler = &dock,
+};
+
+const CommandDescriptor assault_cmd{
+    .name = "assault",
+    .roles = {.no_guests = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 3,
+    .syntax = "assault <ship> <target_ship> [<boarders>] [civilians|military]",
+    .description = "Assault and attempt to capture a target ship",
+    .handler = &assault,
+};
+
 }  // namespace GB::commands

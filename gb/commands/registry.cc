@@ -89,6 +89,8 @@ build_registry() {
         reg(quit_cmd);
         reg(tax_cmd);
         reg(technology_cmd);
+        reg(dock_cmd);
+        reg(assault_cmd);
 
         return map;
       }();

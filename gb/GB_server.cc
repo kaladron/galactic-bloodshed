@@ -85,7 +85,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"allocate", allocateAPs},
       {"analysis", GB::commands::analysis},
       {"announce", GB::commands::announce},
-      {"assault", GB::commands::dock},
       {"arm", GB::commands::arm},
       {"autoreport", GB::commands::autoreport},
       {"block", GB::commands::block},
@@ -105,7 +104,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"dismount", GB::commands::mount},
       {"dissolve", GB::commands::dissolve},  // TODO(jeffbailey): !guest
       {"distance", GB::commands::distance},
-      {"dock", GB::commands::dock},
       {"dump", GB::commands::dump},
       {"enslave", GB::commands::enslave},
       {"examine", GB::commands::examine},

@@ -87,6 +87,7 @@ build_registry() {
         reg(governors_cmd);
         reg(help_cmd);
         reg(quit_cmd);
+        reg(tax_cmd);
 
         return map;
       }();

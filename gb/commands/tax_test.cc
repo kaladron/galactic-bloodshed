@@ -1,149 +1,208 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file tax_test.cc
+/// \brief Unit tests for tax command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-/// \file tax_test.cc
-/// \brief Test tax command database persistence
+namespace {
 
-void test_tax_database_persistence() {
-  std::println(std::cout, "Test: tax command database persistence");
-
-  // Create in-memory database
+// Test querying and setting planetary tax rate successfully
+void test_tax_happy_paths() {
   TestContext ctx;
-
-  // Setup: Create a race with government ship
   Race race{};
   race.Playernum = 1;
-  race.Gov_ship = 100;  // Has government center
-  race.Guest = 0;       // Not a guest
+  race.name = "TestRace";
+  race.Gov_ship = 100;
+  race.Guest = false;
 
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
+  star_struct star{};
+  star.star_id = 1;
+  star.name = "TestStar";
+  star.governor[0] = 0;  // Player 1, Governor 0 controls star
 
-  // Setup: Create a star
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.governor[0] = 0;  // Player 1 governor 0
-  Star star{star_data};
-
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Setup: Create a planet with initial tax rate
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.info(player_t{1}).tax = 10;     // Current tax rate
-  planet.info(player_t{1}).newtax = 10;  // Target tax rate
+  planet.info(1).tax = 10;
+  planet.info(1).newtax = 10;
 
-  PlanetRepository planets(store);
-  planets.save(planet);
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(race);
+    StarRepository stars(store);
+    stars.save(star);
+    PlanetRepository planets(store);
+    planets.save(planet);
+  }
 
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
-  g.race =
-      ctx.em.peek_race(g.player());  // Set race pointer like production does
 
-  // TEST 1: Display current tax rate (no argument)
-  std::println(std::cout, "  Testing: Display current tax rate");
-  {
-    command_t cmd = {"tax"};
-    GB::commands::tax(cmd, g);
+  // 1. Query current tax rate
+  ctx.assert_dispatch_success(g, {"tax"});
+  assert(g.out.str().contains("Current tax rate: 10%"));
+  assert(g.out.str().contains("Target: 10%"));
 
-    // Verify output message
-    std::string out_str = g.out.str();
-    assert(out_str.find("Current tax rate: 10%") != std::string::npos);
-    assert(out_str.find("Target: 10%") != std::string::npos);
-    std::println(std::cout, "    ✓ Output message correct");
-    g.out.str("");  // Clear output for next test
-  }
+  // 2. Set new tax rate to 25%
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"tax", "25"});
+  assert(g.out.str().contains("Set."));
+  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 25);
 
-  // TEST 2: Set new tax rate to 25%
-  std::println(std::cout, "  Testing: Set tax rate to 25%");
-  {
-    command_t cmd = {"tax", "25"};
-    GB::commands::tax(cmd, g);
+  // 3. Set new tax rate to 100% (max)
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"tax", "100"});
+  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 100);
 
-    // Verify output message
-    std::string out_str = g.out.str();
-    assert(out_str.find("Set.") != std::string::npos);
-    std::println(std::cout, "    ✓ Output message correct");
-    g.out.str("");  // Clear output
-
-    // Verify database: newtax should be 25
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).newtax == 25);
-    std::println(std::cout, "    ✓ Database: newtax = {}",
-                 saved->info(player_t{1}).newtax);
-  }
-
-  // TEST 3: Set tax rate to maximum (100%)
-  std::println(std::cout, "  Testing: Set tax rate to 100%");
-  {
-    command_t cmd = {"tax", "100"};
-    GB::commands::tax(cmd, g);
-
-    // Verify database
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).newtax == 100);
-    std::println(std::cout, "    ✓ Database: newtax = {}",
-                 saved->info(player_t{1}).newtax);
-    g.out.str("");  // Clear output
-  }
-
-  // TEST 4: Set tax rate to minimum (0%)
-  std::println(std::cout, "  Testing: Set tax rate to 0%");
-  {
-    command_t cmd = {"tax", "0"};
-    GB::commands::tax(cmd, g);
-
-    // Verify database
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).newtax == 0);
-    std::println(std::cout, "    ✓ Database: newtax = {}",
-                 saved->info(player_t{1}).newtax);
-    g.out.str("");  // Clear output
-  }
-
-  // TEST 5: Reject illegal value (>100)
-  std::println(std::cout, "  Testing: Reject illegal value 150%");
-  {
-    command_t cmd = {"tax", "150"};
-    GB::commands::tax(cmd, g);
-
-    // Verify error message
-    std::string out_str = g.out.str();
-    assert(out_str.find("Illegal value") != std::string::npos);
-    std::println(std::cout, "    ✓ Error message correct");
-
-    // Verify database: should still be 0 from previous test
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).newtax == 0);
-    std::println(std::cout, "    ✓ Database: newtax unchanged = {}",
-                 saved->info(player_t{1}).newtax);
-  }
-
-  std::println(std::cout, "  ✅ All tax database persistence tests passed!");
+  // 4. Set new tax rate to 0% (min)
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"tax", "0"});
+  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 0);
 }
 
+// Test tax command role and scope rejections
+void test_tax_role_and_scope_rejections() {
+  TestContext ctx;
+  Race normal_race{};
+  normal_race.Playernum = 1;
+  normal_race.name = "NormalRace";
+  normal_race.Gov_ship = 100;
+  normal_race.Guest = false;
+
+  Race guest_race{};
+  guest_race.Playernum = 2;
+  guest_race.name = "GuestRace";
+  guest_race.Gov_ship = 100;
+  guest_race.Guest = true;
+
+  star_struct star{};
+  star.star_id = 1;
+  star.name = "TestStar";
+  star.governor[0] = 0;  // Player 1 controls star, Player 2 does not
+
+  Planet planet{};
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+  planet.info(1).tax = 10;
+  planet.info(2).tax = 10;
+
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(normal_race);
+    races.save(guest_race);
+    StarRepository stars(store);
+    stars.save(star);
+    PlanetRepository planets(store);
+    planets.save(planet);
+  }
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+
+  // 1. Guest race rejection
+  ctx.setup_game_obj(g, 2, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+  ctx.assert_dispatch_rejected(g, {"tax", "20"});
+  assert(g.out.str().contains("Guest races cannot use this command."));
+
+  // 2. Star control rejection (Governor 2 on star assigned to Governor 1)
+  {
+    auto star_handle = ctx.em.get_star(1);
+    star_handle->governor(1) = 1;  // Star assigned to Governor 1
+  }
+  g.out.str("");
+  ctx.setup_game_obj(g, 1, 2);  // Player 1, Governor 2
+  ctx.assert_dispatch_rejected(g, {"tax", "20"});
+  assert(g.out.str().contains(
+      "You are not authorized to do that in this system."));
+
+  // 3. Scope rejection (ScopeLevel::LEVEL_UNIV)
+  g.out.str("");
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  ctx.assert_dispatch_rejected(g, {"tax", "20"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+}
+
+// Test tax command domain logic errors
+void test_tax_domain_errors() {
+  TestContext ctx;
+  Race race{};
+  race.Playernum = 1;
+  race.name = "TestRace";
+  race.Gov_ship = 0;  // No government center
+  race.Guest = false;
+
+  star_struct star{};
+  star.star_id = 1;
+  star.name = "TestStar";
+  star.governor[0] = 0;
+
+  Planet planet{};
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+  planet.info(1).tax = 10;
+  planet.info(1).newtax = 10;
+
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(race);
+    StarRepository stars(store);
+    stars.save(star);
+    PlanetRepository planets(store);
+    planets.save(planet);
+  }
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+
+  // 1. Domain error: No government center active
+  ctx.assert_dispatch_rejected(g, {"tax", "20"});
+  assert(g.out.str().contains("You have no government center active."));
+
+  // 2. Domain error: Illegal value (>100 or <0)
+  {
+    auto race_handle = ctx.em.get_race(1);
+    race_handle->Gov_ship = 100;
+  }
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"tax", "150"});
+  assert(g.out.str().contains("Illegal value."));
+  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 10);
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"tax", "-10"});
+  assert(g.out.str().contains("Illegal value."));
+  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 10);
+}
+
+}  // namespace
+
 int main() {
-  test_tax_database_persistence();
-  std::println(std::cout, "\n✅ All tests passed!");
+  test_tax_happy_paths();
+  test_tax_role_and_scope_rejections();
+  test_tax_domain_errors();
+
+  std::println(std::cout, "✓ tax_test passed!");
   return 0;
 }

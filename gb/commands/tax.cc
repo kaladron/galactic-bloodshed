@@ -1,70 +1,61 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file tax.cc
+/// \brief Query or set planetary tax rate.
 
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void tax(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  ap_t APcount = 0;
 
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "scope must be a planet.\n";
-    return;
-  }
-  const auto* star = g.entity_manager.peek_star(g.snum());
-  if (!star) {
-    g.out << "Star not found.\n";
-    return;
-  }
-  if (!star->control(Playernum, Governor)) {
-    g.out << "You are not authorized to do that here.\n";
-    return;
-  }
+bool tax(const command_t& argv, GameObj& g) {
+  player_t Playernum = g.player();
+
   if (g.race->Gov_ship == 0) {
     g.out << "You have no government center active.\n";
-    return;
-  }
-  if (g.race->Guest) {
-    g.out << "Sorry, but you can't do this when you are a guest.\n";
-    return;
-  }
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
-              APcount)) {
-    return;
+    return false;
   }
 
-  auto planet = g.entity_manager.get_planet(g.snum(), g.pnum());
-  if (!planet.get()) {
-    g.out << "Planet not found.\n";
-    return;
-  }
+  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
+  auto& planet = *planet_handle;
 
   if (argv.size() < 2) {
     g.out << std::format("Current tax rate: {}%    Target: {}%\n",
-                         planet->info(Playernum).tax,
-                         planet->info(Playernum).newtax);
-    return;
+                         planet.info(Playernum).tax,
+                         planet.info(Playernum).newtax);
+    return true;
   }
 
-  int sum_tax = std::stoi(argv[1]);
+  int sum_tax = 0;
+  try {
+    sum_tax = std::stoi(argv[1]);
+  } catch (...) {
+    g.out << "Illegal value.\n";
+    return false;
+  }
 
   if (sum_tax > 100 || sum_tax < 0) {
     g.out << "Illegal value.\n";
-    return;
+    return false;
   }
-  planet->info(Playernum).newtax = sum_tax;
-  // Auto-saves when planet goes out of scope
-
-  deductAPs(g, APcount, g.snum());
+  planet.info(Playernum).newtax = sum_tax;
   g.out << "Set.\n";
+  return true;
 }
+
+const CommandDescriptor tax_cmd{
+    .name = "tax",
+    .roles = {.no_guests = true, .star_control = true},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "tax [<rate>]",
+    .description = "Query or set planetary tax rate",
+    .handler = &tax,
+};
+
 }  // namespace GB::commands

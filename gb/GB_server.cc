@@ -187,7 +187,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
     commands["bid"] = GB::commands::bid;
     commands["insurgency"] = GB::commands::insurgency;
     commands["sell"] = GB::commands::sell;
-    commands["tax"] = GB::commands::tax;
     commands["treasury"] = GB::commands::treasury;
   }
 

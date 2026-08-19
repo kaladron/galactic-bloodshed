@@ -1,205 +1,215 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file technology_test.cc
+/// \brief Unit tests for technology command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-/// \file technology_test.cc
-/// \brief Test technology command database persistence
+namespace {
 
-void test_technology_database_persistence() {
-  std::println(std::cout, "Test: technology command database persistence");
-
-  // Create in-memory database
+// Test querying and setting planetary technology investment successfully
+void test_technology_happy_paths() {
   TestContext ctx;
-
-  // Setup: Create a race
   Race race{};
   race.Playernum = 1;
-  race.Guest = 0;  // Not a guest
+  race.name = "TestRace";
+  race.Guest = false;
 
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
+  star_struct star{};
+  star.star_id = 1;
+  star.name = "TestStar";
+  star.governor[0] = 0;  // Player 1, Governor 0 controls star
+  star.AP[0] = 10;
 
-  // Setup: Create a star
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.governor[0] = 0;  // Player 1 governor 0
-  star_data.AP[0] = 10;       // Enough APs
-  Star star{star_data};
-
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Setup: Create a planet with initial tech investment
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.info(player_t{1}).tech_invest = 100;  // Initial investment
-  planet.info(player_t{1}).popn = 1000;  // Population for tech production calc
+  planet.info(1).tech_invest = 100;
+  planet.info(1).popn = 1000;
 
-  PlanetRepository planets(store);
-  planets.save(planet);
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(race);
+    StarRepository stars(store);
+    stars.save(star);
+    PlanetRepository planets(store);
+    planets.save(planet);
+  }
 
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
 
-  // TEST 1: Display current tech investment (no argument)
-  std::println(std::cout, "  Testing: Display current tech investment");
-  {
-    command_t cmd = {"technology"};
-    GB::commands::technology(cmd, g);
+  // 1. Query current technology investment (costs 1 AP)
+  ctx.assert_dispatch_success(g, {"technology"}, 1);
+  assert(g.out.str().contains("Current investment : 100"));
+  assert(g.out.str().contains("Technology production/update:"));
 
-    // Verify output message
-    std::string out_str = g.out.str();
-    assert(out_str.find("Current investment : 100") != std::string::npos);
-    assert(out_str.find("Technology production") != std::string::npos);
-    std::println(std::cout, "    ✓ Output message correct");
-    g.out.str("");  // Clear output for next test
-  }
+  // 2. Set technology investment to 500 (costs 1 AP)
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"technology", "500"}, 1);
+  assert(g.out.str().contains("New (ideal) tech production:"));
+  assert(ctx.em.peek_planet(1, 0)->info(1).tech_invest == 500);
 
-  // TEST 2: Set tech investment to 500
-  std::println(std::cout, "  Testing: Set tech investment to 500");
-  {
-    command_t cmd = {"technology", "500"};
-    GB::commands::technology(cmd, g);
-
-    // Verify output message
-    std::string out_str = g.out.str();
-    assert(out_str.find("New (ideal) tech production") != std::string::npos);
-    std::println(std::cout, "    ✓ Output message correct");
-    g.out.str("");
-
-    // Verify database: tech_invest should be 500
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).tech_invest == 500);
-    std::println(std::cout, "    ✓ Database: tech_invest = {}",
-                 saved->info(player_t{1}).tech_invest);
-  }
-
-  // TEST 3: Set tech investment to 0
-  std::println(std::cout, "  Testing: Set tech investment to 0");
-  {
-    command_t cmd = {"technology", "0"};
-    GB::commands::technology(cmd, g);
-
-    // Verify database
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).tech_invest == 0);
-    std::println(std::cout, "    ✓ Database: tech_invest = {}",
-                 saved->info(player_t{1}).tech_invest);
-    g.out.str("");
-  }
-
-  // TEST 4: Set tech investment to large value
-  std::println(std::cout, "  Testing: Set tech investment to 10000");
-  {
-    command_t cmd = {"technology", "10000"};
-    GB::commands::technology(cmd, g);
-
-    // Verify database
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).tech_invest == 10000);
-    std::println(std::cout, "    ✓ Database: tech_invest = {}",
-                 saved->info(player_t{1}).tech_invest);
-    g.out.str("");
-  }
-
-  // TEST 5: Reject illegal negative value
-  std::println(std::cout, "  Testing: Reject illegal negative value");
-  {
-    command_t cmd = {"technology", "-100"};
-    GB::commands::technology(cmd, g);
-
-    // Verify error message
-    std::string out_str = g.out.str();
-    assert(out_str.find("Illegal value") != std::string::npos);
-    std::println(std::cout, "    ✓ Error message correct");
-
-    // Verify database: should still be 10000 from previous test
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).tech_invest == 10000);
-    std::println(std::cout, "    ✓ Database: tech_invest unchanged = {}",
-                 saved->info(player_t{1}).tech_invest);
-    g.out.str("");
-  }
-
-  // TEST 6: Verify wrong scope level is rejected
-  std::println(std::cout, "  Testing: Reject wrong scope level");
-  {
-    g.set_level(ScopeLevel::LEVEL_UNIV);  // Wrong scope
-    command_t cmd = {"technology", "100"};
-    GB::commands::technology(cmd, g);
-
-    // Verify error message
-    std::string out_str = g.out.str();
-    assert(out_str.find("scope must be a planet") != std::string::npos);
-    std::println(std::cout, "    ✓ Error message correct for wrong scope");
-
-    // Verify database: should still be 10000 (no change)
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).tech_invest == 10000);
-    std::println(std::cout, "    ✓ Database: tech_invest unchanged = {}",
-                 saved->info(player_t{1}).tech_invest);
-
-    // Restore correct scope for further tests
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.out.str("");
-  }
-
-  // TEST 7: Verify unauthorized governor is rejected
-  std::println(std::cout, "  Testing: Reject unauthorized governor");
-  {
-    // Change star governor to 1 (not matching g.governor() = 0)
-    auto star_handle = ctx.em.get_star(1);
-    auto& star_mod = *star_handle;
-    star_mod.governor(1) = 1;  // Different governor
-
-    // Update GameObj governor to non-zero
-    g.set_governor(2);  // Not matching star's governor[0] = 1
-
-    command_t cmd = {"technology", "200"};
-    GB::commands::technology(cmd, g);
-
-    // Verify error message
-    std::string out_str = g.out.str();
-    assert(out_str.find("not authorized") != std::string::npos);
-    std::println(std::cout,
-                 "    ✓ Error message correct for unauthorized governor");
-
-    // Verify database: should still be 10000 (no change)
-    auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).tech_invest == 10000);
-    std::println(std::cout, "    ✓ Database: tech_invest unchanged = {}",
-                 saved->info(player_t{1}).tech_invest);
-
-    // Restore for cleanup
-    g.set_governor(0);
-    g.out.str("");
-  }
-
-  std::println(std::cout,
-               "  ✅ All technology database persistence tests passed!");
+  // 3. Set technology investment to 0
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"technology", "0"}, 1);
+  assert(ctx.em.peek_planet(1, 0)->info(1).tech_invest == 0);
 }
 
+// Test technology command with insufficient AP
+void test_technology_insufficient_ap() {
+  TestContext ctx;
+  Race race{};
+  race.Playernum = 1;
+  race.name = "TestRace";
+  race.Guest = false;
+
+  star_struct star{};
+  star.star_id = 1;
+  star.name = "TestStar";
+  star.governor[0] = 0;
+  star.AP[0] = 0;  // 0 AP (needs 1)
+
+  Planet planet{};
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+  planet.info(1).tech_invest = 100;
+  planet.info(1).popn = 1000;
+
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(race);
+    StarRepository stars(store);
+    stars.save(star);
+    PlanetRepository planets(store);
+    planets.save(planet);
+  }
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+
+  ctx.assert_dispatch_rejected(g, {"technology", "500"});
+  assert(g.out.str().contains("You don't have 1 action points there."));
+  assert(ctx.em.peek_planet(1, 0)->info(1).tech_invest == 100);
+}
+
+// Test technology command role and scope rejections
+void test_technology_role_and_scope_rejections() {
+  TestContext ctx;
+  Race race{};
+  race.Playernum = 1;
+  race.name = "TestRace";
+  race.Guest = false;
+
+  star_struct star{};
+  star.star_id = 1;
+  star.name = "TestStar";
+  star.governor[0] = 1;  // Assigned to Governor 1
+  star.AP[0] = 10;
+
+  Planet planet{};
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+  planet.info(1).tech_invest = 100;
+  planet.info(1).popn = 1000;
+
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(race);
+    StarRepository stars(store);
+    stars.save(star);
+    PlanetRepository planets(store);
+    planets.save(planet);
+  }
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+
+  // 1. Star control rejection (Governor 2 on star assigned to Governor 1)
+  ctx.setup_game_obj(g, 1, 2);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+  ctx.assert_dispatch_rejected(g, {"technology", "200"});
+  assert(g.out.str().contains(
+      "You are not authorized to do that in this system."));
+
+  // 2. Scope rejection (ScopeLevel::LEVEL_UNIV)
+  g.out.str("");
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  ctx.assert_dispatch_rejected(g, {"technology", "200"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+}
+
+// Test technology command domain logic errors
+void test_technology_domain_errors() {
+  TestContext ctx;
+  Race race{};
+  race.Playernum = 1;
+  race.name = "TestRace";
+  race.Guest = false;
+
+  star_struct star{};
+  star.star_id = 1;
+  star.name = "TestStar";
+  star.governor[0] = 0;
+  star.AP[0] = 10;
+
+  Planet planet{};
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+  planet.info(1).tech_invest = 100;
+  planet.info(1).popn = 1000;
+
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(race);
+    StarRepository stars(store);
+    stars.save(star);
+    PlanetRepository planets(store);
+    planets.save(planet);
+  }
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+
+  // Domain error: Illegal negative value (0 AP deducted, investment unchanged)
+  ctx.assert_dispatch_rejected(g, {"technology", "-100"});
+  assert(g.out.str().contains("Illegal value."));
+  assert(ctx.em.peek_planet(1, 0)->info(1).tech_invest == 100);
+}
+
+}  // namespace
+
 int main() {
-  test_technology_database_persistence();
-  std::println(std::cout, "\n✅ All tests passed!");
+  test_technology_happy_paths();
+  test_technology_insufficient_ap();
+  test_technology_role_and_scope_rejections();
+  test_technology_domain_errors();
+
+  std::println(std::cout, "✓ technology_test passed!");
   return 0;
 }

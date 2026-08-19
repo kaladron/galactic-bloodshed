@@ -88,6 +88,7 @@ build_registry() {
         reg(help_cmd);
         reg(quit_cmd);
         reg(tax_cmd);
+        reg(technology_cmd);
 
         return map;
       }();

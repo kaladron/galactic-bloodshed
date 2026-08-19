@@ -1,73 +1,62 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file technology.cc
-/// \brief increase investment in technological development
+/// \brief Query or set planetary technology investment.
 
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void technology(const command_t& argv, GameObj& g) {
+
+bool technology(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  ap_t APcount = 1;
-
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << std::format("scope must be a planet ({}).\n",
-                         static_cast<int>(g.level()));
-    return;
-  }
-
-  const auto* star = g.entity_manager.peek_star(g.snum());
-  if (!star) {
-    g.out << "Star not found.\n";
-    return;
-  }
-
-  // Check control: governor must match or be 0
-  if (Governor != 0 && star->governor(Playernum) != Governor) {
-    g.out << "You are not authorized to do that here.\n";
-    return;
-  }
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
-              APcount)) {
-    return;
-  }
-
-  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
-  if (!planet_handle.get()) {
-    g.out << "Planet not found.\n";
-    return;
-  }
 
   if (argv.size() < 2) {
-    const auto& p = planet_handle.read();
+    const auto* planet = g.entity_manager.peek_planet(g.snum(), g.pnum());
     g.out << std::format(
         "Current investment : {}    Technology production/update: {:.3f}\n",
-        p.info(Playernum).tech_invest,
-        tech_prod(p.info(Playernum).tech_invest, p.info(Playernum).popn));
-    return;
+        planet->info(Playernum).tech_invest,
+        tech_prod(planet->info(Playernum).tech_invest,
+                  planet->info(Playernum).popn));
+    return true;
   }
 
-  money_t invest = std::stoi(argv[1]);
+  money_t invest = 0;
+  try {
+    invest = std::stoi(argv[1]);
+  } catch (...) {
+    g.out << "Illegal value.\n";
+    return false;
+  }
 
   if (invest < 0) {
     g.out << "Illegal value.\n";
-    return;
+    return false;
   }
 
+  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   auto& p = *planet_handle;
   p.info(Playernum).tech_invest = invest;
-
-  deductAPs(g, APcount, g.snum());
 
   g.out << std::format(
       "   New (ideal) tech production: {:.3f} (this planet)\n",
       tech_prod(p.info(Playernum).tech_invest, p.info(Playernum).popn));
+  return true;
 }
+
+const CommandDescriptor technology_cmd{
+    .name = "technology",
+    .roles = {.star_control = true},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::fixed_star(1),
+    .min_args = 1,
+    .syntax = "technology [<investment>]",
+    .description = "Query or set planetary technology investment",
+    .handler = &technology,
+};
+
 }  // namespace GB::commands

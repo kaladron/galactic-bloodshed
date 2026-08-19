@@ -157,7 +157,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"status", GB::commands::tech_status},
       {"stock", GB::commands::rst},
       {"tactical", GB::commands::tactical},
-      {"technology", GB::commands::technology},
       {"think", GB::commands::announce},
       {"time", GB_time},
       {"toggle", GB::commands::toggle},

@@ -21,7 +21,7 @@ struct BuildTestFixture {
   planetnum_t planet_id;
 
   BuildTestFixture()
-      : db(":memory:"), em(db), store(db), star_id(0), planet_id(0) {
+      : db(":memory:"), em(db), store(db), star_id(1), planet_id(0) {
     initialize_schema(db);
 
     // Create race
@@ -38,11 +38,12 @@ struct BuildTestFixture {
 
     // Create star
     star_struct star_data{};
-    star_data.star_id = 0;
+    star_data.star_id = 1;
     star_data.governor[0] = 0;
     star_data.name = "TestStar";
     star_data.xpos = 100.0;
     star_data.ypos = 100.0;
+    star_data.AP[0] = 100;
     Star star{star_data};
     StarRepository stars_repo(store);
     stars_repo.save(star);

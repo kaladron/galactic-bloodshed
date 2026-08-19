@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file build_test.cc
+/// \brief Unit tests for build command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   // Initialize database
-  TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create a test race
   Race race{};
@@ -22,25 +27,24 @@ int main() {
   race.tech = 500.0;  // High tech to build any ship
   race.pods = false;
 
-  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
   // Create a test star
   star_struct star_data{};
-  star_data.star_id = 0;
+  star_data.star_id = 1;
   star_data.governor[0] = 0;
   star_data.name = "TestStar";
   star_data.xpos = 100.0;
   star_data.ypos = 100.0;
+  star_data.AP[0] = 100;
   Star star{star_data};
   StarRepository stars_repo(store);
   stars_repo.save(star);
-  const starnum_t star_id = star_data.star_id;
 
   // Create a test planet with resources
   Planet planet{};
-  planet.star_id() = star_id;
+  planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
@@ -53,76 +57,111 @@ int main() {
   planets_repo.save(planet);
 
   // Create a sectormap with a sector with population for building
-  {
-    SectorMap smap(planet, true);  // Initialize empty sectors
-    smap.get(5, 5).set_owner(1);
-    smap.get(5, 5).set_popn_exact(100);
-    smap.get(5, 5).set_condition(SectorType::SEC_LAND);
-    SectorRepository sectors_repo(store);
-    sectors_repo.save_map(smap);
-  }
+  SectorMap smap(planet, true);  // Initialize empty sectors
+  smap.get(5, 5).set_owner(1);
+  smap.get(5, 5).set_popn_exact(100);
+  smap.get(5, 5).set_condition(SectorType::SEC_LAND);
+  SectorRepository sectors_repo(store);
+  sectors_repo.save_map(smap);
+}
+
+void test_build_happy_paths() {
+  TestContext ctx;
+  setup_test_world(ctx);
 
   // Create GameObj for testing
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(star_id);
+  g.set_snum(1);
   g.set_pnum(0);
 
-  // Test: Build a probe on planet
+  // 1. Build info query (0 AP)
+  ctx.assert_dispatch_success(g, {"build", "?"}, 0);
+  assert(g.out.str().contains("Default ship parameters"));
+
+  // 2. Test: Build a probe on planet (1 AP deducted dynamically)
+  g.out.str("");
+  // ":" = Probe
+  ctx.assert_dispatch_success(g, {"build", ":", "5,5", "1"}, 1);
+
+  // Verify planet resources were deducted
+  ctx.em.clear_cache();
+  const auto* planet_verify = ctx.em.peek_planet(1, 0);
+  assert(planet_verify);
+  assert(planet_verify->info(player_t{1}).resource <
+         10000);  // Resources should be deducted
+
+  // Verify ship was created (it should be ship #1)
+  const auto* ship = ctx.em.peek_ship(1);
+  assert(ship);
+  assert(ship->type() == ShipType::OTYPE_PROBE);
+  assert(ship->owner() == 1);
+  assert(ship->whatorbits() == ScopeLevel::LEVEL_PLAN);
+  assert(ship->storbits() == 1);
+  assert(ship->pnumorbits() == 0);
+  assert(ship->land_coords() == Coordinates(5, 5));
+}
+
+void test_build_insufficient_ap() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Set Star AP to 0
   {
-    command_t argv = {"build", ":", "5,5", "1"};  // ":" = Probe
-    GB::commands::build(argv, g);
-
-    // The build command uses notify() which sends to connected clients,
-    // not g.out. In tests, we verify success by checking the database
-    // instead of output messages.
-
-    // Verify planet resources were deducted
-    ctx.em.clear_cache();
-    const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
-    assert(planet_verify);
-    assert(planet_verify->info(player_t{1}).resource <
-           10000);  // Resources should be deducted
-
-    // Verify ship was created (it should be ship #1)
-    const auto* ship = ctx.em.peek_ship(1);
-    assert(ship);
-    assert(ship->type() == ShipType::OTYPE_PROBE);
-    assert(ship->owner() == 1);
-    assert(ship->whatorbits() == ScopeLevel::LEVEL_PLAN);
-    assert(ship->storbits() == star_id);
-    assert(ship->pnumorbits() == 0);
-    assert(ship->land_coords() == Coordinates(5, 5));
-
-    std::println(std::cout, "Build command test passed: Probe built on planet");
+    auto star_handle = ctx.em.get_star(1);
+    star_handle->AP(1) = 0;
   }
 
-  // Test: Build with insufficient resources
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+
+  ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
+  assert(g.out.str().contains("action points"));
+}
+
+void test_build_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+
+  // 1. Min args check (< 2 args)
+  ctx.assert_dispatch_rejected(g, {"build"});
+  assert(g.out.str().contains(
+      "Syntax: build <type> <x,y> [count] | build ? [type]"));
+
+  // 2. Test: Build with insufficient resources
   {
     // Drain resources completely
-    auto planet_handle2 = ctx.em.get_planet(star_id, 0);
-    auto& planet2 = *planet_handle2;
-    planet2.info(player_t{1}).resource = 0;  // No resources
+    auto planet_handle = ctx.em.get_planet(1, 0);
+    planet_handle->info(player_t{1}).resource = 0;  // No resources
   }
+  g.out.str("");
+  // Try to build probe with no resources
+  ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
+  // The build command should fail due to insufficient resources. The error is
+  // written to g.out
+  assert(g.out.str().contains("You need"));
+}
 
-  {
-    command_t argv = {"build", ":", "5,5",
-                      "1"};  // Try to build probe with no resources
-    GB::commands::build(argv, g);
+}  // namespace
 
-    // The build command should fail due to insufficient resources.
-    // The error is written to g.out
-    std::string result = g.out.str();
-    std::println(std::cout, "Build error output: {}", result);
-    assert(result.find("You need") != std::string::npos);
-    g.out.str("");
+int main() {
+  test_build_happy_paths();
+  test_build_insufficient_ap();
+  test_build_domain_errors();
 
-    std::println(std::cout,
-                 "Build command test passed: Insufficient resources");
-  }
-
-  std::println(std::cout, "\nAll build command tests passed!");
+  std::println(std::cout, "✓ build_test passed!");
   return 0;
 }

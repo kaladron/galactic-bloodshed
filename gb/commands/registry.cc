@@ -93,6 +93,7 @@ build_registry() {
         reg(assault_cmd);
         reg(land_cmd);
         reg(launch_cmd);
+        reg(build_cmd);
 
         return map;
       }();

@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file build.cc
+/// \brief Ship construction on planets and by builder ships.
+
 module;
 
 import gblib;
 import scnlib;
 import std;
 import tabulate;
-#undef stdout
 
 module commands;
 
@@ -68,10 +70,10 @@ void add_ship_spec_row(tabulate::Table& table, ShipType i, const Race& race) {
 }  // namespace
 
 namespace GB::commands {
-void build(const command_t& argv, GameObj& g) {
+
+bool build(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
-  // TODO(jeffbailey): Fix unused ap_t APcount = 1;
   int j;
   int m;
   int n;
@@ -88,7 +90,6 @@ void build(const command_t& argv, GameObj& g) {
   std::optional<Ship> builder;
   Ship newship;
 
-  // Entity handles that persist across the loop
   std::optional<EntityHandle<Planet>> planet_handle;
   std::optional<EntityHandle<SectorMap>> sectormap_handle;
 
@@ -110,109 +111,113 @@ void build(const command_t& argv, GameObj& g) {
         }
       }
       g.out << table << "\n";
-      return;
+      return true;
     }
     /* Description of specific ship type */
     auto i = get_build_type(argv[2][0]);
-    if (!i)
+    if (!i) {
       g.out << "No such ship type.\n";
-    else if (!Shipdata[*i][ABIL_PROGRAMMED])
-      g.out << "This ship type has not been programmed.\n";
-    else {
-      const auto* exam = g.entity_manager.peek_ship_exam(*i);
-      if (exam && !exam->description.empty()) {
-        g.out << "\n" << exam->description;
-        if (!exam->description.ends_with('\n')) {
-          g.out << "\n";
-        }
-      }
-      /* Built where? */
-      if (Shipdata[*i][ABIL_BUILD] & 1) {
-        g.out << "\nCan be constructed on planet.";
-      }
-      n = 0;
-      std::string header = "\nCan be built by ";
-      for (j = 0; j < NUMSTYPES; j++)
-        if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) n++;
-      if (n) {
-        m = 0;
-        g.out << header;
-        for (j = 0; j < NUMSTYPES; j++) {
-          if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) {
-            m++;
-            if (n - m > 1)
-              g.out << std::format("{}, ", Shipltrs[j]);
-            else if (n - m > 0)
-              g.out << std::format("{} and ", Shipltrs[j]);
-            else
-              g.out << std::format("{} ", Shipltrs[j]);
-          }
-        }
-        g.out << "type ships.\n";
-      }
-      /* default parameters */
-      auto table = create_ship_spec_table();
-      const auto& race = *g.race;
-      add_ship_spec_row(table, *i, race);
-      g.out << table << "\n";
+      return false;
     }
-
-    return;
+    if (!Shipdata[*i][ABIL_PROGRAMMED]) {
+      g.out << "This ship type has not been programmed.\n";
+      return false;
+    }
+    const auto* exam = g.entity_manager.peek_ship_exam(*i);
+    if (exam && !exam->description.empty()) {
+      g.out << "\n" << exam->description;
+      if (!exam->description.ends_with('\n')) {
+        g.out << "\n";
+      }
+    }
+    /* Built where? */
+    if (Shipdata[*i][ABIL_BUILD] & 1) {
+      g.out << "\nCan be constructed on planet.";
+    }
+    n = 0;
+    std::string header = "\nCan be built by ";
+    for (j = 0; j < NUMSTYPES; j++)
+      if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) n++;
+    if (n) {
+      m = 0;
+      g.out << header;
+      for (j = 0; j < NUMSTYPES; j++) {
+        if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) {
+          m++;
+          if (n - m > 1)
+            g.out << std::format("{}, ", Shipltrs[j]);
+          else if (n - m > 0)
+            g.out << std::format("{} and ", Shipltrs[j]);
+          else
+            g.out << std::format("{} ", Shipltrs[j]);
+        }
+      }
+      g.out << "type ships.\n";
+    }
+    /* default parameters */
+    auto table = create_ship_spec_table();
+    const auto& race = *g.race;
+    add_ship_spec_row(table, *i, race);
+    g.out << table << "\n";
+    return true;
   }
 
   level = g.level();
   if (level != ScopeLevel::LEVEL_SHIP && level != ScopeLevel::LEVEL_PLAN) {
     g.out << "You must change scope to a ship or planet to build.\n";
-    return;
+    return false;
   }
   starnum_t snum = g.snum();
   planetnum_t pnum = g.pnum();
   const auto& race = *g.race;
-  count = 0; /* this used used to reset count in the loop */
+  count = 0;
   std::optional<ShipType> what;
-  int x, y;  // Coordinates for sector access
+  int x = 0;
+  int y = 0;
+  bool any_built = false;
+
   do {
     switch (level) {
       case ScopeLevel::LEVEL_PLAN: {
-        if (!count) { /* initialize loop variables */
+        if (!count) {
           if (argv.size() < 2) {
             g.out << "Build what?\n";
-            return;
+            return false;
           }
           what = get_build_type(argv[1][0]);
           if (!what) {
             g.out << "No such ship type.\n";
-            return;
+            return false;
           }
           auto buildresult = can_build_this(*what, race);
           if (!buildresult && !race.God) {
             g.out << buildresult.error();
-            return;
+            return false;
           }
           if (!(Shipdata[*what][ABIL_BUILD] & 1) && !race.God) {
             g.out << "This ship cannot be built by a planet.\n";
-            return;
+            return false;
           }
           if (argv.size() < 3) {
             g.out << "Build where?\n";
-            return;
+            return false;
           }
           planet_handle = g.entity_manager.get_planet(snum, pnum);
           Planet& planet = **planet_handle;
           const auto& star = *g.entity_manager.peek_star(snum);
           if (!can_build_at_planet(g, star, planet) && !race.God) {
             g.out << "You can't build that here.\n";
-            return;
+            return false;
           }
           auto coords_opt = Coordinates::parse(argv[2]);
           if (!coords_opt) {
             g.out << "Invalid sector format. Use: x,y\n";
-            return;
+            return false;
           }
           build_coords = *coords_opt;
           if (!planet.is_valid(build_coords)) {
             g.out << "Illegal sector.\n";
-            return;
+            return false;
           }
           sectormap_handle = g.entity_manager.get_sectormap(snum, pnum);
           auto& sectormap = **sectormap_handle;
@@ -221,11 +226,11 @@ void build(const command_t& argv, GameObj& g) {
                                             planet, sector, build_coords);
           if (!result && !race.God) {
             g.out << result.error();
-            return;
+            return false;
           }
           if (!(count = getcount(argv, 3))) {
             g.out << "Give a positive number of builds.\n";
-            return;
+            return false;
           }
           Getship(&newship, *what, race);
         }
@@ -236,7 +241,11 @@ void build(const command_t& argv, GameObj& g) {
             planet.info(Playernum).resource) {
           g.out << std::format("You need {}r to construct this ship.\n",
                                shipcost);
-          return;
+          return any_built;
+        }
+        if (!g.deduct_ap(snum, 1)) {
+          g.out << "You don't have 1 action points there.\n";
+          return any_built;
         }
         create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
                               newship, planet, snum, pnum, build_coords);
@@ -253,6 +262,7 @@ void build(const command_t& argv, GameObj& g) {
           auto ship_handle = g.entity_manager.create_ship(newship.to_struct());
           // Ship is now created in database with its data
         }
+        any_built = true;
         break;
       }
       case ScopeLevel::LEVEL_SHIP: {
@@ -260,7 +270,7 @@ void build(const command_t& argv, GameObj& g) {
           const auto* builder_ptr = g.entity_manager.peek_ship(g.shipno());
           if (!builder_ptr) {
             g.out << "Ship not found.\n";
-            return;
+            return false;
           }
           builder =
               Ship(builder_ptr->to_struct());  // Copy ship data to local Ship
@@ -268,18 +278,18 @@ void build(const command_t& argv, GameObj& g) {
           auto test_build_level = build_at_ship(g, &*builder, &snum, &pnum);
           if (!test_build_level) {
             g.out << "You can't build here.\n";
-            return;
+            return false;
           }
           build_level = test_build_level.value();
           switch (builder->type()) {
             case ShipType::OTYPE_FACTORY:
               if (!(count = getcount(argv, 2))) {
                 g.out << "Give a positive number of builds.\n";
-                return;
+                return false;
               }
               if (!landed(*builder)) {
                 g.out << "Factories can only build when landed on a planet.\n";
-                return;
+                return false;
               }
               newship = Getfactship(*builder);
               outside = true;
@@ -288,30 +298,29 @@ void build(const command_t& argv, GameObj& g) {
             case ShipType::STYPE_CARGO:
               if (landed(*builder)) {
                 g.out << "This ships cannot build when landed.\n";
-                return;
+                return false;
               }
               outside = true;
               [[clang::fallthrough]];  // TODO(jeffbailey): Added this to
-                                       // silence
-                                       // warning, check it.
+                                       // silence warning, check it.
             default:
               if (argv.size() < 2) {
                 g.out << "Build what?\n";
-                return;
+                return false;
               }
               if ((what = get_build_type(argv[1][0])) < 0) {
                 g.out << "No such ship type.\n";
-                return;
+                return false;
               }
               auto build_on_ship_result =
                   can_build_on_ship(*what, race, *builder);
               if (!build_on_ship_result) {
                 g.out << build_on_ship_result.error();
-                return;
+                return false;
               }
               if (!(count = getcount(argv, 3))) {
                 g.out << "Give a positive number of builds.\n";
-                return;
+                return false;
               }
               Getship(&newship, *what, race);
               break;
@@ -324,7 +333,7 @@ void build(const command_t& argv, GameObj& g) {
                 "You are not advanced enough to build this ship.\n"
                 "{:.1f} engineering technology needed. You have {:.1f}.\n",
                 tech, race.tech);
-            return;
+            return false;
           }
           if (outside && build_level == ScopeLevel::LEVEL_PLAN) {
             planet_handle = g.entity_manager.get_planet(snum, pnum);
@@ -333,7 +342,7 @@ void build(const command_t& argv, GameObj& g) {
               const auto& star = *g.entity_manager.peek_star(snum);
               if (!can_build_at_planet(g, star, planet)) {
                 g.out << "You can't build that here.\n";
-                return;
+                return false;
               }
               Coordinates build_coords = builder->land_coords();
               x = build_coords.x;
@@ -346,7 +355,7 @@ void build(const command_t& argv, GameObj& g) {
                                                 planet, sector, build_coords);
               if (!result) {
                 g.out << result.error();
-                return;
+                return false;
               }
             }
           }
@@ -361,7 +370,11 @@ void build(const command_t& argv, GameObj& g) {
                 planet.info(Playernum).resource) {
               g.out << std::format("You need {}r to construct this ship.\n",
                                    shipcost);
-              return;
+              return any_built;
+            }
+            if (!g.deduct_ap(snum, 1)) {
+              g.out << "You don't have 1 action points there.\n";
+              return any_built;
             }
             create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
                                   newship, planet, snum, pnum,
@@ -382,7 +395,11 @@ void build(const command_t& argv, GameObj& g) {
             if (builder->resource() < (shipcost = newship.build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
-              return;
+              return any_built;
+            }
+            if (!g.deduct_ap(snum, 1)) {
+              g.out << "You don't have 1 action points there.\n";
+              return any_built;
             }
             create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
                                 true, &planet, &newship, &*builder);
@@ -399,12 +416,23 @@ void build(const command_t& argv, GameObj& g) {
             if (builder->hanger() + ship_size(newship) >
                 builder->max_hanger()) {
               g.out << "Not enough hanger space.\n";
-              return;
+              return any_built;
             }
             if (builder->resource() < (shipcost = newship.build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
-              return;
+              return any_built;
+            }
+            if (builder->whatorbits() == ScopeLevel::LEVEL_UNIV) {
+              if (!g.deduct_univ_ap(1)) {
+                g.out << "You need 1 universe action point.\n";
+                return any_built;
+              }
+            } else {
+              if (!g.deduct_ap(snum, 1)) {
+                g.out << "You don't have 1 action points there.\n";
+                return any_built;
+              }
             }
             create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
                                 false, nullptr, &newship, &*builder);
@@ -426,6 +454,7 @@ void build(const command_t& argv, GameObj& g) {
           auto builder_handle = g.entity_manager.get_ship(builder->number());
           *builder_handle = std::move(*builder);
         }
+        any_built = true;
         break;
       }
       default:
@@ -434,5 +463,19 @@ void build(const command_t& argv, GameObj& g) {
     }
     count--;
   } while (count);
+
+  return any_built;
 }
+
+const CommandDescriptor build_cmd{
+    .name = "build",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 2,
+    .syntax = "build <type> <x,y> [count] | build ? [type]",
+    .description = "Construct a ship on a planet or from a ship",
+    .handler = &build,
+};
+
 }  // namespace GB::commands

@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file move_popn.cc
+/// \brief Move civilian population or deploy military troops across sectors.
+
 module;
 
 import session;
@@ -7,12 +10,12 @@ import gblib;
 import notification;
 import scnlib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void move_popn(const command_t& argv, GameObj& g) {
+
+bool move_popn(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   PopulationType what =
@@ -34,42 +37,43 @@ void move_popn(const command_t& argv, GameObj& g) {
   int done;
   double astrength;
   double dstrength;
+  bool any_moved = false;
 
   if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "Wrong scope\n";
-    return;
+    return false;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum());
   if (!star.control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
-    return;
+    return false;
   }
   auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& planet = *planet_handle;
 
   if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
-    return;
+    return false;
   }
   auto from_opt = Coordinates::parse(argv[1]);
   if (!from_opt) {
     g.out << "Bad format for sector.\n";
-    return;
+    return false;
   }
   Coordinates curr_coords = *from_opt;
   if (!planet.is_valid(curr_coords)) {
     g.out << "Origin coordinates illegal.\n";
-    return;
+    return false;
   }
 
   auto smap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
   if (!smap_handle.get()) {
     g.out << "Sector map not found.\n";
-    return;
+    return false;
   }
   auto& smap = *smap_handle;
 
@@ -80,22 +84,22 @@ void move_popn(const command_t& argv, GameObj& g) {
     auto& sect = smap.get(curr_coords);
     if (sect.get_owner() != Playernum) {
       g.out << std::format("You don't own sector {}!\n", curr_coords);
-      return;
+      return any_moved;
     }
     Coordinates next_coords = get_move(planet, argv[2][n++], curr_coords);
     if (curr_coords == next_coords) {
       g.out << "Finished.\n";
-      return;
+      return any_moved;
     }
 
     if (!planet.is_valid(next_coords)) {
       g.out << std::format("Illegal coordinates {}.\n", next_coords);
-      return;
+      return any_moved;
     }
 
     if (!adjacent(planet, curr_coords, next_coords)) {
       g.out << "Illegal move - to adjacent sectors only!\n";
-      return;
+      return any_moved;
     }
 
     /* ok, the move is legal */
@@ -125,7 +129,7 @@ void move_popn(const command_t& argv, GameObj& g) {
       else if (what == PopulationType::MIL)
         g.out << std::format("Bad value - {} troops in [{}]\n",
                              sect.get_troops(), curr_coords);
-      return;
+      return any_moved;
     }
 
     g.out << std::format("{} {} moved.\n", people,
@@ -135,7 +139,7 @@ void move_popn(const command_t& argv, GameObj& g) {
     mech_defend(g, &people, what, planet, next_coords, sect2);
     if (!people) {
       g.out << "Attack aborted.\n";
-      return;
+      return any_moved;
     }
 
     if ((sect2.get_owner() != 0) && (sect2.get_owner() != Playernum))
@@ -151,9 +155,9 @@ void move_popn(const command_t& argv, GameObj& g) {
       APcost =
           MOVE_FACTOR * ((int)std::log10(1.0 + (double)people) + Assault) + 1;
 
-    if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-                APcost)) {
-      return;
+    if (!g.deduct_ap(g.snum(), APcost)) {
+      g.out << std::format("You don't have {} action points there.\n", APcost);
+      return any_moved;
     }
 
     if (Assault) {
@@ -310,9 +314,43 @@ void move_popn(const command_t& argv, GameObj& g) {
       done = 1;
     }
 
-    deductAPs(g, APcost, g.snum());
+    any_moved = true;
     curr_coords = next_coords; /* get ready for the next round */
   }
   g.out << "Finished.\n";
+  return any_moved;
 }
+
+bool deploy(const command_t& argv, GameObj& g) {
+  return move_popn(argv, g);
+}
+
+const CommandDescriptor move_cmd{
+    .name = "move",
+    .roles =
+        {
+            .star_control = true,
+        },
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::dynamic(),
+    .min_args = 3,
+    .syntax = "move <from_sector> <path> [<amount>]",
+    .description = "Move civilian population across planetary sectors",
+    .handler = &move_popn,
+};
+
+const CommandDescriptor deploy_cmd{
+    .name = "deploy",
+    .roles =
+        {
+            .star_control = true,
+        },
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::dynamic(),
+    .min_args = 3,
+    .syntax = "deploy <from_sector> <path> [<amount>]",
+    .description = "Deploy military troops across planetary sectors",
+    .handler = &deploy,
+};
+
 }  // namespace GB::commands

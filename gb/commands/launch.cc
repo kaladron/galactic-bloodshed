@@ -1,30 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file launch.cc
+/// \brief Launch a landed or docked ship.
+
 module;
 
 import session;
 import gblib;
 import notification;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void launch(const command_t& argv, GameObj& g) {
+
+bool launch(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  ap_t APcount = 1;
-
-  if (argv.size() < 2) {
-    g.out << "Launch what?\n";
-    return;
-  }
+  bool any_launched = false;
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
 
   for (auto ship_handle : ships) {
-    Ship& s = *ship_handle;  // Get mutable access upfront
+    Ship& s = *ship_handle;
 
     if (!ship_matches_filter(argv[1], s)) continue;
     if (!authorized(Governor, s)) continue;
@@ -38,13 +36,11 @@ void launch(const command_t& argv, GameObj& g) {
       g.out << std::format("{} is not landed or docked.\n", s);
       continue;
     }
-    if (!landed(s)) APcount = 0;
     if (landed(s) && s.resource() > max_resource(s)) {
       g.out << std::format("{} is too overloaded to launch.\n", s);
       continue;
     }
     if (s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      /* Factories cannot be launched once turned on. Maarten */
       if (s.type() == ShipType::OTYPE_FACTORY && s.on()) {
         g.out << "Factories cannot be launched once turned on.\n";
         g.out << "Consider using 'scrap'.\n";
@@ -126,6 +122,7 @@ void launch(const command_t& argv, GameObj& g) {
         g.out << "You can't launch that ship.\n";
         continue;
       }
+      any_launched = true;
     } else if (s.whatdest() == ScopeLevel::LEVEL_SHIP) {
       auto s2_handle = g.entity_manager.get_ship(s.destshipno());
       if (!s2_handle.get()) {
@@ -134,19 +131,15 @@ void launch(const command_t& argv, GameObj& g) {
       }
       auto& s2 = *s2_handle;
       if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-        const universe_struct* univ_data = g.entity_manager.peek_universe();
-        if (!enufAP(g.entity_manager, Playernum, Governor,
-                    univ_data->AP[Playernum.value - 1], APcount)) {
+        if (!g.deduct_univ_ap(1)) {
+          g.out << "You need 1 universe action point.\n";
           continue;
         }
-        deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
       } else {
-        const auto& star = *g.entity_manager.peek_star(s.storbits());
-        if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-                    APcount)) {
+        if (!g.deduct_ap(s.storbits(), 1)) {
+          g.out << "You don't have 1 action points there.\n";
           continue;
         }
-        deductAPs(g, APcount, s.storbits());
       }
       s.docked() = 0;
       s.whatdest() = ScopeLevel::LEVEL_UNIV;
@@ -155,16 +148,15 @@ void launch(const command_t& argv, GameObj& g) {
       s2.whatdest() = ScopeLevel::LEVEL_UNIV;
       s2.destshipno() = 0;
       g.out << std::format("{} undocked from {}.\n", s, s2);
+      any_launched = true;
     } else {
+      if (!g.deduct_ap(s.storbits(), 1)) {
+        g.out << "You don't have 1 action points there.\n";
+        return any_launched;
+      }
+
       const auto* star_ptr = g.entity_manager.peek_star(s.storbits());
       const auto& star = *star_ptr;
-      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-                  APcount)) {
-        return;
-      }
-      deductAPs(g, APcount, s.storbits());
-
-      /* adjust x,ypos to absolute coords */
       auto planet_handle =
           g.entity_manager.get_planet(s.storbits(), s.pnumorbits());
       auto& p = *planet_handle;
@@ -178,16 +170,15 @@ void launch(const command_t& argv, GameObj& g) {
           star.ypos() + p.ypos() +
           (double)int_rand((int)(-DIST_TO_LAND / 4), (int)(DIST_TO_LAND / 4));
 
-      /* subtract fuel from ship */
       auto fuel = p.gravity() * s.mass() * LAUNCH_GRAV_MASS_FACTOR;
       if (s.fuel() < fuel) {
         g.out << std::format("{} does not have enough fuel! ({:.1f})\n", s,
                              fuel);
-        return;
+        return any_launched;
       }
       use_fuel(s, fuel);
       s.docked() = 0;
-      s.whatdest() = ScopeLevel::LEVEL_UNIV; /* no destination */
+      s.whatdest() = ScopeLevel::LEVEL_UNIV;
       switch (s.type()) {
         case ShipType::OTYPE_CANIST:
         case ShipType::OTYPE_GREEN:
@@ -198,8 +189,6 @@ void launch(const command_t& argv, GameObj& g) {
       }
       s.notified() = 0;
       if (!p.explored()) {
-        /* not yet explored by owner; space exploration causes the
-           player to see a whole map */
         p.explored() = 1;
       }
       std::string observed =
@@ -223,7 +212,25 @@ void launch(const command_t& argv, GameObj& g) {
         default:
           break;
       }
+      any_launched = true;
     }
   }
+
+  return any_launched;
 }
+
+const std::array<std::string_view, 1> launch_aliases = {"undock"};
+
+const CommandDescriptor launch_cmd{
+    .name = "launch",
+    .aliases = launch_aliases,
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 2,
+    .syntax = "launch <ship>",
+    .description = "Launch a landed or docked ship",
+    .handler = &launch,
+};
+
 }  // namespace GB::commands

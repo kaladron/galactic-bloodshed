@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file fire.cc
+/// \brief Fire weapons at target ship.
+
 module;
 
 import gblib;
@@ -10,30 +13,28 @@ import std;
 module commands;
 
 namespace GB::commands {
+
 /*! Ship vs ship */
-void fire(const command_t& argv, GameObj& g) {
+bool fire(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  ap_t APcount;
-  int cew;
+  int cew_mode;
   // This is called from dock.cc.
   if (argv[0] == "fire-from-dock") {
     // TODO(jeffbailey): It's not clear that cew is ever used as anything other
     // than a true/false value.
-    cew = 3;
-    APcount = 0;
+    cew_mode = 3;
   } else if (argv[0] == "cew") {
-    cew = 1;
-    APcount = 1;
+    cew_mode = 1;
   } else {  // argv[0] = fire
-    cew = 0;
-    APcount = 1;
+    cew_mode = 0;
   }
   shipnum_t toship;
   shipnum_t sh;
   int strength;
   int maxstrength;
   int retal;
+  bool any_fired = false;
 
   sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
 
@@ -41,7 +42,7 @@ void fire(const command_t& argv, GameObj& g) {
     std::string msg =
         "Syntax: '" + argv[0] + " <ship> <target> [<strength>]'.\n";
     g.out << msg;
-    return;
+    return false;
   }
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
@@ -54,20 +55,20 @@ void fire(const command_t& argv, GameObj& g) {
       g.out << std::format("{} is irradiated and inactive.\n", from);
       continue;
     }
-    if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      const auto& universe = *g.entity_manager.peek_universe();
-      if (!enufAP(g.entity_manager, Playernum, Governor,
-                  universe.AP[Playernum.value - 1], APcount)) {
-        continue;
-      }
-    } else {
-      const auto* star = g.entity_manager.peek_star(from.storbits());
-      if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
-                  APcount)) {
-        continue;
+    if (argv[0] != "fire-from-dock") {
+      if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+        if (!g.deduct_univ_ap(1)) {
+          g.out << "You need 1 universe action points.\n";
+          continue;
+        }
+      } else {
+        if (!g.deduct_ap(from.storbits(), 1)) {
+          g.out << "You don't have 1 action points there.\n";
+          continue;
+        }
       }
     }
-    if (cew) {
+    if (cew_mode) {
       if (!from.cew()) {
         g.out << "That ship is not equipped to fire CEWs.\n";
         continue;
@@ -77,10 +78,10 @@ void fire(const command_t& argv, GameObj& g) {
         continue;
       }
     }
-    auto toshiptmp = string_to_shipnum(argv[1]);
+    auto toshiptmp = string_to_shipnum(argv[2]);
     if (!toshiptmp || *toshiptmp <= 0) {
       g.out << "Bad ship number.\n";
-      return;
+      return any_fired;
     }
     toship = *toshiptmp;
     if (toship == from.number()) {
@@ -127,7 +128,7 @@ void fire(const command_t& argv, GameObj& g) {
         continue;
       }
     }
-    if (cew) {
+    if (cew_mode) {
       if (from.fuel() < (double)from.cew()) {
         g.out << std::format("You need {} fuel to fire CEWs.\n", from.cew());
         continue;
@@ -157,8 +158,8 @@ void fire(const command_t& argv, GameObj& g) {
     }
 
     /* check to see if there is crystal overloads */
-    if (laser_on(from) || cew)
-      check_overload(g.entity_manager, from, cew, &strength);
+    if (laser_on(from) || cew_mode)
+      check_overload(g.entity_manager, from, cew_mode, &strength);
 
     if (strength <= 0) {
       g.out << "No attack.\n";
@@ -170,7 +171,7 @@ void fire(const command_t& argv, GameObj& g) {
     Ship& to_ship = *to_handle;
 
     auto s2sresult =
-        shoot_ship_to_ship(g.entity_manager, from, to_ship, strength, cew);
+        shoot_ship_to_ship(g.entity_manager, from, to_ship, strength, cew_mode);
 
     if (!s2sresult) {
       g.out << "Illegal attack.\n";
@@ -179,7 +180,7 @@ void fire(const command_t& argv, GameObj& g) {
 
     auto const& [damage, short_buf, long_buf] = *s2sresult;
 
-    if (laser_on(from) || cew)
+    if (laser_on(from) || cew_mode)
       use_fuel(from, 2.0 * (double)strength);
     else
       use_destruct(from, strength);
@@ -261,7 +262,43 @@ void fire(const command_t& argv, GameObj& g) {
         }
       }
     }
-    deductAPs(g, APcount, from.storbits());
+
+    any_fired = true;
   }  // end of ShipList iteration
+
+  return any_fired;
 }
+
+bool cew(const command_t& argv, GameObj& g) {
+  return fire(argv, g);
+}
+
+const CommandDescriptor fire_cmd{
+    .name = "fire",
+    .roles =
+        {
+            .no_guests = true,
+        },
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 3,
+    .syntax = "fire <ship> <target> [<strength>]",
+    .description = "Fire conventional or laser weapons at target ship",
+    .handler = &fire,
+};
+
+const CommandDescriptor cew_cmd{
+    .name = "cew",
+    .roles =
+        {
+            .no_guests = true,
+        },
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 3,
+    .syntax = "cew <ship> <target>",
+    .description = "Fire Confined Energy Weapons (CEWs) at target ship",
+    .handler = &cew,
+};
+
 }  // namespace GB::commands

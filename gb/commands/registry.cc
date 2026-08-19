@@ -95,6 +95,8 @@ build_registry() {
         reg(land_cmd);
         reg(launch_cmd);
         reg(build_cmd);
+        reg(fire_cmd);
+        reg(cew_cmd);
         reg(cs_cmd);
         reg(dump_cmd);
         reg(scrap_cmd);

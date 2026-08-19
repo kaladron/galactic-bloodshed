@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file detonate.cc
+/// \brief Detonate space mine(s) command.
+
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void detonate(const command_t& argv, GameObj& g) {
-  const governor_t Governor = g.governor();
 
-  if (argv.size() < 2) {
-    g.out << std::format("Syntax: '{}' <mine>\n", argv[0]);
-    return;
-  }
+bool detonate(const command_t& argv, GameObj& g) {
+  const governor_t Governor = g.governor();
+  bool any_detonated = false;
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
   for (auto ship_handle : ships) {
@@ -38,6 +37,24 @@ void detonate(const command_t& argv, GameObj& g) {
     }
 
     domine(s, 1, g.entity_manager);
+    any_detonated = true;
   }
+
+  return any_detonated;
 }
+
+const CommandDescriptor detonate_cmd{
+    .name = "detonate",
+    .roles =
+        {
+            .no_guests = true,
+        },
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "detonate <mine>",
+    .description = "Detonate space mine(s)",
+    .handler = &detonate,
+};
+
 }  // namespace GB::commands

@@ -13,12 +13,13 @@ import session;
 module commands;
 
 namespace GB::commands {
-void dissolve(const command_t& argv, GameObj& g) {
+
+bool dissolve(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   if (!DISSOLVE) {
     g.out << "Dissolve has been disabled. Please notify diety.\n";
-    return;
+    return false;
   }
 
   if (Governor != 0) {
@@ -29,7 +30,7 @@ void dissolve(const command_t& argv, GameObj& g) {
         Playernum, 0,
         std::format("Governor #{} has attempted to dissolve this race.\n",
                     Governor));
-    return;
+    return false;
   }
 
   if (argv.size() < 3) {
@@ -37,7 +38,7 @@ void dissolve(const command_t& argv, GameObj& g) {
     g.out << "Please use 'dissolve <race password> <leader "
              "password>'<option> to initiate\n";
     g.out << "self-destruct sequence.\n";
-    return;
+    return false;
   }
   g.out << "WARNING!! WARNING!! WARNING!!\n";
   g.out << "-------------------------------\n";
@@ -55,7 +56,7 @@ void dissolve(const command_t& argv, GameObj& g) {
 
   if (player.value == 0) {
     g.out << "Password mismatch, self-destruct not initiated!\n";
-    return;
+    return false;
   }
 
   auto n_ships = g.entity_manager.num_ships();
@@ -108,5 +109,23 @@ void dissolve(const command_t& argv, GameObj& g) {
   post(g.entity_manager,
        std::format("{} [{}] has dissolved.\n", race.name, Playernum),
        NewsType::DECLARATION);
+
+  return true;
 }
+
+const CommandDescriptor dissolve_cmd{
+    .name = "dissolve",
+    .roles =
+        {
+            .no_guests = true,
+            .leader_only = true,
+        },
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "dissolve <race password> <leader password> [waste]",
+    .description = "Dissolve empire, destroying all ships and sectors",
+    .handler = &dissolve,
+};
+
 }  // namespace GB::commands

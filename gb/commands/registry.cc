@@ -92,6 +92,8 @@ build_registry() {
         reg(dock_cmd);
         reg(assault_cmd);
         reg(bombard_cmd);
+        reg(detonate_cmd);
+        reg(dissolve_cmd);
         reg(land_cmd);
         reg(launch_cmd);
         reg(build_cmd);

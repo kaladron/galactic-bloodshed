@@ -30,12 +30,12 @@
 - Aim for approximately **150–250 lines of code changed per commit**.
 - Keep changes atomic, focused on a single responsibility, and easy to review.
 - Every commit must compile cleanly (`ninja -C build`) and pass 100% of tests (`(cd build && ctest)`).
-- **In-place review fixes**: When addressing code review feedback, amend or rebase the relevant commit in-place rather than stacking redundant fixup commits on top.
+- **In-place review fixes via interactive rebase**: When addressing code review feedback on stacked commits, use interactive rebase (`git rebase -i`) to edit and amend the relevant commit in-place rather than manually unstaging/re-staging or stacking redundant fixup commits on top.
 
 ### 2. In-Commit Testing (Never Defer Tests)
 - **Every commit** that introduces new features, refactors, helper methods, or command descriptors **MUST include its unit tests in the exact same commit**.
 - Never separate implementation into one commit and tests into a later commit.
-- **Test Fidelity**: Preserve realistic entity state and domain setup fields (e.g., `race.mass`, `race.metabolism`, distinct player IDs for role rejection tests such as Player 1 for deity and Player 2 for mortal). Do not delete or oversimplify test cases during modernization.
+- **Test Fidelity & Completeness**: Preserve all distinct test cases, assertions, and edge scenarios (e.g. multi-step sequences like friendly boarding, rejection of already-docked ships, edge-case validations). Never drop, truncate, or over-consolidate existing test cases during modernization. Preserve realistic entity state and domain setup fields (e.g., `race.mass`, `race.metabolism`, distinct player IDs for role rejection tests such as Player 1 for deity and Player 2 for mortal).
 
 ### 3. Plain English Architecture Documentation
 - `ARCHITECTURE.md` is for humans and AI agents to understand how systems work conceptually.
@@ -48,13 +48,14 @@
 - **Always re-anchor** by reading the active plan artifact and `ARCHITECTURE.md` before beginning work on a new commit or phase.
 
 ### 5. Code Hygiene & Style Conventions
-- **Docstring integrity**: Every C++ source and test file must begin with `/// \file <filename>` and `/// \brief <description>` headers immediately below the Apache-2.0 license banner. **NEVER** strip existing docstrings, file comments, or explanatory comments when refactoring or migrating code.
+- **Docstring & comment integrity**: Every C++ source and test file must begin with `/// \file <filename>` and `/// \brief <description>` headers immediately below the Apache-2.0 license banner. **NEVER** strip existing docstrings, file comments, stanza comments, inline explanatory comments, or test setup explanations when refactoring or migrating code.
 - **Comment placement**: Explanatory comments belong at the **top of a code stanza**, not trailing at the end of statements.
 - **Unused parameters**: In modern C++, if a function parameter is intentionally unused in the implementation (e.g., `argv` for no-arg commands), **omit the parameter name entirely** (`bool quit(const command_t&, GameObj& g)`) rather than annotating it with `[[maybe_unused]]`.
 - **No `_impl` suffixes or forwarding wrappers**: Domain handlers in `GB::commands` are named directly after the command (`bool bless(const command_t&, GameObj&)`) and assigned directly to `.handler = &bless`. Do not create `_impl` suffixes or redundant `void bless(...)` forwarding wrappers.
 - **Clean numeric literals**: Rely on implicit conversion for strong ID types (e.g., `race.Playernum = 1;`, `ctx.setup_game_obj(g, 1, 0);`) instead of verbose explicit casts (`player_t{1}`, `governor_t{0}`).
 - **No Hungarian / `k` prefixes**: Use standard snake_case naming for constants and descriptors (e.g. `capital_cmd`, not `kCapitalCmd`).
 - **No migration comments**: Never leave temporary migration commentary in production code (e.g. state preconditions cleanly rather than documenting past refactors).
+- **Fail-fast on database corruption (no defensive try/catch on internal IDs)**: `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError` to indicate programming bugs or data corruption. Never wrap internal/validated ID lookups (`g.snum()`, `where.snum`, `Place` parsed values) in defensive `try/catch` or null checks that silence errors; let the exceptions propagate so the server fails fast. Wrap in `try/catch` **strictly** when looking up untrusted user-supplied raw IDs (e.g. arbitrary command argument strings like `#123`).
 - **Code formatting scope**: Run `clang-format -i` strictly on C++ files (`.cc`, `.cppm`, `.h`, `.hpp`). **NEVER** run `clang-format` on CMake files (`CMakeLists.txt`, `*.cmake`) or JSON data files.
 
 ## 🔨 Building the Project
@@ -194,11 +195,7 @@ bool commandname(const command_t& argv, GameObj& g) {
     }
     
     // 2. Access entities via EntityManager (read-only peek)
-    const auto* star = g.entity_manager.peek_star(g.snum());
-    if (!star) {
-        g.out << "Star not found.\n";
-        return false;
-    }
+    const auto& star = *g.entity_manager.peek_star(g.snum());
     
     // 3. Mutate entities via RAII handle two-step pattern
     auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
@@ -512,6 +509,8 @@ int main() {
 - ❌ Create global state variables
 - ❌ Bypass the gblib access layer for data persistence
 - ❌ Check for null pointers from `peek_star()`, `peek_planet()`, or `peek_sectormap()` - these throw exceptions instead
+- ❌ Catch or suppress `EntityNotFoundError` on internal/validated IDs (e.g., `g.snum()`, `where.snum`) - let it fail fast on data corruption
+- ❌ Drop, shorten, or consolidate away existing test cases, assertions, or explanatory comments during modernization
 
 ### ALWAYS:
 - ✅ Use `import gblib;` and prefer `import std;` over `import std.compat;`
@@ -523,6 +522,9 @@ int main() {
 - ✅ End output lines with `\n`
 - ✅ Use existing constants from `gb/files.h` and `gblib:tweakables`
 - ✅ Dereference `peek_star()`, `peek_planet()`, and `peek_sectormap()` results directly - they throw on not-found
+- ✅ Wrap in `try/catch` only when looking up untrusted user-supplied raw IDs (e.g. parsed strings)
+- ✅ Retain all docstrings, stanza comments, inline explanatory comments, and test setup explanations verbatim
+- ✅ Use interactive rebase (`git rebase -i`) to amend stacked commits in-place when addressing review feedback
 - ✅ Follow the established command pattern exactly
 
 ## 🎮 Game Concepts

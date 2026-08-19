@@ -1,49 +1,45 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file scrap_test.cc
+/// \brief Unit tests for scrap command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  // Create test context
-  TestContext ctx;
+namespace {
 
-  // Create test race
+void setup_test_world(TestContext& ctx) {
+  JsonStore store(ctx.db);
+
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
   race.governor[0].active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
-  race.tech = 100.0;  // High tech for testing
+  race.tech = 100.0;
   race.morale = 100;
-
-  // Save race via repository
-  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
-  // Create a test star
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "TestStar";
   ss.xpos = 100.0;
   ss.ypos = 200.0;
-  ss.explored = (1ULL << 1);  // Player 1 has explored this star
-  ss.AP[0] = 10;              // Player 1 has APs (0-indexed in AP array)
+  ss.explored = (1ULL << 1);
+  ss.AP[0] = 10;
   Star star(ss);
-
-  // Save star via repository
   StarRepository stars_repo(store);
   stars_repo.save(star);
 
-  // Create a planet for the star
   Planet planet{PlanetType::EARTH};
-  planet.star_id() = 0;
+  planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
@@ -51,24 +47,18 @@ int main() {
   planet.info(player_t{1}).numsectsowned = 1;
   planet.info(player_t{1}).popn = 1000;
   planet.info(player_t{1}).resource = 500;
-
-  // Save planet via repository
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);
 
-  // Create a sector map for the planet
   SectorMap smap(planet, true);
   auto& sector = smap.get(5, 5);
   sector.set_owner(1);
   sector.set_popn_exact(100);
   sector.set_resource(50);
   sector.set_efficiency_bounded(100);
-
-  // Save sector map using Repository (DAL layer)
   SectorRepository sector_repo(store);
   sector_repo.save_map(smap);
 
-  // Create first ship (carrier to receive scrapped resources)
   Ship ship1{};
   ship1.number() = 1;
   ship1.owner() = 1;
@@ -78,7 +68,7 @@ int main() {
   ship1.type() = ShipType::STYPE_CARRIER;
   ship1.name() = "Carrier";
   ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship1.storbits() = 0;
+  ship1.storbits() = 1;
   ship1.xpos() = 100.0;
   ship1.ypos() = 200.0;
   ship1.fuel() = 100.0;
@@ -94,7 +84,6 @@ int main() {
   ship1.whatdest() = ScopeLevel::LEVEL_SHIP;
   ship1.destshipno() = 2;
 
-  // Create second ship (to be scrapped, docked with first)
   Ship ship2{};
   ship2.number() = 2;
   ship2.owner() = 1;
@@ -105,86 +94,103 @@ int main() {
   ship2.build_type() = ShipType::STYPE_FIGHTER;
   ship2.name() = "ToScrap";
   ship2.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship2.storbits() = 0;
+  ship2.storbits() = 1;
   ship2.xpos() = 100.0;
   ship2.ypos() = 200.0;
   ship2.fuel() = 50.0;
   ship2.max_fuel() = 100.0;
   ship2.resource() = 20;
   ship2.max_resource() = 50;
-  ship2.popn() = 5;  // Has crew to allow scrapping
+  ship2.popn() = 5;
   ship2.max_crew() = 10;
   ship2.destruct() = 10;
   ship2.max_destruct() = 20;
   ship2.mass() = 10.0;
-  ship2.build_cost() = 100;  // Set build cost for scrap value calculation
+  ship2.build_cost() = 100;
   ship2.docked() = 1;
   ship2.whatdest() = ScopeLevel::LEVEL_SHIP;
   ship2.destshipno() = 1;
 
-  // Save ships via repository
   ShipRepository ships_repo(store);
   ships_repo.save(ship1);
   ships_repo.save(ship2);
+}
 
-  // Create GameObj for command execution
+void test_scrap_happy_paths() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
-  std::println(std::cout, "Scrap a docked ship and verify resources transfer");
+  // 1. Scrap docked fighter (1 AP deducted via dynamic AP)
+  ctx.assert_dispatch_success(g, {"scrap", "#2"}, 1);
+
+  ctx.em.clear_cache();
+  const auto* scrapped = ctx.em.peek_ship(2);
+  assert(scrapped != nullptr);
+  assert(scrapped->alive() == 0);
+
+  const auto* carrier_after = ctx.em.peek_ship(1);
+  assert(carrier_after != nullptr);
+  assert(carrier_after->resource() > 100);
+  assert(carrier_after->docked() == 0);
+}
+
+void test_scrap_insufficient_ap() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Set Star AP to 0
   {
-    // Hold a race handle to keep the race in cache during the test
-    // This prevents kill_ship() from evicting the race when its internal handle
-    // is released
-    auto race_handle = ctx.em.get_race(1);
-    g.race = &race_handle.read();  // Set g.race to point to the cached race
-
-    const auto* carrier_before = ctx.em.peek_ship(1);
-    assert(carrier_before != nullptr);
-    int initial_resource = carrier_before->resource();
-    double initial_fuel = carrier_before->fuel();
-    std::println(std::cout, "    Carrier before: resource={}, fuel={:.0f}",
-                 initial_resource, initial_fuel);
-
-    const auto* scrap_ship = ctx.em.peek_ship(2);
-    assert(scrap_ship != nullptr);
-    std::println(
-        std::cout, "    Ship to scrap: resource={}, fuel={:.0f}, build_cost={}",
-        scrap_ship->resource(), scrap_ship->fuel(), scrap_ship->build_cost());
-
-    // scrap #2
-    command_t argv = {"scrap", "#2"};
-    GB::commands::scrap(argv, g);
-
-    // Clear cache to force reload from database
-    ctx.em.clear_cache();
-
-    // Verify ship 2 is dead
-    const auto* scrapped = ctx.em.peek_ship(2);
-    assert(scrapped != nullptr);
-    assert(scrapped->alive() == 0);
-    std::println(std::cout, "    ✓ Ship 2 is now dead (alive={})",
-                 scrapped->alive());
-
-    // Verify carrier received resources
-    const auto* carrier_after = ctx.em.peek_ship(1);
-    assert(carrier_after != nullptr);
-    std::println(std::cout, "    Carrier after: resource={}, fuel={:.0f}",
-                 carrier_after->resource(), carrier_after->fuel());
-
-    // Resources should have increased (scrapval = build_cost/2 + resource)
-    assert(carrier_after->resource() > initial_resource);
-    std::println(std::cout, "    ✓ Carrier resource increased from {} to {}",
-                 initial_resource, carrier_after->resource());
-
-    // Carrier should be undocked after scrap
-    assert(carrier_after->docked() == 0);
-    std::println(std::cout, "    ✓ Carrier is now undocked");
+    auto star_handle = ctx.em.get_star(1);
+    star_handle->AP(1) = 0;
   }
 
-  std::println(std::cout, "\n✅ All scrap tests passed!");
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+
+  ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
+  assert(g.out.str().contains("action points"));
+}
+
+void test_scrap_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+
+  // 1. Min args check (< 2 args)
+  ctx.assert_dispatch_rejected(g, {"scrap"});
+  assert(g.out.str().contains("Syntax: scrap <ship>"));
+
+  // 2. Uncrewed ship rejection
+  {
+    auto s2 = ctx.em.get_ship(2);
+    s2->popn() = 0;
+  }
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
+  assert(g.out.str().contains("no crew"));
+}
+
+}  // namespace
+
+int main() {
+  test_scrap_happy_paths();
+  test_scrap_insufficient_ap();
+  test_scrap_domain_errors();
+
+  std::println(std::cout, "✓ scrap_test passed!");
   return 0;
 }

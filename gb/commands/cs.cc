@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file cs.cc
+/// \brief Change current scope level or default home system.
+
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void cs(const command_t& argv, GameObj& g) {
+
+bool cs(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
 
@@ -18,7 +21,7 @@ void cs(const command_t& argv, GameObj& g) {
     const auto* universe = g.entity_manager.peek_universe();
     if (!universe) {
       g.out << "cs: Universe data not available.\n";
-      return;
+      return false;
     }
 
     g.set_level(g.race->governor[Governor.value].deflevel);
@@ -31,7 +34,7 @@ void cs(const command_t& argv, GameObj& g) {
     g.lastx[0] = g.lasty[0] = 0.0;
     g.lastx[1] = star.xpos();
     g.lasty[1] = star.ypos();
-    return;
+    return true;
   }
 
   // Change to specified scope
@@ -41,7 +44,7 @@ void cs(const command_t& argv, GameObj& g) {
     if (where.err) {
       g.out << "cs: bad scope.\n";
       g.lastx[0] = g.lasty[0] = 0.0;
-      return;
+      return false;
     }
 
     /* fix lastx, lasty coordinates */
@@ -77,7 +80,7 @@ void cs(const command_t& argv, GameObj& g) {
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
       } break;
-      case ScopeLevel::LEVEL_SHIP:
+      case ScopeLevel::LEVEL_SHIP: {
         const auto* s = g.entity_manager.peek_ship(g.shipno());
         if (!s) {
           g.lastx[0] = g.lasty[0] = 0.0;
@@ -128,22 +131,21 @@ void cs(const command_t& argv, GameObj& g) {
           }
         } else
           g.lastx[0] = g.lasty[0] = 0.0;
-        break;
+      } break;
     }
     g.set_level(where.level);
     g.set_snum(where.snum);
     g.set_pnum(where.pnum);
     g.set_shipno(where.shipno);
-    return;
+    return true;
   }
 
   if (argv.size() == 3 && argv[1] == "-d") {
-    /* make new def scope */
     Place where{g, argv[2]};
 
     if (where.err || where.level == ScopeLevel::LEVEL_SHIP) {
       g.out << "cs: bad home system.\n";
-      return;
+      return false;
     }
 
     auto race_handle = g.entity_manager.get_race(Playernum);
@@ -153,7 +155,22 @@ void cs(const command_t& argv, GameObj& g) {
 
     std::string where_str = where.to_string();
     g.out << "New home system is " << where_str << "\n";
-    return;
+    return true;
   }
+
+  g.out << "cs: bad scope.\n";
+  return false;
 }
+
+const CommandDescriptor cs_cmd{
+    .name = "cs",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "cs [<scope> | -d <scope>]",
+    .description = "Change current scope level or default home system",
+    .handler = &cs,
+};
+
 }  // namespace GB::commands

@@ -1,57 +1,46 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file cs_test.cc
+/// \brief Unit tests for cs command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  // Create test context
-  TestContext ctx;
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
-  // Create universe with 2 stars
   universe_struct us{};
-  us.id = 1;  // Universe is a singleton with ID 1
+  us.id = 1;
   us.numstars = 2;
-  us.ships = 0;  // No ships at universe level
-
+  us.ships = 0;
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
 
-  // Verify universe was saved and can be loaded
-  {
-    const auto* loaded = ctx.em.peek_universe();
-    if (!loaded) {
-      std::println(std::cout,
-                   "ERROR: Universe not found immediately after save!");
-      return 1;
-    }
-    std::println(std::cout, "Universe loaded successfully: {} stars",
-                 loaded->numstars);
-  }
-
-  // Create test race
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
   race.Guest = false;
   race.governor[0].active = true;
-
+  race.governor[0].deflevel = ScopeLevel::LEVEL_STAR;
+  race.governor[0].defsystem = 0;
+  race.governor[0].defplanetnum = 0;
   RaceRepository races(store);
   races.save(race);
 
-  // Create two test stars
   star_struct ss0{};
   ss0.star_id = 0;
   ss0.name = "Alpha";
   ss0.xpos = 100.0;
   ss0.ypos = 200.0;
-  ss0.pnames.emplace_back("AlphaPrime");  // Has 1 planet
-  ss0.explored = (1ULL << 1);             // Player 1 has explored
+  ss0.pnames.emplace_back("AlphaPrime");
+  ss0.explored = (1ULL << 1);
   Star star0(ss0);
 
   star_struct ss1{};
@@ -59,94 +48,86 @@ int main() {
   ss1.name = "Beta";
   ss1.xpos = 300.0;
   ss1.ypos = 400.0;
-  // No planets (pnames empty)
-  ss1.explored = (1ULL << 1);  // Player 1 has explored
+  ss1.explored = (1ULL << 1);
   Star star1(ss1);
 
   StarRepository stars_repo(store);
   stars_repo.save(star0);
   stars_repo.save(star1);
 
-  // Create a test planet at star 0
   Planet planet{PlanetType::EARTH};
   planet.star_id() = 0;
   planet.planet_order() = 0;
   planet.Maxx() = 5;
   planet.Maxy() = 5;
   planet.explored() = true;
-  planet.info(player_t{1}).explored =
-      true;  // Player 1 has explored this planet
+  planet.info(player_t{1}).explored = true;
 
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);
+}
 
-  // Create GameObj for command execution
+void test_cs_happy_paths() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);  // Set race pointer like production
+  ctx.setup_game_obj(g, 1, 0);
 
-  std::println(std::cout, "cs command switches to universe scope");
-  {
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(0);
+  // 1. Switch to universe scope (free AP)
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  ctx.assert_dispatch_success(g, {"cs", "/"}, 0);
+  assert(g.level() == ScopeLevel::LEVEL_UNIV);
 
-    command_t argv = {"cs", "/"};
-    GB::commands::cs(argv, g);
+  // 2. Switch to star Beta by name
+  ctx.assert_dispatch_success(g, {"cs", "Beta"}, 0);
+  assert(g.level() == ScopeLevel::LEVEL_STAR);
+  assert(g.snum() == 1);
 
-    assert(g.level() == ScopeLevel::LEVEL_UNIV);
-    std::println(std::cout, "    ✓ Switched to universe scope");
-  }
+  // 3. Switch to planet AlphaPrime via full path
+  ctx.assert_dispatch_success(g, {"cs", "/Alpha/AlphaPrime"}, 0);
+  assert(g.level() == ScopeLevel::LEVEL_PLAN);
+  assert(g.snum() == 0);
+  assert(g.pnum() == 0);
 
-  std::println(std::cout, "cs command switches to star scope by name");
-  {
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+  // 4. Default cs without arguments
+  ctx.assert_dispatch_success(g, {"cs"}, 0);
+  assert(g.level() == ScopeLevel::LEVEL_STAR);
+  assert(g.snum() == 0);
 
-    command_t argv = {"cs", "Beta"};
-    GB::commands::cs(argv, g);
+  // 5. Change default system with -d
+  ctx.assert_dispatch_success(g, {"cs", "-d", "/"}, 0);
+  assert(g.out.str().contains("New home system"));
+}
 
-    assert(g.level() == ScopeLevel::LEVEL_STAR);
-    assert(g.snum() == 1);
-    std::println(std::cout, "    ✓ Switched to star Beta (1) scope");
-  }
+void test_cs_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
 
-  std::println(std::cout, "cs command switches to star scope by name");
-  {
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
 
-    command_t argv = {"cs", "Alpha"};
-    GB::commands::cs(argv, g);
+  // 1. Invalid star name
+  ctx.assert_dispatch_rejected(g, {"cs", "NonExistentStar"});
+  assert(g.out.str().contains("cs: bad scope"));
+  assert(g.level() == ScopeLevel::LEVEL_UNIV);
 
-    assert(g.level() == ScopeLevel::LEVEL_STAR);
-    assert(g.snum() == 0);
-    std::println(std::cout, "    ✓ Switched to star Alpha (0) scope");
-  }
+  // 2. Invalid home system format
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"cs", "-d", "NonExistentStar"});
+  assert(g.out.str().contains("cs: bad home system"));
+}
 
-  std::println(std::cout, "cs command rejects invalid star name");
-  {
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+}  // namespace
 
-    command_t argv = {"cs", "NonExistent"};
-    GB::commands::cs(argv, g);
+int main() {
+  test_cs_happy_paths();
+  test_cs_domain_errors();
 
-    // Should still be at universe level
-    assert(g.level() == ScopeLevel::LEVEL_UNIV);
-    std::println(std::cout, "    ✓ Rejected invalid star name");
-  }
-
-  std::println(std::cout, "cs command switches to planet scope");
-  {
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(0);
-
-    command_t argv = {"cs", "AlphaPrime"};
-    GB::commands::cs(argv, g);
-
-    assert(g.level() == ScopeLevel::LEVEL_PLAN);
-    assert(g.snum() == 0);
-    assert(g.pnum() == 0);
-    std::println(std::cout, "    ✓ Switched to planet AlphaPrime scope");
-  }
-
-  std::println(std::cout, "\n✅ All cs tests passed!");
+  std::println(std::cout, "✓ cs_test passed!");
   return 0;
 }

@@ -8,7 +8,6 @@ module gblib;
 
 bool GameObj::deduct_ap(starnum_t snum, ap_t amount) {
   if (amount == 0 || god_) return true;
-  if (snum == 0) return false;
   try {
     const auto* star = entity_manager.peek_star(snum);
     if (!star || star->AP(player_) < amount) {

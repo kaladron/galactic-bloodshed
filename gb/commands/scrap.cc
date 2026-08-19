@@ -11,13 +11,9 @@ import gblib;
 module commands;
 
 namespace GB::commands {
-void scrap(const command_t& argv, GameObj& g) {
-  const ap_t APcount = 1;
 
-  if (argv.size() < 2) {
-    g.out << "Scrap what?\n";
-    return;
-  }
+bool scrap(const command_t& argv, GameObj& g) {
+  bool any_scrapped = false;
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
   for (auto ship_handle : ships) {
@@ -40,9 +36,16 @@ void scrap(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    if (!enufAP(g.entity_manager, g.player(), g.governor(),
-                star->AP(g.player()), APcount)) {
-      continue;
+    if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+      if (!g.deduct_univ_ap(1)) {
+        g.out << "You need 1 universe action point.\n";
+        continue;
+      }
+    } else {
+      if (!g.deduct_ap(s.storbits(), 1)) {
+        g.out << "You don't have 1 action points there.\n";
+        continue;
+      }
     }
 
     if (s.whatorbits() == ScopeLevel::LEVEL_PLAN &&
@@ -190,11 +193,6 @@ void scrap(const command_t& argv, GameObj& g) {
       s2->hanger() -= s.size();
     }
 
-    if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
-    }
-    deductAPs(g, APcount, s.storbits());
-
     g.entity_manager.kill_ship(g.player(), s);
 
     if (docked(s) && s2 != nullptr) {
@@ -242,6 +240,21 @@ void scrap(const command_t& argv, GameObj& g) {
     } else {
       g.out << "\nDestroyed.\n";
     }
+    any_scrapped = true;
   }
+
+  return any_scrapped;
 }
+
+const CommandDescriptor scrap_cmd{
+    .name = "scrap",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 2,
+    .syntax = "scrap <ship>",
+    .description = "Scrap a ship to reclaim resources, fuel, and crew",
+    .handler = &scrap,
+};
+
 }  // namespace GB::commands

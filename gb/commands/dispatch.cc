@@ -25,8 +25,13 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     return false;
   }
   if (desc.roles.star_control) {
-    const auto* star = g.entity_manager.peek_star(g.snum());
-    if (!star || !star->control(g.player(), g.governor())) {
+    try {
+      const auto* star = g.entity_manager.peek_star(g.snum());
+      if (!star || !star->control(g.player(), g.governor())) {
+        g.out << "You are not authorized to do that in this system.\n";
+        return false;
+      }
+    } catch (const EntityNotFoundError&) {
       g.out << "You are not authorized to do that in this system.\n";
       return false;
     }
@@ -46,8 +51,14 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
 
   // 4. Fixed-Cost AP Pre-check
   if (desc.ap.model == APModel::FixedStar) {
-    const auto* star = g.entity_manager.peek_star(g.snum());
-    if (!star || star->AP(g.player()) < desc.ap.amount) {
+    try {
+      const auto* star = g.entity_manager.peek_star(g.snum());
+      if (!star || star->AP(g.player()) < desc.ap.amount) {
+        g.out << std::format("You don't have {} action points there.\n",
+                             desc.ap.amount);
+        return false;
+      }
+    } catch (const EntityNotFoundError&) {
       g.out << std::format("You don't have {} action points there.\n",
                            desc.ap.amount);
       return false;

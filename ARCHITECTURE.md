@@ -483,7 +483,7 @@ Command handlers focus strictly on domain logic and output formatting, while the
 ```cpp
 namespace GB::commands {
 
-bool examine_impl(const command_t& argv, GameObj& g) {
+bool examine(const command_t& argv, GameObj& g) {
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno) {
     g.out << "Specify a valid ship number.\n";
@@ -506,7 +506,7 @@ export constexpr CommandDescriptor examine_cmd{
     .min_args = 2,
     .syntax = "examine <ship>",
     .description = "Examine ship systems and cargo",
-    .handler = &examine_impl
+    .handler = &examine,
 };
 
 } // namespace GB::commands

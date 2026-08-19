@@ -209,7 +209,8 @@ void test_land_on_friendly_carrier() {
 
   // Now the shuttle (already at 5,5 landed) can land on carrier
   ctx.assert_dispatch_success(g, {"land", "#1", "#2"}, 0);
-  assert(g.out.str().contains("landed on") || g.out.str().contains("loaded onto"));
+  assert(g.out.str().contains("landed on") ||
+         g.out.str().contains("loaded onto"));
 
   const auto* shuttle_after = ctx.em.peek_ship(1);
   assert(shuttle_after->docked());

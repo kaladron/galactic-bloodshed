@@ -30,10 +30,12 @@
 - Aim for approximately **150–250 lines of code changed per commit**.
 - Keep changes atomic, focused on a single responsibility, and easy to review.
 - Every commit must compile cleanly (`ninja -C build`) and pass 100% of tests (`(cd build && ctest)`).
+- **In-place review fixes**: When addressing code review feedback, amend or rebase the relevant commit in-place rather than stacking redundant fixup commits on top.
 
 ### 2. In-Commit Testing (Never Defer Tests)
 - **Every commit** that introduces new features, refactors, helper methods, or command descriptors **MUST include its unit tests in the exact same commit**.
 - Never separate implementation into one commit and tests into a later commit.
+- **Test Fidelity**: Preserve realistic entity state and domain setup fields (e.g., `race.mass`, `race.metabolism`, distinct player IDs for role rejection tests such as Player 1 for deity and Player 2 for mortal). Do not delete or oversimplify test cases during modernization.
 
 ### 3. Plain English Architecture Documentation
 - `ARCHITECTURE.md` is for humans and AI agents to understand how systems work conceptually.
@@ -46,9 +48,14 @@
 - **Always re-anchor** by reading the active plan artifact and `ARCHITECTURE.md` before beginning work on a new commit or phase.
 
 ### 5. Code Hygiene & Style Conventions
+- **Docstring integrity**: Every C++ source and test file must begin with `/// \file <filename>` and `/// \brief <description>` headers immediately below the Apache-2.0 license banner. **NEVER** strip existing docstrings, file comments, or explanatory comments when refactoring or migrating code.
 - **Comment placement**: Explanatory comments belong at the **top of a code stanza**, not trailing at the end of statements.
+- **Unused parameters**: In modern C++, if a function parameter is intentionally unused in the implementation (e.g., `argv` for no-arg commands), **omit the parameter name entirely** (`bool quit(const command_t&, GameObj& g)`) rather than annotating it with `[[maybe_unused]]`.
+- **No `_impl` suffixes or forwarding wrappers**: Domain handlers in `GB::commands` are named directly after the command (`bool bless(const command_t&, GameObj&)`) and assigned directly to `.handler = &bless`. Do not create `_impl` suffixes or redundant `void bless(...)` forwarding wrappers.
+- **Clean numeric literals**: Rely on implicit conversion for strong ID types (e.g., `race.Playernum = 1;`, `ctx.setup_game_obj(g, 1, 0);`) instead of verbose explicit casts (`player_t{1}`, `governor_t{0}`).
 - **No Hungarian / `k` prefixes**: Use standard snake_case naming for constants and descriptors (e.g. `capital_cmd`, not `kCapitalCmd`).
 - **No migration comments**: Never leave temporary migration commentary in production code (e.g. state preconditions cleanly rather than documenting past refactors).
+- **Code formatting scope**: Run `clang-format -i` strictly on C++ files (`.cc`, `.cppm`, `.h`, `.hpp`). **NEVER** run `clang-format` on CMake files (`CMakeLists.txt`, `*.cmake`) or JSON data files.
 
 ## 🔨 Building the Project
 
@@ -178,7 +185,7 @@ Commands use declarative metadata (`CommandDescriptor`) paired with a thin domai
 namespace GB::commands {
 
 /// Handler returns true on success (triggers AP deduction), false on domain error (0 AP deducted).
-bool commandname_impl(const command_t& argv, GameObj& g) {
+bool commandname(const command_t& argv, GameObj& g) {
     // 1. Domain argument parsing and validation
     auto target = parse_target(argv[1]);
     if (!target) {
@@ -211,7 +218,7 @@ export constexpr CommandDescriptor commandname_cmd{
     .min_args = 2,
     .syntax = "commandname <target>",
     .description = "Perform a planetary action",
-    .handler = &commandname_impl,
+    .handler = &commandname,
 };
 
 }  // namespace GB::commands
@@ -622,6 +629,10 @@ These recipes provide step-by-step instructions for common tasks.
 2. **Create `gb/commands/foo.cc`**:
    ```cpp
    // SPDX-License-Identifier: Apache-2.0
+
+   /// \file foo.cc
+   /// \brief Example command implementation.
+
    module;
    import gblib;
    import std;
@@ -629,7 +640,7 @@ These recipes provide step-by-step instructions for common tasks.
 
    namespace GB::commands {
 
-   bool foo_impl(const command_t& argv, GameObj& g) {
+   bool foo(const command_t& argv, GameObj& g) {
      // Domain argument parsing & entity logic via g.entity_manager
      // Return true on success (triggers AP deduction), false on domain error
      return true;
@@ -643,7 +654,7 @@ These recipes provide step-by-step instructions for common tasks.
        .min_args = 1,
        .syntax = "foo",
        .description = "Example command",
-       .handler = &foo_impl,
+       .handler = &foo,
    };
 
    }  // namespace GB::commands

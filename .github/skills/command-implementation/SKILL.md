@@ -24,10 +24,10 @@ Player-facing actions are declarative `CommandDescriptor` instances paired with 
 ## Signature
 
 ```cpp
-bool commandname_impl(const command_t& argv, GameObj& g);
+bool commandname(const command_t& argv, GameObj& g);
 ```
 
-- `argv[0]` is the command name; `argv[1..]` are user arguments.
+- `argv[0]` is the command name; `argv[1..]` are user arguments (omit the `argv` name if the command takes no arguments).
 - `g` is the `GameObj` execution context (player, governor, scope, output stream, EntityManager).
 - Returns `true` on success (commits state and AP deduction).
 - Returns `false` on domain error (aborts action, 0 AP deducted).
@@ -49,7 +49,7 @@ module commands;
 
 namespace GB::commands {
 
-bool commandname_impl(const command_t& argv, GameObj& g) {
+bool commandname(const command_t& argv, GameObj& g) {
   // 1. Argument parsing & domain validation (early return false on failure)
   // 2. Entity access via g.entity_manager
   // 3. Game logic / state mutation via RAII handle two-step pattern
@@ -65,7 +65,7 @@ export constexpr CommandDescriptor commandname_cmd{
     .min_args = 1,
     .syntax = "commandname <args>",
     .description = "One-line description",
-    .handler = &commandname_impl,
+    .handler = &commandname,
 };
 
 }  // namespace GB::commands
@@ -95,14 +95,15 @@ export constexpr CommandDescriptor commandname_cmd{
 
 3. **Register descriptor** in `gb/commands/registry.cc`:
    ```cpp
-   {"commandname", &GB::commands::commandname_cmd},
-   {"cn", &GB::commands::commandname_cmd},  // optional alias
+   reg(commandname_cmd);
    ```
 
 4. **Add 4-way unit tests** in `gb/commands/commandname_test.cc` (see `command-test-matrix` skill).
 
 ## Anti-Patterns
 
+- ❌ Suffixing handlers with `_impl` or writing redundant forwarding stubs — use direct `bool commandname(...)`.
+- ❌ Using `[[maybe_unused]]` for unused parameters — omit the parameter name instead (`const command_t&`).
 - ❌ Writing procedural permission or scope checks inside the handler — declare them in `CommandDescriptor`.
 - ❌ Direct console I/O (`printf`, `std::cout`, `std::print`).
 - ❌ Repository or `getstar()`/`putship()` calls — go through `g.entity_manager`.

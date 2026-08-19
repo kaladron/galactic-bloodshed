@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file bombard.cc
+/// \brief Ship vs planet bombardment command.
+
 module;
 
 import session;
@@ -7,21 +10,16 @@ import gblib;
 import notification;
 import scnlib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
+
 /*! Ship vs planet */
-void bombard(const command_t& argv, GameObj& g) {
+bool bombard(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  ap_t APcount = 1;
-
-  if (argv.size() < 2) {
-    g.out << "Syntax: 'bombard <ship> [<x,y> [<strength>]]'.\n";
-    return;
-  }
+  bool any_fired = false;
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
   for (auto ship_handle : ships) {
@@ -42,9 +40,8 @@ void bombard(const command_t& argv, GameObj& g) {
       g.out << "This ship is not landed on the planet.\n";
       continue;
     }
-    const auto* star = g.entity_manager.peek_star(from.storbits());
-    if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
-                APcount)) {
+    if (!g.deduct_ap(from.storbits(), 1)) {
+      g.out << "You don't have 1 action points there.\n";
       continue;
     }
 
@@ -204,7 +201,24 @@ void bombard(const command_t& argv, GameObj& g) {
       }
     }
 
-    deductAPs(g, APcount, from.storbits());
+    any_fired = true;
   }  // end of ShipList iteration
+
+  return any_fired;
 }
+
+const CommandDescriptor bombard_cmd{
+    .name = "bombard",
+    .roles =
+        {
+            .no_guests = true,
+        },
+    .scopes = AllowedScopes::planet_or_ship(),
+    .ap = APCost::dynamic(),
+    .min_args = 2,
+    .syntax = "bombard <ship> [<x,y> [<strength>]]",
+    .description = "Bombard planetary sectors from orbiting or AFV ships",
+    .handler = &bombard,
+};
+
 }  // namespace GB::commands

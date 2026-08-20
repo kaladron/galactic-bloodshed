@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file enslave_test.cc
+/// \brief Unit tests for enslave command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  TestContext ctx;
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
   // Create test race
@@ -17,6 +21,8 @@ int main() {
   race.Playernum = 1;
   race.name = "Enslavers";
   race.Guest = false;
+  race.governor[0].active = true;
+  race.governor[0].toggle.highlight = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -26,6 +32,7 @@ int main() {
   enemy.Playernum = 2;
   enemy.name = "Victims";
   enemy.Guest = false;
+  enemy.governor[0].active = true;
   races.save(enemy);
 
   // Create test star
@@ -67,28 +74,113 @@ int main() {
   oap.storbits() = 0;
   oap.pnumorbits() = 0;
   oap.destruct() = 500;
+  oap.tech() = 100.0;
+  oap.size() = 100;
+  oap.build_cost() = 100;
 
   ShipRepository ships(store);
   ships.save(oap);
+}
 
-  // Create GameObj
+void test_enslave_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.set_snum(0);
   g.set_pnum(0);
 
-  // Test enslave command
-  command_t argv = {"enslave", "1"};
-  GB::commands::enslave(argv, g);
+  ctx.assert_dispatch_success(g, {"enslave", "1"});
 
   // Verify planet was enslaved
   ctx.em.clear_cache();
   const auto* saved_planet = ctx.em.peek_planet(0, 0);
   assert(saved_planet);
   assert(saved_planet->slaved_to() == 1);
+}
 
-  std::println(std::cout, "enslave_test passed!");
+void test_enslave_insufficient_ap() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Set AP to 0
+  {
+    auto star_handle = ctx.em.get_star(0);
+    star_handle->AP(1) = 0;
+  }
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  ctx.assert_dispatch_rejected(g, {"enslave", "1"});
+  assert(g.out.str().contains("action points"));
+}
+
+void test_enslave_role_rejection() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Create guest race
+  Race guest{};
+  guest.Playernum = 3;
+  guest.name = "GuestEnslaver";
+  guest.Guest = true;
+  guest.governor[0].active = true;
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(guest);
+  }
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 3, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+
+  ctx.assert_dispatch_rejected(g, {"enslave", "1"});
+  assert(g.out.str().contains("Guest races cannot use this command."));
+}
+
+void test_enslave_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // 1. Min args check (< 2 args)
+  ctx.assert_dispatch_rejected(g, {"enslave"});
+  assert(g.out.str().contains("Syntax: enslave <ship>"));
+
+  // 2. Ship not an OAP
+  {
+    auto ship_handle = ctx.em.get_ship(1);
+    ship_handle->type() = ShipType::STYPE_CARGO;
+  }
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"enslave", "1"});
+  assert(g.out.str().contains("not an Ob Asst Pltfrm"));
+}
+
+}  // namespace
+
+int main() {
+  test_enslave_happy_path();
+  test_enslave_insufficient_ap();
+  test_enslave_role_rejection();
+  test_enslave_domain_errors();
+
+  std::println(std::cout, "✓ enslave_test passed!");
   return 0;
 }

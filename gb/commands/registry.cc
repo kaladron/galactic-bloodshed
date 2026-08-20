@@ -92,8 +92,12 @@ build_registry() {
         reg(dock_cmd);
         reg(assault_cmd);
         reg(bombard_cmd);
+        reg(capture_cmd);
+        reg(defend_cmd);
         reg(detonate_cmd);
         reg(dissolve_cmd);
+        reg(enslave_cmd);
+        reg(insurgency_cmd);
         reg(land_cmd);
         reg(launch_cmd);
         reg(move_cmd);

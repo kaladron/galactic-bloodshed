@@ -12,7 +12,7 @@ module commands;
 
 namespace GB::commands {
 /*! Planet vs ship */
-void defend(const command_t& argv, GameObj& g) {
+bool defend(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   ap_t APcount = 1;
@@ -20,72 +20,72 @@ void defend(const command_t& argv, GameObj& g) {
   int retal;
   int damage;
 
-  if (!DEFENSE) return;
+  if (!DEFENSE) return false;
 
   /* get the planet from the players current scope */
   if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to set scope to the planet first.\n";
-    return;
+    return false;
   }
 
   if (argv.size() < 3) {
     g.out << "Syntax: 'defend <ship> <sector> [<strength>]'.\n";
-    return;
+    return false;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum());
   if (Governor != 0 && star.governor(Playernum) != Governor) {
     g.out << "You are not authorized to do that in this system.\n";
-    return;
+    return false;
   }
   auto toshiptmp = string_to_shipnum(argv[1]);
   if (!toshiptmp || *toshiptmp <= 0) {
     g.out << "Bad ship number.\n";
-    return;
+    return false;
   }
   auto toship = *toshiptmp;
 
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-              APcount)) {
-    return;
+  if (!g.deduct_ap(g.snum(), APcount)) {
+    g.out << "You don't have enough action points.\n";
+    return false;
   }
 
   auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& p = *planet_handle;
 
   if (!p.info(Playernum).numsectsowned) {
     g.out << "You do not occupy any sectors here.\n";
-    return;
+    return false;
   }
 
   if (p.slaved_to() != 0 && p.slaved_to() != Playernum) {
     g.out << "This planet is enslaved.\n";
-    return;
+    return false;
   }
 
   auto to_handle = g.entity_manager.get_ship(toship);
   if (!to_handle.get()) {
     g.out << "Ship not found.\n";
-    return;
+    return false;
   }
   auto* to = to_handle.get();
 
   if (to->whatorbits() != ScopeLevel::LEVEL_PLAN) {
     g.out << "The ship is not in planet orbit.\n";
-    return;
+    return false;
   }
 
   if (to->storbits() != g.snum() || to->pnumorbits() != g.pnum()) {
     g.out << "Target is not in orbit around this planet.\n";
-    return;
+    return false;
   }
 
   if (landed(*to)) {
     g.out << "Planet guns can't fire on landed ships.\n";
-    return;
+    return false;
   }
 
   /* save defense strength for retaliation */
@@ -97,26 +97,26 @@ void defend(const command_t& argv, GameObj& g) {
   auto coords_opt = Coordinates::parse(argv[2]);
   if (!coords_opt) {
     g.out << "Bad format for sector.\n";
-    return;
+    return false;
   }
   const Coordinates sector_coords = *coords_opt;
 
   if (!p.is_valid(sector_coords)) {
     g.out << "Illegal sector.\n";
-    return;
+    return false;
   }
 
   /* check to see if you own the sector */
   auto smap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
   if (!smap_handle.get()) {
     g.out << "Sector map not found.\n";
-    return;
+    return false;
   }
   auto& smap = *smap_handle;
   auto& sect = smap.get(sector_coords);
   if (sect.get_owner() != Playernum) {
     g.out << "Nice try.\n";
-    return;
+    return false;
   }
 
   if (argv.size() >= 4)
@@ -130,21 +130,21 @@ void defend(const command_t& argv, GameObj& g) {
   if (strength <= 0) {
     g.out << std::format("No attack - {} guns, {}d\n", p.info(Playernum).guns,
                          p.info(Playernum).destruct);
-    return;
+    return false;
   }
 
   // Need mutable race for shoot_planet_to_ship
   auto race_handle = g.entity_manager.get_race(Playernum);
   if (!race_handle.get()) {
     g.out << "Race not found.\n";
-    return;
+    return false;
   }
   auto& race = *race_handle;
 
   auto p2s_opt = shoot_planet_to_ship(g.entity_manager, race, *to, strength);
   if (!p2s_opt) {
     g.out << std::format("Target out of range  {}!\n", SYSTEMSIZE);
-    return;
+    return false;
   }
   auto [p_damage, p_short, p_long] = *p2s_opt;
   damage = p_damage;
@@ -220,6 +220,22 @@ void defend(const command_t& argv, GameObj& g) {
     }
   }
 
-  deductAPs(g, APcount, g.snum());
+  return true;
 }
+
+const CommandDescriptor defend_cmd{
+    .name = "defend",
+    .roles =
+        {
+            .star_control = true,
+        },
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::dynamic(),
+    .min_args = 3,
+    .syntax = "defend <ship> <sector> [<strength>]",
+    .description =
+        "Defend planet against orbiting ships using planetary defense guns",
+    .handler = &defend,
+};
+
 }  // namespace GB::commands

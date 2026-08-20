@@ -12,10 +12,9 @@ import std;
 module commands;
 
 namespace GB::commands {
-void insurgency(const command_t& argv, GameObj& g) {
+bool insurgency(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  ap_t APcount = 10;
   player_t who{0};
   int eligible;
   int them = 0;
@@ -25,34 +24,27 @@ void insurgency(const command_t& argv, GameObj& g) {
 
   if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You must 'cs' to the planet you wish to try it on.\n";
-    return;
+    return false;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum());
   if (!star.control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
-    return;
+    return false;
   }
-  /*  if(argv.size()<3) {
-        g.out << "The correct syntax is 'insurgency <race>
-    <money>'\n";
-        return;
-    }*/
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-              APcount))
-    return;
+
   who = get_player(g.entity_manager, argv[1]);
   if (who.value == 0) {
     g.out << "No such player.\n";
-    return;
+    return false;
   }
   const auto* alien = g.entity_manager.peek_race(who);
   if (alien->Guest) {
     g.out << "Don't be such a dickweed.\n";
-    return;
+    return false;
   }
   if (who == Playernum) {
     g.out << "You can't revolt against yourself!\n";
-    return;
+    return false;
   }
   eligible = 0;
   them = 0;
@@ -64,28 +56,28 @@ void insurgency(const command_t& argv, GameObj& g) {
   if (!eligible) {
     g.out << "You must have population in the star system to attempt "
              "insurgency\n.";
-    return;
+    return false;
   }
   auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& p = *planet_handle;
 
   if (!p.info(who).popn) {
     g.out << "This player does not occupy this planet.\n";
-    return;
+    return false;
   }
 
   int amount = std::stoi(argv[2]);
   if (amount < 0) {
     g.out << "You have to use a positive amount of money.\n";
-    return;
+    return false;
   }
   if (g.race->governor[Governor.value].money < amount) {
     g.out << "Nice try.\n";
-    return;
+    return false;
   }
 
   x = INSURG_FACTOR * (double)amount * (double)p.info(who).tax /
@@ -141,10 +133,24 @@ void insurgency(const command_t& argv, GameObj& g) {
                      g.race->name, Playernum, alien->name, who),
          NewsType::DECLARATION);
   }
-  deductAPs(g, APcount, g.snum());
-
   // Need mutable access for money deduction
   auto race_handle = g.entity_manager.get_race(Playernum);
   race_handle->governor[Governor.value].money -= amount;
+  return true;
 }
+
+const CommandDescriptor insurgency_cmd{
+    .name = "insurgency",
+    .roles =
+        {
+            .star_control = true,
+        },
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::fixed_star(10),
+    .min_args = 3,
+    .syntax = "insurgency <race> <money>",
+    .description = "Finance a planetary insurgency against an occupying player",
+    .handler = &insurgency,
+};
+
 }  // namespace GB::commands

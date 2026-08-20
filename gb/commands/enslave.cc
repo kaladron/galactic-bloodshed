@@ -13,48 +13,48 @@ import session;
 module commands;
 
 namespace GB::commands {
-void enslave(const command_t& argv, GameObj& g) {
+
+bool enslave(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
-  const governor_t Governor = g.governor();
   ap_t APcount = 2;
   int aliens = 0;
   int def = 0;
   int attack = 0;
 
   auto shipno = string_to_shipnum(argv[1]);
-  if (!shipno) return;
+  if (!shipno) return false;
   try {
     g.entity_manager.peek_ship(*shipno);
   } catch (const EntityNotFoundError&) {
     g.out << "Ship not found.\n";
-    return;
+    return false;
   }
   auto ship_handle = g.entity_manager.get_ship(*shipno);
   auto* s = ship_handle.get();
   if (testship(*s, g)) {
-    return;
+    return false;
   }
   if (s->type() != ShipType::STYPE_OAP) {
     g.out << std::format("This ship is not an {}.\n",
                          Shipnames[ShipType::STYPE_OAP]);
-    return;
+    return false;
   }
   if (s->whatorbits() != ScopeLevel::LEVEL_PLAN) {
     g.out << std::format("{} doesn't orbit a planet.\n", *s);
-    return;
+    return false;
   }
 
   // Use get_star to keep star alive for entire function
   auto star_handle = g.entity_manager.get_star(s->storbits());
   if (!star_handle.get()) {
     g.out << "Star not found.\n";
-    return;
+    return false;
   }
   const auto& star = star_handle.read();
 
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-              APcount)) {
-    return;
+  if (!g.deduct_ap(s->storbits(), APcount)) {
+    g.out << "You don't have enough action points.\n";
+    return false;
   }
 
   // Get star name/planet name before deductAPs modifies star
@@ -65,12 +65,12 @@ void enslave(const command_t& argv, GameObj& g) {
       g.entity_manager.get_planet(s->storbits(), s->pnumorbits());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& p = *planet_handle;
   if (p.info(Playernum).numsectsowned == 0) {
     g.out << "You don't have a garrison on the planet.\n";
-    return;
+    return false;
   }
 
   /* add up forces attacking, defending */
@@ -84,7 +84,7 @@ void enslave(const command_t& argv, GameObj& g) {
 
   if (!aliens) {
     g.out << "There is no one else on this planet to enslave!\n";
-    return;
+    return false;
   }
 
   const ShipList kShiplist(g.entity_manager, p.ships());
@@ -96,8 +96,6 @@ void enslave(const command_t& argv, GameObj& g) {
         attack += s2->destruct();
     }
   }
-
-  deductAPs(g, APcount, s->storbits());
 
   g.out << "\nFor successful enslavement this ship and the other ships here\n";
   g.out << "that are yours must have a weapons\n";
@@ -140,5 +138,23 @@ void enslave(const command_t& argv, GameObj& g) {
     if (p.info(i).numsectsowned && i != Playernum)
       warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
                   telegram.str());
+
+  return true;
 }
+
+const CommandDescriptor enslave_cmd{
+    .name = "enslave",
+    .roles =
+        {
+            .no_guests = true,
+        },
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 2,
+    .syntax = "enslave <ship>",
+    .description =
+        "Enslave enemy planet population using an Orbiting Assault Platform",
+    .handler = &enslave,
+};
+
 }  // namespace GB::commands

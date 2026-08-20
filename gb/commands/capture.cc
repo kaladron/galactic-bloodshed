@@ -13,7 +13,7 @@ import session;
 module commands;
 
 namespace GB::commands {
-void capture(const command_t& argv, GameObj& g) {
+bool capture(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   const ap_t APcount = 1;
@@ -30,15 +30,16 @@ void capture(const command_t& argv, GameObj& g) {
   population_t casualty_scale = 0;
   double astrength;
   double dstrength;
+  bool any_captured = false;
 
   if (argv.size() < 2) {
     g.out << "Capture what?\n";
-    return;
+    return false;
   }
   if (Governor != 0 &&
       g.entity_manager.peek_star(g.snum())->governor(Playernum) != Governor) {
     g.out << "You are not authorized in this system.\n";
-    return;
+    return false;
   }
 
   ShipList shiplist(g.entity_manager, g);
@@ -57,9 +58,7 @@ void capture(const command_t& argv, GameObj& g) {
 
         continue;
       }
-      if (!enufAP(g.entity_manager, Playernum, Governor,
-                  g.entity_manager.peek_star(ship.storbits())->AP(Playernum),
-                  APcount)) {
+      if (!g.deduct_ap(ship.storbits(), APcount)) {
         continue;
       }
 
@@ -323,8 +322,24 @@ void capture(const command_t& argv, GameObj& g) {
         notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
                     ship.storbits(), short_msg);
       }
-      deductAPs(g, APcount, ship.storbits());
+      any_captured = true;
     }
   }
+  return any_captured;
 }
+
+const CommandDescriptor capture_cmd{
+    .name = "capture",
+    .roles =
+        {
+            .star_control = true,
+        },
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::dynamic(),
+    .min_args = 2,
+    .syntax = "capture <ship> [<number>] [civilians|military]",
+    .description = "Attempt to capture a landed enemy ship with ground forces",
+    .handler = &capture,
+};
+
 }  // namespace GB::commands

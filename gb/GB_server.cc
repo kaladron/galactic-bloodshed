@@ -89,7 +89,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"autoreport", GB::commands::autoreport},
       {"block", GB::commands::block},
       {"broadcast", GB::commands::announce},
-      {"capture", GB::commands::capture},
       {"center", GB::commands::center},
       {"client_survey", GB::commands::survey},
       {"colonies", GB::commands::colonies},
@@ -97,7 +96,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"disarm", GB::commands::arm},
       {"dismount", GB::commands::mount},
       {"distance", GB::commands::distance},
-      {"enslave", GB::commands::enslave},
       {"examine", GB::commands::examine},
       {"explore", GB::commands::explore},
       {"factories", GB::commands::rst},
@@ -162,13 +160,8 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
     commands["vote"] = GB::commands::vote;
   }
 
-  if (DEFENSE) {
-    commands["defend"] = GB::commands::defend;
-  }
-
   if (MARKET) {
     commands["bid"] = GB::commands::bid;
-    commands["insurgency"] = GB::commands::insurgency;
     commands["treasury"] = GB::commands::treasury;
   }
 

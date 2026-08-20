@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file insurgency_test.cc
+/// \brief Unit tests for insurgency command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  TestContext ctx;
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
   // Create test race (instigator)
@@ -17,7 +21,10 @@ int main() {
   race.Playernum = 1;
   race.name = "Rebels";
   race.Guest = false;
+  race.governor[0].active = true;
   race.governor[0].money = 10000;
+  race.governor[0].toggle.highlight = true;
+  race.governor[1].active = true;
   race.morale = 100;
   race.fighters = 10;
 
@@ -29,6 +36,7 @@ int main() {
   target.Playernum = 2;
   target.name = "Oppressors";
   target.Guest = false;
+  target.governor[0].active = true;
   target.morale = 50;
   target.fighters = 5;
   races.save(target);
@@ -39,6 +47,9 @@ int main() {
   star.name = "Test Star";
   star.AP[0] = 100;
   star.pnames.emplace_back("Test Planet");
+  star.governor[0] = 0;
+  star.governor[1] = 0;
+  star.explored = (1ULL << 1) | (1ULL << 2);
 
   StarRepository stars(store);
   stars.save(star);
@@ -71,25 +82,114 @@ int main() {
     SectorRepository sectors(store);
     sectors.save_map(smap);
   }
+}
 
-  // Create GameObj
+void test_insurgency_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
 
-  // Test insurgency command
-  command_t argv = {"insurgency", "2", "5000"};
-  GB::commands::insurgency(argv, g);
+  ctx.assert_dispatch_success(g, {"insurgency", "2", "5000"}, 10);
 
   // Verify race money decreased
   ctx.em.clear_cache();
   const auto* saved_race = ctx.em.peek_race(1);
   assert(saved_race);
   assert(saved_race->governor[0].money == 5000);
+}
 
-  std::println(std::cout, "insurgency_test passed!");
+void test_insurgency_insufficient_ap() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Set AP to 5 (< 10 required)
+  {
+    auto star_handle = ctx.em.get_star(0);
+    star_handle->AP(1) = 5;
+  }
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
+  assert(g.out.str().contains("action points"));
+
+  // Money must not have been deducted
+  const auto* race = ctx.em.peek_race(1);
+  assert(race->governor[0].money == 10000);
+}
+
+void test_insurgency_role_and_scope_rejections() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+
+  // 1. Scope rejection (LEVEL_UNIV)
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+
+  // 2. Star control rejection
+  {
+    auto star_handle = ctx.em.get_star(0);
+    star_handle->governor(1) = 2;  // Star governed by Gov 2
+  }
+  g.out.str("");
+  ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+  ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
+  assert(g.out.str().contains("not authorized"));
+}
+
+void test_insurgency_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // 1. Min args check (< 3 args)
+  ctx.assert_dispatch_rejected(g, {"insurgency", "2"});
+  assert(g.out.str().contains("Syntax: insurgency <race> <money>"));
+
+  // 2. Revolt against self
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"insurgency", "1", "5000"});
+  assert(g.out.str().contains("yourself"));
+
+  // 3. Not enough money
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"insurgency", "2", "50000"});
+  assert(g.out.str().contains("Nice try"));
+}
+
+}  // namespace
+
+int main() {
+  test_insurgency_happy_path();
+  test_insurgency_insufficient_ap();
+  test_insurgency_role_and_scope_rejections();
+  test_insurgency_domain_errors();
+
+  std::println(std::cout, "✓ insurgency_test passed!");
   return 0;
 }

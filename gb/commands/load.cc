@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file load.cc
+/// \brief Functions for loading and unloading commodities to/from ships.
+
 module;
 
 import session;
@@ -275,7 +278,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
 }  // namespace
 
 namespace GB::commands {
-void load(const command_t& argv, GameObj& g) {
+bool load(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   ap_t APcount = 0;
@@ -287,14 +290,15 @@ void load(const command_t& argv, GameObj& g) {
   int uplim;
   int amt;
   int transfercrew;
+  bool success = false;
 
-  if (argv.size() < 2) {
+  if (argv.size() < 3) {
     if (mode == 0) {
       g.out << "Load what?\n";
     } else {
       g.out << "Unload what?\n";
     }
-    return;
+    return false;
   }
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
@@ -517,7 +521,7 @@ void load(const command_t& argv, GameObj& g) {
           /* fight a land battle */
           unload_onto_alien_sector(g, *p_ptr, &s, *sect_ptr,
                                    PopulationType::CIV, -amt);
-          return;
+          return true;
         } else {
           transfercrew = 1;
           if (!sect_ptr->get_popn() && !sect_ptr->get_troops() && amt < 0) {
@@ -554,7 +558,7 @@ void load(const command_t& argv, GameObj& g) {
           g.out << "That sector is already occupied by another player!\n";
           unload_onto_alien_sector(g, *p_ptr, &s, *sect_ptr,
                                    PopulationType::MIL, -amt);
-          return;
+          return true;
         } else {
           transfercrew = 1;
           if (sect_ptr->is_empty() && amt < 0) {
@@ -632,6 +636,7 @@ void load(const command_t& argv, GameObj& g) {
         g.out << "No such commodity.\n";
         continue;
     }
+    success = true;
 
     if (sh) {
       /* ship to ship transfer */
@@ -687,5 +692,29 @@ void load(const command_t& argv, GameObj& g) {
         std::get<TransportData>(s.special()).target)
       do_transporter(race, g, &s);
   }
+  return success;
 }
+
+const CommandDescriptor load_cmd{
+    .name = "load",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "load <ship> <commodity> [<amount>]",
+    .description = "Load commodities onto a ship",
+    .handler = &load,
+};
+
+const CommandDescriptor unload_cmd{
+    .name = "unload",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "unload <ship> <commodity> [<amount>]",
+    .description = "Unload commodities from a ship",
+    .handler = &load,
+};
+
 }  // namespace GB::commands

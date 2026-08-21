@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file mount.cc
+/// \brief Functions for mounting and dismounting crystals in ships.
+
 module;
 
 import gblib;
@@ -9,10 +12,11 @@ import std;
 module commands;
 
 namespace GB::commands {
-void mount(const command_t& argv, GameObj& g) {
+bool mount(const command_t& argv, GameObj& g) {
   const governor_t Governor = g.governor();
   bool mnt;
   mnt = argv[0] == "mount";
+  bool success = false;
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
   for (auto ship_handle : ships) {
@@ -41,6 +45,7 @@ void mount(const command_t& argv, GameObj& g) {
       ship.mounted() = 1;
       ship.crystals()--;
       g.out << "Mounted.\n";
+      success = true;
     } else if (ship.mounted() && !mnt) {
       if (ship.crystals() == max_crystals(ship)) {
         g.out << "You can't dismount the crystal. Max "
@@ -59,10 +64,35 @@ void mount(const command_t& argv, GameObj& g) {
         ship.fire_laser() = 0;
         g.out << "Laser deactivated.\n";
       }
+      success = true;
     } else {
       g.out << "Weird error in 'mount'.\n";
       continue;
     }
   }
+  return success;
 }
+
+const CommandDescriptor mount_cmd{
+    .name = "mount",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "mount <ship>",
+    .description = "Mount a crystal into a ship's hyperdrive",
+    .handler = &mount,
+};
+
+const CommandDescriptor dismount_cmd{
+    .name = "dismount",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "dismount <ship>",
+    .description = "Dismount a crystal from a ship's hyperdrive",
+    .handler = &mount,
+};
+
 }  // namespace GB::commands

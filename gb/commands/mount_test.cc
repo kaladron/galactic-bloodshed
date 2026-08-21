@@ -1,22 +1,35 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file mount_test.cc
+/// \brief Unit tests for mount and dismount commands
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-/// \file mount_test.cc
-/// \brief Unit tests for mount command
+namespace {
+
+void setup_test_race(TestContext& ctx) {
+  JsonStore store(ctx.db);
+  Race race{};
+  race.Playernum = 1;
+  race.name = "Crystallines";
+  race.Guest = false;
+  race.governor[0].active = true;
+
+  RaceRepository races(store);
+  races.save(race);
+}
 
 // Database persistence for mounting crystals
 void test_mount_persistence() {
-  // 1. Create in-memory database
   TestContext ctx;
+  setup_test_race(ctx);
 
-  // 2. Create test entities via Repository
   JsonStore store(ctx.db);
   ShipRepository ships(store);
 
@@ -27,42 +40,33 @@ void test_mount_persistence() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_HABITAT;  // Has crystal mount
   ship.alive() = true;
+  ship.active() = true;
+  ship.mount() = 1;
   ship.crystals() = 2;  // Has 2 crystals on board
   ship.mounted() = 0;   // Not mounted yet
   ships.save(ship);
 
-  // 3. Verify initial state via EntityManager
-  ctx.em.clear_cache();
-  {
-    const auto* s = ctx.em.peek_ship(1);
-    assert(s->crystals() == 2);
-    assert(s->mounted() == 0);
-  }
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
 
-  // 4. Simulate mounting a crystal via EntityManager
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    auto& s = *ship_handle;
-    s.mounted() = 1;
-    s.crystals()--;
-    // Auto-saves on scope exit
-  }
+  ctx.assert_dispatch_success(g, {"mount", "#1"});
 
-  // 5. Verify changes persisted after cache clear
-  ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
   assert(final_ship->mounted() == 1);
   assert(final_ship->crystals() == 1);
+  assert(g.out.str().contains("Mounted."));
 
   std::println(std::cout, "✓ mount persistence test passed");
 }
 
 // Database persistence for dismounting crystals
 void test_dismount_persistence() {
-  // 1. Create in-memory database
   TestContext ctx;
+  setup_test_race(ctx);
 
-  // 2. Create test entities via Repository
   JsonStore store(ctx.db);
   ShipRepository ships(store);
 
@@ -73,51 +77,38 @@ void test_dismount_persistence() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_HABITAT;
   ship.alive() = true;
+  ship.active() = true;
+  ship.mount() = 1;
   ship.crystals() = 1;
   ship.mounted() = 1;              // Crystal mounted
   ship.hyper_drive().charge = 50;  // Charged
   ship.hyper_drive().ready = 1;
   ships.save(ship);
 
-  // 3. Verify initial state via EntityManager
-  ctx.em.clear_cache();
-  {
-    const auto* s = ctx.em.peek_ship(1);
-    assert(s->crystals() == 1);
-    assert(s->mounted() == 1);
-    assert(s->hyper_drive().charge == 50);
-    assert(s->hyper_drive().ready == 1);
-  }
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
 
-  // 4. Simulate dismounting crystal via EntityManager
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    auto& s = *ship_handle;
-    s.mounted() = 0;
-    s.crystals()++;
-    // Discharge hyperdrive when dismounting
-    s.hyper_drive().charge = 0;
-    s.hyper_drive().ready = 0;
-    // Auto-saves on scope exit
-  }
+  ctx.assert_dispatch_success(g, {"dismount", "#1"});
 
-  // 5. Verify changes persisted after cache clear
-  ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
   assert(final_ship->mounted() == 0);
   assert(final_ship->crystals() == 2);
   assert(final_ship->hyper_drive().charge == 0);
   assert(final_ship->hyper_drive().ready == 0);
+  assert(g.out.str().contains("Dismounted."));
+  assert(g.out.str().contains("Discharged."));
 
   std::println(std::cout, "✓ dismount persistence test passed");
 }
 
 // Edge case - cannot mount without crystals
 void test_mount_no_crystals() {
-  // 1. Create in-memory database
   TestContext ctx;
+  setup_test_race(ctx);
 
-  // 2. Create test entities via Repository
   JsonStore store(ctx.db);
   ShipRepository ships(store);
 
@@ -128,26 +119,33 @@ void test_mount_no_crystals() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_HABITAT;
   ship.alive() = true;
+  ship.active() = true;
+  ship.mount() = 1;
   ship.crystals() = 0;  // No crystals
   ship.mounted() = 0;
   ships.save(ship);
 
-  // 3. Verify cannot mount (command validation)
-  ctx.em.clear_cache();
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
+
+  ctx.assert_dispatch_rejected(g, {"mount", "#1"});
+  assert(g.out.str().contains("You have no crystals on board."));
+
   const auto* s = ctx.em.peek_ship(1);
   assert(s->crystals() == 0);
   assert(s->mounted() == 0);
-  // Command should detect no crystals and not modify ship
 
   std::println(std::cout, "✓ mount no crystals edge case test passed");
 }
 
 // Edge case - cannot dismount if crystal storage full
 void test_dismount_full_storage() {
-  // 1. Create in-memory database
   TestContext ctx;
+  setup_test_race(ctx);
 
-  // 2. Create test entities via Repository
   JsonStore store(ctx.db);
   ShipRepository ships(store);
 
@@ -158,26 +156,53 @@ void test_dismount_full_storage() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_HABITAT;
   ship.alive() = true;
-  // Assume max_crystals is 127 for this ship type
-  ship.crystals() = 127;  // Max storage full
+  ship.active() = true;
+  ship.mount() = 1;
+  ship.crystals() = max_crystals(ship);  // Max storage full
   ship.mounted() = 1;
   ships.save(ship);
 
-  // 3. Verify state
-  ctx.em.clear_cache();
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
+
+  ctx.assert_dispatch_rejected(g, {"dismount", "#1"});
+  assert(g.out.str().contains(
+      "You can't dismount the crystal. Max allowed already on board."));
+
   const auto* s = ctx.em.peek_ship(1);
-  assert(s->crystals() == 127);
   assert(s->mounted() == 1);
-  // Command should detect full storage and not allow dismount
 
   std::println(std::cout, "✓ dismount full storage edge case test passed");
 }
+
+void test_mount_syntax_and_errors() {
+  TestContext ctx;
+  setup_test_race(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+
+  // 1. Min args check (< 2 args)
+  ctx.assert_dispatch_rejected(g, {"mount"});
+  assert(g.out.str().contains("Syntax: mount <ship>"));
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"dismount"});
+  assert(g.out.str().contains("Syntax: dismount <ship>"));
+}
+
+}  // namespace
 
 int main() {
   test_mount_persistence();
   test_dismount_persistence();
   test_mount_no_crystals();
   test_dismount_full_storage();
+  test_mount_syntax_and_errors();
 
   std::println(std::cout, "\n✅ All mount tests passed!");
   return 0;

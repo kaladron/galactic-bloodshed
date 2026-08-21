@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file load_test.cc
+/// \brief Unit tests for load and unload commands
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  TestContext ctx;
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
   // Create test race
@@ -82,11 +86,15 @@ int main() {
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
+}
 
-  // Create GameObj
+void test_load_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
@@ -98,8 +106,7 @@ int main() {
     double initial_ship_fuel = s_before->fuel();
     int initial_planet_fuel = p_before->info(player_t{1}).fuel;
 
-    command_t argv = {"load", "#1", "f", "100"};
-    GB::commands::load(argv, g);
+    ctx.assert_dispatch_success(g, {"load", "#1", "f", "100"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     const auto* p_after = ctx.em.peek_planet(0, 0);
@@ -115,8 +122,7 @@ int main() {
     int initial_ship_resource = s_before->resource();
     int initial_planet_resource = p_before->info(player_t{1}).resource;
 
-    command_t argv = {"load", "#1", "r", "200"};
-    GB::commands::load(argv, g);
+    ctx.assert_dispatch_success(g, {"load", "#1", "r", "200"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     const auto* p_after = ctx.em.peek_planet(0, 0);
@@ -133,8 +139,7 @@ int main() {
     int initial_ship_destruct = s_before->destruct();
     int initial_planet_destruct = p_before->info(player_t{1}).destruct;
 
-    command_t argv = {"load", "#1", "d", "50"};
-    GB::commands::load(argv, g);
+    ctx.assert_dispatch_success(g, {"load", "#1", "d", "50"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     const auto* p_after = ctx.em.peek_planet(0, 0);
@@ -150,8 +155,7 @@ int main() {
     int initial_ship_crystals = s_before->crystals();
     int initial_planet_crystals = p_before->info(player_t{1}).crystals;
 
-    command_t argv = {"load", "#1", "x", "10"};
-    GB::commands::load(argv, g);
+    ctx.assert_dispatch_success(g, {"load", "#1", "x", "10"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     const auto* p_after = ctx.em.peek_planet(0, 0);
@@ -159,6 +163,60 @@ int main() {
     assert(p_after->info(player_t{1}).crystals == initial_planet_crystals - 10);
     std::println(std::cout, "✓ Crystals loaded from planet to ship");
   }
+}
+
+void test_unload_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // First load resources, then unload
+  ctx.assert_dispatch_success(g, {"load", "#1", "r", "200"});
+  assert(ctx.em.peek_ship(1)->resource() == 200);
+
+  ctx.assert_dispatch_success(g, {"unload", "#1", "r", "50"});
+  assert(ctx.em.peek_ship(1)->resource() == 150);
+  assert(ctx.em.peek_planet(0, 0)->info(player_t{1}).resource == 350);
+  std::println(std::cout, "✓ Resources unloaded from ship to planet");
+}
+
+void test_load_syntax_and_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // 1. Min args check (< 3 args)
+  ctx.assert_dispatch_rejected(g, {"load"});
+  assert(g.out.str().contains("Syntax: load <ship> <commodity> [<amount>]"));
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"unload", "#1"});
+  assert(g.out.str().contains("Syntax: unload <ship> <commodity> [<amount>]"));
+
+  // 2. Unknown commodity
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"load", "#1", "z", "10"});
+  assert(g.out.str().contains("No such commodity"));
+}
+
+}  // namespace
+
+int main() {
+  test_load_happy_path();
+  test_unload_happy_path();
+  test_load_syntax_and_errors();
 
   std::println(std::cout, "\n✅ All load command tests passed!");
   std::println(std::cout,

@@ -100,8 +100,12 @@ build_registry() {
         reg(insurgency_cmd);
         reg(land_cmd);
         reg(launch_cmd);
+        reg(load_cmd);
+        reg(unload_cmd);
         reg(move_cmd);
         reg(deploy_cmd);
+        reg(mount_cmd);
+        reg(dismount_cmd);
         reg(build_cmd);
         reg(fire_cmd);
         reg(cew_cmd);

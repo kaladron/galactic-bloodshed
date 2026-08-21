@@ -12,21 +12,16 @@ module commands;
 
 namespace GB::commands {
 /** Deity fix-it utilities */
-void fix(const command_t& argv, GameObj& g) {
-  if (!g.god()) {
-    g.out << "This command is only available to the deity.\n";
-    return;
-  }
-
+bool fix(const command_t& argv, GameObj& g) {
   if (argv[1] == "planet") {
     if (g.level() != ScopeLevel::LEVEL_PLAN) {
       g.out << "Change scope to the planet first.\n";
-      return;
+      return false;
     }
     auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
     if (!planet_handle.get()) {
       g.out << "Planet not found.\n";
-      return;
+      return false;
     }
     auto& p = *planet_handle;
     if (argv[2] == "Maxx") {
@@ -79,19 +74,19 @@ void fix(const command_t& argv, GameObj& g) {
       g.out << std::format("TOXIC = {}\n", p.conditions(TOXIC));
     } else {
       g.out << "No such option for 'fix planet'.\n";
-      return;
+      return false;
     }
-    return;
+    return true;
   }
   if (argv[1] == "ship") {
     if (g.level() != ScopeLevel::LEVEL_SHIP) {
       g.out << "Change scope to the ship you wish to fix.\n";
-      return;
+      return false;
     }
     auto ship_handle = g.entity_manager.get_ship(g.shipno());
     if (!ship_handle.get()) {
       g.out << "Ship not found.\n";
-      return;
+      return false;
     }
     auto& s = *ship_handle;
     if (argv[2] == "fuel") {
@@ -119,10 +114,23 @@ void fix(const command_t& argv, GameObj& g) {
       g.out << std::format("{} destroyed\n", s);
     } else {
       g.out << "No such option for 'fix ship'.\n";
-      return;
+      return false;
     }
-    return;
+    return true;
   }
   g.out << "Fix what?\n";
+  return false;
 }
+
+const CommandDescriptor fix_cmd{
+    .name = "fix",
+    .roles = {.god_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "fix <planet|ship> <property> [<value>]",
+    .description = "Deity fix-it utilities for planets and ships",
+    .handler = &fix,
+};
+
 }  // namespace GB::commands

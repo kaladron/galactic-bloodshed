@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file repair_test.cc
+/// \brief Unit tests for repair command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  TestContext ctx;
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
-  // Create test race
   Race race{};
   race.Playernum = 1;
   race.name = "Testers";
@@ -21,7 +24,6 @@ int main() {
   RaceRepository races(store);
   races.save(race);
 
-  // Create test star
   star_struct star{};
   star.star_id = 0;
   star.name = "Test Star";
@@ -29,7 +31,6 @@ int main() {
   StarRepository stars(store);
   stars.save(star);
 
-  // Create test planet
   Planet planet{};
   planet.star_id() = 0;
   planet.planet_order() = 0;
@@ -63,18 +64,21 @@ int main() {
     SectorRepository sectors(store);
     sectors.save_map(smap);
   }
+}
 
-  // Create GameObj
+void test_repair_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
 
-  // Test repair command
-  command_t argv = {"repair", "3:5,3:5"};
-  GB::commands::repair(argv, g);
+  ctx.assert_dispatch_success(g, {"repair", "3:5,3:5"});
+  assert(g.out.str().contains("3 sectors repaired at a cost of"));
 
   // Verify sectors were repaired
   ctx.em.clear_cache();
@@ -98,6 +102,39 @@ int main() {
   assert(saved_planet);
   assert(saved_planet->info(player_t{1}).resource ==
          1000 - (3 * SECTOR_REPAIR_COST));
+}
+
+void test_repair_scope_and_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+
+  // 1. Scope rejection at UNIV level
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  ctx.assert_dispatch_rejected(g, {"repair"});
+  assert(g.out.str().contains("Invalid scope for this command"));
+
+  // 2. Domain error: no sectors owned on planet
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+  {
+    auto p_handle = ctx.em.get_planet(0, 0);
+    p_handle->info(player_t{1}).numsectsowned = 0;
+  }
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"repair", "3:5,3:5"});
+  assert(g.out.str().contains("You don't own any sectors on this planet"));
+}
+
+}  // namespace
+
+int main() {
+  test_repair_happy_path();
+  test_repair_scope_and_domain_errors();
 
   std::println(std::cout, "repair_test passed!");
   return 0;

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file fix_test.cc
+/// \brief Unit tests for fix command (deity utilities)
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
-
-/// \file fix_test.cc
-/// \brief Unit tests for fix command (deity utilities)
 
 // Database persistence for fixing ship fuel
 void test_fix_ship_fuel_persistence() {
@@ -286,6 +286,88 @@ void test_fix_planet_position_persistence() {
   std::println(std::cout, "✓ fix planet position persistence test passed");
 }
 
+void test_fix_command_dispatch() {
+  TestContext ctx;
+  JsonStore store(ctx.db);
+
+  // Create deity race (player 1, deity = true)
+  Race deity_race{};
+  deity_race.Playernum = 1;
+  deity_race.name = "Gods";
+  deity_race.God = true;
+  deity_race.Guest = false;
+
+  // Create mortal race (player 2, deity = false)
+  Race mortal_race{};
+  mortal_race.Playernum = 2;
+  mortal_race.name = "Mortals";
+  mortal_race.God = false;
+  mortal_race.Guest = false;
+
+  RaceRepository races(store);
+  races.save(deity_race);
+  races.save(mortal_race);
+
+  // Create star and planet
+  star_struct ss{};
+  ss.star_id = 0;
+  ss.name = "GodStar";
+  StarRepository stars(store);
+  stars.save(ss);
+
+  Planet planet{};
+  planet.star_id() = 0;
+  planet.planet_order() = 0;
+  planet.Maxx() = 10;
+  planet.Maxy() = 10;
+  planet.conditions(TEMP) = 50;
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  // Create ship
+  Ship ship{};
+  ship.number() = 1;
+  ship.owner() = 1;
+  ship.governor() = 0;
+  ship.type() = ShipType::STYPE_SHUTTLE;
+  ship.alive() = true;
+  ship.fuel() = 50.0;
+  ship.max_fuel() = 200;
+  ShipRepository ships(store);
+  ships.save(ship);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+
+  // 1. Mortal rejection
+  ctx.setup_game_obj(g, 2, 0);
+  ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "100"});
+  assert(g.out.str().contains("Only deity can use this command"));
+
+  // 2. Deity happy path - planet fix
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_god(true);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "temperature", "100"});
+  assert(g.out.str().contains("TEMP = 100"));
+
+  // 3. Deity happy path - ship fix
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "fuel", "200"});
+  assert(g.out.str().contains("fuel = 200"));
+
+  // 4. Min args check (< 3 args)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "planet"});
+  assert(
+      g.out.str().contains("Syntax: fix <planet|ship> <property> [<value>]"));
+}
+
 int main() {
   test_fix_ship_fuel_persistence();
   test_fix_ship_damage_persistence();
@@ -293,6 +375,7 @@ int main() {
   test_fix_planet_temp_persistence();
   test_fix_planet_oxygen_persistence();
   test_fix_planet_position_persistence();
+  test_fix_command_dispatch();
 
   std::println(std::cout, "\n✅ All fix tests passed!");
   return 0;

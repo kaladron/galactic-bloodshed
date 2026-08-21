@@ -11,7 +11,7 @@ import gblib;
 module commands;
 
 namespace GB::commands {
-void repair(const command_t& argv, GameObj& g) {
+bool repair(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   int hix;
   int lowy;
@@ -26,36 +26,37 @@ void repair(const command_t& argv, GameObj& g) {
     if (std::isdigit(argv[1][0]) && argv[1].find(',') != std::string::npos) {
       if (g.level() != ScopeLevel::LEVEL_PLAN) {
         g.out << "There are no sectors here.\n";
-        return;
+        return false;
       }
       where =
           std::make_unique<Place>(ScopeLevel::LEVEL_PLAN, g.snum(), g.pnum());
 
     } else {
       where = std::make_unique<Place>(g, argv[1]);
-      if (where->err || where->level == ScopeLevel::LEVEL_SHIP) return;
+      if (where->err || where->level == ScopeLevel::LEVEL_SHIP) return false;
     }
   }
 
   if (where->level != ScopeLevel::LEVEL_PLAN) {
     g.out << "Scope must be a planet.\n";
+    return false;
   }
 
   auto planet_handle = g.entity_manager.get_planet(where->snum, where->pnum);
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& p = *planet_handle;
   if (!p.info(Playernum).numsectsowned) {
     g.out << "You don't own any sectors on this planet.\n";
-    return;
+    return false;
   }
 
   auto smap_handle = g.entity_manager.get_sectormap(where->snum, where->pnum);
   if (!smap_handle.get()) {
     g.out << "Sector map not found.\n";
-    return;
+    return false;
   }
   auto& smap = *smap_handle;
   if (std::isdigit(argv[1][0]) && argv[1].find(',') != std::string::npos) {
@@ -63,7 +64,7 @@ void repair(const command_t& argv, GameObj& g) {
     auto coords = get4args(argv[1]);
     if (!coords) {
       g.out << "Invalid coordinate format. Use: x,y or xl:xh,yl:yh\n";
-      return;
+      return false;
     }
     auto [x_low, x_high, y_low, y_high] = *coords;
     x2 = std::max(0, x_low);
@@ -97,5 +98,18 @@ void repair(const command_t& argv, GameObj& g) {
 
   g.out << std::format("{0} sectors repaired at a cost of {1} resources.\n",
                        sectors, cost);
+  return true;
 }
+
+const CommandDescriptor repair_cmd{
+    .name = "repair",
+    .roles = {},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "repair [<coords>]",
+    .description = "Repair wasted sectors on a planet",
+    .handler = &repair,
+};
+
 }  // namespace GB::commands

@@ -109,12 +109,14 @@ build_registry() {
         reg(dismount_cmd);
         reg(build_cmd);
         reg(fire_cmd);
+        reg(fix_cmd);
         reg(cew_cmd);
         reg(cs_cmd);
         reg(center_cmd);
         reg(dump_cmd);
         reg(fuel_cmd);
         reg(orbit_cmd);
+        reg(repair_cmd);
         reg(scrap_cmd);
         reg(sell_cmd);
         reg(zoom_cmd);

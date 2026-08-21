@@ -36,6 +36,7 @@
 - **Every commit** that introduces new features, refactors, helper methods, or command descriptors **MUST include its unit tests in the exact same commit**.
 - Never separate implementation into one commit and tests into a later commit.
 - **Test Fidelity & Completeness**: Preserve all distinct test cases, assertions, and edge scenarios (e.g. multi-step sequences like friendly boarding, rejection of already-docked ships, edge-case validations). Never drop, truncate, or over-consolidate existing test cases during modernization. Preserve realistic entity state and domain setup fields (e.g., `race.mass`, `race.metabolism`, distinct player IDs for role rejection tests such as Player 1 for deity and Player 2 for mortal).
+- **Preserve domain formulas & template lookups in tests**: When initializing test entities (races, ships, planets), preserve baseline template lookups and domain calculations (e.g., `Shipdata[type][ABIL_BUILD]`, `Shipnames[type]`, `race.mass`, `race.metabolism`) instead of replacing them with arbitrary hardcoded magic numbers (e.g., replacing template size calculations with `100`).
 
 ### 3. Plain English Architecture Documentation
 - `ARCHITECTURE.md` is for humans and AI agents to understand how systems work conceptually.
@@ -49,6 +50,8 @@
 
 ### 5. Code Hygiene & Style Conventions
 - **Docstring & comment integrity**: Every C++ source and test file must begin with `/// \file <filename>` and `/// \brief <description>` headers immediately below the Apache-2.0 license banner. **NEVER** strip existing docstrings, file comments, stanza comments, inline explanatory comments, or test setup explanations when refactoring or migrating code.
+- **TODO and disabled test retention**: You are encouraged to resolve and implement TODOs when performing the work they describe (re-enabling the associated test cases and assertions). However, **NEVER** silently delete, strip, or "clean up" TODO comments, future migration markers (e.g., `// TODO: Re-enable ... after kill_ship() migrated to EntityManager (Phase 3.7)`), or commented-out test blocks without actually implementing the fix or feature they track.
+- **Cross-reference manual pages**: When defining `CommandDescriptor` metadata (scopes, min_args, AP costs, syntax strings), always check `help/<command>.md` and `help/` manual pages to ensure exact fidelity with canonical game rules.
 - **Comment placement**: Explanatory comments belong at the **top of a code stanza**, not trailing at the end of statements.
 - **Unused parameters**: In modern C++, if a function parameter is intentionally unused in the implementation (e.g., `argv` for no-arg commands), **omit the parameter name entirely** (`bool quit(const command_t&, GameObj& g)`) rather than annotating it with `[[maybe_unused]]`.
 - **No `_impl` suffixes or forwarding wrappers**: Domain handlers in `GB::commands` are named directly after the command (`bool bless(const command_t&, GameObj&)`) and assigned directly to `.handler = &bless`. Do not create `_impl` suffixes or redundant `void bless(...)` forwarding wrappers.

@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file order.cc
+/// \brief Handler for order command.
+
 module;
 
 import gblib;
@@ -9,7 +12,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void order(const command_t& argv, GameObj& g) {
+bool order(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   ap_t APcount = 1;
@@ -22,6 +25,7 @@ void order(const command_t& argv, GameObj& g) {
         DispOrders(g.entity_manager, Playernum, Governor, *ship);
       }
     }
+    return true;
   } else if (argv.size() >= 2) {
     DispOrdersHeader(g.entity_manager, Playernum, Governor);
     ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
@@ -40,7 +44,22 @@ void order(const command_t& argv, GameObj& g) {
       // Early exit for specific ship number filters
       if (is_ship_number_filter(argv[1])) break;
     }
-  } else
+    return true;
+  } else {
     g.out << "I don't understand what you mean.\n";
+    return false;
+  }
 }
+
+const CommandDescriptor order_cmd{
+    .name = "order",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "order [<ship> [<order> [<args>]]]",
+    .description = "Give standing orders to ships or view ship orders",
+    .handler = &order,
+};
+
 }  // namespace GB::commands

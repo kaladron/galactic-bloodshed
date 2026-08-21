@@ -116,9 +116,12 @@ build_registry() {
         reg(dump_cmd);
         reg(fuel_cmd);
         reg(orbit_cmd);
+        reg(order_cmd);
         reg(repair_cmd);
+        reg(route_cmd);
         reg(scrap_cmd);
         reg(sell_cmd);
+        reg(tactical_cmd);
         reg(zoom_cmd);
 
         return map;

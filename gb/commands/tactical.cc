@@ -681,7 +681,7 @@ void generate_tactical_reports(
 // ============================================================================
 
 namespace GB::commands {
-void tactical(const command_t& argv, GameObj& g) {
+bool tactical(const command_t& argv, GameObj& g) {
   TacticalContext ctx;
   ctx.enemies_only = false;
   std::vector<std::unique_ptr<TacticalItem>> items;
@@ -713,18 +713,18 @@ void tactical(const command_t& argv, GameObj& g) {
         auto scan_res = scn::scan<underlying_type_t<shipnum_t>>(arg_sv, "{}");
         if (!scan_res) {
           g.out << std::format("tactical: invalid ship argument {}\n", argv[l]);
-          return;
+          return false;
         }
         shipnum_t shipno{scan_res->value()};
         if (shipno > n_ships || shipno < 1) {
           g.out << std::format("tactical: no such ship #{} \n", shipno);
-          return;
+          return false;
         }
 
         const auto* ship = g.entity_manager.peek_ship(shipno);
         if (!ship) {
           g.out << std::format("tactical: no such ship #{} \n", shipno);
-          return;
+          return false;
         }
 
         // For tactical, we need to collect nearby ships/planets too
@@ -742,7 +742,7 @@ void tactical(const command_t& argv, GameObj& g) {
         l++;
       }
       generate_tactical_reports(g, ctx, items);
-      return;
+      return true;
     }
 
     // argv[1] might be ship type filter - store for target filtering
@@ -753,7 +753,7 @@ void tactical(const command_t& argv, GameObj& g) {
   switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
       g.out << "You can't do tactical from universe level.\n";
-      return;
+      return false;
 
     case ScopeLevel::LEVEL_PLAN:
       plan_get_tactical_items(g, items, g.player(), g.snum(), g.pnum());
@@ -767,7 +767,7 @@ void tactical(const command_t& argv, GameObj& g) {
       if (g.shipno() == 0) {
         g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
                  "scope to a ship.\n";
-        return;
+        return false;
       }
 
       {
@@ -775,7 +775,7 @@ void tactical(const command_t& argv, GameObj& g) {
         if (!scoped_ship) {
           g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
                                g.shipno());
-          return;
+          return false;
         }
 
         // Add the scoped ship
@@ -796,5 +796,19 @@ void tactical(const command_t& argv, GameObj& g) {
   }
 
   generate_tactical_reports(g, ctx, items);
+  return true;
 }
+
+const CommandDescriptor tactical_cmd{
+    .name = "tactical",
+    .roles = {},
+    .scopes = {.star = true, .planet = true, .ship = true},
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "tactical [<#ship|shiptype>] [<race>]",
+    .description =
+        "Report on tactical combat capabilities and firing solutions",
+    .handler = &tactical,
+};
+
 }  // namespace GB::commands

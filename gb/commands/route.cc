@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file route.cc
+/// \brief Set and view automated shipping routes for planets.
+
 module;
 
 import gblib;
@@ -10,7 +13,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void route(const command_t& argv, GameObj& g) {
+bool route(const command_t& argv, GameObj& g) {
   // TODO(jeffbailey): This seems to segfault with no args.
   player_t Playernum = g.player();
   // TODO(jeffbailey): ap_t APcount = 0;
@@ -23,12 +26,12 @@ void route(const command_t& argv, GameObj& g) {
 
   if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to 'cs' to a planet to examine routes.\n";
-    return;
+    return false;
   }
   auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& p = *planet_handle;
   if (argv.size() == 1) { /* display all shipping routes that are active */
@@ -61,13 +64,13 @@ void route(const command_t& argv, GameObj& g) {
                 : "???");
       }
     g.out << "Done.\n";
-    return;
+    return true;
   }
   if (argv.size() == 2) {
     i = std::stoi(argv[1]);
     if (i > MAX_ROUTES || i < 1) {
       g.out << "Bad route number.\n";
-      return;
+      return false;
     }
     if (p.info(Playernum).route[i - 1].set) {
       star = p.info(Playernum).route[i - 1].dest_star;
@@ -101,24 +104,26 @@ void route(const command_t& argv, GameObj& g) {
               : "???");
     }
     g.out << "Done.\n";
-    return;
+    return true;
   }
   if (argv.size() == 3) {
     i = std::stoi(argv[1]);
     if (i > MAX_ROUTES || i < 1) {
       g.out << "Bad route number.\n";
-      return;
+      return false;
     }
-    if (argv[2] == "activate")
+    if (argv[2] == "activate") {
       p.info(Playernum).route[i - 1].set = 1;
-    else if (argv[2] == "deactivate")
+      g.out << "Set.\n";
+    } else if (argv[2] == "deactivate") {
       p.info(Playernum).route[i - 1].set = 0;
-    else {
+      g.out << "Set.\n";
+    } else {
       Place where{g, argv[2], true};
       if (!where.err) {
         if (where.level != ScopeLevel::LEVEL_PLAN) {
           g.out << "You have to designate a planet.\n";
-          return;
+          return false;
         }
         p.info(Playernum).route[i - 1].dest_star =
             static_cast<unsigned char>(where.snum.value);
@@ -127,25 +132,26 @@ void route(const command_t& argv, GameObj& g) {
         g.out << "Set.\n";
       } else {
         g.out << "Illegal destination.\n";
-        return;
+        return false;
       }
     }
+    return true;
   } else {
     i = std::stoi(argv[1]);
     if (i > MAX_ROUTES || i < 1) {
       g.out << "Bad route number.\n";
-      return;
+      return false;
     }
     if (argv[2] == "land") {
       auto coords_opt = Coordinates::parse(argv[3]);
       if (!coords_opt) {
         g.out << "Bad sector coordinates.\n";
-        return;
+        return false;
       }
       const Coordinates coords = *coords_opt;
       if (!p.is_valid(coords)) {
         g.out << "Bad sector coordinates.\n";
-        return;
+        return false;
       }
       p.info(Playernum).route[i - 1].dest_coords = coords;
     } else if (argv[2] == "load") {
@@ -170,9 +176,23 @@ void route(const command_t& argv, GameObj& g) {
       }
     } else {
       g.out << "What are you trying to do?\n";
-      return;
+      return false;
     }
     g.out << "Set.\n";
   }
+  return true;
 }
+
+const CommandDescriptor route_cmd{
+    .name = "route",
+    .roles = {},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "route [<number> [activate|deactivate|land|load|unload|<dest> "
+              "[<args>]]]",
+    .description = "Set and view automated shipping routes for a planet",
+    .handler = &route,
+};
+
 }  // namespace GB::commands

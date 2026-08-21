@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file order_test.cc
+/// \brief Unit tests for order command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  // Create test context
-  TestContext ctx;
+namespace {
 
+void setup_test_world(TestContext& ctx) {
   // Create test race
   Race race{};
   race.Playernum = 1;
@@ -33,34 +35,33 @@ int main() {
   ship.type() = ShipType::STYPE_BATTLE;  // Battleship can bombard
   ship.name() = "TestShip";
   ship.speed() = 5;
+  ship.max_speed() = 9;
   ship.popn() = 100;  // Crew
 
   // Save ship via repository
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
+}
 
-  // Create GameObj for command execution
+void test_order_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);  // Set race pointer like production
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println(std::cout, "Set ship defense order");
   {
-    // Clear cache to ensure we get fresh data
-    ctx.em.clear_cache();
+    ctx.assert_dispatch_success(g, {"order", "#1", "defense", "on"});
 
-    command_t argv = {"order", "#1", "defense", "on"};
-    GB::commands::order(argv, g);
-
-    // Clear cache again to force reload from database
+    // Force reload from database
     ctx.em.clear_cache();
 
     // Verify defense order was set
     const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
-    std::println(std::cout, "    Ship found: number={}, protect.planet={}",
-                 saved_ship->number(), saved_ship->protect().planet);
     assert(saved_ship->protect().planet == 1);
     std::println(std::cout, "    ✓ Defense order set: protect.planet={}",
                  saved_ship->protect().planet);
@@ -68,13 +69,9 @@ int main() {
 
   std::println(std::cout, "\nTest 2: Turn defense order off");
   {
-    // Clear cache to ensure we get fresh data
-    ctx.em.clear_cache();
+    ctx.assert_dispatch_success(g, {"order", "#1", "defense", "off"});
 
-    command_t argv = {"order", "#1", "defense", "off"};
-    GB::commands::order(argv, g);
-
-    // Clear cache again to force reload from database
+    // Force reload from database
     ctx.em.clear_cache();
 
     // Verify defense was turned off
@@ -87,9 +84,7 @@ int main() {
 
   std::println(std::cout, "\nTest 3: Display all orders (no modifications)");
   {
-    // This should just display orders without modifications
-    command_t argv = {"order"};
-    GB::commands::order(argv, g);
+    ctx.assert_dispatch_success(g, {"order"});
 
     // Verify ship state unchanged
     const auto* saved_ship = ctx.em.peek_ship(1);
@@ -97,7 +92,13 @@ int main() {
     assert(saved_ship->protect().planet == 0);  // Still off from previous test
     std::println(std::cout, "    ✓ Display orders works without modification");
   }
+}
 
-  std::println(std::cout, "\n✅ All order tests passed!");
+}  // namespace
+
+int main() {
+  test_order_happy_path();
+
+  std::println(std::cout, "All order tests passed!");
   return 0;
 }

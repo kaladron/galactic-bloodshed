@@ -1,13 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import dallib;
-import gblib;
-import test;
-import commands;
-import std;
-
-#include <cassert>
-
 /// \file tactical_test.cc
 /// \brief Test tactical command functionality
 ///
@@ -15,21 +7,20 @@ import std;
 /// The tactical command shows a combat display of ships and planets in the
 /// current scope.
 
-#include <cstddef>
+import commands;
+import dallib;
+import gblib;
+import test;
+import std;
 
-// Setup common game state used by all tests
-struct TestState {
-  Database db;
-  EntityManager em;
-  JsonStore store;
+#include <cassert>
 
-  TestState() : db(":memory:"), em(db), store(db) {
-    initialize_schema(db);
-  }
-};
+namespace {
 
 // Create a minimal universe with ships for testing
-void setup_test_universe(TestState& state) {
+void setup_test_universe(TestContext& ctx) {
+  JsonStore store(ctx.db);
+
   // Create a race
   Race race{};
   race.Playernum = 1;
@@ -40,7 +31,7 @@ void setup_test_universe(TestState& state) {
   race.governor[0].active = true;
   race.governor[0].name = "Governor1";
 
-  RaceRepository races(state.store);
+  RaceRepository races(store);
   races.save(race);
 
   // Create a star
@@ -52,7 +43,7 @@ void setup_test_universe(TestState& state) {
   star.inhabited = 2;    // Player 1 inhabits (bit 1 set)
   star.governor[0] = 0;  // Player 1 governor
 
-  StarRepository stars(state.store);
+  StarRepository stars(store);
   stars.save(star);
 
   // Create a planet
@@ -63,7 +54,7 @@ void setup_test_universe(TestState& state) {
   planet.info(player_t{1}).numsectsowned = 10;
   planet.info(player_t{1}).explored = 1;  // Player 1 has explored this planet
 
-  PlanetRepository planets(state.store);
+  PlanetRepository planets(store);
   planets.save(planet);
 
   // Create some ships for the player
@@ -79,7 +70,7 @@ void setup_test_universe(TestState& state) {
   ship1.storbits() = 1;
   ship1.pnumorbits() = 0;
 
-  ShipRepository ships(state.store);
+  ShipRepository ships(store);
   ships.save(ship1);
 }
 
@@ -87,28 +78,17 @@ void setup_test_universe(TestState& state) {
 void test_tactical_planet_scope() {
   std::println(std::cout, "Test: Tactical at planet scope");
 
-  TestState state;
-  setup_test_universe(state);
+  TestContext ctx;
+  setup_test_universe(ctx);
 
-  // Refresh entity manager cache
-  state.em.clear_cache();
-
-  // Create GameObj for tactical command
   auto& registry = get_test_session_registry();
-  GameObj g_tactical(state.em, registry);
-
-  g_tactical.set_player(1);
-
-  g_tactical.set_governor(0);
+  GameObj g_tactical(ctx.em, registry);
+  ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_PLAN);
   g_tactical.set_snum(1);
   g_tactical.set_pnum(0);
 
-  g_tactical.race = state.em.peek_race(1);
-
-  // Run standalone tactical command
-  command_t tactical_cmd = {"tactical"};
-  GB::commands::tactical(tactical_cmd, g_tactical);
+  ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
 
   // Verify tactical produces output
@@ -120,35 +100,24 @@ void test_tactical_planet_scope() {
          "Tactical at planet scope should show planet");
 
   std::println(std::cout, "  ✓ Planet scope produces tactical output");
-  std::println(std::cout, "  Output:\n{}", tactical_output);
 }
 
 /// Test tactical at ship scope - shows surrounding area (planet + ships)
-/// Per documentation: "Enemy ships will only appear on tactical display
-/// if they are in the same scope as the calling ship."
 void test_tactical_ship_scope() {
   std::println(std::cout, "Test: Tactical at ship scope");
 
-  TestState state;
-  setup_test_universe(state);
+  TestContext ctx;
+  setup_test_universe(ctx);
 
-  // Refresh entity manager cache
-  state.em.clear_cache();
-
-  // Create GameObj for tactical command
   auto& registry = get_test_session_registry();
-  GameObj g_tactical(state.em, registry);
-  g_tactical.set_player(1);
-  g_tactical.set_governor(0);
+  GameObj g_tactical(ctx.em, registry);
+  ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_SHIP);
   g_tactical.set_snum(1);
   g_tactical.set_pnum(0);
   g_tactical.set_shipno(1);
-  g_tactical.race = state.em.peek_race(1);
 
-  // Run standalone tactical command
-  command_t tactical_cmd = {"tactical"};
-  GB::commands::tactical(tactical_cmd, g_tactical);
+  ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
 
   // Verify we got output
@@ -161,35 +130,23 @@ void test_tactical_ship_scope() {
 
   std::println(std::cout,
                "  ✓ Ship scope produces tactical output with surrounding area");
-  std::println(std::cout, "  Output:\n{}", tactical_output);
 }
 
 /// Test tactical at star scope - shows planets and ships in the star system
 void test_tactical_star_scope() {
   std::println(std::cout, "Test: Tactical at star scope");
 
-  TestState state;
-  setup_test_universe(state);
+  TestContext ctx;
+  setup_test_universe(ctx);
 
-  // Refresh entity manager cache
-  state.em.clear_cache();
-
-  // Create GameObj for tactical command
   auto& registry = get_test_session_registry();
-  GameObj g_tactical(state.em, registry);
-
-  g_tactical.set_player(1);
-
-  g_tactical.set_governor(0);
+  GameObj g_tactical(ctx.em, registry);
+  ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_STAR);
   g_tactical.set_snum(1);
   g_tactical.set_pnum(0);
 
-  g_tactical.race = state.em.peek_race(1);
-
-  // Run standalone tactical command
-  command_t tactical_cmd = {"tactical"};
-  GB::commands::tactical(tactical_cmd, g_tactical);
+  ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
 
   // Verify tactical produces output
@@ -201,8 +158,25 @@ void test_tactical_star_scope() {
          "Tactical at star scope should show planet");
 
   std::println(std::cout, "  ✓ Star scope produces tactical output");
-  std::println(std::cout, "  Output:\n{}", tactical_output);
 }
+
+void test_tactical_scope_rejection() {
+  std::println(std::cout, "Test: Tactical scope rejection at UNIV scope");
+
+  TestContext ctx;
+  setup_test_universe(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g_tactical(ctx.em, registry);
+  ctx.setup_game_obj(g_tactical, 1, 0);
+  g_tactical.set_level(ScopeLevel::LEVEL_UNIV);
+
+  ctx.assert_dispatch_rejected(g_tactical, {"tactical"});
+  assert(g_tactical.out.str().contains("Invalid scope for this command"));
+  std::println(std::cout, "  ✓ Tactical rejected at universe level");
+}
+
+}  // namespace
 
 int main() {
   std::println(std::cout, "=== Tactical Command Test ===\n");
@@ -210,6 +184,7 @@ int main() {
   test_tactical_planet_scope();
   test_tactical_ship_scope();
   test_tactical_star_scope();
+  test_tactical_scope_rejection();
 
   std::println(std::cout, "\n✅ All tactical tests passed!");
   return 0;

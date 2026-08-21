@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file proj_fuel.cc
+/// \brief Fuel calculation projection command.
+
 module;
 
 import gblib;
@@ -9,7 +12,7 @@ import std;
 module commands;
 
 namespace GB::commands {
-void proj_fuel(const command_t& argv, GameObj& g) {
+bool proj_fuel(const command_t& argv, GameObj& g) {
   int opt_settings;
   bool computing = true;
   segments_t current_segs;
@@ -22,39 +25,39 @@ void proj_fuel(const command_t& argv, GameObj& g) {
   if ((argv.size() < 2) || (argv.size() > 3)) {
     g.out << "Invalid number of options.\n\"fuel #<shipnumber> "
              "[destination]\"...\n";
-    return;
+    return false;
   }
   if (argv[1][0] != '#') {
     g.out << "Invalid first option.\n\"fuel #<shipnumber> [destination]\"...\n";
-    return;
+    return false;
   }
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno || *shipno > g.entity_manager.num_ships() || *shipno < 1) {
     g.out << std::format("rst: no such ship #{}\n", *shipno);
-    return;
+    return false;
   }
   const Ship* ship;
   try {
     ship = g.entity_manager.peek_ship(*shipno);
   } catch (const EntityNotFoundError&) {
     g.out << "Ship not found.\n";
-    return;
+    return false;
   }
   if (ship->owner() != g.player()) {
     g.out << "You do not own this ship.\n";
-    return;
+    return false;
   }
   if (landed(*ship) && (argv.size() == 2)) {
     g.out << "You must specify a destination for landed or docked ships...\n";
-    return;
+    return false;
   }
   if (!ship->speed()) {
     g.out << "That ship is not moving!\n";
-    return;
+    return false;
   }
   if ((!speed_rating(*ship)) || (ship->type() == ShipType::OTYPE_FACTORY)) {
     g.out << "That ship does not have a speed rating...\n";
-    return;
+    return false;
   }
   std::string plan_buf;
   if (landed(*ship) && (ship->whatorbits() == ScopeLevel::LEVEL_PLAN)) {
@@ -62,12 +65,12 @@ void proj_fuel(const command_t& argv, GameObj& g) {
         g.entity_manager.peek_planet(ship->storbits(), ship->pnumorbits());
     if (!p) {
       g.out << "Planet data not found.\n";
-      return;
+      return false;
     }
     const auto* star_ptr = g.entity_manager.peek_star(ship->storbits());
     if (!star_ptr) {
       g.out << "Star data not found.\n";
-      return;
+      return false;
     }
     gravity_factor = p->gravity();
     plan_buf = std::format("/{}/{}", star_ptr->get_name(),
@@ -82,19 +85,19 @@ void proj_fuel(const command_t& argv, GameObj& g) {
   Place tmpdest{g, deststr, true};
   if (tmpdest.err) {
     g.out << "fuel:  bad scope.\n";
-    return;
+    return false;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     const auto* tmpship = g.entity_manager.peek_ship(tmpdest.shipno);
     if (!tmpship) {
       g.out << "Destination ship not found.\n";
-      return;
+      return false;
     }
     // followable takes non-const reference to target (may modify it)
     Ship mutable_target(tmpship->get_struct());
     if (!followable(g.entity_manager, *ship, mutable_target)) {
       g.out << "The ship's destination is out of range.\n";
-      return;
+      return false;
     }
   }
   if (tmpdest.level != ScopeLevel::LEVEL_UNIV &&
@@ -104,12 +107,12 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
     if (!dest_star || isclr(dest_star->explored(), ship->owner())) {
       g.out << "You haven't explored the destination system.\n";
-      return;
+      return false;
     }
   }
   if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
     g.out << "Invalid ship destination.\n";
-    return;
+    return false;
   }
   double x_0 = ship->xpos();
   double y_0 = ship->ypos();
@@ -119,17 +122,17 @@ void proj_fuel(const command_t& argv, GameObj& g) {
 
   if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
     g.out << "That ship currently has no destination orders...\n";
-    return;
+    return false;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     const auto* tmpship = g.entity_manager.peek_ship(tmpdest.shipno);
     if (!tmpship) {
       g.out << "Destination ship not found.\n";
-      return;
+      return false;
     }
     if (tmpship->owner() != g.player()) {
       g.out << "Nice try.\n";
-      return;
+      return false;
     }
     x_1 = tmpship->xpos();
     y_1 = tmpship->ypos();
@@ -138,7 +141,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
     if (!p || !dest_star) {
       g.out << "Destination planet or star not found.\n";
-      return;
+      return false;
     }
     x_1 = p->xpos() + dest_star->xpos();
     y_1 = p->ypos() + dest_star->ypos();
@@ -146,13 +149,13 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
     if (!dest_star) {
       g.out << "Destination star not found.\n";
-      return;
+      return false;
     }
     x_1 = dest_star->xpos();
     y_1 = dest_star->ypos();
   } else {
     g.out << "ERROR: Invalid destination level\n";
-    return;
+    return false;
   }
 
   /* compute the distance */
@@ -160,7 +163,7 @@ void proj_fuel(const command_t& argv, GameObj& g) {
 
   if (dist <= DIST_TO_LAND) {
     g.out << "That ship is within 10.0 units of the destination.\n";
-    return;
+    return false;
   }
 
   /*  First get the results based on current fuel load.  */
@@ -212,5 +215,18 @@ void proj_fuel(const command_t& argv, GameObj& g) {
     fuel_output(g, dist, fuel_usage, gravity_factor, tmpship.mass(),
                 number_segments, plan_buf);
   }
+  return true;
 }
+
+const CommandDescriptor fuel_cmd{
+    .name = "fuel",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "fuel <#ship> [<destination>]",
+    .description = "Show fuel requirements and travel time for a trip",
+    .handler = &proj_fuel,
+};
+
 }  // namespace GB::commands

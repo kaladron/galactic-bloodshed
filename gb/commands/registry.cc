@@ -98,6 +98,7 @@ build_registry() {
         reg(dissolve_cmd);
         reg(enslave_cmd);
         reg(insurgency_cmd);
+        reg(jettison_cmd);
         reg(land_cmd);
         reg(launch_cmd);
         reg(load_cmd);
@@ -112,6 +113,7 @@ build_registry() {
         reg(cs_cmd);
         reg(center_cmd);
         reg(dump_cmd);
+        reg(fuel_cmd);
         reg(orbit_cmd);
         reg(scrap_cmd);
         reg(sell_cmd);

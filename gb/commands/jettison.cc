@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file jettison.cc
+/// \brief Functions for jettisoning cargo into deep space.
+
 module;
 
 import gblib;
@@ -24,16 +27,17 @@ int jettison_check(GameObj& g, int amt, int max) {
 }  // namespace
 
 namespace GB::commands {
-void jettison(const command_t& argv, GameObj& g) {
+bool jettison(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   ap_t APcount = 0;
   int amt;
   char commod;
+  bool success = false;
 
-  if (argv.size() < 2) {
+  if (argv.size() < 3) {
     g.out << "Jettison what?\n";
-    return;
+    return false;
   }
 
   ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
@@ -83,6 +87,7 @@ void jettison(const command_t& argv, GameObj& g) {
           ship.crystals() -= amt;
           g.out << std::format("{} crystal{} jettisoned.\n", amt,
                                (amt == 1) ? "" : "s");
+          success = true;
         }
         break;
       case 'c':
@@ -93,6 +98,7 @@ void jettison(const command_t& argv, GameObj& g) {
                                (amt == 1) ? "hurls itself" : "hurl themselves");
           g.out << std::format("Complement of {} is now {}.\n", ship,
                                ship.popn());
+          success = true;
         }
         break;
       case 'm':
@@ -103,6 +109,7 @@ void jettison(const command_t& argv, GameObj& g) {
                                ship.number(), ship.troops() - amt);
           ship.troops() -= amt;
           ship.mass() -= amt * g.race->mass;
+          success = true;
         }
         break;
       case 'd':
@@ -117,24 +124,40 @@ void jettison(const command_t& argv, GameObj& g) {
               g.out << "no longer boobytrapped.\n";
             }
           }
+          success = true;
         }
         break;
       case 'f':
         if ((amt = jettison_check(g, amt, (int)(ship.fuel()))) > 0) {
           use_fuel(ship, (double)amt);
           g.out << std::format("{} fuel jettisoned.\n", amt);
+          success = true;
         }
         break;
       case 'r':
         if ((amt = jettison_check(g, amt, (int)(ship.resource()))) > 0) {
           use_resource(ship, amt);
           g.out << std::format("{} resources jettisoned.\n", amt);
+          success = true;
         }
         break;
       default:
         g.out << "No such commodity valid.\n";
-        return;
+        return false;
     }
   }
+  return success;
 }
+
+const CommandDescriptor jettison_cmd{
+    .name = "jettison",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "jettison <ship> <commodity> [<amount>]",
+    .description = "Unload commodities from a ship into space",
+    .handler = &jettison,
+};
+
 }  // namespace GB::commands

@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file jettison_test.cc
+/// \brief Unit tests for jettison command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  TestContext ctx;
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
   // Create test race
@@ -56,11 +60,15 @@ int main() {
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
+}
 
-  // Create GameObj
+void test_jettison_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
   g.set_shipno(1);
@@ -70,8 +78,7 @@ int main() {
     const auto* s_before = ctx.em.peek_ship(1);
     int initial_crystals = s_before->crystals();
 
-    command_t argv = {"jettison", "#1", "x", "3"};
-    GB::commands::jettison(argv, g);
+    ctx.assert_dispatch_success(g, {"jettison", "#1", "x", "3"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->crystals() == initial_crystals - 3);
@@ -84,12 +91,11 @@ int main() {
     int initial_popn = s_before->popn();
     double initial_mass = s_before->mass();
 
-    command_t argv = {"jettison", "#1", "c", "5"};
-    GB::commands::jettison(argv, g);
+    ctx.assert_dispatch_success(g, {"jettison", "#1", "c", "5"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->popn() == initial_popn - 5);
-    assert(s_after->mass() == initial_mass - (5 * race.mass));
+    assert(s_after->mass() == initial_mass - 5.0);
     std::println(std::cout, "✓ Crew jettisoned with mass reduction");
   }
 
@@ -99,12 +105,11 @@ int main() {
     int initial_troops = s_before->troops();
     double initial_mass = s_before->mass();
 
-    command_t argv = {"jettison", "#1", "m", "4"};
-    GB::commands::jettison(argv, g);
+    ctx.assert_dispatch_success(g, {"jettison", "#1", "m", "4"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->troops() == initial_troops - 4);
-    assert(s_after->mass() == initial_mass - (4 * race.mass));
+    assert(s_after->mass() == initial_mass - 4.0);
     std::println(std::cout, "✓ Military jettisoned with mass reduction");
   }
 
@@ -113,8 +118,7 @@ int main() {
     const auto* s_before = ctx.em.peek_ship(1);
     int initial_destruct = s_before->destruct();
 
-    command_t argv = {"jettison", "#1", "d", "10"};
-    GB::commands::jettison(argv, g);
+    ctx.assert_dispatch_success(g, {"jettison", "#1", "d", "10"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->destruct() == initial_destruct - 10);
@@ -126,8 +130,7 @@ int main() {
     const auto* s_before = ctx.em.peek_ship(1);
     double initial_fuel = s_before->fuel();
 
-    command_t argv = {"jettison", "#1", "f", "25"};
-    GB::commands::jettison(argv, g);
+    ctx.assert_dispatch_success(g, {"jettison", "#1", "f", "25"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->fuel() == initial_fuel - 25);
@@ -139,13 +142,52 @@ int main() {
     const auto* s_before = ctx.em.peek_ship(1);
     int initial_resource = s_before->resource();
 
-    command_t argv = {"jettison", "#1", "r", "30"};
-    GB::commands::jettison(argv, g);
+    ctx.assert_dispatch_success(g, {"jettison", "#1", "r", "30"});
 
     const auto* s_after = ctx.em.peek_ship(1);
     assert(s_after->resource() == initial_resource - 30);
     std::println(std::cout, "✓ Resources jettisoned");
   }
+}
+
+void test_jettison_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.set_shipno(1);
+
+  // 1. Min args check (< 3 args)
+  ctx.assert_dispatch_rejected(g, {"jettison"});
+  assert(
+      g.out.str().contains("Syntax: jettison <ship> <commodity> [<amount>]"));
+
+  // 2. Unknown commodity
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"jettison", "#1", "z", "10"});
+  assert(g.out.str().contains("No such commodity valid"));
+
+  // 3. Jettison when landed
+  {
+    auto ship_handle = ctx.em.get_ship(1);
+    ship_handle->docked() = true;
+    ship_handle->whatorbits() = ScopeLevel::LEVEL_PLAN;
+    ship_handle->whatdest() = ScopeLevel::LEVEL_PLAN;
+  }
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "10"});
+  assert(g.out.str().contains("Ship is landed, cannot jettison"));
+}
+
+}  // namespace
+
+int main() {
+  test_jettison_happy_path();
+  test_jettison_domain_errors();
 
   std::println(std::cout, "All jettison tests passed!");
   return 0;

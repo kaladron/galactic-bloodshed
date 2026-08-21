@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file orbit_test.cc
+/// \brief Test orbit command graphic display and scope handling
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-/// \file orbit_test.cc
-/// \brief Test orbit command graphic display and scope handling
+namespace {
 
-int main() {
-  // Create test context
-  TestContext ctx;
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
   // Setup: Create universe with 1 star and ships
@@ -104,19 +104,23 @@ int main() {
   ships_repo.save(ship1);
   ships_repo.save(ship2);
   ships_repo.save(ship3);
+}
 
-  // Create GameObj for command execution
+void test_orbit_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  ctx.setup_game_obj(g, 1, 0);
 
   // TEST: Orbit display at star level
   std::println(std::cout, "Orbit command displays ship at star");
   {
-    command_t argv = {"orbit"};
-    GB::commands::orbit(argv, g);
+    g.set_level(ScopeLevel::LEVEL_STAR);
+    g.set_snum(0);
+
+    ctx.assert_dispatch_success(g, {"orbit"});
 
     // Verify ships remain unchanged
     const auto* saved_ship = ctx.em.peek_ship(1);
@@ -135,8 +139,7 @@ int main() {
     g.set_pnum(0);
 
     g.out.str("");
-    command_t argv = {"orbit"};
-    GB::commands::orbit(argv, g);
+    ctx.assert_dispatch_success(g, {"orbit"});
 
     std::string out = g.out.str();
     assert(!out.empty());
@@ -150,8 +153,7 @@ int main() {
     g.set_snum(0);
 
     g.out.str("");
-    command_t argv = {"orbit", "-s"};
-    GB::commands::orbit(argv, g);
+    ctx.assert_dispatch_success(g, {"orbit", "-s"});
     std::string out_no_ships = g.out.str();
 
     assert(!out_no_ships.empty());
@@ -163,8 +165,7 @@ int main() {
   {
     g.set_level(ScopeLevel::LEVEL_UNIV);
 
-    command_t argv = {"orbit"};
-    GB::commands::orbit(argv, g);
+    ctx.assert_dispatch_success(g, {"orbit"});
 
     const auto* saved_ship = ctx.em.peek_ship(1);
     assert(saved_ship != nullptr);
@@ -178,31 +179,33 @@ int main() {
         std::cout,
         "    ✓ Universe-level orbit displays stars and ships in transit");
   }
+}
 
-  // TEST: Orbit edge case (missing universe data)
-  std::println(std::cout,
-               "Orbit at universe level with no universe (edge case)");
-  {
-    Database db2(":memory:");
-    initialize_schema(db2);
-    EntityManager em2(db2);
+void test_orbit_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
 
-    JsonStore store2(db2);
-    RaceRepository races2(store2);
-    races2.save(race);
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
 
-    auto& registry = get_test_session_registry();
-    GameObj g2(em2, registry);
-    g2.set_player(1);
-    g2.set_governor(0);
-    g2.race = em2.peek_race(1);
-    g2.set_level(ScopeLevel::LEVEL_UNIV);
+  // 1. Invalid option number format
+  ctx.assert_dispatch_rejected(g, {"orbit", "-abc"});
+  assert(g.out.str().contains("Bad number"));
 
-    command_t argv = {"orbit"};
-    GB::commands::orbit(argv, g2);
+  // 2. Invalid target scope path
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"orbit", "nonexistent/star"});
+  assert(g.out.str().contains("orbit: error in args."));
+}
 
-    std::println(std::cout, "    ✓ Handled missing universe gracefully");
-  }
+}  // namespace
+
+int main() {
+  test_orbit_happy_path();
+  test_orbit_domain_errors();
 
   std::println(std::cout, "\n✅ All orbit tests passed!");
   return 0;

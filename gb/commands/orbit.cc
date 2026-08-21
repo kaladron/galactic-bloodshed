@@ -34,7 +34,7 @@ namespace GB::commands {
  *  -(number) : Do not display that #'d ship or planet (in case it obstructs
  * 		the view of another object)
  */
-void orbit(const command_t& argv, GameObj& g) {
+bool orbit(const command_t& argv, GameObj& g) {
   int DontDispNum = -1;
   int DontDispPlanets;
   int DontDispShips;
@@ -65,7 +65,7 @@ void orbit(const command_t& argv, GameObj& g) {
             } else {
               g.out << std::format("Bad number {}.\n",
                                    std::string_view(argv[flag]).substr(1));
-              return;
+              return false;
             }
             if (DontDispNum > 0) DontDispNum--; /* make a '1' into a '0' */
             break;
@@ -88,7 +88,7 @@ void orbit(const command_t& argv, GameObj& g) {
 
   if (where->err) {
     g.out << "orbit: error in args.\n";
-    return;
+    return false;
   }
 
   /* orbit type of map */
@@ -97,7 +97,7 @@ void orbit(const command_t& argv, GameObj& g) {
   const auto* race_ptr = g.entity_manager.peek_race(g.player());
   if (!race_ptr) {
     g.out << "Race not found.\n";
-    return;
+    return false;
   }
   const Race& Race = *race_ptr;
 
@@ -106,7 +106,7 @@ void orbit(const command_t& argv, GameObj& g) {
       const auto* universe = g.entity_manager.peek_universe();
       if (!universe) {
         g.out << "Universe data not available.\n";
-        return;
+        return false;
       }
       for (auto star_handle : StarList(g.entity_manager)) {
         const auto& star_ref = *star_handle;
@@ -131,7 +131,7 @@ void orbit(const command_t& argv, GameObj& g) {
       const auto* star_ptr = g.entity_manager.peek_star(where->snum);
       if (!star_ptr) {
         g.out << "Star not found.\n";
-        return;
+        return false;
       }
       std::string star =
           DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars, Race);
@@ -179,12 +179,12 @@ void orbit(const command_t& argv, GameObj& g) {
       const auto* plan_star = g.entity_manager.peek_star(where->snum);
       if (!plan_star) {
         g.out << "Star not found.\n";
-        return;
+        return false;
       }
       const auto* p = g.entity_manager.peek_planet(where->snum, where->pnum);
       if (!p) {
         g.out << "Planet not found.\n";
-        return;
+        return false;
       }
       std::string planet = DispPlanet(g, ScopeLevel::LEVEL_PLAN, *p,
                                       plan_star->get_planet_name(where->pnum),
@@ -219,11 +219,24 @@ void orbit(const command_t& argv, GameObj& g) {
     } break;
     default:
       g.out << "Bad scope.\n";
-      return;
+      return false;
   }
   system_map_text += '\n';
   g.out << system_map_text;
+  return true;
 }
+
+const CommandDescriptor orbit_cmd{
+    .name = "orbit",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "orbit [-p] [-S] [-s] [-<num>] [<path>]",
+    .description = "Graphic representation of objects in current scope or path",
+    .handler = &orbit,
+};
+
 }  // namespace GB::commands
 
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks

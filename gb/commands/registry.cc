@@ -106,9 +106,12 @@ build_registry() {
         reg(fire_cmd);
         reg(cew_cmd);
         reg(cs_cmd);
+        reg(center_cmd);
         reg(dump_cmd);
+        reg(orbit_cmd);
         reg(scrap_cmd);
         reg(sell_cmd);
+        reg(zoom_cmd);
 
         return map;
       }();

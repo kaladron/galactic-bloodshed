@@ -89,7 +89,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"autoreport", GB::commands::autoreport},
       {"block", GB::commands::block},
       {"broadcast", GB::commands::announce},
-      {"center", GB::commands::center},
       {"client_survey", GB::commands::survey},
       {"colonies", GB::commands::colonies},
       {"declare", GB::commands::declare},
@@ -115,7 +114,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"mount", GB::commands::mount},
       {"motto", GB::commands::motto},
       {"name", GB::commands::name},
-      {"orbit", GB::commands::orbit},
       {"order", GB::commands::order},
       {"page", GB::commands::page},
       {"pay", GB::commands::pay},  // TODO(jeffbailey): !guest
@@ -153,7 +151,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"walk", GB::commands::walk},
       {"whois", GB::commands::whois},
       {"weapons", GB::commands::rst},
-      {"zoom", GB::commands::zoom},
   };
 
   if (VOTING) {

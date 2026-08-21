@@ -14,7 +14,7 @@ module commands;
 
 namespace GB::commands {
 /// Zoom in or out for orbit display
-void zoom(const command_t& argv, GameObj& g) {
+bool zoom(const command_t& argv, GameObj& g) {
   int i = (g.level() == ScopeLevel::LEVEL_UNIV);
 
   if (argv.size() > 1) {
@@ -23,9 +23,9 @@ void zoom(const command_t& argv, GameObj& g) {
       auto [num, denom] = scan_res->values();
       if (denom == 0.0) {
         g.out << "Illegal denominator value.\n";
-      } else {
-        g.zoom[i] = num / denom;
+        return false;
       }
+      g.zoom[i] = num / denom;
     } else {
       auto single_res = scn::scan<double>(argv[1], "{}");
       if (single_res) {
@@ -36,5 +36,18 @@ void zoom(const command_t& argv, GameObj& g) {
 
   g.out << std::format("Zoom value {0}, lastx = {1}, lasty = {2}.\n", g.zoom[i],
                        g.lastx[i], g.lasty[i]);
+  return true;
 }
+
+const CommandDescriptor zoom_cmd{
+    .name = "zoom",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "zoom [<amount>]",
+    .description = "Set zoom scale and center coordinates for orbit display",
+    .handler = &zoom,
+};
+
 }  // namespace GB::commands

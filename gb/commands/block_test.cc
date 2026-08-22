@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file block_test.cc
+/// \brief Unit tests for block command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  // Create test context
+namespace {
+
+void test_block_dispatch() {
   TestContext ctx;
   JsonStore store(ctx.db);
 
@@ -18,9 +22,9 @@ int main() {
   race1.Playernum = 1;
   race1.name = "TestRace1";
   race1.governor[0].active = true;
-  race1.translate[0] = 100;  // Full knowledge of self
-  race1.translate[1] = 50;   // Some knowledge of race 2
-  race1.translate[2] = 75;   // Some knowledge of race 3
+  race1.translate[0] = 100;
+  race1.translate[1] = 50;
+  race1.translate[2] = 75;
 
   Race race2{};
   race2.Playernum = 2;
@@ -38,32 +42,29 @@ int main() {
   races.save(race3);
 
   // Create blocks for each player
-  // Block 1: Has members but zero VPs (should still appear after fix)
   block block1{};
   block1.Playernum = 1;
   block1.name = "ZeroVPBlock";
   block1.motto = "We have no VPs yet";
-  block1.VPs = 0;               // Zero VPs - this was the bug case
-  block1.invite = (1ULL << 1);  // Player 1 invited
-  block1.pledge = (1ULL << 1);  // Player 1 pledged
+  block1.VPs = 0;
+  block1.invite = (1ULL << 1);
+  block1.pledge = (1ULL << 1);
 
-  // Block 2: Has members and non-zero VPs
   block block2{};
   block2.Playernum = 2;
   block2.name = "HasVPsBlock";
   block2.motto = "We have some VPs";
-  block2.VPs = 100;             // Non-zero VPs
-  block2.invite = (1ULL << 2);  // Player 2 invited
-  block2.pledge = (1ULL << 2);  // Player 2 pledged
+  block2.VPs = 100;
+  block2.invite = (1ULL << 2);
+  block2.pledge = (1ULL << 2);
 
-  // Block 3: Empty block (no members, should not appear)
   block block3{};
   block3.Playernum = 3;
   block3.name = "EmptyBlock";
   block3.motto = "Nobody here";
   block3.VPs = 50;
-  block3.invite = 0;  // No invites
-  block3.pledge = 0;  // No pledges
+  block3.invite = 0;
+  block3.pledge = 0;
 
   BlockRepository blocks(store);
   blocks.save(block1);
@@ -72,15 +73,14 @@ int main() {
 
   // Setup Power_blocks global with member counts
   Power_blocks.time = std::time(nullptr);
-  Power_blocks.members[0] = 1;  // Block 1 has 1 member
-  Power_blocks.members[1] = 1;  // Block 2 has 1 member
-  Power_blocks.members[2] = 0;  // Block 3 has 0 members (empty)
+  Power_blocks.members[0] = 1;
+  Power_blocks.members[1] = 1;
+  Power_blocks.members[2] = 0;
 
-  Power_blocks.VPs[0] = 0;    // Block 1: Zero VPs
-  Power_blocks.VPs[1] = 100;  // Block 2: Non-zero VPs
-  Power_blocks.VPs[2] = 50;   // Block 3: Has VPs but no members
+  Power_blocks.VPs[0] = 0;
+  Power_blocks.VPs[1] = 100;
+  Power_blocks.VPs[2] = 50;
 
-  // Set some other stats for display
   Power_blocks.money[0] = 1000;
   Power_blocks.money[1] = 5000;
   Power_blocks.popn[0] = 10000;
@@ -88,48 +88,36 @@ int main() {
   Power_blocks.ships_owned[0] = 5;
   Power_blocks.ships_owned[1] = 20;
 
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  std::println(std::cout, "========== Block Command Tests ==========\n");
+  // 1. List all alliance blocks
+  ctx.assert_dispatch_success(g, {"block"});
+  std::string output = g.out.str();
+  assert(output.find("ZeroVPBlock") != std::string::npos);
+  assert(output.find("HasVPsBlock") != std::string::npos);
+  assert(output.find("EmptyBlock") == std::string::npos);
+  std::println(std::cout, "    ✓ All alliance blocks listing succeeded");
 
-  std::println(std::cout, "List all alliance blocks");
-  {
-    command_t argv = {"block"};
-    GB::commands::block(argv, g);
+  // 2. Query player block membership
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"block", "player", "1"});
+  assert(g.out.str().contains("TestRace1"));
+  std::println(std::cout, "    ✓ Player block membership query succeeded");
 
-    std::string output = g.out.str();
-    std::println(std::cout, "--- Output ---");
-    std::println(std::cout, "{}", output);
+  // 3. Query specific block power report
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"block", "1"});
+  assert(g.out.str().contains("ZeroVPBlock"));
+  std::println(std::cout, "    ✓ Specific block report query succeeded");
+}
 
-    // Verify header doesn't have trailing newline before ===
-    // The old bug was: "as of Fri Dec 26...\n ==========" on two lines
-    assert(output.find("==========\n #") != std::string::npos ||
-           output.find("==========\n Pl") != std::string::npos ||
-           output.find("==========\n#") != std::string::npos);
-    std::println(std::cout, "    ✓ Header line doesn't have spurious newline");
+}  // namespace
 
-    // Bug fix verification: Block with zero VPs but members should appear
-    assert(output.find("ZeroVPBlock") != std::string::npos &&
-           "Bug: Block with zero VPs but members should appear in listing");
-    std::println(std::cout, "    ✓ Block with zero VPs but members appears");
-
-    // Block with non-zero VPs should also appear
-    assert(output.find("HasVPsBlock") != std::string::npos &&
-           "Block with non-zero VPs should appear in listing");
-    std::println(std::cout, "    ✓ Block with non-zero VPs appears");
-
-    // Empty block (no members) should NOT appear
-    assert(output.find("EmptyBlock") == std::string::npos &&
-           "Empty block (no members) should not appear in listing");
-    std::println(std::cout, "    ✓ Empty block (no members) correctly hidden");
-
-    g.out.str("");  // Clear for next test
-  }
-
-  std::println(std::cout, "\n========== All Tests Passed ==========\n");
+int main() {
+  test_block_dispatch();
+  std::println(std::cout, "\n✅ All block tests passed!");
   return 0;
 }

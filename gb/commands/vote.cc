@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file vote.cc
+/// \brief Cast or inspect votes for universe turn updates.
+
 module;
 
 import gblib;
 import std;
 import notification;
-#undef stdout
 
 module commands;
 
@@ -63,7 +65,8 @@ void check_votes(GameObj& g) {
 }  // namespace
 
 namespace GB::commands {
-void vote(const command_t& argv, GameObj& g) {
+
+bool vote(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
 
   auto race = g.entity_manager.get_race(Playernum);
@@ -71,38 +74,51 @@ void vote(const command_t& argv, GameObj& g) {
   if (g.god()) {
     g.out << "Your vote doesn't count, however, here is the count.\n";
     show_votes(g);
-    return;
+    return true;
   }
 
   if (race->Guest) {
     g.out << "You are not allowed to vote, but, here is the count.\n";
     show_votes(g);
-    return;
+    return true;
   }
 
   if (argv.size() <= 2) {
     g.out << std::format("Your vote on updates is {0}\n",
                          race->votes ? "go" : "wait");
     show_votes(g);
-    return;
+    return true;
   }
 
   bool check = false;
   if (argv[1] != "update") {
     g.out << std::format("No such vote '{0}'\n", argv[1].c_str());
-    return;
+    return false;
   }
 
   if (argv[2] == "go") {
     race->votes = true;
     check = true;
-  } else if (argv[2] == "wait")
+  } else if (argv[2] == "wait") {
     race->votes = false;
-  else {
+  } else {
     g.out << std::format("No such update choice '{0}'\n", argv[2].c_str());
-    return;
+    return false;
   }
 
   if (check) check_votes(g);
+  return true;
 }
+
+const CommandDescriptor vote_cmd{
+    .name = "vote",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "vote [update <go|wait>]",
+    .description = "Cast or inspect votes for universe turn updates",
+    .handler = &vote,
+};
+
 }  // namespace GB::commands

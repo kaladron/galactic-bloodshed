@@ -7,46 +7,42 @@ module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void toxicity(const command_t& argv, GameObj& g) {
-  constexpr ap_t APcount = 1;
 
-  if (argv.size() != 2) {
-    g.out << "Provide exactly one value between 0 and 100.\n";
-    return;
-  }
-
+bool toxicity(const command_t& argv, GameObj& g) {
   int thresh = std::stoi(argv[1]);
 
   if (thresh > 100 || thresh < 0) {
     g.out << "Illegal value.\n";
-    return;
-  }
-
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "scope must be a planet.\n";
-    return;
-  }
-  const auto& star = *g.entity_manager.peek_star(g.snum());
-  if (!enufAP(g.entity_manager, g.player(), g.governor(), star.AP(g.player()),
-              APcount)) {
-    return;
+    return false;
   }
 
   auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& p = *planet_handle;
   p.info(g.player()).tox_thresh = thresh;
-  deductAPs(g, APcount, g.snum());
 
   g.out << std::format(" New threshold is: {}\n",
                        p.info(g.player()).tox_thresh);
+  return true;
 }
+
+const CommandDescriptor toxicity_cmd{
+    .name = "toxicity",
+    .roles = {},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::fixed_star(1),
+    .min_args = 2,
+    .syntax = "toxicity <threshold>",
+    .description =
+        "Set planetary toxicity threshold for waste cannister construction",
+    .handler = &toxicity,
+};
+
 }  // namespace GB::commands

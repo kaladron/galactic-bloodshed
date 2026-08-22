@@ -164,6 +164,12 @@ build_registry() {
         reg(personal_cmd);
         reg(toggle_cmd);
         reg(whois_cmd);
+        reg(block_cmd);
+        reg(mobilize_cmd);
+        reg(toxicity_cmd);
+        if (VOTING) {
+          reg(vote_cmd);
+        }
 
         return map;
       }();

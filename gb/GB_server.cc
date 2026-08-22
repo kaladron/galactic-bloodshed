@@ -84,24 +84,17 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"allocate", allocateAPs},
       {"arm", GB::commands::arm},
       {"autoreport", GB::commands::autoreport},
-      {"block", GB::commands::block},
       {"disarm", GB::commands::arm},
       {"invite", GB::commands::invite},
       {"make", GB::commands::make_mod},
-      {"mobilize", GB::commands::mobilize},
       {"modify", GB::commands::make_mod},
       {"schedule", GB_schedule},
       {"time", GB_time},
-      {"toxicity", GB::commands::toxicity},
       {"transfer", GB::commands::transfer},
       {"uninvite", GB::commands::invite},
       {"upgrade", GB::commands::upgrade},
       {"walk", GB::commands::walk},
   };
-
-  if (VOTING) {
-    commands["vote"] = GB::commands::vote;
-  }
 
   if (MARKET) {
     commands["bid"] = GB::commands::bid;

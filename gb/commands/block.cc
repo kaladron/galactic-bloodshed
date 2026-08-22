@@ -12,7 +12,8 @@ import tabulate;
 module commands;
 
 namespace GB::commands {
-void block(const command_t& argv, GameObj& g) {
+
+bool block(const command_t& argv, GameObj& g) {
   player_t p;
 
   const auto* race = g.race;
@@ -21,12 +22,12 @@ void block(const command_t& argv, GameObj& g) {
     p = get_player(g.entity_manager, argv[2]);
     if (p == 0) {
       g.out << "No such player.\n";
-      return;
+      return false;
     }
     const auto* r = g.entity_manager.peek_race(p);
     if (!r) {
       g.out << "Race not found.\n";
-      return;
+      return false;
     }
     // Flag for finding a block
     bool found_any = false;
@@ -77,13 +78,13 @@ void block(const command_t& argv, GameObj& g) {
     p = get_player(g.entity_manager, argv[1]);
     if (p == 0) {
       g.out << "No such player,\n";
-      return;
+      return false;
     }
     /* list the players who are in this alliance block */
     const auto* block_p = g.entity_manager.peek_block(p.value);
     if (!block_p) {
       g.out << "Block not found.\n";
-      return;
+      return false;
     }
     std::uint64_t allied_members = (block_p->invite & block_p->pledge);
     g.out << std::format("         ========== {} Power Report ==========\n",
@@ -179,5 +180,18 @@ void block(const command_t& argv, GameObj& g) {
 
     g.out << table << "\n";
   }
+  return true;
 }
+
+const CommandDescriptor block_cmd{
+    .name = "block",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "block [<player>|player <player>]",
+    .description = "Display alliance block power reports and memberships",
+    .handler = &block,
+};
+
 }  // namespace GB::commands

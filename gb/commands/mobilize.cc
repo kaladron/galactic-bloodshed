@@ -13,53 +13,53 @@ module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void mobilize(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  ap_t APcount = 1;
 
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "scope must be a planet.\n";
-    return;
-  }
-  const auto* star = g.entity_manager.peek_star(g.snum());
-  if (!star) {
-    g.out << "Star not found.\n";
-    return;
-  }
-  if (!star->control(Playernum, Governor)) {
-    g.out << "You are not authorized to do this here.\n";
-    return;
-  }
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
-              APcount)) {
-    return;
-  }
+bool mobilize(const command_t& argv, GameObj& g) {
+  player_t Playernum = g.player();
+  ap_t APcount = 1;
 
   auto planet = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
 
   if (argv.size() < 2) {
     g.out << std::format("Current mobilization: {}    Quota: {}\n",
                          planet->info(Playernum).comread,
                          planet->info(Playernum).mob_set);
-    return;
+    return true;
   }
   int sum_mob = std::stoi(argv[1]);
 
   if (sum_mob > 100 || sum_mob < 0) {
     g.out << "Illegal value.\n";
-    return;
+    return false;
   }
+
+  if (!g.deduct_ap(g.snum(), APcount)) {
+    g.out << std::format("You don't have {} action points there.\n", APcount);
+    return false;
+  }
+
   planet->info(Playernum).mob_set = sum_mob;
-  deductAPs(g, APcount, g.snum());
+  return true;
 }
+
+const CommandDescriptor mobilize_cmd{
+    .name = "mobilize",
+    .roles = {.star_control = true},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::dynamic(),
+    .min_args = 1,
+    .syntax = "mobilize [<percentage>]",
+    .description =
+        "Set planetary mobilization percentage for military production",
+    .handler = &mobilize,
+};
+
 }  // namespace GB::commands

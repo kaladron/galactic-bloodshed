@@ -859,6 +859,10 @@ add_executable(colonies_test commands/colonies_test.cc)
 target_link_libraries(colonies_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_colonies_test COMMAND colonies_test)
 
+add_executable(vote_test commands/vote_test.cc)
+target_link_libraries(vote_test PRIVATE test_module dallib gblib commands session notification SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_vote_test COMMAND vote_test)
+
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug
     COMMAND ${CMAKE_COMMAND} -E env 

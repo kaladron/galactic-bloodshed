@@ -40,17 +40,17 @@ void display_toggles(GameObj& g, const Race::gov& governor, const Race& race) {
 }  // namespace
 
 namespace GB::commands {
-void toggle(const command_t& argv, GameObj& g) {
+
+bool toggle(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  // TODO(jeffbailey): ap_t APcount = 0;
 
   auto race_handle = g.entity_manager.get_race(Playernum);
 
   if (argv.size() == 1) {
     const auto& race = race_handle.read();
     display_toggles(g, race.governor[Governor.value], race);
-    return;
+    return true;
   }
 
   auto& race = *race_handle;
@@ -76,7 +76,21 @@ void toggle(const command_t& argv, GameObj& g) {
     tog(g, &race.governor[Governor.value].toggle.compat, "compatibility");
   else {
     g.out << std::format("No such option '{}'\n", argv[1]);
-    return;
+    return false;
   }
+  return true;
 }
+
+const CommandDescriptor toggle_cmd{
+    .name = "toggle",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "toggle [<option>]",
+    .description =
+        "Display or toggle client and governor configuration options",
+    .handler = &toggle,
+};
+
 }  // namespace GB::commands

@@ -44,8 +44,7 @@ void test_toggle_database_persistence() {
   // TEST 1: Display all toggle settings (no argument)
   std::println(std::cout, "  Testing: Display all toggle settings");
   {
-    command_t cmd = {"toggle"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle"});
 
     // Verify output contains all toggle names
     std::string out_str = g.out.str();
@@ -64,8 +63,7 @@ void test_toggle_database_persistence() {
   // TEST 2: Toggle gag setting
   std::println(std::cout, "  Testing: Toggle gag setting");
   {
-    command_t cmd = {"toggle", "gag"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "gag"});
 
     // Verify output
     std::string out_str = g.out.str();
@@ -80,7 +78,7 @@ void test_toggle_database_persistence() {
     std::println(std::cout, "    ✓ Database: gag = true");
 
     // Toggle again - should turn off
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "gag"});
     out_str = g.out.str();
     assert(out_str.find("gag is now off") != std::string::npos);
 
@@ -94,8 +92,7 @@ void test_toggle_database_persistence() {
   // TEST 3: Toggle inverse setting
   std::println(std::cout, "  Testing: Toggle inverse setting");
   {
-    command_t cmd = {"toggle", "inverse"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "inverse"});
 
     // Verify database
     auto saved = races.find_by_player(1);
@@ -108,8 +105,7 @@ void test_toggle_database_persistence() {
   // TEST 4: Toggle double_digits setting
   std::println(std::cout, "  Testing: Toggle double_digits setting");
   {
-    command_t cmd = {"toggle", "double_digits"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "double_digits"});
 
     // Verify database
     auto saved = races.find_by_player(1);
@@ -122,8 +118,7 @@ void test_toggle_database_persistence() {
   // TEST 5: Toggle geography setting
   std::println(std::cout, "  Testing: Toggle geography setting");
   {
-    command_t cmd = {"toggle", "geography"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "geography"});
 
     // Verify database
     auto saved = races.find_by_player(1);
@@ -136,8 +131,7 @@ void test_toggle_database_persistence() {
   // TEST 6: Toggle autoload setting
   std::println(std::cout, "  Testing: Toggle autoload setting");
   {
-    command_t cmd = {"toggle", "autoload"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "autoload"});
 
     // Verify database
     auto saved = races.find_by_player(1);
@@ -150,8 +144,7 @@ void test_toggle_database_persistence() {
   // TEST 7: Toggle color setting
   std::println(std::cout, "  Testing: Toggle color setting");
   {
-    command_t cmd = {"toggle", "color"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "color"});
 
     // Verify database
     auto saved = races.find_by_player(1);
@@ -164,8 +157,7 @@ void test_toggle_database_persistence() {
   // TEST 8: Toggle compatibility setting
   std::println(std::cout, "  Testing: Toggle compatibility setting");
   {
-    command_t cmd = {"toggle", "compatibility"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "compatibility"});
 
     // Verify database
     auto saved = races.find_by_player(1);
@@ -178,8 +170,7 @@ void test_toggle_database_persistence() {
   // TEST 9: Toggle visible setting
   std::println(std::cout, "  Testing: Toggle visible setting");
   {
-    command_t cmd = {"toggle", "visible"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "visible"});
 
     // Verify database (invisible flag should toggle)
     auto saved = races.find_by_player(1);
@@ -201,8 +192,7 @@ void test_toggle_database_persistence() {
     // Update g.race pointer
     g.race = ctx.em.peek_race(1);
 
-    command_t cmd = {"toggle", "monitor"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_success(g, {"toggle", "monitor"});
 
     // Verify database
     auto saved = races.find_by_player(1);
@@ -215,8 +205,7 @@ void test_toggle_database_persistence() {
   // TEST 11: Reject invalid toggle option
   std::println(std::cout, "  Testing: Reject invalid toggle option");
   {
-    command_t cmd = {"toggle", "invalid_option"};
-    GB::commands::toggle(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"toggle", "invalid_option"});
 
     // Verify error message
     std::string out_str = g.out.str();

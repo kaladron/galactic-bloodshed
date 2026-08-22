@@ -39,8 +39,7 @@ void test_highlight_database_persistence() {
   // TEST 1: Set highlight to player 2
   std::println(std::cout, "  Testing: Set highlight to player 2");
   {
-    command_t cmd = {"highlight", "2"};
-    GB::commands::highlight(cmd, g);
+    ctx.assert_dispatch_success(g, {"highlight", "2"});
 
     // Verify database: highlight should be set to 2
     auto saved = races_repo.find_by_player(1);
@@ -53,8 +52,7 @@ void test_highlight_database_persistence() {
   // TEST 2: Change highlight to player 1 (self)
   std::println(std::cout, "  Testing: Change highlight to player 1 (self)");
   {
-    command_t cmd = {"highlight", "1"};
-    GB::commands::highlight(cmd, g);
+    ctx.assert_dispatch_success(g, {"highlight", "1"});
 
     auto saved = races_repo.find_by_player(1);
     assert(saved.has_value());
@@ -66,8 +64,7 @@ void test_highlight_database_persistence() {
   // TEST 3: Change back to player 2
   std::println(std::cout, "  Testing: Change back to player 2");
   {
-    command_t cmd = {"highlight", "2"};
-    GB::commands::highlight(cmd, g);
+    ctx.assert_dispatch_success(g, {"highlight", "2"});
 
     auto saved = races_repo.find_by_player(1);
     assert(saved.has_value());
@@ -79,8 +76,7 @@ void test_highlight_database_persistence() {
   // TEST 4: Invalid player number
   std::println(std::cout, "  Testing: Invalid player number");
   {
-    command_t cmd = {"highlight", "999"};
-    GB::commands::highlight(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"highlight", "999"});
 
     std::string out_str = g.out.str();
     assert(out_str.find("No such player") != std::string::npos);

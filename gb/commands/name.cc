@@ -1,22 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file name.cc
+/// \brief Name or rename game entities.
+
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void name(const command_t& argv, GameObj& g) {
-  ap_t APcount = 0;
+
+bool name(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
-  if (argv.size() < 3 || !std::isalnum(argv[2][0])) {
+  if (!std::isalnum(argv[2][0])) {
     g.out << "Illegal name format.\n";
-    return;
+    return false;
   }
 
   std::string formatted_name = argv[2];
@@ -34,13 +36,13 @@ void name(const command_t& argv, GameObj& g) {
 
   if (spaces == static_cast<long>(formatted_name.size())) {
     g.out << "Illegal name.\n";
-    return;
+    return false;
   }
 
   if (formatted_name.empty() || has_invalid_char) {
     g.out << std::format("Illegal name {}.\n",
                          has_invalid_char ? "form" : "length");
-    return;
+    return false;
   }
 
   if (argv[1] == "ship") {
@@ -48,104 +50,123 @@ void name(const command_t& argv, GameObj& g) {
       auto ship = g.entity_manager.get_ship(g.shipno());
       if (!ship.get()) {
         g.out << "Ship not found.\n";
-        return;
+        return false;
       }
       ship->name() = formatted_name;
       g.out << "Name set.\n";
-      return;
+      return true;
     }
     g.out << "You have to 'cs' to a ship to name it.\n";
-    return;
+    return false;
   }
   if (argv[1] == "class") {
     if (g.level() == ScopeLevel::LEVEL_SHIP) {
       auto ship = g.entity_manager.get_ship(g.shipno());
       if (!ship.get()) {
         g.out << "Ship not found.\n";
-        return;
+        return false;
       }
       if (ship->type() != ShipType::OTYPE_FACTORY) {
         g.out << "You are not at a factory!\n";
-        return;
+        return false;
       }
       if (ship->on()) {
         g.out << "This factory is already on line.\n";
-        return;
+        return false;
       }
       ship->shipclass() = formatted_name;
       g.out << "Class set.\n";
-      return;
+      return true;
     }
     g.out << "You have to 'cs' to a factory to name the ship class.\n";
-    return;
+    return false;
   }
   if (argv[1] == "block") {
     /* name your alliance block */
     if (Governor != 0) {
       g.out << "You are not authorized to do this.\n";
-      return;
+      return false;
     }
     auto block_handle = g.entity_manager.get_block(Playernum.value);
     auto& block = *block_handle;
     block.name = formatted_name;
     g.out << "Done.\n";
-  } else if (argv[1] == "star") {
+    return true;
+  }
+  if (argv[1] == "star") {
     if (g.level() == ScopeLevel::LEVEL_STAR) {
       if (!g.race->God) {
         g.out << "Only dieties may name a star.\n";
-        return;
+        return false;
       }
       auto star = g.entity_manager.get_star(g.snum());
       if (!star.get()) {
         g.out << "Star not found.\n";
-        return;
+        return false;
       }
       star->set_name(formatted_name);
-    } else {
-      g.out << "You have to 'cs' to a star to name it.\n";
-      return;
+      return true;
     }
-  } else if (argv[1] == "planet") {
+    g.out << "You have to 'cs' to a star to name it.\n";
+    return false;
+  }
+  if (argv[1] == "planet") {
     if (g.level() == ScopeLevel::LEVEL_PLAN) {
       if (!g.race->God) {
         g.out << "Only deity can rename planets.\n";
-        return;
+        return false;
       }
       auto star = g.entity_manager.get_star(g.snum());
       if (!star.get()) {
         g.out << "Star not found.\n";
-        return;
+        return false;
       }
       star->set_planet_name(g.pnum(), formatted_name);
-      deductAPs(g, APcount, g.snum());
-    } else {
-      g.out << "You have to 'cs' to a planet to name it.\n";
-      return;
+      return true;
     }
-  } else if (argv[1] == "race") {
+    g.out << "You have to 'cs' to a planet to name it.\n";
+    return false;
+  }
+  if (argv[1] == "race") {
     if (Governor != 0) {
       g.out << "You are not authorized to do this.\n";
-      return;
+      return false;
     }
     auto race = g.entity_manager.get_race(Playernum);
     if (!race.get()) {
       g.out << "Race not found.\n";
-      return;
+      return false;
     }
     race->name = formatted_name;
     g.out << std::format("Name changed to `{}'.\n", race->name);
-  } else if (argv[1] == "governor") {
+    return true;
+  }
+  if (argv[1] == "governor") {
     auto race = g.entity_manager.get_race(Playernum);
     if (!race.get()) {
       g.out << "Race not found.\n";
-      return;
+      return false;
     }
     race->governor[Governor.value].name = formatted_name;
     g.out << std::format("Name changed to `{}'.\n",
                          race->governor[Governor.value].name);
-  } else {
-    g.out << "I don't know what you mean.\n";
-    return;
+    return true;
   }
+
+  g.out << "I don't know what you mean.\n";
+  return false;
 }
+
+const CommandDescriptor name_cmd{
+    .name = "name",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "name <ship|class|block|star|planet|race|governor> <name>",
+    .description =
+        "Name or rename game entities, ships, governors, and alliance blocks",
+    .handler = &name,
+};
+
 }  // namespace GB::commands

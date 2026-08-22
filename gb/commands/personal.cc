@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file personal.cc
+/// \brief Set personal description info for your race.
+
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void personal(const command_t& argv, GameObj& g) {
+
+bool personal(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
 
   std::stringstream ss_message;
@@ -17,11 +20,21 @@ void personal(const command_t& argv, GameObj& g) {
             std::ostream_iterator<std::string>(ss_message, " "));
   std::string message = ss_message.str();
 
-  if (g.governor() != 0) {
-    g.out << "Only the leader can do this.\n";
-    return;
-  }
   auto race = g.entity_manager.get_race(Playernum);
   race->info = message;
+  g.out << "Personal information updated.\n";
+  return true;
 }
+
+const CommandDescriptor personal_cmd{
+    .name = "personal",
+    .roles = {.leader_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "personal <info text>",
+    .description = "Set personal information description for your race",
+    .handler = &personal,
+};
+
 }  // namespace GB::commands

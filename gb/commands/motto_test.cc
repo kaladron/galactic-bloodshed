@@ -36,8 +36,7 @@ void test_motto_database_persistence() {
   // TEST 1: Set a motto
   std::println(std::cout, "  Testing: Set motto");
   {
-    command_t cmd = {"motto", "For", "the", "Empire!"};
-    GB::commands::motto(cmd, g);
+    ctx.assert_dispatch_success(g, {"motto", "For", "the", "Empire!"});
 
     // Verify output message
     std::string out_str = g.out.str();
@@ -56,8 +55,7 @@ void test_motto_database_persistence() {
   // TEST 2: Change the motto
   std::println(std::cout, "  Testing: Change motto");
   {
-    command_t cmd = {"motto", "Victory", "or", "Death"};
-    GB::commands::motto(cmd, g);
+    ctx.assert_dispatch_success(g, {"motto", "Victory", "or", "Death"});
 
     // Verify database: motto should be changed
     auto saved = blocks.find_by_id(1);
@@ -70,8 +68,7 @@ void test_motto_database_persistence() {
   // TEST 3: Set empty motto
   std::println(std::cout, "  Testing: Clear motto with single space");
   {
-    command_t cmd = {"motto", " "};
-    GB::commands::motto(cmd, g);
+    ctx.assert_dispatch_success(g, {"motto", " "});
 
     auto saved = blocks.find_by_id(1);
     assert(saved.has_value());
@@ -82,11 +79,11 @@ void test_motto_database_persistence() {
   std::println(std::cout, "  Testing: Non-governor authorization check");
   {
     g.set_governor(1);  // Change to non-zero governor
-    command_t cmd = {"motto", "Should", "Fail"};
-    GB::commands::motto(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"motto", "Should", "Fail"});
 
     std::string out_str = g.out.str();
-    assert(out_str.find("not authorized") != std::string::npos);
+    assert(out_str.find("Only the leader") != std::string::npos ||
+           out_str.find("not authorized") != std::string::npos);
     std::println(std::cout, "    ✓ Authorization check works");
     g.out.str("");
   }

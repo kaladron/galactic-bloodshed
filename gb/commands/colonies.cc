@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file colonies.cc
+/// \brief Colonization report command.
+
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
@@ -47,17 +49,17 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
 }  // namespace
 
 namespace GB::commands {
-void colonies(const command_t& argv, GameObj& g) {
+
+bool colonies(const command_t& argv, GameObj& g) {
   g.out << "          ========== Colonization Report ==========\n";
   g.out << "  Planet     gov sec tech    popn  x   res  "
            "des  fuel  tax  cmpt/tox mob  Aliens\n";
 
-  if (argv.size() < 2)
-    for (auto star_handle : StarList(g.entity_manager)) {
-      const auto& star = *star_handle;
-      colonies_at_star(g, *g.race, star.star_id());
+  if (argv.size() < 2) {
+    for (const Star* star : StarList::readonly(g.entity_manager)) {
+      colonies_at_star(g, *g.race, star->star_id());
     }
-  else
+  } else {
     for (int i = 1; i < argv.size(); i++) {
       Place where{g, argv[i]};
       if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
@@ -68,6 +70,21 @@ void colonies(const command_t& argv, GameObj& g) {
       } /* ok, a proper location */
       colonies_at_star(g, *g.race, where.snum);
     }
+  }
   g.out << "\n";
+  return true;
 }
+
+const CommandDescriptor colonies_cmd{
+    .name = "colonies",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "colonies [<star> ...]",
+    .description =
+        "Display colonization report across all or specified star systems",
+    .handler = &colonies,
+};
+
 }  // namespace GB::commands

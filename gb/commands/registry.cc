@@ -157,6 +157,13 @@ build_registry() {
         reg(unpledge_cmd);
         reg(victory_cmd);
         reg(zoom_cmd);
+        reg(colonies_cmd);
+        reg(highlight_cmd);
+        reg(motto_cmd);
+        reg(name_cmd);
+        reg(personal_cmd);
+        reg(toggle_cmd);
+        reg(whois_cmd);
 
         return map;
       }();

@@ -45,8 +45,7 @@ void test_name_ship_persistence() {
   // TEST: Rename ship
   std::println(std::cout, "  Testing: Rename ship to 'USS Enterprise'");
   {
-    command_t cmd = {"name", "ship", "USS", "Enterprise"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_success(g, {"name", "ship", "USS", "Enterprise"});
 
     // Verify output message
     std::string out_str = g.out.str();
@@ -90,8 +89,7 @@ void test_name_race_persistence() {
   // TEST: Rename race
   std::println(std::cout, "  Testing: Rename race to 'Klingons'");
   {
-    command_t cmd = {"name", "race", "Klingons"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_success(g, {"name", "race", "Klingons"});
 
     // Verify database
     auto saved = races.find_by_player(1);
@@ -133,14 +131,14 @@ void test_name_star_persistence() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
+  g.set_god(true);
   g.race =
       ctx.em.peek_race(g.player());  // Set race pointer like production does
 
   // TEST: Rename star
   std::println(std::cout, "  Testing: Rename star to 'Alpha Centauri'");
   {
-    command_t cmd = {"name", "star", "Alpha", "Centauri"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_success(g, {"name", "star", "Alpha", "Centauri"});
 
     // Verify database
     auto saved = stars_repo.find_by_number(1);
@@ -185,14 +183,14 @@ void test_name_planet_persistence() {
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
+  g.set_god(true);
   g.race =
       ctx.em.peek_race(g.player());  // Set race pointer like production does
 
   // TEST: Rename planet
   std::println(std::cout, "  Testing: Rename planet to 'New Earth'");
   {
-    command_t cmd = {"name", "planet", "New", "Earth"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_success(g, {"name", "planet", "New", "Earth"});
 
     // Verify database
     auto saved = stars_repo.find_by_number(1);
@@ -224,19 +222,17 @@ void test_name_invalid_formats() {
   ctx.setup_game_obj(g);
   g.race = ctx.em.peek_race(g.player());
 
-  // TEST: Less than 3 arguments -> "Illegal name format."
+  // TEST: Less than 3 arguments -> "Not enough arguments." / "Illegal name
+  // format."
   {
     g.out.str("");
-    command_t cmd = {"name", "ship"};
-    GB::commands::name(cmd, g);
-    assert(g.out.str().find("Illegal name format.") != std::string::npos);
+    ctx.assert_dispatch_rejected(g, {"name", "ship"});
   }
 
   // TEST: First char of name not alphanumeric -> "Illegal name format."
   {
     g.out.str("");
-    command_t cmd = {"name", "ship", "!invalid"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "ship", "!invalid"});
     assert(g.out.str().find("Illegal name format.") != std::string::npos);
   }
 
@@ -244,8 +240,7 @@ void test_name_invalid_formats() {
   // form."
   {
     g.out.str("");
-    command_t cmd = {"name", "race", "Val/halla"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "race", "Val/halla"});
     assert(g.out.str().find("Illegal name form.") != std::string::npos);
   }
 
@@ -253,8 +248,7 @@ void test_name_invalid_formats() {
   // name format."
   {
     g.out.str("");
-    command_t cmd = {"name", "race", " ", " "};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "race", " ", " "});
     assert(g.out.str().find("Illegal name format.") != std::string::npos);
   }
 
@@ -285,8 +279,7 @@ void test_name_governor() {
   // TEST: Rename governor 0 to 'Grand Moff'
   {
     g.out.str("");
-    command_t cmd = {"name", "governor", "Grand", "Moff"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_success(g, {"name", "governor", "Grand", "Moff"});
     assert(g.out.str().find("Name changed to `Grand Moff'.") !=
            std::string::npos);
 
@@ -330,8 +323,7 @@ void test_name_block() {
   {
     g.set_governor(0);
     g.out.str("");
-    command_t cmd = {"name", "block", "United", "Federation"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_success(g, {"name", "block", "United", "Federation"});
     assert(g.out.str().find("Done.") != std::string::npos);
 
     // Verify block name updated in database
@@ -344,8 +336,7 @@ void test_name_block() {
   {
     g.set_governor(1);
     g.out.str("");
-    command_t cmd = {"name", "block", "Rebel", "Alliance"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "block", "Rebel", "Alliance"});
     assert(g.out.str().find("You are not authorized to do this.") !=
            std::string::npos);
   }
@@ -392,8 +383,7 @@ void test_name_factory_class() {
   {
     g.set_shipno(1);
     g.out.str("");
-    command_t cmd = {"name", "class", "Battleship"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_success(g, {"name", "class", "Battleship"});
     assert(g.out.str().find("Class set.") != std::string::npos);
 
     auto saved = ships.find_by_number(1);
@@ -409,8 +399,7 @@ void test_name_factory_class() {
     }
     g.set_shipno(1);
     g.out.str("");
-    command_t cmd = {"name", "class", "Cruiser"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "class", "Cruiser"});
     assert(g.out.str().find("This factory is already on line.") !=
            std::string::npos);
   }
@@ -419,8 +408,7 @@ void test_name_factory_class() {
   {
     g.set_shipno(2);
     g.out.str("");
-    command_t cmd = {"name", "class", "Destroyer"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "class", "Destroyer"});
     assert(g.out.str().find("You are not at a factory!") != std::string::npos);
   }
 
@@ -460,8 +448,7 @@ void test_name_permissions_and_scope() {
     g.set_level(ScopeLevel::LEVEL_STAR);
     g.set_snum(1);
     g.out.str("");
-    command_t cmd = {"name", "star", "Forbidden"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "star", "Forbidden"});
     assert(g.out.str().find("Only dieties may name a star.") !=
            std::string::npos);
   }
@@ -472,8 +459,7 @@ void test_name_permissions_and_scope() {
     g.set_snum(1);
     g.set_pnum(0);
     g.out.str("");
-    command_t cmd = {"name", "planet", "Forbidden"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "planet", "Forbidden"});
     assert(g.out.str().find("Only deity can rename planets.") !=
            std::string::npos);
   }
@@ -482,8 +468,7 @@ void test_name_permissions_and_scope() {
   {
     g.set_level(ScopeLevel::LEVEL_UNIV);
     g.out.str("");
-    command_t cmd = {"name", "ship", "Enterprise"};
-    GB::commands::name(cmd, g);
+    ctx.assert_dispatch_rejected(g, {"name", "ship", "Enterprise"});
     assert(g.out.str().find("You have to 'cs' to a ship to name it.") !=
            std::string::npos);
   }

@@ -107,6 +107,7 @@ build_registry() {
         reg(deploy_cmd);
         reg(mount_cmd);
         reg(dismount_cmd);
+        reg(map_cmd);
         reg(build_cmd);
         reg(fire_cmd);
         reg(fix_cmd);
@@ -121,6 +122,8 @@ build_registry() {
         reg(route_cmd);
         reg(scrap_cmd);
         reg(sell_cmd);
+        reg(survey_cmd);
+        reg(client_survey_cmd);
         reg(tactical_cmd);
         reg(zoom_cmd);
 

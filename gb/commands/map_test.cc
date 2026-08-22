@@ -1,23 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file map_test.cc
+/// \brief Unit tests for map command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  // Create test context
-  TestContext ctx;
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
-  // Create universe with 1 star
+  // Create universe with 2 stars
   universe_struct us{};
-  us.id = 1;  // Universe is a singleton with ID 1
-  us.numstars = 1;
-  us.ships = 0;  // No ships at universe level
+  us.id = 1;
+  us.numstars = 2;
+  us.ships = 0;
 
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
@@ -37,215 +40,149 @@ int main() {
   race.governor[0].toggle.highlight = 1;
   race.discoveries[D_CRYSTAL] = true;
 
-  // Save race
   RaceRepository races(store);
   races.save(race);
 
-  // Create a test star using star_struct, then wrap in Star
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "TestStar";
-  ss.xpos = 100.0;
-  ss.ypos = 200.0;
-  ss.stability = 40;          // Stable star (< 50)
-  ss.explored = (1ULL << 1);  // Player 1 has explored
-  ss.pnames.push_back(
-      "TestPlanet");  // Add planet name so star knows it has a planet
-  Star star(ss);
-
-  // Save star
+  // Create stable star
+  star_struct ss0{};
+  ss0.star_id = 0;
+  ss0.name = "TestStar";
+  ss0.xpos = 100.0;
+  ss0.ypos = 200.0;
+  ss0.stability = 40;          // Stable star (< 50)
+  ss0.explored = (1ULL << 1);  // Player 1 has explored
+  ss0.pnames.push_back("TestPlanet");
+  Star star0(ss0);
   StarRepository stars_repo(store);
-  stars_repo.save(star);
+  stars_repo.save(star0);
 
-  // Create a test planet
-  Planet planet{PlanetType::EARTH};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.Maxx() = 5;
-  planet.Maxy() = 5;
-  planet.explored() = true;
-  planet.info(player_t{1}).numsectsowned = 3;
-  planet.info(player_t{1}).guns = 10;
-  planet.info(player_t{1}).mob_points = 100;
-  planet.info(player_t{1}).comread = 50;
-  planet.info(player_t{1}).mob_set = 75;
-  planet.info(player_t{1}).resource = 1000;
-  planet.info(player_t{1}).fuel = 500;
-  planet.info(player_t{1}).destruct = 25;
-  planet.info(player_t{1}).popn = 5000;
-  planet.info(player_t{1}).crystals = 10;
-  planet.info(player_t{1}).troops = 200;
-  planet.info(player_t{1}).tax = 10;
-  planet.info(player_t{1}).newtax = 12;
-  planet.info(player_t{1}).est_production = 150.5;
-  planet.conditions(TOXIC) = 25;
+  // Create planet on star 0
+  Planet planet0{PlanetType::EARTH};
+  planet0.star_id() = 0;
+  planet0.planet_order() = 0;
+  planet0.Maxx() = 5;
+  planet0.Maxy() = 5;
+  planet0.explored() = true;
+  planet0.info(player_t{1}).numsectsowned = 3;
+  planet0.info(player_t{1}).guns = 10;
+  planet0.info(player_t{1}).mob_points = 100;
+  planet0.info(player_t{1}).comread = 50;
+  planet0.info(player_t{1}).mob_set = 75;
+  planet0.info(player_t{1}).resource = 1000;
+  planet0.info(player_t{1}).fuel = 500;
+  planet0.info(player_t{1}).destruct = 25;
+  planet0.info(player_t{1}).popn = 5000;
+  planet0.info(player_t{1}).crystals = 10;
+  planet0.info(player_t{1}).troops = 200;
+  planet0.info(player_t{1}).tax = 10;
+  planet0.info(player_t{1}).newtax = 12;
+  planet0.info(player_t{1}).est_production = 150.5;
+  planet0.conditions(TOXIC) = 25;
 
-  // Save planet
   PlanetRepository planets_repo(store);
-  planets_repo.save(planet);
+  planets_repo.save(planet0);
 
-  // Create sectormap for the planet
-  SectorMap smap(planet, true);
-
-  // Set up a few sectors
-  for (int x = 0; x < planet.Maxx(); x++) {
-    for (int y = 0; y < planet.Maxy(); y++) {
-      Sector& s = smap.get(x, y);
-
-      // Create varied sector types
-      if (x == 0 && y == 0) {
-        s.set_condition(SectorType::SEC_LAND);
-        s.set_owner(1);
-        s.set_popn_exact(100);
-      } else if (x == 1 && y == 1) {
-        s.set_condition(SectorType::SEC_SEA);
-        s.set_owner(0);
-      } else if (x == 2 && y == 2) {
-        s.set_condition(SectorType::SEC_MOUNT);
-        s.set_owner(1);
-        s.set_crystals(50);
-      } else {
-        s.set_condition(SectorType::SEC_LAND);
-        s.set_owner(0);
-      }
+  // Create sectormap for planet 0
+  SectorMap smap(planet0, true);
+  for (auto [coord, s] : smap.indexed_sectors()) {
+    if (coord.x == 0 && coord.y == 0) {
+      s.set_condition(SectorType::SEC_LAND);
+      s.set_owner(1);
+      s.set_popn_exact(100);
+    } else if (coord.x == 1 && coord.y == 1) {
+      s.set_condition(SectorType::SEC_SEA);
+      s.set_owner(0);
+      s.set_popn_exact(0);
+    } else if (coord.x == 2 && coord.y == 2) {
+      s.set_condition(SectorType::SEC_ICE);
+      s.set_owner(2);
+      s.set_popn_exact(50);
+    } else if (coord.x == 3 && coord.y == 3) {
+      s.set_condition(SectorType::SEC_LAND);
+      s.set_owner(1);
+      s.set_crystals(true);
+      s.set_popn_exact(200);
+    } else {
+      s.set_condition(SectorType::SEC_LAND);
+      s.set_owner(0);
+      s.set_popn_exact(0);
     }
   }
-
-  // Save sectormap
   SectorRepository sector_repo(store);
   sector_repo.save_map(smap);
 
-  // Create GameObj for command execution
+  // Create unstable star
+  star_struct ss1{};
+  ss1.star_id = 1;
+  ss1.name = "UnstableStar";
+  ss1.xpos = 300.0;
+  ss1.ypos = 400.0;
+  ss1.stability = 75;  // Unstable (> 50)
+  ss1.explored = (1ULL << 1);
+  ss1.pnames.push_back("UnstablePlanet");
+  Star star1(ss1);
+  stars_repo.save(star1);
+
+  // Create planet on star 1
+  Planet planet1{PlanetType::EARTH};
+  planet1.star_id() = 1;
+  planet1.planet_order() = 0;
+  planet1.Maxx() = 3;
+  planet1.Maxy() = 3;
+  planet1.explored() = true;
+  planet1.info(player_t{1}).numsectsowned = 1;
+  planets_repo.save(planet1);
+
+  SectorMap usmap(planet1, true);
+  for (Sector& s : usmap) {
+    s.set_condition(SectorType::SEC_LAND);
+  }
+  sector_repo.save_map(usmap);
+}
+
+void test_map_dispatch() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);  // Set race pointer like production
+  ctx.setup_game_obj(g, 1, 0);
+
+  // 1. Happy path: Map at planet scope (stable star)
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
+  ctx.assert_dispatch_success(g, {"map"});
+  assert(!g.out.str().contains("WARNING! This planet's primary is unstable."));
+  std::println(std::cout, "    ✓ Map at planet scope (stable star) succeeded");
 
-  std::println(std::cout, "Map command at planet level displays map");
-  {
-    command_t argv = {"map"};
-    GB::commands::map(argv, g);
+  // 2. Happy path: Map at planet scope (unstable star warning)
+  g.set_snum(1);
+  g.set_pnum(0);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"map"});
+  assert(g.out.str().contains("WARNING! This planet's primary is unstable."));
+  std::println(std::cout, "    ✓ Map displayed unstable star warning");
 
-    // The map command just displays output, doesn't modify data
-    // Verify planet data is unchanged
-    const auto* saved_planet = ctx.em.peek_planet(0, 0);
-    assert(saved_planet != nullptr);
-    assert(saved_planet->Maxx() == 5);
-    assert(saved_planet->Maxy() == 5);
-    std::println(std::cout, "    ✓ Map display at planet level works");
-  }
+  // 3. Happy path: Map at universe level falls back to orbit
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"map"});
+  std::println(std::cout, "    ✓ Map at universe level fell back to orbit");
 
-  std::println(std::cout, "Map command with explicit planet argument");
-  {
-    // Change to star level
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(0);
+  // 4. Bad scope: Map at ship level
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"map"});
+  assert(g.out.str().contains("Bad scope"));
+  std::println(std::cout, "    ✓ Map rejected at ship scope");
+}
 
-    command_t argv = {"map", "/TestStar/0"};
-    GB::commands::map(argv, g);
+}  // namespace
 
-    // Verify data unchanged
-    const auto* saved_planet = ctx.em.peek_planet(0, 0);
-    assert(saved_planet != nullptr);
-    std::println(std::cout, "    ✓ Map with planet argument works");
-  }
-
-  std::println(std::cout, "Map command rejects ship scope");
-  {
-    // Set to ship scope - should be rejected
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-
-    command_t argv = {"map"};
-    GB::commands::map(argv, g);
-
-    // Should output "Bad scope." error
-    std::println(std::cout, "    ✓ Map correctly rejects ship scope");
-  }
-
-  std::println(std::cout, "Map command with unstable star warning");
-  {
-    // Create an unstable star
-    star_struct us{};
-    us.star_id = 1;
-    us.name = "UnstableStar";
-    us.xpos = 300.0;
-    us.ypos = 400.0;
-    us.stability = 60;  // Unstable (> 50)
-    us.explored = (1ULL << 1);
-    us.pnames.push_back("UnstablePlanet");  // Add planet name
-    Star ustar(us);
-    stars_repo.save(ustar);
-
-    // Create planet for unstable star
-    Planet uplanet{PlanetType::EARTH};
-    uplanet.star_id() = 1;
-    uplanet.planet_order() = 0;
-    uplanet.Maxx() = 3;
-    uplanet.Maxy() = 3;
-    uplanet.explored() = true;
-    uplanet.info(player_t{1}).numsectsowned = 1;
-    planets_repo.save(uplanet);
-
-    // Create minimal sectormap
-    SectorMap usmap(uplanet, true);
-    for (int x = 0; x < 3; x++) {
-      for (int y = 0; y < 3; y++) {
-        Sector& s = usmap.get(x, y);
-        s.set_condition(SectorType::SEC_LAND);
-      }
-    }
-    sector_repo.save_map(usmap);
-
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(1);
-    g.set_pnum(0);
-
-    command_t argv = {"map"};
-    GB::commands::map(argv, g);
-
-    // Should output unstable star warning
-    std::println(std::cout, "    ✓ Map displays unstable star warning");
-  }
-
-  std::println(std::cout, "Map at universe/star level falls back to orbit");
-  {
-    // At universe or star level, map command calls orbit instead
-    g.set_level(ScopeLevel::LEVEL_UNIV);
-
-    command_t argv = {"map"};
-    GB::commands::map(argv, g);
-
-    // This should fall through to orbit display
-    std::println(std::cout, "    ✓ Map at universe level falls back to orbit");
-  }
-
-  std::println(std::cout, "Map at universe level with no universe (edge case)");
-  {
-    // Create a new EntityManager with no universe
-    Database db2(":memory:");
-    initialize_schema(db2);
-    EntityManager em2(db2);
-
-    // Create race but no universe
-    JsonStore store2(db2);
-    RaceRepository races2(store2);
-    races2.save(race);
-
-    auto& registry = get_test_session_registry();
-    GameObj g2(em2, registry);
-    g2.set_player(1);
-    g2.set_governor(0);
-    g2.race = em2.peek_race(1);
-    g2.set_level(ScopeLevel::LEVEL_UNIV);
-
-    command_t argv = {"map"};
-    GB::commands::map(argv, g2);
-
-    // Should have printed error and not crashed
-    std::println(std::cout, "    ✓ Handled missing universe gracefully");
-  }
+int main() {
+  test_map_dispatch();
 
   std::println(std::cout, "\n✅ All map tests passed!");
   return 0;

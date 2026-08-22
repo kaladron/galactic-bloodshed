@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file survey.cc
+/// \brief Detailed survey of planet, sector, or star.
+
 module;
 
 import gblib;
@@ -401,7 +404,7 @@ void survey_star(GameObj& g, const Place& where) {
 
 namespace GB::commands {
 
-void survey(const command_t& argv, GameObj& g) {
+bool survey(const command_t& argv, GameObj& g) {
   // Determine if this is CSP format based on command name
   bool is_csp_format = (argv[0] == "client_survey");
 
@@ -409,7 +412,7 @@ void survey(const command_t& argv, GameObj& g) {
   bool all = false;
   std::string range_arg;
   auto where_opt = parse_survey_location(argv, g, all, range_arg);
-  if (!where_opt) return;
+  if (!where_opt) return false;
 
   const auto& where = *where_opt;
 
@@ -424,19 +427,42 @@ void survey(const command_t& argv, GameObj& g) {
       } else {
         survey_planet_overview(g, where);
       }
-      break;
+      return true;
 
     case ScopeLevel::LEVEL_STAR:
       survey_star(g, where);
-      break;
+      return true;
 
     case ScopeLevel::LEVEL_UNIV:
       g.out << "It's just _there_, you know?\n";
-      break;
+      return true;
 
     default:
       g.out << "Illegal scope.\n";
-      break;
+      return false;
   }
 }
+
+const CommandDescriptor survey_cmd{
+    .name = "survey",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "survey [<coords>|<range>|<place>]",
+    .description = "Detailed survey of planet, sector, or star",
+    .handler = &survey,
+};
+
+const CommandDescriptor client_survey_cmd{
+    .name = "client_survey",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "client_survey [<coords>|<range>|<place>]",
+    .description = "Machine-readable survey format for client interfaces",
+    .handler = &survey,
+};
+
 }  // namespace GB::commands

@@ -1,22 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file survey_test.cc
+/// \brief Unit tests for survey and client_survey commands
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-/// \file survey_test.cc
-/// \brief Test survey command for edge cases and output formatting
+namespace {
 
-void test_survey_no_args_planet_scope() {
-  std::println(std::cout,
-               "Test: survey command with no arguments at planet scope");
-
-  // Create in-memory database
-  TestContext ctx;
+void setup_test_world(TestContext& ctx) {
+  JsonStore store(ctx.db);
 
   // Setup: Create a race
   Race race{};
@@ -24,7 +22,7 @@ void test_survey_no_args_planet_scope() {
   race.name = "TestRace";
   race.Guest = false;
   race.God = false;
-  race.tech = 50.0;
+  race.tech = 60.0;
   race.conditions[METHANE] = 5;
   race.conditions[OXYGEN] = 20;
   race.conditions[CO2] = 10;
@@ -35,18 +33,17 @@ void test_survey_no_args_planet_scope() {
   race.conditions[OTHER] = 2;
   race.conditions[TEMP] = 280;
 
-  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
   // Setup: Create a star
   star_struct star{};
-  star.star_id = 1;
+  star.star_id = 0;
   star.name = "Sol";
   star.xpos = 100.0;
   star.ypos = 200.0;
   star.gravity = 1.0;
-  star.stability = 50;
+  star.stability = 45;
   star.temperature = 5;
   star.pnames.push_back("Earth");
 
@@ -55,7 +52,7 @@ void test_survey_no_args_planet_scope() {
 
   // Setup: Create a planet
   Planet planet{};
-  planet.star_id() = 1;
+  planet.star_id() = 0;
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
@@ -80,149 +77,7 @@ void test_survey_no_args_planet_scope() {
   PlanetRepository planets(store);
   planets.save(planet);
 
-  // Create a sector map (required for getsmap in survey)
-  SectorMap smap(planet, true);
-  SectorRepository sector_repo(store);
-  sector_repo.save_map(smap);
-
-  // Create GameObj for command execution
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(0);
-
-  // TEST: Survey command with no arguments - should show full planet survey
-  std::println(std::cout, "  Testing: survey (no args) at planet scope");
-  {
-    command_t cmd = {"survey"};
-    GB::commands::survey(cmd, g);
-
-    // Verify output contains expected information
-    std::string out_str = g.out.str();
-    // Note: notify() output doesn't go to g.out, so we can't check for planet
-    // name Check for information that IS written to g.out
-    assert(out_str.find("======== Planetary conditions: ========") !=
-           std::string::npos);
-    assert(out_str.find("atmosphere concentrations") != std::string::npos);
-    std::println(std::cout, "    ✓ Output contains planet survey information");
-  }
-
-  std::println(std::cout, "  ✅ Survey with no args test passed!");
-}
-
-void test_survey_sector_mode_no_args() {
-  std::println(std::cout, "Test: survey command in CSP mode with no arguments");
-
-  // Create in-memory database
-  TestContext ctx;
-
-  // Setup: Create a race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.Guest = false;
-  race.God = false;
-  race.tech = 50.0;
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup: Create a star
-  star_struct star{};
-  star.star_id = 1;
-  star.name = "Sol";
-  star.pnames.push_back("Earth");
-
-  StarRepository stars(store);
-  stars.save(star);
-
-  // Setup: Create a planet
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
-  planet.info(player_t{1}).numsectsowned = 5;
-
-  PlanetRepository planets(store);
-  planets.save(planet);
-
-  // Create a sector map (required for getsmap in survey)
-  SectorMap smap(planet, true);
-  SectorRepository sector_repo(store);
-  sector_repo.save_map(smap);
-
-  // Create GameObj for command execution
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(0);
-
-  // TEST: Use 'map' command (mode=1) with no arguments - THIS IS THE BUG!
-  // Previously this would access argv[1] without checking argv.size()
-  std::println(std::cout,
-               "  Testing: map (no args) at planet scope - bug fix check");
-  {
-    command_t cmd = {"map"};  // map uses mode=1
-    GB::commands::survey(cmd, g);
-
-    // Should not crash and should produce valid output
-    std::string out_str = g.out.str();
-    // The command should work without segfaulting
-    std::println(std::cout,
-                 "    ✓ Command executed without crash (bug fix verified)");
-  }
-
-  std::println(std::cout, "  ✅ Survey CSP mode test passed!");
-}
-
-void test_survey_sector_range_with_header() {
-  std::println(std::cout,
-               "Test: survey command with sector range shows header");
-
-  // Create in-memory database
-  TestContext ctx;
-
-  // Setup: Create a race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.Guest = false;
-  race.God = false;
-  race.tech = 50.0;
-  race.conditions[TEMP] = 280;
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup: Create a star
-  star_struct star{};
-  star.star_id = 1;
-  star.name = "Sol";
-  star.pnames.push_back("Earth");
-
-  StarRepository stars(store);
-  stars.save(star);
-
-  // Setup: Create a planet with sectors
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
-  planet.conditions(TOXIC) = 10;
-  planet.info(player_t{1}).numsectsowned = 5;
-
-  PlanetRepository planets(store);
-  planets.save(planet);
-
-  // Create some sectors
+  // Create sectors
   SectorMap smap(planet, true);
   for (int x = 0; x < 10; x++) {
     for (int y = 0; y < 10; y++) {
@@ -241,103 +96,124 @@ void test_survey_sector_range_with_header() {
     }
   }
 
-  // Save sector map using Repository (DAL layer)
   SectorRepository sector_repo(store);
   sector_repo.save_map(smap);
+}
 
-  // Create GameObj for command execution
+void test_survey_no_args_planet_scope() {
+  std::println(std::cout, "Test: survey (no args) at planet scope");
+
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
+  g.set_snum(0);
   g.set_pnum(0);
 
-  // TEST: Survey specific sector range in non-CSP mode
-  std::println(std::cout, "  Testing: survey 0:2,0:2 (should show header)");
-  {
-    command_t cmd = {"survey", "0:2,0:2"};
-    GB::commands::survey(cmd, g);
+  ctx.assert_dispatch_success(g, {"survey"});
 
-    // Verify output contains the header line (tabulate format)
-    std::string out_str = g.out.str();
-    assert(out_str.find("x,y") != std::string::npos);
-    assert(out_str.find("cond/type") != std::string::npos);
-    assert(out_str.find("owner") != std::string::npos);
-    assert(out_str.find("xtals") != std::string::npos);
-    assert(out_str.find("0,0") != std::string::npos);
-    std::println(std::cout, "    ✓ Output contains header and sector data");
-  }
+  std::string out_str = g.out.str();
+  assert(out_str.find("======== Planetary conditions: ========") !=
+         std::string::npos);
+  assert(out_str.find("atmosphere concentrations") != std::string::npos);
+  std::println(std::cout, "    ✓ Output contains planet survey information");
+}
 
-  std::println(std::cout, "  ✅ Sector range with header test passed!");
+void test_survey_sector_range_with_header() {
+  std::println(std::cout,
+               "Test: survey command with sector range shows header");
+
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  ctx.assert_dispatch_success(g, {"survey", "0:2,0:2"});
+
+  std::string out_str = g.out.str();
+  assert(out_str.find("x,y") != std::string::npos);
+  assert(out_str.find("cond/type") != std::string::npos);
+  assert(out_str.find("owner") != std::string::npos);
+  assert(out_str.find("xtals") != std::string::npos);
+  assert(out_str.find("0,0") != std::string::npos);
+  std::println(std::cout, "    ✓ Output contains header and sector data");
 }
 
 void test_survey_star_scope() {
   std::println(std::cout, "Test: survey command at star scope");
 
-  // Create in-memory database
   TestContext ctx;
+  setup_test_world(ctx);
 
-  // Setup: Create a race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.Guest = false;
-  race.God = false;
-  race.tech = 60.0;  // Above TECH_SEE_STABILITY (50)
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup: Create a star
-  star_struct star{};
-  star.star_id = 1;
-  star.name = "Sol";
-  star.xpos = 100.0;
-  star.ypos = 200.0;
-  star.gravity = 1.0;
-  star.stability = 45;
-  star.temperature = 5;
-  star.pnames.push_back("Mercury");
-  star.pnames.push_back("Venus");
-  star.pnames.push_back("Earth");
-
-  StarRepository stars(store);
-  stars.save(star);
-
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_snum(0);
 
-  // TEST: Survey command at star scope
-  std::println(std::cout, "  Testing: survey at star scope");
-  {
-    command_t cmd = {"survey"};
-    GB::commands::survey(cmd, g);
+  ctx.assert_dispatch_success(g, {"survey"});
 
-    // Verify output contains expected information
-    std::string out_str = g.out.str();
-    assert(out_str.find("Star Sol") != std::string::npos);
-    assert(out_str.find("100,200") != std::string::npos);
-    assert(out_str.find("Gravity") != std::string::npos);
-    assert(out_str.find("Instability") != std::string::npos);
-    assert(out_str.find("45%") != std::string::npos);  // Stability value
-    assert(out_str.find("planets are") != std::string::npos);
-    std::println(std::cout, "    ✓ Output contains star information");
-  }
-
-  std::println(std::cout, "  ✅ Star scope survey test passed!");
+  std::string out_str = g.out.str();
+  assert(out_str.find("Star Sol") != std::string::npos);
+  assert(out_str.find("100,200") != std::string::npos);
+  assert(out_str.find("Gravity") != std::string::npos);
+  assert(out_str.find("Instability") != std::string::npos);
+  assert(out_str.find("45%") != std::string::npos);
+  assert(out_str.find("planets are") != std::string::npos);
+  std::println(std::cout, "    ✓ Output contains star information");
 }
+
+void test_survey_universe_scope() {
+  std::println(std::cout, "Test: survey command at universe scope");
+
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+
+  ctx.assert_dispatch_success(g, {"survey"});
+  assert(g.out.str().contains("It's just _there_, you know?"));
+  std::println(std::cout, "    ✓ Universe scope survey succeeded");
+}
+
+void test_client_survey_dispatch() {
+  std::println(std::cout, "Test: client_survey command dispatch");
+
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  ctx.assert_dispatch_success(g, {"client_survey", "0:2,0:2"});
+  assert(!g.out.str().empty());
+  std::println(std::cout, "    ✓ client_survey dispatched successfully");
+}
+
+}  // namespace
 
 int main() {
   test_survey_no_args_planet_scope();
-  test_survey_sector_mode_no_args();
   test_survey_sector_range_with_header();
   test_survey_star_scope();
+  test_survey_universe_scope();
+  test_client_survey_dispatch();
+
   std::println(std::cout, "\n✅ All survey tests passed!");
   return 0;
 }

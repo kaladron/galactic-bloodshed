@@ -8,67 +8,33 @@ module;
 import std;
 import gblib;
 import notification;
+import scnlib;
 import session;
 
 module commands;
 
 namespace GB::commands {
-void declare(const command_t& argv, GameObj& g) {
+bool declare(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
-  const governor_t Governor = g.governor();
-  const ap_t APcount = 1;
-  player_t n;
-  int d_mod;
-  std::string news_msg;
-
-  if (Governor != 0) {
-    g.out << "Only leaders may declare.\n";
-    return;
-  }
-
-  n = get_player(g.entity_manager, argv[1]);
+  player_t n = get_player(g.entity_manager, argv[1]);
   if (n.value == 0) {
     g.out << "No such player.\n";
-    return;
-  }
-
-  /* look in universe data for APs first */
-  const auto* universe = g.entity_manager.peek_universe();
-  if (!universe) {
-    g.out << "Universe data not found.\n";
-    return;
-  }
-
-  /* enufAPs would print something */
-  if ((int)universe->AP[Playernum.value - 1] >= APcount) {
-    deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
-    /* otherwise use current star */
-  } else if ((g.level() == ScopeLevel::LEVEL_STAR ||
-              g.level() == ScopeLevel::LEVEL_PLAN)) {
-    const auto& star = *g.entity_manager.peek_star(g.snum());
-    if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-                APcount)) {
-      g.out << std::format("You don't have enough AP's ({})\n", APcount);
-      return;
-    }
-    deductAPs(g, APcount, g.snum());
-  } else {
-    g.out << std::format("You don't have enough AP's ({})\n", APcount);
-    return;
+    return false;
   }
 
   auto race_handle = g.entity_manager.get_race(Playernum);
-
   auto alien_handle = g.entity_manager.get_race(n);
   if (!alien_handle.get()) {
     g.out << "Alien race not found.\n";
-    return;
+    return false;
   }
 
   auto& race = *race_handle;
   auto& alien = *alien_handle;
+  int d_mod = 30;
+  std::string news_msg;
 
-  switch (*argv[2].c_str()) {
+  switch (argv[2][0]) {
     case 'a':
       setbit(race.allied, n);
       clrbit(race.atwar, n);
@@ -84,8 +50,12 @@ void declare(const command_t& argv, GameObj& g) {
       news_msg = std::format("{} [{}] declares ALLIANCE with {} [{}].\n",
                              race.name, Playernum, alien.name, n);
       d_mod = 30;
-      if (argv.size() > 3) d_mod = std::stoi(argv[3]);
-      d_mod = std::max(d_mod, 30);
+      if (argv.size() > 3) {
+        auto parsed = scn::scan<int>(argv[3], "{}");
+        if (parsed) {
+          d_mod = std::max(parsed->value(), 30);
+        }
+      }
       break;
     case 'n':
       clrbit(race.allied, n);
@@ -145,7 +115,7 @@ void declare(const command_t& argv, GameObj& g) {
       break;
     default:
       g.out << "I don't understand.\n";
-      return;
+      return false;
   }
 
   post(g.entity_manager, news_msg, NewsType::DECLARATION);
@@ -154,5 +124,18 @@ void declare(const command_t& argv, GameObj& g) {
   /* They, of course, learn more about you */
   alien.translate[Playernum.value - 1] =
       MIN(alien.translate[Playernum.value - 1] + d_mod, 100);
+  return true;
 }
+
+const CommandDescriptor declare_cmd{
+    .name = "declare",
+    .roles = {.no_guests = true, .leader_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::fixed_univ(1),
+    .min_args = 3,
+    .syntax = "declare <race> <alliance|neutral|war> [<modifier>]",
+    .description = "Declare alliance, neutrality, or war with another race",
+    .handler = &declare,
+};
+
 }  // namespace GB::commands

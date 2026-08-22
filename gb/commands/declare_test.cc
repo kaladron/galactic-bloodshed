@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file declare_test.cc
+/// \brief Test declare command functionality, diplomatic states, and role
+/// validation.
+
 import dallib;
 import gblib;
 import test;
@@ -8,22 +12,25 @@ import std;
 
 #include <cassert>
 
-int main() {
-  TestContext ctx;
+namespace {
 
-  // Create two test races via repository
+void test_declare_dispatch() {
+  std::println(std::cout,
+               "Test: declare command dispatch and diplomatic states");
+  TestContext ctx;
+  JsonStore store(ctx.db);
+
+  // Create test races
   Race race1{};
   race1.Playernum = 1;
-  race1.name = "TestRace1";
+  race1.name = "Federation";
   race1.governor[0].active = true;
 
   Race race2{};
   race2.Playernum = 2;
-  race2.name = "TestRace2";
+  race2.name = "Klingons";
   race2.governor[0].active = true;
 
-  // Save races via repository
-  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race1);
   races.save(race2);
@@ -32,59 +39,58 @@ int main() {
   UniverseRepository universe_repo(store);
   universe_struct sdata{};
   sdata.id = 1;
-  sdata.AP[0] = 10;  // Give player 1 some AP points
+  sdata.AP[0] = 10;
   sdata.numstars = 0;
   universe_repo.save(sdata);
 
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  std::println(std::cout, "Declare alliance");
-  {
-    command_t argv = {"declare", "2", "alliance"};
-    GB::commands::declare(argv, g);
+  // 1. Declare alliance
+  ctx.assert_dispatch_success(g, {"declare", "2", "alliance"});
+  const auto* saved_race1 = ctx.em.peek_race(1);
+  const auto* saved_race2 = ctx.em.peek_race(2);
+  assert(saved_race1 != nullptr);
+  assert(saved_race2 != nullptr);
+  assert(isset(saved_race1->allied, 2U));
+  assert(!isset(saved_race1->atwar, 2U));
+  assert(saved_race2->translate[0] >= 30);
+  std::println(std::cout, "    ✓ Alliance declared and translation updated");
 
-    // Verify alliance was set
-    const auto* saved_race1 = ctx.em.peek_race(1);
-    const auto* saved_race2 = ctx.em.peek_race(2);
-    assert(saved_race1 != nullptr);
-    assert(saved_race2 != nullptr);
-    assert(isset(saved_race1->allied, 2U));
-    assert(!isset(saved_race1->atwar, 2U));
-    // Verify translation was increased
-    assert(saved_race2->translate[0] >= 30);
-    std::println(std::cout, "    ✓ Alliance declared and translation updated");
-  }
+  // 2. Declare war
+  ctx.assert_dispatch_success(g, {"declare", "2", "war"});
+  saved_race1 = ctx.em.peek_race(1);
+  assert(isset(saved_race1->atwar, 2U));
+  assert(!isset(saved_race1->allied, 2U));
+  std::println(std::cout, "    ✓ War declared successfully");
 
-  std::println(std::cout, "\nTest 2: Declare war");
-  {
-    command_t argv = {"declare", "2", "war"};
-    GB::commands::declare(argv, g);
+  // 3. Declare neutrality
+  ctx.assert_dispatch_success(g, {"declare", "2", "neutrality"});
+  saved_race1 = ctx.em.peek_race(1);
+  assert(!isset(saved_race1->atwar, 2U));
+  assert(!isset(saved_race1->allied, 2U));
+  std::println(std::cout, "    ✓ Neutrality declared successfully");
 
-    // Verify war was declared
-    const auto* saved_race1 = ctx.em.peek_race(1);
-    assert(saved_race1 != nullptr);
-    assert(isset(saved_race1->atwar, 2U));
-    assert(!isset(saved_race1->allied, 2U));
-    std::println(std::cout, "    ✓ War declared successfully");
-  }
+  // 4. Role check: Governor != 0 cannot declare
+  g.set_governor(1);
+  ctx.assert_dispatch_rejected(g, {"declare", "2", "war"});
+  assert(g.out.str().contains(
+      "Only the leader (Governor 0) may use this command."));
+  std::println(std::cout, "    ✓ Governor rejection verified");
 
-  std::println(std::cout, "\nTest 3: Declare neutrality");
-  {
-    command_t argv = {"declare", "2", "neutrality"};
-    GB::commands::declare(argv, g);
+  // 5. Invalid target player
+  g.set_governor(0);
+  ctx.assert_dispatch_rejected(g, {"declare", "99", "war"});
+  assert(g.out.str().contains("No such player."));
+  std::println(std::cout, "    ✓ Invalid player rejection verified");
+}
 
-    // Verify neutrality was set
-    const auto* saved_race1 = ctx.em.peek_race(1);
-    assert(saved_race1 != nullptr);
-    assert(!isset(saved_race1->atwar, 2U));
-    assert(!isset(saved_race1->allied, 2U));
-    std::println(std::cout, "    ✓ Neutrality declared successfully");
-  }
+}  // namespace
 
+int main() {
+  test_declare_dispatch();
   std::println(std::cout, "\n✅ All declare tests passed!");
   return 0;
 }

@@ -140,6 +140,10 @@ build_registry() {
         reg(survey_cmd);
         reg(client_survey_cmd);
         reg(tactical_cmd);
+        reg(declare_cmd);
+        reg(pledge_cmd);
+        reg(relation_cmd);
+        reg(unpledge_cmd);
         reg(victory_cmd);
         reg(zoom_cmd);
 

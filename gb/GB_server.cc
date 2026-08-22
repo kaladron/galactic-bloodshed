@@ -89,7 +89,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"block", GB::commands::block},
       {"broadcast", GB::commands::announce},
       {"colonies", GB::commands::colonies},
-      {"declare", GB::commands::declare},
       {"disarm", GB::commands::arm},
       {"give", GB::commands::give},  // TODO(jeffbailey): !guest
       {"grant", GB::commands::grant},
@@ -104,10 +103,8 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"page", GB::commands::page},
       {"pay", GB::commands::pay},  // TODO(jeffbailey): !guest
       {"personal", GB::commands::personal},
-      {"pledge", GB::commands::pledge},
       {"post", GB::commands::send_message},
       {"read", GB::commands::read_messages},
-      {"relation", GB::commands::relation},
       {"schedule", GB_schedule},
       {"send", GB::commands::send_message},
       {"shout", GB::commands::announce},
@@ -117,7 +114,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"toxicity", GB::commands::toxicity},
       {"transfer", GB::commands::transfer},
       {"uninvite", GB::commands::invite},
-      {"unpledge", GB::commands::unpledge},
       {"upgrade", GB::commands::upgrade},
       {"walk", GB::commands::walk},
       {"whois", GB::commands::whois},

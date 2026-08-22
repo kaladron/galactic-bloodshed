@@ -14,35 +14,28 @@ module commands;
 
 namespace GB::commands {
 /* declare that you wish to be included in the alliance block */
-void pledge(const command_t& argv, GameObj& g) {
+bool pledge(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
-  const governor_t Governor = g.governor();
-  player_t n;
-
-  if (Governor != 0) {
-    g.out << "Only leaders may pledge.\n";
-    return;
-  }
-  n = get_player(g.entity_manager, argv[1]);
+  player_t n = get_player(g.entity_manager, argv[1]);
   if (n == player_t{0}) {
     g.out << "No such player.\n";
-    return;
+    return false;
   }
   if (n == Playernum) {
     g.out << "Not needed, you are the leader.\n";
-    return;
+    return false;
   }
 
   const auto* race = g.entity_manager.peek_race(Playernum);
   if (!race) {
     g.out << "Race not found.\n";
-    return;
+    return false;
   }
 
   auto block_handle = g.entity_manager.get_block(n.value);
   if (!block_handle.get()) {
     g.out << "Block not found.\n";
-    return;
+    return false;
   }
   auto& block = *block_handle;
 
@@ -67,7 +60,19 @@ void pledge(const command_t& argv, GameObj& g) {
   }
 
   post(g.entity_manager, msg, NewsType::DECLARATION);
-
   compute_power_blocks(g.entity_manager);
+  return true;
 }
+
+const CommandDescriptor pledge_cmd{
+    .name = "pledge",
+    .roles = {.no_guests = true, .leader_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "pledge <race>",
+    .description = "Pledge allegiance to join an alliance block",
+    .handler = &pledge,
+};
+
 }  // namespace GB::commands

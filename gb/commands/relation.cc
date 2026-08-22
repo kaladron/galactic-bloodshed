@@ -17,7 +17,7 @@ static auto allied(const Race& r, const player_t p) {
 }
 
 namespace GB::commands {
-void relation(const command_t& argv, GameObj& g) {
+bool relation(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   player_t q;
   if (argv.size() == 1) {
@@ -26,14 +26,14 @@ void relation(const command_t& argv, GameObj& g) {
     q = get_player(g.entity_manager, argv[1]);
     if (q == player_t{0}) {
       g.out << "No such player.\n";
-      return;
+      return false;
     }
   }
 
   const auto* race = g.entity_manager.peek_race(q);
   if (!race) {
     g.out << "Race not found.\n";
-    return;
+    return false;
   }
 
   g.out << std::format("\n              Racial Relations Report for {}\n\n",
@@ -51,5 +51,19 @@ void relation(const command_t& argv, GameObj& g) {
         race->translate[r->Playernum.value - 1], r->name,
         allied(*race, r->Playernum), allied(*r, q));
   }
+  return true;
 }
+
+const CommandDescriptor relation_cmd{
+    .name = "relation",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "relation [<race>]",
+    .description =
+        "Display diplomatic relations and mutual standing between races",
+    .handler = &relation,
+};
+
 }  // namespace GB::commands

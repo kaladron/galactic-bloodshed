@@ -480,7 +480,7 @@ void report_star_ships(GameObj& g, RstContext& ctx, player_t player_num,
 // ============================================================================
 
 namespace GB::commands {
-void rst(const command_t& argv, GameObj& g) {
+bool rst(const command_t& argv, GameObj& g) {
   ReportSet report_types;
 
   RstContext ctx;
@@ -497,8 +497,7 @@ void rst(const command_t& argv, GameObj& g) {
   if (argv.size() >= 2) {
     if (*argv[1].c_str() == '#' || std::isdigit(*argv[1].c_str())) {
       /* report on a couple ships */
-      int l = 1;
-      while (l < MAXARGS && *argv[l].c_str() != '\0') {
+      for (std::size_t l = 1; l < argv.size(); ++l) {
         std::string_view arg_sv = argv[l];
         if (!arg_sv.empty() && arg_sv.front() == '#') {
           arg_sv.remove_prefix(1);
@@ -506,27 +505,26 @@ void rst(const command_t& argv, GameObj& g) {
         auto scan_res = scn::scan<underlying_type_t<shipnum_t>>(arg_sv, "{}");
         if (!scan_res) {
           g.out << std::format("rst: invalid ship argument {}\n", argv[l]);
-          return;
+          return false;
         }
         shipnum_t shipno{scan_res->value()};
         if (shipno > n_ships || shipno < 1) {
           g.out << std::format("rst: no such ship #{} \n", shipno);
-          return;
+          return false;
         }
 
         const auto* ship = g.entity_manager.peek_ship(shipno);
         if (!ship) {
           g.out << std::format("rst: no such ship #{} \n", shipno);
-          return;
+          return false;
         }
 
         // Report all types when reporting specific ships
         std::ranges::copy(Shipltrs,
                           std::inserter(report_types, report_types.end()));
         ship_report(g, ctx, *ship, report_types);
-        l++;
       }
-      return;
+      return true;
     }
 
     // Parse ship type letters and add to set - only valid ship letters
@@ -537,7 +535,7 @@ void rst(const command_t& argv, GameObj& g) {
     // Warn if no valid ship types were found
     if (report_types.empty()) {
       g.out << std::format("'{}' -- no valid ship letters found\n", argv[1]);
-      return;
+      return false;
     }
   } else {
     // No ship type filter specified - report all types
@@ -572,14 +570,14 @@ void rst(const command_t& argv, GameObj& g) {
       if (g.shipno() == 0) {
         g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
                  "scope to a ship.\n";
-        return;
+        return false;
       }
 
       const auto* scoped_ship = g.entity_manager.peek_ship(g.shipno());
       if (!scoped_ship) {
         g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
                              g.shipno());
-        return;
+        return false;
       }
 
       // Report on the scoped ship directly
@@ -593,5 +591,75 @@ void rst(const command_t& argv, GameObj& g) {
       break;
     }
   }
+  return true;
 }
+
+const CommandDescriptor report_cmd{
+    .name = "report",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "report [<shiptypes> | #<shipno> ...]",
+    .description = "Summary report of ships and craft",
+    .handler = &rst,
+};
+
+const CommandDescriptor ship_cmd{
+    .name = "ship",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "ship [<shiptypes> | #<shipno> ...]",
+    .description =
+        "Comprehensive status, stock, and capability report of ships",
+    .handler = &rst,
+};
+
+const CommandDescriptor stats_cmd{
+    .name = "stats",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "stats [<shiptypes> | #<shipno> ...]",
+    .description = "Combat and capability statistics report of ships",
+    .handler = &rst,
+};
+
+const CommandDescriptor stock_cmd{
+    .name = "stock",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "stock [<shiptypes> | #<shipno> ...]",
+    .description = "Inventory, cargo, and resource stock report of ships",
+    .handler = &rst,
+};
+
+const CommandDescriptor weapons_cmd{
+    .name = "weapons",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "weapons [<shiptypes> | #<shipno> ...]",
+    .description = "Weaponry, ordnance, and combat loadout report of ships",
+    .handler = &rst,
+};
+
+const CommandDescriptor factories_cmd{
+    .name = "factories",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "factories [<shiptypes> | #<shipno> ...]",
+    .description =
+        "Factory configuration and production capability report of ships",
+    .handler = &rst,
+};
+
 }  // namespace GB::commands

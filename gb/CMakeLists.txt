@@ -771,6 +771,10 @@ add_executable(tech_status_test commands/tech_status_test.cc)
 target_link_libraries(tech_status_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_tech_status_test COMMAND tech_status_test)
 
+add_executable(rst_test commands/rst_test.cc)
+target_link_libraries(rst_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_rst_test COMMAND rst_test)
+
 add_executable(dispatch_pipeline_test commands/dispatch_pipeline_test.cc)
 target_link_libraries(dispatch_pipeline_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_dispatch_pipeline_test COMMAND dispatch_pipeline_test)

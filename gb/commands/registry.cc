@@ -124,6 +124,12 @@ build_registry() {
         reg(order_cmd);
         reg(repair_cmd);
         reg(route_cmd);
+        reg(report_cmd);
+        reg(ship_cmd);
+        reg(stats_cmd);
+        reg(stock_cmd);
+        reg(weapons_cmd);
+        reg(factories_cmd);
         reg(scrap_cmd);
         reg(sell_cmd);
         reg(stars_cmd);

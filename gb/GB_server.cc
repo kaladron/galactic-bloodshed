@@ -91,7 +91,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"colonies", GB::commands::colonies},
       {"declare", GB::commands::declare},
       {"disarm", GB::commands::arm},
-      {"factories", GB::commands::rst},
       {"give", GB::commands::give},  // TODO(jeffbailey): !guest
       {"grant", GB::commands::grant},
       {"highlight", GB::commands::highlight},
@@ -112,13 +111,9 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"production", GB::commands::production},
       {"relation", GB::commands::relation},
       {"read", GB::commands::read_messages},
-      {"report", GB::commands::rst},
       {"schedule", GB_schedule},
       {"send", GB::commands::send_message},
       {"shout", GB::commands::announce},
-      {"ship", GB::commands::rst},
-      {"stats", GB::commands::rst},
-      {"stock", GB::commands::rst},
       {"think", GB::commands::announce},
       {"time", GB_time},
       {"toggle", GB::commands::toggle},
@@ -130,7 +125,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"victory", GB::commands::victory},
       {"walk", GB::commands::walk},
       {"whois", GB::commands::whois},
-      {"weapons", GB::commands::rst},
   };
 
   if (VOTING) {

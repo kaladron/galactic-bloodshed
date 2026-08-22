@@ -839,6 +839,14 @@ add_executable(unpledge_test commands/unpledge_test.cc)
 target_link_libraries(unpledge_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_unpledge_test COMMAND unpledge_test)
 
+add_executable(page_test commands/page_test.cc)
+target_link_libraries(page_test PRIVATE test_module dallib gblib commands session notification SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_page_test COMMAND page_test)
+
+add_executable(announce_test commands/announce_test.cc)
+target_link_libraries(announce_test PRIVATE test_module dallib gblib commands session notification SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_announce_test COMMAND announce_test)
+
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug
     COMMAND ${CMAKE_COMMAND} -E env 

@@ -81,13 +81,10 @@ using CommandFunction = void (*)(const command_t&, GameObj&);
 
 static const std::unordered_map<std::string, CommandFunction>& getCommands() {
   static std::unordered_map<std::string, CommandFunction> commands{
-      {"'", GB::commands::announce},
       {"allocate", allocateAPs},
-      {"announce", GB::commands::announce},
       {"arm", GB::commands::arm},
       {"autoreport", GB::commands::autoreport},
       {"block", GB::commands::block},
-      {"broadcast", GB::commands::announce},
       {"colonies", GB::commands::colonies},
       {"disarm", GB::commands::arm},
       {"highlight", GB::commands::highlight},
@@ -98,14 +95,8 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"modify", GB::commands::make_mod},
       {"motto", GB::commands::motto},
       {"name", GB::commands::name},
-      {"page", GB::commands::page},
       {"personal", GB::commands::personal},
-      {"post", GB::commands::send_message},
-      {"read", GB::commands::read_messages},
       {"schedule", GB_schedule},
-      {"send", GB::commands::send_message},
-      {"shout", GB::commands::announce},
-      {"think", GB::commands::announce},
       {"time", GB_time},
       {"toggle", GB::commands::toggle},
       {"toxicity", GB::commands::toxicity},

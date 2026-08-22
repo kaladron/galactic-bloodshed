@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file read_messages.cc
+/// \brief Read telegrams, news bulletins, and announcements.
+
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void read_messages(const command_t& argv, GameObj& g) {
-  // TODO(jeffbailey): ap_t APcount = 0;
-  if (argv.size() == 1 || argv[1] == "telegram")
+
+bool read_messages(const command_t& argv, GameObj& g) {
+  if (argv.size() == 1 || argv[1] == "telegram") {
     teleg_read(g);
-  else if (argv[1] == "news") {
+    return true;
+  }
+  if (argv[1] == "news") {
     g.out << CUTE_MESSAGE;
     g.out << "\n----------        Declarations        ----------\n";
     news_read(NewsType::DECLARATION, g);
@@ -23,7 +27,21 @@ void read_messages(const command_t& argv, GameObj& g) {
     news_read(NewsType::TRANSFER, g);
     g.out << "\n----------          Bulletins         ----------\n";
     news_read(NewsType::ANNOUNCE, g);
-  } else
-    g.out << "Read what?\n";
+    return true;
+  }
+  g.out << "Read what?\n";
+  return false;
 }
+
+const CommandDescriptor read_cmd{
+    .name = "read",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "read [telegram|news]",
+    .description = "Read telegram messages or public news bulletins",
+    .handler = &read_messages,
+};
+
 }  // namespace GB::commands

@@ -1,58 +1,49 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file announce.cc
+/// \brief Announce, broadcast, shout, or think messages across systems.
+
 module;
 
 import gblib;
 import notification;
-import session; // For SessionRegistry full definition
+import session;
 import std;
-#undef stdout
 
 module commands;
 
 namespace {
-enum class Communicate {
+enum class Communicate : std::uint8_t {
   ANN = ':',
-  BROADCAST = '>',
+  BROADCAST = '\"',
   SHOUT = '!',
-  THINK = '=',
-  UNKNOWN = ' ',
+  THINK = ';',
+  UNKNOWN = 0,
 };
 
-Communicate get_mode(const std::string& mode) {
-  if (mode == "announce") return Communicate::ANN;
-  if (mode == "broadcast" || mode == "'") return Communicate::BROADCAST;
-  if (mode == "shout") return Communicate::SHOUT;
-  if (mode == "think") return Communicate::THINK;
-
+Communicate get_mode(std::string_view command) {
+  if (command == "announce" || command == ":") return Communicate::ANN;
+  if (command == "broadcast" || command == "\"" || command == "'")
+    return Communicate::BROADCAST;
+  if (command == "shout" || command == "!") return Communicate::SHOUT;
+  if (command == "think" || command == ";") return Communicate::THINK;
   return Communicate::UNKNOWN;
 }
 }  // namespace
 
 namespace GB::commands {
-void announce(const command_t& argv, GameObj& g) {
+
+bool announce(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
   Communicate mode = get_mode(argv[0]);
   if (mode == Communicate::UNKNOWN) {
     g.out << "Not sure how you got here.\n";
-    return;
-  }
-
-  const auto* race = g.entity_manager.peek_race(Playernum);
-  if (!race) {
-    g.out << "Race data not found.\n";
-    return;
-  }
-
-  if (mode == Communicate::SHOUT && !race->God) {
-    g.out << "You are not privileged to use this command.\n";
-    return;
+    return false;
   }
 
   std::stringstream ss_message;
-
   std::ranges::copy(argv | std::views::drop(1),
                     std::ostream_iterator<std::string>(ss_message, " "));
   std::string message = ss_message.str();
@@ -70,9 +61,9 @@ void announce(const command_t& argv, GameObj& g) {
     default: {
       const auto& star = *g.entity_manager.peek_star(g.snum());
       if ((mode == Communicate::ANN) &&
-          !(!!isset(star.inhabited(), Playernum) || race->God)) {
+          !(!!isset(star.inhabited(), Playernum) || g.god())) {
         g.out << "You do not inhabit this system or have diety privileges.\n";
-        return;
+        return false;
       }
     }
   }
@@ -97,8 +88,66 @@ void announce(const command_t& argv, GameObj& g) {
     case Communicate::THINK:
       d_think(g.session_registry, g.entity_manager, Playernum, Governor, msg);
       break;
-    case Communicate::UNKNOWN:  // Impossible
+    case Communicate::UNKNOWN:
       break;
   }
+  return true;
 }
+
+namespace {
+constexpr std::string_view announce_aliases[] = {":"};
+constexpr std::string_view broadcast_aliases[] = {"\"", "'"};
+constexpr std::string_view shout_aliases[] = {"!"};
+constexpr std::string_view think_aliases[] = {";"};
+}  // namespace
+
+const CommandDescriptor announce_cmd{
+    .name = "announce",
+    .aliases = announce_aliases,
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "announce <message>",
+    .description =
+        "Announce a message to all players present in current system",
+    .handler = &announce,
+};
+
+const CommandDescriptor broadcast_cmd{
+    .name = "broadcast",
+    .aliases = broadcast_aliases,
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "broadcast <message>",
+    .description = "Broadcast a message universally to all players in the game",
+    .handler = &announce,
+};
+
+const CommandDescriptor shout_cmd{
+    .name = "shout",
+    .aliases = shout_aliases,
+    .roles = {.god_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "shout <message>",
+    .description = "Deity broadcast to announce universal admin notifications",
+    .handler = &announce,
+};
+
+const CommandDescriptor think_cmd{
+    .name = "think",
+    .aliases = think_aliases,
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "think <message>",
+    .description = "Send a thought message internally to your own race",
+    .handler = &announce,
+};
+
 }  // namespace GB::commands

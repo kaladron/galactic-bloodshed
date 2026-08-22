@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file tech_status.cc
+/// \brief Technology investment and generation report for colonies.
+
 module;
 
 import gblib;
@@ -56,7 +59,7 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
 }  // namespace
 
 namespace GB::commands {
-void tech_status(const command_t& argv, GameObj& g) {
+bool tech_status(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
 
   g.out << "             ========== Technology Report ==========\n\n";
@@ -113,5 +116,18 @@ void tech_status(const command_t& argv, GameObj& g) {
   }
   g.out << std::format("Tech: {:31}{:8.3f}{:8.3f}\n", totals.invest,
                        totals.gain, totals.max_gain);
+  return true;
 }
+
+const CommandDescriptor status_cmd{
+    .name = "status",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "status [<star> ...]",
+    .description = "Technology investment and generation report for colonies",
+    .handler = &tech_status,
+};
+
 }  // namespace GB::commands

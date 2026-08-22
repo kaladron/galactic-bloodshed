@@ -759,6 +759,18 @@ add_executable(explore_test commands/explore_test.cc)
 target_link_libraries(explore_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_explore_test COMMAND explore_test)
 
+add_executable(distance_test commands/distance_test.cc)
+target_link_libraries(distance_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_distance_test COMMAND distance_test)
+
+add_executable(star_locations_test commands/star_locations_test.cc)
+target_link_libraries(star_locations_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_star_locations_test COMMAND star_locations_test)
+
+add_executable(tech_status_test commands/tech_status_test.cc)
+target_link_libraries(tech_status_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_tech_status_test COMMAND tech_status_test)
+
 add_executable(dispatch_pipeline_test commands/dispatch_pipeline_test.cc)
 target_link_libraries(dispatch_pipeline_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_dispatch_pipeline_test COMMAND dispatch_pipeline_test)

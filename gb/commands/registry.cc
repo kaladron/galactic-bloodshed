@@ -97,6 +97,7 @@ build_registry() {
         reg(defend_cmd);
         reg(detonate_cmd);
         reg(dissolve_cmd);
+        reg(distance_cmd);
         reg(enslave_cmd);
         reg(examine_cmd);
         reg(explore_cmd);
@@ -125,6 +126,8 @@ build_registry() {
         reg(route_cmd);
         reg(scrap_cmd);
         reg(sell_cmd);
+        reg(stars_cmd);
+        reg(status_cmd);
         reg(survey_cmd);
         reg(client_survey_cmd);
         reg(tactical_cmd);

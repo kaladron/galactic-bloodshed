@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file star_locations.cc
+/// \brief Report stellar positions and distances from current position.
+
 module;
 
 import gblib;
@@ -10,7 +13,7 @@ import tabulate;
 module commands;
 
 namespace GB::commands {
-void star_locations(const command_t& argv, GameObj& g) {
+bool star_locations(const command_t& argv, GameObj& g) {
   // Optional argument filters to only show stars within this distance
   int max_dist = (argv.size() > 1) ? std::stoi(argv[1]) : 999999;
 
@@ -42,5 +45,19 @@ void star_locations(const command_t& argv, GameObj& g) {
   } else {
     g.out << "No stars found within specified distance.\n";
   }
+  return true;
 }
+
+const CommandDescriptor stars_cmd{
+    .name = "stars",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "stars [<radius>]",
+    .description =
+        "Report stellar positions and distances from current position",
+    .handler = &star_locations,
+};
+
 }  // namespace GB::commands

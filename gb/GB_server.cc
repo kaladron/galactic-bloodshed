@@ -91,7 +91,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"colonies", GB::commands::colonies},
       {"declare", GB::commands::declare},
       {"disarm", GB::commands::arm},
-      {"distance", GB::commands::distance},
       {"factories", GB::commands::rst},
       {"give", GB::commands::give},  // TODO(jeffbailey): !guest
       {"grant", GB::commands::grant},
@@ -118,9 +117,7 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"send", GB::commands::send_message},
       {"shout", GB::commands::announce},
       {"ship", GB::commands::rst},
-      {"stars", GB::commands::star_locations},
       {"stats", GB::commands::rst},
-      {"status", GB::commands::tech_status},
       {"stock", GB::commands::rst},
       {"think", GB::commands::announce},
       {"time", GB_time},

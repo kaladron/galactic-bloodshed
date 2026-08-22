@@ -49,14 +49,14 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
 }  // namespace
 
 namespace GB::commands {
-void power(const command_t& argv, GameObj& g) {
+bool power(const command_t& argv, GameObj& g) {
   std::optional<player_t> target_player;
 
   if (argv.size() >= 2) {
     player_t p = get_player(g.entity_manager, argv[1]);
     if (p == 0) {
       g.out << "No such player,\n";
-      return;
+      return false;
     }
     target_player = p;
   }
@@ -120,11 +120,24 @@ void power(const command_t& argv, GameObj& g) {
     const auto* r = g.entity_manager.peek_race(target_player.value());
     if (!r) {
       g.out << "Race not found.\n";
-      return;
+      return false;
     }
     add_power_row(table, g.entity_manager, *race, *r, target_player.value(), 0);
   }
 
   g.out << table << "\n";
+  return true;
 }
+
+const CommandDescriptor power_cmd{
+    .name = "power",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "power [<player>]",
+    .description = "Galactic influence, stockpiles, and military power report",
+    .handler = &power,
+};
+
 }  // namespace GB::commands

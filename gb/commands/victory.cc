@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file victory.cc
+/// \brief Display current victory standings and player rankings.
+
 module;
 
 import gblib;
+import scnlib;
 import std;
 import tabulate;
 #undef stdout
@@ -10,10 +14,17 @@ import tabulate;
 module commands;
 
 namespace GB::commands {
-void victory(const command_t& argv, GameObj& g) {
-  int count = (argv.size() > 1) ? std::stoi(argv[1])
-                                : g.entity_manager.num_races().value;
-  count = std::min(count, g.entity_manager.num_races().value);
+bool victory(const command_t& argv, GameObj& g) {
+  int count = g.entity_manager.num_races().value;
+  if (argv.size() > 1) {
+    auto scan_res = scn::scan<int>(argv[1], "{}");
+    if (!scan_res || scan_res->value() < 1) {
+      g.out << "Invalid count specified.\n";
+      return false;
+    }
+    count = scan_res->value();
+  }
+  count = std::min(count, static_cast<int>(g.entity_manager.num_races().value));
 
   auto viclist = create_victory_list(g.entity_manager);
 
@@ -81,5 +92,18 @@ void victory(const command_t& argv, GameObj& g) {
   }
 
   g.out << table << "\n";
+  return true;
 }
+
+const CommandDescriptor victory_cmd{
+    .name = "victory",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "victory [<count>]",
+    .description = "Display current victory standings and player rankings",
+    .handler = &victory,
+};
+
 }  // namespace GB::commands

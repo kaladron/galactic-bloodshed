@@ -105,12 +105,9 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"pay", GB::commands::pay},  // TODO(jeffbailey): !guest
       {"personal", GB::commands::personal},
       {"pledge", GB::commands::pledge},
-      {"power", GB::commands::power},
-      {"profile", GB::commands::profile},
       {"post", GB::commands::send_message},
-      {"production", GB::commands::production},
-      {"relation", GB::commands::relation},
       {"read", GB::commands::read_messages},
+      {"relation", GB::commands::relation},
       {"schedule", GB_schedule},
       {"send", GB::commands::send_message},
       {"shout", GB::commands::announce},
@@ -122,7 +119,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"uninvite", GB::commands::invite},
       {"unpledge", GB::commands::unpledge},
       {"upgrade", GB::commands::upgrade},
-      {"victory", GB::commands::victory},
       {"walk", GB::commands::walk},
       {"whois", GB::commands::whois},
   };

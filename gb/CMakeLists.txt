@@ -815,6 +815,18 @@ add_executable(fuel_test commands/fuel_test.cc)
 target_link_libraries(fuel_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_fuel_test COMMAND fuel_test)
 
+add_executable(profile_test commands/profile_test.cc)
+target_link_libraries(profile_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_profile_test COMMAND profile_test)
+
+add_executable(production_test commands/production_test.cc)
+target_link_libraries(production_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_production_test COMMAND production_test)
+
+add_executable(victory_test commands/victory_test.cc)
+target_link_libraries(victory_test PRIVATE test_module dallib gblib commands scnlib_module SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_victory_test COMMAND victory_test)
+
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug
     COMMAND ${CMAKE_COMMAND} -E env 

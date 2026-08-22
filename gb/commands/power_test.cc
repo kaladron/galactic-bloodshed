@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file power_test.cc
+/// \brief Test power command functionality and report output via
+/// CommandDescriptor.
+
 import dallib;
 import gblib;
 import test;
@@ -8,13 +12,11 @@ import std;
 
 #include <cassert>
 
-/// \file power_test.cc
-/// \brief Test power command functionality and report output
+namespace {
 
-void test_power_all_players() {
-  std::println(std::cout, "Test: power command - report for all players");
+void test_power_dispatch() {
+  std::println(std::cout, "Test: power command dispatch and reporting");
 
-  // Create in-memory database
   TestContext ctx;
   JsonStore store(ctx.db);
 
@@ -23,7 +25,6 @@ void test_power_all_players() {
   us.id = 1;
   us.VN_hitlist[0] = 3;
   us.VN_hitlist[1] = 7;
-
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
 
@@ -67,98 +68,39 @@ void test_power_all_players() {
   powers.save(p1);
   powers.save(p2);
 
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.race = ctx.em.peek_race(g.player());
 
-  // TEST: Run power command for all players
-  {
-    command_t cmd = {"power"};
-    GB::commands::power(cmd, g);
+  // 1. All players report
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"power"});
+  std::string out = g.out.str();
+  assert(out.contains("Galactic Bloodshed Power Report"));
+  assert(out.contains("Terrans") || out.contains("Martians"));
+  std::println(std::cout, "    ✓ power all players report succeeded");
 
-    // Verify report output
-    std::string out = g.out.str();
-    assert(out.find("Galactic Bloodshed Power Report") != std::string::npos);
-    assert(out.find("Terrans") != std::string::npos ||
-           out.find("Martians") != std::string::npos);
-  }
+  // 2. Specific player filter
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"power", "2"});
+  out = g.out.str();
+  assert(out.contains("Galactic Bloodshed Power Report"));
+  assert(out.contains("Martians"));
+  std::println(std::cout, "    ✓ power target player succeeded");
 
-  std::println(std::cout, "  ✅ Power command for all players passed!");
+  // 3. Error case: invalid player
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"power", "99"});
+  assert(g.out.str().contains("No such player"));
+  std::println(std::cout, "    ✓ power rejected non-existent player");
 }
 
-void test_power_target_player() {
-  std::println(std::cout, "Test: power command - target player filtering");
-
-  // Create in-memory database
-  TestContext ctx;
-  JsonStore store(ctx.db);
-
-  // Setup: Create universe and races
-  universe_struct us{};
-  us.id = 1;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  Race race1{};
-  race1.Playernum = 1;
-  race1.name = "Terrans";
-  race1.translate[0] = 100;
-  race1.translate[1] = 100;
-
-  Race race2{};
-  race2.Playernum = 2;
-  race2.name = "Martians";
-  race2.translate[0] = 100;
-  race2.translate[1] = 100;
-
-  RaceRepository races(store);
-  races.save(race1);
-  races.save(race2);
-
-  power p2{};
-  p2.id = 2;
-
-  PowerRepository powers(store);
-  powers.save(p2);
-
-  // Create GameObj for command execution
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
-  g.race = ctx.em.peek_race(g.player());
-
-  // TEST: Query specific valid target player #2
-  {
-    g.out.str("");
-    command_t cmd = {"power", "2"};
-    GB::commands::power(cmd, g);
-
-    // Verify output contains requested player name
-    std::string out = g.out.str();
-    assert(out.find("Galactic Bloodshed Power Report") != std::string::npos);
-    assert(out.find("Martians") != std::string::npos);
-  }
-
-  // TEST: Query invalid player #99
-  {
-    g.out.str("");
-    command_t cmd = {"power", "99"};
-    GB::commands::power(cmd, g);
-
-    // Verify error message
-    std::string out = g.out.str();
-    assert(out.find("No such player") != std::string::npos);
-  }
-
-  std::println(std::cout, "  ✅ Target player filtering test passed!");
-}
+}  // namespace
 
 int main() {
-  test_power_all_players();
-  test_power_target_player();
+  test_power_dispatch();
 
-  std::println(std::cout, "\n✅ All power tests passed!");
+  std::println(std::cout, "All power tests passed!");
   return 0;
 }

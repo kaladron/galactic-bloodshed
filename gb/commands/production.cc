@@ -48,7 +48,7 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
 }  // namespace
 
 namespace GB::commands {
-void production(const command_t& argv, GameObj& g) {
+bool production(const command_t& argv, GameObj& g) {
   g.out << "          ============ Production Report ==========\n";
 
   tabulate::Table table;
@@ -101,5 +101,18 @@ void production(const command_t& argv, GameObj& g) {
     }
 
   g.out << table << "\n";
+  return true;
 }
+
+const CommandDescriptor production_cmd{
+    .name = "production",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "production [<location> ...]",
+    .description = "Display planet and sector production estimates",
+    .handler = &production,
+};
+
 }  // namespace GB::commands

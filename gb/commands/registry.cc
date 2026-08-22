@@ -122,6 +122,9 @@ build_registry() {
         reg(fuel_cmd);
         reg(orbit_cmd);
         reg(order_cmd);
+        reg(power_cmd);
+        reg(production_cmd);
+        reg(profile_cmd);
         reg(repair_cmd);
         reg(route_cmd);
         reg(report_cmd);
@@ -137,6 +140,7 @@ build_registry() {
         reg(survey_cmd);
         reg(client_survey_cmd);
         reg(tactical_cmd);
+        reg(victory_cmd);
         reg(zoom_cmd);
 
         return map;

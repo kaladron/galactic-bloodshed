@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file profile.cc
+/// \brief Display racial profile, stats, morale, and planetary conditions.
+
 module;
 
 import gblib;
@@ -10,11 +13,11 @@ import tabulate;
 module commands;
 
 namespace GB::commands {
-void profile(const command_t& argv, GameObj& g) {
+bool profile(const command_t& argv, GameObj& g) {
   const auto* race = g.entity_manager.peek_race(g.player());
   if (!race) {
     g.out << "Race not found.\n";
-    return;
+    return false;
   }
 
   // Get information about ourselves
@@ -129,19 +132,19 @@ void profile(const command_t& argv, GameObj& g) {
     if (Cloak(*race)) g.out << "  Cloaking";
     if (Wormhole(*race)) g.out << "  Wormhole";
     g.out << "\n";
-    return;
+    return true;
   }
 
   // Get information about another player.
   player_t p = get_player(g.entity_manager, argv[1]);
   if (p == 0) {
     g.out << "Player does not exist.\n";
-    return;
+    return false;
   }
   const auto* r = g.entity_manager.peek_race(p);
   if (!r) {
     g.out << "Race not found.\n";
-    return;
+    return false;
   }
   g.out << std::format("------ Race report on {} ({}) ------\n", r->name, p);
   if (race->God && r->God) {
@@ -199,5 +202,19 @@ void profile(const command_t& argv, GameObj& g) {
   g.out << std::format(
       "Sector type preference : {}\n",
       race->translate[p.value - 1] > 80 ? Desnames[r->likesbest] : " ? ");
+  return true;
 }
+
+const CommandDescriptor profile_cmd{
+    .name = "profile",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "profile [<race name>]",
+    .description =
+        "Display racial profile, stats, morale, and planetary conditions",
+    .handler = &profile,
+};
+
 }  // namespace GB::commands

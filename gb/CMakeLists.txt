@@ -755,6 +755,10 @@ add_executable(examine_test commands/examine_test.cc)
 target_link_libraries(examine_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_examine_test COMMAND examine_test)
 
+add_executable(explore_test commands/explore_test.cc)
+target_link_libraries(explore_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_explore_test COMMAND explore_test)
+
 add_executable(dispatch_pipeline_test commands/dispatch_pipeline_test.cc)
 target_link_libraries(dispatch_pipeline_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_dispatch_pipeline_test COMMAND dispatch_pipeline_test)

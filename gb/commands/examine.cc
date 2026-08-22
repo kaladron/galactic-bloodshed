@@ -11,40 +11,40 @@ import gblib;
 module commands;
 
 namespace GB::commands {
-void examine(const command_t& argv, GameObj& g) {
+bool examine(const command_t& argv, GameObj& g) {
   const ap_t APcount = 0;
 
   if (argv.size() < 2) {
     g.out << "Examine what?\n";
-    return;
+    return false;
   }
 
   auto shipno = string_to_shipnum(argv[1]);
 
   if (!shipno) {
-    return;
+    return false;
   }
 
   try {
     g.entity_manager.peek_ship(*shipno);
   } catch (const EntityNotFoundError&) {
     g.out << "Ship not found.\n";
-    return;
+    return false;
   }
   auto ship = g.entity_manager.get_ship(*shipno);
 
   if (!ship->alive()) {
     g.out << "that ship is dead.\n";
-    return;
+    return false;
   }
   if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV) {
     g.out << "That ship it not visible to you.\n";
-    return;
+    return false;
   }
   const auto& star = *g.entity_manager.peek_star(ship->storbits());
   if (isclr(star.inhabited(), g.player())) {
     g.out << "That ship it not visible to you.\n";
-    return;
+    return false;
   }
 
   const auto* exam = g.entity_manager.peek_ship_exam(ship->type());
@@ -71,5 +71,18 @@ void examine(const command_t& argv, GameObj& g) {
     g.out << "This device has been irradiated;\n";
     g.out << "Its crew is dying and it cannot move for the time being.\n";
   }
+  return true;
 }
+
+const CommandDescriptor examine_cmd{
+    .name = "examine",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "examine <#shipnum>",
+    .description = "Examine a ship or object in detail",
+    .handler = &examine,
+};
+
 }  // namespace GB::commands

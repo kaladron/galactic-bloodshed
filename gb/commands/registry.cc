@@ -82,6 +82,7 @@ build_registry() {
 
         reg(shutdown_cmd);
         reg(purge_cmd);
+        reg(analysis_cmd);
         reg(bless_cmd);
         reg(capital_cmd);
         reg(governors_cmd);
@@ -97,6 +98,8 @@ build_registry() {
         reg(detonate_cmd);
         reg(dissolve_cmd);
         reg(enslave_cmd);
+        reg(examine_cmd);
+        reg(explore_cmd);
         reg(insurgency_cmd);
         reg(jettison_cmd);
         reg(land_cmd);

@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file examine_test.cc
+/// \brief Unit tests for examine command
+
+import commands;
 import dallib;
 import gblib;
 import test;
-import commands;
 import std;
 
 #include <cassert>
 
-int main() {
-  TestContext ctx;
+namespace {
+
+void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
   // Initialize universe
@@ -58,22 +62,42 @@ int main() {
   auto exam_handle = ctx.em.get_ship_exam(ShipType::STYPE_SHUTTLE);
   exam_handle->description =
       "Shuttle: SQLite stored short-range spacecraft description.";
+}
+
+void test_examine_dispatch() {
+  TestContext ctx;
+  setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
 
-  // Execute examine #1
-  command_t argv = {"examine", "#1"};
-  GB::commands::examine(argv, g);
+  // 1. Min args check: examine without arguments
+  ctx.assert_dispatch_rejected(g, {"examine"});
+  assert(g.out.str().contains("Syntax: examine <#shipnum>"));
+  std::println(std::cout, "    ✓ examine rejected with insufficient arguments");
 
-  std::string output = g.out.str();
-  assert(output.find(
-             "Shuttle: SQLite stored short-range spacecraft description.") !=
-         std::string::npos);
+  // 2. Happy path: examine #1
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"examine", "#1"});
+  assert(g.out.str().contains(
+      "Shuttle: SQLite stored short-range spacecraft description."));
+  std::println(std::cout, "    ✓ examine #1 succeeded with description");
 
-  std::println(std::cout, "✓ examine_test passed successfully!");
+  // 3. Domain error: non-existent ship
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"examine", "#999"});
+  assert(g.out.str().contains("Ship not found."));
+  std::println(std::cout, "    ✓ examine rejected non-existent ship");
+}
+
+}  // namespace
+
+int main() {
+  test_examine_dispatch();
+
+  std::println(std::cout, "All examine tests passed!");
   return 0;
 }

@@ -159,7 +159,7 @@ int main() {
   std::println(std::cout, "Basic analysis (all sectors)");
   {
     command_t argv = {"analysis"};
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     std::println(std::cout, "\n--- Output ---");
@@ -250,7 +250,7 @@ int main() {
   std::println(std::cout, "Analysis with bottom 5 mode");
   {
     command_t argv = {"analysis", "-"};
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     std::println(std::cout, "\n--- Output ---");
@@ -362,7 +362,7 @@ int main() {
   std::println(std::cout, "Analysis filtered to ocean sectors only");
   {
     command_t argv = {"analysis", "."};  // . is sea
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     std::println(std::cout, "\n--- Output ---");
@@ -379,7 +379,7 @@ int main() {
   std::println(std::cout, "Analysis filtered to land sectors only");
   {
     command_t argv = {"analysis", "*"};  // * is land
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     std::println(std::cout, "\n--- Output ---");
@@ -399,7 +399,7 @@ int main() {
   std::println(std::cout, "Analysis filtered to mountain sectors only");
   {
     command_t argv = {"analysis", "^"};  // ^ is mountain
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     std::println(std::cout, "\n--- Output ---");
@@ -415,7 +415,7 @@ int main() {
   std::println(std::cout, "Analysis filtered to desert sectors (special 'd')");
   {
     command_t argv = {"analysis", "d"};  // 'd' is desert (special case)
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     std::println(std::cout, "\n--- Output ---");
@@ -431,7 +431,7 @@ int main() {
   std::println(std::cout, "Analysis with player filter");
   {
     command_t argv = {"analysis", "1"};  // Filter to player 1
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     std::println(std::cout, "\n--- Output ---");
@@ -447,7 +447,7 @@ int main() {
   std::println(std::cout, "Combined sector type and player filter");
   {
     command_t argv = {"analysis", "*", "1"};  // Land sectors owned by player 1
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     std::println(std::cout, "\n--- Output ---");
@@ -475,7 +475,7 @@ int main() {
   {
     std::println(std::cout, "Test: Default filter matches all owners");
     command_t argv = {"analysis"};
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     // Should see stats for all players (1, 2, and 0 for unoccupied)
@@ -493,7 +493,7 @@ int main() {
   {
     std::println(std::cout, "Test: Player 0 filter matches only unoccupied");
     command_t argv = {"analysis", "0"};
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     assert(output.find("unoccupied") != std::string::npos &&
@@ -508,7 +508,7 @@ int main() {
     std::println(std::cout,
                  "Test: Specific player filter matches only that player");
     command_t argv = {"analysis", "1"};
-    GB::commands::analysis(argv, g);
+    ctx.assert_dispatch_success(g, argv);
 
     std::string output = g.out.str();
     assert(output.find("owned by 1") != std::string::npos &&
@@ -518,7 +518,7 @@ int main() {
 
     // Try player 2
     command_t argv2 = {"analysis", "2"};
-    GB::commands::analysis(argv2, g);
+    ctx.assert_dispatch_success(g, argv2);
 
     output = g.out.str();
     assert(output.find("owned by 2") != std::string::npos &&

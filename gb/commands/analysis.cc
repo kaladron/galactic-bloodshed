@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file analysis.cc
+/// \brief Statistical analysis of top/bottom sector categories on planets.
+
 module;
 
 import gblib;
@@ -388,7 +391,7 @@ std::optional<int> parse_player_number(const std::string& arg) {
 }  // namespace
 
 namespace GB::commands {
-void analysis(const command_t& argv, GameObj& g) {
+bool analysis(const command_t& argv, GameObj& g) {
   std::optional<SectorType> sector_type;  // nullopt does analysis on all types
   auto filter = PlayerFilter::all_players();
   auto mode = Mode::TopFive;
@@ -414,7 +417,7 @@ void analysis(const command_t& argv, GameObj& g) {
     if (auto player_num = parse_player_number(arg)) {
       if (*player_num > g.entity_manager.num_races()) {
         g.out << "No such player #.\n";
-        return;
+        return false;
       }
       filter = (*player_num == 0)
                    ? PlayerFilter::unoccupied()
@@ -431,12 +434,12 @@ void analysis(const command_t& argv, GameObj& g) {
 
     // Nothing matched - unrecognized argument
     g.out << std::format("Unrecognized argument: {}\n", arg);
-    return;
+    return false;
   }
 
   if (where.err) {
     g.out << "Invalid scope.\n";
-    return;
+    return false;
   }
 
   switch (where.level) {
@@ -444,17 +447,31 @@ void analysis(const command_t& argv, GameObj& g) {
       [[fallthrough]];
     case ScopeLevel::LEVEL_SHIP:
       g.out << "You can only analyze planets.\n";
-      break;
+      return false;
     case ScopeLevel::LEVEL_PLAN:
       do_analysis(g, filter, mode, sector_type, where.snum, where.pnum);
-      break;
+      return true;
     case ScopeLevel::LEVEL_STAR: {
       const auto& star = *g.entity_manager.peek_star(where.snum);
       for (planetnum_t pnum = 0; pnum < star.numplanets(); pnum++) {
         do_analysis(g, filter, mode, sector_type, where.snum, pnum);
       }
-      break;
+      return true;
     }
   }
+  return true;
 }
+
+const CommandDescriptor analysis_cmd{
+    .name = "analysis",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "analysis [ [-] [<sector type>] [<race #>] [<scope>] ]",
+    .description =
+        "Statistical analysis of top/bottom sector categories on planets",
+    .handler = &analysis,
+};
+
 }  // namespace GB::commands

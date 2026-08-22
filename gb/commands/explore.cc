@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file explore.cc
+/// \brief Global census and exploration survey of known stars and worlds.
+
 module;
 
 import gblib;
@@ -10,7 +13,7 @@ import tabulate;
 module commands;
 
 namespace GB::commands {
-void explore(const command_t& argv, GameObj& g) {
+bool explore(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   int starq = -1;
 
@@ -18,12 +21,12 @@ void explore(const command_t& argv, GameObj& g) {
     Place where{g, argv[1]};
     if (where.err) {
       g.out << "explore: bad scope.\n";
-      return;
+      return false;
     }
     if (where.level == ScopeLevel::LEVEL_SHIP ||
         where.level == ScopeLevel::LEVEL_UNIV) {
       g.out << std::format("Bad scope '{}'\n", argv[1]);
-      return;
+      return false;
     }
     starq = static_cast<int>(where.snum.value);
   }
@@ -98,5 +101,19 @@ void explore(const command_t& argv, GameObj& g) {
       }
     }
   }
+  return true;
 }
+
+const CommandDescriptor explore_cmd{
+    .name = "explore",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "explore [<where>]",
+    .description =
+        "Global census and exploration survey of known stars and worlds",
+    .handler = &explore,
+};
+
 }  // namespace GB::commands

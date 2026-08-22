@@ -25,7 +25,8 @@ export bool shutdown(const command_t&, GameObj&);
 export extern const CommandDescriptor shutdown_cmd;
 
 // Regular commands (take GameObj&)
-export void analysis(const command_t&, GameObj&);
+export bool analysis(const command_t&, GameObj&);
+export extern const CommandDescriptor analysis_cmd;
 export void announce(const command_t&, GameObj&);
 export void arm(const command_t&, GameObj&);
 export void autoreport(const command_t&, GameObj&);
@@ -62,8 +63,10 @@ export bool dump(const command_t&, GameObj&);
 export extern const CommandDescriptor dump_cmd;
 export bool enslave(const command_t&, GameObj&);
 export extern const CommandDescriptor enslave_cmd;
-export void examine(const command_t&, GameObj&);
-export void explore(const command_t&, GameObj&);
+export bool examine(const command_t&, GameObj&);
+export extern const CommandDescriptor examine_cmd;
+export bool explore(const command_t&, GameObj&);
+export extern const CommandDescriptor explore_cmd;
 export bool fire(const command_t&, GameObj&);
 export extern const CommandDescriptor fire_cmd;
 export bool cew(const command_t&, GameObj&);

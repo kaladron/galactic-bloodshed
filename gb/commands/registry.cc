@@ -141,6 +141,9 @@ build_registry() {
         reg(client_survey_cmd);
         reg(tactical_cmd);
         reg(declare_cmd);
+        reg(give_cmd);
+        reg(grant_cmd);
+        reg(pay_cmd);
         reg(pledge_cmd);
         reg(relation_cmd);
         reg(unpledge_cmd);

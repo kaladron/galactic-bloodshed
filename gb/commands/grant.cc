@@ -1,38 +1,35 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file grant.cc
-/// \brief Grant money to other players or governors.
+/// \brief Grant stars, ships, or treasury funds to governors.
 
 module;
 
-import std;
 import gblib;
 import notification;
 import session;
+import std;
+import scnlib;
 
 module commands;
 
 namespace GB::commands {
-void grant(const command_t& argv, GameObj& g) {
+
+bool grant(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  // ap_t APcount = 0; TODO(jeffbailey);
-  governor_t gov;
 
-  if (argv.size() < 3) {
-    g.out << "Syntax: grant <governor> star\n";
-    g.out << "        grant <governor> ship <shiplist>\n";
-    g.out << "        grant <governor> money <amount>\n";
-    return;
-  }
-  if ((gov = std::stoi(argv[1])) > MAXGOVERNORS) {
+  auto parsed_gov = scn::scan<int>(argv[1], "{}");
+  if (!parsed_gov || parsed_gov->value() < 0 ||
+      parsed_gov->value() > MAXGOVERNORS) {
     g.out << "Bad governor number.\n";
-    return;
+    return false;
   }
+  governor_t gov{static_cast<unsigned char>(parsed_gov->value())};
 
   if (!g.race->governor[gov.value].active) {
     g.out << "That governor is not active.\n";
-    return;
+    return false;
   }
 
   auto race_handle = g.entity_manager.get_race(Playernum);
@@ -41,13 +38,13 @@ void grant(const command_t& argv, GameObj& g) {
   if (argv[2] == "star") {
     if (g.level() != ScopeLevel::LEVEL_STAR) {
       g.out << "Please cs to the star system first.\n";
-      return;
+      return false;
     }
     starnum_t snum = g.snum();
     auto star_handle = g.entity_manager.get_star(snum);
     if (!star_handle.get()) {
       g.out << "Star not found.\n";
-      return;
+      return false;
     }
     star_handle->governor(Playernum) = gov;
     warn_player(
@@ -55,7 +52,14 @@ void grant(const command_t& argv, GameObj& g) {
         std::format("\"{}\" has granted you control of the /{} star system.\n",
                     race.governor[Governor.value].name,
                     star_handle->get_name()));
-  } else if (argv[2] == "ship") {
+    return true;
+  }
+
+  if (argv[2] == "ship") {
+    if (argv.size() < 4) {
+      g.out << "Syntax: grant <governor> ship <shiplist>\n";
+      return false;
+    }
     ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
     for (auto ship_handle : ships) {
       Ship& ship = *ship_handle;
@@ -71,16 +75,23 @@ void grant(const command_t& argv, GameObj& g) {
       g.out << std::format("{} granted to \"{}\"\n", ship,
                            race.governor[gov.value].name);
     }
-  } else if (argv[2] == "money") {
-    long amount = 0;
+    return true;
+  }
+
+  if (argv[2] == "money") {
     if (argv.size() < 4) {
       g.out << "Indicate the amount of money.\n";
-      return;
+      return false;
     }
-    amount = std::stoi(argv[3]);
+    auto parsed_amount = scn::scan<long>(argv[3], "{}");
+    if (!parsed_amount) {
+      g.out << "Invalid amount.\n";
+      return false;
+    }
+    long amount = parsed_amount->value();
     if (amount < 0 && Governor != 0) {
       g.out << "Only leaders may make take away money.\n";
-      return;
+      return false;
     }
     if (amount > race.governor[Governor.value].money)
       amount = race.governor[Governor.value].money;
@@ -102,8 +113,23 @@ void grant(const command_t& argv, GameObj& g) {
                               race.governor[Governor.value].name, -amount));
     race.governor[Governor.value].money -= amount;
     race.governor[gov.value].money += amount;
-    return;
-  } else
-    g.out << "You can't grant that.\n";
+    return true;
+  }
+
+  g.out << "You can't grant that.\n";
+  return false;
 }
+
+const CommandDescriptor grant_cmd{
+    .name = "grant",
+    .roles = {.leader_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "grant <governor #> <star|ship|money> [<shiplist|amount>]",
+    .description =
+        "Grant control of stars, ships, or treasury funds to a governor",
+    .handler = &grant,
+};
+
 }  // namespace GB::commands

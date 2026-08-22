@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file give.cc
+/// \brief Transfer ship ownership to a mutual ally.
+
 module;
 
 import session;
@@ -11,91 +14,74 @@ import std;
 module commands;
 
 namespace GB::commands {
-void give(const command_t& argv, GameObj& g) {
+bool give(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  ap_t APcount = 5;
-  player_t who;
-
-  who = get_player(g.entity_manager, argv[1]);
+  player_t who = get_player(g.entity_manager, argv[1]);
   if (who.value == 0) {
     g.out << "No such player.\n";
-    return;
+    return false;
   }
-  if (Governor != 0) {
-    g.out << "You are not authorized to do that.\n";
-    return;
-  }
+
   auto alien_handle = g.entity_manager.get_race(who);
   if (!alien_handle.get()) {
     g.out << "Race not found.\n";
-    return;
+    return false;
   }
   auto& alien = *alien_handle;
   const auto& race = *g.race;
   if (alien.Guest && !race.God) {
     g.out << "You can't give this player anything.\n";
-    return;
-  }
-  if (race.Guest) {
-    g.out << "You can't give anyone anything.\n";
-    return;
+    return false;
   }
   /* check to see if both players are mutually allied */
   if (!race.God &&
       !(isset(race.allied, who) && isset(alien.allied, Playernum))) {
     g.out << "You two are not mutually allied.\n";
-    return;
+    return false;
   }
   auto shipno = string_to_shipnum(argv[2]);
   if (!shipno) {
     g.out << "Illegal ship number.\n";
-    return;
+    return false;
   }
 
   try {
     g.entity_manager.peek_ship(*shipno);
   } catch (const EntityNotFoundError&) {
     g.out << "No such ship.\n";
-    return;
+    return false;
   }
   auto ship_handle = g.entity_manager.get_ship(*shipno);
   auto& ship = *ship_handle;
 
   if (ship.owner() != Playernum || !ship.alive()) {
-    DontOwnErr(g.entity_manager, Playernum, Governor, *shipno);
-    return;
+    DontOwnErr(g.entity_manager, Playernum, g.governor(), *shipno);
+    return false;
   }
   if (ship.type() == ShipType::STYPE_POD) {
     g.out << "You cannot change the ownership of spore pods.\n";
-    return;
+    return false;
   }
 
   if ((ship.popn() + ship.troops()) && !race.God) {
     g.out << "You can't give this ship away while it has crew/mil on board.\n";
-    return;
+    return false;
   }
   if (ship.ships() != 0 && !race.God) {
     g.out
         << "You can't give away this ship, it has other ships loaded on it.\n";
-    return;
+    return false;
   }
-  switch (ship.whatorbits()) {
-    case ScopeLevel::LEVEL_UNIV: {
-      const auto* univ = g.entity_manager.peek_universe();
-      if (!enufAP(g.entity_manager, Playernum, Governor,
-                  univ->AP[Playernum.value - 1], APcount)) {
-        return;
-      }
-      break;
+
+  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    if (!g.deduct_univ_ap(5)) {
+      g.out << "You don't have enough universe action points.\n";
+      return false;
     }
-    default: {
-      const auto& star = *g.entity_manager.peek_star(g.snum());
-      if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-                  APcount)) {
-        return;
-      }
-      break;
+  } else {
+    if (!g.deduct_ap(ship.storbits(), 5)) {
+      g.out << "You don't have enough action points in that system.\n";
+      return false;
     }
   }
 
@@ -126,17 +112,9 @@ void give(const command_t& argv, GameObj& g) {
     }
     default:
       g.out << "Something wrong with this ship's scope.\n";
-      return;
+      return false;
   }
 
-  switch (ship.whatorbits()) {
-    case ScopeLevel::LEVEL_UNIV:
-      deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
-      return;
-    default:
-      deductAPs(g, APcount, g.snum());
-      break;
-  }
   g.out << "Owner changed.\n";
   std::string givemsg =
       std::format("{} [{}] gave you {} at {}.\n", race.name, Playernum, ship,
@@ -148,5 +126,18 @@ void give(const command_t& argv, GameObj& g) {
                                       race.name, Playernum, alien.name, who);
     post(g.entity_manager, postmsg, NewsType::TRANSFER);
   }
+  return true;
 }
+
+const CommandDescriptor give_cmd{
+    .name = "give",
+    .roles = {.no_guests = true, .leader_only = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::dynamic(),
+    .min_args = 3,
+    .syntax = "give <race> <#ship>",
+    .description = "Transfer ownership of an uncrewed ship to a mutual ally",
+    .handler = &give,
+};
+
 }  // namespace GB::commands

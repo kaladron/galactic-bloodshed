@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file give_test.cc
+/// \brief Test give command functionality, ship ownership transfer, and
+/// validation rules.
+
 import dallib;
 import gblib;
 import test;
@@ -8,9 +12,12 @@ import std;
 
 #include <cassert>
 
-int main() {
-  // Initialize database
+namespace {
+
+void test_give_dispatch() {
+  std::println(std::cout, "Test: give command dispatch and ship transfer");
   TestContext ctx;
+  JsonStore store(ctx.db);
 
   // Create two test races - one giving, one receiving
   Race race1{};
@@ -29,25 +36,21 @@ int main() {
   race2.God = false;
   setbit<std::uint64_t>(race2.allied, 1U);  // Mutually allied with race 1
 
-  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race1);
   races.save(race2);
 
-  // Clear cache so EntityManager picks up races from database
-  ctx.em.clear_cache();
-
   // Create a test star
   star_struct star_data{};
-  star_data.star_id = 0;
+  star_data.star_id = 1;
   star_data.governor[0] = 0;
   star_data.name = "TestStar";
   star_data.xpos = 100.0;
   star_data.ypos = 100.0;
-  star_data.pnames = {"TestPlanet"};  // Star has 1 planet
+  star_data.pnames = {"TestPlanet"};
   Star star{star_data};
-  star.AP(player_t{1}) = 100;  // Give race 1 enough action points
-  setbit<std::uint64_t>(star.explored(), 1U);  // Mark explored by race 1
+  star.AP(player_t{1}) = 100;
+  setbit<std::uint64_t>(star.explored(), 1U);
   StarRepository stars_repo(store);
   stars_repo.save(star);
   const starnum_t star_id = star_data.star_id;
@@ -58,8 +61,6 @@ int main() {
   planet.planet_order() = 0;
   planet.Maxx() = 10;
   planet.Maxy() = 10;
-  planet.xpos() = 0.0;
-  planet.ypos() = 0.0;
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);
 
@@ -72,155 +73,82 @@ int main() {
   ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
   ship.storbits() = star_id;
   ship.pnumorbits() = 0;
-  ship.popn() = 0;    // No crew (required for transfer)
-  ship.troops() = 0;  // No troops (required for transfer)
-  ship.ships() = 0;   // No loaded ships (required for transfer)
+  ship.popn() = 0;
+  ship.troops() = 0;
+  ship.ships() = 0;
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
   const shipnum_t ship_id = ship.number();
 
-  // Flush entities to ensure they're in the database
-  ctx.em.flush_all();
-
-  // Create GameObj for testing
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(star_id);
   g.set_pnum(0);
 
-  // Test: Give ship to another player
-  {
-    // Debug: Check what races exist
-    std::println(std::cout, "Available races:");
-    for (auto race_handle : RaceList(ctx.em)) {
-      const auto& race = race_handle.read();
-      std::println(std::cout, "  Player {}: {}", race.Playernum, race.name);
-    }
+  // 1. Give ship to allied player
+  ctx.assert_dispatch_success(
+      g, {"give", "Receiver", std::format("#{}", ship_id.value)});
+  const auto* ship_verify = ctx.em.peek_ship(ship_id);
+  assert(ship_verify != nullptr);
+  assert(ship_verify->owner() == 2);
+  assert(ship_verify->governor() == 0);
 
-    command_t argv = {"give", "Receiver", std::to_string(ship_id.value)};
-    GB::commands::give(argv, g);
+  const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
+  assert(planet_verify != nullptr);
+  assert(planet_verify->info(player_t{2}).explored == 1);
 
-    // Debug: Check for error messages
-    std::string result = g.out.str();
-    if (!result.empty()) {
-      std::println(std::cout, "Give command output: {}", result);
-    }
+  const auto* star_verify = ctx.em.peek_star(star_id);
+  assert(star_verify != nullptr);
+  assert(isset<std::uint64_t>(star_verify->explored(), 2U));
+  std::println(std::cout, "    ✓ Ship ownership transferred to ally");
 
-    // The give command uses notify() which sends to connected clients,
-    // not g.out. In tests, we verify success by checking the database.
+  // 2. Non-leader governor rejected
+  auto ship2_handle = ctx.em.create_ship();
+  auto& ship2 = *ship2_handle;
+  ship2.owner() = 1;
+  ship2.governor() = 0;
+  ship2.type() = ShipType::OTYPE_PROBE;
+  ship2.alive() = 1;
+  ship2.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship2.storbits() = star_id;
+  ship2.pnumorbits() = 0;
+  const shipnum_t ship2_id = ship2.number();
 
-    // Verify ship ownership changed
-    ctx.em.clear_cache();
-    const auto* ship_verify = ctx.em.peek_ship(ship_id);
-    assert(ship_verify);
-    std::println(std::cout, "Ship owner: {} (expected 2)",
-                 ship_verify->owner());
-    std::println(std::cout, "Ship governor: {} (expected 0)",
-                 ship_verify->governor());
-    assert(ship_verify->owner() == 2);
-    assert(ship_verify->governor() == 0);  // Given to leader
+  g.set_governor(1);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"give", "Receiver", std::format("#{}", ship2_id.value)});
+  assert(g.out.str().contains(
+      "Only the leader (Governor 0) may use this command."));
+  std::println(std::cout, "    ✓ Governor rejection verified");
 
-    // Verify planet exploration bit set for receiver
-    const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
-    assert(planet_verify);
-    assert(planet_verify->info(player_t{2}).explored == 1);  // Race 2
+  // 3. Crewed ship cannot be given away
+  g.set_governor(0);
+  auto ship3_handle = ctx.em.create_ship();
+  auto& ship3 = *ship3_handle;
+  ship3.owner() = 1;
+  ship3.governor() = 0;
+  ship3.type() = ShipType::OTYPE_PROBE;
+  ship3.alive() = 1;
+  ship3.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship3.storbits() = star_id;
+  ship3.pnumorbits() = 0;
+  ship3.popn() = 10;
+  const shipnum_t ship3_id = ship3.number();
 
-    // Verify star exploration bit set for receiver
-    const auto* star_verify = ctx.em.peek_star(star_id);
-    assert(star_verify);
-    assert(isset<std::uint64_t>(star_verify->explored(), 2U));
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"give", "Receiver", std::format("#{}", ship3_id.value)});
+  assert(g.out.str().contains("crew/mil on board"));
+  std::println(std::cout, "    ✓ Crewed ship rejection verified");
+}
 
-    std::println(std::cout,
-                 "Give command test passed: Ship ownership transferred");
+}  // namespace
 
-    // Clear output for next test
-    g.out.str("");
-  }
-
-  // Test: Try to give ship from non-governor (should fail)
-  {
-    // Create another ship owned by race 1
-    auto ship2_handle = ctx.em.create_ship();
-    auto& ship2 = *ship2_handle;
-    ship2.owner() = 1;
-    ship2.governor() = 0;
-    ship2.type() = ShipType::OTYPE_PROBE;
-    ship2.alive() = 1;
-    ship2.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    ship2.storbits() = star_id;
-    ship2.pnumorbits() = 0;
-    ship2.popn() = 0;
-    ship2.troops() = 0;
-    ship2.ships() = 0;
-    const shipnum_t ship2_id = ship2.number();
-    std::println(std::cout, "Ship2 ID: {}", ship2_id);
-
-    // Ship is auto-saved when handle goes out of scope
-    ctx.em.clear_cache();
-
-    // Try as non-leader governor
-    g.set_governor(1);
-
-    command_t argv = {"give", "Receiver", std::to_string(ship2_id.value)};
-    GB::commands::give(argv, g);
-
-    std::string result = g.out.str();
-    std::println(std::cout, "Non-leader output: {}", result);
-    assert(result.find("not authorized") != std::string::npos);
-    g.out.str("");
-
-    // Verify ship ownership unchanged
-    ctx.em.clear_cache();
-    const auto* ship2_verify = ctx.em.peek_ship(ship2_id);
-    assert(ship2_verify);
-    std::println(std::cout, "Ship2 owner: {} (expected 1)",
-                 ship2_verify->owner());
-    assert(ship2_verify->owner() == 1);  // Still owned by race 1
-
-    std::println(std::cout,
-                 "Give command test passed: Non-governor cannot give");
-  }
-
-  // Test: Try to give ship with crew (should fail unless God)
-  {
-    g.set_governor(0);  // Reset to leader
-
-    // Create ship with crew
-    auto ship3_handle = ctx.em.create_ship();
-    auto& ship3 = *ship3_handle;
-    ship3.owner() = 1;
-    ship3.governor() = 0;
-    ship3.type() = ShipType::OTYPE_PROBE;
-    ship3.alive() = 1;
-    ship3.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    ship3.storbits() = star_id;
-    ship3.pnumorbits() = 0;
-    ship3.popn() = 10;  // Has crew
-    ship3.troops() = 0;
-    ship3.ships() = 0;
-    const shipnum_t ship3_id = ship3.number();
-
-    // Ship is auto-saved when handle goes out of scope
-    ctx.em.clear_cache();
-
-    command_t argv = {"give", "Receiver", std::to_string(ship3_id.value)};
-    GB::commands::give(argv, g);
-
-    std::string result = g.out.str();
-    assert(result.find("crew/mil on board") != std::string::npos);
-    g.out.str("");
-
-    // Verify ship ownership unchanged
-    const auto* ship3_verify = ctx.em.peek_ship(ship3_id);
-    assert(ship3_verify);
-    assert(ship3_verify->owner() == 1);  // Still owned by race 1
-
-    std::println(std::cout,
-                 "Give command test passed: Cannot give ship with crew");
-  }
-
-  std::println(std::cout, "\nAll give command tests passed!");
+int main() {
+  test_give_dispatch();
+  std::println(std::cout, "\n✅ All give command tests passed!");
   return 0;
 }

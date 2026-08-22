@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file grant_test.cc
+/// \brief Test grant command functionality, governor transfers, and validation
+/// rules.
+
 import dallib;
 import gblib;
 import test;
@@ -8,10 +12,14 @@ import std;
 
 #include <cassert>
 
-int main() {
-  TestContext ctx;
+namespace {
 
-  // Create test race with multiple governors via repository
+void test_grant_dispatch() {
+  std::println(std::cout, "Test: grant command dispatch and governor grants");
+  TestContext ctx;
+  JsonStore store(ctx.db);
+
+  // Create test race with multiple governors
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
@@ -21,31 +29,75 @@ int main() {
   race.governor[1].money = 500;
   race.governor[1].name = "SubGov";
 
-  // Save race via repository
-  JsonStore store(ctx.db);
   RaceRepository races(store);
   races.save(race);
 
-  // Create GameObj for command execution
+  // Create a star system
+  star_struct star_data{};
+  star_data.star_id = 1;
+  star_data.governor[0] = 0;
+  star_data.name = "SectorStar";
+  Star star{star_data};
+  StarRepository stars(store);
+  stars.save(star);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);  // Set race pointer like production
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  ctx.setup_game_obj(g, 1, 0);
 
-  std::println(std::cout, "Grant money to governor");
-  {
-    command_t argv = {"grant", "1", "money", "200"};
-    GB::commands::grant(argv, g);
+  // 1. Grant money to governor
+  ctx.assert_dispatch_success(g, {"grant", "1", "money", "200"});
+  const auto* saved_race = ctx.em.peek_race(1);
+  assert(saved_race != nullptr);
+  assert(saved_race->governor[0].money == 800);
+  assert(saved_race->governor[1].money == 700);
+  std::println(std::cout, "    ✓ Money granted to governor");
 
-    // Verify money was transferred
-    const auto* saved_race = ctx.em.peek_race(1);
-    assert(saved_race != nullptr);
-    assert(saved_race->governor[0].money == 800);  // 1000 - 200
-    assert(saved_race->governor[1].money == 700);  // 500 + 200
-    std::println(std::cout, "    ✓ Money granted: gov[0]={}, gov[1]={}",
-                 saved_race->governor[0].money, saved_race->governor[1].money);
-  }
+  // 2. Dock money from governor
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"grant", "1", "money", "-100"});
+  saved_race = ctx.em.peek_race(1);
+  assert(saved_race != nullptr);
+  assert(saved_race->governor[0].money == 900);
+  assert(saved_race->governor[1].money == 600);
+  std::println(std::cout, "    ✓ Money docked from governor");
 
+  // 3. Grant star when scoped to star
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"grant", "1", "star"});
+  const auto* saved_star = ctx.em.peek_star(1);
+  assert(saved_star != nullptr);
+  assert(saved_star->governor(player_t{1}) == 1);
+  std::println(std::cout, "    ✓ Star granted to governor");
+
+  // 4. Role check: Governor cannot grant
+  g.set_governor(1);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"grant", "1", "money", "100"});
+  assert(g.out.str().contains(
+      "Only the leader (Governor 0) may use this command."));
+  std::println(std::cout, "    ✓ Governor rejection verified");
+
+  // 5. Inactive governor rejection
+  g.set_governor(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"grant", "5", "money", "100"});
+  assert(g.out.str().contains("That governor is not active."));
+  std::println(std::cout, "    ✓ Inactive governor rejection verified");
+
+  // 6. Bad governor number
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"grant", "99", "money", "100"});
+  assert(g.out.str().contains("Bad governor number."));
+  std::println(std::cout, "    ✓ Bad governor number rejection verified");
+}
+
+}  // namespace
+
+int main() {
+  test_grant_dispatch();
   std::println(std::cout, "\n✅ All grant tests passed!");
   return 0;
 }

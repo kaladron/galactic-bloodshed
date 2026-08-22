@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file pay_test.cc
+/// \brief Test pay command functionality, treasury transfers, and role
+/// validation.
+
 import dallib;
 import gblib;
 import test;
@@ -8,7 +12,10 @@ import std;
 
 #include <cassert>
 
-int main() {
+namespace {
+
+void test_pay_dispatch() {
+  std::println(std::cout, "Test: pay command dispatch and treasury transfer");
   TestContext ctx;
   JsonStore store(ctx.db);
 
@@ -18,9 +25,7 @@ int main() {
   payer.name = "Payer";
   payer.Guest = false;
   payer.governor[0].money = 10000;
-  payer.governor[1].money = 5000;
-  RaceRepository races(store);
-  races.save(payer);
+  payer.governor[0].active = true;
 
   // Create payee race via repository
   Race payee{};
@@ -28,117 +33,72 @@ int main() {
   payee.name = "Payee";
   payee.Guest = false;
   payee.governor[0].money = 1000;
+  payee.governor[0].active = true;
+
+  RaceRepository races(store);
+  races.save(payer);
   races.save(payee);
 
-  // Test: Pay 500 from player 1 to player 2
-  {
-    auto payer_handle = ctx.em.get_race(1);
-    auto payee_handle = ctx.em.get_race(2);
-    auto& p = *payer_handle;
-    auto& a = *payee_handle;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
 
-    int amount = 500;
-    p.governor[0].money -= amount;
-    a.governor[0].money += amount;
-  }
+  // 1. Pay 500 from player 1 to player 2
+  ctx.assert_dispatch_success(g, {"pay", "2", "500"});
+  const auto* saved_payer = ctx.em.peek_race(1);
+  const auto* saved_payee = ctx.em.peek_race(2);
+  assert(saved_payer != nullptr);
+  assert(saved_payee != nullptr);
+  assert(saved_payer->governor[0].money == 9500);
+  assert(saved_payee->governor[0].money == 1500);
+  std::println(std::cout, "    ✓ Money transfer saved correctly");
 
-  // Verify: Money transferred
-  {
-    const auto* saved_payer = ctx.em.peek_race(1);
-    const auto* saved_payee = ctx.em.peek_race(2);
-    assert(saved_payer);
-    assert(saved_payee);
-    assert(saved_payer->governor[0].money == 9500);
-    assert(saved_payee->governor[0].money == 1500);
-    std::println(std::cout, "✓ Money transfer saved correctly");
-  }
+  // 2. Role check: Governor != 0 cannot pay
+  g.set_governor(1);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"pay", "2", "500"});
+  assert(g.out.str().contains(
+      "Only the leader (Governor 0) may use this command."));
+  std::println(std::cout, "    ✓ Governor rejection verified");
 
-  // Test: Large transfer
-  {
-    auto payer_handle = ctx.em.get_race(1);
-    auto payee_handle = ctx.em.get_race(2);
-    auto& p = *payer_handle;
-    auto& a = *payee_handle;
+  // 3. Insufficient funds rejection
+  g.set_governor(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"pay", "2", "999999"});
+  assert(g.out.str().contains("You don't have that much money to give!"));
+  std::println(std::cout, "    ✓ Insufficient funds rejection verified");
 
-    int amount = 5000;
-    p.governor[0].money -= amount;
-    a.governor[0].money += amount;
-  }
+  // 4. Negative amount rejection
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"pay", "2", "-100"});
+  assert(g.out.str().contains(
+      "You have to give a player a positive amount of money."));
+  std::println(std::cout, "    ✓ Negative amount rejection verified");
 
-  // Verify: Large transfer completed
-  {
-    const auto* saved_payer = ctx.em.peek_race(1);
-    const auto* saved_payee = ctx.em.peek_race(2);
-    assert(saved_payer);
-    assert(saved_payee);
-    assert(saved_payer->governor[0].money == 4500);
-    assert(saved_payee->governor[0].money == 6500);
-    std::println(std::cout, "✓ Large transfer saved correctly");
-  }
+  // 5. Invalid player rejection
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"pay", "99", "100"});
+  assert(g.out.str().contains("No such player.") ||
+         g.out.str().contains("Alien race not found."));
+  std::println(std::cout, "    ✓ Invalid player rejection verified");
 
-  // Test: Transfer from governor (not leader)
-  {
-    auto payer_handle = ctx.em.get_race(1);
-    auto payee_handle = ctx.em.get_race(2);
-    auto& p = *payer_handle;
-    auto& a = *payee_handle;
+  // 6. Cumulative transfer check
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"pay", "2", "1000"});
+  saved_payer = ctx.em.peek_race(1);
+  saved_payee = ctx.em.peek_race(2);
+  assert(saved_payer != nullptr);
+  assert(saved_payee != nullptr);
+  assert(saved_payer->governor[0].money == 8500);
+  assert(saved_payee->governor[0].money == 2500);
+  std::println(std::cout,
+               "    ✓ Cumulative transfer verified (payer: 8500, payee: 2500)");
+}
 
-    int amount = 1000;
-    p.governor[1].money -= amount;  // From governor 1
-    a.governor[0].money += amount;  // To leader
-  }
+}  // namespace
 
-  // Verify: Governor transfer completed
-  {
-    const auto* saved_payer = ctx.em.peek_race(1);
-    const auto* saved_payee = ctx.em.peek_race(2);
-    assert(saved_payer);
-    assert(saved_payee);
-    assert(saved_payer->governor[1].money == 4000);
-    assert(saved_payee->governor[0].money == 7500);
-    std::println(std::cout, "✓ Governor transfer saved correctly");
-  }
-
-  // Test: Multiple sequential transfers
-  {
-    for (int i = 0; i < 5; i++) {
-      auto payer_handle = ctx.em.get_race(1);
-      auto payee_handle = ctx.em.get_race(2);
-      auto& p = *payer_handle;
-      auto& a = *payee_handle;
-
-      int amount = 100;
-      p.governor[0].money -= amount;
-      a.governor[0].money += amount;
-    }
-  }
-
-  // Verify: All transfers accumulated
-  {
-    const auto* saved_payer = ctx.em.peek_race(1);
-    const auto* saved_payee = ctx.em.peek_race(2);
-    assert(saved_payer);
-    assert(saved_payee);
-    assert(saved_payer->governor[0].money == 4000);  // 4500 - 500
-    assert(saved_payee->governor[0].money == 8000);  // 7500 + 500
-    std::println(std::cout, "✓ Multiple transfers accumulated correctly");
-  }
-
-  // Test: Zero balance scenarios
-  {
-    auto payer_handle = ctx.em.get_race(1);
-    auto& p = *payer_handle;
-    p.governor[0].money = 0;
-  }
-
-  // Verify: Zero balance saved
-  {
-    const auto* saved = ctx.em.peek_race(1);
-    assert(saved);
-    assert(saved->governor[0].money == 0);
-    std::println(std::cout, "✓ Zero balance saved correctly");
-  }
-
-  std::println(std::cout, "All pay tests passed!");
+int main() {
+  test_pay_dispatch();
+  std::println(std::cout, "\n✅ All pay command tests passed!");
   return 0;
 }

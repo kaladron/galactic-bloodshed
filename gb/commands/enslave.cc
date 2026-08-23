@@ -57,7 +57,7 @@ bool enslave(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  // Get star name/planet name before deductAPs modifies star
+  // Get star name/planet name before modifying planet
   std::string star_name = star.get_name();
   std::string planet_name = star.get_planet_name(s->pnumorbits());
 

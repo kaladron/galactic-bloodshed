@@ -41,17 +41,6 @@ void DontOwnErr(EntityManager& em, player_t Playernum, governor_t Governor,
   push_telegram(em, Playernum, Governor, error_msg);
 }
 
-bool enufAP(EntityManager& em, player_t Playernum, governor_t Governor,
-            ap_t have, ap_t needed) {
-  if (have < needed) {
-    std::string ap_msg =
-        std::format("You don't have {} action points there.\n", needed);
-    push_telegram(em, Playernum, Governor, ap_msg);
-    return false;
-  }
-  return true;
-}
-
 /**
  * \brief Find the player/governor that matches passwords
  * \param racepass Password for the race
@@ -90,38 +79,6 @@ player_t get_player(EntityManager& em, const std::string& name) {
     if (name == race.name) return race.Playernum;
   }
   return 0;
-}
-
-void deductAPs(const GameObj& g, ap_t APs, ScopeLevel level) {
-  if (APs == 0) return;
-
-  if (level == ScopeLevel::LEVEL_UNIV) {
-    auto univ_handle = g.entity_manager.get_universe();
-    auto& univ = *univ_handle;
-    univ.AP[g.player().value - 1] =
-        std::max(0u, univ.AP[g.player().value - 1] - APs);
-    return;
-  }
-}
-
-void deductAPs(const GameObj& g, ap_t APs, starnum_t snum) {
-  if (APs == 0) return;
-
-  // Get star for modification (RAII auto-saves on scope exit)
-  auto star_handle = g.entity_manager.get_star(snum);
-  if (!star_handle.get()) {
-    return;
-  }
-
-  auto& star = *star_handle;
-  if (star.AP(g.player()) >= APs)
-    star.AP(g.player()) -= APs;
-  else {
-    star.AP(g.player()) = 0;
-    std::string cheater_msg = "WHOA!  You cheater!  Oooohh!  OOOOH!\n  I'm "
-                              "tellllllllliiiiiiinnnnnnnnnggggggggg!!!!!!!\n";
-    push_telegram(g.entity_manager, g.player(), g.governor(), cheater_msg);
-  }
 }
 
 std::optional<std::tuple<int, int, int, int>> get4args(std::string_view s) {

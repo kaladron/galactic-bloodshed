@@ -3,15 +3,12 @@
 /// \file load.cc
 /// \brief Functions for loading and unloading commodities to/from ships.
 
-module;
+module commands;
 
 import session;
 import gblib;
 import notification;
 import std;
-#undef stdout
-
-module commands;
 
 namespace {
 int landed_on(const Ship& s, const shipnum_t shipno) {
@@ -281,7 +278,6 @@ namespace GB::commands {
 bool load(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  ap_t APcount = 0;
   int mode = argv[0] == "load" ? 0 : 1;  // load or unload
   char commod;
   unsigned char sh = 0;
@@ -316,18 +312,6 @@ bool load(const command_t& argv, GameObj& g) {
           std::format("{} is irradiated and inactive.\n", s));
 
       continue;
-    }
-    if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      const auto* universe = g.entity_manager.peek_universe();
-      if (!enufAP(g.entity_manager, Playernum, Governor,
-                  universe->AP[Playernum.value - 1], APcount)) {
-        continue;
-      }
-    } else {
-      const auto* star = g.entity_manager.peek_star(s.storbits());
-      if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
-                  APcount))
-        continue;
     }
     if (!s.docked()) {
       g.out << std::format("{} is not landed or docked.\n", s);

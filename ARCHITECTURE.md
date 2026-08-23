@@ -579,16 +579,54 @@ Database (SQLite)
 
 ## Module Organization
 
-### Module Hierarchy
+### Module Architecture & Dependencies
 
-```
-gblib (primary module)
-├── gblib:types          - Core game types (Ship, Planet, Race, etc.)
-├── gblib:dal            - Database access layer
-├── gblib:repositories   - Repository implementations
-├── gblib:services       - Business logic services
-├── gblib:commands       - (Separate module for commands)
-└── gblib:*              - Other game systems (combat, movement, etc.)
+```mermaid
+graph TD
+    subgraph AppLayer ["Application Layer"]
+        Commands["commands (Player Commands)"]
+        Spec["commands:spec (CommandDescriptor & Dispatch)"]
+        Commands --> Spec
+    end
+
+    subgraph ServiceLayer ["Service & Network Layer"]
+        Session["session (Asio Networking)"]
+        Notification["notification (Message Routing)"]
+        AsioWrapper["asio (Boost.Asio Wrapper)"]
+        Session --> AsioWrapper
+    end
+
+    subgraph CoreLayer ["gblib (Core Game Library)"]
+        GameObjPart["gblib:gameobj (GameObj & AP Helpers)"]
+        ServicesPart["gblib:services (EntityManager)"]
+        ReposPart["gblib:repositories (Entity Repositories)"]
+        SessionRegPart["gblib:sessionregistry (Session Registry Interface)"]
+        DomainPart["gblib domain partitions (:types, :star, :planet, :ships, ...)"]
+        
+        ServicesPart --> ReposPart
+        ServicesPart --> DomainPart
+        ReposPart --> DomainPart
+    end
+
+    subgraph DalLayer ["Data Access Layer (dallib)"]
+        DAL["dallib (Database, JsonStore, Schema)"]
+        SQLite[("SQLite3 Storage")]
+        DAL --> SQLite
+    end
+
+    Commands --> GameObjPart
+    Commands --> ServicesPart
+    Commands --> Notification
+    Commands -. "who/emulate only" .-> Session
+
+    Notification --> ServicesPart
+    Notification --> SessionRegPart
+
+    Session --> SessionRegPart
+    Session --> DomainPart
+
+    ReposPart --> DAL
+    ServicesPart --> DAL
 ```
 
 ### Export Philosophy
@@ -610,7 +648,7 @@ gblib (primary module)
 // gblib-repositories.cppm
 export module gblib:repositories;
 
-import :dal;
+import dallib;
 import :types;
 
 // Export the repository classes

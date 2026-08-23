@@ -3,13 +3,10 @@
 /// \file jettison.cc
 /// \brief Functions for jettisoning cargo into deep space.
 
-module;
+module commands;
 
 import gblib;
 import std;
-#undef stdout
-
-module commands;
 
 namespace {
 int jettison_check(GameObj& g, int amt, int max) {
@@ -30,7 +27,6 @@ namespace GB::commands {
 bool jettison(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  ap_t APcount = 0;
   int amt;
   char commod;
   bool success = false;
@@ -57,19 +53,6 @@ bool jettison(const command_t& argv, GameObj& g) {
     if (!s.active()) {
       g.out << std::format("{} is irradiated and inactive.\n", s);
       continue;
-    }
-    if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      const auto* universe = g.entity_manager.peek_universe();
-      if (!enufAP(g.entity_manager, Playernum, Governor,
-                  universe->AP[Playernum.value - 1], APcount)) {
-        continue;
-      }
-    } else {
-      const auto* star = g.entity_manager.peek_star(s.storbits());
-      if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
-                  APcount)) {
-        continue;
-      }
     }
 
     if (argv.size() > 3)

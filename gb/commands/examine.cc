@@ -56,10 +56,11 @@ bool examine(const command_t& argv, GameObj& g) {
   }
 
   if (!ship->examined()) {
-    if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV)
-      deductAPs(g, APcount, ScopeLevel::LEVEL_UNIV);
-    else
-      deductAPs(g, APcount, ship->storbits());
+    if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV) {
+      g.deduct_univ_ap(APcount);
+    } else {
+      g.deduct_ap(ship->storbits(), APcount);
+    }
 
     ship->examined() = 1;
   }

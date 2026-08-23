@@ -298,6 +298,7 @@ target_sources(
           commands/repair.cc
           commands/route.cc
           commands/rst.cc
+          commands/segment.cc
           commands/tactical.cc
           commands/scrap.cc
           commands/sell.cc
@@ -314,6 +315,7 @@ target_sources(
           commands/transfer.cc
           commands/treasury.cc
           commands/unpledge.cc
+          commands/update.cc
           commands/upgrade.cc
           commands/victory.cc
           commands/vote.cc
@@ -922,6 +924,14 @@ add_test(NAME GB_auth_test COMMAND auth_test)
 add_executable(server_config_test services/server_config_test.cc)
 target_link_libraries(server_config_test PRIVATE test_module dallib gblib server_config SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_server_config_test COMMAND server_config_test)
+
+add_executable(update_test commands/update_test.cc)
+target_link_libraries(update_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_update_test COMMAND update_test)
+
+add_executable(segment_test commands/segment_test.cc)
+target_link_libraries(segment_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_segment_test COMMAND segment_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

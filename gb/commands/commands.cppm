@@ -14,8 +14,12 @@ export bool quit(const command_t&, GameObj&);
 export extern const CommandDescriptor quit_cmd;
 export bool purge(const command_t&, GameObj&);
 export extern const CommandDescriptor purge_cmd;
+export bool segment(const command_t&, GameObj&);
+export extern const CommandDescriptor segment_cmd;
 export bool shutdown(const command_t&, GameObj&);
 export extern const CommandDescriptor shutdown_cmd;
+export bool update(const command_t&, GameObj&);
+export extern const CommandDescriptor update_cmd;
 
 // Regular commands (take GameObj&)
 export bool allocate(const command_t&, GameObj&);

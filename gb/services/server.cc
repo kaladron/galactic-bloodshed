@@ -250,92 +250,65 @@ void Server::remove_session(std::shared_ptr<Session> session) {
 }
 
 bool Server::do_command(Session& session, std::string_view comm) {
-  auto argv = make_command_t(comm);
+  if (session.connected()) {
+    auto argv = make_command_t(comm);
+    GameObj g(session.entity_manager(), session.registry());
+    g.set_player(session.player());
+    g.set_governor(session.governor());
+    g.set_god(session.god());
+    g.set_snum(session.snum());
+    g.set_pnum(session.pnum());
+    g.set_shipno(session.shipno());
+    g.set_level(session.level());
+    g.race = session.entity_manager().peek_race(g.player());
 
-  if (session.connected() && session.god() && argv[0] == "@@update") {
-    const auto* race = session.entity_manager().peek_race(session.player());
-    if (!race || !race->God) {
-      session.out() << "Only deity can use this command.\n";
-    } else {
-      session.out() << "Starting update...\n";
-      session.flush_to_network();
-      do_update(session.entity_manager(), session.registry(), true);
-      session.out() << "Update completed.\n";
+    process_command(g, argv);
+
+    if (g.shutdown_requested()) {
+      shutdown_flag_ = true;
     }
-  } else if (session.connected() && session.god() && argv[0] == "@@segment") {
-    const auto* race = session.entity_manager().peek_race(session.player());
-    if (!race || !race->God) {
-      session.out() << "Only deity can use this command.\n";
-    } else {
-      int seg_num = 0;
-      if (argv.size() > 1) {
-        seg_num = std::stoi(argv[1]);
-      }
-      session.out() << "Starting segment movement...\n";
-      session.flush_to_network();
-      do_segment(session.entity_manager(), session.registry(), 1, seg_num);
-      session.out() << "Segment completed.\n";
+
+    if (g.disconnect_requested()) {
+      session.out() << g.out.str();
+      return false;
     }
+
+    session.set_player(g.player());
+    session.set_governor(g.governor());
+    session.set_god(g.god());
+    session.set_snum(g.snum());
+    session.set_pnum(g.pnum());
+    session.set_shipno(g.shipno());
+    session.set_level(g.level());
+
+    session.out() << g.out.str();
   } else {
-    if (session.connected()) {
-      GameObj g(session.entity_manager(), session.registry());
-      g.set_player(session.player());
-      g.set_governor(session.governor());
-      g.set_god(session.god());
-      g.set_snum(session.snum());
-      g.set_pnum(session.pnum());
-      g.set_shipno(session.shipno());
-      g.set_level(session.level());
-      g.race = session.entity_manager().peek_race(g.player());
-
-      process_command(g, argv);
-
-      if (g.shutdown_requested()) {
-        shutdown_flag_ = true;
-      }
-
-      if (g.disconnect_requested()) {
-        session.out() << g.out.str();
-        return false;
-      }
-
-      session.set_player(g.player());
-      session.set_governor(g.governor());
-      session.set_god(g.god());
-      session.set_snum(g.snum());
-      session.set_pnum(g.pnum());
-      session.set_shipno(g.shipno());
-      session.set_level(g.level());
-
-      session.out() << g.out.str();
-    } else {
-      check_connect(session, comm);
-      if (!session.connected()) {
-        session.out() << "Goodbye!\n";
-        return false;
-      }
-      GameObj g(session.entity_manager(), session.registry());
-      g.set_player(session.player());
-      g.set_governor(session.governor());
-      g.set_god(session.god());
-      g.set_snum(session.snum());
-      g.set_pnum(session.pnum());
-      g.set_shipno(session.shipno());
-      g.set_level(session.level());
-      g.race = session.entity_manager().peek_race(g.player());
-
-      check_for_telegrams(g);
-
-      command_t call_cs = {"cs"};
-      process_command(g, call_cs);
-
-      session.set_snum(g.snum());
-      session.set_pnum(g.pnum());
-      session.set_shipno(g.shipno());
-      session.set_level(g.level());
-
-      session.out() << g.out.str();
+    check_connect(session, comm);
+    if (!session.connected()) {
+      session.out() << "Goodbye!\n";
+      return false;
     }
+    GameObj g(session.entity_manager(), session.registry());
+    g.set_player(session.player());
+    g.set_governor(session.governor());
+    g.set_god(session.god());
+    g.set_snum(session.snum());
+    g.set_pnum(session.pnum());
+    g.set_shipno(session.shipno());
+    g.set_level(session.level());
+    g.race = session.entity_manager().peek_race(g.player());
+
+    check_for_telegrams(g);
+
+    command_t call_cs = {"cs"};
+    process_command(g, call_cs);
+
+    session.set_snum(g.snum());
+    session.set_pnum(g.pnum());
+    session.set_shipno(g.shipno());
+    session.set_level(g.level());
+
+    session.out() << g.out.str();
   }
   return true;
 }

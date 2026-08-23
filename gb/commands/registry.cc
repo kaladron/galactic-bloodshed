@@ -80,7 +80,9 @@ build_registry() {
           }
         };
 
+        reg(segment_cmd);
         reg(shutdown_cmd);
+        reg(update_cmd);
         reg(purge_cmd);
         reg(analysis_cmd);
         reg(bless_cmd);

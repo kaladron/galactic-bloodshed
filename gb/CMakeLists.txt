@@ -353,8 +353,8 @@ add_executable(who_test commands/who_test.cc)
 target_link_libraries(who_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_who_test COMMAND who_test)
 
-add_executable(emulate_test emulate_test.cc)
-target_link_libraries(emulate_test PRIVATE gblib dallib)
+add_executable(emulate_test commands/emulate_test.cc)
+target_link_libraries(emulate_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_emulate_test COMMAND emulate_test)
 
 add_executable(shlmisc_test shlmisc_test.cc)

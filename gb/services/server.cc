@@ -252,9 +252,7 @@ void Server::remove_session(std::shared_ptr<Session> session) {
 bool Server::do_command(Session& session, std::string_view comm) {
   auto argv = make_command_t(comm);
 
-  if (session.connected() && session.god() && argv[0] == "emulate") {
-    GB::commands::emulate(argv, session);
-  } else if (session.connected() && session.god() && argv[0] == "@@update") {
+  if (session.connected() && session.god() && argv[0] == "@@update") {
     const auto* race = session.entity_manager().peek_race(session.player());
     if (!race || !race->God) {
       session.out() << "Only deity can use this command.\n";
@@ -301,6 +299,9 @@ bool Server::do_command(Session& session, std::string_view comm) {
         return false;
       }
 
+      session.set_player(g.player());
+      session.set_governor(g.governor());
+      session.set_god(g.god());
       session.set_snum(g.snum());
       session.set_pnum(g.pnum());
       session.set_shipno(g.shipno());

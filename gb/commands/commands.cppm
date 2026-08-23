@@ -5,13 +5,7 @@ export module commands;
 export import :spec;
 
 import gblib;
-import session; // For SessionRegistry full definition
-
 namespace GB::commands {
-// Server-level commands (take Session& instead of GameObj&)
-// TODO(Step 9): Convert these to (const command_t&, GameObj&) after GameObj can
-// access Session
-export void emulate(const command_t&, Session&);
 
 // God commands
 export bool help(const command_t&, GameObj&);
@@ -74,6 +68,8 @@ export bool assault(const command_t&, GameObj&);
 export extern const CommandDescriptor assault_cmd;
 export bool dump(const command_t&, GameObj&);
 export extern const CommandDescriptor dump_cmd;
+export bool emulate(const command_t&, GameObj&);
+export extern const CommandDescriptor emulate_cmd;
 export bool enslave(const command_t&, GameObj&);
 export extern const CommandDescriptor enslave_cmd;
 export bool examine(const command_t&, GameObj&);

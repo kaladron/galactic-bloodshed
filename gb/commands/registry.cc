@@ -98,6 +98,7 @@ build_registry() {
         reg(detonate_cmd);
         reg(dissolve_cmd);
         reg(distance_cmd);
+        reg(emulate_cmd);
         reg(enslave_cmd);
         reg(examine_cmd);
         reg(explore_cmd);

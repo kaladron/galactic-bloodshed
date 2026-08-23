@@ -207,7 +207,8 @@ target_sources(
   commands
   PUBLIC FILE_SET CXX_MODULES FILES commands/commands.cppm
                                     commands/command_spec.cppm
-  PRIVATE commands/analysis.cc
+  PRIVATE commands/allocate.cc
+          commands/analysis.cc
           commands/announce.cc
           commands/arm.cc
           commands/autoreport.cc
@@ -281,6 +282,7 @@ target_sources(
           commands/tax.cc
           commands/technology.cc
           commands/tech_status.cc
+          commands/time.cc
           commands/toggle.cc
           commands/toxicity.cc
           commands/transfer.cc
@@ -624,6 +626,18 @@ add_test(NAME GB_treasury_test COMMAND treasury_test)
 add_executable(invite_test commands/invite_test.cc)
 target_link_libraries(invite_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_invite_test COMMAND invite_test)
+
+add_executable(allocate_test commands/allocate_test.cc)
+target_link_libraries(allocate_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_allocate_test COMMAND allocate_test)
+
+add_executable(time_test commands/time_test.cc)
+target_link_libraries(time_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_time_test COMMAND time_test)
+
+add_executable(schedule_test commands/schedule_test.cc)
+target_link_libraries(schedule_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_schedule_test COMMAND schedule_test)
 
 add_executable(survey_test commands/survey_test.cc)
 target_link_libraries(survey_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)

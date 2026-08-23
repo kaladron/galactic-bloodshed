@@ -181,6 +181,9 @@ build_registry() {
           reg(bid_cmd);
           reg(treasury_cmd);
         }
+        reg(allocate_cmd);
+        reg(schedule_cmd);
+        reg(time_cmd);
         if (VOTING) {
           reg(vote_cmd);
         }

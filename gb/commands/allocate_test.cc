@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: Apache-2.0
+
+/// \file allocate_test.cc
+/// \brief Unit tests for the allocate action points command.
+
+import dallib;
+import gblib;
+import test;
+import commands;
+import std;
+
+#include <cassert>
+
+int main() {
+  TestContext ctx;
+  JsonStore store(ctx.db);
+
+  // Create test race
+  Race race{};
+  race.Playernum = 1;
+  race.name = "Spenders";
+  race.Guest = false;
+  race.governor[0].active = true;
+
+  RaceRepository races(store);
+  races.save(race);
+
+  // Create test star 0
+  star_struct star{};
+  star.star_id = 0;
+  star.name = "Sol";
+  star.AP[0] = 20;
+
+  StarRepository stars(store);
+  stars.save(star);
+
+  // Setup Universe APs
+  {
+    auto univ_handle = ctx.em.get_universe();
+    univ_handle->AP[0] = 50;
+  }
+
+  // Create GameObj
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+
+  // 1. Scope rejection at universe level
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"allocate", "10"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at universe level verified");
+
+  // Switch to star scope
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+
+  // 2. Syntax / argument rejection
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"allocate"});
+  assert(g.out.str().contains("Syntax: allocate <action points>"));
+  std::println(std::cout, "    ✓ Missing argument syntax error verified");
+
+  // 3. Non-positive allocation rejection
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"allocate", "0"});
+  assert(g.out.str().contains(
+      "You must specify a positive amount of APs to allocate."));
+  std::println(std::cout, "    ✓ Non-positive allocation rejected");
+
+  // 4. Over-allocation rejection (more than universe has)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"allocate", "100"});
+  assert(g.out.str().contains("Illegal value (100) - maximum = 50"));
+  std::println(std::cout, "    ✓ Over-allocation rejected");
+
+  // 5. Successful allocation
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"allocate", "15"});
+  assert(g.out.str().contains("Allocated"));
+  {
+    ctx.em.clear_cache();
+    const auto* u = ctx.em.peek_universe();
+    const auto* s = ctx.em.peek_star(0);
+    assert(u->AP[0] == 35);
+    assert(s->AP(1) == 35);
+  }
+  std::println(std::cout, "    ✓ Successful allocation verified");
+
+  // 6. Guest race rejection
+  {
+    auto guest_race_handle = ctx.em.get_race(1);
+    guest_race_handle->Guest = true;
+  }
+  ctx.setup_game_obj(g);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"allocate", "5"});
+  assert(g.out.str().contains("Guest races cannot use this command."));
+  std::println(std::cout, "    ✓ Guest race rejection verified");
+
+  std::println(std::cout, "allocate_test passed!");
+  return 0;
+}

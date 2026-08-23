@@ -18,6 +18,5 @@ getracenum(EntityManager&, const std::string&, const std::string&);
 export std::optional<std::tuple<int, int, int, int>>
 get4args(std::string_view s);
 export player_t get_player(EntityManager&, const std::string&);
-export void allocateAPs(const command_t&, GameObj&);
 export void deductAPs(const GameObj&, ap_t, ScopeLevel);
 export void deductAPs(const GameObj&, ap_t, starnum_t);

@@ -71,23 +71,9 @@ bool shutdown_flag = false;  // Used by shutdown command
 
 static void process_command(GameObj&, const command_t& argv);
 
-static void GB_time(const command_t&, GameObj&);
-static void GB_schedule(const command_t&, GameObj&);
 static void initialize_block_data(EntityManager&);
 static void welcome_user(Session&, EntityManager&);
 static void check_connect(Session&, std::string_view);
-
-using CommandFunction = void (*)(const command_t&, GameObj&);
-
-static const std::unordered_map<std::string, CommandFunction>& getCommands() {
-  static std::unordered_map<std::string, CommandFunction> commands{
-      {"allocate", allocateAPs},
-      {"schedule", GB_schedule},
-      {"time", GB_time},
-  };
-
-  return commands;
-}
 
 namespace {
 command_t make_command_t(std::string_view message) {
@@ -787,7 +773,8 @@ static void check_connect(Session& session, std::string_view message) {
   temp_g.set_player(Playernum);
   temp_g.set_governor(Governor);
   temp_g.race = session.entity_manager().peek_race(Playernum);
-  GB_time({}, temp_g);
+  GB::commands::time({}, temp_g);
+  session.out() << temp_g.out.str();
 
   session.out() << std::format(
       "\nLast login      : {}",
@@ -836,19 +823,10 @@ static void process_command(GameObj& g, const command_t& argv) {
   }
   g.race = race;
 
-  // Dual-mode dispatch:
-  // 1. Check modern CommandDescriptor registry first
   if (const auto* desc = GB::commands::find_command_descriptor(argv[0])) {
     GB::commands::dispatch_command(g, *desc, argv);
   } else {
-    // 2. Fall back to legacy command table for unmigrated commands
-    const auto& commands = getCommands();
-    auto command = commands.find(argv[0]);
-    if (command != commands.end()) {
-      command->second(argv, g);
-    } else {
-      g.out << "'" << argv[0] << "':illegal command error.\n";
-    }
+    g.out << "'" << argv[0] << "':illegal command error.\n";
   }
 
   /* compute the prompt and send to the player */
@@ -867,39 +845,4 @@ static void initialize_block_data(EntityManager& entity_manager) {
     setbit(block_handle->invite, i);
     setbit(block_handle->pledge, i);
   }
-}
-
-/* report back the update status */
-static void GB_time(const command_t&, GameObj& g) {
-  std::time_t clk = std::time(nullptr);
-  const auto* state = g.entity_manager.peek_server_state();
-  if (!state) {
-    g.out << "Server state unavailable.\n";
-    return;
-  }
-  const auto& sched = get_schedule_info();
-  g.out << sched.start_buf;
-  g.out << sched.update_buf;
-  g.out << sched.segment_buf;
-  g.out << std::format("Current time    : {0}", std::ctime(&clk));
-}
-
-static void GB_schedule(const command_t&, GameObj& g) {
-  std::time_t clk = std::time(nullptr);
-  const auto* state = g.entity_manager.peek_server_state();
-  if (!state) {
-    g.out << "Server state unavailable.\n";
-    return;
-  }
-  const auto& sched = get_schedule_info();
-  g.out << std::format("{0} minute update intervals\n",
-                       state->update_time_minutes);
-  g.out << std::format("{0} movement segments per update\n", state->segments);
-  g.out << std::format("Current time    : {0}", std::ctime(&clk));
-  g.out << std::format(
-      "Next Segment {0:2d} : {1}",
-      state->nsegments_done == state->segments ? 1 : state->nsegments_done + 1,
-      std::ctime(&state->next_segment_time));
-  g.out << std::format("Next Update {0:3d} : {1}", sched.nupdates_done + 1,
-                       std::ctime(&state->next_update_time));
 }

@@ -25,6 +25,8 @@ export bool shutdown(const command_t&, GameObj&);
 export extern const CommandDescriptor shutdown_cmd;
 
 // Regular commands (take GameObj&)
+export bool allocate(const command_t&, GameObj&);
+export extern const CommandDescriptor allocate_cmd;
 export bool analysis(const command_t&, GameObj&);
 export extern const CommandDescriptor analysis_cmd;
 export bool announce(const command_t&, GameObj&);
@@ -163,7 +165,8 @@ export extern const CommandDescriptor weapons_cmd;
 export extern const CommandDescriptor factories_cmd;
 export bool tactical(const command_t&, GameObj&);
 export extern const CommandDescriptor tactical_cmd;
-export void sale(const command_t&, GameObj&);
+export bool schedule(const command_t&, GameObj&);
+export extern const CommandDescriptor schedule_cmd;
 export bool scrap(const command_t&, GameObj&);
 export extern const CommandDescriptor scrap_cmd;
 export bool send_message(const command_t&, GameObj&);
@@ -182,6 +185,8 @@ export bool technology(const command_t&, GameObj&);
 export extern const CommandDescriptor technology_cmd;
 export bool tech_status(const command_t&, GameObj&);
 export extern const CommandDescriptor status_cmd;
+export bool time(const command_t&, GameObj&);
+export extern const CommandDescriptor time_cmd;
 export bool toggle(const command_t&, GameObj&);
 export extern const CommandDescriptor toggle_cmd;
 export bool toxicity(const command_t&, GameObj&);

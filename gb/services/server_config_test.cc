@@ -1,0 +1,142 @@
+// SPDX-License-Identifier: Apache-2.0
+
+/// \file server_config_test.cc
+/// \brief Unit tests for CLI parsing, server configuration, schedule
+/// initialization, and block setup.
+
+import dallib;
+import gblib;
+import server_config;
+import test;
+import std;
+
+#include <cassert>
+
+namespace {
+
+void test_parse_server_args_default() {
+  const char* argv[] = {"GB"};
+  ServerConfig config = parse_server_args(1, argv);
+  assert(config.port == GB_PORT);
+  assert(config.update_time == DEFAULT_UPDATE_TIME);
+  assert(config.segments == MOVES_PER_UPDATE);
+}
+
+void test_parse_server_args_custom_port() {
+  const char* argv[] = {"GB", "2020"};
+  ServerConfig config = parse_server_args(2, argv);
+  assert(config.port == 2020);
+  assert(config.update_time == DEFAULT_UPDATE_TIME);
+  assert(config.segments == MOVES_PER_UPDATE);
+}
+
+void test_parse_server_args_custom_update_time() {
+  const char* argv[] = {"GB", "2020", "45"};
+  ServerConfig config = parse_server_args(3, argv);
+  assert(config.port == 2020);
+  assert(config.update_time == std::chrono::minutes(45));
+  assert(config.segments == MOVES_PER_UPDATE);
+}
+
+void test_parse_server_args_custom_segments() {
+  const char* argv[] = {"GB", "2020", "45", "6"};
+  ServerConfig config = parse_server_args(4, argv);
+  assert(config.port == 2020);
+  assert(config.update_time == std::chrono::minutes(45));
+  assert(config.segments == 6);
+}
+
+void test_initialize_schedule_state_first_run() {
+  ServerState state{};
+  ServerConfig config{
+      .port = 2020, .update_time = std::chrono::minutes(60), .segments = 4};
+
+  std::time_t now = 1000000;
+  initialize_schedule_state(state, config, now);
+
+  assert(state.update_time_minutes == 60);
+  assert(state.segments == 4);
+  assert(state.next_update_time == now + 3600);
+  assert(state.next_segment_time == now + 900);
+}
+
+void test_initialize_schedule_state_single_segment() {
+  ServerState state{};
+  ServerConfig config{
+      .port = 2020, .update_time = std::chrono::minutes(60), .segments = 1};
+
+  std::time_t now = 1000000;
+  initialize_schedule_state(state, config, now);
+
+  assert(state.segments == 1);
+  assert(state.next_segment_time == now + (144 * 3600));
+}
+
+void test_initialize_schedule_state_catchup_past_segments() {
+  ServerState state{};
+  state.next_update_time = 1003600;
+  state.next_segment_time = 900000;  // Past time (< now)
+
+  ServerConfig config{
+      .port = 2020, .update_time = std::chrono::minutes(60), .segments = 4};
+
+  std::time_t now = 1000000;
+  initialize_schedule_state(state, config, now);
+
+  assert(state.next_segment_time == state.next_update_time);
+  assert(state.nsegments_done == 4);
+}
+
+void test_initialize_block_data() {
+  TestContext ctx;
+  Race race1{};
+  race1.Playernum = 1;
+  race1.name = "Race1";
+
+  Race race2{};
+  race2.Playernum = 2;
+  race2.name = "Race2";
+
+  {
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(race1);
+    races.save(race2);
+
+    BlockRepository blocks(store);
+    block b1{};
+    b1.Playernum = 1;
+    blocks.save(b1);
+    block b2{};
+    b2.Playernum = 2;
+    blocks.save(b2);
+  }
+
+  initialize_block_data(ctx.em);
+
+  const auto* block1 = ctx.em.peek_block(1);
+  assert(block1 != nullptr);
+  assert(isset(block1->invite, player_t{1}));
+  assert(isset(block1->pledge, player_t{1}));
+
+  const auto* block2 = ctx.em.peek_block(2);
+  assert(block2 != nullptr);
+  assert(isset(block2->invite, player_t{2}));
+  assert(isset(block2->pledge, player_t{2}));
+}
+
+}  // namespace
+
+int main() {
+  test_parse_server_args_default();
+  test_parse_server_args_custom_port();
+  test_parse_server_args_custom_update_time();
+  test_parse_server_args_custom_segments();
+  test_initialize_schedule_state_first_run();
+  test_initialize_schedule_state_single_segment();
+  test_initialize_schedule_state_catchup_past_segments();
+  test_initialize_block_data();
+
+  std::println(std::cout, "✓ server_config_test passed!");
+  return 0;
+}

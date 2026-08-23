@@ -212,6 +212,14 @@ target_sources(
   PRIVATE services/auth.cc)
 target_link_libraries(auth PUBLIC gblib session commands)
 
+# Create server_config library (Service Layer)
+add_library(server_config)
+target_sources(
+  server_config
+  PUBLIC FILE_SET CXX_MODULES FILES services/server_config.cppm
+  PRIVATE services/server_config.cc)
+target_link_libraries(server_config PUBLIC gblib dallib)
+
 add_library(commands)
 target_sources(
   commands
@@ -309,7 +317,7 @@ target_link_libraries(commands PRIVATE gblib session notification SQLite::SQLite
                                        scnlib_module tabulate_module)
 
 add_executable(GB GB_server.cc)
-target_link_libraries(GB PRIVATE gblib commands asio_module session auth SQLite::SQLite3 glaze::glaze)
+target_link_libraries(GB PRIVATE gblib commands asio_module session auth server_config SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB)
 
 # Test targets
@@ -902,6 +910,10 @@ add_test(NAME GB_prompt_test COMMAND prompt_test)
 add_executable(auth_test services/auth_test.cc)
 target_link_libraries(auth_test PRIVATE test_module dallib gblib session auth commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_auth_test COMMAND auth_test)
+
+add_executable(server_config_test services/server_config_test.cc)
+target_link_libraries(server_config_test PRIVATE test_module dallib gblib server_config SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_server_config_test COMMAND server_config_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

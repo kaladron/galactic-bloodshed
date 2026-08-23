@@ -17,6 +17,7 @@ import commands;
 import dallib;
 import gblib;
 import notification;
+import server_config;
 import session;
 
 // Server class - implements SessionRegistry interface for the application layer
@@ -71,7 +72,6 @@ private:
 bool shutdown_flag = false;  // Used by shutdown command
 
 static void process_command(GameObj&, const command_t& argv);
-static void initialize_block_data(EntityManager&);
 
 // ============================================================================
 // Server class implementation
@@ -324,55 +324,14 @@ int main(int argc, char** argv) {
     std::println(std::cout, "      The segment password is '%s'.",
                  SEGMENT_PASSWORD);
   }
-  int port;
-  std::chrono::minutes update_time;  // Local for command parsing
-  switch (argc) {
-    case 2:
-      port = std::stoi(argv[1]);
-      update_time = std::chrono::minutes(DEFAULT_UPDATE_TIME);
-      state.update_time_minutes = update_time.count();
-      state.segments = MOVES_PER_UPDATE;
-      break;
-    case 3:
-      port = std::stoi(argv[1]);
-      update_time = std::chrono::minutes(std::stoi(argv[2]));
-      state.update_time_minutes = update_time.count();
-      state.segments = MOVES_PER_UPDATE;
-      break;
-    case 4:
-      port = std::stoi(argv[1]);
-      update_time = std::chrono::minutes(std::stoi(argv[2]));
-      state.update_time_minutes = update_time.count();
-      state.segments = std::stoi(argv[3]);
-      break;
-    default:
-      port = GB_PORT;
-      update_time = DEFAULT_UPDATE_TIME;
-      state.update_time_minutes = update_time.count();
-      state.segments = MOVES_PER_UPDATE;
-      break;
-  }
-  std::cerr << "      Port " << port << '\n';
-  std::cerr << "      " << update_time << " minutes between updates" << '\n';
+  ServerConfig config = parse_server_args(argc, argv);
+  initialize_schedule_state(state, config, clk);
+
+  std::cerr << "      Port " << config.port << '\n';
+  std::cerr << "      " << config.update_time << " minutes between updates"
+            << '\n';
   std::cerr << "      " << state.segments << " segments/update" << '\n';
   set_server_start_time(clk);
-
-  // Initialize state from database or set defaults if first run
-  if (state.next_update_time == 0) {
-    state.next_update_time = clk + (state.update_time_minutes * 60);
-  }
-  if (state.segments <= 1) {
-    state.next_segment_time = clk + (144 * 3600);
-  } else {
-    if (state.next_segment_time == 0) {
-      state.next_segment_time =
-          clk + (state.update_time_minutes * 60 / state.segments);
-    }
-    if (state.next_segment_time < clk) {
-      state.next_segment_time = state.next_update_time;
-      state.nsegments_done = state.segments;
-    }
-  }
 
   // Print initial schedule status
   std::print(stderr, "Last Update {:3d} : {}", 0, std::ctime(&clk));
@@ -398,7 +357,7 @@ int main(int argc, char** argv) {
 
   // Start server using new Asio-based Server class
   asio::io_context io;
-  Server server(io, port, entity_manager);
+  Server server(io, config.port, entity_manager);
   post(entity_manager, "Server started\n", NewsType::ANNOUNCE);
   server.run();
 
@@ -548,17 +507,4 @@ static void process_command(GameObj& g, const command_t& argv) {
   /* compute the prompt and send to the player */
   g.out << do_prompt(g);
   g.race = nullptr;
-}
-
-/**
- * Ensure each player has a self-invite/self-pledge in their block
- */
-static void initialize_block_data(EntityManager& entity_manager) {
-  for (auto race_handle : RaceList(entity_manager)) {
-    const auto& race = race_handle.read();
-    const player_t i = race.Playernum;
-    auto block_handle = entity_manager.get_block(i.value);
-    setbit(block_handle->invite, i);
-    setbit(block_handle->pledge, i);
-  }
 }

@@ -82,9 +82,6 @@ using CommandFunction = void (*)(const command_t&, GameObj&);
 static const std::unordered_map<std::string, CommandFunction>& getCommands() {
   static std::unordered_map<std::string, CommandFunction> commands{
       {"allocate", allocateAPs},
-      {"arm", GB::commands::arm},
-      {"autoreport", GB::commands::autoreport},
-      {"disarm", GB::commands::arm},
       {"invite", GB::commands::invite},
       {"make", GB::commands::make_mod},
       {"modify", GB::commands::make_mod},
@@ -92,7 +89,6 @@ static const std::unordered_map<std::string, CommandFunction>& getCommands() {
       {"time", GB_time},
       {"transfer", GB::commands::transfer},
       {"uninvite", GB::commands::invite},
-      {"upgrade", GB::commands::upgrade},
       {"walk", GB::commands::walk},
   };
 

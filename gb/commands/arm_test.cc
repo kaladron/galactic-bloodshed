@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file arm_test.cc
+/// \brief Unit tests for arm and disarm commands.
+
 import dallib;
 import gblib;
 import test;
@@ -8,7 +11,11 @@ import std;
 
 #include <cassert>
 
-int main() {
+namespace {
+
+void test_arm_and_disarm() {
+  std::println(std::cout,
+               "Test: arm and disarm command dispatch and domain logic");
   TestContext ctx;
   JsonStore store(ctx.db);
 
@@ -17,6 +24,7 @@ int main() {
   race.Playernum = 1;
   race.name = "Testers";
   race.Guest = false;
+  race.governor[0].active = true;
   race.governor[0].money = 10000;
   race.fighters = 100;
 
@@ -27,6 +35,7 @@ int main() {
   star_struct star{};
   star.star_id = 0;
   star.name = "Test Star";
+  star.governor[0] = 0;
   star.AP[0] = 100;
 
   StarRepository stars(store);
@@ -60,13 +69,47 @@ int main() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
+
+  // 1. Scope rejection at UNIV scope
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"arm", "5,5", "100"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at universe level verified");
+
+  // 2. Scope rejection at STAR scope
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"disarm", "5,5", "50"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at star level verified");
+
+  // 3. Guest rejection
+  {
+    auto guest_race_handle = ctx.em.get_race(1);
+    guest_race_handle->Guest = true;
+  }
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"arm", "5,5", "100"});
+  assert(g.out.str().contains("Guest races cannot use this command."));
+  std::println(std::cout, "    ✓ Guest rejection verified");
 
-  // Test arm command
-  command_t argv = {"arm", "5,5", "100"};
-  GB::commands::arm(argv, g);
+  // Restore non-guest race
+  {
+    auto race_handle = ctx.em.get_race(1);
+    race_handle->Guest = false;
+  }
+  ctx.setup_game_obj(g);
+
+  // 4. Test arm command success
+  ctx.assert_dispatch_success(g, {"arm", "5,5", "100"});
+  std::println(std::cout, "    ✓ Arm command succeeded");
 
   // Verify changes persisted
   ctx.em.clear_cache();
@@ -85,16 +128,25 @@ int main() {
   assert(saved_race);
   assert(saved_race->governor[0].money == 0);
 
-  // Test disarm
-  command_t argv2 = {"disarm", "5,5", "50"};
-  GB::commands::arm(argv2, g);
+  // 5. Test disarm command success
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+  ctx.assert_dispatch_success(g, {"disarm", "5,5", "50"});
+  std::println(std::cout, "    ✓ Disarm command succeeded");
 
   ctx.em.clear_cache();
   saved_smap = ctx.em.peek_sectormap(0, 0);
   const auto& saved_sect2 = saved_smap->get(5, 5);
   assert(saved_sect2.get_troops() == 50);
   assert(saved_sect2.get_popn() == 950);
+}
 
-  std::println(std::cout, "arm_test passed!");
+}  // namespace
+
+int main() {
+  test_arm_and_disarm();
+  std::println(std::cout, "\n✅ All arm and disarm tests passed!");
   return 0;
 }

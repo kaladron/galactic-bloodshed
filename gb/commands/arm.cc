@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file arm.cc
+/// \brief Arm or disarm sector populations.
+
 module;
 
 import gblib;
 import scnlib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
-void arm(const command_t& argv, GameObj& g) {
+
+bool arm(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   int mode;
@@ -25,46 +28,46 @@ void arm(const command_t& argv, GameObj& g) {
 
   if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "Change scope to planet level first.\n";
-    return;
+    return false;
   }
   const auto& star = *g.entity_manager.peek_star(g.snum());
   if (!star.control(Playernum, Governor)) {
     g.out << "You are not authorized to do that here.\n";
-    return;
+    return false;
   }
   auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& planet = *planet_handle;
 
   if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
-    return;
+    return false;
   }
 
   auto coords_opt = Coordinates::parse(argv[1]);
   if (!coords_opt) {
     g.out << "Bad format for sector.\n";
-    return;
+    return false;
   }
   const Coordinates coords = *coords_opt;
   if (!planet.is_valid(coords)) {
     g.out << "Illegal coordinates.\n";
-    return;
+    return false;
   }
 
   auto smap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
   if (!smap_handle.get()) {
     g.out << "Sector map not found.\n";
-    return;
+    return false;
   }
   auto& smap = *smap_handle;
   auto& sect = smap.get(coords);
   if (sect.get_owner() != Playernum) {
     g.out << "You don't own that sector.\n";
-    return;
+    return false;
   }
   if (mode) {
     max_allowed = MIN(sect.get_popn(), planet.info(Playernum).destruct *
@@ -72,23 +75,28 @@ void arm(const command_t& argv, GameObj& g) {
     if (argv.size() < 3)
       amount = max_allowed;
     else {
-      amount = std::stoul(argv[2]);
-      if (amount <= 0) {
+      try {
+        amount = std::stoi(argv[2]);
+        if (amount <= 0) {
+          g.out << "You must specify a positive number of civs to arm.\n";
+          return false;
+        }
+      } catch (const std::exception&) {
         g.out << "You must specify a positive number of civs to arm.\n";
-        return;
+        return false;
       }
     }
     amount = std::min(amount, max_allowed);
     if (!amount) {
       g.out << "You can't arm any civilians now.\n";
-      return;
+      return false;
     }
     /*    enlist_cost = ENLIST_TROOP_COST * amount; */
     money_t enlist_cost = g.race->fighters * amount;
     if (enlist_cost > g.race->governor[Governor.value].money) {
       g.out << std::format("You need {} money to enlist {} troops.\n",
                            enlist_cost, amount);
-      return;
+      return false;
     }
     auto race_handle = g.entity_manager.get_race(Playernum);
     auto& race_mut = *race_handle;
@@ -110,10 +118,15 @@ void arm(const command_t& argv, GameObj& g) {
     if (argv.size() < 3)
       amount = sect.get_troops();
     else {
-      amount = std::stoi(argv[2]);
-      if (amount <= 0) {
+      try {
+        amount = std::stoi(argv[2]);
+        if (amount <= 0) {
+          g.out << "You must specify a positive number of civs to arm.\n";
+          return false;
+        }
+      } catch (const std::exception&) {
         g.out << "You must specify a positive number of civs to arm.\n";
-        return;
+        return false;
       }
       amount = MIN(sect.get_troops(), amount);
     }
@@ -126,5 +139,29 @@ void arm(const command_t& argv, GameObj& g) {
     g.out << std::format("{} troops disarmed (now {} civilians, {} military)\n",
                          amount, sect.get_popn(), sect.get_troops());
   }
+  return true;
 }
+
+const CommandDescriptor arm_cmd{
+    .name = "arm",
+    .roles = {.no_guests = true, .star_control = true},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "arm <sector x,y> [<# of civs>]",
+    .description = "Convert civilian population to military units",
+    .handler = &arm,
+};
+
+const CommandDescriptor disarm_cmd{
+    .name = "disarm",
+    .roles = {.no_guests = true, .star_control = true},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::free(),
+    .min_args = 2,
+    .syntax = "disarm <sector x,y> [<# of troops>]",
+    .description = "Convert military units back to civilian population",
+    .handler = &arm,
+};
+
 }  // namespace GB::commands

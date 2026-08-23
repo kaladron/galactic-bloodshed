@@ -167,6 +167,10 @@ build_registry() {
         reg(block_cmd);
         reg(mobilize_cmd);
         reg(toxicity_cmd);
+        reg(arm_cmd);
+        reg(disarm_cmd);
+        reg(autoreport_cmd);
+        reg(upgrade_cmd);
         if (VOTING) {
           reg(vote_cmd);
         }

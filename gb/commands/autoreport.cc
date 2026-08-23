@@ -6,22 +6,23 @@
 
 module;
 
-import std;
 import gblib;
+import std;
 
 module commands;
 
 namespace GB::commands {
-void autoreport(const command_t& argv, GameObj& g) {
+
+bool autoreport(const command_t& argv, GameObj& g) {
   const auto* star = g.entity_manager.peek_star(g.snum());
   if (!star) {
     g.out << "Star not found.\n";
-    return;
+    return false;
   }
 
   if (g.governor() != 0 && star->governor(g.player()) != g.governor()) {
     g.out << "You are not authorized to do this here.\n";
-    return;
+    return false;
   }
 
   starnum_t snum = 0;
@@ -31,7 +32,7 @@ void autoreport(const command_t& argv, GameObj& g) {
     case 1:
       if (g.level() != ScopeLevel::LEVEL_PLAN) {
         g.out << "Scope must be a planet.\n";
-        return;
+        return false;
       }
       snum = g.snum();
       pnum = g.pnum();
@@ -40,21 +41,21 @@ void autoreport(const command_t& argv, GameObj& g) {
       Place place{g, argv[1]};
       if (place.level != ScopeLevel::LEVEL_PLAN) {
         g.out << "Scope must be a planet.\n";
-        return;
+        return false;
       }
       snum = place.snum;
       pnum = place.pnum;
     } break;
     default:
       g.out << "Invalid number of arguments.\n";
-      return;
+      return false;
   }
 
   // Get planet for modification (RAII auto-saves on scope exit)
   auto planet_handle = g.entity_manager.get_planet(snum, pnum);
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
 
   auto& p = *planet_handle;
@@ -70,5 +71,18 @@ void autoreport(const command_t& argv, GameObj& g) {
                        target_star ? target_star->get_planet_name(pnum)
                                    : "Unknown",
                        (p.info(g.player()).autorep ? "set" : "unset"));
+  return true;
 }
+
+const CommandDescriptor autoreport_cmd{
+    .name = "autoreport",
+    .roles = {.star_control = true},
+    .scopes = AllowedScopes::non_universe(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "autoreport [<planet>]",
+    .description = "Toggle automatic production reports for a planet",
+    .handler = &autoreport,
+};
+
 }  // namespace GB::commands

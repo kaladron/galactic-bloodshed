@@ -57,6 +57,9 @@ export struct AllowedScopes {
   static constexpr AllowedScopes star_or_univ() {
     return {.univ = true, .star = true};
   }
+  static constexpr AllowedScopes non_universe() {
+    return {.star = true, .planet = true, .ship = true};
+  }
 };
 
 /// AP cost configuration

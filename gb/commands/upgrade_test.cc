@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file upgrade_test.cc
+/// \brief Unit tests for upgrade command and AP deduction.
+
 import dallib;
 import gblib;
 import test;
@@ -8,7 +11,9 @@ import std;
 
 #include <cassert>
 
-int main() {
+namespace {
+
+void test_upgrade_command() {
   // Create test context
   TestContext ctx;
 
@@ -19,7 +24,7 @@ int main() {
   race.governor[0].active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
-  race.tech = 100.0;  // High tech to allow upgrades
+  race.tech = 500.0;  // High tech to allow upgrades
   race.morale = 100;
   race.God = false;
 
@@ -42,102 +47,161 @@ int main() {
   StarRepository stars_repo(store);
   stars_repo.save(star);
 
-  // Create a ship that can be upgraded (must have ABIL_MOD capability)
-  // STYPE_FIGHTER (type 1) is a common modifiable ship type
+  const auto type = ShipType::STYPE_FIGHTER;
   Ship ship{};
   ship.number() = 1;
   ship.owner() = 1;
   ship.governor() = 0;
   ship.alive() = true;
   ship.active() = true;
-  ship.type() = ShipType::STYPE_FIGHTER;
-  ship.build_type() = ShipType::STYPE_FIGHTER;
+  ship.type() = type;
+  ship.build_type() = type;
   ship.name() = "Upgradeable";
   ship.whatorbits() = ScopeLevel::LEVEL_STAR;
   ship.storbits() = 0;
   ship.xpos() = 100.0;
   ship.ypos() = 200.0;
-  ship.fuel() = 100.0;
-  ship.max_fuel() = 100.0;
+  ship.fuel() = 10.0;
+  ship.max_fuel() = Shipdata[type][ABIL_FUELCAP];
   ship.resource() = 500;  // Need resources to pay for upgrades
-  ship.max_resource() = 1000;
-  ship.popn() = 10;
-  ship.max_crew() = 10;
-  ship.armor() = 10;
+  ship.max_resource() = Shipdata[type][ABIL_CARGO];
+  ship.popn() = Shipdata[type][ABIL_MAXCREW];
+  ship.max_crew() = Shipdata[type][ABIL_MAXCREW];
+  ship.armor() = Shipdata[type][ABIL_ARMOR];
   ship.max_speed() = 5;
-  ship.max_destruct() = 10;
-  ship.mass() = 10.0;
+  ship.max_destruct() = Shipdata[type][ABIL_DESTCAP];
+  ship.max_hanger() = Shipdata[type][ABIL_HANGER];
+  ship.primary() = Shipdata[type][ABIL_GUNS];
+  ship.secondary() = Shipdata[type][ABIL_GUNS];
   ship.base_mass() = 10.0;
-  ship.build_cost() = 50;
+  ship.mass() = 10.0;
+  ship.build_cost() = static_cast<int>(cost(ship));
   ship.damage() = 0;  // No damage - required for upgrades
 
   // Save ship via repository
   ShipRepository ships_repo(store);
   ships_repo.save(ship);
 
-  // Create GameObj for command execution - must be at SHIP scope
+  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);  // Must be at ship scope for upgrade
+
+  // 1. Scope rejection at UNIV scope
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at universe level verified");
+
+  // 2. Scope rejection at STAR scope
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at star level verified");
+
+  // 3. Guest rejection
+  {
+    auto guest_race_handle = ctx.em.get_race(1);
+    guest_race_handle->Guest = true;
+  }
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
   g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
+  assert(g.out.str().contains("Guest races cannot use this command."));
+  std::println(std::cout, "    ✓ Guest rejection verified");
 
+  // Restore non-guest race
+  {
+    auto race_handle = ctx.em.get_race(1);
+    race_handle->Guest = false;
+  }
+  ctx.setup_game_obj(g);
+
+  // 4. Upgrade ship armor (at SHIP scope)
   std::println(std::cout, "Upgrade ship armor");
   {
-    ctx.em.clear_cache();
-    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
+    ctx.setup_game_obj(g);
+    g.set_level(ScopeLevel::LEVEL_SHIP);
+    g.set_shipno(1);
+    g.set_snum(0);
+
     const auto* ship_before = ctx.em.peek_ship(1);
     assert(ship_before != nullptr);
     int initial_armor = ship_before->armor();
+    int target_armor = initial_armor + 2;
     int initial_resource = ship_before->resource();
-    std::println(std::cout, "    Before: armor={}, resource={}", initial_armor,
-                 initial_resource);
+    const auto* star_before = ctx.em.peek_star(0);
+    assert(star_before->AP(1) == 10);
+    std::println(std::cout, "    Before: armor={}, resource={}, star AP={}",
+                 initial_armor, initial_resource, star_before->AP(1));
 
-    // upgrade armor 50
-    command_t argv = {"upgrade", "armor", "50"};
-    GB::commands::upgrade(argv, g);
+    // upgrade armor target_armor
+    ctx.assert_dispatch_success(
+        g, {"upgrade", "armor", std::to_string(target_armor)}, 1);
 
     // Clear cache to force reload from database
     ctx.em.clear_cache();
 
     const auto* ship_after = ctx.em.peek_ship(1);
     assert(ship_after != nullptr);
-    std::println(std::cout, "    After: armor={}, resource={}",
-                 ship_after->armor(), ship_after->resource());
+    const auto* star_after = ctx.em.peek_star(0);
+    assert(star_after->AP(1) == 9);  // 1 Star AP deducted
+    std::println(std::cout, "    After: armor={}, resource={}, star AP={}",
+                 ship_after->armor(), ship_after->resource(),
+                 star_after->AP(1));
 
-    // Armor should have increased (up to max of 100)
-    assert(ship_after->armor() >= initial_armor);
-    std::println(std::cout, "    ✓ Armor upgrade applied (was {}, now {})",
-                 initial_armor, ship_after->armor());
+    // Armor should have increased
+    assert(ship_after->armor() == target_armor);
+    std::println(
+        std::cout,
+        "    ✓ Armor upgrade applied and 1 Star AP deducted (was {}, now {})",
+        initial_armor, ship_after->armor());
   }
 
+  // 5. Upgrade ship speed
   std::println(std::cout, "Upgrade ship speed");
   {
-    ctx.em.clear_cache();
-    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
+    ctx.setup_game_obj(g);
+    g.set_level(ScopeLevel::LEVEL_SHIP);
+    g.set_shipno(1);
+    g.set_snum(0);
+
     const auto* ship_before = ctx.em.peek_ship(1);
     assert(ship_before != nullptr);
     int initial_speed = ship_before->max_speed();
+    int target_speed = initial_speed + 1;
     int initial_resource = ship_before->resource();
-    std::println(std::cout, "    Before: max_speed={}, resource={}",
-                 initial_speed, initial_resource);
+    const auto* star_before = ctx.em.peek_star(0);
+    assert(star_before->AP(1) == 9);
+    std::println(std::cout, "    Before: max_speed={}, resource={}, star AP={}",
+                 initial_speed, initial_resource, star_before->AP(1));
 
-    // upgrade speed 9 (max is 9)
-    command_t argv = {"upgrade", "speed", "9"};
-    GB::commands::upgrade(argv, g);
+    // upgrade speed target_speed
+    ctx.assert_dispatch_success(
+        g, {"upgrade", "speed", std::to_string(target_speed)}, 1);
 
     ctx.em.clear_cache();
 
     const auto* ship_after = ctx.em.peek_ship(1);
     assert(ship_after != nullptr);
-    std::println(std::cout, "    After: max_speed={}, resource={}",
-                 ship_after->max_speed(), ship_after->resource());
+    const auto* star_after = ctx.em.peek_star(0);
+    assert(star_after->AP(1) == 8);  // Another 1 Star AP deducted
+    std::println(std::cout, "    After: max_speed={}, resource={}, star AP={}",
+                 ship_after->max_speed(), ship_after->resource(),
+                 star_after->AP(1));
 
     // Speed should have increased
-    assert(ship_after->max_speed() >= initial_speed);
-    std::println(std::cout, "    ✓ Speed upgrade applied (was {}, now {})",
-                 initial_speed, ship_after->max_speed());
+    assert(ship_after->max_speed() == target_speed);
+    std::println(
+        std::cout,
+        "    ✓ Speed upgrade applied and 1 Star AP deducted (was {}, now {})",
+        initial_speed, ship_after->max_speed());
   }
 
   std::println(std::cout, "Verify upgrades persist after cache clear");
@@ -154,7 +218,12 @@ int main() {
 
     std::println(std::cout, "    ✓ Upgrades persisted to database");
   }
+}
 
+}  // namespace
+
+int main() {
+  test_upgrade_command();
   std::println(std::cout, "\n✅ All upgrade tests passed!");
   return 0;
 }

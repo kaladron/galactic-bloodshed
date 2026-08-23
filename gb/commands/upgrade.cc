@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file upgrade.cc
+/// \brief Upgrade ship characteristics and systems.
+
 module;
 
 import gblib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
+
 /* upgrade ship characteristics */
-void upgrade(const command_t& argv, GameObj& g) {
-  // TODO(jeffbailey): Fix unused ap_t APcount = 1;
+bool upgrade(const command_t& argv, GameObj& g) {
   int value;
   int oldcost;
   int newcost;
@@ -20,24 +22,24 @@ void upgrade(const command_t& argv, GameObj& g) {
 
   if (g.level() != ScopeLevel::LEVEL_SHIP) {
     g.out << "You have to change scope to the ship you wish to upgrade.\n";
-    return;
+    return false;
   }
   auto dirship_handle = g.entity_manager.get_ship(g.shipno());
   if (!dirship_handle.get()) {
     g.out << "Illegal dir value.\n";
-    return;
+    return false;
   }
   Ship& dirship = *dirship_handle;
   if (testship(dirship, g)) {
-    return;
+    return false;
   }
   if (dirship.damage()) {
     g.out << "You cannot upgrade damaged ships.\n";
-    return;
+    return false;
   }
   if (dirship.type() == ShipType::OTYPE_FACTORY) {
     g.out << "You can't upgrade factories.\n";
-    return;
+    return false;
   }
 
   const auto& race = *g.race;
@@ -51,12 +53,12 @@ void upgrade(const command_t& argv, GameObj& g) {
 
   if (value < 0) {
     g.out << "That's a ridiculous setting.\n";
-    return;
+    return false;
   }
 
   if (!Shipdata[dirship.build_type()][ABIL_MOD]) {
     g.out << "This ship cannot be upgraded.\n";
-    return;
+    return false;
   }
 
   if (argv[1] == "armor") {
@@ -76,7 +78,7 @@ void upgrade(const command_t& argv, GameObj& g) {
              !dirship.mount()) {
     if (!Crystal(race)) {
       g.out << "Your race does not now how to utilize crystal power yet.\n";
-      return;
+      return false;
     }
     ship.mount() = !ship.mount();
   } else if (argv[1] == "destruct" &&
@@ -93,7 +95,7 @@ void upgrade(const command_t& argv, GameObj& g) {
     if (argv[2] == "strength") {
       if (ship.primtype() == GTYPE_NONE) {
         g.out << "No caliber defined.\n";
-        return;
+        return false;
       }
       ship.primary() = std::stoi(argv[3]);
       ship.primary() = MAX(ship.primary(), dirship.primary());
@@ -106,20 +108,20 @@ void upgrade(const command_t& argv, GameObj& g) {
         ship.primtype() = MAX(GTYPE_HEAVY, dirship.primtype());
       else {
         g.out << "No such caliber.\n";
-        return;
+        return false;
       }
       ship.primtype() =
           MIN(shipdata_primary(dirship.build_type()), ship.primtype());
     } else {
       g.out << "No such gun characteristic.\n";
-      return;
+      return false;
     }
   } else if (argv[1] == "secondary" &&
              Shipdata[dirship.build_type()][ABIL_SECONDARY]) {
     if (argv[2] == "strength") {
       if (ship.sectype() == GTYPE_NONE) {
         g.out << "No caliber defined.\n";
-        return;
+        return false;
       }
       ship.secondary() = std::stoi(argv[3]);
       ship.secondary() = MAX(ship.secondary(), dirship.secondary());
@@ -132,22 +134,22 @@ void upgrade(const command_t& argv, GameObj& g) {
         ship.sectype() = MAX(GTYPE_HEAVY, dirship.sectype());
       else {
         g.out << "No such caliber.\n";
-        return;
+        return false;
       }
       ship.sectype() =
           MIN(shipdata_secondary(dirship.build_type()), ship.sectype());
     } else {
       g.out << "No such gun characteristic.\n";
-      return;
+      return false;
     }
   } else if (argv[1] == "cew" && Shipdata[dirship.build_type()][ABIL_CEW]) {
     if (!Cew(race)) {
       g.out << "Your race cannot build confined energy weapons.\n";
-      return;
+      return false;
     }
     if (!Shipdata[dirship.build_type()][ABIL_CEW]) {
       g.out << "This kind of ship cannot mount confined energy weapons.\n";
-      return;
+      return false;
     }
     value = std::stoi(argv[3]);
     if (argv[2] == "strength") {
@@ -156,22 +158,22 @@ void upgrade(const command_t& argv, GameObj& g) {
       ship.cew_range() = value;
     } else {
       g.out << "No such option for CEWs.\n";
-      return;
+      return false;
     }
   } else if (argv[1] == "laser" && Shipdata[dirship.build_type()][ABIL_LASER]) {
     if (!Laser(race)) {
       g.out << "Your race cannot build lasers.\n";
-      return;
+      return false;
     }
     if (Shipdata[dirship.build_type()][ABIL_LASER]) {
       ship.laser() = 1;
     } else {
       g.out << "That ship cannot be fitted with combat lasers.\n";
-      return;
+      return false;
     }
   } else {
     g.out << "That characteristic either doesn't exist or can't be modified.\n";
-    return;
+    return false;
   }
 
   /* check to see whether this ship can actually be built by this player */
@@ -179,7 +181,7 @@ void upgrade(const command_t& argv, GameObj& g) {
     g.out << std::format(
         "This upgrade requires an engineering technology of {:.1f}.\n",
         complex);
-    return;
+    return false;
   }
 
   /* check to see if the new ship will actually fit inside the hanger if it is
@@ -190,7 +192,7 @@ void upgrade(const command_t& argv, GameObj& g) {
     s2_handle_opt = g.entity_manager.get_ship(dirship.destshipno());
     if (!s2_handle_opt || !s2_handle_opt->get()) {
       g.out << "Parent ship not found.\n";
-      return;
+      return false;
     }
     s2 = &(*(*s2_handle_opt));
     if (s2->max_hanger() - (s2->hanger() - dirship.size()) < ship_size(ship)) {
@@ -199,7 +201,7 @@ void upgrade(const command_t& argv, GameObj& g) {
       g.out << std::format("{} more needed.\n",
                            ship_size(ship) - (s2->max_hanger() -
                                               (s2->hanger() - dirship.size())));
-      return;
+      return false;
     }
   }
 
@@ -209,7 +211,7 @@ void upgrade(const command_t& argv, GameObj& g) {
   netcost = race.God ? 0 : 2 * (newcost - oldcost); /* upgrade is expensive */
   if (newcost < oldcost) {
     g.out << "You cannot downgrade ships!\n";
-    return;
+    return false;
   }
   if (!race.God) {
     netcost += !netcost;
@@ -219,6 +221,7 @@ void upgrade(const command_t& argv, GameObj& g) {
     g.out << std::format("Old value {}r   New value {}r\n", oldcost, newcost);
     g.out << std::format(
         "You need {} resources on board to make this modification.\n", netcost);
+    return false;
   } else if (netcost || race.God) {
     g.out << std::format("Old value {}r   New value {}r\n", oldcost, newcost);
     g.out << std::format("Characteristic modified at a cost of {} resources.\n",
@@ -251,8 +254,22 @@ void upgrade(const command_t& argv, GameObj& g) {
     dirship.base_mass() = getmass(dirship);
     dirship.build_cost() = race.God ? 0 : cost(dirship);
     dirship.complexity() = complexity(dirship);
+    return true;
   } else {
     g.out << "You can not make this modification.\n";
+    return false;
   }
 }
+
+const CommandDescriptor upgrade_cmd{
+    .name = "upgrade",
+    .roles = {.no_guests = true},
+    .scopes = AllowedScopes::ship_only(),
+    .ap = APCost::fixed_star(1),
+    .min_args = 2,
+    .syntax = "upgrade <characteristic> [<value>]",
+    .description = "Upgrade ship characteristics and systems",
+    .handler = &upgrade,
+};
+
 }  // namespace GB::commands

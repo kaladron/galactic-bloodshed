@@ -25,6 +25,9 @@ jobs:
           apt-get update
           apt-get install -y libsqlite3-dev
           git config --global --add safe.directory '*'
+          ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld
+          ln -sf /usr/bin/lld-22 /usr/bin/lld
+          ln -sf /usr/bin/clang-scan-deps-22 /usr/bin/clang-scan-deps
           ln -sf /usr/bin/clang-format-22 /usr/bin/clang-format
           mkdir -p /lib/share/libc++
           ln -sf /usr/lib/llvm-22/share/libc++/v1 /lib/share/libc++/v1
@@ -45,7 +48,7 @@ jobs:
           echo "✅ Read-only entity list usage is correct"
 
       - name: Configure CMake
-        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clang++-22
+        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang-22 -DCMAKE_CXX_COMPILER=clang++-22
 
       - name: Check code formatting
         run: |
@@ -97,7 +100,7 @@ jobs:
           ln -sf /usr/lib/llvm-22/share/libc++/v1 /lib/share/libc++/v1
 
       - name: Configure CMake
-        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clang++-22
+        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang-22 -DCMAKE_CXX_COMPILER=clang++-22
 
       - name: Run Clang-Tidy on Changed Files
         run: |
@@ -132,7 +135,7 @@ jobs:
           ln -sf /usr/lib/llvm-22/share/libc++/v1 /lib/share/libc++/v1
 
       - name: Configure CMake
-        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clang++-22
+        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang-22 -DCMAKE_CXX_COMPILER=clang++-22
 
       - name: Build
         run: cmake --build build
@@ -172,7 +175,7 @@ jobs:
           ln -sf /usr/lib/llvm-22/share/libc++/v1 /lib/share/libc++/v1
 
       - name: Configure CMake with Coverage
-        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clang++-22 -DENABLE_COVERAGE=ON
+        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang-22 -DCMAKE_CXX_COMPILER=clang++-22 -DENABLE_COVERAGE=ON
 
       - name: Build
         run: cmake --build build

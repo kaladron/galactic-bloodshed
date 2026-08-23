@@ -28,8 +28,10 @@ protected:
   std::string table_name;
 
   // Derived classes must implement these for their specific type
-  virtual std::optional<std::string> serialize(const T& entity) const = 0;
-  virtual std::optional<T> deserialize(const std::string& json) const = 0;
+  [[nodiscard]] virtual std::optional<std::string>
+  serialize(const T& entity) const = 0;
+  [[nodiscard]] virtual std::optional<T>
+  deserialize(const std::string& json) const = 0;
 
 public:
   Repository(JsonStore& js, std::string table)
@@ -44,7 +46,7 @@ public:
   Repository& operator=(Repository&&) = default;
 
   // Save entity with given ID
-  bool save(KeyValue id, const T& entity) {
+  bool save(const KeyValue& id, const T& entity) {
     if (auto json = serialize(entity)) {
       return store.store(table_name, id, *json);
     }
@@ -52,7 +54,7 @@ public:
   }
 
   // Find entity by ID
-  std::optional<T> find(KeyValue id) {
+  std::optional<T> find(const KeyValue& id) {
     return store.retrieve(table_name, id).and_then([this](const auto& json) {
       return deserialize(json);
     });
@@ -66,7 +68,7 @@ public:
   }
 
   // Remove entity by ID
-  bool remove(KeyValue id) {
+  bool remove(const KeyValue& id) {
     return store.remove(table_name, id);
   }
 
@@ -100,7 +102,7 @@ template <FixedString Tag, typename T>
 struct to<JSON, ID<Tag, T>> {
   template <auto Opts>
   static void op(const ID<Tag, T>& id, is_context auto&& ctx, auto&& b,
-                 auto&& ix) noexcept {
+                 auto&& ix) {
     serialize<JSON>::op<Opts>(id.value, ctx, b, ix);
   }
 };
@@ -233,8 +235,10 @@ public:
   bool save(const Race& race);
 
 protected:
-  std::optional<std::string> serialize(const Race& race) const override;
-  std::optional<Race> deserialize(const std::string& json_str) const override;
+  [[nodiscard]] std::optional<std::string>
+  serialize(const Race& race) const override;
+  [[nodiscard]] std::optional<Race>
+  deserialize(const std::string& json_str) const override;
 };
 
 // RaceRepository implementation
@@ -403,8 +407,10 @@ public:
   shipnum_t count_all_ships();
 
 protected:
-  std::optional<std::string> serialize(const Ship& ship) const override;
-  std::optional<Ship> deserialize(const std::string& json_str) const override;
+  [[nodiscard]] std::optional<std::string>
+  serialize(const Ship& ship) const override;
+  [[nodiscard]] std::optional<Ship>
+  deserialize(const std::string& json_str) const override;
 };
 
 // ShipRepository implementation
@@ -504,8 +510,10 @@ public:
   bool save(const Planet& planet);
 
 protected:
-  std::optional<std::string> serialize(const Planet& planet) const override;
-  std::optional<Planet> deserialize(const std::string& json_str) const override;
+  [[nodiscard]] std::optional<std::string>
+  serialize(const Planet& planet) const override;
+  [[nodiscard]] std::optional<Planet>
+  deserialize(const std::string& json_str) const override;
 
 private:
   // Helper for internal use with explicit parameters
@@ -581,8 +589,10 @@ public:
   bool save(const Star& star);
 
 protected:
-  std::optional<std::string> serialize(const Star& star) const override;
-  std::optional<Star> deserialize(const std::string& json_str) const override;
+  [[nodiscard]] std::optional<std::string>
+  serialize(const Star& star) const override;
+  [[nodiscard]] std::optional<Star>
+  deserialize(const std::string& json_str) const override;
 };
 
 // StarRepository implementation
@@ -677,8 +687,10 @@ public:
   bool save_map(const SectorMap& map);
 
 protected:
-  std::optional<std::string> serialize(const Sector& sector) const override;
-  std::optional<Sector> deserialize(const std::string& json_str) const override;
+  [[nodiscard]] std::optional<std::string>
+  serialize(const Sector& sector) const override;
+  [[nodiscard]] std::optional<Sector>
+  deserialize(const std::string& json_str) const override;
 
 private:
   static std::vector<std::pair<std::string, KeyValue>>
@@ -808,7 +820,8 @@ public:
   }
 
 protected:
-  std::optional<std::string> serialize(const Commod& commod) const override {
+  [[nodiscard]] std::optional<std::string>
+  serialize(const Commod& commod) const override {
     auto result = glz::write_json(commod);
     if (result.has_value()) {
       return result.value();
@@ -816,7 +829,7 @@ protected:
     return std::nullopt;
   }
 
-  std::optional<Commod>
+  [[nodiscard]] std::optional<Commod>
   deserialize(const std::string& json_str) const override {
     Commod commod{};
     auto result = glz::read_json(commod, json_str);
@@ -844,7 +857,8 @@ public:
   }
 
 protected:
-  std::optional<std::string> serialize(const block& b) const override {
+  [[nodiscard]] std::optional<std::string>
+  serialize(const block& b) const override {
     auto result = glz::write_json(b);
     if (result.has_value()) {
       return result.value();
@@ -852,7 +866,8 @@ protected:
     return std::nullopt;
   }
 
-  std::optional<block> deserialize(const std::string& json_str) const override {
+  [[nodiscard]] std::optional<block>
+  deserialize(const std::string& json_str) const override {
     block b{};
     auto result = glz::read_json(b, json_str);
     if (!result) {
@@ -879,7 +894,8 @@ public:
   }
 
 protected:
-  std::optional<std::string> serialize(const power& p) const override {
+  [[nodiscard]] std::optional<std::string>
+  serialize(const power& p) const override {
     auto result = glz::write_json(p);
     if (result.has_value()) {
       return result.value();
@@ -887,7 +903,8 @@ protected:
     return std::nullopt;
   }
 
-  std::optional<power> deserialize(const std::string& json_str) const override {
+  [[nodiscard]] std::optional<power>
+  deserialize(const std::string& json_str) const override {
     power p{};
     auto result = glz::read_json(p, json_str);
     if (!result) {
@@ -915,7 +932,7 @@ public:
   }
 
 protected:
-  std::optional<std::string>
+  [[nodiscard]] std::optional<std::string>
   serialize(const universe_struct& universe) const override {
     auto result = glz::write_json(universe);
     if (result.has_value()) {
@@ -924,7 +941,7 @@ protected:
     return std::nullopt;
   }
 
-  std::optional<universe_struct>
+  [[nodiscard]] std::optional<universe_struct>
   deserialize(const std::string& json_str) const override {
     universe_struct universe{};
     auto result = glz::read_json(universe, json_str);
@@ -953,7 +970,7 @@ public:
   }
 
 protected:
-  std::optional<std::string>
+  [[nodiscard]] std::optional<std::string>
   serialize(const ServerState& state) const override {
     auto result = glz::write_json(state);
     if (result.has_value()) {
@@ -962,7 +979,7 @@ protected:
     return std::nullopt;
   }
 
-  std::optional<ServerState>
+  [[nodiscard]] std::optional<ServerState>
   deserialize(const std::string& json_str) const override {
     ServerState state{};
     auto result = glz::read_json(state, json_str);
@@ -1018,7 +1035,7 @@ public:
       std::string trimmed = section.substr(first, (last - first + 1));
 
       if (type < NUMSTYPES) {
-        ShipType stype = static_cast<ShipType>(type);
+        auto stype = static_cast<ShipType>(type);
         ShipExam exam{.ship_type = stype,
                       .name = std::string(Shipnames[type]),
                       .description = trimmed};
@@ -1030,7 +1047,8 @@ public:
   }
 
 protected:
-  std::optional<std::string> serialize(const ShipExam& exam) const override {
+  [[nodiscard]] std::optional<std::string>
+  serialize(const ShipExam& exam) const override {
     auto result = glz::write_json(exam);
     if (result.has_value()) {
       return result.value();
@@ -1038,7 +1056,7 @@ protected:
     return std::nullopt;
   }
 
-  std::optional<ShipExam>
+  [[nodiscard]] std::optional<ShipExam>
   deserialize(const std::string& json_str) const override {
     ShipExam exam{};
     auto result = glz::read_json(exam, json_str);

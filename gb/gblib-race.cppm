@@ -92,10 +92,10 @@ public:
   } governor[MAXGOVERNORS + 1];
 
   // Iterate over active governors only
-  auto active_governors() const;
+  [[nodiscard]] auto active_governors() const;
 
   // Iterate over all governors (active or not)
-  auto all_governors() const;
+  [[nodiscard]] auto all_governors() const;
 };
 
 // Entry returned when iterating over governors (const version)
@@ -148,10 +148,10 @@ public:
     }
   };
 
-  Iterator begin() const {
+  [[nodiscard]] Iterator begin() const {
     return Iterator(race_, 0);
   }
-  Iterator end() const {
+  [[nodiscard]] Iterator end() const {
     return Iterator(race_, MAXGOVERNORS + 1);
   }
 };
@@ -190,10 +190,10 @@ public:
     }
   };
 
-  Iterator begin() const {
+  [[nodiscard]] Iterator begin() const {
     return Iterator(race_, 0);
   }
-  Iterator end() const {
+  [[nodiscard]] Iterator end() const {
     return Iterator(race_, MAXGOVERNORS + 1);
   }
 };

@@ -177,7 +177,7 @@ public:
     return star_struct.star_id;
   }
 
-  Star(star_struct in) : star_struct(in) {}
+  Star(const star_struct& in) : star_struct(in) {}
 
 private:
   star_struct star_struct{};

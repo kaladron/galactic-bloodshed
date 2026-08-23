@@ -209,13 +209,13 @@ enum class Troops {
 
 // Used in CSP_PROFILE for discoveries
 enum class Discoveries {
-  Hyperdrive = 0,   // CSPD_HYPERDRIVE
-  Crystal = 1,      // CSPD_CRYSTAL
-  Laser = 2,        // CSPD_LASER
-  Cew = 3,          // CSPD_CEW
-  Avpm = 4,         // CSPD_AVPM
-  MaxNumDiscovery,  // CSPD_MAX_NUM_DISCOVERY
-  Unknown = 99      // CSPD_DISCOVERY_UNKNOWN
+  Hyperdrive = 0,       // CSPD_HYPERDRIVE
+  Crystal = 1,          // CSPD_CRYSTAL
+  Laser = 2,            // CSPD_LASER
+  Cew = 3,              // CSPD_CEW
+  Avpm = 4,             // CSPD_AVPM
+  MaxNumDiscovery = 5,  // CSPD_MAX_NUM_DISCOVERY
+  Unknown = 99          // CSPD_DISCOVERY_UNKNOWN
 };
 
 enum class PlayerType {

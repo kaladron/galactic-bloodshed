@@ -30,7 +30,7 @@ parse_ship_selection(std::string_view selection) {
   }
 
   // Check if it's a number
-  if (selection.size() > 0 && std::isdigit(selection.front())) {
+  if (!selection.empty() && std::isdigit(selection.front())) {
     return std::stoi(std::string(selection.begin(), selection.end()));
   }
 

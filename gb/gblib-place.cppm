@@ -64,10 +64,12 @@ void Place::getplace2(GameObj& g, std::string_view string,
         level = ScopeLevel::LEVEL_STAR;
         break;
     }
-    while (string.starts_with('.'))
+    while (string.starts_with('.')) {
       string.remove_prefix(1);
-    while (string.starts_with('/'))
+    }
+    while (string.starts_with('/')) {
       string.remove_prefix(1);
+    }
     getplace2(g, string, ignoreexpl);
     return;
   }
@@ -113,7 +115,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
         err = true;
         return;
       }
-      for (auto i = 0; i < star->numplanets(); i++)
+      for (auto i = 0; i < star->numplanets(); i++) {
         if (substr == star->get_planet_name(i)) {
           level = ScopeLevel::LEVEL_PLAN;
           pnum = i;
@@ -132,6 +134,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
           err = true;
           return;
         }
+      }
       g.out << std::format("No such planet {0}.\n", substr.data());
       err = true;
       return;

@@ -18,7 +18,7 @@ void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
    * it */
   ship.bombard() = 1;
   MindData mind{}; /* who to attack */
-  mind.target = stats.VN_brain.Most_mad;
+  mind.target = stats.VN_brain.most_mad;
   ship.whatdest() = ScopeLevel::LEVEL_PLAN;
   const auto* universe = em.peek_universe();
   if (success(50))
@@ -213,7 +213,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
         rcv_fuel(ship, (double)prod);
       }
       /* now try to construct another machine */
-      ShipType shipbuild = (stats.VN_brain.Total_mad > 100 && success(50))
+      ShipType shipbuild = (stats.VN_brain.total_mad > 100 && success(50))
                                ? ShipType::OTYPE_BERS
                                : ShipType::OTYPE_VN;
       if (ship.resource() >= Shipdata[shipbuild][ABIL_COST]) {
@@ -271,7 +271,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
                                  ? std::get<MindData>(ship.special())
                                  : MindData{};
             s2.special() = MindData{.progenitor = ship_mind.progenitor,
-                                    .target = stats.VN_brain.Most_mad,
+                                    .target = stats.VN_brain.most_mad,
                                     .generation = ship_mind.generation,
                                     .busy = 0,
                                     .tampered = ship_mind.tampered,

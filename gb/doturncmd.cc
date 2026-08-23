@@ -165,7 +165,7 @@ static void process_stars_and_planets(TurnState& state, bool update) {
 }
 
 static void process_races(TurnState& state, bool update) {
-  state.stats.VN_brain.Most_mad = 0; /* not mad at anyone for starts */
+  state.stats.VN_brain.most_mad = 0; /* not mad at anyone for starts */
 
   // Get universe data for VN hitlist
   auto sdata_handle = state.entity_manager.get_universe();
@@ -188,13 +188,13 @@ static void process_races(TurnState& state, bool update) {
         }
       }
       /* add VN program */
-      state.stats.VN_brain.Total_mad +=
+      state.stats.VN_brain.total_mad +=
           sdata_handle->VN_hitlist[player.value - 1];
       /* find out who they're most mad at */
-      if (state.stats.VN_brain.Most_mad > 0 &&
-          sdata_handle->VN_hitlist[state.stats.VN_brain.Most_mad - 1] <=
+      if (state.stats.VN_brain.most_mad > 0 &&
+          sdata_handle->VN_hitlist[state.stats.VN_brain.most_mad - 1] <=
               sdata_handle->VN_hitlist[player.value - 1]) {
-        state.stats.VN_brain.Most_mad = player.value;
+        state.stats.VN_brain.most_mad = player.value;
       }
     }
     if (VOTING) {

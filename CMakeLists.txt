@@ -70,8 +70,35 @@ if(RUN_CLANG_TIDY_EXE)
     COMMENT "Running clang-tidy with --fix..."
     VERBATIM
   )
+  add_custom_target(
+    tidy-full
+    COMMAND ${RUN_CLANG_TIDY_EXE}
+      -p ${CMAKE_BINARY_DIR}
+      "-config-file=${CMAKE_SOURCE_DIR}/.clang-tidy-full"
+      "-header-filter=.*(gb|dallib)/.*"
+      "-exclude-header-filter=.*third_party/.*"
+      -quiet
+      "(gb|dallib)/.*\\.(cc|cppm)$"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running exhaustive clang-tidy analysis..."
+    VERBATIM
+  )
+  add_custom_target(
+    tidy-full-fix
+    COMMAND ${RUN_CLANG_TIDY_EXE}
+      -p ${CMAKE_BINARY_DIR}
+      "-config-file=${CMAKE_SOURCE_DIR}/.clang-tidy-full"
+      "-header-filter=.*(gb|dallib)/.*"
+      "-exclude-header-filter=.*third_party/.*"
+      -quiet
+      -fix
+      "(gb|dallib)/.*\\.(cc|cppm)$"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running exhaustive clang-tidy analysis with --fix..."
+    VERBATIM
+  )
 else()
-  message(STATUS "run-clang-tidy not found, 'tidy' and 'tidy-fix' targets disabled")
+  message(STATUS "run-clang-tidy not found, 'tidy', 'tidy-fix', 'tidy-full' targets disabled")
 endif()
 
 # clang-format target for formatting all source files

@@ -54,7 +54,7 @@ public:
   // --- Update state ---
 
   /// Check if updates are in progress (suppress real-time notifications)
-  virtual bool update_in_progress() const = 0;
+  [[nodiscard]] virtual bool update_in_progress() const = 0;
 
   /// Set update in progress flag (used by turn processing)
   virtual void set_update_in_progress(bool) {
@@ -69,13 +69,14 @@ public:
   }
 
   /// Check if a player/governor is currently connected
-  virtual bool is_connected(player_t, governor_t) const {
+  [[nodiscard]] virtual bool is_connected(player_t, governor_t) const {
     return false;  // Default: nobody is connected
   }
 
   /// Get list of connected sessions (for 'who' command)
   /// Returns vector of SessionInfo for all connected players
-  virtual std::vector<SessionInfo> get_connected_sessions() const {
+  [[nodiscard]] virtual std::vector<SessionInfo>
+  get_connected_sessions() const {
     return {};  // Default: no sessions in test mode
   }
 };
@@ -91,7 +92,7 @@ public:
     return false;  // Not delivered in test mode
   }
 
-  bool update_in_progress() const override {
+  [[nodiscard]] bool update_in_progress() const override {
     return false;  // Never in update mode during tests
   }
 

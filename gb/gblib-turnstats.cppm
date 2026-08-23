@@ -36,7 +36,7 @@ export struct TurnStats {
   std::array<unsigned long, MAXPLAYERS> Sdatapopns{};
 
   // Star info (per star, per planet) - temperature modifications, intimidation
-  std::array<std::array<stinfo, MAXPLANETS>, NUMSTARS> Stinfo{};
+  std::array<std::array<Stinfo, MAXPLANETS>, NUMSTARS> Stinfo{};
 
   // Stars inhabited bitmap (one per star)
   std::array<unsigned long, NUMSTARS> StarsInhab{};
@@ -73,10 +73,10 @@ export struct TurnStats {
   bool Claims{};
 
   // VN brain state (VN AI state per turn)
-  vnbrain VN_brain{};
+  Vnbrain VN_brain{};
 
   // Sector processing info (per sector on current planet)
-  std::array<std::array<sectinfo, MAX_Y>, MAX_X> Sectinfo{};
+  std::array<std::array<Sectinfo, MAX_Y>, MAX_X> Sectinfo{};
 
   // Non-copyable to prevent accidental copies of large arrays
   TurnStats(const TurnStats&) = delete;

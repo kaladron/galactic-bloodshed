@@ -100,14 +100,13 @@ void order_impact(GameObj& g, const command_t& argv, Ship& ship) {
     g.out << "Only missiles can be designated for this.\n";
     return;
   }
-  int x = 0;
-  int y = 0;
-  if (std::sscanf(argv[3].c_str(), "%d,%d", &x, &y) != 2) {
+  auto coords = Coordinates::parse(argv[3]);
+  if (!coords) {
     g.out << "Usage: order <ship> designate <x>,<y>\n";
     return;
   }
-  ship.special() = ImpactData{.x = static_cast<unsigned char>(x),
-                              .y = static_cast<unsigned char>(y),
+  ship.special() = ImpactData{.x = static_cast<unsigned char>(coords->x),
+                              .y = static_cast<unsigned char>(coords->y),
                               .scatter = 0};
 }
 
@@ -138,16 +137,18 @@ void order_jump(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_protect(GameObj& g, const command_t& argv, Ship& ship) {
-  int j = 0;
+  shipnum_t j{0};
   if (argv.size() > 3) {
-    std::sscanf(argv[3].c_str() + (argv[3][0] == '#'), "%d", &j);
+    if (auto target_num = string_to_shipnum(argv[3])) {
+      j = *target_num;
+    }
   }
   if (j == ship.number()) {
     g.out << "You can't do that.\n";
     return;
   }
   if (can_bombard(ship)) {
-    if (!j) {
+    if (j == 0) {
       ship.protect().on = 0;
     } else {
       ship.protect().on = 1;

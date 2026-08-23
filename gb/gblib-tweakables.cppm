@@ -40,7 +40,7 @@ export constexpr int DISCONNECT_TIME = 7200;  // maximum idle time
 export constexpr int MAX_COMMAND_LEN =
     512;  // Maximum length of a single command
 export constexpr std::size_t MAX_WRITE_QUEUE_SIZE =
-    1024 * 1024;  // 1MB - disconnect slow clients
+    1024UL * 1024UL;  // 1MB - disconnect slow clients
 export constexpr std::size_t MAX_INPUT_QUEUE_SIZE =
     1000;  // Maximum queued commands
 export constexpr std::time_t IDLE_TIMEOUT_SECONDS =

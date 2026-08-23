@@ -88,23 +88,23 @@ export enum Conditions {
   TOXIC = 10,
 };
 
-export struct stinfo {
-  short temp_add; /* addition to temperature to each planet */
-  unsigned char Thing_add;
+export struct Stinfo {
+  short temp_add{0}; /* addition to temperature to each planet */
+  unsigned char thing_add{0};
   /* new Thing colony on this planet */
-  unsigned char inhab;       /* explored by anybody */
-  unsigned char intimidated; /* assault platform is here */
+  unsigned char inhab{0};       /* explored by anybody */
+  unsigned char intimidated{0}; /* assault platform is here */
 };
 
-export struct vnbrain {
-  unsigned short Total_mad; /* total # of VN's destroyed so far */
-  unsigned char Most_mad;   /* player most mad at */
+export struct Vnbrain {
+  unsigned short total_mad{0}; /* total # of VN's destroyed so far */
+  unsigned char most_mad{0};   /* player most mad at */
 };
 
-export struct sectinfo {
-  player_t explored;  /* sector has been explored */
-  unsigned char VN;   /* this sector has a VN */
-  unsigned char done; /* this sector has been updated */
+export struct Sectinfo {
+  player_t explored{0};  /* sector has been explored */
+  unsigned char vn{0};   /* this sector has a VN */
+  unsigned char done{0}; /* this sector has been updated */
 };
 
 export struct ServerState {
@@ -114,23 +114,23 @@ export struct ServerState {
   std::time_t next_segment_time{0};  // Next segment timestamp
   int update_time_minutes{10};       // Interval between updates in minutes
   segments_t nsegments_done{0};      // Segments completed this update
-  std::string welcome_message{};  // Welcome message shown to connecting players
+  std::string welcome_message;  // Welcome message shown to connecting players
 };
 
 export struct Commod {
   int id{0};  // Commodity ID for database persistence
-  player_t owner;
-  governor_t governor;
-  CommodType type;
-  std::uint64_t amount;
-  bool deliver; /* whether the lot is ready for shipping or not */
-  money_t bid;
-  player_t bidder;
-  governor_t bidder_gov;
-  starnum_t star_from; /* where the stuff originated from */
-  planetnum_t planet_from;
-  starnum_t star_to; /* where it goes to */
-  planetnum_t planet_to;
+  player_t owner{0};
+  governor_t governor{0};
+  CommodType type{CommodType::RESOURCE};
+  std::uint64_t amount{0};
+  bool deliver{false}; /* whether the lot is ready for shipping or not */
+  money_t bid{0};
+  player_t bidder{0};
+  governor_t bidder_gov{0};
+  starnum_t star_from{0}; /* where the stuff originated from */
+  planetnum_t planet_from{0};
+  starnum_t star_to{0}; /* where it goes to */
+  planetnum_t planet_to{0};
 };
 
 export struct Victory {
@@ -145,13 +145,13 @@ export struct Victory {
     // Must be equal
     return std::weak_ordering::equivalent;
   }
-  player_t racenum;
+  player_t racenum{0};
   std::string name;
   bool no_count = false;
-  double tech;
-  int Thing;
-  int IQ;
-  unsigned long rawscore;
+  double tech{0.0};
+  int thing{0};
+  int iq{0};
+  unsigned long rawscore{0};
 };
 
 export struct Coordinates {
@@ -159,7 +159,7 @@ export struct Coordinates {
   int y{0};
 
   constexpr Coordinates() = default;
-  constexpr Coordinates(int x_, int y_) noexcept : x(x_), y(y_) {}
+  constexpr Coordinates(int x_val, int y_val) noexcept : x(x_val), y(y_val) {}
 
   constexpr Coordinates operator+(const Coordinates& other) const noexcept {
     return {x + other.x, y + other.y};
@@ -190,35 +190,45 @@ export struct Coordinates {
     int x_val = 0;
     int y_val = 0;
     auto comma_pos = str.find(',');
-    if (comma_pos == std::string_view::npos) return std::nullopt;
+    if (comma_pos == std::string_view::npos) {
+      return std::nullopt;
+    }
 
     auto x_str = str.substr(0, comma_pos);
     auto y_str = str.substr(comma_pos + 1);
 
     while (!x_str.empty() &&
-           std::isspace(static_cast<unsigned char>(x_str.front())))
+           std::isspace(static_cast<unsigned char>(x_str.front()))) {
       x_str.remove_prefix(1);
+    }
     while (!x_str.empty() &&
-           std::isspace(static_cast<unsigned char>(x_str.back())))
+           std::isspace(static_cast<unsigned char>(x_str.back()))) {
       x_str.remove_suffix(1);
+    }
     while (!y_str.empty() &&
-           std::isspace(static_cast<unsigned char>(y_str.front())))
+           std::isspace(static_cast<unsigned char>(y_str.front()))) {
       y_str.remove_prefix(1);
+    }
     while (!y_str.empty() &&
-           std::isspace(static_cast<unsigned char>(y_str.back())))
+           std::isspace(static_cast<unsigned char>(y_str.back()))) {
       y_str.remove_suffix(1);
+    }
 
-    if (x_str.empty() || y_str.empty()) return std::nullopt;
+    if (x_str.empty() || y_str.empty()) {
+      return std::nullopt;
+    }
 
     auto [p1, ec1] =
         std::from_chars(x_str.data(), x_str.data() + x_str.size(), x_val);
-    if (ec1 != std::errc{} || p1 != x_str.data() + x_str.size())
+    if (ec1 != std::errc{} || p1 != x_str.data() + x_str.size()) {
       return std::nullopt;
+    }
 
     auto [p2, ec2] =
         std::from_chars(y_str.data(), y_str.data() + y_str.size(), y_val);
-    if (ec2 != std::errc{} || p2 != y_str.data() + y_str.size())
+    if (ec2 != std::errc{} || p2 != y_str.data() + y_str.size()) {
       return std::nullopt;
+    }
 
     return Coordinates{x_val, y_val};
   }
@@ -226,7 +236,7 @@ export struct Coordinates {
 
 export template <>
 struct std::formatter<Coordinates> {
-  constexpr auto parse(std::format_parse_context& ctx) {
+  static constexpr auto parse(std::format_parse_context& ctx) {
     return ctx.begin();
   }
 
@@ -246,7 +256,7 @@ string_to_shipnum(std::string_view s) {
     s.remove_prefix(1);
   }
 
-  if (s.size() > 0 && std::isdigit(s.front())) {
+  if (!s.empty() && std::isdigit(s.front())) {
     return std::stoi(std::string(s.begin(), s.end()));
   }
   return {};

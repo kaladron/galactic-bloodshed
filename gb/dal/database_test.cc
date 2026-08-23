@@ -216,13 +216,13 @@ int main() {
 
     Database db2(std::move(db1));
     assert(db2.is_open());
-    assert(!db1.is_open());
+    assert(!db1.is_open());  // NOLINT(bugprone-use-after-move)
     std::println(std::cout, "✓ Move constructor works");
 
     Database db3(":memory:");
     db3 = std::move(db2);
     assert(db3.is_open());
-    assert(!db2.is_open());
+    assert(!db2.is_open());  // NOLINT(bugprone-use-after-move)
     std::println(std::cout, "✓ Move assignment works");
   }
 
@@ -240,7 +240,7 @@ int main() {
 
     bool caught_news_add_error = false;
     try {
-      db1.news_add(1, "Test Message", 100);
+      db1.news_add(1, "Test Message", 100);  // NOLINT(bugprone-use-after-move)
     } catch (const SqliteError& e) {
       caught_news_add_error = true;
     }

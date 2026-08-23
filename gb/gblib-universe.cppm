@@ -31,14 +31,14 @@ public:
   explicit Universe(universe_struct& raw_data) : data(raw_data) {}
 
   // Basic accessors
-  unsigned short numstars() const {
+  [[nodiscard]] unsigned short numstars() const {
     return data.numstars;
   }
   void set_numstars(unsigned short value) {
     data.numstars = value;
   }
 
-  shipnum_t ships() const {
+  [[nodiscard]] shipnum_t ships() const {
     return data.ships;
   }
   void set_ships(shipnum_t value) {
@@ -46,7 +46,7 @@ public:
   }
 
   // Action Point (AP) methods
-  ap_t get_AP(player_t p) const {
+  [[nodiscard]] ap_t get_AP(player_t p) const {
     if (p.value < 1 || p.value > MAXPLAYERS) return 0;
     return data.AP[p.value - 1];
   }
@@ -68,7 +68,7 @@ public:
   }
 
   // VN (Von Neumann) tracking methods
-  unsigned short get_VN_hitlist(player_t p) const {
+  [[nodiscard]] unsigned short get_VN_hitlist(player_t p) const {
     if (p.value < 1 || p.value > MAXPLAYERS) return 0;
     return data.VN_hitlist[p.value - 1];
   }
@@ -88,7 +88,7 @@ public:
     if (data.VN_hitlist[p.value - 1] > 0) data.VN_hitlist[p.value - 1]--;
   }
 
-  int get_VN_index1(player_t p) const {
+  [[nodiscard]] int get_VN_index1(player_t p) const {
     if (p.value < 1 || p.value > MAXPLAYERS) return 0;
     return data.VN_index1[p.value - 1];
   }
@@ -98,7 +98,7 @@ public:
     data.VN_index1[p.value - 1] = value;
   }
 
-  int get_VN_index2(player_t p) const {
+  [[nodiscard]] int get_VN_index2(player_t p) const {
     if (p.value < 1 || p.value > MAXPLAYERS) return 0;
     return data.VN_index2[p.value - 1];
   }

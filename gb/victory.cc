@@ -14,8 +14,8 @@ std::vector<Victory> create_victory_list(EntityManager& entity_manager) {
     Victory vic{.racenum = race.Playernum,
                 .name = race.name,
                 .tech = race.tech,
-                .Thing = race.Metamorph,
-                .IQ = race.IQ,
+                .thing = race.Metamorph,
+                .iq = race.IQ,
                 .rawscore = race.victory_score};
     if (race.God || race.Guest || race.dissolved) vic.no_count = true;
     victories.emplace_back(vic);

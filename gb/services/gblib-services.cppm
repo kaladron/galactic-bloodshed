@@ -45,8 +45,12 @@ public:
         dirty(initial_dirty) {}
 
   ~EntityHandle() {
-    if (dirty && entity) {
-      save_fn(*entity);
+    try {
+      if (dirty && entity && save_fn) {
+        save_fn(*entity);
+      }
+    } catch (...) {
+      // Destructors must not throw exceptions
     }
     // Note: EntityManager will be notified via release mechanism
   }
@@ -92,12 +96,12 @@ public:
     dirty = true;
     return entity;
   }
-  const T* get() const {
+  [[nodiscard]] const T* get() const {
     return entity;
   }
 
   // Explicit read-only access (doesn't mark dirty)
-  const T& read() const {
+  [[nodiscard]] const T& read() const {
     return *entity;
   }
 
@@ -253,13 +257,9 @@ private:
 export inline void record_vn_destruction_site(int& index1, int& index2,
                                               int star_id,
                                               bool supplant_first) {
-  if (index1 == -1) {
-    index1 = star_id;
-  } else if (index2 == -1) {
+  if (index1 != -1 && (index2 == -1 || !supplant_first)) {
     index2 = star_id;
-  } else if (supplant_first) {
-    index1 = star_id;
   } else {
-    index2 = star_id;
+    index1 = star_id;
   }
 }

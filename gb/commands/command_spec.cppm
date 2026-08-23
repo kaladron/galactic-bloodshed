@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-module;
+export module commands:spec;
 
 import gblib;
 import std;
-
-export module commands:spec;
 
 namespace GB::commands {
 
@@ -24,7 +22,7 @@ export struct AllowedScopes {
   bool planet = false;
   bool ship = false;
 
-  constexpr bool allows(ScopeLevel level) const {
+  [[nodiscard]] constexpr bool allows(ScopeLevel level) const {
     switch (level) {
       case ScopeLevel::LEVEL_UNIV:
         return univ;
@@ -93,7 +91,7 @@ export using CommandFn = bool (*)(const command_t& argv, GameObj& g);
 
 export struct CommandDescriptor {
   std::string_view name;
-  std::span<const std::string_view> aliases = {};
+  std::span<const std::string_view> aliases;
   RoleRequirements roles = {};
   AllowedScopes scopes = AllowedScopes::any();
   APCost ap = APCost::free();

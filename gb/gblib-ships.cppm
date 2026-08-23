@@ -239,7 +239,7 @@ export struct ship_struct {
   population_t troops{0};
   unsigned short crystals{0};
 
-  SpecialData special{};
+  SpecialData special;
 
   short who_killed{0};
 

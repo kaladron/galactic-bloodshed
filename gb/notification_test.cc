@@ -58,11 +58,11 @@ public:
   explicit MockRegistry(bool update_in_progress = false)
       : update_in_progress_(update_in_progress) {}
 
-  void add_session(std::shared_ptr<MockSession> session) {
+  void add_session(const std::shared_ptr<MockSession>& session) {
     sessions_.push_back(session);
   }
 
-  bool update_in_progress() const override {
+  [[nodiscard]] bool update_in_progress() const override {
     return update_in_progress_;
   }
 

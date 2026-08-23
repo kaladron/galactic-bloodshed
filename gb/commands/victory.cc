@@ -73,7 +73,7 @@ bool victory(const command_t& argv, GameObj& g) {
 
     // Build base row
     tabulate::Table::Row_t row = {
-        std::format("{}", rank), std::format("{}", vic.Thing ? 'M' : ' '),
+        std::format("{}", rank), std::format("{}", vic.thing ? 'M' : ' '),
         std::format("[{}]", vic.racenum), std::format("{:.15}", vic.name)};
 
     // Add god-only columns
@@ -83,7 +83,7 @@ bool victory(const command_t& argv, GameObj& g) {
 
       row.insert(row.end(),
                  {std::format("{}", vic.rawscore),
-                  std::format("{:.2f}", vic.tech), std::format("{}", vic.IQ),
+                  std::format("{:.2f}", vic.tech), std::format("{}", vic.iq),
                   std::format("{}", race->password),
                   std::format("{}", race->governor[0].password)});
     }

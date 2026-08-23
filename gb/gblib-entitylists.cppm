@@ -308,20 +308,20 @@ public:
     return {em_, endIndex, endIndex};
   }
 
-  ConstIterator begin() const {
+  [[nodiscard]] ConstIterator begin() const {
     return {em_, traits_type::first_index(), traits_type::end_index(count_)};
   }
 
-  ConstIterator end() const {
+  [[nodiscard]] ConstIterator end() const {
     const auto endIndex = traits_type::end_index(count_);
     return {em_, endIndex, endIndex};
   }
 
-  ConstIterator cbegin() const {
+  [[nodiscard]] ConstIterator cbegin() const {
     return begin();
   }
 
-  ConstIterator cend() const {
+  [[nodiscard]] ConstIterator cend() const {
     return end();
   }
 
@@ -441,21 +441,21 @@ public:
     return {em_, primary_key_, endIndex, endIndex};
   }
 
-  ConstIterator begin() const {
+  [[nodiscard]] ConstIterator begin() const {
     return {em_, primary_key_, traits_type::first_index(),
             traits_type::end_index(count_)};
   }
 
-  ConstIterator end() const {
+  [[nodiscard]] ConstIterator end() const {
     const auto endIndex = traits_type::end_index(count_);
     return {em_, primary_key_, endIndex, endIndex};
   }
 
-  ConstIterator cbegin() const {
+  [[nodiscard]] ConstIterator cbegin() const {
     return begin();
   }
 
-  ConstIterator cend() const {
+  [[nodiscard]] ConstIterator cend() const {
     return end();
   }
 
@@ -551,10 +551,10 @@ public:
   Ship* operator->();
   const Ship* operator->() const;
   Ship* get();
-  const Ship* get() const;
+  [[nodiscard]] const Ship* get() const;
 
   // Explicit read-only access (doesn't mark dirty)
-  const Ship& peek() const;
+  [[nodiscard]] const Ship& peek() const;
 
   // Force save without waiting for destructor
   void save();
@@ -604,14 +604,14 @@ public:
   class ConstIterator;
 
   // Iterator support - mutable version
-  MutableIterator begin();
-  MutableIterator end();
+  [[nodiscard]] MutableIterator begin();
+  [[nodiscard]] MutableIterator end();
 
   // Iterator support - const version (read-only)
-  ConstIterator begin() const;
-  ConstIterator end() const;
-  ConstIterator cbegin() const;
-  ConstIterator cend() const;
+  [[nodiscard]] ConstIterator begin() const;
+  [[nodiscard]] ConstIterator end() const;
+  [[nodiscard]] ConstIterator cbegin() const;
+  [[nodiscard]] ConstIterator cend() const;
 
 private:
   mutable EntityManager* em{nullptr};
@@ -623,7 +623,7 @@ private:
   player_t player{0};
 
   // Helper to check if a ship matches the current scope
-  bool matches_scope(const Ship& ship) const;
+  [[nodiscard]] bool matches_scope(const Ship& ship) const;
 };
 
 // Iterator classes
@@ -642,9 +642,9 @@ public:
                   player_t player);
 
   MutableIterator& operator++();
-  ShipHandle operator*();  // Defined in .cc file
-  bool operator==(const MutableIterator& other) const;
-  bool operator!=(const MutableIterator& other) const;
+  [[nodiscard]] ShipHandle operator*();  // Defined in .cc file
+  [[nodiscard]] bool operator==(const MutableIterator& other) const;
+  [[nodiscard]] bool operator!=(const MutableIterator& other) const;
 
 private:
   EntityManager& em;
@@ -656,7 +656,7 @@ private:
   player_t player;
 
   void advance_to_next_match();
-  bool matches_scope(const Ship& ship) const;
+  [[nodiscard]] bool matches_scope(const Ship& ship) const;
 };
 
 /**
@@ -677,9 +677,9 @@ public:
                 player_t player);
 
   ConstIterator& operator++();
-  const Ship* operator*() const;
-  bool operator==(const ConstIterator& other) const;
-  bool operator!=(const ConstIterator& other) const;
+  [[nodiscard]] const Ship* operator*() const;
+  [[nodiscard]] bool operator==(const ConstIterator& other) const;
+  [[nodiscard]] bool operator!=(const ConstIterator& other) const;
 
 private:
   EntityManager& em;
@@ -691,5 +691,5 @@ private:
   player_t player;
 
   void advance_to_next_match();
-  bool matches_scope(const Ship& ship) const;
+  [[nodiscard]] bool matches_scope(const Ship& ship) const;
 };

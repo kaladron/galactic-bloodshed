@@ -39,7 +39,7 @@ void bind_keys(sqlite3_stmt* stmt,
 
 JsonStore::JsonStore(Database& database) : db(database) {}
 
-bool JsonStore::store(const std::string& table, KeyValue id,
+bool JsonStore::store(const std::string& table, const KeyValue& id,
                       const std::string& json) {
   if (!db.is_open()) {
     throw SqliteError("Database connection is not open");
@@ -72,7 +72,7 @@ bool JsonStore::store(const std::string& table, KeyValue id,
 }
 
 std::optional<std::string> JsonStore::retrieve(const std::string& table,
-                                               KeyValue id) {
+                                               const KeyValue& id) {
   if (!db.is_open()) {
     throw SqliteError("Database connection is not open");
   }
@@ -109,7 +109,7 @@ std::optional<std::string> JsonStore::retrieve(const std::string& table,
   return result;
 }
 
-bool JsonStore::remove(const std::string& table, KeyValue id) {
+bool JsonStore::remove(const std::string& table, const KeyValue& id) {
   if (!db.is_open()) {
     throw SqliteError("Database connection is not open");
   }

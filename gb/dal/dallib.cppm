@@ -19,7 +19,7 @@ public:
   explicit SqliteError(const std::string& msg, int code = 0)
       : std::runtime_error(msg), code_(code) {}
 
-  int code() const noexcept {
+  [[nodiscard]] int code() const noexcept {
     return code_;
   }
 };
@@ -50,7 +50,7 @@ public:
   void optimize();
 
   // Check if database is open
-  bool is_open() const {
+  [[nodiscard]] bool is_open() const {
     return conn != nullptr;
   }
 
@@ -117,9 +117,11 @@ public:
   explicit JsonStore(Database& database);
 
   // Generic CRUD operations
-  bool store(const std::string& table, KeyValue id, const std::string& json);
-  std::optional<std::string> retrieve(const std::string& table, KeyValue id);
-  bool remove(const std::string& table, KeyValue id);
+  bool store(const std::string& table, const KeyValue& id,
+             const std::string& json);
+  std::optional<std::string> retrieve(const std::string& table,
+                                      const KeyValue& id);
+  bool remove(const std::string& table, const KeyValue& id);
 
   // ID management
   std::vector<int> list_ids(const std::string& table);

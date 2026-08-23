@@ -7,7 +7,7 @@ import :planet;
 
 // POD struct containing all Sector data fields
 export struct sector_struct {
-  Coordinates coords{};
+  Coordinates coords;
   unsigned int eff{0};          /* efficiency (0-100) */
   unsigned int fert{0};         /* max popn is proportional to this */
   unsigned int mobilization{0}; /* percent popn is mobilized for war */
@@ -57,12 +57,12 @@ public:
   Sector& operator=(const Sector&) = delete;
 
   // Move constructor
-  Sector(Sector&& other) noexcept : data_(std::move(other.data_)) {}
+  Sector(Sector&& other) noexcept : data_(other.data_) {}
 
   // Move assignment
   Sector& operator=(Sector&& other) noexcept {
     if (this != &other) {
-      data_ = std::move(other.data_);
+      data_ = other.data_;
     }
     return *this;
   }
@@ -198,8 +198,9 @@ public:
   /// (unless it's a gas sector)
   void plate() noexcept {
     data_.eff = 100;
-    if (data_.condition != SectorType::SEC_GAS)
+    if (data_.condition != SectorType::SEC_GAS) {
       data_.condition = SectorType::SEC_PLATED;
+    }
   }
 
   /// Clear ownership if sector is empty (no popn or troops)
@@ -255,14 +256,16 @@ public:
   SectorMap(const Planet& planet)
       : star_id_(planet.star_id()), planet_order_(planet.planet_order()),
         maxx_(planet.Maxx()), maxy_(planet.Maxy()) {
-    grid_.reserve(planet.Maxx() * planet.Maxy());
+    grid_.reserve(static_cast<std::size_t>(planet.Maxx()) *
+                  static_cast<std::size_t>(planet.Maxy()));
   }
 
   //! Add an empty sector for every potential space.  Used for initialization.
   SectorMap(const Planet& planet, bool)
       : star_id_(planet.star_id()), planet_order_(planet.planet_order()),
         maxx_(planet.Maxx()), maxy_(planet.Maxy()),
-        grid_(planet.Maxx() * planet.Maxy()) {}
+        grid_(static_cast<std::size_t>(planet.Maxx()) *
+              static_cast<std::size_t>(planet.Maxy())) {}
 
   // Accessors for planet identity
   [[nodiscard]] starnum_t star_id() const {
@@ -278,10 +281,10 @@ public:
   auto end() {
     return grid_.end();
   }
-  auto begin() const {
+  [[nodiscard]] auto begin() const {
     return grid_.begin();
   }
-  auto end() const {
+  [[nodiscard]] auto end() const {
     return grid_.end();
   }
 
@@ -290,11 +293,15 @@ public:
   }
 
   Sector& get(const int x, const int y) {
-    return grid_.at(static_cast<std::size_t>(x + (y * maxx_)));
+    return grid_.at(
+        static_cast<std::size_t>(x) +
+        (static_cast<std::size_t>(y) * static_cast<std::size_t>(maxx_)));
   }
 
   [[nodiscard]] const Sector& get(const int x, const int y) const {
-    return grid_.at(static_cast<std::size_t>(x + (y * maxx_)));
+    return grid_.at(
+        static_cast<std::size_t>(x) +
+        (static_cast<std::size_t>(y) * static_cast<std::size_t>(maxx_)));
   }
 
   Sector& get(const Coordinates c) {
@@ -307,12 +314,16 @@ public:
 
   // Set from sector_struct
   void set(const int x, const int y, const sector_struct& s) {
-    grid_.at(static_cast<std::size_t>(x + (y * maxx_))) = Sector(s);
+    grid_.at(static_cast<std::size_t>(x) +
+             (static_cast<std::size_t>(y) * static_cast<std::size_t>(maxx_))) =
+        Sector(s);
   }
 
   // Set from Sector - extract struct and reconstruct
   void set(const int x, const int y, const Sector& s) {
-    grid_.at(static_cast<std::size_t>(x + (y * maxx_))) = Sector(s.to_struct());
+    grid_.at(static_cast<std::size_t>(x) +
+             (static_cast<std::size_t>(y) * static_cast<std::size_t>(maxx_))) =
+        Sector(s.to_struct());
   }
 
   void set(const Coordinates c, const sector_struct& s) {
@@ -335,8 +346,8 @@ public:
 
       Iterator(int x, int y, int maxx) : x_(x), y_(y), maxx_(maxx) {}
 
-      Coordinates operator*() const {
-        return {x_, y_};
+      value_type operator*() const {
+        return Coordinates{x_, y_};
       }
       Iterator& operator++() {
         ++x_;
@@ -357,10 +368,10 @@ public:
     };
 
     CoordinatesView(int maxx, int maxy) : maxx_(maxx), maxy_(maxy) {}
-    Iterator begin() const {
+    [[nodiscard]] Iterator begin() const {
       return Iterator(0, 0, maxx_);
     }
-    Iterator end() const {
+    [[nodiscard]] Iterator end() const {
       return Iterator(0, maxy_, maxx_);
     }
 
@@ -408,10 +419,10 @@ public:
     };
 
     IndexedSectorsViewImpl(MapType& map) : map_(&map) {}
-    Iterator begin() const {
+    [[nodiscard]] Iterator begin() const {
       return Iterator(map_, 0, 0);
     }
-    Iterator end() const {
+    [[nodiscard]] Iterator end() const {
       return Iterator(map_, 0, map_->get_maxy());
     }
 
@@ -423,7 +434,7 @@ public:
     return IndexedSectorsViewImpl<SectorMap, Sector&>(*this);
   }
 
-  auto indexed_sectors() const {
+  [[nodiscard]] auto indexed_sectors() const {
     return IndexedSectorsViewImpl<const SectorMap, const Sector&>(*this);
   }
 

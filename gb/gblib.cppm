@@ -21,6 +21,7 @@ export import :move;
 export import :order;
 export import :planet;
 export import :place;
+export import :prompt;
 export import :types;
 export import :sector;
 export import :race;

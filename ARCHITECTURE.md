@@ -154,6 +154,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. E
 - **`gblib:race`**, **`gblib:ships`**, **`gblib:star`**, **`gblib:planet`**, etc. - Entity structures
 - **`gblib:tweakables`** - Game configuration constants
 - **`gblib:doturncmd`** - Turn processing (do_update, do_segment, do_next_thing, ScheduleInfo)
+- **`gblib:prompt`** - Scope and nested orbit prompt formatting (`do_prompt`)
 - **`gblib:misc`**, **`gblib:shlmisc`** - Utility functions
 - **Game logic partitions**: `gblib:doplanet`, `gblib:doship`, `gblib:fire`, etc.
 

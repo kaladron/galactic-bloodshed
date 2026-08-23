@@ -140,6 +140,7 @@ target_sources(
          gblib-order.cppm
          gblib-place.cppm
          gblib-planet.cppm
+         gblib-prompt.cppm
          gblib-race.cppm
          utils/gblib-rand.cppm
          repositories/gblib-repositories.cppm
@@ -173,6 +174,7 @@ target_sources(
           move.cc
           order.cc
           planet.cc
+          prompt.cc
           utils/rand.cc
           sectormap.cc
           sector.cc
@@ -884,6 +886,10 @@ add_test(NAME GB_colonies_test COMMAND colonies_test)
 add_executable(vote_test commands/vote_test.cc)
 target_link_libraries(vote_test PRIVATE test_module dallib gblib commands session notification SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_vote_test COMMAND vote_test)
+
+add_executable(prompt_test prompt_test.cc)
+target_link_libraries(prompt_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_prompt_test COMMAND prompt_test)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

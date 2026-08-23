@@ -188,7 +188,12 @@ jobs:
 
       - name: Generate Coverage Report
         run: |
-          llvm-profdata merge -sparse build/coverage-*.profraw -o build/coverage.profdata
+          PROFRAW_FILES=$(find . -name "*.profraw")
+          if [ -z "$PROFRAW_FILES" ]; then
+            echo "❌ No .profraw profiling data found"
+            exit 1
+          fi
+          llvm-profdata merge -sparse $PROFRAW_FILES -o build/coverage.profdata
           
           # Find all test executables
           TEST_BINARIES=$(find build/gb -maxdepth 1 -type f -executable ! -name "*.so" ! -name "*.a")

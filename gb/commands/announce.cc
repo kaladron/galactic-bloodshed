@@ -13,12 +13,12 @@ import std;
 module commands;
 
 namespace {
-enum class Communicate : std::uint8_t {
+enum class Communicate : char {
   ANN = ':',
-  BROADCAST = '\"',
+  BROADCAST = '>',
   SHOUT = '!',
-  THINK = ';',
-  UNKNOWN = 0,
+  THINK = '=',
+  UNKNOWN = ' ',
 };
 
 Communicate get_mode(std::string_view command) {
@@ -71,7 +71,7 @@ bool announce(const command_t& argv, GameObj& g) {
   std::string msg =
       std::format("{} \"{}\" [{},{}] {} {}\n", g.race->name,
                   g.race->governor[Governor.value].name, Playernum, Governor,
-                  std::to_underlying(mode), message);
+                  static_cast<char>(mode), message);
 
   switch (mode) {
     case Communicate::ANN:

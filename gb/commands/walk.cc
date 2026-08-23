@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file walk.cc
+/// \brief Walk command implementation.
+
 module;
 
 import session;
@@ -11,67 +14,63 @@ import std;
 module commands;
 
 namespace GB::commands {
-void walk(const command_t& argv, GameObj& g) {
+bool walk(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   const ap_t APcount = 1;
 
-  if (argv.size() < 2) {
-    g.out << "Walk what?\n";
-    return;
-  }
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno || *shipno <= 0) {
     g.out << "Bad ship number.\n";
-    return;
+    return false;
   }
   try {
     g.entity_manager.peek_ship(*shipno);
   } catch (const EntityNotFoundError&) {
     g.out << "No such ship.\n";
-    return;
+    return false;
   }
   auto ship_handle = g.entity_manager.get_ship(*shipno);
   auto* ship = ship_handle.get();
   if (testship(*ship, g)) {
     g.out << "You do not control this ship.\n";
-    return;
+    return false;
   }
   if (ship->type() != ShipType::OTYPE_AFV) {
     g.out << "This ship doesn't walk!\n";
-    return;
+    return false;
   }
   if (!landed(*ship)) {
     g.out << "This ship is not landed on a planet.\n";
-    return;
+    return false;
   }
   if (!ship->popn()) {
     g.out << "No crew.\n";
-    return;
+    return false;
   }
   if (ship->fuel() < AFV_FUEL_COST) {
     g.out << std::format("You don't have {:.1f} fuel to move it.\n",
                          AFV_FUEL_COST);
-    return;
+    return false;
   }
 
   // Use get_star to keep star alive for entire function
   auto star_handle = g.entity_manager.get_star(ship->storbits());
   if (!star_handle.get()) {
     g.out << "Star not found.\n";
-    return;
+    return false;
   }
-  const auto& star = star_handle.read();
+  auto& star = *star_handle;
 
-  if (!enufAP(g.entity_manager, Playernum, Governor, star.AP(Playernum),
-              APcount)) {
-    return;
+  if (star.AP(Playernum) < APcount) {
+    g.out << std::format("You don't have {} action points there.\n", APcount);
+    return false;
   }
   auto planet_handle =
       g.entity_manager.get_planet(ship->storbits(), ship->pnumorbits());
   if (!planet_handle.get()) {
     g.out << "Planet not found.\n";
-    return;
+    return false;
   }
   auto& p = *planet_handle;
 
@@ -79,24 +78,24 @@ void walk(const command_t& argv, GameObj& g) {
   Coordinates new_coords = get_move(p, argv[2][0], old_coords);
   if (old_coords == new_coords) {
     g.out << "Illegal move.\n";
-    return;
+    return false;
   }
   if (!p.is_valid(new_coords)) {
     g.out << std::format("Illegal coordinates {}.\n", new_coords);
-    return;
+    return false;
   }
   auto smap_handle =
       g.entity_manager.get_sectormap(ship->storbits(), ship->pnumorbits());
   if (!smap_handle.get()) {
     g.out << "Sector map not found.\n";
-    return;
+    return false;
   }
   auto& smap = *smap_handle;
   /* check to see if player is permited on the sector type */
   auto& sect = smap.get(new_coords);
   if (!g.race->likes[sect.get_condition()]) {
     g.out << "Your ships cannot walk into that sector type!\n";
-    return;
+    return false;
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
   ShipList shiplist(g.entity_manager, p.ships());
@@ -159,11 +158,11 @@ void walk(const command_t& argv, GameObj& g) {
     auto oldowner = sect.get_owner();
     auto oldgov = star.governor(sect.get_owner());
     const auto* alien = g.entity_manager.peek_race(oldowner);
-    if (!alien) return;
+    if (!alien) return false;
     if (!isset(g.race->allied, oldowner) || !isset(alien->allied, Playernum)) {
       if (!retal_strength(*ship)) {
         g.out << "You have nothing to attack with!\n";
-        return;
+        return false;
       }
       while ((sect.get_popn() + sect.get_troops()) && retal_strength(*ship)) {
         auto civ = sect.get_popn();
@@ -215,6 +214,19 @@ void walk(const command_t& argv, GameObj& g) {
       if (i != Playernum && p.info(i).numsectsowned)
         g.session_registry.notify_player(i, star.governor(i), moving);
   }
-  deductAPs(g, APcount, ship->storbits());
+  star.AP(Playernum) -= APcount;
+  return true;
 }
+
+const CommandDescriptor walk_cmd{
+    .name = "walk",
+    .roles = {.no_guests = true},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 3,
+    .syntax = "walk <ship> <direction>",
+    .description = "Move an AFV from one sector to another",
+    .handler = &walk,
+};
+
 }  // namespace GB::commands

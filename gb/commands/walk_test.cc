@@ -80,21 +80,50 @@ int main() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
+
+  // 1. Guest rejection
+  {
+    auto guest_race_handle = ctx.em.get_race(1);
+    guest_race_handle->Guest = true;
+  }
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
+  assert(g.out.str().contains("Guest races cannot use this command."));
+  std::println(std::cout, "    ✓ Guest rejection verified");
+
+  // Restore non-guest race
+  {
+    auto race_handle = ctx.em.get_race(1);
+    race_handle->Guest = false;
+  }
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.set_snum(0);
   g.set_pnum(0);
 
-  // Test walk command - move south (k or '2')
-  command_t argv = {"walk", "1", "k"};
-  GB::commands::walk(argv, g);
+  // 2. Invalid ship rejection
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"walk", "999", "k"});
+  assert(g.out.str().contains("No such ship."));
+  std::println(std::cout, "    ✓ Invalid ship rejection verified");
 
-  // Verify AFV moved
+  // 3. Test walk command success - move south (k or '2')
+  ctx.assert_dispatch_success(g, {"walk", "1", "k"});
+
+  // Verify AFV moved and AP deducted
   ctx.em.clear_cache();
   const auto* saved_ship = ctx.em.peek_ship(1);
   assert(saved_ship);
   assert(saved_ship->land_coords() == Coordinates(5, 6));
   assert(saved_ship->fuel() < 100.0);
 
+  const auto* saved_star = ctx.em.peek_star(0);
+  assert(saved_star);
+  assert(saved_star->AP(1) == 99);  // 1 Star AP deducted
+
+  std::println(std::cout, "    ✓ Walk succeeded and 1 Star AP deducted");
   std::println(std::cout, "walk_test passed!");
   return 0;
 }

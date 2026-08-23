@@ -70,6 +70,43 @@ int main() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
+
+  // 1. Scope rejection at UNIV level
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at universe level verified");
+
+  // 2. Scope rejection at STAR level
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at star level verified");
+
+  // 3. Guest rejection
+  {
+    auto guest_race_handle = ctx.em.get_race(1);
+    guest_race_handle->Guest = true;
+  }
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
+  assert(g.out.str().contains("Guest races cannot use this command."));
+  std::println(std::cout, "    ✓ Guest rejection verified");
+
+  // Restore non-guest race
+  {
+    auto race_handle = ctx.em.get_race(1);
+    race_handle->Guest = false;
+  }
+  ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
@@ -80,9 +117,9 @@ int main() {
     int p1_resource_before = p_before->info(player_t{1}).resource;
     int p2_resource_before = p_before->info(player_t{2}).resource;
 
-    command_t argv = {"transfer", "Receiver", "r", "100"};
-    GB::commands::transfer(argv, g);
+    ctx.assert_dispatch_success(g, {"transfer", "Receiver", "r", "100"}, 1);
 
+    ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).resource == p1_resource_before - 100);
     assert(p_after->info(player_t{2}).resource == p2_resource_before + 100);
@@ -95,9 +132,9 @@ int main() {
     int p1_fuel_before = p_before->info(player_t{1}).fuel;
     int p2_fuel_before = p_before->info(player_t{2}).fuel;
 
-    command_t argv = {"transfer", "Receiver", "f", "75"};
-    GB::commands::transfer(argv, g);
+    ctx.assert_dispatch_success(g, {"transfer", "Receiver", "f", "75"}, 1);
 
+    ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).fuel == p1_fuel_before - 75);
     assert(p_after->info(player_t{2}).fuel == p2_fuel_before + 75);
@@ -110,9 +147,9 @@ int main() {
     int p1_destruct_before = p_before->info(player_t{1}).destruct;
     int p2_destruct_before = p_before->info(player_t{2}).destruct;
 
-    command_t argv = {"transfer", "Receiver", "d", "50"};
-    GB::commands::transfer(argv, g);
+    ctx.assert_dispatch_success(g, {"transfer", "Receiver", "d", "50"}, 1);
 
+    ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).destruct == p1_destruct_before - 50);
     assert(p_after->info(player_t{2}).destruct == p2_destruct_before + 50);
@@ -125,9 +162,9 @@ int main() {
     int p1_crystals_before = p_before->info(player_t{1}).crystals;
     int p2_crystals_before = p_before->info(player_t{2}).crystals;
 
-    command_t argv = {"transfer", "Receiver", "x", "10"};
-    GB::commands::transfer(argv, g);
+    ctx.assert_dispatch_success(g, {"transfer", "Receiver", "x", "10"}, 1);
 
+    ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).crystals == p1_crystals_before - 10);
     assert(p_after->info(player_t{2}).crystals == p2_crystals_before + 10);
@@ -141,10 +178,10 @@ int main() {
     int p2_resource_before = p_before->info(player_t{2}).resource;
 
     // Try to transfer more resources than player has
-    command_t argv = {"transfer", "Receiver", "r", "10000"};
-    GB::commands::transfer(argv, g);
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "10000"});
 
     // Should not have changed (command fails with error message)
+    ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
     assert(p_after->info(player_t{1}).resource == p1_resource_before);
     assert(p_after->info(player_t{2}).resource == p2_resource_before);

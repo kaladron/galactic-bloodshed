@@ -171,6 +171,10 @@ build_registry() {
         reg(disarm_cmd);
         reg(autoreport_cmd);
         reg(upgrade_cmd);
+        reg(make_cmd);
+        reg(modify_cmd);
+        reg(transfer_cmd);
+        reg(walk_cmd);
         if (VOTING) {
           reg(vote_cmd);
         }

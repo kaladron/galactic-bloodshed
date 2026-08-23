@@ -72,9 +72,45 @@ int main() {
   ShipRepository ships_repo(store);
   ships_repo.save(factory);
 
-  // Create GameObj for command execution - must be at SHIP scope
+  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+
+  // 1. Scope rejection at UNIV scope
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"make", "f"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at universe level verified");
+
+  // 2. Scope rejection at STAR scope
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"modify", "armor", "50"});
+  assert(g.out.str().contains("Invalid scope for this command."));
+  std::println(std::cout, "    ✓ Scope rejection at star level verified");
+
+  // 3. Guest rejection
+  {
+    auto guest_race_handle = ctx.em.get_race(1);
+    guest_race_handle->Guest = true;
+  }
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
+  g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"make", "f"});
+  assert(g.out.str().contains("Guest races cannot use this command."));
+  std::println(std::cout, "    ✓ Guest rejection verified");
+
+  // Restore non-guest race
+  {
+    auto race_handle = ctx.em.get_race(1);
+    race_handle->Guest = false;
+  }
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);  // Factory is ship #1
@@ -82,12 +118,7 @@ int main() {
 
   std::println(std::cout, "Set factory to produce fighters (make f)");
   {
-    ctx.em.clear_cache();
-    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
-
-    // make f (fighter)
-    command_t argv = {"make", "f"};
-    GB::commands::make_mod(argv, g);
+    ctx.assert_dispatch_success(g, {"make", "f"});
 
     ctx.em.clear_cache();
 
@@ -103,16 +134,12 @@ int main() {
 
   std::println(std::cout, "Modify factory design (modify armor 50)");
   {
-    ctx.em.clear_cache();
-    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
     const auto* factory_before = ctx.em.peek_ship(1);
     assert(factory_before != nullptr);
     int initial_armor = factory_before->armor();
     std::println(std::cout, "    Before: armor={}", initial_armor);
 
-    // modify armor 50
-    command_t argv = {"modify", "armor", "50"};
-    GB::commands::make_mod(argv, g);
+    ctx.assert_dispatch_success(g, {"modify", "armor", "50"});
 
     ctx.em.clear_cache();
 
@@ -127,12 +154,7 @@ int main() {
 
   std::println(std::cout, "Modify factory design (modify speed 9)");
   {
-    ctx.em.clear_cache();
-    g.race = ctx.em.peek_race(1);  // Re-fetch after cache clear
-
-    // modify speed 9
-    command_t argv = {"modify", "speed", "9"};
-    GB::commands::make_mod(argv, g);
+    ctx.assert_dispatch_success(g, {"modify", "speed", "9"});
 
     ctx.em.clear_cache();
 

@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file transfer.cc
+/// \brief Transfer command implementation.
+
 module;
 
 import gblib;
@@ -12,26 +15,16 @@ import session;
 module commands;
 
 namespace GB::commands {
-void transfer(const command_t& argv, GameObj& g) {
+bool transfer(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  ap_t APcount = 1;
   char commod = 0;
 
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "You need to be in planet scope to do this.\n";
-    return;
-  }
-
   const auto* star = g.entity_manager.peek_star(g.snum());
-  if (!enufAP(g.entity_manager, Playernum, Governor, star->AP(Playernum),
-              APcount))
-    return;
 
   auto player = get_player(g.entity_manager, argv[1]);
   if (player == 0) {
     g.out << "No such player.\n";
-    return;
+    return false;
   }
 
   auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
@@ -40,7 +33,7 @@ void transfer(const command_t& argv, GameObj& g) {
   auto scan_result = scn::scan<char>(argv[2], "{}");
   if (!scan_result) {
     g.out << "Invalid commodity type.\n";
-    return;
+    return false;
   }
   commod = scan_result->value();
   // TODO(jeffbailey): May throw an exception on a negative number.
@@ -52,7 +45,7 @@ void transfer(const command_t& argv, GameObj& g) {
     case 'r': {
       if (give > planet.info(Playernum).resource) {
         g.out << std::format("You don't have {} on this planet.\n", give);
-        return;
+        return false;
       }
       planet.info(Playernum).resource -= give;
       planet.info(player).resource += give;
@@ -66,7 +59,7 @@ void transfer(const command_t& argv, GameObj& g) {
     case '&': {
       if (give > planet.info(Playernum).crystals) {
         g.out << std::format("You don't have {} on this planet.\n", give);
-        return;
+        return false;
       }
       planet.info(Playernum).crystals -= give;
       planet.info(player).crystals += give;
@@ -79,7 +72,7 @@ void transfer(const command_t& argv, GameObj& g) {
     case 'f': {
       if (give > planet.info(Playernum).fuel) {
         g.out << std::format("You don't have {} fuel on this planet.\n", give);
-        return;
+        return false;
       }
       planet.info(Playernum).fuel -= give;
       planet.info(player).fuel += give;
@@ -93,7 +86,7 @@ void transfer(const command_t& argv, GameObj& g) {
       if (give > planet.info(Playernum).destruct) {
         g.out << std::format("You don't have {} destruct on this planet.\n",
                              give);
-        return;
+        return false;
       }
       planet.info(Playernum).destruct -= give;
       planet.info(player).destruct += give;
@@ -105,9 +98,21 @@ void transfer(const command_t& argv, GameObj& g) {
     } break;
     default:
       g.out << "What?\n";
-      return;
+      return false;
   }
 
-  deductAPs(g, APcount, g.snum());
+  return true;
 }
+
+const CommandDescriptor transfer_cmd{
+    .name = "transfer",
+    .roles = {.no_guests = true},
+    .scopes = AllowedScopes::planet_only(),
+    .ap = APCost::fixed_star(1),
+    .min_args = 4,
+    .syntax = "transfer <player> <commodity> <amount>",
+    .description = "Transfer supplies to alien stockpiles on a planet",
+    .handler = &transfer,
+};
+
 }  // namespace GB::commands

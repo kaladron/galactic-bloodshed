@@ -175,6 +175,12 @@ build_registry() {
         reg(modify_cmd);
         reg(transfer_cmd);
         reg(walk_cmd);
+        reg(invite_cmd);
+        reg(uninvite_cmd);
+        if (MARKET) {
+          reg(bid_cmd);
+          reg(treasury_cmd);
+        }
         if (VOTING) {
           reg(vote_cmd);
         }

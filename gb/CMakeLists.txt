@@ -617,6 +617,14 @@ add_executable(bid_test commands/bid_test.cc)
 target_link_libraries(bid_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_bid_test COMMAND bid_test)
 
+add_executable(treasury_test commands/treasury_test.cc)
+target_link_libraries(treasury_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_treasury_test COMMAND treasury_test)
+
+add_executable(invite_test commands/invite_test.cc)
+target_link_libraries(invite_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
+add_test(NAME GB_invite_test COMMAND invite_test)
+
 add_executable(survey_test commands/survey_test.cc)
 target_link_libraries(survey_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_survey_test COMMAND survey_test)

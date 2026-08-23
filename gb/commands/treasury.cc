@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file treasury.cc
+/// \brief Treasury command implementation.
+
 module;
 
 import gblib;
@@ -10,7 +13,7 @@ import tabulate;
 module commands;
 
 namespace GB::commands {
-void treasury(const command_t&, GameObj& g) {
+bool treasury(const command_t&, GameObj& g) {
   governor_t Governor = g.governor();
 
   const auto& gov = g.race->governor[Governor.value];
@@ -42,5 +45,18 @@ void treasury(const command_t&, GameObj& g) {
 
   g.out << table << "\n";
   g.out << std::format("You have: {}\n", gov.money);
+  return true;
 }
+
+const CommandDescriptor treasury_cmd{
+    .name = "treasury",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "treasury",
+    .description = "Display current governor treasury, income, and costs",
+    .handler = &treasury,
+};
+
 }  // namespace GB::commands

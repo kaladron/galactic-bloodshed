@@ -82,7 +82,7 @@ void list_all_commodities(GameObj& g) {
 }
 
 // List commodities filtered by type
-void list_commodities_by_type(const command_t& argv, GameObj& g) {
+bool list_commodities_by_type(const command_t& argv, GameObj& g) {
   auto commod = argv[1][0];
   CommodType item;
   switch (commod) {
@@ -100,7 +100,7 @@ void list_commodities_by_type(const command_t& argv, GameObj& g) {
       break;
     default:
       g.out << "No such type of commodity.\n";
-      return;
+      return false;
   }
 
   g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
@@ -114,27 +114,28 @@ void list_commodities_by_type(const command_t& argv, GameObj& g) {
   }
 
   g.out << table << "\n";
+  return true;
 }
 
 // Place a bid on a commodity lot
-void place_bid(const command_t& argv, GameObj& g) {
+bool place_bid(const command_t& argv, GameObj& g) {
   if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to be in a planet scope to buy.\n";
-    return;
+    return false;
   }
   auto snum = g.snum();
   auto pnum = g.pnum();
   const auto* star = g.entity_manager.peek_star(snum);
   if (g.governor() != 0 && star->governor(g.player()) != g.governor()) {
     g.out << "You are not authorized in this system.\n";
-    return;
+    return false;
   }
   const auto* p = g.entity_manager.peek_planet(snum, pnum);
 
   if (p->slaved_to() != 0 && p->slaved_to() != g.player()) {
     g.out << std::format("This planet is enslaved to player {}.\n",
                          p->slaved_to());
-    return;
+    return false;
   }
   /* check to see if there is an undamaged gov center or space port here */
   const ShipList kShiplist(g.entity_manager, p->ships());
@@ -149,41 +150,41 @@ void place_bid(const command_t& argv, GameObj& g) {
   if (!ok) {
     g.out << "You don't have an undamaged space port or "
              "government center here.\n";
-    return;
+    return false;
   }
 
   auto lot = std::stoi(argv[1]);
   money_t bid0 = std::stoi(argv[2]);
   if ((lot <= 0) || lot > g.entity_manager.num_commods()) {
     g.out << "Illegal lot number.\n";
-    return;
+    return false;
   }
 
   // First peek to validate the lot
   const auto* c_peek = g.entity_manager.peek_commod(lot);
   if (!c_peek || c_peek->owner == 0) {
     g.out << "No such lot for sale.\n";
-    return;
+    return false;
   }
   if (c_peek->owner == g.player() &&
       (c_peek->star_from != g.snum() || c_peek->planet_from != g.pnum())) {
     g.out << "You can only set a minimum price for your "
              "lot from the location it was sold.\n";
-    return;
+    return false;
   }
   money_t minbid = (int)((double)c_peek->bid * (1.0 + UP_BID));
   if (bid0 < minbid) {
     g.out << std::format("You have to bid more than {}.\n", minbid);
-    return;
+    return false;
   }
   if (g.race->Guest) {
     g.out << "Guest races cannot bid.\n";
-    return;
+    return false;
   }
   // Need to check money via g.race->governor
   if (bid0 > g.race->governor[g.governor().value].money) {
     g.out << "Sorry, no buying on credit allowed.\n";
-    return;
+    return false;
   }
 
   auto commod_handle = g.entity_manager.get_commod(lot);
@@ -208,16 +209,30 @@ void place_bid(const command_t& argv, GameObj& g) {
       "There will be an additional {} charged to you for shipping costs.\n",
       shipping);
   g.out << "Bid accepted.\n";
+  return true;
 }
 }  // namespace
 
-void bid(const command_t& argv, GameObj& g) {
+bool bid(const command_t& argv, GameObj& g) {
   if (argv.size() == 1) {
     list_all_commodities(g);
-  } else if (argv.size() == 2) {
-    list_commodities_by_type(argv, g);
-  } else {
-    place_bid(argv, g);
+    return true;
   }
+  if (argv.size() == 2) {
+    return list_commodities_by_type(argv, g);
+  }
+  return place_bid(argv, g);
 }
+
+const CommandDescriptor bid_cmd{
+    .name = "bid",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "bid [<type> | <lot> <bid>]",
+    .description = "View market lots or place bids on commodities",
+    .handler = &bid,
+};
+
 }  // namespace GB::commands

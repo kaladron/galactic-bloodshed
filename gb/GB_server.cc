@@ -81,15 +81,10 @@ using CommandFunction = void (*)(const command_t&, GameObj&);
 
 static const std::unordered_map<std::string, CommandFunction>& getCommands() {
   static std::unordered_map<std::string, CommandFunction> commands{
-      {"allocate", allocateAPs},          {"invite", GB::commands::invite},
-      {"schedule", GB_schedule},          {"time", GB_time},
-      {"uninvite", GB::commands::invite},
+      {"allocate", allocateAPs},
+      {"schedule", GB_schedule},
+      {"time", GB_time},
   };
-
-  if (MARKET) {
-    commands["bid"] = GB::commands::bid;
-    commands["treasury"] = GB::commands::treasury;
-  }
 
   return commands;
 }

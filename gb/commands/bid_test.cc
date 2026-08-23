@@ -109,16 +109,33 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
 
+  std::println(std::cout, "List all commodities");
+  {
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"bid"});
+    assert(g.out.str().contains("Galactic Bloodshed Commodities Market"));
+    std::println(std::cout, "✓ Listing all commodities succeeded");
+  }
+
+  std::println(std::cout, "List commodities by type");
+  {
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"bid", "r"});
+    assert(g.out.str().contains("Galactic Bloodshed Commodities Market"));
+    std::println(std::cout, "✓ Listing commodities by type succeeded");
+  }
+
   std::println(std::cout, "Place initial bid on commodity");
   {
     const auto* c_before = ctx.em.peek_commod(1);
     std::println(std::cout, "  Before: bid={}, bidder={}", c_before->bid,
                  c_before->bidder);
 
-    command_t argv = {"bid", "1", "1000"};
-    GB::commands::bid(argv, g);
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"bid", "1", "1000"});
     std::println(std::cout, "  Output: {}", g.out.str());
 
+    ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
     std::println(std::cout, "  After: bid={}, bidder={}", c_after->bid,
                  c_after->bidder);
@@ -138,9 +155,10 @@ int main() {
     // Need to bid at least (1 + UP_BID) times the current bid
     int new_bid = (int)((double)previous_bid * (1.0 + UP_BID)) + 10;
 
-    command_t argv = {"bid", "1", std::to_string(new_bid)};
-    GB::commands::bid(argv, g);
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"bid", "1", std::to_string(new_bid)});
 
+    ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == new_bid);
     assert(c_after->bidder == 1);
@@ -153,10 +171,11 @@ int main() {
     int previous_bid = c_before->bid;
 
     // Try to bid less than required
-    command_t argv = {"bid", "1", "100"};
-    GB::commands::bid(argv, g);
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"bid", "1", "100"});
 
     // Bid should not change
+    ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == previous_bid);
     std::println(std::cout, "✓ Low bid rejected");
@@ -181,10 +200,12 @@ int main() {
     g2.set_snum(0);
     g2.set_pnum(0);
 
-    command_t argv = {"bid", "1", "5000"};
-    GB::commands::bid(argv, g2);
+    g2.out.str("");
+    ctx.assert_dispatch_rejected(g2, {"bid", "1", "5000"});
+    assert(g2.out.str().contains("Guest races cannot bid."));
 
     // Bid should not change
+    ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
     assert(c_after->bid == previous_bid);
     std::println(std::cout, "✓ Guest race blocked from bidding");

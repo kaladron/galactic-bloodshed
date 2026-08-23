@@ -18,6 +18,7 @@
 
 - **Commit messages**: Use `.github/skills/generate-commit-message/SKILL.md` when asked to draft a commit message or commit summary.
 - **Code formatting**: Always run `clang-format -i` on modified C++ files (`.cc`, `.cppm`, `.h`, `.hpp`) before committing or pushing changes (see `.github/skills/clang-format/SKILL.md`).
+- **Static analysis**: Run `./tools/tidy-changed.sh` on modified C++ files before committing (see `.github/skills/clang-tidy/SKILL.md`).
 - **Atomic commit workflow**: Use `.github/skills/atomic-commit-workflow/SKILL.md` for bite-sized (~200 LOC) commits with in-commit tests and verification.
 - **Command implementation**: Use `.github/skills/command-implementation/SKILL.md` when adding or migrating player commands using `CommandDescriptor`.
 - **Command test matrix**: Use `.github/skills/command-test-matrix/SKILL.md` when writing 4-way command tests.

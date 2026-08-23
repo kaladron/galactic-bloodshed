@@ -178,7 +178,6 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. E
 ```
 commands --> gblib (for GameObj, EntityManager, SessionRegistry interface)
          --> notification (for cross-player messaging)
-         --> session (only for who/emulate commands that need Session&)
 
 notification --> gblib (for EntityManager, SessionRegistry interface, types)
 
@@ -633,7 +632,6 @@ graph TD
     Commands --> GameObjPart
     Commands --> ServicesPart
     Commands --> Notification
-    Commands -. "who/emulate only" .-> Session
 
     Notification --> ServicesPart
     Notification --> SessionRegPart

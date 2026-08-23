@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file who.cc
+/// \brief List currently connected players.
+
 module;
 
 import gblib;
-import session;
 import tabulate;
 import std;
 #undef stdout
@@ -12,38 +14,38 @@ module commands;
 
 namespace GB::commands {
 
-void who(const command_t& /* argv */, Session& session) {
+bool who(const command_t&, GameObj& g) {
   std::time_t now = std::time(nullptr);
-  bool is_god = false;
+  bool is_god = g.god();
   int coward_count = 0;
 
-  session.out() << std::format("Current Players: {}", std::ctime(&now));
-
-  const auto* current_race =
-      session.entity_manager().peek_race(session.player());
-  if (current_race) {
-    is_god = current_race->God;
-  }
+  g.out << std::format("Current Players: {}", std::ctime(&now));
 
   tabulate::Table table;
   table.add_row({"Race", "Governor", "Player", "Idle", "Star", "Flags"});
 
   // Get all connected sessions as metadata (no Session type exposure)
-  for (const auto& info : session.registry().get_connected_sessions()) {
+  for (const auto& info : g.session_registry.get_connected_sessions()) {
     if (info.god) continue;  // Skip god sessions
 
-    const auto* r = session.entity_manager().peek_race(info.player);
+    const auto* r = g.entity_manager.peek_race(info.player);
     if (!r) continue;
 
     // Check if this player should be visible
     bool is_visible = !r->governor[info.governor.value].toggle.invisible ||
-                      info.player == session.player() || is_god;
+                      info.player == g.player() || is_god;
 
     if (is_visible) {
       std::string gov_name =
           std::format("\"{}\"", r->governor[info.governor.value].name);
-      const auto* star = session.entity_manager().peek_star(info.snum);
-      std::string star_name = is_god && star ? star->get_name() : "";
+      std::string star_name;
+      if (is_god) {
+        try {
+          const auto* star = g.entity_manager.peek_star(info.snum);
+          if (star) star_name = star->get_name();
+        } catch (const EntityNotFoundError&) {
+        }
+      }
       std::time_t idle_seconds = now - info.last_time;
       std::string player_gov =
           std::format("[{},{}]", info.player, info.governor);
@@ -66,14 +68,26 @@ void who(const command_t& /* argv */, Session& session) {
     }
   }
 
-  session.out() << table << "\n";
+  g.out << table << "\n";
 
   if (SHOW_COWARDS) {
-    session.out() << std::format("And {} coward{}.\n", coward_count,
-                                 (coward_count == 1) ? "" : "s");
+    g.out << std::format("And {} coward{}.\n", coward_count,
+                         (coward_count == 1) ? "" : "s");
   } else {
-    session.out() << "Finished.\n";
+    g.out << "Finished.\n";
   }
+  return true;
 }
+
+const CommandDescriptor who_cmd{
+    .name = "who",
+    .roles = {},
+    .scopes = AllowedScopes::any(),
+    .ap = APCost::free(),
+    .min_args = 1,
+    .syntax = "who",
+    .description = "List currently connected players",
+    .handler = &who,
+};
 
 }  // namespace GB::commands

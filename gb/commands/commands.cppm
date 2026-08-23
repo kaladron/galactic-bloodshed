@@ -11,7 +11,6 @@ namespace GB::commands {
 // Server-level commands (take Session& instead of GameObj&)
 // TODO(Step 9): Convert these to (const command_t&, GameObj&) after GameObj can
 // access Session
-export void who(const command_t&, Session&);
 export void emulate(const command_t&, Session&);
 
 // God commands
@@ -205,6 +204,8 @@ export bool vote(const command_t&, GameObj&);
 export extern const CommandDescriptor vote_cmd;
 export bool walk(const command_t&, GameObj&);
 export extern const CommandDescriptor walk_cmd;
+export bool who(const command_t&, GameObj&);
+export extern const CommandDescriptor who_cmd;
 export bool whois(const command_t&, GameObj&);
 export extern const CommandDescriptor whois_cmd;
 export bool zoom(const command_t&, GameObj&);

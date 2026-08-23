@@ -163,6 +163,7 @@ build_registry() {
         reg(name_cmd);
         reg(personal_cmd);
         reg(toggle_cmd);
+        reg(who_cmd);
         reg(whois_cmd);
         reg(block_cmd);
         reg(mobilize_cmd);

@@ -349,8 +349,8 @@ add_executable(notification_test notification_test.cc)
 target_link_libraries(notification_test PRIVATE gblib session notification dallib)
 add_test(NAME GB_notification_test COMMAND notification_test)
 
-add_executable(who_test who_test.cc)
-target_link_libraries(who_test PRIVATE gblib dallib)
+add_executable(who_test commands/who_test.cc)
+target_link_libraries(who_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_who_test COMMAND who_test)
 
 add_executable(emulate_test emulate_test.cc)

@@ -16,9 +16,12 @@ Session::Session(asio::ip::tcp::socket socket, EntityManager& em,
     : socket_(std::move(socket)), entity_manager_(em), registry_(registry),
       on_disconnect_(std::move(on_disconnect)) {
   // Log connection (get peer address)
-  auto endpoint = socket_.remote_endpoint();
-  std::println(stderr, "NEW CONNECTION from {}",
-               endpoint.address().to_string());
+  asio::error_code ec;
+  auto endpoint = socket_.remote_endpoint(ec);
+  if (!ec) {
+    std::println(stderr, "NEW CONNECTION from {}",
+                 endpoint.address().to_string());
+  }
 }
 
 void Session::start() {

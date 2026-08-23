@@ -137,6 +137,11 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. E
   - Cross-player message routing with game logic
   - Respects gag toggles, star inhabitance, update_in_progress
   - Functions: d_broadcast, d_announce, d_think, d_shout, warn_player, warn_race
+
+- **`auth`** (Service Layer) - `gb/services/auth.cppm`
+  - Authentication, password parsing, and connection handshake logic
+  - Scope clamping and welcome message dispatch
+  - Functions: make_command_t, parse_connect, welcome_user, check_connect
   
 - **`asio`** (Third-party wrapper) - `gb/third_party/asio.cppm`
   - Module wrapper for Boost.Asio networking library

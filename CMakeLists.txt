@@ -40,15 +40,19 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 include(cmake/compiler_setup.cmake)
 
 # clang-tidy target for running static analysis with auto-fix
-find_program(RUN_CLANG_TIDY_EXE NAMES run-clang-tidy)
+find_program(
+  RUN_CLANG_TIDY_EXE
+  NAMES run-clang-tidy run-clang-tidy-22 run-clang-tidy-21 run-clang-tidy-20 run-clang-tidy-19 run-clang-tidy.py
+)
 if(RUN_CLANG_TIDY_EXE)
   add_custom_target(
     tidy
     COMMAND ${RUN_CLANG_TIDY_EXE}
       -p ${CMAKE_BINARY_DIR}
-      -header-filter='.*galactic-bloodshed.*'
+      "-header-filter=.*(gb|dallib)/.*"
+      "-exclude-header-filter=.*third_party/.*"
       -quiet
-      "gb/.*\\.\(cc|cppm\)$$"
+      "(gb|dallib)/.*\\.(cc|cppm)$"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Running clang-tidy..."
     VERBATIM
@@ -57,10 +61,11 @@ if(RUN_CLANG_TIDY_EXE)
     tidy-fix
     COMMAND ${RUN_CLANG_TIDY_EXE}
       -p ${CMAKE_BINARY_DIR}
-      -header-filter='.*galactic-bloodshed.*'
+      "-header-filter=.*(gb|dallib)/.*"
+      "-exclude-header-filter=.*third_party/.*"
       -quiet
       -fix
-      "gb/.*\\.\(cc|cppm\)$$"
+      "(gb|dallib)/.*\\.(cc|cppm)$"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Running clang-tidy with --fix..."
     VERBATIM

@@ -17,6 +17,9 @@ endif()
 
 enable_testing()
 
+# Export compile commands by default for tooling (clangd, clang-tidy)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compilation database" FORCE)
+
 # Set language version used
 
 

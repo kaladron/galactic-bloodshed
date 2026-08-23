@@ -147,6 +147,11 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. E
   - CLI argument parsing, server configuration options (`ServerConfig`), and startup scheduling initialization
   - Ensures initial self-invite and self-pledge state in player power blocks
   - Functions: parse_server_args, initialize_schedule_state, initialize_block_data
+
+- **`server`** (Service Layer) - `gb/services/server.cppm`
+  - Core network server implementing `SessionRegistry` interface
+  - Manages active client TCP sessions, timer-based event loop, command dispatch, and shutdown signals
+  - Class: `Server`
   
 - **`asio`** (Third-party wrapper) - `gb/third_party/asio.cppm`
   - Module wrapper for Boost.Asio networking library

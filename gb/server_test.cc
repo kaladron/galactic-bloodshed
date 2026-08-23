@@ -1,115 +1,120 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file server_test.cc
+/// \brief Comprehensive unit tests for Server class implementing
+/// SessionRegistry and async network handling.
+
 import asio;
+import auth;
+import commands;
 import dallib;
 import gblib;
+import notification;
+import server;
 import session;
+import test;
 import std;
 
 #include <cassert>
 
-/// \file server_test.cc
-/// \brief Tests for the Server class (Step 3 of Asio migration)
+namespace {
 
-int main() {
-  std::println(std::cout, "=== Server Test ===\n");
+void test_server_initialization_and_registry_primitives() {
+  TestContext ctx;
+  asio::io_context io;
+  Server server(io, 0, ctx.em);
 
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  std::println(std::cout, "✓ Database initialized");
+  assert(server.session_count() == 0);
+  assert(!server.is_connected(1, 0));
+  assert(server.get_connected_sessions().empty());
+  assert(!server.update_in_progress());
 
-  // Create a test race
+  server.set_update_in_progress(true);
+  assert(server.update_in_progress());
+  server.set_update_in_progress(false);
+  assert(!server.update_in_progress());
+
+  // Notification methods should safely handle empty session list
+  server.notify_race(1, "Broadcast message\n");
+  assert(!server.notify_player(1, 0, "Personal message\n"));
+  server.flush_all();
+
+  server.shutdown();
+}
+
+void test_server_network_lifecycle_and_session_handling() {
+  TestContext ctx;
+
   Race race{};
   race.Playernum = 1;
-  race.name = "TestRace";
-  race.Guest = false;
-  race.governor[0].name = "TestGovernor";
-  race.governor[0].money = 1000;
-
-  JsonStore store(db);
-  RaceRepository races(store);
-  races.save(race);
-  std::println(std::cout, "✓ Test race created");
-
-  // Initialize server state
-  auto server_state_handle = em.get_server_state();
-  auto& state = *server_state_handle;
-  state.update_time_minutes = 60;
-  state.segments = 4;
-  state.next_update_time = std::time(nullptr) + 3600;
-  state.next_segment_time = std::time(nullptr) + 900;
-  server_state_handle.save();
-  std::println(std::cout, "✓ Server state initialized");
-
-  // SessionRegistry interface
+  race.name = "ServerTestRace";
+  race.password = "raceword";
+  race.governor[0].name = "Gov0";
+  race.governor[0].password = "govword";
+  race.governor[0].deflevel = ScopeLevel::LEVEL_UNIV;
+  race.governor[0].defsystem = 0;
+  race.governor[0].defplanetnum = 0;
   {
-    std::println(std::cout, "\nTest 1: SessionRegistry interface");
+    JsonStore store(ctx.db);
+    RaceRepository races(store);
+    races.save(race);
 
-    // Create a mock implementation to test the interface
-    class TestRegistry : public SessionRegistry {
-    public:
-      void notify_race(player_t, const std::string&) override {
-        call_count++;
-      }
-      bool notify_player(player_t, governor_t, const std::string&) override {
-        call_count++;
-        return true;
-      }
-      bool update_in_progress() const override {
-        return false;
-      }
-      int call_count = 0;
-    };
+    StarRepository star_repo(store);
+    star_struct sdata{};
+    sdata.star_id = 0;
+    sdata.name = "Sol";
+    Star star{sdata};
+    star_repo.save(star);
 
-    TestRegistry registry;
-    registry.notify_race(1, "Test message");
-
-    assert(registry.call_count == 1);
-    std::println(std::cout, "✓ SessionRegistry interface works");
+    UniverseRepository univ_repo(store);
+    universe_struct u{};
+    u.id = 1;
+    u.numstars = 1;
+    univ_repo.save(u);
   }
 
-  // Timer-based operations
-  {
-    std::println(std::cout, "\nTest 2: Timer-based operations");
+  asio::io_context io;
+  Server server(io, 0, ctx.em);
+  server.start();
 
-    asio::io_context io;
-    asio::steady_timer timer(io);
-    bool timer_fired = false;
+  // Connect client socket to server's dynamically assigned port
+  asio::ip::tcp::socket client_socket(io);
+  client_socket.connect(
+      asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), server.port()));
 
-    timer.expires_after(std::chrono::milliseconds(10));
-    timer.async_wait([&](asio::error_code ec) {
-      if (!ec) {
-        timer_fired = true;
-      }
-    });
+  // Run io to accept connection and dispatch welcome message
+  io.poll();
 
-    // Run for a short time
-    io.run_for(std::chrono::milliseconds(50));
+  assert(server.session_count() == 1);
 
-    assert(timer_fired);
-    std::println(std::cout, "✓ Asio timer operations work");
-  }
+  // Read welcome message
+  std::array<char, 512> read_buf{};
+  std::size_t n = client_socket.read_some(asio::buffer(read_buf));
+  std::string welcome_msg(read_buf.data(), n);
+  assert(welcome_msg.contains("Welcome to Galactic Bloodshed"));
 
-  // Acceptor can be created
-  {
-    std::println(std::cout, "\nTest 3: TCP acceptor creation");
+  // Send credentials
+  std::string creds = "raceword govword\n";
+  client_socket.write_some(asio::buffer(creds));
 
-    asio::io_context io;
-    try {
-      // Try to create an acceptor (using port 0 for auto-assignment)
-      asio::ip::tcp::acceptor acceptor(
-          io, asio::ip::tcp::endpoint(asio::ip::tcp::v6(), 0));
-      acceptor.set_option(asio::socket_base::reuse_address(true));
+  // Run io to read input from socket
+  io.poll();
 
-      std::println(std::cout, "✓ TCP acceptor created successfully");
-    } catch (const std::exception& e) {
-      std::println(std::cout, "✗ TCP acceptor creation failed");
-      return 1;
-    }
-  }
+  // Test registry methods with connected session
+  server.notify_race(1, "Race announcement\n");
+  server.flush_all();
+  io.poll();
 
-  std::println(std::cout, "\n=== All Server Tests Passed ===");
+  server.shutdown();
+  assert(server.session_count() == 0);
+}
+
+}  // namespace
+
+int main() {
+  test_server_initialization_and_registry_primitives();
+  test_server_network_lifecycle_and_session_handling();
+
+  std::println(std::cout, "✓ server_test passed!");
   return 0;
 }

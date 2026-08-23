@@ -220,6 +220,14 @@ target_sources(
   PRIVATE services/server_config.cc)
 target_link_libraries(server_config PUBLIC gblib dallib)
 
+# Create server library (Service Layer)
+add_library(server)
+target_sources(
+  server
+  PUBLIC FILE_SET CXX_MODULES FILES services/server.cppm
+  PRIVATE services/server.cc)
+target_link_libraries(server PUBLIC gblib asio_module session auth notification commands dallib)
+
 add_library(commands)
 target_sources(
   commands
@@ -317,7 +325,7 @@ target_link_libraries(commands PRIVATE gblib session notification SQLite::SQLite
                                        scnlib_module tabulate_module)
 
 add_executable(GB GB_server.cc)
-target_link_libraries(GB PRIVATE gblib commands asio_module session auth server_config SQLite::SQLite3 glaze::glaze)
+target_link_libraries(GB PRIVATE gblib commands asio_module session auth server_config server SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB)
 
 # Test targets
@@ -334,7 +342,7 @@ target_link_libraries(session_test PRIVATE gblib session)
 add_test(NAME GB_session_test COMMAND session_test)
 
 add_executable(server_test server_test.cc)
-target_link_libraries(server_test PRIVATE gblib session asio_module dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(server_test PRIVATE test_module dallib gblib asio_module session auth server commands notification SQLite::SQLite3 glaze::glaze)
 add_test(NAME GB_server_test COMMAND server_test)
 
 add_executable(notification_test notification_test.cc)

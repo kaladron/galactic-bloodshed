@@ -9,8 +9,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 int main() {
   TestContext ctx;
   JsonStore store(ctx.db);
@@ -47,10 +45,10 @@ int main() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"schedule"});
   std::string out = g.out.str();
-  assert(out.contains("30 minute update intervals"));
-  assert(out.contains("5 movement segments per update"));
-  assert(out.contains("Next Segment"));
-  assert(out.contains("Next Update"));
+  test::expect_contains(out, "30 minute update intervals");
+  test::expect_contains(out, "5 movement segments per update");
+  test::expect_contains(out, "Next Segment");
+  test::expect_contains(out, "Next Update");
 
   std::println(std::cout,
                "    ✓ Schedule command succeeded and printed schedule");

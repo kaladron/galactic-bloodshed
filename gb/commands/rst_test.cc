@@ -10,8 +10,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -122,36 +120,36 @@ void test_rst_dispatch() {
   // 1. report command: summary of ships
   ctx.assert_dispatch_success(g, {"report"});
   std::string output = g.out.str();
-  assert(output.contains("Hermes") || output.contains("#1"));
+  test::expect_true(output.contains("Hermes") || output.contains("#1"));
   std::println(std::cout, "    ✓ report command succeeded");
 
   // 2. ship command: full report
   g.out.str("");
   ctx.assert_dispatch_success(g, {"ship"});
   output = g.out.str();
-  assert(output.contains("Hermes"));
+  test::expect_contains(output, "Hermes");
   std::println(std::cout, "    ✓ ship command succeeded");
 
   // 3. stats command: stats report
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stats"});
   output = g.out.str();
-  assert(output.contains("Hermes"));
+  test::expect_contains(output, "Hermes");
   std::println(std::cout, "    ✓ stats command succeeded");
 
   // 4. stock command: cargo and inventory report
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stock"});
   output = g.out.str();
-  assert(output.contains("res") || output.contains("fuel"));
+  test::expect_true(output.contains("res") || output.contains("fuel"));
   std::println(std::cout, "    ✓ stock command succeeded");
 
   // 5. weapons command: weapons report
   g.out.str("");
   ctx.assert_dispatch_success(g, {"weapons"});
   output = g.out.str();
-  assert(output.contains("guns") || output.contains("primary") ||
-         output.contains("Hermes"));
+  test::expect_true(output.contains("guns") || output.contains("primary") ||
+                    output.contains("Hermes"));
   std::println(std::cout, "    ✓ weapons command succeeded");
 
   // 6. factories command: factory report
@@ -161,14 +159,14 @@ void test_rst_dispatch() {
   g.set_pnum(0);
   ctx.assert_dispatch_success(g, {"factories"});
   output = g.out.str();
-  assert(output.contains("Cost") && output.contains("Weapons") &&
-         output.contains("100"));
+  test::expect_true(output.contains("Cost") && output.contains("Weapons") &&
+                    output.contains("100"));
   std::println(std::cout, "    ✓ factories command succeeded");
 
   // 7. Specific ship target: report #1
   g.out.str("");
   ctx.assert_dispatch_success(g, {"report", "#1"});
-  assert(g.out.str().contains("Hermes"));
+  test::expect_contains(g.out.str(), "Hermes");
   std::println(std::cout, "    ✓ report specific ship #1 succeeded");
 
   // 8. Specific ship letter filter: report s (shuttle)
@@ -176,19 +174,19 @@ void test_rst_dispatch() {
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
   ctx.assert_dispatch_success(g, {"report", "s"});
-  assert(g.out.str().contains("Hermes"));
+  test::expect_contains(g.out.str(), "Hermes");
   std::println(std::cout, "    ✓ report shiptype filter succeeded");
 
   // 9. Error case: non-existent ship number
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"report", "#999"});
-  assert(g.out.str().contains("no such ship"));
+  test::expect_contains(g.out.str(), "no such ship");
   std::println(std::cout, "    ✓ report rejected non-existent ship");
 
   // 10. Error case: invalid ship letter
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"report", "?"});
-  assert(g.out.str().contains("no valid ship letters found"));
+  test::expect_contains(g.out.str(), "no valid ship letters found");
   std::println(std::cout, "    ✓ report rejected invalid ship letters");
 }
 

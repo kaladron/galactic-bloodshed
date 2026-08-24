@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_emulate_matrix() {
@@ -48,62 +46,62 @@ void test_emulate_matrix() {
   g.set_god(true);
   g.out.str("");
 
-  assert(GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                        {"emulate", "2", "1"}));
-  assert(g.out.str().contains("Emulating Klingons \"Governor1\" [2,1]"));
-  assert(g.player() == 2);
-  assert(g.governor() == 1);
-  assert(!g.god());  // Emulated session drops god privileges
+  test::expect_true(GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
+                                                   {"emulate", "2", "1"}));
+  test::expect_contains(g.out.str(), "Emulating Klingons \"Governor1\" [2,1]");
+  test::expect_eq(g.player(), 2);
+  test::expect_eq(g.governor(), 1);
+  test::expect_false(g.god());  // Emulated session drops god privileges
 
   // --- Case 2: Role Rejection (Mortal player cannot emulate) ---
   ctx.setup_game_obj(g, 2, 0);
   g.set_god(false);
   g.out.str("");
 
-  assert(!GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                         {"emulate", "1", "0"}));
-  assert(g.out.str().contains("Only deity can use this command."));
-  assert(g.player() == 2);
-  assert(g.governor() == 0);
+  test::expect_false(GB::commands::dispatch_command(
+      g, GB::commands::emulate_cmd, {"emulate", "1", "0"}));
+  test::expect_contains(g.out.str(), "Only deity can use this command.");
+  test::expect_eq(g.player(), 2);
+  test::expect_eq(g.governor(), 0);
 
   // --- Case 3: Argument count checks ---
   ctx.setup_game_obj(g, 1, 0);
   g.set_god(true);
   g.out.str("");
 
-  assert(!GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                         {"emulate"}));
-  assert(g.out.str().contains("Syntax: emulate <player> <governor>"));
+  test::expect_false(GB::commands::dispatch_command(
+      g, GB::commands::emulate_cmd, {"emulate"}));
+  test::expect_contains(g.out.str(), "Syntax: emulate <player> <governor>");
 
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                         {"emulate", "2"}));
-  assert(g.out.str().contains("Syntax: emulate <player> <governor>"));
+  test::expect_false(GB::commands::dispatch_command(
+      g, GB::commands::emulate_cmd, {"emulate", "2"}));
+  test::expect_contains(g.out.str(), "Syntax: emulate <player> <governor>");
 
   // --- Case 4: Domain Errors ---
   // Non-numeric args
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                         {"emulate", "abc", "0"}));
-  assert(g.out.str().contains("Invalid player or governor number."));
+  test::expect_false(GB::commands::dispatch_command(
+      g, GB::commands::emulate_cmd, {"emulate", "abc", "0"}));
+  test::expect_contains(g.out.str(), "Invalid player or governor number.");
 
   // Non-existent player
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                         {"emulate", "99", "0"}));
-  assert(g.out.str().contains("Player 99 does not exist."));
+  test::expect_false(GB::commands::dispatch_command(
+      g, GB::commands::emulate_cmd, {"emulate", "99", "0"}));
+  test::expect_contains(g.out.str(), "Player 99 does not exist.");
 
   // Out of range governor
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                         {"emulate", "2", "99"}));
-  assert(g.out.str().contains("Invalid governor 99."));
+  test::expect_false(GB::commands::dispatch_command(
+      g, GB::commands::emulate_cmd, {"emulate", "2", "99"}));
+  test::expect_contains(g.out.str(), "Invalid governor 99.");
 
   // Inactive governor
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                         {"emulate", "2", "2"}));
-  assert(g.out.str().contains("Governor 2 is not active."));
+  test::expect_false(GB::commands::dispatch_command(
+      g, GB::commands::emulate_cmd, {"emulate", "2", "2"}));
+  test::expect_contains(g.out.str(), "Governor 2 is not active.");
 }
 
 }  // namespace

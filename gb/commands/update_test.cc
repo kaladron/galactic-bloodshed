@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_update_matrix() {
@@ -48,20 +46,20 @@ void test_update_matrix() {
   g.set_god(true);
   g.out.str("");
 
-  assert(GB::commands::dispatch_command(g, GB::commands::update_cmd,
-                                        {"@@update"}));
+  test::expect_true(GB::commands::dispatch_command(g, GB::commands::update_cmd,
+                                                   {"@@update"}));
   std::string out = g.out.str();
-  assert(out.contains("Starting update..."));
-  assert(out.contains("Update completed."));
+  test::expect_contains(out, "Starting update...");
+  test::expect_contains(out, "Update completed.");
 
   // --- Case 2: Role Rejection (Mortal player cannot run @@update) ---
   ctx.setup_game_obj(g, 2, 0);
   g.set_god(false);
   g.out.str("");
 
-  assert(!GB::commands::dispatch_command(g, GB::commands::update_cmd,
-                                         {"@@update"}));
-  assert(g.out.str().contains("Only deity can use this command."));
+  test::expect_false(GB::commands::dispatch_command(g, GB::commands::update_cmd,
+                                                    {"@@update"}));
+  test::expect_contains(g.out.str(), "Only deity can use this command.");
 
   // --- Case 3: Scope Testing (Valid in all scopes) ---
   ctx.setup_game_obj(g, 1, 0);
@@ -70,8 +68,8 @@ void test_update_matrix() {
                      ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {
     g.set_level(scope);
     g.out.str("");
-    assert(GB::commands::dispatch_command(g, GB::commands::update_cmd,
-                                          {"@@update"}));
+    test::expect_true(GB::commands::dispatch_command(
+        g, GB::commands::update_cmd, {"@@update"}));
   }
 }
 

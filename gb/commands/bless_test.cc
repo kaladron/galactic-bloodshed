@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 // Test bless command - technology and money blessings
@@ -52,11 +50,11 @@ void test_bless_technology_and_money() {
 
   // 1. Happy Path: Deity blesses technology
   ctx.assert_dispatch_success(g, {"bless", "1", "technology", "5"});
-  assert(ctx.em.peek_race(1)->tech == 15.0);
+  test::expect_eq(ctx.em.peek_race(1)->tech, 15.0);
 
   // 2. Happy Path: Deity blesses money
   ctx.assert_dispatch_success(g, {"bless", "1", "money", "1000"});
-  assert(ctx.em.peek_race(1)->governor[0].money == 1100);
+  test::expect_eq(ctx.em.peek_race(1)->governor[0].money, 1100);
 }
 
 // Test bless command - permissions and scope restrictions
@@ -103,8 +101,8 @@ void test_bless_role_and_scope_rejection() {
   g.set_pnum(0);
   g.set_god(false);
   ctx.assert_dispatch_rejected(g, {"bless", "2", "technology", "5"});
-  assert(ctx.em.peek_race(2)->tech == 10.0);
-  assert(g.out.str().contains("Only deity can use this command."));
+  test::expect_eq(ctx.em.peek_race(2)->tech, 10.0);
+  test::expect_contains(g.out.str(), "Only deity can use this command.");
 
   // 2. Scope Rejection: Deity (Player 1) at LEVEL_UNIV scope is rejected
   g.out.str("");
@@ -112,8 +110,8 @@ void test_bless_role_and_scope_rejection() {
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"bless", "2", "technology", "5"});
-  assert(ctx.em.peek_race(2)->tech == 10.0);
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_eq(ctx.em.peek_race(2)->tech, 10.0);
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
 }
 
 }  // namespace

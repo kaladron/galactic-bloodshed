@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 // Test news purge execution by deity
@@ -36,7 +34,7 @@ void test_purge_as_god() {
 
   // 1. Happy Path: Deity successfully purges news
   ctx.assert_dispatch_success(g, {"purge"});
-  assert(g.out.str().contains("Purged all news."));
+  test::expect_contains(g.out.str(), "Purged all news.");
 }
 
 // Test purge rejection for mortal player
@@ -59,7 +57,7 @@ void test_purge_as_mortal() {
 
   // 2. Role Rejection: Mortal player is rejected
   ctx.assert_dispatch_rejected(g, {"purge"});
-  assert(g.out.str().contains("Only deity can use this command."));
+  test::expect_contains(g.out.str(), "Only deity can use this command.");
 }
 
 }  // namespace

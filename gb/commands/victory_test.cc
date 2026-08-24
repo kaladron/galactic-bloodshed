@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_victory_dispatch() {
@@ -67,27 +65,27 @@ void test_victory_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"victory"});
   std::string out = g.out.str();
-  assert(out.contains("PLAYER RANKINGS"));
-  assert(out.contains("Martians") && out.contains("Terrans"));
+  test::expect_contains(out, "PLAYER RANKINGS");
+  test::expect_true(out.contains("Martians") && out.contains("Terrans"));
   std::println(std::cout, "    ✓ victory all players standings succeeded");
 
   // 2. Victory top count (victory 1 - top 1 player)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"victory", "1"});
   out = g.out.str();
-  assert(out.contains("PLAYER RANKINGS"));
-  assert(out.contains("Martians"));
+  test::expect_contains(out, "PLAYER RANKINGS");
+  test::expect_contains(out, "Martians");
   std::println(std::cout, "    ✓ victory top 1 player standings succeeded");
 
   // 3. Error case: invalid count
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"victory", "0"});
-  assert(g.out.str().contains("Invalid count specified"));
+  test::expect_contains(g.out.str(), "Invalid count specified");
   std::println(std::cout, "    ✓ victory rejected 0 count");
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"victory", "abc"});
-  assert(g.out.str().contains("Invalid count specified"));
+  test::expect_contains(g.out.str(), "Invalid count specified");
   std::println(std::cout, "    ✓ victory rejected non-numeric count");
 
   // 4. God mode includes passwords
@@ -95,8 +93,8 @@ void test_victory_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"victory"});
   out = g.out.str();
-  assert(out.contains("Password") && out.contains("Gov Pass"));
-  assert(out.contains("secret1") || out.contains("secret2"));
+  test::expect_true(out.contains("Password") && out.contains("Gov Pass"));
+  test::expect_true(out.contains("secret1") || out.contains("secret2"));
   std::println(std::cout, "    ✓ victory god mode details succeeded");
 }
 

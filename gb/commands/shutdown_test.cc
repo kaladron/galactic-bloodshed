@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 // Test shutdown execution by deity
@@ -33,8 +31,8 @@ void test_shutdown_as_god() {
 
   // 1. Happy Path: Deity successfully triggers shutdown
   ctx.assert_dispatch_success(g, {"@@shutdown"});
-  assert(g.shutdown_requested());
-  assert(g.out.str().contains("Doing shutdown."));
+  test::expect_true(g.shutdown_requested());
+  test::expect_contains(g.out.str(), "Doing shutdown.");
 }
 
 // Test shutdown rejection for mortal player
@@ -57,8 +55,8 @@ void test_shutdown_as_mortal() {
 
   // 2. Role Rejection: Mortal player is rejected
   ctx.assert_dispatch_rejected(g, {"@@shutdown"});
-  assert(!g.shutdown_requested());
-  assert(g.out.str().contains("Only deity can use this command."));
+  test::expect_false(g.shutdown_requested());
+  test::expect_contains(g.out.str(), "Only deity can use this command.");
 }
 
 }  // namespace

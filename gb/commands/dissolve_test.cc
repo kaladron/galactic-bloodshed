@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -45,15 +43,15 @@ void setup_test_world(TestContext& ctx) {
 
   // Load race into EntityManager cache to ensure getracenum can find it
   const auto* loaded_race = ctx.em.peek_race(1);
-  assert(loaded_race != nullptr);
-  assert(loaded_race->password == "testpass");
+  test::expect_ne(loaded_race, nullptr);
+  test::expect_eq(loaded_race->password, "testpass");
   std::println(std::cout,
                "Race loaded into EntityManager: player={}, password={}",
                loaded_race->Playernum, loaded_race->password);
   std::println(std::cout, "Governor 0: active={}, password='{}'",
                loaded_race->governor[0].active,
                loaded_race->governor[0].password);
-  assert(loaded_race->governor[0].password == "govpass");
+  test::expect_eq(loaded_race->governor[0].password, "govpass");
 }
 
 void test_dissolve_happy_path() {
@@ -76,11 +74,11 @@ void test_dissolve_happy_path() {
 
     // Verify race was dissolved
     const auto* saved_race = ctx.em.peek_race(1);
-    assert(saved_race != nullptr);
+    test::expect_ne(saved_race, nullptr);
     std::println(std::cout, "DEBUG: Race dissolved = {}",
                  saved_race->dissolved);
     std::println(std::cout, "DEBUG: Race name = {}", saved_race->name);
-    assert(saved_race->dissolved == true);
+    test::expect_true(saved_race->dissolved);
     std::println(std::cout, "    ✓ Race dissolved flag set to true");
 
     // TODO: Re-enable ship destruction test after kill_ship() migrated to
@@ -121,14 +119,14 @@ void test_dissolve_role_rejections() {
   ctx.setup_game_obj(g, 2, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"dissolve", "guestpass", "guestgov"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Leader-only rejection (Governor 1)
   g.out.str("");
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"dissolve", "testpass", "subpass"});
-  assert(g.out.str().contains("leader (Governor 0)"));
+  test::expect_contains(g.out.str(), "leader (Governor 0)");
 }
 
 void test_dissolve_domain_errors() {
@@ -142,13 +140,14 @@ void test_dissolve_domain_errors() {
 
   // 1. Min args (< 3 args)
   ctx.assert_dispatch_rejected(g, {"dissolve", "testpass"});
-  assert(g.out.str().contains(
-      "Syntax: dissolve <race password> <leader password> [waste]"));
+  test::expect_contains(
+      g.out.str(),
+      "Syntax: dissolve <race password> <leader password> [waste]");
 
   // 2. Password mismatch
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"dissolve", "wrongpass", "wronggov"});
-  assert(g.out.str().contains("Password mismatch"));
+  test::expect_contains(g.out.str(), "Password mismatch");
 }
 
 }  // namespace

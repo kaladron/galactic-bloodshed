@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_pledge_and_unpledge_dispatch() {
@@ -50,37 +48,37 @@ void test_pledge_and_unpledge_dispatch() {
   // 1. Pledge to block 2
   ctx.assert_dispatch_success(g, {"pledge", "2"});
   const auto* saved_block = ctx.em.peek_block(2);
-  assert(saved_block != nullptr);
-  assert(isset(saved_block->pledge, player_t{1}));
+  test::expect_ne(saved_block, nullptr);
+  test::expect_true(isset(saved_block->pledge, player_t{1}));
   std::println(std::cout, "    ✓ Pledged allegiance successfully");
 
   // 2. Unpledge from block 2
   ctx.assert_dispatch_success(g, {"unpledge", "2"});
   saved_block = ctx.em.peek_block(2);
-  assert(saved_block != nullptr);
-  assert(!isset(saved_block->pledge, player_t{1}));
+  test::expect_ne(saved_block, nullptr);
+  test::expect_false(isset(saved_block->pledge, player_t{1}));
   std::println(std::cout, "    ✓ Unpledged successfully");
 
   // 3. Self pledge rejection
   ctx.assert_dispatch_rejected(g, {"pledge", "1"});
-  assert(g.out.str().contains("Not needed, you are the leader."));
+  test::expect_contains(g.out.str(), "Not needed, you are the leader.");
   std::println(std::cout, "    ✓ Self pledge rejection verified");
 
   // 4. Self unpledge rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"unpledge", "1"});
-  assert(g.out.str().contains("Not needed, you are the leader."));
+  test::expect_contains(g.out.str(), "Not needed, you are the leader.");
   std::println(std::cout, "    ✓ Self unpledge rejection verified");
 
   // 5. Role check: Governor cannot pledge or unpledge
   g.set_governor(1);
   ctx.assert_dispatch_rejected(g, {"pledge", "2"});
-  assert(g.out.str().contains(
-      "Only the leader (Governor 0) may use this command."));
+  test::expect_contains(g.out.str(),
+                        "Only the leader (Governor 0) may use this command.");
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"unpledge", "2"});
-  assert(g.out.str().contains(
-      "Only the leader (Governor 0) may use this command."));
+  test::expect_contains(g.out.str(),
+                        "Only the leader (Governor 0) may use this command.");
   std::println(std::cout,
                "    ✓ Governor rejection verified for pledge and unpledge");
 
@@ -88,10 +86,10 @@ void test_pledge_and_unpledge_dispatch() {
   g.set_governor(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pledge", "99"});
-  assert(g.out.str().contains("No such player."));
+  test::expect_contains(g.out.str(), "No such player.");
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"unpledge", "99"});
-  assert(g.out.str().contains("No such player."));
+  test::expect_contains(g.out.str(), "No such player.");
   std::println(std::cout, "    ✓ Invalid player rejection verified");
 }
 

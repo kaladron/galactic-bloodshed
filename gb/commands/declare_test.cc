@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_declare_dispatch() {
@@ -52,38 +50,38 @@ void test_declare_dispatch() {
   ctx.assert_dispatch_success(g, {"declare", "2", "alliance"});
   const auto* saved_race1 = ctx.em.peek_race(1);
   const auto* saved_race2 = ctx.em.peek_race(2);
-  assert(saved_race1 != nullptr);
-  assert(saved_race2 != nullptr);
-  assert(isset(saved_race1->allied, 2U));
-  assert(!isset(saved_race1->atwar, 2U));
-  assert(saved_race2->translate[0] >= 30);
+  test::expect_ne(saved_race1, nullptr);
+  test::expect_ne(saved_race2, nullptr);
+  test::expect_true(isset(saved_race1->allied, 2U));
+  test::expect_false(isset(saved_race1->atwar, 2U));
+  test::expect_ge(saved_race2->translate[0], 30);
   std::println(std::cout, "    ✓ Alliance declared and translation updated");
 
   // 2. Declare war
   ctx.assert_dispatch_success(g, {"declare", "2", "war"});
   saved_race1 = ctx.em.peek_race(1);
-  assert(isset(saved_race1->atwar, 2U));
-  assert(!isset(saved_race1->allied, 2U));
+  test::expect_true(isset(saved_race1->atwar, 2U));
+  test::expect_false(isset(saved_race1->allied, 2U));
   std::println(std::cout, "    ✓ War declared successfully");
 
   // 3. Declare neutrality
   ctx.assert_dispatch_success(g, {"declare", "2", "neutrality"});
   saved_race1 = ctx.em.peek_race(1);
-  assert(!isset(saved_race1->atwar, 2U));
-  assert(!isset(saved_race1->allied, 2U));
+  test::expect_false(isset(saved_race1->atwar, 2U));
+  test::expect_false(isset(saved_race1->allied, 2U));
   std::println(std::cout, "    ✓ Neutrality declared successfully");
 
   // 4. Role check: Governor != 0 cannot declare
   g.set_governor(1);
   ctx.assert_dispatch_rejected(g, {"declare", "2", "war"});
-  assert(g.out.str().contains(
-      "Only the leader (Governor 0) may use this command."));
+  test::expect_contains(g.out.str(),
+                        "Only the leader (Governor 0) may use this command.");
   std::println(std::cout, "    ✓ Governor rejection verified");
 
   // 5. Invalid target player
   g.set_governor(0);
   ctx.assert_dispatch_rejected(g, {"declare", "99", "war"});
-  assert(g.out.str().contains("No such player."));
+  test::expect_contains(g.out.str(), "No such player.");
   std::println(std::cout, "    ✓ Invalid player rejection verified");
 }
 

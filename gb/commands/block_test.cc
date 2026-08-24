@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_block_dispatch() {
@@ -96,21 +94,21 @@ void test_block_dispatch() {
   // 1. List all alliance blocks
   ctx.assert_dispatch_success(g, {"block"});
   std::string output = g.out.str();
-  assert(output.find("ZeroVPBlock") != std::string::npos);
-  assert(output.find("HasVPsBlock") != std::string::npos);
-  assert(output.find("EmptyBlock") == std::string::npos);
+  test::expect_contains(output, "ZeroVPBlock");
+  test::expect_contains(output, "HasVPsBlock");
+  test::expect_false(output.contains("EmptyBlock"));
   std::println(std::cout, "    ✓ All alliance blocks listing succeeded");
 
   // 2. Query player block membership
   g.out.str("");
   ctx.assert_dispatch_success(g, {"block", "player", "1"});
-  assert(g.out.str().contains("TestRace1"));
+  test::expect_contains(g.out.str(), "TestRace1");
   std::println(std::cout, "    ✓ Player block membership query succeeded");
 
   // 3. Query specific block power report
   g.out.str("");
   ctx.assert_dispatch_success(g, {"block", "1"});
-  assert(g.out.str().contains("ZeroVPBlock"));
+  test::expect_contains(g.out.str(), "ZeroVPBlock");
   std::println(std::cout, "    ✓ Specific block report query succeeded");
 }
 

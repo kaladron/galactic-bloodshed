@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_relation_dispatch() {
@@ -46,23 +44,23 @@ void test_relation_dispatch() {
   // 1. View own relations report
   ctx.assert_dispatch_success(g, {"relation"});
   std::string out = g.out.str();
-  assert(out.contains("Racial Relations Report for Federation"));
-  assert(out.contains("Klingons"));
-  assert(out.contains("ALLIED"));
+  test::expect_contains(out, "Racial Relations Report for Federation");
+  test::expect_contains(out, "Klingons");
+  test::expect_contains(out, "ALLIED");
   std::println(std::cout, "    ✓ Own relations report generated");
 
   // 2. View relations for another player
   g.out.str("");
   ctx.assert_dispatch_success(g, {"relation", "2"});
   out = g.out.str();
-  assert(out.contains("Racial Relations Report for Klingons"));
-  assert(out.contains("Federation"));
+  test::expect_contains(out, "Racial Relations Report for Klingons");
+  test::expect_contains(out, "Federation");
   std::println(std::cout, "    ✓ Target player relations report generated");
 
   // 3. Invalid player argument
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"relation", "99"});
-  assert(g.out.str().contains("No such player."));
+  test::expect_contains(g.out.str(), "No such player.");
   std::println(std::cout, "    ✓ Invalid player rejection verified");
 }
 

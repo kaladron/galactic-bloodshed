@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file name_test.cc
+/// \brief Test name command database persistence and validation rules
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
-
-/// \file name_test.cc
-/// \brief Test name command database persistence and validation rules
 
 void test_name_ship_persistence() {
   std::println(std::cout, "Test: name command - ship naming");
@@ -49,13 +47,13 @@ void test_name_ship_persistence() {
 
     // Verify output message
     std::string out_str = g.out.str();
-    assert(out_str.find("Name set.") != std::string::npos);
+    test::expect_contains(out_str, "Name set.");
     std::println(std::cout, "    ✓ Output message correct");
 
     // Verify database
     auto saved = ships.find_by_number(1);
-    assert(saved.has_value());
-    assert(saved->name() == "USS Enterprise");
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->name(), "USS Enterprise");
     std::println(std::cout, "    ✓ Database: ship name = '{}'", saved->name());
   }
 
@@ -93,8 +91,8 @@ void test_name_race_persistence() {
 
     // Verify database
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->name == "Klingons");
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->name, "Klingons");
     std::println(std::cout, "    ✓ Database: race name = '{}'", saved->name);
   }
 
@@ -142,8 +140,8 @@ void test_name_star_persistence() {
 
     // Verify database
     auto saved = stars_repo.find_by_number(1);
-    assert(saved.has_value());
-    assert(saved->get_name() == "Alpha Centauri");
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->get_name(), "Alpha Centauri");
     std::println(std::cout, "    ✓ Database: star name = '{}'",
                  saved->get_name());
   }
@@ -194,8 +192,8 @@ void test_name_planet_persistence() {
 
     // Verify database
     auto saved = stars_repo.find_by_number(1);
-    assert(saved.has_value());
-    assert(saved->get_planet_name(0) == "New Earth");
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->get_planet_name(0), "New Earth");
     std::println(std::cout, "    ✓ Database: planet name = '{}'",
                  saved->get_planet_name(0));
   }
@@ -233,7 +231,7 @@ void test_name_invalid_formats() {
   {
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship", "!invalid"});
-    assert(g.out.str().find("Illegal name format.") != std::string::npos);
+    test::expect_contains(g.out.str(), "Illegal name format.");
   }
 
   // TEST: Name containing slash or invalid special character -> "Illegal name
@@ -241,7 +239,7 @@ void test_name_invalid_formats() {
   {
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "race", "Val/halla"});
-    assert(g.out.str().find("Illegal name form.") != std::string::npos);
+    test::expect_contains(g.out.str(), "Illegal name form.");
   }
 
   // TEST: All spaces name (first character is space, fails isalnum) -> "Illegal
@@ -249,7 +247,7 @@ void test_name_invalid_formats() {
   {
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "race", " ", " "});
-    assert(g.out.str().find("Illegal name format.") != std::string::npos);
+    test::expect_contains(g.out.str(), "Illegal name format.");
   }
 
   std::println(std::cout, "  ✅ Invalid format validation test passed!");
@@ -280,13 +278,12 @@ void test_name_governor() {
   {
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "governor", "Grand", "Moff"});
-    assert(g.out.str().find("Name changed to `Grand Moff'.") !=
-           std::string::npos);
+    test::expect_contains(g.out.str(), "Name changed to `Grand Moff'.");
 
     // Verify database update
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].name == "Grand Moff");
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->governor[0].name, "Grand Moff");
   }
 
   std::println(std::cout, "  ✅ Governor naming test passed!");
@@ -324,12 +321,12 @@ void test_name_block() {
     g.set_governor(0);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "block", "United", "Federation"});
-    assert(g.out.str().find("Done.") != std::string::npos);
+    test::expect_contains(g.out.str(), "Done.");
 
     // Verify block name updated in database
     const auto* saved = ctx.em.peek_block(blocknum_t{1});
-    assert(saved != nullptr);
-    assert(saved->name == "United Federation");
+    test::expect_ne(saved, nullptr);
+    test::expect_eq(saved->name, "United Federation");
   }
 
   // TEST: Non-leader governor (governor 1) is rejected
@@ -337,8 +334,7 @@ void test_name_block() {
     g.set_governor(1);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "block", "Rebel", "Alliance"});
-    assert(g.out.str().find("You are not authorized to do this.") !=
-           std::string::npos);
+    test::expect_contains(g.out.str(), "You are not authorized to do this.");
   }
 
   std::println(std::cout, "  ✅ Block naming test passed!");
@@ -384,11 +380,11 @@ void test_name_factory_class() {
     g.set_shipno(1);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "class", "Battleship"});
-    assert(g.out.str().find("Class set.") != std::string::npos);
+    test::expect_contains(g.out.str(), "Class set.");
 
     auto saved = ships.find_by_number(1);
-    assert(saved.has_value());
-    assert(saved->shipclass() == "Battleship");
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->shipclass(), "Battleship");
   }
 
   // TEST: Name class when factory is on-line -> error
@@ -400,8 +396,7 @@ void test_name_factory_class() {
     g.set_shipno(1);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "Cruiser"});
-    assert(g.out.str().find("This factory is already on line.") !=
-           std::string::npos);
+    test::expect_contains(g.out.str(), "This factory is already on line.");
   }
 
   // TEST: Name class at non-factory ship -> error
@@ -409,7 +404,7 @@ void test_name_factory_class() {
     g.set_shipno(2);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "Destroyer"});
-    assert(g.out.str().find("You are not at a factory!") != std::string::npos);
+    test::expect_contains(g.out.str(), "You are not at a factory!");
   }
 
   std::println(std::cout, "  ✅ Factory class naming test passed!");
@@ -449,8 +444,7 @@ void test_name_permissions_and_scope() {
     g.set_snum(1);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "star", "Forbidden"});
-    assert(g.out.str().find("Only dieties may name a star.") !=
-           std::string::npos);
+    test::expect_contains(g.out.str(), "Only dieties may name a star.");
   }
 
   // TEST: Non-god naming planet -> rejected
@@ -460,8 +454,7 @@ void test_name_permissions_and_scope() {
     g.set_pnum(0);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "planet", "Forbidden"});
-    assert(g.out.str().find("Only deity can rename planets.") !=
-           std::string::npos);
+    test::expect_contains(g.out.str(), "Only deity can rename planets.");
   }
 
   // TEST: Naming ship when not at ship level -> wrong scope message
@@ -469,8 +462,8 @@ void test_name_permissions_and_scope() {
     g.set_level(ScopeLevel::LEVEL_UNIV);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship", "Enterprise"});
-    assert(g.out.str().find("You have to 'cs' to a ship to name it.") !=
-           std::string::npos);
+    test::expect_contains(g.out.str(),
+                          "You have to 'cs' to a ship to name it.");
   }
 
   std::println(std::cout, "  ✅ Permissions and scope test passed!");

@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_personal_dispatch() {
@@ -38,8 +36,8 @@ void test_personal_dispatch() {
   ctx.assert_dispatch_success(
       g, {"personal", "Peaceful", "explorers", "of", "the", "galaxy"});
   const auto* updated_race = ctx.em.peek_race(1);
-  assert(updated_race != nullptr);
-  assert(updated_race->info.contains("Peaceful explorers of the galaxy"));
+  test::expect_ne(updated_race, nullptr);
+  test::expect_contains(updated_race->info, "Peaceful explorers of the galaxy");
   std::println(std::cout, "    ✓ Leader successfully set personal info");
 
   // 2. Non-leader governor (governor 1) is rejected by leader_only role
@@ -47,8 +45,8 @@ void test_personal_dispatch() {
   g.set_governor(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"personal", "Unauthorized", "update"});
-  assert(g.out.str().contains("Only the leader") ||
-         g.out.str().contains("Governor 0"));
+  test::expect_true(g.out.str().contains("Only the leader") ||
+                    g.out.str().contains("Governor 0"));
   std::println(std::cout,
                "    ✓ Non-leader rejected by leader_only requirement");
 }

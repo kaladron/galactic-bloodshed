@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_give_dispatch() {
@@ -91,17 +89,17 @@ void test_give_dispatch() {
   ctx.assert_dispatch_success(
       g, {"give", "Receiver", std::format("#{}", ship_id.value)});
   const auto* ship_verify = ctx.em.peek_ship(ship_id);
-  assert(ship_verify != nullptr);
-  assert(ship_verify->owner() == 2);
-  assert(ship_verify->governor() == 0);
+  test::expect_ne(ship_verify, nullptr);
+  test::expect_eq(ship_verify->owner(), 2);
+  test::expect_eq(ship_verify->governor(), 0);
 
   const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
-  assert(planet_verify != nullptr);
-  assert(planet_verify->info(player_t{2}).explored == 1);
+  test::expect_ne(planet_verify, nullptr);
+  test::expect_eq(planet_verify->info(player_t{2}).explored, 1);
 
   const auto* star_verify = ctx.em.peek_star(star_id);
-  assert(star_verify != nullptr);
-  assert(isset<std::uint64_t>(star_verify->explored(), 2U));
+  test::expect_ne(star_verify, nullptr);
+  test::expect_true(isset<std::uint64_t>(star_verify->explored(), 2U));
   std::println(std::cout, "    ✓ Ship ownership transferred to ally");
 
   // 2. Non-leader governor rejected
@@ -120,8 +118,8 @@ void test_give_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Receiver", std::format("#{}", ship2_id.value)});
-  assert(g.out.str().contains(
-      "Only the leader (Governor 0) may use this command."));
+  test::expect_contains(g.out.str(),
+                        "Only the leader (Governor 0) may use this command.");
   std::println(std::cout, "    ✓ Governor rejection verified");
 
   // 3. Crewed ship cannot be given away
@@ -141,7 +139,7 @@ void test_give_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Receiver", std::format("#{}", ship3_id.value)});
-  assert(g.out.str().contains("crew/mil on board"));
+  test::expect_contains(g.out.str(), "crew/mil on board");
   std::println(std::cout, "    ✓ Crewed ship rejection verified");
 }
 

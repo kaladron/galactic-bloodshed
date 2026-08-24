@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file highlight_test.cc
+/// \brief Test highlight command database persistence
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
-
-/// \file highlight_test.cc
-/// \brief Test highlight command database persistence
 
 void test_highlight_database_persistence() {
   std::println(std::cout, "Test: highlight command database persistence");
@@ -43,8 +41,8 @@ void test_highlight_database_persistence() {
 
     // Verify database: highlight should be set to 2
     auto saved = races_repo.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.highlight == 2);
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->governor[0].toggle.highlight, 2);
     std::println(std::cout, "    ✓ Database: highlight = {}",
                  saved->governor[0].toggle.highlight);
   }
@@ -55,8 +53,8 @@ void test_highlight_database_persistence() {
     ctx.assert_dispatch_success(g, {"highlight", "1"});
 
     auto saved = races_repo.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.highlight == 1);
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->governor[0].toggle.highlight, 1);
     std::println(std::cout, "    ✓ Database: highlight = {}",
                  saved->governor[0].toggle.highlight);
   }
@@ -67,8 +65,8 @@ void test_highlight_database_persistence() {
     ctx.assert_dispatch_success(g, {"highlight", "2"});
 
     auto saved = races_repo.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.highlight == 2);
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->governor[0].toggle.highlight, 2);
     std::println(std::cout, "    ✓ Database: highlight = {}",
                  saved->governor[0].toggle.highlight);
   }
@@ -79,14 +77,15 @@ void test_highlight_database_persistence() {
     ctx.assert_dispatch_rejected(g, {"highlight", "999"});
 
     std::string out_str = g.out.str();
-    assert(out_str.find("No such player") != std::string::npos);
+    test::expect_contains(out_str, "No such player");
     std::println(std::cout, "    ✓ Error message for invalid player");
     g.out.str("");
 
     // Verify highlight wasn't changed
     auto saved = races_repo.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.highlight == 2);  // Should still be 2
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->governor[0].toggle.highlight,
+                    2);  // Should still be 2
   }
 
   std::println(std::cout,

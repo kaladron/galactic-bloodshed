@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file motto_test.cc
+/// \brief Test motto command database persistence
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
-
-/// \file motto_test.cc
-/// \brief Test motto command database persistence
 
 void test_motto_database_persistence() {
   std::println(std::cout, "Test: motto command database persistence");
@@ -40,15 +38,15 @@ void test_motto_database_persistence() {
 
     // Verify output message
     std::string out_str = g.out.str();
-    assert(out_str.find("Done") != std::string::npos);
+    test::expect_contains(out_str, "Done");
     std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output
 
     // Verify database: motto should be set
     auto saved = blocks.find_by_id(1);
-    assert(saved.has_value());
+    test::expect_true(saved.has_value());
     std::string saved_motto = saved->motto;
-    assert(saved_motto.find("For the Empire!") != std::string::npos);
+    test::expect_contains(saved_motto, "For the Empire!");
     std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
   }
 
@@ -59,9 +57,9 @@ void test_motto_database_persistence() {
 
     // Verify database: motto should be changed
     auto saved = blocks.find_by_id(1);
-    assert(saved.has_value());
+    test::expect_true(saved.has_value());
     std::string saved_motto = saved->motto;
-    assert(saved_motto.find("Victory or Death") != std::string::npos);
+    test::expect_contains(saved_motto, "Victory or Death");
     std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
   }
 
@@ -71,7 +69,7 @@ void test_motto_database_persistence() {
     ctx.assert_dispatch_success(g, {"motto", " "});
 
     auto saved = blocks.find_by_id(1);
-    assert(saved.has_value());
+    test::expect_true(saved.has_value());
     std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
   }
 
@@ -82,8 +80,8 @@ void test_motto_database_persistence() {
     ctx.assert_dispatch_rejected(g, {"motto", "Should", "Fail"});
 
     std::string out_str = g.out.str();
-    assert(out_str.find("Only the leader") != std::string::npos ||
-           out_str.find("not authorized") != std::string::npos);
+    test::expect_true(out_str.find("Only the leader") != std::string::npos ||
+                      out_str.find("not authorized") != std::string::npos);
     std::println(std::cout, "    ✓ Authorization check works");
     g.out.str("");
   }

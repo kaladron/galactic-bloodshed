@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 // Test disconnecting from the server via quit command
@@ -31,8 +29,8 @@ void test_quit_command() {
 
   // Happy Path: Player requests quit
   ctx.assert_dispatch_success(g, {"quit"});
-  assert(g.out.str().contains("Goodbye!"));
-  assert(g.disconnect_requested());
+  test::expect_contains(g.out.str(), "Goodbye!");
+  test::expect_true(g.disconnect_requested());
 }
 
 }  // namespace

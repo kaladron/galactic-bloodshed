@@ -9,8 +9,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 int main() {
   TestContext ctx;
   JsonStore store(ctx.db);
@@ -47,7 +45,7 @@ int main() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"time"});
   std::string out = g.out.str();
-  assert(out.contains("Current time"));
+  test::expect_contains(out, "Current time");
 
   std::println(std::cout,
                "    ✓ Time command succeeded and printed current time");

@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 // Test help command dispatch with valid and invalid topics
@@ -22,12 +20,12 @@ void test_help_command_dispatch() {
 
   // 1. Happy Path: Topic help success
   ctx.assert_dispatch_success(g, {"help", "build"});
-  assert(g.out.str().contains("Finished."));
+  test::expect_contains(g.out.str(), "Finished.");
 
   // 2. Domain Error: Non-existent topic
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"help", "this_topic_does_not_exist"});
-  assert(g.out.str().contains("Help on that subject unavailable."));
+  test::expect_contains(g.out.str(), "Help on that subject unavailable.");
 }
 
 }  // namespace

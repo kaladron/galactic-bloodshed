@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file send_message_test.cc
+/// \brief Unit tests for send message command and translation updates
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
 
 namespace {
 

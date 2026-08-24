@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 // Test querying and setting planetary tax rate successfully
@@ -52,24 +50,24 @@ void test_tax_happy_paths() {
 
   // 1. Query current tax rate
   ctx.assert_dispatch_success(g, {"tax"});
-  assert(g.out.str().contains("Current tax rate: 10%"));
-  assert(g.out.str().contains("Target: 10%"));
+  test::expect_contains(g.out.str(), "Current tax rate: 10%");
+  test::expect_contains(g.out.str(), "Target: 10%");
 
   // 2. Set new tax rate to 25%
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tax", "25"});
-  assert(g.out.str().contains("Set."));
-  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 25);
+  test::expect_contains(g.out.str(), "Set.");
+  test::expect_eq(ctx.em.peek_planet(1, 0)->info(1).newtax, 25);
 
   // 3. Set new tax rate to 100% (max)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tax", "100"});
-  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 100);
+  test::expect_eq(ctx.em.peek_planet(1, 0)->info(1).newtax, 100);
 
   // 4. Set new tax rate to 0% (min)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tax", "0"});
-  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 0);
+  test::expect_eq(ctx.em.peek_planet(1, 0)->info(1).newtax, 0);
 }
 
 // Test tax command role and scope rejections
@@ -118,7 +116,7 @@ void test_tax_role_and_scope_rejections() {
   g.set_snum(1);
   g.set_pnum(0);
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Star control rejection (Governor 2 on star assigned to Governor 1)
   {
@@ -128,15 +126,15 @@ void test_tax_role_and_scope_rejections() {
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Governor 2
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
-  assert(g.out.str().contains(
-      "You are not authorized to do that in this system."));
+  test::expect_contains(g.out.str(),
+                        "You are not authorized to do that in this system.");
 
   // 3. Scope rejection (ScopeLevel::LEVEL_UNIV)
   g.out.str("");
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
 }
 
 // Test tax command domain logic errors
@@ -178,7 +176,7 @@ void test_tax_domain_errors() {
 
   // 1. Domain error: No government center active
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
-  assert(g.out.str().contains("You have no government center active."));
+  test::expect_contains(g.out.str(), "You have no government center active.");
 
   // 2. Domain error: Illegal value (>100 or <0)
   {
@@ -187,13 +185,13 @@ void test_tax_domain_errors() {
   }
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tax", "150"});
-  assert(g.out.str().contains("Illegal value."));
-  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 10);
+  test::expect_contains(g.out.str(), "Illegal value.");
+  test::expect_eq(ctx.em.peek_planet(1, 0)->info(1).newtax, 10);
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tax", "-10"});
-  assert(g.out.str().contains("Illegal value."));
-  assert(ctx.em.peek_planet(1, 0)->info(1).newtax == 10);
+  test::expect_contains(g.out.str(), "Illegal value.");
+  test::expect_eq(ctx.em.peek_planet(1, 0)->info(1).newtax, 10);
 }
 
 }  // namespace

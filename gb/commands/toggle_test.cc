@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file toggle_test.cc
+/// \brief Test toggle command database persistence
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
-
-/// \file toggle_test.cc
-/// \brief Test toggle command database persistence
 
 void test_toggle_database_persistence() {
   std::println(std::cout, "Test: toggle command database persistence");
@@ -48,14 +46,14 @@ void test_toggle_database_persistence() {
 
     // Verify output contains all toggle names
     std::string out_str = g.out.str();
-    assert(out_str.find("gag") != std::string::npos);
-    assert(out_str.find("inverse") != std::string::npos);
-    assert(out_str.find("double_digits") != std::string::npos);
-    assert(out_str.find("geography") != std::string::npos);
-    assert(out_str.find("autoload") != std::string::npos);
-    assert(out_str.find("color") != std::string::npos);
-    assert(out_str.find("compatibility") != std::string::npos);
-    assert(out_str.find("VISIBLE") != std::string::npos);
+    test::expect_contains(out_str, "gag");
+    test::expect_contains(out_str, "inverse");
+    test::expect_contains(out_str, "double_digits");
+    test::expect_contains(out_str, "geography");
+    test::expect_contains(out_str, "autoload");
+    test::expect_contains(out_str, "color");
+    test::expect_contains(out_str, "compatibility");
+    test::expect_contains(out_str, "VISIBLE");
     std::println(std::cout, "    ✓ Output displays all toggles");
     g.out.str("");  // Clear output for next test
   }
@@ -67,24 +65,24 @@ void test_toggle_database_persistence() {
 
     // Verify output
     std::string out_str = g.out.str();
-    assert(out_str.find("gag is now on") != std::string::npos);
+    test::expect_contains(out_str, "gag is now on");
     std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");
 
     // Verify database: gag should be true
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.gag == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->governor[0].toggle.gag);
     std::println(std::cout, "    ✓ Database: gag = true");
 
     // Toggle again - should turn off
     ctx.assert_dispatch_success(g, {"toggle", "gag"});
     out_str = g.out.str();
-    assert(out_str.find("gag is now off") != std::string::npos);
+    test::expect_contains(out_str, "gag is now off");
 
     saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.gag == false);
+    test::expect_true(saved.has_value());
+    test::expect_false(saved->governor[0].toggle.gag);
     std::println(std::cout, "    ✓ Database: gag = false after second toggle");
     g.out.str("");
   }
@@ -96,8 +94,8 @@ void test_toggle_database_persistence() {
 
     // Verify database
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.inverse == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->governor[0].toggle.inverse);
     std::println(std::cout, "    ✓ Database: inverse = true");
     g.out.str("");
   }
@@ -109,8 +107,8 @@ void test_toggle_database_persistence() {
 
     // Verify database
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.double_digits == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->governor[0].toggle.double_digits);
     std::println(std::cout, "    ✓ Database: double_digits = true");
     g.out.str("");
   }
@@ -122,8 +120,8 @@ void test_toggle_database_persistence() {
 
     // Verify database
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.geography == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->governor[0].toggle.geography);
     std::println(std::cout, "    ✓ Database: geography = true");
     g.out.str("");
   }
@@ -135,8 +133,8 @@ void test_toggle_database_persistence() {
 
     // Verify database
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.autoload == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->governor[0].toggle.autoload);
     std::println(std::cout, "    ✓ Database: autoload = true");
     g.out.str("");
   }
@@ -148,8 +146,8 @@ void test_toggle_database_persistence() {
 
     // Verify database
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.color == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->governor[0].toggle.color);
     std::println(std::cout, "    ✓ Database: color = true");
     g.out.str("");
   }
@@ -161,8 +159,8 @@ void test_toggle_database_persistence() {
 
     // Verify database
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.compat == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->governor[0].toggle.compat);
     std::println(std::cout, "    ✓ Database: compat = true");
     g.out.str("");
   }
@@ -174,8 +172,8 @@ void test_toggle_database_persistence() {
 
     // Verify database (invisible flag should toggle)
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->governor[0].toggle.invisible == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->governor[0].toggle.invisible);
     std::println(std::cout, "    ✓ Database: invisible = true");
     g.out.str("");
   }
@@ -196,8 +194,8 @@ void test_toggle_database_persistence() {
 
     // Verify database
     auto saved = races.find_by_player(1);
-    assert(saved.has_value());
-    assert(saved->monitor == true);
+    test::expect_true(saved.has_value());
+    test::expect_true(saved->monitor);
     std::println(std::cout, "    ✓ Database: monitor = true (God mode)");
     g.out.str("");
   }
@@ -209,7 +207,7 @@ void test_toggle_database_persistence() {
 
     // Verify error message
     std::string out_str = g.out.str();
-    assert(out_str.find("No such option") != std::string::npos);
+    test::expect_contains(out_str, "No such option");
     std::println(std::cout, "    ✓ Error message correct");
   }
 

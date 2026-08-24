@@ -12,36 +12,37 @@ import session;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_make_command_t() {
-  assert(make_command_t("").empty());
-  assert(make_command_t("   ").empty());
+  test::expect_true(make_command_t("").empty());
+  test::expect_true(make_command_t("   ").empty());
 
   auto res1 = make_command_t("hello world");
-  assert(res1.size() == 2);
-  assert(res1[0] == "hello" && res1[1] == "world");
+  test::expect_eq(res1.size(), 2);
+  test::expect_eq(res1[0], "hello");
+  test::expect_eq(res1[1], "world");
 
   auto res2 = make_command_t("  spaced   out   args  ");
-  assert(res2.size() == 3);
-  assert(res2[0] == "spaced" && res2[1] == "out" && res2[2] == "args");
+  test::expect_eq(res2.size(), 3);
+  test::expect_eq(res2[0], "spaced");
+  test::expect_eq(res2[1], "out");
+  test::expect_eq(res2[2], "args");
 }
 
 void test_parse_connect() {
   auto p0 = parse_connect("");
-  assert(p0.player.empty() && p0.governor.empty());
+  test::expect_true(p0.player.empty() && p0.governor.empty());
 
   auto p1 = parse_connect("single_word");
-  assert(p1.player.empty() && p1.governor.empty());
+  test::expect_true(p1.player.empty() && p1.governor.empty());
 
   auto p2 = parse_connect("racepass govpass");
-  assert(p2.player == "racepass");
-  assert(p2.governor == "govpass");
+  test::expect_eq(p2.player, "racepass");
+  test::expect_eq(p2.governor, "govpass");
 
   auto p3 = parse_connect("too many arguments passed");
-  assert(p3.player.empty() && p3.governor.empty());
+  test::expect_true(p3.player.empty() && p3.governor.empty());
 }
 
 void test_welcome_user() {
@@ -67,8 +68,8 @@ void test_welcome_user() {
   std::array<char, 512> buf{};
   std::size_t len = client_sock.read_some(asio::buffer(buf));
   std::string output(buf.data(), len);
-  assert(output.contains("Welcome to Galactic Bloodshed"));
-  assert(output.contains("Custom Welcome MotD"));
+  test::expect_contains(output, "Welcome to Galactic Bloodshed");
+  test::expect_contains(output, "Custom Welcome MotD");
 }
 
 void test_check_connect_failure() {
@@ -81,17 +82,17 @@ void test_check_connect_failure() {
 
   // 1. Invalid argument count
   check_connect(*session1, "only_one");
-  assert(!session1->connected());
+  test::expect_false(session1->connected());
 
   // 2. Non-existent credentials
   asio::ip::tcp::socket socket2(io);
   auto session2 = std::make_shared<Session>(std::move(socket2), ctx.em,
                                             registry, [](auto) {});
   check_connect(*session2, "wrong password");
-  assert(!session2->connected());
+  test::expect_false(session2->connected());
   std::ostringstream& out_stream =
       static_cast<std::ostringstream&>(session2->out());
-  assert(out_stream.str().contains("Connection refused."));
+  test::expect_contains(out_stream.str(), "Connection refused.");
 }
 
 void test_check_connect_duplicate_session_rejection() {
@@ -108,13 +109,12 @@ void test_check_connect_duplicate_session_rejection() {
     races.save(race);
   }
 
-  // Mock registry that reports (1, 0) as already connected
-  class BusyRegistry : public NullSessionRegistry {
-  public:
-    bool is_connected(player_t p, governor_t g) const override {
-      return p == 1 && g == 0;
-    }
-  } busy_registry;
+  // Use RecordingSessionRegistry configured with active session for player 1
+  // governor 0
+  RecordingSessionRegistry busy_registry;
+  busy_registry.sessions = {
+      SessionInfo{.player = 1, .governor = 0, .connected = true},
+  };
 
   asio::io_context io;
   asio::ip::tcp::socket socket(io);
@@ -122,10 +122,10 @@ void test_check_connect_duplicate_session_rejection() {
                                            busy_registry, [](auto) {});
 
   check_connect(*session, "raceword govword");
-  assert(!session->connected());
+  test::expect_false(session->connected());
   std::ostringstream& out_stream =
       static_cast<std::ostringstream&>(session->out());
-  assert(out_stream.str().contains("Connection refused."));
+  test::expect_contains(out_stream.str(), "Connection refused.");
 }
 
 void test_check_connect_success_and_clamping() {
@@ -170,24 +170,24 @@ void test_check_connect_success_and_clamping() {
 
   check_connect(*session, "raceword govword");
 
-  assert(session->connected());
-  assert(session->player() == 1);
-  assert(session->governor() == 0);
-  assert(session->snum() == 0);  // Clamped from 999
-  assert(session->pnum() == 0);  // Clamped from 999
+  test::expect_true(session->connected());
+  test::expect_eq(session->player(), player_t{1});
+  test::expect_eq(session->governor(), governor_t{0});
+  test::expect_eq(session->snum(), starnum_t{0});    // Clamped from 999
+  test::expect_eq(session->pnum(), planetnum_t{0});  // Clamped from 999
 
   // Verify race login time updated in database
   const auto* updated_race = ctx.em.peek_race(1);
-  assert(updated_race != nullptr);
-  assert(updated_race->governor[0].login > 0);
+  test::expect_true(updated_race != nullptr);
+  test::expect_gt(updated_race->governor[0].login, 0);
 
   // Verify login output
   std::ostringstream& out_stream =
       static_cast<std::ostringstream&>(session->out());
   std::string output = out_stream.str();
-  assert(output.contains("TestRace \"Gov0\" [1,0] logged on."));
-  assert(output.contains("Government Center #42 is active."));
-  assert(output.contains("Morale: 100"));
+  test::expect_contains(output, "TestRace \"Gov0\" [1,0] logged on.");
+  test::expect_contains(output, "Government Center #42 is active.");
+  test::expect_contains(output, "Morale: 100");
 }
 
 }  // namespace

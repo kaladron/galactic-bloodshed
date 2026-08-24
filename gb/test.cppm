@@ -352,6 +352,91 @@ export inline SessionRegistry& get_test_session_registry() {
   return get_null_session_registry();
 }
 
+/// Recorded notification structure for test assertion
+export struct SentNotification {
+  player_t player{0};
+  governor_t governor{0};
+  std::string message;
+  bool is_broadcast{false};
+};
+
+/// Recording implementation of SessionRegistry for verifying async
+/// notifications, broadcasts, and session queries in unit tests.
+export class RecordingSessionRegistry : public NullSessionRegistry {
+public:
+  std::vector<SessionInfo> sessions;
+  std::vector<SentNotification> notifications;
+  bool update_in_progress_flag{false};
+
+  std::vector<SessionInfo> get_connected_sessions() const override {
+    return sessions;
+  }
+
+  bool is_connected(player_t player, governor_t gov) const override {
+    return std::ranges::any_of(sessions, [&](const auto& s) {
+      return s.player == player && s.governor == gov && s.connected;
+    });
+  }
+
+  void notify_race(player_t race, const std::string& message) override {
+    notifications.push_back({
+        .player = race,
+        .governor = 0,
+        .message = message,
+        .is_broadcast = true,
+    });
+  }
+
+  bool notify_player(player_t race, governor_t gov,
+                     const std::string& message) override {
+    notifications.push_back({
+        .player = race,
+        .governor = gov,
+        .message = message,
+        .is_broadcast = false,
+    });
+    return true;
+  }
+
+  [[nodiscard]] bool update_in_progress() const override {
+    return update_in_progress_flag;
+  }
+
+  void set_update_in_progress(bool val) override {
+    update_in_progress_flag = val;
+  }
+
+  /// Check if a notification containing needle was sent to a specific player.
+  [[nodiscard]] bool has_received(player_t player,
+                                  std::string_view needle) const {
+    return std::ranges::any_of(notifications, [&](const auto& n) {
+      return n.player == player && n.message.contains(needle);
+    });
+  }
+
+  /// Check if any broadcast notification containing needle was sent.
+  [[nodiscard]] bool has_broadcast(std::string_view needle) const {
+    return std::ranges::any_of(notifications, [&](const auto& n) {
+      return n.is_broadcast && n.message.contains(needle);
+    });
+  }
+
+  /// Retrieve all messages sent to a specific player.
+  [[nodiscard]] std::vector<std::string> messages_for(player_t player) const {
+    std::vector<std::string> msgs;
+    for (const auto& n : notifications) {
+      if (n.player == player) {
+        msgs.push_back(n.message);
+      }
+    }
+    return msgs;
+  }
+
+  void clear_notifications() {
+    notifications.clear();
+  }
+};
+
 /// Test context providing database, entity manager, GameObj setup, and dispatch
 /// assertion helpers
 ///

@@ -184,8 +184,10 @@ void test_test_world_builder() {
   const auto* star = ctx.em.peek_star(0);
   test::expect_true(star != nullptr, "Star 0 must exist");
   test::expect_eq(star->get_name(), "Sol");
-  test::expect_true(isset(star->explored(), player_t{1}), "Player 1 explored Star 0");
-  test::expect_true(isset(star->explored(), player_t{2}), "Player 2 explored Star 0");
+  test::expect_true(isset(star->explored(), player_t{1}),
+                    "Player 1 explored Star 0");
+  test::expect_true(isset(star->explored(), player_t{2}),
+                    "Player 2 explored Star 0");
   test::expect_eq(star->AP(player_t{1}), 100);
   test::expect_eq(star->AP(player_t{2}), 100);
 
@@ -287,6 +289,54 @@ void test_test_ship_builder() {
   std::println(std::cout, "  ✓ TestShipBuilder verified successfully");
 }
 
+void test_recording_session_registry() {
+  std::println(
+      std::cout,
+      "Test: RecordingSessionRegistry session and notification recording");
+  RecordingSessionRegistry registry;
+
+  // 1. Initial state
+  test::expect_false(registry.update_in_progress());
+  test::expect_true(registry.get_connected_sessions().empty());
+  test::expect_true(registry.notifications.empty());
+
+  // 2. Notification recording
+  registry.notify_race(player_t{1}, "Planetary invasion detected!");
+  registry.notify_player(player_t{2}, governor_t{0},
+                         "Your treasury balance is low.");
+
+  test::expect_eq(registry.notifications.size(), 2);
+  test::expect_true(registry.has_received(player_t{1}, "Planetary invasion"));
+  test::expect_true(registry.has_broadcast("invasion detected"));
+  test::expect_true(registry.has_received(player_t{2}, "treasury balance"));
+  test::expect_false(registry.has_received(player_t{3}, "Planetary invasion"));
+
+  auto p1_msgs = registry.messages_for(player_t{1});
+  test::expect_eq(p1_msgs.size(), 1);
+  test::expect_eq(p1_msgs[0], "Planetary invasion detected!");
+
+  registry.clear_notifications();
+  test::expect_true(registry.notifications.empty());
+  test::expect_false(registry.has_received(player_t{1}, "Planetary invasion"));
+
+  // 3. Connected session queries
+  registry.sessions = {
+      SessionInfo{.player = 1, .governor = 0, .connected = true},
+      SessionInfo{.player = 2, .governor = 1, .connected = false},
+  };
+
+  test::expect_true(registry.is_connected(player_t{1}, governor_t{0}));
+  test::expect_false(registry.is_connected(player_t{2}, governor_t{1}));
+  test::expect_false(registry.is_connected(player_t{3}, governor_t{0}));
+  test::expect_eq(registry.get_connected_sessions().size(), 2);
+
+  // 4. Update in progress flag
+  registry.set_update_in_progress(true);
+  test::expect_true(registry.update_in_progress());
+
+  std::println(std::cout, "  ✓ RecordingSessionRegistry verified successfully");
+}
+
 }  // namespace
 
 int main() {
@@ -294,6 +344,7 @@ int main() {
   test_test_context_dispatch_helpers();
   test_test_world_builder();
   test_test_ship_builder();
+  test_recording_session_registry();
   std::println(std::cout, "✓ test_context_test passed!");
   return 0;
 }

@@ -9,30 +9,11 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
-
-class MockSessionRegistry : public SessionRegistry {
-public:
-  std::vector<SessionInfo> sessions;
-
-  std::vector<SessionInfo> get_connected_sessions() const override {
-    return sessions;
-  }
-
-  void notify_race(player_t, const std::string&) override {}
-  bool notify_player(player_t, governor_t, const std::string&) override {
-    return false;
-  }
-  bool update_in_progress() const override {
-    return false;
-  }
-};
 
 void test_who_matrix() {
   TestContext ctx;
-  MockSessionRegistry mock_registry;
+  RecordingSessionRegistry mock_registry;
   GameObj g(ctx.em, mock_registry);
 
   // 1. Setup races and stars
@@ -100,58 +81,58 @@ void test_who_matrix() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_god(false);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.out.str("");
 
-  assert(GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
+  test::expect_true(
+      GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
   std::string out = g.out.str();
-  assert(out.contains("Current Players:"));
-  assert(out.contains("Federation"));
-  assert(out.contains("\"Kirk\""));
-  assert(out.contains("[1,0]"));
+  test::expect_contains(out, "Current Players:");
+  test::expect_contains(out, "Federation");
+  test::expect_contains(out, "\"Kirk\"");
+  test::expect_contains(out, "[1,0]");
   // Player 2 is invisible, so non-god Player 1 should not see "Klingons" in
   // table
-  assert(!out.contains("Klingons"));
+  test::expect_false(out.contains("Klingons"));
   // Deity session should be skipped
-  assert(!out.contains("Deity"));
+  test::expect_false(out.contains("Deity"));
   // Non-god sees coward count or Finished depending on SHOW_COWARDS
   if (SHOW_COWARDS) {
-    assert(out.contains("1 coward"));
+    test::expect_contains(out, "1 coward");
   } else {
-    assert(out.contains("Finished."));
+    test::expect_contains(out, "Finished.");
   }
 
   // --- Case 2: Invisible player viewing who sees themselves ---
   ctx.setup_game_obj(g, 2, 0);
   g.set_god(false);
-  g.out.str("");
 
-  assert(GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
+  test::expect_true(
+      GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
   out = g.out.str();
-  assert(out.contains("Federation"));
-  assert(out.contains("Klingons"));
-  assert(out.contains("INVISIBLE"));
-  assert(out.contains("GAG"));
-  assert(out.contains("0 cowards") || out.contains("Finished."));
+  test::expect_contains(out, "Federation");
+  test::expect_contains(out, "Klingons");
+  test::expect_contains(out, "INVISIBLE");
+  test::expect_contains(out, "GAG");
+  test::expect_true(out.contains("0 cowards") || out.contains("Finished."));
 
   // --- Case 3: God viewing who sees all and star names ---
   ctx.setup_game_obj(g, 3, 0);
   g.set_god(true);
-  g.out.str("");
 
-  assert(GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
+  test::expect_true(
+      GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
   out = g.out.str();
-  assert(out.contains("Federation"));
-  assert(out.contains("Klingons"));
-  assert(out.contains("Sol"));
-  assert(out.contains("INVISIBLE"));
+  test::expect_contains(out, "Federation");
+  test::expect_contains(out, "Klingons");
+  test::expect_contains(out, "Sol");
+  test::expect_contains(out, "INVISIBLE");
 
   // --- Case 4: Scope Testing (Works across all scopes: UNIV, STAR, PLAN, SHIP)
   // ---
   for (auto scope : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
                      ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {
     g.set_level(scope);
-    g.out.str("");
-    assert(GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
+    test::expect_true(
+        GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
   }
 }
 

@@ -6,80 +6,49 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
+namespace {
 
-int main() {
-  TestContext ctx;
-  JsonStore store(ctx.db);
+void setup_test_world(TestContext& ctx) {
+  TestWorldBuilder(ctx)
+      .add_race("Testers", 100.0, false, player_t{1})
+      .add_star("Test Star", 100, starnum_t{0})
+      .add_planet(0, PlanetType::EARTH);
 
-  // Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Testers";
-  race.Guest = false;
-  std::fill(std::begin(race.likes), std::end(race.likes), true);
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create test star
-  star_struct star{};
-  star.star_id = 0;
-  star.name = "Test Star";
-  star.pnames.emplace_back("Test Planet");
-  star.AP[0] = 100;
-
-  StarRepository stars(store);
-  stars.save(star);
-
-  // Create test planet
-  Planet planet{};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
-  planet.ships() = 1;
-
-  PlanetRepository planets(store);
-  planets.save(planet);
-
-  // Create AFV ship
-  Ship afv{};
-  afv.number() = 1;
-  afv.owner() = 1;
-  afv.governor() = 0;
-  afv.alive() = true;
-  afv.active() = true;  // Ship must be active to execute commands
-  afv.type() = ShipType::OTYPE_AFV;
-  afv.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  afv.whatdest() = ScopeLevel::LEVEL_PLAN;
-  afv.docked() = true;
-  afv.storbits() = 0;
-  afv.pnumorbits() = 0;
-  afv.set_land_coords({5, 5});
-  afv.popn() = 10;
-  afv.fuel() = 100.0;
-  afv.max_fuel() = 200.0;
-
-  ShipRepository ships(store);
-  ships.save(afv);
-
-  // Create test sectormap
+  // Set race likes
   {
-    SectorMap smap(planet, true);
-    smap.get(5, 5).set_owner(1);
-    smap.get(5, 5).set_condition(SectorType::SEC_MOUNT);
-    smap.get(5, 6).set_owner(1);
-    smap.get(5, 6).set_condition(SectorType::SEC_MOUNT);
-
-    SectorRepository sectors(store);
-    sectors.save_map(smap);
+    auto race_handle = ctx.em.get_race(1);
+    std::fill(std::begin(race_handle->likes), std::end(race_handle->likes),
+              true);
   }
 
-  // Create GameObj
+  // Setup planet and sectormap
+  {
+    auto planet_handle = ctx.em.get_planet(0, 0);
+    planet_handle->ships() = 1;
+
+    auto smap_handle = ctx.em.get_sectormap(0, 0);
+    smap_handle->get(5, 5).set_owner(1);
+    smap_handle->get(5, 5).set_condition(SectorType::SEC_MOUNT);
+    smap_handle->get(5, 6).set_owner(1);
+    smap_handle->get(5, 6).set_condition(SectorType::SEC_MOUNT);
+  }
+
+  // Create AFV ship landed at (5, 5)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+      .owned_by(1, 0)
+      .named("AFV")
+      .landed_on(0, 0, Coordinates(5, 5))
+      .with_crew(10, 0)
+      .with_fuel(100.0)
+      .build();
+}
+
+void test_walk_role_and_domain_errors() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
 
   // 1. Guest rejection
   {
@@ -88,10 +57,8 @@ int main() {
   }
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
-  std::println(std::cout, "    ✓ Guest rejection verified");
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // Restore non-guest race
   {
@@ -104,10 +71,22 @@ int main() {
   g.set_pnum(0);
 
   // 2. Invalid ship rejection
-  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"walk", "999", "k"});
-  assert(g.out.str().contains("No such ship."));
-  std::println(std::cout, "    ✓ Invalid ship rejection verified");
+  test::expect_contains(g.out.str(), "No such ship.");
+
+  ctx.verify_universe_invariants();
+}
+
+void test_walk_happy_path() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.set_pnum(0);
 
   // 3. Test walk command success - move south (k or '2')
   ctx.assert_dispatch_success(g, {"walk", "1", "k"});
@@ -115,15 +94,23 @@ int main() {
   // Verify AFV moved and AP deducted
   ctx.em.clear_cache();
   const auto* saved_ship = ctx.em.peek_ship(1);
-  assert(saved_ship);
-  assert(saved_ship->land_coords() == Coordinates(5, 6));
-  assert(saved_ship->fuel() < 100.0);
+  test::expect_true(saved_ship != nullptr);
+  test::expect_true(saved_ship->land_coords() == Coordinates(5, 6));
+  test::expect_lt(saved_ship->fuel(), 100.0);
 
   const auto* saved_star = ctx.em.peek_star(0);
-  assert(saved_star);
-  assert(saved_star->AP(1) == 99);  // 1 Star AP deducted
+  test::expect_true(saved_star != nullptr);
+  test::expect_eq(saved_star->AP(1), 99);  // 1 Star AP deducted
 
-  std::println(std::cout, "    ✓ Walk succeeded and 1 Star AP deducted");
-  std::println(std::cout, "walk_test passed!");
+  ctx.verify_universe_invariants();
+}
+
+}  // namespace
+
+int main() {
+  test_walk_role_and_domain_errors();
+  test_walk_happy_path();
+
+  std::println(std::cout, "✓ walk_test passed!");
   return 0;
 }

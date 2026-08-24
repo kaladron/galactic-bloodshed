@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -103,6 +101,8 @@ void test_load_happy_path() {
   {
     const auto* s_before = ctx.em.peek_ship(1);
     const auto* p_before = ctx.em.peek_planet(0, 0);
+    test::expect_ne(s_before, nullptr);
+    test::expect_ne(p_before, nullptr);
     double initial_ship_fuel = s_before->fuel();
     int initial_planet_fuel = p_before->info(player_t{1}).fuel;
 
@@ -110,8 +110,10 @@ void test_load_happy_path() {
 
     const auto* s_after = ctx.em.peek_ship(1);
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(s_after->fuel() == initial_ship_fuel + 100);
-    assert(p_after->info(player_t{1}).fuel == initial_planet_fuel - 100);
+    test::expect_ne(s_after, nullptr);
+    test::expect_ne(p_after, nullptr);
+    test::expect_eq(s_after->fuel(), initial_ship_fuel + 100);
+    test::expect_eq(p_after->info(player_t{1}).fuel, initial_planet_fuel - 100);
     std::println(std::cout, "✓ Fuel loaded from planet to ship");
   }
 
@@ -119,6 +121,8 @@ void test_load_happy_path() {
   {
     const auto* s_before = ctx.em.peek_ship(1);
     const auto* p_before = ctx.em.peek_planet(0, 0);
+    test::expect_ne(s_before, nullptr);
+    test::expect_ne(p_before, nullptr);
     int initial_ship_resource = s_before->resource();
     int initial_planet_resource = p_before->info(player_t{1}).resource;
 
@@ -126,9 +130,11 @@ void test_load_happy_path() {
 
     const auto* s_after = ctx.em.peek_ship(1);
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(s_after->resource() == initial_ship_resource + 200);
-    assert(p_after->info(player_t{1}).resource ==
-           initial_planet_resource - 200);
+    test::expect_ne(s_after, nullptr);
+    test::expect_ne(p_after, nullptr);
+    test::expect_eq(s_after->resource(), initial_ship_resource + 200);
+    test::expect_eq(p_after->info(player_t{1}).resource,
+                    initial_planet_resource - 200);
     std::println(std::cout, "✓ Resources loaded from planet to ship");
   }
 
@@ -136,6 +142,8 @@ void test_load_happy_path() {
   {
     const auto* s_before = ctx.em.peek_ship(1);
     const auto* p_before = ctx.em.peek_planet(0, 0);
+    test::expect_ne(s_before, nullptr);
+    test::expect_ne(p_before, nullptr);
     int initial_ship_destruct = s_before->destruct();
     int initial_planet_destruct = p_before->info(player_t{1}).destruct;
 
@@ -143,8 +151,11 @@ void test_load_happy_path() {
 
     const auto* s_after = ctx.em.peek_ship(1);
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(s_after->destruct() == initial_ship_destruct + 50);
-    assert(p_after->info(player_t{1}).destruct == initial_planet_destruct - 50);
+    test::expect_ne(s_after, nullptr);
+    test::expect_ne(p_after, nullptr);
+    test::expect_eq(s_after->destruct(), initial_ship_destruct + 50);
+    test::expect_eq(p_after->info(player_t{1}).destruct,
+                    initial_planet_destruct - 50);
     std::println(std::cout, "✓ Destruct loaded from planet to ship");
   }
 
@@ -152,6 +163,8 @@ void test_load_happy_path() {
   {
     const auto* s_before = ctx.em.peek_ship(1);
     const auto* p_before = ctx.em.peek_planet(0, 0);
+    test::expect_ne(s_before, nullptr);
+    test::expect_ne(p_before, nullptr);
     int initial_ship_crystals = s_before->crystals();
     int initial_planet_crystals = p_before->info(player_t{1}).crystals;
 
@@ -159,8 +172,11 @@ void test_load_happy_path() {
 
     const auto* s_after = ctx.em.peek_ship(1);
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(s_after->crystals() == initial_ship_crystals + 10);
-    assert(p_after->info(player_t{1}).crystals == initial_planet_crystals - 10);
+    test::expect_ne(s_after, nullptr);
+    test::expect_ne(p_after, nullptr);
+    test::expect_eq(s_after->crystals(), initial_ship_crystals + 10);
+    test::expect_eq(p_after->info(player_t{1}).crystals,
+                    initial_planet_crystals - 10);
     std::println(std::cout, "✓ Crystals loaded from planet to ship");
   }
 }
@@ -178,11 +194,11 @@ void test_unload_happy_path() {
 
   // First load resources, then unload
   ctx.assert_dispatch_success(g, {"load", "#1", "r", "200"});
-  assert(ctx.em.peek_ship(1)->resource() == 200);
+  test::expect_eq(ctx.em.peek_ship(1)->resource(), 200);
 
   ctx.assert_dispatch_success(g, {"unload", "#1", "r", "50"});
-  assert(ctx.em.peek_ship(1)->resource() == 150);
-  assert(ctx.em.peek_planet(0, 0)->info(player_t{1}).resource == 350);
+  test::expect_eq(ctx.em.peek_ship(1)->resource(), 150);
+  test::expect_eq(ctx.em.peek_planet(0, 0)->info(player_t{1}).resource, 350);
   std::println(std::cout, "✓ Resources unloaded from ship to planet");
 }
 
@@ -199,16 +215,18 @@ void test_load_syntax_and_errors() {
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"load"});
-  assert(g.out.str().contains("Syntax: load <ship> <commodity> [<amount>]"));
+  test::expect_contains(g.out.str(),
+                        "Syntax: load <ship> <commodity> [<amount>]");
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"unload", "#1"});
-  assert(g.out.str().contains("Syntax: unload <ship> <commodity> [<amount>]"));
+  test::expect_contains(g.out.str(),
+                        "Syntax: unload <ship> <commodity> [<amount>]");
 
   // 2. Unknown commodity
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"load", "#1", "z", "10"});
-  assert(g.out.str().contains("No such commodity"));
+  test::expect_contains(g.out.str(), "No such commodity");
 }
 
 }  // namespace

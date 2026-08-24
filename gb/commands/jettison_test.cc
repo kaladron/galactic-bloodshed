@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -76,76 +74,88 @@ void test_jettison_happy_path() {
   std::println(std::cout, "Jettison crystals");
   {
     const auto* s_before = ctx.em.peek_ship(1);
+    test::expect_ne(s_before, nullptr);
     int initial_crystals = s_before->crystals();
 
     ctx.assert_dispatch_success(g, {"jettison", "#1", "x", "3"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    assert(s_after->crystals() == initial_crystals - 3);
+    test::expect_ne(s_after, nullptr);
+    test::expect_eq(s_after->crystals(), initial_crystals - 3);
     std::println(std::cout, "✓ Crystals jettisoned");
   }
 
   std::println(std::cout, "Jettison crew");
   {
     const auto* s_before = ctx.em.peek_ship(1);
+    test::expect_ne(s_before, nullptr);
     int initial_popn = s_before->popn();
     double initial_mass = s_before->mass();
 
     ctx.assert_dispatch_success(g, {"jettison", "#1", "c", "5"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    assert(s_after->popn() == initial_popn - 5);
-    assert(s_after->mass() == initial_mass - 5.0);
+    test::expect_ne(s_after, nullptr);
+    test::expect_eq(s_after->popn(), initial_popn - 5);
+    test::expect_eq(s_after->mass(), initial_mass - 5.0);
     std::println(std::cout, "✓ Crew jettisoned with mass reduction");
   }
 
   std::println(std::cout, "Jettison military");
   {
     const auto* s_before = ctx.em.peek_ship(1);
+    test::expect_ne(s_before, nullptr);
     int initial_troops = s_before->troops();
     double initial_mass = s_before->mass();
 
     ctx.assert_dispatch_success(g, {"jettison", "#1", "m", "4"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    assert(s_after->troops() == initial_troops - 4);
-    assert(s_after->mass() == initial_mass - 4.0);
+    test::expect_ne(s_after, nullptr);
+    test::expect_eq(s_after->troops(), initial_troops - 4);
+    test::expect_eq(s_after->mass(), initial_mass - 4.0);
     std::println(std::cout, "✓ Military jettisoned with mass reduction");
   }
 
   std::println(std::cout, "Jettison destruct");
   {
     const auto* s_before = ctx.em.peek_ship(1);
+    test::expect_ne(s_before, nullptr);
     int initial_destruct = s_before->destruct();
 
     ctx.assert_dispatch_success(g, {"jettison", "#1", "d", "10"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    assert(s_after->destruct() == initial_destruct - 10);
+    test::expect_ne(s_after, nullptr);
+    test::expect_eq(s_after->destruct(), initial_destruct - 10);
     std::println(std::cout, "✓ Destruct jettisoned");
   }
 
   std::println(std::cout, "Jettison fuel");
   {
     const auto* s_before = ctx.em.peek_ship(1);
+    test::expect_ne(s_before, nullptr);
     double initial_fuel = s_before->fuel();
 
     ctx.assert_dispatch_success(g, {"jettison", "#1", "f", "25"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    assert(s_after->fuel() == initial_fuel - 25);
+    test::expect_ne(s_after, nullptr);
+    test::expect_eq(s_after->fuel(), initial_fuel - 25);
     std::println(std::cout, "✓ Fuel jettisoned");
   }
 
   std::println(std::cout, "Jettison resources");
   {
     const auto* s_before = ctx.em.peek_ship(1);
+    test::expect_ne(s_before, nullptr);
     int initial_resource = s_before->resource();
 
     ctx.assert_dispatch_success(g, {"jettison", "#1", "r", "30"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    assert(s_after->resource() == initial_resource - 30);
+    test::expect_ne(s_after, nullptr);
+    test::expect_eq(s_after->resource(), initial_resource - 30);
     std::println(std::cout, "✓ Resources jettisoned");
   }
 }
@@ -163,13 +173,13 @@ void test_jettison_domain_errors() {
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"jettison"});
-  assert(
-      g.out.str().contains("Syntax: jettison <ship> <commodity> [<amount>]"));
+  test::expect_contains(g.out.str(),
+                        "Syntax: jettison <ship> <commodity> [<amount>]");
 
   // 2. Unknown commodity
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"jettison", "#1", "z", "10"});
-  assert(g.out.str().contains("No such commodity valid"));
+  test::expect_contains(g.out.str(), "No such commodity valid");
 
   // 3. Jettison when landed
   {
@@ -180,7 +190,7 @@ void test_jettison_domain_errors() {
   }
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "10"});
-  assert(g.out.str().contains("Ship is landed, cannot jettison"));
+  test::expect_contains(g.out.str(), "Ship is landed, cannot jettison");
 }
 
 }  // namespace

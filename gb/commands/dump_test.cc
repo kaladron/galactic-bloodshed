@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -75,10 +73,11 @@ void test_dump_happy_paths() {
 
   // 1. Dump exploration data (10 AP deducted via FixedStar)
   ctx.assert_dispatch_success(g, {"dump", "Recipient"}, 10);
-  assert(g.out.str().contains("Exploration Data transferred"));
+  test::expect_contains(g.out.str(), "Exploration Data transferred");
 
   const auto* p_after = ctx.em.peek_planet(0, 0);
-  assert(p_after->info(player_t{2}).explored);
+  test::expect_ne(p_after, nullptr);
+  test::expect_true(p_after->info(player_t{2}).explored);
 }
 
 void test_dump_insufficient_ap() {
@@ -98,7 +97,7 @@ void test_dump_insufficient_ap() {
   g.set_snum(0);
 
   ctx.assert_dispatch_rejected(g, {"dump", "Recipient"});
-  assert(g.out.str().contains("You don't have 10 action points there."));
+  test::expect_contains(g.out.str(), "You don't have 10 action points there.");
 }
 
 void test_dump_role_rejections() {
@@ -114,7 +113,7 @@ void test_dump_role_rejections() {
     g.set_snum(0);
 
     ctx.assert_dispatch_rejected(g, {"dump", "Explorer"});
-    assert(g.out.str().contains("Guest races cannot use this command."));
+    test::expect_contains(g.out.str(), "Guest races cannot use this command.");
   }
 
   // 2. Leader-only rejection (Governor > 0)
@@ -126,8 +125,8 @@ void test_dump_role_rejections() {
     g.set_snum(0);
 
     ctx.assert_dispatch_rejected(g, {"dump", "Recipient"});
-    assert(g.out.str().contains(
-        "Only the leader (Governor 0) may use this command."));
+    test::expect_contains(g.out.str(),
+                          "Only the leader (Governor 0) may use this command.");
   }
 }
 
@@ -143,12 +142,12 @@ void test_dump_domain_errors() {
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"dump"});
-  assert(g.out.str().contains("Syntax: dump <player> [<place> ...]"));
+  test::expect_contains(g.out.str(), "Syntax: dump <player> [<place> ...]");
 
   // 2. Invalid player name
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"dump", "NonExistentPlayer"});
-  assert(g.out.str().contains("No such player"));
+  test::expect_contains(g.out.str(), "No such player");
 }
 
 }  // namespace

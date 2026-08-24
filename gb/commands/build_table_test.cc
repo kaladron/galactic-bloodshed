@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file build_table_test.cc
+/// \brief Unit tests for "build ?" ship list table display
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
-
-// Test for "build ?" ship list table display
 
 int main() {
   // Initialize database
@@ -47,25 +46,25 @@ int main() {
     std::println(std::cout, "=== end output ===");
 
     // Verify header is present
-    assert(output.find("Default ship parameters") != std::string::npos);
+    test::expect_contains(output, "Default ship parameters");
 
     // Verify table header columns are present
-    assert(output.find("name") != std::string::npos);
-    assert(output.find("cargo") != std::string::npos);
-    assert(output.find("tech") != std::string::npos);
-    assert(output.find("cost") != std::string::npos);
-    assert(output.find("crew") != std::string::npos);
-    assert(output.find("fuel") != std::string::npos);
+    test::expect_contains(output, "name");
+    test::expect_contains(output, "cargo");
+    test::expect_contains(output, "tech");
+    test::expect_contains(output, "cost");
+    test::expect_contains(output, "crew");
+    test::expect_contains(output, "fuel");
 
     // Verify some common ship types are listed
-    assert(output.find("Probe") != std::string::npos);
-    assert(output.find("Shuttle") != std::string::npos);
-    assert(output.find("Factory") != std::string::npos);
+    test::expect_contains(output, "Probe");
+    test::expect_contains(output, "Shuttle");
+    test::expect_contains(output, "Factory");
 
     // Verify table structure (columns should be aligned)
     // The letter column should have single characters
-    assert(output.find(":") != std::string::npos);  // Probe letter
-    assert(output.find("s") != std::string::npos);  // Shuttle letter
+    test::expect_contains(output, ":");  // Probe letter
+    test::expect_contains(output, "s");  // Shuttle letter
 
     std::println(std::cout, "✓ build ? table display test passed");
   }
@@ -88,10 +87,10 @@ int main() {
 
     // Verify it shows probe-specific info
     // The table should show just the probe row
-    assert(output.find("Probe") != std::string::npos);
+    test::expect_contains(output, "Probe");
 
     // Should describe where it can be built
-    assert(output.find("Can be") != std::string::npos);
+    test::expect_contains(output, "Can be");
 
     std::println(std::cout, "✓ build ? : (single ship) test passed");
   }

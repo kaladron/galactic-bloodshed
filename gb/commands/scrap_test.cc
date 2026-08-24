@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -131,13 +129,13 @@ void test_scrap_happy_paths() {
 
   ctx.em.clear_cache();
   const auto* scrapped = ctx.em.peek_ship(2);
-  assert(scrapped != nullptr);
-  assert(scrapped->alive() == 0);
+  test::expect_ne(scrapped, nullptr);
+  test::expect_eq(scrapped->alive(), 0);
 
   const auto* carrier_after = ctx.em.peek_ship(1);
-  assert(carrier_after != nullptr);
-  assert(carrier_after->resource() > 100);
-  assert(carrier_after->docked() == 0);
+  test::expect_ne(carrier_after, nullptr);
+  test::expect_gt(carrier_after->resource(), 100);
+  test::expect_eq(carrier_after->docked(), 0);
 }
 
 void test_scrap_insufficient_ap() {
@@ -157,7 +155,7 @@ void test_scrap_insufficient_ap() {
   g.set_snum(1);
 
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
-  assert(g.out.str().contains("action points"));
+  test::expect_contains(g.out.str(), "action points");
 }
 
 void test_scrap_domain_errors() {
@@ -172,7 +170,7 @@ void test_scrap_domain_errors() {
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"scrap"});
-  assert(g.out.str().contains("Syntax: scrap <ship>"));
+  test::expect_contains(g.out.str(), "Syntax: scrap <ship>");
 
   // 2. Uncrewed ship rejection
   {
@@ -181,7 +179,7 @@ void test_scrap_domain_errors() {
   }
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
-  assert(g.out.str().contains("no crew"));
+  test::expect_contains(g.out.str(), "no crew");
 }
 
 }  // namespace

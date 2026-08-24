@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file make_mod_test.cc
+/// \brief Unit tests for make and modify commands for factory ship
+/// configuration
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
 
 int main() {
   // Create test context
@@ -81,7 +83,7 @@ int main() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"make", "f"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at universe level verified");
 
   // 2. Scope rejection at STAR scope
@@ -89,7 +91,7 @@ int main() {
   g.set_snum(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"modify", "armor", "50"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at star level verified");
 
   // 3. Guest rejection
@@ -103,7 +105,7 @@ int main() {
   g.set_snum(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"make", "f"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
   std::println(std::cout, "    ✓ Guest rejection verified");
 
   // Restore non-guest race
@@ -123,19 +125,19 @@ int main() {
     ctx.em.clear_cache();
 
     const auto* factory_check = ctx.em.peek_ship(1);
-    assert(factory_check != nullptr);
+    test::expect_ne(factory_check, nullptr);
     std::println(std::cout, "    Factory build_type now = {}",
                  static_cast<int>(factory_check->build_type()));
 
     // Factory should now be configured to build fighters
-    assert(factory_check->build_type() == ShipType::STYPE_FIGHTER);
+    test::expect_eq(factory_check->build_type(), ShipType::STYPE_FIGHTER);
     std::println(std::cout, "    ✓ Factory configured to produce fighters");
   }
 
   std::println(std::cout, "Modify factory design (modify armor 50)");
   {
     const auto* factory_before = ctx.em.peek_ship(1);
-    assert(factory_before != nullptr);
+    test::expect_ne(factory_before, nullptr);
     int initial_armor = factory_before->armor();
     std::println(std::cout, "    Before: armor={}", initial_armor);
 
@@ -144,11 +146,11 @@ int main() {
     ctx.em.clear_cache();
 
     const auto* factory_after = ctx.em.peek_ship(1);
-    assert(factory_after != nullptr);
+    test::expect_ne(factory_after, nullptr);
     std::println(std::cout, "    After: armor={}", factory_after->armor());
 
     // Armor should now be 50
-    assert(factory_after->armor() == 50);
+    test::expect_eq(factory_after->armor(), 50);
     std::println(std::cout, "    ✓ Factory armor modified to 50");
   }
 
@@ -159,12 +161,12 @@ int main() {
     ctx.em.clear_cache();
 
     const auto* factory_check = ctx.em.peek_ship(1);
-    assert(factory_check != nullptr);
+    test::expect_ne(factory_check, nullptr);
     std::println(std::cout, "    After: max_speed={}",
                  factory_check->max_speed());
 
     // Speed should be set (capped to max of 9)
-    assert(factory_check->max_speed() <= 9);
+    test::expect_le(factory_check->max_speed(), 9);
     std::println(std::cout, "    ✓ Factory speed modified");
   }
 
@@ -173,7 +175,7 @@ int main() {
     ctx.em.clear_cache();
 
     const auto* factory_final = ctx.em.peek_ship(1);
-    assert(factory_final != nullptr);
+    test::expect_ne(factory_final, nullptr);
 
     std::println(std::cout, "    Final factory settings:");
     std::println(std::cout, "      build_type = {} (STYPE_FIGHTER={})",
@@ -186,8 +188,8 @@ int main() {
     std::println(std::cout, "      complexity = {:.1f}",
                  factory_final->complexity());
 
-    assert(factory_final->build_type() == ShipType::STYPE_FIGHTER);
-    assert(factory_final->armor() == 50);
+    test::expect_eq(factory_final->build_type(), ShipType::STYPE_FIGHTER);
+    test::expect_eq(factory_final->armor(), 50);
     std::println(std::cout, "    ✓ Factory settings persisted to database");
   }
 

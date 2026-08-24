@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 // Database persistence for fixing ship fuel
 void test_fix_ship_fuel_persistence() {
   // 1. Create in-memory database
@@ -35,14 +33,14 @@ void test_fix_ship_fuel_persistence() {
   ctx.em.clear_cache();
   {
     const auto* s = ctx.em.peek_ship(1);
-    assert(s);
-    assert(s->fuel() == 50.0);
+    test::expect_ne(s, nullptr);
+    test::expect_eq(s->fuel(), 50.0);
   }
 
   // 4. Simulate fixing fuel via EntityManager
   {
     auto ship_handle = ctx.em.get_ship(1);
-    assert(ship_handle.get());
+    test::expect_ne(ship_handle.get(), nullptr);
     auto& s = *ship_handle;
     s.fuel() = 200.0;  // Fill to max
     // Auto-saves on scope exit
@@ -51,8 +49,8 @@ void test_fix_ship_fuel_persistence() {
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
-  assert(final_ship);
-  assert(final_ship->fuel() == 200.0);
+  test::expect_ne(final_ship, nullptr);
+  test::expect_eq(final_ship->fuel(), 200.0);
 
   std::println(std::cout, "✓ fix ship fuel persistence test passed");
 }
@@ -80,14 +78,14 @@ void test_fix_ship_damage_persistence() {
   ctx.em.clear_cache();
   {
     const auto* s = ctx.em.peek_ship(1);
-    assert(s);
-    assert(s->damage() == 75);
+    test::expect_ne(s, nullptr);
+    test::expect_eq(s->damage(), 75);
   }
 
   // 4. Simulate fixing damage via EntityManager
   {
     auto ship_handle = ctx.em.get_ship(1);
-    assert(ship_handle.get());
+    test::expect_ne(ship_handle.get(), nullptr);
     auto& s = *ship_handle;
     s.damage() = 0;  // Fully repair
     // Auto-saves on scope exit
@@ -96,8 +94,8 @@ void test_fix_ship_damage_persistence() {
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
-  assert(final_ship);
-  assert(final_ship->damage() == 0);
+  test::expect_ne(final_ship, nullptr);
+  test::expect_eq(final_ship->damage(), 0);
 
   std::println(std::cout, "✓ fix ship damage persistence test passed");
 }
@@ -125,15 +123,15 @@ void test_fix_ship_alive_persistence() {
   ctx.em.clear_cache();
   {
     const auto* s = ctx.em.peek_ship(1);
-    assert(s);
-    assert(s->alive() == 0);
-    assert(s->damage() == 100);
+    test::expect_ne(s, nullptr);
+    test::expect_eq(s->alive(), 0);
+    test::expect_eq(s->damage(), 100);
   }
 
   // 4. Simulate resurrecting ship via EntityManager
   {
     auto ship_handle = ctx.em.get_ship(1);
-    assert(ship_handle.get());
+    test::expect_ne(ship_handle.get(), nullptr);
     auto& s = *ship_handle;
     s.alive() = 1;
     s.damage() = 0;
@@ -143,9 +141,9 @@ void test_fix_ship_alive_persistence() {
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
-  assert(final_ship);
-  assert(final_ship->alive() == 1);
-  assert(final_ship->damage() == 0);
+  test::expect_ne(final_ship, nullptr);
+  test::expect_eq(final_ship->alive(), 1);
+  test::expect_eq(final_ship->damage(), 0);
 
   std::println(std::cout, "✓ fix ship alive persistence test passed");
 }
@@ -172,14 +170,14 @@ void test_fix_planet_temp_persistence() {
   ctx.em.clear_cache();
   {
     const auto* p = ctx.em.peek_planet(1, 0);
-    assert(p);
-    assert(p->conditions(TEMP) == 50);
+    test::expect_ne(p, nullptr);
+    test::expect_eq(p->conditions(TEMP), 50);
   }
 
   // 4. Simulate fixing temperature via EntityManager
   {
     auto planet_handle = ctx.em.get_planet(1, 0);
-    assert(planet_handle.get());
+    test::expect_ne(planet_handle.get(), nullptr);
     auto& p = *planet_handle;
     p.conditions(TEMP) = 100;  // Set to 100
     // Auto-saves on scope exit
@@ -188,8 +186,8 @@ void test_fix_planet_temp_persistence() {
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_planet = ctx.em.peek_planet(1, 0);
-  assert(final_planet);
-  assert(final_planet->conditions(TEMP) == 100);
+  test::expect_ne(final_planet, nullptr);
+  test::expect_eq(final_planet->conditions(TEMP), 100);
 
   std::println(std::cout, "✓ fix planet temperature persistence test passed");
 }
@@ -216,14 +214,14 @@ void test_fix_planet_oxygen_persistence() {
   ctx.em.clear_cache();
   {
     const auto* p = ctx.em.peek_planet(1, 0);
-    assert(p);
-    assert(p->conditions(OXYGEN) == 10);
+    test::expect_ne(p, nullptr);
+    test::expect_eq(p->conditions(OXYGEN), 10);
   }
 
   // 4. Simulate fixing oxygen via EntityManager
   {
     auto planet_handle = ctx.em.get_planet(1, 0);
-    assert(planet_handle.get());
+    test::expect_ne(planet_handle.get(), nullptr);
     auto& p = *planet_handle;
     p.conditions(OXYGEN) = 50;  // Increase oxygen
     // Auto-saves on scope exit
@@ -232,8 +230,8 @@ void test_fix_planet_oxygen_persistence() {
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_planet = ctx.em.peek_planet(1, 0);
-  assert(final_planet);
-  assert(final_planet->conditions(OXYGEN) == 50);
+  test::expect_ne(final_planet, nullptr);
+  test::expect_eq(final_planet->conditions(OXYGEN), 50);
 
   std::println(std::cout, "✓ fix planet oxygen persistence test passed");
 }
@@ -261,15 +259,15 @@ void test_fix_planet_position_persistence() {
   ctx.em.clear_cache();
   {
     const auto* p = ctx.em.peek_planet(1, 0);
-    assert(p);
-    assert(p->xpos() == 100.0);
-    assert(p->ypos() == 200.0);
+    test::expect_ne(p, nullptr);
+    test::expect_eq(p->xpos(), 100.0);
+    test::expect_eq(p->ypos(), 200.0);
   }
 
   // 4. Simulate fixing position via EntityManager
   {
     auto planet_handle = ctx.em.get_planet(1, 0);
-    assert(planet_handle.get());
+    test::expect_ne(planet_handle.get(), nullptr);
     auto& p = *planet_handle;
     p.xpos() = 500.0;
     p.ypos() = 600.0;
@@ -279,9 +277,9 @@ void test_fix_planet_position_persistence() {
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_planet = ctx.em.peek_planet(1, 0);
-  assert(final_planet);
-  assert(final_planet->xpos() == 500.0);
-  assert(final_planet->ypos() == 600.0);
+  test::expect_ne(final_planet, nullptr);
+  test::expect_eq(final_planet->xpos(), 500.0);
+  test::expect_eq(final_planet->ypos(), 600.0);
 
   std::println(std::cout, "✓ fix planet position persistence test passed");
 }
@@ -342,7 +340,7 @@ void test_fix_command_dispatch() {
   // 1. Mortal rejection
   ctx.setup_game_obj(g, 2, 0);
   ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "100"});
-  assert(g.out.str().contains("Only deity can use this command"));
+  test::expect_contains(g.out.str(), "Only deity can use this command");
 
   // 2. Deity happy path - planet fix
   ctx.setup_game_obj(g, 1, 0);
@@ -352,20 +350,20 @@ void test_fix_command_dispatch() {
   g.set_pnum(0);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "planet", "temperature", "100"});
-  assert(g.out.str().contains("TEMP = 100"));
+  test::expect_contains(g.out.str(), "TEMP = 100");
 
   // 3. Deity happy path - ship fix
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "fuel", "200"});
-  assert(g.out.str().contains("fuel = 200"));
+  test::expect_contains(g.out.str(), "fuel = 200");
 
   // 4. Min args check (< 3 args)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fix", "planet"});
-  assert(
-      g.out.str().contains("Syntax: fix <planet|ship> <property> [<value>]"));
+  test::expect_contains(g.out.str(),
+                        "Syntax: fix <planet|ship> <property> [<value>]");
 }
 
 int main() {

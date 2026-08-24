@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -79,7 +77,7 @@ void test_build_happy_paths() {
 
   // 1. Build info query (0 AP)
   ctx.assert_dispatch_success(g, {"build", "?"}, 0);
-  assert(g.out.str().contains("Default ship parameters"));
+  test::expect_contains(g.out.str(), "Default ship parameters");
 
   // 2. Test: Build a probe on planet (1 AP deducted dynamically)
   g.out.str("");
@@ -89,19 +87,19 @@ void test_build_happy_paths() {
   // Verify planet resources were deducted
   ctx.em.clear_cache();
   const auto* planet_verify = ctx.em.peek_planet(1, 0);
-  assert(planet_verify);
-  assert(planet_verify->info(player_t{1}).resource <
-         10000);  // Resources should be deducted
+  test::expect_ne(planet_verify, nullptr);
+  test::expect_lt(planet_verify->info(player_t{1}).resource,
+                  10000);  // Resources should be deducted
 
   // Verify ship was created (it should be ship #1)
   const auto* ship = ctx.em.peek_ship(1);
-  assert(ship);
-  assert(ship->type() == ShipType::OTYPE_PROBE);
-  assert(ship->owner() == 1);
-  assert(ship->whatorbits() == ScopeLevel::LEVEL_PLAN);
-  assert(ship->storbits() == 1);
-  assert(ship->pnumorbits() == 0);
-  assert(ship->land_coords() == Coordinates(5, 5));
+  test::expect_ne(ship, nullptr);
+  test::expect_eq(ship->type(), ShipType::OTYPE_PROBE);
+  test::expect_eq(ship->owner(), player_t{1});
+  test::expect_eq(ship->whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(ship->storbits(), 1);
+  test::expect_eq(ship->pnumorbits(), 0);
+  test::expect_eq(ship->land_coords(), Coordinates(5, 5));
 }
 
 void test_build_insufficient_ap() {
@@ -122,7 +120,7 @@ void test_build_insufficient_ap() {
   g.set_pnum(0);
 
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
-  assert(g.out.str().contains("action points"));
+  test::expect_contains(g.out.str(), "action points");
 }
 
 void test_build_domain_errors() {
@@ -138,8 +136,8 @@ void test_build_domain_errors() {
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"build"});
-  assert(g.out.str().contains(
-      "Syntax: build <type> <x,y> [count] | build ? [type]"));
+  test::expect_contains(g.out.str(),
+                        "Syntax: build <type> <x,y> [count] | build ? [type]");
 
   // 2. Test: Build with insufficient resources
   {
@@ -152,7 +150,7 @@ void test_build_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
   // The build command should fail due to insufficient resources. The error is
   // written to g.out
-  assert(g.out.str().contains("You need"));
+  test::expect_contains(g.out.str(), "You need");
 }
 
 }  // namespace

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Extended test coverage for build command
 
-#include <cassert>
 #undef stdout
 #undef stdin
 #undef stderr
@@ -140,21 +139,21 @@ void test_planet_multiple_builds() {
   shipnum_t ship_count = fixture.count_ships();
   std::println("Expected 5 ships, got {}", ship_count);
   std::println("Assertion will check ship_count == 5");
-  assert(ship_count == 5);
+  test::expect_eq(ship_count, 5);
 
   // Verify all ships at same location
   for (shipnum_t i = 1; i <= 5; i++) {
     const auto* ship = fixture.get_ship(i);
-    assert(ship != nullptr);
-    assert(ship->land_coords() == Coordinates(5, 5));
-    assert(ship->whatorbits() == ScopeLevel::LEVEL_PLAN);
+    test::expect_ne(ship, nullptr);
+    test::expect_eq(ship->land_coords(), Coordinates(5, 5));
+    test::expect_eq(ship->whatorbits(), ScopeLevel::LEVEL_PLAN);
   }
 
   // Verify resources deducted for all 5 ships
   const auto* planet = fixture.get_planet();
   int cost_per_probe = Shipcost(ShipType::OTYPE_PROBE, *g.race);
   int expected_resource = initial_resource - (5 * cost_per_probe);
-  assert(planet->info(player_t{1}).resource == expected_resource);
+  test::expect_eq(planet->info(player_t{1}).resource, expected_resource);
 
   std::println("✓ Planet multiple builds test passed");
 }
@@ -201,13 +200,13 @@ void test_factory_multiple_builds() {
 
   // Verify ships created (factory is ship 1, new ships are 2-4)
   shipnum_t ship_count = fixture.count_ships();
-  assert(ship_count == 4);  // 1 factory + 3 built ships
+  test::expect_eq(ship_count, 4);  // 1 factory + 3 built ships
 
   // Verify all built ships at factory's landed coordinates (5,5)
   for (shipnum_t i = 2; i <= 4; i++) {
     const auto* ship = fixture.get_ship(i);
-    assert(ship != nullptr);
-    assert(ship->land_coords() == Coordinates(5, 5));  // Same as factory
+    test::expect_ne(ship, nullptr);
+    test::expect_eq(ship->land_coords(), Coordinates(5, 5));  // Same as factory
   }
 
   std::println("✓ Factory multiple builds test passed");
@@ -225,7 +224,7 @@ void test_invalid_coordinates() {
     command_t argv = {"build", ":", "-1,5", "1"};
     GB::commands::build(argv, g);
     std::string output = g.out.str();
-    assert(output.find("Illegal sector") != std::string::npos);
+    test::expect_contains(output, "Illegal sector");
     g.out.str("");
   }
 
@@ -234,7 +233,7 @@ void test_invalid_coordinates() {
     command_t argv = {"build", ":", "25,25", "1"};  // Planet is 20x20
     GB::commands::build(argv, g);
     std::string output = g.out.str();
-    assert(output.find("Illegal sector") != std::string::npos);
+    test::expect_contains(output, "Illegal sector");
     g.out.str("");
   }
 
@@ -243,7 +242,7 @@ void test_invalid_coordinates() {
     command_t argv = {"build", ":", "abc", "1"};
     GB::commands::build(argv, g);
     std::string output = g.out.str();
-    assert(output.find("Invalid sector format") != std::string::npos);
+    test::expect_contains(output, "Invalid sector format");
     g.out.str("");
   }
 
@@ -261,7 +260,7 @@ void test_wrong_scope() {
   GB::commands::build(argv, g);
 
   std::string output = g.out.str();
-  assert(output.find("change scope") != std::string::npos);
+  test::expect_contains(output, "change scope");
 
   std::println("✓ Wrong scope test passed");
 }
@@ -310,7 +309,7 @@ void test_insufficient_hanger_space() {
 
   std::string output = g.out.str();
   // May fail at hanger space or build permission check
-  assert(!output.empty());  // Should have some error
+  test::expect_false(output.empty());  // Should have some error
 
   std::println("✓ Insufficient hanger space test passed");
 }

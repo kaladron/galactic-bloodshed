@@ -9,8 +9,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_upgrade_command() {
@@ -91,7 +89,7 @@ void test_upgrade_command() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at universe level verified");
 
   // 2. Scope rejection at STAR scope
@@ -99,7 +97,7 @@ void test_upgrade_command() {
   g.set_snum(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at star level verified");
 
   // 3. Guest rejection
@@ -113,7 +111,7 @@ void test_upgrade_command() {
   g.set_snum(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
   std::println(std::cout, "    ✓ Guest rejection verified");
 
   // Restore non-guest race
@@ -132,12 +130,12 @@ void test_upgrade_command() {
     g.set_snum(0);
 
     const auto* ship_before = ctx.em.peek_ship(1);
-    assert(ship_before != nullptr);
+    test::expect_ne(ship_before, nullptr);
     int initial_armor = ship_before->armor();
     int target_armor = initial_armor + 2;
     int initial_resource = ship_before->resource();
     const auto* star_before = ctx.em.peek_star(0);
-    assert(star_before->AP(1) == 10);
+    test::expect_eq(star_before->AP(1), 10);
     std::println(std::cout, "    Before: armor={}, resource={}, star AP={}",
                  initial_armor, initial_resource, star_before->AP(1));
 
@@ -149,15 +147,15 @@ void test_upgrade_command() {
     ctx.em.clear_cache();
 
     const auto* ship_after = ctx.em.peek_ship(1);
-    assert(ship_after != nullptr);
+    test::expect_ne(ship_after, nullptr);
     const auto* star_after = ctx.em.peek_star(0);
-    assert(star_after->AP(1) == 9);  // 1 Star AP deducted
+    test::expect_eq(star_after->AP(1), 9);  // 1 Star AP deducted
     std::println(std::cout, "    After: armor={}, resource={}, star AP={}",
                  ship_after->armor(), ship_after->resource(),
                  star_after->AP(1));
 
     // Armor should have increased
-    assert(ship_after->armor() == target_armor);
+    test::expect_eq(ship_after->armor(), target_armor);
     std::println(
         std::cout,
         "    ✓ Armor upgrade applied and 1 Star AP deducted (was {}, now {})",
@@ -173,12 +171,12 @@ void test_upgrade_command() {
     g.set_snum(0);
 
     const auto* ship_before = ctx.em.peek_ship(1);
-    assert(ship_before != nullptr);
+    test::expect_ne(ship_before, nullptr);
     int initial_speed = ship_before->max_speed();
     int target_speed = initial_speed + 1;
     int initial_resource = ship_before->resource();
     const auto* star_before = ctx.em.peek_star(0);
-    assert(star_before->AP(1) == 9);
+    test::expect_eq(star_before->AP(1), 9);
     std::println(std::cout, "    Before: max_speed={}, resource={}, star AP={}",
                  initial_speed, initial_resource, star_before->AP(1));
 
@@ -189,15 +187,15 @@ void test_upgrade_command() {
     ctx.em.clear_cache();
 
     const auto* ship_after = ctx.em.peek_ship(1);
-    assert(ship_after != nullptr);
+    test::expect_ne(ship_after, nullptr);
     const auto* star_after = ctx.em.peek_star(0);
-    assert(star_after->AP(1) == 8);  // Another 1 Star AP deducted
+    test::expect_eq(star_after->AP(1), 8);  // Another 1 Star AP deducted
     std::println(std::cout, "    After: max_speed={}, resource={}, star AP={}",
                  ship_after->max_speed(), ship_after->resource(),
                  star_after->AP(1));
 
     // Speed should have increased
-    assert(ship_after->max_speed() == target_speed);
+    test::expect_eq(ship_after->max_speed(), target_speed);
     std::println(
         std::cout,
         "    ✓ Speed upgrade applied and 1 Star AP deducted (was {}, now {})",
@@ -209,7 +207,7 @@ void test_upgrade_command() {
     ctx.em.clear_cache();
 
     const auto* ship_check = ctx.em.peek_ship(1);
-    assert(ship_check != nullptr);
+    test::expect_ne(ship_check, nullptr);
 
     // Values should still reflect upgrades
     std::println(

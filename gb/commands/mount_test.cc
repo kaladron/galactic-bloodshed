@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_race(TestContext& ctx) {
@@ -55,9 +53,10 @@ void test_mount_persistence() {
   ctx.assert_dispatch_success(g, {"mount", "#1"});
 
   const auto* final_ship = ctx.em.peek_ship(1);
-  assert(final_ship->mounted() == 1);
-  assert(final_ship->crystals() == 1);
-  assert(g.out.str().contains("Mounted."));
+  test::expect_ne(final_ship, nullptr);
+  test::expect_eq(final_ship->mounted(), 1);
+  test::expect_eq(final_ship->crystals(), 1);
+  test::expect_contains(g.out.str(), "Mounted.");
 
   std::println(std::cout, "✓ mount persistence test passed");
 }
@@ -94,12 +93,13 @@ void test_dismount_persistence() {
   ctx.assert_dispatch_success(g, {"dismount", "#1"});
 
   const auto* final_ship = ctx.em.peek_ship(1);
-  assert(final_ship->mounted() == 0);
-  assert(final_ship->crystals() == 2);
-  assert(final_ship->hyper_drive().charge == 0);
-  assert(final_ship->hyper_drive().ready == 0);
-  assert(g.out.str().contains("Dismounted."));
-  assert(g.out.str().contains("Discharged."));
+  test::expect_ne(final_ship, nullptr);
+  test::expect_eq(final_ship->mounted(), 0);
+  test::expect_eq(final_ship->crystals(), 2);
+  test::expect_eq(final_ship->hyper_drive().charge, 0);
+  test::expect_eq(final_ship->hyper_drive().ready, 0);
+  test::expect_contains(g.out.str(), "Dismounted.");
+  test::expect_contains(g.out.str(), "Discharged.");
 
   std::println(std::cout, "✓ dismount persistence test passed");
 }
@@ -132,11 +132,12 @@ void test_mount_no_crystals() {
   g.set_shipno(1);
 
   ctx.assert_dispatch_rejected(g, {"mount", "#1"});
-  assert(g.out.str().contains("You have no crystals on board."));
+  test::expect_contains(g.out.str(), "You have no crystals on board.");
 
   const auto* s = ctx.em.peek_ship(1);
-  assert(s->crystals() == 0);
-  assert(s->mounted() == 0);
+  test::expect_ne(s, nullptr);
+  test::expect_eq(s->crystals(), 0);
+  test::expect_eq(s->mounted(), 0);
 
   std::println(std::cout, "✓ mount no crystals edge case test passed");
 }
@@ -169,11 +170,13 @@ void test_dismount_full_storage() {
   g.set_shipno(1);
 
   ctx.assert_dispatch_rejected(g, {"dismount", "#1"});
-  assert(g.out.str().contains(
-      "You can't dismount the crystal. Max allowed already on board."));
+  test::expect_contains(
+      g.out.str(),
+      "You can't dismount the crystal. Max allowed already on board.");
 
   const auto* s = ctx.em.peek_ship(1);
-  assert(s->mounted() == 1);
+  test::expect_ne(s, nullptr);
+  test::expect_eq(s->mounted(), 1);
 
   std::println(std::cout, "✓ dismount full storage edge case test passed");
 }
@@ -188,11 +191,11 @@ void test_mount_syntax_and_errors() {
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"mount"});
-  assert(g.out.str().contains("Syntax: mount <ship>"));
+  test::expect_contains(g.out.str(), "Syntax: mount <ship>");
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"dismount"});
-  assert(g.out.str().contains("Syntax: dismount <ship>"));
+  test::expect_contains(g.out.str(), "Syntax: dismount <ship>");
 }
 
 }  // namespace

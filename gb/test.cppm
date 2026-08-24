@@ -904,6 +904,7 @@ public:
     ship_.sectype = static_cast<guntype_t>(Shipdata[type][ABIL_SECONDARY]);
     ship_.guns = static_cast<unsigned char>(Shipdata[type][ABIL_GUNS]);
     ship_.primary = static_cast<unsigned long>(Shipdata[type][ABIL_GUNS]);
+    ship_.retaliate = static_cast<unsigned char>(ship_.primary);
 
     // Calculate baseline size and mass using canonical ship functions
     Ship temp_ship{ship_};
@@ -984,6 +985,12 @@ public:
     ship_.guns = guns_flag;
     ship_.primtype = primtype;
     ship_.primary = count;
+    ship_.retaliate = static_cast<unsigned char>(count);
+    return *this;
+  }
+
+  TestShipBuilder& with_retaliate(unsigned char retaliate) {
+    ship_.retaliate = retaliate;
     return *this;
   }
 

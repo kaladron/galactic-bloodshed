@@ -9,96 +9,38 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  // Create test race (Attacker)
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Attacker";
-  race.Guest = false;
-  race.governor[0].active = true;
-  race.governor[0].toggle.highlight = true;
-  race.tech = 100.0;
-  race.morale = 100;
+  TestWorldBuilder(ctx)
+      .add_race("Attacker", 100.0, false, player_t{1})
+      .add_race("Defender", 100.0, false, player_t{2})
+      .add_star("CombatStar", 100, starnum_t{0})
+      .add_planet(0, PlanetType::EARTH);
 
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create target race (Defender)
-  Race target_race{};
-  target_race.Playernum = 2;
-  target_race.name = "Defender";
-  target_race.Guest = false;
-  target_race.governor[0].active = true;
-  target_race.tech = 100.0;
-  target_race.morale = 100;
-  races.save(target_race);
-
-  // Create star system
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "CombatStar";
-  ss.pnames.emplace_back("CombatPlanet");
-  ss.AP[0] = 100;  // Player 1 APs
-  ss.AP[1] = 100;  // Player 2 APs
-  ss.explored = (1ULL << 1) | (1ULL << 2);
-  StarRepository star_repo(store);
-  star_repo.save(ss);
-
-  // Create planet
-  Planet planet{};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
-  planet.xpos() = 100.0;
-  planet.ypos() = 200.0;
-
-  PlanetRepository planet_repo(store);
-  planet_repo.save(planet);
-
-  // Create and initialize sector map
+  // Configure target sector (5,5) on planet (0,0)
   {
-    SectorMap smap(planet, true);
-    smap.get(5, 5).set_condition(SectorType::SEC_LAND);
-    smap.get(5, 5).set_popn_exact(100);
-    smap.get(5, 5).set_owner(2);  // Owned by race 2
-    smap.get(5, 5).set_troops(10);
-
-    SectorRepository smap_repo(store);
-    smap_repo.save_map(smap);
+    auto smap_handle = ctx.em.get_sectormap(0, 0);
+    smap_handle->get(5, 5).set_condition(SectorType::SEC_LAND);
+    smap_handle->get(5, 5).set_popn_exact(100);
+    smap_handle->get(5, 5).set_owner(2);
+    smap_handle->get(5, 5).set_troops(10);
+  }
+  {
+    auto planet_handle = ctx.em.get_planet(0, 0);
+    planet_handle->popn() = 100;
   }
 
-  // Create attacker ship in orbit
-  ship_struct attacker{};
-  attacker.number = 1;
-  attacker.owner = 1;
-  attacker.governor = 0;
-  attacker.alive = true;
-  attacker.active = true;
-  attacker.type = ShipType::STYPE_BATTLE;
-  attacker.guns = PRIMARY;
-  attacker.primary = 10;
-  attacker.primtype = GTYPE_LIGHT;
-  attacker.popn = 10;
-  attacker.troops = 10;
-  attacker.retaliate = 100;
-  attacker.destruct = 100;
-  attacker.fuel = 1000.0;
-  attacker.whatorbits = ScopeLevel::LEVEL_PLAN;
-  attacker.storbits = 0;
-  attacker.pnumorbits = 0;
-  attacker.xpos = 100.0;
-  attacker.ypos = 200.0;
-  attacker.mass = 100.0;
-  attacker.build_cost = 100;
-
-  auto attacker_handle = ctx.em.create_ship(attacker);
-  attacker_handle.save();
+  // Create attacker ship in orbit with guns and ammo
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+      .owned_by(1, 0)
+      .named("Battleship")
+      .in_planet_orbit(0, 0, 100.0, 200.0)
+      .with_guns(GTYPE_LIGHT, 10)
+      .with_destruct(100)
+      .with_crew(10, 10)
+      .with_fuel(1000.0)
+      .build();
 }
 
 void test_bombard_happy_paths() {
@@ -119,16 +61,18 @@ void test_bombard_happy_paths() {
   // Verify ship and planet still exist in database (persisted via
   // EntityManager)
   const auto* ship = ctx.em.peek_ship(1);
-  assert(ship);
-  assert(ship->number() == 1);
-  assert(ship->destruct() < 100);  // Ammo consumed
+  test::expect_true(ship != nullptr);
+  test::expect_eq(ship->number(), 1);
+  test::expect_lt(ship->destruct(), 100);  // Ammo consumed
 
   const auto* planet_after = ctx.em.peek_planet(0, 0);
-  assert(planet_after);
+  test::expect_true(planet_after != nullptr);
 
   // Verify sector map persisted and target was damaged
   const auto* smap_after = ctx.em.peek_sectormap(0, 0);
-  assert(smap_after);
+  test::expect_true(smap_after != nullptr);
+
+  ctx.verify_universe_invariants();
 }
 
 void test_bombard_insufficient_ap() {
@@ -149,7 +93,9 @@ void test_bombard_insufficient_ap() {
   g.set_pnum(0);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
-  assert(g.out.str().contains("action points"));
+  test::expect_contains(g.out.str(), "action points");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_bombard_role_and_scope_rejections() {
@@ -178,15 +124,16 @@ void test_bombard_role_and_scope_rejections() {
   g.set_pnum(0);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Scope rejection (LEVEL_UNIV is not allowed for bombard)
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.out.str("");
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_bombard_domain_errors() {
@@ -202,16 +149,18 @@ void test_bombard_domain_errors() {
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"bombard"});
-  assert(g.out.str().contains("Syntax: bombard <ship> [<x,y> [<strength>]]"));
+  test::expect_contains(g.out.str(),
+                        "Syntax: bombard <ship> [<x,y> [<strength>]]");
 
   // 2. Inactive ship
   {
     auto ship_handle = ctx.em.get_ship(1);
     ship_handle->active() = false;
   }
-  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
-  assert(g.out.str().contains("inactive"));
+  test::expect_contains(g.out.str(), "inactive");
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

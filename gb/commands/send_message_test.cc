@@ -8,61 +8,50 @@ import std;
 
 #include <cassert>
 
-int main() {
-  // Create test context
+namespace {
+
+void setup_test_world(TestContext& ctx) {
+  TestWorldBuilder(ctx)
+      .add_race("TestRace", 100.0, false, player_t{1})
+      .add_race("AlienRace", 100.0, false, player_t{2})
+      .add_star("Sol", 10, starnum_t{0});
+
+  auto r1 = ctx.em.get_race(1);
+  r1->governor[0].name = "TestGovernor";
+  r1->translate[0] = 50;
+
+  auto r2 = ctx.em.get_race(2);
+  r2->translate[0] = 50;
+}
+
+void test_send_message() {
   TestContext ctx;
-  JsonStore store(ctx.db);
+  setup_test_world(ctx);
 
-  // Create two test races (sender and receiver)
-  Race sender{};
-  sender.Playernum = 1;
-  sender.Guest = false;
-  sender.Gov_ship = 0;
-  sender.governor[0].name = "TestGovernor";
-  sender.name = "TestRace";
-  sender.translate[0] = 50;  // Initial translation with race 2
-
-  Race receiver{};
-  receiver.Playernum = 2;
-  receiver.Guest = false;
-  receiver.Gov_ship = 0;
-  receiver.God = false;
-  receiver.name = "AlienRace";
-  receiver.translate[0] = 50;  // Initial translation with race 1
-
-  RaceRepository races(store);
-  races.save(sender);
-  races.save(receiver);
-
-  // Create star
-  star_struct star{};
-  star.star_id = 0;
-  star.AP[0] = 10;  // Sender has APs
-
-  StarRepository stars(store);
-  stars.save(star);
-
-  // Create GameObj for sender
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
   g.set_god(false);
 
-  // Test sending a regular message: send_message 2 Hello World
-  command_t argv = {"send_message", "2", "Hello", "World"};
-  GB::commands::send_message(argv, g);
+  // Test sending a regular message: send 2 Hello World
+  command_t argv = {"send", "2", "Hello", "World"};
+  ctx.assert_dispatch_success(g, argv, 0);
 
-  // Verify translation modifier increased
+  // Verify translation modifier increased by 2 (from 50 to 52)
   const auto* updated_receiver = ctx.em.peek_race(2);
-  assert(updated_receiver);
+  test::expect_true(updated_receiver != nullptr);
+  test::expect_eq(updated_receiver->translate[0], 52);
 
-  // Translation should have increased by 2 (from 50 to 52)
-  assert(updated_receiver->translate[0] == 52);
+  ctx.verify_universe_invariants();
+}
 
-  std::println(std::cout,
-               "✓ send_message command: Message sent and translation modifier "
-               "persisted");
+}  // namespace
+
+int main() {
+  test_send_message();
+
+  std::println(std::cout, "✓ send_message_test passed!");
   return 0;
 }

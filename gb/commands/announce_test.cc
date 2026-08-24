@@ -10,117 +10,90 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
-class CapturingSessionRegistry : public NullSessionRegistry {
-public:
-  std::vector<std::string> messages;
+void setup_test_world(TestContext& ctx) {
+  TestWorldBuilder(ctx)
+      .add_race("Federation", 100.0, false, player_t{1})
+      .add_race("Empire", 100.0, false, player_t{2})
+      .add_star("Sol", 100, starnum_t{0});
 
-  bool notify_player(player_t, governor_t, const std::string& msg) override {
-    messages.push_back(msg);
-    return true;
+  // Setup governors and names
+  {
+    auto race1 = ctx.em.get_race(1);
+    race1->governor[0].name = "President";
+    race1->governor[1].active = true;
+    race1->governor[1].name = "VicePresident";
+
+    auto race2 = ctx.em.get_race(2);
+    race2->governor[0].name = "Emperor";
   }
-};
+
+  // Mark star inhabited by both races
+  {
+    auto star = ctx.em.get_star(0);
+    setbit(star->inhabited(), player_t{1});
+    setbit(star->inhabited(), player_t{2});
+  }
+}
 
 void test_announce_dispatch() {
-  std::println(std::cout,
-               "Test: announce, broadcast, shout, and think dispatch");
   TestContext ctx;
-  JsonStore store(ctx.db);
+  setup_test_world(ctx);
 
-  // Setup test race 1
-  Race race1{};
-  race1.Playernum = 1;
-  race1.name = "Federation";
-  race1.governor[0].active = true;
-  race1.governor[0].name = "President";
-  race1.governor[1].active = true;
-  race1.governor[1].name = "VicePresident";
-
-  // Setup test race 2 (to receive broadcasts/announcements)
-  Race race2{};
-  race2.Playernum = 2;
-  race2.name = "Empire";
-  race2.governor[0].active = true;
-  race2.governor[0].name = "Emperor";
-
-  RaceRepository races(store);
-  races.save(race1);
-  races.save(race2);
-
-  // Create star inhabited by both races
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.governor[0] = 0;
-  star_data.name = "Sol";
-  Star star{star_data};
-  setbit<std::uint64_t>(star.inhabited(), 1U);
-  setbit<std::uint64_t>(star.inhabited(), 2U);
-  StarRepository stars(store);
-  stars.save(star);
-
-  CapturingSessionRegistry registry;
+  RecordingSessionRegistry registry;
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_snum(0);
 
   // 1. Announce in inhabited star system (separator ':')
-  registry.messages.clear();
+  registry.clear_notifications();
   ctx.assert_dispatch_success(g, {"announce", "Hello", "System"});
-  assert(!registry.messages.empty());
-  assert(registry.messages.back().contains(": Hello System"));
-  std::println(
-      std::cout,
-      "    ✓ Star system announcement succeeded with canonical ':' separator");
+  test::expect_true(!registry.notifications.empty());
+  test::expect_contains(registry.notifications.back().message,
+                        ": Hello System");
 
   // 2. Broadcast across galaxy (separator '>')
-  registry.messages.clear();
+  registry.clear_notifications();
   ctx.assert_dispatch_success(g, {"broadcast", "Global", "Transmission"});
-  assert(!registry.messages.empty());
-  assert(registry.messages.back().contains("> Global Transmission"));
-  std::println(
-      std::cout,
-      "    ✓ Broadcast transmission succeeded with canonical '>' separator");
+  test::expect_true(!registry.notifications.empty());
+  test::expect_contains(registry.notifications.back().message,
+                        "> Global Transmission");
 
   // 3. Broadcast alias "'" (separator '>')
-  registry.messages.clear();
+  registry.clear_notifications();
   ctx.assert_dispatch_success(g, {"'", "Quick", "Message"});
-  assert(!registry.messages.empty());
-  assert(registry.messages.back().contains("> Quick Message"));
-  std::println(std::cout, "    ✓ Apostrophe alias for broadcast succeeded with "
-                          "canonical '>' separator");
+  test::expect_true(!registry.notifications.empty());
+  test::expect_contains(registry.notifications.back().message,
+                        "> Quick Message");
 
   // 4. Think to race governors (separator '=')
-  registry.messages.clear();
+  registry.clear_notifications();
   ctx.assert_dispatch_success(g, {"think", "Internal", "Memo"});
-  assert(!registry.messages.empty());
-  assert(registry.messages.back().contains("= Internal Memo"));
-  std::println(std::cout,
-               "    ✓ Think command succeeded with canonical '=' separator");
+  test::expect_true(!registry.notifications.empty());
+  test::expect_contains(registry.notifications.back().message,
+                        "= Internal Memo");
 
   // 5. Shout rejected for mortal
-  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"shout", "Deity", "Announcement"});
-  assert(g.out.str().contains("Only deity can use this command."));
-  std::println(std::cout, "    ✓ Shout rejection for mortal verified");
+  test::expect_contains(g.out.str(), "Only deity can use this command.");
 
   // 6. Shout succeeds for deity (separator '!')
-  registry.messages.clear();
+  registry.clear_notifications();
   g.set_god(true);
   ctx.assert_dispatch_success(g, {"shout", "Deity", "Announcement"});
-  assert(!registry.messages.empty());
-  assert(registry.messages.back().contains("! Deity Announcement"));
-  std::println(std::cout,
-               "    ✓ Shout succeeded for deity with canonical '!' separator");
+  test::expect_true(!registry.notifications.empty());
+  test::expect_contains(registry.notifications.back().message,
+                        "! Deity Announcement");
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace
 
 int main() {
   test_announce_dispatch();
-  std::println(std::cout, "\n✅ All announce tests passed!");
+  std::println(std::cout, "✓ announce_test passed!");
   return 0;
 }

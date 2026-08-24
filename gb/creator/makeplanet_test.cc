@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file makeplanet_test.cc
+/// \brief Test temperature calculation and planet generation
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 #include "gb/creator/makeplanet.h"
 #include "gb/creator/makestar.h"
 #include "gb/creator/makeuniv.h"
-
-/// \file makeplanet_test.cc
-/// \brief Test temperature calculation and planet generation
 
 // Define global stubs required by makestar.cc
 int autoname_plan = 0;
@@ -31,8 +30,8 @@ void test_temperature_calculation() {
   int t3 = Temperature(1500.0, 5000);
 
   // Verify: Farther planets must be colder than closer planets
-  assert(t1 > t2);
-  assert(t2 > t3);
+  test::expect_gt(t1, t2);
+  test::expect_gt(t2, t3);
 
   std::println(
       std::cout,
@@ -60,15 +59,15 @@ void test_makeplanet_types() {
     Planet planet = makeplanet(500.0, 6000, ptype, star_id, pnum, smap);
 
     // Verify: Planet type, location, and dimensions
-    assert(planet.type() == ptype);
-    assert(planet.star_id() == star_id);
-    assert(planet.planet_order() == pnum);
-    assert(planet.Maxx() > 0);
-    assert(planet.Maxy() > 0);
+    test::expect_eq(planet.type(), ptype);
+    test::expect_eq(planet.star_id(), star_id);
+    test::expect_eq(planet.planet_order(), pnum);
+    test::expect_gt(planet.Maxx(), 0);
+    test::expect_gt(planet.Maxy(), 0);
 
     // Verify: Solid planets have generated sector maps
     if (ptype != PlanetType::GASGIANT) {
-      assert(smap.has_value());
+      test::expect_true(smap.has_value());
     }
 
     std::println(std::cout,
@@ -88,9 +87,9 @@ void test_permutation_setters() {
 
   // Test that shuffled_indices generates complete permutation
   auto rand_perm = shuffled_indices(10);
-  assert(rand_perm.size() == 10);
+  test::expect_eq(rand_perm.size(), 10);
   std::set<int> seen(rand_perm.begin(), rand_perm.end());
-  assert(seen.size() == 10);
+  test::expect_eq(seen.size(), 10);
 
   std::println(std::cout,
                "  ✓ Permutation setters and shuffled_indices passed");

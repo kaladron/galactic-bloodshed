@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file enroll_test.cc
+/// \brief Test race enrollment validation rules
+
 import std;
 import dallib;
 import gblib;
-
-#include <cassert>
+import test;
 
 #include "gb/enroll.h"
 #include "gb/racegen.h"
 
 int enroll_valid_race(Database& db);
-
-/// \file enroll_test.cc
-/// \brief Test race enrollment validation rules
 
 // Global variable definitions required by GB_racegen.cc
 struct x race_info{};
@@ -42,10 +41,9 @@ void test_enroll_first_race_god_requirement() {
   int result = enroll_valid_race(db);
 
   // Verify: Enrollment fails with God privilege error
-  assert(result == 1);
-  assert(std::string(race_info.rejection)
-             .find("The first race enrolled must have God privileges.") !=
-         std::string::npos);
+  test::expect_eq(result, 1);
+  test::expect_contains(std::string(race_info.rejection),
+                        "The first race enrolled must have God privileges.");
 
   std::println(std::cout, "  ✓ God race requirement check passed");
 }
@@ -76,9 +74,9 @@ void test_enroll_max_players() {
   int result = enroll_valid_race(db);
 
   // Verify: Enrollment rejected due to max players limit
-  assert(result == 1);
-  assert(race_info.status == EnrollmentStatus::UNENROLLABLE);
-  assert(race_info.rejection.find("No more allowed.") != std::string::npos);
+  test::expect_eq(result, 1);
+  test::expect_eq(race_info.status, EnrollmentStatus::UNENROLLABLE);
+  test::expect_contains(race_info.rejection, "No more allowed.");
 
   std::println(std::cout, "  ✓ Max player limit enforcement passed");
 }
@@ -118,10 +116,9 @@ void test_enroll_no_free_planet_type() {
 
   int result = enroll_valid_race(db);
 
-  assert(result == 1);
-  assert(race_info.status == EnrollmentStatus::UNENROLLABLE);
-  assert(race_info.rejection.find("Didn't find any free Earth") !=
-         std::string::npos);
+  test::expect_eq(result, 1);
+  test::expect_eq(race_info.status, EnrollmentStatus::UNENROLLABLE);
+  test::expect_contains(race_info.rejection, "Didn't find any free Earth");
 
   std::println(std::cout, "  ✓ No free home planet type rejection passed");
 }
@@ -197,19 +194,21 @@ void test_find_suitable_enrol_planet() {
   // (first valid candidate in order)
   std::vector<int> order1 = {0, 1, 3, 2};
   auto res1 = find_suitable_enrol_planet(em, 4, 1, PlanetType::EARTH, order1);
-  assert(res1.has_value());
-  assert(res1->first == 3 && res1->second == 0);
+  test::expect_true(res1.has_value());
+  test::expect_eq(res1->first, 3);
+  test::expect_eq(res1->second, 0);
 
   // Test 2: Given order [0, 1, 2, 3], should skip 0 and 1, and select Star 2
   // (first valid candidate in order)
   std::vector<int> order2 = {0, 1, 2, 3};
   auto res2 = find_suitable_enrol_planet(em, 4, 1, PlanetType::EARTH, order2);
-  assert(res2.has_value());
-  assert(res2->first == 2 && res2->second == 1);
+  test::expect_true(res2.has_value());
+  test::expect_eq(res2->first, 2);
+  test::expect_eq(res2->second, 1);
 
   // Test 3: Looking for DESERT -> no matching planet -> returns std::nullopt
   auto res3 = find_suitable_enrol_planet(em, 4, 1, PlanetType::DESERT, order2);
-  assert(!res3.has_value());
+  test::expect_false(res3.has_value());
 
   std::println(std::cout, "  ✓ find_suitable_enrol_planet exact search passed");
 }

@@ -337,6 +337,49 @@ void test_recording_session_registry() {
   std::println(std::cout, "  ✓ RecordingSessionRegistry verified successfully");
 }
 
+void test_test_command_matrix() {
+  std::println(std::cout, "Test: TestCommandMatrix 4-way runner");
+  TestContext ctx;
+  TestWorldBuilder::create_standard_solar_system(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  static auto matrix_cmd_handler = [](const command_t& argv, GameObj& g) {
+    if (argv.size() > 1 && argv[1] == "bad") {
+      g.out << "Domain error occurred\n";
+      return false;
+    }
+    g.out << "Command succeeded\n";
+    return true;
+  };
+
+  GB::commands::CommandDescriptor matrix_cmd{
+      .name = "matrix_test_cmd",
+      .roles = {.no_guests = true},
+      .scopes = GB::commands::AllowedScopes::planet_only(),
+      .ap = GB::commands::APCost::fixed_star(5),
+      .min_args = 2,
+      .handler = matrix_cmd_handler,
+  };
+
+  TestCommandMatrix(ctx, matrix_cmd)
+      .with_valid_argv({"matrix_test_cmd", "good"})
+      .with_invalid_argv({"matrix_test_cmd", "bad"})
+      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
+      .with_invalid_scopes({ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
+                            ScopeLevel::LEVEL_SHIP})
+      .with_expected_star_ap(5)
+      .run_matrix(g);
+
+  // Star AP was originally 100, deducted 5 on happy path
+  test::expect_eq(ctx.em.peek_star(0)->AP(player_t{1}), 95);
+  std::println(std::cout, "  ✓ TestCommandMatrix verified successfully");
+}
+
 }  // namespace
 
 int main() {
@@ -345,6 +388,7 @@ int main() {
   test_test_world_builder();
   test_test_ship_builder();
   test_recording_session_registry();
+  test_test_command_matrix();
   std::println(std::cout, "✓ test_context_test passed!");
   return 0;
 }

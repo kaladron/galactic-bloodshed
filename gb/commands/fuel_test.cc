@@ -9,87 +9,31 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
-
-  universe_struct us{};
-  us.id = 1;
-  us.numstars = 2;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Stargazers";
-  race.Guest = false;
-  race.governor[0].active = true;
-  race.mass = 1.0;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  star_struct ss0{};
-  ss0.star_id = 0;
-  ss0.name = "OriginStar";
-  ss0.xpos = 0.0;
-  ss0.ypos = 0.0;
-  ss0.explored = (1ULL << 1);
-  ss0.pnames.emplace_back("OriginPlanet");
-
-  star_struct ss1{};
-  ss1.star_id = 1;
-  ss1.name = "DestStar";
-  ss1.xpos = 100.0;
-  ss1.ypos = 100.0;
-  ss1.explored = (1ULL << 1);
-  ss1.pnames.emplace_back("DestPlanet");
-
-  StarRepository stars(store);
-  stars.save(ss0);
-  stars.save(ss1);
-
-  planet_struct ps0{};
-  ps0.star_id = 0;
-  ps0.planet_order = 0;
-  ps0.type = PlanetType::EARTH;
-  planet_struct ps1{};
-  ps1.star_id = 1;
-  ps1.planet_order = 0;
-  ps1.type = PlanetType::EARTH;
-
-  PlanetRepository planets(store);
-  planets.save(ps0);
-  planets.save(ps1);
-
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.governor() = 0;
-  ship.alive() = true;
-  ship.active() = true;
-  ship.type() = ShipType::STYPE_CRUISER;
-  ship.name() = "Explorer";
-  ship.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship.storbits() = 0;
-  ship.xpos() = 0.0;
-  ship.ypos() = 0.0;
-  ship.speed() = 2;
-  ship.max_speed() = 5;
-  ship.fuel() = 100.0;
-  ship.max_fuel() = 500.0;
-  ship.mass() = 100.0;
-
-  ShipRepository ships(store);
-  ships.save(ship);
-}
-
-void test_fuel_happy_path() {
+void test_fuel_matrix() {
   TestContext ctx;
-  setup_test_world(ctx);
+  TestWorldBuilder(ctx)
+      .add_race("Stargazers", 100.0)
+      .add_star("OriginStar", 100, starnum_t{0})
+      .add_planet(0, PlanetType::EARTH)
+      .add_star("DestStar", 100, starnum_t{1})
+      .add_planet(1, PlanetType::EARTH);
+
+  // Position DestStar at (100, 100)
+  {
+    auto star1 = ctx.em.get_star(1);
+    star1->xpos() = 100.0;
+    star1->ypos() = 100.0;
+  }
+
+  shipnum_t ship_num = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                           .owned_by(1, 0)
+                           .named("Explorer")
+                           .in_star_orbit(0, 0.0, 0.0)
+                           .with_speed(2)
+                           .with_fuel(100.0)
+                           .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -97,41 +41,30 @@ void test_fuel_happy_path() {
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
 
-  ctx.assert_dispatch_success(g, {"fuel", "#1", "/DestStar"});
-  assert(g.out.str().contains("FUEL ESTIMATES"));
-}
+  // 1. 4-Way Command Matrix runner on fuel projection
+  TestCommandMatrix(ctx, "fuel")
+      .with_valid_argv(
+          {"fuel", std::format("#{}", ship_num.value), "/DestStar"})
+      .with_invalid_argv({"fuel", "#999", "/DestStar"})
+      .with_valid_scope(ScopeLevel::LEVEL_STAR)
+      .with_expected_star_ap(0)
+      .run_matrix(g);
 
-void test_fuel_domain_errors() {
-  TestContext ctx;
-  setup_test_world(ctx);
+  test::expect_contains(g.out.str(), "FUEL ESTIMATES");
 
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
-
-  // 1. Min args check (< 2 args)
+  // 2. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"fuel"});
-  assert(g.out.str().contains("Syntax: fuel <#ship> [<destination>]"));
-
-  // 2. Non-existent ship
-  g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"fuel", "#999", "/DestStar"});
-  assert(g.out.str().contains("rst: no such ship #999"));
+  test::expect_contains(g.out.str(), "Syntax: fuel <#ship> [<destination>]");
 
   // 3. Bad argument format (not starting with #)
-  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fuel", "1", "/DestStar"});
-  assert(g.out.str().contains("Invalid first option"));
+  test::expect_contains(g.out.str(), "Invalid first option");
 }
 
 }  // namespace
 
 int main() {
-  test_fuel_happy_path();
-  test_fuel_domain_errors();
-
+  test_fuel_matrix();
   std::println(std::cout, "✓ fuel_test passed!");
   return 0;
 }

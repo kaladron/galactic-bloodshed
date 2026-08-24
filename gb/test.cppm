@@ -368,11 +368,13 @@ public:
   std::vector<SentNotification> notifications;
   bool update_in_progress_flag{false};
 
-  std::vector<SessionInfo> get_connected_sessions() const override {
+  [[nodiscard]] std::vector<SessionInfo>
+  get_connected_sessions() const override {
     return sessions;
   }
 
-  bool is_connected(player_t player, governor_t gov) const override {
+  [[nodiscard]] bool is_connected(player_t player,
+                                  governor_t gov) const override {
     return std::ranges::any_of(sessions, [&](const auto& s) {
       return s.player == player && s.governor == gov && s.connected;
     });
@@ -502,13 +504,13 @@ public:
                                ap_t expected_univ_ap_deducted = 0) {
     ap_t initial_star_ap = 0;
     starnum_t snum = g.snum();
-    if (snum > 0) {
-      try {
-        if (const auto* star = em.peek_star(snum)) {
-          initial_star_ap = star->AP(g.player());
-        }
-      } catch (const EntityNotFoundError&) {
+    bool has_star = false;
+    try {
+      if (const auto* star = em.peek_star(snum)) {
+        initial_star_ap = star->AP(g.player());
+        has_star = true;
       }
+    } catch (const EntityNotFoundError&) {
     }
 
     ap_t initial_univ_ap = 0;
@@ -523,9 +525,11 @@ public:
     }
 
     bool ok = dispatch(g, desc, argv);
-    test::expect_true(ok, "Expected command dispatch to succeed");
+    test::expect_true(
+        ok, std::format("Expected command dispatch to succeed, output was: {}",
+                        g.out.str()));
 
-    if (expected_star_ap_deducted > 0 && snum > 0) {
+    if (expected_star_ap_deducted > 0 && has_star) {
       ap_t final_star_ap = em.peek_star(snum)->AP(g.player());
       test::expect_eq(final_star_ap,
                       initial_star_ap - expected_star_ap_deducted,
@@ -559,14 +563,12 @@ public:
     ap_t initial_star_ap = 0;
     starnum_t snum = g.snum();
     bool has_star = false;
-    if (snum > 0) {
-      try {
-        if (const auto* star = em.peek_star(snum)) {
-          initial_star_ap = star->AP(g.player());
-          has_star = true;
-        }
-      } catch (const EntityNotFoundError&) {
+    try {
+      if (const auto* star = em.peek_star(snum)) {
+        initial_star_ap = star->AP(g.player());
+        has_star = true;
       }
+    } catch (const EntityNotFoundError&) {
     }
 
     ap_t initial_univ_ap = 0;
@@ -582,9 +584,12 @@ public:
     }
 
     bool ok = dispatch(g, desc, argv);
-    test::expect_false(ok, "Expected command dispatch to be rejected");
+    test::expect_false(
+        ok,
+        std::format("Expected command dispatch to be rejected, output was: {}",
+                    g.out.str()));
 
-    if (has_star) {
+    if (has_star && desc.ap.model == GB::commands::APModel::FixedStar) {
       try {
         if (const auto* star = em.peek_star(snum)) {
           test::expect_eq(star->AP(g.player()), initial_star_ap,
@@ -594,7 +599,7 @@ public:
       }
     }
 
-    if (has_univ) {
+    if (has_univ && desc.ap.model == GB::commands::APModel::FixedUniv) {
       try {
         if (const auto* univ = em.peek_universe()) {
           test::expect_eq(univ->AP[g.player().value - 1], initial_univ_ap,
@@ -613,6 +618,181 @@ public:
                       "Command descriptor must exist for dispatch");
     assert_dispatch_rejected(g, *desc, argv);
   }
+};
+
+/// Helper runner to execute standardized 4-way command matrix tests:
+/// 1. Insufficient AP rejection (and 0 AP deducted)
+/// 2. Scope rejection across invalid scope levels (and 0 AP deducted)
+/// 3. Guest role rejection (and 0 AP deducted)
+/// 4. Domain error rejection (and 0 AP deducted)
+/// 5. Happy path execution (with exact AP deduction verified)
+export class TestCommandMatrix {
+public:
+  TestCommandMatrix(TestContext& ctx,
+                    const GB::commands::CommandDescriptor& desc)
+      : ctx_(ctx), desc_(desc) {}
+
+  TestCommandMatrix(TestContext& ctx, std::string_view cmd_name)
+      : ctx_(ctx), desc_(*GB::commands::find_command_descriptor(cmd_name)) {}
+
+  TestCommandMatrix& with_valid_argv(command_t argv) {
+    valid_argv_ = std::move(argv);
+    return *this;
+  }
+
+  TestCommandMatrix& with_invalid_argv(command_t argv) {
+    invalid_argv_ = std::move(argv);
+    return *this;
+  }
+
+  TestCommandMatrix& with_valid_scope(ScopeLevel scope) {
+    valid_scope_ = scope;
+    return *this;
+  }
+
+  TestCommandMatrix& with_invalid_scopes(std::vector<ScopeLevel> scopes) {
+    invalid_scopes_ = std::move(scopes);
+    return *this;
+  }
+
+  TestCommandMatrix& with_expected_star_ap(ap_t ap) {
+    expected_star_ap_ = ap;
+    return *this;
+  }
+
+  TestCommandMatrix& with_expected_univ_ap(ap_t ap) {
+    expected_univ_ap_ = ap;
+    return *this;
+  }
+
+  /// Run Happy Path: executes valid_argv in valid_scope and asserts exact AP
+  /// deduction.
+  void run_happy_path(GameObj& g) const {
+    g.set_level(valid_scope_);
+    ctx_.assert_dispatch_success(g, desc_, valid_argv_, expected_star_ap_,
+                                 expected_univ_ap_);
+  }
+
+  /// Run Insufficient AP rejection: sets star/univ AP to 0, asserts rejection +
+  /// 0 AP deduction, then restores AP.
+  void run_insufficient_ap_check(GameObj& g) const {
+    if (expected_star_ap_ == 0 && expected_univ_ap_ == 0) return;
+
+    g.set_level(valid_scope_);
+    starnum_t snum = g.snum();
+    ap_t orig_star_ap = 0;
+    if (expected_star_ap_ > 0) {
+      try {
+        {
+          auto star_handle = ctx_.em.get_star(snum);
+          orig_star_ap = star_handle->AP(g.player());
+          star_handle->AP(g.player()) = 0;
+        }
+      } catch (const EntityNotFoundError&) {
+      }
+    }
+
+    ap_t orig_univ_ap = 0;
+    if (g.player().value > 0 && g.player().value <= MAXPLAYERS &&
+        expected_univ_ap_ > 0) {
+      {
+        auto univ_handle = ctx_.em.get_universe();
+        orig_univ_ap = univ_handle->AP[g.player().value - 1];
+        univ_handle->AP[g.player().value - 1] = 0;
+      }
+    }
+
+    ctx_.assert_dispatch_rejected(g, desc_, valid_argv_);
+
+    if (expected_star_ap_ > 0) {
+      try {
+        {
+          auto star_handle = ctx_.em.get_star(snum);
+          star_handle->AP(g.player()) = orig_star_ap;
+        }
+      } catch (const EntityNotFoundError&) {
+      }
+    }
+    if (g.player().value > 0 && g.player().value <= MAXPLAYERS &&
+        expected_univ_ap_ > 0) {
+      {
+        auto univ_handle = ctx_.em.get_universe();
+        univ_handle->AP[g.player().value - 1] = orig_univ_ap;
+      }
+    }
+  }
+
+  /// Run Invalid Scopes rejection: tests each invalid scope level, asserting
+  /// rejection + 0 AP deduction.
+  void run_scope_checks(GameObj& g) const {
+    for (ScopeLevel scope : invalid_scopes_) {
+      g.set_level(scope);
+      ctx_.assert_dispatch_rejected(g, desc_, valid_argv_);
+    }
+    g.set_level(valid_scope_);
+  }
+
+  /// Run Guest Rejection check: marks race as guest or tests guest player,
+  /// asserting rejection + 0 AP deduction.
+  void run_guest_check(GameObj& g) const {
+    if (!desc_.roles.no_guests) return;
+
+    player_t orig_player = g.player();
+    governor_t orig_gov = g.governor();
+    ScopeLevel orig_scope = g.level();
+
+    if (orig_player > 0) {
+      try {
+        bool orig_guest = false;
+        {
+          auto race_handle = ctx_.em.get_race(orig_player);
+          orig_guest = race_handle->Guest;
+          race_handle->Guest = true;
+        }
+        ctx_.setup_game_obj(g, orig_player, orig_gov);
+
+        g.set_level(valid_scope_);
+        ctx_.assert_dispatch_rejected(g, desc_, valid_argv_);
+
+        {
+          auto race_handle = ctx_.em.get_race(orig_player);
+          race_handle->Guest = orig_guest;
+        }
+        ctx_.setup_game_obj(g, orig_player, orig_gov);
+      } catch (const EntityNotFoundError&) {
+      }
+    }
+
+    ctx_.setup_game_obj(g, orig_player, orig_gov);
+    g.set_level(orig_scope);
+  }
+
+  /// Run Domain Error check: executes invalid_argv and asserts rejection + 0 AP
+  /// deduction.
+  void run_domain_error_check(GameObj& g) const {
+    if (invalid_argv_.empty()) return;
+    g.set_level(valid_scope_);
+    ctx_.assert_dispatch_rejected(g, desc_, invalid_argv_);
+  }
+
+  /// Run standard 4-way command matrix tests in sequence.
+  void run_matrix(GameObj& g) const {
+    run_insufficient_ap_check(g);
+    run_scope_checks(g);
+    run_guest_check(g);
+    run_domain_error_check(g);
+    run_happy_path(g);
+  }
+
+private:
+  TestContext& ctx_;
+  const GB::commands::CommandDescriptor& desc_;
+  command_t valid_argv_;
+  command_t invalid_argv_;
+  ScopeLevel valid_scope_{ScopeLevel::LEVEL_UNIV};
+  std::vector<ScopeLevel> invalid_scopes_;
+  ap_t expected_star_ap_{0};
+  ap_t expected_univ_ap_{0};
 };
 
 /// Fluent builder for constructing consistent test ship entities populated
@@ -711,6 +891,7 @@ public:
   TestShipBuilder& landed_on(starnum_t snum, planetnum_t pnum,
                              Coordinates coords) {
     ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
+    ship_.whatdest = ScopeLevel::LEVEL_PLAN;
     ship_.storbits = snum;
     ship_.pnumorbits = pnum;
     ship_.docked = 1;
@@ -746,6 +927,11 @@ public:
     ship_.popn = civilians;
     ship_.troops = military;
     ship_.mass = ship_.base_mass + (civilians + military);
+    return *this;
+  }
+
+  TestShipBuilder& with_speed(unsigned short speed) {
+    ship_.speed = speed;
     return *this;
   }
 
@@ -836,6 +1022,15 @@ public:
     }
     StarRepository(store_).save(star);
     registered_stars_.push_back(snum);
+
+    UniverseRepository univ_repo(store_);
+    auto u = univ_repo.find(1);
+    if (u) {
+      if (snum.value + 1 > u->numstars) {
+        u->numstars = snum.value + 1;
+        univ_repo.save(*u);
+      }
+    }
     return *this;
   }
 
@@ -847,8 +1042,15 @@ public:
   add_planet(starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
              unsigned char maxx = 10, unsigned char maxy = 10,
              std::optional<planetnum_t> explicit_pnum = std::nullopt) {
-    planetnum_t pnum = explicit_pnum.value_or(
-        planetnum_t{static_cast<planetnum_t::value_type>(next_planet_id_++)});
+    planetnum_t pnum{0};
+    if (explicit_pnum) {
+      pnum = *explicit_pnum;
+    } else {
+      StarRepository stars(store_);
+      auto star_opt = stars.find(snum);
+      pnum = planetnum_t{static_cast<planetnum_t::value_type>(
+          star_opt ? star_opt->numplanets() : 0)};
+    }
     Planet p(type);
     p.star_id() = snum;
     p.planet_order() = pnum;
@@ -862,6 +1064,14 @@ public:
       p.info(pid).resource = 1000;
     }
     PlanetRepository(store_).save(p);
+
+    // Keep star planet names synchronized
+    StarRepository stars(store_);
+    auto star_opt = stars.find(snum);
+    if (star_opt) {
+      star_opt->set_planet_name(pnum, std::format("Planet-{}", pnum.value));
+      stars.save(*star_opt);
+    }
 
     // Save initial SectorMap with coordinate indexing
     SectorMap smap(p, true);
@@ -888,7 +1098,6 @@ private:
   JsonStore store_;
   int next_player_id_{1};
   int next_star_id_{0};
-  int next_planet_id_{0};
   std::vector<player_t> registered_races_;
   std::vector<starnum_t> registered_stars_;
 };

@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file misc_repositories_test.cc
+/// \brief Unit tests for miscellaneous repositories (Commod, Block, Power,
+/// Universe, ServerState, ShipExam).
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 // Test file for miscellaneous repositories:
 // CommodRepository, BlockRepository, PowerRepository, UniverseRepository,
@@ -34,38 +37,38 @@ void test_commod_repository() {
   c1.planet_to = 9;
 
   // Save and retrieve
-  assert(repo.save(c1));
+  test::expect_true(repo.save(c1));
   auto retrieved = repo.find_by_id(1);
-  assert(retrieved.has_value());
-  assert(retrieved->owner == 1);
-  assert(retrieved->governor == 2);
-  assert(retrieved->amount == 100);
-  assert(retrieved->bid == 75);
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->owner, 1);
+  test::expect_eq(retrieved->governor, 2);
+  test::expect_eq(retrieved->amount, 100);
+  test::expect_eq(retrieved->bid, 75);
 
   // Update
   c1.amount = 200;
-  assert(repo.save(c1));
+  test::expect_true(repo.save(c1));
   retrieved = repo.find_by_id(1);
-  assert(retrieved.has_value());
-  assert(retrieved->amount == 200);
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->amount, 200);
 
   // Multiple commods
   Commod c2{};
   c2.id = 5;
   c2.owner = 10;
   c2.amount = 500;
-  assert(repo.save(c2));
-  assert(repo.find_by_id(1).has_value());
-  assert(repo.find_by_id(5).has_value());
+  test::expect_true(repo.save(c2));
+  test::expect_true(repo.find_by_id(1).has_value());
+  test::expect_true(repo.find_by_id(5).has_value());
 
   // Non-existent commod
   auto none = repo.find_by_id(999);
-  assert(!none.has_value());
+  test::expect_false(none.has_value());
 
   // Remove
-  assert(repo.remove(1));
-  assert(!repo.find_by_id(1).has_value());
-  assert(repo.find_by_id(5).has_value());  // Other still exists
+  test::expect_true(repo.remove(1));
+  test::expect_false(repo.find_by_id(1).has_value());
+  test::expect_true(repo.find_by_id(5).has_value());  // Other still exists
 
   std::println(std::cout, "✓ All CommodRepository tests passed");
 }
@@ -92,35 +95,35 @@ void test_block_repository() {
   b1.money = 5000;
 
   // Save and retrieve
-  assert(repo.save(b1));
+  test::expect_true(repo.save(b1));
   auto retrieved = repo.find_by_id(blocknum_t{1});
-  assert(retrieved.has_value());
-  assert(retrieved->Playernum == 1);
-  assert(retrieved->name == "Alliance Alpha");
-  assert(retrieved->systems_owned == 10);
-  assert(retrieved->VPs == 1000);
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->Playernum, 1);
+  test::expect_eq(retrieved->name, "Alliance Alpha");
+  test::expect_eq(retrieved->systems_owned, 10);
+  test::expect_eq(retrieved->VPs, 1000);
 
   // Update
   b1.VPs = 2000;
   b1.money = 10000;
-  assert(repo.save(b1));
+  test::expect_true(repo.save(b1));
   retrieved = repo.find_by_id(blocknum_t{1});
-  assert(retrieved.has_value());
-  assert(retrieved->VPs == 2000);
-  assert(retrieved->money == 10000);
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->VPs, 2000);
+  test::expect_eq(retrieved->money, 10000);
 
   // Multiple blocks
   block b2{};
   b2.Playernum = 3;
   b2.name = "Beta Coalition";
   b2.VPs = 500;
-  assert(repo.save(b2));
-  assert(repo.find_by_id(blocknum_t{1}).has_value());
-  assert(repo.find_by_id(blocknum_t{3}).has_value());
+  test::expect_true(repo.save(b2));
+  test::expect_true(repo.find_by_id(blocknum_t{1}).has_value());
+  test::expect_true(repo.find_by_id(blocknum_t{3}).has_value());
 
   // Remove
-  assert(repo.remove(blocknum_t{3}));
-  assert(!repo.find_by_id(blocknum_t{3}).has_value());
+  test::expect_true(repo.remove(blocknum_t{3}));
+  test::expect_false(repo.find_by_id(blocknum_t{3}).has_value());
 
   std::println(std::cout, "✓ All BlockRepository tests passed");
 }
@@ -148,22 +151,22 @@ void test_power_repository() {
   p1.id = 1;
 
   // Save and retrieve
-  assert(repo.save(p1));
+  test::expect_true(repo.save(p1));
   auto retrieved = repo.find_by_id(powernum_t{1});
-  assert(retrieved.has_value());
-  assert(retrieved->troops == 1000);
-  assert(retrieved->popn == 5000);
-  assert(retrieved->ships_owned == 25);
-  assert(retrieved->money == 10000);
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->troops, 1000);
+  test::expect_eq(retrieved->popn, 5000);
+  test::expect_eq(retrieved->ships_owned, 25);
+  test::expect_eq(retrieved->money, 10000);
 
   // Update
   p1.troops = 2000;
   p1.ships_owned = 30;
-  assert(repo.save(p1));
+  test::expect_true(repo.save(p1));
   retrieved = repo.find_by_id(powernum_t{1});
-  assert(retrieved.has_value());
-  assert(retrieved->troops == 2000);
-  assert(retrieved->ships_owned == 30);
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->troops, 2000);
+  test::expect_eq(retrieved->ships_owned, 30);
 
   // Multiple power entries (one per player)
   power p2{};
@@ -171,15 +174,15 @@ void test_power_repository() {
   p2.troops = 500;
   p2.popn = 2000;
   p2.ships_owned = 10;
-  assert(repo.save(p2));
-  assert(repo.find_by_id(powernum_t{1}).has_value());
-  assert(repo.find_by_id(powernum_t{2}).has_value());
+  test::expect_true(repo.save(p2));
+  test::expect_true(repo.find_by_id(powernum_t{1}).has_value());
+  test::expect_true(repo.find_by_id(powernum_t{2}).has_value());
 
   // Gap finding
   p1.id = 5;
-  assert(repo.save(p1));
+  test::expect_true(repo.save(p1));
   int next_id = repo.next_available_id();
-  assert(next_id == 3);  // Should find gap at 3
+  test::expect_eq(next_id, 3);  // Should find gap at 3
 
   std::println(std::cout, "✓ All PowerRepository tests passed");
 }
@@ -209,37 +212,37 @@ void test_universe_repository() {
   sd.VN_index2[1] = 15;
 
   // Save and retrieve global data
-  assert(repo.save(sd));
+  test::expect_true(repo.save(sd));
   auto retrieved = repo.get_global_data();
-  assert(retrieved.has_value());
-  assert(retrieved->numstars == 50);
-  assert(retrieved->ships == 100);
-  assert(retrieved->AP[0] == 0);
-  assert(retrieved->AP[5] == 50);
-  assert(retrieved->VN_index1[0] == 5);
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->numstars, 50);
+  test::expect_eq(retrieved->ships, 100);
+  test::expect_eq(retrieved->AP[0], 0);
+  test::expect_eq(retrieved->AP[5], 50);
+  test::expect_eq(retrieved->VN_index1[0], 5);
 
   // Update global data
   sd.numstars = 75;
   sd.ships = 200;
-  assert(repo.save(sd));
+  test::expect_true(repo.save(sd));
   retrieved = repo.get_global_data();
-  assert(retrieved.has_value());
-  assert(retrieved->numstars == 75);
-  assert(retrieved->ships == 200);
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->numstars, 75);
+  test::expect_eq(retrieved->ships, 200);
 
   // Array preservation
   for (int i = 0; i < MAXPLAYERS; i++) {
-    assert(retrieved->AP[i] == i * 10);
+    test::expect_eq(retrieved->AP[i], i * 10);
   }
 
   // VN arrays preserved
-  assert(retrieved->VN_hitlist[0] == 1);
-  assert(retrieved->VN_hitlist[1] == 2);
+  test::expect_eq(retrieved->VN_hitlist[0], 1);
+  test::expect_eq(retrieved->VN_hitlist[1], 2);
   // Check VN_index values match what we set (including negative values)
-  assert(retrieved->VN_index1[0] == 5);
-  assert(retrieved->VN_index1[1] == -3);
-  assert(retrieved->VN_index2[0] == 10);
-  assert(retrieved->VN_index2[1] == 15);
+  test::expect_eq(retrieved->VN_index1[0], 5);
+  test::expect_eq(retrieved->VN_index1[1], -3);
+  test::expect_eq(retrieved->VN_index2[0], 10);
+  test::expect_eq(retrieved->VN_index2[1], 15);
 
   std::println(std::cout, "✓ All UniverseRepository tests passed");
 }
@@ -262,36 +265,36 @@ void test_server_state_repository() {
   state.welcome_message = "Welcome to Galactic Bloodshed!";
 
   // Save and retrieve server state
-  assert(repo.save(state));
+  test::expect_true(repo.save(state));
   auto retrieved = repo.get_state();
-  assert(retrieved.has_value());
-  assert(retrieved->id == 1);
-  assert(retrieved->segments == 10);
-  assert(retrieved->next_update_time == 1735000000);
-  assert(retrieved->next_segment_time == 1734900000);
-  assert(retrieved->update_time_minutes == 60);
-  assert(retrieved->nsegments_done == 3);
-  assert(retrieved->welcome_message == "Welcome to Galactic Bloodshed!");
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->id, 1);
+  test::expect_eq(retrieved->segments, 10);
+  test::expect_eq(retrieved->next_update_time, 1735000000);
+  test::expect_eq(retrieved->next_segment_time, 1734900000);
+  test::expect_eq(retrieved->update_time_minutes, 60);
+  test::expect_eq(retrieved->nsegments_done, 3);
+  test::expect_eq(retrieved->welcome_message, "Welcome to Galactic Bloodshed!");
 
   // Update server state
   state.segments = 15;
   state.nsegments_done = 7;
   state.update_time_minutes = 120;
   state.welcome_message = "Updated welcome message!";
-  assert(repo.save(state));
+  test::expect_true(repo.save(state));
   retrieved = repo.get_state();
-  assert(retrieved.has_value());
-  assert(retrieved->segments == 15);
-  assert(retrieved->nsegments_done == 7);
-  assert(retrieved->update_time_minutes == 120);
-  assert(retrieved->welcome_message == "Updated welcome message!");
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->segments, 15);
+  test::expect_eq(retrieved->nsegments_done, 7);
+  test::expect_eq(retrieved->update_time_minutes, 120);
+  test::expect_eq(retrieved->welcome_message, "Updated welcome message!");
 
   // Timestamps are preserved
-  assert(retrieved->next_update_time == 1735000000);
-  assert(retrieved->next_segment_time == 1734900000);
+  test::expect_eq(retrieved->next_update_time, 1735000000);
+  test::expect_eq(retrieved->next_segment_time, 1734900000);
 
   // ID remains 1 (singleton)
-  assert(retrieved->id == 1);
+  test::expect_eq(retrieved->id, 1);
 
   std::println(std::cout, "✓ All ServerStateRepository tests passed");
 }
@@ -310,37 +313,37 @@ void test_ship_exam_repository() {
                      "A small seed pod grown to colonize other planets."};
 
   // Save and retrieve
-  assert(repo.save(exam1));
+  test::expect_true(repo.save(exam1));
   auto retrieved = repo.find_by_type(ShipType::STYPE_POD);
-  assert(retrieved.has_value());
-  assert(retrieved->ship_type == ShipType::STYPE_POD);
-  assert(retrieved->name == "Spore pod");
-  assert(retrieved->description ==
-         "A small seed pod grown to colonize other planets.");
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->ship_type, ShipType::STYPE_POD);
+  test::expect_eq(retrieved->name, "Spore pod");
+  test::expect_eq(retrieved->description,
+                  "A small seed pod grown to colonize other planets.");
 
   // Update
   exam1.description = "Updated spore pod description.";
-  assert(repo.save(exam1));
+  test::expect_true(repo.save(exam1));
   retrieved = repo.find_by_type(ShipType::STYPE_POD);
-  assert(retrieved.has_value());
-  assert(retrieved->description == "Updated spore pod description.");
+  test::expect_true(retrieved.has_value());
+  test::expect_eq(retrieved->description, "Updated spore pod description.");
 
   // Multiple ship exams
   ShipExam exam2{.ship_type = ShipType::STYPE_SHUTTLE,
                  .name = "Shuttle",
                  .description = "Short range transport craft."};
-  assert(repo.save(exam2));
-  assert(repo.find_by_type(ShipType::STYPE_POD).has_value());
-  assert(repo.find_by_type(ShipType::STYPE_SHUTTLE).has_value());
+  test::expect_true(repo.save(exam2));
+  test::expect_true(repo.find_by_type(ShipType::STYPE_POD).has_value());
+  test::expect_true(repo.find_by_type(ShipType::STYPE_SHUTTLE).has_value());
 
   // Non-existent ship exam
   auto none = repo.find_by_type(static_cast<ShipType>(999));
-  assert(!none.has_value());
+  test::expect_false(none.has_value());
 
   // Remove
-  assert(repo.remove(std::to_underlying(ShipType::STYPE_POD)));
-  assert(!repo.find_by_type(ShipType::STYPE_POD).has_value());
-  assert(repo.find_by_type(ShipType::STYPE_SHUTTLE).has_value());
+  test::expect_true(repo.remove(std::to_underlying(ShipType::STYPE_POD)));
+  test::expect_false(repo.find_by_type(ShipType::STYPE_POD).has_value());
+  test::expect_true(repo.find_by_type(ShipType::STYPE_SHUTTLE).has_value());
 
   // Test seed_from_file using PKGDATADIR exam.dat
   {
@@ -351,8 +354,8 @@ void test_ship_exam_repository() {
     bool seeded = seed_repo.seed_from_file(PKGDATADIR "exam.dat");
     if (seeded) {
       auto pod_exam = seed_repo.find_by_type(ShipType::STYPE_POD);
-      assert(pod_exam.has_value());
-      assert(pod_exam->description.find("Spore Pod") != std::string::npos);
+      test::expect_true(pod_exam.has_value());
+      test::expect_contains(pod_exam->description, "Spore Pod");
     }
   }
 

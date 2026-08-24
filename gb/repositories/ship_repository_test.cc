@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file ship_repository_test.cc
+/// \brief Unit tests for ShipRepository CRUD operations and SQLite JSON
+/// persistence.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Create in-memory database and initialize schema
@@ -67,34 +70,34 @@ int main() {
   // Save ship
   std::println(std::cout, "Save ship...");
   bool saved = repo.save(test_ship);
-  assert(saved && "Failed to save ship");
+  test::expect_true(saved, "Failed to save ship");
   std::println(std::cout, "  ✓ Ship saved successfully");
 
   // Retrieve by ship number
   std::println(std::cout, "Retrieve ship by number...");
   auto retrieved = repo.find_by_number(1);
-  assert(retrieved.has_value() && "Failed to retrieve ship");
+  test::expect_true(retrieved.has_value(), "Failed to retrieve ship");
   std::println(std::cout, "  ✓ Ship retrieved successfully");
 
   // Verify data integrity
   std::println(std::cout, "Verify data integrity...");
-  assert(retrieved->number() == test_ship.number());
-  assert(retrieved->owner() == test_ship.owner());
-  assert(retrieved->governor() == test_ship.governor());
-  assert(retrieved->name() == test_ship.name());
-  assert(retrieved->shipclass() == test_ship.shipclass());
-  assert(retrieved->race() == test_ship.race());
-  assert(retrieved->xpos() == test_ship.xpos());
-  assert(retrieved->ypos() == test_ship.ypos());
-  assert(retrieved->fuel() == test_ship.fuel());
-  assert(retrieved->mass() == test_ship.mass());
-  assert(retrieved->armor() == test_ship.armor());
-  assert(retrieved->size() == test_ship.size());
-  assert(retrieved->max_crew() == test_ship.max_crew());
-  assert(retrieved->tech() == test_ship.tech());
-  assert(retrieved->type() == test_ship.type());
-  assert(retrieved->active() == test_ship.active());
-  assert(retrieved->alive() == test_ship.alive());
+  test::expect_eq(retrieved->number(), test_ship.number());
+  test::expect_eq(retrieved->owner(), test_ship.owner());
+  test::expect_eq(retrieved->governor(), test_ship.governor());
+  test::expect_eq(retrieved->name(), test_ship.name());
+  test::expect_eq(retrieved->shipclass(), test_ship.shipclass());
+  test::expect_eq(retrieved->race(), test_ship.race());
+  test::expect_eq(retrieved->xpos(), test_ship.xpos());
+  test::expect_eq(retrieved->ypos(), test_ship.ypos());
+  test::expect_eq(retrieved->fuel(), test_ship.fuel());
+  test::expect_eq(retrieved->mass(), test_ship.mass());
+  test::expect_eq(retrieved->armor(), test_ship.armor());
+  test::expect_eq(retrieved->size(), test_ship.size());
+  test::expect_eq(retrieved->max_crew(), test_ship.max_crew());
+  test::expect_eq(retrieved->tech(), test_ship.tech());
+  test::expect_eq(retrieved->type(), test_ship.type());
+  test::expect_eq(retrieved->active(), test_ship.active());
+  test::expect_eq(retrieved->alive(), test_ship.alive());
   std::println(std::cout, "  ✓ All fields match original");
 
   // Update ship
@@ -103,16 +106,16 @@ int main() {
   retrieved->damage() = 50;
   retrieved->xpos() = 150.0;
   saved = repo.save(*retrieved);
-  assert(saved && "Failed to update ship");
+  test::expect_true(saved, "Failed to update ship");
   std::println(std::cout, "  ✓ Ship updated successfully");
 
   // Retrieve updated ship
   std::println(std::cout, "Retrieve updated ship...");
   auto updated = repo.find_by_number(1);
-  assert(updated.has_value() && "Failed to retrieve updated ship");
-  assert(updated->fuel() == 3000.0);
-  assert(updated->damage() == 50);
-  assert(updated->xpos() == 150.0);
+  test::expect_true(updated.has_value(), "Failed to retrieve updated ship");
+  test::expect_eq(updated->fuel(), 3000.0);
+  test::expect_eq(updated->damage(), 50);
+  test::expect_eq(updated->xpos(), 150.0);
   std::println(std::cout, "  ✓ Updated values verified");
 
   // Save multiple ships (use ship_struct which is copyable)
@@ -134,40 +137,42 @@ int main() {
   // Count all ships
   std::println(std::cout, "Count all ships...");
   shipnum_t count = repo.count_all_ships();
-  assert(count == 3 && "Should have 3 ships");
+  test::expect_eq(count, 3, "Should have 3 ships");
   std::println(std::cout, "  ✓ Ship count correct: {}", count);
 
   // Next available ship number (should find gap at 3)
   std::println(std::cout, "Next available ship number...");
   shipnum_t next_id = repo.next_ship_number();
-  assert(next_id == 3 && "Should return 3 (first gap)");
+  test::expect_eq(next_id, 3, "Should return 3 (first gap)");
   std::println(std::cout, "  ✓ Next ship number is: {}", next_id);
 
   // Delete a ship
   std::println(std::cout, "Delete ship...");
   repo.delete_ship(2);
   auto deleted = repo.find_by_number(2);
-  assert(!deleted.has_value() && "Ship should be deleted");
+  test::expect_false(deleted.has_value(), "Ship should be deleted");
   std::println(std::cout, "  ✓ Ship deleted successfully");
 
   // Count after deletion
   std::println(std::cout, "Count after deletion...");
   count = repo.count_all_ships();
-  assert(count == 2 && "Should have 2 ships after deletion");
+  test::expect_eq(count, 2, "Should have 2 ships after deletion");
   std::println(std::cout, "  ✓ Ship count correct after deletion: {}", count);
 
   // Find non-existent ship
   std::println(std::cout, "Find non-existent ship...");
   auto not_found = repo.find_by_number(999);
-  assert(!not_found.has_value() && "Should not find non-existent ship");
+  test::expect_false(not_found.has_value(),
+                     "Should not find non-existent ship");
   std::println(std::cout,
                "  ✓ Correctly returns nullopt for non-existent ship");
 
   // List ships
   std::println(std::cout, "List ships...");
   auto ship_ids = repo.list_ids();
-  assert(ship_ids.size() == 2);
-  assert(ship_ids[0] == 1 && ship_ids[1] == 5);
+  test::expect_eq(ship_ids.size(), 2);
+  test::expect_eq(ship_ids[0], 1);
+  test::expect_eq(ship_ids[1], 5);
   std::println(std::cout, "  ✓ list_ids returns active ship IDs in order");
 
   std::println(std::cout, "\nAll ShipRepository tests passed!");

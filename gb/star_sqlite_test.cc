@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file star_sqlite_test.cc
+/// \brief Unit tests for Star SQLite table persistence and round-trip
+/// verification.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
-
-#include <sqlite3.h>
-#include <cstring>
 
 int main() {
   // CRITICAL: Always create in-memory database BEFORE calling
@@ -62,40 +62,40 @@ int main() {
 
   // Test EntityManager peek - reads from SQLite via cache
   const auto* retrieved_star_ptr = em.peek_star(1);
-  assert(retrieved_star_ptr != nullptr);
+  test::expect_ne(retrieved_star_ptr, nullptr);
   star_struct retrieved = retrieved_star_ptr->get_struct();
 
   // Verify scalar fields
-  assert(retrieved.ships == test_star.ships);
-  assert(retrieved.name == test_star.name);
-  assert(retrieved.xpos == test_star.xpos);
-  assert(retrieved.ypos == test_star.ypos);
-  assert(retrieved.pnames.size() == test_star.pnames.size());
-  assert(retrieved.stability == test_star.stability);
-  assert(retrieved.nova_stage == test_star.nova_stage);
-  assert(retrieved.temperature == test_star.temperature);
-  assert(retrieved.gravity == test_star.gravity);
+  test::expect_eq(retrieved.ships, test_star.ships);
+  test::expect_eq(retrieved.name, test_star.name);
+  test::expect_eq(retrieved.xpos, test_star.xpos);
+  test::expect_eq(retrieved.ypos, test_star.ypos);
+  test::expect_eq(retrieved.pnames.size(), test_star.pnames.size());
+  test::expect_eq(retrieved.stability, test_star.stability);
+  test::expect_eq(retrieved.nova_stage, test_star.nova_stage);
+  test::expect_eq(retrieved.temperature, test_star.temperature);
+  test::expect_eq(retrieved.gravity, test_star.gravity);
 
   // Verify governor array
   for (int i = 0; i < MAXPLAYERS; i++) {
-    assert(retrieved.governor[i] == test_star.governor[i]);
+    test::expect_eq(retrieved.governor[i], test_star.governor[i]);
   }
 
   // Verify AP array
   for (int i = 0; i < MAXPLAYERS; i++) {
-    assert(retrieved.AP[i] == test_star.AP[i]);
+    test::expect_eq(retrieved.AP[i], test_star.AP[i]);
   }
 
   // Verify bitmasks
-  assert(retrieved.explored == test_star.explored);
-  assert(retrieved.inhabited == test_star.inhabited);
+  test::expect_eq(retrieved.explored, test_star.explored);
+  test::expect_eq(retrieved.inhabited, test_star.inhabited);
 
   // Verify planet names
   for (std::size_t i = 0; i < test_star.pnames.size(); i++) {
-    assert(retrieved.pnames[i] == test_star.pnames[i]);
+    test::expect_eq(retrieved.pnames[i], test_star.pnames[i]);
   }
 
-  // Database connection will be cleaned up automatically by Sql destructor
+  // Database connection will be cleaned up automatically by Database destructor
 
   std::println(std::cout, "Star SQLite storage test passed!");
   return 0;

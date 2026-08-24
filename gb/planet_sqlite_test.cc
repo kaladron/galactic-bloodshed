@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file planet_sqlite_test.cc
+/// \brief Unit tests for Planet SQLite table persistence and round-trip
+/// verification.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
-
-#include <sqlite3.h>
-#include <cstring>
 
 int main() {
   // CRITICAL: Always create in-memory database BEFORE calling
@@ -125,97 +125,107 @@ int main() {
   // Test EntityManager peek - reads from SQLite
   const auto* retrieved_ptr =
       em.peek_planet(1, 2);  // star_id = 1, planet_order = 2
-  assert(retrieved_ptr != nullptr);
+  test::expect_ne(retrieved_ptr, nullptr);
   const Planet& retrieved = *retrieved_ptr;
 
   // Verify scalar fields
-  assert(retrieved.star_id() == test_planet.star_id());
-  assert(retrieved.planet_order() == test_planet.planet_order());
-  assert(retrieved.xpos() == test_planet.xpos());
-  assert(retrieved.ypos() == test_planet.ypos());
-  assert(retrieved.ships() == test_planet.ships());
-  assert(retrieved.Maxx() == test_planet.Maxx());
-  assert(retrieved.Maxy() == test_planet.Maxy());
-  assert(retrieved.popn() == test_planet.popn());
-  assert(retrieved.troops() == test_planet.troops());
-  assert(retrieved.maxpopn() == test_planet.maxpopn());
-  assert(retrieved.total_resources() == test_planet.total_resources());
-  assert(retrieved.slaved_to() == test_planet.slaved_to());
-  assert(retrieved.type() == test_planet.type());
-  assert(retrieved.expltimer() == test_planet.expltimer());
-  assert(retrieved.explored() == test_planet.explored());
+  test::expect_eq(retrieved.star_id(), test_planet.star_id());
+  test::expect_eq(retrieved.planet_order(), test_planet.planet_order());
+  test::expect_eq(retrieved.xpos(), test_planet.xpos());
+  test::expect_eq(retrieved.ypos(), test_planet.ypos());
+  test::expect_eq(retrieved.ships(), test_planet.ships());
+  test::expect_eq(retrieved.Maxx(), test_planet.Maxx());
+  test::expect_eq(retrieved.Maxy(), test_planet.Maxy());
+  test::expect_eq(retrieved.popn(), test_planet.popn());
+  test::expect_eq(retrieved.troops(), test_planet.troops());
+  test::expect_eq(retrieved.maxpopn(), test_planet.maxpopn());
+  test::expect_eq(retrieved.total_resources(), test_planet.total_resources());
+  test::expect_eq(retrieved.slaved_to(), test_planet.slaved_to());
+  test::expect_eq(retrieved.type(), test_planet.type());
+  test::expect_eq(retrieved.expltimer(), test_planet.expltimer());
+  test::expect_eq(retrieved.explored(), test_planet.explored());
 
   // Verify conditions
-  assert(retrieved.conditions(TEMP) == test_planet.conditions(TEMP));
-  assert(retrieved.conditions(OXYGEN) == test_planet.conditions(OXYGEN));
-  assert(retrieved.conditions(CO2) == test_planet.conditions(CO2));
-  assert(retrieved.conditions(HYDROGEN) == test_planet.conditions(HYDROGEN));
-  assert(retrieved.conditions(NITROGEN) == test_planet.conditions(NITROGEN));
-  assert(retrieved.conditions(SULFUR) == test_planet.conditions(SULFUR));
-  assert(retrieved.conditions(HELIUM) == test_planet.conditions(HELIUM));
-  assert(retrieved.conditions(OTHER) == test_planet.conditions(OTHER));
-  assert(retrieved.conditions(METHANE) == test_planet.conditions(METHANE));
-  assert(retrieved.conditions(TOXIC) == test_planet.conditions(TOXIC));
+  test::expect_eq(retrieved.conditions(TEMP), test_planet.conditions(TEMP));
+  test::expect_eq(retrieved.conditions(OXYGEN), test_planet.conditions(OXYGEN));
+  test::expect_eq(retrieved.conditions(CO2), test_planet.conditions(CO2));
+  test::expect_eq(retrieved.conditions(HYDROGEN),
+                  test_planet.conditions(HYDROGEN));
+  test::expect_eq(retrieved.conditions(NITROGEN),
+                  test_planet.conditions(NITROGEN));
+  test::expect_eq(retrieved.conditions(SULFUR), test_planet.conditions(SULFUR));
+  test::expect_eq(retrieved.conditions(HELIUM), test_planet.conditions(HELIUM));
+  test::expect_eq(retrieved.conditions(OTHER), test_planet.conditions(OTHER));
+  test::expect_eq(retrieved.conditions(METHANE),
+                  test_planet.conditions(METHANE));
+  test::expect_eq(retrieved.conditions(TOXIC), test_planet.conditions(TOXIC));
 
   // Verify plinfo for player 1
-  assert(retrieved.info(1).fuel == test_planet.info(1).fuel);
-  assert(retrieved.info(1).destruct == test_planet.info(1).destruct);
-  assert(retrieved.info(1).resource == test_planet.info(1).resource);
-  assert(retrieved.info(1).popn == test_planet.info(1).popn);
-  assert(retrieved.info(1).troops == test_planet.info(1).troops);
-  assert(retrieved.info(1).crystals == test_planet.info(1).crystals);
-  assert(retrieved.info(1).prod_res == test_planet.info(1).prod_res);
-  assert(retrieved.info(1).prod_fuel == test_planet.info(1).prod_fuel);
-  assert(retrieved.info(1).prod_dest == test_planet.info(1).prod_dest);
-  assert(retrieved.info(1).prod_crystals == test_planet.info(1).prod_crystals);
-  assert(retrieved.info(1).prod_money == test_planet.info(1).prod_money);
-  assert(retrieved.info(1).prod_tech == test_planet.info(1).prod_tech);
-  assert(retrieved.info(1).tech_invest == test_planet.info(1).tech_invest);
-  assert(retrieved.info(1).numsectsowned == test_planet.info(1).numsectsowned);
-  assert(retrieved.info(1).comread == test_planet.info(1).comread);
-  assert(retrieved.info(1).mob_set == test_planet.info(1).mob_set);
-  assert(retrieved.info(1).tox_thresh == test_planet.info(1).tox_thresh);
-  assert(retrieved.info(1).explored == test_planet.info(1).explored);
-  assert(retrieved.info(1).autorep == test_planet.info(1).autorep);
-  assert(retrieved.info(1).tax == test_planet.info(1).tax);
-  assert(retrieved.info(1).newtax == test_planet.info(1).newtax);
-  assert(retrieved.info(1).guns == test_planet.info(1).guns);
-  assert(retrieved.info(1).mob_points == test_planet.info(1).mob_points);
-  assert(retrieved.info(1).est_production ==
-         test_planet.info(1).est_production);
+  test::expect_eq(retrieved.info(1).fuel, test_planet.info(1).fuel);
+  test::expect_eq(retrieved.info(1).destruct, test_planet.info(1).destruct);
+  test::expect_eq(retrieved.info(1).resource, test_planet.info(1).resource);
+  test::expect_eq(retrieved.info(1).popn, test_planet.info(1).popn);
+  test::expect_eq(retrieved.info(1).troops, test_planet.info(1).troops);
+  test::expect_eq(retrieved.info(1).crystals, test_planet.info(1).crystals);
+  test::expect_eq(retrieved.info(1).prod_res, test_planet.info(1).prod_res);
+  test::expect_eq(retrieved.info(1).prod_fuel, test_planet.info(1).prod_fuel);
+  test::expect_eq(retrieved.info(1).prod_dest, test_planet.info(1).prod_dest);
+  test::expect_eq(retrieved.info(1).prod_crystals,
+                  test_planet.info(1).prod_crystals);
+  test::expect_eq(retrieved.info(1).prod_money, test_planet.info(1).prod_money);
+  test::expect_eq(retrieved.info(1).prod_tech, test_planet.info(1).prod_tech);
+  test::expect_eq(retrieved.info(1).tech_invest,
+                  test_planet.info(1).tech_invest);
+  test::expect_eq(retrieved.info(1).numsectsowned,
+                  test_planet.info(1).numsectsowned);
+  test::expect_eq(retrieved.info(1).comread, test_planet.info(1).comread);
+  test::expect_eq(retrieved.info(1).mob_set, test_planet.info(1).mob_set);
+  test::expect_eq(retrieved.info(1).tox_thresh, test_planet.info(1).tox_thresh);
+  test::expect_eq(retrieved.info(1).explored, test_planet.info(1).explored);
+  test::expect_eq(retrieved.info(1).autorep, test_planet.info(1).autorep);
+  test::expect_eq(retrieved.info(1).tax, test_planet.info(1).tax);
+  test::expect_eq(retrieved.info(1).newtax, test_planet.info(1).newtax);
+  test::expect_eq(retrieved.info(1).guns, test_planet.info(1).guns);
+  test::expect_eq(retrieved.info(1).mob_points, test_planet.info(1).mob_points);
+  test::expect_eq(retrieved.info(1).est_production,
+                  test_planet.info(1).est_production);
 
   // Verify routes for player 1
-  assert(retrieved.info(1).route[0].set == test_planet.info(1).route[0].set);
-  assert(retrieved.info(1).route[0].dest_star ==
-         test_planet.info(1).route[0].dest_star);
-  assert(retrieved.info(1).route[0].dest_planet ==
-         test_planet.info(1).route[0].dest_planet);
-  assert(retrieved.info(1).route[0].load == test_planet.info(1).route[0].load);
-  assert(retrieved.info(1).route[0].unload ==
-         test_planet.info(1).route[0].unload);
-  assert(retrieved.info(1).route[0].dest_coords ==
-         test_planet.info(1).route[0].dest_coords);
+  test::expect_eq(retrieved.info(1).route[0].set,
+                  test_planet.info(1).route[0].set);
+  test::expect_eq(retrieved.info(1).route[0].dest_star,
+                  test_planet.info(1).route[0].dest_star);
+  test::expect_eq(retrieved.info(1).route[0].dest_planet,
+                  test_planet.info(1).route[0].dest_planet);
+  test::expect_eq(retrieved.info(1).route[0].load,
+                  test_planet.info(1).route[0].load);
+  test::expect_eq(retrieved.info(1).route[0].unload,
+                  test_planet.info(1).route[0].unload);
+  test::expect_eq(retrieved.info(1).route[0].dest_coords,
+                  test_planet.info(1).route[0].dest_coords);
 
-  assert(retrieved.info(1).route[1].set == test_planet.info(1).route[1].set);
-  assert(retrieved.info(1).route[1].dest_star ==
-         test_planet.info(1).route[1].dest_star);
-  assert(retrieved.info(1).route[1].dest_planet ==
-         test_planet.info(1).route[1].dest_planet);
-  assert(retrieved.info(1).route[1].load == test_planet.info(1).route[1].load);
-  assert(retrieved.info(1).route[1].unload ==
-         test_planet.info(1).route[1].unload);
-  assert(retrieved.info(1).route[1].dest_coords ==
-         test_planet.info(1).route[1].dest_coords);
+  test::expect_eq(retrieved.info(1).route[1].set,
+                  test_planet.info(1).route[1].set);
+  test::expect_eq(retrieved.info(1).route[1].dest_star,
+                  test_planet.info(1).route[1].dest_star);
+  test::expect_eq(retrieved.info(1).route[1].dest_planet,
+                  test_planet.info(1).route[1].dest_planet);
+  test::expect_eq(retrieved.info(1).route[1].load,
+                  test_planet.info(1).route[1].load);
+  test::expect_eq(retrieved.info(1).route[1].unload,
+                  test_planet.info(1).route[1].unload);
+  test::expect_eq(retrieved.info(1).route[1].dest_coords,
+                  test_planet.info(1).route[1].dest_coords);
 
   // Verify plinfo for player 2
-  assert(retrieved.info(2).fuel == test_planet.info(2).fuel);
-  assert(retrieved.info(2).destruct == test_planet.info(2).destruct);
-  assert(retrieved.info(2).resource == test_planet.info(2).resource);
-  assert(retrieved.info(2).popn == test_planet.info(2).popn);
-  assert(retrieved.info(2).troops == test_planet.info(2).troops);
-  assert(retrieved.info(2).crystals == test_planet.info(2).crystals);
+  test::expect_eq(retrieved.info(2).fuel, test_planet.info(2).fuel);
+  test::expect_eq(retrieved.info(2).destruct, test_planet.info(2).destruct);
+  test::expect_eq(retrieved.info(2).resource, test_planet.info(2).resource);
+  test::expect_eq(retrieved.info(2).popn, test_planet.info(2).popn);
+  test::expect_eq(retrieved.info(2).troops, test_planet.info(2).troops);
+  test::expect_eq(retrieved.info(2).crystals, test_planet.info(2).crystals);
 
-  // Database connection will be cleaned up automatically by Sql destructor
+  // Database connection will be cleaned up automatically by Database destructor
 
   std::println(std::cout, "Planet SQLite storage test passed!");
   return 0;

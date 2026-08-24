@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file race_repository_test.cc
+/// \brief Unit tests for RaceRepository CRUD operations and SQLite JSON
+/// persistence.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Create in-memory database and initialize schema
@@ -69,31 +72,31 @@ int main() {
   // Save race
   std::println(std::cout, "Save race...");
   bool saved = repo.save(test_race);
-  assert(saved && "Failed to save race");
+  test::expect_true(saved, "Failed to save race");
   std::println(std::cout, "  ✓ Race saved successfully");
 
   // Retrieve by player number
   std::println(std::cout, "Retrieve race by player number...");
   auto retrieved = repo.find_by_player(1);
-  assert(retrieved.has_value() && "Failed to retrieve race");
+  test::expect_true(retrieved.has_value(), "Failed to retrieve race");
   std::println(std::cout, "  ✓ Race retrieved successfully");
 
   // Verify data integrity
   std::println(std::cout, "Verify data integrity...");
-  assert(retrieved->Playernum == test_race.Playernum);
-  assert(retrieved->name == test_race.name);
-  assert(retrieved->password == test_race.password);
-  assert(retrieved->info == test_race.info);
-  assert(retrieved->motto == test_race.motto);
-  assert(retrieved->absorb == test_race.absorb);
-  assert(retrieved->collective_iq == test_race.collective_iq);
-  assert(retrieved->pods == test_race.pods);
-  assert(retrieved->fighters == test_race.fighters);
-  assert(retrieved->IQ == test_race.IQ);
-  assert(retrieved->tech == test_race.tech);
-  assert(retrieved->governors == test_race.governors);
-  assert(retrieved->governor[0].name == test_race.governor[0].name);
-  assert(retrieved->governor[0].money == test_race.governor[0].money);
+  test::expect_eq(retrieved->Playernum, test_race.Playernum);
+  test::expect_eq(retrieved->name, test_race.name);
+  test::expect_eq(retrieved->password, test_race.password);
+  test::expect_eq(retrieved->info, test_race.info);
+  test::expect_eq(retrieved->motto, test_race.motto);
+  test::expect_eq(retrieved->absorb, test_race.absorb);
+  test::expect_eq(retrieved->collective_iq, test_race.collective_iq);
+  test::expect_eq(retrieved->pods, test_race.pods);
+  test::expect_eq(retrieved->fighters, test_race.fighters);
+  test::expect_eq(retrieved->IQ, test_race.IQ);
+  test::expect_eq(retrieved->tech, test_race.tech);
+  test::expect_eq(retrieved->governors, test_race.governors);
+  test::expect_eq(retrieved->governor[0].name, test_race.governor[0].name);
+  test::expect_eq(retrieved->governor[0].money, test_race.governor[0].money);
   std::println(std::cout, "  ✓ All fields match original");
 
   // Update race
@@ -101,15 +104,15 @@ int main() {
   retrieved->tech = 50.0;
   retrieved->morale = 2000;
   saved = repo.save(*retrieved);
-  assert(saved && "Failed to update race");
+  test::expect_true(saved, "Failed to update race");
   std::println(std::cout, "  ✓ Race updated successfully");
 
   // Retrieve updated race
   std::println(std::cout, "Retrieve updated race...");
   auto updated = repo.find_by_player(1);
-  assert(updated.has_value() && "Failed to retrieve updated race");
-  assert(updated->tech == 50.0);
-  assert(updated->morale == 2000);
+  test::expect_true(updated.has_value(), "Failed to retrieve updated race");
+  test::expect_eq(updated->tech, 50.0);
+  test::expect_eq(updated->morale, 2000);
   std::println(std::cout, "  ✓ Updated values verified");
 
   // Multiple races and list_ids
@@ -118,28 +121,29 @@ int main() {
   race2.Playernum = 2;
   race2.name = "Vulcans";
   race2.tech = 100.0;
-  assert(repo.save(race2));
+  test::expect_true(repo.save(race2));
 
   Race race3{};
   race3.Playernum = 5;  // Sparse ID
   race3.name = "Andorians";
   race3.tech = 40.0;
-  assert(repo.save(race3));
+  test::expect_true(repo.save(race3));
 
   auto player_ids = repo.list_ids();
-  assert(player_ids.size() == 3);
-  assert(player_ids[0] == 1);
-  assert(player_ids[1] == 2);
-  assert(player_ids[2] == 5);
+  test::expect_eq(player_ids.size(), 3);
+  test::expect_eq(player_ids[0], 1);
+  test::expect_eq(player_ids[1], 2);
+  test::expect_eq(player_ids[2], 5);
   std::println(std::cout, "  ✓ list_ids returns all player IDs in order");
 
   // Remove race
   std::println(std::cout, "Remove race...");
-  assert(repo.remove(2));
-  assert(!repo.find_by_player(player_t{2}).has_value());
+  test::expect_true(repo.remove(2));
+  test::expect_false(repo.find_by_player(player_t{2}).has_value());
   auto remaining = repo.list_ids();
-  assert(remaining.size() == 2);
-  assert(remaining[0] == 1 && remaining[1] == 5);
+  test::expect_eq(remaining.size(), 2);
+  test::expect_eq(remaining[0], 1);
+  test::expect_eq(remaining[1], 5);
   std::println(std::cout, "  ✓ Race removal successfully deleted entity");
 
   std::println(std::cout, "\nAll RaceRepository tests passed!");

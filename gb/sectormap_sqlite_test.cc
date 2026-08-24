@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file sectormap_sqlite_test.cc
+/// \brief Unit tests for SectorMap SQLite table persistence, caching, and
+/// randomization.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 // Helper to populate a sector map with test data
 void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
@@ -51,19 +54,19 @@ void verify_sectormap_equal(const SectorMap& original,
       const auto& orig = original.get(x, y);
       const auto& retr = retrieved.get(x, y);
 
-      assert(retr.get_x() == orig.get_x());
-      assert(retr.get_y() == orig.get_y());
-      assert(retr.get_eff() == orig.get_eff());
-      assert(retr.get_fert() == orig.get_fert());
-      assert(retr.get_mobilization() == orig.get_mobilization());
-      assert(retr.get_crystals() == orig.get_crystals());
-      assert(retr.get_resource() == orig.get_resource());
-      assert(retr.get_popn() == orig.get_popn());
-      assert(retr.get_troops() == orig.get_troops());
-      assert(retr.get_owner() == orig.get_owner());
-      assert(retr.get_race() == orig.get_race());
-      assert(retr.get_type() == orig.get_type());
-      assert(retr.get_condition() == orig.get_condition());
+      test::expect_eq(retr.get_x(), orig.get_x());
+      test::expect_eq(retr.get_y(), orig.get_y());
+      test::expect_eq(retr.get_eff(), orig.get_eff());
+      test::expect_eq(retr.get_fert(), orig.get_fert());
+      test::expect_eq(retr.get_mobilization(), orig.get_mobilization());
+      test::expect_eq(retr.get_crystals(), orig.get_crystals());
+      test::expect_eq(retr.get_resource(), orig.get_resource());
+      test::expect_eq(retr.get_popn(), orig.get_popn());
+      test::expect_eq(retr.get_troops(), orig.get_troops());
+      test::expect_eq(retr.get_owner(), orig.get_owner());
+      test::expect_eq(retr.get_race(), orig.get_race());
+      test::expect_eq(retr.get_type(), orig.get_type());
+      test::expect_eq(retr.get_condition(), orig.get_condition());
     }
   }
 }
@@ -92,12 +95,13 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   // Test get_sectormap with RAII handle
   {
     auto smap_handle = em.get_sectormap(5, 1);
-    assert(smap_handle.get() && "get_sectormap should return valid handle");
+    test::expect_ne(smap_handle.get(), nullptr,
+                    "get_sectormap should return valid handle");
 
     auto& smap = *smap_handle;
 
     // Verify data was loaded correctly
-    assert(smap.get(0, 0).get_eff() == 25);  // base_eff + 0*0 = 25
+    test::expect_eq(smap.get(0, 0).get_eff(), 25);  // base_eff + 0*0 = 25
 
     // Modify some sectors
     for (int i = 0; i < 4; i++) {
@@ -116,16 +120,16 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   // Verify the updates persisted by loading again
   {
     auto smap_handle = em.get_sectormap(5, 1);
-    assert(smap_handle.get());
+    test::expect_ne(smap_handle.get(), nullptr);
     const auto& smap = smap_handle.read();
 
     for (int i = 0; i < 4; i++) {
-      assert(smap.get(i, i).get_eff() == 95);
-      assert(smap.get(i, i).get_popn() == 77777);
+      test::expect_eq(smap.get(i, i).get_eff(), 95);
+      test::expect_eq(smap.get(i, i).get_popn(), 77777);
     }
 
     // Verify other sectors unchanged
-    assert(smap.get(5, 4).get_eff() == 25 + 5 * 4);  // base_eff + x*y
+    test::expect_eq(smap.get(5, 4).get_eff(), 25 + 5 * 4);  // base_eff + x*y
   }
 
   std::println(std::cout, "  Update persistence verified: PASSED");
@@ -133,10 +137,11 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   // Test peek_sectormap (read-only)
   {
     const SectorMap* smap_ptr = em.peek_sectormap(5, 1);
-    assert(smap_ptr && "peek_sectormap should return valid pointer");
+    test::expect_ne(smap_ptr, nullptr,
+                    "peek_sectormap should return valid pointer");
 
     // Verify we see the updated data
-    assert(smap_ptr->get(0, 0).get_eff() == 95);
+    test::expect_eq(smap_ptr->get(0, 0).get_eff(), 95);
   }
 
   std::println(std::cout, "  peek_sectormap read-only access: PASSED");
@@ -146,14 +151,14 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     auto handle1 = em.get_sectormap(5, 1);
     auto handle2 = em.get_sectormap(5, 1);
 
-    assert(handle1.get() == handle2.get() &&
-           "Multiple handles should reference same cached data");
+    test::expect_eq(handle1.get(), handle2.get(),
+                    "Multiple handles should reference same cached data");
 
     // Modify via handle1
     (*handle1).get(7, 5).set_efficiency_bounded(42);
 
     // Should see change via handle2 (same underlying object)
-    assert((*handle2).get(7, 5).get_eff() == 42);
+    test::expect_eq((*handle2).get(7, 5).get_eff(), 42);
   }
 
   std::println(std::cout, "  Caching (single instance) verified: PASSED");
@@ -161,8 +166,8 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   // Test with non-existent planet
   {
     auto smap_handle = em.get_sectormap(999, 999);
-    assert(!smap_handle.get() &&
-           "Non-existent planet should return null handle");
+    test::expect_eq(smap_handle.get(), nullptr,
+                    "Non-existent planet should return null handle");
   }
 
   std::println(std::cout, "  Non-existent planet handling: PASSED");
@@ -213,15 +218,16 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   const SectorMap* reload1 = em.peek_sectormap(7, 0);
   const SectorMap* reload2 = em.peek_sectormap(7, 1);
 
-  assert(reload1 && reload2);
+  test::expect_ne(reload1, nullptr);
+  test::expect_ne(reload2, nullptr);
 
   // Planet 1 should have its values (base_eff=10, so (0,0) = 10 + 0*0 = 10)
-  assert(reload1->get(0, 0).get_eff() == 10);
-  assert(reload1->get(0, 0).get_popn() == 100);  // base_popn * 1 * 1
+  test::expect_eq(reload1->get(0, 0).get_eff(), 10);
+  test::expect_eq(reload1->get(0, 0).get_popn(), 100);  // base_popn * 1 * 1
 
   // Planet 2 should have its own distinct values
-  assert(reload2->get(0, 0).get_eff() == 99);
-  assert(reload2->get(0, 0).get_popn() == 12345);
+  test::expect_eq(reload2->get(0, 0).get_eff(), 99);
+  test::expect_eq(reload2->get(0, 0).get_popn(), 12345);
 
   std::println(std::cout, "  Planet isolation: PASSED");
 }
@@ -253,13 +259,13 @@ void test_sectormap_random_and_shuffle() {
     coords2.push_back({s.get_x(), s.get_y()});
   }
 
-  assert(coords1.size() == 20);
-  assert(coords2.size() == 20);
-  assert(coords1 == coords2);
+  test::expect_eq(coords1.size(), 20);
+  test::expect_eq(coords2.size(), 20);
+  test::expect_eq(coords1, coords2);
 
   // Verify all sectors are present without duplicates in shuffled output
   std::set<std::pair<int, int>> unique_coords(coords1.begin(), coords1.end());
-  assert(unique_coords.size() == 20);
+  test::expect_eq(unique_coords.size(), 20);
 
   // 2. Verify direct mutation through the returned Sector& view references
   for (Sector& s : smap.shuffle(mock_rng1)) {
@@ -267,15 +273,17 @@ void test_sectormap_random_and_shuffle() {
   }
   for (int x = 0; x < 5; ++x) {
     for (int y = 0; y < 4; ++y) {
-      assert(smap.get(x, y).get_fert() == 99);
+      test::expect_eq(smap.get(x, y).get_fert(), 99);
     }
   }
 
   // 3. Test get_random with deterministic mock engine
   std::mt19937 mock_rng3(999);
   auto& rand_sector = smap.get_random(mock_rng3);
-  assert(rand_sector.get_x() >= 0 && rand_sector.get_x() < 5);
-  assert(rand_sector.get_y() >= 0 && rand_sector.get_y() < 4);
+  test::expect_ge(rand_sector.get_x(), 0);
+  test::expect_lt(rand_sector.get_x(), 5);
+  test::expect_ge(rand_sector.get_y(), 0);
+  test::expect_lt(rand_sector.get_y(), 4);
 
   // 4. Test production game_rng() integration with seed_rand
   seed_rand(12345);
@@ -290,8 +298,8 @@ void test_sectormap_random_and_shuffle() {
     prod_coords2.push_back({s.get_x(), s.get_y()});
   }
 
-  assert(prod_coords1.size() == 20);
-  assert(prod_coords1 == prod_coords2);
+  test::expect_eq(prod_coords1.size(), 20);
+  test::expect_eq(prod_coords1, prod_coords2);
 
   std::println(std::cout, "  SectorMap shuffle and get_random: PASSED");
 }

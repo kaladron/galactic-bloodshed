@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file sector_repository_test.cc
+/// \brief Unit tests for SectorRepository CRUD operations and SectorMap SQLite
+/// JSON persistence.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Create in-memory database and initialize schema
@@ -43,30 +46,30 @@ int main() {
   std::println(std::cout, "Save sector...");
   bool saved = repo.save_sector(test_sector, test_planet.star_id(),
                                 test_planet.planet_order(), 5, 7);
-  assert(saved && "Failed to save sector");
+  test::expect_true(saved, "Failed to save sector");
   std::println(std::cout, "  ✓ Sector saved successfully");
 
   // Retrieve sector by location
   std::println(std::cout, "Retrieve sector by location...");
   auto retrieved =
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 5, 7);
-  assert(retrieved.has_value() && "Failed to retrieve sector");
+  test::expect_true(retrieved.has_value(), "Failed to retrieve sector");
   std::println(std::cout, "  ✓ Sector retrieved successfully");
 
   // Verify data integrity using accessor methods
   std::println(std::cout, "Verify data integrity...");
-  assert(retrieved->coords() == test_data.coords);
-  assert(retrieved->get_eff() == test_data.eff);
-  assert(retrieved->get_fert() == test_data.fert);
-  assert(retrieved->get_mobilization() == test_data.mobilization);
-  assert(retrieved->get_crystals() == test_data.crystals);
-  assert(retrieved->get_resource() == test_data.resource);
-  assert(retrieved->get_popn() == test_data.popn);
-  assert(retrieved->get_troops() == test_data.troops);
-  assert(retrieved->get_owner() == test_data.owner);
-  assert(retrieved->get_race() == test_data.race);
-  assert(retrieved->get_type() == test_data.type);
-  assert(retrieved->get_condition() == test_data.condition);
+  test::expect_eq(retrieved->coords(), test_data.coords);
+  test::expect_eq(retrieved->get_eff(), test_data.eff);
+  test::expect_eq(retrieved->get_fert(), test_data.fert);
+  test::expect_eq(retrieved->get_mobilization(), test_data.mobilization);
+  test::expect_eq(retrieved->get_crystals(), test_data.crystals);
+  test::expect_eq(retrieved->get_resource(), test_data.resource);
+  test::expect_eq(retrieved->get_popn(), test_data.popn);
+  test::expect_eq(retrieved->get_troops(), test_data.troops);
+  test::expect_eq(retrieved->get_owner(), test_data.owner);
+  test::expect_eq(retrieved->get_race(), test_data.race);
+  test::expect_eq(retrieved->get_type(), test_data.type);
+  test::expect_eq(retrieved->get_condition(), test_data.condition);
   std::println(std::cout, "  ✓ All fields match original");
 
   // Update sector using setters
@@ -76,17 +79,17 @@ int main() {
   retrieved->set_crystals(150);
   saved = repo.save_sector(*retrieved, test_planet.star_id(),
                            test_planet.planet_order(), 5, 7);
-  assert(saved && "Failed to update sector");
+  test::expect_true(saved, "Failed to update sector");
   std::println(std::cout, "  ✓ Sector updated successfully");
 
   // Retrieve updated sector
   std::println(std::cout, "Retrieve updated sector...");
   auto updated =
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 5, 7);
-  assert(updated.has_value() && "Failed to retrieve updated sector");
-  assert(updated->get_eff() == 90);
-  assert(updated->get_popn() == 15000);
-  assert(updated->get_crystals() == 150);
+  test::expect_true(updated.has_value(), "Failed to retrieve updated sector");
+  test::expect_eq(updated->get_eff(), 90);
+  test::expect_eq(updated->get_popn(), 15000);
+  test::expect_eq(updated->get_crystals(), 150);
   std::println(std::cout, "  ✓ Updated values verified");
 
   // Save multiple sectors...
@@ -116,22 +119,25 @@ int main() {
   std::println(std::cout, "Retrieve different sectors...");
   auto sec2 =
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 3, 4);
-  assert(sec2.has_value());
-  assert(sec2->get_type() == SectorType::SEC_SEA);
-  assert(sec2->get_x() == 3 && sec2->get_y() == 4);
+  test::expect_true(sec2.has_value());
+  test::expect_eq(sec2->get_type(), SectorType::SEC_SEA);
+  test::expect_eq(sec2->get_x(), 3);
+  test::expect_eq(sec2->get_y(), 4);
 
   auto sec3 =
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 8, 2);
-  assert(sec3.has_value());
-  assert(sec3->get_type() == SectorType::SEC_MOUNT);
-  assert(sec3->get_x() == 8 && sec3->get_y() == 2);
+  test::expect_true(sec3.has_value());
+  test::expect_eq(sec3->get_type(), SectorType::SEC_MOUNT);
+  test::expect_eq(sec3->get_x(), 8);
+  test::expect_eq(sec3->get_y(), 2);
   std::println(std::cout, "  ✓ Different sectors retrieved correctly");
 
   // Find non-existent sector
   std::println(std::cout, "Find non-existent sector...");
   auto not_found = repo.find_sector(test_planet.star_id(),
                                     test_planet.planet_order(), 99, 99);
-  assert(!not_found.has_value() && "Should not find non-existent sector");
+  test::expect_false(not_found.has_value(),
+                     "Should not find non-existent sector");
   std::println(std::cout,
                "  ✓ Correctly returns nullopt for non-existent sector");
 
@@ -157,9 +163,10 @@ int main() {
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 5, 7);
   auto p2_sec =
       repo.find_sector(planet2.star_id(), planet2.planet_order(), 5, 7);
-  assert(p1_sec.has_value() && p2_sec.has_value());
-  assert(p1_sec->get_owner() == 1);
-  assert(p2_sec->get_owner() == 2);
+  test::expect_true(p1_sec.has_value());
+  test::expect_true(p2_sec.has_value());
+  test::expect_eq(p1_sec->get_owner(), 1);
+  test::expect_eq(p2_sec->get_owner(), 2);
   std::println(std::cout, "  ✓ Sectors on different planets handled correctly");
 
   // Save and load SectorMap (bulk operation)
@@ -188,7 +195,7 @@ int main() {
 
   // Save entire map
   bool map_saved = repo.save_map(test_map);
-  assert(map_saved && "Failed to save sector map");
+  test::expect_true(map_saved, "Failed to save sector map");
   std::println(std::cout, "  ✓ SectorMap saved successfully");
 
   // Load SectorMap
@@ -200,13 +207,13 @@ int main() {
     for (int x = 0; x < 3; x++) {
       const auto& original = test_map.get(x, y);
       const auto& loaded = loaded_map.get(x, y);
-      assert(loaded.get_x() == original.get_x());
-      assert(loaded.get_y() == original.get_y());
-      assert(loaded.get_eff() == original.get_eff());
-      assert(loaded.get_fert() == original.get_fert());
-      assert(loaded.get_popn() == original.get_popn());
-      assert(loaded.get_owner() == original.get_owner());
-      assert(loaded.get_type() == original.get_type());
+      test::expect_eq(loaded.get_x(), original.get_x());
+      test::expect_eq(loaded.get_y(), original.get_y());
+      test::expect_eq(loaded.get_eff(), original.get_eff());
+      test::expect_eq(loaded.get_fert(), original.get_fert());
+      test::expect_eq(loaded.get_popn(), original.get_popn());
+      test::expect_eq(loaded.get_owner(), original.get_owner());
+      test::expect_eq(loaded.get_type(), original.get_type());
     }
   }
   std::println(std::cout, "  ✓ SectorMap loaded and verified");
@@ -222,7 +229,7 @@ int main() {
   }
 
   map_saved = repo.save_map(loaded_map);
-  assert(map_saved && "Failed to save updated map");
+  test::expect_true(map_saved, "Failed to save updated map");
 
   // Reload and verify updates
   SectorMap updated_map = repo.load_map(small_planet);
@@ -230,8 +237,8 @@ int main() {
     for (int x = 0; x < 3; x++) {
       const auto& original = test_map.get(x, y);
       const auto& updated = updated_map.get(x, y);
-      assert(updated.get_eff() == original.get_eff() + 10);
-      assert(updated.get_popn() == original.get_popn() + 500);
+      test::expect_eq(updated.get_eff(), original.get_eff() + 10);
+      test::expect_eq(updated.get_popn(), original.get_popn() + 500);
     }
   }
   std::println(std::cout, "  ✓ SectorMap updates saved and verified");
@@ -240,11 +247,11 @@ int main() {
   std::println(std::cout, "New load() method (sector_struct)...");
   sector_struct loaded_struct =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 5, 7);
-  assert(loaded_struct.coords.x == 5);
-  assert(loaded_struct.coords.y == 7);
-  assert(loaded_struct.eff == 90);        // From Test 5 update
-  assert(loaded_struct.popn == 15000);    // From Test 5 update
-  assert(loaded_struct.crystals == 150);  // From Test 5 update
+  test::expect_eq(loaded_struct.coords.x, 5);
+  test::expect_eq(loaded_struct.coords.y, 7);
+  test::expect_eq(loaded_struct.eff, 90);        // From Test 5 update
+  test::expect_eq(loaded_struct.popn, 15000);    // From Test 5 update
+  test::expect_eq(loaded_struct.crystals, 150);  // From Test 5 update
   std::println(std::cout, "  ✓ load() returns sector_struct correctly");
 
   // New save() method working with sector_struct directly
@@ -271,18 +278,18 @@ int main() {
   std::println(std::cout, "Verify save() persisted data...");
   sector_struct verified =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 9, 9);
-  assert(verified.coords == new_struct.coords);
-  assert(verified.eff == new_struct.eff);
-  assert(verified.fert == new_struct.fert);
-  assert(verified.mobilization == new_struct.mobilization);
-  assert(verified.crystals == new_struct.crystals);
-  assert(verified.resource == new_struct.resource);
-  assert(verified.popn == new_struct.popn);
-  assert(verified.troops == new_struct.troops);
-  assert(verified.owner == new_struct.owner);
-  assert(verified.race == new_struct.race);
-  assert(verified.type == new_struct.type);
-  assert(verified.condition == new_struct.condition);
+  test::expect_eq(verified.coords, new_struct.coords);
+  test::expect_eq(verified.eff, new_struct.eff);
+  test::expect_eq(verified.fert, new_struct.fert);
+  test::expect_eq(verified.mobilization, new_struct.mobilization);
+  test::expect_eq(verified.crystals, new_struct.crystals);
+  test::expect_eq(verified.resource, new_struct.resource);
+  test::expect_eq(verified.popn, new_struct.popn);
+  test::expect_eq(verified.troops, new_struct.troops);
+  test::expect_eq(verified.owner, new_struct.owner);
+  test::expect_eq(verified.race, new_struct.race);
+  test::expect_eq(verified.type, new_struct.type);
+  test::expect_eq(verified.condition, new_struct.condition);
   std::println(std::cout, "  ✓ Data persisted and retrieved correctly");
 
   // Verify load() returns default sector_struct for non-existent
@@ -290,8 +297,8 @@ int main() {
   sector_struct empty =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 99, 99);
   // Default-constructed sector_struct should have zero/default values
-  assert(empty.popn == 0);
-  assert(empty.owner == 0);
+  test::expect_eq(empty.popn, 0);
+  test::expect_eq(empty.owner, 0);
   std::println(std::cout,
                "  ✓ load() returns default sector_struct for non-existent");
 
@@ -309,12 +316,12 @@ int main() {
   sector_struct retrieved_rt =
       repo.load(test_planet.star_id(), test_planet.planet_order(), 1, 1);
 
-  assert(retrieved_rt.coords == roundtrip.coords);
-  assert(retrieved_rt.eff == roundtrip.eff);
-  assert(retrieved_rt.fert == roundtrip.fert);
-  assert(retrieved_rt.popn == roundtrip.popn);
-  assert(retrieved_rt.owner == roundtrip.owner);
-  assert(retrieved_rt.type == roundtrip.type);
+  test::expect_eq(retrieved_rt.coords, roundtrip.coords);
+  test::expect_eq(retrieved_rt.eff, roundtrip.eff);
+  test::expect_eq(retrieved_rt.fert, roundtrip.fert);
+  test::expect_eq(retrieved_rt.popn, roundtrip.popn);
+  test::expect_eq(retrieved_rt.owner, roundtrip.owner);
+  test::expect_eq(retrieved_rt.type, roundtrip.type);
   std::println(std::cout, "  ✓ Round-trip save/load works correctly");
 
   std::println(std::cout, "\nAll SectorRepository tests passed!");

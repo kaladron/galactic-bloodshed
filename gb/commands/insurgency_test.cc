@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -100,8 +98,8 @@ void test_insurgency_happy_path() {
   // Verify race money decreased
   ctx.em.clear_cache();
   const auto* saved_race = ctx.em.peek_race(1);
-  assert(saved_race);
-  assert(saved_race->governor[0].money == 5000);
+  test::expect_ne(saved_race, nullptr);
+  test::expect_eq(saved_race->governor[0].money, 5000);
 }
 
 void test_insurgency_insufficient_ap() {
@@ -122,11 +120,12 @@ void test_insurgency_insufficient_ap() {
   g.set_pnum(0);
 
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
-  assert(g.out.str().contains("action points"));
+  test::expect_contains(g.out.str(), "action points");
 
   // Money must not have been deducted
   const auto* race = ctx.em.peek_race(1);
-  assert(race->governor[0].money == 10000);
+  test::expect_ne(race, nullptr);
+  test::expect_eq(race->governor[0].money, 10000);
 }
 
 void test_insurgency_role_and_scope_rejections() {
@@ -140,7 +139,7 @@ void test_insurgency_role_and_scope_rejections() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection
   {
@@ -153,7 +152,7 @@ void test_insurgency_role_and_scope_rejections() {
   g.set_snum(0);
   g.set_pnum(0);
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
-  assert(g.out.str().contains("not authorized"));
+  test::expect_contains(g.out.str(), "not authorized");
 }
 
 void test_insurgency_domain_errors() {
@@ -169,17 +168,17 @@ void test_insurgency_domain_errors() {
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"insurgency", "2"});
-  assert(g.out.str().contains("Syntax: insurgency <race> <money>"));
+  test::expect_contains(g.out.str(), "Syntax: insurgency <race> <money>");
 
   // 2. Revolt against self
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"insurgency", "1", "5000"});
-  assert(g.out.str().contains("yourself"));
+  test::expect_contains(g.out.str(), "yourself");
 
   // 3. Not enough money
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "50000"});
-  assert(g.out.str().contains("Nice try"));
+  test::expect_contains(g.out.str(), "Nice try");
 }
 
 }  // namespace

@@ -13,8 +13,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 // Create a minimal universe with ships for testing
@@ -92,12 +90,12 @@ void test_tactical_planet_scope() {
   std::string tactical_output = g_tactical.out.str();
 
   // Verify tactical produces output
-  assert(!tactical_output.empty() &&
-         "Tactical should produce output at planet scope");
+  test::expect_false(tactical_output.empty(),
+                     "Tactical should produce output at planet scope");
 
   // Verify the output mentions the planet
-  assert(tactical_output.find("TestPlanet") != std::string::npos &&
-         "Tactical at planet scope should show planet");
+  test::expect_contains(tactical_output, "TestPlanet",
+                        "Tactical at planet scope should show planet");
 
   std::println(std::cout, "  ✓ Planet scope produces tactical output");
 }
@@ -121,12 +119,13 @@ void test_tactical_ship_scope() {
   std::string tactical_output = g_tactical.out.str();
 
   // Verify we got output
-  assert(!tactical_output.empty() &&
-         "Tactical should produce output at ship scope");
+  test::expect_false(tactical_output.empty(),
+                     "Tactical should produce output at ship scope");
 
   // Verify the output contains the planet name (showing surrounding area)
-  assert(tactical_output.find("TestPlanet") != std::string::npos &&
-         "Tactical at ship scope should show surrounding planet");
+  test::expect_contains(
+      tactical_output, "TestPlanet",
+      "Tactical at ship scope should show surrounding planet");
 
   std::println(std::cout,
                "  ✓ Ship scope produces tactical output with surrounding area");
@@ -150,12 +149,12 @@ void test_tactical_star_scope() {
   std::string tactical_output = g_tactical.out.str();
 
   // Verify tactical produces output
-  assert(!tactical_output.empty() &&
-         "Tactical should produce output at star scope");
+  test::expect_false(tactical_output.empty(),
+                     "Tactical should produce output at star scope");
 
   // Verify the output mentions the planet
-  assert(tactical_output.find("TestPlanet") != std::string::npos &&
-         "Tactical at star scope should show planet");
+  test::expect_contains(tactical_output, "TestPlanet",
+                        "Tactical at star scope should show planet");
 
   std::println(std::cout, "  ✓ Star scope produces tactical output");
 }
@@ -172,7 +171,7 @@ void test_tactical_scope_rejection() {
   g_tactical.set_level(ScopeLevel::LEVEL_UNIV);
 
   ctx.assert_dispatch_rejected(g_tactical, {"tactical"});
-  assert(g_tactical.out.str().contains("Invalid scope for this command"));
+  test::expect_contains(g_tactical.out.str(), "Invalid scope for this command");
   std::println(std::cout, "  ✓ Tactical rejected at universe level");
 }
 

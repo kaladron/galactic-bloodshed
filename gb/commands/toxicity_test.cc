@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_toxicity_dispatch() {
@@ -51,22 +49,22 @@ void test_toxicity_dispatch() {
 
   // 1. Valid threshold update
   ctx.assert_dispatch_success(g, {"toxicity", "75"});
-  assert(g.out.str().contains("New threshold is: 75"));
+  test::expect_contains(g.out.str(), "New threshold is: 75");
   auto saved = ctx.em.peek_planet(1, 0);
-  assert(saved != nullptr);
-  assert(saved->info(player_t{1}).tox_thresh == 75);
+  test::expect_ne(saved, nullptr);
+  test::expect_eq(saved->info(player_t{1}).tox_thresh, 75);
   std::println(std::cout, "    ✓ Set toxicity threshold to 75 succeeded");
 
   // 2. Reject illegal value (>100)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"toxicity", "150"});
-  assert(g.out.str().contains("Illegal value"));
+  test::expect_contains(g.out.str(), "Illegal value");
   std::println(std::cout, "    ✓ Illegal value 150 rejected");
 
   // 3. Reject missing arguments
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"toxicity"});
-  assert(g.out.str().contains("Syntax: toxicity <threshold>"));
+  test::expect_contains(g.out.str(), "Syntax: toxicity <threshold>");
   std::println(std::cout,
                "    ✓ Missing argument rejected by descriptor min_args");
 
@@ -74,7 +72,7 @@ void test_toxicity_dispatch() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"toxicity", "50"});
-  assert(g.out.str().contains("Invalid scope"));
+  test::expect_contains(g.out.str(), "Invalid scope");
   std::println(std::cout, "    ✓ Invalid scope rejected");
 }
 

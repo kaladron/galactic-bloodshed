@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -116,14 +114,14 @@ void test_detonate_happy_path() {
 
   // Mine should be destroyed after detonation
   if (detonated_mine) {
-    assert(!detonated_mine->alive());
+    test::expect_false(detonated_mine->alive());
   }
 
   // Target ship should be affected by the detonation
   const auto* affected_target = ctx.em.peek_ship(2);
-  assert(affected_target != nullptr);
+  test::expect_ne(affected_target, nullptr);
   // Target should either be destroyed or damaged
-  assert(!affected_target->alive() || affected_target->damage() > 0);
+  test::expect_true(!affected_target->alive() || affected_target->damage() > 0);
 
   std::println(std::cout,
                "✓ detonate command: Mine detonation persisted to database");
@@ -152,7 +150,7 @@ void test_detonate_role_rejection() {
   g.set_snum(0);
 
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 }
 
 void test_detonate_domain_errors() {
@@ -167,7 +165,7 @@ void test_detonate_domain_errors() {
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"detonate"});
-  assert(g.out.str().contains("Syntax: detonate <mine>"));
+  test::expect_contains(g.out.str(), "Syntax: detonate <mine>");
 
   // 2. Ship is not a mine
   g.out.str("");
@@ -180,7 +178,7 @@ void test_detonate_domain_errors() {
   }
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
-  assert(g.out.str().contains("not activated"));
+  test::expect_contains(g.out.str(), "not activated");
 }
 
 }  // namespace

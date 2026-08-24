@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file shiplist_test.cc
+/// \brief Comprehensive unit tests for ShipList iterations (nested, scope, all,
+/// all_alive), filters, and const semantics.
+
 import dallib;
 import gblib;
 import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Create test context
@@ -64,10 +66,10 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive());
-      assert(ship.owner() == 1);
+      test::expect_true(ship.alive());
+      test::expect_eq(ship.owner(), 1);
     }
-    assert(count == 3);
+    test::expect_eq(count, 3);
     std::println(std::cout, "✓ Test 1 passed: Nested iteration found {} ships",
                  count);
   }
@@ -115,11 +117,11 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive());
-      assert(ship.owner() == 1);
-      assert(ship.type() == ShipType::OTYPE_PROBE);
+      test::expect_true(ship.alive());
+      test::expect_eq(ship.owner(), 1);
+      test::expect_eq(ship.type(), ShipType::OTYPE_PROBE);
     }
-    assert(count == 2);
+    test::expect_eq(count, 2);
     std::println(
         std::cout,
         "✓ Test 1b passed: Multi-level nested iteration found {} inner "
@@ -142,10 +144,10 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive());
+      test::expect_true(ship.alive());
     }
     // At this point, only ships 1-6 exist (3 original + 3 from Test 1b)
-    assert(count == 6);
+    test::expect_eq(count, 6);
     std::println(std::cout,
                  "✓ Test 2 passed: Scope iteration (UNIV) found {} ships",
                  count);
@@ -157,17 +159,17 @@ int main() {
     int mutable_count = 0;
     for (auto handle : list) {
       mutable_count++;
-      assert(handle->alive());
+      test::expect_true(handle->alive());
     }
-    assert(mutable_count == 6);
+    test::expect_eq(mutable_count, 6);
 
     const ShipList readonly_list(ctx.em, 1, ShipList::IterationType::Scope);
     int readonly_count = 0;
     for (const Ship* ship : readonly_list) {
       readonly_count++;
-      assert(ship->alive());
+      test::expect_true(ship->alive());
     }
-    assert(readonly_count == 6);
+    test::expect_eq(readonly_count, 6);
 
     std::println(
         std::cout,
@@ -210,10 +212,10 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive());
-      assert(ship.storbits() == 5);
+      test::expect_true(ship.alive());
+      test::expect_eq(ship.storbits(), 5);
     }
-    assert(count == 2);
+    test::expect_eq(count, 2);
     std::println(std::cout,
                  "✓ Test 2b passed: Scope iteration (STAR) found {} ships",
                  count);
@@ -246,11 +248,11 @@ int main() {
     for (auto handle : list) {
       count++;
       Ship& ship = *handle;
-      assert(ship.alive());
-      assert(ship.storbits() == 10);
-      assert(ship.pnumorbits() == 3);
+      test::expect_true(ship.alive());
+      test::expect_eq(ship.storbits(), 10);
+      test::expect_eq(ship.pnumorbits(), 3);
     }
-    assert(count == 1);
+    test::expect_eq(count, 1);
     std::println(std::cout,
                  "✓ Test 2c passed: Scope iteration (PLAN) found {} ships",
                  count);
@@ -270,7 +272,7 @@ int main() {
   // Verify modification persisted
   {
     const auto* ship = ctx.em.peek_ship(1);
-    assert(ship->fuel() >= 100.0);
+    test::expect_ge(ship->fuel(), 100.0);
     std::println(std::cout,
                  "✓ Test 3 passed: Ship modification persisted via RAII");
   }
@@ -291,12 +293,12 @@ int main() {
     const auto* ship1 = ctx.em.peek_ship(1);
     const auto* ship2 = ctx.em.peek_ship(2);
     const auto* ship3 = ctx.em.peek_ship(3);
-    assert(ship1->fuel() >= 150.0);  // 100 from test 3 + 50 from test 3b
-    assert(ship2->fuel() >= 50.0);
-    assert(ship3->fuel() >= 50.0);
-    assert(ship1->destruct() >= 10);
-    assert(ship2->destruct() >= 10);
-    assert(ship3->destruct() >= 10);
+    test::expect_ge(ship1->fuel(), 150.0);  // 100 from test 3 + 50 from test 3b
+    test::expect_ge(ship2->fuel(), 50.0);
+    test::expect_ge(ship3->fuel(), 50.0);
+    test::expect_ge(ship1->destruct(), 10);
+    test::expect_ge(ship2->destruct(), 10);
+    test::expect_ge(ship3->destruct(), 10);
     std::println(std::cout,
                  "✓ Test 3b passed: Multiple ship modifications persisted");
   }
@@ -312,41 +314,42 @@ int main() {
     double initial_fuel = ship_read.fuel();
 
     // Verify we can read without modification
-    assert(initial_fuel >= 150.0);
+    test::expect_ge(initial_fuel, 150.0);
     std::println(std::cout, "✓ Test 3c passed: Read-only peek() access works");
   }
 
   // Ship filtering with ship_matches_filter()
   {
     // Test wildcard filter
-    assert(GB::ship_matches_filter("*", ship1) == true);
-    assert(GB::ship_matches_filter("*", ship2) == true);
+    test::expect_true(GB::ship_matches_filter("*", ship1));
+    test::expect_true(GB::ship_matches_filter("*", ship2));
 
     // Test ship type filter (single type)
     // ship1 = OTYPE_FACTORY (index 31) = 'F'
     // ship2 = OTYPE_PROBE (index 29) = ':'
     // ship3 = STYPE_CARGO (index 13) = 'c'
-    assert(GB::ship_matches_filter("F", ship1) == true);   // Factory
-    assert(GB::ship_matches_filter(":", ship1) == false);  // Not a probe
-    assert(GB::ship_matches_filter(":", ship2) == true);   // Probe
+    test::expect_true(GB::ship_matches_filter("F", ship1));   // Factory
+    test::expect_false(GB::ship_matches_filter(":", ship1));  // Not a probe
+    test::expect_true(GB::ship_matches_filter(":", ship2));   // Probe
 
     // Test ship type filter (multiple types)
-    assert(GB::ship_matches_filter("F:", ship1) == true);   // Matches factory
-    assert(GB::ship_matches_filter("F:", ship2) == true);   // Matches probe
-    assert(GB::ship_matches_filter("cd", ship1) == false);  // Matches neither
+    test::expect_true(GB::ship_matches_filter("F:", ship1));  // Matches factory
+    test::expect_true(GB::ship_matches_filter("F:", ship2));  // Matches probe
+    test::expect_false(
+        GB::ship_matches_filter("cd", ship1));  // Matches neither
 
     // Test ship number filter
-    assert(GB::ship_matches_filter("#1", ship1) == true);   // ship1 is #1
-    assert(GB::ship_matches_filter("#1", ship2) == false);  // ship2 is #2
-    assert(GB::ship_matches_filter("#2", ship2) == true);   // ship2 is #2
+    test::expect_true(GB::ship_matches_filter("#1", ship1));   // ship1 is #1
+    test::expect_false(GB::ship_matches_filter("#1", ship2));  // ship2 is #2
+    test::expect_true(GB::ship_matches_filter("#2", ship2));   // ship2 is #2
 
     // Numeric strings WITHOUT '#' are treated as ship type filters
     // They look for ships with type letters matching the digits (e.g., '1',
     // '2', '3') ship1 is type OTYPE_FACTORY = 'F', so "123" won't match
-    assert(GB::ship_matches_filter("123", ship1) == false);
+    test::expect_false(GB::ship_matches_filter("123", ship1));
 
     // Test empty filter
-    assert(GB::ship_matches_filter("", ship1) == false);
+    test::expect_false(GB::ship_matches_filter("", ship1));
 
     std::println(std::cout,
                  "✓ Test 4 passed: Ship filtering with ship_matches_filter()");
@@ -355,21 +358,21 @@ int main() {
   // Test 4b: parse_ship_selection()
   {
     auto result1 = GB::parse_ship_selection("#123");
-    assert(result1.has_value());
-    assert(result1.value() == 123);
+    test::expect_true(result1.has_value());
+    test::expect_eq(result1.value(), 123);
 
     auto result2 = GB::parse_ship_selection("456");
-    assert(result2.has_value());
-    assert(result2.value() == 456);
+    test::expect_true(result2.has_value());
+    test::expect_eq(result2.value(), 456);
 
     auto result3 = GB::parse_ship_selection("f");
-    assert(!result3.has_value());
+    test::expect_false(result3.has_value());
 
     auto result4 = GB::parse_ship_selection("*");
-    assert(!result4.has_value());
+    test::expect_false(result4.has_value());
 
     auto result5 = GB::parse_ship_selection("");
-    assert(!result5.has_value());
+    test::expect_false(result5.has_value());
 
     std::println(std::cout,
                  "✓ Test 4b passed: parse_ship_selection() works correctly");
@@ -377,12 +380,12 @@ int main() {
 
   // Test 4c: is_ship_number_filter()
   {
-    assert(GB::is_ship_number_filter("#123") == true);
-    assert(GB::is_ship_number_filter("456") ==
-           false);  // Without '#', it's a ship type filter
-    assert(GB::is_ship_number_filter("f") == false);
-    assert(GB::is_ship_number_filter("*") == false);
-    assert(GB::is_ship_number_filter("") == false);
+    test::expect_true(GB::is_ship_number_filter("#123"));
+    test::expect_false(GB::is_ship_number_filter(
+        "456"));  // Without '#', it's a ship type filter
+    test::expect_false(GB::is_ship_number_filter("f"));
+    test::expect_false(GB::is_ship_number_filter("*"));
+    test::expect_false(GB::is_ship_number_filter(""));
 
     std::println(std::cout,
                  "✓ Test 4c passed: is_ship_number_filter() works correctly");
@@ -400,8 +403,8 @@ int main() {
       if (GB::ship_matches_filter(":", s)) probe_count++;
     }
 
-    assert(factory_count == 1);  // ship1 is a factory
-    assert(probe_count == 1);    // ship2 is a probe
+    test::expect_eq(factory_count, 1);  // ship1 is a factory
+    test::expect_eq(probe_count, 1);    // ship2 is a probe
 
     std::println(std::cout,
                  "✓ Test 4d passed: Filtering during iteration works");
@@ -417,8 +420,8 @@ int main() {
     // Iterate with const iterators - should use peek_ship internally
     int count = 0;
     for (const Ship* ship : ships_const) {
-      assert(ship != nullptr);
-      assert(ship->alive());
+      test::expect_ne(ship, nullptr);
+      test::expect_true(ship->alive());
       count++;
 
       // Read-only operations should work fine
@@ -426,7 +429,7 @@ int main() {
                    static_cast<int>(ship->type()));
     }
 
-    assert(count == 3);  // Should see ship1, ship2, ship3
+    test::expect_eq(count, 3);  // Should see ship1, ship2, ship3
 
     // Verify ships weren't marked dirty by THIS iteration
     // (they were already modified by Test 3b, so we just check we didn't change
@@ -447,9 +450,9 @@ int main() {
     }
 
     // Fuel should still be the same (const iteration doesn't mark dirty)
-    assert(ctx.em.peek_ship(1)->fuel() == fuel1_before);
-    assert(ctx.em.peek_ship(2)->fuel() == fuel2_before);
-    assert(ctx.em.peek_ship(3)->fuel() == fuel3_before);
+    test::expect_eq(ctx.em.peek_ship(1)->fuel(), fuel1_before);
+    test::expect_eq(ctx.em.peek_ship(2)->fuel(), fuel2_before);
+    test::expect_eq(ctx.em.peek_ship(3)->fuel(), fuel3_before);
 
     std::println(std::cout,
                  "✓ Test 5 passed: Const iteration is truly read-only");
@@ -474,9 +477,9 @@ int main() {
     }
 
     // Ships should still have same fuel (not marked dirty)
-    assert(ctx.em.peek_ship(1)->fuel() == fuel1_initial);
-    assert(ctx.em.peek_ship(2)->fuel() == fuel2_initial);
-    assert(ctx.em.peek_ship(3)->fuel() == fuel3_initial);
+    test::expect_eq(ctx.em.peek_ship(1)->fuel(), fuel1_initial);
+    test::expect_eq(ctx.em.peek_ship(2)->fuel(), fuel2_initial);
+    test::expect_eq(ctx.em.peek_ship(3)->fuel(), fuel3_initial);
 
     // Now use mutable iteration and actually modify
     {
@@ -488,9 +491,9 @@ int main() {
     }  // Ships auto-save here
 
     // Ships should now have modified fuel
-    assert(ctx.em.peek_ship(1)->fuel() == fuel1_initial + 50.0);
-    assert(ctx.em.peek_ship(2)->fuel() == fuel2_initial + 50.0);
-    assert(ctx.em.peek_ship(3)->fuel() == fuel3_initial + 50.0);
+    test::expect_eq(ctx.em.peek_ship(1)->fuel(), fuel1_initial + 50.0);
+    test::expect_eq(ctx.em.peek_ship(2)->fuel(), fuel2_initial + 50.0);
+    test::expect_eq(ctx.em.peek_ship(3)->fuel(), fuel3_initial + 50.0);
 
     std::println(
         std::cout,
@@ -512,12 +515,12 @@ int main() {
 
     int count = 0;
     for (const Ship* ship : ships) {
-      assert(ship != nullptr);
-      assert(ship->storbits() == 5);
+      test::expect_ne(ship, nullptr);
+      test::expect_eq(ship->storbits(), 5);
       count++;
     }
 
-    assert(count == 2);  // ship4 and ship5 are at star 5
+    test::expect_eq(count, 2);  // ship4 and ship5 are at star 5
     std::println(std::cout,
                  "✓ Test 5c passed: Const scope-based iteration works");
   }
@@ -560,8 +563,9 @@ int main() {
       }
     }
 
-    assert(all_count == alive_count + 1);  // Should include the dead ship
-    assert(found_dead);
+    test::expect_eq(all_count,
+                    alive_count + 1);  // Should include the dead ship
+    test::expect_true(found_dead);
     std::println(
         std::cout,
         "✓ Test 6 passed: All iteration found {} ships (including dead)",
@@ -578,13 +582,14 @@ int main() {
     for (auto handle : alive_ships) {
       alive_count++;
       Ship& ship = *handle;
-      assert(ship.alive());  // All ships should be alive
+      test::expect_true(ship.alive());  // All ships should be alive
       if (ship.number() == 10) {
         found_dead = true;  // Should not happen
       }
     }
 
-    assert(!found_dead);  // Dead ship should not be in AllAlive iteration
+    test::expect_false(
+        found_dead);  // Dead ship should not be in AllAlive iteration
     std::println(
         std::cout,
         "✓ Test 7 passed: AllAlive iteration found {} ships (alive only)",
@@ -599,25 +604,25 @@ int main() {
     const ShipList all_const(ctx.em, ShipList::IterationType::All);
     int all_count = 0;
     for (const Ship* ship : all_const) {
-      assert(ship != nullptr);
+      test::expect_ne(ship, nullptr);
       all_count++;
     }
-    assert(all_count == 10);  // 9 alive + 1 dead from Test 6
+    test::expect_eq(all_count, 10);  // 9 alive + 1 dead from Test 6
     std::println(std::cout, "  Const All iteration found {} ships", all_count);
 
     // Const AllAlive iteration
     const ShipList alive_const(ctx.em, ShipList::IterationType::AllAlive);
     int alive_count = 0;
     for (const Ship* ship : alive_const) {
-      assert(ship != nullptr);
-      assert(ship->alive());
+      test::expect_ne(ship, nullptr);
+      test::expect_true(ship->alive());
       alive_count++;
     }
     std::println(std::cout, "  Const AllAlive iteration found {} ships",
                  alive_count);
     std::println(std::cout, "  Expected alive_count ({}) == all_count - 1 ({})",
                  alive_count, all_count - 1);
-    assert(alive_count == all_count - 1);  // One dead ship
+    test::expect_eq(alive_count, all_count - 1);  // One dead ship
 
     std::println(std::cout,
                  "✓ Test 7b passed: Const All/AllAlive iteration works");

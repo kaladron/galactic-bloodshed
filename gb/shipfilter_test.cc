@@ -1,49 +1,51 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import dallib;
-import gblib;
-import std;
-
-#include <cassert>
-
 /// \file shipfilter_test.cc
 /// \brief Test ship filtering helper functions
+
+import dallib;
+import gblib;
+import test;
+import std;
 
 int main() {
   // Test parse_ship_selection
   {
     auto a = GB::parse_ship_selection("123");
-    assert(a.has_value() && a.value() == 123);
+    test::expect_true(a.has_value());
+    test::expect_eq(a.value(), 123);
 
     auto b = GB::parse_ship_selection("#456");
-    assert(b.has_value() && b.value() == 456);
+    test::expect_true(b.has_value());
+    test::expect_eq(b.value(), 456);
 
     auto c = GB::parse_ship_selection("##789");
-    assert(c.has_value() && c.value() == 789);
+    test::expect_true(c.has_value());
+    test::expect_eq(c.value(), 789);
 
     auto d = GB::parse_ship_selection("f");
-    assert(!d.has_value());
+    test::expect_false(d.has_value());
 
     auto e = GB::parse_ship_selection("*");
-    assert(!e.has_value());
+    test::expect_false(e.has_value());
 
     auto f = GB::parse_ship_selection("");
-    assert(!f.has_value());
+    test::expect_false(f.has_value());
 
     auto g = GB::parse_ship_selection("frd");
-    assert(!g.has_value());
+    test::expect_false(g.has_value());
   }
 
   // Test is_ship_number_filter
   {
-    assert(GB::is_ship_number_filter("#123") == true);
-    assert(GB::is_ship_number_filter("#456") == true);
-    assert(GB::is_ship_number_filter("123") ==
-           false);  // Without '#', it's a ship type filter
-    assert(GB::is_ship_number_filter("f") == false);
-    assert(GB::is_ship_number_filter("*") == false);
-    assert(GB::is_ship_number_filter("") == false);
-    assert(GB::is_ship_number_filter("frd") == false);
+    test::expect_true(GB::is_ship_number_filter("#123"));
+    test::expect_true(GB::is_ship_number_filter("#456"));
+    test::expect_false(GB::is_ship_number_filter(
+        "123"));  // Without '#', it's a ship type filter
+    test::expect_false(GB::is_ship_number_filter("f"));
+    test::expect_false(GB::is_ship_number_filter("*"));
+    test::expect_false(GB::is_ship_number_filter(""));
+    test::expect_false(GB::is_ship_number_filter("frd"));
   }
 
   // Test ship_matches_filter with actual ships
@@ -76,41 +78,41 @@ int main() {
                  static_cast<int>(pod.type()), Shipltrs[pod.type()]);
     std::println(std::cout, "Filter 'p' matches pod: {}",
                  GB::ship_matches_filter("p", pod));
-    assert(GB::ship_matches_filter("p", pod) == true);
-    assert(GB::ship_matches_filter("p", destroyer) == false);
-    assert(GB::ship_matches_filter("p", fighter) == false);
+    test::expect_true(GB::ship_matches_filter("p", pod));
+    test::expect_false(GB::ship_matches_filter("p", destroyer));
+    test::expect_false(GB::ship_matches_filter("p", fighter));
 
     // Test multi-ship type filter (p=pod, d=destroyer)
-    assert(GB::ship_matches_filter("pd", pod) == true);
-    assert(GB::ship_matches_filter("pd", destroyer) == true);
-    assert(GB::ship_matches_filter("pd", fighter) == false);
+    test::expect_true(GB::ship_matches_filter("pd", pod));
+    test::expect_true(GB::ship_matches_filter("pd", destroyer));
+    test::expect_false(GB::ship_matches_filter("pd", fighter));
 
-    assert(GB::ship_matches_filter("fdp", pod) == true);
-    assert(GB::ship_matches_filter("fdp", destroyer) == true);
-    assert(GB::ship_matches_filter("fdp", fighter) == true);
+    test::expect_true(GB::ship_matches_filter("fdp", pod));
+    test::expect_true(GB::ship_matches_filter("fdp", destroyer));
+    test::expect_true(GB::ship_matches_filter("fdp", fighter));
 
     // Test wildcard filter
-    assert(GB::ship_matches_filter("*", pod) == true);
-    assert(GB::ship_matches_filter("*", destroyer) == true);
-    assert(GB::ship_matches_filter("*", fighter) == true);
+    test::expect_true(GB::ship_matches_filter("*", pod));
+    test::expect_true(GB::ship_matches_filter("*", destroyer));
+    test::expect_true(GB::ship_matches_filter("*", fighter));
 
     // Test ship number filter - now checks if specific ship number matches
-    assert(GB::ship_matches_filter("#1", pod) == true);  // pod is ship #1
-    assert(GB::ship_matches_filter("#1", destroyer) ==
-           false);  // destroyer is ship #2
-    assert(GB::ship_matches_filter("#2", destroyer) ==
-           true);  // destroyer is ship #2
-    assert(GB::ship_matches_filter("#123", pod) ==
-           false);  // no ship #123 in this set
+    test::expect_true(GB::ship_matches_filter("#1", pod));  // pod is ship #1
+    test::expect_false(
+        GB::ship_matches_filter("#1", destroyer));  // destroyer is ship #2
+    test::expect_true(
+        GB::ship_matches_filter("#2", destroyer));  // destroyer is ship #2
+    test::expect_false(
+        GB::ship_matches_filter("#123", pod));  // no ship #123 in this set
 
     // Numeric strings WITHOUT '#' are treated as ship type filters
     // They look for ships with type letters matching the digits
-    assert(GB::ship_matches_filter("123", pod) ==
-           false);  // pod is 'p', not '1', '2', or '3'
+    test::expect_false(GB::ship_matches_filter(
+        "123", pod));  // pod is 'p', not '1', '2', or '3'
 
     // Test empty filter
-    assert(GB::ship_matches_filter("", pod) == false);
-    assert(GB::ship_matches_filter("", destroyer) == false);
+    test::expect_false(GB::ship_matches_filter("", pod));
+    test::expect_false(GB::ship_matches_filter("", destroyer));
   }
 
   std::println(std::cout, "All shipfilter tests passed!");

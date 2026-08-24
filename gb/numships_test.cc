@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file numships_test.cc
+/// \brief Unit tests for EntityManager::num_ships() count and ship retrieval.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Initialize database using Database class (in-memory for testing)
@@ -56,51 +58,39 @@ int main() {
 
   // Test that num_ships() returns the correct count
   shipnum_t count_after_inserts = entity_manager.num_ships();
-  assert(count_after_inserts == 3);
+  test::expect_eq(count_after_inserts, 3);
 
   // Test that we can retrieve the ships
   const auto* retrieved_ship1 = entity_manager.peek_ship(1);
-  assert(retrieved_ship1->number() == 1);
-  assert(retrieved_ship1->name() == "TestShip1");
-  assert(retrieved_ship1->type() == ShipType::STYPE_SHUTTLE);
+  test::expect_ne(retrieved_ship1, nullptr);
+  test::expect_eq(retrieved_ship1->number(), 1);
+  test::expect_eq(retrieved_ship1->name(), "TestShip1");
+  test::expect_eq(retrieved_ship1->type(), ShipType::STYPE_SHUTTLE);
 
   const auto* retrieved_ship2 = entity_manager.peek_ship(2);
-  assert(retrieved_ship2->number() == 2);
-  assert(retrieved_ship2->name() == "TestShip2");
-  assert(retrieved_ship2->type() == ShipType::STYPE_CARGO);
+  test::expect_ne(retrieved_ship2, nullptr);
+  test::expect_eq(retrieved_ship2->number(), 2);
+  test::expect_eq(retrieved_ship2->name(), "TestShip2");
+  test::expect_eq(retrieved_ship2->type(), ShipType::STYPE_CARGO);
 
   const auto* retrieved_ship3 = entity_manager.peek_ship(3);
-  assert(retrieved_ship3->number() == 3);
-  assert(retrieved_ship3->name() == "TestShip3");
-  assert(retrieved_ship3->type() == ShipType::STYPE_FIGHTER);
+  test::expect_ne(retrieved_ship3, nullptr);
+  test::expect_eq(retrieved_ship3->number(), 3);
+  test::expect_eq(retrieved_ship3->name(), "TestShip3");
+  test::expect_eq(retrieved_ship3->type(), ShipType::STYPE_FIGHTER);
 
   // Test that retrieving a non-existent ship throws EntityNotFoundError
-  bool threw = false;
-  try {
-    entity_manager.peek_ship(999);
-  } catch (const EntityNotFoundError&) {
-    threw = true;
-  }
-  assert(threw);
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { entity_manager.peek_ship(999); });
 
   // Test that retrieving with invalid ship number (0) throws
   // EntityNotFoundError
-  threw = false;
-  try {
-    entity_manager.peek_ship(0);
-  } catch (const EntityNotFoundError&) {
-    threw = true;
-  }
-  assert(threw);
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { entity_manager.peek_ship(0); });
 
   // Test that retrieving with negative ship number throws EntityNotFoundError
-  threw = false;
-  try {
-    entity_manager.peek_ship(-1);
-  } catch (const EntityNotFoundError&) {
-    threw = true;
-  }
-  assert(threw);
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { entity_manager.peek_ship(-1); });
 
   std::println(std::cout, "Numships and ship storage test passed!");
   std::println(std::cout, "Initial count: {}, Final count: {}", initial_count,

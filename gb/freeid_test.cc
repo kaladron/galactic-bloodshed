@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file freeid_test.cc
+/// \brief Unit tests for gap-finding free ID allocation in repositories.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   Database db(":memory:");
@@ -16,7 +18,7 @@ int main() {
 
   // Empty table should return 1
   int id1 = ship_repo.next_available_id();
-  assert(id1 == 1);
+  test::expect_eq(id1, 1);
   std::println(std::cout, "✓ Empty table returns ID 1");
 
   // Create ships at 1, 2, 3, verify next is 4
@@ -42,13 +44,13 @@ int main() {
   ship_repo.save(ship3);
 
   int id2 = ship_repo.next_available_id();
-  assert(id2 == 4);
+  test::expect_eq(id2, 4);
   std::println(std::cout, "✓ Sequential IDs 1,2,3 -> next is 4");
 
   // Delete ship 2, verify next is 2 (gap reuse)
   ship_repo.delete_ship(2);
   int id3 = ship_repo.next_available_id();
-  assert(id3 == 2);
+  test::expect_eq(id3, 2);
   std::println(std::cout, "✓ Delete ship 2 -> next reuses gap at 2");
 
   // Create ship at 2, verify next is 4 again
@@ -60,14 +62,14 @@ int main() {
   ship_repo.save(ship2b);
 
   int id4 = ship_repo.next_available_id();
-  assert(id4 == 4);
+  test::expect_eq(id4, 4);
   std::println(std::cout, "✓ Fill gap at 2 -> next is 4");
 
   // Delete ships 1 and 3, verify next is 1 (smallest gap)
   ship_repo.delete_ship(1);
   ship_repo.delete_ship(3);
   int id5 = ship_repo.next_available_id();
-  assert(id5 == 1);
+  test::expect_eq(id5, 1);
   std::println(std::cout, "✓ Multiple gaps -> returns smallest (1)");
 
   // Test commodities work the same way
@@ -76,7 +78,7 @@ int main() {
   CommodRepository commod_repo(store);
 
   int cid1 = commod_repo.next_available_id();
-  assert(cid1 == 1);
+  test::expect_eq(cid1, 1);
   std::println(std::cout, "✓ Empty commod table returns ID 1");
 
   // Create some commods
@@ -108,12 +110,12 @@ int main() {
   commod_repo.save(c4);
 
   int cid2 = commod_repo.next_available_id();
-  assert(cid2 == 3);
+  test::expect_eq(cid2, 3);
   std::println(std::cout, "✓ Commod IDs 1,2,4 -> next is 3 (gap)");
 
   commod_repo.delete_commod(1);
   int cid3 = commod_repo.next_available_id();
-  assert(cid3 == 1);
+  test::expect_eq(cid3, 1);
   std::println(std::cout, "✓ Delete commod 1 -> reuses gap at 1");
 
   std::println(std::cout, "\n✅ All free ID management tests passed!");

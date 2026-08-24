@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import gblib;
-import std;
+/// \file bitops_test.cc
+/// \brief Unit tests for bit operation overloads for ID types.
 
-#include <cassert>
+import gblib;
+import test;
+import std;
 
 int main() {
   std::println(std::cout, "Testing bit operation overloads for ID types...");
@@ -16,16 +18,16 @@ int main() {
 
   // Test setbit with player_t
   setbit(flags, p1);
-  assert(isset(flags, p1));
-  assert(isclr(flags, p2));
+  test::expect_true(isset(flags, p1));
+  test::expect_true(isclr(flags, p2));
 
   setbit(flags, p5);
-  assert(isset(flags, p5));
+  test::expect_true(isset(flags, p5));
 
   // Test clrbit with player_t
   clrbit(flags, p1);
-  assert(isclr(flags, p1));
-  assert(isset(flags, p5));
+  test::expect_true(isclr(flags, p1));
+  test::expect_true(isset(flags, p5));
 
   // Test with governor_t
   std::uint64_t gov_flags = 0;
@@ -33,15 +35,15 @@ int main() {
   governor_t g2{1};
 
   setbit(gov_flags, g1);
-  assert(isset(gov_flags, g1));
-  assert(isclr(gov_flags, g2));
+  test::expect_true(isset(gov_flags, g1));
+  test::expect_true(isclr(gov_flags, g2));
 
   clrbit(gov_flags, g1);
-  assert(isclr(gov_flags, g1));
+  test::expect_true(isclr(gov_flags, g1));
 
   // Test that unsigned still works
   setbit(flags, 3U);
-  assert(isset(flags, 3U));
+  test::expect_true(isset(flags, 3U));
 
   std::println(std::cout, "✓ All bit operation overload tests passed!");
   return 0;

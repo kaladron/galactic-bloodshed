@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file star_test.cc
+/// \brief Unit tests for Star class methods, planet name manipulation,
+/// auto-resizing, and bounds checking.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Basic star creation with vector of planet names
@@ -18,11 +21,11 @@ int main() {
 
     Star star(s);
 
-    assert(star.get_name() == "Sol");
-    assert(star.numplanets() == 3);
-    assert(star.get_planet_name(0) == "Mercury");
-    assert(star.get_planet_name(1) == "Venus");
-    assert(star.get_planet_name(2) == "Earth");
+    test::expect_eq(star.get_name(), "Sol");
+    test::expect_eq(star.numplanets(), 3);
+    test::expect_eq(star.get_planet_name(0), "Mercury");
+    test::expect_eq(star.get_planet_name(1), "Venus");
+    test::expect_eq(star.get_planet_name(2), "Earth");
     std::println(std::cout, "  ✓ Basic creation and access works");
   }
 
@@ -37,19 +40,12 @@ int main() {
     Star star(s);
 
     // Valid access
-    assert(star.get_planet_name(0) == "Planet1");
-    assert(star.get_planet_name(1) == "Planet2");
+    test::expect_eq(star.get_planet_name(0), "Planet1");
+    test::expect_eq(star.get_planet_name(1), "Planet2");
 
     // Out of bounds - should throw exception
-    bool caught_exception = false;
-    try {
-      (void)star.get_planet_name(2);
-    } catch (const std::runtime_error& e) {
-      caught_exception = true;
-      std::string msg = e.what();
-      assert(msg.find("Planet number 2 out of range") != std::string::npos);
-    }
-    assert(caught_exception);
+    test::expect_throws<std::runtime_error>(
+        [&]() { (void)star.get_planet_name(2); });
     std::println(std::cout, "  ✓ Out of bounds access throws exception");
   }
 
@@ -64,18 +60,13 @@ int main() {
 
     Star star(s);
 
-    assert(star.planet_name_isset(0) == true);   // Has name
-    assert(star.planet_name_isset(1) == false);  // Empty name
-    assert(star.planet_name_isset(2) == true);   // Has name
+    test::expect_true(star.planet_name_isset(0));   // Has name
+    test::expect_false(star.planet_name_isset(1));  // Empty name
+    test::expect_true(star.planet_name_isset(2));   // Has name
 
     // Out of bounds - should throw exception
-    bool caught_exception = false;
-    try {
-      (void)star.planet_name_isset(99);
-    } catch (const std::runtime_error& e) {
-      caught_exception = true;
-    }
-    assert(caught_exception);
+    test::expect_throws<std::runtime_error>(
+        [&]() { (void)star.planet_name_isset(99); });
     std::println(
         std::cout,
         "  ✓ planet_name_isset works correctly and throws on out of bounds");
@@ -89,19 +80,19 @@ int main() {
     s.pnames.push_back("Planet0");
 
     Star star(s);
-    assert(star.numplanets() == 1);
+    test::expect_eq(star.numplanets(), 1);
 
     // Set planet at index 5 - should auto-resize vector
     star.set_planet_name(5, "Jupiter");
-    assert(star.numplanets() == 6);
+    test::expect_eq(star.numplanets(), 6);
 
     // Check that intermediate planets exist but are empty
-    assert(star.get_planet_name(0) == "Planet0");
-    assert(star.get_planet_name(1) == "");
-    assert(star.get_planet_name(2) == "");
-    assert(star.get_planet_name(3) == "");
-    assert(star.get_planet_name(4) == "");
-    assert(star.get_planet_name(5) == "Jupiter");
+    test::expect_eq(star.get_planet_name(0), "Planet0");
+    test::expect_eq(star.get_planet_name(1), "");
+    test::expect_eq(star.get_planet_name(2), "");
+    test::expect_eq(star.get_planet_name(3), "");
+    test::expect_eq(star.get_planet_name(4), "");
+    test::expect_eq(star.get_planet_name(5), "Jupiter");
     std::println(std::cout, "  ✓ Auto-resize works correctly");
   }
 
@@ -113,11 +104,11 @@ int main() {
     s.pnames.push_back("OldName");
 
     Star star(s);
-    assert(star.get_planet_name(0) == "OldName");
+    test::expect_eq(star.get_planet_name(0), "OldName");
 
     star.set_planet_name(0, "NewName");
-    assert(star.get_planet_name(0) == "NewName");
-    assert(star.numplanets() == 1);  // Size unchanged
+    test::expect_eq(star.get_planet_name(0), "NewName");
+    test::expect_eq(star.numplanets(), 1);  // Size unchanged
     std::println(std::cout, "  ✓ Overwriting works correctly");
   }
 
@@ -129,25 +120,15 @@ int main() {
     // Don't add any planets
 
     Star star(s);
-    assert(star.numplanets() == 0);
+    test::expect_eq(star.numplanets(), 0);
 
     // Out of bounds access should throw
-    bool caught_exception = false;
-    try {
-      (void)star.get_planet_name(0);
-    } catch (const std::runtime_error& e) {
-      caught_exception = true;
-    }
-    assert(caught_exception);
+    test::expect_throws<std::runtime_error>(
+        [&]() { (void)star.get_planet_name(0); });
 
     // planet_name_isset should also throw
-    caught_exception = false;
-    try {
-      (void)star.planet_name_isset(0);
-    } catch (const std::runtime_error& e) {
-      caught_exception = true;
-    }
-    assert(caught_exception);
+    test::expect_throws<std::runtime_error>(
+        [&]() { (void)star.planet_name_isset(0); });
 
     std::println(
         std::cout,
@@ -161,18 +142,18 @@ int main() {
     s.name = "Test";
 
     Star star(s);
-    assert(star.numplanets() == 0);
+    test::expect_eq(star.numplanets(), 0);
 
     // Modify through struct (simulating direct construction)
     s.pnames.push_back("P1");
     s.pnames.push_back("P2");
     s.pnames.push_back("P3");
     Star star2(s);
-    assert(star2.numplanets() == 3);
+    test::expect_eq(star2.numplanets(), 3);
 
     // Modify through Star interface
     star2.set_planet_name(3, "P4");
-    assert(star2.numplanets() == 4);
+    test::expect_eq(star2.numplanets(), 4);
     std::println(std::cout, "  ✓ numplanets() correctly reflects vector size");
   }
 

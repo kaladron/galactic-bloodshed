@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import gblib;
-import std;
+/// \file invariant_log_test.cc
+/// \brief Unit test ensuring log_invariant_violation compiles and executes
+/// across diverse types.
 
-#include <cassert>
+import gblib;
+import test;
+import std;
 
 int main() {
   // Test that log_invariant_violation compiles and can be called
@@ -21,10 +24,6 @@ int main() {
   // Test with source location (implicit)
   log_invariant_violation("Race", "tech", -1.0, 0.0);
 
-  std::println(std::cout, "Invariant logging test passed!");
-  std::println(std::cout,
-               "Note: If kDebugInvariants is true, you should see [INVARIANT] "
-               "messages above.");
-
+  std::println(std::cout, "✓ Invariant logging test passed!");
   return 0;
 }

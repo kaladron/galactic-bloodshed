@@ -330,608 +330,176 @@ add_executable(GB GB_server.cc)
 target_link_libraries(GB PRIVATE gblib commands asio_module session auth server_config server SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB)
 
-# Test targets
-add_executable(scnlib_test scnlib_test.cc)
-target_link_libraries(scnlib_test PRIVATE scnlib_module)
-add_test(NAME GB_scnlib_test COMMAND scnlib_test)
+# Test helper function
+function(gb_add_test name)
+  cmake_parse_arguments(ARG "" "" "SOURCES;EXTRA_LIBS" ${ARGN})
+  if(NOT ARG_SOURCES)
+    set(ARG_SOURCES ${name}.cc)
+  endif()
+  add_executable(${name} ${ARG_SOURCES})
+  target_link_libraries(${name} PRIVATE
+    test_module dallib gblib commands SQLite::SQLite3 glaze::glaze ${ARG_EXTRA_LIBS}
+  )
+  add_test(NAME GB_${name} COMMAND ${name})
+endfunction()
 
+# Test targets
 add_executable(asio_test asio_test.cc)
 target_link_libraries(asio_test PRIVATE asio_module)
 add_test(NAME GB_asio_test COMMAND asio_test)
 
-add_executable(session_test session_test.cc)
-target_link_libraries(session_test PRIVATE gblib session)
-add_test(NAME GB_session_test COMMAND session_test)
-
-add_executable(server_test server_test.cc)
-target_link_libraries(server_test PRIVATE test_module dallib gblib asio_module session auth server commands notification SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_server_test COMMAND server_test)
-
-add_executable(notification_test notification_test.cc)
-target_link_libraries(notification_test PRIVATE gblib session notification dallib)
-add_test(NAME GB_notification_test COMMAND notification_test)
-
-add_executable(who_test commands/who_test.cc)
-target_link_libraries(who_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_who_test COMMAND who_test)
-
-add_executable(emulate_test commands/emulate_test.cc)
-target_link_libraries(emulate_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_emulate_test COMMAND emulate_test)
-
-add_executable(shlmisc_test shlmisc_test.cc)
-target_link_libraries(shlmisc_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_shlmisc_test COMMAND shlmisc_test)
-
-add_executable(shiplist_test shiplist_test.cc)
-target_link_libraries(shiplist_test PRIVATE test_module gblib dallib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_shiplist_test COMMAND shiplist_test)
-
-add_executable(shipfilter_test shipfilter_test.cc)
-target_link_libraries(shipfilter_test PRIVATE gblib dallib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_shipfilter_test COMMAND shipfilter_test)
-
-add_executable(doship_repair_test doship_repair_test.cc)
-target_link_libraries(doship_repair_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_doship_repair_test COMMAND doship_repair_test)
-
-add_executable(gblib_test gblib_test.cc)
-target_link_libraries(gblib_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_gblib_test COMMAND gblib_test)
-
-add_executable(invariant_log_test invariant_log_test.cc)
-target_link_libraries(invariant_log_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_invariant_log_test COMMAND invariant_log_test)
-
-add_executable(bitops_test bitops_test.cc)
-target_link_libraries(bitops_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_bitops_test COMMAND bitops_test)
-
-add_executable(estimate_test estimate_test.cc)
-target_link_libraries(estimate_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_estimate_test COMMAND estimate_test)
-
-add_executable(build_test build_test.cc)
-target_link_libraries(build_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_build_test COMMAND build_test)
-
-add_executable(move_test move_test.cc)
-target_link_libraries(move_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_move_test COMMAND move_test)
-
-add_executable(dosector_simple_test dosector_simple_test.cc)
-target_link_libraries(dosector_simple_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_dosector_simple_test COMMAND dosector_simple_test)
-
-add_executable(doplanet_test doplanet_test.cc)
-target_link_libraries(doplanet_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_doplanet_test COMMAND doplanet_test)
-
-add_executable(doship_test doship_test.cc)
-target_link_libraries(doship_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_doship_test COMMAND doship_test)
-
-add_executable(doturn_test doturn_test.cc)
-target_link_libraries(doturn_test PRIVATE gblib SQLite::SQLite3)
-add_test(NAME GB_doturn_test COMMAND doturn_test)
-
-add_executable(sectormap_sqlite_test sectormap_sqlite_test.cc)
-target_link_libraries(sectormap_sqlite_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_sectormap_sqlite_test COMMAND sectormap_sqlite_test)
-
-add_executable(stardata_json_test stardata_json_test.cc)
-target_link_libraries(stardata_json_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_stardata_json_test COMMAND stardata_json_test)
-
-add_executable(commod_json_test commod_json_test.cc)
-target_link_libraries(commod_json_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_commod_json_test COMMAND commod_json_test)
-
-add_executable(block_json_test block_json_test.cc)
-target_link_libraries(block_json_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_block_json_test COMMAND block_json_test)
-
-add_executable(power_json_test power_json_test.cc)
-target_link_libraries(power_json_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_power_json_test COMMAND power_json_test)
-
-add_executable(strong_id_json_test strong_id_json_test.cc)
-target_link_libraries(strong_id_json_test PRIVATE gblib glaze_core_module glaze::glaze)
-add_test(NAME GB_strong_id_json_test COMMAND strong_id_json_test)
-
-add_executable(coordinates_test coordinates_test.cc)
-target_link_libraries(coordinates_test PRIVATE gblib)
-add_test(NAME GB_coordinates_test COMMAND coordinates_test)
-
-add_executable(star_test star_test.cc)
-target_link_libraries(star_test PRIVATE gblib)
-add_test(NAME GB_star_test COMMAND star_test)
-
-add_executable(star_sqlite_test star_sqlite_test.cc)
-target_link_libraries(star_sqlite_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_star_sqlite_test COMMAND star_sqlite_test)
-
-add_executable(planet_sqlite_test planet_sqlite_test.cc)
-target_link_libraries(planet_sqlite_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_planet_sqlite_test COMMAND planet_sqlite_test)
-
-add_executable(freeid_test freeid_test.cc)
-target_link_libraries(freeid_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_freeid_test COMMAND freeid_test)
-
-add_executable(numships_test numships_test.cc)
-target_link_libraries(numships_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_numships_test COMMAND numships_test)
-
-add_executable(database_test dal/database_test.cc)
-target_link_libraries(database_test PRIVATE dallib)
-add_test(NAME GB_database_test COMMAND database_test)
-
-add_executable(berserker_bombard_test berserker_bombard_test.cc)
-target_link_libraries(berserker_bombard_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_berserker_bombard_test COMMAND berserker_bombard_test)
-
-add_executable(vn_steal_test vn_steal_test.cc)
-target_link_libraries(vn_steal_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_vn_steal_test COMMAND vn_steal_test)
-
-add_executable(json_store_test dal/json_store_test.cc)
-target_link_libraries(json_store_test PRIVATE dallib)
-add_test(NAME GB_json_store_test COMMAND json_store_test)
-
-add_executable(race_repository_test repositories/race_repository_test.cc)
-target_link_libraries(race_repository_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_race_repository_test COMMAND race_repository_test)
-
-add_executable(ship_repository_test repositories/ship_repository_test.cc)
-target_link_libraries(ship_repository_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_ship_repository_test COMMAND ship_repository_test)
-
-add_executable(planet_repository_test repositories/planet_repository_test.cc)
-target_link_libraries(planet_repository_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_planet_repository_test COMMAND planet_repository_test)
-
-add_executable(star_repository_test repositories/star_repository_test.cc)
-target_link_libraries(star_repository_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_star_repository_test COMMAND star_repository_test)
-
-add_executable(sector_repository_test repositories/sector_repository_test.cc)
-target_link_libraries(sector_repository_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_sector_repository_test COMMAND sector_repository_test)
-
-add_executable(misc_repositories_test repositories/misc_repositories_test.cc)
-target_link_libraries(misc_repositories_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_misc_repositories_test COMMAND misc_repositories_test)
-
-add_executable(entity_manager_test services/entity_manager_test.cc)
-target_link_libraries(entity_manager_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_entity_manager_test COMMAND entity_manager_test)
-
-add_executable(entity_manager_kill_ship_test services/entity_manager_kill_ship_test.cc)
-target_link_libraries(entity_manager_kill_ship_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_entity_manager_kill_ship_test COMMAND entity_manager_kill_ship_test)
-
-add_executable(entity_lists_test entity_lists_test.cc)
-target_link_libraries(entity_lists_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_entity_lists_test COMMAND entity_lists_test)
-
-add_executable(universe_test universe_test.cc)
-target_link_libraries(universe_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_universe_test COMMAND universe_test)
-
-add_executable(makeplanet_test creator/makeplanet_test.cc creator/makeplanet.cc creator/makestar.cc)
-target_link_libraries(makeplanet_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_makeplanet_test COMMAND makeplanet_test)
-
-add_executable(enroll_test enroll_test.cc GB_racegen.cc)
-target_link_libraries(enroll_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze scnlib_module)
-add_test(NAME GB_enroll_test COMMAND enroll_test)
-
-add_executable(shootblast_test shootblast_test.cc)
-target_link_libraries(shootblast_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_shootblast_test COMMAND shootblast_test)
-
-add_executable(ground_attack_test ground_attack_test.cc)
-target_link_libraries(ground_attack_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_ground_attack_test COMMAND ground_attack_test)
-
-add_executable(autoreport_test commands/autoreport_test.cc)
-target_link_libraries(autoreport_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_autoreport_test COMMAND autoreport_test)
-
-add_executable(tactical_test commands/tactical_test.cc)
-target_link_libraries(tactical_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze tabulate::tabulate)
-add_test(NAME GB_tactical_test COMMAND tactical_test)
-
-add_executable(motto_test commands/motto_test.cc)
-target_link_libraries(motto_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_motto_test COMMAND motto_test)
-
-add_executable(highlight_test commands/highlight_test.cc)
-target_link_libraries(highlight_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_highlight_test COMMAND highlight_test)
-
-add_executable(capital_test commands/capital_test.cc)
-target_link_libraries(capital_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_capital_test COMMAND capital_test)
-
-add_executable(bless_test commands/bless_test.cc)
-target_link_libraries(bless_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_bless_test COMMAND bless_test)
-
-add_executable(tax_test commands/tax_test.cc)
-target_link_libraries(tax_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_tax_test COMMAND tax_test)
-
-add_executable(technology_test commands/technology_test.cc)
-target_link_libraries(technology_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_technology_test COMMAND technology_test)
-
-add_executable(mobilize_test commands/mobilize_test.cc)
-target_link_libraries(mobilize_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_mobilize_test COMMAND mobilize_test)
-
-add_executable(name_test commands/name_test.cc)
-target_link_libraries(name_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_name_test COMMAND name_test)
-
-add_executable(power_command_test commands/power_test.cc)
-target_link_libraries(power_command_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze tabulate::tabulate)
-add_test(NAME GB_power_command_test COMMAND power_command_test)
-
-add_executable(declare_test commands/declare_test.cc)
-target_link_libraries(declare_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_declare_test COMMAND declare_test)
-
-add_executable(grant_test commands/grant_test.cc)
-target_link_libraries(grant_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_grant_test COMMAND grant_test)
-
-add_executable(dissolve_test commands/dissolve_test.cc)
-target_link_libraries(dissolve_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_dissolve_test COMMAND dissolve_test)
-
-add_executable(route_test commands/route_test.cc)
-target_link_libraries(route_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_route_test COMMAND route_test)
-
-add_executable(toxicity_test commands/toxicity_test.cc)
-target_link_libraries(toxicity_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_toxicity_test COMMAND toxicity_test)
-
-add_executable(toggle_test commands/toggle_test.cc)
-target_link_libraries(toggle_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_toggle_test COMMAND toggle_test)
-
-add_executable(pay_test commands/pay_test.cc)
-target_link_libraries(pay_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_pay_test COMMAND pay_test)
-
-add_executable(order_test commands/order_test.cc)
-target_link_libraries(order_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_order_test COMMAND order_test)
-
-add_executable(cs_test commands/cs_test.cc)
-target_link_libraries(cs_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_cs_test COMMAND cs_test)
-
-add_executable(orbit_test commands/orbit_test.cc)
-target_link_libraries(orbit_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_orbit_test COMMAND orbit_test)
-
-add_executable(dock_test commands/dock_test.cc)
-target_link_libraries(dock_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_dock_test COMMAND dock_test)
-
-add_executable(dump_test commands/dump_test.cc)
-target_link_libraries(dump_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_dump_test COMMAND dump_test)
-
-add_executable(jettison_test commands/jettison_test.cc)
-target_link_libraries(jettison_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_jettison_test COMMAND jettison_test)
-
-add_executable(scrap_test commands/scrap_test.cc)
-target_link_libraries(scrap_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_scrap_test COMMAND scrap_test)
-
-add_executable(sell_test commands/sell_test.cc)
-target_link_libraries(sell_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_sell_test COMMAND sell_test)
-
-add_executable(transfer_test commands/transfer_test.cc)
-target_link_libraries(transfer_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_transfer_test COMMAND transfer_test)
-
-add_executable(bid_test commands/bid_test.cc)
-target_link_libraries(bid_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_bid_test COMMAND bid_test)
-
-add_executable(treasury_test commands/treasury_test.cc)
-target_link_libraries(treasury_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_treasury_test COMMAND treasury_test)
-
-add_executable(invite_test commands/invite_test.cc)
-target_link_libraries(invite_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_invite_test COMMAND invite_test)
-
-add_executable(allocate_test commands/allocate_test.cc)
-target_link_libraries(allocate_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_allocate_test COMMAND allocate_test)
-
-add_executable(time_test commands/time_test.cc)
-target_link_libraries(time_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_time_test COMMAND time_test)
-
-add_executable(schedule_test commands/schedule_test.cc)
-target_link_libraries(schedule_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_schedule_test COMMAND schedule_test)
-
-add_executable(survey_test commands/survey_test.cc)
-target_link_libraries(survey_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_survey_test COMMAND survey_test)
-
-add_executable(upgrade_test commands/upgrade_test.cc)
-target_link_libraries(upgrade_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_upgrade_test COMMAND upgrade_test)
-
-add_executable(make_mod_test commands/make_mod_test.cc)
-target_link_libraries(make_mod_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_make_mod_test COMMAND make_mod_test)
-
-add_executable(map_test commands/map_test.cc)
-target_link_libraries(map_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_map_test COMMAND map_test)
-
-add_executable(mount_test commands/mount_test.cc)
-target_link_libraries(mount_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_mount_test COMMAND mount_test)
-
-add_executable(fix_test commands/fix_test.cc)
-target_link_libraries(fix_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_fix_test COMMAND fix_test)
-
-# Batch 10 tests (sector operations)
-add_executable(arm_test commands/arm_test.cc)
-target_link_libraries(arm_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_arm_test COMMAND arm_test)
-
-add_executable(defend_test commands/defend_test.cc)
-target_link_libraries(defend_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_defend_test COMMAND defend_test)
-
-add_executable(repair_test commands/repair_test.cc)
-target_link_libraries(repair_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_repair_test COMMAND repair_test)
-
-# Batch 11 tests (population/ground operations)
-add_executable(move_popn_test commands/move_popn_test.cc)
-target_link_libraries(move_popn_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_move_popn_test COMMAND move_popn_test)
-
-add_executable(walk_test commands/walk_test.cc)
-target_link_libraries(walk_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_walk_test COMMAND walk_test)
-
-add_executable(enslave_test commands/enslave_test.cc)
-target_link_libraries(enslave_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_enslave_test COMMAND enslave_test)
-
-add_executable(insurgency_test commands/insurgency_test.cc)
-target_link_libraries(insurgency_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_insurgency_test COMMAND insurgency_test)
-
-add_executable(land_test commands/land_test.cc)
-target_link_libraries(land_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_land_test COMMAND land_test)
-
-add_executable(launch_test commands/launch_test.cc)
-target_link_libraries(launch_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_launch_test COMMAND launch_test)
-
-add_executable(build_command_test commands/build_test.cc)
-target_link_libraries(build_command_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_build_command_test COMMAND build_command_test)
-
-add_executable(build_test_extended commands/build_test_extended.cc)
-target_link_libraries(build_test_extended PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_build_test_extended COMMAND build_test_extended)
-
-add_executable(build_table_test commands/build_table_test.cc)
-target_link_libraries(build_table_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_build_table_test COMMAND build_table_test)
-
-add_executable(capture_test commands/capture_test.cc)
-target_link_libraries(capture_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_capture_test COMMAND capture_test)
-
-add_executable(detonate_test commands/detonate_test.cc)
-target_link_libraries(detonate_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_detonate_test COMMAND detonate_test)
-
-add_executable(fire_test commands/fire_test.cc)
-target_link_libraries(fire_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_fire_test COMMAND fire_test)
-
-add_executable(bombard_test commands/bombard_test.cc)
-target_link_libraries(bombard_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_bombard_test COMMAND bombard_test)
-
-add_executable(give_test commands/give_test.cc)
-target_link_libraries(give_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_give_test COMMAND give_test)
-
-add_executable(help_test help_test.cc)
-target_link_libraries(help_test PRIVATE gblib)
-add_test(NAME GB_help_test COMMAND help_test)
-
-add_executable(quit_test commands/quit_test.cc)
-target_link_libraries(quit_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_quit_test COMMAND quit_test)
-
-add_executable(purge_test commands/purge_test.cc)
-target_link_libraries(purge_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_purge_test COMMAND purge_test)
-
-add_executable(shutdown_test commands/shutdown_test.cc)
-target_link_libraries(shutdown_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_shutdown_test COMMAND shutdown_test)
-
-add_executable(load_test commands/load_test.cc)
-target_link_libraries(load_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_load_test COMMAND load_test)
-
-add_executable(send_message_test commands/send_message_test.cc)
-target_link_libraries(send_message_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_send_message_test COMMAND send_message_test)
-
-add_executable(news_test news_test.cc)
-target_link_libraries(news_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_news_test COMMAND news_test)
-
-add_executable(telegram_test telegram_test.cc)
-target_link_libraries(telegram_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_telegram_test COMMAND telegram_test)
-
-add_executable(analysis_test commands/analysis_test.cc)
-target_link_libraries(analysis_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_analysis_test COMMAND analysis_test)
-
-add_executable(block_test commands/block_test.cc)
-target_link_libraries(block_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_block_test COMMAND block_test)
-
-add_executable(examine_test commands/examine_test.cc)
-target_link_libraries(examine_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_examine_test COMMAND examine_test)
-
-add_executable(explore_test commands/explore_test.cc)
-target_link_libraries(explore_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_explore_test COMMAND explore_test)
-
-add_executable(distance_test commands/distance_test.cc)
-target_link_libraries(distance_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_distance_test COMMAND distance_test)
-
-add_executable(star_locations_test commands/star_locations_test.cc)
-target_link_libraries(star_locations_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_star_locations_test COMMAND star_locations_test)
-
-add_executable(tech_status_test commands/tech_status_test.cc)
-target_link_libraries(tech_status_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_tech_status_test COMMAND tech_status_test)
-
-add_executable(rst_test commands/rst_test.cc)
-target_link_libraries(rst_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_rst_test COMMAND rst_test)
-
-add_executable(dispatch_pipeline_test commands/dispatch_pipeline_test.cc)
-target_link_libraries(dispatch_pipeline_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_dispatch_pipeline_test COMMAND dispatch_pipeline_test)
-
-add_executable(gameobj_ap_test gameobj_ap_test.cc)
-target_link_libraries(gameobj_ap_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_gameobj_ap_test COMMAND gameobj_ap_test)
-
-add_executable(command_registry_test commands/command_registry_test.cc)
-target_link_libraries(command_registry_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_command_registry_test COMMAND command_registry_test)
-
-add_executable(test_context_test test_context_test.cc)
-target_link_libraries(test_context_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_test_context_test COMMAND test_context_test)
-
-add_executable(server_command_test server_command_test.cc)
-target_link_libraries(server_command_test PRIVATE test_module dallib gblib session commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_server_command_test COMMAND server_command_test)
-
-add_executable(governors_test commands/governors_test.cc)
-target_link_libraries(governors_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_governors_test COMMAND governors_test)
-
-add_executable(help_command_test commands/help_test.cc)
-target_link_libraries(help_command_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_help_command_test COMMAND help_command_test)
-
-add_executable(zoom_test commands/zoom_test.cc)
-target_link_libraries(zoom_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_zoom_test COMMAND zoom_test)
-
-add_executable(center_test commands/center_test.cc)
-target_link_libraries(center_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_center_test COMMAND center_test)
-
-add_executable(fuel_test commands/fuel_test.cc)
-target_link_libraries(fuel_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_fuel_test COMMAND fuel_test)
-
-add_executable(profile_test commands/profile_test.cc)
-target_link_libraries(profile_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_profile_test COMMAND profile_test)
-
-add_executable(production_test commands/production_test.cc)
-target_link_libraries(production_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_production_test COMMAND production_test)
-
-add_executable(victory_test commands/victory_test.cc)
-target_link_libraries(victory_test PRIVATE test_module dallib gblib commands scnlib_module SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_victory_test COMMAND victory_test)
-
-add_executable(relation_test commands/relation_test.cc)
-target_link_libraries(relation_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_relation_test COMMAND relation_test)
-
-add_executable(pledge_test commands/pledge_test.cc)
-target_link_libraries(pledge_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_pledge_test COMMAND pledge_test)
-
-add_executable(unpledge_test commands/unpledge_test.cc)
-target_link_libraries(unpledge_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_unpledge_test COMMAND unpledge_test)
-
-add_executable(page_test commands/page_test.cc)
-target_link_libraries(page_test PRIVATE test_module dallib gblib commands session notification SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_page_test COMMAND page_test)
-
-add_executable(announce_test commands/announce_test.cc)
-target_link_libraries(announce_test PRIVATE test_module dallib gblib commands session notification SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_announce_test COMMAND announce_test)
-
-add_executable(personal_test commands/personal_test.cc)
-target_link_libraries(personal_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_personal_test COMMAND personal_test)
-
-add_executable(whois_test commands/whois_test.cc)
-target_link_libraries(whois_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_whois_test COMMAND whois_test)
-
-add_executable(colonies_test commands/colonies_test.cc)
-target_link_libraries(colonies_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_colonies_test COMMAND colonies_test)
-
-add_executable(vote_test commands/vote_test.cc)
-target_link_libraries(vote_test PRIVATE test_module dallib gblib commands session notification SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_vote_test COMMAND vote_test)
-
-add_executable(prompt_test prompt_test.cc)
-target_link_libraries(prompt_test PRIVATE test_module dallib gblib SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_prompt_test COMMAND prompt_test)
-
-add_executable(auth_test services/auth_test.cc)
-target_link_libraries(auth_test PRIVATE test_module dallib gblib session auth commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_auth_test COMMAND auth_test)
-
-add_executable(server_config_test services/server_config_test.cc)
-target_link_libraries(server_config_test PRIVATE test_module dallib gblib server_config SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_server_config_test COMMAND server_config_test)
-
-add_executable(update_test commands/update_test.cc)
-target_link_libraries(update_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_update_test COMMAND update_test)
-
-add_executable(segment_test commands/segment_test.cc)
-target_link_libraries(segment_test PRIVATE test_module dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME GB_segment_test COMMAND segment_test)
+add_executable(scnlib_test scnlib_test.cc)
+target_link_libraries(scnlib_test PRIVATE scnlib_module)
+add_test(NAME GB_scnlib_test COMMAND scnlib_test)
+
+gb_add_test(allocate_test SOURCES commands/allocate_test.cc)
+gb_add_test(analysis_test SOURCES commands/analysis_test.cc)
+gb_add_test(announce_test SOURCES commands/announce_test.cc EXTRA_LIBS session notification)
+gb_add_test(arm_test SOURCES commands/arm_test.cc)
+gb_add_test(auth_test SOURCES services/auth_test.cc EXTRA_LIBS session auth)
+gb_add_test(autoreport_test SOURCES commands/autoreport_test.cc)
+gb_add_test(berserker_bombard_test)
+gb_add_test(bid_test SOURCES commands/bid_test.cc)
+gb_add_test(bitops_test)
+gb_add_test(bless_test SOURCES commands/bless_test.cc)
+gb_add_test(block_json_test)
+gb_add_test(block_test SOURCES commands/block_test.cc)
+gb_add_test(bombard_test SOURCES commands/bombard_test.cc)
+gb_add_test(build_command_test SOURCES commands/build_test.cc)
+gb_add_test(build_table_test SOURCES commands/build_table_test.cc)
+gb_add_test(build_test)
+gb_add_test(build_test_extended SOURCES commands/build_test_extended.cc)
+gb_add_test(capital_test SOURCES commands/capital_test.cc)
+gb_add_test(capture_test SOURCES commands/capture_test.cc)
+gb_add_test(center_test SOURCES commands/center_test.cc)
+gb_add_test(colonies_test SOURCES commands/colonies_test.cc)
+gb_add_test(command_registry_test SOURCES commands/command_registry_test.cc)
+gb_add_test(commod_json_test)
+gb_add_test(coordinates_test)
+gb_add_test(cs_test SOURCES commands/cs_test.cc)
+gb_add_test(database_test SOURCES dal/database_test.cc)
+gb_add_test(declare_test SOURCES commands/declare_test.cc)
+gb_add_test(defend_test SOURCES commands/defend_test.cc)
+gb_add_test(detonate_test SOURCES commands/detonate_test.cc)
+gb_add_test(dispatch_pipeline_test SOURCES commands/dispatch_pipeline_test.cc)
+gb_add_test(dissolve_test SOURCES commands/dissolve_test.cc)
+gb_add_test(distance_test SOURCES commands/distance_test.cc)
+gb_add_test(dock_test SOURCES commands/dock_test.cc)
+gb_add_test(doplanet_test)
+gb_add_test(dosector_simple_test)
+gb_add_test(doship_repair_test)
+gb_add_test(doship_test)
+gb_add_test(doturn_test)
+gb_add_test(dump_test SOURCES commands/dump_test.cc)
+gb_add_test(emulate_test SOURCES commands/emulate_test.cc)
+gb_add_test(enroll_test SOURCES enroll_test.cc GB_racegen.cc EXTRA_LIBS scnlib_module)
+gb_add_test(enslave_test SOURCES commands/enslave_test.cc)
+gb_add_test(entity_lists_test)
+gb_add_test(entity_manager_kill_ship_test SOURCES services/entity_manager_kill_ship_test.cc)
+gb_add_test(entity_manager_test SOURCES services/entity_manager_test.cc)
+gb_add_test(estimate_test)
+gb_add_test(examine_test SOURCES commands/examine_test.cc)
+gb_add_test(explore_test SOURCES commands/explore_test.cc)
+gb_add_test(fire_test SOURCES commands/fire_test.cc)
+gb_add_test(fix_test SOURCES commands/fix_test.cc)
+gb_add_test(freeid_test)
+gb_add_test(fuel_test SOURCES commands/fuel_test.cc)
+gb_add_test(gameobj_ap_test)
+gb_add_test(gblib_test)
+gb_add_test(give_test SOURCES commands/give_test.cc)
+gb_add_test(governors_test SOURCES commands/governors_test.cc)
+gb_add_test(grant_test SOURCES commands/grant_test.cc)
+gb_add_test(ground_attack_test)
+gb_add_test(help_command_test SOURCES commands/help_test.cc)
+gb_add_test(help_test)
+gb_add_test(highlight_test SOURCES commands/highlight_test.cc)
+gb_add_test(insurgency_test SOURCES commands/insurgency_test.cc)
+gb_add_test(invariant_log_test)
+gb_add_test(invite_test SOURCES commands/invite_test.cc)
+gb_add_test(jettison_test SOURCES commands/jettison_test.cc)
+gb_add_test(json_store_test SOURCES dal/json_store_test.cc)
+gb_add_test(land_test SOURCES commands/land_test.cc)
+gb_add_test(launch_test SOURCES commands/launch_test.cc)
+gb_add_test(load_test SOURCES commands/load_test.cc)
+gb_add_test(make_mod_test SOURCES commands/make_mod_test.cc)
+gb_add_test(makeplanet_test SOURCES creator/makeplanet_test.cc creator/makeplanet.cc creator/makestar.cc)
+gb_add_test(map_test SOURCES commands/map_test.cc)
+gb_add_test(misc_repositories_test SOURCES repositories/misc_repositories_test.cc)
+gb_add_test(mobilize_test SOURCES commands/mobilize_test.cc)
+gb_add_test(motto_test SOURCES commands/motto_test.cc)
+gb_add_test(mount_test SOURCES commands/mount_test.cc)
+gb_add_test(move_popn_test SOURCES commands/move_popn_test.cc)
+gb_add_test(move_test)
+gb_add_test(name_test SOURCES commands/name_test.cc)
+gb_add_test(news_test)
+gb_add_test(notification_test EXTRA_LIBS session notification)
+gb_add_test(numships_test)
+gb_add_test(orbit_test SOURCES commands/orbit_test.cc)
+gb_add_test(order_test SOURCES commands/order_test.cc)
+gb_add_test(page_test SOURCES commands/page_test.cc EXTRA_LIBS session notification)
+gb_add_test(pay_test SOURCES commands/pay_test.cc)
+gb_add_test(personal_test SOURCES commands/personal_test.cc)
+gb_add_test(planet_repository_test SOURCES repositories/planet_repository_test.cc)
+gb_add_test(planet_sqlite_test)
+gb_add_test(pledge_test SOURCES commands/pledge_test.cc)
+gb_add_test(power_command_test SOURCES commands/power_test.cc EXTRA_LIBS tabulate::tabulate)
+gb_add_test(power_json_test)
+gb_add_test(production_test SOURCES commands/production_test.cc)
+gb_add_test(profile_test SOURCES commands/profile_test.cc)
+gb_add_test(prompt_test)
+gb_add_test(purge_test SOURCES commands/purge_test.cc)
+gb_add_test(quit_test SOURCES commands/quit_test.cc)
+gb_add_test(race_repository_test SOURCES repositories/race_repository_test.cc)
+gb_add_test(relation_test SOURCES commands/relation_test.cc)
+gb_add_test(repair_test SOURCES commands/repair_test.cc)
+gb_add_test(route_test SOURCES commands/route_test.cc)
+gb_add_test(rst_test SOURCES commands/rst_test.cc)
+gb_add_test(schedule_test SOURCES commands/schedule_test.cc)
+gb_add_test(scrap_test SOURCES commands/scrap_test.cc)
+gb_add_test(sector_repository_test SOURCES repositories/sector_repository_test.cc)
+gb_add_test(sectormap_sqlite_test)
+gb_add_test(segment_test SOURCES commands/segment_test.cc)
+gb_add_test(sell_test SOURCES commands/sell_test.cc)
+gb_add_test(send_message_test SOURCES commands/send_message_test.cc)
+gb_add_test(server_command_test EXTRA_LIBS session)
+gb_add_test(server_config_test SOURCES services/server_config_test.cc EXTRA_LIBS server_config)
+gb_add_test(server_test EXTRA_LIBS asio_module session auth server notification)
+gb_add_test(session_test EXTRA_LIBS session)
+gb_add_test(ship_repository_test SOURCES repositories/ship_repository_test.cc)
+gb_add_test(shipfilter_test)
+gb_add_test(shiplist_test)
+gb_add_test(shlmisc_test)
+gb_add_test(shootblast_test)
+gb_add_test(shutdown_test SOURCES commands/shutdown_test.cc)
+gb_add_test(star_locations_test SOURCES commands/star_locations_test.cc)
+gb_add_test(star_repository_test SOURCES repositories/star_repository_test.cc)
+gb_add_test(star_sqlite_test)
+gb_add_test(star_test)
+gb_add_test(stardata_json_test)
+gb_add_test(strong_id_json_test EXTRA_LIBS glaze_core_module)
+gb_add_test(survey_test SOURCES commands/survey_test.cc)
+gb_add_test(tactical_test SOURCES commands/tactical_test.cc EXTRA_LIBS tabulate::tabulate)
+gb_add_test(tax_test SOURCES commands/tax_test.cc)
+gb_add_test(tech_status_test SOURCES commands/tech_status_test.cc)
+gb_add_test(technology_test SOURCES commands/technology_test.cc)
+gb_add_test(telegram_test)
+gb_add_test(test_context_test)
+gb_add_test(time_test SOURCES commands/time_test.cc)
+gb_add_test(toggle_test SOURCES commands/toggle_test.cc)
+gb_add_test(toxicity_test SOURCES commands/toxicity_test.cc)
+gb_add_test(transfer_test SOURCES commands/transfer_test.cc)
+gb_add_test(treasury_test SOURCES commands/treasury_test.cc)
+gb_add_test(universe_test)
+gb_add_test(unpledge_test SOURCES commands/unpledge_test.cc)
+gb_add_test(update_test SOURCES commands/update_test.cc)
+gb_add_test(upgrade_test SOURCES commands/upgrade_test.cc)
+gb_add_test(victory_test SOURCES commands/victory_test.cc EXTRA_LIBS scnlib_module)
+gb_add_test(vn_steal_test)
+gb_add_test(vote_test SOURCES commands/vote_test.cc EXTRA_LIBS session notification)
+gb_add_test(walk_test SOURCES commands/walk_test.cc)
+gb_add_test(who_test SOURCES commands/who_test.cc)
+gb_add_test(whois_test SOURCES commands/whois_test.cc)
+gb_add_test(zoom_test SOURCES commands/zoom_test.cc)
 
 # Custom target to run GB with AddressSanitizer options for detailed leak detection
 add_custom_target(run-gb-debug

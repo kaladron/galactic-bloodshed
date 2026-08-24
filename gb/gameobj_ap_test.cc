@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gameobj_ap_test.cc
+/// \brief Unit tests for GameObj star and universe action point deduction and
+/// validation.
+
 import dallib;
 import gblib;
 import test;
 import std;
-
-#include <cassert>
 
 namespace {
 
@@ -25,31 +27,31 @@ void test_deduct_ap_star() {
   ctx.setup_game_obj(g, player_t{1}, governor_t{0});
 
   // 1. Zero amount deduction succeeds without changing AP
-  assert(g.deduct_ap(starnum_t{1}, 0));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 20);
+  test::expect_true(g.deduct_ap(starnum_t{1}, 0));
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 20);
 
   // 2. Non-existent star or star 0 returns false
-  assert(!g.deduct_ap(starnum_t{0}, 5));
-  assert(!g.deduct_ap(starnum_t{999}, 5));
+  test::expect_false(g.deduct_ap(starnum_t{0}, 5));
+  test::expect_false(g.deduct_ap(starnum_t{999}, 5));
 
   // 3. Normal deduction
-  assert(g.deduct_ap(starnum_t{1}, 5));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 15);
+  test::expect_true(g.deduct_ap(starnum_t{1}, 5));
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 15);
 
   // 4. Insufficient AP fails and leaves AP unchanged
-  assert(!g.deduct_ap(starnum_t{1}, 20));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 15);
+  test::expect_false(g.deduct_ap(starnum_t{1}, 20));
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 15);
 
   // 5. Sequential and exact deduction
-  assert(g.deduct_ap(starnum_t{1}, 10));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 5);
-  assert(g.deduct_ap(starnum_t{1}, 5));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 0);
+  test::expect_true(g.deduct_ap(starnum_t{1}, 10));
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 5);
+  test::expect_true(g.deduct_ap(starnum_t{1}, 5));
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 0);
 
   // 6. God mode bypasses AP check and leaves 0 AP intact
   g.set_god(true);
-  assert(g.deduct_ap(starnum_t{1}, 50));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 0);
+  test::expect_true(g.deduct_ap(starnum_t{1}, 50));
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 0);
 }
 
 void test_deduct_univ_ap() {
@@ -67,25 +69,25 @@ void test_deduct_univ_ap() {
   ctx.setup_game_obj(g, player_t{1}, governor_t{0});
 
   // 1. Zero amount deduction succeeds
-  assert(g.deduct_univ_ap(0));
-  assert(ctx.em.peek_universe()->AP[0] == 25);
+  test::expect_true(g.deduct_univ_ap(0));
+  test::expect_eq(ctx.em.peek_universe()->AP[0], 25);
 
   // 2. Normal deduction
-  assert(g.deduct_univ_ap(10));
-  assert(ctx.em.peek_universe()->AP[0] == 15);
+  test::expect_true(g.deduct_univ_ap(10));
+  test::expect_eq(ctx.em.peek_universe()->AP[0], 15);
 
   // 3. Insufficient AP fails and leaves Univ AP unchanged
-  assert(!g.deduct_univ_ap(20));
-  assert(ctx.em.peek_universe()->AP[0] == 15);
+  test::expect_false(g.deduct_univ_ap(20));
+  test::expect_eq(ctx.em.peek_universe()->AP[0], 15);
 
   // 4. Exact deduction to zero
-  assert(g.deduct_univ_ap(15));
-  assert(ctx.em.peek_universe()->AP[0] == 0);
+  test::expect_true(g.deduct_univ_ap(15));
+  test::expect_eq(ctx.em.peek_universe()->AP[0], 0);
 
   // 5. God mode bypasses Univ AP deduction
   g.set_god(true);
-  assert(g.deduct_univ_ap(50));
-  assert(ctx.em.peek_universe()->AP[0] == 0);
+  test::expect_true(g.deduct_univ_ap(50));
+  test::expect_eq(ctx.em.peek_universe()->AP[0], 0);
 }
 
 }  // namespace

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file entity_lists_test.cc
+/// \brief Unit tests for RaceList, StarList, PlanetList, CommodList, and
+/// ShipList iteration helpers.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
-
-// Test for RaceList, StarList, and PlanetList iteration helpers
 
 namespace {
 
@@ -106,16 +107,16 @@ void test_race_list_readonly(EntityManager& em) {
 
     count++;
     seen_players.push_back(race->Playernum);
-    assert(race->Playernum.value == count);
-    assert(race->governor[0].money ==
-           static_cast<money_t>(race->Playernum.value) * 1000L);
+    test::expect_eq(race->Playernum.value, count);
+    test::expect_eq(race->governor[0].money,
+                    static_cast<money_t>(race->Playernum.value) * 1000L);
   }
 
-  assert(count == 3);
-  assert(seen_players.size() == 3);
-  assert(seen_players[0] == player_t{1});
-  assert(seen_players[1] == player_t{2});
-  assert(seen_players[2] == player_t{3});
+  test::expect_eq(count, 3);
+  test::expect_eq(seen_players.size(), 3);
+  test::expect_eq(seen_players[0], player_t{1});
+  test::expect_eq(seen_players[1], player_t{2});
+  test::expect_eq(seen_players[2], player_t{3});
   std::println(std::cout,
                "  RaceList: iterated {} races, all have correct Playernum",
                count);
@@ -133,13 +134,14 @@ void test_star_list_readonly(EntityManager& em) {
 
     count++;
     seen_stars.push_back(star->get_struct().star_id);
-    assert(star->get_struct().star_id == static_cast<starnum_t>(count - 1));
+    test::expect_eq(star->get_struct().star_id,
+                    static_cast<starnum_t>(count - 1));
   }
 
-  assert(count == 2);
-  assert(seen_stars.size() == 2);
-  assert(seen_stars[0] == 0);
-  assert(seen_stars[1] == 1);
+  test::expect_eq(count, 2);
+  test::expect_eq(seen_stars.size(), 2);
+  test::expect_eq(seen_stars[0], 0);
+  test::expect_eq(seen_stars[1], 1);
   std::println(std::cout,
                "  StarList: iterated {} stars, all have correct star_id",
                count);
@@ -160,15 +162,15 @@ void test_planet_list_readonly(EntityManager& em) {
 
       star_planet_count++;
       total_planets++;
-      assert(planet->star_id() == star_id);
-      assert(planet->planet_order() ==
-             static_cast<planetnum_t>(star_planet_count - 1));
+      test::expect_eq(planet->star_id(), star_id);
+      test::expect_eq(planet->planet_order(),
+                      static_cast<planetnum_t>(star_planet_count - 1));
     }
 
-    assert(star_planet_count == static_cast<int>(star_id.value + 1));
+    test::expect_eq(star_planet_count, static_cast<int>(star_id.value + 1));
   }
 
-  assert(total_planets == 3);
+  test::expect_eq(total_planets, 3);
   std::println(std::cout,
                "  PlanetList: iterated {} total planets across all stars",
                total_planets);
@@ -188,15 +190,15 @@ void test_commod_list_readonly(EntityManager& em) {
     count++;
     total_amount += commod->amount;
     seen_ids.push_back(commod->id);
-    assert(commod->owner.value != 0);
-    assert(commod->amount != 0);
+    test::expect_ne(commod->owner.value, 0);
+    test::expect_ne(commod->amount, 0);
   }
 
-  assert(count == 2);
-  assert(total_amount == 500);
-  assert(seen_ids.size() == 2);
-  assert(seen_ids[0] == 1);
-  assert(seen_ids[1] == 4);
+  test::expect_eq(count, 2);
+  test::expect_eq(total_amount, 500);
+  test::expect_eq(seen_ids.size(), 2);
+  test::expect_eq(seen_ids[0], 1);
+  test::expect_eq(seen_ids[1], 4);
   std::println(std::cout, "  CommodList: iterated {} valid commodities", count);
 }
 
@@ -208,9 +210,9 @@ void test_playernum_indexing(EntityManager& em) {
     power_values[race->Playernum.value - 1] = race->governor[0].money;
   }
 
-  assert(power_values[0] == 1000);
-  assert(power_values[1] == 2000);
-  assert(power_values[2] == 3000);
+  test::expect_eq(power_values[0], 1000);
+  test::expect_eq(power_values[1], 2000);
+  test::expect_eq(power_values[2], 3000);
   std::println(std::cout, "  Array indexing via Playernum works correctly");
 }
 
@@ -245,8 +247,8 @@ void test_ship_list_patterns(EntityManager& em) {
     total_fuel += ship->fuel();
   }
 
-  assert(count == 3);
-  assert(total_fuel == 100.0 + 200.0 + 300.0);
+  test::expect_eq(count, 3);
+  test::expect_eq(total_fuel, 100.0 + 200.0 + 300.0);
   std::println(std::cout, "    Read-only iteration: {} ships, total fuel = {}",
                count, total_fuel);
 
@@ -261,7 +263,7 @@ void test_ship_list_patterns(EntityManager& em) {
     count++;
   }
 
-  assert(count == 3);
+  test::expect_eq(count, 3);
   std::println(std::cout, "    Mutable iteration: modified {} ships", count);
 
   em.clear_cache();
@@ -269,9 +271,9 @@ void test_ship_list_patterns(EntityManager& em) {
     const Ship* s1 = em.peek_ship(1);
     const Ship* s2 = em.peek_ship(2);
     const Ship* s3 = em.peek_ship(3);
-    assert(s1->fuel() == 150.0);
-    assert(s2->fuel() == 250.0);
-    assert(s3->fuel() == 350.0);
+    test::expect_eq(s1->fuel(), 150.0);
+    test::expect_eq(s2->fuel(), 250.0);
+    test::expect_eq(s3->fuel(), 350.0);
     std::println(std::cout, "    Verified modifications were auto-saved");
   }
 
@@ -287,38 +289,29 @@ void test_ship_list_patterns(EntityManager& em) {
   em.clear_cache();
   {
     const Ship* s1 = em.peek_ship(1);
-    assert(s1->fuel() == 175.0);
+    test::expect_eq(s1->fuel(), 175.0);
     std::println(std::cout, "    Verified dereference pattern modifications");
   }
 }
 
 }  // namespace
 
-int run_all_tests() noexcept {
-  try {
-    Database db(":memory:");
-    initialize_schema(db);
+int main() {
+  Database db(":memory:");
+  initialize_schema(db);
 
-    EntityManager em(db);
-    JsonStore store(db);
+  EntityManager em(db);
+  JsonStore store(db);
 
-    populate_base_entities(em, store);
-    test_race_list_readonly(em);
-    test_star_list_readonly(em);
-    test_planet_list_readonly(em);
-    test_commod_list_readonly(em);
-    test_playernum_indexing(em);
-    populate_ships(em, store);
-    test_ship_list_patterns(em);
+  populate_base_entities(em, store);
+  test_race_list_readonly(em);
+  test_star_list_readonly(em);
+  test_planet_list_readonly(em);
+  test_commod_list_readonly(em);
+  test_playernum_indexing(em);
+  populate_ships(em, store);
+  test_ship_list_patterns(em);
 
-    std::println(std::cout, "All entity list tests passed!");
-    return 0;
-  } catch (const std::exception& ex) {
-    std::println(std::cout, "entity_lists_test failed: {}", ex.what());
-    return 1;
-  }
-}
-
-int main() noexcept {
-  return run_all_tests();
+  std::println(std::cout, "All entity list tests passed!");
+  return 0;
 }

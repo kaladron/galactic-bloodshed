@@ -10,40 +10,38 @@ import server_config;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_parse_server_args_default() {
   const char* argv[] = {"GB"};
   ServerConfig config = parse_server_args(1, argv);
-  assert(config.port == GB_PORT);
-  assert(config.update_time == DEFAULT_UPDATE_TIME);
-  assert(config.segments == MOVES_PER_UPDATE);
+  test::expect_eq(config.port, GB_PORT);
+  test::expect_eq(config.update_time, DEFAULT_UPDATE_TIME);
+  test::expect_eq(config.segments, MOVES_PER_UPDATE);
 }
 
 void test_parse_server_args_custom_port() {
   const char* argv[] = {"GB", "2020"};
   ServerConfig config = parse_server_args(2, argv);
-  assert(config.port == 2020);
-  assert(config.update_time == DEFAULT_UPDATE_TIME);
-  assert(config.segments == MOVES_PER_UPDATE);
+  test::expect_eq(config.port, 2020);
+  test::expect_eq(config.update_time, DEFAULT_UPDATE_TIME);
+  test::expect_eq(config.segments, MOVES_PER_UPDATE);
 }
 
 void test_parse_server_args_custom_update_time() {
   const char* argv[] = {"GB", "2020", "45"};
   ServerConfig config = parse_server_args(3, argv);
-  assert(config.port == 2020);
-  assert(config.update_time == std::chrono::minutes(45));
-  assert(config.segments == MOVES_PER_UPDATE);
+  test::expect_eq(config.port, 2020);
+  test::expect_eq(config.update_time, std::chrono::minutes(45));
+  test::expect_eq(config.segments, MOVES_PER_UPDATE);
 }
 
 void test_parse_server_args_custom_segments() {
   const char* argv[] = {"GB", "2020", "45", "6"};
   ServerConfig config = parse_server_args(4, argv);
-  assert(config.port == 2020);
-  assert(config.update_time == std::chrono::minutes(45));
-  assert(config.segments == 6);
+  test::expect_eq(config.port, 2020);
+  test::expect_eq(config.update_time, std::chrono::minutes(45));
+  test::expect_eq(config.segments, 6);
 }
 
 void test_initialize_schedule_state_first_run() {
@@ -54,10 +52,10 @@ void test_initialize_schedule_state_first_run() {
   std::time_t now = 1000000;
   initialize_schedule_state(state, config, now);
 
-  assert(state.update_time_minutes == 60);
-  assert(state.segments == 4);
-  assert(state.next_update_time == now + 3600);
-  assert(state.next_segment_time == now + 900);
+  test::expect_eq(state.update_time_minutes, 60);
+  test::expect_eq(state.segments, 4);
+  test::expect_eq(state.next_update_time, now + 3600);
+  test::expect_eq(state.next_segment_time, now + 900);
 }
 
 void test_initialize_schedule_state_single_segment() {
@@ -68,8 +66,8 @@ void test_initialize_schedule_state_single_segment() {
   std::time_t now = 1000000;
   initialize_schedule_state(state, config, now);
 
-  assert(state.segments == 1);
-  assert(state.next_segment_time == now + (144 * 3600));
+  test::expect_eq(state.segments, 1);
+  test::expect_eq(state.next_segment_time, now + (144 * 3600));
 }
 
 void test_initialize_schedule_state_catchup_past_segments() {
@@ -83,8 +81,8 @@ void test_initialize_schedule_state_catchup_past_segments() {
   std::time_t now = 1000000;
   initialize_schedule_state(state, config, now);
 
-  assert(state.next_segment_time == state.next_update_time);
-  assert(state.nsegments_done == 4);
+  test::expect_eq(state.next_segment_time, state.next_update_time);
+  test::expect_eq(state.nsegments_done, 4);
 }
 
 void test_initialize_block_data() {
@@ -115,14 +113,14 @@ void test_initialize_block_data() {
   initialize_block_data(ctx.em);
 
   const auto* block1 = ctx.em.peek_block(1);
-  assert(block1 != nullptr);
-  assert(isset(block1->invite, player_t{1}));
-  assert(isset(block1->pledge, player_t{1}));
+  test::expect_ne(block1, nullptr);
+  test::expect_true(isset(block1->invite, player_t{1}));
+  test::expect_true(isset(block1->pledge, player_t{1}));
 
   const auto* block2 = ctx.em.peek_block(2);
-  assert(block2 != nullptr);
-  assert(isset(block2->invite, player_t{2}));
-  assert(isset(block2->pledge, player_t{2}));
+  test::expect_ne(block2, nullptr);
+  test::expect_true(isset(block2->invite, player_t{2}));
+  test::expect_true(isset(block2->pledge, player_t{2}));
 }
 
 }  // namespace

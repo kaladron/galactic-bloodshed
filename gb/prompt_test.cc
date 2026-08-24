@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_prompt_universe_scope() {
@@ -30,7 +28,7 @@ void test_prompt_universe_scope() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::string prompt = do_prompt(g);
-  assert(prompt == " ( [100] / )\n");
+  test::expect_eq(prompt, " ( [100] / )\n");
 }
 
 void test_prompt_star_scope() {
@@ -53,7 +51,7 @@ void test_prompt_star_scope() {
   g.set_snum(1);
 
   std::string prompt = do_prompt(g);
-  assert(prompt == " ( [50] /Sol )\n");
+  test::expect_eq(prompt, " ( [50] /Sol )\n");
 }
 
 void test_prompt_planet_scope() {
@@ -78,7 +76,7 @@ void test_prompt_planet_scope() {
   g.set_pnum(0);
 
   std::string prompt = do_prompt(g);
-  assert(prompt == " ( [50] /Sol/Earth )\n");
+  test::expect_eq(prompt, " ( [50] /Sol/Earth )\n");
 }
 
 void test_prompt_ship_orbiting_scopes() {
@@ -134,20 +132,20 @@ void test_prompt_ship_orbiting_scopes() {
 
   // Missing ship
   g.set_shipno(999);
-  assert(do_prompt(g) == " ( [?] /#? )\n");
+  test::expect_eq(do_prompt(g), " ( [?] /#? )\n");
 
   // Ship in universe
   g.set_shipno(10);
-  assert(do_prompt(g) == " ( [100] /#10 )\n");
+  test::expect_eq(do_prompt(g), " ( [100] /#10 )\n");
 
   // Ship in star
   g.set_shipno(11);
-  assert(do_prompt(g) == " ( [50] /Sol/#11 )\n");
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/#11 )\n");
 
   // Ship in planet
   g.set_shipno(12);
   g.set_pnum(0);
-  assert(do_prompt(g) == " ( [50] /Sol/Earth/#12 )\n");
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#12 )\n");
 }
 
 void test_prompt_nested_docked_ships() {
@@ -307,28 +305,28 @@ void test_prompt_nested_docked_ships() {
 
   // 2-level nested prompts
   g.set_shipno(20);
-  assert(do_prompt(g) == " ( [100] /#21/#20 )\n");
+  test::expect_eq(do_prompt(g), " ( [100] /#21/#20 )\n");
 
   g.set_shipno(22);
-  assert(do_prompt(g) == " ( [50] /Sol/#23/#22 )\n");
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/#23/#22 )\n");
 
   g.set_shipno(24);
   g.set_pnum(0);
-  assert(do_prompt(g) == " ( [50] /Sol/Earth/#25/#24 )\n");
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#25/#24 )\n");
 
   g.set_shipno(26);
-  assert(do_prompt(g) == " ( [?] /#?/#? )\n");
+  test::expect_eq(do_prompt(g), " ( [?] /#?/#? )\n");
 
   // 3-level nested prompts
   g.set_shipno(30);
-  assert(do_prompt(g) == " ( [100] / /../#31/#30 )\n");
+  test::expect_eq(do_prompt(g), " ( [100] / /../#31/#30 )\n");
 
   g.set_shipno(33);
-  assert(do_prompt(g) == " ( [50] /Sol/ /../#34/#33 )\n");
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/ /../#34/#33 )\n");
 
   g.set_shipno(36);
   g.set_pnum(0);
-  assert(do_prompt(g) == " ( [50] /Sol/Earth/ /../#37/#36 )\n");
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/ /../#37/#36 )\n");
 }
 
 }  // namespace

@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file entity_manager_kill_ship_test.cc
+/// \brief Unit tests for EntityManager::kill_ship() mechanics, recursive
+/// destruction, and VN telemetry.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Create in-memory database BEFORE initialize_schema
@@ -47,7 +50,7 @@ int main() {
 
   // Now EntityManager can access it
   const auto* universe = em.peek_universe();
-  assert(universe);
+  test::expect_ne(universe, nullptr);
 
   // Create a test star
   star_struct star_data{};
@@ -82,8 +85,8 @@ int main() {
 
     em.kill_ship(1, ship);
 
-    assert(ship.alive() == 0);
-    assert(ship.notified() == 0);
+    test::expect_eq(ship.alive(), 0);
+    test::expect_eq(ship.notified(), 0);
     std::println(std::cout, "✓ Basic ship kill works");
   }
 
@@ -103,9 +106,9 @@ int main() {
 
     em.kill_ship(1, ship);
 
-    assert(std::holds_alternative<MindData>(ship.special()));
+    test::expect_true(std::holds_alternative<MindData>(ship.special()));
     auto result_mind = std::get<MindData>(ship.special());
-    assert(result_mind.who_killed == 1);
+    test::expect_eq(result_mind.who_killed, 1);
     std::println(std::cout, "✓ MindData who_killed tracking works");
   }
 
@@ -131,8 +134,8 @@ int main() {
     // Clear cache and reload to see the persisted changes
     em.clear_cache();
     const auto* victim = em.peek_race(2);
-    assert(victim);
-    assert(victim->Gov_ship == 0);
+    test::expect_ne(victim, nullptr);
+    test::expect_eq(victim->Gov_ship, 0);
     std::println(std::cout, "✓ Gov_ship cleared when government ship killed");
   }
 
@@ -157,8 +160,8 @@ int main() {
 
     // Note: We can't predict exact morale values without implementing
     // adjust_morale, but we can verify that the races were loaded and saved
-    assert(attacker_after);
-    assert(victim_after);
+    test::expect_ne(attacker_after, nullptr);
+    test::expect_ne(victim_after, nullptr);
     std::println(std::cout, "✓ Morale adjustment occurs on kill");
   }
 
@@ -181,10 +184,10 @@ int main() {
 
     // Check VN hitlist was updated
     const auto* universe_after = em.peek_universe();
-    assert(universe_after);
-    assert(universe_after->VN_hitlist[0] > 0);  // Player 1 (index 0)
-    assert(universe_after->VN_index1[0] == 0 ||
-           universe_after->VN_index2[0] == 0);
+    test::expect_ne(universe_after, nullptr);
+    test::expect_gt(universe_after->VN_hitlist[0], 0);  // Player 1 (index 0)
+    test::expect_true(universe_after->VN_index1[0] == 0 ||
+                      universe_after->VN_index2[0] == 0);
     std::println(std::cout, "✓ VN hitlist tracking works");
   }
 
@@ -209,8 +212,8 @@ int main() {
 
     // Check planet toxicity increased
     const auto* planet_after = em.peek_planet(0, 0);
-    assert(planet_after);
-    assert(planet_after->conditions(TOXIC) >= 30);  // Was 10, added 20
+    test::expect_ne(planet_after, nullptr);
+    test::expect_ge(planet_after->conditions(TOXIC), 30);  // Was 10, added 20
     std::println(std::cout, "✓ TOXWC increases planet toxicity on death");
   }
 
@@ -259,7 +262,7 @@ int main() {
     // Phase 3: Kill ship2 - should undock ship1
     {
       auto ship2_handle = em.get_ship(ship2_num);
-      assert(ship2_handle.get());
+      test::expect_ne(ship2_handle.get(), nullptr);
       em.kill_ship(1, *ship2_handle);
       // ship2_handle saves and releases when it goes out of scope
     }
@@ -267,9 +270,9 @@ int main() {
     // Phase 4: Verify ship1 was undocked
     em.clear_cache();
     const auto* ship1_after = em.peek_ship(ship1_num);
-    assert(ship1_after);
-    assert(ship1_after->docked() == 0);
-    assert(ship1_after->whatdest() == ScopeLevel::LEVEL_UNIV);
+    test::expect_ne(ship1_after, nullptr);
+    test::expect_eq(ship1_after->docked(), 0);
+    test::expect_eq(ship1_after->whatdest(), ScopeLevel::LEVEL_UNIV);
     std::println(std::cout, "✓ Docked ships get undocked when one dies");
   }
 
@@ -327,7 +330,7 @@ int main() {
     // Phase 3: Kill the carrier - should recursively kill fighters
     {
       auto carrier_handle = em.get_ship(carrier_num);
-      assert(carrier_handle.get());
+      test::expect_ne(carrier_handle.get(), nullptr);
       em.kill_ship(1, *carrier_handle);
       // carrier_handle saves and releases when it goes out of scope
     }
@@ -338,12 +341,12 @@ int main() {
     const auto* fighter1_after = em.peek_ship(fighter1_num);
     const auto* fighter2_after = em.peek_ship(fighter2_num);
 
-    assert(carrier_after);
-    assert(fighter1_after);
-    assert(fighter2_after);
-    assert(carrier_after->alive() == 0);
-    assert(fighter1_after->alive() == 0);
-    assert(fighter2_after->alive() == 0);
+    test::expect_ne(carrier_after, nullptr);
+    test::expect_ne(fighter1_after, nullptr);
+    test::expect_ne(fighter2_after, nullptr);
+    test::expect_eq(carrier_after->alive(), 0);
+    test::expect_eq(fighter1_after->alive(), 0);
+    test::expect_eq(fighter2_after->alive(), 0);
     std::println(std::cout, "✓ Recursive killing of landed ships works");
   }
 
@@ -354,19 +357,23 @@ int main() {
 
     // Slot 1 empty -> recorded in index1
     record_vn_destruction_site(index1, index2, 10, true);
-    assert(index1 == 10 && index2 == -1);
+    test::expect_eq(index1, 10);
+    test::expect_eq(index2, -1);
 
     // Slot 2 empty -> recorded in index2
     record_vn_destruction_site(index1, index2, 20, false);
-    assert(index1 == 10 && index2 == 20);
+    test::expect_eq(index1, 10);
+    test::expect_eq(index2, 20);
 
     // Both slots filled -> supplant slot 1 when supplant_first is true
     record_vn_destruction_site(index1, index2, 30, true);
-    assert(index1 == 30 && index2 == 20);
+    test::expect_eq(index1, 30);
+    test::expect_eq(index2, 20);
 
     // Both slots filled -> supplant slot 2 when supplant_first is false
     record_vn_destruction_site(index1, index2, 40, false);
-    assert(index1 == 30 && index2 == 40);
+    test::expect_eq(index1, 30);
+    test::expect_eq(index2, 40);
 
     std::println(std::cout,
                  "✓ record_vn_destruction_site deterministic test works");

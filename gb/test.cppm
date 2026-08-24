@@ -902,7 +902,8 @@ public:
     ship_.max_hanger = static_cast<unsigned short>(Shipdata[type][ABIL_HANGER]);
     ship_.primtype = static_cast<guntype_t>(Shipdata[type][ABIL_PRIMARY]);
     ship_.sectype = static_cast<guntype_t>(Shipdata[type][ABIL_SECONDARY]);
-    ship_.guns = static_cast<unsigned char>(Shipdata[type][ABIL_GUNS]);
+    ship_.guns = static_cast<unsigned char>(
+        Shipdata[type][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE);
     ship_.primary = static_cast<unsigned long>(Shipdata[type][ABIL_GUNS]);
     ship_.retaliate = static_cast<unsigned char>(ship_.primary);
 

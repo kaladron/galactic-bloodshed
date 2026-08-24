@@ -9,92 +9,37 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
+  TestWorldBuilder(ctx)
+      .add_race("Testers", 100.0, false, player_t{1})
+      .add_race("Enemies", 100.0, false, player_t{2})
+      .add_star("Test Star", 100, starnum_t{0})
+      .add_planet(0, PlanetType::EARTH);
 
-  // Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Testers";
-  race.Guest = false;
-  race.governor[0].active = true;
-  race.governor[0].toggle.highlight = true;
-  race.governor[1].active = true;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create enemy race
-  Race enemy{};
-  enemy.Playernum = 2;
-  enemy.name = "Enemies";
-  enemy.Guest = false;
-  enemy.governor[0].active = true;
-  races.save(enemy);
-
-  // Create test star
-  star_struct star{};
-  star.star_id = 0;
-  star.name = "Test Star";
-  star.AP[0] = 100;
-  star.pnames.emplace_back("Test Planet");
-  star.governor[0] = 0;
-  star.governor[1] = 0;
-  star.explored = (1ULL << 1) | (1ULL << 2);
-
-  StarRepository stars(store);
-  stars.save(star);
-
-  // Create test planet
-  Planet planet{};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
-  planet.info(player_t{1}).numsectsowned = 1;
-  planet.info(player_t{1}).guns = 50;
-  planet.info(player_t{1}).destruct = 100;
-  planet.xpos() = 0.0;
-  planet.ypos() = 0.0;
-
-  PlanetRepository planets(store);
-  planets.save(planet);
-
-  // Create attacking ship
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 2;
-  ship.alive() = true;
-  ship.active() = true;
-  ship.type() = ShipType::OTYPE_FACTORY;
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = 0;
-  ship.pnumorbits() = 0;
-  ship.xpos() = 0.0;
-  ship.ypos() = 0.0;
-  ship.armor() = 100;
-  ship.size() = Shipdata[ShipType::OTYPE_FACTORY][ABIL_BUILD];
-  ship.tech() = 100.0;
-  ship.build_cost() = 100;
-
-  ShipRepository ships(store);
-  ships.save(ship);
-
-  // Create test sectormap
+  // Setup planet info and sectors
   {
-    SectorMap smap(planet, true);
-    smap.get(5, 5).set_owner(1);
-    smap.get(5, 5).set_popn_exact(1000);
-    smap.get(5, 5).set_troops(500);
-    smap.get(5, 5).set_condition(SectorType::SEC_MOUNT);
+    auto planet_handle = ctx.em.get_planet(0, 0);
+    planet_handle->info(player_t{1}).numsectsowned = 1;
+    planet_handle->info(player_t{1}).guns = 50;
+    planet_handle->info(player_t{1}).destruct = 100;
+    planet_handle->popn() = 1000;
 
-    SectorRepository sectors(store);
-    sectors.save_map(smap);
+    auto smap_handle = ctx.em.get_sectormap(0, 0);
+    smap_handle->get(5, 5).set_owner(1);
+    smap_handle->get(5, 5).set_popn_exact(1000);
+    smap_handle->get(5, 5).set_troops(500);
+    smap_handle->get(5, 5).set_condition(SectorType::SEC_MOUNT);
   }
+
+  // Create attacking enemy ship in planet orbit
+  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+      .owned_by(2, 0)
+      .named("Factory")
+      .in_planet_orbit(0, 0, 0.0, 0.0)
+      .with_armor(100)
+      .build();
 }
 
 void test_defend_happy_path() {
@@ -112,8 +57,10 @@ void test_defend_happy_path() {
 
   ctx.em.clear_cache();
   const auto* saved_planet = ctx.em.peek_planet(0, 0);
-  assert(saved_planet);
-  assert(saved_planet->info(player_t{1}).destruct < 100);
+  test::expect_true(saved_planet != nullptr);
+  test::expect_lt(saved_planet->info(player_t{1}).destruct, 100);
+
+  ctx.verify_universe_invariants();
 }
 
 void test_defend_insufficient_ap() {
@@ -134,7 +81,9 @@ void test_defend_insufficient_ap() {
   g.set_pnum(0);
 
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
-  assert(g.out.str().contains("action points"));
+  test::expect_contains(g.out.str(), "action points");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_defend_role_and_scope_rejections() {
@@ -148,20 +97,21 @@ void test_defend_role_and_scope_rejections() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection
   {
     auto star_handle = ctx.em.get_star(0);
     star_handle->governor(1) = 2;  // Star governed by Gov 2
   }
-  g.out.str("");
   ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
-  assert(g.out.str().contains("not authorized"));
+  test::expect_contains(g.out.str(), "not authorized");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_defend_domain_errors() {
@@ -177,17 +127,18 @@ void test_defend_domain_errors() {
 
   // 1. Min args (< 3 args)
   ctx.assert_dispatch_rejected(g, {"defend", "1"});
-  assert(g.out.str().contains("Syntax: defend <ship> <sector> [<strength>]"));
+  test::expect_contains(g.out.str(),
+                        "Syntax: defend <ship> <sector> [<strength>]");
 
   // 2. Bad ship number
-  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"defend", "abc", "5,5"});
-  assert(g.out.str().contains("Bad ship number"));
+  test::expect_contains(g.out.str(), "Bad ship number");
 
   // 3. Bad sector format
-  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"defend", "1", "bad_coords"});
-  assert(g.out.str().contains("Bad format"));
+  test::expect_contains(g.out.str(), "Bad format");
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

@@ -59,6 +59,8 @@ bool capture(const command_t& argv, GameObj& g) {
         continue;
       }
       if (!g.deduct_ap(ship.storbits(), APcount)) {
+        g.out << std::format("You don't have {} action points there.\n",
+                             APcount);
         continue;
       }
 

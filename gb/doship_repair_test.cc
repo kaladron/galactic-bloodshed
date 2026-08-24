@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file doship_repair_test.cc
+/// \brief Unit tests for do_repair() via doship(): damage and crew efficiency,
+/// factory ship free repair, and resource consumption.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Initialize in-memory database
@@ -78,7 +81,7 @@ int main() {
 
     em.clear_cache();
     const auto* saved_ship = em.peek_ship(ship.number());
-    assert(saved_ship);
+    test::expect_ne(saved_ship, nullptr);
 
     std::println(std::cout, "  Damage:    {} -> {}", damage_before,
                  saved_ship->damage());
@@ -88,8 +91,8 @@ int main() {
     // maxrep = REPAIR_RATE(25) / 1 segment * (20/20 crew) = 25.0
     // cost = (int)(0.005 * 25 * shipcost) = 12
     // drep = (int)25 = 25 -> damage: 50 - 25 = 25
-    assert(saved_ship->damage() == 25);
-    assert(saved_ship->resource() == 4988);
+    test::expect_eq(saved_ship->damage(), 25);
+    test::expect_eq(saved_ship->resource(), 4988);
     std::println(std::cout, "  ✓ Test passed\n");
   }
 
@@ -133,7 +136,7 @@ int main() {
 
     em.clear_cache();
     const auto* saved_ship = em.peek_ship(ship.number());
-    assert(saved_ship);
+    test::expect_ne(saved_ship, nullptr);
 
     std::println(std::cout, "  Damage:    {} -> {}", damage_before,
                  saved_ship->damage());
@@ -144,8 +147,8 @@ int main() {
     // cost = (int)(0.005 * 1.25 * shipcost) = 0 (rounds down)
     // drep = (int)1.25 = 1 -> damage: 75 - 1 = 74
     // Resources unchanged because cost rounded to zero
-    assert(saved_ship->damage() == 74);
-    assert(saved_ship->resource() == 5000);
+    test::expect_eq(saved_ship->damage(), 74);
+    test::expect_eq(saved_ship->resource(), 5000);
     std::println(std::cout, "  ✓ Test passed\n");
   }
 
@@ -188,7 +191,7 @@ int main() {
 
     em.clear_cache();
     const auto* saved_ship = em.peek_ship(ship.number());
-    assert(saved_ship);
+    test::expect_ne(saved_ship, nullptr);
 
     std::println(std::cout, "  Damage:    0 -> {}", saved_ship->damage());
     std::println(std::cout, "  Resources: {} -> {}", resources_before,
@@ -196,8 +199,8 @@ int main() {
 
     // No damage means do_repair is never called (guarded by ship.damage() check
     // in doship)
-    assert(saved_ship->damage() == 0);
-    assert(saved_ship->resource() == 5000);
+    test::expect_eq(saved_ship->damage(), 0);
+    test::expect_eq(saved_ship->resource(), 5000);
     std::println(std::cout, "  ✓ Correctly no repair (no damage)\n");
   }
 
@@ -242,7 +245,7 @@ int main() {
 
     em.clear_cache();
     const auto* saved_ship = em.peek_ship(ship.number());
-    assert(saved_ship);
+    test::expect_ne(saved_ship, nullptr);
 
     std::println(std::cout, "  Damage:    {} -> {}", damage_before,
                  saved_ship->damage());
@@ -252,14 +255,11 @@ int main() {
     // ABIL_REPAIR path: cost=0, maxrep = REPAIR_RATE(25) / 1 = 25.0
     // drep = (int)25 = 25 -> damage: 60 - 25 = 35
     // No resources consumed (free repair for factories)
-    assert(saved_ship->damage() == 35);
-    assert(saved_ship->resource() == 5000);
+    test::expect_eq(saved_ship->damage(), 35);
+    test::expect_eq(saved_ship->resource(), 5000);
     std::println(std::cout, "  ✓ Test passed\n");
   }
 
   std::println(std::cout, "=== All do_repair tests completed ===");
-  std::println(
-      std::cout,
-      "Review output above to verify repair logic is functioning correctly.");
   return 0;
 }

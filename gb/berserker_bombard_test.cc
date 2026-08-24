@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file berserker_bombard_test.cc
+/// \brief Unit tests for Berserker ship planetary bombardment targeting and PDN
+/// interception defenses.
+
 import dallib;
 import gblib;
 import test;
 import std;
-
-#include <cassert>
 
 int main() {
   TestContext ctx;
@@ -86,7 +88,7 @@ int main() {
 
   // Test 1: Bombardment prioritizes war target (Race 2 at 5,5)
   int destroyed = berserker_bombard(ctx.em, ship, planet, race1);
-  assert(destroyed > 0);
+  test::expect_gt(destroyed, 0);
 
   // Test 2: PDN presence prevents bombardment
   ship_struct pdn{};
@@ -104,7 +106,7 @@ int main() {
   planet.ships() = pdn_handle->number();
 
   int pdn_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
-  assert(pdn_destroyed == 0);
+  test::expect_eq(pdn_destroyed, 0);
 
   std::println(std::cout, "berserker_bombard_test: All tests passed!");
   return 0;

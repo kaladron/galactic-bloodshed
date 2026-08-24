@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file ground_attack_test.cc
-/// \brief Pre-refactoring unit tests for mech_attack_people and
-/// people_attack_mech in move.cc.
+/// \brief Unit tests for mech_attack_people and people_attack_mech ground
+/// combat calculations.
 
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 void test_mech_attack_people() {
   std::println(std::cout, "Test: mech_attack_people");
@@ -55,9 +54,9 @@ void test_mech_attack_people() {
   auto [short_buf, long_buf] =
       mech_attack_people(em, ship, &civ, &mil, race, alien, sect, true);
 
-  assert(!short_buf.empty());
-  assert(!long_buf.empty());
-  assert(long_buf.find("Battle at") != std::string::npos);
+  test::expect_false(short_buf.empty());
+  test::expect_false(long_buf.empty());
+  test::expect_contains(long_buf, "Battle at");
 
   std::println(
       std::cout,
@@ -107,9 +106,9 @@ void test_people_attack_mech() {
   auto [short_buf, long_buf] = people_attack_mech(
       em, ship, 100, 50, race, alien, sect, Coordinates{1, 1});
 
-  assert(!short_buf.empty());
-  assert(!long_buf.empty());
-  assert(long_buf.find("assault") != std::string::npos);
+  test::expect_false(short_buf.empty());
+  test::expect_false(long_buf.empty());
+  test::expect_contains(long_buf, "assault");
 
   std::println(std::cout, "  ✓ people_attack_mech passed (ship damage={})",
                ship.damage());
@@ -119,7 +118,6 @@ int main() {
   test_mech_attack_people();
   test_people_attack_mech();
 
-  std::println(std::cout,
-               "\n✅ All ground attack pre-refactoring tests passed!");
+  std::println(std::cout, "\n✅ All ground attack tests passed!");
   return 0;
 }

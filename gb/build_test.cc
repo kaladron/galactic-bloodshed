@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file build_test.cc
+/// \brief Unit tests for can_build_on_sector rules: population presence, wasted
+/// sectors, sector ownership, God privileges, planetary build restrictions, and
+/// quarry uniqueness.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 int main() {
   // Initialize database
@@ -35,7 +39,7 @@ int main() {
   {
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
                                       good_sector, {0, 0});
-    assert(result.has_value());
+    test::expect_true(result.has_value());
     std::println(std::cout, "Test 1 passed: Can build on valid sector");
   }
 
@@ -47,8 +51,8 @@ int main() {
     no_pop_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
                                       no_pop_sector, {0, 0});
-    assert(!result.has_value());
-    assert(result.error() == "You have no more civs in the sector!\n");
+    test::expect_false(result.has_value());
+    test::expect_eq(result.error(), "You have no more civs in the sector!\n");
     std::println(std::cout, "Test 2 passed: Rejects sector with no population");
   }
 
@@ -60,8 +64,8 @@ int main() {
     wasted_sector.set_condition(SectorType::SEC_WASTED);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
                                       wasted_sector, {0, 0});
-    assert(!result.has_value());
-    assert(result.error() == "You can't build on wasted sectors.\n");
+    test::expect_false(result.has_value());
+    test::expect_eq(result.error(), "You can't build on wasted sectors.\n");
     std::println(std::cout, "Test 3 passed: Rejects wasted sector");
   }
 
@@ -73,8 +77,8 @@ int main() {
     alien_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, race, planet,
                                       alien_sector, {0, 0});
-    assert(!result.has_value());
-    assert(result.error() == "You don't own that sector.\n");
+    test::expect_false(result.has_value());
+    test::expect_eq(result.error(), "You don't own that sector.\n");
     std::println(std::cout,
                  "Test 4 passed: Rejects sector owned by another player");
   }
@@ -89,7 +93,7 @@ int main() {
     alien_sector.set_condition(SectorType::SEC_LAND);
     auto result = can_build_on_sector(em, ShipType::OTYPE_PROBE, god_race,
                                       planet, alien_sector, {0, 0});
-    assert(result.has_value());
+    test::expect_true(result.has_value());
     std::println(std::cout, "Test 5 passed: God can build on alien sector");
   }
 
@@ -100,9 +104,8 @@ int main() {
     if (!(Shipdata[ShipType::STYPE_HABITAT][ABIL_BUILD] & 1)) {
       auto result = can_build_on_sector(em, ShipType::STYPE_HABITAT, race,
                                         planet, good_sector, {0, 0});
-      assert(!result.has_value());
-      assert(result.error().find("cannot be built on a planet") !=
-             std::string::npos);
+      test::expect_false(result.has_value());
+      test::expect_contains(result.error(), "cannot be built on a planet");
       std::println(std::cout,
                    "Test 6 passed: Rejects ship type that can't be built on "
                    "planets");
@@ -117,7 +120,7 @@ int main() {
   {
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
                                       good_sector, {5, 5});
-    assert(result.has_value());
+    test::expect_true(result.has_value());
     std::println(std::cout,
                  "Test 7 passed: Can build quarry at empty location");
   }
@@ -162,8 +165,8 @@ int main() {
     // Try to build another quarry at same location as the 3rd ship
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
                                       good_sector, {3, 3});
-    assert(!result.has_value());
-    assert(result.error() == "There already is a quarry here.\n");
+    test::expect_false(result.has_value());
+    test::expect_eq(result.error(), "There already is a quarry here.\n");
     std::println(
         std::cout,
         "Test 8 passed: Rejects duplicate quarry at same location (3rd ship "
@@ -175,7 +178,7 @@ int main() {
     // Quarry exists at (3,3), try building at (4,4)
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
                                       good_sector, {4, 4});
-    assert(result.has_value());
+    test::expect_true(result.has_value());
     std::println(
         std::cout,
         "Test 9 passed: Can build quarry at different location than existing");
@@ -198,7 +201,7 @@ int main() {
     // Should be able to build at (7,7) since existing quarry is dead
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
                                       good_sector, {7, 7});
-    assert(result.has_value());
+    test::expect_true(result.has_value());
     std::println(std::cout,
                  "Test 10 passed: Dead quarry doesn't block new construction");
   }

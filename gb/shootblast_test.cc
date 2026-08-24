@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file shootblast_test.cc
-/// \brief Pre-refactoring unit tests for shoot_planet_to_ship and
-/// shoot_ship_to_planet.
+/// \brief Unit tests for shoot_planet_to_ship and shoot_ship_to_planet.
 
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 void test_shoot_planet_to_ship_invalid_cases() {
   std::println(std::cout, "Test: shoot_planet_to_ship invalid cases");
@@ -29,18 +27,18 @@ void test_shoot_planet_to_ship_invalid_cases() {
 
   // Test 1: Zero strength -> returns std::nullopt
   auto dam1 = shoot_planet_to_ship(em, race, ship, 0);
-  assert(!dam1.has_value());
+  test::expect_false(dam1.has_value());
 
   // Test 2: Dead ship -> returns std::nullopt
   ship.alive() = false;
   auto dam2 = shoot_planet_to_ship(em, race, ship, 10);
-  assert(!dam2.has_value());
+  test::expect_false(dam2.has_value());
 
   // Test 3: Wrong orbit level -> returns std::nullopt
   ship.alive() = true;
   ship.whatorbits() = ScopeLevel::LEVEL_STAR;
   auto dam3 = shoot_planet_to_ship(em, race, ship, 10);
-  assert(!dam3.has_value());
+  test::expect_false(dam3.has_value());
 
   std::println(std::cout, "  ✓ shoot_planet_to_ship invalid cases passed");
 }
@@ -99,11 +97,11 @@ void test_shoot_planet_to_ship_valid_attack() {
   ship.armor() = 5;
 
   auto res = shoot_planet_to_ship(em, race1, ship, 20);
-  assert(res.has_value());
+  test::expect_true(res.has_value());
   auto [damage, short_msg, long_msg] = *res;
-  assert(damage >= 0);
-  assert(!short_msg.empty());
-  assert(!long_msg.empty());
+  test::expect_ge(damage, 0);
+  test::expect_false(short_msg.empty());
+  test::expect_false(long_msg.empty());
 
   std::println(std::cout,
                "  ✓ shoot_planet_to_ship valid attack passed (damage={})",
@@ -135,19 +133,19 @@ void test_shoot_ship_to_planet_invalid_cases() {
   // Test 1: Zero strength -> returns std::nullopt
   auto res1 =
       shoot_ship_to_planet(em, ship, planet, 0, Coordinates{0, 0}, smap, 0, 0);
-  assert(!res1.has_value());
+  test::expect_false(res1.has_value());
 
   // Test 2: Dead ship -> returns std::nullopt
   ship.alive() = false;
   auto res2 =
       shoot_ship_to_planet(em, ship, planet, 10, Coordinates{0, 0}, smap, 0, 0);
-  assert(!res2.has_value());
+  test::expect_false(res2.has_value());
 
   // Test 3: Invalid planet coords -> returns std::nullopt
   ship.alive() = true;
   auto res3 = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{10, 10},
                                    smap, 0, 0);
-  assert(!res3.has_value());
+  test::expect_false(res3.has_value());
 
   std::println(std::cout, "  ✓ shoot_ship_to_planet invalid cases passed");
 }
@@ -208,11 +206,11 @@ void test_shoot_ship_to_planet_valid_attack() {
 
   auto res = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{1, 1}, smap,
                                   0, GTYPE_HEAVY);
-  assert(res.has_value());
+  test::expect_true(res.has_value());
   auto [numdest, nuked, short_msg, long_msg] = *res;
-  assert(numdest >= 0);
-  assert(!short_msg.empty());
-  assert(!long_msg.empty());
+  test::expect_ge(numdest, 0);
+  test::expect_false(short_msg.empty());
+  test::expect_false(long_msg.empty());
 
   std::println(std::cout,
                "  ✓ shoot_ship_to_planet valid attack passed (numdest={})",
@@ -225,6 +223,6 @@ int main() {
   test_shoot_ship_to_planet_invalid_cases();
   test_shoot_ship_to_planet_valid_attack();
 
-  std::println(std::cout, "\n✅ All shootblast pre-refactoring tests passed!");
+  std::println(std::cout, "\n✅ All shootblast tests passed!");
   return 0;
 }

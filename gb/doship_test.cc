@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file doship_test.cc
+/// \brief Unit tests for doship() turn simulation actions: domass, doown,
+/// habitat population/resource growth, and weapon plant production.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 namespace {
 
@@ -51,10 +54,10 @@ void test_domass_and_doown() {
   parent.ships() = child.number();
 
   doown(parent, em);
-  assert(child.owner() == player_t{1});
+  test::expect_eq(child.owner(), player_t{1});
 
   domass(parent, em);
-  assert(parent.mass() > 0.0);
+  test::expect_gt(parent.mass(), 0.0);
 }
 
 void test_do_habitat() {
@@ -85,8 +88,8 @@ void test_do_habitat() {
 
   do_habitat(ship, em);
 
-  assert(ship.resource() > 10);
-  assert(ship.popn() > 50);
+  test::expect_gt(ship.resource(), 10);
+  test::expect_gt(ship.popn(), 50);
 }
 
 void test_do_weapon_plant() {
@@ -115,32 +118,27 @@ void test_do_weapon_plant() {
   Ship& ship = *ship_handle;
 
   int produced = do_weapon_plant(ship, em);
-  assert(produced > 0);
-  assert(ship.resource() < 500);
+  test::expect_gt(produced, 0);
+  test::expect_lt(ship.resource(), 500);
 }
 
 }  // namespace
 
-int main() noexcept {
-  try {
-    std::cout << "Running doship unit tests...\n";
+int main() {
+  std::println(std::cout, "Running doship unit tests...\n");
 
-    std::cout << "  Testing domass and doown... ";
-    test_domass_and_doown();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing domass and doown... ");
+  test_domass_and_doown();
+  std::println(std::cout, "PASS");
 
-    std::cout << "  Testing do_habitat... ";
-    test_do_habitat();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing do_habitat... ");
+  test_do_habitat();
+  std::println(std::cout, "PASS");
 
-    std::cout << "  Testing do_weapon_plant... ";
-    test_do_weapon_plant();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing do_weapon_plant... ");
+  test_do_weapon_plant();
+  std::println(std::cout, "PASS");
 
-    std::cout << "All doship tests passed!\n";
-    return 0;
-  } catch (...) {
-    std::cout << "Test failed with exception!\n";
-    return 1;
-  }
+  std::println(std::cout, "All doship tests passed!");
+  return 0;
 }

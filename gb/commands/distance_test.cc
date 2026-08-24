@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -110,39 +108,39 @@ void test_distance_dispatch() {
 
   // 1. Min args check: rejected when fewer than 3 args
   ctx.assert_dispatch_rejected(g, {"distance"});
-  assert(g.out.str().contains("Syntax: distance <from> <to>"));
+  test::expect_contains(g.out.str(), "Syntax: distance <from> <to>");
   std::println(std::cout,
                "    ✓ distance rejected with insufficient arguments");
 
   // 2. Happy path: distance between two stars (0,0) and (300,400) -> 500
   g.out.str("");
   ctx.assert_dispatch_success(g, {"distance", "/Sol", "/Centauri"});
-  assert(g.out.str().contains("Distance = 500"));
+  test::expect_contains(g.out.str(), "Distance = 500");
   std::println(std::cout, "    ✓ distance between stars calculated accurately");
 
   // 3. Happy path: alias dist
   g.out.str("");
   ctx.assert_dispatch_success(g, {"dist", "/Sol", "/Centauri"});
-  assert(g.out.str().contains("Distance = 500"));
+  test::expect_contains(g.out.str(), "Distance = 500");
   std::println(std::cout, "    ✓ dist alias succeeded");
 
   // 4. Happy path: distance between two ships (0,0) and (30,40) -> 50
   g.out.str("");
   ctx.assert_dispatch_success(g, {"distance", "#1", "#2"});
-  assert(g.out.str().contains("Distance = 50"));
+  test::expect_contains(g.out.str(), "Distance = 50");
   std::println(std::cout, "    ✓ distance between ships calculated accurately");
 
   // 5. Domain error: Foreign ship probe rejected
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"distance", "#1", "#3"});
-  assert(g.out.str().contains("Nice try"));
+  test::expect_contains(g.out.str(), "Nice try");
   std::println(std::cout, "    ✓ distance rejected query on foreign ship");
 
   // 6. Domain error: Bad scope
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"distance", "/NonExistentStar", "/Sol"});
-  assert(g.out.str().contains("Bad scope") ||
-         g.out.str().contains("No such star"));
+  test::expect_true(g.out.str().contains("Bad scope") ||
+                    g.out.str().contains("No such star"));
   std::println(std::cout, "    ✓ distance rejected invalid scope");
 }
 

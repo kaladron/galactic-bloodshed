@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -89,13 +87,15 @@ void test_route_persistence() {
   // Verify: Route was saved
   {
     const auto* saved = ctx.em.peek_planet(0, 0);
-    assert(saved);
-    assert(saved->info(player_t{1}).route[0].set == 1);
-    assert(saved->info(player_t{1}).route[0].dest_star == 1);
-    assert(saved->info(player_t{1}).route[0].dest_planet == 0);
-    assert(saved->info(player_t{1}).route[0].dest_coords == Coordinates(5, 5));
-    assert(saved->info(player_t{1}).route[0].load == (M_FUEL | M_RESOURCES));
-    assert(saved->info(player_t{1}).route[0].unload == M_DESTRUCT);
+    test::expect_ne(saved, nullptr);
+    test::expect_eq(saved->info(player_t{1}).route[0].set, 1);
+    test::expect_eq(saved->info(player_t{1}).route[0].dest_star, 1);
+    test::expect_eq(saved->info(player_t{1}).route[0].dest_planet, 0);
+    test::expect_eq(saved->info(player_t{1}).route[0].dest_coords,
+                    Coordinates(5, 5));
+    test::expect_eq(saved->info(player_t{1}).route[0].load,
+                    (M_FUEL | M_RESOURCES));
+    test::expect_eq(saved->info(player_t{1}).route[0].unload, M_DESTRUCT);
     std::println(std::cout, "✓ Route destination saved correctly");
   }
 
@@ -109,8 +109,8 @@ void test_route_persistence() {
   // Verify: Route deactivated
   {
     const auto* saved = ctx.em.peek_planet(0, 0);
-    assert(saved);
-    assert(saved->info(player_t{1}).route[0].set == 0);
+    test::expect_ne(saved, nullptr);
+    test::expect_eq(saved->info(player_t{1}).route[0].set, 0);
     std::println(std::cout, "✓ Route deactivation saved correctly");
   }
 
@@ -129,10 +129,10 @@ void test_route_persistence() {
   // Verify: All routes saved
   {
     const auto* saved = ctx.em.peek_planet(0, 0);
-    assert(saved);
+    test::expect_ne(saved, nullptr);
     for (int i = 0; i < MAX_ROUTES; i++) {
-      assert(saved->info(player_t{1}).route[i].set == 1);
-      assert(saved->info(player_t{1}).route[i].load == M_FUEL);
+      test::expect_eq(saved->info(player_t{1}).route[i].set, 1);
+      test::expect_eq(saved->info(player_t{1}).route[i].load, M_FUEL);
     }
     std::println(std::cout, "✓ Multiple routes saved correctly");
   }
@@ -149,7 +149,7 @@ void test_route_command_dispatch() {
   // 1. Scope rejection at UNIV scope
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"route"});
-  assert(g.out.str().contains("Invalid scope for this command"));
+  test::expect_contains(g.out.str(), "Invalid scope for this command");
 
   // 2. Command dispatch happy paths at PLAN scope
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -159,37 +159,37 @@ void test_route_command_dispatch() {
   // Activate route 1
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "activate"});
-  assert(ctx.em.peek_planet(0, 0)->info(player_t{1}).route[0].set == 1);
+  test::expect_eq(ctx.em.peek_planet(0, 0)->info(player_t{1}).route[0].set, 1);
 
   // Set destination
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "/DestStar/DestPlanet"});
-  assert(g.out.str().contains("Set"));
+  test::expect_contains(g.out.str(), "Set");
 
   // Set land coords
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "land", "3,3"});
-  assert(g.out.str().contains("Set"));
+  test::expect_contains(g.out.str(), "Set");
 
   // Set load commodities
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "load", "fr"});
-  assert(g.out.str().contains("Set"));
+  test::expect_contains(g.out.str(), "Set");
 
   // View routes
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route"});
-  assert(g.out.str().contains("Done"));
+  test::expect_contains(g.out.str(), "Done");
 
   // 3. Domain error: Bad route number
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"route", "99"});
-  assert(g.out.str().contains("Bad route number"));
+  test::expect_contains(g.out.str(), "Bad route number");
 
   // 4. Domain error: Bad coordinates
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"route", "1", "land", "99,99"});
-  assert(g.out.str().contains("Bad sector coordinates"));
+  test::expect_contains(g.out.str(), "Bad sector coordinates");
 }
 
 }  // namespace

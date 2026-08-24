@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -52,8 +50,8 @@ void test_center_happy_path() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   ctx.assert_dispatch_success(g, {"center", "/Alpha"});
-  assert(g.lastx[1] == 150.0);
-  assert(g.lasty[1] == 250.0);
+  test::expect_eq(g.lastx[1], 150.0);
+  test::expect_eq(g.lasty[1], 250.0);
 }
 
 void test_center_domain_errors() {
@@ -67,12 +65,12 @@ void test_center_domain_errors() {
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"center"});
-  assert(g.out.str().contains("Syntax: center <star>"));
+  test::expect_contains(g.out.str(), "Syntax: center <star>");
 
   // 2. Non-existent star
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"center", "/NonexistentStar"});
-  assert(g.out.str().contains("center: bad scope."));
+  test::expect_contains(g.out.str(), "center: bad scope.");
 }
 
 }  // namespace

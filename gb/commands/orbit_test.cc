@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -124,10 +122,10 @@ void test_orbit_happy_path() {
 
     // Verify ships remain unchanged
     const auto* saved_ship = ctx.em.peek_ship(1);
-    assert(saved_ship != nullptr);
-    assert(saved_ship->owner() == 1);
-    assert(saved_ship->whatorbits() == ScopeLevel::LEVEL_STAR);
-    assert(saved_ship->storbits() == 0);
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_eq(saved_ship->owner(), player_t{1});
+    test::expect_eq(saved_ship->whatorbits(), ScopeLevel::LEVEL_STAR);
+    test::expect_eq(saved_ship->storbits(), 0);
     std::println(std::cout, "    ✓ Orbit display works correctly");
   }
 
@@ -142,7 +140,7 @@ void test_orbit_happy_path() {
     ctx.assert_dispatch_success(g, {"orbit"});
 
     std::string out = g.out.str();
-    assert(!out.empty());
+    test::expect_false(out.empty());
     std::println(std::cout, "    ✓ Planet-level orbit displays orbiting ships");
   }
 
@@ -156,7 +154,7 @@ void test_orbit_happy_path() {
     ctx.assert_dispatch_success(g, {"orbit", "-s"});
     std::string out_no_ships = g.out.str();
 
-    assert(!out_no_ships.empty());
+    test::expect_false(out_no_ships.empty());
     std::println(std::cout, "    ✓ Orbit -s option executed cleanly");
   }
 
@@ -168,13 +166,13 @@ void test_orbit_happy_path() {
     ctx.assert_dispatch_success(g, {"orbit"});
 
     const auto* saved_ship = ctx.em.peek_ship(1);
-    assert(saved_ship != nullptr);
-    assert(saved_ship->owner() == 1);
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_eq(saved_ship->owner(), player_t{1});
 
     const auto* saved_ship2 = ctx.em.peek_ship(2);
-    assert(saved_ship2 != nullptr);
-    assert(saved_ship2->owner() == 1);
-    assert(saved_ship2->whatorbits() == ScopeLevel::LEVEL_UNIV);
+    test::expect_ne(saved_ship2, nullptr);
+    test::expect_eq(saved_ship2->owner(), player_t{1});
+    test::expect_eq(saved_ship2->whatorbits(), ScopeLevel::LEVEL_UNIV);
     std::println(
         std::cout,
         "    ✓ Universe-level orbit displays stars and ships in transit");
@@ -193,12 +191,12 @@ void test_orbit_domain_errors() {
 
   // 1. Invalid option number format
   ctx.assert_dispatch_rejected(g, {"orbit", "-abc"});
-  assert(g.out.str().contains("Bad number"));
+  test::expect_contains(g.out.str(), "Bad number");
 
   // 2. Invalid target scope path
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"orbit", "nonexistent/star"});
-  assert(g.out.str().contains("orbit: error in args."));
+  test::expect_contains(g.out.str(), "orbit: error in args.");
 }
 
 }  // namespace

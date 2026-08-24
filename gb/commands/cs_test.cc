@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -79,27 +77,27 @@ void test_cs_happy_paths() {
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
   ctx.assert_dispatch_success(g, {"cs", "/"}, 0);
-  assert(g.level() == ScopeLevel::LEVEL_UNIV);
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
 
   // 2. Switch to star Beta by name
   ctx.assert_dispatch_success(g, {"cs", "Beta"}, 0);
-  assert(g.level() == ScopeLevel::LEVEL_STAR);
-  assert(g.snum() == 1);
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(g.snum(), 1);
 
   // 3. Switch to planet AlphaPrime via full path
   ctx.assert_dispatch_success(g, {"cs", "/Alpha/AlphaPrime"}, 0);
-  assert(g.level() == ScopeLevel::LEVEL_PLAN);
-  assert(g.snum() == 0);
-  assert(g.pnum() == 0);
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(g.snum(), 0);
+  test::expect_eq(g.pnum(), 0);
 
   // 4. Default cs without arguments
   ctx.assert_dispatch_success(g, {"cs"}, 0);
-  assert(g.level() == ScopeLevel::LEVEL_STAR);
-  assert(g.snum() == 0);
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(g.snum(), 0);
 
   // 5. Change default system with -d
   ctx.assert_dispatch_success(g, {"cs", "-d", "/"}, 0);
-  assert(g.out.str().contains("New home system"));
+  test::expect_contains(g.out.str(), "New home system");
 }
 
 void test_cs_domain_errors() {
@@ -113,13 +111,13 @@ void test_cs_domain_errors() {
 
   // 1. Invalid star name
   ctx.assert_dispatch_rejected(g, {"cs", "NonExistentStar"});
-  assert(g.out.str().contains("cs: bad scope"));
-  assert(g.level() == ScopeLevel::LEVEL_UNIV);
+  test::expect_contains(g.out.str(), "cs: bad scope");
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
 
   // 2. Invalid home system format
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"cs", "-d", "NonExistentStar"});
-  assert(g.out.str().contains("cs: bad home system"));
+  test::expect_contains(g.out.str(), "cs: bad home system");
 }
 
 }  // namespace

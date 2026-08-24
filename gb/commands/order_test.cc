@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -61,8 +59,8 @@ void test_order_happy_path() {
 
     // Verify defense order was set
     const auto* saved_ship = ctx.em.peek_ship(1);
-    assert(saved_ship != nullptr);
-    assert(saved_ship->protect().planet == 1);
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_eq(saved_ship->protect().planet, 1);
     std::println(std::cout, "    ✓ Defense order set: protect.planet={}",
                  saved_ship->protect().planet);
   }
@@ -76,8 +74,8 @@ void test_order_happy_path() {
 
     // Verify defense was turned off
     const auto* saved_ship = ctx.em.peek_ship(1);
-    assert(saved_ship != nullptr);
-    assert(saved_ship->protect().planet == 0);
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_eq(saved_ship->protect().planet, 0);
     std::println(std::cout, "    ✓ Defense order turned off: protect.planet={}",
                  saved_ship->protect().planet);
   }
@@ -88,8 +86,9 @@ void test_order_happy_path() {
 
     // Verify ship state unchanged
     const auto* saved_ship = ctx.em.peek_ship(1);
-    assert(saved_ship != nullptr);
-    assert(saved_ship->protect().planet == 0);  // Still off from previous test
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_eq(saved_ship->protect().planet,
+                    0);  // Still off from previous test
     std::println(std::cout, "    ✓ Display orders works without modification");
   }
 }

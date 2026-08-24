@@ -1,65 +1,63 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file strong_id_test.cc
+/// \brief Unit tests for strong ID type wrapper, formatting, and hashing
+/// operations.
+
 import gblib;
+import test;
 import std;
-
-#include <cassert>
-
-using playernum_t = ID<"player", int>;
-using shipnum_t = ID<"ship", int>;
-using starnum_t = ID<"star", int>;
 
 int main() {
   // Test basic construction
-  playernum_t player1{1};
-  playernum_t player2{2};
+  player_t player1{1};
+  player_t player2{2};
 
-  assert(player1.value == 1);
-  assert(player2.value == 2);
+  test::expect_eq(player1.value, 1);
+  test::expect_eq(player2.value, 2);
 
   // Test comparison
-  assert(player1 != player2);
-  assert(player1 < player2);
-  assert(player2 > player1);
+  test::expect_ne(player1, player2);
+  test::expect_lt(player1, player2);
+  test::expect_gt(player2, player1);
 
   // Test type safety - these types are distinct
   shipnum_t ship{42};
   starnum_t star{5};
 
-  assert(ship.value == 42);
-  assert(star.value == 5);
+  test::expect_eq(ship.value, 42);
+  test::expect_eq(star.value, 5);
 
   // Test increment/decrement
-  playernum_t p{10};
+  player_t p{10};
   ++p;
-  assert(p.value == 11);
+  test::expect_eq(p.value, 11);
   p++;
-  assert(p.value == 12);
+  test::expect_eq(p.value, 12);
   --p;
-  assert(p.value == 11);
+  test::expect_eq(p.value, 11);
 
   // Test dereferencing
-  assert(*p == 11);
+  test::expect_eq(*p, 11);
 
   // Test formatting
   std::string output =
       std::format("Player: {}, Ship: {}, Star: {}\n", player1, ship, star);
-  assert(!output.empty());
+  test::expect_false(output.empty());
   std::println(std::cout, "{}", output);
 
   // Test hash support (for use in unordered containers)
-  std::unordered_map<playernum_t, std::string> player_names;
+  std::unordered_map<player_t, std::string> player_names;
   player_names[player1] = "Alice";
   player_names[player2] = "Bob";
 
-  assert(player_names[player1] == "Alice");
-  assert(player_names[player2] == "Bob");
+  test::expect_eq(player_names[player1], "Alice");
+  test::expect_eq(player_names[player2], "Bob");
 
   // Test to_underlying and underlying_type_t
-  static_assert(std::is_same_v<underlying_type_t<playernum_t>, int>);
-  static_assert(std::is_same_v<underlying_type_t<int>, int>);
-  assert(to_underlying(player1) == 1);
-  assert(to_underlying(42) == 42);
+  static_assert(std::is_same_v<underlying_type_t<player_t>, int>);
+  test::expect_eq(to_underlying(player1), 1);
+  test::expect_eq(to_underlying(42), 42);
 
   std::println(std::cout, "All strong_id tests passed!");
   return 0;

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file stardata_json_test.cc
+/// \brief Unit tests for universe_struct SQLite JSON serialization and
+/// EntityManager integration.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
-
-#include <sqlite3.h>
 
 int main() {
   // Initialize database using Database class (in-memory for testing)
@@ -36,16 +37,16 @@ int main() {
   // Now use EntityManager to retrieve and verify
   EntityManager em(db);
   const auto* retrieved = em.peek_universe();
-  assert(retrieved);
+  test::expect_ne(retrieved, nullptr);
 
   // Verify key fields
-  assert(retrieved->numstars == test_stardata.numstars);
-  assert(retrieved->ships == test_stardata.ships);
-  assert(retrieved->AP[0] == test_stardata.AP[0]);
-  assert(retrieved->AP[1] == test_stardata.AP[1]);
-  assert(retrieved->VN_hitlist[0] == test_stardata.VN_hitlist[0]);
-  assert(retrieved->VN_index1[0] == test_stardata.VN_index1[0]);
-  assert(retrieved->VN_index2[0] == test_stardata.VN_index2[0]);
+  test::expect_eq(retrieved->numstars, test_stardata.numstars);
+  test::expect_eq(retrieved->ships, test_stardata.ships);
+  test::expect_eq(retrieved->AP[0], test_stardata.AP[0]);
+  test::expect_eq(retrieved->AP[1], test_stardata.AP[1]);
+  test::expect_eq(retrieved->VN_hitlist[0], test_stardata.VN_hitlist[0]);
+  test::expect_eq(retrieved->VN_index1[0], test_stardata.VN_index1[0]);
+  test::expect_eq(retrieved->VN_index2[0], test_stardata.VN_index2[0]);
 
   // Database connection will be cleaned up automatically by Sql destructor
 

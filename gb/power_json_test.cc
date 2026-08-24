@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file power_json_test.cc
+/// \brief Unit tests for Power entity SQLite JSON serialization and
+/// EntityManager integration.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
-
-#include <sqlite3.h>
 
 int main() {
   // Initialize database using Database class (in-memory for testing)
@@ -68,34 +69,34 @@ int main() {
   // Retrieve from EntityManager
   for (int i = 0; i < MAXPLAYERS; i++) {
     const auto* power_ptr = em.peek_power(powernum_t{i + 1});
-    assert(power_ptr);  // Should exist now
+    test::expect_ne(power_ptr, nullptr);  // Should exist now
     loaded_power[i] = *power_ptr;
   }
 
   // Verify the data matches
-  assert(loaded_power[0].troops == test_power[0].troops);
-  assert(loaded_power[0].popn == test_power[0].popn);
-  assert(loaded_power[0].resource == test_power[0].resource);
-  assert(loaded_power[0].fuel == test_power[0].fuel);
-  assert(loaded_power[0].destruct == test_power[0].destruct);
-  assert(loaded_power[0].ships_owned == test_power[0].ships_owned);
-  assert(loaded_power[0].planets_owned == test_power[0].planets_owned);
-  assert(loaded_power[0].sectors_owned == test_power[0].sectors_owned);
-  assert(loaded_power[0].money == test_power[0].money);
-  assert(loaded_power[0].sum_mob == test_power[0].sum_mob);
-  assert(loaded_power[0].sum_eff == test_power[0].sum_eff);
+  test::expect_eq(loaded_power[0].troops, test_power[0].troops);
+  test::expect_eq(loaded_power[0].popn, test_power[0].popn);
+  test::expect_eq(loaded_power[0].resource, test_power[0].resource);
+  test::expect_eq(loaded_power[0].fuel, test_power[0].fuel);
+  test::expect_eq(loaded_power[0].destruct, test_power[0].destruct);
+  test::expect_eq(loaded_power[0].ships_owned, test_power[0].ships_owned);
+  test::expect_eq(loaded_power[0].planets_owned, test_power[0].planets_owned);
+  test::expect_eq(loaded_power[0].sectors_owned, test_power[0].sectors_owned);
+  test::expect_eq(loaded_power[0].money, test_power[0].money);
+  test::expect_eq(loaded_power[0].sum_mob, test_power[0].sum_mob);
+  test::expect_eq(loaded_power[0].sum_eff, test_power[0].sum_eff);
 
-  assert(loaded_power[1].troops == test_power[1].troops);
-  assert(loaded_power[1].popn == test_power[1].popn);
-  assert(loaded_power[1].resource == test_power[1].resource);
-  assert(loaded_power[1].fuel == test_power[1].fuel);
-  assert(loaded_power[1].destruct == test_power[1].destruct);
-  assert(loaded_power[1].ships_owned == test_power[1].ships_owned);
-  assert(loaded_power[1].planets_owned == test_power[1].planets_owned);
-  assert(loaded_power[1].sectors_owned == test_power[1].sectors_owned);
-  assert(loaded_power[1].money == test_power[1].money);
-  assert(loaded_power[1].sum_mob == test_power[1].sum_mob);
-  assert(loaded_power[1].sum_eff == test_power[1].sum_eff);
+  test::expect_eq(loaded_power[1].troops, test_power[1].troops);
+  test::expect_eq(loaded_power[1].popn, test_power[1].popn);
+  test::expect_eq(loaded_power[1].resource, test_power[1].resource);
+  test::expect_eq(loaded_power[1].fuel, test_power[1].fuel);
+  test::expect_eq(loaded_power[1].destruct, test_power[1].destruct);
+  test::expect_eq(loaded_power[1].ships_owned, test_power[1].ships_owned);
+  test::expect_eq(loaded_power[1].planets_owned, test_power[1].planets_owned);
+  test::expect_eq(loaded_power[1].sectors_owned, test_power[1].sectors_owned);
+  test::expect_eq(loaded_power[1].money, test_power[1].money);
+  test::expect_eq(loaded_power[1].sum_mob, test_power[1].sum_mob);
+  test::expect_eq(loaded_power[1].sum_eff, test_power[1].sum_eff);
 
   std::println(std::cout, "All power JSON serialization tests passed!");
   return 0;

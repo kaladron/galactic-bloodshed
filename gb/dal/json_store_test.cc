@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import dallib;
-import std;
+/// \file json_store_test.cc
+/// \brief Unit tests for JsonStore JSON serialization and SQLite CRUD
+/// operations.
 
-#include <cassert>
+import dallib;
+import test;
+import std;
 
 #include <sqlite3.h>
 
@@ -32,12 +35,12 @@ int main() {
   {
     std::string json = R"({"name": "test", "value": 42})";
     bool stored = store.store("test_table", 1, json);
-    assert(stored);
+    test::expect_true(stored);
     std::println(std::cout, "✓ Can store JSON");
 
     auto retrieved = store.retrieve("test_table", 1);
-    assert(retrieved.has_value());
-    assert(*retrieved == json);
+    test::expect_true(retrieved.has_value());
+    test::expect_eq(*retrieved, json);
     std::println(std::cout, "✓ Can retrieve JSON");
   }
 
@@ -45,11 +48,11 @@ int main() {
   {
     std::string json_v2 = R"({"name": "test", "value": 100})";
     bool stored = store.store("test_table", 1, json_v2);
-    assert(stored);
+    test::expect_true(stored);
 
     auto retrieved = store.retrieve("test_table", 1);
-    assert(retrieved.has_value());
-    assert(*retrieved == json_v2);
+    test::expect_true(retrieved.has_value());
+    test::expect_eq(*retrieved, json_v2);
     std::println(std::cout, "✓ Can update existing entry");
   }
 
@@ -60,18 +63,18 @@ int main() {
     store.store("test_table", 5, R"({"id": 5})");  // Gap at 4
 
     auto ids = store.list_ids("test_table");
-    assert(ids.size() == 4);
-    assert(ids[0] == 1);
-    assert(ids[1] == 2);
-    assert(ids[2] == 3);
-    assert(ids[3] == 5);
+    test::expect_eq(ids.size(), 4);
+    test::expect_eq(ids[0], 1);
+    test::expect_eq(ids[1], 2);
+    test::expect_eq(ids[2], 3);
+    test::expect_eq(ids[3], 5);
     std::println(std::cout, "✓ Can list all IDs");
   }
 
   // Find next available ID (gap-finding)
   {
     int next_id = store.find_next_available_id("test_table");
-    assert(next_id == 4);  // Should find the gap
+    test::expect_eq(next_id, 4);  // Should find the gap
     std::println(std::cout, "✓ Gap-finding returns correct ID (4)");
 
     // Fill the gap
@@ -79,7 +82,7 @@ int main() {
 
     // Now should return 6 (next after max)
     next_id = store.find_next_available_id("test_table");
-    assert(next_id == 6);
+    test::expect_eq(next_id, 6);
     std::println(std::cout,
                  "✓ After filling gap, returns next ID after max (6)");
   }
@@ -87,15 +90,15 @@ int main() {
   // Remove entry
   {
     bool removed = store.remove("test_table", 2);
-    assert(removed);
+    test::expect_true(removed);
 
     auto retrieved = store.retrieve("test_table", 2);
-    assert(!retrieved.has_value());
+    test::expect_false(retrieved.has_value());
     std::println(std::cout, "✓ Can remove entry");
 
     // Gap-finding should now return 2
     int next_id = store.find_next_available_id("test_table");
-    assert(next_id == 2);
+    test::expect_eq(next_id, 2);
     std::println(std::cout, "✓ Gap-finding finds removed entry slot (2)");
   }
 
@@ -121,31 +124,31 @@ int main() {
     std::string json = R"({"type": "planet", "name": "Earth"})";
 
     bool stored = store.store_multi("multi_key_table", keys, json);
-    assert(stored);
+    test::expect_true(stored);
     std::println(std::cout, "✓ Can store with composite key");
 
     // Retrieve with composite key
     auto retrieved = store.retrieve_multi("multi_key_table", keys);
-    assert(retrieved.has_value());
-    assert(*retrieved == json);
+    test::expect_true(retrieved.has_value());
+    test::expect_eq(*retrieved, json);
     std::println(std::cout, "✓ Can retrieve with composite key");
 
     // Store another entry with same star but different planet
     keys = {{"star_id", 10}, {"planet_order", 5}};
     stored = store.store_multi("multi_key_table", keys,
                                R"({"type": "planet", "name": "Mars"})");
-    assert(stored);
+    test::expect_true(stored);
 
     // Verify we can retrieve both
     keys = {{"star_id", 10}, {"planet_order", 3}};
     retrieved = store.retrieve_multi("multi_key_table", keys);
-    assert(retrieved.has_value());
-    assert(retrieved->find("Earth") != std::string::npos);
+    test::expect_true(retrieved.has_value());
+    test::expect_contains(*retrieved, "Earth");
 
     keys = {{"star_id", 10}, {"planet_order", 5}};
     retrieved = store.retrieve_multi("multi_key_table", keys);
-    assert(retrieved.has_value());
-    assert(retrieved->find("Mars") != std::string::npos);
+    test::expect_true(retrieved.has_value());
+    test::expect_contains(*retrieved, "Mars");
     std::println(std::cout,
                  "✓ Multiple entries with composite keys work correctly");
   }
@@ -166,25 +169,25 @@ int main() {
 
     // find_next_available_id should return 1 for empty table
     int next_id = store.find_next_available_id("empty_table");
-    assert(next_id == 1);
+    test::expect_eq(next_id, 1);
     std::println(std::cout, "✓ Empty table returns ID 1");
 
     auto ids = store.list_ids("empty_table");
-    assert(ids.empty());
+    test::expect_true(ids.empty());
     std::println(std::cout, "✓ Empty table returns empty ID list");
   }
 
   // Non-existent key lookups
   {
     auto non_existent = store.retrieve("test_table", 9999);
-    assert(!non_existent.has_value());
+    test::expect_false(non_existent.has_value());
     std::println(std::cout, "✓ retrieve on non-existent key returns nullopt");
 
     std::vector<std::pair<std::string, KeyValue>> non_existent_keys = {
         {"star_id", 999}, {"planet_order", 999}};
     auto non_existent_multi =
         store.retrieve_multi("multi_key_table", non_existent_keys);
-    assert(!non_existent_multi.has_value());
+    test::expect_false(non_existent_multi.has_value());
     std::println(
         std::cout,
         "✓ retrieve_multi on non-existent composite key returns nullopt");
@@ -192,7 +195,7 @@ int main() {
     // Empty keys vector returns nullopt
     std::vector<std::pair<std::string, KeyValue>> empty_keys;
     auto empty_result = store.retrieve_multi("multi_key_table", empty_keys);
-    assert(!empty_result.has_value());
+    test::expect_false(empty_result.has_value());
     std::println(std::cout, "✓ retrieve_multi with empty keys returns nullopt");
   }
 
@@ -204,11 +207,11 @@ int main() {
         R"({"type": "planet", "name": "Earth v2", "popn": 5000})";
 
     bool stored = store.store_multi("multi_key_table", keys, updated_json);
-    assert(stored);
+    test::expect_true(stored);
 
     auto retrieved = store.retrieve_multi("multi_key_table", keys);
-    assert(retrieved.has_value());
-    assert(*retrieved == updated_json);
+    test::expect_true(retrieved.has_value());
+    test::expect_eq(*retrieved, updated_json);
     std::println(std::cout,
                  "✓ store_multi overwrites existing composite key entry");
   }
@@ -217,36 +220,25 @@ int main() {
   {
     db.begin_transaction();
     bool stored = store.store("test_table", 888, R"({"trans": "temporary"})");
-    assert(stored);
-    assert(store.retrieve("test_table", 888).has_value());
+    test::expect_true(stored);
+    test::expect_true(store.retrieve("test_table", 888).has_value());
 
     db.rollback();
     auto retrieved = store.retrieve("test_table", 888);
-    assert(!retrieved.has_value());
+    test::expect_false(retrieved.has_value());
     std::println(std::cout,
                  "✓ JsonStore respects database transaction rollback");
   }
 
   // Database error handling (SqliteError exception)
   {
-    bool caught_retrieve_error = false;
-    try {
-      store.retrieve("non_existent_table", 1);
-    } catch (const SqliteError& e) {
-      caught_retrieve_error = true;
-      assert(e.code() != 0);
-    }
-    assert(caught_retrieve_error);
+    test::expect_throws<SqliteError>(
+        [&] { store.retrieve("non_existent_table", 1); });
     std::println(std::cout,
                  "✓ SqliteError thrown on non-existent table retrieve");
 
-    bool caught_store_error = false;
-    try {
-      store.store("non_existent_table", 1, R"({"test": 1})");
-    } catch (const SqliteError& e) {
-      caught_store_error = true;
-    }
-    assert(caught_store_error);
+    test::expect_throws<SqliteError>(
+        [&] { store.store("non_existent_table", 1, R"({"test": 1})"); });
     std::println(std::cout, "✓ SqliteError thrown on non-existent table store");
   }
 

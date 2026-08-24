@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file strong_id_json_test.cc
+/// \brief Unit tests for Glaze serialization and deserialization of strong ID
+/// types.
+
 import strong_id;
 import glaze.core;
 import glaze.json;
+import test;
 import std;
-
-#include <cassert>
 
 // Test that strong ID types serialize/deserialize correctly with glaze
 // This validates the glz::meta<ID<Tag,T>> specialization BEFORE
@@ -56,8 +59,8 @@ int main() {
   {
     test_id_t id{42};
     auto result = glz::write_json(id);
-    assert(result.has_value());
-    assert(result.value() == "42");
+    test::expect_true(result.has_value());
+    test::expect_eq(result.value(), "42");
     std::println(std::cout, "✓ Strong ID serializes as plain integer: {}",
                  result.value());
   }
@@ -66,8 +69,8 @@ int main() {
   {
     test_id_t id{0};
     auto ec = glz::read_json(id, "123");
-    assert(!ec);
-    assert(id.value == 123);
+    test::expect_false(bool(ec));
+    test::expect_eq(id.value, 123);
     std::println(std::cout, "✓ Strong ID deserializes from plain integer: {}",
                  id.value);
   }
@@ -77,14 +80,14 @@ int main() {
     TestStruct original{.id = test_id_t{99}, .name = "test"};
 
     auto json_result = glz::write_json(original);
-    assert(json_result.has_value());
+    test::expect_true(json_result.has_value());
     std::println(std::cout, "✓ Struct JSON: {}", json_result.value());
 
     TestStruct parsed{};
     auto ec = glz::read_json(parsed, json_result.value());
-    assert(!ec);
-    assert(parsed.id.value == 99);
-    assert(parsed.name == "test");
+    test::expect_false(bool(ec));
+    test::expect_eq(parsed.id.value, 99);
+    test::expect_eq(parsed.name, "test");
     std::println(std::cout, "✓ Struct round-trip successful");
   }
 
@@ -93,8 +96,8 @@ int main() {
   {
     TestStruct parsed{};
     auto ec = glz::read_json(parsed, R"({"id": 5, "name": "compat"})");
-    assert(!ec);
-    assert(parsed.id.value == 5);
+    test::expect_false(bool(ec));
+    test::expect_eq(parsed.id.value, 5);
     std::println(std::cout, "✓ Backward compatible with existing JSON format");
   }
 

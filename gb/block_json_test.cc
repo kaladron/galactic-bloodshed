@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file block_json_test.cc
+/// \brief Unit tests for Block entity SQLite JSON serialization and
+/// EntityManager integration.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
-
-#include <sqlite3.h>
-#include <cstring>
 
 int main() {
   // Initialize database using Database class (in-memory for testing)
@@ -62,35 +62,37 @@ int main() {
   block retrieved_blocks[MAXPLAYERS];
   for (int i = 0; i < MAXPLAYERS; i++) {
     const auto* block_ptr = em.peek_block(blocknum_t{i + 1});
-    assert(block_ptr);  // Should exist now
+    test::expect_ne(block_ptr, nullptr);  // Should exist now
     retrieved_blocks[i] = *block_ptr;
   }
 
   // Verify key fields for first player
-  assert(retrieved_blocks[0].Playernum == test_blocks[0].Playernum);
-  assert(retrieved_blocks[0].name == test_blocks[0].name);
-  assert(retrieved_blocks[0].motto == test_blocks[0].motto);
-  assert(retrieved_blocks[0].invite == test_blocks[0].invite);
-  assert(retrieved_blocks[0].pledge == test_blocks[0].pledge);
-  assert(retrieved_blocks[0].atwar == test_blocks[0].atwar);
-  assert(retrieved_blocks[0].allied == test_blocks[0].allied);
-  assert(retrieved_blocks[0].next == test_blocks[0].next);
-  assert(retrieved_blocks[0].systems_owned == test_blocks[0].systems_owned);
-  assert(retrieved_blocks[0].VPs == test_blocks[0].VPs);
-  assert(retrieved_blocks[0].money == test_blocks[0].money);
+  test::expect_eq(retrieved_blocks[0].Playernum, test_blocks[0].Playernum);
+  test::expect_eq(retrieved_blocks[0].name, test_blocks[0].name);
+  test::expect_eq(retrieved_blocks[0].motto, test_blocks[0].motto);
+  test::expect_eq(retrieved_blocks[0].invite, test_blocks[0].invite);
+  test::expect_eq(retrieved_blocks[0].pledge, test_blocks[0].pledge);
+  test::expect_eq(retrieved_blocks[0].atwar, test_blocks[0].atwar);
+  test::expect_eq(retrieved_blocks[0].allied, test_blocks[0].allied);
+  test::expect_eq(retrieved_blocks[0].next, test_blocks[0].next);
+  test::expect_eq(retrieved_blocks[0].systems_owned,
+                  test_blocks[0].systems_owned);
+  test::expect_eq(retrieved_blocks[0].VPs, test_blocks[0].VPs);
+  test::expect_eq(retrieved_blocks[0].money, test_blocks[0].money);
 
   // Verify key fields for second player
-  assert(retrieved_blocks[1].Playernum == test_blocks[1].Playernum);
-  assert(retrieved_blocks[1].name == test_blocks[1].name);
-  assert(retrieved_blocks[1].motto == test_blocks[1].motto);
-  assert(retrieved_blocks[1].invite == test_blocks[1].invite);
-  assert(retrieved_blocks[1].pledge == test_blocks[1].pledge);
-  assert(retrieved_blocks[1].atwar == test_blocks[1].atwar);
-  assert(retrieved_blocks[1].allied == test_blocks[1].allied);
-  assert(retrieved_blocks[1].next == test_blocks[1].next);
-  assert(retrieved_blocks[1].systems_owned == test_blocks[1].systems_owned);
-  assert(retrieved_blocks[1].VPs == test_blocks[1].VPs);
-  assert(retrieved_blocks[1].money == test_blocks[1].money);
+  test::expect_eq(retrieved_blocks[1].Playernum, test_blocks[1].Playernum);
+  test::expect_eq(retrieved_blocks[1].name, test_blocks[1].name);
+  test::expect_eq(retrieved_blocks[1].motto, test_blocks[1].motto);
+  test::expect_eq(retrieved_blocks[1].invite, test_blocks[1].invite);
+  test::expect_eq(retrieved_blocks[1].pledge, test_blocks[1].pledge);
+  test::expect_eq(retrieved_blocks[1].atwar, test_blocks[1].atwar);
+  test::expect_eq(retrieved_blocks[1].allied, test_blocks[1].allied);
+  test::expect_eq(retrieved_blocks[1].next, test_blocks[1].next);
+  test::expect_eq(retrieved_blocks[1].systems_owned,
+                  test_blocks[1].systems_owned);
+  test::expect_eq(retrieved_blocks[1].VPs, test_blocks[1].VPs);
+  test::expect_eq(retrieved_blocks[1].money, test_blocks[1].money);
 
   // Database connection will be cleaned up automatically by Sql destructor
 

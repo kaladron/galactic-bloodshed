@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -68,16 +66,16 @@ void test_stars_dispatch() {
   // 1. Happy path: stars without distance argument (lists all stars)
   ctx.assert_dispatch_success(g, {"stars"});
   std::string output = g.out.str();
-  assert(output.contains("Sol"));
-  assert(output.contains("Vega"));
+  test::expect_contains(output, "Sol");
+  test::expect_contains(output, "Vega");
   std::println(std::cout, "    ✓ stars listed all stellar positions");
 
   // 2. Happy path: stars with radius filter (should only include Sol)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stars", "100"});
   output = g.out.str();
-  assert(output.contains("Sol"));
-  assert(!output.contains("Vega"));
+  test::expect_contains(output, "Sol");
+  test::expect_false(output.contains("Vega"));
   std::println(std::cout, "    ✓ stars radius filter matched proximate star");
 
   // 3. Radius filter matching no stars if player is far away
@@ -85,7 +83,8 @@ void test_stars_dispatch() {
   g.lasty[1] = 10000.0;
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stars", "10"});
-  assert(g.out.str().contains("No stars found within specified distance."));
+  test::expect_contains(g.out.str(),
+                        "No stars found within specified distance.");
   std::println(std::cout, "    ✓ stars handled empty search radius cleanly");
 }
 

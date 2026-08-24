@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -81,18 +79,18 @@ void test_status_dispatch() {
   // 1. Happy path: status without arguments
   ctx.assert_dispatch_success(g, {"status"});
   std::string output = g.out.str();
-  assert(output.contains("Technology Report"));
-  assert(output.contains("Sol/Earth"));
-  assert(output.contains("10000"));  // Population
-  assert(output.contains("50"));     // Tech invest
+  test::expect_contains(output, "Technology Report");
+  test::expect_contains(output, "Sol/Earth");
+  test::expect_contains(output, "10000");  // Population
+  test::expect_contains(output, "50");     // Tech invest
   std::println(std::cout, "    ✓ status global colony report succeeded");
 
   // 2. Happy path: status with star location argument
   g.out.str("");
   ctx.assert_dispatch_success(g, {"status", "/Sol"});
   output = g.out.str();
-  assert(output.contains("Technology Report"));
-  assert(output.contains("Sol/Earth"));
+  test::expect_contains(output, "Technology Report");
+  test::expect_contains(output, "Sol/Earth");
   std::println(std::cout, "    ✓ status with /Sol filter succeeded");
 }
 

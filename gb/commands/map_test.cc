@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -153,7 +151,8 @@ void test_map_dispatch() {
   g.set_snum(0);
   g.set_pnum(0);
   ctx.assert_dispatch_success(g, {"map"});
-  assert(!g.out.str().contains("WARNING! This planet's primary is unstable."));
+  test::expect_false(
+      g.out.str().contains("WARNING! This planet's primary is unstable."));
   std::println(std::cout, "    ✓ Map at planet scope (stable star) succeeded");
 
   // 2. Happy path: Map at planet scope (unstable star warning)
@@ -161,7 +160,8 @@ void test_map_dispatch() {
   g.set_pnum(0);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"map"});
-  assert(g.out.str().contains("WARNING! This planet's primary is unstable."));
+  test::expect_contains(g.out.str(),
+                        "WARNING! This planet's primary is unstable.");
   std::println(std::cout, "    ✓ Map displayed unstable star warning");
 
   // 3. Happy path: Map at universe level falls back to orbit
@@ -175,7 +175,7 @@ void test_map_dispatch() {
   g.set_shipno(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"map"});
-  assert(g.out.str().contains("Bad scope"));
+  test::expect_contains(g.out.str(), "Bad scope");
   std::println(std::cout, "    ✓ Map rejected at ship scope");
 }
 

@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_power_dispatch() {
@@ -77,22 +75,22 @@ void test_power_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"power"});
   std::string out = g.out.str();
-  assert(out.contains("Galactic Bloodshed Power Report"));
-  assert(out.contains("Terrans") || out.contains("Martians"));
+  test::expect_contains(out, "Galactic Bloodshed Power Report");
+  test::expect_true(out.contains("Terrans") || out.contains("Martians"));
   std::println(std::cout, "    ✓ power all players report succeeded");
 
   // 2. Specific player filter
   g.out.str("");
   ctx.assert_dispatch_success(g, {"power", "2"});
   out = g.out.str();
-  assert(out.contains("Galactic Bloodshed Power Report"));
-  assert(out.contains("Martians"));
+  test::expect_contains(out, "Galactic Bloodshed Power Report");
+  test::expect_contains(out, "Martians");
   std::println(std::cout, "    ✓ power target player succeeded");
 
   // 3. Error case: invalid player
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"power", "99"});
-  assert(g.out.str().contains("No such player"));
+  test::expect_contains(g.out.str(), "No such player");
   std::println(std::cout, "    ✓ power rejected non-existent player");
 }
 

@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -76,20 +74,21 @@ void test_examine_dispatch() {
 
   // 1. Min args check: examine without arguments
   ctx.assert_dispatch_rejected(g, {"examine"});
-  assert(g.out.str().contains("Syntax: examine <#shipnum>"));
+  test::expect_contains(g.out.str(), "Syntax: examine <#shipnum>");
   std::println(std::cout, "    ✓ examine rejected with insufficient arguments");
 
   // 2. Happy path: examine #1
   g.out.str("");
   ctx.assert_dispatch_success(g, {"examine", "#1"});
-  assert(g.out.str().contains(
-      "Shuttle: SQLite stored short-range spacecraft description."));
+  test::expect_contains(
+      g.out.str(),
+      "Shuttle: SQLite stored short-range spacecraft description.");
   std::println(std::cout, "    ✓ examine #1 succeeded with description");
 
   // 3. Domain error: non-existent ship
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"examine", "#999"});
-  assert(g.out.str().contains("Ship not found."));
+  test::expect_contains(g.out.str(), "Ship not found.");
   std::println(std::cout, "    ✓ examine rejected non-existent ship");
 }
 

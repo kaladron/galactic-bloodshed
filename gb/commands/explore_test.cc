@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -82,25 +80,26 @@ void test_explore_dispatch() {
   // 1. Happy path: explore without arguments (all explored stars)
   ctx.assert_dispatch_success(g, {"explore"});
   std::string output = g.out.str();
-  assert(output.contains("Exploration Report"));
-  assert(output.contains("Sol"));
-  assert(output.contains("Earth"));
-  assert(!output.contains("Centauri"));  // Unexplored star should not appear
+  test::expect_contains(output, "Exploration Report");
+  test::expect_contains(output, "Sol");
+  test::expect_contains(output, "Earth");
+  test::expect_false(
+      output.contains("Centauri"));  // Unexplored star should not appear
   std::println(std::cout, "    ✓ explore global census succeeded");
 
   // 2. Happy path: explore specific star
   g.out.str("");
   ctx.assert_dispatch_success(g, {"explore", "/Sol"});
   output = g.out.str();
-  assert(output.contains("Sol"));
-  assert(output.contains("Earth"));
+  test::expect_contains(output, "Sol");
+  test::expect_contains(output, "Earth");
   std::println(std::cout, "    ✓ explore /Sol succeeded");
 
   // 3. Bad scope rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"explore", "/NonExistentStar"});
-  assert(g.out.str().contains("bad scope") ||
-         g.out.str().contains("No such star"));
+  test::expect_true(g.out.str().contains("bad scope") ||
+                    g.out.str().contains("No such star"));
   std::println(std::cout, "    ✓ explore rejected bad scope");
 }
 

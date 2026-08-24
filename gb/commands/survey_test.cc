@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -116,9 +114,8 @@ void test_survey_no_args_planet_scope() {
   ctx.assert_dispatch_success(g, {"survey"});
 
   std::string out_str = g.out.str();
-  assert(out_str.find("======== Planetary conditions: ========") !=
-         std::string::npos);
-  assert(out_str.find("atmosphere concentrations") != std::string::npos);
+  test::expect_contains(out_str, "======== Planetary conditions: ========");
+  test::expect_contains(out_str, "atmosphere concentrations");
   std::println(std::cout, "    ✓ Output contains planet survey information");
 }
 
@@ -139,11 +136,11 @@ void test_survey_sector_range_with_header() {
   ctx.assert_dispatch_success(g, {"survey", "0:2,0:2"});
 
   std::string out_str = g.out.str();
-  assert(out_str.find("x,y") != std::string::npos);
-  assert(out_str.find("cond/type") != std::string::npos);
-  assert(out_str.find("owner") != std::string::npos);
-  assert(out_str.find("xtals") != std::string::npos);
-  assert(out_str.find("0,0") != std::string::npos);
+  test::expect_contains(out_str, "x,y");
+  test::expect_contains(out_str, "cond/type");
+  test::expect_contains(out_str, "owner");
+  test::expect_contains(out_str, "xtals");
+  test::expect_contains(out_str, "0,0");
   std::println(std::cout, "    ✓ Output contains header and sector data");
 }
 
@@ -162,12 +159,12 @@ void test_survey_star_scope() {
   ctx.assert_dispatch_success(g, {"survey"});
 
   std::string out_str = g.out.str();
-  assert(out_str.find("Star Sol") != std::string::npos);
-  assert(out_str.find("100,200") != std::string::npos);
-  assert(out_str.find("Gravity") != std::string::npos);
-  assert(out_str.find("Instability") != std::string::npos);
-  assert(out_str.find("45%") != std::string::npos);
-  assert(out_str.find("planets are") != std::string::npos);
+  test::expect_contains(out_str, "Star Sol");
+  test::expect_contains(out_str, "100,200");
+  test::expect_contains(out_str, "Gravity");
+  test::expect_contains(out_str, "Instability");
+  test::expect_contains(out_str, "45%");
+  test::expect_contains(out_str, "planets are");
   std::println(std::cout, "    ✓ Output contains star information");
 }
 
@@ -183,7 +180,7 @@ void test_survey_universe_scope() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   ctx.assert_dispatch_success(g, {"survey"});
-  assert(g.out.str().contains("It's just _there_, you know?"));
+  test::expect_contains(g.out.str(), "It's just _there_, you know?");
   std::println(std::cout, "    ✓ Universe scope survey succeeded");
 }
 
@@ -201,7 +198,7 @@ void test_client_survey_dispatch() {
   g.set_pnum(0);
 
   ctx.assert_dispatch_success(g, {"client_survey", "0:2,0:2"});
-  assert(!g.out.str().empty());
+  test::expect_false(g.out.str().empty());
   std::println(std::cout, "    ✓ client_survey dispatched successfully");
 }
 

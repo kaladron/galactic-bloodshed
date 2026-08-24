@@ -9,8 +9,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_whois_dispatch() {
@@ -41,26 +39,26 @@ void test_whois_dispatch() {
 
   // 1. Self identification (no args)
   ctx.assert_dispatch_success(g, {"whois"});
-  assert(g.out.str().contains("Federation"));
-  assert(g.out.str().contains("Kirk"));
+  test::expect_contains(g.out.str(), "Federation");
+  test::expect_contains(g.out.str(), "Kirk");
   std::println(std::cout, "    ✓ Self whois output verified");
 
   // 2. Identify another player
   g.out.str("");
   ctx.assert_dispatch_success(g, {"whois", "2"});
-  assert(g.out.str().contains("Klingons"));
+  test::expect_contains(g.out.str(), "Klingons");
   std::println(std::cout, "    ✓ Other race whois output verified");
 
   // 3. Test alias "identify"
   g.out.str("");
   ctx.assert_dispatch_success(g, {"identify", "2"});
-  assert(g.out.str().contains("Klingons"));
+  test::expect_contains(g.out.str(), "Klingons");
   std::println(std::cout, "    ✓ Identify alias verified");
 
   // 4. Invalid player handled gracefully
   g.out.str("");
   ctx.assert_dispatch_success(g, {"whois", "99"});
-  assert(g.out.str().contains("Invalid player"));
+  test::expect_contains(g.out.str(), "Invalid player");
   std::println(std::cout, "    ✓ Invalid player output verified");
 }
 

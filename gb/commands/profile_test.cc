@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_profile_dispatch() {
@@ -75,30 +73,30 @@ void test_profile_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"profile"});
   std::string out = g.out.str();
-  assert(out.contains("Racial profile for Terrans"));
-  assert(out.contains("Default Scope: /Sol/Earth"));
-  assert(out.contains("Morale: 100"));
+  test::expect_contains(out, "Racial profile for Terrans");
+  test::expect_contains(out, "Default Scope: /Sol/Earth");
+  test::expect_contains(out, "Morale: 100");
   std::println(std::cout, "    ✓ profile self report succeeded");
 
   // 2. Profile for other player by name
   g.out.str("");
   ctx.assert_dispatch_success(g, {"profile", "Martians"});
   out = g.out.str();
-  assert(out.contains("Race report on Martians"));
-  assert(out.contains("Personal: Warlike conquerors"));
+  test::expect_contains(out, "Race report on Martians");
+  test::expect_contains(out, "Personal: Warlike conquerors");
   std::println(std::cout, "    ✓ profile other player by name succeeded");
 
   // 3. Profile for other player by number
   g.out.str("");
   ctx.assert_dispatch_success(g, {"profile", "2"});
   out = g.out.str();
-  assert(out.contains("Race report on Martians"));
+  test::expect_contains(out, "Race report on Martians");
   std::println(std::cout, "    ✓ profile other player by number succeeded");
 
   // 4. Error case: non-existent player
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"profile", "99"});
-  assert(g.out.str().contains("Player does not exist"));
+  test::expect_contains(g.out.str(), "Player does not exist");
   std::println(std::cout, "    ✓ profile rejected non-existent player");
 }
 

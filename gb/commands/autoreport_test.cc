@@ -9,8 +9,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_autoreport_database_persistence() {
@@ -50,7 +48,7 @@ void test_autoreport_database_persistence() {
   g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"autoreport"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at universe level verified");
 
   // 2. Star control authorization rejection
@@ -60,8 +58,8 @@ void test_autoreport_database_persistence() {
   g.set_governor(2);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"autoreport"});
-  assert(g.out.str().contains(
-      "You are not authorized to do that in this system."));
+  test::expect_contains(g.out.str(),
+                        "You are not authorized to do that in this system.");
   std::println(std::cout,
                "    ✓ Star control rejection for governor 2 verified");
 
@@ -75,14 +73,14 @@ void test_autoreport_database_persistence() {
 
     // Verify output message
     std::string out_str = g.out.str();
-    assert(out_str.find("has been set") != std::string::npos);
+    test::expect_contains(out_str, "has been set");
     std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output for next test
 
     // Verify database: autorep should be TELEG_MAX_AUTO (63)
     auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).autorep == TELEG_MAX_AUTO);
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->info(player_t{1}).autorep, TELEG_MAX_AUTO);
     std::println(std::cout, "    ✓ Database: autorep = {} (ON)",
                  saved->info(player_t{1}).autorep);
   }
@@ -94,14 +92,14 @@ void test_autoreport_database_persistence() {
 
     // Verify output message
     std::string out_str = g.out.str();
-    assert(out_str.find("has been unset") != std::string::npos);
+    test::expect_contains(out_str, "has been unset");
     std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output
 
     // Verify database: autorep should be 0
     auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).autorep == 0);
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->info(player_t{1}).autorep, 0);
     std::println(std::cout, "    ✓ Database: autorep = {} (OFF)",
                  saved->info(player_t{1}).autorep);
   }
@@ -113,8 +111,8 @@ void test_autoreport_database_persistence() {
 
     // Verify database: should be ON again
     auto saved = planets.find_by_location(1, 0);
-    assert(saved.has_value());
-    assert(saved->info(player_t{1}).autorep == TELEG_MAX_AUTO);
+    test::expect_true(saved.has_value());
+    test::expect_eq(saved->info(player_t{1}).autorep, TELEG_MAX_AUTO);
     std::println(std::cout, "    ✓ Database: autorep = {} (ON)",
                  saved->info(player_t{1}).autorep);
   }

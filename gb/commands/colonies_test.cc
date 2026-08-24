@@ -9,51 +9,30 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
+void setup_test_world(TestContext& ctx) {
+  TestWorldBuilder(ctx)
+      .add_race("Terrans", 100.0, false, player_t{1})
+      .add_star("Sol", 100, starnum_t{0})
+      .add_planet(0, PlanetType::EARTH, "Earth");
+
+  auto race_handle = ctx.em.get_race(1);
+  race_handle->conditions[0] = 50;
+
+  auto planet_handle = ctx.em.get_planet(0, 0);
+  planet_handle->info(player_t{1}).explored = 1;
+  planet_handle->info(player_t{1}).numsectsowned = 5;
+  planet_handle->popn() = 1000;
+
+  auto smap_handle = ctx.em.get_sectormap(0, 0);
+  smap_handle->get(0, 0).set_owner(1);
+  smap_handle->get(0, 0).set_popn_exact(1000);
+}
+
 void test_colonies_dispatch() {
-  std::println(std::cout, "Test: colonies command dispatch");
   TestContext ctx;
-  JsonStore store(ctx.db);
-
-  // Initialize universe
-  universe_struct us{};
-  us.id = 1;
-  us.numstars = 1;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  // Setup test race
-  Race race1{};
-  race1.Playernum = 1;
-  race1.name = "Terrans";
-  race1.governor[0].active = true;
-  race1.conditions[0] = 50;
-
-  RaceRepository races(store);
-  races.save(race1);
-
-  // Setup star and planet
-  star_struct star_data{};
-  star_data.star_id = 0;
-  star_data.name = "Sol";
-  star_data.governor[0] = 0;
-  star_data.pnames.push_back("Earth");
-  Star star{star_data};
-  setbit<std::uint64_t>(star.explored(), 1U);
-  StarRepository stars(store);
-  stars.save(star);
-
-  Planet planet(PlanetType::EARTH);
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.info(player_t{1}).explored = 1;
-  planet.info(player_t{1}).numsectsowned = 5;
-  planet.info(player_t{1}).popn = 1000;
-  PlanetRepository planets(store);
-  planets.save(planet);
+  setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -61,23 +40,20 @@ void test_colonies_dispatch() {
 
   // 1. Colonization report all stars
   ctx.assert_dispatch_success(g, {"colonies"});
-  assert(g.out.str().contains("Colonization Report"));
-  assert(g.out.str().contains("Sol"));
-  std::println(std::cout,
-               "    ✓ Colonization report across all stars succeeded");
+  test::expect_contains(g.out.str(), "Colonization Report");
+  test::expect_contains(g.out.str(), "Sol");
 
   // 2. Colonization report for specific star
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"colonies", "/Sol"});
-  assert(g.out.str().contains("Sol"));
-  std::println(std::cout,
-               "    ✓ Colonization report for specific star succeeded");
+  test::expect_contains(g.out.str(), "Sol");
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace
 
 int main() {
   test_colonies_dispatch();
-  std::println(std::cout, "\n✅ All colonies tests passed!");
+  std::println(std::cout, "✓ colonies_test passed!");
   return 0;
 }

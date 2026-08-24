@@ -1120,7 +1120,8 @@ public:
   /// by registered races.
   TestWorldBuilder&
   add_planet(starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
-             unsigned char maxx = 10, unsigned char maxy = 10,
+             std::string_view name = "", unsigned char maxx = 10,
+             unsigned char maxy = 10,
              std::optional<planetnum_t> explicit_pnum = std::nullopt) {
     planetnum_t pnum{0};
     if (explicit_pnum) {
@@ -1149,7 +1150,10 @@ public:
     StarRepository stars(store_);
     auto star_opt = stars.find(snum);
     if (star_opt) {
-      star_opt->set_planet_name(pnum, std::format("Planet-{}", pnum.value));
+      std::string planet_name = name.empty()
+                                    ? std::format("Planet-{}", pnum.value)
+                                    : std::string(name);
+      star_opt->set_planet_name(pnum, planet_name);
       stars.save(*star_opt);
     }
 
@@ -1171,7 +1175,7 @@ public:
         .add_race("Federation", 100.0)
         .add_race("Klingons", 100.0)
         .add_star("Sol", 100)
-        .add_planet(0, PlanetType::EARTH);
+        .add_planet(0, PlanetType::EARTH, "Earth");
   }
 
 private:

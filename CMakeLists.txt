@@ -71,6 +71,20 @@ if(RUN_CLANG_TIDY_EXE)
     VERBATIM
   )
   add_custom_target(
+    tidy-changed
+    COMMAND ${CMAKE_SOURCE_DIR}/tools/tidy-changed.sh
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running clang-tidy on changed files..."
+    VERBATIM
+  )
+  add_custom_target(
+    tidy-changed-fix
+    COMMAND ${CMAKE_SOURCE_DIR}/tools/tidy-changed.sh -fix
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running clang-tidy with --fix on changed files..."
+    VERBATIM
+  )
+  add_custom_target(
     tidy-full
     COMMAND ${RUN_CLANG_TIDY_EXE}
       -p ${CMAKE_BINARY_DIR}

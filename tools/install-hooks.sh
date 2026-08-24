@@ -22,8 +22,12 @@ else
     echo "⚠️  Warning: $TOOLS_DIR/pre-commit not found"
 fi
 
+# Configure git aliases
+git config alias.clang-tidy '!./tools/tidy-changed.sh'
+echo "✅ Configured 'git clang-tidy' alias"
+
 echo ""
-echo "✨ Git hooks installed successfully!"
+echo "✨ Developer environment configured successfully!"
 echo ""
 echo "The pre-commit hook will check code formatting before each commit."
 echo "To bypass a check (not recommended), use: git commit --no-verify"

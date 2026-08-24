@@ -4,11 +4,19 @@
 # Run clang-tidy on changed C++ files.
 #
 # Usage:
-#   ./tools/tidy-changed.sh                # Checks unstaged/staged changed files vs HEAD
-#   ./tools/tidy-changed.sh origin/main    # Checks changed files against origin/main
-#   ./tools/tidy-changed.sh file1.cc ...   # Checks specific files
+#   ./tools/tidy-changed.sh [options] [ref | file...]
+#   git clang-tidy [options] [ref | file...]
+#
+# Options:
+#   -fix, --fix          Apply suggested fixes automatically
+#   -full, --full        Use exhaustive .clang-tidy-full configuration
+#   --staged, --cached   Check staged files in index
+#   -h, --help           Show this help message
 
 set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$REPO_ROOT"
 
 RUN_CLANG_TIDY=""
 for candidate in run-clang-tidy run-clang-tidy-22 run-clang-tidy-21 run-clang-tidy-20 run-clang-tidy-19; do
@@ -28,11 +36,51 @@ if [ ! -d "build" ]; then
     exit 1
 fi
 
+FIX_FLAG=""
+CONFIG_FLAG=""
+STAGED_ONLY=false
+REF=""
+SPECIFIC_FILES=()
+
+for arg in "$@"; do
+    case "$arg" in
+        -h|--help)
+            echo "Usage: git clang-tidy [options] [ref | file...]"
+            echo "       ./tools/tidy-changed.sh [options] [ref | file...]"
+            echo ""
+            echo "Options:"
+            echo "  -fix, --fix          Apply suggested fixes automatically"
+            echo "  -full, --full        Use exhaustive .clang-tidy-full configuration"
+            echo "  --staged, --cached   Check staged files in index"
+            echo "  -h, --help           Show this help message"
+            exit 0
+            ;;
+        -fix|--fix)
+            FIX_FLAG="-fix"
+            ;;
+        -full|--full)
+            CONFIG_FLAG="-config-file=.clang-tidy-full"
+            ;;
+        --staged|--cached)
+            STAGED_ONLY=true
+            ;;
+        *)
+            if [ -f "$arg" ]; then
+                SPECIFIC_FILES+=("$arg")
+            else
+                REF="$arg"
+            fi
+            ;;
+    esac
+done
+
 FILES=""
-if [ $# -gt 0 ] && [ -f "$1" ]; then
-    FILES="$*"
-elif [ $# -gt 0 ]; then
-    FILES=$(git diff --name-only --diff-filter=d "$1"...HEAD | grep -E '\.(cc|cppm)$' || true)
+if [ ${#SPECIFIC_FILES[@]} -gt 0 ]; then
+    FILES="${SPECIFIC_FILES[*]}"
+elif [ -n "$REF" ]; then
+    FILES=$(git diff --name-only --diff-filter=d "$REF"...HEAD | grep -E '\.(cc|cppm)$' || true)
+elif [ "$STAGED_ONLY" = true ]; then
+    FILES=$(git diff --cached --name-only --diff-filter=d | grep -E '\.(cc|cppm)$' || true)
 else
     FILES=$(git diff --name-only --diff-filter=d HEAD | grep -E '\.(cc|cppm)$' || true)
     if [ -z "$FILES" ]; then
@@ -50,4 +98,12 @@ for f in $FILES; do
     echo "   $f"
 done
 
-"$RUN_CLANG_TIDY" -p build -header-filter='.*(gb|dallib)/.*' -exclude-header-filter='.*third_party/.*' -quiet $FILES
+TIDY_ARGS=("-p" "build" "-header-filter=.*(gb|dallib)/.*" "-exclude-header-filter=.*third_party/.*" "-quiet")
+if [ -n "$CONFIG_FLAG" ]; then
+    TIDY_ARGS+=("$CONFIG_FLAG")
+fi
+if [ -n "$FIX_FLAG" ]; then
+    TIDY_ARGS+=("$FIX_FLAG")
+fi
+
+"$RUN_CLANG_TIDY" "${TIDY_ARGS[@]}" $FILES

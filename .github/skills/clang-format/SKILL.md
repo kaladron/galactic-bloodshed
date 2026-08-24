@@ -10,7 +10,9 @@ Use this skill when preparing to commit, push, or format C++ code in this reposi
 
 ## Required Behavior
 
-1. Identify all modified C++ source files (`.cc`, `.cppm`, `.h`, `.hpp`).
-2. Run `clang-format -i <file>` on each modified C++ file before committing or pushing.
-3. Verify formatting using `git diff`.
-4. Ensure the project builds (`cmake --build build`) and tests pass (`(cd build && ctest)`) after formatting.
+1. **Format modified files or diffs**:
+   - Run `git clang-format` on staged changes or `git clang-format -f` on unstaged changes before committing or pushing.
+   - Alternatively, run `clang-format -i <file>` on each modified C++ file (`.cc`, `.cppm`, `.h`, `.hpp`).
+2. Verify formatting using `git diff`.
+3. Ensure the project builds (`cmake --build build`) and tests pass (`(cd build && ctest)`) after formatting.
+

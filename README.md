@@ -32,13 +32,20 @@ I received permission from the authors of GB on December 9, 2021 to relicense th
 
 ### ⚠️ First-time Setup (Required!)
 
-After cloning the repository, run this command to install git hooks:
+After cloning the repository, run this command to install git hooks and developer aliases:
 
 ```bash
 ./tools/install-hooks.sh
 ```
 
-This installs a pre-commit hook that checks code formatting before each commit, preventing CI failures.
+This configures:
+1. **Pre-commit hook**: Checks code formatting before each commit, preventing CI failures.
+2. **`git clang-tidy` alias**: Configures `git clang-tidy` to run static analysis on modified files (`./tools/tidy-changed.sh`).
+
+To configure the `git clang-tidy` alias globally across all repositories on your system:
+```bash
+git config --global alias.clang-tidy '!./tools/tidy-changed.sh'
+```
 
 ### Building
 
@@ -47,19 +54,34 @@ cmake -S . -B build
 cmake --build build
 ```
 
-### Code Formatting
+### Code Formatting & Static Analysis
 
-The project uses clang-format for consistent code style. 
+#### Formatting with clang-format
+The project uses `clang-format` for consistent code style.
 
-**Check formatting:**
-```bash
-ninja -C build format
-```
+* **Format changed files or diffs with Git:**
+  ```bash
+  git clang-format        # Formats staged changes
+  git clang-format -f     # Formats unstaged working tree changes
+  ```
+* **Format all files via Ninja:**
+  ```bash
+  ninja -C build format       # Check formatting compliance
+  ninja -C build format-fix   # Reformat all source files
+  ```
 
-**Fix formatting issues:**
-```bash
-ninja -C build format-fix
-```
+#### Static Analysis with clang-tidy
+* **Run static analysis on changed files:**
+  ```bash
+  git clang-tidy              # Checks changed files vs HEAD
+  git clang-tidy -fix         # Automatically applies suggested fixes
+  ninja -C build tidy-changed # Same check via build system
+  ```
+* **Exhaustive or full-repo checks:**
+  ```bash
+  git clang-tidy --full       # Checks changed files against .clang-tidy-full
+  ninja -C build tidy         # Checks all files in repository
+  ```
 
 The pre-commit hook will automatically check formatting before commits. To bypass (not recommended):
 ```bash

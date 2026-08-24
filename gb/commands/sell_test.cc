@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void setup_test_world(TestContext& ctx) {
@@ -98,25 +96,25 @@ void test_sell_happy_paths() {
   // 1. Sell resources (min(20, 100) = 20 AP deducted)
   ctx.assert_dispatch_success(g, {"sell", "r", "100"}, 20);
   const auto* p1 = ctx.em.peek_planet(1, 0);
-  assert(p1->info(player_t{1}).resource == 900);
+  test::expect_eq(p1->info(player_t{1}).resource, 900);
 
   // 2. Sell fuel (min(20, 50) = 20 AP)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"sell", "f", "50"}, 20);
   const auto* p2 = ctx.em.peek_planet(1, 0);
-  assert(p2->info(player_t{1}).fuel == 450);
+  test::expect_eq(p2->info(player_t{1}).fuel, 450);
 
   // 3. Sell destruct (min(20, 25) = 20 AP)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"sell", "d", "25"}, 20);
   const auto* p3 = ctx.em.peek_planet(1, 0);
-  assert(p3->info(player_t{1}).destruct == 175);
+  test::expect_eq(p3->info(player_t{1}).destruct, 175);
 
   // 4. Sell crystals (min(20, 10) = 10 AP)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"sell", "x", "10"}, 10);
   const auto* p4 = ctx.em.peek_planet(1, 0);
-  assert(p4->info(player_t{1}).crystals == 40);
+  test::expect_eq(p4->info(player_t{1}).crystals, 40);
 }
 
 void test_sell_insufficient_ap() {
@@ -137,7 +135,7 @@ void test_sell_insufficient_ap() {
   g.set_pnum(0);
 
   ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
-  assert(g.out.str().contains("action points"));
+  test::expect_contains(g.out.str(), "action points");
 }
 
 void test_sell_role_rejections() {
@@ -154,7 +152,7 @@ void test_sell_role_rejections() {
     g.set_pnum(0);
 
     ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
-    assert(g.out.str().contains("Guest races cannot use this command."));
+    test::expect_contains(g.out.str(), "Guest races cannot use this command.");
   }
 
   // 2. Star control rejection (Governor 2 when star is assigned to Governor 1)
@@ -167,8 +165,8 @@ void test_sell_role_rejections() {
     g.set_pnum(0);
 
     ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
-    assert(g.out.str().contains(
-        "You are not authorized to do that in this system."));
+    test::expect_contains(g.out.str(),
+                          "You are not authorized to do that in this system.");
   }
 }
 
@@ -185,18 +183,19 @@ void test_sell_domain_errors() {
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"sell", "r"});
-  assert(g.out.str().contains("Syntax: sell <r|d|f|x> <amount>"));
+  test::expect_contains(g.out.str(), "Syntax: sell <r|d|f|x> <amount>");
 
   // 2. Invalid commodity
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"sell", "z", "100"});
-  assert(g.out.str().contains("Permitted commodities are r, d, f, and x"));
+  test::expect_contains(g.out.str(),
+                        "Permitted commodities are r, d, f, and x");
 
   // 3. Invalid scope (universe level)
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
-  assert(g.out.str().contains("Invalid scope"));
+  test::expect_contains(g.out.str(), "Invalid scope");
 }
 
 }  // namespace

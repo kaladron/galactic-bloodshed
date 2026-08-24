@@ -9,8 +9,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 // Test listing governors as leader vs governor
@@ -36,15 +34,15 @@ void test_governors_list() {
   // 1. Leader (Governor 0) sees password column
   ctx.setup_game_obj(g, 1, 0);
   ctx.assert_dispatch_success(g, {"governors"});
-  assert(g.out.str().contains("Password"));
-  assert(g.out.str().contains("leadpass"));
+  test::expect_contains(g.out.str(), "Password");
+  test::expect_contains(g.out.str(), "leadpass");
 
   // 2. Governor 1 does not see password column
   g.out.str("");
   ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_success(g, {"governors"});
-  assert(!g.out.str().contains("Password"));
-  assert(!g.out.str().contains("leadpass"));
+  test::expect_false(g.out.str().contains("Password"));
+  test::expect_false(g.out.str().contains("leadpass"));
 }
 
 // Test appointing and revoking governors
@@ -68,23 +66,23 @@ void test_appoint_and_revoke() {
 
   // 1. Appoint Governor 1
   ctx.assert_dispatch_success(g, {"appoint", "1", "secret123"});
-  assert(ctx.em.peek_race(1)->governor[1].active);
-  assert(ctx.em.peek_race(1)->governor[1].password == "secret123");
+  test::expect_true(ctx.em.peek_race(1)->governor[1].active);
+  test::expect_eq(ctx.em.peek_race(1)->governor[1].password, "secret123");
 
   // 2. Appointing already appointed governor fails
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"appoint", "1", "secret123"});
-  assert(g.out.str().contains("already appointed"));
+  test::expect_contains(g.out.str(), "already appointed");
 
   // 3. Revoke with wrong password fails
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"revoke", "1", "wrongpass", "0"});
-  assert(g.out.str().contains("Incorrect password"));
+  test::expect_contains(g.out.str(), "Incorrect password");
 
   // 4. Revoke with correct password succeeds
   g.out.str("");
   ctx.assert_dispatch_success(g, {"revoke", "1", "secret123", "0"});
-  assert(!ctx.em.peek_race(1)->governor[1].active);
+  test::expect_false(ctx.em.peek_race(1)->governor[1].active);
 }
 
 // Test changing governor passwords and guest restrictions
@@ -108,7 +106,7 @@ void test_password_change_and_guest_rejection() {
 
   // 1. Change password successfully
   ctx.assert_dispatch_success(g, {"governors", "1", "password", "newpass"});
-  assert(ctx.em.peek_race(1)->governor[1].password == "newpass");
+  test::expect_eq(ctx.em.peek_race(1)->governor[1].password, "newpass");
 
   // 2. Guest race cannot change password
   {
@@ -117,7 +115,7 @@ void test_password_change_and_guest_rejection() {
   }
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"governors", "1", "password", "evennewer"});
-  assert(g.out.str().contains("Guest races cannot change passwords"));
+  test::expect_contains(g.out.str(), "Guest races cannot change passwords");
 }
 
 }  // namespace

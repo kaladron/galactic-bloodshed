@@ -9,8 +9,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 int main() {
   TestContext ctx;
   JsonStore store(ctx.db);
@@ -49,7 +47,7 @@ int main() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "10"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at universe level verified");
 
   // Switch to star scope
@@ -59,32 +57,32 @@ int main() {
   // 2. Syntax / argument rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate"});
-  assert(g.out.str().contains("Syntax: allocate <action points>"));
+  test::expect_contains(g.out.str(), "Syntax: allocate <action points>");
   std::println(std::cout, "    ✓ Missing argument syntax error verified");
 
   // 3. Non-positive allocation rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "0"});
-  assert(g.out.str().contains(
-      "You must specify a positive amount of APs to allocate."));
+  test::expect_contains(
+      g.out.str(), "You must specify a positive amount of APs to allocate.");
   std::println(std::cout, "    ✓ Non-positive allocation rejected");
 
   // 4. Over-allocation rejection (more than universe has)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "100"});
-  assert(g.out.str().contains("Illegal value (100) - maximum = 50"));
+  test::expect_contains(g.out.str(), "Illegal value (100) - maximum = 50");
   std::println(std::cout, "    ✓ Over-allocation rejected");
 
   // 5. Successful allocation
   g.out.str("");
   ctx.assert_dispatch_success(g, {"allocate", "15"});
-  assert(g.out.str().contains("Allocated"));
+  test::expect_contains(g.out.str(), "Allocated");
   {
     ctx.em.clear_cache();
     const auto* u = ctx.em.peek_universe();
     const auto* s = ctx.em.peek_star(0);
-    assert(u->AP[0] == 35);
-    assert(s->AP(1) == 35);
+    test::expect_eq(u->AP[0], 35);
+    test::expect_eq(s->AP(1), 35);
   }
   std::println(std::cout, "    ✓ Successful allocation verified");
 
@@ -96,7 +94,7 @@ int main() {
   ctx.setup_game_obj(g);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "5"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
   std::println(std::cout, "    ✓ Guest race rejection verified");
 
   std::println(std::cout, "allocate_test passed!");

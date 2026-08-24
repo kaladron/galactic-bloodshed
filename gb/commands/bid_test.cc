@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file bid_test.cc
+/// \brief Unit tests for the commodities market bidding system.
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
 
 int main() {
   TestContext ctx;
@@ -113,7 +114,7 @@ int main() {
   {
     g.out.str("");
     ctx.assert_dispatch_success(g, {"bid"});
-    assert(g.out.str().contains("Galactic Bloodshed Commodities Market"));
+    test::expect_contains(g.out.str(), "Galactic Bloodshed Commodities Market");
     std::println(std::cout, "✓ Listing all commodities succeeded");
   }
 
@@ -121,7 +122,7 @@ int main() {
   {
     g.out.str("");
     ctx.assert_dispatch_success(g, {"bid", "r"});
-    assert(g.out.str().contains("Galactic Bloodshed Commodities Market"));
+    test::expect_contains(g.out.str(), "Galactic Bloodshed Commodities Market");
     std::println(std::cout, "✓ Listing commodities by type succeeded");
   }
 
@@ -139,11 +140,11 @@ int main() {
     const auto* c_after = ctx.em.peek_commod(1);
     std::println(std::cout, "  After: bid={}, bidder={}", c_after->bid,
                  c_after->bidder);
-    assert(c_after->bid == 1000);
-    assert(c_after->bidder == 1);
-    assert(c_after->bidder_gov == 0);
-    assert(c_after->star_to == 0);
-    assert(c_after->planet_to == 0);
+    test::expect_eq(c_after->bid, 1000);
+    test::expect_eq(c_after->bidder, 1);
+    test::expect_eq(c_after->bidder_gov, 0);
+    test::expect_eq(c_after->star_to, 0);
+    test::expect_eq(c_after->planet_to, 0);
     std::println(std::cout, "✓ Initial bid placed successfully");
   }
 
@@ -160,8 +161,8 @@ int main() {
 
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
-    assert(c_after->bid == new_bid);
-    assert(c_after->bidder == 1);
+    test::expect_eq(c_after->bid, new_bid);
+    test::expect_eq(c_after->bidder, 1);
     std::println(std::cout, "✓ Bid raised successfully");
   }
 
@@ -177,7 +178,7 @@ int main() {
     // Bid should not change
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
-    assert(c_after->bid == previous_bid);
+    test::expect_eq(c_after->bid, previous_bid);
     std::println(std::cout, "✓ Low bid rejected");
   }
 
@@ -202,12 +203,12 @@ int main() {
 
     g2.out.str("");
     ctx.assert_dispatch_rejected(g2, {"bid", "1", "5000"});
-    assert(g2.out.str().contains("Guest races cannot bid."));
+    test::expect_contains(g2.out.str(), "Guest races cannot bid.");
 
     // Bid should not change
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
-    assert(c_after->bid == previous_bid);
+    test::expect_eq(c_after->bid, previous_bid);
     std::println(std::cout, "✓ Guest race blocked from bidding");
   }
 

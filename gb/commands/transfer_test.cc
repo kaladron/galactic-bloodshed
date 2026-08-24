@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file transfer_test.cc
+/// \brief Unit tests for transfer command between players on planets.
+
 import dallib;
 import gblib;
 import test;
 import commands;
 import std;
-
-#include <cassert>
 
 int main() {
   TestContext ctx;
@@ -76,7 +77,7 @@ int main() {
   g.set_snum(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at universe level verified");
 
   // 2. Scope rejection at STAR level
@@ -84,7 +85,7 @@ int main() {
   g.set_snum(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
-  assert(g.out.str().contains("Invalid scope for this command."));
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at star level verified");
 
   // 3. Guest rejection
@@ -98,7 +99,7 @@ int main() {
   g.set_pnum(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
   std::println(std::cout, "    ✓ Guest rejection verified");
 
   // Restore non-guest race
@@ -121,8 +122,10 @@ int main() {
 
     ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(player_t{1}).resource == p1_resource_before - 100);
-    assert(p_after->info(player_t{2}).resource == p2_resource_before + 100);
+    test::expect_eq(p_after->info(player_t{1}).resource,
+                    p1_resource_before - 100);
+    test::expect_eq(p_after->info(player_t{2}).resource,
+                    p2_resource_before + 100);
     std::println(std::cout, "✓ Resources transferred");
   }
 
@@ -136,8 +139,8 @@ int main() {
 
     ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(player_t{1}).fuel == p1_fuel_before - 75);
-    assert(p_after->info(player_t{2}).fuel == p2_fuel_before + 75);
+    test::expect_eq(p_after->info(player_t{1}).fuel, p1_fuel_before - 75);
+    test::expect_eq(p_after->info(player_t{2}).fuel, p2_fuel_before + 75);
     std::println(std::cout, "✓ Fuel transferred");
   }
 
@@ -151,8 +154,10 @@ int main() {
 
     ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(player_t{1}).destruct == p1_destruct_before - 50);
-    assert(p_after->info(player_t{2}).destruct == p2_destruct_before + 50);
+    test::expect_eq(p_after->info(player_t{1}).destruct,
+                    p1_destruct_before - 50);
+    test::expect_eq(p_after->info(player_t{2}).destruct,
+                    p2_destruct_before + 50);
     std::println(std::cout, "✓ Destruct transferred");
   }
 
@@ -166,8 +171,10 @@ int main() {
 
     ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(player_t{1}).crystals == p1_crystals_before - 10);
-    assert(p_after->info(player_t{2}).crystals == p2_crystals_before + 10);
+    test::expect_eq(p_after->info(player_t{1}).crystals,
+                    p1_crystals_before - 10);
+    test::expect_eq(p_after->info(player_t{2}).crystals,
+                    p2_crystals_before + 10);
     std::println(std::cout, "✓ Crystals transferred");
   }
 
@@ -183,8 +190,8 @@ int main() {
     // Should not have changed (command fails with error message)
     ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    assert(p_after->info(player_t{1}).resource == p1_resource_before);
-    assert(p_after->info(player_t{2}).resource == p2_resource_before);
+    test::expect_eq(p_after->info(player_t{1}).resource, p1_resource_before);
+    test::expect_eq(p_after->info(player_t{2}).resource, p2_resource_before);
     std::println(std::cout, "✓ Transfer prevented when insufficient resources");
   }
 

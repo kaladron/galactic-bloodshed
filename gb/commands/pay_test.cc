@@ -10,8 +10,6 @@ import test;
 import commands;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_pay_dispatch() {
@@ -47,39 +45,39 @@ void test_pay_dispatch() {
   ctx.assert_dispatch_success(g, {"pay", "2", "500"});
   const auto* saved_payer = ctx.em.peek_race(1);
   const auto* saved_payee = ctx.em.peek_race(2);
-  assert(saved_payer != nullptr);
-  assert(saved_payee != nullptr);
-  assert(saved_payer->governor[0].money == 9500);
-  assert(saved_payee->governor[0].money == 1500);
+  test::expect_ne(saved_payer, nullptr);
+  test::expect_ne(saved_payee, nullptr);
+  test::expect_eq(saved_payer->governor[0].money, 9500);
+  test::expect_eq(saved_payee->governor[0].money, 1500);
   std::println(std::cout, "    ✓ Money transfer saved correctly");
 
   // 2. Role check: Governor != 0 cannot pay
   g.set_governor(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "2", "500"});
-  assert(g.out.str().contains(
-      "Only the leader (Governor 0) may use this command."));
+  test::expect_contains(g.out.str(),
+                        "Only the leader (Governor 0) may use this command.");
   std::println(std::cout, "    ✓ Governor rejection verified");
 
   // 3. Insufficient funds rejection
   g.set_governor(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "2", "999999"});
-  assert(g.out.str().contains("You don't have that much money to give!"));
+  test::expect_contains(g.out.str(), "You don't have that much money to give!");
   std::println(std::cout, "    ✓ Insufficient funds rejection verified");
 
   // 4. Negative amount rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "2", "-100"});
-  assert(g.out.str().contains(
-      "You have to give a player a positive amount of money."));
+  test::expect_contains(
+      g.out.str(), "You have to give a player a positive amount of money.");
   std::println(std::cout, "    ✓ Negative amount rejection verified");
 
   // 5. Invalid player rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "99", "100"});
-  assert(g.out.str().contains("No such player.") ||
-         g.out.str().contains("Alien race not found."));
+  test::expect_true(g.out.str().contains("No such player.") ||
+                    g.out.str().contains("Alien race not found."));
   std::println(std::cout, "    ✓ Invalid player rejection verified");
 
   // 6. Cumulative transfer check
@@ -87,10 +85,10 @@ void test_pay_dispatch() {
   ctx.assert_dispatch_success(g, {"pay", "2", "1000"});
   saved_payer = ctx.em.peek_race(1);
   saved_payee = ctx.em.peek_race(2);
-  assert(saved_payer != nullptr);
-  assert(saved_payee != nullptr);
-  assert(saved_payer->governor[0].money == 8500);
-  assert(saved_payee->governor[0].money == 2500);
+  test::expect_ne(saved_payer, nullptr);
+  test::expect_ne(saved_payee, nullptr);
+  test::expect_eq(saved_payer->governor[0].money, 8500);
+  test::expect_eq(saved_payee->governor[0].money, 2500);
   std::println(std::cout,
                "    ✓ Cumulative transfer verified (payer: 8500, payee: 2500)");
 }

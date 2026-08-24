@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file doturn_test.cc
+/// \brief Unit tests for full turn simulation execution, star stability repair,
+/// and segment vs update turn execution.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
 
 namespace {
 
@@ -64,12 +67,12 @@ void test_fix_stability() {
   star.stability() = 99;
 
   fix_stability(em, star);
-  assert(star.nova_stage() == 1 || star.stability() <= 100);
+  test::expect_true(star.nova_stage() == 1 || star.stability() <= 100);
 
   star.nova_stage() = 15;
   fix_stability(em, star);
-  assert(star.nova_stage() == 0);
-  assert(star.stability() == 20);
+  test::expect_eq(star.nova_stage(), 0);
+  test::expect_eq(star.stability(), 20);
 }
 
 void test_do_turn_segment_vs_update() {
@@ -128,38 +131,30 @@ void test_do_turn_segment_vs_update() {
   do_turn(em, session_registry, false);
 
   const auto* race_after_segment = em.peek_race(player_t{1});
-  assert(race_after_segment != nullptr);
-  assert(race_after_segment->turn == 1);
+  test::expect_ne(race_after_segment, nullptr);
+  test::expect_eq(race_after_segment->turn, 1);
 
   // 2. Run a full update turn (update = true)
   do_turn(em, session_registry, true);
 
   const auto* race_after_update = em.peek_race(player_t{1});
-  assert(race_after_update != nullptr);
-  assert(race_after_update->turn == 2);
+  test::expect_ne(race_after_update, nullptr);
+  test::expect_eq(race_after_update->turn, 2);
 }
 
 }  // namespace
 
-int main() noexcept {
-  try {
-    std::cout << "Running doturn unit tests...\n";
+int main() {
+  std::println(std::cout, "Running doturn unit tests...\n");
 
-    std::cout << "  Testing fix_stability... ";
-    test_fix_stability();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing fix_stability... ");
+  test_fix_stability();
+  std::println(std::cout, "PASS");
 
-    std::cout << "  Testing do_turn segment vs update... ";
-    test_do_turn_segment_vs_update();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing do_turn segment vs update... ");
+  test_do_turn_segment_vs_update();
+  std::println(std::cout, "PASS");
 
-    std::cout << "All doturn tests passed!\n";
-    return 0;
-  } catch (const std::exception& e) {
-    std::cout << "Test failed with exception: " << e.what() << "\n";
-    return 1;
-  } catch (...) {
-    std::cout << "Test failed with unknown exception!\n";
-    return 1;
-  }
+  std::println(std::cout, "All doturn tests passed!");
+  return 0;
 }

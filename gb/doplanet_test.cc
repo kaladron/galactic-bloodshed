@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file doplanet_test.cc
+/// \brief Unit tests for doplanet turn loop, ground ship movement,
+/// terraforming, resource recovery, and exploration island discovery.
+
 import dallib;
 import gblib;
+import test;
 import std;
-
-#include <cassert>
-#include <cstdio>
 
 namespace {
 
@@ -76,9 +78,9 @@ void test_moveship_onplanet() {
 
   // Move once: y should increase from 5 to 6, and bounced should NOT flip order
   bool moved = moveship_onplanet(ship, planet, em);
-  assert(moved);
-  assert(ship.land_coords().y == 6);
-  assert(ship.shipclass()[0] == '2');
+  test::expect_true(moved);
+  test::expect_eq(ship.land_coords().y, 6);
+  test::expect_eq(ship.shipclass()[0], '2');
 }
 
 void test_terraform_and_plow() {
@@ -116,7 +118,7 @@ void test_terraform_and_plow() {
 
   terraform(ship, planet, smap, em);
 
-  assert(smap.get(2, 3).get_condition() == SectorType::SEC_LAND);
+  test::expect_eq(smap.get(2, 3).get_condition(), SectorType::SEC_LAND);
 }
 
 void test_do_recover() {
@@ -147,14 +149,14 @@ void test_do_recover() {
 
   do_recover(em, star, planet);
 
-  assert(planet.info(player_t{1}).resource +
-             planet.info(player_t{2}).resource ==
-         100);
-  assert(planet.info(player_t{1}).destruct +
-             planet.info(player_t{2}).destruct ==
-         50);
-  assert(planet.info(player_t{3}).resource == 0);
-  assert(planet.info(player_t{3}).destruct == 0);
+  test::expect_eq(planet.info(player_t{1}).resource +
+                      planet.info(player_t{2}).resource,
+                  100);
+  test::expect_eq(planet.info(player_t{1}).destruct +
+                      planet.info(player_t{2}).destruct,
+                  50);
+  test::expect_eq(planet.info(player_t{3}).resource, 0);
+  test::expect_eq(planet.info(player_t{3}).destruct, 0);
 }
 
 void test_doplanet_full_cycle() {
@@ -199,10 +201,10 @@ void test_doplanet_full_cycle() {
   stats.Compat[0] = 1.0;
 
   int result = doplanet(em, star, planet, stats);
-  assert(result != 0);
+  test::expect_ne(result, 0);
 
-  assert(planet.popn() > 0);
-  assert(planet.info(player_t{1}).numsectsowned == 100);
+  test::expect_gt(planet.popn(), 0);
+  test::expect_eq(planet.info(player_t{1}).numsectsowned, 100);
 }
 
 void test_exploration_island_discovery() {
@@ -264,47 +266,42 @@ void test_exploration_island_discovery() {
   }
 
   int result = doplanet(em, star, planet, stats);
-  assert(result != 0);
+  test::expect_ne(result, 0);
 
   // Verify that an island was claimed (stats.Claims == true)
-  assert(stats.Claims == true);
-  assert(stats.tot_captured == 1);
+  test::expect_true(stats.Claims);
+  test::expect_eq(stats.tot_captured, 1);
 
   // Verify that EXACTLY 1 additional sector was claimed (1 owned + 1 new island
   // = 2 total), proving that iteration stopped after claiming the first island
-  assert(planet.info(player_t{1}).numsectsowned == 2);
+  test::expect_eq(planet.info(player_t{1}).numsectsowned, 2);
 }
 
 }  // namespace
 
-int main() noexcept {
-  try {
-    std::cout << "Running doplanet unit tests...\n";
+int main() {
+  std::println(std::cout, "Running doplanet unit tests...\n");
 
-    std::cout << "  Testing moveship_onplanet... ";
-    test_moveship_onplanet();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing moveship_onplanet... ");
+  test_moveship_onplanet();
+  std::println(std::cout, "PASS");
 
-    std::cout << "  Testing terraform and plow... ";
-    test_terraform_and_plow();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing terraform and plow... ");
+  test_terraform_and_plow();
+  std::println(std::cout, "PASS");
 
-    std::cout << "  Testing do_recover... ";
-    test_do_recover();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing do_recover... ");
+  test_do_recover();
+  std::println(std::cout, "PASS");
 
-    std::cout << "  Testing doplanet full cycle... ";
-    test_doplanet_full_cycle();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing doplanet full cycle... ");
+  test_doplanet_full_cycle();
+  std::println(std::cout, "PASS");
 
-    std::cout << "  Testing exploration island discovery... ";
-    test_exploration_island_discovery();
-    std::cout << "PASS\n";
+  std::println(std::cout, "  Testing exploration island discovery... ");
+  test_exploration_island_discovery();
+  std::println(std::cout, "PASS");
 
-    std::cout << "All doplanet tests passed!\n";
-    return 0;
-  } catch (...) {
-    std::cout << "Test failed with exception!\n";
-    return 1;
-  }
+  std::println(std::cout, "All doplanet tests passed!");
+  return 0;
 }

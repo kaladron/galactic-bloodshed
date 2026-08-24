@@ -22,13 +22,12 @@ import std;
 export namespace test {
 
 template <typename T>
-concept Formattable = requires(T& v) { std::format("{}", v); };
-
-template <typename T>
 std::string format_or_fallback(const T& val) {
-  if constexpr (Formattable<T>) {
+  if constexpr (std::formattable<T, char>) {
     return std::format("{}", val);
-  } else if constexpr (requires { std::declval<std::ostream&>() << val; }) {
+  } else if constexpr (std::is_enum_v<T>) {
+    return std::format("{}", static_cast<std::underlying_type_t<T>>(val));
+  } else if constexpr (requires(std::ostream& os) { os << val; }) {
     std::ostringstream oss;
     oss << val;
     return oss.str();
@@ -474,30 +473,33 @@ public:
                                 const command_t& argv) {
     ap_t initial_star_ap = 0;
     starnum_t snum = g.snum();
+    bool has_star = false;
     if (snum > 0) {
       try {
         if (const auto* star = em.peek_star(snum)) {
           initial_star_ap = star->AP(g.player());
+          has_star = true;
         }
       } catch (const EntityNotFoundError&) {
       }
     }
 
     ap_t initial_univ_ap = 0;
+    bool has_univ = false;
     try {
       if (const auto* univ = em.peek_universe()) {
         if (g.player().value > 0 && g.player().value <= MAXPLAYERS) {
           initial_univ_ap = univ->AP[g.player().value - 1];
+          has_univ = true;
         }
       }
     } catch (const EntityNotFoundError&) {
-      initial_univ_ap = 0;
     }
 
     bool ok = dispatch(g, desc, argv);
     test::expect_false(ok, "Expected command dispatch to be rejected");
 
-    if (snum > 0) {
+    if (has_star) {
       try {
         if (const auto* star = em.peek_star(snum)) {
           test::expect_eq(star->AP(g.player()), initial_star_ap,
@@ -507,14 +509,14 @@ public:
       }
     }
 
-    try {
-      if (const auto* univ = em.peek_universe()) {
-        if (g.player().value > 0 && g.player().value <= MAXPLAYERS) {
+    if (has_univ) {
+      try {
+        if (const auto* univ = em.peek_universe()) {
           test::expect_eq(univ->AP[g.player().value - 1], initial_univ_ap,
                           "Rejected command must not deduct universe AP");
         }
+      } catch (const EntityNotFoundError&) {
       }
-    } catch (const EntityNotFoundError&) {
     }
   }
 
@@ -526,4 +528,282 @@ public:
                       "Command descriptor must exist for dispatch");
     assert_dispatch_rejected(g, *desc, argv);
   }
+};
+
+/// Fluent builder for constructing consistent test ship entities populated
+/// with canonical template defaults from Shipdata[type] and Shipnames[type].
+export class TestShipBuilder {
+public:
+  TestShipBuilder(EntityManager& em, ShipType type = ShipType::STYPE_BATTLE,
+                  std::optional<shipnum_t> explicit_number = std::nullopt)
+      : em_(em) {
+    shipnum_t number = explicit_number.value_or(shipnum_t{
+        static_cast<shipnum_t::value_type>(em.num_ships().value + 1)});
+    ship_.number = number;
+    ship_.type = type;
+    ship_.build_type = type;
+    ship_.alive = true;
+    ship_.active = true;
+    ship_.on = true;
+    ship_.owner = 1;
+    ship_.governor = 0;
+    ship_.tech = 100.0;
+    ship_.name = Shipnames[type];
+
+    // Canonical baseline initialization from Shipdata
+    ship_.armor = static_cast<unsigned char>(Shipdata[type][ABIL_ARMOR]);
+    ship_.max_crew = static_cast<unsigned short>(Shipdata[type][ABIL_MAXCREW]);
+    ship_.max_resource = static_cast<resource_t>(Shipdata[type][ABIL_CARGO]);
+    ship_.max_destruct =
+        static_cast<unsigned short>(Shipdata[type][ABIL_DESTCAP]);
+    ship_.max_fuel = static_cast<unsigned short>(Shipdata[type][ABIL_FUELCAP]);
+    ship_.max_speed = static_cast<unsigned short>(Shipdata[type][ABIL_SPEED]);
+    ship_.build_cost = static_cast<unsigned short>(Shipdata[type][ABIL_COST]);
+    ship_.fuel = static_cast<double>(ship_.max_fuel);
+    ship_.destruct = static_cast<unsigned short>(ship_.max_destruct);
+    ship_.hanger = 0;
+    ship_.max_hanger = static_cast<unsigned short>(Shipdata[type][ABIL_HANGER]);
+    ship_.primtype = static_cast<guntype_t>(Shipdata[type][ABIL_PRIMARY]);
+    ship_.sectype = static_cast<guntype_t>(Shipdata[type][ABIL_SECONDARY]);
+    ship_.guns = static_cast<unsigned char>(Shipdata[type][ABIL_GUNS]);
+    ship_.primary = static_cast<unsigned long>(Shipdata[type][ABIL_GUNS]);
+
+    // Calculate baseline size and mass using canonical ship functions
+    Ship temp_ship{ship_};
+    ship_.size = static_cast<unsigned short>(ship_size(temp_ship));
+    ship_.base_mass = getmass(temp_ship);
+    ship_.mass = ship_.base_mass;
+  }
+
+  TestShipBuilder& owned_by(player_t owner, governor_t gov = 0) {
+    ship_.owner = owner;
+    ship_.governor = gov;
+    return *this;
+  }
+
+  TestShipBuilder& named(std::string_view name) {
+    ship_.name = name;
+    return *this;
+  }
+
+  TestShipBuilder& with_tech(double tech) {
+    ship_.tech = tech;
+    return *this;
+  }
+
+  TestShipBuilder& with_alive(bool alive) {
+    ship_.alive = alive;
+    return *this;
+  }
+
+  TestShipBuilder& with_active(bool active) {
+    ship_.active = active;
+    return *this;
+  }
+
+  TestShipBuilder& in_star_orbit(starnum_t snum, double x = 0.0,
+                                 double y = 0.0) {
+    ship_.whatorbits = ScopeLevel::LEVEL_STAR;
+    ship_.storbits = snum;
+    ship_.pnumorbits = 0;
+    ship_.xpos = x;
+    ship_.ypos = y;
+    ship_.docked = 0;
+    return *this;
+  }
+
+  TestShipBuilder& in_planet_orbit(starnum_t snum, planetnum_t pnum,
+                                   double x = 0.0, double y = 0.0) {
+    ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
+    ship_.storbits = snum;
+    ship_.pnumorbits = pnum;
+    ship_.xpos = x;
+    ship_.ypos = y;
+    ship_.docked = 0;
+    return *this;
+  }
+
+  TestShipBuilder& landed_on(starnum_t snum, planetnum_t pnum,
+                             Coordinates coords) {
+    ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
+    ship_.storbits = snum;
+    ship_.pnumorbits = pnum;
+    ship_.docked = 1;
+    ship_.land_coords = coords;
+    return *this;
+  }
+
+  TestShipBuilder& docked_to(shipnum_t dest_ship, starnum_t snum) {
+    ship_.whatorbits = ScopeLevel::LEVEL_SHIP;
+    ship_.destshipno = dest_ship;
+    ship_.storbits = snum;
+    ship_.docked = 1;
+    return *this;
+  }
+
+  TestShipBuilder& with_guns(guntype_t primtype, unsigned long count,
+                             unsigned char guns_flag = PRIMARY) {
+    ship_.guns = guns_flag;
+    ship_.primtype = primtype;
+    ship_.primary = count;
+    return *this;
+  }
+
+  TestShipBuilder& with_cew(unsigned short cew_power,
+                            unsigned short range = 1000) {
+    ship_.cew = static_cast<unsigned char>(cew_power);
+    ship_.cew_range = range;
+    ship_.mounted = 1;
+    return *this;
+  }
+
+  TestShipBuilder& with_crew(population_t civilians, population_t military) {
+    ship_.popn = civilians;
+    ship_.troops = military;
+    ship_.mass = ship_.base_mass + (civilians + military);
+    return *this;
+  }
+
+  TestShipBuilder& with_fuel(double fuel) {
+    ship_.fuel = fuel;
+    return *this;
+  }
+
+  TestShipBuilder& with_resource(resource_t res) {
+    ship_.resource = res;
+    return *this;
+  }
+
+  TestShipBuilder& with_destruct(unsigned short destruct) {
+    ship_.destruct = destruct;
+    return *this;
+  }
+
+  TestShipBuilder& with_damage(unsigned short damage) {
+    ship_.damage = static_cast<unsigned char>(damage);
+    return *this;
+  }
+
+  TestShipBuilder& with_armor(unsigned char armor) {
+    ship_.armor = armor;
+    return *this;
+  }
+
+  shipnum_t build() {
+    auto handle = em_.create_ship(ship_);
+    return handle->number();
+  }
+
+private:
+  EntityManager& em_;
+  ship_struct ship_{};
+};
+
+/// Fluent fixture builder for configuring test universes, races, stars, and
+/// planets with auto-assigned IDs and semantic exploration bitmask
+/// initialization.
+export class TestWorldBuilder {
+public:
+  explicit TestWorldBuilder(TestContext& ctx) : store_(ctx.db) {}
+  explicit TestWorldBuilder(Database& db) : store_(db) {}
+
+  /// Add a race to the test world.
+  /// If explicit_id is std::nullopt, auto-assigns the next player ID (1, 2,
+  /// ...).
+  TestWorldBuilder&
+  add_race(std::string_view name = "Federation", double tech = 100.0,
+           bool guest = false,
+           std::optional<player_t> explicit_id = std::nullopt) {
+    player_t id = explicit_id.value_or(
+        player_t{static_cast<player_t::value_type>(next_player_id_++)});
+    Race race{};
+    race.Playernum = id;
+    race.name = name;
+    race.tech = tech;
+    race.Guest = guest;
+    race.governor[0].active = true;
+    race.governor[0].money = 10'000;
+    race.mass = 1.0;
+    race.metabolism = 1.0;
+    RaceRepository(store_).save(race);
+    registered_races_.push_back(id);
+    return *this;
+  }
+
+  /// Add a star to the test world.
+  /// If explicit_snum is std::nullopt, auto-assigns the next star ID (0, 1,
+  /// ...). Automatically marks explored by all races added to this builder.
+  TestWorldBuilder&
+  add_star(std::string_view name = "Sol", ap_t initial_ap = 100,
+           std::optional<starnum_t> explicit_snum = std::nullopt) {
+    starnum_t snum = explicit_snum.value_or(
+        starnum_t{static_cast<starnum_t::value_type>(next_star_id_++)});
+    star_struct ss{};
+    ss.star_id = snum;
+    ss.name = name;
+    for (int i = 0; i < MAXPLAYERS; ++i) {
+      ss.AP[i] = initial_ap;
+    }
+    Star star{ss};
+    for (player_t pid : registered_races_) {
+      setbit(star.explored(), pid);
+      setbit(star.inhabited(), pid);
+    }
+    StarRepository(store_).save(star);
+    registered_stars_.push_back(snum);
+    return *this;
+  }
+
+  /// Add a planet to a star.
+  /// If explicit_pnum is std::nullopt, auto-assigns the next planet order for
+  /// this star. Automatically initializes an empty SectorMap and marks explored
+  /// by registered races.
+  TestWorldBuilder&
+  add_planet(starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
+             unsigned char maxx = 10, unsigned char maxy = 10,
+             std::optional<planetnum_t> explicit_pnum = std::nullopt) {
+    planetnum_t pnum = explicit_pnum.value_or(
+        planetnum_t{static_cast<planetnum_t::value_type>(next_planet_id_++)});
+    Planet p(type);
+    p.star_id() = snum;
+    p.planet_order() = pnum;
+    p.Maxx() = maxx;
+    p.Maxy() = maxy;
+    p.explored() = true;
+    for (player_t pid : registered_races_) {
+      p.info(pid).explored = 1;
+      p.info(pid).destruct = 1000;
+      p.info(pid).fuel = 1000;
+      p.info(pid).resource = 1000;
+    }
+    PlanetRepository(store_).save(p);
+
+    // Save initial SectorMap with coordinate indexing
+    SectorMap smap(p, true);
+    for (int y = 0; y < maxy; ++y) {
+      for (int x = 0; x < maxx; ++x) {
+        smap.get(x, y).set_x(x);
+        smap.get(x, y).set_y(y);
+      }
+    }
+    SectorRepository(store_).save_map(smap);
+    return *this;
+  }
+
+  /// Preset for standard 2-player solar system setup
+  static void create_standard_solar_system(TestContext& ctx) {
+    TestWorldBuilder(ctx)
+        .add_race("Federation", 100.0)
+        .add_race("Klingons", 100.0)
+        .add_star("Sol", 100)
+        .add_planet(0, PlanetType::EARTH);
+  }
+
+private:
+  JsonStore store_;
+  int next_player_id_{1};
+  int next_star_id_{0};
+  int next_planet_id_{0};
+  std::vector<player_t> registered_races_;
+  std::vector<starnum_t> registered_stars_;
 };

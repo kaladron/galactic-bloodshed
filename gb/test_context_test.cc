@@ -160,11 +160,140 @@ void test_test_context_dispatch_helpers() {
   test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 15);
 }
 
+void test_test_world_builder() {
+  std::println(std::cout, "Test: TestWorldBuilder fixture creation");
+  TestContext ctx;
+
+  // Build standard solar system (2 races, 1 star, 1 planet)
+  TestWorldBuilder::create_standard_solar_system(ctx);
+
+  // 1. Verify auto-assigned Player 1 & 2 races
+  const auto* r1 = ctx.em.peek_race(1);
+  test::expect_true(r1 != nullptr, "Race 1 must exist");
+  test::expect_eq(r1->name, "Federation");
+  test::expect_eq(r1->Playernum, player_t{1});
+  test::expect_eq(r1->tech, 100.0);
+  test::expect_false(r1->Guest);
+
+  const auto* r2 = ctx.em.peek_race(2);
+  test::expect_true(r2 != nullptr, "Race 2 must exist");
+  test::expect_eq(r2->name, "Klingons");
+  test::expect_eq(r2->Playernum, player_t{2});
+
+  // 2. Verify Star 0 auto-exploration and AP
+  const auto* star = ctx.em.peek_star(0);
+  test::expect_true(star != nullptr, "Star 0 must exist");
+  test::expect_eq(star->get_name(), "Sol");
+  test::expect_true(isset(star->explored(), player_t{1}), "Player 1 explored Star 0");
+  test::expect_true(isset(star->explored(), player_t{2}), "Player 2 explored Star 0");
+  test::expect_eq(star->AP(player_t{1}), 100);
+  test::expect_eq(star->AP(player_t{2}), 100);
+
+  // 3. Verify Planet 0,0 auto-exploration and SectorMap
+  const auto* planet = ctx.em.peek_planet(0, 0);
+  test::expect_true(planet != nullptr, "Planet /0/0 must exist");
+  test::expect_eq(planet->type(), PlanetType::EARTH);
+  test::expect_eq(planet->info(player_t{1}).explored, 1);
+  test::expect_eq(planet->info(player_t{2}).explored, 1);
+  test::expect_eq(planet->info(player_t{1}).destruct, 1000);
+
+  const auto* smap = ctx.em.peek_sectormap(0, 0);
+  test::expect_true(smap != nullptr, "SectorMap for /0/0 must exist");
+  test::expect_eq(smap->get(0, 0).get_x(), 0);
+  test::expect_eq(smap->get(0, 0).get_y(), 0);
+
+  std::println(std::cout, "  ✓ TestWorldBuilder verified successfully");
+}
+
+void test_test_ship_builder() {
+  std::println(std::cout,
+               "Test: TestShipBuilder canonical baseline construction");
+  TestContext ctx;
+  TestWorldBuilder::create_standard_solar_system(ctx);
+
+  // 1. Battleship built with Shipdata template defaults and star orbit
+  shipnum_t bb_num = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                         .owned_by(1)
+                         .named("USS Enterprise")
+                         .in_star_orbit(0, 10.0, 20.0)
+                         .build();
+
+  test::expect_eq(bb_num, shipnum_t{1});
+  const auto* bb = ctx.em.peek_ship(bb_num);
+  test::expect_true(bb != nullptr, "Battleship must exist");
+  test::expect_eq(bb->name(), "USS Enterprise");
+  test::expect_eq(bb->type(), ShipType::STYPE_BATTLE);
+  test::expect_eq(bb->owner(), player_t{1});
+  test::expect_eq(
+      bb->armor(),
+      static_cast<unsigned char>(Shipdata[ShipType::STYPE_BATTLE][ABIL_ARMOR]));
+  test::expect_eq(bb->max_crew(),
+                  static_cast<unsigned short>(
+                      Shipdata[ShipType::STYPE_BATTLE][ABIL_MAXCREW]));
+  test::expect_eq(bb->max_fuel(),
+                  static_cast<unsigned short>(
+                      Shipdata[ShipType::STYPE_BATTLE][ABIL_FUELCAP]));
+  test::expect_eq(
+      bb->fuel(),
+      static_cast<double>(Shipdata[ShipType::STYPE_BATTLE][ABIL_FUELCAP]));
+  test::expect_eq(bb->whatorbits(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(bb->storbits(), starnum_t{0});
+  test::expect_eq(bb->xpos(), 10.0);
+  test::expect_eq(bb->ypos(), 20.0);
+  test::expect_false(bb->docked());
+
+  // 2. Landed transport with customized crew, resource, and damage
+  Coordinates land_loc{3, 4};
+  shipnum_t lander_num = TestShipBuilder(ctx.em, ShipType::STYPE_LANDER)
+                             .owned_by(2)
+                             .named("Bird of Prey")
+                             .landed_on(0, 0, land_loc)
+                             .with_crew(100, 50)
+                             .with_resource(500)
+                             .with_damage(15)
+                             .with_cew(20, 1500)
+                             .build();
+
+  test::expect_eq(lander_num, shipnum_t{2});
+  const auto* lander = ctx.em.peek_ship(lander_num);
+  test::expect_true(lander != nullptr, "Lander must exist");
+  test::expect_eq(lander->name(), "Bird of Prey");
+  test::expect_eq(lander->whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(lander->storbits(), starnum_t{0});
+  test::expect_eq(lander->pnumorbits(), planetnum_t{0});
+  test::expect_true(lander->docked());
+  test::expect_eq(lander->land_coords().x, 3);
+  test::expect_eq(lander->land_coords().y, 4);
+  test::expect_eq(lander->popn(), 100);
+  test::expect_eq(lander->troops(), 50);
+  test::expect_eq(lander->resource(), 500);
+  test::expect_eq(lander->damage(), 15);
+  test::expect_eq(lander->cew(), 20);
+  test::expect_eq(lander->cew_range(), 1500);
+
+  // 3. Docked ship attached to parent ship
+  shipnum_t fighter_num = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                              .owned_by(1)
+                              .docked_to(bb_num, 0)
+                              .build();
+
+  test::expect_eq(fighter_num, shipnum_t{3});
+  const auto* fighter = ctx.em.peek_ship(fighter_num);
+  test::expect_true(fighter != nullptr, "Fighter must exist");
+  test::expect_eq(fighter->whatorbits(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(fighter->destshipno(), bb_num);
+  test::expect_true(fighter->docked());
+
+  std::println(std::cout, "  ✓ TestShipBuilder verified successfully");
+}
+
 }  // namespace
 
 int main() {
   test_expectation_utilities();
   test_test_context_dispatch_helpers();
+  test_test_world_builder();
+  test_test_ship_builder();
   std::println(std::cout, "✓ test_context_test passed!");
   return 0;
 }

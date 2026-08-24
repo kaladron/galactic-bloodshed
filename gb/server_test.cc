@@ -15,8 +15,6 @@ import session;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 void test_server_initialization_and_registry_primitives() {
@@ -24,19 +22,19 @@ void test_server_initialization_and_registry_primitives() {
   asio::io_context io;
   Server server(io, 0, ctx.em);
 
-  assert(server.session_count() == 0);
-  assert(!server.is_connected(1, 0));
-  assert(server.get_connected_sessions().empty());
-  assert(!server.update_in_progress());
+  test::expect_eq(server.session_count(), 0);
+  test::expect_false(server.is_connected(1, 0));
+  test::expect_true(server.get_connected_sessions().empty());
+  test::expect_false(server.update_in_progress());
 
   server.set_update_in_progress(true);
-  assert(server.update_in_progress());
+  test::expect_true(server.update_in_progress());
   server.set_update_in_progress(false);
-  assert(!server.update_in_progress());
+  test::expect_false(server.update_in_progress());
 
   // Notification methods should safely handle empty session list
   server.notify_race(1, "Broadcast message\n");
-  assert(!server.notify_player(1, 0, "Personal message\n"));
+  test::expect_false(server.notify_player(1, 0, "Personal message\n"));
   server.flush_all();
 
   server.shutdown();
@@ -85,13 +83,13 @@ void test_server_network_lifecycle_and_session_handling() {
   // Run io to accept connection and dispatch welcome message
   io.poll();
 
-  assert(server.session_count() == 1);
+  test::expect_eq(server.session_count(), 1);
 
   // Read welcome message
   std::array<char, 512> read_buf{};
   std::size_t n = client_socket.read_some(asio::buffer(read_buf));
   std::string welcome_msg(read_buf.data(), n);
-  assert(welcome_msg.contains("Welcome to Galactic Bloodshed"));
+  test::expect_contains(welcome_msg, "Welcome to Galactic Bloodshed");
 
   // Send credentials
   std::string creds = "raceword govword\n";
@@ -106,7 +104,7 @@ void test_server_network_lifecycle_and_session_handling() {
   io.poll();
 
   server.shutdown();
-  assert(server.session_count() == 0);
+  test::expect_eq(server.session_count(), 0);
 }
 
 }  // namespace

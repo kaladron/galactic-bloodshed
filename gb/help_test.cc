@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import std;
-
-#include <cassert>
-
 /// \file help_test.cc
-/// \brief Test that help files exist and can be read
+/// \brief Unit tests verifying help documentation files exist in HELPDIR, are
+/// readable markdown, and have valid headers.
+
+import test;
+import std;
 
 // Test that help files exist in the HELPDIR with .md extension
 void test_help_files_exist() {
@@ -15,8 +15,8 @@ void test_help_files_exist() {
   std::filesystem::path help_dir(HELPDIR);
 
   // Check that the help directory exists
-  assert(std::filesystem::exists(help_dir));
-  assert(std::filesystem::is_directory(help_dir));
+  test::expect_true(std::filesystem::exists(help_dir));
+  test::expect_true(std::filesystem::is_directory(help_dir));
   std::println(std::cout, "  ✓ HELPDIR exists: {}", HELPDIR);
 
   // Count .md files
@@ -26,7 +26,7 @@ void test_help_files_exist() {
       md_count++;
     }
   }
-  assert(md_count > 0);
+  test::expect_gt(md_count, 0);
   std::println(std::cout, "  ✓ Found {} .md help files", md_count);
 }
 
@@ -41,15 +41,15 @@ void test_help_file_readable() {
     std::string filepath = std::format("{}/{}.md", HELPDIR, name);
 
     std::ifstream file(filepath);
-    assert(file.is_open());
+    test::expect_true(file.is_open());
 
     // Read first line to verify content
     std::string first_line;
     std::getline(file, first_line);
-    assert(!first_line.empty());
+    test::expect_false(first_line.empty());
 
     // Verify the first line contains the expected markdown header
-    assert(first_line[0] == '#');
+    test::expect_eq(first_line[0], '#');
 
     file.close();
     std::println(std::cout, "  ✓ {} readable, starts with: {}", name,
@@ -64,7 +64,7 @@ void test_help_file_format() {
   std::string filepath = std::format("{}/build.md", HELPDIR);
 
   std::ifstream file(filepath);
-  assert(file.is_open());
+  test::expect_true(file.is_open());
 
   std::string line;
   bool found_title = false;
@@ -84,8 +84,8 @@ void test_help_file_format() {
 
   file.close();
 
-  assert(found_title);
-  assert(found_section);
+  test::expect_true(found_title);
+  test::expect_true(found_section);
   std::println(std::cout, "  ✓ build.md has proper markdown structure");
 }
 
@@ -97,7 +97,7 @@ void test_nonexistent_help_file() {
       std::format("{}/this_topic_does_not_exist.md", HELPDIR);
 
   std::ifstream file(filepath);
-  assert(!file.is_open());
+  test::expect_false(file.is_open());
   std::println(std::cout, "  ✓ Non-existent help file correctly not found");
 }
 

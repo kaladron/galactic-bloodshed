@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file session_test.cc
+/// \brief Unit tests for SessionRegistry notification routing, disconnection
+/// handling, and update suppression.
+
 import asio;
 import dallib;
 import gblib;
 import session;
+import test;
 import std;
-
-#include <cassert>
 
 // Mock Session for testing without real sockets
 // This allows us to test SessionRegistry logic without async I/O
@@ -79,7 +82,7 @@ int main() {
   {
     MockSessionRegistry registry;
     bool delivered = registry.notify_player(1, 0, "Hello");
-    assert(!delivered);
+    test::expect_false(delivered);
     std::println(std::cout, "✓ notify_player returns false with no sessions");
   }
 
@@ -87,7 +90,6 @@ int main() {
   {
     MockSessionRegistry registry;
     registry.notify_race(1, "Broadcast message");
-    assert(true);  // Should not crash
     std::println(std::cout, "✓ notify_race with no sessions doesn't crash");
   }
 
@@ -96,12 +98,12 @@ int main() {
     MockSessionRegistry registry;
     registry.update_flag = true;
     bool delivered = registry.notify_player(1, 0, "Hello");
-    assert(!delivered);
+    test::expect_false(delivered);
 
     // Also test with mock data
     registry.sessions.push_back({true, 1, 0, {}});
     delivered = registry.test_notify_player(1, 0, "Hello");
-    assert(!delivered);  // Should still be false due to update flag
+    test::expect_false(delivered);  // Should still be false due to update flag
 
     std::println(std::cout, "✓ notify_player returns false during update");
   }
@@ -116,7 +118,7 @@ int main() {
     registry.test_notify_race(1, "Test message");
 
     // Message should not be in buffer since update is in progress
-    assert(registry.sessions[0].output.str().empty());
+    test::expect_true(registry.sessions[0].output.str().empty());
     std::println(std::cout, "✓ notify_race suppressed during update");
   }
 
@@ -140,12 +142,12 @@ int main() {
 
     // Send to player 1, governor 0
     bool delivered = registry.test_notify_player(1, 0, "Message for P1G0\n");
-    assert(delivered);
+    test::expect_true(delivered);
 
     // Check only first session received the message
-    assert(registry.sessions[0].output.str() == "Message for P1G0\n");
-    assert(registry.sessions[1].output.str().empty());
-    assert(registry.sessions[2].output.str().empty());
+    test::expect_eq(registry.sessions[0].output.str(), "Message for P1G0\n");
+    test::expect_true(registry.sessions[1].output.str().empty());
+    test::expect_true(registry.sessions[2].output.str().empty());
 
     std::println(std::cout, "✓ notify_player delivers to correct session");
   }
@@ -165,9 +167,9 @@ int main() {
     registry.test_notify_race(1, "Race 1 broadcast\n");
 
     // Check sessions 0 and 1 received message, but not session 2
-    assert(registry.sessions[0].output.str() == "Race 1 broadcast\n");
-    assert(registry.sessions[1].output.str() == "Race 1 broadcast\n");
-    assert(registry.sessions[2].output.str().empty());
+    test::expect_eq(registry.sessions[0].output.str(), "Race 1 broadcast\n");
+    test::expect_eq(registry.sessions[1].output.str(), "Race 1 broadcast\n");
+    test::expect_true(registry.sessions[2].output.str().empty());
 
     std::println(std::cout, "✓ notify_race delivers to all governors of race");
   }
@@ -187,11 +189,11 @@ int main() {
 
     // Send to player 1, governor 0
     bool delivered = registry.test_notify_player(1, 0, "Test\n");
-    assert(delivered);  // Should deliver to session 1
+    test::expect_true(delivered);  // Should deliver to session 1
 
     // Only connected session should receive message
-    assert(registry.sessions[0].output.str().empty());
-    assert(registry.sessions[1].output.str() == "Test\n");
+    test::expect_true(registry.sessions[0].output.str().empty());
+    test::expect_eq(registry.sessions[1].output.str(), "Test\n");
 
     std::println(std::cout,
                  "✓ Disconnected sessions don't receive notifications");
@@ -208,11 +210,11 @@ int main() {
 
     // Try to send to player 3, governor 0 (no matching session)
     bool delivered = registry.test_notify_player(3, 0, "Test\n");
-    assert(!delivered);
+    test::expect_false(delivered);
 
     // No sessions should have received message
-    assert(registry.sessions[0].output.str().empty());
-    assert(registry.sessions[1].output.str().empty());
+    test::expect_true(registry.sessions[0].output.str().empty());
+    test::expect_true(registry.sessions[1].output.str().empty());
 
     std::println(std::cout,
                  "✓ notify_player to non-existent player returns false");
@@ -231,8 +233,8 @@ int main() {
     registry.test_notify_race(3, "Nobody home\n");
 
     // No sessions should have received message
-    assert(registry.sessions[0].output.str().empty());
-    assert(registry.sessions[1].output.str().empty());
+    test::expect_true(registry.sessions[0].output.str().empty());
+    test::expect_true(registry.sessions[1].output.str().empty());
 
     std::println(std::cout,
                  "✓ notify_race to race with no sessions (no crash)");
@@ -252,7 +254,7 @@ int main() {
 
     // All messages should be in the buffer
     std::string expected = "Message 1\nMessage 2\nBroadcast\n";
-    assert(registry.sessions[0].output.str() == expected);
+    test::expect_eq(registry.sessions[0].output.str(), expected);
 
     std::println(std::cout, "✓ Multiple messages accumulate in output buffer");
   }
@@ -272,12 +274,12 @@ int main() {
         {.connected = true, .player = 2, .governor = 0, .output = {}});
 
     bool delivered = registry.test_notify_player(1, 0, "Duplicate login\n");
-    assert(delivered);
+    test::expect_true(delivered);
 
     // Both sessions with player 1, governor 0 should receive message
-    assert(registry.sessions[0].output.str() == "Duplicate login\n");
-    assert(registry.sessions[1].output.str() == "Duplicate login\n");
-    assert(registry.sessions[2].output.str().empty());
+    test::expect_eq(registry.sessions[0].output.str(), "Duplicate login\n");
+    test::expect_eq(registry.sessions[1].output.str(), "Duplicate login\n");
+    test::expect_true(registry.sessions[2].output.str().empty());
 
     std::println(std::cout,
                  "✓ notify_player delivers to multiple matching sessions");
@@ -291,10 +293,10 @@ int main() {
         {.connected = true, .player = 1, .governor = 0, .output = {}});
 
     bool delivered = registry.test_notify_player(1, 0, "");
-    assert(delivered);  // Delivery succeeds even with empty message
+    test::expect_true(delivered);  // Delivery succeeds even with empty message
 
     // Buffer should be empty but delivery still succeeded
-    assert(registry.sessions[0].output.str().empty());
+    test::expect_true(registry.sessions[0].output.str().empty());
 
     std::println(std::cout, "✓ Empty message can be delivered");
   }
@@ -303,13 +305,13 @@ int main() {
   {
     MockSessionRegistry registry;
 
-    assert(!registry.update_in_progress());
+    test::expect_false(registry.update_in_progress());
 
     registry.update_flag = true;
-    assert(registry.update_in_progress());
+    test::expect_true(registry.update_in_progress());
 
     registry.update_flag = false;
-    assert(!registry.update_in_progress());
+    test::expect_false(registry.update_in_progress());
 
     std::println(std::cout, "✓ update_in_progress state management");
   }
@@ -325,8 +327,8 @@ int main() {
     long_message += "\n";
 
     bool delivered = registry.test_notify_player(1, 0, long_message);
-    assert(delivered);
-    assert(registry.sessions[0].output.str() == long_message);
+    test::expect_true(delivered);
+    test::expect_eq(registry.sessions[0].output.str(), long_message);
 
     std::println(std::cout, "✓ Long messages handled correctly");
   }

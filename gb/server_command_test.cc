@@ -11,8 +11,6 @@ import session;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 bool mock_god_handler(const command_t&, GameObj& g) {
@@ -59,13 +57,13 @@ void test_god_privilege_propagation() {
   // 1. Session with god = true executes god_cmd
   g.set_god(true);
   ctx.assert_dispatch_success(g, god_cmd, {"mock_god"});
-  assert(g.out.str().contains("God command executed."));
+  test::expect_contains(g.out.str(), "God command executed.");
 
   // 2. Session with god = false is rejected
   g.out.str("");
   g.set_god(false);
   ctx.assert_dispatch_rejected(g, god_cmd, {"mock_god"});
-  assert(g.out.str().contains("Only deity can use this command."));
+  test::expect_contains(g.out.str(), "Only deity can use this command.");
 }
 
 // Test guest restrictions on guest-restricted commands
@@ -95,14 +93,14 @@ void test_emulation_privilege_drop_and_guest_restrictions() {
   ctx.setup_game_obj(g, 2, 0);
   g.set_god(false);
   ctx.assert_dispatch_rejected(g, no_guest_cmd, {"mock_no_guest"});
-  assert(g.out.str().contains("Guest races cannot use this command."));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Normal non-guest race executes standard command successfully
   g.out.str("");
   ctx.setup_game_obj(g, 3, 0);
   g.set_god(false);
   ctx.assert_dispatch_success(g, no_guest_cmd, {"mock_no_guest"});
-  assert(g.out.str().contains("Mortal command executed."));
+  test::expect_contains(g.out.str(), "Mortal command executed.");
 }
 
 // Test server boundary dispatch lifecycle
@@ -123,7 +121,7 @@ void test_server_boundary_dispatch_lifecycle() {
 
   // Normal player executes standard command
   ctx.assert_dispatch_success(g, no_guest_cmd, {"mock_no_guest"});
-  assert(g.out.str().contains("Mortal command executed."));
+  test::expect_contains(g.out.str(), "Mortal command executed.");
 }
 
 }  // namespace

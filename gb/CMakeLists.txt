@@ -344,13 +344,8 @@ function(gb_add_test name)
 endfunction()
 
 # Test targets
-add_executable(asio_test asio_test.cc)
-target_link_libraries(asio_test PRIVATE asio_module)
-add_test(NAME GB_asio_test COMMAND asio_test)
-
-add_executable(scnlib_test scnlib_test.cc)
-target_link_libraries(scnlib_test PRIVATE scnlib_module)
-add_test(NAME GB_scnlib_test COMMAND scnlib_test)
+gb_add_test(asio_test EXTRA_LIBS asio_module)
+gb_add_test(scnlib_test EXTRA_LIBS scnlib_module)
 
 gb_add_test(allocate_test SOURCES commands/allocate_test.cc)
 gb_add_test(analysis_test SOURCES commands/analysis_test.cc)

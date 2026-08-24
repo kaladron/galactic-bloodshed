@@ -380,6 +380,45 @@ void test_test_command_matrix() {
   std::println(std::cout, "  ✓ TestCommandMatrix verified successfully");
 }
 
+void test_universe_invariants() {
+  std::println(std::cout, "Test: verify_universe_invariants integrity checker");
+  TestContext ctx;
+  TestWorldBuilder::create_standard_solar_system(ctx);
+
+  // Add a ship using TestShipBuilder
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+      .owned_by(player_t{1}, governor_t{0})
+      .named("Enterprise")
+      .in_star_orbit(starnum_t{0}, 0.0, 0.0)
+      .build();
+
+  // Add a commodity
+  Commod commod{};
+  commod.id = 1;
+  commod.owner = player_t{1};
+  commod.amount = 500;
+  JsonStore store(ctx.db);
+  CommodRepository(store).save(commod);
+
+  // Standard world satisfies all invariants
+  test::expect_no_throw([&]() { ctx.verify_universe_invariants(); },
+                        "Standard test world must satisfy universe invariants");
+
+  // Verify that population in planet matches sectors
+  {
+    auto planet_handle = ctx.em.get_planet(starnum_t{0}, planetnum_t{0});
+    planet_handle->popn() = 1234;
+    auto smap_handle = ctx.em.get_sectormap(starnum_t{0}, planetnum_t{0});
+    smap_handle->get(0, 0).set_popn_exact(1234);
+  }
+  test::expect_no_throw(
+      [&]() { ctx.verify_universe_invariants(); },
+      "Aligned planet and sector populations must satisfy invariants");
+
+  std::println(std::cout,
+               "  ✓ verify_universe_invariants verified successfully");
+}
+
 }  // namespace
 
 int main() {
@@ -389,6 +428,7 @@ int main() {
   test_test_ship_builder();
   test_recording_session_registry();
   test_test_command_matrix();
+  test_universe_invariants();
   std::println(std::cout, "✓ test_context_test passed!");
   return 0;
 }

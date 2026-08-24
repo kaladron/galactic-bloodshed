@@ -6,8 +6,6 @@ import gblib;
 import test;
 import std;
 
-#include <cassert>
-
 namespace {
 
 bool mock_success_handler(const command_t&, GameObj& g) {
@@ -36,14 +34,16 @@ void test_role_god_only() {
   // Mortal cannot run god command
   g.set_god(false);
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, desc, {"mock_god"}));
-  assert(g.out.str().contains("Only deity can use this command"));
+  test::expect_false(GB::commands::dispatch_command(g, desc, {"mock_god"}));
+  test::expect_contains(g.out.str(), "Only deity can use this command");
 
   // God can run god command
   g.set_god(true);
   g.out.str("");
-  assert(GB::commands::dispatch_command(g, desc, {"mock_god"}));
-  assert(g.out.str().contains("handler executed successfully"));
+  test::expect_true(GB::commands::dispatch_command(g, desc, {"mock_god"}));
+  test::expect_contains(g.out.str(), "handler executed successfully");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_role_no_guests() {
@@ -69,8 +69,9 @@ void test_role_no_guests() {
 
   // Guest race is rejected
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, desc, {"mock_no_guests"}));
-  assert(g.out.str().contains("Guest races cannot use this command"));
+  test::expect_false(
+      GB::commands::dispatch_command(g, desc, {"mock_no_guests"}));
+  test::expect_contains(g.out.str(), "Guest races cannot use this command");
 
   // Non-guest race is allowed
   {
@@ -80,8 +81,11 @@ void test_role_no_guests() {
   g.race = ctx.em.peek_race(g.player());
 
   g.out.str("");
-  assert(GB::commands::dispatch_command(g, desc, {"mock_no_guests"}));
-  assert(g.out.str().contains("handler executed successfully"));
+  test::expect_true(
+      GB::commands::dispatch_command(g, desc, {"mock_no_guests"}));
+  test::expect_contains(g.out.str(), "handler executed successfully");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_role_leader_only() {
@@ -99,15 +103,17 @@ void test_role_leader_only() {
 
   // Governor 1 is rejected
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, desc, {"mock_leader"}));
-  assert(g.out.str().contains(
-      "Only the leader (Governor 0) may use this command"));
+  test::expect_false(GB::commands::dispatch_command(g, desc, {"mock_leader"}));
+  test::expect_contains(g.out.str(),
+                        "Only the leader (Governor 0) may use this command");
 
   // Governor 0 is allowed
   g.set_governor(0);
   g.out.str("");
-  assert(GB::commands::dispatch_command(g, desc, {"mock_leader"}));
-  assert(g.out.str().contains("handler executed successfully"));
+  test::expect_true(GB::commands::dispatch_command(g, desc, {"mock_leader"}));
+  test::expect_contains(g.out.str(), "handler executed successfully");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_role_star_control() {
@@ -135,15 +141,19 @@ void test_role_star_control() {
 
   // Gov 1 does not control system
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
-  assert(
-      g.out.str().contains("You are not authorized to do that in this system"));
+  test::expect_false(
+      GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
+  test::expect_contains(g.out.str(),
+                        "You are not authorized to do that in this system");
 
   // Gov 0 controls system
   g.set_governor(0);
   g.out.str("");
-  assert(GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
-  assert(g.out.str().contains("handler executed successfully"));
+  test::expect_true(
+      GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
+  test::expect_contains(g.out.str(), "handler executed successfully");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_scope_validation() {
@@ -161,14 +171,18 @@ void test_scope_validation() {
   // Rejected at UNIV
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, desc, {"mock_plan_only"}));
-  assert(g.out.str().contains("Invalid scope for this command"));
+  test::expect_false(
+      GB::commands::dispatch_command(g, desc, {"mock_plan_only"}));
+  test::expect_contains(g.out.str(), "Invalid scope for this command");
 
   // Allowed at PLAN
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.out.str("");
-  assert(GB::commands::dispatch_command(g, desc, {"mock_plan_only"}));
-  assert(g.out.str().contains("handler executed successfully"));
+  test::expect_true(
+      GB::commands::dispatch_command(g, desc, {"mock_plan_only"}));
+  test::expect_contains(g.out.str(), "handler executed successfully");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_argument_validation() {
@@ -187,13 +201,17 @@ void test_argument_validation() {
 
   // Too few arguments
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, desc, {"mock_args", "foo"}));
-  assert(g.out.str().contains("Syntax: mock_args <arg1> <arg2>"));
+  test::expect_false(
+      GB::commands::dispatch_command(g, desc, {"mock_args", "foo"}));
+  test::expect_contains(g.out.str(), "Syntax: mock_args <arg1> <arg2>");
 
   // Sufficient arguments
   g.out.str("");
-  assert(GB::commands::dispatch_command(g, desc, {"mock_args", "foo", "bar"}));
-  assert(g.out.str().contains("handler executed successfully"));
+  test::expect_true(
+      GB::commands::dispatch_command(g, desc, {"mock_args", "foo", "bar"}));
+  test::expect_contains(g.out.str(), "handler executed successfully");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_fixed_star_ap_transactions() {
@@ -221,9 +239,10 @@ void test_fixed_star_ap_transactions() {
 
   // Case 1: Insufficient AP (have 10, need 15) -> Rejected, AP unchanged
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, success_desc, {"mock_cost"}));
-  assert(g.out.str().contains("You don't have 15 action points there"));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 10);
+  test::expect_false(
+      GB::commands::dispatch_command(g, success_desc, {"mock_cost"}));
+  test::expect_contains(g.out.str(), "You don't have 15 action points there");
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 10);
 
   // Set AP to 20
   {
@@ -239,13 +258,17 @@ void test_fixed_star_ap_transactions() {
       .handler = &mock_failure_handler,
   };
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, fail_desc, {"mock_fail"}));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 20);
+  test::expect_false(
+      GB::commands::dispatch_command(g, fail_desc, {"mock_fail"}));
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 20);
 
   // Case 3: Sufficient AP, Handler returns true -> Success, 15 AP deducted
   g.out.str("");
-  assert(GB::commands::dispatch_command(g, success_desc, {"mock_cost"}));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 5);
+  test::expect_true(
+      GB::commands::dispatch_command(g, success_desc, {"mock_cost"}));
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 5);
+
+  ctx.verify_universe_invariants();
 }
 
 void test_fixed_univ_ap_transactions() {
@@ -271,9 +294,10 @@ void test_fixed_univ_ap_transactions() {
 
   // Case 1: Insufficient Univ AP (have 10, need 15) -> Rejected, AP unchanged
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, success_desc, {"mock_univ_cost"}));
-  assert(g.out.str().contains("You need 15 universe action points"));
-  assert(ctx.em.peek_universe()->AP[0] == 10);
+  test::expect_false(
+      GB::commands::dispatch_command(g, success_desc, {"mock_univ_cost"}));
+  test::expect_contains(g.out.str(), "You need 15 universe action points");
+  test::expect_eq(ctx.em.peek_universe()->AP[0], 10);
 
   // Set Univ AP to 20
   {
@@ -289,13 +313,17 @@ void test_fixed_univ_ap_transactions() {
       .handler = &mock_failure_handler,
   };
   g.out.str("");
-  assert(!GB::commands::dispatch_command(g, fail_desc, {"mock_univ_fail"}));
-  assert(ctx.em.peek_universe()->AP[0] == 20);
+  test::expect_false(
+      GB::commands::dispatch_command(g, fail_desc, {"mock_univ_fail"}));
+  test::expect_eq(ctx.em.peek_universe()->AP[0], 20);
 
   // Case 3: Handler returns true -> Success, 15 AP deducted
   g.out.str("");
-  assert(GB::commands::dispatch_command(g, success_desc, {"mock_univ_cost"}));
-  assert(ctx.em.peek_universe()->AP[0] == 5);
+  test::expect_true(
+      GB::commands::dispatch_command(g, success_desc, {"mock_univ_cost"}));
+  test::expect_eq(ctx.em.peek_universe()->AP[0], 5);
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

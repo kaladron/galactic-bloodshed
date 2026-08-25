@@ -80,7 +80,7 @@ Cross-cutting concerns are fundamental components used across all architecture l
 ### Domain Entities & Types
 Located in `gb/gblib-*.cppm` module partition files:
 
-- **`gblib-types.cppm`** - Core type definitions (player_t, shipnum_t, etc.)
+- **`gblib-types.cppm`** - Core type definitions (player_t, shipnum_t, etc.) and `PlayerVector<T, N>` 1-indexed strong ID container
 - **`gblib-race.cppm`** - Race entity structure
 - **`gblib-ships.cppm`** - Ship entity structure and ship types
 - **`gblib-star.cppm`** - Star entity structure and Star wrapper class

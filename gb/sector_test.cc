@@ -172,6 +172,99 @@ void test_sector_invariants() {
   test::expect_eq(s1.get_resource(), 0);
 }
 
+void test_sector_terraform() {
+  Sector sector(sector_struct{
+      .eff = 80,
+      .mobilization = 50,
+      .popn = 1000,
+      .troops = 100,
+      .owner = player_t{1},
+      .race = player_t{1},
+      .type = SectorType::SEC_SEA,
+      .condition = SectorType::SEC_ICE,
+  });
+
+  sector.terraform(SectorType::SEC_LAND);
+  test::expect_eq(sector.get_condition(), SectorType::SEC_LAND);
+  test::expect_eq(sector.get_type(), SectorType::SEC_SEA);  // Geology preserved
+  test::expect_eq(sector.get_eff(), 0);
+  test::expect_eq(sector.get_mobilization(), 0);
+  test::expect_eq(sector.get_popn(), 0);
+  test::expect_eq(sector.get_troops(), 0);
+  test::expect_eq(sector.get_owner(), player_t{0});
+  test::expect_true(sector.is_empty());
+}
+
+void test_sector_colonize_and_claim() {
+  Sector sector(sector_struct{
+      .condition = SectorType::SEC_FOREST,
+  });
+
+  sector.colonize(player_t{2}, 2, player_t{2});
+  test::expect_eq(sector.get_owner(), player_t{2});
+  test::expect_eq(sector.get_race(), player_t{2});
+  test::expect_eq(sector.get_popn(), 2);
+  test::expect_eq(sector.get_troops(), 0);
+  test::expect_true(sector.is_owned());
+
+  sector.claim(player_t{3});
+  test::expect_eq(sector.get_owner(), player_t{3});
+  test::expect_eq(sector.get_race(), player_t{3});
+}
+
+void test_sector_troops_and_mobilization() {
+  Sector sector(sector_struct{
+      .mobilization = 20,
+      .troops = 50,
+  });
+
+  // Mobilization adjustment & clamping
+  sector.adjust_mobilization(15);
+  test::expect_eq(sector.get_mobilization(), 35);
+  sector.adjust_mobilization(-40);  // Bottoms at 0
+  test::expect_eq(sector.get_mobilization(), 0);
+  sector.adjust_mobilization(150);  // Caps at 100
+  test::expect_eq(sector.get_mobilization(), 100);
+
+  sector.set_mobilization_bounded(45);
+  test::expect_eq(sector.get_mobilization(), 45);
+  sector.set_mobilization_bounded(200);  // Clamps to 100
+  test::expect_eq(sector.get_mobilization(), 100);
+  sector.set_mobilization_bounded(-10);  // Clamps to 0
+  test::expect_eq(sector.get_mobilization(), 0);
+
+  // Troops operations
+  sector.add_troops(25);
+  test::expect_eq(sector.get_troops(), 75);
+  sector.subtract_troops(10);
+  test::expect_eq(sector.get_troops(), 65);
+  sector.subtract_troops(100);  // Clamps to 0
+  test::expect_eq(sector.get_troops(), 0);
+
+  sector.set_troops_exact(100);
+  test::expect_eq(sector.get_troops(), 100);
+  sector.clear_troops();
+  test::expect_eq(sector.get_troops(), 0);
+}
+
+void test_sector_transfer_autoclaim() {
+  Sector source(sector_struct{
+      .popn = 100,
+      .owner = player_t{1},
+      .race = player_t{1},
+  });
+  Sector target(sector_struct{
+      .popn = 0,
+      .owner = player_t{0},
+  });
+
+  source.transfer_popn_to(target, 40);
+  test::expect_eq(source.get_popn(), 60);
+  test::expect_eq(target.get_popn(), 40);
+  test::expect_eq(target.get_owner(), player_t{1});
+  test::expect_eq(target.get_race(), player_t{1});
+}
+
 }  // namespace
 
 int main() {
@@ -179,5 +272,9 @@ int main() {
   test_sector_apply_supernova();
   test_sector_plating_and_ownership();
   test_sector_invariants();
+  test_sector_terraform();
+  test_sector_colonize_and_claim();
+  test_sector_troops_and_mobilization();
+  test_sector_transfer_autoclaim();
   return 0;
 }

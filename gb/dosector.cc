@@ -35,7 +35,6 @@ void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
     if (!move) return;
     *people -= move;
     ps.transfer_popn_to(pd, move);
-    pd.set_owner(ps.get_owner());
     stats.tot_captured++;
     stats.Claims = true;
   }
@@ -76,12 +75,12 @@ void updateMobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
 
   if (s.get_mobilization() < pinf.mob_set) {
     if (pinf.resource + stats.prod_res[owner] > 0) {
-      s.set_mobilization(s.get_mobilization() + 1);
+      s.adjust_mobilization(1);
       stats.prod_res[owner] -= round_rand(MOB_COST);
       stats.prod_mob++;
     }
   } else if (s.get_mobilization() > pinf.mob_set) {
-    s.set_mobilization(s.get_mobilization() - 1);
+    s.adjust_mobilization(-1);
     stats.prod_mob--;
   }
 

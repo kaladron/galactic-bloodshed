@@ -75,7 +75,61 @@ void Sector::transfer_popn_to(Sector& dest, population_t amount) noexcept {
   // Perform atomic transfer
   data_.popn -= amount;
   dest.add_popn(amount);
+  if (dest.data_.owner == 0 && dest.data_.popn > 0) {
+    dest.data_.owner = data_.owner;
+    dest.data_.race = (data_.race != 0) ? data_.race : data_.owner;
+  }
 }
+
+void Sector::add_troops(population_t amount) noexcept {
+  if (amount == 0) return;
+
+  population_t new_troops = data_.troops;
+  if (data_.troops > kMaxPopulationPerSector - amount) {
+    new_troops = kMaxPopulationPerSector;
+    log_invariant_violation("Sector", "troops",
+                            std::format("{} + {}", data_.troops, amount),
+                            new_troops);
+  } else {
+    new_troops = data_.troops + amount;
+  }
+
+  data_.troops = new_troops;
+}
+
+void Sector::subtract_troops(population_t amount) noexcept {
+  if (amount == 0) return;
+
+  if (amount > data_.troops) {
+    log_invariant_violation("Sector", "troops",
+                            std::format("subtract {}", amount), "clamped to 0");
+    data_.troops = 0;
+  } else {
+    data_.troops -= amount;
+  }
+}
+
+void Sector::adjust_mobilization(int delta) noexcept {
+  if (delta > 0) {
+    int new_mob = static_cast<int>(data_.mobilization) + delta;
+    data_.mobilization =
+        std::min(100U, static_cast<unsigned int>(std::max(0, new_mob)));
+  } else if (delta < 0) {
+    auto udelta = static_cast<unsigned int>(-delta);
+    data_.mobilization =
+        (data_.mobilization > udelta) ? data_.mobilization - udelta : 0;
+  }
+}
+
+void Sector::set_mobilization_bounded(int val) noexcept {
+  if (val < 0 || val > 100) {
+    log_invariant_violation(
+        "Sector", "mobilization", std::format("{}", val),
+        std::format("clamped to {}", std::clamp(val, 0, 100)));
+  }
+  data_.mobilization = std::clamp(val, 0, 100);
+}
+
 // Resource operation implementations
 void Sector::add_resource(resource_t amount) noexcept {
   if (amount == 0) return;

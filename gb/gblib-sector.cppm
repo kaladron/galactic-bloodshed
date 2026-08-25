@@ -118,9 +118,6 @@ public:
   void set_fert(unsigned int val) noexcept {
     data_.fert = val;
   }
-  void set_mobilization(unsigned int val) noexcept {
-    data_.mobilization = val;
-  }
   void set_crystals(unsigned int val) noexcept {
     data_.crystals = val;
   }
@@ -154,9 +151,26 @@ public:
     data_.eff = 0;
   }
 
+  /// Mobilization operations with bounds (0-100)
+  void adjust_mobilization(int delta) noexcept;
+  void set_mobilization_bounded(int val) noexcept;
+  void set_mobilization(unsigned int val) noexcept {
+    data_.mobilization = val;
+  }
+
+  /// Troops operations with invariant protection
+  void add_troops(population_t amount) noexcept;
+  void subtract_troops(population_t amount) noexcept;
+  void clear_troops() noexcept {
+    data_.troops = 0;
+  }
+  void set_troops_exact(population_t val) noexcept {
+    data_.troops = val;
+  }
   void set_troops(population_t val) noexcept {
     data_.troops = val;
   }
+
   void set_owner(player_t val) noexcept {
     data_.owner = val;
   }
@@ -203,6 +217,32 @@ public:
     data_.troops = 0;
     data_.mobilization = 0;
     data_.eff = 0;
+  }
+
+  /// \brief Terraforms sector to new condition, clearing efficiency,
+  /// mobilization, population, troops, and owner.
+  void terraform(SectorType new_condition) noexcept {
+    data_.condition = new_condition;
+    data_.eff = 0;
+    data_.mobilization = 0;
+    data_.popn = 0;
+    data_.troops = 0;
+    data_.owner = 0;
+  }
+
+  /// \brief Colonizes an unowned sector with an initial population and owner.
+  void colonize(player_t new_owner, population_t initial_popn,
+                player_t race_id = player_t{0}) noexcept {
+    data_.owner = new_owner;
+    data_.race = (race_id != 0) ? race_id : new_owner;
+    data_.popn = initial_popn;
+    data_.troops = 0;
+  }
+
+  /// \brief Sets sector owner and race.
+  void claim(player_t new_owner, player_t race_id = player_t{0}) noexcept {
+    data_.owner = new_owner;
+    data_.race = (race_id != 0) ? race_id : new_owner;
   }
 
   /// \brief Applies supernova radiation damage to the sector based on the

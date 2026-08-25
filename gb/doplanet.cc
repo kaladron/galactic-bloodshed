@@ -128,12 +128,7 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap,
 
   if (success((100 - (int)ship.damage()) * ship.popn() / ship.max_crew())) {
     /* only condition can be terraformed, type doesn't change */
-    s.set_condition(race->likesbest);
-    s.clear_efficiency();
-    s.set_mobilization(0);
-    s.clear_popn();
-    s.set_troops(0);
-    s.set_owner(0);
+    s.terraform(race->likesbest);
     use_fuel(ship, FUEL_COST_TERRA);
     if (success(50) && (planet.conditions(TOXIC) < 100))
       planet.conditions(TOXIC) += 1;
@@ -576,11 +571,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       stats.Sectinfo[p.get_x()][p.get_y()].done = true;
     }
 
-    if ((!p.get_popn() && !p.get_troops()) || p.get_owner() == 0) {
-      p.set_owner(0);
-      p.clear_popn();
-      p.set_troops(0);
-    }
+    p.clear_owner_if_empty();
 
     /*
         if (p->wasted) {
@@ -644,8 +635,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
                  p.get_condition() == explore_race->likesbest)) {
               /*  explorations have found an island */
               stats.Claims = true;
-              p.set_popn_exact(explore_race->number_sexes);
-              p.set_owner(i);
+              p.colonize(i, explore_race->number_sexes);
               stats.tot_captured = 1;
               break;
             } else {
@@ -769,7 +759,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       stats.starpopns[starnum.value][p.get_owner()] += p.get_popn();
     } else {
       p.clear_popn();
-      p.set_troops(0);
+      p.clear_troops();
     }
     planet.total_resources() += p.get_resource();
   }

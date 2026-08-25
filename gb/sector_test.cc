@@ -265,6 +265,95 @@ void test_sector_transfer_autoclaim() {
   test::expect_eq(target.get_race(), player_t{1});
 }
 
+void test_sectormap_range_views() {
+  Planet planet(planet_struct{
+      .dimensions = Coordinates{2, 2},
+  });
+  SectorMap smap(planet, true);
+
+  // Setup sectors:
+  // (0,0): owner 1, popn 100 (populated)
+  // (1,0): owner 1, popn 0 (unpopulated)
+  // (0,1): owner 2, popn 50 (populated)
+  // (1,1): unowned, popn 0
+  smap.get(0, 0).set_owner(1);
+  smap.get(0, 0).set_popn_exact(100);
+
+  smap.get(1, 0).set_owner(1);
+  smap.get(1, 0).set_popn_exact(0);
+
+  smap.get(0, 1).set_owner(2);
+  smap.get(0, 1).set_popn_exact(50);
+
+  smap.get(1, 1).set_owner(0);
+  smap.get(1, 1).set_popn_exact(0);
+
+  // 1. Direct SectorMap iteration
+  std::size_t total_count = 0;
+  for (const Sector& s : smap) {
+    test::expect_false(s.is_wasted());
+    ++total_count;
+  }
+  test::expect_eq(total_count, 4UL);
+
+  // 2. smap.owned()
+  std::size_t owned_count = 0;
+  for (const Sector& s : smap.owned()) {
+    test::expect_true(s.is_owned());
+    ++owned_count;
+  }
+  test::expect_eq(owned_count, 3UL);
+
+  // 2. smap.owned_by()
+  std::size_t p1_count = 0;
+  for (const Sector& s : smap.owned_by(player_t{1})) {
+    test::expect_eq(s.get_owner(), player_t{1});
+    ++p1_count;
+  }
+  test::expect_eq(p1_count, 2UL);
+
+  std::size_t p2_count = 0;
+  for (const Sector& s : smap.owned_by(player_t{2})) {
+    test::expect_eq(s.get_owner(), player_t{2});
+    ++p2_count;
+  }
+  test::expect_eq(p2_count, 1UL);
+
+  // 3. smap.populated()
+  std::size_t pop_count = 0;
+  for (const Sector& s : smap.populated()) {
+    test::expect_true(s.is_populated());
+    ++pop_count;
+  }
+  test::expect_eq(pop_count, 2UL);
+
+  // 4. smap.populated_by()
+  std::size_t p1_pop_count = 0;
+  for (const Sector& s : smap.populated_by(player_t{1})) {
+    test::expect_eq(s.get_owner(), player_t{1});
+    test::expect_true(s.is_populated());
+    ++p1_pop_count;
+  }
+  test::expect_eq(p1_pop_count, 1UL);
+
+  // 5. Mutable iteration through view
+  for (Sector& s : smap.owned_by(player_t{1})) {
+    s.add_resource(50);
+  }
+  test::expect_eq(smap.get(0, 0).get_resource(), 50);
+  test::expect_eq(smap.get(1, 0).get_resource(), 50);
+  test::expect_eq(smap.get(0, 1).get_resource(), 0);
+
+  // 6. Const SectorMap range views
+  const SectorMap& const_smap = smap;
+  std::size_t const_owned_count = 0;
+  for (const Sector& s : const_smap.owned_by(player_t{1})) {
+    test::expect_eq(s.get_resource(), 50);
+    ++const_owned_count;
+  }
+  test::expect_eq(const_owned_count, 2UL);
+}
+
 }  // namespace
 
 int main() {
@@ -276,5 +365,6 @@ int main() {
   test_sector_colonize_and_claim();
   test_sector_troops_and_mobilization();
   test_sector_transfer_autoclaim();
+  test_sectormap_range_views();
   return 0;
 }

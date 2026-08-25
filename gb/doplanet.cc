@@ -608,8 +608,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
                         */
   }
 
-  for (auto& p : smap) {
-    if (p.get_owner() != 0) planet.info(p.get_owner()).numsectsowned++;
+  for (const auto& p : smap.owned()) {
+    planet.info(p.get_owner()).numsectsowned++;
   }
 
   if (planet.expltimer() >= 1) planet.expltimer() -= 1;

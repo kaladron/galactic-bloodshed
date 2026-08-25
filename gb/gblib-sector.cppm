@@ -191,6 +191,9 @@ public:
   [[nodiscard]] bool is_empty() const noexcept {
     return data_.popn == 0 && data_.troops == 0;
   }
+  [[nodiscard]] bool is_populated() const noexcept {
+    return data_.popn > 0 || data_.troops > 0;
+  }
   [[nodiscard]] bool is_wasted() const noexcept {
     return data_.condition == SectorType::SEC_WASTED;
   }
@@ -483,6 +486,54 @@ public:
 
   [[nodiscard]] auto indexed_sectors() const {
     return IndexedSectorsViewImpl<const SectorMap, const Sector&>(*this);
+  }
+
+  /// \brief Returns a non-allocating lazy view of all owned sectors.
+  [[nodiscard]] auto owned() noexcept {
+    return grid_ | std::views::filter(
+                       [](const Sector& s) noexcept { return s.is_owned(); });
+  }
+  [[nodiscard]] auto owned() const noexcept {
+    return grid_ | std::views::filter(
+                       [](const Sector& s) noexcept { return s.is_owned(); });
+  }
+
+  /// \brief Returns a non-allocating lazy view of sectors owned by a specific
+  /// player.
+  [[nodiscard]] auto owned_by(player_t player) noexcept {
+    return grid_ | std::views::filter([player](const Sector& s) noexcept {
+             return s.get_owner() == player;
+           });
+  }
+  [[nodiscard]] auto owned_by(player_t player) const noexcept {
+    return grid_ | std::views::filter([player](const Sector& s) noexcept {
+             return s.get_owner() == player;
+           });
+  }
+
+  /// \brief Returns a non-allocating lazy view of all populated sectors.
+  [[nodiscard]] auto populated() noexcept {
+    return grid_ | std::views::filter([](const Sector& s) noexcept {
+             return s.is_populated();
+           });
+  }
+  [[nodiscard]] auto populated() const noexcept {
+    return grid_ | std::views::filter([](const Sector& s) noexcept {
+             return s.is_populated();
+           });
+  }
+
+  /// \brief Returns a non-allocating lazy view of populated sectors owned by a
+  /// specific player.
+  [[nodiscard]] auto populated_by(player_t player) noexcept {
+    return grid_ | std::views::filter([player](const Sector& s) noexcept {
+             return s.get_owner() == player && s.is_populated();
+           });
+  }
+  [[nodiscard]] auto populated_by(player_t player) const noexcept {
+    return grid_ | std::views::filter([player](const Sector& s) noexcept {
+             return s.get_owner() == player && s.is_populated();
+           });
   }
 
   void put(Sector&& s) {

@@ -102,9 +102,9 @@ export struct Vnbrain {
 };
 
 export struct Sectinfo {
-  player_t explored{0};  /* sector has been explored */
-  unsigned char vn{0};   /* this sector has a VN */
-  unsigned char done{0}; /* this sector has been updated */
+  player_t explored{0}; /* sector has been explored */
+  bool vn{false};       /* this sector has a VN */
+  bool done{false};     /* this sector has been updated */
 };
 
 export struct ServerState {

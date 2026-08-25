@@ -198,7 +198,7 @@ void test_doplanet_full_cycle() {
   sectors.save_map(initial_smap);
 
   TurnStats stats{};
-  stats.Compat[0] = 1.0;
+  stats.Compat[player_t{1}] = 1.0;
 
   int result = doplanet(em, star, planet, stats);
   test::expect_ne(result, 0);
@@ -259,7 +259,7 @@ void test_exploration_island_discovery() {
   sectors.save_map(initial_smap);
 
   TurnStats stats{};
-  stats.Compat[0] = 1.0;
+  stats.Compat[player_t{1}] = 1.0;
   // Mark candidate sectors as already explored by player 1
   for (int x = 1; x <= 4; ++x) {
     stats.Sectinfo[x][0].explored = player_t{1};
@@ -327,7 +327,7 @@ void test_64bit_production_and_stockpiles() {
   sectors.save_map(smap);
 
   TurnStats stats{};
-  stats.Compat[0] = 1.0;
+  stats.Compat[player_t{1}] = 1.0;
 
   doplanet(em, star, planet, stats);
 
@@ -341,6 +341,41 @@ void test_64bit_production_and_stockpiles() {
   test::expect_gt(planet.info(player_t{1}).fuel, 265'535);
   test::expect_eq(planet.info(player_t{1}).destruct, 300'000);
   test::expect_eq(planet.info(player_t{1}).crystals, 400'000);
+}
+
+void test_turnstats_playervector_accumulation() {
+  TurnStats stats{};
+
+  // Verify initial zero-initialization across PlayerVector members
+  test::expect_eq(stats.prod_res[player_t{1}], 0);
+  test::expect_eq(stats.prod_fuel[player_t{1}], 0);
+  test::expect_eq(stats.prod_destruct[player_t{1}], 0);
+  test::expect_eq(stats.prod_crystals[player_t{1}], 0);
+  test::expect_eq(stats.Power[player_t{1}].popn, 0U);
+  test::expect_eq(stats.starpopns[0][player_t{1}], 0UL);
+  test::expect_eq(stats.starnumships[0][player_t{1}], 0U);
+  test::expect_eq(stats.Sdatanumships[player_t{1}], 0U);
+  test::expect_eq(stats.Sdatapopns[player_t{1}], 0UL);
+  test::expect_eq(stats.avg_mob[player_t{1}], 0UL);
+
+  // Mutate player stats using strongly-typed player_t keys
+  stats.prod_res[player_t{1}] += 5000;
+  stats.prod_fuel[player_t{1}] += 2500;
+  stats.Power[player_t{1}].popn = 10000;
+  stats.starpopns[1][player_t{1}] = 8000;
+  stats.starnumships[1][player_t{1}] = 12;
+
+  test::expect_eq(stats.prod_res[player_t{1}], 5000);
+  test::expect_eq(stats.prod_fuel[player_t{1}], 2500);
+  test::expect_eq(stats.Power[player_t{1}].popn, 10000U);
+  test::expect_eq(stats.starpopns[1][player_t{1}], 8000UL);
+  test::expect_eq(stats.starnumships[1][player_t{1}], 12U);
+
+  // Verify bounds safety on 0 and > MAXPLAYERS
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)stats.prod_res[player_t{0}]; });
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)stats.Power[player_t{MAXPLAYERS + 1}]; });
 }
 
 }  // namespace
@@ -370,6 +405,10 @@ int main() {
 
   std::println(std::cout, "  Testing 64-bit production and stockpiles... ");
   test_64bit_production_and_stockpiles();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing TurnStats PlayerVector accumulation... ");
+  test_turnstats_playervector_accumulation();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doplanet tests passed!");

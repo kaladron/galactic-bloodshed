@@ -24,16 +24,16 @@ import :types;
 // arrays.
 export struct TurnStats {
   // Per-star population counts for each player
-  std::array<std::array<unsigned long, MAXPLAYERS>, NUMSTARS> starpopns{};
+  std::array<PlayerVector<unsigned long, MAXPLAYERS>, NUMSTARS> starpopns{};
 
   // Per-star ship counts for each player
-  std::array<std::array<unsigned short, MAXPLAYERS>, NUMSTARS> starnumships{};
+  std::array<PlayerVector<unsigned short, MAXPLAYERS>, NUMSTARS> starnumships{};
 
   // Global ship counts per player (for Sdata)
-  std::array<unsigned short, MAXPLAYERS> Sdatanumships{};
+  PlayerVector<unsigned short, MAXPLAYERS> Sdatanumships;
 
   // Global population counts per player (for Sdata)
-  std::array<unsigned long, MAXPLAYERS> Sdatapopns{};
+  PlayerVector<unsigned long, MAXPLAYERS> Sdatapopns;
 
   // Star info (per star, per planet) - temperature modifications, intimidation
   std::array<std::array<Stinfo, MAXPLANETS>, NUMSTARS> Stinfo{};
@@ -45,17 +45,17 @@ export struct TurnStats {
   std::array<unsigned long, NUMSTARS> StarsExpl{};
 
   // Power statistics for each player
-  std::array<power, MAXPLAYERS> Power{};
+  PlayerVector<power, MAXPLAYERS> Power;
 
   // Production statistics per player
-  std::array<resource_t, MAXPLAYERS> prod_res{};
-  std::array<resource_t, MAXPLAYERS> prod_fuel{};
-  std::array<resource_t, MAXPLAYERS> prod_destruct{};
-  std::array<resource_t, MAXPLAYERS> prod_crystals{};
-  std::array<money_t, MAXPLAYERS> prod_money{};
+  PlayerVector<resource_t, MAXPLAYERS> prod_res;
+  PlayerVector<resource_t, MAXPLAYERS> prod_fuel;
+  PlayerVector<resource_t, MAXPLAYERS> prod_destruct;
+  PlayerVector<resource_t, MAXPLAYERS> prod_crystals;
+  PlayerVector<money_t, MAXPLAYERS> prod_money;
 
   // Average mobility per player
-  std::array<unsigned long, MAXPLAYERS> avg_mob{};
+  PlayerVector<unsigned long, MAXPLAYERS> avg_mob;
 
   // Total production statistics (global accumulators)
   unsigned long tot_resdep{};
@@ -67,7 +67,7 @@ export struct TurnStats {
   std::array<std::uint64_t, NUMSTARS> inhabited{};
 
   // Compatibility values per player (computed at planet start)
-  std::array<double, MAXPLAYERS> Compat{};
+  PlayerVector<double, MAXPLAYERS> Compat;
 
   // Claims flag (set if any sector ownership changes)
   bool Claims{};

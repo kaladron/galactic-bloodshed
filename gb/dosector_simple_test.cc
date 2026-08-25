@@ -441,7 +441,7 @@ void test_produce_and_troop_maintenance() {
 
   Sector s = createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 50, player_t{1});
   TurnStats stats{};
-  stats.Compat[0] = 1.0;
+  stats.Compat[player_t{1}] = 1.0;
 
   produce(em, star, planet, s, stats);
 
@@ -481,7 +481,7 @@ void test_spread_population() {
   center.set_fert(0);
 
   TurnStats stats{};
-  stats.Compat[0] = 1.0;
+  stats.Compat[player_t{1}] = 1.0;
 
   spread(em, planet, center, smap, stats);
 

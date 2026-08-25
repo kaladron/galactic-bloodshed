@@ -27,7 +27,7 @@ void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
   if (!pd.is_owned()) {
     const auto* race = entity_manager.peek_race(ps.get_owner());
     if (!race) return;
-    double move_calc = (*people) * stats.Compat[ps.get_owner().value - 1] *
+    double move_calc = (*people) * stats.Compat[ps.get_owner()] *
                        race->likes[pd.get_condition()] / 100.0;
     // Round and clamp to valid population_t range
     auto move = std::clamp(std::lround(move_calc), population_t{0},
@@ -51,33 +51,33 @@ void processResourceProduction(const Race& race, Sector& s, TurnStats& stats) {
   s.set_resource(s.get_resource() - prod);
 
   auto pfuel = prod * (1 + (s.get_condition() == SectorType::SEC_GAS));
-  int owner_idx = s.get_owner().value - 1;
+  player_t owner = s.get_owner();
 
   if (success(s.get_mobilization())) {
-    stats.prod_destruct[owner_idx] += prod;
+    stats.prod_destruct[owner] += prod;
   } else {
-    stats.prod_res[owner_idx] += prod;
+    stats.prod_res[owner] += prod;
   }
 
-  stats.prod_fuel[owner_idx] += pfuel;
+  stats.prod_fuel[owner] += pfuel;
 }
 
 // Process crystal mining in a sector
 void processCrystalMining(const Race& race, Sector& s, TurnStats& stats) {
   if (s.get_crystals() && Crystal(race) && success(s.get_eff())) {
-    stats.prod_crystals[s.get_owner().value - 1]++;
+    stats.prod_crystals[s.get_owner()]++;
     s.set_crystals(s.get_crystals() - 1);
   }
 }
 
 // Update sector mobilization based on planetary settings
 void updateMobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
-  int owner_idx = s.get_owner().value - 1;
+  player_t owner = s.get_owner();
 
   if (s.get_mobilization() < pinf.mob_set) {
-    if (pinf.resource + stats.prod_res[owner_idx] > 0) {
+    if (pinf.resource + stats.prod_res[owner] > 0) {
       s.set_mobilization(s.get_mobilization() + 1);
-      stats.prod_res[owner_idx] -= round_rand(MOB_COST);
+      stats.prod_res[owner] -= round_rand(MOB_COST);
       stats.prod_mob++;
     }
   } else if (s.get_mobilization() > pinf.mob_set) {
@@ -85,7 +85,7 @@ void updateMobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
     stats.prod_mob--;
   }
 
-  stats.avg_mob[owner_idx] += s.get_mobilization();
+  stats.avg_mob[owner] += s.get_mobilization();
 }
 
 // Update sector efficiency and plating
@@ -133,7 +133,7 @@ population_t calculatePopulationChange(const Race& race, const Sector& s,
 void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
                               const Race& race, const Star& star,
                               const Planet& planet, TurnStats& stats) {
-  auto maxsup = maxsupport(race, s, stats.Compat[s.get_owner().value - 1],
+  auto maxsup = maxsupport(race, s, stats.Compat[s.get_owner()],
                            planet.conditions(TOXIC));
   s.add_popn(calculatePopulationChange(race, s, maxsup));
 

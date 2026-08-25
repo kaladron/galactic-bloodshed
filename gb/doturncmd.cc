@@ -35,18 +35,14 @@ struct TurnState {
   unsigned long& star_popn(starnum_t star, player_t player) noexcept {
     assert(star.value >= 0 && star.value < NUMSTARS &&
            "Star index out of bounds");
-    assert(player.value >= 1 && player.value <= MAXPLAYERS &&
-           "Player index out of bounds");
-    return stats.starpopns[star.value][player.value - 1];
+    return stats.starpopns[star.value][player];
   }
 
   const unsigned long& star_popn(starnum_t star,
                                  player_t player) const noexcept {
     assert(star.value >= 0 && star.value < NUMSTARS &&
            "Star index out of bounds");
-    assert(player.value >= 1 && player.value <= MAXPLAYERS &&
-           "Player index out of bounds");
-    return stats.starpopns[star.value][player.value - 1];
+    return stats.starpopns[star.value][player];
   }
 };
 
@@ -481,15 +477,14 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
 
-        if (state.stats.starpopns[star.value][player.value - 1]) {
+        if (state.stats.starpopns[star.value][player]) {
           setbit(star_handle->inhabited(), player);
 
-          ap_t APs =
-              star_handle->AP(player) +
-              APadd(static_cast<int>(
-                        state.stats.starnumships[star.value][player.value - 1]),
-                    state.stats.starpopns[star.value][player.value - 1],
-                    *race_handle, state);
+          ap_t APs = star_handle->AP(player) +
+                     APadd(static_cast<int>(
+                               state.stats.starnumships[star.value][player]),
+                           state.stats.starpopns[star.value][player],
+                           *race_handle, state);
           if (APs < LIMIT_APs) {
             star_handle->AP(player) = APs;
           } else {
@@ -624,14 +619,14 @@ static void finalize_turn(TurnState& state, bool update) {
 
       /* collective intelligence */
       if (race_handle->collective_iq) {
-        double x = ((2. / 3.14159265) *
-                    std::atan(static_cast<double>(
-                                  state.stats.Power[player.value - 1].popn) /
-                              MESO_POP_SCALE));
+        double x =
+            ((2. / 3.14159265) *
+             std::atan(static_cast<double>(state.stats.Power[player].popn) /
+                       MESO_POP_SCALE));
         race_handle->IQ = race_handle->IQ_limit * x * x;
       }
       race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;
-      race_handle->morale += state.stats.Power[player.value - 1].planets_owned;
+      race_handle->morale += state.stats.Power[player].planets_owned;
       make_discoveries(state.entity_manager, *race_handle);
       race_handle->turn += 1;
       if (race_handle->controlled_planets >=
@@ -668,18 +663,19 @@ static void finalize_turn(TurnState& state, bool update) {
     compute_power_blocks(state.entity_manager);
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
-      state.stats.Power[player.value - 1].money = 0;
+      state.stats.Power[player].money = 0;
       for (auto& governor : race_handle->governor) {
         if (governor.active) {
-          state.stats.Power[player.value - 1].money += governor.money;
+          state.stats.Power[player].money += governor.money;
         }
       }
     }
     // Save power data via EntityManager
-    for (int i : std::views::iota(0, MAXPLAYERS)) {
-      auto power_handle = state.entity_manager.get_power(i);
+    for (player_t i = 1; i <= MAXPLAYERS; ++i) {
+      auto power_handle = state.entity_manager.get_power(powernum_t{i.value});
       if (power_handle.get()) {
         *power_handle = state.stats.Power[i];
+        power_handle->id = i.value;
       }
     }
   }

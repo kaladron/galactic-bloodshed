@@ -475,22 +475,21 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
 
     /* add ships, popn to total count to add AP's */
     if (update) {
-      stats.Power[ship.owner().value - 1].ships_owned++;
-      stats.Power[ship.owner().value - 1].resource += ship.resource();
-      stats.Power[ship.owner().value - 1].fuel += ship.fuel();
-      stats.Power[ship.owner().value - 1].destruct += ship.destruct();
-      stats.Power[ship.owner().value - 1].popn += ship.popn();
-      stats.Power[ship.owner().value - 1].troops += ship.troops();
+      stats.Power[ship.owner()].ships_owned++;
+      stats.Power[ship.owner()].resource += ship.resource();
+      stats.Power[ship.owner()].fuel += ship.fuel();
+      stats.Power[ship.owner()].destruct += ship.destruct();
+      stats.Power[ship.owner()].popn += ship.popn();
+      stats.Power[ship.owner()].troops += ship.troops();
     }
 
     if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      stats.Sdatanumships[ship.owner().value - 1]++;
-      stats.Sdatapopns[ship.owner().value] += ship.popn();
+      stats.Sdatanumships[ship.owner()]++;
+      stats.Sdatapopns[ship.owner()] += ship.popn();
     } else {
-      stats.starnumships[ship.storbits().value][ship.owner().value - 1]++;
+      stats.starnumships[ship.storbits().value][ship.owner()]++;
       /* add popn of ships to popn */
-      stats.starpopns[ship.storbits().value][ship.owner().value - 1] +=
-          ship.popn();
+      stats.starpopns[ship.storbits().value][ship.owner()] += ship.popn();
       /* set inhabited for ship */
       /* only if manned or probe.  Maarten */
       if (ship.popn() || ship.type() == ShipType::OTYPE_PROBE) {

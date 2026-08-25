@@ -30,18 +30,19 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
 
       std::string autorep = pl.info(Playernum).autorep ? "*" : " ";
 
-      table.add_row({std::string(1, Psymbol[pl.type()]),
-                     std::format("{}/{}", star4, planet4), autorep,
-                     std::format("{}", star_ref.governor(Playernum)),
-                     std::format("{:.4f}", pl.info(Playernum).prod_tech),
-                     std::format("{}", pl.total_resources()),
-                     std::format("{}", pl.info(Playernum).prod_crystals),
-                     std::format("{}", pl.info(Playernum).prod_res),
-                     std::format("{}", pl.info(Playernum).prod_dest),
-                     std::format("{}", pl.info(Playernum).prod_fuel),
-                     std::format("{}", pl.info(Playernum).prod_money),
-                     std::format("{}", pl.info(Playernum).tox_thresh),
-                     std::format("{:.2f}", pl.info(Playernum).est_production)});
+      table.add_row(
+          {std::string(1, Psymbol[pl.type()]),
+           std::format("{}/{}", star4, planet4), autorep,
+           std::format("{}", star_ref.governor(Playernum)),
+           std::format("{:.4f}", pl.info(Playernum).prod_tech),
+           std::format("{}", pl.total_resources()),
+           std::format("{}", pl.info(Playernum).prod_crystals),
+           std::format("{}", pl.info(Playernum).prod_res),
+           std::format("{}", pl.info(Playernum).prod_dest),
+           std::format("{}", pl.info(Playernum).prod_fuel),
+           std::format("{}", pl.info(Playernum).prod_money),
+           std::format("{}", pl.info(Playernum).tox_thresh.value_or(0)),
+           std::format("{:.2f}", pl.info(Playernum).est_production)});
     }
   }
 }

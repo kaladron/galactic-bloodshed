@@ -26,10 +26,14 @@ bool toxicity(const command_t& argv, GameObj& g) {
     return false;
   }
   auto& p = *planet_handle;
-  p.info(g.player()).tox_thresh = thresh;
+  if (thresh == 0) {
+    p.info(g.player()).tox_thresh = std::nullopt;
+  } else {
+    p.info(g.player()).tox_thresh = static_cast<std::uint32_t>(thresh);
+  }
 
   g.out << std::format(" New threshold is: {}\n",
-                       p.info(g.player()).tox_thresh);
+                       p.info(g.player()).tox_thresh.value_or(0));
   return true;
 }
 

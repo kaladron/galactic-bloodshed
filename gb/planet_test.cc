@@ -123,6 +123,62 @@ int main() {
     test::expect_gt(compat, 90.0);
   }
 
+  // Test 7: plinfo defaults and optional tox_thresh behavior
+  {
+    Planet planet(PlanetType::EARTH);
+    auto& info = planet.info(player_t{1});
+
+    // Verify initial default states
+    test::expect_eq(info.tox_thresh, std::nullopt);
+    test::expect_false(info.explored);
+    test::expect_eq(info.autorep, 0U);
+    test::expect_eq(info.tax, 0U);
+    test::expect_eq(info.newtax, 0U);
+    test::expect_eq(info.comread, 0U);
+    test::expect_eq(info.mob_set, 0U);
+    test::expect_eq(info.guns, 0U);
+
+    // Verify mutating tox_thresh with value and resetting to nullopt
+    info.tox_thresh = 35U;
+    test::expect_true(info.tox_thresh.has_value());
+    test::expect_eq(info.tox_thresh.value(), 35U);
+    test::expect_eq(info.tox_thresh.value_or(0U), 35U);
+
+    info.tox_thresh = std::nullopt;
+    test::expect_false(info.tox_thresh.has_value());
+    test::expect_eq(info.tox_thresh.value_or(0U), 0U);
+
+    // Verify 32-bit unsigned fields
+    info.tax = 45U;
+    info.newtax = 50U;
+    info.comread = 85U;
+    info.mob_set = 95U;
+    info.guns = 19U;
+    info.autorep = 63U;
+    info.explored = true;
+
+    test::expect_eq(info.tax, 45U);
+    test::expect_eq(info.newtax, 50U);
+    test::expect_eq(info.comread, 85U);
+    test::expect_eq(info.mob_set, 95U);
+    test::expect_eq(info.guns, 19U);
+    test::expect_eq(info.autorep, 63U);
+    test::expect_true(info.explored);
+  }
+
+  // Test 8: Planet exploration timer and explored flag
+  {
+    Planet planet(PlanetType::EARTH);
+    test::expect_eq(planet.expltimer(), 0U);
+    test::expect_false(planet.explored());
+
+    planet.expltimer() = 5U;
+    planet.explored() = true;
+
+    test::expect_eq(planet.expltimer(), 5U);
+    test::expect_true(planet.explored());
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

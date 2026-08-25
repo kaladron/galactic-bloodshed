@@ -52,8 +52,18 @@ void test_toxicity_dispatch() {
   test::expect_contains(g.out.str(), "New threshold is: 75");
   auto saved = ctx.em.peek_planet(1, 0);
   test::expect_ne(saved, nullptr);
-  test::expect_eq(saved->info(player_t{1}).tox_thresh, 75);
+  test::expect_eq(saved->info(player_t{1}).tox_thresh,
+                  std::optional<std::uint32_t>{75});
   std::println(std::cout, "    ✓ Set toxicity threshold to 75 succeeded");
+
+  // Reset threshold to 0 (disabled)
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"toxicity", "0"});
+  test::expect_contains(g.out.str(), "New threshold is: 0");
+  saved = ctx.em.peek_planet(1, 0);
+  test::expect_eq(saved->info(player_t{1}).tox_thresh, std::nullopt);
+  std::println(std::cout,
+               "    ✓ Reset toxicity threshold to 0 (nullopt) succeeded");
 
   // 2. Reject illegal value (>100)
   g.out.str("");

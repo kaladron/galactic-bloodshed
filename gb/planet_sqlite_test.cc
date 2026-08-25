@@ -35,7 +35,7 @@ int main() {
   test_planet.slaved_to() = 3;
   test_planet.type() = PlanetType::MARS;
   test_planet.expltimer() = 5;
-  test_planet.explored() = 1;
+  test_planet.explored() = true;
 
   // Initialize conditions
   test_planet.conditions(TEMP) = 50;
@@ -67,7 +67,7 @@ int main() {
   test_planet.info(1).comread = 80;
   test_planet.info(1).mob_set = 90;
   test_planet.info(1).tox_thresh = 30;
-  test_planet.info(1).explored = 1;
+  test_planet.info(1).explored = true;
   test_planet.info(1).autorep = 1;
   test_planet.info(1).tax = 15;
   test_planet.info(1).newtax = 18;

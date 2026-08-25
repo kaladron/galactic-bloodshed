@@ -39,15 +39,16 @@ export struct plinfo {          // planetary stockpiles
   money_t tech_invest = 0;
   unsigned short numsectsowned = 0;
 
-  unsigned char comread = 0;     // combat readiness (mobilization)
-  unsigned char mob_set = 0;     // mobilization target
-  unsigned char tox_thresh = 0;  // min to build a waste can
+  std::uint32_t comread = 0;  // combat readiness (mobilization)
+  std::uint32_t mob_set = 0;  // mobilization target
+  std::optional<std::uint32_t> tox_thresh =
+      std::nullopt;  // min to build a waste can
 
-  unsigned char explored = 0;
-  unsigned char autorep = 0;
-  unsigned char tax = 0;     // tax rate
-  unsigned char newtax = 0;  // new tax rate (after update)
-  unsigned char guns = 0;    // number of planet guns (mob/5)
+  bool explored = false;
+  std::uint32_t autorep = 0;
+  std::uint32_t tax = 0;     // tax rate
+  std::uint32_t newtax = 0;  // new tax rate (after update)
+  std::uint32_t guns = 0;    // number of planet guns (mob/5)
 
   /* merchant shipping parameters */
   plroute route[MAX_ROUTES];
@@ -73,8 +74,8 @@ export struct planet_struct {
 
   player_t slaved_to = 0;
   PlanetType type = PlanetType::EARTH;
-  unsigned char expltimer = 0;
-  unsigned char explored = 0;
+  std::uint32_t expltimer = 0;
+  bool explored = false;
 
   starnum_t star_id = 0;
   planetnum_t planet_order = 0;
@@ -193,17 +194,17 @@ public:
     return data_.type;
   }
 
-  [[nodiscard]] unsigned char expltimer() const {
+  [[nodiscard]] std::uint32_t expltimer() const noexcept {
     return data_.expltimer;
   }
-  unsigned char& expltimer() {
+  std::uint32_t& expltimer() noexcept {
     return data_.expltimer;
   }
 
-  [[nodiscard]] unsigned char explored() const {
+  [[nodiscard]] bool explored() const noexcept {
     return data_.explored;
   }
-  unsigned char& explored() {
+  bool& explored() noexcept {
     return data_.explored;
   }
 

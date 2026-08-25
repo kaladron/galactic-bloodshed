@@ -841,8 +841,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         planet.info(player).prod_tech = 0;
 
       /* build wc's if it's been ordered */
-      if (planet.info(player).tox_thresh > 0 &&
-          planet.conditions(TOXIC) >= planet.info(player).tox_thresh &&
+      if (planet.info(player).tox_thresh.has_value() &&
+          planet.conditions(TOXIC) >= *planet.info(player).tox_thresh &&
           planet.info(player).resource >=
               Shipcost(ShipType::OTYPE_TOXWC, race)) {
         int t = std::min(TOXMAX, planet.conditions(TOXIC));

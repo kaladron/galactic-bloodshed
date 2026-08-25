@@ -552,9 +552,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 
   /* check for space mirrors (among other things) warming the planet */
   /* if a change in any artificial warming/cooling trends */
-  planet.conditions(TEMP) =
-      planet.conditions(RTEMP) +
-      stats.Stinfo[starnum.value][planetnum.value].temp_add + int_rand(-5, 5);
+  planet.update_climate(stats.Stinfo[starnum.value][planetnum.value].temp_add);
 
   for (Sector& p : smap.shuffle()) {
     if (p.get_owner() != 0 && (p.get_popn() || p.get_troops())) {
@@ -765,8 +763,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   }
 
   /* deal with enslaved planets */
-  if (planet.slaved_to() != 0) {
-    if (planet.info(planet.slaved_to()).popn > planet.popn() / 1000) {
+  if (planet.is_enslaved()) {
+    if (!planet.is_slave_revolt_triggered()) {
       for (const Race* race : RaceList::readonly(entity_manager)) {
         const player_t p = race->Playernum;
         /* add production to slave holder of planet */
@@ -782,7 +780,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     } else {
       /* slave revolt! */
       /* first nuke some random sectors from the revolt */
-      int revolt_sectors = planet.popn() / 1000 + 1;
+      int revolt_sectors = planet.calculate_revolt_devastation_count();
       while (--revolt_sectors) {
         auto& p = smap.get(int_rand(0, (int)planet.Maxx() - 1),
                            int_rand(0, (int)planet.Maxy() - 1));
@@ -818,7 +816,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
           }
         }
       }
-      planet.slaved_to() = 0;
+      planet.free_slaves();
     }
   }
 

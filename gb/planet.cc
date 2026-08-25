@@ -113,3 +113,7 @@ bool adjacent(const Planet& p, const Coordinates from, const Coordinates to) {
   if (p.dimensions().x > 0 && dx == p.dimensions().x - 1) return true;
   return false;
 }
+
+void Planet::update_climate(int temp_variance) noexcept {
+  conditions(TEMP) = conditions(RTEMP) + temp_variance + int_rand(-5, 5);
+}

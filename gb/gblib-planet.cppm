@@ -252,6 +252,42 @@ public:
   [[nodiscard]] double compatibility(const Race&) const;
   [[nodiscard]] ap_t get_points() const;
 
+  /// \brief Updates planetary atmospheric temperature by adding stellar/mirror
+  /// thermal variance to baseline surface temperature.
+  void update_climate(int temp_variance = 0) noexcept;
+
+  /// \brief Returns whether this planet is currently enslaved to a player.
+  [[nodiscard]] bool is_enslaved() const noexcept {
+    return data_.slaved_to != 0;
+  }
+
+  /// \brief Checks if a slave revolt is triggered.
+  ///
+  /// A slave revolt occurs on an enslaved planet when the slave master's
+  /// population on the planet falls to or below 0.1% (1/1000th) of the
+  /// total planet population, leaving insufficient forces to suppress the
+  /// revolt.
+  [[nodiscard]] bool is_slave_revolt_triggered() const noexcept {
+    if (data_.slaved_to == 0) return false;
+    return data_.info[data_.slaved_to].popn <= (data_.popn / 1000);
+  }
+
+  /// \brief Calculates the number of random sectors devastated during a slave
+  /// revolt (1 sector per 1,000 planet population, plus 1 baseline sector).
+  [[nodiscard]] int calculate_revolt_devastation_count() const noexcept {
+    return static_cast<int>(data_.popn / 1000) + 1;
+  }
+
+  /// \brief Enslaves the planet to a master player.
+  void enslave_to(player_t master) noexcept {
+    data_.slaved_to = master;
+  }
+
+  /// \brief Frees the planet from enslavement.
+  void free_slaves() noexcept {
+    data_.slaved_to = 0;
+  }
+
   // For repository serialization
   [[nodiscard]] planet_struct get_struct() const {
     return data_;

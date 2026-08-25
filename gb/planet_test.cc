@@ -240,6 +240,48 @@ int main() {
         [&]() { (void)planet.info(player_t{MAXPLAYERS + 1}); });
   }
 
+  // Test 11: Planet::update_climate
+  {
+    Planet planet(PlanetType::EARTH);
+    planet.conditions(RTEMP) = 75;
+
+    planet.update_climate(10);
+    test::expect_true(planet.conditions(TEMP) >= 80 &&
+                      planet.conditions(TEMP) <= 90);
+
+    planet.update_climate(-20);
+    test::expect_true(planet.conditions(TEMP) >= 50 &&
+                      planet.conditions(TEMP) <= 60);
+  }
+
+  // Test 12: Enslavement, revolt threshold, and slave liberation
+  {
+    Planet planet(PlanetType::EARTH);
+    test::expect_false(planet.is_enslaved());
+    test::expect_false(planet.is_slave_revolt_triggered());
+
+    planet.enslave_to(player_t{2});
+    test::expect_true(planet.is_enslaved());
+    test::expect_eq(planet.slaved_to(), player_t{2});
+
+    planet.popn() = 100'000;
+    // Revolt threshold is planet.popn() / 1000 = 100
+    planet.info(player_t{2}).popn = 101;
+    test::expect_false(planet.is_slave_revolt_triggered());
+
+    planet.info(player_t{2}).popn = 100;
+    test::expect_true(planet.is_slave_revolt_triggered());
+
+    planet.info(player_t{2}).popn = 50;
+    test::expect_true(planet.is_slave_revolt_triggered());
+    test::expect_eq(planet.calculate_revolt_devastation_count(), 101);
+
+    planet.free_slaves();
+    test::expect_false(planet.is_enslaved());
+    test::expect_eq(planet.slaved_to(), player_t{0});
+    test::expect_false(planet.is_slave_revolt_triggered());
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

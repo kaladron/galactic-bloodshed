@@ -55,13 +55,10 @@ int main() {
 
   int pnum = 0;
   int star = 0;
-  int found = 0;
-  int i;
-  int j;
+  bool found = false;
   player_t Playernum;
   PlanetType ppref;
   int idx;
-  int k;
   char c;
   struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
   unsigned char not_found[PlanetType::DESERT + 1] = {};  // Zero-initialized
@@ -145,7 +142,7 @@ int main() {
                  static_cast<int>(ppref));
 
     /* find first planet of right type */
-    found = 0;
+    found = false;
 
     auto cand_stars = shuffled_indices(Sdata.numstars);
     auto found_loc = find_suitable_enrol_planet(
@@ -153,21 +150,22 @@ int main() {
     if (found_loc) {
       star = found_loc->first;
       pnum = found_loc->second;
-      found = 1;
+      found = true;
     }
 
     if (!found) {
       std::println(std::cout, "planet type not found in any free systems.");
       not_found[ppref] = 1;
-      for (found = 1, i = PlanetType::EARTH; i <= PlanetType::DESERT; i++)
-        found &= not_found[i];
-      if (found) {
+      bool all_exhausted = true;
+      for (PlanetType pt : all_planet_types) {
+        all_exhausted &= (not_found[pt] != 0);
+      }
+      if (all_exhausted) {
         std::println(std::cout,
                      "Looks like there aren't any free planets left.  bye..");
         return -1;
-      } else
-        std::println(std::cout, "  Try a different one...");
-      found = 0;
+      }
+      std::println(std::cout, "  Try a different one...");
     }
 
   } while (!found);
@@ -210,23 +208,25 @@ int main() {
   // Set race conditions based on chosen planet
   const auto* cond_planet = entity_manager.peek_planet(star, pnum);
   if (cond_planet) {
-    for (j = 0; j <= OTHER; j++)
-      race.conditions[j] = cond_planet->conditions(static_cast<Conditions>(j));
+    for (Conditions c_type : all_atmosphere_conditions) {
+      race.conditions[c_type] = cond_planet->conditions(c_type);
+    }
   }
   /*+ int_rand( round_rand(-planet->conditions[j]*2.0),
    * round_rand(planet->conditions[j]*2.0) )*/
 
-  for (i = 0; i < MAXPLAYERS; i++) {
+  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
     /* messages from autoreport, player #1 are decodable */
-    if ((i == (Playernum.value - 1) || Playernum == 1) || race.God)
-      race.translate[i] = 100; /* you can talk to own race */
-    else
-      race.translate[i] = 1;
+    if (p == Playernum || Playernum == 1 || race.God) {
+      race.translate[p.value - 1] = 100; /* you can talk to own race */
+    } else {
+      race.translate[p.value - 1] = 1;
+    }
   }
 
   /* assign racial characteristics */
-  for (i = 0; i < NUM_DISCOVERIES; i++)
-    race.discoveries[i] = 0;
+  for (int d_idx = 0; d_idx < NUM_DISCOVERIES; d_idx++)
+    race.discoveries[d_idx] = 0;
   race.tech = 0.0;
   race.morale = 0;
   race.turn = 0;
@@ -291,16 +291,18 @@ int main() {
     }
   }
   // Temporarily show sectors during selection (no need to persist)
-  for (i = SectorType::SEC_SEA; i <= SectorType::SEC_WASTED; i++)
-    if (secttypes[i].here) {
+  for (SectorType st : all_sector_types) {
+    if (secttypes[st].here) {
       std::println(
-          std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", i,
+          std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", st,
           get_sector_char(
-              smap.get(secttypes[i].x, secttypes[i].y).get_condition()),
-          secttypes[i].x, secttypes[i].y, Desnames[i], secttypes[i].count);
+              smap.get(secttypes[st].x, secttypes[st].y).get_condition()),
+          secttypes[st].x, secttypes[st].y, Desnames[st], secttypes[st].count);
     }
+  }
 
-  found = 0;
+  SectorType chosen_sector{};
+  bool sector_chosen = false;
   do {
     std::print("\nchoice (enter the number): ");
     std::string choice_line;
@@ -311,24 +313,24 @@ int main() {
                    choice_result.error().msg());
       return -1;
     }
-    i = choice_result->value();
-
-    if (i < SectorType::SEC_SEA || i > SectorType::SEC_WASTED ||
-        !secttypes[i].here) {
+    auto parsed = to_sector_type(choice_result->value());
+    if (!parsed || !secttypes[*parsed].here) {
       std::println(std::cout, "There are none of that type here..");
-    } else
-      found = 1;
-  } while (!found);
+    } else {
+      chosen_sector = *parsed;
+      sector_chosen = true;
+    }
+  } while (!sector_chosen);
 
-  auto& sect = smap.get(secttypes[i].x, secttypes[i].y);
-  race.likesbest = i;
-  race.likes[i] = 1.0;
+  auto& sect = smap.get(secttypes[chosen_sector].x, secttypes[chosen_sector].y);
+  race.likesbest = chosen_sector;
+  race.likes[chosen_sector] = 1.0;
   race.likes[SectorType::SEC_PLATED] = 1.0;
   race.likes[SectorType::SEC_WASTED] = 0.0;
   std::println(std::cout, "\nEnter compatibilities of other sectors -");
-  for (j = SectorType::SEC_SEA; j < SectorType::SEC_PLATED; j++)
-    if (i != j) {
-      std::print("{:6s} ({:3d} sectors) :", Desnames[j], secttypes[j].count);
+  for (SectorType st : all_sector_types) {
+    if (st < SectorType::SEC_PLATED && st != chosen_sector) {
+      std::print("{:6s} ({:3d} sectors) :", Desnames[st], secttypes[st].count);
       std::string compat_line;
       std::getline(std::cin, compat_line);
       auto compat_result = scn::scan<int>(compat_line, "{}");
@@ -337,9 +339,9 @@ int main() {
                      compat_result.error().msg());
         return -1;
       }
-      k = compat_result->value();
-      race.likes[j] = (double)k / 100.0;
+      race.likes[st] = static_cast<double>(compat_result->value()) / 100.0;
     }
+  }
   std::println(std::cout, "Numraces = {}", entity_manager.num_races());
   Playernum = race.Playernum = player_t{entity_manager.num_races().value + 1};
 
@@ -362,7 +364,7 @@ int main() {
     }
     ss.xpos = star_ptr->xpos() + planet_ptr2->xpos();
     ss.ypos = star_ptr->ypos() + planet_ptr2->ypos();
-    ss.land_coords = {secttypes[i].x, secttypes[i].y};
+    ss.land_coords = sect.coords();
 
     ss.owner = Playernum;
     ss.race = Playernum;
@@ -422,8 +424,7 @@ int main() {
     }
   }
 
-  for (j = 0; j < MAXPLAYERS; j++)
-    race.points[j] = 0;
+  std::ranges::fill(race.points, 0);
 
   if (!races.save(race)) {
     std::println(std::cerr, "Error: Failed to save race to database");
@@ -467,7 +468,7 @@ int main() {
 
   std::println(std::cout, "\nYou are player {}.\n", Playernum);
   std::println(std::cout, "Your race has been created on sector {},{} on",
-               secttypes[i].x, secttypes[i].y);
+               sect.coords().x, sect.coords().y);
   if (const auto* home_star = entity_manager.peek_star(star); home_star) {
     std::println(std::cout, "{}/{}.\n", home_star->get_name(),
                  home_star->get_planet_name(pnum));

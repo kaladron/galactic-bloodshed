@@ -38,7 +38,7 @@ int main() {
   test_data.owner = 1;
   test_data.race = 1;
   test_data.type = SectorType::SEC_LAND;
-  test_data.condition = 0;
+  test_data.condition = SectorType::SEC_LAND;
 
   Sector test_sector(test_data);
 
@@ -268,7 +268,7 @@ int main() {
   new_struct.owner = 1;
   new_struct.race = 1;
   new_struct.type = SectorType::SEC_LAND;
-  new_struct.condition = 0;
+  new_struct.condition = SectorType::SEC_LAND;
 
   repo.save(test_planet.star_id(), test_planet.planet_order(), 9, 9,
             new_struct);

@@ -41,7 +41,8 @@ public:
   double metabolism{0.0};
   short conditions[OTHER + 1]{}; /* Atmosphere/temperature this race likes. */
   double likes[SectorType::SEC_WASTED + 1]{}; /* Sector condition compats. */
-  unsigned int likesbest{0}; /* 100% compat sector condition for this race. */
+  SectorType likesbest{
+      SectorType::SEC_LAND}; /* 100% compat sector condition for this race. */
 
   bool dissolved{false}; /* Player has quit. */
   bool God{false};       /* Player is a God race. */

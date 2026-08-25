@@ -65,10 +65,11 @@ static const int rmax[][8] = {{250, 325, 400, 0, 250, 0, 300}, /*   @   */
 
 /*  The starting conditions of the sectors given a planet types */
 /*              @      o     O    #    ~    .       (       _  */
-static const int cond[] = {SectorType::SEC_SEA,    SectorType::SEC_MOUNT,
-                           SectorType::SEC_LAND,   SectorType::SEC_ICE,
-                           SectorType::SEC_GAS,    SectorType::SEC_SEA,
-                           SectorType::SEC_FOREST, SectorType::SEC_DESERT};
+static const SectorType cond[] = {
+    SectorType::SEC_SEA,    SectorType::SEC_MOUNT,  SectorType::SEC_LAND,
+    SectorType::SEC_ICE,    SectorType::SEC_GAS,    SectorType::SEC_SEA,
+    SectorType::SEC_FOREST, SectorType::SEC_DESERT,
+};
 
 namespace {
 void MakeEarthAtmosphere(Planet& planet, const int chance) {
@@ -98,7 +99,7 @@ void MakeEarthAtmosphere(Planet& planet, const int chance) {
 }
 
 //! Returns # of neighbors of a given designation that a sector has.
-int neighbors(SectorMap& smap, Coordinates coords, int type) {
+int neighbors(SectorMap& smap, Coordinates coords, SectorType type) {
   int l = coords.x - 1;
   int r = coords.x + 1; /* Left and right columns. */
   int n = 0;            /* Number of neighbors so far. */
@@ -137,7 +138,7 @@ void seed(SectorMap& smap, SectorType type, int n) {
  *  become type.
  */
 void grow(SectorMap& smap, SectorType type, int n, int rate) {
-  std::vector<std::tuple<int, int, int>> worklist;  // x, y, type
+  std::vector<std::tuple<int, int, SectorType>> worklist;  // x, y, type
 
   // We don't want to alter the current map, as this is iterative.
   // So we store a worklist and apply it after we've done a scan of

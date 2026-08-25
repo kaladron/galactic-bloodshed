@@ -19,10 +19,22 @@ Sector createTestSector(unsigned int x = 0, unsigned int y = 0,
                         unsigned int mob = 0, unsigned int crystals = 0,
                         resource_t resource = 100, population_t popn = 1000,
                         population_t troops = 0, player_t owner = 1,
-                        unsigned int type = SectorType::SEC_LAND,
-                        unsigned int condition = SectorType::SEC_LAND) {
-  return Sector(x, y, eff, fert, mob, crystals, resource, popn, troops, owner,
-                owner, type, condition);
+                        SectorType type = SectorType::SEC_LAND,
+                        SectorType condition = SectorType::SEC_LAND) {
+  return Sector(sector_struct{
+      .coords = {static_cast<int>(x), static_cast<int>(y)},
+      .eff = eff,
+      .fert = fert,
+      .mobilization = mob,
+      .crystals = crystals,
+      .resource = resource,
+      .popn = popn,
+      .troops = troops,
+      .owner = owner,
+      .race = owner,
+      .type = type,
+      .condition = condition,
+  });
 }
 
 // Helper function to create a test race

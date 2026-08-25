@@ -146,3 +146,35 @@ void Sector::degrade_efficiency(int delta) noexcept {
     data_.eff -= delta;
   }
 }
+
+namespace {
+// Supernova stellar radiation and environmental constants
+constexpr resource_t nova_resource_deposit = 1;
+constexpr unsigned int fertility_loss_percent = 20;  // 20% fertility loss
+constexpr int terminal_nova_stage = 14;              // Final stellar explosion
+constexpr double radiation_casualty_rate = 0.50;     // ~50% casualties per turn
+}  // namespace
+
+void Sector::apply_supernova(int stage) noexcept {
+  // Heavy element nucleosynthesis from stellar radiation deposits mineral
+  // resources.
+  data_.resource += nova_resource_deposit;
+
+  // Intense thermal and ionizing radiation degrades planetary agricultural
+  // fertility.
+  data_.fert -= (data_.fert * fertility_loss_percent) / 100;
+
+  // Stage 14 represents the terminal stellar explosion, completely incinerating
+  // all life.
+  if (stage >= terminal_nova_stage) {
+    clear_popn();
+    data_.owner = 0;
+    data_.troops = 0;
+  } else {
+    // Active nova radiation: kills approximately 50% of the living population
+    // per turn.
+    auto deaths =
+        round_rand(static_cast<double>(data_.popn) * radiation_casualty_rate);
+    subtract_popn(deaths);
+  }
+}

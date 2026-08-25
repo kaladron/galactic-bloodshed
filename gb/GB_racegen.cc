@@ -135,11 +135,11 @@ found_planet:
   race.metabolism = race_info.attr[METAB];
 
   // Assign sector compats and determine a primary sector type.
-  for (auto i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++) {
-    race.likes[i] = race_info.compat[i] / 100.0;
-    if ((100 == race_info.compat[i]) &&
-        (1.0 == planet_compat_cov[race_info.home_planet_type][i]))
-      race.likesbest = i;
+  for (SectorType st : all_sector_types) {
+    race.likes[st] = race_info.compat[st] / 100.0;
+    if ((100 == race_info.compat[st]) &&
+        (1.0 == planet_compat_cov[race_info.home_planet_type][st]))
+      race.likesbest = st;
   }
 
   // Find sector to build capital on, and populate it

@@ -27,6 +27,19 @@ export enum PlanetType {
   DESERT = 7,
 };
 
+export constexpr std::array all_planet_types = {
+    PlanetType::EARTH,   PlanetType::ASTEROID, PlanetType::MARS,
+    PlanetType::ICEBALL, PlanetType::GASGIANT, PlanetType::WATER,
+    PlanetType::FOREST,  PlanetType::DESERT,
+};
+
+export template <>
+struct std::formatter<PlanetType> : std::formatter<int> {
+  auto format(PlanetType type, format_context& ctx) const {
+    return formatter<int>::format(static_cast<int>(type), ctx);
+  }
+};
+
 export enum class NewsType {
   ANNOUNCE,
   COMBAT,
@@ -45,6 +58,26 @@ export enum SectorType {
   SEC_PLATED = 7,
   SEC_WASTED = 8,
 };
+
+export constexpr std::array all_sector_types = {
+    SectorType::SEC_SEA,    SectorType::SEC_LAND,   SectorType::SEC_MOUNT,
+    SectorType::SEC_GAS,    SectorType::SEC_ICE,    SectorType::SEC_FOREST,
+    SectorType::SEC_DESERT, SectorType::SEC_PLATED, SectorType::SEC_WASTED,
+};
+
+export template <>
+struct std::formatter<SectorType> : std::formatter<int> {
+  auto format(SectorType type, format_context& ctx) const {
+    return formatter<int>::format(static_cast<int>(type), ctx);
+  }
+};
+
+export constexpr std::optional<SectorType> to_sector_type(int val) noexcept {
+  if (val >= SectorType::SEC_SEA && val <= SectorType::SEC_WASTED) {
+    return static_cast<SectorType>(val);
+  }
+  return std::nullopt;
+}
 
 export enum class PopulationType {
   CIV,
@@ -86,6 +119,20 @@ export enum Conditions {
   HELIUM = 8,
   OTHER = 9,
   TOXIC = 10,
+};
+
+export constexpr std::array all_condition_types = {
+    Conditions::RTEMP,    Conditions::TEMP,   Conditions::METHANE,
+    Conditions::OXYGEN,   Conditions::CO2,    Conditions::HYDROGEN,
+    Conditions::NITROGEN, Conditions::SULFUR, Conditions::HELIUM,
+    Conditions::OTHER,    Conditions::TOXIC,
+};
+
+export constexpr std::array all_atmosphere_conditions = {
+    Conditions::RTEMP,    Conditions::TEMP,   Conditions::METHANE,
+    Conditions::OXYGEN,   Conditions::CO2,    Conditions::HYDROGEN,
+    Conditions::NITROGEN, Conditions::SULFUR, Conditions::HELIUM,
+    Conditions::OTHER,
 };
 
 export struct Stinfo {

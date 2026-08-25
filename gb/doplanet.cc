@@ -571,18 +571,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               est_production(p, entity_manager);
         spread(entity_manager, planet, p, smap, stats);
       } else {
-        /* damage sector from supernova */
-        p.set_resource(p.get_resource() + 1);
-        p.set_fert(p.get_fert() * 0.8);
-        if (star.nova_stage() == 14) {
-          p.clear_popn();
-          p.set_owner(0);
-          p.set_troops(0);
-        } else {
-          // Nova damage: kill approximately 50% of the population
-          auto deaths = round_rand((double)p.get_popn() * .50);
-          p.subtract_popn(deaths);
-        }
+        p.apply_supernova(star.nova_stage());
       }
       stats.Sectinfo[p.get_x()][p.get_y()].done = true;
     }
@@ -676,10 +665,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     nukex = int_rand(0, (int)planet.Maxx() - 1);
     nukey = int_rand(0, (int)planet.Maxy() - 1);
     auto& p = smap.get(nukex, nukey);
-    p.set_condition(SectorType::SEC_WASTED);
-    p.clear_popn();
-    p.set_owner(0);
-    p.set_troops(0);
+    p.devastate();
   }
 
   for (const Race* race : RaceList::readonly(entity_manager)) {
@@ -811,10 +797,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         auto& p = smap.get(int_rand(0, (int)planet.Maxx() - 1),
                            int_rand(0, (int)planet.Maxy() - 1));
         if (p.get_popn() + p.get_troops()) {
-          p.set_owner(0);
-          p.clear_popn();
-          p.set_troops(0);
-          p.set_condition(SectorType::SEC_WASTED);
+          p.devastate();
         }
       }
       /* now nuke all sectors belonging to former master */
@@ -822,10 +805,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         if (stats.Stinfo[starnum.value][planetnum.value].intimidated &&
             success(50)) {
           if (p.get_owner() == planet.slaved_to()) {
-            p.set_owner(0);
-            p.clear_popn();
-            p.set_troops(0);
-            p.set_condition(SectorType::SEC_WASTED);
+            p.devastate();
           }
         }
         /* also add up the populations while here */
@@ -840,9 +820,10 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             "killed!\n",
             planet.slaved_to());
         telegram_buf << "Productions now go to their rightful owners.\n";
-        for (i = 1; i <= entity_manager.num_races(); i++) {
-          if (planet.info(i).numsectsowned) {
-            push_telegram(entity_manager, i, star.governor(i),
+        for (const Race* race : RaceList::readonly(entity_manager)) {
+          const player_t r_id = race->Playernum;
+          if (planet.info(r_id).numsectsowned) {
+            push_telegram(entity_manager, r_id, star.governor(r_id),
                           telegram_buf.str());
           }
         }

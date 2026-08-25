@@ -17,13 +17,13 @@ export struct sector_struct {
   population_t popn{0};
   population_t troops{0}; /* troops (additional combat value) */
 
-  player_t owner{0};         /* owner of place */
-  player_t race{0};          /* race type occupying sector
-                 (usually==owner) - makes things more
-                 realistic when alien races revolt and
-                 you gain control of them! */
-  unsigned int type{0};      /* underlying sector geology */
-  unsigned int condition{0}; /* environmental effects */
+  player_t owner{0};                         /* owner of place */
+  player_t race{0};                          /* race type occupying sector
+                                 (usually==owner) - makes things more
+                                 realistic when alien races revolt and
+                                 you gain control of them! */
+  SectorType type{SectorType::SEC_SEA};      /* underlying sector geology */
+  SectorType condition{SectorType::SEC_SEA}; /* environmental effects */
 };
 
 export class Sector {
@@ -37,19 +37,10 @@ public:
   Sector(Coordinates coords_, unsigned int eff_, unsigned int fert_,
          unsigned int mobilization_, unsigned int crystals_,
          resource_t resource_, population_t popn_, population_t troops_,
-         player_t owner_, player_t race_, unsigned int type_,
-         unsigned int condition_)
+         player_t owner_, player_t race_, SectorType type_,
+         SectorType condition_)
       : data_{coords_, eff_,    fert_,  mobilization_, crystals_, resource_,
               popn_,   troops_, owner_, race_,         type_,     condition_} {}
-
-  Sector(unsigned int x_, unsigned int y_, unsigned int eff_,
-         unsigned int fert_, unsigned int mobilization_, unsigned int crystals_,
-         resource_t resource_, population_t popn_, population_t troops_,
-         player_t owner_, player_t race_, unsigned int type_,
-         unsigned int condition_)
-      : Sector(Coordinates{static_cast<int>(x_), static_cast<int>(y_)}, eff_,
-               fert_, mobilization_, crystals_, resource_, popn_, troops_,
-               owner_, race_, type_, condition_) {}
 
   Sector() = default;
   ~Sector() = default;
@@ -107,10 +98,10 @@ public:
   [[nodiscard]] player_t get_race() const noexcept {
     return data_.race;
   }
-  [[nodiscard]] unsigned int get_type() const noexcept {
+  [[nodiscard]] SectorType get_type() const noexcept {
     return data_.type;
   }
-  [[nodiscard]] unsigned int get_condition() const noexcept {
+  [[nodiscard]] SectorType get_condition() const noexcept {
     return data_.condition;
   }
 
@@ -172,10 +163,10 @@ public:
   void set_race(player_t val) noexcept {
     data_.race = val;
   }
-  void set_type(unsigned int val) noexcept {
+  void set_type(SectorType val) noexcept {
     data_.type = val;
   }
-  void set_condition(unsigned int val) noexcept {
+  void set_condition(SectorType val) noexcept {
     data_.condition = val;
   }
 
@@ -202,6 +193,22 @@ public:
       data_.condition = SectorType::SEC_PLATED;
     }
   }
+
+  /// \brief Devastates a sector: resets condition to SEC_WASTED, and clears
+  /// owner, population, troops, mobilization, and efficiency.
+  void devastate() noexcept {
+    data_.condition = SectorType::SEC_WASTED;
+    data_.owner = 0;
+    data_.popn = 0;
+    data_.troops = 0;
+    data_.mobilization = 0;
+    data_.eff = 0;
+  }
+
+  /// \brief Applies supernova radiation damage to the sector based on the
+  /// star's nova stage. Increments resource by 1, reduces fertility by 20%,
+  /// and either kills ~50% of the population or sterilizes at stage 14.
+  void apply_supernova(int stage) noexcept;
 
   /// Clear ownership if sector is empty (no popn or troops)
   void clear_owner_if_empty() noexcept {

@@ -56,7 +56,10 @@ public:
   std::uint64_t atwar{0};
   std::uint64_t allied{0};
 
-  shipnum_t Gov_ship{0};                /* Shipnumber of government ship. */
+  shipnum_t Gov_ship{0}; /* Shipnumber of government ship. */
+  [[nodiscard]] bool has_government_center() const noexcept {
+    return Gov_ship != 0;
+  }
   long morale{0};                       /* race's morale level */
   unsigned int points[MAXPLAYERS]{};    /* keep track of war status against
                                          another player - for short reports */

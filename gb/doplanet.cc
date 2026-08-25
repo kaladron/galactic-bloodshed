@@ -823,42 +823,21 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   /* add production to all people here */
   for (auto race_handle : RaceList(entity_manager)) {
     auto& race = *race_handle;
-    player_t player = race.Playernum;
-    if (planet.info(player).numsectsowned) {
-      planet.info(player).fuel += stats.prod_fuel[player];
-      planet.info(player).resource += stats.prod_res[player];
-      planet.info(player).destruct += stats.prod_destruct[player];
-      planet.info(player).crystals += stats.prod_crystals[player];
+    const player_t player = race.Playernum;
+    auto& info = planet.info(player);
+    if (info.numsectsowned > 0) {
+      info.deposit_production(stats.prod_fuel[player], stats.prod_res[player],
+                              stats.prod_destruct[player],
+                              stats.prod_crystals[player]);
 
-      auto gov_idx = star.governor(player);
+      const auto gov_idx = star.governor(player);
+      auto& gov = race.governor[gov_idx.value];
 
       /* tax the population - set new tax rate when done */
-      if (race.Gov_ship != 0) {
-        planet.info(player).prod_money =
-            round_rand(INCOME_FACTOR * (double)planet.info(player).tax *
-                       (double)planet.info(player).popn);
-        race.governor[gov_idx.value].money += planet.info(player).prod_money;
-        planet.info(player).tax += std::min(
-            (int)planet.info(player).newtax - (int)planet.info(player).tax, 5);
-      } else
-        planet.info(player).prod_money = 0;
-      race.governor[gov_idx.value].income += planet.info(player).prod_money;
+      info.collect_tax(gov, race);
 
       /* do tech investments */
-      if (race.Gov_ship != 0) {
-        if (race.governor[gov_idx.value].money >=
-            planet.info(player).tech_invest) {
-          planet.info(player).prod_tech =
-              tech_prod((int)(planet.info(player).tech_invest),
-                        (int)(planet.info(player).popn));
-          race.governor[gov_idx.value].money -= planet.info(player).tech_invest;
-          race.tech += planet.info(player).prod_tech;
-          race.governor[gov_idx.value].cost_tech +=
-              planet.info(player).tech_invest;
-        } else
-          planet.info(player).prod_tech = 0;
-      } else
-        planet.info(player).prod_tech = 0;
+      info.invest_tech(gov, race);
 
       /* build wc's if it's been ordered */
       if (planet.info(player).tox_thresh.has_value() &&
@@ -929,19 +908,13 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 
   for (const Race* race : RaceList::readonly(entity_manager)) {
     const player_t p = race->Playernum;
-    stats.Power[p].resource += planet.info(p).resource;
-    stats.Power[p].destruct += planet.info(p).destruct;
-    stats.Power[p].fuel += planet.info(p).fuel;
-    stats.Power[p].sectors_owned += planet.info(p).numsectsowned;
-    stats.Power[p].planets_owned += !!planet.info(p).numsectsowned;
-    if (planet.info(p).numsectsowned) {
-      /* combat readiness naturally moves towards the avg mobilization */
-      planet.info(p).mob_points = stats.avg_mob[p];
-      stats.avg_mob[p] /= planet.info(p).numsectsowned;
-      planet.info(p).comread = stats.avg_mob[p];
-    } else
-      planet.info(p).comread = 0;
-    planet.info(p).guns = planet_guns(planet.info(p).mob_points);
+    auto& info = planet.info(p);
+    stats.Power[p].resource += info.resource;
+    stats.Power[p].destruct += info.destruct;
+    stats.Power[p].fuel += info.fuel;
+    stats.Power[p].sectors_owned += info.numsectsowned;
+    stats.Power[p].planets_owned += !!info.numsectsowned;
+    info.update_combat_readiness(stats.avg_mob[p]);
   }
   return allmod;
 }

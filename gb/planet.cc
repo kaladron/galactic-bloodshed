@@ -117,3 +117,38 @@ bool adjacent(const Planet& p, const Coordinates from, const Coordinates to) {
 void Planet::update_climate(int temp_variance) noexcept {
   conditions(TEMP) = conditions(RTEMP) + temp_variance + int_rand(-5, 5);
 }
+
+money_t plinfo::collect_tax(Race::gov& gov, const Race& race) noexcept {
+  if (!race.has_government_center()) {
+    prod_money = 0;
+    return 0;
+  }
+  prod_money = round_rand(INCOME_FACTOR * static_cast<double>(tax) *
+                          static_cast<double>(popn));
+  gov.money += prod_money;
+  gov.income += prod_money;
+  tax += std::min(static_cast<int>(newtax) - static_cast<int>(tax), 5);
+  return prod_money;
+}
+
+double plinfo::invest_tech(Race::gov& gov, Race& race) noexcept {
+  if (!race.has_government_center() || gov.money < tech_invest) {
+    prod_tech = 0.0;
+    return 0.0;
+  }
+  prod_tech = tech_prod(static_cast<int>(tech_invest), static_cast<int>(popn));
+  gov.money -= tech_invest;
+  gov.cost_tech += tech_invest;
+  race.tech += prod_tech;
+  return prod_tech;
+}
+
+void plinfo::update_combat_readiness(long total_mob_points) noexcept {
+  mob_points = total_mob_points;
+  if (numsectsowned > 0) {
+    comread = static_cast<std::uint32_t>(total_mob_points / numsectsowned);
+  } else {
+    comread = 0;
+  }
+  guns = static_cast<std::uint32_t>(planet_guns(mob_points));
+}

@@ -55,6 +55,30 @@ export struct plinfo {      // planetary stockpiles
 
   long mob_points = 0;
   double est_production = 0;  // estimated production
+
+  /// \brief Deposits turn production outputs into planetary stockpiles.
+  void deposit_production(resource_t fuel_in, resource_t res_in,
+                          resource_t dest_in, resource_t crystals_in) noexcept {
+    fuel += fuel_in;
+    resource += res_in;
+    destruct += dest_in;
+    crystals += crystals_in;
+  }
+
+  /// \brief Taxes the population on this planet, generating revenue for the
+  /// governor. Adjusts the active tax rate towards `newtax` (capped at +5% max
+  /// increase per update). If the race has no active government center, tax
+  /// collection is disabled (returns 0).
+  money_t collect_tax(Race::gov& gov, const Race& race) noexcept;
+
+  /// \brief Deducts technology investment from governor treasury, calculating
+  /// and applying tech advancement points to the race. If the treasury has
+  /// insufficient funds or no active government center exists, returns 0.0.
+  double invest_tech(Race::gov& gov, Race& race) noexcept;
+
+  /// \brief Updates combat readiness and planetary defense guns based on
+  /// average mobilization.
+  void update_combat_readiness(long total_mob_points) noexcept;
 };
 
 // Internal struct holding raw planet data for serialization

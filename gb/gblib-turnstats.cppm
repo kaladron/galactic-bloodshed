@@ -48,11 +48,11 @@ export struct TurnStats {
   std::array<power, MAXPLAYERS> Power{};
 
   // Production statistics per player
-  std::array<unsigned long, MAXPLAYERS> prod_res{};
-  std::array<unsigned long, MAXPLAYERS> prod_fuel{};
-  std::array<unsigned long, MAXPLAYERS> prod_destruct{};
-  std::array<unsigned long, MAXPLAYERS> prod_crystals{};
-  std::array<unsigned long, MAXPLAYERS> prod_money{};
+  std::array<resource_t, MAXPLAYERS> prod_res{};
+  std::array<resource_t, MAXPLAYERS> prod_fuel{};
+  std::array<resource_t, MAXPLAYERS> prod_destruct{};
+  std::array<resource_t, MAXPLAYERS> prod_crystals{};
+  std::array<money_t, MAXPLAYERS> prod_money{};
 
   // Average mobility per player
   std::array<unsigned long, MAXPLAYERS> avg_mob{};

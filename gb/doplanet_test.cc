@@ -277,6 +277,72 @@ void test_exploration_island_discovery() {
   test::expect_eq(planet.info(player_t{1}).numsectsowned, 2);
 }
 
+void test_64bit_production_and_stockpiles() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.metabolism = 500.0;
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.info(player_t{1}).numsectsowned = 5;
+  planet.info(player_t{1}).resource = 100'000;
+  planet.info(player_t{1}).fuel = 200'000;
+  planet.info(player_t{1}).destruct = 300'000;
+  planet.info(player_t{1}).crystals = 400'000;
+
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  SectorMap smap(planet, true);
+  for (int y = 0; y < 10; ++y) {
+    for (int x = 0; x < 10; ++x) {
+      auto& sect = smap.get(x, y);
+      sect.set_x(x);
+      sect.set_y(y);
+      if (y == 0 && x < 5) {
+        sect.set_owner(1);
+        sect.set_popn_exact(100);
+        sect.set_efficiency_bounded(100);
+        sect.set_resource(100'000);
+        sect.set_condition(SectorType::SEC_LAND);
+      } else {
+        sect.set_owner(0);
+        sect.clear_popn();
+        sect.set_condition(SectorType::SEC_SEA);
+      }
+    }
+  }
+  SectorRepository sectors(store);
+  sectors.save_map(smap);
+
+  TurnStats stats{};
+  stats.Compat[0] = 1.0;
+
+  doplanet(em, star, planet, stats);
+
+  // Verify production recorded as 64-bit resource_t (> 65,535) without 16-bit
+  // overflow
+  test::expect_gt(planet.info(player_t{1}).prod_res, 65'535);
+  test::expect_gt(planet.info(player_t{1}).prod_fuel, 65'535);
+
+  // Verify stockpiles accumulated as 64-bit resource_t without overflow
+  test::expect_gt(planet.info(player_t{1}).resource, 165'535);
+  test::expect_gt(planet.info(player_t{1}).fuel, 265'535);
+  test::expect_eq(planet.info(player_t{1}).destruct, 300'000);
+  test::expect_eq(planet.info(player_t{1}).crystals, 400'000);
+}
+
 }  // namespace
 
 int main() {
@@ -300,6 +366,10 @@ int main() {
 
   std::println(std::cout, "  Testing exploration island discovery... ");
   test_exploration_island_discovery();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing 64-bit production and stockpiles... ");
+  test_64bit_production_and_stockpiles();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doplanet tests passed!");

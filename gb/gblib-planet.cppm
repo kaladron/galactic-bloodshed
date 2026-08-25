@@ -21,23 +21,23 @@ export struct plroute {
   Coordinates dest_coords{0, 0};  // location that ship has to land on
 };
 
-export struct plinfo {          // planetary stockpiles
-  unsigned short fuel = 0;      // fuel for powering things
-  unsigned short destruct = 0;  // destructive potential
-  resource_t resource = 0;      // resources in storage
+export struct plinfo {      // planetary stockpiles
+  resource_t fuel = 0;      // fuel for powering things
+  resource_t destruct = 0;  // destructive potential
+  resource_t resource = 0;  // resources in storage
   population_t popn = 0;
   population_t troops = 0;
-  unsigned short crystals = 0;
+  resource_t crystals = 0;
 
-  unsigned short prod_res = 0;  // shows last update production
-  unsigned short prod_fuel = 0;
-  unsigned short prod_dest = 0;
-  unsigned short prod_crystals = 0;
+  resource_t prod_res = 0;  // shows last update production
+  resource_t prod_fuel = 0;
+  resource_t prod_dest = 0;
+  resource_t prod_crystals = 0;
   money_t prod_money = 0;
   double prod_tech = 0;
 
   money_t tech_invest = 0;
-  unsigned short numsectsowned = 0;
+  std::uint32_t numsectsowned = 0;
 
   std::uint32_t comread = 0;  // combat readiness (mobilization)
   std::uint32_t mob_set = 0;  // mobilization target

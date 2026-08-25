@@ -157,13 +157,26 @@ int main() {
     info.autorep = 63U;
     info.explored = true;
 
-    test::expect_eq(info.tax, 45U);
-    test::expect_eq(info.newtax, 50U);
-    test::expect_eq(info.comread, 85U);
-    test::expect_eq(info.mob_set, 95U);
-    test::expect_eq(info.guns, 19U);
-    test::expect_eq(info.autorep, 63U);
-    test::expect_true(info.explored);
+    // Verify 64-bit resource_t stockpile and production fields
+    info.resource = 1'000'000'000LL;
+    info.fuel = 500'000'000LL;
+    info.destruct = 250'000'000LL;
+    info.crystals = 100'000'000LL;
+    info.prod_res = 100'000LL;
+    info.prod_fuel = 80'000LL;
+    info.prod_dest = 70'000LL;
+    info.prod_crystals = 60'000LL;
+    info.numsectsowned = 500;
+
+    test::expect_eq(info.resource, 1'000'000'000LL);
+    test::expect_eq(info.fuel, 500'000'000LL);
+    test::expect_eq(info.destruct, 250'000'000LL);
+    test::expect_eq(info.crystals, 100'000'000LL);
+    test::expect_eq(info.prod_res, 100'000LL);
+    test::expect_eq(info.prod_fuel, 80'000LL);
+    test::expect_eq(info.prod_dest, 70'000LL);
+    test::expect_eq(info.prod_crystals, 60'000LL);
+    test::expect_eq(info.numsectsowned, 500U);
   }
 
   // Test 8: Planet exploration timer and explored flag

@@ -59,6 +59,15 @@ void test_moveship_onplanet() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
 
   Planet planet = createTestPlanet();
 
@@ -66,6 +75,9 @@ void test_moveship_onplanet() {
       .owner = player_t{1},
       .land_coords = {5, 5},
       .special = TerraformData{.index = 0},
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
       .type = ShipType::OTYPE_TERRA,
       .active = 1,
       .alive = 1,
@@ -76,11 +88,108 @@ void test_moveship_onplanet() {
   Ship& ship = *ship_handle;
   ship.shipclass() = "2222";
 
-  // Move once: y should increase from 5 to 6, and bounced should NOT flip order
-  bool moved = moveship_onplanet(ship, planet, em);
-  test::expect_true(moved);
+  // Test get_ground_order
+  auto order0 = get_ground_order(ship, 0);
+  test::expect_true(order0.has_value());
+  test::expect_eq(*order0, '2');
+
+  auto order_oob = get_ground_order(ship, 10);
+  test::expect_false(order_oob.has_value());
+  test::expect_eq(order_oob.error(), GroundMovementError::InvalidIndex);
+
+  // Move once: y should increase from 5 to 6
+  auto move1 = advance_ground_vehicle(ship, planet, em);
+  test::expect_true(move1.has_value());
+  test::expect_eq(move1->y, 6);
   test::expect_eq(ship.land_coords().y, 6);
   test::expect_eq(ship.shipclass()[0], '2');
+
+  // Test non-terraform ship error
+  ship_struct non_terra_data{
+      .owner = player_t{1},
+      .land_coords = {5, 5},
+      .special = WasteData{},
+      .type = ShipType::OTYPE_CANIST,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+  };
+  auto non_terra_handle = em.create_ship(non_terra_data);
+  Ship& non_terra = *non_terra_handle;
+  auto non_terra_order = get_ground_order(non_terra, 0);
+  test::expect_false(non_terra_order.has_value());
+  test::expect_eq(non_terra_order.error(),
+                  GroundMovementError::NotTerraformVehicle);
+  auto non_terra_move = advance_ground_vehicle(non_terra, planet, em);
+  test::expect_false(non_terra_move.has_value());
+  test::expect_eq(non_terra_move.error(),
+                  GroundMovementError::NotTerraformVehicle);
+  test::expect_eq(non_terra.on(), 0);
+
+  // Test stopped ground ship ('s')
+  ship_struct stopped_data{
+      .owner = player_t{1},
+      .land_coords = {5, 5},
+      .special = TerraformData{.index = 0},
+      .type = ShipType::OTYPE_TERRA,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+  };
+  auto stopped_handle = em.create_ship(stopped_data);
+  Ship& stopped_ship = *stopped_handle;
+  stopped_ship.shipclass() = "s";
+  stopped_ship.on() = 1;
+  auto stopped_order = get_ground_order(stopped_ship, 0);
+  test::expect_false(stopped_order.has_value());
+  test::expect_eq(stopped_order.error(), GroundMovementError::Stopped);
+  auto stopped_move = advance_ground_vehicle(stopped_ship, planet, em);
+  test::expect_false(stopped_move.has_value());
+  test::expect_eq(stopped_move.error(), GroundMovementError::Stopped);
+  test::expect_eq(stopped_ship.on(), 0);
+
+  // Test polar bouncing at south pole (y >= Maxy -> bounce y -= 2, flip order)
+  ship_struct bounce_data{
+      .owner = player_t{1},
+      .land_coords = {5, 9},
+      .special = TerraformData{.index = 0},
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_TERRA,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+  };
+  auto bounce_handle = em.create_ship(bounce_data);
+  Ship& bounce_ship = *bounce_handle;
+  bounce_ship.shipclass() = "2";  // Single move south from y=9 on 10-high
+                                  // planet -> y=10 >= 10 -> bounce to 8
+  auto bounce_move = advance_ground_vehicle(bounce_ship, planet, em);
+  test::expect_true(bounce_move.has_value());
+  test::expect_eq(bounce_move->y, 8);
+  test::expect_eq(bounce_ship.shipclass()[0], '8');  // '2' flipped to '8'
+
+  // Test out-of-orders notification on multi-step orders
+  ship_struct ooo_data{
+      .owner = player_t{1},
+      .land_coords = {5, 5},
+      .special = TerraformData{.index = 0},
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_TERRA,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+  };
+  auto ooo_handle = em.create_ship(ooo_data);
+  Ship& ooo_ship = *ooo_handle;
+  ooo_ship.shipclass() = "88";
+  test::expect_eq(ooo_ship.notified(), 0);
+  auto ooo_move = advance_ground_vehicle(ooo_ship, planet, em);
+  test::expect_true(ooo_move.has_value());
+  test::expect_eq(ooo_ship.notified(), 1);
 }
 
 void test_terraform_and_plow() {

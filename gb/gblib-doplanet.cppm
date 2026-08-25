@@ -2,6 +2,7 @@
 
 export module gblib:doplanet;
 
+import std;
 import :planet;
 import :services;
 import :star;
@@ -15,6 +16,20 @@ export int doplanet(EntityManager&, const Star& star, Planet& planet,
 
 export void moveplanet(EntityManager& entity_manager, const Star& star,
                        Planet& planet);
+
+export enum class GroundMovementError {
+  NotTerraformVehicle,
+  Stopped,
+  EmptyOrders,
+  InvalidIndex,
+};
+
+export std::expected<char, GroundMovementError>
+get_ground_order(const Ship& ship, std::size_t index);
+
+export std::expected<Coordinates, GroundMovementError>
+advance_ground_vehicle(Ship& ship, const Planet& planet,
+                       EntityManager& entity_manager);
 
 export bool moveship_onplanet(Ship& ship, const Planet& planet,
                               EntityManager& entity_manager);

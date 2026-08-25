@@ -8,25 +8,64 @@ import gblib;
 
 module gblib;
 
-bool moveship_onplanet(Ship& ship, const Planet& planet,
+std::expected<char, GroundMovementError> get_ground_order(const Ship& ship,
+                                                          std::size_t index) {
+  if (!std::holds_alternative<TerraformData>(ship.special())) {
+    return std::unexpected(GroundMovementError::NotTerraformVehicle);
+  }
+  const auto& orders = ship.shipclass();
+  if (orders.empty()) {
+    return std::unexpected(GroundMovementError::EmptyOrders);
+  }
+  if (index >= orders.size()) {
+    return std::unexpected(GroundMovementError::InvalidIndex);
+  }
+  const char order = orders[index];
+  if (order == '\0') {
+    return std::unexpected(GroundMovementError::EmptyOrders);
+  }
+  if (order == 's') {
+    return std::unexpected(GroundMovementError::Stopped);
+  }
+  return order;
+}
+
+std::expected<Coordinates, GroundMovementError>
+advance_ground_vehicle(Ship& ship, const Planet& planet,
                        EntityManager& entity_manager) {
   if (!std::holds_alternative<TerraformData>(ship.special())) {
     ship.on() = 0;
-    return false;
+    return std::unexpected(GroundMovementError::NotTerraformVehicle);
   }
 
   auto terraform = std::get<TerraformData>(ship.special());
+  if (ship.shipclass().empty()) {
+    ship.on() = 0;
+    return std::unexpected(GroundMovementError::EmptyOrders);
+  }
+  if (terraform.index >= ship.shipclass().size()) {
+    ship.on() = 0;
+    return std::unexpected(GroundMovementError::InvalidIndex);
+  }
   if (ship.shipclass()[terraform.index] == 's') {
     ship.on() = 0;
-    return false;
+    return std::unexpected(GroundMovementError::Stopped);
   }
   if (ship.shipclass()[terraform.index] == 'c') {
     terraform.index = 0; /* reset the orders */
     ship.special() = terraform;
+    if (ship.shipclass().empty() || ship.shipclass()[0] == 'c') {
+      ship.on() = 0;
+      return std::unexpected(GroundMovementError::EmptyOrders);
+    }
+    if (ship.shipclass()[0] == 's') {
+      ship.on() = 0;
+      return std::unexpected(GroundMovementError::Stopped);
+    }
   }
 
-  auto [x, y] =
-      get_move(planet, ship.shipclass()[terraform.index], ship.land_coords());
+  const char order = ship.shipclass()[terraform.index];
+  auto [x, y] = get_move(planet, order, ship.land_coords());
 
   bool bounced = false;
 
@@ -38,22 +77,33 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
     bounced = true; /* bounce off of north pole! */
   }
   if (planet.Maxy() == 1) y = 0;
-  if (ship.shipclass()[terraform.index + 1] != '\0') {
+
+  if (terraform.index + 1 < ship.shipclass().size() &&
+      ship.shipclass()[terraform.index + 1] != '\0') {
     ++terraform.index;
-    if ((ship.shipclass()[terraform.index + 1] == '\0') && (!ship.notified())) {
+    if ((terraform.index + 1 >= ship.shipclass().size() ||
+         ship.shipclass()[terraform.index + 1] == '\0') &&
+        (!ship.notified())) {
       ship.notified() = 1;
-      std::string teleg_buf =
+      const std::string teleg_buf =
           std::format("%{0} is out of orders at %{1}.", ship,
                       prin_ship_orbits(entity_manager, ship));
       push_telegram(entity_manager, ship.owner(), ship.governor(), teleg_buf);
     }
     ship.special() = terraform;
   } else if (bounced) {
-    ship.shipclass()[terraform.index] +=
-        ((ship.shipclass()[terraform.index] > '5') ? -6 : 6);
+    if (terraform.index < ship.shipclass().size()) {
+      ship.shipclass()[terraform.index] +=
+          ((ship.shipclass()[terraform.index] > '5') ? -6 : 6);
+    }
   }
   ship.set_land_coords({x, y});
-  return true;
+  return Coordinates{x, y};
+}
+
+bool moveship_onplanet(Ship& ship, const Planet& planet,
+                       EntityManager& entity_manager) {
+  return advance_ground_vehicle(ship, planet, entity_manager).has_value();
 }
 
 // move, and then terraform

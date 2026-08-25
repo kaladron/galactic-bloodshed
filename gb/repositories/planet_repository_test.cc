@@ -47,6 +47,7 @@ int main() {
   test::expect_eq(retrieved1->xpos(), 100.5);
   test::expect_eq(retrieved1->ypos(), 200.7);
   test::expect_eq(retrieved1->ships(), 10);
+  test::expect_eq(retrieved1->dimensions(), Coordinates(20, 20));
   test::expect_eq(retrieved1->Maxx(), 20);
   test::expect_eq(retrieved1->Maxy(), 20);
   test::expect_eq(retrieved1->popn(), 100000);

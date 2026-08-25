@@ -61,8 +61,7 @@ export struct planet_struct {
   double xpos = 0;
   double ypos = 0;
   shipnum_t ships = 0;
-  unsigned char Maxx = 0;
-  unsigned char Maxy = 0;
+  Coordinates dimensions{0, 0};
 
   std::array<plinfo, MAXPLAYERS> info{};
   std::array<int, TOXIC + 1> conditions{};
@@ -117,27 +116,38 @@ public:
     return data_.ships;
   }
 
-  [[nodiscard]] unsigned char Maxx() const {
-    return data_.Maxx;
+  [[nodiscard]] constexpr Coordinates dimensions() const noexcept {
+    return data_.dimensions;
   }
-  unsigned char& Maxx() {
-    return data_.Maxx;
+  constexpr Coordinates& dimensions() noexcept {
+    return data_.dimensions;
   }
 
-  [[nodiscard]] unsigned char Maxy() const {
-    return data_.Maxy;
+  // Deprecated: Use dimensions().x instead
+  [[nodiscard]] int Maxx() const noexcept {
+    return data_.dimensions.x;
   }
-  unsigned char& Maxy() {
-    return data_.Maxy;
+  int& Maxx() noexcept {
+    return data_.dimensions.x;
+  }
+
+  // Deprecated: Use dimensions().y instead
+  [[nodiscard]] int Maxy() const noexcept {
+    return data_.dimensions.y;
+  }
+  int& Maxy() noexcept {
+    return data_.dimensions.y;
   }
 
   [[nodiscard]] constexpr bool is_valid(const Coordinates c) const noexcept {
-    return c.x >= 0 && c.y >= 0 && c.x < data_.Maxx && c.y < data_.Maxy;
+    return c.x >= 0 && c.y >= 0 && c.x < data_.dimensions.x &&
+           c.y < data_.dimensions.y;
   }
 
   [[nodiscard]] constexpr Coordinates wrap(const Coordinates c) const noexcept {
-    if (data_.Maxx == 0) return c;
-    int wrapped_x = (c.x % data_.Maxx + data_.Maxx) % data_.Maxx;
+    if (data_.dimensions.x == 0) return c;
+    int wrapped_x =
+        (c.x % data_.dimensions.x + data_.dimensions.x) % data_.dimensions.x;
     return {wrapped_x, c.y};
   }
 
@@ -262,7 +272,8 @@ private:
 
 //* Return gravity for the Planet
 double Planet::gravity() const {
-  return (double)Maxx() * (double)Maxy() * GRAV_FACTOR;
+  return static_cast<double>(data_.dimensions.x) *
+         static_cast<double>(data_.dimensions.y) * GRAV_FACTOR;
 }
 
 double Planet::compatibility(const Race& race) const {

@@ -255,17 +255,17 @@ export class SectorMap {
 public:
   SectorMap(const Planet& planet)
       : star_id_(planet.star_id()), planet_order_(planet.planet_order()),
-        maxx_(planet.Maxx()), maxy_(planet.Maxy()) {
-    grid_.reserve(static_cast<std::size_t>(planet.Maxx()) *
-                  static_cast<std::size_t>(planet.Maxy()));
+        maxx_(planet.dimensions().x), maxy_(planet.dimensions().y) {
+    grid_.reserve(static_cast<std::size_t>(planet.dimensions().x) *
+                  static_cast<std::size_t>(planet.dimensions().y));
   }
 
   //! Add an empty sector for every potential space.  Used for initialization.
   SectorMap(const Planet& planet, bool)
       : star_id_(planet.star_id()), planet_order_(planet.planet_order()),
-        maxx_(planet.Maxx()), maxy_(planet.Maxy()),
-        grid_(static_cast<std::size_t>(planet.Maxx()) *
-              static_cast<std::size_t>(planet.Maxy())) {}
+        maxx_(planet.dimensions().x), maxy_(planet.dimensions().y),
+        grid_(static_cast<std::size_t>(planet.dimensions().x) *
+              static_cast<std::size_t>(planet.dimensions().y)) {}
 
   // Accessors for planet identity
   [[nodiscard]] starnum_t star_id() const {

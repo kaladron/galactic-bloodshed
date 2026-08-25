@@ -44,8 +44,7 @@ void setup_test_world(TestContext& ctx) {
   ps.star_id = 0;
   ps.planet_order = 0;
   ps.type = PlanetType::EARTH;
-  ps.Maxx = 10;
-  ps.Maxy = 10;
+  ps.dimensions = {10, 10};
   ps.info[0].fuel = 1000;
   ps.info[0].resource = 500;
   ps.info[0].destruct = 200;

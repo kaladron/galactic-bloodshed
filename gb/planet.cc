@@ -110,6 +110,6 @@ bool adjacent(const Planet& p, const Coordinates from, const Coordinates to) {
   if (std::abs(from.y - to.y) > 1) return false;
   const int dx = std::abs(from.x - to.x);
   if (dx <= 1) return true;
-  if (p.Maxx() > 0 && dx == p.Maxx() - 1) return true;
+  if (p.dimensions().x > 0 && dx == p.dimensions().x - 1) return true;
   return false;
 }

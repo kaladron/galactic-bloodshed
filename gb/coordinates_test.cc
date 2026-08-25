@@ -76,8 +76,7 @@ int main() {
 
   // --- Planet is_valid & wrap tests ---
   planet_struct pdata{};
-  pdata.Maxx = 10;
-  pdata.Maxy = 8;
+  pdata.dimensions = {10, 8};
   Planet planet(pdata);
 
   test::expect_true(planet.is_valid({0, 0}));

@@ -134,6 +134,7 @@ int main() {
   test::expect_eq(retrieved.xpos(), test_planet.xpos());
   test::expect_eq(retrieved.ypos(), test_planet.ypos());
   test::expect_eq(retrieved.ships(), test_planet.ships());
+  test::expect_eq(retrieved.dimensions(), test_planet.dimensions());
   test::expect_eq(retrieved.Maxx(), test_planet.Maxx());
   test::expect_eq(retrieved.Maxy(), test_planet.Maxy());
   test::expect_eq(retrieved.popn(), test_planet.popn());

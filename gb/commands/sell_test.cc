@@ -49,8 +49,7 @@ void setup_test_world(TestContext& ctx) {
   ps.star_id = 1;
   ps.planet_order = 0;
   ps.type = PlanetType::EARTH;
-  ps.Maxx = 10;
-  ps.Maxy = 10;
+  ps.dimensions = {10, 10};
   ps.info[0].explored = true;
   ps.info[0].numsectsowned = 5;
   ps.info[0].resource = 1000;

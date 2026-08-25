@@ -64,7 +64,7 @@ export struct planet_struct {
   shipnum_t ships = 0;
   Coordinates dimensions{0, 0};
 
-  std::array<plinfo, MAXPLAYERS> info{};
+  PlayerVector<plinfo, MAXPLAYERS> info;
   std::array<int, TOXIC + 1> conditions{};
 
   population_t popn = 0;
@@ -224,20 +224,10 @@ public:
 
   // Array accessors with bounds checking
   [[nodiscard]] const plinfo& info(player_t player) const {
-    if (player.value < 1 || player.value > MAXPLAYERS) {
-      throw std::runtime_error(
-          std::format("Player number {} out of range (valid: 1-{})",
-                      player.value, MAXPLAYERS));
-    }
-    return data_.info[player.value - 1];
+    return data_.info[player];
   }
   plinfo& info(player_t player) {
-    if (player.value < 1 || player.value > MAXPLAYERS) {
-      throw std::runtime_error(
-          std::format("Player number {} out of range (valid: 1-{})",
-                      player.value, MAXPLAYERS));
-    }
-    return data_.info[player.value - 1];
+    return data_.info[player];
   }
 
   [[nodiscard]] int conditions(Conditions cond) const {

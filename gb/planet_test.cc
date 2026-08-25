@@ -192,6 +192,54 @@ int main() {
     test::expect_true(planet.explored());
   }
 
+  // Test 9: PlayerVector 1-indexed access, bounds checking, and iteration
+  {
+    PlayerVector<int, 4> pvec;
+    test::expect_eq(pvec.size(), 4U);
+    test::expect_false(pvec.empty());
+
+    // 1-indexed read and write
+    pvec[player_t{1}] = 100;
+    pvec[player_t{4}] = 400;
+
+    test::expect_eq(pvec[player_t{1}], 100);
+    test::expect_eq(pvec.at(player_t{1}), 100);
+    test::expect_eq(pvec[player_t{4}], 400);
+    test::expect_eq(pvec.at(player_t{4}), 400);
+
+    // Verify underlying array mapping (1-indexed player 1 is index 0)
+    test::expect_eq(pvec.raw_array()[0], 100);
+    test::expect_eq(pvec.raw_array()[3], 400);
+
+    // Bounds checking throws std::out_of_range
+    test::expect_throws<std::out_of_range>([&]() { (void)pvec[player_t{0}]; });
+    test::expect_throws<std::out_of_range>([&]() { (void)pvec[player_t{5}]; });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)pvec[player_t{MAXPLAYERS + 1}]; });
+
+    // Iteration over all slots
+    int sum = 0;
+    for (int val : pvec) {
+      sum += val;
+    }
+    test::expect_eq(sum, 500);
+  }
+
+  // Test 10: Planet::info bounds checking
+  {
+    Planet planet(PlanetType::EARTH);
+    planet.info(player_t{1}).popn = 5000;
+    planet.info(player_t{MAXPLAYERS}).popn = 9999;
+
+    test::expect_eq(planet.info(player_t{1}).popn, 5000);
+    test::expect_eq(planet.info(player_t{MAXPLAYERS}).popn, 9999);
+
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)planet.info(player_t{0}); });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)planet.info(player_t{MAXPLAYERS + 1}); });
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

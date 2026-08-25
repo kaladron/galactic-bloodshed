@@ -53,8 +53,8 @@ void setup_test_world(TestContext& ctx) {
   ps.star_id = 0;
   ps.planet_order = 0;
   ps.type = PlanetType::EARTH;
-  ps.info[0].explored = true;
-  ps.info[1].explored = false;
+  ps.info[player_t{1}].explored = true;
+  ps.info[player_t{2}].explored = false;
   Planet planet(ps);
 
   PlanetRepository planets_repo(store);

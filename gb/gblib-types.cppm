@@ -234,15 +234,115 @@ export struct Coordinates {
   }
 };
 
-export template <>
-struct std::formatter<Coordinates> {
-  static constexpr auto parse(std::format_parse_context& ctx) {
+export template <typename CharT>
+struct std::formatter<Coordinates, CharT> {
+  constexpr auto parse(std::basic_format_parse_context<CharT>& ctx) {
     return ctx.begin();
   }
 
-  auto format(const Coordinates& c, auto& ctx) const {
-    return std::format_to(ctx.out(), "{},{}", c.x, c.y);
+  template <typename FormatContext>
+  auto format(const Coordinates& c, FormatContext& ctx) const {
+    auto out = ctx.out();
+    out = std::format_to(out, "{}", c.x);
+    *out++ = static_cast<CharT>(',');
+    return std::format_to(out, "{}", c.y);
   }
+};
+
+/// \brief 1-indexed fixed-size player array wrapper indexed by player_t (1..N).
+export template <typename T, std::size_t N>
+class PlayerVector {
+public:
+  using value_type = T;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using iterator = typename std::array<T, N>::iterator;
+  using const_iterator = typename std::array<T, N>::const_iterator;
+
+  constexpr PlayerVector() = default;
+
+  [[nodiscard]] constexpr size_type size() const noexcept {
+    return N;
+  }
+  [[nodiscard]] constexpr size_type max_size() const noexcept {
+    return N;
+  }
+  [[nodiscard]] constexpr bool empty() const noexcept {
+    return N == 0;
+  }
+
+  /// \brief 1-indexed access via player_t.
+  [[nodiscard]] constexpr reference operator[](player_t player) {
+    if (player.value < 1 || static_cast<std::size_t>(player.value) > N) {
+      throw std::out_of_range(
+          std::format("Player index {} out of range (1..{})", player.value, N));
+    }
+    return data_[player.value - 1];
+  }
+
+  /// \brief 1-indexed const access via player_t.
+  [[nodiscard]] constexpr const_reference operator[](player_t player) const {
+    if (player.value < 1 || static_cast<std::size_t>(player.value) > N) {
+      throw std::out_of_range(
+          std::format("Player index {} out of range (1..{})", player.value, N));
+    }
+    return data_[player.value - 1];
+  }
+
+  /// \brief Checked 1-indexed access.
+  [[nodiscard]] constexpr reference at(player_t player) {
+    return (*this)[player];
+  }
+
+  /// \brief Checked 1-indexed const access.
+  [[nodiscard]] constexpr const_reference at(player_t player) const {
+    return (*this)[player];
+  }
+
+  /// \brief Iterators over all player slots.
+  [[nodiscard]] constexpr iterator begin() noexcept {
+    return data_.begin();
+  }
+  [[nodiscard]] constexpr iterator end() noexcept {
+    return data_.end();
+  }
+  [[nodiscard]] constexpr const_iterator begin() const noexcept {
+    return data_.begin();
+  }
+  [[nodiscard]] constexpr const_iterator end() const noexcept {
+    return data_.end();
+  }
+  [[nodiscard]] constexpr const_iterator cbegin() const noexcept {
+    return data_.cbegin();
+  }
+  [[nodiscard]] constexpr const_iterator cend() const noexcept {
+    return data_.cend();
+  }
+
+  [[nodiscard]] constexpr pointer data() noexcept {
+    return data_.data();
+  }
+  [[nodiscard]] constexpr const_pointer data() const noexcept {
+    return data_.data();
+  }
+
+  /// \brief Underlying std::array reference for raw array access /
+  /// serialization.
+  [[nodiscard]] constexpr std::array<T, N>& raw_array() noexcept {
+    return data_;
+  }
+  [[nodiscard]] constexpr const std::array<T, N>& raw_array() const noexcept {
+    return data_;
+  }
+
+  constexpr bool operator==(const PlayerVector& other) const = default;
+
+private:
+  std::array<T, N> data_{};
 };
 
 /**

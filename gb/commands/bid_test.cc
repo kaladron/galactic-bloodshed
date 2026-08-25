@@ -52,8 +52,8 @@ int main() {
   ps.planet_order = 0;
   ps.type = PlanetType::EARTH;
   ps.dimensions = {10, 10};
-  ps.info[0].explored = true;
-  ps.info[0].numsectsowned = 5;
+  ps.info[player_t{1}].explored = true;
+  ps.info[player_t{1}].numsectsowned = 5;
   Planet planet(ps);
 
   PlanetRepository planets_repo(store);

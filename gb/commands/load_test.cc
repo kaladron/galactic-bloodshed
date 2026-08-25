@@ -45,10 +45,10 @@ void setup_test_world(TestContext& ctx) {
   ps.planet_order = 0;
   ps.type = PlanetType::EARTH;
   ps.dimensions = {10, 10};
-  ps.info[0].fuel = 1000;
-  ps.info[0].resource = 500;
-  ps.info[0].destruct = 200;
-  ps.info[0].crystals = 50;
+  ps.info[player_t{1}].fuel = 1000;
+  ps.info[player_t{1}].resource = 500;
+  ps.info[player_t{1}].destruct = 200;
+  ps.info[player_t{1}].crystals = 50;
   Planet planet(ps);
 
   PlanetRepository planets_repo(store);

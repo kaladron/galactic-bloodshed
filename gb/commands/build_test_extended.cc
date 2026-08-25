@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Extended test coverage for build command
 
-#undef stdout
-#undef stdin
-#undef stderr
-
 import dallib;
 import gblib;
 import test;
@@ -110,18 +106,18 @@ void test_planet_multiple_builds() {
   // Build 5 probes at sector 5,5
   command_t argv = {"build", ":", "5,5", "5"};
 
-  std::println("About to build 5 probes...");
+  std::println(std::cout, "About to build 5 probes...");
   const auto* test_planet = fixture.get_planet();
-  std::println("Planet maxx={}, maxy={}", test_planet->Maxx(),
+  std::println(std::cout, "Planet maxx={}, maxy={}", test_planet->Maxx(),
                test_planet->Maxy());
 
   // Try to load sectormap
   const auto* smap =
       fixture.em.peek_sectormap(fixture.star_id, fixture.planet_id);
   if (smap) {
-    std::println("Sectormap loaded successfully");
+    std::println(std::cout, "Sectormap loaded successfully");
   } else {
-    std::println("Sectormap not found in database!");
+    std::println(std::cout, "Sectormap not found in database!");
   }
 
   GB::commands::build(argv, g);
@@ -129,7 +125,7 @@ void test_planet_multiple_builds() {
   // Check for any error output
   std::string output = g.out.str();
   if (!output.empty()) {
-    std::println("Build command output: {}", output);
+    std::println(std::cout, "Build command output: {}", output);
   }
 
   // Clear cache to ensure fresh read from DB
@@ -137,9 +133,9 @@ void test_planet_multiple_builds() {
 
   // Verify 5 ships were created
   shipnum_t ship_count = fixture.count_ships();
-  std::println("Expected 5 ships, got {}", ship_count);
-  std::println("Assertion will check ship_count == 5");
-  test::expect_eq(ship_count, 5);
+  std::println(std::cout, "Expected 5 ships, got {}", ship_count.value);
+  std::println(std::cout, "Assertion will check ship_count == 5");
+  test::expect_eq(ship_count, shipnum_t{5});
 
   // Verify all ships at same location
   for (shipnum_t i = 1; i <= 5; i++) {
@@ -155,7 +151,7 @@ void test_planet_multiple_builds() {
   int expected_resource = initial_resource - (5 * cost_per_probe);
   test::expect_eq(planet->info(player_t{1}).resource, expected_resource);
 
-  std::println("✓ Planet multiple builds test passed");
+  std::println(std::cout, "✓ Planet multiple builds test passed");
 }
 
 // Test: Factory building multiple ships
@@ -209,7 +205,7 @@ void test_factory_multiple_builds() {
     test::expect_eq(ship->land_coords(), Coordinates(5, 5));  // Same as factory
   }
 
-  std::println("✓ Factory multiple builds test passed");
+  std::println(std::cout, "✓ Factory multiple builds test passed");
 }
 
 // Test: Invalid sector coordinates
@@ -246,7 +242,7 @@ void test_invalid_coordinates() {
     g.out.str("");
   }
 
-  std::println("✓ Invalid coordinates test passed");
+  std::println(std::cout, "✓ Invalid coordinates test passed");
 }
 
 // Test: Wrong scope level
@@ -262,7 +258,7 @@ void test_wrong_scope() {
   std::string output = g.out.str();
   test::expect_contains(output, "change scope");
 
-  std::println("✓ Wrong scope test passed");
+  std::println(std::cout, "✓ Wrong scope test passed");
 }
 
 // Test: Ship cannot be built by planet
@@ -276,7 +272,8 @@ void test_invalid_ship_for_planet() {
   // Need to find a ship type with !(ABIL_BUILD & 1)
   // For now, just test error path exists
 
-  std::println("✓ Invalid ship for planet test skipped (need ship type data)");
+  std::println(std::cout,
+               "✓ Invalid ship for planet test skipped (need ship type data)");
 }
 
 // Test: Insufficient hanger space
@@ -311,12 +308,12 @@ void test_insufficient_hanger_space() {
   // May fail at hanger space or build permission check
   test::expect_false(output.empty());  // Should have some error
 
-  std::println("✓ Insufficient hanger space test passed");
+  std::println(std::cout, "✓ Insufficient hanger space test passed");
 }
 
 int main() {
   try {
-    std::println("Running extended build command tests...\n");
+    std::println(std::cout, "Running extended build command tests...\n");
 
     // Phase 1: Critical multi-build tests
     test_planet_multiple_builds();
@@ -328,10 +325,10 @@ int main() {
     test_invalid_ship_for_planet();
     test_insufficient_hanger_space();
 
-    std::println("\n✅ All extended build tests passed!");
+    std::println(std::cout, "\n✅ All extended build tests passed!");
     return 0;
   } catch (const std::exception& e) {
-    std::println("Exception: {}", e.what());
+    std::println(std::cerr, "Exception: {}", e.what());
     return 1;
   }
 }

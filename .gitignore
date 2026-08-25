@@ -34,7 +34,7 @@ compile_commands.json
 # Ignore all Python Cache files
 **/__pycache__
 
-# Ignore all .md files
-plan*.md
+# Ignore root plan files
+/plan*.md
 
 _codeql_detected_source_root

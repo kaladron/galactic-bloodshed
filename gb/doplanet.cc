@@ -463,58 +463,8 @@ void do_recover(EntityManager& entity_manager, const Star& star,
   }
 }
 
-double est_production(const Sector& s, EntityManager& entity_manager) {
-  const auto* race = entity_manager.peek_race(s.get_owner());
-  return (race->metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
-}
-
-int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
-             TurnStats& stats) {
-  int nukex = 0;
-  int nukey = 0;
-  bool envir_damage = false;
-  int o = 0;
-  player_t i;
-  int timer = 20;
-  unsigned char allmod = 0;
-  unsigned char allexp = 0;
-
-  // Extract indices for array access and ship creation
-  const starnum_t starnum = star.star_id();
-  const planetnum_t planetnum = planet.planet_order();
-
-  // Reset per-planet state in TurnStats
-  // Note: TurnStats is reused across planets, so we reset per-planet fields
-  // here
-  stats.Sectinfo = {};
-  stats.Claims = false;
-
-  planet.maxpopn() = 0;
-
-  planet.popn() = 0; /* initialize population for recount */
-  planet.troops() = 0;
-  planet.total_resources() = 0;
-
-  /* reset global variables */
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t p = race->Playernum;
-    stats.Compat[p] = planet.compatibility(*race);
-    planet.info(p).numsectsowned = 0;
-    planet.info(p).troops = 0;
-    planet.info(p).popn = 0;
-    planet.info(p).est_production = 0.0;
-    stats.prod_crystals[p] = 0;
-    stats.prod_fuel[p] = 0;
-    stats.prod_destruct[p] = 0;
-    stats.prod_res[p] = 0;
-    stats.avg_mob[p] = 0;
-  }
-
-  auto smap_handle = entity_manager.get_sectormap(starnum, planetnum);
-  if (!smap_handle.get()) {
-    return 0;
-  }
-  auto& smap = *smap_handle;
+void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
+                             SectorMap& smap, TurnStats& stats) {
   for (auto ship_handle : ShipList(entity_manager, planet.ships())) {
     auto& ship = *ship_handle;
     if (ship.alive() && !ship.rad()) {
@@ -615,6 +565,61 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       refuel_gasgiant_orbiters(planet, ship);
     }
   }
+}
+
+double est_production(const Sector& s, EntityManager& entity_manager) {
+  const auto* race = entity_manager.peek_race(s.get_owner());
+  return (race->metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
+}
+
+int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
+             TurnStats& stats) {
+  int nukex = 0;
+  int nukey = 0;
+  bool envir_damage = false;
+  int o = 0;
+  player_t i;
+  int timer = 20;
+  unsigned char allmod = 0;
+  unsigned char allexp = 0;
+
+  // Extract indices for array access and ship creation
+  const starnum_t starnum = star.star_id();
+  const planetnum_t planetnum = planet.planet_order();
+
+  // Reset per-planet state in TurnStats
+  // Note: TurnStats is reused across planets, so we reset per-planet fields
+  // here
+  stats.Sectinfo = {};
+  stats.Claims = false;
+
+  planet.maxpopn() = 0;
+
+  planet.popn() = 0; /* initialize population for recount */
+  planet.troops() = 0;
+  planet.total_resources() = 0;
+
+  /* reset global variables */
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    const player_t p = race->Playernum;
+    stats.Compat[p] = planet.compatibility(*race);
+    planet.info(p).numsectsowned = 0;
+    planet.info(p).troops = 0;
+    planet.info(p).popn = 0;
+    planet.info(p).est_production = 0.0;
+    stats.prod_crystals[p] = 0;
+    stats.prod_fuel[p] = 0;
+    stats.prod_destruct[p] = 0;
+    stats.prod_res[p] = 0;
+    stats.avg_mob[p] = 0;
+  }
+
+  auto smap_handle = entity_manager.get_sectormap(starnum, planetnum);
+  if (!smap_handle.get()) {
+    return 0;
+  }
+  auto& smap = *smap_handle;
+  process_planetary_ships(entity_manager, planet, smap, stats);
 
   /* check for space mirrors (among other things) warming the planet */
   /* if a change in any artificial warming/cooling trends */

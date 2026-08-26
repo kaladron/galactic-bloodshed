@@ -80,5 +80,12 @@ export bool execute_berserker_bombardment(EntityManager& entity_manager,
 /// giant).
 export double refuel_gasgiant_orbiters(const Planet& planet, Ship& ship);
 
+/// \brief Processes all planetary ships (VN replication, berserker bombardment,
+/// terraforming, plowing, dome construction, weapon plants, quarrying, and gas
+/// refueling).
+export void process_planetary_ships(EntityManager& entity_manager,
+                                    Planet& planet, SectorMap& smap,
+                                    TurnStats& stats);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

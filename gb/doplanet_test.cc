@@ -631,6 +631,103 @@ void test_refuel_gasgiant_orbiters() {
   test::expect_eq(ship.fuel(), 500.0);
 }
 
+void test_process_planetary_ships() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.likes[SectorType::SEC_LAND] = 1;
+  race.likes[SectorType::SEC_WASTED] = 0;
+  RaceRepository race_repo(store);
+  race_repo.save(race);
+
+  Star star = createTestStar();
+  StarRepository star_repo(store);
+  star_repo.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.type() = PlanetType::GASGIANT;
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+
+  SectorMap smap(planet, true);
+  smap.get(1, 1).set_condition(SectorType::SEC_WASTED);
+  smap.get(1, 2).set_condition(SectorType::SEC_LAND);
+  smap.get(1, 2).set_fert(50);
+
+  TurnStats stats{};
+
+  // 1. Dead plow ship (should be skipped)
+  ship_struct dead_plow{
+      .owner = player_t{1},
+      .land_coords = {0, 0},
+      .type = ShipType::OTYPE_PLOW,
+      .active = 1,
+      .alive = 0,
+      .docked = 1,
+      .on = 1,
+  };
+  em.create_ship(dead_plow);
+
+  // 2. Active Landed Plow on (1, 1) moving South to (1, 2)
+  ship_struct active_plow{
+      .owner = player_t{1},
+      .shipclass = "2222",
+      .fuel = 50.0,
+      .land_coords = {1, 1},
+      .max_crew = 100,
+      .max_fuel = 100,
+      .popn = 100,
+      .special = TerraformData{.index = 0},
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_PLOW,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+      .on = 1,
+  };
+  auto plow_handle = em.create_ship(active_plow);
+
+  // 3. Orbiting Tanker (should receive gas giant fuel)
+  ship_struct tanker{
+      .owner = player_t{1},
+      .fuel = 50.0,
+      .nextship = plow_handle->number(),
+      .max_fuel = 500,
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::STYPE_TANKER,
+      .active = 1,
+      .alive = 1,
+      .docked = 0,
+      .on = 1,
+  };
+  auto tanker_handle = em.create_ship(tanker);
+
+  // Link ships head to planet
+  planet.ships() = tanker_handle->number();
+
+  process_planetary_ships(em, planet, smap, stats);
+
+  // Verify tanker refueled
+  const auto* t_after = em.peek_ship(tanker_handle->number());
+  test::expect_eq(t_after->fuel(), 50.0 + FUEL_GAS_ADD_TANKER);
+
+  // Verify plow moved and plowed (1, 2)
+  const auto* p_after = em.peek_ship(plow_handle->number());
+  test::expect_eq(p_after->land_coords().x, 1);
+  test::expect_eq(p_after->land_coords().y, 2);
+  test::expect_gt(smap.get(1, 2).get_fert(), 50U);
+}
+
 void test_do_recover() {
   Database db(":memory:");
   initialize_schema(db);
@@ -919,6 +1016,10 @@ int main() {
 
   std::println(std::cout, "  Testing refuel_gasgiant_orbiters... ");
   test_refuel_gasgiant_orbiters();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_planetary_ships... ");
+  test_process_planetary_ships();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

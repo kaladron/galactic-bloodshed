@@ -92,5 +92,11 @@ export void process_planetary_ships(EntityManager& entity_manager,
 export void process_planet_climate(Planet& planet, const Star& star,
                                    const TurnStats& stats);
 
+/// \brief If planetary toxicity exceeds ENVIR_DAMAGE_TOX, devastates a random
+/// sector and returns the devastated coordinates, or std::nullopt if no damage
+/// occurred.
+export std::optional<Coordinates>
+process_toxic_environmental_damage(const Planet& planet, SectorMap& smap);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

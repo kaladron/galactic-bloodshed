@@ -574,6 +574,16 @@ void process_planet_climate(Planet& planet, const Star& star,
   planet.update_climate(stats.Stinfo[starnum.value][planetnum.value].temp_add);
 }
 
+std::optional<Coordinates>
+process_toxic_environmental_damage(const Planet& planet, SectorMap& smap) {
+  if (planet.conditions(TOXIC) <= ENVIR_DAMAGE_TOX) {
+    return std::nullopt;
+  }
+  auto& p = smap.get_random();
+  p.devastate();
+  return p.coords();
+}
+
 double est_production(const Sector& s, EntityManager& entity_manager) {
   const auto* race = entity_manager.peek_race(s.get_owner());
   return (race->metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
@@ -581,9 +591,6 @@ double est_production(const Sector& s, EntityManager& entity_manager) {
 
 int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
              TurnStats& stats) {
-  int nukex = 0;
-  int nukey = 0;
-  bool envir_damage = false;
   int o = 0;
   player_t i;
   int timer = 20;
@@ -725,14 +732,8 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 
   if (allexp) planet.expltimer() = 5;
 
-  /* environment nukes a random sector */
-  if (planet.conditions(TOXIC) > ENVIR_DAMAGE_TOX) {
-    envir_damage = true;
-    nukex = int_rand(0, (int)planet.Maxx() - 1);
-    nukey = int_rand(0, (int)planet.Maxy() - 1);
-    auto& p = smap.get(Coordinates{nukex, nukey});
-    p.devastate();
-  }
+  /* environment nukes a random sector if toxic threshold exceeded */
+  const auto envir_damage = process_toxic_environmental_damage(planet, smap);
 
   for (const Race* race : RaceList::readonly(entity_manager)) {
     const player_t p = race->Playernum;
@@ -768,9 +769,9 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             star.nova_stage());
       }
       /* remind the player that he should clean up the environment. */
-      if (envir_damage) {
+      if (envir_damage.has_value()) {
         telegram_buf << std::format("Environmental damage on sector {},{}\n",
-                                    nukex, nukey);
+                                    envir_damage->x, envir_damage->y);
       }
       if (planet.slaved_to() != 0) {
         telegram_buf << std::format("ENSLAVED to player {}\n",

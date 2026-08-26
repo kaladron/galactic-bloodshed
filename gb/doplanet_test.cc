@@ -1007,6 +1007,38 @@ void test_process_planet_climate() {
   test::expect_le(planet.conditions(TEMP), 35);
 }
 
+void test_process_toxic_environmental_damage() {
+  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+
+  SectorMap smap(planet);
+  for (int y = 0; y < planet.Maxy(); ++y) {
+    for (int x = 0; x < planet.Maxx(); ++x) {
+      auto& sect = smap.get(Coordinates{x, y});
+      sect.set_coords(Coordinates{x, y});
+      sect.set_condition(SectorType::SEC_LAND);
+      sect.set_type(SectorType::SEC_LAND);
+      sect.set_fert(80);
+      sect.set_resource(50);
+    }
+  }
+
+  // 1. Below or at toxic threshold (ENVIR_DAMAGE_TOX = 70) -> no damage
+  planet.conditions(TOXIC) = ENVIR_DAMAGE_TOX;
+  auto safe_res = process_toxic_environmental_damage(planet, smap);
+  test::expect_false(safe_res.has_value());
+
+  // 2. Above toxic threshold -> sector devastated
+  planet.conditions(TOXIC) = ENVIR_DAMAGE_TOX + 1;
+  auto damage_res = process_toxic_environmental_damage(planet, smap);
+  test::expect_true(damage_res.has_value());
+  test::expect_true(smap.in_bounds(*damage_res));
+
+  const auto& devastated_sector = smap.get(*damage_res);
+  test::expect_eq(devastated_sector.get_condition(), SectorType::SEC_WASTED);
+}
+
 }  // namespace
 
 int main() {
@@ -1046,6 +1078,10 @@ int main() {
 
   std::println(std::cout, "  Testing process_planet_climate... ");
   test_process_planet_climate();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_toxic_environmental_damage... ");
+  test_process_toxic_environmental_damage();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

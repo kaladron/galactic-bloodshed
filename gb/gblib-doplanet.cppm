@@ -44,8 +44,12 @@ export enum class GroundActionError {
 
 export bool moveship_onplanet(Ship& ship, const Planet& planet,
                               EntityManager& entity_manager);
-export void terraform(Ship& ship, Planet& planet, SectorMap& smap,
-                      EntityManager& entity_manager);
+
+/// \brief Moves terraformer vehicle and attempts to convert target sector
+/// condition. Returns whether terraforming succeeded, or GroundActionError.
+export std::expected<bool, GroundActionError>
+execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
+                     EntityManager& entity_manager);
 
 /// \brief Moves space plow and improves target sector fertility.
 /// Returns fertility increase amount, or GroundActionError.
@@ -58,7 +62,11 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
 export std::expected<int, GroundActionError>
 upgrade_sector_dome(EntityManager& entity_manager, Ship& ship, SectorMap& smap);
 
-export void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
-                      EntityManager& entity_manager, TurnStats& stats);
+/// \brief Strip mines quarry sector, producing resources and generating
+/// pollution. Returns resources produced, or GroundActionError.
+export std::expected<int, GroundActionError>
+strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
+                  EntityManager& entity_manager, TurnStats& stats);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

@@ -106,37 +106,58 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
   return advance_ground_vehicle(ship, planet, entity_manager).has_value();
 }
 
-// move, and then terraform
-void terraform(Ship& ship, Planet& planet, SectorMap& smap,
-               EntityManager& entity_manager) {
-  if (!moveship_onplanet(ship, planet, entity_manager)) return;
-  auto& s = smap.get(ship.land_coords());
-
-  const auto* race = entity_manager.peek_race(ship.owner());
-  if (s.get_condition() == race->likesbest) {
-    std::string buf = std::format(" T{} is full of zealots!!!", ship.number());
-    push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
-    return;
-  }
-
-  if (s.get_condition() == SectorType::SEC_GAS) {
-    std::string buf =
-        std::format(" T{} is trying to terraform gas.", ship.number());
-    push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
-    return;
-  }
-
-  if (success((100 - (int)ship.damage()) * ship.popn() / ship.max_crew())) {
-    /* only condition can be terraformed, type doesn't change */
-    s.terraform(race->likesbest);
-    use_fuel(ship, FUEL_COST_TERRA);
-    if (success(50) && (planet.conditions(TOXIC) < 100))
-      planet.conditions(TOXIC) += 1;
-    if ((ship.fuel() < (double)FUEL_COST_TERRA) && (!ship.notified())) {
+std::expected<bool, GroundActionError>
+execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
+                     EntityManager& entity_manager) {
+  if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
+  if (!landed(ship)) return std::unexpected(GroundActionError::NotLanded);
+  if (!ship.popn()) return std::unexpected(GroundActionError::NoCrew);
+  if (ship.fuel() < static_cast<double>(FUEL_COST_TERRA)) {
+    if (!ship.notified()) {
       ship.notified() = 1;
       msg_OOF(entity_manager, ship);
     }
+    return std::unexpected(GroundActionError::InsufficientFuel);
   }
+
+  if (!moveship_onplanet(ship, planet, entity_manager)) {
+    return std::unexpected(GroundActionError::MovementFailed);
+  }
+
+  auto& s = smap.get(ship.land_coords());
+  const auto* race = entity_manager.peek_race(ship.owner());
+  if (!race) return std::unexpected(GroundActionError::IncompatibleSector);
+
+  if (s.get_condition() == race->likesbest) {
+    push_telegram(entity_manager, ship.owner(), ship.governor(),
+                  std::format(" T{} is full of zealots!!!", ship.number()));
+    return std::unexpected(GroundActionError::SectorAlreadyOptimal);
+  }
+
+  if (s.get_condition() == SectorType::SEC_GAS) {
+    push_telegram(
+        entity_manager, ship.owner(), ship.governor(),
+        std::format(" T{} is trying to terraform gas.", ship.number()));
+    return std::unexpected(GroundActionError::IncompatibleSector);
+  }
+
+  const int chance =
+      (100 - static_cast<int>(ship.damage())) * ship.popn() / ship.max_crew();
+  if (success(chance)) {
+    /* only condition can be terraformed, type doesn't change */
+    s.terraform(race->likesbest);
+    use_fuel(ship, FUEL_COST_TERRA);
+    if (success(50) && (planet.conditions(TOXIC) < 100)) {
+      planet.conditions(TOXIC) += 1;
+    }
+    if ((ship.fuel() < static_cast<double>(FUEL_COST_TERRA)) &&
+        (!ship.notified())) {
+      ship.notified() = 1;
+      msg_OOF(entity_manager, ship);
+    }
+    return true;
+  }
+  return false;
 }
 
 std::expected<int, GroundActionError>
@@ -205,28 +226,39 @@ upgrade_sector_dome(EntityManager& entity_manager, Ship& ship,
   return adjust;
 }
 
-void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
-               EntityManager& entity_manager, TurnStats& stats) {
-  auto& s = smap.get(ship->land_coords());
-
-  if ((ship->fuel() < (double)FUEL_COST_QUARRY)) {
-    if (!ship->notified()) msg_OOF(entity_manager, *ship);
-    ship->notified() = 1;
-    return;
+std::expected<int, GroundActionError>
+strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
+                  EntityManager& entity_manager, TurnStats& stats) {
+  if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
+  if (!landed(ship)) return std::unexpected(GroundActionError::NotLanded);
+  if (!ship.popn()) return std::unexpected(GroundActionError::NoCrew);
+  if (ship.fuel() < static_cast<double>(FUEL_COST_QUARRY)) {
+    if (!ship.notified()) {
+      msg_OOF(entity_manager, ship);
+      ship.notified() = 1;
+    }
+    ship.on() = 0;
+    return std::unexpected(GroundActionError::InsufficientFuel);
   }
+
+  auto& s = smap.get(ship.land_coords());
   /* nuke the sector */
   s.set_condition(SectorType::SEC_WASTED);
-  const auto* race = entity_manager.peek_race(ship->owner());
-  int prod = round_rand(race->metabolism * (double)ship->popn() /
-                        (double)ship->max_crew());
-  ship->fuel() -= FUEL_COST_QUARRY;
-  stats.prod_res[ship->owner()] += prod;
+  const auto* race = entity_manager.peek_race(ship.owner());
+  if (!race) return std::unexpected(GroundActionError::IncompatibleSector);
+
+  int prod = round_rand(race->metabolism * static_cast<double>(ship.popn()) /
+                        static_cast<double>(ship.max_crew()));
+  ship.fuel() -= FUEL_COST_QUARRY;
+  stats.prod_res[ship.owner()] += prod;
   int tox = int_rand(0, int_rand(0, prod));
   planet.conditions(TOXIC) = std::min(100, planet.conditions(TOXIC) + tox);
-  if (s.get_fert() >= prod)
+  if (s.get_fert() >= prod) {
     s.set_fert(s.get_fert() - prod);
-  else
+  } else {
     s.set_fert(0);
+  }
+  return prod;
 }
 
 void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet) {
@@ -464,14 +496,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             do_berserker(entity_manager, &ship, planet);
           break;
         case ShipType::OTYPE_TERRA:
-          if ((ship.on() && landed(ship) && ship.popn())) {
-            if (ship.fuel() >= (double)FUEL_COST_TERRA)
-              terraform(ship, planet, smap, entity_manager);
-            else if (!ship.notified()) {
-              ship.notified() = 1;
-              msg_OOF(entity_manager, ship);
-            }
-          }
+          execute_terraforming(ship, planet, smap, entity_manager);
           break;
         case ShipType::OTYPE_PLOW: {
           auto plow_res = execute_plowing(ship, planet, smap, entity_manager);
@@ -529,29 +554,25 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           }
           break;
-        case ShipType::OTYPE_QUARRY:
-          if ((ship.on() && landed(ship) && ship.popn())) {
-            if (ship.fuel() >= FUEL_COST_QUARRY)
-              do_quarry(&ship, planet, smap, entity_manager, stats);
-            else if (!ship.notified()) {
-              ship.on() = 0;
-              msg_OOF(entity_manager, ship);
-            }
-          } else {
+        case ShipType::OTYPE_QUARRY: {
+          auto quarry_res =
+              strip_mine_quarry(ship, planet, smap, entity_manager, stats);
+          if (!quarry_res) {
             std::string buf;
-            if (!ship.on()) {
+            if (quarry_res.error() == GroundActionError::NotSwitchedOn) {
               buf = std::format("q{} is not switched on.", ship.number());
-            }
-            if (!landed(ship)) {
+            } else if (quarry_res.error() == GroundActionError::NotLanded) {
               buf = std::format("q{} is not landed.", ship.number());
-            }
-            if (!ship.popn()) {
+            } else if (quarry_res.error() == GroundActionError::NoCrew) {
               buf = std::format("q{} does not have workers aboard.",
                                 ship.number());
             }
-            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
+            if (!buf.empty()) {
+              push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
+            }
           }
           break;
+        }
         default:
           break;
       }

@@ -75,5 +75,10 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
 export bool execute_berserker_bombardment(EntityManager& entity_manager,
                                           Ship& ship, Planet& planet);
 
+/// \brief Refuels ships in orbit around a gas giant planet based on ship type
+/// capacity. Returns amount of fuel added (0.0 if not in orbit or not a gas
+/// giant).
+export double refuel_gasgiant_orbiters(const Planet& planet, Ship& ship);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

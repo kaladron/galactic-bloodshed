@@ -571,6 +571,66 @@ void test_execute_berserker_bombardment() {
   test::expect_false(execute_berserker_bombardment(em, ship, planet));
 }
 
+void test_refuel_gasgiant_orbiters() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  Planet gas_giant(PlanetType::GASGIANT);
+  Planet earth(PlanetType::EARTH);
+
+  ship_struct sdata{
+      .owner = player_t{1},
+      .fuel = 50.0,
+      .max_fuel = 500,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::STYPE_TANKER,
+      .active = 1,
+      .alive = 1,
+      .docked = 0,
+      .on = 1,
+  };
+
+  auto ship_handle = em.create_ship(sdata);
+  Ship& ship = *ship_handle;
+
+  // 1. Not a gas giant: 0 fuel added
+  test::expect_eq(refuel_gasgiant_orbiters(earth, ship), 0.0);
+  test::expect_eq(ship.fuel(), 50.0);
+
+  // 2. Landed ship on gas giant: 0 fuel added
+  ship.docked() = 1;
+  test::expect_eq(refuel_gasgiant_orbiters(gas_giant, ship), 0.0);
+  test::expect_eq(ship.fuel(), 50.0);
+  ship.docked() = 0;
+
+  // 3. Tanker in orbit around gas giant: FUEL_GAS_ADD_TANKER added
+  double added_tanker = refuel_gasgiant_orbiters(gas_giant, ship);
+  test::expect_eq(added_tanker, FUEL_GAS_ADD_TANKER);
+  test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD_TANKER);
+
+  // 4. Habitat in orbit around gas giant: FUEL_GAS_ADD_HABITAT added
+  ship.type() = ShipType::STYPE_HABITAT;
+  ship.fuel() = 50.0;
+  double added_hab = refuel_gasgiant_orbiters(gas_giant, ship);
+  test::expect_eq(added_hab, FUEL_GAS_ADD_HABITAT);
+  test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD_HABITAT);
+
+  // 5. Standard ship in orbit around gas giant: FUEL_GAS_ADD added
+  ship.type() = ShipType::STYPE_POD;
+  ship.fuel() = 50.0;
+  double added_pod = refuel_gasgiant_orbiters(gas_giant, ship);
+  test::expect_eq(added_pod, FUEL_GAS_ADD);
+  test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD);
+
+  // 6. Capacity clamping near max_fuel
+  ship.fuel() = 495.0;
+  double added_clamp = refuel_gasgiant_orbiters(gas_giant, ship);
+  test::expect_eq(added_clamp, 5.0);
+  test::expect_eq(ship.fuel(), 500.0);
+}
+
 void test_do_recover() {
   Database db(":memory:");
   initialize_schema(db);
@@ -855,6 +915,10 @@ int main() {
 
   std::println(std::cout, "  Testing execute_berserker_bombardment... ");
   test_execute_berserker_bombardment();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing refuel_gasgiant_orbiters... ");
+  test_refuel_gasgiant_orbiters();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

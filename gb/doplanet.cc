@@ -292,6 +292,31 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
   return true;
 }
 
+double refuel_gasgiant_orbiters(const Planet& planet, Ship& ship) {
+  if (landed(ship) || planet.type() != PlanetType::GASGIANT) {
+    return 0.0;
+  }
+
+  double fadd = 0.0;
+  switch (ship.type()) {
+    case ShipType::STYPE_TANKER:
+      fadd = FUEL_GAS_ADD_TANKER;
+      break;
+    case ShipType::STYPE_HABITAT:
+      fadd = FUEL_GAS_ADD_HABITAT;
+      break;
+    default:
+      fadd = FUEL_GAS_ADD;
+      break;
+  }
+  const double capacity = static_cast<double>(max_fuel(ship)) - ship.fuel();
+  const double added = std::clamp(fadd, 0.0, std::max(0.0, capacity));
+  if (added > 0.0) {
+    rcv_fuel(ship, added);
+  }
+  return added;
+}
+
 void do_recover(EntityManager& entity_manager, const Star& star,
                 Planet& planet) {
   int owners = 0;
@@ -450,7 +475,6 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   bool envir_damage = false;
   int o = 0;
   player_t i;
-  double fadd;
   int timer = 20;
   unsigned char allmod = 0;
   unsigned char allexp = 0;
@@ -588,21 +612,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
           break;
       }
       /* add fuel for ships orbiting a gas giant */
-      if (!landed(ship) && planet.type() == PlanetType::GASGIANT) {
-        switch (ship.type()) {
-          case ShipType::STYPE_TANKER:
-            fadd = FUEL_GAS_ADD_TANKER;
-            break;
-          case ShipType::STYPE_HABITAT:
-            fadd = FUEL_GAS_ADD_HABITAT;
-            break;
-          default:
-            fadd = FUEL_GAS_ADD;
-            break;
-        }
-        fadd = std::min((double)max_fuel(ship) - ship.fuel(), fadd);
-        rcv_fuel(ship, fadd);
-      }
+      refuel_gasgiant_orbiters(planet, ship);
     }
   }
 

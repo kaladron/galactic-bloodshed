@@ -49,14 +49,6 @@ int int_rand(int low, int hi) {
   return dist(get_rng());
 }
 
-/* int round_rand(double) - returns double rounded to integer, with
- * proportional chance of rounding up or down. */
-int round_rand(double x) {
-  double floor_x = std::floor(x);
-  return (double_rand() > (x - floor_x)) ? static_cast<int>(floor_x)
-                                         : static_cast<int>(floor_x) + 1;
-}
-
 bool success(int x) {
   return int_rand(1, 100) <= (x);
 }

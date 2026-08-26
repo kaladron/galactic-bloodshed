@@ -111,5 +111,12 @@ export std::optional<shipnum_t>
 build_automated_waste_can(EntityManager& entity_manager, const Star& star,
                           Planet& planet, SectorMap& smap, const Race& race);
 
+/// \brief Verifies that all players in the provided list are mutually allied.
+/// Returns true if the list contains 0 or 1 player, or if every distinct pair
+/// of players has mutual alliance bits set. Returns false if any race cannot be
+/// loaded or if any pair is not mutually allied.
+export bool check_mutual_alliances(EntityManager& entity_manager,
+                                   std::span<const player_t> players);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

@@ -384,6 +384,52 @@ int main() {
     test::expect_eq(info.guns, 0U);
   }
 
+  // Test 17: Stockpile value type & plinfo atomic operations
+  {
+    Stockpile empty_stock{};
+    test::expect_true(empty_stock.empty());
+
+    Stockpile a{.resources = 100, .destruct = 50, .fuel = 200, .crystals = 10};
+    test::expect_false(a.empty());
+
+    Stockpile b{.resources = 20, .destruct = 30, .fuel = 50, .crystals = 5};
+    a += b;
+    test::expect_eq(a.resources, 120U);
+    test::expect_eq(a.destruct, 80U);
+    test::expect_eq(a.fuel, 250U);
+    test::expect_eq(a.crystals, 15U);
+
+    Stockpile limit{
+        .resources = 100, .destruct = 100, .fuel = 200, .crystals = 10};
+    const Stockpile clamped = a.clamp_to(limit);
+    test::expect_eq(clamped.resources, 100U);
+    test::expect_eq(clamped.destruct, 80U);
+    test::expect_eq(clamped.fuel, 200U);
+    test::expect_eq(clamped.crystals, 10U);
+
+    a -= clamped;
+    test::expect_eq(a.resources, 20U);
+    test::expect_eq(a.destruct, 0U);
+    test::expect_eq(a.fuel, 50U);
+    test::expect_eq(a.crystals, 5U);
+
+    plinfo info{};
+    info.deposit_stockpile(clamped);
+    test::expect_eq(info.resource, 100U);
+    test::expect_eq(info.destruct, 80U);
+    test::expect_eq(info.fuel, 200U);
+    test::expect_eq(info.crystals, 10U);
+    test::expect_eq(info.stockpile(), clamped);
+
+    const Stockpile drained = info.drain_stockpile();
+    test::expect_eq(drained, clamped);
+    test::expect_eq(info.resource, 0U);
+    test::expect_eq(info.destruct, 0U);
+    test::expect_eq(info.fuel, 0U);
+    test::expect_eq(info.crystals, 0U);
+    test::expect_true(info.stockpile().empty());
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

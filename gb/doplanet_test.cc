@@ -1148,6 +1148,80 @@ void test_build_automated_waste_can() {
                   static_cast<unsigned char>(TOXMAX));
 }
 
+void test_check_mutual_alliances() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+  RaceRepository races(store);
+
+  Race r1 = createTestRace(player_t{1});
+  Race r2 = createTestRace(player_t{2});
+  Race r3 = createTestRace(player_t{3});
+
+  // Base state: no alliances set
+  races.save(r1);
+  races.save(r2);
+  races.save(r3);
+
+  // 1. Empty player list -> true (trivially allied)
+  test::expect_true(check_mutual_alliances(em, {}));
+
+  // 2. Single player list -> true (single conqueror)
+  std::vector<player_t> single_player = {player_t{1}};
+  test::expect_true(check_mutual_alliances(em, single_player));
+
+  // 3. Two unallied players -> false
+  std::vector<player_t> pair = {player_t{1}, player_t{2}};
+  test::expect_false(check_mutual_alliances(em, pair));
+
+  // 4. One-way alliance: 1 allies 2, but 2 does not ally 1 -> false
+  {
+    auto h1 = em.get_race(player_t{1});
+    setbit(h1->allied, player_t{2});
+  }
+  test::expect_false(check_mutual_alliances(em, pair));
+
+  // 5. Mutual alliance: 1 allies 2, 2 allies 1 -> true
+  {
+    auto h2 = em.get_race(player_t{2});
+    setbit(h2->allied, player_t{1});
+  }
+  test::expect_true(check_mutual_alliances(em, pair));
+
+  // 6. Three players: 1-2 allied, 2-3 allied, but 1-3 unallied -> false
+  {
+    auto h2 = em.get_race(player_t{2});
+    setbit(h2->allied, player_t{3});
+    auto h3 = em.get_race(player_t{3});
+    setbit(h3->allied, player_t{2});
+  }
+  std::vector<player_t> trio = {player_t{1}, player_t{2}, player_t{3}};
+  test::expect_false(check_mutual_alliances(em, trio));
+
+  // 7. Three players: complete mutual alliance triangle (1-2, 2-3, 1-3) -> true
+  {
+    auto h1 = em.get_race(player_t{1});
+    setbit(h1->allied, player_t{3});
+    auto h3 = em.get_race(player_t{3});
+    setbit(h3->allied, player_t{1});
+  }
+  test::expect_true(check_mutual_alliances(em, trio));
+
+  // 8. Non-existent player ID (unallied -> false)
+  std::vector<player_t> invalid_pair = {player_t{1}, player_t{5}};
+  test::expect_false(check_mutual_alliances(em, invalid_pair));
+
+  // 9. Allied with non-existent player -> throws EntityNotFoundError when
+  // loading missing race
+  {
+    auto h1 = em.get_race(player_t{1});
+    setbit(h1->allied, player_t{5});
+  }
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { (void)check_mutual_alliances(em, invalid_pair); });
+}
+
 }  // namespace
 
 int main() {
@@ -1199,6 +1273,10 @@ int main() {
 
   std::println(std::cout, "  Testing build_automated_waste_can... ");
   test_build_automated_waste_can();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing check_mutual_alliances... ");
+  test_check_mutual_alliances();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

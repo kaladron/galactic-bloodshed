@@ -21,6 +21,55 @@ export struct plroute {
   Coordinates dest_coords{0, 0};  // location that ship has to land on
 };
 
+/// \brief Cohesive bundle of planetary commodity stockpiles.
+export struct Stockpile {
+  resource_t resources{0};
+  resource_t destruct{0};
+  resource_t fuel{0};
+  resource_t crystals{0};
+
+  [[nodiscard]] constexpr bool empty() const noexcept {
+    return resources == 0 && destruct == 0 && fuel == 0 && crystals == 0;
+  }
+
+  constexpr Stockpile& operator+=(const Stockpile& other) noexcept {
+    resources += other.resources;
+    destruct += other.destruct;
+    fuel += other.fuel;
+    crystals += other.crystals;
+    return *this;
+  }
+
+  constexpr Stockpile& operator-=(const Stockpile& other) noexcept {
+    resources -= std::min(resources, other.resources);
+    destruct -= std::min(destruct, other.destruct);
+    fuel -= std::min(fuel, other.fuel);
+    crystals -= std::min(crystals, other.crystals);
+    return *this;
+  }
+
+  [[nodiscard]] constexpr Stockpile
+  clamp_to(const Stockpile& limit) const noexcept {
+    return Stockpile{
+        .resources = std::min(resources, limit.resources),
+        .destruct = std::min(destruct, limit.destruct),
+        .fuel = std::min(fuel, limit.fuel),
+        .crystals = std::min(crystals, limit.crystals),
+    };
+  }
+
+  [[nodiscard]] Stockpile split_share(std::size_t shares) const noexcept {
+    return Stockpile{
+        .resources = round_rand<resource_t>(resources, shares),
+        .destruct = round_rand<resource_t>(destruct, shares),
+        .fuel = round_rand<resource_t>(fuel, shares),
+        .crystals = round_rand<resource_t>(crystals, shares),
+    };
+  }
+
+  [[nodiscard]] bool operator==(const Stockpile&) const noexcept = default;
+};
+
 export struct plinfo {      // planetary stockpiles
   resource_t fuel = 0;      // fuel for powering things
   resource_t destruct = 0;  // destructive potential
@@ -56,13 +105,49 @@ export struct plinfo {      // planetary stockpiles
   long mob_points = 0;
   double est_production = 0;  // estimated production
 
+  /// \brief Returns a snapshot of current stockpiles.
+  [[nodiscard]] Stockpile stockpile() const noexcept {
+    return Stockpile{
+        .resources = resource,
+        .destruct = destruct,
+        .fuel = fuel,
+        .crystals = crystals,
+    };
+  }
+
+  /// \brief Atomically extracts all stored stockpiles from this colony and
+  /// resets them to zero.
+  Stockpile drain_stockpile() noexcept {
+    const Stockpile looted = stockpile();
+    resource = 0;
+    destruct = 0;
+    fuel = 0;
+    crystals = 0;
+    return looted;
+  }
+
+  /// \brief Atomically deposits a stockpile bundle into this colony.
+  void deposit_stockpile(const Stockpile& bundle) noexcept {
+    resource += bundle.resources;
+    destruct += bundle.destruct;
+    fuel += bundle.fuel;
+    crystals += bundle.crystals;
+  }
+
   /// \brief Deposits turn production outputs into planetary stockpiles.
   void deposit_production(resource_t fuel_in, resource_t res_in,
                           resource_t dest_in, resource_t crystals_in) noexcept {
-    fuel += fuel_in;
-    resource += res_in;
-    destruct += dest_in;
-    crystals += crystals_in;
+    deposit_stockpile(Stockpile{
+        .resources = res_in,
+        .destruct = dest_in,
+        .fuel = fuel_in,
+        .crystals = crystals_in,
+    });
+  }
+
+  /// \brief Deposits a stockpile bundle into planetary stockpiles.
+  void deposit_production(const Stockpile& bundle) noexcept {
+    deposit_stockpile(bundle);
   }
 
   /// \brief Taxes the population on this planet, generating revenue for the

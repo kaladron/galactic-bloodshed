@@ -18,7 +18,7 @@ int main() {
   initialize_schema(db);
 
   // Create a test Planet
-  Planet test_planet(PlanetType::EARTH);
+  Planet test_planet(PlanetType::EARTH, Coordinates{10, 10});
 
   // Initialize scalar fields
   test_planet.star_id() = 1;  // Match the star we'll create below

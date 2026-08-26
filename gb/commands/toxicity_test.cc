@@ -33,7 +33,7 @@ void test_toxicity_dispatch() {
   stars.save(star);
 
   // Setup: Create a planet
-  Planet planet(PlanetType::EARTH);
+  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
   planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.info(player_t{1}).tox_thresh = 50;

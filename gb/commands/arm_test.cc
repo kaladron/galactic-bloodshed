@@ -52,12 +52,12 @@ void test_arm_and_disarm() {
 
   // Create test sectormap
   {
-    SectorMap smap(planet, true);
-    smap.get(5, 5).set_owner(1);
-    smap.get(5, 5).set_popn_exact(1000);
-    smap.get(5, 5).set_troops(0);
-    smap.get(5, 5).set_mobilization(1);
-    smap.get(5, 5).set_condition(SectorType::SEC_MOUNT);
+    SectorMap smap(planet);
+    smap.get(Coordinates{5, 5}).set_owner(1);
+    smap.get(Coordinates{5, 5}).set_popn_exact(1000);
+    smap.get(Coordinates{5, 5}).set_troops(0);
+    smap.get(Coordinates{5, 5}).set_mobilization(1);
+    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
 
     SectorRepository sectors(store);
     sectors.save_map(smap);
@@ -113,7 +113,7 @@ void test_arm_and_disarm() {
   ctx.em.clear_cache();
   const auto* saved_smap = ctx.em.peek_sectormap(0, 0);
   test::expect_ne(saved_smap, nullptr);
-  const auto& saved_sect = saved_smap->get(5, 5);
+  const auto& saved_sect = saved_smap->get(Coordinates{5, 5});
 
   test::expect_eq(saved_sect.get_troops(), 100);
   test::expect_eq(saved_sect.get_popn(), 900);
@@ -136,7 +136,7 @@ void test_arm_and_disarm() {
 
   ctx.em.clear_cache();
   saved_smap = ctx.em.peek_sectormap(0, 0);
-  const auto& saved_sect2 = saved_smap->get(5, 5);
+  const auto& saved_sect2 = saved_smap->get(Coordinates{5, 5});
   test::expect_eq(saved_sect2.get_troops(), 50);
   test::expect_eq(saved_sect2.get_popn(), 950);
 }

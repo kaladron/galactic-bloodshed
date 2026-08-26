@@ -42,22 +42,22 @@ void setup_test_world(TestContext& ctx) {
 
   // Create test sectormap with wasted sectors
   {
-    SectorMap smap(planet, true);
+    SectorMap smap(planet);
 
-    smap.get(3, 3).set_owner(1);
-    smap.get(3, 3).set_condition(SectorType::SEC_WASTED);
-    smap.get(3, 3).set_type(SectorType::SEC_MOUNT);
-    smap.get(3, 3).set_fert(50);
+    smap.get(Coordinates{3, 3}).set_owner(1);
+    smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_WASTED);
+    smap.get(Coordinates{3, 3}).set_type(SectorType::SEC_MOUNT);
+    smap.get(Coordinates{3, 3}).set_fert(50);
 
-    smap.get(4, 4).set_owner(1);
-    smap.get(4, 4).set_condition(SectorType::SEC_WASTED);
-    smap.get(4, 4).set_type(SectorType::SEC_LAND);
-    smap.get(4, 4).set_fert(30);
+    smap.get(Coordinates{4, 4}).set_owner(1);
+    smap.get(Coordinates{4, 4}).set_condition(SectorType::SEC_WASTED);
+    smap.get(Coordinates{4, 4}).set_type(SectorType::SEC_LAND);
+    smap.get(Coordinates{4, 4}).set_fert(30);
 
-    smap.get(5, 5).set_owner(0);
-    smap.get(5, 5).set_condition(SectorType::SEC_WASTED);
-    smap.get(5, 5).set_type(SectorType::SEC_SEA);
-    smap.get(5, 5).set_fert(20);
+    smap.get(Coordinates{5, 5}).set_owner(0);
+    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_WASTED);
+    smap.get(Coordinates{5, 5}).set_type(SectorType::SEC_SEA);
+    smap.get(Coordinates{5, 5}).set_fert(20);
 
     SectorRepository sectors(store);
     sectors.save_map(smap);
@@ -83,15 +83,15 @@ void test_repair_happy_path() {
   const auto* saved_smap = ctx.em.peek_sectormap(0, 0);
   test::expect_ne(saved_smap, nullptr);
 
-  const auto& sect1 = saved_smap->get(3, 3);
+  const auto& sect1 = saved_smap->get(Coordinates{3, 3});
   test::expect_eq(sect1.get_condition(), SectorType::SEC_MOUNT);
   test::expect_false(sect1.is_wasted());
 
-  const auto& sect2 = saved_smap->get(4, 4);
+  const auto& sect2 = saved_smap->get(Coordinates{4, 4});
   test::expect_eq(sect2.get_condition(), SectorType::SEC_LAND);
   test::expect_false(sect2.is_wasted());
 
-  const auto& sect3 = saved_smap->get(5, 5);
+  const auto& sect3 = saved_smap->get(Coordinates{5, 5});
   test::expect_eq(sect3.get_condition(), SectorType::SEC_SEA);
   test::expect_false(sect3.is_wasted());
 

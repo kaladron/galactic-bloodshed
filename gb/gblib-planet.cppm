@@ -110,8 +110,9 @@ public:
   // Constructors
   Planet() = default;
   Planet(planet_struct in) : data_(in) {}
-  Planet(PlanetType type) {
+  Planet(PlanetType type, Coordinates dimensions) {
     data_.type = type;
+    data_.dimensions = dimensions;
   }
   Planet(Planet&) = delete;
   Planet& operator=(const Planet&) = delete;

@@ -14,7 +14,7 @@ void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
                         int base_popn) {
   for (int y = 0; y < planet.Maxy(); y++) {
     for (int x = 0; x < planet.Maxx(); x++) {
-      auto& sector = smap.get(x, y);
+      auto& sector = smap.get(Coordinates{x, y});
       sector.set_x(x);
       sector.set_y(y);
       sector.set_efficiency_bounded(base_eff + (x * y));
@@ -51,8 +51,8 @@ void verify_sectormap_equal(const SectorMap& original,
                             const SectorMap& retrieved, const Planet& planet) {
   for (int y = 0; y < planet.Maxy(); y++) {
     for (int x = 0; x < planet.Maxx(); x++) {
-      const auto& orig = original.get(x, y);
-      const auto& retr = retrieved.get(x, y);
+      const auto& orig = original.get(Coordinates{x, y});
+      const auto& retr = retrieved.get(Coordinates{x, y});
 
       test::expect_eq(retr.get_x(), orig.get_x());
       test::expect_eq(retr.get_y(), orig.get_y());
@@ -79,15 +79,13 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   JsonStore store(db);
   PlanetRepository planets(store);
 
-  Planet test_planet{PlanetType::WATER};
+  Planet test_planet{PlanetType::WATER, Coordinates{8, 6}};
   test_planet.star_id() = 5;
   test_planet.planet_order() = 1;
-  test_planet.Maxx() = 8;
-  test_planet.Maxy() = 6;
   planets.save(test_planet);
 
   // Create initial sector data using Repository (DAL layer)
-  SectorMap initial_smap(test_planet, true);
+  SectorMap initial_smap(test_planet);
   populate_sectormap(initial_smap, test_planet, 25, 50);
   SectorRepository sectors(store);
   sectors.save_map(initial_smap);
@@ -101,11 +99,12 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     auto& smap = *smap_handle;
 
     // Verify data was loaded correctly
-    test::expect_eq(smap.get(0, 0).get_eff(), 25);  // base_eff + 0*0 = 25
+    test::expect_eq(smap.get(Coordinates{0, 0}).get_eff(),
+                    25);  // base_eff + 0*0 = 25
 
     // Modify some sectors
     for (int i = 0; i < 4; i++) {
-      auto& sector = smap.get(i, i);
+      auto& sector = smap.get(Coordinates{i, i});
       sector.set_efficiency_bounded(95);
       sector.set_popn_exact(77777);
     }
@@ -124,12 +123,13 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
     const auto& smap = smap_handle.read();
 
     for (int i = 0; i < 4; i++) {
-      test::expect_eq(smap.get(i, i).get_eff(), 95);
-      test::expect_eq(smap.get(i, i).get_popn(), 77777);
+      test::expect_eq(smap.get(Coordinates{i, i}).get_eff(), 95);
+      test::expect_eq(smap.get(Coordinates{i, i}).get_popn(), 77777);
     }
 
     // Verify other sectors unchanged
-    test::expect_eq(smap.get(5, 4).get_eff(), 25 + 5 * 4);  // base_eff + x*y
+    test::expect_eq(smap.get(Coordinates{5, 4}).get_eff(),
+                    25 + 5 * 4);  // base_eff + x*y
   }
 
   std::println(std::cout, "  Update persistence verified: PASSED");
@@ -141,7 +141,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
                     "peek_sectormap should return valid pointer");
 
     // Verify we see the updated data
-    test::expect_eq(smap_ptr->get(0, 0).get_eff(), 95);
+    test::expect_eq(smap_ptr->get(Coordinates{0, 0}).get_eff(), 95);
   }
 
   std::println(std::cout, "  peek_sectormap read-only access: PASSED");
@@ -155,10 +155,10 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
                     "Multiple handles should reference same cached data");
 
     // Modify via handle1
-    (*handle1).get(7, 5).set_efficiency_bounded(42);
+    (*handle1).get(Coordinates{7, 5}).set_efficiency_bounded(42);
 
     // Should see change via handle2 (same underlying object)
-    test::expect_eq((*handle2).get(7, 5).get_eff(), 42);
+    test::expect_eq((*handle2).get(Coordinates{7, 5}).get_eff(), 42);
   }
 
   std::println(std::cout, "  Caching (single instance) verified: PASSED");
@@ -180,30 +180,26 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   JsonStore store(db);
   PlanetRepository planets(store);
 
-  Planet planet1{PlanetType::EARTH};
+  Planet planet1{PlanetType::EARTH, Coordinates{6, 6}};
   planet1.star_id() = 7;
   planet1.planet_order() = 0;
-  planet1.Maxx() = 6;
-  planet1.Maxy() = 6;
   planets.save(planet1);
 
-  Planet planet2{PlanetType::WATER};
+  Planet planet2{PlanetType::WATER, Coordinates{4, 4}};
   planet2.star_id() = 7;       // Same star
   planet2.planet_order() = 1;  // Different planet order
-  planet2.Maxx() = 4;
-  planet2.Maxy() = 4;
   planets.save(planet2);
 
   // Create different sector maps for each planet using Repository
-  SectorMap smap1(planet1, true);
+  SectorMap smap1(planet1);
   populate_sectormap(smap1, planet1, 10, 100);
   SectorRepository sectors(store);
   sectors.save_map(smap1);
 
-  SectorMap smap2(planet2, true);
+  SectorMap smap2(planet2);
   for (int y = 0; y < planet2.Maxy(); y++) {
     for (int x = 0; x < planet2.Maxx(); x++) {
-      auto& sector = smap2.get(x, y);
+      auto& sector = smap2.get(Coordinates{x, y});
       sector.set_x(x);
       sector.set_y(y);
       sector.set_efficiency_bounded(99);
@@ -222,12 +218,13 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   test::expect_ne(reload2, nullptr);
 
   // Planet 1 should have its values (base_eff=10, so (0,0) = 10 + 0*0 = 10)
-  test::expect_eq(reload1->get(0, 0).get_eff(), 10);
-  test::expect_eq(reload1->get(0, 0).get_popn(), 100);  // base_popn * 1 * 1
+  test::expect_eq(reload1->get(Coordinates{0, 0}).get_eff(), 10);
+  test::expect_eq(reload1->get(Coordinates{0, 0}).get_popn(),
+                  100);  // base_popn * 1 * 1
 
   // Planet 2 should have its own distinct values
-  test::expect_eq(reload2->get(0, 0).get_eff(), 99);
-  test::expect_eq(reload2->get(0, 0).get_popn(), 12345);
+  test::expect_eq(reload2->get(Coordinates{0, 0}).get_eff(), 99);
+  test::expect_eq(reload2->get(Coordinates{0, 0}).get_popn(), 12345);
 
   std::println(std::cout, "  Planet isolation: PASSED");
 }
@@ -235,13 +232,11 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
 void test_sectormap_random_and_shuffle() {
   std::println(std::cout, "=== Testing SectorMap shuffle and get_random ===");
 
-  Planet test_planet{PlanetType::EARTH};
+  Planet test_planet{PlanetType::EARTH, Coordinates{5, 4}};
   test_planet.star_id() = 1;
   test_planet.planet_order() = 0;
-  test_planet.Maxx() = 5;
-  test_planet.Maxy() = 4;
 
-  SectorMap smap(test_planet, true);
+  SectorMap smap(test_planet);
   populate_sectormap(smap, test_planet, 10, 100);
 
   // 1. Test deterministic shuffle using explicit engine seed (collecting
@@ -273,7 +268,7 @@ void test_sectormap_random_and_shuffle() {
   }
   for (int x = 0; x < 5; ++x) {
     for (int y = 0; y < 4; ++y) {
-      test::expect_eq(smap.get(x, y).get_fert(), 99);
+      test::expect_eq(smap.get(Coordinates{x, y}).get_fert(), 99);
     }
   }
 

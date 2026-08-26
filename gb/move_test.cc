@@ -11,7 +11,7 @@ import std;
 
 int main() {
   // Create a test planet with known dimensions
-  Planet planet(PlanetType::EARTH);
+  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
   planet.Maxx() = 10;  // 0-9 range for x-coordinates
   planet.Maxy() = 8;   // 0-7 range for y-coordinates
 
@@ -180,7 +180,7 @@ int main() {
   // Test edge cases with different planet sizes
 
   // Test with minimal planet size
-  Planet small_planet(PlanetType::ASTEROID);
+  Planet small_planet(PlanetType::ASTEROID, Coordinates{10, 10});
   small_planet.Maxx() = 2;  // 0-1 range
   small_planet.Maxy() = 3;  // 0-2 range
 

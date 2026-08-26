@@ -36,7 +36,7 @@ void setup_test_world(TestContext& ctx) {
   StarRepository stars_repo(store);
   stars_repo.save(star);
 
-  Planet planet{PlanetType::EARTH};
+  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
   planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.Maxx() = 10;
@@ -48,8 +48,8 @@ void setup_test_world(TestContext& ctx) {
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);
 
-  SectorMap smap(planet, true);
-  auto& sector = smap.get(5, 5);
+  SectorMap smap(planet);
+  auto& sector = smap.get(Coordinates{5, 5});
   sector.set_owner(1);
   sector.set_popn_exact(100);
   sector.set_resource(50);

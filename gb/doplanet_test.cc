@@ -28,7 +28,7 @@ Race createTestRace(player_t playernum = player_t{1}) {
 }
 
 Planet createTestPlanet() {
-  Planet planet(PlanetType::EARTH);
+  Planet planet(PlanetType::EARTH, Coordinates{0, 0});
   planet.Maxx() = 10;
   planet.Maxy() = 10;
   planet.slaved_to() = 0;
@@ -209,7 +209,7 @@ void test_execute_terraforming() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   ship_struct sdata{
       .owner = player_t{1},
@@ -236,7 +236,7 @@ void test_execute_terraforming() {
   // 1. Target sector already optimal (likesbest)
   ship.set_land_coords({2, 2});
   ship.special() = TerraformData{.index = 0};
-  smap.get(2, 3).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{2, 3}).set_condition(SectorType::SEC_LAND);
   auto res_optimal = execute_terraforming(ship, planet, smap, em);
   test::expect_false(res_optimal.has_value());
   test::expect_eq(res_optimal.error(), GroundActionError::SectorAlreadyOptimal);
@@ -244,7 +244,7 @@ void test_execute_terraforming() {
   // 2. Target sector is gas (incompatible)
   ship.set_land_coords({2, 2});
   ship.special() = TerraformData{.index = 0};
-  smap.get(2, 3).set_condition(SectorType::SEC_GAS);
+  smap.get(Coordinates{2, 3}).set_condition(SectorType::SEC_GAS);
   auto res_gas = execute_terraforming(ship, planet, smap, em);
   test::expect_false(res_gas.has_value());
   test::expect_eq(res_gas.error(), GroundActionError::IncompatibleSector);
@@ -252,12 +252,13 @@ void test_execute_terraforming() {
   // 3. Successful terraforming
   ship.set_land_coords({2, 2});
   ship.special() = TerraformData{.index = 0};
-  smap.get(2, 3).set_condition(SectorType::SEC_DESERT);
+  smap.get(Coordinates{2, 3}).set_condition(SectorType::SEC_DESERT);
   double initial_fuel = ship.fuel();
   auto res_success = execute_terraforming(ship, planet, smap, em);
   test::expect_true(res_success.has_value());
   test::expect_true(*res_success);
-  test::expect_eq(smap.get(2, 3).get_condition(), SectorType::SEC_LAND);
+  test::expect_eq(smap.get(Coordinates{2, 3}).get_condition(),
+                  SectorType::SEC_LAND);
   test::expect_eq(ship.fuel(), initial_fuel - FUEL_COST_TERRA);
 
   // 4. Insufficient fuel
@@ -293,7 +294,7 @@ void test_execute_plowing() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   ship_struct sdata{
       .owner = player_t{1},
@@ -320,8 +321,8 @@ void test_execute_plowing() {
   // 1. Target sector condition not liked
   ship.set_land_coords({1, 1});
   ship.special() = TerraformData{.index = 0};
-  smap.get(1, 2).set_condition(SectorType::SEC_WASTED);
-  smap.get(1, 2).set_fert(50);
+  smap.get(Coordinates{1, 2}).set_condition(SectorType::SEC_WASTED);
+  smap.get(Coordinates{1, 2}).set_fert(50);
   auto res_incompat = execute_plowing(ship, planet, smap, em);
   test::expect_false(res_incompat.has_value());
   test::expect_eq(res_incompat.error(), GroundActionError::IncompatibleSector);
@@ -329,8 +330,8 @@ void test_execute_plowing() {
   // 2. Target sector already at 100% fertility
   ship.set_land_coords({1, 1});
   ship.special() = TerraformData{.index = 0};
-  smap.get(1, 2).set_condition(SectorType::SEC_LAND);
-  smap.get(1, 2).set_fert(100);
+  smap.get(Coordinates{1, 2}).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{1, 2}).set_fert(100);
   auto res_optimal = execute_plowing(ship, planet, smap, em);
   test::expect_false(res_optimal.has_value());
   test::expect_eq(res_optimal.error(), GroundActionError::SectorAlreadyOptimal);
@@ -338,12 +339,12 @@ void test_execute_plowing() {
   // 3. Successful plowing
   ship.set_land_coords({1, 1});
   ship.special() = TerraformData{.index = 0};
-  smap.get(1, 2).set_fert(60);
+  smap.get(Coordinates{1, 2}).set_fert(60);
   double initial_fuel = ship.fuel();
   auto res_success = execute_plowing(ship, planet, smap, em);
   test::expect_true(res_success.has_value());
   test::expect_gt(*res_success, 0);
-  test::expect_gt(smap.get(1, 2).get_fert(), 60U);
+  test::expect_gt(smap.get(Coordinates{1, 2}).get_fert(), 60U);
   test::expect_eq(ship.fuel(), initial_fuel - FUEL_COST_PLOW);
 
   // 4. Insufficient fuel
@@ -373,7 +374,7 @@ void test_upgrade_sector_dome() {
   races.save(race);
 
   Planet planet = createTestPlanet();
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   ship_struct sdata{
       .owner = player_t{1},
@@ -393,17 +394,17 @@ void test_upgrade_sector_dome() {
   Ship& ship = *ship_handle;
 
   // 1. Sector already optimal (100% efficiency)
-  smap.get(2, 2).set_efficiency_bounded(100);
+  smap.get(Coordinates{2, 2}).set_efficiency_bounded(100);
   auto res_optimal = upgrade_sector_dome(em, ship, smap);
   test::expect_false(res_optimal.has_value());
   test::expect_eq(res_optimal.error(), GroundActionError::SectorAlreadyOptimal);
 
   // 2. Successful dome upgrade
-  smap.get(2, 2).set_efficiency_bounded(40);
+  smap.get(Coordinates{2, 2}).set_efficiency_bounded(40);
   auto res_success = upgrade_sector_dome(em, ship, smap);
   test::expect_true(res_success.has_value());
   test::expect_gt(*res_success, 0);
-  test::expect_gt(smap.get(2, 2).get_eff(), 40);
+  test::expect_gt(smap.get(Coordinates{2, 2}).get_eff(), 40);
   test::expect_eq(ship.resource(), 50 - RES_COST_DOME);
 
   // 3. Insufficient resources
@@ -432,7 +433,7 @@ void test_strip_mine_quarry() {
   races.save(race);
 
   Planet planet = createTestPlanet();
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   ship_struct sdata{
       .owner = player_t{1},
@@ -451,8 +452,8 @@ void test_strip_mine_quarry() {
   auto ship_handle = em.create_ship(sdata);
   Ship& ship = *ship_handle;
 
-  smap.get(3, 3).set_condition(SectorType::SEC_LAND);
-  smap.get(3, 3).set_fert(50);
+  smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{3, 3}).set_fert(50);
 
   TurnStats stats;
 
@@ -460,7 +461,8 @@ void test_strip_mine_quarry() {
   auto res_success = strip_mine_quarry(ship, planet, smap, em, stats);
   test::expect_true(res_success.has_value());
   test::expect_gt(*res_success, 0);
-  test::expect_eq(smap.get(3, 3).get_condition(), SectorType::SEC_WASTED);
+  test::expect_eq(smap.get(Coordinates{3, 3}).get_condition(),
+                  SectorType::SEC_WASTED);
   test::expect_gt(stats.prod_res[player_t{1}], 0);
   test::expect_eq(ship.fuel(), 50.0 - FUEL_COST_QUARRY);
 
@@ -518,10 +520,10 @@ void test_execute_berserker_bombardment() {
 
   // SectorMap on Planet 0 with enemy population
   {
-    SectorMap smap(planet, true);
-    smap.get(5, 5).set_condition(SectorType::SEC_LAND);
-    smap.get(5, 5).set_popn_exact(100);
-    smap.get(5, 5).set_owner(2);
+    SectorMap smap(planet);
+    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
+    smap.get(Coordinates{5, 5}).set_popn_exact(100);
+    smap.get(Coordinates{5, 5}).set_owner(2);
     SectorRepository smap_repo(store);
     smap_repo.save_map(smap);
   }
@@ -565,8 +567,8 @@ void test_execute_berserker_bombardment() {
   {
     auto smap_handle =
         em.get_sectormap(planet.star_id(), planet.planet_order());
-    smap_handle->get(5, 5).set_popn_exact(0);
-    smap_handle->get(5, 5).set_owner(0);
+    smap_handle->get(Coordinates{5, 5}).set_popn_exact(0);
+    smap_handle->get(Coordinates{5, 5}).set_owner(0);
   }
   test::expect_false(execute_berserker_bombardment(em, ship, planet));
 }
@@ -576,8 +578,8 @@ void test_refuel_gasgiant_orbiters() {
   initialize_schema(db);
   EntityManager em(db);
 
-  Planet gas_giant(PlanetType::GASGIANT);
-  Planet earth(PlanetType::EARTH);
+  Planet gas_giant(PlanetType::GASGIANT, Coordinates{0, 0});
+  Planet earth(PlanetType::EARTH, Coordinates{0, 0});
 
   ship_struct sdata{
       .owner = player_t{1},
@@ -653,10 +655,10 @@ void test_process_planetary_ships() {
   planet.star_id() = star.star_id();
   planet.planet_order() = 0;
 
-  SectorMap smap(planet, true);
-  smap.get(1, 1).set_condition(SectorType::SEC_WASTED);
-  smap.get(1, 2).set_condition(SectorType::SEC_LAND);
-  smap.get(1, 2).set_fert(50);
+  SectorMap smap(planet);
+  smap.get(Coordinates{1, 1}).set_condition(SectorType::SEC_WASTED);
+  smap.get(Coordinates{1, 2}).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{1, 2}).set_fert(50);
 
   TurnStats stats{};
 
@@ -725,7 +727,7 @@ void test_process_planetary_ships() {
   const auto* p_after = em.peek_ship(plow_handle->number());
   test::expect_eq(p_after->land_coords().x, 1);
   test::expect_eq(p_after->land_coords().y, 2);
-  test::expect_gt(smap.get(1, 2).get_fert(), 50U);
+  test::expect_gt(smap.get(Coordinates{1, 2}).get_fert(), 50U);
 }
 
 void test_do_recover() {
@@ -787,10 +789,10 @@ void test_doplanet_full_cycle() {
   PlanetRepository planets(store);
   planets.save(planet);
 
-  SectorMap initial_smap(planet, true);
+  SectorMap initial_smap(planet);
   for (int y = 0; y < 10; y++) {
     for (int x = 0; x < 10; x++) {
-      auto& s = initial_smap.get(x, y);
+      auto& s = initial_smap.get(Coordinates{x, y});
       s.set_x(x);
       s.set_y(y);
       s.set_owner(1);
@@ -837,10 +839,10 @@ void test_exploration_island_discovery() {
   PlanetRepository planets(store);
   planets.save(planet);
 
-  SectorMap initial_smap(planet, true);
+  SectorMap initial_smap(planet);
   for (int y = 0; y < 10; y++) {
     for (int x = 0; x < 10; x++) {
-      auto& s = initial_smap.get(x, y);
+      auto& s = initial_smap.get(Coordinates{x, y});
       s.set_x(x);
       s.set_y(y);
       s.set_owner(0);
@@ -850,7 +852,7 @@ void test_exploration_island_discovery() {
   }
 
   // Player 1 owns one sector at (0, 0)
-  auto& s_owned = initial_smap.get(0, 0);
+  auto& s_owned = initial_smap.get(Coordinates{0, 0});
   s_owned.set_owner(1);
   s_owned.set_popn_exact(100);
   s_owned.set_condition(SectorType::SEC_LAND);
@@ -858,7 +860,7 @@ void test_exploration_island_discovery() {
   // Set up multiple vacant eligible candidate island sectors that have been
   // explored by player 1
   for (int x = 1; x <= 4; ++x) {
-    auto& cand = initial_smap.get(x, 0);
+    auto& cand = initial_smap.get(Coordinates{x, 0});
     cand.set_condition(SectorType::SEC_LAND);
   }
 
@@ -911,10 +913,10 @@ void test_64bit_production_and_stockpiles() {
   PlanetRepository planets(store);
   planets.save(planet);
 
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
   for (int y = 0; y < 10; ++y) {
     for (int x = 0; x < 10; ++x) {
-      auto& sect = smap.get(x, y);
+      auto& sect = smap.get(Coordinates{x, y});
       sect.set_x(x);
       sect.set_y(y);
       if (y == 0 && x < 5) {

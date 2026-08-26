@@ -39,7 +39,7 @@ Star createTestStar(starnum_t id = 0) {
 }
 
 Planet createTestPlanet(starnum_t star_id = 0, planetnum_t pnum = 0) {
-  Planet planet(PlanetType::EARTH);
+  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
   planet.star_id() = star_id;
   planet.planet_order() = pnum;
   planet.Maxx() = 5;
@@ -108,10 +108,10 @@ void test_do_turn_segment_vs_update() {
   PlanetRepository planets(store);
   planets.save(planet);
 
-  SectorMap initial_smap(planet, true);
+  SectorMap initial_smap(planet);
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
-      auto& s = initial_smap.get(x, y);
+      auto& s = initial_smap.get(Coordinates{x, y});
       s.set_x(x);
       s.set_y(y);
       s.set_owner(1);

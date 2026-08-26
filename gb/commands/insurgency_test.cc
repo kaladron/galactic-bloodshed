@@ -70,11 +70,11 @@ void setup_test_world(TestContext& ctx) {
 
   // Create test sectormap
   {
-    SectorMap smap(planet, true);
+    SectorMap smap(planet);
     for (int i = 0; i < 5; i++) {
-      smap.get(i, 0).set_owner(2);
-      smap.get(i, 0).set_popn_exact(200);
-      smap.get(i, 0).set_condition(SectorType::SEC_MOUNT);
+      smap.get(Coordinates{i, 0}).set_owner(2);
+      smap.get(Coordinates{i, 0}).set_popn_exact(200);
+      smap.get(Coordinates{i, 0}).set_condition(SectorType::SEC_MOUNT);
     }
 
     SectorRepository sectors(store);

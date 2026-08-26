@@ -26,8 +26,8 @@ void setup_test_world(TestContext& ctx) {
   planet_handle->popn() = 1000;
 
   auto smap_handle = ctx.em.get_sectormap(0, 0);
-  smap_handle->get(0, 0).set_owner(1);
-  smap_handle->get(0, 0).set_popn_exact(1000);
+  smap_handle->get(Coordinates{0, 0}).set_owner(1);
+  smap_handle->get(Coordinates{0, 0}).set_popn_exact(1000);
 }
 
 void test_colonies_dispatch() {

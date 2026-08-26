@@ -153,7 +153,7 @@ found_planet:
       }
     }
     // We default to putting the capital at 0,0 if we don't have a better choice
-    return smap.get(0, 0);
+    return smap.get(Coordinates{0, 0});
   }();
 
   sect.set_owner(Playernum);

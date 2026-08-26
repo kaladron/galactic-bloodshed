@@ -55,14 +55,14 @@ int main() {
 
   // Create Sector Map with sectors for Race 2 and Race 3
   {
-    SectorMap smap(planet, true);
-    smap.get(3, 3).set_condition(SectorType::SEC_LAND);
-    smap.get(3, 3).set_popn_exact(100);
-    smap.get(3, 3).set_owner(3);  // Owned by Race 3 (not at war)
+    SectorMap smap(planet);
+    smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
+    smap.get(Coordinates{3, 3}).set_popn_exact(100);
+    smap.get(Coordinates{3, 3}).set_owner(3);  // Owned by Race 3 (not at war)
 
-    smap.get(5, 5).set_condition(SectorType::SEC_LAND);
-    smap.get(5, 5).set_popn_exact(100);
-    smap.get(5, 5).set_owner(2);  // Owned by Race 2 (at war)
+    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
+    smap.get(Coordinates{5, 5}).set_popn_exact(100);
+    smap.get(Coordinates{5, 5}).set_owner(2);  // Owned by Race 2 (at war)
 
     SectorRepository smap_repo(store);
     smap_repo.save_map(smap);

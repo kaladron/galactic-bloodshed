@@ -91,9 +91,9 @@ int main() {
   test::expect_eq(planet.wrap({15, 3}), Coordinates(5, 3));
 
   // --- Sector & SectorMap tests ---
-  SectorMap smap(planet, true);  // Initialize empty grid (10x8 = 80 sectors)
-  test::expect_true(smap.in_bounds({5, 5}));
-  test::expect_false(smap.in_bounds({10, 5}));
+  SectorMap smap(planet);  // Initialize empty grid (10x8 = 80 sectors)
+  test::expect_true(smap.in_bounds(Coordinates{5, 5}));
+  test::expect_false(smap.in_bounds(Coordinates{10, 5}));
 
   Coordinates target_c{3, 4};
   auto& sect = smap.get(target_c);
@@ -126,6 +126,25 @@ int main() {
     indexed_count++;
   }
   test::expect_eq(indexed_count, 80);
+
+  // Out of bounds checking with descriptive error messages
+  try {
+    [[maybe_unused]] auto& out = smap.get(Coordinates{10, 5});
+    test::expect_true(false);  // Should not reach
+  } catch (const std::out_of_range& e) {
+    test::expect_eq(
+        std::string(e.what()),
+        "SectorMap::get(10, 5) out of bounds for dimensions (10, 8)");
+  }
+
+  try {
+    smap.set(Coordinates{-1, 0}, s_data);
+    test::expect_true(false);  // Should not reach
+  } catch (const std::out_of_range& e) {
+    test::expect_eq(
+        std::string(e.what()),
+        "SectorMap::set(-1, 0) out of bounds for dimensions (10, 8)");
+  }
 
   // --- Ship land_coords tests ---
   ship_struct shipdata{};

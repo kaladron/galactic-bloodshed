@@ -1132,11 +1132,9 @@ public:
       pnum = planetnum_t{static_cast<planetnum_t::value_type>(
           star_opt ? star_opt->numplanets() : 0)};
     }
-    Planet p(type);
+    Planet p(type, Coordinates{maxx, maxy});
     p.star_id() = snum;
     p.planet_order() = pnum;
-    p.Maxx() = maxx;
-    p.Maxy() = maxy;
     p.explored() = true;
     for (player_t pid : registered_races_) {
       p.info(pid).explored = 1;
@@ -1158,11 +1156,11 @@ public:
     }
 
     // Save initial SectorMap with coordinate indexing
-    SectorMap smap(p, true);
+    SectorMap smap(p);
     for (int y = 0; y < maxy; ++y) {
       for (int x = 0; x < maxx; ++x) {
-        smap.get(x, y).set_x(x);
-        smap.get(x, y).set_y(y);
+        smap.get(Coordinates{Coordinates{x, y}}).set_x(x);
+        smap.get(Coordinates{Coordinates{x, y}}).set_y(y);
       }
     }
     SectorRepository(store_).save_map(smap);

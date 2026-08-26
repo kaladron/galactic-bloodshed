@@ -303,15 +303,7 @@ public:
 
 export class SectorMap {
 public:
-  SectorMap(const Planet& planet)
-      : star_id_(planet.star_id()), planet_order_(planet.planet_order()),
-        maxx_(planet.dimensions().x), maxy_(planet.dimensions().y) {
-    grid_.reserve(static_cast<std::size_t>(planet.dimensions().x) *
-                  static_cast<std::size_t>(planet.dimensions().y));
-  }
-
-  //! Add an empty sector for every potential space.  Used for initialization.
-  SectorMap(const Planet& planet, bool)
+  explicit SectorMap(const Planet& planet)
       : star_id_(planet.star_id()), planet_order_(planet.planet_order()),
         maxx_(planet.dimensions().x), maxy_(planet.dimensions().y),
         grid_(static_cast<std::size_t>(planet.dimensions().x) *
@@ -342,46 +334,50 @@ public:
     return c.x >= 0 && c.y >= 0 && c.x < maxx_ && c.y < maxy_;
   }
 
-  Sector& get(const int x, const int y) {
-    return grid_.at(
-        static_cast<std::size_t>(x) +
-        (static_cast<std::size_t>(y) * static_cast<std::size_t>(maxx_)));
-  }
-
-  [[nodiscard]] const Sector& get(const int x, const int y) const {
-    return grid_.at(
-        static_cast<std::size_t>(x) +
-        (static_cast<std::size_t>(y) * static_cast<std::size_t>(maxx_)));
-  }
-
   Sector& get(const Coordinates c) {
-    return get(c.x, c.y);
+    if (!in_bounds(c)) {
+      throw std::out_of_range(std::format(
+          "SectorMap::get({}, {}) out of bounds for dimensions ({}, {})", c.x,
+          c.y, maxx_, maxy_));
+    }
+    return grid_[static_cast<std::size_t>(c.x) +
+                 (static_cast<std::size_t>(c.y) *
+                  static_cast<std::size_t>(maxx_))];
   }
 
   [[nodiscard]] const Sector& get(const Coordinates c) const {
-    return get(c.x, c.y);
+    if (!in_bounds(c)) {
+      throw std::out_of_range(std::format(
+          "SectorMap::get({}, {}) out of bounds for dimensions ({}, {})", c.x,
+          c.y, maxx_, maxy_));
+    }
+    return grid_[static_cast<std::size_t>(c.x) +
+                 (static_cast<std::size_t>(c.y) *
+                  static_cast<std::size_t>(maxx_))];
   }
 
   // Set from sector_struct
-  void set(const int x, const int y, const sector_struct& s) {
-    grid_.at(static_cast<std::size_t>(x) +
-             (static_cast<std::size_t>(y) * static_cast<std::size_t>(maxx_))) =
+  void set(const Coordinates c, const sector_struct& s) {
+    if (!in_bounds(c)) {
+      throw std::out_of_range(std::format(
+          "SectorMap::set({}, {}) out of bounds for dimensions ({}, {})", c.x,
+          c.y, maxx_, maxy_));
+    }
+    grid_[static_cast<std::size_t>(c.x) +
+          (static_cast<std::size_t>(c.y) * static_cast<std::size_t>(maxx_))] =
         Sector(s);
   }
 
   // Set from Sector - extract struct and reconstruct
-  void set(const int x, const int y, const Sector& s) {
-    grid_.at(static_cast<std::size_t>(x) +
-             (static_cast<std::size_t>(y) * static_cast<std::size_t>(maxx_))) =
-        Sector(s.to_struct());
-  }
-
-  void set(const Coordinates c, const sector_struct& s) {
-    set(c.x, c.y, s);
-  }
-
   void set(const Coordinates c, const Sector& s) {
-    set(c.x, c.y, s);
+    if (!in_bounds(c)) {
+      throw std::out_of_range(std::format(
+          "SectorMap::set({}, {}) out of bounds for dimensions ({}, {})", c.x,
+          c.y, maxx_, maxy_));
+    }
+    grid_[static_cast<std::size_t>(c.x) +
+          (static_cast<std::size_t>(c.y) * static_cast<std::size_t>(maxx_))] =
+        Sector(s.to_struct());
   }
 
   // TODO(jeffbailey): Migrate to std::views::cartesian_product once supported
@@ -448,7 +444,7 @@ public:
       Iterator(MapType* map, int x, int y) : map_(map), x_(x), y_(y) {}
 
       value_type operator*() const {
-        return {Coordinates{x_, y_}, map_->get(x_, y_)};
+        return {Coordinates{x_, y_}, map_->get(Coordinates{x_, y_})};
       }
       Iterator& operator++() {
         ++x_;
@@ -536,10 +532,6 @@ public:
            });
   }
 
-  void put(Sector&& s) {
-    grid_.emplace_back(std::move(s));
-  }
-
   [[nodiscard]] int get_maxx() const {
     return maxx_;
   }
@@ -550,7 +542,7 @@ public:
   Sector& get_random(URBG& g) {
     std::uniform_int_distribution<int> dis_x(0, maxx_ - 1);
     std::uniform_int_distribution<int> dis_y(0, maxy_ - 1);
-    return get(dis_x(g), dis_y(g));
+    return get(Coordinates{dis_x(g), dis_y(g)});
   }
   Sector& get_random();
 

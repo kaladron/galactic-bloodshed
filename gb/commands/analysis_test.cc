@@ -56,7 +56,7 @@ int main() {
   stars_repo.save(star);
 
   // Create a test planet with a 5x5 grid
-  Planet planet{PlanetType::EARTH};
+  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
   planet.Maxx() = 5;
@@ -69,77 +69,77 @@ int main() {
   planets_repo.save(planet);
 
   // Create sector map with varied data for testing table output
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   // Initialize all sector coordinates first
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
-      smap.get(x, y).set_x(x);
-      smap.get(x, y).set_y(y);
+      smap.get(Coordinates{x, y}).set_x(x);
+      smap.get(Coordinates{x, y}).set_y(y);
     }
   }
 
   // Set up sectors with different owners, types, and values
   // Player 1 owns some sectors
-  smap.get(0, 0).set_owner(1);
-  smap.get(0, 0).set_efficiency_bounded(80);
-  smap.get(0, 0).set_mobilization(50);
-  smap.get(0, 0).set_resource(100);
-  smap.get(0, 0).set_popn_exact(1000);
-  smap.get(0, 0).set_troops(10);
-  smap.get(0, 0).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{0, 0}).set_owner(1);
+  smap.get(Coordinates{0, 0}).set_efficiency_bounded(80);
+  smap.get(Coordinates{0, 0}).set_mobilization(50);
+  smap.get(Coordinates{0, 0}).set_resource(100);
+  smap.get(Coordinates{0, 0}).set_popn_exact(1000);
+  smap.get(Coordinates{0, 0}).set_troops(10);
+  smap.get(Coordinates{0, 0}).set_condition(SectorType::SEC_LAND);
 
-  smap.get(1, 0).set_owner(1);
-  smap.get(1, 0).set_efficiency_bounded(90);
-  smap.get(1, 0).set_mobilization(60);
-  smap.get(1, 0).set_resource(150);
-  smap.get(1, 0).set_popn_exact(2000);
-  smap.get(1, 0).set_troops(20);
-  smap.get(1, 0).set_condition(SectorType::SEC_MOUNT);
+  smap.get(Coordinates{1, 0}).set_owner(1);
+  smap.get(Coordinates{1, 0}).set_efficiency_bounded(90);
+  smap.get(Coordinates{1, 0}).set_mobilization(60);
+  smap.get(Coordinates{1, 0}).set_resource(150);
+  smap.get(Coordinates{1, 0}).set_popn_exact(2000);
+  smap.get(Coordinates{1, 0}).set_troops(20);
+  smap.get(Coordinates{1, 0}).set_condition(SectorType::SEC_MOUNT);
 
-  smap.get(2, 0).set_owner(1);
-  smap.get(2, 0).set_efficiency_bounded(70);
-  smap.get(2, 0).set_mobilization(40);
-  smap.get(2, 0).set_resource(80);
-  smap.get(2, 0).set_popn_exact(500);
-  smap.get(2, 0).set_troops(5);
-  smap.get(2, 0).set_condition(SectorType::SEC_FOREST);
+  smap.get(Coordinates{2, 0}).set_owner(1);
+  smap.get(Coordinates{2, 0}).set_efficiency_bounded(70);
+  smap.get(Coordinates{2, 0}).set_mobilization(40);
+  smap.get(Coordinates{2, 0}).set_resource(80);
+  smap.get(Coordinates{2, 0}).set_popn_exact(500);
+  smap.get(Coordinates{2, 0}).set_troops(5);
+  smap.get(Coordinates{2, 0}).set_condition(SectorType::SEC_FOREST);
 
   // Player 2 owns some sectors
-  smap.get(0, 1).set_owner(2);
-  smap.get(0, 1).set_efficiency_bounded(60);
-  smap.get(0, 1).set_mobilization(30);
-  smap.get(0, 1).set_resource(50);
-  smap.get(0, 1).set_popn_exact(800);
-  smap.get(0, 1).set_troops(8);
-  smap.get(0, 1).set_condition(SectorType::SEC_SEA);
+  smap.get(Coordinates{0, 1}).set_owner(2);
+  smap.get(Coordinates{0, 1}).set_efficiency_bounded(60);
+  smap.get(Coordinates{0, 1}).set_mobilization(30);
+  smap.get(Coordinates{0, 1}).set_resource(50);
+  smap.get(Coordinates{0, 1}).set_popn_exact(800);
+  smap.get(Coordinates{0, 1}).set_troops(8);
+  smap.get(Coordinates{0, 1}).set_condition(SectorType::SEC_SEA);
 
-  smap.get(1, 1).set_owner(2);
-  smap.get(1, 1).set_efficiency_bounded(50);
-  smap.get(1, 1).set_mobilization(25);
-  smap.get(1, 1).set_resource(40);
-  smap.get(1, 1).set_popn_exact(600);
-  smap.get(1, 1).set_troops(6);
-  smap.get(1, 1).set_condition(SectorType::SEC_ICE);
+  smap.get(Coordinates{1, 1}).set_owner(2);
+  smap.get(Coordinates{1, 1}).set_efficiency_bounded(50);
+  smap.get(Coordinates{1, 1}).set_mobilization(25);
+  smap.get(Coordinates{1, 1}).set_resource(40);
+  smap.get(Coordinates{1, 1}).set_popn_exact(600);
+  smap.get(Coordinates{1, 1}).set_troops(6);
+  smap.get(Coordinates{1, 1}).set_condition(SectorType::SEC_ICE);
 
   // Unowned sectors
-  smap.get(2, 1).set_owner(0);
-  smap.get(2, 1).set_efficiency_bounded(0);
-  smap.get(2, 1).set_resource(200);
-  smap.get(2, 1).set_condition(SectorType::SEC_GAS);
+  smap.get(Coordinates{2, 1}).set_owner(0);
+  smap.get(Coordinates{2, 1}).set_efficiency_bounded(0);
+  smap.get(Coordinates{2, 1}).set_resource(200);
+  smap.get(Coordinates{2, 1}).set_condition(SectorType::SEC_GAS);
 
-  smap.get(0, 2).set_owner(0);
-  smap.get(0, 2).set_efficiency_bounded(0);
-  smap.get(0, 2).set_resource(75);
-  smap.get(0, 2).set_condition(SectorType::SEC_DESERT);
+  smap.get(Coordinates{0, 2}).set_owner(0);
+  smap.get(Coordinates{0, 2}).set_efficiency_bounded(0);
+  smap.get(Coordinates{0, 2}).set_resource(75);
+  smap.get(Coordinates{0, 2}).set_condition(SectorType::SEC_DESERT);
 
   // Leave the rest as default (unowned, sea type)
   for (int y = 2; y < 5; y++) {
     for (int x = (y == 2 ? 1 : 0); x < 5; x++) {
-      smap.get(x, y).set_owner(0);
-      smap.get(x, y).set_efficiency_bounded(0);
-      smap.get(x, y).set_resource(10 + x + y);
-      smap.get(x, y).set_condition(SectorType::SEC_SEA);
+      smap.get(Coordinates{x, y}).set_owner(0);
+      smap.get(Coordinates{x, y}).set_efficiency_bounded(0);
+      smap.get(Coordinates{x, y}).set_resource(10 + x + y);
+      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_SEA);
     }
   }
 

@@ -55,7 +55,7 @@ void setup_test_world(TestContext& ctx) {
   stars_repo.save(star0);
 
   // Create planet on star 0
-  Planet planet0{PlanetType::EARTH};
+  Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
   planet0.star_id() = 0;
   planet0.planet_order() = 0;
   planet0.Maxx() = 5;
@@ -81,7 +81,7 @@ void setup_test_world(TestContext& ctx) {
   planets_repo.save(planet0);
 
   // Create sectormap for planet 0
-  SectorMap smap(planet0, true);
+  SectorMap smap(planet0);
   for (auto [coord, s] : smap.indexed_sectors()) {
     if (coord.x == 0 && coord.y == 0) {
       s.set_condition(SectorType::SEC_LAND);
@@ -122,7 +122,7 @@ void setup_test_world(TestContext& ctx) {
   stars_repo.save(star1);
 
   // Create planet on star 1
-  Planet planet1{PlanetType::EARTH};
+  Planet planet1{PlanetType::EARTH, Coordinates{10, 10}};
   planet1.star_id() = 1;
   planet1.planet_order() = 0;
   planet1.Maxx() = 3;
@@ -131,7 +131,7 @@ void setup_test_world(TestContext& ctx) {
   planet1.info(player_t{1}).numsectsowned = 1;
   planets_repo.save(planet1);
 
-  SectorMap usmap(planet1, true);
+  SectorMap usmap(planet1);
   for (Sector& s : usmap) {
     s.set_condition(SectorType::SEC_LAND);
   }

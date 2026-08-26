@@ -27,10 +27,10 @@ void setup_test_world(TestContext& ctx) {
     planet_handle->ships() = 1;
 
     auto smap_handle = ctx.em.get_sectormap(0, 0);
-    smap_handle->get(5, 5).set_owner(1);
-    smap_handle->get(5, 5).set_condition(SectorType::SEC_MOUNT);
-    smap_handle->get(5, 6).set_owner(1);
-    smap_handle->get(5, 6).set_condition(SectorType::SEC_MOUNT);
+    smap_handle->get(Coordinates{5, 5}).set_owner(1);
+    smap_handle->get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
+    smap_handle->get(Coordinates{5, 6}).set_owner(1);
+    smap_handle->get(Coordinates{5, 6}).set_condition(SectorType::SEC_MOUNT);
   }
 
   // Create AFV ship landed at (5, 5)

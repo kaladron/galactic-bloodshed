@@ -11,7 +11,7 @@ import std;
 int main() {
   // Test 1: Planet default and mutable dimensions
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     test::expect_eq(planet.dimensions(), Coordinates(0, 0));
     test::expect_eq(planet.Maxx(), 0);
     test::expect_eq(planet.Maxy(), 0);
@@ -30,7 +30,7 @@ int main() {
 
   // Test 2: Bounds checking with is_valid
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     planet.dimensions() = Coordinates(10, 8);
 
     test::expect_true(planet.is_valid({0, 0}));
@@ -46,7 +46,7 @@ int main() {
 
   // Test 3: Toroidal coordinate wrapping
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     planet.dimensions() = Coordinates(10, 8);
 
     // Within bounds: unchanged
@@ -63,13 +63,13 @@ int main() {
     test::expect_eq(planet.wrap({-11, 3}), Coordinates(9, 3));
 
     // Zero width safety check
-    Planet uninit_planet(PlanetType::EARTH);
+    Planet uninit_planet(PlanetType::EARTH, Coordinates{0, 0});
     test::expect_eq(uninit_planet.wrap({5, 3}), Coordinates(5, 3));
   }
 
   // Test 4: Planet gravity calculation
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     planet.dimensions() = Coordinates(20, 10);
     const double expected_gravity = 20.0 * 10.0 * GRAV_FACTOR;
     test::expect_true(std::abs(planet.gravity() - expected_gravity) < 1e-6);
@@ -77,7 +77,7 @@ int main() {
 
   // Test 5: Coordinate adjacency on planet surface
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     planet.dimensions() = Coordinates(10, 8);
 
     // Direct and diagonal neighbors
@@ -106,7 +106,7 @@ int main() {
 
   // Test 6: Planet compatibility with race conditions
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     for (int i = 0; i <= TOXIC; ++i) {
       planet.conditions(static_cast<Conditions>(i)) = 50;
     }
@@ -125,7 +125,7 @@ int main() {
 
   // Test 7: plinfo defaults and optional tox_thresh behavior
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     auto& info = planet.info(player_t{1});
 
     // Verify initial default states
@@ -181,7 +181,7 @@ int main() {
 
   // Test 8: Planet exploration timer and explored flag
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     test::expect_eq(planet.expltimer(), 0U);
     test::expect_false(planet.explored());
 
@@ -227,7 +227,7 @@ int main() {
 
   // Test 10: Planet::info bounds checking
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     planet.info(player_t{1}).popn = 5000;
     planet.info(player_t{MAXPLAYERS}).popn = 9999;
 
@@ -242,7 +242,7 @@ int main() {
 
   // Test 11: Planet::update_climate
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     planet.conditions(RTEMP) = 75;
 
     planet.update_climate(10);
@@ -256,7 +256,7 @@ int main() {
 
   // Test 12: Enslavement, revolt threshold, and slave liberation
   {
-    Planet planet(PlanetType::EARTH);
+    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     test::expect_false(planet.is_enslaved());
     test::expect_false(planet.is_slave_revolt_triggered());
 

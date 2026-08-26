@@ -788,7 +788,7 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
     for (int x = 0; x < planet.Maxx(); x++) {
       if (auto sector =
               find_sector(planet.star_id(), planet.planet_order(), x, y)) {
-        smap.put(std::move(*sector));
+        smap.set(Coordinates{x, y}, std::move(*sector));
       }
     }
   }

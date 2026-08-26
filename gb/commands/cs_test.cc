@@ -53,7 +53,7 @@ void setup_test_world(TestContext& ctx) {
   stars_repo.save(star0);
   stars_repo.save(star1);
 
-  Planet planet{PlanetType::EARTH};
+  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
   planet.Maxx() = 5;

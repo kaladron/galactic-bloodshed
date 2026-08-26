@@ -30,15 +30,15 @@ void setup_test_world(TestContext& ctx) {
     planet_handle->info(player_t{1}).numsectsowned = 2;
 
     auto smap_handle = ctx.em.get_sectormap(0, 0);
-    smap_handle->get(5, 5).set_owner(1);
-    smap_handle->get(5, 5).set_popn_exact(1000);
-    smap_handle->get(5, 5).set_troops(500);
-    smap_handle->get(5, 5).set_condition(SectorType::SEC_MOUNT);
+    smap_handle->get(Coordinates{5, 5}).set_owner(1);
+    smap_handle->get(Coordinates{5, 5}).set_popn_exact(1000);
+    smap_handle->get(Coordinates{5, 5}).set_troops(500);
+    smap_handle->get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
 
-    smap_handle->get(5, 6).set_owner(1);
-    smap_handle->get(5, 6).set_popn_exact(0);
-    smap_handle->get(5, 6).set_troops(0);
-    smap_handle->get(5, 6).set_condition(SectorType::SEC_MOUNT);
+    smap_handle->get(Coordinates{5, 6}).set_owner(1);
+    smap_handle->get(Coordinates{5, 6}).set_popn_exact(0);
+    smap_handle->get(Coordinates{5, 6}).set_troops(0);
+    smap_handle->get(Coordinates{5, 6}).set_condition(SectorType::SEC_MOUNT);
   }
 }
 
@@ -61,10 +61,10 @@ void test_move_popn_happy_paths() {
   const auto* saved_smap = ctx.em.peek_sectormap(0, 0);
   test::expect_true(saved_smap != nullptr);
 
-  const auto& source_sect = saved_smap->get(5, 5);
+  const auto& source_sect = saved_smap->get(Coordinates{5, 5});
   test::expect_eq(source_sect.get_popn(), 500);
 
-  const auto& dest_sect = saved_smap->get(5, 6);
+  const auto& dest_sect = saved_smap->get(Coordinates{5, 6});
   test::expect_eq(dest_sect.get_popn(), 500);
 
   // 2. Test deploy command - deploy 200 troops
@@ -73,8 +73,8 @@ void test_move_popn_happy_paths() {
   ctx.em.clear_cache();
   const auto* smap2 = ctx.em.peek_sectormap(0, 0);
   test::expect_true(smap2 != nullptr);
-  test::expect_eq(smap2->get(5, 5).get_troops(), 300);
-  test::expect_eq(smap2->get(5, 6).get_troops(), 200);
+  test::expect_eq(smap2->get(Coordinates{5, 5}).get_troops(), 300);
+  test::expect_eq(smap2->get(Coordinates{5, 6}).get_troops(), 200);
 
   ctx.verify_universe_invariants();
 }

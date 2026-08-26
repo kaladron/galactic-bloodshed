@@ -269,24 +269,24 @@ void test_sectormap_range_views() {
   Planet planet(planet_struct{
       .dimensions = Coordinates{2, 2},
   });
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   // Setup sectors:
   // (0,0): owner 1, popn 100 (populated)
   // (1,0): owner 1, popn 0 (unpopulated)
   // (0,1): owner 2, popn 50 (populated)
   // (1,1): unowned, popn 0
-  smap.get(0, 0).set_owner(1);
-  smap.get(0, 0).set_popn_exact(100);
+  smap.get(Coordinates{0, 0}).set_owner(1);
+  smap.get(Coordinates{0, 0}).set_popn_exact(100);
 
-  smap.get(1, 0).set_owner(1);
-  smap.get(1, 0).set_popn_exact(0);
+  smap.get(Coordinates{1, 0}).set_owner(1);
+  smap.get(Coordinates{1, 0}).set_popn_exact(0);
 
-  smap.get(0, 1).set_owner(2);
-  smap.get(0, 1).set_popn_exact(50);
+  smap.get(Coordinates{0, 1}).set_owner(2);
+  smap.get(Coordinates{0, 1}).set_popn_exact(50);
 
-  smap.get(1, 1).set_owner(0);
-  smap.get(1, 1).set_popn_exact(0);
+  smap.get(Coordinates{1, 1}).set_owner(0);
+  smap.get(Coordinates{1, 1}).set_popn_exact(0);
 
   // 1. Direct SectorMap iteration
   std::size_t total_count = 0;
@@ -340,9 +340,9 @@ void test_sectormap_range_views() {
   for (Sector& s : smap.owned_by(player_t{1})) {
     s.add_resource(50);
   }
-  test::expect_eq(smap.get(0, 0).get_resource(), 50);
-  test::expect_eq(smap.get(1, 0).get_resource(), 50);
-  test::expect_eq(smap.get(0, 1).get_resource(), 0);
+  test::expect_eq(smap.get(Coordinates{0, 0}).get_resource(), 50);
+  test::expect_eq(smap.get(Coordinates{1, 0}).get_resource(), 50);
+  test::expect_eq(smap.get(Coordinates{0, 1}).get_resource(), 0);
 
   // 6. Const SectorMap range views
   const SectorMap& const_smap = smap;

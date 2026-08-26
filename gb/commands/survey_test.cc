@@ -76,10 +76,10 @@ void setup_test_world(TestContext& ctx) {
   planets.save(planet);
 
   // Create sectors
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
   for (int x = 0; x < 10; x++) {
     for (int y = 0; y < 10; y++) {
-      auto& s = smap.get(x, y);
+      auto& s = smap.get(Coordinates{x, y});
       s.set_condition(SectorType::SEC_LAND);
       s.set_type(SectorType::SEC_LAND);
       s.set_owner(1);

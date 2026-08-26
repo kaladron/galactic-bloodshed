@@ -178,10 +178,10 @@ int main() {
   small_planet.Maxy() = 3;
 
   // Create a sector map with all sectors initialized
-  SectorMap test_map(small_planet, true);  // true = initialize all sectors
+  SectorMap test_map(small_planet);  // true = initialize all sectors
   for (int y = 0; y < 3; y++) {
     for (int x = 0; x < 3; x++) {
-      auto& sec = test_map.get(x, y);
+      auto& sec = test_map.get(Coordinates{x, y});
       sec.set_x(x);
       sec.set_y(y);
       sec.set_efficiency_bounded(50 + x + y);
@@ -205,8 +205,8 @@ int main() {
   // Verify all sectors loaded correctly
   for (int y = 0; y < 3; y++) {
     for (int x = 0; x < 3; x++) {
-      const auto& original = test_map.get(x, y);
-      const auto& loaded = loaded_map.get(x, y);
+      const auto& original = test_map.get(Coordinates{x, y});
+      const auto& loaded = loaded_map.get(Coordinates{x, y});
       test::expect_eq(loaded.get_x(), original.get_x());
       test::expect_eq(loaded.get_y(), original.get_y());
       test::expect_eq(loaded.get_eff(), original.get_eff());
@@ -222,7 +222,7 @@ int main() {
   std::println(std::cout, "Update and save SectorMap...");
   for (int y = 0; y < 3; y++) {
     for (int x = 0; x < 3; x++) {
-      auto& sec = loaded_map.get(x, y);
+      auto& sec = loaded_map.get(Coordinates{x, y});
       sec.improve_efficiency(10);  // Increase efficiency by 10
       sec.add_popn(500);           // Add population
     }
@@ -235,8 +235,8 @@ int main() {
   SectorMap updated_map = repo.load_map(small_planet);
   for (int y = 0; y < 3; y++) {
     for (int x = 0; x < 3; x++) {
-      const auto& original = test_map.get(x, y);
-      const auto& updated = updated_map.get(x, y);
+      const auto& original = test_map.get(Coordinates{x, y});
+      const auto& updated = updated_map.get(Coordinates{x, y});
       test::expect_eq(updated.get_eff(), original.get_eff() + 10);
       test::expect_eq(updated.get_popn(), original.get_popn() + 500);
     }

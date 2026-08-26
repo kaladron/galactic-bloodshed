@@ -109,17 +109,17 @@ int neighbors(SectorMap& smap, Coordinates coords, SectorType type) {
   else if (r == smap.get_maxx())
     r = 0;
   if (coords.y > 0)
-    n += (smap.get({coords.x, coords.y - 1}).get_type() == type) +
-         (smap.get({l, coords.y - 1}).get_type() == type) +
-         (smap.get({r, coords.y - 1}).get_type() == type);
+    n += (smap.get(Coordinates{coords.x, coords.y - 1}).get_type() == type) +
+         (smap.get(Coordinates{l, coords.y - 1}).get_type() == type) +
+         (smap.get(Coordinates{r, coords.y - 1}).get_type() == type);
 
-  n += (smap.get({l, coords.y}).get_type() == type) +
-       (smap.get({r, coords.y}).get_type() == type);
+  n += (smap.get(Coordinates{l, coords.y}).get_type() == type) +
+       (smap.get(Coordinates{r, coords.y}).get_type() == type);
 
   if (coords.y < smap.get_maxy() - 1)
-    n += (smap.get({coords.x, coords.y + 1}).get_type() == type) +
-         (smap.get({l, coords.y + 1}).get_type() == type) +
-         (smap.get({r, coords.y + 1}).get_type() == type);
+    n += (smap.get(Coordinates{coords.x, coords.y + 1}).get_type() == type) +
+         (smap.get(Coordinates{l, coords.y + 1}).get_type() == type) +
+         (smap.get(Coordinates{r, coords.y + 1}).get_type() == type);
 
   return (n);
 }
@@ -154,7 +154,7 @@ void grow(SectorMap& smap, SectorType type, int n, int rate) {
   }
 
   for (auto& [x, y, sector_type] : worklist) {
-    auto& s = smap.get({x, y});
+    auto& s = smap.get(Coordinates{x, y});
     s.set_condition(sector_type);
     s.set_type(sector_type);
   }
@@ -235,7 +235,15 @@ void Makesurface(const Planet& p, SectorMap& smap) {
 Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
                   planetnum_t planet_order,
                   std::optional<SectorMap>& out_smap) {
-  Planet planet{type};
+  int maxx = int_rand(xmin[type], xmax[type]);
+  auto f = (double)maxx / RATIOXY;
+  int maxy = round_rand(f) + 1;
+  if (!(maxy % 2)) maxy++; /* make odd number of latitude bands */
+
+  if (type == PlanetType::ASTEROID)
+    maxy = int_rand(1, 3); /* Asteroids have funny shapes. */
+
+  Planet planet{type, Coordinates{maxx, maxy}};
 
   // Set location explicitly - no global counter needed
   planet.star_id() = star_id;
@@ -243,22 +251,13 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
   planet.expltimer() = 5;
   planet.conditions(TEMP) = planet.conditions(RTEMP) = Temperature(dist, stemp);
 
-  planet.Maxx() = int_rand(xmin[type], xmax[type]);
-  auto f = (double)planet.Maxx() / RATIOXY;
-  planet.Maxy() = round_rand(f) + 1;
-  if (!(planet.Maxy() % 2))
-    planet.Maxy()++; /* make odd number of latitude bands */
-
-  if (type == PlanetType::ASTEROID)
-    planet.Maxy() = int_rand(1, 3); /* Asteroids have funny shapes. */
-
   auto t = cond[type];
 
   // Initialize with the correct number of sectors.
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
   for (auto y = 0; y < planet.Maxy(); y++) {
     for (auto x = 0; x < planet.Maxx(); x++) {
-      auto& s = smap.get({x, y});
+      auto& s = smap.get(Coordinates{x, y});
       s.set_x(x);
       s.set_y(y);
       s.set_type(t);

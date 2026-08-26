@@ -190,7 +190,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
                         std::abs(target_sector.x + (pl.Maxx() - 1) - x2));
       int dy = std::abs(y2 - target_sector.y);
       double d = std::sqrt((double)(dx * dx + dy * dy));
-      auto& s = smap.get(x2, y2);
+      auto& s = smap.get(Coordinates{x2, y2});
 
       if (d <= r) {
         double fac =

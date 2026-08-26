@@ -48,7 +48,7 @@ void setup_test_world(TestContext& ctx) {
   stars.save(star0);
 
   // Initialize planet 0 on star 0
-  Planet planet0{PlanetType::EARTH};
+  Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
   planet0.star_id() = 0;
   planet0.planet_order() = 0;
   planet0.info(player_t{1}).explored = 1;

@@ -201,8 +201,8 @@ void test_test_world_builder() {
 
   const auto* smap = ctx.em.peek_sectormap(0, 0);
   test::expect_true(smap != nullptr, "SectorMap for /0/0 must exist");
-  test::expect_eq(smap->get(0, 0).get_x(), 0);
-  test::expect_eq(smap->get(0, 0).get_y(), 0);
+  test::expect_eq(smap->get(Coordinates{0, 0}).get_x(), 0);
+  test::expect_eq(smap->get(Coordinates{0, 0}).get_y(), 0);
 
   std::println(std::cout, "  ✓ TestWorldBuilder verified successfully");
 }
@@ -409,7 +409,7 @@ void test_universe_invariants() {
     auto planet_handle = ctx.em.get_planet(starnum_t{0}, planetnum_t{0});
     planet_handle->popn() = 1234;
     auto smap_handle = ctx.em.get_sectormap(starnum_t{0}, planetnum_t{0});
-    smap_handle->get(0, 0).set_popn_exact(1234);
+    smap_handle->get(Coordinates{0, 0}).set_popn_exact(1234);
   }
   test::expect_no_throw(
       [&]() { ctx.verify_universe_invariants(); },

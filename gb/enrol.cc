@@ -293,11 +293,12 @@ int main() {
   // Temporarily show sectors during selection (no need to persist)
   for (SectorType st : all_sector_types) {
     if (secttypes[st].here) {
-      std::println(
-          std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", st,
-          get_sector_char(
-              smap.get(secttypes[st].x, secttypes[st].y).get_condition()),
-          secttypes[st].x, secttypes[st].y, Desnames[st], secttypes[st].count);
+      std::println(std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", st,
+                   get_sector_char(
+                       smap.get(Coordinates{secttypes[st].x, secttypes[st].y})
+                           .get_condition()),
+                   secttypes[st].x, secttypes[st].y, Desnames[st],
+                   secttypes[st].count);
     }
   }
 
@@ -322,7 +323,8 @@ int main() {
     }
   } while (!sector_chosen);
 
-  auto& sect = smap.get(secttypes[chosen_sector].x, secttypes[chosen_sector].y);
+  auto& sect = smap.get(
+      Coordinates{secttypes[chosen_sector].x, secttypes[chosen_sector].y});
   race.likesbest = chosen_sector;
   race.likes[chosen_sector] = 1.0;
   race.likes[SectorType::SEC_PLATED] = 1.0;

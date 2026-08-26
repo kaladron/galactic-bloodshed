@@ -21,10 +21,10 @@ void setup_test_world(TestContext& ctx) {
   // Configure target sector (5,5) on planet (0,0)
   {
     auto smap_handle = ctx.em.get_sectormap(0, 0);
-    smap_handle->get(5, 5).set_condition(SectorType::SEC_LAND);
-    smap_handle->get(5, 5).set_popn_exact(100);
-    smap_handle->get(5, 5).set_owner(2);
-    smap_handle->get(5, 5).set_troops(10);
+    smap_handle->get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
+    smap_handle->get(Coordinates{5, 5}).set_popn_exact(100);
+    smap_handle->get(Coordinates{5, 5}).set_owner(2);
+    smap_handle->get(Coordinates{5, 5}).set_troops(10);
   }
   {
     auto planet_handle = ctx.em.get_planet(0, 0);

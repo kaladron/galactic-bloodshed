@@ -723,7 +723,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     envir_damage = true;
     nukex = int_rand(0, (int)planet.Maxx() - 1);
     nukey = int_rand(0, (int)planet.Maxy() - 1);
-    auto& p = smap.get(nukex, nukey);
+    auto& p = smap.get(Coordinates{nukex, nukey});
     p.devastate();
   }
 
@@ -853,8 +853,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       /* first nuke some random sectors from the revolt */
       int revolt_sectors = planet.calculate_revolt_devastation_count();
       while (--revolt_sectors) {
-        auto& p = smap.get(int_rand(0, (int)planet.Maxx() - 1),
-                           int_rand(0, (int)planet.Maxy() - 1));
+        auto& p = smap.get_random();
         if (p.get_popn() + p.get_troops()) {
           p.devastate();
         }

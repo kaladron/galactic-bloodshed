@@ -59,7 +59,7 @@ Race createTestRace(player_t playernum = 1) {
 
 // Helper function to create a test planet
 Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
-  Planet planet(PlanetType::EARTH);
+  Planet planet(PlanetType::EARTH, Coordinates{maxx, maxy});
   planet.Maxx() = maxx;
   planet.Maxy() = maxy;
   planet.slaved_to() = 0;
@@ -239,13 +239,13 @@ void test_planet_creation() {
   test::expect_eq(planet.conditions(TOXIC), 0);
 
   // Test different planet types
-  Planet earth_planet(PlanetType::EARTH);
+  Planet earth_planet(PlanetType::EARTH, Coordinates{10, 10});
   test::expect_eq(earth_planet.type(), PlanetType::EARTH);
 
-  Planet gas_planet(PlanetType::GASGIANT);
+  Planet gas_planet(PlanetType::GASGIANT, Coordinates{10, 10});
   test::expect_eq(gas_planet.type(), PlanetType::GASGIANT);
 
-  Planet asteroid(PlanetType::ASTEROID);
+  Planet asteroid(PlanetType::ASTEROID, Coordinates{10, 10});
   test::expect_eq(asteroid.type(), PlanetType::ASTEROID);
 
   // Test player info initialization
@@ -292,12 +292,12 @@ void test_star_creation() {
 // Test SectorMap functionality
 void test_sectormap_functionality() {
   auto planet = createTestPlanet(5, 5);
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   // Test sector access and modification
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
-      auto& sector = smap.get(x, y);
+      auto& sector = smap.get(Coordinates{x, y});
       sector.set_x(x);
       sector.set_y(y);
       sector.set_owner(1);
@@ -305,30 +305,31 @@ void test_sectormap_functionality() {
       sector.set_condition(SectorType::SEC_LAND);
 
       // Verify the sector was set correctly
-      test::expect_eq(smap.get(x, y).get_x(), x);
-      test::expect_eq(smap.get(x, y).get_y(), y);
-      test::expect_eq(smap.get(x, y).get_owner(), 1);
-      test::expect_eq(smap.get(x, y).get_popn(), 100 * (x + y));
-      test::expect_eq(smap.get(x, y).get_condition(), SectorType::SEC_LAND);
+      test::expect_eq(smap.get(Coordinates{x, y}).get_x(), x);
+      test::expect_eq(smap.get(Coordinates{x, y}).get_y(), y);
+      test::expect_eq(smap.get(Coordinates{x, y}).get_owner(), 1);
+      test::expect_eq(smap.get(Coordinates{x, y}).get_popn(), 100 * (x + y));
+      test::expect_eq(smap.get(Coordinates{x, y}).get_condition(),
+                      SectorType::SEC_LAND);
     }
   }
 
   // Test boundary conditions
-  auto& corner_sector = smap.get(0, 0);
+  auto& corner_sector = smap.get(Coordinates{0, 0});
   corner_sector.set_efficiency_bounded(100);
   corner_sector.set_fert(50);
   corner_sector.set_resource(1000);
 
-  test::expect_eq(smap.get(0, 0).get_eff(), 100);
-  test::expect_eq(smap.get(0, 0).get_fert(), 50);
-  test::expect_eq(smap.get(0, 0).get_resource(), 1000);
+  test::expect_eq(smap.get(Coordinates{0, 0}).get_eff(), 100);
+  test::expect_eq(smap.get(Coordinates{0, 0}).get_fert(), 50);
+  test::expect_eq(smap.get(Coordinates{0, 0}).get_resource(), 1000);
 
-  auto& opposite_corner = smap.get(4, 4);
+  auto& opposite_corner = smap.get(Coordinates{4, 4});
   opposite_corner.set_crystals(10);
   opposite_corner.set_mobilization(75);
 
-  test::expect_eq(smap.get(4, 4).get_crystals(), 10);
-  test::expect_eq(smap.get(4, 4).get_mobilization(), 75);
+  test::expect_eq(smap.get(Coordinates{4, 4}).get_crystals(), 10);
+  test::expect_eq(smap.get(Coordinates{4, 4}).get_mobilization(), 75);
 }
 
 // Test sector production calculations (mathematical functions)
@@ -475,17 +476,17 @@ void test_spread_population() {
   races.save(race);
 
   Planet planet = createTestPlanet(5, 5);
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
-      smap.get(x, y).set_owner(0);
-      smap.get(x, y).clear_popn();
-      smap.get(x, y).set_condition(SectorType::SEC_LAND);
+      smap.get(Coordinates{x, y}).set_owner(0);
+      smap.get(Coordinates{x, y}).clear_popn();
+      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_LAND);
     }
   }
 
-  auto& center = smap.get(2, 2);
+  auto& center = smap.get(Coordinates{2, 2});
   center.set_x(2);
   center.set_y(2);
   center.set_owner(1);
@@ -500,7 +501,7 @@ void test_spread_population() {
   bool spread_occurred = false;
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
-      if ((x != 2 || y != 2) && smap.get(x, y).get_owner() == 1) {
+      if ((x != 2 || y != 2) && smap.get(Coordinates{x, y}).get_owner() == 1) {
         spread_occurred = true;
         break;
       }

@@ -20,7 +20,7 @@ int main() {
 
   // Create and save a basic planet
   std::println(std::cout, "Save and retrieve basic planet...");
-  Planet planet1(PlanetType::EARTH);
+  Planet planet1(PlanetType::EARTH, Coordinates{10, 10});
   planet1.star_id() = 1;       // Star 1
   planet1.planet_order() = 2;  // Planet 2
   planet1.xpos() = 100.5;
@@ -63,7 +63,7 @@ int main() {
   // Save planet with conditions
   std::println(std::cout,
                "\nTest 2: Save planet with atmospheric conditions...");
-  Planet planet2(PlanetType::ICEBALL);
+  Planet planet2(PlanetType::ICEBALL, Coordinates{10, 10});
   planet2.star_id() = 2;       // Star 2
   planet2.planet_order() = 1;  // Planet 1
   planet2.xpos() = 50.0;
@@ -100,7 +100,7 @@ int main() {
 
   // Save planet with player info
   std::println(std::cout, "\nTest 3: Save planet with player info...");
-  Planet planet3(PlanetType::ASTEROID);
+  Planet planet3(PlanetType::ASTEROID, Coordinates{10, 10});
   planet3.star_id() = 3;       // Star 3
   planet3.planet_order() = 0;  // Planet 0
   planet3.xpos() = 123.4;
@@ -168,7 +168,7 @@ int main() {
 
   // Save planet with routes
   std::println(std::cout, "\nTest 4: Save planet with shipping routes...");
-  Planet planet4(PlanetType::EARTH);
+  Planet planet4(PlanetType::EARTH, Coordinates{10, 10});
   planet4.star_id() = 4;       // Star 4
   planet4.planet_order() = 3;  // Planet 3
   planet4.xpos() = 10.0;
@@ -227,7 +227,7 @@ int main() {
 
   // Multiple planets in same star system
   std::println(std::cout, "\nTest 6: Multiple planets in same star...");
-  Planet planet5(PlanetType::GASGIANT);
+  Planet planet5(PlanetType::GASGIANT, Coordinates{10, 10});
   planet5.star_id() = 5;       // Star 5
   planet5.planet_order() = 0;  // Planet 0
   planet5.xpos() = 200.0;
@@ -235,7 +235,7 @@ int main() {
   planet5.Maxx() = 10;
   planet5.Maxy() = 10;
 
-  Planet planet6(PlanetType::WATER);
+  Planet planet6(PlanetType::WATER, Coordinates{10, 10});
   planet6.star_id() = 5;       // Star 5
   planet6.planet_order() = 1;  // Planet 1
   planet6.xpos() = 250.0;
@@ -265,7 +265,7 @@ int main() {
 
   // Multiple players on same planet
   std::println(std::cout, "\nTest 8: Multiple players on same planet...");
-  Planet planet7(PlanetType::EARTH);
+  Planet planet7(PlanetType::EARTH, Coordinates{10, 10});
   planet7.star_id() = 6;       // Star 6
   planet7.planet_order() = 1;  // Planet 1
   planet7.xpos() = 111.1;

@@ -103,7 +103,7 @@ void test_enroll_no_free_planet_type() {
   StarRepository star_repo(store);
   star_repo.save(star);
 
-  Planet planet{PlanetType::MARS};
+  Planet planet{PlanetType::MARS, Coordinates{10, 10}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
   PlanetRepository planet_repo(store);
@@ -160,12 +160,12 @@ void test_find_suitable_enrol_planet() {
   Star star2(ss2);
   star_repo.save(star2);
 
-  Planet p2_0{PlanetType::MARS};
+  Planet p2_0{PlanetType::MARS, Coordinates{10, 10}};
   p2_0.star_id() = 2;
   p2_0.planet_order() = 0;
   planet_repo.save(p2_0);
 
-  Planet p2_1{PlanetType::EARTH};
+  Planet p2_1{PlanetType::EARTH, Coordinates{10, 10}};
   p2_1.star_id() = 2;
   p2_1.planet_order() = 1;
   p2_1.conditions(RTEMP) = 20;
@@ -179,13 +179,13 @@ void test_find_suitable_enrol_planet() {
   Star star3(ss3);
   star_repo.save(star3);
 
-  Planet p3_0{PlanetType::EARTH};
+  Planet p3_0{PlanetType::EARTH, Coordinates{10, 10}};
   p3_0.star_id() = 3;
   p3_0.planet_order() = 0;
   p3_0.conditions(RTEMP) = 15;
   planet_repo.save(p3_0);
 
-  Planet p3_1{PlanetType::MARS};
+  Planet p3_1{PlanetType::MARS, Coordinates{10, 10}};
   p3_1.star_id() = 3;
   p3_1.planet_order() = 1;
   planet_repo.save(p3_1);

@@ -80,7 +80,7 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
   stats.Sectinfo = {};
   auto x = int_rand(0, p.Maxx() - 1);
   auto y = int_rand(0, p.Maxy() - 1);
-  auto owner = smap.get(x, y).get_owner();
+  auto owner = smap.get(Coordinates{x, y}).get_owner();
 
   const auto* who_race = entity_manager.peek_race(who);
   if (!who_race) return;
@@ -93,7 +93,7 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
     // Sector owned by someone else - check if we can take it
     const auto* owner_race = entity_manager.peek_race(owner);
     double fighters = owner_race ? owner_race->fighters : 1.0;
-    double troops = smap.get(x, y).get_troops() * fighters / 50.0;
+    double troops = smap.get(Coordinates{x, y}).get_troops() * fighters / 50.0;
     if (int_rand(1, 100) <= 100.0 * (1.0 - std::exp(-troops))) {
       return;  // Failed to infect - defenders won
     }
@@ -102,12 +102,13 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
   // Infection succeeds
   p.info(who).explored = 1;
   p.info(who).numsectsowned += 1;
-  smap.get(x, y).set_troops(0);
-  smap.get(x, y).set_popn_exact(who_race->number_sexes);
-  smap.get(x, y).set_owner(who);
-  smap.get(x, y).set_condition(smap.get(x, y).get_type());
+  smap.get(Coordinates{x, y}).set_troops(0);
+  smap.get(Coordinates{x, y}).set_popn_exact(who_race->number_sexes);
+  smap.get(Coordinates{x, y}).set_owner(who);
+  smap.get(Coordinates{x, y})
+      .set_condition(smap.get(Coordinates{x, y}).get_type());
   if (POD_TERRAFORM) {
-    smap.get(x, y).set_condition(who_race->likesbest);
+    smap.get(Coordinates{x, y}).set_condition(who_race->likesbest);
   }
 }
 

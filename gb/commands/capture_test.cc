@@ -36,10 +36,10 @@ void setup_test_world(TestContext& ctx) {
   // Create sectormap with troops for attacker
   {
     auto smap_handle = ctx.em.get_sectormap(0, 0);
-    smap_handle->get(5, 5).set_owner(1);
-    smap_handle->get(5, 5).set_popn_exact(50);
-    smap_handle->get(5, 5).set_troops(100);
-    smap_handle->get(5, 5).set_condition(SectorType::SEC_LAND);
+    smap_handle->get(Coordinates{5, 5}).set_owner(1);
+    smap_handle->get(Coordinates{5, 5}).set_popn_exact(50);
+    smap_handle->get(Coordinates{5, 5}).set_troops(100);
+    smap_handle->get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
 
     auto planet_handle = ctx.em.get_planet(0, 0);
     planet_handle->popn() = 50;
@@ -76,7 +76,7 @@ void test_capture_happy_path() {
 
   const auto* final_smap = ctx.em.peek_sectormap(0, 0);
   test::expect_true(final_smap != nullptr);
-  const auto& final_sector = final_smap->get(5, 5);
+  const auto& final_sector = final_smap->get(Coordinates{5, 5});
   test::expect_le(final_sector.get_troops(), 100);
 
   if (captured_ship->alive()) {

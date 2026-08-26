@@ -365,7 +365,7 @@ bool build(const command_t& argv, GameObj& g) {
           case ShipType::OTYPE_FACTORY: {
             Planet& planet = **planet_handle;
             auto& sectormap = **sectormap_handle;
-            auto& sector = sectormap.get(x, y);
+            auto& sector = sectormap.get(Coordinates{x, y});
             if ((shipcost = newship.build_cost()) >
                 planet.info(Playernum).resource) {
               g.out << std::format("You need {}r to construct this ship.\n",

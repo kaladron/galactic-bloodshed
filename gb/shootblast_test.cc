@@ -60,7 +60,7 @@ void test_shoot_planet_to_ship_valid_attack() {
   StarRepository star_repo(store);
   star_repo.save(star);
 
-  Planet planet{PlanetType::EARTH};
+  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
   PlanetRepository planet_repo(store);
@@ -115,13 +115,13 @@ void test_shoot_ship_to_planet_invalid_cases() {
   initialize_schema(db);
   EntityManager em(db);
 
-  Planet planet{PlanetType::EARTH};
+  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
   planet.Maxx() = 5;
   planet.Maxy() = 5;
 
-  SectorMap smap(planet, true);
+  SectorMap smap(planet);
 
   Ship ship{};
   ship.number() = 1;
@@ -177,7 +177,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   race2.name = "Target";
   race_repo.save(race2);
 
-  Planet planet{PlanetType::EARTH};
+  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
   planet.Maxx() = 4;
@@ -185,8 +185,8 @@ void test_shoot_ship_to_planet_valid_attack() {
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
-  SectorMap smap(planet, true);
-  auto& s = smap.get(1, 1);
+  SectorMap smap(planet);
+  auto& s = smap.get(Coordinates{1, 1});
   s.set_owner(player_t{2});
   s.set_popn_exact(100);
   s.set_condition(SectorType::SEC_LAND);

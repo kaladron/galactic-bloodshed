@@ -1222,6 +1222,74 @@ void test_check_mutual_alliances() {
       [&]() { (void)check_mutual_alliances(em, invalid_pair); });
 }
 
+void test_calculate_plunder_distribution() {
+  // 1. Error case: No conquerors
+  {
+    Stockpile loot{
+        .resources = 100, .destruct = 50, .fuel = 20, .crystals = 10};
+    auto res = calculate_plunder_distribution(loot, {});
+    test::expect_false(res.has_value());
+    test::expect_eq(res.error(), PlunderError::NoConquerors);
+  }
+
+  // 2. Error case: Empty loot
+  {
+    std::vector<player_t> conquerors = {player_t{1}, player_t{2}};
+    auto res = calculate_plunder_distribution(Stockpile{}, conquerors);
+    test::expect_false(res.has_value());
+    test::expect_eq(res.error(), PlunderError::EmptyLoot);
+  }
+
+  // 3. Single conqueror receives 100% of the loot
+  {
+    Stockpile loot{
+        .resources = 150, .destruct = 75, .fuel = 300, .crystals = 42};
+    std::vector<player_t> conquerors = {player_t{2}};
+    auto res = calculate_plunder_distribution(loot, conquerors);
+    test::expect_true(res.has_value());
+    test::expect_eq(res->shares.size(), 1UL);
+    test::expect_eq(res->shares[0].player, player_t{2});
+    test::expect_eq(res->shares[0].share, loot);
+    test::expect_eq(res->total_loot, loot);
+  }
+
+  // 4. Two conquerors: even split & conservation
+  {
+    Stockpile loot{
+        .resources = 100, .destruct = 60, .fuel = 40, .crystals = 20};
+    std::vector<player_t> conquerors = {player_t{1}, player_t{2}};
+    auto res = calculate_plunder_distribution(loot, conquerors);
+    test::expect_true(res.has_value());
+    test::expect_eq(res->shares.size(), 2UL);
+    test::expect_eq(res->shares[0].player, player_t{1});
+    test::expect_eq(res->shares[1].player, player_t{2});
+
+    // Invariant: sum of all shares matches total_loot exactly
+    Stockpile sum = res->shares[0].share;
+    sum += res->shares[1].share;
+    test::expect_eq(sum, loot);
+  }
+
+  // 5. Three conquerors: odd division and remainder conservation
+  {
+    Stockpile loot{.resources = 100, .destruct = 50, .fuel = 7, .crystals = 1};
+    std::vector<player_t> conquerors = {player_t{1}, player_t{2}, player_t{3}};
+    auto res = calculate_plunder_distribution(loot, conquerors);
+    test::expect_true(res.has_value());
+    test::expect_eq(res->shares.size(), 3UL);
+
+    Stockpile sum{};
+    for (const auto& share : res->shares) {
+      sum += share.share;
+    }
+    test::expect_eq(sum, loot);
+    test::expect_eq(sum.resources, 100U);
+    test::expect_eq(sum.destruct, 50U);
+    test::expect_eq(sum.fuel, 7U);
+    test::expect_eq(sum.crystals, 1U);
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -1277,6 +1345,10 @@ int main() {
 
   std::println(std::cout, "  Testing check_mutual_alliances... ");
   test_check_mutual_alliances();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing calculate_plunder_distribution... ");
+  test_calculate_plunder_distribution();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

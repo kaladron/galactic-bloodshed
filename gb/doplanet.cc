@@ -336,6 +336,39 @@ bool check_mutual_alliances(EntityManager& entity_manager,
   });
 }
 
+std::expected<PlunderDistribution, PlunderError>
+calculate_plunder_distribution(Stockpile total_loot,
+                               std::span<const player_t> conquerors) {
+  if (conquerors.empty()) {
+    return std::unexpected(PlunderError::NoConquerors);
+  }
+  if (total_loot.empty()) {
+    return std::unexpected(PlunderError::EmptyLoot);
+  }
+
+  const std::size_t shares_count = conquerors.size();
+  Stockpile remaining = total_loot;
+  std::vector<PlayerLootShare> shares;
+  shares.reserve(shares_count);
+
+  for (std::size_t idx = 0; idx + 1 < shares_count; ++idx) {
+    const player_t conqueror = conquerors[idx];
+    const Stockpile allocated =
+        total_loot.split_share(shares_count).clamp_to(remaining);
+    remaining -= allocated;
+    shares.push_back(PlayerLootShare{.player = conqueror, .share = allocated});
+  }
+
+  // Last conqueror gets all leftovers
+  shares.push_back(
+      PlayerLootShare{.player = conquerors.back(), .share = remaining});
+
+  return PlunderDistribution{
+      .shares = std::move(shares),
+      .total_loot = total_loot,
+  };
+}
+
 void do_recover(EntityManager& entity_manager, const Star& star,
                 Planet& planet) {
   std::vector<player_t> owners;
@@ -351,71 +384,54 @@ void do_recover(EntityManager& entity_manager, const Star& star,
     }
   }
 
-  const bool all_buddies_here = check_mutual_alliances(entity_manager, owners);
+  if (!check_mutual_alliances(entity_manager, owners)) {
+    return;
+  }
 
-  if (all_buddies_here && !owners.empty() && !total_stolen.empty()) {
-    /* Okay, we've got some loot to divvy up */
-    const std::size_t shares = owners.size();
-    Stockpile remaining_stolen = total_stolen;
+  const auto distribution =
+      calculate_plunder_distribution(total_stolen, owners);
+  if (!distribution.has_value()) {
+    return;
+  }
 
-    for (const player_t conqueror : owners) {
-      std::stringstream telegram_buf;
-      telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
-                                  star.get_name(),
-                                  star.get_planet_name(planetnum));
-      push_telegram(entity_manager, conqueror, star.governor(conqueror),
-                    telegram_buf.str());
-      telegram_buf.str("");
-      telegram_buf << std::format("{:<14} {:>5} {:>5} {:>5} {:>5}\n", "", "res",
-                                  "destr", "fuel", "xtal");
-      push_telegram(entity_manager, conqueror, star.governor(conqueror),
-                    telegram_buf.str());
-    }
+  for (const player_t conqueror : owners) {
+    std::stringstream telegram_buf;
+    telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
+                                star.get_name(),
+                                star.get_planet_name(planetnum));
+    push_telegram(entity_manager, conqueror, star.governor(conqueror),
+                  telegram_buf.str());
+    telegram_buf.str("");
+    telegram_buf << std::format("{:<14} {:>5} {:>5} {:>5} {:>5}\n", "", "res",
+                                "destr", "fuel", "xtal");
+    push_telegram(entity_manager, conqueror, star.governor(conqueror),
+                  telegram_buf.str());
+  }
 
-    /* First: give the loot to the conquerors (except last player who gets
-     * leftovers) */
-    for (std::size_t idx = 0; idx + 1 < owners.size(); ++idx) {
-      const player_t conqueror = owners[idx];
-      const Stockpile allocated =
-          total_stolen.split_share(shares).clamp_to(remaining_stolen);
-      remaining_stolen -= allocated;
-      planet.info(conqueror).deposit_stockpile(allocated);
+  for (const auto& [conqueror, allocated] : distribution->shares) {
+    planet.info(conqueror).deposit_stockpile(allocated);
 
-      const auto* race = entity_manager.peek_race(conqueror);
-      const std::string line = std::format(
-          "{:<14.14s} {:>5} {:>5} {:>5} {:>5}", race->name, allocated.resources,
-          allocated.destruct, allocated.fuel, allocated.crystals);
-      for (const player_t recipient : owners) {
-        push_telegram(entity_manager, recipient, star.governor(recipient),
-                      line);
-      }
-    }
-
-    /* Leftovers for last player */
-    const player_t last_conqueror = owners.back();
-    planet.info(last_conqueror).deposit_stockpile(remaining_stolen);
-
-    const auto* last_race = entity_manager.peek_race(last_conqueror);
-    const std::string first_telegram =
-        std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}", last_race->name,
-                    remaining_stolen.resources, remaining_stolen.destruct,
-                    remaining_stolen.fuel, remaining_stolen.crystals);
-    const std::string second_telegram =
-        std::format("{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n",
-                    "Total:", total_stolen.resources, total_stolen.destruct,
-                    total_stolen.fuel, total_stolen.crystals);
+    const auto* race = entity_manager.peek_race(conqueror);
+    const std::string line = std::format(
+        "{:<14.14s} {:>5} {:>5} {:>5} {:>5}", race->name, allocated.resources,
+        allocated.destruct, allocated.fuel, allocated.crystals);
     for (const player_t recipient : owners) {
-      push_telegram(entity_manager, recipient, star.governor(recipient),
-                    first_telegram);
-      push_telegram(entity_manager, recipient, star.governor(recipient),
-                    second_telegram);
+      push_telegram(entity_manager, recipient, star.governor(recipient), line);
     }
+  }
 
-    /* Next: take all the loot away from the losers */
-    for (const Race* race : RaceList::readonly(entity_manager)) {
-      if (planet.info(*race).numsectsowned == 0 && !race->God) {
-        planet.info(*race).drain_stockpile();
-      }
+  const std::string summary_telegram = std::format(
+      "{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n", "Total:", total_stolen.resources,
+      total_stolen.destruct, total_stolen.fuel, total_stolen.crystals);
+  for (const player_t recipient : owners) {
+    push_telegram(entity_manager, recipient, star.governor(recipient),
+                  summary_telegram);
+  }
+
+  /* Next: take all the loot away from the losers */
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    if (planet.info(*race).numsectsowned == 0 && !race->God) {
+      planet.info(*race).drain_stockpile();
     }
   }
 }

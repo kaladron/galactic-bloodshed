@@ -118,5 +118,35 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
 export bool check_mutual_alliances(EntityManager& entity_manager,
                                    std::span<const player_t> players);
 
+export enum class PlunderError {
+  NoConquerors,
+  EmptyLoot,
+};
+
+export struct PlayerLootShare {
+  player_t player{0};
+  Stockpile share{};
+
+  [[nodiscard]] bool
+  operator==(const PlayerLootShare&) const noexcept = default;
+};
+
+export struct PlunderDistribution {
+  std::vector<PlayerLootShare> shares;
+  Stockpile total_loot{};
+
+  [[nodiscard]] bool
+  operator==(const PlunderDistribution&) const noexcept = default;
+};
+
+/// \brief Divvies up a looted stockpile among conquerors.
+/// The first (N - 1) conquerors receive their rounded share, while the final
+/// conqueror receives all exact remaining leftovers, ensuring zero loss or
+/// creation of commodities. Returns PlunderDistribution on success, or
+/// PlunderError if conquerors list is empty or loot is empty.
+export std::expected<PlunderDistribution, PlunderError>
+calculate_plunder_distribution(Stockpile total_loot,
+                               std::span<const player_t> conquerors);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

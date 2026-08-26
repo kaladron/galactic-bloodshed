@@ -47,9 +47,16 @@
 
 ### 4. Context Refresh & Plan Anchoring Protocol
 - AI agents will experience context compression and truncation across multi-commit workflows.
-- **Always re-anchor** by reading the active plan artifact and `ARCHITECTURE.md` before beginning work on a new commit or phase.
+### 5. Low Cyclomatic Complexity & Domain Decomposition
+- Keep domain functions and turn pipeline passes focused and small with low cyclomatic complexity ($\text{CC} \le 4$).
+- Monolithic algorithms must be decomposed into composable, single-responsibility helper functions.
+- When sub-steps represent discrete domain transformations (e.g. `divert_slave_tribute`, `notify_slave_revolt`, `execute_slave_revolt`), export them in the module interface and write dedicated unit tests for each. This enables isolated testing without complex multi-entity integration harness setup.
 
-### 5. Code Hygiene & Style Conventions
+### 6. Responding to User Inquiries & Test Integrity
+- When the user asks a question or makes an observation about code structure, encapsulation, or interfaces (e.g. *"are some internal to the module?"*), answer and explain the design trade-offs and testing considerations first before modifying code.
+- **Never delete, drop, or truncate unit tests** in response to a structural question. If helper functions are exported to support isolated, granular unit testing, state that rationale clearly.
+
+### 7. Code Hygiene & Style Conventions
 - **Docstring & comment integrity**: Every C++ source and test file must begin with `/// \file <filename>` and `/// \brief <description>` headers immediately below the Apache-2.0 license banner. **NEVER** strip existing docstrings, file comments, stanza comments, inline explanatory comments, or test setup explanations when refactoring or migrating code.
 - **TODO and disabled test retention**: You are encouraged to resolve and implement TODOs when performing the work they describe (re-enabling the associated test cases and assertions). However, **NEVER** silently delete, strip, or "clean up" TODO comments, future migration markers (e.g., `// TODO: Re-enable ... after kill_ship() migrated to EntityManager (Phase 3.7)`), or commented-out test blocks without actually implementing the fix or feature they track.
 - **Cross-reference manual pages**: When defining `CommandDescriptor` metadata (scopes, min_args, AP costs, syntax strings), always check `help/<command>.md` and `help/` manual pages to ensure exact fidelity with canonical game rules.
@@ -323,6 +330,11 @@ Rules:
 - **Point-of-Action Completeness**: Domain mutating operations (`Sector::devastate()`, `Sector::terraform()`, `Sector::colonize()`, `Planet::free_slaves()`) must leave the entity in a fully consistent, invariant-satisfying state at the point of action.
 - **No End-of-Loop "Mistake Sweeps"**: Do not write catch-all loops at the end of processing passes to fix up incomplete state mutations or clear unowned entities. Fix the state transition atomically within the domain method itself.
 - **Pass Rich Domain References**: Keep local colony state (`plinfo`) distinct from empire-wide state (`Race`). Pass rich domain references (`Race::gov&`, `Race&`, `const Race&`) to domain methods rather than breaking them apart into loose primitive references (`money_t&`, `unsigned long&`, `bool has_gov`).
+
+#### Multi-Player Spatial Grid Tracking & Bitmaps
+
+- **Dynamic Coordinate-Based Spatial Buffers**: When tracking per-sector states across multiple players on a planet grid (such as exploration, sensor visibility, or movement reaches), use `Coordinates` for all spatial coordinates and allocate dynamic buffers sized to `planet.dimensions().x * planet.dimensions().y`.
+- **Per-Sector Player Bitmaps**: Use `std::vector<std::bitset<MAXPLAYERS + 1>>` to track multi-player boolean flags across grid cells to prevent cross-player state overwriting and enable fast bitwise testing/operations. Avoid fixed-size static arrays (`Sectinfo[2048]`).
 
 #### Domain Documentation in `docs/`
 

@@ -869,10 +869,6 @@ void test_exploration_island_discovery() {
 
   TurnStats stats{};
   stats.Compat[player_t{1}] = 1.0;
-  // Mark candidate sectors as already explored by player 1
-  for (int x = 1; x <= 4; ++x) {
-    stats.Sectinfo[x][0].explored = player_t{1};
-  }
 
   int result = doplanet(em, star, planet, stats);
   test::expect_ne(result, 0);
@@ -1434,6 +1430,69 @@ void test_format_recovery_report() {
   test::expect_true(output.contains("100"));
 }
 
+void test_planet_exploration_context() {
+  PlanetExplorationContext ctx(Coordinates{5, 3});
+  test::expect_eq(ctx.dimensions().x, 5);
+  test::expect_eq(ctx.dimensions().y, 3);
+  test::expect_eq(ctx.maxx(), 5);
+  test::expect_eq(ctx.maxy(), 3);
+
+  // Initially all sectors are unexplored (0)
+  test::expect_false(ctx.all_explored());
+  test::expect_false(ctx.all_explored(player_t{1}));
+  for (int y = 0; y < 3; ++y) {
+    for (int x = 0; x < 5; ++x) {
+      test::expect_false(ctx.is_explored(Coordinates{x, y}));
+      test::expect_false(ctx.is_explored(Coordinates{x, y}, player_t{1}));
+    }
+  }
+
+  // Set explored for player 1
+  ctx.set_explored(Coordinates{2, 1}, player_t{1});
+  test::expect_true(ctx.is_explored(Coordinates{2, 1}));
+  test::expect_true(ctx.is_explored(Coordinates{2, 1}, player_t{1}));
+  test::expect_false(ctx.is_explored(Coordinates{2, 1}, player_t{2}));
+  test::expect_false(ctx.all_explored());
+  test::expect_false(ctx.all_explored(player_t{1}));
+
+  // explore_sector on an already-explored sector propagates to 4 neighbors:
+  // (2, 1) -> (1, 1), (3, 1), (2, 0), (2, 2)
+  Sector s_at_2_1{};
+  s_at_2_1.set_coords(Coordinates{2, 1});
+  ctx.explore_sector(s_at_2_1, player_t{1});
+  test::expect_true(ctx.is_explored(Coordinates{1, 1}, player_t{1}));
+  test::expect_true(ctx.is_explored(Coordinates{3, 1}, player_t{1}));
+  test::expect_true(ctx.is_explored(Coordinates{2, 0}, player_t{1}));
+  test::expect_true(ctx.is_explored(Coordinates{2, 2}, player_t{1}));
+
+  // Toroidal boundary propagation in X:
+  // Set (0, 0) explored, then propagate for player 2 wrapping left to (4, 0)
+  // and down to (0, 1)
+  ctx.set_explored(Coordinates{0, 0}, player_t{2});
+  Sector s_at_0_0{};
+  s_at_0_0.set_coords(Coordinates{0, 0});
+  ctx.explore_sector(s_at_0_0, player_t{2});
+  test::expect_true(ctx.is_explored(Coordinates{4, 0}, player_t{2}));
+  test::expect_true(ctx.is_explored(Coordinates{1, 0}, player_t{2}));
+  test::expect_true(ctx.is_explored(Coordinates{0, 1}, player_t{2}));
+
+  // Explore by sector ownership when unpopulated
+  Sector s_owned{};
+  s_owned.set_coords(Coordinates{4, 2});
+  s_owned.set_owner(3);
+  test::expect_false(ctx.is_explored(Coordinates{4, 2}, player_t{3}));
+  ctx.explore_sector(s_owned, player_t{3});
+  test::expect_true(ctx.is_explored(Coordinates{4, 2}, player_t{3}));
+
+  // Filling all remaining cells for player 1 makes all_explored(p1) true
+  for (int y = 0; y < 3; ++y) {
+    for (int x = 0; x < 5; ++x) {
+      ctx.set_explored(Coordinates{x, y}, player_t{1});
+    }
+  }
+  test::expect_true(ctx.all_explored(player_t{1}));
+}
+
 }  // namespace
 
 int main() {
@@ -1501,6 +1560,10 @@ int main() {
 
   std::println(std::cout, "  Testing format_recovery_report... ");
   test_format_recovery_report();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing PlanetExplorationContext... ");
+  test_planet_exploration_context();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

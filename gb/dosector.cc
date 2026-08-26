@@ -201,25 +201,3 @@ void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
     check--;
   }
 }
-
-/* mark sectors on the planet as having been "explored." for sea exploration
-        on earthtype planets.  */
-
-//  explore() -- mark sector and surrounding sectors as having been explored.
-void explore(const Planet& planet, Sector& s, int x, int y, player_t p,
-             TurnStats& stats) {
-  // explore sectors surrounding sectors currently explored.
-  if (stats.Sectinfo[x][y].explored != player_t{0}) {
-    stats.Sectinfo[mod(x - 1, planet.Maxx())][y].explored = p;
-    stats.Sectinfo[mod(x + 1, planet.Maxx())][y].explored = p;
-    if (y == 0) {
-      stats.Sectinfo[x][1].explored = p;
-    } else if (y == planet.Maxy() - 1) {
-      stats.Sectinfo[x][y - 1].explored = p;
-    } else {
-      stats.Sectinfo[x][y - 1].explored = stats.Sectinfo[x][y + 1].explored = p;
-    }
-  } else if (s.get_owner() == p) {
-    stats.Sectinfo[x][y].explored = p;
-  }
-}

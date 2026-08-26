@@ -148,12 +148,6 @@ export struct Vnbrain {
   unsigned char most_mad{0};   /* player most mad at */
 };
 
-export struct Sectinfo {
-  player_t explored{0}; /* sector has been explored */
-  bool vn{false};       /* this sector has a VN */
-  bool done{false};     /* this sector has been updated */
-};
-
 export struct ServerState {
   int id{1};                         // Always 1 - singleton entity
   unsigned long segments{1};         // Number of movement segments

@@ -75,9 +75,6 @@ export struct TurnStats {
   // VN brain state (VN AI state per turn)
   Vnbrain VN_brain{};
 
-  // Sector processing info (per sector on current planet)
-  std::array<std::array<Sectinfo, MAX_Y>, MAX_X> Sectinfo{};
-
   // Non-copyable to prevent accidental copies of large arrays
   TurnStats(const TurnStats&) = delete;
   TurnStats& operator=(const TurnStats&) = delete;

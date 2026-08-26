@@ -700,9 +700,6 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   const planetnum_t planetnum = planet.planet_order();
 
   // Reset per-planet state in TurnStats
-  // Note: TurnStats is reused across planets, so we reset per-planet fields
-  // here
-  stats.Sectinfo = {};
   stats.Claims = false;
 
   planet.maxpopn() = 0;
@@ -748,7 +745,6 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               est_production(p, entity_manager);
         }
         spread(entity_manager, planet, p, smap, stats);
-        stats.Sectinfo[p.get_x()][p.get_y()].done = true;
       }
       p.clear_owner_if_empty();
     }
@@ -797,6 +793,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   if (planet.expltimer() >= 1) planet.expltimer() -= 1;
   if (!star.nova_stage() && !planet.expltimer()) {
     if (!planet.expltimer()) planet.expltimer() = 5;
+    PlanetExplorationContext exploration{planet};
     for (i = 1; !stats.Claims && !allexp && i <= entity_manager.num_races();
          i++) {
       /* sectors have been modified for this player*/
@@ -806,10 +803,9 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
           o = 1;
           for (Sector& p : smap.shuffle()) {
             /* find out if all sectors have been explored */
-            o &= (stats.Sectinfo[p.get_x()][p.get_y()].explored != player_t{0});
+            o &= exploration.is_explored(p.coords(), i);
             const auto* explore_race = entity_manager.peek_race(i);
-            if (((stats.Sectinfo[p.get_x()][p.get_y()].explored == i) &&
-                 success(50)) &&
+            if ((exploration.is_explored(p.coords(), i) && success(50)) &&
                 (p.get_owner() == 0 &&
                  p.get_condition() != SectorType::SEC_WASTED &&
                  p.get_condition() == explore_race->likesbest)) {
@@ -819,7 +815,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               stats.tot_captured = 1;
               break;
             } else {
-              explore(planet, p, p.get_x(), p.get_y(), i, stats);
+              exploration.explore_sector(p, i);
             }
           }
           allexp |= o; /* all sectors explored for this player */

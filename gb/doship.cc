@@ -73,14 +73,12 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
 }
 
 void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
-                    EntityManager& entity_manager, TurnStats& stats) {
+                    EntityManager& entity_manager) {
   auto smap_handle = entity_manager.get_sectormap(star, pnum);
   if (!smap_handle.get()) return;
   auto& smap = *smap_handle;
-  stats.Sectinfo = {};
-  auto x = int_rand(0, p.Maxx() - 1);
-  auto y = int_rand(0, p.Maxy() - 1);
-  auto owner = smap.get(Coordinates{x, y}).get_owner();
+  auto& s = smap.get_random();
+  auto owner = s.get_owner();
 
   const auto* who_race = entity_manager.peek_race(who);
   if (!who_race) return;
@@ -93,7 +91,7 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
     // Sector owned by someone else - check if we can take it
     const auto* owner_race = entity_manager.peek_race(owner);
     double fighters = owner_race ? owner_race->fighters : 1.0;
-    double troops = smap.get(Coordinates{x, y}).get_troops() * fighters / 50.0;
+    double troops = s.get_troops() * fighters / 50.0;
     if (int_rand(1, 100) <= 100.0 * (1.0 - std::exp(-troops))) {
       return;  // Failed to infect - defenders won
     }
@@ -102,29 +100,28 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
   // Infection succeeds
   p.info(who).explored = 1;
   p.info(who).numsectsowned += 1;
-  smap.get(Coordinates{x, y}).set_troops(0);
-  smap.get(Coordinates{x, y}).set_popn_exact(who_race->number_sexes);
-  smap.get(Coordinates{x, y}).set_owner(who);
-  smap.get(Coordinates{x, y})
-      .set_condition(smap.get(Coordinates{x, y}).get_type());
+  s.set_troops(0);
+  s.set_popn_exact(who_race->number_sexes);
+  s.set_owner(who);
+  s.set_condition(s.get_type());
   if (POD_TERRAFORM) {
-    smap.get(Coordinates{x, y}).set_condition(who_race->likesbest);
+    s.set_condition(who_race->likesbest);
   }
 }
 
 int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
-                  EntityManager& entity_manager, TurnStats& stats) {
+                  EntityManager& entity_manager) {
   if (success(SPORE_SUCCESS_RATE)) {
     auto planet_handle = entity_manager.get_planet(star, pnum);
     if (planet_handle.get()) {
-      do_meta_infect(who, star, pnum, *planet_handle, entity_manager, stats);
+      do_meta_infect(who, star, pnum, *planet_handle, entity_manager);
       return 1;
     }
   }
   return 0;
 }
 
-void do_pod(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
+void do_pod(Ship& ship, EntityManager& entity_manager) {
   if (!std::holds_alternative<PodData>(ship.special())) {
     return;
   }
@@ -149,8 +146,7 @@ void do_pod(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       std::stringstream telegram_buf;
       telegram_buf << std::format("{} has warmed and exploded at {}\n", ship,
                                   prin_ship_orbits(entity_manager, ship));
-      if (infect_planet(ship.owner(), ship.storbits(), i, entity_manager,
-                        stats)) {
+      if (infect_planet(ship.owner(), ship.storbits(), i, entity_manager)) {
         telegram_buf << std::format("\tmeta-colony established on {}.",
                                     star->get_planet_name(i));
       } else {
@@ -563,8 +559,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
           default:
             break;
         }
-      if (ship.type() == ShipType::STYPE_POD)
-        do_pod(ship, entity_manager, stats);
+      if (ship.type() == ShipType::STYPE_POD) do_pod(ship, entity_manager);
     }
   }
 }

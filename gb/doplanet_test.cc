@@ -480,6 +480,97 @@ void test_strip_mine_quarry() {
   test::expect_eq(res_off.error(), GroundActionError::NotSwitchedOn);
 }
 
+void test_execute_berserker_bombardment() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  // Attacker (Race 1, at war with Race 2)
+  Race race1 = createTestRace(player_t{1});
+  setbit(race1.atwar, player_t{2});
+  Race race2 = createTestRace(player_t{2});
+  RaceRepository races(store);
+  races.save(race1);
+  races.save(race2);
+
+  // Initialize Universe with VN hitlist for Player 2
+  universe_struct udata{};
+  udata.id = 1;
+  udata.VN_hitlist[1] = 5;  // Player 2 hitlist entry = 5
+  UniverseRepository univ_repo(store);
+  univ_repo.save(udata);
+
+  // Star system with 2 planets
+  star_struct ss{};
+  ss.star_id = 0;
+  ss.pnames.emplace_back("Planet0");
+  ss.pnames.emplace_back("Planet1");
+  StarRepository star_repo(store);
+  star_repo.save(ss);
+
+  // Planet 0
+  Planet planet = createTestPlanet();
+  planet.star_id() = 0;
+  planet.planet_order() = 0;
+  PlanetRepository planet_repo(store);
+  planet_repo.save(planet);
+
+  // SectorMap on Planet 0 with enemy population
+  {
+    SectorMap smap(planet, true);
+    smap.get(5, 5).set_condition(SectorType::SEC_LAND);
+    smap.get(5, 5).set_popn_exact(100);
+    smap.get(5, 5).set_owner(2);
+    SectorRepository smap_repo(store);
+    smap_repo.save_map(smap);
+  }
+
+  // Berserker ship in orbit
+  ship_struct b_ship{
+      .owner = player_t{1},
+      .destruct = 100,
+      .special = MindData{.progenitor = player_t{1}, .who_killed = player_t{2}},
+      .storbits = 0,
+      .deststar = 0,
+      .destpnum = 0,
+      .pnumorbits = 0,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_BERS,
+      .active = 1,
+      .alive = 1,
+      .bombard = 1,
+      .docked = 0,
+      .on = 1,
+      .guns = 1,
+      .primtype = GTYPE_HEAVY,
+  };
+
+  auto ship_handle = em.create_ship(b_ship);
+  Ship& ship = *ship_handle;
+
+  // 1. Landed ship fails preconditions
+  ship.docked() = 1;
+  test::expect_false(execute_berserker_bombardment(em, ship, planet));
+  ship.docked() = 0;
+
+  // 2. Successful bombardment decrements VN_hitlist
+  test::expect_true(execute_berserker_bombardment(em, ship, planet));
+  const auto* universe_after = em.peek_universe();
+  test::expect_eq(universe_after->VN_hitlist[1], 4);
+
+  // 3. No remaining targets on planet causes ship to pick a new destination
+  // Clear remaining defenders
+  {
+    auto smap_handle =
+        em.get_sectormap(planet.star_id(), planet.planet_order());
+    smap_handle->get(5, 5).set_popn_exact(0);
+    smap_handle->get(5, 5).set_owner(0);
+  }
+  test::expect_false(execute_berserker_bombardment(em, ship, planet));
+}
+
 void test_do_recover() {
   Database db(":memory:");
   initialize_schema(db);
@@ -760,6 +851,10 @@ int main() {
 
   std::println(std::cout, "  Testing strip_mine_quarry... ");
   test_strip_mine_quarry();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing execute_berserker_bombardment... ");
+  test_execute_berserker_bombardment();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

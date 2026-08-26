@@ -68,5 +68,12 @@ export std::expected<int, GroundActionError>
 strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
                   EntityManager& entity_manager, TurnStats& stats);
 
+/// \brief Executes berserker bombardment on target planet if in orbit.
+/// Decrements VN hitlist on kill or selects next destination planet if no
+/// targets found. Returns true if bombardment caused destruction, false
+/// otherwise.
+export bool execute_berserker_bombardment(EntityManager& entity_manager,
+                                          Ship& ship, Planet& planet);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

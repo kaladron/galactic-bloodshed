@@ -261,24 +261,35 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
   return prod;
 }
 
-void do_berserker(EntityManager& entity_manager, Ship* ship, Planet& planet) {
-  if (ship->whatdest() == ScopeLevel::LEVEL_PLAN &&
-      ship->whatorbits() == ScopeLevel::LEVEL_PLAN && !landed(*ship) &&
-      ship->storbits() == ship->deststar() &&
-      ship->pnumorbits() == ship->destpnum()) {
-    const auto* race = entity_manager.peek_race(ship->owner());
-    if (!berserker_bombard(entity_manager, *ship, planet, *race)) {
-      const auto* dest_star = entity_manager.peek_star(ship->storbits());
-      ship->destpnum() = int_rand(0, dest_star->numplanets() - 1);
-    } else if (std::holds_alternative<MindData>(ship->special())) {
-      auto mind = std::get<MindData>(ship->special());
-      const auto* universe = entity_manager.peek_universe();
-      if (universe->VN_hitlist[mind.who_killed.value - 1] > 0) {
-        auto universe_handle = entity_manager.get_universe();
+bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
+                                   Planet& planet) {
+  if (ship.whatdest() != ScopeLevel::LEVEL_PLAN ||
+      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || landed(ship) ||
+      ship.storbits() != ship.deststar() ||
+      ship.pnumorbits() != ship.destpnum()) {
+    return false;
+  }
+
+  const auto* race = entity_manager.peek_race(ship.owner());
+  if (!race) return false;
+
+  int destroyed = berserker_bombard(entity_manager, ship, planet, *race);
+  if (destroyed == 0) {
+    const auto* dest_star = entity_manager.peek_star(ship.storbits());
+    ship.destpnum() = int_rand(0, dest_star->numplanets() - 1);
+    return false;
+  }
+
+  if (std::holds_alternative<MindData>(ship.special())) {
+    auto mind = std::get<MindData>(ship.special());
+    if (mind.who_killed.value > 0 && mind.who_killed.value <= MAXPLAYERS) {
+      auto universe_handle = entity_manager.get_universe();
+      if (universe_handle->VN_hitlist[mind.who_killed.value - 1] > 0) {
         --universe_handle->VN_hitlist[mind.who_killed.value - 1];
       }
     }
   }
+  return true;
 }
 
 void do_recover(EntityManager& entity_manager, const Star& star,
@@ -493,7 +504,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
           if (!ship.destruct() || !ship.bombard())
             planet_doVN(ship, planet, smap, entity_manager, stats);
           else
-            do_berserker(entity_manager, &ship, planet);
+            execute_berserker_bombardment(entity_manager, ship, planet);
           break;
         case ShipType::OTYPE_TERRA:
           execute_terraforming(ship, planet, smap, entity_manager);

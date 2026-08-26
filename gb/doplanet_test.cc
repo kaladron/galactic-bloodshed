@@ -230,6 +230,150 @@ void test_terraform_and_plow() {
   test::expect_eq(smap.get(2, 3).get_condition(), SectorType::SEC_LAND);
 }
 
+void test_execute_plowing() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.likes[SectorType::SEC_LAND] = 1;
+  race.likes[SectorType::SEC_WASTED] = 0;
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  SectorMap smap(planet, true);
+
+  ship_struct sdata{
+      .owner = player_t{1},
+      .fuel = 50.0,
+      .land_coords = {1, 1},
+      .max_crew = 100,
+      .popn = 100,
+      .special = TerraformData{.index = 0},
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_PLOW,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+      .on = 1,
+  };
+
+  auto ship_handle = em.create_ship(sdata);
+  Ship& ship = *ship_handle;
+  ship.shipclass() = "2222";  // Moves south: (1, 1) -> (1, 2)
+
+  // 1. Target sector condition not liked
+  ship.set_land_coords({1, 1});
+  ship.special() = TerraformData{.index = 0};
+  smap.get(1, 2).set_condition(SectorType::SEC_WASTED);
+  smap.get(1, 2).set_fert(50);
+  auto res_incompat = execute_plowing(ship, planet, smap, em);
+  test::expect_false(res_incompat.has_value());
+  test::expect_eq(res_incompat.error(), GroundActionError::IncompatibleSector);
+
+  // 2. Target sector already at 100% fertility
+  ship.set_land_coords({1, 1});
+  ship.special() = TerraformData{.index = 0};
+  smap.get(1, 2).set_condition(SectorType::SEC_LAND);
+  smap.get(1, 2).set_fert(100);
+  auto res_optimal = execute_plowing(ship, planet, smap, em);
+  test::expect_false(res_optimal.has_value());
+  test::expect_eq(res_optimal.error(), GroundActionError::SectorAlreadyOptimal);
+
+  // 3. Successful plowing
+  ship.set_land_coords({1, 1});
+  ship.special() = TerraformData{.index = 0};
+  smap.get(1, 2).set_fert(60);
+  double initial_fuel = ship.fuel();
+  auto res_success = execute_plowing(ship, planet, smap, em);
+  test::expect_true(res_success.has_value());
+  test::expect_gt(*res_success, 0);
+  test::expect_gt(smap.get(1, 2).get_fert(), 60U);
+  test::expect_eq(ship.fuel(), initial_fuel - FUEL_COST_PLOW);
+
+  // 4. Insufficient fuel
+  ship.fuel() = 0.0;
+  ship.notified() = 0;
+  auto res_fuel = execute_plowing(ship, planet, smap, em);
+  test::expect_false(res_fuel.has_value());
+  test::expect_eq(res_fuel.error(), GroundActionError::InsufficientFuel);
+  test::expect_eq(ship.notified(), 1);
+
+  // 5. Not switched on
+  ship.on() = 0;
+  auto res_off = execute_plowing(ship, planet, smap, em);
+  test::expect_false(res_off.has_value());
+  test::expect_eq(res_off.error(), GroundActionError::NotSwitchedOn);
+}
+
+void test_upgrade_sector_dome() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  RaceRepository races(store);
+  races.save(race);
+
+  Planet planet = createTestPlanet();
+  SectorMap smap(planet, true);
+
+  ship_struct sdata{
+      .owner = player_t{1},
+      .land_coords = {2, 2},
+      .max_crew = 100,
+      .resource = 50,
+      .popn = 100,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_DOME,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+      .on = 1,
+  };
+
+  auto ship_handle = em.create_ship(sdata);
+  Ship& ship = *ship_handle;
+
+  // 1. Sector already optimal (100% efficiency)
+  smap.get(2, 2).set_efficiency_bounded(100);
+  auto res_optimal = upgrade_sector_dome(em, ship, smap);
+  test::expect_false(res_optimal.has_value());
+  test::expect_eq(res_optimal.error(), GroundActionError::SectorAlreadyOptimal);
+
+  // 2. Successful dome upgrade
+  smap.get(2, 2).set_efficiency_bounded(40);
+  auto res_success = upgrade_sector_dome(em, ship, smap);
+  test::expect_true(res_success.has_value());
+  test::expect_gt(*res_success, 0);
+  test::expect_gt(smap.get(2, 2).get_eff(), 40);
+  test::expect_eq(ship.resource(), 50 - RES_COST_DOME);
+
+  // 3. Insufficient resources
+  ship.resource() = 0;
+  auto res_res = upgrade_sector_dome(em, ship, smap);
+  test::expect_false(res_res.has_value());
+  test::expect_eq(res_res.error(), GroundActionError::InsufficientResources);
+
+  // 4. Not switched on
+  ship.on() = 0;
+  auto res_off = upgrade_sector_dome(em, ship, smap);
+  test::expect_false(res_off.has_value());
+  test::expect_eq(res_off.error(), GroundActionError::NotSwitchedOn);
+}
+
 void test_do_recover() {
   Database db(":memory:");
   initialize_schema(db);
@@ -498,6 +642,14 @@ int main() {
 
   std::println(std::cout, "  Testing terraform and plow... ");
   test_terraform_and_plow();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing execute_plowing... ");
+  test_execute_plowing();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing upgrade_sector_dome... ");
+  test_upgrade_sector_dome();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

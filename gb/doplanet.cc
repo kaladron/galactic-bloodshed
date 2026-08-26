@@ -139,43 +139,70 @@ void terraform(Ship& ship, Planet& planet, SectorMap& smap,
   }
 }
 
-void plow(Ship* ship, Planet& planet, SectorMap& smap,
-          EntityManager& entity_manager) {
-  if (!moveship_onplanet(*ship, planet, entity_manager)) return;
-  auto& s = smap.get(ship->land_coords());
-  const auto* race = entity_manager.peek_race(ship->owner());
-  if ((race->likes[s.get_condition()]) && (s.get_fert() < 100)) {
-    int adjust = round_rand(
-        10 * (0.01 * (100.0 - (double)ship->damage()) * (double)ship->popn()) /
-        ship->max_crew());
-    if ((ship->fuel() < (double)FUEL_COST_PLOW) && (!ship->notified())) {
-      ship->notified() = 1;
-      msg_OOF(entity_manager, *ship);
-      return;
+std::expected<int, GroundActionError>
+execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
+                EntityManager& entity_manager) {
+  if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
+  if (!landed(ship)) return std::unexpected(GroundActionError::NotLanded);
+  if (ship.fuel() < static_cast<double>(FUEL_COST_PLOW)) {
+    if (!ship.notified()) {
+      ship.notified() = 1;
+      msg_OOF(entity_manager, ship);
     }
-    s.set_fert(std::min(100U, s.get_fert() + adjust));
-    if (s.get_fert() >= 100) {
-      std::string buf =
-          std::format(" K{} is full of zealots!!!", ship->number());
-      push_telegram(entity_manager, ship->owner(), ship->governor(), buf);
-    }
-    use_fuel(*ship, FUEL_COST_PLOW);
-    if (success(50) && (planet.conditions(TOXIC) < 100))
-      planet.conditions(TOXIC) += 1;
+    return std::unexpected(GroundActionError::InsufficientFuel);
   }
+
+  if (!moveship_onplanet(ship, planet, entity_manager)) {
+    return std::unexpected(GroundActionError::MovementFailed);
+  }
+
+  auto& s = smap.get(ship.land_coords());
+  const auto* race = entity_manager.peek_race(ship.owner());
+  if (!race || !race->likes[s.get_condition()]) {
+    return std::unexpected(GroundActionError::IncompatibleSector);
+  }
+  if (s.get_fert() >= 100) {
+    push_telegram(entity_manager, ship.owner(), ship.governor(),
+                  std::format(" K{} is full of zealots!!!", ship.number()));
+    return std::unexpected(GroundActionError::SectorAlreadyOptimal);
+  }
+
+  int adjust = round_rand(10 *
+                          (0.01 * (100.0 - static_cast<double>(ship.damage())) *
+                           static_cast<double>(ship.popn())) /
+                          ship.max_crew());
+  s.set_fert(std::min(100U, s.get_fert() + adjust));
+  if (s.get_fert() >= 100) {
+    push_telegram(entity_manager, ship.owner(), ship.governor(),
+                  std::format(" K{} is full of zealots!!!", ship.number()));
+  }
+  use_fuel(ship, FUEL_COST_PLOW);
+  if (success(50) && (planet.conditions(TOXIC) < 100)) {
+    planet.conditions(TOXIC) += 1;
+  }
+  return adjust;
 }
 
-void do_dome(EntityManager& entity_manager, Ship* ship, SectorMap& smap) {
-  auto& s = smap.get(ship->land_coords());
-  if (s.get_eff() >= 100) {
-    std::string buf = std::format(" Y{} is full of zealots!!!", ship->number());
-    push_telegram(entity_manager, ship->owner(), ship->governor(), buf);
-    return;
+std::expected<int, GroundActionError>
+upgrade_sector_dome(EntityManager& entity_manager, Ship& ship,
+                    SectorMap& smap) {
+  if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
+  if (!landed(ship)) return std::unexpected(GroundActionError::NotLanded);
+  if (ship.resource() < RES_COST_DOME) {
+    return std::unexpected(GroundActionError::InsufficientResources);
   }
-  int adjust = round_rand(.05 * (100. - (double)ship->damage()) *
-                          (double)ship->popn() / ship->max_crew());
+
+  auto& s = smap.get(ship.land_coords());
+  if (s.get_eff() >= 100) {
+    push_telegram(entity_manager, ship.owner(), ship.governor(),
+                  std::format(" Y{} is full of zealots!!!", ship.number()));
+    return std::unexpected(GroundActionError::SectorAlreadyOptimal);
+  }
+  int adjust = round_rand(0.05 * (100.0 - static_cast<double>(ship.damage())) *
+                          static_cast<double>(ship.popn()) / ship.max_crew());
   s.improve_efficiency(adjust);
-  use_resource(*ship, RES_COST_DOME);
+  use_resource(ship, RES_COST_DOME);
+  return adjust;
 }
 
 void do_quarry(Ship* ship, Planet& planet, SectorMap& smap,
@@ -446,41 +473,38 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             }
           }
           break;
-        case ShipType::OTYPE_PLOW:
-          if (ship.on() && landed(ship)) {
-            if (ship.fuel() >= (double)FUEL_COST_PLOW)
-              plow(&ship, planet, smap, entity_manager);
-            else if (!ship.notified()) {
-              ship.notified() = 1;
-              msg_OOF(entity_manager, ship);
+        case ShipType::OTYPE_PLOW: {
+          auto plow_res = execute_plowing(ship, planet, smap, entity_manager);
+          if (!plow_res) {
+            if (plow_res.error() == GroundActionError::NotLanded) {
+              push_telegram(entity_manager, ship.owner(), ship.governor(),
+                            std::format("K{} is not landed.", ship.number()));
+            } else if (plow_res.error() == GroundActionError::NotSwitchedOn) {
+              push_telegram(
+                  entity_manager, ship.owner(), ship.governor(),
+                  std::format("K{} is not switched on.", ship.number()));
             }
-          } else if (ship.on()) {
-            std::string buf = std::format("K{} is not landed.", ship.number());
-            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
-          } else {
-            std::string buf =
-                std::format("K{} is not switched on.", ship.number());
-            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           }
           break;
-        case ShipType::OTYPE_DOME:
-          if (ship.on() && landed(ship)) {
-            if (ship.resource() >= RES_COST_DOME)
-              do_dome(entity_manager, &ship, smap);
-            else {
-              std::string buf = std::format(
-                  "Y{} does not have enough resources.", ship.number());
-              push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
+        }
+        case ShipType::OTYPE_DOME: {
+          auto dome_res = upgrade_sector_dome(entity_manager, ship, smap);
+          if (!dome_res) {
+            if (dome_res.error() == GroundActionError::InsufficientResources) {
+              push_telegram(entity_manager, ship.owner(), ship.governor(),
+                            std::format("Y{} does not have enough resources.",
+                                        ship.number()));
+            } else if (dome_res.error() == GroundActionError::NotLanded) {
+              push_telegram(entity_manager, ship.owner(), ship.governor(),
+                            std::format("Y{} is not landed.", ship.number()));
+            } else if (dome_res.error() == GroundActionError::NotSwitchedOn) {
+              push_telegram(
+                  entity_manager, ship.owner(), ship.governor(),
+                  std::format("Y{} is not switched on.", ship.number()));
             }
-          } else if (ship.on()) {
-            std::string buf = std::format("Y{} is not landed.", ship.number());
-            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
-          } else {
-            std::string buf =
-                std::format("Y{} is not switched on.", ship.number());
-            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           }
           break;
+        }
         case ShipType::OTYPE_WPLANT:
           if (landed(ship))
             if (ship.resource() >= RES_COST_WPLANT &&

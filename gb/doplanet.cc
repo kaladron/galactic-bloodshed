@@ -687,13 +687,62 @@ double est_production(const Sector& s, EntityManager& entity_manager) {
   return (race->metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
 }
 
+std::optional<IslandDiscovery>
+process_island_exploration(EntityManager& entity_manager, const Star& star,
+                           Planet& planet, SectorMap& smap, TurnStats& stats) {
+  if (planet.expltimer() >= 1) {
+    planet.expltimer() -= 1;
+  }
+  if (star.nova_stage() || planet.expltimer() > 0) {
+    return std::nullopt;
+  }
+
+  planet.expltimer() = 5;
+  PlanetExplorationContext exploration{planet};
+  bool allexp = false;
+  int timer = 20;
+  std::optional<IslandDiscovery> discovery;
+
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    const player_t p = race->Playernum;
+    if (stats.Claims || allexp) {
+      break;
+    }
+    if (planet.info(p).numsectsowned == 0) {
+      continue;
+    }
+
+    while (!stats.Claims && !allexp && timer > 0) {
+      timer -= 1;
+      bool all_sectors_explored_for_player = true;
+      for (Sector& s : smap.shuffle()) {
+        all_sectors_explored_for_player &=
+            exploration.is_explored(s.coords(), p);
+        if (exploration.is_explored(s.coords(), p) && success(50) &&
+            s.get_owner() == 0 && s.get_condition() != SectorType::SEC_WASTED &&
+            s.get_condition() == race->likesbest) {
+          stats.Claims = true;
+          s.colonize(p, race->number_sexes);
+          stats.tot_captured = 1;
+          discovery = IslandDiscovery{.coords = s.coords(), .player = p};
+          break;
+        }
+        exploration.explore_sector(s, p);
+      }
+      allexp = (allexp || all_sectors_explored_for_player);
+    }
+  }
+
+  if (allexp) {
+    planet.expltimer() = 5;
+  }
+
+  return discovery;
+}
+
 int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
              TurnStats& stats) {
-  int o = 0;
-  player_t i;
-  int timer = 20;
   int allmod = 0;
-  unsigned char allexp = 0;
 
   // Extract indices for array access and ship creation
   const starnum_t starnum = star.star_id();
@@ -790,40 +839,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     planet.info(p.get_owner()).numsectsowned++;
   }
 
-  if (planet.expltimer() >= 1) planet.expltimer() -= 1;
-  if (!star.nova_stage() && !planet.expltimer()) {
-    if (!planet.expltimer()) planet.expltimer() = 5;
-    PlanetExplorationContext exploration{planet};
-    for (i = 1; !stats.Claims && !allexp && i <= entity_manager.num_races();
-         i++) {
-      /* sectors have been modified for this player*/
-      if (planet.info(i).numsectsowned > 0)
-        while (!stats.Claims && !allexp && timer > 0) {
-          timer -= 1;
-          o = 1;
-          for (Sector& p : smap.shuffle()) {
-            /* find out if all sectors have been explored */
-            o &= exploration.is_explored(p.coords(), i);
-            const auto* explore_race = entity_manager.peek_race(i);
-            if ((exploration.is_explored(p.coords(), i) && success(50)) &&
-                (p.get_owner() == 0 &&
-                 p.get_condition() != SectorType::SEC_WASTED &&
-                 p.get_condition() == explore_race->likesbest)) {
-              /*  explorations have found an island */
-              stats.Claims = true;
-              p.colonize(i, explore_race->number_sexes);
-              stats.tot_captured = 1;
-              break;
-            } else {
-              exploration.explore_sector(p, i);
-            }
-          }
-          allexp |= o; /* all sectors explored for this player */
-        }
-    }
-  }
-
-  if (allexp) planet.expltimer() = 5;
+  process_island_exploration(entity_manager, star, planet, smap, stats);
 
   /* environment nukes a random sector if toxic threshold exceeded */
   const auto envir_damage = process_toxic_environmental_damage(planet, smap);
@@ -890,9 +906,10 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
       }
       telegram_buf << "This planet must be evacuated immediately!\n"
                    << TELEG_DELIM;
-      for (i = 1; i <= entity_manager.num_races(); i++) {
-        if (planet.info(i).numsectsowned) {
-          push_telegram(entity_manager, i, star.governor(i),
+      for (const Race* race : RaceList::readonly(entity_manager)) {
+        const player_t p = race->Playernum;
+        if (planet.info(p).numsectsowned) {
+          push_telegram(entity_manager, p, star.governor(p),
                         telegram_buf.str());
         }
       }
@@ -906,10 +923,11 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   planet.maxpopn() = 0;
   planet.total_resources() = 0;
 
-  for (i = 1; i <= entity_manager.num_races(); i++) {
-    planet.info(i).numsectsowned = 0;
-    planet.info(i).popn = 0;
-    planet.info(i).troops = 0;
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    const player_t p = race->Playernum;
+    planet.info(p).numsectsowned = 0;
+    planet.info(p).popn = 0;
+    planet.info(p).troops = 0;
   }
 
   for (Sector& p : smap.shuffle()) {

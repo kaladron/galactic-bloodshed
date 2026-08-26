@@ -1493,6 +1493,87 @@ void test_planet_exploration_context() {
   test::expect_true(ctx.all_explored(player_t{1}));
 }
 
+void test_process_island_exploration() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(1);
+  race1.name = "Human";
+  race1.likesbest = SectorType::SEC_LAND;
+  race1.number_sexes = 2;
+  RaceRepository races(store);
+  races.save(race1);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.expltimer() = 3;
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  SectorMap smap(planet);
+  for (int y = 0; y < 5; ++y) {
+    for (int x = 0; x < 5; ++x) {
+      auto& s = smap.get(Coordinates{x, y});
+      s.set_coords(Coordinates{x, y});
+      s.set_owner(0);
+      s.clear_popn();
+      s.set_condition(SectorType::SEC_SEA);
+    }
+  }
+
+  // Player 1 owns (0, 0)
+  auto& s00 = smap.get(Coordinates{0, 0});
+  s00.set_owner(1);
+  s00.set_popn_exact(100);
+  s00.set_condition(SectorType::SEC_LAND);
+  planet.info(player_t{1}).numsectsowned = 1;
+
+  // Neighbor (1, 0) is land matching race1.likesbest
+  auto& s10 = smap.get(Coordinates{1, 0});
+  s10.set_condition(SectorType::SEC_LAND);
+
+  TurnStats stats{};
+
+  // 1. Timer countdown test (expltimer = 3 -> 2, no exploration)
+  auto disc1 = process_island_exploration(em, star, planet, smap, stats);
+  test::expect_false(disc1.has_value());
+  test::expect_eq(planet.expltimer(), 2);
+  test::expect_false(stats.Claims);
+
+  // 2. Nova stage test (nova_stage = 1, skips exploration even if expltimer =
+  // 0)
+  planet.expltimer() = 0;
+  Star nova_star = star;
+  nova_star.nova_stage() = 1;
+  auto disc2 = process_island_exploration(em, nova_star, planet, smap, stats);
+  test::expect_false(disc2.has_value());
+  test::expect_false(stats.Claims);
+
+  // 3. Discovery test (expltimer = 0, normal star)
+  planet.expltimer() = 0;
+  auto disc3 = process_island_exploration(em, star, planet, smap, stats);
+  test::expect_true(disc3.has_value());
+  if (disc3.has_value()) {
+    test::expect_eq(disc3->player, player_t{1});
+    test::expect_true(stats.Claims);
+    test::expect_eq(stats.tot_captured, 1);
+    test::expect_eq(planet.expltimer(), 5);
+
+    // Sector (1, 0) is now colonized by player 1 with population = number_sexes
+    // (2)
+    auto& s_discovered = smap.get(disc3->coords);
+    test::expect_eq(s_discovered.get_owner(), player_t{1});
+    test::expect_eq(s_discovered.get_popn(), 2);
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -1564,6 +1645,10 @@ int main() {
 
   std::println(std::cout, "  Testing PlanetExplorationContext... ");
   test_planet_exploration_context();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_island_exploration... ");
+  test_process_island_exploration();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

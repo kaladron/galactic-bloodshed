@@ -277,3 +277,21 @@ private:
   Coordinates dimensions_{0, 0};
   std::vector<std::bitset<MAXPLAYERS + 1>> explored_;
 };
+
+/// \brief Represents an island sector discovered and colonized during
+/// exploration.
+export struct IslandDiscovery {
+  Coordinates coords{0, 0};
+  player_t player{0};
+
+  [[nodiscard]] bool
+  operator==(const IslandDiscovery&) const noexcept = default;
+};
+
+/// \brief Executes planetary sea/island exploration for inhabited races on the
+/// planet. If the exploration timer reaches 0, explores adjacent sectors for
+/// each race. If a candidate island sector matching race preferences is
+/// discovered, colonizes it and returns the discovery details.
+export std::optional<IslandDiscovery>
+process_island_exploration(EntityManager& entity_manager, const Star& star,
+                           Planet& planet, SectorMap& smap, TurnStats& stats);

@@ -87,5 +87,10 @@ export void process_planetary_ships(EntityManager& entity_manager,
                                     Planet& planet, SectorMap& smap,
                                     TurnStats& stats);
 
+/// \brief Updates planetary temperature and climate based on space mirror
+/// warming/cooling trends.
+export void process_planet_climate(Planet& planet, const Star& star,
+                                   const TurnStats& stats);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

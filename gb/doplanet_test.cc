@@ -987,6 +987,26 @@ void test_turnstats_playervector_accumulation() {
       [&]() { (void)stats.Power[player_t{MAXPLAYERS + 1}]; });
 }
 
+void test_process_planet_climate() {
+  star_struct ss{};
+  ss.star_id = 3;
+  Star star(ss);
+
+  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+  planet.star_id() = 3;
+  planet.planet_order() = 1;
+  planet.conditions(TEMP) = 20;
+  planet.conditions(RTEMP) = 20;
+
+  TurnStats stats{};
+  stats.Stinfo[3][1].temp_add = 10;
+
+  process_planet_climate(planet, star, stats);
+
+  test::expect_ge(planet.conditions(TEMP), 25);
+  test::expect_le(planet.conditions(TEMP), 35);
+}
+
 }  // namespace
 
 int main() {
@@ -1022,6 +1042,10 @@ int main() {
 
   std::println(std::cout, "  Testing process_planetary_ships... ");
   test_process_planetary_ships();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_planet_climate... ");
+  test_process_planet_climate();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

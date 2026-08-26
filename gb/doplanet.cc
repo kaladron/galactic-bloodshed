@@ -567,6 +567,13 @@ void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
   }
 }
 
+void process_planet_climate(Planet& planet, const Star& star,
+                            const TurnStats& stats) {
+  const starnum_t starnum = star.star_id();
+  const planetnum_t planetnum = planet.planet_order();
+  planet.update_climate(stats.Stinfo[starnum.value][planetnum.value].temp_add);
+}
+
 double est_production(const Sector& s, EntityManager& entity_manager) {
   const auto* race = entity_manager.peek_race(s.get_owner());
   return (race->metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
@@ -580,7 +587,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   int o = 0;
   player_t i;
   int timer = 20;
-  unsigned char allmod = 0;
+  int allmod = 0;
   unsigned char allexp = 0;
 
   // Extract indices for array access and ship creation
@@ -620,10 +627,10 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   }
   auto& smap = *smap_handle;
   process_planetary_ships(entity_manager, planet, smap, stats);
+  process_planet_climate(planet, star, stats);
 
   /* check for space mirrors (among other things) warming the planet */
   /* if a change in any artificial warming/cooling trends */
-  planet.update_climate(stats.Stinfo[starnum.value][planetnum.value].temp_add);
 
   for (Sector& p : smap.shuffle()) {
     if (p.get_owner() != 0 && (p.get_popn() || p.get_troops())) {

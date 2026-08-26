@@ -740,6 +740,95 @@ process_island_exploration(EntityManager& entity_manager, const Star& star,
   return discovery;
 }
 
+void divert_slave_tribute(EntityManager& entity_manager, Planet& planet,
+                          TurnStats& stats, player_t master) {
+  auto& master_info = planet.info(master);
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    const player_t p = race->Playernum;
+    if (planet.info(p).numsectsowned > 0) {
+      master_info.resource += std::exchange(stats.prod_res[p], 0);
+      master_info.fuel += std::exchange(stats.prod_fuel[p], 0);
+      master_info.destruct += std::exchange(stats.prod_destruct[p], 0);
+    }
+  }
+}
+
+void notify_slave_revolt(EntityManager& entity_manager, const Star& star,
+                         const Planet& planet, player_t former_master) {
+  const std::string message = std::format(
+      "\nThere has been a SLAVE REVOLT on /{}/{}!\n"
+      "All population belonging to player #{} on the planet have been killed!\n"
+      "Productions now go to their rightful owners.\n",
+      star.get_name(), star.get_planet_name(planet.planet_order()),
+      former_master);
+
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    const player_t r_id = race->Playernum;
+    if (planet.info(r_id).numsectsowned > 0) {
+      push_telegram(entity_manager, r_id, star.governor(r_id), message);
+    }
+  }
+}
+
+EnslavementResult execute_slave_revolt(EntityManager& entity_manager,
+                                       const Star& star, Planet& planet,
+                                       SectorMap& smap, bool intimidated) {
+  const player_t former_master = planet.slaved_to();
+  int collateral_devastated = 0;
+  int revolt_sectors = planet.calculate_revolt_devastation_count();
+  while (--revolt_sectors) {
+    auto& p = smap.get_random();
+    if (p.get_popn() + p.get_troops() > 0) {
+      p.devastate();
+      collateral_devastated++;
+    }
+  }
+
+  int master_devastated = 0;
+  if (intimidated) {
+    for (Sector& p : smap.shuffle()) {
+      if (p.get_owner() == former_master && success(50)) {
+        p.devastate();
+        master_devastated++;
+      }
+    }
+  }
+
+  notify_slave_revolt(entity_manager, star, planet, former_master);
+  planet.free_slaves();
+
+  return EnslavementResult{
+      .outcome = EnslavementOutcome::SlaveRevolt,
+      .master = former_master,
+      .collateral_devastated_count = collateral_devastated,
+      .master_devastated_count = master_devastated,
+  };
+}
+
+EnslavementResult process_enslavement_and_revolts(EntityManager& entity_manager,
+                                                  const Star& star,
+                                                  Planet& planet,
+                                                  SectorMap& smap,
+                                                  TurnStats& stats) {
+  if (!planet.is_enslaved()) {
+    return EnslavementResult{.outcome = EnslavementOutcome::None};
+  }
+
+  const player_t master = planet.slaved_to();
+  if (!planet.is_slave_revolt_triggered()) {
+    divert_slave_tribute(entity_manager, planet, stats, master);
+    return EnslavementResult{
+        .outcome = EnslavementOutcome::ProductionDiverted,
+        .master = master,
+    };
+  }
+
+  const bool intimidated =
+      stats.Stinfo[star.star_id().value][planet.planet_order().value]
+          .intimidated;
+  return execute_slave_revolt(entity_manager, star, planet, smap, intimidated);
+}
+
 int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
              TurnStats& stats) {
   int allmod = 0;
@@ -953,62 +1042,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     planet.total_resources() += p.get_resource();
   }
 
-  /* deal with enslaved planets */
-  if (planet.is_enslaved()) {
-    if (!planet.is_slave_revolt_triggered()) {
-      for (const Race* race : RaceList::readonly(entity_manager)) {
-        const player_t p = race->Playernum;
-        /* add production to slave holder of planet */
-        if (planet.info(p).numsectsowned) {
-          planet.info(planet.slaved_to()).resource += stats.prod_res[p];
-          stats.prod_res[p] = 0;
-          planet.info(planet.slaved_to()).fuel += stats.prod_fuel[p];
-          stats.prod_fuel[p] = 0;
-          planet.info(planet.slaved_to()).destruct += stats.prod_destruct[p];
-          stats.prod_destruct[p] = 0;
-        }
-      }
-    } else {
-      /* slave revolt! */
-      /* first nuke some random sectors from the revolt */
-      int revolt_sectors = planet.calculate_revolt_devastation_count();
-      while (--revolt_sectors) {
-        auto& p = smap.get_random();
-        if (p.get_popn() + p.get_troops()) {
-          p.devastate();
-        }
-      }
-      /* now nuke all sectors belonging to former master */
-      for (Sector& p : smap.shuffle()) {
-        if (stats.Stinfo[starnum.value][planetnum.value].intimidated &&
-            success(50)) {
-          if (p.get_owner() == planet.slaved_to()) {
-            p.devastate();
-          }
-        }
-        /* also add up the populations while here */
-      }
-      {
-        std::stringstream telegram_buf;
-        telegram_buf << std::format(
-            "\nThere has been a SLAVE REVOLT on /{}/{}!\n", star.get_name(),
-            star.get_planet_name(planetnum));
-        telegram_buf << std::format(
-            "All population belonging to player #{} on the planet have been "
-            "killed!\n",
-            planet.slaved_to());
-        telegram_buf << "Productions now go to their rightful owners.\n";
-        for (const Race* race : RaceList::readonly(entity_manager)) {
-          const player_t r_id = race->Playernum;
-          if (planet.info(r_id).numsectsowned) {
-            push_telegram(entity_manager, r_id, star.governor(r_id),
-                          telegram_buf.str());
-          }
-        }
-      }
-      planet.free_slaves();
-    }
-  }
+  process_enslavement_and_revolts(entity_manager, star, planet, smap, stats);
 
   /* add production to all people here */
   for (auto race_handle : RaceList(entity_manager)) {

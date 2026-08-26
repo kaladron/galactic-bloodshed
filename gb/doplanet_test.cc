@@ -1574,6 +1574,163 @@ void test_process_island_exploration() {
   }
 }
 
+void test_process_enslavement_and_revolts() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race master_race = createTestRace(1);
+  master_race.name = "MasterRace";
+  Race slave_race = createTestRace(2);
+  slave_race.name = "SlaveRace";
+  RaceRepository races(store);
+  races.save(master_race);
+  races.save(slave_race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  SectorMap smap(planet);
+  for (int y = 0; y < 5; ++y) {
+    for (int x = 0; x < 5; ++x) {
+      auto& s = smap.get(Coordinates{x, y});
+      s.set_coords(Coordinates{x, y});
+      s.set_owner(0);
+      s.clear_popn();
+    }
+  }
+
+  // 1. Not enslaved: outcome is None
+  planet.free_slaves();
+  TurnStats stats1{};
+  auto res1 = process_enslavement_and_revolts(em, star, planet, smap, stats1);
+  test::expect_eq(res1.outcome, EnslavementOutcome::None);
+
+  // 2. Peaceful production diversion:
+  // Planet is enslaved to Player 1. Master has ample population (10,000) so no
+  // revolt triggers.
+  planet.enslave_to(1);
+  planet.popn() = 10000;
+  planet.info(player_t{1}).popn = 10000;
+  planet.info(player_t{2}).numsectsowned = 5;
+  planet.info(player_t{1}).resource = 10;
+  planet.info(player_t{1}).fuel = 5;
+  planet.info(player_t{1}).destruct = 2;
+
+  TurnStats stats2{};
+  stats2.prod_res[player_t{2}] = 50;
+  stats2.prod_fuel[player_t{2}] = 25;
+  stats2.prod_destruct[player_t{2}] = 8;
+
+  auto res2 = process_enslavement_and_revolts(em, star, planet, smap, stats2);
+  test::expect_eq(res2.outcome, EnslavementOutcome::ProductionDiverted);
+  test::expect_eq(res2.master, player_t{1});
+  test::expect_eq(planet.info(player_t{1}).resource, 60);
+  test::expect_eq(planet.info(player_t{1}).fuel, 30);
+  test::expect_eq(planet.info(player_t{1}).destruct, 10);
+  test::expect_eq(stats2.prod_res[player_t{2}], 0);
+  test::expect_eq(stats2.prod_fuel[player_t{2}], 0);
+  test::expect_eq(stats2.prod_destruct[player_t{2}], 0);
+  test::expect_true(planet.is_enslaved());
+
+  // 3. Slave revolt:
+  // Master population drops below threshold (popn = 5 vs total popn = 10,000 /
+  // 1000 = 10)
+  planet.enslave_to(1);
+  planet.popn() = 10000;
+  planet.info(player_t{1}).popn = 5;
+  planet.info(player_t{1}).numsectsowned = 1;
+  planet.info(player_t{2}).numsectsowned = 5;
+
+  auto& s_master = smap.get(Coordinates{0, 0});
+  s_master.set_owner(1);
+  s_master.set_popn_exact(5);
+
+  TurnStats stats3{};
+  stats3.Stinfo[star.star_id().value][planet.planet_order().value].intimidated =
+      true;
+
+  auto res3 = process_enslavement_and_revolts(em, star, planet, smap, stats3);
+  test::expect_eq(res3.outcome, EnslavementOutcome::SlaveRevolt);
+  test::expect_eq(res3.master, player_t{1});
+  test::expect_false(planet.is_enslaved());
+  test::expect_eq(planet.slaved_to(), 0);
+
+  // Verify telegram was pushed to slave player
+  auto telegrams = em.get_telegrams(player_t{2}, governor_t{0});
+  test::expect_false(telegrams.empty());
+  test::expect_true(telegrams[0].message.contains("SLAVE REVOLT"));
+}
+
+void test_divert_slave_tribute() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race master_race = createTestRace(1);
+  master_race.name = "MasterRace";
+  Race slave_race = createTestRace(2);
+  slave_race.name = "SlaveRace";
+  RaceRepository races(store);
+  races.save(master_race);
+  races.save(slave_race);
+
+  Planet planet = createTestPlanet();
+  planet.info(player_t{1}).resource = 100;
+  planet.info(player_t{1}).fuel = 50;
+  planet.info(player_t{1}).destruct = 10;
+  planet.info(player_t{2}).numsectsowned = 3;
+
+  TurnStats stats{};
+  stats.prod_res[player_t{2}] = 30;
+  stats.prod_fuel[player_t{2}] = 15;
+  stats.prod_destruct[player_t{2}] = 5;
+
+  divert_slave_tribute(em, planet, stats, player_t{1});
+
+  test::expect_eq(planet.info(player_t{1}).resource, 130);
+  test::expect_eq(planet.info(player_t{1}).fuel, 65);
+  test::expect_eq(planet.info(player_t{1}).destruct, 15);
+  test::expect_eq(stats.prod_res[player_t{2}], 0);
+  test::expect_eq(stats.prod_fuel[player_t{2}], 0);
+  test::expect_eq(stats.prod_destruct[player_t{2}], 0);
+}
+
+void test_notify_slave_revolt() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race master_race = createTestRace(1);
+  master_race.name = "MasterRace";
+  Race slave_race = createTestRace(2);
+  slave_race.name = "SlaveRace";
+  RaceRepository races(store);
+  races.save(master_race);
+  races.save(slave_race);
+
+  Star star = createTestStar();
+  Planet planet = createTestPlanet();
+  planet.info(player_t{2}).numsectsowned = 1;
+
+  notify_slave_revolt(em, star, planet, player_t{1});
+
+  // Verify telegram was pushed to player 2
+  auto telegrams = em.get_telegrams(player_t{2}, governor_t{0});
+  test::expect_false(telegrams.empty());
+  test::expect_true(telegrams[0].message.contains("SLAVE REVOLT"));
+}
+
 }  // namespace
 
 int main() {
@@ -1649,6 +1806,18 @@ int main() {
 
   std::println(std::cout, "  Testing process_island_exploration... ");
   test_process_island_exploration();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_enslavement_and_revolts... ");
+  test_process_enslavement_and_revolts();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing divert_slave_tribute... ");
+  test_divert_slave_tribute();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing notify_slave_revolt... ");
+  test_notify_slave_revolt();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

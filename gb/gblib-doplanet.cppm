@@ -295,3 +295,50 @@ export struct IslandDiscovery {
 export std::optional<IslandDiscovery>
 process_island_exploration(EntityManager& entity_manager, const Star& star,
                            Planet& planet, SectorMap& smap, TurnStats& stats);
+
+/// \brief Outcome of turn-based enslavement processing.
+export enum class EnslavementOutcome {
+  None,
+  ProductionDiverted,
+  SlaveRevolt,
+};
+
+/// \brief Summary of enslavement and revolt processing for a planet.
+export struct EnslavementResult {
+  EnslavementOutcome outcome{EnslavementOutcome::None};
+  player_t master{0};
+  int collateral_devastated_count{0};
+  int master_devastated_count{0};
+
+  [[nodiscard]] bool
+  operator==(const EnslavementResult&) const noexcept = default;
+};
+
+/// \brief Diverts planetary production yields (resources, fuel, destruct) from
+/// enslaved colonies to the master race's stockpile.
+export void divert_slave_tribute(EntityManager& entity_manager, Planet& planet,
+                                 TurnStats& stats, player_t master);
+
+/// \brief Sends telegram notifications to all colonies on a planet informing
+/// them of a successful slave revolt.
+export void notify_slave_revolt(EntityManager& entity_manager, const Star& star,
+                                const Planet& planet, player_t former_master);
+
+/// \brief Executes a violent slave revolt on a planet, devastating collateral
+/// sectors and former master holdings, sending notifications, and freeing
+/// slaves.
+export EnslavementResult execute_slave_revolt(EntityManager& entity_manager,
+                                              const Star& star, Planet& planet,
+                                              SectorMap& smap,
+                                              bool intimidated);
+
+/// \brief Resolves planetary enslavement, production tribute diversion, and
+/// slave revolts. If the planet is enslaved and master population is sufficient
+/// to suppress revolt, diverts production yields to the master. If master
+/// population falls below suppression thresholds, triggers a violent slave
+/// revolt, devastates sectors, notifies colonies, and frees the planet from
+/// enslavement.
+export EnslavementResult
+process_enslavement_and_revolts(EntityManager& entity_manager, const Star& star,
+                                Planet& planet, SectorMap& smap,
+                                TurnStats& stats);

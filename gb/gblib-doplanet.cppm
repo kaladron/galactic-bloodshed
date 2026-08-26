@@ -174,5 +174,15 @@ export std::optional<RecoveryReport>
 recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
                              Planet& planet);
 
+/// \brief Formats ASCII recovery report using tabulate from a RecoveryReport.
+export std::string format_recovery_report(const RecoveryReport& report,
+                                          EntityManager& entity_manager);
+
+/// \brief Formats and sends recovery report telegrams to all recipient
+/// conquerors.
+export void dispatch_recovery_telegrams(EntityManager& entity_manager,
+                                        const Star& star,
+                                        const RecoveryReport& report);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

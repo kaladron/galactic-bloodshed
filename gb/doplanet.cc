@@ -5,6 +5,7 @@ module;
 
 import std;
 import gblib;
+import tabulate;
 
 module gblib;
 
@@ -416,44 +417,70 @@ recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
   };
 }
 
+std::string format_recovery_report(const RecoveryReport& report,
+                                   EntityManager& entity_manager) {
+  if (report.empty()) {
+    return {};
+  }
+
+  std::stringstream out;
+  out << std::format("Recovery Report: Planet /{}/{}\n", report.star_name,
+                     report.planet_name);
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+
+  table.add_row({"", "res", "destr", "fuel", "xtal"});
+
+  for (const auto& [conqueror, allocated] : report.allocated_shares) {
+    const auto* race = entity_manager.peek_race(conqueror);
+    table.add_row({
+        race ? race->name : std::format("Player {}", conqueror),
+        std::format("{}", allocated.resources),
+        std::format("{}", allocated.destruct),
+        std::format("{}", allocated.fuel),
+        std::format("{}", allocated.crystals),
+    });
+  }
+
+  table.add_row({
+      "Total:",
+      std::format("{}", report.total_stolen.resources),
+      std::format("{}", report.total_stolen.destruct),
+      std::format("{}", report.total_stolen.fuel),
+      std::format("{}", report.total_stolen.crystals),
+  });
+
+  table.column(0).format().font_align(tabulate::FontAlign::left);
+  table.column(1).format().font_align(tabulate::FontAlign::right);
+  table.column(2).format().font_align(tabulate::FontAlign::right);
+  table.column(3).format().font_align(tabulate::FontAlign::right);
+  table.column(4).format().font_align(tabulate::FontAlign::right);
+
+  out << table << "\n";
+  return out.str();
+}
+
+void dispatch_recovery_telegrams(EntityManager& entity_manager,
+                                 const Star& star,
+                                 const RecoveryReport& report) {
+  const auto msg = format_recovery_report(report, entity_manager);
+  if (msg.empty()) {
+    return;
+  }
+
+  for (const player_t recipient : report.recipients) {
+    const governor_t gov = star.governor(recipient);
+    push_telegram(entity_manager, recipient, gov, msg);
+  }
+}
+
 void do_recover(EntityManager& entity_manager, const Star& star,
                 Planet& planet) {
   const auto report =
       recover_conquered_stockpiles(entity_manager, star, planet);
-  if (!report.has_value()) {
-    return;
-  }
-
-  for (const player_t conqueror : report->recipients) {
-    std::stringstream telegram_buf;
-    telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
-                                report->star_name, report->planet_name);
-    push_telegram(entity_manager, conqueror, star.governor(conqueror),
-                  telegram_buf.str());
-    telegram_buf.str("");
-    telegram_buf << std::format("{:<14} {:>5} {:>5} {:>5} {:>5}\n", "", "res",
-                                "destr", "fuel", "xtal");
-    push_telegram(entity_manager, conqueror, star.governor(conqueror),
-                  telegram_buf.str());
-  }
-
-  for (const auto& [conqueror, allocated] : report->allocated_shares) {
-    const auto* race = entity_manager.peek_race(conqueror);
-    const std::string line = std::format(
-        "{:<14.14s} {:>5} {:>5} {:>5} {:>5}", race->name, allocated.resources,
-        allocated.destruct, allocated.fuel, allocated.crystals);
-    for (const player_t recipient : report->recipients) {
-      push_telegram(entity_manager, recipient, star.governor(recipient), line);
-    }
-  }
-
-  const std::string summary_telegram = std::format(
-      "{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n",
-      "Total:", report->total_stolen.resources, report->total_stolen.destruct,
-      report->total_stolen.fuel, report->total_stolen.crystals);
-  for (const player_t recipient : report->recipients) {
-    push_telegram(entity_manager, recipient, star.governor(recipient),
-                  summary_telegram);
+  if (report.has_value()) {
+    dispatch_recovery_telegrams(entity_manager, star, *report);
   }
 }
 

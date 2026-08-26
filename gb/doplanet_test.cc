@@ -1336,12 +1336,13 @@ void test_recover_conquered_stockpiles() {
 
   auto report3 = recover_conquered_stockpiles(em, star, planet);
   test::expect_true(report3.has_value());
-  test::expect_eq(report3->recipients.size(), 2UL);
-  test::expect_eq(report3->allocated_shares.size(), 2UL);
-  test::expect_eq(report3->total_stolen.resources, 100U);
-  test::expect_eq(report3->total_stolen.destruct, 50U);
-  test::expect_eq(report3->total_stolen.fuel, 20U);
-  test::expect_eq(report3->total_stolen.crystals, 5U);
+  const auto& rep = *report3;
+  test::expect_eq(rep.recipients.size(), 2UL);
+  test::expect_eq(rep.allocated_shares.size(), 2UL);
+  test::expect_eq(rep.total_stolen.resources, 100U);
+  test::expect_eq(rep.total_stolen.destruct, 50U);
+  test::expect_eq(rep.total_stolen.fuel, 20U);
+  test::expect_eq(rep.total_stolen.crystals, 5U);
 
   // Conquerors received their shares
   test::expect_eq(planet.info(player_t{1}).resource +
@@ -1372,6 +1373,65 @@ void test_recover_conquered_stockpiles() {
     test::expect_eq(god_planet.info(player_t{1}).resource, 500U);
     test::expect_eq(god_planet.info(player_t{2}).resource, 0U);
   }
+}
+
+void test_format_recovery_report() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race r1 = createTestRace(player_t{1});
+  r1.name = "Humanoid";
+  Race r2 = createTestRace(player_t{2});
+  r2.name = "Klingon";
+
+  RaceRepository races(store);
+  races.save(r1);
+  races.save(r2);
+
+  // 1. Empty report -> empty lines vector
+  RecoveryReport empty_rep{};
+  test::expect_true(format_recovery_report(empty_rep, em).empty());
+
+  // 2. Full report -> correct ASCII header, body, and summary lines
+  RecoveryReport report{
+      .star_id = starnum_t{1},
+      .star_name = "Sol",
+      .planet_name = "Earth",
+      .planet_num = planetnum_t{0},
+      .recipients = {player_t{1}, player_t{2}},
+      .allocated_shares =
+          {
+              PlayerLootShare{.player = player_t{1},
+                              .share = Stockpile{.resources = 60,
+                                                 .destruct = 30,
+                                                 .fuel = 10,
+                                                 .crystals = 3}},
+              PlayerLootShare{.player = player_t{2},
+                              .share = Stockpile{.resources = 40,
+                                                 .destruct = 20,
+                                                 .fuel = 10,
+                                                 .crystals = 2}},
+          },
+      .total_stolen =
+          Stockpile{
+              .resources = 100, .destruct = 50, .fuel = 20, .crystals = 5},
+  };
+
+  const auto output = format_recovery_report(report, em);
+  test::expect_false(output.empty());
+  test::expect_true(output.contains("Recovery Report: Planet /Sol/Earth\n"));
+  test::expect_true(output.contains("res"));
+  test::expect_true(output.contains("destr"));
+  test::expect_true(output.contains("fuel"));
+  test::expect_true(output.contains("xtal"));
+  test::expect_true(output.contains("Humanoid"));
+  test::expect_true(output.contains("Klingon"));
+  test::expect_true(output.contains("Total:"));
+  test::expect_true(output.contains("60"));
+  test::expect_true(output.contains("40"));
+  test::expect_true(output.contains("100"));
 }
 
 }  // namespace
@@ -1437,6 +1497,10 @@ int main() {
 
   std::println(std::cout, "  Testing recover_conquered_stockpiles... ");
   test_recover_conquered_stockpiles();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing format_recovery_report... ");
+  test_format_recovery_report();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

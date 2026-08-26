@@ -84,7 +84,7 @@ Located in `gb/gblib-*.cppm` module partition files:
 - **`gblib-race.cppm`** - Race entity structure
 - **`gblib-ships.cppm`** - Ship entity structure and ship types
 - **`gblib-star.cppm`** - Star entity structure and Star wrapper class
-- **`gblib-planet.cppm`** - Planet entity structure
+- **`gblib-planet.cppm`** - Planet entity structure, `plinfo` colony state, and `Stockpile` resource value type
 - **`gblib-sector.cppm`** - Sector entity structure
 - **`gblib-galaxy.cppm`** - Galaxy entity structure and Galaxy wrapper class
 - **`gblib-tweakables.cppm`** - Game configuration constants

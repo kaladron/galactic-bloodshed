@@ -306,6 +306,28 @@ Rules:
 - Keep numeric loops when the code genuinely needs explicit indices for side arrays or bookkeeping.
 - Keep mutable loops in the RAII handle form so auto-save behavior is preserved.
 
+#### Container Iteration vs. Range Views Pattern
+
+- **Direct Container Iteration**: Classes modeling collections that provide `begin()` / `end()` (such as `SectorMap`) should be iterated directly with `for (auto& item : container)`. Do **not** create duplicate member methods (e.g. `smap.sectors()` or `container.items()`) that merely wrap the default container range.
+- **Differentiated Range Views**: Member range views on containers must provide distinct **filtering**, **projections**, or **alternative access dimensions**:
+  - `smap.owned()`: all owned sectors (`is_owned()`)
+  - `smap.owned_by(player)`: sectors belonging to a specific player
+  - `smap.populated()`: sectors with population or troops (`is_populated()`)
+  - `smap.populated_by(player)`: populated sectors belonging to a specific player
+  - `smap.coordinates()`: 2D `(x, y)` coordinate iteration
+  - `smap.indexed_sectors()`: `(Coordinates, Sector&)` pairs
+  - `smap.shuffle()`: randomized turn-order traversal
+
+#### Self-Contained Domain State Transitions
+
+- **Point-of-Action Completeness**: Domain mutating operations (`Sector::devastate()`, `Sector::terraform()`, `Sector::colonize()`, `Planet::free_slaves()`) must leave the entity in a fully consistent, invariant-satisfying state at the point of action.
+- **No End-of-Loop "Mistake Sweeps"**: Do not write catch-all loops at the end of processing passes to fix up incomplete state mutations or clear unowned entities. Fix the state transition atomically within the domain method itself.
+- **Pass Rich Domain References**: Keep local colony state (`plinfo`) distinct from empire-wide state (`Race`). Pass rich domain references (`Race::gov&`, `Race&`, `const Race&`) to domain methods rather than breaking them apart into loose primitive references (`money_t&`, `unsigned long&`, `bool has_gov`).
+
+#### Domain Documentation in `docs/`
+
+- When discovering domain rules, economic models, or subsystem behavior during modernization (e.g. government centers, tax rate adjustments, climate variations, slave revolts), create human-readable markdown guides in `docs/` (e.g. `docs/governance.md`, `docs/economy.md`, `docs/planets.md`) and register them in `docs/CMakeLists.txt`.
+
 #### Modern Pattern: EntityManager (Use This!)
 
 The `EntityManager` provides centralized, RAII-based entity lifecycle management:

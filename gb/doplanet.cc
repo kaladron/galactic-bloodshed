@@ -584,6 +584,18 @@ process_toxic_environmental_damage(const Planet& planet, SectorMap& smap) {
   return p.coords();
 }
 
+bool process_supernova_sector_devastation(const Star& star, SectorMap& smap) {
+  if (!star.nova_stage()) {
+    return false;
+  }
+  bool affected = false;
+  for (Sector& p : smap.occupied()) {
+    p.apply_supernova(star.nova_stage());
+    affected = true;
+  }
+  return affected;
+}
+
 double est_production(const Sector& s, EntityManager& entity_manager) {
   const auto* race = entity_manager.peek_race(s.get_owner());
   return (race->metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
@@ -636,62 +648,61 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   process_planetary_ships(entity_manager, planet, smap, stats);
   process_planet_climate(planet, star, stats);
 
-  /* check for space mirrors (among other things) warming the planet */
-  /* if a change in any artificial warming/cooling trends */
-
-  for (Sector& p : smap.shuffle()) {
-    if (p.get_owner() != 0 && (p.get_popn() || p.get_troops())) {
+  if (star.nova_stage()) {
+    if (process_supernova_sector_devastation(star, smap)) {
       allmod = 1;
-      if (!star.nova_stage()) {
+    }
+  } else {
+    for (Sector& p : smap.shuffle()) {
+      if (p.is_occupied()) {
+        allmod = 1;
         produce(entity_manager, star, planet, p, stats);
-        if (p.get_owner() != 0)
+        if (p.is_owned()) {
           planet.info(p.get_owner()).est_production +=
               est_production(p, entity_manager);
-        spread(entity_manager, planet, p, smap, stats);
-      } else {
-        p.apply_supernova(star.nova_stage());
-      }
-      stats.Sectinfo[p.get_x()][p.get_y()].done = true;
-    }
-
-    p.clear_owner_if_empty();
-
-    /*
-        if (p->wasted) {
-            if (x>1 && x<planet->Maxx-2) {
-                if (p->des==DES_SEA || p->des==DES_GAS) {
-                    if ( y>1 && y<planet->Maxy-2 &&
-                        (!(p-1)->wasted || !(p+1)->wasted) && !random()%5)
-                        p->wasted = 0;
-                } else if (p->des==DES_LAND || p->des==DES_MOUNT
-                           || p->des==DES_ICE) {
-                    if ( y>1 && y<planet->Maxy-2 && ((p-1)->popn || (p+1)->popn)
-                        && !random()%10)
-                        p->wasted = 0;
-                }
-            }
         }
-    */
-    /*
-        if (entity_manager.peek_star(starnum)->nova_stage) {
-            if (p->des==DES_ICE)
-                if(random()&01)
-                    p->des = DES_LAND;
-                else if (p->des==DES_SEA)
-                    if(random()&01)
-                        if ( (x>0 && (p-1)->des==DES_LAND) ||
-                            (x<planet->Maxx-1 && (p+1)->des==DES_LAND) ||
-                            (y>0 && (p-planet->Maxx)->des==DES_LAND) ||
-                            (y<planet->Maxy-1 && (p+planet->Maxx)->des==DES_LAND
-       ) ) {
-                            p->des = DES_LAND;
-                            p->popn = p->owner = p->troops = 0;
-                            p->resource += int_rand(1,5);
-                            p->fert = int_rand(1,4);
-                        }
-                        }
-                        */
+        spread(entity_manager, planet, p, smap, stats);
+        stats.Sectinfo[p.get_x()][p.get_y()].done = true;
+      }
+      p.clear_owner_if_empty();
+    }
   }
+
+  /*
+      if (p->wasted) {
+          if (x>1 && x<planet->Maxx-2) {
+              if (p->des==DES_SEA || p->des==DES_GAS) {
+                  if ( y>1 && y<planet->Maxy-2 &&
+                      (!(p-1)->wasted || !(p+1)->wasted) && !random()%5)
+                      p->wasted = 0;
+              } else if (p->des==DES_LAND || p->des==DES_MOUNT
+                         || p->des==DES_ICE) {
+                  if ( y>1 && y<planet->Maxy-2 && ((p-1)->popn || (p+1)->popn)
+                      && !random()%10)
+                      p->wasted = 0;
+              }
+          }
+      }
+  */
+  /*
+      if (entity_manager.peek_star(starnum)->nova_stage) {
+          if (p->des==DES_ICE)
+              if(random()&01)
+                  p->des = DES_LAND;
+              else if (p->des==DES_SEA)
+                  if(random()&01)
+                      if ( (x>0 && (p-1)->des==DES_LAND) ||
+                          (x<planet->Maxx-1 && (p+1)->des==DES_LAND) ||
+                          (y>0 && (p-planet->Maxx)->des==DES_LAND) ||
+                          (y<planet->Maxy-1 && (p+planet->Maxx)->des==DES_LAND
+     ) ) {
+                          p->des = DES_LAND;
+                          p->popn = p->owner = p->troops = 0;
+                          p->resource += int_rand(1,5);
+                          p->fert = int_rand(1,4);
+                      }
+                      }
+                      */
 
   for (const auto& p : smap.owned()) {
     planet.info(p.get_owner()).numsectsowned++;
@@ -737,12 +748,13 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 
   for (const Race* race : RaceList::readonly(entity_manager)) {
     const player_t p = race->Playernum;
-    planet.info(p).prod_crystals = stats.prod_crystals[p];
-    planet.info(p).prod_res = stats.prod_res[p];
-    planet.info(p).prod_fuel = stats.prod_fuel[p];
-    planet.info(p).prod_dest = stats.prod_destruct[p];
-    if (planet.info(p).autorep) {
-      planet.info(p).autorep--;
+    auto& info = planet.info(*race);
+    info.prod_crystals = stats.prod_crystals[p];
+    info.prod_res = stats.prod_res[p];
+    info.prod_fuel = stats.prod_fuel[p];
+    info.prod_dest = stats.prod_destruct[p];
+    if (info.autorep) {
+      info.autorep--;
       std::stringstream telegram_buf;
       telegram_buf << std::format("\nFrom /{}/{}\n", star.get_name(),
                                   star.get_planet_name(planetnum));
@@ -777,7 +789,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         telegram_buf << std::format("ENSLAVED to player {}\n",
                                     planet.slaved_to());
       }
-      push_telegram(entity_manager, i, star.governor(i), telegram_buf.str());
+      push_telegram(entity_manager, p, star.governor(p), telegram_buf.str());
     }
   }
 
@@ -932,8 +944,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             .xpos = star.xpos() + planet.xpos(),
             .ypos = star.ypos() + planet.ypos(),
             .mass = 1.0,
-            .land_coords = Coordinates{int_rand(0, (int)planet.Maxx() - 1),
-                                       int_rand(0, (int)planet.Maxy() - 1)},
+            .land_coords = smap.get_random().coords(),
             .armor = static_cast<unsigned char>(
                 Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR]),
             .max_crew = static_cast<unsigned short>(

@@ -98,5 +98,11 @@ export void process_planet_climate(Planet& planet, const Star& star,
 export std::optional<Coordinates>
 process_toxic_environmental_damage(const Planet& planet, SectorMap& smap);
 
+/// \brief If star is undergoing supernova, applies radiation devastation
+/// across all inhabited sectors. Returns true if any inhabited sectors were
+/// affected.
+export bool process_supernova_sector_devastation(const Star& star,
+                                                 SectorMap& smap);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

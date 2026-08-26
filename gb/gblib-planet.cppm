@@ -254,6 +254,12 @@ public:
   plinfo& info(player_t player) {
     return data_.info[player];
   }
+  [[nodiscard]] const plinfo& info(const Race& race) const {
+    return data_.info[race.Playernum];
+  }
+  plinfo& info(const Race& race) {
+    return data_.info[race.Playernum];
+  }
 
   [[nodiscard]] int conditions(Conditions cond) const {
     if (cond < 0 || cond > TOXIC) {

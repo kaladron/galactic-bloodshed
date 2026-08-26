@@ -1039,6 +1039,55 @@ void test_process_toxic_environmental_damage() {
   test::expect_eq(devastated_sector.get_condition(), SectorType::SEC_WASTED);
 }
 
+void test_process_supernova_sector_devastation() {
+  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+
+  SectorMap smap(planet);
+  for (int y = 0; y < planet.Maxy(); ++y) {
+    for (int x = 0; x < planet.Maxx(); ++x) {
+      auto& sect = smap.get(Coordinates{x, y});
+      sect.set_coords(Coordinates{x, y});
+      sect.set_condition(SectorType::SEC_LAND);
+      sect.set_type(SectorType::SEC_LAND);
+      sect.set_fert(80);
+      sect.set_resource(50);
+    }
+  }
+
+  auto& inhabited = smap.get(Coordinates{2, 3});
+  inhabited.colonize(player_t{1}, 1000);
+  inhabited.set_troops(200);
+
+  // 1. Star NOT in supernova (nova_stage = 0) -> no devastation
+  star_struct normal_star_data{};
+  normal_star_data.nova_stage = 0;
+  Star normal_star(normal_star_data);
+  test::expect_false(process_supernova_sector_devastation(normal_star, smap));
+  test::expect_eq(inhabited.get_popn(), 1000);
+
+  // 2. Active radiation stage (nova_stage = 5) -> casualties, mineral deposits,
+  // fertility loss
+  star_struct active_star_data{};
+  active_star_data.nova_stage = 5;
+  Star active_star(active_star_data);
+  test::expect_true(process_supernova_sector_devastation(active_star, smap));
+  test::expect_lt(inhabited.get_popn(), 1000);
+  test::expect_gt(inhabited.get_resource(), 50);
+  test::expect_lt(inhabited.get_fert(), 80);
+
+  // 3. Terminal explosion (nova_stage = 14) -> total incineration and cleared
+  // ownership
+  star_struct terminal_star_data{};
+  terminal_star_data.nova_stage = 14;
+  Star terminal_star(terminal_star_data);
+  test::expect_true(process_supernova_sector_devastation(terminal_star, smap));
+  test::expect_eq(inhabited.get_popn(), 0);
+  test::expect_eq(inhabited.get_owner(), player_t{0});
+  test::expect_eq(inhabited.get_troops(), 0);
+}
+
 }  // namespace
 
 int main() {
@@ -1082,6 +1131,10 @@ int main() {
 
   std::println(std::cout, "  Testing process_toxic_environmental_damage... ");
   test_process_toxic_environmental_damage();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_supernova_sector_devastation... ");
+  test_process_supernova_sector_devastation();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

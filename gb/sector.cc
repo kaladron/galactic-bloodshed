@@ -231,4 +231,6 @@ void Sector::apply_supernova(int stage) noexcept {
         round_rand(static_cast<double>(data_.popn) * radiation_casualty_rate);
     subtract_popn(deaths);
   }
+
+  clear_owner_if_empty();
 }

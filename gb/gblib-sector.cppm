@@ -194,6 +194,9 @@ public:
   [[nodiscard]] bool is_populated() const noexcept {
     return data_.popn > 0 || data_.troops > 0;
   }
+  [[nodiscard]] bool is_occupied() const noexcept {
+    return is_owned() && is_populated();
+  }
   [[nodiscard]] bool is_wasted() const noexcept {
     return data_.condition == SectorType::SEC_WASTED;
   }
@@ -529,6 +532,19 @@ public:
   [[nodiscard]] auto populated_by(player_t player) const noexcept {
     return grid_ | std::views::filter([player](const Sector& s) noexcept {
              return s.get_owner() == player && s.is_populated();
+           });
+  }
+
+  /// \brief Returns a non-allocating lazy view of all occupied (owned and
+  /// populated) sectors.
+  [[nodiscard]] auto occupied() noexcept {
+    return grid_ | std::views::filter([](const Sector& s) noexcept {
+             return s.is_occupied();
+           });
+  }
+  [[nodiscard]] auto occupied() const noexcept {
+    return grid_ | std::views::filter([](const Sector& s) noexcept {
+             return s.is_occupied();
            });
   }
 

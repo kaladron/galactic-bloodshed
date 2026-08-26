@@ -1088,6 +1088,66 @@ void test_process_supernova_sector_devastation() {
   test::expect_eq(inhabited.get_troops(), 0);
 }
 
+void test_build_automated_waste_can() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  Star star = createTestStar();
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.conditions(TOXIC) = 80;
+
+  SectorMap smap(planet);
+  for (int y = 0; y < planet.Maxy(); ++y) {
+    for (int x = 0; x < planet.Maxx(); ++x) {
+      auto& sect = smap.get(Coordinates{x, y});
+      sect.set_coords(Coordinates{x, y});
+      sect.set_condition(SectorType::SEC_LAND);
+    }
+  }
+
+  Race race = createTestRace(player_t{1});
+
+  // 1. No threshold set -> returns nullopt, toxicity unmodified
+  planet.info(race).tox_thresh = std::nullopt;
+  planet.info(race).resource = 1000;
+  auto res1 = build_automated_waste_can(em, star, planet, smap, race);
+  test::expect_false(res1.has_value());
+  test::expect_eq(planet.conditions(TOXIC), 80);
+
+  // 2. Threshold higher than toxicity (90 > 80) -> returns nullopt
+  planet.info(race).tox_thresh = 90;
+  auto res2 = build_automated_waste_can(em, star, planet, smap, race);
+  test::expect_false(res2.has_value());
+  test::expect_eq(planet.conditions(TOXIC), 80);
+
+  // 3. Threshold met (50 <= 80), but insufficient resources (0) -> returns
+  // nullopt
+  planet.info(race).tox_thresh = 50;
+  planet.info(race).resource = 0;
+  auto res3 = build_automated_waste_can(em, star, planet, smap, race);
+  test::expect_false(res3.has_value());
+  test::expect_eq(planet.conditions(TOXIC), 80);
+
+  // 4. Threshold met and resources available -> builds toxic waste can holding
+  // min(TOXMAX, 80) = 20
+  planet.info(race).resource = 1000;
+  auto res4 = build_automated_waste_can(em, star, planet, smap, race);
+  test::expect_true(res4.has_value());
+  test::expect_eq(planet.conditions(TOXIC), 80 - TOXMAX);
+
+  const auto* ship = em.peek_ship(*res4);
+  test::expect_true(ship != nullptr);
+  test::expect_eq(ship->type(), ShipType::OTYPE_TOXWC);
+  test::expect_eq(ship->owner(), player_t{1});
+  test::expect_true(ship->docked());
+  test::expect_true(smap.in_bounds(ship->land_coords()));
+  test::expect_eq(std::get<WasteData>(ship->special()).toxic,
+                  static_cast<unsigned char>(TOXMAX));
+}
+
 }  // namespace
 
 int main() {
@@ -1135,6 +1195,10 @@ int main() {
 
   std::println(std::cout, "  Testing process_supernova_sector_devastation... ");
   test_process_supernova_sector_devastation();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing build_automated_waste_can... ");
+  test_build_automated_waste_can();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

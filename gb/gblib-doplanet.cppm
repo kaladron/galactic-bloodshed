@@ -104,5 +104,12 @@ process_toxic_environmental_damage(const Planet& planet, SectorMap& smap);
 export bool process_supernova_sector_devastation(const Star& star,
                                                  SectorMap& smap);
 
+/// \brief If automated waste canister threshold is set and conditions met,
+/// builds a toxic waste canister ship, reduces planetary toxicity, and places
+/// the ship on the planet. Returns the new ship number if constructed.
+export std::optional<shipnum_t>
+build_automated_waste_can(EntityManager& entity_manager, const Star& star,
+                          Planet& planet, SectorMap& smap, const Race& race);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

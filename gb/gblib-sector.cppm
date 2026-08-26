@@ -368,8 +368,8 @@ public:
         Sector(s);
   }
 
-  // Set from Sector - extract struct and reconstruct
-  void set(const Coordinates c, const Sector& s) {
+  // Set from Sector by moving
+  void set(const Coordinates c, Sector&& s) {
     if (!in_bounds(c)) {
       throw std::out_of_range(std::format(
           "SectorMap::set({}, {}) out of bounds for dimensions ({}, {})", c.x,
@@ -377,7 +377,7 @@ public:
     }
     grid_[static_cast<std::size_t>(c.x) +
           (static_cast<std::size_t>(c.y) * static_cast<std::size_t>(maxx_))] =
-        Sector(s.to_struct());
+        std::move(s);
   }
 
   // TODO(jeffbailey): Migrate to std::views::cartesian_product once supported

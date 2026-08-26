@@ -369,12 +369,11 @@ calculate_plunder_distribution(Stockpile total_loot,
   };
 }
 
-void do_recover(EntityManager& entity_manager, const Star& star,
-                Planet& planet) {
+std::optional<RecoveryReport>
+recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
+                             Planet& planet) {
   std::vector<player_t> owners;
   Stockpile total_stolen;
-
-  const planetnum_t planetnum = planet.planet_order();
 
   for (const Race* race : RaceList::readonly(entity_manager)) {
     if (planet.info(*race).numsectsowned > 0) {
@@ -385,20 +384,50 @@ void do_recover(EntityManager& entity_manager, const Star& star,
   }
 
   if (!check_mutual_alliances(entity_manager, owners)) {
-    return;
+    return std::nullopt;
   }
 
-  const auto distribution =
-      calculate_plunder_distribution(total_stolen, owners);
+  auto distribution = calculate_plunder_distribution(total_stolen, owners);
   if (!distribution.has_value()) {
+    return std::nullopt;
+  }
+
+  // 1. Deposit plunder into conqueror colonies
+  for (const auto& [conqueror, allocated] : distribution->shares) {
+    planet.info(conqueror).deposit_stockpile(allocated);
+  }
+
+  // 2. Drain stockpiles from defeated non-god races
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    if (planet.info(*race).numsectsowned == 0 && !race->God) {
+      planet.info(*race).drain_stockpile();
+    }
+  }
+
+  const planetnum_t planetnum = planet.planet_order();
+  return RecoveryReport{
+      .star_id = star.star_id(),
+      .star_name = star.get_name(),
+      .planet_name = star.get_planet_name(planetnum),
+      .planet_num = planetnum,
+      .recipients = std::move(owners),
+      .allocated_shares = std::move(distribution->shares),
+      .total_stolen = total_stolen,
+  };
+}
+
+void do_recover(EntityManager& entity_manager, const Star& star,
+                Planet& planet) {
+  const auto report =
+      recover_conquered_stockpiles(entity_manager, star, planet);
+  if (!report.has_value()) {
     return;
   }
 
-  for (const player_t conqueror : owners) {
+  for (const player_t conqueror : report->recipients) {
     std::stringstream telegram_buf;
     telegram_buf << std::format("Recovery Report: Planet /{}/{}\n",
-                                star.get_name(),
-                                star.get_planet_name(planetnum));
+                                report->star_name, report->planet_name);
     push_telegram(entity_manager, conqueror, star.governor(conqueror),
                   telegram_buf.str());
     telegram_buf.str("");
@@ -408,31 +437,23 @@ void do_recover(EntityManager& entity_manager, const Star& star,
                   telegram_buf.str());
   }
 
-  for (const auto& [conqueror, allocated] : distribution->shares) {
-    planet.info(conqueror).deposit_stockpile(allocated);
-
+  for (const auto& [conqueror, allocated] : report->allocated_shares) {
     const auto* race = entity_manager.peek_race(conqueror);
     const std::string line = std::format(
         "{:<14.14s} {:>5} {:>5} {:>5} {:>5}", race->name, allocated.resources,
         allocated.destruct, allocated.fuel, allocated.crystals);
-    for (const player_t recipient : owners) {
+    for (const player_t recipient : report->recipients) {
       push_telegram(entity_manager, recipient, star.governor(recipient), line);
     }
   }
 
   const std::string summary_telegram = std::format(
-      "{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n", "Total:", total_stolen.resources,
-      total_stolen.destruct, total_stolen.fuel, total_stolen.crystals);
-  for (const player_t recipient : owners) {
+      "{:<14.14s} {:>5} {:>5} {:>5} {:>5}\n",
+      "Total:", report->total_stolen.resources, report->total_stolen.destruct,
+      report->total_stolen.fuel, report->total_stolen.crystals);
+  for (const player_t recipient : report->recipients) {
     push_telegram(entity_manager, recipient, star.governor(recipient),
                   summary_telegram);
-  }
-
-  /* Next: take all the loot away from the losers */
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    if (planet.info(*race).numsectsowned == 0 && !race->God) {
-      planet.info(*race).drain_stockpile();
-    }
   }
 }
 

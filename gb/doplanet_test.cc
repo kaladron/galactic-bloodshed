@@ -1290,6 +1290,90 @@ void test_calculate_plunder_distribution() {
   }
 }
 
+void test_recover_conquered_stockpiles() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race r1 = createTestRace(player_t{1});
+  r1.God = true;
+  Race r2 = createTestRace(player_t{2});
+  Race r3 = createTestRace(player_t{3});
+
+  RaceRepository races(store);
+  races.save(r1);
+  races.save(r2);
+  races.save(r3);
+
+  Star star = createTestStar();
+  Planet planet = createTestPlanet();
+
+  // 1. No conquerors -> returns nullopt, defeated stockpiles untouched
+  planet.info(player_t{3})
+      .deposit_stockpile(Stockpile{
+          .resources = 100, .destruct = 50, .fuel = 20, .crystals = 5});
+  auto report1 = recover_conquered_stockpiles(em, star, planet);
+  test::expect_false(report1.has_value());
+  test::expect_eq(planet.info(player_t{3}).resource, 100U);
+
+  // 2. Conqueror present, but unallied with another conqueror -> returns
+  // nullopt
+  planet.info(player_t{1}).numsectsowned = 5;
+  planet.info(player_t{2}).numsectsowned = 5;
+  auto report2 = recover_conquered_stockpiles(em, star, planet);
+  test::expect_false(report2.has_value());
+  test::expect_eq(planet.info(player_t{3}).resource, 100U);
+
+  // 3. Mutual alliance established -> plunder distributed, defeated player
+  // drained
+  {
+    auto h1 = em.get_race(player_t{1});
+    setbit(h1->allied, player_t{2});
+    auto h2 = em.get_race(player_t{2});
+    setbit(h2->allied, player_t{1});
+  }
+
+  auto report3 = recover_conquered_stockpiles(em, star, planet);
+  test::expect_true(report3.has_value());
+  test::expect_eq(report3->recipients.size(), 2UL);
+  test::expect_eq(report3->allocated_shares.size(), 2UL);
+  test::expect_eq(report3->total_stolen.resources, 100U);
+  test::expect_eq(report3->total_stolen.destruct, 50U);
+  test::expect_eq(report3->total_stolen.fuel, 20U);
+  test::expect_eq(report3->total_stolen.crystals, 5U);
+
+  // Conquerors received their shares
+  test::expect_eq(planet.info(player_t{1}).resource +
+                      planet.info(player_t{2}).resource,
+                  100U);
+  test::expect_eq(planet.info(player_t{1}).destruct +
+                      planet.info(player_t{2}).destruct,
+                  50U);
+  test::expect_eq(planet.info(player_t{1}).fuel + planet.info(player_t{2}).fuel,
+                  20U);
+  test::expect_eq(planet.info(player_t{1}).crystals +
+                      planet.info(player_t{2}).crystals,
+                  5U);
+
+  // Defeated player's stockpiles drained
+  test::expect_true(planet.info(player_t{3}).stockpile().empty());
+
+  // 4. God race (Player 1 as God) without sectors -> protected from theft
+  {
+    Planet god_planet = createTestPlanet();
+    god_planet.info(player_t{1})
+        .deposit_stockpile(Stockpile{
+            .resources = 500, .destruct = 500, .fuel = 500, .crystals = 500});
+    god_planet.info(player_t{2}).numsectsowned = 5;
+
+    auto god_report = recover_conquered_stockpiles(em, star, god_planet);
+    test::expect_false(god_report.has_value());
+    test::expect_eq(god_planet.info(player_t{1}).resource, 500U);
+    test::expect_eq(god_planet.info(player_t{2}).resource, 0U);
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -1349,6 +1433,10 @@ int main() {
 
   std::println(std::cout, "  Testing calculate_plunder_distribution... ");
   test_calculate_plunder_distribution();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing recover_conquered_stockpiles... ");
+  test_recover_conquered_stockpiles();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

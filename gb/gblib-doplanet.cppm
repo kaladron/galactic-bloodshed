@@ -148,5 +148,31 @@ export std::expected<PlunderDistribution, PlunderError>
 calculate_plunder_distribution(Stockpile total_loot,
                                std::span<const player_t> conquerors);
 
+export struct RecoveryReport {
+  starnum_t star_id{0};
+  std::string star_name;
+  std::string planet_name;
+  planetnum_t planet_num{0};
+  std::vector<player_t> recipients;
+  std::vector<PlayerLootShare> allocated_shares;
+  Stockpile total_stolen{};
+
+  [[nodiscard]] bool empty() const noexcept {
+    return recipients.empty() || allocated_shares.empty() ||
+           total_stolen.empty();
+  }
+
+  [[nodiscard]] bool operator==(const RecoveryReport&) const noexcept = default;
+};
+
+/// \brief Scans planet colonies for conqueror and defeated races. If conquerors
+/// are mutually allied and defeated races have stockpiles, distributes the
+/// plunder to conquerors, drains defeated races' stockpiles, and returns a
+/// RecoveryReport. Returns std::nullopt if no conquerors, no loot, or
+/// conquerors are unallied.
+export std::optional<RecoveryReport>
+recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
+                             Planet& planet);
+
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);

@@ -649,37 +649,49 @@ public:
 /**
  * RAII wrapper for mutable ship access.
  * Automatically saves changes when the wrapper goes out of scope.
- * This type-erased wrapper avoids circular module dependencies.
  */
 export class ShipHandle {
 public:
-  // Constructor - implemented in .cc to avoid circular dependency
-  explicit ShipHandle(EntityHandle<Ship>&& handle);
-  ~ShipHandle();
+  explicit ShipHandle(EntityHandle<Ship>&& handle)
+      : handle_(std::move(handle)) {}
+  ~ShipHandle() = default;
 
-  // Delete copy, allow move
   ShipHandle(const ShipHandle&) = delete;
   ShipHandle& operator=(const ShipHandle&) = delete;
-  ShipHandle(ShipHandle&&) noexcept;
-  ShipHandle& operator=(ShipHandle&&) noexcept;
+  ShipHandle(ShipHandle&&) noexcept = default;
+  ShipHandle& operator=(ShipHandle&&) noexcept = default;
 
-  // Access operators
-  Ship& operator*();
-  const Ship& operator*() const;
-  Ship* operator->();
-  const Ship* operator->() const;
-  Ship* get();
-  [[nodiscard]] const Ship* get() const;
+  Ship& operator*() {
+    return *handle_;
+  }
+  const Ship& operator*() const {
+    return *handle_;
+  }
+  Ship* operator->() {
+    return handle_.operator->();
+  }
+  const Ship* operator->() const {
+    return handle_.operator->();
+  }
+  Ship* get() {
+    return handle_.get();
+  }
+  [[nodiscard]] const Ship* get() const {
+    return handle_.get();
+  }
 
   // Explicit read-only access (doesn't mark dirty)
-  [[nodiscard]] const Ship& peek() const;
+  [[nodiscard]] const Ship& peek() const {
+    return handle_.read();
+  }
 
   // Force save without waiting for destructor
-  void save();
+  void save() {
+    handle_.save();
+  }
 
 private:
-  struct Impl;  // Pimpl to hide EntityHandle<Ship>
-  std::unique_ptr<Impl> pimpl;
+  EntityHandle<Ship> handle_;
 };
 
 /**
@@ -688,34 +700,34 @@ private:
  *
  * Usage:
  *   // Read-only iteration
- *   auto ships = ShipList::readonly(g.entity_manager, ship.ships);
+ *   auto ships = ShipList::readonly(g.entity_manager, g);
  *   for (const Ship* ship : ships) {
- *     g.out << ship->name << "\n";  // Read-only, no modifications allowed
+ *     g.out << ship->name() << "\n";  // Read-only, no modifications allowed
  *   }
  *
  *   // Mutable iteration (auto-saves on scope exit)
- *   ShipList ships(g.entity_manager, ship.ships);
+ *   ShipList ships(g.entity_manager, g);
  *   for (auto ship_handle : ships) {
  *     auto& s = *ship_handle;
- *     s.fuel += 10;  // Marks dirty, will auto-save
+ *     s.fuel() += 10;  // Marks dirty, will auto-save
  *   }
  */
 export class ShipList : public ReadonlyFactory<ShipList> {
 public:
   enum class IterationType {
-    Nested,   ///< Follow ship.ships linked list
+    Nested,   ///< Follow ship.ships linked list / hangar
     Scope,    ///< All ships at current scope (universe/star/planet/ship)
     All,      ///< All ships in game (1..num_ships), including dead
     AllAlive  ///< All alive ships in game (1..num_ships)
   };
 
-  // Mutable version - returns ShipHandle
+  // Constructors
   ShipList(EntityManager& em, shipnum_t start,
            IterationType type = IterationType::Nested);
   ShipList(EntityManager& em, const GameObj& g,
            IterationType type = IterationType::Scope);
-  // Constructor for All/AllAlive iteration (all ships in game)
   ShipList(EntityManager& em, IterationType type);
+  explicit ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids);
 
   // Forward declaration for iterators
   class MutableIterator;
@@ -731,17 +743,16 @@ public:
   [[nodiscard]] ConstIterator cbegin() const;
   [[nodiscard]] ConstIterator cend() const;
 
-private:
-  mutable EntityManager* em{nullptr};
-  shipnum_t start_ship{0};
-  IterationType iteration_type;
-  ScopeLevel scope_level{ScopeLevel::LEVEL_UNIV};
-  starnum_t snum{0};
-  planetnum_t pnum{0};
-  player_t player{0};
+  [[nodiscard]] bool empty() const noexcept {
+    return ship_ids_.empty();
+  }
+  [[nodiscard]] std::size_t size() const noexcept {
+    return ship_ids_.size();
+  }
 
-  // Helper to check if a ship matches the current scope
-  [[nodiscard]] bool matches_scope(const Ship& ship) const;
+private:
+  EntityManager* em_{nullptr};
+  std::vector<shipnum_t> ship_ids_;
 };
 
 // Iterator classes
@@ -754,27 +765,20 @@ public:
   using iterator_category = std::forward_iterator_tag;
   using value_type = ShipHandle;
   using difference_type = std::ptrdiff_t;
+  using pointer = ShipHandle*;
+  using reference = ShipHandle;
 
-  MutableIterator(EntityManager& em, shipnum_t current, IterationType type,
-                  ScopeLevel level, starnum_t snum, planetnum_t pnum,
-                  player_t player);
+  MutableIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it);
 
   MutableIterator& operator++();
-  [[nodiscard]] ShipHandle operator*();  // Defined in .cc file
+  MutableIterator operator++(int);
+  [[nodiscard]] ShipHandle operator*() const;
   [[nodiscard]] bool operator==(const MutableIterator& other) const;
   [[nodiscard]] bool operator!=(const MutableIterator& other) const;
 
 private:
-  EntityManager& em;
-  shipnum_t current;
-  IterationType type;
-  ScopeLevel scope_level;
-  starnum_t snum;
-  planetnum_t pnum;
-  player_t player;
-
-  void advance_to_next_match();
-  [[nodiscard]] bool matches_scope(const Ship& ship) const;
+  EntityManager* em_{nullptr};
+  std::vector<shipnum_t>::const_iterator it_;
 };
 
 /**
@@ -788,26 +792,17 @@ public:
   using value_type = const Ship*;
   using difference_type = std::ptrdiff_t;
   using pointer = const Ship**;
-  using reference = const Ship*&;
+  using reference = const Ship*;
 
-  ConstIterator(EntityManager& em, shipnum_t current, IterationType type,
-                ScopeLevel level, starnum_t snum, planetnum_t pnum,
-                player_t player);
+  ConstIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it);
 
   ConstIterator& operator++();
+  ConstIterator operator++(int);
   [[nodiscard]] const Ship* operator*() const;
   [[nodiscard]] bool operator==(const ConstIterator& other) const;
   [[nodiscard]] bool operator!=(const ConstIterator& other) const;
 
 private:
-  EntityManager& em;
-  shipnum_t current;
-  IterationType type;
-  ScopeLevel scope_level;
-  starnum_t snum;
-  planetnum_t pnum;
-  player_t player;
-
-  void advance_to_next_match();
-  [[nodiscard]] bool matches_scope(const Ship& ship) const;
+  EntityManager* em_{nullptr};
+  std::vector<shipnum_t>::const_iterator it_;
 };

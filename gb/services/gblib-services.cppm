@@ -283,6 +283,21 @@ public:
   powernum_t num_powers();
   powernum_t max_power_id();
 
+  // Ship spatial query operations
+  [[nodiscard]] std::vector<shipnum_t>
+  ships_in_star_system(starnum_t star_id, bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> ships_in_star(starnum_t star_id,
+                                                     bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> ships_on_planet(starnum_t star_id,
+                                                       planetnum_t planet_id,
+                                                       bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> ships_in_hangar(shipnum_t carrier_id,
+                                                       bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> ships_by_owner(player_t owner_id,
+                                                      bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> ships_alive();
+  [[nodiscard]] std::vector<shipnum_t> ships_all();
+
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);
   void kill_ship(player_t destroyer, Ship& ship);

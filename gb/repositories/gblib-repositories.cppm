@@ -407,6 +407,8 @@ public:
   shipnum_t count_all_ships();
 
   // Spatial and indexed query methods
+  [[nodiscard]] std::vector<shipnum_t>
+  find_in_star_system(starnum_t star_id, bool alive_only = true);
   [[nodiscard]] std::vector<shipnum_t> find_in_star(starnum_t star_id,
                                                     bool alive_only = true);
   [[nodiscard]] std::vector<shipnum_t> find_on_planet(starnum_t star_id,
@@ -470,6 +472,23 @@ shipnum_t ShipRepository::count_all_ships() {
   return static_cast<shipnum_t>(list_ids().size());
 }
 
+std::vector<shipnum_t> ShipRepository::find_in_star_system(starnum_t star_id,
+                                                           bool alive_only) {
+  std::string where = "storbits = ?";
+  std::vector<KeyValue> params{star_id.value};
+  if (alive_only) {
+    where += " AND alive = 1";
+  }
+  where += " ORDER BY id";
+  auto ids = store.query_ids(table_name, where, params);
+  std::vector<shipnum_t> result;
+  result.reserve(ids.size());
+  for (int id : ids) {
+    result.emplace_back(id);
+  }
+  return result;
+}
+
 std::vector<shipnum_t> ShipRepository::find_in_star(starnum_t star_id,
                                                     bool alive_only) {
   std::string where = "storbits = ? AND whatorbits = ?";
@@ -491,9 +510,8 @@ std::vector<shipnum_t> ShipRepository::find_in_star(starnum_t star_id,
 std::vector<shipnum_t> ShipRepository::find_on_planet(starnum_t star_id,
                                                       planetnum_t planet_id,
                                                       bool alive_only) {
-  std::string where = "storbits = ? AND pnumorbits = ? AND whatorbits = ?";
-  std::vector<KeyValue> params{star_id.value, planet_id.value,
-                               static_cast<int>(ScopeLevel::LEVEL_PLAN)};
+  std::string where = "storbits = ? AND pnumorbits = ?";
+  std::vector<KeyValue> params{star_id.value, planet_id.value};
   if (alive_only) {
     where += " AND alive = 1";
   }

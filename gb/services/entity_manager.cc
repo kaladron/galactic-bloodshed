@@ -647,6 +647,46 @@ powernum_t EntityManager::max_power_id() {
   return ids.empty() ? powernum_t{0} : powernum_t{ids.back()};
 }
 
+std::vector<shipnum_t> EntityManager::ships_in_star_system(starnum_t star_id,
+                                                           bool alive_only) {
+  return ships.find_in_star_system(star_id, alive_only);
+}
+
+std::vector<shipnum_t> EntityManager::ships_in_star(starnum_t star_id,
+                                                    bool alive_only) {
+  return ships.find_in_star(star_id, alive_only);
+}
+
+std::vector<shipnum_t> EntityManager::ships_on_planet(starnum_t star_id,
+                                                      planetnum_t planet_id,
+                                                      bool alive_only) {
+  return ships.find_on_planet(star_id, planet_id, alive_only);
+}
+
+std::vector<shipnum_t> EntityManager::ships_in_hangar(shipnum_t carrier_id,
+                                                      bool alive_only) {
+  return ships.find_in_hangar(carrier_id, alive_only);
+}
+
+std::vector<shipnum_t> EntityManager::ships_by_owner(player_t owner_id,
+                                                     bool alive_only) {
+  return ships.find_by_owner(owner_id, alive_only);
+}
+
+std::vector<shipnum_t> EntityManager::ships_alive() {
+  return ships.find_alive();
+}
+
+std::vector<shipnum_t> EntityManager::ships_all() {
+  auto ids = store.list_ids("tbl_ship");
+  std::vector<shipnum_t> result;
+  result.reserve(ids.size());
+  for (int id : ids) {
+    result.emplace_back(id);
+  }
+  return result;
+}
+
 // Utility methods
 void EntityManager::flush_all() {
   // Save all cached entities - entities now contain their own IDs

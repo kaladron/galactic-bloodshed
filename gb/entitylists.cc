@@ -12,87 +12,77 @@ import :gameobj;
 import :ships;
 #undef stdout
 
-// ShipHandle implementation using Pimpl to hide EntityHandle<Ship>
-
-struct ShipHandle::Impl {
-  EntityHandle<Ship> handle;
-
-  explicit Impl(EntityHandle<Ship>&& h) : handle(std::move(h)) {}
-};
-
-ShipHandle::ShipHandle(EntityHandle<Ship>&& handle)
-    : pimpl(std::make_unique<Impl>(std::move(handle))) {}
-
-ShipHandle::~ShipHandle() = default;
-
-ShipHandle::ShipHandle(ShipHandle&&) noexcept = default;
-ShipHandle& ShipHandle::operator=(ShipHandle&&) noexcept = default;
-
-Ship& ShipHandle::operator*() {
-  return *pimpl->handle;
-}
-
-const Ship& ShipHandle::operator*() const {
-  return *pimpl->handle;
-}
-
-Ship* ShipHandle::operator->() {
-  return pimpl->handle.operator->();
-}
-
-const Ship* ShipHandle::operator->() const {
-  return pimpl->handle.operator->();
-}
-
-Ship* ShipHandle::get() {
-  return pimpl->handle.get();
-}
-
-const Ship* ShipHandle::get() const {
-  return pimpl->handle.get();
-}
-
-const Ship& ShipHandle::peek() const {
-  return pimpl->handle.read();
-}
-
-void ShipHandle::save() {
-  pimpl->handle.save();
-}
-
 // ShipList constructors
 
 ShipList::ShipList(EntityManager& em, shipnum_t start, IterationType type)
-    : em(&em), start_ship(start), iteration_type(type) {}
+    : em_(&em) {
+  if (type == IterationType::Nested) {
+    for (shipnum_t curr = start; curr != 0;) {
+      const auto* ship = em.peek_ship(curr);
+      if (!ship) break;
+      ship_ids_.push_back(curr);
+      curr = ship->nextship();
+    }
+  } else if (type == IterationType::Scope) {
+    ship_ids_ = em.ships_alive();
+  } else if (type == IterationType::AllAlive) {
+    ship_ids_ = em.ships_alive();
+  } else if (type == IterationType::All) {
+    ship_ids_ = em.ships_all();
+  }
+}
 
 ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
-    : em(&em), start_ship(1),  // Start from ship #1 for scope-based iteration
-      iteration_type(type), scope_level(g.level()), snum(g.snum()),
-      pnum(g.pnum()), player(g.player()) {}
+    : em_(&em) {
+  if (type == IterationType::All) {
+    ship_ids_ = em.ships_all();
+  } else if (type == IterationType::AllAlive) {
+    ship_ids_ = em.ships_alive();
+  } else {
+    switch (g.level()) {
+      case ScopeLevel::LEVEL_UNIV:
+        ship_ids_ = em.ships_alive();
+        break;
+      case ScopeLevel::LEVEL_STAR:
+        ship_ids_ = em.ships_in_star_system(g.snum(), /*alive_only=*/true);
+        break;
+      case ScopeLevel::LEVEL_PLAN:
+        ship_ids_ = em.ships_on_planet(g.snum(), g.pnum(), /*alive_only=*/true);
+        break;
+      case ScopeLevel::LEVEL_SHIP:
+        ship_ids_ = em.ships_by_owner(g.player(), /*alive_only=*/true);
+        break;
+    }
+  }
+}
 
-// Constructor for All/AllAlive iteration (all ships in game)
-ShipList::ShipList(EntityManager& em, IterationType type)
-    : em(&em), start_ship(1), iteration_type(type) {}
+ShipList::ShipList(EntityManager& em, IterationType type) : em_(&em) {
+  if (type == IterationType::All) {
+    ship_ids_ = em.ships_all();
+  } else {
+    ship_ids_ = em.ships_alive();
+  }
+}
+
+ShipList::ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids)
+    : em_(&em), ship_ids_(std::move(ship_ids)) {}
 
 // ShipList iterator methods
 
 ShipList::MutableIterator ShipList::begin() {
-  return MutableIterator(*em, start_ship, iteration_type, scope_level, snum,
-                         pnum, player);
+  return MutableIterator(*em_, ship_ids_.begin());
 }
 
 ShipList::MutableIterator ShipList::end() {
-  return MutableIterator(*em, 0, iteration_type, scope_level, snum, pnum,
-                         player);
+  return MutableIterator(*em_, ship_ids_.end());
 }
 
 ShipList::ConstIterator ShipList::begin() const {
-  return ConstIterator(*em, start_ship, iteration_type, scope_level, snum, pnum,
-                       player);
+  return ConstIterator(*em_, ship_ids_.begin());
 }
 
 ShipList::ConstIterator ShipList::end() const {
-  return ConstIterator(*em, 0, iteration_type, scope_level, snum, pnum, player);
+  return ConstIterator(*em_, ship_ids_.end());
 }
 
 ShipList::ConstIterator ShipList::cbegin() const {
@@ -103,260 +93,60 @@ ShipList::ConstIterator ShipList::cend() const {
   return end();
 }
 
-// Helper to check if a ship matches the current scope
-bool ShipList::matches_scope(const Ship& ship) const {
-  if (iteration_type == IterationType::Nested) {
-    return true;  // Nested iteration doesn't filter by scope
-  }
-
-  if (iteration_type == IterationType::All) {
-    return true;  // All ships, including dead
-  }
-
-  if (iteration_type == IterationType::AllAlive) {
-    return ship.alive();  // Only alive ships
-  }
-
-  // Scope-based filtering
-  if (!ship.alive()) return false;
-
-  switch (scope_level) {
-    case ScopeLevel::LEVEL_UNIV:
-      return true;  // All ships match universe scope
-    case ScopeLevel::LEVEL_STAR:
-      return ship.storbits() == snum;
-    case ScopeLevel::LEVEL_PLAN:
-      return ship.storbits() == snum && ship.pnumorbits() == pnum;
-    case ScopeLevel::LEVEL_SHIP:
-      // At ship scope, match ships owned by the player
-      return ship.owner() == player;
-  }
-  return false;
-}
-
 // MutableIterator implementation
 
-ShipList::MutableIterator::MutableIterator(EntityManager& em, shipnum_t current,
-                                           IterationType type, ScopeLevel level,
-                                           starnum_t snum, planetnum_t pnum,
-                                           player_t player)
-    : em(em), current(current), type(type), scope_level(level), snum(snum),
-      pnum(pnum), player(player) {
-  // Advance to first matching ship
-  if (current != 0) {
-    advance_to_next_match();
-  }
-}
+ShipList::MutableIterator::MutableIterator(
+    EntityManager& em, std::vector<shipnum_t>::const_iterator it)
+    : em_(&em), it_(it) {}
 
 ShipList::MutableIterator& ShipList::MutableIterator::operator++() {
-  if (current == 0) return *this;
-
-  if (type == IterationType::Nested) {
-    // Follow nextship linked list
-    const auto* ship = em.peek_ship(current);
-    current = ship ? ship->nextship() : 0;
-  } else {
-    // Scope-based: increment to next ship number
-    ++current;
-    if (current > em.max_ship_number()) {
-      current = 0;
-    }
-  }
-
-  advance_to_next_match();
+  ++it_;
   return *this;
 }
 
-ShipHandle ShipList::MutableIterator::operator*() {
-  return ShipHandle(em.get_ship(current));
+ShipList::MutableIterator ShipList::MutableIterator::operator++(int) {
+  MutableIterator tmp = *this;
+  ++it_;
+  return tmp;
+}
+
+ShipHandle ShipList::MutableIterator::operator*() const {
+  return ShipHandle(em_->get_ship(*it_));
 }
 
 bool ShipList::MutableIterator::operator==(const MutableIterator& other) const {
-  return current == other.current;
+  return it_ == other.it_;
 }
 
 bool ShipList::MutableIterator::operator!=(const MutableIterator& other) const {
-  return !(*this == other);
-}
-
-void ShipList::MutableIterator::advance_to_next_match() {
-  while (current != 0) {
-    const Ship* ship = nullptr;
-    try {
-      ship = em.peek_ship(current);
-    } catch (const EntityNotFoundError&) {
-      if (type == IterationType::Nested) {
-        current = 0;
-        return;
-      }
-      ++current;
-      if (current > em.max_ship_number()) {
-        current = 0;
-      }
-      continue;
-    }
-
-    if (ship && matches_scope(*ship)) {
-      return;  // Found a matching ship
-    }
-
-    // Move to next ship
-    if (type == IterationType::Nested) {
-      current = ship->nextship();
-    } else {
-      ++current;
-      if (current > em.max_ship_number()) {
-        current = 0;
-      }
-    }
-  }
-}
-
-bool ShipList::MutableIterator::matches_scope(const Ship& ship) const {
-  if (type == IterationType::Nested) {
-    return true;  // Nested iteration doesn't filter by scope
-  }
-
-  if (type == IterationType::All) {
-    return true;  // All ships, including dead
-  }
-
-  if (type == IterationType::AllAlive) {
-    return ship.alive();  // Only alive ships
-  }
-
-  // Scope-based filtering
-  if (!ship.alive()) return false;
-
-  switch (scope_level) {
-    case ScopeLevel::LEVEL_UNIV:
-      return true;  // All ships match universe scope
-    case ScopeLevel::LEVEL_STAR:
-      return ship.storbits() == snum;
-    case ScopeLevel::LEVEL_PLAN:
-      return ship.storbits() == snum && ship.pnumorbits() == pnum;
-    case ScopeLevel::LEVEL_SHIP:
-      // At ship scope, match ships owned by the player
-      return ship.owner() == player;
-  }
-  return false;
+  return it_ != other.it_;
 }
 
 // ConstIterator implementation
 
-ShipList::ConstIterator::ConstIterator(EntityManager& em, shipnum_t current,
-                                       IterationType type, ScopeLevel level,
-                                       starnum_t snum, planetnum_t pnum,
-                                       player_t player)
-    : em(em), current(current), type(type), scope_level(level), snum(snum),
-      pnum(pnum), player(player) {
-  // Advance to first matching ship
-  if (current != 0) {
-    advance_to_next_match();
-  }
-}
+ShipList::ConstIterator::ConstIterator(
+    EntityManager& em, std::vector<shipnum_t>::const_iterator it)
+    : em_(&em), it_(it) {}
 
 ShipList::ConstIterator& ShipList::ConstIterator::operator++() {
-  if (current == 0) return *this;
-
-  if (type == IterationType::Nested) {
-    // Follow nextship linked list
-    try {
-      const auto* ship = em.peek_ship(current);
-      current = ship ? ship->nextship() : 0;
-    } catch (const EntityNotFoundError&) {
-      current = 0;
-    }
-  } else {
-    // Scope-based: increment to next ship number
-    ++current;
-    if (current > em.max_ship_number()) {
-      current = 0;
-    }
-  }
-
-  advance_to_next_match();
+  ++it_;
   return *this;
 }
 
+ShipList::ConstIterator ShipList::ConstIterator::operator++(int) {
+  ConstIterator tmp = *this;
+  ++it_;
+  return tmp;
+}
+
 const Ship* ShipList::ConstIterator::operator*() const {
-  // Use peek_ship to get read-only access without marking dirty
-  try {
-    return em.peek_ship(current);
-  } catch (const EntityNotFoundError&) {
-    return nullptr;
-  }
+  return em_->peek_ship(*it_);
 }
 
 bool ShipList::ConstIterator::operator==(const ConstIterator& other) const {
-  return current == other.current;
+  return it_ == other.it_;
 }
 
 bool ShipList::ConstIterator::operator!=(const ConstIterator& other) const {
-  return !(*this == other);
-}
-
-void ShipList::ConstIterator::advance_to_next_match() {
-  while (current != 0) {
-    const Ship* ship = nullptr;
-    try {
-      ship = em.peek_ship(current);
-    } catch (const EntityNotFoundError&) {
-      if (type == IterationType::Nested) {
-        current = 0;
-        return;
-      }
-      ++current;
-      if (current > em.max_ship_number()) {
-        current = 0;
-      }
-      continue;
-    }
-
-    if (ship && matches_scope(*ship)) {
-      return;  // Found a matching ship
-    }
-
-    // Move to next ship
-    if (type == IterationType::Nested) {
-      current = ship->nextship();
-    } else {
-      ++current;
-      if (current > em.max_ship_number()) {
-        current = 0;
-      }
-    }
-  }
-}
-
-bool ShipList::ConstIterator::matches_scope(const Ship& ship) const {
-  if (type == IterationType::Nested) {
-    return true;  // Nested iteration doesn't filter by scope
-  }
-
-  if (type == IterationType::All) {
-    return true;  // All ships, including dead
-  }
-
-  if (type == IterationType::AllAlive) {
-    return ship.alive();  // Only alive ships
-  }
-
-  // Scope-based filtering
-  if (!ship.alive()) {
-    return false;
-  }
-
-  switch (scope_level) {
-    case ScopeLevel::LEVEL_UNIV:
-      return true;  // All ships match universe scope
-    case ScopeLevel::LEVEL_STAR:
-      return ship.storbits() == snum;
-    case ScopeLevel::LEVEL_PLAN:
-      return ship.storbits() == snum && ship.pnumorbits() == pnum;
-    case ScopeLevel::LEVEL_SHIP:
-      // At ship scope, match ships owned by the player
-      return ship.owner() == player;
-  }
-  return false;
+  return it_ != other.it_;
 }

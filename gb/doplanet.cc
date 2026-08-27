@@ -873,6 +873,55 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
   }
 }
 
+void update_planet_toxicity(Planet& planet) {
+  if (planet.maxpopn() > 0 && planet.conditions(TOXIC) < 100) {
+    planet.conditions(TOXIC) += planet.popn() / planet.maxpopn();
+  }
+  planet.conditions(TOXIC) =
+      std::clamp<short>(planet.conditions(TOXIC), 0, 100);
+}
+
+void process_planet_economy(EntityManager& entity_manager, const Star& star,
+                            Planet& planet, SectorMap& smap, TurnStats& stats) {
+  for (auto race_handle : RaceList(entity_manager)) {
+    auto& race = *race_handle;
+    const player_t player = race.Playernum;
+    auto& info = planet.info(race);
+    if (info.numsectsowned == 0) {
+      continue;
+    }
+
+    info.deposit_production(stats.prod_fuel[player], stats.prod_res[player],
+                            stats.prod_destruct[player],
+                            stats.prod_crystals[player]);
+
+    const auto gov_idx = star.governor(player);
+    auto& gov = race.governor[gov_idx.value];
+
+    // Tax the population - set new tax rate when done
+    info.collect_tax(gov, race);
+
+    // Tech investments
+    info.invest_tech(gov, race);
+
+    // Build automated waste canisters if ordered
+    build_automated_waste_can(entity_manager, star, planet, smap, race);
+  }
+
+  update_planet_toxicity(planet);
+
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    const player_t p = race->Playernum;
+    auto& info = planet.info(*race);
+    stats.Power[p].resource += info.resource;
+    stats.Power[p].destruct += info.destruct;
+    stats.Power[p].fuel += info.fuel;
+    stats.Power[p].sectors_owned += info.numsectsowned;
+    stats.Power[p].planets_owned += !!info.numsectsowned;
+    info.update_combat_readiness(stats.avg_mob[p]);
+  }
+}
+
 int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
              TurnStats& stats) {
   int allmod = 0;
@@ -1055,47 +1104,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 
   process_enslavement_and_revolts(entity_manager, star, planet, smap, stats);
 
-  /* add production to all people here */
-  for (auto race_handle : RaceList(entity_manager)) {
-    auto& race = *race_handle;
-    const player_t player = race.Playernum;
-    auto& info = planet.info(player);
-    if (info.numsectsowned > 0) {
-      info.deposit_production(stats.prod_fuel[player], stats.prod_res[player],
-                              stats.prod_destruct[player],
-                              stats.prod_crystals[player]);
+  process_planet_economy(entity_manager, star, planet, smap, stats);
 
-      const auto gov_idx = star.governor(player);
-      auto& gov = race.governor[gov_idx.value];
-
-      /* tax the population - set new tax rate when done */
-      info.collect_tax(gov, race);
-
-      /* do tech investments */
-      info.invest_tech(gov, race);
-
-      /* build wc's if it's been ordered */
-      build_automated_waste_can(entity_manager, star, planet, smap, race);
-    }
-  } /* (if numsectsowned) */
-
-  if (planet.maxpopn() > 0 && planet.conditions(TOXIC) < 100)
-    planet.conditions(TOXIC) += planet.popn() / planet.maxpopn();
-
-  if (planet.conditions(TOXIC) > 100)
-    planet.conditions(TOXIC) = 100;
-  else if (planet.conditions(TOXIC) < 0)
-    planet.conditions(TOXIC) = 0;
-
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t p = race->Playernum;
-    auto& info = planet.info(p);
-    stats.Power[p].resource += info.resource;
-    stats.Power[p].destruct += info.destruct;
-    stats.Power[p].fuel += info.fuel;
-    stats.Power[p].sectors_owned += info.numsectsowned;
-    stats.Power[p].planets_owned += !!info.numsectsowned;
-    info.update_combat_readiness(stats.avg_mob[p]);
-  }
   return allmod;
 }

@@ -1831,6 +1831,100 @@ void test_recalculate_census() {
   test::expect_true(planet.maxpopn() > 0);
 }
 
+void test_update_planet_toxicity() {
+  Planet planet = createTestPlanet();
+  planet.conditions(TOXIC) = 10;
+  planet.popn() = 250;
+  planet.maxpopn() = 100;
+
+  update_planet_toxicity(planet);
+  // 10 + (250 / 100) = 12
+  test::expect_eq(planet.conditions(TOXIC), 12);
+
+  // Severe overpopulation clamping to 100
+  planet.conditions(TOXIC) = 90;
+  planet.popn() = 2000;
+  planet.maxpopn() = 100;
+  update_planet_toxicity(planet);
+  test::expect_eq(planet.conditions(TOXIC), 100);
+
+  // Zero maxpopn edge case - no division by zero
+  planet.conditions(TOXIC) = 15;
+  planet.popn() = 50;
+  planet.maxpopn() = 0;
+  update_planet_toxicity(planet);
+  test::expect_eq(planet.conditions(TOXIC), 15);
+}
+
+void test_process_planet_economy() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(1);
+  race1.name = "Player1Race";
+  Race race2 = createTestRace(2);
+  race2.name = "Player2Race";
+  RaceRepository races(store);
+  races.save(race1);
+  races.save(race2);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.dimensions() = Coordinates{2, 2};
+  planet.conditions(TOXIC) = 5;
+  planet.popn() = 200;
+  planet.maxpopn() = 100;
+  planet.info(player_t{1}).numsectsowned = 2;
+  planet.info(player_t{1}).popn = 200;
+  planet.info(player_t{1}).tax = 10;
+  planet.info(player_t{1}).tech_invest = 10;
+  planet.info(player_t{1}).resource = 100;
+  planet.info(player_t{1}).fuel = 50;
+  planet.info(player_t{1}).destruct = 20;
+  planet.info(player_t{1}).crystals = 5;
+
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  SectorMap smap(planet);
+
+  TurnStats stats{};
+  stats.prod_fuel[player_t{1}] = 25;
+  stats.prod_res[player_t{1}] = 15;
+  stats.prod_destruct[player_t{1}] = 10;
+  stats.prod_crystals[player_t{1}] = 2;
+  stats.avg_mob[player_t{1}] = 50;
+
+  process_planet_economy(em, star, planet, smap, stats);
+
+  // Stockpiles increased by production deposits
+  test::expect_eq(planet.info(player_t{1}).fuel, 75);
+  test::expect_eq(planet.info(player_t{1}).resource, 115);
+  test::expect_eq(planet.info(player_t{1}).destruct, 30);
+  test::expect_eq(planet.info(player_t{1}).crystals, 7);
+
+  // Toxicity updated: 5 + (200 / 100) = 7
+  test::expect_eq(planet.conditions(TOXIC), 7);
+
+  // Power metrics accumulated
+  test::expect_eq(stats.Power[player_t{1}].resource, 115);
+  test::expect_eq(stats.Power[player_t{1}].fuel, 75);
+  test::expect_eq(stats.Power[player_t{1}].destruct, 30);
+  test::expect_eq(stats.Power[player_t{1}].sectors_owned, 2);
+  test::expect_eq(stats.Power[player_t{1}].planets_owned, 1);
+
+  // Player 2 with 0 sectors owned has 0 power accumulation
+  test::expect_eq(stats.Power[player_t{2}].sectors_owned, 0);
+  test::expect_eq(stats.Power[player_t{2}].planets_owned, 0);
+}
+
 }  // namespace
 
 int main() {
@@ -1922,6 +2016,14 @@ int main() {
 
   std::println(std::cout, "  Testing recalculate_census... ");
   test_recalculate_census();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing update_planet_toxicity... ");
+  test_update_planet_toxicity();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_planet_economy... ");
+  test_process_planet_economy();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

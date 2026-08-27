@@ -349,3 +349,15 @@ process_enslavement_and_revolts(EntityManager& entity_manager, const Star& star,
 export void recalculate_census(EntityManager& entity_manager, const Star& star,
                                Planet& planet, const SectorMap& smap,
                                TurnStats& stats);
+
+/// \brief Updates planetary toxicity based on population overcapacity relative
+/// to maximum supportable capacity. Clamps toxicity within [0, 100].
+export void update_planet_toxicity(Planet& planet);
+
+/// \brief Executes the post-production planetary economy pass: deposits
+/// production into stockpiles, collects taxes, invests in technology,
+/// constructs automated waste canisters, updates environmental toxicity, and
+/// updates empire-wide power metrics and combat readiness.
+export void process_planet_economy(EntityManager& entity_manager,
+                                   const Star& star, Planet& planet,
+                                   SectorMap& smap, TurnStats& stats);

@@ -97,15 +97,17 @@ bool send_message(const command_t& argv, GameObj& g) {
   const auto& race = *g.race;
 
   /* send the message */
+  const struct block* block_target = nullptr;
   if (to_block) {
-    const auto* block = g.entity_manager.peek_block(who.value);
-    if (!block) {
+    try {
+      block_target = g.entity_manager.peek_block(who.value);
+    } catch (const EntityNotFoundError&) {
       g.out << "Block not found.\n";
       return false;
     }
     msg = std::format("{} \"{}\" [{},{}] to {} [{}]: ", race.name,
                       race.governor[Governor.value].name, Playernum, Governor,
-                      block->name, who);
+                      block_target->name, who);
   } else if (to_star) {
     const auto& star_ref = *g.entity_manager.peek_star(star);
     msg = std::format("{} \"{}\" [{},{}] to inhabitants of {}: ", race.name,
@@ -131,16 +133,12 @@ bool send_message(const command_t& argv, GameObj& g) {
       race.name, race.governor[Governor.value].name, Playernum, Governor);
 
   if (to_block) {
-    const auto* block = g.entity_manager.peek_block(who.value);
-    if (!block) {
-      g.out << "Block not found.\n";
-      return false;
-    }
-    std::uint64_t allied_members = (block->invite & block->pledge);
+    std::uint64_t allied_members =
+        (block_target->invite & block_target->pledge);
     const auto block_msg = std::format(
         "{} \"{}\" [{},{}] sends a message to {} [{}] alliance block.\n",
         race.name, race.governor[Governor.value].name, Playernum, Governor,
-        block->name, who);
+        block_target->name, who);
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
       if (isset(allied_members, i) && i != Playernum) {
         auto alien_handle = g.entity_manager.get_race(i);

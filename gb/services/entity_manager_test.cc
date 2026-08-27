@@ -110,6 +110,12 @@ void test_entity_manager_composite_keys() {
   test::expect_ne(peek, nullptr);
   test::expect_eq(peek->popn(), 20000);
   std::println(std::cout, "  ✓ Composite keys work for Planet entities");
+
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_planet(999, 999); });
+  test::expect_throws<EntityNotFoundError>([&]() { em.get_planet(999, 999); });
+  std::println(std::cout,
+               "  ✓ peek_planet and get_planet throw EntityNotFoundError for "
+               "missing planet");
 }
 
 void test_entity_manager_create_delete() {
@@ -256,6 +262,12 @@ void test_entity_manager_singleton_universe() {
   EntityManager em(db);
 
   std::println(std::cout, "Test: EntityManager singleton (universe_struct)");
+
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_universe(); });
+  test::expect_throws<EntityNotFoundError>([&]() { em.get_universe(); });
+  std::println(std::cout,
+               "  ✓ peek_universe and get_universe throw EntityNotFoundError "
+               "when uninitialized");
 
   universe_struct univ{};
   univ.id = 1;
@@ -643,6 +655,11 @@ void test_entity_manager_commods() {
   test::expect_eq(peek->bid, 100);
   std::println(std::cout, "  ✓ peek_commod works");
 
+  auto amount_read =
+      em.with_commod(1, [](const Commod& cmd) { return cmd.amount; });
+  test::expect_eq(amount_read, 500);
+  std::println(std::cout, "  ✓ with_commod works");
+
   {
     auto handle = em.get_commod(1);
     handle->amount = 800;
@@ -655,8 +672,11 @@ void test_entity_manager_commods() {
   test::expect_eq(updated->bid, 150);
   std::println(std::cout, "  ✓ get_commod auto-save persisted changes");
 
-  test::expect_eq(em.peek_commod(999), nullptr);
-  std::println(std::cout, "  ✓ peek_commod returns nullptr for missing commod");
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_commod(999); });
+  test::expect_throws<EntityNotFoundError>([&]() { em.get_commod(999); });
+  std::println(std::cout,
+               "  ✓ peek_commod and get_commod throw EntityNotFoundError for "
+               "missing commod");
 }
 
 void test_entity_manager_blocks() {
@@ -681,6 +701,11 @@ void test_entity_manager_blocks() {
   test::expect_eq(peek->VPs, 500);
   std::println(std::cout, "  ✓ peek_block works");
 
+  auto vps_read =
+      em.with_block(blocknum_t{1}, [](const block& blk) { return blk.VPs; });
+  test::expect_eq(vps_read, 500);
+  std::println(std::cout, "  ✓ with_block works");
+
   {
     auto handle = em.get_block(blocknum_t{1});
     handle->VPs = 1000;
@@ -691,8 +716,13 @@ void test_entity_manager_blocks() {
   test::expect_eq(updated->VPs, 1000);
   std::println(std::cout, "  ✓ get_block auto-save persisted changes");
 
-  test::expect_eq(em.peek_block(blocknum_t{999}), nullptr);
-  std::println(std::cout, "  ✓ peek_block returns nullptr for missing block");
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.peek_block(blocknum_t{999}); });
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.get_block(blocknum_t{999}); });
+  std::println(std::cout,
+               "  ✓ peek_block and get_block throw EntityNotFoundError for "
+               "missing block");
 }
 
 void test_entity_manager_powers() {
@@ -717,6 +747,11 @@ void test_entity_manager_powers() {
   test::expect_eq(peek->popn, 50000);
   std::println(std::cout, "  ✓ peek_power works");
 
+  auto troops_read =
+      em.with_power(powernum_t{1}, [](const power& pwr) { return pwr.troops; });
+  test::expect_eq(troops_read, 1000);
+  std::println(std::cout, "  ✓ with_power works");
+
   {
     auto handle = em.get_power(powernum_t{1});
     handle->troops = 2500;
@@ -727,8 +762,13 @@ void test_entity_manager_powers() {
   test::expect_eq(updated->troops, 2500);
   std::println(std::cout, "  ✓ get_power auto-save persisted changes");
 
-  test::expect_eq(em.peek_power(powernum_t{999}), nullptr);
-  std::println(std::cout, "  ✓ peek_power returns nullptr for missing power");
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.peek_power(powernum_t{999}); });
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.get_power(powernum_t{999}); });
+  std::println(std::cout,
+               "  ✓ peek_power and get_power throw EntityNotFoundError for "
+               "missing power");
 }
 
 void test_entity_manager_create_ship() {

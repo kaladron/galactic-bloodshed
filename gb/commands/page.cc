@@ -55,8 +55,10 @@ bool page(const command_t& argv, GameObj& g) {
                          star.get_name());
 
   if (to_block) {
-    const auto* block_player = g.entity_manager.peek_block(Playernum.value);
-    if (!block_player) {
+    const struct block* block_player = nullptr;
+    try {
+      block_player = g.entity_manager.peek_block(Playernum.value);
+    } catch (const EntityNotFoundError&) {
       g.out << "Block not found.\n";
       return false;
     }

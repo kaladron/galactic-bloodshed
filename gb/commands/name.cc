@@ -87,9 +87,14 @@ bool name(const command_t& argv, GameObj& g) {
       g.out << "You are not authorized to do this.\n";
       return false;
     }
-    auto block_handle = g.entity_manager.get_block(Playernum.value);
-    auto& block = *block_handle;
-    block.name = formatted_name;
+    try {
+      auto block_handle = g.entity_manager.get_block(Playernum.value);
+      auto& block = *block_handle;
+      block.name = formatted_name;
+    } catch (const EntityNotFoundError&) {
+      g.out << "Block not found.\n";
+      return false;
+    }
     g.out << "Done.\n";
     return true;
   }

@@ -259,7 +259,8 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
   // Load from repository
   auto planet_opt = planets.find_by_location(star, pnum);
   if (!planet_opt) {
-    return {this, nullptr, [](const Planet&) {}};
+    throw EntityNotFoundError(
+        std::format("Planet not found: star_id={}, planet_id={}", star, pnum));
   }
 
   // Cache the entity
@@ -321,16 +322,24 @@ void EntityManager::release_star(starnum_t num) {
 
 // Commod entity methods
 EntityHandle<Commod> EntityManager::get_commod(int id) {
-  return get_entity_impl<Commod>(
+  auto handle = get_entity_impl<Commod>(
       this, id, commod_cache, commod_refcount,
       [this](int i) { return commods.find_by_id(i); },
       [this](const Commod& c) { commods.save(c); },
       [this](int i) { release_commod(i); });
+  if (!handle.get()) {
+    throw EntityNotFoundError(std::format("Commodity not found: id={}", id));
+  }
+  return handle;
 }
 
 const Commod* EntityManager::peek_commod(int id) {
-  return peek_entity_impl<Commod>(
+  const auto* commod = peek_entity_impl<Commod>(
       id, commod_cache, [this](int i) { return commods.find_by_id(i); });
+  if (!commod) {
+    throw EntityNotFoundError(std::format("Commodity not found: id={}", id));
+  }
+  return commod;
 }
 
 void EntityManager::release_commod(int id) {
@@ -339,16 +348,24 @@ void EntityManager::release_commod(int id) {
 
 // Block entity methods
 EntityHandle<block> EntityManager::get_block(blocknum_t id) {
-  return get_entity_impl<block>(
+  auto handle = get_entity_impl<block>(
       this, id, block_cache, block_refcount,
       [this](blocknum_t i) { return blocks.find_by_id(i); },
       [this](const block& b) { blocks.save(b); },
       [this](blocknum_t i) { release_block(i); });
+  if (!handle.get()) {
+    throw EntityNotFoundError(std::format("Block not found: id={}", id));
+  }
+  return handle;
 }
 
 const block* EntityManager::peek_block(blocknum_t id) {
-  return peek_entity_impl<block>(
+  const auto* b = peek_entity_impl<block>(
       id, block_cache, [this](blocknum_t i) { return blocks.find_by_id(i); });
+  if (!b) {
+    throw EntityNotFoundError(std::format("Block not found: id={}", id));
+  }
+  return b;
 }
 
 void EntityManager::release_block(blocknum_t id) {
@@ -357,16 +374,24 @@ void EntityManager::release_block(blocknum_t id) {
 
 // Power entity methods
 EntityHandle<power> EntityManager::get_power(powernum_t id) {
-  return get_entity_impl<power>(
+  auto handle = get_entity_impl<power>(
       this, id, power_cache, power_refcount,
       [this](powernum_t i) { return powers.find_by_id(i); },
       [this](const power& p) { powers.save(p); },
       [this](powernum_t i) { release_power(i); });
+  if (!handle.get()) {
+    throw EntityNotFoundError(std::format("Power not found: id={}", id));
+  }
+  return handle;
 }
 
 const power* EntityManager::peek_power(powernum_t id) {
-  return peek_entity_impl<power>(
+  const auto* p = peek_entity_impl<power>(
       id, power_cache, [this](powernum_t i) { return powers.find_by_id(i); });
+  if (!p) {
+    throw EntityNotFoundError(std::format("Power not found: id={}", id));
+  }
+  return p;
 }
 
 void EntityManager::release_power(powernum_t id) {
@@ -386,7 +411,7 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
 
   auto universe_opt = universe_repo.get_global_data();
   if (!universe_opt) {
-    return {this, nullptr, [](const universe_struct&) {}};
+    throw EntityNotFoundError("Universe not found");
   }
 
   global_universe_cache = std::make_unique<universe_struct>(*universe_opt);
@@ -407,7 +432,7 @@ const universe_struct* EntityManager::peek_universe() {
   // Load from repository if not cached
   auto universe_opt = universe_repo.get_global_data();
   if (!universe_opt) {
-    return nullptr;
+    throw EntityNotFoundError("Universe not found");
   }
 
   // Cache the entity (but don't increment refcount - this is read-only)

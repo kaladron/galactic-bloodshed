@@ -33,11 +33,13 @@ bool block(const command_t& argv, GameObj& g) {
     bool found_any = false;
     g.out << std::format("Race #{} [{}] is a member of ", p, r->name);
     for (int i = 1; i <= g.entity_manager.num_races().value; i++) {
-      const auto* block_i = g.entity_manager.peek_block(i);
-      if (!block_i) continue;
-      if (isset(block_i->pledge, p) && isset(block_i->invite, p)) {
-        g.out << std::format("{}{}", found_any ? ", " : " ", i);
-        found_any = true;
+      try {
+        const auto* block_i = g.entity_manager.peek_block(i);
+        if (isset(block_i->pledge, p) && isset(block_i->invite, p)) {
+          g.out << std::format("{}{}", found_any ? ", " : " ", i);
+          found_any = true;
+        }
+      } catch (const EntityNotFoundError&) {
       }
     }
     if (!found_any)
@@ -48,11 +50,13 @@ bool block(const command_t& argv, GameObj& g) {
     found_any = false;
     g.out << std::format("Race #{} [{}] has been invited to join ", p, r->name);
     for (int i = 1; i <= g.entity_manager.num_races().value; i++) {
-      const auto* block_i = g.entity_manager.peek_block(i);
-      if (!block_i) continue;
-      if (!isset(block_i->pledge, p) && isset(block_i->invite, p)) {
-        g.out << std::format("{}{}", found_any ? ", " : " ", i);
-        found_any = true;
+      try {
+        const auto* block_i = g.entity_manager.peek_block(i);
+        if (!isset(block_i->pledge, p) && isset(block_i->invite, p)) {
+          g.out << std::format("{}{}", found_any ? ", " : " ", i);
+          found_any = true;
+        }
+      } catch (const EntityNotFoundError&) {
       }
     }
     if (!found_any)
@@ -63,11 +67,13 @@ bool block(const command_t& argv, GameObj& g) {
     found_any = false;
     g.out << std::format("Race #{} [{}] has pledged ", p, r->name);
     for (int i = 1; i <= g.entity_manager.num_races().value; i++) {
-      const auto* block_i = g.entity_manager.peek_block(i);
-      if (!block_i) continue;
-      if (isset(block_i->pledge, p) && !isset(block_i->invite, p)) {
-        g.out << std::format("{}{}", found_any ? ", " : " ", i);
-        found_any = true;
+      try {
+        const auto* block_i = g.entity_manager.peek_block(i);
+        if (isset(block_i->pledge, p) && !isset(block_i->invite, p)) {
+          g.out << std::format("{}{}", found_any ? ", " : " ", i);
+          found_any = true;
+        }
+      } catch (const EntityNotFoundError&) {
       }
     }
     if (!found_any)
@@ -81,8 +87,10 @@ bool block(const command_t& argv, GameObj& g) {
       return false;
     }
     /* list the players who are in this alliance block */
-    const auto* block_p = g.entity_manager.peek_block(p.value);
-    if (!block_p) {
+    const struct block* block_p = nullptr;
+    try {
+      block_p = g.entity_manager.peek_block(p.value);
+    } catch (const EntityNotFoundError&) {
       g.out << "Block not found.\n";
       return false;
     }
@@ -112,21 +120,24 @@ bool block(const command_t& argv, GameObj& g) {
 
     for (const Race& r : RaceList::readonly(g.entity_manager)) {
       if (!isset(allied_members, r.Playernum) || r.dissolved) continue;
-      const auto* power_ptr =
-          g.entity_manager.peek_power(powernum_t{r.Playernum.value});
-      if (!power_ptr) continue;
+      try {
+        const auto* power_ptr =
+            g.entity_manager.peek_power(powernum_t{r.Playernum.value});
 
-      table.add_row(
-          {std::format("{}", r.Playernum), std::string(r.name),
-           estimate(power_ptr->troops, *race, r.Playernum),
-           estimate(power_ptr->popn, *race, r.Playernum),
-           estimate(power_ptr->money, *race, r.Playernum),
-           estimate(power_ptr->ships_owned, *race, r.Playernum),
-           estimate(power_ptr->planets_owned, *race, r.Playernum),
-           estimate(power_ptr->resource, *race, r.Playernum),
-           estimate(power_ptr->fuel, *race, r.Playernum),
-           estimate(power_ptr->destruct, *race, r.Playernum),
-           std::format("{}%", race->translate[r.Playernum.value - 1])});
+        table.add_row(
+            {std::format("{}", r.Playernum), std::string(r.name),
+             estimate(power_ptr->troops, *race, r.Playernum),
+             estimate(power_ptr->popn, *race, r.Playernum),
+             estimate(power_ptr->money, *race, r.Playernum),
+             estimate(power_ptr->ships_owned, *race, r.Playernum),
+             estimate(power_ptr->planets_owned, *race, r.Playernum),
+             estimate(power_ptr->resource, *race, r.Playernum),
+             estimate(power_ptr->fuel, *race, r.Playernum),
+             estimate(power_ptr->destruct, *race, r.Playernum),
+             std::format("{}%", race->translate[r.Playernum.value - 1])});
+      } catch (const EntityNotFoundError&) {
+        continue;
+      }
     }
 
     g.out << table << "\n";
@@ -138,7 +149,10 @@ bool block(const command_t& argv, GameObj& g) {
       time_str.pop_back();
     }
     g.out << std::format(
-        "         ========== Alliance Blocks as of {} ==========\n", time_str);
+        "         ========== Global Alliance Block Report ==========\n");
+    g.out << std::format("                 (updated: {:<24.24})\n",
+                         time_str.length() > 0 ? time_str.substr(0, 24)
+                                               : "Unknown");
 
     tabulate::Table table;
     table.format().hide_border().column_separator("  ");
@@ -161,21 +175,25 @@ bool block(const command_t& argv, GameObj& g) {
     table[0].format().font_style({tabulate::FontStyle::bold});
 
     for (int i = 1; i <= g.entity_manager.num_races().value; i++) {
-      const auto* block_i = g.entity_manager.peek_block(i);
-      if (!block_i || Power_blocks.members[i - 1] == 0) continue;
+      try {
+        const auto* block_i = g.entity_manager.peek_block(i);
+        if (Power_blocks.members[i - 1] == 0) continue;
 
-      table.add_row(
-          {std::format("{}", i), std::string(block_i->name),
-           std::format("{}", Power_blocks.members[i - 1]),
-           estimate(Power_blocks.money[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.popn[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.ships_owned[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.systems_owned[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.resource[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.fuel[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.destruct[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.VPs[i - 1], *race, player_t{i}),
-           std::format("{}%", race->translate[i - 1])});
+        table.add_row(
+            {std::format("{}", i), std::string(block_i->name),
+             std::format("{}", Power_blocks.members[i - 1]),
+             estimate(Power_blocks.money[i - 1], *race, player_t{i}),
+             estimate(Power_blocks.popn[i - 1], *race, player_t{i}),
+             estimate(Power_blocks.ships_owned[i - 1], *race, player_t{i}),
+             estimate(Power_blocks.systems_owned[i - 1], *race, player_t{i}),
+             estimate(Power_blocks.resource[i - 1], *race, player_t{i}),
+             estimate(Power_blocks.fuel[i - 1], *race, player_t{i}),
+             estimate(Power_blocks.destruct[i - 1], *race, player_t{i}),
+             estimate(Power_blocks.VPs[i - 1], *race, player_t{i}),
+             std::format("{}%", race->translate[i - 1])});
+      } catch (const EntityNotFoundError&) {
+        continue;
+      }
     }
 
     g.out << table << "\n";

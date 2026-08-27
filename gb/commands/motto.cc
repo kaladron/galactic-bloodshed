@@ -19,15 +19,14 @@ bool motto(const command_t& argv, GameObj& g) {
             std::ostream_iterator<std::string>(ss_message, " "));
   std::string message = ss_message.str();
 
-  // Get block for modification (RAII auto-saves on scope exit)
-  auto block_handle = g.entity_manager.get_block(g.player().value);
-  if (!block_handle.get()) {
+  try {
+    auto block_handle = g.entity_manager.get_block(g.player().value);
+    auto& block = *block_handle;
+    block.motto = message;
+  } catch (const EntityNotFoundError&) {
     g.out << "Block not found.\n";
     return false;
   }
-
-  auto& block = *block_handle;
-  block.motto = message;
 
   g.out << "Done.\n";
   return true;

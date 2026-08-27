@@ -65,8 +65,11 @@ void initialize_block_data(EntityManager& entity_manager) {
   for (auto race_handle : RaceList(entity_manager)) {
     const auto& race = race_handle.read();
     const player_t i = race.Playernum;
-    auto block_handle = entity_manager.get_block(i.value);
-    setbit(block_handle->invite, i);
-    setbit(block_handle->pledge, i);
+    try {
+      auto block_handle = entity_manager.get_block(i.value);
+      setbit(block_handle->invite, i);
+      setbit(block_handle->pledge, i);
+    } catch (const EntityNotFoundError&) {
+    }
   }
 }

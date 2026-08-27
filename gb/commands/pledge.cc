@@ -32,35 +32,36 @@ bool pledge(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto block_handle = g.entity_manager.get_block(n.value);
-  if (!block_handle.get()) {
+  try {
+    auto block_handle = g.entity_manager.get_block(n.value);
+    auto& block = *block_handle;
+
+    setbit(block.pledge, Playernum);
+    warn_race(g.session_registry, g.entity_manager, n,
+              std::format("{} [{}] has pledged {}.\n", g.race->name, Playernum,
+                          block.name));
+    warn_race(g.session_registry, g.entity_manager, Playernum,
+              std::format("You have pledged allegiance to {}.\n", block.name));
+
+    std::string msg;
+    switch (int_rand(1, 20)) {
+      case 1:
+        msg = std::format(
+            "{} [{}] joins the band wagon and pledges allegiance to {} [{}]!\n",
+            race->name, Playernum, block.name, n);
+        break;
+      default:
+        msg = std::format("{} [{}] pledges allegiance to {} [{}].\n",
+                          race->name, Playernum, block.name, n);
+        break;
+    }
+
+    post(g.entity_manager, msg, NewsType::DECLARATION);
+    compute_power_blocks(g.entity_manager);
+  } catch (const EntityNotFoundError&) {
     g.out << "Block not found.\n";
     return false;
   }
-  auto& block = *block_handle;
-
-  setbit(block.pledge, Playernum);
-  warn_race(g.session_registry, g.entity_manager, n,
-            std::format("{} [{}] has pledged {}.\n", g.race->name, Playernum,
-                        block.name));
-  warn_race(g.session_registry, g.entity_manager, Playernum,
-            std::format("You have pledged allegiance to {}.\n", block.name));
-
-  std::string msg;
-  switch (int_rand(1, 20)) {
-    case 1:
-      msg = std::format(
-          "{} [{}] joins the band wagon and pledges allegiance to {} [{}]!\n",
-          race->name, Playernum, block.name, n);
-      break;
-    default:
-      msg = std::format("{} [{}] pledges allegiance to {} [{}].\n", race->name,
-                        Playernum, block.name, n);
-      break;
-  }
-
-  post(g.entity_manager, msg, NewsType::DECLARATION);
-  compute_power_blocks(g.entity_manager);
   return true;
 }
 

@@ -38,32 +38,33 @@ bool invite(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto block_handle = g.entity_manager.get_block(g.player().value);
-  if (!block_handle.get()) {
+  try {
+    auto block_handle = g.entity_manager.get_block(g.player().value);
+    auto& block = *block_handle;
+
+    std::string buf;
+    if (mode) {
+      setbit(block.invite, n);
+      buf = std::format("{} [{}] has invited you to join {}\n", race->name,
+                        g.player(), block.name);
+      warn_race(g.session_registry, g.entity_manager, n, buf);
+      buf = std::format("{} [{}] has been invited to join {} [{}]\n",
+                        alien->name, n, block.name, g.player());
+      warn_race(g.session_registry, g.entity_manager, g.player(), buf);
+    } else {
+      clrbit(block.invite, n);
+      buf = std::format("You have been blackballed from {} [{}]\n", block.name,
+                        g.player());
+      warn_race(g.session_registry, g.entity_manager, n, buf);
+      buf = std::format("{} [{}] has been blackballed from {} [{}]\n",
+                        alien->name, n, block.name, g.player());
+      warn_race(g.session_registry, g.entity_manager, g.player(), buf);
+    }
+    post(g.entity_manager, buf, NewsType::DECLARATION);
+  } catch (const EntityNotFoundError&) {
     g.out << "Block not found.\n";
     return false;
   }
-  auto& block = *block_handle;
-
-  std::string buf;
-  if (mode) {
-    setbit(block.invite, n);
-    buf = std::format("{} [{}] has invited you to join {}\n", race->name,
-                      g.player(), block.name);
-    warn_race(g.session_registry, g.entity_manager, n, buf);
-    buf = std::format("{} [{}] has been invited to join {} [{}]\n", alien->name,
-                      n, block.name, g.player());
-    warn_race(g.session_registry, g.entity_manager, g.player(), buf);
-  } else {
-    clrbit(block.invite, n);
-    buf = std::format("You have been blackballed from {} [{}]\n", block.name,
-                      g.player());
-    warn_race(g.session_registry, g.entity_manager, n, buf);
-    buf = std::format("{} [{}] has been blackballed from {} [{}]\n",
-                      alien->name, n, block.name, g.player());
-    warn_race(g.session_registry, g.entity_manager, g.player(), buf);
-  }
-  post(g.entity_manager, buf, NewsType::DECLARATION);
   return true;
 }
 

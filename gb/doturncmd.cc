@@ -490,17 +490,16 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         }
         // Compute victory points for the block
         if (inhabited[star.value] != 0) {
-          const auto* block_player =
-              state.entity_manager.peek_block(player.value);
-          if (block_player) {
+          try {
+            const auto* block_player =
+                state.entity_manager.peek_block(player.value);
             std::uint64_t allied_members =
                 block_player->invite & block_player->pledge;
             if ((inhabited[star.value] | allied_members) == allied_members) {
               auto block_handle = state.entity_manager.get_block(player.value);
-              if (block_handle.get()) {
-                block_handle->systems_owned++;
-              }
+              block_handle->systems_owned++;
             }
+          } catch (const EntityNotFoundError&) {
           }
         }
       }
@@ -512,9 +511,10 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
     auto sdata_handle = state.entity_manager.get_universe();
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
-      auto block_handle = state.entity_manager.get_block(player.value);
-      if (block_handle.get()) {
+      try {
+        auto block_handle = state.entity_manager.get_block(player.value);
         block_handle->systems_owned = 0; /*recount systems owned*/
+      } catch (const EntityNotFoundError&) {
       }
       if (governed(*race_handle, state)) {
         ap_t APs =
@@ -640,9 +640,10 @@ static void finalize_turn(TurnState& state, bool update) {
         }
       }
 
-      auto block_handle = state.entity_manager.get_block(player.value);
-      if (block_handle.get()) {
+      try {
+        auto block_handle = state.entity_manager.get_block(player.value);
         block_handle->VPs = 10L * block_handle->systems_owned;
+      } catch (const EntityNotFoundError&) {
       }
       if (MARKET) {
         for (auto& governor : race_handle->governor) {
@@ -668,11 +669,13 @@ static void finalize_turn(TurnState& state, bool update) {
       }
     }
     // Save power data via EntityManager
-    for (player_t i = 1; i <= MAXPLAYERS; ++i) {
-      auto power_handle = state.entity_manager.get_power(powernum_t{i.value});
-      if (power_handle.get()) {
+    for (const Race& race : RaceList::readonly(state.entity_manager)) {
+      const player_t i = race.Playernum;
+      try {
+        auto power_handle = state.entity_manager.get_power(powernum_t{i.value});
         *power_handle = state.stats.Power[i];
         power_handle->id = i.value;
+      } catch (const EntityNotFoundError&) {
       }
     }
   }
@@ -924,8 +927,12 @@ void compute_power_blocks(EntityManager& entity_manager) {
     const auto& race_i = race_i_handle.read();
     const player_t i = race_i.Playernum;
 
-    const auto* block_i = entity_manager.peek_block(i.value);
-    if (!block_i) continue;
+    const block* block_i = nullptr;
+    try {
+      block_i = entity_manager.peek_block(i.value);
+    } catch (const EntityNotFoundError&) {
+      continue;
+    }
 
     std::uint64_t allied_members = block_i->invite & block_i->pledge;
     Power_blocks.members[i.value - 1] = 0;
@@ -944,16 +951,20 @@ void compute_power_blocks(EntityManager& entity_manager) {
       const player_t j = race_j.Playernum;
 
       if (isset(allied_members, j)) {
-        const auto* power_ptr = entity_manager.peek_power(powernum_t{j.value});
-        if (!power_ptr) continue;
-        Power_blocks.members[i.value - 1] += 1;
-        Power_blocks.sectors_owned[i.value - 1] += power_ptr->sectors_owned;
-        Power_blocks.money[i.value - 1] += power_ptr->money;
-        Power_blocks.popn[i.value - 1] += power_ptr->popn;
-        Power_blocks.ships_owned[i.value - 1] += power_ptr->ships_owned;
-        Power_blocks.resource[i.value - 1] += power_ptr->resource;
-        Power_blocks.fuel[i.value - 1] += power_ptr->fuel;
-        Power_blocks.destruct[i.value - 1] += power_ptr->destruct;
+        try {
+          const auto* power_ptr =
+              entity_manager.peek_power(powernum_t{j.value});
+          Power_blocks.members[i.value - 1] += 1;
+          Power_blocks.sectors_owned[i.value - 1] += power_ptr->sectors_owned;
+          Power_blocks.money[i.value - 1] += power_ptr->money;
+          Power_blocks.popn[i.value - 1] += power_ptr->popn;
+          Power_blocks.ships_owned[i.value - 1] += power_ptr->ships_owned;
+          Power_blocks.resource[i.value - 1] += power_ptr->resource;
+          Power_blocks.fuel[i.value - 1] += power_ptr->fuel;
+          Power_blocks.destruct[i.value - 1] += power_ptr->destruct;
+        } catch (const EntityNotFoundError&) {
+          continue;
+        }
       }
     }
   }

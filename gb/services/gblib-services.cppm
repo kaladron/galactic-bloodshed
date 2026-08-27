@@ -248,6 +248,24 @@ public:
     return std::forward<Fn>(fn)(*exam);
   }
 
+  template <typename Fn>
+  decltype(auto) with_commod(int id, Fn&& fn) {
+    const auto* commod = peek_commod(id);
+    return std::forward<Fn>(fn)(*commod);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_block(blocknum_t id, Fn&& fn) {
+    const auto* b = peek_block(id);
+    return std::forward<Fn>(fn)(*b);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_power(powernum_t id, Fn&& fn) {
+    const auto* p = peek_power(id);
+    return std::forward<Fn>(fn)(*p);
+  }
+
   // Create new entities
   EntityHandle<Ship> create_ship(const ship_struct& data = {});
   void delete_ship(shipnum_t num);

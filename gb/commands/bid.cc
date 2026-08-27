@@ -161,7 +161,13 @@ bool place_bid(const command_t& argv, GameObj& g) {
   }
 
   // First peek to validate the lot
-  const auto* c_peek = g.entity_manager.peek_commod(lot);
+  const Commod* c_peek = nullptr;
+  try {
+    c_peek = g.entity_manager.peek_commod(lot);
+  } catch (const EntityNotFoundError&) {
+    g.out << "No such lot for sale.\n";
+    return false;
+  }
   if (!c_peek || c_peek->owner == 0) {
     g.out << "No such lot for sale.\n";
     return false;

@@ -28,110 +28,108 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
     return false;
   }
 
-  const Ship* s2_check;
-  try {
-    s2_check = g.entity_manager.peek_ship(*ship2tmp);
-  } catch (const EntityNotFoundError&) {
-    g.out << std::format("Ship #{} wasn't found.\n", *ship2tmp);
-    return false;
-  }
-
   auto ship2no = *ship2tmp;
-  if (testship(*s2_check, g)) {
-    g.out << "Illegal format.\n";
-    return false;
-  }
-  if (s2_check->type() == ShipType::OTYPE_FACTORY) {
-    g.out << "Can't land on factories.\n";
-    return false;
-  }
-  if (landed(s)) {
-    if (!landed(*s2_check)) {
-      g.out << std::format("{} is not landed on a planet.\n", *s2_check);
-      return false;
-    }
-    if (s2_check->storbits() != s.storbits()) {
-      g.out << "These ships are not in the same star system.\n";
-      return false;
-    }
-    if (s2_check->pnumorbits() != s.pnumorbits()) {
-      g.out << "These ships are not landed on the same planet.\n";
-      return false;
-    }
-    if (s2_check->land_coords() != s.land_coords()) {
-      g.out << "These ships are not in the same sector.\n";
-      return false;
-    }
-    if (s.on()) {
-      g.out << std::format("{} must be turned off before loading.\n", s);
-      return false;
-    }
-    if (size(s) > hanger(*s2_check)) {
-      g.out << std::format(
-          "Mothership does not have {} hanger space available to load ship.\n",
-          size(s));
-      return false;
-    }
-    /* ok, load 'em up */
-    auto s2_handle = g.entity_manager.get_ship(ship2no);
-    auto& s2 = *s2_handle;
-    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = s2.number();
-    s2.mass() += s.mass();
-    s2.hanger() += size(s);
-    fuel = 0.0;
-    g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2, fuel);
-    s.docked() = 1;
-    return true;
-  } else if (s.docked()) {
-    g.out << std::format("{} is already docked or landed.\n", s);
-    return false;
-  } else {
-    if (s.whatorbits() != s2_check->whatorbits()) {
-      g.out << "Those ships are not in the same scope.\n";
-      return false;
-    }
 
-    Dist = std::hypot(s2_check->xpos() - s.xpos(), s2_check->ypos() - s.ypos());
-    if (Dist > DIST_TO_DOCK) {
-      g.out << std::format("{} must be {} or closer to {}.\n", s, DIST_TO_DOCK,
-                           *s2_check);
-      return false;
-    }
-    fuel = 0.05 + Dist * 0.025 * std::sqrt(s.mass());
-    if (s.fuel() < fuel) {
-      g.out << "Not enough fuel.\n";
-      return false;
-    }
-    if (size(s) > hanger(*s2_check)) {
-      g.out << std::format(
-          "Mothership does not have {} hanger space available to load ship.\n",
-          size(s));
-      return false;
-    }
-    use_fuel(s, fuel);
+  try {
+    return g.entity_manager.with_ship(ship2no, [&](const Ship& s2_check) {
+      if (testship(s2_check, g)) {
+        g.out << "Illegal format.\n";
+        return false;
+      }
+      if (s2_check.type() == ShipType::OTYPE_FACTORY) {
+        g.out << "Can't land on factories.\n";
+        return false;
+      }
+      if (landed(s)) {
+        if (!landed(s2_check)) {
+          g.out << std::format("{} is not landed on a planet.\n", s2_check);
+          return false;
+        }
+        if (s2_check.storbits() != s.storbits()) {
+          g.out << "These ships are not in the same star system.\n";
+          return false;
+        }
+        if (s2_check.pnumorbits() != s.pnumorbits()) {
+          g.out << "These ships are not landed on the same planet.\n";
+          return false;
+        }
+        if (s2_check.land_coords() != s.land_coords()) {
+          g.out << "These ships are not in the same sector.\n";
+          return false;
+        }
+        if (s.on()) {
+          g.out << std::format("{} must be turned off before loading.\n", s);
+          return false;
+        }
+        if (size(s) > hanger(s2_check)) {
+          g.out << std::format("Mothership does not have {} hanger space "
+                               "available to load ship.\n",
+                               size(s));
+          return false;
+        }
+        /* ok, load 'em up */
+        g.entity_manager.mutate_ship(ship2no, [&](Ship& s2) {
+          s.whatorbits() = ScopeLevel::LEVEL_SHIP;
+          s.whatdest() = ScopeLevel::LEVEL_SHIP;
+          s.destshipno() = s2.number();
+          s2.mass() += s.mass();
+          s2.hanger() += size(s);
+          fuel = 0.0;
+          g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2,
+                               fuel);
+          s.docked() = 1;
+        });
+        return true;
+      } else if (s.docked()) {
+        g.out << std::format("{} is already docked or landed.\n", s);
+        return false;
+      } else {
+        if (s.whatorbits() != s2_check.whatorbits()) {
+          g.out << "Those ships are not in the same scope.\n";
+          return false;
+        }
 
-    if (s.whatorbits() != ScopeLevel::LEVEL_PLAN &&
-        s.whatorbits() != ScopeLevel::LEVEL_STAR) {
-      g.out << "Ship is not in planet or star scope.\n";
-      return false;
-    }
+        Dist =
+            std::hypot(s2_check.xpos() - s.xpos(), s2_check.ypos() - s.ypos());
+        if (Dist > DIST_TO_DOCK) {
+          g.out << std::format("{} must be {} or closer to {}.\n", s,
+                               DIST_TO_DOCK, s2_check);
+          return false;
+        }
+        fuel = 0.05 + Dist * 0.025 * std::sqrt(s.mass());
+        if (s.fuel() < fuel) {
+          g.out << "Not enough fuel.\n";
+          return false;
+        }
+        if (size(s) > hanger(s2_check)) {
+          g.out << std::format("Mothership does not have {} hanger space "
+                               "available to load ship.\n",
+                               size(s));
+          return false;
+        }
+        use_fuel(s, fuel);
 
-    auto s2_handle = g.entity_manager.get_ship(ship2no);
-    if (!s2_handle.get()) {
-      g.out << "This shouldn't happen: Target ship no longer exists.\n";
-      return false;
-    }
-    auto& s2 = *s2_handle;
-    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = s2.number();
-    s2.mass() += s.mass();
-    s2.hanger() += size(s);
-    g.out << std::format("{} landed on {} using {} fuel.\n", s, s2, fuel);
-    s.docked() = 1;
-    return true;
+        if (s.whatorbits() != ScopeLevel::LEVEL_PLAN &&
+            s.whatorbits() != ScopeLevel::LEVEL_STAR) {
+          g.out << "Ship is not in planet or star scope.\n";
+          return false;
+        }
+
+        g.entity_manager.mutate_ship(ship2no, [&](Ship& s2) {
+          s.whatorbits() = ScopeLevel::LEVEL_SHIP;
+          s.whatdest() = ScopeLevel::LEVEL_SHIP;
+          s.destshipno() = s2.number();
+          s2.mass() += s.mass();
+          s2.hanger() += size(s);
+          g.out << std::format("{} landed on {} using {} fuel.\n", s, s2, fuel);
+          s.docked() = 1;
+        });
+        return true;
+      }
+    });
+  } catch (const EntityNotFoundError&) {
+    g.out << std::format("Ship #{} wasn't found.\n", ship2no);
+    return false;
   }
 }
 
@@ -331,7 +329,7 @@ bool land(const command_t& argv, GameObj& g) {
   governor_t Governor = g.governor();
   bool any_landed = false;
 
-  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
+  ShipList ships(g);
 
   for (auto ship_handle : ships) {
     Ship& s = *ship_handle;

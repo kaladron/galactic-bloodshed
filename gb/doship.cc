@@ -733,8 +733,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     const auto* race = entity_manager.peek_race(ship.owner());
 
     const ShipList kShiplist(entity_manager, sh);
-    for (const Ship* s_ptr : kShiplist) {
-      const Ship& s = *s_ptr;
+    for (const Ship& s : kShiplist) {
       double xd = s.xpos() - ship.xpos();
       double yd = s.ypos() - ship.ypos();
       double range = std::sqrt(xd * xd + yd * yd);

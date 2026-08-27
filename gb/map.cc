@@ -38,13 +38,13 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
     iq = !!p.info(Playernum).numsectsowned;
 
     const ShipList shiplist(g.entity_manager, p.ships());
-    for (const Ship* s : shiplist) {
-      if (s->owner() == Playernum && authorized(Governor, *s) &&
-          (s->popn() || (s->type() == ShipType::OTYPE_PROBE)))
+    for (const Ship& s : shiplist) {
+      if (s.owner() == Playernum && authorized(Governor, s) &&
+          (s.popn() || (s.type() == ShipType::OTYPE_PROBE)))
         iq = 1;
-      if (s->alive() && landed(*s)) {
-        Coordinates land = s->land_coords();
-        shiplocs[land.x][land.y] = Shipltrs[s->type()];
+      if (s.alive() && landed(s)) {
+        Coordinates land = s.land_coords();
+        shiplocs[land.x][land.y] = Shipltrs[s.type()];
       }
     }
   }

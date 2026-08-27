@@ -343,9 +343,9 @@ static void prepare_dead_ships(TurnState& state) {
   // Collect ship numbers to delete (can't delete while iterating)
   std::vector<shipnum_t> dead_ships;
   const ShipList ships(state.entity_manager, ShipList::IterationType::All);
-  for (const Ship* ship : ships) {
-    if (!ship->alive()) {
-      dead_ships.push_back(ship->number());
+  for (const Ship& ship : ships) {
+    if (!ship.alive()) {
+      dead_ships.push_back(ship.number());
     }
   }
 
@@ -516,12 +516,12 @@ static void update_victory_scores(TurnState& state, bool update) {
 
     const ShipList ships(state.entity_manager,
                          ShipList::IterationType::AllAlive);
-    for (const Ship* ship : ships) {
-      victory[ship->owner().value - 1].shipcost += ship->build_cost();
-      victory[ship->owner().value - 1].shiptech += ship->tech();
-      victory[ship->owner().value - 1].res += ship->resource();
-      victory[ship->owner().value - 1].des += ship->destruct();
-      victory[ship->owner().value - 1].fuel += ship->fuel();
+    for (const Ship& ship : ships) {
+      victory[ship.owner().value - 1].shipcost += ship.build_cost();
+      victory[ship.owner().value - 1].shiptech += ship.tech();
+      victory[ship.owner().value - 1].res += ship.resource();
+      victory[ship.owner().value - 1].des += ship.destruct();
+      victory[ship.owner().value - 1].fuel += ship.fuel();
     }
     /* now that we have the info.. calculate the raw score */
 

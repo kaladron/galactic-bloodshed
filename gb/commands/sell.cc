@@ -43,9 +43,9 @@ bool sell(const command_t& argv, GameObj& g) {
 
   /* check to see if there is an undamaged gov center or space port here */
   bool ok = false;
-  for (const Ship* s : ShipList::readonly(g)) {
-    if (s->alive() && (s->owner() == Playernum) && !s->damage() &&
-        Shipdata[s->type()][ABIL_PORT]) {
+  for (const Ship& s : ShipList::readonly(g)) {
+    if (s.alive() && (s.owner() == Playernum) && !s.damage() &&
+        Shipdata[s.type()][ABIL_PORT]) {
       ok = true;
       break;
     }

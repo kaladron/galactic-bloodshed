@@ -45,9 +45,9 @@ can_build_on_sector(EntityManager& entity_manager, const int what,
   }
   if (what == ShipType::OTYPE_QUARRY) {
     const ShipList shiplist(entity_manager, planet.ships());
-    for (const Ship* s : shiplist) {
-      if (s->alive() && s->type() == ShipType::OTYPE_QUARRY &&
-          s->land_coords() == c) {
+    for (const Ship& s : shiplist) {
+      if (s.alive() && s.type() == ShipType::OTYPE_QUARRY &&
+          s.land_coords() == c) {
         return std::unexpected("There already is a quarry here.\n");
       }
     }

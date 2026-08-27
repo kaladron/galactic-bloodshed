@@ -127,8 +127,7 @@ void test_star_list_readonly(EntityManager& em) {
   int count = 0;
   std::vector<starnum_t> seen_stars;
 
-  auto readonly_stars = StarList::readonly(em);
-  for (const Star& star : std::as_const(readonly_stars)) {
+  for (const Star& star : StarList::readonly(em)) {
     static_assert(std::is_same_v<decltype(star), const Star&>,
                   "StarList::readonly() should yield const Star&");
 
@@ -153,10 +152,9 @@ void test_planet_list_readonly(EntityManager& em) {
 
   for (const Star& star : StarList::readonly(em)) {
     auto star_id = star.get_struct().star_id;
-    auto readonly_planets = PlanetList::readonly(em, star_id, star);
 
     int star_planet_count = 0;
-    for (const Planet& planet : std::as_const(readonly_planets)) {
+    for (const Planet& planet : PlanetList::readonly(em, star_id, star)) {
       static_assert(std::is_same_v<decltype(planet), const Planet&>,
                     "PlanetList::readonly() should yield const Planet&");
 
@@ -182,8 +180,7 @@ void test_commod_list_readonly(EntityManager& em) {
   std::uint64_t total_amount = 0;
   std::vector<int> seen_ids;
 
-  auto readonly_commods = CommodList::readonly(em);
-  for (const Commod& commod : std::as_const(readonly_commods)) {
+  for (const Commod& commod : CommodList::readonly(em)) {
     static_assert(std::is_same_v<decltype(commod), const Commod&>,
                   "CommodList::readonly() should yield const Commod&");
 
@@ -239,12 +236,11 @@ void test_ship_list_patterns(EntityManager& em) {
   int count = 0;
   double total_fuel = 0.0;
 
-  auto readonly_ships = ShipList::readonly(em, 1);
-  for (const Ship* ship : std::as_const(readonly_ships)) {
-    static_assert(std::is_same_v<decltype(ship), const Ship*>,
-                  "ShipList::readonly() should yield const Ship*");
+  for (const Ship& ship : ShipList::readonly(em, shipnum_t{1})) {
+    static_assert(std::is_same_v<decltype(ship), const Ship&>,
+                  "ShipList::readonly() should yield const Ship&");
     count++;
-    total_fuel += ship->fuel();
+    total_fuel += ship.fuel();
   }
 
   test::expect_eq(count, 3);
@@ -255,7 +251,7 @@ void test_ship_list_patterns(EntityManager& em) {
   std::println(std::cout, "  Testing mutable ShipList (with modifications)...");
   count = 0;
 
-  for (auto ship : ShipList{em, 1}) {
+  for (auto ship : ShipList{em, shipnum_t{1}}) {
     static_assert(std::is_same_v<decltype(ship), ShipHandle>,
                   "MutableIterator should return ShipHandle");
 
@@ -279,7 +275,7 @@ void test_ship_list_patterns(EntityManager& em) {
 
   std::println(std::cout,
                "  Testing mutable ShipList with dereference pattern...");
-  ShipList shiplist(em, 1);
+  ShipList shiplist(em, shipnum_t{1});
 
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;
@@ -291,6 +287,23 @@ void test_ship_list_patterns(EntityManager& em) {
     const Ship* s1 = em.peek_ship(1);
     test::expect_eq(s1->fuel(), 175.0);
     std::println(std::cout, "    Verified dereference pattern modifications");
+  }
+
+  std::println(std::cout, "  Testing spatial ShipList constructors...");
+  {
+    int univ_count = 0;
+    for (const Ship& s : ShipList::readonly(em, ScopeLevel::LEVEL_UNIV)) {
+      (void)s;
+      univ_count++;
+    }
+    std::println(std::cout, "    Univ scope ship count: {}", univ_count);
+
+    int star_count = 0;
+    for (const Ship& s : ShipList::readonly(em, starnum_t{0})) {
+      (void)s;
+      star_count++;
+    }
+    std::println(std::cout, "    Star 0 ship count: {}", star_count);
   }
 }
 

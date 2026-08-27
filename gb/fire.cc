@@ -21,9 +21,9 @@ module gblib;
 bool has_planet_defense(EntityManager& entity_manager, const shipnum_t shipno,
                         const player_t Playernum) {
   const ShipList shiplist(entity_manager, shipno);
-  for (const Ship* s : shiplist) {
-    if (s->alive() && s->type() == ShipType::OTYPE_PLANDEF &&
-        s->owner() != Playernum) {
+  for (const Ship& s : shiplist) {
+    if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF &&
+        s.owner() != Playernum) {
       return true;
     }
   }

@@ -20,9 +20,9 @@ bool order(const command_t& argv, GameObj& g) {
   if (argv.size() == 1) { /* display all ship orders */
     DispOrdersHeader(g.entity_manager, Playernum, Governor);
     const ShipList kShips(g.entity_manager, g, ShipList::IterationType::Scope);
-    for (const Ship* ship : kShips) {
-      if (ship->owner() == Playernum && authorized(Governor, *ship)) {
-        DispOrders(g.entity_manager, Playernum, Governor, *ship);
+    for (const Ship& ship : kShips) {
+      if (ship.owner() == Playernum && authorized(Governor, ship)) {
+        DispOrders(g.entity_manager, Playernum, Governor, ship);
       }
     }
     return true;

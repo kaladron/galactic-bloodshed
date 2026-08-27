@@ -40,9 +40,9 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
 
   /* check to see if PDNs are present */
   const ShipList shiplist(entity_manager, planet.ships());
-  for (const Ship* s : shiplist) {
-    if (s->alive() && s->type() == ShipType::OTYPE_PLANDEF &&
-        s->owner() != ship.owner()) {
+  for (const Ship& s : shiplist) {
+    if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF &&
+        s.owner() != ship.owner()) {
       std::string notice =
           std::format("Bombardment of {} cancelled, PDNs are present.\n",
                       prin_ship_orbits(entity_manager, ship));

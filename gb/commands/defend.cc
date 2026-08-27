@@ -188,33 +188,33 @@ bool defend(const command_t& argv, GameObj& g) {
   /* protecting ships retaliate individually if damage was inflicted */
   if (damage) {
     const ShipList shiplist(g.entity_manager, p.ships());
-    for (const Ship* ship : shiplist) {
-      if (ship->protect().on && (ship->protect().ship == toship) &&
-          ship->number() != toship && ship->alive() && ship->active()) {
-        strength = check_retal_strength(*ship);
-        if (laser_on(*ship))
-          check_overload(g.entity_manager, const_cast<Ship&>(*ship), 0,
+    for (const Ship& ship : shiplist) {
+      if (ship.protect().on && (ship.protect().ship == toship) &&
+          ship.number() != toship && ship.alive() && ship.active()) {
+        strength = check_retal_strength(ship);
+        if (laser_on(ship))
+          check_overload(g.entity_manager, const_cast<Ship&>(ship), 0,
                          &strength);
 
         if (auto result2_opt =
-                shoot_ship_to_planet(g.entity_manager, *ship, p, strength,
+                shoot_ship_to_planet(g.entity_manager, ship, p, strength,
                                      sector_coords, smap, 0, 0)) {
           auto [_, __, short_msg2, long_msg2] = *result2_opt;
-          auto ship_mut_handle = g.entity_manager.get_ship(ship->number());
+          auto ship_mut_handle = g.entity_manager.get_ship(ship.number());
           if (!ship_mut_handle.get()) {
             continue;
           }
           auto& ship_mut = *ship_mut_handle;
-          if (laser_on(*ship))
+          if (laser_on(ship))
             use_fuel(ship_mut, 2.0 * (double)strength);
           else
             use_destruct(ship_mut, strength);
           post(g.entity_manager, short_msg2, NewsType::COMBAT);
           notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-                      ship->storbits(), short_msg2);
+                      ship.storbits(), short_msg2);
           g.out << long_msg2;
-          warn_player(g.session_registry, g.entity_manager, ship->owner(),
-                      ship->governor(), long_msg2);
+          warn_player(g.session_registry, g.entity_manager, ship.owner(),
+                      ship.governor(), long_msg2);
         }
       }
     }

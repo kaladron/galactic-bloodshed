@@ -61,7 +61,7 @@ int main() {
 
   // Nested iteration (follows nextship linked list)
   {
-    ShipList list(ctx.em, 1);  // Start at ship 1, nested iteration
+    ShipList list(ctx.em, shipnum_t{1});  // Start at ship 1, nested iteration
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -165,9 +165,9 @@ int main() {
 
     const ShipList readonly_list(ctx.em, 1, ShipList::IterationType::Scope);
     int readonly_count = 0;
-    for (const Ship* ship : readonly_list) {
+    for (const Ship& ship : readonly_list) {
       readonly_count++;
-      test::expect_true(ship->alive());
+      test::expect_true(ship.alive());
     }
     test::expect_eq(readonly_count, 6);
 
@@ -415,18 +415,17 @@ int main() {
     std::println(std::cout, "\nTest 5: Const iteration (read-only)");
 
     // Create a const ShipList using const reference
-    const ShipList ships_const(ctx.em, 1);
+    const ShipList ships_const(ctx.em, shipnum_t{1});
 
     // Iterate with const iterators - should use peek_ship internally
     int count = 0;
-    for (const Ship* ship : ships_const) {
-      test::expect_ne(ship, nullptr);
-      test::expect_true(ship->alive());
+    for (const Ship& ship : ships_const) {
+      test::expect_true(ship.alive());
       count++;
 
       // Read-only operations should work fine
-      std::println(std::cout, "  Ship #{}: type={}", ship->number(),
-                   static_cast<int>(ship->type()));
+      std::println(std::cout, "  Ship #{}: type={}", ship.number(),
+                   static_cast<int>(ship.type()));
     }
 
     test::expect_eq(count, 3);  // Should see ship1, ship2, ship3
@@ -443,9 +442,9 @@ int main() {
 
     // Do another const iteration - fuel should remain unchanged
     {
-      const ShipList ships_const2(ctx.em, 1);
-      for (const Ship* ship : ships_const2) {
-        [[maybe_unused]] auto fuel = ship->fuel();
+      const ShipList ships_const2(ctx.em, shipnum_t{1});
+      for (const Ship& ship : ships_const2) {
+        [[maybe_unused]] auto fuel = ship.fuel();
       }
     }
 
@@ -469,10 +468,10 @@ int main() {
 
     // First, use const iteration - should NOT mark dirty
     {
-      const ShipList ships_const(ctx.em, 1);
-      for (const Ship* ship : ships_const) {
+      const ShipList ships_const(ctx.em, shipnum_t{1});
+      for (const Ship& ship : ships_const) {
         // Just reading data
-        [[maybe_unused]] auto fuel = ship->fuel();
+        [[maybe_unused]] auto fuel = ship.fuel();
       }
     }
 
@@ -483,7 +482,7 @@ int main() {
 
     // Now use mutable iteration and actually modify
     {
-      ShipList ships_mutable(ctx.em, 1);
+      ShipList ships_mutable(ctx.em, shipnum_t{1});
       for (auto ship_handle : ships_mutable) {
         Ship& ship = *ship_handle;
         ship.fuel() += 50.0;  // Modify ship
@@ -514,9 +513,8 @@ int main() {
     const ShipList ships(ctx.em, g, ShipList::IterationType::Scope);
 
     int count = 0;
-    for (const Ship* ship : ships) {
-      test::expect_ne(ship, nullptr);
-      test::expect_eq(ship->storbits(), 5);
+    for (const Ship& ship : ships) {
+      test::expect_eq(ship.storbits(), 5);
       count++;
     }
 
@@ -603,8 +601,8 @@ int main() {
     // Const All iteration
     const ShipList all_const(ctx.em, ShipList::IterationType::All);
     int all_count = 0;
-    for (const Ship* ship : all_const) {
-      test::expect_ne(ship, nullptr);
+    for (const Ship& ship : all_const) {
+      (void)ship;
       all_count++;
     }
     test::expect_eq(all_count, 10);  // 9 alive + 1 dead from Test 6
@@ -613,9 +611,8 @@ int main() {
     // Const AllAlive iteration
     const ShipList alive_const(ctx.em, ShipList::IterationType::AllAlive);
     int alive_count = 0;
-    for (const Ship* ship : alive_const) {
-      test::expect_ne(ship, nullptr);
-      test::expect_true(ship->alive());
+    for (const Ship& ship : alive_const) {
+      test::expect_true(ship.alive());
       alive_count++;
     }
     std::println(std::cout, "  Const AllAlive iteration found {} ships",
@@ -666,9 +663,9 @@ int main() {
 
     // Test const iteration over sparse IDs
     std::vector<shipnum_t> visited_const;
-    for (const Ship* ship :
+    for (const Ship& ship :
          ShipList::readonly(sparse_ctx.em, ShipList::IterationType::All)) {
-      visited_const.push_back(ship->number());
+      visited_const.push_back(ship.number());
     }
     test::expect_eq(visited_const.size(), 2);
     test::expect_eq(visited_const[0], shipnum_t{1});

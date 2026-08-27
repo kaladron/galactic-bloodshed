@@ -385,16 +385,16 @@ inline void verify_universe_invariants(
 
   // 3. Ships have valid numbers, valid owner (if alive), and owner <=
   // MAXPLAYERS
-  for (const Ship* ship :
+  for (const Ship& ship :
        ShipList::readonly(em, ShipList::IterationType::All)) {
-    if (ship->alive()) {
+    if (ship.alive()) {
       expect_ge(
-          ship->owner().value, 1,
-          std::format("Alive ship #{} has invalid owner 0", ship->number()),
+          ship.owner().value, 1,
+          std::format("Alive ship #{} has invalid owner 0", ship.number()),
           loc);
-      expect_le(ship->owner().value, MAXPLAYERS,
+      expect_le(ship.owner().value, MAXPLAYERS,
                 std::format("Alive ship #{} has owner {} > MAXPLAYERS",
-                            ship->number(), ship->owner().value),
+                            ship.number(), ship.owner().value),
                 loc);
     }
   }

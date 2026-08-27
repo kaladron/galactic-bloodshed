@@ -356,6 +356,8 @@ public:
                                                        bool alive_only = true);
   [[nodiscard]] std::vector<shipnum_t> ships_by_owner(player_t owner_id,
                                                       bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> ships_at_scope(ScopeLevel scope,
+                                                      bool alive_only = true);
   [[nodiscard]] std::vector<shipnum_t> ships_alive();
   [[nodiscard]] std::vector<shipnum_t> ships_all();
 

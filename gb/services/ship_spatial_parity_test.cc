@@ -98,10 +98,10 @@ void test_star_spatial_parity(TestContext& ctx) {
   g.set_snum(0);
 
   std::vector<shipnum_t> shiplist_scope_alive;
-  for (const Ship* s :
+  for (const Ship& s :
        ShipList::readonly(ctx.em, g, ShipList::IterationType::Scope)) {
-    if (s->alive()) {
-      shiplist_scope_alive.push_back(s->number());
+    if (s.alive()) {
+      shiplist_scope_alive.push_back(s.number());
     }
   }
   test::expect_eq(indexed_alive, shiplist_scope_alive);
@@ -135,13 +135,24 @@ void test_planet_spatial_parity(TestContext& ctx) {
 
   ship_struct s11_data{};
   s11_data.number = 11;
-  s11_data.owner = 2;
+  s11_data.owner = 1;
   s11_data.storbits = 1;
   s11_data.pnumorbits = 0;
   s11_data.whatorbits = ScopeLevel::LEVEL_PLAN;
   s11_data.alive = true;
   s11_data.nextship = 0;
   ships_repo.save(Ship(s11_data));
+
+  // Dead ship on same planet (should be excluded by default)
+  ship_struct s12_data{};
+  s12_data.number = 12;
+  s12_data.owner = 1;
+  s12_data.storbits = 1;
+  s12_data.pnumorbits = 0;
+  s12_data.whatorbits = ScopeLevel::LEVEL_PLAN;
+  s12_data.alive = false;
+  s12_data.nextship = 0;
+  ships_repo.save(Ship(s12_data));
 
   // 1. Traverse legacy planet.ships() linked list
   std::vector<shipnum_t> linked_alive;
@@ -154,15 +165,15 @@ void test_planet_spatial_parity(TestContext& ctx) {
     curr = ship_opt->nextship();
   }
 
-  // 2. Query via ShipRepository indexed spatial queries
-  auto indexed_alive =
-      ships_repo.find_on_planet(starnum_t{1}, planetnum_t{0}, true);
+  // 2. Query via ShipRepository indexed spatial query
+  auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{0},
+                                                 /*alive_only=*/true);
 
   // 3. Verify parity
   test::expect_eq(indexed_alive.size(), 2);
   test::expect_eq(indexed_alive, linked_alive);
 
-  // 4. Verify GameObj Planet ScopeLevel matches
+  // 4. Verify ShipList Scope iteration at planet scope
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
@@ -171,10 +182,10 @@ void test_planet_spatial_parity(TestContext& ctx) {
   g.set_pnum(0);
 
   std::vector<shipnum_t> shiplist_scope_alive;
-  for (const Ship* s :
+  for (const Ship& s :
        ShipList::readonly(ctx.em, g, ShipList::IterationType::Scope)) {
-    if (s->alive()) {
-      shiplist_scope_alive.push_back(s->number());
+    if (s.alive()) {
+      shiplist_scope_alive.push_back(s.number());
     }
   }
   test::expect_eq(indexed_alive, shiplist_scope_alive);
@@ -235,9 +246,9 @@ void test_hangar_docked_parity(TestContext& ctx) {
 
   // 4. Verify ShipList Nested iteration from carrier
   std::vector<shipnum_t> shiplist_nested;
-  for (const Ship* s : ShipList::readonly(ctx.em, carrier_data.ships,
+  for (const Ship& s : ShipList::readonly(ctx.em, carrier_data.ships,
                                           ShipList::IterationType::Nested)) {
-    shiplist_nested.push_back(s->number());
+    shiplist_nested.push_back(s.number());
   }
   test::expect_eq(indexed_hangar, shiplist_nested);
 
@@ -254,10 +265,10 @@ void test_empire_and_global_parity(TestContext& ctx) {
 
   // Collect player 1 ships via ShipList AllAlive
   std::vector<shipnum_t> p1_shiplist;
-  for (const Ship* s :
+  for (const Ship& s :
        ShipList::readonly(ctx.em, ShipList::IterationType::AllAlive)) {
-    if (s->owner() == 1) {
-      p1_shiplist.push_back(s->number());
+    if (s.owner() == 1) {
+      p1_shiplist.push_back(s.number());
     }
   }
   test::expect_eq(p1_indexed, p1_shiplist);
@@ -267,9 +278,9 @@ void test_empire_and_global_parity(TestContext& ctx) {
 
   // Collect all alive ships via ShipList AllAlive
   std::vector<shipnum_t> all_alive_shiplist;
-  for (const Ship* s :
+  for (const Ship& s :
        ShipList::readonly(ctx.em, ShipList::IterationType::AllAlive)) {
-    all_alive_shiplist.push_back(s->number());
+    all_alive_shiplist.push_back(s.number());
   }
   test::expect_eq(all_alive_indexed, all_alive_shiplist);
 

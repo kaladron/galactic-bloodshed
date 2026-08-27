@@ -59,6 +59,16 @@ ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
 ShipList::ShipList(const GameObj& g, IterationType type)
     : ShipList(g.entity_manager, g, type) {}
 
+ShipList::ShipList(EntityManager& em, ScopeLevel scope, bool alive_only)
+    : em_(&em), ship_ids_(em.ships_at_scope(scope, alive_only)) {}
+
+ShipList::ShipList(EntityManager& em, starnum_t star_id, bool alive_only)
+    : em_(&em), ship_ids_(em.ships_in_star(star_id, alive_only)) {}
+
+ShipList::ShipList(EntityManager& em, starnum_t star_id, planetnum_t planet_id,
+                   bool alive_only)
+    : em_(&em), ship_ids_(em.ships_on_planet(star_id, planet_id, alive_only)) {}
+
 ShipList::ShipList(EntityManager& em, IterationType type) : em_(&em) {
   if (type == IterationType::All) {
     ship_ids_ = em.ships_all();
@@ -142,7 +152,11 @@ ShipList::ConstIterator ShipList::ConstIterator::operator++(int) {
   return tmp;
 }
 
-const Ship* ShipList::ConstIterator::operator*() const {
+const Ship& ShipList::ConstIterator::operator*() const {
+  return *em_->peek_ship(*it_);
+}
+
+const Ship* ShipList::ConstIterator::operator->() const {
   return em_->peek_ship(*it_);
 }
 

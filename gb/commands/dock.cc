@@ -56,7 +56,7 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
     }
   }
 
-  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
+  ShipList ships(g);
   for (auto ship_handle : ships) {
     Ship& s = *ship_handle;
 
@@ -160,10 +160,11 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
       /* first undock the target ship */
       s.docked() = 0;
       s.whatdest() = ScopeLevel::LEVEL_UNIV;
-      auto s3_handle = g.entity_manager.get_ship(s.destshipno());
-      if (s3_handle.get()) {
-        s3_handle->docked() = 0;
-        s3_handle->whatdest() = ScopeLevel::LEVEL_UNIV;
+      if (s.destshipno() != 0) {
+        g.entity_manager.mutate_ship(s.destshipno(), [](Ship& s3) {
+          s3.docked() = 0;
+          s3.whatdest() = ScopeLevel::LEVEL_UNIV;
+        });
       }
     }
 
@@ -269,11 +270,12 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
 
       /* if the assaulted ship is docked, undock it first */
       if (s2.docked() && s2.whatdest() == ScopeLevel::LEVEL_SHIP) {
-        auto s3_handle = g.entity_manager.get_ship(s2.destshipno());
-        if (s3_handle.get()) {
-          s3_handle->docked() = 0;
-          s3_handle->whatdest() = ScopeLevel::LEVEL_UNIV;
-          s3_handle->destshipno() = 0;
+        if (s2.destshipno() != 0) {
+          g.entity_manager.mutate_ship(s2.destshipno(), [](Ship& s3) {
+            s3.docked() = 0;
+            s3.whatdest() = ScopeLevel::LEVEL_UNIV;
+            s3.destshipno() = 0;
+          });
         }
 
         s2.docked() = 0;

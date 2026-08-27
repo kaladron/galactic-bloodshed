@@ -418,6 +418,8 @@ public:
                                                       bool alive_only = true);
   [[nodiscard]] std::vector<shipnum_t> find_by_owner(player_t owner_id,
                                                      bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> find_at_scope(ScopeLevel scope,
+                                                     bool alive_only = true);
   [[nodiscard]] std::vector<shipnum_t> find_alive();
 
 protected:
@@ -547,6 +549,23 @@ std::vector<shipnum_t> ShipRepository::find_by_owner(player_t owner_id,
                                                      bool alive_only) {
   std::string where = "owner = ?";
   std::vector<KeyValue> params{owner_id.value};
+  if (alive_only) {
+    where += " AND alive = 1";
+  }
+  where += " ORDER BY id";
+  auto ids = store.query_ids(table_name, where, params);
+  std::vector<shipnum_t> result;
+  result.reserve(ids.size());
+  for (int id : ids) {
+    result.emplace_back(id);
+  }
+  return result;
+}
+
+std::vector<shipnum_t> ShipRepository::find_at_scope(ScopeLevel scope,
+                                                     bool alive_only) {
+  std::string where = "whatorbits = ?";
+  std::vector<KeyValue> params{static_cast<int>(scope)};
   if (alive_only) {
     where += " AND alive = 1";
   }

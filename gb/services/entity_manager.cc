@@ -673,6 +673,11 @@ std::vector<shipnum_t> EntityManager::ships_by_owner(player_t owner_id,
   return ships.find_by_owner(owner_id, alive_only);
 }
 
+std::vector<shipnum_t> EntityManager::ships_at_scope(ScopeLevel scope,
+                                                     bool alive_only) {
+  return ships.find_at_scope(scope, alive_only);
+}
+
 std::vector<shipnum_t> EntityManager::ships_alive() {
   return ships.find_alive();
 }

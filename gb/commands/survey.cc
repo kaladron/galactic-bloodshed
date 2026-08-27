@@ -255,18 +255,18 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   if (is_csp_format) {
     inhere = p.info(g.player()).numsectsowned > 0;
     const ShipList kShips(g.entity_manager, p.ships());
-    for (const Ship* shipa : kShips) {
-      if (shipa->owner() == g.player() &&
-          (shipa->popn() || (shipa->type() == ShipType::OTYPE_PROBE))) {
+    for (const Ship& shipa : kShips) {
+      if (shipa.owner() == g.player() &&
+          (shipa.popn() || (shipa.type() == ShipType::OTYPE_PROBE))) {
         inhere = true;
       }
-      if (shipa->alive() && landed(*shipa)) {
-        Coordinates land = shipa->land_coords();
+      if (shipa.alive() && landed(shipa)) {
+        Coordinates land = shipa.land_coords();
         if (shiplocs[land.x][land.y].count < MAX_SHIPS_PER_SECTOR) {
           auto& loc = shiplocs[land.x][land.y];
-          loc.ships[loc.count].shipno = shipa->number();
-          loc.ships[loc.count].owner = shipa->owner();
-          loc.ships[loc.count].ltr = Shipltrs[shipa->type()];
+          loc.ships[loc.count].shipno = shipa.number();
+          loc.ships[loc.count].owner = shipa.owner();
+          loc.ships[loc.count].ltr = Shipltrs[shipa.type()];
           loc.count++;
         }
       }

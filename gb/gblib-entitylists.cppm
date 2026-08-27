@@ -728,6 +728,10 @@ public:
            IterationType type = IterationType::Scope);
   explicit ShipList(const GameObj& g,
                     IterationType type = IterationType::Scope);
+  ShipList(EntityManager& em, ScopeLevel scope, bool alive_only = true);
+  ShipList(EntityManager& em, starnum_t star_id, bool alive_only = true);
+  ShipList(EntityManager& em, starnum_t star_id, planetnum_t planet_id,
+           bool alive_only = true);
   ShipList(EntityManager& em, IterationType type);
   explicit ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids);
 
@@ -784,23 +788,24 @@ private:
 };
 
 /**
- * Iterator for const (read-only) ship access - returns const Ship*
+ * Iterator for const (read-only) ship access - returns const Ship&
  * Uses peek_ship() to avoid marking entities as dirty.
  * Provides compile-time guarantees against modification.
  */
 class ShipList::ConstIterator {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = const Ship*;
+  using value_type = Ship;
   using difference_type = std::ptrdiff_t;
-  using pointer = const Ship**;
-  using reference = const Ship*;
+  using pointer = const Ship*;
+  using reference = const Ship&;
 
   ConstIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it);
 
   ConstIterator& operator++();
   ConstIterator operator++(int);
-  [[nodiscard]] const Ship* operator*() const;
+  [[nodiscard]] const Ship& operator*() const;
+  [[nodiscard]] const Ship* operator->() const;
   [[nodiscard]] bool operator==(const ConstIterator& other) const;
   [[nodiscard]] bool operator!=(const ConstIterator& other) const;
 

@@ -202,8 +202,8 @@ void plan_get_tactical_items(GameObj& g,
 
   if (planet->info(player_num).explored) {
     const ShipList ships(g.entity_manager, planet->ships());
-    for (const Ship* ship : ships) {
-      add_tactical_ship(items, ship);
+    for (const Ship& ship : ships) {
+      add_tactical_ship(items, &ship);
     }
   }
 }
@@ -216,8 +216,8 @@ void star_get_tactical_items(GameObj& g,
 
   if (isset(star->explored(), player_num)) {
     const ShipList ships(g.entity_manager, star->ships());
-    for (const Ship* ship : ships) {
-      add_tactical_ship(items, ship);
+    for (const Ship& ship : ships) {
+      add_tactical_ship(items, &ship);
     }
 
     for (planetnum_t i = 0; i < star->numplanets(); i++)

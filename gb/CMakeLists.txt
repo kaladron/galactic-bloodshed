@@ -463,6 +463,7 @@ gb_add_test(server_config_test SOURCES services/server_config_test.cc EXTRA_LIBS
 gb_add_test(server_test EXTRA_LIBS asio_module session auth server notification)
 gb_add_test(session_test EXTRA_LIBS session)
 gb_add_test(ship_repository_test SOURCES repositories/ship_repository_test.cc)
+gb_add_test(ship_spatial_parity_test SOURCES services/ship_spatial_parity_test.cc)
 gb_add_test(shipfilter_test)
 gb_add_test(shiplist_test)
 gb_add_test(shlmisc_test)

@@ -41,19 +41,23 @@ bool examine(const command_t& argv, GameObj& g) {
     g.out << "That ship it not visible to you.\n";
     return false;
   }
-  const auto& star = *g.entity_manager.peek_star(ship->storbits());
-  if (isclr(star.inhabited(), g.player())) {
+  bool visible =
+      g.entity_manager.with_star(ship->storbits(), [&](const Star& star) {
+        return isset(star.inhabited(), g.player());
+      });
+  if (!visible) {
     g.out << "That ship it not visible to you.\n";
     return false;
   }
 
-  const auto* exam = g.entity_manager.peek_ship_exam(ship->type());
-  if (exam && !exam->description.empty()) {
-    g.out << "\n" << exam->description;
-    if (!exam->description.ends_with('\n')) {
-      g.out << "\n";
+  g.entity_manager.with_ship_exam(ship->type(), [&](const ShipExam& exam) {
+    if (!exam.description.empty()) {
+      g.out << "\n" << exam.description;
+      if (!exam.description.ends_with('\n')) {
+        g.out << "\n";
+      }
     }
-  }
+  });
 
   if (!ship->examined()) {
     if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV) {

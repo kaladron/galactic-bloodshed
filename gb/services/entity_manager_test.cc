@@ -764,6 +764,104 @@ void test_entity_manager_create_ship() {
                "  ✓ create_ship allocated ID and persisted successfully");
 }
 
+void test_entity_manager_with_scoped_peeks() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  std::println(std::cout, "Test: EntityManager with_* scoped peek helpers");
+
+  // 1. with_race
+  Race race{};
+  race.Playernum = 1;
+  race.name = "MonadicEmpire";
+  race.morale = 42;
+  RaceRepository races(store);
+  races.save(race);
+
+  auto race_name = em.with_race(1, [](const Race& r) { return r.name; });
+  test::expect_eq(race_name, "MonadicEmpire");
+
+  int morale = em.with_race(1, [](const Race& r) { return r.morale; });
+  test::expect_eq(morale, 42);
+
+  // 2. with_star
+  star_struct raw_star{};
+  raw_star.star_id = 0;
+  raw_star.name = "AlphaCentauri";
+  Star star(raw_star);
+  StarRepository stars(store);
+  stars.save(star);
+
+  auto star_name = em.with_star(0, [](const Star& s) { return s.get_name(); });
+  test::expect_eq(star_name, "AlphaCentauri");
+
+  // 3. with_planet
+  Planet p{PlanetType::EARTH, Coordinates{5, 5}};
+  p.star_id() = 0;
+  p.planet_order() = 1;
+  p.popn() = 5000;
+  PlanetRepository planets(store);
+  planets.save(p);
+
+  auto popn = em.with_planet(0, 1, [](const Planet& pl) { return pl.popn(); });
+  test::expect_eq(popn, 5000);
+
+  // 4. with_ship
+  ship_struct raw_ship{};
+  raw_ship.number = 77;
+  raw_ship.owner = 1;
+  raw_ship.name = "Voyager";
+  raw_ship.fuel = 300.0;
+  Ship ship(raw_ship);
+  ShipRepository ship_repo(store);
+  ship_repo.save(ship);
+
+  auto ship_fuel = em.with_ship(77, [](const Ship& s) { return s.fuel(); });
+  test::expect_eq(ship_fuel, 300.0);
+
+  // 5. with_sectormap
+  SectorMap smap(p);
+  smap.get(Coordinates{2, 3}).set_owner(player_t{1});
+  SectorRepository sectors(store);
+  sectors.save_map(smap);
+
+  auto sect_owner = em.with_sectormap(0, 1, [](const SectorMap& map) {
+    return map.get(Coordinates{2, 3}).get_owner();
+  });
+  test::expect_eq(sect_owner, player_t{1});
+
+  // 6. with_universe
+  universe_struct u{};
+  u.id = 1;
+  u.numstars = 10;
+  UniverseRepository u_repo(store);
+  u_repo.save(u);
+
+  auto numstars = em.with_universe(
+      [](const universe_struct& univ) { return univ.numstars; });
+  test::expect_eq(numstars, 10);
+
+  // 7. with_server_state
+  ServerState state{};
+  state.id = 1;
+  state.welcome_message = "Welcome to GB!";
+  ServerStateRepository state_repo(store);
+  state_repo.save(state);
+
+  auto msg = em.with_server_state(
+      [](const ServerState& st) { return st.welcome_message; });
+  test::expect_eq(msg, "Welcome to GB!");
+
+  // 8. with_ship_exam
+  auto exam_name = em.with_ship_exam(
+      ShipType::OTYPE_PROBE, [](const ShipExam& ex) { return ex.name; });
+  test::expect_eq(exam_name, "Space Probe");
+
+  std::println(std::cout, "  ✓ All with_* scoped peek helpers passed");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -786,6 +884,7 @@ int main() {
   test_entity_manager_blocks();
   test_entity_manager_powers();
   test_entity_manager_create_ship();
+  test_entity_manager_with_scoped_peeks();
 
   std::println(std::cout, "\n✅ All EntityManager tests passed!");
   return 0;

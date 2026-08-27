@@ -199,6 +199,55 @@ public:
   EntityHandle<SectorMap> get_sectormap(starnum_t star, planetnum_t pnum);
   const SectorMap* peek_sectormap(starnum_t star, planetnum_t pnum);
 
+  // Scoped read-only access methods (with_* monadic helpers)
+  template <typename Fn>
+  decltype(auto) with_race(player_t player, Fn&& fn) {
+    const auto* race = peek_race(player);
+    return std::forward<Fn>(fn)(*race);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_ship(shipnum_t num, Fn&& fn) {
+    const auto* ship = peek_ship(num);
+    return std::forward<Fn>(fn)(*ship);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_planet(starnum_t star, planetnum_t pnum, Fn&& fn) {
+    const auto* planet = peek_planet(star, pnum);
+    return std::forward<Fn>(fn)(*planet);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_star(starnum_t num, Fn&& fn) {
+    const auto* star = peek_star(num);
+    return std::forward<Fn>(fn)(*star);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_sectormap(starnum_t star, planetnum_t pnum, Fn&& fn) {
+    const auto* smap = peek_sectormap(star, pnum);
+    return std::forward<Fn>(fn)(*smap);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_universe(Fn&& fn) {
+    const auto* u = peek_universe();
+    return std::forward<Fn>(fn)(*u);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_server_state(Fn&& fn) {
+    const auto* ss = peek_server_state();
+    return std::forward<Fn>(fn)(*ss);
+  }
+
+  template <typename Fn>
+  decltype(auto) with_ship_exam(ShipType ship_type, Fn&& fn) {
+    const auto* exam = peek_ship_exam(ship_type);
+    return std::forward<Fn>(fn)(*exam);
+  }
+
   // Create new entities
   EntityHandle<Ship> create_ship(const ship_struct& data = {});
   void delete_ship(shipnum_t num);

@@ -12,17 +12,18 @@ module commands;
 
 namespace {
 void display_whois(GameObj& g, player_t j) {
-  const auto* race = g.entity_manager.peek_race(j);
-  if (!race) {
+  try {
+    g.entity_manager.with_race(j, [&](const Race& race) {
+      if (j == g.player()) {
+        g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j.value,
+                             g.governor().value, race.name,
+                             race.governor[g.governor().value].name);
+      } else {
+        g.out << std::format("[{:2d}] {}\n", j.value, race.name);
+      }
+    });
+  } catch (const EntityNotFoundError&) {
     g.out << std::format("Race #{} not found.\n", j.value);
-    return;
-  }
-
-  if (j == g.player()) {
-    g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j.value, g.governor().value,
-                         race->name, race->governor[g.governor().value].name);
-  } else {
-    g.out << std::format("[{:2d}] {}\n", j.value, race->name);
   }
 }
 }  // namespace

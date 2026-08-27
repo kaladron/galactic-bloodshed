@@ -40,5 +40,5 @@ export Ship Getfactship(const Ship& b);
 
 export void create_ship_by_ship(EntityManager& entity_manager,
                                 player_t Playernum, governor_t Governor,
-                                const Race& race, bool outside, Planet* planet,
-                                Ship* newship, Ship* builder);
+                                const Race& race, bool outside, Ship* newship,
+                                Ship* builder);

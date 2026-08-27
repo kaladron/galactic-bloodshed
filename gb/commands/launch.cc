@@ -53,16 +53,13 @@ bool launch(const command_t& argv, GameObj& g) {
       }
       auto& s2 = *s2_handle;
       if (landed(s2)) {
-        remove_sh_ship(g.entity_manager, s, s2);
-        auto planet_handle =
-            g.entity_manager.get_planet(s2.storbits(), s2.pnumorbits());
-        auto& p = *planet_handle;
         const auto& star = *g.entity_manager.peek_star(s2.storbits());
-        insert_sh_plan(p, &s);
+        s.whatorbits() = ScopeLevel::LEVEL_PLAN;
         s.storbits() = s2.storbits();
         s.pnumorbits() = s2.pnumorbits();
         s.destpnum() = s2.pnumorbits();
         s.deststar() = s2.deststar();
+        s.destshipno() = 0;
         s.xpos() = s2.xpos();
         s.ypos() = s2.ypos();
         s.set_land_coords(s2.land_coords());
@@ -73,50 +70,45 @@ bool launch(const command_t& argv, GameObj& g) {
         g.out << std::format("Landed on {}/{}.\n", star.get_name(),
                              star.get_planet_name(s.pnumorbits()));
       } else if (s2.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        remove_sh_ship(g.entity_manager, s, s2);
         g.out << std::format("{} launched from {}.\n", s, s2);
+        s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+        s.storbits() = s2.storbits();
+        s.pnumorbits() = s2.pnumorbits();
+        s.destshipno() = 0;
         s.xpos() = s2.xpos();
         s.ypos() = s2.ypos();
         s.docked() = 0;
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
         s2.mass() -= s.mass();
         s2.hanger() -= size(s);
-        auto planet_handle =
-            g.entity_manager.get_planet(s2.storbits(), s2.pnumorbits());
-        auto& p = *planet_handle;
         const auto* star_ptr = g.entity_manager.peek_star(s2.storbits());
         const auto& star = *star_ptr;
-        insert_sh_plan(p, &s);
-        s.storbits() = s2.storbits();
-        s.pnumorbits() = s2.pnumorbits();
         g.out << std::format("Orbiting {}/{}.\n", star.get_name(),
                              star.get_planet_name(s.pnumorbits()));
       } else if (s2.whatorbits() == ScopeLevel::LEVEL_STAR) {
-        remove_sh_ship(g.entity_manager, s, s2);
         g.out << std::format("{} launched from {}.\n", s, s2);
+        s.whatorbits() = ScopeLevel::LEVEL_STAR;
+        s.storbits() = s2.storbits();
+        s.destshipno() = 0;
         s.xpos() = s2.xpos();
         s.ypos() = s2.ypos();
         s.docked() = 0;
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
         s2.mass() -= s.mass();
         s2.hanger() -= size(s);
-        auto star_handle = g.entity_manager.get_star(s2.storbits());
-        auto& star = *star_handle;
-        insert_sh_star(star, &s);
-        s.storbits() = s2.storbits();
+        const auto* star_ptr = g.entity_manager.peek_star(s2.storbits());
+        const auto& star = *star_ptr;
         g.out << std::format("Orbiting {}.\n", star.get_name());
       } else if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-        remove_sh_ship(g.entity_manager, s, s2);
         g.out << std::format("{} launched from {}.\n", s, s2);
+        s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+        s.destshipno() = 0;
         s.xpos() = s2.xpos();
         s.ypos() = s2.ypos();
         s.docked() = 0;
         s.whatdest() = ScopeLevel::LEVEL_UNIV;
         s2.mass() -= s.mass();
         s2.hanger() -= size(s);
-        auto univ_handle = g.entity_manager.get_universe();
-        auto& univ_data = *univ_handle;
-        insert_sh_univ(&univ_data, &s);
         g.out << "Universe level.\n";
       } else {
         g.out << "You can't launch that ship.\n";

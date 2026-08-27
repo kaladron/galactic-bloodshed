@@ -72,7 +72,6 @@ static void process_market(TurnState& state, bool update);
 static void process_ship_masses_and_ownership(TurnState& state);
 static void process_ship_turns(TurnState& state, bool update);
 static void prepare_dead_ships(TurnState& state);
-static void insert_ships_into_lists(TurnState& state);
 static void process_abms_and_missiles(TurnState& state, bool update);
 static void update_victory_scores(TurnState& state, bool update);
 static void finalize_turn(TurnState& state, bool update);
@@ -106,7 +105,6 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
   process_ship_masses_and_ownership(state);
   process_ship_turns(state, update);
   prepare_dead_ships(state);
-  insert_ships_into_lists(state);
   process_abms_and_missiles(state, update);
   update_victory_scores(state, update);
 
@@ -354,68 +352,6 @@ static void prepare_dead_ships(TurnState& state) {
   // Delete dead ships
   for (shipnum_t num : dead_ships) {
     state.entity_manager.delete_ship(num);
-  }
-}
-
-static void insert_ships_into_lists(TurnState& state) {
-  /* erase next ship pointers - reset in insert_sh_... */
-  for (auto ship_handle :
-       ShipList(state.entity_manager, ShipList::IterationType::All)) {
-    ship_handle->nextship() = 0;
-    ship_handle->ships() = 0;
-  }
-
-  /* clear ship list for insertion */
-  auto sdata_handle = state.entity_manager.get_universe();
-  sdata_handle->ships = 0;
-
-  for (auto star_handle : StarList(state.entity_manager)) {
-    const starnum_t star = star_handle->get_struct().star_id;
-    star_handle->ships() = 0;
-    for (auto planet_handle :
-         PlanetList(state.entity_manager, star, *star_handle)) {
-      planet_handle->ships() = 0;
-    }
-  }
-
-  /* insert ship into the list of wherever it might be */
-  for (auto ship_handle :
-       ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
-    if (ship_handle->alive()) {
-      switch (ship_handle->whatorbits()) {
-        case ScopeLevel::LEVEL_UNIV: {
-          auto sdata = state.entity_manager.get_universe();
-          insert_sh_univ(sdata.get(), ship_handle.get());
-          break;
-        }
-        case ScopeLevel::LEVEL_STAR: {
-          try {
-            auto star = state.entity_manager.get_star(ship_handle->storbits());
-            insert_sh_star(*star, ship_handle.get());
-          } catch (const EntityNotFoundError&) {
-          }
-          break;
-        }
-        case ScopeLevel::LEVEL_PLAN: {
-          try {
-            auto planet = state.entity_manager.get_planet(
-                ship_handle->storbits(), ship_handle->pnumorbits());
-            insert_sh_plan(*planet, ship_handle.get());
-          } catch (const EntityNotFoundError&) {
-          }
-          break;
-        }
-        case ScopeLevel::LEVEL_SHIP: {
-          try {
-            auto dest_ship =
-                state.entity_manager.get_ship(ship_handle->destshipno());
-            insert_sh_ship(ship_handle.get(), dest_ship.get());
-          } catch (const EntityNotFoundError&) {
-          }
-          break;
-        }
-      }
-    }
   }
 }
 

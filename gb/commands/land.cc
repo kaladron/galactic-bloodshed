@@ -73,10 +73,11 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
       return false;
     }
     /* ok, load 'em up */
-    remove_sh_plan(g.entity_manager, s);
     auto s2_handle = g.entity_manager.get_ship(ship2no);
     auto& s2 = *s2_handle;
-    insert_sh_ship(&s, &s2);
+    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
+    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    s.destshipno() = s2.number();
     s2.mass() += s.mass();
     s2.hanger() += size(s);
     fuel = 0.0;
@@ -111,11 +112,8 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
     }
     use_fuel(s, fuel);
 
-    if (s.whatorbits() == ScopeLevel::LEVEL_PLAN)
-      remove_sh_plan(g.entity_manager, s);
-    else if (s.whatorbits() == ScopeLevel::LEVEL_STAR)
-      remove_sh_star(g.entity_manager, s);
-    else {
+    if (s.whatorbits() != ScopeLevel::LEVEL_PLAN &&
+        s.whatorbits() != ScopeLevel::LEVEL_STAR) {
       g.out << "Ship is not in planet or star scope.\n";
       return false;
     }
@@ -126,7 +124,9 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
       return false;
     }
     auto& s2 = *s2_handle;
-    insert_sh_ship(&s, &s2);
+    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
+    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    s.destshipno() = s2.number();
     s2.mass() += s.mass();
     s2.hanger() += size(s);
     g.out << std::format("{} landed on {} using {} fuel.\n", s, s2, fuel);

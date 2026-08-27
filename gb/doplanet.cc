@@ -677,8 +677,6 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
   Ship& ship = *ship_handle;
   ship.name() = std::format("Scum{:04d}", ship.number());
   ship.size() = ship_size(ship);
-
-  insert_sh_plan(planet, &ship);
   return ship.number();
 }
 

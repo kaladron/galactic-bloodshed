@@ -287,7 +287,7 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   newship.owner() = Playernum;
   newship.governor() = Governor;
   newship.ships() = 0;
-  insert_sh_plan(planet, &newship);
+  newship.whatorbits() = ScopeLevel::LEVEL_PLAN;
   if (newship.type() == ShipType::OTYPE_TOXWC) {
     std::string message = std::format("Toxin concentration on planet was {}%,",
                                       planet.conditions(TOXIC));
@@ -316,7 +316,7 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
 
 void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
                          governor_t Governor, const Race& race, bool outside,
-                         Planet* planet, Ship* newship, Ship* builder) {
+                         Ship* newship, Ship* builder) {
   // Ship number will be assigned by EntityManager when created
   shipnum_t shipno = shipnum_t{entity_manager.num_ships().value + 1};
   newship->number() = shipno;
@@ -330,24 +330,6 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
     newship->storbits() = builder->storbits();
     newship->pnumorbits() = builder->pnumorbits();
     newship->docked() = 0;
-    switch (builder->whatorbits()) {
-      case ScopeLevel::LEVEL_PLAN:
-        insert_sh_plan(*planet, newship);
-        break;
-      case ScopeLevel::LEVEL_STAR: {
-        auto star_handle = entity_manager.get_star(builder->storbits());
-        insert_sh_star(*star_handle, newship);
-        break;
-      }
-      case ScopeLevel::LEVEL_UNIV: {
-        auto univ_handle = entity_manager.get_universe();
-        insert_sh_univ(univ_handle.get(), newship);
-        break;
-      }
-      case ScopeLevel::LEVEL_SHIP:
-        // TODO(jeffbailey): The compiler can't see that this is impossible.
-        break;
-    }
   } else {
     newship->whatorbits() = ScopeLevel::LEVEL_SHIP;
     newship->whatdest() = ScopeLevel::LEVEL_SHIP;
@@ -357,7 +339,6 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
     newship->storbits() = builder->storbits();
     newship->pnumorbits() = builder->pnumorbits();
     newship->docked() = 1;
-    insert_sh_ship(newship, builder);
   }
   newship->tech() = race.tech;
   newship->xpos() = builder->xpos();

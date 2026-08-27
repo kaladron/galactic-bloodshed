@@ -179,11 +179,3 @@ std::string estimate(const T data, const Race& r, const player_t p) {
   }
   return "?";
 }
-
-export void insert_sh_univ(universe_struct*, Ship*);
-export void insert_sh_star(Star&, Ship*);
-export void insert_sh_plan(Planet&, Ship*);
-export void insert_sh_ship(Ship*, Ship*);
-export void remove_sh_star(EntityManager&, Ship&);
-export void remove_sh_plan(EntityManager&, Ship&);
-export void remove_sh_ship(EntityManager&, Ship&, Ship&);

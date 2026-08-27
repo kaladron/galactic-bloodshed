@@ -391,7 +391,6 @@ bool build(const command_t& argv, GameObj& g) {
           }
           case ShipType::STYPE_SHUTTLE:
           case ShipType::STYPE_CARGO: {
-            Planet& planet = **planet_handle;
             if (builder->resource() < (shipcost = newship.build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
@@ -402,7 +401,7 @@ bool build(const command_t& argv, GameObj& g) {
               return any_built;
             }
             create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
-                                true, &planet, &newship, &*builder);
+                                true, &newship, &*builder);
             if (race.governor[Governor.value].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
@@ -435,7 +434,7 @@ bool build(const command_t& argv, GameObj& g) {
               }
             }
             create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
-                                false, nullptr, &newship, &*builder);
+                                false, &newship, &*builder);
             if (race.governor[Governor.value].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
               autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);

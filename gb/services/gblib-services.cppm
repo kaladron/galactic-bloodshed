@@ -162,6 +162,7 @@ export class EntityManager {
   std::unordered_map<ShipType, int> ship_exam_refcount;
   int global_universe_refcount = 0;
   int server_state_refcount = 0;
+  int deferred_write_depth_ = 0;
 
 public:
   explicit EntityManager(Database& database);
@@ -306,6 +307,10 @@ public:
   // Clear cache (for testing or after turn processing)
   void clear_cache();
 
+  [[nodiscard]] bool is_deferred_write() const noexcept {
+    return deferred_write_depth_ > 0;
+  }
+
   // Transaction Unit of Work for atomic commands
   class Transaction {
     EntityManager* em_{nullptr};
@@ -328,6 +333,29 @@ public:
   };
 
   [[nodiscard]] Transaction begin_transaction();
+
+  // DeferredWriteScope RAII guard for batching turn writes
+  class DeferredWriteScope {
+    EntityManager* em_{nullptr};
+    bool committed_{false};
+
+  public:
+    explicit DeferredWriteScope(EntityManager& em);
+    ~DeferredWriteScope();
+
+    DeferredWriteScope(const DeferredWriteScope&) = delete;
+    DeferredWriteScope& operator=(const DeferredWriteScope&) = delete;
+    DeferredWriteScope(DeferredWriteScope&& other) noexcept;
+    DeferredWriteScope& operator=(DeferredWriteScope&& other) noexcept;
+
+    void commit();
+    void rollback();
+    [[nodiscard]] bool is_committed() const noexcept {
+      return committed_;
+    }
+  };
+
+  [[nodiscard]] DeferredWriteScope create_deferred_write_scope();
 
 private:
   // Release methods called by EntityHandle destructor

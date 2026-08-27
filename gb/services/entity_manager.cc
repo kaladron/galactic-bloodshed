@@ -26,8 +26,10 @@ get_entity_impl(EntityManager* manager, Key key,
   if (it != cache.end()) {
     refcount[key]++;
     return {manager, it->second.get(),
-            [save_fn, release_fn, key](const Entity& e) {
-              save_fn(e);
+            [manager, save_fn, release_fn, key](const Entity& e) {
+              if (!manager || !manager->is_deferred_write()) {
+                save_fn(e);
+              }
               release_fn(key);
             }};
   }
@@ -43,11 +45,14 @@ get_entity_impl(EntityManager* manager, Key key,
       cache.emplace(key, std::make_unique<Entity>(std::move(*entity_opt)));
   refcount[key] = 1;
 
-  return EntityHandle<Entity>(manager, iter->second.get(),
-                              [save_fn, release_fn, key](const Entity& e) {
-                                save_fn(e);
-                                release_fn(key);
-                              });
+  return EntityHandle<Entity>(
+      manager, iter->second.get(),
+      [manager, save_fn, release_fn, key](const Entity& e) {
+        if (!manager || !manager->is_deferred_write()) {
+          save_fn(e);
+        }
+        release_fn(key);
+      });
 }
 
 template <typename Entity, typename Key, typename FindFn>
@@ -251,7 +256,9 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
   if (it != planet_cache.end()) {
     planet_refcount[key]++;
     return {this, it->second.get(), [this, star, pnum](const Planet& p) {
-              planets.save(p);
+              if (!is_deferred_write()) {
+                planets.save(p);
+              }
               release_planet(star, pnum);
             }};
   }
@@ -269,7 +276,9 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
   planet_refcount[key] = 1;
 
   return {this, iter->second.get(), [this, star, pnum](const Planet& p) {
-            planets.save(p);
+            if (!is_deferred_write()) {
+              planets.save(p);
+            }
             release_planet(star, pnum);
           }};
 }
@@ -404,7 +413,9 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
     global_universe_refcount++;
     return {this, global_universe_cache.get(),
             [this](const universe_struct& sd) {
-              universe_repo.save(sd);
+              if (!is_deferred_write()) {
+                universe_repo.save(sd);
+              }
               release_universe();
             }};
   }
@@ -418,7 +429,9 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
   global_universe_refcount = 1;
 
   return {this, global_universe_cache.get(), [this](const universe_struct& sd) {
-            universe_repo.save(sd);
+            if (!is_deferred_write()) {
+              universe_repo.save(sd);
+            }
             release_universe();
           }};
 }
@@ -442,7 +455,7 @@ const universe_struct* EntityManager::peek_universe() {
 
 void EntityManager::release_universe() {
   global_universe_refcount--;
-  if (global_universe_refcount <= 0) {
+  if (global_universe_refcount <= 0 && !is_deferred_write()) {
     global_universe_cache.reset();
     global_universe_refcount = 0;
   }
@@ -453,7 +466,9 @@ EntityHandle<ServerState> EntityManager::get_server_state() {
   if (server_state_cache) {
     server_state_refcount++;
     return {this, server_state_cache.get(), [this](const ServerState& state) {
-              server_state_repo.save(state);
+              if (!is_deferred_write()) {
+                server_state_repo.save(state);
+              }
               release_server_state();
             }};
   }
@@ -467,7 +482,9 @@ EntityHandle<ServerState> EntityManager::get_server_state() {
     // Will be saved when handle is destroyed
     return {this, server_state_cache.get(),
             [this](const ServerState& state) {
-              server_state_repo.save(state);
+              if (!is_deferred_write()) {
+                server_state_repo.save(state);
+              }
               release_server_state();
             },
             true};  // Mark dirty so it gets saved
@@ -477,7 +494,9 @@ EntityHandle<ServerState> EntityManager::get_server_state() {
   server_state_refcount = 1;
 
   return {this, server_state_cache.get(), [this](const ServerState& state) {
-            server_state_repo.save(state);
+            if (!is_deferred_write()) {
+              server_state_repo.save(state);
+            }
             release_server_state();
           }};
 }
@@ -504,7 +523,7 @@ const ServerState* EntityManager::peek_server_state() {
 
 void EntityManager::release_server_state() {
   server_state_refcount--;
-  if (server_state_refcount <= 0) {
+  if (server_state_refcount <= 0 && !is_deferred_write()) {
     server_state_cache.reset();
     server_state_refcount = 0;
   }
@@ -795,7 +814,9 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
   if (it != sectormap_cache.end()) {
     sectormap_refcount[key]++;
     return {this, it->second.get(), [this, star, pnum](const SectorMap& sm) {
-              sectors.save_map(sm);
+              if (!is_deferred_write()) {
+                sectors.save_map(sm);
+              }
               release_sectormap(star, pnum);
             }};
   }
@@ -811,7 +832,9 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
   sectormap_refcount[key] = 1;
 
   return {this, iter->second.get(), [this, star, pnum](const SectorMap& sm) {
-            sectors.save_map(sm);
+            if (!is_deferred_write()) {
+              sectors.save_map(sm);
+            }
             release_sectormap(star, pnum);
           }};
 }
@@ -938,4 +961,69 @@ void EntityManager::Transaction::rollback() {
 
 EntityManager::Transaction EntityManager::begin_transaction() {
   return Transaction(*this);
+}
+
+// DeferredWriteScope implementation
+EntityManager::DeferredWriteScope::DeferredWriteScope(EntityManager& em)
+    : em_(&em), committed_(false) {
+  em_->deferred_write_depth_++;
+}
+
+EntityManager::DeferredWriteScope::~DeferredWriteScope() {
+  if (!committed_ && em_) {
+    try {
+      if (std::uncaught_exceptions() > 0) {
+        rollback();
+      } else {
+        commit();
+      }
+    } catch (...) {
+      // Destructors must not throw exceptions
+    }
+  }
+}
+
+EntityManager::DeferredWriteScope::DeferredWriteScope(
+    DeferredWriteScope&& other) noexcept
+    : em_(other.em_), committed_(std::exchange(other.committed_, true)) {}
+
+EntityManager::DeferredWriteScope& EntityManager::DeferredWriteScope::operator=(
+    DeferredWriteScope&& other) noexcept {
+  if (this != &other) {
+    if (!committed_ && em_) {
+      try {
+        if (std::uncaught_exceptions() > 0) {
+          rollback();
+        } else {
+          commit();
+        }
+      } catch (...) {
+      }
+    }
+    em_ = other.em_;
+    committed_ = std::exchange(other.committed_, true);
+  }
+  return *this;
+}
+
+void EntityManager::DeferredWriteScope::commit() {
+  if (!committed_ && em_) {
+    em_->deferred_write_depth_--;
+    em_->db.begin_transaction();
+    em_->flush_all();
+    em_->db.commit();
+    committed_ = true;
+  }
+}
+
+void EntityManager::DeferredWriteScope::rollback() {
+  if (!committed_ && em_) {
+    em_->deferred_write_depth_--;
+    em_->clear_cache();
+    committed_ = true;
+  }
+}
+
+EntityManager::DeferredWriteScope EntityManager::create_deferred_write_scope() {
+  return DeferredWriteScope(*this);
 }

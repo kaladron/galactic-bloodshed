@@ -463,11 +463,8 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         }
       }
       if (update) {
-        if (doplanet(state.entity_manager, *star_handle, *planet_handle,
-                     state.stats)) {
-          /* save smap gotten & altered by doplanet
-             only if the planet is expl*/
-        }
+        doplanet(state.entity_manager, *star_handle, *planet_handle,
+                 state.stats);
       }
     }
 

@@ -922,109 +922,57 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
   }
 }
 
-int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
-             TurnStats& stats) {
-  int allmod = 0;
-
-  // Extract indices for array access and ship creation
-  const starnum_t starnum = star.star_id();
-  const planetnum_t planetnum = planet.planet_order();
-
-  // Reset per-planet state in TurnStats
+void reset_planet_turn_state(EntityManager& entity_manager, Planet& planet,
+                             TurnStats& stats) {
   stats.Claims = false;
-
   planet.maxpopn() = 0;
-
-  planet.popn() = 0; /* initialize population for recount */
+  planet.popn() = 0;
   planet.troops() = 0;
   planet.total_resources() = 0;
 
-  /* reset global variables */
   for (const Race* race : RaceList::readonly(entity_manager)) {
     const player_t p = race->Playernum;
     stats.Compat[p] = planet.compatibility(*race);
-    planet.info(p).numsectsowned = 0;
-    planet.info(p).troops = 0;
-    planet.info(p).popn = 0;
-    planet.info(p).est_production = 0.0;
+    auto& info = planet.info(*race);
+    info.numsectsowned = 0;
+    info.troops = 0;
+    info.popn = 0;
+    info.est_production = 0.0;
     stats.prod_crystals[p] = 0;
     stats.prod_fuel[p] = 0;
     stats.prod_destruct[p] = 0;
     stats.prod_res[p] = 0;
     stats.avg_mob[p] = 0;
   }
+}
 
-  auto smap_handle = entity_manager.get_sectormap(starnum, planetnum);
-  if (!smap_handle.get()) {
-    return 0;
-  }
-  auto& smap = *smap_handle;
-  process_planetary_ships(entity_manager, planet, smap, stats);
-  process_planet_climate(planet, star, stats);
-
+void process_planet_production(EntityManager& entity_manager, const Star& star,
+                               Planet& planet, SectorMap& smap,
+                               TurnStats& stats) {
   if (star.nova_stage()) {
-    if (process_supernova_sector_devastation(star, smap)) {
-      allmod = 1;
-    }
-  } else {
-    for (Sector& p : smap.shuffle()) {
-      if (p.is_occupied()) {
-        allmod = 1;
-        produce(entity_manager, star, planet, p, stats);
-        if (p.is_owned()) {
-          planet.info(p.get_owner()).est_production +=
-              est_production(p, entity_manager);
-        }
-        spread(entity_manager, planet, p, smap, stats);
-      }
-      p.clear_owner_if_empty();
-    }
+    process_supernova_sector_devastation(star, smap);
+    return;
   }
 
-  /*
-      if (p->wasted) {
-          if (x>1 && x<planet->Maxx-2) {
-              if (p->des==DES_SEA || p->des==DES_GAS) {
-                  if ( y>1 && y<planet->Maxy-2 &&
-                      (!(p-1)->wasted || !(p+1)->wasted) && !random()%5)
-                      p->wasted = 0;
-              } else if (p->des==DES_LAND || p->des==DES_MOUNT
-                         || p->des==DES_ICE) {
-                  if ( y>1 && y<planet->Maxy-2 && ((p-1)->popn || (p+1)->popn)
-                      && !random()%10)
-                      p->wasted = 0;
-              }
-          }
+  for (Sector& p : smap.shuffle()) {
+    if (p.is_occupied()) {
+      produce(entity_manager, star, planet, p, stats);
+      if (p.is_owned()) {
+        planet.info(p.get_owner()).est_production +=
+            est_production(p, entity_manager);
       }
-  */
-  /*
-      if (entity_manager.peek_star(starnum)->nova_stage) {
-          if (p->des==DES_ICE)
-              if(random()&01)
-                  p->des = DES_LAND;
-              else if (p->des==DES_SEA)
-                  if(random()&01)
-                      if ( (x>0 && (p-1)->des==DES_LAND) ||
-                          (x<planet->Maxx-1 && (p+1)->des==DES_LAND) ||
-                          (y>0 && (p-planet->Maxx)->des==DES_LAND) ||
-                          (y<planet->Maxy-1 && (p+planet->Maxx)->des==DES_LAND
-     ) ) {
-                          p->des = DES_LAND;
-                          p->popn = p->owner = p->troops = 0;
-                          p->resource += int_rand(1,5);
-                          p->fert = int_rand(1,4);
-                      }
-                      }
-                      */
-
-  for (const auto& p : smap.owned()) {
-    planet.info(p.get_owner()).numsectsowned++;
+      spread(entity_manager, planet, p, smap, stats);
+    }
+    p.clear_owner_if_empty();
   }
+}
 
-  process_island_exploration(entity_manager, star, planet, smap, stats);
-
-  /* environment nukes a random sector if toxic threshold exceeded */
-  const auto envir_damage = process_toxic_environmental_damage(planet, smap);
+void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
+                                Planet& planet,
+                                const std::optional<Coordinates>& envir_damage,
+                                const TurnStats& stats) {
+  const planetnum_t planetnum = planet.planet_order();
+  const starnum_t starnum = star.star_id();
 
   for (const Race* race : RaceList::readonly(entity_manager)) {
     const player_t p = race->Playernum;
@@ -1060,7 +1008,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
             "This planet's primary is in a Stage {} nova.\n",
             star.nova_stage());
       }
-      /* remind the player that he should clean up the environment. */
+      // Remind the player that they should clean up the environment
       if (envir_damage.has_value()) {
         telegram_buf << std::format("Environmental damage on sector {},{}\n",
                                     envir_damage->x, envir_damage->y);
@@ -1073,30 +1021,51 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
     }
   }
 
-  /* find out who is on this planet, for nova notification */
+  // Find out who is on this planet, for nova notification
   if (star.nova_stage() == 1) {
-    {
-      std::stringstream telegram_buf;
-      telegram_buf << std::format("BULLETIN from /{}/{}\n", star.get_name(),
-                                  star.get_planet_name(planetnum));
-      telegram_buf << std::format("\nStar {} is undergoing nova.\n",
-                                  star.get_name());
-      if (planet.type() == PlanetType::EARTH ||
-          planet.type() == PlanetType::WATER ||
-          planet.type() == PlanetType::FOREST) {
-        telegram_buf << "Seas and rivers are boiling!\n";
-      }
-      telegram_buf << "This planet must be evacuated immediately!\n"
-                   << TELEG_DELIM;
-      for (const Race* race : RaceList::readonly(entity_manager)) {
-        const player_t p = race->Playernum;
-        if (planet.info(p).numsectsowned) {
-          push_telegram(entity_manager, p, star.governor(p),
-                        telegram_buf.str());
-        }
+    std::stringstream telegram_buf;
+    telegram_buf << std::format("BULLETIN from /{}/{}\n", star.get_name(),
+                                star.get_planet_name(planetnum));
+    telegram_buf << std::format("\nStar {} is undergoing nova.\n",
+                                star.get_name());
+    if (planet.type() == PlanetType::EARTH ||
+        planet.type() == PlanetType::WATER ||
+        planet.type() == PlanetType::FOREST) {
+      telegram_buf << "Seas and rivers are boiling!\n";
+    }
+    telegram_buf << "This planet must be evacuated immediately!\n"
+                 << TELEG_DELIM;
+    for (const Race* race : RaceList::readonly(entity_manager)) {
+      const player_t p = race->Playernum;
+      if (planet.info(p).numsectsowned) {
+        push_telegram(entity_manager, p, star.governor(p), telegram_buf.str());
       }
     }
   }
+}
+
+void doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
+              TurnStats& stats) {
+  reset_planet_turn_state(entity_manager, planet, stats);
+
+  auto smap_handle =
+      entity_manager.get_sectormap(star.star_id(), planet.planet_order());
+  auto& smap = *smap_handle;
+
+  process_planetary_ships(entity_manager, planet, smap, stats);
+  process_planet_climate(planet, star, stats);
+
+  process_planet_production(entity_manager, star, planet, smap, stats);
+
+  for (const auto& p : smap.owned()) {
+    planet.info(p.get_owner()).numsectsowned++;
+  }
+
+  process_island_exploration(entity_manager, star, planet, smap, stats);
+
+  const auto envir_damage = process_toxic_environmental_damage(planet, smap);
+
+  send_planet_turn_telegrams(entity_manager, star, planet, envir_damage, stats);
 
   do_recover(entity_manager, star, planet);
 
@@ -1105,6 +1074,4 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
   process_enslavement_and_revolts(entity_manager, star, planet, smap, stats);
 
   process_planet_economy(entity_manager, star, planet, smap, stats);
-
-  return allmod;
 }

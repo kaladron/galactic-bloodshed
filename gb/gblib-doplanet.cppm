@@ -12,8 +12,8 @@ import :turnstats;
 import :types;
 import :misc;
 
-export int doplanet(EntityManager&, const Star& star, Planet& planet,
-                    TurnStats& stats);
+export void doplanet(EntityManager&, const Star& star, Planet& planet,
+                     TurnStats& stats);
 
 export void moveplanet(EntityManager& entity_manager, const Star& star,
                        Planet& planet);
@@ -361,3 +361,20 @@ export void update_planet_toxicity(Planet& planet);
 export void process_planet_economy(EntityManager& entity_manager,
                                    const Star& star, Planet& planet,
                                    SectorMap& smap, TurnStats& stats);
+
+/// \brief Resets transient planetary turn statistics and colony info for all
+/// races before turn production starts.
+export void reset_planet_turn_state(EntityManager& entity_manager,
+                                    Planet& planet, TurnStats& stats);
+
+/// \brief Executes sector production and population spread across all sectors
+/// on a planet, or processes supernova devastation if the star is in nova.
+export void process_planet_production(EntityManager& entity_manager,
+                                      const Star& star, Planet& planet,
+                                      SectorMap& smap, TurnStats& stats);
+
+/// \brief Sends autoreport and emergency nova bulletin telegrams to planetary
+/// colonies.
+export void send_planet_turn_telegrams(
+    EntityManager& entity_manager, const Star& star, Planet& planet,
+    const std::optional<Coordinates>& envir_damage, const TurnStats& stats);

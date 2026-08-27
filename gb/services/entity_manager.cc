@@ -767,7 +767,9 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
   // SectorMap
   auto planet_opt = planets.find_by_location(star, pnum);
   if (!planet_opt) {
-    return {this, nullptr, [](const SectorMap&) {}};
+    throw EntityNotFoundError(std::format(
+        "SectorMap not found: planet not found for star_id={}, planet_id={}",
+        star, pnum));
   }
 
   // Load the sector map

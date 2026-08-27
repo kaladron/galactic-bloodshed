@@ -809,8 +809,7 @@ void test_doplanet_full_cycle() {
   TurnStats stats{};
   stats.Compat[player_t{1}] = 1.0;
 
-  int result = doplanet(em, star, planet, stats);
-  test::expect_ne(result, 0);
+  doplanet(em, star, planet, stats);
 
   test::expect_gt(planet.popn(), 0);
   test::expect_eq(planet.info(player_t{1}).numsectsowned, 100);
@@ -870,8 +869,7 @@ void test_exploration_island_discovery() {
   TurnStats stats{};
   stats.Compat[player_t{1}] = 1.0;
 
-  int result = doplanet(em, star, planet, stats);
-  test::expect_ne(result, 0);
+  doplanet(em, star, planet, stats);
 
   // Verify that an island was claimed (stats.Claims == true)
   test::expect_true(stats.Claims);
@@ -1925,6 +1923,130 @@ void test_process_planet_economy() {
   test::expect_eq(stats.Power[player_t{2}].planets_owned, 0);
 }
 
+void test_reset_planet_turn_state() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(1);
+  race1.name = "Player1Race";
+  Race race2 = createTestRace(2);
+  race2.name = "Player2Race";
+  RaceRepository races(store);
+  races.save(race1);
+  races.save(race2);
+
+  Planet planet = createTestPlanet();
+  planet.maxpopn() = 500;
+  planet.popn() = 250;
+  planet.troops() = 50;
+  planet.total_resources() = 100;
+  planet.info(player_t{1}).numsectsowned = 5;
+  planet.info(player_t{1}).popn = 200;
+  planet.info(player_t{1}).troops = 30;
+  planet.info(player_t{1}).est_production = 50.0;
+
+  TurnStats stats{};
+  stats.Claims = true;
+  stats.prod_fuel[player_t{1}] = 10;
+  stats.prod_res[player_t{1}] = 20;
+
+  reset_planet_turn_state(em, planet, stats);
+
+  test::expect_false(stats.Claims);
+  test::expect_eq(planet.maxpopn(), 0);
+  test::expect_eq(planet.popn(), 0);
+  test::expect_eq(planet.troops(), 0);
+  test::expect_eq(planet.total_resources(), 0);
+
+  test::expect_eq(planet.info(player_t{1}).numsectsowned, 0);
+  test::expect_eq(planet.info(player_t{1}).popn, 0);
+  test::expect_eq(planet.info(player_t{1}).troops, 0);
+  test::expect_eq(planet.info(player_t{1}).est_production, 0.0);
+  test::expect_eq(stats.prod_fuel[player_t{1}], 0);
+  test::expect_eq(stats.prod_res[player_t{1}], 0);
+  test::expect_true(stats.Compat[player_t{1}] > 0.0);
+}
+
+void test_process_planet_production() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(1);
+  race.name = "ProdRace";
+  race.likesbest = SectorType::SEC_LAND;
+  race.likes[SectorType::SEC_LAND] = 1.0;
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.dimensions() = Coordinates{2, 2};
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  SectorMap smap(planet);
+  auto& s00 = smap.get(Coordinates{0, 0});
+  s00.set_owner(1);
+  s00.set_popn_exact(100);
+  s00.set_efficiency_bounded(100);
+  s00.set_condition(SectorType::SEC_LAND);
+  s00.set_resource(50);
+  s00.set_fert(20);
+
+  TurnStats stats{};
+  stats.Compat[player_t{1}] = 100.0;
+
+  process_planet_production(em, star, planet, smap, stats);
+  test::expect_gt(stats.prod_res[player_t{1}], 0);
+}
+
+void test_send_planet_turn_telegrams() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(1);
+  race.name = "TelegRace";
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.info(player_t{1}).autorep = 2;
+
+  TurnStats stats{};
+  stats.prod_res[player_t{1}] = 40;
+  stats.prod_fuel[player_t{1}] = 20;
+  stats.prod_destruct[player_t{1}] = 10;
+  stats.prod_crystals[player_t{1}] = 3;
+
+  send_planet_turn_telegrams(em, star, planet, Coordinates{1, 1}, stats);
+
+  test::expect_eq(planet.info(player_t{1}).autorep, 1);
+  auto telegrams = em.get_telegrams(1, 0);
+  test::expect_eq(telegrams.size(), 1);
+  test::expect_true(
+      telegrams[0].message.contains("Total      Prod: 40r 20f 10d"));
+  test::expect_true(telegrams[0].message.contains("3 crystals found"));
+  test::expect_true(
+      telegrams[0].message.contains("Environmental damage on sector 1,1"));
+}
+
 }  // namespace
 
 int main() {
@@ -2024,6 +2146,18 @@ int main() {
 
   std::println(std::cout, "  Testing process_planet_economy... ");
   test_process_planet_economy();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing reset_planet_turn_state... ");
+  test_reset_planet_turn_state();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_planet_production... ");
+  test_process_planet_production();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing send_planet_turn_telegrams... ");
+  test_send_planet_turn_telegrams();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

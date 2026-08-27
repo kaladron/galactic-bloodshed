@@ -85,8 +85,7 @@ bool tech_status(const command_t& argv, GameObj& g) {
 
   returns totals{};
   if (argv.size() == 1) {
-    for (auto star_handle : StarList(g.entity_manager)) {
-      const auto& star = *star_handle;
+    for (const Star& star : StarList::readonly(g.entity_manager)) {
       tech_report_star(g, star, star.star_id(), table, totals);
     }
   } else { /* Several arguments */
@@ -98,10 +97,12 @@ bool tech_status(const command_t& argv, GameObj& g) {
         continue;
       } /* ok, a proper location */
       starnum_t star = where.snum;
-      const auto* star_ptr = g.entity_manager.peek_star(star);
-      if (!star_ptr) continue;
-      Star star_wrapper(*star_ptr);
-      tech_report_star(g, star_wrapper, star, table, totals);
+      try {
+        const auto& star_ref = *g.entity_manager.peek_star(star);
+        tech_report_star(g, star_ref, star, table, totals);
+      } catch (const EntityNotFoundError&) {
+        continue;
+      }
     }
   }
 

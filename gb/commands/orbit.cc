@@ -108,8 +108,7 @@ bool orbit(const command_t& argv, GameObj& g) {
         g.out << "Universe data not available.\n";
         return false;
       }
-      for (auto star_handle : StarList(g.entity_manager)) {
-        const auto& star_ref = *star_handle;
+      for (const Star& star_ref : StarList::readonly(g.entity_manager)) {
         if (DontDispNum != star_ref.star_id()) {
           std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, star_ref,
                                       DontDispStars, Race);

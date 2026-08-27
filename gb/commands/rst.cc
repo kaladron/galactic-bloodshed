@@ -551,8 +551,7 @@ bool rst(const command_t& argv, GameObj& g) {
         ship_report(g, ctx, *ship, report_types);
       }
 
-      for (auto star_handle : StarList(g.entity_manager)) {
-        const auto& star = *star_handle;
+      for (const Star& star : StarList::readonly(g.entity_manager)) {
         report_star_ships(g, ctx, g.player(), star.star_id(), report_types);
       }
       break;

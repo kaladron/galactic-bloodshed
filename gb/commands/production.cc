@@ -86,8 +86,7 @@ bool production(const command_t& argv, GameObj& g) {
   table[0].format().font_style({tabulate::FontStyle::bold});
 
   if (argv.size() < 2)
-    for (auto star_handle : StarList(g.entity_manager)) {
-      const auto& star = *star_handle;
+    for (const Star& star : StarList::readonly(g.entity_manager)) {
       production_at_star(g, star.star_id(), table);
     }
   else

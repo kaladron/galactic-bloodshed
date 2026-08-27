@@ -36,8 +36,7 @@ bool explore(const command_t& argv, GameObj& g) {
   g.out << std::format(" Global action points : [{:2}]\n",
                        sdata.AP[Playernum.value - 1]);
 
-  for (auto star_handle : StarList(g.entity_manager)) {
-    const auto& star_ref = *star_handle;
+  for (const Star& star_ref : StarList::readonly(g.entity_manager)) {
     if ((starq == -1) || (starq == star_ref.star_id())) {
       if (isset(star_ref.explored(), Playernum)) {
         // Output star header

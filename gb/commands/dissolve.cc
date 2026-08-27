@@ -67,8 +67,7 @@ bool dissolve(const command_t& argv, GameObj& g) {
     g.out << std::format("Ship #{}, self-destruct enabled\n", i);
   }
 
-  for (auto star_handle : StarList(g.entity_manager)) {
-    const auto& star = *star_handle;
+  for (const Star& star : StarList::readonly(g.entity_manager)) {
     if (!isset(star.explored(), Playernum)) continue;
 
     for (auto planet_handle :

@@ -221,11 +221,11 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
   }
 
   if (DEFENSE) {
-    for (auto alien_race_handle : RaceList(g.entity_manager)) {
-      const auto i = alien_race_handle->Playernum;
+    for (const Race& alien_race : RaceList::readonly(g.entity_manager)) {
+      const auto i = alien_race.Playernum;
       if (s.alive() && i != Playernum && p.info(i).popn && p.info(i).guns &&
           p.info(i).destruct) {
-        if (isset(alien_race_handle->atwar, s.owner())) {
+        if (isset(alien_race.atwar, s.owner())) {
           auto alien_handle = g.entity_manager.get_race(i);
           if (!alien_handle.get()) continue;
           auto& alien = *alien_handle;
@@ -262,8 +262,8 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
     auto buf =
         std::format("BOOM!! {} crashes on sector {} with blast radius of {}.\n",
                     s, target_coords, numdest);
-    for (auto race_handle : RaceList(g.entity_manager)) {
-      const auto i = race_handle->Playernum;
+    for (const Race& race : RaceList::readonly(g.entity_manager)) {
+      const auto i = race.Playernum;
       if (p.info(i).numsectsowned || i == Playernum)
         warn_player(g.session_registry, g.entity_manager, i, star->governor(i),
                     buf);
@@ -314,8 +314,8 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
   auto landing_msg = std::format(
       "{} observed landing on sector {},planet /{}/{}.\n", s, s.land_coords(),
       star->get_name(), star->get_planet_name(s.pnumorbits()));
-  for (auto race_handle : RaceList(g.entity_manager)) {
-    const auto i = race_handle->Playernum;
+  for (const Race& race : RaceList::readonly(g.entity_manager)) {
+    const auto i = race.Playernum;
     if (p.info(i).numsectsowned && i != Playernum) {
       g.session_registry.notify_player(i, star->governor(i), landing_msg);
     }

@@ -553,6 +553,11 @@ int EntityManager::num_commods() {
   return store.list_ids("tbl_commod").size();
 }
 
+int EntityManager::max_commod_id() {
+  auto ids = store.list_ids("tbl_commod");
+  return ids.empty() ? 0 : ids.back();
+}
+
 int EntityManager::next_available_commod_id() {
   CommodRepository commod_repo(store);
   return commod_repo.next_available_id();
@@ -563,9 +568,21 @@ player_t EntityManager::num_races() {
   return store.list_ids("tbl_race").size();
 }
 
+player_t EntityManager::max_race_player() {
+  auto ids = store.list_ids("tbl_race");
+  return ids.empty() ? player_t{0} : player_t{ids.back()};
+}
+
 shipnum_t EntityManager::num_ships() {
   // Count ships by listing all IDs in the database
   return store.list_ids("tbl_ship").size();
+}
+
+shipnum_t EntityManager::max_ship_number() {
+  auto ids = store.list_ids("tbl_ship");
+  return ids.empty()
+             ? shipnum_t{0}
+             : shipnum_t{static_cast<shipnum_t::value_type>(ids.back())};
 }
 
 // Utility methods

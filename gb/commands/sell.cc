@@ -122,7 +122,7 @@ bool sell(const command_t& argv, GameObj& g) {
   }
 
   int commodno = g.entity_manager.next_available_commod_id();
-  if (commodno == -1) commodno = g.entity_manager.num_commods() + 1;
+  if (commodno == -1) commodno = g.entity_manager.max_commod_id() + 1;
   g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount, item);
   std::string buf =
       std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", commodno,

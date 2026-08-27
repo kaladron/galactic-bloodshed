@@ -158,7 +158,7 @@ ShipList::MutableIterator& ShipList::MutableIterator::operator++() {
   } else {
     // Scope-based: increment to next ship number
     ++current;
-    if (current > em.num_ships()) {
+    if (current > em.max_ship_number()) {
       current = 0;
     }
   }
@@ -190,7 +190,7 @@ void ShipList::MutableIterator::advance_to_next_match() {
         return;
       }
       ++current;
-      if (current > em.num_ships()) {
+      if (current > em.max_ship_number()) {
         current = 0;
       }
       continue;
@@ -205,7 +205,7 @@ void ShipList::MutableIterator::advance_to_next_match() {
       current = ship->nextship();
     } else {
       ++current;
-      if (current > em.num_ships()) {
+      if (current > em.max_ship_number()) {
         current = 0;
       }
     }
@@ -270,7 +270,7 @@ ShipList::ConstIterator& ShipList::ConstIterator::operator++() {
   } else {
     // Scope-based: increment to next ship number
     ++current;
-    if (current > em.num_ships()) {
+    if (current > em.max_ship_number()) {
       current = 0;
     }
   }
@@ -307,7 +307,7 @@ void ShipList::ConstIterator::advance_to_next_match() {
         return;
       }
       ++current;
-      if (current > em.num_ships()) {
+      if (current > em.max_ship_number()) {
         current = 0;
       }
       continue;
@@ -322,7 +322,7 @@ void ShipList::ConstIterator::advance_to_next_match() {
       current = ship->nextship();
     } else {
       ++current;
-      if (current > em.num_ships()) {
+      if (current > em.max_ship_number()) {
         current = 0;
       }
     }

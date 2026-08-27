@@ -206,10 +206,13 @@ public:
   void delete_commod(int id);
   int next_available_commod_id();
 
-  // Count methods (for queries)
+  // Count and ID boundary methods (for queries and iteration)
   int num_commods();
+  int max_commod_id();
   player_t num_races();
+  player_t max_race_player();
   shipnum_t num_ships();
+  shipnum_t max_ship_number();
 
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);

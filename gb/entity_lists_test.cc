@@ -294,6 +294,64 @@ void test_ship_list_patterns(EntityManager& em) {
   }
 }
 
+void test_sparse_entity_lists() {
+  std::println(std::cout, "Testing sparse ID iteration in entity lists...");
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  // 1. Sparse races: player 1 and player 4 (gaps at 2, 3)
+  {
+    RaceRepository races(store);
+    Race r1{};
+    r1.Playernum = 1;
+    r1.name = "Empire1";
+    races.save(r1);
+
+    Race r4{};
+    r4.Playernum = 4;
+    r4.name = "Empire4";
+    races.save(r4);
+
+    std::vector<player_t> visited_races;
+    for (const Race* r : RaceList::readonly(em)) {
+      visited_races.push_back(r->Playernum);
+    }
+    test::expect_eq(visited_races.size(), 2);
+    test::expect_eq(visited_races[0], player_t{1});
+    test::expect_eq(visited_races[1], player_t{4});
+    std::println(std::cout, "  ✓ Sparse RaceList iteration passed");
+  }
+
+  // 2. Sparse commods: lot 1 and lot 6 (gaps at 2, 3, 4, 5)
+  {
+    CommodRepository commods(store);
+    Commod c1{};
+    c1.id = 1;
+    c1.owner = 1;
+    c1.amount = 50;
+    c1.type = CommodType::RESOURCE;
+    commods.save(c1);
+
+    Commod c6{};
+    c6.id = 6;
+    c6.owner = 4;
+    c6.amount = 200;
+    c6.type = CommodType::CRYSTAL;
+    commods.save(c6);
+
+    std::vector<int> visited_commods;
+    for (const Commod* c : CommodList::readonly(em)) {
+      visited_commods.push_back(c->id);
+    }
+    test::expect_eq(visited_commods.size(), 2);
+    test::expect_eq(visited_commods[0], 1);
+    test::expect_eq(visited_commods[1], 6);
+    std::println(std::cout, "  ✓ Sparse CommodList iteration passed");
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -311,6 +369,7 @@ int main() {
   test_playernum_indexing(em);
   populate_ships(em, store);
   test_ship_list_patterns(em);
+  test_sparse_entity_lists();
 
   std::println(std::cout, "All entity list tests passed!");
   return 0;

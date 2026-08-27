@@ -628,6 +628,57 @@ int main() {
                  "✓ Test 7b passed: Const All/AllAlive iteration works");
   }
 
+  // Test 8: Sparse ship IDs (gaps in ID sequence)
+  {
+    std::println(std::cout, "\nTest 8: Sparse ship IDs iteration");
+    TestContext sparse_ctx;
+    JsonStore sparse_store(sparse_ctx.db);
+    ShipRepository sparse_repo(sparse_store);
+
+    // Create only ship 1 and ship 5 (gaps at 2, 3, 4)
+    Ship s1{};
+    s1.number() = 1;
+    s1.owner() = 1;
+    s1.alive() = true;
+    s1.storbits() = 0;
+    s1.pnumorbits() = 0;
+    s1.type() = ShipType::OTYPE_PROBE;
+    sparse_repo.save(s1);
+
+    Ship s5{};
+    s5.number() = 5;
+    s5.owner() = 1;
+    s5.alive() = true;
+    s5.storbits() = 0;
+    s5.pnumorbits() = 0;
+    s5.type() = ShipType::OTYPE_FACTORY;
+    sparse_repo.save(s5);
+
+    // Test mutable iteration over sparse IDs
+    std::vector<shipnum_t> visited_mutable;
+    for (auto handle :
+         ShipList(sparse_ctx.em, ShipList::IterationType::AllAlive)) {
+      visited_mutable.push_back(handle->number());
+    }
+    test::expect_eq(visited_mutable.size(), 2);
+    test::expect_eq(visited_mutable[0], shipnum_t{1});
+    test::expect_eq(visited_mutable[1], shipnum_t{5});
+
+    // Test const iteration over sparse IDs
+    std::vector<shipnum_t> visited_const;
+    for (const Ship* ship :
+         ShipList::readonly(sparse_ctx.em, ShipList::IterationType::All)) {
+      visited_const.push_back(ship->number());
+    }
+    test::expect_eq(visited_const.size(), 2);
+    test::expect_eq(visited_const[0], shipnum_t{1});
+    test::expect_eq(visited_const[1], shipnum_t{5});
+
+    std::println(
+        std::cout,
+        "✓ Test 8 passed: Sparse ship IDs iteration visited ships #1 and #5");
+  }
+
   std::println(std::cout, "\nAll ShipList tests passed!");
   return 0;
 }

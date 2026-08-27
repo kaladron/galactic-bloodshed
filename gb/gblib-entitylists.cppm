@@ -75,7 +75,7 @@ struct EntityListTraits<Race> {
   using index_type = player_t;
 
   static index_type count(EntityManager& em) {
-    return em.num_races();
+    return em.max_race_player();
   }
 
   static constexpr index_type first_index() {
@@ -143,7 +143,7 @@ struct EntityListTraits<Commod> {
   using index_type = int;
 
   static index_type count(EntityManager& em) {
-    return em.num_commods();
+    return em.max_commod_id();
   }
 
   static constexpr index_type first_index() {
@@ -246,8 +246,14 @@ public:
 
   private:
     void advance_to_valid() {
-      while (current_ != end_ &&
-             !traits_type::is_valid(traits_type::peek(*em_, current_))) {
+      while (current_ != end_) {
+        try {
+          if (traits_type::is_valid(traits_type::peek(*em_, current_))) {
+            return;
+          }
+        } catch (const EntityNotFoundError&) {
+          // Entity does not exist at this sparse ID, continue to next
+        }
         current_ = traits_type::next(current_);
       }
     }
@@ -288,8 +294,14 @@ public:
 
   private:
     void advance_to_valid() {
-      while (current_ != end_ &&
-             !traits_type::is_valid(traits_type::peek(*em_, current_))) {
+      while (current_ != end_) {
+        try {
+          if (traits_type::is_valid(traits_type::peek(*em_, current_))) {
+            return;
+          }
+        } catch (const EntityNotFoundError&) {
+          // Entity does not exist at this sparse ID, continue to next
+        }
         current_ = traits_type::next(current_);
       }
     }

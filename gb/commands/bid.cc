@@ -155,7 +155,7 @@ bool place_bid(const command_t& argv, GameObj& g) {
 
   auto lot = std::stoi(argv[1]);
   money_t bid0 = std::stoi(argv[2]);
-  if ((lot <= 0) || lot > g.entity_manager.num_commods()) {
+  if ((lot <= 0) || lot > g.entity_manager.max_commod_id()) {
     g.out << "Illegal lot number.\n";
     return false;
   }

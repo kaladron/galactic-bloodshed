@@ -886,3 +886,56 @@ bool EntityManager::has_telegrams(player_t player, governor_t governor) {
 void EntityManager::purge_all_telegrams() {
   telegrams.purge_all();
 }
+
+// Transaction implementation
+EntityManager::Transaction::Transaction(EntityManager& em)
+    : em_(&em), active_(true) {
+  em_->db.begin_transaction();
+}
+
+EntityManager::Transaction::~Transaction() {
+  if (active_) {
+    try {
+      rollback();
+    } catch (...) {
+      // Destructors must not throw exceptions
+    }
+  }
+}
+
+EntityManager::Transaction::Transaction(Transaction&& other) noexcept
+    : em_(other.em_), active_(std::exchange(other.active_, false)) {}
+
+EntityManager::Transaction&
+EntityManager::Transaction::operator=(Transaction&& other) noexcept {
+  if (this != &other) {
+    if (active_) {
+      try {
+        rollback();
+      } catch (...) {
+      }
+    }
+    em_ = other.em_;
+    active_ = std::exchange(other.active_, false);
+  }
+  return *this;
+}
+
+void EntityManager::Transaction::commit() {
+  if (active_ && em_) {
+    em_->db.commit();
+    active_ = false;
+  }
+}
+
+void EntityManager::Transaction::rollback() {
+  if (active_ && em_) {
+    em_->db.rollback();
+    em_->clear_cache();
+    active_ = false;
+  }
+}
+
+EntityManager::Transaction EntityManager::begin_transaction() {
+  return Transaction(*this);
+}

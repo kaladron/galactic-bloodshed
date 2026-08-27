@@ -79,11 +79,19 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     }
   }
 
-  // 5. Execute Command
+  // 5. Open Transaction and Execute Command
   if (!desc.handler) {
     return false;
   }
-  bool success = desc.handler(argv, g);
+
+  auto txn = g.entity_manager.begin_transaction();
+  bool success = false;
+  try {
+    success = desc.handler(argv, g);
+  } catch (...) {
+    txn.rollback();
+    throw;
+  }
 
   // 6. Deduct Fixed AP on success
   if (success && desc.ap.amount > 0) {
@@ -94,6 +102,12 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
       auto univ_handle = g.entity_manager.get_universe();
       univ_handle->AP[g.player().value - 1] -= desc.ap.amount;
     }
+  }
+
+  if (success) {
+    txn.commit();
+  } else {
+    txn.rollback();
   }
 
   return success;

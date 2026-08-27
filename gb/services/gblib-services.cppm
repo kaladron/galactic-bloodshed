@@ -306,6 +306,29 @@ public:
   // Clear cache (for testing or after turn processing)
   void clear_cache();
 
+  // Transaction Unit of Work for atomic commands
+  class Transaction {
+    EntityManager* em_{nullptr};
+    bool active_{false};
+
+  public:
+    explicit Transaction(EntityManager& em);
+    ~Transaction();
+
+    Transaction(const Transaction&) = delete;
+    Transaction& operator=(const Transaction&) = delete;
+    Transaction(Transaction&& other) noexcept;
+    Transaction& operator=(Transaction&& other) noexcept;
+
+    void commit();
+    void rollback();
+    [[nodiscard]] bool is_active() const noexcept {
+      return active_;
+    }
+  };
+
+  [[nodiscard]] Transaction begin_transaction();
+
 private:
   // Release methods called by EntityHandle destructor
   void release_race(player_t player);

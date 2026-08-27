@@ -352,6 +352,92 @@ void test_sparse_entity_lists() {
   }
 }
 
+void test_block_list(EntityManager& em, JsonStore& store) {
+  BlockRepository repo(store);
+  {
+    block b1{};
+    b1.Playernum = player_t{1};
+    b1.name = "Federation";
+    b1.VPs = 100;
+    repo.save(b1);
+
+    block b3{};
+    b3.Playernum = player_t{3};
+    b3.name = "Empire";
+    b3.VPs = 250;
+    repo.save(b3);
+  }
+
+  // Readonly iteration (sparse: blocks 1 and 3, skipping 2)
+  std::vector<std::string> names;
+  for (const block& b : BlockList::readonly(em)) {
+    names.push_back(b.name);
+  }
+  test::expect_eq(names.size(), 2);
+  test::expect_eq(names[0], "Federation");
+  test::expect_eq(names[1], "Empire");
+  std::println(std::cout, "  ✓ BlockList::readonly passed");
+
+  // Mutable iteration with auto-save
+  for (auto block_handle : BlockList(em)) {
+    block_handle->VPs += 50;
+  }
+
+  em.clear_cache();
+  const auto* b1_peek = em.peek_block(blocknum_t{1});
+  test::expect_true(b1_peek != nullptr);
+  test::expect_eq(b1_peek->VPs, 150);
+
+  const auto* b3_peek = em.peek_block(blocknum_t{3});
+  test::expect_true(b3_peek != nullptr);
+  test::expect_eq(b3_peek->VPs, 300);
+  std::println(std::cout, "  ✓ Mutable BlockList auto-save passed");
+}
+
+void test_power_list(EntityManager& em, JsonStore& store) {
+  PowerRepository repo(store);
+  {
+    power p1{};
+    p1.id = 1;
+    p1.troops = 1000;
+    p1.popn = 50000;
+    p1.money = 20000;
+    repo.save(p1);
+
+    power p2{};
+    p2.id = 2;
+    p2.troops = 2000;
+    p2.popn = 80000;
+    p2.money = 40000;
+    repo.save(p2);
+  }
+
+  // Readonly iteration
+  std::vector<population_t> troops;
+  for (const power& p : PowerList::readonly(em)) {
+    troops.push_back(p.troops);
+  }
+  test::expect_eq(troops.size(), 2);
+  test::expect_eq(troops[0], 1000);
+  test::expect_eq(troops[1], 2000);
+  std::println(std::cout, "  ✓ PowerList::readonly passed");
+
+  // Mutable iteration with auto-save
+  for (auto power_handle : PowerList(em)) {
+    power_handle->troops += 500;
+  }
+
+  em.clear_cache();
+  const auto* p1_peek = em.peek_power(powernum_t{1});
+  test::expect_true(p1_peek != nullptr);
+  test::expect_eq(p1_peek->troops, 1500);
+
+  const auto* p2_peek = em.peek_power(powernum_t{2});
+  test::expect_true(p2_peek != nullptr);
+  test::expect_eq(p2_peek->troops, 2500);
+  std::println(std::cout, "  ✓ Mutable PowerList auto-save passed");
+}
+
 }  // namespace
 
 int main() {
@@ -367,6 +453,8 @@ int main() {
   test_planet_list_readonly(em);
   test_commod_list_readonly(em);
   test_playernum_indexing(em);
+  test_block_list(em, store);
+  test_power_list(em, store);
   populate_ships(em, store);
   test_ship_list_patterns(em);
   test_sparse_entity_lists();

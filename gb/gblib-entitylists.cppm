@@ -172,6 +172,72 @@ struct EntityListTraits<Commod> {
 };
 
 export template <>
+struct EntityListTraits<block> {
+  using index_type = blocknum_t;
+
+  static index_type count(EntityManager& em) {
+    return em.max_block_id();
+  }
+
+  static constexpr index_type first_index() {
+    return index_type{1};
+  }
+
+  static index_type end_index(index_type count) {
+    return index_type{count.value + 1};
+  }
+
+  static index_type next(index_type current) {
+    return index_type{current.value + 1};
+  }
+
+  static EntityHandle<block> get(EntityManager& em, index_type index) {
+    return em.get_block(index);
+  }
+
+  static const block* peek(EntityManager& em, index_type index) {
+    return em.peek_block(index);
+  }
+
+  static bool is_valid(const block* entity) {
+    return entity != nullptr;
+  }
+};
+
+export template <>
+struct EntityListTraits<power> {
+  using index_type = powernum_t;
+
+  static index_type count(EntityManager& em) {
+    return em.max_power_id();
+  }
+
+  static constexpr index_type first_index() {
+    return index_type{1};
+  }
+
+  static index_type end_index(index_type count) {
+    return index_type{count.value + 1};
+  }
+
+  static index_type next(index_type current) {
+    return index_type{current.value + 1};
+  }
+
+  static EntityHandle<power> get(EntityManager& em, index_type index) {
+    return em.get_power(index);
+  }
+
+  static const power* peek(EntityManager& em, index_type index) {
+    return em.peek_power(index);
+  }
+
+  static bool is_valid(const power* entity) {
+    return entity != nullptr;
+  }
+};
+
+export template <>
 struct EntityListTraits<Planet> {
   using primary_key_type = starnum_t;
   using index_type = planetnum_t;
@@ -546,6 +612,34 @@ public:
   using ConstIterator = typename Base::ConstIterator;
 
   explicit CommodList(EntityManager& em) : Base(em) {}
+};
+
+/**
+ * Iterator class for alliance blocks (1-indexed, 1..max_block_id).
+ * Returns EntityHandle<block> for RAII auto-save behavior.
+ * Skips empty slots (sparse iteration).
+ */
+export class BlockList : public SimpleEntityList<block, BlockList> {
+public:
+  using Base = SimpleEntityList<block, BlockList>;
+  using Iterator = typename Base::Iterator;
+  using ConstIterator = typename Base::ConstIterator;
+
+  explicit BlockList(EntityManager& em) : Base(em) {}
+};
+
+/**
+ * Iterator class for player power statistics (1-indexed, 1..max_power_id).
+ * Returns EntityHandle<power> for RAII auto-save behavior.
+ * Skips empty slots (sparse iteration).
+ */
+export class PowerList : public SimpleEntityList<power, PowerList> {
+public:
+  using Base = SimpleEntityList<power, PowerList>;
+  using Iterator = typename Base::Iterator;
+  using ConstIterator = typename Base::ConstIterator;
+
+  explicit PowerList(EntityManager& em) : Base(em) {}
 };
 
 // ============================================================================

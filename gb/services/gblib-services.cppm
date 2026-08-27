@@ -278,6 +278,10 @@ public:
   player_t max_race_player();
   shipnum_t num_ships();
   shipnum_t max_ship_number();
+  blocknum_t num_blocks();
+  blocknum_t max_block_id();
+  powernum_t num_powers();
+  powernum_t max_power_id();
 
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);

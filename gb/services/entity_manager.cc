@@ -629,6 +629,24 @@ shipnum_t EntityManager::max_ship_number() {
              : shipnum_t{static_cast<shipnum_t::value_type>(ids.back())};
 }
 
+blocknum_t EntityManager::num_blocks() {
+  return blocknum_t{static_cast<int>(store.list_ids("tbl_block").size())};
+}
+
+blocknum_t EntityManager::max_block_id() {
+  auto ids = store.list_ids("tbl_block");
+  return ids.empty() ? blocknum_t{0} : blocknum_t{ids.back()};
+}
+
+powernum_t EntityManager::num_powers() {
+  return powernum_t{static_cast<int>(store.list_ids("tbl_power").size())};
+}
+
+powernum_t EntityManager::max_power_id() {
+  auto ids = store.list_ids("tbl_power");
+  return ids.empty() ? powernum_t{0} : powernum_t{ids.back()};
+}
+
 // Utility methods
 void EntityManager::flush_all() {
   // Save all cached entities - entities now contain their own IDs

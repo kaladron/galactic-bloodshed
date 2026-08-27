@@ -234,22 +234,6 @@ public:
     return data_.dimensions;
   }
 
-  // Deprecated: Use dimensions().x instead
-  [[nodiscard]] int Maxx() const noexcept {
-    return data_.dimensions.x;
-  }
-  int& Maxx() noexcept {
-    return data_.dimensions.x;
-  }
-
-  // Deprecated: Use dimensions().y instead
-  [[nodiscard]] int Maxy() const noexcept {
-    return data_.dimensions.y;
-  }
-  int& Maxy() noexcept {
-    return data_.dimensions.y;
-  }
-
   [[nodiscard]] constexpr bool is_valid(const Coordinates c) const noexcept {
     return c.x >= 0 && c.y >= 0 && c.x < data_.dimensions.x &&
            c.y < data_.dimensions.y;
@@ -260,6 +244,10 @@ public:
     int wrapped_x =
         (c.x % data_.dimensions.x + data_.dimensions.x) % data_.dimensions.x;
     return {wrapped_x, c.y};
+  }
+
+  [[nodiscard]] constexpr int num_sectors() const noexcept {
+    return data_.dimensions.x * data_.dimensions.y;
   }
 
   [[nodiscard]] population_t popn() const {
@@ -415,8 +403,7 @@ private:
 
 //* Return gravity for the Planet
 double Planet::gravity() const {
-  return static_cast<double>(data_.dimensions.x) *
-         static_cast<double>(data_.dimensions.y) * GRAV_FACTOR;
+  return static_cast<double>(num_sectors()) * GRAV_FACTOR;
 }
 
 double Planet::compatibility(const Race& race) const {

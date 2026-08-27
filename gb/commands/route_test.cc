@@ -52,8 +52,7 @@ void setup_test_world(TestContext& ctx) {
   Planet planet0{};
   planet0.star_id() = 0;
   planet0.planet_order() = 0;
-  planet0.Maxx() = 10;
-  planet0.Maxy() = 10;
+  planet0.dimensions() = Coordinates{10, 10};
   planet0.info(player_t{1}).numsectsowned = 5;
   planet0.info(player_t{1}).explored = 1;
   planets.save(planet0);
@@ -61,8 +60,7 @@ void setup_test_world(TestContext& ctx) {
   Planet planet1{};
   planet1.star_id() = 1;
   planet1.planet_order() = 0;
-  planet1.Maxx() = 10;
-  planet1.Maxy() = 10;
+  planet1.dimensions() = Coordinates{10, 10};
   planet1.info(player_t{1}).numsectsowned = 5;
   planet1.info(player_t{1}).explored = 1;
   planets.save(planet1);

@@ -48,8 +48,7 @@ struct BuildTestFixture {
     Planet planet{};
     planet.star_id() = star_id;
     planet.planet_order() = 0;
-    planet.Maxx() = 10;  // Changed from 20 to match working test
-    planet.Maxy() = 10;
+    planet.dimensions() = Coordinates{10, 10};
     planet.xpos() = 0.0;
     planet.ypos() = 0.0;
     planet.info(player_t{1}).resource = 50000;  // Plenty for multiple builds
@@ -108,8 +107,8 @@ void test_planet_multiple_builds() {
 
   std::println(std::cout, "About to build 5 probes...");
   const auto* test_planet = fixture.get_planet();
-  std::println(std::cout, "Planet maxx={}, maxy={}", test_planet->Maxx(),
-               test_planet->Maxy());
+  std::println(std::cout, "Planet maxx={}, maxy={}",
+               test_planet->dimensions().x, test_planet->dimensions().y);
 
   // Try to load sectormap
   const auto* smap =

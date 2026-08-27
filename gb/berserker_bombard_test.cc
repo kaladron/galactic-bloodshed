@@ -48,8 +48,7 @@ int main() {
   Planet planet{};
   planet.star_id() = 0;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 

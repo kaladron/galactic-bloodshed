@@ -57,8 +57,7 @@ void test_give_dispatch() {
   Planet planet{};
   planet.star_id() = star_id;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);
 

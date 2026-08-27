@@ -342,7 +342,7 @@ void do_god(Ship& ship, EntityManager& entity_manager) {
 }
 
 constexpr double ap_planet_factor(const Planet& p) {
-  double x = p.Maxx() * p.Maxy();
+  double x = p.num_sectors();
   return (AP_FACTOR / (AP_FACTOR + x));
 }
 
@@ -626,18 +626,18 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
         if (std::holds_alternative<ImpactData>(ship.special())) {
           auto impact = std::get<ImpactData>(ship.special());
           if (impact.scatter) {
-            auto bombx = int_rand(1, (int)p.Maxx()) - 1;
-            auto bomby = int_rand(1, (int)p.Maxy()) - 1;
+            auto bombx = int_rand(1, p.dimensions().x) - 1;
+            auto bomby = int_rand(1, p.dimensions().y) - 1;
             return {bombx, bomby};
           } else {
-            auto bombx = impact.x % p.Maxx();
-            auto bomby = impact.y % p.Maxy();
+            auto bombx = impact.x % p.dimensions().x;
+            auto bomby = impact.y % p.dimensions().y;
             return {bombx, bomby};
           }
         } else {
           // Default to random if no impact data
-          auto bombx = int_rand(1, (int)p.Maxx()) - 1;
-          auto bomby = int_rand(1, (int)p.Maxy()) - 1;
+          auto bombx = int_rand(1, p.dimensions().x) - 1;
+          auto bomby = int_rand(1, p.dimensions().y) - 1;
           return {bombx, bomby};
         }
       }();
@@ -783,23 +783,16 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
         entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
     auto& planet = *planet_handle;
 
-    auto [x, y] = [&ship, &planet]() -> std::pair<int, int> {
-      if (landed(ship)) {
-        return {ship.land_coords().x, ship.land_coords().y};
-      } else {
-        int x = int_rand(0, (int)planet.Maxx() - 1);
-        int y = int_rand(0, (int)planet.Maxy() - 1);
-        return {x, y};
-      }
-    }();
-
     auto smap_handle =
         entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
     auto& smap = *smap_handle;
 
+    const Coordinates target_coords =
+        landed(ship) ? ship.land_coords() : smap.get_random().coords();
+
     if (auto result_opt = shoot_ship_to_planet(
-            entity_manager, ship, planet, (int)(ship.destruct()),
-            Coordinates{x, y}, smap, 0, GTYPE_LIGHT)) {
+            entity_manager, ship, planet, (int)(ship.destruct()), target_coords,
+            smap, 0, GTYPE_LIGHT)) {
       auto [numdest, nuked, short_msg, long_msg] = *result_opt;
 
       std::stringstream telegram;

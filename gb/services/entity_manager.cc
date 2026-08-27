@@ -763,17 +763,10 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
             }};
   }
 
-  // Need to load from repository - but we need the Planet to construct
-  // SectorMap
-  auto planet_opt = planets.find_by_location(star, pnum);
-  if (!planet_opt) {
-    throw EntityNotFoundError(std::format(
-        "SectorMap not found: planet not found for star_id={}, planet_id={}",
-        star, pnum));
-  }
-
-  // Load the sector map
-  SectorMap loaded_map = sectors.load_map(*planet_opt);
+  // peek_planet checks cache first, then loads from DB, or throws
+  // EntityNotFoundError
+  const auto& planet = *peek_planet(star, pnum);
+  SectorMap loaded_map = sectors.load_map(planet);
 
   // Cache the entity
   auto [iter, inserted] = sectormap_cache.emplace(
@@ -791,9 +784,8 @@ const SectorMap* EntityManager::peek_sectormap(starnum_t star,
   auto key = std::make_pair(star, pnum);
   const auto* sectormap = peek_entity_impl<SectorMap>(
       key, sectormap_cache, sectormap_refcount, [this, star, pnum](auto) {
-        auto planet_opt = planets.find_by_location(star, pnum);
-        if (!planet_opt) return std::optional<SectorMap>{};
-        return std::optional<SectorMap>(sectors.load_map(*planet_opt));
+        const auto& planet = *peek_planet(star, pnum);
+        return std::optional<SectorMap>(sectors.load_map(planet));
       });
   if (!sectormap) {
     throw EntityNotFoundError(std::format(

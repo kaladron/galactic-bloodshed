@@ -13,8 +13,8 @@ export std::mt19937& game_rng();
 
 export template <std::integral Result = int>
 Result round_rand(std::floating_point auto x) {
-  const double d = static_cast<double>(x);
-  const double floor_x = std::floor(d);
+  const auto d = static_cast<double>(x);
+  const auto floor_x = std::floor(d);
   const auto rounded =
       (double_rand() > (d - floor_x)) ? floor_x : (floor_x + 1.0);
   return static_cast<Result>(rounded);

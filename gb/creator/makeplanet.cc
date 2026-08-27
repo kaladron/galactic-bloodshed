@@ -105,8 +105,8 @@ int neighbors(SectorMap& smap, Coordinates coords, SectorType type) {
   int n = 0;            /* Number of neighbors so far. */
 
   if (coords.x == 0)
-    l = smap.get_maxx() - 1;
-  else if (r == smap.get_maxx())
+    l = smap.dimensions().x - 1;
+  else if (r == smap.dimensions().x)
     r = 0;
   if (coords.y > 0)
     n += (smap.get(Coordinates{coords.x, coords.y - 1}).get_type() == type) +
@@ -116,7 +116,7 @@ int neighbors(SectorMap& smap, Coordinates coords, SectorType type) {
   n += (smap.get(Coordinates{l, coords.y}).get_type() == type) +
        (smap.get(Coordinates{r, coords.y}).get_type() == type);
 
-  if (coords.y < smap.get_maxy() - 1)
+  if (coords.y < smap.dimensions().y - 1)
     n += (smap.get(Coordinates{coords.x, coords.y + 1}).get_type() == type) +
          (smap.get(Coordinates{l, coords.y + 1}).get_type() == type) +
          (smap.get(Coordinates{r, coords.y + 1}).get_type() == type);
@@ -144,8 +144,8 @@ void grow(SectorMap& smap, SectorType type, int n, int rate) {
   // So we store a worklist and apply it after we've done a scan of
   // the map.
   while (n-- > 0) {
-    for (int x = 0; x < smap.get_maxx(); x++) {
-      for (int y = 0; y < smap.get_maxy(); y++) {
+    for (int x = 0; x < smap.dimensions().x; x++) {
+      for (int y = 0; y < smap.dimensions().y; y++) {
         if (neighbors(smap, Coordinates{x, y}, type) >= rate) {
           worklist.emplace_back(std::make_tuple(x, y, type));
         }
@@ -177,7 +177,7 @@ int SectTemp(const Planet& p, const int y) {
   const int TFAC = 10;
 
   int temp = p.conditions(TEMP);
-  int mid = ((p.Maxy() + 1) / 2) - 1;
+  int mid = ((p.dimensions().y + 1) / 2) - 1;
   int dy = std::abs(y - mid);
 
   temp -= TFAC * dy * dy;
@@ -208,7 +208,7 @@ void Makesurface(const Planet& p, SectorMap& smap) {
       s.set_crystals(int_rand(4, 8));
 
     // We ice up the poles.
-    if ((s.get_y() != 0) && (s.get_y() != smap.get_maxy() - 1)) continue;
+    if ((s.get_y() != 0) && (s.get_y() != smap.dimensions().y - 1)) continue;
 
     int temp = SectTemp(p, s.get_y());
     switch (s.get_type()) {
@@ -260,7 +260,7 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
     s.set_condition(t);
   }
 
-  auto total_sects = (planet.Maxy() - 1) * (planet.Maxx() - 1);
+  auto total_sects = (planet.dimensions().y - 1) * (planet.dimensions().x - 1);
 
   switch (type) {
     case PlanetType::GASGIANT: /* gas giant Planet */
@@ -307,22 +307,27 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
       break;
     case PlanetType::ASTEROID: /* asteroid */
       /* no atmosphere */
-      for (auto y = 0; y < planet.Maxy(); y++)
-        for (auto x = 0; x < planet.Maxx(); x++)
-          if (!int_rand(0, 3)) {
-            auto& s = smap.get_random();
-            s.set_type(SectorType::SEC_LAND);
-            s.set_condition(SectorType::SEC_LAND);
-          }
+      for (auto& s : smap) {
+        if (!int_rand(0, 3)) {
+          s.set_type(SectorType::SEC_LAND);
+          s.set_condition(SectorType::SEC_LAND);
+        }
+      }
       seed(smap, SectorType::SEC_DESERT, int_rand(1, total_sects));
       break;
     case PlanetType::ICEBALL: /* ball of ice */
-      /* no atmosphere */
+      /* Base atmospheric conditions */
       planet.conditions(HYDROGEN) = 0;
       planet.conditions(HELIUM) = 0;
       planet.conditions(METHANE) = 0;
       planet.conditions(OXYGEN) = 0;
-      if (planet.Maxx() * planet.Maxy() > int_rand(0, 20)) {
+
+      // Atmospheric retention algorithm:
+      // Larger iceball bodies (sufficient surface area and gravity) can hold
+      // a trace atmosphere composed of CO2, Nitrogen, Sulfur, and Other gases.
+      // Bodies with > 20 sectors are guaranteed to retain an atmosphere, while
+      // smaller bodies have a probability proportional to their sector count.
+      if (planet.num_sectors() > int_rand(0, 20)) {
         auto atmos = 100 - (planet.conditions(CO2) = int_rand(30, 45));
         atmos -= planet.conditions(NITROGEN) = int_rand(10, atmos / 2);
         atmos -= planet.conditions(SULFUR) =

@@ -161,8 +161,7 @@ void test_fix_planet_temp_persistence() {
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
   planet.conditions(TEMP) = 50;  // Initial temperature
   planets.save(planet);
 
@@ -205,8 +204,7 @@ void test_fix_planet_oxygen_persistence() {
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
   planet.conditions(OXYGEN) = 10;  // Initial oxygen
   planets.save(planet);
 
@@ -249,8 +247,7 @@ void test_fix_planet_position_persistence() {
   Planet planet{};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
   planet.xpos() = 100.0;
   planet.ypos() = 200.0;
   planets.save(planet);
@@ -316,8 +313,7 @@ void test_fix_command_dispatch() {
   Planet planet{};
   planet.star_id() = 0;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
   planet.conditions(TEMP) = 50;
   PlanetRepository planets(store);
   planets.save(planet);

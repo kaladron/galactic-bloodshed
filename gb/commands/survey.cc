@@ -133,10 +133,10 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
   if (all) {
     out << std::format(
         "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", GB::csp::CSP_CLIENT,
-        GB::csp::CSP_SURVEY_INTRO, p.Maxx(), p.Maxy(), star.get_name(),
-        planet_name, p.info(player).resource, p.info(player).fuel,
-        p.info(player).destruct, p.popn(), p.maxpopn(), p.conditions(TOXIC),
-        p.compatibility(race), p.slaved_to().value);
+        GB::csp::CSP_SURVEY_INTRO, p.dimensions().x, p.dimensions().y,
+        star.get_name(), planet_name, p.info(player).resource,
+        p.info(player).fuel, p.info(player).destruct, p.popn(), p.maxpopn(),
+        p.conditions(TOXIC), p.compatibility(race), p.slaved_to().value);
   }
 
   // Write sector rows
@@ -231,9 +231,9 @@ void survey_planet_sectors(GameObj& g, const Place& where,
 
   // Default for all.
   int lowx = 0;
-  int hix = p.Maxx() - 1;
+  int hix = p.dimensions().x - 1;
   int lowy = 0;
-  int hiy = p.Maxy() - 1;
+  int hiy = p.dimensions().y - 1;
 
   if (!all) {
     auto coords = get4args(range_arg);
@@ -243,14 +243,14 @@ void survey_planet_sectors(GameObj& g, const Place& where,
     }
     auto [x2, x_high, y_low, y_high] = *coords;
     lowx = std::max(0, x2);
-    hix = std::min(x_high, p.Maxx() - 1);
+    hix = std::min(x_high, p.dimensions().x - 1);
     lowy = std::max(0, y_low);
-    hiy = std::min(y_high, p.Maxy() - 1);
+    hiy = std::min(y_high, p.dimensions().y - 1);
   }
 
   // Build ship location data if needed (only for CSP format)
   std::vector<std::vector<SectorShipData>> shiplocs(
-      p.Maxx(), std::vector<SectorShipData>(p.Maxy()));
+      p.dimensions().x, std::vector<SectorShipData>(p.dimensions().y));
   bool inhere = false;  // Track if player has presence on planet
   if (is_csp_format) {
     inhere = p.info(g.player()).numsectsowned > 0;
@@ -352,8 +352,8 @@ void survey_planet_overview(GameObj& g, const Place& where) {
   }
 
   g.out << std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",
-                       "Average fertility", avg_fert / (p.Maxx() * p.Maxy()),
-                       "Average resource", avg_resource / (p.Maxx() * p.Maxy()),
+                       "Average fertility", avg_fert / p.num_sectors(),
+                       "Average resource", avg_resource / p.num_sectors(),
                        "Crystal sectors", crystal_count);
   g.out << std::format("{:>29}: {}\n", "Total resource deposits",
                        p.total_resources());

@@ -68,15 +68,15 @@ bool repair(const command_t& argv, GameObj& g) {
     }
     auto [x_low, x_high, y_low, y_high] = *coords;
     x2 = std::max(0, x_low);
-    hix = std::min(x_high, p.Maxx() - 1);
+    hix = std::min(x_high, p.dimensions().x - 1);
     lowy = std::max(0, y_low);
-    hiy = std::min(y_high, p.Maxy() - 1);
+    hiy = std::min(y_high, p.dimensions().y - 1);
   } else {
     /* repair entire planet */
     x2 = 0;
-    hix = p.Maxx() - 1;
+    hix = p.dimensions().x - 1;
     lowy = 0;
-    hiy = p.Maxy() - 1;
+    hiy = p.dimensions().y - 1;
   }
 
   int sectors = 0;

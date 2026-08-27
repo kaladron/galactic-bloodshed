@@ -230,7 +230,7 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
     return;
   }
 
-  auto total_sect = planet.Maxx() * planet.Maxy();
+  auto total_sect = planet.num_sectors();
 
   const auto& smap = *g.entity_manager.peek_sectormap(Starnum, Planetnum);
 

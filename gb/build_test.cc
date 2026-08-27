@@ -26,8 +26,7 @@ int main() {
 
   // Create a test planet with sectors
   Planet planet{};
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
 
   // Create a normal sector owned by the race with population
   Sector good_sector{};

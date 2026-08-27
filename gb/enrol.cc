@@ -454,7 +454,7 @@ int main() {
   sect.set_troops(0);
   planet.troops() = 0;
   planet.maxpopn() =
-      maxsupport(race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
+      maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
   /* (approximate) */
 
   /* make star explored and stuff */

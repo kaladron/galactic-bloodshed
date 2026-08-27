@@ -52,7 +52,7 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
   g.out << '$';
   const auto* star = g.entity_manager.peek_star(snum);
   g.out << std::format("{};", star->get_planet_name(pnum));
-  g.out << std::format("{};{};{};", p.Maxx(), p.Maxy(), show);
+  g.out << std::format("{};{};{};", p.dimensions().x, p.dimensions().y, show);
 
   /* send map data */
   for (auto [c, sector] : smap->indexed_sectors()) {

@@ -331,6 +331,9 @@ public:
   [[nodiscard]] constexpr Coordinates dimensions() const noexcept {
     return dimensions_;
   }
+  [[nodiscard]] constexpr int num_sectors() const noexcept {
+    return dimensions_.x * dimensions_.y;
+  }
 
   auto begin() {
     return grid_.begin();
@@ -466,7 +469,7 @@ public:
       }
       Iterator& operator++() {
         ++x_;
-        if (x_ >= map_->get_maxx()) {
+        if (x_ >= map_->dimensions().x) {
           x_ = 0;
           ++y_;
         }
@@ -487,7 +490,7 @@ public:
       return Iterator(map_, 0, 0);
     }
     [[nodiscard]] Iterator end() const {
-      return Iterator(map_, 0, map_->get_maxy());
+      return Iterator(map_, 0, map_->dimensions().y);
     }
 
   private:
@@ -563,18 +566,6 @@ public:
            });
   }
 
-  [[nodiscard]] int get_maxx() const noexcept {
-    return dimensions_.x;
-  }
-  [[nodiscard]] int get_maxy() const noexcept {
-    return dimensions_.y;
-  }
-  [[nodiscard]] int Maxx() const noexcept {
-    return dimensions_.x;
-  }
-  [[nodiscard]] int Maxy() const noexcept {
-    return dimensions_.y;
-  }
   template <typename URBG>
   Sector& get_random(URBG& g) {
     std::uniform_int_distribution<int> dis_x(0, dimensions_.x - 1);

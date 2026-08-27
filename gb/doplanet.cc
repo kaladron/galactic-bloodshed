@@ -70,14 +70,14 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
 
   bool bounced = false;
 
-  if (y >= planet.Maxy()) {
+  if (y >= planet.dimensions().y) {
     bounced = true;
     y -= 2; /* bounce off of south pole! */
   } else if (y < 0) {
     y = 1;
     bounced = true; /* bounce off of north pole! */
   }
-  if (planet.Maxy() == 1) y = 0;
+  if (planet.dimensions().y == 1) y = 0;
 
   if (terraform.index + 1 < ship.shipclass().size() &&
       ship.shipclass()[terraform.index + 1] != '\0') {

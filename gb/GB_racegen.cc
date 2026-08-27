@@ -248,7 +248,7 @@ found_planet:
 
   // (approximate)
   planet.maxpopn() =
-      maxsupport(race, sect, 100.0, 0) * planet.Maxx() * planet.Maxy() / 2;
+      maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
 
   // Save race using repository
   RaceRepository races(store);

@@ -62,17 +62,17 @@ void test_makeplanet_types() {
     test::expect_eq(planet.type(), ptype);
     test::expect_eq(planet.star_id(), star_id);
     test::expect_eq(planet.planet_order(), pnum);
-    test::expect_gt(planet.Maxx(), 0);
-    test::expect_gt(planet.Maxy(), 0);
+    test::expect_gt(planet.dimensions().x, 0);
+    test::expect_gt(planet.dimensions().y, 0);
 
     // Verify: Solid planets have generated sector maps
     if (ptype != PlanetType::GASGIANT) {
       test::expect_true(smap.has_value());
     }
 
-    std::println(std::cout,
-                 "  ✓ Planet type {} generated with dimensions {}x{}",
-                 static_cast<int>(ptype), planet.Maxx(), planet.Maxy());
+    std::println(
+        std::cout, "  ✓ Planet type {} generated with dimensions {}x{}",
+        static_cast<int>(ptype), planet.dimensions().x, planet.dimensions().y);
   }
 }
 

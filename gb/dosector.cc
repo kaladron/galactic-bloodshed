@@ -15,11 +15,11 @@ void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
               int yd, Sector& ps, population_t* people, SectorMap& smap,
               TurnStats& stats) {
   /* attempt to migrate beyond screen, or too many people */
-  if (yd > planet.Maxy() - 1 || yd < 0) return;
+  if (yd > planet.dimensions().y - 1 || yd < 0) return;
 
   if (xd < 0)
-    xd = planet.Maxx() - 1;
-  else if (xd > planet.Maxx() - 1)
+    xd = planet.dimensions().x - 1;
+  else if (xd > planet.dimensions().x - 1)
     xd = 0;
 
   auto& pd = smap.get(Coordinates{xd, yd});

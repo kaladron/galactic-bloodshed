@@ -303,9 +303,10 @@ Star Makestar(Database& db, starnum_t snum) {
              static_cast<unsigned int>(planet.type()));
       printf("Position is (%1.0f,%1.0f) relative to %s; distance %1.0f.\n",
              planet.xpos(), planet.ypos(), star.name.c_str(), dist);
-      printf("sect map(%dx%d):\n", planet.Maxx(), planet.Maxy());
-      for (y = 0; y < planet.Maxy(); y++) {
-        for (x = 0; x < planet.Maxx(); x++) {
+      printf("sect map(%dx%d):\n", planet.dimensions().x,
+             planet.dimensions().y);
+      for (y = 0; y < planet.dimensions().y; y++) {
+        for (x = 0; x < planet.dimensions().x; x++) {
           std::putchar(
               get_sector_char(smap.get(Coordinates{x, y}).get_condition()));
         }

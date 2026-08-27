@@ -28,9 +28,7 @@ Race createTestRace(player_t playernum = player_t{1}) {
 }
 
 Planet createTestPlanet() {
-  Planet planet(PlanetType::EARTH, Coordinates{0, 0});
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
   planet.slaved_to() = 0;
   planet.conditions(TOXIC) = 0;
   planet.conditions(RTEMP) = 50;
@@ -1007,8 +1005,8 @@ void test_process_toxic_environmental_damage() {
   planet.planet_order() = 0;
 
   SectorMap smap(planet);
-  for (int y = 0; y < planet.Maxy(); ++y) {
-    for (int x = 0; x < planet.Maxx(); ++x) {
+  for (int y = 0; y < planet.dimensions().y; ++y) {
+    for (int x = 0; x < planet.dimensions().x; ++x) {
       auto& sect = smap.get(Coordinates{x, y});
       sect.set_coords(Coordinates{x, y});
       sect.set_condition(SectorType::SEC_LAND);
@@ -1039,8 +1037,8 @@ void test_process_supernova_sector_devastation() {
   planet.planet_order() = 0;
 
   SectorMap smap(planet);
-  for (int y = 0; y < planet.Maxy(); ++y) {
-    for (int x = 0; x < planet.Maxx(); ++x) {
+  for (int y = 0; y < planet.dimensions().y; ++y) {
+    for (int x = 0; x < planet.dimensions().x; ++x) {
       auto& sect = smap.get(Coordinates{x, y});
       sect.set_coords(Coordinates{x, y});
       sect.set_condition(SectorType::SEC_LAND);
@@ -1094,8 +1092,8 @@ void test_build_automated_waste_can() {
   planet.conditions(TOXIC) = 80;
 
   SectorMap smap(planet);
-  for (int y = 0; y < planet.Maxy(); ++y) {
-    for (int x = 0; x < planet.Maxx(); ++x) {
+  for (int y = 0; y < planet.dimensions().y; ++y) {
+    for (int x = 0; x < planet.dimensions().x; ++x) {
       auto& sect = smap.get(Coordinates{x, y});
       sect.set_coords(Coordinates{x, y});
       sect.set_condition(SectorType::SEC_LAND);

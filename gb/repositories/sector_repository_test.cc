@@ -22,8 +22,7 @@ int main() {
   Planet test_planet{};
   test_planet.star_id() = 5;
   test_planet.planet_order() = 1;
-  test_planet.Maxx() = 10;
-  test_planet.Maxy() = 10;
+  test_planet.dimensions() = Coordinates{10, 10};
 
   // Create a test sector using NEW PATTERN
   sector_struct test_data{};
@@ -146,8 +145,7 @@ int main() {
   Planet planet2{};
   planet2.star_id() = 5;
   planet2.planet_order() = 2;
-  planet2.Maxx() = 10;
-  planet2.Maxy() = 10;
+  planet2.dimensions() = Coordinates{10, 10};
 
   sector_struct data_p2{};
   data_p2.coords = {5, 7};  // Same coordinates as sector on planet 1
@@ -174,8 +172,7 @@ int main() {
   Planet small_planet{};
   small_planet.star_id() = 10;
   small_planet.planet_order() = 3;
-  small_planet.Maxx() = 3;
-  small_planet.Maxy() = 3;
+  small_planet.dimensions() = Coordinates{3, 3};
 
   // Create a sector map with all sectors initialized
   SectorMap test_map(small_planet);  // true = initialize all sectors

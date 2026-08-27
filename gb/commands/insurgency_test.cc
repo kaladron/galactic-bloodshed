@@ -56,8 +56,7 @@ void setup_test_world(TestContext& ctx) {
   Planet planet{};
   planet.star_id() = 0;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
   planet.info(player_t{1}).popn = 100;
   planet.info(player_t{1}).troops = 50;
   planet.info(player_t{2}).popn = 1000;

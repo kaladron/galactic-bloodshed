@@ -24,13 +24,7 @@ bool fix(const command_t& argv, GameObj& g) {
       return false;
     }
     auto& p = *planet_handle;
-    if (argv[2] == "Maxx") {
-      if (argv.size() > 3) p.Maxx() = std::stoi(argv[3]);
-      g.out << std::format("Maxx = {}\n", p.Maxx());
-    } else if (argv[2] == "Maxy") {
-      if (argv.size() > 3) p.Maxy() = std::stoi(argv[3]);
-      g.out << std::format("Maxy = {}\n", p.Maxy());
-    } else if (argv[2] == "xpos") {
+    if (argv[2] == "xpos") {
       if (argv.size() > 3) p.xpos() = (double)std::stoi(argv[3]);
       g.out << std::format("xpos = {}\n", p.xpos());
     } else if (argv[2] == "ypos") {

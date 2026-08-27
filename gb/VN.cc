@@ -196,7 +196,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
         xa = int_rand(-1, 1);
         ya = (ship.land_coords().y == 0)
                  ? 1
-                 : ((ship.land_coords().y == (planet.Maxy() - 1))
+                 : ((ship.land_coords().y == (planet.dimensions().y - 1))
                         ? -1
                         : int_rand(-1, 1));
         ship.set_land_coords(

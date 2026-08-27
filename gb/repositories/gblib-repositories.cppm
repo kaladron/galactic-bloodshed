@@ -784,8 +784,8 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
   // Retrieve all sectors for this planet, ordered by position
   // This requires a custom SQL query, so we'll use the store's underlying
   // database For now, we'll load sectors individually
-  for (int y = 0; y < planet.Maxy(); y++) {
-    for (int x = 0; x < planet.Maxx(); x++) {
+  for (int y = 0; y < planet.dimensions().y; y++) {
+    for (int x = 0; x < planet.dimensions().x; x++) {
       if (auto sector =
               find_sector(planet.star_id(), planet.planet_order(), x, y)) {
         smap.set(Coordinates{x, y}, std::move(*sector));

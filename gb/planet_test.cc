@@ -13,18 +13,14 @@ int main() {
   {
     Planet planet(PlanetType::EARTH, Coordinates{0, 0});
     test::expect_eq(planet.dimensions(), Coordinates(0, 0));
-    test::expect_eq(planet.Maxx(), 0);
-    test::expect_eq(planet.Maxy(), 0);
 
     planet.dimensions() = Coordinates(20, 10);
     test::expect_eq(planet.dimensions().x, 20);
     test::expect_eq(planet.dimensions().y, 10);
-    test::expect_eq(planet.Maxx(), 20);
-    test::expect_eq(planet.Maxy(), 10);
+    test::expect_eq(planet.dimensions(), Coordinates(20, 10));
 
-    // Forwarder assignment compatibility
-    planet.Maxx() = 12;
-    planet.Maxy() = 6;
+    planet.dimensions().x = 12;
+    planet.dimensions().y = 6;
     test::expect_eq(planet.dimensions(), Coordinates(12, 6));
   }
 

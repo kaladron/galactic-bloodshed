@@ -39,11 +39,9 @@ Star createTestStar(starnum_t id = 0) {
 }
 
 Planet createTestPlanet(starnum_t star_id = 0, planetnum_t pnum = 0) {
-  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+  Planet planet(PlanetType::EARTH, Coordinates{5, 5});
   planet.star_id() = star_id;
   planet.planet_order() = pnum;
-  planet.Maxx() = 5;
-  planet.Maxy() = 5;
   planet.slaved_to() = 0;
   planet.conditions(TOXIC) = 0;
   planet.conditions(RTEMP) = 50;

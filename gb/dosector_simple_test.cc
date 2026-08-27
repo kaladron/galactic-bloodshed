@@ -60,8 +60,6 @@ Race createTestRace(player_t playernum = 1) {
 // Helper function to create a test planet
 Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
   Planet planet(PlanetType::EARTH, Coordinates{maxx, maxy});
-  planet.Maxx() = maxx;
-  planet.Maxy() = maxy;
   planet.slaved_to() = 0;
 
   // Initialize conditions
@@ -233,8 +231,8 @@ void test_planet_creation() {
   auto planet = createTestPlanet(15, 20);
 
   // Test basic properties
-  test::expect_eq(planet.Maxx(), 15);
-  test::expect_eq(planet.Maxy(), 20);
+  test::expect_eq(planet.dimensions().x, 15);
+  test::expect_eq(planet.dimensions().y, 20);
   test::expect_eq(planet.slaved_to(), 0);
   test::expect_eq(planet.conditions(TOXIC), 0);
 
@@ -383,12 +381,12 @@ void test_edge_cases() {
 
   // Test planet with minimum/maximum sizes
   auto tiny_planet = createTestPlanet(1, 1);
-  test::expect_eq(tiny_planet.Maxx(), 1);
-  test::expect_eq(tiny_planet.Maxy(), 1);
+  test::expect_eq(tiny_planet.dimensions().x, 1);
+  test::expect_eq(tiny_planet.dimensions().y, 1);
 
   auto large_planet = createTestPlanet(100, 100);
-  test::expect_eq(large_planet.Maxx(), 100);
-  test::expect_eq(large_planet.Maxy(), 100);
+  test::expect_eq(large_planet.dimensions().x, 100);
+  test::expect_eq(large_planet.dimensions().y, 100);
 }
 
 // Test data consistency and relationships
@@ -429,10 +427,10 @@ void test_data_consistency() {
   auto planet = createTestPlanet(10, 10);
 
   // Planet should fit within reasonable star system constraints
-  test::expect_ge(planet.Maxx(), 1);
-  test::expect_le(planet.Maxx(), 100);
-  test::expect_ge(planet.Maxy(), 1);
-  test::expect_le(planet.Maxy(), 100);
+  test::expect_ge(planet.dimensions().x, 1);
+  test::expect_le(planet.dimensions().x, 100);
+  test::expect_ge(planet.dimensions().y, 1);
+  test::expect_le(planet.dimensions().y, 100);
   test::expect_ge(star.numplanets(), 0);
   test::expect_le(star.numplanets(), MAXPLANETS);
 }

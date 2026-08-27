@@ -12,8 +12,8 @@ import std;
 // Helper to populate a sector map with test data
 void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
                         int base_popn) {
-  for (int y = 0; y < planet.Maxy(); y++) {
-    for (int x = 0; x < planet.Maxx(); x++) {
+  for (int y = 0; y < planet.dimensions().y; y++) {
+    for (int x = 0; x < planet.dimensions().x; x++) {
       auto& sector = smap.get(Coordinates{x, y});
       sector.set_x(x);
       sector.set_y(y);
@@ -28,8 +28,8 @@ void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
       sector.set_race(sector.get_owner());
 
       // Vary sector types
-      if (x == 0 || x == planet.Maxx() - 1 || y == 0 ||
-          y == planet.Maxy() - 1) {
+      if (x == 0 || x == planet.dimensions().x - 1 || y == 0 ||
+          y == planet.dimensions().y - 1) {
         sector.set_type(SectorType::SEC_SEA);
         sector.set_condition(SectorType::SEC_SEA);
       } else if ((x + y) % 3 == 0) {
@@ -49,8 +49,8 @@ void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
 // Helper to verify two sector maps are identical
 void verify_sectormap_equal(const SectorMap& original,
                             const SectorMap& retrieved, const Planet& planet) {
-  for (int y = 0; y < planet.Maxy(); y++) {
-    for (int x = 0; x < planet.Maxx(); x++) {
+  for (int y = 0; y < planet.dimensions().y; y++) {
+    for (int x = 0; x < planet.dimensions().x; x++) {
       const auto& orig = original.get(Coordinates{x, y});
       const auto& retr = retrieved.get(Coordinates{x, y});
 
@@ -165,9 +165,9 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
 
   // Test with non-existent planet
   {
-    auto smap_handle = em.get_sectormap(999, 999);
-    test::expect_eq(smap_handle.get(), nullptr,
-                    "Non-existent planet should return null handle");
+    test::expect_throws<EntityNotFoundError>(
+        [&em]() { std::ignore = em.get_sectormap(999, 999); },
+        "Non-existent planet should throw EntityNotFoundError");
   }
 
   std::println(std::cout, "  Non-existent planet handling: PASSED");
@@ -197,8 +197,8 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   sectors.save_map(smap1);
 
   SectorMap smap2(planet2);
-  for (int y = 0; y < planet2.Maxy(); y++) {
-    for (int x = 0; x < planet2.Maxx(); x++) {
+  for (int y = 0; y < planet2.dimensions().y; y++) {
+    for (int x = 0; x < planet2.dimensions().x; x++) {
       auto& sector = smap2.get(Coordinates{x, y});
       sector.set_x(x);
       sector.set_y(y);

@@ -115,11 +115,9 @@ void test_shoot_ship_to_planet_invalid_cases() {
   initialize_schema(db);
   EntityManager em(db);
 
-  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
+  Planet planet{PlanetType::EARTH, Coordinates{5, 5}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
-  planet.Maxx() = 5;
-  planet.Maxy() = 5;
 
   SectorMap smap(planet);
 
@@ -177,11 +175,9 @@ void test_shoot_ship_to_planet_valid_attack() {
   race2.name = "Target";
   race_repo.save(race2);
 
-  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
+  Planet planet{PlanetType::EARTH, Coordinates{4, 4}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
-  planet.Maxx() = 4;
-  planet.Maxy() = 4;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 

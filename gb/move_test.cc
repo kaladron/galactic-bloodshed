@@ -11,9 +11,7 @@ import std;
 
 int main() {
   // Create a test planet with known dimensions
-  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-  planet.Maxx() = 10;  // 0-9 range for x-coordinates
-  planet.Maxy() = 8;   // 0-7 range for y-coordinates
+  Planet planet(PlanetType::EARTH, Coordinates{10, 8});
 
   // Test numeric direction mappings (1-9, excluding 5)
 
@@ -180,9 +178,7 @@ int main() {
   // Test edge cases with different planet sizes
 
   // Test with minimal planet size
-  Planet small_planet(PlanetType::ASTEROID, Coordinates{10, 10});
-  small_planet.Maxx() = 2;  // 0-1 range
-  small_planet.Maxy() = 3;  // 0-2 range
+  Planet small_planet(PlanetType::ASTEROID, Coordinates{2, 3});
 
   {
     // Test wrapping on small planet
@@ -213,14 +209,15 @@ int main() {
 
   // Test at exact boundary conditions
   {
-    // Test at planet.Maxx-1 boundary (rightmost valid position)
-    auto result = get_move(planet, '6', {9, 3});  // x == Maxx-1, moving east
-    test::expect_eq(result.x, 0);                 // wraps to 0
+    // Test at planet.dimensions().x-1 boundary (rightmost valid position)
+    auto result =
+        get_move(planet, '6', {9, 3});  // x == dimensions().x-1, moving east
+    test::expect_eq(result.x, 0);       // wraps to 0
     test::expect_eq(result.y, 3);
 
     // Test at x == 0 boundary (leftmost position)
     result = get_move(planet, '4', {0, 3});  // west from x=0
-    test::expect_eq(result.x, 9);            // wraps to Maxx-1
+    test::expect_eq(result.x, 9);            // wraps to dimensions().x-1
     test::expect_eq(result.y, 3);
   }
 

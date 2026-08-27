@@ -52,8 +52,7 @@ void setup_test_world(TestContext& ctx) {
   Planet planet{};
   planet.star_id() = 0;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
+  planet.dimensions() = Coordinates{10, 10};
   planet.xpos() = 10.0;
   planet.ypos() = 20.0;
   planet.conditions(METHANE) = 5;

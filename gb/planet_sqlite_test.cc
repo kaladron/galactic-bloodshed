@@ -18,7 +18,7 @@ int main() {
   initialize_schema(db);
 
   // Create a test Planet
-  Planet test_planet(PlanetType::EARTH, Coordinates{10, 10});
+  Planet test_planet(PlanetType::EARTH, Coordinates{20, 20});
 
   // Initialize scalar fields
   test_planet.star_id() = 1;  // Match the star we'll create below
@@ -26,8 +26,6 @@ int main() {
   test_planet.xpos() = 100.5;
   test_planet.ypos() = 200.7;
   test_planet.ships() = 10;
-  test_planet.Maxx() = 20;
-  test_planet.Maxy() = 20;
   test_planet.popn() = 100000;
   test_planet.troops() = 5000;
   test_planet.maxpopn() = 150000;
@@ -135,8 +133,6 @@ int main() {
   test::expect_eq(retrieved.ypos(), test_planet.ypos());
   test::expect_eq(retrieved.ships(), test_planet.ships());
   test::expect_eq(retrieved.dimensions(), test_planet.dimensions());
-  test::expect_eq(retrieved.Maxx(), test_planet.Maxx());
-  test::expect_eq(retrieved.Maxy(), test_planet.Maxy());
   test::expect_eq(retrieved.popn(), test_planet.popn());
   test::expect_eq(retrieved.troops(), test_planet.troops());
   test::expect_eq(retrieved.maxpopn(), test_planet.maxpopn());

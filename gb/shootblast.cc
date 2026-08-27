@@ -184,10 +184,11 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 
   std::array<int, MAXPLAYERS> sum_mob{0};
 
-  for (auto y2 = 0; y2 < pl.Maxy(); y2++) {
-    for (auto x2 = 0; x2 < pl.Maxx(); x2++) {
-      int dx = std::min(std::abs(x2 - target_sector.x),
-                        std::abs(target_sector.x + (pl.Maxx() - 1) - x2));
+  for (auto y2 = 0; y2 < pl.dimensions().y; y2++) {
+    for (auto x2 = 0; x2 < pl.dimensions().x; x2++) {
+      int dx =
+          std::min(std::abs(x2 - target_sector.x),
+                   std::abs(target_sector.x + (pl.dimensions().x - 1) - x2));
       int dy = std::abs(y2 - target_sector.y);
       double d = std::sqrt((double)(dx * dx + dy * dy));
       auto& s = smap.get(Coordinates{x2, y2});
@@ -250,7 +251,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
         sum_mob[s.get_owner().value - 1] += s.get_mobilization();
     }
   }
-  auto num_sectors = pl.Maxx() * pl.Maxy();
+  auto num_sectors = pl.num_sectors();
   for (auto i = 1; i <= em.num_races(); i++) {
     pl.info(player_t{i}).mob_points = sum_mob[i - 1];
     pl.info(player_t{i}).comread = sum_mob[i - 1] / num_sectors;
@@ -258,8 +259,8 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   }
 
   /* planet toxicity goes up a bit */
-  pl.conditions(TOXIC) += (100 - pl.conditions(TOXIC)) *
-                          ((double)numdest / (double)(pl.Maxx() * pl.Maxy()));
+  pl.conditions(TOXIC) +=
+      (100 - pl.conditions(TOXIC)) * ((double)numdest / (double)num_sectors);
 
   std::string short_msg = std::format("{} bombards {} [{}]\n", ship,
                                       dispshiploc(em, ship), oldowner.value);

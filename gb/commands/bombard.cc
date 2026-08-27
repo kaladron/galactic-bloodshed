@@ -73,6 +73,19 @@ bool bombard(const command_t& argv, GameObj& g) {
     }
     Planet& p = *p_handle;
 
+    bool has_defense =
+        has_planet_defense(g.entity_manager, p.ships(), Playernum);
+
+    if (has_defense && !landed(from)) {
+      g.out << "Target has planetary defense networks.\n";
+      g.out << "These have to be eliminated before you can attack sectors.\n";
+      continue;
+    }
+
+    auto smap_handle =
+        g.entity_manager.get_sectormap(from.storbits(), from.pnumorbits());
+    SectorMap& smap = *smap_handle;
+
     Coordinates target_coords;
     if (argv.size() > 2) {
       auto coords_opt = Coordinates::parse(argv[2]);
@@ -86,30 +99,13 @@ bool bombard(const command_t& argv, GameObj& g) {
         continue;
       }
     } else {
-      target_coords = {int_rand(0, (int)p.Maxx() - 1),
-                       int_rand(0, (int)p.Maxy() - 1)};
+      target_coords = smap.get_random().coords();
     }
     if (landed(from) && !adjacent(p, from.land_coords(), target_coords)) {
       g.out << "You are not adjacent to that sector.\n";
       continue;
     }
 
-    bool has_defense =
-        has_planet_defense(g.entity_manager, p.ships(), Playernum);
-
-    if (has_defense && !landed(from)) {
-      g.out << "Target has planetary defense networks.\n";
-      g.out << "These have to be eliminated before you can attack sectors.\n";
-      continue;
-    }
-
-    auto smap_handle =
-        g.entity_manager.get_sectormap(from.storbits(), from.pnumorbits());
-    if (!smap_handle.get()) {
-      g.out << "Failed to load sector map.\n";
-      continue;
-    }
-    SectorMap& smap = *smap_handle;
     auto opt_result = shoot_ship_to_planet(g.entity_manager, from, p, strength,
                                            target_coords, smap, 0, 0);
 

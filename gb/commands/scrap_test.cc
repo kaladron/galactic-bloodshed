@@ -39,8 +39,6 @@ void setup_test_world(TestContext& ctx) {
   Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.Maxx() = 10;
-  planet.Maxy() = 10;
   planet.popn() = 1000;
   planet.info(player_t{1}).numsectsowned = 1;
   planet.info(player_t{1}).popn = 1000;

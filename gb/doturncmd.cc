@@ -38,8 +38,8 @@ struct TurnState {
     return stats.starpopns[star.value][player];
   }
 
-  const unsigned long& star_popn(starnum_t star,
-                                 player_t player) const noexcept {
+  [[nodiscard]] const unsigned long& star_popn(starnum_t star,
+                                               player_t player) const noexcept {
     assert(star.value >= 0 && star.value < NUMSTARS &&
            "Star index out of bounds");
     return stats.starpopns[star.value][player];
@@ -454,7 +454,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
 
         if (planet_handle->type() != PlanetType::ASTEROID &&
             (planet_handle->info(player).numsectsowned >
-             planet_handle->Maxx() * planet_handle->Maxy() / 2)) {
+             planet_handle->num_sectors() / 2)) {
           race_handle->controlled_planets++;
         }
 

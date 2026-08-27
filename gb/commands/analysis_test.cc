@@ -56,11 +56,9 @@ int main() {
   stars_repo.save(star);
 
   // Create a test planet with a 5x5 grid
-  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
+  Planet planet{PlanetType::EARTH, Coordinates{5, 5}};
   planet.star_id() = 0;
   planet.planet_order() = 0;
-  planet.Maxx() = 5;
-  planet.Maxy() = 5;
   planet.explored() = true;
   planet.info(player_t{1}).explored = true;  // Player 1 has explored
   planet.info(player_t{2}).explored = true;  // Player 2 has explored

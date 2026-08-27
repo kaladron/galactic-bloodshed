@@ -55,11 +55,9 @@ void setup_test_world(TestContext& ctx) {
   stars_repo.save(star0);
 
   // Create planet on star 0
-  Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
+  Planet planet0{PlanetType::EARTH, Coordinates{5, 5}};
   planet0.star_id() = 0;
   planet0.planet_order() = 0;
-  planet0.Maxx() = 5;
-  planet0.Maxy() = 5;
   planet0.explored() = true;
   planet0.info(player_t{1}).numsectsowned = 3;
   planet0.info(player_t{1}).guns = 10;
@@ -122,11 +120,9 @@ void setup_test_world(TestContext& ctx) {
   stars_repo.save(star1);
 
   // Create planet on star 1
-  Planet planet1{PlanetType::EARTH, Coordinates{10, 10}};
+  Planet planet1{PlanetType::EARTH, Coordinates{3, 3}};
   planet1.star_id() = 1;
   planet1.planet_order() = 0;
-  planet1.Maxx() = 3;
-  planet1.Maxy() = 3;
   planet1.explored() = true;
   planet1.info(player_t{1}).numsectsowned = 1;
   planets_repo.save(planet1);

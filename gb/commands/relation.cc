@@ -40,16 +40,16 @@ bool relation(const command_t& argv, GameObj& g) {
                        race->name);
   g.out << " #       know             Race name       Yours        Theirs\n";
   g.out << " -       ----             ---------       -----        ------\n";
-  for (const Race* r : RaceList::readonly(g.entity_manager)) {
-    if (r->Playernum == race->Playernum) continue;
+  for (const Race& r : RaceList::readonly(g.entity_manager)) {
+    if (r.Playernum == race->Playernum) continue;
     g.out << std::format(
-        "{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n", r->Playernum,
-        ((race->God || (race->translate[r->Playernum.value - 1] > 30)) &&
-         r->Metamorph && (Playernum == q))
+        "{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n", r.Playernum,
+        ((race->God || (race->translate[r.Playernum.value - 1] > 30)) &&
+         r.Metamorph && (Playernum == q))
             ? "Morph"
             : "     ",
-        race->translate[r->Playernum.value - 1], r->name,
-        allied(*race, r->Playernum), allied(*r, q));
+        race->translate[r.Playernum.value - 1], r.name,
+        allied(*race, r.Playernum), allied(r, q));
   }
   return true;
 }

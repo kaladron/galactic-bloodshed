@@ -17,15 +17,15 @@ void show_votes(GameObj& g) {
   int nays = 0;
   int yays = 0;
 
-  for (const Race* race : RaceList::readonly(g.entity_manager)) {
-    if (race->God || race->Guest) continue;
+  for (const Race& race : RaceList::readonly(g.entity_manager)) {
+    if (race.God || race.Guest) continue;
     nvotes++;
-    if (race->votes) {
+    if (race.votes) {
       yays++;
-      if (g.god()) g.out << std::format("  {0} voted go.\n", race->name);
+      if (g.god()) g.out << std::format("  {0} voted go.\n", race.name);
     } else {
       nays++;
-      if (g.god()) g.out << std::format("  {0} voted wait.\n", race->name);
+      if (g.god()) g.out << std::format("  {0} voted wait.\n", race.name);
     }
   }
   g.out << std::format("  Total votes = {0}, Go = {1}, Wait = {2}.\n", nvotes,
@@ -47,10 +47,10 @@ void check_votes(GameObj& g) {
   int nays = 0;
   int yays = 0;
   int nvotes = 0;
-  for (const Race* r : RaceList::readonly(g.entity_manager)) {
-    if (r->God || r->Guest) continue;
+  for (const Race& r : RaceList::readonly(g.entity_manager)) {
+    if (r.God || r.Guest) continue;
     nvotes++;
-    if (r->votes) {
+    if (r.votes) {
       yays++;
     } else {
       nays++;

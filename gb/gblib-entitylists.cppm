@@ -10,8 +10,8 @@
  *
  * Usage:
  *   // Read-only iteration is explicit and cheap
- *   for (const Race* race : RaceList::readonly(entity_manager)) {
- *     observe(*race);
+ *   for (const Race& race : RaceList::readonly(entity_manager)) {
+ *     observe(race);
  *   }
  *
  *   // Iterate over all races with RAII auto-save
@@ -266,15 +266,21 @@ public:
   class ConstIterator {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const Entity*;
+    using value_type = Entity;
     using difference_type = std::ptrdiff_t;
+    using pointer = const Entity*;
+    using reference = const Entity&;
 
     ConstIterator(EntityManager* em, index_type current, index_type end)
         : em_(em), current_(current), end_(end) {
       advance_to_valid();
     }
 
-    const Entity* operator*() const {
+    const Entity& operator*() const {
+      return *traits_type::peek(*em_, current_);
+    }
+
+    const Entity* operator->() const {
       return traits_type::peek(*em_, current_);
     }
 
@@ -402,8 +408,10 @@ public:
   class ConstIterator {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const Entity*;
+    using value_type = Entity;
     using difference_type = std::ptrdiff_t;
+    using pointer = const Entity*;
+    using reference = const Entity&;
 
     ConstIterator(EntityManager* em, primary_key_type primary_key,
                   index_type current, index_type end)
@@ -411,7 +419,11 @@ public:
       advance_to_valid();
     }
 
-    const Entity* operator*() const {
+    const Entity& operator*() const {
+      return *traits_type::peek(*em_, primary_key_, current_);
+    }
+
+    const Entity* operator->() const {
       return traits_type::peek(*em_, primary_key_, current_);
     }
 

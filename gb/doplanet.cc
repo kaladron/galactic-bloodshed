@@ -376,11 +376,11 @@ recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
   std::vector<player_t> owners;
   Stockpile total_stolen;
 
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    if (planet.info(*race).numsectsowned > 0) {
-      owners.push_back(race->Playernum);
-    } else if (!race->God) { /* Can't steal from God */
-      total_stolen += planet.info(*race).stockpile();
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    if (planet.info(race).numsectsowned > 0) {
+      owners.push_back(race.Playernum);
+    } else if (!race.God) { /* Can't steal from God */
+      total_stolen += planet.info(race).stockpile();
     }
   }
 
@@ -399,9 +399,9 @@ recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
   }
 
   // 2. Drain stockpiles from defeated non-god races
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    if (planet.info(*race).numsectsowned == 0 && !race->God) {
-      planet.info(*race).drain_stockpile();
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    if (planet.info(race).numsectsowned == 0 && !race.God) {
+      planet.info(race).drain_stockpile();
     }
   }
 
@@ -703,8 +703,8 @@ process_island_exploration(EntityManager& entity_manager, const Star& star,
   int timer = 20;
   std::optional<IslandDiscovery> discovery;
 
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t p = race->Playernum;
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    const player_t p = race.Playernum;
     if (stats.Claims || allexp) {
       break;
     }
@@ -720,9 +720,9 @@ process_island_exploration(EntityManager& entity_manager, const Star& star,
             exploration.is_explored(s.coords(), p);
         if (exploration.is_explored(s.coords(), p) && success(50) &&
             s.get_owner() == 0 && s.get_condition() != SectorType::SEC_WASTED &&
-            s.get_condition() == race->likesbest) {
+            s.get_condition() == race.likesbest) {
           stats.Claims = true;
-          s.colonize(p, race->number_sexes);
+          s.colonize(p, race.number_sexes);
           stats.tot_captured = 1;
           discovery = IslandDiscovery{.coords = s.coords(), .player = p};
           break;
@@ -743,8 +743,8 @@ process_island_exploration(EntityManager& entity_manager, const Star& star,
 void divert_slave_tribute(EntityManager& entity_manager, Planet& planet,
                           TurnStats& stats, player_t master) {
   auto& master_info = planet.info(master);
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t p = race->Playernum;
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    const player_t p = race.Playernum;
     if (planet.info(p).numsectsowned > 0) {
       master_info.resource += std::exchange(stats.prod_res[p], 0);
       master_info.fuel += std::exchange(stats.prod_fuel[p], 0);
@@ -762,8 +762,8 @@ void notify_slave_revolt(EntityManager& entity_manager, const Star& star,
       star.get_name(), star.get_planet_name(planet.planet_order()),
       former_master);
 
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t r_id = race->Playernum;
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    const player_t r_id = race.Playernum;
     if (planet.info(r_id).numsectsowned > 0) {
       push_telegram(entity_manager, r_id, star.governor(r_id), message);
     }
@@ -837,8 +837,8 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
   planet.maxpopn() = 0;
   planet.total_resources() = 0;
 
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    auto& info = planet.info(*race);
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    auto& info = planet.info(race);
     info.numsectsowned = 0;
     info.popn = 0;
     info.troops = 0;
@@ -910,9 +910,9 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
 
   update_planet_toxicity(planet);
 
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t p = race->Playernum;
-    auto& info = planet.info(*race);
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    const player_t p = race.Playernum;
+    auto& info = planet.info(race);
     stats.Power[p].resource += info.resource;
     stats.Power[p].destruct += info.destruct;
     stats.Power[p].fuel += info.fuel;
@@ -930,10 +930,10 @@ void reset_planet_turn_state(EntityManager& entity_manager, Planet& planet,
   planet.troops() = 0;
   planet.total_resources() = 0;
 
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t p = race->Playernum;
-    stats.Compat[p] = planet.compatibility(*race);
-    auto& info = planet.info(*race);
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    const player_t p = race.Playernum;
+    stats.Compat[p] = planet.compatibility(race);
+    auto& info = planet.info(race);
     info.numsectsowned = 0;
     info.troops = 0;
     info.popn = 0;
@@ -974,9 +974,9 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
   const planetnum_t planetnum = planet.planet_order();
   const starnum_t starnum = star.star_id();
 
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t p = race->Playernum;
-    auto& info = planet.info(*race);
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    const player_t p = race.Playernum;
+    auto& info = planet.info(race);
     info.prod_crystals = stats.prod_crystals[p];
     info.prod_res = stats.prod_res[p];
     info.prod_fuel = stats.prod_fuel[p];
@@ -1035,8 +1035,8 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
     }
     telegram_buf << "This planet must be evacuated immediately!\n"
                  << TELEG_DELIM;
-    for (const Race* race : RaceList::readonly(entity_manager)) {
-      const player_t p = race->Playernum;
+    for (const Race& race : RaceList::readonly(entity_manager)) {
+      const player_t p = race.Playernum;
       if (planet.info(p).numsectsowned) {
         push_telegram(entity_manager, p, star.governor(p), telegram_buf.str());
       }

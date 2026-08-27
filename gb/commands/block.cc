@@ -110,23 +110,23 @@ bool block(const command_t& argv, GameObj& g) {
                    "fuel", "dest", "know"});
     table[0].format().font_style({tabulate::FontStyle::bold});
 
-    for (const Race* r : RaceList::readonly(g.entity_manager)) {
-      if (!isset(allied_members, r->Playernum) || r->dissolved) continue;
+    for (const Race& r : RaceList::readonly(g.entity_manager)) {
+      if (!isset(allied_members, r.Playernum) || r.dissolved) continue;
       const auto* power_ptr =
-          g.entity_manager.peek_power(powernum_t{r->Playernum.value});
+          g.entity_manager.peek_power(powernum_t{r.Playernum.value});
       if (!power_ptr) continue;
 
       table.add_row(
-          {std::format("{}", r->Playernum), std::string(r->name),
-           estimate(power_ptr->troops, *race, r->Playernum),
-           estimate(power_ptr->popn, *race, r->Playernum),
-           estimate(power_ptr->money, *race, r->Playernum),
-           estimate(power_ptr->ships_owned, *race, r->Playernum),
-           estimate(power_ptr->planets_owned, *race, r->Playernum),
-           estimate(power_ptr->resource, *race, r->Playernum),
-           estimate(power_ptr->fuel, *race, r->Playernum),
-           estimate(power_ptr->destruct, *race, r->Playernum),
-           std::format("{}%", race->translate[r->Playernum.value - 1])});
+          {std::format("{}", r.Playernum), std::string(r.name),
+           estimate(power_ptr->troops, *race, r.Playernum),
+           estimate(power_ptr->popn, *race, r.Playernum),
+           estimate(power_ptr->money, *race, r.Playernum),
+           estimate(power_ptr->ships_owned, *race, r.Playernum),
+           estimate(power_ptr->planets_owned, *race, r.Playernum),
+           estimate(power_ptr->resource, *race, r.Playernum),
+           estimate(power_ptr->fuel, *race, r.Playernum),
+           estimate(power_ptr->destruct, *race, r.Playernum),
+           std::format("{}%", race->translate[r.Playernum.value - 1])});
     }
 
     g.out << table << "\n";

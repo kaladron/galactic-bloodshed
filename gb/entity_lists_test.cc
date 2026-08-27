@@ -101,15 +101,15 @@ void test_race_list_readonly(EntityManager& em) {
   std::vector<player_t> seen_players;
 
   auto readonly_races = RaceList::readonly(em);
-  for (const Race* race : std::as_const(readonly_races)) {
-    static_assert(std::is_same_v<decltype(race), const Race*>,
-                  "RaceList::readonly() should yield const Race*");
+  for (const Race& race : std::as_const(readonly_races)) {
+    static_assert(std::is_same_v<decltype(race), const Race&>,
+                  "RaceList::readonly() should yield const Race&");
 
     count++;
-    seen_players.push_back(race->Playernum);
-    test::expect_eq(race->Playernum.value, count);
-    test::expect_eq(race->governor[0].money,
-                    static_cast<money_t>(race->Playernum.value) * 1000L);
+    seen_players.push_back(race.Playernum);
+    test::expect_eq(race.Playernum.value, count);
+    test::expect_eq(race.governor[0].money,
+                    static_cast<money_t>(race.Playernum.value) * 1000L);
   }
 
   test::expect_eq(count, 3);
@@ -128,13 +128,13 @@ void test_star_list_readonly(EntityManager& em) {
   std::vector<starnum_t> seen_stars;
 
   auto readonly_stars = StarList::readonly(em);
-  for (const Star* star : std::as_const(readonly_stars)) {
-    static_assert(std::is_same_v<decltype(star), const Star*>,
-                  "StarList::readonly() should yield const Star*");
+  for (const Star& star : std::as_const(readonly_stars)) {
+    static_assert(std::is_same_v<decltype(star), const Star&>,
+                  "StarList::readonly() should yield const Star&");
 
     count++;
-    seen_stars.push_back(star->get_struct().star_id);
-    test::expect_eq(star->get_struct().star_id,
+    seen_stars.push_back(star.get_struct().star_id);
+    test::expect_eq(star.get_struct().star_id,
                     static_cast<starnum_t>(count - 1));
   }
 
@@ -151,19 +151,19 @@ void test_planet_list_readonly(EntityManager& em) {
   std::println(std::cout, "Testing PlanetList...");
   int total_planets = 0;
 
-  for (const Star* star : StarList::readonly(em)) {
-    auto star_id = star->get_struct().star_id;
-    auto readonly_planets = PlanetList::readonly(em, star_id, *star);
+  for (const Star& star : StarList::readonly(em)) {
+    auto star_id = star.get_struct().star_id;
+    auto readonly_planets = PlanetList::readonly(em, star_id, star);
 
     int star_planet_count = 0;
-    for (const Planet* planet : std::as_const(readonly_planets)) {
-      static_assert(std::is_same_v<decltype(planet), const Planet*>,
-                    "PlanetList::readonly() should yield const Planet*");
+    for (const Planet& planet : std::as_const(readonly_planets)) {
+      static_assert(std::is_same_v<decltype(planet), const Planet&>,
+                    "PlanetList::readonly() should yield const Planet&");
 
       star_planet_count++;
       total_planets++;
-      test::expect_eq(planet->star_id(), star_id);
-      test::expect_eq(planet->planet_order(),
+      test::expect_eq(planet.star_id(), star_id);
+      test::expect_eq(planet.planet_order(),
                       static_cast<planetnum_t>(star_planet_count - 1));
     }
 
@@ -183,15 +183,15 @@ void test_commod_list_readonly(EntityManager& em) {
   std::vector<int> seen_ids;
 
   auto readonly_commods = CommodList::readonly(em);
-  for (const Commod* commod : std::as_const(readonly_commods)) {
-    static_assert(std::is_same_v<decltype(commod), const Commod*>,
-                  "CommodList::readonly() should yield const Commod*");
+  for (const Commod& commod : std::as_const(readonly_commods)) {
+    static_assert(std::is_same_v<decltype(commod), const Commod&>,
+                  "CommodList::readonly() should yield const Commod&");
 
     count++;
-    total_amount += commod->amount;
-    seen_ids.push_back(commod->id);
-    test::expect_ne(commod->owner.value, 0);
-    test::expect_ne(commod->amount, 0);
+    total_amount += commod.amount;
+    seen_ids.push_back(commod.id);
+    test::expect_ne(commod.owner.value, 0);
+    test::expect_ne(commod.amount, 0);
   }
 
   test::expect_eq(count, 2);
@@ -206,8 +206,8 @@ void test_playernum_indexing(EntityManager& em) {
   std::println(std::cout, "Testing array indexing via Playernum...");
   std::array<int, 3> power_values{};
 
-  for (const Race* race : RaceList::readonly(em)) {
-    power_values[race->Playernum.value - 1] = race->governor[0].money;
+  for (const Race& race : RaceList::readonly(em)) {
+    power_values[race.Playernum.value - 1] = race.governor[0].money;
   }
 
   test::expect_eq(power_values[0], 1000);
@@ -315,8 +315,8 @@ void test_sparse_entity_lists() {
     races.save(r4);
 
     std::vector<player_t> visited_races;
-    for (const Race* r : RaceList::readonly(em)) {
-      visited_races.push_back(r->Playernum);
+    for (const Race& r : RaceList::readonly(em)) {
+      visited_races.push_back(r.Playernum);
     }
     test::expect_eq(visited_races.size(), 2);
     test::expect_eq(visited_races[0], player_t{1});
@@ -342,8 +342,8 @@ void test_sparse_entity_lists() {
     commods.save(c6);
 
     std::vector<int> visited_commods;
-    for (const Commod* c : CommodList::readonly(em)) {
-      visited_commods.push_back(c->id);
+    for (const Commod& c : CommodList::readonly(em)) {
+      visited_commods.push_back(c.id);
     }
     test::expect_eq(visited_commods.size(), 2);
     test::expect_eq(visited_commods[0], 1);

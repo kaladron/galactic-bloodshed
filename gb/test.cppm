@@ -351,30 +351,30 @@ inline void verify_universe_invariants(
     EntityManager& em,
     std::source_location loc = std::source_location::current()) {
   // 1. Star APs >= 0 for all currently registered races
-  for (const Star* star : StarList::readonly(em)) {
-    for (const Race* race : RaceList::readonly(em)) {
-      expect_ge(star->AP(race->Playernum), 0,
+  for (const Star& star : StarList::readonly(em)) {
+    for (const Race& race : RaceList::readonly(em)) {
+      expect_ge(star.AP(race.Playernum), 0,
                 std::format("Star '{}' has negative AP for race '{}'",
-                            star->get_name(), race->name),
+                            star.get_name(), race.name),
                 loc);
     }
   }
 
   // 2. Planet population == sum(Sector populations) using range-based SectorMap
-  for (const Star* star : StarList::readonly(em)) {
-    for (const Planet* planet :
-         PlanetList::readonly(em, star->star_id(), *star)) {
+  for (const Star& star : StarList::readonly(em)) {
+    for (const Planet& planet :
+         PlanetList::readonly(em, star.star_id(), star)) {
       try {
         if (const auto* smap =
-                em.peek_sectormap(planet->star_id(), planet->planet_order())) {
+                em.peek_sectormap(planet.star_id(), planet.planet_order())) {
           population_t total_sect_pop = 0;
           for (const Sector& sect : *smap) {
             total_sect_pop += sect.get_popn();
           }
           expect_eq(
-              planet->popn(), total_sect_pop,
+              planet.popn(), total_sect_pop,
               std::format("Planet ({}, {}) population mismatch with sector sum",
-                          planet->star_id(), planet->planet_order()),
+                          planet.star_id(), planet.planet_order()),
               loc);
         }
       } catch (const EntityNotFoundError&) {
@@ -400,11 +400,11 @@ inline void verify_universe_invariants(
   }
 
   // 4. Commodities have valid owner <= MAXPLAYERS
-  for (const auto* commod : CommodList::readonly(em)) {
-    if (commod->owner.value > 0) {
-      expect_le(commod->owner.value, MAXPLAYERS,
+  for (const Commod& commod : CommodList::readonly(em)) {
+    if (commod.owner.value > 0) {
+      expect_le(commod.owner.value, MAXPLAYERS,
                 std::format("Commodity #{} has owner {} > MAXPLAYERS",
-                            commod->id, commod->owner.value),
+                            commod.id, commod.owner.value),
                 loc);
     }
   }

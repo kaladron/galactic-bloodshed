@@ -56,8 +56,8 @@ bool colonies(const command_t& argv, GameObj& g) {
            "des  fuel  tax  cmpt/tox mob  Aliens\n";
 
   if (argv.size() < 2) {
-    for (const Star* star : StarList::readonly(g.entity_manager)) {
-      colonies_at_star(g, *g.race, star->star_id());
+    for (const Star& star : StarList::readonly(g.entity_manager)) {
+      colonies_at_star(g, *g.race, star.star_id());
     }
   } else {
     for (int i = 1; i < argv.size(); i++) {

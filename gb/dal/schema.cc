@@ -57,7 +57,18 @@ void initialize_schema(Database& db) {
 
   CREATE TABLE tbl_ship(
     id INT PRIMARY KEY NOT NULL,
-    data TEXT NOT NULL);
+    data TEXT NOT NULL,
+    owner INT GENERATED ALWAYS AS (json_extract(data, '$.owner')) STORED,
+    storbits INT GENERATED ALWAYS AS (json_extract(data, '$.storbits')) STORED,
+    pnumorbits INT GENERATED ALWAYS AS (json_extract(data, '$.pnumorbits')) STORED,
+    whatorbits INT GENERATED ALWAYS AS (json_extract(data, '$.whatorbits')) STORED,
+    destshipno INT GENERATED ALWAYS AS (json_extract(data, '$.destshipno')) STORED,
+    alive INT GENERATED ALWAYS AS (json_extract(data, '$.alive')) STORED);
+
+  CREATE INDEX idx_ship_owner ON tbl_ship(owner);
+  CREATE INDEX idx_ship_orbit ON tbl_ship(storbits, pnumorbits, whatorbits);
+  CREATE INDEX idx_ship_destship ON tbl_ship(destshipno);
+  CREATE INDEX idx_ship_alive ON tbl_ship(alive);
 
   CREATE TABLE tbl_ship_exam(
     id INT PRIMARY KEY NOT NULL,

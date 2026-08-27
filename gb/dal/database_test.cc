@@ -3,6 +3,8 @@
 /// \file database_test.cc
 /// \brief Unit tests for Database class methods and SQLite operations.
 
+#include <sqlite3.h>
+
 import dallib;
 import test;
 import std;
@@ -249,6 +251,93 @@ int main() {
     });
 
     std::println(std::cout, "✓ Database throws SqliteError on database errors");
+  }
+
+  // tbl_ship STORED generated columns and B-Tree indexes
+  {
+    Database db(":memory:");
+    initialize_schema(db);
+    JsonStore store(db);
+
+    // Ship 1: Player 1, orbiting star 2 planet 3 (LEVEL_PLANET = 1), alive = 1,
+    // destshipno = 0
+    store.store(
+        "tbl_ship", 1,
+        R"({"owner":1,"storbits":2,"pnumorbits":3,"whatorbits":1,"destshipno":0,"alive":1})");
+    // Ship 2: Player 1, orbiting star 2 planet 3, alive = 0 (dead), destshipno
+    // = 0
+    store.store(
+        "tbl_ship", 2,
+        R"({"owner":1,"storbits":2,"pnumorbits":3,"whatorbits":1,"destshipno":0,"alive":0})");
+    // Ship 3: Player 2, orbiting star 5 planet 0 (LEVEL_STAR = 2), alive = 1,
+    // destshipno = 10
+    store.store(
+        "tbl_ship", 3,
+        R"({"owner":2,"storbits":5,"pnumorbits":0,"whatorbits":2,"destshipno":10,"alive":1})");
+
+    // Verify generated columns extraction for Ship 1
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(
+        db.connection(),
+        "SELECT id, owner, storbits, pnumorbits, whatorbits, destshipno, alive "
+        "FROM tbl_ship WHERE id = 1",
+        -1, &stmt, nullptr);
+    test::expect_eq(rc, SQLITE_OK);
+    test::expect_eq(sqlite3_step(stmt), SQLITE_ROW);
+    test::expect_eq(sqlite3_column_int(stmt, 0), 1);
+    test::expect_eq(sqlite3_column_int(stmt, 1), 1);
+    test::expect_eq(sqlite3_column_int(stmt, 2), 2);
+    test::expect_eq(sqlite3_column_int(stmt, 3), 3);
+    test::expect_eq(sqlite3_column_int(stmt, 4), 1);
+    test::expect_eq(sqlite3_column_int(stmt, 5), 0);
+    test::expect_eq(sqlite3_column_int(stmt, 6), 1);
+    sqlite3_finalize(stmt);
+    std::println(std::cout, "✓ tbl_ship generated columns extract correctly");
+
+    // Verify index by owner and alive
+    stmt = nullptr;
+    rc = sqlite3_prepare_v2(
+        db.connection(),
+        "SELECT id FROM tbl_ship WHERE owner = 1 AND alive = 1 ORDER BY id", -1,
+        &stmt, nullptr);
+    test::expect_eq(rc, SQLITE_OK);
+    test::expect_eq(sqlite3_step(stmt), SQLITE_ROW);
+    test::expect_eq(sqlite3_column_int(stmt, 0), 1);
+    test::expect_eq(sqlite3_step(stmt), SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    std::println(
+        std::cout,
+        "✓ idx_ship_owner and idx_ship_alive queries match expected rows");
+
+    // Verify index by orbit (storbits, pnumorbits, whatorbits)
+    stmt = nullptr;
+    rc = sqlite3_prepare_v2(db.connection(),
+                            "SELECT id FROM tbl_ship WHERE storbits = 2 AND "
+                            "pnumorbits = 3 AND whatorbits = 1 ORDER BY id",
+                            -1, &stmt, nullptr);
+    test::expect_eq(rc, SQLITE_OK);
+    test::expect_eq(sqlite3_step(stmt), SQLITE_ROW);
+    test::expect_eq(sqlite3_column_int(stmt, 0), 1);
+    test::expect_eq(sqlite3_step(stmt), SQLITE_ROW);
+    test::expect_eq(sqlite3_column_int(stmt, 0), 2);
+    test::expect_eq(sqlite3_step(stmt), SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    std::println(std::cout,
+                 "✓ idx_ship_orbit query returns matching spatial rows");
+
+    // Verify index by destshipno
+    stmt = nullptr;
+    rc = sqlite3_prepare_v2(db.connection(),
+                            "SELECT id FROM tbl_ship WHERE destshipno = 10", -1,
+                            &stmt, nullptr);
+    test::expect_eq(rc, SQLITE_OK);
+    test::expect_eq(sqlite3_step(stmt), SQLITE_ROW);
+    test::expect_eq(sqlite3_column_int(stmt, 0), 3);
+    test::expect_eq(sqlite3_step(stmt), SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    std::println(
+        std::cout,
+        "✓ idx_ship_destship query returns matching docked/carrier rows");
   }
 
   std::println(std::cout, "\nAll Database tests passed!");

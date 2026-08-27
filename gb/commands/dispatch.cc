@@ -11,6 +11,13 @@ namespace GB::commands {
 
 bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
                       const command_t& argv) {
+  // Ensure g.race is valid and synchronized with current player
+  if (g.player() > 0) {
+    g.race = g.entity_manager.peek_race(g.player());
+  } else {
+    g.race = nullptr;
+  }
+
   // 1. Role & Permission Verification
   if (desc.roles.god_only && !g.god()) {
     g.out << "Only deity can use this command.\n";

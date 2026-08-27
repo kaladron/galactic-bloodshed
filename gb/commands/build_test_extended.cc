@@ -146,7 +146,8 @@ void test_planet_multiple_builds() {
 
   // Verify resources deducted for all 5 ships
   const auto* planet = fixture.get_planet();
-  int cost_per_probe = Shipcost(ShipType::OTYPE_PROBE, *g.race);
+  const auto* race = fixture.em.peek_race(1);
+  int cost_per_probe = Shipcost(ShipType::OTYPE_PROBE, *race);
   int expected_resource = initial_resource - (5 * cost_per_probe);
   test::expect_eq(planet->info(player_t{1}).resource, expected_resource);
 

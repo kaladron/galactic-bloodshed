@@ -532,13 +532,12 @@ void test_peek_sectormap_throws_on_not_found() {
       "  ✓ peek_sectormap throws EntityNotFoundError for invalid planet");
 }
 
-void test_peek_increments_refcount() {
+void test_peek_caching_and_clear_cache() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout,
-               "Test: peek increments refcount (pointers remain valid)");
+  std::println(std::cout, "Test: peek caching and clear_cache eviction");
 
   JsonStore store(db);
   star_struct raw_star{};
@@ -553,19 +552,6 @@ void test_peek_increments_refcount() {
     test::expect_ne(peek1, nullptr);
     test::expect_eq(peek1->get_name(), "TestStar");
 
-    {
-      auto star_handle = em.get_star(0);
-      star_handle->set_name("ModifiedStar");
-    }
-
-    std::string peek_name_after = peek1->get_name();
-    test::expect_eq(peek_name_after, "ModifiedStar");
-    std::println(std::cout,
-                 "  ✓ peek pointer remains valid after get/release cycle");
-  }
-
-  {
-    const auto* peek1 = em.peek_star(0);
     const auto* peek2 = em.peek_star(0);
     test::expect_eq(peek1, peek2);
     std::println(std::cout, "  ✓ Multiple peeks return same cached instance");
@@ -583,14 +569,24 @@ void test_peek_increments_refcount() {
     test::expect_ne(peek_race, nullptr);
     test::expect_eq(peek_race->name, "TestRace");
 
-    {
-      auto race_handle = em.get_race(1);
-      race_handle->tech = 75.0;
-    }
+    // Modify in DB directly while peeked
+    race.name = "ModifiedInDB";
+    races.save(race);
 
-    test::expect_eq(peek_race->name, "TestRace");
-    std::println(std::cout,
-                 "  ✓ peek on race also increments refcount correctly");
+    // Still returns cached value before clear_cache
+    const auto* peek_cached = em.peek_race(1);
+    test::expect_eq(peek_cached->name, "TestRace");
+
+    // clear_cache must evict peeked entities (no refcount leak)
+    em.clear_cache();
+
+    // After clear_cache, peek_race reloads fresh data from DB
+    const auto* peek_reloaded = em.peek_race(1);
+    test::expect_ne(peek_reloaded, nullptr);
+    test::expect_eq(peek_reloaded->name, "ModifiedInDB");
+    std::println(
+        std::cout,
+        "  ✓ peek does not leak refcount; clear_cache evicts peeked entities");
   }
 
   {
@@ -604,18 +600,22 @@ void test_peek_increments_refcount() {
 
     const auto* peek_ship = em.peek_ship(100);
     test::expect_ne(peek_ship, nullptr);
+    test::expect_eq(peek_ship->fuel(), 1000.0);
 
-    {
-      auto ship_handle = em.get_ship(100);
-      ship_handle->fuel() = 500.0;
-    }
+    // Modify directly in DB
+    ship.fuel() = 2500.0;
+    ships.save(ship);
 
-    test::expect_ne(peek_ship, nullptr);
+    em.clear_cache();
+
+    const auto* peek_reloaded_ship = em.peek_ship(100);
+    test::expect_ne(peek_reloaded_ship, nullptr);
+    test::expect_eq(peek_reloaded_ship->fuel(), 2500.0);
     std::println(std::cout,
-                 "  ✓ peek on ship also increments refcount correctly");
+                 "  ✓ clear_cache successfully evicts peeked ship entities");
   }
 
-  std::println(std::cout, "  ✅ All peek refcount tests passed");
+  std::println(std::cout, "  ✅ All peek caching and eviction tests passed");
 }
 
 void test_entity_manager_commods() {
@@ -781,7 +781,7 @@ int main() {
   test_peek_star_throws_on_not_found();
   test_peek_planet_throws_on_not_found();
   test_peek_sectormap_throws_on_not_found();
-  test_peek_increments_refcount();
+  test_peek_caching_and_clear_cache();
   test_entity_manager_commods();
   test_entity_manager_blocks();
   test_entity_manager_powers();

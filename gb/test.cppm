@@ -528,20 +528,24 @@ public:
     JsonStore store(db);
     UniverseRepository universe_repo(store);
     universe_repo.save(u);
+
+    Race default_race{};
+    default_race.Playernum = 1;
+    default_race.name = "TestRace";
+    default_race.governor[0].active = true;
+    RaceRepository race_repo(store);
+    race_repo.save(default_race);
   }
 
   /// Setup a GameObj for testing.
   /// Automatically sets up player, governor, and race pointer.
-  /// If the race for the player does not exist yet, g.race remains null.
   void setup_game_obj(GameObj& g, player_t player = 1, governor_t gov = 0) {
     g.set_player(player);
     g.set_governor(gov);
     if (player > 0) {
-      try {
-        g.race = em.peek_race(player);
-      } catch (const EntityNotFoundError&) {
-        // Race not yet created in test - g.race remains null
-      }
+      g.race = em.peek_race(player);
+    } else {
+      g.race = nullptr;
     }
   }
 

@@ -54,11 +54,10 @@ template <typename Entity, typename Key, typename FindFn>
 const Entity*
 peek_entity_impl(Key key,
                  std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
-                 std::unordered_map<Key, int>& refcount, FindFn find_fn) {
+                 FindFn find_fn) {
   // Check if already cached
   auto it = cache.find(key);
   if (it != cache.end()) {
-    refcount[key]++;  // Increment refcount to keep entity alive
     return it->second.get();
   }
 
@@ -68,23 +67,20 @@ peek_entity_impl(Key key,
     return nullptr;
   }
 
-  // Cache the entity and set initial refcount
+  // Cache the entity without incrementing refcount (read-only peek)
   auto [iter, inserted] =
       cache.emplace(key, std::make_unique<Entity>(std::move(*entity_opt)));
-  refcount[key] = 1;  // peek increments refcount like get does
   return iter->second.get();
 }
 
 template <typename Entity, typename Key>
 void release_entity_impl(
-    Key key, std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
+    Key key, std::unordered_map<Key, std::unique_ptr<Entity>>& /*cache*/,
     std::unordered_map<Key, int>& refcount) {
-  // Assumes lock is already held by caller
   auto it = refcount.find(key);
   if (it != refcount.end()) {
     it->second--;
     if (it->second <= 0) {
-      cache.erase(key);
       refcount.erase(it);
     }
   }
@@ -93,11 +89,15 @@ void release_entity_impl(
 template <typename Entity, typename Key>
 void clear_cache_impl(std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
                       std::unordered_map<Key, int>& refcount) {
-  // Remove entities with no active handles (refcount == 0)
-  // Keep entities with active handles to avoid breaking those handles
+  // Remove entities with no active handles (refcount == 0 or not in refcount
+  // map) Keep entities with active handles (refcount > 0) to avoid breaking
+  // those handles
   for (auto it = cache.begin(); it != cache.end();) {
-    if (refcount[it->first] == 0) {
-      refcount.erase(it->first);
+    auto ref_it = refcount.find(it->first);
+    if (ref_it == refcount.end() || ref_it->second == 0) {
+      if (ref_it != refcount.end()) {
+        refcount.erase(ref_it);
+      }
       it = cache.erase(it);
     } else {
       ++it;
@@ -135,9 +135,10 @@ EntityHandle<Race> EntityManager::get_race(player_t player) {
 }
 
 const Race* EntityManager::peek_race(player_t player) {
-  const auto* race = peek_entity_impl<Race>(
-      player, race_cache, race_refcount,
-      [this](player_t p) { return races.find_by_player(p); });
+  const auto* race =
+      peek_entity_impl<Race>(player, race_cache, [this](player_t p) {
+        return races.find_by_player(p);
+      });
   if (!race) {
     throw EntityNotFoundError(std::format("Race not found: player={}", player));
   }
@@ -163,8 +164,7 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
 
 const Ship* EntityManager::peek_ship(shipnum_t num) {
   const auto* ship = peek_entity_impl<Ship>(
-      num, ship_cache, ship_refcount,
-      [this](shipnum_t n) { return ships.find_by_number(n); });
+      num, ship_cache, [this](shipnum_t n) { return ships.find_by_number(n); });
   if (!ship) {
     throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
   }
@@ -275,8 +275,8 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
 
 const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
-  const auto* planet = peek_entity_impl<Planet>(
-      key, planet_cache, planet_refcount, [this, star, pnum](auto) {
+  const auto* planet =
+      peek_entity_impl<Planet>(key, planet_cache, [this, star, pnum](auto) {
         return planets.find_by_location(star, pnum);
       });
   if (!planet) {
@@ -292,7 +292,6 @@ void EntityManager::release_planet(starnum_t star, planetnum_t pnum) {
   if (it != planet_refcount.end()) {
     it->second--;
     if (it->second <= 0) {
-      planet_cache.erase(key);
       planet_refcount.erase(it);
     }
   }
@@ -309,8 +308,7 @@ EntityHandle<Star> EntityManager::get_star(starnum_t num) {
 
 const Star* EntityManager::peek_star(starnum_t num) {
   const auto* star = peek_entity_impl<Star>(
-      num, star_cache, star_refcount,
-      [this](starnum_t n) { return stars.find_by_number(n); });
+      num, star_cache, [this](starnum_t n) { return stars.find_by_number(n); });
   if (!star) {
     throw EntityNotFoundError(std::format("Star not found: star_id={}", num));
   }
@@ -332,8 +330,7 @@ EntityHandle<Commod> EntityManager::get_commod(int id) {
 
 const Commod* EntityManager::peek_commod(int id) {
   return peek_entity_impl<Commod>(
-      id, commod_cache, commod_refcount,
-      [this](int i) { return commods.find_by_id(i); });
+      id, commod_cache, [this](int i) { return commods.find_by_id(i); });
 }
 
 void EntityManager::release_commod(int id) {
@@ -351,8 +348,7 @@ EntityHandle<block> EntityManager::get_block(blocknum_t id) {
 
 const block* EntityManager::peek_block(blocknum_t id) {
   return peek_entity_impl<block>(
-      id, block_cache, block_refcount,
-      [this](blocknum_t i) { return blocks.find_by_id(i); });
+      id, block_cache, [this](blocknum_t i) { return blocks.find_by_id(i); });
 }
 
 void EntityManager::release_block(blocknum_t id) {
@@ -370,8 +366,7 @@ EntityHandle<power> EntityManager::get_power(powernum_t id) {
 
 const power* EntityManager::peek_power(powernum_t id) {
   return peek_entity_impl<power>(
-      id, power_cache, power_refcount,
-      [this](powernum_t i) { return powers.find_by_id(i); });
+      id, power_cache, [this](powernum_t i) { return powers.find_by_id(i); });
 }
 
 void EntityManager::release_power(powernum_t id) {
@@ -527,7 +522,7 @@ EntityHandle<ShipExam> EntityManager::get_ship_exam(ShipType ship_type) {
 
 const ShipExam* EntityManager::peek_ship_exam(ShipType ship_type) {
   const auto* exam = peek_entity_impl<ShipExam>(
-      ship_type, ship_exam_cache, ship_exam_refcount,
+      ship_type, ship_exam_cache,
       [this](ShipType type) -> std::optional<ShipExam> {
         auto existing = ship_exams.find_by_type(type);
         if (existing) return existing;
@@ -783,7 +778,7 @@ const SectorMap* EntityManager::peek_sectormap(starnum_t star,
                                                planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
   const auto* sectormap = peek_entity_impl<SectorMap>(
-      key, sectormap_cache, sectormap_refcount, [this, star, pnum](auto) {
+      key, sectormap_cache, [this, star, pnum](auto) {
         const auto& planet = *peek_planet(star, pnum);
         return std::optional<SectorMap>(sectors.load_map(planet));
       });
@@ -800,7 +795,6 @@ void EntityManager::release_sectormap(starnum_t star, planetnum_t pnum) {
   if (it != sectormap_refcount.end()) {
     it->second--;
     if (it->second <= 0) {
-      sectormap_cache.erase(key);
       sectormap_refcount.erase(it);
     }
   }

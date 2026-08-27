@@ -248,10 +248,14 @@ public:
   bool remove(const std::string& table, int id);
   std::vector<int> list_ids(const std::string& table);
   int find_next_available_id(const std::string& table);
+  std::vector<int> query_ids(const std::string& table,
+                             const std::string& where_clause,
+                             const std::vector<KeyValue>& params = {});
 };
 ```
 - Generic CRUD operations for JSON data
 - Table-agnostic storage interface
+- Parameterized WHERE queries returning matched IDs without exposing SQLite statements
 - Gap-finding for ID allocation
 - Error handling
 
@@ -260,7 +264,8 @@ public:
 export void initialize_schema(Database& db);
 ```
 - Creates all database tables
-- Sets up indexes
+- Configures STORED generated columns (e.g. `storbits`, `whatorbits`, `destshipno`, `owner`, `alive`) for JSON field extraction
+- Sets up B-Tree indexes on generated columns for high-speed spatial queries
 - Configures SQLite pragmas
 
 #### Design Principles
@@ -328,17 +333,23 @@ public:
   
   // Standard operations
   std::optional<Ship> find_by_number(shipnum_t num);
-  bool save_ship(const Ship& ship);
-  bool remove_ship(shipnum_t num);
+  bool save(const Ship& ship);
+  void delete_ship(shipnum_t num);
   
   // Ship-specific operations
-  shipnum_t get_next_ship_number();
+  shipnum_t next_ship_number();
   shipnum_t count_all_ships();
-  std::vector<Ship> find_by_owner(player_t owner);
+  
+  // Spatial and indexed queries
+  std::vector<shipnum_t> find_in_star(starnum_t star_id, bool alive_only = true);
+  std::vector<shipnum_t> find_on_planet(starnum_t star_id, planetnum_t planet_id, bool alive_only = true);
+  std::vector<shipnum_t> find_in_hangar(shipnum_t carrier_id, bool alive_only = true);
+  std::vector<shipnum_t> find_by_owner(player_t owner_id, bool alive_only = true);
+  std::vector<shipnum_t> find_alive();
   
 protected:
-  std::optional<std::string> serialize(const Ship& ship) override;
-  std::optional<Ship> deserialize(const std::string& json) override;
+  std::optional<std::string> serialize(const Ship& ship) const override;
+  std::optional<Ship> deserialize(const std::string& json) const override;
 };
 ```
 
@@ -397,11 +408,21 @@ public:
   EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
   EntityHandle<Star> get_star(starnum_t num);
 
-  // Read-only access
+  // Direct read-only access (throws EntityNotFoundError on invalid internal IDs)
   const Race* peek_race(player_t player);
   const Ship* peek_ship(shipnum_t num);
-  const Planet* peek_planet(starnum_t star, planetnum_t pnum);
-  const Star* peek_star(starnum_t num);
+  const Planet& peek_planet(starnum_t star, planetnum_t pnum);
+  const Star& peek_star(starnum_t num);
+
+  // Monadic scoped peeks (safe inspection with zero-cost lambda execution)
+  template <typename Fn>
+  auto with_race(player_t player, Fn&& fn) -> std::optional<decltype(fn(std::declval<const Race&>()))>;
+  template <typename Fn>
+  auto with_ship(shipnum_t num, Fn&& fn) -> std::optional<decltype(fn(std::declval<const Ship&>()))>;
+  template <typename Fn>
+  auto with_planet(starnum_t star, planetnum_t pnum, Fn&& fn);
+  template <typename Fn>
+  auto with_star(starnum_t num, Fn&& fn);
 
   // Batch persistence / cache lifecycle
   void flush_all();
@@ -411,7 +432,7 @@ public:
 };
 ```
 
-`EntityManager` is the practical service boundary for the game. It coordinates repositories, caches loaded entities, provides RAII handles for mutation, and exposes read-only access for inspection and iteration.
+`EntityManager` is the practical service boundary for the game. It coordinates repositories, caches loaded entities, provides RAII handles for mutation, and exposes read-only and monadic scoped access for inspection and iteration.
 
 #### RAII Entity Access
 
@@ -422,8 +443,19 @@ ship.fuel() += 10.0;
 // Auto-save happens when ship_handle goes out of scope
 ```
 
-#### Read-Only Access
+#### Read-Only & Monadic Scoped Access
 
+Read-only inspection supports two complementary patterns:
+
+1. **Monadic Scoped Peeks (`with_*`)**: Safely inspects an entity inside a scoped lambda without pointer ceremony or lifetime leaks, returning an `std::optional<Result>`:
+```cpp
+// Inspect ship safely; lambda only executes if the ship exists
+auto name = g.entity_manager.with_ship(target_ship_no, [](const Ship& ship) {
+  return ship.name();
+});
+```
+
+2. **Direct Peeks (`peek_*`)**: Used when accessing validated internal IDs (e.g. `g.player`, `g.snum()`). Lookups throw `EntityNotFoundError` on missing internal IDs to fail fast against database corruption:
 ```cpp
 const auto* race = g.entity_manager.peek_race(g.player);
 g.out << std::format("Race: {}\n", race->name);
@@ -966,8 +998,9 @@ The persistence API is intentionally moving toward two distinct iteration modes:
 ### Target Patterns
 
 ```cpp
-for (const Race* race : RaceList::readonly(entity_manager)) {
+for (const Race& race : RaceList::readonly(entity_manager)) {
   // Read-only traversal
+  g.out << std::format("Race: {}\n", race.name);
 }
 
 for (auto race_handle : RaceList{entity_manager}) {

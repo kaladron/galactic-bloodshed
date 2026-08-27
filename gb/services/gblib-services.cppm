@@ -163,9 +163,6 @@ export class EntityManager {
   int global_universe_refcount = 0;
   int server_state_refcount = 0;
 
-  // Mutex for thread-safety (future-proofing)
-  std::mutex cache_mutex;
-
 public:
   explicit EntityManager(Database& database);
 

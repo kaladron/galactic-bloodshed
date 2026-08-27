@@ -97,8 +97,8 @@ int main() {
 
   Coordinates target_c{3, 4};
   auto& sect = smap.get(target_c);
-  test::expect_eq(sect.get_x(), 0);
-  test::expect_eq(sect.get_y(), 0);  // Initially default-constructed
+  test::expect_eq(sect.coords(),
+                  target_c);  // Initialized by SectorMap constructor
 
   // Setting and checking coords
   sector_struct s_data{};

@@ -342,3 +342,10 @@ export EnslavementResult
 process_enslavement_and_revolts(EntityManager& entity_manager, const Star& star,
                                 Planet& planet, SectorMap& smap,
                                 TurnStats& stats);
+
+/// \brief Recalculates planetary population, troop counts, maximum supportable
+/// population, and total mineral resources across all sectors. Updates
+/// per-player colony info and empire-wide power statistics in TurnStats.
+export void recalculate_census(EntityManager& entity_manager, const Star& star,
+                               Planet& planet, const SectorMap& smap,
+                               TurnStats& stats);

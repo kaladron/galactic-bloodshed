@@ -315,15 +315,13 @@ Star Makestar(Database& db, starnum_t snum) {
     }
     /*
      * Tabulate statistics for this star's planets. */
-    for (y = 0; y < planet.Maxy(); y++)
-      for (x = 0; x < planet.Maxx(); x++) {
-        const auto& sect = smap.get(Coordinates{x, y});
-        std::uint8_t d = sect.get_condition();
-        planet.total_resources() += sect.get_resource();
-        Resource[type] += sect.get_resource();
-        Numsects[type][d]++;
-        Fertsects[type][d] += sect.get_fert();
-      }
+    for (const auto& sect : smap) {
+      std::uint8_t d = sect.get_condition();
+      planet.total_resources() += sect.get_resource();
+      Resource[type] += sect.get_resource();
+      Numsects[type][d]++;
+      Fertsects[type][d] += sect.get_fert();
+    }
 
     // Save sectormap and planet to database after calculations
     JsonStore store(db);

@@ -1731,6 +1731,106 @@ void test_notify_slave_revolt() {
   test::expect_true(telegrams[0].message.contains("SLAVE REVOLT"));
 }
 
+void test_recalculate_census() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(1);
+  race1.name = "Player1Race";
+  Race race2 = createTestRace(2);
+  race2.name = "Player2Race";
+  RaceRepository races(store);
+  races.save(race1);
+  races.save(race2);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.dimensions() = Coordinates{2, 2};
+  planet.conditions(TOXIC) = 10;
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  SectorMap smap(planet);
+  // (0,0): unowned sector with resources
+  auto& s00 = smap.get(Coordinates{0, 0});
+  s00.set_owner(0);
+  s00.clear_popn();
+  s00.clear_troops();
+  s00.set_resource(50);
+
+  // (0,1): owned by player 1
+  auto& s01 = smap.get(Coordinates{0, 1});
+  s01.set_owner(1);
+  s01.set_popn_exact(100);
+  s01.set_troops(20);
+  s01.set_efficiency_bounded(80);
+  s01.set_mobilization(50);
+  s01.set_resource(25);
+  s01.set_fert(10);
+  s01.set_condition(SectorType::SEC_LAND);
+
+  // (1,0): owned by player 1
+  auto& s10 = smap.get(Coordinates{1, 0});
+  s10.set_owner(1);
+  s10.set_popn_exact(200);
+  s10.set_troops(30);
+  s10.set_efficiency_bounded(90);
+  s10.set_mobilization(60);
+  s10.set_resource(15);
+  s10.set_fert(15);
+  s10.set_condition(SectorType::SEC_LAND);
+
+  // (1,1): owned by player 2
+  auto& s11 = smap.get(Coordinates{1, 1});
+  s11.set_owner(2);
+  s11.set_popn_exact(300);
+  s11.set_troops(40);
+  s11.set_efficiency_bounded(70);
+  s11.set_mobilization(40);
+  s11.set_resource(10);
+  s11.set_fert(20);
+  s11.set_condition(SectorType::SEC_LAND);
+
+  TurnStats stats{};
+  stats.Compat[player_t{1}] = 100.0;
+  stats.Compat[player_t{2}] = 80.0;
+
+  recalculate_census(em, star, planet, smap, stats);
+
+  test::expect_eq(planet.total_resources(), 100);
+  test::expect_eq(planet.popn(), 600);
+  test::expect_eq(planet.troops(), 90);
+
+  test::expect_eq(planet.info(player_t{1}).numsectsowned, 2);
+  test::expect_eq(planet.info(player_t{1}).popn, 300);
+  test::expect_eq(planet.info(player_t{1}).troops, 50);
+
+  test::expect_eq(planet.info(player_t{2}).numsectsowned, 1);
+  test::expect_eq(planet.info(player_t{2}).popn, 300);
+  test::expect_eq(planet.info(player_t{2}).troops, 40);
+
+  test::expect_eq(stats.Power[player_t{1}].popn, 300);
+  test::expect_eq(stats.Power[player_t{1}].troops, 50);
+  test::expect_eq(stats.Power[player_t{1}].sum_eff, 170);
+  test::expect_eq(stats.Power[player_t{1}].sum_mob, 110);
+
+  test::expect_eq(stats.Power[player_t{2}].popn, 300);
+  test::expect_eq(stats.Power[player_t{2}].troops, 40);
+  test::expect_eq(stats.Power[player_t{2}].sum_eff, 70);
+  test::expect_eq(stats.Power[player_t{2}].sum_mob, 40);
+
+  test::expect_eq(stats.starpopns[star.star_id().value][player_t{1}], 300);
+  test::expect_eq(stats.starpopns[star.star_id().value][player_t{2}], 300);
+  test::expect_true(planet.maxpopn() > 0);
+}
+
 }  // namespace
 
 int main() {
@@ -1818,6 +1918,10 @@ int main() {
 
   std::println(std::cout, "  Testing notify_slave_revolt... ");
   test_notify_slave_revolt();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing recalculate_census... ");
+  test_recalculate_census();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

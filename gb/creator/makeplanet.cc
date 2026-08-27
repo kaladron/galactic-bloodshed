@@ -255,14 +255,9 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
 
   // Initialize with the correct number of sectors.
   SectorMap smap(planet);
-  for (auto y = 0; y < planet.Maxy(); y++) {
-    for (auto x = 0; x < planet.Maxx(); x++) {
-      auto& s = smap.get(Coordinates{x, y});
-      s.set_x(x);
-      s.set_y(y);
-      s.set_type(t);
-      s.set_condition(t);
-    }
+  for (auto& s : smap) {
+    s.set_type(t);
+    s.set_condition(t);
   }
 
   auto total_sects = (planet.Maxy() - 1) * (planet.Maxx() - 1);

@@ -829,6 +829,50 @@ EnslavementResult process_enslavement_and_revolts(EntityManager& entity_manager,
   return execute_slave_revolt(entity_manager, star, planet, smap, intimidated);
 }
 
+void recalculate_census(EntityManager& entity_manager, const Star& star,
+                        Planet& planet, const SectorMap& smap,
+                        TurnStats& stats) {
+  planet.popn() = 0;
+  planet.troops() = 0;
+  planet.maxpopn() = 0;
+  planet.total_resources() = 0;
+
+  for (const Race* race : RaceList::readonly(entity_manager)) {
+    auto& info = planet.info(*race);
+    info.numsectsowned = 0;
+    info.popn = 0;
+    info.troops = 0;
+  }
+
+  const auto toxic = planet.conditions(TOXIC);
+  const auto star_id = star.star_id().value;
+
+  for (const Sector& s : smap) {
+    planet.total_resources() += s.get_resource();
+    if (!s.is_owned()) {
+      continue;
+    }
+
+    const player_t owner = s.get_owner();
+    auto& pinfo = planet.info(owner);
+    pinfo.numsectsowned++;
+    pinfo.troops += s.get_troops();
+    pinfo.popn += s.get_popn();
+    planet.popn() += s.get_popn();
+    planet.troops() += s.get_troops();
+
+    const auto* owner_race = entity_manager.peek_race(owner);
+    planet.maxpopn() += maxsupport(*owner_race, s, stats.Compat[owner], toxic);
+
+    auto& power = stats.Power[owner];
+    power.troops += s.get_troops();
+    power.popn += s.get_popn();
+    power.sum_eff += s.get_eff();
+    power.sum_mob += s.get_mobilization();
+    stats.starpopns[star_id][owner] += s.get_popn();
+  }
+}
+
 int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
              TurnStats& stats) {
   int allmod = 0;
@@ -1007,40 +1051,7 @@ int doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 
   do_recover(entity_manager, star, planet);
 
-  planet.popn() = 0;
-  planet.troops() = 0;
-  planet.maxpopn() = 0;
-  planet.total_resources() = 0;
-
-  for (const Race* race : RaceList::readonly(entity_manager)) {
-    const player_t p = race->Playernum;
-    planet.info(p).numsectsowned = 0;
-    planet.info(p).popn = 0;
-    planet.info(p).troops = 0;
-  }
-
-  for (Sector& p : smap.shuffle()) {
-    if (p.get_owner() != 0) {
-      planet.info(p.get_owner()).numsectsowned++;
-      planet.info(p.get_owner()).troops += p.get_troops();
-      planet.info(p.get_owner()).popn += p.get_popn();
-      planet.popn() += p.get_popn();
-      planet.troops() += p.get_troops();
-      const auto* owner_race = entity_manager.peek_race(p.get_owner());
-      planet.maxpopn() +=
-          maxsupport(*owner_race, p, stats.Compat[p.get_owner()],
-                     planet.conditions(TOXIC));
-      stats.Power[p.get_owner()].troops += p.get_troops();
-      stats.Power[p.get_owner()].popn += p.get_popn();
-      stats.Power[p.get_owner()].sum_eff += p.get_eff();
-      stats.Power[p.get_owner()].sum_mob += p.get_mobilization();
-      stats.starpopns[starnum.value][p.get_owner()] += p.get_popn();
-    } else {
-      p.clear_popn();
-      p.clear_troops();
-    }
-    planet.total_resources() += p.get_resource();
-  }
+  recalculate_census(entity_manager, star, planet, smap, stats);
 
   process_enslavement_and_revolts(entity_manager, star, planet, smap, stats);
 

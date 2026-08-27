@@ -310,13 +310,13 @@ public:
       : star_id_(planet.star_id()), planet_order_(planet.planet_order()),
         dimensions_(planet.dimensions()),
         grid_(static_cast<std::size_t>(dimensions_.x) *
-              static_cast<std::size_t>(dimensions_.y)) {
+              static_cast<std::size_t>(dimensions_.y)),
+        dirty_(static_cast<std::size_t>(dimensions_.x) *
+                   static_cast<std::size_t>(dimensions_.y),
+               true) {
     for (int y = 0; y < dimensions_.y; ++y) {
       for (int x = 0; x < dimensions_.x; ++x) {
-        grid_[static_cast<std::size_t>(x) +
-              (static_cast<std::size_t>(y) *
-               static_cast<std::size_t>(dimensions_.x))]
-            .set_coords(Coordinates{x, y});
+        grid_[coord_to_idx(Coordinates{x, y})].set_coords(Coordinates{x, y});
       }
     }
   }
@@ -333,6 +333,34 @@ public:
   }
   [[nodiscard]] constexpr int num_sectors() const noexcept {
     return dimensions_.x * dimensions_.y;
+  }
+
+  // Dirty tracking operations
+  [[nodiscard]] bool is_dirty(const Coordinates c) const noexcept {
+    if (!in_bounds(c)) return false;
+    return dirty_[coord_to_idx(c)];
+  }
+
+  [[nodiscard]] bool is_any_dirty() const noexcept {
+    return std::ranges::any_of(dirty_, [](bool b) { return b; });
+  }
+
+  [[nodiscard]] std::size_t dirty_count() const noexcept {
+    return std::ranges::count(dirty_, true);
+  }
+
+  void mark_dirty(const Coordinates c) noexcept {
+    if (in_bounds(c)) {
+      dirty_[coord_to_idx(c)] = true;
+    }
+  }
+
+  void mark_all_dirty() noexcept {
+    std::ranges::fill(dirty_, true);
+  }
+
+  void clear_dirty() noexcept {
+    std::ranges::fill(dirty_, false);
   }
 
   auto begin() {
@@ -358,9 +386,8 @@ public:
           "SectorMap::get({}, {}) out of bounds for dimensions ({}, {})", c.x,
           c.y, dimensions_.x, dimensions_.y));
     }
-    return grid_[static_cast<std::size_t>(c.x) +
-                 (static_cast<std::size_t>(c.y) *
-                  static_cast<std::size_t>(dimensions_.x))];
+    dirty_[coord_to_idx(c)] = true;
+    return grid_[coord_to_idx(c)];
   }
 
   [[nodiscard]] const Sector& get(const Coordinates c) const {
@@ -369,9 +396,12 @@ public:
           "SectorMap::get({}, {}) out of bounds for dimensions ({}, {})", c.x,
           c.y, dimensions_.x, dimensions_.y));
     }
-    return grid_[static_cast<std::size_t>(c.x) +
-                 (static_cast<std::size_t>(c.y) *
-                  static_cast<std::size_t>(dimensions_.x))];
+    return grid_[coord_to_idx(c)];
+  }
+
+  [[nodiscard]] const Sector&
+  get_const_ref(const Coordinates c) const noexcept {
+    return grid_[coord_to_idx(c)];
   }
 
   // Set from sector_struct
@@ -381,11 +411,10 @@ public:
           "SectorMap::set({}, {}) out of bounds for dimensions ({}, {})", c.x,
           c.y, dimensions_.x, dimensions_.y));
     }
-    auto& target = grid_[static_cast<std::size_t>(c.x) +
-                         (static_cast<std::size_t>(c.y) *
-                          static_cast<std::size_t>(dimensions_.x))];
-    target = Sector(s);
-    target.set_coords(c);
+    auto idx = coord_to_idx(c);
+    grid_[idx] = Sector(s);
+    grid_[idx].set_coords(c);
+    dirty_[idx] = true;
   }
 
   // Set from Sector by moving
@@ -395,11 +424,10 @@ public:
           "SectorMap::set({}, {}) out of bounds for dimensions ({}, {})", c.x,
           c.y, dimensions_.x, dimensions_.y));
     }
-    auto& target = grid_[static_cast<std::size_t>(c.x) +
-                         (static_cast<std::size_t>(c.y) *
-                          static_cast<std::size_t>(dimensions_.x))];
-    target = std::move(s);
-    target.set_coords(c);
+    auto idx = coord_to_idx(c);
+    grid_[idx] = std::move(s);
+    grid_[idx].set_coords(c);
+    dirty_[idx] = true;
   }
 
   // TODO(jeffbailey): Migrate to std::views::cartesian_product once supported
@@ -497,12 +525,75 @@ public:
     MapType* map_{nullptr};
   };
 
+  template <typename MapType, typename SectorRefType>
+  class IndexedDirtySectorsViewImpl {
+  public:
+    class Iterator {
+    public:
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = std::pair<Coordinates, SectorRefType>;
+      using difference_type = std::ptrdiff_t;
+
+      Iterator(MapType* map, int x, int y) : map_(map), x_(x), y_(y) {
+        advance_to_dirty();
+      }
+
+      value_type operator*() const {
+        return {Coordinates{x_, y_}, map_->get_const_ref(Coordinates{x_, y_})};
+      }
+      Iterator& operator++() {
+        advance_next();
+        advance_to_dirty();
+        return *this;
+      }
+      bool operator==(const Iterator& other) const {
+        return x_ == other.x_ && y_ == other.y_;
+      }
+
+    private:
+      void advance_next() {
+        ++x_;
+        if (x_ >= map_->dimensions().x) {
+          x_ = 0;
+          ++y_;
+        }
+      }
+      void advance_to_dirty() {
+        while (y_ < map_->dimensions().y) {
+          if (map_->is_dirty(Coordinates{x_, y_})) {
+            return;
+          }
+          advance_next();
+        }
+      }
+
+      MapType* map_{nullptr};
+      int x_{0};
+      int y_{0};
+    };
+
+    explicit IndexedDirtySectorsViewImpl(MapType& map) : map_(&map) {}
+    [[nodiscard]] Iterator begin() const {
+      return Iterator(map_, 0, 0);
+    }
+    [[nodiscard]] Iterator end() const {
+      return Iterator(map_, 0, map_->dimensions().y);
+    }
+
+  private:
+    MapType* map_{nullptr};
+  };
+
   auto indexed_sectors() {
     return IndexedSectorsViewImpl<SectorMap, Sector&>(*this);
   }
 
   [[nodiscard]] auto indexed_sectors() const {
     return IndexedSectorsViewImpl<const SectorMap, const Sector&>(*this);
+  }
+
+  [[nodiscard]] auto indexed_dirty_sectors() const {
+    return IndexedDirtySectorsViewImpl<const SectorMap, const Sector&>(*this);
   }
 
   /// \brief Returns a non-allocating lazy view of all owned sectors.
@@ -595,8 +686,16 @@ public:
   SectorMap& operator=(SectorMap&&) = default;
 
 private:
+  [[nodiscard]] constexpr std::size_t
+  coord_to_idx(const Coordinates c) const noexcept {
+    return static_cast<std::size_t>(c.x) +
+           (static_cast<std::size_t>(c.y) *
+            static_cast<std::size_t>(dimensions_.x));
+  }
+
   starnum_t star_id_{0};
   planetnum_t planet_order_{0};
   Coordinates dimensions_{0, 0};
   std::vector<Sector> grid_;
+  std::vector<bool> dirty_;
 };

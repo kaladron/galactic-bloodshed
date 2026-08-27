@@ -887,13 +887,14 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
     }
   }
 
+  smap.clear_dirty();
   return smap;
 }
 
 bool SectorRepository::save_map(const SectorMap& map) {
-  // Save all sectors in the map using map's stored planet identity
+  // Save all dirty sectors in the map using map's stored planet identity
   bool all_saved = true;
-  for (auto [coord, sector] : map.indexed_sectors()) {
+  for (auto [coord, sector] : map.indexed_dirty_sectors()) {
     if (!save_sector(sector, map.star_id(), map.planet_order(), coord.x,
                      coord.y)) {
       all_saved = false;

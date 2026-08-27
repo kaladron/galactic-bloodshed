@@ -321,6 +321,46 @@ int main() {
   test::expect_eq(retrieved_rt.type, roundtrip.type);
   std::println(std::cout, "  ✓ Round-trip save/load works correctly");
 
+  // Test SectorMap dirty tracking and partial save
+  std::println(std::cout, "Test SectorMap dirty tracking and partial save...");
+  Planet dp_planet;
+  dp_planet.star_id() = 9;
+  dp_planet.planet_order() = 0;
+  dp_planet.dimensions() = Coordinates{4, 4};
+
+  // Initialize and save 4x4 (16 sectors) map
+  SectorMap dirty_test_map(dp_planet);
+  for (auto& sec : dirty_test_map) {
+    sec.set_popn_exact(100);
+    sec.set_owner(1);
+  }
+  test::expect_eq(dirty_test_map.dirty_count(), 16);
+  test::expect_true(dirty_test_map.is_any_dirty());
+  repo.save_map(dirty_test_map);
+
+  // Load map back from DB -> dirty count should be 0
+  SectorMap fresh_map = repo.load_map(dp_planet);
+  test::expect_eq(fresh_map.dirty_count(), 0);
+  test::expect_false(fresh_map.is_any_dirty());
+  test::expect_false(fresh_map.is_dirty(Coordinates{2, 2}));
+
+  // Mutate only 1 sector at (2, 2)
+  fresh_map.get(Coordinates{2, 2}).set_popn_exact(9999);
+  test::expect_eq(fresh_map.dirty_count(), 1);
+  test::expect_true(fresh_map.is_any_dirty());
+  test::expect_true(fresh_map.is_dirty(Coordinates{2, 2}));
+  test::expect_false(fresh_map.is_dirty(Coordinates{0, 0}));
+
+  // Save map -> only the dirty sector (2, 2) is written
+  repo.save_map(fresh_map);
+
+  // Reload and verify
+  SectorMap reloaded_map = repo.load_map(dp_planet);
+  test::expect_eq(reloaded_map.get(Coordinates{2, 2}).get_popn(), 9999);
+  test::expect_eq(reloaded_map.get(Coordinates{0, 0}).get_popn(), 100);
+  std::println(std::cout,
+               "  ✓ SectorMap dirty bitmask and partial save verified");
+
   std::println(std::cout, "\nAll SectorRepository tests passed!");
   return 0;
 }

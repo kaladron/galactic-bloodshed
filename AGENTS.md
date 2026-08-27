@@ -333,12 +333,21 @@ Rules:
 
 #### Multi-Player Spatial Grid Tracking & Bitmaps
 
-- **Dynamic Coordinate-Based Spatial Buffers**: When tracking per-sector states across multiple players on a planet grid (such as exploration, sensor visibility, or movement reaches), use `Coordinates` for all spatial coordinates and allocate dynamic buffers sized to `planet.dimensions().x * planet.dimensions().y`.
+- **Dynamic Coordinate-Based Spatial Buffers**: When tracking per-sector states across multiple players on a planet grid (such as exploration, sensor visibility, or movement reaches), use `Coordinates` for all spatial coordinates and allocate dynamic buffers sized to `planet.num_sectors()`.
 - **Per-Sector Player Bitmaps**: Use `std::vector<std::bitset<MAXPLAYERS + 1>>` to track multi-player boolean flags across grid cells to prevent cross-player state overwriting and enable fast bitwise testing/operations. Avoid fixed-size static arrays (`Sectinfo[2048]`).
+
+#### Planetary Grid Dimensions & `num_sectors()`
+
+- **Use `num_sectors()` helper**: Prefer `planet.num_sectors()` and `smap.num_sectors()` over raw multiplication (`dimensions().x * dimensions().y`).
+- **Use `smap.get_random()`**: When selecting a random sector coordinate on a world, call `smap.get_random().coords()` or `smap.get_random(rng)` instead of computing `int_rand(0, p.dimensions().x - 1)` manually.
+
+#### Multi-Player Simulation Arrays (`PlayerVector<T, N>`)
+
+- **Strong `player_t` Indexing**: Use `PlayerVector<T, MAXPLAYERS>` (`gblib:types`) for multi-player simulation metrics (`TurnStats`, colony arrays, power tallies) to ensure 1-based indexing, bounds safety, and Glaze JSON serialization support without raw C-arrays.
 
 #### Domain Documentation in `docs/`
 
-- When discovering domain rules, economic models, or subsystem behavior during modernization (e.g. government centers, tax rate adjustments, climate variations, slave revolts), create human-readable markdown guides in `docs/` (e.g. `docs/governance.md`, `docs/economy.md`, `docs/planets.md`) and register them in `docs/CMakeLists.txt`.
+- When discovering domain rules, economic models, or subsystem behavior during modernization (e.g. government centers, tax rate adjustments, climate variations, slave revolts, planetary simulation pipelines), create human-readable markdown guides in `docs/` (e.g. `docs/governance.md`, `docs/economy.md`, `docs/planets.md`, `docs/planetary_simulation.md`) and register them in `docs/CMakeLists.txt`.
 
 #### Modern Pattern: EntityManager (Use This!)
 

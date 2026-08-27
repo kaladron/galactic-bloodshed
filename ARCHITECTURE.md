@@ -536,6 +536,41 @@ export constexpr CommandDescriptor examine_cmd{
 
 ---
 
+## Planetary Turn Pipeline Architecture
+
+Planetary simulation during turn execution (`update = true`) is modeled as an **n-tier sequential pipeline** orchestrated by `doplanet()`. Each pass is a single-responsibility domain function with low cyclomatic complexity ($\text{CC} \le 4$), operating over rich domain entities (`Planet`, `SectorMap`, `Sector`, `plinfo`) and returning structured result records before decoupled presentation helpers dispatch telegram notifications.
+
+```mermaid
+flowchart TD
+    Orchestrator([doplanet Orchestrator]) --> P1[1. Reset & State Preparation]
+    P1 --> P2[2. Planetary & Ground Ships]
+    P2 --> P3[3. Climate Dynamics]
+    P3 --> P4[4. Production & Spread]
+    P4 --> P5[5. Island Exploration]
+    P5 --> P6[6. Environmental Fallout]
+    P6 --> P7[7. Plunder Recovery]
+    P7 --> P8[8. Census Recalculation]
+    P8 --> P9[9. Enslavement & Revolts]
+    P9 --> P10[10. Planetary Economy]
+    P10 --> Done([Pipeline Complete])
+
+    style Orchestrator fill:#2d3748,stroke:#4a5568,color:#fff
+    style Done fill:#2d3748,stroke:#4a5568,color:#fff
+```
+
+### Core Design Patterns in Turn Simulation
+
+1. **Decoupled Simulation and Presentation**:
+   Simulation passes never call `push_telegram()` directly. Instead, passes return structured event records (`RecoveryReport`, `EnslavementResult`, `IslandDiscovery`, `std::optional<Coordinates>`), which presentation helpers format into ASCII bulletins.
+2. **Point-of-Action State Consistency**:
+   Domain mutating methods (`Sector::devastate()`, `Sector::terraform()`, `Planet::free_slaves()`, `plinfo::collect_tax()`) leave entities in an invariant-satisfying state atomically at the point of action, eliminating end-of-loop cleanup sweeps.
+3. **`PlayerVector<T, N>` Strong ID Container**:
+   Multi-player metrics are stored in `PlayerVector<T, N>` (`gblib:types`), offering 1-indexed `player_t` bounds checking, container iteration, and zero-allocation JSON serialization via `glz::meta`.
+4. **Dimensions & `num_sectors()` Encapsulation**:
+   Planetary grids are sized by `Coordinates dimensions` (`data_.dimensions.x`, `data_.dimensions.y`) and `num_sectors()` (`dimensions.x * dimensions.y`), providing uniform toroidal wrapping and geometric validation without raw dimensions arithmetic.
+
+---
+
 ## Data Flow Examples
 
 ### Simple Read Operation: Get Ship

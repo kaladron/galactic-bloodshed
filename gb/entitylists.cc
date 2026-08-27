@@ -56,6 +56,9 @@ ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
   }
 }
 
+ShipList::ShipList(const GameObj& g, IterationType type)
+    : ShipList(g.entity_manager, g, type) {}
+
 ShipList::ShipList(EntityManager& em, IterationType type) : em_(&em) {
   if (type == IterationType::All) {
     ship_ids_ = em.ships_all();

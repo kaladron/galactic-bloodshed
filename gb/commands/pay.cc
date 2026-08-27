@@ -23,21 +23,6 @@ bool pay(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto alien_handle = [&]() -> std::optional<EntityHandle<Race>> {
-    try {
-      return g.entity_manager.get_race(who);
-    } catch (const EntityNotFoundError&) {
-      return std::nullopt;
-    }
-  }();
-  if (!alien_handle) {
-    g.out << "Alien race not found.\n";
-    return false;
-  }
-  auto race_handle = g.entity_manager.get_race(Playernum);
-  auto& race = *race_handle;
-  auto& alien = **alien_handle;
-
   auto parsed_amount = scn::scan<int>(argv[2], "{}");
   if (!parsed_amount) {
     g.out << "Invalid amount.\n";
@@ -48,21 +33,35 @@ bool pay(const command_t& argv, GameObj& g) {
     g.out << "You have to give a player a positive amount of money.\n";
     return false;
   }
-  if (race.governor[g.governor().value].money < amount) {
+
+  if (g.race->governor[g.governor().value].money < amount) {
     g.out << "You don't have that much money to give!\n";
     return false;
   }
 
-  race.governor[g.governor().value].money -= amount;
-  alien.governor[0].money += amount;
+  std::string alien_name;
+  try {
+    g.entity_manager.mutate_race(who, [&](Race& alien) {
+      alien.governor[0].money += amount;
+      alien_name = alien.name;
+    });
+  } catch (const EntityNotFoundError&) {
+    g.out << "Alien race not found.\n";
+    return false;
+  }
+
+  g.entity_manager.mutate_race(Playernum, [&](Race& race) {
+    race.governor[g.governor().value].money -= amount;
+  });
+
   warn_player(
       g.session_registry, g.entity_manager, who, 0,
-      std::format("{} [{}] payed you {}.\n", race.name, Playernum, amount));
-  g.out << std::format("{} payed to {} [{}].\n", amount, alien.name, who);
+      std::format("{} [{}] payed you {}.\n", g.race->name, Playernum, amount));
+  g.out << std::format("{} payed to {} [{}].\n", amount, alien_name, who);
 
   post(g.entity_manager,
-       std::format("{} [{}] pays {} [{}].\n", race.name, Playernum, alien.name,
-                   who),
+       std::format("{} [{}] pays {} [{}].\n", g.race->name, Playernum,
+                   alien_name, who),
        NewsType::TRANSFER);
   return true;
 }

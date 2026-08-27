@@ -27,44 +27,49 @@ bool capital(const command_t& argv, GameObj& g) {
     shipno = *shiptmp;
   }
 
-  const auto* s = g.entity_manager.peek_ship(shipno);
-  if (!s) {
+  if (shipno == 0) {
     g.out << "Change the capital to be what ship?\n";
     return false;
   }
 
-  if (argv.size() == 2) {
-    starnum_t snum = s->storbits();
-    if (testship(*s, g)) {
-      g.out << "You can't do that!\n";
-      return false;
-    }
-    if (!landed(*s)) {
-      g.out << "Try landing this ship first!\n";
-      return false;
-    }
+  try {
+    return g.entity_manager.with_ship(shipno, [&](const Ship& s) {
+      if (argv.size() == 2) {
+        starnum_t snum = s.storbits();
+        if (testship(s, g)) {
+          g.out << "You can't do that!\n";
+          return false;
+        }
+        if (!landed(s)) {
+          g.out << "Try landing this ship first!\n";
+          return false;
+        }
 
-    if (s->type() != ShipType::OTYPE_GOV) {
-      g.out << std::format("That ship is not a {}.\n",
-                           Shipnames[ShipType::OTYPE_GOV]);
-      return false;
-    }
+        if (s.type() != ShipType::OTYPE_GOV) {
+          g.out << std::format("That ship is not a {}.\n",
+                               Shipnames[ShipType::OTYPE_GOV]);
+          return false;
+        }
 
-    if (!g.deduct_ap(snum, kAPCost)) {
-      g.out << std::format("You don't have {} action points there.\n", kAPCost);
-      return false;
-    }
+        if (!g.deduct_ap(snum, kAPCost)) {
+          g.out << std::format("You don't have {} action points there.\n",
+                               kAPCost);
+          return false;
+        }
 
-    // Get race for modification (RAII auto-saves on scope exit)
-    auto race_handle = g.entity_manager.get_race(g.player());
-    auto& race_mut = *race_handle;
-    race_mut.Gov_ship = shipno;
+        g.entity_manager.mutate_race(
+            g.player(), [&](Race& race) { race.Gov_ship = shipno; });
+      }
+
+      g.out << std::format("Efficiency of governmental center: {:.0f}%.\n",
+                           ((double)s.popn() / (double)max_crew(s)) *
+                               (100 - (double)s.damage()));
+      return true;
+    });
+  } catch (const EntityNotFoundError&) {
+    g.out << "Change the capital to be what ship?\n";
+    return false;
   }
-
-  g.out << std::format("Efficiency of governmental center: {:.0f}%.\n",
-                       ((double)s->popn() / (double)max_crew(*s)) *
-                           (100 - (double)s->damage()));
-  return true;
 }
 
 const CommandDescriptor capital_cmd{

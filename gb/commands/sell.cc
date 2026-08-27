@@ -9,6 +9,7 @@ import gblib;
 import notification;
 import session;
 import std;
+import scnlib;
 
 module commands;
 
@@ -25,33 +26,26 @@ bool sell(const command_t& argv, GameObj& g) {
 
   /* get information on sale */
   auto commod = argv[1][0];
-  int amount = 0;
-  try {
-    amount = std::stoi(argv[2]);
-  } catch (...) {
+  auto parsed_amount = scn::scan<int>(argv[2], "{}");
+  if (!parsed_amount || parsed_amount->value() <= 0) {
     g.out << "Try using positive values.\n";
     return false;
   }
-  if (amount <= 0) {
-    g.out << "Try using positive values.\n";
-    return false;
-  }
-  auto planet_handle = g.entity_manager.get_planet(snum, pnum);
-  auto& p = *planet_handle;
+  int amount = parsed_amount->value();
 
-  if (p.slaved_to() != 0 && p.slaved_to() != Playernum) {
+  const auto& p_peek = *g.entity_manager.peek_planet(snum, pnum);
+
+  if (p_peek.slaved_to() != 0 && p_peek.slaved_to() != Playernum) {
     g.out << std::format("This planet is enslaved to player {}.\n",
-                         p.slaved_to());
+                         p_peek.slaved_to());
     return false;
   }
 
-  /* check to see if there is an undamage gov center or space port here */
+  /* check to see if there is an undamaged gov center or space port here */
   bool ok = false;
-  ShipList ships(g.entity_manager, p.ships());
-  for (auto ship_handle : ships) {
-    const Ship& s = ship_handle.peek();
-    if (s.alive() && (s.owner() == Playernum) && !s.damage() &&
-        Shipdata[s.type()][ABIL_PORT]) {
+  for (const Ship* s : ShipList::readonly(g)) {
+    if (s->alive() && (s->owner() == Playernum) && !s->damage() &&
+        Shipdata[s->type()][ABIL_PORT]) {
       ok = true;
       break;
     }
@@ -61,38 +55,39 @@ bool sell(const command_t& argv, GameObj& g) {
              "here.\n";
     return false;
   }
+
   CommodType item;
   switch (commod) {
     case 'r':
-      if (!p.info(Playernum).resource) {
+      if (!p_peek.info(Playernum).resource) {
         g.out << "You don't have any resources here to sell!\n";
         return false;
       }
-      amount = MIN(amount, p.info(Playernum).resource);
+      amount = std::min<int>(amount, p_peek.info(Playernum).resource);
       item = CommodType::RESOURCE;
       break;
     case 'd':
-      if (!p.info(Playernum).destruct) {
+      if (!p_peek.info(Playernum).destruct) {
         g.out << "You don't have any destruct here to sell!\n";
         return false;
       }
-      amount = MIN(amount, p.info(Playernum).destruct);
+      amount = std::min<int>(amount, p_peek.info(Playernum).destruct);
       item = CommodType::DESTRUCT;
       break;
     case 'f':
-      if (!p.info(Playernum).fuel) {
+      if (!p_peek.info(Playernum).fuel) {
         g.out << "You don't have any fuel here to sell!\n";
         return false;
       }
-      amount = MIN(amount, p.info(Playernum).fuel);
+      amount = std::min<int>(amount, p_peek.info(Playernum).fuel);
       item = CommodType::FUEL;
       break;
     case 'x':
-      if (!p.info(Playernum).crystals) {
+      if (!p_peek.info(Playernum).crystals) {
         g.out << "You don't have any crystals here to sell!\n";
         return false;
       }
-      amount = MIN(amount, p.info(Playernum).crystals);
+      amount = std::min<int>(amount, p_peek.info(Playernum).crystals);
       item = CommodType::CRYSTAL;
       break;
     default:
@@ -106,20 +101,22 @@ bool sell(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  switch (item) {
-    case CommodType::RESOURCE:
-      p.info(Playernum).resource -= amount;
-      break;
-    case CommodType::DESTRUCT:
-      p.info(Playernum).destruct -= amount;
-      break;
-    case CommodType::FUEL:
-      p.info(Playernum).fuel -= amount;
-      break;
-    case CommodType::CRYSTAL:
-      p.info(Playernum).crystals -= amount;
-      break;
-  }
+  g.entity_manager.mutate_planet(snum, pnum, [&](Planet& p) {
+    switch (item) {
+      case CommodType::RESOURCE:
+        p.info(Playernum).resource -= amount;
+        break;
+      case CommodType::DESTRUCT:
+        p.info(Playernum).destruct -= amount;
+        break;
+      case CommodType::FUEL:
+        p.info(Playernum).fuel -= amount;
+        break;
+      case CommodType::CRYSTAL:
+        p.info(Playernum).crystals -= amount;
+        break;
+    }
+  });
 
   int commodno = g.entity_manager.next_available_commod_id();
   if (commodno == -1) commodno = g.entity_manager.max_commod_id() + 1;

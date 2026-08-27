@@ -7,6 +7,7 @@ import gblib;
 import notification;
 import std;
 import tabulate;
+import scnlib;
 #undef stdout
 
 module commands;
@@ -74,8 +75,8 @@ void list_all_commodities(GameObj& g) {
 
   tabulate::Table table = create_commodity_table();
 
-  for (auto c_handle : CommodList(g.entity_manager)) {
-    add_commodity_row(table, &c_handle.read(), g);
+  for (const Commod& c : CommodList::readonly(g.entity_manager)) {
+    add_commodity_row(table, &c, g);
   }
 
   g.out << table << "\n";
@@ -107,8 +108,7 @@ bool list_commodities_by_type(const command_t& argv, GameObj& g) {
 
   tabulate::Table table = create_commodity_table();
 
-  for (auto c_handle : CommodList(g.entity_manager)) {
-    const auto& c = c_handle.read();
+  for (const Commod& c : CommodList::readonly(g.entity_manager)) {
     if (c.type != item) continue;
     add_commodity_row(table, &c, g);
   }
@@ -138,9 +138,8 @@ bool place_bid(const command_t& argv, GameObj& g) {
     return false;
   }
   /* check to see if there is an undamaged gov center or space port here */
-  const ShipList kShiplist(g.entity_manager, p->ships());
   bool ok = false;
-  for (const Ship* s : kShiplist) {
+  for (const Ship* s : ShipList::readonly(g)) {
     if (s->alive() && (s->owner() == g.player()) && !s->damage() &&
         Shipdata[s->type()][ABIL_PORT]) {
       ok = true;
@@ -153,8 +152,14 @@ bool place_bid(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto lot = std::stoi(argv[1]);
-  money_t bid0 = std::stoi(argv[2]);
+  auto parsed_lot = scn::scan<int>(argv[1], "{}");
+  auto parsed_bid = scn::scan<money_t>(argv[2], "{}");
+  if (!parsed_lot || !parsed_bid) {
+    g.out << "Illegal lot number.\n";
+    return false;
+  }
+  int lot = parsed_lot->value();
+  money_t bid0 = parsed_bid->value();
   if ((lot <= 0) || lot > g.entity_manager.max_commod_id()) {
     g.out << "Illegal lot number.\n";
     return false;
@@ -193,23 +198,24 @@ bool place_bid(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto commod_handle = g.entity_manager.get_commod(lot);
-  auto& c = *commod_handle;
-
-  /* notify the previous bidder that he was just outbidded */
-  if (c.bidder != 0) {
-    std::string bid_message = std::format(
-        "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
-        c.amount, c.type, bid0, g.race->name, g.player());
-    g.session_registry.notify_player(c.bidder, c.bidder_gov, bid_message);
-  }
-  c.bid = bid0;
-  c.bidder = g.player();
-  c.bidder_gov = g.governor();
-  c.star_to = snum;
-  c.planet_to = pnum;
-  auto [shipping, dist] =
-      shipping_cost(g.entity_manager, c.star_to, c.star_from, c.bid);
+  money_t shipping = 0;
+  g.entity_manager.mutate_commod(lot, [&](Commod& c) {
+    /* notify the previous bidder that he was just outbidded */
+    if (c.bidder != 0) {
+      std::string bid_message = std::format(
+          "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
+          c.amount, c.type, bid0, g.race->name, g.player());
+      g.session_registry.notify_player(c.bidder, c.bidder_gov, bid_message);
+    }
+    c.bid = bid0;
+    c.bidder = g.player();
+    c.bidder_gov = g.governor();
+    c.star_to = snum;
+    c.planet_to = pnum;
+    auto [ship_cost, dist] =
+        shipping_cost(g.entity_manager, c.star_to, c.star_from, c.bid);
+    shipping = ship_cost;
+  });
 
   g.out << std::format(
       "There will be an additional {} charged to you for shipping costs.\n",

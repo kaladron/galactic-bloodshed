@@ -726,6 +726,8 @@ public:
            IterationType type = IterationType::Nested);
   ShipList(EntityManager& em, const GameObj& g,
            IterationType type = IterationType::Scope);
+  explicit ShipList(const GameObj& g,
+                    IterationType type = IterationType::Scope);
   ShipList(EntityManager& em, IterationType type);
   explicit ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids);
 

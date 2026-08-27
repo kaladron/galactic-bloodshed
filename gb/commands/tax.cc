@@ -7,6 +7,7 @@ module;
 
 import gblib;
 import std;
+import scnlib;
 
 module commands;
 
@@ -20,29 +21,23 @@ bool tax(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
-  auto& planet = *planet_handle;
-
   if (argv.size() < 2) {
+    const auto& planet = *g.entity_manager.peek_planet(g.snum(), g.pnum());
     g.out << std::format("Current tax rate: {}%    Target: {}%\n",
                          planet.info(Playernum).tax,
                          planet.info(Playernum).newtax);
     return true;
   }
 
-  int sum_tax = 0;
-  try {
-    sum_tax = std::stoi(argv[1]);
-  } catch (...) {
+  auto parsed_tax = scn::scan<int>(argv[1], "{}");
+  if (!parsed_tax || parsed_tax->value() > 100 || parsed_tax->value() < 0) {
     g.out << "Illegal value.\n";
     return false;
   }
 
-  if (sum_tax > 100 || sum_tax < 0) {
-    g.out << "Illegal value.\n";
-    return false;
-  }
-  planet.info(Playernum).newtax = sum_tax;
+  g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+    planet.info(Playernum).newtax = parsed_tax->value();
+  });
   g.out << "Set.\n";
   return true;
 }

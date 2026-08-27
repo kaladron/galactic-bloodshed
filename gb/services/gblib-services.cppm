@@ -264,6 +264,67 @@ public:
     return std::forward<Fn>(fn)(*p);
   }
 
+  // Scoped mutating access methods (mutate_* monadic helpers)
+  template <typename Fn>
+  decltype(auto) mutate_race(player_t player, Fn&& fn) {
+    auto handle = get_race(player);
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_ship(shipnum_t num, Fn&& fn) {
+    auto handle = get_ship(num);
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_planet(starnum_t star, planetnum_t pnum, Fn&& fn) {
+    auto handle = get_planet(star, pnum);
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_star(starnum_t num, Fn&& fn) {
+    auto handle = get_star(num);
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_sectormap(starnum_t star, planetnum_t pnum, Fn&& fn) {
+    auto handle = get_sectormap(star, pnum);
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_commod(int id, Fn&& fn) {
+    auto handle = get_commod(id);
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_block(blocknum_t id, Fn&& fn) {
+    auto handle = get_block(id);
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_power(powernum_t id, Fn&& fn) {
+    auto handle = get_power(id);
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_universe(Fn&& fn) {
+    auto handle = get_universe();
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_server_state(Fn&& fn) {
+    auto handle = get_server_state();
+    return std::forward<Fn>(fn)(*handle);
+  }
+
   // Create new entities
   EntityHandle<Ship> create_ship(const ship_struct& data = {});
   void delete_ship(shipnum_t num);

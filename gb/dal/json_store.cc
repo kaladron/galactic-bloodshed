@@ -311,3 +311,41 @@ std::optional<std::string> JsonStore::retrieve_multi(
   sqlite3_finalize(stmt);
   return result;
 }
+
+std::vector<int> JsonStore::query_ids(const std::string& table,
+                                      const std::string& where_clause,
+                                      const std::vector<KeyValue>& params) {
+  if (!db.is_open()) {
+    throw SqliteError("Database connection is not open");
+  }
+
+  std::string sql =
+      std::format("SELECT id FROM {} WHERE {}", table, where_clause);
+
+  sqlite3_stmt* stmt = nullptr;
+  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  if (rc != SQLITE_OK) {
+    throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
+                                  table, sqlite3_errmsg(db.connection())),
+                      rc);
+  }
+
+  for (std::size_t i = 0; i < params.size(); ++i) {
+    bind_key(stmt, params[i], static_cast<int>(i + 1));
+  }
+
+  std::vector<int> ids;
+  while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+    ids.push_back(sqlite3_column_int(stmt, 0));
+  }
+
+  if (rc != SQLITE_DONE) {
+    sqlite3_finalize(stmt);
+    throw SqliteError(std::format("SQLite step error in table '{}': {}", table,
+                                  sqlite3_errmsg(db.connection())),
+                      rc);
+  }
+
+  sqlite3_finalize(stmt);
+  return ids;
+}

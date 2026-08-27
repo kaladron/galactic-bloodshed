@@ -175,6 +175,113 @@ int main() {
   test::expect_eq(ship_ids[1], 5);
   std::println(std::cout, "  ✓ list_ids returns active ship IDs in order");
 
+  // Spatial and indexed queries
+  std::println(std::cout, "Testing spatial and indexed queries...");
+  {
+    // Clear out earlier test ships
+    repo.delete_ship(1);
+    repo.delete_ship(5);
+
+    // Setup test fleet:
+    // Ship 1: Owner 1, Star 1, LEVEL_STAR, alive = true
+    ship_struct s1{};
+    s1.number = 1;
+    s1.owner = 1;
+    s1.storbits = 1;
+    s1.whatorbits = ScopeLevel::LEVEL_STAR;
+    s1.alive = true;
+    repo.save(Ship(s1));
+
+    // Ship 2: Owner 1, Star 1, LEVEL_STAR, alive = false (dead)
+    ship_struct s2{};
+    s2.number = 2;
+    s2.owner = 1;
+    s2.storbits = 1;
+    s2.whatorbits = ScopeLevel::LEVEL_STAR;
+    s2.alive = false;
+    repo.save(Ship(s2));
+
+    // Ship 3: Owner 2, Star 1, Planet 2, LEVEL_PLAN, alive = true
+    ship_struct s3{};
+    s3.number = 3;
+    s3.owner = 2;
+    s3.storbits = 1;
+    s3.pnumorbits = 2;
+    s3.whatorbits = ScopeLevel::LEVEL_PLAN;
+    s3.alive = true;
+    repo.save(Ship(s3));
+
+    // Ship 4: Owner 2, Star 1, Planet 2, LEVEL_PLAN, alive = false (dead)
+    ship_struct s4{};
+    s4.number = 4;
+    s4.owner = 2;
+    s4.storbits = 1;
+    s4.pnumorbits = 2;
+    s4.whatorbits = ScopeLevel::LEVEL_PLAN;
+    s4.alive = false;
+    repo.save(Ship(s4));
+
+    // Ship 5: Owner 1, Carrier Hangar (destshipno = 1), LEVEL_SHIP, alive =
+    // true
+    ship_struct s5{};
+    s5.number = 5;
+    s5.owner = 1;
+    s5.destshipno = 1;
+    s5.whatorbits = ScopeLevel::LEVEL_SHIP;
+    s5.alive = true;
+    repo.save(Ship(s5));
+
+    // Test find_in_star
+    auto star1_alive = repo.find_in_star(starnum_t{1}, true);
+    test::expect_eq(star1_alive.size(), 1);
+    test::expect_eq(star1_alive[0], 1);
+
+    auto star1_all = repo.find_in_star(starnum_t{1}, false);
+    test::expect_eq(star1_all.size(), 2);
+    test::expect_eq(star1_all[0], 1);
+    test::expect_eq(star1_all[1], 2);
+    std::println(std::cout, "  ✓ find_in_star matches star-level ships");
+
+    // Test find_on_planet
+    auto planet2_alive =
+        repo.find_on_planet(starnum_t{1}, planetnum_t{2}, true);
+    test::expect_eq(planet2_alive.size(), 1);
+    test::expect_eq(planet2_alive[0], 3);
+
+    auto planet2_all = repo.find_on_planet(starnum_t{1}, planetnum_t{2}, false);
+    test::expect_eq(planet2_all.size(), 2);
+    test::expect_eq(planet2_all[0], 3);
+    test::expect_eq(planet2_all[1], 4);
+    std::println(std::cout, "  ✓ find_on_planet matches planet-level ships");
+
+    // Test find_in_hangar
+    auto hangar_alive = repo.find_in_hangar(shipnum_t{1}, true);
+    test::expect_eq(hangar_alive.size(), 1);
+    test::expect_eq(hangar_alive[0], 5);
+    std::println(std::cout, "  ✓ find_in_hangar matches carrier docked ships");
+
+    // Test find_by_owner
+    auto p1_alive = repo.find_by_owner(player_t{1}, true);
+    test::expect_eq(p1_alive.size(), 2);
+    test::expect_eq(p1_alive[0], 1);
+    test::expect_eq(p1_alive[1], 5);
+
+    auto p1_all = repo.find_by_owner(player_t{1}, false);
+    test::expect_eq(p1_all.size(), 3);
+    test::expect_eq(p1_all[0], 1);
+    test::expect_eq(p1_all[1], 2);
+    test::expect_eq(p1_all[2], 5);
+    std::println(std::cout, "  ✓ find_by_owner matches player ships");
+
+    // Test find_alive
+    auto all_alive = repo.find_alive();
+    test::expect_eq(all_alive.size(), 3);
+    test::expect_eq(all_alive[0], 1);
+    test::expect_eq(all_alive[1], 3);
+    test::expect_eq(all_alive[2], 5);
+    std::println(std::cout, "  ✓ find_alive matches all alive ships");
+  }
+
   std::println(std::cout, "\nAll ShipRepository tests passed!");
   return 0;
 }

@@ -127,6 +127,11 @@ public:
   std::vector<int> list_ids(const std::string& table);
   int find_next_available_id(const std::string& table);
 
+  // Query operations
+  std::vector<int> query_ids(const std::string& table,
+                             const std::string& where_clause,
+                             const std::vector<KeyValue>& params = {});
+
   // Multi-key operations (for Sector, Planet with composite keys)
   bool store_multi(const std::string& table,
                    const std::vector<std::pair<std::string, KeyValue>>& keys,

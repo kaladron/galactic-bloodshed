@@ -181,6 +181,7 @@ target_sources(
           planet.cc
           prompt.cc
           repositories/race_repository.cc
+          repositories/star_repository.cc
           utils/rand.cc
           sectormap.cc
           sector.cc
@@ -476,9 +477,9 @@ gb_add_test(shootblast_test)
 gb_add_test(shutdown_test SOURCES commands/shutdown_test.cc)
 gb_add_test(star_locations_test SOURCES commands/star_locations_test.cc)
 gb_add_test(star_repository_test SOURCES repositories/star_repository_test.cc)
-gb_add_test(star_sqlite_test)
+gb_add_test(star_sqlite_test SOURCES repositories/star_sqlite_test.cc)
 gb_add_test(star_test)
-gb_add_test(stardata_json_test)
+gb_add_test(stardata_json_test SOURCES repositories/stardata_json_test.cc)
 gb_add_test(strong_id_json_test EXTRA_LIBS glaze_core_module)
 gb_add_test(strong_id_test EXTRA_LIBS strong_id_module)
 gb_add_test(survey_test SOURCES commands/survey_test.cc)

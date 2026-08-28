@@ -347,76 +347,15 @@ void expect_no_throw(
 /// Verifies cross-entity universe integrity invariants using range-based
 /// entity collections (RaceList, StarList, PlanetList, SectorMap, ShipList,
 /// CommodList). Aborts via test::expect_* if any domain invariant is violated.
-inline void verify_universe_invariants(
+void verify_universe_invariants(
     EntityManager& em,
-    std::source_location loc = std::source_location::current()) {
-  // 1. Star APs >= 0 for all currently registered races
-  for (const Star& star : StarList::readonly(em)) {
-    for (const Race& race : RaceList::readonly(em)) {
-      expect_ge(star.AP(race.Playernum), 0,
-                std::format("Star '{}' has negative AP for race '{}'",
-                            star.get_name(), race.name),
-                loc);
-    }
-  }
-
-  // 2. Planet population == sum(Sector populations) using range-based SectorMap
-  for (const Star& star : StarList::readonly(em)) {
-    for (const Planet& planet :
-         PlanetList::readonly(em, star.star_id(), star)) {
-      try {
-        if (const auto* smap =
-                em.peek_sectormap(planet.star_id(), planet.planet_order())) {
-          population_t total_sect_pop = 0;
-          for (const Sector& sect : *smap) {
-            total_sect_pop += sect.get_popn();
-          }
-          expect_eq(
-              planet.popn(), total_sect_pop,
-              std::format("Planet ({}, {}) population mismatch with sector sum",
-                          planet.star_id(), planet.planet_order()),
-              loc);
-        }
-      } catch (const EntityNotFoundError&) {
-        // SectorMap may not exist for uninitialized test planets
-      }
-    }
-  }
-
-  // 3. Ships have valid numbers, valid owner (if alive), and owner <=
-  // MAXPLAYERS
-  for (const Ship& ship :
-       ShipList::readonly(em, ShipList::IterationType::All)) {
-    if (ship.alive()) {
-      expect_ge(
-          ship.owner().value, 1,
-          std::format("Alive ship #{} has invalid owner 0", ship.number()),
-          loc);
-      expect_le(ship.owner().value, MAXPLAYERS,
-                std::format("Alive ship #{} has owner {} > MAXPLAYERS",
-                            ship.number(), ship.owner().value),
-                loc);
-    }
-  }
-
-  // 4. Commodities have valid owner <= MAXPLAYERS
-  for (const Commod& commod : CommodList::readonly(em)) {
-    if (commod.owner.value > 0) {
-      expect_le(commod.owner.value, MAXPLAYERS,
-                std::format("Commodity #{} has owner {} > MAXPLAYERS",
-                            commod.id, commod.owner.value),
-                loc);
-    }
-  }
-}
+    std::source_location loc = std::source_location::current());
 
 }  // namespace test
 
 // Get singleton test registry
 // Uses NullSessionRegistry from gblib - a no-op registry for tests
-export inline SessionRegistry& get_test_session_registry() {
-  return get_null_session_registry();
-}
+export SessionRegistry& get_test_session_registry();
 
 /// Recorded notification structure for test assertion
 export struct SentNotification {
@@ -435,78 +374,35 @@ public:
   bool update_in_progress_flag{false};
 
   [[nodiscard]] std::vector<SessionInfo>
-  get_connected_sessions() const override {
-    return sessions;
-  }
+  get_connected_sessions() const override;
 
   [[nodiscard]] bool is_connected(player_t player,
-                                  governor_t gov) const override {
-    return std::ranges::any_of(sessions, [&](const auto& s) {
-      return s.player == player && s.governor == gov && s.connected;
-    });
-  }
+                                  governor_t gov) const override;
 
-  void notify_race(player_t race, const std::string& message) override {
-    notifications.push_back({
-        .player = race,
-        .governor = 0,
-        .message = message,
-        .is_broadcast = true,
-    });
-  }
+  void notify_race(player_t race, const std::string& message) override;
 
   bool notify_player(player_t race, governor_t gov,
-                     const std::string& message) override {
-    notifications.push_back({
-        .player = race,
-        .governor = gov,
-        .message = message,
-        .is_broadcast = false,
-    });
-    return true;
-  }
+                     const std::string& message) override;
 
-  [[nodiscard]] bool update_in_progress() const override {
-    return update_in_progress_flag;
-  }
+  [[nodiscard]] bool update_in_progress() const override;
 
-  void set_update_in_progress(bool val) override {
-    update_in_progress_flag = val;
-  }
+  void set_update_in_progress(bool val) override;
 
   /// Check if a notification containing needle was sent to a specific player.
   [[nodiscard]] bool has_received(player_t player,
-                                  std::string_view needle) const {
-    return std::ranges::any_of(notifications, [&](const auto& n) {
-      return n.player == player && n.message.contains(needle);
-    });
-  }
+                                  std::string_view needle) const;
 
   /// Check if any broadcast notification containing needle was sent.
-  [[nodiscard]] bool has_broadcast(std::string_view needle) const {
-    return std::ranges::any_of(notifications, [&](const auto& n) {
-      return n.is_broadcast && n.message.contains(needle);
-    });
-  }
+  [[nodiscard]] bool has_broadcast(std::string_view needle) const;
 
   /// Retrieve all messages sent to a specific player.
-  [[nodiscard]] std::vector<std::string> messages_for(player_t player) const {
-    std::vector<std::string> msgs;
-    for (const auto& n : notifications) {
-      if (n.player == player) {
-        msgs.push_back(n.message);
-      }
-    }
-    return msgs;
-  }
+  [[nodiscard]] std::vector<std::string> messages_for(player_t player) const;
 
-  void clear_notifications() {
-    notifications.clear();
-  }
+  void clear_notifications();
 };
 
-/// Test context providing database, entity manager, GameObj setup, and dispatch
-/// assertion helpers
+/// Test context providing database, entity manager, GameObj setup, and
+/// dispatch assertion helpers
 ///
 /// Usage pattern:
 /// ```cpp
@@ -749,8 +645,8 @@ public:
                                  expected_univ_ap_);
   }
 
-  /// Run Insufficient AP rejection: sets star/univ AP to 0, asserts rejection +
-  /// 0 AP deduction, then restores AP.
+  /// Run Insufficient AP rejection: sets star/univ AP to 0, asserts rejection
+  /// + 0 AP deduction, then restores AP.
   void run_insufficient_ap_check(GameObj& g) const {
     if (expected_star_ap_ == 0 && expected_univ_ap_ == 0) return;
 
@@ -835,8 +731,8 @@ public:
     g.set_level(orig_scope);
   }
 
-  /// Run Domain Error check: executes invalid_argv and asserts rejection + 0 AP
-  /// deduction.
+  /// Run Domain Error check: executes invalid_argv and asserts rejection + 0
+  /// AP deduction.
   void run_domain_error_check(GameObj& g) const {
     if (invalid_argv_.empty()) return;
     g.set_level(valid_scope_);
@@ -1112,8 +1008,8 @@ public:
 
   /// Add a planet to a star.
   /// If explicit_pnum is std::nullopt, auto-assigns the next planet order for
-  /// this star. Automatically initializes an empty SectorMap and marks explored
-  /// by registered races.
+  /// this star. Automatically initializes an empty SectorMap and marks
+  /// explored by registered races.
   TestWorldBuilder&
   add_planet(starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
              std::string_view name = "", unsigned char maxx = 10,

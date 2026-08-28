@@ -85,7 +85,8 @@ find_package(SQLite3 REQUIRED)
 add_library(test_module)
 target_sources(
   test_module
-  PUBLIC FILE_SET CXX_MODULES FILES test.cppm)
+  PUBLIC FILE_SET CXX_MODULES FILES test.cppm
+  PRIVATE test.cc)
 target_link_libraries(test_module PUBLIC gblib dallib session commands)
 
 # Executable targets

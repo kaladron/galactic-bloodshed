@@ -11,7 +11,8 @@ export module auth;
 
 import commands;
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import session;
 
 export struct ConnectionPassword {

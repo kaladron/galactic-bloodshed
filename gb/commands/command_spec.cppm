@@ -2,7 +2,8 @@
 
 export module commands:spec;
 
-import gblib;
+import gb.entities;
+import gb.services;
 import std;
 
 namespace GB::commands {

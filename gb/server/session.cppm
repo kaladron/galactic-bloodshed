@@ -9,7 +9,8 @@
 
 export module session;
 
-import gblib; // For SessionRegistry, types, EntityManager
+import gb.entities;
+import gb.services;
 import asio;
 import std;
 

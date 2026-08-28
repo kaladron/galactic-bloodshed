@@ -11,7 +11,9 @@
 
 import std;
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
+import gb.repositories;
 
 #include "gb/creator/makestar.h"
 #include "gb/creator/makeuniv.h"

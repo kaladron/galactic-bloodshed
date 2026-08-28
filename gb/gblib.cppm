@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib.cppm
+/// \brief Legacy monolithic module interface aggregating subsystem partitions.
+
 export module gblib;
 
 export import strong_id;  // Third-party strong type ID system
@@ -39,9 +42,6 @@ export import :turnstats;
 export import :tweakables;
 export import :universe;
 export import :globals;
-
-// Re-export string_to_shipnum from :types for convenience
-export import :types;
 
 export constexpr double morale_factor(const double x) {
   return (std::atan((double)x / 10000.) / 3.14159565 + .5);

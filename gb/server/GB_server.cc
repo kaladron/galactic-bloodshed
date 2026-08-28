@@ -11,9 +11,9 @@
 import std;
 import asio;
 import dallib;
-import gblib;
-import server;
-import server_config;
+import gb.entities;
+import gb.services;
+import gb.server;
 
 int main(int argc, char** argv) {
   // Create Database and EntityManager for dependency injection

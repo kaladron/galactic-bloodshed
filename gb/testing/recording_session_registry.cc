@@ -10,7 +10,9 @@ module;
 
 module test;
 
-import gblib;
+import gb.entities;
+import gb.services;
+import gb.repositories;
 import std;
 
 SessionRegistry& get_test_session_registry() {

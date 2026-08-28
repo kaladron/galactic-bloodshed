@@ -9,7 +9,8 @@ import std;
 
 module notification;
 
-import gblib; // EntityManager, SessionRegistry, types, push_telegram
+import gb.entities;
+import gb.services;
 #undef stdout
 
 // Complex notification functions implemented using SessionRegistry primitives.

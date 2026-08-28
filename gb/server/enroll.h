@@ -6,7 +6,8 @@
 #ifndef ENROLL_H
 #define ENROLL_H
 
-import gblib;
+import gb.entities;
+import gb.services;
 
 template <typename Range>
 std::optional<std::pair<int, int>>

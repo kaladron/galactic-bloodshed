@@ -11,7 +11,9 @@ module test;
 
 import commands;
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
+import gb.repositories;
 import std;
 
 namespace test {

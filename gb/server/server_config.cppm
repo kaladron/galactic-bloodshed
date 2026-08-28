@@ -11,7 +11,8 @@ import std;
 export module server_config;
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 
 export struct ServerConfig {
   int port{GB_PORT};

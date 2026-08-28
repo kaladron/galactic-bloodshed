@@ -79,31 +79,6 @@ include_directories(..)
 # Attempt to find SQLite3 on the system
 find_package(SQLite3 REQUIRED)
 
-# Libraries
-
-# Create test utilities module (standalone - not part of gblib)
-add_library(test_module)
-target_sources(
-  test_module
-  PUBLIC FILE_SET CXX_MODULES FILES testing/test.cppm
-  PRIVATE testing/recording_session_registry.cc
-          testing/universe_invariants.cc
-          testing/test_context.cc
-          testing/test_matrix.cc
-          testing/test_builders.cc)
-target_link_libraries(test_module PUBLIC gblib gb_entities gb_repositories gb_services gb_turn gb_server dallib session commands)
-
-# Executable targets
-add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
-                        creator/makeuniv.cc)
-target_link_libraries(makeuniv PRIVATE gblib SQLite::SQLite3 glaze::glaze)
-
-add_executable(enrol server/enrol.cc)
-target_link_libraries(enrol PRIVATE gblib SQLite::SQLite3 glaze::glaze scnlib_module)
-
-add_executable(racegen server/GB_racegen.cc server/enroll.cc server/racegen.cc)
-target_link_libraries(racegen PRIVATE gblib dallib SQLite::SQLite3 glaze::glaze)
-
 # Create types module as a standalone foundational library
 # This contains basic type definitions used across all layers
 add_library(types_module)
@@ -197,46 +172,6 @@ target_sources(
           server/VN.cc)
 target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module tabulate_module)
 
-# Create session library (Server Layer)
-add_library(session)
-target_sources(
-  session
-  PUBLIC FILE_SET CXX_MODULES FILES server/session.cppm
-  PRIVATE server/session.cc)
-target_link_libraries(session PUBLIC gblib asio_module)
-
-# Create notification library (Server Layer)
-add_library(notification)
-target_sources(
-  notification
-  PUBLIC FILE_SET CXX_MODULES FILES server/notification.cppm
-  PRIVATE server/notification.cc)
-target_link_libraries(notification PUBLIC gblib session)
-
-# Create auth library (Server Layer)
-add_library(auth)
-target_sources(
-  auth
-  PUBLIC FILE_SET CXX_MODULES FILES server/auth.cppm
-  PRIVATE server/auth.cc)
-target_link_libraries(auth PUBLIC gblib session commands)
-
-# Create server_config library (Server Layer)
-add_library(server_config)
-target_sources(
-  server_config
-  PUBLIC FILE_SET CXX_MODULES FILES server/server_config.cppm
-  PRIVATE server/server_config.cc)
-target_link_libraries(server_config PUBLIC gblib dallib)
-
-# Create server library (Server Layer)
-add_library(server)
-target_sources(
-  server
-  PUBLIC FILE_SET CXX_MODULES FILES server/server.cppm
-  PRIVATE server/server.cc)
-target_link_libraries(server PUBLIC gblib asio_module session auth notification commands dallib)
-
 # Dedicated Subsystem Modules (Phase 6)
 add_library(gb_entities)
 target_sources(
@@ -261,6 +196,46 @@ target_sources(
   gb_turn
   PUBLIC FILE_SET CXX_MODULES FILES turn/turn.cppm)
 target_link_libraries(gb_turn PUBLIC gblib)
+
+# Create session library (Server Layer)
+add_library(session)
+target_sources(
+  session
+  PUBLIC FILE_SET CXX_MODULES FILES server/session.cppm
+  PRIVATE server/session.cc)
+target_link_libraries(session PUBLIC gblib gb_entities gb_services asio_module)
+
+# Create notification library (Server Layer)
+add_library(notification)
+target_sources(
+  notification
+  PUBLIC FILE_SET CXX_MODULES FILES server/notification.cppm
+  PRIVATE server/notification.cc)
+target_link_libraries(notification PUBLIC gblib gb_entities gb_services session)
+
+# Create server_config library (Server Layer)
+add_library(server_config)
+target_sources(
+  server_config
+  PUBLIC FILE_SET CXX_MODULES FILES server/server_config.cppm
+  PRIVATE server/server_config.cc)
+target_link_libraries(server_config PUBLIC gblib gb_entities gb_services dallib)
+
+# Create auth library (Server Layer)
+add_library(auth)
+target_sources(
+  auth
+  PUBLIC FILE_SET CXX_MODULES FILES server/auth.cppm
+  PRIVATE server/auth.cc)
+target_link_libraries(auth PUBLIC gblib gb_entities gb_services session commands)
+
+# Create server library (Server Layer)
+add_library(server)
+target_sources(
+  server
+  PUBLIC FILE_SET CXX_MODULES FILES server/server.cppm
+  PRIVATE server/server.cc)
+target_link_libraries(server PUBLIC gblib gb_entities gb_services asio_module session auth notification commands dallib)
 
 add_library(gb_server)
 target_sources(
@@ -366,8 +341,31 @@ target_sources(
 target_link_libraries(commands PRIVATE gblib gb_entities gb_services session notification SQLite::SQLite3 glaze::glaze
                                        scnlib_module tabulate_module)
 
+# Create test utilities module (standalone - not part of gblib)
+add_library(test_module)
+target_sources(
+  test_module
+  PUBLIC FILE_SET CXX_MODULES FILES testing/test.cppm
+  PRIVATE testing/recording_session_registry.cc
+          testing/universe_invariants.cc
+          testing/test_context.cc
+          testing/test_matrix.cc
+          testing/test_builders.cc)
+target_link_libraries(test_module PUBLIC gblib gb_entities gb_repositories gb_services gb_turn gb_server dallib session commands)
+
+# Executable targets
+add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
+                        creator/makeuniv.cc)
+target_link_libraries(makeuniv PRIVATE gblib gb_entities gb_services gb_repositories dallib SQLite::SQLite3 glaze::glaze)
+
+add_executable(enrol server/enrol.cc)
+target_link_libraries(enrol PRIVATE gblib gb_entities gb_services dallib SQLite::SQLite3 glaze::glaze scnlib_module)
+
+add_executable(racegen server/GB_racegen.cc server/enroll.cc server/racegen.cc)
+target_link_libraries(racegen PRIVATE gblib gb_entities gb_services dallib SQLite::SQLite3 glaze::glaze)
+
 add_executable(GB server/GB_server.cc)
-target_link_libraries(GB PRIVATE gblib commands asio_module session auth server_config server SQLite::SQLite3 glaze::glaze)
+target_link_libraries(GB PRIVATE gblib gb_entities gb_services gb_server commands asio_module dallib SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB)
 
 # Test helper function

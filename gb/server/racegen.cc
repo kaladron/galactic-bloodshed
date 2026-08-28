@@ -7,7 +7,8 @@
 #include <unistd.h>
 
 import std;
-import gblib;
+import gb.entities;
+import gb.services;
 
 #include <cstdarg>
 #include <cstdio>

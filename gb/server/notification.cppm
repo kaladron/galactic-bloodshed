@@ -8,7 +8,8 @@
 
 export module notification;
 
-import gblib; // For SessionRegistry, types, EntityManager
+import gb.entities;
+import gb.services;
 import std;
 
 // Note: SessionRegistry and its basic notify methods are in gblib

@@ -4,7 +4,8 @@
 /// \brief Racegen interface for player race enrollment program.
 
 import std;
-import gblib;
+import gb.entities;
+import gb.services;
 
 #include <cstdio>
 #include <cstdlib>

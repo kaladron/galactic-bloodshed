@@ -56,9 +56,11 @@ Every command test file should follow this pattern:
 /// \brief Unit tests for commandname command
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import commands;
-import std.compat;
+import test;
+import std;
 
 #include <cassert>
 

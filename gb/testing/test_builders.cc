@@ -11,7 +11,9 @@ module;
 module test;
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
+import gb.repositories;
 import std;
 
 TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,

@@ -4,7 +4,8 @@
 /// \brief Player race enrollment CLI executable.
 
 import std;
-import gblib;
+import gb.entities;
+import gb.services;
 import dallib;
 import scnlib;
 #undef stdout

@@ -139,17 +139,16 @@ cmake --build build --clean-first
 ```
 /workspaces/galactic-bloodshed/
 ├── gb/                     # Core game implementation
-│   ├── commands/          # Player command implementations
-│   │   ├── commands.cppm  # Module interface exporting all commands
-│   │   └── *.cc          # Individual command implementations
-│   ├── dal/              # Data Access Layer (Database, JsonStore, Schema)
-│   ├── repositories/     # Repository pattern implementations
-│   ├── services/         # Service layer (EntityManager)
-│   ├── utils/            # Utility functions (rand)
-│   ├── creator/          # Universe generation tools
-│   ├── third_party/      # Third-party module wrappers
-│   ├── gblib-*.cppm      # Core library module partitions
-│   ├── GB_server.cc      # Main server with command dispatch
+│   ├── dal/              # Data Access Layer (dallib)
+│   ├── entities/         # Domain entities, strong IDs, collections (gb.entities)
+│   ├── repositories/     # Repository pattern implementations (gb.repositories)
+│   ├── services/         # Service layer (EntityManager, GameObj) (gb.services)
+│   ├── turn/             # Turn simulation engine & passes (gb.turn)
+│   ├── server/           # Asio server, session, auth, notification (gb.server)
+│   ├── commands/         # Player command implementations (commands)
+│   ├── creator/          # Universe generation tools (makeuniv)
+│   ├── testing/          # Test framework & invariant verification (test)
+│   ├── third_party/      # Third-party module wrappers (asio, scnlib, glaze)
 │   └── CMakeLists.txt    # Build configuration
 ├── client/                # Python client implementation
 ├── docs/                  # Documentation
@@ -160,17 +159,14 @@ cmake --build build --clean-first
 
 ### Module Architecture
 The codebase uses C++ Modules with the following structure:
-- **`gblib`**: Core library module with partitions:
-  - `gblib:types` - Game types and data structures
-  - `gblib:ships` - Ship types and capabilities
-  - `gblib:files_shl` - File I/O and persistence layer
-  - `gblib:misc` - Utility functions
-  - `gblib:tweakables` - Game configuration constants
-  - `gblib:repositories` - Repository implementations
-  - `gblib:services` - Service layer (EntityManager)
-  - `gblib:rand` - Random number utilities
-- **`dallib`**: Data Access Layer module (Database, JsonStore, Schema)
-- **`commands`**: Player command implementations module
+- **`gb.entities`**: Domain models (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Place`, `TurnStats`), strong IDs, `PlayerVector`, `Coordinates`, `Tweakables`
+- **`gb.repositories`**: Repository DAL adapters (`RaceRepository`, `ShipRepository`, `PlanetRepository`, `StarRepository`, `SectorRepository`, etc.)
+- **`gb.services`**: Core game services (`EntityManager`, `GameObj`, `do_prompt`, `SessionRegistry`, `DeferredWriteScope`)
+- **`gb.turn`**: Turn simulation engine (`doplanet`, `doship`, `dosector`, `doturncmd`, `do_update`, `do_segment`)
+- **`gb.server`**: Server networking, session management, authentication, and notifications
+- **`dallib`**: Data Access Layer module (`Database`, `JsonStore`, `Schema`)
+- **`commands`**: Player command implementations module (`GB::commands`)
+- **`test`**: Testing framework, fixtures, and matrix runner
 
 ## 📝 Coding Standards & Conventions
 
@@ -182,14 +178,16 @@ Every source file MUST follow this exact pattern:
 
 module;
 
-import gblib;
+import gb.entities;
+import gb.services;
 import std;  // Prefer std over std.compat for new code
 
 module commands;  // or appropriate module partition
 
 namespace GB::commands {
-void example(const command_t& argv, GameObj& g) {
+bool example(const command_t& argv, GameObj& g) {
     // Implementation
+    return true;
 }
 }  // namespace GB::commands
 ```
@@ -460,8 +458,8 @@ All tests run against an in-memory SQLite database (`Database db(":memory:");` +
 - ❌ Drop, shorten, or consolidate away existing test cases, assertions, or explanatory comments during modernization
 
 ### ALWAYS:
-- ✅ Use `import gblib;` and prefer `import std;` over `import std.compat;`
-- ✅ For tests, also add `import dallib;`
+- ✅ Use fine-grained module imports (`import gb.entities;`, `import gb.services;`, etc.) and prefer `import std;` over `import std.compat;`
+- ✅ For tests, also add `import test;` and `import dallib;`
 - ✅ Write all output through `g.out`
 - ✅ Check `std::optional` values before use
 - ✅ Use early returns with clear error messages
@@ -518,15 +516,17 @@ Before submitting any code:
 ### Common Imports Pattern
 ```cpp
 module;
-import gblib;
+
+import gb.entities;
+import gb.services;
 import std;  // Prefer std over std.compat for new code
-#include "gb/files.h"  // Only if needed for constants
+
 module commands;
 ```
 
 ### Command Signature
 ```cpp
-void commandname(const command_t& argv, GameObj& g)
+bool commandname(const command_t& argv, GameObj& g)
 ```
 
 ### Output Examples

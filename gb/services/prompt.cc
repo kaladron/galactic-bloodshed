@@ -7,7 +7,6 @@ module;
 
 import std;
 import dallib;
-import gblib;
 
 module gblib;
 

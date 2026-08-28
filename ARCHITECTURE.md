@@ -70,136 +70,62 @@ These are the architectural guarantees the project is converging toward. Some ar
                  SQLite Database
 ```
 
-## Cross-Cutting Concerns
+## Subsystem Modules & Cross-Cutting Concerns
 
-**Location**: `gb/` (root directory)  
-**Modules**: `gblib` module partitions (`gblib:types`, `gblib:star`, `gblib:planet`, etc.)
+Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. Subsystems are organized into distinct, modular libraries in `gb/`:
 
-Cross-cutting concerns are fundamental components used across all architecture layers. These are not layers themselves but shared definitions that every layer depends on.
-
-### Domain Entities & Types
-Located in `gb/gblib-*.cppm` module partition files:
-
-- **`gblib-types.cppm`** - Core type definitions (player_t, shipnum_t, etc.) and `PlayerVector<T, N>` 1-indexed strong ID container
-- **`gblib-race.cppm`** - Race entity structure
-- **`gblib-ships.cppm`** - Ship entity structure and ship types
-- **`gblib-star.cppm`** - Star entity structure and Star wrapper class
-- **`gblib-planet.cppm`** - Planet entity structure, `plinfo` colony state, and `Stockpile` resource value type
-- **`gblib-sector.cppm`** - Sector entity structure
-- **`gblib-galaxy.cppm`** - Galaxy entity structure and Galaxy wrapper class
-- **`gblib-tweakables.cppm`** - Game configuration constants
-- **`gblib-globals.cppm`** - Global game state (being phased out)
-
-### Utility Functions
-- **`gblib-misc.cppm`** - Miscellaneous helper functions
-- **`gblib-shlmisc.cppm`** - Shell/command helper functions
-- **Game Logic Modules** - `gblib-doplanet.cppm`, `gblib-doship.cppm`, etc.
-
-### Why Root Directory?
-These components are in the root `gb/` directory because they:
-1. **Are not a layer** - They're foundational types, not a tier in the architecture
-2. **Used by all layers** - DAL, repositories, services, and commands all need them
-3. **Define the domain model** - Core game entities and types
-4. **Part of gblib module** - Exported as module partitions via `gblib.cppm`
-
-### Design Principle
-Cross-cutting concerns should have **no dependencies on any architecture layer**. They define pure data structures and types that layers operate on, but don't contain business logic or data access code themselves.
-
----
-
-## Module Structure
-
-Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. Each layer is typically a separate module:
-
-### Standalone Modules
-
-**These are independent modules that don't belong to gblib:**
+### Core Subsystem Modules
 
 - **`dallib`** (Data Access Layer) - `gb/dal/dallib.cppm`
   - Database, JsonStore, Schema classes
-  - Only layer that knows about SQLite
-  
+  - Only layer with direct dependency on SQLite3
+
+- **`gb.entities`** (Domain Model) - `gb/entities/entities.cppm`
+  - Core domain entities: `Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Place`, `TurnStats`
+  - Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`), `PlayerVector<T, N>`, `Coordinates`, `bitops`
+  - Configuration constants (`Tweakables`), entity lists, ship capabilities and filters
+
+- **`gb.repositories`** (Repository Pattern) - `gb/repositories/repositories.cppm`
+  - Persistence mapping layer between `EntityManager` and `dallib`
+  - Specific repositories for races, ships, planets, stars, sectors, commodities, power, and blocks
+
+- **`gb.services`** (Service Layer) - `gb/services/services.cppm`
+  - `EntityManager`: Central entity lifecycle, caching, and monadic transaction coordinator
+  - `GameObj`: Per-command execution context and AP deduction helpers
+  - `SessionRegistry`: Cross-cutting abstract interface for session notifications
+  - `DeferredWriteScope`: Scoped batched persistence manager
+
+- **`gb.turn`** (Turn Simulation Engine) - `gb/turn/turn.cppm`
+  - Multi-pass simulation pipeline (`doplanet`, `doship`, `dosector`, `doturncmd`, `do_update`, `do_segment`)
+
+- **`gb.server`** (Server & Networking) - `gb/server/server_module.cppm`
+  - Asio-backed TCP server (`Server`), client sessions (`Session`), authentication (`auth`), notifications (`notification`), and startup configuration (`server_config`)
+
 - **`commands`** (Application Layer) - `gb/commands/commands.cppm`
-  - All player commands
-  - Exports command functions in `GB::commands` namespace
-  
-- **`session`** (Service Layer) - `gb/services/session.cppm`
-  - Session class for client connections
-  - NullSessionRegistry for testing
-  - Network I/O with Asio (imported via `asio` module)
-  
-- **`gblib:sessionregistry`** (Cross-cutting) - `gb/gblib-sessionregistry.cppm`
-  - SessionRegistry abstract interface (notification primitives)
-  - SessionInfo struct for type-erased session metadata
-  - Used by commands and services without depending on Session type
+  - 89 player command implementations authored with declarative `CommandDescriptor`s and domain handlers
 
-- **`notification`** (Service Layer) - `gb/services/notification.cppm`
-  - Cross-player message routing with game logic
-  - Respects gag toggles, star inhabitance, update_in_progress
-  - Functions: d_broadcast, d_announce, d_think, d_shout, warn_player, warn_race
-
-- **`auth`** (Service Layer) - `gb/services/auth.cppm`
-  - Authentication, password parsing, and connection handshake logic
-  - Scope clamping and welcome message dispatch
-  - Functions: make_command_t, parse_connect, welcome_user, check_connect
-
-- **`server_config`** (Service Layer) - `gb/services/server_config.cppm`
-  - CLI argument parsing, server configuration options (`ServerConfig`), and startup scheduling initialization
-  - Ensures initial self-invite and self-pledge state in player power blocks
-  - Functions: parse_server_args, initialize_schedule_state, initialize_block_data
-
-- **`server`** (Service Layer) - `gb/services/server.cppm`
-  - Core network server implementing `SessionRegistry` interface
-  - Manages active client TCP sessions, timer-based event loop, command dispatch, and shutdown signals
-  - Class: `Server`
-  
-- **`asio`** (Third-party wrapper) - `gb/third_party/asio.cppm`
-  - Module wrapper for Boost.Asio networking library
-  - Re-exports in `asio::` namespace
-
-### gblib Module Partitions
-
-**The `gblib` module contains cross-cutting concerns as partitions:**
-
-- **`gblib:types`** - Core type definitions (player_t, shipnum_t, etc.)
-- **`gblib:gameobj`** - GameObj context passed to commands
-- **`gblib:sessionregistry`** - SessionRegistry interface and SessionInfo struct
-- **`gblib:services`** - EntityManager (core game service)
-- **`gblib:repositories`** - Repository pattern implementations
-- **`gblib:race`**, **`gblib:ships`**, **`gblib:star`**, **`gblib:planet`**, etc. - Entity structures
-- **`gblib:tweakables`** - Game configuration constants
-- **`gblib:doturncmd`** - Turn processing (do_update, do_segment, do_next_thing, ScheduleInfo)
-- **`gblib:prompt`** - Scope and nested orbit prompt formatting (`do_prompt`)
-- **`gblib:misc`**, **`gblib:shlmisc`** - Utility functions
-- **Game logic partitions**: `gblib:doplanet`, `gblib:doship`, `gblib:fire`, etc.
+- **`gblib`** (Legacy Aggregated Module) - `gb/gblib.cppm`
+  - Transitional partition aggregator retained for backwards compatibility
 
 ### Module Dependencies
 
 ```
-commands --> gblib (for GameObj, EntityManager, SessionRegistry interface)
-         --> notification (for cross-player messaging)
-
-notification --> gblib (for EntityManager, SessionRegistry interface, types)
-
-session --> gblib (for types, SessionRegistry interface)
-        --> asio (for networking)
-
-gblib:sessionregistry --> gblib:types (for player_t, governor_t, etc.)
-
-gblib:services --> dallib (for Database)
-gblib:repositories --> dallib (for JsonStore)
-
-dallib --> (no dependencies, just SQLite)
+commands      --> gb.entities, gb.services, dallib, session, notification
+gb.turn       --> gb.entities, gb.services
+gb.services   --> gb.entities, gb.repositories, dallib
+gb.repositories --> gb.entities, dallib
+gb.server     --> gb.entities, gb.services, commands, dallib, asio
+gb.entities   --> (standalone domain types, strong IDs, utilities)
+dallib        --> SQLite3, Glaze
 ```
 
 ### Why This Structure?
 
 1. **`dallib` is standalone** - It's the foundation; no other modules depend on internal DAL types
-2. **`commands` is standalone** - Application layer imports what it needs from service/core layers
-3. **`session` is standalone** - Concrete Session class with Asio networking is isolated from game logic
-4. **`gblib:sessionregistry` is a partition** - Abstract interface for notifications lives in gblib so commands don't need to import session module
-5. **`gblib` contains shared types** - Everything else uses these fundamental types
-6. **Clear boundaries** - Module imports enforce architectural constraints at compile time
+2. **`gb.entities` contains domain models** - Defines pure game data structures and strong types without dependencies on storage or business logic
+3. **`gb.services` encapsulates business orchestration** - Centralizes entity mutations and session coordination
+4. **`commands` imports only needed subsystems** - Player action handlers depend cleanly on entities and services
+5. **Clear boundaries** - Module imports enforce architectural constraints at compile time
 
 ---
 
@@ -1053,48 +979,86 @@ This architecture is not trying to become a generic ORM.
 
 ```
 gb/
-├── dal/
-│   ├── dallib.cppm               # DAL module interface (standalone)
-│   ├── database.cc              # Database connection management
-│   ├── json_store.cc            # Generic JSON storage
-│   └── schema.cc                # Schema initialization
+├── dal/                         # Data Access Layer (dallib)
+│   ├── dallib.cppm             # DAL module interface
+│   ├── database.cc             # SQLite3 connection & transaction management
+│   ├── json_store.cc           # Type-erased JSON storage
+│   ├── schema.cc               # Schema migrations & table setup
+│   └── *_test.cc               # In-memory DAL test suites
 │
-├── repositories/
-│   ├── gblib-repositories.cppm  # Repository module partition
-│   ├── race_repository.cc       # Race entity persistence
-│   ├── ship_repository.cc       # Ship entity persistence
-│   ├── planet_repository.cc     # Planet entity persistence
-│   ├── star_repository.cc       # Star entity persistence
-│   ├── sector_repository.cc     # Sector entity persistence
-│   ├── commod_repository.cc     # Commodity persistence
-│   ├── block_repository.cc      # Communication block persistence
-│   └── power_repository.cc      # Power report persistence
+├── entities/                    # Domain Entities & Types (gb.entities)
+│   ├── entities.cppm           # Domain entities module interface
+│   ├── gblib-race.cppm         # Race entity structure
+│   ├── gblib-ships.cppm        # Ship entity structure & types
+│   ├── gblib-star.cppm         # Star entity structure & class
+│   ├── gblib-planet.cppm       # Planet entity structure & Stockpile
+│   ├── gblib-sector.cppm       # Sector entity structure
+│   ├── gblib-galaxy.cppm       # Universe & Galaxy structures
+│   ├── gblib-types.cppm        # Strong ID types & PlayerVector<T, N>
+│   ├── gblib-entitylists.cppm  # Entity list iteration views
+│   └── *_test.cc               # Entity unit tests
 │
-├── services/
-│   ├── gblib-services.cppm      # Service module partition
-│   ├── entity_manager.cc        # EntityManager service
-│   ├── session.cppm             # Session module interface (standalone)
-│   ├── session.cc               # Session implementation
-│   ├── notification.cppm        # Notification module interface (standalone)
-│   └── notification.cc          # Cross-player messaging implementation
+├── repositories/                # Repository Pattern DAL Adapters (gb.repositories)
+│   ├── repositories.cppm       # Repositories module interface
+│   ├── race_repository.cc      # Race persistence
+│   ├── ship_repository.cc      # Ship persistence
+│   ├── planet_repository.cc    # Planet persistence
+│   ├── star_repository.cc      # Star persistence
+│   ├── sector_repository.cc    # Sector persistence
+│   ├── commod_repository.cc    # Commodity persistence
+│   ├── block_repository.cc     # Communication block persistence
+│   ├── power_repository.cc     # Power metrics persistence
+│   └── *_test.cc               # Repository unit tests
 │
-├── commands/
-│   ├── commands.cppm            # Command module interface (standalone)
-│   └── *.cc                     # Individual command implementations
+├── services/                    # Domain Services & Orchestration (gb.services)
+│   ├── services.cppm           # Services module interface
+│   ├── entity_manager.cc       # Central lifecycle & monadic mutations
+│   ├── gameobj.cc              # Per-command execution context
+│   ├── prompt.cc               # Contextual prompt formatting
+│   ├── session_registry.cc     # Cross-cutting notification dispatch
+│   └── *_test.cc               # Service unit tests
 │
-├── third_party/
-│   ├── asio.cppm                # Asio module wrapper (standalone)
-│   ├── scnlib.cppm              # scnlib module wrapper
-│   └── glaze_json.cppm          # Glaze JSON module wrapper
+├── turn/                        # Turn Simulation Engine (gb.turn)
+│   ├── turn.cppm               # Turn engine module interface
+│   ├── doplanet.cc             # Planetary lifecycle & movement
+│   ├── doship.cc               # Ship navigation & combat passes
+│   ├── dosector.cc             # Sector population & ecology passes
+│   ├── doturncmd.cc            # Turn update & segment loop
+│   └── *_test.cc               # Turn engine unit tests
 │
-├── tests/
-│   ├── dal_tests/               # DAL unit tests
-│   ├── repository_tests/        # Repository unit tests
-│   ├── service_tests/           # Service tests
-│   └── command_tests/           # Integration tests
+├── server/                      # Server & Networking Layer (gb.server)
+│   ├── server_module.cppm      # Server subsystem module interface
+│   ├── server.cc               # Asio TCP server implementation
+│   ├── session.cc              # Connected player session management
+│   ├── auth.cc                 # Authentication & login handshake
+│   ├── notification.cc         # Cross-player broadcast & routing
+│   ├── server_config.cc        # Configuration & CLI parsing
+│   ├── GB_server.cc            # Main server entrypoint
+│   └── *_test.cc               # Server unit tests
 │
-└── [other game systems]/
-    └── ...
+├── commands/                    # Player Commands (commands)
+│   ├── commands.cppm           # Commands module interface
+│   ├── command_spec.cppm       # CommandDescriptor specification
+│   ├── *.cc                    # 89 individual player commands
+│   └── *_test.cc               # 4-way command unit test matrix
+│
+├── creator/                     # Universe Generation (makeuniv)
+│   ├── makeuniv.cc             # Universe generator entrypoint
+│   ├── makeplanet.cc           # Planetary system generation
+│   ├── makestar.cc             # Star system generation
+│   └── *_test.cc               # Creator unit tests
+│
+├── testing/                     # Test Framework & Invariant Checking (test)
+│   ├── test.cppm               # Test module interface
+│   ├── test_context.cc         # TestContext fixture
+│   ├── test_matrix.cc          # 4-way role/scope test runner
+│   ├── test_builders.cc        # Entity test builders
+│   └── universe_invariants.cc  # Domain invariant assertions
+│
+└── third_party/                 # Third-Party C++ Module Wrappers
+    ├── asio.cppm               # Boost.Asio networking
+    ├── scnlib.cppm             # scnlib parsing
+    └── glaze_json.cppm         # Glaze JSON serialization
 ```
 
 ---

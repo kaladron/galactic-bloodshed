@@ -10,10 +10,9 @@ import std;
 module gblib;
 
 void do_repair(Ship& ship, EntityManager& entity_manager) {
-  const auto* state = entity_manager.peek_server_state();
-  if (!state) return;  // Can't repair without knowing segments
+  const auto& state = *entity_manager.peek_server_state();
 
-  double maxrep = REPAIR_RATE / static_cast<double>(state->segments);
+  double maxrep = REPAIR_RATE / static_cast<double>(state.segments);
 
   /* stations repair for free, and ships docked with them */
   int cost = [&ship, &maxrep, &entity_manager]() {
@@ -47,7 +46,7 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
 }
 
 void do_habitat(Ship& ship, EntityManager& entity_manager) {
-  const auto* race = entity_manager.peek_race(ship.owner());
+  const auto& race = *entity_manager.peek_race(ship.owner());
 
   /* In v5.0+ Habitats make resources out of fuel */
   if (ship.on()) {
@@ -67,56 +66,51 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
     }
   }
 
-  auto add = round_rand((double)ship.popn() * race->birthrate);
+  auto add = round_rand((double)ship.popn() * race.birthrate);
   if (ship.popn() + add > max_crew(ship)) add = max_crew(ship) - ship.popn();
-  rcv_popn(ship, add, race->mass);
+  rcv_popn(ship, add, race.mass);
 }
 
 void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
                     EntityManager& entity_manager) {
-  auto smap_handle = entity_manager.get_sectormap(star, pnum);
-  if (!smap_handle.get()) return;
-  auto& smap = *smap_handle;
-  auto& s = smap.get_random();
-  auto owner = s.get_owner();
+  entity_manager.mutate_sectormap(star, pnum, [&](SectorMap& smap) {
+    auto& s = smap.get_random();
 
-  const auto* who_race = entity_manager.peek_race(who);
-  if (!who_race) return;
-
-  // Check if infection fails
-  if (owner != 0 && owner == who) {
-    return;  // Already owned by us
-  }
-  if (owner != 0) {
-    // Sector owned by someone else - check if we can take it
-    const auto* owner_race = entity_manager.peek_race(owner);
-    double fighters = owner_race ? owner_race->fighters : 1.0;
-    double troops = s.get_troops() * fighters / 50.0;
-    if (int_rand(1, 100) <= 100.0 * (1.0 - std::exp(-troops))) {
-      return;  // Failed to infect - defenders won
+    if (s.is_owned()) {
+      if (s.get_owner() == who) {
+        return;  // Already owned by us
+      }
+      // Sector owned by someone else - check if we can take it
+      const auto& owner_race = *entity_manager.peek_race(s.get_owner());
+      double fighters = owner_race.fighters;
+      double troops = s.get_troops() * fighters / 50.0;
+      if (int_rand(1, 100) <= 100.0 * (1.0 - std::exp(-troops))) {
+        return;  // Failed to infect - defenders won
+      }
     }
-  }
 
-  // Infection succeeds
-  p.info(who).explored = 1;
-  p.info(who).numsectsowned += 1;
-  s.set_troops(0);
-  s.set_popn_exact(who_race->number_sexes);
-  s.set_owner(who);
-  s.set_condition(s.get_type());
-  if (POD_TERRAFORM) {
-    s.set_condition(who_race->likesbest);
-  }
+    const auto& who_race = *entity_manager.peek_race(who);
+
+    // Infection succeeds
+    p.info(who).explored = 1;
+    p.info(who).numsectsowned += 1;
+    s.set_troops(0);
+    s.set_popn_exact(who_race.number_sexes);
+    s.set_owner(who);
+    s.set_condition(s.get_type());
+    if (POD_TERRAFORM) {
+      s.set_condition(who_race.likesbest);
+    }
+  });
 }
 
 int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
                   EntityManager& entity_manager) {
   if (success(SPORE_SUCCESS_RATE)) {
-    auto planet_handle = entity_manager.get_planet(star, pnum);
-    if (planet_handle.get()) {
-      do_meta_infect(who, star, pnum, *planet_handle, entity_manager);
-      return 1;
-    }
+    entity_manager.mutate_planet(star, pnum, [&](Planet& planet) {
+      do_meta_infect(who, star, pnum, planet, entity_manager);
+    });
+    return 1;
   }
   return 0;
 }
@@ -129,26 +123,23 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
 
   switch (ship.whatorbits()) {
     case ScopeLevel::LEVEL_STAR: {
-      const auto* star = entity_manager.peek_star(ship.storbits());
-      if (!star) return;
+      const auto& star = *entity_manager.peek_star(ship.storbits());
 
       if (pod.temperature < POD_THRESHOLD) {
-        const auto* state = entity_manager.peek_server_state();
-        if (state) {
-          pod.temperature +=
-              round_rand((double)star->temperature() / (double)state->segments);
-          ship.special() = pod;
-        }
+        const auto& state = *entity_manager.peek_server_state();
+        pod.temperature +=
+            round_rand((double)star.temperature() / (double)state.segments);
+        ship.special() = pod;
         return;
       }
 
-      auto i = int_rand(0, star->numplanets() - 1);
+      auto i = int_rand(0, star.numplanets() - 1);
       std::stringstream telegram_buf;
       telegram_buf << std::format("{} has warmed and exploded at {}\n", ship,
                                   prin_ship_orbits(entity_manager, ship));
       if (infect_planet(ship.owner(), ship.storbits(), i, entity_manager)) {
         telegram_buf << std::format("\tmeta-colony established on {}.",
-                                    star->get_planet_name(i));
+                                    star.get_planet_name(i));
       } else {
         telegram_buf << std::format("\tno spores have survived.");
       }
@@ -160,11 +151,9 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
 
     case ScopeLevel::LEVEL_PLAN: {
       if (pod.decay < POD_DECAY) {
-        const auto* state = entity_manager.peek_server_state();
-        if (state) {
-          pod.decay += round_rand(1.0 / (double)state->segments);
-          ship.special() = pod;
-        }
+        const auto& state = *entity_manager.peek_server_state();
+        pod.decay += round_rand(1.0 / (double)state.segments);
+        ship.special() = pod;
         return;
       }
 
@@ -208,16 +197,13 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
         std::format("Canister of dust previously covering {} has dissipated.\n",
                     prin_ship_orbits(entity_manager, ship));
 
-    const auto* star = entity_manager.peek_star(ship.storbits());
-    const auto* planet =
-        entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-    if (star && planet) {
-      for (auto race_handle : RaceList(entity_manager)) {
-        const auto& race = race_handle.read();
-        if (planet->info(race.Playernum).numsectsowned)
-          push_telegram(entity_manager, race.Playernum,
-                        star->governor(race.Playernum), telegram);
-      }
+    const auto& star = *entity_manager.peek_star(ship.storbits());
+    const auto& planet =
+        *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+    for (const Race& race : RaceList::readonly(entity_manager)) {
+      if (planet.info(race.Playernum).numsectsowned)
+        push_telegram(entity_manager, race.Playernum,
+                      star.governor(race.Playernum), telegram);
     }
   }
 }
@@ -245,16 +231,13 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
           std::format("Greenhouse gases at {} have dissipated.\n",
                       prin_ship_orbits(entity_manager, ship));
 
-      const auto* star = entity_manager.peek_star(ship.storbits());
-      const auto* planet =
-          entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-      if (star && planet) {
-        for (auto race_handle : RaceList(entity_manager)) {
-          const auto& race = race_handle.read();
-          if (planet->info(race.Playernum).numsectsowned)
-            push_telegram(entity_manager, race.Playernum,
-                          star->governor(race.Playernum), telegram);
-        }
+      const auto& star = *entity_manager.peek_star(ship.storbits());
+      const auto& planet =
+          *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+      for (const Race& race : RaceList::readonly(entity_manager)) {
+        if (planet.info(race.Playernum).numsectsowned)
+          push_telegram(entity_manager, race.Playernum,
+                        star.governor(race.Playernum), telegram);
       }
     }
   }
@@ -269,43 +252,41 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
   switch (aimed_at.level) {
     case ScopeLevel::LEVEL_SHIP: { /* ship aimed at is a legal ship now */
       /* if in the same system */
-      auto target_handle = entity_manager.get_ship(aimed_at.shipno);
-      Ship* target = target_handle.get();
-      if (!target) break;
-      if ((ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
-           ship.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
-          (target->whatorbits() == ScopeLevel::LEVEL_STAR ||
-           target->whatorbits() == ScopeLevel::LEVEL_PLAN) &&
-          ship.storbits() == target->storbits() && target->alive()) {
-        auto range = std::hypot(ship.xpos() - target->xpos(),
-                                ship.ypos() - target->ypos());
-        auto i = int_rand(0, round_rand((2. / ((double)(shipbody(*target)))) *
-                                        (double)(aimed_at.intensity) /
-                                        (range / PLORBITSIZE + 1.0)));
-        std::stringstream telegram_buf;
-        telegram_buf << std::format("{} aimed at {}\n", ship, *target);
-        target->damage() += i;
-        if (i) {
-          telegram_buf << std::format("{}% damage done.\n", i);
+      entity_manager.mutate_ship(aimed_at.shipno, [&](Ship& target) {
+        if ((ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
+             ship.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
+            (target.whatorbits() == ScopeLevel::LEVEL_STAR ||
+             target.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
+            ship.storbits() == target.storbits() && target.alive()) {
+          auto range = std::hypot(ship.xpos() - target.xpos(),
+                                  ship.ypos() - target.ypos());
+          auto i = int_rand(0, round_rand((2. / ((double)(shipbody(target)))) *
+                                          (double)(aimed_at.intensity) /
+                                          (range / PLORBITSIZE + 1.0)));
+          std::stringstream telegram_buf;
+          telegram_buf << std::format("{} aimed at {}\n", ship, target);
+          target.damage() += i;
+          if (i) {
+            telegram_buf << std::format("{}% damage done.\n", i);
+          }
+          if (target.damage() >= 100) {
+            telegram_buf << std::format("{} DESTROYED!!!\n", target);
+            entity_manager.kill_ship(ship.owner(), target);
+          }
+          push_telegram(entity_manager, target.owner(), target.governor(),
+                        telegram_buf.str());
+          push_telegram(entity_manager, ship.owner(), ship.governor(),
+                        telegram_buf.str());
         }
-        if (target->damage() >= 100) {
-          telegram_buf << std::format("{} DESTROYED!!!\n", *target);
-          entity_manager.kill_ship(ship.owner(), *target);
-        }
-        push_telegram(entity_manager, target->owner(), target->governor(),
-                      telegram_buf.str());
-        push_telegram(entity_manager, ship.owner(), ship.governor(),
-                      telegram_buf.str());
-      }
+      });
     } break;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = entity_manager.peek_star(ship.storbits());
-      const auto* planet =
-          entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-      if (!star || !planet) break;
+      const auto& star = *entity_manager.peek_star(ship.storbits());
+      const auto& planet =
+          *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
 
-      double range = std::hypot(ship.xpos() - (star->xpos() + planet->xpos()),
-                                ship.ypos() - (star->ypos() + planet->ypos()));
+      double range = std::hypot(ship.xpos() - (star.xpos() + planet.xpos()),
+                                ship.ypos() - (star.ypos() + planet.ypos()));
 
       int i = range > PLORBITSIZE ? PLORBITSIZE * aimed_at.intensity / range
                                   : aimed_at.intensity;
@@ -320,10 +301,9 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
           aimed_at.snum < entity_manager.peek_universe()->numstars &&
           ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
           aimed_at.snum == ship.storbits()) {
-        auto star_handle = entity_manager.get_star(aimed_at.snum);
-        if (star_handle.get()) {
-          star_handle->stability() += int_rand(0, 1);
-        }
+        entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
+          star.stability() += int_rand(0, 1);
+        });
       }
       break;
     case ScopeLevel::LEVEL_UNIV:
@@ -333,8 +313,8 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
 void do_god(Ship& ship, EntityManager& entity_manager) {
   /* gods have infinite power.... heh heh heh */
-  const auto* race = entity_manager.peek_race(ship.owner());
-  if (race && race->God) {
+  const auto& race = *entity_manager.peek_race(ship.owner());
+  if (race.God) {
     ship.fuel() = max_fuel(ship);
     ship.destruct() = max_destruct(ship);
     ship.resource() = max_resource(ship);
@@ -356,25 +336,24 @@ double crew_factor(const Ship& ship) {
 void do_ap(Ship& ship, EntityManager& entity_manager) {
   /* if landed on planet, change conditions to be like race */
   if (landed(ship) && ship.on()) {
-    auto planet_handle =
-        entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
-    const auto* race = entity_manager.peek_race(ship.owner());
-    if (!planet_handle.get()) return;
-    auto& p = *planet_handle;
-
-    if (ship.fuel() >= 3.0) {
-      use_fuel(ship, 3.0);
-      for (auto j = RTEMP + 1; j <= OTHER; j++) {
-        auto d = round_rand(ap_planet_factor(p) * crew_factor(ship) *
-                            (double)(race->conditions[j] -
-                                     p.conditions(static_cast<Conditions>(j))));
-        if (d) p.conditions(static_cast<Conditions>(j)) += d;
-      }
-    } else if (!ship.notified()) {
-      ship.notified() = 1;
-      ship.on() = 0;
-      msg_OOF(entity_manager, ship);
-    }
+    const auto& race = *entity_manager.peek_race(ship.owner());
+    entity_manager.mutate_planet(
+        ship.storbits(), ship.pnumorbits(), [&](Planet& p) {
+          if (ship.fuel() >= 3.0) {
+            use_fuel(ship, 3.0);
+            for (auto j = RTEMP + 1; j <= OTHER; j++) {
+              auto d = round_rand(
+                  ap_planet_factor(p) * crew_factor(ship) *
+                  (double)(race.conditions[j] -
+                           p.conditions(static_cast<Conditions>(j))));
+              if (d) p.conditions(static_cast<Conditions>(j)) += d;
+            }
+          } else if (!ship.notified()) {
+            ship.notified() = 1;
+            ship.on() = 0;
+            msg_OOF(entity_manager, ship);
+          }
+        });
   }
 }
 
@@ -416,15 +395,13 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
 
     // Check for supernova damage
     if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
-      const auto* star = entity_manager.peek_star(ship.storbits());
-      if (star && star->nova_stage() > 0) {
+      const auto& star = *entity_manager.peek_star(ship.storbits());
+      if (star.nova_stage() > 0) {
         /* damage ships from supernovae */
         /* Maarten: modified to take into account MOVES_PER_UPDATE */
-        const auto* state = entity_manager.peek_server_state();
-        if (state) {
-          ship.damage() +=
-              5L * star->nova_stage() / ((armor(ship) + 1) * state->segments);
-        }
+        const auto& state = *entity_manager.peek_server_state();
+        ship.damage() +=
+            5L * star.nova_stage() / ((armor(ship) + 1) * state.segments);
         if (ship.damage() >= 100) {
           entity_manager.kill_ship(ship.owner(), ship);
           return;
@@ -433,19 +410,20 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
     }
 
     if (ship.type() == ShipType::OTYPE_FACTORY && !ship.on()) {
-      const auto* race = entity_manager.peek_race(ship.owner());
-      if (race) ship.tech() = race->tech;
+      const auto& race = *entity_manager.peek_race(ship.owner());
+      ship.tech() = race.tech;
     }
 
     if (ship.active()) moveship(entity_manager, ship, update, 1, 0);
 
     ship.size() = ship_size(ship); /* for debugging */
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      auto ship2 = entity_manager.get_ship(ship.destshipno());
-      if (ship2.get() && ship2->owner() != ship.owner()) {
-        ship2->owner() = ship.owner();
-        ship2->governor() = ship.governor();
-      }
+      entity_manager.mutate_ship(ship.destshipno(), [&](Ship& ship2) {
+        if (ship2.owner() != ship.owner()) {
+          ship2.owner() = ship.owner();
+          ship2.governor() = ship.governor();
+        }
+      });
       /* just making sure */
     } else if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV &&
                (ship.popn() || ship.type() == ShipType::OTYPE_PROBE)) {
@@ -456,17 +434,14 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
        * ship, */
       /* or a probe, which is designed for this kind of work.  Maarten */
       stats.StarsInhab[ship.storbits().value] = 1;
-      auto star_handle = entity_manager.get_star(ship.storbits());
-      if (star_handle.get()) {
-        setbit(star_handle->inhabited(), ship.owner());
-        setbit(star_handle->explored(), ship.owner());
-      }
+      entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
+        setbit(star.inhabited(), ship.owner());
+        setbit(star.explored(), ship.owner());
+      });
       if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        auto planet_handle =
-            entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
-        if (planet_handle.get()) {
-          planet_handle->info(ship.owner()).explored = 1;
-        }
+        entity_manager.mutate_planet(
+            ship.storbits(), ship.pnumorbits(),
+            [&](Planet& planet) { planet.info(ship.owner()).explored = 1; });
       }
     }
 
@@ -491,11 +466,10 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
       /* only if manned or probe.  Maarten */
       if (ship.popn() || ship.type() == ShipType::OTYPE_PROBE) {
         stats.StarsInhab[ship.storbits().value] = 1;
-        auto star_handle = entity_manager.get_star(ship.storbits());
-        if (star_handle.get()) {
-          setbit(star_handle->inhabited(), ship.owner());
-          setbit(star_handle->explored(), ship.owner());
-        }
+        entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
+          setbit(star.inhabited(), ship.owner());
+          setbit(star.explored(), ship.owner());
+        });
       }
     }
 
@@ -566,8 +540,8 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
 
 void domass(Ship& ship, EntityManager& entity_manager) {
   // Get race mass from EntityManager
-  const auto* race = entity_manager.peek_race(ship.owner());
-  double rmass = race ? race->mass : 1.0;  // Default mass if race not found
+  const auto& race = *entity_manager.peek_race(ship.owner());
+  double rmass = race.mass;
 
   ship.mass() = 0.0;
   ship.hanger() = 0;
@@ -599,104 +573,80 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
   if (ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
       ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
       ship.destpnum() == ship.pnumorbits()) {
-    auto planet_handle =
-        entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
-    if (!planet_handle.get()) return;
-    auto& p = *planet_handle;
-
-    // TODO(jeffbailey): Use std::ranges::find_if here once ShipList iterators
-    // are made ranges-compatible (need default ctor, post-increment, etc.)
-    /* check to see if PDNs are present */
-    bool found_pdn = false;
-    for (auto pdn_ship : ShipList(entity_manager, p.ships())) {
-      if (!pdn_ship->alive() || pdn_ship->type() != ShipType::OTYPE_PLANDEF) {
-        continue;
-      }
-      /* attack the PDN instead */
-      ship.whatdest() =
-          ScopeLevel::LEVEL_SHIP; /* move missile to PDN for attack */
-      ship.xpos() = pdn_ship->xpos();
-      ship.ypos() = pdn_ship->ypos();
-      ship.destshipno() = pdn_ship->number();
-      found_pdn = true;
-      break;
-    }
-    if (!found_pdn) {
-      auto [bombx, bomby] = [&p, &ship] -> std::tuple<int, int> {
-        if (std::holds_alternative<ImpactData>(ship.special())) {
-          auto impact = std::get<ImpactData>(ship.special());
-          if (impact.scatter) {
-            auto bombx = int_rand(1, p.dimensions().x) - 1;
-            auto bomby = int_rand(1, p.dimensions().y) - 1;
-            return {bombx, bomby};
-          } else {
-            auto bombx = impact.x % p.dimensions().x;
-            auto bomby = impact.y % p.dimensions().y;
-            return {bombx, bomby};
+    entity_manager.mutate_planet(
+        ship.storbits(), ship.pnumorbits(), [&](Planet& p) {
+          /* check to see if PDNs are present */
+          for (const Ship& s : ShipList::readonly(entity_manager, p.ships())) {
+            if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF) {
+              /* attack the PDN instead */
+              ship.whatdest() =
+                  ScopeLevel::LEVEL_SHIP; /* move missile to PDN for attack */
+              ship.xpos() = s.xpos();
+              ship.ypos() = s.ypos();
+              ship.destshipno() = s.number();
+              return;
+            }
           }
-        } else {
-          // Default to random if no impact data
-          auto bombx = int_rand(1, p.dimensions().x) - 1;
-          auto bomby = int_rand(1, p.dimensions().y) - 1;
-          return {bombx, bomby};
-        }
-      }();
 
-      // TODO(jeffbailey): This doesn't actually notify anyone and should.
-      std::string bombdropmsg =
-          std::format("{} dropped on sector {},{} at planet {}.\n", ship, bombx,
-                      bomby, prin_ship_orbits(entity_manager, ship));
-      auto smap_handle =
-          entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
-      if (!smap_handle.get()) return;
-      auto& smap = *smap_handle;
-      if (auto result_opt = shoot_ship_to_planet(
-              entity_manager, ship, p, (int)ship.destruct(),
-              Coordinates{bombx, bomby}, smap, 0, GTYPE_HEAVY)) {
-        auto [numdest, _, short_msg, long_msg] = *result_opt;
-        push_telegram(entity_manager, ship.owner(), ship.governor(), long_msg);
-        entity_manager.kill_ship(ship.owner(), ship);
-        std::string sectors_destroyed_msg =
-            std::format("{} dropped on {}.\n\t{} sectors destroyed.\n", ship,
-                        prin_ship_orbits(entity_manager, ship), numdest);
-        const auto* star = entity_manager.peek_star(ship.storbits());
-        for (auto race_handle : RaceList(entity_manager)) {
-          const auto& race = race_handle.read();
-          if (p.info(race.Playernum).numsectsowned &&
-              race.Playernum != ship.owner()) {
-            push_telegram(entity_manager, race.Playernum,
-                          star ? star->governor(race.Playernum) : 0,
-                          sectors_destroyed_msg);
-          }
-        }
-        if (numdest) {
-          std::string dropmsg =
-              std::format("{} dropped on {}.\n", ship,
-                          prin_ship_orbits(entity_manager, ship));
-          post(entity_manager, dropmsg, NewsType::COMBAT);
-        }
-      }
-    }
+          entity_manager.mutate_sectormap(
+              ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
+                Coordinates bomb_coords = [&]() -> Coordinates {
+                  if (std::holds_alternative<ImpactData>(ship.special())) {
+                    auto impact = std::get<ImpactData>(ship.special());
+                    if (!impact.scatter) {
+                      return Coordinates{impact.x % p.dimensions().x,
+                                         impact.y % p.dimensions().y};
+                    }
+                  }
+                  return smap.get_random().coords();
+                }();
+
+                if (auto result_opt = shoot_ship_to_planet(
+                        entity_manager, ship, p, (int)ship.destruct(),
+                        bomb_coords, smap, 0, GTYPE_HEAVY)) {
+                  auto [numdest, _, short_msg, long_msg] = *result_opt;
+                  push_telegram(entity_manager, ship.owner(), ship.governor(),
+                                long_msg);
+                  entity_manager.kill_ship(ship.owner(), ship);
+                  std::string sectors_destroyed_msg = std::format(
+                      "{} dropped on {}.\n\t{} sectors destroyed.\n", ship,
+                      prin_ship_orbits(entity_manager, ship), numdest);
+                  const auto& star = *entity_manager.peek_star(ship.storbits());
+                  for (const Race& race : RaceList::readonly(entity_manager)) {
+                    if (p.info(race.Playernum).numsectsowned &&
+                        race.Playernum != ship.owner()) {
+                      push_telegram(entity_manager, race.Playernum,
+                                    star.governor(race.Playernum),
+                                    sectors_destroyed_msg);
+                    }
+                  }
+                  if (numdest) {
+                    std::string dropmsg =
+                        std::format("{} dropped on {}.\n", ship,
+                                    prin_ship_orbits(entity_manager, ship));
+                    post(entity_manager, dropmsg, NewsType::COMBAT);
+                  }
+                }
+              });
+        });
   } else if (ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
     auto sh2 = ship.destshipno();
-    auto target_handle = entity_manager.get_ship(sh2);
-    Ship* target = target_handle.get();
-    if (!target) return;
-
-    auto dist =
-        std::hypot(ship.xpos() - target->xpos(), ship.ypos() - target->ypos());
-    if (dist <= ((double)ship.speed() * STRIKE_DISTANCE_FACTOR *
-                 (100.0 - (double)ship.damage()) / 100.0)) {
-      /* do the attack */
-      auto s2sresult = shoot_ship_to_ship(entity_manager, ship, *target,
-                                          (int)ship.destruct(), 0);
-      auto const& [damage, short_buf, long_buf] = *s2sresult;
-      push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
-      push_telegram(entity_manager, target->owner(), target->governor(),
-                    long_buf);
-      entity_manager.kill_ship(ship.owner(), ship);
-      post(entity_manager, short_buf, NewsType::COMBAT);
-    }
+    entity_manager.mutate_ship(sh2, [&](Ship& target) {
+      auto dist =
+          std::hypot(ship.xpos() - target.xpos(), ship.ypos() - target.ypos());
+      if (dist <= ((double)ship.speed() * STRIKE_DISTANCE_FACTOR *
+                   (100.0 - (double)ship.damage()) / 100.0)) {
+        /* do the attack */
+        auto s2sresult = shoot_ship_to_ship(entity_manager, ship, target,
+                                            (int)ship.destruct(), 0);
+        auto const& [damage, short_buf, long_buf] = *s2sresult;
+        push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
+        push_telegram(entity_manager, target.owner(), target.governor(),
+                      long_buf);
+        entity_manager.kill_ship(ship.owner(), ship);
+        post(entity_manager, short_buf, NewsType::COMBAT);
+      }
+    });
   }
 }
 
@@ -717,12 +667,12 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
 
   auto sh = [&ship, &entity_manager] -> shipnum_t {
     if (ship.whatorbits() == ScopeLevel::LEVEL_STAR) {
-      const auto* star = entity_manager.peek_star(ship.storbits());
-      return star ? star->ships() : 0;
+      const auto& star = *entity_manager.peek_star(ship.storbits());
+      return star.ships();
     } else {  // ScopeLevel::LEVEL_PLAN
-      const auto* planet =
-          entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-      return planet->ships();
+      const auto& planet =
+          *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+      return planet.ships();
     }
   }();
 
@@ -730,14 +680,14 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   // radius.
   bool rad = false;
   if (!detonate) {
-    const auto* race = entity_manager.peek_race(ship.owner());
+    const auto& race = *entity_manager.peek_race(ship.owner());
 
     const ShipList kShiplist(entity_manager, sh);
     for (const Ship& s : kShiplist) {
       double xd = s.xpos() - ship.xpos();
       double yd = s.ypos() - ship.ypos();
       double range = std::sqrt(xd * xd + yd * yd);
-      if (!isset(race->allied, s.owner()) && (s.owner() != ship.owner()) &&
+      if (!isset(race.allied, s.owner()) && (s.owner() != ship.owner()) &&
           std::holds_alternative<TriggerData>(ship.special()) &&
           ((int)range <= std::get<TriggerData>(ship.special()).radius)) {
         rad = true;
@@ -778,42 +728,40 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   /* if the mine is in orbit around a planet, nuke the planet too! */
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
     /* pick a random sector to nuke */
-    auto planet_handle =
-        entity_manager.get_planet(ship.storbits(), ship.pnumorbits());
-    auto& planet = *planet_handle;
+    entity_manager.mutate_planet(
+        ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
+          entity_manager.mutate_sectormap(
+              ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
+                const Coordinates target_coords =
+                    landed(ship) ? ship.land_coords()
+                                 : smap.get_random().coords();
 
-    auto smap_handle =
-        entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
-    auto& smap = *smap_handle;
+                if (auto result_opt = shoot_ship_to_planet(
+                        entity_manager, ship, planet, (int)(ship.destruct()),
+                        target_coords, smap, 0, GTYPE_LIGHT)) {
+                  auto [numdest, nuked, short_msg, long_msg] = *result_opt;
 
-    const Coordinates target_coords =
-        landed(ship) ? ship.land_coords() : smap.get_random().coords();
+                  std::stringstream telegram;
+                  telegram << postmsg;
+                  if (numdest > 0) {
+                    telegram
+                        << std::format(" - {} sectors destroyed.", numdest);
+                  }
+                  telegram << "\n";
 
-    if (auto result_opt = shoot_ship_to_planet(
-            entity_manager, ship, planet, (int)(ship.destruct()), target_coords,
-            smap, 0, GTYPE_LIGHT)) {
-      auto [numdest, nuked, short_msg, long_msg] = *result_opt;
-
-      std::stringstream telegram;
-      telegram << postmsg;
-      if (numdest > 0) {
-        telegram << std::format(" - {} sectors destroyed.", numdest);
-      }
-      telegram << "\n";
-
-      const auto* star = entity_manager.peek_star(ship.storbits());
-      if (!star) return;
-
-      for (auto race_handle : RaceList(entity_manager)) {
-        const auto& race = race_handle.read();
-        if (nuked[race.Playernum.value - 1]) {
-          push_telegram(entity_manager, race.Playernum,
-                        star->governor(race.Playernum), telegram.str());
-        }
-      }
-      push_telegram(entity_manager, ship.owner(), ship.governor(),
-                    telegram.str());
-    }
+                  const auto& star = *entity_manager.peek_star(ship.storbits());
+                  for (const Race& race : RaceList::readonly(entity_manager)) {
+                    if (nuked[race.Playernum.value - 1]) {
+                      push_telegram(entity_manager, race.Playernum,
+                                    star.governor(race.Playernum),
+                                    telegram.str());
+                    }
+                  }
+                  push_telegram(entity_manager, ship.owner(), ship.governor(),
+                                telegram.str());
+                }
+              });
+        });
   }
 
   entity_manager.kill_ship(ship.owner(), ship);
@@ -824,15 +772,12 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
   if (!ship.on() || !ship.retaliate() || !ship.destruct()) return;
 
   if (landed(ship)) {
-    const auto* planet =
-        entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-    if (!planet) return;
-
-    const auto* owner_race = entity_manager.peek_race(ship.owner());
-    if (!owner_race) return;
+    const auto& planet =
+        *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+    const auto& owner_race = *entity_manager.peek_race(ship.owner());
 
     /* check to see if missiles/mines are present */
-    for (auto target_handle : ShipList(entity_manager, planet->ships())) {
+    for (auto target_handle : ShipList(entity_manager, planet.ships())) {
       if (!ship.destruct()) break;  // Exit if out of destruct
 
       Ship& target = *target_handle;
@@ -843,9 +788,9 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
       if (target.owner() == ship.owner()) continue;
 
       // Check alliance status
-      const auto* target_race = entity_manager.peek_race(target.owner());
-      if (target_race && isset(owner_race->allied, target.owner()) &&
-          isset(target_race->allied, ship.owner())) {
+      const auto& target_race = *entity_manager.peek_race(target.owner());
+      if (isset(owner_race.allied, target.owner()) &&
+          isset(target_race.allied, ship.owner())) {
         /* mutually allied missiles don't get shot up */
         continue;
       }
@@ -857,18 +802,21 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
       ship.destruct() -= numdest;
       auto const& s2sresult =
           shoot_ship_to_ship(entity_manager, ship, target, numdest, 0);
-      auto [damage, short_buf, long_buf] = *s2sresult;
-      push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
-      push_telegram(entity_manager, target.owner(), target.governor(),
-                    long_buf);
-      post(entity_manager, short_buf, NewsType::COMBAT);
+      if (s2sresult) {
+        auto [damage, short_buf, long_buf] = *s2sresult;
+        push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
+        push_telegram(entity_manager, target.owner(), target.governor(),
+                      long_buf);
+        post(entity_manager, short_buf, NewsType::COMBAT);
+      }
+      target_handle.save();
     }
   }
 }
 
 int do_weapon_plant(Ship& ship, EntityManager& entity_manager) {
-  const auto* race = entity_manager.peek_race(ship.owner());
-  double tech = race ? race->tech : 0.0;
+  const auto& race = *entity_manager.peek_race(ship.owner());
+  double tech = race.tech;
   auto maxrate = (int)(tech / 2.0);
 
   auto rate = round_rand(MIN((double)ship.resource() / (double)RES_COST_WPLANT,

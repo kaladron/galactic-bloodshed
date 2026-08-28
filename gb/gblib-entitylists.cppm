@@ -331,12 +331,14 @@ public:
 
   class ConstIterator {
   public:
+    using iterator_concept = std::forward_iterator_tag;
     using iterator_category = std::forward_iterator_tag;
     using value_type = Entity;
     using difference_type = std::ptrdiff_t;
     using pointer = const Entity*;
     using reference = const Entity&;
 
+    ConstIterator() = default;
     ConstIterator(EntityManager* em, index_type current, index_type end)
         : em_(em), current_(current), end_(end) {
       advance_to_valid();
@@ -768,12 +770,14 @@ private:
  */
 class ShipList::MutableIterator {
 public:
-  using iterator_category = std::forward_iterator_tag;
+  using iterator_concept = std::input_iterator_tag;
+  using iterator_category = std::input_iterator_tag;
   using value_type = ShipHandle;
   using difference_type = std::ptrdiff_t;
   using pointer = ShipHandle*;
   using reference = ShipHandle;
 
+  MutableIterator() = default;
   MutableIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it);
 
   MutableIterator& operator++();
@@ -794,12 +798,14 @@ private:
  */
 class ShipList::ConstIterator {
 public:
+  using iterator_concept = std::forward_iterator_tag;
   using iterator_category = std::forward_iterator_tag;
   using value_type = Ship;
   using difference_type = std::ptrdiff_t;
   using pointer = const Ship*;
   using reference = const Ship&;
 
+  ConstIterator() = default;
   ConstIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it);
 
   ConstIterator& operator++();

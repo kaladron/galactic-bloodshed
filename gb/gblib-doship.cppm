@@ -22,3 +22,9 @@ export void do_greenhouse(Ship& ship, EntityManager& entity_manager,
                           TurnStats& stats);
 export void do_mirror(Ship& ship, EntityManager& entity_manager,
                       TurnStats& stats);
+export void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum,
+                           Planet& p, EntityManager& entity_manager);
+export int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
+                         EntityManager& entity_manager);
+export void do_ap(Ship& ship, EntityManager& entity_manager);
+export void do_god(Ship& ship, EntityManager& entity_manager);

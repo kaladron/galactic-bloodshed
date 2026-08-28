@@ -144,13 +144,13 @@ target_sources(
          gblib-move.cppm
          gblib-order.cppm
          gblib-place.cppm
-         gblib-planet.cppm
+         entities/gblib-planet.cppm
          gblib-prompt.cppm
          entities/gblib-race.cppm
          utils/gblib-rand.cppm
          repositories/gblib-repositories.cppm
          services/gblib-services.cppm
-         gblib-sector.cppm
+         entities/gblib-sector.cppm
          gblib-sessionregistry.cppm
          gblib-ships.cppm
          gblib-shipfilter.cppm
@@ -178,7 +178,7 @@ target_sources(
           misc.cc
           move.cc
           order.cc
-          planet.cc
+          entities/planet.cc
           prompt.cc
           repositories/planet_repository.cc
           repositories/race_repository.cc
@@ -186,8 +186,8 @@ target_sources(
           repositories/ship_repository.cc
           repositories/star_repository.cc
           utils/rand.cc
-          sectormap.cc
-          sector.cc
+          entities/sectormap.cc
+          entities/sector.cc
           ships.cc
           shlmisc.cc
           shootblast.cc
@@ -445,7 +445,7 @@ gb_add_test(pay_test SOURCES commands/pay_test.cc)
 gb_add_test(personal_test SOURCES commands/personal_test.cc)
 gb_add_test(planet_repository_test SOURCES repositories/planet_repository_test.cc)
 gb_add_test(planet_sqlite_test SOURCES repositories/planet_sqlite_test.cc)
-gb_add_test(planet_test)
+gb_add_test(planet_test SOURCES entities/planet_test.cc)
 gb_add_test(pledge_test SOURCES commands/pledge_test.cc)
 gb_add_test(power_command_test SOURCES commands/power_test.cc EXTRA_LIBS tabulate::tabulate)
 gb_add_test(power_json_test)
@@ -462,7 +462,7 @@ gb_add_test(rst_test SOURCES commands/rst_test.cc)
 gb_add_test(schedule_test SOURCES commands/schedule_test.cc)
 gb_add_test(scrap_test SOURCES commands/scrap_test.cc)
 gb_add_test(sector_repository_test SOURCES repositories/sector_repository_test.cc)
-gb_add_test(sector_test)
+gb_add_test(sector_test SOURCES entities/sector_test.cc)
 gb_add_test(sectormap_sqlite_test SOURCES repositories/sectormap_sqlite_test.cc)
 gb_add_test(segment_test SOURCES commands/segment_test.cc)
 gb_add_test(sell_test SOURCES commands/sell_test.cc)

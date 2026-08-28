@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file sectormap.cc
+/// \brief SectorMap container methods and random sector selection.
+
 module;
 
 import std;

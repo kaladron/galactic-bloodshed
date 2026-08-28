@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-planet.cppm
+/// \brief Module interface partition for Planet entity, routes, and planetary
+/// exploration models.
+
 export module gblib:planet;
 
 import :race;

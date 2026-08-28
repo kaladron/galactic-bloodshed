@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file planet.cc
+/// \brief Planet domain object implementations.
+
 module;
 
 import std;

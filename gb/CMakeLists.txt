@@ -132,7 +132,7 @@ target_sources(
          gblib-csp.cppm
          turn/gblib-doplanet.cppm
          turn/gblib-dosector.cppm
-         gblib-doship.cppm
+         turn/gblib-doship.cppm
          gblib-doturncmd.cppm
          gblib-entitylists.cppm
          gblib-fire.cppm
@@ -166,7 +166,7 @@ target_sources(
           build.cc
           turn/doplanet.cc
           turn/dosector.cc
-          doship.cc
+          turn/doship.cc
           doturncmd.cc
           entitylists.cc
           services/entity_manager.cc
@@ -391,8 +391,8 @@ gb_add_test(distance_test SOURCES commands/distance_test.cc)
 gb_add_test(dock_test SOURCES commands/dock_test.cc)
 gb_add_test(doplanet_test SOURCES turn/doplanet_test.cc EXTRA_LIBS tabulate::tabulate)
 gb_add_test(dosector_simple_test SOURCES turn/dosector_simple_test.cc)
-gb_add_test(doship_repair_test)
-gb_add_test(doship_test)
+gb_add_test(doship_repair_test SOURCES turn/doship_repair_test.cc)
+gb_add_test(doship_test SOURCES turn/doship_test.cc)
 gb_add_test(doturn_test)
 gb_add_test(dump_test SOURCES commands/dump_test.cc)
 gb_add_test(emulate_test SOURCES commands/emulate_test.cc)

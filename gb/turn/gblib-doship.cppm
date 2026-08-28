@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-doship.cppm
+/// \brief Module interface partition for ship turn simulation processing.
+
 export module gblib:doship;
 
 import :gameobj;

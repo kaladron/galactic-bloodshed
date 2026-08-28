@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-dosector.cppm
+/// \brief Module interface partition for surface sector turn processing.
+
 export module gblib:dosector;
 
 import :planet;

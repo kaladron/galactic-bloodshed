@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file dosector.cc
+/// \brief Planetary surface sector turn simulation processing.
+
 module;
 
 import std;

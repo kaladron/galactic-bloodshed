@@ -146,7 +146,7 @@ target_sources(
          gblib-place.cppm
          gblib-planet.cppm
          gblib-prompt.cppm
-         gblib-race.cppm
+         entities/gblib-race.cppm
          utils/gblib-rand.cppm
          repositories/gblib-repositories.cppm
          services/gblib-services.cppm
@@ -156,7 +156,7 @@ target_sources(
          gblib-shipfilter.cppm
          gblib-shlmisc.cppm
          gblib-shootblast.cppm
-         gblib-star.cppm
+         entities/gblib-star.cppm
          gblib-tele.cppm
          gblib-turnstats.cppm
          gblib-tweakables.cppm
@@ -191,7 +191,7 @@ target_sources(
           ships.cc
           shlmisc.cc
           shootblast.cc
-          star.cc
+          entities/star.cc
           tele.cc
           victory.cc
           VN.cc)
@@ -481,7 +481,7 @@ gb_add_test(shutdown_test SOURCES commands/shutdown_test.cc)
 gb_add_test(star_locations_test SOURCES commands/star_locations_test.cc)
 gb_add_test(star_repository_test SOURCES repositories/star_repository_test.cc)
 gb_add_test(star_sqlite_test SOURCES repositories/star_sqlite_test.cc)
-gb_add_test(star_test)
+gb_add_test(star_test SOURCES entities/star_test.cc)
 gb_add_test(stardata_json_test SOURCES repositories/stardata_json_test.cc)
 gb_add_test(strong_id_json_test EXTRA_LIBS glaze_core_module)
 gb_add_test(strong_id_test SOURCES entities/strong_id_test.cc EXTRA_LIBS strong_id_module)

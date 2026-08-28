@@ -14,41 +14,37 @@ module commands;
 
 namespace GB::commands {
 bool profile(const command_t& argv, GameObj& g) {
-  const auto* race = g.entity_manager.peek_race(g.player());
-  if (!race) {
-    g.out << "Race not found.\n";
-    return false;
-  }
+  const auto& race = *g.race;
 
   // Get information about ourselves
   if (argv.size() == 1) {
     g.out << std::format("--==** Racial profile for {} (player {}) **==--\n",
-                         race->name, race->Playernum);
-    if (race->God) {
+                         race.name, race.Playernum);
+    if (race.God) {
       g.out << "*** Diety Status ***\n";
     }
-    g.out << std::format("Personal: {}\n", race->info);
+    g.out << std::format("Personal: {}\n", race.info);
     const auto& homestar = *g.entity_manager.peek_star(
-        race->governor[g.governor().value].homesystem);
+        race.governor[g.governor().value].homesystem);
     g.out << std::format("Default Scope: /{}/{}\n", homestar.get_name(),
                          homestar.get_planet_name(
-                             race->governor[g.governor().value].homeplanetnum));
-    if (race->Gov_ship == 0)
+                             race.governor[g.governor().value].homeplanetnum));
+    if (race.Gov_ship == 0)
       g.out << "NO DESIGNATED CAPITAL!!\n";
     else
-      g.out << std::format("Designated Capital: #{}\n", race->Gov_ship);
-    g.out << std::format("Morale: {}\n", race->morale);
-    g.out << std::format("Updates active: {}\n", race->turn);
+      g.out << std::format("Designated Capital: #{}\n", race.Gov_ship);
+    g.out << std::format("Morale: {}\n", race.morale);
+    g.out << std::format("Updates active: {}\n", race.turn);
     g.out << "Ranges:\n";
-    g.out << std::format("  guns:   {:.2f}\n", gun_range(*race));
+    g.out << std::format("  guns:   {:.2f}\n", gun_range(race));
     g.out << std::format("  space:  {:.2f}\n",
-                         tele_range(ShipType::OTYPE_STELE, race->tech));
+                         tele_range(ShipType::OTYPE_STELE, race.tech));
     g.out << std::format("  ground: {:.2f}\n\n",
-                         tele_range(ShipType::OTYPE_GTELE, race->tech));
+                         tele_range(ShipType::OTYPE_GTELE, race.tech));
 
     // Race characteristics and planet conditions table
     g.out << std::format("{}\n\n",
-                         race->Metamorph ? "Metamorphic Race" : "Normal Race");
+                         race.Metamorph ? "Metamorphic Race" : "Normal Race");
 
     tabulate::Table race_table;
     race_table.format().hide_border().column_separator("  ");
@@ -74,63 +70,63 @@ bool profile(const command_t& argv, GameObj& g) {
     race_table[0].format().font_style({tabulate::FontStyle::bold});
 
     // Add data rows with proper alignment
-    race_table.add_row({"Fert:", std::format("{}%", race->fertilize), "",
-                        "Temp:", std::format("{}", race->conditions[TEMP]), "",
+    race_table.add_row({"Fert:", std::format("{}%", race.fertilize), "",
+                        "Temp:", std::format("{}", race.conditions[TEMP]), "",
                         "", "", ""});
     race_table.add_row(
-        {"Rate:", std::format("{:.2f}", race->birthrate), "",
-         "methane:", std::format("{}%", race->conditions[METHANE]), "",
+        {"Rate:", std::format("{:.2f}", race.birthrate), "",
+         "methane:", std::format("{}%", race.conditions[METHANE]), "",
          Desnames[SectorType::SEC_SEA], std::format("{}", CHAR_SEA),
-         std::format("{:.0f}", race->likes[SectorType::SEC_SEA] * 100.)});
+         std::format("{:.0f}", race.likes[SectorType::SEC_SEA] * 100.)});
     race_table.add_row(
-        {"Mass:", std::format("{:.3f}", race->mass), "",
-         "oxygen:", std::format("{}%", race->conditions[OXYGEN]), "",
+        {"Mass:", std::format("{:.3f}", race.mass), "",
+         "oxygen:", std::format("{}%", race.conditions[OXYGEN]), "",
          Desnames[SectorType::SEC_GAS], std::format("{}", CHAR_GAS),
-         std::format("{:.0f}", race->likes[SectorType::SEC_GAS] * 100.)});
+         std::format("{:.0f}", race.likes[SectorType::SEC_GAS] * 100.)});
     race_table.add_row(
-        {"Fight:", std::format("{}", race->fighters), "",
-         "helium:", std::format("{}%", race->conditions[HELIUM]), "",
+        {"Fight:", std::format("{}", race.fighters), "",
+         "helium:", std::format("{}%", race.conditions[HELIUM]), "",
          Desnames[SectorType::SEC_ICE], std::format("{}", CHAR_ICE),
-         std::format("{:.0f}", race->likes[SectorType::SEC_ICE] * 100.)});
+         std::format("{:.0f}", race.likes[SectorType::SEC_ICE] * 100.)});
     race_table.add_row(
-        {"Metab:", std::format("{:.2f}", race->metabolism), "",
-         "nitrogen:", std::format("{}%", race->conditions[NITROGEN]), "",
+        {"Metab:", std::format("{:.2f}", race.metabolism), "",
+         "nitrogen:", std::format("{}%", race.conditions[NITROGEN]), "",
          Desnames[SectorType::SEC_MOUNT], std::format("{}", CHAR_MOUNT),
-         std::format("{:.0f}", race->likes[SectorType::SEC_MOUNT] * 100.)});
+         std::format("{:.0f}", race.likes[SectorType::SEC_MOUNT] * 100.)});
     race_table.add_row(
-        {"Sexes:", std::format("{}", race->number_sexes), "",
-         "CO2:", std::format("{}%", race->conditions[CO2]), "",
+        {"Sexes:", std::format("{}", race.number_sexes), "",
+         "CO2:", std::format("{}%", race.conditions[CO2]), "",
          Desnames[SectorType::SEC_LAND], std::format("{}", CHAR_LAND),
-         std::format("{:.0f}", race->likes[SectorType::SEC_LAND] * 100.)});
+         std::format("{:.0f}", race.likes[SectorType::SEC_LAND] * 100.)});
     race_table.add_row(
-        {"Explore:", std::format("{:.0f}%", race->adventurism * 100.0), "",
-         "hydrogen:", std::format("{}%", race->conditions[HYDROGEN]), "",
+        {"Explore:", std::format("{:.0f}%", race.adventurism * 100.0), "",
+         "hydrogen:", std::format("{}%", race.conditions[HYDROGEN]), "",
          Desnames[SectorType::SEC_DESERT], std::format("{}", CHAR_DESERT),
-         std::format("{:.0f}", race->likes[SectorType::SEC_DESERT] * 100.)});
+         std::format("{:.0f}", race.likes[SectorType::SEC_DESERT] * 100.)});
     race_table.add_row(
-        {"Avg Int:", std::format("{}", race->IQ), "",
-         "sulfur:", std::format("{}%", race->conditions[SULFUR]), "",
+        {"Avg Int:", std::format("{}", race.IQ), "",
+         "sulfur:", std::format("{}%", race.conditions[SULFUR]), "",
          Desnames[SectorType::SEC_FOREST], std::format("{}", CHAR_FOREST),
-         std::format("{:.0f}", race->likes[SectorType::SEC_FOREST] * 100.)});
+         std::format("{:.0f}", race.likes[SectorType::SEC_FOREST] * 100.)});
     race_table.add_row(
-        {"Tech:", std::format("{:.2f}", race->tech), "",
-         "other:", std::format("{}%", race->conditions[OTHER]), "",
+        {"Tech:", std::format("{:.2f}", race.tech), "",
+         "other:", std::format("{}%", race.conditions[OTHER]), "",
          Desnames[SectorType::SEC_PLATED], std::format("{}", CHAR_PLATED),
-         std::format("{:.0f}", race->likes[SectorType::SEC_PLATED] * 100.)});
+         std::format("{:.0f}", race.likes[SectorType::SEC_PLATED] * 100.)});
 
     g.out << race_table << "\n\n";
 
     g.out << "Discoveries:";
-    if (Crystal(*race)) g.out << "  Crystals";
-    if (Hyper_drive(*race)) g.out << "  Hyper-drive";
-    if (Laser(*race)) g.out << "  Combat Lasers";
-    if (Cew(*race)) g.out << "  Confined Energy Weapons";
-    if (Vn(*race)) g.out << "  Von Neumann Machines";
-    if (Tractor_beam(*race)) g.out << "  Tractor Beam";
-    if (Transporter(*race)) g.out << "  Transporter";
-    if (Avpm(*race)) g.out << "  AVPM";
-    if (Cloak(*race)) g.out << "  Cloaking";
-    if (Wormhole(*race)) g.out << "  Wormhole";
+    if (Crystal(race)) g.out << "  Crystals";
+    if (Hyper_drive(race)) g.out << "  Hyper-drive";
+    if (Laser(race)) g.out << "  Combat Lasers";
+    if (Cew(race)) g.out << "  Confined Energy Weapons";
+    if (Vn(race)) g.out << "  Von Neumann Machines";
+    if (Tractor_beam(race)) g.out << "  Tractor Beam";
+    if (Transporter(race)) g.out << "  Transporter";
+    if (Avpm(race)) g.out << "  AVPM";
+    if (Cloak(race)) g.out << "  Cloaking";
+    if (Wormhole(race)) g.out << "  Wormhole";
     g.out << "\n";
     return true;
   }
@@ -141,67 +137,71 @@ bool profile(const command_t& argv, GameObj& g) {
     g.out << "Player does not exist.\n";
     return false;
   }
-  const auto* r = g.entity_manager.peek_race(p);
-  if (!r) {
+  try {
+    g.entity_manager.with_race(p, [&](const Race& r) {
+      g.out << std::format("------ Race report on {} ({}) ------\n", r.name, p);
+      if (race.God && r.God) {
+        g.out << "*** Deity Status ***\n";
+      }
+      g.out << std::format("Personal: {}\n", r.info);
+      g.out << std::format("%%Know:  {}%\n", race.translate[p.value - 1]);
+      if (race.translate[p.value - 1] > 50) {
+        g.out << std::format("{}\t  Planet Conditions\n",
+                             r.Metamorph ? "Metamorphic Race"
+                                         : "Normal Race\t");
+        g.out << std::format("Fert:    {}", estimate(r.fertilize, race, p));
+        g.out << std::format("\t\t  Temp:\t{}\n",
+                             estimate(r.conditions[TEMP], race, p));
+        g.out << std::format("Rate:    {}%%",
+                             estimate(r.birthrate * 100.0, race, p));
+      } else {
+        g.out << "Unknown Race\t\t  Planet Conditions\n";
+        g.out << std::format("Fert:    {}", estimate(r.fertilize, race, p));
+        g.out << std::format("\t\t  Temp:\t{}\n",
+                             estimate(r.conditions[TEMP], race, p));
+        g.out << std::format("Rate:    {}", estimate(r.birthrate, race, p));
+      }
+      g.out << std::format("\t\t  methane  {}%\t\tRanges:\n",
+                           estimate(r.conditions[METHANE], race, p));
+      g.out << std::format("Mass:    {}", estimate(r.mass, race, p));
+      g.out << std::format("\t\t  oxygen   {}%",
+                           estimate(r.conditions[OXYGEN], race, p));
+      g.out << std::format("\t\t  guns:   {}\n",
+                           estimate(gun_range(r), race, p));
+      g.out << std::format("Fight:   {}", estimate(r.fighters, race, p));
+      g.out << std::format("\t\t  helium   {}%",
+                           estimate(r.conditions[HELIUM], race, p));
+      g.out << std::format(
+          "\t\t  space:  {}\n",
+          estimate(tele_range(ShipType::OTYPE_STELE, r.tech), race, p));
+      g.out << std::format("Metab:   {}", estimate(r.metabolism, race, p));
+      g.out << std::format("\t\t  nitrogen {}%",
+                           estimate(r.conditions[NITROGEN], race, p));
+      g.out << std::format(
+          "\t\t  ground: {}\n",
+          estimate(tele_range(ShipType::OTYPE_GTELE, r.tech), race, p));
+      g.out << std::format("Sexes:   {}", estimate(r.number_sexes, race, p));
+      g.out << std::format("\t\t  CO2      {}%\n",
+                           estimate(r.conditions[CO2], race, p));
+      g.out << std::format("Explore: {}%",
+                           estimate(r.adventurism * 100.0, race, p));
+      g.out << std::format("\t\t  hydrogen {}%\n",
+                           estimate(r.conditions[HYDROGEN], race, p));
+      g.out << std::format("Avg Int: {}", estimate(r.IQ, race, p));
+      g.out << std::format("\t\t  sulfer   {}%\n",
+                           estimate(r.conditions[SULFUR], race, p));
+      g.out << std::format("Tech:    {}", estimate(r.tech, race, p));
+      g.out << std::format("\t\t  other    {}%",
+                           estimate(r.conditions[OTHER], race, p));
+      g.out << std::format("\t\tMorale:   {}\n", estimate(r.morale, race, p));
+      g.out << std::format(
+          "Sector type preference : {}\n",
+          race.translate[p.value - 1] > 80 ? Desnames[r.likesbest] : " ? ");
+    });
+  } catch (const EntityNotFoundError&) {
     g.out << "Race not found.\n";
     return false;
   }
-  g.out << std::format("------ Race report on {} ({}) ------\n", r->name, p);
-  if (race->God && r->God) {
-    g.out << "*** Deity Status ***\n";
-  }
-  g.out << std::format("Personal: {}\n", r->info);
-  g.out << std::format("%%Know:  {}%\n", race->translate[p.value - 1]);
-  if (race->translate[p.value - 1] > 50) {
-    g.out << std::format("{}\t  Planet Conditions\n",
-                         r->Metamorph ? "Metamorphic Race" : "Normal Race\t");
-    g.out << std::format("Fert:    {}", estimate(r->fertilize, *race, p));
-    g.out << std::format("\t\t  Temp:\t{}\n",
-                         estimate(r->conditions[TEMP], *race, p));
-    g.out << std::format("Rate:    {}%%",
-                         estimate(r->birthrate * 100.0, *race, p));
-  } else {
-    g.out << "Unknown Race\t\t  Planet Conditions\n";
-    g.out << std::format("Fert:    {}", estimate(r->fertilize, *race, p));
-    g.out << std::format("\t\t  Temp:\t{}\n",
-                         estimate(r->conditions[TEMP], *race, p));
-    g.out << std::format("Rate:    {}", estimate(r->birthrate, *race, p));
-  }
-  g.out << std::format("\t\t  methane  {}%\t\tRanges:\n",
-                       estimate(r->conditions[METHANE], *race, p));
-  g.out << std::format("Mass:    {}", estimate(r->mass, *race, p));
-  g.out << std::format("\t\t  oxygen   {}%",
-                       estimate(r->conditions[OXYGEN], *race, p));
-  g.out << std::format("\t\t  guns:   {}\n", estimate(gun_range(*r), *race, p));
-  g.out << std::format("Fight:   {}", estimate(r->fighters, *race, p));
-  g.out << std::format("\t\t  helium   {}%",
-                       estimate(r->conditions[HELIUM], *race, p));
-  g.out << std::format(
-      "\t\t  space:  {}\n",
-      estimate(tele_range(ShipType::OTYPE_STELE, r->tech), *race, p));
-  g.out << std::format("Metab:   {}", estimate(r->metabolism, *race, p));
-  g.out << std::format("\t\t  nitrogen {}%",
-                       estimate(r->conditions[NITROGEN], *race, p));
-  g.out << std::format(
-      "\t\t  ground: {}\n",
-      estimate(tele_range(ShipType::OTYPE_GTELE, r->tech), *race, p));
-  g.out << std::format("Sexes:   {}", estimate(r->number_sexes, *race, p));
-  g.out << std::format("\t\t  CO2      {}%\n",
-                       estimate(r->conditions[CO2], *race, p));
-  g.out << std::format("Explore: {}%",
-                       estimate(r->adventurism * 100.0, *race, p));
-  g.out << std::format("\t\t  hydrogen {}%\n",
-                       estimate(r->conditions[HYDROGEN], *race, p));
-  g.out << std::format("Avg Int: {}", estimate(r->IQ, *race, p));
-  g.out << std::format("\t\t  sulfer   {}%\n",
-                       estimate(r->conditions[SULFUR], *race, p));
-  g.out << std::format("Tech:    {}", estimate(r->tech, *race, p));
-  g.out << std::format("\t\t  other    {}%",
-                       estimate(r->conditions[OTHER], *race, p));
-  g.out << std::format("\t\tMorale:   {}\n", estimate(r->morale, *race, p));
-  g.out << std::format(
-      "Sector type preference : {}\n",
-      race->translate[p.value - 1] > 80 ? Desnames[r->likesbest] : " ? ");
   return true;
 }
 

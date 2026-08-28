@@ -27,11 +27,6 @@ bool invite(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  const auto* race = g.entity_manager.peek_race(g.player());
-  if (!race) {
-    g.out << "Race not found.\n";
-    return false;
-  }
   const auto* alien = g.entity_manager.peek_race(n);
   if (!alien) {
     g.out << "Target race not found.\n";
@@ -39,28 +34,27 @@ bool invite(const command_t& argv, GameObj& g) {
   }
 
   try {
-    auto block_handle = g.entity_manager.get_block(g.player().value);
-    auto& block = *block_handle;
-
-    std::string buf;
-    if (mode) {
-      setbit(block.invite, n);
-      buf = std::format("{} [{}] has invited you to join {}\n", race->name,
-                        g.player(), block.name);
-      warn_race(g.session_registry, g.entity_manager, n, buf);
-      buf = std::format("{} [{}] has been invited to join {} [{}]\n",
-                        alien->name, n, block.name, g.player());
-      warn_race(g.session_registry, g.entity_manager, g.player(), buf);
-    } else {
-      clrbit(block.invite, n);
-      buf = std::format("You have been blackballed from {} [{}]\n", block.name,
-                        g.player());
-      warn_race(g.session_registry, g.entity_manager, n, buf);
-      buf = std::format("{} [{}] has been blackballed from {} [{}]\n",
-                        alien->name, n, block.name, g.player());
-      warn_race(g.session_registry, g.entity_manager, g.player(), buf);
-    }
-    post(g.entity_manager, buf, NewsType::DECLARATION);
+    g.entity_manager.mutate_block(g.player().value, [&](auto& b) {
+      std::string buf;
+      if (mode) {
+        setbit(b.invite, n);
+        buf = std::format("{} [{}] has invited you to join {}\n", g.race->name,
+                          g.player(), b.name);
+        warn_race(g.session_registry, g.entity_manager, n, buf);
+        buf = std::format("{} [{}] has been invited to join {} [{}]\n",
+                          alien->name, n, b.name, g.player());
+        warn_race(g.session_registry, g.entity_manager, g.player(), buf);
+      } else {
+        clrbit(b.invite, n);
+        buf = std::format("You have been blackballed from {} [{}]\n", b.name,
+                          g.player());
+        warn_race(g.session_registry, g.entity_manager, n, buf);
+        buf = std::format("{} [{}] has been blackballed from {} [{}]\n",
+                          alien->name, n, b.name, g.player());
+        warn_race(g.session_registry, g.entity_manager, g.player(), buf);
+      }
+      post(g.entity_manager, buf, NewsType::DECLARATION);
+    });
   } catch (const EntityNotFoundError&) {
     g.out << "Block not found.\n";
     return false;

@@ -26,37 +26,30 @@ bool pledge(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  const auto* race = g.entity_manager.peek_race(Playernum);
-  if (!race) {
-    g.out << "Race not found.\n";
-    return false;
-  }
-
   try {
-    auto block_handle = g.entity_manager.get_block(n.value);
-    auto& block = *block_handle;
+    g.entity_manager.mutate_block(n.value, [&](auto& b) {
+      setbit(b.pledge, Playernum);
+      warn_race(g.session_registry, g.entity_manager, n,
+                std::format("{} [{}] has pledged {}.\n", g.race->name,
+                            Playernum, b.name));
+      warn_race(g.session_registry, g.entity_manager, Playernum,
+                std::format("You have pledged allegiance to {}.\n", b.name));
 
-    setbit(block.pledge, Playernum);
-    warn_race(g.session_registry, g.entity_manager, n,
-              std::format("{} [{}] has pledged {}.\n", g.race->name, Playernum,
-                          block.name));
-    warn_race(g.session_registry, g.entity_manager, Playernum,
-              std::format("You have pledged allegiance to {}.\n", block.name));
+      std::string msg;
+      switch (int_rand(1, 20)) {
+        case 1:
+          msg = std::format("{} [{}] joins the band wagon and pledges "
+                            "allegiance to {} [{}]!\n",
+                            g.race->name, Playernum, b.name, n);
+          break;
+        default:
+          msg = std::format("{} [{}] pledges allegiance to {} [{}].\n",
+                            g.race->name, Playernum, b.name, n);
+          break;
+      }
 
-    std::string msg;
-    switch (int_rand(1, 20)) {
-      case 1:
-        msg = std::format(
-            "{} [{}] joins the band wagon and pledges allegiance to {} [{}]!\n",
-            race->name, Playernum, block.name, n);
-        break;
-      default:
-        msg = std::format("{} [{}] pledges allegiance to {} [{}].\n",
-                          race->name, Playernum, block.name, n);
-        break;
-    }
-
-    post(g.entity_manager, msg, NewsType::DECLARATION);
+      post(g.entity_manager, msg, NewsType::DECLARATION);
+    });
     compute_power_blocks(g.entity_manager);
   } catch (const EntityNotFoundError&) {
     g.out << "Block not found.\n";

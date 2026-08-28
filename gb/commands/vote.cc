@@ -69,15 +69,13 @@ namespace GB::commands {
 bool vote(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
 
-  auto race = g.entity_manager.get_race(Playernum);
-
   if (g.god()) {
     g.out << "Your vote doesn't count, however, here is the count.\n";
     show_votes(g);
     return true;
   }
 
-  if (race->Guest) {
+  if (g.race->Guest) {
     g.out << "You are not allowed to vote, but, here is the count.\n";
     show_votes(g);
     return true;
@@ -85,26 +83,30 @@ bool vote(const command_t& argv, GameObj& g) {
 
   if (argv.size() <= 2) {
     g.out << std::format("Your vote on updates is {0}\n",
-                         race->votes ? "go" : "wait");
+                         g.race->votes ? "go" : "wait");
     show_votes(g);
     return true;
   }
 
   bool check = false;
+  bool new_vote = false;
   if (argv[1] != "update") {
     g.out << std::format("No such vote '{0}'\n", argv[1].c_str());
     return false;
   }
 
   if (argv[2] == "go") {
-    race->votes = true;
+    new_vote = true;
     check = true;
   } else if (argv[2] == "wait") {
-    race->votes = false;
+    new_vote = false;
   } else {
     g.out << std::format("No such update choice '{0}'\n", argv[2].c_str());
     return false;
   }
+
+  g.entity_manager.mutate_race(Playernum,
+                               [&](Race& race) { race.votes = new_vote; });
 
   if (check) check_votes(g);
   return true;

@@ -10,7 +10,6 @@ module;
 #include <cassert>
 
 import std;
-import gblib;
 
 module gblib;
 

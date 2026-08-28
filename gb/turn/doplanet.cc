@@ -8,7 +8,6 @@ module;
 #include <cstdlib>
 
 import std;
-import gblib;
 import tabulate;
 
 module gblib;

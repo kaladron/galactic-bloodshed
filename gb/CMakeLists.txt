@@ -91,7 +91,7 @@ target_sources(
           testing/test_context.cc
           testing/test_matrix.cc
           testing/test_builders.cc)
-target_link_libraries(test_module PUBLIC gblib dallib session commands)
+target_link_libraries(test_module PUBLIC gblib gb_entities gb_repositories gb_services gb_turn gb_server dallib session commands)
 
 # Executable targets
 add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
@@ -237,6 +237,37 @@ target_sources(
   PRIVATE server/server.cc)
 target_link_libraries(server PUBLIC gblib asio_module session auth notification commands dallib)
 
+# Dedicated Subsystem Modules (Phase 6)
+add_library(gb_entities)
+target_sources(
+  gb_entities
+  PUBLIC FILE_SET CXX_MODULES FILES entities/entities.cppm)
+target_link_libraries(gb_entities PUBLIC gblib)
+
+add_library(gb_repositories)
+target_sources(
+  gb_repositories
+  PUBLIC FILE_SET CXX_MODULES FILES repositories/repositories.cppm)
+target_link_libraries(gb_repositories PUBLIC gblib)
+
+add_library(gb_services)
+target_sources(
+  gb_services
+  PUBLIC FILE_SET CXX_MODULES FILES services/services.cppm)
+target_link_libraries(gb_services PUBLIC gblib)
+
+add_library(gb_turn)
+target_sources(
+  gb_turn
+  PUBLIC FILE_SET CXX_MODULES FILES turn/turn.cppm)
+target_link_libraries(gb_turn PUBLIC gblib)
+
+add_library(gb_server)
+target_sources(
+  gb_server
+  PUBLIC FILE_SET CXX_MODULES FILES server/server_module.cppm)
+target_link_libraries(gb_server PUBLIC auth notification server server_config session)
+
 add_library(commands)
 target_sources(
   commands
@@ -332,7 +363,7 @@ target_sources(
           commands/who.cc
           commands/whois.cc
           commands/zoom.cc)
-target_link_libraries(commands PRIVATE gblib session notification SQLite::SQLite3 glaze::glaze
+target_link_libraries(commands PRIVATE gblib gb_entities gb_services session notification SQLite::SQLite3 glaze::glaze
                                        scnlib_module tabulate_module)
 
 add_executable(GB server/GB_server.cc)
@@ -347,7 +378,7 @@ function(gb_add_test name)
   endif()
   add_executable(${name} ${ARG_SOURCES})
   target_link_libraries(${name} PRIVATE
-    test_module dallib gblib commands SQLite::SQLite3 glaze::glaze ${ARG_EXTRA_LIBS}
+    test_module dallib gblib gb_entities gb_repositories gb_services gb_turn gb_server commands SQLite::SQLite3 glaze::glaze ${ARG_EXTRA_LIBS}
   )
   add_test(NAME GB_${name} COMMAND ${name})
 endfunction()

@@ -182,6 +182,7 @@ target_sources(
           prompt.cc
           repositories/planet_repository.cc
           repositories/race_repository.cc
+          repositories/sector_repository.cc
           repositories/star_repository.cc
           utils/rand.cc
           sectormap.cc
@@ -461,7 +462,7 @@ gb_add_test(schedule_test SOURCES commands/schedule_test.cc)
 gb_add_test(scrap_test SOURCES commands/scrap_test.cc)
 gb_add_test(sector_repository_test SOURCES repositories/sector_repository_test.cc)
 gb_add_test(sector_test)
-gb_add_test(sectormap_sqlite_test)
+gb_add_test(sectormap_sqlite_test SOURCES repositories/sectormap_sqlite_test.cc)
 gb_add_test(segment_test SOURCES commands/segment_test.cc)
 gb_add_test(sell_test SOURCES commands/sell_test.cc)
 gb_add_test(send_message_test SOURCES commands/send_message_test.cc)

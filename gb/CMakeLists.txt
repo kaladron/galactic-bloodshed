@@ -133,7 +133,7 @@ target_sources(
          turn/gblib-doplanet.cppm
          turn/gblib-dosector.cppm
          turn/gblib-doship.cppm
-         gblib-doturncmd.cppm
+         turn/gblib-doturncmd.cppm
          gblib-entitylists.cppm
          gblib-fire.cppm
          gblib-fuel.cppm
@@ -167,7 +167,7 @@ target_sources(
           turn/doplanet.cc
           turn/dosector.cc
           turn/doship.cc
-          doturncmd.cc
+          turn/doturncmd.cc
           entitylists.cc
           services/entity_manager.cc
           fire.cc
@@ -393,7 +393,7 @@ gb_add_test(doplanet_test SOURCES turn/doplanet_test.cc EXTRA_LIBS tabulate::tab
 gb_add_test(dosector_simple_test SOURCES turn/dosector_simple_test.cc)
 gb_add_test(doship_repair_test SOURCES turn/doship_repair_test.cc)
 gb_add_test(doship_test SOURCES turn/doship_test.cc)
-gb_add_test(doturn_test)
+gb_add_test(doturn_test SOURCES turn/doturn_test.cc)
 gb_add_test(dump_test SOURCES commands/dump_test.cc)
 gb_add_test(emulate_test SOURCES commands/emulate_test.cc)
 gb_add_test(enroll_test SOURCES enroll_test.cc GB_racegen.cc EXTRA_LIBS scnlib_module)

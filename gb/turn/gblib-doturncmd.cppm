@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-doturncmd.cppm
+/// \brief Module interface partition for turn orchestration and scheduling.
+
 export module gblib:doturncmd;
 
 import :gameobj;

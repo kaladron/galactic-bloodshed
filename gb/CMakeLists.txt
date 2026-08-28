@@ -137,7 +137,7 @@ target_sources(
          entities/gblib-entitylists.cppm
          gblib-fire.cppm
          gblib-fuel.cppm
-         gblib-gameobj.cppm
+         services/gblib-gameobj.cppm
          entities/gblib-globals.cppm
          gblib-map.cppm
          gblib-misc.cppm
@@ -145,13 +145,13 @@ target_sources(
          gblib-order.cppm
          entities/gblib-place.cppm
          entities/gblib-planet.cppm
-         gblib-prompt.cppm
+         services/gblib-prompt.cppm
          entities/gblib-race.cppm
          utils/gblib-rand.cppm
          repositories/gblib-repositories.cppm
          services/gblib-services.cppm
          entities/gblib-sector.cppm
-         gblib-sessionregistry.cppm
+         services/gblib-sessionregistry.cppm
          entities/gblib-ships.cppm
          entities/gblib-shipfilter.cppm
          gblib-shlmisc.cppm
@@ -172,14 +172,14 @@ target_sources(
           services/entity_manager.cc
           fire.cc
           fuel.cc
-          gameobj.cc
+          services/gameobj.cc
           load.cc
           map.cc
           misc.cc
           move.cc
           order.cc
           entities/planet.cc
-          prompt.cc
+          services/prompt.cc
           repositories/planet_repository.cc
           repositories/race_repository.cc
           repositories/sector_repository.cc
@@ -406,9 +406,9 @@ gb_add_test(examine_test SOURCES commands/examine_test.cc)
 gb_add_test(explore_test SOURCES commands/explore_test.cc)
 gb_add_test(fire_test SOURCES commands/fire_test.cc)
 gb_add_test(fix_test SOURCES commands/fix_test.cc)
-gb_add_test(freeid_test)
+gb_add_test(freeid_test SOURCES dal/freeid_test.cc)
 gb_add_test(fuel_test SOURCES commands/fuel_test.cc)
-gb_add_test(gameobj_ap_test)
+gb_add_test(gameobj_ap_test SOURCES services/gameobj_ap_test.cc)
 gb_add_test(gblib_test)
 gb_add_test(give_test SOURCES commands/give_test.cc)
 gb_add_test(governors_test SOURCES commands/governors_test.cc)
@@ -418,7 +418,7 @@ gb_add_test(help_command_test SOURCES commands/help_test.cc)
 gb_add_test(help_test)
 gb_add_test(highlight_test SOURCES commands/highlight_test.cc)
 gb_add_test(insurgency_test SOURCES commands/insurgency_test.cc)
-gb_add_test(invariant_log_test)
+gb_add_test(invariant_log_test SOURCES services/invariant_log_test.cc)
 gb_add_test(invite_test SOURCES commands/invite_test.cc)
 gb_add_test(jettison_test SOURCES commands/jettison_test.cc)
 gb_add_test(json_store_test SOURCES dal/json_store_test.cc)
@@ -435,7 +435,7 @@ gb_add_test(mount_test SOURCES commands/mount_test.cc)
 gb_add_test(move_popn_test SOURCES commands/move_popn_test.cc)
 gb_add_test(move_test)
 gb_add_test(name_test SOURCES commands/name_test.cc)
-gb_add_test(news_test)
+gb_add_test(news_test SOURCES services/news_test.cc)
 gb_add_test(notification_test SOURCES server/notification_test.cc EXTRA_LIBS session notification)
 gb_add_test(numships_test SOURCES entities/numships_test.cc)
 gb_add_test(orbit_test SOURCES commands/orbit_test.cc)
@@ -451,7 +451,7 @@ gb_add_test(power_command_test SOURCES commands/power_test.cc EXTRA_LIBS tabulat
 gb_add_test(power_json_test)
 gb_add_test(production_test SOURCES commands/production_test.cc)
 gb_add_test(profile_test SOURCES commands/profile_test.cc)
-gb_add_test(prompt_test)
+gb_add_test(prompt_test SOURCES services/prompt_test.cc)
 gb_add_test(purge_test SOURCES commands/purge_test.cc)
 gb_add_test(quit_test SOURCES commands/quit_test.cc)
 gb_add_test(race_repository_test SOURCES repositories/race_repository_test.cc)
@@ -490,7 +490,7 @@ gb_add_test(tactical_test SOURCES commands/tactical_test.cc EXTRA_LIBS tabulate:
 gb_add_test(tax_test SOURCES commands/tax_test.cc)
 gb_add_test(tech_status_test SOURCES commands/tech_status_test.cc)
 gb_add_test(technology_test SOURCES commands/technology_test.cc)
-gb_add_test(telegram_test)
+gb_add_test(telegram_test SOURCES services/telegram_test.cc)
 gb_add_test(test_context_test SOURCES testing/test_context_test.cc)
 gb_add_test(time_test SOURCES commands/time_test.cc)
 gb_add_test(toggle_test SOURCES commands/toggle_test.cc)

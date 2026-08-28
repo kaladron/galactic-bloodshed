@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gameobj.cc
+/// \brief GameObj session state and action point deduction implementations.
+
 module;
 
 import std;

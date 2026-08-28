@@ -4,7 +4,8 @@ export module commands;
 
 export import :spec;
 
-import gblib;
+import gb.entities;
+import gb.services;
 namespace GB::commands {
 
 // God commands

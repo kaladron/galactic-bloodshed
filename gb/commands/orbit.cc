@@ -6,7 +6,8 @@
 module;
 
 import std;
-import gblib;
+import gb.entities;
+import gb.services;
 import scnlib;
 
 module commands;

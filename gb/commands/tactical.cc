@@ -10,7 +10,8 @@
 
 module;
 
-import gblib;
+import gb.entities;
+import gb.services;
 import scnlib;
 import std;
 import tabulate;

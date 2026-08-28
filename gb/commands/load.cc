@@ -6,7 +6,8 @@
 module commands;
 
 import session;
-import gblib;
+import gb.entities;
+import gb.services;
 import notification;
 import std;
 

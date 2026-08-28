@@ -6,7 +6,8 @@
 module;
 
 import session;
-import gblib;
+import gb.entities;
+import gb.services;
 import notification;
 import scnlib;
 import std;

@@ -2,7 +2,8 @@
 
 module;
 
-import gblib;
+import gb.entities;
+import gb.services;
 import std;
 
 module commands;

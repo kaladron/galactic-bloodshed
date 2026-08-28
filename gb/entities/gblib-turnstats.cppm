@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// TurnStats: Turn-scoped statistics accumulator
-//
-// This struct holds arrays that accumulate player statistics during
-// a single turn. It is passed through doplanet() and doship() to avoid
-// using global arrays for turn processing.
-//
-// The stats are reset at the start of each turn and used to update
-// power rankings, AP calculations, and other per-turn computations.
+/// \file gblib-turnstats.cppm
+/// \brief Module interface partition for TurnStats turn-scoped statistics
+/// accumulator.
 
 module;
 

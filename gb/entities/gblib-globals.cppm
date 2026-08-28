@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-globals.cppm
+/// \brief Module interface partition for transitional global arrays.
+
 module;
 
 import std;

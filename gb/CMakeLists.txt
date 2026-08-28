@@ -138,12 +138,12 @@ target_sources(
          gblib-fire.cppm
          gblib-fuel.cppm
          gblib-gameobj.cppm
-         gblib-globals.cppm
+         entities/gblib-globals.cppm
          gblib-map.cppm
          gblib-misc.cppm
          gblib-move.cppm
          gblib-order.cppm
-         gblib-place.cppm
+         entities/gblib-place.cppm
          entities/gblib-planet.cppm
          gblib-prompt.cppm
          entities/gblib-race.cppm
@@ -158,10 +158,10 @@ target_sources(
          gblib-shootblast.cppm
          entities/gblib-star.cppm
          gblib-tele.cppm
-         gblib-turnstats.cppm
-         gblib-tweakables.cppm
+         entities/gblib-turnstats.cppm
+         entities/gblib-tweakables.cppm
          entities/gblib-types.cppm
-         gblib-universe.cppm
+         entities/gblib-universe.cppm
   PRIVATE bombard.cc
           build.cc
           turn/doplanet.cc
@@ -499,7 +499,7 @@ gb_add_test(toxicity_test SOURCES commands/toxicity_test.cc)
 gb_add_test(transaction_test SOURCES services/transaction_test.cc)
 gb_add_test(transfer_test SOURCES commands/transfer_test.cc)
 gb_add_test(treasury_test SOURCES commands/treasury_test.cc)
-gb_add_test(universe_test)
+gb_add_test(universe_test SOURCES entities/universe_test.cc)
 gb_add_test(unpledge_test SOURCES commands/unpledge_test.cc)
 gb_add_test(update_test SOURCES commands/update_test.cc)
 gb_add_test(upgrade_test SOURCES commands/upgrade_test.cc)

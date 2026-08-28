@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-tweakables.cppm
+/// \brief Module interface partition for game constants, build options, and
+/// tweakables.
+
 export module gblib:tweakables;
 
 import :types;

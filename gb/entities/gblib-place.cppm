@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-place.cppm
+/// \brief Module interface partition for Place coordinate resolution and entity
+/// referencing.
+
 export module gblib:place;
 
 import :gameobj;

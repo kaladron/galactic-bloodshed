@@ -182,12 +182,11 @@ void test_jettison_domain_errors() {
   test::expect_contains(g.out.str(), "No such commodity valid");
 
   // 3. Jettison when landed
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    ship_handle->docked() = true;
-    ship_handle->whatorbits() = ScopeLevel::LEVEL_PLAN;
-    ship_handle->whatdest() = ScopeLevel::LEVEL_PLAN;
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.docked() = true;
+    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+    s.whatdest() = ScopeLevel::LEVEL_PLAN;
+  });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "10"});
   test::expect_contains(g.out.str(), "Ship is landed, cannot jettison");

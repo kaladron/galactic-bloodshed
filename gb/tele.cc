@@ -112,16 +112,11 @@ void teleg_read(GameObj& g) {
  * read via newspos array in governor data.
  */
 void news_read(NewsType type, GameObj& g) {
-  auto race_handle = g.entity_manager.get_race(g.player());
-  if (!race_handle.get()) {
-    g.out << "Race not found.\n";
-    return;
-  }
-  auto& race = *race_handle;
-
-  // Get the last news ID this governor has read for this type
-  int last_read_id =
-      race.governor[g.governor().value].newspos[std::to_underlying(type)];
+  int last_read_id = 0;
+  g.entity_manager.with_race(g.player(), [&](const Race& race) {
+    last_read_id =
+        race.governor[g.governor().value].newspos[std::to_underlying(type)];
+  });
 
   // Get all news since last read
   auto news_items = g.entity_manager.get_news_since(type, last_read_id);
@@ -145,8 +140,10 @@ void news_read(NewsType type, GameObj& g) {
 
   // Update the last read position to the latest ID
   int latest_id = g.entity_manager.get_latest_news_id(type);
-  race.governor[g.governor().value].newspos[std::to_underlying(type)] =
-      latest_id;
+  g.entity_manager.mutate_race(g.player(), [&](Race& race) {
+    race.governor[g.governor().value].newspos[std::to_underlying(type)] =
+        latest_id;
+  });
 }
 
 /**

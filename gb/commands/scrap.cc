@@ -65,21 +65,20 @@ bool scrap(const command_t& argv, GameObj& g) {
           "{} is not landed or docked.\nNo resources can be reclaimed.\n", s);
     }
 
-    // Handle docked ship - use optional since EntityHandle has no default
-    // constructor
-    std::optional<EntityHandle<Ship>> s2_handle_opt;
-    Ship* s2 = nullptr;
     if (docked(s)) {
-      s2_handle_opt = g.entity_manager.get_ship(s.destshipno());
-      if (!s2_handle_opt || !s2_handle_opt->get()) {
+      bool valid_dock = true;
+      try {
+        g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
+          if ((!s2.docked() || s2.destshipno() != s.number()) &&
+              s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
+            g.out << "Warning, other ship not docked..\n";
+            valid_dock = false;
+          }
+        });
+      } catch (const EntityNotFoundError&) {
         continue;
       }
-      s2 = &(*(*s2_handle_opt));
-      // TODO(jeffbailey): Changed from !s.whatorbits, which didn't make any
-      // sense.
-      if ((!s2->docked() || s2->destshipno() != s.number()) &&
-          s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
-        g.out << "Warning, other ship not docked..\n";
+      if (!valid_dock) {
         continue;
       }
     }
@@ -91,16 +90,15 @@ bool scrap(const command_t& argv, GameObj& g) {
     int troopval = 0;
     double fuelval = 0.0;
 
-    // Get sector for landed ships on planets
-    // Use optional since EntityHandle has no default constructor
-    std::optional<EntityHandle<SectorMap>> smap_handle_opt;
-    Sector* sect = nullptr;
-    if (s.whatorbits() == ScopeLevel::LEVEL_PLAN && landed(s)) {
-      smap_handle_opt =
-          g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
-      if (smap_handle_opt && smap_handle_opt->get()) {
-        sect = &smap_handle_opt->get()->get(s.land_coords());
-      }
+    // Check sector owner for landed ships on planets
+    player_t sect_owner = 0;
+    bool is_landed_on_planet =
+        (s.whatorbits() == ScopeLevel::LEVEL_PLAN && landed(s));
+    if (is_landed_on_planet) {
+      g.entity_manager.with_sectormap(
+          s.storbits(), s.pnumorbits(), [&](const SectorMap& smap) {
+            sect_owner = smap.get(s.land_coords()).get_owner();
+          });
     }
 
     if (s.docked()) {
@@ -108,61 +106,25 @@ bool scrap(const command_t& argv, GameObj& g) {
       g.out << std::format("         scrap value{}: {} rp's.\n",
                            s.resource() ? "(with stockpile) " : "", scrapval);
 
-      if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-          s2->resource() + scrapval > max_resource(*s2) &&
-          s2->type() != ShipType::STYPE_SHUTTLE) {
-        scrapval = max_resource(*s2) - s2->resource();
-        g.out << std::format("(There is only room for {} resources.)\n",
-                             scrapval);
-      }
-
       if (s.fuel()) {
-        g.out << std::format("Fuel recovery: {:.0f}.\n", s.fuel());
         fuelval = s.fuel();
-        if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-            s2->fuel() + fuelval > max_fuel(*s2)) {
-          fuelval = max_fuel(*s2) - s2->fuel();
-          g.out << std::format("(There is only room for {:.2f} fuel.)\n",
-                               fuelval);
-        }
       } else {
         fuelval = 0.0;
       }
 
       if (s.destruct()) {
-        g.out << std::format("Weapons recovery: {}.\n", s.destruct());
         destval = s.destruct();
-        if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-            s2->destruct() + destval > max_destruct(*s2)) {
-          destval = max_destruct(*s2) - s2->destruct();
-          g.out << std::format("(There is only room for {} destruct.)\n",
-                               destval);
-        }
       } else {
         destval = 0;
       }
 
       if (s.popn() + s.troops()) {
-        if (s.whatdest() == ScopeLevel::LEVEL_PLAN && sect != nullptr &&
-            sect->get_owner() > 0 && sect->get_owner() != g.player()) {
+        if (s.whatdest() == ScopeLevel::LEVEL_PLAN && is_landed_on_planet &&
+            sect_owner > 0 && sect_owner != g.player()) {
           g.out << "You don't own this sector; no crew can be recovered.\n";
         } else {
-          g.out << std::format("Population/Troops recovery: {}/{}.\n", s.popn(),
-                               s.troops());
           troopval = s.troops();
-          if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-              s2->troops() + troopval > max_mil(*s2)) {
-            troopval = max_mil(*s2) - s2->troops();
-            g.out << std::format("(There is only room for {} troops.)\n",
-                                 troopval);
-          }
           crewval = s.popn();
-          if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-              s2->popn() + crewval > max_crew(*s2)) {
-            crewval = max_crew(*s2) - s2->popn();
-            g.out << std::format("(There is only room for {} crew.)\n",
-                                 crewval);
-          }
         }
       } else {
         crewval = 0;
@@ -170,69 +132,142 @@ bool scrap(const command_t& argv, GameObj& g) {
       }
 
       if (s.crystals() + s.mounted()) {
-        if (s.whatdest() == ScopeLevel::LEVEL_PLAN && sect != nullptr &&
-            sect->get_owner() > 0 && sect->get_owner() != g.player()) {
+        if (s.whatdest() == ScopeLevel::LEVEL_PLAN && is_landed_on_planet &&
+            sect_owner > 0 && sect_owner != g.player()) {
           g.out << "You don't own this sector; no crystals can be recovered.\n";
         } else {
           xtalval = s.crystals() + s.mounted();
-          if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-              s2->crystals() + xtalval > max_crystals(*s2)) {
-            xtalval = max_crystals(*s2) - s2->crystals();
-            g.out << std::format("(There is only room for {} crystals.)\n",
-                                 xtalval);
-          }
-          g.out << std::format("Crystal recovery: {}.\n", xtalval);
         }
       } else {
         xtalval = 0;
       }
+
+      if (s.whatdest() == ScopeLevel::LEVEL_SHIP) {
+        g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
+          if (s2.resource() + scrapval > max_resource(s2) &&
+              s2.type() != ShipType::STYPE_SHUTTLE) {
+            scrapval = max_resource(s2) - s2.resource();
+            g.out << std::format("(There is only room for {} resources.)\n",
+                                 scrapval);
+          }
+
+          if (s.fuel()) {
+            g.out << std::format("Fuel recovery: {:.0f}.\n", s.fuel());
+            if (s2.fuel() + fuelval > max_fuel(s2)) {
+              fuelval = max_fuel(s2) - s2.fuel();
+              g.out << std::format("(There is only room for {:.2f} fuel.)\n",
+                                   fuelval);
+            }
+          }
+
+          if (s.destruct()) {
+            g.out << std::format("Weapons recovery: {}.\n", s.destruct());
+            if (s2.destruct() + destval > max_destruct(s2)) {
+              destval = max_destruct(s2) - s2.destruct();
+              g.out << std::format("(There is only room for {} destruct.)\n",
+                                   destval);
+            }
+          }
+
+          if (s.popn() + s.troops() &&
+              !(is_landed_on_planet && sect_owner > 0 &&
+                sect_owner != g.player())) {
+            g.out << std::format("Population/Troops recovery: {}/{}.\n",
+                                 s.popn(), s.troops());
+            if (s2.troops() + troopval > max_mil(s2)) {
+              troopval = max_mil(s2) - s2.troops();
+              g.out << std::format("(There is only room for {} troops.)\n",
+                                   troopval);
+            }
+            if (s2.popn() + crewval > max_crew(s2)) {
+              crewval = max_crew(s2) - s2.popn();
+              g.out << std::format("(There is only room for {} crew.)\n",
+                                   crewval);
+            }
+          }
+
+          if (s.crystals() + s.mounted() &&
+              !(is_landed_on_planet && sect_owner > 0 &&
+                sect_owner != g.player())) {
+            if (s2.crystals() + xtalval > max_crystals(s2)) {
+              xtalval = max_crystals(s2) - s2.crystals();
+              g.out << std::format("(There is only room for {} crystals.)\n",
+                                   xtalval);
+            }
+            g.out << std::format("Crystal recovery: {}.\n", xtalval);
+          }
+        });
+      } else {
+        if (s.fuel()) {
+          g.out << std::format("Fuel recovery: {:.0f}.\n", s.fuel());
+        }
+        if (s.destruct()) {
+          g.out << std::format("Weapons recovery: {}.\n", s.destruct());
+        }
+        if (s.popn() + s.troops() && !(is_landed_on_planet && sect_owner > 0 &&
+                                       sect_owner != g.player())) {
+          g.out << std::format("Population/Troops recovery: {}/{}.\n", s.popn(),
+                               s.troops());
+        }
+        if (s.crystals() + s.mounted() &&
+            !(is_landed_on_planet && sect_owner > 0 &&
+              sect_owner != g.player())) {
+          g.out << std::format("Crystal recovery: {}.\n", xtalval);
+        }
+      }
     }
 
     /* more adjustments needed here for hanger. Maarten */
-    if (s.whatorbits() == ScopeLevel::LEVEL_SHIP && s2 != nullptr) {
-      s2->hanger() -= s.size();
+    if (s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+      g.entity_manager.mutate_ship(s.destshipno(),
+                                   [&](Ship& s2) { s2.hanger() -= s.size(); });
     }
 
     g.entity_manager.kill_ship(g.player(), s);
 
-    if (docked(s) && s2 != nullptr) {
-      s2->crystals() += xtalval;
-      rcv_fuel(*s2, fuelval);
-      rcv_destruct(*s2, destval);
-      rcv_resource(*s2, scrapval);
-      rcv_troops(*s2, troopval, g.race->mass);
-      rcv_popn(*s2, crewval, g.race->mass);
-      /* check for docking status in case scrapped ship is landed. Maarten */
-      if (s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
-        s2->docked() = 0; /* undock the surviving ship */
-        s2->whatdest() = ScopeLevel::LEVEL_UNIV;
-        s2->destshipno() = 0;
-      }
+    if (docked(s)) {
+      g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
+        s2.crystals() += xtalval;
+        rcv_fuel(s2, fuelval);
+        rcv_destruct(s2, destval);
+        rcv_resource(s2, scrapval);
+        rcv_troops(s2, troopval, g.race->mass);
+        rcv_popn(s2, crewval, g.race->mass);
+        /* check for docking status in case scrapped ship is landed. Maarten */
+        if (s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
+          s2.docked() = 0; /* undock the surviving ship */
+          s2.whatdest() = ScopeLevel::LEVEL_UNIV;
+          s2.destshipno() = 0;
+        }
+      });
     }
 
-    if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-      auto planet_handle =
-          g.entity_manager.get_planet(s.storbits(), s.pnumorbits());
-      if (planet_handle.get() && landed(s) && sect != nullptr) {
-        auto& planet = *planet_handle;
-        if (sect->get_owner() == g.player()) {
-          sect->add_popn(troopval);
-          sect->add_popn(crewval);
-        } else if (sect->get_owner() == 0) {
-          sect->set_owner(g.player());
-          sect->add_popn(crewval);
-          sect->set_troops(sect->get_troops() + troopval);
-          planet.info(g.player()).numsectsowned++;
-          planet.info(g.player()).popn += crewval;
-          planet.info(g.player()).popn += troopval;
-          g.out << std::format("Sector {} Colonized.\n", s.land_coords());
-        }
-        planet.info(g.player()).resource += scrapval;
-        planet.popn() += crewval;
-        planet.info(g.player()).destruct += destval;
-        planet.info(g.player()).fuel += static_cast<int>(fuelval);
-        planet.info(g.player()).crystals += xtalval;
-      }
+    if (is_landed_on_planet) {
+      g.entity_manager.mutate_sectormap(
+          s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {
+            g.entity_manager.mutate_planet(
+                s.storbits(), s.pnumorbits(), [&](Planet& planet) {
+                  auto& sector = smap.get(s.land_coords());
+                  if (sector.get_owner() == g.player()) {
+                    sector.add_popn(troopval);
+                    sector.add_popn(crewval);
+                  } else if (sector.get_owner() == 0) {
+                    sector.set_owner(g.player());
+                    sector.add_popn(crewval);
+                    sector.set_troops(sector.get_troops() + troopval);
+                    planet.info(g.player()).numsectsowned++;
+                    planet.info(g.player()).popn += crewval;
+                    planet.info(g.player()).popn += troopval;
+                    g.out << std::format("Sector {} Colonized.\n",
+                                         s.land_coords());
+                  }
+                  planet.info(g.player()).resource += scrapval;
+                  planet.popn() += crewval;
+                  planet.info(g.player()).destruct += destval;
+                  planet.info(g.player()).fuel += static_cast<int>(fuelval);
+                  planet.info(g.player()).crystals += xtalval;
+                });
+          });
     }
 
     if (landed(s)) {

@@ -16,12 +16,14 @@ bool technology(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
 
   if (argv.size() < 2) {
-    const auto* planet = g.entity_manager.peek_planet(g.snum(), g.pnum());
-    g.out << std::format(
-        "Current investment : {}    Technology production/update: {:.3f}\n",
-        planet->info(Playernum).tech_invest,
-        tech_prod(planet->info(Playernum).tech_invest,
-                  planet->info(Playernum).popn));
+    g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& planet) {
+      g.out << std::format(
+          "Current investment : {}    Technology production/update: "
+          "{:.3f}\n",
+          planet.info(Playernum).tech_invest,
+          tech_prod(planet.info(Playernum).tech_invest,
+                    planet.info(Playernum).popn));
+    });
     return true;
   }
 
@@ -38,13 +40,13 @@ bool technology(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
-  auto& p = *planet_handle;
-  p.info(Playernum).tech_invest = invest;
+  g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+    p.info(Playernum).tech_invest = invest;
 
-  g.out << std::format(
-      "   New (ideal) tech production: {:.3f} (this planet)\n",
-      tech_prod(p.info(Playernum).tech_invest, p.info(Playernum).popn));
+    g.out << std::format(
+        "   New (ideal) tech production: {:.3f} (this planet)\n",
+        tech_prod(p.info(Playernum).tech_invest, p.info(Playernum).popn));
+  });
   return true;
 }
 

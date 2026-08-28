@@ -18,17 +18,18 @@ void setup_test_world(TestContext& ctx) {
       .add_star("Sol", 100, starnum_t{0})
       .add_planet(0, PlanetType::EARTH, "Earth");
 
-  auto star_handle = ctx.em.get_star(0);
-  setbit(star_handle->inhabited(), player_t{1});
+  ctx.em.mutate_star(0,
+                     [](Star& star) { setbit(star.inhabited(), player_t{1}); });
 
-  auto planet_handle = ctx.em.get_planet(0, 0);
-  planet_handle->info(player_t{1}).explored = 1;
-  planet_handle->info(player_t{1}).numsectsowned = 10;
-  planet_handle->info(player_t{1}).prod_res = 100;
-  planet_handle->info(player_t{1}).prod_fuel = 50;
-  planet_handle->info(player_t{1}).prod_dest = 20;
-  planet_handle->info(player_t{1}).prod_crystals = 5;
-  planet_handle->info(player_t{1}).est_production = 175.0;
+  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+    planet.info(player_t{1}).explored = 1;
+    planet.info(player_t{1}).numsectsowned = 10;
+    planet.info(player_t{1}).prod_res = 100;
+    planet.info(player_t{1}).prod_fuel = 50;
+    planet.info(player_t{1}).prod_dest = 20;
+    planet.info(player_t{1}).prod_crystals = 5;
+    planet.info(player_t{1}).est_production = 175.0;
+  });
 }
 
 void test_production_dispatch() {

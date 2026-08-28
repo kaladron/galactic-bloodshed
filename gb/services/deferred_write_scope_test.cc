@@ -39,22 +39,13 @@ void test_deferred_write_batch_persistence(TestContext& ctx) {
     test::expect_false(scope.is_committed());
 
     // Pass 1: mutate race tech
-    {
-      auto race_handle = ctx.em.get_race(player_t{1});
-      race_handle->tech = 150.0;
-    }
+    ctx.em.mutate_race(player_t{1}, [](Race& r) { r.tech = 150.0; });
 
     // Pass 2: mutate star name
-    {
-      auto star_handle = ctx.em.get_star(starnum_t{1});
-      star_handle->set_name("Alpha Sol");
-    }
+    ctx.em.mutate_star(starnum_t{1}, [](Star& s) { s.set_name("Alpha Sol"); });
 
     // Pass 3: further mutate race tech
-    {
-      auto race_handle = ctx.em.get_race(player_t{1});
-      race_handle->tech = 200.0;
-    }
+    ctx.em.mutate_race(player_t{1}, [](Race& r) { r.tech = 200.0; });
 
     // Still uncommitted before scope exit
     test::expect_false(scope.is_committed());
@@ -91,10 +82,7 @@ void test_deferred_write_explicit_rollback(TestContext& ctx) {
   // Mutate in DeferredWriteScope then explicitly rollback
   {
     auto scope = ctx.em.create_deferred_write_scope();
-    {
-      auto race_handle = ctx.em.get_race(player_t{2});
-      race_handle->tech = 999.0;
-    }
+    ctx.em.mutate_race(player_t{2}, [](Race& r) { r.tech = 999.0; });
 
     scope.rollback();
     test::expect_true(scope.is_committed());
@@ -125,8 +113,7 @@ void test_deferred_write_raii_rollback_on_exception(TestContext& ctx) {
   // Mutate in scope and throw exception
   try {
     auto scope = ctx.em.create_deferred_write_scope();
-    auto race_handle = ctx.em.get_race(player_t{3});
-    race_handle->tech = 888.0;
+    ctx.em.mutate_race(player_t{3}, [](Race& r) { r.tech = 888.0; });
 
     throw std::runtime_error("Simulated turn processing failure");
   } catch (const std::runtime_error&) {
@@ -191,28 +178,17 @@ void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
     auto scope = ctx.em.create_deferred_write_scope();
 
     // 1. Race advances tech
-    {
-      auto race_h = ctx.em.get_race(player_t{4});
-      race_h->tech += 5.0;
-    }
+    ctx.em.mutate_race(player_t{4}, [](Race& r) { r.tech += 5.0; });
 
     // 2. Ship consumes fuel
-    {
-      auto ship_h = ctx.em.get_ship(shipnum_t{10});
-      ship_h->fuel() -= 50.0;
-    }
+    ctx.em.mutate_ship(shipnum_t{10}, [](Ship& s) { s.fuel() -= 50.0; });
 
     // 3. Star regenerates AP
-    {
-      auto star_h = ctx.em.get_star(starnum_t{2});
-      star_h->AP(player_t{4}) += 5;
-    }
+    ctx.em.mutate_star(starnum_t{2}, [](Star& s) { s.AP(player_t{4}) += 5; });
 
     // 4. Planet population grows
-    {
-      auto planet_h = ctx.em.get_planet(starnum_t{2}, planetnum_t{0});
-      planet_h->popn() += 200;
-    }
+    ctx.em.mutate_planet(starnum_t{2}, planetnum_t{0},
+                         [](Planet& p) { p.popn() += 200; });
   }
 
   // Clear cache and verify all 4 entities committed together

@@ -62,13 +62,13 @@ void initialize_schedule_state(ServerState& state, const ServerConfig& config,
 }
 
 void initialize_block_data(EntityManager& entity_manager) {
-  for (auto race_handle : RaceList(entity_manager)) {
-    const auto& race = race_handle.read();
+  for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t i = race.Playernum;
     try {
-      auto block_handle = entity_manager.get_block(i.value);
-      setbit(block_handle->invite, i);
-      setbit(block_handle->pledge, i);
+      entity_manager.mutate_block(i.value, [&](struct block& b) {
+        setbit(b.invite, i);
+        setbit(b.pledge, i);
+      });
     } catch (const EntityNotFoundError&) {
     }
   }

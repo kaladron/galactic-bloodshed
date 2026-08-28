@@ -28,251 +28,282 @@ bool bless(const command_t& argv, GameObj& g) {
   }
   amount = std::stoi(argv[3]);
 
-  auto race_handle = g.entity_manager.get_race(who);
-  if (!race_handle.get()) {
-    g.out << "Race not found.\n";
-    return false;
-  }
-  auto& race = *race_handle;
   /* race characteristics? */
   Mod = 1;
 
   if (argv[2] == "money") {
-    race.governor[0].money += amount;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity gave you {} money.\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.governor[0].money += amount;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity gave you {} money.\n", amount));
+    });
   } else if (argv[2] == "password") {
-    race.password = argv[3];
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity changed your race password to `{}`\n", argv[3]));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.password = argv[3];
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity changed your race password to `{}`\n", argv[3]));
+    });
   } else if (argv[2] == "morale") {
-    race.morale += amount;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity gave you {} morale.\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.morale += amount;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity gave you {} morale.\n", amount));
+    });
   } else if (argv[2] == "pods") {
-    race.pods = true;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                "Deity gave you pod ability.\n");
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.pods = true;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  "Deity gave you pod ability.\n");
+    });
   } else if (argv[2] == "nopods") {
-    race.pods = false;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                "Deity took away pod ability.\n");
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.pods = false;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  "Deity took away pod ability.\n");
+    });
   } else if (argv[2] == "collectiveiq") {
-    race.collective_iq = true;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                "Deity gave you collective intelligence.\n");
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.collective_iq = true;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  "Deity gave you collective intelligence.\n");
+    });
   } else if (argv[2] == "nocollectiveiq") {
-    race.collective_iq = false;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                "Deity took away collective intelligence.\n");
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.collective_iq = false;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  "Deity took away collective intelligence.\n");
+    });
   } else if (argv[2] == "maxiq") {
-    race.IQ_limit = std::stoi(argv[3]);
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity gave you a maximum IQ of {}.\n", race.IQ_limit));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.IQ_limit = std::stoi(argv[3]);
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity gave you a maximum IQ of {}.\n", race.IQ_limit));
+    });
   } else if (argv[2] == "mass") {
-    race.mass = std::stof(argv[3]);
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity gave you {:.2f} mass.\n", race.mass));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.mass = std::stof(argv[3]);
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity gave you {:.2f} mass.\n", race.mass));
+    });
   } else if (argv[2] == "metabolism") {
-    race.metabolism = std::stof(argv[3]);
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity gave you {:.2f} metabolism.\n", race.metabolism));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.metabolism = std::stof(argv[3]);
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity gave you {:.2f} metabolism.\n", race.metabolism));
+    });
   } else if (argv[2] == "adventurism") {
-    race.adventurism = std::stof(argv[3]);
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity gave you {:<3.0f}% adventurism.\n",
-                            race.adventurism * 100.0));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.adventurism = std::stof(argv[3]);
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity gave you {:<3.0f}% adventurism.\n",
+                              race.adventurism * 100.0));
+    });
   } else if (argv[2] == "birthrate") {
-    race.birthrate = std::stof(argv[3]);
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity gave you {:.2f} birthrate.\n", race.birthrate));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.birthrate = std::stof(argv[3]);
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity gave you {:.2f} birthrate.\n", race.birthrate));
+    });
   } else if (argv[2] == "fertility") {
-    race.fertilize = amount;
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity gave you a fetilization ability of {}.\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.fertilize = amount;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity gave you a fetilization ability of {}.\n",
+                              amount));
+    });
   } else if (argv[2] == "IQ") {
-    race.IQ = amount;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity gave you {} IQ.\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.IQ = amount;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity gave you {} IQ.\n", amount));
+    });
   } else if (argv[2] == "fight") {
-    race.fighters = amount;
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity set your fighting ability to {}.\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.fighters = amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your fighting ability to {}.\n", amount));
+    });
   } else if (argv[2] == "technology") {
-    race.tech += (double)amount;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity gave you {} technology.\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.tech += (double)amount;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity gave you {} technology.\n", amount));
+    });
   } else if (argv[2] == "guest") {
-    race.Guest = true;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                "Deity turned you into a guest race.\n");
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.Guest = true;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  "Deity turned you into a guest race.\n");
+    });
   } else if (argv[2] == "god") {
-    race.God = true;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                "Deity turned you into a deity race.\n");
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.God = true;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  "Deity turned you into a deity race.\n");
+    });
   } else if (argv[2] == "mortal") {
-    race.God = false;
-    race.Guest = false;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                "Deity turned you into a mortal race.\n");
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.God = false;
+      race.Guest = false;
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  "Deity turned you into a mortal race.\n");
+    });
     /* sector preferences */
   } else if (argv[2] == "water") {
-    race.likes[SectorType::SEC_SEA] = 0.01 * (double)amount;
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity set your water preference to {}%\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.likes[SectorType::SEC_SEA] = 0.01 * (double)amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your water preference to {}%\n", amount));
+    });
   } else if (argv[2] == "land") {
-    race.likes[SectorType::SEC_LAND] = 0.01 * (double)amount;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity set your land preference to {}%\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.likes[SectorType::SEC_LAND] = 0.01 * (double)amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your land preference to {}%\n", amount));
+    });
   } else if (argv[2] == "mountain") {
-    race.likes[SectorType::SEC_MOUNT] = 0.01 * (double)amount;
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity set your mountain preference to {}%\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.likes[SectorType::SEC_MOUNT] = 0.01 * (double)amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your mountain preference to {}%\n", amount));
+    });
   } else if (argv[2] == "gas") {
-    race.likes[SectorType::SEC_GAS] = 0.01 * (double)amount;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity set your gas preference to {}%\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.likes[SectorType::SEC_GAS] = 0.01 * (double)amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your gas preference to {}%\n", amount));
+    });
   } else if (argv[2] == "ice") {
-    race.likes[SectorType::SEC_ICE] = 0.01 * (double)amount;
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity set your ice preference to {}%\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.likes[SectorType::SEC_ICE] = 0.01 * (double)amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your ice preference to {}%\n", amount));
+    });
   } else if (argv[2] == "forest") {
-    race.likes[SectorType::SEC_FOREST] = 0.01 * (double)amount;
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity set your forest preference to {}%\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.likes[SectorType::SEC_FOREST] = 0.01 * (double)amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your forest preference to {}%\n", amount));
+    });
   } else if (argv[2] == "desert") {
-    race.likes[SectorType::SEC_DESERT] = 0.01 * (double)amount;
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity set your desert preference to {}%\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.likes[SectorType::SEC_DESERT] = 0.01 * (double)amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your desert preference to {}%\n", amount));
+    });
   } else if (argv[2] == "plated") {
-    race.likes[SectorType::SEC_PLATED] = 0.01 * (double)amount;
-    warn_player(
-        g.session_registry, g.entity_manager, who, 0,
-        std::format("Deity set your plated preference to {}%\n", amount));
+    g.entity_manager.mutate_race(who, [&](Race& race) {
+      race.likes[SectorType::SEC_PLATED] = 0.01 * (double)amount;
+      warn_player(
+          g.session_registry, g.entity_manager, who, 0,
+          std::format("Deity set your plated preference to {}%\n", amount));
+    });
   } else
     Mod = 0;
   if (Mod) return true;
   /* ok, must be the planet then */
   commod = argv[2][0];
-  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
-  if (!planet_handle.get()) {
-    g.out << "Planet not found.\n";
-    return false;
-  }
-  auto& planet = *planet_handle;
   if (argv[2] == "explorebit") {
-    planet.info(who).explored = 1;
-    auto star_handle = g.entity_manager.get_star(g.snum());
-    if (!star_handle.get()) {
-      g.out << "Star not found.\n";
-      return false;
-    }
-    auto& star = *star_handle;
-    setbit(star.explored(), who);
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity set your explored bit at /{}/{}.\n",
-                            star.get_name(), star.get_planet_name(g.pnum())));
+    g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+      planet.info(who).explored = 1;
+    });
+    g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
+      setbit(star.explored(), who);
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity set your explored bit at /{}/{}.\n",
+                              star.get_name(), star.get_planet_name(g.pnum())));
+    });
   } else if (argv[2] == "noexplorebit") {
-    planet.info(who).explored = 0;
-    const auto* star_ptr = g.entity_manager.peek_star(g.snum());
-    if (!star_ptr) {
-      g.out << "Star not found.\n";
-      return false;
-    }
+    g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+      planet.info(who).explored = 0;
+    });
+    const auto& star = *g.entity_manager.peek_star(g.snum());
     warn_player(g.session_registry, g.entity_manager, who, 0,
                 std::format("Deity reset your explored bit at /{}/{}.\n",
-                            star_ptr->get_name(),
-                            star_ptr->get_planet_name(g.pnum())));
+                            star.get_name(), star.get_planet_name(g.pnum())));
   } else if (argv[2] == "planetpopulation") {
-    planet.info(who).popn = std::stoi(argv[3]);
-    planet.popn()++;
-    const auto* star_ptr = g.entity_manager.peek_star(g.snum());
-    if (!star_ptr) {
-      g.out << "Star not found.\n";
-      return false;
-    }
+    g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+      planet.info(who).popn = std::stoi(argv[3]);
+      planet.popn()++;
+    });
+    const auto& star = *g.entity_manager.peek_star(g.snum());
     warn_player(
         g.session_registry, g.entity_manager, who, 0,
         std::format("Deity set your population variable to {} at /{}/{}.\n",
-                    planet.info(who).popn, star_ptr->get_name(),
-                    star_ptr->get_planet_name(g.pnum())));
+                    std::stoi(argv[3]), star.get_name(),
+                    star.get_planet_name(g.pnum())));
   } else if (argv[2] == "inhabited") {
-    auto star_handle = g.entity_manager.get_star(g.snum());
-    if (!star_handle.get()) {
-      g.out << "Star not found.\n";
-      return false;
-    }
-    auto& star = *star_handle;
-    setbit(star.inhabited(), Playernum);
-    warn_player(g.session_registry, g.entity_manager, who, 0,
-                std::format("Deity has set your inhabited bit for /{}/{}.\n",
-                            star.get_name(), star.get_planet_name(g.pnum())));
+    g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
+      setbit(star.inhabited(), Playernum);
+      warn_player(g.session_registry, g.entity_manager, who, 0,
+                  std::format("Deity has set your inhabited bit for /{}/{}.\n",
+                              star.get_name(), star.get_planet_name(g.pnum())));
+    });
   } else if (argv[2] == "numsectsowned") {
-    planet.info(who).numsectsowned = std::stoi(argv[3]);
-    const auto* star_ptr = g.entity_manager.peek_star(g.snum());
-    if (!star_ptr) {
-      g.out << "Star not found.\n";
-      return false;
-    }
+    g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+      planet.info(who).numsectsowned = std::stoi(argv[3]);
+    });
+    const auto& star = *g.entity_manager.peek_star(g.snum());
     warn_player(
         g.session_registry, g.entity_manager, who, 0,
         std::format(
             "Deity set your \"numsectsowned\" variable at /{}/{} to {}.\n",
-            star_ptr->get_name(), star_ptr->get_planet_name(g.pnum()),
-            planet.info(who).numsectsowned));
+            star.get_name(), star.get_planet_name(g.pnum()),
+            std::stoi(argv[3])));
   } else {
-    const auto* star_ptr = g.entity_manager.peek_star(g.snum());
-    if (!star_ptr) {
-      g.out << "Star not found.\n";
-      return false;
-    }
+    const auto& star = *g.entity_manager.peek_star(g.snum());
     switch (commod) {
       case 'r':
-        planet.info(who).resource += amount;
+        g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+          planet.info(who).resource += amount;
+        });
         warn_player(g.session_registry, g.entity_manager, who, 0,
                     std::format("Deity gave you {} resources at {}/{}.\n",
-                                amount, star_ptr->get_name(),
-                                star_ptr->get_planet_name(g.pnum())));
+                                amount, star.get_name(),
+                                star.get_planet_name(g.pnum())));
         break;
       case 'd':
-        planet.info(who).destruct += amount;
+        g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+          planet.info(who).destruct += amount;
+        });
         warn_player(g.session_registry, g.entity_manager, who, 0,
                     std::format("Deity gave you {} destruct at {}/{}.\n",
-                                amount, star_ptr->get_name(),
-                                star_ptr->get_planet_name(g.pnum())));
+                                amount, star.get_name(),
+                                star.get_planet_name(g.pnum())));
         break;
       case 'f':
-        planet.info(who).fuel += amount;
+        g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+          planet.info(who).fuel += amount;
+        });
         warn_player(g.session_registry, g.entity_manager, who, 0,
                     std::format("Deity gave you {} fuel at {}/{}.\n", amount,
-                                star_ptr->get_name(),
-                                star_ptr->get_planet_name(g.pnum())));
+                                star.get_name(),
+                                star.get_planet_name(g.pnum())));
         break;
       case 'x':
-        planet.info(who).crystals += amount;
+        g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+          planet.info(who).crystals += amount;
+        });
         warn_player(g.session_registry, g.entity_manager, who, 0,
                     std::format("Deity gave you {} crystals at {}/{}.\n",
-                                amount, star_ptr->get_name(),
-                                star_ptr->get_planet_name(g.pnum())));
+                                amount, star.get_name(),
+                                star.get_planet_name(g.pnum())));
         break;
       case 'a': {
-        auto star_handle = g.entity_manager.get_star(g.snum());
-        if (!star_handle.get()) {
-          g.out << "Star not found.\n";
-          return false;
-        }
-        auto& star = *star_handle;
-        star.AP(who) += amount;
+        g.entity_manager.mutate_star(g.snum(),
+                                     [&](Star& s) { s.AP(who) += amount; });
         warn_player(g.session_registry, g.entity_manager, who, 0,
                     std::format("Deity gave you {} action points at {}.\n",
                                 amount, star.get_name()));

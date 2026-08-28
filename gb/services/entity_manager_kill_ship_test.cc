@@ -260,12 +260,7 @@ int main() {
     em.clear_cache();
 
     // Phase 3: Kill ship2 - should undock ship1
-    {
-      auto ship2_handle = em.get_ship(ship2_num);
-      test::expect_ne(ship2_handle.get(), nullptr);
-      em.kill_ship(1, *ship2_handle);
-      // ship2_handle saves and releases when it goes out of scope
-    }
+    em.mutate_ship(ship2_num, [&](Ship& ship2) { em.kill_ship(1, ship2); });
 
     // Phase 4: Verify ship1 was undocked
     em.clear_cache();
@@ -328,12 +323,8 @@ int main() {
     em.clear_cache();
 
     // Phase 3: Kill the carrier - should recursively kill fighters
-    {
-      auto carrier_handle = em.get_ship(carrier_num);
-      test::expect_ne(carrier_handle.get(), nullptr);
-      em.kill_ship(1, *carrier_handle);
-      // carrier_handle saves and releases when it goes out of scope
-    }
+    em.mutate_ship(carrier_num,
+                   [&](Ship& carrier) { em.kill_ship(1, carrier); });
 
     // Phase 4: Verify all ships are dead
     em.clear_cache();

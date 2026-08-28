@@ -20,20 +20,17 @@ bool toxicity(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
-  if (!planet_handle.get()) {
-    g.out << "Planet not found.\n";
-    return false;
-  }
-  auto& p = *planet_handle;
-  if (thresh == 0) {
-    p.info(g.player()).tox_thresh = std::nullopt;
-  } else {
-    p.info(g.player()).tox_thresh = static_cast<std::uint32_t>(thresh);
-  }
+  std::optional<std::uint32_t> new_val;
+  g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+    if (thresh == 0) {
+      p.info(g.player()).tox_thresh = std::nullopt;
+    } else {
+      p.info(g.player()).tox_thresh = static_cast<std::uint32_t>(thresh);
+    }
+    new_val = p.info(g.player()).tox_thresh;
+  });
 
-  g.out << std::format(" New threshold is: {}\n",
-                       p.info(g.player()).tox_thresh.value_or(0));
+  g.out << std::format(" New threshold is: {}\n", new_val.value_or(0));
   return true;
 }
 

@@ -20,8 +20,8 @@ bool personal(const command_t& argv, GameObj& g) {
             std::ostream_iterator<std::string>(ss_message, " "));
   std::string message = ss_message.str();
 
-  auto race = g.entity_manager.get_race(Playernum);
-  race->info = message;
+  g.entity_manager.mutate_race(Playernum,
+                               [&](Race& race) { race.info = message; });
   g.out << "Personal information updated.\n";
   return true;
 }

@@ -45,40 +45,49 @@ bool toggle(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
-  auto race_handle = g.entity_manager.get_race(Playernum);
-
   if (argv.size() == 1) {
-    const auto& race = race_handle.read();
-    display_toggles(g, race.governor[Governor.value], race);
+    g.entity_manager.with_race(Playernum, [&](const Race& race) {
+      display_toggles(g, race.governor[Governor.value], race);
+    });
     return true;
   }
 
-  auto& race = *race_handle;
-
-  if (argv[1] == "inverse")
-    tog(g, &race.governor[Governor.value].toggle.inverse, "inverse");
-  else if (argv[1] == "double_digits")
-    tog(g, &race.governor[Governor.value].toggle.double_digits,
-        "double_digits");
-  else if (argv[1] == "geography")
-    tog(g, &race.governor[Governor.value].toggle.geography, "geography");
-  else if (argv[1] == "gag")
-    tog(g, &race.governor[Governor.value].toggle.gag, "gag");
-  else if (argv[1] == "autoload")
-    tog(g, &race.governor[Governor.value].toggle.autoload, "autoload");
-  else if (argv[1] == "color")
-    tog(g, &race.governor[Governor.value].toggle.color, "color");
-  else if (argv[1] == "visible")
-    tog(g, &race.governor[Governor.value].toggle.invisible, "invisible");
-  else if (race.God && argv[1] == "monitor")
-    tog(g, &race.monitor, "monitor");
-  else if (argv[1] == "compatibility")
-    tog(g, &race.governor[Governor.value].toggle.compat, "compatibility");
-  else {
-    g.out << std::format("No such option '{}'\n", argv[1]);
-    return false;
-  }
-  return true;
+  bool result = false;
+  g.entity_manager.mutate_race(Playernum, [&](Race& race) {
+    if (argv[1] == "inverse") {
+      tog(g, &race.governor[Governor.value].toggle.inverse, "inverse");
+      result = true;
+    } else if (argv[1] == "double_digits") {
+      tog(g, &race.governor[Governor.value].toggle.double_digits,
+          "double_digits");
+      result = true;
+    } else if (argv[1] == "geography") {
+      tog(g, &race.governor[Governor.value].toggle.geography, "geography");
+      result = true;
+    } else if (argv[1] == "gag") {
+      tog(g, &race.governor[Governor.value].toggle.gag, "gag");
+      result = true;
+    } else if (argv[1] == "autoload") {
+      tog(g, &race.governor[Governor.value].toggle.autoload, "autoload");
+      result = true;
+    } else if (argv[1] == "color") {
+      tog(g, &race.governor[Governor.value].toggle.color, "color");
+      result = true;
+    } else if (argv[1] == "visible") {
+      tog(g, &race.governor[Governor.value].toggle.invisible, "invisible");
+      result = true;
+    } else if (race.God && argv[1] == "monitor") {
+      tog(g, &race.monitor, "monitor");
+      result = true;
+    } else if (argv[1] == "compatibility") {
+      tog(g, &race.governor[Governor.value].toggle.compat, "compatibility");
+      result = true;
+    } else {
+      g.out << std::format("No such option '{}'\n", argv[1]);
+      result = false;
+    }
+  });
+  return result;
 }
 
 const CommandDescriptor toggle_cmd{

@@ -172,10 +172,7 @@ void test_detonate_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"detonate", "#2"});
 
   // 3. Mine is not activated (on = false)
-  {
-    auto mine_handle = ctx.em.get_ship(1);
-    mine_handle->on() = false;
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) { s.on() = false; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
   test::expect_contains(g.out.str(), "not activated");

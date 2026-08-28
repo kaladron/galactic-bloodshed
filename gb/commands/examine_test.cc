@@ -57,9 +57,10 @@ void setup_test_world(TestContext& ctx) {
   ships.save(ship1);
 
   // Seed / set a custom ShipExam description in SQLite
-  auto exam_handle = ctx.em.get_ship_exam(ShipType::STYPE_SHUTTLE);
-  exam_handle->description =
-      "Shuttle: SQLite stored short-range spacecraft description.";
+  ctx.em.mutate_ship_exam(ShipType::STYPE_SHUTTLE, [&](ShipExam& exam) {
+    exam.description =
+        "Shuttle: SQLite stored short-range spacecraft description.";
+  });
 }
 
 void test_examine_dispatch() {

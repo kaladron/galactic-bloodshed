@@ -24,22 +24,19 @@ void test_entity_manager_basic() {
   RaceRepository races(store);
   races.save(race);
 
-  {
-    auto race_handle = em.get_race(1);
-    test::expect_ne(race_handle.get(), nullptr);
-    test::expect_eq(race_handle->name, "Test Race");
-    test::expect_eq(race_handle->tech, 50.0);
-
-    race_handle->tech = 75.0;
-    race_handle->name = "Updated Race";
-  }
+  em.mutate_race(1, [](Race& r) {
+    test::expect_eq(r.name, "Test Race");
+    test::expect_eq(r.tech, 50.0);
+    r.tech = 75.0;
+    r.name = "Updated Race";
+  });
 
   const auto* updated_race = em.peek_race(1);
   test::expect_ne(updated_race, nullptr);
   test::expect_eq(updated_race->tech, 75.0);
   test::expect_eq(updated_race->name, "Updated Race");
 
-  std::println(std::cout, "  ✓ Basic get/modify/auto-save works");
+  std::println(std::cout, "  ✓ Basic mutate/auto-save works");
 }
 
 void test_entity_manager_caching() {
@@ -56,27 +53,20 @@ void test_entity_manager_caching() {
   RaceRepository races(store);
   races.save(race);
 
-  const Race* first_ptr = nullptr;
-  {
-    auto handle1 = em.get_race(1);
-    first_ptr = handle1.get();
+  const Race* first_ptr = em.peek_race(1);
+  const Race* second_ptr = em.peek_race(1);
+  test::expect_eq(first_ptr, second_ptr);
+  std::println(std::cout,
+               "  ✓ Multiple peek calls return same cached instance");
 
-    auto handle2 = em.get_race(1);
-    test::expect_eq(handle1.get(), handle2.get());
-    test::expect_eq(first_ptr, handle2.get());
-    std::println(std::cout,
-                 "  ✓ Multiple get calls return same cached instance");
-
-    handle2->name = "Modified in Handle 2";
-    test::expect_eq(handle1->name, "Modified in Handle 2");
-    std::println(
-        std::cout,
-        "  ✓ Modifications visible across all handles (same instance)");
-  }
+  em.mutate_race(1, [](Race& r) { r.name = "Modified in Mutate"; });
+  test::expect_eq(first_ptr->name, "Modified in Mutate");
+  std::println(std::cout,
+               "  ✓ Modifications visible across all peeks (same instance)");
 
   em.clear_cache();
-  auto handle3 = em.get_race(1);
-  test::expect_eq(handle3->name, "Modified in Handle 2");
+  const auto* third_ptr = em.peek_race(1);
+  test::expect_eq(third_ptr->name, "Modified in Mutate");
   std::println(std::cout, "  ✓ Entity persists after cache clear");
 }
 
@@ -95,16 +85,13 @@ void test_entity_manager_composite_keys() {
   PlanetRepository planets(store);
   planets.save(planet);
 
-  {
-    auto p1 = em.get_planet(1, 2);
-    auto p2 = em.get_planet(1, 2);
-    test::expect_eq(p1.get(), p2.get());
-    std::println(
-        std::cout,
-        "  ✓ Multiple handles to same planet return identical instance");
+  const auto* p1 = em.peek_planet(1, 2);
+  const auto* p2 = em.peek_planet(1, 2);
+  test::expect_eq(p1, p2);
+  std::println(std::cout,
+               "  ✓ Multiple peeks to same planet return identical instance");
 
-    p1->popn() = 20000;
-  }
+  em.mutate_planet(1, 2, [](Planet& p) { p.popn() = 20000; });
 
   const auto* peek = em.peek_planet(1, 2);
   test::expect_ne(peek, nullptr);
@@ -112,10 +99,12 @@ void test_entity_manager_composite_keys() {
   std::println(std::cout, "  ✓ Composite keys work for Planet entities");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_planet(999, 999); });
-  test::expect_throws<EntityNotFoundError>([&]() { em.get_planet(999, 999); });
-  std::println(std::cout,
-               "  ✓ peek_planet and get_planet throw EntityNotFoundError for "
-               "missing planet");
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.mutate_planet(999, 999, [](Planet&) {}); });
+  std::println(
+      std::cout,
+      "  ✓ peek_planet and mutate_planet throw EntityNotFoundError for "
+      "missing planet");
 }
 
 void test_entity_manager_create_delete() {
@@ -169,10 +158,11 @@ void test_entity_manager_read_only_access() {
       std::cout,
       "  ✓ peek_*() throws EntityNotFoundError for non-existent entities");
 
-  test::expect_throws<EntityNotFoundError>([&]() { em.get_race(999); });
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.mutate_race(999, [](Race&) {}); });
   std::println(
       std::cout,
-      "  ✓ get_race() throws EntityNotFoundError for non-existent entities");
+      "  ✓ mutate_race() throws EntityNotFoundError for non-existent entities");
 }
 
 void test_entity_manager_get_ship_throws() {
@@ -180,13 +170,15 @@ void test_entity_manager_get_ship_throws() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout,
-               "Test: EntityManager get_ship() throwing on non-existent ship");
-
-  test::expect_throws<EntityNotFoundError>([&]() { em.get_ship(999); });
   std::println(
       std::cout,
-      "  ✓ get_ship() throws EntityNotFoundError for non-existent ships");
+      "Test: EntityManager mutate_ship() throwing on non-existent ship");
+
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.mutate_ship(999, [](Ship&) {}); });
+  std::println(
+      std::cout,
+      "  ✓ mutate_ship() throws EntityNotFoundError for non-existent ships");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(999); });
   std::println(
@@ -208,8 +200,7 @@ void test_entity_manager_flush_all() {
   RaceRepository races(store);
   races.save(race);
 
-  auto handle = em.get_race(1);
-  handle->tech = 100.0;
+  em.mutate_race(1, [](Race& r) { r.tech = 100.0; });
 
   em.flush_all();
 
@@ -234,21 +225,16 @@ void test_entity_manager_clear_cache() {
   RaceRepository races(store);
   races.save(race);
 
-  auto handle = em.get_race(1);
-  handle->tech = 100.0;
+  em.mutate_race(1, [](Race& r) { r.tech = 100.0; });
 
   em.clear_cache();
-  test::expect_eq(handle->tech, 100.0);
-  std::println(std::cout,
-               "  ✓ clear_cache() preserves entities with active handles");
 
   const auto* peek = em.peek_race(1);
   test::expect_ne(peek, nullptr);
   test::expect_eq(peek->tech, 100.0);
   std::println(std::cout, "  ✓ peek_* reloads from database after cache clear");
 
-  handle = em.get_race(1);
-  handle->name = "Updated After Clear";
+  em.mutate_race(1, [](Race& r) { r.name = "Updated After Clear"; });
 
   const auto* peek_after = em.peek_race(1);
   test::expect_ne(peek_after, nullptr);
@@ -264,10 +250,12 @@ void test_entity_manager_singleton_universe() {
   std::println(std::cout, "Test: EntityManager singleton (universe_struct)");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_universe(); });
-  test::expect_throws<EntityNotFoundError>([&]() { em.get_universe(); });
-  std::println(std::cout,
-               "  ✓ peek_universe and get_universe throw EntityNotFoundError "
-               "when uninitialized");
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.mutate_universe([](universe_struct&) {}); });
+  std::println(
+      std::cout,
+      "  ✓ peek_universe and mutate_universe throw EntityNotFoundError "
+      "when uninitialized");
 
   universe_struct univ{};
   univ.id = 1;
@@ -277,14 +265,12 @@ void test_entity_manager_singleton_universe() {
   UniverseRepository univ_repo(store);
   univ_repo.save(univ);
 
-  {
-    auto u1 = em.get_universe();
-    auto u2 = em.get_universe();
-    test::expect_eq(u1.get(), u2.get());
-    test::expect_eq(u1->numstars, 50);
+  const auto* u1 = em.peek_universe();
+  const auto* u2 = em.peek_universe();
+  test::expect_eq(u1, u2);
+  test::expect_eq(u1->numstars, 50);
 
-    u1->numstars = 75;
-  }
+  em.mutate_universe([](universe_struct& u) { u.numstars = 75; });
 
   const auto* peek = em.peek_universe();
   test::expect_ne(peek, nullptr);
@@ -307,14 +293,12 @@ void test_entity_manager_singleton_server_state() {
   ServerStateRepository server_repo(store);
   server_repo.save(state);
 
-  {
-    auto s1 = em.get_server_state();
-    auto s2 = em.get_server_state();
-    test::expect_eq(s1.get(), s2.get());
-    test::expect_eq(s1->segments, 10);
+  const auto* s1 = em.peek_server_state();
+  const auto* s2 = em.peek_server_state();
+  test::expect_eq(s1, s2);
+  test::expect_eq(s1->segments, 10);
 
-    s1->segments = 15;
-  }
+  em.mutate_server_state([](ServerState& s) { s.segments = 15; });
 
   const auto* peek = em.peek_server_state();
   test::expect_ne(peek, nullptr);
@@ -415,10 +399,8 @@ void test_entity_manager_kill_ship() {
   test::expect_eq(ship.notified(), 0);
   std::println(std::cout, "  ✓ Ship marked as dead (alive=0, notified=0)");
 
-  auto v_handle = em.get_race(1);
-  auto k_handle = em.get_race(2);
-  test::expect_lt(v_handle->morale, 1000);
-  test::expect_gt(k_handle->morale, 1000);
+  em.with_race(1, [](const Race& v) { test::expect_lt(v.morale, 1000); });
+  em.with_race(2, [](const Race& k) { test::expect_gt(k.morale, 1000); });
   std::println(std::cout, "  ✓ Morale adjustments persisted for both races");
 
   ship_struct vn_data{};
@@ -445,8 +427,9 @@ void test_entity_manager_kill_ship() {
   em.kill_ship(2, vn_ship);
   std::println(std::cout, "  ✓ VN ship killed without errors");
 
-  auto univ_handle = em.get_universe();
-  test::expect_eq(univ_handle->VN_index1[1], 5);
+  em.with_universe([&](const universe_struct& univ) {
+    test::expect_eq(univ.VN_index1[1], 5);
+  });
   std::println(std::cout,
                "  ✓ VN tracking (VN_hitlist and VN_index) updated correctly");
 
@@ -459,9 +442,11 @@ void test_entity_manager_kill_ship() {
   Ship pod_ship(pod_data);
   ships.save(pod_ship);
 
-  int v_morale_before = v_handle->morale;
+  int v_morale_before = 0;
+  em.with_race(1, [&](const Race& v) { v_morale_before = v.morale; });
   em.kill_ship(2, pod_ship);
-  test::expect_eq(v_handle->morale, v_morale_before);
+  em.with_race(
+      1, [&](const Race& v) { test::expect_eq(v.morale, v_morale_before); });
   std::println(std::cout, "  ✓ Pod death does not affect morale");
 }
 
@@ -498,8 +483,7 @@ void test_entity_manager_kill_ship_gov_ship() {
   em.kill_ship(2, ship);
   std::println(std::cout, "  ✓ Government ship killed");
 
-  auto v_handle = em.get_race(1);
-  test::expect_eq(v_handle->Gov_ship, 0);
+  em.with_race(1, [](const Race& v) { test::expect_eq(v.Gov_ship, 0); });
   std::println(std::cout,
                "  ✓ Gov_ship field cleared when government ship is killed");
 }
@@ -660,23 +644,24 @@ void test_entity_manager_commods() {
   test::expect_eq(amount_read, 500);
   std::println(std::cout, "  ✓ with_commod works");
 
-  {
-    auto handle = em.get_commod(1);
-    handle->amount = 800;
-    handle->bid = 150;
-  }
+  em.mutate_commod(1, [](Commod& cmd) {
+    cmd.amount = 800;
+    cmd.bid = 150;
+  });
 
   auto updated = repo.find_by_id(1);
   test::expect_true(updated.has_value());
   test::expect_eq(updated->amount, 800);
   test::expect_eq(updated->bid, 150);
-  std::println(std::cout, "  ✓ get_commod auto-save persisted changes");
+  std::println(std::cout, "  ✓ mutate_commod auto-save persisted changes");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_commod(999); });
-  test::expect_throws<EntityNotFoundError>([&]() { em.get_commod(999); });
-  std::println(std::cout,
-               "  ✓ peek_commod and get_commod throw EntityNotFoundError for "
-               "missing commod");
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.mutate_commod(999, [](Commod&) {}); });
+  std::println(
+      std::cout,
+      "  ✓ peek_commod and mutate_commod throw EntityNotFoundError for "
+      "missing commod");
 }
 
 void test_entity_manager_blocks() {
@@ -706,22 +691,19 @@ void test_entity_manager_blocks() {
   test::expect_eq(vps_read, 500);
   std::println(std::cout, "  ✓ with_block works");
 
-  {
-    auto handle = em.get_block(blocknum_t{1});
-    handle->VPs = 1000;
-  }
+  em.mutate_block(blocknum_t{1}, [](block& blk) { blk.VPs = 1000; });
 
   auto updated = repo.find_by_id(blocknum_t{1});
   test::expect_true(updated.has_value());
   test::expect_eq(updated->VPs, 1000);
-  std::println(std::cout, "  ✓ get_block auto-save persisted changes");
+  std::println(std::cout, "  ✓ mutate_block auto-save persisted changes");
 
   test::expect_throws<EntityNotFoundError>(
       [&]() { em.peek_block(blocknum_t{999}); });
   test::expect_throws<EntityNotFoundError>(
-      [&]() { em.get_block(blocknum_t{999}); });
+      [&]() { em.mutate_block(blocknum_t{999}, [](block&) {}); });
   std::println(std::cout,
-               "  ✓ peek_block and get_block throw EntityNotFoundError for "
+               "  ✓ peek_block and mutate_block throw EntityNotFoundError for "
                "missing block");
 }
 
@@ -752,22 +734,19 @@ void test_entity_manager_powers() {
   test::expect_eq(troops_read, 1000);
   std::println(std::cout, "  ✓ with_power works");
 
-  {
-    auto handle = em.get_power(powernum_t{1});
-    handle->troops = 2500;
-  }
+  em.mutate_power(powernum_t{1}, [](power& pwr) { pwr.troops = 2500; });
 
   auto updated = repo.find_by_id(powernum_t{1});
   test::expect_true(updated.has_value());
   test::expect_eq(updated->troops, 2500);
-  std::println(std::cout, "  ✓ get_power auto-save persisted changes");
+  std::println(std::cout, "  ✓ mutate_power auto-save persisted changes");
 
   test::expect_throws<EntityNotFoundError>(
       [&]() { em.peek_power(powernum_t{999}); });
   test::expect_throws<EntityNotFoundError>(
-      [&]() { em.get_power(powernum_t{999}); });
+      [&]() { em.mutate_power(powernum_t{999}, [](power&) {}); });
   std::println(std::cout,
-               "  ✓ peek_power and get_power throw EntityNotFoundError for "
+               "  ✓ peek_power and mutate_power throw EntityNotFoundError for "
                "missing power");
 }
 

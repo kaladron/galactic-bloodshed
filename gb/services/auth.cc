@@ -84,84 +84,94 @@ void check_connect(Session& session, std::string_view message) {
 
   if (Playernum == 0) {
     session.out() << "Connection refused.\n";
-    std::println(stderr, "FAILED CONNECT {},{}\n", race_password, gov_password);
+    std::println(stderr, "FAILED CONNECT {},{}", race_password, gov_password);
     return;
   }
 
-  auto race_handle = session.entity_manager().get_race(Playernum);
-  if (!race_handle.get()) {
+  bool authenticated = false;
+  try {
+    session.entity_manager().with_race(Playernum, [&](const Race& race) {
+      // Check if player is already connected
+      if (session.registry().is_connected(Playernum, Governor)) {
+        session.out() << "Connection refused.\n";
+        return;
+      }
+      authenticated = true;
+
+      std::println(stderr, "CONNECTED {} \"{}\" [{},{}]", race.name,
+                   race.governor[Governor.value].name, Playernum, Governor);
+      session.set_connected(true);
+      session.set_god(race.God);
+      session.set_player(Playernum);
+      session.set_governor(Governor);
+
+      // Initialize scope to default or safe values
+      session.set_level(race.governor[Governor.value].deflevel);
+      session.set_snum(race.governor[Governor.value].defsystem);
+      session.set_pnum(race.governor[Governor.value].defplanetnum);
+      session.set_shipno(0);
+
+      // Validate and clamp star number
+      session.entity_manager().with_universe(
+          [&](const universe_struct& universe) {
+            if (session.snum() >= universe.numstars) {
+              session.set_snum(0);  // Default to first star if invalid
+            }
+          });
+
+      // Validate and clamp planet number
+      session.entity_manager().with_star(
+          session.snum(), [&](const Star& init_star) {
+            if (session.pnum() >= init_star.numplanets()) {
+              session.set_pnum(0);  // Default to first planet if invalid
+            }
+          });
+
+      // Send login messages
+      session.out() << std::format(
+          "\n{} \"{}\" [{},{}] logged on.\n", race.name,
+          race.governor[Governor.value].name, Playernum, Governor);
+      session.out() << std::format(
+          "You are {}.\n", race.governor[Governor.value].toggle.invisible
+                               ? "invisible"
+                               : "visible");
+
+      // Display time
+      GameObj temp_g(session.entity_manager(), session.registry());
+      temp_g.set_player(Playernum);
+      temp_g.set_governor(Governor);
+      temp_g.race = &race;
+      GB::commands::time({}, temp_g);
+      session.out() << temp_g.out.str();
+      temp_g.out.str("");
+
+      session.out() << std::format(
+          "\nLast login      : {}",
+          std::ctime(&(race.governor[Governor.value].login)));
+
+      if (race.Gov_ship == 0) {
+        session.out()
+            << "You have no Governmental Center.  No action points will be "
+               "produced\nuntil you build one and designate a capital.\n";
+      } else {
+        session.out() << std::format("Government Center #{} is active.\n",
+                                     race.Gov_ship);
+      }
+      session.out() << std::format("     Morale: {}\n", race.morale);
+
+      GB::commands::treasury({}, temp_g);
+
+      // Flush temp_g output to session
+      session.out() << temp_g.out.str();
+    });
+  } catch (const EntityNotFoundError&) {
     session.out() << "Connection refused.\n";
     return;
   }
-  const auto& race = race_handle.read();
-
-  // Check if player is already connected
-  if (session.registry().is_connected(Playernum, Governor)) {
-    session.out() << "Connection refused.\n";
-    return;
-  }
-
-  std::print(stderr, "CONNECTED {} \"{}\" [{},{}]\\n", race.name,
-             race.governor[Governor.value].name, Playernum, Governor);
-  session.set_connected(true);
-  session.set_god(race.God);
-  session.set_player(Playernum);
-  session.set_governor(Governor);
-
-  // Initialize scope to default or safe values
-  session.set_level(race.governor[Governor.value].deflevel);
-  session.set_snum(race.governor[Governor.value].defsystem);
-  session.set_pnum(race.governor[Governor.value].defplanetnum);
-  session.set_shipno(0);
-
-  // Validate and clamp star number
-  const auto* universe = session.entity_manager().peek_universe();
-  if (session.snum() >= universe->numstars) {
-    session.set_snum(0);  // Default to first star if invalid
-  }
-
-  // Validate and clamp planet number
-  const auto* init_star = session.entity_manager().peek_star(session.snum());
-  if (init_star && session.pnum() >= init_star->numplanets()) {
-    session.set_pnum(0);  // Default to first planet if invalid
-  }
-
-  // Send login messages
-  session.out() << std::format("\n{} \"{}\" [{},{}] logged on.\n", race.name,
-                               race.governor[Governor.value].name, Playernum,
-                               Governor);
-  session.out() << std::format(
-      "You are {}.\n",
-      race.governor[Governor.value].toggle.invisible ? "invisible" : "visible");
-
-  // Display time
-  GameObj temp_g(session.entity_manager(), session.registry());
-  temp_g.set_player(Playernum);
-  temp_g.set_governor(Governor);
-  temp_g.race = session.entity_manager().peek_race(Playernum);
-  GB::commands::time({}, temp_g);
-  session.out() << temp_g.out.str();
-
-  session.out() << std::format(
-      "\nLast login      : {}",
-      std::ctime(&(race.governor[Governor.value].login)));
+  if (!authenticated) return;
 
   // Update login time
-  auto& race_mut = *race_handle;
-  race_mut.governor[Governor.value].login = std::time(nullptr);
-
-  if (race.Gov_ship == 0) {
-    session.out()
-        << "You have no Governmental Center.  No action points will be "
-           "produced\nuntil you build one and designate a capital.\n";
-  } else {
-    session.out() << std::format("Government Center #{} is active.\n",
-                                 race.Gov_ship);
-  }
-  session.out() << std::format("     Morale: {}\n", race.morale);
-
-  GB::commands::treasury({}, temp_g);
-
-  // Flush temp_g output to session
-  session.out() << temp_g.out.str();
+  session.entity_manager().mutate_race(Playernum, [&](Race& race_mut) {
+    race_mut.governor[Governor.value].login = std::time(nullptr);
+  });
 }

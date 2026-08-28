@@ -59,12 +59,12 @@ bool dissolve(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto n_ships = g.entity_manager.num_ships();
-  for (auto i = 1; i <= n_ships; i++) {
-    auto ship_handle = g.entity_manager.get_ship(i);
-    if (!ship_handle.get() || ship_handle->owner() != Playernum) continue;
-    g.entity_manager.kill_ship(Playernum, *ship_handle);
-    g.out << std::format("Ship #{}, self-destruct enabled\n", i);
+  for (auto ship_handle :
+       ShipList(g.entity_manager, ShipList::IterationType::AllAlive)) {
+    Ship& ship = *ship_handle;
+    if (ship.owner() != Playernum) continue;
+    g.entity_manager.kill_ship(Playernum, ship);
+    g.out << std::format("Ship #{}, self-destruct enabled\n", ship.number());
   }
 
   for (const Star& star : StarList::readonly(g.entity_manager)) {
@@ -87,27 +87,26 @@ bool dissolve(const command_t& argv, GameObj& g) {
         pl.info(Playernum).autorep = 0;
       }
 
-      auto smap_handle =
-          g.entity_manager.get_sectormap(star.star_id(), pl.planet_order());
-      auto& smap = *smap_handle;
-      for (auto& s : smap) {
-        if (s.get_owner() == Playernum) {
-          s.set_owner(0);
-          s.set_troops(0);
-          s.clear_popn();
-          if (waste) s.set_condition(SectorType::SEC_WASTED);
-        }
-      }
+      g.entity_manager.mutate_sectormap(
+          star.star_id(), pl.planet_order(), [&](SectorMap& smap) {
+            for (auto& s : smap) {
+              if (s.get_owner() == Playernum) {
+                s.set_owner(0);
+                s.set_troops(0);
+                s.clear_popn();
+                if (waste) s.set_condition(SectorType::SEC_WASTED);
+              }
+            }
+          });
     }
   }
 
-  auto race_handle = g.entity_manager.get_race(Playernum);
-  auto& race = *race_handle;
-  race.dissolved = true;
-
-  post(g.entity_manager,
-       std::format("{} [{}] has dissolved.\n", race.name, Playernum),
-       NewsType::DECLARATION);
+  g.entity_manager.mutate_race(Playernum, [&](Race& race) {
+    race.dissolved = true;
+    post(g.entity_manager,
+         std::format("{} [{}] has dissolved.\n", race.name, Playernum),
+         NewsType::DECLARATION);
+  });
 
   return true;
 }

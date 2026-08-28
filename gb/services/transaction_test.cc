@@ -29,9 +29,7 @@ void test_transaction_commit(TestContext& ctx) {
     auto txn = ctx.em.begin_transaction();
     test::expect_true(txn.is_active());
 
-    auto race_handle = ctx.em.get_race(player_t{1});
-    race_handle->tech = 250.0;
-    // race_handle destructs and saves to DB within active transaction
+    ctx.em.mutate_race(player_t{1}, [](Race& r) { r.tech = 250.0; });
 
     txn.commit();
     test::expect_false(txn.is_active());
@@ -63,11 +61,7 @@ void test_transaction_explicit_rollback(TestContext& ctx) {
     auto txn = ctx.em.begin_transaction();
     test::expect_true(txn.is_active());
 
-    {
-      auto race_handle = ctx.em.get_race(player_t{2});
-      race_handle->tech = 999.0;
-      // race_handle destructs and writes to SQLite transaction
-    }
+    ctx.em.mutate_race(player_t{2}, [](Race& r_mut) { r_mut.tech = 999.0; });
 
     txn.rollback();
     test::expect_false(txn.is_active());
@@ -98,8 +92,7 @@ void test_transaction_raii_rollback(TestContext& ctx) {
   // Open transaction in scope, mutate ship, but do NOT call commit()
   {
     auto txn = ctx.em.begin_transaction();
-    auto ship_handle = ctx.em.get_ship(shipnum_t{10});
-    ship_handle->fuel() = 9999.0;
+    ctx.em.mutate_ship(shipnum_t{10}, [](Ship& ship) { ship.fuel() = 9999.0; });
     // txn goes out of scope here without commit -> RAII rollback triggered
   }
 
@@ -152,8 +145,8 @@ void test_dispatch_command_transaction_success(TestContext& ctx) {
       .syntax = "mock_txn_success",
       .description = "Mock success command",
       .handler = [](const command_t&, GameObj& game) -> bool {
-        auto race_h = game.entity_manager.get_race(player_t{3});
-        race_h->tech = 75.0;
+        game.entity_manager.mutate_race(player_t{3},
+                                        [](Race& r) { r.tech = 75.0; });
         return true;
       },
   };
@@ -217,8 +210,8 @@ void test_dispatch_command_transaction_failure(TestContext& ctx) {
       .syntax = "mock_txn_fail",
       .description = "Mock fail command",
       .handler = [](const command_t&, GameObj& game) -> bool {
-        auto race_h = game.entity_manager.get_race(player_t{4});
-        race_h->tech = 999.0;
+        game.entity_manager.mutate_race(player_t{4},
+                                        [](Race& r) { r.tech = 999.0; });
         return false;  // Fails!
       },
   };

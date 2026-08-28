@@ -19,10 +19,9 @@ bool highlight(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  // Get race for modification (RAII auto-saves on scope exit)
-  auto race_handle = g.entity_manager.get_race(g.player());
-  auto& race = *race_handle;
-  race.governor[g.governor().value].toggle.highlight = n;
+  g.entity_manager.mutate_race(g.player(), [&](Race& race) {
+    race.governor[g.governor().value].toggle.highlight = n;
+  });
   return true;
 }
 

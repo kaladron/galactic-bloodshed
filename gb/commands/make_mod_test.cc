@@ -95,10 +95,7 @@ int main() {
   std::println(std::cout, "    ✓ Scope rejection at star level verified");
 
   // 3. Guest rejection
-  {
-    auto guest_race_handle = ctx.em.get_race(1);
-    guest_race_handle->Guest = true;
-  }
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
@@ -109,10 +106,7 @@ int main() {
   std::println(std::cout, "    ✓ Guest rejection verified");
 
   // Restore non-guest race
-  {
-    auto race_handle = ctx.em.get_race(1);
-    race_handle->Guest = false;
-  }
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);  // Factory is ship #1

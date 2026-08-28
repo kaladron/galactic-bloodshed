@@ -114,8 +114,18 @@ public:
   }
 };
 
+export template <typename Entity>
+struct EntityListTraits;
+
+export class ShipList;
+
 // Entity manager with caching and lifecycle management
 export class EntityManager {
+  friend class DeferredWriteScope;
+  friend class ShipList;
+  template <typename Entity>
+  friend struct EntityListTraits;
+
   Database& db;
   JsonStore store;
 
@@ -164,11 +174,8 @@ export class EntityManager {
   int server_state_refcount = 0;
   int deferred_write_depth_ = 0;
 
-public:
-  explicit EntityManager(Database& database);
-
-  // Get entity handles (load from DB if not cached)
-  // Throws EntityNotFoundError if entity not found
+  // Internal handle access (used by mutate_* methods, EntityList, and
+  // DeferredWriteScope) Throws EntityNotFoundError if entity not found
   EntityHandle<Race> get_race(player_t player);
   EntityHandle<Ship> get_ship(shipnum_t num);
   EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
@@ -179,6 +186,10 @@ public:
   EntityHandle<universe_struct> get_universe();
   EntityHandle<ServerState> get_server_state();
   EntityHandle<ShipExam> get_ship_exam(ShipType ship_type);
+  EntityHandle<SectorMap> get_sectormap(starnum_t star, planetnum_t pnum);
+
+public:
+  explicit EntityManager(Database& database);
 
   // Direct access for read-only operations (no RAII overhead)
   // Throws EntityNotFoundError if entity not found
@@ -192,9 +203,6 @@ public:
   const universe_struct* peek_universe();
   const ServerState* peek_server_state();
   const ShipExam* peek_ship_exam(ShipType ship_type);
-
-  // Sector map operations (cached with RAII like other entities)
-  EntityHandle<SectorMap> get_sectormap(starnum_t star, planetnum_t pnum);
   const SectorMap* peek_sectormap(starnum_t star, planetnum_t pnum);
 
   // Scoped read-only access methods (with_* monadic helpers)
@@ -322,6 +330,12 @@ public:
   template <typename Fn>
   decltype(auto) mutate_server_state(Fn&& fn) {
     auto handle = get_server_state();
+    return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_ship_exam(ShipType ship_type, Fn&& fn) {
+    auto handle = get_ship_exam(ship_type);
     return std::forward<Fn>(fn)(*handle);
   }
 

@@ -141,11 +141,10 @@ bool send_message(const command_t& argv, GameObj& g) {
         block_target->name, who);
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
       if (isset(allied_members, i) && i != Playernum) {
-        auto alien_handle = g.entity_manager.get_race(i);
-        if (alien_handle.get()) {
-          alien_handle->translate[Playernum.value - 1] =
-              std::min(alien_handle->translate[Playernum.value - 1] + 2, 100);
-        }
+        g.entity_manager.mutate_race(i, [&](Race& alien) {
+          alien.translate[Playernum.value - 1] =
+              std::min(alien.translate[Playernum.value - 1] + 2, 100);
+        });
         g.session_registry.notify_race(i, block_msg);
         g.session_registry.notify_race(i, notice);
         push_telegram(g.entity_manager, i, 0, msg);
@@ -155,11 +154,10 @@ bool send_message(const command_t& argv, GameObj& g) {
     const auto& star_ref = *g.entity_manager.peek_star(star);
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
       if (isset(star_ref.inhabited(), i) && i != Playernum) {
-        auto alien_handle = g.entity_manager.get_race(i);
-        if (alien_handle.get()) {
-          alien_handle->translate[Playernum.value - 1] =
-              std::min(alien_handle->translate[Playernum.value - 1] + 2, 100);
-        }
+        g.entity_manager.mutate_race(i, [&](Race& alien) {
+          alien.translate[Playernum.value - 1] =
+              std::min(alien.translate[Playernum.value - 1] + 2, 100);
+        });
         g.session_registry.notify_race(
             i, std::format("{} \"{}\" [{},{}] sends a message to {}.\n",
                            race.name, race.governor[Governor.value].name,
@@ -169,11 +167,10 @@ bool send_message(const command_t& argv, GameObj& g) {
       }
     }
   } else {
-    auto alien_handle = g.entity_manager.get_race(who);
-    if (alien_handle.get()) {
-      alien_handle->translate[Playernum.value - 1] =
-          std::min(alien_handle->translate[Playernum.value - 1] + 2, 100);
-    }
+    g.entity_manager.mutate_race(who, [&](Race& alien) {
+      alien.translate[Playernum.value - 1] =
+          std::min(alien.translate[Playernum.value - 1] + 2, 100);
+    });
     int gov;
     if (std::isdigit(*argv[2].c_str()))
       gov = std::stoi(argv[2]);

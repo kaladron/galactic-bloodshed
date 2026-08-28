@@ -96,11 +96,12 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   // 6. Deduct Fixed AP on success
   if (success && desc.ap.amount > 0) {
     if (desc.ap.model == APModel::FixedStar) {
-      auto star_handle = g.entity_manager.get_star(g.snum());
-      star_handle->AP(g.player()) -= desc.ap.amount;
+      g.entity_manager.mutate_star(
+          g.snum(), [&](Star& star) { star.AP(g.player()) -= desc.ap.amount; });
     } else if (desc.ap.model == APModel::FixedUniv) {
-      auto univ_handle = g.entity_manager.get_universe();
-      univ_handle->AP[g.player().value - 1] -= desc.ap.amount;
+      g.entity_manager.mutate_universe([&](universe_struct& u) {
+        u.AP[g.player().value - 1] -= desc.ap.amount;
+      });
     }
   }
 

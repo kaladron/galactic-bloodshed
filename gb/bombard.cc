@@ -51,27 +51,27 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
     }
   }
 
-  auto smap_handle =
-      entity_manager.get_sectormap(ship.storbits(), ship.pnumorbits());
-  auto& smap = *smap_handle;
-
   /* look for someone to bombard-check for war */
   std::optional<Coordinates> war_target;
   std::optional<Coordinates> fallback_target;
 
-  for (Sector& sect : smap.shuffle()) {
-    if (sect.get_owner() != 0 && sect.get_owner() != ship.owner() &&
-        (sect.get_condition() != SectorType::SEC_WASTED)) {
-      if (isset(r.atwar, sect.get_owner()) ||
-          (ship.type() == ShipType::OTYPE_BERS &&
-           std::holds_alternative<MindData>(ship.special()) &&
-           sect.get_owner() == std::get<MindData>(ship.special()).target)) {
-        war_target = sect.coords();
-        break;
-      }
-      fallback_target = sect.coords();
-    }
-  }
+  entity_manager.with_sectormap(
+      ship.storbits(), ship.pnumorbits(), [&](const SectorMap& smap) {
+        for (const Sector& sect : smap.shuffle()) {
+          if (sect.get_owner() != 0 && sect.get_owner() != ship.owner() &&
+              (sect.get_condition() != SectorType::SEC_WASTED)) {
+            if (isset(r.atwar, sect.get_owner()) ||
+                (ship.type() == ShipType::OTYPE_BERS &&
+                 std::holds_alternative<MindData>(ship.special()) &&
+                 sect.get_owner() ==
+                     std::get<MindData>(ship.special()).target)) {
+              war_target = sect.coords();
+              break;
+            }
+            fallback_target = sect.coords();
+          }
+        }
+      });
 
   auto target = war_target.has_value() ? war_target : fallback_target;
 
@@ -108,12 +108,21 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   // Enemy planet retaliates along with defending forces
 
   // save owner of destroyed sector
-  auto oldown = smap.get(*target).get_owner();
+  player_t oldown = 0;
+  entity_manager.with_sectormap(
+      ship.storbits(), ship.pnumorbits(),
+      [&](const SectorMap& smap) { oldown = smap.get(*target).get_owner(); });
   ship.destruct() -= str;
   ship.mass() -= str * MASS_DESTRUCT;
 
-  auto opt_result = shoot_ship_to_planet(entity_manager, ship, planet, str,
-                                         *target, smap, 0, 0);
+  std::optional<
+      std::tuple<int, std::array<char, MAXPLAYERS>, std::string, std::string>>
+      opt_result;
+  entity_manager.mutate_sectormap(
+      ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
+        opt_result = shoot_ship_to_planet(entity_manager, ship, planet, str,
+                                          *target, smap, 0, 0);
+      });
   if (!opt_result) return 0;
   auto [raw_numdest, nuked, short_msg, long_msg] = *opt_result;
   /* (0=dont get smap) */

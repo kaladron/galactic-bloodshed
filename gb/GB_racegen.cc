@@ -80,10 +80,6 @@ int enroll_valid_race(Database& database) {
 found_planet:
   std::cout << " found!\n";
 
-  // Get handles for modification
-  auto planet_handle = entity_manager.get_planet(star, pnum);
-  auto& planet = *planet_handle;
-
   Race race{};
 
   race.Playernum = Playernum;
@@ -103,8 +99,10 @@ found_planet:
   race.governor[0].toggle.color = false;
   race.governor[0].active = true;
 
-  for (auto i = 0; i <= OTHER; i++)
-    race.conditions[i] = planet.conditions(static_cast<Conditions>(i));
+  entity_manager.with_planet(star, pnum, [&](const Planet& planet) {
+    for (auto i = 0; i <= OTHER; i++)
+      race.conditions[i] = planet.conditions(static_cast<Conditions>(i));
+  });
 
   for (auto i = 1; i <= MAXPLAYERS; i++) {
     /* messages from autoreport, player #1 are decodable */
@@ -142,28 +140,15 @@ found_planet:
       race.likesbest = st;
   }
 
-  // Find sector to build capital on, and populate it
-  auto smap_handle = entity_manager.get_sectormap(star, pnum);
-  auto& smap = *smap_handle;
-
-  Sector& sect = [&]() -> Sector& {
-    for (Sector& current_sect : smap.shuffle()) {
+  Coordinates capital_coords{0, 0};
+  entity_manager.with_sectormap(star, pnum, [&](const SectorMap& smap) {
+    for (const Sector& current_sect : smap.shuffle()) {
       if (current_sect.get_condition() == race.likesbest) {
-        return current_sect;
+        capital_coords = current_sect.coords();
+        return;
       }
     }
-    // We default to putting the capital at 0,0 if we don't have a better choice
-    return smap.get(Coordinates{0, 0});
-  }();
-
-  sect.set_owner(Playernum);
-  sect.set_race(Playernum);
-  sect.set_popn_exact(race.number_sexes);
-  planet.popn() = race.number_sexes;
-  sect.set_fert(100);
-  sect.set_efficiency_bounded(10);
-  sect.set_troops(0);
-  planet.troops() = 0;
+  });
 
   race.governors = 0;
 
@@ -173,14 +158,16 @@ found_planet:
 
     auto shipno = shipnum_t{entity_manager.num_ships().value + 1};
     race.Gov_ship = shipno;
-    planet.ships() = shipno;
     ss.nextship = 0;
 
     ss.type = ShipType::OTYPE_GOV;
-    const auto* star_ptr = entity_manager.peek_star(star);
-    ss.xpos = star_ptr->xpos() + planet.xpos();
-    ss.ypos = star_ptr->ypos() + planet.ypos();
-    ss.land_coords = sect.coords();
+    entity_manager.with_star(star, [&](const Star& s) {
+      entity_manager.with_planet(star, pnum, [&](const Planet& p) {
+        ss.xpos = s.xpos() + p.xpos();
+        ss.ypos = s.ypos() + p.ypos();
+      });
+    });
+    ss.land_coords = capital_coords;
 
     ss.speed = 0;
     ss.owner = Playernum;
@@ -242,32 +229,45 @@ found_planet:
     ships.save(s);
   }
 
-  planet.info(Playernum).numsectsowned = 1;
-  planet.explored() = 0;
-  planet.info(Playernum).explored = 1;
+  entity_manager.mutate_sectormap(star, pnum, [&](SectorMap& smap) {
+    entity_manager.mutate_planet(star, pnum, [&](Planet& planet) {
+      auto& sect = smap.get(capital_coords);
+      sect.set_owner(Playernum);
+      sect.set_race(Playernum);
+      sect.set_popn_exact(race.number_sexes);
+      sect.set_fert(100);
+      sect.set_efficiency_bounded(10);
+      sect.set_troops(0);
 
-  // (approximate)
-  planet.maxpopn() =
-      maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
+      planet.popn() = race.number_sexes;
+      planet.troops() = 0;
+      planet.ships() = race.Gov_ship;
+      planet.info(Playernum).numsectsowned = 1;
+      planet.explored() = 0;
+      planet.info(Playernum).explored = 1;
+
+      // (approximate)
+      planet.maxpopn() =
+          maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
+    });
+  });
 
   // Save race using repository
   RaceRepository races(store);
   races.save(race);
 
-  // planet_handle and smap_handle will auto-save when they go out of scope
-
   // Update star
-  auto star_handle = entity_manager.get_star(star);
-  auto& star_data = *star_handle;
-  setbit(star_data.explored(), Playernum);
-  setbit(star_data.inhabited(), Playernum);
-  star_data.AP(Playernum) = 5;
-  // star_handle will auto-save when it goes out of scope
+  entity_manager.mutate_star(star, [&](Star& star_data) {
+    setbit(star_data.explored(), Playernum);
+    setbit(star_data.inhabited(), Playernum);
+    star_data.AP(Playernum) = 5;
 
-  std::cout << std::format(
-      "Player {} ({}) created on sector {},{} on {}/{}.\\n", Playernum,
-      race_info.name, sect.get_x(), sect.get_y(), star_data.get_name(),
-      star_data.get_planet_name(pnum));
+    std::cout << std::format(
+        "Player {} ({}) created on sector {},{} on {}/{}.\n", Playernum,
+        race_info.name, capital_coords.x, capital_coords.y,
+        star_data.get_name(), star_data.get_planet_name(pnum));
+  });
+
   race_info.status = EnrollmentStatus::ENROLLED;
   return 0;
 }

@@ -170,11 +170,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
     return false;
   }
 
-  const auto* star = g.entity_manager.peek_star(s.storbits());
-  if (!star) {
-    g.out << "Star system not found.\n";
-    return false;
-  }
+  const auto& star = *g.entity_manager.peek_star(s.storbits());
 
   if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
     if (!g.deduct_univ_ap(1)) {
@@ -188,138 +184,134 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
     }
   }
 
-  auto planet_handle =
-      g.entity_manager.get_planet(s.storbits(), s.pnumorbits());
-  if (!planet_handle.get()) {
-    g.out << "Planet not found.\n";
-    return false;
-  }
-  auto& p = *planet_handle;
+  bool ok = false;
+  g.entity_manager.mutate_planet(s.storbits(), s.pnumorbits(), [&](Planet& p) {
+    g.out << std::format("Planet /{}/{} has gravity field of {:.2f}.\n",
+                         star.get_name(), star.get_planet_name(s.pnumorbits()),
+                         p.gravity());
 
-  g.out << std::format("Planet /{}/{} has gravity field of {:.2f}.\n",
-                       star->get_name(), star->get_planet_name(s.pnumorbits()),
-                       p.gravity());
+    Dist = std::hypot((star.xpos() + p.xpos()) - s.xpos(),
+                      (star.ypos() + p.ypos()) - s.ypos());
+    g.out << std::format("Distance to planet: {:.2f}.\n", Dist);
 
-  Dist = std::hypot((star->xpos() + p.xpos()) - s.xpos(),
-                    (star->ypos() + p.ypos()) - s.ypos());
-  g.out << std::format("Distance to planet: {:.2f}.\n", Dist);
+    if (Dist > DIST_TO_LAND) {
+      g.out << std::format(
+          "{} must be {:.3g} or closer to the planet ({:.2f}).\n", s,
+          DIST_TO_LAND, Dist);
+      return;
+    }
 
-  if (Dist > DIST_TO_LAND) {
-    g.out << std::format(
-        "{} must be {:.3g} or closer to the planet ({:.2f}).\n", s,
-        DIST_TO_LAND, Dist);
-    return false;
-  }
+    fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
 
-  fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
+    if (!p.is_valid(target_coords)) {
+      g.out << "Illegal coordinates.\n";
+      return;
+    }
 
-  if (!p.is_valid(target_coords)) {
-    g.out << "Illegal coordinates.\n";
-    return false;
-  }
-
-  if (DEFENSE) {
-    for (const Race& alien_race : RaceList::readonly(g.entity_manager)) {
-      const auto i = alien_race.Playernum;
-      if (s.alive() && i != Playernum && p.info(i).popn && p.info(i).guns &&
-          p.info(i).destruct) {
-        if (isset(alien_race.atwar, s.owner())) {
-          auto alien_handle = g.entity_manager.get_race(i);
-          if (!alien_handle.get()) continue;
-          auto& alien = *alien_handle;
-          strength = MIN((int)p.info(i).guns, (int)p.info(i).destruct);
-          if (strength) {
-            if (auto p2s_opt = shoot_planet_to_ship(g.entity_manager, alien, s,
-                                                    strength)) {
-              auto [p_damage, p_short, p_long] = *p2s_opt;
-              post(g.entity_manager, p_short, NewsType::COMBAT);
-              notify_star(g.session_registry, g.entity_manager, 0, 0,
-                          s.storbits(), p_short);
-              warn_player(g.session_registry, g.entity_manager, i,
-                          star->governor(i), p_long);
-              g.session_registry.notify_player(s.owner(), s.governor(), p_long);
-            }
-            p.info(i).destruct -= strength;
+    if (DEFENSE) {
+      for (const Race& alien_race : RaceList::readonly(g.entity_manager)) {
+        const auto i = alien_race.Playernum;
+        if (s.alive() && i != Playernum && p.info(i).popn && p.info(i).guns &&
+            p.info(i).destruct) {
+          if (isset(alien_race.atwar, s.owner())) {
+            g.entity_manager.mutate_race(i, [&](Race& alien) {
+              strength = MIN((int)p.info(i).guns, (int)p.info(i).destruct);
+              if (strength) {
+                if (auto p2s_opt = shoot_planet_to_ship(g.entity_manager, alien,
+                                                        s, strength)) {
+                  auto [p_damage, p_short, p_long] = *p2s_opt;
+                  post(g.entity_manager, p_short, NewsType::COMBAT);
+                  notify_star(g.session_registry, g.entity_manager, 0, 0,
+                              s.storbits(), p_short);
+                  warn_player(g.session_registry, g.entity_manager, i,
+                              star.governor(i), p_long);
+                  g.session_registry.notify_player(s.owner(), s.governor(),
+                                                   p_long);
+                }
+                p.info(i).destruct -= strength;
+              }
+            });
           }
         }
       }
-    }
-    if (!s.alive()) {
-      return false;
-    }
-  }
-
-  if (auto [did_crash, roll] = crash(s, fuel); did_crash) {
-    auto smap_handle =
-        g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
-    auto& smap = *smap_handle;
-    auto result_opt = shoot_ship_to_planet(
-        g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.),
-        target_coords, smap, 0, GTYPE_HEAVY);
-    numdest = result_opt ? std::get<0>(*result_opt) : 0;
-    auto buf =
-        std::format("BOOM!! {} crashes on sector {} with blast radius of {}.\n",
-                    s, target_coords, numdest);
-    for (const Race& race : RaceList::readonly(g.entity_manager)) {
-      const auto i = race.Playernum;
-      if (p.info(i).numsectsowned || i == Playernum)
-        warn_player(g.session_registry, g.entity_manager, i, star->governor(i),
-                    buf);
-    }
-    if (roll)
-      g.out << std::format("Ship damage {}% (you rolled a {})\n",
-                           (int)s.damage(), roll);
-    else
-      g.out << std::format(
-          "You had {:.1f}f while the landing required {:.1f}f\n", s.fuel(),
-          fuel);
-    g.entity_manager.kill_ship(s.owner(), s);
-  } else {
-    auto smap_handle =
-        g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
-
-    s.set_land_coords(target_coords);
-    s.xpos() = p.xpos() + star->xpos();
-    s.ypos() = p.ypos() + star->ypos();
-    use_fuel(s, fuel);
-    s.docked() = 1;
-    s.whatdest() = ScopeLevel::LEVEL_PLAN;
-    s.deststar() = s.storbits();
-    s.destpnum() = s.pnumorbits();
-  }
-
-  auto smap_handle =
-      g.entity_manager.get_sectormap(s.storbits(), s.pnumorbits());
-  auto& smap = *smap_handle;
-  auto& sector = smap.get(target_coords);
-
-  if (sector.is_wasted()) {
-    g.out << "Warning: That sector is a wasteland!\n";
-  } else if (sector.get_owner() != 0 && sector.get_owner() != Playernum) {
-    const auto* alien = g.entity_manager.peek_race(sector.get_owner());
-    if (alien) {
-      if (!(isset(g.race->allied, sector.get_owner()) &&
-            isset(alien->allied, Playernum))) {
-        g.out << std::format("You have landed on an alien sector ({}).\n",
-                             alien->name);
-      } else {
-        g.out << std::format("You have landed on allied sector ({}).\n",
-                             alien->name);
+      if (!s.alive()) {
+        return;
       }
     }
-  }
 
-  auto landing_msg = std::format(
-      "{} observed landing on sector {},planet /{}/{}.\n", s, s.land_coords(),
-      star->get_name(), star->get_planet_name(s.pnumorbits()));
-  for (const Race& race : RaceList::readonly(g.entity_manager)) {
-    const auto i = race.Playernum;
-    if (p.info(i).numsectsowned && i != Playernum) {
-      g.session_registry.notify_player(i, star->governor(i), landing_msg);
+    if (auto [did_crash, roll] = crash(s, fuel); did_crash) {
+      g.entity_manager.mutate_sectormap(
+          s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {
+            auto result_opt = shoot_ship_to_planet(
+                g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.),
+                target_coords, smap, 0, GTYPE_HEAVY);
+            numdest = result_opt ? std::get<0>(*result_opt) : 0;
+          });
+      auto buf = std::format(
+          "BOOM!! {} crashes on sector {} with blast radius of {}.\n", s,
+          target_coords, numdest);
+      for (const Race& race : RaceList::readonly(g.entity_manager)) {
+        const auto i = race.Playernum;
+        if (p.info(i).numsectsowned || i == Playernum)
+          warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
+                      buf);
+      }
+      if (roll)
+        g.out << std::format("Ship damage {}% (you rolled a {})\n",
+                             (int)s.damage(), roll);
+      else
+        g.out << std::format(
+            "You had {:.1f}f while the landing required {:.1f}f\n", s.fuel(),
+            fuel);
+      g.entity_manager.kill_ship(s.owner(), s);
+      return;
+    } else {
+      s.set_land_coords(target_coords);
+      s.xpos() = p.xpos() + star.xpos();
+      s.ypos() = p.ypos() + star.ypos();
+      use_fuel(s, fuel);
+      s.docked() = 1;
+      s.whatdest() = ScopeLevel::LEVEL_PLAN;
+      s.deststar() = s.storbits();
+      s.destpnum() = s.pnumorbits();
     }
-  }
-  g.out << std::format("{} landed on planet.\n", s);
-  return true;
+
+    g.entity_manager.with_sectormap(
+        s.storbits(), s.pnumorbits(), [&](const SectorMap& smap) {
+          const auto& sector = smap.get(target_coords);
+
+          if (sector.is_wasted()) {
+            g.out << "Warning: That sector is a wasteland!\n";
+          } else if (sector.get_owner() != 0 &&
+                     sector.get_owner() != Playernum) {
+            g.entity_manager.with_race(
+                sector.get_owner(), [&](const Race& alien) {
+                  if (!(isset(g.race->allied, sector.get_owner()) &&
+                        isset(alien.allied, Playernum))) {
+                    g.out << std::format(
+                        "You have landed on an alien sector ({}).\n",
+                        alien.name);
+                  } else {
+                    g.out << std::format(
+                        "You have landed on allied sector ({}).\n", alien.name);
+                  }
+                });
+          }
+        });
+
+    auto landing_msg = std::format(
+        "{} observed landing on sector {},planet /{}/{}.\n", s, s.land_coords(),
+        star.get_name(), star.get_planet_name(s.pnumorbits()));
+    for (const Race& race : RaceList::readonly(g.entity_manager)) {
+      const auto i = race.Playernum;
+      if (p.info(i).numsectsowned && i != Playernum) {
+        g.session_registry.notify_player(i, star.governor(i), landing_msg);
+      }
+    }
+    g.out << std::format("{} landed on planet.\n", s);
+    ok = true;
+  });
+  return ok;
 }
 }  // namespace
 

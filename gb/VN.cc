@@ -21,10 +21,16 @@ void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
   mind.target = stats.VN_brain.most_mad;
   ship.whatdest() = ScopeLevel::LEVEL_PLAN;
   const auto* universe = em.peek_universe();
-  if (success(50))
-    ship.deststar() = universe->VN_index1[mind.target.value - 1];
-  else
-    ship.deststar() = universe->VN_index2[mind.target.value - 1];
+  if (mind.target.value > 0 &&
+      mind.target.value <=
+          static_cast<player_t::value_type>(std::size(universe->VN_index1))) {
+    if (success(50))
+      ship.deststar() = universe->VN_index1[mind.target.value - 1];
+    else
+      ship.deststar() = universe->VN_index2[mind.target.value - 1];
+  } else {
+    ship.deststar() = int_rand(0, universe->numstars - 1);
+  }
   const auto& star = *em.peek_star(ship.deststar());
   ship.destpnum() = int_rand(0, star.numplanets() - 1);
   if (ship.hyper_drive().has && ship.mounted()) {
@@ -141,21 +147,19 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
     race_order.push_back(player_t{id});
   }
 
-  auto planet_handle = em.get_planet(ship.storbits(), ship.pnumorbits());
-
-  // Loop through permuted vector until someone has resources on
-  // this planet to steal
-  auto victim = select_victim_to_steal_from(*planet_handle, race_order);
+  int prod = 0;
+  player_t f = 0;
+  em.mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet_mut) {
+    auto victim = select_victim_to_steal_from(planet_mut, race_order);
+    if (!victim) return;
+    f = *victim;
+    prod = std::min(planet_mut.info(f).resource,
+                    Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+    planet_mut.info(f).resource -= prod;
+  });
 
   // No resources to steal
-  if (!victim) return;
-  player_t f = *victim;
-
-  // Steal the resources
-
-  auto prod = std::min(planet_handle->info(f).resource,
-                       Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
-  planet_handle->info(f).resource -= prod;
+  if (f == 0) return;
 
   std::string buf;
 
@@ -314,17 +318,19 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
             s2.bombard() = 0;
             s2.fuel() = 0.5 * ship.fuel();
             ship.fuel() *= 0.5;
+            if (std::holds_alternative<MindData>(ship.special())) {
+              auto ship_mind = std::get<MindData>(ship.special());
+              s2.special() = MindData{.progenitor = ship_mind.progenitor,
+                                      .target = ship_mind.target,
+                                      .generation = static_cast<unsigned char>(
+                                          ship_mind.generation + 1),
+                                      .busy = 0,
+                                      .tampered = ship_mind.tampered,
+                                      .who_killed = ship_mind.who_killed};
+            }
           }
-          // Handle mind data for new ship and current ship
           if (std::holds_alternative<MindData>(ship.special())) {
             auto ship_mind = std::get<MindData>(ship.special());
-            s2.special() = MindData{.progenitor = ship_mind.progenitor,
-                                    .target = ship_mind.target,
-                                    .generation = static_cast<unsigned char>(
-                                        ship_mind.generation + 1),
-                                    .busy = 0,
-                                    .tampered = ship_mind.tampered,
-                                    .who_killed = ship_mind.who_killed};
             ship.special() =
                 MindData{.progenitor = ship_mind.progenitor,
                          .target = ship_mind.target,
@@ -335,43 +341,44 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
           }
         }
       }
-    } else { /* orbiting a planet */
-      if (std::holds_alternative<MindData>(ship.special()) &&
-          std::get<MindData>(ship.special()).busy) {
-        if (ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
-            ship.deststar() == ship.storbits() &&
-            ship.destpnum() == ship.pnumorbits()) {
-          if (planet.type() == PlanetType::GASGIANT) {
+    }
+  } else { /* orbiting a planet */
+    if (std::holds_alternative<MindData>(ship.special()) &&
+        std::get<MindData>(ship.special()).busy) {
+      if (ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
+          ship.deststar() == ship.storbits() &&
+          ship.destpnum() == ship.pnumorbits()) {
+        if (planet.type() == PlanetType::GASGIANT) {
+          if (std::holds_alternative<MindData>(ship.special())) {
+            auto mind = std::get<MindData>(ship.special());
+            mind.busy = 0;
+            ship.special() = mind;
+          }
+        } else {
+          /* find a place on the planet to land */
+          bool found = false;
+          for (Sector& sect : smap.shuffle()) {
+            if (sect.get_resource() == 0) continue;
+            found = true;
+            ship.docked() = 1;
+            ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+            ship.deststar() = ship.storbits();
+            ship.destpnum() = ship.pnumorbits();
+            const auto& star = *entity_manager.peek_star(ship.storbits());
+            ship.xpos() = star.xpos() + planet.xpos();
+            ship.ypos() = star.ypos() + planet.ypos();
+            ship.set_land_coords(sect.coords());
             if (std::holds_alternative<MindData>(ship.special())) {
               auto mind = std::get<MindData>(ship.special());
-              mind.busy = 0;
+              mind.busy = 1;
               ship.special() = mind;
             }
-          } else {
-            /* find a place on the planet to land */
-            bool found = false;
-            for (Sector& sect : smap.shuffle()) {
-              if (sect.get_resource() == 0) continue;
-              found = true;
-              ship.docked() = 1;
-              ship.whatdest() = ScopeLevel::LEVEL_PLAN;
-              ship.deststar() = ship.storbits();
-              ship.destpnum() = ship.pnumorbits();
-              const auto& star = *entity_manager.peek_star(ship.storbits());
-              ship.xpos() = star.xpos() + planet.xpos();
-              ship.ypos() = star.ypos() + planet.ypos();
-              ship.set_land_coords(sect.coords());
-              if (std::holds_alternative<MindData>(ship.special())) {
-                auto mind = std::get<MindData>(ship.special());
-                mind.busy = 1;
-                ship.special() = mind;
-              }
-            }
-            if (!found && std::holds_alternative<MindData>(ship.special())) {
-              auto mind = std::get<MindData>(ship.special());
-              mind.busy = 0;
-              ship.special() = mind;
-            }
+            break;
+          }
+          if (!found && std::holds_alternative<MindData>(ship.special())) {
+            auto mind = std::get<MindData>(ship.special());
+            mind.busy = 0;
+            ship.special() = mind;
           }
         }
       }

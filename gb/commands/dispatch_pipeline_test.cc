@@ -74,10 +74,7 @@ void test_role_no_guests() {
   test::expect_contains(g.out.str(), "Guest races cannot use this command");
 
   // Non-guest race is allowed
-  {
-    auto race_handle = ctx.em.get_race(g.player());
-    race_handle->Guest = false;
-  }
+  ctx.em.mutate_race(g.player(), [](Race& r) { r.Guest = false; });
   g.race = ctx.em.peek_race(g.player());
 
   g.out.str("");
@@ -245,10 +242,7 @@ void test_fixed_star_ap_transactions() {
   test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 10);
 
   // Set AP to 20
-  {
-    auto star_handle = ctx.em.get_star(1);
-    star_handle->AP(player_t{1}) = 20;
-  }
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 20; });
 
   // Case 2: Sufficient AP, Handler returns false -> Rejected, AP unchanged
   GB::commands::CommandDescriptor fail_desc{
@@ -300,10 +294,7 @@ void test_fixed_univ_ap_transactions() {
   test::expect_eq(ctx.em.peek_universe()->AP[0], 10);
 
   // Set Univ AP to 20
-  {
-    auto univ_handle = ctx.em.get_universe();
-    univ_handle->AP[0] = 20;
-  }
+  ctx.em.mutate_universe([](universe_struct& u) { u.AP[0] = 20; });
 
   // Case 2: Handler returns false -> AP unchanged (still 20)
   GB::commands::CommandDescriptor fail_desc{

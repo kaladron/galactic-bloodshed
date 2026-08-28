@@ -106,10 +106,7 @@ void test_build_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  {
-    auto star_handle = ctx.em.get_star(1);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -139,11 +136,9 @@ void test_build_domain_errors() {
                         "Syntax: build <type> <x,y> [count] | build ? [type]");
 
   // 2. Test: Build with insufficient resources
-  {
-    // Drain resources completely
-    auto planet_handle = ctx.em.get_planet(1, 0);
-    planet_handle->info(player_t{1}).resource = 0;  // No resources
-  }
+  // Drain resources completely
+  ctx.em.mutate_planet(1, 0,
+                       [](Planet& p) { p.info(player_t{1}).resource = 0; });
   g.out.str("");
   // Try to build probe with no resources
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});

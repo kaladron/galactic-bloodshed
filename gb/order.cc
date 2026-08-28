@@ -41,9 +41,9 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       g.out << std::format("Star {}\n", prin_aimed_at(s));
       if (auto dist = std::hypot(xf - str.xpos(), yf - str.ypos());
           dist <= tele_range(s.type(), s.tech())) {
-        auto star_handle = g.entity_manager.get_star(aimed_at.snum);
-        auto& star = *star_handle;
-        setbit(star.explored(), g.player());
+        g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
+          setbit(star.explored(), g.player());
+        });
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
@@ -57,13 +57,12 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       if (auto dist = std::hypot(xf - (str.xpos() + p.xpos()),
                                  yf - (str.ypos() + p.ypos()));
           dist <= tele_range(s.type(), s.tech())) {
-        auto star_handle = g.entity_manager.get_star(aimed_at.snum);
-        auto& star = *star_handle;
-        setbit(star.explored(), g.player());
-        auto planet_handle =
-            g.entity_manager.get_planet(aimed_at.snum, aimed_at.pnum);
-        auto& planet = *planet_handle;
-        planet.info(g.player()).explored = 1;
+        g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
+          setbit(star.explored(), g.player());
+        });
+        g.entity_manager.mutate_planet(
+            aimed_at.snum, aimed_at.pnum,
+            [&](Planet& planet) { planet.info(g.player()).explored = 1; });
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
@@ -219,14 +218,17 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
     if (!where.err) {
       if (where.level == ScopeLevel::LEVEL_SHIP) {
         try {
-          g.entity_manager.peek_ship(where.shipno);
+          bool is_followable = false;
+          g.entity_manager.with_ship(where.shipno, [&](const Ship& tmpship) {
+            if (followable(g.entity_manager, ship, tmpship)) {
+              is_followable = true;
+            }
+          });
+          if (!is_followable) {
+            g.out << "Warning: that ship is out of range.\n";
+            return;
+          }
         } catch (const EntityNotFoundError&) {
-          g.out << "Warning: that ship is out of range.\n";
-          return;
-        }
-        auto tmpship_handle = g.entity_manager.get_ship(where.shipno);
-        auto& tmpship = *tmpship_handle;
-        if (!followable(g.entity_manager, ship, tmpship)) {
           g.out << "Warning: that ship is out of range.\n";
           return;
         }
@@ -556,50 +558,59 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
   if (ship.type() == ShipType::OTYPE_FACTORY) {
     unsigned int oncost = 0;
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      auto s2_handle = g.entity_manager.get_ship(ship.destshipno());
-      auto& s2 = *s2_handle;
-      if (s2.type() == ShipType::STYPE_HABITAT) {
-        oncost = HAB_FACT_ON_COST * ship.build_cost();
-        if (s2.resource() < oncost) {
-          g.out << std::format(
-              "You don't have {} resources on Habitat #{} to activate this "
-              "factory.\n",
-              oncost, ship.destshipno());
-          return;
+      bool ok = false;
+      g.entity_manager.mutate_ship(ship.destshipno(), [&](Ship& s2) {
+        if (s2.type() == ShipType::STYPE_HABITAT) {
+          oncost = HAB_FACT_ON_COST * ship.build_cost();
+          if (s2.resource() < oncost) {
+            g.out << std::format(
+                "You don't have {} resources on Habitat #{} to activate this "
+                "factory.\n",
+                oncost, ship.destshipno());
+            return;
+          }
+          int hangerneeded =
+              (1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship))) -
+              ((s2.max_hanger() - s2.hanger()) + ship.size());
+          if (hangerneeded > 0) {
+            g.out << std::format(
+                "Not enough hanger space free on Habitat #{}. Need {} more.\n",
+                ship.destshipno(), hangerneeded);
+            return;
+          }
+          s2.resource() -= oncost;
+          s2.hanger() -= ship.size();
+          ship.size() = 1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship));
+          s2.hanger() += ship.size();
+          ok = true;
+        } else {
+          g.out << "The factory is currently being transported.\n";
         }
-        int hangerneeded =
-            (1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship))) -
-            ((s2.max_hanger() - s2.hanger()) + ship.size());
-        if (hangerneeded > 0) {
-          g.out << std::format(
-              "Not enough hanger space free on Habitat #{}. Need {} more.\n",
-              ship.destshipno(), hangerneeded);
-          return;
-        }
-        s2.resource() -= oncost;
-        s2.hanger() -= ship.size();
-        ship.size() = 1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship));
-        s2.hanger() += ship.size();
-      } else {
-        g.out << "The factory is currently being transported.\n";
+      });
+      if (!ok) {
         return;
       }
     } else if (!landed(ship)) {
       g.out << "You cannot activate the factory here.\n";
       return;
     } else {
-      auto planet_handle =
-          g.entity_manager.get_planet(ship.deststar(), ship.destpnum());
-      auto& planet = *planet_handle;
-      oncost = 2 * ship.build_cost();
-      if (planet.info(Playernum).resource < oncost) {
-        g.out << std::format(
-            "You don't have {} resources on the planet to activate this "
-            "factory.\n",
-            oncost);
+      bool ok = false;
+      g.entity_manager.mutate_planet(
+          ship.deststar(), ship.destpnum(), [&](Planet& planet) {
+            oncost = 2 * ship.build_cost();
+            if (planet.info(Playernum).resource < oncost) {
+              g.out << std::format(
+                  "You don't have {} resources on the planet to activate this "
+                  "factory.\n",
+                  oncost);
+              return;
+            }
+            planet.info(Playernum).resource -= oncost;
+            ok = true;
+          });
+      if (!ok) {
         return;
       }
-      planet.info(Playernum).resource -= oncost;
     }
     g.out << std::format("Factory activated at a cost of {} resources.\n",
                          oncost);

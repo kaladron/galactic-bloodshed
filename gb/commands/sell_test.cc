@@ -77,8 +77,7 @@ void setup_test_world(TestContext& ctx) {
   ships_repo.save(port);
 
   // Link ship to planet
-  auto planet_handle = ctx.em.get_planet(1, 0);
-  planet_handle->ships() = 1;
+  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.ships() = 1; });
 }
 
 void test_sell_happy_paths() {
@@ -121,10 +120,7 @@ void test_sell_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 5 (< 20 required for 100 units)
-  {
-    auto star_handle = ctx.em.get_star(1);
-    star_handle->AP(1) = 5;
-  }
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

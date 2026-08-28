@@ -405,12 +405,11 @@ void test_universe_invariants() {
                         "Standard test world must satisfy universe invariants");
 
   // Verify that population in planet matches sectors
-  {
-    auto planet_handle = ctx.em.get_planet(starnum_t{0}, planetnum_t{0});
-    planet_handle->popn() = 1234;
-    auto smap_handle = ctx.em.get_sectormap(starnum_t{0}, planetnum_t{0});
-    smap_handle->get(Coordinates{0, 0}).set_popn_exact(1234);
-  }
+  ctx.em.mutate_planet(starnum_t{0}, planetnum_t{0},
+                       [](Planet& p) { p.popn() = 1234; });
+  ctx.em.mutate_sectormap(starnum_t{0}, planetnum_t{0}, [](SectorMap& smap) {
+    smap.get(Coordinates{0, 0}).set_popn_exact(1234);
+  });
   test::expect_no_throw(
       [&]() { ctx.verify_universe_invariants(); },
       "Aligned planet and sector populations must satisfy invariants");

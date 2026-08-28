@@ -14,13 +14,14 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   TestWorldBuilder(ctx).add_race("Bankers", 100.0, false, player_t{1});
 
-  auto race_handle = ctx.em.get_race(1);
-  race_handle->governor[0].money = 50000;
-  race_handle->governor[0].income = 1000;
-  race_handle->governor[0].profit_market = 250;
-  race_handle->governor[0].maintain = 300;
-  race_handle->governor[0].cost_tech = 150;
-  race_handle->governor[0].cost_market = 50;
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.governor[0].money = 50000;
+    r.governor[0].income = 1000;
+    r.governor[0].profit_market = 250;
+    r.governor[0].maintain = 300;
+    r.governor[0].cost_tech = 150;
+    r.governor[0].cost_market = 50;
+  });
 }
 
 void test_treasury_dispatch() {

@@ -118,10 +118,8 @@ void test_repair_scope_and_domain_errors() {
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
-  {
-    auto p_handle = ctx.em.get_planet(0, 0);
-    p_handle->info(player_t{1}).numsectsowned = 0;
-  }
+  ctx.em.mutate_planet(
+      0, 0, [](Planet& p) { p.info(player_t{1}).numsectsowned = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"repair", "3:5,3:5"});
   test::expect_contains(g.out.str(),

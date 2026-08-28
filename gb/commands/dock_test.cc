@@ -78,12 +78,11 @@ void test_dock_happy_paths() {
 
   // 2. Successful assault (1 AP deducted via dynamic AP)
   // Undock first for assault test
-  {
-    auto s1_handle = ctx.em.get_ship(1);
-    s1_handle->docked() = 0;
-    s1_handle->destshipno() = 0;
-    s1_handle->whatdest() = ScopeLevel::LEVEL_UNIV;
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.docked() = 0;
+    s.destshipno() = 0;
+    s.whatdest() = ScopeLevel::LEVEL_UNIV;
+  });
   ctx.assert_dispatch_success(g, {"assault", "#1", "#3"}, 1);
   test::expect_true(g.out.str().contains("VICTORY") ||
                     g.out.str().contains("CAPTURED"));
@@ -96,10 +95,7 @@ void test_assault_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0 for Player 1
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

@@ -759,11 +759,10 @@ public:
     ap_t orig_star_ap = 0;
     if (expected_star_ap_ > 0) {
       try {
-        {
-          auto star_handle = ctx_.em.get_star(snum);
-          orig_star_ap = star_handle->AP(g.player());
-          star_handle->AP(g.player()) = 0;
-        }
+        ctx_.em.mutate_star(snum, [&](Star& s) {
+          orig_star_ap = s.AP(g.player());
+          s.AP(g.player()) = 0;
+        });
       } catch (const EntityNotFoundError&) {
       }
     }
@@ -771,30 +770,26 @@ public:
     ap_t orig_univ_ap = 0;
     if (g.player().value > 0 && g.player().value <= MAXPLAYERS &&
         expected_univ_ap_ > 0) {
-      {
-        auto univ_handle = ctx_.em.get_universe();
-        orig_univ_ap = univ_handle->AP[g.player().value - 1];
-        univ_handle->AP[g.player().value - 1] = 0;
-      }
+      ctx_.em.mutate_universe([&](universe_struct& u) {
+        orig_univ_ap = u.AP[g.player().value - 1];
+        u.AP[g.player().value - 1] = 0;
+      });
     }
 
     ctx_.assert_dispatch_rejected(g, desc_, valid_argv_);
 
     if (expected_star_ap_ > 0) {
       try {
-        {
-          auto star_handle = ctx_.em.get_star(snum);
-          star_handle->AP(g.player()) = orig_star_ap;
-        }
+        ctx_.em.mutate_star(snum,
+                            [&](Star& s) { s.AP(g.player()) = orig_star_ap; });
       } catch (const EntityNotFoundError&) {
       }
     }
     if (g.player().value > 0 && g.player().value <= MAXPLAYERS &&
         expected_univ_ap_ > 0) {
-      {
-        auto univ_handle = ctx_.em.get_universe();
-        univ_handle->AP[g.player().value - 1] = orig_univ_ap;
-      }
+      ctx_.em.mutate_universe([&](universe_struct& u) {
+        u.AP[g.player().value - 1] = orig_univ_ap;
+      });
     }
   }
 
@@ -820,20 +815,17 @@ public:
     if (orig_player > 0) {
       try {
         bool orig_guest = false;
-        {
-          auto race_handle = ctx_.em.get_race(orig_player);
-          orig_guest = race_handle->Guest;
-          race_handle->Guest = true;
-        }
+        ctx_.em.mutate_race(orig_player, [&](Race& r) {
+          orig_guest = r.Guest;
+          r.Guest = true;
+        });
         ctx_.setup_game_obj(g, orig_player, orig_gov);
 
         g.set_level(valid_scope_);
         ctx_.assert_dispatch_rejected(g, desc_, valid_argv_);
 
-        {
-          auto race_handle = ctx_.em.get_race(orig_player);
-          race_handle->Guest = orig_guest;
-        }
+        ctx_.em.mutate_race(orig_player,
+                            [&](Race& r) { r.Guest = orig_guest; });
         ctx_.setup_game_obj(g, orig_player, orig_gov);
       } catch (const EntityNotFoundError&) {
       }

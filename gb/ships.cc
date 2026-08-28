@@ -716,12 +716,10 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
         if (std::hypot(s.xpos() - xdest, s.ypos() - ydest) <= DIST_TO_LAND)
           destlevel = ScopeLevel::LEVEL_UNIV;
       }
-      auto dst = em.get_star(deststar);
-      const auto* ost = em.peek_star(s.storbits());
-      if (!dst.get() || !ost) return;
-      const auto* dpl = em.peek_planet(deststar, destpnum);
-      const auto* opl = em.peek_planet(s.storbits(), s.pnumorbits());
-      if (!dpl || !opl) return;
+      const auto& dst = *em.peek_star(deststar);
+      const auto& ost = *em.peek_star(s.storbits());
+      const auto& dpl = *em.peek_planet(deststar, destpnum);
+      const auto& opl = *em.peek_planet(s.storbits(), s.pnumorbits());
       truedist = movedist = std::hypot(s.xpos() - xdest, s.ypos() - ydest);
       /* Save some unneccesary calculation and domain errors for atan2
             Maarten */
@@ -770,14 +768,14 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
       }
       // Check if far enough away from object it's orbiting to break orbit
       if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        dist = std::hypot(s.xpos() - (ost->xpos() + opl->xpos()),
-                          s.ypos() - (ost->ypos() + opl->ypos()));
+        dist = std::hypot(s.xpos() - (ost.xpos() + opl.xpos()),
+                          s.ypos() - (ost.ypos() + opl.ypos()));
         if (dist > PLORBITSIZE) {
           s.whatorbits() = ScopeLevel::LEVEL_STAR;
           s.protect().planet = 0;
         }
       } else if (s.whatorbits() == ScopeLevel::LEVEL_STAR) {
-        dist = std::hypot(s.xpos() - ost->xpos(), s.ypos() - ost->ypos());
+        dist = std::hypot(s.xpos() - ost.xpos(), s.ypos() - ost.ypos());
         if (dist > SYSTEMSIZE) {
           s.whatorbits() = ScopeLevel::LEVEL_UNIV;
           s.protect().evade = 0;
@@ -790,7 +788,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
           (destlevel == ScopeLevel::LEVEL_PLAN &&
            (s.storbits() != deststar ||
             s.whatorbits() == ScopeLevel::LEVEL_UNIV))) {
-        stardist = std::hypot(s.xpos() - dst->xpos(), s.ypos() - dst->ypos());
+        stardist = std::hypot(s.xpos() - dst.xpos(), s.ypos() - dst.ypos());
         if (stardist <= SYSTEMSIZE * 1.5) {
           s.whatorbits() = ScopeLevel::LEVEL_STAR;
           s.protect().planet = 0;
@@ -799,12 +797,13 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
              governor of the ship */
           if (!checking_fuel &&
               (s.popn() || s.type() == ShipType::OTYPE_PROBE)) {
-            if (!isset(dst->inhabited(), s.owner())) {
-              auto dst_handle = em.get_star(deststar);
-              dst_handle->governor(s.owner()) = s.governor();
-            }
-            setbit(dst->explored(), s.owner());
-            setbit(dst->inhabited(), s.owner());
+            em.mutate_star(deststar, [&](Star& dst_star) {
+              if (!isset(dst_star.inhabited(), s.owner())) {
+                dst_star.governor(s.owner()) = s.governor();
+              }
+              setbit(dst_star.explored(), s.owner());
+              setbit(dst_star.inhabited(), s.owner());
+            });
           }
           if (s.type() != ShipType::OTYPE_VN) {
             std::string telegram =
@@ -818,17 +817,18 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
       } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
                  deststar == s.storbits()) {
         // Headed for a planet in the same system, & not already there.
-        dist = std::hypot(s.xpos() - (dst->xpos() + dpl->xpos()),
-                          s.ypos() - (dst->ypos() + dpl->ypos()));
+        dist = std::hypot(s.xpos() - (dst.xpos() + dpl.xpos()),
+                          s.ypos() - (dst.ypos() + dpl.ypos()));
         if (dist <= PLORBITSIZE) {
           if (!checking_fuel &&
               (s.popn() || s.type() == ShipType::OTYPE_PROBE)) {
-            auto planet_handle = em.get_planet(deststar, destpnum);
-            if (planet_handle.get()) {
-              (*planet_handle).info(s.owner()).explored = 1;
-            }
-            setbit(dst->explored(), s.owner());
-            setbit(dst->inhabited(), s.owner());
+            em.mutate_planet(deststar, destpnum, [&](Planet& p) {
+              p.info(s.owner()).explored = 1;
+            });
+            em.mutate_star(deststar, [&](Star& dst_star) {
+              setbit(dst_star.explored(), s.owner());
+              setbit(dst_star.inhabited(), s.owner());
+            });
           }
           s.whatorbits() = ScopeLevel::LEVEL_PLAN;
           s.pnumorbits() = destpnum;
@@ -836,10 +836,11 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
           if (dist <= (double)DIST_TO_LAND) {
             telegram << std::format("{} within landing distance of {}.", s,
                                     prin_ship_orbits(em, s));
-            auto dpl_handle = em.get_planet(deststar, destpnum);
-            if (checking_fuel || !do_merchant(em, s, *dpl_handle, telegram))
-              if (s.whatdest() == ScopeLevel::LEVEL_PLAN)
-                s.whatdest() = ScopeLevel::LEVEL_UNIV;
+            em.mutate_planet(deststar, destpnum, [&](Planet& dpl_planet) {
+              if (checking_fuel || !do_merchant(em, s, dpl_planet, telegram))
+                if (s.whatdest() == ScopeLevel::LEVEL_PLAN)
+                  s.whatdest() = ScopeLevel::LEVEL_UNIV;
+            });
           } else {
             telegram << std::format("{} arriving at {}.", s,
                                     prin_ship_orbits(em, s));
@@ -879,7 +880,7 @@ void msg_OOF(EntityManager& em, const Ship& s) {
 }
 
 /* followable: returns 1 iff s1 can follow s2 */
-bool followable(EntityManager& em, const Ship& s1, Ship& s2) {
+bool followable(EntityManager& em, const Ship& s1, const Ship& s2) {
   if (!s2.alive() || !s1.active() || s2.whatorbits() == ScopeLevel::LEVEL_SHIP)
     return true;
 

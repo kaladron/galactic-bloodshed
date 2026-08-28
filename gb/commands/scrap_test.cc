@@ -141,10 +141,7 @@ void test_scrap_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  {
-    auto star_handle = ctx.em.get_star(1);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -171,10 +168,7 @@ void test_scrap_domain_errors() {
   test::expect_contains(g.out.str(), "Syntax: scrap <ship>");
 
   // 2. Uncrewed ship rejection
-  {
-    auto s2 = ctx.em.get_ship(2);
-    s2->popn() = 0;
-  }
+  ctx.em.mutate_ship(2, [](Ship& s) { s.popn() = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
   test::expect_contains(g.out.str(), "no crew");

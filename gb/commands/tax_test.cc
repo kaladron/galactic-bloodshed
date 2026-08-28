@@ -119,10 +119,9 @@ void test_tax_role_and_scope_rejections() {
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Star control rejection (Governor 2 on star assigned to Governor 1)
-  {
-    auto star_handle = ctx.em.get_star(1);
-    star_handle->governor(1) = 1;  // Star assigned to Governor 1
-  }
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.governor(1) = 1;  // Star assigned to Governor 1
+  });
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Governor 2
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
@@ -135,9 +134,10 @@ void test_tax_role_and_scope_rejections() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
+
+  ctx.verify_universe_invariants();
 }
 
-// Test tax command domain logic errors
 void test_tax_domain_errors() {
   TestContext ctx;
   Race race{};
@@ -179,10 +179,7 @@ void test_tax_domain_errors() {
   test::expect_contains(g.out.str(), "You have no government center active.");
 
   // 2. Domain error: Illegal value (>100 or <0)
-  {
-    auto race_handle = ctx.em.get_race(1);
-    race_handle->Gov_ship = 100;
-  }
+  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tax", "150"});
   test::expect_contains(g.out.str(), "Illegal value.");

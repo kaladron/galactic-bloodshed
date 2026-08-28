@@ -19,23 +19,21 @@ void setup_test_world(TestContext& ctx) {
       .add_planet(0, PlanetType::EARTH);
 
   // Setup planet info
-  {
-    auto planet_handle = ctx.em.get_planet(0, 0);
-    planet_handle->info(player_t{1}).numsectsowned = 5;
-    planet_handle->info(player_t{2}).popn = 1000;
-    planet_handle->info(player_t{2}).numsectsowned = 5;
-    planet_handle->info(player_t{1}).destruct = 1000;
-    planet_handle->info(player_t{2}).destruct = 100;
-    planet_handle->slaved_to() = 0;
-    planet_handle->ships() = 1;
-  }
+  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+    planet.info(player_t{1}).numsectsowned = 5;
+    planet.info(player_t{2}).popn = 1000;
+    planet.info(player_t{2}).numsectsowned = 5;
+    planet.info(player_t{1}).destruct = 1000;
+    planet.info(player_t{2}).destruct = 100;
+    planet.slaved_to() = 0;
+    planet.ships() = 1;
+  });
 
   // Create OAP ship in planet orbit
   TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
       .owned_by(1, 0)
-      .named("OAP")
-      .in_planet_orbit(0, 0, 0.0, 0.0)
-      .with_destruct(500)
+      .named("Observer")
+      .in_planet_orbit(0, 0)
       .build();
 }
 
@@ -50,13 +48,14 @@ void test_enslave_happy_path() {
   g.set_snum(0);
   g.set_pnum(0);
 
+  // Enslave victim race (player 2)
   ctx.assert_dispatch_success(g, {"enslave", "1"});
+  test::expect_contains(g.out.str(), "Enslavement successful");
 
-  // Verify planet was enslaved
-  ctx.em.clear_cache();
-  const auto* saved_planet = ctx.em.peek_planet(0, 0);
-  test::expect_true(saved_planet != nullptr);
-  test::expect_eq(saved_planet->slaved_to(), 1);
+  // Verify planet is slaved to player 1
+  const auto* planet = ctx.em.peek_planet(0, 0);
+  test::expect_true(planet != nullptr);
+  test::expect_eq(planet->slaved_to(), 1);
 
   ctx.verify_universe_invariants();
 }
@@ -66,10 +65,7 @@ void test_enslave_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set AP to 0
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -127,10 +123,7 @@ void test_enslave_domain_errors() {
   test::expect_contains(g.out.str(), "Syntax: enslave <ship>");
 
   // 2. Ship not an OAP
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    ship_handle->type() = ShipType::STYPE_CARGO;
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) { s.type() = ShipType::STYPE_CARGO; });
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
   test::expect_contains(g.out.str(), "not an Ob Asst Pltfrm");
 

@@ -17,12 +17,12 @@ void setup_test_world(TestContext& ctx) {
       .add_race("AlienRace", 100.0, false, player_t{2})
       .add_star("Sol", 10, starnum_t{0});
 
-  auto r1 = ctx.em.get_race(1);
-  r1->governor[0].name = "TestGovernor";
-  r1->translate[0] = 50;
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.governor[0].name = "TestGovernor";
+    r.translate[0] = 50;
+  });
 
-  auto r2 = ctx.em.get_race(2);
-  r2->translate[0] = 50;
+  ctx.em.mutate_race(2, [](Race& r) { r.translate[0] = 50; });
 }
 
 void test_send_message() {

@@ -21,11 +21,10 @@ void test_fuel_matrix() {
       .add_planet(1, PlanetType::EARTH);
 
   // Position DestStar at (100, 100)
-  {
-    auto star1 = ctx.em.get_star(1);
-    star1->xpos() = 100.0;
-    star1->ypos() = 100.0;
-  }
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.xpos() = 100.0;
+    s.ypos() = 100.0;
+  });
 
   shipnum_t ship_num = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                            .owned_by(1, 0)

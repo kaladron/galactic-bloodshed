@@ -136,13 +136,12 @@ void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
                            planet.conditions(TOXIC));
   s.add_popn(calculatePopulationChange(race, s, maxsup));
 
-  // Handle troops maintenance costs - get mutable race for governor update
+  // Handle troops maintenance costs - mutate race for governor update
   if (s.get_troops()) {
-    auto race_handle = entity_manager.get_race(s.get_owner());
-    if (race_handle.get()) {
-      race_handle->governor[star.governor(s.get_owner()).value].maintain +=
+    entity_manager.mutate_race(s.get_owner(), [&](Race& r) {
+      r.governor[star.governor(s.get_owner()).value].maintain +=
           UPDATE_TROOP_COST * s.get_troops();
-    }
+    });
   }
 
   // Update ownership if no population remains

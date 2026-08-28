@@ -85,18 +85,13 @@ void test_fire_universe_ap() {
   setup_test_world(ctx);
 
   // Move attacker ship to Universe scope and target at Star scope
-  {
-    auto s1 = ctx.em.get_ship(1);
-    s1->whatorbits() = ScopeLevel::LEVEL_UNIV;
-    auto s2 = ctx.em.get_ship(2);
-    s2->whatorbits() = ScopeLevel::LEVEL_STAR;
-  }
+  ctx.em.mutate_ship(
+      1, [](Ship& s1) { s1.whatorbits() = ScopeLevel::LEVEL_UNIV; });
+  ctx.em.mutate_ship(
+      2, [](Ship& s2) { s2.whatorbits() = ScopeLevel::LEVEL_STAR; });
 
   // Set universe AP
-  {
-    auto u = ctx.em.get_universe();
-    u->AP[0] = 50;
-  }
+  ctx.em.mutate_universe([](universe_struct& u) { u.AP[0] = 50; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -115,10 +110,7 @@ void test_fire_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -186,10 +178,7 @@ void test_fire_domain_errors() {
   test::expect_contains(g.out.str(), "Get real.");
 
   // 3. Inactive ship
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    ship_handle->active() = false;
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) { s.active() = false; });
   ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
   test::expect_contains(g.out.str(), "inactive");
 

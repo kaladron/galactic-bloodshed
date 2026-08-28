@@ -109,10 +109,7 @@ void test_password_change_and_guest_rejection() {
   test::expect_eq(ctx.em.peek_race(1)->governor[1].password, "newpass");
 
   // 2. Guest race cannot change password
-  {
-    auto race_handle = ctx.em.get_race(1);
-    race_handle->Guest = true;
-  }
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"governors", "1", "password", "evennewer"});
   test::expect_contains(g.out.str(), "Guest races cannot change passwords");

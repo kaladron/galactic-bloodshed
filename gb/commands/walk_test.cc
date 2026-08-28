@@ -16,22 +16,19 @@ void setup_test_world(TestContext& ctx) {
 
   // Set race likes
   {
-    auto race_handle = ctx.em.get_race(1);
-    std::fill(std::begin(race_handle->likes), std::end(race_handle->likes),
-              true);
+    ctx.em.mutate_race(1, [](Race& r) {
+      std::fill(std::begin(r.likes), std::end(r.likes), true);
+    });
   }
 
   // Setup planet and sectormap
-  {
-    auto planet_handle = ctx.em.get_planet(0, 0);
-    planet_handle->ships() = 1;
-
-    auto smap_handle = ctx.em.get_sectormap(0, 0);
-    smap_handle->get(Coordinates{5, 5}).set_owner(1);
-    smap_handle->get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
-    smap_handle->get(Coordinates{5, 6}).set_owner(1);
-    smap_handle->get(Coordinates{5, 6}).set_condition(SectorType::SEC_MOUNT);
-  }
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.ships() = 1; });
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{5, 5}).set_owner(1);
+    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
+    smap.get(Coordinates{5, 6}).set_owner(1);
+    smap.get(Coordinates{5, 6}).set_condition(SectorType::SEC_MOUNT);
+  });
 
   // Create AFV ship landed at (5, 5)
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
@@ -51,20 +48,14 @@ void test_walk_role_and_domain_errors() {
   GameObj g(ctx.em, registry);
 
   // 1. Guest rejection
-  {
-    auto guest_race_handle = ctx.em.get_race(1);
-    guest_race_handle->Guest = true;
-  }
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // Restore non-guest race
-  {
-    auto race_handle = ctx.em.get_race(1);
-    race_handle->Guest = false;
-  }
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.set_snum(0);

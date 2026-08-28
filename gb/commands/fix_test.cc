@@ -38,13 +38,7 @@ void test_fix_ship_fuel_persistence() {
   }
 
   // 4. Simulate fixing fuel via EntityManager
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    test::expect_ne(ship_handle.get(), nullptr);
-    auto& s = *ship_handle;
-    s.fuel() = 200.0;  // Fill to max
-    // Auto-saves on scope exit
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) { s.fuel() = 200.0; });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
@@ -83,13 +77,7 @@ void test_fix_ship_damage_persistence() {
   }
 
   // 4. Simulate fixing damage via EntityManager
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    test::expect_ne(ship_handle.get(), nullptr);
-    auto& s = *ship_handle;
-    s.damage() = 0;  // Fully repair
-    // Auto-saves on scope exit
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) { s.damage() = 0; });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
@@ -100,7 +88,7 @@ void test_fix_ship_damage_persistence() {
   std::println(std::cout, "✓ fix ship damage persistence test passed");
 }
 
-// Database persistence for resurrecting ship
+// Database persistence for fixing ship alive status
 void test_fix_ship_alive_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
@@ -115,7 +103,7 @@ void test_fix_ship_alive_persistence() {
   ship.owner() = 1;
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_SHUTTLE;
-  ship.alive() = 0;
+  ship.alive() = false;
   ship.damage() = 100;
   ships.save(ship);
 
@@ -129,14 +117,10 @@ void test_fix_ship_alive_persistence() {
   }
 
   // 4. Simulate resurrecting ship via EntityManager
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    test::expect_ne(ship_handle.get(), nullptr);
-    auto& s = *ship_handle;
+  ctx.em.mutate_ship(1, [](Ship& s) {
     s.alive() = 1;
     s.damage() = 0;
-    // Auto-saves on scope exit
-  }
+  });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
@@ -174,13 +158,7 @@ void test_fix_planet_temp_persistence() {
   }
 
   // 4. Simulate fixing temperature via EntityManager
-  {
-    auto planet_handle = ctx.em.get_planet(1, 0);
-    test::expect_ne(planet_handle.get(), nullptr);
-    auto& p = *planet_handle;
-    p.conditions(TEMP) = 100;  // Set to 100
-    // Auto-saves on scope exit
-  }
+  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.conditions(TEMP) = 100; });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
@@ -217,13 +195,7 @@ void test_fix_planet_oxygen_persistence() {
   }
 
   // 4. Simulate fixing oxygen via EntityManager
-  {
-    auto planet_handle = ctx.em.get_planet(1, 0);
-    test::expect_ne(planet_handle.get(), nullptr);
-    auto& p = *planet_handle;
-    p.conditions(OXYGEN) = 50;  // Increase oxygen
-    // Auto-saves on scope exit
-  }
+  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.conditions(OXYGEN) = 50; });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
@@ -262,14 +234,10 @@ void test_fix_planet_position_persistence() {
   }
 
   // 4. Simulate fixing position via EntityManager
-  {
-    auto planet_handle = ctx.em.get_planet(1, 0);
-    test::expect_ne(planet_handle.get(), nullptr);
-    auto& p = *planet_handle;
+  ctx.em.mutate_planet(1, 0, [](Planet& p) {
     p.xpos() = 500.0;
     p.ypos() = 600.0;
-    // Auto-saves on scope exit
-  }
+  });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();

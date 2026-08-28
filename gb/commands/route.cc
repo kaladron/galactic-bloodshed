@@ -22,47 +22,43 @@ bool route(const command_t& argv, GameObj& g) {
   unsigned char planet;
   unsigned char load;
   unsigned char unload;
-  const char* c;
 
   if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to 'cs' to a planet to examine routes.\n";
     return false;
   }
-  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
-  if (!planet_handle.get()) {
-    g.out << "Planet not found.\n";
-    return false;
-  }
-  auto& p = *planet_handle;
+
   if (argv.size() == 1) { /* display all shipping routes that are active */
-    for (i = 1; i <= MAX_ROUTES; i++)
-      if (p.info(Playernum).route[i - 1].set) {
-        star = p.info(Playernum).route[i - 1].dest_star;
-        planet = p.info(Playernum).route[i - 1].dest_planet;
-        load = p.info(Playernum).route[i - 1].load;
-        unload = p.info(Playernum).route[i - 1].unload;
-        std::string load_flags;
-        load_flags += Fuel(load) ? 'f' : ' ';
-        load_flags += Destruct(load) ? 'd' : ' ';
-        load_flags += Resources(load) ? 'r' : ' ';
-        load_flags += Crystals(load) ? 'x' : ' ';
+    g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
+      for (i = 1; i <= MAX_ROUTES; i++)
+        if (p.info(Playernum).route[i - 1].set) {
+          star = p.info(Playernum).route[i - 1].dest_star;
+          planet = p.info(Playernum).route[i - 1].dest_planet;
+          load = p.info(Playernum).route[i - 1].load;
+          unload = p.info(Playernum).route[i - 1].unload;
+          std::string load_flags;
+          load_flags += Fuel(load) ? 'f' : ' ';
+          load_flags += Destruct(load) ? 'd' : ' ';
+          load_flags += Resources(load) ? 'r' : ' ';
+          load_flags += Crystals(load) ? 'x' : ' ';
 
-        std::string unload_flags;
-        unload_flags += Fuel(unload) ? 'f' : ' ';
-        unload_flags += Destruct(unload) ? 'd' : ' ';
-        unload_flags += Resources(unload) ? 'r' : ' ';
-        unload_flags += Crystals(unload) ? 'x' : ' ';
+          std::string unload_flags;
+          unload_flags += Fuel(unload) ? 'f' : ' ';
+          unload_flags += Destruct(unload) ? 'd' : ' ';
+          unload_flags += Resources(unload) ? 'r' : ' ';
+          unload_flags += Crystals(unload) ? 'x' : ' ';
 
-        const auto* dest_star = g.entity_manager.peek_star(star);
-        g.out << std::format(
-            "{:2}  land {:2},{:2}   load: {}  unload: {}  -> {}/{}\n", i,
-            p.info(Playernum).route[i - 1].dest_coords.x,
-            p.info(Playernum).route[i - 1].dest_coords.y, load_flags,
-            unload_flags, dest_star ? dest_star->get_name() : "???",
-            (dest_star && planet < dest_star->numplanets())
-                ? dest_star->get_planet_name(planet)
-                : "???");
-      }
+          const auto* dest_star = g.entity_manager.peek_star(star);
+          g.out << std::format(
+              "{:2}  land {:2},{:2}   load: {}  unload: {}  -> {}/{}\n", i,
+              p.info(Playernum).route[i - 1].dest_coords.x,
+              p.info(Playernum).route[i - 1].dest_coords.y, load_flags,
+              unload_flags, dest_star ? dest_star->get_name() : "???",
+              (dest_star && planet < dest_star->numplanets())
+                  ? dest_star->get_planet_name(planet)
+                  : "???");
+        }
+    });
     g.out << "Done.\n";
     return true;
   }
@@ -72,37 +68,40 @@ bool route(const command_t& argv, GameObj& g) {
       g.out << "Bad route number.\n";
       return false;
     }
-    if (p.info(Playernum).route[i - 1].set) {
-      star = p.info(Playernum).route[i - 1].dest_star;
-      planet = p.info(Playernum).route[i - 1].dest_planet;
-      load = p.info(Playernum).route[i - 1].load;
-      unload = p.info(Playernum).route[i - 1].unload;
-      std::string load_flags;
-      if (load) {
-        if (Fuel(load)) load_flags += 'f';
-        if (Destruct(load)) load_flags += 'd';
-        if (Resources(load)) load_flags += 'r';
-        if (Crystals(load)) load_flags += 'x';
+    g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
+      if (p.info(Playernum).route[i - 1].set) {
+        star = p.info(Playernum).route[i - 1].dest_star;
+        planet = p.info(Playernum).route[i - 1].dest_planet;
+        load = p.info(Playernum).route[i - 1].load;
+        unload = p.info(Playernum).route[i - 1].unload;
+        std::string load_flags;
+        if (load) {
+          if (Fuel(load)) load_flags += 'f';
+          if (Destruct(load)) load_flags += 'd';
+          if (Resources(load)) load_flags += 'r';
+          if (Crystals(load)) load_flags += 'x';
+        }
+        std::string unload_flags;
+        if (unload) {
+          if (Fuel(unload)) unload_flags += 'f';
+          if (Destruct(unload)) unload_flags += 'd';
+          if (Resources(unload)) unload_flags += 'r';
+          if (Crystals(unload)) unload_flags += 'x';
+        }
+        const auto* dest_star = g.entity_manager.peek_star(star);
+        g.out << std::format(
+            "{:2}  land {:2},{:2}   {}{}  -> {}/{}\n", i,
+            p.info(Playernum).route[i - 1].dest_coords.x,
+            p.info(Playernum).route[i - 1].dest_coords.y,
+            (load ? std::format("load: {}", load_flags) : std::string{}),
+            (unload ? std::format("  unload: {}", unload_flags)
+                    : std::string{}),
+            dest_star ? dest_star->get_name() : "???",
+            (dest_star && planet < dest_star->numplanets())
+                ? dest_star->get_planet_name(planet)
+                : "???");
       }
-      std::string unload_flags;
-      if (unload) {
-        if (Fuel(unload)) unload_flags += 'f';
-        if (Destruct(unload)) unload_flags += 'd';
-        if (Resources(unload)) unload_flags += 'r';
-        if (Crystals(unload)) unload_flags += 'x';
-      }
-      const auto* dest_star = g.entity_manager.peek_star(star);
-      g.out << std::format(
-          "{:2}  land {:2},{:2}   {}{}  -> {}/{}\n", i,
-          p.info(Playernum).route[i - 1].dest_coords.x,
-          p.info(Playernum).route[i - 1].dest_coords.y,
-          (load ? std::format("load: {}", load_flags) : std::string{}),
-          (unload ? std::format("  unload: {}", unload_flags) : std::string{}),
-          dest_star ? dest_star->get_name() : "???",
-          (dest_star && planet < dest_star->numplanets())
-              ? dest_star->get_planet_name(planet)
-              : "???");
-    }
+    });
     g.out << "Done.\n";
     return true;
   }
@@ -113,10 +112,14 @@ bool route(const command_t& argv, GameObj& g) {
       return false;
     }
     if (argv[2] == "activate") {
-      p.info(Playernum).route[i - 1].set = 1;
+      g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+        p.info(Playernum).route[i - 1].set = 1;
+      });
       g.out << "Set.\n";
     } else if (argv[2] == "deactivate") {
-      p.info(Playernum).route[i - 1].set = 0;
+      g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+        p.info(Playernum).route[i - 1].set = 0;
+      });
       g.out << "Set.\n";
     } else {
       Place where{g, argv[2], true};
@@ -125,10 +128,12 @@ bool route(const command_t& argv, GameObj& g) {
           g.out << "You have to designate a planet.\n";
           return false;
         }
-        p.info(Playernum).route[i - 1].dest_star =
-            static_cast<unsigned char>(where.snum.value);
-        p.info(Playernum).route[i - 1].dest_planet =
-            static_cast<unsigned char>(where.pnum.value);
+        g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+          p.info(Playernum).route[i - 1].dest_star =
+              static_cast<unsigned char>(where.snum.value);
+          p.info(Playernum).route[i - 1].dest_planet =
+              static_cast<unsigned char>(where.pnum.value);
+        });
         g.out << "Set.\n";
       } else {
         g.out << "Illegal destination.\n";
@@ -149,31 +154,42 @@ bool route(const command_t& argv, GameObj& g) {
         return false;
       }
       const Coordinates coords = *coords_opt;
-      if (!p.is_valid(coords)) {
+      bool valid = false;
+      g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+        if (!p.is_valid(coords)) {
+          return;
+        }
+        valid = true;
+        p.info(Playernum).route[i - 1].dest_coords = coords;
+      });
+      if (!valid) {
         g.out << "Bad sector coordinates.\n";
         return false;
       }
-      p.info(Playernum).route[i - 1].dest_coords = coords;
     } else if (argv[2] == "load") {
-      p.info(Playernum).route[i - 1].load = 0;
-      c = argv[3].c_str();
-      while (*c) {
-        if (*c == 'f') p.info(Playernum).route[i - 1].load |= M_FUEL;
-        if (*c == 'd') p.info(Playernum).route[i - 1].load |= M_DESTRUCT;
-        if (*c == 'r') p.info(Playernum).route[i - 1].load |= M_RESOURCES;
-        if (*c == 'x') p.info(Playernum).route[i - 1].load |= M_CRYSTALS;
-        c++;
-      }
+      g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+        p.info(Playernum).route[i - 1].load = 0;
+        const char* cp = argv[3].c_str();
+        while (*cp) {
+          if (*cp == 'f') p.info(Playernum).route[i - 1].load |= M_FUEL;
+          if (*cp == 'd') p.info(Playernum).route[i - 1].load |= M_DESTRUCT;
+          if (*cp == 'r') p.info(Playernum).route[i - 1].load |= M_RESOURCES;
+          if (*cp == 'x') p.info(Playernum).route[i - 1].load |= M_CRYSTALS;
+          cp++;
+        }
+      });
     } else if (argv[2] == "unload") {
-      p.info(Playernum).route[i - 1].unload = 0;
-      c = argv[3].c_str();
-      while (*c) {
-        if (*c == 'f') p.info(Playernum).route[i - 1].unload |= M_FUEL;
-        if (*c == 'd') p.info(Playernum).route[i - 1].unload |= M_DESTRUCT;
-        if (*c == 'r') p.info(Playernum).route[i - 1].unload |= M_RESOURCES;
-        if (*c == 'x') p.info(Playernum).route[i - 1].unload |= M_CRYSTALS;
-        c++;
-      }
+      g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+        p.info(Playernum).route[i - 1].unload = 0;
+        const char* cp = argv[3].c_str();
+        while (*cp) {
+          if (*cp == 'f') p.info(Playernum).route[i - 1].unload |= M_FUEL;
+          if (*cp == 'd') p.info(Playernum).route[i - 1].unload |= M_DESTRUCT;
+          if (*cp == 'r') p.info(Playernum).route[i - 1].unload |= M_RESOURCES;
+          if (*cp == 'x') p.info(Playernum).route[i - 1].unload |= M_CRYSTALS;
+          cp++;
+        }
+      });
     } else {
       g.out << "What are you trying to do?\n";
       return false;

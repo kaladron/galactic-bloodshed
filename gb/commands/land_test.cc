@@ -88,13 +88,11 @@ void test_land_on_friendly_carrier() {
   setup_test_world(ctx);
 
   // Reset shuttle to undocked state with land_coords at 5,5
-  {
-    auto s_handle = ctx.em.get_ship(1);
-    auto& s = *s_handle;
+  ctx.em.mutate_ship(1, [](Ship& s) {
     s.docked() = false;
     s.whatorbits() = ScopeLevel::LEVEL_PLAN;
     s.set_land_coords({5, 5});
-  }
+  });
 
   // Create a carrier landed at (5, 5)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
@@ -128,10 +126,7 @@ void test_land_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

@@ -49,20 +49,19 @@ bool dump(const command_t& argv, GameObj& g) {
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
         star_id = where.snum;
-        auto current_star_handle = g.entity_manager.get_star(star_id);
-        auto& current_star = *current_star_handle;
+        g.entity_manager.mutate_star(star_id, [&](Star& current_star) {
+          if (isset(current_star.explored(), Playernum)) {
+            setbit(current_star.explored(), player);
 
-        if (isset(current_star.explored(), Playernum)) {
-          setbit(current_star.explored(), player);
-
-          for (auto planet_handle :
-               PlanetList(g.entity_manager, star_id, current_star)) {
-            auto& planet = *planet_handle;
-            if (planet.info(Playernum).explored) {
-              planet.info(player).explored = 1;
+            for (auto planet_handle :
+                 PlanetList(g.entity_manager, star_id, current_star)) {
+              auto& planet = *planet_handle;
+              if (planet.info(Playernum).explored) {
+                planet.info(player).explored = 1;
+              }
             }
           }
-        }
+        });
       }
     }
   }

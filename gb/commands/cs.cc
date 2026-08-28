@@ -148,10 +148,11 @@ bool cs(const command_t& argv, GameObj& g) {
       return false;
     }
 
-    auto race_handle = g.entity_manager.get_race(Playernum);
-    race_handle->governor[Governor.value].deflevel = where.level;
-    race_handle->governor[Governor.value].defsystem = where.snum;
-    race_handle->governor[Governor.value].defplanetnum = where.pnum;
+    g.entity_manager.mutate_race(Playernum, [&](Race& race) {
+      race.governor[Governor.value].deflevel = where.level;
+      race.governor[Governor.value].defsystem = where.snum;
+      race.governor[Governor.value].defplanetnum = where.pnum;
+    });
 
     std::string where_str = where.to_string();
     g.out << "New home system is " << where_str << "\n";

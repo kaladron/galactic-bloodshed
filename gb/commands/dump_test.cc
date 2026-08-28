@@ -85,10 +85,7 @@ void test_dump_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 5 (< 10)
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 5;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 5; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

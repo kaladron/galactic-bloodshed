@@ -10,3 +10,7 @@ module gblib;
 Sector& SectorMap::get_random() {
   return get_random(game_rng());
 }
+
+const Sector& SectorMap::get_random() const {
+  return get_random(game_rng());
+}

@@ -666,6 +666,14 @@ public:
   Sector& get_random();
 
   template <typename URBG>
+  const Sector& get_random(URBG& g) const {
+    std::uniform_int_distribution<int> dis_x(0, dimensions_.x - 1);
+    std::uniform_int_distribution<int> dis_y(0, dimensions_.y - 1);
+    return get(Coordinates{dis_x(g), dis_y(g)});
+  }
+  const Sector& get_random() const;
+
+  template <typename URBG>
   [[nodiscard]] auto shuffle(URBG& g) {
     std::vector<std::size_t> indices(grid_.size());
     std::iota(indices.begin(), indices.end(), 0);
@@ -678,6 +686,20 @@ public:
   [[nodiscard]] auto shuffle() {
     return shuffle(game_rng());
   }  /// Randomizes the order of the SectorMap.
+
+  template <typename URBG>
+  [[nodiscard]] auto shuffle(URBG& g) const {
+    std::vector<std::size_t> indices(grid_.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::ranges::shuffle(indices, g);
+
+    return std::views::all(std::move(indices)) |
+           std::views::transform(
+               [this](std::size_t idx) -> const Sector& { return grid_[idx]; });
+  }
+  [[nodiscard]] auto shuffle() const {
+    return shuffle(game_rng());
+  }  /// Randomizes the order of the SectorMap (const).
 
   SectorMap(SectorMap&) = delete;
   ~SectorMap() = default;

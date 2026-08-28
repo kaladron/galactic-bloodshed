@@ -26,30 +26,34 @@ int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
            const player_t agent) {
   int revolted_sectors = 0;
 
-  const auto* victim_race = entity_manager.peek_race(victim);
-  if (!victim_race) return 0;
+  try {
+    entity_manager.with_race(victim, [&](const Race& victim_race) {
+      entity_manager.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
+        for (auto [c, s] : smap.indexed_sectors()) {
+          if (s.get_owner() != victim || s.get_popn() == 0) continue;
 
-  auto smap_handle = entity_manager.get_sectormap(snum, pnum);
-  auto& smap = *smap_handle;
-  for (auto [c, s] : smap.indexed_sectors()) {
-    if (s.get_owner() != victim || s.get_popn() == 0) continue;
+          // Revolt rate is a function of tax rate.
+          if (!success(pl.info(victim).tax)) continue;
 
-    // Revolt rate is a function of tax rate.
-    if (!success(pl.info(victim).tax)) continue;
+          if (long_rand(1, s.get_popn()) <=
+              10L * victim_race.fighters * s.get_troops())
+            continue;
 
-    if (long_rand(1, s.get_popn()) <=
-        10L * victim_race->fighters * s.get_troops())
-      continue;
-
-    // Revolt successful.
-    s.set_owner(agent);                              /* enemy gets it */
-    s.subtract_popn(long_rand(0, s.get_popn() - 1)); /* some people killed */
-    s.set_troops(0);                                 /* all troops destroyed */
-    pl.info(victim).numsectsowned -= 1;
-    pl.info(agent).numsectsowned += 1;
-    pl.info(victim).mob_points -= s.get_mobilization();
-    pl.info(agent).mob_points += s.get_mobilization();
-    revolted_sectors++;
+          // Revolt successful.
+          s.set_owner(agent); /* enemy gets it */
+          s.subtract_popn(
+              long_rand(0, s.get_popn() - 1)); /* some people killed */
+          s.set_troops(0);                     /* all troops destroyed */
+          pl.info(victim).numsectsowned -= 1;
+          pl.info(agent).numsectsowned += 1;
+          pl.info(victim).mob_points -= s.get_mobilization();
+          pl.info(agent).mob_points += s.get_mobilization();
+          revolted_sectors++;
+        }
+      });
+    });
+  } catch (const EntityNotFoundError&) {
+    return 0;
   }
 
   return revolted_sectors;

@@ -19,22 +19,19 @@ void setup_test_world(TestContext& ctx) {
       .add_star("Sol", 100, starnum_t{0});
 
   // Setup governors and names
-  {
-    auto race1 = ctx.em.get_race(1);
-    race1->governor[0].name = "President";
-    race1->governor[1].active = true;
-    race1->governor[1].name = "VicePresident";
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.governor[0].name = "President";
+    r.governor[1].active = true;
+    r.governor[1].name = "VicePresident";
+  });
 
-    auto race2 = ctx.em.get_race(2);
-    race2->governor[0].name = "Emperor";
-  }
+  ctx.em.mutate_race(2, [](Race& r) { r.governor[0].name = "Emperor"; });
 
   // Mark star inhabited by both races
-  {
-    auto star = ctx.em.get_star(0);
-    setbit(star->inhabited(), player_t{1});
-    setbit(star->inhabited(), player_t{2});
-  }
+  ctx.em.mutate_star(0, [](Star& star) {
+    setbit(star.inhabited(), player_t{1});
+    setbit(star.inhabited(), player_t{2});
+  });
 }
 
 void test_announce_dispatch() {

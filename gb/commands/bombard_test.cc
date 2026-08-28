@@ -19,17 +19,13 @@ void setup_test_world(TestContext& ctx) {
       .add_planet(0, PlanetType::EARTH);
 
   // Configure target sector (5,5) on planet (0,0)
-  {
-    auto smap_handle = ctx.em.get_sectormap(0, 0);
-    smap_handle->get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
-    smap_handle->get(Coordinates{5, 5}).set_popn_exact(100);
-    smap_handle->get(Coordinates{5, 5}).set_owner(2);
-    smap_handle->get(Coordinates{5, 5}).set_troops(10);
-  }
-  {
-    auto planet_handle = ctx.em.get_planet(0, 0);
-    planet_handle->popn() = 100;
-  }
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
+    smap.get(Coordinates{5, 5}).set_popn_exact(100);
+    smap.get(Coordinates{5, 5}).set_owner(2);
+    smap.get(Coordinates{5, 5}).set_troops(10);
+  });
+  ctx.em.mutate_planet(0, 0, [](Planet& planet) { planet.popn() = 100; });
 
   // Create attacker ship in orbit with guns and ammo
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
@@ -80,10 +76,7 @@ void test_bombard_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -153,10 +146,7 @@ void test_bombard_domain_errors() {
                         "Syntax: bombard <ship> [<x,y> [<strength>]]");
 
   // 2. Inactive ship
-  {
-    auto ship_handle = ctx.em.get_ship(1);
-    ship_handle->active() = false;
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) { s.active() = false; });
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "inactive");
 

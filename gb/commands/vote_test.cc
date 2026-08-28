@@ -14,8 +14,7 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   TestWorldBuilder(ctx).add_race("Democracy", 100.0, false, player_t{1});
 
-  auto race1 = ctx.em.get_race(1);
-  race1->votes = false;
+  ctx.em.mutate_race(1, [](Race& r) { r.votes = false; });
 }
 
 void test_vote_dispatch() {
@@ -59,8 +58,7 @@ void test_vote_dispatch() {
   g.set_god(false);
 
   // 7. Guest vote message
-  auto race1_handle = ctx.em.get_race(1);
-  race1_handle->Guest = true;
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.assert_dispatch_success(g, {"vote"});
   test::expect_contains(g.out.str(),
                         "You are not allowed to vote, but, here is the count.");

@@ -76,11 +76,7 @@ int main() {
   ships_repo.save(port);
 
   // Link ship to planet
-  {
-    auto planet_handle = ctx.em.get_planet(0, 0);
-    auto& p = *planet_handle;
-    p.ships() = 1;
-  }
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.ships() = 1; });
 
   // Create a commodity lot for sale using Repository
   CommodRepository commod_repo(store);
@@ -183,12 +179,7 @@ int main() {
 
   std::println(std::cout, "Guest race cannot bid");
   {
-    // Make player 1 a guest
-    {
-      auto race_handle = ctx.em.get_race(1);
-      auto& r = *race_handle;
-      r.Guest = true;
-    }
+    ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
 
     const auto* c_before = ctx.em.peek_commod(1);
     int previous_bid = c_before->bid;

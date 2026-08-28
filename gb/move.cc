@@ -74,9 +74,6 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
   else
     mil = *people;
 
-  // Use g.race for read-only access, get mutable handle only when needed
-  auto race_handle = g.entity_manager.get_race(g.player());
-
   ShipList shiplist(g.entity_manager, p.ships());
   for (auto ship_handle : shiplist) {
     if (civ + mil == 0) break;

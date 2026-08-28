@@ -33,10 +33,7 @@ int main() {
   stars.save(star);
 
   // Setup Universe APs
-  {
-    auto univ_handle = ctx.em.get_universe();
-    univ_handle->AP[0] = 50;
-  }
+  ctx.em.mutate_universe([](universe_struct& u) { u.AP[0] = 50; });
 
   // Create GameObj
   auto& registry = get_test_session_registry();
@@ -87,10 +84,7 @@ int main() {
   std::println(std::cout, "    ✓ Successful allocation verified");
 
   // 6. Guest race rejection
-  {
-    auto guest_race_handle = ctx.em.get_race(1);
-    guest_race_handle->Guest = true;
-  }
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "5"});

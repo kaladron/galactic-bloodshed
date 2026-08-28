@@ -389,10 +389,7 @@ void test_name_factory_class() {
 
   // TEST: Name class when factory is on-line -> error
   {
-    {
-      auto f_handle = ctx.em.get_ship(1);
-      f_handle->on() = true;
-    }
+    ctx.em.mutate_ship(1, [](Ship& f) { f.on() = true; });
     g.set_shipno(1);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "Cruiser"});

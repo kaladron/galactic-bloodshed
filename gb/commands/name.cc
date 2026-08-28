@@ -47,12 +47,8 @@ bool name(const command_t& argv, GameObj& g) {
 
   if (argv[1] == "ship") {
     if (g.level() == ScopeLevel::LEVEL_SHIP) {
-      auto ship = g.entity_manager.get_ship(g.shipno());
-      if (!ship.get()) {
-        g.out << "Ship not found.\n";
-        return false;
-      }
-      ship->name() = formatted_name;
+      g.entity_manager.mutate_ship(
+          g.shipno(), [&](Ship& ship) { ship.name() = formatted_name; });
       g.out << "Name set.\n";
       return true;
     }
@@ -61,22 +57,21 @@ bool name(const command_t& argv, GameObj& g) {
   }
   if (argv[1] == "class") {
     if (g.level() == ScopeLevel::LEVEL_SHIP) {
-      auto ship = g.entity_manager.get_ship(g.shipno());
-      if (!ship.get()) {
-        g.out << "Ship not found.\n";
-        return false;
-      }
-      if (ship->type() != ShipType::OTYPE_FACTORY) {
-        g.out << "You are not at a factory!\n";
-        return false;
-      }
-      if (ship->on()) {
-        g.out << "This factory is already on line.\n";
-        return false;
-      }
-      ship->shipclass() = formatted_name;
-      g.out << "Class set.\n";
-      return true;
+      bool ok = false;
+      g.entity_manager.mutate_ship(g.shipno(), [&](Ship& ship) {
+        if (ship.type() != ShipType::OTYPE_FACTORY) {
+          g.out << "You are not at a factory!\n";
+          return;
+        }
+        if (ship.on()) {
+          g.out << "This factory is already on line.\n";
+          return;
+        }
+        ship.shipclass() = formatted_name;
+        g.out << "Class set.\n";
+        ok = true;
+      });
+      return ok;
     }
     g.out << "You have to 'cs' to a factory to name the ship class.\n";
     return false;
@@ -88,9 +83,8 @@ bool name(const command_t& argv, GameObj& g) {
       return false;
     }
     try {
-      auto block_handle = g.entity_manager.get_block(Playernum.value);
-      auto& block = *block_handle;
-      block.name = formatted_name;
+      g.entity_manager.mutate_block(
+          Playernum.value, [&](struct block& b) { b.name = formatted_name; });
     } catch (const EntityNotFoundError&) {
       g.out << "Block not found.\n";
       return false;
@@ -104,12 +98,8 @@ bool name(const command_t& argv, GameObj& g) {
         g.out << "Only dieties may name a star.\n";
         return false;
       }
-      auto star = g.entity_manager.get_star(g.snum());
-      if (!star.get()) {
-        g.out << "Star not found.\n";
-        return false;
-      }
-      star->set_name(formatted_name);
+      g.entity_manager.mutate_star(
+          g.snum(), [&](Star& star) { star.set_name(formatted_name); });
       return true;
     }
     g.out << "You have to 'cs' to a star to name it.\n";
@@ -121,12 +111,9 @@ bool name(const command_t& argv, GameObj& g) {
         g.out << "Only deity can rename planets.\n";
         return false;
       }
-      auto star = g.entity_manager.get_star(g.snum());
-      if (!star.get()) {
-        g.out << "Star not found.\n";
-        return false;
-      }
-      star->set_planet_name(g.pnum(), formatted_name);
+      g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
+        star.set_planet_name(g.pnum(), formatted_name);
+      });
       return true;
     }
     g.out << "You have to 'cs' to a planet to name it.\n";
@@ -137,24 +124,16 @@ bool name(const command_t& argv, GameObj& g) {
       g.out << "You are not authorized to do this.\n";
       return false;
     }
-    auto race = g.entity_manager.get_race(Playernum);
-    if (!race.get()) {
-      g.out << "Race not found.\n";
-      return false;
-    }
-    race->name = formatted_name;
-    g.out << std::format("Name changed to `{}'.\n", race->name);
+    g.entity_manager.mutate_race(
+        Playernum, [&](Race& race) { race.name = formatted_name; });
+    g.out << std::format("Name changed to `{}'.\n", formatted_name);
     return true;
   }
   if (argv[1] == "governor") {
-    auto race = g.entity_manager.get_race(Playernum);
-    if (!race.get()) {
-      g.out << "Race not found.\n";
-      return false;
-    }
-    race->governor[Governor.value].name = formatted_name;
-    g.out << std::format("Name changed to `{}'.\n",
-                         race->governor[Governor.value].name);
+    g.entity_manager.mutate_race(Playernum, [&](Race& race) {
+      race.governor[Governor.value].name = formatted_name;
+    });
+    g.out << std::format("Name changed to `{}'.\n", formatted_name);
     return true;
   }
 

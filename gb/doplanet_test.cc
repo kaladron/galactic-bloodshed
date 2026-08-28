@@ -562,12 +562,11 @@ void test_execute_berserker_bombardment() {
 
   // 3. No remaining targets on planet causes ship to pick a new destination
   // Clear remaining defenders
-  {
-    auto smap_handle =
-        em.get_sectormap(planet.star_id(), planet.planet_order());
-    smap_handle->get(Coordinates{5, 5}).set_popn_exact(0);
-    smap_handle->get(Coordinates{5, 5}).set_owner(0);
-  }
+  em.mutate_sectormap(planet.star_id(), planet.planet_order(),
+                      [](SectorMap& smap) {
+                        smap.get(Coordinates{5, 5}).set_popn_exact(0);
+                        smap.get(Coordinates{5, 5}).set_owner(0);
+                      });
   test::expect_false(execute_berserker_bombardment(em, ship, planet));
 }
 
@@ -1168,36 +1167,22 @@ void test_check_mutual_alliances() {
   test::expect_false(check_mutual_alliances(em, pair));
 
   // 4. One-way alliance: 1 allies 2, but 2 does not ally 1 -> false
-  {
-    auto h1 = em.get_race(player_t{1});
-    setbit(h1->allied, player_t{2});
-  }
+  em.mutate_race(player_t{1}, [](Race& r) { setbit(r.allied, player_t{2}); });
   test::expect_false(check_mutual_alliances(em, pair));
 
   // 5. Mutual alliance: 1 allies 2, 2 allies 1 -> true
-  {
-    auto h2 = em.get_race(player_t{2});
-    setbit(h2->allied, player_t{1});
-  }
+  em.mutate_race(player_t{2}, [](Race& r) { setbit(r.allied, player_t{1}); });
   test::expect_true(check_mutual_alliances(em, pair));
 
   // 6. Three players: 1-2 allied, 2-3 allied, but 1-3 unallied -> false
-  {
-    auto h2 = em.get_race(player_t{2});
-    setbit(h2->allied, player_t{3});
-    auto h3 = em.get_race(player_t{3});
-    setbit(h3->allied, player_t{2});
-  }
+  em.mutate_race(player_t{2}, [](Race& r) { setbit(r.allied, player_t{3}); });
+  em.mutate_race(player_t{3}, [](Race& r) { setbit(r.allied, player_t{2}); });
   std::vector<player_t> trio = {player_t{1}, player_t{2}, player_t{3}};
   test::expect_false(check_mutual_alliances(em, trio));
 
   // 7. Three players: complete mutual alliance triangle (1-2, 2-3, 1-3) -> true
-  {
-    auto h1 = em.get_race(player_t{1});
-    setbit(h1->allied, player_t{3});
-    auto h3 = em.get_race(player_t{3});
-    setbit(h3->allied, player_t{1});
-  }
+  em.mutate_race(player_t{1}, [](Race& r) { setbit(r.allied, player_t{3}); });
+  em.mutate_race(player_t{3}, [](Race& r) { setbit(r.allied, player_t{1}); });
   test::expect_true(check_mutual_alliances(em, trio));
 
   // 8. Non-existent player ID (unallied -> false)
@@ -1206,10 +1191,7 @@ void test_check_mutual_alliances() {
 
   // 9. Allied with non-existent player -> throws EntityNotFoundError when
   // loading missing race
-  {
-    auto h1 = em.get_race(player_t{1});
-    setbit(h1->allied, player_t{5});
-  }
+  em.mutate_race(player_t{1}, [](Race& r) { setbit(r.allied, player_t{5}); });
   test::expect_throws<EntityNotFoundError>(
       [&]() { (void)check_mutual_alliances(em, invalid_pair); });
 }
@@ -1319,12 +1301,8 @@ void test_recover_conquered_stockpiles() {
 
   // 3. Mutual alliance established -> plunder distributed, defeated player
   // drained
-  {
-    auto h1 = em.get_race(player_t{1});
-    setbit(h1->allied, player_t{2});
-    auto h2 = em.get_race(player_t{2});
-    setbit(h2->allied, player_t{1});
-  }
+  em.mutate_race(player_t{1}, [](Race& r) { setbit(r.allied, player_t{2}); });
+  em.mutate_race(player_t{2}, [](Race& r) { setbit(r.allied, player_t{1}); });
 
   auto report3 = recover_conquered_stockpiles(em, star, planet);
   test::expect_true(report3.has_value());

@@ -17,20 +17,24 @@ bool allocate(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto univ_handle = g.entity_manager.get_universe();
-  auto& univ = *univ_handle;
-  const auto* star = g.entity_manager.peek_star(g.snum());
   ap_t maxalloc =
-      std::min(univ.AP[Playernum.value - 1], LIMIT_APs - star->AP(Playernum));
+      g.entity_manager.with_universe([&](const universe_struct& univ) {
+        return g.entity_manager.with_star(g.snum(), [&](const Star& star) {
+          return std::min(univ.AP[Playernum.value - 1],
+                          LIMIT_APs - star.AP(Playernum));
+        });
+      });
+
   if (alloc > maxalloc) {
     g.out << std::format("Illegal value ({}) - maximum = {}\n", alloc,
                          maxalloc);
     return false;
   }
-  univ.AP[Playernum.value - 1] -= alloc;
-  auto star_handle = g.entity_manager.get_star(g.snum());
-  auto& star_write = *star_handle;
-  star_write.AP(Playernum) = std::min(LIMIT_APs, star->AP(Playernum) + alloc);
+  g.entity_manager.mutate_universe(
+      [&](universe_struct& u) { u.AP[Playernum.value - 1] -= alloc; });
+  g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
+    star.AP(Playernum) = std::min(LIMIT_APs, star.AP(Playernum) + alloc);
+  });
   g.out << "Allocated\n";
   return true;
 }

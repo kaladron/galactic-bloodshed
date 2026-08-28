@@ -219,147 +219,157 @@ TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
 void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
                  std::optional<SectorType> sector_type, starnum_t Starnum,
                  planetnum_t Planetnum) {
-  auto planet_handle = g.entity_manager.get_planet(Starnum, Planetnum);
-  if (!planet_handle.get()) {
-    g.out << "Planet not found.\n";
-    return;
-  }
-  const auto& planet = planet_handle.read();
-
-  if (!planet.info(g.player()).explored) {
-    return;
-  }
-
-  auto total_sect = planet.num_sectors();
-
-  const auto& smap = *g.entity_manager.peek_sectormap(Starnum, Planetnum);
-
-  // Accumulate statistics for all sectors
-  auto stats = accumulate_statistics(g, smap);
-
-  // Find top sectors matching the filter
-  auto tops = find_top_sectors(g, smap, planet, mode, filter, sector_type);
-
-  std::stringstream header;
-  const auto& star = *g.entity_manager.peek_star(Starnum);
-  header << std::format("\nAnalysis of /{}/{}:\n", star.get_name(),
-                        star.get_planet_name(Planetnum));
-  header << std::format("{} {}", (mode == Mode::TopFive ? "Highest" : "Lowest"),
-                        CARE);
-  if (!sector_type.has_value()) {
-    header << " of all";
-  } else {
-    switch (*sector_type) {
-      case SectorType::SEC_SEA:
-        header << " Ocean";
-        break;
-      case SectorType::SEC_LAND:
-        header << " Land";
-        break;
-      case SectorType::SEC_MOUNT:
-        header << " Mountain";
-        break;
-      case SectorType::SEC_GAS:
-        header << " Gas";
-        break;
-      case SectorType::SEC_ICE:
-        header << " Ice";
-        break;
-      case SectorType::SEC_FOREST:
-        header << " Forest";
-        break;
-      case SectorType::SEC_DESERT:
-        header << " Desert";
-        break;
-      case SectorType::SEC_PLATED:
-        header << " Plated";
-        break;
-      case SectorType::SEC_WASTED:
-        header << " Wasted";
-        break;
+  g.entity_manager.with_planet(Starnum, Planetnum, [&](const Planet& planet) {
+    if (!planet.info(g.player()).explored) {
+      return;
     }
-  }
-  header << filter.describe();
-  g.out << header.str();
 
-  print_top(g, tops.troops, "Troops");
-  print_top(g, tops.res, "Res");
-  print_top(g, tops.eff, "Eff");
-  print_top(g, tops.frt, "Frt");
-  print_top(g, tops.mob, "Mob");
-  print_top(g, tops.popn, "Popn");
-  print_top(g, tops.m_popn, "^Popn");
+    auto total_sect = planet.num_sectors();
 
-  g.out << "\n";
+    g.entity_manager.with_sectormap(
+        Starnum, Planetnum, [&](const SectorMap& smap) {
+          // Accumulate statistics for all sectors
+          auto stats = accumulate_statistics(g, smap);
 
-  // Build table with dynamic sector-type columns
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
+          // Find top sectors matching the filter
+          auto tops =
+              find_top_sectors(g, smap, planet, mode, filter, sector_type);
 
-  // Configure fixed columns
-  table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
-  table.column(1).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(2).format().width(7).font_align(tabulate::FontAlign::right);
-  table.column(3).format().width(6).font_align(tabulate::FontAlign::right);
-  table.column(4).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(5).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(6).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(7).format().width(2).font_align(tabulate::FontAlign::right);
-  // Dynamic sector columns configured after adding rows
+          std::stringstream header;
+          g.entity_manager.with_star(Starnum, [&](const Star& star) {
+            header << std::format("\nAnalysis of /{}/{}:\n", star.get_name(),
+                                  star.get_planet_name(Planetnum));
+          });
+          header << std::format(
+              "{} {}", (mode == Mode::TopFive ? "Highest" : "Lowest"), CARE);
+          if (!sector_type.has_value()) {
+            header << " of all";
+          } else {
+            switch (*sector_type) {
+              case SectorType::SEC_SEA:
+                header << " Ocean";
+                break;
+              case SectorType::SEC_LAND:
+                header << " Land";
+                break;
+              case SectorType::SEC_MOUNT:
+                header << " Mountain";
+                break;
+              case SectorType::SEC_GAS:
+                header << " Gas";
+                break;
+              case SectorType::SEC_ICE:
+                header << " Ice";
+                break;
+              case SectorType::SEC_FOREST:
+                header << " Forest";
+                break;
+              case SectorType::SEC_DESERT:
+                header << " Desert";
+                break;
+              case SectorType::SEC_PLATED:
+                header << " Plated";
+                break;
+              case SectorType::SEC_WASTED:
+                header << " Wasted";
+                break;
+            }
+          }
+          header << filter.describe();
+          g.out << header.str();
 
-  // Build header row
-  std::vector<std::string> table_header = {"Pl",    "sec",   "popn", "troops",
-                                           "a.eff", "a.mob", "res",  "x"};
-  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    table_header.emplace_back(1, Dessymbols[i]);
-  }
-  table.add_row(
-      tabulate::Table::Row_t(table_header.begin(), table_header.end()));
-  table[0].format().font_style({tabulate::FontStyle::bold});
+          print_top(g, tops.troops, "Troops");
+          print_top(g, tops.res, "Res");
+          print_top(g, tops.eff, "Eff");
+          print_top(g, tops.frt, "Frt");
+          print_top(g, tops.mob, "Mob");
+          print_top(g, tops.popn, "Popn");
+          print_top(g, tops.m_popn, "^Popn");
 
-  // Add player rows
-  for (int p = 0; p <= g.entity_manager.num_races().value; p++) {
-    if (stats.players[p].t_sect != 0) {
-      std::vector<std::string> row = {
-          std::format("{}", p),
-          std::format("{}", stats.players[p].t_sect),
-          std::format("{}", stats.players[p].popn),
-          std::format("{}", stats.players[p].troops),
-          std::format("{:.1f}", static_cast<double>(stats.players[p].eff) /
-                                    stats.players[p].t_sect),
-          std::format("{:.1f}", static_cast<double>(stats.players[p].mob) /
-                                    stats.players[p].t_sect),
-          std::format("{}", stats.players[p].res),
-          std::format("{}", stats.players[p].crys)};
-      for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-        row.push_back(std::format("{}", stats.players[p].sect[i]));
-      }
-      table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
-    }
-  }
+          g.out << "\n";
 
-  // Add totals row
-  std::vector<std::string> totals = {
-      "Tl",
-      std::format("{}", total_sect),
-      std::format("{}", stats.total_popn),
-      std::format("{}", stats.total_troops),
-      std::format("{:.1f}", static_cast<double>(stats.total_eff) / total_sect),
-      std::format("{:.1f}", static_cast<double>(stats.total_mob) / total_sect),
-      std::format("{}", stats.total_res),
-      std::format("{}", stats.total_crys)};
-  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    totals.push_back(std::format("{}", stats.sect[i]));
-  }
-  table.add_row(tabulate::Table::Row_t(totals.begin(), totals.end()));
+          // Build table with dynamic sector-type columns
+          tabulate::Table table;
+          table.format().hide_border().column_separator("  ");
 
-  // Configure dynamic sector columns
-  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    table.column(8 + i).format().width(4).font_align(
-        tabulate::FontAlign::right);
-  }
+          // Configure fixed columns
+          table.column(0).format().width(2).font_align(
+              tabulate::FontAlign::right);
+          table.column(1).format().width(3).font_align(
+              tabulate::FontAlign::right);
+          table.column(2).format().width(7).font_align(
+              tabulate::FontAlign::right);
+          table.column(3).format().width(6).font_align(
+              tabulate::FontAlign::right);
+          table.column(4).format().width(5).font_align(
+              tabulate::FontAlign::right);
+          table.column(5).format().width(5).font_align(
+              tabulate::FontAlign::right);
+          table.column(6).format().width(5).font_align(
+              tabulate::FontAlign::right);
+          table.column(7).format().width(2).font_align(
+              tabulate::FontAlign::right);
+          // Dynamic sector columns configured after adding rows
 
-  g.out << table << "\n";
+          // Build header row
+          std::vector<std::string> table_header = {
+              "Pl", "sec", "popn", "troops", "a.eff", "a.mob", "res", "x"};
+          for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
+            table_header.emplace_back(1, Dessymbols[i]);
+          }
+          table.add_row(
+              tabulate::Table::Row_t(table_header.begin(), table_header.end()));
+          table[0].format().font_style({tabulate::FontStyle::bold});
+
+          // Add player rows
+          for (int p = 0; p <= g.entity_manager.num_races().value; p++) {
+            if (stats.players[p].t_sect != 0) {
+              std::vector<std::string> row = {
+                  std::format("{}", p),
+                  std::format("{}", stats.players[p].t_sect),
+                  std::format("{}", stats.players[p].popn),
+                  std::format("{}", stats.players[p].troops),
+                  std::format("{:.1f}",
+                              static_cast<double>(stats.players[p].eff) /
+                                  stats.players[p].t_sect),
+                  std::format("{:.1f}",
+                              static_cast<double>(stats.players[p].mob) /
+                                  stats.players[p].t_sect),
+                  std::format("{}", stats.players[p].res),
+                  std::format("{}", stats.players[p].crys)};
+              for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
+                row.push_back(std::format("{}", stats.players[p].sect[i]));
+              }
+              table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
+            }
+          }
+
+          // Add totals row
+          std::vector<std::string> totals = {
+              "Tl",
+              std::format("{}", total_sect),
+              std::format("{}", stats.total_popn),
+              std::format("{}", stats.total_troops),
+              std::format("{:.1f}",
+                          static_cast<double>(stats.total_eff) / total_sect),
+              std::format("{:.1f}",
+                          static_cast<double>(stats.total_mob) / total_sect),
+              std::format("{}", stats.total_res),
+              std::format("{}", stats.total_crys)};
+          for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
+            totals.push_back(std::format("{}", stats.sect[i]));
+          }
+          table.add_row(tabulate::Table::Row_t(totals.begin(), totals.end()));
+
+          // Configure dynamic sector columns
+          for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
+            table.column(8 + i).format().width(4).font_align(
+                tabulate::FontAlign::right);
+          }
+
+          g.out << table << "\n";
+        });
+  });
 }
 
 // Parse a single character into a sector type

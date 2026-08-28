@@ -182,10 +182,7 @@ void test_toggle_database_persistence() {
   std::println(std::cout, "  Testing: Toggle monitor setting (God mode)");
   {
     // First set race as God
-    auto race_handle = ctx.em.get_race(1);
-    auto& race_mod = *race_handle;
-    race_mod.God = 1;
-    // Auto-saves when scope exits
+    ctx.em.mutate_race(1, [](Race& r) { r.God = 1; });
 
     // Update g.race pointer
     g.race = ctx.em.peek_race(1);

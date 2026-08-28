@@ -106,10 +106,7 @@ void test_insurgency_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set AP to 5 (< 10 required)
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 5;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 5; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -141,10 +138,9 @@ void test_insurgency_role_and_scope_rejections() {
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->governor(1) = 2;  // Star governed by Gov 2
-  }
+  ctx.em.mutate_star(0, [](Star& s) {
+    s.governor(1) = 2;  // Star governed by Gov 2
+  });
   g.out.str("");
   ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
   g.set_level(ScopeLevel::LEVEL_PLAN);

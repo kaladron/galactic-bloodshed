@@ -933,7 +933,7 @@ export std::string prin_ship_orbits(EntityManager&, const Ship&);
 export std::string prin_ship_dest(const Ship&);
 export void moveship(EntityManager&, Ship& ship, int x, int y, int z);
 export void msg_OOF(EntityManager&, const Ship& ship);
-export bool followable(EntityManager&, const Ship& ship, Ship& target);
+export bool followable(EntityManager&, const Ship& ship, const Ship& target);
 
 export shipnum_t Num_ships;
 

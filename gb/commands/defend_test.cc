@@ -19,19 +19,19 @@ void setup_test_world(TestContext& ctx) {
       .add_planet(0, PlanetType::EARTH);
 
   // Setup planet info and sectors
-  {
-    auto planet_handle = ctx.em.get_planet(0, 0);
-    planet_handle->info(player_t{1}).numsectsowned = 1;
-    planet_handle->info(player_t{1}).guns = 50;
-    planet_handle->info(player_t{1}).destruct = 100;
-    planet_handle->popn() = 1000;
+  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+    planet.info(player_t{1}).numsectsowned = 1;
+    planet.info(player_t{1}).guns = 50;
+    planet.info(player_t{1}).destruct = 100;
+    planet.popn() = 1000;
+  });
 
-    auto smap_handle = ctx.em.get_sectormap(0, 0);
-    smap_handle->get(Coordinates{5, 5}).set_owner(1);
-    smap_handle->get(Coordinates{5, 5}).set_popn_exact(1000);
-    smap_handle->get(Coordinates{5, 5}).set_troops(500);
-    smap_handle->get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
-  }
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{5, 5}).set_owner(1);
+    smap.get(Coordinates{5, 5}).set_popn_exact(1000);
+    smap.get(Coordinates{5, 5}).set_troops(500);
+    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
+  });
 
   // Create attacking enemy ship in planet orbit
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
@@ -68,10 +68,7 @@ void test_defend_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set AP to 0
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -100,10 +97,9 @@ void test_defend_role_and_scope_rejections() {
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->governor(1) = 2;  // Star governed by Gov 2
-  }
+  ctx.em.mutate_star(0, [](Star& s) {
+    s.governor(1) = 2;  // Star governed by Gov 2
+  });
   ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);

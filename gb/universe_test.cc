@@ -182,13 +182,10 @@ void test_universe_persistence() {
   test::expect_eq(universe->VN_hitlist[0], 5);
 
   // Modify via EntityManager
-  {
-    auto universe_handle = em.get_universe();
-    auto& universe_mut = *universe_handle;
+  em.mutate_universe([](universe_struct& universe_mut) {
     universe_mut.numstars = 250;
     universe_mut.ships = 600;
-    // Auto-saves when handle goes out of scope
-  }
+  });
 
   // Clear cache to force reload from DB
   em.clear_cache();

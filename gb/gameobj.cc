@@ -13,8 +13,7 @@ bool GameObj::deduct_ap(starnum_t snum, ap_t amount) {
     if (!star || star->AP(player_) < amount) {
       return false;
     }
-    auto star_handle = entity_manager.get_star(snum);
-    star_handle->AP(player_) -= amount;
+    entity_manager.mutate_star(snum, [&](Star& s) { s.AP(player_) -= amount; });
     return true;
   } catch (const EntityNotFoundError&) {
     return false;
@@ -29,8 +28,8 @@ bool GameObj::deduct_univ_ap(ap_t amount) {
     if (!univ || univ->AP[player_.value - 1] < amount) {
       return false;
     }
-    auto univ_handle = entity_manager.get_universe();
-    univ_handle->AP[player_.value - 1] -= amount;
+    entity_manager.mutate_universe(
+        [&](universe_struct& u) { u.AP[player_.value - 1] -= amount; });
     return true;
   } catch (const EntityNotFoundError&) {
     return false;

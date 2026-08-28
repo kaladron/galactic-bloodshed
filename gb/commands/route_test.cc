@@ -71,16 +71,14 @@ void test_route_persistence() {
   setup_test_world(ctx);
 
   // Test: Set route destination
-  {
-    auto planet_handle = ctx.em.get_planet(0, 0);
-    auto& p = *planet_handle;
+  ctx.em.mutate_planet(0, 0, [](Planet& p) {
     p.info(player_t{1}).route[0].set = 1;
     p.info(player_t{1}).route[0].dest_star = 1;
     p.info(player_t{1}).route[0].dest_planet = 0;
     p.info(player_t{1}).route[0].dest_coords = {5, 5};
     p.info(player_t{1}).route[0].load = M_FUEL | M_RESOURCES;
     p.info(player_t{1}).route[0].unload = M_DESTRUCT;
-  }
+  });
 
   // Verify: Route was saved
   {
@@ -98,11 +96,8 @@ void test_route_persistence() {
   }
 
   // Test: Deactivate route
-  {
-    auto planet_handle = ctx.em.get_planet(0, 0);
-    auto& p = *planet_handle;
-    p.info(player_t{1}).route[0].set = 0;
-  }
+  ctx.em.mutate_planet(0, 0,
+                       [](Planet& p) { p.info(player_t{1}).route[0].set = 0; });
 
   // Verify: Route deactivated
   {
@@ -113,16 +108,14 @@ void test_route_persistence() {
   }
 
   // Test: Multiple routes
-  {
-    auto planet_handle = ctx.em.get_planet(0, 0);
-    auto& p = *planet_handle;
+  ctx.em.mutate_planet(0, 0, [](Planet& p) {
     for (int i = 0; i < MAX_ROUTES; i++) {
       p.info(player_t{1}).route[i].set = 1;
       p.info(player_t{1}).route[i].dest_star = 1;
       p.info(player_t{1}).route[i].dest_planet = 0;
       p.info(player_t{1}).route[i].load = M_FUEL;
     }
-  }
+  });
 
   // Verify: All routes saved
   {

@@ -90,46 +90,39 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   SectorRepository sectors(store);
   sectors.save_map(initial_smap);
 
-  // Test get_sectormap with RAII handle
+  // Test mutate_sectormap
   {
-    auto smap_handle = em.get_sectormap(5, 1);
-    test::expect_ne(smap_handle.get(), nullptr,
-                    "get_sectormap should return valid handle");
+    em.mutate_sectormap(5, 1, [](SectorMap& smap) {
+      // Verify data was loaded correctly
+      test::expect_eq(smap.get(Coordinates{0, 0}).get_eff(),
+                      25);  // base_eff + 0*0 = 25
 
-    auto& smap = *smap_handle;
-
-    // Verify data was loaded correctly
-    test::expect_eq(smap.get(Coordinates{0, 0}).get_eff(),
-                    25);  // base_eff + 0*0 = 25
-
-    // Modify some sectors
-    for (int i = 0; i < 4; i++) {
-      auto& sector = smap.get(Coordinates{i, i});
-      sector.set_efficiency_bounded(95);
-      sector.set_popn_exact(77777);
-    }
-    // Handle auto-saves when going out of scope
+      // Modify some sectors
+      for (int i = 0; i < 4; i++) {
+        auto& sector = smap.get(Coordinates{i, i});
+        sector.set_efficiency_bounded(95);
+        sector.set_popn_exact(77777);
+      }
+    });
   }
 
-  std::println(std::cout, "  get_sectormap with RAII auto-save: PASSED");
+  std::println(std::cout, "  mutate_sectormap with auto-save: PASSED");
 
   // Clear cache to force reload from DB
   em.clear_cache();
 
-  // Verify the updates persisted by loading again
+  // Verify the updates persisted by loading again with with_sectormap
   {
-    auto smap_handle = em.get_sectormap(5, 1);
-    test::expect_ne(smap_handle.get(), nullptr);
-    const auto& smap = smap_handle.read();
+    em.with_sectormap(5, 1, [](const SectorMap& smap) {
+      for (int i = 0; i < 4; i++) {
+        test::expect_eq(smap.get(Coordinates{i, i}).get_eff(), 95);
+        test::expect_eq(smap.get(Coordinates{i, i}).get_popn(), 77777);
+      }
 
-    for (int i = 0; i < 4; i++) {
-      test::expect_eq(smap.get(Coordinates{i, i}).get_eff(), 95);
-      test::expect_eq(smap.get(Coordinates{i, i}).get_popn(), 77777);
-    }
-
-    // Verify other sectors unchanged
-    test::expect_eq(smap.get(Coordinates{5, 4}).get_eff(),
-                    25 + 5 * 4);  // base_eff + x*y
+      // Verify other sectors unchanged
+      test::expect_eq(smap.get(Coordinates{5, 4}).get_eff(),
+                      25 + 5 * 4);  // base_eff + x*y
+    });
   }
 
   std::println(std::cout, "  Update persistence verified: PASSED");
@@ -146,19 +139,19 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
 
   std::println(std::cout, "  peek_sectormap read-only access: PASSED");
 
-  // Test caching - multiple handles should reference same data
+  // Test caching - multiple peeks should reference same data
   {
-    auto handle1 = em.get_sectormap(5, 1);
-    auto handle2 = em.get_sectormap(5, 1);
+    const SectorMap* p1 = em.peek_sectormap(5, 1);
+    const SectorMap* p2 = em.peek_sectormap(5, 1);
+    test::expect_eq(p1, p2, "Multiple peeks should reference same cached data");
 
-    test::expect_eq(handle1.get(), handle2.get(),
-                    "Multiple handles should reference same cached data");
+    // Modify via mutate_sectormap
+    em.mutate_sectormap(5, 1, [](SectorMap& smap) {
+      smap.get(Coordinates{7, 5}).set_efficiency_bounded(42);
+    });
 
-    // Modify via handle1
-    (*handle1).get(Coordinates{7, 5}).set_efficiency_bounded(42);
-
-    // Should see change via handle2 (same underlying object)
-    test::expect_eq((*handle2).get(Coordinates{7, 5}).get_eff(), 42);
+    // Should see change via peek
+    test::expect_eq(p1->get(Coordinates{7, 5}).get_eff(), 42);
   }
 
   std::println(std::cout, "  Caching (single instance) verified: PASSED");
@@ -166,7 +159,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   // Test with non-existent planet
   {
     test::expect_throws<EntityNotFoundError>(
-        [&em]() { std::ignore = em.get_sectormap(999, 999); },
+        [&em]() { std::ignore = em.peek_sectormap(999, 999); },
         "Non-existent planet should throw EntityNotFoundError");
   }
 

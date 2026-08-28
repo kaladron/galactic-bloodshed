@@ -55,12 +55,11 @@ void test_launch_happy_paths() {
 
   // 2. Undock alias dispatch
   // Re-dock ship to another ship to test undock
-  {
-    auto s1 = ctx.em.get_ship(1);
-    s1->docked() = 1;
-    s1->whatdest() = ScopeLevel::LEVEL_SHIP;
-    s1->destshipno() = 1;  // Mock target
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.docked() = 1;
+    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    s.destshipno() = 1;  // Mock target
+  });
   ctx.assert_dispatch_success(g, {"undock", "#1"}, 0);
   test::expect_contains(g.out.str(), "undocked");
 
@@ -72,10 +71,7 @@ void test_launch_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  {
-    auto star_handle = ctx.em.get_star(0);
-    star_handle->AP(1) = 0;
-  }
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -106,12 +102,11 @@ void test_launch_domain_errors() {
   test::expect_contains(g.out.str(), "Syntax: launch <ship>");
 
   // 2. Launch non-docked/non-landed ship
-  {
-    auto s1 = ctx.em.get_ship(1);
-    s1->docked() = 0;
-    s1->whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s1->whatdest() = ScopeLevel::LEVEL_UNIV;
-  }
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.docked() = 0;
+    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+    s.whatdest() = ScopeLevel::LEVEL_UNIV;
+  });
   ctx.assert_dispatch_rejected(g, {"launch", "#1"});
   test::expect_contains(g.out.str(), "is not landed or docked");
 

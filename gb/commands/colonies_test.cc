@@ -17,17 +17,18 @@ void setup_test_world(TestContext& ctx) {
       .add_star("Sol", 100, starnum_t{0})
       .add_planet(0, PlanetType::EARTH, "Earth");
 
-  auto race_handle = ctx.em.get_race(1);
-  race_handle->conditions[0] = 50;
+  ctx.em.mutate_race(1, [](Race& race) { race.conditions[0] = 50; });
 
-  auto planet_handle = ctx.em.get_planet(0, 0);
-  planet_handle->info(player_t{1}).explored = 1;
-  planet_handle->info(player_t{1}).numsectsowned = 5;
-  planet_handle->popn() = 1000;
+  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+    planet.info(player_t{1}).explored = 1;
+    planet.info(player_t{1}).numsectsowned = 5;
+    planet.popn() = 1000;
+  });
 
-  auto smap_handle = ctx.em.get_sectormap(0, 0);
-  smap_handle->get(Coordinates{0, 0}).set_owner(1);
-  smap_handle->get(Coordinates{0, 0}).set_popn_exact(1000);
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{0, 0}).set_owner(1);
+    smap.get(Coordinates{0, 0}).set_popn_exact(1000);
+  });
 }
 
 void test_colonies_dispatch() {

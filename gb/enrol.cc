@@ -270,37 +270,31 @@ int main() {
     return -1;
   }
 
-  // Get sectormap handle - will auto-save when handle goes out of scope
-  auto smap_handle = entity_manager.get_sectormap(star, pnum);
-  if (!smap_handle.get()) {
-    std::println(std::cerr, "Error: Cannot load sector map");
-    return -1;
-  }
-  auto& smap = *smap_handle;
-
   std::println(std::cout,
                "\nChoose a primary sector preference. This race will prefer to "
                "live\non this type of sector.");
 
-  for (Sector& sector : smap.shuffle()) {
-    secttypes[sector.get_condition()].count++;
-    if (!secttypes[sector.get_condition()].here) {
-      secttypes[sector.get_condition()].here = true;
-      secttypes[sector.get_condition()].x = sector.get_x();
-      secttypes[sector.get_condition()].y = sector.get_y();
+  entity_manager.with_sectormap(star, pnum, [&](const SectorMap& smap) {
+    for (const Sector& sector : smap.shuffle()) {
+      secttypes[sector.get_condition()].count++;
+      if (!secttypes[sector.get_condition()].here) {
+        secttypes[sector.get_condition()].here = true;
+        secttypes[sector.get_condition()].x = sector.get_x();
+        secttypes[sector.get_condition()].y = sector.get_y();
+      }
     }
-  }
-  // Temporarily show sectors during selection (no need to persist)
-  for (SectorType st : all_sector_types) {
-    if (secttypes[st].here) {
-      std::println(std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", st,
-                   get_sector_char(
-                       smap.get(Coordinates{secttypes[st].x, secttypes[st].y})
-                           .get_condition()),
-                   secttypes[st].x, secttypes[st].y, Desnames[st],
-                   secttypes[st].count);
+    // Temporarily show sectors during selection (no need to persist)
+    for (SectorType st : all_sector_types) {
+      if (secttypes[st].here) {
+        std::println(std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", st,
+                     get_sector_char(
+                         smap.get(Coordinates{secttypes[st].x, secttypes[st].y})
+                             .get_condition()),
+                     secttypes[st].x, secttypes[st].y, Desnames[st],
+                     secttypes[st].count);
+      }
     }
-  }
+  });
 
   SectorType chosen_sector{};
   bool sector_chosen = false;
@@ -323,8 +317,6 @@ int main() {
     }
   } while (!sector_chosen);
 
-  auto& sect = smap.get(
-      Coordinates{secttypes[chosen_sector].x, secttypes[chosen_sector].y});
   race.likesbest = chosen_sector;
   race.likes[chosen_sector] = 1.0;
   race.likes[SectorType::SEC_PLATED] = 1.0;
@@ -357,16 +349,14 @@ int main() {
     race.Gov_ship = shipno;
 
     ss.type = ShipType::OTYPE_GOV;
-    const auto* star_ptr = entity_manager.peek_star(star);
-    const auto* planet_ptr2 = entity_manager.peek_planet(star, pnum);
-    if (!star_ptr || !planet_ptr2) {
-      std::println(std::cerr,
-                   "Error: Cannot access star/planet for ship placement");
-      return -1;
-    }
-    ss.xpos = star_ptr->xpos() + planet_ptr2->xpos();
-    ss.ypos = star_ptr->ypos() + planet_ptr2->ypos();
-    ss.land_coords = sect.coords();
+    entity_manager.with_star(star, [&](const Star& s) {
+      entity_manager.with_planet(star, pnum, [&](const Planet& p) {
+        ss.xpos = s.xpos() + p.xpos();
+        ss.ypos = s.ypos() + p.ypos();
+      });
+    });
+    ss.land_coords =
+        Coordinates{secttypes[chosen_sector].x, secttypes[chosen_sector].y};
 
     ss.owner = Playernum;
     ss.race = Playernum;
@@ -410,15 +400,11 @@ int main() {
     ss.on = 1;
 
     ss.number = shipno;
-    if (const auto* storbit_star = entity_manager.peek_star(ss.storbits);
-        storbit_star) {
+    entity_manager.with_star(ss.storbits, [&](const Star& storbit_star) {
       std::println(std::cout, "Created on sector {} on /{}/{}", ss.land_coords,
-                   storbit_star->get_name(),
-                   storbit_star->get_planet_name(ss.pnumorbits));
-    } else {
-      std::println(std::cout, "Created on sector {} on an unknown location",
-                   ss.land_coords);
-    }
+                   storbit_star.get_name(),
+                   storbit_star.get_planet_name(ss.pnumorbits));
+    });
     Ship s{ss};  // Construct Ship from POD
     if (!ships.save(s)) {
       std::println(std::cerr, "Error: Failed to save ship to database");
@@ -433,49 +419,40 @@ int main() {
     return -1;
   }
 
-  sect.set_owner(Playernum);
-  sect.set_race(Playernum);
-  sect.set_fert(100);
-  sect.set_efficiency_bounded(10);
+  entity_manager.mutate_sectormap(star, pnum, [&](SectorMap& smap) {
+    entity_manager.mutate_planet(star, pnum, [&](Planet& planet) {
+      auto& sect = smap.get(
+          Coordinates{secttypes[chosen_sector].x, secttypes[chosen_sector].y});
+      sect.set_owner(Playernum);
+      sect.set_race(Playernum);
+      sect.set_fert(100);
+      sect.set_efficiency_bounded(10);
+      sect.set_popn_exact(race.number_sexes);
+      sect.set_troops(0);
 
-  // Get planet handle for final modifications
-  auto planet_handle = entity_manager.get_planet(star, pnum);
-  if (!planet_handle.get()) {
-    std::println(std::cerr, "Error: Cannot access planet for final updates");
-    return -1;
-  }
-  auto& planet = *planet_handle;
-  planet.info(Playernum).numsectsowned = 1;
-  planet.explored() = 0;
-  planet.info(Playernum).explored = 1;
-
-  sect.set_popn_exact(race.number_sexes);
-  planet.popn() = race.number_sexes;
-  sect.set_troops(0);
-  planet.troops() = 0;
-  planet.maxpopn() =
-      maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
-  /* (approximate) */
+      planet.info(Playernum).numsectsowned = 1;
+      planet.explored() = 0;
+      planet.info(Playernum).explored = 1;
+      planet.popn() = race.number_sexes;
+      planet.troops() = 0;
+      planet.maxpopn() =
+          maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
+    });
+  });
 
   /* make star explored and stuff */
-  auto star_handle = entity_manager.get_star(star);
-  if (!star_handle.get()) {
-    std::println(std::cerr, "Error: Cannot access star for update");
-    return -1;
-  }
-  auto& star_ref = *star_handle;
-  setbit(star_ref.explored(), Playernum);
-  setbit(star_ref.inhabited(), Playernum);
-  star_ref.AP(Playernum) = 5;
+  entity_manager.mutate_star(star, [&](Star& star_ref) {
+    setbit(star_ref.explored(), Playernum);
+    setbit(star_ref.inhabited(), Playernum);
+    star_ref.AP(Playernum) = 5;
+  });
 
   std::println(std::cout, "\nYou are player {}.\n", Playernum);
   std::println(std::cout, "Your race has been created on sector {},{} on",
-               sect.coords().x, sect.coords().y);
-  if (const auto* home_star = entity_manager.peek_star(star); home_star) {
-    std::println(std::cout, "{}/{}.\n", home_star->get_name(),
-                 home_star->get_planet_name(pnum));
-  } else {
-    std::println(std::cout, "Unknown star/planet.\n");
-  }
+               secttypes[chosen_sector].x, secttypes[chosen_sector].y);
+  entity_manager.with_star(star, [&](const Star& home_star) {
+    std::println(std::cout, "{}/{}.\n", home_star.get_name(),
+                 home_star.get_planet_name(pnum));
+  });
   return 0;
 }

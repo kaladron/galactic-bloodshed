@@ -47,9 +47,8 @@ void test_parse_connect() {
 
 void test_welcome_user() {
   TestContext ctx;
-  auto state_handle = ctx.em.get_server_state();
-  state_handle->welcome_message = "Custom Welcome MotD\n";
-  state_handle.save();
+  ctx.em.mutate_server_state(
+      [](ServerState& s) { s.welcome_message = "Custom Welcome MotD\n"; });
 
   asio::io_context io;
   asio::ip::tcp::acceptor acceptor(

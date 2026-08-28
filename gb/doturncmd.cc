@@ -94,24 +94,22 @@ static void finalize_turn(TurnState& state, bool update);
  * only
  */
 void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
-  TurnState state(
-      entity_manager);  // Create turn-local state with EntityManager ref
+  {
+    auto defer_scope = entity_manager.create_deferred_write_scope();
+    TurnState state(entity_manager);
 
-  process_ships(state);
-  process_stars_and_planets(state, update);
-  process_races(state, update);
-  output_ground_attacks(state);
-  process_market(state, update);
-  process_ship_masses_and_ownership(state);
-  process_ship_turns(state, update);
-  prepare_dead_ships(state);
-  process_abms_and_missiles(state, update);
-  update_victory_scores(state, update);
-
-  // Flush all dirty entities to database in one batch
-  entity_manager.flush_all();
-
-  finalize_turn(state, update);
+    process_ships(state);
+    process_stars_and_planets(state, update);
+    process_races(state, update);
+    output_ground_attacks(state);
+    process_market(state, update);
+    process_ship_masses_and_ownership(state);
+    process_ship_turns(state, update);
+    prepare_dead_ships(state);
+    process_abms_and_missiles(state, update);
+    update_victory_scores(state, update);
+    finalize_turn(state, update);
+  }
 
   // Run SQLite maintenance after turn writes complete.
   entity_manager.optimize();
@@ -152,7 +150,7 @@ static void process_stars_and_planets(TurnState& state, bool update) {
         star_handle->set_planet_name(pnum, std::format("NULL-{}", pnum));
       }
     }
-    if (star_handle->get_name()[0] == '\0') {
+    if (star_handle->get_name().empty() || star_handle->get_name()[0] == '\0') {
       star_handle->set_name(std::format("NULL-{}", star));
     }
   }
@@ -162,7 +160,7 @@ static void process_races(TurnState& state, bool update) {
   state.stats.VN_brain.most_mad = 0; /* not mad at anyone for starts */
 
   // Get universe data for VN hitlist
-  auto sdata_handle = state.entity_manager.get_universe();
+  const auto* sdata = state.entity_manager.peek_universe();
 
   for (auto race_handle : RaceList(state.entity_manager)) {
     const player_t player = race_handle->Playernum;
@@ -182,13 +180,14 @@ static void process_races(TurnState& state, bool update) {
         }
       }
       /* add VN program */
-      state.stats.VN_brain.total_mad +=
-          sdata_handle->VN_hitlist[player.value - 1];
-      /* find out who they're most mad at */
-      if (state.stats.VN_brain.most_mad > 0 &&
-          sdata_handle->VN_hitlist[state.stats.VN_brain.most_mad - 1] <=
-              sdata_handle->VN_hitlist[player.value - 1]) {
-        state.stats.VN_brain.most_mad = player.value;
+      if (sdata) {
+        state.stats.VN_brain.total_mad += sdata->VN_hitlist[player.value - 1];
+        /* find out who they're most mad at */
+        if (state.stats.VN_brain.most_mad > 0 &&
+            sdata->VN_hitlist[state.stats.VN_brain.most_mad - 1] <=
+                sdata->VN_hitlist[player.value - 1]) {
+          state.stats.VN_brain.most_mad = player.value;
+        }
       }
     }
     if (VOTING) {
@@ -226,57 +225,65 @@ static void process_market(TurnState& state, bool update) {
         continue;
       }
 
-      auto bidder_race = state.entity_manager.get_race(c.bidder);
-      auto owner_race = state.entity_manager.get_race(c.owner);
+      if (c.owner != 0 && c.bidder != 0) {
+        const auto* bidder_race = state.entity_manager.peek_race(c.bidder);
+        const auto* owner_race = state.entity_manager.peek_race(c.owner);
 
-      if (c.owner != 0 && c.bidder != 0 && bidder_race.get() &&
-          owner_race.get() &&
-          (bidder_race->governor[c.bidder_gov.value].money >= c.bid)) {
-        bidder_race->governor[c.bidder_gov.value].money -= c.bid;
-        owner_race->governor[c.governor.value].money += c.bid;
-        auto [cost, dist] =
-            shipping_cost(state.entity_manager, c.star_to, c.star_from, c.bid);
-        bidder_race->governor[c.bidder_gov.value].cost_market += c.bid + cost;
-        owner_race->governor[c.governor.value].profit_market += c.bid;
-        maintain(*bidder_race, bidder_race->governor[c.bidder_gov.value], cost);
+        if (bidder_race && owner_race &&
+            (bidder_race->governor[c.bidder_gov.value].money >= c.bid)) {
+          auto [cost, dist] = shipping_cost(state.entity_manager, c.star_to,
+                                            c.star_from, c.bid);
 
-        auto planet_handle =
-            state.entity_manager.get_planet(c.star_to, c.planet_to);
-        if (planet_handle.get()) {
-          switch (c.type) {
-            case CommodType::RESOURCE:
-              planet_handle->info(c.bidder).resource += c.amount;
-              break;
-            case CommodType::FUEL:
-              planet_handle->info(c.bidder).fuel += c.amount;
-              break;
-            case CommodType::DESTRUCT:
-              planet_handle->info(c.bidder).destruct += c.amount;
-              break;
-            case CommodType::CRYSTAL:
-              planet_handle->info(c.bidder).crystals += c.amount;
-              break;
-          }
+          state.entity_manager.mutate_race(c.bidder, [&](Race& b_race) {
+            b_race.governor[c.bidder_gov.value].money -= c.bid;
+            b_race.governor[c.bidder_gov.value].cost_market += c.bid + cost;
+            maintain(b_race, b_race.governor[c.bidder_gov.value], cost);
+          });
+          state.entity_manager.mutate_race(c.owner, [&](Race& o_race) {
+            o_race.governor[c.governor.value].money += c.bid;
+            o_race.governor[c.governor.value].profit_market += c.bid;
+          });
+
+          state.entity_manager.mutate_planet(
+              c.star_to, c.planet_to, [&](Planet& planet) {
+                switch (c.type) {
+                  case CommodType::RESOURCE:
+                    planet.info(c.bidder).resource += c.amount;
+                    break;
+                  case CommodType::FUEL:
+                    planet.info(c.bidder).fuel += c.amount;
+                    break;
+                  case CommodType::DESTRUCT:
+                    planet.info(c.bidder).destruct += c.amount;
+                    break;
+                  case CommodType::CRYSTAL:
+                    planet.info(c.bidder).crystals += c.amount;
+                    break;
+                }
+              });
+
+          const auto* star = state.entity_manager.peek_star(c.star_to);
+          std::string purchased_msg = std::format(
+              "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
+              "arrived at /{}/{}\n",
+              c.id, owner_race->name, c.owner, c.bid, c.amount, c.type,
+              star ? star->get_name() : "unknown",
+              star ? star->get_planet_name(c.planet_to) : "unknown");
+          push_telegram(state.entity_manager, c.bidder, c.bidder_gov,
+                        purchased_msg);
+          std::string sold_msg = std::format(
+              "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id,
+              c.amount, c.type, bidder_race->name, c.bidder, c.bid);
+          push_telegram(state.entity_manager, c.owner, c.governor, sold_msg);
+          c.owner = 0;
+          c.governor = 0;
+          c.bidder = 0;
+          c.bidder_gov = 0;
+        } else {
+          c.bidder = 0;
+          c.bidder_gov = 0;
+          c.bid = 0;
         }
-
-        auto star_handle = state.entity_manager.get_star(c.star_to);
-        std::string purchased_msg = std::format(
-            "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
-            "arrived at /{}/{}\n",
-            c.id, owner_race->name, c.owner, c.bid, c.amount, c.type,
-            star_handle.get() ? star_handle->get_name() : "unknown",
-            star_handle.get() ? star_handle->get_planet_name(c.planet_to)
-                              : "unknown");
-        push_telegram(state.entity_manager, c.bidder, c.bidder_gov,
-                      purchased_msg);
-        std::string sold_msg = std::format(
-            "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
-            c.type, bidder_race->name, c.bidder, c.bid);
-        push_telegram(state.entity_manager, c.owner, c.governor, sold_msg);
-        c.owner = 0;
-        c.governor = 0;
-        c.bidder = 0;
-        c.bidder_gov = 0;
       } else {
         c.bidder = 0;
         c.bidder_gov = 0;
@@ -317,21 +324,18 @@ static void process_ship_turns(TurnState& state, bool update) {
   if (MARKET) {
     /* do maintenance costs */
     if (update) {
-      for (auto ship_handle :
-           ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
-        if (Shipdata[ship_handle->type()][ABIL_MAINTAIN]) {
-          auto race_handle =
-              state.entity_manager.get_race(ship_handle->owner());
-          if (!race_handle.get()) continue;
-
-          if (ship_handle->popn()) {
-            race_handle->governor[ship_handle->governor().value].maintain +=
-                ship_handle->build_cost();
-          }
-          if (ship_handle->troops()) {
-            race_handle->governor[ship_handle->governor().value].maintain +=
-                UPDATE_TROOP_COST * ship_handle->troops();
-          }
+      for (const Ship& s : ShipList::readonly(
+               state.entity_manager, ShipList::IterationType::AllAlive)) {
+        if (Shipdata[s.type()][ABIL_MAINTAIN]) {
+          state.entity_manager.mutate_race(s.owner(), [&](Race& r) {
+            if (s.popn()) {
+              r.governor[s.governor().value].maintain += s.build_cost();
+            }
+            if (s.troops()) {
+              r.governor[s.governor().value].maintain +=
+                  UPDATE_TROOP_COST * s.troops();
+            }
+          });
         }
       }
     }
@@ -342,8 +346,8 @@ static void prepare_dead_ships(TurnState& state) {
   /* prepare dead ships for recycling */
   // Collect ship numbers to delete (can't delete while iterating)
   std::vector<shipnum_t> dead_ships;
-  const ShipList ships(state.entity_manager, ShipList::IterationType::All);
-  for (const Ship& ship : ships) {
+  for (const Ship& ship :
+       ShipList::readonly(state.entity_manager, ShipList::IterationType::All)) {
     if (!ship.alive()) {
       dead_ships.push_back(ship.number());
     }
@@ -407,22 +411,18 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
     if (update) {
       // Build inhabited bitmap from starpopns and calculate APs
       star_handle->inhabited() = 0;
-      for (auto race_handle : RaceList(state.entity_manager)) {
-        const player_t player = race_handle->Playernum;
+      for (const Race& race : RaceList::readonly(state.entity_manager)) {
+        const player_t player = race.Playernum;
 
         if (state.stats.starpopns[star.value][player]) {
           setbit(star_handle->inhabited(), player);
 
-          ap_t APs = star_handle->AP(player) +
-                     APadd(static_cast<int>(
-                               state.stats.starnumships[star.value][player]),
-                           state.stats.starpopns[star.value][player],
-                           *race_handle, state);
-          if (APs < LIMIT_APs) {
-            star_handle->AP(player) = APs;
-          } else {
-            star_handle->AP(player) = LIMIT_APs;
-          }
+          ap_t APs =
+              star_handle->AP(player) +
+              APadd(static_cast<int>(
+                        state.stats.starnumships[star.value][player]),
+                    state.stats.starpopns[star.value][player], race, state);
+          star_handle->AP(player) = std::min(APs, LIMIT_APs);
         }
         // Compute victory points for the block
         if (inhabited[star.value] != 0) {
@@ -432,8 +432,8 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
             std::uint64_t allied_members =
                 block_player->invite & block_player->pledge;
             if ((inhabited[star.value] | allied_members) == allied_members) {
-              auto block_handle = state.entity_manager.get_block(player.value);
-              block_handle->systems_owned++;
+              state.entity_manager.mutate_block(
+                  player.value, [](struct block& b) { b.systems_owned++; });
             }
           } catch (const EntityNotFoundError&) {
           }
@@ -444,24 +444,20 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
 
   /* add APs to sdata for ea. player */
   if (update) {
-    auto sdata_handle = state.entity_manager.get_universe();
-    for (auto race_handle : RaceList(state.entity_manager)) {
-      const player_t player = race_handle->Playernum;
-      try {
-        auto block_handle = state.entity_manager.get_block(player.value);
-        block_handle->systems_owned = 0; /*recount systems owned*/
-      } catch (const EntityNotFoundError&) {
-      }
-      if (governed(*race_handle, state)) {
-        ap_t APs =
-            sdata_handle->AP[player.value - 1] + race_handle->planet_points;
-        if (APs < LIMIT_APs) {
-          sdata_handle->AP[player.value - 1] = APs;
-        } else {
-          sdata_handle->AP[player.value - 1] = LIMIT_APs;
+    state.entity_manager.mutate_universe([&](universe_struct& sdata) {
+      for (const Race& race : RaceList::readonly(state.entity_manager)) {
+        const player_t player = race.Playernum;
+        try {
+          state.entity_manager.mutate_block(
+              player.value, [](struct block& b) { b.systems_owned = 0; });
+        } catch (const EntityNotFoundError&) {
+        }
+        if (governed(race, state)) {
+          ap_t APs = sdata.AP[player.value - 1] + race.planet_points;
+          sdata.AP[player.value - 1] = std::min(APs, LIMIT_APs);
         }
       }
-    }
+    });
   }
 
   /* here is where we do victory calculations. */
@@ -482,41 +478,39 @@ static void update_victory_scores(TurnState& state, bool update) {
 
     std::array<victstruct, MAXPLAYERS> victory;
 
-    for (auto race_handle : RaceList(state.entity_manager)) {
-      const player_t player = race_handle->Playernum;
-      victory[player.value - 1].morale = race_handle->morale;
-      victory[player.value - 1].money = race_handle->governor[0].money;
-      for (auto& governor : race_handle->governor) {
+    for (const Race& race : RaceList::readonly(state.entity_manager)) {
+      const player_t player = race.Playernum;
+      victory[player.value - 1].morale = race.morale;
+      victory[player.value - 1].money = race.governor[0].money;
+      for (auto const& governor : race.governor) {
         if (governor.active) {
           victory[player.value - 1].money += governor.money;
         }
       }
     }
 
-    for (auto star_handle : StarList(state.entity_manager)) {
+    for (const Star& star : StarList::readonly(state.entity_manager)) {
       /* do planets in the star next */
-      for (auto planet_handle :
-           PlanetList(state.entity_manager, star_handle->get_struct().star_id,
-                      *star_handle)) {
-        for (auto race_handle : RaceList(state.entity_manager)) {
-          const player_t player = race_handle->Playernum;
-          if (!planet_handle->info(player).explored) {
+      for (const Planet& planet :
+           PlanetList::readonly(state.entity_manager, star.star_id(), star)) {
+        for (const Race& race : RaceList::readonly(state.entity_manager)) {
+          const player_t player = race.Playernum;
+          if (!planet.info(player).explored) {
             continue;
           }
           victory[player.value - 1].numsects +=
-              static_cast<int>(planet_handle->info(player).numsectsowned);
-          victory[player.value - 1].res += planet_handle->info(player).resource;
+              static_cast<int>(planet.info(player).numsectsowned);
+          victory[player.value - 1].res += planet.info(player).resource;
           victory[player.value - 1].des +=
-              static_cast<int>(planet_handle->info(player).destruct);
+              static_cast<int>(planet.info(player).destruct);
           victory[player.value - 1].fuel +=
-              static_cast<int>(planet_handle->info(player).fuel);
+              static_cast<int>(planet.info(player).fuel);
         }
       } /* end of planet searchings */
     } /* end of star searchings */
 
-    const ShipList ships(state.entity_manager,
-                         ShipList::IterationType::AllAlive);
-    for (const Ship& ship : ships) {
+    for (const Ship& ship : ShipList::readonly(
+             state.entity_manager, ShipList::IterationType::AllAlive)) {
       victory[ship.owner().value - 1].shipcost += ship.build_cost();
       victory[ship.owner().value - 1].shiptech += ship.tech();
       victory[ship.owner().value - 1].res += ship.resource();
@@ -577,8 +571,9 @@ static void finalize_turn(TurnState& state, bool update) {
       }
 
       try {
-        auto block_handle = state.entity_manager.get_block(player.value);
-        block_handle->VPs = 10L * block_handle->systems_owned;
+        state.entity_manager.mutate_block(player.value, [](struct block& b) {
+          b.VPs = 10L * b.systems_owned;
+        });
       } catch (const EntityNotFoundError&) {
       }
       if (MARKET) {
@@ -608,9 +603,11 @@ static void finalize_turn(TurnState& state, bool update) {
     for (const Race& race : RaceList::readonly(state.entity_manager)) {
       const player_t i = race.Playernum;
       try {
-        auto power_handle = state.entity_manager.get_power(powernum_t{i.value});
-        *power_handle = state.stats.Power[i];
-        power_handle->id = i.value;
+        state.entity_manager.mutate_power(powernum_t{i.value},
+                                          [&](struct power& p) {
+                                            p = state.stats.Power[i];
+                                            p.id = i.value;
+                                          });
       } catch (const EntityNotFoundError&) {
       }
     }
@@ -831,16 +828,13 @@ static bool attack_planet(const Ship& ship) {
 
 static void output_ground_attacks(TurnState& state) {
   EntityManager& em = state.entity_manager;
-  for (auto star_handle : StarList(em)) {
-    const auto& star = *star_handle;
+  for (const Star& star : StarList::readonly(em)) {
     const starnum_t star_num = star.star_id();
 
-    for (auto race_i_handle : RaceList(em)) {
-      const auto& race_i = *race_i_handle;
+    for (const Race& race_i : RaceList::readonly(em)) {
       const player_t i = race_i.Playernum;
 
-      for (auto race_j_handle : RaceList(em)) {
-        const auto& race_j = *race_j_handle;
+      for (const Race& race_j : RaceList::readonly(em)) {
         const player_t j = race_j.Playernum;
 
         if (ground_assaults[i.value - 1][j.value - 1][star_num.value]) {
@@ -859,8 +853,7 @@ static void output_ground_attacks(TurnState& state) {
 void compute_power_blocks(EntityManager& entity_manager) {
   /* compute alliance block power */
   Power_blocks.time = std::time(nullptr);
-  for (auto race_i_handle : RaceList(entity_manager)) {
-    const auto& race_i = race_i_handle.read();
+  for (const Race& race_i : RaceList::readonly(entity_manager)) {
     const player_t i = race_i.Playernum;
 
     const block* block_i = nullptr;
@@ -882,8 +875,7 @@ void compute_power_blocks(EntityManager& entity_manager) {
     Power_blocks.systems_owned[i.value - 1] = block_i->systems_owned;
     Power_blocks.VPs[i.value - 1] = block_i->VPs;
 
-    for (auto race_j_handle : RaceList(entity_manager)) {
-      const auto& race_j = race_j_handle.read();
+    for (const Race& race_j : RaceList::readonly(entity_manager)) {
       const player_t j = race_j.Playernum;
 
       if (isset(allied_members, j)) {
@@ -925,10 +917,6 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
   std::time_t clk = std::time(nullptr);
   struct stat stbuf;
 
-  // Get server state handle (will auto-save on scope exit)
-  auto state_handle = entity_manager.get_server_state();
-  auto& state = *state_handle;
-
   bool fakeit = (!force && stat(nogofl, &stbuf) >= 0);
 
   std::string update_msg = std::format("{}DOING UPDATE...\n", std::ctime(&clk));
@@ -940,23 +928,36 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
     session_registry.flush_all();
   }
 
-  if (state.segments <= 1) {
-    /* Disables movement segments. */
-    state.next_segment_time = clk + (144 * 3600);
-    state.nsegments_done = state.segments;
-  } else {
+  std::time_t next_seg_time = 0;
+  std::time_t next_upd_time = 0;
+  int segs_done = 0;
+  int total_segs = 0;
+
+  entity_manager.mutate_server_state([&](ServerState& state) {
+    if (state.segments <= 1) {
+      /* Disables movement segments. */
+      state.next_segment_time = clk + (144 * 3600);
+      state.nsegments_done = state.segments;
+    } else {
+      if (force)
+        state.next_segment_time =
+            clk + state.update_time_minutes * 60 / state.segments;
+      else
+        state.next_segment_time =
+            state.next_update_time +
+            state.update_time_minutes * 60 / state.segments;
+      state.nsegments_done = 1;
+    }
     if (force)
-      state.next_segment_time =
-          clk + state.update_time_minutes * 60 / state.segments;
+      state.next_update_time = clk + state.update_time_minutes * 60;
     else
-      state.next_segment_time = state.next_update_time +
-                                state.update_time_minutes * 60 / state.segments;
-    state.nsegments_done = 1;
-  }
-  if (force)
-    state.next_update_time = clk + state.update_time_minutes * 60;
-  else
-    state.next_update_time += state.update_time_minutes * 60;
+      state.next_update_time += state.update_time_minutes * 60;
+
+    next_seg_time = state.next_segment_time;
+    next_upd_time = state.next_update_time;
+    segs_done = state.nsegments_done;
+    total_segs = state.segments;
+  });
 
   if (!fakeit) schedule_info.nupdates_done++;
 
@@ -967,16 +968,14 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
                   std::ctime(&clk));
   std::print(std::cerr, "{}", std::ctime(&clk));
   std::print(std::cerr, "Next Update {0:3d} : {1}",
-             schedule_info.nupdates_done + 1,
-             std::ctime(&state.next_update_time));
+             schedule_info.nupdates_done + 1, std::ctime(&next_upd_time));
   schedule_info.last_segment_time = clk;
-  schedule_info.segment_buf = std::format(
-      "Last Segment {0:2d} : {1}", state.nsegments_done, std::ctime(&clk));
+  schedule_info.segment_buf =
+      std::format("Last Segment {0:2d} : {1}", segs_done, std::ctime(&clk));
   std::print(std::cerr, "{}", std::ctime(&clk));
   std::print(std::cerr, "Next Segment {0:2d} : {1}",
-             state.nsegments_done == state.segments ? 1
-                                                    : state.nsegments_done + 1,
-             std::ctime(&state.next_segment_time));
+             segs_done == total_segs ? 1 : segs_done + 1,
+             std::ctime(&next_seg_time));
 
   session_registry.set_update_in_progress(true);
   if (!fakeit) do_turn(entity_manager, session_registry, true);
@@ -996,13 +995,11 @@ void do_segment(EntityManager& entity_manager,
   std::time_t clk = std::time(nullptr);
   struct stat stbuf;
 
-  // Get server state handle (will auto-save on scope exit)
-  auto state_handle = entity_manager.get_server_state();
-  auto& state = *state_handle;
+  const auto* state_ptr = entity_manager.peek_server_state();
+  if (!state_ptr) return;
+  if (!override && state_ptr->segments <= 1) return;
 
   bool fakeit = (!override && stat(nogofl, &stbuf) >= 0);
-
-  if (!override && state.segments <= 1) return;
 
   std::string movement_msg =
       std::format("{}DOING MOVEMENT...\n", std::ctime(&clk));
@@ -1013,31 +1010,40 @@ void do_segment(EntityManager& entity_manager,
     // do_turn()
     session_registry.flush_all();
   }
-  if (override) {
-    state.next_segment_time =
-        clk + state.update_time_minutes * 60 / state.segments;
-    if (segment) {
-      state.nsegments_done = segment;
-      state.next_update_time = clk + state.update_time_minutes * 60 *
-                                         (state.segments - segment + 1) /
-                                         state.segments;
+
+  std::time_t next_seg_time = 0;
+  int segs_done = 0;
+
+  entity_manager.mutate_server_state([&](ServerState& state) {
+    if (override) {
+      state.next_segment_time =
+          clk + state.update_time_minutes * 60 / state.segments;
+      if (segment) {
+        state.nsegments_done = segment;
+        state.next_update_time = clk + state.update_time_minutes * 60 *
+                                           (state.segments - segment + 1) /
+                                           state.segments;
+      } else {
+        state.nsegments_done++;
+      }
     } else {
+      state.next_segment_time +=
+          state.update_time_minutes * 60 / state.segments;
       state.nsegments_done++;
     }
-  } else {
-    state.next_segment_time += state.update_time_minutes * 60 / state.segments;
-    state.nsegments_done++;
-  }
+    next_seg_time = state.next_segment_time;
+    segs_done = state.nsegments_done;
+  });
 
   session_registry.set_update_in_progress(true);
   if (!fakeit) do_turn(entity_manager, session_registry, false);
   session_registry.set_update_in_progress(false);
   schedule_info.last_segment_time = clk;
-  schedule_info.segment_buf = std::format(
-      "Last Segment {0:2d} : {1}", state.nsegments_done, std::ctime(&clk));
+  schedule_info.segment_buf =
+      std::format("Last Segment {0:2d} : {1}", segs_done, std::ctime(&clk));
   std::print(std::cerr, "{0}", std::ctime(&clk));
-  std::print(std::cerr, "Next Segment {0:2d} : {1}", state.nsegments_done,
-             std::ctime(&state.next_segment_time));
+  std::print(std::cerr, "Next Segment {0:2d} : {1}", segs_done,
+             std::ctime(&next_seg_time));
   clk = std::time(nullptr);
   std::string segment_msg =
       std::format("{}Segment finished\n", std::ctime(&clk));

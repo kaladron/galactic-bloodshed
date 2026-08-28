@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file types.cppm
+/// \brief Standalone foundational strong ID types module.
+
 export module types;
 
 export import strong_id;

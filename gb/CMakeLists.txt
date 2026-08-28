@@ -109,7 +109,7 @@ target_link_libraries(racegen PRIVATE gblib dallib SQLite::SQLite3 glaze::glaze)
 add_library(types_module)
 target_sources(
   types_module
-  PUBLIC FILE_SET CXX_MODULES FILES types.cppm)
+  PUBLIC FILE_SET CXX_MODULES FILES entities/types.cppm)
 target_link_libraries(types_module PUBLIC strong_id_module)
 
 # Create dallib as a separate library for Data Access Layer
@@ -160,7 +160,7 @@ target_sources(
          gblib-tele.cppm
          gblib-turnstats.cppm
          gblib-tweakables.cppm
-         gblib-types.cppm
+         entities/gblib-types.cppm
          gblib-universe.cppm
   PRIVATE bombard.cc
           build.cc
@@ -364,7 +364,7 @@ gb_add_test(auth_test SOURCES services/auth_test.cc EXTRA_LIBS session auth)
 gb_add_test(autoreport_test SOURCES commands/autoreport_test.cc)
 gb_add_test(berserker_bombard_test)
 gb_add_test(bid_test SOURCES commands/bid_test.cc)
-gb_add_test(bitops_test)
+gb_add_test(bitops_test SOURCES entities/bitops_test.cc)
 gb_add_test(bless_test SOURCES commands/bless_test.cc)
 gb_add_test(block_json_test)
 gb_add_test(block_test SOURCES commands/block_test.cc)
@@ -379,7 +379,7 @@ gb_add_test(center_test SOURCES commands/center_test.cc)
 gb_add_test(colonies_test SOURCES commands/colonies_test.cc)
 gb_add_test(command_registry_test SOURCES commands/command_registry_test.cc)
 gb_add_test(commod_json_test)
-gb_add_test(coordinates_test)
+gb_add_test(coordinates_test SOURCES entities/coordinates_test.cc)
 gb_add_test(cs_test SOURCES commands/cs_test.cc)
 gb_add_test(database_test SOURCES dal/database_test.cc)
 gb_add_test(declare_test SOURCES commands/declare_test.cc)
@@ -484,7 +484,7 @@ gb_add_test(star_sqlite_test SOURCES repositories/star_sqlite_test.cc)
 gb_add_test(star_test)
 gb_add_test(stardata_json_test SOURCES repositories/stardata_json_test.cc)
 gb_add_test(strong_id_json_test EXTRA_LIBS glaze_core_module)
-gb_add_test(strong_id_test EXTRA_LIBS strong_id_module)
+gb_add_test(strong_id_test SOURCES entities/strong_id_test.cc EXTRA_LIBS strong_id_module)
 gb_add_test(survey_test SOURCES commands/survey_test.cc)
 gb_add_test(tactical_test SOURCES commands/tactical_test.cc EXTRA_LIBS tabulate::tabulate)
 gb_add_test(tax_test SOURCES commands/tax_test.cc)

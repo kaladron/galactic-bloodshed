@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-types.cppm
+/// \brief Module interface partition for foundational game types, vectors,
+/// coordinates, and scopes.
+
 export module gblib:types;
 
 import std;

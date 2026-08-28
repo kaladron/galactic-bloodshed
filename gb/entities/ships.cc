@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file ships.cc
+/// \brief Ship domain methods and helper calculations.
+
 module;
 
 import std;

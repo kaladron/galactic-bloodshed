@@ -1,47 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/**
- * @file gblib-entitylists.cppm
- * @brief Entity list iterators for type-safe, RAII-based iteration over
- *        game entities (races, stars, planets, ships).
- *
- * These classes provide a clean iteration interface over EntityManager
- * entities with automatic save-on-scope-exit semantics through EntityHandle.
- *
- * Usage:
- *   // Read-only iteration is explicit and cheap
- *   for (const Race& race : RaceList::readonly(entity_manager)) {
- *     observe(race);
- *   }
- *
- *   // Iterate over all races with RAII auto-save
- *   for (auto race_handle : RaceList(entity_manager)) {
- *     race_handle->tech += 1.0;  // Marks dirty, will auto-save
- *   }
- *
- *   // Iterate over all stars
- *   for (auto star_handle : StarList(entity_manager)) {
- *     process_star(*star_handle);
- *   }
- *
- *   // Iterate over planets of a specific star
- *   const Star& star = ...;
- *   for (auto planet_handle : PlanetList(entity_manager, starnum, star)) {
- *     process_planet(*planet_handle);
- *   }
- *
- *   // Iterate over ships (multiple modes available)
- *   for (auto ship_handle : ShipList(entity_manager,
- * ShipList::IterationType::AllAlive)) { ship_handle->fuel += 10;  // Marks
- * dirty, will auto-save
- *   }
- *
- * Conventions:
- *   - Prefer `XxxList::readonly(...)` for read-only iteration.
- *   - Use `XxxList(...)` only when you need mutable RAII handles.
- *   - Keep explicit numeric loops only when caller logic needs stable indices
- *     for side arrays or bookkeeping.
- */
+/// \file gblib-entitylists.cppm
+/// \brief Entity list iterators for type-safe, RAII-based iteration over game
+/// entities.
 
 export module gblib:entitylists;
 

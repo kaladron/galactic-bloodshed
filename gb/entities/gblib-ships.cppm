@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-ships.cppm
+/// \brief Module interface partition for Ship domain entities, types, and
+/// stats.
+
 export module gblib:ships;
 
 import std;

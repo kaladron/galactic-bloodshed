@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file entitylists.cc
+/// \brief Implementations for entity list iterators.
+
 module;
 
 import std;

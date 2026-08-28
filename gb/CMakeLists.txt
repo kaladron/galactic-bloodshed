@@ -134,7 +134,7 @@ target_sources(
          turn/gblib-dosector.cppm
          turn/gblib-doship.cppm
          turn/gblib-doturncmd.cppm
-         gblib-entitylists.cppm
+         entities/gblib-entitylists.cppm
          gblib-fire.cppm
          gblib-fuel.cppm
          gblib-gameobj.cppm
@@ -152,8 +152,8 @@ target_sources(
          services/gblib-services.cppm
          entities/gblib-sector.cppm
          gblib-sessionregistry.cppm
-         gblib-ships.cppm
-         gblib-shipfilter.cppm
+         entities/gblib-ships.cppm
+         entities/gblib-shipfilter.cppm
          gblib-shlmisc.cppm
          gblib-shootblast.cppm
          entities/gblib-star.cppm
@@ -168,7 +168,7 @@ target_sources(
           turn/dosector.cc
           turn/doship.cc
           turn/doturncmd.cc
-          entitylists.cc
+          entities/entitylists.cc
           services/entity_manager.cc
           fire.cc
           fuel.cc
@@ -188,7 +188,7 @@ target_sources(
           utils/rand.cc
           entities/sectormap.cc
           entities/sector.cc
-          ships.cc
+          entities/ships.cc
           shlmisc.cc
           shootblast.cc
           entities/star.cc
@@ -398,7 +398,7 @@ gb_add_test(dump_test SOURCES commands/dump_test.cc)
 gb_add_test(emulate_test SOURCES commands/emulate_test.cc)
 gb_add_test(enroll_test SOURCES enroll_test.cc GB_racegen.cc EXTRA_LIBS scnlib_module)
 gb_add_test(enslave_test SOURCES commands/enslave_test.cc)
-gb_add_test(entity_lists_test)
+gb_add_test(entity_lists_test SOURCES entities/entity_lists_test.cc)
 gb_add_test(entity_manager_kill_ship_test SOURCES services/entity_manager_kill_ship_test.cc)
 gb_add_test(entity_manager_test SOURCES services/entity_manager_test.cc)
 gb_add_test(estimate_test)
@@ -437,7 +437,7 @@ gb_add_test(move_test)
 gb_add_test(name_test SOURCES commands/name_test.cc)
 gb_add_test(news_test)
 gb_add_test(notification_test EXTRA_LIBS session notification)
-gb_add_test(numships_test)
+gb_add_test(numships_test SOURCES entities/numships_test.cc)
 gb_add_test(orbit_test SOURCES commands/orbit_test.cc)
 gb_add_test(order_test SOURCES commands/order_test.cc)
 gb_add_test(page_test SOURCES commands/page_test.cc EXTRA_LIBS session notification)
@@ -473,8 +473,8 @@ gb_add_test(server_test EXTRA_LIBS asio_module session auth server notification)
 gb_add_test(session_test EXTRA_LIBS session)
 gb_add_test(ship_repository_test SOURCES repositories/ship_repository_test.cc)
 gb_add_test(ship_spatial_parity_test SOURCES services/ship_spatial_parity_test.cc)
-gb_add_test(shipfilter_test)
-gb_add_test(shiplist_test)
+gb_add_test(shipfilter_test SOURCES entities/shipfilter_test.cc)
+gb_add_test(shiplist_test SOURCES entities/shiplist_test.cc)
 gb_add_test(shlmisc_test)
 gb_add_test(shootblast_test)
 gb_add_test(shutdown_test SOURCES commands/shutdown_test.cc)

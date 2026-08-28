@@ -16,33 +16,10 @@ namespace GB::commands {
 bool arm(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
-  int mode;
-  if (argv[0] == "arm") {
-    mode = 1;
-  } else {
-    mode = 0;  // disarm
-  }
-  int max_allowed;
-  int amount = 0;
-  money_t cost = 0;
+  const bool is_arm = (argv[0] == "arm");
 
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "Change scope to planet level first.\n";
-    return false;
-  }
-  const auto& star = *g.entity_manager.peek_star(g.snum());
-  if (!star.control(Playernum, Governor)) {
-    g.out << "You are not authorized to do that here.\n";
-    return false;
-  }
-  auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
-  if (!planet_handle.get()) {
-    g.out << "Planet not found.\n";
-    return false;
-  }
-  auto& planet = *planet_handle;
-
-  if (planet.slaved_to() > 0 && planet.slaved_to() != Playernum) {
+  const auto& planet_peek = *g.entity_manager.peek_planet(g.snum(), g.pnum());
+  if (planet_peek.slaved_to() > 0 && planet_peek.slaved_to() != Playernum) {
     g.out << "That planet has been enslaved!\n";
     return false;
   }
@@ -53,91 +30,110 @@ bool arm(const command_t& argv, GameObj& g) {
     return false;
   }
   const Coordinates coords = *coords_opt;
-  if (!planet.is_valid(coords)) {
+  if (!planet_peek.is_valid(coords)) {
     g.out << "Illegal coordinates.\n";
     return false;
   }
 
-  auto smap_handle = g.entity_manager.get_sectormap(g.snum(), g.pnum());
-  if (!smap_handle.get()) {
-    g.out << "Sector map not found.\n";
-    return false;
-  }
-  auto& smap = *smap_handle;
-  auto& sect = smap.get(coords);
-  if (sect.get_owner() != Playernum) {
+  const auto& smap_peek = *g.entity_manager.peek_sectormap(g.snum(), g.pnum());
+  const auto& sect_peek = smap_peek.get(coords);
+  if (sect_peek.get_owner() != Playernum) {
     g.out << "You don't own that sector.\n";
     return false;
   }
-  if (mode) {
-    max_allowed = MIN(sect.get_popn(), planet.info(Playernum).destruct *
-                                           (sect.get_mobilization() + 1));
-    if (argv.size() < 3)
+
+  if (is_arm) {
+    population_t max_allowed = std::min(
+        sect_peek.get_popn(),
+        static_cast<population_t>(planet_peek.info(Playernum).destruct *
+                                  (sect_peek.get_mobilization() + 1)));
+    population_t amount = 0;
+    if (argv.size() < 3) {
       amount = max_allowed;
-    else {
-      try {
-        amount = std::stoi(argv[2]);
-        if (amount <= 0) {
-          g.out << "You must specify a positive number of civs to arm.\n";
-          return false;
-        }
-      } catch (const std::exception&) {
+    } else {
+      auto count_res = scn::scan<population_t>(argv[2], "{}");
+      if (!count_res || count_res->value() <= 0) {
         g.out << "You must specify a positive number of civs to arm.\n";
         return false;
       }
+      amount = count_res->value();
     }
     amount = std::min(amount, max_allowed);
     if (!amount) {
       g.out << "You can't arm any civilians now.\n";
       return false;
     }
-    /*    enlist_cost = ENLIST_TROOP_COST * amount; */
+
     money_t enlist_cost = g.race->fighters * amount;
     if (enlist_cost > g.race->governor[Governor.value].money) {
       g.out << std::format("You need {} money to enlist {} troops.\n",
                            enlist_cost, amount);
       return false;
     }
-    auto race_handle = g.entity_manager.get_race(Playernum);
-    auto& race_mut = *race_handle;
-    race_mut.governor[Governor.value].money -= enlist_cost;
 
-    cost = std::max(1U, amount / (sect.get_mobilization() + 1));
-    sect.set_troops(sect.get_troops() + amount);
-    sect.subtract_popn(amount);
-    planet.popn() -= amount;
-    planet.info(Playernum).popn -= amount;
-    planet.troops() += amount;
-    planet.info(Playernum).troops += amount;
-    planet.info(Playernum).destruct -= cost;
+    g.entity_manager.mutate_race(Playernum, [&](Race& race_mut) {
+      race_mut.governor[Governor.value].money -= enlist_cost;
+    });
+
+    money_t cost = std::max(
+        1U,
+        static_cast<unsigned int>(amount / (sect_peek.get_mobilization() + 1)));
+    population_t final_popn = 0;
+    population_t final_troops = 0;
+
+    g.entity_manager.mutate_sectormap(g.snum(), g.pnum(), [&](SectorMap& smap) {
+      auto& sect = smap.get(coords);
+      sect.set_troops(sect.get_troops() + amount);
+      sect.subtract_popn(amount);
+      final_popn = sect.get_popn();
+      final_troops = sect.get_troops();
+    });
+
+    g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+      planet.popn() -= amount;
+      planet.info(Playernum).popn -= amount;
+      planet.troops() += amount;
+      planet.info(Playernum).troops += amount;
+      planet.info(Playernum).destruct -= cost;
+    });
+
     g.out << std::format(
         "{} population armed at a cost of {} (now {} civilians, {} military)\n",
-        amount, cost, sect.get_popn(), sect.get_troops());
+        amount, cost, final_popn, final_troops);
     g.out << std::format("This mobilization cost {} money.\n", enlist_cost);
   } else {
-    if (argv.size() < 3)
-      amount = sect.get_troops();
-    else {
-      try {
-        amount = std::stoi(argv[2]);
-        if (amount <= 0) {
-          g.out << "You must specify a positive number of civs to arm.\n";
-          return false;
-        }
-      } catch (const std::exception&) {
+    population_t amount = 0;
+    if (argv.size() < 3) {
+      amount = sect_peek.get_troops();
+    } else {
+      auto count_res = scn::scan<population_t>(argv[2], "{}");
+      if (!count_res || count_res->value() <= 0) {
         g.out << "You must specify a positive number of civs to arm.\n";
         return false;
       }
-      amount = MIN(sect.get_troops(), amount);
+      amount = std::min(sect_peek.get_troops(), count_res->value());
     }
-    sect.add_popn(amount);
-    sect.set_troops(sect.get_troops() - amount);
-    planet.popn() += amount;
-    planet.troops() -= amount;
-    planet.info(Playernum).popn += amount;
-    planet.info(Playernum).troops -= amount;
+
+    population_t final_popn = 0;
+    population_t final_troops = 0;
+
+    g.entity_manager.mutate_sectormap(g.snum(), g.pnum(), [&](SectorMap& smap) {
+      auto& sect = smap.get(coords);
+      sect.add_popn(amount);
+      sect.set_troops(sect.get_troops() - amount);
+      final_popn = sect.get_popn();
+      final_troops = sect.get_troops();
+    });
+
+    g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+      planet.popn() += amount;
+      planet.troops() -= amount;
+      planet.info(Playernum).popn += amount;
+      planet.info(Playernum).troops -= amount;
+    });
+
     g.out << std::format("{} troops disarmed (now {} civilians, {} military)\n",
-                         amount, sect.get_popn(), sect.get_troops());
+                         amount, final_popn, final_troops);
   }
   return true;
 }

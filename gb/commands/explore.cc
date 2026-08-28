@@ -65,8 +65,9 @@ bool explore(const command_t& argv, GameObj& g) {
         table.add_row({"#", "Planet", "Attributes", "Type", "Compat"});
         table[0].format().font_style({tabulate::FontStyle::bold});
 
-        for (planetnum_t i = 0; i < star_ref.numplanets(); i++) {
-          const auto& pl = *g.entity_manager.peek_planet(star_ref.star_id(), i);
+        for (const Planet& pl : PlanetList::readonly(
+                 g.entity_manager, star_ref.star_id(), star_ref)) {
+          const planetnum_t i = pl.planet_order();
 
           // Build attributes string
           std::string attrs;

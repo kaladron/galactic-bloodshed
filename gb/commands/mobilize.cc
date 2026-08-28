@@ -12,6 +12,7 @@
 module;
 
 import gblib;
+import scnlib;
 import std;
 
 module commands;
@@ -19,34 +20,33 @@ module commands;
 namespace GB::commands {
 
 bool mobilize(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  ap_t APcount = 1;
-
-  auto planet = g.entity_manager.get_planet(g.snum(), g.pnum());
-  if (!planet.get()) {
-    g.out << "Planet not found.\n";
-    return false;
-  }
+  const player_t Playernum = g.player();
+  const ap_t APcount = 1;
 
   if (argv.size() < 2) {
-    g.out << std::format("Current mobilization: {}    Quota: {}\n",
-                         planet->info(Playernum).comread,
-                         planet->info(Playernum).mob_set);
+    g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& planet) {
+      g.out << std::format("Current mobilization: {}    Quota: {}\n",
+                           planet.info(Playernum).comread,
+                           planet.info(Playernum).mob_set);
+    });
     return true;
   }
-  int sum_mob = std::stoi(argv[1]);
 
-  if (sum_mob > 100 || sum_mob < 0) {
+  auto scanned = scn::scan<int>(argv[1], "{}");
+  if (!scanned || scanned->value() > 100 || scanned->value() < 0) {
     g.out << "Illegal value.\n";
     return false;
   }
+  int sum_mob = scanned->value();
 
   if (!g.deduct_ap(g.snum(), APcount)) {
     g.out << std::format("You don't have {} action points there.\n", APcount);
     return false;
   }
 
-  planet->info(Playernum).mob_set = sum_mob;
+  g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
+    planet.info(Playernum).mob_set = sum_mob;
+  });
   return true;
 }
 

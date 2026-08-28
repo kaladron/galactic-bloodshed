@@ -16,7 +16,17 @@ namespace GB::commands {
 bool help(const command_t& argv, GameObj& g) {
   if (argv.size() == 1) {
     // Display general help from HELP_FILE
-    if (auto f = std::ifstream(HELP_FILE)) {
+    std::string filename = HELP_FILE;
+    if (!std::filesystem::exists(filename)) {
+      if (std::filesystem::exists("help/help.md")) {
+        filename = "help/help.md";
+      } else if (std::filesystem::exists("../help/help.md")) {
+        filename = "../help/help.md";
+      } else if (std::filesystem::exists("../../help/help.md")) {
+        filename = "../../help/help.md";
+      }
+    }
+    if (auto f = std::ifstream(filename)) {
       std::string line;
       while (std::getline(f, line)) {
         g.out << line << "\n";
@@ -28,6 +38,17 @@ bool help(const command_t& argv, GameObj& g) {
   } else {
     // Display topic-specific help
     std::string filename = std::format("{}/{}.md", HELPDIR, argv[1]);
+    if (!std::filesystem::exists(filename)) {
+      if (std::filesystem::exists(std::format("help/{}.md", argv[1]))) {
+        filename = std::format("help/{}.md", argv[1]);
+      } else if (std::filesystem::exists(
+                     std::format("../help/{}.md", argv[1]))) {
+        filename = std::format("../help/{}.md", argv[1]);
+      } else if (std::filesystem::exists(
+                     std::format("../../help/{}.md", argv[1]))) {
+        filename = std::format("../../help/{}.md", argv[1]);
+      }
+    }
     if (auto f = std::ifstream(filename)) {
       std::string line;
       while (std::getline(f, line)) {

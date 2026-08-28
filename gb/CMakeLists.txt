@@ -8,60 +8,46 @@ add_compile_options(-Werror)
 # In Release mode, use install directories for production
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Development mode: use source data directory
-    set(PKGDATADIR
-        "${CMAKE_SOURCE_DIR}/data/"
-        CACHE STRING "Path to the package data directory")
+    set(PKGDATADIR "${CMAKE_SOURCE_DIR}/data/")
     message(STATUS "Debug build: Using source data directory: ${PKGDATADIR}")
 else()
     # Production mode: use install directory  
-    set(PKGDATADIR
-        "${CMAKE_INSTALL_FULL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}/"
-        CACHE STRING "Path to the package data directory")
+    set(PKGDATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${CMAKE_PROJECT_NAME}/")
     message(STATUS "Release build: Using install data directory: ${PKGDATADIR}")
 endif()
 add_definitions(-DPKGDATADIR="${PKGDATADIR}")
 
-# Set PKGSTATEDIR using CMAKE_INSTALL_LOCALSTATEDIR for local state files
+# Set PKGSTATEDIR for local state files
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Development mode: use build directory for database and state files
-    set(PKGSTATEDIR
-        "${CMAKE_BINARY_DIR}/gamedata/"
-        CACHE STRING "Path to the package state directory")
+    set(PKGSTATEDIR "${CMAKE_BINARY_DIR}/gamedata/")
     # Create the development state directory and subdirectories
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/gamedata")
     message(STATUS "Debug build: Using build state directory: ${PKGSTATEDIR}")
+    set(STATE_INSTALL_DESTINATION "${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
 else()
-    # Production mode: use install directory
-    set(PKGSTATEDIR
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/${CMAKE_PROJECT_NAME}/"
-        CACHE STRING "Path to the package state directory")
+    # Production mode: use /var/lib/galactic-bloodshed/
+    set(PKGSTATEDIR "/var/lib/${CMAKE_PROJECT_NAME}/")
     message(STATUS "Release build: Using install state directory: ${PKGSTATEDIR}")
+    set(STATE_INSTALL_DESTINATION "/var/lib/${CMAKE_PROJECT_NAME}")
 endif()
 add_definitions(-DPKGSTATEDIR="${PKGSTATEDIR}")
-install(DIRECTORY DESTINATION ${PKGSTATEDIR})
+install(DIRECTORY DESTINATION "${STATE_INSTALL_DESTINATION}")
 
-# Set DOCDIR using CMAKE_INSTALL_DOCDIR for documentation files
+# Set DOCDIR and HELPDIR
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Development mode: use source docs directory
-    set(DOCDIR
-        "${CMAKE_SOURCE_DIR}/docs/"
-        CACHE STRING "Path to the package document directory")
+    set(DOCDIR "${CMAKE_SOURCE_DIR}/docs/")
     message(STATUS "Debug build: Using source docs directory: ${DOCDIR}")
     # Development mode: use source help directory
-    set(HELPDIR
-        "${CMAKE_SOURCE_DIR}/help/"
-        CACHE STRING "Path to the help files directory")
+    set(HELPDIR "${CMAKE_SOURCE_DIR}/help/")
     message(STATUS "Debug build: Using source help directory: ${HELPDIR}")
 else()
     # Production mode: use install directory
-    set(DOCDIR
-        "${CMAKE_INSTALL_FULL_DOCDIR}/"
-        CACHE STRING "Path to the package document directory")
+    set(DOCDIR "${CMAKE_INSTALL_FULL_DOCDIR}/")
     message(STATUS "Release build: Using install docs directory: ${DOCDIR}")
-    # Production mode: use install directory for help files
-    set(HELPDIR
-        "${CMAKE_INSTALL_FULL_DOCDIR}/help/"
-        CACHE STRING "Path to the help files directory")
+    # Production mode: use /usr/share/galactic-bloodshed/help/
+    set(HELPDIR "${CMAKE_INSTALL_FULL_DATADIR}/${CMAKE_PROJECT_NAME}/help/")
     message(STATUS "Release build: Using install help directory: ${HELPDIR}")
 endif()
 add_definitions(-DDOCDIR="${DOCDIR}")
@@ -78,6 +64,12 @@ include_directories(..)
 
 # Attempt to find SQLite3 on the system
 find_package(SQLite3 REQUIRED)
+find_library(SQLITE3_STATIC_LIB NAMES libsqlite3.a)
+if(SQLITE3_STATIC_LIB)
+  set_target_properties(SQLite::SQLite3 PROPERTIES
+    IMPORTED_LOCATION "${SQLITE3_STATIC_LIB}"
+  )
+endif()
 
 # Create types module as a standalone foundational library
 # This contains basic type definitions used across all layers
@@ -366,7 +358,7 @@ target_link_libraries(racegen PRIVATE gblib gb_entities gb_services dallib SQLit
 
 add_executable(GB server/GB_server.cc)
 target_link_libraries(GB PRIVATE gblib gb_entities gb_services gb_server commands asio_module dallib SQLite::SQLite3 glaze::glaze)
-install(TARGETS GB)
+install(TARGETS GB makeuniv enrol racegen)
 
 # Test helper function
 function(gb_add_test name)

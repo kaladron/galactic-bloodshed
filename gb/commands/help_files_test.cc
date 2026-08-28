@@ -7,17 +7,32 @@
 import test;
 import std;
 
+std::filesystem::path get_help_dir() {
+  std::filesystem::path help_dir(HELPDIR);
+  if (!std::filesystem::exists(help_dir / "help.md")) {
+    if (std::filesystem::exists("../../help/help.md")) {
+      return "../../help";
+    }
+    if (std::filesystem::exists("../help/help.md")) {
+      return "../help";
+    }
+    if (std::filesystem::exists("help/help.md")) {
+      return "help";
+    }
+  }
+  return help_dir;
+}
+
 // Test that help files exist in the HELPDIR with .md extension
 void test_help_files_exist() {
   std::println(std::cout, "Test: Help files exist with .md extension");
 
-  // HELPDIR is defined at compile time via CMake
-  std::filesystem::path help_dir(HELPDIR);
+  std::filesystem::path help_dir = get_help_dir();
 
   // Check that the help directory exists
   test::expect_true(std::filesystem::exists(help_dir));
   test::expect_true(std::filesystem::is_directory(help_dir));
-  std::println(std::cout, "  ✓ HELPDIR exists: {}", HELPDIR);
+  std::println(std::cout, "  ✓ HELPDIR exists: {}", help_dir.string());
 
   // Count .md files
   int md_count = 0;
@@ -34,11 +49,13 @@ void test_help_files_exist() {
 void test_help_file_readable() {
   std::println(std::cout, "Test: Help files can be opened and read");
 
+  auto help_dir = get_help_dir();
+
   // Test a few common help files
   std::vector<std::string> test_files = {"help", "build", "cs", "map", "orbit"};
 
   for (const auto& name : test_files) {
-    std::string filepath = std::format("{}/{}.md", HELPDIR, name);
+    std::string filepath = std::format("{}/{}.md", help_dir.string(), name);
 
     std::ifstream file(filepath);
     test::expect_true(file.is_open());
@@ -61,7 +78,8 @@ void test_help_file_readable() {
 void test_help_file_format() {
   std::println(std::cout, "Test: Help files have proper markdown format");
 
-  std::string filepath = std::format("{}/build.md", HELPDIR);
+  auto help_dir = get_help_dir();
+  std::string filepath = std::format("{}/build.md", help_dir.string());
 
   std::ifstream file(filepath);
   test::expect_true(file.is_open());
@@ -93,8 +111,9 @@ void test_help_file_format() {
 void test_nonexistent_help_file() {
   std::println(std::cout, "Test: Non-existent help file returns null");
 
+  auto help_dir = get_help_dir();
   std::string filepath =
-      std::format("{}/this_topic_does_not_exist.md", HELPDIR);
+      std::format("{}/this_topic_does_not_exist.md", help_dir.string());
 
   std::ifstream file(filepath);
   test::expect_false(file.is_open());

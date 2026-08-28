@@ -44,6 +44,7 @@ FetchContent_Declare(
   EXCLUDE_FROM_ALL
   PATCH_COMMAND bash ${CMAKE_SOURCE_DIR}/cmake/strip_std_includes.sh
 )
+set(BOOST_INCLUDE_LIBRARIES headers asio)
 FetchContent_MakeAvailable(Boost)
 
 # Suppress warnings on all FetchContent library targets

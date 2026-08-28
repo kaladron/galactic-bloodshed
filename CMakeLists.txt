@@ -17,21 +17,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 # https://gitlab.kitware.com/cmake/cmake/-/issues/25539
 set(CMAKE_CXX_EXTENSIONS ON)
 
-# Use LLVM libc only if clang
-#if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-set(CMAKE_EXE_LINKER_FLAGS "-lc++abi")
-set(CMAKE_LINKER_TYPE LLD)
-#endif()
 
-project("galactic-bloodshed" LANGUAGES CXX)
+set(CMAKE_CXX_FLAGS "-stdlib=libc++")
+
+project("galactic-bloodshed" VERSION 0.1.0 LANGUAGES CXX)
 
 # Include GNUInstallDirs to get canonical paths
 include(GNUInstallDirs)
 
 # Set default build type to Debug for development if not specified
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)")
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -146,4 +142,50 @@ add_subdirectory(gb)
 add_subdirectory(data)
 add_subdirectory(docs)
 add_subdirectory(help)
+
+# ==============================================================================
+# Packaging (CPack)
+# ==============================================================================
+set(CPACK_PACKAGE_NAME "galactic-bloodshed")
+set(CPACK_PACKAGE_VENDOR "Galactic Bloodshed Project")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Galactic Bloodshed 4X multiplayer space strategy game server")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/kaladron/galactic-bloodshed")
+set(CPACK_PACKAGE_CONTACT "Jeff Bailey <jeffbailey@google.com>")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+
+if(NOT CPACK_PACKAGE_VERSION)
+  if(PROJECT_VERSION)
+    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+  else()
+    set(CPACK_PACKAGE_VERSION "0.1.0")
+  endif()
+endif()
+
+# Debian-specific packaging options
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jeff Bailey <jeffbailey@google.com>")
+set(CPACK_DEBIAN_PACKAGE_SECTION "games")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Galactic Bloodshed 4X multiplayer space strategy game server")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/kaladron/galactic-bloodshed")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+
+# Source package options
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "galactic-bloodshed-${CPACK_PACKAGE_VERSION}-source")
+set(CPACK_SOURCE_IGNORE_FILES
+  "/\\.git/"
+  "/build/"
+  "/\\.cache/"
+  "/\\.clangd/"
+  ".*~$"
+)
+
+# Binary package options
+set(CPACK_SET_DESTDIR ON)
+set(CPACK_GENERATOR "TGZ;DEB")
+set(CPACK_PACKAGE_FILE_NAME "galactic-bloodshed-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
+include(CPack)
 

@@ -38,3 +38,6 @@ compile_commands.json
 /plan*.md
 
 _codeql_detected_source_root
+_CPack_Packages/
+*.deb
+*.tar.gz

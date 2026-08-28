@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Use LLVM libc
+# Use LLVM libc++ statically linked
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-set(CMAKE_EXE_LINKER_FLAGS "-lc++abi")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostdlib++ -static-libgcc -Wl,-Bstatic -lc++ -lc++abi -Wl,-Bdynamic")
 
 # Add libc++ module directory as a system include directory so Clang and Clang-Tidy
 # treat 'import std;' declarations as system headers rather than user AST nodes.

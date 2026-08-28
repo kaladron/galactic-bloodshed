@@ -16,14 +16,20 @@
 
 ## 🤖 Agent Skills
 
-- **Commit messages**: Use `.github/skills/generate-commit-message/SKILL.md` when asked to draft a commit message or commit summary.
-- **Code formatting**: Always run `clang-format -i` on modified C++ files (`.cc`, `.cppm`, `.h`, `.hpp`) before committing or pushing changes (see `.github/skills/clang-format/SKILL.md`).
-- **Static analysis**: Run `./tools/tidy-changed.sh` on modified C++ files before committing (see `.github/skills/clang-tidy/SKILL.md`).
-- **Atomic commit workflow**: Use `.github/skills/atomic-commit-workflow/SKILL.md` for bite-sized (~200 LOC) commits with in-commit tests and verification.
-- **Command implementation**: Use `.github/skills/command-implementation/SKILL.md` when adding or migrating player commands using `CommandDescriptor`.
-- **Command test matrix**: Use `.github/skills/command-test-matrix/SKILL.md` when writing 4-way command tests.
-- **Required workflow**: Always inspect the current git diff first so the proposed message covers the full change set, including tests and refactors.
-- **Output format**: Return commit message suggestions in markdown.
+Specialized development skills are located in `.github/skills/` and provide comprehensive reference workflows:
+
+- **Commit Messages**: `.github/skills/generate-commit-message/SKILL.md` — Draft repository-wide commit messages.
+- **Code Formatting**: `.github/skills/clang-format/SKILL.md` — Run `clang-format -i` before committing.
+- **Static Analysis**: `.github/skills/clang-tidy/SKILL.md` — Run `./tools/tidy-changed.sh` before committing.
+- **Atomic Commits**: `.github/skills/atomic-commit-workflow/SKILL.md` — Bite-sized (~200 LOC) commits with in-commit tests.
+- **Command Implementation**: `.github/skills/command-implementation/SKILL.md` — Authoring commands with `CommandDescriptor`.
+- **Command Test Matrix**: `.github/skills/command-test-matrix/SKILL.md` — 4-way unit tests (happy path, guest, governor, scope).
+- **Entity Manager Access**: `.github/skills/entity-manager-access/SKILL.md` — Scoped monadic mutations (`mutate_*`) and peeks (`with_*`, `peek_*`).
+- **Entity List Iteration**: `.github/skills/entity-list-iteration/SKILL.md` — Readonly and mutable list iteration patterns.
+- **Database Test Pattern**: `.github/skills/database-test-pattern/SKILL.md` — In-memory SQLite testing and persistence verification.
+- **Strong ID Types**: `.github/skills/strong-id-types/SKILL.md` — Type-safe IDs (`player_t`, `shipnum_t`) and `PlayerVector`.
+- **Repository Pattern**: `.github/skills/repository-pattern/SKILL.md` — DAL and repository implementation patterns.
+- **Module File Template**: `.github/skills/module-file-template/SKILL.md` — Standard C++26 module structure and headers.
 
 ## 🧭 Workflow & Development Principles
 
@@ -208,13 +214,13 @@ bool commandname(const command_t& argv, GameObj& g) {
     // 2. Access entities via EntityManager (read-only peek)
     const auto& star = *g.entity_manager.peek_star(g.snum());
     
-    // 3. Mutate entities via RAII handle two-step pattern
-    auto planet_handle = g.entity_manager.get_planet(g.snum(), g.pnum());
-    auto& planet = *planet_handle;
-    planet.popn += 1000;  // Auto-saves when planet_handle goes out of scope
+    // 3. Mutate entities via scoped monadic mutation (auto-saves on lambda exit)
+    g.entity_manager.mutate_planet(g.snum(), g.pnum(), [](Planet& planet) {
+        planet.popn += 1000;
+    });
     
     // 4. Player output through g.out
-    g.out << std::format("Success: population now {}\n", planet.popn);
+    g.out << "Success: planet population updated.\n";
     return true;
 }
 
@@ -232,23 +238,18 @@ export constexpr CommandDescriptor commandname_cmd{
 }  // namespace GB::commands
 ```
 
-#### ⚠️ CRITICAL: EntityHandle Lifetime Rule
+#### 🛡️ Monadic Mutation Pattern (`mutate_*`)
 
-**ALWAYS use the two-step pattern** when calling `get_*()` methods. Dereferencing directly from the return value destroys the handle immediately, causing auto-save **before** your modifications:
+All entity mutations MUST go through `EntityManager::mutate_*()` methods. Calling `mutate_*` executes a mutating lambda and automatically persists changes upon lambda completion:
 
 ```cpp
-// ❌ WRONG - Handle destroyed immediately, auto-save happens too early!
-auto& planet = *g.entity_manager.get_planet(g.snum, g.pnum);
-planet.popn += 1000;  // This change is NOT saved!
-
-// ✅ CORRECT - Handle stays alive until scope exit
-auto planet_handle = g.entity_manager.get_planet(g.snum, g.pnum);
-auto& planet = *planet_handle;
-planet.popn += 1000;  // Modifications happen here
-// Auto-save occurs when planet_handle goes out of scope
+// ✅ CORRECT - Scoped mutation with automatic persistence
+g.entity_manager.mutate_planet(g.snum(), g.pnum(), [](Planet& planet) {
+    planet.popn += 1000;  // Modifications happen here
+}); // Auto-save occurs when lambda exits
 ```
 
-**Why:** `get_*()` returns an `EntityHandle<T>` temporary. When you dereference it immediately with `*`, the temporary is destroyed at the end of that statement, triggering the destructor and auto-save. Your subsequent modifications happen on a reference to data that's already been saved, so changes are lost.
+**Why:** Internal `get_*()` handles are encapsulated as `private:` in `EntityManager` to eliminate premature save bugs and prevent holding dangling or unpersisted entity references.
 
 #### Error Handling
 - Use early returns with clear error messages
@@ -375,15 +376,15 @@ const auto* smap = g.entity_manager.peek_sectormap(star_id, planet_num);
 
 **IMPORTANT:** `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError` instead of returning nullptr. Star/planet indices are always contiguous (0 to N-1), so by the time code has a valid star/planet number, the entity must exist or data is corrupt. These exceptions represent programming errors or data corruption, not expected conditions.
 
-**Read-Write Access (get methods - RAII with auto-save):**
+**Read-Write Access (monadic mutate methods - automatic persistence):**
 
 For **validated/internal IDs** (e.g., `g.player`), no try/catch is needed:
 ```cpp
 // Validated ID path: g.player is always valid
-auto race_handle = g.entity_manager.get_race(g.player);
-auto& race = *race_handle;
-race.tech += 10.5;  // Guaranteed valid, no null check
-// Auto-saves when race_handle goes out of scope
+g.entity_manager.mutate_race(g.player, [](Race& race) {
+  race.tech += 10.5;  // Guaranteed valid, no null check
+});
+// Auto-saves when lambda completes
 ```
 
 For **user-input IDs**, wrap in try/catch:
@@ -391,10 +392,9 @@ For **user-input IDs**, wrap in try/catch:
 // User provides a player number as command argument
 player_t target_player{user_input};
 try {
-  auto race_handle = g.entity_manager.get_race(target_player);
-  auto& race = *race_handle;
-  race.tech += 10.5;
-  // Auto-saves on scope exit
+  g.entity_manager.mutate_race(target_player, [](Race& race) {
+    race.tech += 10.5;
+  });
 } catch (const EntityNotFoundError&) {
   g.out << "Player not found.\n";
   return;
@@ -402,148 +402,48 @@ try {
 ```
 
 **Available EntityManager Methods:**
-- **Races**: `peek_race(id)`, `get_race(id)`
-- **Ships**: `peek_ship(id)`, `get_ship(id)`, `num_ships()`
-- **Stars**: `peek_star(id)`, `get_star(id)`
-- **Planets**: `peek_planet(star_id, planet_num)`, `get_planet(star_id, planet_num)`
-- **Sectors**: `peek_sector(planet_id, x, y)`, `get_sector(planet_id, x, y)`
-- **Commodities**: `peek_commod(id)`, `get_commod(id)`, `num_commods()`
-- **Blocks**: `peek_block(id)`, `get_block(id)`
-- **Power**: `peek_power(id)`, `get_power(id)`
-- **Universe Data**: `peek_universe()`, `get_universe()`
+- **Races**: `peek_race(id)`, `with_race(id, fn)`, `mutate_race(id, fn)`
+- **Ships**: `peek_ship(id)`, `with_ship(id, fn)`, `mutate_ship(id, fn)`, `num_ships()`
+- **Stars**: `peek_star(id)`, `with_star(id, fn)`, `mutate_star(id, fn)`
+- **Planets**: `peek_planet(star_id, planet_num)`, `with_planet(star_id, planet_num, fn)`, `mutate_planet(star_id, planet_num, fn)`
+- **SectorMaps**: `peek_sectormap(star_id, planet_num)`, `with_sectormap(star_id, planet_num, fn)`, `mutate_sectormap(star_id, planet_num, fn)`
+- **Commodities**: `peek_commod(id)`, `with_commod(id, fn)`, `mutate_commod(id, fn)`, `num_commods()`
+- **Blocks**: `peek_block(id)`, `with_block(id, fn)`, `mutate_block(id, fn)`
+- **Power**: `peek_power(id)`, `with_power(id, fn)`, `mutate_power(id, fn)`
+- **Universe Data**: `peek_universe()`, `with_universe(fn)`, `mutate_universe(fn)`
+- **Server State**: `peek_server_state()`, `with_server_state(fn)`, `mutate_server_state(fn)`
+- **Ship Exam**: `peek_ship_exam(type)`, `with_ship_exam(type, fn)`, `mutate_ship_exam(type, fn)`
 
 **Key Benefits:**
-- **RAII**: Auto-saves modified entities when handle goes out of scope
+- **Monadic Scoping**: Mutations are bounded to lambdas; auto-saves immediately on lambda exit
+- **Encapsulated Handles**: Internal `get_*()` handles are private, preventing dangling references or premature saves
 - **Caching**: Entities loaded once, reused across multiple accesses
 - **Type-safe**: Compile-time checking of entity types
-- **No manual persistence**: No need to call `put*()` functions
-
-#### Legacy Pattern (Being Phased Out)
-
-**⚠️ DEPRECATED - Do not use in new code:**
-
-**Note:** Some executables (like `enrol.cc`) still use a mixed pattern during migration:
-- `peek_*()` for read-only EntityManager access
-- `get*()` + `put*()` for writes (e.g., `getstar()` returns `Star` by value, then `putstar()` to persist)
-- This mixed approach will be fully replaced by EntityManager `get_*()` handles in future phases
-
-#### Read Operations
-```cpp
-// Get star system
-auto star = getstar(snum);
-
-// Get planet
-auto planet = getplanet(snum, pnum);
-
-// Get ship (returns std::optional)
-auto ship = getship("#123");
-if (!ship) {
-    g.out << "Ship not found.\n";
-    return;
-}
-
-// Get sector
-auto sector = getsector(planet, x, y);
-```
-
-#### Write Operations
-```cpp
-// Modify and persist ship
-ship->fuel += 100;
-putship(*ship);
-
-// Modify and persist planet
-planet.popn += 1000;
-putplanet(planet, stars[snum], pnum);
-
-// Use finish_* helpers for complex operations
-finish_build_ship(sector, x, y, planet, snum, pnum, outside, level, builder);
-```
-
-**Note:** These legacy functions will be removed in Phase 6 of the database migration. All new code should use EntityManager.
+- **No manual persistence**: No need to call `put*()` or manual `.save()` functions
 
 ### Working with GameObj Context
 
 The `GameObj& g` parameter provides:
-- `g.player` - Current player number (1-indexed)
-- `g.governor` - Current governor number
+- `g.player()` - Current player number (`player_t`, 1-indexed)
+- `g.governor()` - Current governor number (`governor_t`)
 - `g.race` - **Pointer to current player's race** (already populated by `process_command()`, always valid)
 - `g.level` - Current scope level (UNIV/STAR/PLAN/SHIP)
-- `g.snum` - Current star number
-- `g.pnum` - Current planet number
-- `g.shipno` - Current ship number
+- `g.snum()` - Current star number (`starnum_t`)
+- `g.pnum()` - Current planet number (`planetnum_t`)
+- `g.shipno` - Current ship number (`shipnum_t`)
 - `g.out` - Output stream to player
-- `g.entity_manager` - **NEW:** Centralized entity access (use this instead of global arrays!)
+- `g.entity_manager` - Centralized entity access service
 
 **Key Pattern**: `g.race` is pre-populated before any command executes in production:
-- For **read-only** access to current player's race: Use `g.race->field` directly
-- For **modifications** to current player's race: Use `g.entity_manager.get_race(g.player)` for RAII (no null check needed)
-- For **other entities with validated IDs**: No try/catch needed; IDs are pre-validated by game logic
-- For **user-input IDs**: Wrap in try/catch to handle `EntityNotFoundError`
-- **In tests**: Set `g.race = entity_manager.peek_race(g.player);` after creating GameObj to match production behavior
+- For **read-only** access to current player's race: Use `g.race->field` directly.
+- For **modifications** to current player's race: Use `g.entity_manager.mutate_race(g.player(), [](Race& race) { ... })`.
+- For **other entities with validated IDs**: No try/catch needed; IDs are pre-validated by game logic.
+- For **user-input IDs**: Wrap in try/catch to handle `EntityNotFoundError` or use `with_*`.
+- **In tests**: Set `g.race = entity_manager.peek_race(g.player());` after creating GameObj to match production behavior.
 
-### Writing Tests
+### Writing Unit & Integration Tests
 
-When creating new test files, follow this essential pattern for database initialization:
-
-```cpp
-// SPDX-License-Identifier: Apache-2.0
-
-import dallib;
-import gblib;
-import std;
-
-#include <cassert>
-
-int main() {
-  // CRITICAL: Always create in-memory database BEFORE calling initialize_schema()
-  Database db(":memory:");
-
-  // Initialize database tables - this creates all required tables
-  initialize_schema(db);
-  
-  // Create EntityManager for accessing entities
-  EntityManager em(db);
-  
-  // Create JsonStore for repository operations (if needed)
-  JsonStore store(db);
-
-  // Your test logic here...
-  // Example: Create and save a race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.Guest = false;
-  race.governor[0].money = 1000;
-  
-  RaceRepository races(store);
-  races.save(race);
-  
-  // Create GameObj for testing commands
-  GameObj g(em);
-  g.player = 1;
-  g.governor = 0;
-  g.race = em.peek_race(1);  // IMPORTANT: Set race pointer like production does
-  
-  // Verify with EntityManager
-  const auto* saved = em.peek_race(1);
-  assert(saved);
-  assert(saved->governor[0].money == 1000);
-  
-  std::println("Test passed!");
-  return 0;
-}
-```
-
-**⚠️ Critical Database Initialization Rules for Tests:**
-- **ALWAYS** create `Database db(":memory:");` before calling `initialize_schema(db)`
-- This creates all required tables including `tbl_ship`, `tbl_race`, `tbl_commod`, etc.
-- Without this, tests will segfault when trying to access non-existent database files
-- The `initialize_schema()` function creates the database schema but requires an active connection
-- All working tests follow this pattern - never deviate from it
-- Tests typically also need `import dallib;` in addition to `import gblib;`
-- Create `EntityManager em(db)` after schema initialization for entity access
-- Create `JsonStore store(db)` if you need to use repositories directly
+All tests run against an in-memory SQLite database (`Database db(":memory:");` + `initialize_schema(db);`). See [`.github/skills/database-test-pattern/SKILL.md`](.github/skills/database-test-pattern/SKILL.md) and [`.github/skills/command-test-matrix/SKILL.md`](.github/skills/command-test-matrix/SKILL.md) for full test setup guides, entity creation through repositories, and cache-clear persistence verification.
 
 ## ⚠️ Critical Rules & Anti-patterns
 
@@ -665,167 +565,12 @@ The project includes a Python client for connecting to the game server. See [`cl
 - Curses UI implementation
 - Debugging and development tips
 
-## 📚 Quick Task Reference
-
-These recipes provide step-by-step instructions for common tasks.
-
-### Add a New Command
-1. **Export descriptor in `gb/commands/commands.cppm`**:
-   ```cpp
-   export extern const CommandDescriptor foo_cmd;
-   ```
-
-2. **Create `gb/commands/foo.cc`**:
-   ```cpp
-   // SPDX-License-Identifier: Apache-2.0
-
-   /// \file foo.cc
-   /// \brief Example command implementation.
-
-   module;
-   import gblib;
-   import std;
-   module commands;
-
-   namespace GB::commands {
-
-   bool foo(const command_t& argv, GameObj& g) {
-     // Domain argument parsing & entity logic via g.entity_manager
-     // Return true on success (triggers AP deduction), false on domain error
-     return true;
-   }
-
-   export constexpr CommandDescriptor foo_cmd{
-       .name = "foo",
-       .roles = {},
-       .scopes = AllowedScopes::planet_only(),
-       .ap = APCost::fixed_star(1),
-       .min_args = 1,
-       .syntax = "foo",
-       .description = "Example command",
-       .handler = &foo,
-   };
-
-   }  // namespace GB::commands
-   ```
-
-3. **Add source file to `commands` target in `gb/CMakeLists.txt`**:
-   ```cmake
-   PRIVATE commands/foo.cc
-   ```
-
-4. **Register in `gb/commands/registry.cc` (or `GB_server.cc`)**:
-   ```cpp
-   {"foo", &GB::commands::foo_cmd},
-   ```
-
-5. **Add 4-Way Unit Test Suite in `gb/commands/foo_test.cc`** (see `command-test-matrix` skill)
-
-6. **Build and test**:
-   ```bash
-   ninja -C build
-   (cd build && ctest)
-   ```
-
-### Read from Database
-Use EntityManager for all entity access. All `peek_*()` methods throw `EntityNotFoundError` on failure.
-
-For **validated/internal IDs** (e.g., `g.player` or IDs from iteration):
-```cpp
-// No try/catch needed - these IDs are guaranteed valid
-const auto* race = g.entity_manager.peek_race(g.player);
-const auto* star = g.entity_manager.peek_star(star_id);  // star_id from iteration
-```
-
-For **user-input IDs**, wrap in try/catch:
-```cpp
-// User provided a ship number as a command argument
-try {
-  const auto* ship = g.entity_manager.peek_ship(user_provided_id);
-  // Use ship
-} catch (const EntityNotFoundError&) {
-  g.out << "Ship not found.\n";
-  return;
-}
-```
-
-**Note:** `peek_*()` methods return cached pointers from EntityManager's internal cache, so repeated calls to the same entity are efficient.
-
-### Write to Database
-Use EntityManager get methods for read-write access with RAII:
-```cpp
-// Get entity handle (auto-saves on scope exit)
-auto race_handle = g.entity_manager.get_race(g.player);
-if (!race_handle.get()) {
-  g.out << "Race not found.\n";
-  return;
-}
-
-// Modify entity (marks dirty)
-auto& race = *race_handle;
-race.tech += 10.5;
-// Auto-saves when race_handle goes out of scope
-
-// Or use explicit save if needed early
-race_handle.save();
-```
-No need to call put* functions - RAII handles persistence automatically.
-
-### Print Aligned Tables
-Use `std::format` to build headers and rows:
-```cpp
-g.out << std::format("{:<15} {:>5} {:>5}\n", "Name", "Crew", "Tech");
-g.out << std::format("{:<15.15} {:>5} {:>5}\n", ship_name, crew, tech);
-```
-Follow patterns in `gb/commands/build.cc` for column widths and alignment.
-
-### Validate Scope and Permissions
-```cpp
-// Scope check
-if (g.level != ScopeLevel::LEVEL_SHIP && g.level != ScopeLevel::LEVEL_PLAN) {
-  g.out << "Must be at ship or planet scope.\n";
-  return;
-}
-
-// Permission/capability checks
-if (ship.tech < required_tech && !race.God) {
-  g.out << "Insufficient technology level.\n";
-  return;
-}
-
-// Toggle flags
-if (!race.governor[g.governor].toggle.autoreport) {
-  g.out << "Autoreport is disabled.\n";
-  return;
-}
-```
-
-### Add Tests
-Small unit-style tests can be added alongside existing tests:
-```cpp
-// SPDX-License-Identifier: Apache-2.0
-import dallib;
-import gblib;
-import std;
-#include <cassert>
-
-int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  
-  // Test logic with assertions
-  assert(result == expected);
-  
-  std::println("Test passed!");
-  return 0;
-}
-```
-Wire into CTest via `gb/CMakeLists.txt`.
-
 ## 📖 Additional Resources
 
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) - Complete n-tier architecture, module layout, and data flow details
 - [`docs/gb_FAQ.txt`](docs/gb_FAQ.txt) - Historical game documentation and FAQ
+- `.github/skills/` - Procedural developer skills and reference workflows
 
 ---
 
-**Remember**: This is a legacy game being modernized. Respect existing patterns while using modern C++ features. When in doubt, follow the patterns in existing command implementations like `build.cc`, `analysis.cc`, and `autoreport.cc`.
+**Remember**: This is a legacy game being modernized. Respect existing patterns while using modern C++ features. When in doubt, consult the relevant skill in `.github/skills/` or existing command implementations.

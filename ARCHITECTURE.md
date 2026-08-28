@@ -13,10 +13,10 @@ These are the architectural guarantees the project is converging toward. Some ar
 1. **SQLite details stay in the DAL.** Raw `sqlite3_*` calls, pragmas, SQL statements, and connection lifecycle belong in `dallib` only.
 2. **Repositories own serialization and table-specific persistence.** A repository may know how a `Race`, `Ship`, or `Planet` maps to storage, but it must not contain game rules.
 3. **EntityManager is the game-facing persistence interface.** Commands and core game logic should load, cache, iterate, mutate, and flush entities through `EntityManager` rather than talking to repositories directly.
-4. **Writable access is RAII-based.** `get_*()` returns a handle whose lifetime controls persistence, and modifications are auto-saved when the handle leaves scope.
-5. **Read-only access is explicit.** `peek_*()` and readonly iterators exist so callers can traverse state without paying writable-handle overhead or implying mutation.
+4. **Writable access is monadic and scoped.** `mutate_*()` executes mutations inside a scoped lambda and automatically persists changes upon lambda completion. Internal `get_*()` handles are private to `EntityManager` to prevent handle lifetime errors.
+5. **Read-only access is explicit.** `peek_*()`, `with_*()`, and readonly iterators (`RaceList::readonly`, `StarList::readonly`, etc.) exist so callers can traverse and inspect state without paying writable-handle overhead or implying mutation.
 6. **Lookup semantics are consistent.** The target API is that entity lookup failures are treated as service-layer errors, with user-input paths translating those errors into clear command output.
-7. **Iteration semantics are consistent.** Read-only loops should use explicit readonly patterns; mutable loops should use handle-based patterns.
+7. **Iteration semantics are consistent.** Read-only loops use explicit readonly patterns (`XxxList::readonly`); mutable loops use handle-based iterators or scoped monadic mutations.
 
 ## Layer Responsibilities
 
@@ -402,11 +402,29 @@ export class EntityManager {
 public:
   explicit EntityManager(Database& database);
 
-  // Writable access with RAII persistence
-  EntityHandle<Race> get_race(player_t player);
-  EntityHandle<Ship> get_ship(shipnum_t num);
-  EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
-  EntityHandle<Star> get_star(starnum_t num);
+  // Monadic mutating access (scoped lambda execution with automatic persistence)
+  template <typename Fn>
+  decltype(auto) mutate_race(player_t player, Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_ship(shipnum_t num, Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_planet(starnum_t star, planetnum_t pnum, Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_star(starnum_t num, Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_sectormap(starnum_t star, planetnum_t pnum, Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_universe(Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_block(player_t player, Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_power(player_t player, Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_commod(commodnum_t num, Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_server_state(Fn&& fn);
+  template <typename Fn>
+  decltype(auto) mutate_ship_exam(ShipType ship_type, Fn&& fn);
 
   // Direct read-only access (throws EntityNotFoundError on invalid internal IDs)
   const Race* peek_race(player_t player);
@@ -429,18 +447,26 @@ public:
   void clear_cache();
   player_t num_races();
   shipnum_t num_ships();
+
+private:
+  // Internal handles encapsulated to prevent handle lifetime / premature save errors
+  EntityHandle<Race> get_race(player_t player);
+  EntityHandle<Ship> get_ship(shipnum_t num);
+  EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
+  EntityHandle<Star> get_star(starnum_t num);
+  // ... (all get_* methods private)
 };
 ```
 
-`EntityManager` is the practical service boundary for the game. It coordinates repositories, caches loaded entities, provides RAII handles for mutation, and exposes read-only and monadic scoped access for inspection and iteration.
+`EntityManager` is the practical service boundary for the game. It coordinates repositories, caches loaded entities, provides monadic mutating access with automatic persistence, and exposes read-only and monadic scoped access for inspection and iteration.
 
-#### RAII Entity Access
+#### Monadic Mutating Entity Access
 
 ```cpp
-auto ship_handle = g.entity_manager.get_ship(shipno);
-auto& ship = *ship_handle;
-ship.fuel() += 10.0;
-// Auto-save happens when ship_handle goes out of scope
+g.entity_manager.mutate_ship(shipno, [](Ship& ship) {
+  ship.fuel() += 10.0;
+});
+// Auto-save happens automatically when the mutation lambda completes
 ```
 
 #### Read-Only & Monadic Scoped Access
@@ -464,7 +490,7 @@ g.out << std::format("Race: {}\n", race->name);
 #### Service Layer Responsibilities In Practice
 - Coordinate repositories behind a game-specific API.
 - Preserve identity/caching guarantees for loaded entities.
-- Support batch flushing after turn processing.
+- Support batch flushing after turn processing (`DeferredWriteScope`).
 - Host game-facing persistence operations like entity deletion, news/telegram posting, and other multi-entity actions.
 - Avoid exposing DAL internals upward.
 
@@ -624,11 +650,11 @@ Database (SQLite)
 
 ```
 Command (build.cc)
-  ↓ planet_handle = g.entity_manager.get_planet(star, pnum)
+  ↓ g.entity_manager.mutate_planet(star, pnum, [](Planet& planet) { ... })
 Service (EntityManager)
   ↓ planets.find_by_location(star, pnum)
-  ↓ [caller mutates *planet_handle]
-  ↓ [handle destructor triggers save]
+  ↓ [executes lambda mutating planet]
+  ↓ [lambda completion triggers auto-save]
 Repository (PlanetRepository)
     ↓ serialize(planet)
     ↓ store.store("tbl_planet", id, json)

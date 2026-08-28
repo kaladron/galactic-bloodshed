@@ -51,8 +51,8 @@ namespace GB::commands {
 
 bool commandname(const command_t& argv, GameObj& g) {
   // 1. Argument parsing & domain validation (early return false on failure)
-  // 2. Entity access via g.entity_manager
-  // 3. Game logic / state mutation via RAII handle two-step pattern
+  // 2. Entity access via g.entity_manager (peek_* or with_*)
+  // 3. Game logic / state mutation via monadic mutate_* pattern
   // 4. Player output via g.out
   return true;
 }

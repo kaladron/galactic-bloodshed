@@ -66,11 +66,9 @@ em.clear_cache();
 }
 
 // 2. Mutate via the production code path
-{
-  auto handle = em.get_race(player_t{1});
-  auto& race = *handle;
+em.mutate_race(player_t{1}, [](Race& race) {
   race.governor[0].money += 500;
-}  // auto-save fires here
+});  // auto-save fires on lambda exit
 
 // 3. Clear cache again and re-read from disk
 em.clear_cache();

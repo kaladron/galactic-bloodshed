@@ -101,58 +101,58 @@ target_sources(
   PUBLIC FILE_SET
          CXX_MODULES
          FILES
-         gblib.cppm
-         gblib-bombard.cppm
-         gblib-build.cppm
-         gblib-csp.cppm
-         turn/gblib-doplanet.cppm
-         turn/gblib-dosector.cppm
-         turn/gblib-doship.cppm
-         turn/gblib-doturncmd.cppm
-         entities/gblib-entitylists.cppm
-         gblib-fire.cppm
-         gblib-fuel.cppm
-         services/gblib-gameobj.cppm
-         entities/gblib-globals.cppm
-         gblib-map.cppm
-         gblib-misc.cppm
-         gblib-move.cppm
-         gblib-order.cppm
-         entities/gblib-place.cppm
-         entities/gblib-planet.cppm
-         services/gblib-prompt.cppm
-         entities/gblib-race.cppm
-         utils/gblib-rand.cppm
-         repositories/gblib-repositories.cppm
-         services/gblib-services.cppm
-         entities/gblib-sector.cppm
-         services/gblib-sessionregistry.cppm
-         entities/gblib-ships.cppm
-         entities/gblib-shipfilter.cppm
-         gblib-shlmisc.cppm
-         gblib-shootblast.cppm
-         entities/gblib-star.cppm
-         gblib-tele.cppm
-         entities/gblib-turnstats.cppm
-         entities/gblib-tweakables.cppm
-         entities/gblib-types.cppm
-         entities/gblib-universe.cppm
-  PRIVATE bombard.cc
-          build.cc
+          gblib.cppm
+          turn/gblib-bombard.cppm
+          entities/gblib-build.cppm
+          entities/gblib-csp.cppm
+          turn/gblib-doplanet.cppm
+          turn/gblib-dosector.cppm
+          turn/gblib-doship.cppm
+          turn/gblib-doturncmd.cppm
+          entities/gblib-entitylists.cppm
+          entities/gblib-fire.cppm
+          entities/gblib-fuel.cppm
+          services/gblib-gameobj.cppm
+          entities/gblib-globals.cppm
+          entities/gblib-map.cppm
+          entities/gblib-misc.cppm
+          entities/gblib-move.cppm
+          entities/gblib-order.cppm
+          entities/gblib-place.cppm
+          entities/gblib-planet.cppm
+          services/gblib-prompt.cppm
+          entities/gblib-race.cppm
+          entities/gblib-rand.cppm
+          repositories/gblib-repositories.cppm
+          services/gblib-services.cppm
+          entities/gblib-sector.cppm
+          services/gblib-sessionregistry.cppm
+          entities/gblib-ships.cppm
+          entities/gblib-shipfilter.cppm
+          services/gblib-shlmisc.cppm
+          entities/gblib-shootblast.cppm
+          entities/gblib-star.cppm
+          services/gblib-tele.cppm
+          entities/gblib-turnstats.cppm
+          entities/gblib-tweakables.cppm
+          entities/gblib-types.cppm
+          entities/gblib-universe.cppm
+  PRIVATE turn/bombard.cc
+          entities/build.cc
           turn/doplanet.cc
           turn/dosector.cc
           turn/doship.cc
           turn/doturncmd.cc
           entities/entitylists.cc
           services/entity_manager.cc
-          fire.cc
-          fuel.cc
+          entities/fire.cc
+          entities/fuel.cc
           services/gameobj.cc
-          load.cc
-          map.cc
-          misc.cc
-          move.cc
-          order.cc
+          entities/load.cc
+          entities/map.cc
+          entities/misc.cc
+          entities/move.cc
+          entities/order.cc
           entities/planet.cc
           services/prompt.cc
           repositories/planet_repository.cc
@@ -160,14 +160,14 @@ target_sources(
           repositories/sector_repository.cc
           repositories/ship_repository.cc
           repositories/star_repository.cc
-          utils/rand.cc
+          entities/rand.cc
           entities/sectormap.cc
           entities/sector.cc
           entities/ships.cc
-          shlmisc.cc
-          shootblast.cc
+          services/shlmisc.cc
+          entities/shootblast.cc
           entities/star.cc
-          tele.cc
+          services/tele.cc
           server/victory.cc
           server/VN.cc)
 target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module tabulate_module)
@@ -382,8 +382,8 @@ function(gb_add_test name)
 endfunction()
 
 # Test targets
-gb_add_test(asio_test EXTRA_LIBS asio_module)
-gb_add_test(scnlib_test EXTRA_LIBS scnlib_module)
+gb_add_test(asio_test SOURCES third_party/asio_test.cc EXTRA_LIBS asio_module)
+gb_add_test(scnlib_test SOURCES third_party/scnlib_test.cc EXTRA_LIBS scnlib_module)
 
 gb_add_test(allocate_test SOURCES commands/allocate_test.cc)
 gb_add_test(analysis_test SOURCES commands/analysis_test.cc)
@@ -391,23 +391,23 @@ gb_add_test(announce_test SOURCES commands/announce_test.cc EXTRA_LIBS session n
 gb_add_test(arm_test SOURCES commands/arm_test.cc)
 gb_add_test(auth_test SOURCES server/auth_test.cc EXTRA_LIBS session auth)
 gb_add_test(autoreport_test SOURCES commands/autoreport_test.cc)
-gb_add_test(berserker_bombard_test)
+gb_add_test(berserker_bombard_test SOURCES turn/berserker_bombard_test.cc)
 gb_add_test(bid_test SOURCES commands/bid_test.cc)
 gb_add_test(bitops_test SOURCES entities/bitops_test.cc)
 gb_add_test(bless_test SOURCES commands/bless_test.cc)
-gb_add_test(block_json_test)
+gb_add_test(block_json_test SOURCES repositories/block_json_test.cc)
 gb_add_test(block_test SOURCES commands/block_test.cc)
 gb_add_test(bombard_test SOURCES commands/bombard_test.cc)
 gb_add_test(build_command_test SOURCES commands/build_test.cc)
 gb_add_test(build_table_test SOURCES commands/build_table_test.cc)
-gb_add_test(build_test)
+gb_add_test(build_test SOURCES entities/build_test.cc)
 gb_add_test(build_test_extended SOURCES commands/build_test_extended.cc)
 gb_add_test(capital_test SOURCES commands/capital_test.cc)
 gb_add_test(capture_test SOURCES commands/capture_test.cc)
 gb_add_test(center_test SOURCES commands/center_test.cc)
 gb_add_test(colonies_test SOURCES commands/colonies_test.cc)
 gb_add_test(command_registry_test SOURCES commands/command_registry_test.cc)
-gb_add_test(commod_json_test)
+gb_add_test(commod_json_test SOURCES repositories/commod_json_test.cc)
 gb_add_test(coordinates_test SOURCES entities/coordinates_test.cc)
 gb_add_test(cs_test SOURCES commands/cs_test.cc)
 gb_add_test(database_test SOURCES dal/database_test.cc)
@@ -430,7 +430,7 @@ gb_add_test(enslave_test SOURCES commands/enslave_test.cc)
 gb_add_test(entity_lists_test SOURCES entities/entity_lists_test.cc)
 gb_add_test(entity_manager_kill_ship_test SOURCES services/entity_manager_kill_ship_test.cc)
 gb_add_test(entity_manager_test SOURCES services/entity_manager_test.cc)
-gb_add_test(estimate_test)
+gb_add_test(estimate_test SOURCES entities/estimate_test.cc)
 gb_add_test(examine_test SOURCES commands/examine_test.cc)
 gb_add_test(explore_test SOURCES commands/explore_test.cc)
 gb_add_test(fire_test SOURCES commands/fire_test.cc)
@@ -438,13 +438,13 @@ gb_add_test(fix_test SOURCES commands/fix_test.cc)
 gb_add_test(freeid_test SOURCES dal/freeid_test.cc)
 gb_add_test(fuel_test SOURCES commands/fuel_test.cc)
 gb_add_test(gameobj_ap_test SOURCES services/gameobj_ap_test.cc)
-gb_add_test(gblib_test)
+gb_add_test(gblib_test SOURCES entities/gblib_test.cc)
 gb_add_test(give_test SOURCES commands/give_test.cc)
 gb_add_test(governors_test SOURCES commands/governors_test.cc)
 gb_add_test(grant_test SOURCES commands/grant_test.cc)
-gb_add_test(ground_attack_test)
+gb_add_test(ground_attack_test SOURCES entities/ground_attack_test.cc)
 gb_add_test(help_command_test SOURCES commands/help_test.cc)
-gb_add_test(help_test)
+gb_add_test(help_test SOURCES commands/help_files_test.cc)
 gb_add_test(highlight_test SOURCES commands/highlight_test.cc)
 gb_add_test(insurgency_test SOURCES commands/insurgency_test.cc)
 gb_add_test(invariant_log_test SOURCES services/invariant_log_test.cc)
@@ -462,7 +462,7 @@ gb_add_test(mobilize_test SOURCES commands/mobilize_test.cc)
 gb_add_test(motto_test SOURCES commands/motto_test.cc)
 gb_add_test(mount_test SOURCES commands/mount_test.cc)
 gb_add_test(move_popn_test SOURCES commands/move_popn_test.cc)
-gb_add_test(move_test)
+gb_add_test(move_test SOURCES entities/move_test.cc)
 gb_add_test(name_test SOURCES commands/name_test.cc)
 gb_add_test(news_test SOURCES services/news_test.cc)
 gb_add_test(notification_test SOURCES server/notification_test.cc EXTRA_LIBS session notification)
@@ -477,7 +477,7 @@ gb_add_test(planet_sqlite_test SOURCES repositories/planet_sqlite_test.cc)
 gb_add_test(planet_test SOURCES entities/planet_test.cc)
 gb_add_test(pledge_test SOURCES commands/pledge_test.cc)
 gb_add_test(power_command_test SOURCES commands/power_test.cc EXTRA_LIBS tabulate::tabulate)
-gb_add_test(power_json_test)
+gb_add_test(power_json_test SOURCES repositories/power_json_test.cc)
 gb_add_test(production_test SOURCES commands/production_test.cc)
 gb_add_test(profile_test SOURCES commands/profile_test.cc)
 gb_add_test(prompt_test SOURCES services/prompt_test.cc)
@@ -504,15 +504,15 @@ gb_add_test(ship_repository_test SOURCES repositories/ship_repository_test.cc)
 gb_add_test(ship_spatial_parity_test SOURCES services/ship_spatial_parity_test.cc)
 gb_add_test(shipfilter_test SOURCES entities/shipfilter_test.cc)
 gb_add_test(shiplist_test SOURCES entities/shiplist_test.cc)
-gb_add_test(shlmisc_test)
-gb_add_test(shootblast_test)
+gb_add_test(shlmisc_test SOURCES services/shlmisc_test.cc)
+gb_add_test(shootblast_test SOURCES entities/shootblast_test.cc)
 gb_add_test(shutdown_test SOURCES commands/shutdown_test.cc)
 gb_add_test(star_locations_test SOURCES commands/star_locations_test.cc)
 gb_add_test(star_repository_test SOURCES repositories/star_repository_test.cc)
 gb_add_test(star_sqlite_test SOURCES repositories/star_sqlite_test.cc)
 gb_add_test(star_test SOURCES entities/star_test.cc)
 gb_add_test(stardata_json_test SOURCES repositories/stardata_json_test.cc)
-gb_add_test(strong_id_json_test EXTRA_LIBS glaze_core_module)
+gb_add_test(strong_id_json_test SOURCES entities/strong_id_json_test.cc EXTRA_LIBS glaze_core_module)
 gb_add_test(strong_id_test SOURCES entities/strong_id_test.cc EXTRA_LIBS strong_id_module)
 gb_add_test(survey_test SOURCES commands/survey_test.cc)
 gb_add_test(tactical_test SOURCES commands/tactical_test.cc EXTRA_LIBS tabulate::tabulate)

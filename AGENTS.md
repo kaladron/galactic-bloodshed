@@ -446,7 +446,7 @@ All tests run against an in-memory SQLite database (`Database db(":memory:");` +
 ## ⚠️ Critical Rules & Anti-patterns
 
 ### DO NOT:
-- ❌ Use `#include` for new code (except for legacy constants from `gb/files.h`, `gb/buffers.h`)
+- ❌ Use `#include` for new code (except for legacy constants from `gb/entities/files.h`, `gb/buffers.h`)
 - ❌ Use `printf`, `std::cout`, or direct console I/O
 - ❌ Use raw `new`/`delete` or manual memory management
 - ❌ Add external dependencies without approval
@@ -465,7 +465,7 @@ All tests run against an in-memory SQLite database (`Database db(":memory:");` +
 - ✅ Use early returns with clear error messages
 - ✅ Use `std::format` for string formatting
 - ✅ End output lines with `\n`
-- ✅ Use existing constants from `gb/files.h` and `gblib:tweakables`
+- ✅ Use existing constants from `gb/entities/files.h` and `gblib:tweakables`
 - ✅ Dereference `peek_star()`, `peek_planet()`, and `peek_sectormap()` results directly - they throw on not-found
 - ✅ Wrap in `try/catch` only when looking up untrusted user-supplied raw IDs (e.g. parsed strings)
 - ✅ Retain all docstrings, stanza comments, inline explanatory comments, and test setup explanations verbatim
@@ -537,7 +537,7 @@ g.out << std::format("{:<15} {:>5}\n", "Name", "Value");  // Table header
 ```
 
 ### File Path Constants
-Use these from `gb/files.h`:
+Use these from `gb/entities/files.h`:
 - `EXAM_FL` - Ship examination data
 - `DATA_DIR` - Data directory path
 - Others as defined

@@ -17,7 +17,7 @@ import gb.repositories;
 
 #include "gb/creator/makestar.h"
 #include "gb/creator/makeuniv.h"
-#include "gb/files.h"
+#include "gb/entities/files.h"
 
 int autoname_star = -1;
 int autoname_plan = -1;

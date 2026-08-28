@@ -5,7 +5,7 @@
 
 module;
 
-#include "gb/files.h"
+#include "gb/entities/files.h"
 #include <sys/stat.h>
 #include <cassert>
 

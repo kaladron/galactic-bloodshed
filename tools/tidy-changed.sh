@@ -41,28 +41,38 @@ CONFIG_FLAG=""
 STAGED_ONLY=false
 REF=""
 SPECIFIC_FILES=()
+CUSTOM_TIDY_BIN="${CLANG_TIDY_BINARY:-}"
 
-for arg in "$@"; do
+while [ $# -gt 0 ]; do
+    arg="$1"
     case "$arg" in
         -h|--help)
             echo "Usage: git clang-tidy [options] [ref | file...]"
             echo "       ./tools/tidy-changed.sh [options] [ref | file...]"
             echo ""
             echo "Options:"
-            echo "  -fix, --fix          Apply suggested fixes automatically"
-            echo "  -full, --full        Use exhaustive .clang-tidy-full configuration"
-            echo "  --staged, --cached   Check staged files in index"
-            echo "  -h, --help           Show this help message"
+            echo "  -fix, --fix                 Apply suggested fixes automatically"
+            echo "  -full, --full               Use exhaustive .clang-tidy-full configuration"
+            echo "  --staged, --cached          Check staged files in index"
+            echo "  --clang-tidy-binary <bin>   Use custom clang-tidy binary (e.g. clang_tidy)"
+            echo "  -h, --help                  Show this help message"
             exit 0
             ;;
         -fix|--fix)
             FIX_FLAG="-fix"
+            shift
             ;;
         -full|--full)
             CONFIG_FLAG="-config-file=.clang-tidy-full"
+            shift
             ;;
         --staged|--cached)
             STAGED_ONLY=true
+            shift
+            ;;
+        --clang-tidy-binary|-clang-tidy-binary)
+            CUSTOM_TIDY_BIN="$2"
+            shift 2
             ;;
         *)
             if [ -f "$arg" ]; then
@@ -70,6 +80,7 @@ for arg in "$@"; do
             else
                 REF="$arg"
             fi
+            shift
             ;;
     esac
 done
@@ -99,6 +110,9 @@ for f in $FILES; do
 done
 
 TIDY_ARGS=("-p" "build" "-header-filter=.*(gb|dallib)/.*" "-exclude-header-filter=.*third_party/.*" "-quiet")
+if [ -n "$CUSTOM_TIDY_BIN" ]; then
+    TIDY_ARGS+=("-clang-tidy-binary" "$CUSTOM_TIDY_BIN")
+fi
 if [ -n "$CONFIG_FLAG" ]; then
     TIDY_ARGS+=("$CONFIG_FLAG")
 fi

@@ -85,8 +85,12 @@ find_package(SQLite3 REQUIRED)
 add_library(test_module)
 target_sources(
   test_module
-  PUBLIC FILE_SET CXX_MODULES FILES test.cppm
-  PRIVATE test.cc)
+  PUBLIC FILE_SET CXX_MODULES FILES testing/test.cppm
+  PRIVATE testing/recording_session_registry.cc
+          testing/universe_invariants.cc
+          testing/test_context.cc
+          testing/test_matrix.cc
+          testing/test_builders.cc)
 target_link_libraries(test_module PUBLIC gblib dallib session commands)
 
 # Executable targets
@@ -483,7 +487,7 @@ gb_add_test(tax_test SOURCES commands/tax_test.cc)
 gb_add_test(tech_status_test SOURCES commands/tech_status_test.cc)
 gb_add_test(technology_test SOURCES commands/technology_test.cc)
 gb_add_test(telegram_test)
-gb_add_test(test_context_test)
+gb_add_test(test_context_test SOURCES testing/test_context_test.cc)
 gb_add_test(time_test SOURCES commands/time_test.cc)
 gb_add_test(toggle_test SOURCES commands/toggle_test.cc)
 gb_add_test(deferred_write_scope_test SOURCES services/deferred_write_scope_test.cc)

@@ -180,6 +180,7 @@ target_sources(
           order.cc
           planet.cc
           prompt.cc
+          repositories/planet_repository.cc
           repositories/race_repository.cc
           repositories/star_repository.cc
           utils/rand.cc
@@ -441,7 +442,7 @@ gb_add_test(page_test SOURCES commands/page_test.cc EXTRA_LIBS session notificat
 gb_add_test(pay_test SOURCES commands/pay_test.cc)
 gb_add_test(personal_test SOURCES commands/personal_test.cc)
 gb_add_test(planet_repository_test SOURCES repositories/planet_repository_test.cc)
-gb_add_test(planet_sqlite_test)
+gb_add_test(planet_sqlite_test SOURCES repositories/planet_sqlite_test.cc)
 gb_add_test(planet_test)
 gb_add_test(pledge_test SOURCES commands/pledge_test.cc)
 gb_add_test(power_command_test SOURCES commands/power_test.cc EXTRA_LIBS tabulate::tabulate)

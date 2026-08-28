@@ -180,11 +180,11 @@ target_sources(
           order.cc
           planet.cc
           prompt.cc
+          repositories/race_repository.cc
           utils/rand.cc
           sectormap.cc
           sector.cc
           ships.cc
-          entitylists.cc
           shlmisc.cc
           shootblast.cc
           star.cc

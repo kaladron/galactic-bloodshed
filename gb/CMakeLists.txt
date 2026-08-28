@@ -183,6 +183,7 @@ target_sources(
           repositories/planet_repository.cc
           repositories/race_repository.cc
           repositories/sector_repository.cc
+          repositories/ship_repository.cc
           repositories/star_repository.cc
           utils/rand.cc
           sectormap.cc

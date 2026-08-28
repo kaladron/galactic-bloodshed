@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file session.cc
+/// \brief Client session connection and async I/O implementation.
+
 module;
 
 #include <cstdio>

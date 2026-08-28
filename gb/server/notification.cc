@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file notification.cc
+/// \brief Implementation of notification and message routing services.
+
 module;
 
 import std;

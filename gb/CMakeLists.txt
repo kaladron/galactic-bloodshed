@@ -197,44 +197,44 @@ target_sources(
           VN.cc)
 target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module tabulate_module)
 
-# Create session library (Service Layer)
+# Create session library (Server Layer)
 add_library(session)
 target_sources(
   session
-  PUBLIC FILE_SET CXX_MODULES FILES services/session.cppm
-  PRIVATE services/session.cc)
+  PUBLIC FILE_SET CXX_MODULES FILES server/session.cppm
+  PRIVATE server/session.cc)
 target_link_libraries(session PUBLIC gblib asio_module)
 
-# Create notification library (Service Layer)
+# Create notification library (Server Layer)
 add_library(notification)
 target_sources(
   notification
-  PUBLIC FILE_SET CXX_MODULES FILES services/notification.cppm
-  PRIVATE services/notification.cc)
+  PUBLIC FILE_SET CXX_MODULES FILES server/notification.cppm
+  PRIVATE server/notification.cc)
 target_link_libraries(notification PUBLIC gblib session)
 
-# Create auth library (Service Layer)
+# Create auth library (Server Layer)
 add_library(auth)
 target_sources(
   auth
-  PUBLIC FILE_SET CXX_MODULES FILES services/auth.cppm
-  PRIVATE services/auth.cc)
+  PUBLIC FILE_SET CXX_MODULES FILES server/auth.cppm
+  PRIVATE server/auth.cc)
 target_link_libraries(auth PUBLIC gblib session commands)
 
-# Create server_config library (Service Layer)
+# Create server_config library (Server Layer)
 add_library(server_config)
 target_sources(
   server_config
-  PUBLIC FILE_SET CXX_MODULES FILES services/server_config.cppm
-  PRIVATE services/server_config.cc)
+  PUBLIC FILE_SET CXX_MODULES FILES server/server_config.cppm
+  PRIVATE server/server_config.cc)
 target_link_libraries(server_config PUBLIC gblib dallib)
 
-# Create server library (Service Layer)
+# Create server library (Server Layer)
 add_library(server)
 target_sources(
   server
-  PUBLIC FILE_SET CXX_MODULES FILES services/server.cppm
-  PRIVATE services/server.cc)
+  PUBLIC FILE_SET CXX_MODULES FILES server/server.cppm
+  PRIVATE server/server.cc)
 target_link_libraries(server PUBLIC gblib asio_module session auth notification commands dallib)
 
 add_library(commands)
@@ -335,7 +335,7 @@ target_sources(
 target_link_libraries(commands PRIVATE gblib session notification SQLite::SQLite3 glaze::glaze
                                        scnlib_module tabulate_module)
 
-add_executable(GB GB_server.cc)
+add_executable(GB server/GB_server.cc)
 target_link_libraries(GB PRIVATE gblib commands asio_module session auth server_config server SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB)
 
@@ -360,7 +360,7 @@ gb_add_test(allocate_test SOURCES commands/allocate_test.cc)
 gb_add_test(analysis_test SOURCES commands/analysis_test.cc)
 gb_add_test(announce_test SOURCES commands/announce_test.cc EXTRA_LIBS session notification)
 gb_add_test(arm_test SOURCES commands/arm_test.cc)
-gb_add_test(auth_test SOURCES services/auth_test.cc EXTRA_LIBS session auth)
+gb_add_test(auth_test SOURCES server/auth_test.cc EXTRA_LIBS session auth)
 gb_add_test(autoreport_test SOURCES commands/autoreport_test.cc)
 gb_add_test(berserker_bombard_test)
 gb_add_test(bid_test SOURCES commands/bid_test.cc)
@@ -436,7 +436,7 @@ gb_add_test(move_popn_test SOURCES commands/move_popn_test.cc)
 gb_add_test(move_test)
 gb_add_test(name_test SOURCES commands/name_test.cc)
 gb_add_test(news_test)
-gb_add_test(notification_test EXTRA_LIBS session notification)
+gb_add_test(notification_test SOURCES server/notification_test.cc EXTRA_LIBS session notification)
 gb_add_test(numships_test SOURCES entities/numships_test.cc)
 gb_add_test(orbit_test SOURCES commands/orbit_test.cc)
 gb_add_test(order_test SOURCES commands/order_test.cc)
@@ -467,10 +467,10 @@ gb_add_test(sectormap_sqlite_test SOURCES repositories/sectormap_sqlite_test.cc)
 gb_add_test(segment_test SOURCES commands/segment_test.cc)
 gb_add_test(sell_test SOURCES commands/sell_test.cc)
 gb_add_test(send_message_test SOURCES commands/send_message_test.cc)
-gb_add_test(server_command_test EXTRA_LIBS session)
-gb_add_test(server_config_test SOURCES services/server_config_test.cc EXTRA_LIBS server_config)
-gb_add_test(server_test EXTRA_LIBS asio_module session auth server notification)
-gb_add_test(session_test EXTRA_LIBS session)
+gb_add_test(server_command_test SOURCES server/server_command_test.cc EXTRA_LIBS session)
+gb_add_test(server_config_test SOURCES server/server_config_test.cc EXTRA_LIBS server_config)
+gb_add_test(server_test SOURCES server/server_test.cc EXTRA_LIBS asio_module session auth server notification)
+gb_add_test(session_test SOURCES server/session_test.cc EXTRA_LIBS session)
 gb_add_test(ship_repository_test SOURCES repositories/ship_repository_test.cc)
 gb_add_test(ship_spatial_parity_test SOURCES services/ship_spatial_parity_test.cc)
 gb_add_test(shipfilter_test SOURCES entities/shipfilter_test.cc)

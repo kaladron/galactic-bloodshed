@@ -126,10 +126,9 @@ execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
   }
 
   auto& s = smap.get(ship.land_coords());
-  const auto* race = entity_manager.peek_race(ship.owner());
-  if (!race) return std::unexpected(GroundActionError::IncompatibleSector);
+  const auto& race = *entity_manager.peek_race(ship.owner());
 
-  if (s.get_condition() == race->likesbest) {
+  if (s.get_condition() == race.likesbest) {
     push_telegram(entity_manager, ship.owner(), ship.governor(),
                   std::format(" T{} is full of zealots!!!", ship.number()));
     return std::unexpected(GroundActionError::SectorAlreadyOptimal);
@@ -146,7 +145,7 @@ execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
       (100 - static_cast<int>(ship.damage())) * ship.popn() / ship.max_crew();
   if (success(chance)) {
     /* only condition can be terraformed, type doesn't change */
-    s.terraform(race->likesbest);
+    s.terraform(race.likesbest);
     use_fuel(ship, FUEL_COST_TERRA);
     if (success(50) && (planet.conditions(TOXIC) < 100)) {
       planet.conditions(TOXIC) += 1;
@@ -179,8 +178,8 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
   }
 
   auto& s = smap.get(ship.land_coords());
-  const auto* race = entity_manager.peek_race(ship.owner());
-  if (!race || !race->likes[s.get_condition()]) {
+  const auto& race = *entity_manager.peek_race(ship.owner());
+  if (!race.likes[s.get_condition()]) {
     return std::unexpected(GroundActionError::IncompatibleSector);
   }
   if (s.get_fert() >= 100) {
@@ -245,10 +244,9 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
   auto& s = smap.get(ship.land_coords());
   /* nuke the sector */
   s.set_condition(SectorType::SEC_WASTED);
-  const auto* race = entity_manager.peek_race(ship.owner());
-  if (!race) return std::unexpected(GroundActionError::IncompatibleSector);
+  const auto& race = *entity_manager.peek_race(ship.owner());
 
-  int prod = round_rand(race->metabolism * static_cast<double>(ship.popn()) /
+  int prod = round_rand(race.metabolism * static_cast<double>(ship.popn()) /
                         static_cast<double>(ship.max_crew()));
   ship.fuel() -= FUEL_COST_QUARRY;
   stats.prod_res[ship.owner()] += prod;
@@ -271,23 +269,23 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
     return false;
   }
 
-  const auto* race = entity_manager.peek_race(ship.owner());
-  if (!race) return false;
+  const auto& race = *entity_manager.peek_race(ship.owner());
 
-  int destroyed = berserker_bombard(entity_manager, ship, planet, *race);
+  int destroyed = berserker_bombard(entity_manager, ship, planet, race);
   if (destroyed == 0) {
-    const auto* dest_star = entity_manager.peek_star(ship.storbits());
-    ship.destpnum() = int_rand(0, dest_star->numplanets() - 1);
+    const auto& dest_star = *entity_manager.peek_star(ship.storbits());
+    ship.destpnum() = int_rand(0, dest_star.numplanets() - 1);
     return false;
   }
 
   if (std::holds_alternative<MindData>(ship.special())) {
     auto mind = std::get<MindData>(ship.special());
     if (mind.who_killed.value > 0 && mind.who_killed.value <= MAXPLAYERS) {
-      auto universe_handle = entity_manager.get_universe();
-      if (universe_handle->VN_hitlist[mind.who_killed.value - 1] > 0) {
-        --universe_handle->VN_hitlist[mind.who_killed.value - 1];
-      }
+      entity_manager.mutate_universe([&](universe_struct& u) {
+        if (u.VN_hitlist[mind.who_killed.value - 1] > 0) {
+          --u.VN_hitlist[mind.who_killed.value - 1];
+        }
+      });
     }
   }
   return true;
@@ -329,10 +327,10 @@ bool check_mutual_alliances(EntityManager& entity_manager,
   }
 
   return std::ranges::all_of(players, [&](player_t p) {
-    const auto* race = entity_manager.peek_race(p);
+    const auto& race = *entity_manager.peek_race(p);
     std::bitset<MAXPLAYERS + 1> peers_mask = required_mask;
     peers_mask.reset(p.value);
-    const std::bitset<MAXPLAYERS + 1> race_allied(race->allied);
+    const std::bitset<MAXPLAYERS + 1> race_allied(race.allied);
     return (race_allied & peers_mask) == peers_mask;
   });
 }
@@ -433,9 +431,9 @@ std::string format_recovery_report(const RecoveryReport& report,
   table.add_row({"", "res", "destr", "fuel", "xtal"});
 
   for (const auto& [conqueror, allocated] : report.allocated_shares) {
-    const auto* race = entity_manager.peek_race(conqueror);
+    const auto& race = *entity_manager.peek_race(conqueror);
     table.add_row({
-        race ? race->name : std::format("Player {}", conqueror),
+        race.name,
         std::format("{}", allocated.resources),
         std::format("{}", allocated.destruct),
         std::format("{}", allocated.fuel),
@@ -681,8 +679,8 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
 }
 
 double est_production(const Sector& s, EntityManager& entity_manager) {
-  const auto* race = entity_manager.peek_race(s.get_owner());
-  return (race->metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
+  const auto& race = *entity_manager.peek_race(s.get_owner());
+  return (race.metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
 }
 
 std::optional<IslandDiscovery>
@@ -859,8 +857,8 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
     planet.popn() += s.get_popn();
     planet.troops() += s.get_troops();
 
-    const auto* owner_race = entity_manager.peek_race(owner);
-    planet.maxpopn() += maxsupport(*owner_race, s, stats.Compat[owner], toxic);
+    const auto& owner_race = *entity_manager.peek_race(owner);
+    planet.maxpopn() += maxsupport(owner_race, s, stats.Compat[owner], toxic);
 
     auto& power = stats.Power[owner];
     power.troops += s.get_troops();
@@ -1046,30 +1044,32 @@ void doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
               TurnStats& stats) {
   reset_planet_turn_state(entity_manager, planet, stats);
 
-  auto smap_handle =
-      entity_manager.get_sectormap(star.star_id(), planet.planet_order());
-  auto& smap = *smap_handle;
+  entity_manager.mutate_sectormap(
+      star.star_id(), planet.planet_order(), [&](SectorMap& smap) {
+        process_planetary_ships(entity_manager, planet, smap, stats);
+        process_planet_climate(planet, star, stats);
 
-  process_planetary_ships(entity_manager, planet, smap, stats);
-  process_planet_climate(planet, star, stats);
+        process_planet_production(entity_manager, star, planet, smap, stats);
 
-  process_planet_production(entity_manager, star, planet, smap, stats);
+        for (const auto& p : smap.owned()) {
+          planet.info(p.get_owner()).numsectsowned++;
+        }
 
-  for (const auto& p : smap.owned()) {
-    planet.info(p.get_owner()).numsectsowned++;
-  }
+        process_island_exploration(entity_manager, star, planet, smap, stats);
 
-  process_island_exploration(entity_manager, star, planet, smap, stats);
+        const auto envir_damage =
+            process_toxic_environmental_damage(planet, smap);
 
-  const auto envir_damage = process_toxic_environmental_damage(planet, smap);
+        send_planet_turn_telegrams(entity_manager, star, planet, envir_damage,
+                                   stats);
 
-  send_planet_turn_telegrams(entity_manager, star, planet, envir_damage, stats);
+        do_recover(entity_manager, star, planet);
 
-  do_recover(entity_manager, star, planet);
+        recalculate_census(entity_manager, star, planet, smap, stats);
 
-  recalculate_census(entity_manager, star, planet, smap, stats);
+        process_enslavement_and_revolts(entity_manager, star, planet, smap,
+                                        stats);
 
-  process_enslavement_and_revolts(entity_manager, star, planet, smap, stats);
-
-  process_planet_economy(entity_manager, star, planet, smap, stats);
+        process_planet_economy(entity_manager, star, planet, smap, stats);
+      });
 }

@@ -98,10 +98,10 @@ add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
                         creator/makeuniv.cc)
 target_link_libraries(makeuniv PRIVATE gblib SQLite::SQLite3 glaze::glaze)
 
-add_executable(enrol enrol.cc)
+add_executable(enrol server/enrol.cc)
 target_link_libraries(enrol PRIVATE gblib SQLite::SQLite3 glaze::glaze scnlib_module)
 
-add_executable(racegen GB_racegen.cc enroll.cc racegen.cc)
+add_executable(racegen server/GB_racegen.cc server/enroll.cc server/racegen.cc)
 target_link_libraries(racegen PRIVATE gblib dallib SQLite::SQLite3 glaze::glaze)
 
 # Create types module as a standalone foundational library
@@ -193,8 +193,8 @@ target_sources(
           shootblast.cc
           entities/star.cc
           tele.cc
-          victory.cc
-          VN.cc)
+          server/victory.cc
+          server/VN.cc)
 target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module tabulate_module)
 
 # Create session library (Server Layer)
@@ -396,7 +396,7 @@ gb_add_test(doship_test SOURCES turn/doship_test.cc)
 gb_add_test(doturn_test SOURCES turn/doturn_test.cc)
 gb_add_test(dump_test SOURCES commands/dump_test.cc)
 gb_add_test(emulate_test SOURCES commands/emulate_test.cc)
-gb_add_test(enroll_test SOURCES enroll_test.cc GB_racegen.cc EXTRA_LIBS scnlib_module)
+gb_add_test(enroll_test SOURCES server/enroll_test.cc server/GB_racegen.cc EXTRA_LIBS scnlib_module)
 gb_add_test(enslave_test SOURCES commands/enslave_test.cc)
 gb_add_test(entity_lists_test SOURCES entities/entity_lists_test.cc)
 gb_add_test(entity_manager_kill_ship_test SOURCES services/entity_manager_kill_ship_test.cc)
@@ -504,7 +504,7 @@ gb_add_test(unpledge_test SOURCES commands/unpledge_test.cc)
 gb_add_test(update_test SOURCES commands/update_test.cc)
 gb_add_test(upgrade_test SOURCES commands/upgrade_test.cc)
 gb_add_test(victory_test SOURCES commands/victory_test.cc EXTRA_LIBS scnlib_module)
-gb_add_test(vn_steal_test)
+gb_add_test(vn_steal_test SOURCES server/vn_steal_test.cc)
 gb_add_test(vote_test SOURCES commands/vote_test.cc EXTRA_LIBS session notification)
 gb_add_test(walk_test SOURCES commands/walk_test.cc)
 gb_add_test(who_test SOURCES commands/who_test.cc)

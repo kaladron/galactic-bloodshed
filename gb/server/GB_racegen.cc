@@ -7,7 +7,7 @@ import std;
 import dallib;
 import gblib;
 
-#include "gb/racegen.h"
+#include "gb/server/racegen.h"
 
 namespace {
 constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {

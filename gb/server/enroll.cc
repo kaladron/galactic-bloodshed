@@ -9,8 +9,8 @@ import gblib;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/enroll.h"
-#include "gb/racegen.h"
+#include "gb/server/enroll.h"
+#include "gb/server/racegen.h"
 
 static const char* DEFAULT_ENROLLMENT_FILENAME = "enroll.saves";
 static const char* DEFAULT_ENROLLMENT_FAILURE_FILENAME = "failures.saves";

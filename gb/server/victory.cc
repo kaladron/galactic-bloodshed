@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file victory.cc
+/// \brief Victory condition calculation and victory rankings generation.
+
 module;
 
 import std;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/* enrol.c -- initializes to owner one sector and planet. */
+/// \file enrol.cc
+/// \brief Player race enrollment CLI executable.
 
 import std;
 import gblib;
@@ -8,7 +9,7 @@ import dallib;
 import scnlib;
 #undef stdout
 
-#include "gb/enroll.h"
+#include "gb/server/enroll.h"
 
 namespace GB::enrol {
 

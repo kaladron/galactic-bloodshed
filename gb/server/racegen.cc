@@ -13,7 +13,7 @@ import gblib;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/racegen.h"
+#include "gb/server/racegen.h"
 
 static int do_racegen();
 

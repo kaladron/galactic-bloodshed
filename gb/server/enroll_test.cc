@@ -8,8 +8,8 @@ import dallib;
 import gblib;
 import test;
 
-#include "gb/enroll.h"
-#include "gb/racegen.h"
+#include "gb/server/enroll.h"
+#include "gb/server/racegen.h"
 
 int enroll_valid_race(Database& db);
 

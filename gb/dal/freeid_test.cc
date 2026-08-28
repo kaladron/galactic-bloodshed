@@ -4,7 +4,8 @@
 /// \brief Unit tests for gap-finding free ID allocation in repositories.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.repositories;
 import test;
 import std;
 

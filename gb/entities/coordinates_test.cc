@@ -4,7 +4,7 @@
 /// \brief Unit tests for Coordinates struct, arithmetic, parsing, formatting,
 /// and SectorMap integration.
 
-import gblib;
+import gb.entities;
 import test;
 import std;
 

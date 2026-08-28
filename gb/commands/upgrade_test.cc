@@ -4,7 +4,8 @@
 /// \brief Unit tests for upgrade command and AP deduction.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import commands;
 import std;

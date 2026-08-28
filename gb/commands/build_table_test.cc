@@ -4,7 +4,8 @@
 /// \brief Unit tests for "build ?" ship list table display
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import commands;
 import std;

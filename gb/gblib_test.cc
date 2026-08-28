@@ -4,7 +4,9 @@
 /// \brief Unit tests for bit setting operations across integer widths.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
+import gb.turn;
 import test;
 import std;
 

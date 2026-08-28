@@ -16,7 +16,9 @@ export module test;
 
 import commands;
 import dallib; // For Database, initialize_schema
-import gblib;  // For SessionRegistry, types, EntityManager
+import gb.entities;
+import gb.services;
+import gb.repositories;
 import std;
 
 export namespace test {

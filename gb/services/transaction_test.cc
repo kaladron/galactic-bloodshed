@@ -5,7 +5,8 @@
 /// dispatch_command transactional integration.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import commands;
 import test;
 import std;

@@ -4,7 +4,8 @@
 /// \brief Test temperature calculation and planet generation
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import std;
 

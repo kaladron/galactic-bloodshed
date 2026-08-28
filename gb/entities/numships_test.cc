@@ -4,7 +4,7 @@
 /// \brief Unit tests for EntityManager::num_ships() count and ship retrieval.
 
 import dallib;
-import gblib;
+import gb.entities;
 import test;
 import std;
 

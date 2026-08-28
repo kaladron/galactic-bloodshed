@@ -5,7 +5,7 @@
 /// auto-resizing, and bounds checking.
 
 import dallib;
-import gblib;
+import gb.entities;
 import test;
 import std;
 

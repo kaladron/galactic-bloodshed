@@ -4,7 +4,7 @@
 /// \brief Unit tests for Sector domain methods, devastation, supernova
 /// radiation, and invariant handling.
 
-import gblib;
+import gb.entities;
 import test;
 import std;
 

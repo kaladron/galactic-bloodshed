@@ -5,7 +5,9 @@
 /// and segment vs update turn execution.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
+import gb.turn;
 import test;
 import std;
 

@@ -4,7 +4,8 @@
 /// \brief Unit tests for autoreport command and database persistence.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import commands;
 import std;

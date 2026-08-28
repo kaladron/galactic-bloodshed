@@ -4,7 +4,8 @@
 /// \brief Unit test ensuring log_invariant_violation compiles and executes
 /// across diverse types.
 
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import std;
 

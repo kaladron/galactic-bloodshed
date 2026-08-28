@@ -4,7 +4,9 @@
 /// \brief Unit tests for shoot_planet_to_ship and shoot_ship_to_planet.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
+import gb.turn;
 import test;
 import std;
 

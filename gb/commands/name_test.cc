@@ -4,7 +4,8 @@
 /// \brief Test name command database persistence and validation rules
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import commands;
 import std;

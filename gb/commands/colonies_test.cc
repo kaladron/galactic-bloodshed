@@ -4,7 +4,8 @@
 /// \brief Test colonies command colonization report generation.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import commands;
 import std;

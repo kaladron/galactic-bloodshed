@@ -3,7 +3,7 @@
 /// \file bitops_test.cc
 /// \brief Unit tests for bit operation overloads for ID types.
 
-import gblib;
+import gb.entities;
 import test;
 import std;
 

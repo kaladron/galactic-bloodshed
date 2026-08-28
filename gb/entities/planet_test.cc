@@ -4,7 +4,7 @@
 /// \brief Unit tests for Planet domain methods, dimensions, and toroidal
 /// geometry.
 
-import gblib;
+import gb.entities;
 import test;
 import std;
 

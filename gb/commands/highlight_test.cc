@@ -4,7 +4,8 @@
 /// \brief Test highlight command database persistence
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import commands;
 import std;

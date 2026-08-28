@@ -5,7 +5,8 @@
 /// retrieve, timestamps, selective deletion, broadcast, purge, FIFO order).
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import std;
 

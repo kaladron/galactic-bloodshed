@@ -5,7 +5,9 @@
 /// initialization, and block setup.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
+import gb.server;
 import server_config;
 import test;
 import std;

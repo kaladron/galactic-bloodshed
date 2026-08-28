@@ -5,7 +5,7 @@
 /// all_alive), filters, and const semantics.
 
 import dallib;
-import gblib;
+import gb.entities;
 import test;
 import std;
 

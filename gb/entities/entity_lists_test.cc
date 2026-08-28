@@ -5,7 +5,7 @@
 /// ShipList iteration helpers.
 
 import dallib;
-import gblib;
+import gb.entities;
 import test;
 import std;
 

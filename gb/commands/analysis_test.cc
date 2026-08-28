@@ -4,7 +4,8 @@
 /// \brief Unit tests for analysis command output and player/sector filtering
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import commands;
 import std;

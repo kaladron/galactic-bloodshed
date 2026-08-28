@@ -4,7 +4,7 @@
 /// \brief Unit tests for strong ID type wrapper, formatting, and hashing
 /// operations.
 
-import gblib;
+import gb.entities;
 import test;
 import std;
 

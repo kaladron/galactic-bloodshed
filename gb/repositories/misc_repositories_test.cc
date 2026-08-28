@@ -5,7 +5,8 @@
 /// Universe, ServerState, ShipExam).
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.repositories;
 import test;
 import std;
 

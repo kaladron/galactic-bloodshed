@@ -4,7 +4,8 @@
 /// \brief Unit tests for transfer command between players on planets.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import commands;
 import std;

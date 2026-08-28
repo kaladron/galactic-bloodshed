@@ -5,7 +5,8 @@
 /// scopes and nested orbit levels.
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import std;
 

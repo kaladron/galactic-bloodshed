@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file doplanet.cc
+/// \brief Planetary lifecycle, ground vehicle movement, and turn simulation
+/// processing.
+
 module;
 #include <cstdlib>
 

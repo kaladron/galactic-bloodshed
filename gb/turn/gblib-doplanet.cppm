@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file gblib-doplanet.cppm
+/// \brief Module interface partition for planetary lifecycle and turn
+/// processing.
+
 export module gblib:doplanet;
 
 import std;

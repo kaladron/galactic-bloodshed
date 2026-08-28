@@ -130,7 +130,7 @@ target_sources(
          gblib-bombard.cppm
          gblib-build.cppm
          gblib-csp.cppm
-         gblib-doplanet.cppm
+         turn/gblib-doplanet.cppm
          turn/gblib-dosector.cppm
          gblib-doship.cppm
          gblib-doturncmd.cppm
@@ -164,7 +164,7 @@ target_sources(
          gblib-universe.cppm
   PRIVATE bombard.cc
           build.cc
-          doplanet.cc
+          turn/doplanet.cc
           turn/dosector.cc
           doship.cc
           doturncmd.cc
@@ -389,7 +389,7 @@ gb_add_test(dispatch_pipeline_test SOURCES commands/dispatch_pipeline_test.cc)
 gb_add_test(dissolve_test SOURCES commands/dissolve_test.cc)
 gb_add_test(distance_test SOURCES commands/distance_test.cc)
 gb_add_test(dock_test SOURCES commands/dock_test.cc)
-gb_add_test(doplanet_test EXTRA_LIBS tabulate::tabulate)
+gb_add_test(doplanet_test SOURCES turn/doplanet_test.cc EXTRA_LIBS tabulate::tabulate)
 gb_add_test(dosector_simple_test SOURCES turn/dosector_simple_test.cc)
 gb_add_test(doship_repair_test)
 gb_add_test(doship_test)

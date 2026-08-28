@@ -79,11 +79,23 @@ jobs:
           cpack --config build/CPackSourceConfig.cmake
           mv galactic-bloodshed-*-source.tar.gz build/ 2>/dev/null || true
 
-      - name: Upload Release Artifacts
+      - name: Upload Debian Package Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-artifacts-${{ env.RELEASE_VERSION }}
-          path: |
-            build/*.tar.gz
-            build/*.deb
+          name: debian-package-${{ env.RELEASE_VERSION }}
+          path: build/*.deb
+          if-no-files-found: error
+
+      - name: Upload Binary Tarball Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-tarball-${{ env.RELEASE_VERSION }}
+          path: build/*-Linux-x86_64.tar.gz
+          if-no-files-found: error
+
+      - name: Upload Source Tarball Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-tarball-${{ env.RELEASE_VERSION }}
+          path: build/*-source.tar.gz
           if-no-files-found: error

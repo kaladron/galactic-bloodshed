@@ -82,17 +82,41 @@ When parsing user input, parse to `int`/`unsigned`, validate, then construct the
 
 `ID<...>` serializes transparently as a plain integer through Glaze, so existing JSON in the database stays compatible. No special meta is needed.
 
-## Iteration
+## Iteration & Range Patterns
 
-Prefer the iterator helpers (e.g. `Race::active_governors()`) when available — they yield typed entries:
+**Never write raw numeric loops** like `for (int i = 0; i < MAXPLAYERS; ++i)` or `for (player_t i = 1; i < MAXPLAYERS; ++i)` (which introduces off-by-one errors). Use the provided domain iterators and range helpers:
 
-```cpp
-for (auto [gov_id, gov_data] : race.active_governors()) {
-  // gov_id is governor_t
-}
-```
+1. **Iterating over managed entities**:
+   ```cpp
+   // ✅ Iterate over enrolled races and index PlayerVector directly
+   for (const Race& race : RaceList::readonly(em)) {
+     vec[race.Playernum] = 100;
+   }
+   ```
 
-Manual numeric loops are still acceptable when the code genuinely needs the index (e.g. bookkeeping side arrays).
+2. **Iterating over all player slots**:
+   ```cpp
+   // ✅ Iterate over all valid player IDs (1..MAXPLAYERS)
+   for (player_t p : all_players()) {
+     if (planet.info(p).explored) { ... }
+   }
+   ```
+
+3. **Iterating directly over `PlayerVector`**:
+   ```cpp
+   // ✅ Standard range-for over player elements
+   for (const auto& entry : player_vec) {
+     total += entry.value;
+   }
+   ```
+
+4. **Iterating over active governors**:
+   ```cpp
+   // ✅ Yields typed entries with governor_t
+   for (auto [gov_id, gov_data] : race.active_governors()) {
+     // gov_id is governor_t
+   }
+   ```
 
 ## Refusing Type Confusion at Boundaries
 
@@ -107,12 +131,14 @@ If you find a function still typed `int player, int gov`, fix the signature; tha
 
 ## Anti-Patterns
 
+- ❌ Writing raw numeric player loops (`for (int i = 0; i < MAXPLAYERS; ++i)`).
 - ❌ Using `int` / `unsigned` to hold IDs.
 - ❌ `static_cast<int>(gov)` or `gov.value` just to compile a comparison.
 - ❌ Implicit construction (`player_t p = 1;`).
 - ❌ Mixing brands (`player_t = governor_t{0};`).
 - ❌ Custom JSON meta for ID fields — Glaze already handles it.
 - ❌ Reintroducing `int` parameters in new APIs that take an identifier.
+
 
 ## Checklist
 

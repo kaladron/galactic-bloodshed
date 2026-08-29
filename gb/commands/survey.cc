@@ -107,9 +107,8 @@ void render_human_survey(std::ostream& out, const Race& race,
       std::string cond_type = std::format(
           " {}   {}", Dessymbols[s.get_condition()], Dessymbols[s.get_type()]);
       std::string crystals =
-          (s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God))
-              ? "yes"
-              : "";
+          (s.get_crystals() && (race.discoveries.crystal || race.God)) ? "yes"
+                                                                       : "";
       table.add_row(
           {std::format("{},{}", row.x, row.y), cond_type,
            std::format("{}", s.get_owner()), std::format("{}", s.get_race()),
@@ -150,8 +149,7 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
         GB::csp::CSP_SURVEY_SECTOR, row.x, row.y, sect_char, row.desshow_char,
         (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(), s.get_fert(),
         s.get_mobilization(),
-        ((s.get_crystals() && (race.discoveries[D_CRYSTAL] || race.God)) ? 1
-                                                                         : 0),
+        ((s.get_crystals() && (race.discoveries.crystal || race.God)) ? 1 : 0),
         s.get_resource(), s.get_popn(), s.get_troops(),
         maxsupport(race, s, row.compat, row.toxic));
 
@@ -347,7 +345,7 @@ void survey_planet_overview(GameObj& g, const Place& where) {
   for (const auto& s : *smap) {
     avg_fert += s.get_fert();
     avg_resource += s.get_resource();
-    if (race.discoveries[D_CRYSTAL] || race.God) {
+    if (race.discoveries.crystal || race.God) {
       crystal_count += !!s.get_crystals();
     }
   }

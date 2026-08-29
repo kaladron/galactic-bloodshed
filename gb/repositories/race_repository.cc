@@ -18,6 +18,16 @@ import std;
 namespace glz {
 
 template <>
+struct meta<TechDiscoveries> {
+  using T = TechDiscoveries;
+  static constexpr auto value =
+      object("hyperdrive", &T::hyperdrive, "laser", &T::laser, "cew", &T::cew,
+             "vn", &T::vn, "tractor_beam", &T::tractor_beam, "transporter",
+             &T::transporter, "avpm", &T::avpm, "cloak", &T::cloak, "wormhole",
+             &T::wormhole, "crystal", &T::crystal);
+};
+
+template <>
 struct meta<Race::gov> {
   using T = Race::gov;
   static constexpr auto value =

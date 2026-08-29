@@ -118,16 +118,16 @@ bool profile(const command_t& argv, GameObj& g) {
     g.out << race_table << "\n\n";
 
     g.out << "Discoveries:";
-    if (Crystal(race)) g.out << "  Crystals";
-    if (Hyper_drive(race)) g.out << "  Hyper-drive";
-    if (Laser(race)) g.out << "  Combat Lasers";
-    if (Cew(race)) g.out << "  Confined Energy Weapons";
-    if (Vn(race)) g.out << "  Von Neumann Machines";
-    if (Tractor_beam(race)) g.out << "  Tractor Beam";
-    if (Transporter(race)) g.out << "  Transporter";
-    if (Avpm(race)) g.out << "  AVPM";
-    if (Cloak(race)) g.out << "  Cloaking";
-    if (Wormhole(race)) g.out << "  Wormhole";
+    if (race.discoveries.crystal) g.out << "  Crystals";
+    if (race.discoveries.hyperdrive) g.out << "  Hyper-drive";
+    if (race.discoveries.laser) g.out << "  Combat Lasers";
+    if (race.discoveries.cew) g.out << "  Confined Energy Weapons";
+    if (race.discoveries.vn) g.out << "  Von Neumann Machines";
+    if (race.discoveries.tractor_beam) g.out << "  Tractor Beam";
+    if (race.discoveries.transporter) g.out << "  Transporter";
+    if (race.discoveries.avpm) g.out << "  AVPM";
+    if (race.discoveries.cloak) g.out << "  Cloaking";
+    if (race.discoveries.wormhole) g.out << "  Wormhole";
     g.out << "\n";
     return true;
   }

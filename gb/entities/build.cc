@@ -96,10 +96,10 @@ std::expected<void, std::string> can_build_this(const ShipType what,
   if (Shipdata[what][ABIL_GOD] && !race.God) {
     return std::unexpected("Only Gods can build this type of ship.\n");
   }
-  if (what == ShipType::OTYPE_VN && !Vn(race)) {
+  if (what == ShipType::OTYPE_VN && !race.discoveries.vn) {
     return std::unexpected("You have not discovered VN technology.\n");
   }
-  if (what == ShipType::OTYPE_TRANSDEV && !Avpm(race)) {
+  if (what == ShipType::OTYPE_TRANSDEV && !race.discoveries.avpm) {
     return std::unexpected("You have not discovered AVPM technology.\n");
   }
   if (Shipdata[what][ABIL_TECH] > race.tech && !race.God) {

@@ -22,6 +22,30 @@ export using toggletype = struct {
   bool compat;
 };
 
+/// Technology discoveries and breakthrough unlocks achieved by a race.
+export struct TechDiscoveries {
+  bool hyperdrive{
+      false};         ///< Capable of constructing faster-than-light hyperdrives
+  bool laser{false};  ///< Capable of constructing combat laser weaponry
+  bool cew{
+      false};  ///< Capable of constructing Concentrated Energy Weapons (CEWs)
+  bool vn{
+      false};  ///< Capable of building self-replicating Von Neumann machines
+  bool tractor_beam{
+      false};  ///< Capable of constructing long-range tractor/repulsor beams
+  bool transporter{
+      false};  ///< Capable of operating planetary matter transporters
+  bool avpm{
+      false};  ///< Capable of building Anti-Vehicle Planetary Missiles (AVPM)
+  bool cloak{false};  ///< Capable of constructing starship cloaking devices
+  bool wormhole{
+      false};  ///< Capable of detecting and traversing artificial wormholes
+  bool crystal{false};  ///< Capable of synthesizing alien power crystals
+
+  [[nodiscard]] bool
+  operator==(const TechDiscoveries&) const noexcept = default;
+};
+
 export class Race {
 public:
   player_t Playernum{0};
@@ -71,8 +95,8 @@ public:
   unsigned short turn{0};
 
   double tech{0.0};
-  unsigned int discoveries[NUM_DISCOVERIES]{}; /* Tech discoveries. */
-  unsigned long victory_score{0};              /* Number of victory points. */
+  TechDiscoveries discoveries{};  /* Tech discoveries. */
+  unsigned long victory_score{0}; /* Number of victory points. */
   bool votes{false};
   ap_t planet_points{0}; /* For the determination of global APs */
 
@@ -256,60 +280,6 @@ export struct power_blocks {
   unsigned long money[MAXPLAYERS];
   unsigned short VPs[MAXPLAYERS];
 };
-
-/* special discoveries */
-export enum Discover {
-  D_HYPER_DRIVE = 0,  /* hyper-space capable */
-  D_LASER = 1,        /* can construct/operate combat lasers */
-  D_CEW = 2,          /* can construct/operate cews */
-  D_VN = 3,           /* can construct von-neumann machines */
-  D_TRACTOR_BEAM = 4, /* tractor/repulsor beam */
-  D_TRANSPORTER = 5,  /* tractor beam (local) */
-  D_AVPM = 6,         /* AVPM transporter */
-  D_CLOAK = 7,        /* cloaking device */
-  D_WORMHOLE = 8,     /* worm-hole */
-  D_CRYSTAL = 9,      /* crystal power */
-};
-
-export constexpr bool Hyper_drive(const Race& r) {
-  return r.discoveries[D_HYPER_DRIVE];
-}
-
-export constexpr bool Laser(const Race& r) {
-  return r.discoveries[D_LASER];
-}
-
-export constexpr bool Cew(const Race& r) {
-  return r.discoveries[D_CEW];
-}
-
-export constexpr bool Vn(const Race& r) {
-  return r.discoveries[D_VN];
-}
-
-export constexpr bool Tractor_beam(const Race& r) {
-  return r.discoveries[D_TRACTOR_BEAM];
-}
-
-export constexpr bool Transporter(const Race& r) {
-  return r.discoveries[D_TRANSPORTER];
-}
-
-export constexpr bool Avpm(const Race& r) {
-  return r.discoveries[D_AVPM];
-}
-
-export constexpr bool Cloak(const Race& r) {
-  return r.discoveries[D_CLOAK];
-}
-
-export constexpr bool Wormhole(const Race& r) {
-  return r.discoveries[D_WORMHOLE];
-}
-
-export constexpr bool Crystal(const Race& r) {
-  return r.discoveries[D_CRYSTAL];
-}
 
 export constexpr double TECH_HYPER_DRIVE = 50.0;
 export constexpr double TECH_LASER = 100.0;

@@ -156,10 +156,11 @@ bool make_mod(const command_t& argv, GameObj& g) {
       dirship.max_destruct() = Shipdata[*i][ABIL_DESTCAP];
       dirship.max_speed() = Shipdata[*i][ABIL_SPEED];
 
-      dirship.mount() = Shipdata[*i][ABIL_MOUNT] * Crystal(race);
-      dirship.hyper_drive().has = Shipdata[*i][ABIL_JUMP] * Hyper_drive(race);
-      dirship.cloak() = Shipdata[*i][ABIL_CLOAK] * Cloak(race);
-      dirship.laser() = Shipdata[*i][ABIL_LASER] * Laser(race);
+      dirship.mount() = Shipdata[*i][ABIL_MOUNT] * race.discoveries.crystal;
+      dirship.hyper_drive().has =
+          Shipdata[*i][ABIL_JUMP] * race.discoveries.hyperdrive;
+      dirship.cloak() = Shipdata[*i][ABIL_CLOAK] * race.discoveries.cloak;
+      dirship.laser() = Shipdata[*i][ABIL_LASER] * race.discoveries.laser;
       dirship.cew() = 0;
       dirship.mode() = 0;
 
@@ -219,11 +220,11 @@ bool make_mod(const command_t& argv, GameObj& g) {
           dirship.max_speed() = std::clamp<speed_t>(value, 1, 9);
         } else if (argv[1] == "mount" &&
                    Shipdata[dirship.build_type()][ABIL_MOUNT] &&
-                   Crystal(race)) {
+                   race.discoveries.crystal) {
           dirship.mount() = !dirship.mount();
         } else if (argv[1] == "hyperdrive" &&
                    Shipdata[dirship.build_type()][ABIL_JUMP] &&
-                   Hyper_drive(race)) {
+                   race.discoveries.hyperdrive) {
           dirship.hyper_drive().has = !dirship.hyper_drive().has;
         } else if (argv[1] == "primary" &&
                    Shipdata[dirship.build_type()][ABIL_PRIMARY]) {
@@ -269,7 +270,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
           }
         } else if (argv[1] == "cew" &&
                    Shipdata[dirship.build_type()][ABIL_CEW]) {
-          if (!Cew(race)) {
+          if (!race.discoveries.cew) {
             g.out << "Your race does not understand confined energy weapons.\n";
             return;
           }
@@ -289,7 +290,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
           }
         } else if (argv[1] == "laser" &&
                    Shipdata[dirship.build_type()][ABIL_LASER]) {
-          if (!Laser(race)) {
+          if (!race.discoveries.laser) {
             g.out << "Your race does not understand lasers yet.\n";
             return;
           }
@@ -304,7 +305,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
                    "modified.\n";
           return;
         }
-      } else if (Hyper_drive(race)) {
+      } else if (race.discoveries.hyperdrive) {
         if (argv[1] == "hyperdrive") {
           dirship.hyper_drive().has = !dirship.hyper_drive().has;
         } else {

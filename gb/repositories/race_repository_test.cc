@@ -53,6 +53,9 @@ int main() {
   test_race.votes = true;
   test_race.planet_points = 100;
   test_race.governors = 3;
+  test_race.discoveries.hyperdrive = true;
+  test_race.discoveries.laser = true;
+  test_race.discoveries.crystal = true;
 
   // Initialize some arrays
   for (int i = 0; i <= OTHER; ++i) {
@@ -95,6 +98,7 @@ int main() {
   test::expect_eq(retrieved->fighters, test_race.fighters);
   test::expect_eq(retrieved->IQ, test_race.IQ);
   test::expect_eq(retrieved->tech, test_race.tech);
+  test::expect_eq(retrieved->discoveries, test_race.discoveries);
   test::expect_eq(retrieved->governors, test_race.governors);
   test::expect_eq(retrieved->governor[0].name, test_race.governor[0].name);
   test::expect_eq(retrieved->governor[0].money, test_race.governor[0].money);

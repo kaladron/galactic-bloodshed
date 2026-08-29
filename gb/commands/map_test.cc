@@ -37,7 +37,7 @@ void setup_test_world(TestContext& ctx) {
   race.governor[0].toggle.inverse = false;
   race.governor[0].toggle.double_digits = false;
   race.governor[0].toggle.highlight = 1;
-  race.discoveries[D_CRYSTAL] = true;
+  race.discoveries.crystal = true;
 
   RaceRepository races(store);
   races.save(race);

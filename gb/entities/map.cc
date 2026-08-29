@@ -185,8 +185,7 @@ char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
     }
   }
 
-  if (s.get_crystals() && (r.discoveries[D_CRYSTAL] || r.God))
-    return CHAR_CRYSTAL;
+  if (s.get_crystals() && (r.discoveries.crystal || r.God)) return CHAR_CRYSTAL;
 
   return get_sector_char(s.get_condition());
 }

@@ -66,7 +66,7 @@ void processResourceProduction(const Race& race, Sector& s, TurnStats& stats) {
 
 // Process crystal mining in a sector
 void processCrystalMining(const Race& race, Sector& s, TurnStats& stats) {
-  if (s.get_crystals() && Crystal(race) && success(s.get_eff())) {
+  if (s.get_crystals() && race.discoveries.crystal && success(s.get_eff())) {
     stats.prod_crystals[s.get_owner()]++;
     s.set_crystals(s.get_crystals() - 1);
   }

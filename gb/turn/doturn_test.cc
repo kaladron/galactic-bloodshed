@@ -273,7 +273,7 @@ void test_do_turn_victory_scores_and_discoveries() {
   // Tech increased
   test::expect_ge(race_after->tech, 20.0);
   // Discovered Hyperdrive
-  test::expect_eq(race_after->discoveries[D_HYPER_DRIVE], 1);
+  test::expect_true(race_after->discoveries.hyperdrive);
   // Victory score calculated
   test::expect_gt(race_after->victory_score, 0);
 }

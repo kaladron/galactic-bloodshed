@@ -770,54 +770,54 @@ void handle_victory(EntityManager& em) {
 
 static void make_discoveries(EntityManager& em, Race& r) {
   /* would be nicer to do this with a loop of course - but it's late */
-  if (!Hyper_drive(r) && r.tech >= TECH_HYPER_DRIVE) {
+  if (!r.discoveries.hyperdrive && r.tech >= TECH_HYPER_DRIVE) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered HYPERDRIVE technology.\n");
-    r.discoveries[D_HYPER_DRIVE] = 1;
+    r.discoveries.hyperdrive = true;
   }
-  if (!Laser(r) && r.tech >= TECH_LASER) {
+  if (!r.discoveries.laser && r.tech >= TECH_LASER) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered LASER technology.\n");
-    r.discoveries[D_LASER] = 1;
+    r.discoveries.laser = true;
   }
-  if (!Cew(r) && r.tech >= TECH_CEW) {
+  if (!r.discoveries.cew && r.tech >= TECH_CEW) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered CEW technology.\n");
-    r.discoveries[D_CEW] = 1;
+    r.discoveries.cew = true;
   }
-  if (!Vn(r) && r.tech >= TECH_VN) {
+  if (!r.discoveries.vn && r.tech >= TECH_VN) {
     push_telegram_race(em, r.Playernum, "You have discovered VN technology.\n");
-    r.discoveries[D_VN] = 1;
+    r.discoveries.vn = true;
   }
-  if (!Tractor_beam(r) && r.tech >= TECH_TRACTOR_BEAM) {
+  if (!r.discoveries.tractor_beam && r.tech >= TECH_TRACTOR_BEAM) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered TRACTOR BEAM technology.\n");
-    r.discoveries[D_TRACTOR_BEAM] = 1;
+    r.discoveries.tractor_beam = true;
   }
-  if (!Transporter(r) && r.tech >= TECH_TRANSPORTER) {
+  if (!r.discoveries.transporter && r.tech >= TECH_TRANSPORTER) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered TRANSPORTER technology.\n");
-    r.discoveries[D_TRANSPORTER] = 1;
+    r.discoveries.transporter = true;
   }
-  if (!Avpm(r) && r.tech >= TECH_AVPM) {
+  if (!r.discoveries.avpm && r.tech >= TECH_AVPM) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered AVPM technology.\n");
-    r.discoveries[D_AVPM] = 1;
+    r.discoveries.avpm = true;
   }
-  if (!Cloak(r) && r.tech >= TECH_CLOAK) {
+  if (!r.discoveries.cloak && r.tech >= TECH_CLOAK) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered CLOAK technology.\n");
-    r.discoveries[D_CLOAK] = 1;
+    r.discoveries.cloak = true;
   }
-  if (!Wormhole(r) && r.tech >= TECH_WORMHOLE) {
+  if (!r.discoveries.wormhole && r.tech >= TECH_WORMHOLE) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered WORMHOLE technology.\n");
-    r.discoveries[D_WORMHOLE] = 1;
+    r.discoveries.wormhole = true;
   }
-  if (!Crystal(r) && r.tech >= TECH_CRYSTAL) {
+  if (!r.discoveries.crystal && r.tech >= TECH_CRYSTAL) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered CRYSTAL technology.\n");
-    r.discoveries[D_CRYSTAL] = 1;
+    r.discoveries.crystal = true;
   }
 }
 

@@ -227,8 +227,7 @@ int main() {
   }
 
   /* assign racial characteristics */
-  for (int d_idx = 0; d_idx < NUM_DISCOVERIES; d_idx++)
-    race.discoveries[d_idx] = 0;
+  race.discoveries = {};
   race.tech = 0.0;
   race.morale = 0;
   race.turn = 0;

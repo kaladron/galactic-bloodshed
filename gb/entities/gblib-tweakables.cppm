@@ -143,7 +143,6 @@ export constexpr ap_t DESERT_POINTS_LOW = 2;
 export constexpr ap_t DESERT_POINTS_HIGH = 3;
 
 export constexpr int MAXPLAYERS = 64;
-export constexpr int NUM_DISCOVERIES = 80;
 
 export constexpr int NAMESIZE = 18;
 export constexpr int NUMSTARS = 256;

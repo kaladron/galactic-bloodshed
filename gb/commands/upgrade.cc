@@ -74,7 +74,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
       ship.max_fuel() = MAX(dirship.max_fuel(), MIN(value, 10000));
     } else if (argv[1] == "mount" &&
                Shipdata[dirship.build_type()][ABIL_MOUNT] && !dirship.mount()) {
-      if (!Crystal(race)) {
+      if (!race.discoveries.crystal) {
         g.out << "Your race does not now how to utilize crystal power yet.\n";
         return;
       }
@@ -87,7 +87,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
       ship.max_speed() = MAX(dirship.max_speed(), MAX(1, MIN(value, 9)));
     } else if (argv[1] == "hyperdrive" &&
                Shipdata[dirship.build_type()][ABIL_JUMP] &&
-               !dirship.hyper_drive().has && Hyper_drive(race)) {
+               !dirship.hyper_drive().has && race.discoveries.hyperdrive) {
       ship.hyper_drive().has = 1;
     } else if (argv[1] == "primary" &&
                Shipdata[dirship.build_type()][ABIL_PRIMARY]) {
@@ -142,7 +142,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
         return;
       }
     } else if (argv[1] == "cew" && Shipdata[dirship.build_type()][ABIL_CEW]) {
-      if (!Cew(race)) {
+      if (!race.discoveries.cew) {
         g.out << "Your race cannot build confined energy weapons.\n";
         return;
       }
@@ -161,7 +161,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
       }
     } else if (argv[1] == "laser" &&
                Shipdata[dirship.build_type()][ABIL_LASER]) {
-      if (!Laser(race)) {
+      if (!race.discoveries.laser) {
         g.out << "Your race cannot build lasers.\n";
         return;
       }

@@ -157,6 +157,36 @@ int main() {
     std::println(std::cout, "  ✓ numplanets() correctly reflects vector size");
   }
 
+  // Star::control tests
+  std::println(std::cout, "Star::control administrative authorization...");
+  {
+    star_struct s{};
+    s.name = "SectorGovStar";
+    Star star(s);
+
+    // Governor 0 (primary race leader) always has administrative control
+    test::expect_true(star.control(1, 0));
+    test::expect_true(star.control(2, 0));
+
+    // Default governor is 0, so any governor query for non-assigned player
+    // fails if non-zero
+    test::expect_false(star.control(1, 1));
+    test::expect_false(star.control(1, 2));
+
+    // Assign specific governor for player 1
+    star.governor(1) = 2;
+    test::expect_true(star.control(1, 0));   // Primary leader still controls
+    test::expect_true(star.control(1, 2));   // Assigned governor has control
+    test::expect_false(star.control(1, 1));  // Other governors do not
+
+    // Player 2's assignment is isolated
+    star.governor(2) = 3;
+    test::expect_true(star.control(2, 3));
+    test::expect_false(star.control(2, 2));
+    test::expect_false(star.control(1, 3));
+    std::println(std::cout, "  ✓ Star::control correctly authorizes governors");
+  }
+
   std::println(std::cout, "\n✓ All Star class tests passed!");
   return 0;
 }

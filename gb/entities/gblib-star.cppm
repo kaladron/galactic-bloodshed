@@ -170,7 +170,9 @@ public:
     return star_struct.gravity;
   }
 
-  [[nodiscard]] int control(player_t, governor_t) const;
+  /// Checks whether a player and governor have administrative control of this
+  /// star system.
+  [[nodiscard]] bool control(player_t, governor_t) const;
 
   [[nodiscard]] star_struct get_struct() const {
     return star_struct;

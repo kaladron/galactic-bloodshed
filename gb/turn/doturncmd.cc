@@ -141,7 +141,7 @@ static void process_stars_and_planets(TurnState& state, bool update) {
       const planetnum_t pnum = planet_handle->planet_order();
       if (update) {
         if (planet_handle->popn() || planet_handle->ships() != 0) {
-          state.stats.Stinfo[star.value][pnum.value].inhab = 1;
+          state.stats.Stinfo[star.value][pnum.value].inhab = true;
         }
         moveplanet(state.entity_manager, *star_handle, *planet_handle);
       }

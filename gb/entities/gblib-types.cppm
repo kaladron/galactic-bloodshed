@@ -139,12 +139,15 @@ export constexpr std::array all_atmosphere_conditions = {
     Conditions::OTHER,
 };
 
+/// Temporary per-planet simulation state tracking across turn update passes.
 export struct Stinfo {
-  short temp_add{0}; /* addition to temperature to each planet */
-  unsigned char thing_add{0};
-  /* new Thing colony on this planet */
-  unsigned char inhab{0};       /* explored by anybody */
-  unsigned char intimidated{0}; /* assault platform is here */
+  int temp_add{0};  ///< Thermal adjustment applied to planet temperature
+  bool thing_add{
+      false};  ///< Whether a new alien Thing colony spawned on this planet
+  bool inhab{
+      false};  ///< Whether any race inhabits or explored this planet this turn
+  bool intimidated{
+      false};  ///< Whether an assault platform is suppressing slave revolts
 };
 
 export struct Vnbrain {

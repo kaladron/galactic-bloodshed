@@ -362,7 +362,7 @@ void do_oap(Ship& ship, TurnStats& stats) {
   /* "indimidate" the planet below, for enslavement purposes. */
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN)
     stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].intimidated =
-        1;
+        true;
 }
 
 void doship(Ship& ship, bool update, EntityManager& entity_manager,
@@ -482,7 +482,8 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
           ship.deststar() == ship.storbits() &&
           ship.destpnum() == ship.pnumorbits()) {
         /* ship bombards planet */
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].inhab = 1;
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].inhab =
+            true;
       }
 
       /* repair ship by the amount of crew it has */

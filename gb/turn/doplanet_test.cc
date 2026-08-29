@@ -2025,6 +2025,24 @@ void test_send_planet_turn_telegrams() {
       telegrams[0].message.contains("Environmental damage on sector 1,1"));
 }
 
+void test_stinfo_simulation_defaults_and_types() {
+  Stinfo info{};
+  test::expect_eq(info.temp_add, 0);
+  test::expect_false(info.thing_add);
+  test::expect_false(info.inhab);
+  test::expect_false(info.intimidated);
+
+  info.temp_add = -25;
+  info.thing_add = true;
+  info.inhab = true;
+  info.intimidated = true;
+
+  test::expect_eq(info.temp_add, -25);
+  test::expect_true(info.thing_add);
+  test::expect_true(info.inhab);
+  test::expect_true(info.intimidated);
+}
+
 }  // namespace
 
 int main() {
@@ -2156,6 +2174,10 @@ int main() {
 
   std::println(std::cout, "  Testing TurnStats PlayerVector accumulation... ");
   test_turnstats_playervector_accumulation();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing Stinfo simulation defaults and types... ");
+  test_stinfo_simulation_defaults_and_types();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doplanet tests passed!");

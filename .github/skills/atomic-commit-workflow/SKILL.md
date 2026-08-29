@@ -13,6 +13,7 @@ Follow these rules to deliver high-quality, easily reviewable atomic commits.
 - **Atomic**: Each commit must address a single conceptual change (e.g. one command migration + its tests, one helper method + its tests).
 - **Never split logic from tests**: Every commit introducing new code MUST contain the tests for that code in the same commit.
 - **Document latent bug fixes**: Always explicitly call out and explain any latent bugs, edge-case vulnerabilities, or bounds safety hazards resolved during refactoring in the commit message body.
+- **Modernize legacy raw types**: Watch for raw primitives (`long`, `short`, `unsigned long`, `char` boolean flags, `int` identifiers) in touched structs or function signatures and convert them to the appropriate domain types (`population_t`, `resource_t`, `money_t`, `ap_t`, `starnum_t`, `planetnum_t`, `bool`).
 
 ## 2. Pre-Commit Verification Checklist
 

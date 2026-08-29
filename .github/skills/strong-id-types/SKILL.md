@@ -12,20 +12,32 @@ Identifier types like `player_t`, `governor_t`, `shipnum_t`, `starnum_t` are not
 notify_player(governor, player, msg);  // swapped args — should not compile
 ```
 
-## Where IDs Are Defined
+## Where IDs & Metric Aliases Are Defined
 
-`gb/types.cppm`:
+`gb/entities/types.cppm`:
 
 ```cpp
+// Strong IDs (ID<"brand", T>):
 export using player_t    = ID<"player">;
 export using governor_t  = ID<"governor">;
-export using starnum_t   = std::uint32_t;
-export using planetnum_t = std::uint32_t;
-export using shipnum_t   = std::uint64_t;
-export using commodnum_t = std::int64_t;
-```
+export using starnum_t   = ID<"star", std::uint32_t>;
+export using planetnum_t = ID<"planet", std::uint32_t>;
+export using shipnum_t   = ID<"ship", std::uint64_t>;
+export using commodnum_t = ID<"commod", std::int64_t>;
+export using blocknum_t  = ID<"block", int>;
+export using powernum_t  = ID<"power", int>;
 
-`player_t` and `governor_t` are strong; the others are still type aliases (consistent within the codebase but not enforced by the compiler — still prefer the alias name for clarity).
+// Semantic Metric Aliases:
+export using armor_t        = std::uint32_t;  ///< Armor rating absorbing combat damage
+export using damage_t       = std::uint32_t;  ///< Hull damage percentage (0..100)
+export using speed_t        = std::uint32_t;  ///< Tactical engine speed setting
+export using radiation_t    = std::uint32_t;  ///< Accumulated radiation dose level
+export using gun_count_t    = std::uint32_t;  ///< Number of gun mounts or battery power rating
+export using bearing_t      = std::uint32_t;  ///< Course navigation heading angle (0..359)
+export using hangar_t       = std::uint32_t;  ///< Internal carried ship hangar capacity/space
+export using ship_size_t    = std::uint32_t;  ///< Ship physical size / volume
+export using weapon_power_t = std::uint32_t;  ///< Concentrated energy weapon / laser power setting
+```
 
 ## Always Use the Typed Name
 

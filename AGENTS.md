@@ -27,7 +27,8 @@ Specialized development skills are located in `.github/skills/` and provide comp
 - **Entity Manager Access**: `.github/skills/entity-manager-access/SKILL.md` — Scoped monadic mutations (`mutate_*`) and peeks (`with_*`, `peek_*`).
 - **Entity List Iteration**: `.github/skills/entity-list-iteration/SKILL.md` — Readonly and mutable list iteration patterns.
 - **Database Test Pattern**: `.github/skills/database-test-pattern/SKILL.md` — In-memory SQLite testing and persistence verification.
-- **Strong ID Types**: `.github/skills/strong-id-types/SKILL.md` — Type-safe IDs (`player_t`, `shipnum_t`) and `PlayerVector`.
+- **Strong ID Types**: `.github/skills/strong-id-types/SKILL.md` — Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`), semantic metric aliases, and `PlayerVector`.
+- **Entity Domain Methods**: `.github/skills/entity-domain-methods/SKILL.md` — Computed predicates, domain methods, and structured manifests on entities.
 - **Repository Pattern**: `.github/skills/repository-pattern/SKILL.md` — DAL and repository implementation patterns.
 - **Module File Template**: `.github/skills/module-file-template/SKILL.md` — Standard C++26 module structure and headers.
 

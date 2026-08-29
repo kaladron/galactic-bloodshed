@@ -175,19 +175,20 @@ bool defend(const command_t& argv, GameObj& g) {
                 if (auto result_opt = shoot_ship_to_planet(
                         g.entity_manager, target_ship, p, strength,
                         sector_coords, smap, 0, 0)) {
-                  auto [_, __, short_msg, long_msg] = *result_opt;
                   if (target_ship.is_laser_on())
                     use_fuel(target_ship, 2.0 * (double)strength);
                   else
                     use_destruct(target_ship, strength);
 
-                  post(g.entity_manager, short_msg, NewsType::COMBAT);
+                  post(g.entity_manager, result_opt->short_message,
+                       NewsType::COMBAT);
                   notify_star(g.session_registry, g.entity_manager, Playernum,
-                              Governor, target_ship.storbits(), short_msg);
-                  g.out << long_msg;
+                              Governor, target_ship.storbits(),
+                              result_opt->short_message);
+                  g.out << result_opt->long_message;
                   warn_player(g.session_registry, g.entity_manager,
                               target_ship.owner(), target_ship.governor(),
-                              long_msg);
+                              result_opt->long_message);
                 }
               }
 
@@ -207,7 +208,6 @@ bool defend(const command_t& argv, GameObj& g) {
                     if (auto result2_opt = shoot_ship_to_planet(
                             g.entity_manager, ship, p, strength, sector_coords,
                             smap, 0, 0)) {
-                      auto [_, __, short_msg2, long_msg2] = *result2_opt;
                       g.entity_manager.mutate_ship(
                           ship.number(), [&](Ship& ship_mut) {
                             if (ship.is_laser_on())
@@ -215,13 +215,15 @@ bool defend(const command_t& argv, GameObj& g) {
                             else
                               use_destruct(ship_mut, strength);
                           });
-                      post(g.entity_manager, short_msg2, NewsType::COMBAT);
+                      post(g.entity_manager, result2_opt->short_message,
+                           NewsType::COMBAT);
                       notify_star(g.session_registry, g.entity_manager,
                                   Playernum, Governor, ship.storbits(),
-                                  short_msg2);
-                      g.out << long_msg2;
+                                  result2_opt->short_message);
+                      g.out << result2_opt->long_message;
                       warn_player(g.session_registry, g.entity_manager,
-                                  ship.owner(), ship.governor(), long_msg2);
+                                  ship.owner(), ship.governor(),
+                                  result2_opt->long_message);
                     }
                   }
                 }

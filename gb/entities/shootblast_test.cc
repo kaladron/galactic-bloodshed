@@ -205,14 +205,14 @@ void test_shoot_ship_to_planet_valid_attack() {
   auto res = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{1, 1}, smap,
                                   0, GTYPE_HEAVY);
   test::expect_true(res.has_value());
-  auto [numdest, nuked, short_msg, long_msg] = *res;
-  test::expect_ge(numdest, 0);
-  test::expect_false(short_msg.empty());
-  test::expect_false(long_msg.empty());
+  test::expect_ge(res->sectors_destroyed, 0);
+  test::expect_false(res->short_message.empty());
+  test::expect_false(res->long_message.empty());
+  test::expect_true(res->nuked_players[player_t{2}]);
 
   std::println(std::cout,
                "  ✓ shoot_ship_to_planet valid attack passed (numdest={})",
-               numdest);
+               res->sectors_destroyed);
 }
 
 int main() {

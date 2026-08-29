@@ -607,13 +607,13 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
                 if (auto result_opt = shoot_ship_to_planet(
                         entity_manager, ship, p, (int)ship.destruct(),
                         bomb_coords, smap, 0, GTYPE_HEAVY)) {
-                  auto [numdest, _, short_msg, long_msg] = *result_opt;
                   push_telegram(entity_manager, ship.owner(), ship.governor(),
-                                long_msg);
+                                result_opt->long_message);
                   entity_manager.kill_ship(ship.owner(), ship);
                   std::string sectors_destroyed_msg = std::format(
                       "{} dropped on {}.\n\t{} sectors destroyed.\n", ship,
-                      prin_ship_orbits(entity_manager, ship), numdest);
+                      prin_ship_orbits(entity_manager, ship),
+                      result_opt->sectors_destroyed);
                   const auto& star = *entity_manager.peek_star(ship.storbits());
                   for (const Race& race : RaceList::readonly(entity_manager)) {
                     if (p.info(race.Playernum).numsectsowned &&
@@ -623,7 +623,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
                                     sectors_destroyed_msg);
                     }
                   }
-                  if (numdest) {
+                  if (result_opt->sectors_destroyed) {
                     std::string dropmsg =
                         std::format("{} dropped on {}.\n", ship,
                                     prin_ship_orbits(entity_manager, ship));
@@ -742,19 +742,17 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
                 if (auto result_opt = shoot_ship_to_planet(
                         entity_manager, ship, planet, (int)(ship.destruct()),
                         target_coords, smap, 0, GTYPE_LIGHT)) {
-                  auto [numdest, nuked, short_msg, long_msg] = *result_opt;
-
                   std::stringstream telegram;
                   telegram << postmsg;
-                  if (numdest > 0) {
-                    telegram
-                        << std::format(" - {} sectors destroyed.", numdest);
+                  if (result_opt->sectors_destroyed > 0) {
+                    telegram << std::format(" - {} sectors destroyed.",
+                                            result_opt->sectors_destroyed);
                   }
                   telegram << "\n";
 
                   const auto& star = *entity_manager.peek_star(ship.storbits());
                   for (const Race& race : RaceList::readonly(entity_manager)) {
-                    if (nuked[race.Playernum.value - 1]) {
+                    if (result_opt->nuked_players[race.Playernum]) {
                       push_telegram(entity_manager, race.Playernum,
                                     star.governor(race.Playernum),
                                     telegram.str());

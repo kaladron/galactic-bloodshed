@@ -12,9 +12,15 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
                    int cew_strength, int range, bool ignore = false);
 export std::optional<std::tuple<int, std::string, std::string>>
 shoot_planet_to_ship(EntityManager& em, Race& race, Ship& target, int strength);
-// Numdest, Nuked array, Short, Long
-export std::optional<
-    std::tuple<int, std::array<char, MAXPLAYERS>, std::string, std::string>>
+
+export struct BombardResult {
+  int sectors_destroyed{0};
+  PlayerVector<bool, MAXPLAYERS> nuked_players{};
+  std::string short_message;
+  std::string long_message;
+};
+
+export std::optional<BombardResult>
 shoot_ship_to_planet(EntityManager& em, const Ship& attacker, Planet& target,
                      int strength, Coordinates target_sector,
                      SectorMap& sector_map, int ignore, int caliber);

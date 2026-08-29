@@ -148,8 +148,7 @@ shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship, int strength) {
  * @return Result containing number of sectors destroyed and which players were
  * hit.
  */
-std::optional<
-    std::tuple<int, std::array<char, MAXPLAYERS>, std::string, std::string>>
+std::optional<BombardResult>
 shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
                      int strength, Coordinates target_sector, SectorMap& smap,
                      int ignore, int caliber) {
@@ -160,7 +159,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   if (!pl.is_valid(target_sector)) return std::nullopt;
 
   int numdest{0};
-  std::array<char, MAXPLAYERS> nuked{};
+  PlayerVector<bool, MAXPLAYERS> nuked{};
 
   double r = .4 * strength;
   if (!caliber) { /* figure out the appropriate gun caliber if not given*/
@@ -182,7 +181,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   auto& target = smap.get(target_sector);
   player_t oldowner = target.get_owner();
 
-  std::array<int, MAXPLAYERS> sum_mob{0};
+  PlayerVector<int, MAXPLAYERS> sum_mob{};
 
   for (auto y2 = 0; y2 < pl.dimensions().y; y2++) {
     for (auto x2 = 0; x2 < pl.dimensions().x; x2++) {
@@ -228,7 +227,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 
         if (round_rand(fac) >
             Defensedata[s.get_condition()] * int_rand(0, 10)) {
-          if (s.get_owner() != 0) nuked[s.get_owner().value - 1] = 1;
+          if (s.get_owner() != 0) nuked[s.get_owner()] = true;
           s.clear_popn();
           s.set_troops(int_rand(0, (int)s.get_troops()));
           if (!s.get_troops()) /* troops may survive this */
@@ -247,15 +246,15 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
           s.subtract_resource(std::lround(fac));
         }
       }
-      if (s.get_owner() != 0)
-        sum_mob[s.get_owner().value - 1] += s.get_mobilization();
+      if (s.get_owner() != 0) sum_mob[s.get_owner()] += s.get_mobilization();
     }
   }
   auto num_sectors = pl.num_sectors();
-  for (auto i = 1; i <= em.num_races(); i++) {
-    pl.info(player_t{i}).mob_points = sum_mob[i - 1];
-    pl.info(player_t{i}).comread = sum_mob[i - 1] / num_sectors;
-    pl.info(player_t{i}).guns = planet_guns(sum_mob[i - 1]);
+  for (const Race& race : RaceList::readonly(em)) {
+    player_t i = race.Playernum;
+    pl.info(i).mob_points = sum_mob[i];
+    pl.info(i).comread = sum_mob[i] / num_sectors;
+    pl.info(i).guns = planet_guns(sum_mob[i]);
   }
 
   /* planet toxicity goes up a bit */
@@ -263,10 +262,15 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
       (100 - pl.conditions(TOXIC)) * ((double)numdest / (double)num_sectors);
 
   std::string short_msg = std::format("{} bombards {} [{}]\n", ship,
-                                      dispshiploc(em, ship), oldowner.value);
+                                      dispshiploc(em, ship), oldowner);
   std::string long_msg =
       short_msg + std::format("\t{} sectors destroyed\n", numdest);
-  return std::make_tuple(numdest, nuked, short_msg, long_msg);
+  return BombardResult{
+      .sectors_destroyed = numdest,
+      .nuked_players = nuked,
+      .short_message = std::move(short_msg),
+      .long_message = std::move(long_msg),
+  };
 }
 
 static std::pair<int, std::string> do_radiation(Ship& ship, double tech,

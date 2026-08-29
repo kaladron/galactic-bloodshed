@@ -135,8 +135,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
     g.out << "You have to unload to assault alien sectors.\n";
     return;
   }
-  ground_assaults[Playernum.value - 1][sect.get_owner().value - 1]
-                 [g.snum().value] += 1;
+  ground_assaults[Playernum][sect.get_owner()][g.snum()] += 1;
 
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
     g.entity_manager.mutate_race(sect.get_owner(), [&](Race& alien) {

@@ -153,6 +153,49 @@ void test_move_popn_domain_errors() {
   ctx.verify_universe_invariants();
 }
 
+void test_move_popn_assault_and_unowned() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Add enemy race (Player 2)
+  TestWorldBuilder(ctx).add_race("AlienEnemy", 100.0, false, player_t{2});
+
+  // Setup sectors: (5,5) owned by P1, (5,6) unowned (owner 0), (5,7) owned by
+  // P2
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{5, 5}).set_owner(1);
+    smap.get(Coordinates{5, 5}).set_popn_exact(1000);
+    smap.get(Coordinates{5, 5}).set_troops(500);
+
+    smap.get(Coordinates{5, 6}).set_owner(0);
+    smap.get(Coordinates{5, 6}).set_popn_exact(0);
+    smap.get(Coordinates{5, 6}).set_troops(0);
+
+    smap.get(Coordinates{5, 7}).set_owner(2);
+    smap.get(Coordinates{5, 7}).set_popn_exact(100);
+    smap.get(Coordinates{5, 7}).set_troops(50);
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // 1. Move into unowned sector (owner == 0) -> does not trigger assault
+  ground_assaults[player_t{1}][player_t{2}][starnum_t{0}] = 0;
+  ctx.assert_dispatch_success(g, {"move", "5,5", "k", "100"});
+  test::expect_eq(ground_assaults[player_t{1}][player_t{2}][starnum_t{0}], 0U);
+
+  // 2. Move into enemy sector (owner == 2) -> triggers assault
+  ctx.assert_dispatch_success(g, {"move", "5,6", "k", "50"});
+  test::expect_ge(ground_assaults[player_t{1}][player_t{2}][starnum_t{0}], 1U);
+
+  // Clean up
+  ground_assaults[player_t{1}][player_t{2}][starnum_t{0}] = 0;
+}
+
 }  // namespace
 
 int main() {
@@ -160,6 +203,7 @@ int main() {
   test_move_popn_insufficient_ap();
   test_move_popn_role_and_scope_rejections();
   test_move_popn_domain_errors();
+  test_move_popn_assault_and_unowned();
 
   std::println(std::cout, "✓ move_popn_test passed!");
   return 0;

@@ -116,9 +116,36 @@ void test_people_attack_mech() {
                ship.damage());
 }
 
+void test_ground_assault_matrix() {
+  std::println(std::cout, "Test: ground_assault_matrix");
+
+  player_t attacker{1};
+  player_t defender{2};
+  starnum_t star{5};
+
+  ground_assaults[attacker][defender][star] = 0;
+  ground_assaults[attacker][defender][star] += 3;
+  test::expect_eq(ground_assaults[attacker][defender][star], 3U);
+
+  // Bounds rejection tests
+  test::expect_throws<std::out_of_range>(
+      [] { (void)ground_assaults[player_t{0}]; });
+  test::expect_throws<std::out_of_range>(
+      [] { (void)ground_assaults[player_t{MAXPLAYERS + 1}]; });
+  test::expect_throws<std::out_of_range>([attacker, defender] {
+    (void)ground_assaults[attacker][defender][starnum_t{NUMSTARS}];
+  });
+
+  // Clear
+  ground_assaults[attacker][defender][star] = 0;
+  test::expect_eq(ground_assaults[attacker][defender][star], 0U);
+  std::println(std::cout, "  ✓ ground_assault_matrix passed");
+}
+
 int main() {
   test_mech_attack_people();
   test_people_attack_mech();
+  test_ground_assault_matrix();
 
   std::println(std::cout, "\n✅ All ground attack tests passed!");
   return 0;

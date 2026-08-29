@@ -153,8 +153,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
     }
 
     if (Assault) {
-      ground_assaults[Playernum.value - 1][sect2_peek.get_owner().value - 1]
-                     [g.snum().value] += 1;
+      ground_assaults[Playernum][sect2_peek.get_owner()][g.snum()] += 1;
       old2owner = sect2_peek.get_owner();
       old2gov = star.governor(old2owner);
 

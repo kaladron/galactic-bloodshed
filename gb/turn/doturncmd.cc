@@ -836,13 +836,12 @@ static void output_ground_attacks(TurnState& state) {
       for (const Race& race_j : RaceList::readonly(em)) {
         const player_t j = race_j.Playernum;
 
-        if (ground_assaults[i.value - 1][j.value - 1][star_num.value]) {
+        if (ground_assaults[i][j][star_num]) {
           std::string assault_news = std::format(
               "{}: {} [{}] assaults {} [{}] {} times.\n", star.get_name(),
-              race_i.name, i, race_j.name, j,
-              ground_assaults[i.value - 1][j.value - 1][star_num.value]);
+              race_i.name, i, race_j.name, j, ground_assaults[i][j][star_num]);
           post(em, assault_news, NewsType::COMBAT);
-          ground_assaults[i.value - 1][j.value - 1][star_num.value] = 0;
+          ground_assaults[i][j][star_num] = 0;
         }
       }
     }

@@ -819,14 +819,13 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     /* add ship to VN shit list */
     if (std::holds_alternative<MindData>(ship.special())) {
       auto mind = std::get<MindData>(ship.special());
-      Sdata.VN_hitlist[mind.who_killed.value - 1] += 1;
+      Sdata.VN_hitlist[mind.who_killed] += 1;
     }
 
     /* keep track of where these VN's were shot up */
-    record_vn_destruction_site(Sdata.VN_index1[Playernum.value - 1],
-                               Sdata.VN_index2[Playernum.value - 1],
-                               static_cast<int>(ship.storbits().value),
-                               int_rand(0, 1) == 0);
+    record_vn_destruction_site(
+        Sdata.VN_index1[Playernum], Sdata.VN_index2[Playernum],
+        static_cast<int>(ship.storbits().value), int_rand(0, 1) == 0);
     // Sdata auto-saves when handle goes out of scope
   }
 

@@ -273,7 +273,7 @@ void test_fixed_univ_ap_transactions() {
 
   universe_struct u{};
   u.id = 1;
-  u.AP[0] = 10;
+  u.AP[player_t{1}] = 10;
   universe_repo.save(u);
 
   auto& registry = get_test_session_registry();
@@ -292,10 +292,10 @@ void test_fixed_univ_ap_transactions() {
   test::expect_false(
       GB::commands::dispatch_command(g, success_desc, {"mock_univ_cost"}));
   test::expect_contains(g.out.str(), "You need 15 universe action points");
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 10);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 10);
 
   // Set Univ AP to 20
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[0] = 20; });
+  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 20; });
 
   // Case 2: Handler returns false -> AP unchanged (still 20)
   GB::commands::CommandDescriptor fail_desc{
@@ -307,13 +307,13 @@ void test_fixed_univ_ap_transactions() {
   g.out.str("");
   test::expect_false(
       GB::commands::dispatch_command(g, fail_desc, {"mock_univ_fail"}));
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 20);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 20);
 
   // Case 3: Handler returns true -> Success, 15 AP deducted
   g.out.str("");
   test::expect_true(
       GB::commands::dispatch_command(g, success_desc, {"mock_univ_cost"}));
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 5);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 5);
 
   ctx.verify_universe_invariants();
 }

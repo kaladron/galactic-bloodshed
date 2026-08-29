@@ -417,11 +417,11 @@ void test_entity_manager_kill_ship() {
 
   universe_struct univ_data{};
   univ_data.id = 1;
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    univ_data.VN_index1[i] = -1;
-    univ_data.VN_index2[i] = -1;
-  }
-  univ_data.VN_hitlist[0] = 5;
+  for (auto& idx : univ_data.VN_index1)
+    idx = -1;
+  for (auto& idx : univ_data.VN_index2)
+    idx = -1;
+  univ_data.VN_hitlist[player_t{1}] = 5;
   UniverseRepository univ_repo(store);
   univ_repo.save(univ_data);
 
@@ -429,7 +429,7 @@ void test_entity_manager_kill_ship() {
   std::println(std::cout, "  ✓ VN ship killed without errors");
 
   em.with_universe([&](const universe_struct& univ) {
-    test::expect_eq(univ.VN_index1[1], 5);
+    test::expect_eq(univ.VN_index1[player_t{2}], 5);
   });
   std::println(std::cout,
                "  ✓ VN tracking (VN_hitlist and VN_index) updated correctly");

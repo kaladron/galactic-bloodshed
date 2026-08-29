@@ -19,7 +19,7 @@ void setup_test_world(TestContext& ctx) {
   universe_struct us{};
   us.id = 1;
   us.numstars = 2;
-  us.AP[0] = 50;  // Global AP for player 1
+  us.AP[player_t{1}] = 50;  // Global AP for player 1
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
 

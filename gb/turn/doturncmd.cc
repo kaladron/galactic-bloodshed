@@ -180,12 +180,12 @@ static void process_races(TurnState& state, bool update) {
       }
       /* add VN program */
       if (sdata) {
-        state.stats.VN_brain.total_mad += sdata->VN_hitlist[player.value - 1];
+        state.stats.VN_brain.total_mad += sdata->VN_hitlist[player];
         /* find out who they're most mad at */
-        if (state.stats.VN_brain.most_mad > 0 &&
-            sdata->VN_hitlist[state.stats.VN_brain.most_mad - 1] <=
-                sdata->VN_hitlist[player.value - 1]) {
-          state.stats.VN_brain.most_mad = player.value;
+        if (state.stats.VN_brain.most_mad == 0 ||
+            sdata->VN_hitlist[state.stats.VN_brain.most_mad] <=
+                sdata->VN_hitlist[player]) {
+          state.stats.VN_brain.most_mad = player;
         }
       }
     }
@@ -452,8 +452,8 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         } catch (const EntityNotFoundError&) {
         }
         if (governed(race, state)) {
-          ap_t APs = sdata.AP[player.value - 1] + race.planet_points;
-          sdata.AP[player.value - 1] = std::min(APs, LIMIT_APs);
+          ap_t APs = sdata.AP[player] + race.planet_points;
+          sdata.AP[player] = std::min(APs, LIMIT_APs);
         }
       }
     });

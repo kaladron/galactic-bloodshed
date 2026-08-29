@@ -50,14 +50,6 @@ struct meta<plinfo> {
       &T::mob_points, "est_production", &T::est_production);
 };
 
-template <typename T, std::size_t N>
-struct meta<PlayerVector<T, N>> {
-  using Type = PlayerVector<T, N>;
-  static constexpr auto value = [](auto&& self) -> auto& {
-    return self.raw_array();
-  };
-};
-
 template <>
 struct meta<planet_struct> {
   using T = planet_struct;

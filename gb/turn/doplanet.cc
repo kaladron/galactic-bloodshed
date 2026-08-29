@@ -284,10 +284,10 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
 
   if (std::holds_alternative<MindData>(ship.special())) {
     auto mind = std::get<MindData>(ship.special());
-    if (mind.who_killed.value > 0 && mind.who_killed.value <= MAXPLAYERS) {
+    if (mind.who_killed > 0 && mind.who_killed <= MAXPLAYERS) {
       entity_manager.mutate_universe([&](universe_struct& u) {
-        if (u.VN_hitlist[mind.who_killed.value - 1] > 0) {
-          --u.VN_hitlist[mind.who_killed.value - 1];
+        if (u.VN_hitlist[mind.who_killed] > 0) {
+          --u.VN_hitlist[mind.who_killed];
         }
       });
     }

@@ -67,12 +67,13 @@ void test_universe_AP_methods() {
   test::expect_eq(universe.get_AP(3), 3000);
   test::expect_eq(universe.get_AP(1), 500);  // Player 1 unaffected
 
-  // Test boundary conditions (invalid player numbers)
-  universe.set_AP(0, 999);  // Should be ignored
-  test::expect_eq(universe.get_AP(0), 0);
-
-  universe.set_AP(MAXPLAYERS + 1, 999);  // Should be ignored
-  test::expect_eq(universe.get_AP(MAXPLAYERS + 1), 0);
+  // Test boundary conditions (invalid player numbers throw std::out_of_range)
+  test::expect_throws<std::out_of_range>([&]() { (void)universe.get_AP(0); });
+  test::expect_throws<std::out_of_range>([&]() { universe.set_AP(0, 999); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)universe.get_AP(MAXPLAYERS + 1); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { universe.set_AP(MAXPLAYERS + 1, 999); });
 
   std::println(std::cout, "  ✓ AP methods work correctly");
 }
@@ -112,9 +113,11 @@ void test_universe_VN_methods() {
   test::expect_eq(universe.get_VN_index1(2), 42);
   test::expect_eq(universe.get_VN_index2(2), -99);
 
-  // Test boundary conditions
-  test::expect_eq(universe.get_VN_hitlist(0), 0);
-  test::expect_eq(universe.get_VN_index1(MAXPLAYERS + 1), 0);
+  // Test boundary conditions (invalid player numbers throw std::out_of_range)
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)universe.get_VN_hitlist(0); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)universe.get_VN_index1(MAXPLAYERS + 1); });
 
   std::println(std::cout, "  ✓ VN tracking methods work correctly");
 }
@@ -164,9 +167,9 @@ void test_universe_persistence() {
     u.id = 1;
     u.numstars = 200;
     u.ships = 500;
-    u.AP[0] = 1000;  // Player 1
-    u.AP[1] = 2000;  // Player 2
-    u.VN_hitlist[0] = 5;
+    u.AP[player_t{1}] = 1000;
+    u.AP[player_t{2}] = 2000;
+    u.VN_hitlist[player_t{1}] = 5;
 
     repo.save(u);
   }
@@ -177,9 +180,9 @@ void test_universe_persistence() {
   test::expect_ne(universe, nullptr);
   test::expect_eq(universe->numstars, 200);
   test::expect_eq(universe->ships, 500);
-  test::expect_eq(universe->AP[0], 1000);
-  test::expect_eq(universe->AP[1], 2000);
-  test::expect_eq(universe->VN_hitlist[0], 5);
+  test::expect_eq(universe->AP[player_t{1}], 1000);
+  test::expect_eq(universe->AP[player_t{2}], 2000);
+  test::expect_eq(universe->VN_hitlist[player_t{1}], 5);
 
   // Modify via EntityManager
   em.mutate_universe([](universe_struct& universe_mut) {
@@ -195,9 +198,9 @@ void test_universe_persistence() {
   test::expect_ne(universe2, nullptr);
   test::expect_eq(universe2->numstars, 250);
   test::expect_eq(universe2->ships, 600);
-  test::expect_eq(universe2->AP[0], 1000);
-  test::expect_eq(universe2->AP[1], 2000);
-  test::expect_eq(universe2->VN_hitlist[0], 5);
+  test::expect_eq(universe2->AP[player_t{1}], 1000);
+  test::expect_eq(universe2->AP[player_t{2}], 2000);
+  test::expect_eq(universe2->VN_hitlist[player_t{1}], 5);
 
   std::println(std::cout, "  ✓ Persistence with EntityManager works correctly");
 }

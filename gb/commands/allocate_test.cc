@@ -34,12 +34,12 @@ int main() {
   stars.save(star);
 
   // Setup Universe APs
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[0] = 50; });
+  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 50; });
 
   // Create GameObj
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
 
   // 1. Scope rejection at universe level
   g.set_level(ScopeLevel::LEVEL_UNIV);
@@ -79,14 +79,14 @@ int main() {
     ctx.em.clear_cache();
     const auto* u = ctx.em.peek_universe();
     const auto* s = ctx.em.peek_star(0);
-    test::expect_eq(u->AP[0], 35);
+    test::expect_eq(u->AP[player_t{1}], 35);
     test::expect_eq(s->AP(1), 35);
   }
   std::println(std::cout, "    ✓ Successful allocation verified");
 
   // 6. Guest race rejection
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "5"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");

@@ -92,7 +92,7 @@ void test_fire_universe_ap() {
       2, [](Ship& s2) { s2.whatorbits() = ScopeLevel::LEVEL_STAR; });
 
   // Set universe AP
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[0] = 50; });
+  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 50; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -101,7 +101,7 @@ void test_fire_universe_ap() {
 
   bool ok = ctx.dispatch(g, {"fire", "#1", "#2", "10"});
   test::expect_true(ok);
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 49);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 49);
 
   ctx.verify_universe_invariants();
 }

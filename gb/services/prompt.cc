@@ -22,8 +22,7 @@ std::string do_prompt(const GameObj& g) {
   const auto* universe = g.entity_manager.peek_universe();
   switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] / )\n",
-                            universe->AP[Playernum.value - 1]);
+      prompt << std::format(" ( [{0}] / )\n", universe->AP[Playernum]);
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(g.snum());
@@ -50,8 +49,8 @@ std::string do_prompt(const GameObj& g) {
 
   switch (s->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] /#{1} )\n",
-                            universe->AP[Playernum.value - 1], g.shipno());
+      prompt << std::format(" ( [{0}] /#{1} )\n", universe->AP[Playernum],
+                            g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
@@ -83,9 +82,8 @@ std::string do_prompt(const GameObj& g) {
 
   switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] /#{1}/#{2} )\n",
-                            universe->AP[Playernum.value - 1], s->destshipno(),
-                            g.shipno());
+      prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", universe->AP[Playernum],
+                            s->destshipno(), g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(s->storbits());
@@ -116,7 +114,7 @@ std::string do_prompt(const GameObj& g) {
   switch (s2->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV:
       prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
-                            universe->AP[Playernum.value - 1], s->destshipno(),
+                            universe->AP[Playernum], s->destshipno(),
                             g.shipno());
       return prompt.str();
     case ScopeLevel::LEVEL_STAR: {

@@ -21,13 +21,11 @@ void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
   mind.target = stats.VN_brain.most_mad;
   ship.whatdest() = ScopeLevel::LEVEL_PLAN;
   const auto* universe = em.peek_universe();
-  if (mind.target.value > 0 &&
-      mind.target.value <=
-          static_cast<player_t::value_type>(std::size(universe->VN_index1))) {
+  if (mind.target > 0 && mind.target <= MAXPLAYERS) {
     if (success(50))
-      ship.deststar() = universe->VN_index1[mind.target.value - 1];
+      ship.deststar() = universe->VN_index1[mind.target];
     else
-      ship.deststar() = universe->VN_index2[mind.target.value - 1];
+      ship.deststar() = universe->VN_index2[mind.target];
   } else {
     ship.deststar() = int_rand(0, universe->numstars - 1);
   }

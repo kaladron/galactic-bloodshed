@@ -103,7 +103,7 @@ void test_test_context_dispatch_helpers() {
     UniverseRepository universe_repo(store);
     universe_struct u{};
     u.id = 1;
-    u.AP[0] = 30;
+    u.AP[player_t{1}] = 30;
     universe_repo.save(u);
   }
 
@@ -143,7 +143,7 @@ void test_test_context_dispatch_helpers() {
   ctx.assert_dispatch_success(g, univ_cost_cmd, {"univ_cost"},
                               /*expected_star_ap_deducted=*/0,
                               /*expected_univ_ap_deducted=*/10);
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 20);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 20);
 
   // 3. Rejected dispatch due to handler returning false (AP remains 15)
   ctx.assert_dispatch_rejected(g, fail_cmd, {"fail_cmd"});

@@ -22,8 +22,8 @@ void test_power_dispatch() {
   // Setup: Create universe
   universe_struct us{};
   us.id = 1;
-  us.VN_hitlist[0] = 3;
-  us.VN_hitlist[1] = 7;
+  us.VN_hitlist[player_t{1}] = 3;
+  us.VN_hitlist[player_t{2}] = 7;
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
 
@@ -69,7 +69,7 @@ void test_power_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
   g.race = ctx.em.peek_race(g.player());
 
   // 1. All players report

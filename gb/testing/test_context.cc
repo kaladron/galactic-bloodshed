@@ -75,7 +75,7 @@ void TestContext::assert_dispatch_success(
   try {
     if (const auto* univ = em.peek_universe()) {
       if (g.player().value > 0 && g.player().value <= MAXPLAYERS) {
-        initial_univ_ap = univ->AP[g.player().value - 1];
+        initial_univ_ap = univ->AP[g.player()];
       }
     }
   } catch (const EntityNotFoundError&) {
@@ -94,7 +94,7 @@ void TestContext::assert_dispatch_success(
   }
 
   if (expected_univ_ap_deducted > 0) {
-    ap_t final_univ_ap = em.peek_universe()->AP[g.player().value - 1];
+    ap_t final_univ_ap = em.peek_universe()->AP[g.player()];
     test::expect_eq(final_univ_ap, initial_univ_ap - expected_univ_ap_deducted,
                     "Universe AP deduction mismatch");
   }
@@ -130,7 +130,7 @@ void TestContext::assert_dispatch_rejected(
   try {
     if (const auto* univ = em.peek_universe()) {
       if (g.player().value > 0 && g.player().value <= MAXPLAYERS) {
-        initial_univ_ap = univ->AP[g.player().value - 1];
+        initial_univ_ap = univ->AP[g.player()];
         has_univ = true;
       }
     }
@@ -157,7 +157,7 @@ void TestContext::assert_dispatch_rejected(
   if (has_univ && desc.ap.model == GB::commands::APModel::FixedUniv) {
     try {
       if (const auto* univ = em.peek_universe()) {
-        test::expect_eq(univ->AP[g.player().value - 1], initial_univ_ap,
+        test::expect_eq(univ->AP[g.player()], initial_univ_ap,
                         "Rejected command must not deduct universe AP");
       }
     } catch (const EntityNotFoundError&) {

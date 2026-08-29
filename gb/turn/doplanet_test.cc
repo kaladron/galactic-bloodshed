@@ -499,7 +499,7 @@ void test_execute_berserker_bombardment() {
   // Initialize Universe with VN hitlist for Player 2
   universe_struct udata{};
   udata.id = 1;
-  udata.VN_hitlist[1] = 5;  // Player 2 hitlist entry = 5
+  udata.VN_hitlist[player_t{2}] = 5;  // Player 2 hitlist entry = 5
   UniverseRepository univ_repo(store);
   univ_repo.save(udata);
 
@@ -560,7 +560,7 @@ void test_execute_berserker_bombardment() {
   // 2. Successful bombardment decrements VN_hitlist
   test::expect_true(execute_berserker_bombardment(em, ship, planet));
   const auto* universe_after = em.peek_universe();
-  test::expect_eq(universe_after->VN_hitlist[1], 4);
+  test::expect_eq(universe_after->VN_hitlist[player_t{2}], 4);
 
   // 3. No remaining targets on planet causes ship to pick a new destination
   // Clear remaining defenders

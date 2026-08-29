@@ -151,8 +151,8 @@ export struct Stinfo {
 };
 
 export struct Vnbrain {
-  unsigned short total_mad{0}; /* total # of VN's destroyed so far */
-  unsigned char most_mad{0};   /* player most mad at */
+  std::uint32_t total_mad{0}; /* total # of VN's destroyed so far */
+  player_t most_mad{0};       /* player most mad at */
 };
 
 export struct ServerState {

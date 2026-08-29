@@ -42,11 +42,12 @@ int main() {
   UniverseRepository universe_repo(store);
   universe_struct u{};
   u.id = 1;
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    u.VN_hitlist[i] = 0;
-    u.VN_index1[i] = -1;
-    u.VN_index2[i] = -1;
-  }
+  for (auto& h : u.VN_hitlist)
+    h = 0;
+  for (auto& idx : u.VN_index1)
+    idx = -1;
+  for (auto& idx : u.VN_index2)
+    idx = -1;
   universe_repo.save(u);
 
   // Now EntityManager can access it
@@ -186,9 +187,9 @@ int main() {
     // Check VN hitlist was updated
     const auto* universe_after = em.peek_universe();
     test::expect_ne(universe_after, nullptr);
-    test::expect_gt(universe_after->VN_hitlist[0], 0);  // Player 1 (index 0)
-    test::expect_true(universe_after->VN_index1[0] == 0 ||
-                      universe_after->VN_index2[0] == 0);
+    test::expect_gt(universe_after->VN_hitlist[player_t{1}], 0);
+    test::expect_true(universe_after->VN_index1[player_t{1}] == 0 ||
+                      universe_after->VN_index2[player_t{1}] == 0);
     std::println(std::cout, "✓ VN hitlist tracking works");
   }
 

@@ -38,7 +38,7 @@ void test_declare_dispatch() {
   UniverseRepository universe_repo(store);
   universe_struct sdata{};
   sdata.id = 1;
-  sdata.AP[0] = 10;
+  sdata.AP[player_t{1}] = 10;
   sdata.numstars = 0;
   universe_repo.save(sdata);
 

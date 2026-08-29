@@ -200,17 +200,19 @@ void test_universe_repository() {
   sd.id = 1;  // Stardata is a singleton with id=1
   sd.numstars = 50;
   sd.ships = 100;
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    sd.AP[i] = i * 10;
+  ap_t ap_val = 0;
+  for (auto& ap : sd.AP) {
+    ap = ap_val;
+    ap_val += 10;
   }
-  sd.VN_hitlist[0] = 1;
-  sd.VN_hitlist[1] = 2;
+  sd.VN_hitlist[player_t{1}] = 1;
+  sd.VN_hitlist[player_t{2}] = 2;
   // VN_index arrays are int arrays for VN tracking
-  sd.VN_index1[0] = 5;
-  sd.VN_index1[1] =
+  sd.VN_index1[player_t{1}] = 5;
+  sd.VN_index1[player_t{2}] =
       -3;  // Test negative values (comment says negative values are used)
-  sd.VN_index2[0] = 10;
-  sd.VN_index2[1] = 15;
+  sd.VN_index2[player_t{1}] = 10;
+  sd.VN_index2[player_t{2}] = 15;
 
   // Save and retrieve global data
   test::expect_true(repo.save(sd));
@@ -218,9 +220,9 @@ void test_universe_repository() {
   test::expect_true(retrieved.has_value());
   test::expect_eq(retrieved->numstars, 50);
   test::expect_eq(retrieved->ships, 100);
-  test::expect_eq(retrieved->AP[0], 0);
-  test::expect_eq(retrieved->AP[5], 50);
-  test::expect_eq(retrieved->VN_index1[0], 5);
+  test::expect_eq(retrieved->AP[player_t{1}], 0);
+  test::expect_eq(retrieved->AP[player_t{6}], 50);
+  test::expect_eq(retrieved->VN_index1[player_t{1}], 5);
 
   // Update global data
   sd.numstars = 75;
@@ -232,18 +234,20 @@ void test_universe_repository() {
   test::expect_eq(retrieved->ships, 200);
 
   // Array preservation
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    test::expect_eq(retrieved->AP[i], i * 10);
+  ap_t expected_ap = 0;
+  for (const auto& ap : retrieved->AP) {
+    test::expect_eq(ap, expected_ap);
+    expected_ap += 10;
   }
 
   // VN arrays preserved
-  test::expect_eq(retrieved->VN_hitlist[0], 1);
-  test::expect_eq(retrieved->VN_hitlist[1], 2);
+  test::expect_eq(retrieved->VN_hitlist[player_t{1}], 1);
+  test::expect_eq(retrieved->VN_hitlist[player_t{2}], 2);
   // Check VN_index values match what we set (including negative values)
-  test::expect_eq(retrieved->VN_index1[0], 5);
-  test::expect_eq(retrieved->VN_index1[1], -3);
-  test::expect_eq(retrieved->VN_index2[0], 10);
-  test::expect_eq(retrieved->VN_index2[1], 15);
+  test::expect_eq(retrieved->VN_index1[player_t{1}], 5);
+  test::expect_eq(retrieved->VN_index1[player_t{2}], -3);
+  test::expect_eq(retrieved->VN_index2[player_t{1}], 10);
+  test::expect_eq(retrieved->VN_index2[player_t{2}], 15);
 
   std::println(std::cout, "✓ All UniverseRepository tests passed");
 }

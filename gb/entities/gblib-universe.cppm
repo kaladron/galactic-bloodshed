@@ -15,15 +15,15 @@ import std;
 // as it contains universe-wide data, not star-specific data
 export struct universe_struct {
   int id{0};  // Universe ID for database persistence (always 1 for singleton)
-  unsigned short numstars{0};  /* Total # of stars in universe */
+  std::uint32_t numstars{0};   /* Total # of stars in universe */
   shipnum_t ships{0};          /* Head of universe-wide ship list */
   planetnum_t planet_count{0}; /* Count of non-asteroid planets (for victory) */
-  ap_t AP[MAXPLAYERS]{};       /* Action points for each player */
-  unsigned short VN_hitlist[MAXPLAYERS]{};
+  PlayerVector<ap_t, MAXPLAYERS> AP;
+  PlayerVector<std::uint32_t, MAXPLAYERS> VN_hitlist;
   /* # of ships destroyed by each player */
-  int VN_index1[MAXPLAYERS]{}; /* negative value is used */
-  int VN_index2[MAXPLAYERS]{}; /* VN's record of destroyed ships
-                                          systems where they bought it */
+  PlayerVector<int, MAXPLAYERS> VN_index1; /* negative value is used */
+  PlayerVector<int, MAXPLAYERS> VN_index2; /* VN's record of destroyed ships
+                                              systems where they bought it */
 };
 
 // Wrapper class for Universe data (like Star wraps star_struct)
@@ -35,10 +35,10 @@ public:
   explicit Universe(universe_struct& raw_data) : data(raw_data) {}
 
   // Basic accessors
-  [[nodiscard]] unsigned short numstars() const {
+  [[nodiscard]] std::uint32_t numstars() const {
     return data.numstars;
   }
-  void set_numstars(unsigned short value) {
+  void set_numstars(std::uint32_t value) {
     data.numstars = value;
   }
 
@@ -51,65 +51,52 @@ public:
 
   // Action Point (AP) methods
   [[nodiscard]] ap_t get_AP(player_t p) const {
-    if (p.value < 1 || p.value > MAXPLAYERS) return 0;
-    return data.AP[p.value - 1];
+    return data.AP[p];
   }
 
   void set_AP(player_t p, ap_t value) {
-    if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data.AP[p.value - 1] = value;
+    data.AP[p] = value;
   }
 
   void deduct_AP(player_t p, ap_t amount) {
-    if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data.AP[p.value - 1] =
-        (data.AP[p.value - 1] > amount) ? (data.AP[p.value - 1] - amount) : 0;
+    data.AP[p] = (data.AP[p] > amount) ? (data.AP[p] - amount) : 0;
   }
 
   void add_AP(player_t p, ap_t amount) {
-    if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data.AP[p.value - 1] += amount;
+    data.AP[p] += amount;
   }
 
   // VN (Von Neumann) tracking methods
-  [[nodiscard]] unsigned short get_VN_hitlist(player_t p) const {
-    if (p.value < 1 || p.value > MAXPLAYERS) return 0;
-    return data.VN_hitlist[p.value - 1];
+  [[nodiscard]] std::uint32_t get_VN_hitlist(player_t p) const {
+    return data.VN_hitlist[p];
   }
 
-  void set_VN_hitlist(player_t p, unsigned short value) {
-    if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data.VN_hitlist[p.value - 1] = value;
+  void set_VN_hitlist(player_t p, std::uint32_t value) {
+    data.VN_hitlist[p] = value;
   }
 
   void increment_VN_hitlist(player_t p) {
-    if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data.VN_hitlist[p.value - 1]++;
+    data.VN_hitlist[p]++;
   }
 
   void decrement_VN_hitlist(player_t p) {
-    if (p.value < 1 || p.value > MAXPLAYERS) return;
-    if (data.VN_hitlist[p.value - 1] > 0) data.VN_hitlist[p.value - 1]--;
+    if (data.VN_hitlist[p] > 0) data.VN_hitlist[p]--;
   }
 
   [[nodiscard]] int get_VN_index1(player_t p) const {
-    if (p.value < 1 || p.value > MAXPLAYERS) return 0;
-    return data.VN_index1[p.value - 1];
+    return data.VN_index1[p];
   }
 
   void set_VN_index1(player_t p, int value) {
-    if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data.VN_index1[p.value - 1] = value;
+    data.VN_index1[p] = value;
   }
 
   [[nodiscard]] int get_VN_index2(player_t p) const {
-    if (p.value < 1 || p.value > MAXPLAYERS) return 0;
-    return data.VN_index2[p.value - 1];
+    return data.VN_index2[p];
   }
 
   void set_VN_index2(player_t p, int value) {
-    if (p.value < 1 || p.value > MAXPLAYERS) return;
-    data.VN_index2[p.value - 1] = value;
+    data.VN_index2[p] = value;
   }
 
   // Direct access to underlying struct (for migration compatibility)

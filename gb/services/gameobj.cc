@@ -25,14 +25,14 @@ bool GameObj::deduct_ap(starnum_t snum, ap_t amount) {
 
 bool GameObj::deduct_univ_ap(ap_t amount) {
   if (amount == 0 || god_) return true;
-  if (player_ == 0) return false;
+  if (player_ == 0 || player_ > MAXPLAYERS) return false;
   try {
     const auto* univ = entity_manager.peek_universe();
-    if (!univ || univ->AP[player_.value - 1] < amount) {
+    if (!univ || univ->AP[player_] < amount) {
       return false;
     }
     entity_manager.mutate_universe(
-        [&](universe_struct& u) { u.AP[player_.value - 1] -= amount; });
+        [&](universe_struct& u) { u.AP[player_] -= amount; });
     return true;
   } catch (const EntityNotFoundError&) {
     return false;

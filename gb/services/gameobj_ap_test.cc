@@ -62,7 +62,7 @@ void test_deduct_univ_ap() {
 
   universe_struct u{};
   u.id = 1;
-  u.AP[0] = 25;  // Player 1 has 25 Univ AP
+  u.AP[player_t{1}] = 25;  // Player 1 has 25 Univ AP
   universe_repo.save(u);
 
   auto& registry = get_test_session_registry();
@@ -71,24 +71,24 @@ void test_deduct_univ_ap() {
 
   // 1. Zero amount deduction succeeds
   test::expect_true(g.deduct_univ_ap(0));
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 25);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 25);
 
   // 2. Normal deduction
   test::expect_true(g.deduct_univ_ap(10));
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 15);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 15);
 
   // 3. Insufficient AP fails and leaves Univ AP unchanged
   test::expect_false(g.deduct_univ_ap(20));
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 15);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 15);
 
   // 4. Exact deduction to zero
   test::expect_true(g.deduct_univ_ap(15));
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 0);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 0);
 
   // 5. God mode bypasses Univ AP deduction
   g.set_god(true);
   test::expect_true(g.deduct_univ_ap(50));
-  test::expect_eq(ctx.em.peek_universe()->AP[0], 0);
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 0);
 }
 
 }  // namespace

@@ -107,6 +107,14 @@ struct to<JSON, ID<Tag, T>> {
   }
 };
 
+template <typename T, std::size_t N>
+struct meta<PlayerVector<T, N>> {
+  using Type = PlayerVector<T, N>;
+  static constexpr auto value = [](auto&& self) -> auto& {
+    return self.raw_array();
+  };
+};
+
 template <>
 struct meta<Coordinates> {
   using T = Coordinates;

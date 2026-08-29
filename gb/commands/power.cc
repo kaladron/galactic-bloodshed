@@ -34,7 +34,7 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
   std::string know_col;
   if (race.God) {
     const auto* universe = em.peek_universe();
-    know_col = std::format("{}", universe->VN_hitlist[i.value - 1]);
+    know_col = std::format("{}", universe->VN_hitlist[i]);
   } else {
     know_col = std::format("{}%", race.translate[i.value - 1]);
   }

@@ -14,93 +14,75 @@ module gblib;
 
 /* can takeoff & land, is mobile, etc. */
 unsigned short speed_rating(const Ship& s) {
-  return s.max_speed();
+  return s.max_speed_capacity();
 }
 
 /* has an on/off switch */
 bool has_switch(const Ship& s) {
-  return Shipdata[s.type()][ABIL_HASSWITCH];
+  return s.has_switch();
 }
 
 /* can bombard planets */
 bool can_bombard(const Ship& s) {
-  return Shipdata[s.type()][ABIL_GUNS] && (s.type() != ShipType::STYPE_MINE);
+  return s.can_bombard();
 }
 
 /* can navigate */
 bool can_navigate(const Ship& s) {
-  return Shipdata[s.type()][ABIL_SPEED] > 0 &&
-         s.type() != ShipType::OTYPE_TERRA && s.type() != ShipType::OTYPE_VN;
+  return s.can_navigate();
 }
 
 /* can aim at things. */
 bool can_aim(const Ship& s) {
-  return s.type() >= ShipType::STYPE_MIRROR &&
-         s.type() <= ShipType::OTYPE_TRACT;
+  return s.can_aim();
 }
 
 /* macros to get ship stats */
-unsigned long armor(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY)
-             ? Shipdata[s.type()][ABIL_ARMOR]
-             : s.armor() * (100 - s.damage()) / 100;
+armor_t armor(const Ship& s) {
+  return s.effective_armor();
 }
 
-long guns(const Ship& s) {
-  return (s.guns() == GTYPE_NONE)
-             ? 0
-             : (s.guns() == PRIMARY ? s.primary() : s.secondary());
+weapon_power_t guns(const Ship& s) {
+  return s.active_guns();
 }
 
 population_t max_crew(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY)
-             ? Shipdata[s.type()][ABIL_MAXCREW] - s.troops()
-             : s.max_crew() - s.troops();
+  return s.available_crew();
 }
 
 population_t max_mil(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY)
-             ? Shipdata[s.type()][ABIL_MAXCREW] - s.popn()
-             : s.max_crew() - s.popn();
+  return s.available_mil();
 }
 
-long max_resource(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY) ? Shipdata[s.type()][ABIL_CARGO]
-                                               : s.max_resource();
+resource_t max_resource(const Ship& s) {
+  return s.max_resource_capacity();
 }
 int max_crystals(const Ship&) {
   return MAX_CRYSTALS;
 }
 
-long max_fuel(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY)
-             ? Shipdata[s.type()][ABIL_FUELCAP]
-             : s.max_fuel();
+unsigned short max_fuel(const Ship& s) {
+  return s.max_fuel_capacity();
 }
 
-long max_destruct(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY)
-             ? Shipdata[s.type()][ABIL_DESTCAP]
-             : s.max_destruct();
+unsigned short max_destruct(const Ship& s) {
+  return s.max_destruct_capacity();
 }
 
-long max_speed(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY) ? Shipdata[s.type()][ABIL_SPEED]
-                                               : s.max_speed();
+speed_t max_speed(const Ship& s) {
+  return s.max_speed_capacity();
 }
 
 long shipcost(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY)
-             ? 2L * s.build_cost() * s.on() + Shipdata[s.type()][ABIL_COST]
-             : s.build_cost();
+  return s.effective_cost();
 }
 
 double mass(const Ship& s) {
   return s.mass();
 }
 
-long shipsight(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_PROBE) || s.popn();
+bool shipsight(const Ship& s) {
+  return s.has_sight();
 }
 
 weapon_power_t retaliate(const Ship& s) {
@@ -112,21 +94,19 @@ int size(const Ship& s) {
 }
 
 int shipbody(const Ship& s) {
-  return std::max(0, static_cast<int>(s.size()) -
-                         static_cast<int>(s.max_hanger()));
+  return s.shipbody();
 }
 
-long hanger(const Ship& s) {
-  return std::max(0L, static_cast<long>(s.max_hanger()) -
-                          static_cast<long>(s.hanger()));
+hangar_t hanger(const Ship& s) {
+  return s.hanger_space();
 }
 
 long repair(const Ship& s) {
-  return (s.type() == ShipType::OTYPE_FACTORY) ? s.on() : max_crew(s);
+  return s.repair_capacity();
 }
 
 int getdefense(EntityManager& em, const Ship& ship) {
-  if (landed(ship)) {
+  if (ship.is_landed()) {
     const auto* smap = em.peek_sectormap(ship.storbits(), ship.pnumorbits());
     if (!smap) return 0;
     const auto& sect = smap->get(ship.land_coords());
@@ -137,11 +117,11 @@ int getdefense(EntityManager& em, const Ship& ship) {
 }
 
 bool laser_on(const Ship& ship) {
-  return (ship.laser() && ship.fire_laser());
+  return ship.is_laser_on();
 }
 
 bool landed(const Ship& ship) {
-  return (ship.whatdest() == ScopeLevel::LEVEL_PLAN && ship.docked());
+  return ship.is_landed();
 }
 
 void capture_stuff(const Ship& ship, GameObj& g) {
@@ -509,14 +489,12 @@ std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept {
   return {false, 0};
 }
 
-int docked(const Ship& s) {
-  return s.docked() && s.whatdest() == ScopeLevel::LEVEL_SHIP;
+bool docked(const Ship& s) {
+  return s.is_docked();
 }
 
-int overloaded(const Ship& s) {
-  return (s.resource() > max_resource(s)) || (s.fuel() > max_fuel(s)) ||
-         (s.popn() + s.troops() > s.max_crew()) ||
-         (s.destruct() > max_destruct(s));
+bool overloaded(const Ship& s) {
+  return s.is_overloaded();
 }
 
 std::string prin_ship_orbits(EntityManager& em, const Ship& s) {

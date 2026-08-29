@@ -275,7 +275,7 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
   double fac = (2. / 3.14159265) *
                std::atan((double)(5 * (tech + 1.0) / (ship.tech() + 1.0)));
 
-  int arm = std::max(0UL, armor(ship) - hits / 5);
+  int arm = std::max(0, static_cast<int>(armor(ship)) - hits / 5);
   int body = shipbody(ship);
 
   int penetrate = 0;
@@ -320,7 +320,7 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
     }
 
   double fac = p_factor(tech, ship.tech());
-  int arm = std::max(0UL, armor(ship) + defense - hits / 5);
+  int arm = std::max(0, static_cast<int>(armor(ship)) + defense - hits / 5);
   double body = std::sqrt((double)(0.1 * shipbody(ship)));
 
   int critdam = 0;

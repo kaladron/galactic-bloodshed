@@ -307,6 +307,175 @@ export struct ship_struct {
   hangar_t max_hanger{0};  ///< Maximum hangar capacity
 };
 
+export const long Shipdata[NUMSTYPES][NUMABILS] = {
+    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
+       dm  bd   cn mod las cew clk god prg port rep pay */
+    /*SPd*/ {0, 0, 0, 0, 0, 0, 0, 20, 1, 0, 1, 0, 0, 1,
+             0, 2, 0, 1, 0, 0, 0, 0,  0, 0, 1, 0, 1, 0},
+    /*Shu*/ {10, 25, 2, 2, 1, 1, 0, 20, 10, 0, 2, 0, 0, 1,
+             0,  4,  0, 8, 4, 1, 0, 0,  0,  0, 1, 0, 0, 1},
+    /*Car*/ {250, 600, 200, 800, 30, 3, 2, 1000, 30, 5, 30, 1, 1, 0,
+             0,   4,   50,  20,  2,  1, 1, 1,    0,  0, 1,  0, 1, 1},
+    /*Drn*/ {300, 500, 10, 500, 60, 3, 2, 500, 60, 10, 40, 1, 1, 1,
+             0,   6,   50, 8,   2,  1, 1, 1,   0,  0,  1,  0, 0, 1},
+    /*BB */ {200, 235, 10, 400, 30, 3, 2, 200, 30, 7, 20, 1, 1, 1,
+             0,   6,   50, 8,   2,  1, 1, 1,   0,  0, 1,  0, 0, 1},
+    /*Int*/ {150, 110, 5,  120, 20, 2, 2, 200, 20, 3, 15, 1, 1, 1,
+             0,   6,   50, 8,   2,  1, 1, 1,   0,  0, 1,  0, 0, 1},
+    /*CA */ {150, 165, 5,  300, 20, 3, 2, 120, 20, 5, 10, 1, 1, 1,
+             0,   6,   50, 8,   2,  1, 1, 1,   0,  0, 1,  0, 0, 1},
+    /*DD */ {100, 110, 5,  120, 15, 2, 2, 80, 15, 3, 5, 1, 1, 1,
+             0,   6,   50, 8,   2,  1, 1, 1,  0,  0, 1, 0, 0, 1},
+    /*FF */ {100, 0, 0, 40, 20, 2, 1, 10, 1, 2, 1, 1, 1, 1,
+             0,   9, 0, 8,  2,  1, 1, 1,  0, 0, 1, 0, 1, 1},
+    /*Exp*/ {40, 10, 0, 15, 5, 2, 0, 35, 5, 1, 2, 1, 1, 1,
+             0,  6,  0, 8,  0, 1, 1, 0,  0, 0, 1, 0, 0, 1},
+    /*Hab*/ {100, 5000, 10, 500, 20, 2, 1, 2000, 2000, 3, 50, 0, 0, 0,
+             1,   4,    75, 20,  18, 1, 0, 0,    0,    0, 1,  1, 1, 1},
+    /*Stn*/ {100, 5000, 10, 250, 20, 2, 0, 2000, 50, 1, 10, 0, 0, 0,
+             0,   4,    75, 20,  6,  1, 0, 0,    0,  0, 1,  1, 1, 1},
+    /*OSP*/ {200, 1400, 20, 1000, 50, 3, 2, 2000, 200, 5, 40, 1, 1, 0,
+             0,   4,    75, 20,   6,  1, 1, 1,    0,   0, 1,  0, 1, 1},
+    /*Crg*/ {100, 1000, 5, 1000, 10, 1, 0, 1000, 100, 2, 10, 1, 1, 1,
+             0,   4,    0, 8,    4,  1, 0, 0,    0,   0, 1,  0, 0, 1},
+    /*Tnk*/ {100, 200, 5, 200, 10, 1, 0, 5000, 10, 2, 10, 1, 1, 1,
+             0,   4,   0, 8,   2,  1, 0, 0,    0,  0, 1,  0, 0, 1},
+    /*GOD*/ {9999, 20000, 1000, 20000, 1000, 3, 3, 20000, 1000, 100,
+             10,   1,     1,    1,     0,    9, 0, 1,     6,    1,
+             1,    1,     0,    1,     1,    1, 1, 0},
+    /*SMn*/ {50, 0, 0, 25, 0, 0, 0, 20, 0, 1, 30, 0, 0, 1,
+             1,  2, 0, 8,  0, 1, 0, 0,  0, 0, 1,  0, 0, 0},
+    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
+       dm  bd  cn mod las cew clk god prg port*/
+    /*mir*/ {100, 200, 0,  10, 1, 1, 0, 20, 5, 0, 100, 0, 0, 0,
+             0,   2,   75, 20, 0, 0, 0, 0,  0, 0, 1,   0, 1, 1},
+    /*Stc*/ {50, 0, 0, 0, 0, 0, 0, 20, 2, 0, 20, 1, 1, 1,
+             0,  4, 0, 8, 0, 1, 0, 0,  0, 0, 1,  0, 0, 1},
+    /*Tsc*/ {5, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 1,
+             0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0},
+    /*T-R*/ {200, 0, 0, 0, 0, 0, 0, 1000, 5, 0, 20, 1, 0, 1,
+             1,   2, 0, 1, 0, 0, 0, 0,    0, 0, 0,  0, 1, 0},
+    /*APr*/ {80, 0, 0, 0, 0, 0, 0, 200, 10, 1, 20, 0, 0, 1,
+             1,  0, 0, 1, 0, 0, 0, 0,   0,  0, 1,  0, 1, 0},
+    /* CD*/ {40, 0, 0, 0, 0, 0, 0, 1, 0, 0, 10, 0, 0, 1,
+             1,  1, 0, 1, 0, 0, 0, 0, 0, 0, 1,  0, 1, 0},
+    /*Grn*/ {40, 0, 0, 0, 0, 0, 0, 1, 0, 0, 10, 0, 0, 1,
+             0,  1, 0, 1, 0, 0, 0, 0, 0, 0, 1,  0, 1, 0},
+    /*VN */ {80, 20, 0, 0, 0, 0, 0, 50, 0, 1, 100, 0, 0, 1,
+             0,  4,  0, 1, 0, 0, 0, 0,  0, 0, 1,   0, 0, 0},
+    /*Bers*/ {999, 50, 0, 500, 40, 3, 2, 1000, 0, 15, 100, 0, 0, 1,
+              1,   6,  0, 1,   0,  0, 0, 0,    0, 1,  1,   0, 1, 0},
+    /*Gov*/ {0, 500, 0,  100, 10, 1, 0, 1000, 10, 20, 500, 0, 0, 1,
+             0, 0,   75, 17,  0,  0, 0, 0,    0,  0,  1,   1, 1, 0},
+    /*OMCL*/ {350, 25, 0, 0,  0, 0, 0, 100, 2, 1, 50, 0, 0, 1,
+              1,   4,  0, 17, 0, 0, 0, 0,   0, 0, 0,  0, 0, 0},
+    /*TWC*/ {0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 5, 0, 0, 1,
+             0, 4, 0, 1, 0, 0, 0, 0,  0, 0, 1, 0, 0, 0},
+    /*Prb*/ {150, 0, 0, 0,  0, 0, 0, 20, 0, 0, 10, 0, 0, 1,
+             0,   9, 0, 19, 0, 0, 0, 0,  0, 0, 1,  0, 0, 0},
+    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
+       dm  bd  cn mod las cew clk god prg port*/
+    /*GRL */ {100, 50, 0,  120, 20, 1, 0, 0, 40, 3, 30, 0, 0, 1,
+              1,   0,  75, 1,   0,  1, 0, 1, 0,  0, 1,  0, 1, 1},
+    /*Fac*/ {0, 50, 0,  0,  0, 0, 0, 0, 20, 0, 20, 0, 0, 1,
+             1, 0,  75, 17, 8, 0, 0, 0, 0,  0, 1,  0, 1, 1},
+    /*TFD*/ {50, 40, 5, 0,  0, 0, 0, 200, 20, 1, 20, 1, 1, 1,
+             1,  4,  0, 17, 0, 1, 0, 0,   0,  0, 1,  0, 1, 1},
+    /*BCC*/ {9999, 200, 0, 50, 0, 3, 0, 0, 0, 10, 3, 0, 0, 1,
+             1,    0,   0, 1,  0, 0, 0, 0, 0, 1,  0, 0, 1, 0},
+    /*BAf*/ {9999, 1000, 0, 1000, 0, 0, 0, 1000, 0, 10, 8, 0, 0, 1,
+             1,    0,    0, 1,    0, 0, 0, 0,    0, 1,  0, 0, 1, 0},
+    /*TD */ {200, 1000, 0,  1000, 0, 0, 0, 1000, 100, 0, 300, 0, 0, 1,
+             1,   0,    50, 1,    0, 0, 0, 0,    0,   0, 1,   0, 1, 0},
+    /*Mis*/ {50, 0, 0, 10, 0, 0, 0, 5, 0, 0, 5, 0, 0, 0,
+             1,  6, 0, 8,  0, 1, 0, 0, 0, 0, 1, 0, 0, 0},
+    /*PDN*/ {200, 50, 0,  500, 20, 3, 0, 0, 50, 10, 100, 0, 0, 1,
+             1,   0,  75, 1,   0,  1, 0, 0, 0,  0,  1,   0, 1, 1},
+    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
+       dm  bd  cn mod las cew clk god prg port*/
+    /*Qua*/ {0, 0, 0, 0, 0, 0, 0, 200, 50, 1, 10, 0, 0, 1,
+             1, 0, 0, 1, 0, 1, 0, 0,   0,  0, 1,  0, 1, 1},
+    /*Plo*/ {5, 0, 0, 0, 0, 0, 0, 200, 10, 1, 10, 0, 0, 1,
+             1, 0, 0, 1, 0, 1, 0, 0,   0,  0, 1,  0, 0, 0},
+    /*Dom*/ {10, 100, 0, 0, 0, 0, 0, 0, 20, 1, 10, 0, 0, 1,
+             1,  0,   0, 1, 0, 1, 0, 0, 0,  0, 1,  0, 1, 0},
+    /*Wea*/ {0, 500, 0,  0,  0, 0, 0, 500, 20, 5, 20, 0, 0, 1,
+             0, 0,   75, 17, 0, 0, 0, 0,   0,  0, 1,  0, 1, 0},
+    /*Port*/ {0, 0, 0,  0, 0, 0, 0, 0, 100, 3, 50, 0, 0, 1,
+              0, 0, 75, 1, 0, 1, 0, 0, 0,   0, 1,  1, 1, 1},
+    /*ABM*/ {100, 5, 0,  50, 5, 1, 0, 0, 5, 5, 50, 0, 0, 1,
+             1,   0, 50, 1,  0, 1, 0, 0, 0, 0, 1,  0, 1, 1},
+    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
+       dm  bd  cn mod las cew clk god prg port*/
+    /*AFV*/ {50, 5, 0, 20, 2, 1, 0, 20, 1, 2, 20, 0, 0, 0,
+             0,  0, 0, 8,  0, 1, 0, 0,  0, 0, 1,  0, 1, 1},
+    /*Bun*/ {10, 100, 20, 100, 0, 0, 0, 100, 100, 15, 100, 0, 0, 0,
+             0,  0,   50, 1,   0, 1, 0, 0,   0,   0,  1,   0, 1, 1},
+    /*Lnd*/ {150, 100, 10, 200, 10, 3, 0, 100, 500, 7, 50, 1, 1, 1,
+             0,   2,   50, 8,   0,  1, 0, 0,   0,   0, 1,  0, 1, 1}};
+
+export const char* Shipnames[NUMSTYPES] = {"Spore pod",
+                                           "Shuttle",
+                                           "Carrier",
+                                           "Dreadnaught",
+                                           "Battleship",
+                                           "Interceptor",
+                                           "Cruiser",
+                                           "Destroyer",
+                                           "Fighter Group",
+                                           "Explorer",
+                                           "Habitat",
+                                           "Station",
+                                           "Ob Asst Pltfrm",
+                                           "Cargo Ship",
+                                           "Tanker",
+                                           "GODSHIP",
+                                           "Space Mine",
+                                           "Space Mirror",
+                                           "Space Telescope",
+                                           "Ground Telescope",
+                                           "* T-R beam",
+                                           "Atmosph Processor",
+                                           "Dust Canister",
+                                           "Greenhouse Gases",
+                                           "V.Neumann Machine",
+                                           "Berserker",
+                                           "Govrnmnt. Center",
+                                           "Mind Control Lsr",
+                                           "Tox Waste Canistr",
+                                           "Space Probe",
+                                           "Gamma Ray Laser",
+                                           "Factory",
+                                           "Terraform Device",
+                                           "Bers Cntrl Center",
+                                           "Bers Autofac",
+                                           "AVPM Transporter",
+                                           "Missile",
+                                           "Planet Def Net",
+                                           "Quarry",
+                                           "Space Plow",
+                                           "Dome",
+                                           "Weapons Plant",
+                                           "Space Port",
+                                           "ABM Battery",
+                                           "Mech",
+                                           "Bunker",
+                                           "Lander"};
+
+/// Type-safe accessor for primary gun caliber from Shipdata
+/// \param ship_type The ship type to query
+/// \return Primary gun caliber as guntype_t
+export inline guntype_t shipdata_primary(ShipType ship_type) {
+  return static_cast<guntype_t>(Shipdata[ship_type][ABIL_PRIMARY]);
+}
+
+/// Type-safe accessor for secondary gun caliber from Shipdata
+/// \param ship_type The ship type to query
+/// \return Secondary gun caliber as guntype_t
+export inline guntype_t shipdata_secondary(ShipType ship_type) {
+  return static_cast<guntype_t>(Shipdata[ship_type][ABIL_SECONDARY]);
+}
+
 export class Ship {
 private:
   ship_struct data_;  // Private data member for encapsulation
@@ -868,6 +1037,160 @@ public:
   }
 
   // =========================================================================
+  // DOMAIN QUERIES & COMPUTED PROPERTIES
+  // =========================================================================
+
+  /// Whether ship is currently docked inside another ship (mothership/carrier).
+  [[nodiscard]] bool is_docked() const noexcept {
+    return data_.docked && data_.whatdest == ScopeLevel::LEVEL_SHIP;
+  }
+
+  /// Whether ship is currently landed on a planet surface.
+  [[nodiscard]] bool is_landed() const noexcept {
+    return data_.whatdest == ScopeLevel::LEVEL_PLAN && data_.docked;
+  }
+
+  /// Whether ship has an active combat laser armed and ready to fire.
+  [[nodiscard]] bool is_laser_on() const noexcept {
+    return data_.laser && data_.fire_laser;
+  }
+
+  /// Whether hyperspace jump drive has accumulated sufficient charge to jump.
+  [[nodiscard]] bool is_hyper_drive_ready() const noexcept {
+    return data_.hyper_drive.is_ready();
+  }
+
+  /// Whether ship cargo, fuel, crew, or ammo exceeds design storage limits.
+  [[nodiscard]] bool is_overloaded() const noexcept {
+    return (data_.resource > max_resource_capacity()) ||
+           (data_.fuel > max_fuel_capacity()) ||
+           (data_.popn + data_.troops > max_crew_capacity()) ||
+           (data_.destruct > max_destruct_capacity());
+  }
+
+  /// Whether ship type has an operational on/off activation switch.
+  [[nodiscard]] bool has_switch() const noexcept {
+    return Shipdata[data_.type][ABIL_HASSWITCH] != 0;
+  }
+
+  /// Whether ship has planetary bombardment weapon capabilities.
+  [[nodiscard]] bool can_bombard() const noexcept {
+    return Shipdata[data_.type][ABIL_GUNS] != 0 &&
+           (data_.type != ShipType::STYPE_MINE);
+  }
+
+  /// Whether ship is capable of independent orbital navigation.
+  [[nodiscard]] bool can_navigate() const noexcept {
+    return Shipdata[data_.type][ABIL_SPEED] > 0 &&
+           data_.type != ShipType::OTYPE_TERRA &&
+           data_.type != ShipType::OTYPE_VN;
+  }
+
+  /// Whether ship can be aimed at specific orbital targets (mirrors/tractors).
+  [[nodiscard]] bool can_aim() const noexcept {
+    return data_.type >= ShipType::STYPE_MIRROR &&
+           data_.type <= ShipType::OTYPE_TRACT;
+  }
+
+  /// Whether ship has sensor visibility / crew sight range.
+  [[nodiscard]] bool has_sight() const noexcept {
+    return (data_.type == ShipType::OTYPE_PROBE) || data_.popn > 0;
+  }
+
+  /// Effective armor accounting for factory overrides and structural damage.
+  [[nodiscard]] armor_t effective_armor() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? static_cast<armor_t>(Shipdata[data_.type][ABIL_ARMOR])
+               : static_cast<armor_t>(data_.armor * (100 - data_.damage) / 100);
+  }
+
+  /// Active weapon battery strength based on selected gun mode.
+  [[nodiscard]] weapon_power_t active_guns() const noexcept {
+    return (data_.guns == GTYPE_NONE)
+               ? 0
+               : (data_.guns == PRIMARY ? data_.primary : data_.secondary);
+  }
+
+  /// Structural body size excluding maximum hangar bay space.
+  [[nodiscard]] int shipbody() const noexcept {
+    return std::max(0, static_cast<int>(data_.size) -
+                           static_cast<int>(data_.max_hanger));
+  }
+
+  /// Remaining available hangar space for docking smaller craft.
+  [[nodiscard]] hangar_t hanger_space() const noexcept {
+    return std::max(0L, static_cast<long>(data_.max_hanger) -
+                            static_cast<long>(data_.hanger));
+  }
+
+  /// Available civilian crew capacity accounting for military troops on board.
+  [[nodiscard]] population_t available_crew() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? static_cast<population_t>(Shipdata[data_.type][ABIL_MAXCREW] -
+                                           data_.troops)
+               : (data_.max_crew - data_.troops);
+  }
+
+  /// Available military troop capacity accounting for civilian crew on board.
+  [[nodiscard]] population_t available_mil() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? static_cast<population_t>(Shipdata[data_.type][ABIL_MAXCREW] -
+                                           data_.popn)
+               : (data_.max_crew - data_.popn);
+  }
+
+  /// Maximum total crew capacity including factory template overrides.
+  [[nodiscard]] population_t max_crew_capacity() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? static_cast<population_t>(Shipdata[data_.type][ABIL_MAXCREW])
+               : data_.max_crew;
+  }
+
+  /// Maximum cargo resource capacity including factory template overrides.
+  [[nodiscard]] resource_t max_resource_capacity() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? static_cast<resource_t>(Shipdata[data_.type][ABIL_CARGO])
+               : data_.max_resource;
+  }
+
+  /// Maximum fuel tank capacity including factory template overrides.
+  [[nodiscard]] unsigned short max_fuel_capacity() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? static_cast<unsigned short>(Shipdata[data_.type][ABIL_FUELCAP])
+               : data_.max_fuel;
+  }
+
+  /// Maximum ammo / ordnance capacity including factory template overrides.
+  [[nodiscard]] unsigned short max_destruct_capacity() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? static_cast<unsigned short>(Shipdata[data_.type][ABIL_DESTCAP])
+               : data_.max_destruct;
+  }
+
+  /// Maximum impulse engine speed throttle including factory template
+  /// overrides.
+  [[nodiscard]] speed_t max_speed_capacity() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? static_cast<speed_t>(Shipdata[data_.type][ABIL_SPEED])
+               : data_.max_speed;
+  }
+
+  /// Repair work capacity per turn (operational status for factories, crew for
+  /// others).
+  [[nodiscard]] long repair_capacity() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY) ? data_.on
+                                                   : available_crew();
+  }
+
+  /// Effective build / maintenance cost including factory activation scaling.
+  [[nodiscard]] long effective_cost() const noexcept {
+    return (data_.type == ShipType::OTYPE_FACTORY)
+               ? 2L * data_.build_cost * data_.on +
+                     Shipdata[data_.type][ABIL_COST]
+               : data_.build_cost;
+  }
+
+  // =========================================================================
   // SERIALIZATION SUPPORT
   // =========================================================================
 
@@ -900,22 +1223,22 @@ export bool can_navigate(const Ship& s);
 export bool can_aim(const Ship& s);
 
 /* macros to get ship stats */
-export unsigned long armor(const Ship& s);
-export long guns(const Ship& s);
+export armor_t armor(const Ship& s);
+export weapon_power_t guns(const Ship& s);
 export population_t max_crew(const Ship& s);
 export population_t max_mil(const Ship& s);
-export long max_resource(const Ship& s);
+export resource_t max_resource(const Ship& s);
 export int max_crystals(const Ship& s);
-export long max_fuel(const Ship& s);
-export long max_destruct(const Ship& s);
-export long max_speed(const Ship& s);
+export unsigned short max_fuel(const Ship& s);
+export unsigned short max_destruct(const Ship& s);
+export speed_t max_speed(const Ship& s);
 export long shipcost(const Ship& s);
 export double mass(const Ship& s);
-export long shipsight(const Ship& s);
+export bool shipsight(const Ship& s);
 export weapon_power_t retaliate(const Ship& s);
 export int size(const Ship& s);
 export int shipbody(const Ship& s);
-export long hanger(const Ship& s);
+export hangar_t hanger(const Ship& s);
 export long repair(const Ship& s);
 export int getdefense(EntityManager&, const Ship&);
 export bool landed(const Ship&);
@@ -927,8 +1250,8 @@ export unsigned int ship_size(const Ship&);
 export double complexity(const Ship&);
 export double complexity(ShipType);  // Complexity for default ship of this type
 export bool testship(const Ship&, GameObj&);
-export int docked(const Ship&);
-export int overloaded(const Ship&);
+export bool docked(const Ship&);
+export bool overloaded(const Ship&);
 export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
 export void do_VN(EntityManager&, Ship&, TurnStats&);
 export std::optional<player_t>
@@ -1009,177 +1332,6 @@ struct std::formatter<Ship> {
 //     taken care of too.
 //   - Orbital Mind Control Lasers having 10 guns of caliber 0 seemed strange.
 //     Now 0 guns. Also removed the 100 destruct carrying capacity. Added 25
-//     cargo space so it can repair itself. */
-
-export const long Shipdata[NUMSTYPES][NUMABILS] = {
-    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
-       dm  bd   cn mod las cew clk god prg port rep pay */
-    /*SPd*/ {0, 0, 0, 0, 0, 0, 0, 20, 1, 0, 1, 0, 0, 1,
-             0, 2, 0, 1, 0, 0, 0, 0,  0, 0, 1, 0, 1, 0},
-    /*Shu*/ {10, 25, 2, 2, 1, 1, 0, 20, 10, 0, 2, 0, 0, 1,
-             0,  4,  0, 8, 4, 1, 0, 0,  0,  0, 1, 0, 0, 1},
-    /*Car*/ {250, 600, 200, 800, 30, 3, 2, 1000, 30, 5, 30, 1, 1, 0,
-             0,   4,   50,  20,  2,  1, 1, 1,    0,  0, 1,  0, 1, 1},
-    /*Drn*/ {300, 500, 10, 500, 60, 3, 2, 500, 60, 10, 40, 1, 1, 1,
-             0,   6,   50, 8,   2,  1, 1, 1,   0,  0,  1,  0, 0, 1},
-    /*BB */ {200, 235, 10, 400, 30, 3, 2, 200, 30, 7, 20, 1, 1, 1,
-             0,   6,   50, 8,   2,  1, 1, 1,   0,  0, 1,  0, 0, 1},
-    /*Int*/ {150, 110, 5,  120, 20, 2, 2, 200, 20, 3, 15, 1, 1, 1,
-             0,   6,   50, 8,   2,  1, 1, 1,   0,  0, 1,  0, 0, 1},
-    /*CA */ {150, 165, 5,  300, 20, 3, 2, 120, 20, 5, 10, 1, 1, 1,
-             0,   6,   50, 8,   2,  1, 1, 1,   0,  0, 1,  0, 0, 1},
-    /*DD */ {100, 110, 5,  120, 15, 2, 2, 80, 15, 3, 5, 1, 1, 1,
-             0,   6,   50, 8,   2,  1, 1, 1,  0,  0, 1, 0, 0, 1},
-    /*FF */ {100, 0, 0, 40, 20, 2, 1, 10, 1, 2, 1, 1, 1, 1,
-             0,   9, 0, 8,  2,  1, 1, 1,  0, 0, 1, 0, 1, 1},
-    /*Exp*/ {40, 10, 0, 15, 5, 2, 0, 35, 5, 1, 2, 1, 1, 1,
-             0,  6,  0, 8,  0, 1, 1, 0,  0, 0, 1, 0, 0, 1},
-    /*Hab*/ {100, 5000, 10, 500, 20, 2, 1, 2000, 2000, 3, 50, 0, 0, 0,
-             1,   4,    75, 20,  18, 1, 0, 0,    0,    0, 1,  1, 1, 1},
-    /*Stn*/ {100, 5000, 10, 250, 20, 2, 0, 2000, 50, 1, 10, 0, 0, 0,
-             0,   4,    75, 20,  6,  1, 0, 0,    0,  0, 1,  1, 1, 1},
-    /*OSP*/ {200, 1400, 20, 1000, 50, 3, 2, 2000, 200, 5, 40, 1, 1, 0,
-             0,   4,    75, 20,   6,  1, 1, 1,    0,   0, 1,  0, 1, 1},
-    /*Crg*/ {100, 1000, 5, 1000, 10, 1, 0, 1000, 100, 2, 10, 1, 1, 1,
-             0,   4,    0, 8,    4,  1, 0, 0,    0,   0, 1,  0, 0, 1},
-    /*Tnk*/ {100, 200, 5, 200, 10, 1, 0, 5000, 10, 2, 10, 1, 1, 1,
-             0,   4,   0, 8,   2,  1, 0, 0,    0,  0, 1,  0, 0, 1},
-    /*GOD*/ {9999, 20000, 1000, 20000, 1000, 3, 3, 20000, 1000, 100,
-             10,   1,     1,    1,     0,    9, 0, 1,     6,    1,
-             1,    1,     0,    1,     1,    1, 1, 0},
-    /*SMn*/ {50, 0, 0, 25, 0, 0, 0, 20, 0, 1, 30, 0, 0, 1,
-             1,  2, 0, 8,  0, 1, 0, 0,  0, 0, 1,  0, 0, 0},
-    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
-       dm  bd  cn mod las cew clk god prg port*/
-    /*mir*/ {100, 200, 0,  10, 1, 1, 0, 20, 5, 0, 100, 0, 0, 0,
-             0,   2,   75, 20, 0, 0, 0, 0,  0, 0, 1,   0, 1, 1},
-    /*Stc*/ {50, 0, 0, 0, 0, 0, 0, 20, 2, 0, 20, 1, 1, 1,
-             0,  4, 0, 8, 0, 1, 0, 0,  0, 0, 1,  0, 0, 1},
-    /*Tsc*/ {5, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 1,
-             0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0},
-    /*T-R*/ {200, 0, 0, 0, 0, 0, 0, 1000, 5, 0, 20, 1, 0, 1,
-             1,   2, 0, 1, 0, 0, 0, 0,    0, 0, 0,  0, 1, 0},
-    /*APr*/ {80, 0, 0, 0, 0, 0, 0, 200, 10, 1, 20, 0, 0, 1,
-             1,  0, 0, 1, 0, 0, 0, 0,   0,  0, 1,  0, 1, 0},
-    /* CD*/ {40, 0, 0, 0, 0, 0, 0, 1, 0, 0, 10, 0, 0, 1,
-             1,  1, 0, 1, 0, 0, 0, 0, 0, 0, 1,  0, 1, 0},
-    /*Grn*/ {40, 0, 0, 0, 0, 0, 0, 1, 0, 0, 10, 0, 0, 1,
-             0,  1, 0, 1, 0, 0, 0, 0, 0, 0, 1,  0, 1, 0},
-    /*VN */ {80, 20, 0, 0, 0, 0, 0, 50, 0, 1, 100, 0, 0, 1,
-             0,  4,  0, 1, 0, 0, 0, 0,  0, 0, 1,   0, 0, 0},
-    /*Bers*/ {999, 50, 0, 500, 40, 3, 2, 1000, 0, 15, 100, 0, 0, 1,
-              1,   6,  0, 1,   0,  0, 0, 0,    0, 1,  1,   0, 1, 0},
-    /*Gov*/ {0, 500, 0,  100, 10, 1, 0, 1000, 10, 20, 500, 0, 0, 1,
-             0, 0,   75, 17,  0,  0, 0, 0,    0,  0,  1,   1, 1, 0},
-    /*OMCL*/ {350, 25, 0, 0,  0, 0, 0, 100, 2, 1, 50, 0, 0, 1,
-              1,   4,  0, 17, 0, 0, 0, 0,   0, 0, 0,  0, 0, 0},
-    /*TWC*/ {0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 5, 0, 0, 1,
-             0, 4, 0, 1, 0, 0, 0, 0,  0, 0, 1, 0, 0, 0},
-    /*Prb*/ {150, 0, 0, 0,  0, 0, 0, 20, 0, 0, 10, 0, 0, 1,
-             0,   9, 0, 19, 0, 0, 0, 0,  0, 0, 1,  0, 0, 0},
-    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
-       dm  bd  cn mod las cew clk god prg port*/
-    /*GRL */ {100, 50, 0,  120, 20, 1, 0, 0, 40, 3, 30, 0, 0, 1,
-              1,   0,  75, 1,   0,  1, 0, 1, 0,  0, 1,  0, 1, 1},
-    /*Fac*/ {0, 50, 0,  0,  0, 0, 0, 0, 20, 0, 20, 0, 0, 1,
-             1, 0,  75, 17, 8, 0, 0, 0, 0,  0, 1,  0, 1, 1},
-    /*TFD*/ {50, 40, 5, 0,  0, 0, 0, 200, 20, 1, 20, 1, 1, 1,
-             1,  4,  0, 17, 0, 1, 0, 0,   0,  0, 1,  0, 1, 1},
-    /*BCC*/ {9999, 200, 0, 50, 0, 3, 0, 0, 0, 10, 3, 0, 0, 1,
-             1,    0,   0, 1,  0, 0, 0, 0, 0, 1,  0, 0, 1, 0},
-    /*BAf*/ {9999, 1000, 0, 1000, 0, 0, 0, 1000, 0, 10, 8, 0, 0, 1,
-             1,    0,    0, 1,    0, 0, 0, 0,    0, 1,  0, 0, 1, 0},
-    /*TD */ {200, 1000, 0,  1000, 0, 0, 0, 1000, 100, 0, 300, 0, 0, 1,
-             1,   0,    50, 1,    0, 0, 0, 0,    0,   0, 1,   0, 1, 0},
-    /*Mis*/ {50, 0, 0, 10, 0, 0, 0, 5, 0, 0, 5, 0, 0, 0,
-             1,  6, 0, 8,  0, 1, 0, 0, 0, 0, 1, 0, 0, 0},
-    /*PDN*/ {200, 50, 0,  500, 20, 3, 0, 0, 50, 10, 100, 0, 0, 1,
-             1,   0,  75, 1,   0,  1, 0, 0, 0,  0,  1,   0, 1, 1},
-    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
-       dm  bd  cn mod las cew clk god prg port*/
-    /*Qua*/ {0, 0, 0, 0, 0, 0, 0, 200, 50, 1, 10, 0, 0, 1,
-             1, 0, 0, 1, 0, 1, 0, 0,   0,  0, 1,  0, 1, 1},
-    /*Plo*/ {5, 0, 0, 0, 0, 0, 0, 200, 10, 1, 10, 0, 0, 1,
-             1, 0, 0, 1, 0, 1, 0, 0,   0,  0, 1,  0, 0, 0},
-    /*Dom*/ {10, 100, 0, 0, 0, 0, 0, 0, 20, 1, 10, 0, 0, 1,
-             1,  0,   0, 1, 0, 1, 0, 0, 0,  0, 1,  0, 1, 0},
-    /*Wea*/ {0, 500, 0,  0,  0, 0, 0, 500, 20, 5, 20, 0, 0, 1,
-             0, 0,   75, 17, 0, 0, 0, 0,   0,  0, 1,  0, 1, 0},
-    /*Port*/ {0, 0, 0,  0, 0, 0, 0, 0, 100, 3, 50, 0, 0, 1,
-              0, 0, 75, 1, 0, 1, 0, 0, 0,   0, 1,  1, 1, 1},
-    /*ABM*/ {100, 5, 0,  50, 5, 1, 0, 0, 5, 5, 50, 0, 0, 1,
-             1,   0, 50, 1,  0, 1, 0, 0, 0, 0, 1,  0, 1, 1},
-    /*  tech  carg  bay  dest guns prim sec fuelcap  crw arm  cst mt jp ld sw sp
-       dm  bd  cn mod las cew clk god prg port*/
-    /*AFV*/ {50, 5, 0, 20, 2, 1, 0, 20, 1, 2, 20, 0, 0, 0,
-             0,  0, 0, 8,  0, 1, 0, 0,  0, 0, 1,  0, 1, 1},
-    /*Bun*/ {10, 100, 20, 100, 0, 0, 0, 100, 100, 15, 100, 0, 0, 0,
-             0,  0,   50, 1,   0, 1, 0, 0,   0,   0,  1,   0, 1, 1},
-    /*Lnd*/ {150, 100, 10, 200, 10, 3, 0, 100, 500, 7, 50, 1, 1, 1,
-             0,   2,   50, 8,   0,  1, 0, 0,   0,   0, 1,  0, 1, 1}};
-
-export const char* Shipnames[NUMSTYPES] = {"Spore pod",
-                                           "Shuttle",
-                                           "Carrier",
-                                           "Dreadnaught",
-                                           "Battleship",
-                                           "Interceptor",
-                                           "Cruiser",
-                                           "Destroyer",
-                                           "Fighter Group",
-                                           "Explorer",
-                                           "Habitat",
-                                           "Station",
-                                           "Ob Asst Pltfrm",
-                                           "Cargo Ship",
-                                           "Tanker",
-                                           "GODSHIP",
-                                           "Space Mine",
-                                           "Space Mirror",
-                                           "Space Telescope",
-                                           "Ground Telescope",
-                                           "* T-R beam",
-                                           "Atmosph Processor",
-                                           "Dust Canister",
-                                           "Greenhouse Gases",
-                                           "V.Neumann Machine",
-                                           "Berserker",
-                                           "Govrnmnt. Center",
-                                           "Mind Control Lsr",
-                                           "Tox Waste Canistr",
-                                           "Space Probe",
-                                           "Gamma Ray Laser",
-                                           "Factory",
-                                           "Terraform Device",
-                                           "Bers Cntrl Center",
-                                           "Bers Autofac",
-                                           "AVPM Transporter",
-                                           "Missile",
-                                           "Planet Def Net",
-                                           "Quarry",
-                                           "Space Plow",
-                                           "Dome",
-                                           "Weapons Plant",
-                                           "Space Port",
-                                           "ABM Battery",
-                                           "Mech",
-                                           "Bunker",
-                                           "Lander"};
-
-/// Type-safe accessor for primary gun caliber from Shipdata
-/// \param ship_type The ship type to query
-/// \return Primary gun caliber as guntype_t
-export inline guntype_t shipdata_primary(ShipType ship_type) {
-  return static_cast<guntype_t>(Shipdata[ship_type][ABIL_PRIMARY]);
-}
-
-/// Type-safe accessor for secondary gun caliber from Shipdata
-/// \param ship_type The ship type to query
-/// \return Secondary gun caliber as guntype_t
-export inline guntype_t shipdata_secondary(ShipType ship_type) {
-  return static_cast<guntype_t>(Shipdata[ship_type][ABIL_SECONDARY]);
-}
-
 /// Get display character for gun caliber type
 /// \param caliber Gun caliber type (GTYPE_NONE=0, GTYPE_LIGHT=1,
 /// GTYPE_MEDIUM=2, GTYPE_HEAVY=3)

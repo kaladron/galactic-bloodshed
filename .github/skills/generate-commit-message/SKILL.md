@@ -16,6 +16,7 @@ Use this skill when the task is to draft a git commit message from the repositor
 - Start with a repository-wide scope check such as `git status --short`, `git diff --stat`, and `git diff --cached --stat` or equivalent tooling.
 - If the diff summary is ambiguous, read the changed files or diff hunks before drafting the message.
 - Make sure the proposed message covers all meaningful changes in the diff, not just the most recent file.
+- **Explicitly call out any latent bugs, edge-case fixes, bounds/buffer safety hazards, or logic defects that were resolved along the way.**
 - Return the result in markdown.
 
 ## Procedure
@@ -39,8 +40,9 @@ Use this skill when the task is to draft a git commit message from the repositor
 3. Write an imperative subject line.
    Keep it concise, specific, and scoped to the actual diff.
 
-4. Add a body only when it improves clarity.
-   Include the body when the diff has multiple related parts, test updates, refactors, or behavior changes that would be unclear from the subject alone.
+4. Add a body explaining key changes and latent bug fixes.
+   - Include the body when the diff has multiple related parts, test updates, refactors, or behavior changes that would be unclear from the subject alone.
+   - **Always explicitly document latent bugs, edge-case vulnerabilities, or safety hazards resolved as part of the change.**
 
 5. Present the result in markdown.
    Preferred format:
@@ -48,7 +50,7 @@ Use this skill when the task is to draft a git commit message from the repositor
 ```text
 <subject line>
 
-<body paragraphs if needed>
+<body paragraphs explaining what changed, why, and explicit notes on any latent bugs fixed>
 ```
 
 ## Output Rules
@@ -56,6 +58,7 @@ Use this skill when the task is to draft a git commit message from the repositor
 - Do not invent changes that are not present in the diff.
 - Do not summarize only the last file you touched when the repository diff contains broader changes.
 - Do not omit tests, refactors, or infrastructure changes when they are a material part of the change set.
+- **Do not omit or bury latent bug fixes in generic refactoring summaries; clearly detail the latent defect and how the change resolves it.**
 - Prefer one primary commit message suggestion.
 - If useful, include one short alternate subject line after the primary suggestion.
 - If there is no diff, say that no commit message can be drafted yet because there are no changes to summarize.

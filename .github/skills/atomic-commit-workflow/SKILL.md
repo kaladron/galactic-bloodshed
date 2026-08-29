@@ -12,6 +12,7 @@ Follow these rules to deliver high-quality, easily reviewable atomic commits.
 - **Target**: Aim for **150–250 lines of code** changed per commit.
 - **Atomic**: Each commit must address a single conceptual change (e.g. one command migration + its tests, one helper method + its tests).
 - **Never split logic from tests**: Every commit introducing new code MUST contain the tests for that code in the same commit.
+- **Document latent bug fixes**: Always explicitly call out and explain any latent bugs, edge-case vulnerabilities, or bounds safety hazards resolved during refactoring in the commit message body.
 
 ## 2. Pre-Commit Verification Checklist
 

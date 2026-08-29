@@ -27,9 +27,9 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
         return 0;
       }
     }
-    maxrep *=
-        static_cast<double>(ship.popn()) / static_cast<double>(ship.max_crew());
-    return static_cast<int>(0.005 * maxrep * shipcost(ship));
+    maxrep *= static_cast<double>(ship.popn()) /
+              static_cast<double>(ship.max_crew_capacity());
+    return static_cast<int>(0.005 * maxrep * ship.effective_cost());
   }();
 
   if (cost <= ship.resource()) {
@@ -51,11 +51,11 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
   /* In v5.0+ Habitats make resources out of fuel */
   if (ship.on()) {
     double fuse = ship.fuel() *
-                  ((double)ship.popn() / (double)ship.max_crew()) *
+                  ((double)ship.popn() / (double)ship.max_crew_capacity()) *
                   (1.0 - .01 * (double)ship.damage());
     auto add = (int)fuse / 20;
-    if (ship.resource() + add > ship.max_resource())
-      add = ship.max_resource() - ship.resource();
+    if (ship.resource() + add > ship.max_resource_capacity())
+      add = ship.max_resource_capacity() - ship.resource();
     fuse = 20.0 * (double)add;
     rcv_resource(ship, add);
     use_fuel(ship, fuse);
@@ -67,7 +67,8 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
   }
 
   auto add = round_rand((double)ship.popn() * race.birthrate);
-  if (ship.popn() + add > max_crew(ship)) add = max_crew(ship) - ship.popn();
+  if (ship.popn() + add > ship.max_crew_capacity())
+    add = ship.max_crew_capacity() - ship.popn();
   rcv_popn(ship, add, race.mass);
 }
 

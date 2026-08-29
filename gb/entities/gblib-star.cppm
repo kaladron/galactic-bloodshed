@@ -70,12 +70,36 @@ public:
     return star_struct.explored;
   }
 
+  /// Returns whether this star system has been explored by the given player.
+  [[nodiscard]] bool is_explored_by(player_t p) const noexcept;
+
+  /// Marks the star system as explored by the given player.
+  void mark_explored_by(player_t p) noexcept;
+
+  /// Returns whether any player has explored this star system.
+  [[nodiscard]] bool is_explored() const noexcept;
+
   std::uint64_t& inhabited() {
     return star_struct.inhabited;
   }
   [[nodiscard]] std::uint64_t inhabited() const {
     return star_struct.inhabited;
   }
+
+  /// Returns whether this star system is inhabited by the given player.
+  [[nodiscard]] bool is_inhabited_by(player_t p) const noexcept;
+
+  /// Marks the star system as inhabited by the given player.
+  void mark_inhabited_by(player_t p) noexcept;
+
+  /// Clears habitation status for the given player.
+  void clear_inhabited_by(player_t p) noexcept;
+
+  /// Returns whether any player currently inhabits this star system.
+  [[nodiscard]] bool is_inhabited() const noexcept;
+
+  /// Clears all planetary inhabitants across all players from this star system.
+  void clear_all_inhabitants() noexcept;
 
   [[nodiscard]] int numplanets() const {
     return star_struct.pnames.size();

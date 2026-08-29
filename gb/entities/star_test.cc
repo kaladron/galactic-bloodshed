@@ -187,6 +187,59 @@ int main() {
     std::println(std::cout, "  ✓ Star::control correctly authorizes governors");
   }
 
+  // Exploration domain methods
+  std::println(std::cout, "Star exploration domain methods...");
+  {
+    star_struct s{};
+    s.name = "Alpha";
+    Star star(s);
+
+    test::expect_false(star.is_explored());
+    test::expect_false(star.is_explored_by(player_t{1}));
+    test::expect_false(star.is_explored_by(player_t{2}));
+
+    star.mark_explored_by(player_t{1});
+    test::expect_true(star.is_explored());
+    test::expect_true(star.is_explored_by(player_t{1}));
+    test::expect_false(star.is_explored_by(player_t{2}));
+
+    star.mark_explored_by(player_t{2});
+    test::expect_true(star.is_explored());
+    test::expect_true(star.is_explored_by(player_t{1}));
+    test::expect_true(star.is_explored_by(player_t{2}));
+    std::println(std::cout, "  ✓ Star exploration methods work as expected");
+  }
+
+  // Inhabitation domain methods
+  std::println(std::cout, "Star inhabitation domain methods...");
+  {
+    star_struct s{};
+    s.name = "Beta";
+    Star star(s);
+
+    test::expect_false(star.is_inhabited());
+    test::expect_false(star.is_inhabited_by(player_t{1}));
+    test::expect_false(star.is_inhabited_by(player_t{2}));
+
+    star.mark_inhabited_by(player_t{1});
+    test::expect_true(star.is_inhabited());
+    test::expect_true(star.is_inhabited_by(player_t{1}));
+    test::expect_false(star.is_inhabited_by(player_t{2}));
+
+    star.mark_inhabited_by(player_t{2});
+    test::expect_true(star.is_inhabited_by(player_t{2}));
+
+    star.clear_inhabited_by(player_t{1});
+    test::expect_false(star.is_inhabited_by(player_t{1}));
+    test::expect_true(star.is_inhabited_by(player_t{2}));
+    test::expect_true(star.is_inhabited());
+
+    star.clear_all_inhabitants();
+    test::expect_false(star.is_inhabited());
+    test::expect_false(star.is_inhabited_by(player_t{2}));
+    std::println(std::cout, "  ✓ Star inhabitation methods work as expected");
+  }
+
   std::println(std::cout, "\n✓ All Star class tests passed!");
   return 0;
 }

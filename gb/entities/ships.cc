@@ -10,101 +10,6 @@ import std;
 
 module gblib;
 
-// Essentialy everything in this file can move into a Ship class.
-
-/* can takeoff & land, is mobile, etc. */
-unsigned short speed_rating(const Ship& s) {
-  return s.max_speed_capacity();
-}
-
-/* has an on/off switch */
-bool has_switch(const Ship& s) {
-  return s.has_switch();
-}
-
-/* can bombard planets */
-bool can_bombard(const Ship& s) {
-  return s.can_bombard();
-}
-
-/* can navigate */
-bool can_navigate(const Ship& s) {
-  return s.can_navigate();
-}
-
-/* can aim at things. */
-bool can_aim(const Ship& s) {
-  return s.can_aim();
-}
-
-/* macros to get ship stats */
-armor_t armor(const Ship& s) {
-  return s.effective_armor();
-}
-
-weapon_power_t guns(const Ship& s) {
-  return s.active_guns();
-}
-
-population_t max_crew(const Ship& s) {
-  return s.available_crew();
-}
-
-population_t max_mil(const Ship& s) {
-  return s.available_mil();
-}
-
-resource_t max_resource(const Ship& s) {
-  return s.max_resource_capacity();
-}
-int max_crystals(const Ship&) {
-  return MAX_CRYSTALS;
-}
-
-unsigned short max_fuel(const Ship& s) {
-  return s.max_fuel_capacity();
-}
-
-unsigned short max_destruct(const Ship& s) {
-  return s.max_destruct_capacity();
-}
-
-speed_t max_speed(const Ship& s) {
-  return s.max_speed_capacity();
-}
-
-long shipcost(const Ship& s) {
-  return s.effective_cost();
-}
-
-double mass(const Ship& s) {
-  return s.mass();
-}
-
-bool shipsight(const Ship& s) {
-  return s.has_sight();
-}
-
-weapon_power_t retaliate(const Ship& s) {
-  return s.retaliate();
-}
-
-int size(const Ship& s) {
-  return s.size();
-}
-
-int shipbody(const Ship& s) {
-  return s.shipbody();
-}
-
-hangar_t hanger(const Ship& s) {
-  return s.hanger_space();
-}
-
-long repair(const Ship& s) {
-  return s.repair_capacity();
-}
-
 int getdefense(EntityManager& em, const Ship& ship) {
   if (ship.is_landed()) {
     const auto* smap = em.peek_sectormap(ship.storbits(), ship.pnumorbits());
@@ -114,14 +19,6 @@ int getdefense(EntityManager& em, const Ship& ship) {
   }
   // No defense
   return 0;
-}
-
-bool laser_on(const Ship& ship) {
-  return ship.is_laser_on();
-}
-
-bool landed(const Ship& ship) {
-  return ship.is_landed();
 }
 
 void capture_stuff(const Ship& ship, GameObj& g) {
@@ -238,7 +135,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
     return 0;
   }
 
-  if (!landed(s)) { /* try to land the ship */
+  if (!s.is_landed()) { /* try to land the ship */
     double fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
     if (s.fuel() < fuel) { /* ship can't land - cancel all orders */
       s.whatdest() = ScopeLevel::LEVEL_UNIV;
@@ -262,14 +159,14 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
   if (load) {
     telegram << "\t\t";
     if (Fuel(load)) {
-      int amount = (int)s.max_fuel() - (int)s.fuel();
+      int amount = (int)s.max_fuel_capacity() - (int)s.fuel();
       if (amount > p.info(owner).fuel) amount = p.info(owner).fuel;
       p.info(owner).fuel -= amount;
       rcv_fuel(s, (double)amount);
       telegram << std::format("{}f ", amount);
     }
     if (Resources(load)) {
-      int amount = (int)s.max_resource() - (int)s.resource();
+      int amount = (int)s.max_resource_capacity() - (int)s.resource();
       if (amount > p.info(owner).resource) amount = p.info(owner).resource;
       p.info(owner).resource -= amount;
       rcv_resource(s, amount);
@@ -282,7 +179,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
       telegram << std::format("{}x ", amount);
     }
     if (Destruct(load)) {
-      int amount = (int)s.max_destruct() - (int)s.destruct();
+      int amount = (int)s.max_destruct_capacity() - (int)s.destruct();
       if (amount > p.info(owner).destruct) amount = p.info(owner).destruct;
       p.info(owner).destruct -= amount;
       rcv_destruct(s, amount);
@@ -487,14 +384,6 @@ std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept {
 
   // No crash.
   return {false, 0};
-}
-
-bool docked(const Ship& s) {
-  return s.is_docked();
-}
-
-bool overloaded(const Ship& s) {
-  return s.is_overloaded();
 }
 
 std::string prin_ship_orbits(EntityManager& em, const Ship& s) {

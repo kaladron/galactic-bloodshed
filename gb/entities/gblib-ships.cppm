@@ -1175,6 +1175,11 @@ public:
                : data_.max_speed;
   }
 
+  /// Maximum alien power crystal storage capacity.
+  [[nodiscard]] int max_crystals_capacity() const noexcept {
+    return MAX_CRYSTALS;
+  }
+
   /// Repair work capacity per turn (operational status for factories, crew for
   /// others).
   [[nodiscard]] long repair_capacity() const noexcept {
@@ -1208,41 +1213,7 @@ public:
   }
 };
 
-/* can takeoff & land, is mobile, etc. */
-export unsigned short speed_rating(const Ship& s);
-
-export bool has_switch(const Ship& d);
-
-/* can bombard planets */
-export bool can_bombard(const Ship& s);
-
-/* can navigate */
-export bool can_navigate(const Ship& s);
-
-/* can aim at things. */
-export bool can_aim(const Ship& s);
-
-/* macros to get ship stats */
-export armor_t armor(const Ship& s);
-export weapon_power_t guns(const Ship& s);
-export population_t max_crew(const Ship& s);
-export population_t max_mil(const Ship& s);
-export resource_t max_resource(const Ship& s);
-export int max_crystals(const Ship& s);
-export unsigned short max_fuel(const Ship& s);
-export unsigned short max_destruct(const Ship& s);
-export speed_t max_speed(const Ship& s);
-export long shipcost(const Ship& s);
-export double mass(const Ship& s);
-export bool shipsight(const Ship& s);
-export weapon_power_t retaliate(const Ship& s);
-export int size(const Ship& s);
-export int shipbody(const Ship& s);
-export hangar_t hanger(const Ship& s);
-export long repair(const Ship& s);
 export int getdefense(EntityManager&, const Ship&);
-export bool landed(const Ship&);
-export bool laser_on(const Ship&);
 export void capture_stuff(const Ship&, GameObj&);
 export double cost(const Ship&);
 export double getmass(const Ship&);
@@ -1250,8 +1221,6 @@ export unsigned int ship_size(const Ship&);
 export double complexity(const Ship&);
 export double complexity(ShipType);  // Complexity for default ship of this type
 export bool testship(const Ship&, GameObj&);
-export bool docked(const Ship&);
-export bool overloaded(const Ship&);
 export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
 export void do_VN(EntityManager&, Ship&, TurnStats&);
 export std::optional<player_t>

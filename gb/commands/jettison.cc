@@ -47,7 +47,7 @@ bool jettison(const command_t& argv, GameObj& g) {
     if (s.owner() != Playernum || !s.alive()) {
       continue;
     }
-    if (landed(s)) {
+    if (s.is_landed()) {
       g.out << "Ship is landed, cannot jettison.\n";
       continue;
     }
@@ -100,7 +100,7 @@ bool jettison(const command_t& argv, GameObj& g) {
         if ((amt = jettison_check(g, amt, (int)(ship.destruct()))) > 0) {
           use_destruct(ship, amt);
           g.out << std::format("{} destruct jettisoned.\n", amt);
-          if (!max_crew(ship)) {
+          if (!ship.max_crew_capacity()) {
             g.out << std::format("\n{} ", ship);
             if (ship.destruct()) {
               g.out << "still boobytrapped.\n";

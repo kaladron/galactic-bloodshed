@@ -162,7 +162,7 @@ void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
                         Sector& sector, int* crew, double* fuel) {
   *crew = std::min(s->max_crew_capacity(), sector.get_popn());
   *fuel = std::min(static_cast<double>(s->max_fuel_capacity()),
-                   static_cast<double>(planet->info(Playernum.value - 1).fuel));
+                   static_cast<double>(planet->info(Playernum).fuel));
   sector.subtract_popn(*crew);
   if (!sector.get_popn() && !sector.get_troops()) sector.set_owner(0);
   planet->info(Playernum).fuel -= (int)(*fuel);

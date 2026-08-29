@@ -38,7 +38,7 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
       target.whatorbits() == ScopeLevel::LEVEL_UNIV)
     return std::nullopt;
   if (attacker.storbits() != target.storbits()) return std::nullopt;
-  if (has_switch(attacker) && !attacker.on()) return std::nullopt;
+  if (attacker.has_switch() && !attacker.on()) return std::nullopt;
 
   /* compute caliber */
   const auto caliber = current_caliber(attacker);
@@ -64,7 +64,7 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   auto [tevade, tspeed, tbody] = ship_disposition(target);
   auto defense = getdefense(em, target);
 
-  bool focus = laser_on(attacker) && attacker.focus();
+  bool focus = attacker.is_laser_on() && attacker.focus();
 
   int hit_probability;
   int hits = (range != 0)
@@ -90,7 +90,7 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   auto weapon = [range, &attacker, caliber] -> std::string {
     if (range != 0) return "strength CEW";
 
-    if (laser_on(attacker)) {
+    if (attacker.is_laser_on()) {
       if (attacker.focus()) return "strength focused laser";
       return "strength laser";
     }
@@ -155,7 +155,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
                      int ignore, int caliber) {
   if (strength <= 0) return std::nullopt;
   if (!(ship.alive() || ignore)) return std::nullopt;
-  if (has_switch(ship) && !ship.on()) return std::nullopt;
+  if (ship.has_switch() && !ship.on()) return std::nullopt;
   if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return std::nullopt;
   if (!pl.is_valid(target_sector)) return std::nullopt;
 
@@ -275,8 +275,8 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
   double fac = (2. / 3.14159265) *
                std::atan((double)(5 * (tech + 1.0) / (ship.tech() + 1.0)));
 
-  int arm = std::max(0, static_cast<int>(armor(ship)) - hits / 5);
-  int body = shipbody(ship);
+  int arm = std::max(0, static_cast<int>(ship.effective_armor()) - hits / 5);
+  int body = ship.shipbody();
 
   int penetrate = 0;
   double r = 1.0;
@@ -320,8 +320,9 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
     }
 
   double fac = p_factor(tech, ship.tech());
-  int arm = std::max(0, static_cast<int>(armor(ship)) + defense - hits / 5);
-  double body = std::sqrt((double)(0.1 * shipbody(ship)));
+  int arm = std::max(0, static_cast<int>(ship.effective_armor()) + defense -
+                            hits / 5);
+  double body = std::sqrt((double)(0.1 * ship.shipbody()));
 
   int critdam = 0;
   int crithits = 0;
@@ -392,7 +393,7 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
 static std::tuple<bool, speed_t, int> ship_disposition(const Ship& ship) {
   bool evade = false;
   speed_t speed = 0;
-  int body = size(ship);
+  int body = ship.size();
   if (ship.active() && !ship.docked() &&
       (ship.whatdest() || ship.navigate().on)) {
     evade = ship.protect().evade;
@@ -507,7 +508,7 @@ static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
   std::stringstream critmsg;
   *critdam = 0;
   *crithits = 0;
-  int eff_size = std::max(1, shipbody(ship) / caliber);
+  int eff_size = std::max(1, ship.shipbody() / caliber);
   for (auto i = 1; i <= penetrate; i++)
     if (!int_rand(0, eff_size - 1)) {
       *crithits += 1;

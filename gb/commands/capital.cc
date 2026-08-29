@@ -41,7 +41,7 @@ bool capital(const command_t& argv, GameObj& g) {
           g.out << "You can't do that!\n";
           return false;
         }
-        if (!landed(s)) {
+        if (!s.is_landed()) {
           g.out << "Try landing this ship first!\n";
           return false;
         }
@@ -63,7 +63,7 @@ bool capital(const command_t& argv, GameObj& g) {
       }
 
       g.out << std::format("Efficiency of governmental center: {:.0f}%.\n",
-                           ((double)s.popn() / (double)max_crew(s)) *
+                           ((double)s.popn() / (double)s.max_crew_capacity()) *
                                (100 - (double)s.damage()));
       return true;
     });

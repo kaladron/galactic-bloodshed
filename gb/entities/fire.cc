@@ -72,14 +72,14 @@ int check_retal_strength(const Ship& ship) {
   // irradiated ships dont retaliate
   if (!ship.active() || !ship.alive()) return 0;
 
-  if (laser_on(ship)) return MIN(ship.fire_laser(), (int)ship.fuel() / 2);
+  if (ship.is_laser_on()) return MIN(ship.fire_laser(), (int)ship.fuel() / 2);
 
   return retal_strength(ship);
 }
 
 int retal_strength(const Ship& s) {
   if (!s.alive()) return 0;
-  if (!Shipdata[s.type()][ABIL_SPEED] && !landed(s)) return 0;
+  if (!Shipdata[s.type()][ABIL_SPEED] && !s.is_landed()) return 0;
   /* land based ships */
   if (!s.popn() && (s.type() != ShipType::OTYPE_BERS)) return 0;
 

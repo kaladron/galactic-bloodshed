@@ -48,7 +48,7 @@ bool proj_fuel(const command_t& argv, GameObj& g) {
     g.out << "You do not own this ship.\n";
     return false;
   }
-  if (landed(*ship) && (argv.size() == 2)) {
+  if (ship->is_landed() && (argv.size() == 2)) {
     g.out << "You must specify a destination for landed or docked ships...\n";
     return false;
   }
@@ -56,12 +56,13 @@ bool proj_fuel(const command_t& argv, GameObj& g) {
     g.out << "That ship is not moving!\n";
     return false;
   }
-  if ((!speed_rating(*ship)) || (ship->type() == ShipType::OTYPE_FACTORY)) {
+  if ((!ship->max_speed_capacity()) ||
+      (ship->type() == ShipType::OTYPE_FACTORY)) {
     g.out << "That ship does not have a speed rating...\n";
     return false;
   }
   std::string plan_buf;
-  if (landed(*ship) && (ship->whatorbits() == ScopeLevel::LEVEL_PLAN)) {
+  if (ship->is_landed() && (ship->whatorbits() == ScopeLevel::LEVEL_PLAN)) {
     const auto* p =
         g.entity_manager.peek_planet(ship->storbits(), ship->pnumorbits());
     if (!p) {

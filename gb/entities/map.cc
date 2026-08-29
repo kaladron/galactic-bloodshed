@@ -41,7 +41,7 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
       if (s.owner() == Playernum && authorized(Governor, s) &&
           (s.popn() || (s.type() == ShipType::OTYPE_PROBE)))
         iq = 1;
-      if (s.alive() && landed(s)) {
+      if (s.alive() && s.is_landed()) {
         Coordinates land = s.land_coords();
         shiplocs[land.x][land.y] = Shipltrs[s.type()];
       }

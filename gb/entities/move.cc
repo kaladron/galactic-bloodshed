@@ -79,7 +79,7 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
     if (ship.owner() != g.player() && ship.type() == ShipType::OTYPE_AFV &&
-        landed(ship) && retal_strength(ship) &&
+        ship.is_landed() && retal_strength(ship) &&
         (ship.land_coords() == target_coords)) {
       const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
       if (!isset(g.race->allied, ship.owner()) ||

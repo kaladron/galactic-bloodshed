@@ -241,7 +241,7 @@ void ShipTacticalItem::add_tactical_header_row(
 
   // Build landed location suffix
   std::string location_suffix;
-  if (landed(s)) {
+  if (s.is_landed()) {
     location_suffix = std::format(" ({})", s.land_coords());
   }
 
@@ -309,7 +309,7 @@ void ShipTacticalItem::add_tactical_target_row(
   }
 
   // Calculate combat parameters using firer's data and target's data
-  int body = size(s);
+  int body = s.size();
   auto defense = getdefense(g.entity_manager, s);
   auto [prob, factor] =
       hit_odds(dist, firer.tech, firer.damage, firer.evade, tev, firer.speed,
@@ -332,7 +332,7 @@ void ShipTacticalItem::add_tactical_target_row(
 
   // Build location string
   std::string loc_str;
-  if (landed(s)) {
+  if (s.is_landed()) {
     loc_str = std::format("{}", s.land_coords());
   }
 
@@ -378,7 +378,7 @@ bool ShipTacticalItem::should_report_tactical(player_t player_num,
   if (!authorized(governor, s)) return false;
 
   // Don't report on ships without sight capability
-  if (!shipsight(s)) return false;
+  if (!s.has_sight()) return false;
 
   return true;
 }
@@ -479,7 +479,7 @@ void ShipTacticalItem::report_tactical(
         .evade = params.fev,
         .speed = params.fspeed,
         .caliber = current_caliber(s),
-        .laser_focused = (laser_on(s) && s.focus()),
+        .laser_focused = (s.is_laser_on() && s.focus()),
     };
 
     // Polymorphic call - adds row to table for ships, skips for planets not in

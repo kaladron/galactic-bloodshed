@@ -166,7 +166,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
     g.out << "You have to cs to the planet it orbits.\n";
     return false;
   }
-  if (!speed_rating(s)) {
+  if (!s.max_speed_capacity()) {
     g.out << "This ship is not rated for maneuvering.\n";
     return false;
   }
@@ -330,7 +330,7 @@ bool land(const command_t& argv, GameObj& g) {
     if (!GB::ship_matches_filter(argv[1], s)) continue;
     if (!authorized(Governor, s)) continue;
 
-    if (overloaded(s)) {
+    if (s.is_overloaded()) {
       g.out << std::format("{} is too overloaded to land.\n", s);
       continue;
     }
@@ -338,7 +338,7 @@ bool land(const command_t& argv, GameObj& g) {
       g.out << "You can't load quarries onto ship.\n";
       continue;
     }
-    if (docked(s)) {
+    if (s.is_docked()) {
       g.out << "That ship is docked to another ship.\n";
       continue;
     }

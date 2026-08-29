@@ -21,7 +21,7 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
 
   Playernum = race.Playernum;
 
-  if (!landed(*s)) {
+  if (!s->is_landed()) {
     g.out << "Origin ship not landed.\n";
     return;
   }
@@ -49,7 +49,7 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
       g.out << "The target device is not receiving.\n";
       return;
     }
-    if (!landed(s2)) {
+    if (!s2.is_landed()) {
       g.out << "Target ship not landed.\n";
       return;
     }
@@ -337,7 +337,7 @@ bool load(const command_t& argv, GameObj& g) {
             is_docked_valid = false;
             return;
           }
-          if (overloaded(s2) && s2.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+          if (s2.is_overloaded() && s2.whatorbits() == ScopeLevel::LEVEL_SHIP) {
             g.out << std::format("{} is overloaded!\n", s2);
             is_docked_valid = false;
             return;
@@ -376,16 +376,18 @@ bool load(const command_t& argv, GameObj& g) {
       case '&':
         if (sh) {
           g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
-            uplim =
-                diff ? 0 : MIN(s2.crystals(), max_crystals(s) - s.crystals());
-            lolim =
-                diff ? 0 : -MIN(s.crystals(), max_crystals(s2) - s2.crystals());
+            uplim = diff ? 0
+                         : MIN(s2.crystals(),
+                               s.max_crystals_capacity() - s.crystals());
+            lolim = diff ? 0
+                         : -MIN(s.crystals(),
+                                s2.max_crystals_capacity() - s2.crystals());
           });
         } else {
           g.entity_manager.with_planet(
               g.snum(), g.pnum(), [&](const Planet& p) {
                 uplim = MIN(p.info(Playernum).crystals,
-                            max_crystals(s) - s.crystals());
+                            s.max_crystals_capacity() - s.crystals());
                 lolim = -s.crystals();
               });
         }
@@ -393,14 +395,15 @@ bool load(const command_t& argv, GameObj& g) {
       case 'c':
         if (sh) {
           g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
-            uplim = diff ? 0 : MIN(s2.popn(), max_crew(s) - s.popn());
-            lolim = diff ? 0 : -MIN(s.popn(), max_crew(s2) - s2.popn());
+            uplim = diff ? 0 : MIN(s2.popn(), s.max_crew_capacity() - s.popn());
+            lolim =
+                diff ? 0 : -MIN(s.popn(), s2.max_crew_capacity() - s2.popn());
           });
         } else {
           g.entity_manager.with_sectormap(
               g.snum(), g.pnum(), [&](const SectorMap& smap) {
                 const auto& sect = smap.get(s.land_coords());
-                uplim = MIN(sect.get_popn(), max_crew(s) - s.popn());
+                uplim = MIN(sect.get_popn(), s.max_crew_capacity() - s.popn());
                 lolim = -s.popn();
               });
         }
@@ -408,14 +411,15 @@ bool load(const command_t& argv, GameObj& g) {
       case 'm':
         if (sh) {
           g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
-            uplim = diff ? 0 : MIN(s2.troops(), max_mil(s) - s.troops());
-            lolim = diff ? 0 : -MIN(s.troops(), max_mil(s2) - s2.troops());
+            uplim = diff ? 0 : MIN(s2.troops(), s.available_mil() - s.troops());
+            lolim =
+                diff ? 0 : -MIN(s.troops(), s2.available_mil() - s2.troops());
           });
         } else {
           g.entity_manager.with_sectormap(
               g.snum(), g.pnum(), [&](const SectorMap& smap) {
                 const auto& sect = smap.get(s.land_coords());
-                uplim = MIN(sect.get_troops(), max_mil(s) - s.troops());
+                uplim = MIN(sect.get_troops(), s.available_mil() - s.troops());
                 lolim = -s.troops();
               });
         }
@@ -423,15 +427,17 @@ bool load(const command_t& argv, GameObj& g) {
       case 'd':
         if (sh) {
           g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
-            uplim =
-                diff ? 0 : MIN(s2.destruct(), max_destruct(s) - s.destruct());
-            lolim = -MIN(s.destruct(), max_destruct(s2) - s2.destruct());
+            uplim = diff ? 0
+                         : MIN(s2.destruct(),
+                               s.max_destruct_capacity() - s.destruct());
+            lolim =
+                -MIN(s.destruct(), s2.max_destruct_capacity() - s2.destruct());
           });
         } else {
           g.entity_manager.with_planet(
               g.snum(), g.pnum(), [&](const Planet& p) {
                 uplim = MIN(p.info(Playernum).destruct,
-                            max_destruct(s) - s.destruct());
+                            s.max_destruct_capacity() - s.destruct());
                 lolim = -s.destruct();
               });
         }
@@ -439,16 +445,17 @@ bool load(const command_t& argv, GameObj& g) {
       case 'f':
         if (sh) {
           g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
-            uplim = diff
-                        ? 0
-                        : MIN((int)s2.fuel(), (int)max_fuel(s) - (int)s.fuel());
-            lolim = -MIN((int)s.fuel(), (int)max_fuel(s2) - (int)s2.fuel());
+            uplim = diff ? 0
+                         : MIN((int)s2.fuel(),
+                               (int)s.max_fuel_capacity() - (int)s.fuel());
+            lolim = -MIN((int)s.fuel(),
+                         (int)s2.max_fuel_capacity() - (int)s2.fuel());
           });
         } else {
           g.entity_manager.with_planet(
               g.snum(), g.pnum(), [&](const Planet& p) {
                 uplim = MIN((int)p.info(Playernum).fuel,
-                            (int)max_fuel(s) - (int)s.fuel());
+                            (int)s.max_fuel_capacity() - (int)s.fuel());
                 lolim = -(int)s.fuel();
               });
         }
@@ -460,19 +467,21 @@ bool load(const command_t& argv, GameObj& g) {
                 s.whatorbits() != ScopeLevel::LEVEL_SHIP)
               uplim = diff ? 0 : s2.resource();
             else
-              uplim =
-                  diff ? 0 : MIN(s2.resource(), max_resource(s) - s.resource());
+              uplim = diff ? 0
+                           : MIN(s2.resource(),
+                                 s.max_resource_capacity() - s.resource());
             if (s2.type() == ShipType::STYPE_SHUTTLE &&
                 s.whatorbits() != ScopeLevel::LEVEL_SHIP)
               lolim = -s.resource();
             else
-              lolim = -MIN(s.resource(), max_resource(s2) - s2.resource());
+              lolim = -MIN(s.resource(),
+                           s2.max_resource_capacity() - s2.resource());
           });
         } else {
           g.entity_manager.with_planet(
               g.snum(), g.pnum(), [&](const Planet& p) {
                 uplim = MIN(p.info(Playernum).resource,
-                            max_resource(s) - s.resource());
+                            s.max_resource_capacity() - s.resource());
                 lolim = -s.resource();
               });
         }
@@ -676,7 +685,7 @@ bool load(const command_t& argv, GameObj& g) {
         s.destruct() += amt;
         s.mass() += amt * MASS_DESTRUCT;
         g.out << std::format("{} destruct transferred.\n", amt);
-        if (!max_crew(s)) {
+        if (!s.max_crew_capacity()) {
           g.out << std::format("\n{} ", s);
           if (s.destruct()) {
             g.out << "now boobytrapped.\n";

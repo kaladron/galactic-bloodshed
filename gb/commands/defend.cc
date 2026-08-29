@@ -63,7 +63,7 @@ bool defend(const command_t& argv, GameObj& g) {
         g.out << "Target is not in orbit around this planet.\n";
         return false;
       }
-      if (landed(to)) {
+      if (to.is_landed()) {
         g.out << "Planet guns can't fire on landed ships.\n";
         return false;
       }
@@ -169,14 +169,14 @@ bool defend(const command_t& argv, GameObj& g) {
                 // not the ship's current damage state, so this correctly
                 // applies the ship's original (pre-damage) attack capability.
                 strength = retal;
-                if (laser_on(target_ship))
+                if (target_ship.is_laser_on())
                   check_overload(g.entity_manager, target_ship, 0, &strength);
 
                 if (auto result_opt = shoot_ship_to_planet(
                         g.entity_manager, target_ship, p, strength,
                         sector_coords, smap, 0, 0)) {
                   auto [_, __, short_msg, long_msg] = *result_opt;
-                  if (laser_on(target_ship))
+                  if (target_ship.is_laser_on())
                     use_fuel(target_ship, 2.0 * (double)strength);
                   else
                     use_destruct(target_ship, strength);
@@ -200,7 +200,7 @@ bool defend(const command_t& argv, GameObj& g) {
                       ship.number() != toship && ship.alive() &&
                       ship.active()) {
                     strength = check_retal_strength(ship);
-                    if (laser_on(ship))
+                    if (ship.is_laser_on())
                       check_overload(g.entity_manager, const_cast<Ship&>(ship),
                                      0, &strength);
 
@@ -210,7 +210,7 @@ bool defend(const command_t& argv, GameObj& g) {
                       auto [_, __, short_msg2, long_msg2] = *result2_opt;
                       g.entity_manager.mutate_ship(
                           ship.number(), [&](Ship& ship_mut) {
-                            if (laser_on(ship))
+                            if (ship.is_laser_on())
                               use_fuel(ship_mut, 2.0 * (double)strength);
                             else
                               use_destruct(ship_mut, strength);

@@ -40,7 +40,7 @@ bool walk(const command_t& argv, GameObj& g) {
     g.out << "This ship doesn't walk!\n";
     return false;
   }
-  if (!landed(*ship_peek)) {
+  if (!ship_peek->is_landed()) {
     g.out << "This ship is not landed on a planet.\n";
     return false;
   }
@@ -87,7 +87,7 @@ bool walk(const command_t& argv, GameObj& g) {
     for (auto ship_handle : shiplist) {
       Ship& ship2 = *ship_handle;
       if (ship2.owner() != Playernum && ship2.type() == ShipType::OTYPE_AFV &&
-          landed(ship2) && retal_strength(ship2) &&
+          ship2.is_landed() && retal_strength(ship2) &&
           (ship2.land_coords() == new_coords)) {
         const auto* alien = g.entity_manager.peek_race(ship2.owner());
         if (!alien) {

@@ -114,7 +114,7 @@ std::expected<bool, GroundActionError>
 execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
                      EntityManager& entity_manager) {
   if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
-  if (!landed(ship)) return std::unexpected(GroundActionError::NotLanded);
+  if (!ship.is_landed()) return std::unexpected(GroundActionError::NotLanded);
   if (!ship.popn()) return std::unexpected(GroundActionError::NoCrew);
   if (ship.fuel() < static_cast<double>(FUEL_COST_TERRA)) {
     if (!ship.notified()) {
@@ -144,8 +144,8 @@ execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
     return std::unexpected(GroundActionError::IncompatibleSector);
   }
 
-  const int chance =
-      (100 - static_cast<int>(ship.damage())) * ship.popn() / ship.max_crew();
+  const int chance = (100 - static_cast<int>(ship.damage())) * ship.popn() /
+                     ship.max_crew_capacity();
   if (success(chance)) {
     /* only condition can be terraformed, type doesn't change */
     s.terraform(race.likesbest);
@@ -167,7 +167,7 @@ std::expected<int, GroundActionError>
 execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
                 EntityManager& entity_manager) {
   if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
-  if (!landed(ship)) return std::unexpected(GroundActionError::NotLanded);
+  if (!ship.is_landed()) return std::unexpected(GroundActionError::NotLanded);
   if (ship.fuel() < static_cast<double>(FUEL_COST_PLOW)) {
     if (!ship.notified()) {
       ship.notified() = 1;
@@ -194,7 +194,7 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
   int adjust = round_rand(10 *
                           (0.01 * (100.0 - static_cast<double>(ship.damage())) *
                            static_cast<double>(ship.popn())) /
-                          ship.max_crew());
+                          ship.max_crew_capacity());
   s.set_fert(std::min(100U, s.get_fert() + adjust));
   if (s.get_fert() >= 100) {
     push_telegram(entity_manager, ship.owner(), ship.governor(),
@@ -211,7 +211,7 @@ std::expected<int, GroundActionError>
 upgrade_sector_dome(EntityManager& entity_manager, Ship& ship,
                     SectorMap& smap) {
   if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
-  if (!landed(ship)) return std::unexpected(GroundActionError::NotLanded);
+  if (!ship.is_landed()) return std::unexpected(GroundActionError::NotLanded);
   if (ship.resource() < RES_COST_DOME) {
     return std::unexpected(GroundActionError::InsufficientResources);
   }
@@ -222,8 +222,9 @@ upgrade_sector_dome(EntityManager& entity_manager, Ship& ship,
                   std::format(" Y{} is full of zealots!!!", ship.number()));
     return std::unexpected(GroundActionError::SectorAlreadyOptimal);
   }
-  int adjust = round_rand(0.05 * (100.0 - static_cast<double>(ship.damage())) *
-                          static_cast<double>(ship.popn()) / ship.max_crew());
+  int adjust =
+      round_rand(0.05 * (100.0 - static_cast<double>(ship.damage())) *
+                 static_cast<double>(ship.popn()) / ship.max_crew_capacity());
   s.improve_efficiency(adjust);
   use_resource(ship, RES_COST_DOME);
   return adjust;
@@ -233,7 +234,7 @@ std::expected<int, GroundActionError>
 strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
                   EntityManager& entity_manager, TurnStats& stats) {
   if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
-  if (!landed(ship)) return std::unexpected(GroundActionError::NotLanded);
+  if (!ship.is_landed()) return std::unexpected(GroundActionError::NotLanded);
   if (!ship.popn()) return std::unexpected(GroundActionError::NoCrew);
   if (ship.fuel() < static_cast<double>(FUEL_COST_QUARRY)) {
     if (!ship.notified()) {
@@ -250,7 +251,7 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
   const auto& race = *entity_manager.peek_race(ship.owner());
 
   int prod = round_rand(race.metabolism * static_cast<double>(ship.popn()) /
-                        static_cast<double>(ship.max_crew()));
+                        static_cast<double>(ship.max_crew_capacity()));
   ship.fuel() -= FUEL_COST_QUARRY;
   stats.prod_res[ship.owner()] += prod;
   int tox = int_rand(0, int_rand(0, prod));
@@ -266,7 +267,7 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
 bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
                                    Planet& planet) {
   if (ship.whatdest() != ScopeLevel::LEVEL_PLAN ||
-      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || landed(ship) ||
+      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
       ship.storbits() != ship.deststar() ||
       ship.pnumorbits() != ship.destpnum()) {
     return false;
@@ -295,7 +296,7 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
 }
 
 double refuel_gasgiant_orbiters(const Planet& planet, Ship& ship) {
-  if (landed(ship) || planet.type() != PlanetType::GASGIANT) {
+  if (ship.is_landed() || planet.type() != PlanetType::GASGIANT) {
     return 0.0;
   }
 
@@ -311,7 +312,8 @@ double refuel_gasgiant_orbiters(const Planet& planet, Ship& ship) {
       fadd = FUEL_GAS_ADD;
       break;
   }
-  const double capacity = static_cast<double>(max_fuel(ship)) - ship.fuel();
+  const double capacity =
+      static_cast<double>(ship.max_fuel_capacity()) - ship.fuel();
   const double added = std::clamp(fadd, 0.0, std::max(0.0, capacity));
   if (added > 0.0) {
     rcv_fuel(ship, added);
@@ -538,7 +540,7 @@ void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
           break;
         }
         case ShipType::OTYPE_WPLANT:
-          if (landed(ship))
+          if (ship.is_landed())
             if (ship.resource() >= RES_COST_WPLANT &&
                 ship.fuel() >= FUEL_COST_WPLANT)
               stats.prod_destruct[ship.owner()] +=

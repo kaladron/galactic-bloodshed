@@ -261,7 +261,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
           (shipa.popn() || (shipa.type() == ShipType::OTYPE_PROBE))) {
         inhere = true;
       }
-      if (shipa.alive() && landed(shipa)) {
+      if (shipa.alive() && shipa.is_landed()) {
         Coordinates land = shipa.land_coords();
         if (shiplocs[land.x][land.y].count < MAX_SHIPS_PER_SECTOR) {
           auto& loc = shiplocs[land.x][land.y];

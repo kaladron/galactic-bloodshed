@@ -153,7 +153,7 @@ bool orbit(const command_t& argv, GameObj& g) {
       else {
         for (const Ship& s :
              ShipList::readonly(g.entity_manager, where->snum)) {
-          if (s.owner() == g.player() && shipsight(s)) {
+          if (s.owner() == g.player() && s.has_sight()) {
             iq = true; /* you are there to sight, need a crew */
             break;
           }
@@ -192,7 +192,7 @@ bool orbit(const command_t& argv, GameObj& g) {
       bool iq = false;
       for (const Ship& s :
            ShipList::readonly(g.entity_manager, where->snum, where->pnum)) {
-        if (s.owner() == g.player() && shipsight(s)) {
+        if (s.owner() == g.player() && s.has_sight()) {
           iq = true; /* you are there to sight, need a crew */
           break;
         }
@@ -202,7 +202,7 @@ bool orbit(const command_t& argv, GameObj& g) {
         for (const Ship& s :
              ShipList::readonly(g.entity_manager, where->snum, where->pnum)) {
           if (DontDispNum != s.number()) {
-            if (!landed(s)) {
+            if (!s.is_landed()) {
               if ((s.owner() == g.player()) || iq) {
                 system_map_text +=
                     DispShip(g, g.entity_manager, *where, s, Race, *p);

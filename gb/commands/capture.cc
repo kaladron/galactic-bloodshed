@@ -48,7 +48,7 @@ bool capture(const command_t& argv, GameObj& g) {
     Ship& ship = *ship_handle;
     shipnum_t shipno = ship.number();
     if (ship.owner() != Playernum) {
-      if (!landed(ship)) {
+      if (!ship.is_landed()) {
         g.out << std::format("{} #{} is not landed on a planet.\n",
                              Shipnames[ship.type()], shipno);
 
@@ -163,8 +163,9 @@ bool capture(const command_t& argv, GameObj& g) {
                       dstrength =
                           ((double)ship.popn() + (double)ship.troops() * 10.0 *
                                                      (double)alien->fighters) *
-                          .01 * alien->tech * ((double)(armor(ship)) + 0.01) *
-                          .01 * (100.0 - (double)ship.damage()) *
+                          .01 * alien->tech *
+                          ((double)(ship.effective_armor()) + 0.01) * .01 *
+                          (100.0 - (double)ship.damage()) *
                           morale_factor(
                               (double)(alien->morale - race.morale))));
               casualty_scale = std::min(boarders, ship.popn() + ship.troops());
@@ -215,12 +216,12 @@ bool capture(const command_t& argv, GameObj& g) {
               ship.owner() = Playernum;
               ship.governor() = Governor;
               if (what == PopulationType::CIV) {
-                ship.popn() = std::min(boarders, max_crew(ship));
+                ship.popn() = std::min(boarders, ship.max_crew_capacity());
                 sect.add_popn(boarders -
                               ship.popn());  // Return excess boarders
                 ship.mass() += ship.popn() * race.mass;
               } else if (what == PopulationType::MIL) {
-                ship.troops() = std::min(boarders, max_mil(ship));
+                ship.troops() = std::min(boarders, ship.available_mil());
                 sect.set_troops(sect.get_troops() + boarders - ship.troops());
                 ship.mass() += ship.troops() * race.mass;
               }

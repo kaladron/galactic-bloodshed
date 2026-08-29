@@ -76,7 +76,7 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
 }
 
 void order_defense(GameObj& g, const command_t& argv, Ship& ship) {
-  if (can_bombard(ship)) {
+  if (ship.can_bombard()) {
     if (argv[3] == "off")
       ship.protect().planet = false;
     else
@@ -145,7 +145,7 @@ void order_protect(GameObj& g, const command_t& argv, Ship& ship) {
     g.out << "You can't do that.\n";
     return;
   }
-  if (can_bombard(ship)) {
+  if (ship.can_bombard()) {
     if (j == 0) {
       ship.protect().on = false;
     } else {
@@ -173,7 +173,7 @@ void order_switch(GameObj& g, const command_t& /*argv*/, Ship& ship) {
     g.out << "Use \"on\" to bring factory online.\n";
     return;
   }
-  if (has_switch(ship)) {
+  if (ship.has_switch()) {
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
       g.out << "That ship is being transported.\n";
       return;
@@ -209,7 +209,7 @@ void order_switch(GameObj& g, const command_t& /*argv*/, Ship& ship) {
 }
 
 void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
-  if (speed_rating(ship)) {
+  if (ship.max_speed_capacity()) {
     if (ship.docked()) {
       g.out << "That ship is docked; use undock or launch first.\n";
       return;
@@ -255,7 +255,7 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_evade(GameObj& /*g*/, const command_t& argv, Ship& ship) {
-  if (max_crew(ship) && max_speed(ship)) {
+  if (ship.max_crew_capacity() && ship.max_speed_capacity()) {
     if (argv[3] == "on")
       ship.protect().evade = true;
     else if (argv[3] == "off")
@@ -265,7 +265,7 @@ void order_evade(GameObj& /*g*/, const command_t& argv, Ship& ship) {
 
 void order_bombard(GameObj& g, const command_t& argv, Ship& ship) {
   if (ship.type() != ShipType::OTYPE_OMCL) {
-    if (can_bombard(ship)) {
+    if (ship.can_bombard()) {
       if (argv[3] == "off")
         ship.bombard() = 0;
       else if (argv[3] == "on")
@@ -277,7 +277,7 @@ void order_bombard(GameObj& g, const command_t& argv, Ship& ship) {
 
 void order_retaliate(GameObj& g, const command_t& argv, Ship& ship) {
   if (ship.type() != ShipType::OTYPE_OMCL) {
-    if (can_bombard(ship)) {
+    if (ship.can_bombard()) {
       if (argv[3] == "off")
         ship.protect().self = false;
       else if (argv[3] == "on")
@@ -299,7 +299,7 @@ void order_focus(GameObj& g, const command_t& argv, Ship& ship) {
 
 void order_laser(GameObj& g, const command_t& argv, Ship& ship) {
   if (ship.laser()) {
-    if (can_bombard(ship)) {
+    if (ship.can_bombard()) {
       if (ship.mounted()) {
         if (argv[3] == "on")
           ship.fire_laser() = std::stoi(argv[4]);
@@ -327,13 +327,13 @@ void order_merchant(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_speed(GameObj& g, const command_t& argv, Ship& ship) {
-  if (speed_rating(ship)) {
+  if (ship.max_speed_capacity()) {
     int j = std::stoi(argv[3]);
     if (j < 0) {
       g.out << "Specify a positive speed.\n";
       return;
     }
-    j = std::min<int>(j, speed_rating(ship));
+    j = std::min<int>(j, ship.max_speed_capacity());
     ship.speed() = j;
   } else {
     g.out << "This ship does not have a speed rating.\n";
@@ -341,7 +341,7 @@ void order_speed(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_salvo(GameObj& g, const command_t& argv, Ship& ship) {
-  if (can_bombard(ship)) {
+  if (ship.can_bombard()) {
     int j = std::stoi(argv[3]);
     if (j < 0) {
       g.out << "Specify a positive number of guns.\n";
@@ -498,7 +498,7 @@ void order_transport(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
-  if (can_aim(ship)) {
+  if (ship.can_aim()) {
     if (ship.type() == ShipType::OTYPE_GTELE ||
         ship.type() == ShipType::OTYPE_TRACT || ship.fuel() >= FUEL_MANEUVER) {
       if (ship.type() == ShipType::STYPE_MIRROR && ship.docked()) {
@@ -543,7 +543,7 @@ void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
 
 void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
   player_t Playernum = g.player();
-  if (!has_switch(ship)) {
+  if (!ship.has_switch()) {
     g.out << "This ship does not have an on/off setting.\n";
     return;
   }
@@ -590,7 +590,7 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
       if (!ok) {
         return;
       }
-    } else if (!landed(ship)) {
+    } else if (!ship.is_landed()) {
       g.out << "You cannot activate the factory here.\n";
       return;
     } else {
@@ -638,7 +638,7 @@ void give_orders(GameObj& g, const command_t& argv, int /* APcount */,
     return;
   }
   if (ship.type() != ShipType::OTYPE_TRANSDEV && !ship.popn() &&
-      max_crew(ship)) {
+      ship.max_crew_capacity()) {
     g.out << std::format("{} has no crew and is not a robotic ship.\n", ship);
     return;
   }
@@ -787,7 +787,7 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
   if (ship.merchant()) {
     buffer << std::format("/merchant {}", ship.merchant());
   }
-  if (has_switch(ship)) {
+  if (ship.has_switch()) {
     if (ship.on())
       buffer << "/on";
     else
@@ -870,7 +870,7 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
         em, Playernum, Governor,
         std::format("  *** distance {:.0f} - jump will cost {:.1f}f ***\n",
                     dist, fuse));
-    if (ship.max_fuel() < fuse)
+    if (ship.max_fuel_capacity() < fuse)
       push_telegram(em, Playernum, Governor,
                     "Your ship cannot carry enough fuel to do this jump.\n");
   }

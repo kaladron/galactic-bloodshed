@@ -106,7 +106,7 @@ select_victim_to_steal_from(const Planet& planet,
 
 /*  do_VN() -- called by doship() */
 void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
-  if (!landed(ship)) {
+  if (!ship.is_landed()) {
     // Doing other things
     if (!std::holds_alternative<MindData>(ship.special()) ||
         !std::get<MindData>(ship.special()).busy)
@@ -125,7 +125,7 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   /* launch if no assignment */
   if (!std::holds_alternative<MindData>(ship.special()) ||
       !std::get<MindData>(ship.special()).busy) {
-    if (ship.fuel() >= (double)ship.max_fuel()) {
+    if (ship.fuel() >= (double)ship.max_fuel_capacity()) {
       const auto* star = em.peek_star(ship.storbits());
       const auto* planet = em.peek_planet(ship.storbits(), ship.pnumorbits());
       ship.xpos() = star->xpos() + planet->xpos() + int_rand(-10, 10);
@@ -188,7 +188,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
   int ya;
   int prod;
 
-  if (landed(ship)) {
+  if (ship.is_landed()) {
     if (ship.type() == ShipType::OTYPE_VN &&
         std::holds_alternative<MindData>(ship.special()) &&
         std::get<MindData>(ship.special()).busy) {

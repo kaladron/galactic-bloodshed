@@ -48,7 +48,7 @@ bool mount(const command_t& argv, GameObj& g) {
       g.out << "Mounted.\n";
       success = true;
     } else if (ship.mounted() && !mnt) {
-      if (ship.crystals() >= MAX_CRYSTALS) {
+      if (ship.crystals() >= ship.max_crystals_capacity()) {
         g.out << "You can't dismount the crystal. Max "
                  "allowed already on board.\n";
         continue;

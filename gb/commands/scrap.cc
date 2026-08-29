@@ -190,8 +190,8 @@ bool scrap(const command_t& argv, GameObj& g) {
           if (s.crystals() + s.mounted() &&
               !(is_landed_on_planet && sect_owner > 0 &&
                 sect_owner != g.player())) {
-            if (s2.crystals() + xtalval > MAX_CRYSTALS) {
-              xtalval = MAX_CRYSTALS - s2.crystals();
+            if (s2.crystals() + xtalval > s2.max_crystals_capacity()) {
+              xtalval = s2.max_crystals_capacity() - s2.crystals();
               g.out << std::format("(There is only room for {} crystals.)\n",
                                    xtalval);
             }

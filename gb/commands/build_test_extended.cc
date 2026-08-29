@@ -159,8 +159,10 @@ void test_planet_multiple_builds() {
 void test_factory_multiple_builds() {
   BuildTestFixture fixture;
 
-  // Create a factory ship landed at 7,7
+  // Create a factory ship landed at 5,5 configured to build probes
+  const auto* race_ptr = fixture.em.peek_race(1);
   Ship factory_data{};
+  Getship(&factory_data, ShipType::OTYPE_PROBE, *race_ptr);
   factory_data.type() = ShipType::OTYPE_FACTORY;
   factory_data.owner() = 1;
   factory_data.governor() = 0;

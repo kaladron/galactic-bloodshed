@@ -92,6 +92,7 @@ int main() {
     // Capacities & Overload
     test::expect_eq(ship.available_crew(), 70U);  // 100 - 30
     test::expect_eq(ship.available_mil(), 60U);   // 100 - 40
+    test::expect_eq(ship.max_crystals_capacity(), MAX_CRYSTALS);
     test::expect_false(ship.is_overloaded());
 
     ship.resource() = 600;

@@ -37,7 +37,7 @@ bool bombard(const command_t& argv, GameObj& g) {
       g.out << "You must be in orbit around a planet to bombard.\n";
       continue;
     }
-    if (from.type() == ShipType::OTYPE_AFV && !landed(from)) {
+    if (from.type() == ShipType::OTYPE_AFV && !from.is_landed()) {
       g.out << "This ship is not landed on the planet.\n";
       continue;
     }
@@ -54,12 +54,13 @@ bool bombard(const command_t& argv, GameObj& g) {
     if (strength > maxstrength) {
       strength = maxstrength;
       g.out << std::format("{} set to {}\n",
-                           laser_on(from) ? "Laser strength" : "Guns",
+                           from.is_laser_on() ? "Laser strength" : "Guns",
                            strength);
     }
 
     /* check to see if there is crystal overload */
-    if (laser_on(from)) check_overload(g.entity_manager, from, 0, &strength);
+    if (from.is_laser_on())
+      check_overload(g.entity_manager, from, 0, &strength);
 
     if (strength <= 0) {
       g.out << "No attack.\n";
@@ -71,7 +72,7 @@ bool bombard(const command_t& argv, GameObj& g) {
           bool has_defense =
               has_planet_defense(g.entity_manager, p.ships(), Playernum);
 
-          if (has_defense && !landed(from)) {
+          if (has_defense && !from.is_landed()) {
             g.out << "Target has planetary defense networks.\n";
             g.out << "These have to be eliminated before you can attack "
                      "sectors.\n";
@@ -96,7 +97,8 @@ bool bombard(const command_t& argv, GameObj& g) {
                   target_coords = smap.get_random().coords();
                 });
           }
-          if (landed(from) && !adjacent(p, from.land_coords(), target_coords)) {
+          if (from.is_landed() &&
+              !adjacent(p, from.land_coords(), target_coords)) {
             g.out << "You are not adjacent to that sector.\n";
             return;
           }
@@ -117,7 +119,7 @@ bool bombard(const command_t& argv, GameObj& g) {
           }
           auto [numdest, nuked, short_msg, long_msg] = *opt_result;
 
-          if (laser_on(from))
+          if (from.is_laser_on())
             use_fuel(from, 2.0 * (double)strength);
           else
             use_destruct(from, strength);
@@ -173,7 +175,7 @@ bool bombard(const command_t& argv, GameObj& g) {
               Ship& ship = *ship_handle;
               if (ship.protect().planet && ship.number() != from.number() &&
                   ship.alive() && ship.active()) {
-                if (laser_on(ship))
+                if (ship.is_laser_on())
                   check_overload(g.entity_manager, ship, 0, &strength);
 
                 strength = check_retal_strength(ship);
@@ -183,7 +185,7 @@ bool bombard(const command_t& argv, GameObj& g) {
                 if (s2sresult) {
                   auto [_, short_buf, long_buf] = *s2sresult;
 
-                  if (laser_on(ship))
+                  if (ship.is_laser_on())
                     use_fuel(ship, 2.0 * (double)strength);
                   else
                     use_destruct(ship, strength);

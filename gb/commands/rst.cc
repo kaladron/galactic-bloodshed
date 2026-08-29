@@ -96,10 +96,10 @@ void report_stock(GameObj& g, RstContext& ctx, const Ship& s) {
                    s.active() ? s.name() : "INACTIVE"),
        std::format("{}", s.crystals()),
        std::format("{}:{}", s.hanger(), s.max_hanger()),
-       std::format("{}:{}", s.resource(), max_resource(s)),
-       std::format("{}:{}", s.destruct(), max_destruct(s)),
-       std::format("{:.1f}:{}", s.fuel(), max_fuel(s)),
-       std::format("{}/{}:{}", s.popn(), s.troops(), s.max_crew())});
+       std::format("{}:{}", s.resource(), s.max_resource_capacity()),
+       std::format("{}:{}", s.destruct(), s.max_destruct_capacity()),
+       std::format("{:.1f}:{}", s.fuel(), s.max_fuel_capacity()),
+       std::format("{}/{}:{}", s.popn(), s.troops(), s.max_crew_capacity())});
 
   g.out << table << "\n";
 }
@@ -155,10 +155,10 @@ void report_status(GameObj& g, RstContext& ctx, const Ship& s) {
        s.hyper_drive().has ? "yes" : "",
        std::format("{}{}/{}{}", s.primary(), caliber_char(s.primtype()),
                    s.secondary(), caliber_char(s.sectype())),
-       std::format("{}", armor(s)), std::format("{:.0f}", s.tech()),
-       std::format("{}", max_speed(s)), std::format("{}", shipcost(s)),
-       std::format("{:.1f}", mass(s)),
-       std::format("{}{}", size(s), pod_suffix)});
+       std::format("{}", s.effective_armor()), std::format("{:.0f}", s.tech()),
+       std::format("{}", s.max_speed_capacity()),
+       std::format("{}", s.effective_cost()), std::format("{:.1f}", s.mass()),
+       std::format("{}{}", s.size(), pod_suffix)});
 
   g.out << table << "\n";
 }
@@ -308,12 +308,14 @@ void report_factories(GameObj& g, RstContext& ctx, const Ship& s) {
       {std::format("{}", s.number()),
        std::format("{}", Shipltrs[s.build_type()]),
        std::format("{}", s.build_cost()), std::format("{:.1f}", s.complexity()),
-       std::format("{:.1f}", s.base_mass()), std::format("{}", ship_size(s)),
-       std::format("{}", s.armor()), std::format("{}", s.max_crew()),
-       std::format("{}", s.max_fuel()), std::format("{}", s.max_resource()),
-       std::format("{}", s.max_hanger()), std::format("{}", s.max_destruct()),
-       speed_indicator, std::format("{}/{}", prim_guns, sec_guns),
-       s.laser() ? "yes" : " no", cew_str, range_str, damage_status});
+       std::format("{:.1f}", s.base_mass()), std::format("{}", s.size()),
+       std::format("{}", s.armor()), std::format("{}", s.max_crew_capacity()),
+       std::format("{}", s.max_fuel_capacity()),
+       std::format("{}", s.max_resource_capacity()),
+       std::format("{}", s.max_hanger()),
+       std::format("{}", s.max_destruct_capacity()), speed_indicator,
+       std::format("{}/{}", prim_guns, sec_guns), s.laser() ? "yes" : " no",
+       cew_str, range_str, damage_status});
 
   g.out << table << "\n";
 }

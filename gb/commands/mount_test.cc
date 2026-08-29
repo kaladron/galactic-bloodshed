@@ -159,7 +159,7 @@ void test_dismount_full_storage() {
   ship.alive() = true;
   ship.active() = true;
   ship.mount() = 1;
-  ship.crystals() = max_crystals(ship);  // Max storage full
+  ship.crystals() = ship.max_crystals_capacity();  // Max storage full
   ship.mounted() = 1;
   ships.save(ship);
 

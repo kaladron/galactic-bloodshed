@@ -173,7 +173,7 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
 }
 
 void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
-  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || landed(ship)) {
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed()) {
     return;
   }
 
@@ -211,7 +211,7 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
 void do_greenhouse(Ship& ship, EntityManager& entity_manager,
                    TurnStats& stats) {
-  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN && !landed(ship)) {
+  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN && !ship.is_landed()) {
     if (!std::holds_alternative<TimerData>(ship.special())) {
       return;
     }
@@ -261,7 +261,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
             ship.storbits() == target.storbits() && target.alive()) {
           auto range = std::hypot(ship.xpos() - target.xpos(),
                                   ship.ypos() - target.ypos());
-          auto i = int_rand(0, round_rand((2. / ((double)(shipbody(target)))) *
+          auto i = int_rand(0, round_rand((2. / ((double)(target.shipbody()))) *
                                           (double)(aimed_at.intensity) /
                                           (range / PLORBITSIZE + 1.0)));
           std::stringstream telegram_buf;
@@ -316,9 +316,9 @@ void do_god(Ship& ship, EntityManager& entity_manager) {
   /* gods have infinite power.... heh heh heh */
   const auto& race = *entity_manager.peek_race(ship.owner());
   if (race.God) {
-    ship.fuel() = max_fuel(ship);
-    ship.destruct() = max_destruct(ship);
-    ship.resource() = max_resource(ship);
+    ship.fuel() = ship.max_fuel_capacity();
+    ship.destruct() = ship.max_destruct_capacity();
+    ship.resource() = ship.max_resource_capacity();
   }
 }
 
@@ -336,7 +336,7 @@ double crew_factor(const Ship& ship) {
 
 void do_ap(Ship& ship, EntityManager& entity_manager) {
   /* if landed on planet, change conditions to be like race */
-  if (landed(ship) && ship.on()) {
+  if (ship.is_landed() && ship.on()) {
     const auto& race = *entity_manager.peek_race(ship.owner());
     entity_manager.mutate_planet(
         ship.storbits(), ship.pnumorbits(), [&](Planet& p) {
@@ -391,7 +391,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
     } else
       ship.active() = 1;
 
-    if (!ship.popn() && max_crew(ship) && !ship.docked())
+    if (!ship.popn() && ship.max_crew_capacity() && !ship.docked())
       ship.whatdest() = ScopeLevel::LEVEL_UNIV;
 
     // Check for supernova damage
@@ -401,8 +401,8 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
         /* damage ships from supernovae */
         /* Maarten: modified to take into account MOVES_PER_UPDATE */
         const auto& state = *entity_manager.peek_server_state();
-        ship.damage() +=
-            5L * star.nova_stage() / ((armor(ship) + 1) * state.segments);
+        ship.damage() += 5L * star.nova_stage() /
+                         ((ship.effective_armor() + 1) * state.segments);
         if (ship.damage() >= 100) {
           entity_manager.kill_ship(ship.owner(), ship);
           return;
@@ -476,7 +476,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
 
     if (ship.active()) {
       /* bombard the planet */
-      if (can_bombard(ship) && ship.bombard() &&
+      if (ship.can_bombard() && ship.bombard() &&
           ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
           ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
           ship.deststar() == ship.storbits() &&
@@ -488,7 +488,8 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
       /* repair ship by the amount of crew it has */
       /* industrial complexes can repair (robot ships
          and offline factories can't repair) */
-      if (ship.damage() && repair(ship)) do_repair(ship, entity_manager);
+      if (ship.damage() && ship.repair_capacity())
+        do_repair(ship, entity_manager);
 
       if (update) switch (ship.type()) { /* do this stuff during updates only*/
           case ShipType::OTYPE_CANIST:
@@ -734,8 +735,8 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
           entity_manager.mutate_sectormap(
               ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
                 const Coordinates target_coords =
-                    landed(ship) ? ship.land_coords()
-                                 : smap.get_random().coords();
+                    ship.is_landed() ? ship.land_coords()
+                                     : smap.get_random().coords();
 
                 if (auto result_opt = shoot_ship_to_planet(
                         entity_manager, ship, planet, (int)(ship.destruct()),
@@ -772,7 +773,7 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
   if (!ship.alive() || ship.owner() == 0) return;
   if (!ship.on() || !ship.retaliate() || !ship.destruct()) return;
 
-  if (landed(ship)) {
+  if (ship.is_landed()) {
     const auto& planet =
         *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
     const auto& owner_race = *entity_manager.peek_race(ship.owner());

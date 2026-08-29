@@ -667,11 +667,11 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
           if (!checking_fuel &&
               (s.popn() || s.type() == ShipType::OTYPE_PROBE)) {
             em.mutate_star(deststar, [&](Star& dst_star) {
-              if (!isset(dst_star.inhabited(), s.owner())) {
+              if (!dst_star.is_inhabited_by(s.owner())) {
                 dst_star.governor(s.owner()) = s.governor();
               }
-              setbit(dst_star.explored(), s.owner());
-              setbit(dst_star.inhabited(), s.owner());
+              dst_star.mark_explored_by(s.owner());
+              dst_star.mark_inhabited_by(s.owner());
             });
           }
           if (s.type() != ShipType::OTYPE_VN) {
@@ -695,8 +695,8 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
               p.info(s.owner()).explored = 1;
             });
             em.mutate_star(deststar, [&](Star& dst_star) {
-              setbit(dst_star.explored(), s.owner());
-              setbit(dst_star.inhabited(), s.owner());
+              dst_star.mark_explored_by(s.owner());
+              dst_star.mark_inhabited_by(s.owner());
             });
           }
           s.whatorbits() = ScopeLevel::LEVEL_PLAN;

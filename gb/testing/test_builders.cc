@@ -229,8 +229,8 @@ TestWorldBuilder::add_star(std::string_view name, ap_t initial_ap,
   }
   Star star{ss};
   for (player_t pid : registered_races_) {
-    setbit(star.explored(), pid);
-    setbit(star.inhabited(), pid);
+    star.mark_explored_by(pid);
+    star.mark_inhabited_by(pid);
   }
   StarRepository(store_).save(star);
   registered_stars_.push_back(snum);

@@ -42,7 +42,7 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       if (auto dist = std::hypot(xf - str.xpos(), yf - str.ypos());
           dist <= tele_range(s.type(), s.tech())) {
         g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
-          setbit(star.explored(), g.player());
+          star.mark_explored_by(g.player());
         });
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
@@ -58,7 +58,7 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
                                  yf - (str.ypos() + p.ypos()));
           dist <= tele_range(s.type(), s.tech())) {
         g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
-          setbit(star.explored(), g.player());
+          star.mark_explored_by(g.player());
         });
         g.entity_manager.mutate_planet(
             aimed_at.snum, aimed_at.pnum,
@@ -239,8 +239,8 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
         if (where.level != ScopeLevel::LEVEL_UNIV &&
             ((ship.storbits() != where.snum) &&
              where.level != ScopeLevel::LEVEL_STAR) &&
-            isclr(g.entity_manager.peek_star(where.snum)->explored(),
-                  ship.owner())) {
+            !g.entity_manager.peek_star(where.snum)
+                 ->is_explored_by(ship.owner())) {
           g.out << "You haven't explored this system.\n";
           return;
         }

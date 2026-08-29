@@ -257,15 +257,14 @@ static std::string DispStar(const GameObj& g, const ScopeLevel level,
 
   std::stringstream ss;
   if (r.governor[g.governor().value].toggle.color) {
-    char stand =
-        (isset(star.explored(), g.player()) ? g.player().value : 0) + '?';
+    char stand = (star.is_explored_by(g.player()) ? g.player().value : 0) + '?';
     ss << std::format("{} {} {} 0 * ", stand, x, y);
-    stand = (isset(star.inhabited(), g.player()) ? g.player().value : 0) + '?';
+    stand = (star.is_inhabited_by(g.player()) ? g.player().value : 0) + '?';
     ss << std::format("{} {};", stand, star.get_name());
   } else {
-    int stand = (isset(star.explored(), g.player()) ? 1 : 0);
+    int stand = (star.is_explored_by(g.player()) ? 1 : 0);
     ss << std::format("{} {} {} 0 * ", stand, x, y);
-    stand = (isset(star.inhabited(), g.player()) ? 1 : 0);
+    stand = (star.is_inhabited_by(g.player()) ? 1 : 0);
     ss << std::format("{} {};", stand, star.get_name());
   }
 

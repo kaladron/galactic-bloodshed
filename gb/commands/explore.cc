@@ -39,7 +39,7 @@ bool explore(const command_t& argv, GameObj& g) {
 
   for (const Star& star_ref : StarList::readonly(g.entity_manager)) {
     if ((starq == -1) || (starq == star_ref.star_id())) {
-      if (isset(star_ref.explored(), Playernum)) {
+      if (star_ref.is_explored_by(Playernum)) {
         // Output star header
         if (g.race->tech >= TECH_SEE_STABILITY) {
           g.out << std::format("\n{} ({:2})[{:2}]\n", star_ref.get_name(),

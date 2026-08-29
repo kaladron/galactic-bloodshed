@@ -259,8 +259,8 @@ found_planet:
 
   // Update star
   entity_manager.mutate_star(star, [&](Star& star_data) {
-    setbit(star_data.explored(), Playernum);
-    setbit(star_data.inhabited(), Playernum);
+    star_data.mark_explored_by(Playernum);
+    star_data.mark_inhabited_by(Playernum);
     star_data.AP(Playernum) = 5;
 
     std::cout << std::format(

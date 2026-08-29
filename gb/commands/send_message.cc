@@ -154,7 +154,7 @@ bool send_message(const command_t& argv, GameObj& g) {
   } else if (to_star) {
     const auto& star_ref = *g.entity_manager.peek_star(star);
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-      if (isset(star_ref.inhabited(), i) && i != Playernum) {
+      if (star_ref.is_inhabited_by(i) && i != Playernum) {
         g.entity_manager.mutate_race(i, [&](Race& alien) {
           alien.translate[Playernum.value - 1] =
               std::min(alien.translate[Playernum.value - 1] + 2, 100);

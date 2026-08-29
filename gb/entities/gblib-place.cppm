@@ -98,7 +98,7 @@ void Place::getplace2(GameObj& g, std::string_view string,
         if (substr == star->get_name()) {
           level = ScopeLevel::LEVEL_STAR;
           snum = i;
-          if (ignoreexpl || isset(star->explored(), Playernum) || g.god()) {
+          if (ignoreexpl || star->is_explored_by(Playernum) || g.god()) {
             if (string.starts_with('/')) string.remove_prefix(1);
             return getplace2(g, string, ignoreexpl);
           }

@@ -185,9 +185,9 @@ void test_test_world_builder() {
   const auto* star = ctx.em.peek_star(0);
   test::expect_true(star != nullptr, "Star 0 must exist");
   test::expect_eq(star->get_name(), "Sol");
-  test::expect_true(isset(star->explored(), player_t{1}),
+  test::expect_true(star->is_explored_by(player_t{1}),
                     "Player 1 explored Star 0");
-  test::expect_true(isset(star->explored(), player_t{2}),
+  test::expect_true(star->is_explored_by(player_t{2}),
                     "Player 2 explored Star 0");
   test::expect_eq(star->AP(player_t{1}), 100);
   test::expect_eq(star->AP(player_t{2}), 100);

@@ -215,7 +215,7 @@ void star_get_tactical_items(GameObj& g,
   const auto* star = g.entity_manager.peek_star(snum);
   if (!star) return;
 
-  if (isset(star->explored(), player_num)) {
+  if (star->is_explored_by(player_num)) {
     const ShipList ships(g.entity_manager, star->ships());
     for (const Ship& ship : ships) {
       add_tactical_ship(items, &ship);

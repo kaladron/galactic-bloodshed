@@ -443,8 +443,8 @@ int main() {
 
   /* make star explored and stuff */
   entity_manager.mutate_star(star, [&](Star& star_ref) {
-    setbit(star_ref.explored(), Playernum);
-    setbit(star_ref.inhabited(), Playernum);
+    star_ref.mark_explored_by(Playernum);
+    star_ref.mark_inhabited_by(Playernum);
     star_ref.AP(Playernum) = 5;
   });
 

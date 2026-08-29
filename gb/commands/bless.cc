@@ -221,7 +221,7 @@ bool bless(const command_t& argv, GameObj& g) {
       planet.info(who).explored = 1;
     });
     g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
-      setbit(star.explored(), who);
+      star.mark_explored_by(who);
       warn_player(g.session_registry, g.entity_manager, who, 0,
                   std::format("Deity set your explored bit at /{}/{}.\n",
                               star.get_name(), star.get_planet_name(g.pnum())));
@@ -247,7 +247,7 @@ bool bless(const command_t& argv, GameObj& g) {
                     star.get_planet_name(g.pnum())));
   } else if (argv[2] == "inhabited") {
     g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
-      setbit(star.inhabited(), Playernum);
+      star.mark_inhabited_by(Playernum);
       warn_player(g.session_registry, g.entity_manager, who, 0,
                   std::format("Deity has set your inhabited bit for /{}/{}.\n",
                               star.get_name(), star.get_planet_name(g.pnum())));

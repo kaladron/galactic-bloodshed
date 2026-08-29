@@ -45,7 +45,7 @@ void d_announce(SessionRegistry& registry, EntityManager& em, player_t sender,
     if (!race) continue;
 
     // Must inhabit the star (or be God)
-    if (!isset(star_ptr->inhabited(), p) && !race->God) continue;
+    if (!star_ptr->is_inhabited_by(p) && !race->God) continue;
 
     for (auto [g, gov] : race->active_governors()) {
       if (p == sender && g == sender_gov) continue;
@@ -123,7 +123,7 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
   if (registry.update_in_progress()) {
     for (player_t p = 1; p <= em.num_races(); p++) {
       if (p == sender && sender_gov == 0) continue;
-      if (!isset(star_ptr->inhabited(), p)) continue;
+      if (!star_ptr->is_inhabited_by(p)) continue;
 
       const auto* race = em.peek_race(p);
       if (!race) continue;
@@ -139,7 +139,7 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
   // Try real-time, fall back to telegram
   for (player_t p = 1; p <= em.num_races(); p++) {
     if (p == sender && sender_gov == 0) continue;
-    if (!isset(star_ptr->inhabited(), p)) continue;
+    if (!star_ptr->is_inhabited_by(p)) continue;
 
     const auto* race = em.peek_race(p);
     if (!race) continue;
@@ -162,7 +162,7 @@ void warn_star(SessionRegistry& registry, EntityManager& em, player_t sender,
   // Send to all players who inhabit the star system (except sender)
   for (player_t p = 1; p <= em.num_races(); p++) {
     if (p == sender) continue;
-    if (!isset(star_ptr->inhabited(), p)) continue;
+    if (!star_ptr->is_inhabited_by(p)) continue;
 
     warn_race(registry, em, p, message);
   }

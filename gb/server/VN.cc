@@ -64,13 +64,15 @@ void order_VN(EntityManager& em, Ship& ship) {
      and we have VN's there already */
   const auto& star_min = *em.peek_star(min);
   const auto& star_min2 = *em.peek_star(min2);
-  if (isset(star_min.inhabited(), 1U))
-    if (isset(star_min2.inhabited(), 1U))
+  if (star_min.is_inhabited_by(player_t{1})) {
+    if (star_min2.is_inhabited_by(player_t{1})) {
       ship.deststar() = int_rand(0, (int)universe->numstars - 1);
-    else
+    } else {
       ship.deststar() = min2; /* 2nd closest star */
-  else
+    }
+  } else {
     ship.deststar() = min;
+  }
 
   const auto& dest_star = *em.peek_star(ship.deststar());
   if (dest_star.numplanets()) {

@@ -465,7 +465,7 @@ void report_star_ships(GameObj& g, RstContext& ctx, player_t player_num,
   const auto* star = g.entity_manager.peek_star(snum);
   if (!star) return;
 
-  if (isset(star->explored(), player_num)) {
+  if (star->is_explored_by(player_num)) {
     const ShipList ships(g.entity_manager, star->ships());
     for (const Ship& ship : ships) {
       ship_report(g, ctx, ship, rep_on);

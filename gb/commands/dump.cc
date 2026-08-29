@@ -32,8 +32,8 @@ bool dump(const command_t& argv, GameObj& g) {
       auto& current_star = *current_star_handle;
       star_id = current_star.get_struct().star_id;
 
-      if (isset(current_star.explored(), Playernum)) {
-        setbit(current_star.explored(), player);
+      if (current_star.is_explored_by(Playernum)) {
+        current_star.mark_explored_by(player);
 
         for (auto planet_handle :
              PlanetList(g.entity_manager, star_id, current_star)) {
@@ -51,8 +51,8 @@ bool dump(const command_t& argv, GameObj& g) {
           where.level != ScopeLevel::LEVEL_SHIP) {
         star_id = where.snum;
         g.entity_manager.mutate_star(star_id, [&](Star& current_star) {
-          if (isset(current_star.explored(), Playernum)) {
-            setbit(current_star.explored(), player);
+          if (current_star.is_explored_by(Playernum)) {
+            current_star.mark_explored_by(player);
 
             for (auto planet_handle :
                  PlanetList(g.entity_manager, star_id, current_star)) {

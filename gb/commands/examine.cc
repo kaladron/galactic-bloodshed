@@ -39,7 +39,7 @@ bool examine(const command_t& argv, GameObj& g) {
       }
       bool visible =
           g.entity_manager.with_star(ship.storbits(), [&](const Star& star) {
-            return isset(star.inhabited(), g.player());
+            return star.is_inhabited_by(g.player());
           });
       if (!visible) {
         g.out << "That ship it not visible to you.\n";

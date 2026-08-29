@@ -26,7 +26,7 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
 
-  if (!isset(star.explored(), Playernum) ||
+  if (!star.is_explored_by(Playernum) ||
       (Governor != 0 && star.governor(Playernum) != Governor)) {
     return;
   };

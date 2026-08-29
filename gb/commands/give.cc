@@ -87,13 +87,13 @@ bool give(const command_t& argv, GameObj& g) {
               break;
             case ScopeLevel::LEVEL_STAR: {
               g.entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-                setbit(star.explored(), who);
+                star.mark_explored_by(who);
               });
               break;
             }
             case ScopeLevel::LEVEL_PLAN: {
               g.entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-                setbit(star.explored(), who);
+                star.mark_explored_by(who);
               });
 
               g.entity_manager.mutate_planet(

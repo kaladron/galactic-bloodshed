@@ -99,7 +99,7 @@ void test_give_dispatch() {
 
   const auto* star_verify = ctx.em.peek_star(star_id);
   test::expect_ne(star_verify, nullptr);
-  test::expect_true(isset<std::uint64_t>(star_verify->explored(), 2U));
+  test::expect_true(star_verify->is_explored_by(player_t{2}));
   std::println(std::cout, "    ✓ Ship ownership transferred to ally");
 
   // 2. Non-leader governor rejected

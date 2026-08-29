@@ -20,7 +20,7 @@ void setup_test_world(TestContext& ctx) {
       .add_planet(0, PlanetType::EARTH, "Earth");
 
   ctx.em.mutate_star(0,
-                     [](Star& star) { setbit(star.inhabited(), player_t{1}); });
+                     [](Star& star) { star.mark_inhabited_by(player_t{1}); });
 
   ctx.em.mutate_planet(0, 0, [](Planet& planet) {
     planet.info(player_t{1}).explored = 1;

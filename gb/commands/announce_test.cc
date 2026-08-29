@@ -30,8 +30,8 @@ void setup_test_world(TestContext& ctx) {
 
   // Mark star inhabited by both races
   ctx.em.mutate_star(0, [](Star& star) {
-    setbit(star.inhabited(), player_t{1});
-    setbit(star.inhabited(), player_t{2});
+    star.mark_inhabited_by(player_t{1});
+    star.mark_inhabited_by(player_t{2});
   });
 }
 

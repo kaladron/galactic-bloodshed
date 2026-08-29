@@ -69,7 +69,7 @@ bool dissolve(const command_t& argv, GameObj& g) {
   }
 
   for (const Star& star : StarList::readonly(g.entity_manager)) {
-    if (!isset(star.explored(), Playernum)) continue;
+    if (!star.is_explored_by(Playernum)) continue;
 
     for (auto planet_handle :
          PlanetList(g.entity_manager, star.star_id(), star)) {

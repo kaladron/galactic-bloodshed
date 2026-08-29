@@ -39,8 +39,8 @@ int main() {
   ss.name = "MarketHub";
   ss.xpos = 100.0;
   ss.ypos = 200.0;
-  ss.AP[0] = 100;
-  ss.governor[0] = 0;
+  ss.AP[player_t{1}] = 100;
+  ss.governor[player_t{1}] = 0;
   ss.pnames.emplace_back("MarketPlanet");
   Star star(ss);
 

@@ -32,7 +32,7 @@ void setup_test_world(TestContext& ctx) {
   ss.xpos = 100.0;
   ss.ypos = 200.0;
   ss.explored = (1ULL << 1);
-  ss.AP[0] = 10;
+  ss.AP[player_t{1}] = 10;
   Star star(ss);
   StarRepository stars_repo(store);
   stars_repo.save(star);

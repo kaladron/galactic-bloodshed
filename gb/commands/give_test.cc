@@ -42,7 +42,7 @@ void test_give_dispatch() {
   // Create a test star
   star_struct star_data{};
   star_data.star_id = 1;
-  star_data.governor[0] = 0;
+  star_data.governor[player_t{1}] = 0;
   star_data.name = "TestStar";
   star_data.xpos = 100.0;
   star_data.ypos = 100.0;

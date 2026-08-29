@@ -6,8 +6,7 @@
 module gblib;
 
 bool Star::control(player_t Playernum, governor_t Governor) const {
-  return (Governor == 0 ||
-          star_struct.governor[Playernum.value - 1] == Governor);
+  return Governor == 0 || star_struct.governor[Playernum] == Governor;
 }
 
 bool Star::is_explored_by(player_t p) const noexcept {

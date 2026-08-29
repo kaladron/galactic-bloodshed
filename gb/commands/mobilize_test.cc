@@ -27,8 +27,8 @@ void test_mobilize_dispatch() {
   // Setup: Create a star
   star_struct star_data{};
   star_data.star_id = 1;
-  star_data.governor[0] = 0;  // Player 1 governor 0 controls
-  star_data.AP[0] = 10;       // Action points
+  star_data.governor[player_t{1}] = 0;  // Player 1 governor 0 controls
+  star_data.AP[player_t{1}] = 10;       // Action points
   Star star{star_data};
   StarRepository stars_repo(store);
   stars_repo.save(star);

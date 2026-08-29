@@ -10,23 +10,24 @@ import :tweakables;
 import std;
 
 export struct star_struct {
-  shipnum_t ships{0};              /* 1st ship in orbit */
-  std::string name;                /* name of star */
-  governor_t governor[MAXPLAYERS]; /* which subordinate maintains the system */
-  ap_t AP[MAXPLAYERS];             /* action pts alotted */
-  std::uint64_t explored;          /* who's been here 64 bits*/
-  std::uint64_t inhabited;         /* who lives here now 64 bits*/
-  double xpos, ypos;
+  shipnum_t ships{0}; /* 1st ship in orbit */
+  std::string name;   /* name of star */
+  PlayerVector<governor_t, MAXPLAYERS>
+      governor; /* which subordinate maintains the system */
+  PlayerVector<ap_t, MAXPLAYERS> AP; /* action pts alotted */
+  std::uint64_t explored{0};         /* who's been here 64 bits*/
+  std::uint64_t inhabited{0};        /* who lives here now 64 bits*/
+  double xpos{0.0}, ypos{0.0};
 
   std::vector<std::string>
       pnames; /* names of planets (vector size = numplanets) */
 
-  unsigned char stability;   /* how close to nova it is */
-  unsigned char nova_stage;  /* stage of nova */
-  unsigned char temperature; /* factor which expresses how hot the star is*/
-  double gravity;            /* attraction of star in "Standards". */
+  unsigned char stability{0};   /* how close to nova it is */
+  unsigned char nova_stage{0};  /* stage of nova */
+  unsigned char temperature{0}; /* factor which expresses how hot the star is*/
+  double gravity{0.0};          /* attraction of star in "Standards". */
 
-  starnum_t star_id;
+  starnum_t star_id{0};
 };
 
 export class Star {
@@ -126,40 +127,20 @@ public:
     return star_struct.ypos;
   }
 
-  // Action points (player_t is 1-indexed, array is 0-indexed)
+  // Action points (1-indexed via PlayerVector)
   ap_t& AP(player_t playernum) {
-    if (playernum.value == 0 || playernum.value > MAXPLAYERS) {
-      throw std::out_of_range(std::format(
-          "Invalid player number {} for Star::AP", playernum.value));
-    }
-    return star_struct.AP[playernum.value - 1];
+    return star_struct.AP[playernum];
   }
-  // Action points (player_t is 1-indexed, array is 0-indexed)
   [[nodiscard]] ap_t AP(player_t playernum) const {
-    if (playernum.value == 0 || playernum.value > MAXPLAYERS) {
-      throw std::out_of_range(std::format(
-          "Invalid player number {} for Star::AP", playernum.value));
-    }
-    return star_struct.AP[playernum.value - 1];
+    return star_struct.AP[playernum];
   }
 
-  // which subordinate maintains the system (player_t is 1-indexed, array is
-  // 0-indexed)
+  // which subordinate maintains the system (1-indexed via PlayerVector)
   governor_t& governor(player_t playernum) {
-    if (playernum.value == 0 || playernum.value > MAXPLAYERS) {
-      throw std::out_of_range(std::format(
-          "Invalid player number {} for Star::governor", playernum.value));
-    }
-    return star_struct.governor[playernum.value - 1];
+    return star_struct.governor[playernum];
   }
-  // which subordinate maintains the system (player_t is 1-indexed, array is
-  // 0-indexed)
   [[nodiscard]] governor_t governor(player_t playernum) const {
-    if (playernum.value == 0 || playernum.value > MAXPLAYERS) {
-      throw std::out_of_range(std::format(
-          "Invalid player number {} for Star::governor", playernum.value));
-    }
-    return star_struct.governor[playernum.value - 1];
+    return star_struct.governor[playernum];
   }
 
   // how close to nova it is

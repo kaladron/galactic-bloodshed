@@ -19,7 +19,7 @@ void test_deduct_ap_star() {
 
   star_struct sdata{};
   sdata.star_id = 1;
-  sdata.AP[0] = 20;  // Player 1 has 20 AP
+  sdata.AP[player_t{1}] = 20;  // Player 1 has 20 AP
   Star star{sdata};
   star_repo.save(star);
 

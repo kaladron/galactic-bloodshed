@@ -92,7 +92,7 @@ void test_test_context_dispatch_helpers() {
     StarRepository star_repo(store);
     star_struct sdata{};
     sdata.star_id = 1;
-    sdata.AP[0] = 20;
+    sdata.AP[player_t{1}] = 20;
     Star star{sdata};
     star_repo.save(star);
   }

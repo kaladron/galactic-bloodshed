@@ -32,13 +32,13 @@ int main() {
   test_star.star_id = 1;
 
   // Initialize governor array
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    test_star.governor[i] = i + 1;
+  for (player_t p : all_players()) {
+    test_star.governor[p] = static_cast<governor_t>(p.value);
   }
 
   // Initialize AP array
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    test_star.AP[i] = i * 100;
+  for (player_t p : all_players()) {
+    test_star.AP[p] = (p.value - 1) * 100;
   }
 
   // Initialize explored and inhabited bitmasks
@@ -78,13 +78,13 @@ int main() {
   test::expect_eq(retrieved.gravity, test_star.gravity);
 
   // Verify governor array
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    test::expect_eq(retrieved.governor[i], test_star.governor[i]);
+  for (player_t p : all_players()) {
+    test::expect_eq(retrieved.governor[p], test_star.governor[p]);
   }
 
   // Verify AP array
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    test::expect_eq(retrieved.AP[i], test_star.AP[i]);
+  for (player_t p : all_players()) {
+    test::expect_eq(retrieved.AP[p], test_star.AP[p]);
   }
 
   // Verify bitmasks

@@ -224,9 +224,7 @@ TestWorldBuilder::add_star(std::string_view name, ap_t initial_ap,
   star_struct ss{};
   ss.star_id = snum;
   ss.name = name;
-  for (int i = 0; i < MAXPLAYERS; ++i) {
-    ss.AP[i] = initial_ap;
-  }
+  ss.AP.fill(initial_ap);
   Star star{ss};
   for (player_t pid : registered_races_) {
     star.mark_explored_by(pid);

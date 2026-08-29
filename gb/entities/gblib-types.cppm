@@ -313,6 +313,11 @@ public:
 
   constexpr PlayerVector() = default;
 
+  /// \brief Assigns the given value to all elements.
+  constexpr void fill(const T& value) {
+    data_.fill(value);
+  }
+
   [[nodiscard]] constexpr size_type size() const noexcept {
     return N;
   }

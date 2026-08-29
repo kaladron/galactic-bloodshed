@@ -34,8 +34,8 @@ void test_arm_and_disarm() {
   star_struct star{};
   star.star_id = 0;
   star.name = "Test Star";
-  star.governor[0] = 0;
-  star.AP[0] = 100;
+  star.governor[player_t{1}] = 0;
+  star.AP[player_t{1}] = 100;
 
   StarRepository stars(store);
   stars.save(star);

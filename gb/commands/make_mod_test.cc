@@ -39,7 +39,7 @@ int main() {
   ss.xpos = 100.0;
   ss.ypos = 200.0;
   ss.explored = (1ULL << 1);
-  ss.AP[0] = 10;
+  ss.AP[player_t{1}] = 10;
   Star star(ss);
 
   // Save star via repository

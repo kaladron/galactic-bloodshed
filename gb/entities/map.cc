@@ -94,7 +94,7 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
       race.Metamorph ? "covered" : "owned", p.info(Playernum).numsectsowned);
   if (p.explored() || race.tech >= TECH_EXPLORE) {
     bool f = false;
-    for (player_t i{1}; i < MAXPLAYERS; ++i) {
+    for (player_t i : all_players()) {
       if (p.info(i).numsectsowned != 0 && i != Playernum) {
         f = true;
         g.out << std::format("{}{}", race.is_at_war_with(i) ? '*' : ' ', i);

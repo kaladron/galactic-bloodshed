@@ -38,8 +38,8 @@ void setup_test_world(TestContext& ctx) {
   ss.xpos = 100.0;
   ss.ypos = 200.0;
   ss.explored = (1ULL << 1);
-  ss.AP[0] = 100;
-  ss.governor[0] = 1;  // Star controlled by Governor 1 for Player 1
+  ss.AP[player_t{1}] = 100;
+  ss.governor[player_t{1}] = 1;  // Star controlled by Governor 1 for Player 1
   ss.pnames.push_back("TradePlanet");
   Star star(ss);
 

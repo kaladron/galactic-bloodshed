@@ -23,7 +23,7 @@ void test_autoreport_database_persistence() {
   star.star_id = 1;
   star.name = "Test Star";
   star.pnames.push_back("Test Planet");
-  star.governor[0] = 0;  // Player 1 (index 0) governor 0
+  star.governor[player_t{1}] = 0;  // Player 1 governor 0
 
   JsonStore store(ctx.db);
   StarRepository stars(store);

@@ -37,7 +37,7 @@ int main() {
   ss.name = "TransferHub";
   ss.xpos = 100.0;
   ss.ypos = 200.0;
-  ss.AP[0] = 50;  // Give player 1 enough APs
+  ss.AP[player_t{1}] = 50;  // Give player 1 enough APs
   ss.pnames.emplace_back("TransferPlanet");
   Star star(ss);
 

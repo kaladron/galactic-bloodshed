@@ -121,7 +121,7 @@ void test_role_star_control() {
 
   star_struct sdata{};
   sdata.star_id = 1;
-  sdata.governor[0] = 0;  // controlled by player 1 gov 0
+  sdata.governor[player_t{1}] = 0;  // controlled by player 1 gov 0
   Star star{sdata};
   stars.save(star);
 
@@ -219,7 +219,7 @@ void test_fixed_star_ap_transactions() {
 
   star_struct sdata{};
   sdata.star_id = 1;
-  sdata.AP[0] = 10;
+  sdata.AP[player_t{1}] = 10;
   Star star{sdata};
   stars.save(star);
 

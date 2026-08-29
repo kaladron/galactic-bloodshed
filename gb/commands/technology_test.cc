@@ -23,8 +23,8 @@ void test_technology_happy_paths() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[0] = 0;  // Player 1, Governor 0 controls star
-  star.AP[0] = 10;
+  star.governor[player_t{1}] = 0;  // Player 1, Governor 0 controls star
+  star.AP[player_t{1}] = 10;
 
   Planet planet{};
   planet.star_id() = 1;
@@ -77,8 +77,8 @@ void test_technology_insufficient_ap() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[0] = 0;
-  star.AP[0] = 0;  // 0 AP (needs 1)
+  star.governor[player_t{1}] = 0;
+  star.AP[player_t{1}] = 0;  // 0 AP (needs 1)
 
   Planet planet{};
   planet.star_id() = 1;
@@ -119,8 +119,8 @@ void test_technology_role_and_scope_rejections() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[0] = 1;  // Assigned to Governor 1
-  star.AP[0] = 10;
+  star.governor[player_t{1}] = 1;  // Assigned to Governor 1
+  star.AP[player_t{1}] = 10;
 
   Planet planet{};
   planet.star_id() = 1;
@@ -169,8 +169,8 @@ void test_technology_domain_errors() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[0] = 0;
-  star.AP[0] = 10;
+  star.governor[player_t{1}] = 0;
+  star.AP[player_t{1}] = 10;
 
   Planet planet{};
   planet.star_id() = 1;

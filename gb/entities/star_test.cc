@@ -240,6 +240,33 @@ int main() {
     std::println(std::cout, "  ✓ Star inhabitation methods work as expected");
   }
 
+  // AP and governor PlayerVector tests
+  std::println(std::cout, "Star AP and governor PlayerVector accessors...");
+  {
+    star_struct s{};
+    s.name = "Gamma";
+    Star star(s);
+
+    star.AP(player_t{1}) = 42;
+    star.AP(player_t{2}) = 99;
+    test::expect_eq(star.AP(player_t{1}), 42);
+    test::expect_eq(star.AP(player_t{2}), 99);
+
+    star.governor(player_t{1}) = 3;
+    test::expect_eq(star.governor(player_t{1}), 3);
+
+    // Bounds checking throws std::out_of_range
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)star.AP(player_t{0}); });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)star.AP(player_t{MAXPLAYERS + 1}); });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)star.governor(player_t{0}); });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)star.governor(player_t{MAXPLAYERS + 1}); });
+    std::println(std::cout, "  ✓ Star AP and governor PlayerVector verified");
+  }
+
   std::println(std::cout, "\n✓ All Star class tests passed!");
   return 0;
 }

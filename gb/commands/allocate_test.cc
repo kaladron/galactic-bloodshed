@@ -28,7 +28,7 @@ int main() {
   star_struct star{};
   star.star_id = 0;
   star.name = "Sol";
-  star.AP[0] = 20;
+  star.AP[player_t{1}] = 20;
 
   StarRepository stars(store);
   stars.save(star);

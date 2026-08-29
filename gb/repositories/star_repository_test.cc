@@ -34,13 +34,13 @@ int main() {
   test_star_data.inhabited = 0b110011;
 
   // Initialize governor array
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    test_star_data.governor[i] = i + 1;
+  for (player_t p : all_players()) {
+    test_star_data.governor[p] = static_cast<governor_t>(p.value);
   }
 
   // Initialize AP array
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    test_star_data.AP[i] = i * 100;
+  for (player_t p : all_players()) {
+    test_star_data.AP[p] = (p.value - 1) * 100;
   }
 
   // Initialize planet names using vector
@@ -82,14 +82,13 @@ int main() {
   test::expect_eq(retrieved->inhabited(), 0b110011);
 
   // Verify governor array using accessor (player_t is 1-indexed)
-  for (int i = 1; i <= MAXPLAYERS; i++) {
-    test::expect_eq(retrieved->governor(player_t{i}), i);
+  for (player_t p : all_players()) {
+    test::expect_eq(retrieved->governor(p), static_cast<governor_t>(p.value));
   }
 
-  // Verify AP array - need to get underlying struct for this
-  auto retrieved_data = retrieved->get_struct();
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    test::expect_eq(retrieved_data.AP[i], i * 100);
+  // Verify AP array using accessor
+  for (player_t p : all_players()) {
+    test::expect_eq(retrieved->AP(p), (p.value - 1) * 100);
   }
 
   // Verify planet names

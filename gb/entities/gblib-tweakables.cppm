@@ -144,6 +144,13 @@ export constexpr ap_t DESERT_POINTS_HIGH = 3;
 
 export constexpr int MAXPLAYERS = 64;
 
+/// \brief Range view over all valid player IDs (1..MAXPLAYERS).
+export constexpr auto all_players() {
+  return std::views::iota(1, MAXPLAYERS + 1) | std::views::transform([](int i) {
+           return player_t{static_cast<player_t::value_type>(i)};
+         });
+}
+
 export constexpr int NAMESIZE = 18;
 export constexpr int NUMSTARS = 256;
 export constexpr int MAXPLANETS = 10;

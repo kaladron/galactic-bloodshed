@@ -78,8 +78,7 @@ void TestCommandMatrix::run_insufficient_ap_check(GameObj& g) const {
   }
 
   ap_t orig_univ_ap = 0;
-  if (g.player().value > 0 && g.player().value <= MAXPLAYERS &&
-      expected_univ_ap_ > 0) {
+  if (expected_univ_ap_ > 0) {
     ctx_.em.mutate_universe([&](universe_struct& u) {
       orig_univ_ap = u.AP[g.player()];
       u.AP[g.player()] = 0;
@@ -95,8 +94,7 @@ void TestCommandMatrix::run_insufficient_ap_check(GameObj& g) const {
     } catch (const EntityNotFoundError&) {
     }
   }
-  if (g.player().value > 0 && g.player().value <= MAXPLAYERS &&
-      expected_univ_ap_ > 0) {
+  if (expected_univ_ap_ > 0) {
     ctx_.em.mutate_universe(
         [&](universe_struct& u) { u.AP[g.player()] = orig_univ_ap; });
   }

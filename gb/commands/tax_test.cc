@@ -24,7 +24,7 @@ void test_tax_happy_paths() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[0] = 0;  // Player 1, Governor 0 controls star
+  star.governor[player_t{1}] = 0;  // Player 1, Governor 0 controls star
 
   Planet planet{};
   planet.star_id() = 1;
@@ -89,7 +89,7 @@ void test_tax_role_and_scope_rejections() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[0] = 0;  // Player 1 controls star, Player 2 does not
+  star.governor[player_t{1}] = 0;  // Player 1 controls star, Player 2 does not
 
   Planet planet{};
   planet.star_id() = 1;
@@ -150,7 +150,7 @@ void test_tax_domain_errors() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[0] = 0;
+  star.governor[player_t{1}] = 0;
 
   Planet planet{};
   planet.star_id() = 1;

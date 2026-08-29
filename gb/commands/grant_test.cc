@@ -34,7 +34,7 @@ void test_grant_dispatch() {
   // Create a star system
   star_struct star_data{};
   star_data.star_id = 1;
-  star_data.governor[0] = 0;
+  star_data.governor[player_t{1}] = 0;
   star_data.name = "SectorStar";
   Star star{star_data};
   StarRepository stars(store);

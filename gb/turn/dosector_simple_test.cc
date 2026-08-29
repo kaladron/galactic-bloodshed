@@ -91,12 +91,6 @@ Star createTestStar() {
   star_data.star_id = 0;
   star_data.explored = 0;
   star_data.inhabited = 0;
-
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    star_data.governor[i] = 0;
-    star_data.AP[i] = 0;
-  }
-
   star_data.pnames.push_back("TestPlanet");
 
   return Star(star_data);

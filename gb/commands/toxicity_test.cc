@@ -27,8 +27,8 @@ void test_toxicity_dispatch() {
   // Setup: Create a star with AP
   star_struct star_data{};
   star_data.star_id = 1;
-  star_data.governor[0] = 0;
-  star_data.AP[0] = 10;
+  star_data.governor[player_t{1}] = 0;
+  star_data.AP[player_t{1}] = 10;
   Star star{star_data};
   StarRepository stars(store);
   stars.save(star);

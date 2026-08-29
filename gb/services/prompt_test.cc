@@ -40,7 +40,7 @@ void test_prompt_star_scope() {
     star_struct sdata{};
     sdata.star_id = 1;
     sdata.name = "Sol";
-    sdata.AP[0] = 50;
+    sdata.AP[player_t{1}] = 50;
     Star star{sdata};
     star_repo.save(star);
   }
@@ -63,7 +63,7 @@ void test_prompt_planet_scope() {
     star_struct sdata{};
     sdata.star_id = 1;
     sdata.name = "Sol";
-    sdata.AP[0] = 50;
+    sdata.AP[player_t{1}] = 50;
     sdata.pnames = {"Earth", "Mars"};
     Star star{sdata};
     star_repo.save(star);
@@ -94,7 +94,7 @@ void test_prompt_ship_orbiting_scopes() {
     star_struct sdata{};
     sdata.star_id = 1;
     sdata.name = "Sol";
-    sdata.AP[0] = 50;
+    sdata.AP[player_t{1}] = 50;
     sdata.pnames = {"Earth"};
     Star star{sdata};
     star_repo.save(star);
@@ -163,7 +163,7 @@ void test_prompt_nested_docked_ships() {
     star_struct sdata{};
     sdata.star_id = 1;
     sdata.name = "Sol";
-    sdata.AP[0] = 50;
+    sdata.AP[player_t{1}] = 50;
     sdata.pnames = {"Earth"};
     Star star{sdata};
     star_repo.save(star);

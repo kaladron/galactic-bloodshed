@@ -44,10 +44,10 @@ void setup_test_world(TestContext& ctx) {
   star_struct star{};
   star.star_id = 0;
   star.name = "Test Star";
-  star.AP[0] = 100;
+  star.AP[player_t{1}] = 100;
   star.pnames.emplace_back("Test Planet");
-  star.governor[0] = 0;
-  star.governor[1] = 0;
+  star.governor[player_t{1}] = 0;
+  star.governor[player_t{2}] = 0;
   star.explored = (1ULL << 1) | (1ULL << 2);
 
   StarRepository stars(store);

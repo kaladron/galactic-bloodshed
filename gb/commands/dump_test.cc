@@ -43,7 +43,7 @@ void setup_test_world(TestContext& ctx) {
   ss.xpos = 100.0;
   ss.ypos = 200.0;
   ss.explored = (1ULL << 1);
-  ss.AP[0] = 20;
+  ss.AP[player_t{1}] = 20;
   ss.pnames.emplace_back("TestPlanet");
   Star star(ss);
 

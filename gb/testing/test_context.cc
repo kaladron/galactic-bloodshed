@@ -74,9 +74,7 @@ void TestContext::assert_dispatch_success(
   ap_t initial_univ_ap = 0;
   try {
     if (const auto* univ = em.peek_universe()) {
-      if (g.player().value > 0 && g.player().value <= MAXPLAYERS) {
-        initial_univ_ap = univ->AP[g.player()];
-      }
+      initial_univ_ap = univ->AP[g.player()];
     }
   } catch (const EntityNotFoundError&) {
     initial_univ_ap = 0;
@@ -129,10 +127,8 @@ void TestContext::assert_dispatch_rejected(
   bool has_univ = false;
   try {
     if (const auto* univ = em.peek_universe()) {
-      if (g.player().value > 0 && g.player().value <= MAXPLAYERS) {
-        initial_univ_ap = univ->AP[g.player()];
-        has_univ = true;
-      }
+      initial_univ_ap = univ->AP[g.player()];
+      has_univ = true;
     }
   } catch (const EntityNotFoundError&) {
   }

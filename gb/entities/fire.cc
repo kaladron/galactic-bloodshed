@@ -83,24 +83,25 @@ int retal_strength(const Ship& s) {
   /* land based ships */
   if (!s.popn() && (s.type() != ShipType::OTYPE_BERS)) return 0;
 
-  auto avail = [&]() {
+  auto avail = [&]() -> weapon_power_t {
     if (s.guns() == PRIMARY)
       return (s.type() == ShipType::STYPE_FIGHTER ||
               s.type() == ShipType::OTYPE_AFV ||
               s.type() == ShipType::OTYPE_BERS)
                  ? s.primary()
-                 : MIN(s.popn(), s.primary());
+                 : std::min(static_cast<weapon_power_t>(s.popn()), s.primary());
     if (s.guns() == SECONDARY)
       return (s.type() == ShipType::STYPE_FIGHTER ||
               s.type() == ShipType::OTYPE_AFV ||
               s.type() == ShipType::OTYPE_BERS)
                  ? s.secondary()
-                 : MIN(s.popn(), s.secondary());
+                 : std::min(static_cast<weapon_power_t>(s.popn()),
+                            s.secondary());
 
-    return 0UL;
+    return 0U;
   }();
 
-  avail = MIN(s.retaliate(), avail);
-  int strength = MIN(s.destruct(), avail);
+  avail = std::min(s.retaliate(), avail);
+  int strength = std::min(static_cast<weapon_power_t>(s.destruct()), avail);
   return strength;
 }

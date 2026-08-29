@@ -530,16 +530,16 @@ public:
   TestShipBuilder& docked_to(shipnum_t dest_ship, starnum_t snum);
   TestShipBuilder& with_guns(guntype_t primtype, unsigned long count,
                              unsigned char guns_flag = PRIMARY);
-  TestShipBuilder& with_retaliate(unsigned char retaliate);
-  TestShipBuilder& with_cew(unsigned short cew_power,
+  TestShipBuilder& with_retaliate(weapon_power_t retaliate);
+  TestShipBuilder& with_cew(weapon_power_t cew_power,
                             unsigned short range = 1000);
   TestShipBuilder& with_crew(population_t civilians, population_t military);
-  TestShipBuilder& with_speed(unsigned short speed);
+  TestShipBuilder& with_speed(speed_t speed);
   TestShipBuilder& with_fuel(double fuel);
   TestShipBuilder& with_resource(resource_t res);
   TestShipBuilder& with_destruct(unsigned short destruct);
-  TestShipBuilder& with_damage(unsigned short damage);
-  TestShipBuilder& with_armor(unsigned char armor);
+  TestShipBuilder& with_damage(damage_t damage);
+  TestShipBuilder& with_armor(armor_t armor);
 
   shipnum_t build();
 

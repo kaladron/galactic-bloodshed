@@ -44,17 +44,17 @@ TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
   ship_.fuel = static_cast<double>(ship_.max_fuel);
   ship_.destruct = static_cast<unsigned short>(ship_.max_destruct);
   ship_.hanger = 0;
-  ship_.max_hanger = static_cast<unsigned short>(Shipdata[type][ABIL_HANGER]);
+  ship_.max_hanger = static_cast<hangar_t>(Shipdata[type][ABIL_HANGER]);
   ship_.primtype = static_cast<guntype_t>(Shipdata[type][ABIL_PRIMARY]);
   ship_.sectype = static_cast<guntype_t>(Shipdata[type][ABIL_SECONDARY]);
-  ship_.guns = static_cast<unsigned char>(
+  ship_.guns = static_cast<gun_count_t>(
       Shipdata[type][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE);
-  ship_.primary = static_cast<unsigned long>(Shipdata[type][ABIL_GUNS]);
-  ship_.retaliate = static_cast<unsigned char>(ship_.primary);
+  ship_.primary = static_cast<weapon_power_t>(Shipdata[type][ABIL_GUNS]);
+  ship_.retaliate = ship_.primary;
 
   // Calculate baseline size and mass using canonical ship functions
   Ship temp_ship{ship_};
-  ship_.size = static_cast<unsigned short>(ship_size(temp_ship));
+  ship_.size = static_cast<ship_size_t>(ship_size(temp_ship));
   ship_.base_mass = getmass(temp_ship);
   ship_.mass = ship_.base_mass;
 }
@@ -133,21 +133,21 @@ TestShipBuilder& TestShipBuilder::with_guns(guntype_t primtype,
                                             unsigned char guns_flag) {
   ship_.guns = guns_flag;
   ship_.primtype = primtype;
-  ship_.primary = count;
-  ship_.retaliate = static_cast<unsigned char>(count);
+  ship_.primary = static_cast<weapon_power_t>(count);
+  ship_.retaliate = static_cast<weapon_power_t>(count);
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_retaliate(unsigned char retaliate) {
+TestShipBuilder& TestShipBuilder::with_retaliate(weapon_power_t retaliate) {
   ship_.retaliate = retaliate;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_cew(unsigned short cew_power,
+TestShipBuilder& TestShipBuilder::with_cew(weapon_power_t cew_power,
                                            unsigned short range) {
-  ship_.cew = static_cast<unsigned char>(cew_power);
+  ship_.cew = cew_power;
   ship_.cew_range = range;
-  ship_.mounted = 1;
+  ship_.mounted = true;
   return *this;
 }
 
@@ -159,7 +159,7 @@ TestShipBuilder& TestShipBuilder::with_crew(population_t civilians,
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_speed(unsigned short speed) {
+TestShipBuilder& TestShipBuilder::with_speed(speed_t speed) {
   ship_.speed = speed;
   return *this;
 }
@@ -179,12 +179,12 @@ TestShipBuilder& TestShipBuilder::with_destruct(unsigned short destruct) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_damage(unsigned short damage) {
-  ship_.damage = static_cast<unsigned char>(damage);
+TestShipBuilder& TestShipBuilder::with_damage(damage_t damage) {
+  ship_.damage = damage;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_armor(unsigned char armor) {
+TestShipBuilder& TestShipBuilder::with_armor(armor_t armor) {
   ship_.armor = armor;
   return *this;
 }

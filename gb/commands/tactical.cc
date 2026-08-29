@@ -28,15 +28,15 @@ namespace {
 struct TacticalParams {
   double tech = 0.0;
   bool fev = false;
-  int fspeed = 0;
+  speed_t fspeed = 0;
 };
 
 // Parameters for the firing ship when calculating hit odds against targets
 struct FiringShipParams {
   double tech = 0.0;
-  int damage = 0;
+  damage_t damage = 0;
   bool evade = false;
-  int speed = 0;
+  speed_t speed = 0;
   guntype_t caliber = GTYPE_NONE;
   bool laser_focused = false;  // Laser is on and focused
 };
@@ -301,7 +301,7 @@ void ShipTacticalItem::add_tactical_target_row(
 
   // Calculate target ship's evasion and speed (only if moving and active)
   bool tev = false;
-  int tspeed = 0;
+  speed_t tspeed = 0;
   if ((s.whatdest() != ScopeLevel::LEVEL_UNIV || s.navigate().on) &&
       !s.docked() && s.active()) {
     tspeed = s.speed();

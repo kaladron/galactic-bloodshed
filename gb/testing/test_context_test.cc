@@ -270,9 +270,9 @@ void test_test_ship_builder() {
   test::expect_eq(lander->popn(), 100);
   test::expect_eq(lander->troops(), 50);
   test::expect_eq(lander->resource(), 500);
-  test::expect_eq(lander->damage(), 15);
-  test::expect_eq(lander->cew(), 20);
-  test::expect_eq(lander->cew_range(), 1500);
+  test::expect_eq(lander->damage(), 15U);
+  test::expect_eq(lander->cew(), 20U);
+  test::expect_eq(lander->cew_range(), 1500U);
 
   // 3. Docked ship attached to parent ship
   shipnum_t fighter_num = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)

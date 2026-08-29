@@ -251,13 +251,13 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
               .whatdest = ship.whatdest(),
               .whatorbits = ScopeLevel::LEVEL_PLAN,
               .type = shipbuild,
-              .alive = 1,
-              .mode = 0,
-              .docked = 1,
-              .guns = static_cast<unsigned char>(
+              .alive = true,
+              .mode = false,
+              .docked = true,
+              .guns = static_cast<gun_count_t>(
                   Shipdata[shipbuild][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE),
               .primary =
-                  static_cast<unsigned long>(Shipdata[shipbuild][ABIL_GUNS]),
+                  static_cast<weapon_power_t>(Shipdata[shipbuild][ABIL_GUNS]),
               .primtype = shipdata_primary(shipbuild),
               .secondary = 0,
               .sectype = shipdata_secondary(shipbuild),

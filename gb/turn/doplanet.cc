@@ -652,8 +652,8 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
           Shipdata[ShipType::OTYPE_TOXWC][ABIL_DESTCAP]),
       .max_fuel = static_cast<unsigned short>(
           Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP]),
-      .max_speed = static_cast<unsigned short>(
-          Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED]),
+      .max_speed =
+          static_cast<speed_t>(Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED]),
       .build_cost =
           static_cast<unsigned short>(Shipcost(ShipType::OTYPE_TOXWC, race)),
       .base_mass = 1.0,
@@ -665,11 +665,11 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
       .whatdest = ScopeLevel::LEVEL_PLAN,
       .whatorbits = ScopeLevel::LEVEL_PLAN,
       .type = ShipType::OTYPE_TOXWC,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
+      .active = true,
+      .alive = true,
+      .docked = true,
       .guns = GTYPE_NONE,
-      .primary = static_cast<unsigned long>(
+      .primary = static_cast<weapon_power_t>(
           Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS]),
       .primtype = shipdata_primary(ShipType::OTYPE_TOXWC),
       .sectype = shipdata_secondary(ShipType::OTYPE_TOXWC),

@@ -59,6 +59,9 @@ int main() {
   test_data.mounted = false;
   test_data.cloaked = false;
   test_data.docked = false;
+  test_data.who_killed = player_t{4};
+  test_data.hanger = 10;
+  test_data.max_hanger = 20;
   test_data.guns = 1;     // Light guns
   test_data.primary = 0;  // No primary weapon
   test_data.primtype = GTYPE_NONE;
@@ -89,6 +92,7 @@ int main() {
   test_mind.tampered = false;
   test_mind.who_killed = player_t{3};
   test_data.special = test_mind;
+  test_data.retaliate = 5;
 
   // Wrap in Ship for saving
   Ship test_ship(test_data);
@@ -124,6 +128,16 @@ int main() {
   test::expect_eq(retrieved->type(), test_ship.type());
   test::expect_eq(retrieved->active(), test_ship.active());
   test::expect_eq(retrieved->alive(), test_ship.alive());
+  test::expect_eq(retrieved->hanger(), 10U);
+  test::expect_eq(retrieved->max_hanger(), 20U);
+  test::expect_eq(retrieved->who_killed(), player_t{4});
+  test::expect_eq(retrieved->guns(), 1U);
+  test::expect_false(retrieved->mode());
+  test::expect_false(retrieved->bombard());
+  test::expect_false(retrieved->mounted());
+  test::expect_false(retrieved->cloaked());
+  test::expect_false(retrieved->docked());
+  test::expect_eq(retrieved->retaliate(), 5U);
 
   // Verify NavigateData integrity
   test::expect_true(retrieved->navigate().on);

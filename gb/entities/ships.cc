@@ -103,7 +103,7 @@ long shipsight(const Ship& s) {
   return (s.type() == ShipType::OTYPE_PROBE) || s.popn();
 }
 
-long retaliate(const Ship& s) {
+weapon_power_t retaliate(const Ship& s) {
   return s.retaliate();
 }
 
@@ -112,11 +112,13 @@ int size(const Ship& s) {
 }
 
 int shipbody(const Ship& s) {
-  return s.size() - s.max_hanger();
+  return std::max(0, static_cast<int>(s.size()) -
+                         static_cast<int>(s.max_hanger()));
 }
 
 long hanger(const Ship& s) {
-  return s.max_hanger() - s.hanger();
+  return std::max(0L, static_cast<long>(s.max_hanger()) -
+                          static_cast<long>(s.hanger()));
 }
 
 long repair(const Ship& s) {
@@ -155,8 +157,10 @@ void capture_stuff(const Ship& ship, GameObj& g) {
 }
 
 double getmass(const Ship& s) {
-  return (1.0 + MASS_ARMOR * s.armor() +
-          MASS_SIZE * (s.size() - s.max_hanger()) +
+  const double body =
+      std::max(0.0, static_cast<double>(static_cast<int>(s.size()) -
+                                        static_cast<int>(s.max_hanger())));
+  return (1.0 + MASS_ARMOR * s.armor() + MASS_SIZE * body +
           MASS_HANGER * s.max_hanger() +
           MASS_GUNS * s.primary() * static_cast<int>(s.primtype()) +
           MASS_GUNS * s.secondary() * static_cast<int>(s.sectype()));

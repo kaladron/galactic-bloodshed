@@ -289,8 +289,9 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
   int dosage = round_rand(40. * (double)penetrate / (double)body);
   dosage = std::min(100, dosage);
 
-  if (dosage > ship.rad()) ship.rad() = std::max(ship.rad(), dosage);
-  if (success(ship.rad())) ship.active() = 0;
+  if (dosage > ship.rad())
+    ship.rad() = std::max(ship.rad(), static_cast<radiation_t>(dosage));
+  if (success(ship.rad())) ship.active() = false;
 
   int casualties = 0;
   int casualties1 = 0;

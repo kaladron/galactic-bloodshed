@@ -137,7 +137,7 @@ std::optional<ScopeLevel> build_at_ship(GameObj& g, Ship* builder,
     g.out << "This ship has no crew.\n";
     return {};
   }
-  if (docked(*builder)) {
+  if (builder->is_docked()) {
     g.out << "Undock this ship first.\n";
     return {};
   }
@@ -149,7 +149,7 @@ std::optional<ScopeLevel> build_at_ship(GameObj& g, Ship* builder,
     g.out << "This factory is not online.\n";
     return {};
   }
-  if (builder->type() == ShipType::OTYPE_FACTORY && !landed(*builder)) {
+  if (builder->type() == ShipType::OTYPE_FACTORY && !builder->is_landed()) {
     g.out << "Factories must be landed on a planet.\n";
     return {};
   }
@@ -160,17 +160,17 @@ std::optional<ScopeLevel> build_at_ship(GameObj& g, Ship* builder,
 
 void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
                         Sector& sector, int* crew, double* fuel) {
-  *crew = MIN(s->max_crew(), sector.get_popn());
-  *fuel = MIN((double)s->max_fuel(),
-              (double)planet->info(Playernum.value - 1).fuel);
+  *crew = std::min(s->max_crew_capacity(), sector.get_popn());
+  *fuel = std::min(static_cast<double>(s->max_fuel_capacity()),
+                   static_cast<double>(planet->info(Playernum.value - 1).fuel));
   sector.subtract_popn(*crew);
   if (!sector.get_popn() && !sector.get_troops()) sector.set_owner(0);
   planet->info(Playernum).fuel -= (int)(*fuel);
 }
 
 void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel) {
-  *crew = MIN(s->max_crew(), b->popn());
-  *fuel = MIN((double)s->max_fuel(), b->fuel());
+  *crew = std::min(s->max_crew_capacity(), b->popn());
+  *fuel = std::min(static_cast<double>(s->max_fuel_capacity()), b->fuel());
   b->popn() -= *crew;
   b->fuel() -= *fuel;
 }
@@ -179,14 +179,14 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
                          double load_fuel, int load_crew) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  newship->speed() = newship->max_speed();
+  newship->speed() = newship->max_speed_capacity();
   newship->owner() = Playernum;
   newship->governor() = Governor;
-  newship->fuel() = race.God ? newship->max_fuel() : load_fuel;
-  newship->popn() = race.God ? newship->max_crew() : load_crew;
+  newship->fuel() = race.God ? newship->max_fuel_capacity() : load_fuel;
+  newship->popn() = race.God ? newship->max_crew_capacity() : load_crew;
   newship->troops() = 0;
-  newship->resource() = race.God ? newship->max_resource() : 0;
-  newship->destruct() = race.God ? newship->max_destruct() : 0;
+  newship->resource() = race.God ? newship->max_resource_capacity() : 0;
+  newship->destruct() = race.God ? newship->max_destruct_capacity() : 0;
   newship->crystals() = 0;
   newship->hanger() = 0;
   newship->mass() = newship->base_mass() + (double)newship->popn() * race.mass +
@@ -195,7 +195,7 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
                     (double)newship->destruct() * MASS_DESTRUCT;
   newship->alive() = 1;
   newship->active() = 1;
-  newship->protect().self = newship->guns() > 0;
+  newship->protect().self = newship->active_guns() > 0;
   newship->hyper_drive().on = false;
   newship->hyper_drive().charge = 0;
   newship->mounted() = race.God ? newship->mount() : 0;
@@ -241,15 +241,15 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
     g.out << std::format(
         "Warning: This ship is constructed with a {}% damage level.\n",
         newship->damage());
-    if (!Shipdata[newship->type()][ABIL_REPAIR] && newship->max_crew())
+    if (!Shipdata[newship->type()][ABIL_REPAIR] && newship->max_crew_capacity())
       g.out << "It will need resources to become fully operational.\n";
   }
-  if (Shipdata[newship->type()][ABIL_REPAIR] && newship->max_crew())
+  if (Shipdata[newship->type()][ABIL_REPAIR] && newship->max_crew_capacity())
     g.out << "This ship does not need resources to repair.\n";
   if (newship->type() == ShipType::OTYPE_FACTORY)
     g.out
         << "This factory may not begin repairs until it has been activated.\n";
-  if (!newship->max_crew())
+  if (!newship->max_crew_capacity())
     g.out << "This ship is robotic, and may not repair itself.\n";
 
   g.out << std::format("Loaded with {} crew and {:.1f} fuel.\n", load_crew,

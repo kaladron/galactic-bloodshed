@@ -288,7 +288,7 @@ bool build(const command_t& argv, GameObj& g) {
                 g.out << "Give a positive number of builds.\n";
                 return false;
               }
-              if (!landed(*builder)) {
+              if (!builder->is_landed()) {
                 g.out << "Factories can only build when landed on a planet.\n";
                 return false;
               }
@@ -297,7 +297,7 @@ bool build(const command_t& argv, GameObj& g) {
               break;
             case ShipType::STYPE_SHUTTLE:
             case ShipType::STYPE_CARGO:
-              if (landed(*builder)) {
+              if (builder->is_landed()) {
                 g.out << "This ships cannot build when landed.\n";
                 return false;
               }

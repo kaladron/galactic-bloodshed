@@ -57,18 +57,12 @@ bool make_mod(const command_t& argv, GameObj& g) {
         if (Shipdata[dirship.build_type()][ABIL_PRIMARY] &&
             dirship.primtype() != GTYPE_NONE) {
           g.out << std::format("{:3}{:c}", dirship.primary(),
-                               (dirship.primtype() == GTYPE_LIGHT    ? 'L'
-                                : dirship.primtype() == GTYPE_MEDIUM ? 'M'
-                                : dirship.primtype() == GTYPE_HEAVY  ? 'H'
-                                                                     : 'N'));
+                               caliber_char(dirship.primtype()));
         }
         if (Shipdata[dirship.build_type()][ABIL_SECONDARY] &&
             dirship.sectype() != GTYPE_NONE) {
           g.out << std::format("/{:}{:c}", dirship.secondary(),
-                               (dirship.sectype() == GTYPE_LIGHT    ? 'L'
-                                : dirship.sectype() == GTYPE_MEDIUM ? 'M'
-                                : dirship.sectype() == GTYPE_HEAVY  ? 'H'
-                                                                    : 'N'));
+                               caliber_char(dirship.sectype()));
         }
         g.out << "\n";
         g.out << std::format("Ship:  {:<16.16s}\tCrew:     {:4d}",
@@ -204,25 +198,25 @@ bool make_mod(const command_t& argv, GameObj& g) {
 
       if (Shipdata[dirship.build_type()][ABIL_MOD]) {
         if (argv[1] == "armor") {
-          dirship.armor() = MIN(value, 100);
+          dirship.armor() = std::min<armor_t>(value, 100);
         } else if (argv[1] == "crew" &&
                    Shipdata[dirship.build_type()][ABIL_MAXCREW]) {
-          dirship.max_crew() = MIN(value, 10000);
+          dirship.max_crew() = std::min<population_t>(value, 10000);
         } else if (argv[1] == "cargo" &&
                    Shipdata[dirship.build_type()][ABIL_CARGO]) {
-          dirship.max_resource() = MIN(value, 10000);
+          dirship.max_resource() = std::min<resource_t>(value, 10000);
         } else if (argv[1] == "hanger" &&
                    Shipdata[dirship.build_type()][ABIL_HANGER]) {
-          dirship.max_hanger() = MIN(value, 10000);
+          dirship.max_hanger() = std::min<hangar_t>(value, 10000);
         } else if (argv[1] == "fuel" &&
                    Shipdata[dirship.build_type()][ABIL_FUELCAP]) {
-          dirship.max_fuel() = MIN(value, 10000);
+          dirship.max_fuel() = std::min<unsigned short>(value, 10000);
         } else if (argv[1] == "destruct" &&
                    Shipdata[dirship.build_type()][ABIL_DESTCAP]) {
-          dirship.max_destruct() = MIN(value, 10000);
+          dirship.max_destruct() = std::min<unsigned short>(value, 10000);
         } else if (argv[1] == "speed" &&
                    Shipdata[dirship.build_type()][ABIL_SPEED]) {
-          dirship.max_speed() = MAX(1, MIN(value, 9));
+          dirship.max_speed() = std::clamp<speed_t>(value, 1, 9);
         } else if (argv[1] == "mount" &&
                    Shipdata[dirship.build_type()][ABIL_MOUNT] &&
                    Crystal(race)) {

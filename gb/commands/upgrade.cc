@@ -190,14 +190,15 @@ bool upgrade(const command_t& argv, GameObj& g) {
     if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
       bool fits = true;
       g.entity_manager.with_ship(dirship.destshipno(), [&](const Ship& s2) {
-        if (s2.max_hanger() - (s2.hanger() - dirship.size()) <
-            ship_size(ship)) {
+        const long available_space = static_cast<long>(s2.max_hanger()) -
+                                     (static_cast<long>(s2.hanger()) -
+                                      static_cast<long>(dirship.size()));
+        const long needed_size = static_cast<long>(ship_size(ship));
+        if (available_space < needed_size) {
           g.out << std::format("Not enough free hanger space on {}{}.\n",
                                Shipltrs[s2.type()], dirship.destshipno());
-          g.out << std::format(
-              "{} more needed.\n",
-              ship_size(ship) -
-                  (s2.max_hanger() - (s2.hanger() - dirship.size())));
+          g.out << std::format("{} more needed.\n",
+                               needed_size - available_space);
           fits = false;
         }
       });

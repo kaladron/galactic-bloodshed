@@ -103,18 +103,18 @@ bool fire(const command_t& argv, GameObj& g) {
     retal = check_retal_strength(*to);
 
     if (from.type() == ShipType::OTYPE_AFV) {
-      if (!landed(from)) {
+      if (!from.is_landed()) {
         g.out << std::format("{} isn't landed on a planet!\n", from);
         continue;
       }
-      if (!landed(*to)) {
+      if (!to->is_landed()) {
         g.session_registry.notify_player(
             Playernum, Governor,
             std::format("{} isn't landed on a planet!\n", *to));
         continue;
       }
     }
-    if (landed(from) && landed(*to)) {
+    if (from.is_landed() && to->is_landed()) {
       if ((from.storbits() != to->storbits()) ||
           (from.pnumorbits() != to->pnumorbits())) {
         g.out << "Landed ships can only attack other "
@@ -134,7 +134,7 @@ bool fire(const command_t& argv, GameObj& g) {
         g.out << std::format("You need {} fuel to fire CEWs.\n", from.cew());
         continue;
       }
-      if (landed(from) || landed(*to)) {
+      if (from.is_landed() || to->is_landed()) {
         g.out << "CEWs cannot originate from or targeted "
                  "to ships landed on planets.\n";
         continue;
@@ -153,13 +153,13 @@ bool fire(const command_t& argv, GameObj& g) {
       if (strength > maxstrength) {
         strength = maxstrength;
         g.out << std::format("{} set to {}\n",
-                             (laser_on(from) ? "Laser strength" : "Guns"),
+                             (from.is_laser_on() ? "Laser strength" : "Guns"),
                              strength);
       }
     }
 
     /* check to see if there is crystal overloads */
-    if (laser_on(from) || cew_mode)
+    if (from.is_laser_on() || cew_mode)
       check_overload(g.entity_manager, from, cew_mode, &strength);
 
     if (strength <= 0) {
@@ -182,7 +182,7 @@ bool fire(const command_t& argv, GameObj& g) {
       damage = dmg;
       any_fired = true;
 
-      if (laser_on(from) || cew_mode)
+      if (from.is_laser_on() || cew_mode)
         use_fuel(from, 2.0 * (double)strength);
       else
         use_destruct(from, strength);
@@ -202,7 +202,7 @@ bool fire(const command_t& argv, GameObj& g) {
         // not the ship's current damage state, so this correctly applies
         // the ship's original (pre-damage) attack capability.
         strength = retal;
-        if (laser_on(to_ship))
+        if (to_ship.is_laser_on())
           check_overload(g.entity_manager, to_ship, 0, &strength);
 
         auto retal_result = shoot_ship_to_ship(g.entity_manager, to_ship, from,
@@ -210,7 +210,7 @@ bool fire(const command_t& argv, GameObj& g) {
         if (retal_result) {
           auto const& [r_damage, r_short_buf, r_long_buf] = *retal_result;
 
-          if (laser_on(to_ship))
+          if (to_ship.is_laser_on())
             use_fuel(to_ship, 2.0 * (double)strength);
           else
             use_destruct(to_ship, strength);
@@ -248,14 +248,14 @@ bool fire(const command_t& argv, GameObj& g) {
             (ship.protect().ship == toship) && ship.number() != from.number() &&
             ship.number() != toship && ship.alive() && ship.active()) {
           strength = check_retal_strength(ship);
-          if (laser_on(ship))
+          if (ship.is_laser_on())
             check_overload(g.entity_manager, ship, 0, &strength);
 
           auto s2sresult =
               shoot_ship_to_ship(g.entity_manager, ship, from, strength, 0);
           if (s2sresult) {
             auto const& [damange, short_buf, long_buf] = *s2sresult;
-            if (laser_on(ship))
+            if (ship.is_laser_on())
               use_fuel(ship, 2.0 * (double)strength);
             else
               use_destruct(ship, strength);

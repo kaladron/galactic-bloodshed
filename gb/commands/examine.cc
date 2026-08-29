@@ -65,7 +65,7 @@ bool examine(const command_t& argv, GameObj& g) {
         ship.examined() = 1;
       }
 
-      if (has_switch(ship)) {
+      if (ship.has_switch()) {
         g.out
             << "This device has an on/off switch that can be set with order.\n";
       }

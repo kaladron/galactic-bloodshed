@@ -28,7 +28,7 @@ bool launch(const command_t& argv, GameObj& g) {
     if (!ship_matches_filter(argv[1], s)) continue;
     if (!authorized(Governor, s)) continue;
 
-    if (!speed_rating(s) && landed(s)) {
+    if (!speed_rating(s) && s.is_landed()) {
       g.out << "That ship is not designed to be launched.\n";
       continue;
     }
@@ -37,7 +37,7 @@ bool launch(const command_t& argv, GameObj& g) {
       g.out << std::format("{} is not landed or docked.\n", s);
       continue;
     }
-    if (landed(s) && s.resource() > max_resource(s)) {
+    if (s.is_landed() && s.resource() > s.max_resource_capacity()) {
       g.out << std::format("{} is too overloaded to launch.\n", s);
       continue;
     }
@@ -48,7 +48,7 @@ bool launch(const command_t& argv, GameObj& g) {
         continue;
       }
       g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
-        if (landed(s2)) {
+        if (s2.is_landed()) {
           g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
             s.whatorbits() = ScopeLevel::LEVEL_PLAN;
             s.storbits() = s2.storbits();
@@ -62,7 +62,7 @@ bool launch(const command_t& argv, GameObj& g) {
             s.docked() = 1;
             s.whatdest() = ScopeLevel::LEVEL_PLAN;
             s2.mass() -= s.mass();
-            s2.hanger() -= size(s);
+            s2.hanger() -= s.size();
             g.out << std::format("Landed on {}/{}.\n", star.get_name(),
                                  star.get_planet_name(s.pnumorbits()));
           });
@@ -77,7 +77,7 @@ bool launch(const command_t& argv, GameObj& g) {
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.mass() -= s.mass();
-          s2.hanger() -= size(s);
+          s2.hanger() -= s.size();
           g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
             g.out << std::format("Orbiting {}/{}.\n", star.get_name(),
                                  star.get_planet_name(s.pnumorbits()));
@@ -92,7 +92,7 @@ bool launch(const command_t& argv, GameObj& g) {
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.mass() -= s.mass();
-          s2.hanger() -= size(s);
+          s2.hanger() -= s.size();
           g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
             g.out << std::format("Orbiting {}.\n", star.get_name());
           });
@@ -105,7 +105,7 @@ bool launch(const command_t& argv, GameObj& g) {
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.mass() -= s.mass();
-          s2.hanger() -= size(s);
+          s2.hanger() -= s.size();
           g.out << "Universe level.\n";
         } else {
           g.out << "You can't launch that ship.\n";

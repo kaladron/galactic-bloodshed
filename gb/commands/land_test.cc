@@ -47,8 +47,10 @@ void test_land_on_planet() {
 
   const auto* s = ctx.em.peek_ship(1);
   test::expect_true(s != nullptr);
-  // Ship should be docked after landing
+  // Ship should be docked and landed after landing
   test::expect_true(s->docked());
+  test::expect_true(s->is_landed());
+  test::expect_false(s->is_docked());
   test::expect_eq(s->land_coords(), Coordinates(5, 5));
 
   ctx.verify_universe_invariants();

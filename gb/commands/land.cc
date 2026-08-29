@@ -41,8 +41,8 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
         g.out << "Can't land on factories.\n";
         return false;
       }
-      if (landed(s)) {
-        if (!landed(s2_check)) {
+      if (s.is_landed()) {
+        if (!s2_check.is_landed()) {
           g.out << std::format("{} is not landed on a planet.\n", s2_check);
           return false;
         }
@@ -62,10 +62,10 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           g.out << std::format("{} must be turned off before loading.\n", s);
           return false;
         }
-        if (size(s) > hanger(s2_check)) {
+        if (s.size() > s2_check.hanger_space()) {
           g.out << std::format("Mothership does not have {} hanger space "
                                "available to load ship.\n",
-                               size(s));
+                               s.size());
           return false;
         }
         /* ok, load 'em up */
@@ -74,7 +74,7 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           s.whatdest() = ScopeLevel::LEVEL_SHIP;
           s.destshipno() = s2.number();
           s2.mass() += s.mass();
-          s2.hanger() += size(s);
+          s2.hanger() += s.size();
           fuel = 0.0;
           g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2,
                                fuel);
@@ -102,10 +102,10 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           g.out << "Not enough fuel.\n";
           return false;
         }
-        if (size(s) > hanger(s2_check)) {
+        if (s.size() > s2_check.hanger_space()) {
           g.out << std::format("Mothership does not have {} hanger space "
                                "available to load ship.\n",
-                               size(s));
+                               s.size());
           return false;
         }
         use_fuel(s, fuel);
@@ -121,7 +121,7 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           s.whatdest() = ScopeLevel::LEVEL_SHIP;
           s.destshipno() = s2.number();
           s2.mass() += s.mass();
-          s2.hanger() += size(s);
+          s2.hanger() += s.size();
           g.out << std::format("{} landed on {} using {} fuel.\n", s, s2, fuel);
           s.docked() = 1;
         });

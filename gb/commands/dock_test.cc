@@ -71,9 +71,13 @@ void test_dock_happy_paths() {
   test::expect_true(s1 != nullptr);
   test::expect_true(s2 != nullptr);
   test::expect_eq(s1->docked(), 1);
+  test::expect_true(s1->is_docked());
+  test::expect_false(s1->is_landed());
   test::expect_eq(s1->whatdest(), ScopeLevel::LEVEL_SHIP);
   test::expect_eq(s1->destshipno(), 2);
   test::expect_eq(s2->docked(), 1);
+  test::expect_true(s2->is_docked());
+  test::expect_false(s2->is_landed());
   test::expect_eq(s2->whatdest(), ScopeLevel::LEVEL_SHIP);
   test::expect_eq(s2->destshipno(), 1);
 

@@ -24,6 +24,10 @@ int main() {
   setbit(test64, 48U);
   test::expect_eq(test64, static_cast<std::uint64_t>(std::exp2(48)));
 
+  // Test bool_rand
+  test::expect_false(bool_rand(0.0));
+  test::expect_true(bool_rand(1.0));
+
   std::println(std::cout, "✓ gblib_test passed!");
   return 0;
 }

@@ -56,9 +56,8 @@ bool mount(const command_t& argv, GameObj& g) {
       ship.mounted() = 0;
       ship.crystals()++;
       g.out << "Dismounted.\n";
-      if (ship.hyper_drive().charge || ship.hyper_drive().ready) {
+      if (ship.hyper_drive().charge > 0) {
         ship.hyper_drive().charge = 0;
-        ship.hyper_drive().ready = 0;
         g.out << "Discharged.\n";
       }
       if (ship.laser() && ship.fire_laser()) {

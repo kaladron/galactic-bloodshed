@@ -124,13 +124,14 @@ export struct AimedAtData {
   ScopeLevel level; /* aimed at what level */
 };
 
+/// Brain parameters for Von Neumann machines and Berserkers.
 export struct MindData {
-  player_t progenitor; /* the originator of the strain */
-  player_t target;     /* who to kill (for Berserkers) */
-  unsigned char generation;
-  unsigned char busy;     /* currently occupied */
-  unsigned char tampered; /* recently tampered with? */
-  player_t who_killed;
+  player_t progenitor{0};       ///< Original race that created this strain
+  player_t target{0};           ///< Target player to destroy (for Berserkers)
+  std::uint32_t generation{0};  ///< Reproduction generation counter
+  bool busy{false};      ///< Whether machine is currently occupied with a task
+  bool tampered{false};  ///< Whether machine brain was reprogrammed by an alien
+  player_t who_killed{0};  ///< Player who destroyed progenitor machine
 };
 
 export struct PodData {
@@ -177,28 +178,35 @@ export using SpecialData =
                  WasteData      /* toxic waste containers */
                  >;
 
-// Named structs for nested ship data (replacing anonymous structs)
+/// Automated navigation course parameters for a ship.
 export struct NavigateData {
-  unsigned char on{0};       /* toggles navigate mode */
-  unsigned char speed{0};    /* speed for navigate command */
-  unsigned short turns{0};   /* number turns left in maneuver */
-  unsigned short bearing{0}; /* course */
+  bool on{false};          ///< Whether navigation course mode is active
+  speed_t speed{0};        ///< Dialed navigation speed throttle (0..9)
+  std::uint32_t turns{0};  ///< Movement turns remaining in maneuver
+  bearing_t bearing{0};    ///< Course heading in degrees (0..359)
 };
 
+/// Defensive escort and auto-retaliation parameters for a ship.
 export struct ProtectData {
-  double maxrng{0.0};      /* maximum range for autoshoot */
-  unsigned char on{0};     /* toggle on/off */
-  unsigned char planet{0}; /* planet defender */
-  unsigned char self{0};   /* retaliate if attacked */
-  unsigned char evade{0};  /* evasive action */
-  shipnum_t ship{0};       /* ship it is protecting */
+  double maxrng{0.0};  ///< Maximum engagement range for defense fire
+  shipnum_t ship{0};   ///< Target ship number being protected
+  bool on{false};      ///< Whether escort / protection mode is active
+  bool planet{false};  ///< Whether assigned as a planetary defense interceptor
+  bool self{false};    ///< Whether ship automatically retaliates when attacked
+  bool evade{false};   ///< Whether ship executes evasive maneuvers in combat
 };
 
+/// Faster-than-light hyperdrive parameters.
 export struct HyperDriveData {
-  unsigned char charge{0};
-  unsigned char ready{0};
-  unsigned char on{0};
-  unsigned char has{0};
+  std::uint32_t charge{
+      0};           ///< Charge accumulator (0..HYPER_DRIVE_READY_CHARGE)
+  bool on{false};   ///< Whether hyperdrive charging / jump sequence is engaged
+  bool has{false};  ///< Whether ship is equipped with a functional hyperdrive
+
+  /// Returns whether hyperdrive is fully charged and ready for jump.
+  [[nodiscard]] constexpr bool is_ready() const noexcept {
+    return charge >= HYPER_DRIVE_READY_CHARGE;
+  }
 };
 
 // POD struct containing all Ship data fields for serialization

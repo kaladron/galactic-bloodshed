@@ -34,9 +34,9 @@ void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
   const auto& star = *em.peek_star(ship.deststar());
   ship.destpnum() = int_rand(0, star.numplanets() - 1);
   if (ship.hyper_drive().has && ship.mounted()) {
-    ship.hyper_drive().on = 1;
-    ship.hyper_drive().ready = 1;
-    mind.busy = 1;
+    ship.hyper_drive().on = true;
+    ship.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
+    mind.busy = true;
   }
   ship.special() = mind;
 }
@@ -293,16 +293,15 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
             s2.retaliate() = s2.primary();
             s2.destruct() = 500;
             ship.fuel() *= 0.5; /* lose some fuel */
-            s2.hyper_drive().has = 1;
-            s2.hyper_drive().on = 1;
-            s2.hyper_drive().ready = 1;
-            s2.hyper_drive().charge = 0;
+            s2.hyper_drive().has = true;
+            s2.hyper_drive().on = true;
+            s2.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
             s2.mounted() = 1;
             auto buf = std::format("{0} constructed {1}.", ship, s2);
             push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
             if (std::holds_alternative<MindData>(s2.special())) {
               auto mind = std::get<MindData>(s2.special());
-              mind.tampered = 0;
+              mind.tampered = false;
               s2.special() = mind;
             }
           } else {
@@ -331,13 +330,12 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
           }
           if (std::holds_alternative<MindData>(ship.special())) {
             auto ship_mind = std::get<MindData>(ship.special());
-            ship.special() =
-                MindData{.progenitor = ship_mind.progenitor,
-                         .target = ship_mind.target,
-                         .generation = ship_mind.generation,
-                         .busy = static_cast<unsigned char>(int_rand(0, 1)),
-                         .tampered = ship_mind.tampered,
-                         .who_killed = ship_mind.who_killed};
+            ship.special() = MindData{.progenitor = ship_mind.progenitor,
+                                      .target = ship_mind.target,
+                                      .generation = ship_mind.generation,
+                                      .busy = bool_rand(),
+                                      .tampered = ship_mind.tampered,
+                                      .who_killed = ship_mind.who_killed};
           }
         }
       }

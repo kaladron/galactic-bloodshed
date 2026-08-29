@@ -82,7 +82,6 @@ void test_dismount_persistence() {
   ship.crystals() = 1;
   ship.mounted() = 1;              // Crystal mounted
   ship.hyper_drive().charge = 50;  // Charged
-  ship.hyper_drive().ready = 1;
   ships.save(ship);
 
   auto& registry = get_test_session_registry();
@@ -97,8 +96,8 @@ void test_dismount_persistence() {
   test::expect_ne(final_ship, nullptr);
   test::expect_eq(final_ship->mounted(), 0);
   test::expect_eq(final_ship->crystals(), 2);
-  test::expect_eq(final_ship->hyper_drive().charge, 0);
-  test::expect_eq(final_ship->hyper_drive().ready, 0);
+  test::expect_eq(final_ship->hyper_drive().charge, 0U);
+  test::expect_false(final_ship->hyper_drive().is_ready());
   test::expect_contains(g.out.str(), "Dismounted.");
   test::expect_contains(g.out.str(), "Discharged.");
 

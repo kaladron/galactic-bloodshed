@@ -195,9 +195,8 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
                     (double)newship->destruct() * MASS_DESTRUCT;
   newship->alive() = 1;
   newship->active() = 1;
-  newship->protect().self = newship->guns() ? 1 : 0;
-  newship->hyper_drive().on = 0;
-  newship->hyper_drive().ready = 0;
+  newship->protect().self = newship->guns() > 0;
+  newship->hyper_drive().on = false;
   newship->hyper_drive().charge = 0;
   newship->mounted() = race.God ? newship->mount() : 0;
   newship->cloak() = 0;
@@ -368,8 +367,8 @@ void Getship(Ship* s, ShipType i, const Race& r) {
       .max_speed = static_cast<unsigned short>(Shipdata[i][ABIL_SPEED]),
       .build_type = i,
       .mount = static_cast<unsigned char>(r.God ? Shipdata[i][ABIL_MOUNT] : 0),
-      .hyper_drive = {.has = static_cast<unsigned char>(
-                          r.God ? Shipdata[i][ABIL_JUMP] : 0)},
+      .hyper_drive = {.has = static_cast<bool>(r.God ? Shipdata[i][ABIL_JUMP]
+                                                     : 0)},
       .laser = static_cast<unsigned char>(r.God ? Shipdata[i][ABIL_LASER] : 0),
       .type = i,
       .guns = static_cast<unsigned char>(

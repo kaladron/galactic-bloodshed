@@ -52,3 +52,8 @@ int int_rand(int low, int hi) {
 bool success(int x) {
   return int_rand(1, 100) <= (x);
 }
+
+bool bool_rand(double p) {
+  std::bernoulli_distribution dist(p);
+  return dist(get_rng());
+}

@@ -123,11 +123,10 @@ void order_jump(GameObj& g, const command_t& argv, Ship& ship) {
         g.out << "Destination must be star or planet.\n";
         return;
       }
-      ship.hyper_drive().on = 1;
-      ship.navigate().on = 0;
+      ship.hyper_drive().on = true;
+      ship.navigate().on = false;
       if (ship.mounted()) {
-        ship.hyper_drive().charge = 1;
-        ship.hyper_drive().ready = 1;
+        ship.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
       }
     }
   } else {
@@ -728,9 +727,9 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
       ship.speed(), dispshiploc_brief(em, ship), buffer.str());
 
   if (ship.hyper_drive().on) {
-    buffer << std::format("/jump {} {}",
-                          (ship.hyper_drive().ready ? "ready" : "charging"),
-                          ship.hyper_drive().charge);
+    buffer << std::format(
+        "/jump {} {}", (ship.hyper_drive().is_ready() ? "ready" : "charging"),
+        ship.hyper_drive().charge);
   }
   if (ship.protect().self) {
     buffer << "/retal";

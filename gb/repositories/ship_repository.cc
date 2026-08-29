@@ -97,8 +97,8 @@ struct meta<ProtectData> {
 template <>
 struct meta<HyperDriveData> {
   using T = HyperDriveData;
-  static constexpr auto value = object("charge", &T::charge, "ready", &T::ready,
-                                       "on", &T::on, "has", &T::has);
+  static constexpr auto value =
+      object("charge", &T::charge, "on", &T::on, "has", &T::has);
 };
 
 template <>

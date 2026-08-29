@@ -65,6 +65,31 @@ int main() {
   test_data.secondary = 0;  // No secondary weapon
   test_data.sectype = GTYPE_NONE;
 
+  test_data.navigate.on = true;
+  test_data.navigate.speed = 4;
+  test_data.navigate.turns = 3;
+  test_data.navigate.bearing = 270;
+
+  test_data.protect.on = true;
+  test_data.protect.planet = true;
+  test_data.protect.self = true;
+  test_data.protect.evade = false;
+  test_data.protect.maxrng = 150.0;
+  test_data.protect.ship = shipnum_t{42};
+
+  test_data.hyper_drive.has = true;
+  test_data.hyper_drive.on = true;
+  test_data.hyper_drive.charge = HYPER_DRIVE_READY_CHARGE;
+
+  MindData test_mind{};
+  test_mind.progenitor = player_t{1};
+  test_mind.target = player_t{2};
+  test_mind.generation = 5;
+  test_mind.busy = true;
+  test_mind.tampered = false;
+  test_mind.who_killed = player_t{3};
+  test_data.special = test_mind;
+
   // Wrap in Ship for saving
   Ship test_ship(test_data);
 
@@ -99,6 +124,38 @@ int main() {
   test::expect_eq(retrieved->type(), test_ship.type());
   test::expect_eq(retrieved->active(), test_ship.active());
   test::expect_eq(retrieved->alive(), test_ship.alive());
+
+  // Verify NavigateData integrity
+  test::expect_true(retrieved->navigate().on);
+  test::expect_eq(retrieved->navigate().speed, 4U);
+  test::expect_eq(retrieved->navigate().turns, 3U);
+  test::expect_eq(retrieved->navigate().bearing, 270U);
+
+  // Verify ProtectData integrity
+  test::expect_true(retrieved->protect().on);
+  test::expect_true(retrieved->protect().planet);
+  test::expect_true(retrieved->protect().self);
+  test::expect_false(retrieved->protect().evade);
+  test::expect_eq(retrieved->protect().maxrng, 150.0);
+  test::expect_eq(retrieved->protect().ship, shipnum_t{42});
+
+  // Verify HyperDriveData and computed is_ready() integrity
+  test::expect_true(retrieved->hyper_drive().has);
+  test::expect_true(retrieved->hyper_drive().on);
+  test::expect_eq(retrieved->hyper_drive().charge,
+                  static_cast<std::uint32_t>(HYPER_DRIVE_READY_CHARGE));
+  test::expect_true(retrieved->hyper_drive().is_ready());
+
+  // Verify MindData in SpecialData
+  test::expect_true(std::holds_alternative<MindData>(retrieved->special()));
+  const auto& retrieved_mind = std::get<MindData>(retrieved->special());
+  test::expect_eq(retrieved_mind.progenitor, player_t{1});
+  test::expect_eq(retrieved_mind.target, player_t{2});
+  test::expect_eq(retrieved_mind.generation, 5U);
+  test::expect_true(retrieved_mind.busy);
+  test::expect_false(retrieved_mind.tampered);
+  test::expect_eq(retrieved_mind.who_killed, player_t{3});
+
   std::println(std::cout, "  ✓ All fields match original");
 
   // Update ship

@@ -350,14 +350,12 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
   telegram << std::format("\t\tDestination set to {}\n", prin_ship_dest(s));
   if (s.hyper_drive().has) { /* order the ship to jump if it can */
     if (s.storbits() != s.deststar()) {
-      s.navigate().on = 0;
-      s.hyper_drive().on = 1;
+      s.navigate().on = false;
+      s.hyper_drive().on = true;
       if (s.mounted()) {
-        s.hyper_drive().charge = 1;
-        s.hyper_drive().ready = 1;
+        s.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
       } else {
         s.hyper_drive().charge = 0;
-        s.hyper_drive().ready = 0;
       }
       telegram << "\t\tJump orders set\n";
     }
@@ -571,7 +569,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
 
   if (s.hyper_drive().has && s.hyper_drive().on) { /* do a hyperspace jump */
     if (!mode) return; /* we're not ready to jump until the update */
-    if (s.hyper_drive().ready) {
+    if (s.hyper_drive().is_ready()) {
       const auto* dest_star = em.peek_star(s.deststar());
       if (!dest_star) return;
       dist = std::hypot(s.xpos() - dest_star->xpos(),
@@ -588,7 +586,7 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
             "{} at system {} does not have {:.1f}f to do hyperspace jump.", s,
             prin_ship_orbits(em, s), fuse);
         if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
-        s.hyper_drive().on = 0;
+        s.hyper_drive().on = false;
         return;
       }
       use_fuel(s, fuse);
@@ -600,21 +598,18 @@ void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
       s.ypos() = dest_star->ypos() - cs * 0.9 * SYSTEMSIZE;
       s.whatorbits() = ScopeLevel::LEVEL_STAR;
       s.storbits() = s.deststar();
-      s.protect().planet = 0;
-      s.hyper_drive().on = 0;
-      s.hyper_drive().ready = 0;
+      s.protect().planet = false;
+      s.hyper_drive().on = false;
       s.hyper_drive().charge = 0;
       std::string telegram =
           std::format("{} arrived at {}.", s, prin_ship_orbits(em, s));
       if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
     } else if (s.mounted()) {
-      s.hyper_drive().ready = 1;
       s.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
     } else {
-      if (s.hyper_drive().charge == HYPER_DRIVE_READY_CHARGE)
-        s.hyper_drive().ready = 1;
-      else
+      if (s.hyper_drive().charge < HYPER_DRIVE_READY_CHARGE) {
         s.hyper_drive().charge += 1;
+      }
     }
     return;
   }

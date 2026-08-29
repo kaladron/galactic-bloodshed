@@ -78,9 +78,9 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
 void order_defense(GameObj& g, const command_t& argv, Ship& ship) {
   if (can_bombard(ship)) {
     if (argv[3] == "off")
-      ship.protect().planet = 0;
+      ship.protect().planet = false;
     else
-      ship.protect().planet = 1;
+      ship.protect().planet = true;
   } else {
     g.out << "That ship cannot be assigned those orders.\n";
   }
@@ -147,9 +147,9 @@ void order_protect(GameObj& g, const command_t& argv, Ship& ship) {
   }
   if (can_bombard(ship)) {
     if (j == 0) {
-      ship.protect().on = 0;
+      ship.protect().on = false;
     } else {
-      ship.protect().on = 1;
+      ship.protect().on = true;
       ship.protect().ship = j;
     }
   } else {
@@ -159,12 +159,13 @@ void order_protect(GameObj& g, const command_t& argv, Ship& ship) {
 
 void order_navigate(GameObj& /*g*/, const command_t& argv, Ship& ship) {
   if (argv.size() >= 5) {
-    ship.navigate().on = 1;
-    ship.navigate().bearing = std::stoi(argv[3]);
-    ship.navigate().turns = std::stoi(argv[4]);
-  } else
-    ship.navigate().on = 0;
-  if (ship.hyper_drive().on) ship.hyper_drive().on = 0;
+    ship.navigate().on = true;
+    ship.navigate().bearing = std::stoul(argv[3]);
+    ship.navigate().turns = std::stoul(argv[4]);
+  } else {
+    ship.navigate().on = false;
+  }
+  if (ship.hyper_drive().on) ship.hyper_drive().on = false;
 }
 
 void order_switch(GameObj& g, const command_t& /*argv*/, Ship& ship) {
@@ -256,9 +257,9 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
 void order_evade(GameObj& /*g*/, const command_t& argv, Ship& ship) {
   if (max_crew(ship) && max_speed(ship)) {
     if (argv[3] == "on")
-      ship.protect().evade = 1;
+      ship.protect().evade = true;
     else if (argv[3] == "off")
-      ship.protect().evade = 0;
+      ship.protect().evade = false;
   }
 }
 
@@ -278,9 +279,9 @@ void order_retaliate(GameObj& g, const command_t& argv, Ship& ship) {
   if (ship.type() != ShipType::OTYPE_OMCL) {
     if (can_bombard(ship)) {
       if (argv[3] == "off")
-        ship.protect().self = 0;
+        ship.protect().self = false;
       else if (argv[3] == "on")
-        ship.protect().self = 1;
+        ship.protect().self = true;
     } else
       g.out << "This type of ship cannot be set to retaliate.\n";
   }

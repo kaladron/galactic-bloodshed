@@ -35,6 +35,7 @@ void setup_test_world(TestContext& ctx) {
   ship.name() = "TestShip";
   ship.speed() = 5;
   ship.max_speed() = 9;
+  ship.max_crew() = 100;
   ship.popn() = 100;  // Crew
 
   // Save ship via repository
@@ -61,7 +62,7 @@ void test_order_happy_path() {
     // Verify defense order was set
     const auto* saved_ship = ctx.em.peek_ship(1);
     test::expect_ne(saved_ship, nullptr);
-    test::expect_eq(saved_ship->protect().planet, 1);
+    test::expect_true(saved_ship->protect().planet);
     std::println(std::cout, "    ✓ Defense order set: protect.planet={}",
                  saved_ship->protect().planet);
   }
@@ -76,20 +77,65 @@ void test_order_happy_path() {
     // Verify defense was turned off
     const auto* saved_ship = ctx.em.peek_ship(1);
     test::expect_ne(saved_ship, nullptr);
-    test::expect_eq(saved_ship->protect().planet, 0);
+    test::expect_false(saved_ship->protect().planet);
     std::println(std::cout, "    ✓ Defense order turned off: protect.planet={}",
                  saved_ship->protect().planet);
   }
 
-  std::println(std::cout, "\nTest 3: Display all orders (no modifications)");
+  std::println(std::cout, "\nTest 3: Set navigation order");
+  {
+    ctx.assert_dispatch_success(g, {"order", "#1", "navigate", "270", "4"});
+
+    ctx.em.clear_cache();
+    const auto* saved_ship = ctx.em.peek_ship(1);
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_true(saved_ship->navigate().on);
+    test::expect_eq(saved_ship->navigate().bearing, 270U);
+    test::expect_eq(saved_ship->navigate().turns, 4U);
+    std::println(std::cout, "    ✓ Navigation order set: bearing=270, turns=4");
+  }
+
+  std::println(std::cout, "\nTest 4: Turn navigation order off");
+  {
+    ctx.assert_dispatch_success(g, {"order", "#1", "navigate", "off"});
+
+    ctx.em.clear_cache();
+    const auto* saved_ship = ctx.em.peek_ship(1);
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_false(saved_ship->navigate().on);
+    std::println(std::cout, "    ✓ Navigation order turned off");
+  }
+
+  std::println(std::cout, "\nTest 5: Set evasion order");
+  {
+    ctx.assert_dispatch_success(g, {"order", "#1", "evade", "on"});
+
+    ctx.em.clear_cache();
+    const auto* saved_ship = ctx.em.peek_ship(1);
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_true(saved_ship->protect().evade);
+    std::println(std::cout, "    ✓ Evasion order turned on");
+  }
+
+  std::println(std::cout, "\nTest 6: Set retaliation order");
+  {
+    ctx.assert_dispatch_success(g, {"order", "#1", "retaliate", "on"});
+
+    ctx.em.clear_cache();
+    const auto* saved_ship = ctx.em.peek_ship(1);
+    test::expect_ne(saved_ship, nullptr);
+    test::expect_true(saved_ship->protect().self);
+    std::println(std::cout, "    ✓ Retaliation order turned on");
+  }
+
+  std::println(std::cout, "\nTest 7: Display all orders (no modifications)");
   {
     ctx.assert_dispatch_success(g, {"order"});
 
     // Verify ship state unchanged
     const auto* saved_ship = ctx.em.peek_ship(1);
     test::expect_ne(saved_ship, nullptr);
-    test::expect_eq(saved_ship->protect().planet,
-                    0);  // Still off from previous test
+    test::expect_false(saved_ship->protect().planet);
     std::println(std::cout, "    ✓ Display orders works without modification");
   }
 }

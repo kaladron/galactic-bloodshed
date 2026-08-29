@@ -83,6 +83,24 @@ public:
   std::uint64_t atwar{0};
   std::uint64_t allied{0};
 
+  /// Returns whether this race is allied with the given player.
+  [[nodiscard]] bool is_allied_with(player_t p) const noexcept;
+
+  /// Declares a diplomatic alliance with the given player.
+  void declare_alliance_with(player_t p) noexcept;
+
+  /// Rescinds a diplomatic alliance with the given player.
+  void rescind_alliance_with(player_t p) noexcept;
+
+  /// Returns whether this race is at war with the given player.
+  [[nodiscard]] bool is_at_war_with(player_t p) const noexcept;
+
+  /// Declares war on the given player.
+  void declare_war_on(player_t p) noexcept;
+
+  /// Makes peace with the given player, clearing the at-war state.
+  void make_peace_with(player_t p) noexcept;
+
   shipnum_t Gov_ship{0}; /* Shipnumber of government ship. */
   [[nodiscard]] bool has_government_center() const noexcept {
     return Gov_ship != 0;
@@ -264,6 +282,42 @@ export struct block {
   unsigned short systems_owned;
   unsigned long VPs;
   unsigned long money;
+
+  /// Returns whether the given player is invited to this bloc.
+  [[nodiscard]] bool is_invited(player_t p) const noexcept;
+
+  /// Invites the given player to this bloc.
+  void invite_player(player_t p) noexcept;
+
+  /// Cancels the invitation for the given player to this bloc.
+  void cancel_invite(player_t p) noexcept;
+
+  /// Returns whether the given player is pledged to this bloc.
+  [[nodiscard]] bool is_pledged(player_t p) const noexcept;
+
+  /// Pledges the given player to this bloc.
+  void pledge_player(player_t p) noexcept;
+
+  /// Unpledges the given player from this bloc.
+  void unpledge_player(player_t p) noexcept;
+
+  /// Returns whether this bloc is allied with the given player.
+  [[nodiscard]] bool is_allied_with(player_t p) const noexcept;
+
+  /// Declares this bloc's alliance with the given player.
+  void declare_alliance_with(player_t p) noexcept;
+
+  /// Rescinds this bloc's alliance with the given player.
+  void rescind_alliance_with(player_t p) noexcept;
+
+  /// Returns whether this bloc is at war with the given player.
+  [[nodiscard]] bool is_at_war_with(player_t p) const noexcept;
+
+  /// Declares this bloc at war with the given player.
+  void declare_war_on(player_t p) noexcept;
+
+  /// Makes peace between this bloc and the given player.
+  void make_peace_with(player_t p) noexcept;
 };
 
 export struct power_blocks {

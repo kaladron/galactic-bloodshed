@@ -152,6 +152,7 @@ target_sources(
           repositories/sector_repository.cc
           repositories/ship_repository.cc
           repositories/star_repository.cc
+          entities/race.cc
           entities/rand.cc
           entities/sectormap.cc
           entities/sector.cc
@@ -476,6 +477,7 @@ gb_add_test(prompt_test SOURCES services/prompt_test.cc)
 gb_add_test(purge_test SOURCES commands/purge_test.cc)
 gb_add_test(quit_test SOURCES commands/quit_test.cc)
 gb_add_test(race_repository_test SOURCES repositories/race_repository_test.cc)
+gb_add_test(race_test SOURCES entities/race_test.cc)
 gb_add_test(relation_test SOURCES commands/relation_test.cc)
 gb_add_test(repair_test SOURCES commands/repair_test.cc)
 gb_add_test(route_test SOURCES commands/route_test.cc)

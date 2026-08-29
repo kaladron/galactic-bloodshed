@@ -342,9 +342,9 @@ void test_notify_star() {
   races.save(race3);
 
   // Create star with inhabitants 1 and 2
-  star_struct star = create_star(5);
-  setbit(star.inhabited, 1u);
-  setbit(star.inhabited, 2u);
+  Star star{create_star(5)};
+  star.mark_inhabited_by(player_t{1});
+  star.mark_inhabited_by(player_t{2});
 
   StarRepository stars(store);
   stars.save(star);
@@ -384,11 +384,11 @@ void test_warn_star() {
   races.save(race2);
 
   // Create star with inhabitants 1 and 2
-  star_struct star = create_star(7);
-  setbit(star.inhabited, 1u);
-  setbit(star.inhabited, 2u);
-  star.governor[0] = 0;  // Player 1 default governor
-  star.governor[1] = 0;  // Player 2 default governor
+  Star star{create_star(7)};
+  star.mark_inhabited_by(player_t{1});
+  star.mark_inhabited_by(player_t{2});
+  star.governor(player_t{1}) = 0;  // Player 1 default governor
+  star.governor(player_t{2}) = 0;  // Player 2 default governor
 
   StarRepository stars(store);
   stars.save(star);
@@ -425,9 +425,9 @@ void test_telegram_star() {
   races.save(race2);
 
   // Create star with both races
-  star_struct star = create_star(10);
-  setbit(star.inhabited, 1u);
-  setbit(star.inhabited, 2u);
+  Star star{create_star(10)};
+  star.mark_inhabited_by(player_t{1});
+  star.mark_inhabited_by(player_t{2});
 
   StarRepository stars(store);
   stars.save(star);

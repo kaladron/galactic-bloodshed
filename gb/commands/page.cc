@@ -63,9 +63,9 @@ bool page(const command_t& argv, GameObj& g) {
       g.out << "Block not found.\n";
       return false;
     }
-    std::uint64_t allied_members = block_player->invite & block_player->pledge;
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-      if (isset(allied_members, i) && i != Playernum) {
+      if (block_player->is_invited(i) && block_player->is_pledged(i) &&
+          i != Playernum) {
         g.session_registry.notify_race(i, msg);
       }
     }

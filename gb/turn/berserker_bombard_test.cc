@@ -19,7 +19,7 @@ int main() {
   race1.Playernum = 1;
   race1.Guest = false;
   race1.governor[0].active = true;
-  setbit(race1.atwar, player_t{2});  // At war with Race 2
+  race1.declare_war_on(player_t{2});  // At war with Race 2
 
   // Create Race 2 (Target 1 - At War)
   Race race2{};

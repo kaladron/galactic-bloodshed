@@ -436,8 +436,8 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
       /* or a probe, which is designed for this kind of work.  Maarten */
       stats.StarsInhab[ship.storbits().value] = 1;
       entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-        setbit(star.inhabited(), ship.owner());
-        setbit(star.explored(), ship.owner());
+        star.mark_inhabited_by(ship.owner());
+        star.mark_explored_by(ship.owner());
       });
       if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
         entity_manager.mutate_planet(
@@ -468,8 +468,8 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
       if (ship.popn() || ship.type() == ShipType::OTYPE_PROBE) {
         stats.StarsInhab[ship.storbits().value] = 1;
         entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-          setbit(star.inhabited(), ship.owner());
-          setbit(star.explored(), ship.owner());
+          star.mark_inhabited_by(ship.owner());
+          star.mark_explored_by(ship.owner());
         });
       }
     }
@@ -690,7 +690,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
       double xd = s.xpos() - ship.xpos();
       double yd = s.ypos() - ship.ypos();
       double range = std::sqrt(xd * xd + yd * yd);
-      if (!isset(race.allied, s.owner()) && (s.owner() != ship.owner()) &&
+      if (!race.is_allied_with(s.owner()) && (s.owner() != ship.owner()) &&
           std::holds_alternative<TriggerData>(ship.special()) &&
           ((int)range <= std::get<TriggerData>(ship.special()).radius)) {
         rad = true;
@@ -792,8 +792,8 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
 
       // Check alliance status
       const auto& target_race = *entity_manager.peek_race(target.owner());
-      if (isset(owner_race.allied, target.owner()) &&
-          isset(target_race.allied, ship.owner())) {
+      if (owner_race.is_allied_with(target.owner()) &&
+          target_race.is_allied_with(ship.owner())) {
         /* mutually allied missiles don't get shot up */
         continue;
       }

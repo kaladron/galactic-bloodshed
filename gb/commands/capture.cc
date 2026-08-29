@@ -121,7 +121,7 @@ bool capture(const command_t& argv, GameObj& g) {
         continue;
       }
 
-      if (isset(race.allied, (ship.owner()))) {
+      if (race.is_allied_with(ship.owner())) {
         g.session_registry.notify_player(
             Playernum, Governor,
             std::format("Boarding the ship of your ally, {}\n", alien->name));
@@ -249,12 +249,13 @@ bool capture(const command_t& argv, GameObj& g) {
       std::string telegram =
           std::format("BULLETIN from {}/{}!!\n", star.get_name(),
                       star.get_planet_name(ship.pnumorbits()));
-      telegram += std::format(
-          "You are being attacked by{} Player #{} ({})!!!\n",
-          (isset(alien->allied, Playernum)
-               ? " your ally"
-               : (isset(alien->atwar, Playernum) ? " your enemy" : " neutral")),
-          Playernum, race.name);
+      telegram +=
+          std::format("You are being attacked by{} Player #{} ({})!!!\n",
+                      (alien->is_allied_with(Playernum)
+                           ? " your ally"
+                           : (alien->is_at_war_with(Playernum) ? " your enemy"
+                                                               : " neutral")),
+                      Playernum, race.name);
       telegram += std::format("{} at sector {} [owner {}] !\n", ship,
                               ship.land_coords(), sect_owner_display);
 

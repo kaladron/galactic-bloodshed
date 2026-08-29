@@ -17,7 +17,7 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
   governor_t Governor = g.governor();
 
   const auto& star_ref = *g.entity_manager.peek_star(star);
-  if (!isset(star_ref.explored(), Playernum)) return;
+  if (!star_ref.is_explored_by(Playernum)) return;
 
   for (auto i = 0; i < star_ref.numplanets(); i++) {
     const auto& pl = *g.entity_manager.peek_planet(star, i);

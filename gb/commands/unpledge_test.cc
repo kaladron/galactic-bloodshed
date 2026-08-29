@@ -51,7 +51,7 @@ void test_unpledge_dispatch() {
   ctx.assert_dispatch_success(g, {"unpledge", "2"});
   const auto* saved_block = ctx.em.peek_block(2);
   test::expect_ne(saved_block, nullptr);
-  test::expect_false(isset(saved_block->pledge, player_t{1}));
+  test::expect_false(saved_block->is_pledged(player_t{1}));
   std::println(std::cout, "    ✓ Unpledged successfully");
 
   // 2. Self unpledge rejection

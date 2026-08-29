@@ -62,7 +62,7 @@ bool announce(const command_t& argv, GameObj& g) {
     default: {
       const auto& star = *g.entity_manager.peek_star(g.snum());
       if ((mode == Communicate::ANN) &&
-          !(!!isset(star.inhabited(), Playernum) || g.god())) {
+          !(star.is_inhabited_by(Playernum) || g.god())) {
         g.out << "You do not inhabit this system or have diety privileges.\n";
         return false;
       }

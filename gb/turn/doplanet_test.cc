@@ -490,7 +490,7 @@ void test_execute_berserker_bombardment() {
 
   // Attacker (Race 1, at war with Race 2)
   Race race1 = createTestRace(player_t{1});
-  setbit(race1.atwar, player_t{2});
+  race1.declare_war_on(player_t{2});
   Race race2 = createTestRace(player_t{2});
   RaceRepository races(store);
   races.save(race1);
@@ -738,8 +738,8 @@ void test_do_recover() {
   Race r1 = createTestRace(player_t{1});
   Race r2 = createTestRace(player_t{2});
   Race r3 = createTestRace(player_t{3});
-  setbit(r1.allied, player_t{2});
-  setbit(r2.allied, player_t{1});
+  r1.declare_alliance_with(player_t{2});
+  r2.declare_alliance_with(player_t{1});
 
   RaceRepository races(store);
   races.save(r1);
@@ -1169,22 +1169,28 @@ void test_check_mutual_alliances() {
   test::expect_false(check_mutual_alliances(em, pair));
 
   // 4. One-way alliance: 1 allies 2, but 2 does not ally 1 -> false
-  em.mutate_race(player_t{1}, [](Race& r) { setbit(r.allied, player_t{2}); });
+  em.mutate_race(player_t{1},
+                 [](Race& r) { r.declare_alliance_with(player_t{2}); });
   test::expect_false(check_mutual_alliances(em, pair));
 
   // 5. Mutual alliance: 1 allies 2, 2 allies 1 -> true
-  em.mutate_race(player_t{2}, [](Race& r) { setbit(r.allied, player_t{1}); });
+  em.mutate_race(player_t{2},
+                 [](Race& r) { r.declare_alliance_with(player_t{1}); });
   test::expect_true(check_mutual_alliances(em, pair));
 
   // 6. Three players: 1-2 allied, 2-3 allied, but 1-3 unallied -> false
-  em.mutate_race(player_t{2}, [](Race& r) { setbit(r.allied, player_t{3}); });
-  em.mutate_race(player_t{3}, [](Race& r) { setbit(r.allied, player_t{2}); });
+  em.mutate_race(player_t{2},
+                 [](Race& r) { r.declare_alliance_with(player_t{3}); });
+  em.mutate_race(player_t{3},
+                 [](Race& r) { r.declare_alliance_with(player_t{2}); });
   std::vector<player_t> trio = {player_t{1}, player_t{2}, player_t{3}};
   test::expect_false(check_mutual_alliances(em, trio));
 
   // 7. Three players: complete mutual alliance triangle (1-2, 2-3, 1-3) -> true
-  em.mutate_race(player_t{1}, [](Race& r) { setbit(r.allied, player_t{3}); });
-  em.mutate_race(player_t{3}, [](Race& r) { setbit(r.allied, player_t{1}); });
+  em.mutate_race(player_t{1},
+                 [](Race& r) { r.declare_alliance_with(player_t{3}); });
+  em.mutate_race(player_t{3},
+                 [](Race& r) { r.declare_alliance_with(player_t{1}); });
   test::expect_true(check_mutual_alliances(em, trio));
 
   // 8. Non-existent player ID (unallied -> false)
@@ -1193,7 +1199,8 @@ void test_check_mutual_alliances() {
 
   // 9. Allied with non-existent player -> throws EntityNotFoundError when
   // loading missing race
-  em.mutate_race(player_t{1}, [](Race& r) { setbit(r.allied, player_t{5}); });
+  em.mutate_race(player_t{1},
+                 [](Race& r) { r.declare_alliance_with(player_t{5}); });
   test::expect_throws<EntityNotFoundError>(
       [&]() { (void)check_mutual_alliances(em, invalid_pair); });
 }
@@ -1303,8 +1310,10 @@ void test_recover_conquered_stockpiles() {
 
   // 3. Mutual alliance established -> plunder distributed, defeated player
   // drained
-  em.mutate_race(player_t{1}, [](Race& r) { setbit(r.allied, player_t{2}); });
-  em.mutate_race(player_t{2}, [](Race& r) { setbit(r.allied, player_t{1}); });
+  em.mutate_race(player_t{1},
+                 [](Race& r) { r.declare_alliance_with(player_t{2}); });
+  em.mutate_race(player_t{2},
+                 [](Race& r) { r.declare_alliance_with(player_t{1}); });
 
   auto report3 = recover_conquered_stockpiles(em, star, planet);
   test::expect_true(report3.has_value());

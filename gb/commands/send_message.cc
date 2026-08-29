@@ -134,14 +134,13 @@ bool send_message(const command_t& argv, GameObj& g) {
       race.name, race.governor[Governor.value].name, Playernum, Governor);
 
   if (to_block) {
-    std::uint64_t allied_members =
-        (block_target->invite & block_target->pledge);
     const auto block_msg = std::format(
         "{} \"{}\" [{},{}] sends a message to {} [{}] alliance block.\n",
         race.name, race.governor[Governor.value].name, Playernum, Governor,
         block_target->name, who);
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-      if (isset(allied_members, i) && i != Playernum) {
+      if (block_target->is_invited(i) && block_target->is_pledged(i) &&
+          i != Playernum) {
         g.entity_manager.mutate_race(i, [&](Race& alien) {
           alien.translate[Playernum.value - 1] =
               std::min(alien.translate[Playernum.value - 1] + 2, 100);

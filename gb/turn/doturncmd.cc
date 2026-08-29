@@ -325,6 +325,9 @@ static void process_ship_turns(TurnState& state, bool update) {
     if (update) {
       for (const Ship& s : ShipList::readonly(
                state.entity_manager, ShipList::IterationType::AllAlive)) {
+        if (s.owner() == 0) {
+          continue;
+        }
         if (Shipdata[s.type()][ABIL_MAINTAIN]) {
           state.entity_manager.mutate_race(s.owner(), [&](Race& r) {
             if (s.popn()) {
@@ -463,77 +466,78 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
 }
 
 static void update_victory_scores(TurnState& state, bool update) {
-  if (update) {
-    struct victstruct {
-      int numsects{0};
-      int shipcost{0};
-      int shiptech{0};
-      int morale{0};
-      resource_t res{0};
-      int des{0};
-      int fuel{0};
-      money_t money{0};
-    };
+  if (!update) {
+    return;
+  }
 
-    std::array<victstruct, MAXPLAYERS> victory;
+  struct victstruct {
+    int numsects{0};
+    int shipcost{0};
+    double shiptech{0.0};
+    int morale{0};
+    resource_t res{0};
+    int des{0};
+    int fuel{0};
+    money_t money{0};
+  };
 
-    for (const Race& race : RaceList::readonly(state.entity_manager)) {
-      const player_t player = race.Playernum;
-      victory[player.value - 1].morale = race.morale;
-      victory[player.value - 1].money = race.governor[0].money;
-      for (auto const& governor : race.governor) {
-        if (governor.active) {
-          victory[player.value - 1].money += governor.money;
-        }
+  PlayerVector<victstruct, MAXPLAYERS> victory{};
+
+  for (const Race& race : RaceList::readonly(state.entity_manager)) {
+    const player_t player = race.Playernum;
+    victory[player].morale = race.morale;
+    for (const auto& governor : race.governor) {
+      if (governor.active) {
+        victory[player].money += governor.money;
       }
     }
+  }
 
-    for (const Star& star : StarList::readonly(state.entity_manager)) {
-      /* do planets in the star next */
-      for (const Planet& planet :
-           PlanetList::readonly(state.entity_manager, star.star_id(), star)) {
-        for (const Race& race : RaceList::readonly(state.entity_manager)) {
-          const player_t player = race.Playernum;
-          if (!planet.info(player).explored) {
-            continue;
-          }
-          victory[player.value - 1].numsects +=
-              static_cast<int>(planet.info(player).numsectsowned);
-          victory[player.value - 1].res += planet.info(player).resource;
-          victory[player.value - 1].des +=
-              static_cast<int>(planet.info(player).destruct);
-          victory[player.value - 1].fuel +=
-              static_cast<int>(planet.info(player).fuel);
+  for (const Star& star : StarList::readonly(state.entity_manager)) {
+    /* do planets in the star next */
+    for (const Planet& planet :
+         PlanetList::readonly(state.entity_manager, star.star_id(), star)) {
+      for (const Race& race : RaceList::readonly(state.entity_manager)) {
+        const player_t player = race.Playernum;
+        if (!planet.info(player).explored) {
+          continue;
         }
-      } /* end of planet searchings */
-    } /* end of star searchings */
+        victory[player].numsects +=
+            static_cast<int>(planet.info(player).numsectsowned);
+        victory[player].res += planet.info(player).resource;
+        victory[player].des += planet.info(player).destruct;
+        victory[player].fuel += planet.info(player).fuel;
+      }
+    } /* end of planet searchings */
+  } /* end of star searchings */
 
-    for (const Ship& ship : ShipList::readonly(
-             state.entity_manager, ShipList::IterationType::AllAlive)) {
-      victory[ship.owner().value - 1].shipcost += ship.build_cost();
-      victory[ship.owner().value - 1].shiptech += ship.tech();
-      victory[ship.owner().value - 1].res += ship.resource();
-      victory[ship.owner().value - 1].des += ship.destruct();
-      victory[ship.owner().value - 1].fuel += ship.fuel();
+  for (const Ship& ship : ShipList::readonly(
+           state.entity_manager, ShipList::IterationType::AllAlive)) {
+    if (ship.owner() == 0) {
+      continue;
     }
-    /* now that we have the info.. calculate the raw score */
+    victory[ship.owner()].shipcost += ship.build_cost();
+    victory[ship.owner()].shiptech += ship.tech();
+    victory[ship.owner()].res += ship.resource();
+    victory[ship.owner()].des += ship.destruct();
+    victory[ship.owner()].fuel += ship.fuel();
+  }
+  /* now that we have the info.. calculate the raw score */
 
-    for (auto race_handle : RaceList(state.entity_manager)) {
-      const player_t player = race_handle->Playernum;
-      race_handle->victory_score =
-          (VICT_SECT * victory[player.value - 1].numsects) +
-          (VICT_SHIP * (victory[player.value - 1].shipcost +
-                        (VICT_TECH * victory[player.value - 1].shiptech))) +
-          (VICT_RES *
-           (victory[player.value - 1].res + victory[player.value - 1].des)) +
-          (VICT_FUEL * victory[player.value - 1].fuel) +
-          (VICT_MONEY * static_cast<int>(victory[player.value - 1].money));
-      race_handle->victory_score /= VICT_DIVISOR;
-      race_handle->victory_score = static_cast<int>(
-          morale_factor(static_cast<double>(victory[player.value - 1].morale)) *
-          race_handle->victory_score);
-    }
-  } /* end of if (update) */
+  for (auto race_handle : RaceList(state.entity_manager)) {
+    const player_t player = race_handle->Playernum;
+    race_handle->victory_score =
+        (VICT_SECT * victory[player].numsects) +
+        (VICT_SHIP * (victory[player].shipcost +
+                      static_cast<int>(VICT_TECH * victory[player].shiptech))) +
+        (VICT_RES * (victory[player].res + victory[player].des)) +
+        (VICT_FUEL * victory[player].fuel) +
+        (VICT_MONEY * static_cast<int>(victory[player].money));
+    race_handle->victory_score /= VICT_DIVISOR;
+    race_handle->victory_score = static_cast<int>(
+        morale_factor(static_cast<double>(victory[player].morale)) *
+        race_handle->victory_score);
+  }
 }
 
 static void finalize_turn(TurnState& state, bool update) {

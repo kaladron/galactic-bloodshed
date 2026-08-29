@@ -543,8 +543,13 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
 
 void domass(Ship& ship, EntityManager& entity_manager) {
   // Get race mass from EntityManager
-  const auto& race = *entity_manager.peek_race(ship.owner());
-  double rmass = race.mass;
+  double rmass = 1.0;
+  if (ship.owner() != 0) {
+    const auto* race = entity_manager.peek_race(ship.owner());
+    if (race) {
+      rmass = race->mass;
+    }
+  }
 
   ship.mass() = 0.0;
   ship.hanger() = 0;

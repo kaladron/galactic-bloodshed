@@ -278,6 +278,84 @@ void test_do_turn_victory_scores_and_discoveries() {
   test::expect_gt(race_after->victory_score, 0);
 }
 
+void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  universe_struct u{};
+  u.id = 1;
+  u.numstars = 1;
+  u.planet_count = 1;
+  UniverseRepository univ_repo(store);
+  univ_repo.save(u);
+
+  Race race1 = createTestRace(player_t{1});
+  race1.morale = 100;
+  race1.governor[0].money = 1000;
+  race1.governor[1].active = true;
+  race1.governor[1].money = 500;
+  RaceRepository race_repo(store);
+  race_repo.save(race1);
+
+  Race race2 = createTestRace(player_t{2});
+  race2.morale = 100;
+  race2.governor[0].money = 2000;
+  race_repo.save(race2);
+
+  Star star = createTestStar(starnum_t{0});
+  StarRepository star_repo(store);
+  star_repo.save(star);
+
+  Planet planet = createTestPlanet(starnum_t{0}, planetnum_t{0});
+  planet.info(player_t{1}).numsectsowned = 10;
+  planet.info(player_t{1}).explored = 1;
+  planet.info(player_t{1}).resource = 50000;
+  planet.info(player_t{2}).numsectsowned = 5;
+  planet.info(player_t{2}).explored = 1;
+  planet.info(player_t{2}).resource = 50000;
+  PlanetRepository planet_repo(store);
+  planet_repo.save(planet);
+
+  SectorMap smap(planet);
+  SectorRepository sector_repo(store);
+  sector_repo.save_map(smap);
+
+  ShipRepository ship_repo(store);
+
+  // Player 1 ship
+  Ship ship1{};
+  ship1.number() = 1;
+  ship1.owner() = player_t{1};
+  ship1.alive() = true;
+  ship1.tech() = 10.0;
+  ship1.size() = 10;
+  ship1.resource() = 100;
+  ship_repo.save(ship1);
+
+  // Derelict/unowned ship (owner == 0) - tests safety against negative indexing
+  Ship derelict{};
+  derelict.number() = 2;
+  derelict.owner() = player_t{0};
+  derelict.alive() = true;
+  derelict.tech() = 5.0;
+  ship_repo.save(derelict);
+
+  NullSessionRegistry session_registry;
+
+  // Run full update turn
+  do_turn(em, session_registry, true);
+
+  const auto* r1_after = em.peek_race(player_t{1});
+  const auto* r2_after = em.peek_race(player_t{2});
+  test::expect_ne(r1_after, nullptr);
+  test::expect_ne(r2_after, nullptr);
+  test::expect_gt(r1_after->victory_score, 0);
+  test::expect_gt(r2_after->victory_score, 0);
+}
+
 }  // namespace
 
 int main() {
@@ -298,6 +376,11 @@ int main() {
   std::println(std::cout,
                "  Testing do_turn victory scores and discoveries... ");
   test_do_turn_victory_scores_and_discoveries();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing do_turn victory scores with derelict and "
+                          "multiple players... ");
+  test_do_turn_victory_scores_with_derelict_and_multiple_players();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doturn tests passed!");

@@ -87,7 +87,7 @@ int main() {
   ctx.em.clear_cache();
   const auto* b_invited = ctx.em.peek_block(1);
   test::expect_ne(b_invited, nullptr);
-  test::expect_true(isset(b_invited->invite, player_t{2}));
+  test::expect_true(b_invited->is_invited(player_t{2}));
   std::println(std::cout, "    ✓ Invite succeeded and bit set");
 
   // 6. Successful uninvite
@@ -95,7 +95,7 @@ int main() {
   ctx.em.clear_cache();
   const auto* b_uninvited = ctx.em.peek_block(1);
   test::expect_ne(b_uninvited, nullptr);
-  test::expect_false(isset(b_uninvited->invite, player_t{2}));
+  test::expect_false(b_uninvited->is_invited(player_t{2}));
   std::println(std::cout, "    ✓ Uninvite succeeded and bit cleared");
 
   std::println(std::cout, "invite_test passed!");

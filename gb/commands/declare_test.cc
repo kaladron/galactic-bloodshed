@@ -53,23 +53,23 @@ void test_declare_dispatch() {
   const auto* saved_race2 = ctx.em.peek_race(2);
   test::expect_ne(saved_race1, nullptr);
   test::expect_ne(saved_race2, nullptr);
-  test::expect_true(isset(saved_race1->allied, 2U));
-  test::expect_false(isset(saved_race1->atwar, 2U));
+  test::expect_true(saved_race1->is_allied_with(player_t{2}));
+  test::expect_false(saved_race1->is_at_war_with(player_t{2}));
   test::expect_ge(saved_race2->translate[0], 30);
   std::println(std::cout, "    ✓ Alliance declared and translation updated");
 
   // 2. Declare war
   ctx.assert_dispatch_success(g, {"declare", "2", "war"});
   saved_race1 = ctx.em.peek_race(1);
-  test::expect_true(isset(saved_race1->atwar, 2U));
-  test::expect_false(isset(saved_race1->allied, 2U));
+  test::expect_true(saved_race1->is_at_war_with(player_t{2}));
+  test::expect_false(saved_race1->is_allied_with(player_t{2}));
   std::println(std::cout, "    ✓ War declared successfully");
 
   // 3. Declare neutrality
   ctx.assert_dispatch_success(g, {"declare", "2", "neutrality"});
   saved_race1 = ctx.em.peek_race(1);
-  test::expect_false(isset(saved_race1->atwar, 2U));
-  test::expect_false(isset(saved_race1->allied, 2U));
+  test::expect_false(saved_race1->is_at_war_with(player_t{2}));
+  test::expect_false(saved_race1->is_allied_with(player_t{2}));
   std::println(std::cout, "    ✓ Neutrality declared successfully");
 
   // 4. Role check: Governor != 0 cannot declare

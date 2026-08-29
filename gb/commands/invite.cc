@@ -38,7 +38,7 @@ bool invite(const command_t& argv, GameObj& g) {
     g.entity_manager.mutate_block(g.player().value, [&](auto& b) {
       std::string buf;
       if (mode) {
-        setbit(b.invite, n);
+        b.invite_player(n);
         buf = std::format("{} [{}] has invited you to join {}\n", g.race->name,
                           g.player(), b.name);
         warn_race(g.session_registry, g.entity_manager, n, buf);
@@ -46,7 +46,7 @@ bool invite(const command_t& argv, GameObj& g) {
                           alien->name, n, b.name, g.player());
         warn_race(g.session_registry, g.entity_manager, g.player(), buf);
       } else {
-        clrbit(b.invite, n);
+        b.cancel_invite(n);
         buf = std::format("You have been blackballed from {} [{}]\n", b.name,
                           g.player());
         warn_race(g.session_registry, g.entity_manager, n, buf);

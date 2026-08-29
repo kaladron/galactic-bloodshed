@@ -12,8 +12,8 @@ import gb.services;
 module commands;
 
 static auto allied(const Race& r, const player_t p) {
-  if (isset(r.atwar, p)) return "WAR";
-  if (isset(r.allied, p)) return "ALLIED";
+  if (r.is_at_war_with(p)) return "WAR";
+  if (r.is_allied_with(p)) return "ALLIED";
   return "neutral";
 }
 

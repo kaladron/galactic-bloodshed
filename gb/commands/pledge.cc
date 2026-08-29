@@ -29,7 +29,7 @@ bool pledge(const command_t& argv, GameObj& g) {
 
   try {
     g.entity_manager.mutate_block(n.value, [&](auto& b) {
-      setbit(b.pledge, Playernum);
+      b.pledge_player(Playernum);
       warn_race(g.session_registry, g.entity_manager, n,
                 std::format("{} [{}] has pledged {}.\n", g.race->name,
                             Playernum, b.name));

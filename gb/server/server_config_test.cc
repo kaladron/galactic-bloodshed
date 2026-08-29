@@ -116,13 +116,13 @@ void test_initialize_block_data() {
 
   const auto* block1 = ctx.em.peek_block(1);
   test::expect_ne(block1, nullptr);
-  test::expect_true(isset(block1->invite, player_t{1}));
-  test::expect_true(isset(block1->pledge, player_t{1}));
+  test::expect_true(block1->is_invited(player_t{1}));
+  test::expect_true(block1->is_pledged(player_t{1}));
 
   const auto* block2 = ctx.em.peek_block(2);
   test::expect_ne(block2, nullptr);
-  test::expect_true(isset(block2->invite, player_t{2}));
-  test::expect_true(isset(block2->pledge, player_t{2}));
+  test::expect_true(block2->is_invited(player_t{2}));
+  test::expect_true(block2->is_pledged(player_t{2}));
 }
 
 }  // namespace

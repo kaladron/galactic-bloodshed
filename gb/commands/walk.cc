@@ -93,8 +93,8 @@ bool walk(const command_t& argv, GameObj& g) {
         if (!alien) {
           continue;
         }
-        if (!isset(g.race->allied, ship2.owner()) ||
-            !isset(alien->allied, Playernum)) {
+        if (!g.race->is_allied_with(ship2.owner()) ||
+            !alien->is_allied_with(Playernum)) {
           int strength;
           int strength1;
           while ((strength = retal_strength(ship2)) &&
@@ -145,8 +145,8 @@ bool walk(const command_t& argv, GameObj& g) {
         auto oldowner = sect.get_owner();
         auto oldgov = star.governor(sect.get_owner());
         const auto* alien = g.entity_manager.peek_race(oldowner);
-        if (alien && (!isset(g.race->allied, oldowner) ||
-                      !isset(alien->allied, Playernum))) {
+        if (alien && (!g.race->is_allied_with(oldowner) ||
+                      !alien->is_allied_with(Playernum))) {
           if (!retal_strength(ship)) {
             g.out << "You have nothing to attack with!\n";
           } else {
@@ -191,7 +191,7 @@ bool walk(const command_t& argv, GameObj& g) {
 
       int succ = 0;
       if ((sect.get_owner() == Playernum ||
-           isset(g.race->allied, sect.get_owner()) || sect.get_owner() == 0) &&
+           g.race->is_allied_with(sect.get_owner()) || sect.get_owner() == 0) &&
           ship.alive())
         succ = 1;
 

@@ -760,8 +760,7 @@ bool followable(EntityManager& em, const Ship& s1, const Ship& s2) {
 
   const auto* r = em.peek_race(s2.owner());
   if (!r) return false;
-  auto allied = r->allied;
   /* You can follow your own ships, your allies' ships, or nearby ships */
-  return (s1.owner() == s2.owner()) || (isset(allied, s1.owner())) ||
+  return (s1.owner() == s2.owner()) || r->is_allied_with(s1.owner()) ||
          (std::sqrt(dx * dx + dy * dy) <= range);
 }

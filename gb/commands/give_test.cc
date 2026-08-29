@@ -25,7 +25,7 @@ void test_give_dispatch() {
   race1.name = "Giver";
   race1.Guest = false;
   race1.God = false;
-  setbit<std::uint64_t>(race1.allied, 2U);  // Mutually allied with race 2
+  race1.declare_alliance_with(player_t{2});  // Mutually allied with race 2
 
   Race race2{};
   race2.Playernum = 2;
@@ -33,7 +33,7 @@ void test_give_dispatch() {
   race2.name = "Receiver";
   race2.Guest = false;
   race2.God = false;
-  setbit<std::uint64_t>(race2.allied, 1U);  // Mutually allied with race 1
+  race2.declare_alliance_with(player_t{1});  // Mutually allied with race 1
 
   RaceRepository races(store);
   races.save(race1);

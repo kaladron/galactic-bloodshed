@@ -214,7 +214,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
         const auto i = alien_race.Playernum;
         if (s.alive() && i != Playernum && p.info(i).popn && p.info(i).guns &&
             p.info(i).destruct) {
-          if (isset(alien_race.atwar, s.owner())) {
+          if (alien_race.is_at_war_with(s.owner())) {
             g.entity_manager.mutate_race(i, [&](Race& alien) {
               strength = MIN((int)p.info(i).guns, (int)p.info(i).destruct);
               if (strength) {
@@ -287,8 +287,8 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
                      sector.get_owner() != Playernum) {
             g.entity_manager.with_race(
                 sector.get_owner(), [&](const Race& alien) {
-                  if (!(isset(g.race->allied, sector.get_owner()) &&
-                        isset(alien.allied, Playernum))) {
+                  if (!(g.race->is_allied_with(sector.get_owner()) &&
+                        alien.is_allied_with(Playernum))) {
                     g.out << std::format(
                         "You have landed on an alien sector ({}).\n",
                         alien.name);

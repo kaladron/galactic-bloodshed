@@ -33,7 +33,7 @@ bool give(const command_t& argv, GameObj& g) {
       }
       /* check to see if both players are mutually allied */
       if (!race.God &&
-          !(isset(race.allied, who) && isset(alien.allied, Playernum))) {
+          !(race.is_allied_with(who) && alien.is_allied_with(Playernum))) {
         g.out << "You two are not mutually allied.\n";
         return;
       }

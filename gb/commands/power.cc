@@ -17,12 +17,12 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
                    const Race& r, player_t i, int rank) {
   std::string rank_col = (rank != 0) ? std::format("{}", rank) : "";
 
-  std::string alliance_them = isset(race.allied, i)  ? "+"
-                              : isset(race.atwar, i) ? "-"
-                                                     : " ";
-  std::string alliance_us = isset(r.allied, race.Playernum)  ? "+"
-                            : isset(r.atwar, race.Playernum) ? "-"
-                                                             : " ";
+  std::string alliance_them = race.is_allied_with(i)   ? "+"
+                              : race.is_at_war_with(i) ? "-"
+                                                       : " ";
+  std::string alliance_us = r.is_allied_with(race.Playernum)   ? "+"
+                            : r.is_at_war_with(race.Playernum) ? "-"
+                                                               : " ";
 
   const power* power_ptr = nullptr;
   try {

@@ -31,8 +31,8 @@ void test_relation_dispatch() {
   race2.translate[0] = 50;  // Know 50% about player 1
 
   // Set diplomatic states
-  setbit(race1.allied, player_t{2});
-  setbit(race2.allied, player_t{1});
+  race1.declare_alliance_with(player_t{2});
+  race2.declare_alliance_with(player_t{1});
 
   RaceRepository races(store);
   races.save(race1);

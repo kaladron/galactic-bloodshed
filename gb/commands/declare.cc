@@ -36,8 +36,8 @@ bool declare(const command_t& argv, GameObj& g) {
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
     switch (argv[2][0]) {
       case 'a':
-        setbit(race.allied, n);
-        clrbit(race.atwar, n);
+        race.declare_alliance_with(n);
+        race.make_peace_with(n);
         if (success(5)) {
           g.out << "But would you want your sister to marry one?\n";
         } else {
@@ -58,8 +58,8 @@ bool declare(const command_t& argv, GameObj& g) {
         }
         break;
       case 'n':
-        clrbit(race.allied, n);
-        clrbit(race.atwar, n);
+        race.rescind_alliance_with(n);
+        race.make_peace_with(n);
         g.out << "Done.\n";
 
         warn_race(
@@ -72,8 +72,8 @@ bool declare(const command_t& argv, GameObj& g) {
         d_mod = 30;
         break;
       case 'w':
-        setbit(race.atwar, n);
-        clrbit(race.allied, n);
+        race.declare_war_on(n);
+        race.rescind_alliance_with(n);
         if (success(4)) {
           g.out << "Your enemies flaunt their secondary male reproductive "
                    "glands in your\ngeneral direction.\n";

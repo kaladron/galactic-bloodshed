@@ -82,8 +82,8 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
         ship.is_landed() && retal_strength(ship) &&
         (ship.land_coords() == target_coords)) {
       const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
-      if (!isset(g.race->allied, ship.owner()) ||
-          !isset(alien_ptr->allied, g.player())) {
+      if (!g.race->is_allied_with(ship.owner()) ||
+          !alien_ptr->is_allied_with(g.player())) {
         const auto* star = g.entity_manager.peek_star(ship.storbits());
         while ((civ + mil) > 0 && retal_strength(ship)) {
           oldgov = star->governor(alien_ptr->Playernum);

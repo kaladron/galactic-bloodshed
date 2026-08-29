@@ -321,12 +321,12 @@ void ShipTacticalItem::add_tactical_target_row(
   }
 
   // Determine diplomatic status indicator
-  const auto* war_status = isset(race.atwar, s.owner())    ? "-"
-                           : isset(race.allied, s.owner()) ? "+"
-                                                           : " ";
+  const auto* war_status = race.is_at_war_with(s.owner())   ? "-"
+                           : race.is_allied_with(s.owner()) ? "+"
+                                                            : " ";
 
   // Filter out allied ships if enemies-only mode is enabled
-  if (ctx.enemies_only && isset(race.allied, s.owner())) {
+  if (ctx.enemies_only && race.is_allied_with(s.owner())) {
     return;
   }
 

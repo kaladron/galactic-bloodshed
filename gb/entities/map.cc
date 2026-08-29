@@ -94,10 +94,10 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
       race.Metamorph ? "covered" : "owned", p.info(Playernum).numsectsowned);
   if (p.explored() || race.tech >= TECH_EXPLORE) {
     bool f = false;
-    for (auto i = 1U; i < MAXPLAYERS; i++) {
-      if (p.info(i).numsectsowned != 0 && i != Playernum.value) {
+    for (player_t i{1}; i < MAXPLAYERS; ++i) {
+      if (p.info(i).numsectsowned != 0 && i != Playernum) {
         f = true;
-        g.out << std::format("{}{}", isset(race.atwar, i) ? '*' : ' ', i);
+        g.out << std::format("{}{}", race.is_at_war_with(i) ? '*' : ' ', i);
       }
     }
     if (!f) g.out << "(none)\n";
@@ -166,8 +166,8 @@ char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
              const Sector& s) {
   if (s.get_troops() && !r.governor[Governor.value].toggle.geography) {
     if (s.get_owner() == Playernum) return CHAR_MY_TROOPS;
-    if (isset(r.allied, s.get_owner())) return CHAR_ALLIED_TROOPS;
-    if (isset(r.atwar, s.get_owner())) return CHAR_ATWAR_TROOPS;
+    if (r.is_allied_with(s.get_owner())) return CHAR_ALLIED_TROOPS;
+    if (r.is_at_war_with(s.get_owner())) return CHAR_ATWAR_TROOPS;
 
     return CHAR_NEUTRAL_TROOPS;
   }

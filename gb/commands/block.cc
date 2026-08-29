@@ -165,21 +165,19 @@ bool block(const command_t& argv, GameObj& g) {
     table[0].format().font_style({tabulate::FontStyle::bold});
 
     for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
-      int i = block_i.Playernum.value;
-      if (Power_blocks.members[i - 1] == 0) continue;
+      player_t i = block_i.Playernum;
+      const auto& stats = Power_blocks.blocks[i];
+      if (stats.members == 0) continue;
 
       table.add_row(
           {std::format("{}", i), std::string(block_i.name),
-           std::format("{}", Power_blocks.members[i - 1]),
-           estimate(Power_blocks.money[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.popn[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.ships_owned[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.systems_owned[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.resource[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.fuel[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.destruct[i - 1], *race, player_t{i}),
-           estimate(Power_blocks.VPs[i - 1], *race, player_t{i}),
-           std::format("{}%", race->translate[block_i.Playernum])});
+           std::format("{}", stats.members), estimate(stats.money, *race, i),
+           estimate(stats.popn, *race, i),
+           estimate(stats.ships_owned, *race, i),
+           estimate(stats.systems_owned, *race, i),
+           estimate(stats.resource, *race, i), estimate(stats.fuel, *race, i),
+           estimate(stats.destruct, *race, i), estimate(stats.VPs, *race, i),
+           std::format("{}%", race->translate[i])});
     }
 
     g.out << table << "\n";

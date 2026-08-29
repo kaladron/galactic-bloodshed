@@ -330,19 +330,23 @@ export struct block {
   void make_peace_with(player_t p) noexcept;
 };
 
+export struct PowerBlockStats {
+  std::uint32_t members{0};
+  population_t troops{0};       /* total troops */
+  population_t popn{0};         /* total population */
+  resource_t resource{0};       /* total resource in stock */
+  resource_t fuel{0};           /* total fuel in stock */
+  resource_t destruct{0};       /* total dest in stock */
+  std::uint32_t ships_owned{0}; /* # of ships owned */
+  std::uint32_t systems_owned{0};
+  std::uint32_t sectors_owned{0};
+  money_t money{0};
+  std::uint64_t VPs{0};
+};
+
 export struct power_blocks {
-  std::time_t time;
-  unsigned long members[MAXPLAYERS];
-  unsigned long troops[MAXPLAYERS];   /* total troops */
-  unsigned long popn[MAXPLAYERS];     /* total population */
-  unsigned long resource[MAXPLAYERS]; /* total resource in stock */
-  unsigned long fuel[MAXPLAYERS];
-  unsigned long destruct[MAXPLAYERS];     /* total dest in stock */
-  unsigned short ships_owned[MAXPLAYERS]; /* # of ships owned */
-  unsigned short systems_owned[MAXPLAYERS];
-  unsigned long sectors_owned[MAXPLAYERS];
-  unsigned long money[MAXPLAYERS];
-  unsigned short VPs[MAXPLAYERS];
+  std::time_t time{0};
+  PlayerVector<PowerBlockStats, MAXPLAYERS> blocks{};
 };
 
 export constexpr double TECH_HYPER_DRIVE = 50.0;

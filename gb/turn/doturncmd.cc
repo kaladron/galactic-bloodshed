@@ -862,16 +862,11 @@ void compute_power_blocks(EntityManager& entity_manager) {
       continue;
     }
 
-    Power_blocks.members[i.value - 1] = 0;
-    Power_blocks.sectors_owned[i.value - 1] = 0;
-    Power_blocks.popn[i.value - 1] = 0;
-    Power_blocks.ships_owned[i.value - 1] = 0;
-    Power_blocks.resource[i.value - 1] = 0;
-    Power_blocks.fuel[i.value - 1] = 0;
-    Power_blocks.destruct[i.value - 1] = 0;
-    Power_blocks.money[i.value - 1] = 0;
-    Power_blocks.systems_owned[i.value - 1] = block_i->systems_owned;
-    Power_blocks.VPs[i.value - 1] = block_i->VPs;
+    auto& stats = Power_blocks.blocks[i];
+    stats = PowerBlockStats{
+        .systems_owned = block_i->systems_owned,
+        .VPs = block_i->VPs,
+    };
 
     for (const Race& race_j : RaceList::readonly(entity_manager)) {
       const player_t j = race_j.Playernum;
@@ -880,14 +875,14 @@ void compute_power_blocks(EntityManager& entity_manager) {
         try {
           const auto* power_ptr =
               entity_manager.peek_power(powernum_t{j.value});
-          Power_blocks.members[i.value - 1] += 1;
-          Power_blocks.sectors_owned[i.value - 1] += power_ptr->sectors_owned;
-          Power_blocks.money[i.value - 1] += power_ptr->money;
-          Power_blocks.popn[i.value - 1] += power_ptr->popn;
-          Power_blocks.ships_owned[i.value - 1] += power_ptr->ships_owned;
-          Power_blocks.resource[i.value - 1] += power_ptr->resource;
-          Power_blocks.fuel[i.value - 1] += power_ptr->fuel;
-          Power_blocks.destruct[i.value - 1] += power_ptr->destruct;
+          stats.members += 1;
+          stats.sectors_owned += power_ptr->sectors_owned;
+          stats.money += power_ptr->money;
+          stats.popn += power_ptr->popn;
+          stats.ships_owned += power_ptr->ships_owned;
+          stats.resource += power_ptr->resource;
+          stats.fuel += power_ptr->fuel;
+          stats.destruct += power_ptr->destruct;
         } catch (const EntityNotFoundError&) {
           continue;
         }

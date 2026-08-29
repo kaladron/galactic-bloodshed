@@ -72,20 +72,24 @@ void test_block_dispatch() {
 
   // Setup Power_blocks global with member counts
   Power_blocks.time = std::time(nullptr);
-  Power_blocks.members[0] = 1;
-  Power_blocks.members[1] = 1;
-  Power_blocks.members[2] = 0;
-
-  Power_blocks.VPs[0] = 0;
-  Power_blocks.VPs[1] = 100;
-  Power_blocks.VPs[2] = 50;
-
-  Power_blocks.money[0] = 1000;
-  Power_blocks.money[1] = 5000;
-  Power_blocks.popn[0] = 10000;
-  Power_blocks.popn[1] = 50000;
-  Power_blocks.ships_owned[0] = 5;
-  Power_blocks.ships_owned[1] = 20;
+  Power_blocks.blocks[player_t{1}] = PowerBlockStats{
+      .members = 1,
+      .popn = 10000,
+      .ships_owned = 5,
+      .money = 1000,
+      .VPs = 0,
+  };
+  Power_blocks.blocks[player_t{2}] = PowerBlockStats{
+      .members = 1,
+      .popn = 50000,
+      .ships_owned = 20,
+      .money = 5000,
+      .VPs = 100,
+  };
+  Power_blocks.blocks[player_t{3}] = PowerBlockStats{
+      .members = 0,
+      .VPs = 50,
+  };
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

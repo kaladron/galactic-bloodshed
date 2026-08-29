@@ -61,7 +61,7 @@ bool enslave(const command_t& argv, GameObj& g) {
 
             /* add up forces attacking, defending */
             attack = aliens = def = 0;
-            for (player_t i = 1; i < MAXPLAYERS; i++) {
+            for (player_t i : all_players()) {
               if (p.info(i).numsectsowned && i != Playernum) {
                 aliens = 1;
                 def += p.info(i).destruct;
@@ -126,7 +126,7 @@ bool enslave(const command_t& argv, GameObj& g) {
             }
 
             g.entity_manager.with_star(s.storbits(), [&](const Star& star) {
-              for (player_t i{1}; i.value < MAXPLAYERS; ++i)
+              for (player_t i : all_players())
                 if (p.info(i).numsectsowned && i != Playernum)
                   warn_player(g.session_registry, g.entity_manager, i,
                               star.governor(i), telegram.str());

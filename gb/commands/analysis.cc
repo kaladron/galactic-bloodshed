@@ -119,22 +119,24 @@ struct SectorStats {
   int total_eff = 0;
   int total_res = 0;
   std::array<int, SectorType::SEC_WASTED + 1> sect{};
-  std::array<PlayerSectorStats, MAXPLAYERS + 1> players{};
+  PlayerSectorStats unowned{};
+  PlayerVector<PlayerSectorStats, MAXPLAYERS> players{};
 };
 
 SectorStats accumulate_statistics(GameObj& g, const SectorMap& smap) {
   SectorStats stats;
 
   for (const auto& sect : smap) {
-    auto p = sect.get_owner().value;
+    player_t p = sect.get_owner();
+    PlayerSectorStats& ps = (p == 0) ? stats.unowned : stats.players[p];
 
-    stats.players[p].eff += sect.get_eff();
-    stats.players[p].mob += sect.get_mobilization();
-    stats.players[p].res += sect.get_resource();
-    stats.players[p].popn += sect.get_popn();
-    stats.players[p].troops += sect.get_troops();
-    stats.players[p].sect[sect.get_condition()]++;
-    stats.players[p].t_sect++;
+    ps.eff += sect.get_eff();
+    ps.mob += sect.get_mobilization();
+    ps.res += sect.get_resource();
+    ps.popn += sect.get_popn();
+    ps.troops += sect.get_troops();
+    ps.sect[sect.get_condition()]++;
+    ps.t_sect++;
     stats.total_eff += sect.get_eff();
     stats.total_mob += sect.get_mobilization();
     stats.total_res += sect.get_resource();
@@ -143,10 +145,10 @@ SectorStats accumulate_statistics(GameObj& g, const SectorMap& smap) {
     stats.sect[sect.get_condition()]++;
 
     if (sect.is_wasted()) {
-      stats.players[p].wasted_sect++;
+      ps.wasted_sect++;
     }
     if (sect.get_crystals() && g.race->tech >= TECH_CRYSTAL) {
-      stats.players[p].crys++;
+      ps.crys++;
       stats.total_crys++;
     }
   }
@@ -322,25 +324,33 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
               tabulate::Table::Row_t(table_header.begin(), table_header.end()));
           table[0].format().font_style({tabulate::FontStyle::bold});
 
+          auto format_row = [&](int p, const PlayerSectorStats& ps) {
+            std::vector<std::string> row = {
+                std::format("{}", p),
+                std::format("{}", ps.t_sect),
+                std::format("{}", ps.popn),
+                std::format("{}", ps.troops),
+                std::format("{:.1f}", static_cast<double>(ps.eff) / ps.t_sect),
+                std::format("{:.1f}", static_cast<double>(ps.mob) / ps.t_sect),
+                std::format("{}", ps.res),
+                std::format("{}", ps.crys)};
+            for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
+              row.push_back(std::format("{}", ps.sect[i]));
+            }
+            return row;
+          };
+
+          // Add unowned row (player 0) if any unowned sectors exist
+          if (stats.unowned.t_sect != 0) {
+            auto row = format_row(0, stats.unowned);
+            table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
+          }
+
           // Add player rows
-          for (int p = 0; p <= g.entity_manager.num_races().value; p++) {
+          for (const Race& race : RaceList::readonly(g.entity_manager)) {
+            player_t p = race.Playernum;
             if (stats.players[p].t_sect != 0) {
-              std::vector<std::string> row = {
-                  std::format("{}", p),
-                  std::format("{}", stats.players[p].t_sect),
-                  std::format("{}", stats.players[p].popn),
-                  std::format("{}", stats.players[p].troops),
-                  std::format("{:.1f}",
-                              static_cast<double>(stats.players[p].eff) /
-                                  stats.players[p].t_sect),
-                  std::format("{:.1f}",
-                              static_cast<double>(stats.players[p].mob) /
-                                  stats.players[p].t_sect),
-                  std::format("{}", stats.players[p].res),
-                  std::format("{}", stats.players[p].crys)};
-              for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-                row.push_back(std::format("{}", stats.players[p].sect[i]));
-              }
+              auto row = format_row(p.value, stats.players[p]);
               table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
             }
           }

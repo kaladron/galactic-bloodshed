@@ -346,7 +346,7 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
               s2.mass() += boarders * race.mass; /* our mass */
               if (casualties2 + casualties3) {
                 /* You must kill to get morale */
-                adjust_morale(race, alien, (int)s2.build_cost());
+                race.adjust_morale(alien, static_cast<int>(s2.build_cost()));
               }
             } else { /* retreat */
               if (what == PopulationType::MIL)
@@ -354,22 +354,21 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
               else if (what == PopulationType::CIV)
                 s.popn() += boarders;
               s.mass() += boarders * race.mass;
-              adjust_morale(alien, race, (int)race.fighters);
+              alien.adjust_morale(race, static_cast<int>(race.fighters));
             }
 
             /* races find out about each other */
-            alien.translate[Playernum.value - 1] =
-                MIN(alien.translate[Playernum.value - 1] + 5, 100);
-            race.translate[old2owner.value - 1] =
-                MIN(race.translate[old2owner.value - 1] + 5, 100);
+            alien.translate[Playernum] =
+                MIN(alien.translate[Playernum] + 5, 100);
+            race.translate[old2owner] = MIN(race.translate[old2owner] + 5, 100);
 
             if (!boarders &&
                 (s2.popn() + s2.troops())) /* boarding party killed */
-              alien.translate[Playernum.value - 1] =
-                  MIN(alien.translate[Playernum.value - 1] + 25, 100);
+              alien.translate[Playernum] =
+                  MIN(alien.translate[Playernum] + 25, 100);
             if (s2.owner() == Playernum) /* captured ship */
-              race.translate[old2owner.value - 1] =
-                  MIN(race.translate[old2owner.value - 1] + 25, 100);
+              race.translate[old2owner] =
+                  MIN(race.translate[old2owner] + 25, 100);
           });
         });
         if (assault_aborted) {

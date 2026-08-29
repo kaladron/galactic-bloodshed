@@ -229,7 +229,7 @@ bool capture(const command_t& argv, GameObj& g) {
                   ship.type() != ShipType::OTYPE_FACTORY) {
                 g.entity_manager.mutate_race(Playernum, [&](Race& r) {
                   g.entity_manager.mutate_race(oldowner, [&](Race& a) {
-                    adjust_morale(r, a, ship.build_cost());
+                    r.adjust_morale(a, static_cast<int>(ship.build_cost()));
                   });
                 });
               }

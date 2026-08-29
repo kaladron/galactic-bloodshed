@@ -105,12 +105,12 @@ found_planet:
       race.conditions[i] = planet.conditions(static_cast<Conditions>(i));
   });
 
-  for (auto i = 1; i <= MAXPLAYERS; i++) {
+  for (player_t p : all_players()) {
     /* messages from autoreport, player #1 are decodable */
-    if ((i == Playernum) || (Playernum == 1) || race.God)
-      race.translate[i - 1] = 100; /* you can talk to own race */
+    if ((p == Playernum) || (Playernum == player_t{1}) || race.God)
+      race.translate[p] = 100; /* you can talk to own race */
     else
-      race.translate[i - 1] = 1;
+      race.translate[p] = 1;
   }
 
   // Assign racial characteristics

@@ -44,8 +44,8 @@ void test_profile_dispatch() {
   race1.conditions[HYDROGEN] = 5;
   race1.conditions[SULFUR] = 5;
   race1.conditions[OTHER] = 5;
-  race1.translate[0] = 100;
-  race1.translate[1] = 90;
+  race1.translate[player_t{1}] = 100;
+  race1.translate[player_t{2}] = 90;
   race1.governor[0].homesystem = 0;
   race1.governor[0].homeplanetnum = 0;
 
@@ -56,8 +56,8 @@ void test_profile_dispatch() {
   race2.morale = 80;
   race2.turn = 5;
   race2.conditions[TEMP] = 30;
-  race2.translate[0] = 90;
-  race2.translate[1] = 100;
+  race2.translate[player_t{1}] = 90;
+  race2.translate[player_t{2}] = 100;
   race2.governor[0].homesystem = 0;
   race2.governor[0].homeplanetnum = 0;
 

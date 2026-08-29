@@ -78,7 +78,8 @@ public:
   bool monitor{false};
   /* God is monitering this race. */  // TODO(jeffbailey): Remove this.
 
-  int translate[MAXPLAYERS]{}; /* translation mod for each player */
+  PlayerVector<int, MAXPLAYERS>
+      translate{}; /* translation mod for each player */
 
   std::uint64_t atwar{0};
   std::uint64_t allied{0};
@@ -105,9 +106,18 @@ public:
   [[nodiscard]] bool has_government_center() const noexcept {
     return Gov_ship != 0;
   }
-  long morale{0};                       /* race's morale level */
-  unsigned int points[MAXPLAYERS]{};    /* keep track of war status against
-                                         another player - for short reports */
+  long morale{0}; /* race's morale level */
+  PlayerVector<std::uint32_t, MAXPLAYERS>
+      points{}; /* keep track of war status against another player - for short
+                   reports */
+
+  /// Adjusts morale and combat victory points following a combat victory over
+  /// loser.
+  void adjust_morale(Race& loser, int amount) noexcept {
+    morale += amount;
+    loser.morale -= amount;
+    points[loser] += amount;
+  }
   unsigned short controlled_planets{0}; /* Number of planets under control. */
   unsigned short victory_turns{0};
   unsigned short turn{0};

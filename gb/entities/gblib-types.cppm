@@ -356,6 +356,44 @@ public:
     return (*this)[player];
   }
 
+  /// \brief 1-indexed access via race-like object with .Playernum.
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  [[nodiscard]] constexpr reference operator[](const RaceLike& race) {
+    return (*this)[race.Playernum];
+  }
+
+  /// \brief 1-indexed const access via race-like object with .Playernum.
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  [[nodiscard]] constexpr const_reference
+  operator[](const RaceLike& race) const {
+    return (*this)[race.Playernum];
+  }
+
+  /// \brief Checked 1-indexed access via race-like object with .Playernum.
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  [[nodiscard]] constexpr reference at(const RaceLike& race) {
+    return (*this)[race.Playernum];
+  }
+
+  /// \brief Checked 1-indexed const access via race-like object with
+  /// .Playernum.
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  [[nodiscard]] constexpr const_reference at(const RaceLike& race) const {
+    return (*this)[race.Playernum];
+  }
+
   /// \brief Iterators over all player slots.
   [[nodiscard]] constexpr iterator begin() noexcept {
     return data_.begin();

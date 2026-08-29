@@ -113,17 +113,17 @@ bool block(const command_t& argv, GameObj& g) {
       try {
         g.entity_manager.with_power(
             powernum_t{r.Playernum.value}, [&](const auto& p_info) {
-              table.add_row(
-                  {std::format("{}", r.Playernum), std::string(r.name),
-                   estimate(p_info.troops, *race, r.Playernum),
-                   estimate(p_info.popn, *race, r.Playernum),
-                   estimate(p_info.money, *race, r.Playernum),
-                   estimate(p_info.ships_owned, *race, r.Playernum),
-                   estimate(p_info.planets_owned, *race, r.Playernum),
-                   estimate(p_info.resource, *race, r.Playernum),
-                   estimate(p_info.fuel, *race, r.Playernum),
-                   estimate(p_info.destruct, *race, r.Playernum),
-                   std::format("{}%", race->translate[r.Playernum.value - 1])});
+              table.add_row({std::format("{}", r.Playernum),
+                             std::string(r.name),
+                             estimate(p_info.troops, *race, r.Playernum),
+                             estimate(p_info.popn, *race, r.Playernum),
+                             estimate(p_info.money, *race, r.Playernum),
+                             estimate(p_info.ships_owned, *race, r.Playernum),
+                             estimate(p_info.planets_owned, *race, r.Playernum),
+                             estimate(p_info.resource, *race, r.Playernum),
+                             estimate(p_info.fuel, *race, r.Playernum),
+                             estimate(p_info.destruct, *race, r.Playernum),
+                             std::format("{}%", race->translate[r])});
             });
       } catch (const EntityNotFoundError&) {
         continue;
@@ -179,7 +179,7 @@ bool block(const command_t& argv, GameObj& g) {
            estimate(Power_blocks.fuel[i - 1], *race, player_t{i}),
            estimate(Power_blocks.destruct[i - 1], *race, player_t{i}),
            estimate(Power_blocks.VPs[i - 1], *race, player_t{i}),
-           std::format("{}%", race->translate[i - 1])});
+           std::format("{}%", race->translate[block_i.Playernum])});
     }
 
     g.out << table << "\n";

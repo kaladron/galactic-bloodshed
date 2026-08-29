@@ -110,6 +110,56 @@ int main() {
                  "  ✓ block alliance and war methods work as expected");
   }
 
+  // Race translate and points PlayerVector tests
+  std::println(std::cout,
+               "Race translate and points PlayerVector accessors...");
+  {
+    Race race{};
+    race.Playernum = 1;
+    race.translate[player_t{1}] = 100;
+    race.translate[player_t{2}] = 75;
+    race.points[player_t{2}] = 500;
+
+    test::expect_eq(race.translate[player_t{1}], 100);
+    test::expect_eq(race.translate[player_t{2}], 75);
+    test::expect_eq(race.points[player_t{2}], 500u);
+
+    // PlayerVector indexing directly by Race object
+    Race race2{};
+    race2.Playernum = 2;
+    test::expect_eq(race.translate[race2], 75);
+    test::expect_eq(race.points[race2], 500u);
+
+    // Out-of-bounds throws std::out_of_range
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)race.translate[player_t{0}]; });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)race.translate[player_t{MAXPLAYERS + 1}]; });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)race.points[player_t{0}]; });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)race.points[player_t{MAXPLAYERS + 1}]; });
+    std::println(std::cout, "  ✓ Race PlayerVector accessors verified");
+  }
+
+  // Race adjust_morale domain method tests
+  std::println(std::cout, "Race adjust_morale domain method...");
+  {
+    Race winner{};
+    winner.Playernum = 1;
+    winner.morale = 100;
+
+    Race loser{};
+    loser.Playernum = 2;
+    loser.morale = 50;
+
+    winner.adjust_morale(loser, 25);
+    test::expect_eq(winner.morale, 125);
+    test::expect_eq(loser.morale, 25);
+    test::expect_eq(winner.points[loser], 25u);
+    std::println(std::cout, "  ✓ Race::adjust_morale works as expected");
+  }
+
   std::println(std::cout, "\n✓ All Race entity tests passed!");
   return 0;
 }

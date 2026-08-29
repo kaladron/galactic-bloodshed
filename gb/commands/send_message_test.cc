@@ -20,10 +20,10 @@ void setup_test_world(TestContext& ctx) {
 
   ctx.em.mutate_race(1, [](Race& r) {
     r.governor[0].name = "TestGovernor";
-    r.translate[0] = 50;
+    r.translate[player_t{1}] = 50;
   });
 
-  ctx.em.mutate_race(2, [](Race& r) { r.translate[0] = 50; });
+  ctx.em.mutate_race(2, [](Race& r) { r.translate[player_t{1}] = 50; });
 }
 
 void test_send_message() {
@@ -44,7 +44,7 @@ void test_send_message() {
   // Verify translation modifier increased by 2 (from 50 to 52)
   const auto* updated_receiver = ctx.em.peek_race(2);
   test::expect_true(updated_receiver != nullptr);
-  test::expect_eq(updated_receiver->translate[0], 52);
+  test::expect_eq(updated_receiver->translate[player_t{1}], 52);
 
   ctx.verify_universe_invariants();
 }

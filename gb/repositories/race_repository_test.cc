@@ -53,6 +53,9 @@ int main() {
   test_race.votes = true;
   test_race.planet_points = 100;
   test_race.governors = 3;
+  test_race.translate[player_t{1}] = 100;
+  test_race.translate[player_t{2}] = 75;
+  test_race.points[player_t{2}] = 350;
   test_race.discoveries.hyperdrive = true;
   test_race.discoveries.laser = true;
   test_race.discoveries.crystal = true;
@@ -100,6 +103,12 @@ int main() {
   test::expect_eq(retrieved->tech, test_race.tech);
   test::expect_eq(retrieved->discoveries, test_race.discoveries);
   test::expect_eq(retrieved->governors, test_race.governors);
+  test::expect_eq(retrieved->translate[player_t{1}],
+                  test_race.translate[player_t{1}]);
+  test::expect_eq(retrieved->translate[player_t{2}],
+                  test_race.translate[player_t{2}]);
+  test::expect_eq(retrieved->points[player_t{2}],
+                  test_race.points[player_t{2}]);
   test::expect_eq(retrieved->governor[0].name, test_race.governor[0].name);
   test::expect_eq(retrieved->governor[0].money, test_race.governor[0].money);
   std::println(std::cout, "  ✓ All fields match original");

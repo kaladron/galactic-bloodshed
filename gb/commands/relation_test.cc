@@ -28,7 +28,7 @@ void test_relation_dispatch() {
   race2.Playernum = 2;
   race2.name = "Klingons";
   race2.governor[0].active = true;
-  race2.translate[0] = 50;  // Know 50% about player 1
+  race2.translate[player_t{1}] = 50;  // Know 50% about player 1
 
   // Set diplomatic states
   race1.declare_alliance_with(player_t{2});

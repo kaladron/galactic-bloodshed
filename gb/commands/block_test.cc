@@ -21,9 +21,9 @@ void test_block_dispatch() {
   race1.Playernum = 1;
   race1.name = "TestRace1";
   race1.governor[0].active = true;
-  race1.translate[0] = 100;
-  race1.translate[1] = 50;
-  race1.translate[2] = 75;
+  race1.translate[player_t{1}] = 100;
+  race1.translate[player_t{2}] = 50;
+  race1.translate[player_t{3}] = 75;
 
   Race race2{};
   race2.Playernum = 2;

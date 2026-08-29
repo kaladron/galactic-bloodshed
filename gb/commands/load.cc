@@ -141,10 +141,9 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
     g.entity_manager.mutate_race(sect.get_owner(), [&](Race& alien) {
       /* races find out about each other */
-      alien.translate[Playernum.value - 1] =
-          MIN(alien.translate[Playernum.value - 1] + 5, 100);
-      race.translate[sect.get_owner().value - 1] =
-          MIN(race.translate[sect.get_owner().value - 1] + 5, 100);
+      alien.translate[Playernum] = MIN(alien.translate[Playernum] + 5, 100);
+      race.translate[sect.get_owner()] =
+          MIN(race.translate[sect.get_owner()] + 5, 100);
 
       oldowner = sect.get_owner();
       const auto& star = *g.entity_manager.peek_star(g.snum());
@@ -199,7 +198,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
           sect.set_troops(people);
         }
         sect.set_owner(Playernum);
-        adjust_morale(race, alien, (int)alien.fighters);
+        race.adjust_morale(alien, static_cast<int>(alien.fighters));
       } else { /* retreat */
         absorbed = 0;
         if (alien.absorb) {
@@ -219,7 +218,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
         else
           ship->troops() += people;
         ship->mass() += people * race.mass;
-        adjust_morale(alien, race, (int)race.fighters);
+        alien.adjust_morale(race, static_cast<int>(race.fighters));
       }
       std::string telegram =
           std::format("/{}/{}: {} [{}] {} assaults {} [{}] {}({}) {}\n",

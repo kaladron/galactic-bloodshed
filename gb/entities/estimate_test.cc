@@ -20,9 +20,9 @@ int main() {
   // Create test race with translation capability
   Race race{};
   race.Playernum = 1;
-  race.translate[0] = 100;  // Full translation for player 1
-  race.translate[1] = 50;   // Partial translation for player 2
-  race.translate[2] = 5;    // Very low translation for player 3
+  race.translate[player_t{1}] = 100;  // Full translation for player 1
+  race.translate[player_t{2}] = 50;   // Partial translation for player 2
+  race.translate[player_t{3}] = 5;    // Very low translation for player 3
 
   RaceRepository races(store);
   races.save(race);

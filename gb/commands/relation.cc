@@ -41,12 +41,11 @@ bool relation(const command_t& argv, GameObj& g) {
         if (r.Playernum == race.Playernum) continue;
         g.out << std::format(
             "{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n", r.Playernum,
-            ((race.God || (race.translate[r.Playernum.value - 1] > 30)) &&
-             r.Metamorph && (Playernum == q))
+            ((race.God || (race.translate[r] > 30)) && r.Metamorph &&
+             (Playernum == q))
                 ? "Morph"
                 : "     ",
-            race.translate[r.Playernum.value - 1], r.name,
-            allied(race, r.Playernum), allied(r, q));
+            race.translate[r], r.name, allied(race, r.Playernum), allied(r, q));
       }
     });
   } catch (const EntityNotFoundError&) {

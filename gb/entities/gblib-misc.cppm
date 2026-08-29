@@ -164,8 +164,8 @@ export constexpr double logscale(const int x) {
 export template <typename T>
   requires std::is_arithmetic_v<T>
 std::string estimate(const T data, const Race& r, const player_t p) {
-  if (r.translate[p.value - 1] > 10) {
-    int k = 101 - std::min(r.translate[p.value - 1], 100);
+  if (r.translate[p] > 10) {
+    int k = 101 - std::min(r.translate[p], 100);
     int est = (std::abs(static_cast<int>(data)) / k) * k;
     if (est < 1000) return std::format("{}", est);
     if (est < 10000) {

@@ -565,7 +565,7 @@ static void finalize_turn(TurnState& state, bool update) {
       if (race_handle->controlled_planets >=
           planet_count.value * VICTORY_PERCENT / 200) {
         for (auto other_race : RaceList(state.entity_manager)) {
-          other_race->translate[player.value - 1] = 100;
+          other_race->translate[player] = 100;
         }
       }
 

@@ -217,12 +217,12 @@ int main() {
   /*+ int_rand( round_rand(-planet->conditions[j]*2.0),
    * round_rand(planet->conditions[j]*2.0) )*/
 
-  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+  for (player_t p : all_players()) {
     /* messages from autoreport, player #1 are decodable */
     if (p == Playernum || Playernum == 1 || race.God) {
-      race.translate[p.value - 1] = 100; /* you can talk to own race */
+      race.translate[p] = 100; /* you can talk to own race */
     } else {
-      race.translate[p.value - 1] = 1;
+      race.translate[p] = 1;
     }
   }
 
@@ -413,7 +413,7 @@ int main() {
     }
   }
 
-  std::ranges::fill(race.points, 0);
+  race.points.fill(0);
 
   if (!races.save(race)) {
     std::println(std::cerr, "Error: Failed to save race to database");

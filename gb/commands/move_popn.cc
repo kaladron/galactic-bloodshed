@@ -166,10 +166,8 @@ bool move_popn(const command_t& argv, GameObj& g) {
       Race race = *g.race;
 
       /* races find out about each other */
-      alien.translate[Playernum.value - 1] =
-          MIN(alien.translate[Playernum.value - 1] + 5, 100);
-      race.translate[old2owner.value - 1] =
-          MIN(race.translate[old2owner.value - 1] + 5, 100);
+      alien.translate[Playernum] = MIN(alien.translate[Playernum] + 5, 100);
+      race.translate[old2owner] = MIN(race.translate[old2owner] + 5, 100);
 
       g.entity_manager.mutate_sectormap(
           g.snum(), g.pnum(), [&](SectorMap& smap) {
@@ -224,7 +222,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
                 sect2.set_popn_exact(absorbed);
                 sect2.set_troops(people);
               }
-              adjust_morale(race, alien, (int)alien.fighters);
+              race.adjust_morale(alien, static_cast<int>(alien.fighters));
             } else { /* retreat */
               absorbed = 0;
               if (alien.absorb) {
@@ -240,7 +238,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
                 sect.add_popn(people);
               else if (what == PopulationType::MIL)
                 sect.set_troops(sect.get_troops() + people);
-              adjust_morale(alien, race, (int)race.fighters);
+              alien.adjust_morale(race, static_cast<int>(race.fighters));
             }
 
             std::string telegram = std::format(
@@ -275,15 +273,15 @@ bool move_popn(const command_t& argv, GameObj& g) {
             if (!(sect.get_popn() + sect.get_troops() + people)) {
               telegram += "You killed all of them!\n";
               /* increase modifier */
-              race.translate[old2owner.value - 1] =
-                  MIN(race.translate[old2owner.value - 1] + 5, 100);
+              race.translate[old2owner] =
+                  MIN(race.translate[old2owner] + 5, 100);
             }
             if (!people) {
               g.out << std::format(
                   "Oh no! They killed your party to the last man!\n");
               /* increase modifier */
-              alien.translate[Playernum.value - 1] =
-                  MIN(alien.translate[Playernum.value - 1] + 5, 100);
+              alien.translate[Playernum] =
+                  MIN(alien.translate[Playernum] + 5, 100);
             }
 
             telegram +=

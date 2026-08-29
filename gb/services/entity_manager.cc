@@ -798,7 +798,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
         std::abort();
       }
       auto& killer = *killer_handle;
-      adjust_morale(killer, victim, (int)ship.build_cost());
+      killer.adjust_morale(victim, static_cast<int>(ship.build_cost()));
       // Both killer and victim auto-save when handles go out of scope
     } else if (ship.owner() == Playernum && !ship.docked() &&
                ship.max_crew_capacity()) {

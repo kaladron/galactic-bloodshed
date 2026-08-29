@@ -32,15 +32,15 @@ void test_power_dispatch() {
   race1.Playernum = 1;
   race1.name = "Terrans";
   race1.victory_score = 100.0;
-  race1.translate[0] = 100;
-  race1.translate[1] = 50;
+  race1.translate[player_t{1}] = 100;
+  race1.translate[player_t{2}] = 50;
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "Martians";
   race2.victory_score = 150.0;
-  race2.translate[0] = 50;
-  race2.translate[1] = 100;
+  race2.translate[player_t{1}] = 50;
+  race2.translate[player_t{2}] = 100;
 
   RaceRepository races(store);
   races.save(race1);

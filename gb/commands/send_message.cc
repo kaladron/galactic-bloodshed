@@ -142,8 +142,8 @@ bool send_message(const command_t& argv, GameObj& g) {
       if (block_target->is_invited(i) && block_target->is_pledged(i) &&
           i != Playernum) {
         g.entity_manager.mutate_race(i, [&](Race& alien) {
-          alien.translate[Playernum.value - 1] =
-              std::min(alien.translate[Playernum.value - 1] + 2, 100);
+          alien.translate[Playernum] =
+              std::min(alien.translate[Playernum] + 2, 100);
         });
         g.session_registry.notify_race(i, block_msg);
         g.session_registry.notify_race(i, notice);
@@ -155,8 +155,8 @@ bool send_message(const command_t& argv, GameObj& g) {
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
       if (star_ref.is_inhabited_by(i) && i != Playernum) {
         g.entity_manager.mutate_race(i, [&](Race& alien) {
-          alien.translate[Playernum.value - 1] =
-              std::min(alien.translate[Playernum.value - 1] + 2, 100);
+          alien.translate[Playernum] =
+              std::min(alien.translate[Playernum] + 2, 100);
         });
         g.session_registry.notify_race(
             i, std::format("{} \"{}\" [{},{}] sends a message to {}.\n",
@@ -168,8 +168,8 @@ bool send_message(const command_t& argv, GameObj& g) {
     }
   } else {
     g.entity_manager.mutate_race(who, [&](Race& alien) {
-      alien.translate[Playernum.value - 1] =
-          std::min(alien.translate[Playernum.value - 1] + 2, 100);
+      alien.translate[Playernum] =
+          std::min(alien.translate[Playernum] + 2, 100);
     });
     int gov;
     if (std::isdigit(*argv[2].c_str()))

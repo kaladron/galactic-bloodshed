@@ -36,7 +36,7 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
     const auto* universe = em.peek_universe();
     know_col = std::format("{}", universe->VN_hitlist[i]);
   } else {
-    know_col = std::format("{}%", race.translate[i.value - 1]);
+    know_col = std::format("{}%", race.translate[i]);
   }
 
   table.add_row(
@@ -117,7 +117,7 @@ bool power(const command_t& argv, GameObj& g) {
       player_t p = vic.racenum;
       const auto* r = g.entity_manager.peek_race(p);
       if (!r) continue;
-      if (!r->dissolved && race->translate[p.value - 1] >= 10) {
+      if (!r->dissolved && race->translate[p] >= 10) {
         add_power_row(table, g.entity_manager, *race, *r, p, rank);
       }
     }

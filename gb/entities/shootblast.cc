@@ -14,11 +14,11 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
           int strength, int hits, int defense, int caliber, double range,
           const std::string_view weapon, int hit_probability);
 
-static std::tuple<int, int, int> ship_disposition(const Ship& ship);
+static std::tuple<bool, speed_t, int> ship_disposition(const Ship& ship);
 static int CEW_hit(double dist, int cew_range);
 static int Num_hits(double dist, bool focus, int strength, double tech,
-                    int damage, int fevade, int tevade, int fspeed, int tspeed,
-                    int tbody, guntype_t caliber, int defense,
+                    int damage, bool fevade, bool tevade, speed_t fspeed,
+                    speed_t tspeed, int tbody, guntype_t caliber, int defense,
                     int* hit_probability);
 static int cew_hit_odds(double dist, int cew_range);
 static std::string do_critical_hits(int penetrate, Ship& ship, int* hits,
@@ -388,9 +388,9 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
  * @param ship The ship for which the disposition is being determined.
  * @return A tuple containing the evade value, speed, and body size of the ship.
  */
-static std::tuple<int, int, int> ship_disposition(const Ship& ship) {
-  int evade = 0;
-  int speed = 0;
+static std::tuple<bool, speed_t, int> ship_disposition(const Ship& ship) {
+  bool evade = false;
+  speed_t speed = 0;
   int body = size(ship);
   if (ship.active() && !ship.docked() &&
       (ship.whatdest() || ship.navigate().on)) {
@@ -411,8 +411,9 @@ static int CEW_hit(double dist, int cew_range) {
 }
 
 static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
-                    int fev, int tev, int fspeed, int tspeed, int body,
-                    guntype_t caliber, int defense, int* hit_probability) {
+                    bool fev, bool tev, speed_t fspeed, speed_t tspeed,
+                    int body, guntype_t caliber, int defense,
+                    int* hit_probability) {
   auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
                                  body, caliber, defense);
 
@@ -440,8 +441,8 @@ static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
  * @param range     The distance to the target.
  * @param tech      The technology level of the shooter.
  * @param fdam      The damage factor of the firing entity (percentage, 0-100).
- * @param fev       The experience value of the firing entity.
- * @param tev       The experience value of the target entity.
+ * @param fev       The evasion state of the firing entity.
+ * @param tev       The evasion state of the target entity.
  * @param fspeed    The speed of the firing entity.
  * @param tspeed    The speed of the target entity.
  * @param body      The body size of the target.
@@ -450,16 +451,18 @@ static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
  * @return std::pair<int, int> A pair where the first element is the hit odds
  * (percentage), and the second element is the computed range factor.
  */
-std::pair<int, int> hit_odds(double range, double tech, int fdam, int fev,
-                             int tev, int fspeed, int tspeed, int body,
+std::pair<int, int> hit_odds(double range, double tech, int fdam, bool fev,
+                             bool tev, speed_t fspeed, speed_t tspeed, int body,
                              guntype_t caliber, int defense) {
   if (caliber == GTYPE_NONE) {
     return {0, 0};
   }
 
+  double fev_d = fev ? 1.0 : 0.0;
+  double tev_d = tev ? 1.0 : 0.0;
   double a =
       std::log10(1.0 + (double)tech) * 80.0 * std::pow((double)body, 0.33333);
-  double b = 72.0 / ((2.0 + (double)tev) * (2.0 + (double)fev) *
+  double b = 72.0 / ((2.0 + tev_d) * (2.0 + fev_d) *
                      (18.0 + (double)tspeed + (double)fspeed));
   double c = a * b / (double)caliber;
   int factor = (int)(c * (1.0 - (double)fdam / 100.)); /* 50% hit range */

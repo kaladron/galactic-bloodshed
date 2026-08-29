@@ -88,11 +88,12 @@ When parsing user input, parse to `int`/`unsigned`, validate, then construct the
 
 1. **Iterating over managed entities**:
    ```cpp
-   // ✅ Iterate over enrolled races and index PlayerVector directly
+   // ✅ Iterate over enrolled races and index PlayerVector directly with race
    for (const Race& race : RaceList::readonly(em)) {
-     vec[race.Playernum] = 100;
+     vec[race] = 100;
    }
    ```
+
 
 2. **Iterating over all player slots**:
    ```cpp

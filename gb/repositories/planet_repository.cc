@@ -18,6 +18,14 @@ import std;
 namespace glz {
 
 template <>
+struct meta<CommodityManifest> {
+  using T = CommodityManifest;
+  static constexpr auto value =
+      object("fuel", &T::fuel, "destruct", &T::destruct, "resources",
+             &T::resources, "crystals", &T::crystals);
+};
+
+template <>
 struct meta<plroute> {
   using T = plroute;
   static constexpr auto value =

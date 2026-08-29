@@ -47,24 +47,6 @@ export constexpr double morale_factor(const double x) {
   return (std::atan((double)x / 10000.) / 3.14159565 + .5);
 }
 
-export constexpr int M_FUEL = 0x1;
-export constexpr int M_DESTRUCT = 0x2;
-export constexpr int M_RESOURCES = 0x4;
-export constexpr int M_CRYSTALS = 0x8;
-
-export bool Fuel(int x) {
-  return x & M_FUEL;
-}
-export bool Destruct(int x) {
-  return x & M_DESTRUCT;
-};
-export bool Resources(int x) {
-  return x & M_RESOURCES;
-};
-export bool Crystals(int x) {
-  return x & M_CRYSTALS;
-};
-
 export std::vector<Victory> create_victory_list(EntityManager&);
 
 /**

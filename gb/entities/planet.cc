@@ -108,16 +108,16 @@ void moveplanet(EntityManager& entity_manager, const Star& star,
  * and y coordinates. Additionally, the function handles the case where the
  * coordinates wrap around the planet's boundaries.
  *
- * @param p The planet object.
  * @param from The starting coordinates.
  * @param to The target coordinates.
  * @return True if the coordinates are adjacent, false otherwise.
  */
-bool adjacent(const Planet& p, const Coordinates from, const Coordinates to) {
+bool Planet::is_adjacent(const Coordinates from,
+                         const Coordinates to) const noexcept {
   if (std::abs(from.y - to.y) > 1) return false;
   const int dx = std::abs(from.x - to.x);
   if (dx <= 1) return true;
-  if (p.dimensions().x > 0 && dx == p.dimensions().x - 1) return true;
+  if (dimensions().x > 0 && dx == dimensions().x - 1) return true;
   return false;
 }
 

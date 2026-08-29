@@ -98,7 +98,7 @@ bool bombard(const command_t& argv, GameObj& g) {
                 });
           }
           if (from.is_landed() &&
-              !adjacent(p, from.land_coords(), target_coords)) {
+              !p.is_adjacent(from.land_coords(), target_coords)) {
             g.out << "You are not adjacent to that sector.\n";
             return;
           }

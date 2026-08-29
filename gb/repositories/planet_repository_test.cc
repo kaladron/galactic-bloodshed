@@ -168,18 +168,21 @@ int main() {
   planet4.ypos() = 20.0;
 
   // Initialize routes for player 1
-  planet4.info(1).route[0].set = 1;
+  planet4.info(1).route[0].set = true;
   planet4.info(1).route[0].dest_star = 5;
   planet4.info(1).route[0].dest_planet = 3;
-  planet4.info(1).route[0].load = 0x0F;
-  planet4.info(1).route[0].unload = 0xF0;
+  planet4.info(1).route[0].load = CommodityManifest{
+      .fuel = true, .destruct = true, .resources = true, .crystals = true};
+  planet4.info(1).route[0].unload = CommodityManifest{};
   planet4.info(1).route[0].dest_coords = {10, 20};
 
-  planet4.info(1).route[1].set = 1;
+  planet4.info(1).route[1].set = true;
   planet4.info(1).route[1].dest_star = 7;
   planet4.info(1).route[1].dest_planet = 2;
-  planet4.info(1).route[1].load = 0x03;
-  planet4.info(1).route[1].unload = 0x0C;
+  planet4.info(1).route[1].load =
+      CommodityManifest{.fuel = true, .destruct = true};
+  planet4.info(1).route[1].unload =
+      CommodityManifest{.resources = true, .crystals = true};
   planet4.info(1).route[1].dest_coords = {15, 25};
 
   test::expect_true(repo.save(planet4));
@@ -187,18 +190,22 @@ int main() {
   auto retrieved4 = repo.find_by_location(4, 3);
   test::expect_true(retrieved4.has_value());
   test::expect_eq(retrieved4->planet_order(), 3);
-  test::expect_eq(retrieved4->info(1).route[0].set, 1);
-  test::expect_eq(retrieved4->info(1).route[0].dest_star, 5);
-  test::expect_eq(retrieved4->info(1).route[0].dest_planet, 3);
-  test::expect_eq(retrieved4->info(1).route[0].load, 0x0F);
-  test::expect_eq(retrieved4->info(1).route[0].unload, 0xF0);
+  test::expect_true(retrieved4->info(1).route[0].set);
+  test::expect_eq(retrieved4->info(1).route[0].dest_star, starnum_t{5});
+  test::expect_eq(retrieved4->info(1).route[0].dest_planet, planetnum_t{3});
+  test::expect_eq(retrieved4->info(1).route[0].load,
+                  planet4.info(1).route[0].load);
+  test::expect_eq(retrieved4->info(1).route[0].unload,
+                  planet4.info(1).route[0].unload);
   test::expect_eq(retrieved4->info(1).route[0].dest_coords,
                   (Coordinates{10, 20}));
-  test::expect_eq(retrieved4->info(1).route[1].set, 1);
-  test::expect_eq(retrieved4->info(1).route[1].dest_star, 7);
-  test::expect_eq(retrieved4->info(1).route[1].dest_planet, 2);
-  test::expect_eq(retrieved4->info(1).route[1].load, 0x03);
-  test::expect_eq(retrieved4->info(1).route[1].unload, 0x0C);
+  test::expect_true(retrieved4->info(1).route[1].set);
+  test::expect_eq(retrieved4->info(1).route[1].dest_star, starnum_t{7});
+  test::expect_eq(retrieved4->info(1).route[1].dest_planet, planetnum_t{2});
+  test::expect_eq(retrieved4->info(1).route[1].load,
+                  planet4.info(1).route[1].load);
+  test::expect_eq(retrieved4->info(1).route[1].unload,
+                  planet4.info(1).route[1].unload);
   test::expect_eq(retrieved4->info(1).route[1].dest_coords,
                   (Coordinates{15, 25}));
   std::println(std::cout, "✓ Shipping routes preserved correctly");

@@ -77,27 +77,42 @@ int main() {
     planet.dimensions() = Coordinates(10, 8);
 
     // Direct and diagonal neighbors
-    test::expect_true(adjacent(planet, {5, 5}, {5, 5}));
-    test::expect_true(adjacent(planet, {5, 5}, {6, 5}));
-    test::expect_true(adjacent(planet, {5, 5}, {4, 5}));
-    test::expect_true(adjacent(planet, {5, 5}, {5, 6}));
-    test::expect_true(adjacent(planet, {5, 5}, {5, 4}));
-    test::expect_true(adjacent(planet, {5, 5}, {6, 6}));
-    test::expect_true(adjacent(planet, {5, 5}, {4, 4}));
+    test::expect_true(planet.is_adjacent({5, 5}, {5, 5}));
+    test::expect_true(planet.is_adjacent({5, 5}, {6, 5}));
+    test::expect_true(planet.is_adjacent({5, 5}, {4, 5}));
+    test::expect_true(planet.is_adjacent({5, 5}, {5, 6}));
+    test::expect_true(planet.is_adjacent({5, 5}, {5, 4}));
+    test::expect_true(planet.is_adjacent({5, 5}, {6, 6}));
+    test::expect_true(planet.is_adjacent({5, 5}, {4, 4}));
 
     // Non-adjacent locations
-    test::expect_false(adjacent(planet, {5, 5}, {7, 5}));
-    test::expect_false(adjacent(planet, {5, 5}, {5, 7}));
-    test::expect_false(adjacent(planet, {5, 5}, {7, 7}));
+    test::expect_false(planet.is_adjacent({5, 5}, {7, 5}));
+    test::expect_false(planet.is_adjacent({5, 5}, {5, 7}));
+    test::expect_false(planet.is_adjacent({5, 5}, {7, 7}));
 
     // Toroidal seam wrapping adjacency
-    test::expect_true(adjacent(planet, {0, 4}, {9, 4}));
-    test::expect_true(adjacent(planet, {0, 4}, {9, 5}));
-    test::expect_true(adjacent(planet, {0, 4}, {9, 3}));
-    test::expect_true(adjacent(planet, {9, 4}, {0, 4}));
+    test::expect_true(planet.is_adjacent({0, 4}, {9, 4}));
+    test::expect_true(planet.is_adjacent({0, 4}, {9, 5}));
+    test::expect_true(planet.is_adjacent({0, 4}, {9, 3}));
+    test::expect_true(planet.is_adjacent({9, 4}, {0, 4}));
 
     // Non-wrapping vertical separation across polar caps
-    test::expect_false(adjacent(planet, {5, 0}, {5, 7}));
+    test::expect_false(planet.is_adjacent({5, 0}, {5, 7}));
+  }
+
+  // Test 5b: CommodityManifest & plroute defaults
+  {
+    CommodityManifest manifest{};
+    test::expect_false(manifest.any());
+    manifest.fuel = true;
+    test::expect_true(manifest.any());
+
+    plroute route{};
+    test::expect_false(route.set);
+    test::expect_false(route.load.any());
+    test::expect_false(route.unload.any());
+    test::expect_eq(route.dest_star, starnum_t{0});
+    test::expect_eq(route.dest_planet, planetnum_t{0});
   }
 
   // Test 6: Planet compatibility with race conditions

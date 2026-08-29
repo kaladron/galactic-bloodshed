@@ -15,14 +15,32 @@ import std;
 // Forward declaration to avoid circular dependency with :services
 export class EntityManager;
 
-// Merchant shipping route parameters
+/// Set of commodities selected for loading or unloading on a shipping route.
+export struct CommodityManifest {
+  bool fuel{false};       ///< Fuel commodity
+  bool destruct{false};   ///< Destructive potential commodity
+  bool resources{false};  ///< Minerals / resources commodity
+  bool crystals{false};   ///< Power crystals commodity
+
+  /// Returns whether any commodity is selected.
+  [[nodiscard]] constexpr bool any() const noexcept {
+    return fuel || destruct || resources || crystals;
+  }
+
+  [[nodiscard]] bool
+  operator==(const CommodityManifest&) const noexcept = default;
+};
+
+/// Merchant shipping route parameters.
 export struct plroute {
-  unsigned char set = 0;          // does the planet have orders?
-  unsigned char dest_star = 0;    // star that ship has to go to next
-  unsigned char dest_planet = 0;  // planet destination
-  unsigned char load = 0;         // bit-field commodities to be loaded there
-  unsigned char unload = 0;       // unloaded commodities
-  Coordinates dest_coords{0, 0};  // location that ship has to land on
+  bool set{false};                ///< Whether this merchant route is active
+  starnum_t dest_star{0};         ///< Destination star system ID
+  planetnum_t dest_planet{0};     ///< Destination planet number
+  CommodityManifest load{};       ///< Commodities to load at destination
+  CommodityManifest unload{};     ///< Commodities to unload at destination
+  Coordinates dest_coords{0, 0};  ///< Landing coordinates on destination planet
+
+  [[nodiscard]] bool operator==(const plroute&) const noexcept = default;
 };
 
 /// \brief Cohesive bundle of planetary commodity stockpiles.
@@ -360,6 +378,11 @@ public:
   [[nodiscard]] double compatibility(const Race&) const;
   [[nodiscard]] ap_t get_points() const;
 
+  /// \brief Checks whether two coordinates are topologically adjacent on this
+  /// planet.
+  [[nodiscard]] bool is_adjacent(const Coordinates from,
+                                 const Coordinates to) const noexcept;
+
   /// \brief Updates planetary atmospheric temperature by adding stellar/mirror
   /// thermal variance to baseline surface temperature.
   void update_climate(int temp_variance = 0) noexcept;
@@ -452,5 +475,3 @@ ap_t Planet::get_points() const {
 
 export int revolt(Planet& p, EntityManager& entity_manager, starnum_t star,
                   planetnum_t pnum, player_t victim, player_t agent);
-
-export bool adjacent(const Planet&, Coordinates from, Coordinates to);

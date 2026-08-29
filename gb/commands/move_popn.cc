@@ -79,7 +79,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
       return any_moved;
     }
 
-    if (!adjacent(planet_peek, curr_coords, next_coords)) {
+    if (!planet_peek.is_adjacent(curr_coords, next_coords)) {
       g.out << "Illegal move - to adjacent sectors only!\n";
       return any_moved;
     }

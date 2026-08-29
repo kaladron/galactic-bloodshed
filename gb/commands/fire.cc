@@ -124,7 +124,7 @@ bool fire(const command_t& argv, GameObj& g) {
       }
       const auto* p =
           g.entity_manager.peek_planet(from.storbits(), from.pnumorbits());
-      if (!adjacent(*p, from.land_coords(), to->land_coords())) {
+      if (!p->is_adjacent(from.land_coords(), to->land_coords())) {
         g.out << "You are not adjacent to your target!\n";
         continue;
       }

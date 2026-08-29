@@ -154,31 +154,31 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
     s.destpnum() = s.pnumorbits();
   }
   /* load and unload supplies specified by the planet */
-  char load = p.info(owner).route[j].load;
-  char unload = p.info(owner).route[j].unload;
-  if (load) {
+  const auto& load = p.info(owner).route[j].load;
+  const auto& unload = p.info(owner).route[j].unload;
+  if (load.any()) {
     telegram << "\t\t";
-    if (Fuel(load)) {
+    if (load.fuel) {
       int amount = (int)s.max_fuel_capacity() - (int)s.fuel();
       if (amount > p.info(owner).fuel) amount = p.info(owner).fuel;
       p.info(owner).fuel -= amount;
       rcv_fuel(s, (double)amount);
       telegram << std::format("{}f ", amount);
     }
-    if (Resources(load)) {
+    if (load.resources) {
       int amount = (int)s.max_resource_capacity() - (int)s.resource();
       if (amount > p.info(owner).resource) amount = p.info(owner).resource;
       p.info(owner).resource -= amount;
       rcv_resource(s, amount);
       telegram << std::format("{}r ", amount);
     }
-    if (Crystals(load)) {
+    if (load.crystals) {
       int amount = p.info(owner).crystals;
       p.info(owner).crystals -= amount;
       s.crystals() += amount;
       telegram << std::format("{}x ", amount);
     }
-    if (Destruct(load)) {
+    if (load.destruct) {
       int amount = (int)s.max_destruct_capacity() - (int)s.destruct();
       if (amount > p.info(owner).destruct) amount = p.info(owner).destruct;
       p.info(owner).destruct -= amount;
@@ -187,27 +187,27 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
     }
     telegram << "loaded\n";
   }
-  if (unload) {
+  if (unload.any()) {
     telegram << "\t\t";
-    if (Fuel(unload)) {
+    if (unload.fuel) {
       int amount = (int)s.fuel();
       p.info(owner).fuel += amount;
       telegram << std::format("{}f ", amount);
       use_fuel(s, (double)amount);
     }
-    if (Resources(unload)) {
+    if (unload.resources) {
       int amount = s.resource();
       p.info(owner).resource += amount;
       telegram << std::format("{}r ", amount);
       use_resource(s, amount);
     }
-    if (Crystals(unload)) {
+    if (unload.crystals) {
       int amount = s.crystals();
       p.info(owner).crystals += amount;
       telegram << std::format("{}x ", amount);
       s.crystals() -= amount;
     }
-    if (Destruct(unload)) {
+    if (unload.destruct) {
       int amount = s.destruct();
       p.info(owner).destruct += amount;
       telegram << std::format("{}d ", amount);

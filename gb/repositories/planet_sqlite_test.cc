@@ -75,18 +75,21 @@ int main() {
   test_planet.info(1).est_production = 2500.75;
 
   // Initialize routes for player 1
-  test_planet.info(1).route[0].set = 1;
+  test_planet.info(1).route[0].set = true;
   test_planet.info(1).route[0].dest_star = 5;
   test_planet.info(1).route[0].dest_planet = 3;
-  test_planet.info(1).route[0].load = 0x0F;
-  test_planet.info(1).route[0].unload = 0xF0;
+  test_planet.info(1).route[0].load = CommodityManifest{
+      .fuel = true, .destruct = true, .resources = true, .crystals = true};
+  test_planet.info(1).route[0].unload = CommodityManifest{};
   test_planet.info(1).route[0].dest_coords = {10, 20};
 
-  test_planet.info(1).route[1].set = 1;
+  test_planet.info(1).route[1].set = true;
   test_planet.info(1).route[1].dest_star = 7;
   test_planet.info(1).route[1].dest_planet = 2;
-  test_planet.info(1).route[1].load = 0x03;
-  test_planet.info(1).route[1].unload = 0x0C;
+  test_planet.info(1).route[1].load =
+      CommodityManifest{.fuel = true, .destruct = true};
+  test_planet.info(1).route[1].unload =
+      CommodityManifest{.resources = true, .crystals = true};
   test_planet.info(1).route[1].dest_coords = {15, 25};
 
   // Initialize plinfo for player 2 (to test multiple players)

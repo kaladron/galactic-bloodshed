@@ -73,48 +73,51 @@ void test_route_persistence() {
 
   // Test: Set route destination
   ctx.em.mutate_planet(0, 0, [](Planet& p) {
-    p.info(player_t{1}).route[0].set = 1;
+    p.info(player_t{1}).route[0].set = true;
     p.info(player_t{1}).route[0].dest_star = 1;
     p.info(player_t{1}).route[0].dest_planet = 0;
     p.info(player_t{1}).route[0].dest_coords = {5, 5};
-    p.info(player_t{1}).route[0].load = M_FUEL | M_RESOURCES;
-    p.info(player_t{1}).route[0].unload = M_DESTRUCT;
+    p.info(player_t{1}).route[0].load =
+        CommodityManifest{.fuel = true, .resources = true};
+    p.info(player_t{1}).route[0].unload = CommodityManifest{.destruct = true};
   });
 
   // Verify: Route was saved
   {
     const auto* saved = ctx.em.peek_planet(0, 0);
     test::expect_ne(saved, nullptr);
-    test::expect_eq(saved->info(player_t{1}).route[0].set, 1);
-    test::expect_eq(saved->info(player_t{1}).route[0].dest_star, 1);
-    test::expect_eq(saved->info(player_t{1}).route[0].dest_planet, 0);
+    test::expect_true(saved->info(player_t{1}).route[0].set);
+    test::expect_eq(saved->info(player_t{1}).route[0].dest_star, starnum_t{1});
+    test::expect_eq(saved->info(player_t{1}).route[0].dest_planet,
+                    planetnum_t{0});
     test::expect_eq(saved->info(player_t{1}).route[0].dest_coords,
                     Coordinates(5, 5));
-    test::expect_eq(saved->info(player_t{1}).route[0].load,
-                    (M_FUEL | M_RESOURCES));
-    test::expect_eq(saved->info(player_t{1}).route[0].unload, M_DESTRUCT);
+    test::expect_true(saved->info(player_t{1}).route[0].load.fuel);
+    test::expect_true(saved->info(player_t{1}).route[0].load.resources);
+    test::expect_false(saved->info(player_t{1}).route[0].load.destruct);
+    test::expect_true(saved->info(player_t{1}).route[0].unload.destruct);
     std::println(std::cout, "✓ Route destination saved correctly");
   }
 
   // Test: Deactivate route
-  ctx.em.mutate_planet(0, 0,
-                       [](Planet& p) { p.info(player_t{1}).route[0].set = 0; });
+  ctx.em.mutate_planet(
+      0, 0, [](Planet& p) { p.info(player_t{1}).route[0].set = false; });
 
   // Verify: Route deactivated
   {
     const auto* saved = ctx.em.peek_planet(0, 0);
     test::expect_ne(saved, nullptr);
-    test::expect_eq(saved->info(player_t{1}).route[0].set, 0);
+    test::expect_false(saved->info(player_t{1}).route[0].set);
     std::println(std::cout, "✓ Route deactivation saved correctly");
   }
 
   // Test: Multiple routes
   ctx.em.mutate_planet(0, 0, [](Planet& p) {
     for (int i = 0; i < MAX_ROUTES; i++) {
-      p.info(player_t{1}).route[i].set = 1;
+      p.info(player_t{1}).route[i].set = true;
       p.info(player_t{1}).route[i].dest_star = 1;
       p.info(player_t{1}).route[i].dest_planet = 0;
-      p.info(player_t{1}).route[i].load = M_FUEL;
+      p.info(player_t{1}).route[i].load = CommodityManifest{.fuel = true};
     }
   });
 
@@ -123,8 +126,8 @@ void test_route_persistence() {
     const auto* saved = ctx.em.peek_planet(0, 0);
     test::expect_ne(saved, nullptr);
     for (int i = 0; i < MAX_ROUTES; i++) {
-      test::expect_eq(saved->info(player_t{1}).route[i].set, 1);
-      test::expect_eq(saved->info(player_t{1}).route[i].load, M_FUEL);
+      test::expect_true(saved->info(player_t{1}).route[i].set);
+      test::expect_true(saved->info(player_t{1}).route[i].load.fuel);
     }
     std::println(std::cout, "✓ Multiple routes saved correctly");
   }
@@ -151,7 +154,7 @@ void test_route_command_dispatch() {
   // Activate route 1
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "activate"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(player_t{1}).route[0].set, 1);
+  test::expect_true(ctx.em.peek_planet(0, 0)->info(player_t{1}).route[0].set);
 
   // Set destination
   g.out.str("");

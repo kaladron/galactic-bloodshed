@@ -51,7 +51,7 @@ template <>
 struct meta<ImpactData> {
   using T = ImpactData;
   static constexpr auto value =
-      object("x", &T::x, "y", &T::y, "scatter", &T::scatter);
+      object("coords", &T::coords, "scatter", &T::scatter);
 };
 
 template <>

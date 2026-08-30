@@ -599,11 +599,11 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
           entity_manager.mutate_sectormap(
               ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
                 Coordinates bomb_coords = [&]() -> Coordinates {
-                  if (std::holds_alternative<ImpactData>(ship.special())) {
-                    auto impact = std::get<ImpactData>(ship.special());
-                    if (!impact.scatter) {
-                      return Coordinates{impact.x % p.dimensions().x,
-                                         impact.y % p.dimensions().y};
+                  if (const auto* missile = ship.as<MissileShip>()) {
+                    if (!missile->is_scatter()) {
+                      return Coordinates{
+                          missile->impact_coords().x % p.dimensions().x,
+                          missile->impact_coords().y % p.dimensions().y};
                     }
                   }
                   return smap.get_random().coords();

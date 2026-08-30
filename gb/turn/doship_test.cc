@@ -280,7 +280,7 @@ void test_domissile_planet_bombardment_and_ship_attack() {
   missile1_data.deststar = starnum_t{1};
   missile1_data.destpnum = planetnum_t{0};
   missile1_data.destruct = 10;
-  missile1_data.special = ImpactData{.x = 1, .y = 1, .scatter = 0};
+  missile1_data.special = ImpactData{.coords = {1, 1}, .scatter = false};
   auto m1_handle = em.create_ship(missile1_data);
   Ship& m1 = *m1_handle;
   m1.on() = 1;

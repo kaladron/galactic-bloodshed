@@ -11,10 +11,11 @@ module gblib;
 
 namespace {
 std::string prin_aimed_at(const Ship& ship) {
-  if (!std::holds_alternative<AimedAtData>(ship.special())) {
+  const auto* mirror = ship.as<SpaceMirrorShip>();
+  if (!mirror) {
     return "Not aimed";
   }
-  const auto& aimed_at = std::get<AimedAtData>(ship.special());
+  const auto& aimed_at = mirror->aim();
   Place targ{aimed_at.level, aimed_at.snum, aimed_at.pnum, aimed_at.shipno};
   return targ.to_string();
 }
@@ -23,11 +24,12 @@ std::string prin_aimed_at(const Ship& ship) {
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
 void mk_expl_aimed_at(GameObj& g, const Ship& s) {
-  if (!std::holds_alternative<AimedAtData>(s.special())) {
+  const auto* mirror = s.as<SpaceMirrorShip>();
+  if (!mirror) {
     g.out << "Ship is not aimed.\n";
     return;
   }
-  const auto& aimed_at = std::get<AimedAtData>(s.special());
+  const auto& aimed_at = mirror->aim();
   const auto& str = *g.entity_manager.peek_star(aimed_at.snum);
 
   auto xf = s.xpos();
@@ -87,15 +89,17 @@ void order_defense(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_scatter(GameObj& g, const command_t& /*argv*/, Ship& ship) {
-  if (ship.type() != ShipType::STYPE_MISSILE) {
+  auto* missile = ship.as<MissileShip>();
+  if (!missile) {
     g.out << "Only missiles can be given this order.\n";
     return;
   }
-  ship.special() = ImpactData{.x = 0, .y = 0, .scatter = 1};
+  missile->set_scatter();
 }
 
 void order_impact(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.type() != ShipType::STYPE_MISSILE) {
+  auto* missile = ship.as<MissileShip>();
+  if (!missile) {
     g.out << "Only missiles can be designated for this.\n";
     return;
   }
@@ -104,9 +108,7 @@ void order_impact(GameObj& g, const command_t& argv, Ship& ship) {
     g.out << "Usage: order <ship> designate <x>,<y>\n";
     return;
   }
-  ship.special() = ImpactData{.x = static_cast<unsigned char>(coords->x),
-                              .y = static_cast<unsigned char>(coords->y),
-                              .scatter = 0};
+  missile->set_impact_coords(*coords);
 }
 
 void order_jump(GameObj& g, const command_t& argv, Ship& ship) {
@@ -403,30 +405,24 @@ void order_secondary(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_explosive(GameObj& /*g*/, const command_t& /*argv*/, Ship& ship) {
-  switch (ship.type()) {
-    case ShipType::STYPE_MINE:
-    case ShipType::OTYPE_GR:
-      ship.mode() = 0;
-      break;
-    default:
-      break;
+  if (auto* mine = ship.as<MineShip>()) {
+    mine->set_radiative(false);
+  } else if (ship.type() == ShipType::OTYPE_GR) {
+    ship.mode() = 0;
   }
 }
 
 void order_radiative(GameObj& /*g*/, const command_t& /*argv*/, Ship& ship) {
-  switch (ship.type()) {
-    case ShipType::STYPE_MINE:
-    case ShipType::OTYPE_GR:
-      ship.mode() = 1;
-      break;
-    default:
-      break;
+  if (auto* mine = ship.as<MineShip>()) {
+    mine->set_radiative(true);
+  } else if (ship.type() == ShipType::OTYPE_GR) {
+    ship.mode() = 1;
   }
 }
 
 void order_move(GameObj& g, const command_t& argv, Ship& ship) {
-  if ((ship.type() != ShipType::OTYPE_TERRA) &&
-      (ship.type() != ShipType::OTYPE_PLOW)) {
+  auto* terraform = ship.as<TerraformerShip>();
+  if (!terraform) {
     g.out << "That ship is not a terraformer or a space plow.\n";
     return;
   }
@@ -464,34 +460,33 @@ void order_move(GameObj& g, const command_t& argv, Ship& ship) {
       return;
     }
   }
-  ship.shipclass() = moveseq;
+  terraform->shipclass() = moveseq;
   /* This is the index keeping track of which order in shipclass is next. */
-  ship.special() = TerraformData{.index = 0};
+  terraform->set_index(0);
 }
 
 void order_trigger(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.type() == ShipType::STYPE_MINE) {
-    unsigned short radius;
-    if (std::stoi(argv[3]) < 0)
-      radius = 0;
-    else
-      radius = std::stoi(argv[3]);
-    ship.special() = TriggerData{.radius = radius};
+  auto* mine = ship.as<MineShip>();
+  if (mine) {
+    int radius = std::stoi(argv[3]);
+    mine->set_trigger_radius(radius < 0 ? 0
+                                        : static_cast<unsigned short>(radius));
   } else {
     g.out << "This ship cannot be assigned a trigger radius.\n";
   }
 }
 
 void order_transport(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.type() == ShipType::OTYPE_TRANSDEV) {
+  auto* transporter = ship.as<TransporterShip>();
+  if (transporter) {
     unsigned short target = std::stoi(argv[3]);
-    if (target == ship.number()) {
+    if (shipnum_t{target} == ship.number()) {
       g.out << "A transporter cannot transport to itself.";
       target = 0;
     } else {
       g.out << std::format("Target ship is {}.\n", target);
     }
-    ship.special() = TransportData{.target = target};
+    transporter->set_target_ship(shipnum_t{target});
   } else {
     g.out << "This ship is not a transporter.\n";
   }
@@ -510,11 +505,19 @@ void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
         g.out << "Error in destination.\n";
         return;
       }
-      ship.special() = AimedAtData{.shipno = pl.shipno,
-                                   .snum = pl.snum,
-                                   .intensity = 0,
-                                   .pnum = pl.pnum,
-                                   .level = pl.level};
+      if (auto* mirror = ship.as<SpaceMirrorShip>()) {
+        mirror->aim() = AimedAtData{.shipno = pl.shipno,
+                                    .snum = pl.snum,
+                                    .intensity = 0,
+                                    .pnum = pl.pnum,
+                                    .level = pl.level};
+      } else {
+        ship.special() = AimedAtData{.shipno = pl.shipno,
+                                     .snum = pl.snum,
+                                     .intensity = 0,
+                                     .pnum = pl.pnum,
+                                     .level = pl.level};
+      }
       if (ship.type() != ShipType::OTYPE_TRACT &&
           ship.type() != ShipType::OTYPE_GTELE)
         use_fuel(ship, FUEL_MANEUVER);
@@ -532,12 +535,9 @@ void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
-  if (ship.type() == ShipType::STYPE_MIRROR) {
-    if (std::holds_alternative<AimedAtData>(ship.special())) {
-      auto aimed_at = std::get<AimedAtData>(ship.special());
-      aimed_at.intensity = std::max(0, std::min(100, std::stoi(argv[3])));
-      ship.special() = aimed_at;
-    }
+  if (auto* mirror = ship.as<SpaceMirrorShip>()) {
+    mirror->set_intensity(
+        static_cast<char>(std::clamp(std::stoi(argv[3]), 0, 100)));
   }
 }
 
@@ -794,60 +794,48 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
       buffer << "/off";
   }
   if (ship.protect().evade) buffer << "/evade";
-  if (ship.bombard()) buffer << "/bomb";
-  if (ship.type() == ShipType::STYPE_MINE ||
-      ship.type() == ShipType::OTYPE_GR) {
+  if (const auto* mine = ship.as<MineShip>()) {
+    if (mine->mode())
+      buffer << "/radiate";
+    else
+      buffer << "/explode";
+    buffer << std::format("/trigger {}", mine->trigger_radius());
+  } else if (ship.type() == ShipType::OTYPE_GR) {
     if (ship.mode())
       buffer << "/radiate";
     else
       buffer << "/explode";
   }
-  if (ship.type() == ShipType::OTYPE_TERRA ||
-      ship.type() == ShipType::OTYPE_PLOW) {
-    if (std::holds_alternative<TerraformData>(ship.special())) {
-      auto terraform = std::get<TerraformData>(ship.special());
-      std::string temp = &(ship.shipclass()[terraform.index]);
-      buffer << std::format("/move {}", temp);
 
-      if (temp[temp.length() - 1] == 'c') {
-        std::string hidden = temp;
-        hidden = hidden.substr(0, terraform.index);
-        buffer << std::format("{}c", hidden);
-      }
+  if (const auto* terraform = ship.as<TerraformerShip>()) {
+    std::string temp = &(terraform->shipclass()[terraform->index()]);
+    buffer << std::format("/move {}", temp);
+
+    if (temp[temp.length() - 1] == 'c') {
+      std::string hidden = temp;
+      hidden = hidden.substr(0, terraform->index());
+      buffer << std::format("{}c", hidden);
     }
   }
 
-  if (ship.type() == ShipType::STYPE_MISSILE &&
-      ship.whatdest() == ScopeLevel::LEVEL_PLAN) {
-    if (std::holds_alternative<ImpactData>(ship.special())) {
-      auto impact = std::get<ImpactData>(ship.special());
-      if (impact.scatter)
+  if (const auto* missile = ship.as<MissileShip>()) {
+    if (missile->whatdest() == ScopeLevel::LEVEL_PLAN) {
+      if (missile->is_scatter())
         buffer << "/scatter";
       else {
-        buffer << std::format("/impact {},{}", impact.x, impact.y);
+        buffer << std::format("/impact {},{}", missile->impact_coords().x,
+                              missile->impact_coords().y);
       }
     }
   }
 
-  if (ship.type() == ShipType::STYPE_MINE) {
-    if (std::holds_alternative<TriggerData>(ship.special())) {
-      buffer << std::format("/trigger {}",
-                            std::get<TriggerData>(ship.special()).radius);
-    }
+  if (const auto* trans = ship.as<TransporterShip>()) {
+    buffer << std::format("/target {}", trans->target_ship().value);
   }
-  if (ship.type() == ShipType::OTYPE_TRANSDEV) {
-    if (std::holds_alternative<TransportData>(ship.special())) {
-      buffer << std::format("/target {}",
-                            std::get<TransportData>(ship.special()).target);
-    }
-  }
-  if (ship.type() == ShipType::STYPE_MIRROR) {
-    std::string intensity_str = "0";
-    if (std::holds_alternative<AimedAtData>(ship.special())) {
-      intensity_str =
-          std::to_string(std::get<AimedAtData>(ship.special()).intensity);
-    }
-    buffer << std::format("/aim {}/int {}", prin_aimed_at(ship), intensity_str);
+
+  if (const auto* mirror = ship.as<SpaceMirrorShip>()) {
+    buffer << std::format("/aim {}/int {}", prin_aimed_at(*mirror),
+                          static_cast<int>(mirror->intensity()));
   }
 
   buffer << "\n";

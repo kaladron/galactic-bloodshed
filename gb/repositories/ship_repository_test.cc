@@ -505,14 +505,13 @@ int main() {
     ship_struct missile_data{};
     missile_data.number = 204;
     missile_data.type = ShipType::STYPE_MISSILE;
-    missile_data.special = ImpactData{.x = 12, .y = 34, .scatter = 2};
+    missile_data.special = ImpactData{.coords = {12, 34}, .scatter = true};
     auto missile_ship = ShipFactory::create(missile_data);
     test::expect_true(missile_ship != nullptr);
     auto* missile = missile_ship->as<MissileShip>();
     test::expect_true(missile != nullptr);
-    test::expect_eq(missile->impact_x(), 12);
-    test::expect_eq(missile->impact_y(), 34);
-    test::expect_eq(missile->scatter(), 2);
+    test::expect_eq(missile->impact_coords(), (Coordinates{12, 34}));
+    test::expect_true(missile->is_scatter());
 
     // MineShip
     ship_struct mine_data{};
@@ -542,10 +541,13 @@ int main() {
     ship_struct plow_data{};
     plow_data.number = 207;
     plow_data.type = ShipType::OTYPE_PLOW;
+    plow_data.special = TerraformData{.index = 5};
     auto plow_ship = ShipFactory::create(plow_data);
     test::expect_true(plow_ship != nullptr);
     auto* plow = plow_ship->as<GroundPlowShip>();
     test::expect_true(plow != nullptr);
+    test::expect_eq(plow->index(), 5);
+    test::expect_true(plow_ship->as<TerraformerShip>() != nullptr);
 
     // TransporterShip
     ship_struct trans_data{};

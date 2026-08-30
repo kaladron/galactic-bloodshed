@@ -144,9 +144,8 @@ export struct TimerData {
 };
 
 export struct ImpactData {
-  unsigned char x;
-  unsigned char y;
-  unsigned char scatter;
+  Coordinates coords{0, 0};
+  bool scatter{false};
 };
 
 export struct TriggerData {
@@ -1418,20 +1417,19 @@ public:
   [[nodiscard]] const ImpactData& impact() const noexcept {
     return impact_;
   }
-  [[nodiscard]] unsigned char impact_x() const noexcept {
-    return impact_.x;
+  [[nodiscard]] Coordinates impact_coords() const noexcept {
+    return impact_.coords;
   }
-  [[nodiscard]] unsigned char impact_y() const noexcept {
-    return impact_.y;
-  }
-  [[nodiscard]] unsigned char scatter() const noexcept {
+  [[nodiscard]] bool is_scatter() const noexcept {
     return impact_.scatter;
   }
-  void set_impact(unsigned char x, unsigned char y,
-                  unsigned char scatter) noexcept {
-    impact_.x = x;
-    impact_.y = y;
-    impact_.scatter = scatter;
+  void set_impact_coords(Coordinates coords) noexcept {
+    impact_.coords = coords;
+    impact_.scatter = false;
+  }
+  void set_scatter() noexcept {
+    impact_.coords = Coordinates{0, 0};
+    impact_.scatter = true;
   }
 
   [[nodiscard]] ship_struct to_struct() const override {
@@ -1514,9 +1512,9 @@ private:
   TerraformData terraform_{};
 };
 
-export class GroundPlowShip : public Ship {
+export class GroundPlowShip : public TerraformerShip {
 public:
-  using Ship::Ship;
+  using TerraformerShip::TerraformerShip;
 };
 
 export class TransporterShip : public Ship {
@@ -1538,7 +1536,7 @@ public:
     return shipnum_t{transport_.target};
   }
   void set_target_ship(shipnum_t target) noexcept {
-    transport_.target = target.value;
+    transport_.target = static_cast<unsigned short>(target.value);
   }
 
   [[nodiscard]] ship_struct to_struct() const override {
@@ -1635,7 +1633,9 @@ struct ShipTypeTraits<MineShip> {
 
 export template <>
 struct ShipTypeTraits<TerraformerShip> {
-  static constexpr ShipType expected_type = ShipType::OTYPE_TERRA;
+  [[nodiscard]] static constexpr bool matches(ShipType type) noexcept {
+    return type == ShipType::OTYPE_TERRA || type == ShipType::OTYPE_PLOW;
+  }
 };
 
 export template <>

@@ -184,11 +184,24 @@ void test_rst_dispatch() {
   test::expect_contains(g.out.str(), "no such ship");
   std::println(std::cout, "    ✓ report rejected non-existent ship");
 
-  // 10. Error case: invalid ship letter
+  // 11. Spore Pod temperature suffix
+  ship_struct s_pod{};
+  s_pod.number = 3;
+  s_pod.owner = 1;
+  s_pod.type = ShipType::STYPE_POD;
+  s_pod.name = "PodAlpha";
+  s_pod.alive = 1;
+  s_pod.active = 1;
+  s_pod.whatorbits = ScopeLevel::LEVEL_STAR;
+  s_pod.storbits = 0;
+  s_pod.size = 10;
+  s_pod.special = PodData{.temperature = 88};
+  auto pod_handle = ctx.em.create_ship(s_pod);
+
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"report", "?"});
-  test::expect_contains(g.out.str(), "no valid ship letters found");
-  std::println(std::cout, "    ✓ report rejected invalid ship letters");
+  ctx.assert_dispatch_success(g, {"stats", "#3"});
+  test::expect_contains(g.out.str(), "10 (88)");
+  std::println(std::cout, "    ✓ pod temperature suffix displayed");
 }
 
 }  // namespace

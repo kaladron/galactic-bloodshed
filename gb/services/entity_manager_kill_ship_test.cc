@@ -92,26 +92,22 @@ int main() {
     std::println(std::cout, "✓ Basic ship kill works");
   }
 
-  // MindData handling
+  // AutonomousShip who_killed tracking
   {
     ship_struct ship_data{};
     ship_data.owner = 2;
     ship_data.alive = 1;
-    ship_data.type = ShipType::STYPE_FIGHTER;
+    ship_data.type = ShipType::OTYPE_VN;
 
     auto ship_handle = em.create_ship(ship_data);
     auto& ship = *ship_handle;
 
-    MindData mind{};
-    mind.who_killed = 0;
-    ship.special() = mind;
-
     em.kill_ship(1, ship);
 
-    test::expect_true(std::holds_alternative<MindData>(ship.special()));
-    auto result_mind = std::get<MindData>(ship.special());
-    test::expect_eq(result_mind.who_killed, 1);
-    std::println(std::cout, "✓ MindData who_killed tracking works");
+    auto* vn = ship.as<VonNeumannShip>();
+    test::expect_ne(vn, nullptr);
+    test::expect_eq(vn->who_killed(), player_t{1});
+    std::println(std::cout, "✓ AutonomousShip who_killed tracking works");
   }
 
   // Gov_ship gets cleared when government ship is killed
@@ -202,13 +198,10 @@ int main() {
     ship_data.whatorbits = ScopeLevel::LEVEL_PLAN;
     ship_data.storbits = 0;
     ship_data.pnumorbits = 0;
+    ship_data.special = WasteData{.toxic = 20};
 
     auto ship_handle = em.create_ship(ship_data);
     auto& ship = *ship_handle;
-
-    WasteData waste{};
-    waste.toxic = 20;
-    ship.special() = waste;
 
     em.kill_ship(1, ship);
 

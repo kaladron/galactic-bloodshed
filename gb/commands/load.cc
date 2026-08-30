@@ -16,35 +16,25 @@ int landed_on(const Ship& s, const shipnum_t shipno) {
   return (s.whatorbits() == ScopeLevel::LEVEL_SHIP && s.destshipno() == shipno);
 }
 
-void do_transporter(const Race& race, GameObj& g, Ship* s) {
-  player_t Playernum = g.player();
-
-  Playernum = race.Playernum;
-
-  if (!s->is_landed()) {
+void do_transporter(const Race& race, GameObj& g, TransporterShip& s) {
+  if (!s.is_landed()) {
     g.out << "Origin ship not landed.\n";
     return;
   }
-  if (s->storbits() != g.snum() || s->pnumorbits() != g.pnum()) {
+  if (s.storbits() != g.snum() || s.pnumorbits() != g.pnum()) {
     g.out << "Change scope to the planet the ship is landed on!\n";
     return;
   }
-  if (s->damage()) {
+  if (s.damage()) {
     g.out << "Origin device is damaged.\n";
     return;
   }
-  if (!std::holds_alternative<TransportData>(s->special())) {
-    g.out << "Transport device not configured.\n";
-    return;
-  }
-  auto transport = std::get<TransportData>(s->special());
-
-  if (transport.target == 0) {
+  if (!s.target_ship().value) {
     g.out << "The hopper seems to be blocked.\n";
     return;
   }
 
-  g.entity_manager.mutate_ship(transport.target, [&](Ship& s2) {
+  g.entity_manager.mutate_ship(s.target_ship(), [&](Ship& s2) {
     if (!s2.alive() || s2.type() != ShipType::OTYPE_TRANSDEV || !s2.on()) {
       g.out << "The target device is not receiving.\n";
       return;
@@ -61,51 +51,50 @@ void do_transporter(const Race& race, GameObj& g, Ship* s) {
     g.out << "Zap\07!\n"; /* ^G */
     /* send stuff to other ship (could be transport device) */
     std::string tele_lines;
-    if (s->resource()) {
-      rcv_resource(s2, (int)s->resource());
-      g.out << std::format("{} resources transferred.\n", s->resource());
-      tele_lines += std::format("{} Resources\n", s->resource());
-      use_resource(*s, (int)s->resource());
+    if (s.resource()) {
+      rcv_resource(s2, s.resource());
+      g.out << std::format("{} resources transferred.\n", s.resource());
+      tele_lines += std::format("{} Resources\n", s.resource());
+      use_resource(s, s.resource());
     }
-    if (s->fuel()) {
-      rcv_fuel(s2, s->fuel());
-      g.out << std::format("{} fuel transferred.\n", s->fuel());
-      tele_lines += std::format("{} Fuel\n", s->fuel());
-      use_fuel(*s, s->fuel());
-    }
-
-    if (s->destruct()) {
-      rcv_destruct(s2, (int)s->destruct());
-      g.out << std::format("{} destruct transferred.\n", s->destruct());
-      tele_lines += std::format("{} Destruct\n", s->destruct());
-      use_destruct(*s, (int)s->destruct());
+    if (s.fuel()) {
+      rcv_fuel(s2, s.fuel());
+      g.out << std::format("{} fuel transferred.\n", s.fuel());
+      tele_lines += std::format("{} Fuel\n", s.fuel());
+      use_fuel(s, s.fuel());
     }
 
-    if (s->popn()) {
-      s2.mass() += s->popn() * race.mass;
-      s2.popn() += s->popn();
+    if (s.destruct()) {
+      rcv_destruct(s2, s.destruct());
+      g.out << std::format("{} destruct transferred.\n", s.destruct());
+      tele_lines += std::format("{} Destruct\n", s.destruct());
+      use_destruct(s, s.destruct());
+    }
 
-      g.out << std::format("{} population transferred.\n", s->popn());
+    if (s.popn()) {
+      s2.mass() += static_cast<double>(s.popn()) * race.mass;
+      s2.popn() += s.popn();
+
+      g.out << std::format("{} population transferred.\n", s.popn());
       tele_lines +=
-          std::format("{} {}\n", s->popn(),
+          std::format("{} {}\n", s.popn(),
                       race.Metamorph ? "tons of biomass" : "population");
-      s->mass() -= s->popn() * race.mass;
-      s->popn() -= s->popn();
+      s.mass() -= static_cast<double>(s.popn()) * race.mass;
+      s.popn() = 0;
     }
 
-    if (s->crystals()) {
-      s2.crystals() += s->crystals();
+    if (s.crystals()) {
+      s2.crystals() += s.crystals();
 
-      g.out << std::format("{} crystal(s) transferred.\n", s->crystals());
-      tele_lines += std::format("{} crystal(s)\n", s->crystals());
-
-      s->crystals() = 0;
+      g.out << std::format("{} crystal(s) transferred.\n", s.crystals());
+      tele_lines += std::format("{} crystal(s)\n", s.crystals());
+      s.crystals() = 0;
     }
 
-    if (s2.owner() != s->owner()) {
+    if (s2.owner() != s.owner()) {
       std::string telegram =
           "Audio-vibatory-physio-molecular transport device #";
-      telegram += std::format("{} gave your ship {} the following:\n", *s, s2);
+      telegram += std::format("{} gave your ship {} the following:\n", s, s2);
       telegram += tele_lines;
       warn_player(g.session_registry, g.entity_manager, s2.owner(),
                   s2.governor(), telegram);
@@ -698,7 +687,7 @@ bool load(const command_t& argv, GameObj& g) {
         g.out << std::format("{} crystal(s) transferred.\n", amt);
         break;
       case 'f':
-        rcv_fuel(s, (double)amt);
+        rcv_fuel(s, static_cast<double>(amt));
         g.out << std::format("{} fuel transferred.\n", amt);
         break;
       case 'r':
@@ -709,10 +698,11 @@ bool load(const command_t& argv, GameObj& g) {
     success = true;
 
     /* do transporting here */
-    if (s.type() == ShipType::OTYPE_TRANSDEV && s.on() &&
-        std::holds_alternative<TransportData>(s.special()) &&
-        std::get<TransportData>(s.special()).target)
-      do_transporter(race, g, &s);
+    if (auto* trans = s.as<TransporterShip>()) {
+      if (trans->on() && trans->target_ship().value) {
+        do_transporter(race, g, *trans);
+      }
+    }
   }
   return success;
 }

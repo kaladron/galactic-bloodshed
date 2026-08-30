@@ -175,10 +175,52 @@ void test_scrap_domain_errors() {
   test::expect_contains(g.out.str(), "no crew");
 }
 
+void test_scrap_toxic_waste_warning() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(0);
+
+  // Create Toxic Waste Canister landed on planet
+  ship_struct tox_data{};
+  tox_data.number = 3;
+  tox_data.owner = 1;
+  tox_data.governor = 0;
+  tox_data.alive = true;
+  tox_data.active = true;
+  tox_data.type = ShipType::OTYPE_TOXWC;
+  tox_data.name = "HazMat";
+  tox_data.whatorbits = ScopeLevel::LEVEL_PLAN;
+  tox_data.storbits = starnum_t{1};
+  tox_data.pnumorbits = planetnum_t{0};
+  tox_data.whatdest = ScopeLevel::LEVEL_PLAN;
+  tox_data.land_coords = {5, 5};
+  tox_data.docked = 1;
+  tox_data.popn = 1;
+  tox_data.special = WasteData{.toxic = 25};
+  auto tox_handle = ctx.em.create_ship(tox_data);
+  const auto tox_id = tox_handle->number();
+
+  ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", tox_id.value)},
+                              1);
+  test::expect_contains(g.out.str(),
+                        "WARNING: This will release 25 toxin points");
+
+  ctx.em.clear_cache();
+  const auto* scrapped = ctx.em.peek_ship(tox_id);
+  test::expect_eq(scrapped->alive(), 0);
+}
+
 }  // namespace
 
 int main() {
   test_scrap_happy_paths();
+  test_scrap_toxic_waste_warning();
   test_scrap_insufficient_ap();
   test_scrap_domain_errors();
 

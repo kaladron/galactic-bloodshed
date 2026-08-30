@@ -790,10 +790,8 @@ EntityManager::find_player_by_name(const std::string& name) {
 }
 
 void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
-  if (std::holds_alternative<MindData>(ship.special())) {
-    auto mind = std::get<MindData>(ship.special());
-    mind.who_killed = Playernum;
-    ship.special() = mind;
+  if (auto* auto_ship = ship.as<AutonomousShip>()) {
+    auto_ship->set_who_killed(Playernum);
   }
   ship.alive() = 0;
   ship.notified() = 0; /* prepare the ship for recycling */
@@ -801,81 +799,49 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   if (ship.owner() != 0 && ship.type() != ShipType::STYPE_POD &&
       ship.type() != ShipType::OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
-    auto victim_handle = get_race(ship.owner());
-    if (!victim_handle.get()) {
-      std::cerr << "Database corruption, race not found.";
-      std::abort();
-    }
-    auto& victim = *victim_handle;
-    if (victim.Gov_ship == ship.number()) victim.Gov_ship = 0;
+    mutate_race(ship.owner(), [&](Race& victim) {
+      if (victim.Gov_ship == ship.number()) victim.Gov_ship = 0;
 
-    if (!victim.God && Playernum != ship.owner() &&
-        ship.type() != ShipType::OTYPE_VN) {
-      auto killer_handle = get_race(Playernum);
-      if (!killer_handle.get()) {
-        std::cerr << "Database corruption, race not found.";
-        std::abort();
+      if (!victim.God && Playernum != ship.owner() &&
+          ship.type() != ShipType::OTYPE_VN) {
+        mutate_race(Playernum, [&](Race& killer) {
+          killer.adjust_morale(victim, static_cast<int>(ship.build_cost()));
+        });
+      } else if (ship.owner() == Playernum && !ship.docked() &&
+                 ship.max_crew_capacity()) {
+        victim.morale -= 2L * ship.build_cost(); /* scuttle/scrap */
       }
-      auto& killer = *killer_handle;
-      killer.adjust_morale(victim, static_cast<int>(ship.build_cost()));
-      // Both killer and victim auto-save when handles go out of scope
-    } else if (ship.owner() == Playernum && !ship.docked() &&
-               ship.max_crew_capacity()) {
-      victim.morale -= 2L * ship.build_cost(); /* scuttle/scrap */
-    }
-    // victim auto-saves when handle goes out of scope
+    });
   }
 
-  if (ship.type() == ShipType::OTYPE_VN ||
-      ship.type() == ShipType::OTYPE_BERS) {
-    auto sdata_handle = get_universe();
-    if (!sdata_handle.get()) {
-      std::cerr << "Database corruption, universe_struct not found.";
-      std::abort();
-    }
-    auto& Sdata = *sdata_handle;
+  if (const auto* auto_ship = ship.as<AutonomousShip>()) {
+    mutate_universe([&](universe_struct& Sdata) {
+      /* add ship to VN shit list */
+      Sdata.VN_hitlist[auto_ship->who_killed()] += 1;
 
-    /* add ship to VN shit list */
-    if (std::holds_alternative<MindData>(ship.special())) {
-      auto mind = std::get<MindData>(ship.special());
-      Sdata.VN_hitlist[mind.who_killed] += 1;
-    }
-
-    /* keep track of where these VN's were shot up */
-    record_vn_destruction_site(
-        Sdata.VN_index1[Playernum], Sdata.VN_index2[Playernum],
-        static_cast<int>(ship.storbits().value), int_rand(0, 1) == 0);
-    // Sdata auto-saves when handle goes out of scope
+      /* keep track of where these VN's were shot up */
+      record_vn_destruction_site(
+          Sdata.VN_index1[Playernum], Sdata.VN_index2[Playernum],
+          static_cast<int>(ship.storbits().value), int_rand(0, 1) == 0);
+    });
   }
 
-  if (ship.type() == ShipType::OTYPE_TOXWC &&
-      ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    auto planet_handle = get_planet(ship.storbits(), ship.pnumorbits());
-    if (!planet_handle.get()) {
-      std::cerr << "Database corruption, planet not found.";
-      std::abort();
+  if (const auto* tox = ship.as<ToxicWasteShip>()) {
+    if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+      mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
+        planet.conditions(TOXIC) =
+            MIN(100, planet.conditions(TOXIC) + tox->toxic_level());
+      });
     }
-    auto& planet = *planet_handle;
-    if (std::holds_alternative<WasteData>(ship.special())) {
-      auto waste = std::get<WasteData>(ship.special());
-      planet.conditions(TOXIC) =
-          MIN(100, planet.conditions(TOXIC) + waste.toxic);
-    }
-    // planet auto-saves when handle goes out of scope
   }
 
   /* undock the stuff docked with it */
   if (ship.docked() && ship.whatorbits() != ScopeLevel::LEVEL_SHIP &&
       ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
-    auto dest_ship_handle = get_ship(ship.destshipno());
-    if (!dest_ship_handle.get()) {
-      std::cerr << "Database corruption, ship not found.";
-      std::abort();
-    }
-    auto& s = *dest_ship_handle;
-    s.docked() = 0;
-    s.whatdest() = ScopeLevel::LEVEL_UNIV;
-    // s auto-saves when handle goes out of scope
+    mutate_ship(ship.destshipno(), [](Ship& s) {
+      s.docked() = 0;
+      s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    });
   }
 
   /* landed ships are killed */

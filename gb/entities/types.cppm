@@ -23,6 +23,7 @@ export using ap_t = std::uint32_t;
 export using resource_t = std::int64_t;
 export using money_t = std::int64_t;
 export using population_t = std::int64_t;
+export using fuel_t = double;
 
 // Semantic domain metric types
 export using armor_t =

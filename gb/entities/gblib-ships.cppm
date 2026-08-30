@@ -1257,6 +1257,12 @@ public:
   void set_target(player_t target) noexcept {
     mind_.target = target;
   }
+  [[nodiscard]] player_t who_killed() const noexcept {
+    return mind_.who_killed;
+  }
+  void set_who_killed(player_t killer) noexcept {
+    mind_.who_killed = killer;
+  }
   [[nodiscard]] std::uint32_t generation() const noexcept {
     return mind_.generation;
   }
@@ -1390,6 +1396,9 @@ public:
   }
   void set_count(unsigned char count) noexcept {
     timer_.count = count;
+  }
+  void reset_timer() noexcept {
+    timer_.count = 0;
   }
 
   [[nodiscard]] ship_struct to_struct() const override {
@@ -1699,14 +1708,14 @@ export std::optional<player_t>
 select_victim_to_steal_from(const Planet& planet,
                             std::span<const player_t> race_order);
 export void planet_doVN(Ship&, Planet&, SectorMap&, EntityManager&, TurnStats&);
-export void use_fuel(Ship&, double);
-export void use_destruct(Ship&, int);
-export void use_resource(Ship&, int);
-export void rcv_fuel(Ship&, double);
-export void rcv_resource(Ship&, int);
-export void rcv_destruct(Ship&, int);
-export void rcv_popn(Ship&, int, double);
-export void rcv_troops(Ship&, int, double);
+export void use_fuel(Ship&, fuel_t);
+export void use_destruct(Ship&, resource_t);
+export void use_resource(Ship&, resource_t);
+export void rcv_fuel(Ship&, fuel_t);
+export void rcv_resource(Ship&, resource_t);
+export void rcv_destruct(Ship&, resource_t);
+export void rcv_popn(Ship&, population_t, double);
+export void rcv_troops(Ship&, population_t, double);
 export std::string prin_ship_orbits(EntityManager&, const Ship&);
 export std::string prin_ship_dest(const Ship&);
 export void moveship(EntityManager&, Ship& ship, int x, int y, int z);
@@ -1726,13 +1735,13 @@ export const char Shipltrs[] = {
     'v', 'V', '@', 'l', 'w', ':', 'G', 'F',  'T', ';', 'Z', '[',
     '^', 'P', 'q', 'K', 'Y', 'W', 'J', '&',  'R', 'b', 'L'};
 
-export template <>
-struct std::formatter<Ship> {
+export template <std::derived_from<Ship> T>
+struct std::formatter<T> {
   constexpr auto parse(std::format_parse_context& ctx) {
     return ctx.begin();
   }
 
-  auto format(const Ship& s, auto& ctx) const {
+  auto format(const T& s, auto& ctx) const {
     return std::format_to(ctx.out(), "{}{}{} [{}]", Shipltrs[s.type()],
                           s.number(), s.name(), s.owner());
   }

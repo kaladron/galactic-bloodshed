@@ -114,10 +114,55 @@ void test_launch_domain_errors() {
   ctx.verify_universe_invariants();
 }
 
+void test_launch_canister_ships() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // Create test canister ship landed on planet with initial count 5
+  ship_struct canist_data{};
+  canist_data.number = 2;
+  canist_data.owner = 1;
+  canist_data.governor = 0;
+  canist_data.alive = true;
+  canist_data.active = true;
+  canist_data.type = ShipType::OTYPE_CANIST;
+  canist_data.name = "DustCanister";
+  canist_data.max_speed = 1;
+  canist_data.whatorbits = ScopeLevel::LEVEL_PLAN;
+  canist_data.storbits = starnum_t{0};
+  canist_data.pnumorbits = planetnum_t{0};
+  canist_data.whatdest = ScopeLevel::LEVEL_PLAN;
+  canist_data.land_coords = {5, 5};
+  canist_data.docked = 1;
+  canist_data.fuel = 1000.0;
+  canist_data.special = TimerData{.count = 5};
+  auto canist_handle = ctx.em.create_ship(canist_data);
+  const auto canist_id = canist_handle->number();
+
+  ctx.assert_dispatch_success(
+      g, {"launch", std::format("#{}", canist_id.value)}, 1);
+  test::expect_contains(g.out.str(), "A cloud of dust envelopes your planet");
+
+  ctx.em.clear_cache();
+  const auto* launched = ctx.em.peek_ship(canist_id)->as<CanisterShip>();
+  test::expect_ne(launched, nullptr);
+  test::expect_eq(launched->count(), 0U);
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
   test_launch_happy_paths();
+  test_launch_canister_ships();
   test_launch_insufficient_ap();
   test_launch_domain_errors();
 

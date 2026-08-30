@@ -140,11 +140,8 @@ void report_status(GameObj& g, RstContext& ctx, const Ship& s) {
 
   // Build special suffix for POD temperature
   std::string pod_suffix;
-  if (s.type() == ShipType::STYPE_POD) {
-    if (std::holds_alternative<PodData>(s.special())) {
-      auto pod = std::get<PodData>(s.special());
-      pod_suffix = std::format(" ({})", pod.temperature);
-    }
+  if (const auto* pod = s.as<SporePodShip>()) {
+    pod_suffix = std::format(" ({})", pod->temperature());
   }
 
   // Add data row

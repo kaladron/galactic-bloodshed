@@ -164,13 +164,8 @@ bool launch(const command_t& argv, GameObj& g) {
               use_fuel(s, fuel);
               s.docked() = 0;
               s.whatdest() = ScopeLevel::LEVEL_UNIV;
-              switch (s.type()) {
-                case ShipType::OTYPE_CANIST:
-                case ShipType::OTYPE_GREEN:
-                  s.special() = TimerData{.count = 0};
-                  break;
-                default:
-                  break;
+              if (auto* canist = s.as<CanisterShip>()) {
+                canist->reset_timer();
               }
               s.notified() = 0;
               if (!p.explored()) {
@@ -188,15 +183,12 @@ bool launch(const command_t& argv, GameObj& g) {
               g.out << std::format("{} launched from planet,", s);
               g.out << std::format(" using {:.1f} fuel.\n", fuel);
 
-              switch (s.type()) {
-                case ShipType::OTYPE_CANIST:
+              if (const auto* canist = s.as<CanisterShip>()) {
+                if (canist->type() == ShipType::OTYPE_CANIST) {
                   g.out << "A cloud of dust envelopes your planet.\n";
-                  break;
-                case ShipType::OTYPE_GREEN:
+                } else if (canist->type() == ShipType::OTYPE_GREEN) {
                   g.out << "Greenhouse gases surround the planet.\n";
-                  break;
-                default:
-                  break;
+                }
               }
               any_launched = true;
             });

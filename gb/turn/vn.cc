@@ -12,84 +12,154 @@ import std;
 
 module gblib;
 
-namespace {
-void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
-  /* give berserkers a mission - send to planet of offending player and bombard
-   * it */
-  ship.bombard() = 1;
-  MindData mind{}; /* who to attack */
-  mind.target = stats.VN_brain.most_mad;
-  ship.whatdest() = ScopeLevel::LEVEL_PLAN;
-  const auto* universe = em.peek_universe();
-  if (mind.target > 0 && mind.target <= MAXPLAYERS) {
-    if (success(50))
-      ship.deststar() = universe->VN_index1[mind.target];
-    else
-      ship.deststar() = universe->VN_index2[mind.target];
-  } else {
-    ship.deststar() = int_rand(0, universe->numstars - 1);
+/// \brief Finds the closest and second-closest star systems to the specified
+/// coordinates, excluding the current star system.
+///
+/// \param em Entity manager for accessing star and universe entities.
+/// \param current_star Star system currently orbited (which will be excluded
+/// from results).
+/// \param xpos X coordinate in universe space.
+/// \param ypos Y coordinate in universe space.
+/// \return StarTargetResult containing the closest and second-closest
+/// starnum_t.
+StarTargetResult find_closest_stars(EntityManager& em, starnum_t current_star,
+                                    double xpos, double ypos) {
+  const auto& universe = *em.peek_universe();
+  if (universe.numstars <= 1) {
+    return StarTargetResult{.closest = current_star,
+                            .second_closest = current_star};
   }
+
+  std::optional<starnum_t> min1;
+  std::optional<starnum_t> min2;
+  double dist1 = std::numeric_limits<double>::max();
+  double dist2 = std::numeric_limits<double>::max();
+
+  // Scan all stars using readonly StarList iteration to track the top two
+  // closest candidate systems excluding the ship's current star.
+  for (const Star& star : StarList::readonly(em)) {
+    if (star.star_id() == current_star) {
+      continue;
+    }
+
+    const double d = std::hypot(star.xpos() - xpos, star.ypos() - ypos);
+
+    // If closer than the closest star, push the previous closest down to
+    // second-closest.
+    if (d < dist1) {
+      dist2 = dist1;
+      min2 = min1;
+      dist1 = d;
+      min1 = star.star_id();
+    } else if (d < dist2) {
+      // Otherwise check if closer than the current second-closest.
+      dist2 = d;
+      min2 = star.star_id();
+    }
+  }
+
+  const starnum_t closest = min1.value_or(current_star);
+  const starnum_t second_closest = min2.value_or(closest);
+  return StarTargetResult{.closest = closest, .second_closest = second_closest};
+}
+
+/// \brief Selects and assigns a destination target for an autonomous berserker
+/// ship.
+///
+/// If an offending player target is set in TurnStats, the berserker routes
+/// toward one of the target player's known star systems; otherwise, it selects
+/// a random star.
+///
+/// \param em Entity manager for entity queries and mutations.
+/// \param ship Autonomous berserker ship to assign orders to.
+/// \param stats Turn statistics containing aggression tracking (most_mad).
+void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
+                                  const TurnStats& stats) {
+  ship.bombard() = true;
+  ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+
+  ship.mind().target = stats.VN_brain.most_mad;
+  const auto target = ship.mind().target;
+
+  const auto& universe = *em.peek_universe();
+
+  // Route toward the offending player if valid, flipping a coin between
+  // primary and secondary target stars recorded in the universe index.
+  if (is_valid_player(target)) {
+    ship.deststar() =
+        bool_rand() ? universe.VN_index1[target] : universe.VN_index2[target];
+  } else {
+    ship.deststar() = int_rand(0, universe.numstars - 1);
+  }
+
   const auto& star = *em.peek_star(ship.deststar());
-  ship.destpnum() = int_rand(0, star.numplanets() - 1);
+  if (auto pnum = star.get_random_planet_index()) {
+    ship.destpnum() = *pnum;
+  } else {
+    ship.destpnum() = 0;
+    ship.whatdest() = ScopeLevel::LEVEL_STAR;
+  }
+
   if (ship.hyper_drive().has && ship.mounted()) {
     ship.hyper_drive().on = true;
     ship.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
-    mind.busy = true;
+    ship.set_busy(true);
   }
-  ship.special() = mind;
 }
 
-void order_VN(EntityManager& em, Ship& ship) {
-  int min = 0;
-  int min2 = 0;
+/// \brief Selects and assigns a destination target for an autonomous Von
+/// Neumann machine.
+///
+/// Identifies nearest star systems and routes to uninhabited systems, avoiding
+/// stars already occupied by Player 1.
+///
+/// \param em Entity manager for entity queries and mutations.
+/// \param ship Autonomous Von Neumann machine to assign orders to.
+void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
+  const auto& universe = *em.peek_universe();
 
-  const auto* universe = em.peek_universe();
-  /* find closest star */
-  for (auto s = 0; s < universe->numstars; s++) {
-    if (s != ship.storbits()) {
-      const auto& star_s = *em.peek_star(s);
-      const auto& star_min = *em.peek_star(min);
-      if (std::hypot(star_s.xpos() - ship.xpos(), star_s.ypos() - ship.ypos()) <
-          std::hypot(star_min.xpos() - ship.xpos(),
-                     star_min.ypos() - ship.ypos())) {
-        min2 = min;
-        min = s;
-      }
-    }
-  }
+  auto [closest, second_closest] =
+      find_closest_stars(em, ship.storbits(), ship.xpos(), ship.ypos());
 
-  /* don't go there if we have a choice,
-     and we have VN's there already */
-  const auto& star_min = *em.peek_star(min);
-  const auto& star_min2 = *em.peek_star(min2);
+  const auto& star_min = *em.peek_star(closest);
+  const auto& star_min2 = *em.peek_star(second_closest);
+
+  // Avoid stars already occupied by VN (Player 1); if both nearest are
+  // occupied, pick a random star.
   if (star_min.is_inhabited_by(player_t{1})) {
     if (star_min2.is_inhabited_by(player_t{1})) {
-      ship.deststar() = int_rand(0, (int)universe->numstars - 1);
+      ship.deststar() = int_rand(0, universe.numstars - 1);
     } else {
-      ship.deststar() = min2; /* 2nd closest star */
+      ship.deststar() = second_closest;
     }
   } else {
-    ship.deststar() = min;
+    ship.deststar() = closest;
   }
 
   const auto& dest_star = *em.peek_star(ship.deststar());
-  if (dest_star.numplanets()) {
-    ship.destpnum() = int_rand(0, dest_star.numplanets() - 1);
+  if (auto pnum = dest_star.get_random_planet_index()) {
+    ship.destpnum() = *pnum;
     ship.whatdest() = ScopeLevel::LEVEL_PLAN;
-    if (std::holds_alternative<MindData>(ship.special())) {
-      auto mind = std::get<MindData>(ship.special());
-      mind.busy = 1;
-      ship.special() = mind;
-    }
+    ship.set_busy(true);
   } else {
-    /* no good; find someplace else. */
-    if (std::holds_alternative<MindData>(ship.special())) {
-      auto mind = std::get<MindData>(ship.special());
-      mind.busy = 0;
-      ship.special() = mind;
-    }
+    ship.destpnum() = 0;
+    ship.whatdest() = ScopeLevel::LEVEL_STAR;
+    ship.set_busy(false);
   }
   ship.speed() = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
+}
+
+namespace {
+void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
+  if (auto* auto_ship = ship.as<AutonomousShip>()) {
+    select_berserker_destination(em, *auto_ship, stats);
+  }
+}
+
+void order_VN(EntityManager& em, Ship& ship) {
+  if (auto* auto_ship = ship.as<AutonomousShip>()) {
+    select_vn_destination(em, *auto_ship);
+  }
 }
 }  // namespace
 

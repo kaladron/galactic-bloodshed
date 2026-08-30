@@ -106,6 +106,10 @@ public:
     return star_struct.pnames.size();
   }
 
+  /// \brief Returns a random planet index (0..numplanets-1), or std::nullopt if
+  /// the star has no planets.
+  [[nodiscard]] std::optional<planetnum_t> get_random_planet_index() const;
+
   shipnum_t& ships() {
     return star_struct.ships;
   }

@@ -31,3 +31,23 @@ export int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
                          EntityManager& entity_manager);
 export void do_ap(Ship& ship, EntityManager& entity_manager);
 export void do_god(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Top two nearest star systems identified by navigation scanning.
+export struct StarTargetResult {
+  starnum_t closest{0};         ///< Primary nearest star system
+  starnum_t second_closest{0};  ///< Secondary nearest star system
+};
+
+/// \brief Finds the closest and second-closest star systems to the given
+/// coordinates, excluding the current star system.
+export StarTargetResult find_closest_stars(EntityManager& em,
+                                           starnum_t current_star, double xpos,
+                                           double ypos);
+
+/// \brief Assigns destination orders to an autonomous berserker ship.
+export void select_berserker_destination(EntityManager& em,
+                                         AutonomousShip& ship,
+                                         const TurnStats& stats);
+
+/// \brief Assigns destination orders to an autonomous Von Neumann machine.
+export void select_vn_destination(EntityManager& em, AutonomousShip& ship);

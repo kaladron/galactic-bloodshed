@@ -488,12 +488,14 @@ void test_do_canister_and_greenhouse() {
   canister_data.special = TimerData{.count = 0};
   auto can_handle = em.create_ship(canister_data);
   Ship& canister = *can_handle;
+  auto* canist_ship = canister.as<CanisterShip>();
+  test::expect_true(canist_ship != nullptr);
 
   do_canister(canister, em, stats);
-  test::expect_eq(std::get<TimerData>(canister.special()).count, 1);
+  test::expect_eq(canist_ship->count(), 1);
   test::expect_lt(stats.Stinfo[1][0].temp_add, 0);
 
-  canister.special() = TimerData{.count = DISSIPATE};
+  canist_ship->set_count(DISSIPATE);
   do_canister(canister, em, stats);
   test::expect_eq(canister.alive(), 0);
 }

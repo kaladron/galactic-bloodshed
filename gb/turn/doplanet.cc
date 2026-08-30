@@ -14,7 +14,8 @@ module gblib;
 
 std::expected<char, GroundMovementError> get_ground_order(const Ship& ship,
                                                           std::size_t index) {
-  if (!std::holds_alternative<TerraformData>(ship.special())) {
+  const auto* terraform = ship.as<TerraformerShip>();
+  if (!terraform) {
     return std::unexpected(GroundMovementError::NotTerraformVehicle);
   }
   const auto& orders = ship.shipclass();
@@ -37,27 +38,26 @@ std::expected<char, GroundMovementError> get_ground_order(const Ship& ship,
 std::expected<Coordinates, GroundMovementError>
 advance_ground_vehicle(Ship& ship, const Planet& planet,
                        EntityManager& entity_manager) {
-  if (!std::holds_alternative<TerraformData>(ship.special())) {
+  auto* terraform = ship.as<TerraformerShip>();
+  if (!terraform) {
     ship.on() = 0;
     return std::unexpected(GroundMovementError::NotTerraformVehicle);
   }
 
-  auto terraform = std::get<TerraformData>(ship.special());
   if (ship.shipclass().empty()) {
     ship.on() = 0;
     return std::unexpected(GroundMovementError::EmptyOrders);
   }
-  if (terraform.index >= ship.shipclass().size()) {
+  if (terraform->index() >= ship.shipclass().size()) {
     ship.on() = 0;
     return std::unexpected(GroundMovementError::InvalidIndex);
   }
-  if (ship.shipclass()[terraform.index] == 's') {
+  if (ship.shipclass()[terraform->index()] == 's') {
     ship.on() = 0;
     return std::unexpected(GroundMovementError::Stopped);
   }
-  if (ship.shipclass()[terraform.index] == 'c') {
-    terraform.index = 0; /* reset the orders */
-    ship.special() = terraform;
+  if (ship.shipclass()[terraform->index()] == 'c') {
+    terraform->set_index(0); /* reset the orders */
     if (ship.shipclass().empty() || ship.shipclass()[0] == 'c') {
       ship.on() = 0;
       return std::unexpected(GroundMovementError::EmptyOrders);
@@ -68,7 +68,7 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
     }
   }
 
-  const char order = ship.shipclass()[terraform.index];
+  const char order = ship.shipclass()[terraform->index()];
   auto [x, y] = get_move(planet, order, ship.land_coords());
 
   bool bounced = false;
@@ -82,11 +82,11 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
   }
   if (planet.dimensions().y == 1) y = 0;
 
-  if (terraform.index + 1 < ship.shipclass().size() &&
-      ship.shipclass()[terraform.index + 1] != '\0') {
-    ++terraform.index;
-    if ((terraform.index + 1 >= ship.shipclass().size() ||
-         ship.shipclass()[terraform.index + 1] == '\0') &&
+  if (terraform->index() + 1 < ship.shipclass().size() &&
+      ship.shipclass()[terraform->index() + 1] != '\0') {
+    terraform->set_index(terraform->index() + 1);
+    if ((terraform->index() + 1 >= ship.shipclass().size() ||
+         ship.shipclass()[terraform->index() + 1] == '\0') &&
         (!ship.notified())) {
       ship.notified() = 1;
       const std::string teleg_buf =
@@ -94,11 +94,10 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
                       prin_ship_orbits(entity_manager, ship));
       push_telegram(entity_manager, ship.owner(), ship.governor(), teleg_buf);
     }
-    ship.special() = terraform;
   } else if (bounced) {
-    if (terraform.index < ship.shipclass().size()) {
-      ship.shipclass()[terraform.index] +=
-          ((ship.shipclass()[terraform.index] > '5') ? -6 : 6);
+    if (terraform->index() < ship.shipclass().size()) {
+      ship.shipclass()[terraform->index()] +=
+          ((ship.shipclass()[terraform->index()] > '5') ? -6 : 6);
     }
   }
   ship.set_land_coords({x, y});
@@ -282,12 +281,12 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
     return false;
   }
 
-  if (std::holds_alternative<MindData>(ship.special())) {
-    auto mind = std::get<MindData>(ship.special());
-    if (mind.who_killed > 0 && mind.who_killed <= MAXPLAYERS) {
+  if (const auto* mind_ship = ship.as<AutonomousShip>()) {
+    const auto who = mind_ship->who_killed();
+    if (who > 0 && who <= MAXPLAYERS) {
       entity_manager.mutate_universe([&](universe_struct& u) {
-        if (u.VN_hitlist[mind.who_killed] > 0) {
-          --u.VN_hitlist[mind.who_killed];
+        if (u.VN_hitlist[who] > 0) {
+          --u.VN_hitlist[who];
         }
       });
     }

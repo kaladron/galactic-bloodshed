@@ -235,7 +235,7 @@ void test_execute_terraforming() {
 
   // 1. Target sector already optimal (likesbest)
   ship.set_land_coords({2, 2});
-  ship.special() = TerraformData{.index = 0};
+  ship.as<TerraformerShip>()->set_index(0);
   smap.get(Coordinates{2, 3}).set_condition(SectorType::SEC_LAND);
   auto res_optimal = execute_terraforming(ship, planet, smap, em);
   test::expect_false(res_optimal.has_value());
@@ -243,7 +243,7 @@ void test_execute_terraforming() {
 
   // 2. Target sector is gas (incompatible)
   ship.set_land_coords({2, 2});
-  ship.special() = TerraformData{.index = 0};
+  ship.as<TerraformerShip>()->set_index(0);
   smap.get(Coordinates{2, 3}).set_condition(SectorType::SEC_GAS);
   auto res_gas = execute_terraforming(ship, planet, smap, em);
   test::expect_false(res_gas.has_value());
@@ -251,7 +251,7 @@ void test_execute_terraforming() {
 
   // 3. Successful terraforming
   ship.set_land_coords({2, 2});
-  ship.special() = TerraformData{.index = 0};
+  ship.as<TerraformerShip>()->set_index(0);
   smap.get(Coordinates{2, 3}).set_condition(SectorType::SEC_DESERT);
   double initial_fuel = ship.fuel();
   auto res_success = execute_terraforming(ship, planet, smap, em);
@@ -320,7 +320,7 @@ void test_execute_plowing() {
 
   // 1. Target sector condition not liked
   ship.set_land_coords({1, 1});
-  ship.special() = TerraformData{.index = 0};
+  ship.as<TerraformerShip>()->set_index(0);
   smap.get(Coordinates{1, 2}).set_condition(SectorType::SEC_WASTED);
   smap.get(Coordinates{1, 2}).set_fert(50);
   auto res_incompat = execute_plowing(ship, planet, smap, em);
@@ -329,7 +329,7 @@ void test_execute_plowing() {
 
   // 2. Target sector already at 100% fertility
   ship.set_land_coords({1, 1});
-  ship.special() = TerraformData{.index = 0};
+  ship.as<TerraformerShip>()->set_index(0);
   smap.get(Coordinates{1, 2}).set_condition(SectorType::SEC_LAND);
   smap.get(Coordinates{1, 2}).set_fert(100);
   auto res_optimal = execute_plowing(ship, planet, smap, em);
@@ -338,7 +338,7 @@ void test_execute_plowing() {
 
   // 3. Successful plowing
   ship.set_land_coords({1, 1});
-  ship.special() = TerraformData{.index = 0};
+  ship.as<TerraformerShip>()->set_index(0);
   smap.get(Coordinates{1, 2}).set_fert(60);
   double initial_fuel = ship.fuel();
   auto res_success = execute_plowing(ship, planet, smap, em);
@@ -1137,7 +1137,7 @@ void test_build_automated_waste_can() {
   test::expect_eq(ship->owner(), player_t{1});
   test::expect_true(ship->docked());
   test::expect_true(smap.in_bounds(ship->land_coords()));
-  test::expect_eq(std::get<WasteData>(ship->special()).toxic,
+  test::expect_eq(ship->as<ToxicWasteShip>()->toxic_level(),
                   static_cast<unsigned char>(TOXMAX));
 }
 

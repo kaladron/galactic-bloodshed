@@ -117,20 +117,20 @@ int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
 }
 
 void do_pod(Ship& ship, EntityManager& entity_manager) {
-  if (!std::holds_alternative<PodData>(ship.special())) {
+  auto* pod = ship.as<SporePodShip>();
+  if (!pod) {
     return;
   }
-  auto pod = std::get<PodData>(ship.special());
 
   switch (ship.whatorbits()) {
     case ScopeLevel::LEVEL_STAR: {
       const auto& star = *entity_manager.peek_star(ship.storbits());
 
-      if (pod.temperature < POD_THRESHOLD) {
+      if (pod->temperature() < POD_THRESHOLD) {
         const auto& state = *entity_manager.peek_server_state();
-        pod.temperature +=
-            round_rand((double)star.temperature() / (double)state.segments);
-        ship.special() = pod;
+        pod->set_temperature(
+            pod->temperature() +
+            round_rand((double)star.temperature() / (double)state.segments));
         return;
       }
 
@@ -151,10 +151,9 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
     }
 
     case ScopeLevel::LEVEL_PLAN: {
-      if (pod.decay < POD_DECAY) {
+      if (pod->decay() < POD_DECAY) {
         const auto& state = *entity_manager.peek_server_state();
-        pod.decay += round_rand(1.0 / (double)state.segments);
-        ship.special() = pod;
+        pod->set_decay(pod->decay() + round_rand(1.0 / (double)state.segments));
         return;
       }
 
@@ -177,13 +176,13 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
     return;
   }
 
-  if (!std::holds_alternative<TimerData>(ship.special())) {
+  auto* canist = ship.as<CanisterShip>();
+  if (!canist) {
     return;
   }
-  auto timer = std::get<TimerData>(ship.special());
 
-  if (++timer.count < DISSIPATE) {
-    ship.special() = timer;
+  canist->set_count(canist->count() + 1);
+  if (canist->count() < DISSIPATE) {
     if (stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add <
         -90)
       stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add =
@@ -211,49 +210,50 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
 void do_greenhouse(Ship& ship, EntityManager& entity_manager,
                    TurnStats& stats) {
-  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN && !ship.is_landed()) {
-    if (!std::holds_alternative<TimerData>(ship.special())) {
-      return;
-    }
-    auto timer = std::get<TimerData>(ship.special());
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed()) {
+    return;
+  }
+  auto* canist = ship.as<CanisterShip>();
+  if (!canist) {
+    return;
+  }
 
-    if (++timer.count < DISSIPATE) {
-      ship.special() = timer;
-      if (stats.Stinfo[ship.storbits().value][ship.pnumorbits().value]
-              .temp_add > 90)
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add =
-            100;
-      else
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add +=
-            10;
-    } else { /* timer expired; destroy canister */
-      entity_manager.kill_ship(ship.owner(), ship);
-      std::string telegram =
-          std::format("Greenhouse gases at {} have dissipated.\n",
-                      prin_ship_orbits(entity_manager, ship));
+  canist->set_count(canist->count() + 1);
+  if (canist->count() < DISSIPATE) {
+    if (stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add >
+        90)
+      stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add =
+          100;
+    else
+      stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add +=
+          10;
+  } else { /* timer expired; destroy canister */
+    entity_manager.kill_ship(ship.owner(), ship);
+    std::string telegram =
+        std::format("Greenhouse gases at {} have dissipated.\n",
+                    prin_ship_orbits(entity_manager, ship));
 
-      const auto& star = *entity_manager.peek_star(ship.storbits());
-      const auto& planet =
-          *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-      for (const Race& race : RaceList::readonly(entity_manager)) {
-        if (planet.info(race.Playernum).numsectsowned)
-          push_telegram(entity_manager, race.Playernum,
-                        star.governor(race.Playernum), telegram);
-      }
+    const auto& star = *entity_manager.peek_star(ship.storbits());
+    const auto& planet =
+        *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+    for (const Race& race : RaceList::readonly(entity_manager)) {
+      if (planet.info(race.Playernum).numsectsowned)
+        push_telegram(entity_manager, race.Playernum,
+                      star.governor(race.Playernum), telegram);
     }
   }
 }
 
 void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
-  if (!std::holds_alternative<AimedAtData>(ship.special())) {
+  auto* mirror = ship.as<SpaceMirrorShip>();
+  if (!mirror) {
     return;
   }
-  auto aimed_at = std::get<AimedAtData>(ship.special());
 
-  switch (aimed_at.level) {
+  switch (mirror->aimed_level()) {
     case ScopeLevel::LEVEL_SHIP: { /* ship aimed at is a legal ship now */
       /* if in the same system */
-      entity_manager.mutate_ship(aimed_at.shipno, [&](Ship& target) {
+      entity_manager.mutate_ship(mirror->aimed_ship(), [&](Ship& target) {
         if ((ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
              ship.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
             (target.whatorbits() == ScopeLevel::LEVEL_STAR ||
@@ -262,7 +262,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
           auto range = std::hypot(ship.xpos() - target.xpos(),
                                   ship.ypos() - target.ypos());
           auto i = int_rand(0, round_rand((2. / ((double)(target.shipbody()))) *
-                                          (double)(aimed_at.intensity) /
+                                          (double)(mirror->intensity()) /
                                           (range / PLORBITSIZE + 1.0)));
           std::stringstream telegram_buf;
           telegram_buf << std::format("{} aimed at {}\n", ship, target);
@@ -280,29 +280,32 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
                         telegram_buf.str());
         }
       });
-    } break;
+      break;
+    }
     case ScopeLevel::LEVEL_PLAN: {
       const auto& star = *entity_manager.peek_star(ship.storbits());
       const auto& planet =
-          *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+          *entity_manager.peek_planet(ship.storbits(), mirror->aimed_planet());
 
       double range = std::hypot(ship.xpos() - (star.xpos() + planet.xpos()),
                                 ship.ypos() - (star.ypos() + planet.ypos()));
 
-      int i = range > PLORBITSIZE ? PLORBITSIZE * aimed_at.intensity / range
-                                  : aimed_at.intensity;
+      int i = range > PLORBITSIZE ? PLORBITSIZE * mirror->intensity() / range
+                                  : mirror->intensity();
 
       i = round_rand(.01 * (100.0 - (double)(ship.damage())) * (double)i);
-      stats.Stinfo[ship.storbits().value][aimed_at.pnum.value].temp_add += i;
-    } break;
+      stats.Stinfo[ship.storbits().value][mirror->aimed_planet().value]
+          .temp_add += i;
+      break;
+    }
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
          it's not too fair.. */
-      if (aimed_at.snum > 0 &&
-          aimed_at.snum < entity_manager.peek_universe()->numstars &&
+      if (mirror->aimed_star() > 0 &&
+          mirror->aimed_star() < entity_manager.peek_universe()->numstars &&
           ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
-          aimed_at.snum == ship.storbits()) {
-        entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
+          mirror->aimed_star() == ship.storbits()) {
+        entity_manager.mutate_star(mirror->aimed_star(), [&](Star& star) {
           star.stability() += int_rand(0, 1);
         });
       }
@@ -510,22 +513,13 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
             break;
           case ShipType::OTYPE_VN: /* Von Neumann machine */
           case ShipType::OTYPE_BERS:
-            if (std::holds_alternative<MindData>(ship.special())) {
-              auto mind = std::get<MindData>(ship.special());
-              if (mind.progenitor == 0) {
+            if (auto* auto_ship = ship.as<AutonomousShip>()) {
+              if (auto_ship->progenitor() == 0) {
                 // TODO(jeffbailey): Why is setting this to 1 correct?
-                mind.progenitor = 1;
-                ship.special() = mind;
+                auto_ship->mind().progenitor = 1;
               }
-            } else {
-              ship.special() = MindData{.progenitor = 1,
-                                        .target = 0,
-                                        .generation = 0,
-                                        .busy = 0,
-                                        .tampered = 0,
-                                        .who_killed = 0};
+              do_VN(entity_manager, *auto_ship, stats);
             }
-            do_VN(entity_manager, ship, stats);
             break;
           case ShipType::STYPE_OAP:
             do_oap(ship, stats);
@@ -694,12 +688,13 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
     for (const Ship& s : kShiplist) {
       double xd = s.xpos() - ship.xpos();
       double yd = s.ypos() - ship.ypos();
-      double range = std::sqrt(xd * xd + yd * yd);
-      if (!race.is_allied_with(s.owner()) && (s.owner() != ship.owner()) &&
-          std::holds_alternative<TriggerData>(ship.special()) &&
-          ((int)range <= std::get<TriggerData>(ship.special()).radius)) {
-        rad = true;
-        break;
+      double range = std::hypot(xd, yd);
+      if (const auto* mine = ship.as<MineShip>()) {
+        if (!race.is_allied_with(s.owner()) && (s.owner() != ship.owner()) &&
+            (range <= static_cast<double>(mine->trigger_radius()))) {
+          rad = true;
+          break;
+        }
       }
     }
   } else {

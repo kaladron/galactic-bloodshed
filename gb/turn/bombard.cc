@@ -59,11 +59,9 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
         for (const Sector& sect : smap.shuffle()) {
           if (sect.get_owner() != 0 && sect.get_owner() != ship.owner() &&
               (sect.get_condition() != SectorType::SEC_WASTED)) {
+            const auto* bers = ship.as<BerserkerShip>();
             if (r.is_at_war_with(sect.get_owner()) ||
-                (ship.type() == ShipType::OTYPE_BERS &&
-                 std::holds_alternative<MindData>(ship.special()) &&
-                 sect.get_owner() ==
-                     std::get<MindData>(ship.special()).target)) {
+                (bers && sect.get_owner() == bers->target())) {
               war_target = sect.coords();
               break;
             }

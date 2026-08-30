@@ -70,3 +70,23 @@ export resource_t mine_sector(AutonomousShip& ship, Sector& sector);
 /// is depleted.
 export Coordinates roam_to_adjacent_sector(AutonomousShip& ship,
                                            const Planet& planet);
+
+/// \brief Generates a random binary name for a new Von Neumann machine.
+export std::string generate_vn_binary_name();
+
+/// \brief Constructs and deploys a newly replicated Von Neumann machine on a
+/// planet.
+export shipnum_t construct_replicated_vn(EntityManager& em,
+                                         AutonomousShip& parent,
+                                         Planet& planet);
+
+/// \brief Constructs and deploys a newly constructed Berserker warship on a
+/// planet.
+export shipnum_t construct_replicated_berserker(EntityManager& em,
+                                                AutonomousShip& parent,
+                                                Planet& planet,
+                                                const TurnStats& stats);
+
+/// \brief Replicates as many autonomous machines as parent resources allow.
+export int replicate_machines(EntityManager& em, AutonomousShip& parent,
+                              Planet& planet, const TurnStats& stats);

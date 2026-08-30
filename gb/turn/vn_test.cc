@@ -322,7 +322,8 @@ int main() {
     test::expect_true(planet.is_adjacent({0, 0}, north_polar_c));
 
     // South pole clamping: at y == Maxy - 1 (y == 9), the machine cannot move
-    // south (y >= 10), so y is always in [8, 9] and strictly adjacent to {5, 9}.
+    // south (y >= 10), so y is always in [8, 9] and strictly adjacent to {5,
+    // 9}.
     vn->set_land_coords({5, 9});
     Coordinates south_polar_c = roam_to_adjacent_sector(*vn, planet);
     test::expect_true(south_polar_c.y >= 8 && south_polar_c.y <= 9);
@@ -366,6 +367,171 @@ int main() {
     std::println(
         std::cout,
         "  ✓ steal_planetary_resources steals resources from alien colony");
+  }
+
+  // =========================================================================
+  // 8. generate_vn_binary_name tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: generate_vn_binary_name");
+
+    for (int i = 0; i < 50; ++i) {
+      std::string name = generate_vn_binary_name();
+      test::expect_true(name.length() >= 3 && name.length() <= 10);
+      for (char c : name) {
+        test::expect_true(c == '0' || c == '1');
+      }
+    }
+
+    std::println(std::cout,
+                 "  ✓ generate_vn_binary_name generates valid binary names");
+  }
+
+  // =========================================================================
+  // 9. construct_replicated_vn tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: construct_replicated_vn");
+
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+
+    ship_struct vn_data{};
+    vn_data.number = 401;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.tech = 500.0;
+    vn_data.armor = 2;
+    vn_data.resource = 250;
+    vn_data.fuel = 60.0;
+    vn_data.special = MindData{
+        .progenitor = player_t{1},
+        .target = player_t{2},
+        .generation = 2,
+        .busy = true,
+        .tampered = false,
+        .who_killed = player_t{0},
+    };
+    auto parent_ship = ShipFactory::create(vn_data);
+    auto* parent = parent_ship->as<VonNeumannShip>();
+    test::expect_true(parent != nullptr);
+
+    const int cost = Shipdata[ShipType::OTYPE_VN][ABIL_COST];
+    shipnum_t child_num = construct_replicated_vn(em, *parent, planet);
+    test::expect_true(child_num != 0);
+    test::expect_eq(planet.ships(), child_num);
+    test::expect_eq(parent->resource(), 250 - cost);
+    test::expect_eq(parent->fuel(), 30.0);
+
+    const auto* child = em.peek_ship(child_num);
+    test::expect_true(child != nullptr);
+    test::expect_eq(child->type(), ShipType::OTYPE_VN);
+    test::expect_eq(child->tech(), 520.0);
+    test::expect_eq(child->armor(), 3);
+    test::expect_eq(child->fuel(), 30.0);
+    test::expect_eq(child->owner(), player_t{1});
+
+    auto* child_vn = child->as<VonNeumannShip>();
+    test::expect_true(child_vn != nullptr);
+    test::expect_eq(child_vn->generation(), 3);
+    test::expect_eq(child_vn->progenitor(), player_t{1});
+    test::expect_eq(child_vn->target(), player_t{2});
+    test::expect_false(child_vn->is_busy());
+    test::expect_false(child_vn->name().empty());
+
+    std::println(std::cout,
+                 "  ✓ construct_replicated_vn inherits lineage and attributes");
+  }
+
+  // =========================================================================
+  // 10. construct_replicated_berserker tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: construct_replicated_berserker");
+
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+
+    ship_struct vn_data{};
+    vn_data.number = 402;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.tech = 500.0;
+    vn_data.armor = 2;
+    vn_data.resource = 500;
+    vn_data.fuel = 40.0;
+    vn_data.special = MindData{
+        .progenitor = player_t{1},
+        .target = player_t{0},
+        .generation = 2,
+        .busy = true,
+        .tampered = false,
+        .who_killed = player_t{0},
+    };
+    auto parent_ship = ShipFactory::create(vn_data);
+    auto* parent = parent_ship->as<VonNeumannShip>();
+    test::expect_true(parent != nullptr);
+
+    TurnStats bers_stats{};
+    bers_stats.VN_brain.most_mad = player_t{3};
+
+    const int cost = Shipdata[ShipType::OTYPE_BERS][ABIL_COST];
+    shipnum_t bers_num =
+        construct_replicated_berserker(em, *parent, planet, bers_stats);
+    test::expect_true(bers_num != 0);
+    test::expect_eq(planet.ships(), bers_num);
+    test::expect_eq(parent->resource(), 500 - cost);
+    test::expect_eq(parent->fuel(), 20.0);
+
+    const auto* bers = em.peek_ship(bers_num);
+    test::expect_true(bers != nullptr);
+    test::expect_eq(bers->type(), ShipType::OTYPE_BERS);
+    test::expect_eq(bers->tech(), 600.0);
+    test::expect_eq(bers->armor(), 13);    // parent armor (2) + 11
+    test::expect_eq(bers->fuel(), 200.0);  // 5 * 40
+    test::expect_eq(bers->destruct(), 500);
+    test::expect_true(bers->hyper_drive().has);
+    test::expect_true(bers->hyper_drive().on);
+    test::expect_eq(bers->bombard(), 1);
+
+    auto* bers_ship = bers->as<BerserkerShip>();
+    test::expect_true(bers_ship != nullptr);
+    test::expect_eq(bers_ship->target(), player_t{3});
+    test::expect_eq(bers_ship->generation(), 2);
+    test::expect_false(bers_ship->is_busy());
+
+    std::println(
+        std::cout,
+        "  ✓ construct_replicated_berserker sets retaliatory aggression specs");
+  }
+
+  // =========================================================================
+  // 11. replicate_machines tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: replicate_machines");
+
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+
+    const int vn_cost = Shipdata[ShipType::OTYPE_VN][ABIL_COST];
+    ship_struct vn_data{};
+    vn_data.number = 403;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.tech = 100.0;
+    vn_data.resource = 2 * vn_cost;
+    vn_data.fuel = 50.0;
+    auto parent_ship = ShipFactory::create(vn_data);
+    auto* parent = parent_ship->as<VonNeumannShip>();
+    test::expect_true(parent != nullptr);
+
+    TurnStats calm_stats{};
+    calm_stats.VN_brain.total_mad = 0;  // Builds VNs only
+
+    int count = replicate_machines(em, *parent, planet, calm_stats);
+    test::expect_eq(count, 2);
+    test::expect_eq(parent->resource(), 0);
+
+    std::println(std::cout,
+                 "  ✓ replicate_machines constructs full batch of machines");
   }
 
   std::println(std::cout,

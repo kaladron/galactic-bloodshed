@@ -298,6 +298,210 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   steal_planetary_resources(em, *auto_ship);
 }
 
+/// \brief Generates a random binary name (e.g. "01101") for a new Von Neumann
+/// machine.
+///
+/// In Galactic Bloodshed, ship names are non-unique cosmetic designations.
+/// Uniqueness is guaranteed by the unique shipnum_t assigned during creation.
+///
+/// \return std::string of random binary digits ('0' or '1').
+std::string generate_vn_binary_name() {
+  const int len = int_rand(3, std::min(10, SHIP_NAMESIZE));
+  std::string name;
+  name.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    name.push_back(bool_rand() ? '1' : '0');
+  }
+  return name;
+}
+
+/// \brief Constructs and deploys a newly replicated Von Neumann machine on a
+/// planet.
+///
+/// \param em Entity manager for entity persistence.
+/// \param parent Autonomous parent machine providing resources, lineage, and
+/// fuel.
+/// \param planet Planet where replication is occurring.
+/// \return Ship number of the newly constructed machine.
+shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
+                                  Planet& planet) {
+  const int cost = Shipdata[ShipType::OTYPE_VN][ABIL_COST];
+  use_resource(parent, cost);
+
+  MindData child_mind{
+      .progenitor = parent.mind().progenitor,
+      .target = parent.mind().target,
+      .generation = parent.mind().generation + 1,
+      .busy = false,
+      .tampered = parent.mind().tampered,
+      .who_killed = parent.mind().who_killed,
+  };
+
+  ship_struct s2_data{
+      .owner = 1,
+      .governor = 0,
+      .name = generate_vn_binary_name(),
+      .xpos = parent.xpos(),
+      .ypos = parent.ypos(),
+      .fuel = 0.5 * parent.fuel(),
+      .land_coords = parent.land_coords(),
+      .nextship = planet.ships(),
+      .armor = parent.armor() + 1,
+      .max_crew = Shipdata[ShipType::OTYPE_VN][ABIL_MAXCREW],
+      .max_resource = Shipdata[ShipType::OTYPE_VN][ABIL_CARGO],
+      .max_destruct = static_cast<unsigned short>(
+          Shipdata[ShipType::OTYPE_VN][ABIL_DESTCAP]),
+      .max_fuel = static_cast<unsigned short>(
+          Shipdata[ShipType::OTYPE_VN][ABIL_FUELCAP]),
+      .max_speed =
+          static_cast<speed_t>(Shipdata[ShipType::OTYPE_VN][ABIL_SPEED]),
+      .tech = parent.tech() + 20.0,
+      .special = child_mind,
+      .storbits = parent.storbits(),
+      .deststar = parent.deststar(),
+      .destpnum = parent.destpnum(),
+      .pnumorbits = parent.pnumorbits(),
+      .whatdest = parent.whatdest(),
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_VN,
+      .speed = static_cast<speed_t>(Shipdata[ShipType::OTYPE_VN][ABIL_SPEED]),
+      .active = true,
+      .alive = true,
+      .mode = false,
+      .bombard = false,
+      .docked = true,
+  };
+
+  parent.fuel() *= 0.5;
+
+  auto ship_handle = em.create_ship(s2_data);
+  Ship& s2 = *ship_handle;
+  s2.size() = ship_size(s2);
+  s2.base_mass() = getmass(s2);
+  s2.mass() = s2.base_mass();
+
+  planet.ships() = s2.number();
+  return s2.number();
+}
+
+/// \brief Constructs and deploys a newly constructed Berserker warship on a
+/// planet.
+///
+/// \param em Entity manager for entity persistence and notifications.
+/// \param parent Autonomous parent machine providing resources, lineage, and
+/// fuel.
+/// \param planet Planet where construction is occurring.
+/// \param stats Turn statistics containing retaliation target data.
+/// \return Ship number of the newly constructed Berserker.
+shipnum_t construct_replicated_berserker(EntityManager& em,
+                                         AutonomousShip& parent, Planet& planet,
+                                         const TurnStats& stats) {
+  const int cost = Shipdata[ShipType::OTYPE_BERS][ABIL_COST];
+  use_resource(parent, cost);
+
+  MindData bers_mind{
+      .progenitor = parent.mind().progenitor,
+      .target = stats.VN_brain.most_mad,
+      .generation = parent.mind().generation,
+      .busy = false,
+      .tampered = false,
+      .who_killed = parent.mind().who_killed,
+  };
+
+  ship_struct s2_data{
+      .owner = 1,
+      .governor = 0,
+      .xpos = parent.xpos(),
+      .ypos = parent.ypos(),
+      .fuel = 5.0 * parent.fuel(),
+      .land_coords = parent.land_coords(),
+      .nextship = planet.ships(),
+      .armor = parent.armor() + 11,
+      .max_crew = Shipdata[ShipType::OTYPE_BERS][ABIL_MAXCREW],
+      .max_resource = Shipdata[ShipType::OTYPE_BERS][ABIL_CARGO],
+      .max_destruct = static_cast<unsigned short>(
+          Shipdata[ShipType::OTYPE_BERS][ABIL_DESTCAP]),
+      .max_fuel = static_cast<unsigned short>(
+          Shipdata[ShipType::OTYPE_BERS][ABIL_FUELCAP]),
+      .max_speed =
+          static_cast<speed_t>(Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED]),
+      .tech = parent.tech() + 100.0,
+      .destruct = 500,
+      .special = bers_mind,
+      .protect = ProtectData{.planet = true, .self = true},
+      .hyper_drive = HyperDriveData{.charge = HYPER_DRIVE_READY_CHARGE,
+                                    .on = true,
+                                    .has = true},
+      .storbits = parent.storbits(),
+      .deststar = parent.deststar(),
+      .destpnum = parent.destpnum(),
+      .pnumorbits = parent.pnumorbits(),
+      .whatdest = parent.whatdest(),
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .retaliate = static_cast<weapon_power_t>(
+          Shipdata[ShipType::OTYPE_BERS][ABIL_GUNS]),
+      .type = ShipType::OTYPE_BERS,
+      .speed = static_cast<speed_t>(Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED]),
+      .active = true,
+      .alive = true,
+      .mode = false,
+      .bombard = true,
+      .mounted = true,
+      .docked = true,
+      .guns = static_cast<gun_count_t>(
+          Shipdata[ShipType::OTYPE_BERS][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE),
+      .primary = static_cast<weapon_power_t>(
+          Shipdata[ShipType::OTYPE_BERS][ABIL_GUNS]),
+      .primtype = shipdata_primary(ShipType::OTYPE_BERS),
+      .secondary = 0,
+      .sectype = shipdata_secondary(ShipType::OTYPE_BERS),
+  };
+
+  parent.fuel() *= 0.5;
+
+  auto ship_handle = em.create_ship(s2_data);
+  Ship& s2 = *ship_handle;
+  s2.size() = ship_size(s2);
+  s2.base_mass() = getmass(s2);
+  s2.mass() = s2.base_mass();
+
+  planet.ships() = s2.number();
+
+  auto buf =
+      std::format("{0} constructed {1}.", static_cast<const Ship&>(parent), s2);
+  push_telegram(em, parent.owner(), parent.governor(), buf);
+  return s2.number();
+}
+
+/// \brief Replicates as many autonomous machines as parent resources allow.
+///
+/// \param em Entity manager for entity persistence and notifications.
+/// \param parent Autonomous machine attempting replication.
+/// \param planet Planet where replication is occurring.
+/// \param stats Turn statistics for aggression tracking.
+/// \return Total number of new machines constructed.
+int replicate_machines(EntityManager& em, AutonomousShip& parent,
+                       Planet& planet, const TurnStats& stats) {
+  const ShipType shipbuild = (stats.VN_brain.total_mad > 100 && bool_rand())
+                                 ? ShipType::OTYPE_BERS
+                                 : ShipType::OTYPE_VN;
+  const int cost = Shipdata[shipbuild][ABIL_COST];
+  if (cost <= 0 || parent.resource() < cost) {
+    return 0;
+  }
+
+  const int count = static_cast<int>(parent.resource() / cost);
+  for (int i = 0; i < count; ++i) {
+    if (shipbuild == ShipType::OTYPE_BERS) {
+      construct_replicated_berserker(em, parent, planet, stats);
+    } else {
+      construct_replicated_vn(em, parent, planet);
+    }
+    parent.mind().busy = bool_rand();
+  }
+  return count;
+}
+
 /*  planet_doVN() -- called by doplanet() */
 void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
                  EntityManager& entity_manager, TurnStats& stats) {
@@ -305,8 +509,6 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
   if (!auto_ship) {
     return;
   }
-
-  int j;
 
   if (auto_ship->is_landed()) {
     if (auto_ship->type() == ShipType::OTYPE_VN && auto_ship->mind().busy) {
@@ -320,129 +522,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
         /* mine the sector */
         mine_sector(*auto_ship, s);
       }
-      /* now try to construct another machine */
-      ShipType shipbuild = (stats.VN_brain.total_mad > 100 && success(50))
-                               ? ShipType::OTYPE_BERS
-                               : ShipType::OTYPE_VN;
-      if (ship.resource() >= Shipdata[shipbuild][ABIL_COST]) {
-        int numVNs;
-        /* construct as many VNs as possible */
-        numVNs = ship.resource() / Shipdata[shipbuild][ABIL_COST];
-        for (j = 1; j <= numVNs; j++) {
-          use_resource(ship, Shipdata[shipbuild][ABIL_COST]);
-
-          // Create new ship via EntityManager with designated initializers
-          ship_struct s2_data{
-              .xpos = ship.xpos(),
-              .ypos = ship.ypos(),
-              .land_coords = ship.land_coords(),
-              .nextship = planet.ships(),
-              .armor = static_cast<unsigned char>(ship.armor() + 1),
-              .max_crew = static_cast<unsigned short>(
-                  Shipdata[shipbuild][ABIL_MAXCREW]),
-              .max_resource =
-                  static_cast<resource_t>(Shipdata[shipbuild][ABIL_CARGO]),
-              .max_destruct = static_cast<unsigned short>(
-                  Shipdata[shipbuild][ABIL_DESTCAP]),
-              .max_fuel = static_cast<unsigned short>(
-                  Shipdata[shipbuild][ABIL_FUELCAP]),
-              .max_speed =
-                  static_cast<unsigned short>(Shipdata[shipbuild][ABIL_SPEED]),
-              .storbits = ship.storbits(),
-              .deststar = ship.deststar(),
-              .destpnum = ship.destpnum(),
-              .pnumorbits = ship.pnumorbits(),
-              .whatdest = ship.whatdest(),
-              .whatorbits = ScopeLevel::LEVEL_PLAN,
-              .type = shipbuild,
-              .alive = true,
-              .mode = false,
-              .docked = true,
-              .guns = static_cast<gun_count_t>(
-                  Shipdata[shipbuild][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE),
-              .primary =
-                  static_cast<weapon_power_t>(Shipdata[shipbuild][ABIL_GUNS]),
-              .primtype = shipdata_primary(shipbuild),
-              .secondary = 0,
-              .sectype = shipdata_secondary(shipbuild),
-          };
-          auto ship_handle = entity_manager.create_ship(s2_data);
-          Ship& s2 = *ship_handle;
-          s2.size() = ship_size(s2);
-          s2.base_mass() = getmass(s2);
-          s2.mass() = s2.base_mass();
-
-          planet.ships() = s2.number();
-          if (shipbuild == ShipType::OTYPE_BERS) {
-            /* target = person killed the most VN's */
-            auto ship_mind = std::holds_alternative<MindData>(ship.special())
-                                 ? std::get<MindData>(ship.special())
-                                 : MindData{};
-            s2.special() = MindData{.progenitor = ship_mind.progenitor,
-                                    .target = stats.VN_brain.most_mad,
-                                    .generation = ship_mind.generation,
-                                    .busy = 0,
-                                    .tampered = ship_mind.tampered,
-                                    .who_killed = ship_mind.who_killed};
-            s2.speed() = Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED];
-            s2.tech() = ship.tech() + 100.0;
-            s2.bombard() = 1;
-            s2.protect().self = 1;
-            s2.protect().planet = 1;
-            s2.armor() += 10; /* give 'em some armor */
-            s2.active() = 1;
-            s2.owner() = 1;
-            s2.governor() = 0;
-            s2.fuel() = 5 * ship.fuel(); /* give 'em some fuel */
-            s2.retaliate() = s2.primary();
-            s2.destruct() = 500;
-            ship.fuel() *= 0.5; /* lose some fuel */
-            s2.hyper_drive().has = true;
-            s2.hyper_drive().on = true;
-            s2.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
-            s2.mounted() = 1;
-            auto buf = std::format("{0} constructed {1}.", ship, s2);
-            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
-            if (std::holds_alternative<MindData>(s2.special())) {
-              auto mind = std::get<MindData>(s2.special());
-              mind.tampered = false;
-              s2.special() = mind;
-            }
-          } else {
-            s2.tech() = ship.tech() + 20.0;
-            int n = int_rand(3, std::min(10, SHIP_NAMESIZE)); /* for name */
-            s2.name()[n] = '\0';
-            while (n--)
-              s2.name()[n] = int_rand(0, 1) + '0';
-            s2.owner() = 1;
-            s2.governor() = 0;
-            s2.active() = 1;
-            s2.speed() = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
-            s2.bombard() = 0;
-            s2.fuel() = 0.5 * ship.fuel();
-            ship.fuel() *= 0.5;
-            if (std::holds_alternative<MindData>(ship.special())) {
-              auto ship_mind = std::get<MindData>(ship.special());
-              s2.special() = MindData{.progenitor = ship_mind.progenitor,
-                                      .target = ship_mind.target,
-                                      .generation = static_cast<unsigned char>(
-                                          ship_mind.generation + 1),
-                                      .busy = 0,
-                                      .tampered = ship_mind.tampered,
-                                      .who_killed = ship_mind.who_killed};
-            }
-          }
-          if (std::holds_alternative<MindData>(ship.special())) {
-            auto ship_mind = std::get<MindData>(ship.special());
-            ship.special() = MindData{.progenitor = ship_mind.progenitor,
-                                      .target = ship_mind.target,
-                                      .generation = ship_mind.generation,
-                                      .busy = bool_rand(),
-                                      .tampered = ship_mind.tampered,
-                                      .who_killed = ship_mind.who_killed};
-          }
-        }
-      }
+      replicate_machines(entity_manager, *auto_ship, planet, stats);
     }
   } else { /* orbiting a planet */
     if (std::holds_alternative<MindData>(ship.special()) &&

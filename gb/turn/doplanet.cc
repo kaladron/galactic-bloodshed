@@ -718,9 +718,8 @@ process_island_exploration(EntityManager& entity_manager, const Star& star,
       for (Sector& s : smap.shuffle()) {
         all_sectors_explored_for_player &=
             exploration.is_explored(s.coords(), p);
-        if (exploration.is_explored(s.coords(), p) && success(50) &&
-            s.get_owner() == 0 && s.get_condition() != SectorType::SEC_WASTED &&
-            s.get_condition() == race.likesbest) {
+        if (exploration.is_explored(s.coords(), p) && bool_rand() &&
+            s.is_colonizable_by(race)) {
           stats.Claims = true;
           s.colonize(p, race.number_sexes);
           stats.tot_captured = 1;
@@ -786,8 +785,11 @@ EnslavementResult execute_slave_revolt(EntityManager& entity_manager,
 
   int master_devastated = 0;
   if (intimidated) {
-    for (Sector& p : smap.shuffle()) {
-      if (p.get_owner() == former_master && success(50)) {
+    auto is_master_sector = [&](const Sector& s) noexcept {
+      return s.is_owned_by(former_master);
+    };
+    for (Sector& p : smap.shuffle() | std::views::filter(is_master_sector)) {
+      if (bool_rand()) {
         p.devastate();
         master_devastated++;
       }
@@ -954,15 +956,13 @@ void process_planet_production(EntityManager& entity_manager, const Star& star,
     return;
   }
 
-  for (Sector& p : smap.shuffle()) {
-    if (p.is_occupied()) {
-      produce(entity_manager, star, planet, p, stats);
-      if (p.is_owned()) {
-        planet.info(p.get_owner()).est_production +=
-            est_production(p, entity_manager);
-      }
-      spread(entity_manager, planet, p, smap, stats);
+  for (Sector& p : smap.shuffle() | std::views::filter(&Sector::is_occupied)) {
+    produce(entity_manager, star, planet, p, stats);
+    if (p.is_owned()) {
+      planet.info(p.get_owner()).est_production +=
+          est_production(p, entity_manager);
     }
+    spread(entity_manager, planet, p, smap, stats);
     p.clear_owner_if_empty();
   }
 }

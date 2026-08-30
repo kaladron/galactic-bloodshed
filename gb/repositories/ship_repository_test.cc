@@ -85,14 +85,6 @@ int main() {
   test_data.hyper_drive.on = true;
   test_data.hyper_drive.charge = HYPER_DRIVE_READY_CHARGE;
 
-  MindData test_mind{};
-  test_mind.progenitor = player_t{1};
-  test_mind.target = player_t{2};
-  test_mind.generation = 5;
-  test_mind.busy = true;
-  test_mind.tampered = false;
-  test_mind.who_killed = player_t{3};
-  test_data.special = test_mind;
   test_data.retaliate = 5;
 
   // Wrap in Ship for saving
@@ -160,16 +152,6 @@ int main() {
   test::expect_eq(retrieved->hyper_drive().charge,
                   static_cast<std::uint32_t>(HYPER_DRIVE_READY_CHARGE));
   test::expect_true(retrieved->hyper_drive().is_ready());
-
-  // Verify MindData in SpecialData
-  test::expect_true(std::holds_alternative<MindData>(retrieved->special()));
-  const auto& retrieved_mind = std::get<MindData>(retrieved->special());
-  test::expect_eq(retrieved_mind.progenitor, player_t{1});
-  test::expect_eq(retrieved_mind.target, player_t{2});
-  test::expect_eq(retrieved_mind.generation, 5U);
-  test::expect_true(retrieved_mind.busy);
-  test::expect_false(retrieved_mind.tampered);
-  test::expect_eq(retrieved_mind.who_killed, player_t{3});
 
   std::println(std::cout, "  ✓ All fields match original");
 

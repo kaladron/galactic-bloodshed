@@ -82,8 +82,18 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 
 - **`gb.entities`** (Domain Model) - `gb/entities/entities.cppm`
   - Core domain entities: `Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Place`, `TurnStats`
-  - Polymorphic specialized ship hierarchy: `Ship` $\to$ `AutonomousShip` $\to$ (`VonNeumannShip`, `BerserkerShip`) with compile-time checked downcasting via `Ship::as<T>()` and factory deserialization
-  - Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), `PlayerVector<T, N>`, `Coordinates`
+  - Polymorphic specialized ship hierarchy with compile-time checked downcasting via `Ship::as<T>()`, `ShipFactory` deserialization, and encapsulated typed members (eliminating raw variant unpacking):
+    - Base: `Ship`
+    - Autonomous / Replicating: `AutonomousShip` $\to$ (`VonNeumannShip`, `BerserkerShip`)
+    - Directed Energy & Optics: `SpaceMirrorShip` (space mirrors, orbital/ground telescopes, tractor beams)
+    - Biological / Spores: `SporePodShip` (thermal germination and orbital decay)
+    - Atmospheric Alteration: `CanisterShip` (cooling dust canisters, greenhouse gas canisters)
+    - Ballistic Ordnance: `MissileShip` (precision planetary coordinates and scatter impacts)
+    - Orbital Hazards: `MineShip` (proximity trigger radii and radiative warheads)
+    - Geoengineering: `TerraformerShip` $\to$ `GroundPlowShip` (surface order queues and plowing)
+    - Cargo Transfer: `TransporterShip` (target recipient vessels)
+    - Ecological Containment: `ToxicWasteShip` (planetary toxin harvesting and storage)
+  - Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), `PlayerVector<T, N>`, `Coordinates`
   - First-class domain methods and computed predicates (`Ship::is_docked()`, `Ship::is_landed()`, `Ship::is_laser_on()`, `HyperDriveData::is_ready()`, `Planet::is_adjacent()`, `Planet::adjacent_coordinates()`, `Planet::random_adjacent_coordinates()`, `Star::is_explored_by()`, `Race::is_allied_with()`, `block::is_invited()`)
   - Strongly-typed manifests and flags (`CommodityManifest`, `TechDiscoveries`)
   - Configuration constants (`Tweakables`), entity lists, ship capabilities and filters

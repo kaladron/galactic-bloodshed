@@ -511,12 +511,6 @@ void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
                                     .intensity = 0,
                                     .pnum = pl.pnum,
                                     .level = pl.level};
-      } else {
-        ship.special() = AimedAtData{.shipno = pl.shipno,
-                                     .snum = pl.snum,
-                                     .intensity = 0,
-                                     .pnum = pl.pnum,
-                                     .level = pl.level};
       }
       if (ship.type() != ShipType::OTYPE_TRACT &&
           ship.type() != ShipType::OTYPE_GTELE)

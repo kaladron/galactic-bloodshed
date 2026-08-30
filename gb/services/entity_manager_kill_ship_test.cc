@@ -171,12 +171,9 @@ int main() {
     ship_data.type = ShipType::OTYPE_VN;
     ship_data.storbits = 0;
 
+    ship_data.special = MindData{.who_killed = 1};
     auto ship_handle = em.create_ship(ship_data);
     auto& ship = *ship_handle;
-
-    MindData mind{};
-    mind.who_killed = 1;
-    ship.special() = mind;
 
     em.kill_ship(1, ship);
 

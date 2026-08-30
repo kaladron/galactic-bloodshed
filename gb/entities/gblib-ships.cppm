@@ -731,14 +731,6 @@ public:
     return data_.crystals;
   }
 
-  // Special data
-  [[nodiscard]] const SpecialData& special() const {
-    return data_.special;
-  }
-  SpecialData& special() {
-    return data_.special;
-  }
-
   [[nodiscard]] player_t who_killed() const {
     return data_.who_killed;
   }
@@ -1266,6 +1258,12 @@ public:
   [[nodiscard]] std::uint32_t generation() const noexcept {
     return mind_.generation;
   }
+  [[nodiscard]] bool is_tampered() const noexcept {
+    return mind_.tampered;
+  }
+  void set_tampered(bool tampered) noexcept {
+    mind_.tampered = tampered;
+  }
 
   [[nodiscard]] ship_struct to_struct() const override {
     ship_struct copy = data_;
@@ -1615,7 +1613,9 @@ struct ShipTypeTraits<BerserkerShip> {
 
 export template <>
 struct ShipTypeTraits<SpaceMirrorShip> {
-  static constexpr ShipType expected_type = ShipType::STYPE_MIRROR;
+  [[nodiscard]] static constexpr bool matches(ShipType type) noexcept {
+    return type >= ShipType::STYPE_MIRROR && type <= ShipType::OTYPE_TRACT;
+  }
 };
 
 export template <>

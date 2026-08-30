@@ -210,19 +210,25 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   newship->on() = 0;
   switch (newship->type()) {
     case ShipType::OTYPE_VN:
-      newship->special() = MindData{.progenitor = Playernum,
-                                    .target = 0,
-                                    .generation = 1,
-                                    .busy = 1,
-                                    .tampered = 0,
-                                    .who_killed = 0};
+      if (auto* vn = newship->as<VonNeumannShip>()) {
+        vn->mind() = MindData{.progenitor = Playernum,
+                              .target = 0,
+                              .generation = 1,
+                              .busy = 1,
+                              .tampered = 0,
+                              .who_killed = 0};
+      }
       break;
     case ShipType::STYPE_MINE:
-      newship->special() = TriggerData{.radius = 100}; /* trigger radius */
+      if (auto* mine = newship->as<MineShip>()) {
+        mine->set_trigger_radius(100);
+      }
       g.out << "Mine disarmed.\nTrigger radius set at 100.\n";
       break;
     case ShipType::OTYPE_TRANSDEV:
-      newship->special() = TransportData{.target = 0};
+      if (auto* trans = newship->as<TransporterShip>()) {
+        trans->set_target_ship(shipnum_t{0});
+      }
       newship->on() = 0;
       g.out << "Receive OFF.  Change with order.\n";
       break;
@@ -287,16 +293,13 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   newship.governor() = Governor;
   newship.ships() = 0;
   newship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  if (newship.type() == ShipType::OTYPE_TOXWC) {
+  if (auto* waste_ship = newship.as<ToxicWasteShip>()) {
     std::string message = std::format("Toxin concentration on planet was {}%,",
                                       planet.conditions(TOXIC));
     push_telegram(entity_manager, Playernum, Governor, message);
-    unsigned char toxic_amount;
-    if (planet.conditions(TOXIC) > TOXMAX)
-      toxic_amount = TOXMAX;
-    else
-      toxic_amount = planet.conditions(TOXIC);
-    newship.special() = WasteData{.toxic = toxic_amount};
+    const auto toxic_amount =
+        static_cast<unsigned char>(std::min(TOXMAX, planet.conditions(TOXIC)));
+    waste_ship->set_toxic_level(toxic_amount);
     planet.conditions(TOXIC) -= toxic_amount;
     std::string toxMsg = std::format(" now {}%.\n", planet.conditions(TOXIC));
     push_telegram(entity_manager, Playernum, Governor, toxMsg);
@@ -374,18 +377,18 @@ void Getship(Ship* s, ShipType i, const Race& r) {
                                                                  : GTYPE_NONE),
       .primary = static_cast<weapon_power_t>(Shipdata[i][ABIL_GUNS]),
       .primtype = shipdata_primary(i),
+      .sectype = shipdata_secondary(i),
       .max_hanger = static_cast<hangar_t>(Shipdata[i][ABIL_HANGER]),
   };
-  data.sectype = shipdata_secondary(i);
+  if (i == ShipType::OTYPE_VN || i == ShipType::OTYPE_BERS) {
+    data.special = MindData{.progenitor = r.Playernum};
+  }
 
-  *s = Ship(std::move(data));
+  *s = std::move(*ShipFactory::create(std::move(data)));
   s->size() = ship_size(*s);
   s->base_mass() = getmass(*s);
   s->mass() = getmass(*s);
   s->build_cost() = r.God ? 0 : (int)cost(*s);
-  if (s->type() == ShipType::OTYPE_VN || s->type() == ShipType::OTYPE_BERS) {
-    s->special() = MindData{.progenitor = r.Playernum};
-  }
 }
 
 Ship Getfactship(const Ship& b) {

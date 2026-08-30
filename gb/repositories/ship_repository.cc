@@ -142,6 +142,9 @@ std::unique_ptr<Ship> ShipFactory::create(ship_struct data) {
     case ShipType::OTYPE_BERS:
       return std::make_unique<BerserkerShip>(std::move(data));
     case ShipType::STYPE_MIRROR:
+    case ShipType::OTYPE_STELE:
+    case ShipType::OTYPE_GTELE:
+    case ShipType::OTYPE_TRACT:
       return std::make_unique<SpaceMirrorShip>(std::move(data));
     case ShipType::STYPE_POD:
       return std::make_unique<SporePodShip>(std::move(data));

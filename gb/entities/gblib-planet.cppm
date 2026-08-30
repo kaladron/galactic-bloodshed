@@ -383,6 +383,16 @@ public:
   [[nodiscard]] bool is_adjacent(const Coordinates from,
                                  const Coordinates to) const noexcept;
 
+  /// \brief Returns all valid adjacent coordinates surrounding the given
+  /// position, respecting east/west toroidal wrapping and north/south polar
+  /// boundaries.
+  [[nodiscard]] std::vector<Coordinates>
+  adjacent_coordinates(Coordinates from) const;
+
+  /// \brief Returns a randomly chosen valid adjacent coordinate on the
+  /// planetary grid.
+  [[nodiscard]] Coordinates random_adjacent_coordinates(Coordinates from) const;
+
   /// \brief Updates planetary atmospheric temperature by adding stellar/mirror
   /// thermal variance to baseline surface temperature.
   void update_climate(int temp_variance = 0) noexcept;

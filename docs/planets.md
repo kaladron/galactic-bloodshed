@@ -54,6 +54,21 @@ a planetary **slave revolt** is automatically triggered (`Planet::is_slave_revol
 2. **Regional Intimidation Devastation**: In addition, master-owned sectors on intimidated stars have a $50\%$ chance of being devastated.
 3. **Liberation**: The planetary shackles are broken, resetting `slaved_to = 0` via `Planet::free_slaves()`.
 
+## Planetary Grid Topology & Surface Navigation
+
+Planetary surface maps in Galactic Bloodshed represent cylindrical/toroidal worlds mapped to a 2D discrete coordinate grid $[0, \text{Maxx}-1] \times [0, \text{Maxy}-1]$.
+
+### Surface Geometry & Seam Wrapping
+- **East/West Toroidal Wrapping (X Dimension)**: Moving east beyond $x = \text{Maxx}-1$ wraps continuously around to $x = 0$, and moving west beyond $x = 0$ wraps to $x = \text{Maxx}-1$. Surface coordinates are normalized using `Planet::wrap(Coordinates)`.
+- **North/South Polar Boundaries (Y Dimension)**: The Y dimension is non-wrapping and clamped between the North Pole ($y = 0$) and the South Pole ($y = \text{Maxy}-1$). Units cannot step north of the North Pole or south of the South Pole.
+
+### Topological Adjacency & Roaming
+- **Neighbor Calculation (`Planet::adjacent_coordinates()`)**:
+  - **Temperate / Equatorial Sectors** ($0 < y < \text{Maxy}-1$): Have **8 topological neighbors** (including diagonal steps and wrapped east/west seams).
+  - **Polar Sectors** ($y = 0$ or $y = \text{Maxy}-1$): Have **5 topological neighbors** due to polar boundary clamping.
+- **Autonomous Roaming (`Planet::random_adjacent_coordinates()`)**:
+  - Autonomous surface units (such as Von Neumann machines exploring depleted sectors) use `Planet::random_adjacent_coordinates()` to step into neighboring sectors without out-of-bounds errors or polar escape.
+
 ## See Also
 - [Governance and Administration](governance.md)
 - [Economy and Taxation](economy.md)

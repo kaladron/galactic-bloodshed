@@ -66,7 +66,24 @@ int main() {
 
   JsonStore store(db);
   StarRepository star_repo(store);
+  PlanetRepository planet_repo(store);
+  RaceRepository race_repo(store);
   UniverseRepository universe_repo(store);
+
+  Race r1{};
+  r1.Playernum = 1;
+  r1.name = "VN Machine";
+  race_repo.save(r1);
+
+  Race r2{};
+  r2.Playernum = 2;
+  r2.name = "Terran";
+  race_repo.save(r2);
+
+  planet_struct p0_data{};
+  p0_data.star_id = 0;
+  p0_data.planet_order = 0;
+  planet_repo.save(Planet{p0_data});
 
   // =========================================================================
   // 2. find_closest_stars tests (including Bug 1: Star 0 Orbit Search Fix)
@@ -216,6 +233,139 @@ int main() {
     std::println(
         std::cout,
         "  ✓ select_vn_destination navigates to optimal uninhabited stars");
+  }
+
+  // =========================================================================
+  // 5. mine_sector tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: mine_sector");
+
+    ship_struct vn_data{};
+    vn_data.number = 301;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.resource = 0;
+    vn_data.fuel = 0.0;
+    auto vn_ship = ShipFactory::create(vn_data);
+    auto* vn = vn_ship->as<VonNeumannShip>();
+    test::expect_true(vn != nullptr);
+
+    sector_struct s_data{};
+    s_data.resource = 100;
+    Sector sector(s_data);
+
+    // Mine sector with 100 resource: takes 50%, yields 50
+    resource_t yield = mine_sector(*vn, sector);
+    test::expect_eq(yield, 50);
+    test::expect_eq(sector.get_resource(), 50);
+    test::expect_eq(vn->resource(), 50);
+    test::expect_eq(vn->fuel(), 50.0);
+
+    // Mine depleted sector
+    sector.set_resource(0);
+    resource_t empty_yield = mine_sector(*vn, sector);
+    test::expect_eq(empty_yield, 0);
+    test::expect_eq(vn->resource(), 50);
+
+    // Berserker mining converts to destruct (5x) and fuel
+    ship_struct bers_data{};
+    bers_data.number = 302;
+    bers_data.owner = 1;
+    bers_data.type = ShipType::OTYPE_BERS;
+    bers_data.destruct = 0;
+    bers_data.fuel = 0.0;
+    auto bers_ship = ShipFactory::create(bers_data);
+    auto* bers = bers_ship->as<BerserkerShip>();
+    test::expect_true(bers != nullptr);
+
+    sector.set_resource(200);
+    resource_t bers_yield = mine_sector(*bers, sector);
+    test::expect_eq(bers_yield, 100);
+    test::expect_eq(sector.get_resource(), 100);
+    test::expect_eq(bers->destruct(), 500);  // 5 * 100
+    test::expect_eq(bers->fuel(), 100.0);
+
+    std::println(std::cout,
+                 "  ✓ mine_sector extracts resources and fuel correctly");
+  }
+
+  // =========================================================================
+  // 6. roam_to_adjacent_sector tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: roam_to_adjacent_sector");
+
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+
+    ship_struct vn_data{};
+    vn_data.number = 303;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.land_coords = {5, 5};
+    auto vn_ship = ShipFactory::create(vn_data);
+    auto* vn = vn_ship->as<VonNeumannShip>();
+    test::expect_true(vn != nullptr);
+
+    seed_rand(42);
+    Coordinates new_c = roam_to_adjacent_sector(*vn, planet);
+    test::expect_true(std::abs(new_c.x - 5) <= 1 || new_c.x == 9 ||
+                      new_c.x == 0);
+    test::expect_true(std::abs(new_c.y - 5) <= 1);
+    test::expect_eq(vn->land_coords(), new_c);
+
+    // North pole clamping: at y == 0, the machine cannot move north (y < 0),
+    // so y is always in [0, 1] and strictly adjacent to {0, 0}.
+    vn->set_land_coords({0, 0});
+    Coordinates north_polar_c = roam_to_adjacent_sector(*vn, planet);
+    test::expect_true(north_polar_c.y >= 0 && north_polar_c.y <= 1);
+    test::expect_true(planet.is_adjacent({0, 0}, north_polar_c));
+
+    // South pole clamping: at y == Maxy - 1 (y == 9), the machine cannot move
+    // south (y >= 10), so y is always in [8, 9] and strictly adjacent to {5, 9}.
+    vn->set_land_coords({5, 9});
+    Coordinates south_polar_c = roam_to_adjacent_sector(*vn, planet);
+    test::expect_true(south_polar_c.y >= 8 && south_polar_c.y <= 9);
+    test::expect_true(planet.is_adjacent({5, 9}, south_polar_c));
+
+    std::println(
+        std::cout,
+        "  ✓ roam_to_adjacent_sector wanders safely with polar clamping");
+  }
+
+  // =========================================================================
+  // 7. steal_planetary_resources tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: steal_planetary_resources");
+
+    // Add Player 2 colony with resources on Star 0, Planet 0
+    em.mutate_planet(0, 0,
+                     [](Planet& p) { p.info(player_t{2}).resource = 1000; });
+
+    ship_struct vn_data{};
+    vn_data.number = 304;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.storbits = 0;
+    vn_data.pnumorbits = 0;
+    vn_data.resource = 0;
+    auto vn_ship = ShipFactory::create(vn_data);
+    auto* vn = vn_ship->as<VonNeumannShip>();
+    test::expect_true(vn != nullptr);
+
+    auto result = steal_planetary_resources(em, *vn);
+    test::expect_eq(result.victim, player_t{2});
+    test::expect_eq(result.amount, Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+    test::expect_eq(vn->resource(), Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+
+    const auto& planet_after = *em.peek_planet(0, 0);
+    test::expect_eq(planet_after.info(player_t{2}).resource,
+                    1000 - Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+
+    std::println(
+        std::cout,
+        "  ✓ steal_planetary_resources steals resources from alien colony");
   }
 
   std::println(std::cout,

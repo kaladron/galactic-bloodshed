@@ -174,42 +174,12 @@ select_victim_to_steal_from(const Planet& planet,
   return std::nullopt;
 }
 
-/*  do_VN() -- called by doship() */
-void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
-  if (!ship.is_landed()) {
-    // Doing other things
-    if (!std::holds_alternative<MindData>(ship.special()) ||
-        !std::get<MindData>(ship.special()).busy)
-      return;
-
-    // we were just built & launched
-    if (ship.type() == ShipType::OTYPE_BERS)
-      order_berserker(em, ship, stats);
-    else
-      order_VN(em, ship);
-    return;
-  }
-
-  stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].inhab = true;
-
-  /* launch if no assignment */
-  if (!std::holds_alternative<MindData>(ship.special()) ||
-      !std::get<MindData>(ship.special()).busy) {
-    if (ship.fuel() >= (double)ship.max_fuel_capacity()) {
-      const auto* star = em.peek_star(ship.storbits());
-      const auto* planet = em.peek_planet(ship.storbits(), ship.pnumorbits());
-      ship.xpos() = star->xpos() + planet->xpos() + int_rand(-10, 10);
-      ship.ypos() = star->ypos() + planet->ypos() + int_rand(-10, 10);
-      ship.docked() = 0;
-      ship.whatdest() = ScopeLevel::LEVEL_UNIV;
-    }
-    return;
-  }
-
-  /* we have an assignment.  Since we are landed, this means
-     we are engaged in building up resources/fuel. */
-  /* steal resources from other players */
-  /* permute list of people to steal from */
+/// \brief Steals resources from landed non-Player-1 colony stockpiles.
+///
+/// \param em Entity manager for entity queries, mutations, and messaging.
+/// \param ship Autonomous ship performing the theft.
+/// \return StealResult containing victim ID and quantity stolen.
+StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
   auto candidate_ids = shuffled_indices(1, em.num_races().value + 1);
   std::vector<player_t> race_order;
   race_order.reserve(candidate_ids.size());
@@ -217,29 +187,28 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
     race_order.push_back(player_t{id});
   }
 
-  int prod = 0;
+  resource_t prod = 0;
   player_t f = 0;
   em.mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet_mut) {
     auto victim = select_victim_to_steal_from(planet_mut, race_order);
     if (!victim) return;
     f = *victim;
-    prod = std::min(planet_mut.info(f).resource,
-                    Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+    prod = std::min(
+        planet_mut.info(f).resource,
+        static_cast<resource_t>(Shipdata[ShipType::OTYPE_VN][ABIL_COST]));
     planet_mut.info(f).resource -= prod;
   });
 
-  // No resources to steal
-  if (f == 0) return;
+  if (f == 0) return StealResult{};
 
   std::string buf;
-
   if (ship.type() == ShipType::OTYPE_VN) {
-    rcv_resource(ship, prod);
+    rcv_resource(ship, static_cast<int>(prod));
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_VN], ship.number(),
-                      prin_ship_orbits(em, ship).c_str());
+                      prin_ship_orbits(em, ship));
   } else if (ship.type() == ShipType::OTYPE_BERS) {
-    rcv_destruct(ship, prod);
+    rcv_destruct(ship, static_cast<int>(prod));
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_BERS], ship.number(),
                       prin_ship_orbits(em, ship));
@@ -247,44 +216,109 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
 
   push_telegram_race(em, f, buf);
   if (f != ship.owner()) push_telegram(em, ship.owner(), ship.governor(), buf);
+  return StealResult{.victim = f, .amount = prod};
+}
+
+/// \brief Mines resources and fuel from the currently occupied sector.
+///
+/// \param ship Autonomous ship mining the sector.
+/// \param sector Sector being mined.
+/// \return Quantity of resources extracted from the sector.
+resource_t mine_sector(AutonomousShip& ship, Sector& sector) {
+  const resource_t oldres = sector.get_resource();
+  if (oldres <= 0) {
+    return 0;
+  }
+
+  sector.set_resource(static_cast<resource_t>(oldres * VN_RES_TAKE));
+  const resource_t prod = oldres - sector.get_resource();
+  if (ship.type() == ShipType::OTYPE_VN) {
+    rcv_resource(ship, static_cast<int>(prod));
+  } else if (ship.type() == ShipType::OTYPE_BERS) {
+    rcv_destruct(ship, static_cast<int>(5 * prod));
+  }
+  rcv_fuel(ship, static_cast<double>(prod));
+  return prod;
+}
+
+/// \brief Moves an autonomous machine to an adjacent sector when current
+/// sector is depleted.
+///
+/// \param ship Autonomous ship to move.
+/// \param planet Planet being explored.
+/// \return New landed coordinates on the planet.
+Coordinates roam_to_adjacent_sector(AutonomousShip& ship,
+                                    const Planet& planet) {
+  const Coordinates new_coords =
+      planet.random_adjacent_coordinates(ship.land_coords());
+  ship.set_land_coords(new_coords);
+  return new_coords;
+}
+
+/*  do_VN() -- called by doship() */
+void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
+  auto* auto_ship = ship.as<AutonomousShip>();
+  if (!auto_ship) {
+    return;
+  }
+
+  if (!auto_ship->is_landed()) {
+    if (!auto_ship->mind().busy) {
+      return;
+    }
+
+    // we were just built & launched
+    if (auto_ship->type() == ShipType::OTYPE_BERS)
+      order_berserker(em, ship, stats);
+    else
+      order_VN(em, ship);
+    return;
+  }
+
+  stats.Stinfo[auto_ship->storbits().value][auto_ship->pnumorbits().value]
+      .inhab = true;
+
+  /* launch if no assignment */
+  if (!auto_ship->mind().busy) {
+    if (auto_ship->fuel() >=
+        static_cast<double>(auto_ship->max_fuel_capacity())) {
+      const auto& star = *em.peek_star(auto_ship->storbits());
+      const auto& planet =
+          *em.peek_planet(auto_ship->storbits(), auto_ship->pnumorbits());
+      auto_ship->xpos() = star.xpos() + planet.xpos() + int_rand(-10, 10);
+      auto_ship->ypos() = star.ypos() + planet.ypos() + int_rand(-10, 10);
+      auto_ship->docked() = 0;
+      auto_ship->whatdest() = ScopeLevel::LEVEL_UNIV;
+    }
+    return;
+  }
+
+  /* we have an assignment. Since we are landed, this means we are engaged in
+     building up resources/fuel. */
+  steal_planetary_resources(em, *auto_ship);
 }
 
 /*  planet_doVN() -- called by doplanet() */
 void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
                  EntityManager& entity_manager, TurnStats& stats) {
-  int j;
-  int oldres;
-  int xa;
-  int ya;
-  int prod;
+  auto* auto_ship = ship.as<AutonomousShip>();
+  if (!auto_ship) {
+    return;
+  }
 
-  if (ship.is_landed()) {
-    if (ship.type() == ShipType::OTYPE_VN &&
-        std::holds_alternative<MindData>(ship.special()) &&
-        std::get<MindData>(ship.special()).busy) {
+  int j;
+
+  if (auto_ship->is_landed()) {
+    if (auto_ship->type() == ShipType::OTYPE_VN && auto_ship->mind().busy) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
-      auto& s = smap.get(ship.land_coords());
-      if (!(oldres = s.get_resource())) {
+      auto& s = smap.get(auto_ship->land_coords());
+      if (s.get_resource() == 0) {
         /* move to another sector */
-        xa = int_rand(-1, 1);
-        ya = (ship.land_coords().y == 0)
-                 ? 1
-                 : ((ship.land_coords().y == (planet.dimensions().y - 1))
-                        ? -1
-                        : int_rand(-1, 1));
-        ship.set_land_coords(
-            planet.wrap(ship.land_coords() + Coordinates{xa, ya}));
+        roam_to_adjacent_sector(*auto_ship, planet);
       } else {
         /* mine the sector */
-        s.set_resource(s.get_resource() * VN_RES_TAKE);
-        prod = oldres -
-               s.get_resource(); /* poor way for a player to mine resources */
-        if (ship.type() == ShipType::OTYPE_VN)
-          rcv_resource(ship, prod);
-        else if (ship.type() == ShipType::OTYPE_BERS)
-          rcv_destruct(ship, 5 * prod);
-        rcv_fuel(ship, (double)prod);
+        mine_sector(*auto_ship, s);
       }
       /* now try to construct another machine */
       ShipType shipbuild = (stats.VN_brain.total_mad > 100 && success(50))

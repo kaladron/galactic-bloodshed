@@ -51,3 +51,22 @@ export void select_berserker_destination(EntityManager& em,
 
 /// \brief Assigns destination orders to an autonomous Von Neumann machine.
 export void select_vn_destination(EntityManager& em, AutonomousShip& ship);
+
+/// \brief Result of stealing planetary resources from an alien colony.
+export struct StealResult {
+  player_t victim{0};    ///< Player ID victimized, or 0 if none
+  resource_t amount{0};  ///< Quantity of resources stolen
+};
+
+/// \brief Steals resources from alien colonies on the currently landed planet.
+export StealResult steal_planetary_resources(EntityManager& em,
+                                             AutonomousShip& ship);
+
+/// \brief Mines resources from a sector, transferring extracted yield to cargo
+/// and fuel.
+export resource_t mine_sector(AutonomousShip& ship, Sector& sector);
+
+/// \brief Moves an autonomous machine to an adjacent sector when current sector
+/// is depleted.
+export Coordinates roam_to_adjacent_sector(AutonomousShip& ship,
+                                           const Planet& planet);

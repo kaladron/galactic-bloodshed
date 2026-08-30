@@ -121,6 +121,35 @@ bool Planet::is_adjacent(const Coordinates from,
   return false;
 }
 
+std::vector<Coordinates> Planet::adjacent_coordinates(Coordinates from) const {
+  std::vector<Coordinates> neighbors;
+  if (dimensions().x <= 0 || dimensions().y <= 0) {
+    return neighbors;
+  }
+  neighbors.reserve(8);
+  for (int dy = -1; dy <= 1; ++dy) {
+    const int new_y = from.y + dy;
+    if (new_y < 0 || new_y >= dimensions().y) {
+      continue;
+    }
+    for (int dx = -1; dx <= 1; ++dx) {
+      if (dx == 0 && dy == 0) {
+        continue;
+      }
+      neighbors.push_back(wrap(Coordinates{from.x + dx, new_y}));
+    }
+  }
+  return neighbors;
+}
+
+Coordinates Planet::random_adjacent_coordinates(Coordinates from) const {
+  const auto neighbors = adjacent_coordinates(from);
+  if (neighbors.empty()) {
+    return from;
+  }
+  return neighbors[int_rand(0, neighbors.size() - 1)];
+}
+
 void Planet::update_climate(int temp_variance) noexcept {
   conditions(TEMP) = conditions(RTEMP) + temp_variance + int_rand(-5, 5);
 }

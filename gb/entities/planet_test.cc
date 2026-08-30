@@ -98,6 +98,33 @@ int main() {
 
     // Non-wrapping vertical separation across polar caps
     test::expect_false(planet.is_adjacent({5, 0}, {5, 7}));
+
+    // adjacent_coordinates: interior point has 8 neighbors
+    auto interior_neighbors = planet.adjacent_coordinates({5, 5});
+    test::expect_eq(interior_neighbors.size(), 8);
+    for (const auto& neighbor : interior_neighbors) {
+      test::expect_true(planet.is_adjacent({5, 5}, neighbor));
+    }
+
+    // adjacent_coordinates: north pole (y == 0) has 5 neighbors
+    auto north_pole_neighbors = planet.adjacent_coordinates({0, 0});
+    test::expect_eq(north_pole_neighbors.size(), 5);
+    for (const auto& neighbor : north_pole_neighbors) {
+      test::expect_true(planet.is_adjacent({0, 0}, neighbor));
+      test::expect_true(neighbor.y >= 0 && neighbor.y <= 1);
+    }
+
+    // adjacent_coordinates: south pole (y == 7) has 5 neighbors
+    auto south_pole_neighbors = planet.adjacent_coordinates({5, 7});
+    test::expect_eq(south_pole_neighbors.size(), 5);
+    for (const auto& neighbor : south_pole_neighbors) {
+      test::expect_true(planet.is_adjacent({5, 7}, neighbor));
+      test::expect_true(neighbor.y >= 6 && neighbor.y <= 7);
+    }
+
+    // random_adjacent_coordinates returns a valid adjacent neighbor
+    auto random_neighbor = planet.random_adjacent_coordinates({5, 5});
+    test::expect_true(planet.is_adjacent({5, 5}, random_neighbor));
   }
 
   // Test 5b: CommodityManifest & plroute defaults

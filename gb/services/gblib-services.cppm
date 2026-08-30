@@ -285,6 +285,26 @@ public:
     return std::forward<Fn>(fn)(*handle);
   }
 
+  template <typename Subclass, typename Fn>
+  bool mutate_as(shipnum_t num, Fn&& fn) {
+    auto handle = get_ship(num);
+    if (auto* typed = handle->as<Subclass>()) {
+      std::forward<Fn>(fn)(*typed);
+      return true;
+    }
+    return false;
+  }
+
+  template <typename Subclass, typename Fn>
+  bool peek_as(shipnum_t num, Fn&& fn) {
+    const auto* ship = peek_ship(num);
+    if (const auto* typed = ship->as<Subclass>()) {
+      std::forward<Fn>(fn)(*typed);
+      return true;
+    }
+    return false;
+  }
+
   template <typename Fn>
   decltype(auto) mutate_planet(starnum_t star, planetnum_t pnum, Fn&& fn) {
     auto handle = get_planet(star, pnum);

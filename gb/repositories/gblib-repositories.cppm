@@ -213,6 +213,14 @@ protected:
   deserialize(const std::string& json_str) const override;
 };
 
+// ShipFactory - creates and deserializes polymorphic Ship subclasses
+export class ShipFactory {
+public:
+  [[nodiscard]] static std::unique_ptr<Ship> create(ship_struct data);
+  [[nodiscard]] static std::unique_ptr<Ship>
+  deserialize(const std::string& json_str);
+};
+
 // ShipRepository - provides type-safe access to Ship entities
 export class ShipRepository : public Repository<Ship> {
 public:
@@ -220,6 +228,7 @@ public:
 
   // Domain-specific methods
   std::optional<Ship> find_by_number(shipnum_t num);
+  [[nodiscard]] std::unique_ptr<Ship> find_ship(shipnum_t num);
   bool save(const Ship& ship);
   void delete_ship(shipnum_t num);
   shipnum_t next_ship_number();

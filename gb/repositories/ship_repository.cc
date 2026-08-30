@@ -135,11 +135,31 @@ struct meta<ship_struct> {
 
 }  // namespace glz
 
+std::unique_ptr<Ship> ShipFactory::create(ship_struct data) {
+  switch (data.type) {
+    case ShipType::OTYPE_VN:
+      return std::make_unique<VonNeumannShip>(std::move(data));
+    case ShipType::OTYPE_BERS:
+      return std::make_unique<BerserkerShip>(std::move(data));
+    default:
+      return std::make_unique<Ship>(std::move(data));
+  }
+}
+
+std::unique_ptr<Ship> ShipFactory::deserialize(const std::string& json_str) {
+  ship_struct data{};
+  auto result = glz::read_json(data, json_str);
+  if (result) {
+    return nullptr;
+  }
+  return create(std::move(data));
+}
+
 ShipRepository::ShipRepository(JsonStore& store)
     : Repository<Ship>(store, "tbl_ship") {}
 
 std::optional<std::string> ShipRepository::serialize(const Ship& ship) const {
-  ship_struct data = ship.get_struct();
+  ship_struct data = ship.to_struct();
   auto result = glz::write_json(data);
   if (result.has_value()) {
     return result.value();
@@ -159,6 +179,13 @@ ShipRepository::deserialize(const std::string& json_str) const {
 
 std::optional<Ship> ShipRepository::find_by_number(shipnum_t num) {
   return find(num);
+}
+
+std::unique_ptr<Ship> ShipRepository::find_ship(shipnum_t num) {
+  if (auto json = store.retrieve(table_name, num)) {
+    return ShipFactory::deserialize(*json);
+  }
+  return nullptr;
 }
 
 bool ShipRepository::save(const Ship& ship) {

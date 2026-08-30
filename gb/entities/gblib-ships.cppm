@@ -477,14 +477,21 @@ export inline guntype_t shipdata_secondary(ShipType ship_type) {
 }
 
 export class Ship {
-private:
-  ship_struct data_;  // Private data member for encapsulation
+protected:
+  ship_struct
+      data_;  // Protected data member for encapsulation and subclass access
 
 public:
   // Constructors
   Ship() = default;
   Ship(ship_struct in) : data_(std::move(in)) {}
-  ~Ship() = default;
+  virtual ~Ship() = default;
+
+  template <typename Derived>
+  [[nodiscard]] Derived* as() noexcept;
+
+  template <typename Derived>
+  [[nodiscard]] const Derived* as() const noexcept;
 
   // Delete copy, allow move
   Ship(const Ship&) = delete;
@@ -1200,18 +1207,135 @@ public:
   // =========================================================================
 
   // For repository serialization - returns copy of internal struct
-  [[nodiscard]] ship_struct get_struct() const {
-    return data_;
+  [[nodiscard]] virtual ship_struct get_struct() const {
+    return to_struct();
   }
 
   // Direct access to internal struct (FOR SERIALIZATION USE ONLY)
-  [[nodiscard]] const ship_struct& to_struct() const noexcept {
+  [[nodiscard]] virtual ship_struct to_struct() const {
     return data_;
   }
   [[nodiscard]] ship_struct& to_struct() noexcept {
     return data_;
   }
 };
+
+// =========================================================================
+// AutonomousShip and Derived Specialty Subclasses
+// =========================================================================
+
+export class AutonomousShip : public Ship {
+public:
+  AutonomousShip() = default;
+  explicit AutonomousShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<MindData>(data_.special)) {
+      mind_ = std::get<MindData>(data_.special);
+    } else {
+      mind_ =
+          MindData{.progenitor = data_.owner, .generation = 1, .busy = true};
+    }
+  }
+
+  [[nodiscard]] MindData& mind() noexcept {
+    return mind_;
+  }
+  [[nodiscard]] const MindData& mind() const noexcept {
+    return mind_;
+  }
+  [[nodiscard]] bool is_busy() const noexcept {
+    return mind_.busy;
+  }
+  void set_busy(bool busy) noexcept {
+    mind_.busy = busy;
+  }
+
+  [[nodiscard]] player_t progenitor() const noexcept {
+    return mind_.progenitor;
+  }
+  [[nodiscard]] player_t target() const noexcept {
+    return mind_.target;
+  }
+  void set_target(player_t target) noexcept {
+    mind_.target = target;
+  }
+  [[nodiscard]] std::uint32_t generation() const noexcept {
+    return mind_.generation;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = mind_;
+    return copy;
+  }
+
+protected:
+  MindData mind_{};
+};
+
+export class VonNeumannShip : public AutonomousShip {
+public:
+  using AutonomousShip::AutonomousShip;
+};
+
+export class BerserkerShip : public AutonomousShip {
+public:
+  using AutonomousShip::AutonomousShip;
+};
+
+// Type traits for zero-cost static downcasting
+export template <typename T>
+struct ShipTypeTraits {
+  static_assert(std::is_base_of_v<Ship, T>, "T must derive from Ship");
+};
+
+export template <>
+struct ShipTypeTraits<AutonomousShip> {
+  [[nodiscard]] static constexpr bool matches(ShipType type) noexcept {
+    return type == ShipType::OTYPE_VN || type == ShipType::OTYPE_BERS;
+  }
+};
+
+export template <>
+struct ShipTypeTraits<VonNeumannShip> {
+  static constexpr ShipType expected_type = ShipType::OTYPE_VN;
+};
+
+export template <>
+struct ShipTypeTraits<BerserkerShip> {
+  static constexpr ShipType expected_type = ShipType::OTYPE_BERS;
+};
+
+template <typename Derived>
+Derived* Ship::as() noexcept {
+  static_assert(std::is_base_of_v<Ship, Derived>,
+                "Derived must inherit from Ship");
+  if constexpr (requires { ShipTypeTraits<Derived>::matches(type()); }) {
+    if (ShipTypeTraits<Derived>::matches(type())) {
+      return static_cast<Derived*>(this);
+    }
+  } else {
+    if (type() == ShipTypeTraits<Derived>::expected_type) {
+      return static_cast<Derived*>(this);
+    }
+  }
+  return nullptr;
+}
+
+template <typename Derived>
+const Derived* Ship::as() const noexcept {
+  static_assert(std::is_base_of_v<Ship, Derived>,
+                "Derived must inherit from Ship");
+  if constexpr (requires { ShipTypeTraits<Derived>::matches(type()); }) {
+    if (ShipTypeTraits<Derived>::matches(type())) {
+      return static_cast<const Derived*>(this);
+    }
+  } else {
+    if (type() == ShipTypeTraits<Derived>::expected_type) {
+      return static_cast<const Derived*>(this);
+    }
+  }
+  return nullptr;
+}
 
 export int getdefense(EntityManager&, const Ship&);
 export void capture_stuff(const Ship&, GameObj&);

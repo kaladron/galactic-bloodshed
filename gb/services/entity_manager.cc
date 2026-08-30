@@ -156,24 +156,45 @@ void EntityManager::release_race(player_t player) {
 
 // Ship entity methods
 EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
-  auto handle = get_entity_impl<Ship>(
-      this, num, ship_cache, ship_refcount,
-      [this](shipnum_t n) { return ships.find_by_number(n); },
-      [this](const Ship& s) { ships.save(s); },
-      [this](shipnum_t n) { release_ship(n); });
-  if (!handle.get()) {
+  auto it = ship_cache.find(num);
+  if (it != ship_cache.end()) {
+    ship_refcount[num]++;
+    return {this, it->second.get(), [this, num](const Ship& s) {
+              if (!is_deferred_write()) {
+                ships.save(s);
+              }
+              release_ship(num);
+            }};
+  }
+
+  auto ship_ptr = ships.find_ship(num);
+  if (!ship_ptr) {
     throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
   }
-  return handle;
+
+  auto [iter, inserted] = ship_cache.emplace(num, std::move(ship_ptr));
+  ship_refcount[num] = 1;
+  return {this, iter->second.get(), [this, num](const Ship& s) {
+            if (!is_deferred_write()) {
+              ships.save(s);
+            }
+            release_ship(num);
+          }};
 }
 
 const Ship* EntityManager::peek_ship(shipnum_t num) {
-  const auto* ship = peek_entity_impl<Ship>(
-      num, ship_cache, [this](shipnum_t n) { return ships.find_by_number(n); });
-  if (!ship) {
+  auto it = ship_cache.find(num);
+  if (it != ship_cache.end()) {
+    return it->second.get();
+  }
+
+  auto ship_ptr = ships.find_ship(num);
+  if (!ship_ptr) {
     throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
   }
-  return ship;
+
+  auto [iter, inserted] = ship_cache.emplace(num, std::move(ship_ptr));
+  return iter->second.get();
 }
 
 void EntityManager::release_ship(shipnum_t num) {
@@ -187,21 +208,19 @@ EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
   // Create ship_struct, copying from provided data but overriding number
   ship_struct data = init_data;
   data.number = num;
-  Ship new_ship{data};
+  auto new_ship = ShipFactory::create(std::move(data));
 
   // Save immediately to database
-  ships.save(new_ship);
+  ships.save(*new_ship);
 
   // Cache it
-  auto [iter, inserted] =
-      ship_cache.emplace(num, std::make_unique<Ship>(std::move(new_ship)));
+  auto [iter, inserted] = ship_cache.emplace(num, std::move(new_ship));
   ship_refcount[num] = 1;
 
-  // Save the new ship to database immediately
-  ships.save(*iter->second);
-
   return {this, iter->second.get(), [this, num](const Ship& s) {
-            ships.save(s);
+            if (!is_deferred_write()) {
+              ships.save(s);
+            }
             release_ship(num);
           }};
 }

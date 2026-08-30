@@ -7,6 +7,7 @@
 import dallib;
 import gb.entities;
 import gb.repositories;
+import gb.services;
 import test;
 import std;
 
@@ -352,6 +353,110 @@ int main() {
     test::expect_eq(all_alive[1], 3);
     test::expect_eq(all_alive[2], 5);
     std::println(std::cout, "  ✓ find_alive matches all alive ships");
+  }
+
+  // =========================================================================
+  // Test ShipFactory, AutonomousShip, and Polymorphic Persistence
+  // =========================================================================
+  {
+    std::println(std::cout,
+                 "\nTest: ShipFactory & Polymorphic AutonomousShip Subclasses");
+
+    // 1. Factory instantiation
+    ship_struct vn_data{};
+    vn_data.number = 100;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    auto vn_ship = ShipFactory::create(vn_data);
+    test::expect_true(vn_ship != nullptr);
+    test::expect_true(vn_ship->as<VonNeumannShip>() != nullptr);
+    test::expect_true(vn_ship->as<AutonomousShip>() != nullptr);
+    test::expect_true(vn_ship->as<BerserkerShip>() == nullptr);
+
+    auto* vn = vn_ship->as<VonNeumannShip>();
+    test::expect_eq(vn->progenitor(), player_t{1});
+    test::expect_eq(vn->generation(), 1);
+    test::expect_true(vn->is_busy());
+
+    vn->set_busy(false);
+    vn->set_target(player_t{4});
+    test::expect_false(vn->is_busy());
+    test::expect_eq(vn->target(), player_t{4});
+
+    // 2. Berserker instantiation
+    ship_struct bers_data{};
+    bers_data.number = 101;
+    bers_data.owner = 1;
+    bers_data.type = ShipType::OTYPE_BERS;
+    auto bers_ship = ShipFactory::create(bers_data);
+    test::expect_true(bers_ship != nullptr);
+    test::expect_true(bers_ship->as<BerserkerShip>() != nullptr);
+    test::expect_true(bers_ship->as<AutonomousShip>() != nullptr);
+    test::expect_true(bers_ship->as<VonNeumannShip>() == nullptr);
+
+    // 3. Base ship instantiation
+    ship_struct cruiser_data{};
+    cruiser_data.number = 102;
+    cruiser_data.owner = 2;
+    cruiser_data.type = ShipType::STYPE_CRUISER;
+    auto cruiser_ship = ShipFactory::create(cruiser_data);
+    test::expect_true(cruiser_ship != nullptr);
+    test::expect_true(cruiser_ship->as<AutonomousShip>() == nullptr);
+    test::expect_true(cruiser_ship->as<VonNeumannShip>() == nullptr);
+    test::expect_true(cruiser_ship->as<BerserkerShip>() == nullptr);
+
+    // 4. Glaze serialization / deserialization roundtrip via repository
+    bool saved = repo.save(*vn_ship);
+    test::expect_true(saved);
+
+    auto deserialized = repo.find_ship(shipnum_t{100});
+    test::expect_true(deserialized != nullptr);
+    auto* des_vn = deserialized->as<VonNeumannShip>();
+    test::expect_true(des_vn != nullptr);
+    test::expect_eq(des_vn->target(), player_t{4});
+    test::expect_false(des_vn->is_busy());
+    test::expect_eq(des_vn->progenitor(), player_t{1});
+    std::println(
+        std::cout,
+        "  ✓ ShipFactory creates and deserializes polymorphic subclasses");
+
+    // 5. EntityManager polymorphic integration and monadic mutation
+    EntityManager em(db);
+    em.create_ship(vn_data);
+
+    // Mutate as VonNeumannShip
+    bool mutated =
+        em.mutate_as<VonNeumannShip>(shipnum_t{100}, [](VonNeumannShip& v) {
+          v.set_busy(false);
+          v.set_target(player_t{5});
+        });
+    test::expect_true(mutated);
+
+    // Type mismatch rejection
+    bool wrong_mutate =
+        em.mutate_as<BerserkerShip>(shipnum_t{100}, [](BerserkerShip&) {});
+    test::expect_false(wrong_mutate);
+
+    // Peek as VonNeumannShip
+    bool peeked =
+        em.peek_as<VonNeumannShip>(shipnum_t{100}, [](const VonNeumannShip& v) {
+          test::expect_false(v.is_busy());
+          test::expect_eq(v.target(), player_t{5});
+        });
+    test::expect_true(peeked);
+
+    // Clear cache to verify SQLite reload reconstructs polymorphic subclass
+    em.clear_cache();
+
+    const auto* reloaded = em.peek_ship(shipnum_t{100});
+    test::expect_true(reloaded != nullptr);
+    const auto* reloaded_vn = reloaded->as<VonNeumannShip>();
+    test::expect_true(reloaded_vn != nullptr);
+    test::expect_false(reloaded_vn->is_busy());
+    test::expect_eq(reloaded_vn->target(), player_t{5});
+    std::println(
+        std::cout,
+        "  ✓ EntityManager persists and reconstructs polymorphic ships");
   }
 
   std::println(std::cout, "\nAll ShipRepository tests passed!");

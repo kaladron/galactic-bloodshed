@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file VN.cc
+/// \file vn.cc
 /// \brief Assorted Von Neumann machine code.
 
 module;

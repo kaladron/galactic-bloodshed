@@ -55,7 +55,7 @@ Specialized development skills are located in `.github/skills/` and provide comp
 ### 4. Context Refresh & Plan Anchoring Protocol
 - AI agents will experience context compression and truncation across multi-commit workflows.
 ### 5. Low Cyclomatic Complexity & Domain Decomposition
-- Keep domain functions and turn pipeline passes focused and small with low cyclomatic complexity ($\text{CC} \le 4$).
+- Keep domain functions and turn pipeline passes focused and small with low cyclomatic complexity ($\text{CC} \le 10$). Lower is better when it represents the right trade-off between function count and readability.
 - Monolithic algorithms must be decomposed into composable, single-responsibility helper functions.
 - When sub-steps represent discrete domain transformations (e.g. `divert_slave_tribute`, `notify_slave_revolt`, `execute_slave_revolt`), export them in the module interface and write dedicated unit tests for each. This enables isolated testing without complex multi-entity integration harness setup.
 

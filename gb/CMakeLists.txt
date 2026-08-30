@@ -162,7 +162,7 @@ target_sources(
           entities/star.cc
           services/tele.cc
           server/victory.cc
-          server/VN.cc)
+          turn/vn.cc)
 target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module tabulate_module)
 
 # Dedicated Subsystem Modules (Phase 6)
@@ -527,7 +527,7 @@ gb_add_test(unpledge_test SOURCES commands/unpledge_test.cc)
 gb_add_test(update_test SOURCES commands/update_test.cc)
 gb_add_test(upgrade_test SOURCES commands/upgrade_test.cc)
 gb_add_test(victory_test SOURCES commands/victory_test.cc EXTRA_LIBS scnlib_module)
-gb_add_test(vn_steal_test SOURCES server/vn_steal_test.cc)
+gb_add_test(vn_test SOURCES turn/vn_test.cc)
 gb_add_test(vote_test SOURCES commands/vote_test.cc EXTRA_LIBS session notification)
 gb_add_test(walk_test SOURCES commands/walk_test.cc)
 gb_add_test(who_test SOURCES commands/who_test.cc)

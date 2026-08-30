@@ -524,7 +524,7 @@ export constexpr CommandDescriptor examine_cmd{
 
 ## Planetary Turn Pipeline Architecture
 
-Planetary simulation during turn execution (`update = true`) is modeled as an **n-tier sequential pipeline** orchestrated by `doplanet()`. Each pass is a single-responsibility domain function with low cyclomatic complexity ($\text{CC} \le 4$), operating over rich domain entities (`Planet`, `SectorMap`, `Sector`, `plinfo`) and returning structured result records before decoupled presentation helpers dispatch telegram notifications.
+Planetary simulation during turn execution (`update = true`) is modeled as an **n-tier sequential pipeline** orchestrated by `doplanet()`. Each pass is a single-responsibility domain function with low cyclomatic complexity ($\text{CC} \le 10$), operating over rich domain entities (`Planet`, `SectorMap`, `Sector`, `plinfo`) and returning structured result records before decoupled presentation helpers dispatch telegram notifications.
 
 ```mermaid
 flowchart TD

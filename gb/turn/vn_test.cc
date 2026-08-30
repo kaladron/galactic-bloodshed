@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file vn_steal_test.cc
+/// \file vn_test.cc
 /// \brief Unit tests for select_victim_to_steal_from candidate priority
 /// ordering.
 

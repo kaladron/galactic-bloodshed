@@ -131,9 +131,9 @@ void test_prompt_ship_orbiting_scopes() {
   ctx.setup_game_obj(g, player_t{1}, governor_t{0});
   g.set_level(ScopeLevel::LEVEL_SHIP);
 
-  // Missing ship
+  // Missing ship throws EntityNotFoundError (database corruption / invalid ID)
   g.set_shipno(999);
-  test::expect_eq(do_prompt(g), " ( [?] /#? )\n");
+  test::expect_throws<EntityNotFoundError>([&]() { do_prompt(g); });
 
   // Ship in universe
   g.set_shipno(10);
@@ -297,6 +297,52 @@ void test_prompt_nested_docked_ships() {
     s36.pnumorbits = 0;
     Ship ship36{s36};
     ship_repo.save(ship36);
+
+    // Level 4 nest: Station 44 (plan) -> Carrier 43 -> Cruiser 42 -> Fighter 41
+    // -> Drone 40
+    ship_struct s44{};
+    s44.number = 44;
+    s44.whatorbits = ScopeLevel::LEVEL_PLAN;
+    s44.storbits = 1;
+    s44.pnumorbits = 0;
+    Ship ship44{s44};
+    ship_repo.save(ship44);
+
+    ship_struct s43{};
+    s43.number = 43;
+    s43.whatorbits = ScopeLevel::LEVEL_SHIP;
+    s43.destshipno = 44;
+    s43.storbits = 1;
+    s43.pnumorbits = 0;
+    Ship ship43{s43};
+    ship_repo.save(ship43);
+
+    ship_struct s42{};
+    s42.number = 42;
+    s42.whatorbits = ScopeLevel::LEVEL_SHIP;
+    s42.destshipno = 43;
+    s42.storbits = 1;
+    s42.pnumorbits = 0;
+    Ship ship42{s42};
+    ship_repo.save(ship42);
+
+    ship_struct s41{};
+    s41.number = 41;
+    s41.whatorbits = ScopeLevel::LEVEL_SHIP;
+    s41.destshipno = 42;
+    s41.storbits = 1;
+    s41.pnumorbits = 0;
+    Ship ship41{s41};
+    ship_repo.save(ship41);
+
+    ship_struct s40{};
+    s40.number = 40;
+    s40.whatorbits = ScopeLevel::LEVEL_SHIP;
+    s40.destshipno = 41;
+    s40.storbits = 1;
+    s40.pnumorbits = 0;
+    Ship ship40{s40};
+    ship_repo.save(ship40);
   }
 
   auto& registry = get_test_session_registry();
@@ -312,22 +358,31 @@ void test_prompt_nested_docked_ships() {
   test::expect_eq(do_prompt(g), " ( [50] /Sol/#23/#22 )\n");
 
   g.set_shipno(24);
-  g.set_pnum(0);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#25/#24 )\n");
 
+  // Missing parent ship throws EntityNotFoundError
   g.set_shipno(26);
-  test::expect_eq(do_prompt(g), " ( [?] /#?/#? )\n");
+  test::expect_throws<EntityNotFoundError>([&]() { do_prompt(g); });
 
   // 3-level nested prompts
   g.set_shipno(30);
-  test::expect_eq(do_prompt(g), " ( [100] / /../#31/#30 )\n");
+  test::expect_eq(do_prompt(g), " ( [100] /#32/#31/#30 )\n");
 
   g.set_shipno(33);
-  test::expect_eq(do_prompt(g), " ( [50] /Sol/ /../#34/#33 )\n");
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/#35/#34/#33 )\n");
 
   g.set_shipno(36);
-  g.set_pnum(0);
-  test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/ /../#37/#36 )\n");
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#38/#37/#36 )\n");
+
+  // 4-level nested prompt (arbitrary depth)
+  g.set_shipno(40);
+  test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#44/#43/#42/#41/#40 )\n");
+
+  // Direct format_ship_prompt testing
+  test::expect_eq(format_ship_prompt(ctx.em, player_t{1}, 30),
+                  " ( [100] /#32/#31/#30 )\n");
+  test::expect_eq(format_ship_prompt(ctx.em, player_t{1}, 40),
+                  " ( [50] /Sol/Earth/#44/#43/#42/#41/#40 )\n");
 }
 
 }  // namespace

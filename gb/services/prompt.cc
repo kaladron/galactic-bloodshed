@@ -10,131 +10,81 @@ import dallib;
 
 module gblib;
 
+std::string format_ship_prompt(EntityManager& em, const player_t player,
+                               const shipnum_t shipno) {
+  const Ship* current_ship = em.peek_ship(shipno);
+
+  std::vector<shipnum_t> ship_chain{shipno};
+  std::unordered_set<shipnum_t> visited{shipno};
+
+  while (current_ship->whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    const shipnum_t parent_no = current_ship->destshipno();
+    if (parent_no == 0 || visited.contains(parent_no)) {
+      break;
+    }
+    visited.insert(parent_no);
+    current_ship = em.peek_ship(parent_no);
+    ship_chain.push_back(parent_no);
+  }
+
+  ap_t ap = 0;
+  std::string path;
+
+  switch (current_ship->whatorbits()) {
+    case ScopeLevel::LEVEL_UNIV: {
+      const auto* universe = em.peek_universe();
+      ap = universe->AP[player];
+      break;
+    }
+    case ScopeLevel::LEVEL_STAR: {
+      const auto* star = em.peek_star(current_ship->storbits());
+      ap = star->AP(player);
+      path = std::format("/{}", star->get_name());
+      break;
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto* star = em.peek_star(current_ship->storbits());
+      ap = star->AP(player);
+      path = std::format("/{}/{}", star->get_name(),
+                         star->get_planet_name(current_ship->pnumorbits()));
+      break;
+    }
+    case ScopeLevel::LEVEL_SHIP:
+      std::unreachable();
+  }
+
+  for (const shipnum_t num : std::views::reverse(ship_chain)) {
+    path += std::format("/#{}", num);
+  }
+
+  return std::format(" ( [{}] {} )\n", ap, path);
+}
+
 /**
  * \brief Create a prompt that shows the current AP and location of the player
  * \param g Game Object with player information
  * \return Prompt string for display to the user
  */
 std::string do_prompt(const GameObj& g) {
-  player_t Playernum = g.player();
-  std::stringstream prompt;
-
+  const player_t player = g.player();
   const auto* universe = g.entity_manager.peek_universe();
+
   switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] / )\n", universe->AP[Playernum]);
-      return prompt.str();
+      return std::format(" ( [{}] / )\n", universe->AP[player]);
+
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(g.snum());
-      prompt << std::format(" ( [{0}] /{1} )\n", star->AP(Playernum),
-                            star->get_name());
-      return prompt.str();
+      return std::format(" ( [{}] /{} )\n", star->AP(player), star->get_name());
     }
+
     case ScopeLevel::LEVEL_PLAN: {
       const auto* star = g.entity_manager.peek_star(g.snum());
-      prompt << std::format(" ( [{0}] /{1}/{2} )\n", star->AP(Playernum),
-                            star->get_name(), star->get_planet_name(g.pnum()));
-      return prompt.str();
+      return std::format(" ( [{}] /{}/{} )\n", star->AP(player),
+                         star->get_name(), star->get_planet_name(g.pnum()));
     }
+
     case ScopeLevel::LEVEL_SHIP:
-      break;  // That's the rest of this function.
+      return format_ship_prompt(g.entity_manager, player, g.shipno());
   }
-
-  const Ship* s = nullptr;
-  try {
-    s = g.entity_manager.peek_ship(g.shipno());
-  } catch (const EntityNotFoundError&) {
-    return " ( [?] /#? )\n";
-  }
-
-  switch (s->whatorbits()) {
-    case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] /#{1} )\n", universe->AP[Playernum],
-                            g.shipno());
-      return prompt.str();
-    case ScopeLevel::LEVEL_STAR: {
-      const auto* star = g.entity_manager.peek_star(s->storbits());
-      prompt << std::format(" ( [{0}] /{1}/#{2} )\n", star->AP(Playernum),
-                            star->get_name(), g.shipno());
-      return prompt.str();
-    }
-    case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = g.entity_manager.peek_star(s->storbits());
-      prompt << std::format(" ( [{0}] /{1}/{2}/#{3} )\n", star->AP(Playernum),
-                            star->get_name(), star->get_planet_name(g.pnum()),
-                            g.shipno());
-      return prompt.str();
-    }
-    case ScopeLevel::LEVEL_SHIP:
-      break;  // That's the rest of this function.  (Ship within a ship)
-  }
-
-  /* I put this mess in because of non-functioning prompts when you
-     are in a ship within a ship, or deeper. I am certain this can be
-     done more elegantly (a lot more) but I don't feel like trying
-     that right now. right now I want it to function. Maarten */
-  const Ship* s2 = nullptr;
-  try {
-    s2 = g.entity_manager.peek_ship(s->destshipno());
-  } catch (const EntityNotFoundError&) {
-    return " ( [?] /#?/#? )\n";
-  }
-
-  switch (s2->whatorbits()) {
-    case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] /#{1}/#{2} )\n", universe->AP[Playernum],
-                            s->destshipno(), g.shipno());
-      return prompt.str();
-    case ScopeLevel::LEVEL_STAR: {
-      const auto* star = g.entity_manager.peek_star(s->storbits());
-      prompt << std::format(" ( [{0}] /{1}/#{2}/#{3} )\n", star->AP(Playernum),
-                            star->get_name(), s->destshipno(), g.shipno());
-      return prompt.str();
-    }
-    case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = g.entity_manager.peek_star(s->storbits());
-      prompt << std::format(" ( [{0}] /{1}/{2}/#{3}/#{4} )\n",
-                            star->AP(Playernum), star->get_name(),
-                            star->get_planet_name(g.pnum()), s->destshipno(),
-                            g.shipno());
-      return prompt.str();
-    }
-    case ScopeLevel::LEVEL_SHIP:
-      break;  // That's the rest of this function.  (Ship w/in ship w/in ship)
-  }
-
-  while (s2->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    try {
-      s2 = g.entity_manager.peek_ship(s2->destshipno());
-    } catch (const EntityNotFoundError&) {
-      return " ( [?] / /../#?/#? )\n";
-    }
-  }
-
-  switch (s2->whatorbits()) {
-    case ScopeLevel::LEVEL_UNIV:
-      prompt << std::format(" ( [{0}] / /../#{1}/#{2} )\n",
-                            universe->AP[Playernum], s->destshipno(),
-                            g.shipno());
-      return prompt.str();
-    case ScopeLevel::LEVEL_STAR: {
-      const auto* star = g.entity_manager.peek_star(s->storbits());
-      prompt << std::format(" ( [{0}] /{1}/ /../#{2}/#{3} )\n",
-                            star->AP(Playernum), star->get_name(),
-                            s->destshipno(), g.shipno());
-      return prompt.str();
-    }
-    case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = g.entity_manager.peek_star(s->storbits());
-      prompt << std::format(" ( [{0}] /{1}/{2}/ /../#{3}/#{4} )\n",
-                            star->AP(Playernum), star->get_name(),
-                            star->get_planet_name(g.pnum()), s->destshipno(),
-                            g.shipno());
-      return prompt.str();
-    }
-    case ScopeLevel::LEVEL_SHIP:
-      break;  // (Ship w/in ship w/in ship w/in ship)
-  }
-  // Kidding!  All done. =)
-  return prompt.str();
 }

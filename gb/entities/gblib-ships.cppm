@@ -1316,6 +1316,13 @@ public:
     return aim_.level;
   }
 
+  /// Resolves the absolute coordinates (x, y) of the aimed target.
+  [[nodiscard]] std::optional<std::pair<double, double>>
+  target_coordinates(EntityManager& em) const;
+
+  /// Calculates the 0..7 compass aim direction heading toward the target.
+  [[nodiscard]] int aim_direction(EntityManager& em) const;
+
   [[nodiscard]] ship_struct to_struct() const override {
     ship_struct copy = data_;
     copy.special = aim_;

@@ -200,11 +200,81 @@ void test_orbit_domain_errors() {
   test::expect_contains(g.out.str(), "orbit: error in args.");
 }
 
+void test_orbit_space_mirror_aiming() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Setup a space mirror ship at position (100.0, 200.0)
+  ship_struct mirror_data{};
+  mirror_data.number = 10;
+  mirror_data.owner = 1;
+  mirror_data.governor = 0;
+  mirror_data.alive = true;
+  mirror_data.active = true;
+  mirror_data.type = ShipType::STYPE_MIRROR;
+  mirror_data.name = "SolarMirror";
+  mirror_data.whatorbits = ScopeLevel::LEVEL_STAR;
+  mirror_data.storbits = 0;
+  mirror_data.xpos = 100.0;
+  mirror_data.ypos = 200.0;
+  mirror_data.special = AimedAtData{
+      .shipno = shipnum_t{0},
+      .snum = starnum_t{0},
+      .intensity = 5,
+      .pnum = planetnum_t{0},
+      .level = ScopeLevel::LEVEL_PLAN,
+  };
+  auto mirror_handle = ctx.em.create_ship(mirror_data);
+  const auto mirror_id = mirror_handle->number();
+
+  const auto* ship = ctx.em.peek_ship(mirror_id);
+  test::expect_ne(ship, nullptr);
+  const auto* mirror = ship->as<SpaceMirrorShip>();
+  test::expect_ne(mirror, nullptr);
+
+  // 1. Target coordinates for planet: Star (100, 200) + Planet (0, 0)
+  auto coords = mirror->target_coordinates(ctx.em);
+  test::expect_true(coords.has_value());
+  test::expect_eq(coords->first, 100.0);
+  test::expect_eq(coords->second, 200.0);
+
+  // 2. Aim at a ship located at (150.0, 250.0) -> south-east heading
+  ctx.em.mutate_as<SpaceMirrorShip>(mirror_id, [](SpaceMirrorShip& m) {
+    m.aim().level = ScopeLevel::LEVEL_SHIP;
+    m.aim().shipno = 2;
+  });
+
+  const auto* updated_mirror =
+      ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
+  auto ship_coords = updated_mirror->target_coordinates(ctx.em);
+  test::expect_true(ship_coords.has_value());
+  test::expect_eq(ship_coords->first, 150.0);
+  test::expect_eq(ship_coords->second, 250.0);
+
+  int dir = updated_mirror->aim_direction(ctx.em);
+  test::expect_eq(dir, 3);  // slope = +1.0, dy > 0 -> direction 3
+
+  // 3. Verify orbit command includes the mirror in system view
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_contains(g.out.str(), "3 M false");
+
+  std::println(std::cout, "    ✓ Space mirror targeting, direction heading, "
+                          "and orbit display verified");
+}
+
 }  // namespace
 
 int main() {
   test_orbit_happy_path();
   test_orbit_domain_errors();
+  test_orbit_space_mirror_aiming();
 
   std::println(std::cout, "\n✅ All orbit tests passed!");
   return 0;

@@ -9,10 +9,10 @@ Planets form the core territory and industrial engine of empires in Galactic Blo
 Each planet possesses a natural baseline temperature (`RTEMP`) determined by its star's luminosity and orbital distance.
 
 ### Temperature Fluctuations
-During each turn update (`Planet::update_climate()`):
+During each turn update:
 $$T_{\text{surface}} = T_{\text{base}} + \Delta_{\text{mirrors}} \pm 5^{\circ}\text{C}$$
 - **Natural Variance**: A stochastic variance of $\pm 5^{\circ}\text{C}$ simulates seasonal and atmospheric shifts.
-- **Orbital Space Mirrors**: Landed or orbiting orbital mirrors can focus stellar radiation onto the planet to warm cold worlds or reflect it to cool hot worlds.
+- **Orbital Space Mirrors (`STYPE_MIRROR`)**: Space mirrors can be positioned in orbit and aimed at planets, stars, or other vessels with a designated intensity (using the `order` command). When aimed at a planetary target, mirrors focus stellar radiation onto the atmosphere to warm cold worlds or angle away to reflect sunlight and cool scorched biospheres. The orbital display renders mirror compass headings (0..7) pointing toward their aimed targets.
 
 ## Sector Mobilization and Defense Guns
 

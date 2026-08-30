@@ -318,20 +318,15 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
 static std::string DispShip(const GameObj& g, EntityManager& em,
                             const Place& where, const Ship& ship, const Race& r,
                             const Planet& pl) {
-  int x;
-  int y;
-  int wm;
-  int stand;
-  double xt;
-  double yt;
-  double slope;
-
   if (!ship.alive()) return "";
 
   // Get star position for coordinate calculations
   const auto* where_star = (where.level != ScopeLevel::LEVEL_UNIV)
                                ? em.peek_star(where.snum)
                                : nullptr;
+
+  int x = 0;
+  int y = 0;
 
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN:
@@ -359,122 +354,40 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
       return "";
   }
 
+  // The 4th field in graphical orbit display represents mirror compass heading
+  // (0..7). For standard vessels, mirror_heading is 0.
+  int mirror_heading = 0;
   switch (ship.type()) {
     case ShipType::STYPE_MIRROR: {
-      if (std::holds_alternative<AimedAtData>(ship.special())) {
-        auto aimed_at = std::get<AimedAtData>(ship.special());
-        if (aimed_at.level == ScopeLevel::LEVEL_STAR) {
-          const auto* aimed_star = em.peek_star(aimed_at.snum);
-          if (aimed_star) {
-            xt = aimed_star->xpos();
-            yt = aimed_star->ypos();
-          } else {
-            xt = yt = 0.0;
-          }
-        } else if (aimed_at.level == ScopeLevel::LEVEL_PLAN) {
-          const auto* aimed_star = em.peek_star(aimed_at.snum);
-          if (!aimed_star) {
-            xt = yt = 0.0;
-          } else if (where.level == ScopeLevel::LEVEL_PLAN &&
-                     aimed_at.pnum == where.pnum) {
-            /* same planet */
-            xt = aimed_star->xpos() + pl.xpos();
-            yt = aimed_star->ypos() + pl.ypos();
-          } else { /* different planet */
-            const auto* apl = em.peek_planet(where.snum, where.pnum);
-            if (apl) {
-              xt = aimed_star->xpos() + apl->xpos();
-              yt = aimed_star->ypos() + apl->ypos();
-            } else {
-              xt = yt = 0.0;
-            }
-          }
-        } else if (aimed_at.level == ScopeLevel::LEVEL_SHIP) {
-          const auto* aship = em.peek_ship(aimed_at.shipno);
-          if (aship) {
-            xt = aship->xpos();
-            yt = aship->ypos();
-          } else {
-            xt = yt = 0.0;
-          }
-        } else {
-          xt = yt = 0.0;
-        }
-      } else {
-        xt = yt = 0.0;
-      }
-      wm = 0;
-
-      if (xt == ship.xpos()) {
-        if (yt > ship.ypos())
-          wm = 4;
-        else
-          wm = 0;
-      } else {
-        slope = (yt - ship.ypos()) / (xt - ship.xpos());
-        if (yt == ship.ypos()) {
-          if (xt > ship.xpos())
-            wm = 2;
-          else
-            wm = 6;
-        } else if (yt > ship.ypos()) {
-          if (slope < -2.414) wm = 4;
-          if (slope > -2.414) wm = 5;
-          if (slope > -0.414) wm = 6;
-          if (slope > 0.000) wm = 2;
-          if (slope > 0.414) wm = 3;
-          if (slope > 2.414) wm = 4;
-        } else if (yt < ship.ypos()) {
-          if (slope < -2.414) wm = 0;
-          if (slope > -2.414) wm = 1;
-          if (slope > -0.414) wm = 2;
-          if (slope > 0.000) wm = 6;
-          if (slope > 0.414) wm = 7;
-          if (slope > 2.414) wm = 0;
-        }
-      }
-
-      /* (magnification) */
-      if (x >= 0 && y >= 0) {
-        if (r.governor[g.governor().value].toggle.color) {
-          return std::format(
-              "{} {} {} {} {} {} {};", (char)(ship.owner().value + '?'), x, y,
-              wm, Shipltrs[ship.type()], (char)(ship.owner().value + '?'),
-              ship.number().value);
-        } else {
-          stand =
-              (ship.owner() == r.governor[g.governor().value].toggle.highlight);
-          return std::format("{} {} {} {} {} {} {};", stand, x, y, wm,
-                             Shipltrs[ship.type()], stand, ship.number().value);
-        }
-      }
+      const auto* mirror = ship.as<SpaceMirrorShip>();
+      mirror_heading = mirror ? mirror->aim_direction(em) : 0;
       break;
     }
 
     case ShipType::OTYPE_CANIST:
     case ShipType::OTYPE_GREEN:
-      break;
+      return "";
 
     default:
       /* other ships can only be seen when in system */
-      wm = 0;
-      if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV ||
-          ((ship.owner() == g.player()) || g.god()))
-        if (x >= 0 && y >= 0) {
-          if (r.governor[g.governor().value].toggle.color) {
-            return std::format(
-                "{} {} {} {} {} {} {};", (char)(ship.owner().value + '?'), x, y,
-                wm, Shipltrs[ship.type()], (char)(ship.owner().value + '?'),
-                ship.number().value);
-          } else {
-            stand = (ship.owner() ==
-                     r.governor[g.governor().value].toggle.highlight);
-            return std::format("{} {} {} {} {} {} {};", stand, x, y, wm,
-                               Shipltrs[ship.type()], stand,
-                               ship.number().value);
-          }
-        }
+      if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV &&
+          ship.owner() != g.player() && !g.god()) {
+        return "";
+      }
       break;
+  }
+
+  if (x >= 0 && y >= 0) {
+    if (r.governor[g.governor().value].toggle.color) {
+      return std::format("{} {} {} {} {} {} {};",
+                         (char)(ship.owner().value + '?'), x, y, mirror_heading,
+                         Shipltrs[ship.type()],
+                         (char)(ship.owner().value + '?'), ship.number().value);
+    }
+    const bool stand =
+        (ship.owner() == r.governor[g.governor().value].toggle.highlight);
+    return std::format("{} {} {} {} {} {} {};", stand, x, y, mirror_heading,
+                       Shipltrs[ship.type()], stand, ship.number().value);
   }
   return "";
 }

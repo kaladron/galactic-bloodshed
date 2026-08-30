@@ -21,6 +21,100 @@ int getdefense(EntityManager& em, const Ship& ship) {
   return 0;
 }
 
+/// \brief Resolves the absolute 2D universe coordinates of a space mirror's
+/// aimed target.
+///
+/// Looks up the aimed target entity (star, planet, or ship) in the entity
+/// manager and computes its absolute coordinates.
+///
+/// \param em Entity manager for entity queries.
+/// \return Absolute coordinates (x, y) if target exists, or std::nullopt
+/// otherwise.
+std::optional<std::pair<double, double>>
+SpaceMirrorShip::target_coordinates(EntityManager& em) const {
+  switch (aim_.level) {
+    case ScopeLevel::LEVEL_STAR: {
+      const auto* star = em.peek_star(aim_.snum);
+      if (!star) return std::nullopt;
+      return std::make_pair(star->xpos(), star->ypos());
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto* star = em.peek_star(aim_.snum);
+      const auto* planet = em.peek_planet(aim_.snum, aim_.pnum);
+      if (!star || !planet) return std::nullopt;
+      return std::make_pair(star->xpos() + planet->xpos(),
+                            star->ypos() + planet->ypos());
+    }
+    case ScopeLevel::LEVEL_SHIP: {
+      const auto* target_ship = em.peek_ship(aim_.shipno);
+      if (!target_ship) return std::nullopt;
+      return std::make_pair(target_ship->xpos(), target_ship->ypos());
+    }
+    default:
+      return std::nullopt;
+  }
+}
+
+/// \brief Computes the 8-octant compass heading (0..7) toward the mirror's
+/// aimed target.
+///
+/// The 8 compass directions correspond to:
+/// - 0: North (0 deg)
+/// - 1: North-East (45 deg)
+/// - 2: East (90 deg)
+/// - 3: South-East (135 deg)
+/// - 4: South (180 deg)
+/// - 5: South-West (225 deg)
+/// - 6: West (270 deg)
+/// - 7: North-West (315 deg)
+///
+/// The slope boundaries are based on the tangent of half-octant (22.5 deg)
+/// boundaries:
+/// - tan(22.5 deg) = sqrt(2) - 1 ≈ 0.4142
+/// - tan(67.5 deg) = sqrt(2) + 1 ≈ 2.4142
+///
+/// \param em Entity manager for resolving target coordinates.
+/// \return Compass direction heading index (0..7).
+int SpaceMirrorShip::aim_direction(EntityManager& em) const {
+  auto target = target_coordinates(em);
+  if (!target) {
+    return 0;
+  }
+
+  // Trigonometric slope thresholds for 8-octant compass headings (22.5°
+  // and 67.5°) Using standard C++ <numbers> mathematical constants: tan(22.5°)
+  // = tan(pi/8) = sqrt(2) - 1 tan(67.5°) = tan(3pi/8) = sqrt(2) + 1
+  constexpr double TAN_22_5_DEG = std::numbers::sqrt2 - 1.0;
+  constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
+
+  const auto [xt, yt] = *target;
+  if (xt == xpos()) {
+    return (yt > ypos()) ? 4 : 0;
+  }
+
+  const double slope = (yt - ypos()) / (xt - xpos());
+  if (yt == ypos()) {
+    return (xt > xpos()) ? 2 : 6;
+  }
+
+  if (yt > ypos()) {
+    if (slope < -TAN_67_5_DEG) return 4;
+    if (slope > TAN_67_5_DEG) return 4;
+    if (slope > TAN_22_5_DEG) return 3;
+    if (slope > 0.000) return 2;
+    if (slope > -TAN_22_5_DEG) return 6;
+    return 5;
+  }
+
+  // yt < ypos()
+  if (slope < -TAN_67_5_DEG) return 0;
+  if (slope > TAN_67_5_DEG) return 0;
+  if (slope > TAN_22_5_DEG) return 7;
+  if (slope > 0.000) return 6;
+  if (slope > -TAN_22_5_DEG) return 2;
+  return 1;
+}
+
 void capture_stuff(const Ship& ship, GameObj& g) {
   ShipList ships(g.entity_manager, ship.ships());
   for (auto ship_handle : ships) {

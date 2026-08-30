@@ -3,4 +3,5 @@
 # Install non-help documentation files
 install(FILES economy.md gb_FAQ.txt governance.md planetary_simulation.md
               planets.md RACEGEN.COMPILE.HELP RACEGEN.PLAYER.HELP
+              von_neumann.md
         DESTINATION "${CMAKE_INSTALL_DOCDIR}")

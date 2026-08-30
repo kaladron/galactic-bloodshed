@@ -255,6 +255,29 @@ Coordinates roam_to_adjacent_sector(AutonomousShip& ship,
   return new_coords;
 }
 
+/// \brief Attempts to launch an unassigned, fully fueled Von Neumann machine
+/// into deep space.
+///
+/// \param em Entity manager for star and planet queries.
+/// \param ship Autonomous machine attempting launch.
+/// \return True if the machine launched into space, false otherwise.
+bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
+  if (ship.is_busy()) {
+    return false;
+  }
+  if (ship.fuel() < static_cast<double>(ship.max_fuel_capacity())) {
+    return false;
+  }
+
+  const auto& star = *em.peek_star(ship.storbits());
+  const auto& planet = *em.peek_planet(ship.storbits(), ship.pnumorbits());
+  ship.xpos() = star.xpos() + planet.xpos() + int_rand(-10, 10);
+  ship.ypos() = star.ypos() + planet.ypos() + int_rand(-10, 10);
+  ship.docked() = 0;
+  ship.whatdest() = ScopeLevel::LEVEL_UNIV;
+  return true;
+}
+
 /*  do_VN() -- called by doship() */
 void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   auto* auto_ship = ship.as<AutonomousShip>();
@@ -263,39 +286,25 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
   }
 
   if (!auto_ship->is_landed()) {
-    if (!auto_ship->mind().busy) {
+    if (!auto_ship->is_busy()) {
       return;
     }
 
     // we were just built & launched
-    if (auto_ship->type() == ShipType::OTYPE_BERS)
+    if (auto_ship->type() == ShipType::OTYPE_BERS) {
       order_berserker(em, ship, stats);
-    else
+    } else {
       order_VN(em, ship);
+    }
     return;
   }
 
   stats.Stinfo[auto_ship->storbits().value][auto_ship->pnumorbits().value]
       .inhab = true;
 
-  /* launch if no assignment */
-  if (!auto_ship->mind().busy) {
-    if (auto_ship->fuel() >=
-        static_cast<double>(auto_ship->max_fuel_capacity())) {
-      const auto& star = *em.peek_star(auto_ship->storbits());
-      const auto& planet =
-          *em.peek_planet(auto_ship->storbits(), auto_ship->pnumorbits());
-      auto_ship->xpos() = star.xpos() + planet.xpos() + int_rand(-10, 10);
-      auto_ship->ypos() = star.ypos() + planet.ypos() + int_rand(-10, 10);
-      auto_ship->docked() = 0;
-      auto_ship->whatdest() = ScopeLevel::LEVEL_UNIV;
-    }
-    return;
+  if (!try_launch_unassigned_vn(em, *auto_ship)) {
+    steal_planetary_resources(em, *auto_ship);
   }
-
-  /* we have an assignment. Since we are landed, this means we are engaged in
-     building up resources/fuel. */
-  steal_planetary_resources(em, *auto_ship);
 }
 
 /// \brief Generates a random binary name (e.g. "01101") for a new Von Neumann
@@ -502,6 +511,49 @@ int replicate_machines(EntityManager& em, AutonomousShip& parent,
   return count;
 }
 
+/// \brief Attempts to land an orbiting autonomous machine onto a
+/// resource-bearing planetary sector.
+///
+/// \param em Entity manager for star queries.
+/// \param ship Autonomous machine attempting landing.
+/// \param planet Target planet orbited.
+/// \param smap Sector map of the planet.
+/// \return True if the machine successfully landed on a sector, false
+/// otherwise.
+bool attempt_planet_landing(EntityManager& em, AutonomousShip& ship,
+                            const Planet& planet, SectorMap& smap) {
+  if (!ship.is_busy() || ship.whatdest() != ScopeLevel::LEVEL_PLAN ||
+      ship.deststar() != ship.storbits() ||
+      ship.destpnum() != ship.pnumorbits()) {
+    return false;
+  }
+
+  if (planet.type() == PlanetType::GASGIANT) {
+    ship.set_busy(false);
+    return false;
+  }
+
+  for (Sector& sect : smap.shuffle()) {
+    if (sect.get_resource() == 0) {
+      continue;
+    }
+    ship.docked() = 1;
+    ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+    ship.deststar() = ship.storbits();
+    ship.destpnum() = ship.pnumorbits();
+    const auto& star = *em.peek_star(ship.storbits());
+    ship.xpos() = star.xpos() + planet.xpos();
+    ship.ypos() = star.ypos() + planet.ypos();
+    ship.set_land_coords(sect.coords());
+    ship.set_busy(true);
+    return true;
+  }
+
+  // No resource-bearing sector found; clear assignment
+  ship.set_busy(false);
+  return false;
+}
+
 /*  planet_doVN() -- called by doplanet() */
 void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
                  EntityManager& entity_manager, TurnStats& stats) {
@@ -511,7 +563,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
   }
 
   if (auto_ship->is_landed()) {
-    if (auto_ship->type() == ShipType::OTYPE_VN && auto_ship->mind().busy) {
+    if (auto_ship->type() == ShipType::OTYPE_VN && auto_ship->is_busy()) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
       auto& s = smap.get(auto_ship->land_coords());
@@ -524,46 +576,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
       }
       replicate_machines(entity_manager, *auto_ship, planet, stats);
     }
-  } else { /* orbiting a planet */
-    if (std::holds_alternative<MindData>(ship.special()) &&
-        std::get<MindData>(ship.special()).busy) {
-      if (ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
-          ship.deststar() == ship.storbits() &&
-          ship.destpnum() == ship.pnumorbits()) {
-        if (planet.type() == PlanetType::GASGIANT) {
-          if (std::holds_alternative<MindData>(ship.special())) {
-            auto mind = std::get<MindData>(ship.special());
-            mind.busy = 0;
-            ship.special() = mind;
-          }
-        } else {
-          /* find a place on the planet to land */
-          bool found = false;
-          for (Sector& sect : smap.shuffle()) {
-            if (sect.get_resource() == 0) continue;
-            found = true;
-            ship.docked() = 1;
-            ship.whatdest() = ScopeLevel::LEVEL_PLAN;
-            ship.deststar() = ship.storbits();
-            ship.destpnum() = ship.pnumorbits();
-            const auto& star = *entity_manager.peek_star(ship.storbits());
-            ship.xpos() = star.xpos() + planet.xpos();
-            ship.ypos() = star.ypos() + planet.ypos();
-            ship.set_land_coords(sect.coords());
-            if (std::holds_alternative<MindData>(ship.special())) {
-              auto mind = std::get<MindData>(ship.special());
-              mind.busy = 1;
-              ship.special() = mind;
-            }
-            break;
-          }
-          if (!found && std::holds_alternative<MindData>(ship.special())) {
-            auto mind = std::get<MindData>(ship.special());
-            mind.busy = 0;
-            ship.special() = mind;
-          }
-        }
-      }
-    }
+  } else {
+    attempt_planet_landing(entity_manager, *auto_ship, planet, smap);
   }
 }

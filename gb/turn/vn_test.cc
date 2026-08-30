@@ -534,6 +534,114 @@ int main() {
                  "  ✓ replicate_machines constructs full batch of machines");
   }
 
+  // =========================================================================
+  // 12. try_launch_unassigned_vn tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: try_launch_unassigned_vn");
+
+    ship_struct vn_data{};
+    vn_data.number = 501;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.storbits = 0;
+    vn_data.pnumorbits = 0;
+    vn_data.docked = 1;
+    vn_data.max_fuel = 100;
+    vn_data.fuel = 50.0;  // Partial fuel
+    vn_data.special = MindData{
+        .progenitor = player_t{1},
+        .target = player_t{0},
+        .generation = 1,
+        .busy = true,
+        .tampered = false,
+        .who_killed = player_t{0},
+    };
+    auto vn_ship = ShipFactory::create(vn_data);
+    auto* vn = vn_ship->as<VonNeumannShip>();
+    test::expect_true(vn != nullptr);
+
+    // Busy machine does not launch
+    test::expect_false(try_launch_unassigned_vn(em, *vn));
+
+    // Idle machine with partial fuel does not launch
+    vn->set_busy(false);
+    test::expect_false(try_launch_unassigned_vn(em, *vn));
+
+    // Idle machine with full fuel launches
+    vn->fuel() = 100.0;
+    test::expect_true(try_launch_unassigned_vn(em, *vn));
+    test::expect_false(vn->is_landed());
+    test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_UNIV);
+
+    std::println(
+        std::cout,
+        "  ✓ try_launch_unassigned_vn launches idle fueled probes into space");
+  }
+
+  // =========================================================================
+  // 13. attempt_planet_landing tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: attempt_planet_landing");
+
+    Planet gas_giant(PlanetType::GASGIANT, Coordinates{5, 5});
+    Planet rocky_planet(PlanetType::EARTH, Coordinates{5, 5});
+
+    SectorMap empty_smap(rocky_planet);
+    for (Sector& s : empty_smap) {
+      s.set_resource(0);
+    }
+
+    SectorMap rich_smap(rocky_planet);
+    for (Sector& s : rich_smap) {
+      s.set_resource(100);
+    }
+
+    ship_struct vn_data{};
+    vn_data.number = 502;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.storbits = 0;
+    vn_data.pnumorbits = 0;
+    vn_data.deststar = 0;
+    vn_data.destpnum = 0;
+    vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
+    vn_data.docked = 0;
+    vn_data.special = MindData{
+        .progenitor = player_t{1},
+        .target = player_t{0},
+        .generation = 1,
+        .busy = true,
+        .tampered = false,
+        .who_killed = player_t{0},
+    };
+    auto vn_ship = ShipFactory::create(vn_data);
+    auto* vn = vn_ship->as<VonNeumannShip>();
+    test::expect_true(vn != nullptr);
+
+    // Cannot land on gas giant
+    test::expect_false(attempt_planet_landing(em, *vn, gas_giant, rich_smap));
+    test::expect_false(vn->is_busy());
+
+    // Cannot land on depleted planet
+    vn->set_busy(true);
+    test::expect_false(
+        attempt_planet_landing(em, *vn, rocky_planet, empty_smap));
+    test::expect_false(vn->is_busy());
+
+    // Successfully lands on rich rocky planet
+    vn->set_busy(true);
+    test::expect_true(attempt_planet_landing(em, *vn, rocky_planet, rich_smap));
+    test::expect_true(vn->is_landed());
+    test::expect_true(vn->is_busy());
+    test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_PLAN);
+
+    std::println(
+        std::cout,
+        "  ✓ attempt_planet_landing lands on resource-bearing sectors");
+  }
+
   std::println(std::cout,
                "\nAll VN navigation and turn tests passed successfully!");
   return 0;

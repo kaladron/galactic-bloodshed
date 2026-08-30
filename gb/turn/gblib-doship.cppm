@@ -90,3 +90,12 @@ export shipnum_t construct_replicated_berserker(EntityManager& em,
 /// \brief Replicates as many autonomous machines as parent resources allow.
 export int replicate_machines(EntityManager& em, AutonomousShip& parent,
                               Planet& planet, const TurnStats& stats);
+
+/// \brief Attempts to launch an unassigned, fully fueled Von Neumann machine
+/// into deep space.
+export bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship);
+
+/// \brief Attempts to land an orbiting autonomous machine onto a
+/// resource-bearing planetary sector.
+export bool attempt_planet_landing(EntityManager& em, AutonomousShip& ship,
+                                   const Planet& planet, SectorMap& smap);

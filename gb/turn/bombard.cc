@@ -51,26 +51,35 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   }
 
   /* look for someone to bombard-check for war */
-  std::optional<Coordinates> war_target;
-  std::optional<Coordinates> fallback_target;
+  std::optional<Coordinates> target;
 
   entity_manager.with_sectormap(
       ship.storbits(), ship.pnumorbits(), [&](const SectorMap& smap) {
-        for (const Sector& sect : smap.shuffle()) {
-          if (sect.get_owner() != 0 && sect.get_owner() != ship.owner() &&
-              (sect.get_condition() != SectorType::SEC_WASTED)) {
-            const auto* bers = ship.as<BerserkerShip>();
-            if (r.is_at_war_with(sect.get_owner()) ||
-                (bers && sect.get_owner() == bers->target())) {
-              war_target = sect.coords();
-              break;
-            }
-            fallback_target = sect.coords();
+        const auto* bers = ship.as<BerserkerShip>();
+        const std::optional<player_t> programmed_target =
+            bers && bers->target() != 0 ? std::optional{bers->target()}
+                                        : std::nullopt;
+
+        auto candidates =
+            smap.shuffle() | std::views::filter([&](const Sector& s) noexcept {
+              return s.is_bombardable_by(ship.owner());
+            });
+
+        // 1. Look for an active enemy colony first
+        for (const Sector& sect : candidates) {
+          const player_t owner = sect.get_owner();
+          if (r.is_at_war_with(owner) || programmed_target == owner) {
+            target = sect.coords();
+            return;
           }
         }
-      });
 
-  auto target = war_target.has_value() ? war_target : fallback_target;
+        // 2. If no enemy colonies exist, fall back to any foreign colony
+        for (const Sector& sect : candidates) {
+          target = sect.coords();
+          return;
+        }
+      });
 
   if (!target.has_value()) {
     /* there were no sectors worth bombing. */

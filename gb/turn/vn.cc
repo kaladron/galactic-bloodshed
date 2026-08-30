@@ -533,10 +533,8 @@ bool attempt_planet_landing(EntityManager& em, AutonomousShip& ship,
     return false;
   }
 
-  for (Sector& sect : smap.shuffle()) {
-    if (sect.get_resource() == 0) {
-      continue;
-    }
+  for (Sector& sect :
+       smap.shuffle() | std::views::filter(&Sector::has_resource)) {
     ship.docked() = 1;
     ship.whatdest() = ScopeLevel::LEVEL_PLAN;
     ship.deststar() = ship.storbits();
@@ -567,7 +565,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
       auto& s = smap.get(auto_ship->land_coords());
-      if (s.get_resource() == 0) {
+      if (!s.has_resource()) {
         /* move to another sector */
         roam_to_adjacent_sector(*auto_ship, planet);
       } else {

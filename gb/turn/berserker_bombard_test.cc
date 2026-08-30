@@ -43,6 +43,7 @@ int main() {
   star_struct ss{};
   ss.star_id = 0;
   ss.pnames.emplace_back("TestPlanet");
+  ss.pnames.emplace_back("WastedPlanet");
   StarRepository star_repo(store);
   star_repo.save(ss);
 
@@ -53,6 +54,7 @@ int main() {
   planet.dimensions() = Coordinates{10, 10};
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
+  SectorRepository smap_repo(store);
 
   // Create Sector Map with sectors for Race 2 and Race 3
   {
@@ -65,7 +67,6 @@ int main() {
     smap.get(Coordinates{5, 5}).set_popn_exact(100);
     smap.get(Coordinates{5, 5}).set_owner(2);  // Owned by Race 2 (at war)
 
-    SectorRepository smap_repo(store);
     smap_repo.save_map(smap);
   }
 
@@ -108,6 +109,30 @@ int main() {
 
   int pdn_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
   test::expect_eq(pdn_destroyed, 0);
+
+  // Test 3: Planet with only wasted sectors has no valid targets
+  {
+    Planet peaceful_planet{};
+    peaceful_planet.star_id() = 0;
+    peaceful_planet.planet_order() = 1;
+    peaceful_planet.dimensions() = Coordinates{5, 5};
+    planet_repo.save(peaceful_planet);
+
+    SectorMap wasted_smap(peaceful_planet);
+    for (Sector& s : wasted_smap) {
+      s.set_condition(SectorType::SEC_WASTED);
+      s.set_owner(2);
+    }
+    smap_repo.save_map(wasted_smap);
+
+    ship.pnumorbits() = 1;
+    ship.destpnum() = 1;
+    ship.notified() = 0;
+    int wasted_destroyed =
+        berserker_bombard(ctx.em, ship, peaceful_planet, race1);
+    test::expect_eq(wasted_destroyed, 0);
+    test::expect_eq(ship.notified(), 1);
+  }
 
   std::println(std::cout, "berserker_bombard_test: All tests passed!");
   return 0;

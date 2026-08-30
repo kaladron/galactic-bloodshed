@@ -141,6 +141,25 @@ std::unique_ptr<Ship> ShipFactory::create(ship_struct data) {
       return std::make_unique<VonNeumannShip>(std::move(data));
     case ShipType::OTYPE_BERS:
       return std::make_unique<BerserkerShip>(std::move(data));
+    case ShipType::STYPE_MIRROR:
+      return std::make_unique<SpaceMirrorShip>(std::move(data));
+    case ShipType::STYPE_POD:
+      return std::make_unique<SporePodShip>(std::move(data));
+    case ShipType::OTYPE_CANIST:
+    case ShipType::OTYPE_GREEN:
+      return std::make_unique<CanisterShip>(std::move(data));
+    case ShipType::STYPE_MISSILE:
+      return std::make_unique<MissileShip>(std::move(data));
+    case ShipType::STYPE_MINE:
+      return std::make_unique<MineShip>(std::move(data));
+    case ShipType::OTYPE_TERRA:
+      return std::make_unique<TerraformerShip>(std::move(data));
+    case ShipType::OTYPE_PLOW:
+      return std::make_unique<GroundPlowShip>(std::move(data));
+    case ShipType::OTYPE_TRANSDEV:
+      return std::make_unique<TransporterShip>(std::move(data));
+    case ShipType::OTYPE_TOXWC:
+      return std::make_unique<ToxicWasteShip>(std::move(data));
     default:
       return std::make_unique<Ship>(std::move(data));
   }

@@ -1282,6 +1282,300 @@ public:
   using AutonomousShip::AutonomousShip;
 };
 
+export class SpaceMirrorShip : public Ship {
+public:
+  SpaceMirrorShip() = default;
+  explicit SpaceMirrorShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<AimedAtData>(data_.special)) {
+      aim_ = std::get<AimedAtData>(data_.special);
+    }
+  }
+
+  [[nodiscard]] AimedAtData& aim() noexcept {
+    return aim_;
+  }
+  [[nodiscard]] const AimedAtData& aim() const noexcept {
+    return aim_;
+  }
+  [[nodiscard]] char intensity() const noexcept {
+    return aim_.intensity;
+  }
+  void set_intensity(char intensity) noexcept {
+    aim_.intensity = intensity;
+  }
+  [[nodiscard]] starnum_t aimed_star() const noexcept {
+    return aim_.snum;
+  }
+  [[nodiscard]] planetnum_t aimed_planet() const noexcept {
+    return aim_.pnum;
+  }
+  [[nodiscard]] shipnum_t aimed_ship() const noexcept {
+    return aim_.shipno;
+  }
+  [[nodiscard]] ScopeLevel aimed_level() const noexcept {
+    return aim_.level;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = aim_;
+    return copy;
+  }
+
+private:
+  AimedAtData aim_{};
+};
+
+export class SporePodShip : public Ship {
+public:
+  SporePodShip() = default;
+  explicit SporePodShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<PodData>(data_.special)) {
+      pod_ = std::get<PodData>(data_.special);
+    }
+  }
+
+  [[nodiscard]] PodData& pod() noexcept {
+    return pod_;
+  }
+  [[nodiscard]] const PodData& pod() const noexcept {
+    return pod_;
+  }
+  [[nodiscard]] unsigned char decay() const noexcept {
+    return pod_.decay;
+  }
+  void set_decay(unsigned char decay) noexcept {
+    pod_.decay = decay;
+  }
+  [[nodiscard]] unsigned char temperature() const noexcept {
+    return pod_.temperature;
+  }
+  void set_temperature(unsigned char temp) noexcept {
+    pod_.temperature = temp;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = pod_;
+    return copy;
+  }
+
+private:
+  PodData pod_{};
+};
+
+export class CanisterShip : public Ship {
+public:
+  CanisterShip() = default;
+  explicit CanisterShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<TimerData>(data_.special)) {
+      timer_ = std::get<TimerData>(data_.special);
+    }
+  }
+
+  [[nodiscard]] TimerData& timer() noexcept {
+    return timer_;
+  }
+  [[nodiscard]] const TimerData& timer() const noexcept {
+    return timer_;
+  }
+  [[nodiscard]] unsigned char count() const noexcept {
+    return timer_.count;
+  }
+  void set_count(unsigned char count) noexcept {
+    timer_.count = count;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = timer_;
+    return copy;
+  }
+
+private:
+  TimerData timer_{};
+};
+
+export class MissileShip : public Ship {
+public:
+  MissileShip() = default;
+  explicit MissileShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<ImpactData>(data_.special)) {
+      impact_ = std::get<ImpactData>(data_.special);
+    }
+  }
+
+  [[nodiscard]] ImpactData& impact() noexcept {
+    return impact_;
+  }
+  [[nodiscard]] const ImpactData& impact() const noexcept {
+    return impact_;
+  }
+  [[nodiscard]] unsigned char impact_x() const noexcept {
+    return impact_.x;
+  }
+  [[nodiscard]] unsigned char impact_y() const noexcept {
+    return impact_.y;
+  }
+  [[nodiscard]] unsigned char scatter() const noexcept {
+    return impact_.scatter;
+  }
+  void set_impact(unsigned char x, unsigned char y,
+                  unsigned char scatter) noexcept {
+    impact_.x = x;
+    impact_.y = y;
+    impact_.scatter = scatter;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = impact_;
+    return copy;
+  }
+
+private:
+  ImpactData impact_{};
+};
+
+export class MineShip : public Ship {
+public:
+  MineShip() = default;
+  explicit MineShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<TriggerData>(data_.special)) {
+      trigger_ = std::get<TriggerData>(data_.special);
+    }
+  }
+
+  [[nodiscard]] TriggerData& trigger() noexcept {
+    return trigger_;
+  }
+  [[nodiscard]] const TriggerData& trigger() const noexcept {
+    return trigger_;
+  }
+  [[nodiscard]] unsigned short trigger_radius() const noexcept {
+    return trigger_.radius;
+  }
+  void set_trigger_radius(unsigned short radius) noexcept {
+    trigger_.radius = radius;
+  }
+  [[nodiscard]] bool is_radiative() const noexcept {
+    return data_.mode;
+  }
+  void set_radiative(bool rad) noexcept {
+    data_.mode = rad;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = trigger_;
+    return copy;
+  }
+
+private:
+  TriggerData trigger_{};
+};
+
+export class TerraformerShip : public Ship {
+public:
+  TerraformerShip() = default;
+  explicit TerraformerShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<TerraformData>(data_.special)) {
+      terraform_ = std::get<TerraformData>(data_.special);
+    }
+  }
+
+  [[nodiscard]] TerraformData& terraform() noexcept {
+    return terraform_;
+  }
+  [[nodiscard]] const TerraformData& terraform() const noexcept {
+    return terraform_;
+  }
+  [[nodiscard]] unsigned char index() const noexcept {
+    return terraform_.index;
+  }
+  void set_index(unsigned char idx) noexcept {
+    terraform_.index = idx;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = terraform_;
+    return copy;
+  }
+
+private:
+  TerraformData terraform_{};
+};
+
+export class GroundPlowShip : public Ship {
+public:
+  using Ship::Ship;
+};
+
+export class TransporterShip : public Ship {
+public:
+  TransporterShip() = default;
+  explicit TransporterShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<TransportData>(data_.special)) {
+      transport_ = std::get<TransportData>(data_.special);
+    }
+  }
+
+  [[nodiscard]] TransportData& transport() noexcept {
+    return transport_;
+  }
+  [[nodiscard]] const TransportData& transport() const noexcept {
+    return transport_;
+  }
+  [[nodiscard]] shipnum_t target_ship() const noexcept {
+    return shipnum_t{transport_.target};
+  }
+  void set_target_ship(shipnum_t target) noexcept {
+    transport_.target = target.value;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = transport_;
+    return copy;
+  }
+
+private:
+  TransportData transport_{};
+};
+
+export class ToxicWasteShip : public Ship {
+public:
+  ToxicWasteShip() = default;
+  explicit ToxicWasteShip(ship_struct in) : Ship(std::move(in)) {
+    if (std::holds_alternative<WasteData>(data_.special)) {
+      waste_ = std::get<WasteData>(data_.special);
+    }
+  }
+
+  [[nodiscard]] WasteData& waste() noexcept {
+    return waste_;
+  }
+  [[nodiscard]] const WasteData& waste() const noexcept {
+    return waste_;
+  }
+  [[nodiscard]] unsigned char toxic_level() const noexcept {
+    return waste_.toxic;
+  }
+  void set_toxic_level(unsigned char toxic) noexcept {
+    waste_.toxic = toxic;
+  }
+
+  [[nodiscard]] ship_struct to_struct() const override {
+    ship_struct copy = data_;
+    copy.special = waste_;
+    return copy;
+  }
+
+private:
+  WasteData waste_{};
+};
+
 // Type traits for zero-cost static downcasting
 export template <typename T>
 struct ShipTypeTraits {
@@ -1303,6 +1597,53 @@ struct ShipTypeTraits<VonNeumannShip> {
 export template <>
 struct ShipTypeTraits<BerserkerShip> {
   static constexpr ShipType expected_type = ShipType::OTYPE_BERS;
+};
+
+export template <>
+struct ShipTypeTraits<SpaceMirrorShip> {
+  static constexpr ShipType expected_type = ShipType::STYPE_MIRROR;
+};
+
+export template <>
+struct ShipTypeTraits<SporePodShip> {
+  static constexpr ShipType expected_type = ShipType::STYPE_POD;
+};
+
+export template <>
+struct ShipTypeTraits<CanisterShip> {
+  [[nodiscard]] static constexpr bool matches(ShipType type) noexcept {
+    return type == ShipType::OTYPE_CANIST || type == ShipType::OTYPE_GREEN;
+  }
+};
+
+export template <>
+struct ShipTypeTraits<MissileShip> {
+  static constexpr ShipType expected_type = ShipType::STYPE_MISSILE;
+};
+
+export template <>
+struct ShipTypeTraits<MineShip> {
+  static constexpr ShipType expected_type = ShipType::STYPE_MINE;
+};
+
+export template <>
+struct ShipTypeTraits<TerraformerShip> {
+  static constexpr ShipType expected_type = ShipType::OTYPE_TERRA;
+};
+
+export template <>
+struct ShipTypeTraits<GroundPlowShip> {
+  static constexpr ShipType expected_type = ShipType::OTYPE_PLOW;
+};
+
+export template <>
+struct ShipTypeTraits<TransporterShip> {
+  static constexpr ShipType expected_type = ShipType::OTYPE_TRANSDEV;
+};
+
+export template <>
+struct ShipTypeTraits<ToxicWasteShip> {
+  static constexpr ShipType expected_type = ShipType::OTYPE_TOXWC;
 };
 
 template <typename Derived>

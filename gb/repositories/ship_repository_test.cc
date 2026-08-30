@@ -457,6 +457,120 @@ int main() {
     std::println(
         std::cout,
         "  ✓ EntityManager persists and reconstructs polymorphic ships");
+
+    // 6. Test all specialty subclasses
+    // SpaceMirrorShip
+    ship_struct mirror_data{};
+    mirror_data.number = 201;
+    mirror_data.type = ShipType::STYPE_MIRROR;
+    mirror_data.special = AimedAtData{
+        .shipno = shipnum_t{0},
+        .snum = starnum_t{3},
+        .intensity = 5,
+        .pnum = planetnum_t{2},
+        .level = ScopeLevel::LEVEL_PLAN,
+    };
+    auto mirror_ship = ShipFactory::create(mirror_data);
+    test::expect_true(mirror_ship != nullptr);
+    auto* mirror = mirror_ship->as<SpaceMirrorShip>();
+    test::expect_true(mirror != nullptr);
+    test::expect_eq(mirror->aimed_star(), starnum_t{3});
+    test::expect_eq(mirror->aimed_planet(), planetnum_t{2});
+    test::expect_eq(mirror->intensity(), 5);
+
+    // SporePodShip
+    ship_struct pod_data{};
+    pod_data.number = 202;
+    pod_data.type = ShipType::STYPE_POD;
+    pod_data.special = PodData{.decay = 10, .temperature = 25};
+    auto pod_ship = ShipFactory::create(pod_data);
+    test::expect_true(pod_ship != nullptr);
+    auto* pod = pod_ship->as<SporePodShip>();
+    test::expect_true(pod != nullptr);
+    test::expect_eq(pod->decay(), 10);
+    test::expect_eq(pod->temperature(), 25);
+
+    // CanisterShip
+    ship_struct canist_data{};
+    canist_data.number = 203;
+    canist_data.type = ShipType::OTYPE_CANIST;
+    canist_data.special = TimerData{.count = 8};
+    auto canist_ship = ShipFactory::create(canist_data);
+    test::expect_true(canist_ship != nullptr);
+    auto* canist = canist_ship->as<CanisterShip>();
+    test::expect_true(canist != nullptr);
+    test::expect_eq(canist->count(), 8);
+
+    // MissileShip
+    ship_struct missile_data{};
+    missile_data.number = 204;
+    missile_data.type = ShipType::STYPE_MISSILE;
+    missile_data.special = ImpactData{.x = 12, .y = 34, .scatter = 2};
+    auto missile_ship = ShipFactory::create(missile_data);
+    test::expect_true(missile_ship != nullptr);
+    auto* missile = missile_ship->as<MissileShip>();
+    test::expect_true(missile != nullptr);
+    test::expect_eq(missile->impact_x(), 12);
+    test::expect_eq(missile->impact_y(), 34);
+    test::expect_eq(missile->scatter(), 2);
+
+    // MineShip
+    ship_struct mine_data{};
+    mine_data.number = 205;
+    mine_data.type = ShipType::STYPE_MINE;
+    mine_data.mode = true;
+    mine_data.special = TriggerData{.radius = 50};
+    auto mine_ship = ShipFactory::create(mine_data);
+    test::expect_true(mine_ship != nullptr);
+    auto* mine = mine_ship->as<MineShip>();
+    test::expect_true(mine != nullptr);
+    test::expect_eq(mine->trigger_radius(), 50);
+    test::expect_true(mine->is_radiative());
+
+    // TerraformerShip
+    ship_struct terra_data{};
+    terra_data.number = 206;
+    terra_data.type = ShipType::OTYPE_TERRA;
+    terra_data.special = TerraformData{.index = 3};
+    auto terra_ship = ShipFactory::create(terra_data);
+    test::expect_true(terra_ship != nullptr);
+    auto* terra = terra_ship->as<TerraformerShip>();
+    test::expect_true(terra != nullptr);
+    test::expect_eq(terra->index(), 3);
+
+    // GroundPlowShip
+    ship_struct plow_data{};
+    plow_data.number = 207;
+    plow_data.type = ShipType::OTYPE_PLOW;
+    auto plow_ship = ShipFactory::create(plow_data);
+    test::expect_true(plow_ship != nullptr);
+    auto* plow = plow_ship->as<GroundPlowShip>();
+    test::expect_true(plow != nullptr);
+
+    // TransporterShip
+    ship_struct trans_data{};
+    trans_data.number = 208;
+    trans_data.type = ShipType::OTYPE_TRANSDEV;
+    trans_data.special = TransportData{.target = 42};
+    auto trans_ship = ShipFactory::create(trans_data);
+    test::expect_true(trans_ship != nullptr);
+    auto* trans = trans_ship->as<TransporterShip>();
+    test::expect_true(trans != nullptr);
+    test::expect_eq(trans->target_ship(), shipnum_t{42});
+
+    // ToxicWasteShip
+    ship_struct waste_data{};
+    waste_data.number = 209;
+    waste_data.type = ShipType::OTYPE_TOXWC;
+    waste_data.special = WasteData{.toxic = 95};
+    auto waste_ship = ShipFactory::create(waste_data);
+    test::expect_true(waste_ship != nullptr);
+    auto* waste = waste_ship->as<ToxicWasteShip>();
+    test::expect_true(waste != nullptr);
+    test::expect_eq(waste->toxic_level(), 95);
+
+    std::println(std::cout,
+                 "  ✓ All specialty ship subclasses instantiate and downcast");
   }
 
   std::println(std::cout, "\nAll ShipRepository tests passed!");

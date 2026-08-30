@@ -275,6 +275,8 @@ int main() {
                "\nChoose a primary sector preference. This race will prefer to "
                "live\non this type of sector.");
 
+  // Shuffle to randomize initial home sector coordinates across the world
+  // so each newly enrolled player doesn't start in the top-left (0,0) corner.
   entity_manager.with_sectormap(star, pnum, [&](const SectorMap& smap) {
     for (const Sector& sector : smap.shuffle()) {
       secttypes[sector.get_condition()].count++;

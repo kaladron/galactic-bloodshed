@@ -141,13 +141,17 @@ found_planet:
       race.likesbest = st;
   }
 
+  // Find a randomized starting capital sector matching the race's preferred
+  // terrain.
   Coordinates capital_coords{0, 0};
   entity_manager.with_sectormap(star, pnum, [&](const SectorMap& smap) {
-    for (const Sector& current_sect : smap.shuffle()) {
-      if (current_sect.get_condition() == race.likesbest) {
-        capital_coords = current_sect.coords();
-        return;
-      }
+    auto matches_preference = [&](const Sector& s) noexcept {
+      return s.is_colonizable_by(race.likesbest);
+    };
+    for (const Sector& current_sect :
+         smap.shuffle() | std::views::filter(matches_preference)) {
+      capital_coords = current_sect.coords();
+      return;
     }
   });
 

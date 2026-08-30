@@ -354,6 +354,89 @@ void test_sectormap_range_views() {
   test::expect_eq(const_owned_count, 2UL);
 }
 
+void test_sector_resource_and_crystal_predicates() {
+  Sector empty_res(sector_struct{
+      .crystals = 0,
+      .resource = 0,
+  });
+  test::expect_false(empty_res.has_resource());
+  test::expect_false(empty_res.has_crystals());
+
+  Sector with_res(sector_struct{
+      .crystals = 5,
+      .resource = 100,
+  });
+  test::expect_true(with_res.has_resource());
+  test::expect_true(with_res.has_crystals());
+}
+
+void test_sector_colonizable_predicates() {
+  Race race{};
+  race.likesbest = SectorType::SEC_FOREST;
+
+  // 1. Unowned, non-wasted, matching climate -> colonizable
+  Sector candidate(sector_struct{
+      .owner = player_t{0},
+      .condition = SectorType::SEC_FOREST,
+  });
+  test::expect_true(candidate.is_colonizable_by(race));
+  test::expect_true(candidate.is_colonizable_by(SectorType::SEC_FOREST));
+
+  // 2. Already owned -> not colonizable
+  Sector owned(sector_struct{
+      .owner = player_t{1},
+      .condition = SectorType::SEC_FOREST,
+  });
+  test::expect_false(owned.is_colonizable_by(race));
+  test::expect_false(owned.is_colonizable_by(SectorType::SEC_FOREST));
+
+  // 3. Wasted -> not colonizable
+  Sector wasted(sector_struct{
+      .owner = player_t{0},
+      .condition = SectorType::SEC_WASTED,
+  });
+  test::expect_false(wasted.is_colonizable_by(race));
+  test::expect_false(wasted.is_colonizable_by(SectorType::SEC_FOREST));
+
+  // 4. Unowned, non-wasted, different climate -> not colonizable
+  Sector desert(sector_struct{
+      .owner = player_t{0},
+      .condition = SectorType::SEC_DESERT,
+  });
+  test::expect_false(desert.is_colonizable_by(race));
+  test::expect_false(desert.is_colonizable_by(SectorType::SEC_FOREST));
+}
+
+void test_sector_bombardable_and_ownership_predicates() {
+  // 1. Owned by enemy, valid condition -> bombardable
+  Sector enemy_sector(sector_struct{
+      .owner = player_t{2},
+      .condition = SectorType::SEC_LAND,
+  });
+  test::expect_true(enemy_sector.is_bombardable_by(player_t{1}));
+  test::expect_true(enemy_sector.is_owned_by(player_t{2}));
+  test::expect_false(enemy_sector.is_owned_by(player_t{1}));
+
+  // 2. Owned by attacker -> not bombardable
+  test::expect_false(enemy_sector.is_bombardable_by(player_t{2}));
+
+  // 3. Unowned -> not bombardable
+  Sector unowned_sector(sector_struct{
+      .owner = player_t{0},
+      .condition = SectorType::SEC_LAND,
+  });
+  test::expect_false(unowned_sector.is_bombardable_by(player_t{1}));
+  test::expect_false(unowned_sector.is_owned_by(player_t{1}));
+  test::expect_true(unowned_sector.is_owned_by(player_t{0}));
+
+  // 4. Owned by enemy, but wasted -> not bombardable
+  Sector wasted_enemy_sector(sector_struct{
+      .owner = player_t{2},
+      .condition = SectorType::SEC_WASTED,
+  });
+  test::expect_false(wasted_enemy_sector.is_bombardable_by(player_t{1}));
+}
+
 }  // namespace
 
 int main() {
@@ -366,5 +449,8 @@ int main() {
   test_sector_troops_and_mobilization();
   test_sector_transfer_autoclaim();
   test_sectormap_range_views();
+  test_sector_resource_and_crystal_predicates();
+  test_sector_colonizable_predicates();
+  test_sector_bombardable_and_ownership_predicates();
   return 0;
 }

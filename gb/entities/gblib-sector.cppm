@@ -8,6 +8,7 @@ export module gblib:sector;
 
 import :types;
 import :planet;
+import :race;
 
 // POD struct containing all Sector data fields
 export struct sector_struct {
@@ -189,23 +190,43 @@ public:
   }
 
   // State predicates - commonly used checks encapsulated as methods
-  [[nodiscard]] bool is_owned() const noexcept {
+  [[nodiscard]] constexpr bool is_owned() const noexcept {
     return data_.owner != 0;
   }
-  [[nodiscard]] bool is_empty() const noexcept {
+  [[nodiscard]] constexpr bool is_owned_by(player_t player) const noexcept {
+    return data_.owner == player;
+  }
+  [[nodiscard]] constexpr bool is_empty() const noexcept {
     return data_.popn == 0 && data_.troops == 0;
   }
-  [[nodiscard]] bool is_populated() const noexcept {
+  [[nodiscard]] constexpr bool is_populated() const noexcept {
     return data_.popn > 0 || data_.troops > 0;
   }
-  [[nodiscard]] bool is_occupied() const noexcept {
+  [[nodiscard]] constexpr bool is_occupied() const noexcept {
     return is_owned() && is_populated();
   }
-  [[nodiscard]] bool is_wasted() const noexcept {
+  [[nodiscard]] constexpr bool is_wasted() const noexcept {
     return data_.condition == SectorType::SEC_WASTED;
   }
-  [[nodiscard]] bool is_plated() const noexcept {
+  [[nodiscard]] constexpr bool is_plated() const noexcept {
     return data_.condition == SectorType::SEC_PLATED;
+  }
+  [[nodiscard]] constexpr bool has_resource() const noexcept {
+    return data_.resource > 0;
+  }
+  [[nodiscard]] constexpr bool has_crystals() const noexcept {
+    return data_.crystals > 0;
+  }
+  [[nodiscard]] bool is_colonizable_by(const Race& race) const noexcept {
+    return !is_owned() && !is_wasted() && data_.condition == race.likesbest;
+  }
+  [[nodiscard]] constexpr bool
+  is_colonizable_by(SectorType likesbest) const noexcept {
+    return !is_owned() && !is_wasted() && data_.condition == likesbest;
+  }
+  [[nodiscard]] constexpr bool
+  is_bombardable_by(player_t attacker_owner) const noexcept {
+    return is_owned() && data_.owner != attacker_owner && !is_wasted();
   }
 
   // State modification methods

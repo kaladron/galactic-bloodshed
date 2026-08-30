@@ -1219,60 +1219,75 @@ export class AutonomousShip : public Ship {
 public:
   AutonomousShip() = default;
   explicit AutonomousShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<MindData>(data_.special)) {
-      mind_ = std::get<MindData>(data_.special);
-    } else {
-      mind_ =
+    if (!std::holds_alternative<MindData>(data_.special)) {
+      data_.special =
           MindData{.progenitor = data_.owner, .generation = 1, .busy = true};
     }
   }
 
   [[nodiscard]] MindData& mind() noexcept {
-    return mind_;
+    if (!std::holds_alternative<MindData>(data_.special)) {
+      data_.special =
+          MindData{.progenitor = data_.owner, .generation = 1, .busy = true};
+    }
+    return std::get<MindData>(data_.special);
   }
   [[nodiscard]] const MindData& mind() const noexcept {
-    return mind_;
+    if (std::holds_alternative<MindData>(data_.special)) {
+      return std::get<MindData>(data_.special);
+    }
+    static const MindData default_mind{};
+    return default_mind;
   }
   [[nodiscard]] bool is_busy() const noexcept {
-    return mind_.busy;
+    if (std::holds_alternative<MindData>(data_.special)) {
+      return std::get<MindData>(data_.special).busy;
+    }
+    return true;
   }
   void set_busy(bool busy) noexcept {
-    mind_.busy = busy;
+    mind().busy = busy;
   }
 
   [[nodiscard]] player_t progenitor() const noexcept {
-    return mind_.progenitor;
+    if (std::holds_alternative<MindData>(data_.special)) {
+      return std::get<MindData>(data_.special).progenitor;
+    }
+    return data_.owner;
   }
   [[nodiscard]] player_t target() const noexcept {
-    return mind_.target;
+    if (std::holds_alternative<MindData>(data_.special)) {
+      return std::get<MindData>(data_.special).target;
+    }
+    return player_t{0};
   }
   void set_target(player_t target) noexcept {
-    mind_.target = target;
+    mind().target = target;
   }
   [[nodiscard]] player_t who_killed() const noexcept {
-    return mind_.who_killed;
+    if (std::holds_alternative<MindData>(data_.special)) {
+      return std::get<MindData>(data_.special).who_killed;
+    }
+    return player_t{0};
   }
   void set_who_killed(player_t killer) noexcept {
-    mind_.who_killed = killer;
+    mind().who_killed = killer;
   }
   [[nodiscard]] std::uint32_t generation() const noexcept {
-    return mind_.generation;
+    if (std::holds_alternative<MindData>(data_.special)) {
+      return std::get<MindData>(data_.special).generation;
+    }
+    return 1;
   }
   [[nodiscard]] bool is_tampered() const noexcept {
-    return mind_.tampered;
+    if (std::holds_alternative<MindData>(data_.special)) {
+      return std::get<MindData>(data_.special).tampered;
+    }
+    return false;
   }
   void set_tampered(bool tampered) noexcept {
-    mind_.tampered = tampered;
+    mind().tampered = tampered;
   }
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = mind_;
-    return copy;
-  }
-
-protected:
-  MindData mind_{};
 };
 
 export class VonNeumannShip : public AutonomousShip {
@@ -1289,34 +1304,41 @@ export class SpaceMirrorShip : public Ship {
 public:
   SpaceMirrorShip() = default;
   explicit SpaceMirrorShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<AimedAtData>(data_.special)) {
-      aim_ = std::get<AimedAtData>(data_.special);
+    if (!std::holds_alternative<AimedAtData>(data_.special)) {
+      data_.special = AimedAtData{};
     }
   }
 
   [[nodiscard]] AimedAtData& aim() noexcept {
-    return aim_;
+    if (!std::holds_alternative<AimedAtData>(data_.special)) {
+      data_.special = AimedAtData{};
+    }
+    return std::get<AimedAtData>(data_.special);
   }
   [[nodiscard]] const AimedAtData& aim() const noexcept {
-    return aim_;
+    if (std::holds_alternative<AimedAtData>(data_.special)) {
+      return std::get<AimedAtData>(data_.special);
+    }
+    static const AimedAtData default_aim{};
+    return default_aim;
   }
   [[nodiscard]] char intensity() const noexcept {
-    return aim_.intensity;
+    return aim().intensity;
   }
   void set_intensity(char intensity) noexcept {
-    aim_.intensity = intensity;
+    aim().intensity = intensity;
   }
   [[nodiscard]] starnum_t aimed_star() const noexcept {
-    return aim_.snum;
+    return aim().snum;
   }
   [[nodiscard]] planetnum_t aimed_planet() const noexcept {
-    return aim_.pnum;
+    return aim().pnum;
   }
   [[nodiscard]] shipnum_t aimed_ship() const noexcept {
-    return aim_.shipno;
+    return aim().shipno;
   }
   [[nodiscard]] ScopeLevel aimed_level() const noexcept {
-    return aim_.level;
+    return aim().level;
   }
 
   /// Resolves the absolute coordinates (x, y) of the aimed target.
@@ -1325,150 +1347,142 @@ public:
 
   /// Calculates the 0..7 compass aim direction heading toward the target.
   [[nodiscard]] int aim_direction(EntityManager& em) const;
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = aim_;
-    return copy;
-  }
-
-private:
-  AimedAtData aim_{};
 };
 
 export class SporePodShip : public Ship {
 public:
   SporePodShip() = default;
   explicit SporePodShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<PodData>(data_.special)) {
-      pod_ = std::get<PodData>(data_.special);
+    if (!std::holds_alternative<PodData>(data_.special)) {
+      data_.special = PodData{};
     }
   }
 
   [[nodiscard]] PodData& pod() noexcept {
-    return pod_;
+    if (!std::holds_alternative<PodData>(data_.special)) {
+      data_.special = PodData{};
+    }
+    return std::get<PodData>(data_.special);
   }
   [[nodiscard]] const PodData& pod() const noexcept {
-    return pod_;
+    if (std::holds_alternative<PodData>(data_.special)) {
+      return std::get<PodData>(data_.special);
+    }
+    static const PodData default_pod{};
+    return default_pod;
   }
   [[nodiscard]] unsigned char decay() const noexcept {
-    return pod_.decay;
+    return pod().decay;
   }
   void set_decay(unsigned char decay) noexcept {
-    pod_.decay = decay;
+    pod().decay = decay;
   }
   [[nodiscard]] unsigned char temperature() const noexcept {
-    return pod_.temperature;
+    return pod().temperature;
   }
   void set_temperature(unsigned char temp) noexcept {
-    pod_.temperature = temp;
+    pod().temperature = temp;
   }
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = pod_;
-    return copy;
-  }
-
-private:
-  PodData pod_{};
 };
 
 export class CanisterShip : public Ship {
 public:
   CanisterShip() = default;
   explicit CanisterShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<TimerData>(data_.special)) {
-      timer_ = std::get<TimerData>(data_.special);
+    if (!std::holds_alternative<TimerData>(data_.special)) {
+      data_.special = TimerData{};
     }
   }
 
   [[nodiscard]] TimerData& timer() noexcept {
-    return timer_;
+    if (!std::holds_alternative<TimerData>(data_.special)) {
+      data_.special = TimerData{};
+    }
+    return std::get<TimerData>(data_.special);
   }
   [[nodiscard]] const TimerData& timer() const noexcept {
-    return timer_;
+    if (std::holds_alternative<TimerData>(data_.special)) {
+      return std::get<TimerData>(data_.special);
+    }
+    static const TimerData default_timer{};
+    return default_timer;
   }
   [[nodiscard]] unsigned char count() const noexcept {
-    return timer_.count;
+    return timer().count;
   }
   void set_count(unsigned char count) noexcept {
-    timer_.count = count;
+    timer().count = count;
   }
   void reset_timer() noexcept {
-    timer_.count = 0;
+    timer().count = 0;
   }
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = timer_;
-    return copy;
-  }
-
-private:
-  TimerData timer_{};
 };
 
 export class MissileShip : public Ship {
 public:
   MissileShip() = default;
   explicit MissileShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<ImpactData>(data_.special)) {
-      impact_ = std::get<ImpactData>(data_.special);
+    if (!std::holds_alternative<ImpactData>(data_.special)) {
+      data_.special = ImpactData{};
     }
   }
 
   [[nodiscard]] ImpactData& impact() noexcept {
-    return impact_;
+    if (!std::holds_alternative<ImpactData>(data_.special)) {
+      data_.special = ImpactData{};
+    }
+    return std::get<ImpactData>(data_.special);
   }
   [[nodiscard]] const ImpactData& impact() const noexcept {
-    return impact_;
+    if (std::holds_alternative<ImpactData>(data_.special)) {
+      return std::get<ImpactData>(data_.special);
+    }
+    static const ImpactData default_impact{};
+    return default_impact;
   }
   [[nodiscard]] Coordinates impact_coords() const noexcept {
-    return impact_.coords;
+    return impact().coords;
   }
   [[nodiscard]] bool is_scatter() const noexcept {
-    return impact_.scatter;
+    return impact().scatter;
   }
   void set_impact_coords(Coordinates coords) noexcept {
-    impact_.coords = coords;
-    impact_.scatter = false;
+    impact().coords = coords;
+    impact().scatter = false;
   }
   void set_scatter() noexcept {
-    impact_.coords = Coordinates{0, 0};
-    impact_.scatter = true;
+    impact().coords = Coordinates{0, 0};
+    impact().scatter = true;
   }
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = impact_;
-    return copy;
-  }
-
-private:
-  ImpactData impact_{};
 };
 
 export class MineShip : public Ship {
 public:
   MineShip() = default;
   explicit MineShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<TriggerData>(data_.special)) {
-      trigger_ = std::get<TriggerData>(data_.special);
+    if (!std::holds_alternative<TriggerData>(data_.special)) {
+      data_.special = TriggerData{};
     }
   }
 
   [[nodiscard]] TriggerData& trigger() noexcept {
-    return trigger_;
+    if (!std::holds_alternative<TriggerData>(data_.special)) {
+      data_.special = TriggerData{};
+    }
+    return std::get<TriggerData>(data_.special);
   }
   [[nodiscard]] const TriggerData& trigger() const noexcept {
-    return trigger_;
+    if (std::holds_alternative<TriggerData>(data_.special)) {
+      return std::get<TriggerData>(data_.special);
+    }
+    static const TriggerData default_trigger{};
+    return default_trigger;
   }
   [[nodiscard]] unsigned short trigger_radius() const noexcept {
-    return trigger_.radius;
+    return trigger().radius;
   }
   void set_trigger_radius(unsigned short radius) noexcept {
-    trigger_.radius = radius;
+    trigger().radius = radius;
   }
   [[nodiscard]] bool is_radiative() const noexcept {
     return data_.mode;
@@ -1476,47 +1490,36 @@ public:
   void set_radiative(bool rad) noexcept {
     data_.mode = rad;
   }
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = trigger_;
-    return copy;
-  }
-
-private:
-  TriggerData trigger_{};
 };
 
 export class TerraformerShip : public Ship {
 public:
   TerraformerShip() = default;
   explicit TerraformerShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<TerraformData>(data_.special)) {
-      terraform_ = std::get<TerraformData>(data_.special);
+    if (!std::holds_alternative<TerraformData>(data_.special)) {
+      data_.special = TerraformData{};
     }
   }
 
   [[nodiscard]] TerraformData& terraform() noexcept {
-    return terraform_;
+    if (!std::holds_alternative<TerraformData>(data_.special)) {
+      data_.special = TerraformData{};
+    }
+    return std::get<TerraformData>(data_.special);
   }
   [[nodiscard]] const TerraformData& terraform() const noexcept {
-    return terraform_;
+    if (std::holds_alternative<TerraformData>(data_.special)) {
+      return std::get<TerraformData>(data_.special);
+    }
+    static const TerraformData default_terraform{};
+    return default_terraform;
   }
   [[nodiscard]] unsigned char index() const noexcept {
-    return terraform_.index;
+    return terraform().index;
   }
   void set_index(unsigned char idx) noexcept {
-    terraform_.index = idx;
+    terraform().index = idx;
   }
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = terraform_;
-    return copy;
-  }
-
-private:
-  TerraformData terraform_{};
 };
 
 export class GroundPlowShip : public TerraformerShip {
@@ -1528,65 +1531,74 @@ export class TransporterShip : public Ship {
 public:
   TransporterShip() = default;
   explicit TransporterShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<TransportData>(data_.special)) {
-      transport_ = std::get<TransportData>(data_.special);
+    if (!std::holds_alternative<TransportData>(data_.special)) {
+      data_.special = TransportData{};
     }
   }
 
   [[nodiscard]] TransportData& transport() noexcept {
-    return transport_;
+    if (!std::holds_alternative<TransportData>(data_.special)) {
+      data_.special = TransportData{};
+    }
+    return std::get<TransportData>(data_.special);
   }
   [[nodiscard]] const TransportData& transport() const noexcept {
-    return transport_;
+    if (std::holds_alternative<TransportData>(data_.special)) {
+      return std::get<TransportData>(data_.special);
+    }
+    static const TransportData default_transport{};
+    return default_transport;
   }
   [[nodiscard]] shipnum_t target_ship() const noexcept {
-    return shipnum_t{transport_.target};
+    return shipnum_t{transport().target};
   }
   void set_target_ship(shipnum_t target) noexcept {
-    transport_.target = static_cast<unsigned short>(target.value);
+    transport().target = static_cast<unsigned short>(target.value);
   }
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = transport_;
-    return copy;
-  }
-
-private:
-  TransportData transport_{};
 };
 
 export class ToxicWasteShip : public Ship {
 public:
   ToxicWasteShip() = default;
   explicit ToxicWasteShip(ship_struct in) : Ship(std::move(in)) {
-    if (std::holds_alternative<WasteData>(data_.special)) {
-      waste_ = std::get<WasteData>(data_.special);
+    if (!std::holds_alternative<WasteData>(data_.special)) {
+      data_.special = WasteData{};
     }
   }
 
   [[nodiscard]] WasteData& waste() noexcept {
-    return waste_;
+    if (!std::holds_alternative<WasteData>(data_.special)) {
+      data_.special = WasteData{};
+    }
+    return std::get<WasteData>(data_.special);
   }
   [[nodiscard]] const WasteData& waste() const noexcept {
-    return waste_;
+    if (std::holds_alternative<WasteData>(data_.special)) {
+      return std::get<WasteData>(data_.special);
+    }
+    static const WasteData default_waste{};
+    return default_waste;
   }
   [[nodiscard]] unsigned char toxic_level() const noexcept {
-    return waste_.toxic;
+    return waste().toxic;
   }
   void set_toxic_level(unsigned char toxic) noexcept {
-    waste_.toxic = toxic;
+    waste().toxic = toxic;
   }
-
-  [[nodiscard]] ship_struct to_struct() const override {
-    ship_struct copy = data_;
-    copy.special = waste_;
-    return copy;
-  }
-
-private:
-  WasteData waste_{};
 };
+
+static_assert(sizeof(AutonomousShip) == sizeof(Ship));
+static_assert(sizeof(VonNeumannShip) == sizeof(Ship));
+static_assert(sizeof(BerserkerShip) == sizeof(Ship));
+static_assert(sizeof(SpaceMirrorShip) == sizeof(Ship));
+static_assert(sizeof(SporePodShip) == sizeof(Ship));
+static_assert(sizeof(CanisterShip) == sizeof(Ship));
+static_assert(sizeof(MissileShip) == sizeof(Ship));
+static_assert(sizeof(MineShip) == sizeof(Ship));
+static_assert(sizeof(TerraformerShip) == sizeof(Ship));
+static_assert(sizeof(GroundPlowShip) == sizeof(Ship));
+static_assert(sizeof(TransporterShip) == sizeof(Ship));
+static_assert(sizeof(ToxicWasteShip) == sizeof(Ship));
 
 // Type traits for zero-cost static downcasting
 export template <typename T>

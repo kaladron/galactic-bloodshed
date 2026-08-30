@@ -32,21 +32,21 @@ int getdefense(EntityManager& em, const Ship& ship) {
 /// otherwise.
 std::optional<std::pair<double, double>>
 SpaceMirrorShip::target_coordinates(EntityManager& em) const {
-  switch (aim_.level) {
+  switch (aim().level) {
     case ScopeLevel::LEVEL_STAR: {
-      const auto* star = em.peek_star(aim_.snum);
+      const auto* star = em.peek_star(aim().snum);
       if (!star) return std::nullopt;
       return std::make_pair(star->xpos(), star->ypos());
     }
     case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = em.peek_star(aim_.snum);
-      const auto* planet = em.peek_planet(aim_.snum, aim_.pnum);
+      const auto* star = em.peek_star(aim().snum);
+      const auto* planet = em.peek_planet(aim().snum, aim().pnum);
       if (!star || !planet) return std::nullopt;
       return std::make_pair(star->xpos() + planet->xpos(),
                             star->ypos() + planet->ypos());
     }
     case ScopeLevel::LEVEL_SHIP: {
-      const auto* target_ship = em.peek_ship(aim_.shipno);
+      const auto* target_ship = em.peek_ship(aim().shipno);
       if (!target_ship) return std::nullopt;
       return std::make_pair(target_ship->xpos(), target_ship->ypos());
     }

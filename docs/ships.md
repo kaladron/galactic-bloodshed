@@ -114,7 +114,81 @@ Damaged vessels ($\text{Damage} > 0$) attempt structural repairs during turn upd
 
 ---
 
-## 5. Imperial Power and the Galactic Census
+## 5. Specialized Naval Equipment and Planetary Geoengineering
+
+Certain starship classes are equipped with advanced scientific, industrial, or biological subsystems that alter planetary environments, manufacture munitions, or incubate populations during turn updates.
+
+### Space Mirrors and Solar Redirection
+Space Mirrors are massive orbital reflector arrays designed to redirect stellar radiation onto planetary biospheres for terraforming, heating, or climate stabilization:
+- **Stellar Alignment**: A space mirror must be actively aimed at its host star to function. Mirrors in an unaimed standby mode do not redirect energy.
+- **Planetary Thermal Modification**: When stationed in planetary orbit, the mirror focuses stellar energy into the target world's upper atmosphere:
+  $$\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Target Planet Radius})} \right\rfloor$$
+  Mirrors can be configured to heat freezing worlds or shaded to cool overheated greenhouse planets toward species-compatible equilibrium temperatures.
+
+### Atmosphere Processors
+Atmosphere Processors perform large-scale planetary geoengineering by converting ambient gases into breathable atmosphere:
+- **Atmospheric Modification**: Active processors operating on planetary surfaces modify local atmospheric gas concentrations (methane, oxygen, carbon dioxide, helium, nitrogen, sulfur) by calibrated per-segment increments.
+- **Safety Clamping**: Planetary atmospheric concentrations and toxicity ratings are strictly bounded within $[0\%, 100\%]$ to prevent ecological collapse or unphysical gas densities.
+
+### Orbital Habitats and Population Incubators
+Orbital Habitats function as specialized bioship incubators capable of generating civilian population in deep space or orbit:
+- **Incubator Operations**: Active habitats consume stored fuel and raw minerals to synthesize life-support biomass and incubate new colonists:
+  $$\Delta \text{Population} = \left\lfloor \text{Incubation Rate} \times \frac{\text{Current Population}}{\text{Maximum Crew Capacity}} \right\rfloor$$
+- **Dynamic Displacement**: As new colonists are generated, the ship's operational mass increases proportionally based on the biological body mass of the incubated species ($M_{\text{race}}$).
+
+### Weapon Plants and Munitions Manufacturing
+Weapon Plants are automated manufacturing modules that convert raw industrial resources into destructive ordnance (`destruct`):
+- **Munitions Synthesis**: Each turn segment, operational weapon plants produce new destructive ordnance:
+  $$\Delta \text{Destruct} = \min\Big(\text{Available Crew Staffing}, \text{Stored Resources}, \text{Stored Fuel} \times 2, \text{Unallocated Ammo Capacity}\Big)$$
+- **Resource Depletion**: Synthesizing ammo consumes resources and fuel at a $1:1$ resource and $0.5:1$ fuel ratio, dynamically adjusting total vessel mass.
+
+### Biological Spore Pods and Climate Modifiers
+- **Spore Pods**: Bio-seeding craft capable of dispersing alien spores across planetary sectors. In multi-planet star systems, unmanned biological pods select target worlds across the system to initiate planetary seeding.
+- **Canisters and Greenhouses**: Specialized payload canisters and greenhouse modules release dense greenhouse agents to raise planetary temperatures or stabilize atmospheric pressure.
+
+---
+
+## 6. Point Defense, Interception, and Autonomous Combat
+
+Planetary and naval engagements feature autonomous defensive networks, interceptor batteries, and automated orbital bombardment systems.
+
+```mermaid
+flowchart TD
+    Target["Incoming Threat / Target Detected"] --> Type{"Engagement Type"}
+    Type -->|Hostile Missile / Mine| ABM["Anti-Ballistic Missile (ABM)\nScan for unallied ordnance & intercept"]
+    Type -->|Naval Intruder| Mine["Proximity Mine\nDetonate on unallied ships entering range"]
+    Type -->|Orbital Bombardment| PDNCheck{"Are Planetary Defense\nNetworks (PDNs) Present?"}
+    PDNCheck -->|Yes| Cancel["Bombardment Deterred\nCancel strike & alert commanding governor"]
+    PDNCheck -->|No| Bombard["Berserker Orbital Strike\nPrioritize war targets & saturation bomb surface"]
+```
+
+### Point Defense Networks (PDNs) and Bombardment Deterrence
+Point Defense Networks (PDNs) are specialized heavy defense installations stationed on planetary surfaces or in low orbit:
+- **Strategic Deterrence**: The presence of any operational, unallied PDN on a planet acts as an absolute strategic deterrent against automated Berserker saturation bombing. Automated bombardment runs are immediately aborted upon detecting active foreign PDNs.
+
+### Autonomous Berserker Saturation Bombardment
+Automated Berserker warships orbiting foreign planets execute tactical saturation bombardment against surface colonies:
+- **Targeting Priority**:
+  1. Active colonies belonging to empires with which the ship's empire is **at war**.
+  2. Colonies belonging to a **specifically programmed target species**.
+  3. Any unallied foreign colony on the planetary surface.
+- **Bombardment Firepower**: Effective orbital strike power is determined by operational gun mounts, structural damage, and available destructive ordnance:
+  $$\text{Strike Power} = \min\left(\left\lfloor \text{Template Gun Mounts} \times \frac{100 - \text{Damage}}{100} \right\rfloor, \text{Stored Destruct Ammo}\right)$$
+- **Sector Devastation & Retaliation**: The bombardment converts target sectors into nuclear wasteland, reduces planetary population, and expends destruct ammo. Defending surface batteries return retaliatory ground fire, and automated alert bulletins are dispatched to the planetary governors of all affected empires.
+
+### Proximity Minefields
+Proximity Mines are stationary spatial munitions deployed in star systems or planetary orbits:
+- **Autonomous Detonation**: Mines continuously monitor local space for moving vessels. When an unallied vessel enters triggering range, the mine detonates its full destructive payload.
+- **Alliance Safety**: Allied and coalition fleets sharing friendly diplomatic relations safely navigate through friendly minefields without triggering detonations.
+
+### Anti-Ballistic Missile (ABM) Interception
+ABM platforms provide automated point defense against incoming space-to-space ordnance:
+- **Threat Identification**: ABM batteries continuously scan local orbital tracks for incoming missiles and drifting mines belonging to hostile or unallied empires.
+- **Precision Interception**: Upon detecting hostile ordnance, the ABM fires interceptor rounds to neutralize the threat before it reaches target vessels, while sparing friendly missiles and allied torpedoes.
+
+---
+
+## 7. Imperial Power and the Galactic Census
 
 During turn updates, active ships report their operational readiness to Imperial Intelligence and the Galactic Census:
 - **Empire Power Ratings**: Active starships contribute directly to an empire's global strength rating based on hull count, propellant reserves, mineral stockpiles, carried destructive ordnance, colonist populations, and military troop strength.

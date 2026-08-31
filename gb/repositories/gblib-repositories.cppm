@@ -107,6 +107,46 @@ struct to<JSON, ID<Tag, T>> {
   }
 };
 
+template <FixedString Tag, typename T, T Min, T Max>
+struct from<JSON, Bounded<Tag, T, Min, Max>> {
+  template <auto Opts>
+  static void op(Bounded<Tag, T, Min, Max>& b, is_context auto&& ctx, auto&& it,
+                 auto&& end) {
+    T val{};
+    parse<JSON>::op<Opts>(val, ctx, it, end);
+    b = Bounded<Tag, T, Min, Max>{val};
+  }
+};
+
+template <FixedString Tag, typename T, T Min, T Max>
+struct to<JSON, Bounded<Tag, T, Min, Max>> {
+  template <auto Opts>
+  static void op(const Bounded<Tag, T, Min, Max>& b, is_context auto&& ctx,
+                 auto&& buf, auto&& ix) {
+    serialize<JSON>::op<Opts>(b.value, ctx, buf, ix);
+  }
+};
+
+template <FixedString Tag, typename T, T Mod>
+struct from<JSON, Modular<Tag, T, Mod>> {
+  template <auto Opts>
+  static void op(Modular<Tag, T, Mod>& m, is_context auto&& ctx, auto&& it,
+                 auto&& end) {
+    T val{};
+    parse<JSON>::op<Opts>(val, ctx, it, end);
+    m = Modular<Tag, T, Mod>{val};
+  }
+};
+
+template <FixedString Tag, typename T, T Mod>
+struct to<JSON, Modular<Tag, T, Mod>> {
+  template <auto Opts>
+  static void op(const Modular<Tag, T, Mod>& m, is_context auto&& ctx,
+                 auto&& buf, auto&& ix) {
+    serialize<JSON>::op<Opts>(m.value, ctx, buf, ix);
+  }
+};
+
 template <typename T, std::size_t N>
 struct meta<PlayerVector<T, N>> {
   using Type = PlayerVector<T, N>;

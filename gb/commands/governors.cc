@@ -40,7 +40,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
           (ship.governor() == src_gov)) {
         ship.governor() = tgt_gov;
         outmsg = std::format("Changed ownership of {0}{1}...\n",
-                             Shipltrs[ship.type()], i);
+                             ship.type_letter(), i);
         push_telegram(entity_manager, race.Playernum, 0, outmsg);
       }
     });

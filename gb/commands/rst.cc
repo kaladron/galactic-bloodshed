@@ -92,7 +92,7 @@ void report_stock(GameObj& g, RstContext& ctx, const Ship& s) {
   // Add data row
   table.add_row(
       {std::format("{}", s.number()),
-       std::format("{}{} {}", Shipltrs[s.type()], s.crystals() ? 'x' : ' ',
+       std::format("{}{} {}", s.type_letter(), s.crystals() ? 'x' : ' ',
                    s.active() ? s.name() : "INACTIVE"),
        std::format("{}", s.crystals()),
        std::format("{}:{}", s.hanger(), s.max_hanger()),
@@ -146,7 +146,7 @@ void report_status(GameObj& g, RstContext& ctx, const Ship& s) {
 
   // Add data row
   table.add_row(
-      {std::format("{}", s.number()), std::format("{}", Shipltrs[s.type()]),
+      {std::format("{}", s.number()), std::format("{}", s.type_letter()),
        std::format("{}", s.active() ? s.name() : "INACTIVE"),
        s.laser() ? "yes" : "", s.cew() ? "yes" : "",
        s.hyper_drive().has ? "yes" : "",
@@ -203,14 +203,14 @@ void report_weapons(GameObj& g, RstContext& ctx, const Ship& s) {
   std::string class_with_type;
   if (s.type() == ShipType::OTYPE_FACTORY) {
     class_with_type =
-        std::format("{} {}", Shipltrs[s.build_type()], ship_class);
+        std::format("{} {}", ship_template(s.build_type()).letter, ship_class);
   } else {
     class_with_type = ship_class;
   }
 
   // Add data row
   table.add_row(
-      {std::format("{}", s.number()), std::format("{}", Shipltrs[s.type()]),
+      {std::format("{}", s.number()), std::format("{}", s.type_letter()),
        std::format("{}", s.active() ? s.name() : "INACTIVE"),
        s.laser() ? "yes" : "", std::format("{}/{}", s.cew(), s.cew_range()),
        std::format("{}", (int)((1.0 - .01 * s.damage()) * s.tech() / 4.0)),
@@ -303,7 +303,7 @@ void report_factories(GameObj& g, RstContext& ctx, const Ship& s) {
   // Add data row
   table.add_row(
       {std::format("{}", s.number()),
-       std::format("{}", Shipltrs[s.build_type()]),
+       std::format("{}", ship_template(s.build_type()).letter),
        std::format("{}", s.build_cost()), std::format("{:.1f}", s.complexity()),
        std::format("{:.1f}", s.base_mass()), std::format("{}", s.size()),
        std::format("{}", s.armor()), std::format("{}", s.max_crew_capacity()),
@@ -384,7 +384,7 @@ void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
 
   // Add data row
   table.add_row(
-      {std::format("{}", Shipltrs[s.type()]), std::format("{}", s.number()),
+      {std::format("{}", s.type_letter()), std::format("{}", s.number()),
        name_str, std::format("{}", s.governor()), std::format("{}", s.damage()),
        std::format("{}", s.popn()), std::format("{}", s.troops()),
        std::format("{}", s.destruct()), std::format("{:.0f}", s.fuel()),
@@ -409,7 +409,7 @@ bool should_report_ship(const Ship& s, player_t player_num, governor_t governor,
   if (!authorized(governor, s)) return false;
 
   // Don't report on ships whose type isn't in the requested report filter
-  if (!rep_on.contains(Shipltrs[s.type()])) return false;
+  if (!rep_on.contains(s.type_letter())) return false;
 
   // Don't report on undocked canisters (launched canisters don't show up)
   if (s.type() == ShipType::OTYPE_CANIST && !s.docked()) return false;
@@ -520,7 +520,8 @@ bool rst(const command_t& argv, GameObj& g) {
         }
 
         // Report all types when reporting specific ships
-        std::ranges::copy(Shipltrs,
+        auto all_letters = get_all_ship_letters();
+        std::ranges::copy(all_letters,
                           std::inserter(report_types, report_types.end()));
         ship_report(g, ctx, *ship, report_types);
       }
@@ -528,9 +529,9 @@ bool rst(const command_t& argv, GameObj& g) {
     }
 
     // Parse ship type letters and add to set - only valid ship letters
-    std::ranges::copy_if(
-        argv[1], std::inserter(report_types, report_types.end()),
-        [](char c) { return std::ranges::contains(Shipltrs, c); });
+    std::ranges::copy_if(argv[1],
+                         std::inserter(report_types, report_types.end()),
+                         [](char c) { return is_valid_ship_letter(c); });
 
     // Warn if no valid ship types were found
     if (report_types.empty()) {
@@ -539,7 +540,8 @@ bool rst(const command_t& argv, GameObj& g) {
     }
   } else {
     // No ship type filter specified - report all types
-    std::ranges::copy(Shipltrs,
+    auto all_letters = get_all_ship_letters();
+    std::ranges::copy(all_letters,
                       std::inserter(report_types, report_types.end()));
   }
 

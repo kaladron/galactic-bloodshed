@@ -79,7 +79,7 @@ int check_retal_strength(const Ship& ship) {
 
 int retal_strength(const Ship& s) {
   if (!s.alive()) return 0;
-  if (!Shipdata[s.type()][ABIL_SPEED] && !s.is_landed()) return 0;
+  if (!s.get_template().base_speed && !s.is_landed()) return 0;
   /* land based ships */
   if (!s.popn() && (s.type() != ShipType::OTYPE_BERS)) return 0;
 

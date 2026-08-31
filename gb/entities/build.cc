@@ -79,8 +79,8 @@ bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
 }
 
 std::optional<ShipType> get_build_type(const char shipc) {
-  for (int i = 0; i < std::extent<decltype(Shipltrs)>::value; ++i) {
-    if (Shipltrs[i] == shipc) return ShipType{i};
+  for (std::size_t i = 0; i < NUMSTYPES; ++i) {
+    if (ship_templates[i].letter == shipc) return ShipType{static_cast<int>(i)};
   }
   return {};
 }

@@ -265,7 +265,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
           auto& loc = shiplocs[land.x][land.y];
           loc.ships[loc.count].shipno = shipa.number();
           loc.ships[loc.count].owner = shipa.owner();
-          loc.ships[loc.count].ltr = Shipltrs[shipa.type()];
+          loc.ships[loc.count].ltr = shipa.type_letter();
           loc.count++;
         }
       }

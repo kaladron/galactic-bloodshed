@@ -32,7 +32,7 @@ bool enslave(const command_t& argv, GameObj& g) {
       }
       if (s.type() != ShipType::STYPE_OAP) {
         g.out << std::format("This ship is not an {}.\n",
-                             Shipnames[ShipType::STYPE_OAP]);
+                             ship_template(ShipType::STYPE_OAP).name);
         return;
       }
       if (s.whatorbits() != ScopeLevel::LEVEL_PLAN) {

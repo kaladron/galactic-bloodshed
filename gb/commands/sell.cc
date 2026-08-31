@@ -46,7 +46,7 @@ bool sell(const command_t& argv, GameObj& g) {
   bool ok = false;
   for (const Ship& s : ShipList::readonly(g)) {
     if (s.alive() && (s.owner() == Playernum) && !s.damage() &&
-        Shipdata[s.type()][ABIL_PORT]) {
+        s.is_starport()) {
       ok = true;
       break;
     }

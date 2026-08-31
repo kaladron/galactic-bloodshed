@@ -48,7 +48,7 @@ bool capital(const command_t& argv, GameObj& g) {
 
         if (s.type() != ShipType::OTYPE_GOV) {
           g.out << std::format("That ship is not a {}.\n",
-                               Shipnames[ShipType::OTYPE_GOV]);
+                               ship_template(ShipType::OTYPE_GOV).name);
           return false;
         }
 

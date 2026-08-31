@@ -381,13 +381,13 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
     if (r.governor[g.governor().value].toggle.color) {
       return std::format("{} {} {} {} {} {} {};",
                          (char)(ship.owner().value + '?'), x, y, mirror_heading,
-                         Shipltrs[ship.type()],
-                         (char)(ship.owner().value + '?'), ship.number().value);
+                         ship.type_letter(), (char)(ship.owner().value + '?'),
+                         ship.number().value);
     }
     const bool stand =
         (ship.owner() == r.governor[g.governor().value].toggle.highlight);
     return std::format("{} {} {} {} {} {} {};", stand, x, y, mirror_heading,
-                       Shipltrs[ship.type()], stand, ship.number().value);
+                       ship.type_letter(), stand, ship.number().value);
   }
   return "";
 }

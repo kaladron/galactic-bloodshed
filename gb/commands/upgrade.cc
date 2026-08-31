@@ -53,44 +53,36 @@ bool upgrade(const command_t& argv, GameObj& g) {
       return;
     }
 
-    if (!Shipdata[dirship.build_type()][ABIL_MOD]) {
+    const auto& btmpl = ship_template(dirship.build_type());
+    if (!btmpl.can_modify) {
       g.out << "This ship cannot be upgraded.\n";
       return;
     }
 
     if (argv[1] == "armor") {
       ship.armor() = MAX(dirship.armor(), MIN(value, 100));
-    } else if (argv[1] == "crew" &&
-               Shipdata[dirship.build_type()][ABIL_MAXCREW]) {
+    } else if (argv[1] == "crew" && btmpl.max_crew) {
       ship.max_crew() = MAX(dirship.max_crew(), MIN(value, 10000));
-    } else if (argv[1] == "cargo" &&
-               Shipdata[dirship.build_type()][ABIL_CARGO]) {
+    } else if (argv[1] == "cargo" && btmpl.max_cargo) {
       ship.max_resource() = MAX(dirship.max_resource(), MIN(value, 10000));
-    } else if (argv[1] == "hanger" &&
-               Shipdata[dirship.build_type()][ABIL_HANGER]) {
+    } else if (argv[1] == "hanger" && btmpl.max_hangar) {
       ship.max_hanger() = MAX(dirship.max_hanger(), MIN(value, 10000));
-    } else if (argv[1] == "fuel" &&
-               Shipdata[dirship.build_type()][ABIL_FUELCAP]) {
+    } else if (argv[1] == "fuel" && btmpl.max_fuel) {
       ship.max_fuel() = MAX(dirship.max_fuel(), MIN(value, 10000));
-    } else if (argv[1] == "mount" &&
-               Shipdata[dirship.build_type()][ABIL_MOUNT] && !dirship.mount()) {
+    } else if (argv[1] == "mount" && btmpl.can_mount && !dirship.mount()) {
       if (!race.discoveries.crystal) {
         g.out << "Your race does not now how to utilize crystal power yet.\n";
         return;
       }
       ship.mount() = !ship.mount();
-    } else if (argv[1] == "destruct" &&
-               Shipdata[dirship.build_type()][ABIL_DESTCAP]) {
+    } else if (argv[1] == "destruct" && btmpl.max_destruct) {
       ship.max_destruct() = MAX(dirship.max_destruct(), MIN(value, 10000));
-    } else if (argv[1] == "speed" &&
-               Shipdata[dirship.build_type()][ABIL_SPEED]) {
+    } else if (argv[1] == "speed" && btmpl.base_speed) {
       ship.max_speed() = MAX(dirship.max_speed(), MAX(1, MIN(value, 9)));
-    } else if (argv[1] == "hyperdrive" &&
-               Shipdata[dirship.build_type()][ABIL_JUMP] &&
+    } else if (argv[1] == "hyperdrive" && btmpl.can_hyperjump &&
                !dirship.hyper_drive().has && race.discoveries.hyperdrive) {
       ship.hyper_drive().has = 1;
-    } else if (argv[1] == "primary" &&
-               Shipdata[dirship.build_type()][ABIL_PRIMARY]) {
+    } else if (argv[1] == "primary" && btmpl.primary_power) {
       if (argv[2] == "strength") {
         if (ship.primtype() == GTYPE_NONE) {
           g.out << "No caliber defined.\n";
@@ -115,8 +107,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
         g.out << "No such gun characteristic.\n";
         return;
       }
-    } else if (argv[1] == "secondary" &&
-               Shipdata[dirship.build_type()][ABIL_SECONDARY]) {
+    } else if (argv[1] == "secondary" && btmpl.secondary_power) {
       if (argv[2] == "strength") {
         if (ship.sectype() == GTYPE_NONE) {
           g.out << "No caliber defined.\n";
@@ -141,13 +132,9 @@ bool upgrade(const command_t& argv, GameObj& g) {
         g.out << "No such gun characteristic.\n";
         return;
       }
-    } else if (argv[1] == "cew" && Shipdata[dirship.build_type()][ABIL_CEW]) {
+    } else if (argv[1] == "cew" && btmpl.has_cew) {
       if (!race.discoveries.cew) {
         g.out << "Your race cannot build confined energy weapons.\n";
-        return;
-      }
-      if (!Shipdata[dirship.build_type()][ABIL_CEW]) {
-        g.out << "This kind of ship cannot mount confined energy weapons.\n";
         return;
       }
       value = std::stoi(argv[3]);
@@ -159,18 +146,12 @@ bool upgrade(const command_t& argv, GameObj& g) {
         g.out << "No such option for CEWs.\n";
         return;
       }
-    } else if (argv[1] == "laser" &&
-               Shipdata[dirship.build_type()][ABIL_LASER]) {
+    } else if (argv[1] == "laser" && btmpl.max_lasers) {
       if (!race.discoveries.laser) {
         g.out << "Your race cannot build lasers.\n";
         return;
       }
-      if (Shipdata[dirship.build_type()][ABIL_LASER]) {
-        ship.laser() = 1;
-      } else {
-        g.out << "That ship cannot be fitted with combat lasers.\n";
-        return;
-      }
+      ship.laser() = 1;
     } else {
       g.out
           << "That characteristic either doesn't exist or can't be modified.\n";
@@ -196,7 +177,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
         const long needed_size = static_cast<long>(ship_size(ship));
         if (available_space < needed_size) {
           g.out << std::format("Not enough free hanger space on {}{}.\n",
-                               Shipltrs[s2.type()], dirship.destshipno());
+                               s2.type_letter(), dirship.destshipno());
           g.out << std::format("{} more needed.\n",
                                needed_size - available_space);
           fits = false;

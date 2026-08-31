@@ -468,20 +468,6 @@ export const char* Shipnames[NUMSTYPES] = {"Spore pod",
                                            "Bunker",
                                            "Lander"};
 
-/// Type-safe accessor for primary gun caliber from Shipdata
-/// \param ship_type The ship type to query
-/// \return Primary gun caliber as guntype_t
-export inline guntype_t shipdata_primary(ShipType ship_type) {
-  return static_cast<guntype_t>(Shipdata[ship_type][ABIL_PRIMARY]);
-}
-
-/// Type-safe accessor for secondary gun caliber from Shipdata
-/// \param ship_type The ship type to query
-/// \return Secondary gun caliber as guntype_t
-export inline guntype_t shipdata_secondary(ShipType ship_type) {
-  return static_cast<guntype_t>(Shipdata[ship_type][ABIL_SECONDARY]);
-}
-
 /// \brief Strongly-typed immutable specifications and capabilities for a ship
 /// class.
 export struct ShipTemplate {
@@ -2113,6 +2099,40 @@ ship_template(ShipType type) noexcept {
   return ship_templates[0];
 }
 
+/// \brief Returns an array containing the classification letters of all ship
+/// types.
+export [[nodiscard]] constexpr std::array<char, NUMSTYPES>
+get_all_ship_letters() noexcept {
+  std::array<char, NUMSTYPES> letters{};
+  for (std::size_t i = 0; i < NUMSTYPES; ++i) {
+    letters[i] = ship_templates[i].letter;
+  }
+  return letters;
+}
+
+/// \brief Returns whether the given character corresponds to a known ship
+/// classification letter.
+export [[nodiscard]] constexpr bool is_valid_ship_letter(char c) noexcept {
+  return std::ranges::any_of(
+      ship_templates, [c](const ShipTemplate& t) { return t.letter == c; });
+}
+
+/// \brief Type-safe accessor for primary gun caliber from ShipTemplate.
+/// \param ship_type The ship type to query.
+/// \return Primary gun caliber as guntype_t.
+export [[nodiscard]] constexpr guntype_t
+shipdata_primary(ShipType ship_type) noexcept {
+  return static_cast<guntype_t>(ship_template(ship_type).primary_power);
+}
+
+/// \brief Type-safe accessor for secondary gun caliber from ShipTemplate.
+/// \param ship_type The ship type to query.
+/// \return Secondary gun caliber as guntype_t.
+export [[nodiscard]] constexpr guntype_t
+shipdata_secondary(ShipType ship_type) noexcept {
+  return static_cast<guntype_t>(ship_template(ship_type).secondary_power);
+}
+
 export class Ship {
 protected:
   ship_struct
@@ -2566,6 +2586,11 @@ public:
     return get_template().can_mount;
   }
 
+  /// \brief Indicates whether this ship class operates as a space port.
+  [[nodiscard]] constexpr bool is_starport() const noexcept {
+    return get_template().is_starport;
+  }
+
   /// \brief Indicates whether this ship class is equipped to construct other
   /// ships.
   [[nodiscard]] constexpr bool can_construct_ships() const noexcept {
@@ -2761,18 +2786,17 @@ public:
 
   /// Whether ship type has an operational on/off activation switch.
   [[nodiscard]] bool has_switch() const noexcept {
-    return Shipdata[data_.type][ABIL_HASSWITCH] != 0;
+    return get_template().has_switch;
   }
 
   /// Whether ship has planetary bombardment weapon capabilities.
   [[nodiscard]] bool can_bombard() const noexcept {
-    return Shipdata[data_.type][ABIL_GUNS] != 0 &&
-           (data_.type != ShipType::STYPE_MINE);
+    return get_template().max_guns != 0 && (data_.type != ShipType::STYPE_MINE);
   }
 
   /// Whether ship is capable of independent orbital navigation.
   [[nodiscard]] bool can_navigate() const noexcept {
-    return Shipdata[data_.type][ABIL_SPEED] > 0 &&
+    return get_template().base_speed > 0 &&
            data_.type != ShipType::OTYPE_TERRA &&
            data_.type != ShipType::OTYPE_VN;
   }
@@ -2791,7 +2815,7 @@ public:
   /// Effective armor accounting for factory overrides and structural damage.
   [[nodiscard]] armor_t effective_armor() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<armor_t>(Shipdata[data_.type][ABIL_ARMOR])
+               ? get_template().base_armor
                : static_cast<armor_t>(data_.armor * (100 - data_.damage) / 100);
   }
 
@@ -2818,7 +2842,7 @@ public:
   /// Available civilian crew capacity accounting for military troops on board.
   [[nodiscard]] population_t available_crew() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<population_t>(Shipdata[data_.type][ABIL_MAXCREW] -
+               ? static_cast<population_t>(get_template().max_crew -
                                            data_.troops)
                : (data_.max_crew - data_.troops);
   }
@@ -2826,16 +2850,14 @@ public:
   /// Available military troop capacity accounting for civilian crew on board.
   [[nodiscard]] population_t available_mil() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<population_t>(Shipdata[data_.type][ABIL_MAXCREW] -
-                                           data_.popn)
+               ? static_cast<population_t>(get_template().max_crew - data_.popn)
                : (data_.max_crew - data_.popn);
   }
 
   /// Maximum total crew capacity including factory template overrides.
   [[nodiscard]] population_t max_crew_capacity() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<population_t>(Shipdata[data_.type][ABIL_MAXCREW])
-               : data_.max_crew;
+    return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_crew
+                                                   : data_.max_crew;
   }
 
   /// Maximum cargo resource capacity including factory template overrides.
@@ -2882,14 +2904,18 @@ public:
   /// Effective build / maintenance cost including factory activation scaling.
   [[nodiscard]] long effective_cost() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? 2L * data_.build_cost * data_.on +
-                     Shipdata[data_.type][ABIL_COST]
+               ? 2L * data_.build_cost * data_.on + get_template().build_cost
                : data_.build_cost;
   }
 
   /// Ship classification type letter code.
   [[nodiscard]] char type_letter() const noexcept {
     return get_template().letter;
+  }
+
+  /// Ship classification type name.
+  [[nodiscard]] std::string_view type_name() const noexcept {
+    return get_template().name;
   }
 
   /// Maximum gun mount capacity from ship template.

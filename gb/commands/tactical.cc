@@ -252,7 +252,7 @@ void ShipTacticalItem::add_tactical_header_row(
   }
 
   table.add_row(
-      {std::format("{}", s.number()), std::format("{}", Shipltrs[s.type()]),
+      {std::format("{}", s.number()), std::format("{}", s.type_letter()),
        name_str, std::format("{:.0f}", s.tech()),
        std::format("{}{}/{}{}", s.primary(), caliber_char(s.primtype()),
                    s.secondary(), caliber_char(s.sectype())),
@@ -342,7 +342,7 @@ void ShipTacticalItem::add_tactical_target_row(
   // Add row to table
   table.add_row({std::format("{}", s.number()),
                  std::format("{}{},{}", war_status, s.owner(), s.governor()),
-                 std::format("{}", Shipltrs[s.type()]),
+                 std::format("{}", s.type_letter()),
                  std::format("{:.14}", s.name()), std::format("{:.0f}", dist),
                  std::format("{}", factor), std::format("{}", body),
                  std::format("{}", tspeed), tev ? "yes" : "",

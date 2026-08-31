@@ -50,7 +50,7 @@ bool capture(const command_t& argv, GameObj& g) {
     if (ship.owner() != Playernum) {
       if (!ship.is_landed()) {
         g.out << std::format("{} #{} is not landed on a planet.\n",
-                             Shipnames[ship.type()], shipno);
+                             ship.type_name(), shipno);
 
         continue;
       }

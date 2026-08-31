@@ -54,19 +54,17 @@ tabulate::Table create_ship_spec_table() {
 }
 
 void add_ship_spec_row(tabulate::Table& table, ShipType i, const Race& race) {
-  table.add_row({std::string(1, Shipltrs[i]), std::string(Shipnames[i]),
-                 std::format("{}", Shipdata[i][ABIL_CARGO]),
-                 std::format("{}", Shipdata[i][ABIL_HANGER]),
-                 std::format("{}", Shipdata[i][ABIL_ARMOR]),
-                 std::format("{}", Shipdata[i][ABIL_DESTCAP]),
-                 std::format("{}", Shipdata[i][ABIL_GUNS]),
-                 std::format("{}", Shipdata[i][ABIL_PRIMARY]),
-                 std::format("{}", Shipdata[i][ABIL_SECONDARY]),
-                 std::format("{}", Shipdata[i][ABIL_FUELCAP]),
-                 std::format("{}", Shipdata[i][ABIL_MAXCREW]),
-                 std::format("{}", Shipdata[i][ABIL_SPEED]),
-                 std::format("{:.0f}", (double)Shipdata[i][ABIL_TECH]),
-                 std::format("{}", Shipcost(i, race))});
+  const auto& tmpl = ship_template(i);
+  table.add_row(
+      {std::string(1, tmpl.letter), std::string(tmpl.name),
+       std::format("{}", tmpl.max_cargo), std::format("{}", tmpl.max_hangar),
+       std::format("{}", tmpl.base_armor), std::format("{}", tmpl.max_destruct),
+       std::format("{}", tmpl.max_guns), std::format("{}", tmpl.primary_power),
+       std::format("{}", tmpl.secondary_power),
+       std::format("{}", tmpl.max_fuel), std::format("{}", tmpl.max_crew),
+       std::format("{}", tmpl.base_speed),
+       std::format("{:.0f}", tmpl.base_tech),
+       std::format("{}", Shipcost(i, race))});
 }
 }  // namespace
 
@@ -100,9 +98,10 @@ bool build(const command_t& argv, GameObj& g) {
       const auto& race = *g.race;
       auto sorted_ships = get_sorted_ship_types();
       for (ShipType i : sorted_ships) {
-        if ((!Shipdata[i][ABIL_GOD]) || race.God) {
+        const auto& tmpl = ship_template(i);
+        if ((!tmpl.is_god_only) || race.God) {
           if (race.pods || (i != ShipType::STYPE_POD)) {
-            if (Shipdata[i][ABIL_PROGRAMMED]) {
+            if (tmpl.is_programmed) {
               add_ship_spec_row(table, i, race);
             }
           }
@@ -117,7 +116,8 @@ bool build(const command_t& argv, GameObj& g) {
       g.out << "No such ship type.\n";
       return false;
     }
-    if (!Shipdata[*i][ABIL_PROGRAMMED]) {
+    const auto& tmpl = ship_template(*i);
+    if (!tmpl.is_programmed) {
       g.out << "This ship type has not been programmed.\n";
       return false;
     }
@@ -129,25 +129,26 @@ bool build(const command_t& argv, GameObj& g) {
       }
     }
     /* Built where? */
-    if (Shipdata[*i][ABIL_BUILD] & 1) {
+    if (tmpl.can_build_on_planet()) {
       g.out << "\nCan be constructed on planet.";
     }
     n = 0;
     std::string header = "\nCan be built by ";
-    for (j = 0; j < NUMSTYPES; j++)
-      if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) n++;
+    for (j = 0; j < NUMSTYPES; j++) {
+      if (tmpl.can_be_built_by(ship_template(ShipType{j}))) n++;
+    }
     if (n) {
       m = 0;
       g.out << header;
       for (j = 0; j < NUMSTYPES; j++) {
-        if (Shipdata[*i][ABIL_BUILD] & Shipdata[j][ABIL_CONSTRUCT]) {
+        if (tmpl.can_be_built_by(ship_template(ShipType{j}))) {
           m++;
           if (n - m > 1)
-            g.out << std::format("{}, ", Shipltrs[j]);
+            g.out << std::format("{}, ", ship_template(ShipType{j}).letter);
           else if (n - m > 0)
-            g.out << std::format("{} and ", Shipltrs[j]);
+            g.out << std::format("{} and ", ship_template(ShipType{j}).letter);
           else
-            g.out << std::format("{} ", Shipltrs[j]);
+            g.out << std::format("{} ", ship_template(ShipType{j}).letter);
         }
       }
       g.out << "type ships.\n";
@@ -192,7 +193,7 @@ bool build(const command_t& argv, GameObj& g) {
             g.out << buildresult.error();
             return false;
           }
-          if (!(Shipdata[*what][ABIL_BUILD] & 1) && !race.God) {
+          if (!ship_template(*what).can_build_on_planet() && !race.God) {
             g.out << "This ship cannot be built by a planet.\n";
             return false;
           }
@@ -328,7 +329,7 @@ bool build(const command_t& argv, GameObj& g) {
           }
           if ((tech = builder->type() == ShipType::OTYPE_FACTORY
                           ? complexity(*builder)
-                          : Shipdata[*what][ABIL_TECH]) > race.tech &&
+                          : ship_template(*what).base_tech) > race.tech &&
               !race.God) {
             g.out << std::format(
                 "You are not advanced enough to build this ship.\n"

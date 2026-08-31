@@ -51,11 +51,24 @@ Simulates planetary thermal dynamics:
 - Applies natural seasonal and atmospheric temperature drift ($\pm 5^{\circ}\text{C}$) via `Planet::update_climate()`.
 
 ### 4. Sector Production and Population Spread (`process_planet_production`)
-Simulates economic output and population dynamics across every sector on the planet:
-- **Supernova Sterilization**: If the host star is undergoing a supernova, radiation damages crops, discovering mineral veins or sterilizing sectors.
-- **Production Engine**: Sectors generate resources, fuel, destructive potential, and rare crystals based on sector type, efficiency, and race traits.
-- **Population Growth & Starvation**: Populated sectors grow organically according to race birthrates. Overcrowded sectors exceeding maximum support capacity suffer starvation.
-- **8-Way Population Migration**: Excess population in crowded sectors spreads outwards into compatible, adjacent unowned sectors.
+Simulates economic output, demographic changes, and territorial migration across every sector on the planet:
+- **Supernova Sterilization**: If the host star is undergoing a supernova, intense radiation damages agricultural fertility, exposing deep mineral veins or sterilizing sectors entirely into `SEC_WASTED`.
+- **Resource & Fuel Extraction (`process_resource_production`)**: Populated sectors extract mineral deposits and petroleum. Gas sectors (`SEC_GAS`) produce double fuel yield ($2\times$). Highly mobilized sectors divert output into destructive ammo stockpiles (`prod_destruct`).
+- **Demographic Growth & Starvation Dynamics (`calculate_population_change`)**:
+  - *Maximum Support Capacity*: $\text{maxsup} = \text{std::lround}((\text{eff} + 1) \times \text{fert} \times 0.01 \times \text{compat} \times (100 - \text{toxic}) / 100)$.
+  - *Sterility Threshold*: If sector population drops below the species' reproductive minimum ($\text{popn} < \text{race.number\_sexes}$), biological reproduction stalls completely ($\Delta \text{popn} = 0$).
+  - *Breeding Growth* ($\text{popn} < \text{maxsup}$): $\Delta \text{popn} = \text{round\_rand}((\text{maxsup} - \text{popn}) \times \text{race.birthrate})$.
+  - *Overpopulation Starvation* ($\text{popn} > \text{maxsup}$): Severe famine inflicts casualties within the range $[0, \min(2 \times (\text{popn} - \text{maxsup}), \text{popn})]$.
+- **Spontaneous Colonist Migration (`spread` & `calculate_migrating_colonists`)**:
+  - *Trigger Condition*: When sector population exceeds $10\%$ of maximum capacity ($\text{popn} > 0.1 \times \text{maxsup}$), excess colonists look to expand outwards.
+  - *Spatial Adjacency*: Explores valid 8-way neighbors, honoring **toroidal $X$ wrapping** across the planetary meridian while respecting impassable **polar $Y$ boundaries**.
+  - *Target Eligibility*: Colonists migrate only into *unowned* sectors (`owner == 0`) with positive environmental affinity ($\text{race.likes}[\text{target.condition}] > 0$).
+  - *Migration Volume*:
+    $$\Delta \text{migrants} = \text{round\_rand}\left(\text{popn} \times \frac{\text{adventurism}}{50} \times \frac{\text{compat}}{100} \times \frac{\text{race.likes}[\text{target.condition}]}{100}\right)$$
+  - *Territorial Claiming*: Migrants immediately claim the new sector for their empire, updating colonized sector tallies in `TurnStats`.
+- **Industrial Infrastructure & Plating (`update_efficiency`)**:
+  - Unplated sectors improve efficiency with probability $(100 - \text{tax}) \times \text{race.likes}[\text{condition}]$, gaining $\text{round\_rand}(\text{race.metabolism})$ points.
+  - When efficiency reaches $100\%$, the sector automatically converts to **Plated** status (`SEC_PLATED`), maximizing defensive protection and structural stability.
 
 ### 5. Island Exploration (`process_island_exploration`)
 Controls planetary exploration and territorial expansion:

@@ -636,6 +636,7 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
   const planetnum_t planetnum = planet.planet_order();
   const player_t player = race.Playernum;
 
+  const auto& tmpl = ship_template(ShipType::OTYPE_TOXWC);
   ship_struct s2{
       .owner = player,
       .governor = star.governor(player),
@@ -643,20 +644,13 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
       .ypos = star.ypos() + planet.ypos(),
       .mass = 1.0,
       .land_coords = smap.get_random().coords(),
-      .armor = static_cast<unsigned char>(
-          Shipdata[ShipType::OTYPE_TOXWC][ABIL_ARMOR]),
-      .max_crew = static_cast<unsigned short>(
-          Shipdata[ShipType::OTYPE_TOXWC][ABIL_MAXCREW]),
-      .max_resource =
-          static_cast<resource_t>(Shipdata[ShipType::OTYPE_TOXWC][ABIL_CARGO]),
-      .max_destruct = static_cast<unsigned short>(
-          Shipdata[ShipType::OTYPE_TOXWC][ABIL_DESTCAP]),
-      .max_fuel = static_cast<unsigned short>(
-          Shipdata[ShipType::OTYPE_TOXWC][ABIL_FUELCAP]),
-      .max_speed =
-          static_cast<speed_t>(Shipdata[ShipType::OTYPE_TOXWC][ABIL_SPEED]),
-      .build_cost =
-          static_cast<unsigned short>(Shipcost(ShipType::OTYPE_TOXWC, race)),
+      .armor = tmpl.base_armor,
+      .max_crew = tmpl.max_crew,
+      .max_resource = tmpl.max_cargo,
+      .max_destruct = tmpl.max_destruct,
+      .max_fuel = tmpl.max_fuel,
+      .max_speed = tmpl.base_speed,
+      .build_cost = Shipcost(ShipType::OTYPE_TOXWC, race),
       .base_mass = 1.0,
       .special = WasteData{.toxic = static_cast<unsigned char>(t)},
       .storbits = starnum,
@@ -669,9 +663,8 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
       .active = true,
       .alive = true,
       .docked = true,
-      .guns = GTYPE_NONE,
-      .primary = static_cast<weapon_power_t>(
-          Shipdata[ShipType::OTYPE_TOXWC][ABIL_GUNS]),
+      .guns = ActiveBattery::NONE,
+      .primary = tmpl.max_guns,
       .primtype = shipdata_primary(ShipType::OTYPE_TOXWC),
       .sectype = shipdata_secondary(ShipType::OTYPE_TOXWC),
   };

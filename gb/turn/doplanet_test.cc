@@ -540,12 +540,12 @@ void test_execute_berserker_bombardment() {
       .whatdest = ScopeLevel::LEVEL_PLAN,
       .whatorbits = ScopeLevel::LEVEL_PLAN,
       .type = ShipType::OTYPE_BERS,
-      .active = 1,
-      .alive = 1,
-      .bombard = 1,
-      .docked = 0,
-      .on = 1,
-      .guns = 1,
+      .active = true,
+      .alive = true,
+      .bombard = true,
+      .docked = false,
+      .on = true,
+      .guns = ActiveBattery::PRIMARY,
       .primtype = GTYPE_HEAVY,
   };
 
@@ -553,9 +553,9 @@ void test_execute_berserker_bombardment() {
   Ship& ship = *ship_handle;
 
   // 1. Landed ship fails preconditions
-  ship.docked() = 1;
+  ship.docked() = true;
   test::expect_false(execute_berserker_bombardment(em, ship, planet));
-  ship.docked() = 0;
+  ship.docked() = false;
 
   // 2. Successful bombardment decrements VN_hitlist
   test::expect_true(execute_berserker_bombardment(em, ship, planet));

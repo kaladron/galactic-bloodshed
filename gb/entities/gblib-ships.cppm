@@ -21,8 +21,14 @@ export enum guntype_t {
   GTYPE_HEAVY
 };
 
-export inline constexpr int PRIMARY = 1;
-export inline constexpr int SECONDARY = 2;
+export enum class ActiveBattery : std::uint8_t {
+  NONE = 0,
+  PRIMARY = 1,
+  SECONDARY = 2,
+};
+
+export inline constexpr ActiveBattery PRIMARY = ActiveBattery::PRIMARY;
+export inline constexpr ActiveBattery SECONDARY = ActiveBattery::SECONDARY;
 
 export enum ShipType : int {
   STYPE_POD,
@@ -232,24 +238,24 @@ export struct ship_struct {
   armor_t armor{0};     ///< Armor protection rating
   ship_size_t size{0};  ///< Ship hull volume / physical size
 
-  population_t max_crew{0};        ///< Maximum crew capacity
-  resource_t max_resource{0};      ///< Maximum resource cargo capacity
-  unsigned short max_destruct{0};  ///< Maximum destructive charge capacity
-  unsigned short max_fuel{0};      ///< Maximum fuel tank capacity
-  speed_t max_speed{0};            ///< Maximum engine impulse speed
+  population_t max_crew{0};    ///< Maximum crew capacity
+  resource_t max_resource{0};  ///< Maximum resource cargo capacity
+  resource_t max_destruct{0};  ///< Maximum destructive charge capacity
+  fuel_t max_fuel{0.0};        ///< Maximum fuel tank capacity
+  speed_t max_speed{0};        ///< Maximum engine impulse speed
   ShipType build_type{
-      ShipType::STYPE_POD};      ///< Ship template type when constructed
-  unsigned short build_cost{0};  ///< Construction cost in resources
+      ShipType::STYPE_POD};  ///< Ship template type when constructed
+  money_t build_cost{0};     ///< Construction cost in resources
 
   double base_mass{0.0};   ///< Empty hull baseline mass
   double tech{0.0};        ///< Construction technology level
   double complexity{0.0};  ///< Hull structural complexity rating
 
-  unsigned short destruct{0};  ///< Current carried destructive charges
-  resource_t resource{0};      ///< Current carried resource cargo
-  population_t popn{0};        ///< Current carried colonists / crew
-  population_t troops{0};      ///< Current carried military troops
-  unsigned short crystals{0};  ///< Current carried warp crystal charge
+  resource_t destruct{0};     ///< Current carried destructive charges
+  resource_t resource{0};     ///< Current carried resource cargo
+  population_t popn{0};       ///< Current carried colonists / crew
+  population_t troops{0};     ///< Current carried military troops
+  std::uint32_t crystals{0};  ///< Current carried warp crystal charge
 
   SpecialData special;  ///< Ship-type-specific payload / mode data
 
@@ -296,12 +302,12 @@ export struct ship_struct {
   bool examined{false};  ///< Ship surveyed / examined
   bool on{false};        ///< Factory / power generator online
 
-  bool merchant{false};            ///< Commercial trade vessel status
-  gun_count_t guns{0};             ///< Active gun battery configuration
-  weapon_power_t primary{0};       ///< Primary battery weapon payload
-  guntype_t primtype{GTYPE_NONE};  ///< Primary gun caliber type
-  weapon_power_t secondary{0};     ///< Secondary battery weapon payload
-  guntype_t sectype{GTYPE_NONE};   ///< Secondary gun caliber type
+  bool merchant{false};                     ///< Commercial trade vessel status
+  ActiveBattery guns{ActiveBattery::NONE};  ///< Active gun battery mode
+  weapon_power_t primary{0};                ///< Primary battery weapon payload
+  guntype_t primtype{GTYPE_NONE};           ///< Primary gun caliber type
+  weapon_power_t secondary{0};    ///< Secondary battery weapon payload
+  guntype_t sectype{GTYPE_NONE};  ///< Secondary gun caliber type
 
   hangar_t hanger{0};      ///< Current docked fighters / payload count
   hangar_t max_hanger{0};  ///< Maximum hangar capacity
@@ -2251,17 +2257,17 @@ public:
     return data_.max_resource;
   }
 
-  [[nodiscard]] unsigned short max_destruct() const {
+  [[nodiscard]] resource_t max_destruct() const {
     return data_.max_destruct;
   }
-  unsigned short& max_destruct() {
+  resource_t& max_destruct() {
     return data_.max_destruct;
   }
 
-  [[nodiscard]] unsigned short max_fuel() const {
+  [[nodiscard]] fuel_t max_fuel() const {
     return data_.max_fuel;
   }
-  unsigned short& max_fuel() {
+  fuel_t& max_fuel() {
     return data_.max_fuel;
   }
 
@@ -2280,10 +2286,10 @@ public:
     return data_.build_type;
   }
 
-  [[nodiscard]] unsigned short build_cost() const {
+  [[nodiscard]] money_t build_cost() const {
     return data_.build_cost;
   }
-  unsigned short& build_cost() {
+  money_t& build_cost() {
     return data_.build_cost;
   }
 
@@ -2309,10 +2315,10 @@ public:
   }
 
   // Cargo
-  [[nodiscard]] unsigned short destruct() const {
+  [[nodiscard]] resource_t destruct() const {
     return data_.destruct;
   }
-  unsigned short& destruct() {
+  resource_t& destruct() {
     return data_.destruct;
   }
 
@@ -2337,10 +2343,10 @@ public:
     return data_.troops;
   }
 
-  [[nodiscard]] unsigned short crystals() const {
+  [[nodiscard]] std::uint32_t crystals() const {
     return data_.crystals;
   }
-  unsigned short& crystals() {
+  std::uint32_t& crystals() {
     return data_.crystals;
   }
 
@@ -2640,10 +2646,16 @@ public:
     return data_.merchant;
   }
 
-  [[nodiscard]] gun_count_t guns() const {
+  [[nodiscard]] ActiveBattery guns() const {
     return data_.guns;
   }
-  gun_count_t& guns() {
+  ActiveBattery& guns() {
+    return data_.guns;
+  }
+  [[nodiscard]] ActiveBattery active_battery() const {
+    return data_.guns;
+  }
+  ActiveBattery& active_battery() {
     return data_.guns;
   }
 
@@ -2760,9 +2772,10 @@ public:
 
   /// Active weapon battery strength based on selected gun mode.
   [[nodiscard]] weapon_power_t active_guns() const noexcept {
-    return (data_.guns == GTYPE_NONE)
+    return (data_.guns == ActiveBattery::NONE)
                ? 0
-               : (data_.guns == PRIMARY ? data_.primary : data_.secondary);
+               : (data_.guns == ActiveBattery::PRIMARY ? data_.primary
+                                                       : data_.secondary);
   }
 
   /// Structural body size excluding maximum hangar bay space.
@@ -2803,21 +2816,21 @@ public:
   /// Maximum cargo resource capacity including factory template overrides.
   [[nodiscard]] resource_t max_resource_capacity() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<resource_t>(Shipdata[data_.type][ABIL_CARGO])
+               ? ship_template(data_.type).max_cargo
                : data_.max_resource;
   }
 
   /// Maximum fuel tank capacity including factory template overrides.
-  [[nodiscard]] unsigned short max_fuel_capacity() const noexcept {
+  [[nodiscard]] fuel_t max_fuel_capacity() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<unsigned short>(Shipdata[data_.type][ABIL_FUELCAP])
+               ? ship_template(data_.type).max_fuel
                : data_.max_fuel;
   }
 
   /// Maximum ammo / ordnance capacity including factory template overrides.
-  [[nodiscard]] unsigned short max_destruct_capacity() const noexcept {
+  [[nodiscard]] resource_t max_destruct_capacity() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<unsigned short>(Shipdata[data_.type][ABIL_DESTCAP])
+               ? ship_template(data_.type).max_destruct
                : data_.max_destruct;
   }
 
@@ -2825,7 +2838,7 @@ public:
   /// overrides.
   [[nodiscard]] speed_t max_speed_capacity() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<speed_t>(Shipdata[data_.type][ABIL_SPEED])
+               ? ship_template(data_.type).base_speed
                : data_.max_speed;
   }
 

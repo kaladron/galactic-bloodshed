@@ -78,7 +78,7 @@ int main() {
   b_ship.alive = true;
   b_ship.on = true;
   b_ship.type = ShipType::OTYPE_BERS;
-  b_ship.guns = 1;
+  b_ship.guns = ActiveBattery::PRIMARY;
   b_ship.primtype = GTYPE_HEAVY;
   b_ship.destruct = 100;
   b_ship.whatorbits = ScopeLevel::LEVEL_PLAN;

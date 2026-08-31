@@ -361,24 +361,24 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
 }
 
 void Getship(Ship* s, ShipType i, const Race& r) {
+  const auto& tmpl = ship_template(i);
   ship_struct data{
-      .armor = static_cast<armor_t>(Shipdata[i][ABIL_ARMOR]),
-      .max_crew = static_cast<population_t>(Shipdata[i][ABIL_MAXCREW]),
-      .max_resource = static_cast<resource_t>(Shipdata[i][ABIL_CARGO]),
-      .max_destruct = static_cast<unsigned short>(Shipdata[i][ABIL_DESTCAP]),
-      .max_fuel = static_cast<unsigned short>(Shipdata[i][ABIL_FUELCAP]),
-      .max_speed = static_cast<speed_t>(Shipdata[i][ABIL_SPEED]),
+      .armor = tmpl.base_armor,
+      .max_crew = tmpl.max_crew,
+      .max_resource = tmpl.max_cargo,
+      .max_destruct = tmpl.max_destruct,
+      .max_fuel = tmpl.max_fuel,
+      .max_speed = tmpl.base_speed,
       .build_type = i,
-      .mount = r.God && Shipdata[i][ABIL_MOUNT] != 0,
-      .hyper_drive = {.has = r.God && Shipdata[i][ABIL_JUMP] != 0},
-      .laser = r.God && Shipdata[i][ABIL_LASER] != 0,
+      .mount = r.God && tmpl.can_mount,
+      .hyper_drive = {.has = r.God && tmpl.can_hyperjump},
+      .laser = r.God && tmpl.max_lasers != 0,
       .type = i,
-      .guns = static_cast<gun_count_t>(Shipdata[i][ABIL_PRIMARY] ? PRIMARY
-                                                                 : GTYPE_NONE),
-      .primary = static_cast<weapon_power_t>(Shipdata[i][ABIL_GUNS]),
+      .guns = tmpl.primary_power ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
+      .primary = tmpl.max_guns,
       .primtype = shipdata_primary(i),
       .sectype = shipdata_secondary(i),
-      .max_hanger = static_cast<hangar_t>(Shipdata[i][ABIL_HANGER]),
+      .max_hanger = tmpl.max_hangar,
   };
   if (i == ShipType::OTYPE_VN || i == ShipType::OTYPE_BERS) {
     data.special = MindData{.progenitor = r.Playernum};
@@ -407,7 +407,7 @@ Ship Getfactship(const Ship& b) {
       .cew_range = b.cew_range(),
       .laser = b.laser(),
       .type = b.build_type(),
-      .guns = static_cast<unsigned char>(b.primary() ? PRIMARY : GTYPE_NONE),
+      .guns = b.primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
       .primary = b.primary(),
       .primtype = b.primtype(),
       .max_hanger = b.max_hanger(),

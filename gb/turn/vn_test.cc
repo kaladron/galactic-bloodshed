@@ -219,7 +219,7 @@ int main() {
     test::expect_eq(vn->deststar(), starnum_t{1});
     test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_PLAN);
     test::expect_true(vn->is_busy());
-    test::expect_eq(vn->speed(), Shipdata[ShipType::OTYPE_VN][ABIL_SPEED]);
+    test::expect_eq(vn->speed(), ship_template(ShipType::OTYPE_VN).base_speed);
 
     // Case B: Star 1 is inhabited by Player 1 -> routes to Star 2 (second
     // closest)
@@ -361,14 +361,14 @@ int main() {
     auto* vn = vn_ship->as<VonNeumannShip>();
     test::expect_true(vn != nullptr);
 
+    const auto vn_cost = ship_template(ShipType::OTYPE_VN).build_cost;
     auto result = steal_planetary_resources(em, *vn);
     test::expect_eq(result.victim, player_t{2});
-    test::expect_eq(result.amount, Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
-    test::expect_eq(vn->resource(), Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+    test::expect_eq(result.amount, vn_cost);
+    test::expect_eq(vn->resource(), vn_cost);
 
     const auto& planet_after = *em.peek_planet(0, 0);
-    test::expect_eq(planet_after.info(player_t{2}).resource,
-                    1000 - Shipdata[ShipType::OTYPE_VN][ABIL_COST]);
+    test::expect_eq(planet_after.info(player_t{2}).resource, 1000 - vn_cost);
 
     std::println(
         std::cout,
@@ -421,7 +421,7 @@ int main() {
     auto* parent = parent_ship->as<VonNeumannShip>();
     test::expect_true(parent != nullptr);
 
-    const int cost = Shipdata[ShipType::OTYPE_VN][ABIL_COST];
+    const auto cost = ship_template(ShipType::OTYPE_VN).build_cost;
     shipnum_t child_num = construct_replicated_vn(em, *parent, planet);
     test::expect_true(child_num != 0);
     test::expect_eq(planet.ships(), child_num);
@@ -479,7 +479,7 @@ int main() {
     TurnStats bers_stats{};
     bers_stats.VN_brain.most_mad = player_t{3};
 
-    const int cost = Shipdata[ShipType::OTYPE_BERS][ABIL_COST];
+    const auto cost = ship_template(ShipType::OTYPE_BERS).build_cost;
     shipnum_t bers_num =
         construct_replicated_berserker(em, *parent, planet, bers_stats);
     test::expect_true(bers_num != 0);
@@ -517,7 +517,7 @@ int main() {
 
     Planet planet(PlanetType::EARTH, Coordinates{10, 10});
 
-    const int vn_cost = Shipdata[ShipType::OTYPE_VN][ABIL_COST];
+    const auto vn_cost = ship_template(ShipType::OTYPE_VN).build_cost;
     ship_struct vn_data{};
     vn_data.number = 403;
     vn_data.owner = 1;
@@ -535,6 +535,21 @@ int main() {
     int count = replicate_machines(em, *parent, planet, calm_stats);
     test::expect_eq(count, 2);
     test::expect_eq(parent->resource(), 0);
+
+    // Test Berserker replication when total_mad > 100
+    const auto bers_cost = ship_template(ShipType::OTYPE_BERS).build_cost;
+    parent->resource() = bers_cost;
+    TurnStats enraged_stats{};
+    enraged_stats.VN_brain.total_mad = 200;  // High anger triggers Berserkers
+    enraged_stats.VN_brain.most_mad = player_t{4};
+
+    int bers_count = replicate_machines(em, *parent, planet, enraged_stats);
+    test::expect_eq(bers_count, 1);
+    test::expect_eq(parent->resource(), 0);
+    const auto* newly_replicated = em.peek_ship(planet.ships());
+    test::expect_ne(newly_replicated, nullptr);
+    test::expect_true(newly_replicated->type() == ShipType::OTYPE_BERS ||
+                      newly_replicated->type() == ShipType::OTYPE_VN);
 
     std::println(std::cout,
                  "  ✓ replicate_machines constructs full batch of machines");

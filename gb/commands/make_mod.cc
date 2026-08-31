@@ -51,7 +51,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
           return;
         }
         g.out << "  --- Current Production Specifications ---\n";
-        g.out << std::format("{}\t\t\tArmor:    {:4d}\t\tGuns:",
+        g.out << std::format("{}\t\t\tArmor:    {:4}\t\tGuns:",
                              (dirship.on() ? "Online" : "Offline"),
                              dirship.armor());
         if (Shipdata[dirship.build_type()][ABIL_PRIMARY] &&
@@ -65,7 +65,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
                                caliber_char(dirship.sectype()));
         }
         g.out << "\n";
-        g.out << std::format("Ship:  {:<16.16s}\tCrew:     {:4d}",
+        g.out << std::format("Ship:  {:<16.16s}\tCrew:     {:4}",
                              Shipnames[dirship.build_type()],
                              dirship.max_crew());
         if (Shipdata[dirship.build_type()][ABIL_MOUNT]) {
@@ -74,8 +74,8 @@ bool make_mod(const command_t& argv, GameObj& g) {
         } else {
           g.out << "\n";
         }
-        g.out << std::format("Class: {}\t\tFuel:     {:4d}",
-                             dirship.shipclass(), dirship.max_fuel());
+        g.out << std::format("Class: {}\t\tFuel:     {:4}", dirship.shipclass(),
+                             dirship.max_fuel());
         if (Shipdata[dirship.build_type()][ABIL_JUMP]) {
           g.out << std::format("\t\tHyperdrive: {}\n",
                                (dirship.hyper_drive().has ? "yes" : "no"));
@@ -97,15 +97,14 @@ bool make_mod(const command_t& argv, GameObj& g) {
         } else {
           g.out << "\n";
         }
-        g.out << std::format("Size:  {:<6d}\t\tDestruct: {:4d}", dirship.size(),
+        g.out << std::format("Size:  {:<6}\t\tDestruct: {:4}", dirship.size(),
                              dirship.max_destruct());
         if (Shipdata[dirship.build_type()][ABIL_CEW] && dirship.cew()) {
-          g.out << std::format("\t\t   Opt Range: {:4d}\n",
-                               dirship.cew_range());
+          g.out << std::format("\t\t   Opt Range: {:4}\n", dirship.cew_range());
         } else {
           g.out << "\n";
         }
-        g.out << std::format("Tech:  {:.1f} ({:.1f})\tSpeed:    {:4d}",
+        g.out << std::format("Tech:  {:.1f} ({:.1f})\tSpeed:    {:4}",
                              dirship.complexity(), race.tech,
                              dirship.max_speed());
         if (Shipdata[dirship.build_type()][ABIL_CEW] && dirship.cew()) {
@@ -144,7 +143,8 @@ bool make_mod(const command_t& argv, GameObj& g) {
 
       dirship.build_type() = *i;
       dirship.armor() = Shipdata[*i][ABIL_ARMOR];
-      dirship.guns() = GTYPE_NONE; /* this keeps track of the factory status! */
+      dirship.guns() =
+          ActiveBattery::NONE; /* this keeps track of the factory status! */
       dirship.primary() = Shipdata[*i][ABIL_GUNS];
       dirship.primtype() = shipdata_primary(*i);
       dirship.primary() = Shipdata[*i][ABIL_GUNS];

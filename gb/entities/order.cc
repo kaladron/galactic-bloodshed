@@ -353,7 +353,7 @@ void order_salvo(GameObj& g, const command_t& argv, Ship& ship) {
       j = ship.primary();
     else if (ship.guns() == SECONDARY && j > ship.secondary())
       j = ship.secondary();
-    else if (ship.guns() == GTYPE_NONE)
+    else if (ship.guns() == ActiveBattery::NONE)
       j = 0;
 
     ship.retaliate() = j;

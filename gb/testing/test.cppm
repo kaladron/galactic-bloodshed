@@ -528,8 +528,9 @@ public:
   TestShipBuilder& landed_on(starnum_t snum, planetnum_t pnum,
                              Coordinates coords);
   TestShipBuilder& docked_to(shipnum_t dest_ship, starnum_t snum);
-  TestShipBuilder& with_guns(guntype_t primtype, unsigned long count,
-                             unsigned char guns_flag = PRIMARY);
+  TestShipBuilder&
+  with_guns(guntype_t primtype, weapon_power_t count,
+            ActiveBattery active_battery = ActiveBattery::PRIMARY);
   TestShipBuilder& with_retaliate(weapon_power_t retaliate);
   TestShipBuilder& with_cew(weapon_power_t cew_power,
                             unsigned short range = 1000);
@@ -537,7 +538,7 @@ public:
   TestShipBuilder& with_speed(speed_t speed);
   TestShipBuilder& with_fuel(double fuel);
   TestShipBuilder& with_resource(resource_t res);
-  TestShipBuilder& with_destruct(unsigned short destruct);
+  TestShipBuilder& with_destruct(resource_t destruct);
   TestShipBuilder& with_damage(damage_t damage);
   TestShipBuilder& with_armor(armor_t armor);
 

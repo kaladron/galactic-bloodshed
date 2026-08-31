@@ -63,7 +63,7 @@ int main() {
   test_data.who_killed = player_t{4};
   test_data.hanger = 10;
   test_data.max_hanger = 20;
-  test_data.guns = 1;     // Light guns
+  test_data.guns = ActiveBattery::PRIMARY;
   test_data.primary = 0;  // No primary weapon
   test_data.primtype = GTYPE_NONE;
   test_data.secondary = 0;  // No secondary weapon
@@ -124,7 +124,7 @@ int main() {
   test::expect_eq(retrieved->hanger(), 10U);
   test::expect_eq(retrieved->max_hanger(), 20U);
   test::expect_eq(retrieved->who_killed(), player_t{4});
-  test::expect_eq(retrieved->guns(), 1U);
+  test::expect_eq(retrieved->guns(), ActiveBattery::PRIMARY);
   test::expect_false(retrieved->mode());
   test::expect_false(retrieved->bombard());
   test::expect_false(retrieved->mounted());

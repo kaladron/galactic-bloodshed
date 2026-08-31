@@ -32,24 +32,24 @@ TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
   ship_.tech = 100.0;
   ship_.name = Shipnames[type];
 
-  // Canonical baseline initialization from Shipdata
-  ship_.armor = static_cast<unsigned char>(Shipdata[type][ABIL_ARMOR]);
-  ship_.max_crew = static_cast<unsigned short>(Shipdata[type][ABIL_MAXCREW]);
-  ship_.max_resource = static_cast<resource_t>(Shipdata[type][ABIL_CARGO]);
-  ship_.max_destruct =
-      static_cast<unsigned short>(Shipdata[type][ABIL_DESTCAP]);
-  ship_.max_fuel = static_cast<unsigned short>(Shipdata[type][ABIL_FUELCAP]);
-  ship_.max_speed = static_cast<unsigned short>(Shipdata[type][ABIL_SPEED]);
-  ship_.build_cost = static_cast<unsigned short>(Shipdata[type][ABIL_COST]);
-  ship_.fuel = static_cast<double>(ship_.max_fuel);
-  ship_.destruct = static_cast<unsigned short>(ship_.max_destruct);
+  // Canonical baseline initialization from ship_template
+  const auto& tmpl = ship_template(type);
+  ship_.armor = tmpl.base_armor;
+  ship_.max_crew = tmpl.max_crew;
+  ship_.max_resource = tmpl.max_cargo;
+  ship_.max_destruct = tmpl.max_destruct;
+  ship_.max_fuel = tmpl.max_fuel;
+  ship_.max_speed = tmpl.base_speed;
+  ship_.build_cost = tmpl.build_cost;
+  ship_.fuel = ship_.max_fuel;
+  ship_.destruct = ship_.max_destruct;
   ship_.hanger = 0;
-  ship_.max_hanger = static_cast<hangar_t>(Shipdata[type][ABIL_HANGER]);
-  ship_.primtype = static_cast<guntype_t>(Shipdata[type][ABIL_PRIMARY]);
-  ship_.sectype = static_cast<guntype_t>(Shipdata[type][ABIL_SECONDARY]);
-  ship_.guns = static_cast<gun_count_t>(
-      Shipdata[type][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE);
-  ship_.primary = static_cast<weapon_power_t>(Shipdata[type][ABIL_GUNS]);
+  ship_.max_hanger = tmpl.max_hangar;
+  ship_.primtype = shipdata_primary(type);
+  ship_.sectype = shipdata_secondary(type);
+  ship_.guns =
+      tmpl.primary_power ? ActiveBattery::PRIMARY : ActiveBattery::NONE;
+  ship_.primary = tmpl.max_guns;
   ship_.retaliate = ship_.primary;
 
   // Calculate baseline size and mass using canonical ship functions
@@ -129,12 +129,12 @@ TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
 }
 
 TestShipBuilder& TestShipBuilder::with_guns(guntype_t primtype,
-                                            unsigned long count,
-                                            unsigned char guns_flag) {
-  ship_.guns = guns_flag;
+                                            weapon_power_t count,
+                                            ActiveBattery active_battery) {
+  ship_.guns = active_battery;
   ship_.primtype = primtype;
-  ship_.primary = static_cast<weapon_power_t>(count);
-  ship_.retaliate = static_cast<weapon_power_t>(count);
+  ship_.primary = count;
+  ship_.retaliate = count;
   return *this;
 }
 
@@ -174,7 +174,7 @@ TestShipBuilder& TestShipBuilder::with_resource(resource_t res) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_destruct(unsigned short destruct) {
+TestShipBuilder& TestShipBuilder::with_destruct(resource_t destruct) {
   ship_.destruct = destruct;
   return *this;
 }

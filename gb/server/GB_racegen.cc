@@ -181,27 +181,28 @@ found_planet:
 
     ss.tech = 100.0;
 
+    const auto& gov_tmpl = ship_template(ShipType::OTYPE_GOV);
     ss.build_type = ShipType::OTYPE_GOV;
-    ss.armor = Shipdata[ShipType::OTYPE_GOV][ABIL_ARMOR];
+    ss.armor = gov_tmpl.base_armor;
     ss.guns = PRIMARY;
-    ss.primary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
+    ss.primary = gov_tmpl.max_guns;
     ss.primtype = shipdata_primary(ShipType::OTYPE_GOV);
-    ss.secondary = Shipdata[ShipType::OTYPE_GOV][ABIL_GUNS];
+    ss.secondary = gov_tmpl.max_guns;
     ss.sectype = shipdata_secondary(ShipType::OTYPE_GOV);
-    ss.max_crew = Shipdata[ShipType::OTYPE_GOV][ABIL_MAXCREW];
-    ss.max_destruct = Shipdata[ShipType::OTYPE_GOV][ABIL_DESTCAP];
-    ss.max_resource = Shipdata[ShipType::OTYPE_GOV][ABIL_CARGO];
-    ss.max_fuel = Shipdata[ShipType::OTYPE_GOV][ABIL_FUELCAP];
-    ss.max_speed = Shipdata[ShipType::OTYPE_GOV][ABIL_SPEED];
-    ss.build_cost = Shipdata[ShipType::OTYPE_GOV][ABIL_COST];
+    ss.max_crew = gov_tmpl.max_crew;
+    ss.max_destruct = gov_tmpl.max_destruct;
+    ss.max_resource = gov_tmpl.max_cargo;
+    ss.max_fuel = gov_tmpl.max_fuel;
+    ss.max_speed = gov_tmpl.base_speed;
+    ss.build_cost = gov_tmpl.build_cost;
     ss.size = 100;
     ss.base_mass = 100.0;
     ss.shipclass = "Standard";
 
     ss.fuel = 0.0;
-    ss.popn = Shipdata[ss.type][ABIL_MAXCREW];
+    ss.popn = gov_tmpl.max_crew;
     ss.troops = 0;
-    ss.mass = ss.base_mass + Shipdata[ss.type][ABIL_MAXCREW] * race.mass;
+    ss.mass = ss.base_mass + gov_tmpl.max_crew * race.mass;
     ss.destruct = ss.resource = 0;
 
     ss.alive = 1;

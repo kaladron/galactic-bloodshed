@@ -146,7 +146,7 @@ void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
     ship.whatdest() = ScopeLevel::LEVEL_STAR;
     ship.set_busy(false);
   }
-  ship.speed() = Shipdata[ShipType::OTYPE_VN][ABIL_SPEED];
+  ship.speed() = ship_template(ShipType::OTYPE_VN).base_speed;
 }
 
 namespace {
@@ -193,9 +193,8 @@ StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
     auto victim = select_victim_to_steal_from(planet_mut, race_order);
     if (!victim) return;
     f = *victim;
-    prod = std::min(
-        planet_mut.info(f).resource,
-        static_cast<resource_t>(Shipdata[ShipType::OTYPE_VN][ABIL_COST]));
+    prod = std::min(planet_mut.info(f).resource,
+                    ship_template(ShipType::OTYPE_VN).build_cost);
     planet_mut.info(f).resource -= prod;
   });
 
@@ -203,12 +202,12 @@ StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
 
   std::string buf;
   if (ship.type() == ShipType::OTYPE_VN) {
-    rcv_resource(ship, static_cast<int>(prod));
+    rcv_resource(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_VN], ship.number(),
                       prin_ship_orbits(em, ship));
   } else if (ship.type() == ShipType::OTYPE_BERS) {
-    rcv_destruct(ship, static_cast<int>(prod));
+    rcv_destruct(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, Shipltrs[ShipType::OTYPE_BERS], ship.number(),
                       prin_ship_orbits(em, ship));
@@ -236,11 +235,11 @@ resource_t mine_sector(AutonomousShip& ship, Sector& sector) {
   const resource_t prod = (newres == oldres) ? 1 : (oldres - newres);
   sector.set_resource(oldres - prod);
   if (ship.type() == ShipType::OTYPE_VN) {
-    rcv_resource(ship, static_cast<int>(prod));
+    rcv_resource(ship, prod);
   } else if (ship.type() == ShipType::OTYPE_BERS) {
-    rcv_destruct(ship, static_cast<int>(5 * prod));
+    rcv_destruct(ship, 5 * prod);
   }
-  rcv_fuel(ship, static_cast<double>(prod));
+  rcv_fuel(ship, prod);
   return prod;
 }
 
@@ -268,7 +267,7 @@ bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
   if (ship.is_busy()) {
     return false;
   }
-  if (ship.fuel() < static_cast<double>(ship.max_fuel_capacity())) {
+  if (ship.fuel() < ship.max_fuel_capacity()) {
     return false;
   }
 
@@ -339,8 +338,8 @@ std::string generate_vn_binary_name() {
 /// \return Ship number of the newly constructed machine.
 shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
                                   Planet& planet) {
-  const int cost = Shipdata[ShipType::OTYPE_VN][ABIL_COST];
-  use_resource(parent, cost);
+  const auto& tmpl = ship_template(ShipType::OTYPE_VN);
+  use_resource(parent, tmpl.build_cost);
 
   MindData child_mind{
       .progenitor = parent.mind().progenitor,
@@ -361,14 +360,11 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
       .land_coords = parent.land_coords(),
       .nextship = planet.ships(),
       .armor = parent.armor() + 1,
-      .max_crew = Shipdata[ShipType::OTYPE_VN][ABIL_MAXCREW],
-      .max_resource = Shipdata[ShipType::OTYPE_VN][ABIL_CARGO],
-      .max_destruct = static_cast<unsigned short>(
-          Shipdata[ShipType::OTYPE_VN][ABIL_DESTCAP]),
-      .max_fuel = static_cast<unsigned short>(
-          Shipdata[ShipType::OTYPE_VN][ABIL_FUELCAP]),
-      .max_speed =
-          static_cast<speed_t>(Shipdata[ShipType::OTYPE_VN][ABIL_SPEED]),
+      .max_crew = tmpl.max_crew,
+      .max_resource = tmpl.max_cargo,
+      .max_destruct = tmpl.max_destruct,
+      .max_fuel = tmpl.max_fuel,
+      .max_speed = tmpl.base_speed,
       .tech = parent.tech() + 20.0,
       .special = child_mind,
       .storbits = parent.storbits(),
@@ -378,7 +374,7 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
       .whatdest = parent.whatdest(),
       .whatorbits = ScopeLevel::LEVEL_PLAN,
       .type = ShipType::OTYPE_VN,
-      .speed = static_cast<speed_t>(Shipdata[ShipType::OTYPE_VN][ABIL_SPEED]),
+      .speed = tmpl.base_speed,
       .active = true,
       .alive = true,
       .mode = false,
@@ -410,8 +406,8 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
 shipnum_t construct_replicated_berserker(EntityManager& em,
                                          AutonomousShip& parent, Planet& planet,
                                          const TurnStats& stats) {
-  const int cost = Shipdata[ShipType::OTYPE_BERS][ABIL_COST];
-  use_resource(parent, cost);
+  const auto& tmpl = ship_template(ShipType::OTYPE_BERS);
+  use_resource(parent, tmpl.build_cost);
 
   MindData bers_mind{
       .progenitor = parent.mind().progenitor,
@@ -431,14 +427,11 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
       .land_coords = parent.land_coords(),
       .nextship = planet.ships(),
       .armor = parent.armor() + 11,
-      .max_crew = Shipdata[ShipType::OTYPE_BERS][ABIL_MAXCREW],
-      .max_resource = Shipdata[ShipType::OTYPE_BERS][ABIL_CARGO],
-      .max_destruct = static_cast<unsigned short>(
-          Shipdata[ShipType::OTYPE_BERS][ABIL_DESTCAP]),
-      .max_fuel = static_cast<unsigned short>(
-          Shipdata[ShipType::OTYPE_BERS][ABIL_FUELCAP]),
-      .max_speed =
-          static_cast<speed_t>(Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED]),
+      .max_crew = tmpl.max_crew,
+      .max_resource = tmpl.max_cargo,
+      .max_destruct = tmpl.max_destruct,
+      .max_fuel = tmpl.max_fuel,
+      .max_speed = tmpl.base_speed,
       .tech = parent.tech() + 100.0,
       .destruct = 500,
       .special = bers_mind,
@@ -452,20 +445,17 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
       .pnumorbits = parent.pnumorbits(),
       .whatdest = parent.whatdest(),
       .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .retaliate = static_cast<weapon_power_t>(
-          Shipdata[ShipType::OTYPE_BERS][ABIL_GUNS]),
+      .retaliate = tmpl.max_guns,
       .type = ShipType::OTYPE_BERS,
-      .speed = static_cast<speed_t>(Shipdata[ShipType::OTYPE_BERS][ABIL_SPEED]),
+      .speed = tmpl.base_speed,
       .active = true,
       .alive = true,
       .mode = false,
       .bombard = true,
       .mounted = true,
       .docked = true,
-      .guns = static_cast<gun_count_t>(
-          Shipdata[ShipType::OTYPE_BERS][ABIL_PRIMARY] ? PRIMARY : GTYPE_NONE),
-      .primary = static_cast<weapon_power_t>(
-          Shipdata[ShipType::OTYPE_BERS][ABIL_GUNS]),
+      .guns = tmpl.primary_power ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
+      .primary = tmpl.max_guns,
       .primtype = shipdata_primary(ShipType::OTYPE_BERS),
       .secondary = 0,
       .sectype = shipdata_secondary(ShipType::OTYPE_BERS),
@@ -499,12 +489,13 @@ int replicate_machines(EntityManager& em, AutonomousShip& parent,
   const ShipType shipbuild = (stats.VN_brain.total_mad > 100 && bool_rand())
                                  ? ShipType::OTYPE_BERS
                                  : ShipType::OTYPE_VN;
-  const int cost = Shipdata[shipbuild][ABIL_COST];
+  const auto& tmpl = ship_template(shipbuild);
+  const resource_t cost = tmpl.build_cost;
   if (cost <= 0 || parent.resource() < cost) {
     return 0;
   }
 
-  const int count = static_cast<int>(parent.resource() / cost);
+  const auto count = parent.resource() / cost;
   for (int i = 0; i < count; ++i) {
     if (shipbuild == ShipType::OTYPE_BERS) {
       construct_replicated_berserker(em, parent, planet, stats);
@@ -513,7 +504,7 @@ int replicate_machines(EntityManager& em, AutonomousShip& parent,
     }
     parent.mind().busy = bool_rand();
   }
-  return count;
+  return static_cast<int>(count);
 }
 
 /// \brief Attempts to land an orbiting autonomous machine onto a

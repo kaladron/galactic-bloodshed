@@ -258,6 +258,7 @@ During turn updates, active ships report their operational readiness to Imperial
 ---
 
 ## See Also
+- [Ship Classes and Construction Catalog](ship_types.md)
 - [Stellar Mechanics and Star Systems](stars.md)
 - [Planetary Mechanics and Colonization](planets.md)
 - [Planetary Simulation Engine](planetary_simulation.md)

@@ -637,6 +637,49 @@ void test_spread_polar_boundary() {
   }
 }
 
+void test_calculate_population_change() {
+  Race race = createTestRace(player_t{1});
+  race.birthrate = 0.1;
+  race.number_sexes = 2;
+
+  // 1. Under-capacity breeding growth: popn = 500, maxsup = 1000 -> diff =
+  // -500. Growth = 50.
+  Sector sector_growing = createTestSector(0, 0, 50, 50, 0, 0, 100, 500, 0, 1);
+  population_t change = calculate_population_change(race, sector_growing, 1000);
+  test::expect_eq(change, 50);
+
+  // 2. Underpopulated below breeding threshold: popn = 1, number_sexes = 2 ->
+  // 0.
+  Sector sector_sterile = createTestSector(0, 0, 50, 50, 0, 0, 100, 1, 0, 1);
+  change = calculate_population_change(race, sector_sterile, 1000);
+  test::expect_eq(change, 0);
+
+  // 3. Equilibrium: popn == maxsup -> 0.
+  Sector sector_stable = createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1);
+  change = calculate_population_change(race, sector_stable, 1000);
+  test::expect_eq(change, 0);
+
+  // 4. Zero population -> 0.
+  Sector sector_empty = createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 0);
+  change = calculate_population_change(race, sector_empty, 1000);
+  test::expect_eq(change, 0);
+
+  // 5. Overpopulated starvation die-off: popn = 1200, maxsup = 1000 -> diff =
+  // 200. Die-off must be non-positive and within [-400, 0].
+  Sector sector_overpop = createTestSector(0, 0, 50, 50, 0, 0, 100, 1200, 0, 1);
+  change = calculate_population_change(race, sector_overpop, 1000);
+  test::expect_le(change, 0);
+  test::expect_ge(change, -400);
+
+  // 6. Massive overpopulation arithmetic saturation: diff exceeds int64/2
+  // without overflow.
+  Sector sector_massive =
+      createTestSector(0, 0, 50, 50, 0, 0, 100, 1000000000L, 0, 1);
+  change = calculate_population_change(race, sector_massive, 100);
+  test::expect_le(change, 0);
+  test::expect_ge(change, -1000000000L);
+}
+
 }  // namespace
 
 int main() {
@@ -696,6 +739,10 @@ int main() {
 
   std::println(std::cout, "  Testing polar boundary adjacency... ");
   test_spread_polar_boundary();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing calculate population change... ");
+  test_calculate_population_change();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All dosector tests passed!");

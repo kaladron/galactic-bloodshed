@@ -17,6 +17,8 @@ export population_t attempt_colonist_migration(EntityManager&, const Planet&,
                                                Sector&, Coordinates,
                                                population_t, SectorMap&,
                                                TurnStats&);
+export population_t calculate_population_change(const Race&, const Sector&,
+                                                population_t);
 
 export void produce(EntityManager&, const Star&, const Planet&, Sector&,
                     TurnStats&);

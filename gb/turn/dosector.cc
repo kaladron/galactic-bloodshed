@@ -69,10 +69,44 @@ population_t attempt_colonist_migration(EntityManager& entity_manager,
       });
 }
 
+/// \brief Computes population change for a sector during turn simulation.
+/// \param race Species demographic traits (birthrate, number_sexes).
+/// \param s Planetary sector with current population.
+/// \param maxsup Maximum population supported by the sector given habitability
+/// and toxicity.
+/// \return Population delta: positive for breeding growth, negative for
+/// overpopulation die-off, 0 for stable.
+population_t calculate_population_change(const Race& race, const Sector& s,
+                                         population_t maxsup) {
+  const population_t popn = s.get_popn();
+  const population_t diff = popn - maxsup;
+
+  if (diff < 0) {
+    if (popn >= race.number_sexes) {
+      return round_rand<population_t>(-static_cast<double>(diff) *
+                                      race.birthrate);
+    }
+    return 0;
+  }
+
+  if (diff == 0 || popn <= 0) {
+    return 0;
+  }
+
+  // Overpopulation starvation die-off: range [0, min(2 * diff, popn)]
+  // Saturate 2 * diff to prevent integer overflow
+  const population_t max_die_off =
+      (diff > std::numeric_limits<population_t>::max() / 2)
+          ? popn
+          : std::min(2 * diff, popn);
+  return -long_rand(0, max_die_off);
+}
+
 namespace {
 
-// Process resource production from a sector
-void processResourceProduction(const Race& race, Sector& s, TurnStats& stats) {
+/// \brief Extracts raw resources or fuel from a populated sector.
+void process_resource_production(const Race& race, Sector& s,
+                                 TurnStats& stats) {
   if (!s.get_resource() || !success(s.get_eff())) return;
 
   resource_t prod = static_cast<resource_t>(round_rand(race.metabolism)) *
@@ -92,16 +126,17 @@ void processResourceProduction(const Race& race, Sector& s, TurnStats& stats) {
   stats.prod_fuel[owner] += pfuel;
 }
 
-// Process crystal mining in a sector
-void processCrystalMining(const Race& race, Sector& s, TurnStats& stats) {
+/// \brief Mines crystal deposits from a sector if race has crystal discovery.
+void process_crystal_mining(const Race& race, Sector& s, TurnStats& stats) {
   if (s.get_crystals() && race.discoveries.crystal && success(s.get_eff())) {
     stats.prod_crystals[s.get_owner()]++;
     s.set_crystals(s.get_crystals() - 1);
   }
 }
 
-// Update sector mobilization based on planetary settings
-void updateMobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
+/// \brief Adjusts sector mobilization level towards the governor's planetary
+/// target setting.
+void update_mobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
   player_t owner = s.get_owner();
 
   if (s.get_mobilization() < pinf.mob_set) {
@@ -118,8 +153,9 @@ void updateMobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
   stats.avg_mob[owner] += s.get_mobilization();
 }
 
-// Update sector efficiency and plating
-void updateEfficiency(Sector& s, const Race& race, const Planet& planet) {
+/// \brief Updates sector efficiency and converts fully developed sectors to
+/// plated condition.
+void update_efficiency(Sector& s, const Race& race, const Planet& planet) {
   if (s.get_eff() < 100) {
     int chance = round_rand((100.0 - (double)planet.info(s.get_owner()).tax) *
                             race.likes[s.get_condition()]);
@@ -132,8 +168,9 @@ void updateEfficiency(Sector& s, const Race& race, const Planet& planet) {
   }
 }
 
-// Update sector fertility and condition
-void updateFertilityAndCondition(Sector& s, const Race& race) {
+/// \brief Simulates racial fertilization and natural recovery of wasted
+/// sectors.
+void update_fertility_and_condition(Sector& s, const Race& race) {
   if (!s.is_wasted() && race.fertilize && (s.get_fert() < 100)) {
     s.set_fert(s.get_fert() + (int_rand(0, 100) < race.fertilize));
   }
@@ -145,27 +182,14 @@ void updateFertilityAndCondition(Sector& s, const Race& race) {
   }
 }
 
-// Calculate population change based on sector conditions
-population_t calculatePopulationChange(const Race& race, const Sector& s,
-                                       population_t maxsup) {
-  population_t diff = s.get_popn() - maxsup;
-
-  if (diff < 0) {
-    if (s.get_popn() >= race.number_sexes) {
-      return round_rand(-static_cast<double>(diff) * race.birthrate);
-    }
-    return 0;
-  }
-  return -int_rand(0, std::min(2 * diff, s.get_popn()));
-}
-
-// Handle population changes and owner updates
-void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
-                              const Race& race, const Star& star,
-                              const Planet& planet, TurnStats& stats) {
+/// \brief Handles population change, troop upkeep accounting, and unpopulated
+/// sector abandonment.
+void update_population_and_owner(EntityManager& entity_manager, Sector& s,
+                                 const Race& race, const Star& star,
+                                 const Planet& planet, TurnStats& stats) {
   auto maxsup = maxsupport(race, s, stats.Compat[s.get_owner()],
                            planet.conditions(TOXIC));
-  s.add_popn(calculatePopulationChange(race, s, maxsup));
+  s.add_popn(calculate_population_change(race, s, maxsup));
 
   // Handle troops maintenance costs - mutate race for governor update
   if (s.get_troops()) {
@@ -193,19 +217,19 @@ void produce(EntityManager& entity_manager, const Star& star,
 
   entity_manager.with_race(s.get_owner(), [&](const Race& race) {
     // Process production and resources
-    processResourceProduction(race, s, stats);
-    processCrystalMining(race, s, stats);
+    process_resource_production(race, s, stats);
+    process_crystal_mining(race, s, stats);
 
     // Handle mobilization
     const auto& pinf = planet.info(s.get_owner());
-    updateMobilization(s, pinf, stats);
+    update_mobilization(s, pinf, stats);
 
     // Update efficiency, fertility and sector condition
-    updateEfficiency(s, race, planet);
-    updateFertilityAndCondition(s, race);
+    update_efficiency(s, race, planet);
+    update_fertility_and_condition(s, race);
 
     // Handle population changes and ownership
-    updatePopulationAndOwner(entity_manager, s, race, star, planet, stats);
+    update_population_and_owner(entity_manager, s, race, star, planet, stats);
   });
 }
 

@@ -166,6 +166,8 @@ static void process_races(TurnState& state, bool update) {
 void process_market_transactions(EntityManager& entity_manager) {
   if (!MARKET) return;
 
+  std::vector<int> dead_commods;
+
   /* reset market - note: CommodList filters out null/invalid entries */
   for (auto commod_handle : CommodList(entity_manager)) {
     auto& c = *commod_handle;
@@ -226,9 +228,14 @@ void process_market_transactions(EntityManager& entity_manager) {
       c.bid = 0;
     }
     if (c.owner == player_t{0}) {
-      // Commodity is dead - delete it after handle releases
-      entity_manager.delete_commod(c.id);
+      dead_commods.push_back(c.id);
     }
+  }
+
+  // Delete dead commodities after all entity handles have been released and
+  // saved
+  for (int id : dead_commods) {
+    entity_manager.delete_commod(id);
   }
 }
 

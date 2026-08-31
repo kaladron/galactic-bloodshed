@@ -149,7 +149,7 @@ unsigned int ship_size(const Ship& s) {
 double cost(const Ship& s) {
   /* compute how much it costs to build this ship */
   double factor = 0.0;
-  factor += (double)Shipdata[s.build_type()][ABIL_COST];
+  factor += static_cast<double>(s.get_template().build_cost);
   factor += GUN_COST * (double)s.primary();
   factor += GUN_COST * (double)s.secondary();
   factor += CREW_COST * (double)s.max_crew();
@@ -363,19 +363,20 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
  * @return The complexity value of the ship.
  */
 double complexity(const Ship& s) {
+  const auto& tmpl = s.get_template();
   SystemCost cost;
 
-  cost.add(s.primary(), Shipdata[s.build_type()][ABIL_GUNS]);
-  cost.add(s.secondary(), Shipdata[s.build_type()][ABIL_GUNS]);
-  cost.add(s.max_crew(), Shipdata[s.build_type()][ABIL_MAXCREW]);
-  cost.add(s.max_resource(), Shipdata[s.build_type()][ABIL_CARGO]);
-  cost.add(s.max_fuel(), Shipdata[s.build_type()][ABIL_FUELCAP]);
-  cost.add(s.max_destruct(), Shipdata[s.build_type()][ABIL_DESTCAP]);
-  cost.add(s.max_speed(), Shipdata[s.build_type()][ABIL_SPEED]);
-  cost.add(s.max_hanger(), Shipdata[s.build_type()][ABIL_HANGER]);
-  cost.add(s.armor(), Shipdata[s.build_type()][ABIL_ARMOR]);
+  cost.add(s.primary(), tmpl.max_guns);
+  cost.add(s.secondary(), tmpl.max_guns);
+  cost.add(s.max_crew(), tmpl.max_crew);
+  cost.add(s.max_resource(), tmpl.max_cargo);
+  cost.add(s.max_fuel(), tmpl.max_fuel);
+  cost.add(s.max_destruct(), tmpl.max_destruct);
+  cost.add(s.max_speed(), tmpl.base_speed);
+  cost.add(s.max_hanger(), tmpl.max_hangar);
+  cost.add(s.armor(), tmpl.base_armor);
 
-  const double base_tech = Shipdata[s.build_type()][ABIL_TECH];
+  const double base_tech = tmpl.base_tech;
   const auto [advantage, disadvantage] = cost.get();
 
   // Combine advantage and disadvantage into a single deviation score.
@@ -408,7 +409,7 @@ double complexity(const Ship& s) {
 double complexity(ShipType type) {
   // For an unmodified ship, complexity() returns exactly the base tech.
   // We can compute this directly without creating a full Ship object.
-  return static_cast<double>(Shipdata[type][ABIL_TECH]);
+  return ship_template(type).base_tech;
 }
 
 bool testship(const Ship& s, GameObj& g) {

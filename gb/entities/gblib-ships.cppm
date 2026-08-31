@@ -529,6 +529,25 @@ export struct ShipTemplate {
   bool can_repair{false};   ///< Capable of self/fleet repair (ABIL_REPAIR)
   bool requires_maintenance{
       false};  ///< Incurs regular economic maintenance cost (ABIL_MAINTAIN)
+
+  /// \brief Returns whether this ship type can be built on a planetary surface.
+  [[nodiscard]] constexpr bool can_build_on_planet() const noexcept {
+    return (static_cast<int>(build_time) & 1) != 0;
+  }
+
+  /// \brief Returns whether this ship type can be constructed by the specified
+  /// builder ship template.
+  [[nodiscard]] constexpr bool
+  can_be_built_by(const ShipTemplate& builder) const noexcept {
+    return (static_cast<int>(build_time) &
+            static_cast<int>(builder.construction_cost)) != 0;
+  }
+
+  /// \brief Returns whether this ship type is equipped to construct other
+  /// ships.
+  [[nodiscard]] constexpr bool can_construct_ships() const noexcept {
+    return static_cast<int>(construction_cost) != 0;
+  }
 };
 
 export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
@@ -2545,6 +2564,12 @@ public:
   /// \brief Indicates whether this ship class can mount warp crystals.
   [[nodiscard]] constexpr bool can_mount() const noexcept {
     return get_template().can_mount;
+  }
+
+  /// \brief Indicates whether this ship class is equipped to construct other
+  /// ships.
+  [[nodiscard]] constexpr bool can_construct_ships() const noexcept {
+    return get_template().can_construct_ships();
   }
 
   /// \brief Returns whether this ship is capable of exploring stars and planets

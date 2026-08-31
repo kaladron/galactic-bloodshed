@@ -23,10 +23,10 @@ module gblib;
  * @return std::expected<void, std::string> Success or an error message string.
  */
 std::expected<void, std::string>
-can_build_on_sector(EntityManager& entity_manager, const int what,
+can_build_on_sector(EntityManager& entity_manager, const ShipType what,
                     const Race& race, const Planet& planet,
                     const Sector& sector, const Coordinates& c) {
-  auto shipc = Shipltrs[what];
+  auto shipc = ship_template(what).letter;
   if (!sector.get_popn()) {
     return std::unexpected("You have no more civs in the sector!\n");
   }
@@ -36,7 +36,7 @@ can_build_on_sector(EntityManager& entity_manager, const int what,
   if (sector.get_owner() != race.Playernum && !race.God) {
     return std::unexpected("You don't own that sector.\n");
   }
-  if ((!(Shipdata[what][ABIL_BUILD] & 1)) && !race.God) {
+  if (!ship_template(what).can_build_on_planet() && !race.God) {
     std::string temp = std::format(
         "This ship type cannot be built on a planet.\nUse 'build ? {}' to find "
         "out where it can be built.\n",
@@ -90,10 +90,11 @@ std::expected<void, std::string> can_build_this(const ShipType what,
   if (what == ShipType::STYPE_POD && !race.pods) {
     return std::unexpected("Only Metamorphic races can build Spore Pods.\n");
   }
-  if (!Shipdata[what][ABIL_PROGRAMMED]) {
+  const auto& tmpl = ship_template(what);
+  if (!tmpl.is_programmed) {
     return std::unexpected("This ship type has not been programmed.\n");
   }
-  if (Shipdata[what][ABIL_GOD] && !race.God) {
+  if (tmpl.is_god_only && !race.God) {
     return std::unexpected("Only Gods can build this type of ship.\n");
   }
   if (what == ShipType::OTYPE_VN && !race.discoveries.vn) {
@@ -102,11 +103,11 @@ std::expected<void, std::string> can_build_this(const ShipType what,
   if (what == ShipType::OTYPE_TRANSDEV && !race.discoveries.avpm) {
     return std::unexpected("You have not discovered AVPM technology.\n");
   }
-  if (Shipdata[what][ABIL_TECH] > race.tech && !race.God) {
+  if (tmpl.base_tech > race.tech && !race.God) {
     std::string error = std::format(
-        "You are not advanced enough to build this ship.\n%.1f engineering "
-        "technology needed. You have %.1f.\n",
-        (double)Shipdata[what][ABIL_TECH], race.tech);
+        "You are not advanced enough to build this ship.\n{:.1f} engineering "
+        "technology needed. You have {:.1f}.\n",
+        tmpl.base_tech, race.tech);
     return std::unexpected(error);
   }
   return {};
@@ -114,13 +115,12 @@ std::expected<void, std::string> can_build_this(const ShipType what,
 
 std::expected<void, std::string>
 can_build_on_ship(ShipType what, const Race& race, const Ship& builder) {
-  if (!(Shipdata[what][ABIL_BUILD] &
-        Shipdata[builder.type()][ABIL_CONSTRUCT]) &&
+  if (!ship_template(what).can_be_built_by(builder.get_template()) &&
       !race.God) {
     std::string error = std::format(
         "This ship type cannot be built by a {}.\nUse 'build ? {}' to find out "
         "where it can be built.\n",
-        Shipnames[builder.type()], Shipltrs[what]);
+        builder.get_template().name, ship_template(what).letter);
     return std::unexpected(error);
   }
   return {};
@@ -129,7 +129,7 @@ can_build_on_ship(ShipType what, const Race& race, const Ship& builder) {
 std::optional<ScopeLevel> build_at_ship(GameObj& g, Ship* builder,
                                         starnum_t* snum, planetnum_t* pnum) {
   if (testship(*builder, g)) return {};
-  if (!Shipdata[builder->type()][ABIL_CONSTRUCT]) {
+  if (!builder->can_construct_ships()) {
     g.out << "This ship cannot construct other ships.\n";
     return {};
   }
@@ -204,7 +204,7 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   newship->fire_laser() = 0;
   newship->mode() = 0;
   newship->rad() = 0;
-  newship->damage() = race.God ? 0 : Shipdata[newship->type()][ABIL_DAMAGE];
+  newship->damage() = race.God ? 0 : newship->get_template().base_damage;
   newship->retaliate() = newship->primary();
   newship->ships() = 0;
   newship->on() = 0;
@@ -247,10 +247,10 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
     g.out << std::format(
         "Warning: This ship is constructed with a {}% damage level.\n",
         newship->damage());
-    if (!Shipdata[newship->type()][ABIL_REPAIR] && newship->max_crew_capacity())
+    if (!newship->can_repair() && newship->max_crew_capacity())
       g.out << "It will need resources to become fully operational.\n";
   }
-  if (Shipdata[newship->type()][ABIL_REPAIR] && newship->max_crew_capacity())
+  if (newship->can_repair() && newship->max_crew_capacity())
     g.out << "This ship does not need resources to repair.\n";
   if (newship->type() == ShipType::OTYPE_FACTORY)
     g.out

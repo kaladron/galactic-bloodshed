@@ -100,9 +100,9 @@ int main() {
 
   // Fail - ship type cannot be built on planet (non-God)
   {
-    // Find a ship type that cannot be built on planets (ABIL_BUILD bit 0 not
-    // set) Using STYPE_HABITAT which typically can't be built on planets
-    if (!(Shipdata[ShipType::STYPE_HABITAT][ABIL_BUILD] & 1)) {
+    // Find a ship type that cannot be built on planets
+    // Using STYPE_HABITAT which typically can't be built on planets
+    if (!ship_template(ShipType::STYPE_HABITAT).can_build_on_planet()) {
       auto result = can_build_on_sector(em, ShipType::STYPE_HABITAT, race,
                                         planet, good_sector, {0, 0});
       test::expect_false(result.has_value());

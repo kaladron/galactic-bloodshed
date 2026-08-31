@@ -2541,6 +2541,12 @@ public:
     return get_template().can_mount;
   }
 
+  /// \brief Returns whether this ship is capable of exploring stars and planets
+  /// (carrying population/crew or being an automated sensor probe).
+  [[nodiscard]] constexpr bool is_exploration_capable() const noexcept {
+    return data_.popn > 0 || data_.type == ShipType::OTYPE_PROBE;
+  }
+
   [[nodiscard]] speed_t speed() const {
     return data_.speed;
   }

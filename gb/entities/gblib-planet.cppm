@@ -356,6 +356,16 @@ public:
     return data_.info[race.Playernum];
   }
 
+  /// \brief Returns whether this planet has been explored by the given player.
+  [[nodiscard]] constexpr bool is_explored_by(player_t player) const noexcept {
+    return data_.info[player].explored;
+  }
+
+  /// \brief Marks this planet as explored by the given player.
+  constexpr void mark_explored_by(player_t player) noexcept {
+    data_.info[player].explored = true;
+  }
+
   [[nodiscard]] int conditions(Conditions cond) const {
     if (cond < 0 || cond > TOXIC) {
       throw std::runtime_error(std::format("Condition {} out of range (max {})",

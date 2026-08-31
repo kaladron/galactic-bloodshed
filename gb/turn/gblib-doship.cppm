@@ -69,6 +69,28 @@ export bool process_ship_supernova(Ship& ship, const Star& star,
 /// \param race Race owning the factory.
 export void sync_factory_technology(Ship& ship, const Race& race);
 
+/// \brief Synchronizes docked ship ownership with its carrier ship.
+/// \param ship Docked ship to synchronize.
+/// \param em Entity manager for querying the carrier ship.
+export void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em);
+
+/// \brief Updates star and planet exploration/inhabitation status for a ship.
+/// \param ship Ship exploring or inhabiting the system.
+/// \param em Entity manager for mutating star and planet exploration flags.
+/// \param stats Per-turn stats tracking inhabited stars.
+export void update_ship_inhabited_and_exploration(const Ship& ship,
+                                                  EntityManager& em,
+                                                  TurnStats& stats);
+
+/// \brief Accumulates ship counts, population, fuel, resources, and ordnance
+/// into turn statistics for power ratings and census reporting.
+/// \param ship Ship to tally.
+/// \param stats Turn statistics accumulator.
+/// \param update Whether this is a full turn update pass (true) or segment
+/// (false).
+export void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
+                                        bool update);
+
 /// \brief Top two nearest star systems identified by navigation scanning.
 export struct StarTargetResult {
   starnum_t closest{0};         ///< Primary nearest star system

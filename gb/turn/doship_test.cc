@@ -961,6 +961,176 @@ void test_sync_factory_technology() {
   test::expect_eq(online_factory.tech(), 50.0);
 }
 
+void test_exploration_domain_methods() {
+  // Ship capability
+  ship_struct probe_data{.popn = 0, .type = ShipType::OTYPE_PROBE};
+  Ship probe{probe_data};
+  test::expect_true(probe.is_exploration_capable());
+
+  ship_struct manned_data{.popn = 5, .type = ShipType::STYPE_SHUTTLE};
+  Ship manned{manned_data};
+  test::expect_true(manned.is_exploration_capable());
+
+  ship_struct uncrewed_data{.popn = 0, .type = ShipType::STYPE_CARGO};
+  Ship uncrewed{uncrewed_data};
+  test::expect_false(uncrewed.is_exploration_capable());
+
+  // Planet exploration
+  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
+  test::expect_false(planet.is_explored_by(player_t{1}));
+  planet.mark_explored_by(player_t{1});
+  test::expect_true(planet.is_explored_by(player_t{1}));
+}
+
+void test_update_ship_inhabited_and_exploration() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+  TurnStats stats{};
+
+  Race race = createTestRace(player_t{1});
+  RaceRepository(store).save(race);
+
+  Star star = createTestStar(starnum_t{1});
+  StarRepository(store).save(star);
+
+  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+  PlanetRepository(store).save(planet);
+
+  // 1. Probe in star orbit explores star
+  ship_struct probe_data{
+      .owner = player_t{1},
+      .popn = 0,
+      .storbits = starnum_t{1},
+      .whatorbits = ScopeLevel::LEVEL_STAR,
+      .type = ShipType::OTYPE_PROBE,
+      .alive = 1,
+  };
+  auto probe_handle = em.create_ship(probe_data);
+  update_ship_inhabited_and_exploration(*probe_handle, em, stats);
+  test::expect_eq(stats.StarsInhab[1], 1);
+  const auto& star_after_probe = *em.peek_star(starnum_t{1});
+  test::expect_true(star_after_probe.is_explored_by(player_t{1}));
+
+  // 2. Manned ship in planet orbit explores star & planet
+  ship_struct manned_data{
+      .owner = player_t{1},
+      .popn = 10,
+      .storbits = starnum_t{1},
+      .pnumorbits = planetnum_t{0},
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::STYPE_SHUTTLE,
+      .alive = 1,
+  };
+  auto manned_handle = em.create_ship(manned_data);
+  update_ship_inhabited_and_exploration(*manned_handle, em, stats);
+  const auto& planet_after_manned =
+      *em.peek_planet(starnum_t{1}, planetnum_t{0});
+  test::expect_true(planet_after_manned.is_explored_by(player_t{1}));
+
+  // 3. Uncrewed cargo ship does not explore
+  Planet planet2{PlanetType::EARTH, Coordinates{2, 2}};
+  planet2.star_id() = 1;
+  planet2.planet_order() = 1;
+  PlanetRepository(store).save(planet2);
+
+  ship_struct cargo_data{
+      .owner = player_t{2},
+      .popn = 0,
+      .storbits = starnum_t{1},
+      .pnumorbits = planetnum_t{1},
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::STYPE_CARGO,
+      .alive = 1,
+  };
+  auto cargo_handle = em.create_ship(cargo_data);
+  update_ship_inhabited_and_exploration(*cargo_handle, em, stats);
+  const auto& planet2_after = *em.peek_planet(starnum_t{1}, planetnum_t{1});
+  test::expect_false(planet2_after.is_explored_by(player_t{2}));
+}
+
+void test_synchronize_docked_carrier_ownership() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(player_t{1});
+  Race race2 = createTestRace(player_t{2});
+  RaceRepository(store).save(race1);
+  RaceRepository(store).save(race2);
+
+  // Carrier owned by Player 1
+  ship_struct carrier_data{
+      .owner = player_t{1},
+      .governor = governor_t{0},
+      .type = ShipType::STYPE_CARRIER,
+      .alive = 1,
+  };
+  auto carrier_handle = em.create_ship(carrier_data);
+
+  // Docked fighter initially owned by Player 2
+  ship_struct fighter_data{
+      .owner = player_t{2},
+      .governor = governor_t{0},
+      .destshipno = carrier_handle->number(),
+      .whatorbits = ScopeLevel::LEVEL_SHIP,
+      .type = ShipType::STYPE_FIGHTER,
+      .alive = 1,
+  };
+  auto fighter_handle = em.create_ship(fighter_data);
+  Ship& fighter = *fighter_handle;
+
+  synchronize_docked_carrier_ownership(fighter, em);
+  test::expect_eq(fighter.owner(), player_t{1});
+}
+
+void test_accumulate_ship_power_stats() {
+  TurnStats stats{};
+
+  // 1. Star-orbiting ship during update pass
+  ship_struct star_ship_data{
+      .owner = player_t{1},
+      .fuel = 25.0,
+      .destruct = 5,
+      .resource = 50,
+      .popn = 10,
+      .troops = 4,
+      .storbits = starnum_t{1},
+      .whatorbits = ScopeLevel::LEVEL_STAR,
+      .type = ShipType::STYPE_BATTLE,
+      .alive = 1,
+  };
+  Ship star_ship{star_ship_data};
+
+  accumulate_ship_power_stats(star_ship, stats, true);
+  test::expect_eq(stats.Power[player_t{1}].ships_owned, 1);
+  test::expect_eq(stats.Power[player_t{1}].fuel, 25.0);
+  test::expect_eq(stats.Power[player_t{1}].destruct, 5);
+  test::expect_eq(stats.Power[player_t{1}].resource, 50);
+  test::expect_eq(stats.Power[player_t{1}].popn, 10);
+  test::expect_eq(stats.Power[player_t{1}].troops, 4);
+  test::expect_eq(stats.starnumships[1][player_t{1}], 1);
+  test::expect_eq(stats.starpopns[1][player_t{1}], 10);
+
+  // 2. Deep space ship in LEVEL_UNIV
+  ship_struct univ_ship_data{
+      .owner = player_t{1},
+      .popn = 20,
+      .whatorbits = ScopeLevel::LEVEL_UNIV,
+      .type = ShipType::STYPE_EXPLORER,
+      .alive = 1,
+  };
+  Ship univ_ship{univ_ship_data};
+
+  accumulate_ship_power_stats(univ_ship, stats, false);
+  test::expect_eq(stats.Sdatanumships[player_t{1}], 1);
+  test::expect_eq(stats.Sdatapopns[player_t{1}], 20);
+}
+
 }  // namespace
 
 int main() {
@@ -1034,6 +1204,23 @@ int main() {
 
   std::println(std::cout, "  Testing sync_factory_technology... ");
   test_sync_factory_technology();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing exploration domain methods... ");
+  test_exploration_domain_methods();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout,
+               "  Testing update_ship_inhabited_and_exploration... ");
+  test_update_ship_inhabited_and_exploration();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing synchronize_docked_carrier_ownership... ");
+  test_synchronize_docked_carrier_ownership();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing accumulate_ship_power_stats... ");
+  test_accumulate_ship_power_stats();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doship tests passed!");

@@ -422,6 +422,57 @@ void sync_factory_technology(Ship& ship, const Race& race) {
   }
 }
 
+void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em) {
+  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    if (const auto* carrier = em.peek_ship(ship.destshipno())) {
+      if (ship.owner() != carrier->owner()) {
+        ship.owner() = carrier->owner();
+        ship.governor() = carrier->governor();
+      }
+    }
+  }
+}
+
+void update_ship_inhabited_and_exploration(const Ship& ship, EntityManager& em,
+                                           TurnStats& stats) {
+  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV ||
+      !ship.is_exploration_capable()) {
+    return;
+  }
+
+  stats.StarsInhab[ship.storbits().value] = 1;
+  em.mutate_star(ship.storbits(), [&](Star& star) {
+    star.mark_inhabited_by(ship.owner());
+    star.mark_explored_by(ship.owner());
+  });
+
+  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+    em.mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
+      planet.mark_explored_by(ship.owner());
+    });
+  }
+}
+
+void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
+                                 bool update) {
+  if (update) {
+    stats.Power[ship.owner()].ships_owned++;
+    stats.Power[ship.owner()].resource += ship.resource();
+    stats.Power[ship.owner()].fuel += ship.fuel();
+    stats.Power[ship.owner()].destruct += ship.destruct();
+    stats.Power[ship.owner()].popn += ship.popn();
+    stats.Power[ship.owner()].troops += ship.troops();
+  }
+
+  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    stats.Sdatanumships[ship.owner()]++;
+    stats.Sdatapopns[ship.owner()] += ship.popn();
+  } else {
+    stats.starnumships[ship.storbits().value][ship.owner()]++;
+    stats.starpopns[ship.storbits().value][ship.owner()] += ship.popn();
+  }
+}
+
 void doship(Ship& ship, bool update, EntityManager& entity_manager,
             TurnStats& stats) {
   /*ship is active */
@@ -451,61 +502,10 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
     if (ship.active()) moveship(entity_manager, ship, update, 1, 0);
 
     ship.size() = ship_size(ship); /* for debugging */
-    if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      entity_manager.mutate_ship(ship.destshipno(), [&](Ship& ship2) {
-        if (ship2.owner() != ship.owner()) {
-          ship2.owner() = ship.owner();
-          ship2.governor() = ship.governor();
-        }
-      });
-      /* just making sure */
-    } else if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV &&
-               (ship.popn() || ship.type() == ShipType::OTYPE_PROBE)) {
-      /* Though I have often used TWCs for exploring, I don't think it is
-       * right
-       */
-      /* to be able to map out worlds with this type of junk. Either a manned
-       * ship, */
-      /* or a probe, which is designed for this kind of work.  Maarten */
-      stats.StarsInhab[ship.storbits().value] = 1;
-      entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-        star.mark_inhabited_by(ship.owner());
-        star.mark_explored_by(ship.owner());
-      });
-      if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        entity_manager.mutate_planet(
-            ship.storbits(), ship.pnumorbits(),
-            [&](Planet& planet) { planet.info(ship.owner()).explored = 1; });
-      }
-    }
 
-    /* add ships, popn to total count to add AP's */
-    if (update) {
-      stats.Power[ship.owner()].ships_owned++;
-      stats.Power[ship.owner()].resource += ship.resource();
-      stats.Power[ship.owner()].fuel += ship.fuel();
-      stats.Power[ship.owner()].destruct += ship.destruct();
-      stats.Power[ship.owner()].popn += ship.popn();
-      stats.Power[ship.owner()].troops += ship.troops();
-    }
-
-    if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-      stats.Sdatanumships[ship.owner()]++;
-      stats.Sdatapopns[ship.owner()] += ship.popn();
-    } else {
-      stats.starnumships[ship.storbits().value][ship.owner()]++;
-      /* add popn of ships to popn */
-      stats.starpopns[ship.storbits().value][ship.owner()] += ship.popn();
-      /* set inhabited for ship */
-      /* only if manned or probe.  Maarten */
-      if (ship.popn() || ship.type() == ShipType::OTYPE_PROBE) {
-        stats.StarsInhab[ship.storbits().value] = 1;
-        entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-          star.mark_inhabited_by(ship.owner());
-          star.mark_explored_by(ship.owner());
-        });
-      }
-    }
+    synchronize_docked_carrier_ownership(ship, entity_manager);
+    update_ship_inhabited_and_exploration(ship, entity_manager, stats);
+    accumulate_ship_power_stats(ship, stats, update);
 
     if (ship.active()) {
       /* bombard the planet */

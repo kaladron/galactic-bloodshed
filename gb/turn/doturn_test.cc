@@ -461,6 +461,130 @@ void test_process_market_transactions_isolated() {
   test::expect_eq(dest_planet.info(player_t{2}).fuel, 50);
 }
 
+void test_compute_governed_status() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  // Case 1: No Gov_ship
+  race.Gov_ship = 0;
+  test::expect_false(compute_governed_status(race, em));
+
+  // Case 2: Ship exists but dead or undocked
+  Ship gov_ship{};
+  gov_ship.number() = 1;
+  gov_ship.owner() = player_t{1};
+  gov_ship.alive() = false;
+  gov_ship.docked() = false;
+  ShipRepository ship_repo(store);
+  ship_repo.save(gov_ship);
+  race.Gov_ship = 1;
+  test::expect_false(compute_governed_status(race, em));
+
+  // Case 4: Ship alive and docked at planet
+  em.mutate_ship(1, [](Ship& s) {
+    s.alive() = true;
+    s.docked() = true;
+    s.whatdest() = ScopeLevel::LEVEL_PLAN;
+  });
+  test::expect_true(compute_governed_status(race, em));
+
+  // Case 5: Ship docked at habitat orbiting planet or star
+  Ship habitat{};
+  habitat.number() = 2;
+  habitat.owner() = player_t{1};
+  habitat.alive() = true;
+  habitat.type() = ShipType::STYPE_HABITAT;
+  habitat.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship_repo.save(habitat);
+
+  em.mutate_ship(1, [](Ship& s) {
+    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
+    s.destshipno() = 2;
+  });
+  test::expect_true(compute_governed_status(race, em));
+}
+
+void test_action_points_computation_and_distribution() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.planet_points = 50;
+
+  // 1. Ungoverned race: APs reduced by 20x
+  ap_t ungoverned_ap = compute_star_action_points(10, 10000, race, em);
+  test::expect_ge(ungoverned_ap, 0);
+
+  // 2. Setup governed ship
+  Ship gov_ship{};
+  gov_ship.number() = 1;
+  gov_ship.owner() = player_t{1};
+  gov_ship.alive() = true;
+  gov_ship.docked() = true;
+  gov_ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+  ShipRepository ship_repo(store);
+  ship_repo.save(gov_ship);
+  race.Gov_ship = 1;
+
+  ap_t governed_ap = compute_star_action_points(10, 10000, race, em);
+  test::expect_gt(governed_ap, ungoverned_ap);
+
+  // 3. Universe Action Point Distribution
+  universe_struct u{};
+  u.id = 1;
+  u.numstars = 1;
+  u.AP[player_t{1}] = 100;
+  UniverseRepository univ_repo(store);
+  univ_repo.save(u);
+
+  RaceRepository race_repo(store);
+  race_repo.save(race);
+
+  distribute_universe_action_points(em);
+
+  const auto* u_after = em.peek_universe();
+  test::expect_ne(u_after, nullptr);
+  test::expect_eq(u_after->AP[player_t{1}], 150);  // 100 + 50
+}
+
+void test_output_ground_attacks() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(player_t{1});
+  Race race2 = createTestRace(player_t{2});
+  RaceRepository race_repo(store);
+  race_repo.save(race1);
+  race_repo.save(race2);
+
+  Star star = createTestStar(starnum_t{0});
+  StarRepository star_repo(store);
+  star_repo.save(star);
+
+  universe_struct u{};
+  u.id = 1;
+  u.numstars = 1;
+  UniverseRepository univ_repo(store);
+  univ_repo.save(u);
+
+  ground_assaults[player_t{1}][player_t{2}][starnum_t{0}] = 3;
+
+  output_ground_attacks(em);
+
+  test::expect_eq(ground_assaults[player_t{1}][player_t{2}][starnum_t{0}], 0U);
+}
+
 }  // namespace
 
 int main() {
@@ -472,6 +596,19 @@ int main() {
 
   std::println(std::cout, "  Testing process_market_transactions isolated... ");
   test_process_market_transactions_isolated();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing compute_governed_status... ");
+  test_compute_governed_status();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout,
+               "  Testing action points computation and distribution... ");
+  test_action_points_computation_and_distribution();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing output_ground_attacks... ");
+  test_output_ground_attacks();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing fix_stability... ");

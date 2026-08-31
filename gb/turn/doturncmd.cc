@@ -59,11 +59,8 @@ static constexpr void maintain(Race& r, Race::gov& governor,
   }
 }
 
-static ap_t APadd(const int, const population_t, const Race&, const TurnState&);
 static bool attack_planet(const Ship&);
-static bool governed(const Race&, const TurnState&);
 static void make_discoveries(EntityManager&, Race&);
-static void output_ground_attacks(TurnState& state);
 static void process_ships(TurnState& state);
 static void process_stars_and_planets(TurnState& state, bool update);
 static void process_races(TurnState& state, bool update);
@@ -99,7 +96,7 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
     process_ships(state);
     process_stars_and_planets(state, update);
     process_races(state, update);
-    output_ground_attacks(state);
+    output_ground_attacks(state.entity_manager);
     if (update) {
       process_market_transactions(state.entity_manager);
     }
@@ -196,8 +193,6 @@ static void process_races(TurnState& state, bool update) {
       race_handle->votes = false;
     }
   }
-
-  output_ground_attacks(state);
 }
 
 /**
@@ -404,11 +399,12 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         if (state.stats.starpopns[star.value][player]) {
           star_handle->mark_inhabited_by(player);
 
-          ap_t APs =
-              star_handle->AP(player) +
-              APadd(static_cast<int>(
-                        state.stats.starnumships[star.value][player]),
-                    state.stats.starpopns[star.value][player], race, state);
+          ap_t APs = star_handle->AP(player) +
+                     compute_star_action_points(
+                         static_cast<int>(
+                             state.stats.starnumships[star.value][player]),
+                         state.stats.starpopns[star.value][player], race,
+                         state.entity_manager);
           star_handle->AP(player) = std::min(APs, LIMIT_APs);
         }
         // Compute victory points for the block
@@ -431,20 +427,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
 
   /* add APs to sdata for ea. player */
   if (update) {
-    state.entity_manager.mutate_universe([&](universe_struct& sdata) {
-      for (const Race& race : RaceList::readonly(state.entity_manager)) {
-        const player_t player = race.Playernum;
-        try {
-          state.entity_manager.mutate_block(
-              player.value, [](struct block& b) { b.systems_owned = 0; });
-        } catch (const EntityNotFoundError&) {
-        }
-        if (governed(race, state)) {
-          ap_t APs = sdata.AP[player] + race.planet_points;
-          sdata.AP[player] = std::min(APs, LIMIT_APs);
-        }
-      }
-    });
+    distribute_universe_action_points(state.entity_manager);
   }
 
   /* here is where we do victory calculations. */
@@ -605,40 +588,12 @@ static void finalize_turn(TurnState& state, bool update) {
   // handled by the caller (do_update/do_segment in GB_server.cc)
 }
 
-/* routine for number of AP's to add to each player in ea. system,scaled
-    by amount of crew in their palace */
-
-static ap_t APadd(const int sh, const population_t popn, const Race& race,
-                  const TurnState& state) {
-  ap_t APs;
-
-  APs = round_rand((double)sh / 10.0 + 5. * std::log10(1.0 + (double)popn));
-
-  if (governed(race, state)) return APs;
-  /* dont have an active gov center */
-  return round_rand((double)APs / 20.);
-}
-
-/**
- * Checks if a given race is governed.
- *
- * This function determines whether a race is governed. A race is considered
- * governed if the following conditions are met:
- * - The race has a government ship assigned.
- * - The government ship is a valid ship index.
- * - The government ship is alive and docked.
- * - The government ship is either orbiting a planet or orbiting another ship
- * that is a habitat orbiting a planet or a star.
- *
- * @param race The race to check for governance.
- * @return True if the race is governed, false otherwise.
- */
-static bool governed(const Race& race, const TurnState& state) {
-  if (race.Gov_ship == 0 || race.Gov_ship > state.entity_manager.num_ships()) {
+bool compute_governed_status(const Race& race, EntityManager& entity_manager) {
+  if (race.Gov_ship == 0) {
     return false;
   }
 
-  const auto* gov_ship = state.entity_manager.peek_ship(race.Gov_ship);
+  const auto* gov_ship = entity_manager.peek_ship(race.Gov_ship);
   if (!gov_ship || !gov_ship->alive() || !gov_ship->docked()) {
     return false;
   }
@@ -650,8 +605,7 @@ static bool governed(const Race& race, const TurnState& state) {
 
   // Check if docked at a habitat that's orbiting a planet or star
   if (gov_ship->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    const auto* habitat =
-        state.entity_manager.peek_ship(gov_ship->destshipno());
+    const auto* habitat = entity_manager.peek_ship(gov_ship->destshipno());
     if (habitat && habitat->type() == ShipType::STYPE_HABITAT &&
         (habitat->whatorbits() == ScopeLevel::LEVEL_PLAN ||
          habitat->whatorbits() == ScopeLevel::LEVEL_STAR)) {
@@ -660,6 +614,37 @@ static bool governed(const Race& race, const TurnState& state) {
   }
 
   return false;
+}
+
+ap_t compute_star_action_points(int num_ships, population_t popn,
+                                const Race& race,
+                                EntityManager& entity_manager) {
+  double popn_val = std::max(0.0, static_cast<double>(popn));
+  ap_t APs = round_rand(static_cast<double>(num_ships) / 10.0 +
+                        5.0 * std::log10(1.0 + popn_val));
+
+  if (compute_governed_status(race, entity_manager)) {
+    return APs;
+  }
+  /* dont have an active gov center */
+  return round_rand(static_cast<double>(APs) / 20.0);
+}
+
+void distribute_universe_action_points(EntityManager& entity_manager) {
+  entity_manager.mutate_universe([&](universe_struct& sdata) {
+    for (const Race& race : RaceList::readonly(entity_manager)) {
+      const player_t player = race.Playernum;
+      try {
+        entity_manager.mutate_block(
+            player.value, [](struct block& b) { b.systems_owned = 0; });
+      } catch (const EntityNotFoundError&) {
+      }
+      if (compute_governed_status(race, entity_manager)) {
+        ap_t APs = sdata.AP[player] + race.planet_points;
+        sdata.AP[player] = std::min(APs, LIMIT_APs);
+      }
+    }
+  });
 }
 
 /* fix stability for stars */
@@ -814,8 +799,7 @@ static bool attack_planet(const Ship& ship) {
   return ship.whatdest() == ScopeLevel::LEVEL_PLAN;
 }
 
-static void output_ground_attacks(TurnState& state) {
-  EntityManager& em = state.entity_manager;
+void output_ground_attacks(EntityManager& em) {
   for (const Star& star : StarList::readonly(em)) {
     const starnum_t star_num = star.star_id();
 

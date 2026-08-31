@@ -720,10 +720,61 @@ void test_calculate_victory_scores_isolated() {
   test::expect_gt(race_after->victory_score, 0UL);
 }
 
+void test_do_update_voting_reset_and_scheduling() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(player_t{1});
+  race1.votes = true;  // Voted 'go'
+  Race race2 = createTestRace(player_t{2});
+  race2.votes = true;  // Voted 'go'
+  RaceRepository race_repo(store);
+  race_repo.save(race1);
+  race_repo.save(race2);
+
+  universe_struct u{};
+  u.id = 1;
+  u.numstars = 1;
+  UniverseRepository univ_repo(store);
+  univ_repo.save(u);
+
+  ServerState sstate{};
+  sstate.id = 1;
+  sstate.segments = 1;
+  sstate.update_time_minutes = 60;
+  ServerStateRepository state_repo(store);
+  state_repo.save(sstate);
+
+  auto& registry = get_test_session_registry();
+
+  // Execute full turn update
+  do_update(em, registry, true);
+
+  // Verify that all races have their votes reset to false (wait) and persisted
+  const auto* r1 = em.peek_race(player_t{1});
+  const auto* r2 = em.peek_race(player_t{2});
+  test::expect_ne(r1, nullptr);
+  test::expect_ne(r2, nullptr);
+  test::expect_false(r1->votes);
+  test::expect_false(r2->votes);
+
+  // Verify ScheduleInfo updated
+  const auto& sched = get_schedule_info();
+  test::expect_gt(sched.nupdates_done, 0U);
+  test::expect_false(sched.update_buf.empty());
+}
+
 }  // namespace
 
 int main() {
   std::println(std::cout, "Running doturn unit tests...\n");
+
+  std::println(std::cout,
+               "  Testing do_update voting reset and scheduling... ");
+  test_do_update_voting_reset_and_scheduling();
+  std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing planet deposit_commodity... ");
   test_planet_deposit_commodity();

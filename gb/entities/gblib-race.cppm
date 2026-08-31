@@ -150,11 +150,12 @@ public:
     std::time_t login{0}; /* last login for this governor */
   } governor[MAXGOVERNORS + 1];
 
-  /// \brief Resets turn-level economic accounting ledgers and controlled planet
-  /// tallies at the start of a turn update.
+  /// \brief Resets turn-level economic accounting ledgers, controlled planet
+  /// tallies, and player update votes at the start of a turn update.
   void reset_turn_accounting() noexcept {
     controlled_planets = 0;
     planet_points = 0;
+    votes = false;
     for (auto& gov : governor) {
       if (gov.active) {
         gov.maintain = 0;

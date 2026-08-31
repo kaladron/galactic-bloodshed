@@ -79,10 +79,30 @@ public:
   get_connected_sessions() const {
     return {};  // Default: no sessions in test mode
   }
+
+  // --- Turn scheduling requests ---
+
+  /// Request that the server execute the next turn simulation step (segment or
+  /// update)
+  virtual void request_next_thing() {
+    // Default implementation does nothing
+  }
+
+  /// Check if a turn simulation step is requested
+  [[nodiscard]] virtual bool has_pending_turn() const {
+    return false;
+  }
+
+  /// Clear pending turn request flag
+  virtual void clear_pending_turn() {
+    // Default implementation does nothing
+  }
 };
 
 /// Null implementation of SessionRegistry for tests (does nothing)
 export class NullSessionRegistry : public SessionRegistry {
+  bool pending_turn_{false};
+
 public:
   void notify_race(player_t, const std::string&) override {
     // No sessions in test mode - silently ignore
@@ -94,6 +114,18 @@ public:
 
   [[nodiscard]] bool update_in_progress() const override {
     return false;  // Never in update mode during tests
+  }
+
+  void request_next_thing() override {
+    pending_turn_ = true;
+  }
+
+  [[nodiscard]] bool has_pending_turn() const override {
+    return pending_turn_;
+  }
+
+  void clear_pending_turn() override {
+    pending_turn_ = false;
   }
 
   NullSessionRegistry() = default;

@@ -125,9 +125,10 @@ void Server::on_timer() {
                  (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
     }
   }
-  if (go_time_ > 0 && current_time >= go_time_) {
+  if (pending_turn_ || (go_time_ > 0 && current_time >= go_time_)) {
     do_next_thing(entity_manager_, *this);
     go_time_ = 0;
+    pending_turn_ = false;
   }
 }
 

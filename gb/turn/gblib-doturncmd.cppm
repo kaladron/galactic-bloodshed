@@ -15,12 +15,50 @@ import std;
 
 class SessionRegistry;
 
-export void do_turn(EntityManager&, SessionRegistry&, bool update);
-export void do_next_thing(EntityManager&, SessionRegistry&);
-export void do_update(EntityManager&, SessionRegistry&, bool = false);
-export void do_segment(EntityManager&, SessionRegistry&, int, int);
-export void handle_victory(EntityManager&);
-export void compute_power_blocks(EntityManager&);
+/// \brief Executes a turn simulation pass (movement segment or full turn
+/// update).
+/// \param em Entity manager for world queries and mutations.
+/// \param reg Session registry for player event notifications.
+/// \param update If true, executes a full update; if false, executes a movement
+/// segment.
+export void do_turn(EntityManager& em, SessionRegistry& reg, bool update);
+
+/// \brief Advances game simulation by one discrete interval (movement segment
+/// or full update) based on the current completed segment count.
+/// \param entity_manager Database entity manager.
+/// \param session_registry Session registry for player notifications.
+export void do_next_thing(EntityManager& entity_manager,
+                          SessionRegistry& session_registry);
+
+/// \brief Executes a full turn update across all systems, including planetary
+/// production, AP distribution, market fulfillment, and tech progression.
+/// \param entity_manager Database entity manager.
+/// \param session_registry Session registry for player notifications.
+/// \param force If true, ignores server pause state and advances immediately.
+export void do_update(EntityManager& entity_manager,
+                      SessionRegistry& session_registry, bool force = false);
+
+/// \brief Executes a movement simulation segment (ship trajectory steps,
+/// repairs, ABM tracking).
+/// \param entity_manager Database entity manager.
+/// \param session_registry Session registry for player notifications.
+/// \param override If true, forces segment execution regardless of segments
+/// setting.
+/// \param segment Specific target segment index if overriding schedule.
+export void do_segment(EntityManager& entity_manager,
+                       SessionRegistry& session_registry, int override,
+                       int segment);
+
+/// \brief Evaluates victory condition thresholds (controlled planets, victory
+/// turns) and broadcasts game-over victory bulletins.
+/// \param em Database entity manager.
+export void handle_victory(EntityManager& em);
+
+/// \brief Aggregates power block membership statistics across all empires and
+/// alliances.
+/// \param em Database entity manager.
+export void compute_power_blocks(EntityManager& em);
+
 /// \brief Evaluates open interstellar market lots, transfers purchased
 /// commodities, charges freight shipping fees, and deposits goods at recipient
 /// planets.
@@ -76,20 +114,24 @@ export void update_von_neumann_target(EntityManager& em, TurnStats& stats);
 /// \param r Race entity undergoing tech progression.
 export void check_technological_discoveries(EntityManager& em, Race& r);
 
+/// \brief Fluctuates star solar stability and checks for nova initiation.
+/// \param em Entity manager for news notifications.
+/// \param s Star entity undergoing stability check.
 export void fix_stability(EntityManager& em, Star& s);
 
-/// Schedule status info for display commands
+/// \brief Schedule status info for display commands.
 export struct ScheduleInfo {
   std::string start_buf;    // "Server started  : <time>"
   std::string update_buf;   // "Last Update N : <time>"
   std::string segment_buf;  // "Last Segment N : <time>"
-  unsigned int nupdates_done;
-  std::time_t last_update_time;
-  std::time_t last_segment_time;
+  unsigned int nupdates_done{0};
+  std::time_t last_update_time{0};
+  std::time_t last_segment_time{0};
 };
 
-/// Get current schedule status for display
+/// \brief Gets current schedule status for display commands.
 export const ScheduleInfo& get_schedule_info();
 
-/// Set server start time (called once at startup)
+/// \brief Sets server start time timestamp and formatted status string.
+/// \param start_time UNIX epoch timestamp when the server started.
 export void set_server_start_time(std::time_t start_time);

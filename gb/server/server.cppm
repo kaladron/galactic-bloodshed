@@ -41,6 +41,15 @@ public:
   void flush_all() override;
   bool is_connected(player_t race, governor_t gov) const override;
   std::vector<SessionInfo> get_connected_sessions() const override;
+  void request_next_thing() override {
+    pending_turn_ = true;
+  }
+  [[nodiscard]] bool has_pending_turn() const override {
+    return pending_turn_;
+  }
+  void clear_pending_turn() override {
+    pending_turn_ = false;
+  }
 
   EntityManager& entity_manager() {
     return entity_manager_;
@@ -74,6 +83,7 @@ private:
   bool started_ = false;
   bool shutdown_flag_ = false;
   bool update_flag_ = false;
+  bool pending_turn_ = false;
 
   std::time_t go_time_ = 0;
   std::chrono::steady_clock::time_point last_quota_update_;

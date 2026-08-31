@@ -147,11 +147,6 @@ static void process_races(TurnState& state, bool update) {
 
     for (auto race_handle : RaceList(state.entity_manager)) {
       race_handle->reset_turn_accounting();
-      if (VOTING) {
-        /* Reset their vote for Update go. */
-        // TODO(jeffbailey): This doesn't seem to work.
-        race_handle->votes = false;
-      }
     }
   }
 }

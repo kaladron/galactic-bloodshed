@@ -510,7 +510,7 @@ private:
 };
 
 /// Fluent builder for constructing consistent test ship entities populated
-/// with canonical template defaults from Shipdata[type] and Shipnames[type].
+/// with canonical template defaults from ShipTemplate.
 export class TestShipBuilder {
 public:
   TestShipBuilder(EntityManager& em, ShipType type = ShipType::STYPE_BATTLE,

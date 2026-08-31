@@ -550,11 +550,7 @@ void EntityManager::release_server_state() {
 
 namespace {
 std::string load_default_ship_description(ShipType ship_type) {
-  int type_val = std::to_underlying(ship_type);
-  if (type_val >= 0 && type_val < NUMSTYPES) {
-    return std::format("{}\n", Shipnames[type_val]);
-  }
-  return "Unknown ship type.\n";
+  return std::format("{}\n", ship_template(ship_type).name);
 }
 }  // namespace
 
@@ -567,7 +563,7 @@ EntityHandle<ShipExam> EntityManager::get_ship_exam(ShipType ship_type) {
         int type_val = std::to_underlying(type);
         if (type_val >= 0 && type_val < NUMSTYPES) {
           ShipExam new_exam{.ship_type = type,
-                            .name = Shipnames[type_val],
+                            .name = std::string(ship_template(type).name),
                             .description = load_default_ship_description(type)};
           ship_exams.save(new_exam);
           return new_exam;
@@ -592,7 +588,7 @@ const ShipExam* EntityManager::peek_ship_exam(ShipType ship_type) {
         int type_val = std::to_underlying(type);
         if (type_val >= 0 && type_val < NUMSTYPES) {
           ShipExam new_exam{.ship_type = type,
-                            .name = Shipnames[type_val],
+                            .name = std::string(ship_template(type).name),
                             .description = load_default_ship_description(type)};
           ship_exams.save(new_exam);
           return new_exam;

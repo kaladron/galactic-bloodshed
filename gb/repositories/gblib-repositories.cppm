@@ -631,7 +631,7 @@ public:
       if (type < NUMSTYPES) {
         auto stype = static_cast<ShipType>(type);
         ShipExam exam{.ship_type = stype,
-                      .name = std::string(Shipnames[type]),
+                      .name = std::string(ship_template(stype).name),
                       .description = trimmed};
         save(exam);
         type++;

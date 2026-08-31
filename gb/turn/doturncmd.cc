@@ -271,7 +271,7 @@ static void process_ship_turns(TurnState& state, bool update) {
         if (s.owner() == 0) {
           continue;
         }
-        if (Shipdata[s.type()][ABIL_MAINTAIN]) {
+        if (s.requires_maintenance()) {
           state.entity_manager.mutate_race(s.owner(), [&](Race& r) {
             if (s.popn()) {
               r.governor[s.governor().value].maintain += s.build_cost();

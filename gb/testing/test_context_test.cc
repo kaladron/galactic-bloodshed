@@ -214,7 +214,7 @@ void test_test_ship_builder() {
   TestContext ctx;
   TestWorldBuilder::create_standard_solar_system(ctx);
 
-  // 1. Battleship built with Shipdata template defaults and star orbit
+  // 1. Battleship built with ShipTemplate defaults and star orbit
   shipnum_t bb_num = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
                          .owned_by(1)
                          .named("USS Enterprise")
@@ -227,18 +227,11 @@ void test_test_ship_builder() {
   test::expect_eq(bb->name(), "USS Enterprise");
   test::expect_eq(bb->type(), ShipType::STYPE_BATTLE);
   test::expect_eq(bb->owner(), player_t{1});
-  test::expect_eq(
-      bb->armor(),
-      static_cast<unsigned char>(Shipdata[ShipType::STYPE_BATTLE][ABIL_ARMOR]));
-  test::expect_eq(bb->max_crew(),
-                  static_cast<unsigned short>(
-                      Shipdata[ShipType::STYPE_BATTLE][ABIL_MAXCREW]));
-  test::expect_eq(bb->max_fuel(),
-                  static_cast<unsigned short>(
-                      Shipdata[ShipType::STYPE_BATTLE][ABIL_FUELCAP]));
-  test::expect_eq(
-      bb->fuel(),
-      static_cast<double>(Shipdata[ShipType::STYPE_BATTLE][ABIL_FUELCAP]));
+  const auto& battle_tmpl = ship_template(ShipType::STYPE_BATTLE);
+  test::expect_eq(bb->armor(), battle_tmpl.base_armor);
+  test::expect_eq(bb->max_crew(), battle_tmpl.max_crew);
+  test::expect_eq(bb->max_fuel(), battle_tmpl.max_fuel);
+  test::expect_eq(bb->fuel(), static_cast<double>(battle_tmpl.max_fuel));
   test::expect_eq(bb->whatorbits(), ScopeLevel::LEVEL_STAR);
   test::expect_eq(bb->storbits(), starnum_t{0});
   test::expect_eq(bb->xpos(), 10.0);

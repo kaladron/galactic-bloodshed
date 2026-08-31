@@ -31,7 +31,7 @@ bool in_list(const player_t playernum, const std::string_view list,
 
   // Match either the ship letter or * for wildcard.
   for (const auto& p : list)
-    if (p == Shipltrs[s.type()] || p == '*') return true;
+    if (p == s.type_letter() || p == '*') return true;
   return false;
 }
 

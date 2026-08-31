@@ -9,80 +9,103 @@ import std;
 import test;
 
 int main() {
-  std::println(std::cout, "Testing ShipTemplate parity against Shipdata...");
+  std::println(std::cout, "Testing ShipTemplate invariants...");
+  test::expect_eq(ship_templates.size(), static_cast<std::size_t>(NUMSTYPES));
+  test::expect_eq(NUMSTYPES, 47);
+
+  std::set<char> seen_letters;
   for (int t = 0; t < NUMSTYPES; ++t) {
     const auto ship_type = static_cast<ShipType>(t);
     const auto& tmpl = ship_template(ship_type);
 
-    // Metadata parity
+    // Metadata invariants
     test::expect_eq(static_cast<int>(tmpl.type), t);
-    test::expect_eq(tmpl.name, std::string_view(Shipnames[t]));
-    test::expect_eq(tmpl.letter, Shipltrs[t]);
+    test::expect_false(tmpl.name.empty(), "Ship template name cannot be empty");
+    test::expect_true(is_valid_ship_letter(tmpl.letter),
+                      "Ship letter must be valid");
+    test::expect_false(seen_letters.contains(tmpl.letter),
+                       "Ship letters must be distinct");
+    seen_letters.insert(tmpl.letter);
 
-    // Numerical baseline capacity parity
-    test::expect_eq(static_cast<long>(tmpl.base_tech), Shipdata[t][ABIL_TECH]);
-    test::expect_eq(tmpl.max_cargo,
-                    static_cast<resource_t>(Shipdata[t][ABIL_CARGO]));
-    test::expect_eq(tmpl.max_hangar,
-                    static_cast<hangar_t>(Shipdata[t][ABIL_HANGER]));
-    test::expect_eq(tmpl.max_destruct,
-                    static_cast<resource_t>(Shipdata[t][ABIL_DESTCAP]));
-    test::expect_eq(tmpl.max_guns,
-                    static_cast<gun_count_t>(Shipdata[t][ABIL_GUNS]));
-    test::expect_eq(tmpl.primary_power,
-                    static_cast<weapon_power_t>(Shipdata[t][ABIL_PRIMARY]));
-    test::expect_eq(tmpl.secondary_power,
-                    static_cast<weapon_power_t>(Shipdata[t][ABIL_SECONDARY]));
-    test::expect_eq(static_cast<long>(tmpl.max_fuel),
-                    Shipdata[t][ABIL_FUELCAP]);
-    test::expect_eq(tmpl.max_crew,
-                    static_cast<population_t>(Shipdata[t][ABIL_MAXCREW]));
-    test::expect_eq(tmpl.base_armor,
-                    static_cast<armor_t>(Shipdata[t][ABIL_ARMOR]));
-    test::expect_eq(tmpl.build_cost,
-                    static_cast<money_t>(Shipdata[t][ABIL_COST]));
-    test::expect_eq(tmpl.base_speed,
-                    static_cast<speed_t>(Shipdata[t][ABIL_SPEED]));
-    test::expect_eq(tmpl.base_damage,
-                    static_cast<damage_t>(Shipdata[t][ABIL_DAMAGE]));
-    test::expect_eq(static_cast<long>(tmpl.build_time),
-                    Shipdata[t][ABIL_BUILD]);
-    test::expect_eq(static_cast<long>(tmpl.construction_cost),
-                    Shipdata[t][ABIL_CONSTRUCT]);
-    test::expect_eq(tmpl.can_modify, Shipdata[t][ABIL_MOD] != 0);
-    test::expect_eq(tmpl.max_lasers,
-                    static_cast<gun_count_t>(Shipdata[t][ABIL_LASER]));
-
-    // Boolean capabilities parity
-    test::expect_eq(tmpl.can_mount, Shipdata[t][ABIL_MOUNT] != 0);
-    test::expect_eq(tmpl.can_hyperjump, Shipdata[t][ABIL_JUMP] != 0);
-    test::expect_eq(tmpl.can_land, Shipdata[t][ABIL_CANLAND] != 0);
-    test::expect_eq(tmpl.has_switch, Shipdata[t][ABIL_HASSWITCH] != 0);
-    test::expect_eq(tmpl.has_cew, Shipdata[t][ABIL_CEW] != 0);
-    test::expect_eq(tmpl.can_cloak, Shipdata[t][ABIL_CLOAK] != 0);
-    test::expect_eq(tmpl.is_god_only, Shipdata[t][ABIL_GOD] != 0);
-    test::expect_eq(tmpl.is_programmed, Shipdata[t][ABIL_PROGRAMMED] != 0);
-    test::expect_eq(tmpl.is_starport, Shipdata[t][ABIL_PORT] != 0);
-    test::expect_eq(tmpl.can_repair, Shipdata[t][ABIL_REPAIR] != 0);
-    test::expect_eq(tmpl.requires_maintenance, Shipdata[t][ABIL_MAINTAIN] != 0);
+    // Consistency of domain predicates with raw values
+    test::expect_eq(tmpl.can_build_on_planet(),
+                    (static_cast<int>(tmpl.build_time) & 1) != 0);
+    test::expect_eq(tmpl.can_construct_ships(),
+                    static_cast<int>(tmpl.construction_cost) != 0);
   }
-  std::println(std::cout, "  ✓ All 47 ship templates match Shipdata exactly");
+  test::expect_eq(seen_letters.size(), static_cast<std::size_t>(NUMSTYPES));
+  std::println(std::cout,
+               "  ✓ All 47 ship templates have valid metadata and unique "
+               "letters");
+
+  std::println(std::cout, "Testing get_all_ship_letters helper...");
+  {
+    auto letters = get_all_ship_letters();
+    test::expect_eq(letters.size(), static_cast<std::size_t>(NUMSTYPES));
+    for (char c : letters) {
+      test::expect_true(is_valid_ship_letter(c));
+    }
+    test::expect_false(is_valid_ship_letter('?'));
+    test::expect_false(is_valid_ship_letter('$'));
+  }
+
+  std::println(std::cout, "Testing specific ship template properties...");
+  {
+    const auto& pod_tmpl = ship_template(ShipType::STYPE_POD);
+    test::expect_eq(pod_tmpl.name, "Spore pod");
+    test::expect_eq(pod_tmpl.letter, 'p');
+    test::expect_true(pod_tmpl.can_repair);
+    test::expect_false(pod_tmpl.requires_maintenance);
+    test::expect_true(pod_tmpl.can_land);
+    test::expect_false(pod_tmpl.can_hyperjump);
+    test::expect_false(pod_tmpl.can_mount);
+    test::expect_false(pod_tmpl.can_modify);
+    test::expect_false(pod_tmpl.is_starport);
+
+    const auto& battle_tmpl = ship_template(ShipType::STYPE_BATTLE);
+    test::expect_eq(battle_tmpl.name, "Battleship");
+    test::expect_eq(battle_tmpl.letter, 'B');
+    test::expect_eq(battle_tmpl.base_armor, 7);
+    test::expect_eq(battle_tmpl.max_crew, 30);
+    test::expect_eq(battle_tmpl.max_fuel, 200);
+    test::expect_true(battle_tmpl.can_modify);
+    test::expect_true(battle_tmpl.can_mount);
+    test::expect_true(battle_tmpl.can_hyperjump);
+    test::expect_true(battle_tmpl.can_land);
+
+    const auto& factory_tmpl = ship_template(ShipType::OTYPE_FACTORY);
+    test::expect_eq(factory_tmpl.name, "Factory");
+    test::expect_eq(factory_tmpl.letter, 'F');
+    test::expect_true(factory_tmpl.can_construct_ships());
+    test::expect_true(factory_tmpl.has_switch);
+
+    const auto& hab_tmpl = ship_template(ShipType::STYPE_HABITAT);
+    test::expect_eq(hab_tmpl.name, "Habitat");
+    test::expect_eq(hab_tmpl.letter, 'H');
+    test::expect_true(hab_tmpl.is_starport);
+    test::expect_true(hab_tmpl.can_repair);
+    test::expect_true(hab_tmpl.requires_maintenance);
+    test::expect_false(hab_tmpl.can_land);
+  }
 
   std::println(std::cout, "Testing Ship entity helper accessors...");
   {
     Ship carrier;
     carrier.type() = ShipType::STYPE_CARRIER;
-    test::expect_eq(carrier.get_template().name, "Carrier");
+    test::expect_eq(carrier.type_name(), "Carrier");
+    test::expect_eq(carrier.type_letter(), 'X');
     test::expect_true(carrier.can_repair());
     test::expect_true(carrier.requires_maintenance());
     test::expect_false(carrier.can_land());
     test::expect_true(carrier.can_hyperjump());
     test::expect_true(carrier.can_mount());
     test::expect_true(carrier.can_modify());
+    test::expect_false(carrier.is_starport());
 
     Ship pod;
     pod.type() = ShipType::STYPE_POD;
-    test::expect_eq(pod.get_template().name, "Spore pod");
+    test::expect_eq(pod.type_name(), "Spore pod");
+    test::expect_eq(pod.type_letter(), 'p');
     test::expect_true(pod.can_repair());
     test::expect_false(pod.requires_maintenance());
     test::expect_true(pod.can_land());
@@ -92,13 +115,14 @@ int main() {
 
     Ship hab;
     hab.type() = ShipType::STYPE_HABITAT;
-    test::expect_eq(hab.get_template().name, "Habitat");
+    test::expect_eq(hab.type_name(), "Habitat");
+    test::expect_eq(hab.type_letter(), 'H');
     test::expect_true(hab.can_repair());
     test::expect_true(hab.requires_maintenance());
     test::expect_false(hab.can_land());
     test::expect_false(hab.can_hyperjump());
     test::expect_false(hab.can_mount());
-    test::expect_true(hab.get_template().is_starport);
+    test::expect_true(hab.is_starport());
     std::println(std::cout, "  ✓ Ship capability accessors work correctly");
   }
 

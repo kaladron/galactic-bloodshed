@@ -218,7 +218,7 @@ found_planet:
     ss.storbits = star;
     ss.pnumorbits = pnum;
     ss.rad = 0;
-    ss.damage = 0; /*Shipdata[ss.type][ABIL_DAMAGE];*/
+    ss.damage = 0;
     /* (first capital is 100% efficient */
     ss.retaliate = 0;
 

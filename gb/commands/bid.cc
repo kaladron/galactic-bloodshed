@@ -142,7 +142,7 @@ bool place_bid(const command_t& argv, GameObj& g) {
   bool ok = false;
   for (const Ship& s : ShipList::readonly(g)) {
     if (s.alive() && (s.owner() == g.player()) && !s.damage() &&
-        Shipdata[s.type()][ABIL_PORT]) {
+        s.is_starport()) {
       ok = true;
       break;
     }

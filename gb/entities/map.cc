@@ -43,7 +43,7 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
         iq = 1;
       if (s.alive() && s.is_landed()) {
         Coordinates land = s.land_coords();
-        shiplocs[land.x][land.y] = Shipltrs[s.type()];
+        shiplocs[land.x][land.y] = s.type_letter();
       }
     }
   }

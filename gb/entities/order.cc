@@ -717,7 +717,7 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
     buffer << prin_ship_dest(ship);
 
   buffer << std::format(
-      "{:5} {} {:14.14} {}{} {:10.10} {}", ship.number(), Shipltrs[ship.type()],
+      "{:5} {} {:14.14} {}{} {:10.10} {}", ship.number(), ship.type_letter(),
       ship.name(), ship.hyper_drive().has ? (ship.mounted() ? '+' : '*') : ' ',
       ship.speed(), dispshiploc_brief(em, ship), buffer.str());
 

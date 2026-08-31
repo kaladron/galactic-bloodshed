@@ -42,7 +42,7 @@ parse_ship_selection(std::string_view selection) {
  *
  * Supports multiple filter types:
  * - "#123" - Match specific ship number (MUST have # prefix)
- * - "f" - Match ship type (single character from Shipltrs)
+ * - "f" - Match ship type (single character classification letter)
  * - "frd" or "123" - Match any of multiple ship types (numeric strings are
  * treated as type letters, not ship numbers)
  * - "*" - Match all ships (wildcard)
@@ -68,7 +68,7 @@ export bool ship_matches_filter(std::string_view filter, const Ship& ship) {
   // This includes numeric strings like "123" which look for ship types with
   // letters '1', '2', '3'
   for (const auto& c : filter) {
-    if (c == ::Shipltrs[ship.type()] || c == '*') {
+    if (c == ship.type_letter() || c == '*') {
       return true;
     }
   }

@@ -189,7 +189,7 @@ public:
    * Add a stat comparison to the running totals.
    *
    * @param value The ship's actual stat value.
-   * @param base The baseline value from Shipdata template.
+   * @param base The baseline value from ShipTemplate.
    */
   void add(int value, int base) {
     const double ratio = ((static_cast<double>(value) + 1.0) /
@@ -347,7 +347,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
  * If complexity(ship) > race.tech, the ship cannot be built. It's also used
  * for sorting ships in display order.
  *
- * The algorithm compares the ship's stats against the base template (Shipdata):
+ * The algorithm compares the ship's stats against the base ShipTemplate:
  * - Stats above baseline accumulate as "advantage" (linear growth)
  * - Stats below baseline accumulate as "disadvantage" (exponential decay
  * penalty)
@@ -356,7 +356,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
  * requirement (higher tech ships tolerate more customization), then squared to
  * make large deviations exponentially more expensive.
  *
- * A ship with no modifications returns exactly its base ABIL_TECH value.
+ * A ship with no modifications returns exactly its base tech requirement.
  * Upgrades increase complexity; downgrades slightly decrease it.
  *
  * @param s The Ship object for which the complexity is calculated.
@@ -400,8 +400,8 @@ double complexity(const Ship& s) {
 /**
  * @brief Calculate the complexity (tech level) for a default ship of a type.
  *
- * For a ship with no modifications, this returns exactly its base ABIL_TECH
- * value. This is useful for sorting ship types by their base complexity.
+ * For a ship with no modifications, this returns exactly its base tech
+ * requirement. This is useful for sorting ship types by their base complexity.
  *
  * @param type The ShipType to get default complexity for.
  * @return The base complexity value for this ship type.

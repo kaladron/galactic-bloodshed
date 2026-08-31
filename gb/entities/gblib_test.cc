@@ -109,12 +109,9 @@ int main() {
     Ship fact(fact_data);
     test::expect_true(fact.has_switch());
     test::expect_eq(fact.repair_capacity(), 1L);
-    test::expect_eq(fact.max_crew_capacity(),
-                    static_cast<population_t>(
-                        Shipdata[ShipType::OTYPE_FACTORY][ABIL_MAXCREW]));
-    test::expect_eq(
-        fact.max_resource_capacity(),
-        static_cast<resource_t>(Shipdata[ShipType::OTYPE_FACTORY][ABIL_CARGO]));
+    const auto& fact_tmpl = ship_template(ShipType::OTYPE_FACTORY);
+    test::expect_eq(fact.max_crew_capacity(), fact_tmpl.max_crew);
+    test::expect_eq(fact.max_resource_capacity(), fact_tmpl.max_cargo);
   }
 
   std::println(std::cout, "✓ gblib_test passed!");

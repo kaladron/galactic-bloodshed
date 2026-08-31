@@ -30,7 +30,7 @@ TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
   ship_.owner = 1;
   ship_.governor = 0;
   ship_.tech = 100.0;
-  ship_.name = Shipnames[type];
+  ship_.name = ship_template(type).name;
 
   // Canonical baseline initialization from ship_template
   const auto& tmpl = ship_template(type);

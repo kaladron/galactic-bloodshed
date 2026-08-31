@@ -204,12 +204,12 @@ StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
   if (ship.type() == ShipType::OTYPE_VN) {
     rcv_resource(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
-                      f, Shipltrs[ShipType::OTYPE_VN], ship.number(),
+                      f, ship.type_letter(), ship.number(),
                       prin_ship_orbits(em, ship));
   } else if (ship.type() == ShipType::OTYPE_BERS) {
     rcv_destruct(ship, prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
-                      f, Shipltrs[ShipType::OTYPE_BERS], ship.number(),
+                      f, ship.type_letter(), ship.number(),
                       prin_ship_orbits(em, ship));
   }
 

@@ -158,7 +158,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
     g.out << std::format("{} doesn't orbit a planet.\n", s);
     return false;
   }
-  if (!Shipdata[s.type()][ABIL_CANLAND]) {
+  if (!s.can_land()) {
     g.out << "This ship is not equipped to land.\n";
     return false;
   }

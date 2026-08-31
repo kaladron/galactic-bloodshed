@@ -585,6 +585,141 @@ void test_output_ground_attacks() {
   test::expect_eq(ground_assaults[player_t{1}][player_t{2}][starnum_t{0}], 0U);
 }
 
+void test_race_turn_accounting_and_maintenance() {
+  Race race = createTestRace(player_t{1});
+  race.controlled_planets = 5;
+  race.planet_points = 20;
+  race.governor[0].active = true;
+  race.governor[0].maintain = 100;
+  race.governor[0].income = 50;
+  race.governor[0].cost_market = 30;
+  race.governor[0].profit_market = 40;
+  race.governor[0].cost_tech = 10;
+  race.governor[0].money = 500;
+  race.morale = 80;
+
+  // 1. Reset turn accounting
+  race.reset_turn_accounting();
+  test::expect_eq(race.controlled_planets, 0);
+  test::expect_eq(race.planet_points, 0);
+  test::expect_eq(race.governor[0].maintain, 0);
+  test::expect_eq(race.governor[0].income, 0UL);
+  test::expect_eq(race.governor[0].cost_market, 0UL);
+  test::expect_eq(race.governor[0].profit_market, 0UL);
+  test::expect_eq(race.governor[0].cost_tech, 0UL);
+
+  // 2. Deduct maintenance with sufficient funds
+  race.governor[0].money = 500;
+  race.deduct_maintenance(governor_t{0}, 200);
+  test::expect_eq(race.governor[0].money, 300);
+  test::expect_eq(race.morale, 80);
+
+  // 3. Deduct maintenance with deficit: deducts remaining money, applies morale
+  // penalty clamped to [0, 100]
+  race.deduct_maintenance(governor_t{0},
+                          500);  // Deficit of 200 -> penalty of 20
+  test::expect_eq(race.governor[0].money, 0);
+  test::expect_eq(race.morale, 60);
+
+  // Deficit clamping: large deficit clamps morale to 0
+  race.deduct_maintenance(governor_t{0},
+                          10000);  // Deficit of 10000 -> morale 0
+  test::expect_eq(race.morale, 0);
+
+  // 4. Collective Intelligence IQ scaling
+  race.collective_iq = true;
+  race.IQ_limit = 200;
+  race.update_collective_intelligence(50000);
+  test::expect_gt(race.IQ, 0);
+  test::expect_le(race.IQ, race.IQ_limit);
+}
+
+void test_update_von_neumann_target() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(player_t{1});
+  Race race2 = createTestRace(player_t{2});
+  RaceRepository race_repo(store);
+  race_repo.save(race1);
+  race_repo.save(race2);
+
+  universe_struct u{};
+  u.id = 1;
+  u.numstars = 1;
+  u.VN_hitlist[player_t{1}] = 10;
+  u.VN_hitlist[player_t{2}] = 25;
+  UniverseRepository univ_repo(store);
+  univ_repo.save(u);
+
+  TurnStats stats{};
+  update_von_neumann_target(em, stats);
+
+  test::expect_eq(stats.VN_brain.total_mad, 35);
+  test::expect_eq(stats.VN_brain.most_mad, player_t{2});
+}
+
+void test_check_technological_discoveries() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.tech = 160.0;  // Qualifies for HYPERDRIVE (50), LASER (100), CEW (150)
+  RaceRepository race_repo(store);
+  race_repo.save(race);
+
+  check_technological_discoveries(em, race);
+
+  test::expect_true(race.discoveries.hyperdrive);
+  test::expect_true(race.discoveries.laser);
+  test::expect_true(race.discoveries.cew);
+  test::expect_true(race.discoveries.vn);
+  test::expect_true(race.discoveries.crystal);
+  test::expect_false(race.discoveries.avpm);          // TECH_AVPM = 250
+  test::expect_false(race.discoveries.tractor_beam);  // TECH_TRACTOR_BEAM = 999
+}
+
+void test_calculate_victory_scores_isolated() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(player_t{1});
+  race1.morale = 100;
+  race1.governor[0].money = 1000;
+  RaceRepository race_repo(store);
+  race_repo.save(race1);
+
+  universe_struct u{};
+  u.id = 1;
+  u.numstars = 1;
+  UniverseRepository univ_repo(store);
+  univ_repo.save(u);
+
+  Star star = createTestStar(starnum_t{0});
+  StarRepository star_repo(store);
+  star_repo.save(star);
+
+  Planet planet = createTestPlanet(starnum_t{0}, planetnum_t{0});
+  planet.info(player_t{1}).explored = true;
+  planet.info(player_t{1}).numsectsowned = 10;
+  planet.info(player_t{1}).resource = 100;
+  planet.info(player_t{1}).fuel = 50;
+  PlanetRepository planet_repo(store);
+  planet_repo.save(planet);
+
+  calculate_victory_scores(em);
+
+  const auto* race_after = em.peek_race(player_t{1});
+  test::expect_ne(race_after, nullptr);
+  test::expect_gt(race_after->victory_score, 0UL);
+}
+
 }  // namespace
 
 int main() {
@@ -609,6 +744,22 @@ int main() {
 
   std::println(std::cout, "  Testing output_ground_attacks... ");
   test_output_ground_attacks();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing race turn accounting and maintenance... ");
+  test_race_turn_accounting_and_maintenance();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing update_von_neumann_target... ");
+  test_update_von_neumann_target();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing check_technological_discoveries... ");
+  test_check_technological_discoveries();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing calculate_victory_scores isolated... ");
+  test_calculate_victory_scores_isolated();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing fix_stability... ");

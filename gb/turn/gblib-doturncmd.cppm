@@ -9,6 +9,7 @@ import :gameobj;
 import :race;
 import :services;
 import :star;
+import :turnstats;
 import :types;
 import std;
 
@@ -54,6 +55,26 @@ export void distribute_universe_action_points(EntityManager& entity_manager);
 /// during turn simulation segments and resets the assault counters.
 /// \param em Entity manager for star/race queries and news dispatch.
 export void output_ground_attacks(EntityManager& em);
+
+/// \brief Computes victory points for all empires based on sector ownership,
+/// fleet assets, stockpiled resources, treasury funds, and morale scaling.
+/// \param entity_manager Database entity manager for entity queries and
+/// mutations.
+export void calculate_victory_scores(EntityManager& entity_manager);
+
+/// \brief Evaluates the Von Neumann machine collective target across all
+/// empires, tracking total aggression and identifying the priority target.
+/// \param em Entity manager for universe hitlist queries.
+/// \param stats Turn statistics struct storing VN collective memory.
+export void update_von_neumann_target(EntityManager& em, TurnStats& stats);
+
+/// \brief Checks whether an empire has attained tech thresholds to unlock
+/// specialized capabilities (hyperdrive, laser, cew, vn, tractor beam,
+/// transporter, avpm, cloak, wormhole, crystal) and dispatches telegram
+/// notices.
+/// \param em Entity manager for telegram dispatch.
+/// \param r Race entity undergoing tech progression.
+export void check_technological_discoveries(EntityManager& em, Race& r);
 
 export void fix_stability(EntityManager& em, Star& s);
 

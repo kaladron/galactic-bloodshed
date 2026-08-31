@@ -47,20 +47,7 @@ struct TurnState {
 
 }  // anonymous namespace
 
-// Note: RaceList, StarList, PlanetList are now imported from gblib:entitylists
-
-static constexpr void maintain(Race& r, Race::gov& governor,
-                               const money_t amount) noexcept {
-  if (governor.money >= amount)
-    governor.money -= amount;
-  else {
-    r.morale -= (amount - governor.money) / 10;
-    governor.money = 0;
-  }
-}
-
 static bool attack_planet(const Ship&);
-static void make_discoveries(EntityManager&, Race&);
 static void process_ships(TurnState& state);
 static void process_stars_and_planets(TurnState& state, bool update);
 static void process_races(TurnState& state, bool update);
@@ -68,7 +55,6 @@ static void process_ship_masses_and_ownership(TurnState& state);
 static void process_ship_turns(TurnState& state, bool update);
 static void prepare_dead_ships(TurnState& state);
 static void process_abms_and_missiles(TurnState& state, bool update);
-static void update_victory_scores(TurnState& state, bool update);
 static void finalize_turn(TurnState& state, bool update);
 
 /**
@@ -104,7 +90,9 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
     process_ship_turns(state, update);
     prepare_dead_ships(state);
     process_abms_and_missiles(state, update);
-    update_victory_scores(state, update);
+    if (update) {
+      calculate_victory_scores(state.entity_manager);
+    }
     finalize_turn(state, update);
   }
 
@@ -154,43 +142,16 @@ static void process_stars_and_planets(TurnState& state, bool update) {
 }
 
 static void process_races(TurnState& state, bool update) {
-  state.stats.VN_brain.most_mad = 0; /* not mad at anyone for starts */
+  if (update) {
+    update_von_neumann_target(state.entity_manager, state.stats);
 
-  // Get universe data for VN hitlist
-  const auto* sdata = state.entity_manager.peek_universe();
-
-  for (auto race_handle : RaceList(state.entity_manager)) {
-    const player_t player = race_handle->Playernum;
-
-    /* increase tech; change to something else */
-    if (update) {
-      /* Reset controlled planet count */
-      race_handle->controlled_planets = 0;
-      race_handle->planet_points = 0;
-      for (auto& governor : race_handle->governor) {
-        if (governor.active) {
-          governor.maintain = 0;
-          governor.cost_market = 0;
-          governor.profit_market = 0;
-          governor.cost_tech = 0;
-          governor.income = 0;
-        }
+    for (auto race_handle : RaceList(state.entity_manager)) {
+      race_handle->reset_turn_accounting();
+      if (VOTING) {
+        /* Reset their vote for Update go. */
+        // TODO(jeffbailey): This doesn't seem to work.
+        race_handle->votes = false;
       }
-      /* add VN program */
-      if (sdata) {
-        state.stats.VN_brain.total_mad += sdata->VN_hitlist[player];
-        /* find out who they're most mad at */
-        if (state.stats.VN_brain.most_mad == 0 ||
-            sdata->VN_hitlist[state.stats.VN_brain.most_mad] <=
-                sdata->VN_hitlist[player]) {
-          state.stats.VN_brain.most_mad = player;
-        }
-      }
-    }
-    if (VOTING) {
-      /* Reset their vote for Update go. */
-      // TODO(jeffbailey): This doesn't seem to work.
-      race_handle->votes = false;
     }
   }
 }
@@ -231,7 +192,7 @@ void process_market_transactions(EntityManager& entity_manager) {
         entity_manager.mutate_race(c.bidder, [&](Race& b_race) {
           b_race.governor[c.bidder_gov.value].money -= c.bid;
           b_race.governor[c.bidder_gov.value].cost_market += c.bid + cost;
-          maintain(b_race, b_race.governor[c.bidder_gov.value], cost);
+          b_race.deduct_maintenance(c.bidder_gov, cost);
         });
         entity_manager.mutate_race(c.owner, [&](Race& o_race) {
           o_race.governor[c.governor.value].money += c.bid;
@@ -433,11 +394,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
   /* here is where we do victory calculations. */
 }
 
-static void update_victory_scores(TurnState& state, bool update) {
-  if (!update) {
-    return;
-  }
-
+void calculate_victory_scores(EntityManager& entity_manager) {
   struct victstruct {
     int numsects{0};
     int shipcost{0};
@@ -451,7 +408,7 @@ static void update_victory_scores(TurnState& state, bool update) {
 
   PlayerVector<victstruct, MAXPLAYERS> victory{};
 
-  for (const Race& race : RaceList::readonly(state.entity_manager)) {
+  for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t player = race.Playernum;
     victory[player].morale = race.morale;
     for (const auto& governor : race.governor) {
@@ -461,11 +418,11 @@ static void update_victory_scores(TurnState& state, bool update) {
     }
   }
 
-  for (const Star& star : StarList::readonly(state.entity_manager)) {
+  for (const Star& star : StarList::readonly(entity_manager)) {
     /* do planets in the star next */
     for (const Planet& planet :
-         PlanetList::readonly(state.entity_manager, star.star_id(), star)) {
-      for (const Race& race : RaceList::readonly(state.entity_manager)) {
+         PlanetList::readonly(entity_manager, star.star_id(), star)) {
+      for (const Race& race : RaceList::readonly(entity_manager)) {
         const player_t player = race.Playernum;
         if (!planet.info(player).explored) {
           continue;
@@ -479,8 +436,8 @@ static void update_victory_scores(TurnState& state, bool update) {
     } /* end of planet searchings */
   } /* end of star searchings */
 
-  for (const Ship& ship : ShipList::readonly(
-           state.entity_manager, ShipList::IterationType::AllAlive)) {
+  for (const Ship& ship :
+       ShipList::readonly(entity_manager, ShipList::IterationType::AllAlive)) {
     if (ship.owner() == 0) {
       continue;
     }
@@ -492,7 +449,7 @@ static void update_victory_scores(TurnState& state, bool update) {
   }
   /* now that we have the info.. calculate the raw score */
 
-  for (auto race_handle : RaceList(state.entity_manager)) {
+  for (auto race_handle : RaceList(entity_manager)) {
     const player_t player = race_handle->Playernum;
     race_handle->victory_score =
         (VICT_SECT * victory[player].numsects) +
@@ -515,17 +472,11 @@ static void finalize_turn(TurnState& state, bool update) {
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
 
-      /* collective intelligence */
-      if (race_handle->collective_iq) {
-        double x =
-            ((2. / 3.14159265) *
-             std::atan(static_cast<double>(state.stats.Power[player].popn) /
-                       MESO_POP_SCALE));
-        race_handle->IQ = race_handle->IQ_limit * x * x;
-      }
+      race_handle->update_collective_intelligence(
+          state.stats.Power[player].popn);
       race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;
       race_handle->morale += state.stats.Power[player].planets_owned;
-      make_discoveries(state.entity_manager, *race_handle);
+      check_technological_discoveries(state.entity_manager, *race_handle);
       race_handle->turn += 1;
       if (race_handle->controlled_planets >=
           planet_count.value * VICTORY_PERCENT / 100) {
@@ -550,7 +501,7 @@ static void finalize_turn(TurnState& state, bool update) {
       if (MARKET) {
         for (auto& governor : race_handle->governor) {
           if (governor.active) {
-            maintain(*race_handle, governor, governor.maintain);
+            race_handle->deduct_maintenance(governor, governor.maintain);
           }
         }
       }
@@ -689,61 +640,79 @@ void fix_stability(EntityManager& em, Star& s) {
   }
 }
 
+void update_von_neumann_target(EntityManager& em, TurnStats& stats) {
+  stats.VN_brain.most_mad = player_t{0};
+  stats.VN_brain.total_mad = 0;
+
+  const auto* sdata = em.peek_universe();
+  if (!sdata) return;
+
+  for (const Race& race : RaceList::readonly(em)) {
+    const player_t player = race.Playernum;
+    stats.VN_brain.total_mad += sdata->VN_hitlist[player];
+    if (stats.VN_brain.most_mad == player_t{0} ||
+        sdata->VN_hitlist[stats.VN_brain.most_mad] <=
+            sdata->VN_hitlist[player]) {
+      stats.VN_brain.most_mad = player;
+    }
+  }
+}
+
+enum class WinCategory {
+  NONE,
+  BIG_WINNER,
+  LITTLE_WINNER
+};
+
 void handle_victory(EntityManager& em) {
   if (!VICTORY) return;
 
   const planetnum_t planet_count = em.peek_universe()->planet_count;
-  int i, j;
   int game_over = 0;
-  int win_category[64];
+  PlayerVector<WinCategory, MAXPLAYERS> win_category{};
 
-  const int BIG_WINNER = 1;
-  const int LITTLE_WINNER = 2;
-
-  for (i = 1; i <= em.num_races(); i++) {
-    win_category[i - 1] = 0;
-    const auto* race = em.peek_race(i);
-    if (!race) continue;
-    if (race->controlled_planets >=
-        planet_count.value * VICTORY_PERCENT / 100) {
-      win_category[i - 1] = LITTLE_WINNER;
+  for (const Race& race : RaceList::readonly(em)) {
+    const player_t player = race.Playernum;
+    if (race.controlled_planets >= planet_count.value * VICTORY_PERCENT / 100) {
+      win_category[player] = WinCategory::LITTLE_WINNER;
     }
-    if (race->victory_turns >= VICTORY_UPDATES) {
+    if (race.victory_turns >= VICTORY_UPDATES) {
       game_over++;
-      win_category[i - 1] = BIG_WINNER;
+      win_category[player] = WinCategory::BIG_WINNER;
     }
   }
+
   if (game_over) {
-    for (i = 1; i <= em.num_races(); i++) {
+    for (const Race& race : RaceList::readonly(em)) {
+      const player_t i = race.Playernum;
       push_telegram_race(em, i, "*** Attention ***");
       push_telegram_race(em, i,
                          "This game of Galactic Bloodshed is now *over*");
       std::string winner_msg =
           std::format("The big winner{}", (game_over == 1) ? " is" : "s are");
       push_telegram_race(em, i, winner_msg);
-      for (j = 1; j <= em.num_races(); j++)
-        if (win_category[j - 1] == BIG_WINNER) {
-          const auto* winner_race = em.peek_race(j);
-          if (!winner_race) continue;
+      for (const Race& winner : RaceList::readonly(em)) {
+        const player_t j = winner.Playernum;
+        if (win_category[j] == WinCategory::BIG_WINNER) {
           std::string big_winner_msg =
-              std::format("*** [{:2d}] {:<30.30s} ***", j, winner_race->name);
+              std::format("*** [{:2d}] {:<30.30s} ***", j, winner.name);
           push_telegram_race(em, i, big_winner_msg);
         }
+      }
       push_telegram_race(em, i, "Lesser winners:");
-      for (j = 1; j <= em.num_races(); j++)
-        if (win_category[j - 1] == LITTLE_WINNER) {
-          const auto* winner_race = em.peek_race(j);
-          if (!winner_race) continue;
+      for (const Race& winner : RaceList::readonly(em)) {
+        const player_t j = winner.Playernum;
+        if (win_category[j] == WinCategory::LITTLE_WINNER) {
           std::string little_winner_msg =
-              std::format("+++ [{:2d}] {:<30.30s} +++", j, winner_race->name);
+              std::format("+++ [{:2d}] {:<30.30s} +++", j, winner.name);
           push_telegram_race(em, i, little_winner_msg);
         }
+      }
     }
   }
 }
 
-static void make_discoveries(EntityManager& em, Race& r) {
-  /* would be nicer to do this with a loop of course - but it's late */
+void check_technological_discoveries(EntityManager& em, Race& r) {
   if (!r.discoveries.hyperdrive && r.tech >= TECH_HYPER_DRIVE) {
     push_telegram_race(em, r.Playernum,
                        "You have discovered HYPERDRIVE technology.\n");

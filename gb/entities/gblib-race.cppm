@@ -150,6 +150,51 @@ public:
     std::time_t login{0}; /* last login for this governor */
   } governor[MAXGOVERNORS + 1];
 
+  /// \brief Resets turn-level economic accounting ledgers and controlled planet
+  /// tallies at the start of a turn update.
+  void reset_turn_accounting() noexcept {
+    controlled_planets = 0;
+    planet_points = 0;
+    for (auto& gov : governor) {
+      if (gov.active) {
+        gov.maintain = 0;
+        gov.cost_market = 0;
+        gov.profit_market = 0;
+        gov.cost_tech = 0;
+        gov.income = 0;
+      }
+    }
+  }
+
+  /// \brief Deducts treasury funds for maintenance costs, deducting morale
+  /// (clamped to [0, 100]) if treasury funds are insufficient to cover costs.
+  void deduct_maintenance(governor_t gov_num, money_t amount) noexcept {
+    deduct_maintenance(governor[gov_num.value], amount);
+  }
+
+  /// \brief Deducts treasury funds for maintenance costs, deducting morale
+  /// (clamped to [0, 100]) if treasury funds are insufficient to cover costs.
+  void deduct_maintenance(gov& gov_ref, money_t amount) noexcept {
+    if (gov_ref.money >= amount) {
+      gov_ref.money -= amount;
+    } else {
+      const money_t deficit = amount - gov_ref.money;
+      const int morale_penalty = static_cast<int>(deficit / 10);
+      morale = std::clamp(static_cast<long>(morale - morale_penalty), 0L, 100L);
+      gov_ref.money = 0;
+    }
+  }
+
+  /// \brief Updates race IQ based on collective population scaling if the race
+  /// possesses collective intelligence traits.
+  void update_collective_intelligence(population_t total_popn) noexcept {
+    if (collective_iq) {
+      double x = ((2.0 / std::numbers::pi) *
+                  std::atan(static_cast<double>(total_popn) / MESO_POP_SCALE));
+      IQ = static_cast<unsigned short>(IQ_limit * x * x);
+    }
+  }
+
   // Iterate over active governors only
   [[nodiscard]] auto active_governors() const;
 

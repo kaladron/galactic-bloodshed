@@ -31,6 +31,7 @@ Specialized development skills are located in `.github/skills/` and provide comp
 - **Entity Domain Methods**: `.github/skills/entity-domain-methods/SKILL.md` — Computed predicates, domain methods, and structured manifests on entities.
 - **Repository Pattern**: `.github/skills/repository-pattern/SKILL.md` — DAL and repository implementation patterns.
 - **Module File Template**: `.github/skills/module-file-template/SKILL.md` — Standard C++26 module structure and headers.
+- **Domain Documentation**: `.github/skills/domain-documentation/SKILL.md` — Authoring player-facing technical guides to game mechanics and formulas.
 
 ## 🧭 Workflow & Development Principles
 

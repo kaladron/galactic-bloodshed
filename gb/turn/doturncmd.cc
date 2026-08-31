@@ -67,7 +67,6 @@ static void output_ground_attacks(TurnState& state);
 static void process_ships(TurnState& state);
 static void process_stars_and_planets(TurnState& state, bool update);
 static void process_races(TurnState& state, bool update);
-static void process_market(TurnState& state, bool update);
 static void process_ship_masses_and_ownership(TurnState& state);
 static void process_ship_turns(TurnState& state, bool update);
 static void prepare_dead_ships(TurnState& state);
@@ -101,7 +100,9 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
     process_stars_and_planets(state, update);
     process_races(state, update);
     output_ground_attacks(state);
-    process_market(state, update);
+    if (update) {
+      process_market_transactions(state.entity_manager);
+    }
     process_ship_masses_and_ownership(state);
     process_ship_turns(state, update);
     prepare_dead_ships(state);
@@ -202,7 +203,6 @@ static void process_races(TurnState& state, bool update) {
 /**
  * Process commodity market transactions.
  *
- * Only runs during full updates (update=1), not movement segments.
  * For each commodity on the market:
  * - Delivers commodities that weren't yet delivered
  * - Processes bids: transfers money and goods if bidder can afford it
@@ -210,88 +210,73 @@ static void process_races(TurnState& state, bool update) {
  * - Sends telegrams to buyers and sellers
  * - Removes sold/expired commodities
  *
- * @param state Turn state with entity data
- * @param update true to process market, false to skip (movement segment only)
+ * \param entity_manager Database entity manager for persistent storage
  */
-static void process_market(TurnState& state, bool update) {
-  if (MARKET && update) {
-    /* reset market - note: CommodList filters out null/invalid entries */
-    for (auto commod_handle : CommodList(state.entity_manager)) {
-      auto& c = *commod_handle;
+void process_market_transactions(EntityManager& entity_manager) {
+  if (!MARKET) return;
 
-      if (!c.deliver) {
-        c.deliver = true;
-        continue;
-      }
+  /* reset market - note: CommodList filters out null/invalid entries */
+  for (auto commod_handle : CommodList(entity_manager)) {
+    auto& c = *commod_handle;
 
-      if (c.owner != 0 && c.bidder != 0) {
-        const auto* bidder_race = state.entity_manager.peek_race(c.bidder);
-        const auto* owner_race = state.entity_manager.peek_race(c.owner);
+    if (!c.deliver) {
+      c.deliver = true;
+      continue;
+    }
 
-        if (bidder_race && owner_race &&
-            (bidder_race->governor[c.bidder_gov.value].money >= c.bid)) {
-          auto [cost, dist] = shipping_cost(state.entity_manager, c.star_to,
-                                            c.star_from, c.bid);
+    if (c.owner != 0 && c.bidder != 0) {
+      const auto* bidder_race = entity_manager.peek_race(c.bidder);
+      const auto* owner_race = entity_manager.peek_race(c.owner);
 
-          state.entity_manager.mutate_race(c.bidder, [&](Race& b_race) {
-            b_race.governor[c.bidder_gov.value].money -= c.bid;
-            b_race.governor[c.bidder_gov.value].cost_market += c.bid + cost;
-            maintain(b_race, b_race.governor[c.bidder_gov.value], cost);
-          });
-          state.entity_manager.mutate_race(c.owner, [&](Race& o_race) {
-            o_race.governor[c.governor.value].money += c.bid;
-            o_race.governor[c.governor.value].profit_market += c.bid;
-          });
+      if (bidder_race && owner_race &&
+          (bidder_race->governor[c.bidder_gov.value].money >= c.bid)) {
+        auto [cost, dist] =
+            shipping_cost(entity_manager, c.star_to, c.star_from, c.bid);
 
-          state.entity_manager.mutate_planet(
-              c.star_to, c.planet_to, [&](Planet& planet) {
-                switch (c.type) {
-                  case CommodType::RESOURCE:
-                    planet.info(c.bidder).resource += c.amount;
-                    break;
-                  case CommodType::FUEL:
-                    planet.info(c.bidder).fuel += c.amount;
-                    break;
-                  case CommodType::DESTRUCT:
-                    planet.info(c.bidder).destruct += c.amount;
-                    break;
-                  case CommodType::CRYSTAL:
-                    planet.info(c.bidder).crystals += c.amount;
-                    break;
-                }
-              });
+        entity_manager.mutate_race(c.bidder, [&](Race& b_race) {
+          b_race.governor[c.bidder_gov.value].money -= c.bid;
+          b_race.governor[c.bidder_gov.value].cost_market += c.bid + cost;
+          maintain(b_race, b_race.governor[c.bidder_gov.value], cost);
+        });
+        entity_manager.mutate_race(c.owner, [&](Race& o_race) {
+          o_race.governor[c.governor.value].money += c.bid;
+          o_race.governor[c.governor.value].profit_market += c.bid;
+        });
 
-          const auto* star = state.entity_manager.peek_star(c.star_to);
-          std::string purchased_msg = std::format(
-              "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
-              "arrived at /{}/{}\n",
-              c.id, owner_race->name, c.owner, c.bid, c.amount, c.type,
-              star ? star->get_name() : "unknown",
-              star ? star->get_planet_name(c.planet_to) : "unknown");
-          push_telegram(state.entity_manager, c.bidder, c.bidder_gov,
-                        purchased_msg);
-          std::string sold_msg = std::format(
-              "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id,
-              c.amount, c.type, bidder_race->name, c.bidder, c.bid);
-          push_telegram(state.entity_manager, c.owner, c.governor, sold_msg);
-          c.owner = 0;
-          c.governor = 0;
-          c.bidder = 0;
-          c.bidder_gov = 0;
-        } else {
-          c.bidder = 0;
-          c.bidder_gov = 0;
-          c.bid = 0;
-        }
+        entity_manager.mutate_planet(
+            c.star_to, c.planet_to, [&](Planet& planet) {
+              planet.deposit_commodity(c.type, c.amount, c.bidder);
+            });
+
+        const auto* star = entity_manager.peek_star(c.star_to);
+        std::string purchased_msg = std::format(
+            "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
+            "arrived at /{}/{}\n",
+            c.id, owner_race->name, c.owner, c.bid, c.amount, c.type,
+            star ? star->get_name() : "unknown",
+            star ? star->get_planet_name(c.planet_to) : "unknown");
+        push_telegram(entity_manager, c.bidder, c.bidder_gov, purchased_msg);
+        std::string sold_msg = std::format(
+            "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
+            c.type, bidder_race->name, c.bidder, c.bid);
+        push_telegram(entity_manager, c.owner, c.governor, sold_msg);
+        c.owner = 0;
+        c.governor = 0;
+        c.bidder = 0;
+        c.bidder_gov = 0;
       } else {
         c.bidder = 0;
         c.bidder_gov = 0;
         c.bid = 0;
       }
-      if (c.owner == player_t{0}) {
-        // Commodity is dead - delete it after handle releases
-        state.entity_manager.delete_commod(c.id);
-      }
+    } else {
+      c.bidder = 0;
+      c.bidder_gov = 0;
+      c.bid = 0;
+    }
+    if (c.owner == player_t{0}) {
+      // Commodity is dead - delete it after handle releases
+      entity_manager.delete_commod(c.id);
     }
   }
 }

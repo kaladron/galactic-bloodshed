@@ -439,6 +439,29 @@ public:
     data_.slaved_to = 0;
   }
 
+  /// \brief Deposits purchased or delivered commodities into the player's
+  /// planetary stockpile.
+  /// \param type Type of commodity deposited.
+  /// \param amount Quantity of commodity to deposit.
+  /// \param player Recipient player owning the stockpile.
+  void deposit_commodity(CommodType type, resource_t amount,
+                         player_t player) noexcept {
+    switch (type) {
+      case CommodType::RESOURCE:
+        info(player).resource += amount;
+        break;
+      case CommodType::FUEL:
+        info(player).fuel += amount;
+        break;
+      case CommodType::DESTRUCT:
+        info(player).destruct += amount;
+        break;
+      case CommodType::CRYSTAL:
+        info(player).crystals += amount;
+        break;
+    }
+  }
+
   // For repository serialization
   [[nodiscard]] planet_struct get_struct() const {
     return data_;

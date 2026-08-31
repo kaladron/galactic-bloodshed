@@ -356,10 +356,123 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   test::expect_gt(r2_after->victory_score, 0);
 }
 
+void test_planet_deposit_commodity() {
+  Planet planet(PlanetType::EARTH, Coordinates{5, 5});
+  const player_t p{1};
+
+  planet.deposit_commodity(CommodType::RESOURCE, 150, p);
+  test::expect_eq(planet.info(p).resource, 150);
+
+  planet.deposit_commodity(CommodType::FUEL, 80, p);
+  test::expect_eq(planet.info(p).fuel, 80);
+
+  planet.deposit_commodity(CommodType::DESTRUCT, 45, p);
+  test::expect_eq(planet.info(p).destruct, 45);
+
+  planet.deposit_commodity(CommodType::CRYSTAL, 10, p);
+  test::expect_eq(planet.info(p).crystals, 10);
+}
+
+void test_process_market_transactions_isolated() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(player_t{1});
+  race1.governor[0].money = 500;
+  Race race2 = createTestRace(player_t{2});
+  race2.governor[0].money = 1000;
+  RaceRepository race_repo(store);
+  race_repo.save(race1);
+  race_repo.save(race2);
+
+  Star star1 = createTestStar(starnum_t{0});
+  Star star2 = createTestStar(starnum_t{1});
+  star2.xpos() = 50000.0;
+  StarRepository star_repo(store);
+  star_repo.save(star1);
+  star_repo.save(star2);
+
+  Planet planet1 = createTestPlanet(starnum_t{0}, planetnum_t{0});
+  Planet planet2 = createTestPlanet(starnum_t{1}, planetnum_t{0});
+  PlanetRepository planet_repo(store);
+  planet_repo.save(planet1);
+  planet_repo.save(planet2);
+
+  CommodRepository commod_repo(store);
+
+  // 1. Undelivered lot: delivery flag is updated to true on first pass
+  Commod lot1{};
+  lot1.id = 1;
+  lot1.owner = player_t{1};
+  lot1.governor = governor_t{0};
+  lot1.type = CommodType::FUEL;
+  lot1.amount = 50;
+  lot1.star_from = starnum_t{0};
+  lot1.planet_from = planetnum_t{0};
+  lot1.star_to = starnum_t{1};
+  lot1.planet_to = planetnum_t{0};
+  lot1.bidder = player_t{2};
+  lot1.bidder_gov = governor_t{0};
+  lot1.bid = 200;
+  lot1.deliver = false;
+  commod_repo.save(lot1);
+
+  process_market_transactions(em);
+  const auto* lot1_after = em.peek_commod(1);
+  test::expect_ne(lot1_after, nullptr);
+  test::expect_true(lot1_after->deliver);
+
+  // 2. Insufficient buyer funds: bid exceeds money -> bid is cleared
+  lot1_after = nullptr;
+  em.mutate_commod(1, [](Commod& c) {
+    c.bid = 5000;  // Bidder only has 1000
+  });
+
+  process_market_transactions(em);
+  const auto* lot1_cleared = em.peek_commod(1);
+  test::expect_ne(lot1_cleared, nullptr);
+  test::expect_eq(lot1_cleared->bid, 0);
+  test::expect_eq(lot1_cleared->bidder, player_t{0});
+
+  // 3. Successful transaction: Valid bid executed, money transferred, lot
+  // deleted
+  em.mutate_commod(1, [](Commod& c) {
+    c.bidder = player_t{2};
+    c.bidder_gov = governor_t{0};
+    c.bid = 300;
+  });
+
+  process_market_transactions(em);
+
+  // Lot deleted
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_commod(1); });
+
+  // Seller received payment
+  const auto* seller = em.peek_race(player_t{1});
+  test::expect_eq(seller->governor[0].money, 800);  // 500 + 300
+
+  // Buyer charged bid + freight, and received fuel on destination planet
+  const auto* buyer = em.peek_race(player_t{2});
+  test::expect_lt(buyer->governor[0].money, 700);  // 1000 - 300 - shipping_cost
+  const auto& dest_planet = *em.peek_planet(starnum_t{1}, planetnum_t{0});
+  test::expect_eq(dest_planet.info(player_t{2}).fuel, 50);
+}
+
 }  // namespace
 
 int main() {
   std::println(std::cout, "Running doturn unit tests...\n");
+
+  std::println(std::cout, "  Testing planet deposit_commodity... ");
+  test_planet_deposit_commodity();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_market_transactions isolated... ");
+  test_process_market_transactions_isolated();
+  std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing fix_stability... ");
   test_fix_stability();

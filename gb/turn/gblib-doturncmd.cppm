@@ -18,6 +18,11 @@ export void do_update(EntityManager&, SessionRegistry&, bool = false);
 export void do_segment(EntityManager&, SessionRegistry&, int, int);
 export void handle_victory(EntityManager&);
 export void compute_power_blocks(EntityManager&);
+/// \brief Evaluates open interstellar market lots, transfers purchased
+/// commodities, charges freight shipping fees, and deposits goods at recipient
+/// planets.
+/// \param em Entity manager for market queries and mutations.
+export void process_market_transactions(EntityManager& em);
 export void fix_stability(EntityManager& em, Star& s);
 
 /// Schedule status info for display commands

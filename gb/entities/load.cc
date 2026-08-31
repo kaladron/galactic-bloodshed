@@ -10,41 +10,33 @@ import std;
 module gblib;
 
 void use_fuel(Ship& s, const fuel_t amt) {
-  s.fuel() -= amt;
-  s.mass() -= amt * MASS_FUEL;
+  s.consume_fuel(amt);
 }
 
 void use_destruct(Ship& s, const resource_t amt) {
-  s.destruct() -= static_cast<unsigned short>(amt);
-  s.mass() -= static_cast<double>(amt) * MASS_DESTRUCT;
+  s.consume_destruct(amt);
 }
 
 void use_resource(Ship& s, const resource_t amt) {
-  s.resource() -= amt;
-  s.mass() -= static_cast<double>(amt) * MASS_RESOURCE;
+  s.consume_resource(amt);
 }
 
 void rcv_fuel(Ship& s, const fuel_t amt) {
-  s.fuel() += amt;
-  s.mass() += amt * MASS_FUEL;
+  s.add_fuel(amt);
 }
 
 void rcv_resource(Ship& s, const resource_t amt) {
-  s.resource() += amt;
-  s.mass() += static_cast<double>(amt) * MASS_RESOURCE;
+  s.add_resource(amt);
 }
 
 void rcv_destruct(Ship& s, const resource_t amt) {
-  s.destruct() += static_cast<unsigned short>(amt);
-  s.mass() += static_cast<double>(amt) * MASS_DESTRUCT;
+  s.add_destruct(amt);
 }
 
 void rcv_popn(Ship& s, const population_t amt, const double mass) {
-  s.popn() += amt;
-  s.mass() += static_cast<double>(amt) * mass;
+  s.add_popn(amt, mass);
 }
 
 void rcv_troops(Ship& s, const population_t amt, const double mass) {
-  s.troops() += amt;
-  s.mass() += static_cast<double>(amt) * mass;
+  s.add_troops(amt, mass);
 }

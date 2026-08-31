@@ -7,6 +7,7 @@ export module gblib:doship;
 
 import :gameobj;
 import :ships;
+import :star;
 import :turnstats;
 
 export void doship(Ship&, bool update, EntityManager&, TurnStats& stats);
@@ -43,6 +44,30 @@ export void do_ap(Ship& ship, EntityManager& entity_manager);
 /// \brief Recharges fuel, destruct ordnance, and resources for divine/deity
 /// ships.
 export void do_god(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Processes radiation effects on ship crew and accumulated radiation
+/// decay.
+/// \param ship Ship experiencing radiation.
+/// \param update Whether this is a full turn update pass (true) or segment
+/// (false).
+/// \return Whether the ship remains active/mobile after radiation checks.
+export bool process_ship_radiation(Ship& ship, bool update);
+
+/// \brief Processes supernova radiation and blast wave damage on ships in the
+/// system.
+/// \param ship Ship in the star system.
+/// \param star Star undergoing supernova.
+/// \param state Server state containing segment count.
+/// \param em Entity manager for destroying destroyed ships.
+/// \return True if ship survived, false if destroyed.
+export bool process_ship_supernova(Ship& ship, const Star& star,
+                                   const ServerState& state, EntityManager& em);
+
+/// \brief Synchronizes offline factory technological capability with current
+/// empire technology.
+/// \param ship Factory ship to synchronize.
+/// \param race Race owning the factory.
+export void sync_factory_technology(Ship& ship, const Race& race);
 
 /// \brief Top two nearest star systems identified by navigation scanning.
 export struct StarTargetResult {

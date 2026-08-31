@@ -16,7 +16,7 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
 
   /* stations repair for free, and ships docked with them */
   int cost = [&ship, &maxrep, &entity_manager]() {
-    if (Shipdata[ship.type()][ABIL_REPAIR]) {
+    if (ship.can_repair()) {
       return 0;
     }
     // Check if docked with a station
@@ -27,21 +27,25 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
         return 0;
       }
     }
-    maxrep *= static_cast<double>(ship.popn()) /
-              static_cast<double>(ship.max_crew_capacity());
-    return static_cast<int>(0.005 * maxrep * ship.effective_cost());
+    auto max_crew = ship.max_crew_capacity();
+    if (max_crew == 0) {
+      maxrep = 0.0;
+      return 0;
+    }
+    maxrep *= static_cast<double>(ship.popn()) / static_cast<double>(max_crew);
+    return static_cast<int>(0.005 * maxrep *
+                            static_cast<double>(ship.effective_cost()));
   }();
 
   if (cost <= ship.resource()) {
-    use_resource(ship, cost);
-    int drep = static_cast<int>(maxrep);
-    ship.damage() = std::max(0, static_cast<int>(ship.damage()) - drep);
+    ship.consume_resource(cost);
+    ship.repair_damage(static_cast<damage_t>(maxrep));
   } else {
     /* use up all of the ships resources */
     int drep = static_cast<int>(maxrep * (static_cast<double>(ship.resource()) /
                                           static_cast<double>(cost)));
-    use_resource(ship, ship.resource());
-    ship.damage() = std::max(0, static_cast<int>(ship.damage()) - drep);
+    ship.consume_resource(ship.resource());
+    ship.repair_damage(static_cast<damage_t>(drep));
   }
 }
 
@@ -377,6 +381,47 @@ void do_oap(Ship& ship, TurnStats& stats) {
         true;
 }
 
+bool process_ship_radiation(Ship& ship, bool update) {
+  if (!ship.rad()) {
+    return true;
+  }
+  bool active = true;
+  /* irradiated ships are immobile if radiation check fails */
+  if (success(ship.rad())) {
+    active = false;
+  }
+  if (update) {
+    ship.popn() = round_rand(static_cast<double>(ship.popn()) * 0.80);
+    ship.troops() = round_rand(static_cast<double>(ship.troops()) * 0.80);
+    auto repair_amt = (ship.rad() >= REPAIR_RATE)
+                          ? int_rand(0, static_cast<int>(REPAIR_RATE))
+                          : int_rand(0, static_cast<int>(ship.rad()));
+    ship.repair_radiation(static_cast<radiation_t>(repair_amt));
+  }
+  return active;
+}
+
+bool process_ship_supernova(Ship& ship, const Star& star,
+                            const ServerState& state, EntityManager& em) {
+  if (star.nova_stage() == 0) {
+    return true;
+  }
+  auto dmg =
+      5L * star.nova_stage() / ((ship.effective_armor() + 1) * state.segments);
+  ship.apply_damage(static_cast<damage_t>(dmg));
+  if (ship.damage() >= 100) {
+    em.kill_ship(ship.owner(), ship);
+    return false;
+  }
+  return true;
+}
+
+void sync_factory_technology(Ship& ship, const Race& race) {
+  if (ship.type() == ShipType::OTYPE_FACTORY && !ship.on()) {
+    ship.tech() = race.tech;
+  }
+}
+
 void doship(Ship& ship, bool update, EntityManager& entity_manager,
             TurnStats& stats) {
   /*ship is active */
@@ -385,23 +430,8 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
   if (ship.owner() == 0) ship.alive() = 0;
 
   if (ship.alive()) {
-    /* repair radiation */
-    if (ship.rad()) {
-      ship.active() = 1;
-      /* irradiated ships are immobile.. */
-      /* kill off some people */
-      /* check to see if ship is active */
-      if (success(ship.rad())) ship.active() = 0;
-      if (update) {
-        ship.popn() = round_rand(ship.popn() * .80);
-        ship.troops() = round_rand(ship.troops() * .80);
-        if (ship.rad() >= (int)REPAIR_RATE)
-          ship.rad() -= int_rand(0, (int)REPAIR_RATE);
-        else
-          ship.rad() -= int_rand(0, (int)ship.rad());
-      }
-    } else
-      ship.active() = 1;
+    /* repair radiation & check mobility */
+    ship.active() = process_ship_radiation(ship, update);
 
     if (!ship.popn() && ship.max_crew_capacity() && !ship.docked())
       ship.whatdest() = ScopeLevel::LEVEL_UNIV;
@@ -409,23 +439,14 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
     // Check for supernova damage
     if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
       const auto& star = *entity_manager.peek_star(ship.storbits());
-      if (star.nova_stage() > 0) {
-        /* damage ships from supernovae */
-        /* Maarten: modified to take into account MOVES_PER_UPDATE */
-        const auto& state = *entity_manager.peek_server_state();
-        ship.damage() += 5L * star.nova_stage() /
-                         ((ship.effective_armor() + 1) * state.segments);
-        if (ship.damage() >= 100) {
-          entity_manager.kill_ship(ship.owner(), ship);
-          return;
-        }
+      const auto& state = *entity_manager.peek_server_state();
+      if (!process_ship_supernova(ship, star, state, entity_manager)) {
+        return;
       }
     }
 
-    if (ship.type() == ShipType::OTYPE_FACTORY && !ship.on()) {
-      const auto& race = *entity_manager.peek_race(ship.owner());
-      ship.tech() = race.tech;
-    }
+    const auto& race = *entity_manager.peek_race(ship.owner());
+    sync_factory_technology(ship, race);
 
     if (ship.active()) moveship(entity_manager, ship, update, 1, 0);
 

@@ -11,6 +11,7 @@ import std;
 import :gameobj;
 import :planet;
 import :sector;
+import :tweakables;
 import :turnstats;
 
 export enum guntype_t {
@@ -2840,6 +2841,73 @@ public:
                ? 2L * data_.build_cost * data_.on +
                      Shipdata[data_.type][ABIL_COST]
                : data_.build_cost;
+  }
+
+  // =========================================================================
+  // DOMAIN OPERATIONS & STATE TRANSITIONS
+  // =========================================================================
+
+  /// \brief Increases hull damage by the specified amount, clamped to 100%.
+  void apply_damage(damage_t amt) noexcept {
+    data_.damage = std::min<damage_t>(100, data_.damage + amt);
+  }
+
+  /// \brief Repairs hull damage by the specified amount, clamped to 0%.
+  void repair_damage(damage_t amt) noexcept {
+    data_.damage = (amt >= data_.damage) ? 0 : data_.damage - amt;
+  }
+
+  /// \brief Reduces accumulated radiation dose, clamped to 0.
+  void repair_radiation(radiation_t amt) noexcept {
+    data_.rad = (amt >= data_.rad) ? 0 : data_.rad - amt;
+  }
+
+  /// \brief Consumes fuel and decrements ship mass accordingly.
+  void consume_fuel(fuel_t amt) noexcept {
+    data_.fuel -= amt;
+    data_.mass -= amt * MASS_FUEL;
+  }
+
+  /// \brief Adds fuel and increments ship mass accordingly.
+  void add_fuel(fuel_t amt) noexcept {
+    data_.fuel += amt;
+    data_.mass += amt * MASS_FUEL;
+  }
+
+  /// \brief Consumes resources and decrements ship mass accordingly.
+  void consume_resource(resource_t amt) noexcept {
+    data_.resource -= amt;
+    data_.mass -= static_cast<double>(amt) * MASS_RESOURCE;
+  }
+
+  /// \brief Adds resources and increments ship mass accordingly.
+  void add_resource(resource_t amt) noexcept {
+    data_.resource += amt;
+    data_.mass += static_cast<double>(amt) * MASS_RESOURCE;
+  }
+
+  /// \brief Consumes destruct ordnance and decrements ship mass accordingly.
+  void consume_destruct(resource_t amt) noexcept {
+    data_.destruct -= static_cast<unsigned short>(amt);
+    data_.mass -= static_cast<double>(amt) * MASS_DESTRUCT;
+  }
+
+  /// \brief Adds destruct ordnance and increments ship mass accordingly.
+  void add_destruct(resource_t amt) noexcept {
+    data_.destruct += static_cast<unsigned short>(amt);
+    data_.mass += static_cast<double>(amt) * MASS_DESTRUCT;
+  }
+
+  /// \brief Adds population and increments ship mass based on race mass.
+  void add_popn(population_t amt, double race_mass) noexcept {
+    data_.popn += amt;
+    data_.mass += static_cast<double>(amt) * race_mass;
+  }
+
+  /// \brief Adds troops and increments ship mass based on race mass.
+  void add_troops(population_t amt, double race_mass) noexcept {
+    data_.troops += amt;
+    data_.mass += static_cast<double>(amt) * race_mass;
   }
 
   // =========================================================================

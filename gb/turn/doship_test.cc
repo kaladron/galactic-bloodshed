@@ -750,6 +750,217 @@ void test_do_mirror() {
   test::expect_ge(target_updated.damage(), 0);
 }
 
+void test_ship_domain_operations() {
+  ship_struct sdata{
+      .fuel = 50.0,
+      .mass = 100.0,
+      .destruct = 10,
+      .resource = 200,
+      .popn = 50,
+      .troops = 20,
+      .damage = 10,
+      .rad = 30,
+  };
+  Ship ship{sdata};
+
+  // 1. Damage clamping
+  ship.apply_damage(50);
+  test::expect_eq(ship.damage(), 60);
+  ship.apply_damage(60);
+  test::expect_eq(ship.damage(), 100);  // Clamped at 100
+
+  ship.repair_damage(40);
+  test::expect_eq(ship.damage(), 60);
+  ship.repair_damage(80);
+  test::expect_eq(ship.damage(), 0);  // Clamped at 0
+
+  // 2. Radiation repair
+  ship.repair_radiation(10);
+  test::expect_eq(ship.rad(), 20);
+  ship.repair_radiation(50);
+  test::expect_eq(ship.rad(), 0);  // Clamped at 0
+
+  // 3. Fuel operations & mass tracking
+  double initial_mass = ship.mass();
+  ship.consume_fuel(10.0);
+  test::expect_eq(ship.fuel(), 40.0);
+  test::expect_eq(ship.mass(), initial_mass - 10.0 * MASS_FUEL);
+
+  ship.add_fuel(20.0);
+  test::expect_eq(ship.fuel(), 60.0);
+  test::expect_eq(ship.mass(), initial_mass + 10.0 * MASS_FUEL);
+
+  // 4. Resource operations & mass tracking
+  initial_mass = ship.mass();
+  ship.consume_resource(50);
+  test::expect_eq(ship.resource(), 150);
+  test::expect_eq(ship.mass(), initial_mass - 50.0 * MASS_RESOURCE);
+
+  ship.add_resource(100);
+  test::expect_eq(ship.resource(), 250);
+  test::expect_eq(ship.mass(), initial_mass + 50.0 * MASS_RESOURCE);
+
+  // 5. Destruct ordnance operations & mass tracking
+  initial_mass = ship.mass();
+  ship.consume_destruct(5);
+  test::expect_eq(ship.destruct(), 5);
+  test::expect_eq(ship.mass(), initial_mass - 5.0 * MASS_DESTRUCT);
+
+  ship.add_destruct(15);
+  test::expect_eq(ship.destruct(), 20);
+  test::expect_eq(ship.mass(), initial_mass + 10.0 * MASS_DESTRUCT);
+
+  // 6. Population & troop cargo additions
+  initial_mass = ship.mass();
+  ship.add_popn(25, 2.0);
+  test::expect_eq(ship.popn(), 75);
+  test::expect_eq(ship.mass(), initial_mass + 50.0);
+
+  initial_mass = ship.mass();
+  ship.add_troops(10, 2.0);
+  test::expect_eq(ship.troops(), 30);
+  test::expect_eq(ship.mass(), initial_mass + 20.0);
+}
+
+void test_do_repair_zero_crew() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  ServerState state{.segments = 1};
+  ServerStateRepository(store).save(state);
+
+  Race race = createTestRace(player_t{1});
+  RaceRepository(store).save(race);
+
+  // 1. Probe with max_crew = 0 (verifies division-by-zero fix)
+  ship_struct probe_data{
+      .owner = player_t{1},
+      .max_crew = 0,
+      .resource = 100,
+      .damage = 50,
+      .type = ShipType::OTYPE_PROBE,
+      .alive = 1,
+  };
+  auto probe_handle = em.create_ship(probe_data);
+  Ship& probe = *probe_handle;
+
+  do_repair(probe, em);
+  // Probe with 0 crew should safely do 0 repairs without crashing or division
+  // by zero
+  test::expect_eq(probe.damage(), 50);
+
+  // 2. Manned ship with crew repairs damage
+  ship_struct manned_data{
+      .owner = player_t{1},
+      .max_crew = 10,
+      .build_cost = 100,
+      .resource = 100,
+      .popn = 10,
+      .damage = 50,
+      .type = ShipType::STYPE_SHUTTLE,
+      .alive = 1,
+  };
+  auto manned_handle = em.create_ship(manned_data);
+  Ship& manned = *manned_handle;
+
+  do_repair(manned, em);
+  test::expect_lt(manned.damage(), 50);
+  test::expect_lt(manned.resource(), 100);
+}
+
+void test_process_ship_radiation() {
+  seed_rand(42);
+
+  // 1. Ship with 0 rad is mobile (returns true)
+  ship_struct clean_data{
+      .popn = 100,
+      .troops = 50,
+      .rad = 0,
+  };
+  Ship clean_ship{clean_data};
+  test::expect_true(process_ship_radiation(clean_ship, true));
+  test::expect_eq(clean_ship.popn(), 100);
+
+  // 2. Ship with radiation on update pass decays crew and repairs rad
+  ship_struct rad_data{
+      .popn = 100,
+      .troops = 50,
+      .rad = 20,
+  };
+  Ship rad_ship{rad_data};
+  process_ship_radiation(rad_ship, true);
+  test::expect_le(rad_ship.popn(), 100);
+  test::expect_le(rad_ship.troops(), 50);
+  test::expect_le(rad_ship.rad(), 20);
+}
+
+void test_process_ship_supernova() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  RaceRepository(store).save(race);
+
+  star_struct sdata{
+      .name = "NovaStar",
+      .nova_stage = 2,
+      .star_id = starnum_t{1},
+  };
+  Star star{sdata};
+  ServerState state{.segments = 1};
+
+  // 1. Surviving ship
+  ship_struct ship_data{
+      .owner = player_t{1},
+      .armor = 2,
+      .damage = 10,
+      .type = ShipType::STYPE_BATTLE,
+      .alive = 1,
+  };
+  auto ship_handle = em.create_ship(ship_data);
+  Ship& ship = *ship_handle;
+
+  bool survived = process_ship_supernova(ship, star, state, em);
+  test::expect_true(survived);
+  test::expect_gt(ship.damage(), 10);
+  test::expect_eq(ship.alive(), 1);
+
+  // 2. Ship destroyed by supernova (damage >= 100)
+  ship.damage() = 98;
+  survived = process_ship_supernova(ship, star, state, em);
+  test::expect_false(survived);
+  test::expect_eq(ship.alive(), 0);
+}
+
+void test_sync_factory_technology() {
+  Race race = createTestRace(player_t{1});
+  race.tech = 150.0;
+
+  // 1. Offline factory updates tech
+  ship_struct offline_factory_data{
+      .tech = 50.0,
+      .type = ShipType::OTYPE_FACTORY,
+      .on = 0,
+  };
+  Ship offline_factory{offline_factory_data};
+  sync_factory_technology(offline_factory, race);
+  test::expect_eq(offline_factory.tech(), 150.0);
+
+  // 2. Online factory preserves tech
+  ship_struct online_factory_data{
+      .tech = 50.0,
+      .type = ShipType::OTYPE_FACTORY,
+      .on = 1,
+  };
+  Ship online_factory{online_factory_data};
+  sync_factory_technology(online_factory, race);
+  test::expect_eq(online_factory.tech(), 50.0);
+}
+
 }  // namespace
 
 int main() {
@@ -803,6 +1014,26 @@ int main() {
 
   std::println(std::cout, "  Testing do_mirror... ");
   test_do_mirror();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing ship domain operations... ");
+  test_ship_domain_operations();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing do_repair on zero-crew probe... ");
+  test_do_repair_zero_crew();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_ship_radiation... ");
+  test_process_ship_radiation();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_ship_supernova... ");
+  test_process_ship_supernova();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing sync_factory_technology... ");
+  test_sync_factory_technology();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doship tests passed!");

@@ -62,8 +62,7 @@ During each full turn update, surface temperature evolves according to:
 $$T_{\text{surface}} = T_{\text{base}} + \Delta T_{\text{mirrors}} \pm 5^{\circ}\text{C}$$
 
 - **Seasonal Atmospheric Drift**: Natural stochastic fluctuations of $\pm 5^{\circ}\text{C}$ simulate seasonal weather shifts and atmospheric turbulence.
-- **Orbital Space Mirrors**: Giant orbital reflector arrays stationed in orbit focus stellar energy into the upper atmosphere to warm freezing worlds, melt glaciated biospheres, or shade overheated planets:
-  $$\Delta T_{\text{mirrors}} = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Target Planet Radius})} \right\rfloor$$
+- **Orbital Space Mirrors**: Giant orbital reflector arrays stationed in orbit focus stellar energy into the upper atmosphere to warm freezing worlds, melt glaciated biospheres, or shade overheated planets: $\Delta T_{\text{mirrors}} = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Target Planet Radius})} \right\rfloor$.
 
 ---
 
@@ -130,9 +129,7 @@ $$\text{Population}_{\text{master}} \le \left\lfloor \frac{\text{Population}_{\t
 a planetary **slave revolt** is immediately triggered.
 
 ### Consequences of a Slave Revolt
-1. **Urban and Ecological Devastation**: Uprisings ignite widespread fighting across the world, completely devastating:
-   $$N_{\text{devastated}} = \left\lfloor \frac{\text{Population}_{\text{total}}}{1000} \right\rfloor + 1$$
-   random populated sectors into ruined wasteland.
+1. **Urban and Ecological Devastation**: Uprisings ignite widespread fighting across the world, completely devastating $N_{\text{devastated}} = \left\lfloor \frac{\text{Population}_{\text{total}}}{1000} \right\rfloor + 1$ random populated sectors into ruined wasteland.
 2. **Regional Intimidation Backlash**: Master-owned sectors located within intimidated star systems suffer a $50\%$ probability of devastation.
 3. **Liberation**: Imperial shackles are broken, immediately restoring the subjugated population to free citizen status.
 

@@ -84,15 +84,13 @@ flowchart TD
 
 ### 1. Radiation Hazards and Crew Sickness
 Ships contaminated by nuclear fallout, stellar flares, or weapon detonations ($\text{Radiation} > 0$) experience system failures and crew casualties:
-- **Mobility Gating**: Guidance and engine systems have a probability of failing proportional to radiation intensity:
-  $$P(\text{Immobilized}) = \frac{\text{Radiation Level}}{100}$$
-- **Crew Attrition**: On full turn updates, radiation sickness claims $20\%$ of living crew and carried military troops:
-  $$\text{Crew}_{\text{new}} = \left\lfloor \text{Crew}_{\text{old}} \times 0.80 \right\rfloor, \quad \text{Troops}_{\text{new}} = \left\lfloor \text{Troops}_{\text{old}} \times 0.80 \right\rfloor$$
-- **Natural Decontamination**: Radiation dissipates over time during update passes:
-  $$\Delta \text{Radiation} = -\text{UniformRandom}\Big(0, \min\big(\text{Radiation}, \text{Base Decontamination Rate}\big)\Big)$$
+- **Mobility Gating**: Guidance and engine systems have a probability of failing proportional to radiation intensity: $P(\text{Immobilized}) = \frac{\text{Radiation Level}}{100}$.
+- **Crew Attrition**: On full turn updates, radiation sickness claims $20\%$ of living crew and carried military troops: $\text{Crew}_{\text{new}} = \left\lfloor \text{Crew}_{\text{old}} \times 0.80 \right\rfloor, \quad \text{Troops}_{\text{new}} = \left\lfloor \text{Troops}_{\text{old}} \times 0.80 \right\rfloor$.
+- **Natural Decontamination**: Radiation dissipates over time during update passes: $\Delta \text{Radiation} = -\text{UniformRandom}\Big(0, \min\big(\text{Radiation}, \text{Base Decontamination Rate}\big)\Big)$.
 
 ### 2. Supernova Blast Waves
 Vessels caught in a star system undergoing a nova collapse suffer extreme radiant heat and physical shockwave damage:
+
 $$\Delta \text{Damage} = \left\lfloor \frac{5 \times \text{Nova Stage}}{(\text{Effective Armor} + 1) \times S} \right\rfloor$$
 
 where $S$ is the number of simulation segments per update pass. If cumulative structural damage reaches or exceeds $100\%$, the vessel is destroyed by the blast.
@@ -103,14 +101,9 @@ Offline Mobile Factories automatically modernize their internal manufacturing to
 ### 4. Hull Maintenance and Resource Consumption
 Damaged vessels ($\text{Damage} > 0$) attempt structural repairs during turn updates:
 - **Free Station Maintenance**: Orbital repair stations and vessels docked with them perform hull repairs without consuming stored resources.
-- **Crew Repair Scaling**: The effective repair output scales with available crew staffing:
-  $$r_{\text{crew}} = \frac{\text{Current Crew}}{\text{Maximum Crew Capacity}}$$
-  $$\text{Max Repair} = \text{Base Repair Rate} \times r_{\text{crew}}$$
-- **Resource Cost**: Repairing hull damage consumes refined minerals:
-  $$\text{Resource Cost} = \left\lfloor 0.005 \times \text{Max Repair} \times \text{Ship Construction Cost} \right\rfloor$$
-- **Partial Maintenance**: If stored resources are insufficient to cover full maintenance, all available resources are expended for proportional partial repairs:
-  $$\text{Damage Repaired} = \left\lfloor \text{Max Repair} \times \left(\frac{\text{Stored Resources}}{\text{Resource Cost}}\right) \right\rfloor$$
-  Unmanned sensor probes safely bypass crewed maintenance formulas.
+- **Crew Repair Scaling**: The effective repair output scales with available crew staffing: $r_{\text{crew}} = \frac{\text{Current Crew}}{\text{Maximum Crew Capacity}}$, yielding maximum repair potential $\text{Max Repair} = \text{Base Repair Rate} \times r_{\text{crew}}$.
+- **Resource Cost**: Repairing hull damage consumes refined minerals: $\text{Resource Cost} = \left\lfloor 0.005 \times \text{Max Repair} \times \text{Ship Construction Cost} \right\rfloor$.
+- **Partial Maintenance**: If stored resources are insufficient to cover full maintenance, all available resources are expended for proportional partial repairs: $\text{Damage Repaired} = \left\lfloor \text{Max Repair} \times \left(\frac{\text{Stored Resources}}{\text{Resource Cost}}\right) \right\rfloor$. Unmanned sensor probes safely bypass crewed maintenance formulas.
 
 ---
 
@@ -121,9 +114,7 @@ Certain starship classes are equipped with advanced scientific, industrial, or b
 ### Space Mirrors and Solar Redirection
 Space Mirrors are massive orbital reflector arrays designed to redirect stellar radiation onto planetary biospheres for terraforming, heating, or climate stabilization:
 - **Stellar Alignment**: A space mirror must be actively aimed at its host star to function. Mirrors in an unaimed standby mode do not redirect energy.
-- **Planetary Thermal Modification**: When stationed in planetary orbit, the mirror focuses stellar energy into the target world's upper atmosphere:
-  $$\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Target Planet Radius})} \right\rfloor$$
-  Mirrors can be configured to heat freezing worlds or shaded to cool overheated greenhouse planets toward species-compatible equilibrium temperatures.
+- **Planetary Thermal Modification**: When stationed in planetary orbit, the mirror focuses stellar energy into the target world's upper atmosphere: $\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Target Planet Radius})} \right\rfloor$. Mirrors can be configured to heat freezing worlds or shaded to cool overheated greenhouse planets toward species-compatible equilibrium temperatures.
 
 ### Atmosphere Processors
 Atmosphere Processors perform large-scale planetary geoengineering by converting ambient gases into breathable atmosphere:
@@ -132,14 +123,12 @@ Atmosphere Processors perform large-scale planetary geoengineering by converting
 
 ### Orbital Habitats and Population Incubators
 Orbital Habitats function as specialized bioship incubators capable of generating civilian population in deep space or orbit:
-- **Incubator Operations**: Active habitats consume stored fuel and raw minerals to synthesize life-support biomass and incubate new colonists:
-  $$\Delta \text{Population} = \left\lfloor \text{Incubation Rate} \times \frac{\text{Current Population}}{\text{Maximum Crew Capacity}} \right\rfloor$$
+- **Incubator Operations**: Active habitats consume stored fuel and raw minerals to synthesize life-support biomass and incubate new colonists: $\Delta \text{Population} = \left\lfloor \text{Incubation Rate} \times \frac{\text{Current Population}}{\text{Maximum Crew Capacity}} \right\rfloor$.
 - **Dynamic Displacement**: As new colonists are generated, the ship's operational mass increases proportionally based on the biological body mass of the incubated species ($M_{\text{race}}$).
 
 ### Weapon Plants and Munitions Manufacturing
 Weapon Plants are automated manufacturing modules that convert raw industrial resources into destructive ordnance (`destruct`):
-- **Munitions Synthesis**: Each turn segment, operational weapon plants produce new destructive ordnance:
-  $$\Delta \text{Destruct} = \min\Big(\text{Available Crew Staffing}, \text{Stored Resources}, \text{Stored Fuel} \times 2, \text{Unallocated Ammo Capacity}\Big)$$
+- **Munitions Synthesis**: Each turn segment, operational weapon plants produce new destructive ordnance: $\Delta \text{Destruct} = \min\Big(\text{Available Crew Staffing}, \text{Stored Resources}, \text{Stored Fuel} \times 2, \text{Unallocated Ammo Capacity}\Big)$.
 - **Resource Depletion**: Synthesizing ammo consumes resources and fuel at a $1:1$ resource and $0.5:1$ fuel ratio, dynamically adjusting total vessel mass.
 
 ### Biological Spore Pods and Climate Modifiers
@@ -217,7 +206,7 @@ Planetary and naval engagements feature autonomous defensive networks, intercept
 ```mermaid
 flowchart TD
     Target["Incoming Threat / Target Detected"] --> Type{"Engagement Type"}
-    Type -->|Hostile Missile / Mine| ABM["Anti-Ballistic Missile (ABM)\nScan for unallied ordnance & intercept"]
+    Type -->|"Hostile Missile or Mine"| ABM["Anti-Ballistic Missile (ABM)\nScan for unallied ordnance & intercept"]
     Type -->|Naval Intruder| Mine["Proximity Mine\nDetonate on unallied ships entering range"]
     Type -->|Orbital Bombardment| PDNCheck{"Are Planetary Defense\nNetworks (PDNs) Present?"}
     PDNCheck -->|Yes| Cancel["Bombardment Deterred\nCancel strike & alert commanding governor"]
@@ -234,8 +223,7 @@ Automated Berserker warships orbiting foreign planets execute tactical saturatio
   1. Active colonies belonging to empires with which the ship's empire is **at war**.
   2. Colonies belonging to a **specifically programmed target species**.
   3. Any unallied foreign colony on the planetary surface.
-- **Bombardment Firepower**: Effective orbital strike power is determined by operational gun mounts, structural damage, and available destructive ordnance:
-  $$\text{Strike Power} = \min\left(\left\lfloor \text{Template Gun Mounts} \times \frac{100 - \text{Damage}}{100} \right\rfloor, \text{Stored Destruct Ammo}\right)$$
+- **Bombardment Firepower**: Effective orbital strike power is determined by operational gun mounts, structural damage, and available destructive ordnance: $\text{Strike Power} = \min\left(\left\lfloor \text{Template Gun Mounts} \times \frac{100 - \text{Damage}}{100} \right\rfloor, \text{Stored Destruct Ammo}\right)$.
 - **Sector Devastation & Retaliation**: The bombardment converts target sectors into nuclear wasteland, reduces planetary population, and expends destruct ammo. Defending surface batteries return retaliatory ground fire, and automated alert bulletins are dispatched to the planetary governors of all affected empires.
 
 ### Proximity Minefields

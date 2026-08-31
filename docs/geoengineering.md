@@ -32,8 +32,7 @@ flowchart LR
 Space Mirrors are massive orbital reflector arrays designed to capture and redirect stellar radiation:
 - **Heating Mode**: Positioned in low orbit and aimed directly at a freezing or glaciated world, mirrors focus concentrated solar energy into the upper atmosphere to warm surface temperatures and melt ice sheets.
 - **Cooling / Shading Mode**: Angled away from the sun, mirrors cast permanent orbital shadows over volcanic or scorched worlds, shielding the biosphere from blistering stellar heat.
-- **Thermal Redirection Formula**:
-  $$\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$$
+- **Thermal Redirection Formula**: $\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$.
 
 ### Atmospheric Aerosol Canisters
 - **Greenhouse Gas Canisters (`h`)**: Injected into the troposphere to trap infrared radiation, raising global planetary temperatures.

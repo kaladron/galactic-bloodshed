@@ -79,9 +79,7 @@ flowchart TD
 ### Supernova Stages and Blast Wave Hazards
 1. **Stage 1 Nova Bulletin**: An emergency galactic bulletin broadcasts to all star empires warning that the star has entered nova collapse. On Earth-like, water, and forest worlds, seas and rivers begin boiling away. Planetary colonies must evacuate immediately.
 2. **Stages 2 to 14 Nova Blast Storm**: The collapsing core unleashes devastating radiant heat and physical shockwaves:
-   - **Vessel Blast Damage**: All starships and orbital stations in the star system suffer structural damage each simulation segment ($S$ segments per update):
-     $$\Delta \text{Damage} = \left\lfloor \frac{5 \times \text{Nova Stage}}{(\text{Effective Armor} + 1) \times S} \right\rfloor$$
-     Vessels accumulating $100\%$ structural damage are obliterated.
+   - **Vessel Blast Damage**: All starships and orbital stations in the star system suffer structural damage each simulation segment ($S$ segments per update): $\Delta \text{Damage} = \left\lfloor \frac{5 \times \text{Nova Stage}}{(\text{Effective Armor} + 1) \times S} \right\rfloor$. Vessels accumulating $100\%$ structural damage are obliterated.
    - **Surface Sterilization**: Planetary biospheres suffer severe agricultural degradation, scorching fertile sectors into barren wasteland.
 3. **Stage 15 Re-stabilization**: After progressing through Stage 14, the nova storm subsides. Scientists broadcast a galactic notice confirming the star has restabilized, resetting stability to $20\%$.
 

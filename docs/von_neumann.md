@@ -15,7 +15,7 @@ flowchart TD
     Rep -->|Yes| Spawn["Replication & Lineage Advance\nSpawn Offspring (+20 Tech, +1 Armor)"]
     Rep -->|No| CheckHostile{"Total Galactic Hostility > 100?"}
     Spawn --> CheckHostile
-    CheckHostile -->|Yes (50% Chance)| Berserk["Manufacture Berserker Warship\n(+100 Tech, +11 Armor, Orbital Bombardment)"]
+    CheckHostile -->|"Yes (50% Chance)"| Berserk["Manufacture Berserker Warship\n(+100 Tech, +11 Armor, Orbital Bombardment)"]
     CheckHostile -->|No| Roam["Wander Depleted Sectors / Launch to Deep Space"]
     Berserk --> Hunt["Target Star Systems of Hostile Empire"]
     Roam --> Deep
@@ -29,11 +29,8 @@ flowchart TD
 Every autonomous machine possesses an internal cybernetic consciousness and lineage tracking:
 
 - **Progenitor**: The originating empire or intelligence that deployed the ancestral seed machine.
-- **Generational Lineage**: A reproductive generation counter ($g_0, g_1, \dots$). Each time a machine replicates, its offspring advances the generation:
-  $$g_{\text{child}} = g_{\text{parent}} + 1$$
-- **Iterative Hardware Evolution**: Each generational iteration incorporates refined engineering, upgrading the offspring's scientific technology level and defensive armor:
-  $$\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 20.0$$
-  $$\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 1$$
+- **Generational Lineage**: A reproductive generation counter ($g_0, g_1, \dots$). Each time a machine replicates, its offspring advances the generation: $g_{\text{child}} = g_{\text{parent}} + 1$.
+- **Iterative Hardware Evolution**: Each generational iteration incorporates refined engineering, upgrading the offspring's scientific technology level and defensive armor: $\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 20.0$ and $\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 1$.
 - **Binary Designations**: Newborn probes automatically assign themselves thematic binary strings (e.g. `"1010011"`, `"01101"`) as cosmetic hull names.
 - **Cybernetic Subversion & Reprogramming**: Advanced star empires can attempt to capture and tamper with machine minds, overwriting mission parameters, target priorities, and operational doctrines.
 
@@ -53,10 +50,8 @@ Once landed, the machine strip-mines its occupied sector:
 $$\text{Extracted Yield} = \max\left(1, \left\lfloor \text{Sector Mineral Reserves} \times 0.5 \right\rfloor\right)$$
 
 - **Mineral Stockpiling**: The extracted mineral yield is transferred directly into the probe's cargo hold.
-- **Propellant Synthesis**: The probe refines the extracted minerals into an equal volume of liquid fuel:
-  $$\Delta \text{Fuel} = \text{Extracted Yield}$$
-- **Berserker Ordnance Synthesis**: Berserker warships convert extracted minerals into $5\times$ destructive ordnance:
-  $$\Delta \text{Destruct} = 5 \times \text{Extracted Yield}$$
+- **Propellant Synthesis**: The probe refines the extracted minerals into an equal volume of liquid fuel: $\Delta \text{Fuel} = \text{Extracted Yield}$.
+- **Berserker Ordnance Synthesis**: Berserker warships convert extracted minerals into $5\times$ destructive ordnance: $\Delta \text{Destruct} = 5 \times \text{Extracted Yield}$.
 
 ### Sector Depletion and Toroidal Roaming
 When a sector's mineral reserves are completely exhausted ($0$ resources remaining), the machine automatically wanders to a random adjacent sector. It navigates across cylindrical east/west seam wrapping while respecting polar boundaries.

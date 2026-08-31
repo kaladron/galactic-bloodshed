@@ -13,7 +13,7 @@ flowchart TD
     end
 
     subgraph Governance ["System Governance"]
-        Popn -->|Tax Rate (0-100%)| Revenue["Tax Revenue"]
+        Popn -->|"Tax Rate (0-100%)"| Revenue["Tax Revenue"]
         Revenue -->|Deposited| Treasury["Governor Treasury\n(System Coffers)"]
         Treasury -->|Pay Maintenance| Maint["Fleet & Troop Upkeep\nShip Maintenance"]
         Treasury -->|Budget Funding| TechInv["Technology Investment"]
@@ -64,8 +64,7 @@ To avoid economic shock and public unrest:
 
 ### Socio-Economic Consequences of Taxation
 While high taxation enriches the treasury, it places heavy burdens on the populace:
-- **Metabolism & Birthrate Suppression**: Heavy tax rates depress living standards, reducing effective population growth and industrial vigor:
-  $$\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)$$
+- **Metabolism & Birthrate Suppression**: Heavy tax rates depress living standards, reducing effective population growth and industrial vigor: $\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)$.
 - **Insurgency Vulnerability**: Populous worlds under oppressive tax burdens experience rising civil unrest, dramatically increasing the success probability of hostile covert insurgency operations.
 
 ---
@@ -90,8 +89,7 @@ Empires allocate research funding on a world using the `technology` command (`te
 During each full turn update:
 1. **Treasury Solvency Check**: The star system governor's treasury must contain sufficient funds to cover the configured investment budget. If the treasury lacks funds, research fails for that turn and zero scientific progress occurs.
 2. **Fund Deduction**: The investment amount is deducted from the governor's treasury and logged under research expenditures.
-3. **Research Output Formula**: Scientific breakthroughs scale with financial funding and local planetary population:
-   $$\Delta \text{Tech} = \frac{\text{Investment Funding}}{100} \times \left(1.0 + \log_{10}\left(\max(1, \text{Population})\right)\right)$$
+3. **Research Output Formula**: Scientific breakthroughs scale with financial funding and local planetary population: $\Delta \text{Tech} = \frac{\text{Investment Funding}}{100} \times \left(1.0 + \log_{10}\left(\max(1, \text{Population})\right)\right)$.
 4. **Imperial Discovery**: Generated research points are added directly to the empire's global technology rating, unlocking advanced vessel blueprints, energy weapon calibers, and planetary terraforming systems.
 
 ---

@@ -44,16 +44,13 @@ flowchart LR
 
 ### Metabolism ($M$)
 Metabolism represents the biological vigor, industriousness, and physical energy of the species:
-- **Industrial Extraction**: Higher metabolism yields higher mineral extraction and fuel refining per sector:
-  $$\text{Yield} = \min\left(\text{Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$$
+- **Industrial Extraction**: Higher metabolism yields higher mineral extraction and fuel refining per sector: $\text{Yield} = \min\left(\text{Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$.
 - **Infrastructure Development**: Increases the rate at which colonists upgrade sector efficiency toward $100\%$ (plated status).
-- **Tax Strain**: High taxation depresses effective metabolism:
-  $$\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)$$
+- **Tax Strain**: High taxation depresses effective metabolism: $\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)$.
 
 ### Individual Body Mass ($M_{\text{race}}$)
 Individual body mass defines the physical weight per citizen or soldier:
-- **Logistical Displacement**: Civilian colonists and military troops add physical weight to starship hulls:
-  $$\Delta \text{Mass}_{\text{ship}} = (\text{Crew} + \text{Troops}) \times M_{\text{race}}$$
+- **Logistical Displacement**: Civilian colonists and military troops add physical weight to starship hulls: $\Delta \text{Mass}_{\text{ship}} = (\text{Crew} + \text{Troops}) \times M_{\text{race}}$.
 - **Propellant Costs**: Heavier species expend significantly more fuel during surface lift-offs, orbital maneuvers, and hyperspace jumps. Light species excel at rapid naval troop mobilization.
 
 ### Reproductive Sexes ($N_{\text{sexes}}$)

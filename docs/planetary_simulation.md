@@ -58,8 +58,7 @@ flowchart LR
 ```
 
 - **Natural Seasonal Drift**: Planetary surface temperatures experience natural atmospheric fluctuations of $\pm 5^{\circ}\text{C}$ around their stellar baseline.
-- **Orbital Space Mirrors**: Giant orbital reflector arrays aimed at the planet focus stellar energy into the upper atmosphere to warm freezing worlds or shade overheated biospheres:
-  $$\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$$
+- **Orbital Space Mirrors**: Giant orbital reflector arrays aimed at the planet focus stellar energy into the upper atmosphere to warm freezing worlds or shade overheated biospheres: $\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$.
 
 ---
 
@@ -72,8 +71,7 @@ If the host star is undergoing a nova collapse, extreme radiation sweeps across 
 
 ### Industrial Resource Extraction
 Populated sectors extract raw minerals and petroleum:
-- **Mineral Yield**: Populated sectors extract mineral ore based on racial metabolism and sector efficiency:
-  $$\text{Yield} = \min\left(\text{Sector Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$$
+- **Mineral Yield**: Populated sectors extract mineral ore based on racial metabolism and sector efficiency: $\text{Yield} = \min\left(\text{Sector Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$.
 - **Propellant Synthesis**: Extracting minerals simultaneously generates refined fuel. Sectors classified as Gas Fields yield double fuel output ($2 \times \text{Yield}$).
 - **Munitions Diversion**: If a sector has undergone military mobilization, extracted minerals are automatically refined into destructive ordnance (`destruct`) rather than raw minerals.
 - **Crystal Synthesis**: Advanced empires with crystal discovery extract rare crystalline deposits from mineral-rich sectors.
@@ -88,21 +86,16 @@ flowchart TD
     Cap -->|Population > Max Support| Starve["Overpopulation Famine\nCasualties in [0, 2 * Excess]"]
 ```
 
-- **Maximum Demographic Support Capacity**: The sustainable population cap for a sector depends on infrastructure efficiency, soil fertility, atmospheric compatibility, and environmental toxicity:
-  $$\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$$
+- **Maximum Demographic Support Capacity**: The sustainable population cap for a sector depends on infrastructure efficiency, soil fertility, atmospheric compatibility, and environmental toxicity: $\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$.
 - **Reproductive Threshold**: If sector population drops below the species' reproductive minimum ($\text{Population} < \text{Reproductive Sexes}$), reproduction ceases entirely.
-- **Population Growth**: Below carrying capacity, populations expand according to racial birthrate:
-  $$\Delta \text{Population} = \left\lfloor (\text{Max Population} - \text{Population}) \times \text{Birthrate} \right\rfloor$$
-- **Overpopulation Starvation**: When population exceeds support capacity, severe famine inflicts casualties within the range:
-  $$\text{Casualties} \in \left[0, \min\big(2 \times (\text{Population} - \text{Max Population}), \text{Population}\big)\right]$$
+- **Population Growth**: Below carrying capacity, populations expand according to racial birthrate: $\Delta \text{Population} = \left\lfloor (\text{Max Population} - \text{Population}) \times \text{Birthrate} \right\rfloor$.
+- **Overpopulation Starvation**: When population exceeds support capacity, severe famine inflicts casualties within the range: $\text{Casualties} \in \left[0, \min\big(2 \times (\text{Population} - \text{Max Population}), \text{Population}\big)\right]$.
 
 ### Spontaneous Colonist Migration and Expansion
 When a sector becomes crowded ($\text{Population} > 0.10 \times \text{Max Population}$), pioneer colonists look to expand into neighboring wilderness:
-- **Migration Pool**: Adventurous colonists form migration parties:
-  $$\text{Available Migrants} = \left\lfloor \text{Population} \times \text{Adventurism} \times \frac{100 - \text{Fertility}}{100} \right\rfloor - \text{Reproductive Sexes}$$
+- **Migration Pool**: Adventurous colonists form migration parties: $\text{Available Migrants} = \left\lfloor \text{Population} \times \text{Adventurism} \times \frac{100 - \text{Fertility}}{100} \right\rfloor - \text{Reproductive Sexes}$.
 - **Topological Navigation**: Migrants step into adjacent unowned sectors, honoring **toroidal east/west seam wrapping** across meridians while respecting **polar north/south limits**.
-- **Settlement Volume**: Migrants settle eligible unowned territory with positive environmental affinity:
-  $$\Delta \text{Settlers} = \left\lfloor \text{Available Migrants} \times \text{Compatibility} \times \frac{\text{Habitat Preference}}{100} \right\rfloor$$
+- **Settlement Volume**: Migrants settle eligible unowned territory with positive environmental affinity: $\Delta \text{Settlers} = \left\lfloor \text{Available Migrants} \times \text{Compatibility} \times \frac{\text{Habitat Preference}}{100} \right\rfloor$.
 - **Territorial Claim**: Settlers claim newly occupied sectors, planting imperial colony flags and expanding empire boundaries.
 
 ### Infrastructure Development and Plating
@@ -152,8 +145,8 @@ Subjugated enemy populations on conquered worlds are managed through enslavement
 ```mermaid
 flowchart TD
     Pop["Enslaved Planetary Population"] --> Gar{"Master Military Garrison Check\nMaster Pop <= 0.1% of Total Pop?"}
-    Gar -->|No (Sufficient Guard)| Tribute["Tribute Diverted\n100% Commodity Harvest Sent to Master"]
-    Gar -->|Yes (Garrison Too Weak)| Revolt["SLAVE REVOLT TRIGGERED!\nViolent Uprising Breaks Out"]
+    Gar -->|"No (Sufficient Guard)"| Tribute["Tribute Diverted\n100% Commodity Harvest Sent to Master"]
+    Gar -->|"Yes (Garrison Too Weak)"| Revolt["SLAVE REVOLT TRIGGERED!\nViolent Uprising Breaks Out"]
     
     Revolt --> Devastate["Urban Devastation\nSectors Destroyed in Uprising"]
     Devastate --> Free["Planetary Shackles Broken\nSlaves Liberated to Free Citizens"]
@@ -164,9 +157,7 @@ On peaceful slave worlds, the entire output of newly harvested commodities (fuel
 
 ### Slave Revolt Triggers and Uprisings
 An enslaved population requires an active military presence to maintain order. If the master empire's population drops to or below **$0.1\%$ ($1/1000\text{th}$)** of the total planetary population:
-- **Devastation**: Violent uprisings break out across the world, devastating:
-  $$N_{\text{devastated}} = \left\lfloor \frac{\text{Total Population}}{1000} \right\rfloor + 1$$
-  random populated sectors.
+- **Devastation**: Violent uprisings break out across the world, devastating $N_{\text{devastated}} = \left\lfloor \frac{\text{Total Population}}{1000} \right\rfloor + 1$ random populated sectors.
 - **Intimidation Backlash**: Master-owned sectors in intimidated star systems face a $50\%$ chance of destruction.
 - **Liberation**: The shackles of enslavement are broken, fully liberating the planetary population.
 
@@ -179,8 +170,7 @@ The turn simulation finalizes local economic accounting and defense readiness:
 - **Harvest Deposits**: Newly mined resources and synthesized fuels are credited to local colony stockpiles.
 - **Tax Collection**: Civilian taxes are levied and transferred into the system governor's treasury. Tax rate increases are constrained by the $+5\%$ per turn update rate-limiting policy.
 - **Scientific Research**: Planetary research grants are deducted from the governor's treasury, generating imperial technology advancement points.
-- **Ground Defense Batteries**: Total sector mobilization readiness is converted into active ground defense gun batteries:
-  $$N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Points}}{1000} \right\rfloor\right)$$
+- **Ground Defense Batteries**: Total sector mobilization readiness is converted into active ground defense gun batteries: $N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Points}}{1000} \right\rfloor\right)$.
 - **Automated Waste Canisters**: If environmental pollution exceeds the governor's configured toxicity threshold, the colony automatically expends minerals to construct a Toxic Waste Canister ship, purging up to $20$ points of toxicity from the biosphere.
 
 ---

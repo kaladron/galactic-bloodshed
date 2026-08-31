@@ -92,9 +92,7 @@ Open market lots on the Interstellar Exchange are evaluated and cleared during t
 
 1. **Delivery Delay**: Commodities placed on the exchange require one update to register before bids are eligible for fulfillment.
 2. **Affordability Check**: The highest bidder must possess sufficient funds to pay the bid price plus interstellar freight shipping costs.
-3. **Freight Cost Calculation**:
-   $$\text{Distance} = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$$
-   $$\text{Shipping Fee} = \left\lfloor \frac{\text{Distance} \times \text{Bid Price}}{1000} \right\rfloor$$
+3. **Freight Cost Calculation**: Shipping tariffs scale with Euclidean distance: $\text{Distance} = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$, resulting in $\text{Shipping Fee} = \left\lfloor \frac{\text{Distance} \times \text{Bid Price}}{1000} \right\rfloor$.
 4. **Deposit & Stockpile**: Commodities are delivered directly to the designated destination planet's resource reserves.
 
 ---

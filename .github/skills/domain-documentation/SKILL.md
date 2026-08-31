@@ -23,7 +23,20 @@ When modernizing or discovering game subsystems (e.g., naval operations, orbital
 
 ## 2. Mathematical Rigor & Formulas
 
-Document exact numerical formulas and probability distributions using LaTeX math ($`$...$`$ inline or display `$$...$$`):
+Document exact numerical formulas and probability distributions using LaTeX math:
+
+### ⚠️ GitHub Math Formatting Rules:
+- **Inline Math in Lists**: When including formulas inside bullet points (`- ...`) or numbered lists (`1. ...`), **ALWAYS use inline math (`$...$`)** directly on the list item line. GitHub's markdown parser fails to render `$$...$$` display blocks nested inside list items.
+  ```markdown
+  - **Tax Strain**: High taxation depresses effective metabolism: $\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)$.
+  ```
+- **Display Math Blocks**: Use `$$...$$` display blocks **strictly for standalone paragraphs** separated by blank lines before and after:
+  ```markdown
+  The maximum demographic capacity is calculated as:
+
+  $$\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$$
+  ```
+- **Delimiter Spacing**: Do not place spaces immediately after opening `$` or before closing `$` (e.g. `$x = 1$`, not `$ x = 1 $`) to ensure reliable KaTeX rendering.
 
 - **Probabilities**: State exact success and failure distributions (e.g. $P(\text{Immobilized}) = \frac{\text{Radiation}}{100}$).
 - **Rates and Scaling**: Express formulas for crew scaling, efficiency ratios, and resource costs:
@@ -37,13 +50,20 @@ Document exact numerical formulas and probability distributions using LaTeX math
 
 ## 3. Visual Lifecycles & Mermaid Diagrams
 
-Use Mermaid flowcharts and state diagrams to illustrate multi-step simulation pipelines, spatial hierarchies, and behavioral state transitions:
+Use Mermaid flowcharts and state diagrams to illustrate multi-step simulation pipelines, spatial hierarchies, and behavioral state transitions.
+
+### ⚠️ GitHub Mermaid Syntax Rules:
+- **Quote Edge Labels with Special Characters**: In flowcharts, any edge label containing parentheses `()`, slashes `/`, percentages `%`, or punctuation **MUST be enclosed in double quotes** (`-->|"Yes (50% Chance)"|` or `-->|"Tax Rate (0-100%)"|`). Unquoted parentheses are misinterpreted as node shape boundaries by Mermaid, breaking GitHub rendering.
+- **Quote All Node Text**: Always wrap node labels in double quotes inside brackets: `Node["Text with (parens), / slashes, and \n newlines"]` or `Decision{"Condition <= 100?"}`.
 
 ```mermaid
 flowchart TD
     Univ["Universe Scope (Deep Space)\nInterstellar Coordinates"] --> Star["Star System Orbit\nHeliocentric Position"]
     Star --> Plan["Planetary Scope\nOrbital Track or Surface Grid"]
     Plan --> Carrier["Carrier Hangars\nDocked Inside Host Ship or Station"]
+    Plan --> Check{"Condition Check\nStored Resources >= Build Cost?"}
+    Check -->|"Yes (50% Chance)"| Build["Construct Unit"]
+    Check -->|No| Standby["Standby Mode"]
 ```
 
 ---
@@ -56,7 +76,7 @@ Every domain guide in `docs/` should follow a structured layout:
 2. **Core Concepts / Reference Frames**: Spatial, political, or economic hierarchies.
 3. **Domain Mechanics & Subsystem Breakdown**: Section-by-section walkthrough of specific rules, actions, and constraints.
 4. **Mathematical Models & Turn Lifecycles**: Step-by-step turn execution phases with LaTeX formulas.
-5. **See Also**: Relative markdown links to related guides in `docs/`.
+5. **See Also**: Comprehensive, bidirectional relative markdown links to all related topic guides in `docs/` using exact guide titles.
 
 ---
 
@@ -67,9 +87,11 @@ Whenever creating a new document in `docs/`:
 1. Save the file to `docs/<topic>.md`.
 2. Register the filename in `docs/CMakeLists.txt` under `install(FILES ...)`:
    ```cmake
-   install(FILES economy.md gb_FAQ.txt governance.md planetary_simulation.md
-                 planets.md RACEGEN.COMPILE.HELP RACEGEN.PLAYER.HELP ships.md
-                 stars.md von_neumann.md <new_topic>.md
+   install(FILES combat.md covert_ops.md diplomacy.md economy.md gb_FAQ.txt
+                 geoengineering.md governance.md navigation.md
+                 planetary_simulation.md planets.md RACEGEN.COMPILE.HELP
+                 RACEGEN.PLAYER.HELP races.md ships.md ship_types.md stars.md
+                 turn_cycle.md von_neumann.md
            DESTINATION "${CMAKE_INSTALL_DOCDIR}")
    ```
 3. Run `ninja -C build` to verify CMake configuration.

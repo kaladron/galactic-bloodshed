@@ -385,9 +385,8 @@ void test_domine_trigger_and_detonation() {
   auto mine_handle = em.create_ship(mine_data);
   mine_handle->on() = 1;
 
-  em.mutate_star(starnum_t{1}, [&](Star& s) {
-    s.ships() = ally_handle->number();
-  });
+  em.mutate_star(starnum_t{1},
+                 [&](Star& s) { s.ships() = ally_handle->number(); });
   ally_handle->ships() = mine_handle->number();
 
   domine(*mine_handle, 0, em);
@@ -408,9 +407,8 @@ void test_domine_trigger_and_detonation() {
   enemy_data.ypos = 5.0;
   auto enemy_handle = em.create_ship(enemy_data);
 
-  em.mutate_star(starnum_t{1}, [&](Star& s) {
-    s.ships() = enemy_handle->number();
-  });
+  em.mutate_star(starnum_t{1},
+                 [&](Star& s) { s.ships() = enemy_handle->number(); });
   enemy_handle->ships() = mine_handle->number();
 
   domine(*mine_handle, 0, em);
@@ -470,9 +468,8 @@ void test_doabm_intercept() {
   };
   auto allied_handle = em.create_ship(allied_missile_data);
 
-  em.mutate_planet(starnum_t{1}, planetnum_t{0}, [&](Planet& p) {
-    p.ships() = hostile_handle->number();
-  });
+  em.mutate_planet(starnum_t{1}, planetnum_t{0},
+                   [&](Planet& p) { p.ships() = hostile_handle->number(); });
   hostile_handle->ships() = allied_handle->number();
 
   ship_struct abm_data{

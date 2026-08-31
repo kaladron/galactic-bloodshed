@@ -846,10 +846,9 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
         if (!target.alive() || !ship.destruct()) return;
 
         /* attack the missile/mine */
-        auto numdest =
-            std::min({static_cast<weapon_power_t>(retal_strength(ship)),
-                      static_cast<weapon_power_t>(ship.destruct()),
-                      ship.retaliate()});
+        auto numdest = std::min(
+            {static_cast<weapon_power_t>(retal_strength(ship)),
+             static_cast<weapon_power_t>(ship.destruct()), ship.retaliate()});
         ship.consume_destruct(numdest);
         auto const& s2sresult =
             shoot_ship_to_ship(entity_manager, ship, target, numdest, 0);

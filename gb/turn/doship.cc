@@ -53,27 +53,33 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
   const auto& race = *entity_manager.peek_race(ship.owner());
 
   /* In v5.0+ Habitats make resources out of fuel */
-  if (ship.on()) {
+  if (ship.on() && ship.max_crew_capacity() > 0) {
     double fuse = ship.fuel() *
-                  ((double)ship.popn() / (double)ship.max_crew_capacity()) *
-                  (1.0 - .01 * (double)ship.damage());
-    auto add = (int)fuse / 20;
-    if (ship.resource() + add > ship.max_resource_capacity())
+                  (static_cast<double>(ship.popn()) /
+                   static_cast<double>(ship.max_crew_capacity())) *
+                  (1.0 - 0.01 * static_cast<double>(ship.damage()));
+    auto add = static_cast<int>(fuse / 20.0);
+    if (ship.resource() + add > ship.max_resource_capacity()) {
       add = ship.max_resource_capacity() - ship.resource();
-    fuse = 20.0 * (double)add;
-    rcv_resource(ship, add);
-    use_fuel(ship, fuse);
+    }
+    fuse = 20.0 * static_cast<double>(add);
+    ship.add_resource(add);
+    ship.consume_fuel(fuse);
 
     for (auto nested_ship : ShipList(entity_manager, ship.ships())) {
-      if (nested_ship->type() == ShipType::OTYPE_WPLANT)
-        rcv_destruct(ship, do_weapon_plant(*nested_ship, entity_manager));
+      if (nested_ship->type() == ShipType::OTYPE_WPLANT) {
+        ship.add_destruct(do_weapon_plant(*nested_ship, entity_manager));
+      }
     }
   }
 
-  auto add = round_rand((double)ship.popn() * race.birthrate);
-  if (ship.popn() + add > ship.max_crew_capacity())
-    add = ship.max_crew_capacity() - ship.popn();
-  rcv_popn(ship, add, race.mass);
+  if (ship.max_crew_capacity() > 0) {
+    auto add = round_rand(static_cast<double>(ship.popn()) * race.birthrate);
+    if (ship.popn() + add > ship.max_crew_capacity()) {
+      add = ship.max_crew_capacity() - ship.popn();
+    }
+    ship.add_popn(add, race.mass);
+  }
 }
 
 void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
@@ -198,13 +204,9 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
   canist->set_count(canist->count() + 1);
   if (canist->count() < DISSIPATE) {
-    if (stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add <
-        -90)
-      stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add =
-          -100;
-    else
-      stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add -=
-          10;
+    auto& temp_add =
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add;
+    temp_add = std::max(-100, temp_add - 10);
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
 
@@ -235,13 +237,9 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
 
   canist->set_count(canist->count() + 1);
   if (canist->count() < DISSIPATE) {
-    if (stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add >
-        90)
-      stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add =
-          100;
-    else
-      stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add +=
-          10;
+    auto& temp_add =
+        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add;
+    temp_add = std::min(100, temp_add + 10);
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
     std::string telegram =
@@ -276,12 +274,15 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
             ship.storbits() == target.storbits() && target.alive()) {
           auto range = std::hypot(ship.xpos() - target.xpos(),
                                   ship.ypos() - target.ypos());
-          auto i = int_rand(0, round_rand((2. / ((double)(target.shipbody()))) *
-                                          (double)(mirror->intensity()) /
-                                          (range / PLORBITSIZE + 1.0)));
+          int body = std::max(1, target.shipbody());
+          auto max_dmg = round_rand(
+              (2.0 / static_cast<double>(body)) *
+              static_cast<double>(mirror->intensity()) /
+              (range / PLORBITSIZE + 1.0));
+          auto i = int_rand(0, max_dmg);
           std::stringstream telegram_buf;
           telegram_buf << std::format("{} aimed at {}\n", ship, target);
-          target.damage() += i;
+          target.apply_damage(static_cast<damage_t>(i));
           if (i) {
             telegram_buf << std::format("{}% damage done.\n", i);
           }
@@ -305,10 +306,12 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       double range = std::hypot(ship.xpos() - (star.xpos() + planet.xpos()),
                                 ship.ypos() - (star.ypos() + planet.ypos()));
 
-      int i = range > PLORBITSIZE ? PLORBITSIZE * mirror->intensity() / range
-                                  : mirror->intensity();
+      int i = range > PLORBITSIZE
+                  ? static_cast<int>(PLORBITSIZE * mirror->intensity() / range)
+                  : mirror->intensity();
 
-      i = round_rand(.01 * (100.0 - (double)(ship.damage())) * (double)i);
+      i = round_rand(0.01 * (100.0 - static_cast<double>(ship.damage())) *
+                     static_cast<double>(i));
       stats.Stinfo[ship.storbits().value][mirror->aimed_planet().value]
           .temp_add += i;
       break;
@@ -319,7 +322,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       if (ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
           mirror->aimed_star() == ship.storbits()) {
         entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-          star.stability() += int_rand(0, 1);
+          star.stability() += static_cast<unsigned char>(int_rand(0, 1));
         });
       }
       break;
@@ -344,10 +347,9 @@ constexpr double ap_planet_factor(const Planet& p) {
 }
 
 double crew_factor(const Ship& ship) {
-  int maxcrew = Shipdata[ship.type()][ABIL_MAXCREW];
-
+  int maxcrew = ship.max_crew_capacity();
   if (!maxcrew) return 0.0;
-  return ((double)ship.popn() / (double)maxcrew);
+  return (static_cast<double>(ship.popn()) / static_cast<double>(maxcrew));
 }
 
 void do_ap(Ship& ship, EntityManager& entity_manager) {
@@ -357,13 +359,15 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
     entity_manager.mutate_planet(
         ship.storbits(), ship.pnumorbits(), [&](Planet& p) {
           if (ship.fuel() >= 3.0) {
-            use_fuel(ship, 3.0);
-            for (auto j = RTEMP + 1; j <= OTHER; j++) {
+            ship.consume_fuel(3.0);
+            for (int j = RTEMP + 1; j <= OTHER; j++) {
+              auto cond = static_cast<Conditions>(j);
               auto d = round_rand(
                   ap_planet_factor(p) * crew_factor(ship) *
-                  (double)(race.conditions[j] -
-                           p.conditions(static_cast<Conditions>(j))));
-              if (d) p.conditions(static_cast<Conditions>(j)) += d;
+                  static_cast<double>(race.conditions[j] - p.conditions(cond)));
+              if (d) {
+                p.conditions(cond) = std::clamp(p.conditions(cond) + d, 0, 100);
+              }
             }
           } else if (!ship.notified()) {
             ship.notified() = 1;
@@ -848,14 +852,21 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
 int do_weapon_plant(Ship& ship, EntityManager& entity_manager) {
   const auto& race = *entity_manager.peek_race(ship.owner());
   double tech = race.tech;
-  auto maxrate = (int)(tech / 2.0);
+  auto maxrate = static_cast<int>(tech / 2.0);
 
-  auto rate = round_rand(MIN((double)ship.resource() / (double)RES_COST_WPLANT,
-                             ship.fuel() / FUEL_COST_WPLANT) *
-                         (1. - .01 * (double)ship.damage()) *
-                         (double)ship.popn() / (double)ship.max_crew());
+  auto max_crew = ship.max_crew_capacity();
+  if (max_crew == 0) {
+    return 0;
+  }
+
+  auto rate = round_rand(std::min(static_cast<double>(ship.resource()) /
+                                      static_cast<double>(RES_COST_WPLANT),
+                                  ship.fuel() / FUEL_COST_WPLANT) *
+                         (1.0 - 0.01 * static_cast<double>(ship.damage())) *
+                         static_cast<double>(ship.popn()) /
+                         static_cast<double>(max_crew));
   rate = std::min(rate, maxrate);
-  use_resource(ship, (rate * RES_COST_WPLANT));
-  use_fuel(ship, ((double)rate * FUEL_COST_WPLANT));
+  ship.consume_resource(rate * RES_COST_WPLANT);
+  ship.consume_fuel(static_cast<double>(rate) * FUEL_COST_WPLANT);
   return rate;
 }

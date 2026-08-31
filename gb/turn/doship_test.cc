@@ -1131,6 +1131,114 @@ void test_accumulate_ship_power_stats() {
   test::expect_eq(stats.Sdatapopns[player_t{1}], 20);
 }
 
+void test_special_subsystems_extended() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+  TurnStats stats{};
+
+  Race race = createTestRace(player_t{1});
+  race.conditions[RTEMP] = 50;
+  race.conditions[OXYGEN] = 80;
+  RaceRepository(store).save(race);
+
+  Star star = createTestStar(starnum_t{1});
+  StarRepository(store).save(star);
+
+  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
+  planet.star_id() = 1;
+  planet.planet_order() = 0;
+  planet.conditions(RTEMP) = 10;
+  planet.conditions(OXYGEN) = 10;
+  PlanetRepository(store).save(planet);
+
+  // 1. Habitat with 0 max_crew does not divide by zero
+  ship_struct hab_data{
+      .owner = player_t{1},
+      .fuel = 100.0,
+      .max_crew = 0,
+      .type = ShipType::STYPE_HABITAT,
+      .alive = 1,
+      .on = 1,
+  };
+  auto hab_handle = em.create_ship(hab_data);
+  do_habitat(*hab_handle, em);
+  test::expect_eq(hab_handle->resource(), 0);
+
+  // 2. Weapon plant with 0 max_crew does not divide by zero
+  ship_struct wplant_data{
+      .owner = player_t{1},
+      .fuel = 100.0,
+      .max_crew = 0,
+      .resource = 100,
+      .type = ShipType::OTYPE_WPLANT,
+      .alive = 1,
+      .on = 1,
+  };
+  auto wplant_handle = em.create_ship(wplant_data);
+  int produced = do_weapon_plant(*wplant_handle, em);
+  test::expect_eq(produced, 0);
+
+  // 3. Canister clamped at -100
+  ship_struct can_data{
+      .owner = player_t{1},
+      .storbits = starnum_t{1},
+      .pnumorbits = planetnum_t{0},
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_CANIST,
+      .alive = 1,
+  };
+  auto can_handle = em.create_ship(can_data);
+  stats.Stinfo[1][0].temp_add = -95;
+  do_canister(*can_handle, em, stats);
+  test::expect_eq(stats.Stinfo[1][0].temp_add, -100);
+
+  // 4. Greenhouse clamped at +100
+  ship_struct gh_data{
+      .owner = player_t{1},
+      .storbits = starnum_t{1},
+      .pnumorbits = planetnum_t{0},
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_GREEN,
+      .alive = 1,
+  };
+  auto gh_handle = em.create_ship(gh_data);
+  stats.Stinfo[1][0].temp_add = 95;
+  do_greenhouse(*gh_handle, em, stats);
+  test::expect_eq(stats.Stinfo[1][0].temp_add, 100);
+
+  // 5. Space mirror destroys target ship when damage exceeds 100
+  ship_struct target_data{
+      .owner = player_t{1},
+      .size = 10,
+      .storbits = starnum_t{1},
+      .whatorbits = ScopeLevel::LEVEL_STAR,
+      .damage = 99,
+      .type = ShipType::STYPE_SHUTTLE,
+      .alive = 1,
+  };
+  auto target_handle = em.create_ship(target_data);
+
+  ship_struct mirror_data{
+      .owner = player_t{1},
+      .storbits = starnum_t{1},
+      .whatorbits = ScopeLevel::LEVEL_STAR,
+      .type = ShipType::STYPE_MIRROR,
+      .alive = 1,
+  };
+  auto mirror_handle = em.create_ship(mirror_data);
+  auto* mirror_ship = mirror_handle->as<SpaceMirrorShip>();
+  mirror_ship->aim().level = ScopeLevel::LEVEL_SHIP;
+  mirror_ship->aim().shipno = target_handle->number();
+  mirror_ship->aim().intensity = 100;
+
+  do_mirror(*mirror_handle, em, stats);
+  const auto* target_after = em.peek_ship(target_handle->number());
+  // Destroyed ship is killed via em.kill_ship
+  test::expect_true(target_after == nullptr || target_after->alive() == 0);
+}
+
 }  // namespace
 
 int main() {
@@ -1221,6 +1329,10 @@ int main() {
 
   std::println(std::cout, "  Testing accumulate_ship_power_stats... ");
   test_accumulate_ship_power_stats();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing special subsystems extended... ");
+  test_special_subsystems_extended();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doship tests passed!");

@@ -247,8 +247,10 @@ flowchart TD
 ## See Also
 
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
-- [Planetary Simulation Engine & Sector Dynamics](planetary_simulation.md)
-- [Turn Simulation Lifecycle & Economic Accounting](turn_cycle.md)
-- [Governance, Colonies, and Empire Management](governance.md)
-- [Galactic Economic Model & Commodity Trading](economy.md)
-- [Von Neumann Machine AI & Berserker Simulation](von_neumann.md)
+- [Stellar Mechanics, Spectral Classes, and Nova Lifecycles](stars.md)
+- [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
+- [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
+- [Governance, Capitals, and Imperial Administration](governance.md)
+- [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
+- [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
+- [Autonomous Machine AI, Von Neumann Probes, and Berserker Warships](von_neumann.md)

@@ -49,20 +49,20 @@ Action Points (APs) represent the logistical capacity of an empire to issue comm
 
 ### Star System Action Points
 
-At each full turn update, an empire receives Action Points in every star system where it maintains planetary colonies or naval crews. The points awarded depend upon planetary population ($P$), ship presence, and governance status:
+At each full turn update, an empire receives Action Points in every star system where it maintains planetary colonies or naval crews. The points awarded depend upon planetary population ($P$), stationed ship count ($N_{\text{ships}}$), and governance status:
 
-$$\text{Raw APs} = \left\lfloor \left(1.0 + \log_{10}\left(\max(1, P)\right)\right) \times \left(1.0 + \frac{\text{Ship Crew Scaling}}{100}\right) \right\rfloor$$
+$$\text{Raw APs} = \text{round\_rand}\left(\frac{N_{\text{ships}}}{10} + 5 \log_{10}\left(1 + \max(0, P)\right)\right)$$
 
 #### Governance Efficiency Modifier
 Operating without an active, operational Government Center palace or docked flagship severely impairs bureaucratic coordination:
 
-$$\text{Final System APs} = \begin{cases} \text{Raw APs} & \text{if Empire is Governed} \\ \max\left(1, \left\lfloor \frac{\text{Raw APs}}{20} \right\rfloor\right) & \text{if Empire is Ungoverned} \end{cases}$$
+$$\text{Final System APs} = \begin{cases} \min(250, \text{Current APs} + \text{Raw APs}) & \text{if Governed} \\ \min\left(250, \text{Current APs} + \max\left(1, \left\lfloor \frac{\text{Raw APs}}{20} \right\rfloor\right)\right) & \text{if in Anarchy} \end{cases}$$
 
 ### Universe Action Points
 
-Planetary colonies also generate planetary action points that accumulate toward a centralized universe-level treasury. Governed empires receive universe-wide action points each update:
+Planetary colonies generate planetary points that accumulate toward a centralized universe-level treasury. Governed empires receive universe-wide action points each update:
 
-$$\Delta \text{AP}_{\text{univ}} = \left\lfloor \frac{\text{Accumulated Planetary Points}}{10} \right\rfloor$$
+$$\Delta \text{AP}_{\text{univ}} = \text{Total Colonized Planet Points}$$
 
 Ungoverned empires receive zero universe-level action points.
 
@@ -76,7 +76,7 @@ During each full update, planetary governors assess economic maintenance costs f
 
 When maintenance expenses exceed available treasury funds, the deficit directly degrades civil morale:
 
-$$\text{Deficit} = \text{Total Maintenance} - \text{Governor Treasury}$$
+$$\text{Deficit} = \text{Total Maintenance Obligations} - \text{Governor Treasury}$$
 
 $$\Delta \text{Morale} = -\left\lfloor \frac{\text{Deficit}}{10} \right\rfloor$$
 
@@ -157,8 +157,10 @@ $$\text{Final Victory Score} = \left\lfloor \text{Raw Score} \times \left(\frac{
 
 ## 9. See Also
 
-- [Planetary Simulation Guide](planetary_simulation.md)
-- [Planets & Sectors Guide](planets.md)
-- [Economy & Commerce Guide](economy.md)
-- [Governance & Empires Guide](governance.md)
-- [Ships & Naval Architecture](ships.md)
+- [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
+- [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
+- [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
+- [Governance, Capitals, and Imperial Administration](governance.md)
+- [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
+- [Stellar Mechanics, Spectral Classes, and Nova Lifecycles](stars.md)
+- [Autonomous Machine AI, Von Neumann Probes, and Berserker Warships](von_neumann.md)

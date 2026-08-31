@@ -1,126 +1,203 @@
-# Planetary Simulation Pipeline
+# Planetary Simulation Engine and Sector Dynamics
 
 ## Overview
 
-Planetary simulation in Galactic Bloodshed occurs during game turns and movement segments via `doplanet()`. During full turn updates (`update = true`), planets simulate ground vehicle operations, atmospheric climate, agricultural and industrial production, population migration, environmental fallout, stockpile plunder, census tallies, enslavement mechanics, taxation, and research.
+In **Galactic Bloodshed**, settled worlds are dynamic living ecosystems and industrial powerhouses. During full turn updates, the planetary simulation engine processes physical climate dynamics, automated ground vehicles, agricultural and industrial extraction, demographic breeding and starvation, territorial colonist expansion, environmental disasters, colony plunder, imperial census tallies, enslavement mechanics, taxation, and research.
 
-The simulation is architected as an **n-tier sequential pipeline** where pure domain simulation passes operate over rich domain entities (`Planet`, `SectorMap`, `Sector`, `plinfo`), returning structured result records before decoupled presentation helpers dispatch telegrams.
+The simulation executes through ten sequential simulation passes across each planet's surface grid:
 
 ```mermaid
 flowchart TD
-    Start([doplanet Pipeline Entry]) --> P1[1. Reset & Preparation<br/><i>reset_planet_turn_state</i>]
-    P1 --> P2[2. Planetary & Ground Ships<br/><i>process_planetary_ships</i>]
-    P2 --> P3[3. Climate & Atmosphere<br/><i>process_planet_climate</i>]
-    P3 --> P4[4. Sector Production & Spread<br/><i>process_planet_production</i>]
-    P4 --> P5[5. Island Exploration<br/><i>process_island_exploration</i>]
-    P5 --> P6[6. Environmental Disasters<br/><i>process_toxic_environmental_damage</i>]
-    P6 --> P7[7. Conquered Stockpile Plunder<br/><i>do_recover</i>]
-    P7 --> P8[8. Census Recalculation<br/><i>recalculate_census</i>]
-    P8 --> P9[9. Enslavement & Revolts<br/><i>process_enslavement_and_revolts</i>]
-    P9 --> P10[10. Planetary Economy<br/><i>process_planet_economy</i>]
-    P10 --> End([Pipeline Complete])
-
-    style Start fill:#2d3748,stroke:#4a5568,color:#fff
-    style End fill:#2d3748,stroke:#4a5568,color:#fff
+    Start(["Turn Simulation Phase"]) --> P1["1. Turn Reset & Ecological Assessment"]
+    P1 --> P2["2. Ground Vehicles & Surface Automation"]
+    P2 --> P3["3. Climate Dynamics & Thermal Drift"]
+    P3 --> P4["4. Sector Production & Colonist Expansion"]
+    P4 --> P5["5. Planetary Island Exploration"]
+    P5 --> P6["6. Environmental Toxicity & Disasters"]
+    P6 --> P7["7. Conquered Stockpile Plunder"]
+    P7 --> P8["8. Imperial Census & Power Ratings"]
+    P8 --> P9["9. Enslavement & Slave Revolts"]
+    P9 --> P10["10. Planetary Economy & Defenses"]
+    P10 --> End(["Turn Finalized & Telegrams Dispatched"])
 ```
 
 ---
 
-## The 10 Sequential Simulation Passes
+## 1. Turn Reset and Ecological Assessment
 
-### 1. Reset and State Preparation (`reset_planet_turn_state`)
-Before simulation starts:
-- Cleans transient planetary statistics in `TurnStats` (clearing production accumulators, island discovery flags).
-- Resets total planetary population, troops, and mineral deposits on the `Planet` entity.
-- Resets per-player colony tallies (`popn = 0`, `troops = 0`, `numsectsowned = 0`, `est_production = 0.0`) across all active races.
-- Pre-computes race-to-planet atmospheric compatibility ratings (`stats.Compat[player]`).
-
-### 2. Planetary and Ground Ships (`process_planetary_ships`)
-Iterates over all ships in orbit or landed on the planet, skipping dead or irradiated vessels:
-- **Von Neumann Probes**: Replicate and build new probes when resource stockpiles suffice.
-- **Berserkers**: Execute automated orbital strikes against enemy populations, decrementing target hitlists (`Universe::VN_hitlist`).
-- **Terraformers**: Execute ground movement and convert hostile sectors to optimal race habitat (`SectorType::likesbest`).
-- **Plows**: Move across arable land and increase agricultural fertility (`s.fert()`), generating minor industrial waste.
-- **Domes**: Upgrade infrastructure and increase sector efficiency (`s.efficiency()`).
-- **Quarries**: Strip-mine sectors to `SEC_WASTED`, extracting mineral resources into colony stockpiles.
-- **Gas Giant Refueling**: Refuels orbiting tankers, habitats, and standard spacecraft from gas giant atmospheres.
-
-### 3. Climate and Atmospheric Dynamics (`process_planet_climate`)
-Simulates planetary thermal dynamics:
-- Adjusts surface temperature based on focused stellar radiation from space mirrors (`TurnStats::Stinfo.temp_add`).
-- Applies natural seasonal and atmospheric temperature drift ($\pm 5^{\circ}\text{C}$) via `Planet::update_climate()`.
-
-### 4. Sector Production and Population Spread (`process_planet_production`)
-Simulates economic output, demographic changes, and territorial migration across every sector on the planet:
-- **Supernova Sterilization**: If the host star is undergoing a supernova, intense radiation damages agricultural fertility, exposing deep mineral veins or sterilizing sectors entirely into `SEC_WASTED`.
-- **Resource & Fuel Extraction (`process_resource_production`)**: Populated sectors extract mineral deposits and petroleum. Gas sectors (`SEC_GAS`) produce double fuel yield ($2\times$). Highly mobilized sectors divert output into destructive ammo stockpiles (`prod_destruct`).
-- **Demographic Growth & Starvation Dynamics (`calculate_population_change`)**:
-  - *Maximum Support Capacity*: $\text{maxsup} = \text{std::lround}((\text{eff} + 1) \times \text{fert} \times 0.01 \times \text{compat} \times (100 - \text{toxic}) / 100)$.
-  - *Sterility Threshold*: If sector population drops below the species' reproductive minimum ($\text{popn} < \text{race.number\_sexes}$), biological reproduction stalls completely ($\Delta \text{popn} = 0$).
-  - *Breeding Growth* ($\text{popn} < \text{maxsup}$): $\Delta \text{popn} = \text{round\_rand}((\text{maxsup} - \text{popn}) \times \text{race.birthrate})$.
-  - *Overpopulation Starvation* ($\text{popn} > \text{maxsup}$): Severe famine inflicts casualties within the range $[0, \min(2 \times (\text{popn} - \text{maxsup}), \text{popn})]$.
-- **Spontaneous Colonist Migration (`spread` & `calculate_migrating_colonists`)**:
-  - *Trigger Condition*: When sector population exceeds $10\%$ of maximum capacity ($\text{popn} > 0.1 \times \text{maxsup}$), excess colonists look to expand outwards.
-  - *Spatial Adjacency*: Explores valid 8-way neighbors, honoring **toroidal $X$ wrapping** across the planetary meridian while respecting impassable **polar $Y$ boundaries**.
-  - *Target Eligibility*: Colonists migrate only into *unowned* sectors (`owner == 0`) with positive environmental affinity ($\text{race.likes}[\text{target.condition}] > 0$).
-  - *Migration Volume*:
-    $$\Delta \text{migrants} = \text{round\_rand}\left(\text{popn} \times \frac{\text{adventurism}}{50} \times \frac{\text{compat}}{100} \times \frac{\text{race.likes}[\text{target.condition}]}{100}\right)$$
-  - *Territorial Claiming*: Migrants immediately claim the new sector for their empire, updating colonized sector tallies in `TurnStats`.
-- **Industrial Infrastructure & Plating (`update_efficiency`)**:
-  - Unplated sectors improve efficiency with probability $(100 - \text{tax}) \times \text{race.likes}[\text{condition}]$, gaining $\text{round\_rand}(\text{race.metabolism})$ points.
-  - When efficiency reaches $100\%$, the sector automatically converts to **Plated** status (`SEC_PLATED`), maximizing defensive protection and structural stability.
-
-### 5. Island Exploration (`process_island_exploration`)
-Controls planetary exploration and territorial expansion:
-- Ticks down the planetary exploration countdown timer (`planet.expltimer()`).
-- When the timer expires, scans for undiscovered islands or landmasses.
-- Colonizes discovered sectors, claims territory for exploring races, and logs discovery alerts.
-
-### 6. Environmental Disasters (`process_toxic_environmental_damage`)
-Monitors planetary pollution levels:
-- When toxicity exceeds the critical environmental threshold (`conditions(TOXIC) > ENVIR_DAMAGE_TOX`), an industrial disaster triggers.
-- Atomically devastates a random sector to `SectorType::SEC_WASTED` (`Sector::devastate()`), wiping out population and infrastructure while notifying colonists.
-
-### 7. Conquered Stockpile Plunder (`do_recover`)
-When a planet is conquered and previous owners are fully eliminated:
-- Evaluates the mutual alliance graph (`check_mutual_alliances`) among all conquering races.
-- If all conquerors are mutually allied, calculates proportional plunder shares using `calculate_plunder_distribution()`.
-- Guarantees strict commodity conservation ($\sum \text{allocated} = \text{total\_loot}$) with remainder allocation.
-- Transfers stockpiles into conqueror inventories and dispatches recovery telegrams.
-
-### 8. Census Recalculation (`recalculate_census`)
-Executes a single linear traversal over the `SectorMap`:
-- Tallies total mineral resources across all sectors on the world.
-- Accumulates population, troops, and maximum population capacity (`maxpopn`) for each player.
-- Updates empire-wide power metrics (`stats.Power`) and stellar system population tracking (`stats.starpopns`).
-
-### 9. Enslavement and Slave Revolts (`process_enslavement_and_revolts`)
-Manages enslaved planetary populations:
-- **Tribute Diversion**: For peaceful slave worlds, diverts all newly produced resources, fuel, destruct, and crystals directly to the master player's colony stockpile.
-- **Slave Revolts**: If the master player's garrison drops to or below $0.1\%$ ($1/1000\text{th}$) of the total population, an uprising triggers:
-  - Devastates $(1 + \lfloor \text{popn}_{\text{total}} / 1000 \rfloor)$ random sectors.
-  - Devastates master-owned sectors in intimidated star systems ($50\%$ chance).
-  - Liberates the population (`planet.free_slaves()`) and dispatches revolt bulletins.
-
-### 10. Planetary Economy and Taxation (`process_planet_economy`)
-Finalizes the economic turn for each inhabiting colony:
-- **Production Deposits**: Moves newly produced commodities into local stockpiles (`plinfo::deposit_production()`).
-- **Taxation**: Calculates tax revenue based on population and current tax rate, transferring income to the system governor's treasury. Tax increases are rate-limited to $+5\%$ per turn update.
-- **Technology Research**: Deducts tech investment from the governor's treasury and advances racial technology points (`race.tech`).
-- **Combat Readiness & Defense Guns**: Updates sector mobilization readiness and calculates ground-based planetary defense guns ($N_{\text{guns}} = \min(20, \lfloor \text{mob} / 1000 \rfloor)$).
-- **Automated Toxic Waste Cans**: If pollution exceeds the player's configured `tox_thresh`, automatically constructs a toxic waste can ship (`OTYPE_TOXWC`) to clean up to 20 points of toxicity.
+Before sector simulation begins, the environment performs foundational baseline setup:
+- Clears transient turn production accumulators and discovery flags.
+- Re-tallies active planetary populations, stationed ground troops, and available mineral deposits.
+- Pre-computes race-to-planet atmospheric compatibility ratings based on temperature, gravity, and atmospheric gas ratios (methane, oxygen, carbon dioxide, helium, nitrogen, sulfur).
 
 ---
 
-## Decoupled Presentation and Telegrams
+## 2. Ground Vehicles and Surface Automation
 
-Simulation passes do not write directly to player communication channels. Instead:
-1. Passes return structured value types (`std::optional<Coordinates>`, `RecoveryReport`, `EnslavementResult`, `IslandDiscovery`).
-2. Presentation helper `send_planet_turn_telegrams()` formats autoreport bulletins, disaster notices, and economic summaries before routing telegrams through `EntityManager`.
+Active surface vehicles, autonomous terraformers, and orbital support craft execute operational orders across the planetary grid:
+
+- **Autonomous Von Neumann Probes**: Extract mineral resources from surface sectors, refine propellant, and replicate new machine offspring when resources suffice.
+- **Berserker Warships**: Orbiting autonomous dreadnoughts execute saturation bombardment runs against designated enemy colonies.
+- **Terraformers**: Autonomous ground vehicles navigate across sectors, conditioning hostile terrain toward their species' ideal biosphere.
+- **Space Plows**: Move across arable land, conditioning topsoil to increase agricultural fertility while generating trace industrial byproducts.
+- **Domes**: Erect climate-controlled habitats, upgrading sector efficiency and shielding colonists from harsh atmospheric conditions.
+- **Quarries**: Strip-mine heavy mineral veins, extracting raw industrial materials into colony stockpiles before leaving behind spent wasteland.
+- **Gas Giant Harvesting**: Tankers and orbital stations stationed in low orbit around gas giants skim atmospheric hydrogen to replenish fleet fuel reserves.
+
+---
+
+## 3. Climate Dynamics and Thermal Drift
+
+Planetary surface temperatures evolve based on heliocentric orbital distance, seasonal variations, and orbital engineering:
+
+```mermaid
+flowchart LR
+    Stellar["Stellar Baseline\nLuminosity & Orbit"] --> Drift["Seasonal Drift\n(+/- 5°C Variance)"]
+    Mirrors["Orbital Space Mirrors\nFocused Solar Beams"] --> Thermal["Net Planetary Surface Temperature"]
+    Drift --> Thermal
+```
+
+- **Natural Seasonal Drift**: Planetary surface temperatures experience natural atmospheric fluctuations of $\pm 5^{\circ}\text{C}$ around their stellar baseline.
+- **Orbital Space Mirrors**: Giant orbital reflector arrays aimed at the planet focus stellar energy into the upper atmosphere to warm freezing worlds or shade overheated biospheres:
+  $$\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$$
+
+---
+
+## 4. Sector Production, Demographics, and Colonist Spread
+
+The economic and biological heart of the simulation processes every occupied sector on the planet:
+
+### Supernova Impact
+If the host star is undergoing a nova collapse, extreme radiation sweeps across the planet, degrading agricultural fertility, stripping surface vegetation, and searing vulnerable terrain into nuclear wasteland.
+
+### Industrial Resource Extraction
+Populated sectors extract raw minerals and petroleum:
+- **Mineral Yield**: Populated sectors extract mineral ore based on racial metabolism and sector efficiency:
+  $$\text{Yield} = \min\left(\text{Sector Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$$
+- **Propellant Synthesis**: Extracting minerals simultaneously generates refined fuel. Sectors classified as Gas Fields yield double fuel output ($2 \times \text{Yield}$).
+- **Munitions Diversion**: If a sector has undergone military mobilization, extracted minerals are automatically refined into destructive ordnance (`destruct`) rather than raw minerals.
+- **Crystal Synthesis**: Advanced empires with crystal discovery extract rare crystalline deposits from mineral-rich sectors.
+
+### Demographic Breeding and Overpopulation Famine
+
+```mermaid
+flowchart TD
+    Pop["Current Sector Population"] --> Cap{"Compare vs. Max Support Capacity"}
+    Cap -->|Population < Max Support| Grow["Breeding Growth\nBirthrate * (Max Support - Pop)"]
+    Cap -->|Population == Max Support| Stable["Demographic Equilibrium\n(Delta Pop = 0)"]
+    Cap -->|Population > Max Support| Starve["Overpopulation Famine\nCasualties in [0, 2 * Excess]"]
+```
+
+- **Maximum Demographic Support Capacity**: The sustainable population cap for a sector depends on infrastructure efficiency, soil fertility, atmospheric compatibility, and environmental toxicity:
+  $$\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$$
+- **Reproductive Threshold**: If sector population drops below the species' reproductive minimum ($\text{Population} < \text{Reproductive Sexes}$), reproduction ceases entirely.
+- **Population Growth**: Below carrying capacity, populations expand according to racial birthrate:
+  $$\Delta \text{Population} = \left\lfloor (\text{Max Population} - \text{Population}) \times \text{Birthrate} \right\rfloor$$
+- **Overpopulation Starvation**: When population exceeds support capacity, severe famine inflicts casualties within the range:
+  $$\text{Casualties} \in \left[0, \min\big(2 \times (\text{Population} - \text{Max Population}), \text{Population}\big)\right]$$
+
+### Spontaneous Colonist Migration and Expansion
+When a sector becomes crowded ($\text{Population} > 0.10 \times \text{Max Population}$), pioneer colonists look to expand into neighboring wilderness:
+- **Migration Pool**: Adventurous colonists form migration parties:
+  $$\text{Available Migrants} = \left\lfloor \text{Population} \times \text{Adventurism} \times \frac{100 - \text{Fertility}}{100} \right\rfloor - \text{Reproductive Sexes}$$
+- **Topological Navigation**: Migrants step into adjacent unowned sectors, honoring **toroidal east/west seam wrapping** across meridians while respecting **polar north/south limits**.
+- **Settlement Volume**: Migrants settle eligible unowned territory with positive environmental affinity:
+  $$\Delta \text{Settlers} = \left\lfloor \text{Available Migrants} \times \text{Compatibility} \times \frac{\text{Habitat Preference}}{100} \right\rfloor$$
+- **Territorial Claim**: Settlers claim newly occupied sectors, planting imperial colony flags and expanding empire boundaries.
+
+### Infrastructure Development and Plating
+- Colonists improve sector efficiency over time at a rate influenced by tax rates, racial metabolism, and habitat preference.
+- Upon reaching $100\%$ efficiency, the sector automatically converts to **Plated** status, maximizing structural durability and defensive shielding.
+
+---
+
+## 5. Planetary Island Exploration
+
+For worlds with uncharted island chains or hidden landmasses:
+- An exploration countdown timer steadily decrements each turn.
+- When the timer reaches zero, imperial survey teams discover new landmasses, automatically colonizing revealed territory and dispatching discovery bulletins.
+
+---
+
+## 6. Environmental Toxicity and Industrial Disasters
+
+Heavy manufacturing, strip-mining, and orbital bombardment generate toxic byproducts:
+- **Disaster Threshold**: When planetary pollution exceeds critical environmental safety thresholds ($> 30\%$ Toxicity), an ecological catastrophe triggers.
+- **Disaster Impact**: An industrial disaster incinerates a random populated sector into nuclear wasteland, destroying local population and infrastructure while alerting the governing empire.
+
+---
+
+## 7. Conquered Stockpile Plunder
+
+When planetary invaders eradicate the defending garrison and capture a world:
+- The system evaluates diplomatic relations among all victorious conquerors.
+- If victorious empires share mutual alliances, captured commodity stockpiles (fuel, minerals, destruct, crystals) are divided equitably based on troop participation and sector control.
+- Plunder shares are transferred into conqueror inventories and victory recovery telegrams are dispatched.
+
+---
+
+## 8. Imperial Census and Power Ratings
+
+A single comprehensive census traversal audits the planetary grid:
+- Aggregates planetary mineral reserves, fuel yields, and crystal deposits.
+- Tallies civilian population, military garrisons, and maximum planetary carrying capacity.
+- Updates stellar system demographics and empire-wide galactic power scores.
+
+---
+
+## 9. Enslavement and Slave Revolts
+
+Subjugated enemy populations on conquered worlds are managed through enslavement policies:
+
+```mermaid
+flowchart TD
+    Pop["Enslaved Planetary Population"] --> Gar{"Master Military Garrison Check\nMaster Pop <= 0.1% of Total Pop?"}
+    Gar -->|No (Sufficient Guard)| Tribute["Tribute Diverted\n100% Commodity Harvest Sent to Master"]
+    Gar -->|Yes (Garrison Too Weak)| Revolt["SLAVE REVOLT TRIGGERED!\nViolent Uprising Breaks Out"]
+    
+    Revolt --> Devastate["Urban Devastation\nSectors Destroyed in Uprising"]
+    Devastate --> Free["Planetary Shackles Broken\nSlaves Liberated to Free Citizens"]
+```
+
+### Tribute Extraction
+On peaceful slave worlds, the entire output of newly harvested commodities (fuel, minerals, destruct, crystals) is diverted directly into the master empire's stockpiles.
+
+### Slave Revolt Triggers and Uprisings
+An enslaved population requires an active military presence to maintain order. If the master empire's population drops to or below **$0.1\%$ ($1/1000\text{th}$)** of the total planetary population:
+- **Devastation**: Violent uprisings break out across the world, devastating:
+  $$N_{\text{devastated}} = \left\lfloor \frac{\text{Total Population}}{1000} \right\rfloor + 1$$
+  random populated sectors.
+- **Intimidation Backlash**: Master-owned sectors in intimidated star systems face a $50\%$ chance of destruction.
+- **Liberation**: The shackles of enslavement are broken, fully liberating the planetary population.
+
+---
+
+## 10. Planetary Economy, Taxation, and Defenses
+
+The turn simulation finalizes local economic accounting and defense readiness:
+
+- **Harvest Deposits**: Newly mined resources and synthesized fuels are credited to local colony stockpiles.
+- **Tax Collection**: Civilian taxes are levied and transferred into the system governor's treasury. Tax rate increases are constrained by the $+5\%$ per turn update rate-limiting policy.
+- **Scientific Research**: Planetary research grants are deducted from the governor's treasury, generating imperial technology advancement points.
+- **Ground Defense Batteries**: Total sector mobilization readiness is converted into active ground defense gun batteries:
+  $$N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Points}}{1000} \right\rfloor\right)$$
+- **Automated Waste Canisters**: If environmental pollution exceeds the governor's configured toxicity threshold, the colony automatically expends minerals to construct a Toxic Waste Canister ship, purging up to $20$ points of toxicity from the biosphere.
+
+---
+
+## 11. Automated Telegrams and Communications
+
+Upon completing simulation passes, automated intelligence bulletins and telegrams are dispatched to system governors:
+- **Autoreports**: Summarize commodity production totals, newly mined crystals, and temperature shifts.
+- **Disaster Notices**: Alert governors to industrial toxicity disasters and sector devastation.
+- **Nova Warnings**: Emergency evacuation bulletins warn of stellar nova collapses and boiling seas.
+- **Revolt Bulletins**: Urgent war notices signal slave uprisings or planetary liberation events.
 
 ---
 
 ## See Also
-- [Planets and Colonization](planets.md)
-- [Economy and Taxation](economy.md)
-- [Governance and Administration](governance.md)
+- [Planetary Mechanics and Colonization](planets.md)
+- [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
+- [Governance, Capitals, and Imperial Administration](governance.md)
+- [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
+- [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)

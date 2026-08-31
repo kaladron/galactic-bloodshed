@@ -1,91 +1,139 @@
-# Von Neumann Machines and Berserker Warships
+# Autonomous Machine AI, Von Neumann Probes, and Berserker Warships
 
 ## Overview
 
-Von Neumann machines (`OTYPE_VN`) and Berserkers (`OTYPE_BERS`) are autonomous, self-replicating robotic intelligences in Galactic Bloodshed. Originally seeded across the galaxy by Deity (Player 1) or deployed by advanced star empires, these automated probes travel interstellar distances, land on mineral-rich worlds, strip-mine planetary biospheres, and replicate exponentially.
+**Von Neumann Machines** and **Berserkers** are autonomous, self-replicating robotic intelligences in **Galactic Bloodshed**. Deployed across deep space as self-sustaining exploration and mining probes, these machine entities travel between star systems, land on mineral-rich worlds, strip-mine planetary biospheres, synthesize propellants and munitions, and replicate exponentially.
 
-## Machine Consciousness and Lineage
+When threatened or attacked by space empires, the machine network mobilizes for war, manufacturing heavily armored Berserker dreadnoughts programmed to retaliate against hostile civilizations.
+
+```mermaid
+flowchart TD
+    Deep["1. Deep Space Interstellar Transit\nTraverse Interstellar Coordinates"] --> Orbit["2. Orbital Insertion & Planetary Scan\nIdentify Habitable Worlds & Mineral Veins"]
+    Orbit --> Land["3. Surface Landing & Extraction\nLand on Resource-Rich Planetary Sectors"]
+    Land --> Mine["4. Strip-Mining & Synthesis\nMine Minerals & Refine Fuel / Munitions"]
+    Mine --> Rep{"5. Self-Replication Cycle\nStored Minerals >= Build Cost?"}
+    Rep -->|Yes| Spawn["Replication & Lineage Advance\nSpawn Offspring (+20 Tech, +1 Armor)"]
+    Rep -->|No| CheckHostile{"Total Galactic Hostility > 100?"}
+    Spawn --> CheckHostile
+    CheckHostile -->|Yes (50% Chance)| Berserk["Manufacture Berserker Warship\n(+100 Tech, +11 Armor, Orbital Bombardment)"]
+    CheckHostile -->|No| Roam["Wander Depleted Sectors / Launch to Deep Space"]
+    Berserk --> Hunt["Target Star Systems of Hostile Empire"]
+    Roam --> Deep
+    Hunt --> Deep
+```
+
+---
+
+## 1. Cybernetic Lineage and Generational Evolution
 
 Every autonomous machine possesses an internal cybernetic consciousness and lineage tracking:
 
-- **Progenitor**: The empire or player that originally created or deployed the ancestral seed machine (defaults to Player 1).
-- **Generation**: The reproductive lineage counter ($g_0, g_1, \dots$). Each time a machine replicates, its offspring increments the generation:
+- **Progenitor**: The originating empire or intelligence that deployed the ancestral seed machine.
+- **Generational Lineage**: A reproductive generation counter ($g_0, g_1, \dots$). Each time a machine replicates, its offspring advances the generation:
   $$g_{\text{child}} = g_{\text{parent}} + 1$$
-- **Technological Evolution**: Each generation of replication incorporates iterative hardware improvements, advancing the offspring's technology level by **$+20.0$ Tech** over its parent. Offspring also gain **$+1$ Armor** rating.
-- **Binary Designations**: Newborn probes automatically assign themselves thematic binary strings (e.g. `"1010011"`, `"01101"`) as their cosmetic ship names.
-- **Tampering and Subversion**: Alien empires can attempt to capture or tamper with machine minds, altering their target assignments and reprogramming their mission parameters.
+- **Iterative Hardware Evolution**: Each generational iteration incorporates refined engineering, upgrading the offspring's scientific technology level and defensive armor:
+  $$\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 20.0$$
+  $$\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 1$$
+- **Binary Designations**: Newborn probes automatically assign themselves thematic binary strings (e.g. `"1010011"`, `"01101"`) as cosmetic hull names.
+- **Cybernetic Subversion & Reprogramming**: Advanced star empires can attempt to capture and tamper with machine minds, overwriting mission parameters, target priorities, and operational doctrines.
 
-## Planetary Surface Operations and Strip-Mining
+---
 
-When a machine reaches a planetary system, it enters orbit and initiates surface colonization:
+## 2. Planetary Surface Operations and Strip-Mining
 
-### Landing Selection
-- Probes scan the planets in the system, rejecting Gas Giants (which cannot support landings).
-- The probe scans the surface sectors of the world, identifying and landing directly on a sector with non-zero mineral resources.
+Upon entering a star system, an autonomous machine enters planetary orbit and initiates its surface operations:
 
-### Sector Strip-Mining
-Once landed, a machine strip-mines its occupied sector:
-$$\text{Yield} = \left\lfloor \text{Sector Resources} \times 0.5 \right\rfloor$$
+### Landing Site Selection
+- Probes scan all planets in the star system, bypassing uninhabitable gas giants that cannot support landings.
+- The machine scans surface sectors, identifying and landing directly on a sector bearing raw mineral reserves.
 
-- **Resource Cargo**: The extracted mineral yield is loaded directly into the probe's cargo hold.
-- **Propellant Synthesis**: The probe simultaneously refines the mined minerals into an equal amount of fuel propellant ($\Delta \text{Fuel} = \text{Yield}$).
-- **Berserker Ordnance Synthesis**: Berserker warships convert mined minerals into $5\times$ destructive ordnance ($\Delta \text{Destruct} = 5 \times \text{Yield}$).
+### Sector Strip-Mining and Synthesis
+Once landed, the machine strip-mines its occupied sector:
 
-### Sector Roaming and Toroidal Navigation
-When a sector is stripped of all mineral resources ($0$ resources remaining), the machine automatically wanders to a random adjacent sector. It safely navigates across the planet's toroidal east/west wrap-around boundaries while respecting northern and southern polar limits.
+$$\text{Extracted Yield} = \max\left(1, \left\lfloor \text{Sector Mineral Reserves} \times 0.5 \right\rfloor\right)$$
 
-### Colony Resource Theft
-If player colonies exist on the world, landed probes will raid planetary stockpiles:
-- The probe steals up to its base construction cost in resources from a randomly chosen colony on the planet.
-- The victim player receives an automated telegram alert warning that autonomous probes have raided their resource depots.
+- **Mineral Stockpiling**: The extracted mineral yield is transferred directly into the probe's cargo hold.
+- **Propellant Synthesis**: The probe refines the extracted minerals into an equal volume of liquid fuel:
+  $$\Delta \text{Fuel} = \text{Extracted Yield}$$
+- **Berserker Ordnance Synthesis**: Berserker warships convert extracted minerals into $5\times$ destructive ordnance:
+  $$\Delta \text{Destruct} = 5 \times \text{Extracted Yield}$$
 
-## Self-Replication and Production Cycles
+### Sector Depletion and Toroidal Roaming
+When a sector's mineral reserves are completely exhausted ($0$ resources remaining), the machine automatically wanders to a random adjacent sector. It navigates across cylindrical east/west seam wrapping while respecting polar boundaries.
+
+### Colony Resource Raids
+If foreign player colonies exist on the world, landed probes raid planetary depots:
+- The machine siphons minerals up to its base construction cost from a random resident colony on the planet.
+- Victim empires receive automated telegram bulletins alerting them to the theft.
+
+---
+
+## 3. Self-Replication and Production Cycles
 
 During the planetary simulation phase, landed probes evaluate their accumulated cargo reserves:
 
-$$\text{Offspring Count} = \left\lfloor \frac{\text{Stored Resources}}{\text{Ship Build Cost}} \right\rfloor$$
+$$\text{Offspring Count} = \left\lfloor \frac{\text{Stored Minerals}}{\text{Base Hull Construction Cost}} \right\rfloor$$
 
-For each child machine constructed:
-1. **Resource Consumption**: The build cost is deducted from the parent's cargo hold.
-2. **Propellant Sharing**: The parent splits its stored fuel reserves evenly with the newborn offspring ($50\%$ to parent, $50\%$ to child).
-3. **Lineage Inheritance**: The offspring inherits the ancestral progenitor ID and advances to generation $g_{\text{parent}} + 1$.
+For each child machine manufactured:
+1. **Resource Expenditure**: The construction cost is deducted from the parent's mineral cargo.
+2. **Propellant Sharing**: The parent divides its stored fuel reserves evenly with the newborn offspring ($50\%$ to parent, $50\%$ to child).
+3. **Lineage Inheritance**: The offspring inherits the ancestral progenitor identity and advances to generation $g_{\text{parent}} + 1$.
 
-## Galactic Aggression and Berserker Mobilization
+---
 
-The collective machine network monitors galactic combat and tracks hostility directed against its probes. When players attack or destroy Von Neumann machines, the network records the incident:
+## 4. Galactic Hostility and Berserker War Mobilization
 
-- The machine intelligence logs an aggression metric for each offending empire, identifying the player responsible for the highest casualties (`most_mad`).
-- If total galactic aggression exceeds the alert threshold:
-  $$\text{Total Galactic Aggression} > 100$$
-- Landed probes initiate **war mobilization**: each replication cycle has a **$50\%$ chance** to construct a heavily armed **Berserker Warship** (`OTYPE_BERS`) instead of a peaceful probe.
+The collective machine network continuously monitors galactic combat and logs hostile actions directed against its units.
+
+```mermaid
+flowchart TD
+    Combat["Hostile Empire Attacks Machine Probes"] --> Log["Network Logs Aggression\nIdentifies Primary Offender"]
+    Log --> Alert{"Total Galactic Hostility > 100?"}
+    Alert -->|Yes| War["WAR MOBILIZATION ACTIVE!\n50% Probability per Replication"]
+    War --> Dreadnought["Construct Berserker Warship\nArm Heavy Batteries & Orbital Bombardment"]
+    Dreadnought --> Target["Program Retaliation Target\nHunt Primary Offending Empire"]
+```
+
+### Mobilization Threshold
+When total galactic hostility exceeds the critical alert threshold:
+
+$$\text{Total Galactic Hostility} > 100$$
+
+all landed probes initiate **war mobilization**. Each subsequent replication cycle has a **$50\%$ probability** of constructing a combat-ready **Berserker Warship** instead of a peaceful probe.
 
 ### Berserker Warship Specifications
 
-| Subsystem / Attribute | Specification |
-| :--- | :--- |
-| **Retaliation Target** | Programmed to hunt down the empire with the highest hostility rating |
-| **Technology Bonus** | **$+100.0$ Tech** leap over the parent probe |
-| **Armor Rating** | Parent Armor $+11$ |
-| **Destructive Ordnance** | 500 destructive warheads |
-| **Propulsion** | $5\times$ parent fuel capacity |
-| **Hyperdrive Jump Engine** | Equipped with crystal-mounted jump drive, pre-charged and ready for hyperspace jumps |
-| **Orbital Bombardment** | Planetary bombardment systems active (`bombard = true`) |
-| **Combat Doctrine** | Automatic retaliation enabled with primary battery heavy guns |
+| Subsystem / Metric | Specification | Tactical Capabilities |
+| :--- | :--- | :--- |
+| **Retaliation Directive** | Primary Offending Empire | Autonomously hunts star systems belonging to the primary aggressor. |
+| **Technology Advancement** | $\text{Tech}_{\text{parent}} + 100.0$ | Massive technological leap over the parent machine. |
+| **Armor Plating** | $\text{Armor}_{\text{parent}} + 11$ | Heavy capital-grade defensive armor. |
+| **Destructive Warheads** | $500$ Destruct Ammo | Dedicated munitions hold for extended combat and bombardment. |
+| **Propulsion Reserves** | $5 \times \text{Parent Fuel Capacity}$ | High-capacity fuel tanks for deep-space transit and maneuvers. |
+| **Hyperspace Jump Drive** | Pre-charged Hyperdrive | Crystal-mounted hyperdrive jump engine ready for immediate jumps. |
+| **Orbital Bombardment** | Automated Berserker Bombardment | Executes saturation strikes against hostile surface colonies. |
+| **Combat Fire Control** | Active Heavy Gun Batteries | Automated counter-fire and retaliation against hostile craft. |
 
-## Interstellar Navigation and Galactic Exploration
+---
 
-Autonomous machines navigate the galaxy through automated behavioral stages:
+## 5. Interstellar Navigation and Deep Space Deployment
+
+Autonomous machines navigate the galaxy through sequential behavioral stages:
 
 1. **Deep Space Launch**:
-   - Once a probe has accumulated full fuel tanks and completed its surface mining operations, it launches from the planetary surface into deep space.
+   - Once a probe has accumulated full fuel tanks and completed surface extraction, it launches from the planetary surface into deep space.
 2. **Target Star Selection**:
-   - **Peaceful Probes**: Scan neighboring star systems within operational range, prioritizing uninhabited systems with terrestrial worlds while avoiding systems composed entirely of gas giants.
-   - **Berserkers**: Scan the galaxy specifically for star systems colonized by their designated target empire.
+   - **Peaceful Probes**: Scan neighboring star systems within operational range, prioritizing uninhabited systems with terrestrial worlds while avoiding gas giant systems.
+   - **Berserkers**: Scan the galaxy specifically for star systems colonized by their designated target enemy.
 3. **Orbital Arrival and Descent**:
    - Upon arriving in the destination star system, the machine maneuvers into planetary orbit, scans the surface grid, and lands on a resource-bearing sector to begin the lifecycle anew.
 
+---
+
 ## See Also
-- [Planetary Mechanics and Colonization](planets.md)
-- [Planetary Simulation Engine](planetary_simulation.md)
-- [Governance and Administration](governance.md)
-- [Galactic Economic Model](economy.md)
+- [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
+- [Ship Classes and Construction Catalog](ship_types.md)
+- [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
+- [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
+- [Governance, Capitals, and Imperial Administration](governance.md)
+- [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)

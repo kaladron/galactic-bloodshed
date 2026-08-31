@@ -164,48 +164,49 @@ flowchart LR
     Switch -->|NONE| Off["Weapons Offline / Unarmed\nActive Firepower = 0"]
 ```
 
-### Weapon Calibers (`guntype_t`)
+### Weapon Calibers
 
 Gun calibers dictate effective engagement range, damage output per volley, penetration capability, and munition consumption:
 
-| Caliber Designation | Enum Identifier | Characteristics & Tactical Role | Munition Profile |
-| :--- | :--- | :--- | :--- |
-| **None** | `GTYPE_NONE` | Unarmed battery mount or disabled weapon slot. | 0 destruct / volley |
-| **Light Guns** | `GTYPE_LIGHT` | High tracking velocity and rapid cyclic fire; optimized for anti-fighter screening and point defense. | Low ammo draw |
-| **Medium Guns** | `GTYPE_MEDIUM` | General-purpose fleet battery; balanced range and damage against cruisers and destroyers. | Standard ammo draw |
-| **Heavy Guns** | `GTYPE_HEAVY` | Heavy capital ship spinal mounts and planetary siege cannons; devastating kinetic strike against battleships and surface installations. | High ammo draw |
+| Caliber Designation | Tactical Characteristics & Fleet Role | Munition Profile |
+| :--- | :--- | :--- |
+| **None / Unarmed** | Unarmed battery mount or disabled weapon slot. | 0 destruct / volley |
+| **Light Guns** | High tracking velocity and rapid cyclic fire; optimized for anti-fighter screening and point defense. | Low ammo draw |
+| **Medium Guns** | General-purpose fleet battery; balanced range and damage against cruisers and destroyers. | Standard ammo draw |
+| **Heavy Guns** | Heavy capital ship spinal mounts and planetary siege cannons; devastating kinetic strike against battleships and surface installations. | High ammo draw |
 
-### Active Battery Selection (`ActiveBattery`)
+### Active Battery Selection
 
-During combat encounters, a vessel's tactical computers direct fire through the currently selected battery mode:
-- **`ActiveBattery::PRIMARY`**: Firing control is routed through the primary battery (`ship.primary()`, `ship.primtype()`).
-- **`ActiveBattery::SECONDARY`**: Firing control is routed through the secondary battery (`ship.secondary()`, `ship.sectype()`).
-- **`ActiveBattery::NONE`**: All batteries remain on standby with zero offensive output (useful for non-combat ships, factory vessels during retooling, or stealth operations).
+During combat encounters, a vessel's tactical fire control directs fire through the currently selected battery mode:
+- **Primary Battery**: Fire control is routed through the primary battery mount.
+- **Secondary Battery**: Fire control is routed through the secondary battery mount.
+- **Standby / Disarmed**: All batteries remain on standby with zero offensive output (useful for non-combat ships, factory vessels during retooling, or stealth operations).
 
 Captains select the active battery using the `order` command:
 ```text
 order <ship> primary     # Directs weapons to primary battery
 order <ship> secondary   # Switches fire control to secondary battery
+order <ship> none        # Places weapons on standby
 ```
 
-### Automated Retaliation Thresholds (`retaliate`)
+### Automated Retaliation Thresholds
 
 Starships can be programmed with an automated retaliation threshold (`retaliate`), configuring the vessel to return defensive counter-fire immediately when fired upon by hostile craft:
 $$\text{Effective Counter-Fire} = \min\Big(\text{Programmed Retaliation Level}, \text{Active Battery Power}, \text{Stored Destruct Ammo}\Big)$$
 This ensures defensive perimeter vessels and patrols automatically respond to hostile incursions without requiring real-time player intervention.
 
-### Directed Energy Weapons & Munitions
+### Directed Energy Weapons and Munitions
 
 In addition to kinetic gun batteries, vessels can mount specialized energy projection systems:
-- **Combat Lasers (`laser`)**: Direct-fire optical beam weapons providing instantaneous, armor-piercing point defense and short-range interception.
-- **Concentrated Energy Weapons (CEW)**: High-yield particle and plasma projectors with dedicated beam ratings (`cew`) and tunable focus ranges (`cew_range`).
-- **Destructive Munitions (`destruct`)**: Physical kinetic warheads and explosive ordnance stored in cargo bays, consumed proportionally with each kinetic battery salvo and planetary bombardment strike.
+- **Combat Lasers**: Direct-fire optical beam weapons providing instantaneous, armor-piercing point defense and short-range interception.
+- **Concentrated Energy Weapons (CEW)**: High-yield particle and plasma projectors with dedicated beam ratings and tunable focus ranges.
+- **Destructive Munitions (Destruct)**: Physical kinetic warheads and explosive ordnance stored in cargo bays, consumed proportionally with each kinetic battery salvo and planetary bombardment strike.
 
 ### Naval Batteries vs. Planetary Defense Installations
 
 A critical distinction in empire defense architectures is the separation between mobile naval systems and fixed planetary installations:
-- **Naval Batteries (`Ship::guns`, `primary`, `secondary`)**: Mobile ship-mounted weapon systems utilizing active battery switching and vessel-stored destruct munitions.
-- **Planetary Defense Guns (`planet.info(player).guns`)**: Ground-based surface defensive installations permanently mounted across planetary sectors, defending colonies from landing assaults and returning retaliatory fire during orbital bombardment runs.
+- **Naval Batteries**: Mobile ship-mounted weapon systems utilizing active battery switching and vessel-stored destruct munitions.
+- **Planetary Defense Batteries**: Ground-based surface defensive installations permanently mounted across planetary sectors, defending colonies from landing assaults and returning retaliatory fire during orbital bombardment runs.
 
 ---
 
@@ -259,9 +260,10 @@ During turn updates, active ships report their operational readiness to Imperial
 
 ## See Also
 - [Ship Classes and Construction Catalog](ship_types.md)
-- [Stellar Mechanics and Star Systems](stars.md)
-- [Planetary Mechanics and Colonization](planets.md)
-- [Planetary Simulation Engine](planetary_simulation.md)
-- [Governance and Administration](governance.md)
-- [Galactic Economic Model](economy.md)
-- [Von Neumann Machines and Berserkers](von_neumann.md)
+- [Stellar Mechanics, Spectral Classes, and Nova Lifecycles](stars.md)
+- [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
+- [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
+- [Governance, Capitals, and Imperial Administration](governance.md)
+- [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
+- [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
+- [Autonomous Machine AI, Von Neumann Probes, and Berserker Warships](von_neumann.md)

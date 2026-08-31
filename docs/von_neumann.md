@@ -133,6 +133,8 @@ Autonomous machines navigate the galaxy through sequential behavioral stages:
 ## See Also
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
 - [Ship Classes and Construction Catalog](ship_types.md)
+- [Tactical Combat, Naval Gunnery, and Planetary Warfare](combat.md)
+- [Covert Operations, Espionage, and Insurgency](covert_ops.md)
 - [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
 - [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
 - [Governance, Capitals, and Imperial Administration](governance.md)

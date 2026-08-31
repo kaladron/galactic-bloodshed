@@ -159,8 +159,12 @@ $$\text{Final Victory Score} = \left\lfloor \text{Raw Score} \times \left(\frac{
 
 - [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
 - [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
+- [Species Biology, Ecology, and Racial Genetics](races.md)
 - [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
+- [Tactical Combat, Naval Gunnery, and Planetary Warfare](combat.md)
+- [Interstellar Navigation, Propulsion, and Hyperspace Mechanics](navigation.md)
 - [Governance, Capitals, and Imperial Administration](governance.md)
+- [Diplomacy, Coalitions, and Power Blocks](diplomacy.md)
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
 - [Stellar Mechanics, Spectral Classes, and Nova Lifecycles](stars.md)
 - [Autonomous Machine AI, Von Neumann Probes, and Berserker Warships](von_neumann.md)

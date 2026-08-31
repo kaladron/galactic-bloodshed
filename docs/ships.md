@@ -260,6 +260,8 @@ During turn updates, active ships report their operational readiness to Imperial
 
 ## See Also
 - [Ship Classes and Construction Catalog](ship_types.md)
+- [Tactical Combat, Naval Gunnery, and Planetary Warfare](combat.md)
+- [Interstellar Navigation, Propulsion, and Hyperspace Mechanics](navigation.md)
 - [Stellar Mechanics, Spectral Classes, and Nova Lifecycles](stars.md)
 - [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
 - [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)

@@ -140,7 +140,9 @@ To end anarchy:
 
 ## See Also
 - [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
-- [Planetary Mechanics and Colonization](planets.md)
-- [Planetary Simulation Pipeline](planetary_simulation.md)
+- [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
+- [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
+- [Diplomacy, Coalitions, and Power Blocks](diplomacy.md)
+- [Covert Operations, Espionage, and Insurgency](covert_ops.md)
 - [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)

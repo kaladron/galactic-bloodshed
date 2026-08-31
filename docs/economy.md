@@ -161,8 +161,10 @@ If an empire's seat of government is destroyed, lost, or unassigned:
 ---
 
 ## See Also
-- [Governance, Capitals, and Empire Administration](governance.md)
-- [Planetary Mechanics and Colonization](planets.md)
-- [Planetary Simulation Pipeline](planetary_simulation.md)
+- [Governance, Capitals, and Imperial Administration](governance.md)
+- [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
+- [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
+- [Species Biology, Ecology, and Racial Genetics](races.md)
+- [Diplomacy, Coalitions, and Power Blocks](diplomacy.md)
 - [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)

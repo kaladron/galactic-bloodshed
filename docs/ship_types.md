@@ -247,6 +247,9 @@ flowchart TD
 ## See Also
 
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
+- [Tactical Combat, Naval Gunnery, and Planetary Warfare](combat.md)
+- [Interstellar Navigation, Propulsion, and Hyperspace Mechanics](navigation.md)
+- [Geoengineering, Terraforming, and Ecological Warfare](geoengineering.md)
 - [Stellar Mechanics, Spectral Classes, and Nova Lifecycles](stars.md)
 - [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
 - [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)

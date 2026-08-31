@@ -140,8 +140,11 @@ a planetary **slave revolt** is immediately triggered.
 
 ## See Also
 - [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
+- [Species Biology, Ecology, and Racial Genetics](races.md)
+- [Geoengineering, Terraforming, and Ecological Warfare](geoengineering.md)
 - [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
+- [Tactical Combat, Naval Gunnery, and Planetary Warfare](combat.md)
 - [Governance, Capitals, and Imperial Administration](governance.md)
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
 - [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
-- [Autonomous Machine AI and Berserkers](von_neumann.md)
+- [Autonomous Machine AI, Von Neumann Probes, and Berserker Warships](von_neumann.md)

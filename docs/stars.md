@@ -105,6 +105,7 @@ Maintaining overwhelming naval battlefleets or armed orbital platforms within a 
 
 ## See Also
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
+- [Interstellar Navigation, Propulsion, and Hyperspace Mechanics](navigation.md)
 - [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
 - [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
 - [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)

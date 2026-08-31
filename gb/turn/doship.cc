@@ -275,10 +275,9 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
           auto range = std::hypot(ship.xpos() - target.xpos(),
                                   ship.ypos() - target.ypos());
           int body = std::max(1, target.shipbody());
-          auto max_dmg = round_rand(
-              (2.0 / static_cast<double>(body)) *
-              static_cast<double>(mirror->intensity()) /
-              (range / PLORBITSIZE + 1.0));
+          auto max_dmg = round_rand((2.0 / static_cast<double>(body)) *
+                                    static_cast<double>(mirror->intensity()) /
+                                    (range / PLORBITSIZE + 1.0));
           auto i = int_rand(0, max_dmg);
           std::stringstream telegram_buf;
           telegram_buf << std::format("{} aimed at {}\n", ship, target);
@@ -718,8 +717,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   if (!detonate) {
     const auto& race = *entity_manager.peek_race(ship.owner());
 
-    const ShipList kShiplist(entity_manager, sh);
-    for (const Ship& s : kShiplist) {
+    for (const auto& s : ShipList::readonly(entity_manager, sh)) {
       double xd = s.xpos() - ship.xpos();
       double yd = s.ypos() - ship.ypos();
       double range = std::hypot(xd, yd);
@@ -744,22 +742,28 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   post(entity_manager, postmsg, NewsType::COMBAT);
   telegram_star(entity_manager, ship.storbits(), ship.owner(), ship.governor(),
                 postmsg);
-  ShipList shiplist(entity_manager, sh);
-  for (auto ship_handle : shiplist) {
-    Ship& s = *ship_handle;
+
+  // Collect victim ship IDs
+  std::vector<shipnum_t> victims;
+  for (const auto& s : ShipList::readonly(entity_manager, sh)) {
     if (s.number() != ship.number() && s.alive() &&
         (s.type() != ShipType::OTYPE_CANIST) &&
         (s.type() != ShipType::OTYPE_GREEN)) {
-      auto s2sresult = shoot_ship_to_ship(entity_manager, ship, s,
-                                          (int)(ship.destruct()), 0, false);
+      victims.push_back(s.number());
+    }
+  }
+
+  for (shipnum_t victim_num : victims) {
+    entity_manager.mutate_ship(victim_num, [&](Ship& s) {
+      if (!s.alive()) return;
+      auto s2sresult = shoot_ship_to_ship(
+          entity_manager, ship, s, static_cast<int>(ship.destruct()), 0, false);
       if (s2sresult) {
         auto const& [damage, short_buf, long_buf] = *s2sresult;
         post(entity_manager, short_buf, NewsType::COMBAT);
         push_telegram(entity_manager, s.owner(), s.governor(), long_buf);
       }
-      // Explicitly save the modified ship
-      ship_handle.save();
-    }
+    });
   }
 
   /* if the mine is in orbit around a planet, nuke the planet too! */
@@ -774,8 +778,9 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
                                      : smap.get_random().coords();
 
                 if (auto result_opt = shoot_ship_to_planet(
-                        entity_manager, ship, planet, (int)(ship.destruct()),
-                        target_coords, smap, 0, GTYPE_LIGHT)) {
+                        entity_manager, ship, planet,
+                        static_cast<int>(ship.destruct()), target_coords, smap,
+                        0, GTYPE_LIGHT)) {
                   std::stringstream telegram;
                   telegram << postmsg;
                   if (result_opt->sectors_destroyed > 0) {
@@ -811,15 +816,15 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
         *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
     const auto& owner_race = *entity_manager.peek_race(ship.owner());
 
-    /* check to see if missiles/mines are present */
-    for (auto target_handle : ShipList(entity_manager, planet.ships())) {
-      if (!ship.destruct()) break;  // Exit if out of destruct
-
-      Ship& target = *target_handle;
+    // 1. Identify threat missiles and mines in orbit
+    std::vector<shipnum_t> threats;
+    for (const auto& target :
+         ShipList::readonly(entity_manager, planet.ships())) {
       if (!target.alive()) continue;
       if (target.type() != ShipType::STYPE_MISSILE &&
-          target.type() != ShipType::STYPE_MINE)
+          target.type() != ShipType::STYPE_MINE) {
         continue;
+      }
       if (target.owner() == ship.owner()) continue;
 
       // Check alliance status
@@ -830,21 +835,33 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
         continue;
       }
 
-      /* attack the missile/mine */
-      auto numdest = retal_strength(ship);
-      numdest = MIN(numdest, ship.destruct());
-      numdest = MIN(numdest, ship.retaliate());
-      ship.destruct() -= numdest;
-      auto const& s2sresult =
-          shoot_ship_to_ship(entity_manager, ship, target, numdest, 0);
-      if (s2sresult) {
-        auto [damage, short_buf, long_buf] = *s2sresult;
-        push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
-        push_telegram(entity_manager, target.owner(), target.governor(),
-                      long_buf);
-        post(entity_manager, short_buf, NewsType::COMBAT);
-      }
-      target_handle.save();
+      threats.push_back(target.number());
+    }
+
+    // 2. Intercept threats
+    for (shipnum_t threat_num : threats) {
+      if (!ship.destruct()) break;  // Exit if out of destruct
+
+      entity_manager.mutate_ship(threat_num, [&](Ship& target) {
+        if (!target.alive() || !ship.destruct()) return;
+
+        /* attack the missile/mine */
+        auto numdest =
+            std::min({static_cast<weapon_power_t>(retal_strength(ship)),
+                      static_cast<weapon_power_t>(ship.destruct()),
+                      ship.retaliate()});
+        ship.consume_destruct(numdest);
+        auto const& s2sresult =
+            shoot_ship_to_ship(entity_manager, ship, target, numdest, 0);
+        if (s2sresult) {
+          auto [damage, short_buf, long_buf] = *s2sresult;
+          push_telegram(entity_manager, ship.owner(), ship.governor(),
+                        long_buf);
+          push_telegram(entity_manager, target.owner(), target.governor(),
+                        long_buf);
+          post(entity_manager, short_buf, NewsType::COMBAT);
+        }
+      });
     }
   }
 }

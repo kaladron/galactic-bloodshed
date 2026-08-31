@@ -14,10 +14,36 @@ export void doship(Ship&, bool update, EntityManager&, TurnStats& stats);
 export void domass(Ship&, EntityManager&);
 export void doown(Ship&, EntityManager&);
 export void domissile(Ship&, EntityManager&);
-export void domine(Ship&, int, EntityManager&);
-export void doabm(Ship&, EntityManager&);
-export int do_weapon_plant(Ship&, EntityManager&);
+/// \brief Simulates proximity triggering, detonation, ship collateral damage,
+/// and orbital planetary bombardment for space mines.
+/// \param ship Mine ship executing turn processing.
+/// \param detonate Whether manual or forced detonation is triggered (non-zero).
+/// \param entity_manager Entity manager for spatial queries and mutations.
+export void domine(Ship& ship, int detonate, EntityManager& entity_manager);
+
+/// \brief Simulates surface-to-orbit anti-ballistic missile (ABM) defenses
+/// intercepting incoming hostile missiles and mines.
+/// \param ship ABM defense ship landed on planetary surface.
+/// \param entity_manager Entity manager for querying orbital threats and
+/// attacking.
+export void doabm(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Manufactures destructive ordnance on weapon plant ships from mineral
+/// and propellant stockpiles.
+/// \param ship Weapon plant ship.
+/// \param entity_manager Entity manager for owner race lookups.
+/// \return Quantity of destructive charges produced.
+export int do_weapon_plant(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Executes automated or crewed damage repair and resource consumption.
+/// \param ship Ship undergoing maintenance.
+/// \param entity_manager Entity manager for docked stations and state.
 export void do_repair(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Synthesizes resources from propellant, breeds colonists, and triggers
+/// nested weapon plants inside orbital habitats.
+/// \param ship Habitat ship.
+/// \param entity_manager Entity manager for race and nested ship queries.
 export void do_habitat(Ship& ship, EntityManager& entity_manager);
 /// \brief Simulates spore pod warming, detonation, and planetary meta-colony
 /// seeding.

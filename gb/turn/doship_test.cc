@@ -343,52 +343,80 @@ void test_domine_trigger_and_detonation() {
 
   Race race1 = createTestRace(player_t{1});
   Race race2 = createTestRace(player_t{2});
+  Race race3 = createTestRace(player_t{3});
+  race1.declare_alliance_with(player_t{3});
+  race3.declare_alliance_with(player_t{1});
   RaceRepository(store).save(race1);
   RaceRepository(store).save(race2);
+  RaceRepository(store).save(race3);
 
   Star star = createTestStar(starnum_t{1});
   StarRepository(store).save(star);
 
-  ship_struct enemy_data{
-      .owner = player_t{2},
+  // 1. Allied ship in trigger range does NOT detonate mine
+  ship_struct ally_data{
+      .owner = player_t{3},
       .size = 10,
       .tech = 10.0,
+      .storbits = starnum_t{1},
       .whatorbits = ScopeLevel::LEVEL_STAR,
       .type = ShipType::STYPE_SHUTTLE,
       .active = 1,
       .alive = 1,
   };
-  enemy_data.storbits = starnum_t{1};
-  enemy_data.xpos = 5.0;
-  enemy_data.ypos = 5.0;
-  auto enemy_handle = em.create_ship(enemy_data);
-  Ship& enemy = *enemy_handle;
+  ally_data.xpos = 5.0;
+  ally_data.ypos = 5.0;
+  auto ally_handle = em.create_ship(ally_data);
 
   ship_struct mine_data{
       .owner = player_t{1},
       .size = 1,
       .tech = 10.0,
+      .destruct = 50,
+      .storbits = starnum_t{1},
       .whatorbits = ScopeLevel::LEVEL_STAR,
       .type = ShipType::STYPE_MINE,
       .active = 1,
       .alive = 1,
   };
-  mine_data.storbits = starnum_t{1};
-  mine_data.destruct = 50;
   mine_data.xpos = 0.0;
   mine_data.ypos = 0.0;
   mine_data.special = TriggerData{.radius = 20};
   auto mine_handle = em.create_ship(mine_data);
-  Ship& mine = *mine_handle;
-  mine.on() = 1;
+  mine_handle->on() = 1;
 
-  star.ships() = enemy.number();
-  enemy.ships() = mine.number();
-  StarRepository(store).save(star);
+  em.mutate_star(starnum_t{1}, [&](Star& s) {
+    s.ships() = ally_handle->number();
+  });
+  ally_handle->ships() = mine_handle->number();
 
-  domine(mine, 0, em);
-  test::expect_eq(mine.alive(), 0);
-  test::expect_gt(enemy.damage(), 0);
+  domine(*mine_handle, 0, em);
+  test::expect_eq(mine_handle->alive(), 1);
+
+  // 2. Enemy ship in trigger range triggers mine detonation
+  ship_struct enemy_data{
+      .owner = player_t{2},
+      .size = 10,
+      .tech = 10.0,
+      .storbits = starnum_t{1},
+      .whatorbits = ScopeLevel::LEVEL_STAR,
+      .type = ShipType::STYPE_SHUTTLE,
+      .active = 1,
+      .alive = 1,
+  };
+  enemy_data.xpos = 5.0;
+  enemy_data.ypos = 5.0;
+  auto enemy_handle = em.create_ship(enemy_data);
+
+  em.mutate_star(starnum_t{1}, [&](Star& s) {
+    s.ships() = enemy_handle->number();
+  });
+  enemy_handle->ships() = mine_handle->number();
+
+  domine(*mine_handle, 0, em);
+  test::expect_eq(mine_handle->alive(), 0);
+  const auto* enemy_after = em.peek_ship(enemy_handle->number());
+  test::expect_gt(enemy_after->damage(), 0);
 }
 
 void test_doabm_intercept() {
@@ -399,8 +427,12 @@ void test_doabm_intercept() {
 
   Race race1 = createTestRace(player_t{1});
   Race race2 = createTestRace(player_t{2});
+  Race race3 = createTestRace(player_t{3});
+  race1.declare_alliance_with(player_t{3});
+  race3.declare_alliance_with(player_t{1});
   RaceRepository(store).save(race1);
   RaceRepository(store).save(race2);
+  RaceRepository(store).save(race3);
 
   Star star = createTestStar(starnum_t{1});
   StarRepository(store).save(star);
@@ -410,43 +442,59 @@ void test_doabm_intercept() {
   planet.planet_order() = 0;
   PlanetRepository(store).save(planet);
 
-  ship_struct missile_data{
+  // 1. Hostile enemy missile in orbit
+  ship_struct hostile_missile_data{
       .owner = player_t{2},
       .size = 1,
       .tech = 10.0,
+      .storbits = starnum_t{1},
+      .pnumorbits = planetnum_t{0},
       .whatorbits = ScopeLevel::LEVEL_PLAN,
       .type = ShipType::STYPE_MISSILE,
       .active = 1,
       .alive = 1,
   };
-  missile_data.storbits = starnum_t{1};
-  missile_data.pnumorbits = planetnum_t{0};
-  auto missile_handle = em.create_ship(missile_data);
-  Ship& missile = *missile_handle;
+  auto hostile_handle = em.create_ship(hostile_missile_data);
 
-  planet.ships() = missile.number();
-  PlanetRepository(store).save(planet);
+  // 2. Allied missile in orbit (should be spared)
+  ship_struct allied_missile_data{
+      .owner = player_t{3},
+      .size = 1,
+      .tech = 10.0,
+      .storbits = starnum_t{1},
+      .pnumorbits = planetnum_t{0},
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::STYPE_MISSILE,
+      .active = 1,
+      .alive = 1,
+  };
+  auto allied_handle = em.create_ship(allied_missile_data);
+
+  em.mutate_planet(starnum_t{1}, planetnum_t{0}, [&](Planet& p) {
+    p.ships() = hostile_handle->number();
+  });
+  hostile_handle->ships() = allied_handle->number();
 
   ship_struct abm_data{
       .owner = player_t{1},
       .size = 1,
       .max_crew = 10,
       .tech = 10.0,
+      .destruct = 50,
       .popn = 10,
+      .storbits = starnum_t{1},
+      .deststar = starnum_t{1},
+      .destpnum = planetnum_t{0},
+      .pnumorbits = planetnum_t{0},
+      .whatdest = ScopeLevel::LEVEL_PLAN,
       .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .retaliate = 50,
       .type = ShipType::OTYPE_ABM,
       .active = 1,
       .alive = 1,
   };
   abm_data.primtype = GTYPE_HEAVY;
   abm_data.primary = 10;
-  abm_data.storbits = starnum_t{1};
-  abm_data.pnumorbits = planetnum_t{0};
-  abm_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  abm_data.deststar = starnum_t{1};
-  abm_data.destpnum = planetnum_t{0};
-  abm_data.destruct = 50;
-  abm_data.retaliate = 50;
   auto abm_handle = em.create_ship(abm_data);
   Ship& abm = *abm_handle;
   abm.guns() = PRIMARY;
@@ -455,8 +503,11 @@ void test_doabm_intercept() {
 
   doabm(abm, em);
   test::expect_lt(abm.destruct(), 50);
-  const auto* updated_missile = em.peek_ship(missile.number());
-  test::expect_gt(updated_missile->damage(), 0);
+  const auto* updated_hostile = em.peek_ship(hostile_handle->number());
+  test::expect_gt(updated_hostile->damage(), 0);
+
+  const auto* updated_allied = em.peek_ship(allied_handle->number());
+  test::expect_eq(updated_allied->damage(), 0);
 }
 
 void test_do_canister_and_greenhouse() {

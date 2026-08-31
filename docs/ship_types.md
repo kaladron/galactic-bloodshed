@@ -79,12 +79,12 @@ mindmap
 
 These vessels form the vanguard of imperial expansion, establishing initial orbital presence and mapping uncharted star systems.
 
-| Class | Letter | Tech Req | Cost | Armor | Speed | Fuel | Cargo | Destruct | Crew | Guns | Lasers | Capabilities |
+| Class | Letter | Tech Req | Cost | Armor | Speed | Fuel | Cargo | Destruct | Crew | Guns | Laser Mount | Capabilities |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Spore Pod** | `p` | 0 | 1 | 0 | 2 | 20 | 0 | 0 | 1 | 0 | 0 | Land, Repair, No Maint |
-| **Shuttle** | `s` | 10 | 2 | 0 | 4 | 20 | 25 | 2 | 10 | 1 (L) | 0 | Land, Mod, Maint |
-| **Explorer** | `e` | 40 | 2 | 1 | 6 | 35 | 10 | 15 | 5 | 5 (M) | 1 | Land, Hyper, Crystal, Mod, Maint |
-| **Space Probe** | `:` | 150 | 10 | 0 | 9 | 20 | 0 | 0 | 0 | 0 | 0 | Land, Unmanned, Built in Warships/Stations |
+| **Spore Pod** | `p` | 0 | 1 | 0 | 2 | 20 | 0 | 0 | 1 | 0 | No | Land, Repair, No Maint |
+| **Shuttle** | `s` | 10 | 2 | 0 | 4 | 20 | 25 | 2 | 10 | 1 (L) | No | Land, Mod, Maint |
+| **Explorer** | `e` | 40 | 2 | 1 | 6 | 35 | 10 | 15 | 5 | 5 (M) | Yes | Land, Hyper, Crystal, Mod, Maint |
+| **Space Probe** | `:` | 150 | 10 | 0 | 9 | 20 | 0 | 0 | 0 | 0 | No | Land, Unmanned, Built in Warships/Stations |
 
 ### Tactical Notes
 - **Spore Pod (`p`)**: Inexpensive, self-repairing colony seed craft. Requires zero technology and incurs no maintenance. Ideal for early-game expansion and depositing pioneer populations on habitable worlds.
@@ -98,17 +98,17 @@ These vessels form the vanguard of imperial expansion, establishing initial orbi
 
 The primary combat arm of the navy, ranging from swarm strike craft to super-capital battle line flagships.
 
-| Class | Letter | Tech Req | Cost | Armor | Speed | Fuel | Cargo | Destruct | Crew | Guns | Caliber | Lasers | Capabilities |
+| Class | Letter | Tech Req | Cost | Armor | Speed | Fuel | Cargo | Destruct | Crew | Guns | Caliber | Laser Mount | Capabilities |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Fighter Group** | `f` | 100 | 1 | 2 | 9 | 10 | 0 | 40 | 1 | 20 | M / L | 1 | Hyper, Crystal, CEW, Mod, Maint |
-| **Destroyer** | `d` | 100 | 5 | 3 | 6 | 80 | 110 | 120 | 15 | 15 | M / M | 1 | Hyper, Crystal, CEW, Mod, Maint |
-| **Cruiser** | `C` | 150 | 10 | 5 | 6 | 120 | 165 | 300 | 20 | 20 | H / M | 1 | Hyper, Crystal, CEW, Mod, Maint |
-| **Interceptor** | `I` | 150 | 15 | 3 | 6 | 200 | 110 | 120 | 20 | 20 | M / M | 1 | Hyper, Crystal, CEW, Mod, Maint |
-| **Battleship** | `B` | 200 | 20 | 7 | 6 | 200 | 235 | 400 | 30 | 30 | H / M | 1 | Hyper, Crystal, CEW, Mod, Maint |
-| **Dreadnaught** | `D` | 300 | 40 | 10 | 6 | 500 | 500 | 500 | 60 | 60 | H / M | 1 | Hyper, Crystal, CEW, Mod, Maint |
-| **Carrier** | `X` | 250 | 30 | 5 | 4 | 1000 | 600 | 800 | 30 | 30 | H / M | 1 | 200 Hangar, Hyper, Crystal, Repair, Maint |
-| **Space Mine** | `!` | 50 | 30 | 1 | 2 | 20 | 0 | 25 | 0 | 0 | — | 0 | Switch, Proximity Detonation, No Maint |
-| **Missile** | `^` | 50 | 5 | 0 | 6 | 5 | 0 | 10 | 0 | 0 | — | 0 | Switch, Guided Kinetic Ordnance, No Maint |
+| **Fighter Group** | `f` | 100 | 1 | 2 | 9 | 10 | 0 | 40 | 1 | 20 | M / L | Yes | Hyper, Crystal, CEW, Mod, Maint |
+| **Destroyer** | `d` | 100 | 5 | 3 | 6 | 80 | 110 | 120 | 15 | 15 | M / M | Yes | Hyper, Crystal, CEW, Mod, Maint |
+| **Cruiser** | `C` | 150 | 10 | 5 | 6 | 120 | 165 | 300 | 20 | 20 | H / M | Yes | Hyper, Crystal, CEW, Mod, Maint |
+| **Interceptor** | `I` | 150 | 15 | 3 | 6 | 200 | 110 | 120 | 20 | 20 | M / M | Yes | Hyper, Crystal, CEW, Mod, Maint |
+| **Battleship** | `B` | 200 | 20 | 7 | 6 | 200 | 235 | 400 | 30 | 30 | H / M | Yes | Hyper, Crystal, CEW, Mod, Maint |
+| **Dreadnaught** | `D` | 300 | 40 | 10 | 6 | 500 | 500 | 500 | 60 | 60 | H / M | Yes | Hyper, Crystal, CEW, Mod, Maint |
+| **Carrier** | `X` | 250 | 30 | 5 | 4 | 1000 | 600 | 800 | 30 | 30 | H / M | Yes | 200 Hangar, Hyper, Crystal, Repair, Maint |
+| **Space Mine** | `!` | 50 | 30 | 1 | 2 | 20 | 0 | 25 | 0 | 0 | — | No | Switch, Proximity Detonation, No Maint |
+| **Missile** | `^` | 50 | 5 | 0 | 6 | 5 | 0 | 10 | 0 | 0 | — | No | Switch, Guided Kinetic Ordnance, No Maint |
 
 ### Tactical Notes
 - **Gun Calibers**: Heavy ($H=3$), Medium ($M=2$), Light ($L=1$). Combat damage scales directly with gun caliber and active battery power.
@@ -144,7 +144,7 @@ Large orbital structures acting as regional command centers, industrial shipyard
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Habitat** | `H` | 100 | 50 | 3 | 4 | 2000 | 5000 | 500 | 2000 | 20 (M/L) | Starport, Repair, Switch, 2000 Popn, Shipyard |
 | **Station** | `S` | 100 | 10 | 1 | 4 | 2000 | 5000 | 250 | 50 | 20 (M) | Starport, Repair, Defense Depot |
-| **Ob Asst Pltfrm** | `O` | 200 | 40 | 5 | 4 | 2000 | 1400 | 1000 | 200 | 50 (H/M) | Hyper, Crystal, CEW, Laser, Repair |
+| **Ob Asst Pltfrm** | `O` | 200 | 40 | 5 | 4 | 2000 | 1400 | 1000 | 200 | 50 (H/M) | Hyper, Crystal, CEW, Laser Mount, Repair |
 | **Space Port** | `J` | 0 | 50 | 3 | 0 | 0 | 0 | 0 | 100 | 0 | Starport, Trade & Commerce Hub, Maint |
 | **Space Mirror** | `+` | 100 | 100 | 0 | 2 | 20 | 200 | 10 | 5 | 1 (L) | Focused Solar Beam / Terraforming |
 | **Mind Control Lsr** | `l` | 350 | 50 | 1 | 4 | 100 | 25 | 0 | 2 | 0 | Switch, Planetary Enslavement Laser |

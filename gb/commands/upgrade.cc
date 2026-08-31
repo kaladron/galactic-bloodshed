@@ -146,12 +146,12 @@ bool upgrade(const command_t& argv, GameObj& g) {
         g.out << "No such option for CEWs.\n";
         return;
       }
-    } else if (argv[1] == "laser" && btmpl.max_lasers) {
+    } else if (argv[1] == "laser" && btmpl.can_mount_laser) {
       if (!race.discoveries.laser) {
         g.out << "Your race cannot build lasers.\n";
         return;
       }
-      ship.laser() = 1;
+      ship.laser() = true;
     } else {
       g.out
           << "That characteristic either doesn't exist or can't be modified.\n";

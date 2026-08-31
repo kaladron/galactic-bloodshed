@@ -82,7 +82,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
         }
         g.out << std::format("Cost:  {} r\t\tCargo:    {:4}",
                              dirship.build_cost(), dirship.max_resource());
-        if (btmpl.max_lasers) {
+        if (btmpl.can_mount_laser) {
           g.out << std::format("\t\tCombat Lasers: {}\n",
                                (dirship.laser() ? "yes" : "no"));
         } else {
@@ -158,7 +158,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
       dirship.hyper_drive().has =
           itmpl.can_hyperjump * race.discoveries.hyperdrive;
       dirship.cloak() = itmpl.can_cloak * race.discoveries.cloak;
-      dirship.laser() = itmpl.max_lasers * race.discoveries.laser;
+      dirship.laser() = itmpl.can_mount_laser && race.discoveries.laser;
       dirship.cew() = 0;
       dirship.mode() = 0;
 
@@ -270,7 +270,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
             g.out << "No such option for CEWs.\n";
             return;
           }
-        } else if (argv[1] == "laser" && btmpl.max_lasers) {
+        } else if (argv[1] == "laser" && btmpl.can_mount_laser) {
           if (!race.discoveries.laser) {
             g.out << "Your race does not understand lasers yet.\n";
             return;

@@ -59,6 +59,7 @@ int main() {
     test::expect_true(pod_tmpl.can_land);
     test::expect_false(pod_tmpl.can_hyperjump);
     test::expect_false(pod_tmpl.can_mount);
+    test::expect_false(pod_tmpl.can_mount_laser);
     test::expect_false(pod_tmpl.can_modify);
     test::expect_false(pod_tmpl.is_starport);
 
@@ -70,6 +71,7 @@ int main() {
     test::expect_eq(battle_tmpl.max_fuel, 200);
     test::expect_true(battle_tmpl.can_modify);
     test::expect_true(battle_tmpl.can_mount);
+    test::expect_true(battle_tmpl.can_mount_laser);
     test::expect_true(battle_tmpl.can_hyperjump);
     test::expect_true(battle_tmpl.can_land);
 
@@ -99,6 +101,7 @@ int main() {
     test::expect_false(carrier.can_land());
     test::expect_true(carrier.can_hyperjump());
     test::expect_true(carrier.can_mount());
+    test::expect_true(carrier.can_mount_laser());
     test::expect_true(carrier.can_modify());
     test::expect_false(carrier.is_starport());
 
@@ -111,6 +114,7 @@ int main() {
     test::expect_true(pod.can_land());
     test::expect_false(pod.can_hyperjump());
     test::expect_false(pod.can_mount());
+    test::expect_false(pod.can_mount_laser());
     test::expect_false(pod.can_modify());
 
     Ship hab;
@@ -122,6 +126,7 @@ int main() {
     test::expect_false(hab.can_land());
     test::expect_false(hab.can_hyperjump());
     test::expect_false(hab.can_mount());
+    test::expect_false(hab.can_mount_laser());
     test::expect_true(hab.is_starport());
     std::println(std::cout, "  ✓ Ship capability accessors work correctly");
   }

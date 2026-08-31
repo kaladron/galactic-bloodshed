@@ -853,6 +853,7 @@ void test_exploration_island_discovery() {
   auto& s_owned = initial_smap.get(Coordinates{0, 0});
   s_owned.set_owner(1);
   s_owned.set_popn_exact(100);
+  s_owned.set_fert(100);
   s_owned.set_condition(SectorType::SEC_LAND);
 
   // Set up multiple vacant eligible candidate island sectors that have been

@@ -10,38 +10,66 @@ import std;
 
 module gblib;
 
-static const std::array<int, 8> x_adj = {-1, 0, 1, -1, 1, -1, 0, 1};
-static const std::array<int, 8> y_adj = {1, 1, 1, 0, 0, -1, -1, -1};
+/// \brief Computes how many colonists migrate to an unowned adjacent target
+/// sector.
+/// \param race Species traits and environmental preferences.
+/// \param compatibility Planet habitability compatibility factor for the
+/// species.
+/// \param target Destination sector to migrate into.
+/// \param available_migrants Current pool of colonists seeking migration.
+/// \return Number of colonists moving to the target sector.
+population_t calculate_migrating_colonists(const Race& race,
+                                           double compatibility,
+                                           const Sector& target,
+                                           population_t available_migrants) {
+  if (available_migrants <= 0 || target.is_owned()) {
+    return 0;
+  }
+  const double likes_factor = race.likes[target.get_condition()];
+  const double move_calc = static_cast<double>(available_migrants) *
+                           compatibility * likes_factor / 100.0;
+  return std::clamp(std::lround(move_calc), population_t{0},
+                    available_migrants);
+}
+
+/// \brief Attempts to migrate colonists from a source sector to an adjacent
+/// target coordinate.
+/// \param entity_manager Reference to the game entity manager.
+/// \param planet Planet hosting the sectors.
+/// \param source Populated source sector.
+/// \param target_coords Grid coordinates of the target sector.
+/// \param available_migrants Available pool of potential migrating colonists.
+/// \param smap Planetary sector grid.
+/// \param stats Turn statistics to update upon successful colonization.
+/// \return Number of colonists successfully transferred.
+population_t attempt_colonist_migration(EntityManager& entity_manager,
+                                        const Planet& planet, Sector& source,
+                                        Coordinates target_coords,
+                                        population_t available_migrants,
+                                        SectorMap& smap, TurnStats& stats) {
+  if (available_migrants <= 0 || !planet.is_valid(target_coords)) {
+    return 0;
+  }
+  auto& target_sector = smap.get(target_coords);
+  if (target_sector.is_owned()) {
+    return 0;
+  }
+  return entity_manager.with_race(
+      source.get_owner(), [&](const Race& race) -> population_t {
+        const population_t move = calculate_migrating_colonists(
+            race, stats.Compat[source.get_owner()], target_sector,
+            available_migrants);
+        if (move <= 0) {
+          return 0;
+        }
+        source.transfer_popn_to(target_sector, move);
+        stats.tot_captured++;
+        stats.Claims = true;
+        return move;
+      });
+}
 
 namespace {
-void Migrate2(EntityManager& entity_manager, const Planet& planet, int xd,
-              int yd, Sector& ps, population_t* people, SectorMap& smap,
-              TurnStats& stats) {
-  /* attempt to migrate beyond screen, or too many people */
-  if (yd > planet.dimensions().y - 1 || yd < 0) return;
-
-  if (xd < 0)
-    xd = planet.dimensions().x - 1;
-  else if (xd > planet.dimensions().x - 1)
-    xd = 0;
-
-  auto& pd = smap.get(Coordinates{xd, yd});
-
-  if (!pd.is_owned()) {
-    const auto* race = entity_manager.peek_race(ps.get_owner());
-    if (!race) return;
-    double move_calc = (*people) * stats.Compat[ps.get_owner()] *
-                       race->likes[pd.get_condition()] / 100.0;
-    // Round and clamp to valid population_t range
-    auto move = std::clamp(std::lround(move_calc), population_t{0},
-                           std::numeric_limits<population_t>::max());
-    if (!move) return;
-    *people -= move;
-    ps.transfer_popn_to(pd, move);
-    stats.tot_captured++;
-    stats.Claims = true;
-  }
-}
 
 // Process resource production from a sector
 void processResourceProduction(const Race& race, Sector& s, TurnStats& stats) {
@@ -152,54 +180,74 @@ void updatePopulationAndOwner(EntityManager& entity_manager, Sector& s,
 }
 }  // anonymous namespace
 
-//  produce() -- produce, stuff like that, on a sector.
+/// \brief Runs industrial production, resource extraction, and sector growth on
+/// a sector.
+/// \param entity_manager Reference to the game entity manager.
+/// \param star Star hosting the planetary system.
+/// \param planet Planet hosting the sector.
+/// \param s Planetary sector to simulate.
+/// \param stats Empire-wide simulation turn statistics.
 void produce(EntityManager& entity_manager, const Star& star,
              const Planet& planet, Sector& s, TurnStats& stats) {
   if (!s.is_owned()) return;
-  const auto* race = entity_manager.peek_race(s.get_owner());
-  if (!race) return;
 
-  // Process production and resources
-  processResourceProduction(*race, s, stats);
-  processCrystalMining(*race, s, stats);
+  entity_manager.with_race(s.get_owner(), [&](const Race& race) {
+    // Process production and resources
+    processResourceProduction(race, s, stats);
+    processCrystalMining(race, s, stats);
 
-  // Handle mobilization
-  const auto& pinf = planet.info(s.get_owner());
-  updateMobilization(s, pinf, stats);
+    // Handle mobilization
+    const auto& pinf = planet.info(s.get_owner());
+    updateMobilization(s, pinf, stats);
 
-  // Update efficiency, fertility and sector condition
-  updateEfficiency(s, *race, planet);
-  updateFertilityAndCondition(s, *race);
+    // Update efficiency, fertility and sector condition
+    updateEfficiency(s, race, planet);
+    updateFertilityAndCondition(s, race);
 
-  // Handle population changes and ownership
-  updatePopulationAndOwner(entity_manager, s, *race, star, planet, stats);
+    // Handle population changes and ownership
+    updatePopulationAndOwner(entity_manager, s, race, star, planet, stats);
+  });
 }
 
-// spread()  -- spread population around.
+/// \brief Spreads sector population across adjacent unowned planetary sectors
+/// during turn updates.
+/// \param entity_manager Reference to the game entity manager.
+/// \param pl Planet hosting the sectors.
+/// \param s Source sector with population.
+/// \param smap Planetary sector grid.
+/// \param stats Simulation turn statistics.
 void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
             SectorMap& smap, TurnStats& stats) {
   if (!s.is_owned()) return;
-  if (pl.slaved_to() != 0 && pl.slaved_to() != s.get_owner())
+  if (pl.slaved_to() != 0 && pl.slaved_to() != s.get_owner()) {
     return; /* no one wants to go anywhere */
-
-  const auto* race = entity_manager.peek_race(s.get_owner());
-  if (!race) return;
-
-  /* the higher the fertility, the less people like to leave */
-  population_t people =
-      round_rand(race->adventurism * static_cast<double>(s.get_popn()) *
-                 (100. - s.get_fert()) / 100.) -
-      race->number_sexes; /* how many people want to move -
-                                          one family stays behind */
-
-  int check = round_rand(6.0 * race->adventurism); /* more rounds for
-                                                               high advent */
-  while (people > 0 && check) {
-    int j = int_rand(0, 7);
-    int x2 = x_adj[j];
-    int y2 = y_adj[j];
-    Migrate2(entity_manager, pl, s.get_x() + x2, s.get_y() + y2, s, &people,
-             smap, stats);
-    check--;
   }
+
+  entity_manager.with_race(s.get_owner(), [&](const Race& race) {
+    /* the higher the fertility, the less people like to leave */
+    const double base_migrants = race.adventurism *
+                                 static_cast<double>(s.get_popn()) *
+                                 (100.0 - s.get_fert()) / 100.0;
+    const auto raw_migrants = round_rand(base_migrants);
+    if (raw_migrants <= race.number_sexes) {
+      return;
+    }
+    population_t people =
+        raw_migrants - race.number_sexes; /* one family stays behind */
+
+    const auto neighbors = pl.adjacent_coordinates(s.coords());
+    if (neighbors.empty()) {
+      return;
+    }
+
+    int check =
+        round_rand(6.0 * race.adventurism); /* more rounds for high advent */
+    while (people > 0 && check > 0) {
+      const auto target_coords = neighbors[int_rand(0, neighbors.size() - 1)];
+      const population_t moved = attempt_colonist_migration(
+          entity_manager, pl, s, target_coords, people, smap, stats);
+      people -= moved;
+      --check;
+    }
+  });
 }

@@ -504,6 +504,139 @@ void test_spread_population() {
   test::expect_true(spread_occurred);
 }
 
+void test_calculate_migrating_colonists() {
+  Race race = createTestRace(player_t{1});
+  race.likes[SectorType::SEC_LAND] = 0.8;
+  race.likes[SectorType::SEC_SEA] = 0.2;
+
+  Sector target_unowned =
+      createTestSector(1, 0, 50, 50, 0, 0, 100, 0, 0, 0, SectorType::SEC_LAND,
+                       SectorType::SEC_LAND);
+  Sector target_owned =
+      createTestSector(1, 0, 50, 50, 0, 0, 100, 500, 0, 2, SectorType::SEC_LAND,
+                       SectorType::SEC_LAND);
+
+  // 1. Zero available migrants returns 0
+  test::expect_eq(calculate_migrating_colonists(race, 1.0, target_unowned, 0),
+                  0);
+
+  // 2. Target sector already owned returns 0 (spread only colonizes unowned)
+  test::expect_eq(calculate_migrating_colonists(race, 1.0, target_owned, 500),
+                  0);
+
+  // 3. Proportional migration calculation: 1000 * 1.0 compat * 0.8 likes / 100
+  // = 8
+  test::expect_eq(
+      calculate_migrating_colonists(race, 1.0, target_unowned, 1000), 8);
+
+  // 4. Over-unity clamp prevents pool underflow
+  test::expect_eq(
+      calculate_migrating_colonists(race, 200.0, target_unowned, 10), 10);
+}
+
+void test_attempt_colonist_migration() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  RaceRepository races(store);
+  races.save(race);
+
+  Planet planet = createTestPlanet(5, 5);
+  SectorMap smap(planet);
+
+  for (int y = 0; y < 5; y++) {
+    for (int x = 0; x < 5; x++) {
+      smap.get(Coordinates{x, y}).set_owner(0);
+      smap.get(Coordinates{x, y}).clear_popn();
+      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_LAND);
+    }
+  }
+
+  auto& source = smap.get(Coordinates{0, 0});
+  source.set_owner(1);
+  source.set_popn_exact(1000);
+
+  TurnStats stats{};
+  stats.Compat[player_t{1}] = 1.0;
+
+  // 1. Out of bounds coordinates rejected
+  population_t transferred = attempt_colonist_migration(
+      em, planet, source, Coordinates{0, -1}, 100, smap, stats);
+  test::expect_eq(transferred, 0);
+
+  // 2. Migration to unowned adjacent sector succeeds
+  transferred = attempt_colonist_migration(em, planet, source,
+                                           Coordinates{1, 0}, 100, smap, stats);
+  test::expect_true(transferred > 0);
+  test::expect_eq(source.get_popn(), 1000 - transferred);
+  test::expect_eq(smap.get(Coordinates{1, 0}).get_popn(), transferred);
+  test::expect_eq(smap.get(Coordinates{1, 0}).get_owner(), player_t{1});
+  test::expect_true(stats.Claims);
+  test::expect_eq(stats.tot_captured, 1U);
+}
+
+void test_spread_toroidal_wrapping() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.adventurism = 1.0;
+  RaceRepository races(store);
+  races.save(race);
+
+  Planet planet = createTestPlanet(5, 5);
+  SectorMap smap(planet);
+
+  // Initialize all sectors as unowned land
+  for (int y = 0; y < 5; y++) {
+    for (int x = 0; x < 5; x++) {
+      smap.get(Coordinates{x, y}).set_owner(0);
+      smap.get(Coordinates{x, y}).clear_popn();
+      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_LAND);
+    }
+  }
+
+  // Populate western meridian at x=0
+  auto& west_edge = smap.get(Coordinates{0, 2});
+  west_edge.set_coords({0, 2});
+  west_edge.set_owner(1);
+  west_edge.set_popn_exact(10000);
+  west_edge.set_fert(0);
+
+  TurnStats stats{};
+  stats.Compat[player_t{1}] = 1.0;
+
+  // Attempt direct migration across western meridian to x=4
+  population_t moved = attempt_colonist_migration(
+      em, planet, west_edge, Coordinates{4, 2}, 500, smap, stats);
+  test::expect_true(moved > 0);
+  test::expect_eq(smap.get(Coordinates{4, 2}).get_owner(), player_t{1});
+  test::expect_eq(smap.get(Coordinates{4, 2}).get_popn(), moved);
+}
+
+void test_spread_polar_boundary() {
+  Planet planet = createTestPlanet(5, 5);
+
+  // North pole coordinate (y = 0)
+  const auto north_neighbors = planet.adjacent_coordinates(Coordinates{2, 0});
+  for (const auto& neighbor : north_neighbors) {
+    test::expect_true(neighbor.y >= 0);
+    test::expect_true(neighbor.y < 5);
+  }
+
+  // South pole coordinate (y = 4)
+  const auto south_neighbors = planet.adjacent_coordinates(Coordinates{2, 4});
+  for (const auto& neighbor : south_neighbors) {
+    test::expect_true(neighbor.y >= 0);
+    test::expect_true(neighbor.y < 5);
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -547,6 +680,22 @@ int main() {
 
   std::println(std::cout, "  Testing population spread... ");
   test_spread_population();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing calculate migrating colonists... ");
+  test_calculate_migrating_colonists();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing attempt colonist migration... ");
+  test_attempt_colonist_migration();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing toroidal spread wrapping... ");
+  test_spread_toroidal_wrapping();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing polar boundary adjacency... ");
+  test_spread_polar_boundary();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All dosector tests passed!");

@@ -286,6 +286,12 @@ int main() {
     test::expect_eq(bers->destruct(), 500);  // 5 * 100
     test::expect_eq(bers->fuel(), 100.0);
 
+    // Test 1-mineral sector extraction prevents infinite loop and depletes to 0
+    sector.set_resource(1);
+    resource_t one_yield = mine_sector(*vn, sector);
+    test::expect_eq(one_yield, 1);
+    test::expect_eq(sector.get_resource(), 0);
+
     std::println(std::cout,
                  "  ✓ mine_sector extracts resources and fuel correctly");
   }

@@ -230,8 +230,11 @@ resource_t mine_sector(AutonomousShip& ship, Sector& sector) {
     return 0;
   }
 
-  sector.set_resource(static_cast<resource_t>(oldres * VN_RES_TAKE));
-  const resource_t prod = oldres - sector.get_resource();
+  const resource_t newres = static_cast<resource_t>(oldres * VN_RES_TAKE);
+  // Guarantee at least 1 resource is extracted to prevent infinite loops on
+  // low-resource sectors
+  const resource_t prod = (newres == oldres) ? 1 : (oldres - newres);
+  sector.set_resource(oldres - prod);
   if (ship.type() == ShipType::OTYPE_VN) {
     rcv_resource(ship, static_cast<int>(prod));
   } else if (ship.type() == ShipType::OTYPE_BERS) {
@@ -271,8 +274,10 @@ bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
 
   const auto& star = *em.peek_star(ship.storbits());
   const auto& planet = *em.peek_planet(ship.storbits(), ship.pnumorbits());
-  ship.xpos() = star.xpos() + planet.xpos() + int_rand(-10, 10);
-  ship.ypos() = star.ypos() + planet.ypos() + int_rand(-10, 10);
+  const double offset_x = int_rand(-10, 10);
+  const double offset_y = int_rand(-10, 10);
+  ship.xpos() = star.xpos() + planet.xpos() + offset_x;
+  ship.ypos() = star.ypos() + planet.ypos() + offset_y;
   ship.docked() = 0;
   ship.whatdest() = ScopeLevel::LEVEL_UNIV;
   return true;

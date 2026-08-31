@@ -148,7 +148,68 @@ Weapon Plants are automated manufacturing modules that convert raw industrial re
 
 ---
 
-## 6. Point Defense, Interception, and Autonomous Combat
+## 6. Naval Weapon Systems, Battery Calibers, and Tactical Fire Control
+
+Starships engage in tactical naval combat through modular kinetic gun batteries, directed-energy beam weapons, and stored destructive munitions.
+
+### Dual Battery Architecture
+
+Warships support up to two distinct weapon installations: a **Primary Battery** and a **Secondary Battery**. Each battery operates with independent mount capacity (`primary`, `secondary`) and an assigned weapon **Caliber** (`primtype`, `sectype`):
+
+```mermaid
+flowchart LR
+    Ship["Naval Vessel\n(Combat Orders & Mode)"] --> Switch{"Active Battery Selection\n(ActiveBattery)"}
+    Switch -->|PRIMARY| Prim["Primary Battery\nPower Rating: ship.primary()\nCaliber: ship.primtype()"]
+    Switch -->|SECONDARY| Sec["Secondary Battery\nPower Rating: ship.secondary()\nCaliber: ship.sectype()"]
+    Switch -->|NONE| Off["Weapons Offline / Unarmed\nActive Firepower = 0"]
+```
+
+### Weapon Calibers (`guntype_t`)
+
+Gun calibers dictate effective engagement range, damage output per volley, penetration capability, and munition consumption:
+
+| Caliber Designation | Enum Identifier | Characteristics & Tactical Role | Munition Profile |
+| :--- | :--- | :--- | :--- |
+| **None** | `GTYPE_NONE` | Unarmed battery mount or disabled weapon slot. | 0 destruct / volley |
+| **Light Guns** | `GTYPE_LIGHT` | High tracking velocity and rapid cyclic fire; optimized for anti-fighter screening and point defense. | Low ammo draw |
+| **Medium Guns** | `GTYPE_MEDIUM` | General-purpose fleet battery; balanced range and damage against cruisers and destroyers. | Standard ammo draw |
+| **Heavy Guns** | `GTYPE_HEAVY` | Heavy capital ship spinal mounts and planetary siege cannons; devastating kinetic strike against battleships and surface installations. | High ammo draw |
+
+### Active Battery Selection (`ActiveBattery`)
+
+During combat encounters, a vessel's tactical computers direct fire through the currently selected battery mode:
+- **`ActiveBattery::PRIMARY`**: Firing control is routed through the primary battery (`ship.primary()`, `ship.primtype()`).
+- **`ActiveBattery::SECONDARY`**: Firing control is routed through the secondary battery (`ship.secondary()`, `ship.sectype()`).
+- **`ActiveBattery::NONE`**: All batteries remain on standby with zero offensive output (useful for non-combat ships, factory vessels during retooling, or stealth operations).
+
+Captains select the active battery using the `order` command:
+```text
+order <ship> primary     # Directs weapons to primary battery
+order <ship> secondary   # Switches fire control to secondary battery
+```
+
+### Automated Retaliation Thresholds (`retaliate`)
+
+Starships can be programmed with an automated retaliation threshold (`retaliate`), configuring the vessel to return defensive counter-fire immediately when fired upon by hostile craft:
+$$\text{Effective Counter-Fire} = \min\Big(\text{Programmed Retaliation Level}, \text{Active Battery Power}, \text{Stored Destruct Ammo}\Big)$$
+This ensures defensive perimeter vessels and patrols automatically respond to hostile incursions without requiring real-time player intervention.
+
+### Directed Energy Weapons & Munitions
+
+In addition to kinetic gun batteries, vessels can mount specialized energy projection systems:
+- **Combat Lasers (`laser`)**: Direct-fire optical beam weapons providing instantaneous, armor-piercing point defense and short-range interception.
+- **Concentrated Energy Weapons (CEW)**: High-yield particle and plasma projectors with dedicated beam ratings (`cew`) and tunable focus ranges (`cew_range`).
+- **Destructive Munitions (`destruct`)**: Physical kinetic warheads and explosive ordnance stored in cargo bays, consumed proportionally with each kinetic battery salvo and planetary bombardment strike.
+
+### Naval Batteries vs. Planetary Defense Installations
+
+A critical distinction in empire defense architectures is the separation between mobile naval systems and fixed planetary installations:
+- **Naval Batteries (`Ship::guns`, `primary`, `secondary`)**: Mobile ship-mounted weapon systems utilizing active battery switching and vessel-stored destruct munitions.
+- **Planetary Defense Guns (`planet.info(player).guns`)**: Ground-based surface defensive installations permanently mounted across planetary sectors, defending colonies from landing assaults and returning retaliatory fire during orbital bombardment runs.
+
+---
+
+## 7. Point Defense, Interception, and Autonomous Combat
 
 Planetary and naval engagements feature autonomous defensive networks, interceptor batteries, and automated orbital bombardment systems.
 
@@ -188,7 +249,7 @@ ABM platforms provide automated point defense against incoming space-to-space or
 
 ---
 
-## 7. Imperial Power and the Galactic Census
+## 8. Imperial Power and the Galactic Census
 
 During turn updates, active ships report their operational readiness to Imperial Intelligence and the Galactic Census:
 - **Empire Power Ratings**: Active starships contribute directly to an empire's global strength rating based on hull count, propellant reserves, mineral stockpiles, carried destructive ordnance, colonist populations, and military troop strength.

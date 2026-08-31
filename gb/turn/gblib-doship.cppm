@@ -18,11 +18,20 @@ export void doabm(Ship&, EntityManager&);
 export int do_weapon_plant(Ship&, EntityManager&);
 export void do_repair(Ship& ship, EntityManager& entity_manager);
 export void do_habitat(Ship& ship, EntityManager& entity_manager);
+/// \brief Simulates spore pod warming, detonation, and planetary meta-colony
+/// seeding.
 export void do_pod(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Simulates dust canister atmospheric cooling and eventual dissipation.
 export void do_canister(Ship& ship, EntityManager& entity_manager,
                         TurnStats& stats);
+
+/// \brief Simulates greenhouse gas warming and eventual dissipation.
 export void do_greenhouse(Ship& ship, EntityManager& entity_manager,
                           TurnStats& stats);
+
+/// \brief Simulates focused space mirror heating against ships, planets, or
+/// stars.
 export void do_mirror(Ship& ship, EntityManager& entity_manager,
                       TurnStats& stats);
 export void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum,
@@ -30,6 +39,9 @@ export void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum,
 export int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
                          EntityManager& entity_manager);
 export void do_ap(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Recharges fuel, destruct ordnance, and resources for divine/deity
+/// ships.
 export void do_god(Ship& ship, EntityManager& entity_manager);
 
 /// \brief Top two nearest star systems identified by navigation scanning.

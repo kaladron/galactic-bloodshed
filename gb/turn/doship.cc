@@ -134,7 +134,18 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
         return;
       }
 
-      auto i = int_rand(0, star.numplanets() - 1);
+      auto target_planet = star.get_random_planet_index();
+      if (!target_planet.has_value()) {
+        std::string telegram = std::format(
+            "{} has warmed and exploded at {}\n\tno planets in system; spores "
+            "dissipated into the void.\n",
+            ship, prin_ship_orbits(entity_manager, ship));
+        push_telegram(entity_manager, ship.owner(), ship.governor(), telegram);
+        entity_manager.kill_ship(ship.owner(), ship);
+        return;
+      }
+
+      auto i = *target_planet;
       std::stringstream telegram_buf;
       telegram_buf << std::format("{} has warmed and exploded at {}\n", ship,
                                   prin_ship_orbits(entity_manager, ship));
@@ -301,11 +312,9 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
          it's not too fair.. */
-      if (mirror->aimed_star() > 0 &&
-          mirror->aimed_star() < entity_manager.peek_universe()->numstars &&
-          ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
+      if (ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
           mirror->aimed_star() == ship.storbits()) {
-        entity_manager.mutate_star(mirror->aimed_star(), [&](Star& star) {
+        entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
           star.stability() += int_rand(0, 1);
         });
       }

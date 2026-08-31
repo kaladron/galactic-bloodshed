@@ -134,6 +134,22 @@ int main() {
     test::expect_eq(ship.notified(), 1);
   }
 
+  // Test 4: Ship with no weapons (destruct == 0) notifies player of lack of
+  // weapons
+  {
+    ship.pnumorbits() = 0;
+    ship.destpnum() = 0;
+    ship.notified() = 0;
+    ship.destruct() = 0;
+    // Clear PDNs
+    planet.ships() = 0;
+    planet_repo.save(planet);
+
+    int no_weapon_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
+    test::expect_eq(no_weapon_destroyed, 0);
+    test::expect_eq(ship.notified(), 1);
+  }
+
   std::println(std::cout, "berserker_bombard_test: All tests passed!");
   return 0;
 }

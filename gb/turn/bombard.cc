@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file bombard.cc
+/// \brief Simulates autonomous berserker planetary bombardment.
+
 module;
 
 import std;
-#undef stdout
 
 module gblib;
 
@@ -26,20 +28,20 @@ module gblib;
  * has no weapons, a notification is sent to the ship's owner indicating the
  * lack of weapons.
  *
- * @param ship A pointer to the berserker ship performing the bombardment.
- * @param planet The planet being bombarded.
- * @param r The race to which the ship belongs.
- * @return The number of sectors destroyed during the bombardment.
+ * \param entity_manager Entity manager for spatial queries, updates, and
+ * messaging.
+ * \param ship The berserker ship performing the bombardment.
+ * \param planet The planet being bombarded.
+ * \param r The race to which the ship belongs.
+ * \return The number of sectors destroyed during the bombardment.
  */
 int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
                       const Race& r) {
   // Get star for telegrams - lookup once for efficiency
-  const auto* star = entity_manager.peek_star(ship.storbits());
-  if (!star) return 0;
+  const auto& star = *entity_manager.peek_star(ship.storbits());
 
   /* check to see if PDNs are present */
-  const ShipList shiplist(entity_manager, planet.ships());
-  for (const Ship& s : shiplist) {
+  for (const auto& s : ShipList::readonly(entity_manager, planet.ships())) {
     if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF &&
         s.owner() != ship.owner()) {
       std::string notice =
@@ -86,26 +88,28 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
     if (!ship.notified()) {
       ship.notified() = 1;
       std::stringstream telegram;
-      telegram << std::format("Report from {}{} {}\n\n", Shipltrs[ship.type()],
+      telegram << std::format("Report from {}{} {}\n\n", ship.type_letter(),
                               ship.number(), ship.name());
       telegram << std::format("Planet /{}/{} has been saturation bombed.\n",
-                              star->get_name(),
-                              star->get_planet_name(ship.pnumorbits()));
+                              star.get_name(),
+                              star.get_planet_name(ship.pnumorbits()));
       push_telegram(entity_manager, ship.owner(), ship.governor(),
                     telegram.str());
     }
     return 0;
   }
 
-  int str = MIN(Shipdata[ship.type()][ABIL_GUNS] * (100 - ship.damage()) / 100.,
-                ship.destruct());
+  int str = std::min(
+      static_cast<int>(static_cast<double>(ship.max_guns_capacity()) *
+                       (100.0 - static_cast<double>(ship.damage())) / 100.0),
+      static_cast<int>(ship.destruct()));
   if (!str) {
     /* no weapons! */
     if (!ship.notified()) {
       ship.notified() = 1;
       std::string telegram =
           std::format("Bulletin\n\n {}{} {} has no weapons to bombard with.\n",
-                      Shipltrs[ship.type()], ship.number(), ship.name());
+                      ship.type_letter(), ship.number(), ship.name());
       push_telegram(entity_manager, ship.owner(), ship.governor(), telegram);
     }
     return 0;
@@ -118,8 +122,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   entity_manager.with_sectormap(
       ship.storbits(), ship.pnumorbits(),
       [&](const SectorMap& smap) { oldown = smap.get(*target).get_owner(); });
-  ship.destruct() -= str;
-  ship.mass() -= str * MASS_DESTRUCT;
+  ship.consume_destruct(str);
 
   std::optional<BombardResult> opt_result;
   entity_manager.mutate_sectormap(
@@ -144,23 +147,23 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
 
   /* notify other player. */
   std::stringstream telegram_alert;
-  telegram_alert << std::format("ALERT from planet /{}/{}\n", star->get_name(),
-                                star->get_planet_name(ship.pnumorbits()));
+  telegram_alert << std::format("ALERT from planet /{}/{}\n", star.get_name(),
+                                star.get_planet_name(ship.pnumorbits()));
   telegram_alert << std::format(
       "{}{} {} bombarded sector {}; {} sectors destroyed.\n",
-      Shipltrs[ship.type()], ship.number(), ship.name(), *target, numdest);
+      ship.type_letter(), ship.number(), ship.name(), *target, numdest);
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     player_t i = race.Playernum;
     if (result.nuked_players[i] && i != ship.owner()) {
-      push_telegram(entity_manager, i, star->governor(i), telegram_alert.str());
+      push_telegram(entity_manager, i, star.governor(i), telegram_alert.str());
     }
   }
 
   std::string combatpost =
-      std::format("{}{} {} [{}] bombards {}/{}\n", Shipltrs[ship.type()],
-                  ship.number(), ship.name(), ship.owner(), star->get_name(),
-                  star->get_planet_name(ship.pnumorbits()));
+      std::format("{}{} {} [{}] bombards {}/{}\n", ship.type_letter(),
+                  ship.number(), ship.name(), ship.owner(), star.get_name(),
+                  star.get_planet_name(ship.pnumorbits()));
   post(entity_manager, combatpost, NewsType::COMBAT);
 
   return numdest;

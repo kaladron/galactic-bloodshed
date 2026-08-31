@@ -2849,6 +2849,16 @@ public:
                : data_.build_cost;
   }
 
+  /// Ship classification type letter code.
+  [[nodiscard]] char type_letter() const noexcept {
+    return get_template().letter;
+  }
+
+  /// Maximum gun mount capacity from ship template.
+  [[nodiscard]] gun_count_t max_guns_capacity() const noexcept {
+    return get_template().max_guns;
+  }
+
   // =========================================================================
   // DOMAIN OPERATIONS & STATE TRANSITIONS
   // =========================================================================

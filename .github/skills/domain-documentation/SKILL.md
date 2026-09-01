@@ -38,6 +38,7 @@ Document exact numerical formulas and probability distributions using LaTeX math
 
   $$\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$$
   ```
+- **Allowed Macros & Operator Names**: GitHub's LaTeX renderer blocks `\operatorname`. Use standard `\text{...}` (e.g. `\text{Uniform}(0, 1)`) or standard math operators (`\log`, `\max`, `\min`, `\arctan`, `\sin`) instead.
 - **Delimiter Spacing**: Do not place spaces immediately after opening `$` or before closing `$` (e.g. `$x = 1$`, not `$ x = 1 $`) to ensure reliable KaTeX rendering.
 
 - **Probabilities**: State exact success and failure distributions (e.g. $P(\text{Immobilized}) = \frac{\text{Radiation}}{100}$).

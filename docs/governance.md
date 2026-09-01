@@ -70,9 +70,9 @@ flowchart LR
 ```
 
 ### Star System Action Points
-During each full turn update, each star system generates Action Points based on local planetary population ($P$) and stationed starships ($N_{\text{ships}}$):
+During each full turn update, each star system generates Action Points based on local planetary population ($P$) and stationed starships ($`N_{\text{ships}}`$):
 
-$$\text{Raw APs} = \text{round\_rand}\left(\frac{N_{\text{ships}}}{10} + 5 \log_{10}\left(1 + \max(0, P)\right)\right)$$
+$$\text{Raw APs} = \text{StochasticRound}\left(\frac{N_{\text{ships}}}{10} + 5 \log_{10}\left(1 + \max(0, P)\right)\right)$$
 
 $$\text{Final System APs} = \begin{cases} \min(250, \text{Current APs} + \text{Raw APs}) & \text{if Governed} \\ \min\left(250, \text{Current APs} + \max\left(1, \left\lfloor \frac{\text{Raw APs}}{20} \right\rfloor\right)\right) & \text{if in Anarchy} \end{cases}$$
 

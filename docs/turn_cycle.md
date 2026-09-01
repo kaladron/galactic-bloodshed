@@ -22,7 +22,7 @@ flowchart TD
 
 ## 2. Movement Segments vs. Turn Updates
 
-A complete turn is configured by the server administration into an interval of duration $T_{\text{update}}$ (in minutes) divided into $N_{\text{segments}}$ equal discrete movement segments:
+A complete turn is configured by the server administration into an interval of duration $`T_{\text{update}}`$ (in minutes) divided into $`N_{\text{segments}}`$ equal discrete movement segments:
 
 $$\Delta t_{\text{segment}} = \frac{T_{\text{update}}}{N_{\text{segments}}}$$
 
@@ -49,9 +49,9 @@ Action Points (APs) represent the logistical capacity of an empire to issue comm
 
 ### Star System Action Points
 
-At each full turn update, an empire receives Action Points in every star system where it maintains planetary colonies or naval crews. The points awarded depend upon planetary population ($P$), stationed ship count ($N_{\text{ships}}$), and governance status:
+At each full turn update, an empire receives Action Points in every star system where it maintains planetary colonies or naval crews. The points awarded depend upon planetary population ($P$), stationed ship count ($`N_{\text{ships}}`$), and governance status:
 
-$$\text{Raw APs} = \text{round\_rand}\left(\frac{N_{\text{ships}}}{10} + 5 \log_{10}\left(1 + \max(0, P)\right)\right)$$
+$$\text{Raw APs} = \text{StochasticRound}\left(\frac{N_{\text{ships}}}{10} + 5 \log_{10}\left(1 + \max(0, P)\right)\right)$$
 
 #### Governance Efficiency Modifier
 Operating without an active, operational Government Center palace or docked flagship severely impairs bureaucratic coordination:
@@ -92,7 +92,7 @@ Open market lots on the Interstellar Exchange are evaluated and cleared during t
 
 1. **Delivery Delay**: Commodities placed on the exchange require one update to register before bids are eligible for fulfillment.
 2. **Affordability Check**: The highest bidder must possess sufficient funds to pay the bid price plus interstellar freight shipping costs.
-3. **Freight Cost Calculation**: Shipping tariffs scale with Euclidean distance: $\text{Distance} = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$, resulting in $\text{Shipping Fee} = \left\lfloor \frac{\text{Distance} \times \text{Bid Price}}{1000} \right\rfloor$.
+3. **Freight Cost Calculation**: Shipping tariffs scale with Euclidean distance: $`\text{Distance} = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}`$, resulting in $\text{Shipping Fee} = \left\lfloor \frac{\text{Distance} \times \text{Bid Price}}{1000} \right\rfloor$.
 4. **Deposit & Stockpile**: Commodities are delivered directly to the designated destination planet's resource reserves.
 
 ---
@@ -115,7 +115,7 @@ $$\Delta \text{Tech} = \frac{IQ}{100.0}$$
 
 ### Collective Intelligence Scaling
 
-Races endowed with Collective Intelligence scale their effective IQ dynamically based on total galaxy-wide population ($P_{\text{total}}$):
+Races endowed with Collective Intelligence scale their effective IQ dynamically based on total galaxy-wide population ($`P_{\text{total}}`$):
 
 $$IQ_{\text{effective}} = IQ_{\text{limit}} \times \left(\frac{2}{\pi} \arctan\left(\frac{P_{\text{total}}}{10^6}\right)\right)^2$$
 

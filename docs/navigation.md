@@ -39,7 +39,7 @@ flowchart TD
 
 ## 2. Dynamic Vessel Displacement and Mass Physics
 
-Fuel consumption, launch thrust requirements, and hyperjump energy demands scale with a vessel's **total operational mass** ($M_{\text{total}}$):
+Fuel consumption, launch thrust requirements, and hyperjump energy demands scale with a vessel's **total operational mass** ($`M_{\text{total}}`$):
 
 $$\text{Mass}_{\text{total}} = \text{Base Hull Mass} + (\text{Fuel} \times 0.01) + (\text{Resources} \times 0.1) + (\text{Destruct} \times 0.1) + (\text{Crew} + \text{Troops}) \times M_{\text{race}} + \sum \text{Mass}_{\text{docked}}$$
 
@@ -55,7 +55,7 @@ flowchart LR
 
 - **Cargo & Munitions Weight**: Refined resources and destructive ordnance add $0.1$ mass units per item.
 - **Propellant Weight**: Liquid fuel reserves contribute $0.01$ mass units per fuel unit.
-- **Living Biomass**: Colonist crew and carried soldiers contribute mass based on their biological species weight ($M_{\text{race}}$).
+- **Living Biomass**: Colonist crew and carried soldiers contribute mass based on their biological species weight ($`M_{\text{race}}`$).
 - **Hangar Bay Nesting**: Carried fighters, shuttles, and probes contribute their complete operational displacement to the host carrier.
 
 ---
@@ -126,7 +126,7 @@ A starship can execute FTL jumps only if it satisfies all of the following requi
 4. **Pre-Charged Drive**: The hyperdrive must be pre-charged and primed before jump initiation.
 
 ### Jump Propellant Calculation
-The fuel required to rip a portal into hyperspace and traverse interstellar coordinates scales with Cartesian distance ($D_{\text{jump}}$) and total vessel displacement:
+The fuel required to rip a portal into hyperspace and traverse interstellar coordinates scales with Cartesian distance ($`D_{\text{jump}}`$) and total vessel displacement:
 
 $$D_{\text{jump}} = \sqrt{(X_{\text{dest}} - X_{\text{origin}})^2 + (Y_{\text{dest}} - Y_{\text{origin}})^2}$$
 

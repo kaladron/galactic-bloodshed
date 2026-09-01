@@ -46,17 +46,17 @@ flowchart LR
 Metabolism represents the biological vigor, industriousness, and physical energy of the species:
 - **Industrial Extraction**: Higher metabolism yields higher mineral extraction and fuel refining per sector: $\text{Yield} = \min\left(\text{Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$.
 - **Infrastructure Development**: Increases the rate at which colonists upgrade sector efficiency toward $100\%$ (plated status).
-- **Tax Strain**: High taxation depresses effective metabolism: $\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)$.
+- **Tax Strain**: High taxation depresses effective metabolism: $`\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)`$.
 
-### Individual Body Mass ($M_{\text{race}}$)
+### Individual Body Mass ($`M_{\text{race}}`$)
 Individual body mass defines the physical weight per citizen or soldier:
-- **Logistical Displacement**: Civilian colonists and military troops add physical weight to starship hulls: $\Delta \text{Mass}_{\text{ship}} = (\text{Crew} + \text{Troops}) \times M_{\text{race}}$.
+- **Logistical Displacement**: Civilian colonists and military troops add physical weight to starship hulls: $`\Delta \text{Mass}_{\text{ship}} = (\text{Crew} + \text{Troops}) \times M_{\text{race}}`$.
 - **Propellant Costs**: Heavier species expend significantly more fuel during surface lift-offs, orbital maneuvers, and hyperspace jumps. Light species excel at rapid naval troop mobilization.
 
-### Reproductive Sexes ($N_{\text{sexes}}$)
+### Reproductive Sexes ($`N_{\text{sexes}}`$)
 Reproductive sexes defines the minimum number of individuals required to form a fertile breeding family unit:
-- **Sterility Threshold**: If a sector's population falls below $N_{\text{sexes}}$, biological reproduction stalls completely ($\Delta \text{Population} = 0$).
-- **Colonization Resilience**: Species with $N_{\text{sexes}} = 1$ (such as Metamorphs) can colonize worlds from a single pioneer colonist, whereas species with $N_{\text{sexes}} = 3+$ require larger initial landing parties.
+- **Sterility Threshold**: If a sector's population falls below $`N_{\text{sexes}}`$, biological reproduction stalls completely ($\Delta \text{Population} = 0$).
+- **Colonization Resilience**: Species with $`N_{\text{sexes}} = 1`$ (such as Metamorphs) can colonize worlds from a single pioneer colonist, whereas species with $`N_{\text{sexes}} = 3+`$ require larger initial landing parties.
 
 ### Birthrate ($B$)
 Birthrate determines how rapidly a colony's population expands toward environmental carrying capacity:
@@ -87,12 +87,12 @@ Species with standard cognitive structures progress scientifically at a constant
 $$\Delta \text{Tech} = \frac{\text{IQ}}{100.0}$$
 
 ### Collective Hive Intelligence
-Species endowed with Collective Intelligence operate as a unified psychic hive mind. Their effective intelligence scales dynamically with their total galaxy-wide population ($P_{\text{total}}$):
+Species endowed with Collective Intelligence operate as a unified psychic hive mind. Their effective intelligence scales dynamically with their total galaxy-wide population ($`P_{\text{total}}`$):
 
 $$IQ_{\text{effective}} = IQ_{\text{limit}} \times \left(\frac{2}{\pi} \arctan\left(\frac{P_{\text{total}}}{10^6}\right)\right)^2$$
 
 - **Early-Game Vulnerability**: Small pioneer populations possess low initial IQ, requiring rapid demographic expansion.
-- **Late-Game Supremacy**: As galactic population reaches millions of citizens, effective IQ approaches $IQ_{\text{limit}}$, unleashing explosive scientific breakthroughs.
+- **Late-Game Supremacy**: As galactic population reaches millions of citizens, effective IQ approaches $`IQ_{\text{limit}}`$, unleashing explosive scientific breakthroughs.
 
 ### Ground Combat Lethality
 Combat ability represents individual martial lethality, physical ferocity, and close-quarters combat skill. In planetary surface battles and starship boarding actions, higher combat ratings dramatically increase casualty infliction rates against foreign soldiers and defending militias.
@@ -152,7 +152,7 @@ flowchart TD
 - **Expansion**: Relies on constructed starships, freighters, and assault landers for colonization and conquest.
 
 ### 2. Metamorphs (Biological Swarms)
-- **Asexual Unity**: Strict single-sex reproduction ($N_{\text{sexes}} = 1$).
+- **Asexual Unity**: Strict single-sex reproduction ($`N_{\text{sexes}} = 1`$).
 - **Spore Pod Colonization (`p`)**: Can construct biological Spore Pods at Technology Level 0 instantly on planetary surfaces. Spore pods enter deep-space hibernation and burst upon reaching foreign star systems, seeding biospheres with pioneer biomass.
 - **Biomass Absorption**: In ground combat, victorious Metamorph forces absorb defeated enemy populations directly into their own biomass, transforming conquered colonists into Metamorph population.
 

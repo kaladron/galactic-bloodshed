@@ -157,7 +157,7 @@ On peaceful slave worlds, the entire output of newly harvested commodities (fuel
 
 ### Slave Revolt Triggers and Uprisings
 An enslaved population requires an active military presence to maintain order. If the master empire's population drops to or below **$0.1\%$ ($1/1000\text{th}$)** of the total planetary population:
-- **Devastation**: Violent uprisings break out across the world, devastating $N_{\text{devastated}} = \left\lfloor \frac{\text{Total Population}}{1000} \right\rfloor + 1$ random populated sectors.
+- **Devastation**: Violent uprisings break out across the world, devastating $`N_{\text{devastated}} = \left\lfloor \frac{\text{Total Population}}{1000} \right\rfloor + 1`$ random populated sectors.
 - **Intimidation Backlash**: Master-owned sectors in intimidated star systems face a $50\%$ chance of destruction.
 - **Liberation**: The shackles of enslavement are broken, fully liberating the planetary population.
 
@@ -170,7 +170,7 @@ The turn simulation finalizes local economic accounting and defense readiness:
 - **Harvest Deposits**: Newly mined resources and synthesized fuels are credited to local colony stockpiles.
 - **Tax Collection**: Civilian taxes are levied and transferred into the system governor's treasury. Tax rate increases are constrained by the $+5\%$ per turn update rate-limiting policy.
 - **Scientific Research**: Planetary research grants are deducted from the governor's treasury, generating imperial technology advancement points.
-- **Ground Defense Batteries**: Total sector mobilization readiness is converted into active ground defense gun batteries: $N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Points}}{1000} \right\rfloor\right)$.
+- **Ground Defense Batteries**: Total sector mobilization readiness is converted into active ground defense gun batteries: $`N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Points}}{1000} \right\rfloor\right)`$.
 - **Automated Waste Canisters**: If environmental pollution exceeds the governor's configured toxicity threshold, the colony automatically expends minerals to construct a Toxic Waste Canister ship, purging up to $20$ points of toxicity from the biosphere.
 
 ---

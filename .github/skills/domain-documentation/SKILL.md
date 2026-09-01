@@ -26,10 +26,12 @@ When modernizing or discovering game subsystems (e.g., naval operations, orbital
 Document exact numerical formulas and probability distributions using LaTeX math:
 
 ### ⚠️ GitHub Math Formatting Rules:
-- **Inline Math in Lists**: When including formulas inside bullet points (`- ...`) or numbered lists (`1. ...`), **ALWAYS use inline math (`$...$`)** directly on the list item line. GitHub's markdown parser fails to render `$$...$$` display blocks nested inside list items.
+- **Backtick Delimiters for Inline Math (`$` `$` `...` `$` `$`)**: When inline math contains underscores (`_` for subscripts), asterisks (`*`), or characters that conflict with Markdown formatting, **ALWAYS use the backtick delimiter `$``...``$`**. GitHub's CommonMark parser matches underscores (`_..._`) as italics before passing text to MathJax/KaTeX, which strips subscripts and breaks math rendering unless protected by backticks:
   ```markdown
-  - **Tax Strain**: High taxation depresses effective metabolism: $\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)$.
+  - **Tax Strain**: High taxation depresses effective metabolism: $`\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)`$.
+  - **Logistical Displacement**: Civilian colonists add weight: $`\Delta \text{Mass}_{\text{ship}} = (\text{Crew} + \text{Troops}) \times M_{\text{race}}`$.
   ```
+- **Inline Math in Lists**: When including formulas inside bullet points (`- ...`) or numbered lists (`1. ...`), use inline math directly on the list item line. GitHub's parser fails to render `$$...$$` display blocks nested inside list items.
 - **Display Math Blocks**: Use `$$...$$` display blocks **strictly for standalone paragraphs** separated by blank lines before and after:
   ```markdown
   The maximum demographic capacity is calculated as:

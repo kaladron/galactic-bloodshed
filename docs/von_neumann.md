@@ -29,8 +29,8 @@ flowchart TD
 Every autonomous machine possesses an internal cybernetic consciousness and lineage tracking:
 
 - **Progenitor**: The originating empire or intelligence that deployed the ancestral seed machine.
-- **Generational Lineage**: A reproductive generation counter ($g_0, g_1, \dots$). Each time a machine replicates, its offspring advances the generation: $g_{\text{child}} = g_{\text{parent}} + 1$.
-- **Iterative Hardware Evolution**: Each generational iteration incorporates refined engineering, upgrading the offspring's scientific technology level and defensive armor: $\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 20.0$ and $\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 1$.
+- **Generational Lineage**: A reproductive generation counter ($`g_0, g_1, \dots`$). Each time a machine replicates, its offspring advances the generation: $`g_{\text{child}} = g_{\text{parent}} + 1`$.
+- **Iterative Hardware Evolution**: Each generational iteration incorporates refined engineering, upgrading the offspring's scientific technology level and defensive armor: $`\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 20.0`$ and $`\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 1`$.
 - **Binary Designations**: Newborn probes automatically assign themselves thematic binary strings (e.g. `"1010011"`, `"01101"`) as cosmetic hull names.
 - **Cybernetic Subversion & Reprogramming**: Advanced star empires can attempt to capture and tamper with machine minds, overwriting mission parameters, target priorities, and operational doctrines.
 
@@ -72,7 +72,7 @@ $$\text{Offspring Count} = \left\lfloor \frac{\text{Stored Minerals}}{\text{Base
 For each child machine manufactured:
 1. **Resource Expenditure**: The construction cost is deducted from the parent's mineral cargo.
 2. **Propellant Sharing**: The parent divides its stored fuel reserves evenly with the newborn offspring ($50\%$ to parent, $50\%$ to child).
-3. **Lineage Inheritance**: The offspring inherits the ancestral progenitor identity and advances to generation $g_{\text{parent}} + 1$.
+3. **Lineage Inheritance**: The offspring inherits the ancestral progenitor identity and advances to generation $`g_{\text{parent}} + 1`$.
 
 ---
 
@@ -101,8 +101,8 @@ all landed probes initiate **war mobilization**. Each subsequent replication cyc
 | Subsystem / Metric | Specification | Tactical Capabilities |
 | :--- | :--- | :--- |
 | **Retaliation Directive** | Primary Offending Empire | Autonomously hunts star systems belonging to the primary aggressor. |
-| **Technology Advancement** | $\text{Tech}_{\text{parent}} + 100.0$ | Massive technological leap over the parent machine. |
-| **Armor Plating** | $\text{Armor}_{\text{parent}} + 11$ | Heavy capital-grade defensive armor. |
+| **Technology Advancement** | $`\text{Tech}_{\text{parent}} + 100.0`$ | Massive technological leap over the parent machine. |
+| **Armor Plating** | $`\text{Armor}_{\text{parent}} + 11`$ | Heavy capital-grade defensive armor. |
 | **Destructive Warheads** | $500$ Destruct Ammo | Dedicated munitions hold for extended combat and bombardment. |
 | **Propulsion Reserves** | $5 \times \text{Parent Fuel Capacity}$ | High-capacity fuel tanks for deep-space transit and maneuvers. |
 | **Hyperspace Jump Drive** | Pre-charged Hyperdrive | Crystal-mounted hyperdrive jump engine ready for immediate jumps. |

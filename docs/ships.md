@@ -43,7 +43,7 @@ A carrier's total displacement includes its baseline structure, stored consumabl
 
 $$\text{Mass}_{\text{total}} = \text{Base Hull Mass} + (\text{Fuel} \times 0.01) + (\text{Resources} \times 0.1) + (\text{Destruct} \times 0.1) + (\text{Crew} + \text{Troops}) \times M_{\text{race}} + \sum \text{Mass}_{\text{docked}}$$
 
-where $M_{\text{race}}$ is the physical body mass per individual colonist or soldier of the carried species.
+where $`M_{\text{race}}`$ is the physical body mass per individual colonist or soldier of the carried species.
 
 ---
 
@@ -85,7 +85,7 @@ flowchart TD
 ### 1. Radiation Hazards and Crew Sickness
 Ships contaminated by nuclear fallout, stellar flares, or weapon detonations ($\text{Radiation} > 0$) experience system failures and crew casualties:
 - **Mobility Gating**: Guidance and engine systems have a probability of failing proportional to radiation intensity: $P(\text{Immobilized}) = \frac{\text{Radiation Level}}{100}$.
-- **Crew Attrition**: On full turn updates, radiation sickness claims $20\%$ of living crew and carried military troops: $\text{Crew}_{\text{new}} = \left\lfloor \text{Crew}_{\text{old}} \times 0.80 \right\rfloor, \quad \text{Troops}_{\text{new}} = \left\lfloor \text{Troops}_{\text{old}} \times 0.80 \right\rfloor$.
+- **Crew Attrition**: On full turn updates, radiation sickness claims $20\%$ of living crew and carried military troops: $`\text{Crew}_{\text{new}} = \left\lfloor \text{Crew}_{\text{old}} \times 0.80 \right\rfloor, \quad \text{Troops}_{\text{new}} = \left\lfloor \text{Troops}_{\text{old}} \times 0.80 \right\rfloor`$.
 - **Natural Decontamination**: Radiation dissipates over time during update passes: $\Delta \text{Radiation} = -\text{UniformRandom}\Big(0, \min\big(\text{Radiation}, \text{Base Decontamination Rate}\big)\Big)$.
 
 ### 2. Supernova Blast Waves
@@ -96,12 +96,12 @@ $$\Delta \text{Damage} = \left\lfloor \frac{5 \times \text{Nova Stage}}{(\text{E
 where $S$ is the number of simulation segments per update pass. If cumulative structural damage reaches or exceeds $100\%$, the vessel is destroyed by the blast.
 
 ### 3. Mobile Factory Technology Upgrades
-Offline Mobile Factories automatically modernize their internal manufacturing tooling to match the owning empire's current imperial technology level ($\text{Tech}_{\text{factory}} \leftarrow \text{Tech}_{\text{empire}}$). Powering down a factory allows it to absorb the latest technological breakthroughs before resuming production.
+Offline Mobile Factories automatically modernize their internal manufacturing tooling to match the owning empire's current imperial technology level ($`\text{Tech}_{\text{factory}} \leftarrow \text{Tech}_{\text{empire}}`$). Powering down a factory allows it to absorb the latest technological breakthroughs before resuming production.
 
 ### 4. Hull Maintenance and Resource Consumption
 Damaged vessels ($\text{Damage} > 0$) attempt structural repairs during turn updates:
 - **Free Station Maintenance**: Orbital repair stations and vessels docked with them perform hull repairs without consuming stored resources.
-- **Crew Repair Scaling**: The effective repair output scales with available crew staffing: $r_{\text{crew}} = \frac{\text{Current Crew}}{\text{Maximum Crew Capacity}}$, yielding maximum repair potential $\text{Max Repair} = \text{Base Repair Rate} \times r_{\text{crew}}$.
+- **Crew Repair Scaling**: The effective repair output scales with available crew staffing: $`r_{\text{crew}} = \frac{\text{Current Crew}}{\text{Maximum Crew Capacity}}`$, yielding maximum repair potential $`\text{Max Repair} = \text{Base Repair Rate} \times r_{\text{crew}}`$.
 - **Resource Cost**: Repairing hull damage consumes refined minerals: $\text{Resource Cost} = \left\lfloor 0.005 \times \text{Max Repair} \times \text{Ship Construction Cost} \right\rfloor$.
 - **Partial Maintenance**: If stored resources are insufficient to cover full maintenance, all available resources are expended for proportional partial repairs: $\text{Damage Repaired} = \left\lfloor \text{Max Repair} \times \left(\frac{\text{Stored Resources}}{\text{Resource Cost}}\right) \right\rfloor$. Unmanned sensor probes safely bypass crewed maintenance formulas.
 
@@ -124,7 +124,7 @@ Atmosphere Processors perform large-scale planetary geoengineering by converting
 ### Orbital Habitats and Population Incubators
 Orbital Habitats function as specialized bioship incubators capable of generating civilian population in deep space or orbit:
 - **Incubator Operations**: Active habitats consume stored fuel and raw minerals to synthesize life-support biomass and incubate new colonists: $\Delta \text{Population} = \left\lfloor \text{Incubation Rate} \times \frac{\text{Current Population}}{\text{Maximum Crew Capacity}} \right\rfloor$.
-- **Dynamic Displacement**: As new colonists are generated, the ship's operational mass increases proportionally based on the biological body mass of the incubated species ($M_{\text{race}}$).
+- **Dynamic Displacement**: As new colonists are generated, the ship's operational mass increases proportionally based on the biological body mass of the incubated species ($`M_{\text{race}}`$).
 
 ### Weapon Plants and Munitions Manufacturing
 Weapon Plants are automated manufacturing modules that convert raw industrial resources into destructive ordnance (`destruct`):

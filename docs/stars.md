@@ -51,7 +51,7 @@ Stars are categorized into distinct spectral classes that determine core luminos
 | **N** | Carbon Stars | Variable | Specialized | Hydrocarbon-rich, methane and sulfur atmospheres. |
 
 ### Planetary Thermal Coupling
-A star's core luminosity ($L_{\text{star}}$) and the planet's orbital distance ($D_{\text{orbit}}$) determine the world's baseline surface temperature:
+A star's core luminosity ($`L_{\text{star}}`$) and the planet's orbital distance ($`D_{\text{orbit}}`$) determine the world's baseline surface temperature:
 
 $$T_{\text{baseline}} = \left\lfloor \frac{L_{\text{star}} \times 1000}{D_{\text{orbit}}^2} \right\rfloor$$
 

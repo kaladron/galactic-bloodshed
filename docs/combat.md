@@ -42,8 +42,8 @@ Energy weapons draw power directly from the ship's fuel reserves ($2.0\text{ fue
 - **Radiative Firing Mode**: Ships configured to fire in radiative mode (`order <ship> mode rad`) direct ionizing radiation into target hulls, disabling operational computers and inflicting severe radiation sickness on enemy crews without destroying the ship chassis.
 
 ### Guided Ordnance and Area Denial
-- **Guided Missiles (`^`)**: Self-propelled kinetic warheads that close with target ships at point-blank range ($D_{\text{effective}} = 0$) before detonating their destructive payload.
-- **Proximity Space Mines (`!`)**: Autonomous area-denial munitions that monitor local space and detonate their full explosive charge when unallied vessels enter proximity ($D_{\text{effective}} = D^2 / 200$).
+- **Guided Missiles (`^`)**: Self-propelled kinetic warheads that close with target ships at point-blank range ($`D_{\text{effective}} = 0`$) before detonating their destructive payload.
+- **Proximity Space Mines (`!`)**: Autonomous area-denial munitions that monitor local space and detonate their full explosive charge when unallied vessels enter proximity ($`D_{\text{effective}} = D^2 / 200`$).
 - **Anti-Ballistic Missiles (ABM `&`)**: Point defense platforms that track and intercept incoming hostile missiles and mines before impact.
 
 ---

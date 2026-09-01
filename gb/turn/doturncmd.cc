@@ -166,7 +166,7 @@ static void process_races(TurnState& state, bool update) {
 void process_market_transactions(EntityManager& entity_manager) {
   if (!MARKET) return;
 
-  std::vector<int> dead_commods;
+  auto barrier = entity_manager.create_deletion_barrier();
 
   /* reset market - note: CommodList filters out null/invalid entries */
   for (auto commod_handle : CommodList(entity_manager)) {
@@ -228,14 +228,8 @@ void process_market_transactions(EntityManager& entity_manager) {
       c.bid = 0;
     }
     if (c.owner == player_t{0}) {
-      dead_commods.push_back(c.id);
+      entity_manager.delete_commod(c.id);
     }
-  }
-
-  // Delete dead commodities after all entity handles have been released and
-  // saved
-  for (int id : dead_commods) {
-    entity_manager.delete_commod(id);
   }
 }
 
@@ -289,18 +283,12 @@ static void process_ship_turns(TurnState& state, bool update) {
 
 static void prepare_dead_ships(TurnState& state) {
   /* prepare dead ships for recycling */
-  // Collect ship numbers to delete (can't delete while iterating)
-  std::vector<shipnum_t> dead_ships;
+  auto barrier = state.entity_manager.create_deletion_barrier();
   for (const Ship& ship :
        ShipList::readonly(state.entity_manager, ShipList::IterationType::All)) {
     if (!ship.alive()) {
-      dead_ships.push_back(ship.number());
+      state.entity_manager.delete_ship(ship.number());
     }
-  }
-
-  // Delete dead ships
-  for (shipnum_t num : dead_ships) {
-    state.entity_manager.delete_ship(num);
   }
 }
 

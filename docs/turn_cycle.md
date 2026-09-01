@@ -51,7 +51,7 @@ Action Points (APs) represent the logistical capacity of an empire to issue comm
 
 At each full turn update, an empire receives Action Points in every star system where it maintains planetary colonies or naval crews. The points awarded depend upon planetary population ($P$), stationed ship count ($`N_{\text{ships}}`$), and governance status:
 
-$$\text{Raw APs} = \text{StochasticRound}\left(\frac{N_{\text{ships}}}{10} + 5 \log_{10}\left(1 + \max(0, P)\right)\right)$$
+$$\text{Raw APs} = \left\lfloor \frac{N_{\text{ships}}}{10} + 5 \log_{10}\left(1 + \max(0, P)\right) + \operatorname{Uniform}(0, 1) \right\rfloor$$
 
 #### Governance Efficiency Modifier
 Operating without an active, operational Government Center palace or docked flagship severely impairs bureaucratic coordination:

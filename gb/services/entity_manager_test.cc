@@ -128,10 +128,23 @@ void test_entity_manager_create_delete() {
   test::expect_ne(peek, nullptr);
   test::expect_eq(peek->fuel(), 100.0);
 
-  em.delete_ship(ship_num);
+  // Calling delete_ship without barrier throws DeletionBarrierRequiredError
+  test::expect_throws<DeletionBarrierRequiredError>(
+      [&]() { em.delete_ship(ship_num); });
+  std::println(
+      std::cout,
+      "  ✓ delete_ship() throws DeletionBarrierRequiredError without barrier");
+
+  {
+    auto barrier = em.create_deletion_barrier();
+    em.delete_ship(ship_num);
+    // Ship is still cached and peekable during barrier scope
+    test::expect_ne(em.peek_ship(ship_num), nullptr);
+  }
+  // After barrier exit, ship is deleted
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(ship_num); });
-  std::println(std::cout,
-               "  ✓ delete_ship() removes ship from cache and database");
+  std::println(std::cout, "  ✓ delete_ship() with DeletionBarrier removes ship "
+                          "from cache and database");
 }
 
 void test_entity_manager_read_only_access() {
@@ -882,6 +895,133 @@ void test_entity_manager_with_scoped_peeks() {
   std::println(std::cout, "  ✓ All with_* scoped peek helpers passed");
 }
 
+void test_deletion_barrier() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println(std::cout, "Test: EntityManager DeletionBarrier");
+
+  // 1. Mandatory barrier checks
+  test::expect_false(em.is_deletion_barrier_active());
+  test::expect_throws<DeletionBarrierRequiredError>(
+      [&]() { em.delete_ship(1); });
+  test::expect_throws<DeletionBarrierRequiredError>(
+      [&]() { em.delete_commod(1); });
+  std::println(std::cout, "  ✓ delete_ship() and delete_commod() throw "
+                          "DeletionBarrierRequiredError "
+                          "when inactive");
+
+  // 2. Anti-recursion / non-nesting
+  {
+    auto barrier = em.create_deletion_barrier();
+    test::expect_true(em.is_deletion_barrier_active());
+    test::expect_throws<std::logic_error>(
+        [&]() { auto nested = em.create_deletion_barrier(); });
+    std::println(std::cout,
+                 "  ✓ creating nested DeletionBarrier throws std::logic_error");
+  }
+  test::expect_false(em.is_deletion_barrier_active());
+
+  // 3. Deferred ship deletion and pointer stability
+  shipnum_t ship_id;
+  {
+    auto new_ship = em.create_ship();
+    ship_id = new_ship->number();
+    new_ship->fuel() = 50.0;
+  }
+  {
+    auto barrier = em.create_deletion_barrier();
+    const auto* peek1 = em.peek_ship(ship_id);
+    test::expect_ne(peek1, nullptr);
+    test::expect_eq(peek1->fuel(), 50.0);
+
+    em.delete_ship(ship_id);
+
+    // Still accessible and pointer is stable during barrier
+    const auto* peek2 = em.peek_ship(ship_id);
+    test::expect_eq(peek1, peek2);
+  }
+  // Evicted from cache and database after barrier exits
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(ship_id); });
+  std::println(
+      std::cout,
+      "  ✓ deferred ship deletion preserves cache and pointer stability until "
+      "barrier exit");
+
+  // 4. Deferred commodity deletion
+  int commod_id;
+  {
+    auto new_commod = em.create_commod();
+    commod_id = new_commod->id;
+    new_commod->amount = 123;
+  }
+  {
+    auto barrier = em.create_deletion_barrier();
+    const auto* peek1 = em.peek_commod(commod_id);
+    test::expect_ne(peek1, nullptr);
+    test::expect_eq(peek1->amount, 123);
+
+    em.delete_commod(commod_id);
+
+    const auto* peek2 = em.peek_commod(commod_id);
+    test::expect_eq(peek1, peek2);
+  }
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.peek_commod(commod_id); });
+  std::println(
+      std::cout,
+      "  ✓ deferred commod deletion preserves cache until barrier exit");
+
+  // 5. Active handle at drain time throws EntityInUseError
+  shipnum_t handle_ship_id;
+  {
+    auto new_ship = em.create_ship();
+    handle_ship_id = new_ship->number();
+  }
+  em.mutate_ship(handle_ship_id, [&](Ship&) {
+    // Inside mutate_ship callback, an EntityHandle is active on the stack
+    test::expect_throws<EntityInUseError>([&]() {
+      auto barrier = em.create_deletion_barrier();
+      em.delete_ship(handle_ship_id);
+      // Scope exit triggers ~DeletionBarrier -> refcount > 0 throws
+      // EntityInUseError
+    });
+  });
+  std::println(std::cout, "  ✓ DeletionBarrier drain throws EntityInUseError "
+                          "if active handles exist");
+
+  // 6. Safe inline deletion during ShipList iteration
+  shipnum_t s1, s2, s3;
+  {
+    auto ship1 = em.create_ship();
+    s1 = ship1->number();
+    ship1->alive() = true;
+
+    auto ship2 = em.create_ship();
+    s2 = ship2->number();
+    ship2->alive() = false;
+
+    auto ship3 = em.create_ship();
+    s3 = ship3->number();
+    ship3->alive() = true;
+  }
+  {
+    auto barrier = em.create_deletion_barrier();
+    for (const Ship& s : ShipList::readonly(em, ShipList::IterationType::All)) {
+      if (!s.alive()) {
+        em.delete_ship(s.number());
+      }
+    }
+  }
+  test::expect_ne(em.peek_ship(s1), nullptr);
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(s2); });
+  test::expect_ne(em.peek_ship(s3), nullptr);
+  std::println(std::cout, "  ✓ inline deletion during ShipList iteration "
+                          "successfully cleans up dead "
+                          "ships");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -905,6 +1045,7 @@ int main() {
   test_entity_manager_powers();
   test_entity_manager_create_ship();
   test_entity_manager_with_scoped_peeks();
+  test_deletion_barrier();
 
   std::println(std::cout, "\n✅ All EntityManager tests passed!");
   return 0;

@@ -226,21 +226,19 @@ EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
 }
 
 void EntityManager::delete_ship(shipnum_t num) {
-  // Remove from cache if present
-  ship_cache.erase(num);
-  ship_refcount.erase(num);
-
-  // Remove from database
-  ships.delete_ship(num);
+  if (!deletion_barrier_active_) {
+    throw DeletionBarrierRequiredError(std::format(
+        "delete_ship({}) called without an active DeletionBarrier", num));
+  }
+  pending_ship_deletions_.push_back(num);
 }
 
 void EntityManager::delete_commod(int id) {
-  // Remove from cache if present
-  commod_cache.erase(id);
-  commod_refcount.erase(id);
-
-  // Remove from database
-  commods.delete_commod(id);
+  if (!deletion_barrier_active_) {
+    throw DeletionBarrierRequiredError(std::format(
+        "delete_commod({}) called without an active DeletionBarrier", id));
+  }
+  pending_commod_deletions_.push_back(id);
 }
 
 EntityHandle<Commod> EntityManager::create_commod(const Commod& init_data) {
@@ -1070,4 +1068,83 @@ void EntityManager::DeferredWriteScope::rollback() {
 
 EntityManager::DeferredWriteScope EntityManager::create_deferred_write_scope() {
   return DeferredWriteScope(*this);
+}
+
+void EntityManager::drain_pending_deletions() {
+  for (shipnum_t num : pending_ship_deletions_) {
+    auto ref_it = ship_refcount.find(num);
+    if (ref_it != ship_refcount.end() && ref_it->second > 0) {
+      throw EntityInUseError(std::format(
+          "Cannot delete ship {}: still referenced by {} active handle(s)", num,
+          ref_it->second));
+    }
+    ship_cache.erase(num);
+    ship_refcount.erase(num);
+    ships.delete_ship(num);
+  }
+  pending_ship_deletions_.clear();
+
+  for (int id : pending_commod_deletions_) {
+    auto ref_it = commod_refcount.find(id);
+    if (ref_it != commod_refcount.end() && ref_it->second > 0) {
+      throw EntityInUseError(
+          std::format("Cannot delete commodity {}: still referenced by {} "
+                      "active handle(s)",
+                      id, ref_it->second));
+    }
+    commod_cache.erase(id);
+    commod_refcount.erase(id);
+    commods.delete_commod(id);
+  }
+  pending_commod_deletions_.clear();
+}
+
+// DeletionBarrier implementation
+EntityManager::DeletionBarrier::DeletionBarrier(EntityManager& em) : em_(&em) {
+  if (em_->deletion_barrier_active_) {
+    throw std::logic_error(
+        "A DeletionBarrier is already active on this EntityManager; nested "
+        "barriers are not permitted");
+  }
+  em_->deletion_barrier_active_ = true;
+}
+
+EntityManager::DeletionBarrier::~DeletionBarrier() noexcept(false) {
+  if (em_) {
+    em_->deletion_barrier_active_ = false;
+    if (std::uncaught_exceptions() > 0) {
+      em_->pending_ship_deletions_.clear();
+      em_->pending_commod_deletions_.clear();
+    } else {
+      em_->drain_pending_deletions();
+    }
+  }
+}
+
+EntityManager::DeletionBarrier::DeletionBarrier(
+    DeletionBarrier&& other) noexcept
+    : em_(std::exchange(other.em_, nullptr)) {}
+
+EntityManager::DeletionBarrier&
+EntityManager::DeletionBarrier::operator=(DeletionBarrier&& other) noexcept {
+  if (this != &other) {
+    if (em_) {
+      em_->deletion_barrier_active_ = false;
+      try {
+        if (std::uncaught_exceptions() == 0) {
+          em_->drain_pending_deletions();
+        } else {
+          em_->pending_ship_deletions_.clear();
+          em_->pending_commod_deletions_.clear();
+        }
+      } catch (...) {
+      }
+    }
+    em_ = std::exchange(other.em_, nullptr);
+  }
+  return *this;
+}
+
+EntityManager::DeletionBarrier EntityManager::create_deletion_barrier() {
+  return DeletionBarrier(*this);
 }

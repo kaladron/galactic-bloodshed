@@ -16,6 +16,21 @@ public:
       : std::runtime_error(msg) {}
 };
 
+// Exception thrown when an entity deletion is attempted without an active
+// DeletionBarrier
+export class DeletionBarrierRequiredError : public std::logic_error {
+public:
+  explicit DeletionBarrierRequiredError(const std::string& msg)
+      : std::logic_error(msg) {}
+};
+
+// Exception thrown when attempting to delete an entity that still has active
+// handles
+export class EntityInUseError : public std::logic_error {
+public:
+  explicit EntityInUseError(const std::string& msg) : std::logic_error(msg) {}
+};
+
 // Hash function for composite keys
 namespace std {
 template <>
@@ -173,6 +188,9 @@ export class EntityManager {
   int global_universe_refcount = 0;
   int server_state_refcount = 0;
   int deferred_write_depth_ = 0;
+  bool deletion_barrier_active_ = false;
+  std::vector<shipnum_t> pending_ship_deletions_;
+  std::vector<int> pending_commod_deletions_;
 
   // Internal handle access (used by mutate_* methods, EntityList, and
   // DeferredWriteScope) Throws EntityNotFoundError if entity not found
@@ -473,6 +491,25 @@ public:
 
   [[nodiscard]] DeferredWriteScope create_deferred_write_scope();
 
+  // DeletionBarrier RAII guard for safely deferring entity deletions
+  class DeletionBarrier {
+    EntityManager* em_{nullptr};
+
+  public:
+    explicit DeletionBarrier(EntityManager& em);
+    ~DeletionBarrier() noexcept(false);
+
+    DeletionBarrier(const DeletionBarrier&) = delete;
+    DeletionBarrier& operator=(const DeletionBarrier&) = delete;
+    DeletionBarrier(DeletionBarrier&& other) noexcept;
+    DeletionBarrier& operator=(DeletionBarrier&& other) noexcept;
+  };
+
+  [[nodiscard]] DeletionBarrier create_deletion_barrier();
+  [[nodiscard]] bool is_deletion_barrier_active() const noexcept {
+    return deletion_barrier_active_;
+  }
+
 private:
   // Release methods called by EntityHandle destructor
   void release_race(player_t player);
@@ -486,6 +523,8 @@ private:
   void release_server_state();
   void release_sectormap(starnum_t star, planetnum_t pnum);
   void release_ship_exam(ShipType ship_type);
+
+  void drain_pending_deletions();
 };
 
 export inline void record_vn_destruction_site(int& index1, int& index2,

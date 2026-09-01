@@ -15,6 +15,16 @@ constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {
     PlanetType::EARTH,   PlanetType::FOREST, PlanetType::DESERT,
     PlanetType::WATER,   PlanetType::MARS,   PlanetType::ICEBALL,
     PlanetType::GASGIANT};
+
+std::string racegen_db_path = PKGSTATEDIR "gb.db";
+}  // namespace
+
+void set_racegen_db_path(std::string_view path) {
+  racegen_db_path = path;
+}
+
+const std::string& get_racegen_db_path() {
+  return racegen_db_path;
 }
 
 int enroll_valid_race(Database& database);
@@ -22,7 +32,7 @@ int enroll_valid_race(Database& database);
 /*
  * Returns 0 if successfully enrolled, or 1 if failure. */
 int enroll_valid_race() {
-  Database database{PKGSTATEDIR "gb.db"};
+  Database database{racegen_db_path};
   return enroll_valid_race(database);
 }
 

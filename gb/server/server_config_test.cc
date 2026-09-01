@@ -46,6 +46,67 @@ void test_parse_server_args_custom_segments() {
   test::expect_eq(config.segments, 6);
 }
 
+void test_parse_server_args_flags() {
+  {
+    const char* argv[] = {"GB", "-p", "2025", "-d", "/tmp/custom.db"};
+    ServerConfig config = parse_server_args(5, argv);
+    test::expect_eq(config.port, 2025);
+    test::expect_eq(config.db_path, std::string("/tmp/custom.db"));
+    test::expect_false(config.show_help);
+    test::expect_false(config.has_error);
+  }
+  {
+    const char* argv[] = {"GB", "--port", "3000", "--database",
+                          "/var/data/gb.sqlite"};
+    ServerConfig config = parse_server_args(5, argv);
+    test::expect_eq(config.port, 3000);
+    test::expect_eq(config.db_path, std::string("/var/data/gb.sqlite"));
+    test::expect_false(config.show_help);
+    test::expect_false(config.has_error);
+  }
+  {
+    const char* argv[] = {"GB", "--port=4000", "--db=/opt/gb.db"};
+    ServerConfig config = parse_server_args(3, argv);
+    test::expect_eq(config.port, 4000);
+    test::expect_eq(config.db_path, std::string("/opt/gb.db"));
+    test::expect_false(config.show_help);
+    test::expect_false(config.has_error);
+  }
+}
+
+void test_parse_server_args_help() {
+  {
+    const char* argv[] = {"GB", "-h"};
+    ServerConfig config = parse_server_args(2, argv);
+    test::expect_true(config.show_help);
+    test::expect_false(config.has_error);
+  }
+  {
+    const char* argv[] = {"GB", "--help"};
+    ServerConfig config = parse_server_args(2, argv);
+    test::expect_true(config.show_help);
+    test::expect_false(config.has_error);
+  }
+}
+
+void test_parse_server_args_errors() {
+  {
+    const char* argv[] = {"GB", "-p"};
+    ServerConfig config = parse_server_args(2, argv);
+    test::expect_true(config.has_error);
+  }
+  {
+    const char* argv[] = {"GB", "--port", "abc"};
+    ServerConfig config = parse_server_args(3, argv);
+    test::expect_true(config.has_error);
+  }
+  {
+    const char* argv[] = {"GB", "--unknown"};
+    ServerConfig config = parse_server_args(2, argv);
+    test::expect_true(config.has_error);
+  }
+}
+
 void test_initialize_schedule_state_first_run() {
   ServerState state{};
   ServerConfig config{
@@ -132,6 +193,9 @@ int main() {
   test_parse_server_args_custom_port();
   test_parse_server_args_custom_update_time();
   test_parse_server_args_custom_segments();
+  test_parse_server_args_flags();
+  test_parse_server_args_help();
+  test_parse_server_args_errors();
   test_initialize_schedule_state_first_run();
   test_initialize_schedule_state_single_segment();
   test_initialize_schedule_state_catchup_past_segments();

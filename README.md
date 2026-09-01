@@ -54,6 +54,53 @@ cmake -S . -B build
 cmake --build build
 ```
 
+### Command-Line Utilities
+
+All utilities support `-h` / `--help` to show usage information and `-d` / `--database` / `--db` (or `-D` for `makeuniv`) to specify an alternative database location (defaulting to `/var/lib/galactic-bloodshed/gb.db` in release builds or `build/gamedata/gb.db` in debug builds).
+
+#### `GB` (Main Game Server)
+Starts the Galactic Bloodshed server.
+```bash
+./build/gb/GB [options] [port] [update_time] [segments]
+```
+* `-p, --port <port>`: Port to listen on (default: `2010`).
+* `-d, --database, --db <path>`: Path to SQLite database.
+* `-h, --help`: Display help message and exit.
+
+#### `makeuniv` (Universe Generator)
+Initializes and populates a new game universe database.
+```bash
+./build/gb/makeuniv [options]
+```
+* `-D, --database, --db <path>`: Path to SQLite database.
+* `-a`: Autoload star names from `star.list`.
+* `-b`: Autoload planet names from `planet.list`.
+* `-d`: Use all defaults and autoloaded names.
+* `-e <E>`: Percentage of stars that have no planets.
+* `-l <MIN>`: Minimum planets per system.
+* `-m <MAX>`: Maximum planets per system.
+* `-s <N>`: Total number of stars in the universe.
+* `-v`: Print generated planet maps and info.
+* `-w`: Print generated star info.
+* `-h, --help`: Display help message and exit.
+
+#### `enrol` (Race Enrollment CLI)
+Interactive CLI tool to enroll new player races into an existing game database.
+```bash
+./build/gb/enrol [options]
+```
+* `-d, --database, --db <path>`: Path to SQLite database.
+* `-h, --help`: Display help message and exit.
+
+#### `racegen` (Race Generator)
+Interactive race creation and point-budget design tool.
+```bash
+./build/gb/racegen [options]
+```
+* `-d, --database, --db <path>`: Path to SQLite database.
+* `-h, --help`: Display help message and exit.
+
+
 ### Code Formatting & Static Analysis
 
 #### Formatting with clang-format

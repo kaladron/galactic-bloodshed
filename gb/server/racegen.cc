@@ -45,32 +45,47 @@ static void save(int argc, const char* argv[]);
 static void send2(int argc, const char* argv[]);
 static void quit(int argc, const char** argv);
 
-int main(int, char**) {
-#ifdef PRIV
-  int port;
-
-  /* Check command line syntax */
-
-  if (argc > 1) {
-    if ((argv[1][0] == '-') && (isserver = (argv[1][1] == 's'))) {
-      if (argc > 2)
-        port = std::atoi(argv[2]);
-      else
-        port = 2020;
-      if (port == 0) {
-        printf("Syntax: racegen [-s [port]]\n");
-        std::exit(0);
+int main(int argc, char** argv) {
+  for (int i = 1; i < argc; ++i) {
+    std::string_view arg = argv[i];
+    if (arg == "-h" || arg == "--help") {
+      std::println(std::cout, "Usage: racegen [options]");
+      std::println(std::cout, "");
+      std::println(std::cout, "Options:");
+      std::println(std::cout,
+                   "  -d, --database, --db <path> Path to SQLite database "
+                   "(default: {}gb.db)",
+                   PKGSTATEDIR);
+      std::println(std::cout,
+                   "  -h, --help                  Display this help message "
+                   "and exit");
+      return 0;
+    }
+    if (arg == "-d" || arg == "--database" || arg == "--db") {
+      if (i + 1 >= argc) {
+        std::println(std::cerr, "Error: Option \"{}\" requires an argument.",
+                     arg);
+        return 1;
       }
+      set_racegen_db_path(argv[++i]);
+    } else if (arg.starts_with("--database=")) {
+      set_racegen_db_path(arg.substr(std::string_view("--database=").size()));
+    } else if (arg.starts_with("--db=")) {
+      set_racegen_db_path(arg.substr(std::string_view("--db=").size()));
     } else {
-      printf("Syntax: racegen [-s [port]]\n");
-      return (0);
+      std::println(std::cerr, "Unknown option \"{}\".", arg);
+      std::println(std::cerr,
+                   "Usage: racegen [-d|--database|--db <path>] [-h|--help]");
+      return 1;
     }
   }
 
+#ifdef PRIV
   if (isserver) { /* Server version of racegen */
     int sockfd;
     socklen_t clilen;
     struct sockaddr_in cli_addr, serv_addr;
+    int port = 2020;
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       fprintf(stderr, "server: can't open stream socket");

@@ -52,8 +52,44 @@ static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
 
 }  // namespace GB::enrol
 
-int main() {
+int main(int argc, char* argv[]) {
   using namespace GB::enrol;
+
+  std::string db_path = PKGSTATEDIR "gb.db";
+
+  for (int i = 1; i < argc; ++i) {
+    std::string_view arg = argv[i];
+    if (arg == "-h" || arg == "--help") {
+      std::println(std::cout, "Usage: enrol [options]");
+      std::println(std::cout, "");
+      std::println(std::cout, "Options:");
+      std::println(std::cout,
+                   "  -d, --database, --db <path> Path to SQLite database "
+                   "(default: {}gb.db)",
+                   PKGSTATEDIR);
+      std::println(std::cout,
+                   "  -h, --help                  Display this help message "
+                   "and exit");
+      return 0;
+    }
+    if (arg == "-d" || arg == "--database" || arg == "--db") {
+      if (i + 1 >= argc) {
+        std::println(std::cerr, "Error: Option \"{}\" requires an argument.",
+                     arg);
+        return 1;
+      }
+      db_path = argv[++i];
+    } else if (arg.starts_with("--database=")) {
+      db_path = arg.substr(std::string_view("--database=").size());
+    } else if (arg.starts_with("--db=")) {
+      db_path = arg.substr(std::string_view("--db=").size());
+    } else {
+      std::println(std::cerr, "Unknown option \"{}\".", arg);
+      std::println(std::cerr,
+                   "Usage: enrol [-d|--database|--db <path>] [-h|--help]");
+      return 1;
+    }
+  }
 
   int pnum = 0;
   int star = 0;
@@ -66,7 +102,7 @@ int main() {
   unsigned char not_found[PlanetType::DESERT + 1] = {};  // Zero-initialized
 
   // Create Database and EntityManager for dependency injection
-  Database database{PKGSTATEDIR "gb.db"};
+  Database database{db_path};
   EntityManager entity_manager{database};
 
   // Create JsonStore and repositories for new entity creation

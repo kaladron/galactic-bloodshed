@@ -37,6 +37,7 @@ static std::vector<Star> stars;
 int main(int argc, char* argv[]) {
   int c;
   int i;
+  std::string db_path = PKGSTATEDIR "gb.db";
 
   /*
    * Initialize: */
@@ -44,10 +45,24 @@ int main(int argc, char* argv[]) {
 
   /*
    * Read the arguments for values: */
-  for (i = 1; i < argc; i++)
-    if (argv[i][0] != '-')
+  for (i = 1; i < argc; i++) {
+    std::string_view arg = argv[i];
+    if (arg == "-h" || arg == "--help") {
       goto usage;
-    else
+    }
+    if (arg == "--database" || arg == "--db" || arg == "-D") {
+      if (i + 1 >= argc) {
+        std::println(std::cerr, "Option \"{}\" requires an argument.", arg);
+        return 1;
+      }
+      db_path = argv[++i];
+    } else if (arg.starts_with("--database=")) {
+      db_path = arg.substr(std::string_view("--database=").size());
+    } else if (arg.starts_with("--db=")) {
+      db_path = arg.substr(std::string_view("--db=").size());
+    } else if (argv[i][0] != '-') {
+      goto usage;
+    } else {
       switch (argv[i][1]) {
         case 'a':
           autoname_star = 1;
@@ -56,15 +71,31 @@ int main(int argc, char* argv[]) {
           autoname_plan = 1;
           break;
         case 'e':
+          if (i + 1 >= argc) {
+            std::println(std::cerr, "Option \"-e\" requires an argument.");
+            return 1;
+          }
           planetlesschance = std::atoi(argv[++i]);
           break;
         case 'l':
+          if (i + 1 >= argc) {
+            std::println(std::cerr, "Option \"-l\" requires an argument.");
+            return 1;
+          }
           minplanets = std::atoi(argv[++i]);
           break;
         case 'm':
+          if (i + 1 >= argc) {
+            std::println(std::cerr, "Option \"-m\" requires an argument.");
+            return 1;
+          }
           maxplanets = std::atoi(argv[++i]);
           break;
         case 's':
+          if (i + 1 >= argc) {
+            std::println(std::cerr, "Option \"-s\" requires an argument.");
+            return 1;
+          }
           nstars = std::atoi(argv[++i]);
           break;
         case 'v':
@@ -87,29 +118,41 @@ int main(int argc, char* argv[]) {
           std::println(std::cout, "Unknown option \"{}\".", argv[i]);
 usage:
           std::println(std::cout, "");
+          std::println(std::cout,
+                       "Usage: makeuniv [-a] [-b] [-d] [-e E] [-l MIN] [-m "
+                       "MAX] [-s N] [-v] "
+                       "[-w] [-D|--database|--db <path>] [-h|--help]");
+          std::println(std::cout,
+                       "  -a                         Autoload star names.");
+          std::println(std::cout,
+                       "  -b                         Autoload planet names.");
+          std::println(std::cout, "  -d                         Use all "
+                                  "defaults and autoloaded names.");
           std::println(
               std::cout,
-              "Usage: makeuniv [-a] [-b] [-e E] [-l MIN] [-m MAX] [-s N] [-v] "
-              "[-w]");
-          std::println(std::cout, "  -a      Autoload star names.");
-          std::println(std::cout, "  -b      Autoload planet names.");
-          std::println(std::cout,
-                       "  -d      Use all defauls and autoloaded names.");
-          std::println(std::cout,
-                       "  -e E    Make E% of stars have no planets.");
+              "  -e E                       Make E% of stars have no planets.");
+          std::println(std::cout, "  -l MIN                     Other systems "
+                                  "will have at least MIN planets.");
+          std::println(std::cout, "  -m MAX                     Other systems "
+                                  "will have at most  MAX planets.");
           std::println(
               std::cout,
-              "  -l MIN  Other systems will have at least MIN planets.");
+              "  -s S                       The universe will have S stars.");
+          std::println(std::cout, "  -v                         Print info and "
+                                  "map of planets generated.");
           std::println(
               std::cout,
-              "  -m MAX  Other systems will have at most  MAX planets.");
-          std::println(std::cout, "  -s S    The universe will have S stars.");
+              "  -w                         Print info on stars generated.");
           std::println(std::cout,
-                       "  -v      Print info and map of planets generated.");
-          std::println(std::cout, "  -w      Print info on stars generated.");
+                       "  -D, --database, --db <path> Path to SQLite database "
+                       "(default: " PKGSTATEDIR "gb.db)");
+          std::println(std::cout, "  -h, --help                 Display this "
+                                  "help message and exit.");
           std::println(std::cout, "");
           std::exit(0);
       }
+    }
+  }
 
   /*
    * Get values for all the switches that still don't have good values. */
@@ -160,7 +203,7 @@ usage:
   Sdata.numstars = nstars;
 
   // Create database and initialize schema
-  Database db(PKGSTATEDIR "gb.db");
+  Database db(db_path);
   initialize_schema(db);
 
   for (starnum_t star = 0; star < nstars; star++) {

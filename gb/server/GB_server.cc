@@ -16,8 +16,18 @@ import gb.services;
 import gb.server;
 
 int main(int argc, char** argv) {
+  ServerConfig config = parse_server_args(argc, argv);
+  if (config.show_help) {
+    print_server_usage(argv[0]);
+    return 0;
+  }
+  if (config.has_error) {
+    print_server_usage(argv[0]);
+    return 1;
+  }
+
   // Create Database and EntityManager for dependency injection
-  Database database{PKGSTATEDIR "gb.db"};
+  Database database{config.db_path};
   EntityManager entity_manager{database};
 
   std::println(std::cout, "      ***   Galactic Bloodshed ver {0} ***",
@@ -31,13 +41,13 @@ int main(int argc, char** argv) {
     std::println(std::cout, "      The segment password is '%s'.",
                  SEGMENT_PASSWORD);
   }
-  ServerConfig config = parse_server_args(argc, argv);
   entity_manager.mutate_server_state([&](ServerState& state) {
     initialize_schedule_state(state, config, clk);
   });
 
   entity_manager.with_server_state([&](const ServerState& state) {
     std::cerr << "      Port " << config.port << '\n';
+    std::cerr << "      Database " << config.db_path << '\n';
     std::cerr << "      " << config.update_time << " minutes between updates"
               << '\n';
     std::cerr << "      " << state.segments << " segments/update" << '\n';

@@ -215,11 +215,30 @@ void test_find_suitable_enrol_planet() {
   std::println(std::cout, "  ✓ find_suitable_enrol_planet exact search passed");
 }
 
+void test_racegen_db_path_config() {
+  std::println(std::cout, "Test: racegen database path configuration");
+
+  // Default path should end with gb.db
+  test::expect_contains(get_racegen_db_path(), "gb.db");
+
+  // Setting custom path
+  set_racegen_db_path("/custom/path/to/game.sqlite");
+  test::expect_eq(get_racegen_db_path(),
+                  std::string("/custom/path/to/game.sqlite"));
+
+  // Reset back to default
+  set_racegen_db_path(PKGSTATEDIR "gb.db");
+  test::expect_eq(get_racegen_db_path(), std::string(PKGSTATEDIR "gb.db"));
+
+  std::println(std::cout, "  ✓ racegen database path configuration passed");
+}
+
 int main() {
   test_enroll_first_race_god_requirement();
   test_enroll_max_players();
   test_enroll_no_free_planet_type();
   test_find_suitable_enrol_planet();
+  test_racegen_db_path_config();
 
   std::println(std::cout, "\n✅ All enroll tests passed!");
   return 0;

@@ -209,5 +209,7 @@ int cost_of_race();
 void modify_print_loop(int level);
 
 int enroll_valid_race();
+void set_racegen_db_path(std::string_view path);
+const std::string& get_racegen_db_path();
 
 #endif  // RACEGEN_H

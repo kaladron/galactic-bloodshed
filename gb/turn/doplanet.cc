@@ -277,7 +277,12 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
   int destroyed = berserker_bombard(entity_manager, ship, planet, race);
   if (destroyed == 0) {
     const auto& dest_star = *entity_manager.peek_star(ship.storbits());
-    ship.destpnum() = int_rand(0, dest_star.numplanets() - 1);
+    if (auto random_planet = dest_star.get_random_planet_index()) {
+      ship.destpnum() = *random_planet;
+    } else {
+      ship.destpnum() = 0;
+      ship.whatdest() = ScopeLevel::LEVEL_STAR;
+    }
     return false;
   }
 

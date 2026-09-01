@@ -570,6 +570,25 @@ void test_execute_berserker_bombardment() {
                         smap.get(Coordinates{5, 5}).set_owner(0);
                       });
   test::expect_false(execute_berserker_bombardment(em, ship, planet));
+
+  // 4. Star with 0 planets safely sets destination to LEVEL_STAR
+  star_struct empty_star_data{};
+  empty_star_data.star_id = 1;
+  empty_star_data.pnames = {};
+  star_repo.save(empty_star_data);
+
+  Planet empty_planet = createTestPlanet();
+  empty_planet.star_id() = 1;
+  empty_planet.planet_order() = 0;
+  planet_repo.save(empty_planet);
+
+  ship.storbits() = 1;
+  ship.deststar() = 1;
+  ship.destpnum() = 0;
+  ship.pnumorbits() = 0;
+  test::expect_false(execute_berserker_bombardment(em, ship, empty_planet));
+  test::expect_eq(ship.whatdest(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(ship.destpnum(), 0);
 }
 
 void test_refuel_gasgiant_orbiters() {

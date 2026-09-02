@@ -294,9 +294,9 @@ export struct ship_struct {
   bool merchant{false};                     ///< Commercial trade vessel status
   ActiveBattery guns{ActiveBattery::NONE};  ///< Active gun battery mode
   weapon_power_t primary{0};                ///< Primary battery weapon payload
-  guntype_t primtype{GTYPE_NONE};           ///< Primary gun caliber type
-  weapon_power_t secondary{0};    ///< Secondary battery weapon payload
-  guntype_t sectype{GTYPE_NONE};  ///< Secondary gun caliber type
+  guntype_t primtype{guntype_t::NONE};      ///< Primary gun caliber type
+  weapon_power_t secondary{0};         ///< Secondary battery weapon payload
+  guntype_t sectype{guntype_t::NONE};  ///< Secondary gun caliber type
 
   hangar_t hanger{0};      ///< Current docked fighters / payload count
   hangar_t max_hanger{0};  ///< Maximum hangar capacity
@@ -3561,18 +3561,18 @@ struct std::formatter<T> {
 };
 
 /// Get display character for gun caliber type
-/// \param caliber Gun caliber type (GTYPE_NONE=0, GTYPE_LIGHT=1,
-/// GTYPE_MEDIUM=2, GTYPE_HEAVY=3)
+/// \param caliber Gun caliber type (guntype_t::NONE=0, guntype_t::LIGHT=1,
+/// guntype_t::MEDIUM=2, guntype_t::HEAVY=3)
 /// \return Character representing caliber ('L', 'M', 'H', or ' ' for none)
 export constexpr char caliber_char(guntype_t caliber) {
   switch (caliber) {
-    case GTYPE_LIGHT:
+    case guntype_t::LIGHT:
       return 'L';
-    case GTYPE_MEDIUM:
+    case guntype_t::MEDIUM:
       return 'M';
-    case GTYPE_HEAVY:
+    case guntype_t::HEAVY:
       return 'H';
-    case GTYPE_NONE:
+    case guntype_t::NONE:
     default:
       return ' ';
   }

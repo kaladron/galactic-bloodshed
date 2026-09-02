@@ -48,7 +48,7 @@ void test_mech_attack_people() {
   ship.destruct() = 100;
   ship.guns() = PRIMARY;
   ship.primary() = 10;
-  ship.primtype() = GTYPE_HEAVY;
+  ship.primtype() = guntype_t::HEAVY;
 
   population_t civ = 100;
   population_t mil = 50;

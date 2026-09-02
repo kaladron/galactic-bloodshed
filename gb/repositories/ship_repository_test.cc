@@ -65,9 +65,9 @@ int main() {
   test_data.max_hanger = 20;
   test_data.guns = ActiveBattery::PRIMARY;
   test_data.primary = 0;  // No primary weapon
-  test_data.primtype = GTYPE_NONE;
+  test_data.primtype = guntype_t::NONE;
   test_data.secondary = 0;  // No secondary weapon
-  test_data.sectype = GTYPE_NONE;
+  test_data.sectype = guntype_t::NONE;
 
   test_data.navigate.on = true;
   test_data.navigate.speed = 4;

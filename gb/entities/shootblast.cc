@@ -96,18 +96,18 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
     }
 
     switch (caliber) {
-      case GTYPE_LIGHT:
+      case guntype_t::LIGHT:
         return "light guns";
-      case GTYPE_MEDIUM:
+      case guntype_t::MEDIUM:
         return "medium guns";
-      case GTYPE_HEAVY:
+      case guntype_t::HEAVY:
         return "heavy guns";
-      case GTYPE_NONE:
+      case guntype_t::NONE:
         return "pea-shooter";
     }
   }();
 
-  if (caliber == GTYPE_NONE) return std::nullopt;
+  if (caliber == guntype_t::NONE) return std::nullopt;
 
   auto [damage, damage_msg] = do_damage(
       em, attacker.owner(), target, (double)attacker.tech(), cew_strength, hits,
@@ -130,11 +130,11 @@ shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship, int strength) {
 
   int hit_probability;
   int hits = Num_hits(0.0, false, strength, race.tech, 0, evade, 0, speed, 0,
-                      body, GTYPE_MEDIUM, 1, &hit_probability);
+                      body, guntype_t::MEDIUM, 1, &hit_probability);
 
   auto [damage, damage_msg] =
       do_damage(em, race.Playernum, ship, race.tech, strength, hits, 0,
-                GTYPE_MEDIUM, 0.0, "medium guns", hit_probability);
+                guntype_t::MEDIUM, 0.0, "medium guns", hit_probability);
 
   std::string short_msg = std::format(
       "{} [{}] {} {}\n", dispshiploc(em, ship), race.Playernum.value,
@@ -162,10 +162,10 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   PlayerVector<bool, MAXPLAYERS> nuked{};
 
   double r = .4 * strength;
-  if (caliber ==
-      GTYPE_NONE) { /* figure out the appropriate gun caliber if not given*/
+  if (caliber == guntype_t::NONE) {
+    /* figure out the appropriate gun caliber if not given*/
     if (ship.fire_laser())
-      caliber = GTYPE_LIGHT;
+      caliber = guntype_t::LIGHT;
     else
       switch (ship.guns()) {
         case PRIMARY:
@@ -175,7 +175,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
           caliber = ship.sectype();
           break;
         default:
-          caliber = GTYPE_LIGHT;
+          caliber = guntype_t::LIGHT;
       }
   }
 
@@ -463,7 +463,7 @@ static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
 std::pair<int, int> hit_odds(double range, double tech, int fdam, bool fev,
                              bool tev, speed_t fspeed, speed_t tspeed,
                              ship_size_t body, guntype_t caliber, int defense) {
-  if (caliber == GTYPE_NONE) {
+  if (caliber == guntype_t::NONE) {
     return {0, 0};
   }
 
@@ -501,13 +501,13 @@ double tele_range(ShipType type, double tech) {
 }
 
 guntype_t current_caliber(const Ship& ship) {
-  if (ship.laser() && ship.fire_laser()) return GTYPE_LIGHT;
-  if (ship.type() == ShipType::STYPE_MINE) return GTYPE_LIGHT;
-  if (ship.type() == ShipType::STYPE_MISSILE) return GTYPE_HEAVY;
+  if (ship.laser() && ship.fire_laser()) return guntype_t::LIGHT;
+  if (ship.type() == ShipType::STYPE_MINE) return guntype_t::LIGHT;
+  if (ship.type() == ShipType::STYPE_MISSILE) return guntype_t::HEAVY;
   if (ship.guns() == PRIMARY) return ship.primtype();
   if (ship.guns() == SECONDARY) return ship.sectype();
 
-  return GTYPE_NONE;
+  return guntype_t::NONE;
 }
 
 static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
@@ -573,8 +573,8 @@ std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage) {
   for (auto i = 1; i <= ship.secondary(); i++)
     secgundamage += success(damage);
   ship.secondary() -= secgundamage;
-  if (!ship.primary()) ship.primtype() = GTYPE_NONE;
-  if (!ship.secondary()) ship.sectype() = GTYPE_NONE;
+  if (!ship.primary()) ship.primtype() = guntype_t::NONE;
+  if (!ship.secondary()) ship.sectype() = guntype_t::NONE;
   return {casualties, casualties1, primgundamage, secgundamage};
 }
 

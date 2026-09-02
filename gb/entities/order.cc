@@ -732,31 +732,31 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
 
   if (ship.guns() == PRIMARY) {
     switch (ship.primtype()) {
-      case GTYPE_LIGHT:
+      case guntype_t::LIGHT:
         buffer << "/lgt primary";
         break;
-      case GTYPE_MEDIUM:
+      case guntype_t::MEDIUM:
         buffer << "/med primary";
         break;
-      case GTYPE_HEAVY:
+      case guntype_t::HEAVY:
         buffer << "/hvy primary";
         break;
-      case GTYPE_NONE:
+      case guntype_t::NONE:
         buffer << "/none";
         break;
     }
   } else if (ship.guns() == SECONDARY) {
     switch (ship.sectype()) {
-      case GTYPE_LIGHT:
+      case guntype_t::LIGHT:
         buffer << "/lgt secondary";
         break;
-      case GTYPE_MEDIUM:
+      case guntype_t::MEDIUM:
         buffer << "/med secndry";
         break;
-      case GTYPE_HEAVY:
+      case guntype_t::HEAVY:
         buffer << "/hvy secndry";
         break;
-      case GTYPE_NONE:
+      case guntype_t::NONE:
         buffer << "/none";
         break;
     }

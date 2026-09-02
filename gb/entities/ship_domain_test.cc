@@ -327,9 +327,9 @@ void test_dynamic_base_mass() {
       .size = 50,
       .base_mass = 9999.0,  // Stored legacy value should be completely ignored
       .primary = 4,
-      .primtype = GTYPE_MEDIUM,
+      .primtype = guntype_t::MEDIUM,
       .secondary = 2,
-      .sectype = GTYPE_LIGHT,
+      .sectype = guntype_t::LIGHT,
       .max_hanger = 10,
   };
   Ship ship{sdata};
@@ -361,11 +361,6 @@ void test_gun_caliber_domain() {
   test::expect_eq(gun_caliber(guntype_t::LIGHT), 1u);
   test::expect_eq(gun_caliber(guntype_t::MEDIUM), 2u);
   test::expect_eq(gun_caliber(guntype_t::HEAVY), 3u);
-
-  test::expect_eq(gun_caliber(GTYPE_NONE), 0u);
-  test::expect_eq(gun_caliber(GTYPE_LIGHT), 1u);
-  test::expect_eq(gun_caliber(GTYPE_MEDIUM), 2u);
-  test::expect_eq(gun_caliber(GTYPE_HEAVY), 3u);
 
   test::expect_eq(caliber_char(guntype_t::NONE), ' ');
   test::expect_eq(caliber_char(guntype_t::LIGHT), 'L');

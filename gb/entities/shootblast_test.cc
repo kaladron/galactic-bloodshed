@@ -132,19 +132,19 @@ void test_shoot_ship_to_planet_invalid_cases() {
 
   // Test 1: Zero strength -> returns std::nullopt
   auto res1 = shoot_ship_to_planet(em, ship, planet, 0, Coordinates{0, 0}, smap,
-                                   0, GTYPE_NONE);
+                                   0, guntype_t::NONE);
   test::expect_false(res1.has_value());
 
   // Test 2: Dead ship -> returns std::nullopt
   ship.alive() = false;
   auto res2 = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{0, 0},
-                                   smap, 0, GTYPE_NONE);
+                                   smap, 0, guntype_t::NONE);
   test::expect_false(res2.has_value());
 
   // Test 3: Invalid planet coords -> returns std::nullopt
   ship.alive() = true;
   auto res3 = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{10, 10},
-                                   smap, 0, GTYPE_NONE);
+                                   smap, 0, guntype_t::NONE);
   test::expect_false(res3.has_value());
 
   std::println(std::cout, "  ✓ shoot_ship_to_planet invalid cases passed");
@@ -203,7 +203,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   ship.size() = 10;
 
   auto res = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{1, 1}, smap,
-                                  0, GTYPE_HEAVY);
+                                  0, guntype_t::HEAVY);
   test::expect_true(res.has_value());
   test::expect_ge(res->sectors_destroyed, 0);
   test::expect_false(res->short_message.empty());

@@ -24,7 +24,7 @@ export std::optional<BombardResult>
 shoot_ship_to_planet(EntityManager& em, const Ship& attacker, Planet& target,
                      int strength, Coordinates target_sector,
                      SectorMap& sector_map, int ignore,
-                     guntype_t caliber = GTYPE_NONE);
+                     guntype_t caliber = guntype_t::NONE);
 export std::pair<int, int> hit_odds(double range, double tech, int fdam,
                                     bool fev, bool tev, speed_t fspeed,
                                     speed_t tspeed, ship_size_t body,

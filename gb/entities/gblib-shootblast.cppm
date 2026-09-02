@@ -27,8 +27,8 @@ shoot_ship_to_planet(EntityManager& em, const Ship& attacker, Planet& target,
                      guntype_t caliber = GTYPE_NONE);
 export std::pair<int, int> hit_odds(double range, double tech, int fdam,
                                     bool fev, bool tev, speed_t fspeed,
-                                    speed_t tspeed, int body, guntype_t caliber,
-                                    int defense);
+                                    speed_t tspeed, ship_size_t body,
+                                    guntype_t caliber, int defense);
 export double tele_range(ShipType tech_level, double base_range);
 export guntype_t current_caliber(const Ship& ship);
 export std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage);

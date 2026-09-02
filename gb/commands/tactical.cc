@@ -309,7 +309,7 @@ void ShipTacticalItem::add_tactical_target_row(
   }
 
   // Calculate combat parameters using firer's data and target's data
-  int body = s.size();
+  ship_size_t body = s.size();
   auto defense = getdefense(g.entity_manager, s);
   auto [prob, factor] =
       hit_odds(dist, firer.tech, firer.damage, firer.evade, tev, firer.speed,

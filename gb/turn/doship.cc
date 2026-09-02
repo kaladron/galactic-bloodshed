@@ -410,7 +410,7 @@ bool process_ship_supernova(Ship& ship, const Star& star,
     return true;
   }
   auto dmg =
-      5L * star.nova_stage() / ((ship.effective_armor() + 1) * state.segments);
+      5UL * star.nova_stage() / ((ship.effective_armor() + 1) * state.segments);
   ship.apply_damage(static_cast<damage_t>(dmg));
   if (ship.damage() >= 100) {
     em.kill_ship(ship.owner(), ship);

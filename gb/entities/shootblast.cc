@@ -14,12 +14,13 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
           int strength, int hits, int defense, guntype_t caliber, double range,
           const std::string_view weapon, int hit_probability);
 
-static std::tuple<bool, speed_t, int> ship_disposition(const Ship& ship);
+static std::tuple<bool, speed_t, ship_size_t>
+ship_disposition(const Ship& ship);
 static int CEW_hit(double dist, int cew_range);
 static int Num_hits(double dist, bool focus, int strength, double tech,
                     int damage, bool fevade, bool tevade, speed_t fspeed,
-                    speed_t tspeed, int tbody, guntype_t caliber, int defense,
-                    int* hit_probability);
+                    speed_t tspeed, ship_size_t tbody, guntype_t caliber,
+                    int defense, int* hit_probability);
 static int cew_hit_odds(double dist, int cew_range);
 static std::string do_critical_hits(int penetrate, Ship& ship, int* hits,
                                     int* damage, guntype_t caliber);
@@ -280,12 +281,15 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
   double fac = (2. / 3.14159265) *
                std::atan((double)(5 * (tech + 1.0) / (ship.tech() + 1.0)));
 
-  int arm = std::max(0, static_cast<int>(ship.effective_armor()) - hits / 5);
-  int body = ship.shipbody();
+  const auto armor_reduction = static_cast<armor_t>(hits / 5);
+  const armor_t arm = ship.effective_armor() > armor_reduction
+                          ? ship.effective_armor() - armor_reduction
+                          : 0;
+  const auto body = std::max<ship_size_t>(1, ship.shipbody());
 
   int penetrate = 0;
   double r = 1.0;
-  for (int i = 1; i <= arm; i++)
+  for (armor_t i = 1; i <= arm; i++)
     r *= fac;
 
   for (int i = 1; i <= hits; i++) /* check to see how many hits penetrate */
@@ -327,7 +331,8 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
   double fac = p_factor(tech, ship.tech());
   int arm = std::max(0, static_cast<int>(ship.effective_armor()) + defense -
                             hits / 5);
-  double body = std::sqrt((double)(0.1 * ship.shipbody()));
+  const auto body_size = std::max<ship_size_t>(1, ship.shipbody());
+  double body = std::sqrt(0.1 * static_cast<double>(body_size));
 
   int critdam = 0;
   int crithits = 0;
@@ -395,10 +400,11 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
  * @param ship The ship for which the disposition is being determined.
  * @return A tuple containing the evade value, speed, and body size of the ship.
  */
-static std::tuple<bool, speed_t, int> ship_disposition(const Ship& ship) {
+static std::tuple<bool, speed_t, ship_size_t>
+ship_disposition(const Ship& ship) {
   bool evade = false;
   speed_t speed = 0;
-  int body = ship.size();
+  ship_size_t body = ship.size();
   if (ship.active() && !ship.docked() &&
       (ship.whatdest() || ship.navigate().on)) {
     evade = ship.protect().evade;
@@ -419,7 +425,7 @@ static int CEW_hit(double dist, int cew_range) {
 
 static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
                     bool fev, bool tev, speed_t fspeed, speed_t tspeed,
-                    int body, guntype_t caliber, int defense,
+                    ship_size_t body, guntype_t caliber, int defense,
                     int* hit_probability) {
   auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
                                  body, caliber, defense);
@@ -459,8 +465,8 @@ static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
  * (percentage), and the second element is the computed range factor.
  */
 std::pair<int, int> hit_odds(double range, double tech, int fdam, bool fev,
-                             bool tev, speed_t fspeed, speed_t tspeed, int body,
-                             guntype_t caliber, int defense) {
+                             bool tev, speed_t fspeed, speed_t tspeed,
+                             ship_size_t body, guntype_t caliber, int defense) {
   if (caliber == GTYPE_NONE) {
     return {0, 0};
   }
@@ -512,10 +518,10 @@ static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
                                     int* critdam, guntype_t caliber) {
   std::stringstream critmsg;
   *critdam = 0;
-  const auto eff_size = std::max(1, static_cast<int>(ship.shipbody()) /
-                                        static_cast<int>(gun_caliber(caliber)));
+  const unsigned int caliber_val = std::max(1u, gun_caliber(caliber));
+  const auto eff_size = std::max<ship_size_t>(1, ship.shipbody() / caliber_val);
   for (auto i = 1; i <= penetrate; i++)
-    if (!int_rand(0, eff_size - 1)) {
+    if (!int_rand(0, static_cast<int>(eff_size) - 1)) {
       *crithits += 1;
       int dam = int_rand(0, 100);
       *critdam += dam;

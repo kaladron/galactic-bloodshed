@@ -215,11 +215,100 @@ void test_shoot_ship_to_planet_valid_attack() {
                res->sectors_destroyed);
 }
 
+void test_hit_odds_sizing() {
+  std::println(std::cout, "Test: hit_odds sizing with zero and extreme body");
+
+  // Caliber NONE always returns 0 odds
+  auto [odds_none, factor_none] =
+      hit_odds(100.0, 10.0, 0, false, false, 0, 0, 0, guntype_t::NONE, 0);
+  test::expect_eq(odds_none, 0);
+  test::expect_eq(factor_none, 0);
+
+  // Zero body size should calculate cleanly without NaN or division by zero
+  auto [odds_zero, factor_zero] =
+      hit_odds(100.0, 10.0, 0, false, false, 0, 0, 0, guntype_t::LIGHT, 0);
+  test::expect_ge(odds_zero, 0);
+  test::expect_ge(factor_zero, 0);
+
+  // Standard body size
+  auto [odds_std, factor_std] =
+      hit_odds(100.0, 10.0, 0, false, false, 0, 0, 100, guntype_t::LIGHT, 0);
+  test::expect_ge(odds_std, 0);
+  test::expect_gt(factor_std, 0);
+
+  // Huge body size
+  auto [odds_huge, factor_huge] = hit_odds(100.0, 10.0, 0, false, false, 0, 0,
+                                           1'000'000, guntype_t::LIGHT, 0);
+  test::expect_ge(odds_huge, odds_std);
+  test::expect_gt(factor_huge, factor_std);
+
+  std::println(std::cout, "  ✓ hit_odds sizing passed");
+}
+
+void test_zero_body_ship_combat() {
+  std::println(std::cout, "Test: zero-body ship combat safety");
+
+  Database db(":memory:");
+  initialize_schema(db);
+  JsonStore store(db);
+  EntityManager em(db);
+
+  star_struct ss{};
+  ss.star_id = 0;
+  ss.name = "Sol";
+  ss.pnames.emplace_back("Terra");
+  Star star(ss);
+  StarRepository(store).save(star);
+
+  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
+  planet.star_id() = 0;
+  planet.planet_order() = 0;
+  PlanetRepository(store).save(planet);
+
+  Race race{};
+  race.Playernum = player_t{1};
+  race.name = "Attacker";
+  race.tech = 50.0;
+  RaceRepository(store).save(race);
+
+  // Target ship with 0 size and 0 armor (shipbody() == 0, effective_armor()
+  // == 0)
+  Ship ship{};
+  ship.number() = 1;
+  ship.owner() = player_t{2};
+  ship.type() = ShipType::OTYPE_CANIST;
+  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship.storbits() = 0;
+  ship.pnumorbits() = 0;
+  ship.alive() = true;
+  ship.on() = true;
+  ship.tech() = 10.0;
+  ship.size() = 0;
+  ship.max_hanger() = 0;
+  ship.armor() = 0;
+  ship.mass() = 1;
+
+  test::expect_eq(ship.shipbody(), 0u);
+  test::expect_eq(ship.effective_armor(), 0u);
+
+  // Attack zero-body ship - must not divide by zero or crash
+  auto res = shoot_planet_to_ship(em, race, ship, 25);
+  test::expect_true(res.has_value());
+  auto [damage, short_msg, long_msg] = *res;
+  test::expect_ge(damage, 0);
+  test::expect_false(short_msg.empty());
+
+  std::println(std::cout, "  ✓ zero-body ship combat passed (damage={})",
+               damage);
+}
+
 int main() {
   test_shoot_planet_to_ship_invalid_cases();
   test_shoot_planet_to_ship_valid_attack();
   test_shoot_ship_to_planet_invalid_cases();
   test_shoot_ship_to_planet_valid_attack();
+  test_hit_odds_sizing();
+  test_zero_body_ship_combat();
 
   std::println(std::cout, "\n✅ All shootblast tests passed!");
   return 0;

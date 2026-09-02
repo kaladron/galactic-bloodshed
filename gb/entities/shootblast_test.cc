@@ -302,6 +302,48 @@ void test_zero_body_ship_combat() {
                damage);
 }
 
+void test_penetration_factor_domain() {
+  std::println(std::cout,
+               "Test: penetration factor (p_factor) domain formulas");
+
+  // Constant verification
+  test::expect_eq(HITS_PER_ARMOR_PENETRATION, 5u);
+  test::expect_eq(TECH_PENETRATION_SCALE, 5.0);
+
+  // Parity tech: (2 / pi) * atan(5) ~= 0.8744
+  const double parity_factor = p_factor(10.0, 10.0);
+  test::expect_gt(parity_factor, 0.87);
+  test::expect_lt(parity_factor, 0.88);
+
+  // Attacker dominance: tech 100 vs 1
+  const double attacker_factor = p_factor(100.0, 1.0);
+  test::expect_gt(attacker_factor, 0.98);
+
+  // Defender dominance: tech 1 vs 100
+  const double defender_factor = p_factor(1.0, 100.0);
+  test::expect_lt(defender_factor, 0.15);
+  test::expect_gt(defender_factor, 0.0);
+
+  // Extreme defender dominance: tech 0 vs 1000
+  const double extreme_factor = p_factor(0.0, 1000.0);
+  test::expect_lt(extreme_factor, 0.01);
+  test::expect_gt(extreme_factor, 0.0);
+
+  // Cumulative penetration probability r = fac^arm
+  const double r0 = std::pow(parity_factor, 0.0);
+  test::expect_eq(r0, 1.0);
+
+  const double r1 = std::pow(parity_factor, 1.0);
+  test::expect_eq(r1, parity_factor);
+
+  const double r5 = std::pow(parity_factor, 5.0);
+  test::expect_lt(r5, r1);
+  test::expect_gt(r5, 0.45);
+  test::expect_lt(r5, 0.55);  // 0.8744^5 ~= 0.508
+
+  std::println(std::cout, "  ✓ penetration factor domain formulas passed");
+}
+
 int main() {
   test_shoot_planet_to_ship_invalid_cases();
   test_shoot_planet_to_ship_valid_attack();
@@ -309,6 +351,7 @@ int main() {
   test_shoot_ship_to_planet_valid_attack();
   test_hit_odds_sizing();
   test_zero_body_ship_combat();
+  test_penetration_factor_domain();
 
   std::println(std::cout, "\n✅ All shootblast tests passed!");
   return 0;

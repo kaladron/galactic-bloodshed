@@ -34,6 +34,18 @@ export guntype_t current_caliber(const Ship& ship);
 export std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage);
 export int planet_guns(long planet_id);
 
+/// \brief Salvo saturation rule: every 5 hits reduce target effective armor by
+/// 1 for that attack (help/fireformula.md).
+export constexpr unsigned int HITS_PER_ARMOR_PENETRATION = 5;
+
+/// \brief Inflection scalar for relative tech comparison in armor penetration
+/// (help/fireformula.md).
+export constexpr double TECH_PENETRATION_SCALE = 5.0;
+
+/// \brief Computes per-armor-point penetration factor based on relative
+/// technology (help/fireformula.md).
+export double p_factor(double attacker_tech, double defender_tech);
+
 /**
  * @brief Calculates the gun range for a given race based on its technology
  * level.

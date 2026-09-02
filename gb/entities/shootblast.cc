@@ -24,7 +24,6 @@ static int Num_hits(double dist, bool focus, int strength, double tech,
 static int cew_hit_odds(double dist, int cew_range);
 static std::string do_critical_hits(int penetrate, Ship& ship, int* hits,
                                     int* damage, guntype_t caliber);
-static double p_factor(double attacker, double defender);
 
 std::optional<std::tuple<int, std::string, std::string>>
 shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
@@ -278,19 +277,17 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
                                                 int strength, int hits) {
   std::stringstream msg;
-  double fac = (2. / 3.14159265) *
-               std::atan((double)(5 * (tech + 1.0) / (ship.tech() + 1.0)));
+  const double fac = p_factor(tech, ship.tech());
 
-  const auto armor_reduction = static_cast<armor_t>(hits / 5);
+  const auto armor_reduction =
+      static_cast<armor_t>(hits / HITS_PER_ARMOR_PENETRATION);
   const armor_t arm = ship.effective_armor() > armor_reduction
                           ? ship.effective_armor() - armor_reduction
                           : 0;
   const auto body = std::max<ship_size_t>(1, ship.shipbody());
 
   int penetrate = 0;
-  double r = 1.0;
-  for (armor_t i = 1; i <= arm; i++)
-    r *= fac;
+  const double r = std::pow(fac, static_cast<double>(arm));
 
   for (int i = 1; i <= hits; i++) /* check to see how many hits penetrate */
     if (double_rand() <= r) penetrate += 1;
@@ -328,18 +325,17 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
       msg << std::format("\t\tArmor reduced to {}\n", ship.armor());
     }
 
-  double fac = p_factor(tech, ship.tech());
-  int arm = std::max(0, static_cast<int>(ship.effective_armor()) + defense -
-                            hits / 5);
+  const double fac = p_factor(tech, ship.tech());
+  const int arm =
+      std::max(0, static_cast<int>(ship.effective_armor()) + defense -
+                      static_cast<int>(hits / HITS_PER_ARMOR_PENETRATION));
   const auto body_size = std::max<ship_size_t>(1, ship.shipbody());
-  double body = std::sqrt(0.1 * static_cast<double>(body_size));
+  const double body = std::sqrt(0.1 * static_cast<double>(body_size));
 
   int critdam = 0;
   int crithits = 0;
   int penetrate = 0;
-  double r = 1.0;
-  for (int i = 1; i <= arm; i++)
-    r *= fac;
+  const double r = std::pow(fac, static_cast<double>(arm));
 
   for (int i = 1; i <= hits; i++) /* check to see how many hits penetrate */
     if (double_rand() <= r) penetrate += 1;
@@ -582,9 +578,10 @@ std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage) {
   return {casualties, casualties1, primgundamage, secgundamage};
 }
 
-static double p_factor(double attacker, double defender) {
-  return ((2. / 3.141592) *
-          std::atan(5 * (double)((attacker + 1.0) / (defender + 1.0))));
+double p_factor(double attacker_tech, double defender_tech) {
+  return (2.0 * std::numbers::inv_pi) *
+         std::atan(TECH_PENETRATION_SCALE *
+                   ((attacker_tech + 1.0) / (defender_tech + 1.0)));
 }
 
 int planet_guns(long points) {

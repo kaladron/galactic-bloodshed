@@ -131,20 +131,20 @@ void test_shoot_ship_to_planet_invalid_cases() {
   ship.on() = true;
 
   // Test 1: Zero strength -> returns std::nullopt
-  auto res1 =
-      shoot_ship_to_planet(em, ship, planet, 0, Coordinates{0, 0}, smap, 0, 0);
+  auto res1 = shoot_ship_to_planet(em, ship, planet, 0, Coordinates{0, 0}, smap,
+                                   0, GTYPE_NONE);
   test::expect_false(res1.has_value());
 
   // Test 2: Dead ship -> returns std::nullopt
   ship.alive() = false;
-  auto res2 =
-      shoot_ship_to_planet(em, ship, planet, 10, Coordinates{0, 0}, smap, 0, 0);
+  auto res2 = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{0, 0},
+                                   smap, 0, GTYPE_NONE);
   test::expect_false(res2.has_value());
 
   // Test 3: Invalid planet coords -> returns std::nullopt
   ship.alive() = true;
   auto res3 = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{10, 10},
-                                   smap, 0, 0);
+                                   smap, 0, GTYPE_NONE);
   test::expect_false(res3.has_value());
 
   std::println(std::cout, "  ✓ shoot_ship_to_planet invalid cases passed");

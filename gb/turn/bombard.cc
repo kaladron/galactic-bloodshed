@@ -128,7 +128,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   entity_manager.mutate_sectormap(
       ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
         opt_result = shoot_ship_to_planet(entity_manager, ship, planet, str,
-                                          *target, smap, 0, 0);
+                                          *target, smap, 0, GTYPE_NONE);
       });
   if (!opt_result) return 0;
   const auto& result = *opt_result;

@@ -108,7 +108,7 @@ bool bombard(const command_t& argv, GameObj& g) {
               from.storbits(), from.pnumorbits(), [&](SectorMap& smap) {
                 opt_result =
                     shoot_ship_to_planet(g.entity_manager, from, p, strength,
-                                         target_coords, smap, 0, 0);
+                                         target_coords, smap, 0, GTYPE_NONE);
               });
 
           if (!opt_result) {

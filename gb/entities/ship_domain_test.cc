@@ -354,6 +354,25 @@ void test_dynamic_base_mass() {
   test::expect_eq(ship.shipbody(), 0u);
 }
 
+void test_gun_caliber_domain() {
+  std::println(std::cout, "Testing guntype_t and gun_caliber()...");
+
+  test::expect_eq(gun_caliber(guntype_t::NONE), 0u);
+  test::expect_eq(gun_caliber(guntype_t::LIGHT), 1u);
+  test::expect_eq(gun_caliber(guntype_t::MEDIUM), 2u);
+  test::expect_eq(gun_caliber(guntype_t::HEAVY), 3u);
+
+  test::expect_eq(gun_caliber(GTYPE_NONE), 0u);
+  test::expect_eq(gun_caliber(GTYPE_LIGHT), 1u);
+  test::expect_eq(gun_caliber(GTYPE_MEDIUM), 2u);
+  test::expect_eq(gun_caliber(GTYPE_HEAVY), 3u);
+
+  test::expect_eq(caliber_char(guntype_t::NONE), ' ');
+  test::expect_eq(caliber_char(guntype_t::LIGHT), 'L');
+  test::expect_eq(caliber_char(guntype_t::MEDIUM), 'M');
+  test::expect_eq(caliber_char(guntype_t::HEAVY), 'H');
+}
+
 }  // namespace
 
 int main() {
@@ -367,6 +386,7 @@ int main() {
   test_destruct_consumption();
   test_clamped_add_and_consume();
   test_dynamic_base_mass();
+  test_gun_caliber_domain();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

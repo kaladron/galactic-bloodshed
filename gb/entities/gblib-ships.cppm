@@ -14,12 +14,33 @@ import :sector;
 import :tweakables;
 import :turnstats;
 
-export enum guntype_t {
-  GTYPE_NONE,
-  GTYPE_LIGHT,
-  GTYPE_MEDIUM,
-  GTYPE_HEAVY
+export enum class guntype_t : std::uint8_t {
+  NONE = 0,
+  LIGHT = 1,
+  MEDIUM = 2,
+  HEAVY = 3,
 };
+
+export inline constexpr guntype_t GTYPE_NONE = guntype_t::NONE;
+export inline constexpr guntype_t GTYPE_LIGHT = guntype_t::LIGHT;
+export inline constexpr guntype_t GTYPE_MEDIUM = guntype_t::MEDIUM;
+export inline constexpr guntype_t GTYPE_HEAVY = guntype_t::HEAVY;
+
+/// \brief Returns the integer caliber multiplier for combat and mass
+/// calculations.
+export [[nodiscard]] constexpr unsigned int
+gun_caliber(guntype_t caliber) noexcept {
+  switch (caliber) {
+    case guntype_t::LIGHT:
+      return 1;
+    case guntype_t::MEDIUM:
+      return 2;
+    case guntype_t::HEAVY:
+      return 3;
+    case guntype_t::NONE:
+      return 0;
+  }
+}
 
 export enum class ActiveBattery : std::uint8_t {
   NONE = 0,

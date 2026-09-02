@@ -174,7 +174,7 @@ bool defend(const command_t& argv, GameObj& g) {
 
                 if (auto result_opt = shoot_ship_to_planet(
                         g.entity_manager, target_ship, p, strength,
-                        sector_coords, smap, 0, 0)) {
+                        sector_coords, smap, 0, GTYPE_NONE)) {
                   if (target_ship.is_laser_on())
                     use_fuel(target_ship, 2.0 * (double)strength);
                   else
@@ -207,7 +207,7 @@ bool defend(const command_t& argv, GameObj& g) {
 
                     if (auto result2_opt = shoot_ship_to_planet(
                             g.entity_manager, ship, p, strength, sector_coords,
-                            smap, 0, 0)) {
+                            smap, 0, GTYPE_NONE)) {
                       g.entity_manager.mutate_ship(
                           ship.number(), [&](Ship& ship_mut) {
                             if (ship.is_laser_on())

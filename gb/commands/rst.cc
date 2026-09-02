@@ -274,13 +274,15 @@ void report_factories(GameObj& g, RstContext& ctx, const Ship& s) {
   }
 
   // Build weapon strings
-  std::string prim_guns = s.primtype() ? std::format("{}{}", s.primary(),
-                                                     caliber_char(s.primtype()))
-                                       : "---";
+  std::string prim_guns =
+      s.primtype() != GTYPE_NONE
+          ? std::format("{}{}", s.primary(), caliber_char(s.primtype()))
+          : "---";
 
-  std::string sec_guns = s.sectype() ? std::format("{}{}", s.secondary(),
-                                                   caliber_char(s.sectype()))
-                                     : "---";
+  std::string sec_guns =
+      s.sectype() != GTYPE_NONE
+          ? std::format("{}{}", s.secondary(), caliber_char(s.sectype()))
+          : "---";
 
   std::string cew_str = s.cew() ? std::format("{}", s.cew()) : "----";
   std::string range_str = s.cew() ? std::format("{}", s.cew_range()) : "-----";

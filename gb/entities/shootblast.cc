@@ -11,7 +11,7 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
                                                 int strength, int hits);
 static std::pair<int, std::string>
 do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
-          int strength, int hits, int defense, int caliber, double range,
+          int strength, int hits, int defense, guntype_t caliber, double range,
           const std::string_view weapon, int hit_probability);
 
 static std::tuple<bool, speed_t, int> ship_disposition(const Ship& ship);
@@ -22,7 +22,7 @@ static int Num_hits(double dist, bool focus, int strength, double tech,
                     int* hit_probability);
 static int cew_hit_odds(double dist, int cew_range);
 static std::string do_critical_hits(int penetrate, Ship& ship, int* hits,
-                                    int* damage, int defense);
+                                    int* damage, guntype_t caliber);
 static double p_factor(double attacker, double defender);
 
 std::optional<std::tuple<int, std::string, std::string>>
@@ -151,7 +151,7 @@ shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship, int strength) {
 std::optional<BombardResult>
 shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
                      int strength, Coordinates target_sector, SectorMap& smap,
-                     int ignore, int caliber) {
+                     int ignore, guntype_t caliber) {
   if (strength <= 0) return std::nullopt;
   if (!(ship.alive() || ignore)) return std::nullopt;
   if (ship.has_switch() && !ship.on()) return std::nullopt;
@@ -162,7 +162,8 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   PlayerVector<bool, MAXPLAYERS> nuked{};
 
   double r = .4 * strength;
-  if (!caliber) { /* figure out the appropriate gun caliber if not given*/
+  if (caliber ==
+      GTYPE_NONE) { /* figure out the appropriate gun caliber if not given*/
     if (ship.fire_laser())
       caliber = GTYPE_LIGHT;
     else
@@ -193,8 +194,8 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
       auto& s = smap.get(Coordinates{x2, y2});
 
       if (d <= r) {
-        double fac =
-            SECTOR_DAMAGE * (double)strength * (double)caliber / (d + 1.);
+        double fac = SECTOR_DAMAGE * (double)strength *
+                     (double)gun_caliber(caliber) / (d + 1.);
 
         if (s.get_owner() != 0) {
           population_t kills = 0;
@@ -309,7 +310,7 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
 
 static std::pair<int, std::string>
 do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
-          int strength, int hits, int defense, int caliber, double range,
+          int strength, int hits, int defense, guntype_t caliber, double range,
           const std::string_view weapon, int hit_probability) {
   std::stringstream msg;
 
@@ -318,7 +319,7 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
   msg << std::format("\t  Hits: {}  {}% probability\n", hits, hit_probability);
   /* ship may lose some armor */
   if (ship.armor())
-    if (success(hits * caliber)) {
+    if (success(hits * gun_caliber(caliber))) {
       ship.armor()--;
       msg << std::format("\t\tArmor reduced to {}\n", ship.armor());
     }
@@ -338,8 +339,8 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
   for (int i = 1; i <= hits; i++) /* check to see how many hits penetrate */
     if (double_rand() <= r) penetrate += 1;
 
-  int damage = round_rand(SHIP_DAMAGE * (double)caliber * (double)penetrate /
-                          (double)body);
+  int damage = round_rand(SHIP_DAMAGE * (double)gun_caliber(caliber) *
+                          (double)penetrate / (double)body);
 
   auto critmsg =
       do_critical_hits(penetrate, ship, &crithits, &critdam, caliber);
@@ -470,7 +471,7 @@ std::pair<int, int> hit_odds(double range, double tech, int fdam, bool fev,
       std::log10(1.0 + (double)tech) * 80.0 * std::pow((double)body, 0.33333);
   double b = 72.0 / ((2.0 + tev_d) * (2.0 + fev_d) *
                      (18.0 + (double)tspeed + (double)fspeed));
-  double c = a * b / (double)caliber;
+  double c = a * b / static_cast<double>(gun_caliber(caliber));
   int factor = (int)(c * (1.0 - (double)fdam / 100.)); /* 50% hit range */
   int odds = 0;
   if (factor > 0)
@@ -508,11 +509,11 @@ guntype_t current_caliber(const Ship& ship) {
 }
 
 static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
-                                    int* critdam, int caliber) {
+                                    int* critdam, guntype_t caliber) {
   std::stringstream critmsg;
   *critdam = 0;
-  const auto eff_size =
-      std::max(1, static_cast<int>(ship.shipbody()) / caliber);
+  const auto eff_size = std::max(1, static_cast<int>(ship.shipbody()) /
+                                        static_cast<int>(gun_caliber(caliber)));
   for (auto i = 1; i <= penetrate; i++)
     if (!int_rand(0, eff_size - 1)) {
       *crithits += 1;

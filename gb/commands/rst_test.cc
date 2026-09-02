@@ -80,7 +80,7 @@ void setup_test_world(TestContext& ctx) {
   s1.max_resource = 100;
   s1.armor = 5;
   s1.guns = ActiveBattery::PRIMARY;
-  s1.primtype = guntype_t::GTYPE_HEAVY;
+  s1.primtype = guntype_t::HEAVY;
   s1.primary = 5;
   s1.destruct = 10;
   s1.max_destruct = 50;

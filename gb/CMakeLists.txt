@@ -494,6 +494,7 @@ gb_add_test(server_command_test SOURCES server/server_command_test.cc EXTRA_LIBS
 gb_add_test(server_config_test SOURCES server/server_config_test.cc EXTRA_LIBS server_config)
 gb_add_test(server_test SOURCES server/server_test.cc EXTRA_LIBS asio_module session auth server notification)
 gb_add_test(session_test SOURCES server/session_test.cc EXTRA_LIBS session)
+gb_add_test(ship_domain_test SOURCES entities/ship_domain_test.cc)
 gb_add_test(ship_repository_test SOURCES repositories/ship_repository_test.cc)
 gb_add_test(ship_spatial_parity_test SOURCES services/ship_spatial_parity_test.cc)
 gb_add_test(ship_template_test SOURCES entities/ship_template_test.cc)

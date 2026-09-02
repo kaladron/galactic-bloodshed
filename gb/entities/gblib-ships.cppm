@@ -2734,13 +2734,140 @@ public:
     return get_template().max_guns;
   }
 
+  /// \brief Hull operational efficiency in [0.0, 1.0] based on damage (1.0 at
+  /// 0% damage, 0.0 at 100% damage).
+  [[nodiscard]] constexpr double hull_efficiency() const noexcept {
+    return std::clamp((100.0 - static_cast<double>(data_.damage)) / 100.0, 0.0,
+                      1.0);
+  }
+
+  /// \brief Ratio of carried crew to maximum capacity in [0.0, 1.0] (0.0 if
+  /// ship has zero capacity).
+  [[nodiscard]] double crew_ratio() const noexcept {
+    const auto max_crew = max_crew_capacity();
+    if (max_crew <= 0) return 0.0;
+    return std::clamp(static_cast<double>(data_.popn) /
+                          static_cast<double>(max_crew),
+                      0.0, 1.0);
+  }
+
+  /// \brief Returns whether ship is fueled to maximum capacity (within
+  /// epsilon).
+  [[nodiscard]] bool is_fully_fueled() const noexcept {
+    return data_.fuel >= static_cast<double>(max_fuel_capacity()) - 1e-4;
+  }
+
+  /// \brief Returns whether ship has non-negligible fuel remaining.
+  [[nodiscard]] bool has_fuel() const noexcept {
+    return data_.fuel > 1e-4;
+  }
+
+  /// \brief Available cargo capacity remaining for resources.
+  [[nodiscard]] resource_t available_resource_capacity() const noexcept {
+    return std::max<resource_t>(0, max_resource_capacity() - data_.resource);
+  }
+
   // =========================================================================
   // DOMAIN OPERATIONS & STATE TRANSITIONS
   // =========================================================================
 
+  /// \brief Sets hull damage clamped to [0, 100]%.
+  void set_damage(damage_t amt) noexcept {
+    data_.damage = std::clamp<damage_t>(amt, 0, 100);
+  }
+
+  /// \brief Sets fuel clamped to [0.0, max_fuel_capacity()].
+  void set_fuel(fuel_t amt) noexcept {
+    data_.fuel = std::clamp(amt, 0.0, static_cast<double>(max_fuel_capacity()));
+  }
+
+  /// \brief Sets civilian population/crew clamped to [0, max_crew_capacity()].
+  void set_popn(population_t amt) noexcept {
+    data_.popn = std::clamp<population_t>(amt, 0, max_crew_capacity());
+  }
+
+  /// \brief Sets cargo resources clamped to [0, max_resource_capacity()].
+  void set_resource(resource_t amt) noexcept {
+    data_.resource = std::clamp<resource_t>(amt, 0, max_resource_capacity());
+  }
+
+  /// \brief Sets destructive charges clamped to [0, max_destruct_capacity()].
+  void set_destruct(resource_t amt) noexcept {
+    data_.destruct = std::clamp<resource_t>(amt, 0, max_destruct_capacity());
+  }
+
+  /// \brief Attempts to consume an exact amount of fuel; returns true on
+  /// success, false if insufficient fuel.
+  [[nodiscard]] bool try_consume_fuel(fuel_t cost) noexcept {
+    if (cost <= 0.0) return true;
+    if (data_.fuel + 1e-4 < cost) return false;
+    const auto actual = std::min(data_.fuel, cost);
+    data_.fuel -= actual;
+    if (data_.fuel < 0.0) data_.fuel = 0.0;
+    data_.mass -= actual * MASS_FUEL;
+    return true;
+  }
+
+  /// \brief Consumes up to the requested amount of fuel, returning the amount
+  /// actually consumed.
+  [[nodiscard]] fuel_t consume_up_to_fuel(fuel_t max_amount) noexcept {
+    if (max_amount <= 0.0) return 0.0;
+    const auto actual = std::min(data_.fuel, max_amount);
+    data_.fuel -= actual;
+    if (data_.fuel < 0.0) data_.fuel = 0.0;
+    data_.mass -= actual * MASS_FUEL;
+    return actual;
+  }
+
+  /// \brief Attempts to consume an exact amount of resource cargo; returns
+  /// true on success, false if insufficient resources.
+  [[nodiscard]] bool try_consume_resource(resource_t cost) noexcept {
+    if (cost <= 0) return true;
+    if (data_.resource < cost) return false;
+    data_.resource -= cost;
+    data_.mass -= static_cast<double>(cost) * MASS_RESOURCE;
+    return true;
+  }
+
+  /// \brief Consumes up to the requested amount of resource cargo, returning
+  /// the amount actually consumed.
+  [[nodiscard]] resource_t
+  consume_up_to_resource(resource_t max_amount) noexcept {
+    if (max_amount <= 0) return 0;
+    const auto actual = std::min(data_.resource, max_amount);
+    data_.resource -= actual;
+    data_.mass -= static_cast<double>(actual) * MASS_RESOURCE;
+    return actual;
+  }
+
+  /// \brief Attempts to consume an exact amount of destructive charges; returns
+  /// true on success, false if insufficient charges.
+  [[nodiscard]] bool try_consume_destruct(resource_t cost) noexcept {
+    if (cost <= 0) return true;
+    if (data_.destruct < cost) return false;
+    data_.destruct -= cost;
+    data_.mass -= static_cast<double>(cost) * MASS_DESTRUCT;
+    return true;
+  }
+
+  /// \brief Consumes up to the requested amount of destructive charges,
+  /// returning the amount actually consumed.
+  [[nodiscard]] resource_t
+  consume_up_to_destruct(resource_t max_amount) noexcept {
+    if (max_amount <= 0) return 0;
+    const auto actual = std::min(data_.destruct, max_amount);
+    data_.destruct -= actual;
+    data_.mass -= static_cast<double>(actual) * MASS_DESTRUCT;
+    return actual;
+  }
+
   /// \brief Increases hull damage by the specified amount, clamped to 100%.
   void apply_damage(damage_t amt) noexcept {
-    data_.damage = std::min<damage_t>(100, data_.damage + amt);
+    if (amt >= 100 || data_.damage + amt >= 100) {
+      data_.damage = 100;
+    } else {
+      data_.damage += amt;
+    }
   }
 
   /// \brief Repairs hull damage by the specified amount, clamped to 0%.
@@ -2753,52 +2880,107 @@ public:
     data_.rad = (amt >= data_.rad) ? 0 : data_.rad - amt;
   }
 
-  /// \brief Consumes fuel and decrements ship mass accordingly.
+  /// \brief Consumes fuel and decrements ship mass accordingly, clamped to 0.
   void consume_fuel(fuel_t amt) noexcept {
-    data_.fuel -= amt;
-    data_.mass -= amt * MASS_FUEL;
+    if (amt <= 0.0) return;
+    const auto actual = std::min(data_.fuel, amt);
+    data_.fuel -= actual;
+    if (data_.fuel < 0.0) data_.fuel = 0.0;
+    data_.mass -= actual * MASS_FUEL;
   }
 
-  /// \brief Adds fuel and increments ship mass accordingly.
+  /// \brief Adds fuel and increments ship mass accordingly, clamped to max fuel
+  /// capacity. If amt is negative, delegates to consume_fuel(-amt).
   void add_fuel(fuel_t amt) noexcept {
-    data_.fuel += amt;
-    data_.mass += amt * MASS_FUEL;
+    if (amt < 0.0) {
+      consume_fuel(-amt);
+      return;
+    }
+    const auto max_cap = static_cast<double>(max_fuel_capacity());
+    if (data_.fuel >= max_cap) return;
+    const auto actual = std::min(amt, max_cap - data_.fuel);
+    data_.fuel += actual;
+    data_.mass += actual * MASS_FUEL;
   }
 
-  /// \brief Consumes resources and decrements ship mass accordingly.
+  /// \brief Consumes resources and decrements ship mass accordingly, clamped
+  /// to 0.
   void consume_resource(resource_t amt) noexcept {
-    data_.resource -= amt;
-    data_.mass -= static_cast<double>(amt) * MASS_RESOURCE;
+    if (amt <= 0) return;
+    const auto actual = std::min(data_.resource, amt);
+    data_.resource -= actual;
+    data_.mass -= static_cast<double>(actual) * MASS_RESOURCE;
   }
 
-  /// \brief Adds resources and increments ship mass accordingly.
+  /// \brief Adds resources and increments ship mass accordingly, clamped to
+  /// max resource capacity. If amt is negative, delegates to
+  /// consume_resource(-amt).
   void add_resource(resource_t amt) noexcept {
-    data_.resource += amt;
-    data_.mass += static_cast<double>(amt) * MASS_RESOURCE;
+    if (amt < 0) {
+      consume_resource(-amt);
+      return;
+    }
+    const auto max_cap = max_resource_capacity();
+    if (data_.resource >= max_cap) return;
+    const auto actual = std::min(amt, max_cap - data_.resource);
+    data_.resource += actual;
+    data_.mass += static_cast<double>(actual) * MASS_RESOURCE;
   }
 
-  /// \brief Consumes destruct ordnance and decrements ship mass accordingly.
+  /// \brief Consumes destruct ordnance and decrements ship mass accordingly,
+  /// clamped to 0.
   void consume_destruct(resource_t amt) noexcept {
-    data_.destruct -= static_cast<unsigned short>(amt);
-    data_.mass -= static_cast<double>(amt) * MASS_DESTRUCT;
+    if (amt <= 0) return;
+    const auto actual = std::min(data_.destruct, amt);
+    data_.destruct -= actual;
+    data_.mass -= static_cast<double>(actual) * MASS_DESTRUCT;
   }
 
-  /// \brief Adds destruct ordnance and increments ship mass accordingly.
+  /// \brief Adds destruct ordnance and increments ship mass accordingly,
+  /// clamped to max destruct capacity. If amt is negative, delegates to
+  /// consume_destruct(-amt).
   void add_destruct(resource_t amt) noexcept {
-    data_.destruct += static_cast<unsigned short>(amt);
-    data_.mass += static_cast<double>(amt) * MASS_DESTRUCT;
+    if (amt < 0) {
+      consume_destruct(-amt);
+      return;
+    }
+    const auto max_cap = max_destruct_capacity();
+    if (data_.destruct >= max_cap) return;
+    const auto actual = std::min(amt, max_cap - data_.destruct);
+    data_.destruct += actual;
+    data_.mass += static_cast<double>(actual) * MASS_DESTRUCT;
   }
 
-  /// \brief Adds population and increments ship mass based on race mass.
+  /// \brief Adds population and increments ship mass based on race mass,
+  /// clamped to max crew capacity. If amt is negative, removes population.
   void add_popn(population_t amt, double race_mass) noexcept {
-    data_.popn += amt;
-    data_.mass += static_cast<double>(amt) * race_mass;
+    if (amt < 0) {
+      const auto actual = std::min(data_.popn, -amt);
+      data_.popn -= actual;
+      data_.mass -= static_cast<double>(actual) * race_mass;
+      return;
+    }
+    const auto max_cap = max_crew_capacity();
+    if (data_.popn >= max_cap) return;
+    const auto actual = std::min(amt, max_cap - data_.popn);
+    data_.popn += actual;
+    data_.mass += static_cast<double>(actual) * race_mass;
   }
 
-  /// \brief Adds troops and increments ship mass based on race mass.
+  /// \brief Adds troops and increments ship mass based on race mass,
+  /// clamped to max crew capacity. If amt is negative, removes troops.
   void add_troops(population_t amt, double race_mass) noexcept {
-    data_.troops += amt;
-    data_.mass += static_cast<double>(amt) * race_mass;
+    if (amt < 0) {
+      const auto actual = std::min(data_.troops, -amt);
+      data_.troops -= actual;
+      data_.mass -= static_cast<double>(actual) * race_mass;
+      return;
+    }
+    const auto max_cap = max_crew_capacity();
+    if (data_.troops >= max_cap) return;
+    const auto actual = std::min(amt, max_cap - data_.troops);
+    data_.troops += actual;
+    data_.mass += static_cast<double>(actual) * race_mass;
   }
 
   // =========================================================================

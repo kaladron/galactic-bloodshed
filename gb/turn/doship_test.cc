@@ -802,6 +802,10 @@ void test_ship_domain_operations() {
   ship_struct sdata{
       .fuel = 50.0,
       .mass = 100.0,
+      .max_crew = 100,
+      .max_resource = 500,
+      .max_destruct = 100,
+      .max_fuel = 100.0,
       .destruct = 10,
       .resource = 200,
       .popn = 50,

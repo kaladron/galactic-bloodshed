@@ -54,7 +54,10 @@ Specialized development skills are located in `.github/skills/` and provide comp
 - Update `ARCHITECTURE.md` **incrementally** as new systems/patterns are introduced rather than deferring all documentation to the end of a project.
 
 ### 4. Context Refresh & Plan Anchoring Protocol
-- AI agents will experience context compression and truncation across multi-commit workflows.
+- AI agents experience context compression and truncation across multi-commit workflows.
+- Always check the active plan artifact in the conversation artifact directory before starting a commit to ensure constraints, ordering, and test expectations are preserved.
+- Update the plan artifact after each commit is approved to track live progress.
+
 ### 5. Low Cyclomatic Complexity & Domain Decomposition
 - Keep domain functions and turn pipeline passes focused and small with low cyclomatic complexity ($\text{CC} \le 10$). Lower is better when it represents the right trade-off between function count and readability.
 - Monolithic algorithms must be decomposed into composable, single-responsibility helper functions.
@@ -76,6 +79,23 @@ Specialized development skills are located in `.github/skills/` and provide comp
 - **No migration comments**: Never leave temporary migration commentary in production code (e.g. state preconditions cleanly rather than documenting past refactors).
 - **Fail-fast on database corruption (no defensive try/catch on internal IDs)**: `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError` to indicate programming bugs or data corruption. Never wrap internal/validated ID lookups (`g.snum()`, `where.snum`, `Place` parsed values) in defensive `try/catch` or null checks that silence errors; let the exceptions propagate so the server fails fast. Wrap in `try/catch` **strictly** when looking up untrusted user-supplied raw IDs (e.g. arbitrary command argument strings like `#123`).
 - **Code formatting scope**: Run `clang-format -i` strictly on C++ files (`.cc`, `.cppm`, `.h`, `.hpp`). **NEVER** run `clang-format` on CMake files (`CMakeLists.txt`, `*.cmake`) or JSON data files.
+
+### 8. Pair Programming Discipline & Mandatory Technical Critique
+- **No sycophancy or default agreement**: When the user proposes or discusses a design, API signature, or domain model, the agent MUST critically analyze it rather than agreeing by default.
+- **Mandatory 3-point critique**: Actively evaluate:
+  1. *Type Safety*: Does the type system prevent illegal states (e.g. mismatched reference frames, negative values, out-of-bound enums)?
+  2. *Failure Modes*: How can callers misuse or misunderstand this interface?
+  3. *Adversarial Counterargument*: What is the strongest technical reason *against* this design, or what is a cleaner, more idiomatic alternative?
+- **Zero hidden hesitations**: If an edge case, alternative design, or code smell occurs to the agent (e.g. boolean parameter traps vs enums, missing coordinate frames), the agent MUST explicitly surface it in prose. Never withhold technical concerns.
+
+### 9. Gated Execution & Two-Stage Commit Protocol
+- **No unprompted coding**: When the user asks for planning, analysis, design discussion, or documentation updates, the agent MUST NOT touch, create, or modify code files in `gb/`. Code tools are strictly unlocked when the user gives an explicit directive to begin implementation.
+- **Two-stage commit gate**: Every commit requires an explicit human review gate:
+  1. *Stage 1 (Present & Stop)*: Implement the code and unit tests in the same commit, verify with `ninja -C build` and `ctest`, and present the full `git diff` and proposed commit message in markdown. **STOP AND WAIT.** Never run `git commit` or stage changes autonomously.
+  2. *Stage 2 (Human Approval)*: Only execute `git commit` after the user explicitly reviews the diff and gives permission.
+- **Document bug fixes in commit messages**: Every commit message body must explicitly describe any bugs, edge cases, or invariant violations resolved by the change.
+- **End-of-phase domain documentation**: At the conclusion of each phase, review whether player-facing domain documentation in `docs/` should be created or updated (explaining game mechanics and formulas with clear math, without internal C++ symbols).
+- **Push to origin**: Never push until all stacked commits in a task or phase are approved by the user.
 
 ## 🔨 Building the Project
 

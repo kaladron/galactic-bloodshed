@@ -67,7 +67,6 @@ int main() {
   factory.popn() = 50;
   factory.max_crew() = 100;
   factory.mass() = 100.0;
-  factory.base_mass() = 100.0;
   factory.on() = 0;  // Factory must be offline to configure
   factory.size() = 100;
 

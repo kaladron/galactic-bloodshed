@@ -387,7 +387,6 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
   auto ship_handle = em.create_ship(s2_data);
   Ship& s2 = *ship_handle;
   s2.size() = ship_size(s2);
-  s2.base_mass() = getmass(s2);
   s2.mass() = s2.base_mass();
 
   planet.ships() = s2.number();
@@ -466,7 +465,6 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   auto ship_handle = em.create_ship(s2_data);
   Ship& s2 = *ship_handle;
   s2.size() = ship_size(s2);
-  s2.base_mass() = getmass(s2);
   s2.mass() = s2.base_mass();
 
   planet.ships() = s2.number();

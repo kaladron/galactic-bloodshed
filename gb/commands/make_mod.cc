@@ -309,7 +309,6 @@ bool make_mod(const command_t& argv, GameObj& g) {
     g.out << std::format("The current cost of the ship is {} resources.\n",
                          dirship.build_cost());
     dirship.size() = ship_size(dirship);
-    dirship.base_mass() = getmass(dirship);
     g.out << std::format(
         "The current base mass of the ship is {:.1f} - size is {}.\n",
         dirship.base_mass(), dirship.size());

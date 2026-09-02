@@ -237,7 +237,6 @@ bool upgrade(const command_t& argv, GameObj& g) {
         });
       }
       dirship.size() = ship_size(dirship);
-      dirship.base_mass() = getmass(dirship);
       dirship.build_cost() = race.God ? 0 : cost(dirship);
       dirship.complexity() = complexity(dirship);
       ok = true;

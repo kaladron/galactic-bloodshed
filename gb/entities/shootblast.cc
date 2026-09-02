@@ -511,8 +511,8 @@ static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
                                     int* critdam, int caliber) {
   std::stringstream critmsg;
   *critdam = 0;
-  *crithits = 0;
-  int eff_size = std::max(1, ship.shipbody() / caliber);
+  const auto eff_size =
+      std::max(1, static_cast<int>(ship.shipbody()) / caliber);
   for (auto i = 1; i <= penetrate; i++)
     if (!int_rand(0, eff_size - 1)) {
       *crithits += 1;

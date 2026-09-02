@@ -320,6 +320,40 @@ void test_clamped_add_and_consume() {
   expect_near(ship.mass(), mass_before_troops + 90.0 * 2.0);
 }
 
+void test_dynamic_base_mass() {
+  std::println(std::cout, "Testing Ship::base_mass() dynamic calculation...");
+  ship_struct sdata{
+      .armor = 5,
+      .size = 50,
+      .base_mass = 9999.0,  // Stored legacy value should be completely ignored
+      .primary = 4,
+      .primtype = GTYPE_MEDIUM,
+      .secondary = 2,
+      .sectype = GTYPE_LIGHT,
+      .max_hanger = 10,
+  };
+  Ship ship{sdata};
+
+  // body = max(0, 50 - 10) = 40
+  test::expect_eq(ship.shipbody(), 40u);
+  test::expect_eq(ship.hanger_space(), 10u);
+
+  // expected = 1.0 + 1.0 * 5 + 0.2 * 40 + 0.1 * 10 + 0.2 * 4 * 2 + 0.2 * 2 * 1
+  //          = 1.0 + 5.0 + 8.0 + 1.0 + 1.6 + 0.4 = 17.0
+  expect_near(ship.base_mass(), 17.0);
+  expect_near(getmass(ship), 17.0);
+
+  // Dynamically reacts to structural changes without manual base_mass
+  // assignment
+  ship.armor() = 10;  // +5.0 mass
+  expect_near(ship.base_mass(), 22.0);
+  expect_near(getmass(ship), 22.0);
+
+  // Underflow protection: max_hanger > size clamps to 0
+  ship.max_hanger() = 100;
+  test::expect_eq(ship.shipbody(), 0u);
+}
+
 }  // namespace
 
 int main() {
@@ -332,6 +366,7 @@ int main() {
   test_resource_consumption();
   test_destruct_consumption();
   test_clamped_add_and_consume();
+  test_dynamic_base_mass();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

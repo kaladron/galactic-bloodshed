@@ -386,8 +386,7 @@ void Getship(Ship* s, ShipType i, const Race& r) {
 
   *s = std::move(*ShipFactory::create(std::move(data)));
   s->size() = ship_size(*s);
-  s->base_mass() = getmass(*s);
-  s->mass() = getmass(*s);
+  s->mass() = s->base_mass();
   s->build_cost() = r.God ? 0 : (int)cost(*s);
 }
 
@@ -417,8 +416,7 @@ Ship Getfactship(const Ship& b) {
 
   Ship s(data);
   s.size() = ship_size(s);
-  s.base_mass() = getmass(s);
-  s.mass() = getmass(s);
+  s.mass() = s.base_mass();
   return s;
 }
 

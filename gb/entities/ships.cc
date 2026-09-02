@@ -127,14 +127,15 @@ void capture_stuff(const Ship& ship, GameObj& g) {
   }
 }
 
+double Ship::base_mass() const noexcept {
+  return 1.0 + MASS_ARMOR * armor() + MASS_SIZE * shipbody() +
+         MASS_HANGER * max_hanger() +
+         MASS_GUNS * primary() * std::to_underlying(primtype()) +
+         MASS_GUNS * secondary() * std::to_underlying(sectype());
+}
+
 double getmass(const Ship& s) {
-  const double body =
-      std::max(0.0, static_cast<double>(static_cast<int>(s.size()) -
-                                        static_cast<int>(s.max_hanger())));
-  return (1.0 + MASS_ARMOR * s.armor() + MASS_SIZE * body +
-          MASS_HANGER * s.max_hanger() +
-          MASS_GUNS * s.primary() * static_cast<int>(s.primtype()) +
-          MASS_GUNS * s.secondary() * static_cast<int>(s.sectype()));
+  return s.base_mass();
 }
 
 unsigned int ship_size(const Ship& s) {

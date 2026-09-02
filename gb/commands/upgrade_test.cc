@@ -73,7 +73,6 @@ void test_upgrade_command() {
   ship.max_hanger() = tmpl.max_hangar;
   ship.primary() = tmpl.max_guns;
   ship.secondary() = tmpl.max_guns;
-  ship.base_mass() = 10.0;
   ship.mass() = 10.0;
   ship.build_cost() = static_cast<int>(cost(ship));
   ship.damage() = 0;  // No damage - required for upgrades

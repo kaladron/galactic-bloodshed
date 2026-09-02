@@ -2137,12 +2137,9 @@ public:
     return data_.build_cost;
   }
 
-  [[nodiscard]] double base_mass() const {
-    return data_.base_mass;
-  }
-  double& base_mass() {
-    return data_.base_mass;
-  }
+  /// \brief Calculates empty hull baseline mass based on armor, size, hangar,
+  /// and gun batteries.
+  [[nodiscard]] double base_mass() const noexcept;
 
   [[nodiscard]] double tech() const {
     return data_.tech;
@@ -2639,15 +2636,14 @@ public:
   }
 
   /// Structural body size excluding maximum hangar bay space.
-  [[nodiscard]] int shipbody() const noexcept {
-    return std::max(0, static_cast<int>(data_.size) -
-                           static_cast<int>(data_.max_hanger));
+  [[nodiscard]] ship_size_t shipbody() const noexcept {
+    return data_.size > data_.max_hanger ? data_.size - data_.max_hanger : 0;
   }
 
   /// Remaining available hangar space for docking smaller craft.
   [[nodiscard]] hangar_t hanger_space() const noexcept {
-    return std::max(0L, static_cast<long>(data_.max_hanger) -
-                            static_cast<long>(data_.hanger));
+    return data_.max_hanger > data_.hanger ? data_.max_hanger - data_.hanger
+                                           : 0;
   }
 
   /// Available civilian crew capacity accounting for military troops on board.

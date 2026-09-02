@@ -274,7 +274,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
             ship.storbits() == target.storbits() && target.alive()) {
           auto range = std::hypot(ship.xpos() - target.xpos(),
                                   ship.ypos() - target.ypos());
-          int body = std::max(1, target.shipbody());
+          const auto body = std::max<ship_size_t>(1, target.shipbody());
           auto max_dmg = round_rand((2.0 / static_cast<double>(body)) *
                                     static_cast<double>(mirror->intensity()) /
                                     (range / PLORBITSIZE + 1.0));

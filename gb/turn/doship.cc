@@ -638,7 +638,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
 
                 if (auto result_opt = shoot_ship_to_planet(
                         entity_manager, ship, p, (int)ship.destruct(),
-                        bomb_coords, smap, 0, GTYPE_HEAVY)) {
+                        bomb_coords, smap, 0, guntype_t::HEAVY)) {
                   push_telegram(entity_manager, ship.owner(), ship.governor(),
                                 result_opt->long_message);
                   entity_manager.kill_ship(ship.owner(), ship);
@@ -780,7 +780,7 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
                 if (auto result_opt = shoot_ship_to_planet(
                         entity_manager, ship, planet,
                         static_cast<int>(ship.destruct()), target_coords, smap,
-                        0, GTYPE_LIGHT)) {
+                        0, guntype_t::LIGHT)) {
                   std::stringstream telegram;
                   telegram << postmsg;
                   if (result_opt->sectors_destroyed > 0) {

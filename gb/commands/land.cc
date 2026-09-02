@@ -245,7 +245,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
           s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {
             auto result_opt = shoot_ship_to_planet(
                 g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.),
-                target_coords, smap, 0, GTYPE_HEAVY);
+                target_coords, smap, 0, guntype_t::HEAVY);
             numdest = result_opt ? result_opt->sectors_destroyed : 0;
           });
       auto buf = std::format(

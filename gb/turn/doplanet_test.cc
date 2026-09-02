@@ -546,7 +546,7 @@ void test_execute_berserker_bombardment() {
       .docked = false,
       .on = true,
       .guns = ActiveBattery::PRIMARY,
-      .primtype = GTYPE_HEAVY,
+      .primtype = guntype_t::HEAVY,
   };
 
   auto ship_handle = em.create_ship(b_ship);

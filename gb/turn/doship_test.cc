@@ -490,7 +490,7 @@ void test_doabm_intercept() {
       .active = 1,
       .alive = 1,
   };
-  abm_data.primtype = GTYPE_HEAVY;
+  abm_data.primtype = guntype_t::HEAVY;
   abm_data.primary = 10;
   auto abm_handle = em.create_ship(abm_data);
   Ship& abm = *abm_handle;

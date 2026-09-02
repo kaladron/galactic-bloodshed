@@ -55,11 +55,11 @@ bool make_mod(const command_t& argv, GameObj& g) {
         g.out << std::format("{}\t\t\tArmor:    {:4}\t\tGuns:",
                              (dirship.on() ? "Online" : "Offline"),
                              dirship.armor());
-        if (btmpl.primary_power && dirship.primtype() != GTYPE_NONE) {
+        if (btmpl.primary_power && dirship.primtype() != guntype_t::NONE) {
           g.out << std::format("{:3}{:c}", dirship.primary(),
                                caliber_char(dirship.primtype()));
         }
-        if (btmpl.secondary_power && dirship.sectype() != GTYPE_NONE) {
+        if (btmpl.secondary_power && dirship.sectype() != guntype_t::NONE) {
           g.out << std::format("/{:}{:c}", dirship.secondary(),
                                caliber_char(dirship.sectype()));
         }
@@ -221,17 +221,17 @@ bool make_mod(const command_t& argv, GameObj& g) {
             dirship.primary() = std::stoi(argv[3]);
           } else if (argv[2] == "caliber") {
             if (argv[3] == "light")
-              dirship.primtype() = GTYPE_LIGHT;
+              dirship.primtype() = guntype_t::LIGHT;
             else if (argv[3] == "medium")
-              dirship.primtype() = GTYPE_MEDIUM;
+              dirship.primtype() = guntype_t::MEDIUM;
             else if (argv[3] == "heavy")
-              dirship.primtype() = GTYPE_HEAVY;
+              dirship.primtype() = guntype_t::HEAVY;
             else {
               g.out << "No such caliber.\n";
               return;
             }
-            dirship.primtype() =
-                MIN(shipdata_primary(dirship.build_type()), dirship.primtype());
+            dirship.primtype() = std::min(
+                shipdata_primary(dirship.build_type()), dirship.primtype());
           } else {
             g.out << "No such gun characteristic.\n";
             return;
@@ -241,17 +241,17 @@ bool make_mod(const command_t& argv, GameObj& g) {
             dirship.secondary() = std::stoi(argv[3]);
           } else if (argv[2] == "caliber") {
             if (argv[3] == "light")
-              dirship.sectype() = GTYPE_LIGHT;
+              dirship.sectype() = guntype_t::LIGHT;
             else if (argv[3] == "medium")
-              dirship.sectype() = GTYPE_MEDIUM;
+              dirship.sectype() = guntype_t::MEDIUM;
             else if (argv[3] == "heavy")
-              dirship.sectype() = GTYPE_HEAVY;
+              dirship.sectype() = guntype_t::HEAVY;
             else {
               g.out << "No such caliber.\n";
               return;
             }
-            dirship.sectype() = MIN(shipdata_secondary(dirship.build_type()),
-                                    dirship.sectype());
+            dirship.sectype() = std::min(
+                shipdata_secondary(dirship.build_type()), dirship.sectype());
           } else {
             g.out << "No such gun characteristic.\n";
             return;

@@ -21,11 +21,6 @@ export enum class guntype_t : std::uint8_t {
   HEAVY = 3,
 };
 
-export inline constexpr guntype_t GTYPE_NONE = guntype_t::NONE;
-export inline constexpr guntype_t GTYPE_LIGHT = guntype_t::LIGHT;
-export inline constexpr guntype_t GTYPE_MEDIUM = guntype_t::MEDIUM;
-export inline constexpr guntype_t GTYPE_HEAVY = guntype_t::HEAVY;
-
 /// \brief Returns the integer caliber multiplier for combat and mass
 /// calculations.
 export [[nodiscard]] constexpr unsigned int

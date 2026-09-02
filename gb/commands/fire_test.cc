@@ -23,7 +23,7 @@ void setup_test_world(TestContext& ctx) {
       .owned_by(1, 0)
       .named("Battleship")
       .in_star_orbit(0, 100.0, 200.0)
-      .with_guns(GTYPE_LIGHT, 10)
+      .with_guns(guntype_t::LIGHT, 10)
       .with_destruct(100)
       .with_crew(10, 10)
       .with_fuel(1000.0)

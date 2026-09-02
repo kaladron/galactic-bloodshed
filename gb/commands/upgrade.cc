@@ -84,50 +84,50 @@ bool upgrade(const command_t& argv, GameObj& g) {
       ship.hyper_drive().has = 1;
     } else if (argv[1] == "primary" && btmpl.primary_power) {
       if (argv[2] == "strength") {
-        if (ship.primtype() == GTYPE_NONE) {
+        if (ship.primtype() == guntype_t::NONE) {
           g.out << "No caliber defined.\n";
           return;
         }
         ship.primary() = std::stoi(argv[3]);
-        ship.primary() = MAX(ship.primary(), dirship.primary());
+        ship.primary() = std::max(ship.primary(), dirship.primary());
       } else if (argv[2] == "caliber") {
         if (argv[3] == "light")
-          ship.primtype() = MAX(GTYPE_LIGHT, dirship.primtype());
+          ship.primtype() = std::max(guntype_t::LIGHT, dirship.primtype());
         else if (argv[3] == "medium")
-          ship.primtype() = MAX(GTYPE_MEDIUM, dirship.primtype());
+          ship.primtype() = std::max(guntype_t::MEDIUM, dirship.primtype());
         else if (argv[3] == "heavy")
-          ship.primtype() = MAX(GTYPE_HEAVY, dirship.primtype());
+          ship.primtype() = std::max(guntype_t::HEAVY, dirship.primtype());
         else {
           g.out << "No such caliber.\n";
           return;
         }
         ship.primtype() =
-            MIN(shipdata_primary(dirship.build_type()), ship.primtype());
+            std::min(shipdata_primary(dirship.build_type()), ship.primtype());
       } else {
         g.out << "No such gun characteristic.\n";
         return;
       }
     } else if (argv[1] == "secondary" && btmpl.secondary_power) {
       if (argv[2] == "strength") {
-        if (ship.sectype() == GTYPE_NONE) {
+        if (ship.sectype() == guntype_t::NONE) {
           g.out << "No caliber defined.\n";
           return;
         }
         ship.secondary() = std::stoi(argv[3]);
-        ship.secondary() = MAX(ship.secondary(), dirship.secondary());
+        ship.secondary() = std::max(ship.secondary(), dirship.secondary());
       } else if (argv[2] == "caliber") {
         if (argv[3] == "light")
-          ship.sectype() = MAX(GTYPE_LIGHT, dirship.sectype());
+          ship.sectype() = std::max(guntype_t::LIGHT, dirship.sectype());
         else if (argv[3] == "medium")
-          ship.sectype() = MAX(GTYPE_MEDIUM, dirship.sectype());
+          ship.sectype() = std::max(guntype_t::MEDIUM, dirship.sectype());
         else if (argv[3] == "heavy")
-          ship.sectype() = MAX(GTYPE_HEAVY, dirship.sectype());
+          ship.sectype() = std::max(guntype_t::HEAVY, dirship.sectype());
         else {
           g.out << "No such caliber.\n";
           return;
         }
         ship.sectype() =
-            MIN(shipdata_secondary(dirship.build_type()), ship.sectype());
+            std::min(shipdata_secondary(dirship.build_type()), ship.sectype());
       } else {
         g.out << "No such gun characteristic.\n";
         return;

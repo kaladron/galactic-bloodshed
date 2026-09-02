@@ -37,7 +37,7 @@ struct FiringShipParams {
   damage_t damage = 0;
   bool evade = false;
   speed_t speed = 0;
-  guntype_t caliber = GTYPE_NONE;
+  guntype_t caliber = guntype_t::NONE;
   bool laser_focused = false;  // Laser is on and focused
 };
 
@@ -632,7 +632,7 @@ void PlanetTacticalItem::report_tactical(
         .damage = 0,  // Planets don't have damage
         .evade = params.fev,
         .speed = params.fspeed,
-        .caliber = GTYPE_MEDIUM,
+        .caliber = guntype_t::MEDIUM,
         .laser_focused = false,  // Planets don't have laser focus
     };
 

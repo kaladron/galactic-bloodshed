@@ -82,7 +82,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
     } else if (argv[1] == "hyperdrive" && btmpl.can_hyperjump &&
                !dirship.hyper_drive().has && race.discoveries.hyperdrive) {
       ship.hyper_drive().has = 1;
-    } else if (argv[1] == "primary" && btmpl.primary_power) {
+    } else if (argv[1] == "primary" && btmpl.has_primary()) {
       if (argv[2] == "strength") {
         if (ship.primtype() == guntype_t::NONE) {
           g.out << "No caliber defined.\n";
@@ -107,7 +107,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
         g.out << "No such gun characteristic.\n";
         return;
       }
-    } else if (argv[1] == "secondary" && btmpl.secondary_power) {
+    } else if (argv[1] == "secondary" && btmpl.has_secondary()) {
       if (argv[2] == "strength") {
         if (ship.sectype() == guntype_t::NONE) {
           g.out << "No caliber defined.\n";

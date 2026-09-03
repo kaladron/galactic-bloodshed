@@ -374,7 +374,7 @@ void Getship(Ship* s, ShipType i, const Race& r) {
       .hyper_drive = {.has = r.God && tmpl.can_hyperjump},
       .laser = r.God && tmpl.can_mount_laser,
       .type = i,
-      .guns = tmpl.primary_power ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
+      .guns = tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
       .primary = tmpl.max_guns,
       .primtype = shipdata_primary(i),
       .sectype = shipdata_secondary(i),

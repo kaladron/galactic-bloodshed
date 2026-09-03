@@ -55,11 +55,11 @@ bool make_mod(const command_t& argv, GameObj& g) {
         g.out << std::format("{}\t\t\tArmor:    {:4}\t\tGuns:",
                              (dirship.on() ? "Online" : "Offline"),
                              dirship.armor());
-        if (btmpl.primary_power && dirship.primtype() != guntype_t::NONE) {
+        if (btmpl.has_primary() && dirship.primtype() != guntype_t::NONE) {
           g.out << std::format("{:3}{:c}", dirship.primary(),
                                caliber_char(dirship.primtype()));
         }
-        if (btmpl.secondary_power && dirship.sectype() != guntype_t::NONE) {
+        if (btmpl.has_secondary() && dirship.sectype() != guntype_t::NONE) {
           g.out << std::format("/{:}{:c}", dirship.secondary(),
                                caliber_char(dirship.sectype()));
         }
@@ -216,7 +216,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
         } else if (argv[1] == "hyperdrive" && btmpl.can_hyperjump &&
                    race.discoveries.hyperdrive) {
           dirship.hyper_drive().has = !dirship.hyper_drive().has;
-        } else if (argv[1] == "primary" && btmpl.primary_power) {
+        } else if (argv[1] == "primary" && btmpl.has_primary()) {
           if (argv[2] == "strength") {
             dirship.primary() = std::stoi(argv[3]);
           } else if (argv[2] == "caliber") {
@@ -236,7 +236,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
             g.out << "No such gun characteristic.\n";
             return;
           }
-        } else if (argv[1] == "secondary" && btmpl.secondary_power) {
+        } else if (argv[1] == "secondary" && btmpl.has_secondary()) {
           if (argv[2] == "strength") {
             dirship.secondary() = std::stoi(argv[3]);
           } else if (argv[2] == "caliber") {

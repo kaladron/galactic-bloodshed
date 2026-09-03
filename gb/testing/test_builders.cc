@@ -48,7 +48,7 @@ TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
   ship_.primtype = shipdata_primary(type);
   ship_.sectype = shipdata_secondary(type);
   ship_.guns =
-      tmpl.primary_power ? ActiveBattery::PRIMARY : ActiveBattery::NONE;
+      tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE;
   ship_.primary = tmpl.max_guns;
   ship_.retaliate = ship_.primary;
 

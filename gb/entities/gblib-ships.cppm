@@ -305,22 +305,24 @@ export struct ShipTemplate {
   char letter{'p'};
 
   // Baseline capacities & numerical metrics
-  double base_tech{0.0};              ///< Baseline technology requirement
-  resource_t max_cargo{0};            ///< Maximum resource cargo capacity
-  hangar_t max_hangar{0};             ///< Maximum hangar capacity
-  resource_t max_destruct{0};         ///< Maximum destruct crystal capacity
-  gun_count_t max_guns{0};            ///< Number of gun mounts
-  weapon_power_t primary_power{0};    ///< Primary battery weapon rating
-  weapon_power_t secondary_power{0};  ///< Secondary battery weapon rating
-  fuel_t max_fuel{0.0};               ///< Maximum fuel tank capacity
-  population_t max_crew{0};           ///< Maximum crew accommodation capacity
-  armor_t base_armor{0};              ///< Baseline hull armor rating
-  money_t build_cost{0};              ///< Base construction cost in currency
-  speed_t base_speed{0};              ///< Base engine throttle speed rating
-  damage_t base_damage{0};            ///< Base structural damage threshold
-  double build_time{0.0};             ///< Construction build time factor
-  double construction_cost{0.0};      ///< Construction cost multiplier
-  bool can_modify{false};             ///< Can be customized / modified
+  double base_tech{0.0};       ///< Baseline technology requirement
+  resource_t max_cargo{0};     ///< Maximum resource cargo capacity
+  hangar_t max_hangar{0};      ///< Maximum hangar capacity
+  resource_t max_destruct{0};  ///< Maximum destruct crystal capacity
+  gun_count_t max_guns{0};     ///< Number of gun mounts
+  guntype_t max_primary_caliber{
+      guntype_t::NONE};  ///< Maximum primary gun caliber
+  guntype_t max_secondary_caliber{
+      guntype_t::NONE};           ///< Maximum secondary gun caliber
+  fuel_t max_fuel{0.0};           ///< Maximum fuel tank capacity
+  population_t max_crew{0};       ///< Maximum crew accommodation capacity
+  armor_t base_armor{0};          ///< Baseline hull armor rating
+  money_t build_cost{0};          ///< Base construction cost in currency
+  speed_t base_speed{0};          ///< Base engine throttle speed rating
+  damage_t base_damage{0};        ///< Base structural damage threshold
+  double build_time{0.0};         ///< Construction build time factor
+  double construction_cost{0.0};  ///< Construction cost multiplier
+  bool can_modify{false};         ///< Can be customized / modified
 
   // Boolean capabilities & operational permissions
   bool can_mount_laser{false};  ///< Can be equipped with combat laser mount
@@ -336,6 +338,18 @@ export struct ShipTemplate {
   bool can_repair{false};       ///< Capable of self/fleet repair
   bool requires_maintenance{
       false};  ///< Incurs regular economic maintenance cost
+
+  /// \brief Indicates whether the ship class supports mounting a primary
+  /// battery.
+  [[nodiscard]] constexpr bool has_primary() const noexcept {
+    return max_primary_caliber != guntype_t::NONE;
+  }
+
+  /// \brief Indicates whether the ship class supports mounting a secondary
+  /// battery.
+  [[nodiscard]] constexpr bool has_secondary() const noexcept {
+    return max_secondary_caliber != guntype_t::NONE;
+  }
 
   /// \brief Returns whether this ship type can be built on a planetary surface.
   [[nodiscard]] constexpr bool can_build_on_planet() const noexcept {
@@ -367,8 +381,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 20,
      .max_crew = 1,
      .base_armor = 0,
@@ -400,8 +414,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 2,
      .max_destruct = 2,
      .max_guns = 1,
-     .primary_power = 1,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::LIGHT,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 20,
      .max_crew = 10,
      .base_armor = 0,
@@ -433,8 +447,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 200,
      .max_destruct = 800,
      .max_guns = 30,
-     .primary_power = 3,
-     .secondary_power = 2,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::MEDIUM,
      .max_fuel = 1000,
      .max_crew = 30,
      .base_armor = 5,
@@ -466,8 +480,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 10,
      .max_destruct = 500,
      .max_guns = 60,
-     .primary_power = 3,
-     .secondary_power = 2,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::MEDIUM,
      .max_fuel = 500,
      .max_crew = 60,
      .base_armor = 10,
@@ -499,8 +513,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 10,
      .max_destruct = 400,
      .max_guns = 30,
-     .primary_power = 3,
-     .secondary_power = 2,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::MEDIUM,
      .max_fuel = 200,
      .max_crew = 30,
      .base_armor = 7,
@@ -532,8 +546,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 5,
      .max_destruct = 120,
      .max_guns = 20,
-     .primary_power = 2,
-     .secondary_power = 2,
+     .max_primary_caliber = guntype_t::MEDIUM,
+     .max_secondary_caliber = guntype_t::MEDIUM,
      .max_fuel = 200,
      .max_crew = 20,
      .base_armor = 3,
@@ -565,8 +579,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 5,
      .max_destruct = 300,
      .max_guns = 20,
-     .primary_power = 3,
-     .secondary_power = 2,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::MEDIUM,
      .max_fuel = 120,
      .max_crew = 20,
      .base_armor = 5,
@@ -598,8 +612,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 5,
      .max_destruct = 120,
      .max_guns = 15,
-     .primary_power = 2,
-     .secondary_power = 2,
+     .max_primary_caliber = guntype_t::MEDIUM,
+     .max_secondary_caliber = guntype_t::MEDIUM,
      .max_fuel = 80,
      .max_crew = 15,
      .base_armor = 3,
@@ -631,8 +645,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 40,
      .max_guns = 20,
-     .primary_power = 2,
-     .secondary_power = 1,
+     .max_primary_caliber = guntype_t::MEDIUM,
+     .max_secondary_caliber = guntype_t::LIGHT,
      .max_fuel = 10,
      .max_crew = 1,
      .base_armor = 2,
@@ -664,8 +678,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 15,
      .max_guns = 5,
-     .primary_power = 2,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::MEDIUM,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 35,
      .max_crew = 5,
      .base_armor = 1,
@@ -697,8 +711,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 10,
      .max_destruct = 500,
      .max_guns = 20,
-     .primary_power = 2,
-     .secondary_power = 1,
+     .max_primary_caliber = guntype_t::MEDIUM,
+     .max_secondary_caliber = guntype_t::LIGHT,
      .max_fuel = 2000,
      .max_crew = 2000,
      .base_armor = 3,
@@ -730,8 +744,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 10,
      .max_destruct = 250,
      .max_guns = 20,
-     .primary_power = 2,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::MEDIUM,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 2000,
      .max_crew = 50,
      .base_armor = 1,
@@ -763,8 +777,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 20,
      .max_destruct = 1000,
      .max_guns = 50,
-     .primary_power = 3,
-     .secondary_power = 2,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::MEDIUM,
      .max_fuel = 2000,
      .max_crew = 200,
      .base_armor = 5,
@@ -796,8 +810,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 5,
      .max_destruct = 1000,
      .max_guns = 10,
-     .primary_power = 1,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::LIGHT,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 1000,
      .max_crew = 100,
      .base_armor = 2,
@@ -829,8 +843,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 5,
      .max_destruct = 200,
      .max_guns = 10,
-     .primary_power = 1,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::LIGHT,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 5000,
      .max_crew = 10,
      .base_armor = 2,
@@ -862,8 +876,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 1000,
      .max_destruct = 20000,
      .max_guns = 1000,
-     .primary_power = 3,
-     .secondary_power = 3,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::HEAVY,
      .max_fuel = 20000,
      .max_crew = 1000,
      .base_armor = 100,
@@ -895,8 +909,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 25,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 20,
      .max_crew = 0,
      .base_armor = 1,
@@ -928,8 +942,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 10,
      .max_guns = 1,
-     .primary_power = 1,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::LIGHT,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 20,
      .max_crew = 5,
      .base_armor = 0,
@@ -961,8 +975,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 20,
      .max_crew = 2,
      .base_armor = 0,
@@ -994,8 +1008,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 0,
      .max_crew = 2,
      .base_armor = 0,
@@ -1027,8 +1041,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 1000,
      .max_crew = 5,
      .base_armor = 0,
@@ -1060,8 +1074,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 200,
      .max_crew = 10,
      .base_armor = 1,
@@ -1093,8 +1107,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 1,
      .max_crew = 0,
      .base_armor = 0,
@@ -1126,8 +1140,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 1,
      .max_crew = 0,
      .base_armor = 0,
@@ -1159,8 +1173,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 50,
      .max_crew = 0,
      .base_armor = 1,
@@ -1192,8 +1206,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 500,
      .max_guns = 40,
-     .primary_power = 3,
-     .secondary_power = 2,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::MEDIUM,
      .max_fuel = 1000,
      .max_crew = 0,
      .base_armor = 15,
@@ -1225,8 +1239,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 100,
      .max_guns = 10,
-     .primary_power = 1,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::LIGHT,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 1000,
      .max_crew = 10,
      .base_armor = 20,
@@ -1258,8 +1272,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 100,
      .max_crew = 2,
      .base_armor = 1,
@@ -1291,8 +1305,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 20,
      .max_crew = 0,
      .base_armor = 0,
@@ -1324,8 +1338,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 20,
      .max_crew = 0,
      .base_armor = 0,
@@ -1357,8 +1371,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 120,
      .max_guns = 20,
-     .primary_power = 1,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::LIGHT,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 0,
      .max_crew = 40,
      .base_armor = 3,
@@ -1390,8 +1404,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 0,
      .max_crew = 20,
      .base_armor = 0,
@@ -1423,8 +1437,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 5,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 200,
      .max_crew = 20,
      .base_armor = 1,
@@ -1456,8 +1470,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 50,
      .max_guns = 0,
-     .primary_power = 3,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 0,
      .max_crew = 0,
      .base_armor = 10,
@@ -1489,8 +1503,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 1000,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 1000,
      .max_crew = 0,
      .base_armor = 10,
@@ -1522,8 +1536,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 1000,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 1000,
      .max_crew = 100,
      .base_armor = 0,
@@ -1555,8 +1569,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 10,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 5,
      .max_crew = 0,
      .base_armor = 0,
@@ -1588,8 +1602,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 500,
      .max_guns = 20,
-     .primary_power = 3,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 0,
      .max_crew = 50,
      .base_armor = 10,
@@ -1621,8 +1635,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 200,
      .max_crew = 50,
      .base_armor = 1,
@@ -1654,8 +1668,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 200,
      .max_crew = 10,
      .base_armor = 1,
@@ -1687,8 +1701,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 0,
      .max_crew = 20,
      .base_armor = 1,
@@ -1720,8 +1734,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 500,
      .max_crew = 20,
      .base_armor = 5,
@@ -1753,8 +1767,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 0,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 0,
      .max_crew = 100,
      .base_armor = 3,
@@ -1786,8 +1800,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 50,
      .max_guns = 5,
-     .primary_power = 1,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::LIGHT,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 0,
      .max_crew = 5,
      .base_armor = 5,
@@ -1819,8 +1833,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 0,
      .max_destruct = 20,
      .max_guns = 2,
-     .primary_power = 1,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::LIGHT,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 20,
      .max_crew = 1,
      .base_armor = 2,
@@ -1852,8 +1866,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 20,
      .max_destruct = 100,
      .max_guns = 0,
-     .primary_power = 0,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::NONE,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 100,
      .max_crew = 100,
      .base_armor = 15,
@@ -1885,8 +1899,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .max_hangar = 10,
      .max_destruct = 200,
      .max_guns = 10,
-     .primary_power = 3,
-     .secondary_power = 0,
+     .max_primary_caliber = guntype_t::HEAVY,
+     .max_secondary_caliber = guntype_t::NONE,
      .max_fuel = 100,
      .max_crew = 500,
      .base_armor = 7,
@@ -1943,7 +1957,7 @@ export [[nodiscard]] constexpr bool is_valid_ship_letter(char c) noexcept {
 /// \return Primary gun caliber as guntype_t.
 export [[nodiscard]] constexpr guntype_t
 shipdata_primary(ShipType ship_type) noexcept {
-  return static_cast<guntype_t>(ship_template(ship_type).primary_power);
+  return ship_template(ship_type).max_primary_caliber;
 }
 
 /// \brief Type-safe accessor for secondary gun caliber from ShipTemplate.
@@ -1951,7 +1965,7 @@ shipdata_primary(ShipType ship_type) noexcept {
 /// \return Secondary gun caliber as guntype_t.
 export [[nodiscard]] constexpr guntype_t
 shipdata_secondary(ShipType ship_type) noexcept {
-  return static_cast<guntype_t>(ship_template(ship_type).secondary_power);
+  return ship_template(ship_type).max_secondary_caliber;
 }
 
 export class Ship {

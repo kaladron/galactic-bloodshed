@@ -131,5 +131,48 @@ int main() {
     std::println(std::cout, "  ✓ Ship capability accessors work correctly");
   }
 
+  std::println(std::cout,
+               "Testing ShipTemplate battery caliber specifications...");
+  {
+    for (int t = 0; t < NUMSTYPES; ++t) {
+      const auto ship_type = static_cast<ShipType>(t);
+      const auto& tmpl = ship_template(ship_type);
+      test::expect_eq(tmpl.has_primary(),
+                      tmpl.max_primary_caliber != guntype_t::NONE);
+      test::expect_eq(tmpl.has_secondary(),
+                      tmpl.max_secondary_caliber != guntype_t::NONE);
+      test::expect_eq(shipdata_primary(ship_type), tmpl.max_primary_caliber);
+      test::expect_eq(shipdata_secondary(ship_type),
+                      tmpl.max_secondary_caliber);
+
+      if (tmpl.has_secondary()) {
+        test::expect_true(
+            tmpl.has_primary(),
+            "Ship with secondary battery should also support primary");
+      }
+    }
+
+    const auto& battle = ship_template(ShipType::STYPE_BATTLE);
+    test::expect_eq(battle.max_primary_caliber, guntype_t::HEAVY);
+    test::expect_eq(battle.max_secondary_caliber, guntype_t::MEDIUM);
+    test::expect_true(battle.has_primary());
+    test::expect_true(battle.has_secondary());
+
+    const auto& shuttle = ship_template(ShipType::STYPE_SHUTTLE);
+    test::expect_eq(shuttle.max_primary_caliber, guntype_t::LIGHT);
+    test::expect_eq(shuttle.max_secondary_caliber, guntype_t::NONE);
+    test::expect_true(shuttle.has_primary());
+    test::expect_false(shuttle.has_secondary());
+
+    const auto& pod = ship_template(ShipType::STYPE_POD);
+    test::expect_eq(pod.max_primary_caliber, guntype_t::NONE);
+    test::expect_eq(pod.max_secondary_caliber, guntype_t::NONE);
+    test::expect_false(pod.has_primary());
+    test::expect_false(pod.has_secondary());
+
+    std::println(std::cout,
+                 "  ✓ ShipTemplate battery caliber specifications valid");
+  }
+
   return 0;
 }

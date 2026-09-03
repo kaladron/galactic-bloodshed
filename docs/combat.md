@@ -26,14 +26,16 @@ flowchart LR
     Weapons --> Ordnance["Guided Space Ordnance\nMissiles, Mines & ABM Batteries"]
 ```
 
-### Kinetic Gun Calibers
-Kinetic batteries fire high-velocity physical warheads stored in ship cargo holds:
+### Kinetic Gun Calibers and Caliber Multipliers
+Kinetic batteries fire high-velocity physical warheads stored in ship cargo holds. Each gun installation belongs to one of three caliber tiers, characterized by an integer caliber multiplier $K$:
 
-| Caliber Designation | Maximum Range | Armor Penetration | Ammo Consumption | Optimal Fleet Role |
-| :--- | :---: | :---: | :---: | :--- |
-| **Light Guns** | $50$ units | Low | Low ($1$ destruct / volley) | Anti-fighter screening, missile interception, light scouts. |
-| **Medium Guns** | $150$ units | Moderate | Standard ($1$ destruct / gun) | Destroyer and cruiser fleet engagements, balanced broadsides. |
-| **Heavy Guns** | $250$ units | Devastating | High ($1$ destruct / gun) | Battleship spinal cannons, planetary siege batteries, dreadnoughts. |
+| Caliber Designation | Caliber Multiplier ($K$) | Relative 50% Tracking Range ($c \propto 1/K$) | Displacement Mass | Kinetic Damage ($D \propto K$) | Optimal Fleet Role |
+| :--- | :---: | :---: | :---: | :--- | :--- |
+| **Light Guns** | $1$ | **$3.0\times$** (High precision) | $0.2$ / gun | Standard ($1\times$) | Anti-fighter screening, missile point defense, agile escorts. |
+| **Medium Guns** | $2$ | **$1.5\times$** (Moderate precision) | $0.4$ / gun | Double ($2\times$) | Destroyer and cruiser line engagements, balanced broadsides. |
+| **Heavy Guns** | $3$ | **$1.0\times$** (Close-range / large targets) | $0.6$ / gun | Triple ($3\times$) | Battleship spinal cannons, planetary siege batteries, dreadnoughts. |
+
+All kinetic guns consume $1$ unit of stored destructive ordnance (`destruct`) per gun discharged in a volley.
 
 ### Directed-Energy Weapons
 Energy weapons draw power directly from the ship's fuel reserves ($2.0\text{ fuel per strength point}$):
@@ -67,17 +69,31 @@ Attacks succeed only if the target is within the maximum effective range of the 
 
 $$D = \sqrt{(x_{\text{target}} - x_{\text{attacker}})^2 + (y_{\text{target}} - y_{\text{attacker}})^2}$$
 
+Maximum kinetic weapon range scales logarithmically with imperial scientific technology:
+
+$$R_{\text{max}} = \log_{10}(\text{Technology} + 1) \times \text{System Scale}$$
+
+Targets positioned beyond $R_{\text{max}}$ cannot be engaged by kinetic batteries.
+
 ### Hit Probability and Combat Multipliers
-The probability of scoring hits depends on relative scientific technology, attacker gunnery precision, target evasion throttling, and the target's physical displacement size:
+The probability of scoring hits depends on relative scientific technology, attacker gunnery precision, target evasion throttling, target physical displacement size, and the weapon caliber multiplier $K$:
+- **Effective 50% Hit Factor**: The tracking baseline where fire control achieves a $50\%$ hit probability scales inversely with caliber:
+  $$c = \frac{a \times b}{K}$$
+  where $a$ scales with fire control technology and target displacement profile ($a \propto \text{Target Size}^{1/3}$), and $b$ accounts for relative speeds and evasive maneuvering. Light guns ($K = 1$) maintain high tracking precision over longer effective baselines, while heavy spinal mounts ($K = 3$) require closer range or larger targets to ensure hits.
 - Higher imperial technology provides superior fire control computers, increasing penetration odds.
 - Small strike craft (such as Fighters and Shuttles) utilize agile thrusters to evade incoming heavy gun fire.
 - Massive dreadnoughts and space stations present large target profiles, absorbing higher proportions of volleys.
 
-### Critical System Hits and Structural Damage
-Volleys penetrating defensive hull armor inflict critical internal damage:
-- **Structural Rupture**: Inflicts direct percentage damage ($\text{Damage} \ge 100\%$ destroys the vessel).
-- **Subsystem Destruction**: Penetrating hits destroy mounted gun batteries, disable hyperspace jump drives, rupture fuel/destruct holds, or damage docked parasite craft.
-- **Crew Casualties**: Secondary blast shockwaves cause casualties among living bridge officers and carried troops.
+### Critical System Hits, Structural Damage, and Collateral Attrition
+Volleys penetrating defensive hull armor inflict structural destruction and internal subsystem devastation:
+- **Structural Rupture**: Inflicts direct percentage damage scaled by penetrating hits and caliber multiplier $K$:
+  $$\text{Damage} \propto \frac{\text{Base Weapon Damage} \times K \times \text{Penetrating Hits}}{\text{Target Hull Volume}}$$
+  Accumulating $\text{Damage} \ge 100\%$ destroys the vessel.
+- **Critical Subsystem Hits**: Penetrating heavy caliber rounds lower effective internal compartment protection, substantially increasing the odds of disabling hyperspace jump drives, rupturing fuel tanks, or destroying docked parasite craft.
+- **Collateral Subsystem & Personnel Casualties**: Every penetrating hit inflicts collateral damage across living personnel and mounted gun batteries with probability:
+  $$P(\text{Casualty or Gun Loss}) = \frac{\text{Inflicted Damage Percentage}}{100}$$
+  Each carried colonist, troop, primary gun, and secondary gun is evaluated independently.
+- **Battery Depletion & Caliber Reset**: When collateral damage destroys the last remaining gun in a battery, its count reaches zero and its caliber automatically resets to None. If the depleted battery was the ship's active battery, offensive kinetic fire and kinetic retaliation are immediately disabled until repaired.
 
 ---
 
@@ -88,7 +104,7 @@ Warships can be integrated into automated fleet defense grids to ensure instanta
 ```mermaid
 flowchart TD
     Attacker["Hostile Vessel Fires on Target Ship"] --> DefCheck{"Target Damaged & Retaliation Enabled?"}
-    DefCheck -->|Yes| SelfRetal["Target Counter-Fires Immediately\nBased on Programmed Retaliation Level"]
+    DefCheck -->|Yes| SelfRetal["Target Counter-Fires Immediately\nBased on Programmed Salvo Limit"]
     DefCheck -->|No| EscortCheck
     SelfRetal --> EscortCheck{"Allied Escort Ships Stationed with Protect Orders?"}
     EscortCheck -->|Yes| EscortRetal["Escort Warships Unleash Broadside Volleys\nSimultaneous Counter-Fire against Attacker"]
@@ -96,10 +112,22 @@ flowchart TD
     EscortRetal --> EndCombat
 ```
 
-### Automated Retaliation Thresholds
-Captains program automated counter-fire thresholds using `order <ship> retaliate <strength>`:
+### Automated Retaliation and Salvo Limits
+Captains program automated counter-fire using standing tactical orders:
+- `order <ship> retaliate on|off`: Arms or disarms automated defensive counter-fire when struck by hostile fire.
+- `order <ship> salvo <guns>`: Sets a ceiling on the number of guns fired per defensive volley (clamped to the active battery's operational gun count).
+- `order <ship> laser on <strength>`: Arms directed-energy retaliation using combat lasers and fuel reserves.
 
-$$\text{Effective Counter-Fire} = \min\Big(\text{Programmed Retaliation Level}, \text{Active Battery Power}, \text{Stored Ammo}\Big)$$
+#### Retaliation Prerequisites and Firepower
+When attacked, a defending warship evaluates automated counter-fire immediately before subsequent commands resolve:
+1. **Operational Readiness**: The ship must be active and operational. Ships immobilized by radiation sickness cannot return fire.
+2. **Mobility Prerequisite**: The ship must have a positive base propulsion speed ($> 0$), or be landed on a planetary surface. Unlanded orbital platforms and space stations in deep space cannot retaliate.
+3. **Crew Staffing Constraint**: For standard warships, retaliation firepower cannot exceed living crew ($1$ crew member required per active gun). Strike craft (Fighters, AFVs) and robotic warships (Berserkers) are specifically exempt from this limit.
+4. **Effective Kinetic Retaliation**:
+   $$\text{Defensive Counter-Fire} = \min\Big(\text{Programmed Salvo Limit}, \text{Active Battery Gun Count}, \text{Effective Crew Staffing}, \text{Stored Destruct Ammo}\Big)$$
+5. **Effective Directed-Energy Retaliation**:
+   $$\text{Laser Counter-Fire} = \min\left(\text{Programmed Laser Strength}, \left\lfloor \frac{\text{Stored Fuel}}{2} \right\rfloor\right)$$
+   Laser retaliation requires an operational focus crystal mounted in the propulsion drive.
 
 When struck, the vessel immediately returns fire before subsequent tactical orders are executed.
 

@@ -38,12 +38,24 @@ Capital vessels and space stations (such as Fleet Carriers, Mobile Factories, an
 - **Docking**: Smaller vessels can dock with friendly carriers or stations to be transported across interstellar distances without expending their own fuel.
 - **Fleet Allegiance**: Docked craft operate under the direct command of the host carrier. Whenever a vessel is docked inside a carrier, the carrier's commanding empire and governor maintain operational control of all carried craft. If a carrier changes allegiance, all docked craft within its hangars transition with the carrier.
 
-### Dynamic Operational Mass
-A carrier's total displacement includes its baseline structure, stored consumables, transported populations, and all docked parasite craft:
+### Dynamic Operational Mass and Displacement Metrics
+A vessel's total displacement includes its baseline structure, stored consumables, carried populations, and any docked parasite craft:
 
-$$\text{Mass}_{\text{total}} = \text{Base Hull Mass} + (\text{Fuel} \times 0.01) + (\text{Resources} \times 0.1) + (\text{Destruct} \times 0.1) + (\text{Crew} + \text{Troops}) \times M_{\text{race}} + \sum \text{Mass}_{\text{docked}}$$
+$$\text{Mass}_{\text{total}} = \text{Base Hull Mass} + (\text{Fuel} \times 0.05) + (\text{Resources} \times 0.10) + (\text{Destruct} \times 0.15) + (\text{Crew} + \text{Troops}) \times M_{\text{race}} + \sum \text{Mass}_{\text{docked}}$$
 
 where $`M_{\text{race}}`$ is the physical body mass per individual colonist or soldier of the carried species.
+
+#### Base Hull Mass
+Empty hull mass depends on defensive armor plating, chassis volume, internal hangar bays, and kinetic gun mounts:
+
+$$\text{Base Hull Mass} = 1.0 + \text{Armor} \times 1.0 + \text{Hull Volume} \times 0.2 + \text{Hangar Capacity} \times 0.1 + 0.2 \times \Big(N_{\text{primary}} \times K_{\text{primary}} + N_{\text{secondary}} \times K_{\text{secondary}}\Big)$$
+
+where $N$ is the number of operational gun mounts and $K$ is the caliber mass multiplier ($1$ for Light Guns, $2$ for Medium Guns, $3$ for Heavy Guns, and $0$ for Unarmed).
+
+#### Displacement Sizing
+A ship's physical displacement profile determines its target signature in tactical combat and maximum internal capacity:
+
+$$\text{Displacement Size} = \left\lfloor 1.0 + 0.1 \times (N_{\text{primary}} + N_{\text{secondary}}) + 0.01 \times \text{Crew Capacity} + 0.02 \times \text{Resource Capacity} + 0.01 \times \text{Fuel Capacity} + 0.02 \times \text{Destruct Capacity} + \text{Hangar Capacity} \right\rfloor$$
 
 ---
 
@@ -143,46 +155,63 @@ Starships engage in tactical naval combat through modular kinetic gun batteries,
 
 ### Dual Battery Architecture
 
-Warships support up to two distinct weapon installations: a **Primary Battery** and a **Secondary Battery**. Each battery operates with independent mount capacity (`primary`, `secondary`) and an assigned weapon **Caliber** (`primtype`, `sectype`):
+Warships support up to two distinct weapon installations: a **Primary Battery** and a **Secondary Battery**. Each battery operates with independent mount capacity (gun count) and an assigned weapon **Caliber** (Light, Medium, or Heavy). A battery with zero functional guns is always uncalibrated (None), and an uncalibrated mount cannot hold functional guns:
 
 ```mermaid
 flowchart LR
-    Ship["Naval Vessel\n(Combat Orders & Mode)"] --> Switch{"Active Battery Selection\n(ActiveBattery)"}
-    Switch -->|PRIMARY| Prim["Primary Battery\nPower Rating: ship.primary()\nCaliber: ship.primtype()"]
-    Switch -->|SECONDARY| Sec["Secondary Battery\nPower Rating: ship.secondary()\nCaliber: ship.sectype()"]
-    Switch -->|NONE| Off["Weapons Offline / Unarmed\nActive Firepower = 0"]
+    Ship["Naval Vessel\nOperational Combat Mode"] --> Switch{"Active Battery Mode"}
+    Switch -->|"PRIMARY"| Prim["Primary Battery\nOperational Mounts & Caliber"]
+    Switch -->|"SECONDARY"| Sec["Secondary Battery\nOperational Mounts & Caliber"]
+    Switch -->|"NONE"| Off["Weapons Standby / Offline\nActive Firepower = 0"]
 ```
 
-### Weapon Calibers
+### Weapon Calibers and Caliber Multipliers
 
-Gun calibers dictate effective engagement range, damage output per volley, penetration capability, and munition consumption:
+Gun calibers dictate engagement tracking precision, structural damage scaling, critical hit vulnerability, and physical displacement weight:
 
-| Caliber Designation | Tactical Characteristics & Fleet Role | Munition Profile |
-| :--- | :--- | :--- |
-| **None / Unarmed** | Unarmed battery mount or disabled weapon slot. | 0 destruct / volley |
-| **Light Guns** | High tracking velocity and rapid cyclic fire; optimized for anti-fighter screening and point defense. | Low ammo draw |
-| **Medium Guns** | General-purpose fleet battery; balanced range and damage against cruisers and destroyers. | Standard ammo draw |
-| **Heavy Guns** | Heavy capital ship spinal mounts and planetary siege cannons; devastating kinetic strike against battleships and surface installations. | High ammo draw |
+| Caliber Designation | Caliber Multiplier ($K$) | Relative 50% Tracking Range ($c \propto 1/K$) | Displacement Mass | Tactical Characteristics & Fleet Role | Ammo Profile |
+| :--- | :---: | :---: | :---: | :--- | :--- |
+| **None / Unarmed** | $0$ | N/A | $0.0$ mass / gun | Unarmed battery mount or depleted weapon slot. | 0 destruct / round |
+| **Light Guns** | $1$ | **$3.0\times$** (High precision) | $0.2$ mass / gun | High tracking precision against agile strike craft and missiles; rapid point defense. | 1 destruct / round |
+| **Medium Guns** | $2$ | **$1.5\times$** (Moderate precision) | $0.4$ mass / gun | General-purpose fleet battery; balanced tracking and damage for destroyers and cruisers. | 1 destruct / round |
+| **Heavy Guns** | $3$ | **$1.0\times$** (Close-range / large targets) | $0.6$ mass / gun | Heavy capital ship spinal mounts and siege cannons; massive kinetic impact against armored hulls. | 1 destruct / round |
 
-### Active Battery Selection
+### Active Battery Selection and Standby Modes
 
-During combat encounters, a vessel's tactical fire control directs fire through the currently selected battery mode:
+During combat encounters, a vessel's tactical fire control directs kinetic broadsides through the currently selected active battery:
 - **Primary Battery**: Fire control is routed through the primary battery mount.
 - **Secondary Battery**: Fire control is routed through the secondary battery mount.
-- **Standby / Disarmed**: All batteries remain on standby with zero offensive output (useful for non-combat ships, factory vessels during retooling, or stealth operations).
+- **Standby / Disarmed**: All kinetic batteries remain offline with zero offensive output (essential for unarmed transports, stealth vessels, or factories during retooling).
+- **Empty Battery Fallback**: If the currently selected battery contains zero operational guns (either built without guns or reduced to zero by combat damage), tactical fire control treats the weapon system as offline—the ship cannot fire kinetic ordnance or retaliate.
 
 Captains select the active battery using the `order` command:
 ```text
-order <ship> primary     # Directs weapons to primary battery
-order <ship> secondary   # Switches fire control to secondary battery
-order <ship> none        # Places weapons on standby
+order <ship> primary [<salvo>]    # Activates primary battery (optional salvo cap)
+order <ship> secondary [<salvo>]  # Activates secondary battery (optional salvo cap)
+order <ship> none                 # Places kinetic weapons on standby
 ```
 
-### Automated Retaliation Thresholds
+### Automated Retaliation and Salvo Limits
 
-Starships can be programmed with an automated retaliation threshold (`retaliate`), configuring the vessel to return defensive counter-fire immediately when fired upon by hostile craft:
-$$\text{Effective Counter-Fire} = \min\Big(\text{Programmed Retaliation Level}, \text{Active Battery Power}, \text{Stored Destruct Ammo}\Big)$$
-This ensures defensive perimeter vessels and patrols automatically respond to hostile incursions without requiring real-time player intervention.
+Warships can be integrated into automated fleet defense networks using standing retaliation orders:
+- **Retaliation Toggle (`order <ship> retaliate on|off`)**: Enables or disables automated defensive counter-fire when struck by hostile fire.
+- **Salvo Cap (`order <ship> salvo <guns>`)**: Regulates ammunition expenditure by capping the maximum number of guns fired per defensive volley (clamped to the active battery's operational gun count).
+- **Laser Retaliation (`order <ship> laser on <strength>`)**: Configures the vessel to return fire using combat lasers instead of kinetic guns (consuming $2.0\text{ fuel per strength point}$, requiring an operational propulsion crystal).
+
+#### Retaliation Gating and Firepower Resolution
+Defensive kinetic counter-fire resolves automatically before subsequent tactical commands:
+1. **Operational Readiness**: The ship must be active and operational. Ships immobilized by radiation sickness cannot return fire.
+2. **Mobility Prerequisite**: The ship must have a positive base propulsion speed ($> 0$), or be landed on a planetary surface. Unlanded orbital platforms and space stations in deep space cannot retaliate.
+3. **Crew Staffing Constraint**: Standard warships require $1$ living crew member per active gun. Automated AI warships (such as Berserkers) and specialized strike craft (Fighters and Armored Fighting Vehicles) are exempt from this staffing limit.
+4. **Effective Firepower**:
+   $$\text{Defensive Counter-Fire} = \min\Big(\text{Programmed Salvo Limit}, \text{Active Battery Gun Count}, \text{Effective Crew Staffing}, \text{Stored Destruct Ammo}\Big)$$
+
+### Combat Collateral Damage and Battery Depletion
+
+Penetrating hostile fire inflicts critical subsystem damage and collateral casualties:
+- **Collateral Probability**: For every hit that penetrates defensive armor, each carried colonist, troop, primary gun, and secondary gun faces an independent casualty risk:
+  $$P(\text{Casualty or Gun Loss}) = \frac{\text{Inflicted Damage Percentage}}{100}$$
+- **Battery Depletion & Caliber Degradation**: When collateral damage destroys the last remaining gun in a battery, its count reaches zero and its caliber automatically degrades to None. If the depleted battery was the active battery, the ship immediately loses its ability to return fire until repaired at a shipyard or switched to an alternate functional battery.
 
 ### Directed Energy Weapons and Munitions
 

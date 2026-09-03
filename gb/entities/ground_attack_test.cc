@@ -47,8 +47,7 @@ void test_mech_attack_people() {
   ship.retaliate() = 100;
   ship.destruct() = 100;
   ship.guns() = PRIMARY;
-  ship.primary() = 10;
-  ship.primtype() = guntype_t::HEAVY;
+  ship.set_primary_battery(10, guntype_t::HEAVY);
 
   population_t civ = 100;
   population_t mil = 50;
@@ -103,7 +102,7 @@ void test_people_attack_mech() {
   ship.retaliate() = 100;
   ship.destruct() = 100;
   ship.guns() = PRIMARY;
-  ship.primary() = 5;
+  ship.set_primary_battery(5, guntype_t::HEAVY);
 
   auto [short_buf, long_buf] = people_attack_mech(
       em, ship, 100, 50, race, alien, sect, Coordinates{1, 1});

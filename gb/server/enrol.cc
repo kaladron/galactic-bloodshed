@@ -406,10 +406,10 @@ int main(int argc, char* argv[]) {
     ss.build_type = ShipType::OTYPE_GOV;
     ss.armor = gov_tmpl.base_armor;
     ss.guns = PRIMARY;
-    ss.primary = gov_tmpl.max_guns;
-    ss.primtype = shipdata_primary(ShipType::OTYPE_GOV);
-    ss.secondary = gov_tmpl.max_guns;
-    ss.sectype = shipdata_secondary(ShipType::OTYPE_GOV);
+    ss.primary_battery = GunBattery::create(
+        gov_tmpl.max_guns, shipdata_primary(ShipType::OTYPE_GOV));
+    ss.secondary_battery = GunBattery::create(
+        gov_tmpl.max_guns, shipdata_secondary(ShipType::OTYPE_GOV));
     ss.max_crew = gov_tmpl.max_crew;
     ss.max_destruct = gov_tmpl.max_destruct;
     ss.max_resource = gov_tmpl.max_cargo;

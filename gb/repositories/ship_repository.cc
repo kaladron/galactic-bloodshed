@@ -102,6 +102,13 @@ struct meta<HyperDriveData> {
 };
 
 template <>
+struct meta<GunBattery> {
+  using T = GunBattery;
+  static constexpr auto value =
+      object("count", &T::count, "caliber", &T::caliber);
+};
+
+template <>
 struct meta<ship_struct> {
   using T = ship_struct;
   static constexpr auto value = object(
@@ -128,9 +135,9 @@ struct meta<ship_struct> {
       "mode", &T::mode, "bombard", &T::bombard, "mounted", &T::mounted,
       "cloaked", &T::cloaked, "sheep", &T::sheep, "docked", &T::docked,
       "notified", &T::notified, "examined", &T::examined, "on", &T::on,
-      "merchant", &T::merchant, "guns", &T::guns, "primary", &T::primary,
-      "primtype", &T::primtype, "secondary", &T::secondary, "sectype",
-      &T::sectype, "hanger", &T::hanger, "max_hanger", &T::max_hanger);
+      "merchant", &T::merchant, "guns", &T::guns, "primary_battery",
+      &T::primary_battery, "secondary_battery", &T::secondary_battery, "hanger",
+      &T::hanger, "max_hanger", &T::max_hanger);
 };
 
 }  // namespace glz

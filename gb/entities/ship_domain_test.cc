@@ -326,10 +326,8 @@ void test_dynamic_base_mass() {
       .armor = 5,
       .size = 50,
       .base_mass = 9999.0,  // Stored legacy value should be completely ignored
-      .primary = 4,
-      .primtype = guntype_t::MEDIUM,
-      .secondary = 2,
-      .sectype = guntype_t::LIGHT,
+      .primary_battery = GunBattery::create(4, guntype_t::MEDIUM),
+      .secondary_battery = GunBattery::create(2, guntype_t::LIGHT),
       .max_hanger = 10,
   };
   Ship ship{sdata};
@@ -368,6 +366,84 @@ void test_gun_caliber_domain() {
   test::expect_eq(caliber_char(guntype_t::HEAVY), 'H');
 }
 
+void test_gun_battery_invariants_and_operations() {
+  std::println(std::cout,
+               "Testing GunBattery value object invariants and operations...");
+
+  // Default value object
+  GunBattery empty;
+  test::expect_eq(empty.count, 0u);
+  test::expect_eq(empty.caliber, guntype_t::NONE);
+  test::expect_true(empty.is_empty());
+  test::expect_false(empty.has_guns());
+  test::expect_eq(empty.caliber_multiplier(), 0u);
+  expect_near(empty.mass_contribution(), 0.0);
+
+  // Normalization via factory
+  auto valid = GunBattery::create(10, guntype_t::HEAVY);
+  test::expect_eq(valid.count, 10u);
+  test::expect_eq(valid.caliber, guntype_t::HEAVY);
+  test::expect_true(valid.has_guns());
+  test::expect_false(valid.is_empty());
+  test::expect_eq(valid.caliber_multiplier(), 3u);
+  expect_near(valid.mass_contribution(), 30.0);
+
+  auto zero_count = GunBattery::create(0, guntype_t::HEAVY);
+  test::expect_eq(zero_count.count, 0u);
+  test::expect_eq(zero_count.caliber, guntype_t::NONE);
+  test::expect_true(zero_count.is_empty());
+
+  auto none_caliber = GunBattery::create(10, guntype_t::NONE);
+  test::expect_eq(none_caliber.count, 0u);
+  test::expect_eq(none_caliber.caliber, guntype_t::NONE);
+  test::expect_true(none_caliber.is_empty());
+
+  // Damage operations returning actual guns destroyed
+  test::expect_eq(valid.damage(3), 3u);
+  test::expect_eq(valid.count, 7u);
+  test::expect_eq(valid.caliber, guntype_t::HEAVY);
+
+  // Partial damage destroying remainder
+  test::expect_eq(valid.damage(7), 7u);
+  test::expect_eq(valid.count, 0u);
+  test::expect_eq(valid.caliber, guntype_t::NONE);
+  test::expect_true(valid.is_empty());
+
+  // Overkill damage: reports actual clamped destroyed count
+  auto overkill = GunBattery::create(5, guntype_t::MEDIUM);
+  test::expect_eq(overkill.damage(10), 5u);
+  test::expect_eq(overkill.count, 0u);
+  test::expect_eq(overkill.caliber, guntype_t::NONE);
+  test::expect_eq(overkill.damage(3), 0u);
+
+  // Ship battery encapsulation and atomic setters
+  Ship ship;
+  ship.set_primary_battery(6, guntype_t::MEDIUM);
+  test::expect_eq(ship.primary(), 6u);
+  test::expect_eq(ship.primtype(), guntype_t::MEDIUM);
+  test::expect_eq(ship.primary_battery().count, 6u);
+  test::expect_eq(ship.primary_battery().caliber, guntype_t::MEDIUM);
+
+  ship.set_secondary_battery(4, guntype_t::LIGHT);
+  test::expect_eq(ship.secondary(), 4u);
+  test::expect_eq(ship.sectype(), guntype_t::LIGHT);
+  test::expect_eq(ship.secondary_battery().count, 4u);
+  test::expect_eq(ship.secondary_battery().caliber, guntype_t::LIGHT);
+
+  // Damage via Ship domain methods returning actual guns lost
+  test::expect_eq(ship.damage_primary_guns(2), 2u);
+  test::expect_eq(ship.primary(), 4u);
+  test::expect_eq(ship.primtype(), guntype_t::MEDIUM);
+
+  test::expect_eq(ship.damage_primary_guns(10), 4u);  // clamped to 4 remaining
+  test::expect_eq(ship.primary(), 0u);
+  test::expect_eq(ship.primtype(), guntype_t::NONE);
+
+  test::expect_eq(ship.damage_secondary_guns(4), 4u);
+  test::expect_eq(ship.secondary(), 0u);
+  test::expect_eq(ship.sectype(), guntype_t::NONE);
+}
+
 }  // namespace
 
 int main() {
@@ -382,6 +458,7 @@ int main() {
   test_clamped_add_and_consume();
   test_dynamic_base_mass();
   test_gun_caliber_domain();
+  test_gun_battery_invariants_and_operations();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

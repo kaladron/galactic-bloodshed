@@ -143,10 +143,8 @@ bool make_mod(const command_t& argv, GameObj& g) {
       dirship.armor() = itmpl.base_armor;
       dirship.guns() =
           ActiveBattery::NONE; /* this keeps track of the factory status! */
-      dirship.primary() = itmpl.max_guns;
-      dirship.primtype() = shipdata_primary(*i);
-      dirship.secondary() = itmpl.max_guns;
-      dirship.sectype() = shipdata_secondary(*i);
+      dirship.set_primary_battery(itmpl.max_guns, shipdata_primary(*i));
+      dirship.set_secondary_battery(itmpl.max_guns, shipdata_secondary(*i));
       dirship.max_crew() = itmpl.max_crew;
       dirship.max_resource() = itmpl.max_cargo;
       dirship.max_hanger() = itmpl.max_hangar;
@@ -218,40 +216,45 @@ bool make_mod(const command_t& argv, GameObj& g) {
           dirship.hyper_drive().has = !dirship.hyper_drive().has;
         } else if (argv[1] == "primary" && btmpl.has_primary()) {
           if (argv[2] == "strength") {
-            dirship.primary() = std::stoi(argv[3]);
+            dirship.set_primary_battery(std::stoi(argv[3]), dirship.primtype());
           } else if (argv[2] == "caliber") {
+            guntype_t new_caliber{guntype_t::NONE};
             if (argv[3] == "light")
-              dirship.primtype() = guntype_t::LIGHT;
+              new_caliber = guntype_t::LIGHT;
             else if (argv[3] == "medium")
-              dirship.primtype() = guntype_t::MEDIUM;
+              new_caliber = guntype_t::MEDIUM;
             else if (argv[3] == "heavy")
-              dirship.primtype() = guntype_t::HEAVY;
+              new_caliber = guntype_t::HEAVY;
             else {
               g.out << "No such caliber.\n";
               return;
             }
-            dirship.primtype() = std::min(
-                shipdata_primary(dirship.build_type()), dirship.primtype());
+            new_caliber =
+                std::min(shipdata_primary(dirship.build_type()), new_caliber);
+            dirship.set_primary_battery(dirship.primary(), new_caliber);
           } else {
             g.out << "No such gun characteristic.\n";
             return;
           }
         } else if (argv[1] == "secondary" && btmpl.has_secondary()) {
           if (argv[2] == "strength") {
-            dirship.secondary() = std::stoi(argv[3]);
+            dirship.set_secondary_battery(std::stoi(argv[3]),
+                                          dirship.sectype());
           } else if (argv[2] == "caliber") {
+            guntype_t new_caliber{guntype_t::NONE};
             if (argv[3] == "light")
-              dirship.sectype() = guntype_t::LIGHT;
+              new_caliber = guntype_t::LIGHT;
             else if (argv[3] == "medium")
-              dirship.sectype() = guntype_t::MEDIUM;
+              new_caliber = guntype_t::MEDIUM;
             else if (argv[3] == "heavy")
-              dirship.sectype() = guntype_t::HEAVY;
+              new_caliber = guntype_t::HEAVY;
             else {
               g.out << "No such caliber.\n";
               return;
             }
-            dirship.sectype() = std::min(
-                shipdata_secondary(dirship.build_type()), dirship.sectype());
+            new_caliber =
+                std::min(shipdata_secondary(dirship.build_type()), new_caliber);
+            dirship.set_secondary_battery(dirship.secondary(), new_caliber);
           } else {
             g.out << "No such gun characteristic.\n";
             return;

@@ -70,9 +70,10 @@ void test_upgrade_command() {
   ship.armor() = tmpl.base_armor;
   ship.max_speed() = 5;
   ship.max_destruct() = tmpl.max_destruct;
-  ship.max_hanger() = tmpl.max_hangar;
-  ship.primary() = tmpl.max_guns;
-  ship.secondary() = tmpl.max_guns;
+  ship.set_primary_battery(tmpl.max_guns,
+                           shipdata_primary(ShipType::STYPE_BATTLE));
+  ship.set_secondary_battery(tmpl.max_guns,
+                             shipdata_secondary(ShipType::STYPE_BATTLE));
   ship.mass() = 10.0;
   ship.build_cost() = static_cast<int>(cost(ship));
   ship.damage() = 0;  // No damage - required for upgrades

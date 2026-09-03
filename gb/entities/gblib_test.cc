@@ -38,8 +38,8 @@ int main() {
     data.max_hanger = 20;
     data.hanger = 5;
     data.guns = PRIMARY;
-    data.primary = 40;
-    data.secondary = 20;
+    data.primary_battery = GunBattery::create(40, guntype_t::MEDIUM);
+    data.secondary_battery = GunBattery::create(20, guntype_t::LIGHT);
     data.max_crew = 100;
     data.popn = 40;
     data.troops = 30;

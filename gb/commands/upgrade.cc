@@ -88,21 +88,24 @@ bool upgrade(const command_t& argv, GameObj& g) {
           g.out << "No caliber defined.\n";
           return;
         }
-        ship.primary() = std::stoi(argv[3]);
-        ship.primary() = std::max(ship.primary(), dirship.primary());
+        auto count = std::max(static_cast<gun_count_t>(std::stoi(argv[3])),
+                              dirship.primary());
+        ship.set_primary_battery(count, ship.primtype());
       } else if (argv[2] == "caliber") {
+        guntype_t new_caliber{guntype_t::NONE};
         if (argv[3] == "light")
-          ship.primtype() = std::max(guntype_t::LIGHT, dirship.primtype());
+          new_caliber = std::max(guntype_t::LIGHT, dirship.primtype());
         else if (argv[3] == "medium")
-          ship.primtype() = std::max(guntype_t::MEDIUM, dirship.primtype());
+          new_caliber = std::max(guntype_t::MEDIUM, dirship.primtype());
         else if (argv[3] == "heavy")
-          ship.primtype() = std::max(guntype_t::HEAVY, dirship.primtype());
+          new_caliber = std::max(guntype_t::HEAVY, dirship.primtype());
         else {
           g.out << "No such caliber.\n";
           return;
         }
-        ship.primtype() =
-            std::min(shipdata_primary(dirship.build_type()), ship.primtype());
+        new_caliber =
+            std::min(shipdata_primary(dirship.build_type()), new_caliber);
+        ship.set_primary_battery(ship.primary(), new_caliber);
       } else {
         g.out << "No such gun characteristic.\n";
         return;
@@ -113,21 +116,24 @@ bool upgrade(const command_t& argv, GameObj& g) {
           g.out << "No caliber defined.\n";
           return;
         }
-        ship.secondary() = std::stoi(argv[3]);
-        ship.secondary() = std::max(ship.secondary(), dirship.secondary());
+        auto count = std::max(static_cast<gun_count_t>(std::stoi(argv[3])),
+                              dirship.secondary());
+        ship.set_secondary_battery(count, ship.sectype());
       } else if (argv[2] == "caliber") {
+        guntype_t new_caliber{guntype_t::NONE};
         if (argv[3] == "light")
-          ship.sectype() = std::max(guntype_t::LIGHT, dirship.sectype());
+          new_caliber = std::max(guntype_t::LIGHT, dirship.sectype());
         else if (argv[3] == "medium")
-          ship.sectype() = std::max(guntype_t::MEDIUM, dirship.sectype());
+          new_caliber = std::max(guntype_t::MEDIUM, dirship.sectype());
         else if (argv[3] == "heavy")
-          ship.sectype() = std::max(guntype_t::HEAVY, dirship.sectype());
+          new_caliber = std::max(guntype_t::HEAVY, dirship.sectype());
         else {
           g.out << "No such caliber.\n";
           return;
         }
-        ship.sectype() =
-            std::min(shipdata_secondary(dirship.build_type()), ship.sectype());
+        new_caliber =
+            std::min(shipdata_secondary(dirship.build_type()), new_caliber);
+        ship.set_secondary_battery(ship.secondary(), new_caliber);
       } else {
         g.out << "No such gun characteristic.\n";
         return;
@@ -220,10 +226,8 @@ bool upgrade(const command_t& argv, GameObj& g) {
       dirship.max_destruct() = ship.max_destruct();
       dirship.max_speed() = ship.max_speed();
       dirship.hyper_drive() = ship.hyper_drive();
-      dirship.primary() = ship.primary();
-      dirship.primtype() = ship.primtype();
-      dirship.secondary() = ship.secondary();
-      dirship.sectype() = ship.sectype();
+      dirship.set_primary_battery(ship.primary_battery());
+      dirship.set_secondary_battery(ship.secondary_battery());
       dirship.cew() = ship.cew();
       dirship.cew_range() = ship.cew_range();
       dirship.laser() = ship.laser();

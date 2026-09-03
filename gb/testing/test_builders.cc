@@ -45,12 +45,12 @@ TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
   ship_.destruct = ship_.max_destruct;
   ship_.hanger = 0;
   ship_.max_hanger = tmpl.max_hangar;
-  ship_.primtype = shipdata_primary(type);
-  ship_.sectype = shipdata_secondary(type);
-  ship_.guns =
-      tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE;
-  ship_.primary = tmpl.max_guns;
-  ship_.retaliate = ship_.primary;
+  ship_.primary_battery =
+      GunBattery::create(tmpl.max_guns, shipdata_primary(type));
+  ship_.secondary_battery = GunBattery::create(0, shipdata_secondary(type));
+  ship_.guns = ship_.primary_battery.has_guns() ? ActiveBattery::PRIMARY
+                                                : ActiveBattery::NONE;
+  ship_.retaliate = ship_.primary_battery.count;
 
   // Calculate baseline size and mass using canonical ship functions
   Ship temp_ship{ship_};
@@ -129,11 +129,10 @@ TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
 }
 
 TestShipBuilder& TestShipBuilder::with_guns(guntype_t primtype,
-                                            weapon_power_t count,
+                                            gun_count_t count,
                                             ActiveBattery active_battery) {
   ship_.guns = active_battery;
-  ship_.primtype = primtype;
-  ship_.primary = count;
+  ship_.primary_battery = GunBattery::create(count, primtype);
   ship_.retaliate = count;
   return *this;
 }

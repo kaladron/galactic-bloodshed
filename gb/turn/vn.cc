@@ -454,10 +454,10 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
       .mounted = true,
       .docked = true,
       .guns = tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
-      .primary = tmpl.max_guns,
-      .primtype = shipdata_primary(ShipType::OTYPE_BERS),
-      .secondary = 0,
-      .sectype = shipdata_secondary(ShipType::OTYPE_BERS),
+      .primary_battery = GunBattery::create(
+          tmpl.max_guns, shipdata_primary(ShipType::OTYPE_BERS)),
+      .secondary_battery =
+          GunBattery::create(0, shipdata_secondary(ShipType::OTYPE_BERS)),
   };
 
   parent.fuel() *= 0.5;

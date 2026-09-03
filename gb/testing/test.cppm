@@ -529,7 +529,7 @@ public:
                              Coordinates coords);
   TestShipBuilder& docked_to(shipnum_t dest_ship, starnum_t snum);
   TestShipBuilder&
-  with_guns(guntype_t primtype, weapon_power_t count,
+  with_guns(guntype_t primtype, gun_count_t count,
             ActiveBattery active_battery = ActiveBattery::PRIMARY);
   TestShipBuilder& with_retaliate(weapon_power_t retaliate);
   TestShipBuilder& with_cew(weapon_power_t cew_power,

@@ -669,9 +669,10 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
       .alive = true,
       .docked = true,
       .guns = ActiveBattery::NONE,
-      .primary = tmpl.max_guns,
-      .primtype = shipdata_primary(ShipType::OTYPE_TOXWC),
-      .sectype = shipdata_secondary(ShipType::OTYPE_TOXWC),
+      .primary_battery = GunBattery::create(
+          tmpl.max_guns, shipdata_primary(ShipType::OTYPE_TOXWC)),
+      .secondary_battery =
+          GunBattery::create(0, shipdata_secondary(ShipType::OTYPE_TOXWC)),
   };
   auto ship_handle = entity_manager.create_ship(s2);
   Ship& ship = *ship_handle;

@@ -375,9 +375,8 @@ void Getship(Ship* s, ShipType i, const Race& r) {
       .laser = r.God && tmpl.can_mount_laser,
       .type = i,
       .guns = tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
-      .primary = tmpl.max_guns,
-      .primtype = shipdata_primary(i),
-      .sectype = shipdata_secondary(i),
+      .primary_battery = GunBattery::create(tmpl.max_guns, shipdata_primary(i)),
+      .secondary_battery = GunBattery::create(0, shipdata_secondary(i)),
       .max_hanger = tmpl.max_hangar,
   };
   if (i == ShipType::OTYPE_VN || i == ShipType::OTYPE_BERS) {
@@ -407,12 +406,10 @@ Ship Getfactship(const Ship& b) {
       .laser = b.laser(),
       .type = b.build_type(),
       .guns = b.primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
-      .primary = b.primary(),
-      .primtype = b.primtype(),
+      .primary_battery = b.primary_battery(),
+      .secondary_battery = b.secondary_battery(),
       .max_hanger = b.max_hanger(),
   };
-  data.secondary = b.secondary();
-  data.sectype = b.sectype();
 
   Ship s(data);
   s.size() = ship_size(s);

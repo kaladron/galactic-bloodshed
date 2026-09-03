@@ -64,10 +64,10 @@ int main() {
   test_data.hanger = 10;
   test_data.max_hanger = 20;
   test_data.guns = ActiveBattery::PRIMARY;
-  test_data.primary = 0;  // No primary weapon
-  test_data.primtype = guntype_t::NONE;
-  test_data.secondary = 0;  // No secondary weapon
-  test_data.sectype = guntype_t::NONE;
+  test_data.primary_battery =
+      GunBattery{.count = 6, .caliber = guntype_t::HEAVY};
+  test_data.secondary_battery =
+      GunBattery{.count = 2, .caliber = guntype_t::LIGHT};
 
   test_data.navigate.on = true;
   test_data.navigate.speed = 4;
@@ -131,6 +131,10 @@ int main() {
   test::expect_false(retrieved->cloaked());
   test::expect_false(retrieved->docked());
   test::expect_eq(retrieved->retaliate(), 5U);
+  test::expect_eq(retrieved->primary_battery().count, 6U);
+  test::expect_eq(retrieved->primary_battery().caliber, guntype_t::HEAVY);
+  test::expect_eq(retrieved->secondary_battery().count, 2U);
+  test::expect_eq(retrieved->secondary_battery().caliber, guntype_t::LIGHT);
 
   // Verify NavigateData integrity
   test::expect_true(retrieved->navigate().on);

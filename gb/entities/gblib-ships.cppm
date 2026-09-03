@@ -43,6 +43,77 @@ export enum class ActiveBattery : std::uint8_t {
   SECONDARY = 2,
 };
 
+/// \brief Value object representing a ship's gun battery mount, encapsulating
+/// weapon count and caliber while enforcing domain invariants.
+///
+/// Invariants enforced:
+/// - A battery with 0 guns has caliber guntype_t::NONE.
+/// - A battery with guntype_t::NONE caliber has 0 guns.
+/// - count > 0 if and only if caliber != guntype_t::NONE.
+export struct GunBattery {
+  gun_count_t count{0};
+  guntype_t caliber{guntype_t::NONE};
+
+  /// \brief Factory method that normalizes empty states to count 0 and caliber
+  /// NONE.
+  [[nodiscard]] static constexpr GunBattery create(gun_count_t count,
+                                                   guntype_t caliber) noexcept {
+    if (count == 0 || caliber == guntype_t::NONE) {
+      return {.count = 0, .caliber = guntype_t::NONE};
+    }
+    return {.count = count, .caliber = caliber};
+  }
+
+  /// \brief Returns true if the battery has guns mounted and a valid caliber.
+  [[nodiscard]] constexpr bool has_guns() const noexcept {
+    return count > 0 && caliber != guntype_t::NONE;
+  }
+
+  /// \brief Returns true if the battery is empty (0 guns or caliber NONE).
+  [[nodiscard]] constexpr bool is_empty() const noexcept {
+    return !has_guns();
+  }
+
+  /// \brief Returns the integer caliber multiplier for mass and combat
+  /// calculations (0 for empty/NONE, 1 for LIGHT, 2 for MEDIUM, 3 for HEAVY).
+  [[nodiscard]] constexpr unsigned int caliber_multiplier() const noexcept {
+    return has_guns() ? gun_caliber(caliber) : 0u;
+  }
+
+  /// \brief Returns the mass contribution of this battery (count * caliber
+  /// multiplier).
+  [[nodiscard]] constexpr double mass_contribution() const noexcept {
+    return static_cast<double>(count) *
+           static_cast<double>(caliber_multiplier());
+  }
+
+  /// \brief Atomically sets count and caliber, maintaining domain invariants.
+  constexpr void set(gun_count_t new_count, guntype_t new_caliber) noexcept {
+    if (new_count == 0 || new_caliber == guntype_t::NONE) {
+      count = 0;
+      caliber = guntype_t::NONE;
+    } else {
+      count = new_count;
+      caliber = new_caliber;
+    }
+  }
+
+  /// \brief Applies combat collateral damage to gun mounts.
+  /// \param hits Number of gun hits to apply.
+  /// \return The actual number of guns destroyed (clamped to available count).
+  /// If all guns are destroyed, the caliber is automatically cleared to NONE.
+  constexpr gun_count_t damage(gun_count_t hits) noexcept {
+    const gun_count_t lost = std::min(hits, count);
+    count -= lost;
+    if (count == 0) {
+      caliber = guntype_t::NONE;
+    }
+    return lost;
+  }
+
+  constexpr auto operator<=>(const GunBattery&) const noexcept = default;
+};
+
 export inline constexpr ActiveBattery PRIMARY = ActiveBattery::PRIMARY;
 export inline constexpr ActiveBattery SECONDARY = ActiveBattery::SECONDARY;
 
@@ -288,10 +359,8 @@ export struct ship_struct {
 
   bool merchant{false};                     ///< Commercial trade vessel status
   ActiveBattery guns{ActiveBattery::NONE};  ///< Active gun battery mode
-  weapon_power_t primary{0};                ///< Primary battery weapon payload
-  guntype_t primtype{guntype_t::NONE};      ///< Primary gun caliber type
-  weapon_power_t secondary{0};         ///< Secondary battery weapon payload
-  guntype_t sectype{guntype_t::NONE};  ///< Secondary gun caliber type
+  GunBattery primary_battery;               ///< Primary gun battery
+  GunBattery secondary_battery;             ///< Secondary gun battery
 
   hangar_t hanger{0};      ///< Current docked fighters / payload count
   hangar_t max_hanger{0};  ///< Maximum hangar capacity
@@ -2547,32 +2616,62 @@ public:
     return data_.guns;
   }
 
-  [[nodiscard]] weapon_power_t primary() const {
-    return data_.primary;
+  // Gun Batteries
+  [[nodiscard]] const GunBattery& primary_battery() const noexcept {
+    return data_.primary_battery;
   }
-  weapon_power_t& primary() {
-    return data_.primary;
-  }
-
-  [[nodiscard]] guntype_t primtype() const {
-    return data_.primtype;
-  }
-  guntype_t& primtype() {
-    return data_.primtype;
+  [[nodiscard]] const GunBattery& secondary_battery() const noexcept {
+    return data_.secondary_battery;
   }
 
-  [[nodiscard]] weapon_power_t secondary() const {
-    return data_.secondary;
-  }
-  weapon_power_t& secondary() {
-    return data_.secondary;
+  /// \brief Atomically sets the primary battery count and caliber.
+  void set_primary_battery(gun_count_t count, guntype_t caliber) noexcept {
+    data_.primary_battery.set(count, caliber);
   }
 
-  [[nodiscard]] guntype_t sectype() const {
-    return data_.sectype;
+  /// \brief Atomically sets the primary battery from a GunBattery value object.
+  void set_primary_battery(GunBattery battery) noexcept {
+    data_.primary_battery.set(battery.count, battery.caliber);
   }
-  guntype_t& sectype() {
-    return data_.sectype;
+
+  /// \brief Atomically sets the secondary battery count and caliber.
+  void set_secondary_battery(gun_count_t count, guntype_t caliber) noexcept {
+    data_.secondary_battery.set(count, caliber);
+  }
+
+  /// \brief Atomically sets the secondary battery from a GunBattery value
+  /// object.
+  void set_secondary_battery(GunBattery battery) noexcept {
+    data_.secondary_battery.set(battery.count, battery.caliber);
+  }
+
+  /// \brief Applies collateral damage to the primary gun battery mounts.
+  /// \return The actual number of primary guns destroyed.
+  gun_count_t damage_primary_guns(gun_count_t hits) noexcept {
+    return data_.primary_battery.damage(hits);
+  }
+
+  /// \brief Applies collateral damage to the secondary gun battery mounts.
+  /// \return The actual number of secondary guns destroyed.
+  gun_count_t damage_secondary_guns(gun_count_t hits) noexcept {
+    return data_.secondary_battery.damage(hits);
+  }
+
+  // Value accessors for backward-compatible read-only queries
+  [[nodiscard]] gun_count_t primary() const noexcept {
+    return data_.primary_battery.count;
+  }
+
+  [[nodiscard]] guntype_t primtype() const noexcept {
+    return data_.primary_battery.caliber;
+  }
+
+  [[nodiscard]] gun_count_t secondary() const noexcept {
+    return data_.secondary_battery.count;
+  }
+
+  [[nodiscard]] guntype_t sectype() const noexcept {
+    return data_.secondary_battery.caliber;
   }
 
   // Hanger
@@ -2658,11 +2757,11 @@ public:
   }
 
   /// Active weapon battery strength based on selected gun mode.
-  [[nodiscard]] weapon_power_t active_guns() const noexcept {
+  [[nodiscard]] gun_count_t active_guns() const noexcept {
     return (data_.guns == ActiveBattery::NONE)
                ? 0
-               : (data_.guns == ActiveBattery::PRIMARY ? data_.primary
-                                                       : data_.secondary);
+               : (data_.guns == ActiveBattery::PRIMARY ? primary()
+                                                       : secondary());
   }
 
   /// Structural body size excluding maximum hangar bay space.

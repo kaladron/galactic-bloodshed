@@ -490,8 +490,7 @@ void test_doabm_intercept() {
       .active = 1,
       .alive = 1,
   };
-  abm_data.primtype = guntype_t::HEAVY;
-  abm_data.primary = 10;
+  abm_data.primary_battery = GunBattery::create(10, guntype_t::HEAVY);
   auto abm_handle = em.create_ship(abm_data);
   Ship& abm = *abm_handle;
   abm.guns() = PRIMARY;

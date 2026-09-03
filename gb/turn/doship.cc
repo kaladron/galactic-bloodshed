@@ -144,18 +144,7 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
         return;
       }
 
-      auto target_planet = star.get_random_planet_index();
-      if (!target_planet.has_value()) {
-        std::string telegram = std::format(
-            "{} has warmed and exploded at {}\n\tno planets in system; spores "
-            "dissipated into the void.\n",
-            ship, prin_ship_orbits(entity_manager, ship));
-        push_telegram(entity_manager, ship.owner(), ship.governor(), telegram);
-        entity_manager.kill_ship(ship.owner(), ship);
-        return;
-      }
-
-      auto i = *target_planet;
+      auto i = star.get_random_planet_index();
       std::stringstream telegram_buf;
       telegram_buf << std::format("{} has warmed and exploded at {}\n", ship,
                                   prin_ship_orbits(entity_manager, ship));

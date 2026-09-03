@@ -267,6 +267,30 @@ int main() {
     std::println(std::cout, "  ✓ Star AP and governor PlayerVector verified");
   }
 
+  // get_random_planet_index tests
+  std::println(std::cout, "Star get_random_planet_index tests...");
+  {
+    // Case 1: Single planet system always returns index 0
+    star_struct s1{};
+    s1.name = "Solo";
+    s1.pnames = {"SingleWorld"};
+    Star star1(s1);
+    test::expect_eq(star1.get_random_planet_index(), planetnum_t{0});
+
+    // Case 2: Multi-planet system returns a valid index in range [0, numplanets
+    // - 1]
+    star_struct s3{};
+    s3.name = "Trio";
+    s3.pnames = {"World1", "World2", "World3"};
+    Star star3(s3);
+    for (int i = 0; i < 20; ++i) {
+      planetnum_t p = star3.get_random_planet_index();
+      test::expect_true(p < star3.numplanets());
+    }
+
+    std::println(std::cout, "  ✓ get_random_planet_index verified (bounds)");
+  }
+
   std::println(std::cout, "\n✓ All Star class tests passed!");
   return 0;
 }

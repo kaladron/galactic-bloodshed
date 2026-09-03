@@ -41,10 +41,7 @@ void Star::clear_all_inhabitants() noexcept {
   star_struct.inhabited = 0;
 }
 
-std::optional<planetnum_t> Star::get_random_planet_index() const {
-  if (star_struct.pnames.empty()) {
-    return std::nullopt;
-  }
+planetnum_t Star::get_random_planet_index() const {
   return planetnum_t{
       static_cast<unsigned int>(int_rand(0, star_struct.pnames.size() - 1))};
 }

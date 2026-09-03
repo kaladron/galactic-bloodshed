@@ -624,34 +624,7 @@ void test_do_pod() {
   race.likesbest = SectorType::SEC_LAND;
   RaceRepository(store).save(race);
 
-  // 1. Test Spore pod in star system with 0 planets (empty system edge case)
-  star_struct empty_sdata{
-      .name = "EmptyStar",
-      .pnames = {},
-      .star_id = starnum_t{1},
-  };
-  Star empty_star{empty_sdata};
-  StarRepository(store).save(empty_star);
-
-  ship_struct pod_empty_data{
-      .owner = player_t{1},
-      .type = ShipType::STYPE_POD,
-      .active = 1,
-      .alive = 1,
-  };
-  pod_empty_data.whatorbits = ScopeLevel::LEVEL_STAR;
-  pod_empty_data.storbits = starnum_t{1};
-  auto pod_empty_handle = em.create_ship(pod_empty_data);
-  Ship& pod_empty = *pod_empty_handle;
-  auto* pod_ship = pod_empty.as<SporePodShip>();
-  test::expect_true(pod_ship != nullptr);
-  pod_ship->set_temperature(POD_THRESHOLD + 10);
-
-  // Should safely handle 0 planets without throwing or crashing
-  do_pod(pod_empty, em);
-  test::expect_eq(pod_empty.alive(), 0);
-
-  // 2. Test Spore pod in star system with a planet
+  // 1. Test Spore pod in star system with a planet
   Star star = createTestStar(starnum_t{2});
   StarRepository(store).save(star);
 

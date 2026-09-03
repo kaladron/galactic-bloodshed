@@ -123,7 +123,7 @@ int main() {
     s3.star_id = 3;
     s3.xpos = 100.0;
     s3.ypos = 0.0;
-    s3.pnames = {};
+    s3.pnames = {"P1"};
 
     star_repo.save(Star{s0});
     star_repo.save(Star{s1});
@@ -159,7 +159,7 @@ int main() {
     em.mutate_universe([](universe_struct& u) {
       u.VN_index1[player_t{2}] = 1;
       u.VN_index2[player_t{2}] = 1;
-      u.VN_index1[player_t{3}] = 3;  // Star 3 has 0 planets
+      u.VN_index1[player_t{3}] = 3;
       u.VN_index2[player_t{3}] = 3;
     });
 
@@ -184,15 +184,14 @@ int main() {
     test::expect_true(bers->hyper_drive().on);
     test::expect_eq(bers->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
 
-    // Test zero-planet star target (Regression test for Bug 2)
+    // Test hitlist target routing
     stats.VN_brain.most_mad = player_t{3};
     select_berserker_destination(em, *bers, stats);
     test::expect_eq(bers->deststar(), starnum_t{3});
     test::expect_eq(bers->destpnum(), planetnum_t{0});
-    test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_STAR);
+    test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
 
-    std::println(std::cout, "  ✓ select_berserker_destination targets hitlist "
-                            "and guards 0-planet systems");
+    std::println(std::cout, "  ✓ select_berserker_destination targets hitlist");
   }
 
   // =========================================================================

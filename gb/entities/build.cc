@@ -205,7 +205,7 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   newship->mode() = 0;
   newship->rad() = 0;
   newship->damage() = race.God ? 0 : newship->get_template().base_damage;
-  newship->retaliate() = newship->primary();
+  newship->retaliate() = newship->primary_battery().count;
   newship->ships() = 0;
   newship->on() = 0;
   switch (newship->type()) {
@@ -405,7 +405,8 @@ Ship Getfactship(const Ship& b) {
       .cew_range = b.cew_range(),
       .laser = b.laser(),
       .type = b.build_type(),
-      .guns = b.primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
+      .guns = b.primary_battery().has_guns() ? ActiveBattery::PRIMARY
+                                             : ActiveBattery::NONE,
       .primary_battery = b.primary_battery(),
       .secondary_battery = b.secondary_battery(),
       .max_hanger = b.max_hanger(),

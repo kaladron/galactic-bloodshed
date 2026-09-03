@@ -139,11 +139,12 @@ double getmass(const Ship& s) {
 }
 
 unsigned int ship_size(const Ship& s) {
-  const double size = 1.0 + SIZE_GUNS * s.primary() +
-                      SIZE_GUNS * s.secondary() + SIZE_CREW * s.max_crew() +
-                      SIZE_RESOURCE * s.max_resource() +
-                      SIZE_FUEL * s.max_fuel() +
-                      SIZE_DESTRUCT * s.max_destruct() + s.max_hanger();
+  const double size =
+      1.0 + SIZE_GUNS * static_cast<double>(s.primary_battery().count) +
+      SIZE_GUNS * static_cast<double>(s.secondary_battery().count) +
+      SIZE_CREW * s.max_crew() + SIZE_RESOURCE * s.max_resource() +
+      SIZE_FUEL * s.max_fuel() + SIZE_DESTRUCT * s.max_destruct() +
+      s.max_hanger();
   return (std::floor(size));
 }
 
@@ -151,8 +152,8 @@ double cost(const Ship& s) {
   /* compute how much it costs to build this ship */
   double factor = 0.0;
   factor += static_cast<double>(s.get_template().build_cost);
-  factor += GUN_COST * (double)s.primary();
-  factor += GUN_COST * (double)s.secondary();
+  factor += GUN_COST * static_cast<double>(s.primary_battery().count);
+  factor += GUN_COST * static_cast<double>(s.secondary_battery().count);
   factor += CREW_COST * (double)s.max_crew();
   factor += CARGO_COST * (double)s.max_resource();
   factor += FUEL_COST * (double)s.max_fuel();
@@ -367,8 +368,8 @@ double complexity(const Ship& s) {
   const auto& tmpl = s.get_template();
   SystemCost cost;
 
-  cost.add(s.primary(), tmpl.max_guns);
-  cost.add(s.secondary(), tmpl.max_guns);
+  cost.add(s.primary_battery().count, tmpl.max_guns);
+  cost.add(s.secondary_battery().count, tmpl.max_guns);
   cost.add(s.max_crew(), tmpl.max_crew);
   cost.add(s.max_resource(), tmpl.max_cargo);
   cost.add(s.max_fuel(), tmpl.max_fuel);

@@ -2708,23 +2708,6 @@ public:
     return data_.secondary_battery.damage(hits);
   }
 
-  // Value accessors for backward-compatible read-only queries
-  [[nodiscard]] gun_count_t primary() const noexcept {
-    return data_.primary_battery.count;
-  }
-
-  [[nodiscard]] guntype_t primtype() const noexcept {
-    return data_.primary_battery.caliber;
-  }
-
-  [[nodiscard]] gun_count_t secondary() const noexcept {
-    return data_.secondary_battery.count;
-  }
-
-  [[nodiscard]] guntype_t sectype() const noexcept {
-    return data_.secondary_battery.caliber;
-  }
-
   // Hanger
   [[nodiscard]] hangar_t hanger() const {
     return data_.hanger;

@@ -419,29 +419,29 @@ void test_gun_battery_invariants_and_operations() {
   // Ship battery encapsulation and atomic setters
   Ship ship;
   ship.set_primary_battery(6, guntype_t::MEDIUM);
-  test::expect_eq(ship.primary(), 6u);
-  test::expect_eq(ship.primtype(), guntype_t::MEDIUM);
   test::expect_eq(ship.primary_battery().count, 6u);
   test::expect_eq(ship.primary_battery().caliber, guntype_t::MEDIUM);
+  test::expect_true(ship.primary_battery().has_guns());
 
   ship.set_secondary_battery(4, guntype_t::LIGHT);
-  test::expect_eq(ship.secondary(), 4u);
-  test::expect_eq(ship.sectype(), guntype_t::LIGHT);
   test::expect_eq(ship.secondary_battery().count, 4u);
   test::expect_eq(ship.secondary_battery().caliber, guntype_t::LIGHT);
+  test::expect_true(ship.secondary_battery().has_guns());
 
   // Damage via Ship domain methods returning actual guns lost
   test::expect_eq(ship.damage_primary_guns(2), 2u);
-  test::expect_eq(ship.primary(), 4u);
-  test::expect_eq(ship.primtype(), guntype_t::MEDIUM);
+  test::expect_eq(ship.primary_battery().count, 4u);
+  test::expect_eq(ship.primary_battery().caliber, guntype_t::MEDIUM);
 
   test::expect_eq(ship.damage_primary_guns(10), 4u);  // clamped to 4 remaining
-  test::expect_eq(ship.primary(), 0u);
-  test::expect_eq(ship.primtype(), guntype_t::NONE);
+  test::expect_eq(ship.primary_battery().count, 0u);
+  test::expect_eq(ship.primary_battery().caliber, guntype_t::NONE);
+  test::expect_false(ship.primary_battery().has_guns());
 
   test::expect_eq(ship.damage_secondary_guns(4), 4u);
-  test::expect_eq(ship.secondary(), 0u);
-  test::expect_eq(ship.sectype(), guntype_t::NONE);
+  test::expect_eq(ship.secondary_battery().count, 0u);
+  test::expect_eq(ship.secondary_battery().caliber, guntype_t::NONE);
+  test::expect_false(ship.secondary_battery().has_guns());
 }
 
 void test_active_gun_battery_and_formatting() {

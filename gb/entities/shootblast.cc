@@ -557,10 +557,10 @@ std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage) {
   for (auto i = 1; i <= ship.troops(); i++)
     casualties1 += success(damage);
   ship.troops() -= casualties1;
-  for (auto i = 1; i <= ship.primary(); i++)
+  for (auto i = 1; i <= ship.primary_battery().count; i++)
     primgundamage += success(damage);
   primgundamage = ship.damage_primary_guns(primgundamage);
-  for (auto i = 1; i <= ship.secondary(); i++)
+  for (auto i = 1; i <= ship.secondary_battery().count; i++)
     secgundamage += success(damage);
   secgundamage = ship.damage_secondary_guns(secgundamage);
   return {casualties, casualties1, primgundamage, secgundamage};

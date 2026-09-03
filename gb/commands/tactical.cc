@@ -253,9 +253,7 @@ void ShipTacticalItem::add_tactical_header_row(
 
   table.add_row(
       {std::format("{}", s.number()), std::format("{}", s.type_letter()),
-       name_str, std::format("{:.0f}", s.tech()),
-       std::format("{}{}/{}{}", s.primary(), caliber_char(s.primtype()),
-                   s.secondary(), caliber_char(s.sectype())),
+       name_str, std::format("{:.0f}", s.tech()), s.battery_summary(),
        std::format("{}", s.armor()), std::format("{}", s.size()),
        std::format("{}", s.destruct()), std::format("{:.1f}", s.fuel()),
        std::format("{}%", s.damage()), std::format("{}", params.fspeed),

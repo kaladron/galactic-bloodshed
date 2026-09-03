@@ -149,9 +149,7 @@ void report_status(GameObj& g, RstContext& ctx, const Ship& s) {
       {std::format("{}", s.number()), std::format("{}", s.type_letter()),
        std::format("{}", s.active() ? s.name() : "INACTIVE"),
        s.laser() ? "yes" : "", s.cew() ? "yes" : "",
-       s.hyper_drive().has ? "yes" : "",
-       std::format("{}{}/{}{}", s.primary(), caliber_char(s.primtype()),
-                   s.secondary(), caliber_char(s.sectype())),
+       s.hyper_drive().has ? "yes" : "", s.battery_summary(),
        std::format("{}", s.effective_armor()), std::format("{:.0f}", s.tech()),
        std::format("{}", s.max_speed_capacity()),
        std::format("{}", s.effective_cost()), std::format("{:.1f}", s.mass()),
@@ -214,9 +212,7 @@ void report_weapons(GameObj& g, RstContext& ctx, const Ship& s) {
        std::format("{}", s.active() ? s.name() : "INACTIVE"),
        s.laser() ? "yes" : "", std::format("{}/{}", s.cew(), s.cew_range()),
        std::format("{}", (int)((1.0 - .01 * s.damage()) * s.tech() / 4.0)),
-       std::format("{}{}/{}{}", s.primary(), caliber_char(s.primtype()),
-                   s.secondary(), caliber_char(s.sectype())),
-       std::format("{}%", s.damage()), class_with_type});
+       s.battery_summary(), std::format("{}%", s.damage()), class_with_type});
 
   g.out << table << "\n";
 }
@@ -275,14 +271,11 @@ void report_factories(GameObj& g, RstContext& ctx, const Ship& s) {
 
   // Build weapon strings
   std::string prim_guns =
-      s.primtype() != guntype_t::NONE
-          ? std::format("{}{}", s.primary(), caliber_char(s.primtype()))
-          : "---";
+      s.primary_battery().has_guns() ? s.primary_battery().to_string() : "---";
 
-  std::string sec_guns =
-      s.sectype() != guntype_t::NONE
-          ? std::format("{}{}", s.secondary(), caliber_char(s.sectype()))
-          : "---";
+  std::string sec_guns = s.secondary_battery().has_guns()
+                             ? s.secondary_battery().to_string()
+                             : "---";
 
   std::string cew_str = s.cew() ? std::format("{}", s.cew()) : "----";
   std::string range_str = s.cew() ? std::format("{}", s.cew_range()) : "-----";

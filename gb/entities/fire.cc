@@ -83,25 +83,15 @@ int retal_strength(const Ship& s) {
   /* land based ships */
   if (!s.popn() && (s.type() != ShipType::OTYPE_BERS)) return 0;
 
-  auto avail = [&]() -> weapon_power_t {
-    if (s.guns() == PRIMARY)
-      return (s.type() == ShipType::STYPE_FIGHTER ||
-              s.type() == ShipType::OTYPE_AFV ||
-              s.type() == ShipType::OTYPE_BERS)
-                 ? s.primary()
-                 : std::min(static_cast<weapon_power_t>(s.popn()), s.primary());
-    if (s.guns() == SECONDARY)
-      return (s.type() == ShipType::STYPE_FIGHTER ||
-              s.type() == ShipType::OTYPE_AFV ||
-              s.type() == ShipType::OTYPE_BERS)
-                 ? s.secondary()
-                 : std::min(static_cast<weapon_power_t>(s.popn()),
-                            s.secondary());
+  const auto* battery = s.active_gun_battery();
+  if (!battery) return 0;
 
-    return 0U;
-  }();
+  weapon_power_t avail =
+      (s.type() == ShipType::STYPE_FIGHTER || s.type() == ShipType::OTYPE_AFV ||
+       s.type() == ShipType::OTYPE_BERS)
+          ? battery->count
+          : std::min(static_cast<weapon_power_t>(s.popn()), battery->count);
 
   avail = std::min(s.retaliate(), avail);
-  int strength = std::min(static_cast<weapon_power_t>(s.destruct()), avail);
-  return strength;
+  return std::min(static_cast<weapon_power_t>(s.destruct()), avail);
 }

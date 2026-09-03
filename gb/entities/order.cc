@@ -349,59 +349,48 @@ void order_salvo(GameObj& g, const command_t& argv, Ship& ship) {
       g.out << "Specify a positive number of guns.\n";
       return;
     }
-    if (ship.guns() == PRIMARY && j > ship.primary())
-      j = ship.primary();
-    else if (ship.guns() == SECONDARY && j > ship.secondary())
-      j = ship.secondary();
-    else if (ship.guns() == ActiveBattery::NONE)
-      j = 0;
-
-    ship.retaliate() = j;
+    const auto* battery = ship.active_gun_battery();
+    ship.retaliate() =
+        battery
+            ? std::min<gun_count_t>(static_cast<gun_count_t>(j), battery->count)
+            : 0;
   } else {
     g.out << "This ship cannot be set to retaliate.\n";
   }
 }
 
-void order_primary(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.primary()) {
-    if (argv.size() < 4) {
-      ship.guns() = PRIMARY;
-      ship.retaliate() =
-          std::min<unsigned long>(ship.retaliate(), ship.primary());
-    } else {
-      int j = std::stoi(argv[3]);
-      if (j < 0) {
-        g.out << "Specify a nonnegative number of guns.\n";
-        return;
-      }
-      j = std::min<unsigned long>(j, ship.primary());
-      ship.retaliate() = j;
-      ship.guns() = PRIMARY;
-    }
-  } else {
-    g.out << "This ship does not have primary guns.\n";
+namespace {
+void order_battery(GameObj& g, const command_t& argv, Ship& ship,
+                   ActiveBattery mode) {
+  const auto& battery =
+      (mode == PRIMARY) ? ship.primary_battery() : ship.secondary_battery();
+  const char* name = (mode == PRIMARY) ? "primary" : "secondary";
+  if (!battery.has_guns()) {
+    g.out << std::format("This ship does not have {} guns.\n", name);
+    return;
   }
+  if (argv.size() < 4) {
+    ship.guns() = mode;
+    ship.retaliate() = std::min<unsigned long>(ship.retaliate(), battery.count);
+  } else {
+    int j = std::stoi(argv[3]);
+    if (j < 0) {
+      g.out << "Specify a nonnegative number of guns.\n";
+      return;
+    }
+    ship.retaliate() =
+        std::min<unsigned long>(static_cast<unsigned long>(j), battery.count);
+    ship.guns() = mode;
+  }
+}
+}  // namespace
+
+void order_primary(GameObj& g, const command_t& argv, Ship& ship) {
+  order_battery(g, argv, ship, PRIMARY);
 }
 
 void order_secondary(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.secondary()) {
-    if (argv.size() < 4) {
-      ship.guns() = SECONDARY;
-      ship.retaliate() =
-          std::min<unsigned long>(ship.retaliate(), ship.secondary());
-    } else {
-      int j = std::stoi(argv[3]);
-      if (j < 0) {
-        g.out << "Specify a nonnegative number of guns.\n";
-        return;
-      }
-      j = std::min<unsigned long>(j, ship.secondary());
-      ship.retaliate() = j;
-      ship.guns() = SECONDARY;
-    }
-  } else {
-    g.out << "This ship does not have secondary guns.\n";
-  }
+  order_battery(g, argv, ship, SECONDARY);
 }
 
 void order_explosive(GameObj& /*g*/, const command_t& /*argv*/, Ship& ship) {
@@ -730,35 +719,31 @@ void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
     buffer << "/retal";
   }
 
-  if (ship.guns() == PRIMARY) {
-    switch (ship.primtype()) {
-      case guntype_t::LIGHT:
-        buffer << "/lgt primary";
-        break;
-      case guntype_t::MEDIUM:
-        buffer << "/med primary";
-        break;
-      case guntype_t::HEAVY:
-        buffer << "/hvy primary";
-        break;
-      case guntype_t::NONE:
-        buffer << "/none";
-        break;
-    }
-  } else if (ship.guns() == SECONDARY) {
-    switch (ship.sectype()) {
-      case guntype_t::LIGHT:
-        buffer << "/lgt secondary";
-        break;
-      case guntype_t::MEDIUM:
-        buffer << "/med secndry";
-        break;
-      case guntype_t::HEAVY:
-        buffer << "/hvy secndry";
-        break;
-      case guntype_t::NONE:
-        buffer << "/none";
-        break;
+  if (ship.guns() != ActiveBattery::NONE) {
+    const auto* battery = ship.active_gun_battery();
+    if (!battery) {
+      buffer << "/none";
+    } else {
+      std::string_view cal_prefix;
+      switch (battery->caliber) {
+        case guntype_t::LIGHT:
+          cal_prefix = "/lgt ";
+          break;
+        case guntype_t::MEDIUM:
+          cal_prefix = "/med ";
+          break;
+        case guntype_t::HEAVY:
+          cal_prefix = "/hvy ";
+          break;
+        default:
+          break;
+      }
+      std::string_view bat_name =
+          (ship.guns() == PRIMARY)
+              ? "primary"
+              : ((battery->caliber == guntype_t::LIGHT) ? "secondary"
+                                                        : "secndry");
+      buffer << cal_prefix << bat_name;
     }
   }
 

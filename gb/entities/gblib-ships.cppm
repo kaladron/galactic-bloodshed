@@ -37,6 +37,24 @@ gun_caliber(guntype_t caliber) noexcept {
   }
 }
 
+/// Get display character for gun caliber type
+/// \param caliber Gun caliber type (guntype_t::NONE=0, guntype_t::LIGHT=1,
+/// guntype_t::MEDIUM=2, guntype_t::HEAVY=3)
+/// \return Character representing caliber ('L', 'M', 'H', or ' ' for none)
+export constexpr char caliber_char(guntype_t caliber) {
+  switch (caliber) {
+    case guntype_t::LIGHT:
+      return 'L';
+    case guntype_t::MEDIUM:
+      return 'M';
+    case guntype_t::HEAVY:
+      return 'H';
+    case guntype_t::NONE:
+    default:
+      return ' ';
+  }
+}
+
 export enum class ActiveBattery : std::uint8_t {
   NONE = 0,
   PRIMARY = 1,
@@ -109,6 +127,12 @@ export struct GunBattery {
       caliber = guntype_t::NONE;
     }
     return lost;
+  }
+
+  /// \brief Formats the battery as "<count><caliber_char>", e.g. "10L", or "0 "
+  /// if empty.
+  [[nodiscard]] std::string to_string() const {
+    return std::format("{}{}", count, caliber_char(caliber));
   }
 
   constexpr auto operator<=>(const GunBattery&) const noexcept = default;
@@ -2624,6 +2648,33 @@ public:
     return data_.secondary_battery;
   }
 
+  /// \brief Returns a pointer to the active gun battery mount, or nullptr if
+  /// gun battery mode is NONE or the selected battery has no guns mounted.
+  [[nodiscard]] const GunBattery* active_gun_battery() const noexcept {
+    if (data_.guns == ActiveBattery::PRIMARY &&
+        data_.primary_battery.has_guns()) {
+      return &data_.primary_battery;
+    }
+    if (data_.guns == ActiveBattery::SECONDARY &&
+        data_.secondary_battery.has_guns()) {
+      return &data_.secondary_battery;
+    }
+    return nullptr;
+  }
+
+  /// \brief Caliber of the active gun battery, or guntype_t::NONE if
+  /// offline/empty.
+  [[nodiscard]] guntype_t active_gun_caliber() const noexcept {
+    const auto* battery = active_gun_battery();
+    return battery ? battery->caliber : guntype_t::NONE;
+  }
+
+  /// \brief Formats a summary of both batteries, e.g. "10H/5L" or "0 /0 ".
+  [[nodiscard]] std::string battery_summary() const {
+    return std::format("{}/{}", primary_battery().to_string(),
+                       secondary_battery().to_string());
+  }
+
   /// \brief Atomically sets the primary battery count and caliber.
   void set_primary_battery(gun_count_t count, guntype_t caliber) noexcept {
     data_.primary_battery.set(count, caliber);
@@ -2758,10 +2809,8 @@ public:
 
   /// Active weapon battery strength based on selected gun mode.
   [[nodiscard]] gun_count_t active_guns() const noexcept {
-    return (data_.guns == ActiveBattery::NONE)
-               ? 0
-               : (data_.guns == ActiveBattery::PRIMARY ? primary()
-                                                       : secondary());
+    const auto* battery = active_gun_battery();
+    return battery ? battery->count : 0;
   }
 
   /// Structural body size excluding maximum hangar bay space.
@@ -3667,24 +3716,6 @@ struct std::formatter<T> {
                           s.name(), s.owner());
   }
 };
-
-/// Get display character for gun caliber type
-/// \param caliber Gun caliber type (guntype_t::NONE=0, guntype_t::LIGHT=1,
-/// guntype_t::MEDIUM=2, guntype_t::HEAVY=3)
-/// \return Character representing caliber ('L', 'M', 'H', or ' ' for none)
-export constexpr char caliber_char(guntype_t caliber) {
-  switch (caliber) {
-    case guntype_t::LIGHT:
-      return 'L';
-    case guntype_t::MEDIUM:
-      return 'M';
-    case guntype_t::HEAVY:
-      return 'H';
-    case guntype_t::NONE:
-    default:
-      return ' ';
-  }
-}
 
 /// Check if ship type appears in filter string
 /// \param type Ship type to check

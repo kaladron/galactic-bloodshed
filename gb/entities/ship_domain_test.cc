@@ -444,6 +444,78 @@ void test_gun_battery_invariants_and_operations() {
   test::expect_eq(ship.sectype(), guntype_t::NONE);
 }
 
+void test_active_gun_battery_and_formatting() {
+  // 1. GunBattery to_string formatting
+  test::expect_eq(GunBattery{}.to_string(), "0 ");
+  test::expect_eq(GunBattery::create(10, guntype_t::LIGHT).to_string(), "10L");
+  test::expect_eq(GunBattery::create(5, guntype_t::MEDIUM).to_string(), "5M");
+  test::expect_eq(GunBattery::create(2, guntype_t::HEAVY).to_string(), "2H");
+
+  // 2. Active battery selection on Ship
+  Ship ship;
+  test::expect_eq(ship.active_gun_battery(), nullptr);
+  test::expect_eq(ship.active_gun_caliber(), guntype_t::NONE);
+  test::expect_eq(ship.active_guns(), 0u);
+  test::expect_eq(ship.battery_summary(), "0 /0 ");
+
+  // Mode set to PRIMARY, but battery has no guns
+  ship.guns() = PRIMARY;
+  test::expect_eq(ship.active_gun_battery(), nullptr);
+  test::expect_eq(ship.active_gun_caliber(), guntype_t::NONE);
+  test::expect_eq(ship.active_guns(), 0u);
+
+  // Mount primary guns
+  ship.set_primary_battery(8, guntype_t::MEDIUM);
+  test::expect_ne(ship.active_gun_battery(), nullptr);
+  test::expect_eq(ship.active_gun_battery()->count, 8u);
+  test::expect_eq(ship.active_gun_battery()->caliber, guntype_t::MEDIUM);
+  test::expect_eq(ship.active_gun_caliber(), guntype_t::MEDIUM);
+  test::expect_eq(ship.active_guns(), 8u);
+  test::expect_eq(ship.battery_summary(), "8M/0 ");
+
+  // Switch to SECONDARY while empty
+  ship.guns() = SECONDARY;
+  test::expect_eq(ship.active_gun_battery(), nullptr);
+  test::expect_eq(ship.active_gun_caliber(), guntype_t::NONE);
+  test::expect_eq(ship.active_guns(), 0u);
+
+  // Mount secondary guns
+  ship.set_secondary_battery(4, guntype_t::LIGHT);
+  test::expect_ne(ship.active_gun_battery(), nullptr);
+  test::expect_eq(ship.active_gun_battery()->count, 4u);
+  test::expect_eq(ship.active_gun_battery()->caliber, guntype_t::LIGHT);
+  test::expect_eq(ship.active_gun_caliber(), guntype_t::LIGHT);
+  test::expect_eq(ship.active_guns(), 4u);
+  test::expect_eq(ship.battery_summary(), "8M/4L");
+
+  // Destroy secondary guns; active battery returns nullptr safely
+  test::expect_eq(ship.damage_secondary_guns(4), 4u);
+  test::expect_eq(ship.active_gun_battery(), nullptr);
+  test::expect_eq(ship.active_gun_caliber(), guntype_t::NONE);
+  test::expect_eq(ship.active_guns(), 0u);
+  test::expect_eq(ship.battery_summary(), "8M/0 ");
+
+  // Switch back to PRIMARY with surviving guns
+  ship.guns() = PRIMARY;
+  test::expect_ne(ship.active_gun_battery(), nullptr);
+  test::expect_eq(ship.active_guns(), 8u);
+  test::expect_eq(ship.active_gun_caliber(), guntype_t::MEDIUM);
+
+  // 3. Combat retaliation integration with active battery
+  ship.alive() = true;
+  ship.type() = ShipType::STYPE_BATTLE;
+  ship.popn() = 100;
+  ship.destruct() = 50;
+  ship.retaliate() = 10;
+  test::expect_eq(retal_strength(ship), 8);  // limited by 8 primary guns
+
+  ship.retaliate() = 5;
+  test::expect_eq(retal_strength(ship), 5);  // limited by salvo order
+
+  ship.guns() = ActiveBattery::NONE;
+  test::expect_eq(retal_strength(ship), 0);  // offline weapons
+}
+
 }  // namespace
 
 int main() {
@@ -459,6 +531,7 @@ int main() {
   test_dynamic_base_mass();
   test_gun_caliber_domain();
   test_gun_battery_invariants_and_operations();
+  test_active_gun_battery_and_formatting();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

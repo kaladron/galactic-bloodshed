@@ -164,19 +164,12 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   double r = .4 * strength;
   if (caliber == guntype_t::NONE) {
     /* figure out the appropriate gun caliber if not given*/
-    if (ship.fire_laser())
+    if (ship.fire_laser()) {
       caliber = guntype_t::LIGHT;
-    else
-      switch (ship.guns()) {
-        case PRIMARY:
-          caliber = ship.primtype();
-          break;
-        case SECONDARY:
-          caliber = ship.sectype();
-          break;
-        default:
-          caliber = guntype_t::LIGHT;
-      }
+    } else {
+      const auto* battery = ship.active_gun_battery();
+      caliber = battery ? battery->caliber : guntype_t::LIGHT;
+    }
   }
 
   auto& target = smap.get(target_sector);
@@ -504,10 +497,7 @@ guntype_t current_caliber(const Ship& ship) {
   if (ship.laser() && ship.fire_laser()) return guntype_t::LIGHT;
   if (ship.type() == ShipType::STYPE_MINE) return guntype_t::LIGHT;
   if (ship.type() == ShipType::STYPE_MISSILE) return guntype_t::HEAVY;
-  if (ship.guns() == PRIMARY) return ship.primtype();
-  if (ship.guns() == SECONDARY) return ship.sectype();
-
-  return guntype_t::NONE;
+  return ship.active_gun_caliber();
 }
 
 static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,

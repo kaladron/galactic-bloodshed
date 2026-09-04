@@ -297,6 +297,152 @@ struct std::formatter<Coordinates, CharT> {
   }
 };
 
+/// \brief Continuous 2D position within a star system relative to the host star
+/// (+/- SYSTEMSIZE = 2,000).
+export struct SystemCoordinates {
+  double x{0.0};
+  double y{0.0};
+
+  constexpr SystemCoordinates() = default;
+  constexpr SystemCoordinates(double x_val, double y_val) noexcept
+      : x(x_val), y(y_val) {}
+
+  constexpr SystemCoordinates
+  operator+(SystemCoordinates other) const noexcept {
+    return {x + other.x, y + other.y};
+  }
+  constexpr SystemCoordinates
+  operator-(SystemCoordinates other) const noexcept {
+    return {x - other.x, y - other.y};
+  }
+  constexpr SystemCoordinates& operator+=(SystemCoordinates other) noexcept {
+    x += other.x;
+    y += other.y;
+    return *this;
+  }
+  constexpr SystemCoordinates& operator-=(SystemCoordinates other) noexcept {
+    x -= other.x;
+    y -= other.y;
+    return *this;
+  }
+
+  constexpr SystemCoordinates operator-() const noexcept {
+    return {-x, -y};
+  }
+
+  constexpr SystemCoordinates operator*(double scalar) const noexcept {
+    return {x * scalar, y * scalar};
+  }
+  friend constexpr SystemCoordinates operator*(double scalar,
+                                               SystemCoordinates c) noexcept {
+    return {c.x * scalar, c.y * scalar};
+  }
+  constexpr SystemCoordinates operator/(double scalar) const noexcept {
+    return {x / scalar, y / scalar};
+  }
+  constexpr SystemCoordinates& operator*=(double scalar) noexcept {
+    x *= scalar;
+    y *= scalar;
+    return *this;
+  }
+  constexpr SystemCoordinates& operator/=(double scalar) noexcept {
+    x /= scalar;
+    y /= scalar;
+    return *this;
+  }
+
+  [[nodiscard]] double distance_to(SystemCoordinates other) const noexcept {
+    return std::hypot(x - other.x, y - other.y);
+  }
+  [[nodiscard]] double bearing_to(SystemCoordinates other) const noexcept {
+    return std::atan2(other.y - y, other.x - x);
+  }
+
+  constexpr auto operator<=>(const SystemCoordinates&) const = default;
+  constexpr bool operator==(const SystemCoordinates&) const = default;
+};
+
+export template <typename CharT>
+struct std::formatter<SystemCoordinates, CharT> {
+  constexpr auto parse(std::basic_format_parse_context<CharT>& ctx) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const SystemCoordinates& c, FormatContext& ctx) const {
+    auto out = ctx.out();
+    out = std::format_to(out, "{}", c.x);
+    *out++ = static_cast<CharT>(',');
+    return std::format_to(out, "{}", c.y);
+  }
+};
+
+/// \brief Continuous 2D position in the universe (+/- UNIVSIZE = 150,000).
+export struct UniverseCoordinates {
+  double x{0.0};
+  double y{0.0};
+
+  constexpr UniverseCoordinates() = default;
+  constexpr UniverseCoordinates(double x_val, double y_val) noexcept
+      : x(x_val), y(y_val) {}
+
+  [[nodiscard]] double distance_to(UniverseCoordinates other) const noexcept {
+    return std::hypot(x - other.x, y - other.y);
+  }
+  [[nodiscard]] double bearing_to(UniverseCoordinates other) const noexcept {
+    return std::atan2(other.y - y, other.x - x);
+  }
+
+  // Cross-frame operations with SystemCoordinates
+  constexpr UniverseCoordinates
+  operator+(SystemCoordinates offset) const noexcept {
+    return {x + offset.x, y + offset.y};
+  }
+  friend constexpr UniverseCoordinates
+  operator+(SystemCoordinates offset, UniverseCoordinates base) noexcept {
+    return base + offset;
+  }
+  constexpr UniverseCoordinates
+  operator-(SystemCoordinates offset) const noexcept {
+    return {x - offset.x, y - offset.y};
+  }
+  constexpr UniverseCoordinates& operator+=(SystemCoordinates offset) noexcept {
+    x += offset.x;
+    y += offset.y;
+    return *this;
+  }
+  constexpr UniverseCoordinates& operator-=(SystemCoordinates offset) noexcept {
+    x -= offset.x;
+    y -= offset.y;
+    return *this;
+  }
+
+  // Difference between two UniverseCoordinates is a displacement vector
+  // (SystemCoordinates)
+  constexpr SystemCoordinates
+  operator-(UniverseCoordinates other) const noexcept {
+    return {x - other.x, y - other.y};
+  }
+
+  constexpr auto operator<=>(const UniverseCoordinates&) const = default;
+  constexpr bool operator==(const UniverseCoordinates&) const = default;
+};
+
+export template <typename CharT>
+struct std::formatter<UniverseCoordinates, CharT> {
+  constexpr auto parse(std::basic_format_parse_context<CharT>& ctx) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const UniverseCoordinates& c, FormatContext& ctx) const {
+    auto out = ctx.out();
+    out = std::format_to(out, "{}", c.x);
+    *out++ = static_cast<CharT>(',');
+    return std::format_to(out, "{}", c.y);
+  }
+};
+
 /// \brief 1-indexed fixed-size player array wrapper indexed by player_t (1..N).
 export template <typename T, std::size_t N>
 class PlayerVector {

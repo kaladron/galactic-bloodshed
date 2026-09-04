@@ -8,6 +8,27 @@ import gb.entities;
 import test;
 import std;
 
+namespace {
+// Floating-point comparison tolerance for trigonometry (std::atan2) and
+// Euclidean distance calculations.
+constexpr double floating_point_tolerance = 1e-5;
+
+void expect_near(double actual, double expected,
+                 double tolerance = floating_point_tolerance,
+                 std::source_location loc = std::source_location::current()) {
+  if (std::abs(actual - expected) > tolerance) {
+    std::println(std::cerr,
+                 "\n❌ [ASSERTION FAILED] {}:{}\n"
+                 "    Expected ~: {}\n"
+                 "    Actual:     {}\n"
+                 "    Difference: {} (exceeds tolerance {})",
+                 loc.file_name(), loc.line(), expected, actual,
+                 std::abs(actual - expected), tolerance);
+    test::expect_true(false, "Values not within tolerance", loc);
+  }
+}
+}  // namespace
+
 int main() {
   std::println(std::cout, "=== Testing Coordinates & API Integration ===");
 
@@ -153,6 +174,160 @@ int main() {
   test::expect_eq(ship.land_coords(), Coordinates(7, 2));
   test::expect_eq(ship.land_coords().x, 7);
   test::expect_eq(ship.land_coords().y, 2);
+
+  // --- SystemCoordinates tests ---
+  std::println(std::cout, "--- Testing SystemCoordinates ---");
+  {
+    SystemCoordinates s0{};
+    test::expect_eq(s0.x, 0.0);
+    test::expect_eq(s0.y, 0.0);
+
+    SystemCoordinates s1{10.5, -20.5};
+    test::expect_eq(s1.x, 10.5);
+    test::expect_eq(s1.y, -20.5);
+
+    SystemCoordinates s2{2.5, 5.5};
+    SystemCoordinates s_sum = s1 + s2;
+    expect_near(s_sum.x, 13.0);
+    expect_near(s_sum.y, -15.0);
+
+    SystemCoordinates s_diff = s1 - s2;
+    expect_near(s_diff.x, 8.0);
+    expect_near(s_diff.y, -26.0);
+
+    SystemCoordinates s_compound{1.0, 2.0};
+    s_compound += s2;
+    expect_near(s_compound.x, 3.5);
+    expect_near(s_compound.y, 7.5);
+    s_compound -= s2;
+    expect_near(s_compound.x, 1.0);
+    expect_near(s_compound.y, 2.0);
+
+    // Unary negation
+    SystemCoordinates s_neg = -s1;
+    expect_near(s_neg.x, -10.5);
+    expect_near(s_neg.y, 20.5);
+
+    // Scalar multiplication and division
+    SystemCoordinates s_mul = s2 * 2.0;
+    expect_near(s_mul.x, 5.0);
+    expect_near(s_mul.y, 11.0);
+
+    SystemCoordinates s_mul_left = 2.0 * s2;
+    expect_near(s_mul_left.x, 5.0);
+    expect_near(s_mul_left.y, 11.0);
+
+    SystemCoordinates s_div = s2 / 2.0;
+    expect_near(s_div.x, 1.25);
+    expect_near(s_div.y, 2.75);
+
+    SystemCoordinates s_scale{4.0, 6.0};
+    s_scale *= 0.5;
+    expect_near(s_scale.x, 2.0);
+    expect_near(s_scale.y, 3.0);
+    s_scale /= 2.0;
+    expect_near(s_scale.x, 1.0);
+    expect_near(s_scale.y, 1.5);
+
+    // Euclidean distance
+    SystemCoordinates p_origin{0.0, 0.0};
+    SystemCoordinates p_34{3.0, 4.0};
+    expect_near(p_origin.distance_to(p_34), 5.0);
+    expect_near(p_34.distance_to(p_origin), 5.0);
+
+    // Bearing in radians
+    expect_near(p_origin.bearing_to({10.0, 0.0}), 0.0);
+    expect_near(p_origin.bearing_to({0.0, 10.0}), std::numbers::pi / 2.0);
+    expect_near(p_origin.bearing_to({-10.0, 0.0}), std::numbers::pi);
+    expect_near(p_origin.bearing_to({0.0, -10.0}), -std::numbers::pi / 2.0);
+
+    // Comparisons
+    test::expect_eq(s1, SystemCoordinates(10.5, -20.5));
+    test::expect_ne(s1, s2);
+
+    // Formatting
+    test::expect_eq(std::format("{}", s1), "10.5,-20.5");
+  }
+
+  // --- UniverseCoordinates tests ---
+  std::println(std::cout, "--- Testing UniverseCoordinates ---");
+  {
+    UniverseCoordinates u0{};
+    test::expect_eq(u0.x, 0.0);
+    test::expect_eq(u0.y, 0.0);
+
+    UniverseCoordinates u1{1000.0, 2000.0};
+    test::expect_eq(u1.x, 1000.0);
+    test::expect_eq(u1.y, 2000.0);
+
+    // Euclidean distance
+    UniverseCoordinates u2{1600.0, 2800.0};
+    expect_near(u1.distance_to(u2), 1000.0);
+    expect_near(u2.distance_to(u1), 1000.0);
+
+    // Bearing
+    expect_near(u1.bearing_to({2000.0, 2000.0}), 0.0);
+    expect_near(u1.bearing_to({1000.0, 3000.0}), std::numbers::pi / 2.0);
+
+    // Comparisons
+    test::expect_eq(u1, UniverseCoordinates(1000.0, 2000.0));
+    test::expect_ne(u1, u2);
+
+    // Formatting
+    test::expect_eq(std::format("{}", u1), "1000,2000");
+  }
+
+  // --- Cross-frame arithmetic tests ---
+  std::println(std::cout, "--- Testing Cross-Frame Operations ---");
+  {
+    UniverseCoordinates star_pos{5000.0, 10000.0};
+    SystemCoordinates planet_offset{300.0, -400.0};
+
+    // Adding system offset to universe coordinates yields universe coordinates
+    UniverseCoordinates planet_abs = star_pos + planet_offset;
+    expect_near(planet_abs.x, 5300.0);
+    expect_near(planet_abs.y, 9600.0);
+
+    // Commutative addition
+    UniverseCoordinates planet_abs2 = planet_offset + star_pos;
+    expect_near(planet_abs2.x, 5300.0);
+    expect_near(planet_abs2.y, 9600.0);
+
+    // Subtraction of system offset from universe position
+    UniverseCoordinates star_sub = planet_abs - planet_offset;
+    expect_near(star_sub.x, 5000.0);
+    expect_near(star_sub.y, 10000.0);
+
+    // Compound assignment
+    UniverseCoordinates moving = star_pos;
+    moving += planet_offset;
+    expect_near(moving.x, 5300.0);
+    expect_near(moving.y, 9600.0);
+    moving -= planet_offset;
+    expect_near(moving.x, 5000.0);
+    expect_near(moving.y, 10000.0);
+
+    // Difference of two UniverseCoordinates yields a SystemCoordinates
+    // displacement vector
+    SystemCoordinates displacement = planet_abs - star_pos;
+    expect_near(displacement.x, 300.0);
+    expect_near(displacement.y, -400.0);
+    expect_near(displacement.distance_to({0.0, 0.0}), 500.0);
+
+    // Static type assertions verifying affine frame discipline
+    static_assert(std::is_same_v<decltype(star_pos + planet_offset),
+                                 UniverseCoordinates>);
+    static_assert(std::is_same_v<decltype(planet_offset + star_pos),
+                                 UniverseCoordinates>);
+    static_assert(std::is_same_v<decltype(star_pos - planet_offset),
+                                 UniverseCoordinates>);
+    static_assert(
+        std::is_same_v<decltype(planet_abs - star_pos), SystemCoordinates>);
+    static_assert(std::is_same_v<decltype(planet_offset + planet_offset),
+                                 SystemCoordinates>);
+    static_assert(std::is_same_v<decltype(planet_offset - planet_offset),
+                                 SystemCoordinates>);
+  }
 
   std::println(std::cout, "✓ All Coordinates & API Integration tests passed!");
   return 0;

@@ -10,8 +10,8 @@ import gb.services;
 import gb.server;
 import test;
 
-#include "gb/server/enroll.h"
-#include "gb/server/racegen.h"
+#include "gb/creator/enroll.h"
+#include "gb/creator/racegen.h"
 
 int enroll_valid_race(Database& db);
 

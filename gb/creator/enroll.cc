@@ -10,8 +10,8 @@ import gb.services;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/server/enroll.h"
-#include "gb/server/racegen.h"
+#include "gb/creator/enroll.h"
+#include "gb/creator/racegen.h"
 
 static const char* DEFAULT_ENROLLMENT_FILENAME = "enroll.saves";
 static const char* DEFAULT_ENROLLMENT_FAILURE_FILENAME = "failures.saves";

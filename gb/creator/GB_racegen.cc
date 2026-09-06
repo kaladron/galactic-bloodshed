@@ -8,7 +8,7 @@ import dallib;
 import gb.entities;
 import gb.services;
 
-#include "gb/server/racegen.h"
+#include "gb/creator/racegen.h"
 
 namespace {
 constexpr std::array<PlanetType, N_HOME_PLANET_TYPES> planet_translate = {

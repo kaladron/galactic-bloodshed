@@ -14,7 +14,7 @@ import gb.services;
 #include <cstdio>
 #include <cstdlib>
 
-#include "gb/server/racegen.h"
+#include "gb/creator/racegen.h"
 
 static int do_racegen();
 

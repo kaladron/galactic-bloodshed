@@ -10,7 +10,7 @@ import dallib;
 import scnlib;
 #undef stdout
 
-#include "gb/server/enroll.h"
+#include "gb/creator/enroll.h"
 
 namespace GB::enrol {
 

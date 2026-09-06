@@ -300,12 +300,110 @@ void test_racegen_db_path_config() {
   std::println(std::cout, "  ✓ racegen database path configuration passed");
 }
 
+void test_enroll_valid_race_success() {
+  std::println(std::cout, "Test: enroll_valid_race success and bounds safety");
+
+  Database db(":memory:");
+  initialize_schema(db);
+  JsonStore store(db);
+
+  // Setup: Create universe with 1 star
+  universe_struct us{};
+  us.id = 1;
+  us.numstars = 1;
+  UniverseRepository univ_repo(store);
+  univ_repo.save(us);
+
+  // Star 0 has 2 planets: Planet 0 is MARS, Planet 1 is GASGIANT
+  star_struct ss0{};
+  ss0.star_id = 0;
+  ss0.inhabited = 0;
+  ss0.pnames = {"Ares", "Jupiter"};
+  Star star0(ss0);
+  StarRepository star_repo(store);
+  star_repo.save(star0);
+
+  PlanetRepository planet_repo(store);
+  Planet p0{PlanetType::MARS, Coordinates{5, 5}};
+  p0.star_id() = 0;
+  p0.planet_order() = 0;
+  planet_repo.save(p0);
+
+  Planet p1{PlanetType::GASGIANT, Coordinates{5, 5}};
+  p1.star_id() = 0;
+  p1.planet_order() = 1;
+  p1.conditions(RTEMP) = -80;
+  planet_repo.save(p1);
+
+  // Populate SectorMap with SEC_GAS sectors so capital sector preference
+  // matches
+  SectorRepository sector_repo(store);
+  SectorMap smap(p1);
+  for (int y = 0; y < 5; ++y) {
+    for (int x = 0; x < 5; ++x) {
+      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_GAS);
+    }
+  }
+  sector_repo.save_map(smap);
+
+  // Setup: Jovian God race
+  race_info = x{};
+  race_info.priv_type = P_GOD;
+  std::snprintf(race_info.name, sizeof(race_info.name), "Jovians");
+  std::snprintf(race_info.password, sizeof(race_info.password), "secret");
+  race_info.home_planet_type = H_JOVIAN;
+  race_info.attr[SEXES] = 1.0;
+  race_info.attr[A_IQ] = 100.0;
+  race_info.attr[BIRTH] = 1.0;
+  race_info.attr[MASS] = 1.0;
+  race_info.attr[METAB] = 1.0;
+  race_info.compat[S_GAS] = 100.0;
+
+  // TEST: Execute enroll_valid_race
+  int result = enroll_valid_race(db);
+
+  // Verify: Successfully enrolled
+  test::expect_eq(result, 0);
+  test::expect_eq(race_info.status, EnrollmentStatus::ENROLLED);
+
+  // Verify: Race created with correct sector preferences and bounds
+  EntityManager em(db);
+  const auto* enrolled_race = em.peek_race(player_t{1});
+  test::expect_true(enrolled_race != nullptr);
+  if (enrolled_race) {
+    test::expect_eq(enrolled_race->name, std::string("Jovians"));
+    test::expect_eq(enrolled_race->likesbest, SectorType::SEC_GAS);
+    test::expect_eq(enrolled_race->likes[SectorType::SEC_GAS], 1.0);
+    test::expect_eq(enrolled_race->likes[SectorType::SEC_WASTED], 0.0);
+    test::expect_true(enrolled_race->God);
+  }
+
+  // Verify: Star is marked explored and inhabited
+  const auto* star = em.peek_star(0);
+  test::expect_true(star != nullptr);
+  if (star) {
+    test::expect_true(star->is_explored_by(player_t{1}));
+    test::expect_true(star->is_inhabited_by(player_t{1}));
+  }
+
+  // Verify: Planet population and governor ship created
+  const auto* planet = em.peek_planet(0, 1);
+  test::expect_true(planet != nullptr);
+  if (planet) {
+    test::expect_gt(planet->popn(), 0);
+    test::expect_eq(planet->ships(), enrolled_race->Gov_ship);
+  }
+
+  std::println(std::cout, "  ✓ enroll_valid_race completed successfully");
+}
+
 int main() {
   test_enroll_first_race_god_requirement();
   test_enroll_max_players();
   test_enroll_no_free_planet_type();
   test_find_suitable_enrol_planet();
   test_racegen_db_path_config();
+  test_enroll_valid_race_success();
 
   std::println(std::cout, "\n✅ All enroll tests passed!");
   return 0;

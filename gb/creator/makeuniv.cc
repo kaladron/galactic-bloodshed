@@ -277,18 +277,21 @@ usage:
 }
 
 void place_star(star_struct& star) {
-  int found = 0;
-  int i;
-  int j;
-  while (!found) {
-    star.xpos = (double)int_rand(-UNIVSIZE, UNIVSIZE);
-    star.ypos = (double)int_rand(-UNIVSIZE, UNIVSIZE);
-    /* check to see if another star is nearby */
-    i = 100 * ((int)star.xpos + UNIVSIZE) / (2 * UNIVSIZE);
-    j = 100 * ((int)star.xpos + UNIVSIZE) / (2 * UNIVSIZE);
+  constexpr auto to_grid_bin = [](double coord) noexcept -> size_t {
+    const double normalized = (coord + UNIVSIZE) / (2.0 * UNIVSIZE);
+    return static_cast<size_t>(std::clamp(normalized * 100.0, 0.0, 99.0));
+  };
+
+  while (true) {
+    const UniverseCoordinates pos{double_rand(-UNIVSIZE, UNIVSIZE),
+                                  double_rand(-UNIVSIZE, UNIVSIZE)};
+    const size_t i = to_grid_bin(pos.x);
+    const size_t j = to_grid_bin(pos.y);
     if (!star_grid_occupancy[i][j]) {
       star_grid_occupancy[i][j] = true;
-      found = 1;
+      star.xpos = pos.x;
+      star.ypos = pos.y;
+      return;
     }
   }
 }

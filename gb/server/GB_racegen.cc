@@ -145,10 +145,15 @@ found_planet:
 
   // Assign sector compats and determine a primary sector type.
   for (SectorType st : all_sector_types) {
+    if (st == SectorType::SEC_WASTED) {
+      race.likes[st] = 0.0;
+      continue;
+    }
     race.likes[st] = race_info.compat[st] / 100.0;
     if ((100 == race_info.compat[st]) &&
-        (1.0 == planet_compat_cov[race_info.home_planet_type][st]))
+        (1.0 == planet_compat_cov[race_info.home_planet_type][st])) {
       race.likesbest = st;
+    }
   }
 
   // Find a randomized starting capital sector matching the race's preferred

@@ -9,6 +9,99 @@ import std;
 
 module gblib;
 
+bool check_orbital_pdn_defense(EntityManager& entity_manager,
+                               const Planet& planet, player_t attacker) {
+  for (const auto& s : ShipList::readonly(entity_manager, planet.ships())) {
+    if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF &&
+        s.owner() != attacker) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::optional<Coordinates>
+find_bombardment_target(EntityManager& entity_manager, const Ship& ship,
+                        const Race& attacker_race) {
+  std::optional<Coordinates> target;
+
+  entity_manager.with_sectormap(
+      ship.storbits(), ship.pnumorbits(), [&](const SectorMap& smap) {
+        const auto* bers = ship.as<BerserkerShip>();
+        const std::optional<player_t> programmed_target =
+            bers && bers->target() != 0 ? std::optional{bers->target()}
+                                        : std::nullopt;
+
+        auto candidates =
+            smap.shuffle() | std::views::filter([&](const Sector& s) noexcept {
+              return s.is_bombardable_by(ship.owner());
+            });
+
+        // 1. Look for an active enemy colony or programmed target first
+        for (const Sector& sect : candidates) {
+          const player_t owner = sect.get_owner();
+          if (attacker_race.is_at_war_with(owner) ||
+              programmed_target == owner) {
+            target = sect.coords();
+            return;
+          }
+        }
+
+        // 2. If no enemy colonies exist, fall back to any foreign colony
+        for (const Sector& sect : candidates) {
+          target = sect.coords();
+          return;
+        }
+      });
+
+  return target;
+}
+
+int calculate_bombardment_strength(const Ship& ship) {
+  const double effective_guns =
+      static_cast<double>(ship.max_guns_capacity()) * ship.hull_efficiency();
+  return std::max(0, std::min(static_cast<int>(effective_guns),
+                              static_cast<int>(ship.destruct())));
+}
+
+void dispatch_bombardment_alerts(EntityManager& entity_manager,
+                                 const Ship& ship, const Star& star,
+                                 Coordinates target, player_t old_owner,
+                                 int sectors_destroyed,
+                                 const BombardResult& result) {
+  /* tell the bombarding player about it.. */
+  std::stringstream telegram_report;
+  telegram_report << std::format("REPORT from ship #{}\n\n", ship.number());
+  telegram_report << result.short_message;
+  telegram_report << std::format(
+      "sector {} (owner {}). {} sectors destroyed.\n", target, old_owner,
+      sectors_destroyed);
+  push_telegram(entity_manager, ship.owner(), ship.governor(),
+                telegram_report.str());
+
+  /* notify other player. */
+  std::stringstream telegram_alert;
+  telegram_alert << std::format("ALERT from planet /{}/{}\n", star.get_name(),
+                                star.get_planet_name(ship.pnumorbits()));
+  telegram_alert << std::format(
+      "{}{} {} bombarded sector {}; {} sectors destroyed.\n",
+      ship.type_letter(), ship.number(), ship.name(), target,
+      sectors_destroyed);
+
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    player_t i = race.Playernum;
+    if (result.nuked_players[i] && i != ship.owner()) {
+      push_telegram(entity_manager, i, star.governor(i), telegram_alert.str());
+    }
+  }
+
+  std::string combatpost =
+      std::format("{}{} {} [{}] bombards {}/{}\n", ship.type_letter(),
+                  ship.number(), ship.name(), ship.owner(), star.get_name(),
+                  star.get_planet_name(ship.pnumorbits()));
+  post(entity_manager, combatpost, NewsType::COMBAT);
+}
+
 /**
  * Performs a bombardment action by a berserker ship on a planet.
  *
@@ -41,48 +134,16 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   const auto& star = *entity_manager.peek_star(ship.storbits());
 
   /* check to see if PDNs are present */
-  for (const auto& s : ShipList::readonly(entity_manager, planet.ships())) {
-    if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF &&
-        s.owner() != ship.owner()) {
-      std::string notice =
-          std::format("Bombardment of {} cancelled, PDNs are present.\n",
-                      prin_ship_orbits(entity_manager, ship));
-      push_telegram(entity_manager, ship.owner(), ship.governor(), notice);
-      return 0;
-    }
+  if (check_orbital_pdn_defense(entity_manager, planet, ship.owner())) {
+    std::string notice =
+        std::format("Bombardment of {} cancelled, PDNs are present.\n",
+                    prin_ship_orbits(entity_manager, ship));
+    push_telegram(entity_manager, ship.owner(), ship.governor(), notice);
+    return 0;
   }
 
   /* look for someone to bombard-check for war */
-  std::optional<Coordinates> target;
-
-  entity_manager.with_sectormap(
-      ship.storbits(), ship.pnumorbits(), [&](const SectorMap& smap) {
-        const auto* bers = ship.as<BerserkerShip>();
-        const std::optional<player_t> programmed_target =
-            bers && bers->target() != 0 ? std::optional{bers->target()}
-                                        : std::nullopt;
-
-        auto candidates =
-            smap.shuffle() | std::views::filter([&](const Sector& s) noexcept {
-              return s.is_bombardable_by(ship.owner());
-            });
-
-        // 1. Look for an active enemy colony first
-        for (const Sector& sect : candidates) {
-          const player_t owner = sect.get_owner();
-          if (r.is_at_war_with(owner) || programmed_target == owner) {
-            target = sect.coords();
-            return;
-          }
-        }
-
-        // 2. If no enemy colonies exist, fall back to any foreign colony
-        for (const Sector& sect : candidates) {
-          target = sect.coords();
-          return;
-        }
-      });
-
+  const auto target = find_bombardment_target(entity_manager, ship, r);
   if (!target.has_value()) {
     /* there were no sectors worth bombing. */
     if (!ship.notified()) {
@@ -99,11 +160,8 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
     return 0;
   }
 
-  int str = std::min(
-      static_cast<int>(static_cast<double>(ship.max_guns_capacity()) *
-                       (100.0 - static_cast<double>(ship.damage())) / 100.0),
-      static_cast<int>(ship.destruct()));
-  if (!str) {
+  const int str = calculate_bombardment_strength(ship);
+  if (str <= 0) {
     /* no weapons! */
     if (!ship.notified()) {
       ship.notified() = 1;
@@ -133,38 +191,10 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   if (!opt_result) return 0;
   const auto& result = *opt_result;
   /* (0=dont get smap) */
-  auto numdest = std::max(result.sectors_destroyed, 0);
+  const auto numdest = std::max(result.sectors_destroyed, 0);
 
-  /* tell the bombarding player about it.. */
-  std::stringstream telegram_report;
-  telegram_report << std::format("REPORT from ship #{}\n\n", ship.number());
-  telegram_report << result.short_message;
-  telegram_report << std::format(
-      "sector {} (owner {}). {} sectors destroyed.\n", *target, oldown,
-      numdest);
-  push_telegram(entity_manager, ship.owner(), ship.governor(),
-                telegram_report.str());
-
-  /* notify other player. */
-  std::stringstream telegram_alert;
-  telegram_alert << std::format("ALERT from planet /{}/{}\n", star.get_name(),
-                                star.get_planet_name(ship.pnumorbits()));
-  telegram_alert << std::format(
-      "{}{} {} bombarded sector {}; {} sectors destroyed.\n",
-      ship.type_letter(), ship.number(), ship.name(), *target, numdest);
-
-  for (const Race& race : RaceList::readonly(entity_manager)) {
-    player_t i = race.Playernum;
-    if (result.nuked_players[i] && i != ship.owner()) {
-      push_telegram(entity_manager, i, star.governor(i), telegram_alert.str());
-    }
-  }
-
-  std::string combatpost =
-      std::format("{}{} {} [{}] bombards {}/{}\n", ship.type_letter(),
-                  ship.number(), ship.name(), ship.owner(), star.get_name(),
-                  star.get_planet_name(ship.pnumorbits()));
-  post(entity_manager, combatpost, NewsType::COMBAT);
+  dispatch_bombardment_alerts(entity_manager, ship, star, *target, oldown,
+                              numdest, result);
 
   return numdest;
 }

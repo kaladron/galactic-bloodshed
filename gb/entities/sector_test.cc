@@ -437,6 +437,282 @@ void test_sector_bombardable_and_ownership_predicates() {
   test::expect_false(wasted_enemy_sector.is_bombardable_by(player_t{1}));
 }
 
+void test_sector_recover_fertility() {
+  Race race{};
+  race.fertilize = 100;
+
+  // 1. Natural fertilization increases fertility up to 100
+  Sector sector(sector_struct{
+      .fert = 98,
+      .type = SectorType::SEC_LAND,
+      .condition = SectorType::SEC_LAND,
+  });
+  seed_rand(42);
+  sector.recover_fertility(race);
+  test::expect_true(sector.get_fert() >= 98 && sector.get_fert() <= 100);
+
+  // 2. Fertility is strictly capped at 100
+  Sector max_fert(sector_struct{
+      .fert = 100,
+      .type = SectorType::SEC_LAND,
+      .condition = SectorType::SEC_LAND,
+  });
+  max_fert.recover_fertility(race);
+  test::expect_eq(max_fert.get_fert(), 100);
+
+  // 3. Wasted sectors do not gain fertility from fertilization
+  Sector wasted(sector_struct{
+      .fert = 50,
+      .type = SectorType::SEC_LAND,
+      .condition = SectorType::SEC_WASTED,
+  });
+  // Temporarily disable natural repair to test fertility isolation
+  wasted.recover_fertility(race);
+  test::expect_eq(wasted.get_fert(), 50);
+
+  // 4. Natural repair restores wasted sector to original geology type
+  bool repaired = false;
+  for (int i = 0; i < 200; ++i) {
+    wasted.recover_fertility(race);
+    if (!wasted.is_wasted()) {
+      repaired = true;
+      break;
+    }
+  }
+  test::expect_true(repaired);
+  test::expect_eq(wasted.get_condition(), SectorType::SEC_LAND);
+}
+
+void test_sector_update_efficiency() {
+  Race race{};
+  race.Playernum = player_t{1};
+  race.metabolism = 10.0;
+  race.likes[SectorType::SEC_LAND] = 1.0;
+  race.likes[SectorType::SEC_GAS] = 1.0;
+
+  Planet planet{};
+  planet.info(player_t{1}).tax = 0;  // 100% chance of development
+
+  // 1. Unowned sector does not mutate or throw
+  Sector unowned(sector_struct{
+      .eff = 50,
+      .owner = player_t{0},
+      .condition = SectorType::SEC_LAND,
+  });
+  unowned.update_efficiency(race, planet);
+  test::expect_eq(unowned.get_eff(), 50);
+
+  // 2. Owned sector develops efficiency based on metabolism
+  Sector developing(sector_struct{
+      .eff = 20,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_LAND,
+  });
+  seed_rand(42);
+  developing.update_efficiency(race, planet);
+  test::expect_true(developing.get_eff() > 20);
+
+  // 3. Reaching 100% efficiency automatically plates land sector
+  Sector near_max(sector_struct{
+      .eff = 95,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_LAND,
+  });
+  near_max.update_efficiency(race, planet);
+  test::expect_eq(near_max.get_eff(), 100);
+  test::expect_eq(near_max.get_condition(), SectorType::SEC_PLATED);
+  test::expect_true(near_max.is_plated());
+
+  // 4. Gas sectors plate to 100% efficiency but retain SEC_GAS condition
+  Sector gas_sector(sector_struct{
+      .eff = 95,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_GAS,
+  });
+  gas_sector.update_efficiency(race, planet);
+  test::expect_eq(gas_sector.get_eff(), 100);
+  test::expect_eq(gas_sector.get_condition(), SectorType::SEC_GAS);
+  test::expect_false(gas_sector.is_plated());
+
+  // 5. Already at 100% efficiency triggers plating directly
+  Sector already_max(sector_struct{
+      .eff = 100,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_LAND,
+  });
+  already_max.update_efficiency(race, planet);
+  test::expect_eq(already_max.get_condition(), SectorType::SEC_PLATED);
+}
+
+void test_sector_produce_resources() {
+  Race race{};
+  race.Playernum = player_t{1};
+  race.metabolism = 1.0;
+
+  TurnStats stats{};
+
+  // 1. Unowned sector does not produce or throw
+  Sector unowned(sector_struct{
+      .eff = 100,
+      .resource = 500,
+      .owner = player_t{0},
+      .condition = SectorType::SEC_LAND,
+  });
+  unowned.produce_resources(race, stats);
+  test::expect_eq(unowned.get_resource(), 500);
+  test::expect_eq(stats.prod_res[player_t{1}], 0);
+
+  // 2. Standard resource extraction on land sector
+  Sector land(sector_struct{
+      .eff = 100,
+      .mobilization = 0,
+      .resource = 1000,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_LAND,
+  });
+  seed_rand(42);
+  land.produce_resources(race, stats);
+  const resource_t extracted = 1000 - land.get_resource();
+  test::expect_true(extracted > 0);
+  test::expect_eq(stats.prod_res[player_t{1}], extracted);
+  test::expect_eq(stats.prod_destruct[player_t{1}], 0);
+  test::expect_eq(stats.prod_fuel[player_t{1}], extracted);
+
+  // 3. Gas sector doubles fuel production
+  TurnStats gas_stats{};
+  Sector gas(sector_struct{
+      .eff = 100,
+      .mobilization = 0,
+      .resource = 1000,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_GAS,
+  });
+  seed_rand(42);
+  gas.produce_resources(race, gas_stats);
+  const resource_t gas_extracted = 1000 - gas.get_resource();
+  test::expect_true(gas_extracted > 0);
+  test::expect_eq(gas_stats.prod_res[player_t{1}], gas_extracted);
+  test::expect_eq(gas_stats.prod_fuel[player_t{1}], gas_extracted * 2);
+
+  // 4. Mobilized sector produces destruct instead of resources
+  TurnStats mob_stats{};
+  Sector mobilized(sector_struct{
+      .eff = 100,
+      .mobilization = 100,
+      .resource = 1000,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_LAND,
+  });
+  seed_rand(42);
+  mobilized.produce_resources(race, mob_stats);
+  const resource_t mob_extracted = 1000 - mobilized.get_resource();
+  test::expect_true(mob_extracted > 0);
+  test::expect_eq(mob_stats.prod_res[player_t{1}], 0);
+  test::expect_eq(mob_stats.prod_destruct[player_t{1}], mob_extracted);
+
+  // 5. Continuous fractional metabolism scaling
+  TurnStats frac_stats{};
+  Race low_metabolism{};
+  low_metabolism.Playernum = player_t{1};
+  low_metabolism.metabolism = 0.5;
+  Sector frac_sector(sector_struct{
+      .eff = 100,
+      .mobilization = 0,
+      .resource = 1000,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_LAND,
+  });
+  seed_rand(42);
+  frac_sector.produce_resources(low_metabolism, frac_stats);
+  const resource_t frac_extracted = 1000 - frac_sector.get_resource();
+  test::expect_true(frac_extracted > 0);
+  test::expect_eq(frac_stats.prod_res[player_t{1}], frac_extracted);
+
+  // 6. Sector depletion cannot exceed available resource
+  TurnStats dep_stats{};
+  Race productive_race{};
+  productive_race.Playernum = player_t{1};
+  productive_race.metabolism = 10.0;
+  Sector scarce_sector(sector_struct{
+      .eff = 100,
+      .mobilization = 0,
+      .resource = 5,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_LAND,
+  });
+  scarce_sector.produce_resources(productive_race, dep_stats);
+  test::expect_eq(scarce_sector.get_resource(), 0);
+  test::expect_eq(dep_stats.prod_res[player_t{1}], 5);
+
+  // 7. Zero resource or zero efficiency produces nothing
+  TurnStats empty_stats{};
+  Sector empty_sec(sector_struct{
+      .eff = 0,
+      .resource = 100,
+      .owner = player_t{1},
+      .condition = SectorType::SEC_LAND,
+  });
+  empty_sec.produce_resources(race, empty_stats);
+  test::expect_eq(empty_sec.get_resource(), 100);
+  test::expect_eq(empty_stats.prod_res[player_t{1}], 0);
+}
+
+void test_sector_mine_crystals() {
+  Race race{};
+  race.Playernum = player_t{1};
+  race.discoveries.crystal = true;
+
+  TurnStats stats{};
+
+  // 1. Unowned sector cannot be mined
+  Sector unowned(sector_struct{
+      .eff = 100,
+      .crystals = 5,
+      .owner = player_t{0},
+  });
+  test::expect_false(unowned.mine_crystals(race, stats));
+  test::expect_eq(unowned.get_crystals(), 5);
+
+  // 2. Sector with no crystals returns false
+  Sector empty(sector_struct{
+      .eff = 100,
+      .crystals = 0,
+      .owner = player_t{1},
+  });
+  test::expect_false(empty.mine_crystals(race, stats));
+
+  // 3. Race without crystal discovery cannot mine
+  Race undiscovered{};
+  undiscovered.Playernum = player_t{1};
+  undiscovered.discoveries.crystal = false;
+  Sector with_crystals(sector_struct{
+      .eff = 100,
+      .crystals = 5,
+      .owner = player_t{1},
+  });
+  test::expect_false(with_crystals.mine_crystals(undiscovered, stats));
+  test::expect_eq(with_crystals.get_crystals(), 5);
+
+  // 4. Sector with zero efficiency cannot mine
+  Sector zero_eff(sector_struct{
+      .eff = 0,
+      .crystals = 5,
+      .owner = player_t{1},
+  });
+  test::expect_false(zero_eff.mine_crystals(race, stats));
+  test::expect_eq(zero_eff.get_crystals(), 5);
+
+  // 5. Successful crystal mining decrements crystals and tallies stats
+  Sector viable(sector_struct{
+      .eff = 100,
+      .crystals = 3,
+      .owner = player_t{1},
+  });
+  test::expect_true(viable.mine_crystals(race, stats));
+  test::expect_eq(viable.get_crystals(), 2);
+  test::expect_eq(stats.prod_crystals[player_t{1}], 1);
+}
+
 }  // namespace
 
 int main() {
@@ -452,5 +728,9 @@ int main() {
   test_sector_resource_and_crystal_predicates();
   test_sector_colonizable_predicates();
   test_sector_bombardable_and_ownership_predicates();
+  test_sector_recover_fertility();
+  test_sector_update_efficiency();
+  test_sector_produce_resources();
+  test_sector_mine_crystals();
   return 0;
 }

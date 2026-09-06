@@ -9,6 +9,7 @@ export module gblib:sector;
 import :types;
 import :planet;
 import :race;
+import :turnstats;
 
 // POD struct containing all Sector data fields
 export struct sector_struct {
@@ -280,6 +281,22 @@ public:
   /// star's nova stage. Increments resource by 1, reduces fertility by 20%,
   /// and either kills ~50% of the population or sterilizes at stage 14.
   void apply_supernova(int stage) noexcept;
+
+  /// \brief Simulates racial fertilization and natural recovery of wasted
+  /// sectors.
+  void recover_fertility(const Race& race) noexcept;
+
+  /// \brief Updates sector efficiency and converts fully developed sectors to
+  /// plated condition.
+  void update_efficiency(const Race& race, const Planet& planet) noexcept;
+
+  /// \brief Extracts raw resources or fuel from a populated sector based on
+  /// metabolism and efficiency.
+  void produce_resources(const Race& race, TurnStats& stats) noexcept;
+
+  /// \brief Mines crystal deposits from a sector if race has crystal discovery.
+  /// \return True if a crystal deposit was successfully mined.
+  bool mine_crystals(const Race& race, TurnStats& stats) noexcept;
 
   /// Clear ownership if sector is empty (no popn or troops)
   void clear_owner_if_empty() noexcept {

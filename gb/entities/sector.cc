@@ -234,3 +234,69 @@ void Sector::apply_supernova(int stage) noexcept {
 
   clear_owner_if_empty();
 }
+
+void Sector::recover_fertility(const Race& race) noexcept {
+  if (!is_wasted() && race.fertilize > 0 && data_.fert < 100) {
+    data_.fert += (int_rand(0, 100) < static_cast<int>(race.fertilize));
+  }
+  data_.fert = std::min(data_.fert, 100U);
+
+  if (is_wasted() && success(NATURAL_REPAIR)) {
+    data_.condition = data_.type;
+  }
+}
+
+void Sector::update_efficiency(const Race& race,
+                               const Planet& planet) noexcept {
+  if (!is_owned()) return;
+
+  if (data_.eff < 100) {
+    const int chance =
+        round_rand((100.0 - static_cast<double>(planet.info(data_.owner).tax)) *
+                   race.likes[data_.condition]);
+    if (success(chance)) {
+      improve_efficiency(round_rand(race.metabolism));
+      if (data_.eff >= 100) {
+        plate();
+      }
+    }
+  } else {
+    plate();
+  }
+}
+
+void Sector::produce_resources(const Race& race, TurnStats& stats) noexcept {
+  if (!is_owned() || data_.resource <= 0 ||
+      !success(static_cast<int>(data_.eff))) {
+    return;
+  }
+
+  const double eff_scale =
+      double_rand(1.0, std::max(1.0, static_cast<double>(data_.eff)));
+  resource_t prod = round_rand<resource_t>(race.metabolism * eff_scale);
+  prod = std::clamp(prod, resource_t{0}, data_.resource);
+  if (prod == 0) return;
+
+  data_.resource -= prod;
+
+  const auto pfuel = prod * (1 + (data_.condition == SectorType::SEC_GAS));
+  const player_t owner = data_.owner;
+
+  if (success(static_cast<int>(data_.mobilization))) {
+    stats.prod_destruct[owner] += prod;
+  } else {
+    stats.prod_res[owner] += prod;
+  }
+
+  stats.prod_fuel[owner] += pfuel;
+}
+
+bool Sector::mine_crystals(const Race& race, TurnStats& stats) noexcept {
+  if (!is_owned() || data_.crystals == 0 || !race.discoveries.crystal ||
+      !success(static_cast<int>(data_.eff))) {
+    return false;
+  }
+  stats.prod_crystals[data_.owner]++;
+  --data_.crystals;
+  return true;
+}

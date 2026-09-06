@@ -6,29 +6,17 @@
 import dallib;
 import gb.entities;
 import gb.services;
+import gb.creator;
 import test;
 import std;
-
-#include "gb/creator/makeplanet.h"
-#include "gb/creator/makestar.h"
-#include "gb/creator/makeuniv.h"
-
-// Define global stubs required by makestar.cc
-int autoname_plan = 0;
-int autoname_star = 0;
-int minplanets = 1;
-int maxplanets = 10;
-int printplaninfo = 0;
-int printstarinfo = 0;
-void place_star(star_struct&) {}
 
 void test_temperature_calculation() {
   std::println(std::cout, "Test: Temperature calculation");
 
   // TEST: Calculate temperatures at increasing orbital distances from star
-  int t1 = Temperature(100.0, 5000);
-  int t2 = Temperature(500.0, 5000);
-  int t3 = Temperature(1500.0, 5000);
+  int t1 = GB::creator::calculate_temperature(100.0, 5000);
+  int t2 = GB::creator::calculate_temperature(500.0, 5000);
+  int t3 = GB::creator::calculate_temperature(1500.0, 5000);
 
   // Verify: Farther planets must be colder than closer planets
   test::expect_gt(t1, t2);
@@ -57,7 +45,8 @@ void test_makeplanet_types() {
     std::optional<SectorMap> smap;
 
     // TEST: Generate planet with makeplanet()
-    Planet planet = makeplanet(500.0, 6000, ptype, star_id, pnum, smap);
+    Planet planet =
+        GB::creator::makeplanet(500.0, 6000, ptype, star_id, pnum, smap);
 
     // Verify: Planet type, location, and dimensions
     test::expect_eq(planet.type(), ptype);
@@ -77,29 +66,22 @@ void test_makeplanet_types() {
   }
 }
 
-void test_permutation_setters() {
-  std::println(
-      std::cout,
-      "Test: set_planet_list_permutation and set_star_list_permutation");
-
-  std::vector<int> perm = {3, 1, 0, 2};
-  set_planet_list_permutation(perm);
-  set_star_list_permutation(perm);
+void test_shuffled_indices() {
+  std::println(std::cout, "Test: shuffled_indices permutation validity");
 
   // Test that shuffled_indices generates complete permutation
   auto rand_perm = shuffled_indices(10);
-  test::expect_eq(rand_perm.size(), 10);
+  test::expect_eq(rand_perm.size(), 10zu);
   std::set<int> seen(rand_perm.begin(), rand_perm.end());
-  test::expect_eq(seen.size(), 10);
+  test::expect_eq(seen.size(), 10zu);
 
-  std::println(std::cout,
-               "  ✓ Permutation setters and shuffled_indices passed");
+  std::println(std::cout, "  ✓ shuffled_indices passed");
 }
 
 int main() {
   test_temperature_calculation();
   test_makeplanet_types();
-  test_permutation_setters();
+  test_shuffled_indices();
 
   std::println(std::cout, "\n✅ All makeplanet tests passed!");
   return 0;

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file makeuniv.cc
-/// \brief Universe creation program.
+/// \brief Universe creation command-line utility.
 
-#include <sqlite3.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <cstdio>
 #include <cstdlib>
@@ -13,39 +11,14 @@ import std;
 import dallib;
 import gb.entities;
 import gb.services;
-import gb.repositories;
-
-#include "gb/creator/makestar.h"
-#include "gb/creator/makeuniv.h"
-#include "gb/entities/files.h"
-
-int autoname_star = -1;
-int autoname_plan = -1;
-int minplanets = -1;
-int maxplanets = -1;
-int printplaninfo = 0;
-int printstarinfo = 0;
-
-static int nstars = -1;
-static std::array<std::array<bool, 100>, 100> star_grid_occupancy{};
-static int planetlesschance = 0;
-
-// Local storage for universe creation - not the global Sdata/stars
-static universe_struct Sdata{};
-static std::vector<Star> stars;
+import gb.creator;
 
 int main(int argc, char* argv[]) {
-  int c;
-  int i;
   std::string db_path = PKGSTATEDIR "gb.db";
+  GB::creator::UniverseConfig config{};
+  bool interactive = true;
 
-  /*
-   * Initialize: */
-  srandom(getpid());
-
-  /*
-   * Read the arguments for values: */
-  for (i = 1; i < argc; i++) {
+  for (int i = 1; i < argc; ++i) {
     std::string_view arg = argv[i];
     if (arg == "-h" || arg == "--help") {
       goto usage;
@@ -65,59 +38,58 @@ int main(int argc, char* argv[]) {
     } else {
       switch (argv[i][1]) {
         case 'a':
-          autoname_star = 1;
+          config.auto_name_stars = true;
           break;
         case 'b':
-          autoname_plan = 1;
+          config.auto_name_planets = true;
           break;
         case 'e':
           if (i + 1 >= argc) {
             std::println(std::cerr, "Option \"-e\" requires an argument.");
             return 1;
           }
-          planetlesschance = std::atoi(argv[++i]);
+          config.planetless_chance_percent = std::atoi(argv[++i]);
           break;
         case 'l':
           if (i + 1 >= argc) {
             std::println(std::cerr, "Option \"-l\" requires an argument.");
             return 1;
           }
-          minplanets = std::atoi(argv[++i]);
+          config.min_planets = static_cast<planetnum_t>(std::atoi(argv[++i]));
           break;
         case 'm':
           if (i + 1 >= argc) {
             std::println(std::cerr, "Option \"-m\" requires an argument.");
             return 1;
           }
-          maxplanets = std::atoi(argv[++i]);
+          config.max_planets = static_cast<planetnum_t>(std::atoi(argv[++i]));
           break;
         case 's':
           if (i + 1 >= argc) {
             std::println(std::cerr, "Option \"-s\" requires an argument.");
             return 1;
           }
-          nstars = std::atoi(argv[++i]);
+          config.num_stars = static_cast<starnum_t>(std::atoi(argv[++i]));
           break;
         case 'v':
-          printplaninfo = 1;
+          config.print_planet_info = true;
           break;
         case 'w':
-          printstarinfo = 1;
+          config.print_star_info = true;
           break;
         case 'd':
-          autoname_star = 1;
-          autoname_plan = 1;
-          printplaninfo = 1;
-          printstarinfo = 1;
-          nstars = 128;
-          minplanets = 1;
-          maxplanets = 10;
+          config.auto_name_stars = true;
+          config.auto_name_planets = true;
+          config.print_planet_info = true;
+          config.print_star_info = true;
+          config.num_stars = 128;
+          config.min_planets = 1;
+          config.max_planets = 10;
+          interactive = false;
           break;
         default:
-          std::println(std::cout, "");
-          std::println(std::cout, "Unknown option \"{}\".", argv[i]);
+          std::println(std::cout, "Unknown option \"{}\".\n", argv[i]);
 usage:
-          std::println(std::cout, "");
           std::println(std::cout,
                        "Usage: makeuniv [-a] [-b] [-d] [-e E] [-l MIN] [-m "
                        "MAX] [-s N] [-v] "
@@ -147,151 +119,42 @@ usage:
                        "  -D, --database, --db <path> Path to SQLite database "
                        "(default: " PKGSTATEDIR "gb.db)");
           std::println(std::cout, "  -h, --help                 Display this "
-                                  "help message and exit.");
-          std::println(std::cout, "");
-          std::exit(0);
+                                  "help message and exit.\n");
+          return 0;
       }
     }
   }
 
-  /*
-   * Get values for all the switches that still don't have good values. */
-  if (autoname_star == -1) {
-    std::println(std::cout,
-                 "\nDo you wish to use the file \"{}\" for star names? [y/n]> ",
-                 STARLIST);
-    c = std::getchar();
-    if (c != '\n') std::getchar();
-    autoname_star = (c == 'y');
-  }
-  if (autoname_plan == -1) {
-    std::println(
-        std::cout,
-        "\nDo you wish to use the file \"{}\" for planet names? [y/n]> ",
-        PLANETLIST);
-    c = std::getchar();
-    if (c != '\n') std::getchar();
-    autoname_plan = (c == 'y');
-  }
-  while ((nstars < 1) || (nstars >= NUMSTARS)) {
-    std::println(std::cout, "Number of stars [1-{}]:", NUMSTARS - 1);
-    if (scanf("%d", &nstars) < 0) {
-      perror("Cannot read input");
-      std::exit(-1);
+  // Interactive prompts if not running in default mode and values unconfigured
+  if (interactive) {
+    if (!config.auto_name_stars) {
+      std::print("\nDo you wish to use the file \"{}\" for star names? [y/n]> ",
+                 config.star_names_file);
+      int c = std::getchar();
+      if (c != '\n') std::getchar();
+      config.auto_name_stars = (c == 'y');
     }
-  }
-  while ((minplanets <= 0) || (minplanets > MAXPLANETS)) {
-    std::println(std::cout,
-                 "Minimum number of planets per system [1-{}]: ", MAXPLANETS);
-    if (scanf("%d", &minplanets) < 0) {
-      perror("Cannot read input");
-      std::exit(-1);
-    }
-  }
-  while ((maxplanets < minplanets) || (maxplanets > MAXPLANETS)) {
-    std::println(std::cout,
-                 "Maximum number of planets per system [{}-{}]: ", minplanets,
-                 MAXPLANETS);
-    if (scanf("%d", &maxplanets) < 0) {
-      perror("Cannot read input");
-      std::exit(-1);
+    if (!config.auto_name_planets) {
+      std::print(
+          "\nDo you wish to use the file \"{}\" for planet names? [y/n]> ",
+          config.planet_names_file);
+      int c = std::getchar();
+      if (c != '\n') std::getchar();
+      config.auto_name_planets = (c == 'y');
     }
   }
 
-  Makeplanet_init();
-  Makestar_init();
-  Sdata.numstars = nstars;
-
-  // Create database and initialize schema
   Database db(db_path);
-  initialize_schema(db);
+  GB::creator::UniverseGenerator generator(config);
+  auto result = generator.generate(db);
 
-  for (starnum_t star = 0; star < nstars; star++) {
-    stars.emplace_back(Makestar(db, star));
-  }
-
-  // Count non-asteroid planets for victory conditions
-  Sdata.planet_count =
-      static_cast<planetnum_t>(db.count_non_asteroid_planets());
-
-#if 0
-  /* 
-   * Try to more evenly space stars.  Essentially this is an inverse-gravity
-   * calculation: the nearer two stars are to each other, the more they
-   * repulse each other.  Several iterations of this will suffice to move all
-   * of the stars nicely apart. */
-  for (i=0; i<CREAT_UNIV_ITERAT; i++)
-    for (star=0; star<Sdata.numstars; star++) {
-      for (x=0; x<Sdata.numstars; x++)	/* star2 */
-	if (x!=star) {
-	  /* find inverse of distance squared */
-	  double dx = Stars[star]->xpos - Stars[x]->xpos;
-	  double dy = Stars[star]->ypos - Stars[x]->ypos;
-	  att = 10*UNIVSIZE / (dx*dx + dy*dy);
-	  xspeed[star] += att * (Stars[star]->xpos - Stars[x]->xpos);
-	  if (Stars[star]->xpos>UNIVSIZE || Stars[star]->xpos< -UNIVSIZE)
-	    xspeed[star] *= -1;
-	  yspeed[star] += att * (Stars[star]->ypos - Stars[x]->ypos);
-	  if (Stars[star]->ypos>UNIVSIZE || Stars[star]->ypos< -UNIVSIZE)
-	    yspeed[star] *= -1;
-	  }
-      Stars[star]->xpos += xspeed[star];
-      Stars[star]->ypos += yspeed[star];
-      }
-#endif
-
-  // Save universe data and all stars to database using repositories
-  JsonStore store(db);
-  UniverseRepository universe_repo(store);
-  Sdata.id = 1;  // Universe data is a singleton with id=1
-  universe_repo.save(Sdata);
-
-  StarRepository star_repo(store);
-  for (starnum_t star = 0; star < Sdata.numstars; star++) {
-    star_repo.save(stars[star.value]);
-  }
-
-  // Initialize power and block array for all players
-  {
-    JsonStore store(db);
-    BlockRepository block_repo(store);
-    PowerRepository power_repo(store);
-
-    for (int i : std::views::iota(0, MAXPLAYERS)) {
-      power p{};
-      p.id = i;
-      power_repo.save(p);
-
-      block b{};
-      b.Playernum = i;
-      block_repo.save(b);
-    }
-
-    ShipExamRepository exam_repo(store);
-    exam_repo.seed_from_file(EXAM_FL);
-  }
-
-  PrintStatistics();
+  std::println(std::cout,
+               "\nUniverse successfully generated in \"{}\":", db_path);
+  std::println(std::cout, "  Stars created: {}", result.num_stars);
+  std::println(std::cout, "  Planets created (non-asteroid): {}",
+               result.planet_count);
+  std::println(std::cout, "  Total resources seeded: {}",
+               result.total_resources);
 
   return 0;
-}
-
-void place_star(star_struct& star) {
-  constexpr auto to_grid_bin = [](double coord) noexcept -> size_t {
-    const double normalized = (coord + UNIVSIZE) / (2.0 * UNIVSIZE);
-    return static_cast<size_t>(std::clamp(normalized * 100.0, 0.0, 99.0));
-  };
-
-  while (true) {
-    const UniverseCoordinates pos{double_rand(-UNIVSIZE, UNIVSIZE),
-                                  double_rand(-UNIVSIZE, UNIVSIZE)};
-    const size_t i = to_grid_bin(pos.x);
-    const size_t j = to_grid_bin(pos.y);
-    if (!star_grid_occupancy[i][j]) {
-      star_grid_occupancy[i][j] = true;
-      star.xpos = pos.x;
-      star.ypos = pos.y;
-      return;
-    }
-  }
 }

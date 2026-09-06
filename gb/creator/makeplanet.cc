@@ -3,6 +3,8 @@
 /// \file makeplanet.cc
 /// \brief Generates individual planets for star systems.
 
+module;
+
 #include <sqlite3.h>
 #include <cstdlib>
 
@@ -12,8 +14,9 @@ import gb.entities;
 import gb.services;
 import gb.repositories;
 
-#include "gb/creator/makeplanet.h"
-#include "gb/creator/makestar.h"
+module gb.creator;
+
+namespace GB::creator {
 
 /*             @   o   O   #   ~   .   (   -    */
 static const int xmin[] = {15, 2, 4, 4, 26, 12, 12, 12};
@@ -251,7 +254,8 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
   planet.star_id() = star_id;
   planet.planet_order() = planet_order;
   planet.expltimer() = 5;
-  planet.conditions(TEMP) = planet.conditions(RTEMP) = Temperature(dist, stemp);
+  planet.conditions(TEMP) = planet.conditions(RTEMP) =
+      calculate_temperature(dist, stemp);
 
   auto t = cond[type];
 
@@ -383,3 +387,5 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
   out_smap = std::move(smap);
   return planet;
 }
+
+}  // namespace GB::creator

@@ -194,7 +194,8 @@ add_library(gb_creator)
 target_sources(
   gb_creator
   PUBLIC FILE_SET CXX_MODULES FILES creator/creator.cppm
-  PRIVATE creator/enrollment_service.cc creator/archetypes.cc)
+  PRIVATE creator/enrollment_service.cc creator/archetypes.cc
+          creator/universe_generator.cc creator/makeplanet.cc)
 target_link_libraries(gb_creator PUBLIC gblib gb_entities gb_services gb_repositories dallib tabulate_module)
 
 # Create session library (Server Layer)
@@ -354,9 +355,8 @@ target_sources(
 target_link_libraries(test_module PUBLIC gblib gb_entities gb_repositories gb_services gb_turn gb_server gb_creator dallib session commands)
 
 # Executable targets
-add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
-                        creator/makeuniv.cc)
-target_link_libraries(makeuniv PRIVATE gblib gb_entities gb_services gb_repositories dallib SQLite::SQLite3 glaze::glaze)
+add_executable(makeuniv creator/makeuniv.cc)
+target_link_libraries(makeuniv PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
 
 add_executable(enrol creator/enrol.cc)
 target_link_libraries(enrol PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze scnlib_module tabulate_module)
@@ -456,7 +456,8 @@ gb_add_test(land_test SOURCES commands/land_test.cc)
 gb_add_test(launch_test SOURCES commands/launch_test.cc)
 gb_add_test(load_test SOURCES commands/load_test.cc)
 gb_add_test(make_mod_test SOURCES commands/make_mod_test.cc)
-gb_add_test(makeplanet_test SOURCES creator/makeplanet_test.cc creator/makeplanet.cc creator/makestar.cc)
+gb_add_test(makeplanet_test SOURCES creator/makeplanet_test.cc EXTRA_LIBS gb_creator)
+gb_add_test(makeuniv_test SOURCES creator/makeuniv_test.cc EXTRA_LIBS gb_creator)
 gb_add_test(map_test SOURCES commands/map_test.cc)
 gb_add_test(misc_repositories_test SOURCES repositories/misc_repositories_test.cc)
 gb_add_test(mobilize_test SOURCES commands/mobilize_test.cc)

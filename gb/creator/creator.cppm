@@ -185,7 +185,7 @@ export struct RaceEnrollmentSpec {
   std::optional<SectorType> preferred_sector{std::nullopt};
   std::optional<Coordinates> capital_coords{std::nullopt};
   std::optional<std::pair<starnum_t, planetnum_t>> target_planet{std::nullopt};
-  std::vector<starnum_t> candidate_stars{};
+  std::vector<starnum_t> candidate_stars;
   bool is_god{false};
   bool is_guest{false};
 
@@ -238,6 +238,89 @@ private:
   EntityManager& entity_manager_;
   JsonStore store_;
   RaceRepository races_;
+};
+
+/// Baseline cosmic temperature floor in Celsius (~4 Kelvin, near cosmic
+/// background).
+export constexpr int BASELINE_SPACE_TEMP_C = -269;
+
+/// Stellar luminosity scaling coefficient used for orbital radiant flux.
+export constexpr double STELLAR_LUMINOSITY_SCALE = 1315.0;
+
+/// Core orbital scale radius offset in orbital distance units.
+export constexpr double ORBITAL_SCALE_RADIUS = 40.0;
+
+/// Temperature calculation formula based on orbital distance and star
+/// spectral temperature index.
+///
+/// Equilibrium surface temperature in Celsius:
+///   T = T_baseline + (T_star * L_scale * R_core) / (R_core + dist)
+export constexpr int calculate_temperature(double dist, int stemp) noexcept {
+  return BASELINE_SPACE_TEMP_C +
+         static_cast<int>(stemp * STELLAR_LUMINOSITY_SCALE *
+                          ORBITAL_SCALE_RADIUS / (ORBITAL_SCALE_RADIUS + dist));
+}
+
+/// Generates an individual planet for a star system with procedural terrain.
+export Planet makeplanet(double dist, short stemp, PlanetType type,
+                         starnum_t star_id, planetnum_t planet_order,
+                         std::optional<SectorMap>& out_smap);
+
+/// Configuration parameters for procedural universe creation.
+export struct UniverseConfig {
+  starnum_t num_stars{128};
+  planetnum_t min_planets{1};
+  planetnum_t max_planets{10};
+  int planetless_chance_percent{0};
+  bool auto_name_stars{true};
+  bool auto_name_planets{true};
+  bool print_star_info{false};
+  bool print_planet_info{false};
+  std::string star_names_file{PKGDATADIR "star.list"};
+  std::string planet_names_file{PKGDATADIR "planet.list"};
+  std::string exam_file{PKGDATADIR "exam.dat"};
+};
+
+/// Summary of a generated universe.
+export struct UniverseGenerationResult {
+  starnum_t num_stars{0};
+  planetnum_t planet_count{0};
+  int total_resources{0};
+  std::array<int, PlanetType::DESERT + 1> planets_by_type{};
+};
+
+/// Procedural engine that generates stars, planets, sectormaps, and universe
+/// metadata.
+export class UniverseGenerator {
+public:
+  explicit UniverseGenerator(UniverseConfig config = {});
+
+  /// Sets custom star name list (useful for tests or overriding files).
+  void set_star_names(std::vector<std::string> names);
+
+  /// Sets custom planet name list (useful for tests or overriding files).
+  void set_planet_names(std::vector<std::string> names);
+
+  /// Generates the complete universe into the database.
+  UniverseGenerationResult generate(Database& db);
+
+private:
+  UniverseConfig config_;
+  std::array<std::array<bool, 100>, 100> star_grid_occupancy_{};
+  std::vector<std::string> star_names_;
+  std::vector<std::size_t> star_indices_;
+  std::size_t star_name_cursor_{0};
+
+  std::vector<std::string> planet_names_;
+  std::vector<std::size_t> planet_indices_;
+  std::size_t planet_name_cursor_{0};
+
+  void load_name_lists();
+  std::string next_star_name(starnum_t snum);
+  std::string next_planet_name(planetnum_t pnum);
+  void place_star(star_struct& star);
+  Star make_star_system(Database& db, starnum_t snum,
+                        UniverseGenerationResult& result);
 };
 
 }  // namespace GB::creator

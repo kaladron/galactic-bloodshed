@@ -680,6 +680,94 @@ void test_upgrade_sector_dome() {
   auto res_off = upgrade_sector_dome(em, ship, smap);
   test::expect_false(res_off.has_value());
   test::expect_eq(res_off.error(), GroundActionError::NotSwitchedOn);
+
+  // 5. Not landed
+  ship.on() = 1;
+  ship.resource() = 50;
+  ship.docked() = 0;
+  auto res_not_landed = upgrade_sector_dome(em, ship, smap);
+  test::expect_false(res_not_landed.has_value());
+  test::expect_eq(res_not_landed.error(), GroundActionError::NotLanded);
+
+  // 6. Efficiency capped at 100
+  ship.docked() = 1;
+  smap.get(Coordinates{2, 2}).set_efficiency_bounded(98);
+  auto res_cap = upgrade_sector_dome(em, ship, smap);
+  test::expect_true(res_cap.has_value());
+  test::expect_eq(smap.get(Coordinates{2, 2}).get_eff(), 100);
+
+  // 7. Damage and crew scaling
+  ship.damage() = 50;  // 50% hull efficiency
+  ship.popn() = 50;    // 50% crew ratio
+  smap.get(Coordinates{2, 2}).set_efficiency_bounded(20);
+  auto res_scale = upgrade_sector_dome(em, ship, smap);
+  test::expect_true(res_scale.has_value());
+  // 5.0 * 0.5 * 0.5 = 1.25 -> rounded around 1
+  test::expect_ge(*res_scale, 1);
+  test::expect_le(*res_scale, 2);
+}
+
+void test_process_dome_turn() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  RaceRepository races(store);
+  races.save(race);
+
+  Planet planet = createTestPlanet();
+  SectorMap smap(planet);
+  smap.get(Coordinates{2, 2}).set_efficiency_bounded(30);
+
+  ship_struct sdata{
+      .number = 7,
+      .owner = player_t{1},
+      .land_coords = {2, 2},
+      .max_crew = 100,
+      .max_resource = 100,
+      .resource = 50,
+      .popn = 100,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_DOME,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+      .on = 1,
+  };
+
+  auto ship_handle = em.create_ship(sdata);
+  Ship& ship = *ship_handle;
+
+  // 1. Successful dome turn
+  process_dome_turn(em, ship, smap);
+  test::expect_gt(smap.get(Coordinates{2, 2}).get_eff(), 30);
+  test::expect_eq(ship.resource(), 50 - RES_COST_DOME);
+
+  // 2. Insufficient resources telegram
+  ship.resource() = 0;
+  process_dome_turn(em, ship, smap);
+  auto tele_res = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_res.empty());
+  test::expect_true(
+      tele_res.back().message.contains("does not have enough resources"));
+
+  // 3. Not landed telegram
+  ship.resource() = 50;
+  ship.docked() = 0;
+  process_dome_turn(em, ship, smap);
+  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_landed.empty());
+  test::expect_true(tele_landed.back().message.contains("is not landed"));
+
+  // 4. Not switched on telegram
+  ship.docked() = 1;
+  ship.on() = 0;
+  process_dome_turn(em, ship, smap);
+  auto tele_on = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_on.empty());
+  test::expect_true(tele_on.back().message.contains("is not switched on"));
 }
 
 void test_strip_mine_quarry() {
@@ -833,6 +921,68 @@ void test_process_quarry_turn() {
   test::expect_false(tele_crew.empty());
   test::expect_true(
       tele_crew.back().message.contains("does not have workers aboard"));
+}
+
+void test_process_weapon_plant_turn() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.tech = 50.0;
+  RaceRepository races(store);
+  races.save(race);
+
+  ship_struct sdata{
+      .number = 99,
+      .owner = player_t{1},
+      .fuel = 50.0,
+      .max_crew = 100,
+      .max_resource = 100,
+      .max_fuel = 100,
+      .resource = 50,
+      .popn = 100,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_WPLANT,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+      .on = 1,
+  };
+
+  auto ship_handle = em.create_ship(sdata);
+  Ship& ship = *ship_handle;
+  TurnStats stats;
+
+  // 1. Successful weapon plant turn
+  process_weapon_plant_turn(em, ship, stats);
+  test::expect_gt(stats.prod_destruct[player_t{1}], 0);
+
+  // 2. Not landed telegram
+  ship.docked() = 0;
+  process_weapon_plant_turn(em, ship, stats);
+  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_landed.empty());
+  test::expect_true(tele_landed.back().message.contains("is not landed"));
+
+  // 3. Insufficient resources telegram
+  ship.docked() = 1;
+  ship.resource() = 0;
+  process_weapon_plant_turn(em, ship, stats);
+  auto tele_res = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_res.empty());
+  test::expect_true(
+      tele_res.back().message.contains("does not have enough resources"));
+
+  // 4. Insufficient fuel telegram
+  ship.resource() = 50;
+  ship.fuel() = 0.0;
+  process_weapon_plant_turn(em, ship, stats);
+  auto tele_fuel = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_fuel.empty());
+  test::expect_true(
+      tele_fuel.back().message.contains("does not have enough fuel"));
 }
 
 void test_execute_berserker_bombardment() {
@@ -2532,12 +2682,20 @@ int main() {
   test_upgrade_sector_dome();
   std::println(std::cout, "PASS");
 
+  std::println(std::cout, "  Testing process_dome_turn... ");
+  test_process_dome_turn();
+  std::println(std::cout, "PASS");
+
   std::println(std::cout, "  Testing strip_mine_quarry... ");
   test_strip_mine_quarry();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing process_quarry_turn... ");
   test_process_quarry_turn();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_weapon_plant_turn... ");
+  test_process_weapon_plant_turn();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing execute_berserker_bombardment... ");

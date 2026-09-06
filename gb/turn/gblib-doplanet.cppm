@@ -121,6 +121,11 @@ export void process_plow_turn(EntityManager& entity_manager, Ship& ship,
 export std::expected<int, GroundActionError>
 upgrade_sector_dome(EntityManager& entity_manager, Ship& ship, SectorMap& smap);
 
+/// \brief Processes one turn for a constructor dome (Y), improving sector
+/// efficiency using carried resources or sending status telegrams on failure.
+export void process_dome_turn(EntityManager& entity_manager, Ship& ship,
+                              SectorMap& smap);
+
 /// \brief Strip mines quarry sector, producing resources and generating
 /// pollution. Returns resources produced, or GroundActionError.
 export std::expected<int, GroundActionError>
@@ -132,6 +137,12 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
 export void process_quarry_turn(EntityManager& entity_manager, Ship& ship,
                                 Planet& planet, SectorMap& smap,
                                 TurnStats& stats);
+
+/// \brief Processes one turn for a planetary weapon plant (W), producing
+/// destructive charges from fuel and resources or sending status telegrams on
+/// failure.
+export void process_weapon_plant_turn(EntityManager& entity_manager, Ship& ship,
+                                      TurnStats& stats);
 
 /// \brief Executes berserker bombardment on target planet if in orbit.
 /// Decrements VN hitlist on kill or selects next destination planet if no

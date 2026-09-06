@@ -245,12 +245,29 @@ upgrade_sector_dome(EntityManager& entity_manager, Ship& ship,
                   std::format(" Y{} is full of zealots!!!", ship.number()));
     return std::unexpected(GroundActionError::SectorAlreadyOptimal);
   }
-  int adjust =
-      round_rand(0.05 * (100.0 - static_cast<double>(ship.damage())) *
-                 static_cast<double>(ship.popn()) / ship.max_crew_capacity());
+  const int adjust =
+      round_rand(5.0 * ship.hull_efficiency() * ship.crew_ratio());
   s.improve_efficiency(adjust);
-  use_resource(ship, RES_COST_DOME);
+  ship.consume_resource(RES_COST_DOME);
   return adjust;
+}
+
+void process_dome_turn(EntityManager& entity_manager, Ship& ship,
+                       SectorMap& smap) {
+  auto dome_res = upgrade_sector_dome(entity_manager, ship, smap);
+  if (!dome_res) {
+    if (dome_res.error() == GroundActionError::InsufficientResources) {
+      push_telegram(
+          entity_manager, ship.owner(), ship.governor(),
+          std::format("Y{} does not have enough resources.", ship.number()));
+    } else if (dome_res.error() == GroundActionError::NotLanded) {
+      push_telegram(entity_manager, ship.owner(), ship.governor(),
+                    std::format("Y{} is not landed.", ship.number()));
+    } else if (dome_res.error() == GroundActionError::NotSwitchedOn) {
+      push_telegram(entity_manager, ship.owner(), ship.governor(),
+                    std::format("Y{} is not switched on.", ship.number()));
+    }
+  }
 }
 
 std::expected<int, GroundActionError>
@@ -302,6 +319,28 @@ void process_quarry_turn(EntityManager& entity_manager, Ship& ship,
       push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
     }
   }
+}
+
+void process_weapon_plant_turn(EntityManager& entity_manager, Ship& ship,
+                               TurnStats& stats) {
+  if (!ship.is_landed()) {
+    push_telegram(entity_manager, ship.owner(), ship.governor(),
+                  std::format("W{} is not landed.", ship.number()));
+    return;
+  }
+  if (ship.resource() < RES_COST_WPLANT) {
+    push_telegram(
+        entity_manager, ship.owner(), ship.governor(),
+        std::format("W{} does not have enough resources.", ship.number()));
+    return;
+  }
+  if (ship.fuel() < FUEL_COST_WPLANT) {
+    push_telegram(entity_manager, ship.owner(), ship.governor(),
+                  std::format("W{} does not have enough fuel.", ship.number()));
+    return;
+  }
+
+  stats.prod_destruct[ship.owner()] += do_weapon_plant(ship, entity_manager);
 }
 
 bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
@@ -550,47 +589,11 @@ void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
         case ShipType::OTYPE_PLOW:
           process_plow_turn(entity_manager, ship, planet, smap);
           break;
-        case ShipType::OTYPE_DOME: {
-          auto dome_res = upgrade_sector_dome(entity_manager, ship, smap);
-          if (!dome_res) {
-            if (dome_res.error() == GroundActionError::InsufficientResources) {
-              push_telegram(entity_manager, ship.owner(), ship.governor(),
-                            std::format("Y{} does not have enough resources.",
-                                        ship.number()));
-            } else if (dome_res.error() == GroundActionError::NotLanded) {
-              push_telegram(entity_manager, ship.owner(), ship.governor(),
-                            std::format("Y{} is not landed.", ship.number()));
-            } else if (dome_res.error() == GroundActionError::NotSwitchedOn) {
-              push_telegram(
-                  entity_manager, ship.owner(), ship.governor(),
-                  std::format("Y{} is not switched on.", ship.number()));
-            }
-          }
+        case ShipType::OTYPE_DOME:
+          process_dome_turn(entity_manager, ship, smap);
           break;
-        }
         case ShipType::OTYPE_WPLANT:
-          if (ship.is_landed())
-            if (ship.resource() >= RES_COST_WPLANT &&
-                ship.fuel() >= FUEL_COST_WPLANT)
-              stats.prod_destruct[ship.owner()] +=
-                  do_weapon_plant(ship, entity_manager);
-            else {
-              if (ship.resource() < RES_COST_WPLANT) {
-                std::string buf = std::format(
-                    "W{} does not have enough resources.", ship.number());
-                push_telegram(entity_manager, ship.owner(), ship.governor(),
-                              buf);
-              } else {
-                std::string buf = std::format("W{} does not have enough fuel.",
-                                              ship.number());
-                push_telegram(entity_manager, ship.owner(), ship.governor(),
-                              buf);
-              }
-            }
-          else {
-            std::string buf = std::format("W{} is not landed.", ship.number());
-            push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
-          }
+          process_weapon_plant_turn(entity_manager, ship, stats);
           break;
         case ShipType::OTYPE_QUARRY:
           process_quarry_turn(entity_manager, ship, planet, smap, stats);

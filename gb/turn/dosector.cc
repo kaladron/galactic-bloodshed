@@ -79,6 +79,10 @@ population_t attempt_colonist_migration(EntityManager& entity_manager,
 population_t calculate_population_change(const Race& race, const Sector& s,
                                          population_t maxsup) {
   const population_t popn = s.get_popn();
+  if (popn <= 0) {
+    return 0;
+  }
+
   const population_t diff = popn - maxsup;
 
   if (diff < 0) {
@@ -89,7 +93,7 @@ population_t calculate_population_change(const Race& race, const Sector& s,
     return 0;
   }
 
-  if (diff == 0 || popn <= 0) {
+  if (diff == 0) {
     return 0;
   }
 

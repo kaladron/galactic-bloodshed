@@ -592,28 +592,63 @@ void test_calculate_migrating_colonists() {
   Race race = createTestRace(player_t{1});
   race.likes[SectorType::SEC_LAND] = 0.8;
   race.likes[SectorType::SEC_SEA] = 0.2;
+  race.likes[SectorType::SEC_WASTED] = 0.0;
 
   Sector target_unowned =
       createTestSector(1, 0, 50, 50, 0, 0, 100, 0, 0, 0, SectorType::SEC_LAND,
                        SectorType::SEC_LAND);
-  Sector target_owned =
+  Sector target_owned_self =
+      createTestSector(1, 0, 50, 50, 0, 0, 100, 500, 0, 1, SectorType::SEC_LAND,
+                       SectorType::SEC_LAND);
+  Sector target_owned_enemy =
       createTestSector(1, 0, 50, 50, 0, 0, 100, 500, 0, 2, SectorType::SEC_LAND,
                        SectorType::SEC_LAND);
+  Sector target_disliked =
+      createTestSector(1, 0, 50, 50, 0, 0, 100, 0, 0, 0, SectorType::SEC_WASTED,
+                       SectorType::SEC_WASTED);
 
-  // 1. Zero available migrants returns 0
+  // 1. Zero or negative available migrants returns 0
   test::expect_eq(calculate_migrating_colonists(race, 1.0, target_unowned, 0),
+                  0);
+  test::expect_eq(calculate_migrating_colonists(race, 1.0, target_unowned, -10),
                   0);
 
   // 2. Target sector already owned returns 0 (spread only colonizes unowned)
-  test::expect_eq(calculate_migrating_colonists(race, 1.0, target_owned, 500),
-                  0);
+  test::expect_eq(
+      calculate_migrating_colonists(race, 1.0, target_owned_self, 500), 0);
+  test::expect_eq(
+      calculate_migrating_colonists(race, 1.0, target_owned_enemy, 500), 0);
 
-  // 3. Proportional migration calculation: 1000 * 1.0 compat * 0.8 likes / 100
+  // 3. Incompatible or zero planetary compatibility returns 0
+  test::expect_eq(
+      calculate_migrating_colonists(race, 0.0, target_unowned, 1000), 0);
+  test::expect_eq(
+      calculate_migrating_colonists(race, -0.5, target_unowned, 1000), 0);
+
+  // 4. Disliked condition with zero preference returns 0
+  test::expect_eq(
+      calculate_migrating_colonists(race, 1.0, target_disliked, 1000), 0);
+
+  // 5. Proportional migration calculation: 1000 * 1.0 compat * 0.8 likes / 100
   // = 8
   test::expect_eq(
       calculate_migrating_colonists(race, 1.0, target_unowned, 1000), 8);
 
-  // 4. Over-unity clamp prevents pool underflow
+  // 6. Rounding boundary conditions: 0.49 rounds to 0, 0.50 rounds to 1
+  race.likes[SectorType::SEC_DESERT] = 0.49;
+  race.likes[SectorType::SEC_FOREST] = 0.50;
+  Sector target_boundary_0 =
+      createTestSector(1, 0, 50, 50, 0, 0, 100, 0, 0, 0, SectorType::SEC_DESERT,
+                       SectorType::SEC_DESERT);
+  Sector target_boundary_1 =
+      createTestSector(1, 0, 50, 50, 0, 0, 100, 0, 0, 0, SectorType::SEC_FOREST,
+                       SectorType::SEC_FOREST);
+  test::expect_eq(
+      calculate_migrating_colonists(race, 1.0, target_boundary_0, 100), 0);
+  test::expect_eq(
+      calculate_migrating_colonists(race, 1.0, target_boundary_1, 100), 1);
+
+  // 7. Over-unity clamp prevents pool underflow
   test::expect_eq(
       calculate_migrating_colonists(race, 200.0, target_unowned, 10), 10);
 }
@@ -625,6 +660,8 @@ void test_attempt_colonist_migration() {
   JsonStore store(db);
 
   Race race = createTestRace(player_t{1});
+  race.likes[SectorType::SEC_LAND] = 0.8;
+  race.likes[SectorType::SEC_WASTED] = 0.0;
   RaceRepository races(store);
   races.save(race);
 
@@ -646,20 +683,66 @@ void test_attempt_colonist_migration() {
   TurnStats stats{};
   stats.Compat[player_t{1}] = 1.0;
 
-  // 1. Out of bounds coordinates rejected
+  // 1. Zero or negative available migrants rejected
+  test::expect_eq(attempt_colonist_migration(em, planet, source,
+                                             Coordinates{1, 0}, 0, smap, stats),
+                  0);
+  test::expect_eq(attempt_colonist_migration(
+                      em, planet, source, Coordinates{1, 0}, -5, smap, stats),
+                  0);
+  test::expect_eq(source.get_popn(), 1000);
+
+  // 2. Out of bounds coordinates rejected
   population_t transferred = attempt_colonist_migration(
       em, planet, source, Coordinates{0, -1}, 100, smap, stats);
   test::expect_eq(transferred, 0);
+  test::expect_eq(attempt_colonist_migration(
+                      em, planet, source, Coordinates{5, 0}, 100, smap, stats),
+                  0);
+  test::expect_eq(source.get_popn(), 1000);
 
-  // 2. Migration to unowned adjacent sector succeeds
-  transferred = attempt_colonist_migration(em, planet, source,
-                                           Coordinates{1, 0}, 100, smap, stats);
-  test::expect_true(transferred > 0);
-  test::expect_eq(source.get_popn(), 1000 - transferred);
-  test::expect_eq(smap.get(Coordinates{1, 0}).get_popn(), transferred);
+  // 3. Destination sector already owned (friendly or hostile) rejected
+  smap.get(Coordinates{0, 1}).set_owner(player_t{1});
+  smap.get(Coordinates{0, 1}).set_popn_exact(100);
+  test::expect_eq(attempt_colonist_migration(
+                      em, planet, source, Coordinates{0, 1}, 100, smap, stats),
+                  0);
+  test::expect_eq(stats.Claims, false);
+  test::expect_eq(stats.tot_captured, 0U);
+
+  smap.get(Coordinates{0, 2}).set_owner(player_t{2});
+  smap.get(Coordinates{0, 2}).set_popn_exact(100);
+  test::expect_eq(attempt_colonist_migration(
+                      em, planet, source, Coordinates{0, 2}, 100, smap, stats),
+                  0);
+  test::expect_eq(stats.tot_captured, 0U);
+
+  // 4. Destination sector disliked (zero migration calculated) rejected
+  smap.get(Coordinates{0, 3}).set_condition(SectorType::SEC_WASTED);
+  test::expect_eq(attempt_colonist_migration(
+                      em, planet, source, Coordinates{0, 3}, 100, smap, stats),
+                  0);
+  test::expect_eq(smap.get(Coordinates{0, 3}).get_popn(), 0);
+  test::expect_eq(stats.tot_captured, 0U);
+
+  // 5. Migration to unowned adjacent sector succeeds
+  transferred = attempt_colonist_migration(
+      em, planet, source, Coordinates{1, 0}, 1000, smap, stats);
+  test::expect_eq(transferred, 8);
+  test::expect_eq(source.get_popn(), 992);
+  test::expect_eq(smap.get(Coordinates{1, 0}).get_popn(), 8);
   test::expect_eq(smap.get(Coordinates{1, 0}).get_owner(), player_t{1});
   test::expect_true(stats.Claims);
   test::expect_eq(stats.tot_captured, 1U);
+
+  // 6. Subsequent migration into another unowned sector increments claims
+  population_t transferred_2 = attempt_colonist_migration(
+      em, planet, source, Coordinates{1, 1}, 500, smap, stats);
+  test::expect_eq(transferred_2, 4);
+  test::expect_eq(source.get_popn(), 988);
+  test::expect_eq(smap.get(Coordinates{1, 1}).get_popn(), 4);
+  test::expect_eq(smap.get(Coordinates{1, 1}).get_owner(), player_t{1});
+  test::expect_eq(stats.tot_captured, 2U);
 }
 
 void test_spread_toroidal_wrapping() {
@@ -738,30 +821,136 @@ void test_calculate_population_change() {
   change = calculate_population_change(race, sector_sterile, 1000);
   test::expect_eq(change, 0);
 
-  // 3. Equilibrium: popn == maxsup -> 0.
+  // 3. Asexual reproduction: number_sexes = 1 allows single colonist (popn = 1)
+  // to breed
+  Race asexual_race = race;
+  asexual_race.number_sexes = 1;
+  change = calculate_population_change(asexual_race, sector_sterile, 1000);
+  test::expect_true(change > 0);
+
+  // 4. Tri-sexual reproduction: number_sexes = 3 requires popn >= 3
+  Race trisexual_race = race;
+  trisexual_race.number_sexes = 3;
+  Sector sector_pair = createTestSector(0, 0, 50, 50, 0, 0, 100, 2, 0, 1);
+  Sector sector_trio = createTestSector(0, 0, 50, 50, 0, 0, 100, 3, 0, 1);
+  test::expect_eq(
+      calculate_population_change(trisexual_race, sector_pair, 1000), 0);
+  test::expect_true(
+      calculate_population_change(trisexual_race, sector_trio, 1000) > 0);
+
+  // 5. Zero birthrate yields no growth even when well below capacity
+  Race sterile_race = race;
+  sterile_race.birthrate = 0.0;
+  test::expect_eq(
+      calculate_population_change(sterile_race, sector_growing, 1000), 0);
+
+  // 6. Equilibrium: popn == maxsup -> 0.
   Sector sector_stable = createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1);
   change = calculate_population_change(race, sector_stable, 1000);
   test::expect_eq(change, 0);
 
-  // 4. Zero population -> 0.
+  // 7. Empty or corrupt/negative population -> 0.
   Sector sector_empty = createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 0);
   change = calculate_population_change(race, sector_empty, 1000);
   test::expect_eq(change, 0);
 
-  // 5. Overpopulated starvation die-off: popn = 1200, maxsup = 1000 -> diff =
-  // 200. Die-off must be non-positive and within [-400, 0].
+  Sector sector_negative = createTestSector(0, 0, 50, 50, 0, 0, 100, -25, 0, 0);
+  change = calculate_population_change(race, sector_negative, 1000);
+  test::expect_eq(change, 0);
+
+  // 8. Mild overpopulation starvation die-off: popn = 1200, maxsup = 1000 ->
+  // diff = 200. Die-off must be non-positive and within [-400, 0].
   Sector sector_overpop = createTestSector(0, 0, 50, 50, 0, 0, 100, 1200, 0, 1);
   change = calculate_population_change(race, sector_overpop, 1000);
   test::expect_le(change, 0);
   test::expect_ge(change, -400);
 
-  // 6. Massive overpopulation arithmetic saturation: diff exceeds int64/2
+  // 9. Severe overpopulation starvation die-off: popn = 1000, maxsup = 100 ->
+  // diff = 900. 2 * diff = 1800 > popn (1000). Max die-off is clamped to popn,
+  // ensuring popn never drops below 0.
+  Sector sector_severe = createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 0, 1);
+  change = calculate_population_change(race, sector_severe, 100);
+  test::expect_le(change, 0);
+  test::expect_ge(change, -1000);
+
+  // 10. Massive overpopulation arithmetic saturation: diff exceeds int64/2
   // without overflow.
   Sector sector_massive =
       createTestSector(0, 0, 50, 50, 0, 0, 100, 1000000000L, 0, 1);
   change = calculate_population_change(race, sector_massive, 100);
   test::expect_le(change, 0);
   test::expect_ge(change, -1000000000L);
+}
+
+void test_spread_edge_cases() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.adventurism = 1.0;
+  race.number_sexes = 2;
+  RaceRepository races(store);
+  races.save(race);
+
+  Planet planet = createTestPlanet(5, 5);
+  SectorMap smap(planet);
+
+  for (int y = 0; y < 5; y++) {
+    for (int x = 0; x < 5; x++) {
+      smap.get(Coordinates{x, y}).set_owner(0);
+      smap.get(Coordinates{x, y}).clear_popn();
+      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_LAND);
+    }
+  }
+
+  // 1. Enslaved world: popn does not spread when planet is slaved to another
+  // player
+  planet.enslave_to(player_t{2});
+  auto& slave_sector = smap.get(Coordinates{2, 2});
+  slave_sector.set_coords({2, 2});
+  slave_sector.set_owner(player_t{1});
+  slave_sector.set_popn_exact(5000);
+  slave_sector.set_fert(0);
+
+  TurnStats stats{};
+  stats.Compat[player_t{1}] = 1.0;
+  spread(em, planet, slave_sector, smap, stats);
+
+  test::expect_eq(slave_sector.get_popn(), 5000);
+  test::expect_eq(stats.tot_captured, 0U);
+
+  // 2. Unowned sector does not spread
+  planet.free_slaves();
+  auto& unowned_sector = smap.get(Coordinates{0, 0});
+  spread(em, planet, unowned_sector, smap, stats);
+  test::expect_eq(stats.tot_captured, 0U);
+
+  // 3. High fertility (100%) sector: base_migrants = 0, no migration occurs
+  auto& content_sector = smap.get(Coordinates{3, 3});
+  content_sector.set_coords({3, 3});
+  content_sector.set_owner(player_t{1});
+  content_sector.set_popn_exact(100);
+  content_sector.set_fert(100);
+  spread(em, planet, content_sector, smap, stats);
+  test::expect_eq(content_sector.get_popn(), 100);
+  test::expect_eq(stats.tot_captured, 0U);
+}
+
+void test_produce_unowned_sector() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  Star star = createTestStar();
+  Planet planet = createTestPlanet(5, 5);
+  Sector s = createTestSector(0, 0, 50, 50, 0, 0, 100, 0, 0, 0);
+  TurnStats stats{};
+
+  // Unowned sector does not produce or mutate
+  produce(em, star, planet, s, stats);
+  test::expect_false(s.is_owned());
+  test::expect_eq(s.get_owner(), player_t{0});
 }
 
 }  // namespace
@@ -813,8 +1002,16 @@ int main() {
   test_produce_sector_lifecycle();
   std::println(std::cout, "PASS");
 
+  std::println(std::cout, "  Testing produce unowned sector... ");
+  test_produce_unowned_sector();
+  std::println(std::cout, "PASS");
+
   std::println(std::cout, "  Testing population spread... ");
   test_spread_population();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing spread edge cases... ");
+  test_spread_edge_cases();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing calculate migrating colonists... ");

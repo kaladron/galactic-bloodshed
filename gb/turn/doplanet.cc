@@ -179,7 +179,7 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
                 EntityManager& entity_manager) {
   if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
   if (!ship.is_landed()) return std::unexpected(GroundActionError::NotLanded);
-  if (ship.fuel() < static_cast<double>(FUEL_COST_PLOW)) {
+  if (ship.fuel() < FUEL_COST_PLOW) {
     if (!ship.notified()) {
       ship.notified() = 1;
       msg_OOF(entity_manager, ship);
@@ -202,20 +202,32 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
     return std::unexpected(GroundActionError::SectorAlreadyOptimal);
   }
 
-  int adjust = round_rand(10 *
-                          (0.01 * (100.0 - static_cast<double>(ship.damage())) *
-                           static_cast<double>(ship.popn())) /
-                          ship.max_crew_capacity());
+  const int adjust =
+      round_rand(10.0 * ship.hull_efficiency() * ship.crew_ratio());
   s.set_fert(std::min(100U, s.get_fert() + adjust));
   if (s.get_fert() >= 100) {
     push_telegram(entity_manager, ship.owner(), ship.governor(),
                   std::format(" K{} is full of zealots!!!", ship.number()));
   }
-  use_fuel(ship, FUEL_COST_PLOW);
+  ship.consume_fuel(FUEL_COST_PLOW);
   if (success(50) && (planet.conditions(TOXIC) < 100)) {
     planet.conditions(TOXIC) += 1;
   }
   return adjust;
+}
+
+void process_plow_turn(EntityManager& entity_manager, Ship& ship,
+                       Planet& planet, SectorMap& smap) {
+  auto plow_res = execute_plowing(ship, planet, smap, entity_manager);
+  if (!plow_res) {
+    if (plow_res.error() == GroundActionError::NotLanded) {
+      push_telegram(entity_manager, ship.owner(), ship.governor(),
+                    std::format("K{} is not landed.", ship.number()));
+    } else if (plow_res.error() == GroundActionError::NotSwitchedOn) {
+      push_telegram(entity_manager, ship.owner(), ship.governor(),
+                    std::format("K{} is not switched on.", ship.number()));
+    }
+  }
 }
 
 std::expected<int, GroundActionError>
@@ -247,7 +259,7 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
   if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
   if (!ship.is_landed()) return std::unexpected(GroundActionError::NotLanded);
   if (!ship.popn()) return std::unexpected(GroundActionError::NoCrew);
-  if (ship.fuel() < static_cast<double>(FUEL_COST_QUARRY)) {
+  if (!ship.try_consume_fuel(FUEL_COST_QUARRY)) {
     if (!ship.notified()) {
       msg_OOF(entity_manager, ship);
       ship.notified() = 1;
@@ -261,11 +273,9 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
   s.set_condition(SectorType::SEC_WASTED);
   const auto& race = *entity_manager.peek_race(ship.owner());
 
-  int prod = round_rand(race.metabolism * static_cast<double>(ship.popn()) /
-                        static_cast<double>(ship.max_crew_capacity()));
-  ship.fuel() -= FUEL_COST_QUARRY;
+  const int prod = round_rand(race.metabolism * ship.crew_ratio());
   stats.prod_res[ship.owner()] += prod;
-  int tox = int_rand(0, int_rand(0, prod));
+  const int tox = int_rand(0, int_rand(0, prod));
   planet.conditions(TOXIC) = std::min(100, planet.conditions(TOXIC) + tox);
   if (s.get_fert() >= prod) {
     s.set_fert(s.get_fert() - prod);
@@ -273,6 +283,25 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
     s.set_fert(0);
   }
   return prod;
+}
+
+void process_quarry_turn(EntityManager& entity_manager, Ship& ship,
+                         Planet& planet, SectorMap& smap, TurnStats& stats) {
+  auto quarry_res =
+      strip_mine_quarry(ship, planet, smap, entity_manager, stats);
+  if (!quarry_res) {
+    std::string buf;
+    if (quarry_res.error() == GroundActionError::NotSwitchedOn) {
+      buf = std::format("q{} is not switched on.", ship.number());
+    } else if (quarry_res.error() == GroundActionError::NotLanded) {
+      buf = std::format("q{} is not landed.", ship.number());
+    } else if (quarry_res.error() == GroundActionError::NoCrew) {
+      buf = std::format("q{} does not have workers aboard.", ship.number());
+    }
+    if (!buf.empty()) {
+      push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
+    }
+  }
 }
 
 bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
@@ -518,20 +547,9 @@ void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
         case ShipType::OTYPE_TERRA:
           execute_terraforming(ship, planet, smap, entity_manager);
           break;
-        case ShipType::OTYPE_PLOW: {
-          auto plow_res = execute_plowing(ship, planet, smap, entity_manager);
-          if (!plow_res) {
-            if (plow_res.error() == GroundActionError::NotLanded) {
-              push_telegram(entity_manager, ship.owner(), ship.governor(),
-                            std::format("K{} is not landed.", ship.number()));
-            } else if (plow_res.error() == GroundActionError::NotSwitchedOn) {
-              push_telegram(
-                  entity_manager, ship.owner(), ship.governor(),
-                  std::format("K{} is not switched on.", ship.number()));
-            }
-          }
+        case ShipType::OTYPE_PLOW:
+          process_plow_turn(entity_manager, ship, planet, smap);
           break;
-        }
         case ShipType::OTYPE_DOME: {
           auto dome_res = upgrade_sector_dome(entity_manager, ship, smap);
           if (!dome_res) {
@@ -574,25 +592,9 @@ void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
             push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
           }
           break;
-        case ShipType::OTYPE_QUARRY: {
-          auto quarry_res =
-              strip_mine_quarry(ship, planet, smap, entity_manager, stats);
-          if (!quarry_res) {
-            std::string buf;
-            if (quarry_res.error() == GroundActionError::NotSwitchedOn) {
-              buf = std::format("q{} is not switched on.", ship.number());
-            } else if (quarry_res.error() == GroundActionError::NotLanded) {
-              buf = std::format("q{} is not landed.", ship.number());
-            } else if (quarry_res.error() == GroundActionError::NoCrew) {
-              buf = std::format("q{} does not have workers aboard.",
-                                ship.number());
-            }
-            if (!buf.empty()) {
-              push_telegram(entity_manager, ship.owner(), ship.governor(), buf);
-            }
-          }
+        case ShipType::OTYPE_QUARRY:
+          process_quarry_turn(entity_manager, ship, planet, smap, stats);
           break;
-        }
         default:
           break;
       }

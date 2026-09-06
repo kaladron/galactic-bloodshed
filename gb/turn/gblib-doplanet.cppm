@@ -111,6 +111,11 @@ export std::expected<int, GroundActionError>
 execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
                 EntityManager& entity_manager);
 
+/// \brief Processes one turn for a space plow vehicle, executing plowing or
+/// sending status telegrams on failure.
+export void process_plow_turn(EntityManager& entity_manager, Ship& ship,
+                              Planet& planet, SectorMap& smap);
+
 /// \brief Upgrades constructor dome efficiency using ship resources.
 /// Returns efficiency increase amount, or GroundActionError.
 export std::expected<int, GroundActionError>
@@ -121,6 +126,12 @@ upgrade_sector_dome(EntityManager& entity_manager, Ship& ship, SectorMap& smap);
 export std::expected<int, GroundActionError>
 strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
                   EntityManager& entity_manager, TurnStats& stats);
+
+/// \brief Processes one turn for a quarry strip mining vehicle, executing
+/// quarry operations or sending status telegrams on failure.
+export void process_quarry_turn(EntityManager& entity_manager, Ship& ship,
+                                Planet& planet, SectorMap& smap,
+                                TurnStats& stats);
 
 /// \brief Executes berserker bombardment on target planet if in orbit.
 /// Decrements VN hitlist on kill or selects next destination planet if no

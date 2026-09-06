@@ -527,6 +527,101 @@ void test_execute_plowing() {
   auto res_off = execute_plowing(ship, planet, smap, em);
   test::expect_false(res_off.has_value());
   test::expect_eq(res_off.error(), GroundActionError::NotSwitchedOn);
+
+  // 6. Not landed
+  ship.on() = 1;
+  ship.fuel() = 50.0;
+  ship.docked() = 0;
+  auto res_not_landed = execute_plowing(ship, planet, smap, em);
+  test::expect_false(res_not_landed.has_value());
+  test::expect_eq(res_not_landed.error(), GroundActionError::NotLanded);
+
+  // 7. Movement failed (e.g. vehicle stopped)
+  ship.docked() = 1;
+  ship.shipclass() = "s";
+  ship.as<TerraformerShip>()->set_index(0);
+  auto res_move_fail = execute_plowing(ship, planet, smap, em);
+  test::expect_false(res_move_fail.has_value());
+  test::expect_eq(res_move_fail.error(), GroundActionError::MovementFailed);
+
+  // 8. Damage and crew scaling
+  ship.on() = 1;
+  ship.shipclass() = "2222";
+  ship.as<TerraformerShip>()->set_index(0);
+  ship.set_land_coords({1, 1});
+  smap.get(Coordinates{1, 2}).set_fert(20);
+  ship.damage() = 50;  // 50% hull efficiency
+  ship.popn() = 50;    // 50% crew ratio
+  auto res_scaled = execute_plowing(ship, planet, smap, em);
+  test::expect_true(res_scaled.has_value());
+  test::expect_ge(*res_scaled, 2);
+  test::expect_le(*res_scaled, 3);
+}
+
+void test_process_plow_turn() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.likes[SectorType::SEC_LAND] = 1;
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  SectorMap smap(planet);
+  smap.get(Coordinates{1, 2}).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{1, 2}).set_fert(40);
+
+  ship_struct sdata{
+      .number = 12,
+      .owner = player_t{1},
+      .fuel = 50.0,
+      .land_coords = {1, 1},
+      .max_crew = 100,
+      .max_fuel = 100,
+      .popn = 100,
+      .special = TerraformData{.index = 0},
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_PLOW,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+      .on = 1,
+  };
+
+  auto ship_handle = em.create_ship(sdata);
+  Ship& ship = *ship_handle;
+  ship.shipclass() = "2222";  // Moves south: (1, 1) -> (1, 2)
+
+  // 1. Successful plow turn
+  process_plow_turn(em, ship, planet, smap);
+  test::expect_eq(ship.land_coords().y, 2);
+  test::expect_gt(smap.get(Coordinates{1, 2}).get_fert(), 40U);
+  test::expect_eq(ship.fuel(), 50.0 - FUEL_COST_PLOW);
+
+  // 2. Not landed telegram
+  ship.docked() = 0;
+  process_plow_turn(em, ship, planet, smap);
+  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_landed.empty());
+  test::expect_true(tele_landed.back().message.contains("is not landed"));
+
+  // 3. Not switched on telegram
+  ship.docked() = 1;
+  ship.on() = 0;
+  process_plow_turn(em, ship, planet, smap);
+  auto tele_on = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_on.empty());
+  test::expect_true(tele_on.back().message.contains("is not switched on"));
 }
 
 void test_upgrade_sector_dome() {
@@ -647,6 +742,97 @@ void test_strip_mine_quarry() {
   auto res_off = strip_mine_quarry(ship, planet, smap, em, stats);
   test::expect_false(res_off.has_value());
   test::expect_eq(res_off.error(), GroundActionError::NotSwitchedOn);
+
+  // 4. Not landed
+  ship.on() = 1;
+  ship.fuel() = 50.0;
+  ship.docked() = 0;
+  auto res_not_landed = strip_mine_quarry(ship, planet, smap, em, stats);
+  test::expect_false(res_not_landed.has_value());
+  test::expect_eq(res_not_landed.error(), GroundActionError::NotLanded);
+
+  // 5. No crew aboard
+  ship.docked() = 1;
+  ship.popn() = 0;
+  auto res_no_crew = strip_mine_quarry(ship, planet, smap, em, stats);
+  test::expect_false(res_no_crew.has_value());
+  test::expect_eq(res_no_crew.error(), GroundActionError::NoCrew);
+
+  // 6. Fertility depletion clamping to 0
+  ship.popn() = 100;
+  smap.get(Coordinates{3, 3}).set_fert(1);
+  auto res_deplete = strip_mine_quarry(ship, planet, smap, em, stats);
+  test::expect_true(res_deplete.has_value());
+  test::expect_eq(smap.get(Coordinates{3, 3}).get_fert(), 0U);
+}
+
+void test_process_quarry_turn() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.metabolism = 1.0;
+  RaceRepository races(store);
+  races.save(race);
+
+  Planet planet = createTestPlanet();
+  SectorMap smap(planet);
+  smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{3, 3}).set_fert(50);
+
+  ship_struct sdata{
+      .number = 42,
+      .owner = player_t{1},
+      .fuel = 50.0,
+      .land_coords = {3, 3},
+      .max_crew = 100,
+      .max_fuel = 100,
+      .popn = 100,
+      .whatdest = ScopeLevel::LEVEL_PLAN,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_QUARRY,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+      .on = 1,
+  };
+
+  auto ship_handle = em.create_ship(sdata);
+  Ship& ship = *ship_handle;
+  TurnStats stats;
+
+  // 1. Successful quarry turn
+  process_quarry_turn(em, ship, planet, smap, stats);
+  test::expect_eq(smap.get(Coordinates{3, 3}).get_condition(),
+                  SectorType::SEC_WASTED);
+  test::expect_gt(stats.prod_res[player_t{1}], 0);
+  test::expect_eq(ship.fuel(), 50.0 - FUEL_COST_QUARRY);
+
+  // 2. Not switched on telegram
+  ship.on() = 0;
+  process_quarry_turn(em, ship, planet, smap, stats);
+  auto tele_on = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_on.empty());
+  test::expect_true(tele_on.back().message.contains("is not switched on"));
+
+  // 3. Not landed telegram
+  ship.on() = 1;
+  ship.docked() = 0;
+  process_quarry_turn(em, ship, planet, smap, stats);
+  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_landed.empty());
+  test::expect_true(tele_landed.back().message.contains("is not landed"));
+
+  // 4. No crew telegram
+  ship.docked() = 1;
+  ship.popn() = 0;
+  process_quarry_turn(em, ship, planet, smap, stats);
+  auto tele_crew = em.get_telegrams(player_t{1}, governor_t{0});
+  test::expect_false(tele_crew.empty());
+  test::expect_true(
+      tele_crew.back().message.contains("does not have workers aboard"));
 }
 
 void test_execute_berserker_bombardment() {
@@ -2338,12 +2524,20 @@ int main() {
   test_execute_plowing();
   std::println(std::cout, "PASS");
 
+  std::println(std::cout, "  Testing process_plow_turn... ");
+  test_process_plow_turn();
+  std::println(std::cout, "PASS");
+
   std::println(std::cout, "  Testing upgrade_sector_dome... ");
   test_upgrade_sector_dome();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing strip_mine_quarry... ");
   test_strip_mine_quarry();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing process_quarry_turn... ");
+  test_process_quarry_turn();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing execute_berserker_bombardment... ");

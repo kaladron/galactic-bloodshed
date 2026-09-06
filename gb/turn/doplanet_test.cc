@@ -1645,6 +1645,27 @@ void test_build_automated_waste_can() {
   test::expect_true(smap.in_bounds(ship->land_coords()));
   test::expect_eq(ship->as<ToxicWasteShip>()->toxic_level(),
                   static_cast<unsigned char>(TOXMAX));
+  test::expect_eq(ship->xpos(), star.xpos() + planet.xpos());
+  test::expect_eq(ship->ypos(), star.ypos() + planet.ypos());
+
+  // 5. Partial extraction (toxicity < TOXMAX)
+  planet.conditions(TOXIC) = 15;
+  planet.info(race).tox_thresh = 10;
+  planet.info(race).resource = 1000;
+  auto res5 = build_automated_waste_can(em, star, planet, smap, race);
+  test::expect_true(res5.has_value());
+  test::expect_eq(planet.conditions(TOXIC), 0);
+  const auto* ship5 = em.peek_ship(*res5);
+  test::expect_true(ship5 != nullptr);
+  test::expect_eq(ship5->as<ToxicWasteShip>()->toxic_level(), 15);
+
+  // 6. Exact threshold boundary (toxicity == tox_thresh)
+  planet.conditions(TOXIC) = 25;
+  planet.info(race).tox_thresh = 25;
+  planet.info(race).resource = 1000;
+  auto res6 = build_automated_waste_can(em, star, planet, smap, race);
+  test::expect_true(res6.has_value());
+  test::expect_eq(planet.conditions(TOXIC), 5);
 }
 
 void test_check_mutual_alliances() {
@@ -2313,6 +2334,91 @@ void test_notify_slave_revolt() {
   test::expect_true(telegrams[0].message.contains("SLAVE REVOLT"));
 }
 
+void test_execute_slave_revolt() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race master_race = createTestRace(1);
+  master_race.name = "MasterRace";
+  Race slave_race = createTestRace(2);
+  slave_race.name = "SlaveRace";
+  RaceRepository races(store);
+  races.save(master_race);
+  races.save(slave_race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  // 1. Unintimidated slave revolt:
+  // Devastates collateral sectors (proportional to population), does NOT
+  // devastate master-specific sectors via the intimidated loop, notifies
+  // colonies, and frees slaves.
+  {
+    Planet planet = createTestPlanet(Coordinates{5, 5});
+    planet.star_id() = star.star_id();
+    planet.planet_order() = 0;
+    planet.enslave_to(1);
+    planet.popn() = 4000;
+    planet.info(player_t{1}).numsectsowned = 5;
+    planet.info(player_t{2}).numsectsowned = 5;
+
+    SectorMap smap(planet);
+    for (Sector& s : smap) {
+      s.set_condition(SectorType::SEC_LAND);
+      s.set_owner(1);
+      s.set_popn_exact(100);
+    }
+
+    auto res =
+        execute_slave_revolt(em, star, planet, smap, /*intimidated=*/false);
+    test::expect_eq(res.outcome, EnslavementOutcome::SlaveRevolt);
+    test::expect_eq(res.master, player_t{1});
+    test::expect_gt(res.collateral_devastated_count, 0);
+    test::expect_eq(res.master_devastated_count, 0);
+    test::expect_false(planet.is_enslaved());
+    test::expect_eq(planet.slaved_to(), 0);
+
+    auto tele1 = em.get_telegrams(player_t{1}, governor_t{0});
+    test::expect_false(tele1.empty());
+    test::expect_true(tele1.back().message.contains("SLAVE REVOLT"));
+
+    auto tele2 = em.get_telegrams(player_t{2}, governor_t{0});
+    test::expect_false(tele2.empty());
+    test::expect_true(tele2.back().message.contains("SLAVE REVOLT"));
+  }
+
+  // 2. Intimidated slave revolt:
+  // Intimidation flag causes master-owned sectors to be evaluated for
+  // devastation.
+  {
+    Planet planet = createTestPlanet(Coordinates{5, 5});
+    planet.star_id() = star.star_id();
+    planet.planet_order() = 0;
+    planet.enslave_to(1);
+    planet.popn() = 0;
+    planet.info(player_t{1}).numsectsowned = 25;
+
+    SectorMap smap(planet);
+    for (Sector& s : smap) {
+      s.set_condition(SectorType::SEC_LAND);
+      s.set_owner(1);
+      s.set_popn_exact(100);
+    }
+
+    auto res =
+        execute_slave_revolt(em, star, planet, smap, /*intimidated=*/true);
+    test::expect_eq(res.outcome, EnslavementOutcome::SlaveRevolt);
+    test::expect_eq(res.master, player_t{1});
+    test::expect_eq(res.collateral_devastated_count, 0);
+    test::expect_ge(res.master_devastated_count, 0);
+    test::expect_false(planet.is_enslaved());
+    test::expect_eq(planet.slaved_to(), 0);
+  }
+}
+
 void test_recalculate_census() {
   Database db(":memory:");
   initialize_schema(db);
@@ -2507,6 +2613,53 @@ void test_process_planet_economy() {
   test::expect_eq(stats.Power[player_t{2}].planets_owned, 0);
 }
 
+void test_process_planet_economy_automated_waste_can() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(1);
+  race.name = "WorkerRace";
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  planet.star_id() = star.star_id();
+  planet.planet_order() = 0;
+  planet.dimensions() = Coordinates{2, 2};
+  planet.conditions(TOXIC) = 50;
+  planet.popn() = 100;
+  planet.maxpopn() = 1000;
+  planet.info(player_t{1}).numsectsowned = 1;
+  planet.info(player_t{1}).popn = 100;
+  planet.info(player_t{1}).tox_thresh = 40;
+  planet.info(player_t{1}).resource = 500;
+
+  PlanetRepository planets(store);
+  planets.save(planet);
+
+  SectorMap smap(planet);
+  for (int y = 0; y < 2; ++y) {
+    for (int x = 0; x < 2; ++x) {
+      smap.get(Coordinates{x, y}).set_coords(Coordinates{x, y});
+    }
+  }
+
+  TurnStats stats{};
+  process_planet_economy(em, star, planet, smap, stats);
+
+  // Toxicity reduced by TOXMAX (20): 50 - 20 = 30.
+  // Then update_planet_toxicity adds popn / maxpopn = 100 / 1000 = 0 ->
+  // stays 30.
+  test::expect_eq(planet.conditions(TOXIC), 30);
+  test::expect_eq(planet.info(player_t{1}).resource, 500);
+}
+
 void test_reset_planet_turn_state() {
   Database db(":memory:");
   initialize_schema(db);
@@ -2605,12 +2758,16 @@ void test_send_planet_turn_telegrams() {
   races.save(race);
 
   Star star = createTestStar();
+  star.nova_stage() = 2;
   StarRepository stars(store);
   stars.save(star);
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
   planet.planet_order() = 0;
+  planet.conditions(RTEMP) = 200;
+  planet.conditions(TEMP) = 250;
+  planet.enslave_to(2);
   planet.info(player_t{1}).autorep = 2;
 
   TurnStats stats{};
@@ -2618,6 +2775,8 @@ void test_send_planet_turn_telegrams() {
   stats.prod_fuel[player_t{1}] = 20;
   stats.prod_destruct[player_t{1}] = 10;
   stats.prod_crystals[player_t{1}] = 3;
+  stats.Stinfo[star.star_id().value][planet.planet_order().value].temp_add = 50;
+  stats.tot_captured = 3;
 
   send_planet_turn_telegrams(em, star, planet, Coordinates{1, 1}, stats);
 
@@ -2629,6 +2788,102 @@ void test_send_planet_turn_telegrams() {
   test::expect_true(telegrams[0].message.contains("3 crystals found"));
   test::expect_true(
       telegrams[0].message.contains("Environmental damage on sector 1,1"));
+  test::expect_true(telegrams[0].message.contains("Temp: 200 to 250"));
+  test::expect_true(telegrams[0].message.contains("3 sectors captured"));
+  test::expect_true(telegrams[0].message.contains("Stage 2 nova"));
+  test::expect_true(telegrams[0].message.contains("ENSLAVED to player 2"));
+}
+
+void test_send_planet_turn_telegrams_nova() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race1 = createTestRace(1);
+  race1.name = "Colonist1";
+  Race race2 = createTestRace(2);
+  race2.name = "Uninhabited2";
+  RaceRepository races(store);
+  races.save(race1);
+  races.save(race2);
+
+  Star star = createTestStar();
+  star.nova_stage() = 1;
+  StarRepository stars(store);
+  stars.save(star);
+
+  // 1. Earth planet in Stage 1 nova -> "Seas and rivers are boiling!"
+  {
+    Planet planet = createTestPlanet();
+    planet.star_id() = star.star_id();
+    planet.planet_order() = 0;
+    planet.type() = PlanetType::EARTH;
+    planet.info(player_t{1}).numsectsowned = 5;
+    planet.info(player_t{2}).numsectsowned = 0;
+
+    TurnStats stats{};
+    send_planet_turn_telegrams(em, star, planet, std::nullopt, stats);
+
+    auto tele1 = em.get_telegrams(player_t{1}, governor_t{0});
+    test::expect_false(tele1.empty());
+    test::expect_true(tele1.back().message.contains("BULLETIN from /"));
+    test::expect_true(
+        tele1.back().message.contains("Seas and rivers are boiling!"));
+    test::expect_true(tele1.back().message.contains(
+        "This planet must be evacuated immediately!"));
+
+    // Race 2 has 0 sectors owned -> no telegram received
+    auto tele2 = em.get_telegrams(player_t{2}, governor_t{0});
+    test::expect_true(tele2.empty());
+  }
+
+  // 2. Water and Forest planet types also include "Seas and rivers are
+  // boiling!"
+  {
+    Planet planet_water = createTestPlanet();
+    planet_water.star_id() = star.star_id();
+    planet_water.planet_order() = 0;
+    planet_water.type() = PlanetType::WATER;
+    planet_water.info(player_t{1}).numsectsowned = 3;
+
+    TurnStats stats{};
+    send_planet_turn_telegrams(em, star, planet_water, std::nullopt, stats);
+
+    auto tele = em.get_telegrams(player_t{1}, governor_t{0});
+    test::expect_true(
+        tele.back().message.contains("Seas and rivers are boiling!"));
+
+    Planet planet_forest = createTestPlanet();
+    planet_forest.star_id() = star.star_id();
+    planet_forest.planet_order() = 0;
+    planet_forest.type() = PlanetType::FOREST;
+    planet_forest.info(player_t{1}).numsectsowned = 3;
+
+    send_planet_turn_telegrams(em, star, planet_forest, std::nullopt, stats);
+    auto tele_f = em.get_telegrams(player_t{1}, governor_t{0});
+    test::expect_true(
+        tele_f.back().message.contains("Seas and rivers are boiling!"));
+  }
+
+  // 3. Desert planet in Stage 1 nova -> no "Seas and rivers are boiling!"
+  {
+    Planet planet_desert = createTestPlanet();
+    planet_desert.star_id() = star.star_id();
+    planet_desert.planet_order() = 0;
+    planet_desert.type() = PlanetType::DESERT;
+    planet_desert.info(player_t{1}).numsectsowned = 5;
+
+    TurnStats stats{};
+    send_planet_turn_telegrams(em, star, planet_desert, std::nullopt, stats);
+
+    auto tele = em.get_telegrams(player_t{1}, governor_t{0});
+    test::expect_true(tele.back().message.contains("BULLETIN from /"));
+    test::expect_false(
+        tele.back().message.contains("Seas and rivers are boiling!"));
+    test::expect_true(tele.back().message.contains(
+        "This planet must be evacuated immediately!"));
+  }
 }
 
 void test_stinfo_simulation_defaults_and_types() {
@@ -2767,6 +3022,10 @@ int main() {
   test_notify_slave_revolt();
   std::println(std::cout, "PASS");
 
+  std::println(std::cout, "  Testing execute_slave_revolt... ");
+  test_execute_slave_revolt();
+  std::println(std::cout, "PASS");
+
   std::println(std::cout, "  Testing recalculate_census... ");
   test_recalculate_census();
   std::println(std::cout, "PASS");
@@ -2779,6 +3038,11 @@ int main() {
   test_process_planet_economy();
   std::println(std::cout, "PASS");
 
+  std::println(std::cout,
+               "  Testing process_planet_economy_automated_waste_can... ");
+  test_process_planet_economy_automated_waste_can();
+  std::println(std::cout, "PASS");
+
   std::println(std::cout, "  Testing reset_planet_turn_state... ");
   test_reset_planet_turn_state();
   std::println(std::cout, "PASS");
@@ -2789,6 +3053,10 @@ int main() {
 
   std::println(std::cout, "  Testing send_planet_turn_telegrams... ");
   test_send_planet_turn_telegrams();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing send_planet_turn_telegrams_nova... ");
+  test_send_planet_turn_telegrams_nova();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_recover... ");

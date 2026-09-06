@@ -654,11 +654,12 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
   const player_t player = race.Playernum;
 
   const auto& tmpl = ship_template(ShipType::OTYPE_TOXWC);
+  const auto coords = planet.absolute_coordinates(star);
   ship_struct s2{
       .owner = player,
       .governor = star.governor(player),
-      .xpos = star.xpos() + planet.xpos(),
-      .ypos = star.ypos() + planet.ypos(),
+      .xpos = coords.x,
+      .ypos = coords.y,
       .mass = 1.0,
       .land_coords = smap.get_random().coords(),
       .armor = tmpl.base_armor,

@@ -26,7 +26,7 @@ find_suitable_enrol_planet(EntityManager& entity_manager, int numstars,
       const auto* planet_ptr = entity_manager.peek_planet(star, pnum);
       if (!planet_ptr) continue;
 
-      if (planet_ptr->type() == ppref && star_ptr->numplanets() != 1) {
+      if (planet_ptr->type() == ppref) {
         bool vacant = true;
         for (int i = 1; i <= num_players; ++i) {
           if (planet_ptr->info(player_t{i}).numsectsowned > 0) {
@@ -34,8 +34,7 @@ find_suitable_enrol_planet(EntityManager& entity_manager, int numstars,
             break;
           }
         }
-        if (vacant && planet_ptr->conditions(RTEMP) >= -50 &&
-            planet_ptr->conditions(RTEMP) <= 50) {
+        if (vacant) {
           return std::make_pair(static_cast<int>(star), pnum);
         }
       }

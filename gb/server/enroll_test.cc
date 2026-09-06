@@ -192,25 +192,92 @@ void test_find_suitable_enrol_planet() {
   p3_1.planet_order() = 1;
   planet_repo.save(p3_1);
 
-  // Test 1: Given order [0, 1, 3, 2], should skip 0 and 1, and select Star 3
-  // (first valid candidate in order)
-  std::vector<int> order1 = {0, 1, 3, 2};
-  auto res1 = find_suitable_enrol_planet(em, 4, 1, PlanetType::EARTH, order1);
+  // Star 4: 2 planets, candidate Gas Giant at pnum 1 (cold: RTEMP = -80)
+  star_struct ss4{};
+  ss4.star_id = 4;
+  ss4.inhabited = 0;
+  ss4.pnames = {"P1", "P2"};
+  Star star4(ss4);
+  star_repo.save(star4);
+
+  Planet p4_0{PlanetType::MARS, Coordinates{10, 10}};
+  p4_0.star_id() = 4;
+  p4_0.planet_order() = 0;
+  planet_repo.save(p4_0);
+
+  Planet p4_1{PlanetType::GASGIANT, Coordinates{10, 10}};
+  p4_1.star_id() = 4;
+  p4_1.planet_order() = 1;
+  p4_1.conditions(RTEMP) = -80;
+  planet_repo.save(p4_1);
+
+  // Star 5: 2 planets, cryogenic Iceball at pnum 0 (RTEMP = -120), hot Desert
+  // at pnum 1 (RTEMP = 150)
+  star_struct ss5{};
+  ss5.star_id = 5;
+  ss5.inhabited = 0;
+  ss5.pnames = {"P1", "P2"};
+  Star star5(ss5);
+  star_repo.save(star5);
+
+  Planet p5_0{PlanetType::ICEBALL, Coordinates{10, 10}};
+  p5_0.star_id() = 5;
+  p5_0.planet_order() = 0;
+  p5_0.conditions(RTEMP) = -120;
+  planet_repo.save(p5_0);
+
+  Planet p5_1{PlanetType::DESERT, Coordinates{10, 10}};
+  p5_1.star_id() = 5;
+  p5_1.planet_order() = 1;
+  p5_1.conditions(RTEMP) = 150;
+  planet_repo.save(p5_1);
+
+  // Test 1: Given order [0, 1, 3, 2, 4, 5], should skip 0 and 1, and select
+  // Star 3 (first valid candidate in order)
+  std::vector<int> order1 = {0, 1, 3, 2, 4, 5};
+  auto res1 = find_suitable_enrol_planet(em, 6, 1, PlanetType::EARTH, order1);
   test::expect_true(res1.has_value());
+  if (!res1) return;
   test::expect_eq(res1->first, 3);
   test::expect_eq(res1->second, 0);
 
-  // Test 2: Given order [0, 1, 2, 3], should skip 0 and 1, and select Star 2
-  // (first valid candidate in order)
-  std::vector<int> order2 = {0, 1, 2, 3};
-  auto res2 = find_suitable_enrol_planet(em, 4, 1, PlanetType::EARTH, order2);
+  // Test 2: Given order [0, 1, 2, 3, 4, 5], should skip 0 and 1, and select
+  // Star 2 (first valid candidate in order)
+  std::vector<int> order2 = {0, 1, 2, 3, 4, 5};
+  auto res2 = find_suitable_enrol_planet(em, 6, 1, PlanetType::EARTH, order2);
   test::expect_true(res2.has_value());
+  if (!res2) return;
   test::expect_eq(res2->first, 2);
   test::expect_eq(res2->second, 1);
 
-  // Test 3: Looking for DESERT -> no matching planet -> returns std::nullopt
-  auto res3 = find_suitable_enrol_planet(em, 4, 1, PlanetType::DESERT, order2);
-  test::expect_false(res3.has_value());
+  // Test 3: Gas Giant enrollment regression test (cold gas giant at -80C)
+  auto res_gas =
+      find_suitable_enrol_planet(em, 6, 1, PlanetType::GASGIANT, order2);
+  test::expect_true(res_gas.has_value());
+  if (!res_gas) return;
+  test::expect_eq(res_gas->first, 4);
+  test::expect_eq(res_gas->second, 1);
+
+  // Test 4: Cryogenic Iceball enrollment (cold iceball at -120C)
+  auto res_ice =
+      find_suitable_enrol_planet(em, 6, 1, PlanetType::ICEBALL, order2);
+  test::expect_true(res_ice.has_value());
+  if (!res_ice) return;
+  test::expect_eq(res_ice->first, 5);
+  test::expect_eq(res_ice->second, 0);
+
+  // Test 5: Hot Desert enrollment (warm desert world at 150C)
+  auto res_desert =
+      find_suitable_enrol_planet(em, 6, 1, PlanetType::DESERT, order2);
+  test::expect_true(res_desert.has_value());
+  if (!res_desert) return;
+  test::expect_eq(res_desert->first, 5);
+  test::expect_eq(res_desert->second, 1);
+
+  // Test 6: Looking for FOREST -> no matching planet -> returns std::nullopt
+  auto res_none =
+      find_suitable_enrol_planet(em, 6, 1, PlanetType::FOREST, order2);
+  test::expect_false(res_none.has_value());
 
   std::println(std::cout, "  ✓ find_suitable_enrol_planet exact search passed");
 }

@@ -19,153 +19,11 @@ struct SectorTypeSummary {
   int count{0};
 };
 
-struct RaceArchetype {
-  bool is_metamorphic{false};
-  mass_t base_mass{0.125};
-  birthrate_t base_birthrate{0.5};
-  fighters_t base_fighters{5};
-  iq_t base_iq{150};
-  adventurism_t base_adventurism{0.7};
-  sexes_t min_sexes{2};
-  sexes_t max_sexes{4};
-  metabolism_t base_metabolism{1.5};
-
-  [[nodiscard]] mass_t sample_mass() const {
-    return base_mass + 0.001 * int_rand(-25, 25);
-  }
-  [[nodiscard]] birthrate_t sample_birthrate() const {
-    return base_birthrate + 0.01 * int_rand(-10, 10);
-  }
-  [[nodiscard]] fighters_t sample_fighters() const {
-    int val = static_cast<int>(base_fighters) + int_rand(-1, 1);
-    return static_cast<fighters_t>(std::max(0, val));
-  }
-  [[nodiscard]] iq_t sample_iq() const {
-    if (is_metamorphic) {
-      return 0;
-    }
-    return base_iq + int_rand(-10, 10);
-  }
-  [[nodiscard]] adventurism_t sample_adventurism() const {
-    return base_adventurism + 0.01 * int_rand(-10, 10);
-  }
-  [[nodiscard]] sexes_t sample_sexes() const {
-    int max_val =
-        int_rand(static_cast<int>(min_sexes), static_cast<int>(max_sexes));
-    return static_cast<sexes_t>(int_rand(static_cast<int>(min_sexes), max_val));
-  }
-  [[nodiscard]] metabolism_t sample_metabolism() const {
-    return base_metabolism + 0.01 * int_rand(-15, 15);
-  }
-};
-
-constexpr std::array<RaceArchetype, 10> race_archetypes = {{
-    // 1: Metamorphic predators
-    {.is_metamorphic = true,
-     .base_mass = 0.1,
-     .base_birthrate = 0.9,
-     .base_fighters = 9,
-     .base_iq = 0,
-     .base_adventurism = 0.89,
-     .min_sexes = 1,
-     .max_sexes = 1,
-     .base_metabolism = 3.0},
-    // 2: Metamorphic heavyweights
-    {.is_metamorphic = true,
-     .base_mass = 0.15,
-     .base_birthrate = 0.85,
-     .base_fighters = 10,
-     .base_iq = 0,
-     .base_adventurism = 0.89,
-     .min_sexes = 1,
-     .max_sexes = 1,
-     .base_metabolism = 2.7},
-    // 3: Metamorphic colossi
-    {.is_metamorphic = true,
-     .base_mass = 0.2,
-     .base_birthrate = 0.8,
-     .base_fighters = 11,
-     .base_iq = 0,
-     .base_adventurism = 0.89,
-     .min_sexes = 1,
-     .max_sexes = 1,
-     .base_metabolism = 2.4},
-    // 4: High intelligence, low combat
-    {.is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.5,
-     .base_fighters = 2,
-     .base_iq = 190,
-     .base_adventurism = 0.6,
-     .min_sexes = 2,
-     .max_sexes = 2,
-     .base_metabolism = 1.0},
-    // 5
-    {.is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.55,
-     .base_fighters = 3,
-     .base_iq = 180,
-     .base_adventurism = 0.65,
-     .min_sexes = 2,
-     .max_sexes = 2,
-     .base_metabolism = 1.15},
-    // 6
-    {.is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.6,
-     .base_fighters = 4,
-     .base_iq = 170,
-     .base_adventurism = 0.7,
-     .min_sexes = 2,
-     .max_sexes = 4,
-     .base_metabolism = 1.30},
-    // 7
-    {.is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.65,
-     .base_fighters = 5,
-     .base_iq = 160,
-     .base_adventurism = 0.7,
-     .min_sexes = 2,
-     .max_sexes = 4,
-     .base_metabolism = 1.45},
-    // 8
-    {.is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.7,
-     .base_fighters = 6,
-     .base_iq = 150,
-     .base_adventurism = 0.75,
-     .min_sexes = 2,
-     .max_sexes = 4,
-     .base_metabolism = 1.6},
-    // 9
-    {.is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.75,
-     .base_fighters = 7,
-     .base_iq = 140,
-     .base_adventurism = 0.75,
-     .min_sexes = 2,
-     .max_sexes = 4,
-     .base_metabolism = 1.75},
-    // 10: Balanced military
-    {.is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.8,
-     .base_fighters = 8,
-     .base_iq = 130,
-     .base_adventurism = 0.8,
-     .min_sexes = 2,
-     .max_sexes = 4,
-     .base_metabolism = 1.9},
-}};
-
 }  // namespace GB::enrol
 
 int main(int argc, char* argv[]) {
   using namespace GB::enrol;
+  using namespace GB::creator;
 
   std::string db_path = PKGSTATEDIR "gb.db";
 
@@ -223,6 +81,9 @@ int main(int argc, char* argv[]) {
                  MAXPLAYERS - 1);
     return -1;
   }
+
+  std::println(std::cout, "\n=== Available Racial Archetypes ===\n");
+  std::cout << create_archetypes_table() << "\n\n";
 
   std::print("Enter racial type to be created (1-{}):", race_archetypes.size());
   std::string input_line;

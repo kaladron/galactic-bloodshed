@@ -194,8 +194,8 @@ add_library(gb_creator)
 target_sources(
   gb_creator
   PUBLIC FILE_SET CXX_MODULES FILES creator/creator.cppm
-  PRIVATE creator/enrollment_service.cc)
-target_link_libraries(gb_creator PUBLIC gblib gb_entities gb_services gb_repositories dallib)
+  PRIVATE creator/enrollment_service.cc creator/archetypes.cc)
+target_link_libraries(gb_creator PUBLIC gblib gb_entities gb_services gb_repositories dallib tabulate_module)
 
 # Create session library (Server Layer)
 add_library(session)
@@ -359,7 +359,7 @@ add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
 target_link_libraries(makeuniv PRIVATE gblib gb_entities gb_services gb_repositories dallib SQLite::SQLite3 glaze::glaze)
 
 add_executable(enrol creator/enrol.cc)
-target_link_libraries(enrol PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze scnlib_module)
+target_link_libraries(enrol PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze scnlib_module tabulate_module)
 
 add_executable(racegen creator/GB_racegen.cc creator/enroll.cc creator/racegen.cc)
 target_link_libraries(racegen PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)

@@ -484,6 +484,40 @@ void test_find_suitable_planet_shuffle() {
   std::println(std::cout, "  ✓ find_suitable_planet shuffle passed");
 }
 
+void test_archetypes_table() {
+  std::println(std::cout, "Test: Archetypes table generation and structure");
+
+  // Verify all 10 archetypes are defined and valid
+  test::expect_eq(GB::creator::race_archetypes.size(), 10zu);
+  for (std::size_t i = 0; i < GB::creator::race_archetypes.size(); ++i) {
+    const auto& arch = GB::creator::race_archetypes[i];
+    test::expect_false(arch.name.empty());
+    test::expect_true(arch.base_mass > 0.0);
+    test::expect_true(arch.base_birthrate > 0.0);
+    test::expect_true(arch.base_fighters > 0);
+    test::expect_true(arch.base_metabolism > 0.0);
+    test::expect_true(arch.min_sexes >= 1);
+    test::expect_true(arch.max_sexes >= arch.min_sexes);
+  }
+
+  // Generate table using tabulate
+  auto table = GB::creator::create_archetypes_table();
+  // 1 header row + 10 data rows = 11 rows
+  test::expect_eq(table.size(), 11zu);
+
+  // Render to string and check for key headers and archetype names
+  std::stringstream ss;
+  ss << table;
+  std::string output = ss.str();
+  test::expect_true(output.contains("Archetype"));
+  test::expect_true(output.contains("Metamorphic Predator"));
+  test::expect_true(output.contains("Militaristic Legionnaire"));
+  test::expect_true(output.contains("Cerebral Researcher"));
+
+  std::println(std::cout,
+               "  ✓ Archetypes table generation and structure passed");
+}
+
 }  // namespace
 
 int main() {
@@ -496,6 +530,7 @@ int main() {
   test_enroll_gas_giant_cold_success();
   test_enroll_explicit_capital_coords();
   test_find_suitable_planet_shuffle();
+  test_archetypes_table();
 
   std::println(std::cout, "\n✅ All EnrollmentService unit tests passed!");
   return 0;

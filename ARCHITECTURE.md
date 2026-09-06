@@ -111,6 +111,13 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 - **`gb.turn`** (Turn Simulation Engine) - `gb/turn/turn.cppm`
   - Multi-pass simulation pipeline (`doplanet`, `doship`, `dosector`, `doturncmd`, `do_update`, `do_segment`)
 
+- **`gb.creator`** (Universe Generation & Imperial Onboarding) - `gb/creator/creator.cppm`
+  - Encapsulates procedural galaxy generation, empire initialization, and species design
+  - `UniverseGenerator`: Procedural universe generation engine producing stars, planetary systems, and sector geography according to configurable astrophysical parameters
+  - `EnrollmentService`: Canonical service for player registration, homeworld cartography, capital colony establishment, and government flagship commissioning
+  - `RacegenEngine`: Pure point-budget calculation and validation engine for the 1400-point genetic design sandbox, trait covariances, and biome affinities
+  - `RaceArchetype`: Pre-calibrated evolutionary racial archetypes and formatted terminal tabulation
+
 - **`gb.server`** (Server & Networking) - `gb/server/server_module.cppm`
   - Asio-backed TCP server (`Server`), client sessions (`Session`), authentication (`auth`), notifications (`notification`), and startup configuration (`server_config`)
 
@@ -125,6 +132,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 ```
 commands      --> gb.entities, gb.services, dallib, session, notification
 gb.turn       --> gb.entities, gb.services
+gb.creator    --> gb.entities, gb.services, gb.repositories, dallib, tabulate
 gb.services   --> gb.entities, gb.repositories, dallib
 gb.repositories --> gb.entities, dallib
 gb.server     --> gb.entities, gb.services, commands, dallib, asio
@@ -138,7 +146,8 @@ dallib        --> SQLite3, Glaze
 2. **`gb.entities` contains domain models** - Defines pure game data structures and strong types without dependencies on storage or business logic
 3. **`gb.services` encapsulates business orchestration** - Centralizes entity mutations and session coordination
 4. **`commands` imports only needed subsystems** - Player action handlers depend cleanly on entities and services
-5. **Clear boundaries** - Module imports enforce architectural constraints at compile time
+5. **`gb.creator` isolates universe setup and player onboarding** - Keeps galaxy generation algorithms, point-budget math, and enrollment orchestration separate from the runtime server daemon and turn loop
+6. **Clear boundaries** - Module imports enforce architectural constraints at compile time
 
 ---
 
@@ -565,6 +574,40 @@ flowchart TD
    Multi-player metrics are stored in `PlayerVector<T, N>` (`gblib:types`), offering 1-indexed `player_t` bounds checking, container iteration, and zero-allocation JSON serialization via `glz::meta`.
 4. **Dimensions & `num_sectors()` Encapsulation**:
    Planetary grids are sized by `Coordinates dimensions` (`data_.dimensions.x`, `data_.dimensions.y`) and `num_sectors()` (`dimensions.x * dimensions.y`), providing uniform toroidal wrapping and geometric validation without raw dimensions arithmetic.
+
+---
+
+## Universe Creation & Imperial Onboarding Architecture
+
+Galaxy generation and player onboarding are encapsulated in the **`gb.creator`** module. The subsystem isolates procedural generation algorithms and the genetic design sandbox from runtime server operations, communicating strictly through `EntityManager` and `dallib`.
+
+```mermaid
+flowchart TD
+    subgraph UniverseCreation ["Universe Creation (makeuniv)"]
+        UG["UniverseGenerator Engine"] -->|"Procedural placement"| Stars["Star Systems & Coordinates"]
+        UG -->|"Orbital physics"| Planets["Planetary Orbits & Thermal Gradients"]
+        UG -->|"Surface generation"| Sectors["Sector Gradients & Topography"]
+        UG -->|"Monadic persistence"| EM_U["EntityManager / Database"]
+    end
+
+    subgraph PlayerOnboarding ["Imperial Onboarding (enrol / racegen)"]
+        UI["CLI Interfaces: enrol / racegen"] --> RE["RacegenEngine: Point Budgeting & Invariant Validation"]
+        RE --> ES["EnrollmentService: Orchestrates Empire Initialization"]
+        ES -->|"Cartography check"| Search["Discover Uninhabited System & Home World"]
+        ES -->|"Colonization"| Cap["Found Capital Sector & Seed Population"]
+        ES -->|"Naval commissioning"| Flag["Commission Government Flagship"]
+        ES -->|"Atomic flush"| EM_E["EntityManager / Database"]
+    end
+```
+
+### Core Design Principles
+
+1. **Separation of Physics and CLI**:
+   `UniverseGenerator` encapsulates procedural star placement, orbital spacing, and planetary geography in a pure engine without terminal prompts or global state. The `makeuniv` CLI is a thin argument-parsing wrapper over `UniverseGenerator`.
+2. **Unified Onboarding Pipeline**:
+   All race enrollment paths—whether quick-start pre-calibrated archetypes (`enrol`) or custom 1400-point genetic species (`racegen`)—converge on `EnrollmentService::enroll_player()`. This ensures that homeworld discovery invariants, initial Action Points, fog-of-war clearing, and flagship commissioning are identical across all entry points.
+3. **Pure Point-Budget Validation**:
+   `RacegenEngine` calculates non-linear attribute costs, physical covariances, and multi-biome compatibility surcharges as pure, side-effect-free functions operating on `RaceEnrollmentSpec`.
 
 ---
 
@@ -1055,11 +1098,18 @@ gb/
 │   ├── *.cc                    # 89 individual player commands
 │   └── *_test.cc               # 4-way command unit test matrix
 │
-├── creator/                     # Universe Generation (makeuniv)
-│   ├── makeuniv.cc             # Universe generator entrypoint
-│   ├── makeplanet.cc           # Planetary system generation
-│   ├── makestar.cc             # Star system generation
-│   └── *_test.cc               # Creator unit tests
+├── creator/                     # Universe Generation & Onboarding (gb.creator)
+│   ├── creator.cppm            # Creator subsystem module interface
+│   ├── universe_generator.cc   # Procedural universe generation engine
+│   ├── enrollment_service.cc   # Canonical player onboarding service
+│   ├── racegen_engine.cc       # Point-budget calculation and validation engine
+│   ├── archetypes.cc           # Pre-calibrated racial archetypes & tabulation
+│   ├── makeplanet.cc           # Planetary surface and geography generation
+│   ├── makeuniv.cc             # Universe generator CLI entrypoint
+│   ├── enrol.cc                # Guided player enrollment wizard CLI
+│   ├── racegen.cc              # Interactive genetic design sandbox CLI
+│   ├── enroll.cc               # Batch racegen enrollment adapter
+│   └── *_test.cc               # Creator unit & invariant tests
 │
 ├── testing/                     # Test Framework & Invariant Checking (test)
 │   ├── test.cppm               # Test module interface

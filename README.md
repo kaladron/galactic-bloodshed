@@ -68,7 +68,7 @@ Starts the Galactic Bloodshed server.
 * `-h, --help`: Display help message and exit.
 
 #### `makeuniv` (Universe Generator)
-Initializes and populates a new game universe database.
+Initializes and populates a new game universe database with procedural stars, planetary systems, and sector maps.
 ```bash
 ./build/gb/makeuniv [options]
 ```
@@ -84,21 +84,38 @@ Initializes and populates a new game universe database.
 * `-w`: Print generated star info.
 * `-h, --help`: Display help message and exit.
 
+For detailed documentation on procedural star placement, galaxy geometry, orbital physics, and planetary temperature gradients, see the [Universe Creation Guide](docs/universe_creation.md).
+
 #### `enrol` (Race Enrollment CLI)
-Interactive CLI tool to enroll new player races into an existing game database.
+Interactive CLI tool to enroll new player races into an existing game database. Features a guided setup wizard with 10 calibrated evolutionary archetypes, preferred homeworld selection, and automatic capital colony founding.
 ```bash
 ./build/gb/enrol [options]
 ```
 * `-d, --database, --db <path>`: Path to SQLite database.
 * `-h, --help`: Display help message and exit.
 
+For details on the racial archetypes, biological attributes, and homeworld discovery invariants, see the [Race Generation and Imperial Onboarding Guide](docs/race_generation.md).
+
 #### `racegen` (Race Generator)
-Interactive race creation and point-budget design tool.
+Interactive species engineering and point-budget design sandbox. Allows customizing the 11 core biological traits, testing multi-biome compatibility and covariance costs against the 1400-point genetic budget, and registering custom empires.
 ```bash
 ./build/gb/racegen [options]
 ```
 * `-d, --database, --db <path>`: Path to SQLite database.
 * `-h, --help`: Display help message and exit.
+
+For in-depth mathematical cost curves, biological covariances, and sector habitability formulas, see the [Race Generation and Imperial Onboarding Guide](docs/race_generation.md).
+
+### Documentation
+
+Comprehensive game guides and technical references are located in [`docs/`](docs/):
+
+* **[Universe Creation Guide](docs/universe_creation.md)** — Procedural galaxy generation, star placement, orbital physics, and temperature gradients.
+* **[Race Generation and Imperial Onboarding Guide](docs/race_generation.md)** — Biological traits, evolutionary archetypes, the 1400-point genetic design sandbox, and capital founding.
+* **[Planets and Biomes Guide](docs/planets.md)** — Planetary environments, sector types, and habitability formulas.
+* **[Ships and Naval Architecture](docs/ships.md)** — Ship types, combat characteristics, hyperdrives, and specialized vessels.
+* **[Turn Simulation Cycle](docs/turn_cycle.md)** — Turn simulation engine, update sequences, and multi-pass pipeline.
+* **[System Architecture](ARCHITECTURE.md)** — High-level n-tier architecture, module layout, and persistence boundaries.
 
 
 ### Code Formatting & Static Analysis

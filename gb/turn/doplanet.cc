@@ -35,6 +35,25 @@ std::expected<char, GroundMovementError> get_ground_order(const Ship& ship,
   return order;
 }
 
+GroundStepResult calculate_ground_step(const Planet& planet, char order,
+                                       Coordinates from) noexcept {
+  Coordinates target = get_move(planet, order, from);
+  bool bounced = false;
+
+  if (target.y >= planet.dimensions().y) {
+    bounced = true;
+    target.y -= 2; /* bounce off of south pole! */
+  } else if (target.y < 0) {
+    target.y = 1;
+    bounced = true; /* bounce off of north pole! */
+  }
+  if (planet.dimensions().y == 1) {
+    target.y = 0;
+  }
+
+  return GroundStepResult{.destination = target, .bounced = bounced};
+}
+
 std::expected<Coordinates, GroundMovementError>
 advance_ground_vehicle(Ship& ship, const Planet& planet,
                        EntityManager& entity_manager) {
@@ -69,25 +88,18 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
   }
 
   const char order = ship.shipclass()[terraform->index()];
-  auto [x, y] = get_move(planet, order, ship.land_coords());
+  const auto [destination, bounced] =
+      calculate_ground_step(planet, order, ship.land_coords());
 
-  bool bounced = false;
-
-  if (y >= planet.dimensions().y) {
-    bounced = true;
-    y -= 2; /* bounce off of south pole! */
-  } else if (y < 0) {
-    y = 1;
-    bounced = true; /* bounce off of north pole! */
-  }
-  if (planet.dimensions().y == 1) y = 0;
-
-  if (terraform->index() + 1 < ship.shipclass().size() &&
-      ship.shipclass()[terraform->index() + 1] != '\0') {
-    terraform->set_index(terraform->index() + 1);
-    if ((terraform->index() + 1 >= ship.shipclass().size() ||
-         ship.shipclass()[terraform->index() + 1] == '\0') &&
-        (!ship.notified())) {
+  const std::size_t next_idx = terraform->index() + 1;
+  const bool has_next = (next_idx < ship.shipclass().size() &&
+                         ship.shipclass()[next_idx] != '\0');
+  if (has_next) {
+    terraform->set_index(next_idx);
+    const std::size_t after_next = next_idx + 1;
+    const bool is_exhausted = (after_next >= ship.shipclass().size() ||
+                               ship.shipclass()[after_next] == '\0');
+    if (is_exhausted && !ship.notified()) {
       ship.notified() = 1;
       const std::string teleg_buf =
           std::format("%{0} is out of orders at %{1}.", ship,
@@ -96,12 +108,12 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
     }
   } else if (bounced) {
     if (terraform->index() < ship.shipclass().size()) {
-      ship.shipclass()[terraform->index()] +=
-          ((ship.shipclass()[terraform->index()] > '5') ? -6 : 6);
+      ship.shipclass()[terraform->index()] =
+          reflect_polar_order(ship.shipclass()[terraform->index()]);
     }
   }
-  ship.set_land_coords({x, y});
-  return Coordinates{x, y};
+  ship.set_land_coords(destination);
+  return destination;
 }
 
 bool moveship_onplanet(Ship& ship, const Planet& planet,

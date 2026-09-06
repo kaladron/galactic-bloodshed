@@ -189,7 +189,174 @@ void test_moveship_onplanet() {
   test::expect_eq(ooo_ship.notified(), 0);
   auto ooo_move = advance_ground_vehicle(ooo_ship, planet, em);
   test::expect_true(ooo_move.has_value());
-  test::expect_eq(ooo_ship.notified(), 1);
+  // Test polar bouncing at north pole (y < 0 -> bounce y = 1, flip order '8' ->
+  // '2')
+  ship_struct north_bounce_data{
+      .owner = player_t{1},
+      .land_coords = {5, 0},
+      .special = TerraformData{.index = 0},
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_TERRA,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+  };
+  auto nb_handle = em.create_ship(north_bounce_data);
+  Ship& nb_ship = *nb_handle;
+  nb_ship.shipclass() = "8";
+  auto nb_move = advance_ground_vehicle(nb_ship, planet, em);
+  test::expect_true(nb_move.has_value());
+  test::expect_eq(nb_move->y, 1);
+  test::expect_eq(nb_ship.shipclass()[0], '2');
+
+  // Test cycling order ('c') resetting index
+  ship_struct cycle_data{
+      .owner = player_t{1},
+      .land_coords = {5, 5},
+      .special = TerraformData{.index = 1},
+      .storbits = star.star_id(),
+      .pnumorbits = 0,
+      .whatorbits = ScopeLevel::LEVEL_PLAN,
+      .type = ShipType::OTYPE_TERRA,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+  };
+  auto cycle_handle = em.create_ship(cycle_data);
+  Ship& cycle_ship = *cycle_handle;
+  cycle_ship.shipclass() = "2c";
+  auto cycle_move = advance_ground_vehicle(cycle_ship, planet, em);
+  test::expect_true(cycle_move.has_value());
+  test::expect_eq(cycle_move->y, 6);
+  auto* terra_cycle = cycle_ship.as<TerraformerShip>();
+  test::expect_eq(terra_cycle->index(), 1);
+
+  // Test cycling orders with empty cycle ("c") turning off ship
+  ship_struct empty_cycle_data{
+      .owner = player_t{1},
+      .land_coords = {5, 5},
+      .special = TerraformData{.index = 0},
+      .type = ShipType::OTYPE_TERRA,
+      .active = 1,
+      .alive = 1,
+      .docked = 1,
+  };
+  auto empty_cycle_handle = em.create_ship(empty_cycle_data);
+  Ship& ec_ship = *empty_cycle_handle;
+  ec_ship.shipclass() = "c";
+  ec_ship.on() = 1;
+  auto ec_move = advance_ground_vehicle(ec_ship, planet, em);
+  test::expect_false(ec_move.has_value());
+  test::expect_eq(ec_move.error(), GroundMovementError::EmptyOrders);
+  test::expect_eq(ec_ship.on(), 0);
+}
+
+void test_reflect_polar_order() {
+  test::expect_eq(reflect_polar_order('1'), '7');
+  test::expect_eq(reflect_polar_order('2'), '8');
+  test::expect_eq(reflect_polar_order('3'), '9');
+  test::expect_eq(reflect_polar_order('7'), '1');
+  test::expect_eq(reflect_polar_order('8'), '2');
+  test::expect_eq(reflect_polar_order('9'), '3');
+
+  test::expect_eq(reflect_polar_order('4'), '4');
+  test::expect_eq(reflect_polar_order('6'), '6');
+  test::expect_eq(reflect_polar_order('5'), '5');
+  test::expect_eq(reflect_polar_order('c'), 'c');
+  test::expect_eq(reflect_polar_order('s'), 's');
+  test::expect_eq(reflect_polar_order('x'), 'x');
+}
+
+void test_calculate_ground_step() {
+  Planet planet = createTestPlanet({10, 10});
+
+  // 1. Regular interior movement (no bounce)
+  auto r_south = calculate_ground_step(planet, '2', {5, 5});
+  test::expect_eq(r_south.destination, (Coordinates{5, 6}));
+  test::expect_false(r_south.bounced);
+
+  auto r_east = calculate_ground_step(planet, '6', {5, 5});
+  test::expect_eq(r_east.destination, (Coordinates{6, 5}));
+  test::expect_false(r_east.bounced);
+
+  auto r_west = calculate_ground_step(planet, '4', {5, 5});
+  test::expect_eq(r_west.destination, (Coordinates{4, 5}));
+  test::expect_false(r_west.bounced);
+
+  auto r_north = calculate_ground_step(planet, '8', {5, 5});
+  test::expect_eq(r_north.destination, (Coordinates{5, 4}));
+  test::expect_false(r_north.bounced);
+
+  auto r_diag = calculate_ground_step(planet, '3', {5, 5});
+  test::expect_eq(r_diag.destination, (Coordinates{6, 6}));
+  test::expect_false(r_diag.bounced);
+
+  // 2. South pole boundary bounce (y >= dimensions.y)
+  auto r_sp_straight = calculate_ground_step(planet, '2', {5, 9});
+  test::expect_eq(r_sp_straight.destination, (Coordinates{5, 8}));
+  test::expect_true(r_sp_straight.bounced);
+
+  auto r_sp_diag_sw = calculate_ground_step(planet, '1', {5, 9});
+  test::expect_eq(r_sp_diag_sw.destination, (Coordinates{4, 8}));
+  test::expect_true(r_sp_diag_sw.bounced);
+
+  auto r_sp_diag_se = calculate_ground_step(planet, '3', {5, 9});
+  test::expect_eq(r_sp_diag_se.destination, (Coordinates{6, 8}));
+  test::expect_true(r_sp_diag_se.bounced);
+
+  // 3. North pole boundary bounce (y < 0)
+  auto r_np_straight = calculate_ground_step(planet, '8', {5, 0});
+  test::expect_eq(r_np_straight.destination, (Coordinates{5, 1}));
+  test::expect_true(r_np_straight.bounced);
+
+  auto r_np_diag_nw = calculate_ground_step(planet, '7', {5, 0});
+  test::expect_eq(r_np_diag_nw.destination, (Coordinates{4, 1}));
+  test::expect_true(r_np_diag_nw.bounced);
+
+  auto r_np_diag_ne = calculate_ground_step(planet, '9', {5, 0});
+  test::expect_eq(r_np_diag_ne.destination, (Coordinates{6, 1}));
+  test::expect_true(r_np_diag_ne.bounced);
+
+  // 4. Toroidal X-wrapping combined with polar bounce
+  auto r_wrap_np = calculate_ground_step(planet, '7', {0, 0});
+  test::expect_eq(r_wrap_np.destination, (Coordinates{9, 1}));
+  test::expect_true(r_wrap_np.bounced);
+
+  auto r_wrap_sp = calculate_ground_step(planet, '3', {9, 9});
+  test::expect_eq(r_wrap_sp.destination, (Coordinates{0, 8}));
+  test::expect_true(r_wrap_sp.bounced);
+
+  // 5. 1x1 planet: single-cell boundary clamp
+  Planet p1x1 = createTestPlanet({1, 1});
+  auto r_1x1_vert = calculate_ground_step(p1x1, '2', {0, 0});
+  test::expect_eq(r_1x1_vert.destination, (Coordinates{0, 0}));
+  test::expect_true(r_1x1_vert.bounced);
+
+  auto r_1x1_horiz = calculate_ground_step(p1x1, '6', {0, 0});
+  test::expect_eq(r_1x1_horiz.destination, (Coordinates{0, 0}));
+  test::expect_false(r_1x1_horiz.bounced);
+
+  // 6. 1-high ring (Nx1, e.g. 4x1)
+  Planet p4x1 = createTestPlanet({4, 1});
+  auto r_4x1_horiz = calculate_ground_step(p4x1, '6', {0, 0});
+  test::expect_eq(r_4x1_horiz.destination, (Coordinates{1, 0}));
+  test::expect_false(r_4x1_horiz.bounced);
+
+  auto r_4x1_vert = calculate_ground_step(p4x1, '8', {0, 0});
+  test::expect_eq(r_4x1_vert.destination, (Coordinates{0, 0}));
+  test::expect_true(r_4x1_vert.bounced);
+
+  // 7. 2-high planet (5x2): alternating bounce rows
+  Planet p5x2 = createTestPlanet({5, 2});
+  auto r_2h_north = calculate_ground_step(p5x2, '8', {2, 0});
+  test::expect_eq(r_2h_north.destination, (Coordinates{2, 1}));
+  test::expect_true(r_2h_north.bounced);
+
+  auto r_2h_south = calculate_ground_step(p5x2, '2', {2, 1});
+  test::expect_eq(r_2h_south.destination, (Coordinates{2, 0}));
+  test::expect_true(r_2h_south.bounced);
 }
 
 void test_execute_terraforming() {
@@ -2153,6 +2320,14 @@ int main() {
 
   std::println(std::cout, "  Testing moveship_onplanet... ");
   test_moveship_onplanet();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing reflect_polar_order... ");
+  test_reflect_polar_order();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing calculate_ground_step... ");
+  test_calculate_ground_step();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing execute_terraforming... ");

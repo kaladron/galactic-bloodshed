@@ -32,6 +32,55 @@ export enum class GroundMovementError {
 export std::expected<char, GroundMovementError>
 get_ground_order(const Ship& ship, std::size_t index);
 
+/// \brief Result of a single ground vehicle movement step.
+export struct GroundStepResult {
+  Coordinates destination;
+  bool bounced{false};
+
+  constexpr bool operator==(const GroundStepResult&) const = default;
+};
+
+/// \brief Reflects a keypad movement direction vertically across a polar
+/// boundary.
+///
+/// Terraformer and ground vehicle movement sequences use standard numeric
+/// keypad directions: '1'-'3' (Southwest/South/Southeast), '4'/'6' (West/East),
+/// and '7'-'9' (Northwest/North/Northeast).
+///
+/// When a vehicle reaches the end of its order sequence and bounces off the
+/// North pole (y < 0) or South pole (y >= height), the game inverts its
+/// vertical direction so subsequent turns head back into playable territory
+/// rather than repeatedly colliding with the pole.
+///
+/// Inverts the vertical (Y) component while preserving lateral direction:
+/// - Southwest ('1') <-> Northwest ('7')
+/// - South ('2')     <-> North ('8')
+/// - Southeast ('3') <-> Northeast ('9')
+/// Non-polar keys ('4', '6') and control flags ('c', 's') remain unchanged.
+export constexpr char reflect_polar_order(char order) noexcept {
+  switch (order) {
+    case '1':
+      return '7';
+    case '2':
+      return '8';
+    case '3':
+      return '9';
+    case '7':
+      return '1';
+    case '8':
+      return '2';
+    case '9':
+      return '3';
+    default:
+      return order;
+  }
+}
+
+/// \brief Calculates destination coordinates and polar bounce status for a
+/// ground movement step.
+export GroundStepResult calculate_ground_step(const Planet& planet, char order,
+                                              Coordinates from) noexcept;
+
 export std::expected<Coordinates, GroundMovementError>
 advance_ground_vehicle(Ship& ship, const Planet& planet,
                        EntityManager& entity_manager);

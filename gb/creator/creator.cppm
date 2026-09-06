@@ -323,4 +323,98 @@ private:
                         UniverseGenerationResult& result);
 };
 
+export constexpr std::size_t num_race_attributes = 11;
+
+/// Itemized cost breakdown resulting from race point calculations.
+export struct RaceCostBreakdown {
+  std::array<double, num_race_attributes> attribute_costs{};
+  std::array<double, SectorType::SEC_WASTED + 1> sector_costs{};
+  int planet_cost{0};
+  int race_type_cost{0};
+  int sector_count_cost{0};
+  int total_cost{0};
+  int points_remaining{STARTING_POINTS};
+
+  [[nodiscard]] double adventurism() const noexcept {
+    return attribute_costs[0];
+  }
+  [[nodiscard]] double absorb() const noexcept {
+    return attribute_costs[1];
+  }
+  [[nodiscard]] double birthrate() const noexcept {
+    return attribute_costs[2];
+  }
+  [[nodiscard]] double collective_iq() const noexcept {
+    return attribute_costs[3];
+  }
+  [[nodiscard]] double fertilize() const noexcept {
+    return attribute_costs[4];
+  }
+  [[nodiscard]] double iq() const noexcept {
+    return attribute_costs[5];
+  }
+  [[nodiscard]] double fight() const noexcept {
+    return attribute_costs[6];
+  }
+  [[nodiscard]] double pods() const noexcept {
+    return attribute_costs[7];
+  }
+  [[nodiscard]] double mass() const noexcept {
+    return attribute_costs[8];
+  }
+  [[nodiscard]] double sexes() const noexcept {
+    return attribute_costs[9];
+  }
+  [[nodiscard]] double metabolism() const noexcept {
+    return attribute_costs[10];
+  }
+};
+
+/// Core calculation and validation engine for racegen.
+export class RacegenEngine {
+public:
+  RacegenEngine();
+
+  /// Creates a clean default enrollment specification.
+  [[nodiscard]] RaceEnrollmentSpec
+  create_default_spec(bool metamorph = false) const noexcept;
+
+  /// Computes the complete itemized cost and remaining points for an enrollment
+  /// spec.
+  [[nodiscard]] RaceCostBreakdown
+  calculate_cost(const RaceEnrollmentSpec& spec) const noexcept;
+
+  /// Validates an enrollment spec against game invariants and budget
+  /// constraints.
+  [[nodiscard]] std::vector<std::string>
+  validate(const RaceEnrollmentSpec& spec, bool is_player = true,
+           bool rigorous = false) const;
+
+  /// Returns whether an enrollment spec satisfies all validation invariants.
+  [[nodiscard]] bool is_valid(const RaceEnrollmentSpec& spec,
+                              bool is_player = true,
+                              bool rigorous = false) const {
+    return validate(spec, is_player, rigorous).empty();
+  }
+
+private:
+  struct AttributeParam {
+    double e_factor{0.0};
+    double e_fudge{0.0};
+    double e_hinge{0.0};
+    double l_factor{0.0};
+    double l_fudge{0.0};
+    double minimum{0.0};
+    double init{0.0};
+    double maximum{0.0};
+    int is_integral{0};  // 0 = float, 1 = int, 2 = bool
+  };
+
+  std::array<AttributeParam, num_race_attributes> base_attr_{};
+  std::array<std::array<double, num_race_attributes>, num_race_attributes>
+      normal_cov_{};
+  std::array<std::array<double, num_race_attributes>, num_race_attributes>
+      morph_cov_{};
+};
+
 }  // namespace GB::creator

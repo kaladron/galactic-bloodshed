@@ -468,6 +468,33 @@ int main() {
     test::expect_true(info.stockpile().empty());
   }
 
+  // Test 20: Planet system_coordinates and absolute_coordinates
+  {
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    planet.xpos() = -120.0;
+    planet.ypos() = 250.0;
+    test::expect_eq(planet.system_coordinates(),
+                    SystemCoordinates(-120.0, 250.0));
+
+    planet.set_system_coordinates(SystemCoordinates(100.0, -200.0));
+    test::expect_eq(planet.xpos(), 100.0);
+    test::expect_eq(planet.ypos(), -200.0);
+    test::expect_eq(planet.system_coordinates(),
+                    SystemCoordinates(100.0, -200.0));
+
+    star_struct sdata{};
+    sdata.xpos = 5000.0;
+    sdata.ypos = 10000.0;
+    Star star(sdata);
+
+    UniverseCoordinates abs_via_star = planet.absolute_coordinates(star);
+    test::expect_eq(abs_via_star, UniverseCoordinates(5100.0, 9800.0));
+
+    UniverseCoordinates abs_via_coords =
+        planet.absolute_coordinates(star.coordinates());
+    test::expect_eq(abs_via_coords, UniverseCoordinates(5100.0, 9800.0));
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

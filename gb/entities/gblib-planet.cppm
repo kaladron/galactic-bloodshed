@@ -14,6 +14,7 @@ import std;
 
 // Forward declaration to avoid circular dependency with :services
 export class EntityManager;
+export class Star;
 
 /// Set of commodities selected for loading or unloading on a shipping route.
 export struct CommodityManifest {
@@ -241,6 +242,30 @@ public:
   double& ypos() {
     return data_.ypos;
   }
+
+  /// \brief Returns continuous in-system coordinates relative to the host star
+  /// (+/- SYSTEMSIZE = 2,000).
+  [[nodiscard]] constexpr SystemCoordinates
+  system_coordinates() const noexcept {
+    return {data_.xpos, data_.ypos};
+  }
+
+  /// \brief Sets continuous in-system coordinates relative to the host star.
+  constexpr void set_system_coordinates(SystemCoordinates coords) noexcept {
+    data_.xpos = coords.x;
+    data_.ypos = coords.y;
+  }
+
+  /// \brief Computes absolute galactic position given host star universe
+  /// coordinates.
+  [[nodiscard]] constexpr UniverseCoordinates
+  absolute_coordinates(UniverseCoordinates star_coords) const noexcept {
+    return star_coords + system_coordinates();
+  }
+
+  /// \brief Computes absolute galactic position given the host star entity.
+  [[nodiscard]] UniverseCoordinates
+  absolute_coordinates(const Star& star) const noexcept;
 
   [[nodiscard]] shipnum_t ships() const {
     return data_.ships;

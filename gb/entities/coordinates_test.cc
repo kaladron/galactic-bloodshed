@@ -329,6 +329,58 @@ int main() {
                                  SystemCoordinates>);
   }
 
+  // --- Entity continuous coordinates tests ---
+  std::println(std::cout, "--- Testing Entity Continuous Coordinates ---");
+  {
+    // Star continuous coordinates
+    star_struct sdata{};
+    sdata.xpos = 1200.0;
+    sdata.ypos = -3400.0;
+    Star star(sdata);
+    test::expect_eq(star.coordinates(), UniverseCoordinates(1200.0, -3400.0));
+    star.set_coordinates(UniverseCoordinates(2500.0, 5000.0));
+    expect_near(star.xpos(), 2500.0);
+    expect_near(star.ypos(), 5000.0);
+    test::expect_eq(star.coordinates(), UniverseCoordinates(2500.0, 5000.0));
+
+    // Planet in-system and absolute coordinates
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    planet.xpos() = 150.0;
+    planet.ypos() = -200.0;
+    test::expect_eq(planet.system_coordinates(),
+                    SystemCoordinates(150.0, -200.0));
+    planet.set_system_coordinates(SystemCoordinates(300.0, 400.0));
+    expect_near(planet.xpos(), 300.0);
+    expect_near(planet.ypos(), 400.0);
+    test::expect_eq(planet.system_coordinates(),
+                    SystemCoordinates(300.0, 400.0));
+
+    // Absolute coordinates via Star reference and UniverseCoordinates overload
+    UniverseCoordinates expected_abs =
+        star.coordinates() + planet.system_coordinates();
+    test::expect_eq(planet.absolute_coordinates(star), expected_abs);
+    test::expect_eq(planet.absolute_coordinates(star.coordinates()),
+                    expected_abs);
+    expect_near(planet.absolute_coordinates(star).x, 2800.0);
+    expect_near(planet.absolute_coordinates(star).y, 5400.0);
+
+    // Ship continuous coordinates
+    ship_struct sh_data{};
+    sh_data.xpos = 2803.0;
+    sh_data.ypos = 5404.0;
+    Ship sh(sh_data);
+    test::expect_eq(sh.coordinates(), UniverseCoordinates(2803.0, 5404.0));
+    sh.set_coordinates(UniverseCoordinates(3000.0, 6000.0));
+    expect_near(sh.xpos(), 3000.0);
+    expect_near(sh.ypos(), 6000.0);
+    test::expect_eq(sh.coordinates(), UniverseCoordinates(3000.0, 6000.0));
+
+    // Proximity / distance calculations across entities
+    sh.set_coordinates(UniverseCoordinates(2803.0, 5404.0));
+    expect_near(sh.coordinates().distance_to(planet.absolute_coordinates(star)),
+                5.0);
+  }
+
   std::println(std::cout, "✓ All Coordinates & API Integration tests passed!");
   return 0;
 }

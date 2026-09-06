@@ -130,6 +130,14 @@ public:
     return star_struct.ypos;
   }
 
+  [[nodiscard]] constexpr UniverseCoordinates coordinates() const noexcept {
+    return {star_struct.xpos, star_struct.ypos};
+  }
+  constexpr void set_coordinates(UniverseCoordinates coords) noexcept {
+    star_struct.xpos = coords.x;
+    star_struct.ypos = coords.y;
+  }
+
   // Action points (1-indexed via PlayerVector)
   ap_t& AP(player_t playernum) {
     return star_struct.AP[playernum];

@@ -516,6 +516,19 @@ void test_active_gun_battery_and_formatting() {
   test::expect_eq(retal_strength(ship), 0);  // offline weapons
 }
 
+void test_ship_continuous_coordinates() {
+  ship_struct sdata{};
+  sdata.xpos = -450.0;
+  sdata.ypos = 1200.0;
+  Ship ship{sdata};
+
+  test::expect_eq(ship.coordinates(), UniverseCoordinates(-450.0, 1200.0));
+  ship.set_coordinates(UniverseCoordinates(300.0, -800.0));
+  expect_near(ship.xpos(), 300.0);
+  expect_near(ship.ypos(), -800.0);
+  test::expect_eq(ship.coordinates(), UniverseCoordinates(300.0, -800.0));
+}
+
 }  // namespace
 
 int main() {
@@ -532,6 +545,7 @@ int main() {
   test_gun_caliber_domain();
   test_gun_battery_invariants_and_operations();
   test_active_gun_battery_and_formatting();
+  test_ship_continuous_coordinates();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

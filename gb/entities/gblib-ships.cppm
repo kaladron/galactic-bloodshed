@@ -11,6 +11,7 @@ import std;
 import :gameobj;
 import :planet;
 import :sector;
+import :types;
 import :tweakables;
 import :turnstats;
 
@@ -2149,6 +2150,17 @@ public:
   }
   double& ypos() {
     return data_.ypos;
+  }
+
+  /// \brief Returns continuous position in universe coordinates.
+  [[nodiscard]] constexpr UniverseCoordinates coordinates() const noexcept {
+    return {data_.xpos, data_.ypos};
+  }
+
+  /// \brief Sets continuous position in universe coordinates.
+  constexpr void set_coordinates(UniverseCoordinates coords) noexcept {
+    data_.xpos = coords.x;
+    data_.ypos = coords.y;
   }
 
   // Resources

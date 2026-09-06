@@ -291,6 +291,21 @@ int main() {
     std::println(std::cout, "  ✓ get_random_planet_index verified (bounds)");
   }
 
+  // coordinates tests
+  std::println(std::cout, "Star coordinates tests...");
+  {
+    star_struct s{};
+    s.xpos = 450.0;
+    s.ypos = -850.0;
+    Star star(s);
+    test::expect_eq(star.coordinates(), UniverseCoordinates(450.0, -850.0));
+    star.set_coordinates(UniverseCoordinates(-100.0, 200.0));
+    test::expect_eq(star.xpos(), -100.0);
+    test::expect_eq(star.ypos(), 200.0);
+    test::expect_eq(star.coordinates(), UniverseCoordinates(-100.0, 200.0));
+    std::println(std::cout, "  ✓ coordinates() and set_coordinates() verified");
+  }
+
   std::println(std::cout, "\n✓ All Star class tests passed!");
   return 0;
 }

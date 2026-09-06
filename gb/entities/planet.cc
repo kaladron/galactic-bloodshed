@@ -188,3 +188,8 @@ void plinfo::update_combat_readiness(long total_mob_points) noexcept {
   }
   guns = static_cast<std::uint32_t>(planet_guns(mob_points));
 }
+
+UniverseCoordinates
+Planet::absolute_coordinates(const Star& star) const noexcept {
+  return star.coordinates() + system_coordinates();
+}

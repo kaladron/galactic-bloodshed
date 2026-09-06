@@ -132,13 +132,15 @@ int main() {
 
     // Test search from Star 0: Closest is Star 1 (dist 10), second closest is
     // Star 2 (dist 25)
-    auto res0 = find_closest_stars(em, starnum_t{0}, 0.0, 0.0);
+    auto res0 =
+        find_closest_stars(em, starnum_t{0}, UniverseCoordinates{0.0, 0.0});
     test::expect_eq(res0.closest, starnum_t{1});
     test::expect_eq(res0.second_closest, starnum_t{2});
 
     // Test search from Star 1: Closest is Star 0 (dist 10), second closest is
     // Star 2 (dist 15)
-    auto res1 = find_closest_stars(em, starnum_t{1}, 10.0, 0.0);
+    auto res1 =
+        find_closest_stars(em, starnum_t{1}, UniverseCoordinates{10.0, 0.0});
     test::expect_eq(res1.closest, starnum_t{0});
     test::expect_eq(res1.second_closest, starnum_t{2});
 
@@ -594,10 +596,14 @@ int main() {
     test::expect_false(try_launch_unassigned_vn(em, *vn));
 
     // Idle machine with full fuel launches
-    vn->fuel() = 100.0;
+    vn->set_fuel(100.0);
     test::expect_true(try_launch_unassigned_vn(em, *vn));
     test::expect_false(vn->is_landed());
     test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_UNIV);
+    const auto& host_star = *em.peek_star(vn->storbits());
+    const auto& host_planet = *em.peek_planet(vn->storbits(), vn->pnumorbits());
+    test::expect_true(vn->coordinates().distance_to(
+                          host_planet.absolute_coordinates(host_star)) <= 15.0);
 
     std::println(
         std::cout,
@@ -661,6 +667,9 @@ int main() {
     test::expect_true(vn->is_landed());
     test::expect_true(vn->is_busy());
     test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_PLAN);
+    const auto& landing_star = *em.peek_star(vn->storbits());
+    test::expect_eq(vn->coordinates(),
+                    rocky_planet.absolute_coordinates(landing_star));
 
     std::println(
         std::cout,

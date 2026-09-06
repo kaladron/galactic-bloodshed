@@ -33,6 +33,13 @@ double double_rand() {
   return dist(get_rng());
 }
 
+/* double double_rand(low, hi) - returns a random double between low and hi */
+double double_rand(double low, double high) {
+  if (high <= low) return low;
+  std::uniform_real_distribution<double> dist(low, high);
+  return dist(get_rng());
+}
+
 /* int int_rand(low,hi) - this returns an integer random number
  * between hi and low, inclusive. */
 long long_rand(long low, long hi) {

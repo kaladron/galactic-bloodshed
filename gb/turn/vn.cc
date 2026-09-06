@@ -18,12 +18,11 @@ module gblib;
 /// \param em Entity manager for accessing star and universe entities.
 /// \param current_star Star system currently orbited (which will be excluded
 /// from results).
-/// \param xpos X coordinate in universe space.
-/// \param ypos Y coordinate in universe space.
+/// \param origin Position in universe space.
 /// \return StarTargetResult containing the closest and second-closest
 /// starnum_t.
 StarTargetResult find_closest_stars(EntityManager& em, starnum_t current_star,
-                                    double xpos, double ypos) {
+                                    UniverseCoordinates origin) {
   const auto& universe = *em.peek_universe();
   if (universe.numstars <= 1) {
     return StarTargetResult{.closest = current_star,
@@ -42,7 +41,7 @@ StarTargetResult find_closest_stars(EntityManager& em, starnum_t current_star,
       continue;
     }
 
-    const double d = std::hypot(star.xpos() - xpos, star.ypos() - ypos);
+    const double d = star.coordinates().distance_to(origin);
 
     // If closer than the closest star, push the previous closest down to
     // second-closest.
@@ -114,7 +113,7 @@ void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
   const auto& universe = *em.peek_universe();
 
   auto [closest, second_closest] =
-      find_closest_stars(em, ship.storbits(), ship.xpos(), ship.ypos());
+      find_closest_stars(em, ship.storbits(), ship.coordinates());
 
   const auto& star_min = *em.peek_star(closest);
   const auto& star_min2 = *em.peek_star(second_closest);
@@ -256,16 +255,17 @@ bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
   if (ship.is_busy()) {
     return false;
   }
-  if (ship.fuel() < ship.max_fuel_capacity()) {
+  if (!ship.is_fully_fueled()) {
     return false;
   }
 
   const auto& star = *em.peek_star(ship.storbits());
   const auto& planet = *em.peek_planet(ship.storbits(), ship.pnumorbits());
-  const double offset_x = int_rand(-10, 10);
-  const double offset_y = int_rand(-10, 10);
-  ship.xpos() = star.xpos() + planet.xpos() + offset_x;
-  ship.ypos() = star.ypos() + planet.ypos() + offset_y;
+  // Disperse newly launched probes within a +/-10.0 unit orbital departure box
+  // so multiple machines do not stack identically at the planet's center.
+  const SystemCoordinates launch_offset{double_rand(-10.0, 10.0),
+                                        double_rand(-10.0, 10.0)};
+  ship.set_coordinates(planet.absolute_coordinates(star) + launch_offset);
   ship.docked() = 0;
   ship.whatdest() = ScopeLevel::LEVEL_UNIV;
   return true;
@@ -523,8 +523,7 @@ bool attempt_planet_landing(EntityManager& em, AutonomousShip& ship,
     ship.deststar() = ship.storbits();
     ship.destpnum() = ship.pnumorbits();
     const auto& star = *em.peek_star(ship.storbits());
-    ship.xpos() = star.xpos() + planet.xpos();
-    ship.ypos() = star.ypos() + planet.ypos();
+    ship.set_coordinates(planet.absolute_coordinates(star));
     ship.set_land_coords(sect.coords());
     ship.set_busy(true);
     return true;

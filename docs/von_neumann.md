@@ -117,6 +117,7 @@ Autonomous machines navigate the galaxy through sequential behavioral stages:
 
 1. **Deep Space Launch**:
    - Once a probe has accumulated full fuel tanks and completed surface extraction, it launches from the planetary surface into deep space.
+   - **Departure Dispersion**: Probes do not spawn directly at the planet's geometric center. Instead, an orbital departure offset $(\Delta x, \Delta y) \in [-10.0, 10.0] \times [-10.0, 10.0]$ is applied relative to the planet's absolute galactic position, preventing multiple newly launched machines from stacking identically in open space.
 2. **Target Star Selection**:
    - **Peaceful Probes**: Scan neighboring star systems within operational range, prioritizing uninhabited systems with terrestrial worlds while avoiding gas giant systems.
    - **Berserkers**: Scan the galaxy specifically for star systems colonized by their designated target enemy.

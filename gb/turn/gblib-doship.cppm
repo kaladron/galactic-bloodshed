@@ -8,6 +8,7 @@ export module gblib:doship;
 import :gameobj;
 import :ships;
 import :star;
+import :types;
 import :turnstats;
 
 export void doship(Ship&, bool update, EntityManager&, TurnStats& stats);
@@ -126,8 +127,8 @@ export struct StarTargetResult {
 /// \brief Finds the closest and second-closest star systems to the given
 /// coordinates, excluding the current star system.
 export StarTargetResult find_closest_stars(EntityManager& em,
-                                           starnum_t current_star, double xpos,
-                                           double ypos);
+                                           starnum_t current_star,
+                                           UniverseCoordinates origin);
 
 /// \brief Assigns destination orders to an autonomous berserker ship.
 export void select_berserker_destination(EntityManager& em,

@@ -8,6 +8,7 @@ export void seed_rand(unsigned int seed);
 export bool success(int x);
 export bool bool_rand(double p = 0.5);
 export double double_rand();
+export double double_rand(double low, double high);
 export int int_rand(int low, int high);
 export long long_rand(long low, long high);
 export std::mt19937& game_rng();

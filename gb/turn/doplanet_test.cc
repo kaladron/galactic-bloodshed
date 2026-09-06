@@ -29,8 +29,8 @@ Race createTestRace(player_t playernum = player_t{1}) {
   return race;
 }
 
-Planet createTestPlanet() {
-  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+Planet createTestPlanet(Coordinates dimensions = Coordinates{10, 10}) {
+  Planet planet(PlanetType::EARTH, dimensions);
   planet.slaved_to() = 0;
   planet.conditions(TOXIC) = 0;
   planet.conditions(RTEMP) = 50;
@@ -1419,11 +1419,9 @@ void test_format_recovery_report() {
 }
 
 void test_planet_exploration_context() {
-  PlanetExplorationContext ctx(Coordinates{5, 3});
-  test::expect_eq(ctx.dimensions().x, 5);
-  test::expect_eq(ctx.dimensions().y, 3);
-  test::expect_eq(ctx.maxx(), 5);
-  test::expect_eq(ctx.maxy(), 3);
+  Planet planet = createTestPlanet({5, 3});
+  PlanetExplorationContext ctx(planet);
+  test::expect_eq(ctx.dimensions(), (Coordinates{5, 3}));
 
   // Initially all sectors are unexplored (0)
   test::expect_false(ctx.all_explored());
@@ -1443,15 +1441,19 @@ void test_planet_exploration_context() {
   test::expect_false(ctx.all_explored());
   test::expect_false(ctx.all_explored(player_t{1}));
 
-  // explore_sector on an already-explored sector propagates to 4 neighbors:
-  // (2, 1) -> (1, 1), (3, 1), (2, 0), (2, 2)
+  // explore_sector on an already-explored sector propagates to adjacent
+  // neighbors:
   Sector s_at_2_1{};
   s_at_2_1.set_coords(Coordinates{2, 1});
-  ctx.explore_sector(s_at_2_1, player_t{1});
+  ctx.explore_sector(planet, s_at_2_1, player_t{1});
   test::expect_true(ctx.is_explored(Coordinates{1, 1}, player_t{1}));
   test::expect_true(ctx.is_explored(Coordinates{3, 1}, player_t{1}));
   test::expect_true(ctx.is_explored(Coordinates{2, 0}, player_t{1}));
   test::expect_true(ctx.is_explored(Coordinates{2, 2}, player_t{1}));
+  test::expect_true(ctx.is_explored(Coordinates{1, 0}, player_t{1}));
+  test::expect_true(ctx.is_explored(Coordinates{3, 0}, player_t{1}));
+  test::expect_true(ctx.is_explored(Coordinates{1, 2}, player_t{1}));
+  test::expect_true(ctx.is_explored(Coordinates{3, 2}, player_t{1}));
 
   // Toroidal boundary propagation in X:
   // Set (0, 0) explored, then propagate for player 2 wrapping left to (4, 0)
@@ -1459,7 +1461,7 @@ void test_planet_exploration_context() {
   ctx.set_explored(Coordinates{0, 0}, player_t{2});
   Sector s_at_0_0{};
   s_at_0_0.set_coords(Coordinates{0, 0});
-  ctx.explore_sector(s_at_0_0, player_t{2});
+  ctx.explore_sector(planet, s_at_0_0, player_t{2});
   test::expect_true(ctx.is_explored(Coordinates{4, 0}, player_t{2}));
   test::expect_true(ctx.is_explored(Coordinates{1, 0}, player_t{2}));
   test::expect_true(ctx.is_explored(Coordinates{0, 1}, player_t{2}));
@@ -1469,7 +1471,7 @@ void test_planet_exploration_context() {
   s_owned.set_coords(Coordinates{4, 2});
   s_owned.set_owner(3);
   test::expect_false(ctx.is_explored(Coordinates{4, 2}, player_t{3}));
-  ctx.explore_sector(s_owned, player_t{3});
+  ctx.explore_sector(planet, s_owned, player_t{3});
   test::expect_true(ctx.is_explored(Coordinates{4, 2}, player_t{3}));
 
   // Filling all remaining cells for player 1 makes all_explored(p1) true
@@ -1479,6 +1481,95 @@ void test_planet_exploration_context() {
     }
   }
   test::expect_true(ctx.all_explored(player_t{1}));
+}
+
+void test_planet_exploration_spatial_edge_cases() {
+  // 1. 1x1 grid: degenerate single-sector planet
+  Planet p1x1 = createTestPlanet({1, 1});
+  PlanetExplorationContext ctx1x1(p1x1);
+  test::expect_eq(ctx1x1.dimensions(), (Coordinates{1, 1}));
+  test::expect_false(ctx1x1.all_explored(player_t{1}));
+
+  Sector s1x1{};
+  s1x1.set_coords({0, 0});
+  s1x1.set_owner(1);
+  ctx1x1.explore_sector(p1x1, s1x1, player_t{1});
+  test::expect_true(ctx1x1.is_explored({0, 0}, player_t{1}));
+  test::expect_true(ctx1x1.all_explored(player_t{1}));
+  // Re-exploration on 1x1 keeps {0, 0} explored safely
+  ctx1x1.explore_sector(p1x1, s1x1, player_t{1});
+  test::expect_true(ctx1x1.is_explored({0, 0}, player_t{1}));
+
+  // 2. 1xN grid (1x4): vertical column with polar boundaries
+  Planet p1x4 = createTestPlanet({1, 4});
+  PlanetExplorationContext ctx1x4(p1x4);
+  Sector s_north{};
+  s_north.set_coords({0, 0});
+  ctx1x4.set_explored({0, 0}, player_t{1});
+  ctx1x4.explore_sector(p1x4, s_north, player_t{1});
+  // North pole only propagates south to (0, 1), wrapping in X stays at x=0
+  test::expect_true(ctx1x4.is_explored({0, 1}, player_t{1}));
+  test::expect_false(ctx1x4.is_explored({0, 2}, player_t{1}));
+  test::expect_false(ctx1x4.is_explored({0, 3}, player_t{1}));
+
+  Sector s_south{};
+  s_south.set_coords({0, 3});
+  ctx1x4.set_explored({0, 3}, player_t{2});
+  ctx1x4.explore_sector(p1x4, s_south, player_t{2});
+  // South pole only propagates north to (0, 2)
+  test::expect_true(ctx1x4.is_explored({0, 2}, player_t{2}));
+  test::expect_false(ctx1x4.is_explored({0, 1}, player_t{2}));
+  test::expect_false(ctx1x4.is_explored({0, 0}, player_t{2}));
+
+  // 3. Nx1 grid (4x1): horizontal ring with toroidal wrapping and no vertical
+  // neighbors
+  Planet p4x1 = createTestPlanet({4, 1});
+  PlanetExplorationContext ctx4x1(p4x1);
+  Sector s_ring{};
+  s_ring.set_coords({0, 0});
+  ctx4x1.set_explored({0, 0}, player_t{1});
+  ctx4x1.explore_sector(p4x1, s_ring, player_t{1});
+  // Toroidal wrap left to (3, 0) and right to (1, 0)
+  test::expect_true(ctx4x1.is_explored({3, 0}, player_t{1}));
+  test::expect_true(ctx4x1.is_explored({1, 0}, player_t{1}));
+  test::expect_false(ctx4x1.is_explored({2, 0}, player_t{1}));
+
+  // 4. Polar borders on general grid: north pole and south pole bounds
+  Planet p5x5 = createTestPlanet({5, 5});
+  PlanetExplorationContext ctx5x5(p5x5);
+  Sector s_np{};
+  s_np.set_coords({2, 0});
+  ctx5x5.set_explored({2, 0}, player_t{1});
+  ctx5x5.explore_sector(p5x5, s_np, player_t{1});
+  for (int x = 0; x < 5; ++x) {
+    // Cannot leak beyond north pole (y < 0)
+    test::expect_false(ctx5x5.in_bounds({x, -1}));
+  }
+
+  Sector s_sp{};
+  s_sp.set_coords({2, 4});
+  ctx5x5.set_explored({2, 4}, player_t{1});
+  ctx5x5.explore_sector(p5x5, s_sp, player_t{1});
+  for (int x = 0; x < 5; ++x) {
+    // Cannot leak beyond south pole (y >= 5)
+    test::expect_false(ctx5x5.in_bounds({x, 5}));
+  }
+
+  // 5. Multi-player independent bitmaps
+  Planet p_multi = createTestPlanet({3, 3});
+  PlanetExplorationContext ctx_multi(p_multi);
+  ctx_multi.set_explored({1, 1}, player_t{1});
+  ctx_multi.set_explored({1, 1}, player_t{2});
+  test::expect_true(ctx_multi.is_explored({1, 1}));
+  test::expect_true(ctx_multi.is_explored({1, 1}, player_t{1}));
+  test::expect_true(ctx_multi.is_explored({1, 1}, player_t{2}));
+  test::expect_false(ctx_multi.is_explored({1, 1}, player_t{3}));
+
+  ctx_multi.clear_explored({1, 1}, player_t{1});
+  test::expect_false(ctx_multi.is_explored({1, 1}, player_t{1}));
+  test::expect_true(ctx_multi.is_explored({1, 1}, player_t{2}));
+  test::expect_true(
+      ctx_multi.is_explored({1, 1}));  // still explored by player 2
 }
 
 void test_process_island_exploration() {
@@ -2126,6 +2217,11 @@ int main() {
 
   std::println(std::cout, "  Testing PlanetExplorationContext... ");
   test_planet_exploration_context();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout,
+               "  Testing PlanetExplorationContext spatial edge cases... ");
+  test_planet_exploration_spatial_edge_cases();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing process_island_exploration... ");

@@ -196,80 +196,28 @@ export void do_recover(EntityManager& entity_manager, const Star& star,
 /// processing, replacing static TurnStats.Sectinfo arrays.
 export class PlanetExplorationContext {
 public:
-  explicit PlanetExplorationContext(Coordinates dimensions)
-      : dimensions_(dimensions),
-        explored_(static_cast<std::size_t>(dimensions.x) *
-                  static_cast<std::size_t>(dimensions.y)) {}
-
-  explicit PlanetExplorationContext(const Planet& planet)
-      : PlanetExplorationContext(planet.dimensions()) {}
+  explicit PlanetExplorationContext(Coordinates dimensions);
+  explicit PlanetExplorationContext(const Planet& planet);
 
   [[nodiscard]] Coordinates dimensions() const noexcept {
     return dimensions_;
   }
-  [[nodiscard]] int maxx() const noexcept {
-    return dimensions_.x;
-  }
-  [[nodiscard]] int maxy() const noexcept {
-    return dimensions_.y;
-  }
 
-  [[nodiscard]] bool in_bounds(Coordinates c) const noexcept {
-    return c.x >= 0 && c.y >= 0 && c.x < dimensions_.x && c.y < dimensions_.y;
-  }
+  [[nodiscard]] bool in_bounds(Coordinates c) const noexcept;
+  [[nodiscard]] bool is_explored(Coordinates c, player_t player) const;
+  [[nodiscard]] bool is_explored(Coordinates c) const;
 
-  [[nodiscard]] bool is_explored(Coordinates c, player_t player) const {
-    return explored_[index(c)].test(player.value);
-  }
+  void set_explored(Coordinates c, player_t player);
+  void clear_explored(Coordinates c, player_t player);
 
-  [[nodiscard]] bool is_explored(Coordinates c) const {
-    return explored_[index(c)].any();
-  }
-
-  void set_explored(Coordinates c, player_t player) {
-    explored_[index(c)].set(player.value);
-  }
-
-  void clear_explored(Coordinates c, player_t player) {
-    explored_[index(c)].reset(player.value);
-  }
-
-  [[nodiscard]] bool all_explored(player_t player) const {
-    return std::ranges::all_of(explored_, [player](const auto& bitset) {
-      return bitset.test(player.value);
-    });
-  }
-
-  [[nodiscard]] bool all_explored() const {
-    return std::ranges::all_of(explored_,
-                               [](const auto& bitset) { return bitset.any(); });
-  }
+  [[nodiscard]] bool all_explored(player_t player) const;
+  [[nodiscard]] bool all_explored() const;
 
   /// \brief Explores sectors surrounding sectors currently explored for player
-  /// `p`. If `s.coords()` is already explored by `p`, marks adjacent 4-way
-  /// neighbors as explored by `p`. If `s.coords()` is not explored by `p`, but
-  /// owned by `p`, marks `s.coords()` as explored by `p`.
-  void explore_sector(const Sector& s, player_t p) {
-    const Coordinates c = s.coords();
-    if (is_explored(c, p)) {
-      const int left_x = (c.x > 0) ? (c.x - 1) : (dimensions_.x - 1);
-      const int right_x = (c.x + 1 < dimensions_.x) ? (c.x + 1) : 0;
-      set_explored(Coordinates{left_x, c.y}, p);
-      set_explored(Coordinates{right_x, c.y}, p);
-      if (c.y == 0) {
-        if (dimensions_.y > 1) {
-          set_explored(Coordinates{c.x, 1}, p);
-        }
-      } else if (c.y == dimensions_.y - 1) {
-        set_explored(Coordinates{c.x, c.y - 1}, p);
-      } else {
-        set_explored(Coordinates{c.x, c.y - 1}, p);
-        set_explored(Coordinates{c.x, c.y + 1}, p);
-      }
-    } else if (s.get_owner() == p) {
-      set_explored(c, p);
-    }
-  }
+  /// `p`. If `s.coords()` is already explored by `p`, marks adjacent neighbors
+  /// as explored by `p`. If `s.coords()` is not explored by `p`, but owned by
+  /// `p`, marks `s.coords()` as explored by `p`.
+  void explore_sector(const Planet& planet, const Sector& s, player_t p);
 
 private:
   [[nodiscard]] std::size_t index(Coordinates c) const noexcept {

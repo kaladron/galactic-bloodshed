@@ -359,10 +359,10 @@ add_executable(makeuniv creator/makeplanet.cc creator/makestar.cc
 target_link_libraries(makeuniv PRIVATE gblib gb_entities gb_services gb_repositories dallib SQLite::SQLite3 glaze::glaze)
 
 add_executable(enrol creator/enrol.cc)
-target_link_libraries(enrol PRIVATE gblib gb_entities gb_services dallib SQLite::SQLite3 glaze::glaze scnlib_module)
+target_link_libraries(enrol PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze scnlib_module)
 
 add_executable(racegen creator/GB_racegen.cc creator/enroll.cc creator/racegen.cc)
-target_link_libraries(racegen PRIVATE gblib gb_entities gb_services dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(racegen PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
 
 add_executable(GB server/GB_server.cc)
 target_link_libraries(GB PRIVATE gblib gb_entities gb_services gb_server commands asio_module dallib SQLite::SQLite3 glaze::glaze)
@@ -425,7 +425,7 @@ gb_add_test(doship_test SOURCES turn/doship_test.cc)
 gb_add_test(doturn_test SOURCES turn/doturn_test.cc)
 gb_add_test(dump_test SOURCES commands/dump_test.cc)
 gb_add_test(emulate_test SOURCES commands/emulate_test.cc)
-gb_add_test(enroll_test SOURCES creator/enroll_test.cc creator/GB_racegen.cc EXTRA_LIBS scnlib_module)
+gb_add_test(enroll_test SOURCES creator/enroll_test.cc creator/GB_racegen.cc EXTRA_LIBS gb_creator scnlib_module)
 gb_add_test(enrollment_test SOURCES creator/enrollment_test.cc EXTRA_LIBS gb_creator)
 gb_add_test(enslave_test SOURCES commands/enslave_test.cc)
 gb_add_test(entity_lists_test SOURCES entities/entity_lists_test.cc)

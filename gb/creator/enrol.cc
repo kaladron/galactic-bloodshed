@@ -6,49 +6,161 @@
 import std;
 import gb.entities;
 import gb.services;
+import gb.creator;
 import dallib;
 import scnlib;
 #undef stdout
 
-#include "gb/creator/enroll.h"
-
 namespace GB::enrol {
 
-struct stype {
-  bool here;
-  int x, y;
-  int count;
+struct SectorTypeSummary {
+  bool present{false};
+  Coordinates coords{};
+  int count{0};
 };
 
-#define RACIAL_TYPES 10
+struct RaceArchetype {
+  bool is_metamorphic{false};
+  mass_t base_mass{0.125};
+  birthrate_t base_birthrate{0.5};
+  fighters_t base_fighters{5};
+  iq_t base_iq{150};
+  adventurism_t base_adventurism{0.7};
+  sexes_t min_sexes{2};
+  sexes_t max_sexes{4};
+  metabolism_t base_metabolism{1.5};
 
-/* racial types (10 racial types ) */
-static int Thing[RACIAL_TYPES] = {1, 1, 1, 0, 0, 0, 0, 0, 0, 0};
+  [[nodiscard]] mass_t sample_mass() const {
+    return base_mass + 0.001 * int_rand(-25, 25);
+  }
+  [[nodiscard]] birthrate_t sample_birthrate() const {
+    return base_birthrate + 0.01 * int_rand(-10, 10);
+  }
+  [[nodiscard]] fighters_t sample_fighters() const {
+    int val = static_cast<int>(base_fighters) + int_rand(-1, 1);
+    return static_cast<fighters_t>(std::max(0, val));
+  }
+  [[nodiscard]] iq_t sample_iq() const {
+    if (is_metamorphic) {
+      return 0;
+    }
+    return base_iq + int_rand(-10, 10);
+  }
+  [[nodiscard]] adventurism_t sample_adventurism() const {
+    return base_adventurism + 0.01 * int_rand(-10, 10);
+  }
+  [[nodiscard]] sexes_t sample_sexes() const {
+    int max_val =
+        int_rand(static_cast<int>(min_sexes), static_cast<int>(max_sexes));
+    return static_cast<sexes_t>(int_rand(static_cast<int>(min_sexes), max_val));
+  }
+  [[nodiscard]] metabolism_t sample_metabolism() const {
+    return base_metabolism + 0.01 * int_rand(-15, 15);
+  }
+};
 
-static double db_Mass[RACIAL_TYPES] = {.1,   .15,  .2,   .125, .125,
-                                       .125, .125, .125, .125, .125};
-static double db_Birthrate[RACIAL_TYPES] = {0.9, 0.85, 0.8, 0.5,  0.55,
-                                            0.6, 0.65, 0.7, 0.75, 0.8};
-static int db_Fighters[RACIAL_TYPES] = {9, 10, 11, 2, 3, 4, 5, 6, 7, 8};
-static int db_Intelligence[RACIAL_TYPES] = {0,   0,   0,   190, 180,
-                                            170, 160, 150, 140, 130};
-
-static double db_Adventurism[RACIAL_TYPES] = {0.89, 0.89, 0.89, .6,  .65,
-                                              .7,   .7,   .75,  .75, .8};
-
-static int Min_Sexes[RACIAL_TYPES] = {1, 1, 1, 2, 2, 2, 2, 2, 2, 2};
-static int Max_Sexes[RACIAL_TYPES] = {1, 1, 1, 2, 2, 4, 4, 4, 4, 4};
-static double db_Metabolism[RACIAL_TYPES] = {3.0,  2.7,  2.4, 1.0,  1.15,
-                                             1.30, 1.45, 1.6, 1.75, 1.9};
-
-#define RMass(x) (db_Mass[(x)] + .001 * (double)int_rand(-25, 25))
-#define Birthrate(x) (db_Birthrate[(x)] + .01 * (double)int_rand(-10, 10))
-#define Fighters(x) (db_Fighters[(x)] + int_rand(-1, 1))
-#define Intelligence(x) (db_Intelligence[(x)] + int_rand(-10, 10))
-#define Adventurism(x) (db_Adventurism[(x)] + 0.01 * (double)int_rand(-10, 10))
-#define Sexes(x)                                                               \
-  (int_rand(Min_Sexes[(x)], int_rand(Min_Sexes[(x)], Max_Sexes[(x)])))
-#define Metabolism(x) (db_Metabolism[(x)] + .01 * (double)int_rand(-15, 15))
+constexpr std::array<RaceArchetype, 10> race_archetypes = {{
+    // 1: Metamorphic predators
+    {.is_metamorphic = true,
+     .base_mass = 0.1,
+     .base_birthrate = 0.9,
+     .base_fighters = 9,
+     .base_iq = 0,
+     .base_adventurism = 0.89,
+     .min_sexes = 1,
+     .max_sexes = 1,
+     .base_metabolism = 3.0},
+    // 2: Metamorphic heavyweights
+    {.is_metamorphic = true,
+     .base_mass = 0.15,
+     .base_birthrate = 0.85,
+     .base_fighters = 10,
+     .base_iq = 0,
+     .base_adventurism = 0.89,
+     .min_sexes = 1,
+     .max_sexes = 1,
+     .base_metabolism = 2.7},
+    // 3: Metamorphic colossi
+    {.is_metamorphic = true,
+     .base_mass = 0.2,
+     .base_birthrate = 0.8,
+     .base_fighters = 11,
+     .base_iq = 0,
+     .base_adventurism = 0.89,
+     .min_sexes = 1,
+     .max_sexes = 1,
+     .base_metabolism = 2.4},
+    // 4: High intelligence, low combat
+    {.is_metamorphic = false,
+     .base_mass = 0.125,
+     .base_birthrate = 0.5,
+     .base_fighters = 2,
+     .base_iq = 190,
+     .base_adventurism = 0.6,
+     .min_sexes = 2,
+     .max_sexes = 2,
+     .base_metabolism = 1.0},
+    // 5
+    {.is_metamorphic = false,
+     .base_mass = 0.125,
+     .base_birthrate = 0.55,
+     .base_fighters = 3,
+     .base_iq = 180,
+     .base_adventurism = 0.65,
+     .min_sexes = 2,
+     .max_sexes = 2,
+     .base_metabolism = 1.15},
+    // 6
+    {.is_metamorphic = false,
+     .base_mass = 0.125,
+     .base_birthrate = 0.6,
+     .base_fighters = 4,
+     .base_iq = 170,
+     .base_adventurism = 0.7,
+     .min_sexes = 2,
+     .max_sexes = 4,
+     .base_metabolism = 1.30},
+    // 7
+    {.is_metamorphic = false,
+     .base_mass = 0.125,
+     .base_birthrate = 0.65,
+     .base_fighters = 5,
+     .base_iq = 160,
+     .base_adventurism = 0.7,
+     .min_sexes = 2,
+     .max_sexes = 4,
+     .base_metabolism = 1.45},
+    // 8
+    {.is_metamorphic = false,
+     .base_mass = 0.125,
+     .base_birthrate = 0.7,
+     .base_fighters = 6,
+     .base_iq = 150,
+     .base_adventurism = 0.75,
+     .min_sexes = 2,
+     .max_sexes = 4,
+     .base_metabolism = 1.6},
+    // 9
+    {.is_metamorphic = false,
+     .base_mass = 0.125,
+     .base_birthrate = 0.75,
+     .base_fighters = 7,
+     .base_iq = 140,
+     .base_adventurism = 0.75,
+     .min_sexes = 2,
+     .max_sexes = 4,
+     .base_metabolism = 1.75},
+    // 10: Balanced military
+    {.is_metamorphic = false,
+     .base_mass = 0.125,
+     .base_birthrate = 0.8,
+     .base_fighters = 8,
+     .base_iq = 130,
+     .base_adventurism = 0.8,
+     .min_sexes = 2,
+     .max_sexes = 4,
+     .base_metabolism = 1.9},
+}};
 
 }  // namespace GB::enrol
 
@@ -91,24 +203,19 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  int pnum = 0;
-  int star = 0;
+  planetnum_t pnum{0};
+  starnum_t star{0};
   bool found = false;
   player_t Playernum;
   PlanetType ppref;
-  int idx;
   char c;
-  struct stype secttypes[SectorType::SEC_WASTED + 1] = {};
-  unsigned char not_found[PlanetType::DESERT + 1] = {};  // Zero-initialized
+  std::array<SectorTypeSummary, SectorType::SEC_WASTED + 1> secttypes{};
+  std::set<PlanetType> exhausted_planet_types;
 
-  // Create Database and EntityManager for dependency injection
+  // Create Database, EntityManager, and EnrollmentService
   Database database{db_path};
   EntityManager entity_manager{database};
-
-  // Create JsonStore and repositories for new entity creation
-  JsonStore store{database};
-  RaceRepository races{store};
-  ShipRepository ships{store};
+  GB::creator::EnrollmentService service{entity_manager, database};
 
   if ((Playernum = player_t{entity_manager.num_races().value + 1}) >=
       player_t{MAXPLAYERS}) {
@@ -117,29 +224,28 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  std::print("Enter racial type to be created (1-{}):", RACIAL_TYPES);
+  std::print("Enter racial type to be created (1-{}):", race_archetypes.size());
   std::string input_line;
   std::getline(std::cin, input_line);
-  auto idx_result = scn::scan<int>(input_line, "{}");
+  auto idx_result = scn::scan<std::size_t>(input_line, "{}");
   if (!idx_result) {
     std::println(std::cerr, "Error: Cannot read input - {}",
                  idx_result.error().msg());
     return -1;
   }
-  idx = idx_result->value();
+  std::size_t chosen_idx = idx_result->value();
 
-  if (idx <= 0 || idx > RACIAL_TYPES) {
+  if (chosen_idx < 1 || chosen_idx > race_archetypes.size()) {
     std::println(std::cout, "Bad racial index.");
     return 1;
   }
-  idx = idx - 1;
+  std::size_t idx = chosen_idx - 1;
 
   const auto* universe_ptr = entity_manager.peek_universe();
   if (!universe_ptr) {
     std::println(std::cerr, "Error: Cannot load universe data");
     return -1;
   }
-  const auto& Sdata = *universe_ptr;
   std::println(std::cout, "There is still space for player {}.", Playernum);
 
   do {
@@ -176,15 +282,12 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    std::println(std::cout, "Looking for type {} planet...",
-                 static_cast<int>(ppref));
+    std::println(std::cout, "Looking for type {} planet...", ppref);
 
     /* find first planet of right type */
     found = false;
 
-    auto cand_stars = shuffled_indices(Sdata.numstars);
-    auto found_loc = find_suitable_enrol_planet(
-        entity_manager, Sdata.numstars, Playernum.value, ppref, cand_stars);
+    auto found_loc = service.find_suitable_planet(ppref);
     if (found_loc) {
       star = found_loc->first;
       pnum = found_loc->second;
@@ -193,12 +296,8 @@ int main(int argc, char* argv[]) {
 
     if (!found) {
       std::println(std::cout, "planet type not found in any free systems.");
-      not_found[ppref] = 1;
-      bool all_exhausted = true;
-      for (PlanetType pt : all_planet_types) {
-        all_exhausted &= (not_found[pt] != 0);
-      }
-      if (all_exhausted) {
+      exhausted_planet_types.insert(ppref);
+      if (exhausted_planet_types.size() >= all_planet_types.size()) {
         std::println(std::cout,
                      "Looks like there aren't any free planets left.  bye..");
         return -1;
@@ -208,92 +307,57 @@ int main(int argc, char* argv[]) {
 
   } while (!found);
 
-  Race race{};
-
   std::print("\n\tDeity/Guest/Normal (d/g/n) ?");
   std::string deity_line;
   std::getline(std::cin, deity_line);
   c = (!deity_line.empty()) ? deity_line[0] : '\0';
 
-  race.God = (c == 'd');
-  race.Guest = (c == 'g');
-  race.name = "Unknown";
+  bool is_god = (c == 'd');
+  bool is_guest = (c == 'g');
 
-  // TODO(jeffbailey): What initializes the rest of the governors?
-  race.governor[0].money = 0;
-  race.governor[0].homelevel = race.governor[0].deflevel =
-      ScopeLevel::LEVEL_PLAN;
-  race.governor[0].homesystem = race.governor[0].defsystem = star;
-  race.governor[0].homeplanetnum = race.governor[0].defplanetnum = pnum;
-  /* display options */
-  race.governor[0].toggle.highlight = Playernum;
-  race.governor[0].toggle.inverse = 1;
-  race.governor[0].toggle.color = 0;
-  race.governor[0].active = 1;
   std::print("Enter the password for this race:");
   std::string password_line;
   std::getline(std::cin, password_line);
-  race.password = password_line;
+  std::string race_password = password_line;
 
   std::print("Enter the password for this leader:");
   std::string gov_password_line;
   std::getline(std::cin, gov_password_line);
-  race.governor[0].password = gov_password_line;
-
-  /* make conditions preferred by your people set to (more or less)
-     those of the planet : higher the concentration of gas, the higher
-     percentage difference between planet and race (commented out) */
-  // Set race conditions based on chosen planet
-  const auto* cond_planet = entity_manager.peek_planet(star, pnum);
-  if (cond_planet) {
-    for (Conditions c_type : all_atmosphere_conditions) {
-      race.conditions[c_type] = cond_planet->conditions(c_type);
-    }
-  }
-  /*+ int_rand( round_rand(-planet->conditions[j]*2.0),
-   * round_rand(planet->conditions[j]*2.0) )*/
-
-  for (player_t p : all_players()) {
-    /* messages from autoreport, player #1 are decodable */
-    if (p == Playernum || Playernum == 1 || race.God) {
-      race.translate[p] = 100; /* you can talk to own race */
-    } else {
-      race.translate[p] = 1;
-    }
-  }
+  std::string gov_password = gov_password_line;
 
   /* assign racial characteristics */
-  race.discoveries = {};
-  race.tech = 0.0;
-  race.morale = 0;
-  race.turn = 0;
-  race.allied = 0;
-  race.atwar = 0;
-  char ok_char;
-  do {
-    race.mass = RMass(idx);
-    race.birthrate = Birthrate(idx);
-    race.fighters = Fighters(idx);
-    if (Thing[idx]) {
-      race.IQ = 0;
-      race.Metamorph = race.absorb = race.collective_iq = race.pods = true;
-    } else {
-      race.IQ = Intelligence(idx);
-      race.Metamorph = race.absorb = race.collective_iq = race.pods = false;
-    }
-    race.adventurism = Adventurism(idx);
-    race.number_sexes = Sexes(idx);
-    race.metabolism = Metabolism(idx);
+  const auto& archetype = race_archetypes[idx];
+  mass_t race_mass{};
+  birthrate_t race_birthrate{};
+  fighters_t race_fighters{};
+  iq_t race_iq{};
+  bool race_metamorph = archetype.is_metamorphic;
+  bool race_absorb = archetype.is_metamorphic;
+  bool race_collective_iq = archetype.is_metamorphic;
+  bool race_pods = archetype.is_metamorphic;
+  adventurism_t race_adventurism{};
+  sexes_t race_sexes{};
+  metabolism_t race_metabolism{};
 
-    std::println(std::cout, "{}", race.Metamorph ? "METAMORPHIC" : "");
-    std::println(std::cout, "       Birthrate: {:.3f}", race.birthrate);
-    std::println(std::cout, "Fighting ability: {}", race.fighters);
-    std::println(std::cout, "              IQ: {}", race.IQ);
-    std::println(std::cout, "      Metabolism: {:.2f}", race.metabolism);
-    std::println(std::cout, "     Adventurism: {:.2f}", race.adventurism);
-    std::println(std::cout, "            Mass: {:.2f}", race.mass);
+  char ok_char = '\0';
+  do {
+    race_mass = archetype.sample_mass();
+    race_birthrate = archetype.sample_birthrate();
+    race_fighters = archetype.sample_fighters();
+    race_iq = archetype.sample_iq();
+    race_adventurism = archetype.sample_adventurism();
+    race_sexes = archetype.sample_sexes();
+    race_metabolism = archetype.sample_metabolism();
+
+    std::println(std::cout, "{}", race_metamorph ? "METAMORPHIC" : "");
+    std::println(std::cout, "       Birthrate: {:.3f}", race_birthrate);
+    std::println(std::cout, "Fighting ability: {}", race_fighters);
+    std::println(std::cout, "              IQ: {}", race_iq);
+    std::println(std::cout, "      Metabolism: {:.2f}", race_metabolism);
+    std::println(std::cout, "     Adventurism: {:.2f}", race_adventurism);
+    std::println(std::cout, "            Mass: {:.2f}", race_mass);
     std::println(std::cout, " Number of sexes: {} (min req'd for colonization)",
-                 race.number_sexes);
+                 race_sexes);
 
     std::print("\n\nLook OK(y/n)?");
     std::string ok_line;
@@ -316,21 +380,19 @@ int main(int argc, char* argv[]) {
   entity_manager.with_sectormap(star, pnum, [&](const SectorMap& smap) {
     for (const Sector& sector : smap.shuffle()) {
       secttypes[sector.get_condition()].count++;
-      if (!secttypes[sector.get_condition()].here) {
-        secttypes[sector.get_condition()].here = true;
-        secttypes[sector.get_condition()].x = sector.get_x();
-        secttypes[sector.get_condition()].y = sector.get_y();
+      if (!secttypes[sector.get_condition()].present) {
+        secttypes[sector.get_condition()].present = true;
+        secttypes[sector.get_condition()].coords = sector.coords();
       }
     }
     // Temporarily show sectors during selection (no need to persist)
     for (SectorType st : all_sector_types) {
-      if (secttypes[st].here) {
-        std::println(std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", st,
-                     get_sector_char(
-                         smap.get(Coordinates{secttypes[st].x, secttypes[st].y})
-                             .get_condition()),
-                     secttypes[st].x, secttypes[st].y, Desnames[st],
-                     secttypes[st].count);
+      if (secttypes[st].present) {
+        std::println(
+            std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", st,
+            get_sector_char(smap.get(secttypes[st].coords).get_condition()),
+            secttypes[st].coords.x, secttypes[st].coords.y, Desnames[st],
+            secttypes[st].count);
       }
     }
   });
@@ -348,7 +410,7 @@ int main(int argc, char* argv[]) {
       return -1;
     }
     auto parsed = to_sector_type(choice_result->value());
-    if (!parsed || !secttypes[*parsed].here) {
+    if (!parsed || !secttypes[*parsed].present) {
       std::println(std::cout, "There are none of that type here..");
     } else {
       chosen_sector = *parsed;
@@ -356,10 +418,10 @@ int main(int argc, char* argv[]) {
     }
   } while (!sector_chosen);
 
-  race.likesbest = chosen_sector;
-  race.likes[chosen_sector] = 1.0;
-  race.likes[SectorType::SEC_PLATED] = 1.0;
-  race.likes[SectorType::SEC_WASTED] = 0.0;
+  std::array<double, SectorType::SEC_WASTED + 1> sector_compat{};
+  sector_compat[chosen_sector] = 1.0;
+  sector_compat[SectorType::SEC_PLATED] = 1.0;
+  sector_compat[SectorType::SEC_WASTED] = 0.0;
   std::println(std::cout, "\nEnter compatibilities of other sectors -");
   for (SectorType st : all_sector_types) {
     if (st < SectorType::SEC_PLATED && st != chosen_sector) {
@@ -372,124 +434,47 @@ int main(int argc, char* argv[]) {
                      compat_result.error().msg());
         return -1;
       }
-      race.likes[st] = static_cast<double>(compat_result->value()) / 100.0;
-    }
-  }
-  std::println(std::cout, "Numraces = {}", entity_manager.num_races());
-  Playernum = race.Playernum = player_t{entity_manager.num_races().value + 1};
-
-  /* build a capital ship to run the government */
-  {
-    ship_struct ss{};  // POD struct for direct initialization
-    shipnum_t shipno;
-
-    shipno = ships.next_ship_number();
-    std::println(std::cout, "Creating government ship {}...", shipno);
-    race.Gov_ship = shipno;
-
-    ss.type = ShipType::OTYPE_GOV;
-    entity_manager.with_star(star, [&](const Star& s) {
-      entity_manager.with_planet(star, pnum, [&](const Planet& p) {
-        ss.xpos = s.xpos() + p.xpos();
-        ss.ypos = s.ypos() + p.ypos();
-      });
-    });
-    ss.land_coords =
-        Coordinates{secttypes[chosen_sector].x, secttypes[chosen_sector].y};
-
-    ss.owner = Playernum;
-    ss.race = Playernum;
-
-    ss.tech = 100.0;
-
-    const auto& gov_tmpl = ship_template(ShipType::OTYPE_GOV);
-    ss.build_type = ShipType::OTYPE_GOV;
-    ss.armor = gov_tmpl.base_armor;
-    ss.guns = PRIMARY;
-    ss.primary_battery = GunBattery::create(
-        gov_tmpl.max_guns, shipdata_primary(ShipType::OTYPE_GOV));
-    ss.secondary_battery = GunBattery::create(
-        gov_tmpl.max_guns, shipdata_secondary(ShipType::OTYPE_GOV));
-    ss.max_crew = gov_tmpl.max_crew;
-    ss.max_destruct = gov_tmpl.max_destruct;
-    ss.max_resource = gov_tmpl.max_cargo;
-    ss.max_fuel = gov_tmpl.max_fuel;
-    ss.max_speed = gov_tmpl.base_speed;
-    ss.build_cost = gov_tmpl.build_cost;
-    ss.size = 100;
-    ss.base_mass = 100.0;
-    ss.shipclass = "Standard";
-
-    ss.popn = gov_tmpl.max_crew;
-    ss.mass = ss.base_mass + gov_tmpl.max_crew * race.mass;
-
-    ss.alive = 1;
-    ss.active = 1;
-    ss.protect.self = 1;
-
-    ss.docked = 1;
-    /* docked on the planet */
-    ss.whatorbits = ScopeLevel::LEVEL_PLAN;
-    ss.whatdest = ScopeLevel::LEVEL_PLAN;
-    ss.deststar = star;
-    ss.destpnum = pnum;
-    ss.storbits = star;
-    ss.pnumorbits = pnum;
-    /* (first capital is 100% efficient */
-
-    ss.on = 1;
-
-    ss.number = shipno;
-    entity_manager.with_star(ss.storbits, [&](const Star& storbit_star) {
-      std::println(std::cout, "Created on sector {} on /{}/{}", ss.land_coords,
-                   storbit_star.get_name(),
-                   storbit_star.get_planet_name(ss.pnumorbits));
-    });
-    Ship s{ss};  // Construct Ship from POD
-    if (!ships.save(s)) {
-      std::println(std::cerr, "Error: Failed to save ship to database");
-      return -1;
+      sector_compat[st] = compat_result->value() / 100.0;
     }
   }
 
-  race.points.fill(0);
+  GB::creator::RaceEnrollmentSpec spec{
+      .name = "Unknown",
+      .password = race_password,
+      .governor_password = gov_password,
+      .home_planet_type = ppref,
+      .preferred_sector = chosen_sector,
+      .capital_coords = secttypes[chosen_sector].coords,
+      .target_planet = std::make_pair(star, pnum),
+      .is_god = is_god,
+      .is_guest = is_guest,
+      .mass = race_mass,
+      .birthrate = race_birthrate,
+      .fighters = race_fighters,
+      .iq = race_iq,
+      .metamorph = race_metamorph,
+      .absorb = race_absorb,
+      .collective_iq = race_collective_iq,
+      .pods = race_pods,
+      .adventurism = race_adventurism,
+      .number_sexes = race_sexes,
+      .metabolism = race_metabolism,
+      .sector_compatibilities = sector_compat,
+      .likesbest = chosen_sector,
+  };
 
-  if (!races.save(race)) {
-    std::println(std::cerr, "Error: Failed to save race to database");
+  // EnrollmentService handles complete entity setup: creating Race with
+  // properly initialized Leader and inactive governors 1..MAXGOVERNORS,
+  // configuring capital sector, home planet, Star, and government ship.
+  auto result = service.enroll_player(spec);
+  if (!result.success) {
+    std::println(std::cerr, "Error: Enrollment failed - {}", result.message);
     return -1;
   }
 
-  entity_manager.mutate_sectormap(star, pnum, [&](SectorMap& smap) {
-    entity_manager.mutate_planet(star, pnum, [&](Planet& planet) {
-      auto& sect = smap.get(
-          Coordinates{secttypes[chosen_sector].x, secttypes[chosen_sector].y});
-      sect.set_owner(Playernum);
-      sect.set_race(Playernum);
-      sect.set_fert(100);
-      sect.set_efficiency_bounded(10);
-      sect.set_popn_exact(race.number_sexes);
-      sect.set_troops(0);
-
-      planet.info(Playernum).numsectsowned = 1;
-      planet.explored() = 0;
-      planet.info(Playernum).explored = 1;
-      planet.popn() = race.number_sexes;
-      planet.troops() = 0;
-      planet.maxpopn() =
-          maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
-    });
-  });
-
-  /* make star explored and stuff */
-  entity_manager.mutate_star(star, [&](Star& star_ref) {
-    star_ref.mark_explored_by(Playernum);
-    star_ref.mark_inhabited_by(Playernum);
-    star_ref.AP(Playernum) = 5;
-  });
-
-  std::println(std::cout, "\nYou are player {}.\n", Playernum);
+  std::println(std::cout, "\nYou are player {}.\n", result.player_num);
   std::println(std::cout, "Your race has been created on sector {},{} on",
-               secttypes[chosen_sector].x, secttypes[chosen_sector].y);
+               result.capital_coords.x, result.capital_coords.y);
   entity_manager.with_star(star, [&](const Star& home_star) {
     std::println(std::cout, "{}/{}.\n", home_star.get_name(),
                  home_star.get_planet_name(pnum));

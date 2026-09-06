@@ -31,19 +31,19 @@ export struct RaceEnrollmentSpec {
   bool is_guest{false};
 
   // Biological & racial attributes
-  double mass{1.0};
-  double birthrate{1.0};
-  unsigned int fighters{10};
-  int iq{100};
-  int iq_limit{0};
+  mass_t mass{1.0};
+  birthrate_t birthrate{1.0};
+  fighters_t fighters{10};
+  iq_t iq{100};
+  iq_t iq_limit{0};
   bool metamorph{false};
   bool absorb{false};
   bool collective_iq{false};
   bool pods{false};
-  double adventurism{1.0};
-  unsigned int number_sexes{2};
-  double metabolism{1.0};
-  unsigned int fertilize{0};
+  adventurism_t adventurism{1.0};
+  sexes_t number_sexes{2};
+  metabolism_t metabolism{1.0};
+  fertilize_t fertilize{0};
 
   // Sector compatibility preferences (0.0 to 1.0 per SectorType)
   std::array<double, SectorType::SEC_WASTED + 1> sector_compatibilities{};
@@ -72,7 +72,8 @@ public:
   /// Discovers a vacant candidate planet of the requested type in an
   /// uninhabited multi-planet system.
   std::optional<std::pair<starnum_t, planetnum_t>>
-  find_suitable_planet(PlanetType ppref, std::span<const starnum_t> star_order);
+  find_suitable_planet(PlanetType ppref,
+                       std::span<const starnum_t> star_order = {});
 
 private:
   EntityManager& entity_manager_;

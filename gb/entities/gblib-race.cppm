@@ -56,16 +56,16 @@ public:
   bool absorb{false};        /* Does this race absorb enemies in combat? */
   bool collective_iq{false}; /* Does this race have collective IQ? */
   bool pods{false};          /* Can this race use pods? */
-  unsigned int fighters{0};  /* Fight rating of this race. */
-  int IQ{0};
-  int IQ_limit{0}; /* Asymtotic IQ for collective IQ races. */
-  unsigned int number_sexes{1};
-  unsigned int fertilize{0}; /* Chance that this race will increase the
-                              fertility of its sectors by 1 each update */
-  double adventurism{0.0};
-  double birthrate{0.0};
-  double mass{0.0};
-  double metabolism{0.0};
+  fighters_t fighters{0};    /* Fight rating of this race. */
+  iq_t IQ{0};
+  iq_t IQ_limit{0}; /* Asymtotic IQ for collective IQ races. */
+  sexes_t number_sexes{1};
+  fertilize_t fertilize{0}; /* Chance that this race will increase the
+                             fertility of its sectors by 1 each update */
+  adventurism_t adventurism{0.0};
+  birthrate_t birthrate{0.0};
+  mass_t mass{0.0};
+  metabolism_t metabolism{0.0};
   short conditions[OTHER + 1]{}; /* Atmosphere/temperature this race likes. */
   double likes[SectorType::SEC_WASTED + 1]{}; /* Sector condition compats. */
   SectorType likesbest{

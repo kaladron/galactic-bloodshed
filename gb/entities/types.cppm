@@ -42,6 +42,19 @@ export using ship_size_t = std::uint32_t;  ///< Ship physical size / volume
 export using weapon_power_t =
     std::uint32_t;  ///< Concentrated energy weapon / laser power setting
 
+// Race biological and societal metric types
+export using iq_t = std::int32_t;  ///< Race intelligence rating
+export using fighters_t =
+    std::uint32_t;  ///< Race military combat capability rating
+export using sexes_t = std::uint32_t;  ///< Number of reproductive sexes
+export using fertilize_t =
+    std::uint32_t;                   ///< Sector fertilization chance percentage
+export using birthrate_t = double;   ///< Natural reproduction rate multiplier
+export using mass_t = double;        ///< Biological mass per colonist unit
+export using metabolism_t = double;  ///< Resource and food consumption rate
+export using adventurism_t =
+    double;  ///< Planetary colonization expansion drive
+
 // Bounded and modular domain smart types
 export using bounded_damage_t =
     Bounded<"damage", std::uint32_t, 0,

@@ -21,19 +21,15 @@ EnrollmentService::EnrollmentService(EntityManager& em, Database& db)
 std::optional<std::pair<starnum_t, planetnum_t>>
 EnrollmentService::find_suitable_planet(PlanetType ppref,
                                         std::span<const starnum_t> star_order) {
-  const auto* univ = entity_manager_.peek_universe();
-  int numstars = univ->numstars;
-
-  for (auto star : star_order) {
-    if (star < 0 || star >= numstars) continue;
-    const auto* star_ptr = entity_manager_.peek_star(star);
-    if (!star_ptr) continue;
-
+  auto check_star = [&](starnum_t star, const Star& star_data)
+      -> std::optional<std::pair<starnum_t, planetnum_t>> {
     /* skip over inhabited stars - or stars with just one planet! */
-    if (star_ptr->inhabited() != 0 || star_ptr->numplanets() < 2) continue;
+    if (star_data.inhabited() != 0 || star_data.numplanets() < 2) {
+      return std::nullopt;
+    }
 
     for (const Planet& planet :
-         PlanetList::readonly(entity_manager_, star, *star_ptr)) {
+         PlanetList::readonly(entity_manager_, star, star_data)) {
       if (planet.type() == ppref) {
         bool vacant = true;
         for (player_t p : all_players()) {
@@ -47,6 +43,26 @@ EnrollmentService::find_suitable_planet(PlanetType ppref,
         }
       }
     }
+    return std::nullopt;
+  };
+
+  if (star_order.empty()) {
+    for (const Star& star_data : StarList::shuffle(entity_manager_)) {
+      auto res = check_star(star_data.star_id(), star_data);
+      if (res) return res;
+    }
+    return std::nullopt;
+  }
+
+  const auto* univ = entity_manager_.peek_universe();
+  int numstars = univ->numstars;
+
+  for (auto star : star_order) {
+    if (star < 0 || star >= numstars) continue;
+    const auto* star_ptr = entity_manager_.peek_star(star);
+    if (!star_ptr) continue;
+    auto res = check_star(star, *star_ptr);
+    if (res) return res;
   }
   return std::nullopt;
 }
@@ -58,7 +74,8 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   if (playernum >= MAXPLAYERS) {
     return EnrollmentResult{
         .success = false,
-        .message = "No more allowed.",
+        .message = std::format("There are already {} players; No more allowed.",
+                               MAXPLAYERS - 1),
     };
   }
 
@@ -77,14 +94,8 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
     star = spec.target_planet->first;
     pnum = spec.target_planet->second;
   } else {
-    std::vector<starnum_t> star_order = spec.candidate_stars;
-    if (star_order.empty()) {
-      const auto* univ = entity_manager_.peek_universe();
-      for (int s : shuffled_indices(univ->numstars)) {
-        star_order.emplace_back(s);
-      }
-    }
-    auto found_loc = find_suitable_planet(spec.home_planet_type, star_order);
+    auto found_loc =
+        find_suitable_planet(spec.home_planet_type, spec.candidate_stars);
     if (!found_loc) {
       return EnrollmentResult{
           .success = false,
@@ -130,13 +141,17 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   // 5. Build race entity
   Race race{};
   race.Playernum = playernum;
-  race.God = (playernum == 1 && spec.is_god);
+  race.God = spec.is_god;
   race.Guest = spec.is_guest;
   race.name = spec.name;
   race.password = spec.password;
   race.info = spec.address;
 
-  // Governor 0 initialization
+  // Governor 0 is designated as the race Leader.
+  // Note: Governors 1 through MAXGOVERNORS are value-initialized to inactive
+  // (active = false) by Race::gov in-class member initializers on `Race
+  // race{};`.
+  race.governor[0].name = "Leader";
   race.governor[0].password = spec.governor_password;
   race.governor[0].homelevel = race.governor[0].deflevel =
       ScopeLevel::LEVEL_PLAN;

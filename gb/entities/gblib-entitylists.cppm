@@ -11,6 +11,7 @@ import std;
 import :gameobj;
 import :services;
 import :types;
+import :rand;
 import :race;
 import :star;
 import :planet;
@@ -372,6 +373,14 @@ public:
     return end();
   }
 
+protected:
+  EntityManager& entity_manager() const noexcept {
+    return *em_;
+  }
+  index_type count() const noexcept {
+    return count_;
+  }
+
 private:
   EntityManager* em_;
   index_type count_;
@@ -512,6 +521,17 @@ public:
     return end();
   }
 
+protected:
+  EntityManager& entity_manager() const noexcept {
+    return *em_;
+  }
+  primary_key_type primary_key() const noexcept {
+    return primary_key_;
+  }
+  index_type count() const noexcept {
+    return count_;
+  }
+
 private:
   EntityManager* em_;
   primary_key_type primary_key_;
@@ -544,6 +564,34 @@ public:
   using ConstIterator = typename Base::ConstIterator;
 
   explicit StarList(EntityManager& em) : Base(em) {}
+
+  template <typename URBG = std::mt19937>
+  [[nodiscard]] static auto shuffle(EntityManager& em, URBG& g) {
+    const auto* univ = em.peek_universe();
+    std::vector<starnum_t> indices(static_cast<std::size_t>(univ->numstars));
+    for (unsigned int i = 0; i < static_cast<unsigned int>(univ->numstars);
+         ++i) {
+      indices[i] = starnum_t{i};
+    }
+    std::ranges::shuffle(indices, g);
+
+    return std::views::all(std::move(indices)) |
+           std::views::transform(
+               [&em](starnum_t s) -> const Star& { return *em.peek_star(s); });
+  }
+
+  [[nodiscard]] static auto shuffle(EntityManager& em) {
+    return shuffle(em, game_rng());
+  }
+
+  template <typename URBG = std::mt19937>
+  [[nodiscard]] auto shuffle(URBG& g) const {
+    return shuffle(this->entity_manager(), g);
+  }
+
+  [[nodiscard]] auto shuffle() const {
+    return shuffle(this->entity_manager(), game_rng());
+  }
 };
 
 /**
@@ -561,6 +609,49 @@ public:
 
   PlanetList(EntityManager& em, starnum_t star, const Star& star_data)
       : Base(em, star, star_data.numplanets()) {}
+
+  template <typename URBG = std::mt19937>
+  [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
+                                    planetnum_t numplanets, URBG& g) {
+    std::vector<planetnum_t> indices(
+        static_cast<std::size_t>(numplanets.value));
+    for (unsigned int i = 0; i < numplanets.value; ++i) {
+      indices[i] = planetnum_t{i};
+    }
+    std::ranges::shuffle(indices, g);
+
+    return std::views::all(std::move(indices)) |
+           std::views::transform([&em, star](planetnum_t p) -> const Planet& {
+             return *em.peek_planet(star, p);
+           });
+  }
+
+  [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
+                                    planetnum_t numplanets) {
+    return shuffle(em, star, numplanets, game_rng());
+  }
+
+  template <typename URBG = std::mt19937>
+  [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
+                                    const Star& star_data, URBG& g) {
+    return shuffle(em, star, star_data.numplanets(), g);
+  }
+
+  [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
+                                    const Star& star_data) {
+    return shuffle(em, star, star_data.numplanets(), game_rng());
+  }
+
+  template <typename URBG = std::mt19937>
+  [[nodiscard]] auto shuffle(URBG& g) const {
+    return shuffle(this->entity_manager(), this->primary_key(), this->count(),
+                   g);
+  }
+
+  [[nodiscard]] auto shuffle() const {
+    return shuffle(this->entity_manager(), this->primary_key(), this->count(),
+                   game_rng());
+  }
 };
 
 /**

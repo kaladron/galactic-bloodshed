@@ -345,6 +345,46 @@ void test_enroll_second_race_mortal_success() {
   std::println(std::cout, "  ✓ Enroll second race mortal success passed");
 }
 
+void test_enroll_second_race_god_success() {
+  std::println(std::cout, "Test: Enroll second race with God privileges");
+
+  Database db(":memory:");
+  setup_test_universe(db);
+  EntityManager em(db);
+  GB::creator::EnrollmentService service(em, db);
+
+  // Enroll player 1 as God on Earth
+  GB::creator::RaceEnrollmentSpec god1_spec{
+      .name = "PantheonPrime",
+      .password = "pass1",
+      .home_planet_type = PlanetType::EARTH,
+      .is_god = true,
+  };
+  auto res1 = service.enroll_player(god1_spec);
+  test::expect_true(res1.success);
+
+  // Enroll player 2 as another God race on Desert
+  GB::creator::RaceEnrollmentSpec god2_spec{
+      .name = "DesertDeity",
+      .password = "pass2",
+      .home_planet_type = PlanetType::DESERT,
+      .preferred_sector = SectorType::SEC_DESERT,
+      .is_god = true,
+  };
+  auto res2 = service.enroll_player(god2_spec);
+  test::expect_true(res2.success);
+  test::expect_eq(res2.player_num, player_t{2});
+
+  const auto* god2_race = em.peek_race(player_t{2});
+  test::expect_true(god2_race != nullptr);
+  if (god2_race) {
+    test::expect_eq(god2_race->name, std::string("DesertDeity"));
+    test::expect_true(god2_race->God);
+  }
+
+  std::println(std::cout, "  ✓ Enroll second race God success passed");
+}
+
 void test_enroll_gas_giant_cold_success() {
   std::println(std::cout, "Test: Enroll race on cryogenic Gas Giant (-80C)");
 
@@ -413,6 +453,37 @@ void test_enroll_explicit_capital_coords() {
   std::println(std::cout, "  ✓ Explicit capital coordinates passed");
 }
 
+void test_find_suitable_planet_shuffle() {
+  std::println(std::cout, "Test: find_suitable_planet with default shuffle");
+
+  Database db(":memory:");
+  setup_test_universe(db);
+  EntityManager em(db);
+  GB::creator::EnrollmentService service(em, db);
+
+  // Sol (star 0) has Earth and Gas Giant, Vega (star 2) has Iceball and Desert.
+  // Star 1 has Mars, but only 1 planet, so it is skipped.
+  auto found_earth = service.find_suitable_planet(PlanetType::EARTH);
+  test::expect_true(found_earth.has_value());
+  if (found_earth) {
+    test::expect_eq(found_earth->first, starnum_t{0});
+    test::expect_eq(found_earth->second, planetnum_t{0});
+  }
+
+  auto found_desert = service.find_suitable_planet(PlanetType::DESERT);
+  test::expect_true(found_desert.has_value());
+  if (found_desert) {
+    test::expect_eq(found_desert->first, starnum_t{2});
+    test::expect_eq(found_desert->second, planetnum_t{1});
+  }
+
+  // Single planet star (Mars on star 1) should not be found
+  auto found_mars = service.find_suitable_planet(PlanetType::MARS);
+  test::expect_true(!found_mars.has_value());
+
+  std::println(std::cout, "  ✓ find_suitable_planet shuffle passed");
+}
+
 }  // namespace
 
 int main() {
@@ -421,8 +492,10 @@ int main() {
   test_no_free_planet_rejected();
   test_enroll_first_race_god_success();
   test_enroll_second_race_mortal_success();
+  test_enroll_second_race_god_success();
   test_enroll_gas_giant_cold_success();
   test_enroll_explicit_capital_coords();
+  test_find_suitable_planet_shuffle();
 
   std::println(std::cout, "\n✅ All EnrollmentService unit tests passed!");
   return 0;

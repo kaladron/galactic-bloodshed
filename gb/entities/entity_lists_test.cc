@@ -174,6 +174,71 @@ void test_planet_list_readonly(EntityManager& em) {
                total_planets);
 }
 
+void test_star_list_shuffle(EntityManager& em) {
+  std::println(std::cout, "Testing StarList::shuffle...");
+  int count = 0;
+  std::vector<starnum_t> seen_stars;
+
+  for (const Star& star : StarList::shuffle(em)) {
+    static_assert(std::is_same_v<decltype(star), const Star&>,
+                  "StarList::shuffle() should yield const Star&");
+
+    count++;
+    seen_stars.push_back(star.get_struct().star_id);
+  }
+
+  test::expect_eq(count, 2);
+  test::expect_eq(seen_stars.size(), 2);
+  std::ranges::sort(seen_stars);
+  test::expect_eq(seen_stars[0], 0);
+  test::expect_eq(seen_stars[1], 1);
+
+  // Test member method form on StarList instance
+  StarList star_list(em);
+  int member_count = 0;
+  for (const Star& star : star_list.shuffle()) {
+    static_assert(std::is_same_v<decltype(star), const Star&>,
+                  "star_list.shuffle() should yield const Star&");
+    member_count++;
+  }
+  test::expect_eq(member_count, 2);
+
+  std::println(std::cout, "  StarList::shuffle: iterated {} stars, all present",
+               count);
+}
+
+void test_planet_list_shuffle(EntityManager& em) {
+  std::println(std::cout, "Testing PlanetList::shuffle...");
+  int total_planets = 0;
+
+  for (const Star& star : StarList::readonly(em)) {
+    auto star_id = star.get_struct().star_id;
+
+    std::vector<planetnum_t> seen_planets;
+    for (const Planet& planet : PlanetList::shuffle(em, star_id, star)) {
+      static_assert(std::is_same_v<decltype(planet), const Planet&>,
+                    "PlanetList::shuffle() should yield const Planet&");
+
+      total_planets++;
+      test::expect_eq(planet.star_id(), star_id);
+      seen_planets.push_back(planet.planet_order());
+    }
+
+    test::expect_eq(seen_planets.size(),
+                    static_cast<std::size_t>(star_id.value + 1));
+    std::ranges::sort(seen_planets);
+    for (std::size_t i = 0; i < seen_planets.size(); ++i) {
+      test::expect_eq(seen_planets[i], static_cast<planetnum_t>(i));
+    }
+  }
+
+  test::expect_eq(total_planets, 3);
+  std::println(
+      std::cout,
+      "  PlanetList::shuffle: iterated {} total planets across all stars",
+      total_planets);
+}
+
 void test_commod_list_readonly(EntityManager& em) {
   std::println(std::cout, "Testing CommodList...");
   int count = 0;
@@ -463,7 +528,9 @@ int main() {
   populate_base_entities(em, store);
   test_race_list_readonly(em);
   test_star_list_readonly(em);
+  test_star_list_shuffle(em);
   test_planet_list_readonly(em);
+  test_planet_list_shuffle(em);
   test_commod_list_readonly(em);
   test_playernum_indexing(em);
   test_block_list(em, store);

@@ -457,6 +457,90 @@ void test_produce_and_troop_maintenance() {
   test::expect_eq(updated_race->governor[0].maintain, UPDATE_TROOP_COST * 50);
 }
 
+void test_update_mobilization() {
+  TurnStats stats{};
+  plinfo pinf{};
+  pinf.mob_set = 20;
+  pinf.resource = 100;
+
+  // 1. Sector mobilization below target: increases by 1, tracks stats
+  Sector low_mob =
+      createTestSector(0, 0, 50, 50, 10, 0, 100, 1000, 0, player_t{1});
+  update_mobilization(low_mob, pinf, stats);
+  test::expect_eq(low_mob.get_mobilization(), 11);
+  test::expect_eq(stats.prod_mob, 1);
+  test::expect_eq(stats.avg_mob[player_t{1}], 11);
+
+  // 2. Sector mobilization above target: decreases by 1, tracks stats
+  Sector high_mob =
+      createTestSector(0, 0, 50, 50, 25, 0, 100, 1000, 0, player_t{1});
+  update_mobilization(high_mob, pinf, stats);
+  test::expect_eq(high_mob.get_mobilization(), 24);
+  test::expect_eq(stats.prod_mob, 0);               // 1 - 1 = 0
+  test::expect_eq(stats.avg_mob[player_t{1}], 35);  // 11 + 24 = 35
+
+  // 3. Sector mobilization at target: remains unchanged
+  Sector equal_mob =
+      createTestSector(0, 0, 50, 50, 20, 0, 100, 1000, 0, player_t{1});
+  update_mobilization(equal_mob, pinf, stats);
+  test::expect_eq(equal_mob.get_mobilization(), 20);
+  test::expect_eq(stats.prod_mob, 0);
+
+  // 4. Insufficient resources: mobilization cannot increase
+  plinfo poor_pinf{};
+  poor_pinf.mob_set = 50;
+  poor_pinf.resource = 0;
+  TurnStats zero_res_stats{};
+  Sector poor_mob =
+      createTestSector(0, 0, 50, 50, 10, 0, 100, 1000, 0, player_t{1});
+  update_mobilization(poor_mob, poor_pinf, zero_res_stats);
+  test::expect_eq(poor_mob.get_mobilization(), 10);
+  test::expect_eq(zero_res_stats.prod_mob, 0);
+}
+
+void test_produce_sector_lifecycle() {
+  seed_rand(42);
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  race.discoveries.crystal = true;
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  Planet planet = createTestPlanet(5, 5);
+  planet.info(player_t{1}).tax = 0;
+  planet.info(player_t{1}).mob_set = 10;
+  planet.info(player_t{1}).resource = 100;
+
+  // Sector with 100% efficiency, resources, crystals, and land condition
+  Sector s = createTestSector(0, 0, 100, 50, 0, 2, 500, 1000, 0, player_t{1},
+                              SectorType::SEC_LAND, SectorType::SEC_LAND);
+  TurnStats stats{};
+  stats.Compat[player_t{1}] = 1.0;
+
+  produce(em, star, planet, s, stats);
+
+  // Verifies production was routed to TurnStats
+  test::expect_true(stats.prod_res[player_t{1}] > 0);
+  test::expect_true(stats.prod_fuel[player_t{1}] > 0);
+
+  // Verifies crystal was mined
+  test::expect_eq(s.get_crystals(), 1);
+  test::expect_eq(stats.prod_crystals[player_t{1}], 1);
+
+  // Verifies mobilization was incremented towards target
+  test::expect_eq(s.get_mobilization(), 1);
+  test::expect_eq(stats.prod_mob, 1);
+
+  // Verifies sector at 100% efficiency was plated
+  test::expect_eq(s.get_condition(), SectorType::SEC_PLATED);
+  test::expect_true(s.is_plated());
+}
+
 void test_spread_population() {
   seed_rand(42);
   Database db(":memory:");
@@ -719,6 +803,14 @@ int main() {
 
   std::println(std::cout, "  Testing produce and troop maintenance... ");
   test_produce_and_troop_maintenance();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing update mobilization... ");
+  test_update_mobilization();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing produce sector lifecycle... ");
+  test_produce_sector_lifecycle();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing population spread... ");

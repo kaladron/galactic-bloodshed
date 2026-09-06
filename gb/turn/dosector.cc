@@ -102,38 +102,6 @@ population_t calculate_population_change(const Race& race, const Sector& s,
   return -long_rand(0, max_die_off);
 }
 
-namespace {
-
-/// \brief Extracts raw resources or fuel from a populated sector.
-void process_resource_production(const Race& race, Sector& s,
-                                 TurnStats& stats) {
-  if (!s.get_resource() || !success(s.get_eff())) return;
-
-  resource_t prod = static_cast<resource_t>(round_rand(race.metabolism)) *
-                    static_cast<resource_t>(int_rand(1, s.get_eff()));
-  prod = std::min(prod, s.get_resource());
-  s.set_resource(s.get_resource() - prod);
-
-  auto pfuel = prod * (1 + (s.get_condition() == SectorType::SEC_GAS));
-  player_t owner = s.get_owner();
-
-  if (success(s.get_mobilization())) {
-    stats.prod_destruct[owner] += prod;
-  } else {
-    stats.prod_res[owner] += prod;
-  }
-
-  stats.prod_fuel[owner] += pfuel;
-}
-
-/// \brief Mines crystal deposits from a sector if race has crystal discovery.
-void process_crystal_mining(const Race& race, Sector& s, TurnStats& stats) {
-  if (s.get_crystals() && race.discoveries.crystal && success(s.get_eff())) {
-    stats.prod_crystals[s.get_owner()]++;
-    s.set_crystals(s.get_crystals() - 1);
-  }
-}
-
 /// \brief Adjusts sector mobilization level towards the governor's planetary
 /// target setting.
 void update_mobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
@@ -153,34 +121,7 @@ void update_mobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
   stats.avg_mob[owner] += s.get_mobilization();
 }
 
-/// \brief Updates sector efficiency and converts fully developed sectors to
-/// plated condition.
-void update_efficiency(Sector& s, const Race& race, const Planet& planet) {
-  if (s.get_eff() < 100) {
-    int chance = round_rand((100.0 - (double)planet.info(s.get_owner()).tax) *
-                            race.likes[s.get_condition()]);
-    if (success(chance)) {
-      s.improve_efficiency(round_rand(race.metabolism));
-      if (s.get_eff() >= 100) s.plate();
-    }
-  } else {
-    s.plate();
-  }
-}
-
-/// \brief Simulates racial fertilization and natural recovery of wasted
-/// sectors.
-void update_fertility_and_condition(Sector& s, const Race& race) {
-  if (!s.is_wasted() && race.fertilize && (s.get_fert() < 100)) {
-    s.set_fert(s.get_fert() + (int_rand(0, 100) < race.fertilize));
-  }
-
-  s.set_fert(std::min<int>(s.get_fert(), 100));
-
-  if (s.is_wasted() && success(NATURAL_REPAIR)) {
-    s.set_condition(s.get_type());
-  }
-}
+namespace {
 
 /// \brief Handles population change, troop upkeep accounting, and unpopulated
 /// sector abandonment.
@@ -217,16 +158,16 @@ void produce(EntityManager& entity_manager, const Star& star,
 
   entity_manager.with_race(s.get_owner(), [&](const Race& race) {
     // Process production and resources
-    process_resource_production(race, s, stats);
-    process_crystal_mining(race, s, stats);
+    s.produce_resources(race, stats);
+    s.mine_crystals(race, stats);
 
     // Handle mobilization
     const auto& pinf = planet.info(s.get_owner());
     update_mobilization(s, pinf, stats);
 
     // Update efficiency, fertility and sector condition
-    update_efficiency(s, race, planet);
-    update_fertility_and_condition(s, race);
+    s.update_efficiency(race, planet);
+    s.recover_fertility(race);
 
     // Handle population changes and ownership
     update_population_and_owner(entity_manager, s, race, star, planet, stats);

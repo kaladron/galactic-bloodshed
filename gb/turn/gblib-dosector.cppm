@@ -20,6 +20,7 @@ export population_t attempt_colonist_migration(EntityManager&, const Planet&,
 export population_t calculate_population_change(const Race&, const Sector&,
                                                 population_t);
 
+export void update_mobilization(Sector&, const plinfo&, TurnStats&);
 export void produce(EntityManager&, const Star&, const Planet&, Sector&,
                     TurnStats&);
 export void spread(EntityManager&, const Planet&, Sector&, SectorMap&,

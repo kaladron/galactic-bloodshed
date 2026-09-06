@@ -137,7 +137,6 @@ void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
   ship.speed() = ship_template(ShipType::OTYPE_VN).base_speed;
 }
 
-namespace {
 void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats) {
   if (auto* auto_ship = ship.as<AutonomousShip>()) {
     select_berserker_destination(em, *auto_ship, stats);
@@ -149,7 +148,6 @@ void order_VN(EntityManager& em, Ship& ship) {
     select_vn_destination(em, *auto_ship);
   }
 }
-}  // namespace
 
 std::optional<player_t>
 select_victim_to_steal_from(const Planet& planet,

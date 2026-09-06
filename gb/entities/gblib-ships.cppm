@@ -2923,7 +2923,9 @@ public:
   /// \brief Returns whether ship is fueled to maximum capacity (within
   /// epsilon).
   [[nodiscard]] bool is_fully_fueled() const noexcept {
-    return data_.fuel >= static_cast<double>(max_fuel_capacity()) - 1e-4;
+    const auto max_fuel = max_fuel_capacity();
+    if (max_fuel == 0) return false;
+    return data_.fuel >= static_cast<double>(max_fuel) - 1e-4;
   }
 
   /// \brief Returns whether ship has non-negligible fuel remaining.

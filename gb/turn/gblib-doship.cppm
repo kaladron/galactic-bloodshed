@@ -138,6 +138,21 @@ export void select_berserker_destination(EntityManager& em,
 /// \brief Assigns destination orders to an autonomous Von Neumann machine.
 export void select_vn_destination(EntityManager& em, AutonomousShip& ship);
 
+/// \brief Orders an autonomous Berserker to select a target and destination.
+export void order_berserker(EntityManager& em, Ship& ship, TurnStats& stats);
+
+/// \brief Orders an autonomous Von Neumann machine to select a destination.
+export void order_VN(EntityManager& em, Ship& ship);
+
+/// \brief Performs turn processing for an autonomous Von Neumann or Berserker
+/// machine.
+export void do_VN(EntityManager& em, Ship& ship, TurnStats& stats);
+
+/// \brief Performs planetary surface operations (landing, mining, replication)
+/// for an autonomous machine.
+export void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
+                        EntityManager& entity_manager, TurnStats& stats);
+
 /// \brief Result of stealing planetary resources from an alien colony.
 export struct StealResult {
   player_t victim{0};    ///< Player ID victimized, or 0 if none

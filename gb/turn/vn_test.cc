@@ -676,6 +676,239 @@ int main() {
         "  ✓ attempt_planet_landing lands on resource-bearing sectors");
   }
 
+  // =========================================================================
+  // 14. order_VN & order_berserker tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: order_VN & order_berserker");
+
+    // Regular ship: no-op, does not crash or change orders
+    ship_struct cargo_data{};
+    cargo_data.number = 601;
+    cargo_data.owner = 1;
+    cargo_data.type = ShipType::STYPE_CARGO;
+    cargo_data.storbits = 0;
+    auto cargo = ShipFactory::create(cargo_data);
+    TurnStats stats{};
+
+    order_VN(em, *cargo);
+    test::expect_eq(cargo->whatdest(), ScopeLevel::LEVEL_UNIV);
+
+    order_berserker(em, *cargo, stats);
+    test::expect_eq(cargo->whatdest(), ScopeLevel::LEVEL_UNIV);
+
+    // Autonomous VN: sets destination and speed
+    ship_struct vn_data{};
+    vn_data.number = 602;
+    vn_data.owner = 1;
+    vn_data.type = ShipType::OTYPE_VN;
+    vn_data.storbits = 0;
+    vn_data.xpos = 0.0;
+    vn_data.ypos = 0.0;
+    auto vn = ShipFactory::create(vn_data);
+
+    order_VN(em, *vn);
+    // Star 1 was marked inhabited by Player 1 in earlier tests, so VN routes to
+    // Star 2
+    test::expect_eq(vn->deststar(), starnum_t{2});
+    test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_PLAN);
+    test::expect_true(vn->as<AutonomousShip>()->is_busy());
+    test::expect_eq(vn->speed(), ship_template(ShipType::OTYPE_VN).base_speed);
+
+    // Autonomous Berserker: routes toward offending player
+    stats.VN_brain.most_mad = player_t{2};
+    ship_struct bers_data{};
+    bers_data.number = 603;
+    bers_data.owner = 1;
+    bers_data.type = ShipType::OTYPE_BERS;
+    bers_data.storbits = 0;
+    bers_data.xpos = 0.0;
+    bers_data.ypos = 0.0;
+    bers_data.hyper_drive.has = true;
+    bers_data.mounted = true;
+    bers_data.special = MindData{
+        .target = player_t{0},
+        .generation = 1,
+        .busy = true,
+    };
+    auto bers = ShipFactory::create(bers_data);
+
+    order_berserker(em, *bers, stats);
+    test::expect_eq(bers->deststar(), starnum_t{1});
+    test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
+    test::expect_true(bers->as<AutonomousShip>()->is_busy());
+
+    std::println(std::cout,
+                 "  ✓ order_VN and order_berserker assign autonomous orders");
+  }
+
+  // =========================================================================
+  // 15. do_VN tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: do_VN");
+
+    TurnStats stats{};
+
+    // 1. Non-autonomous ship is ignored
+    ship_struct cargo_data{};
+    cargo_data.number = 701;
+    cargo_data.owner = 1;
+    cargo_data.type = ShipType::STYPE_CARGO;
+    auto cargo = ShipFactory::create(cargo_data);
+    do_VN(em, *cargo, stats);
+    test::expect_false(stats.Stinfo[0][0].inhab);
+
+    // 2. Unlanded, non-busy VN is ignored
+    ship_struct unlanded_idle_data{};
+    unlanded_idle_data.number = 702;
+    unlanded_idle_data.owner = 1;
+    unlanded_idle_data.type = ShipType::OTYPE_VN;
+    unlanded_idle_data.storbits = 0;
+    unlanded_idle_data.whatdest = ScopeLevel::LEVEL_UNIV;
+    unlanded_idle_data.special = MindData{.busy = false};
+    auto unlanded_idle = ShipFactory::create(unlanded_idle_data);
+    do_VN(em, *unlanded_idle, stats);
+    test::expect_eq(unlanded_idle->whatdest(), ScopeLevel::LEVEL_UNIV);
+
+    // 3. Unlanded, busy VN orders destination
+    ship_struct unlanded_busy_data{};
+    unlanded_busy_data.number = 703;
+    unlanded_busy_data.owner = 1;
+    unlanded_busy_data.type = ShipType::OTYPE_VN;
+    unlanded_busy_data.storbits = 0;
+    unlanded_busy_data.whatdest = ScopeLevel::LEVEL_UNIV;
+    unlanded_busy_data.special = MindData{.busy = true};
+    auto unlanded_busy = ShipFactory::create(unlanded_busy_data);
+    do_VN(em, *unlanded_busy, stats);
+    test::expect_eq(unlanded_busy->deststar(), starnum_t{2});
+    test::expect_eq(unlanded_busy->whatdest(), ScopeLevel::LEVEL_PLAN);
+
+    // 3b. Unlanded, busy Berserker orders destination
+    stats.VN_brain.most_mad = player_t{2};
+    ship_struct unlanded_bers_data{};
+    unlanded_bers_data.number = 706;
+    unlanded_bers_data.owner = 1;
+    unlanded_bers_data.type = ShipType::OTYPE_BERS;
+    unlanded_bers_data.storbits = 0;
+    unlanded_bers_data.whatdest = ScopeLevel::LEVEL_UNIV;
+    unlanded_bers_data.hyper_drive.has = true;
+    unlanded_bers_data.mounted = true;
+    unlanded_bers_data.special = MindData{.busy = true};
+    auto unlanded_bers = ShipFactory::create(unlanded_bers_data);
+    do_VN(em, *unlanded_bers, stats);
+    test::expect_eq(unlanded_bers->deststar(), starnum_t{1});
+    test::expect_eq(unlanded_bers->whatdest(), ScopeLevel::LEVEL_PLAN);
+
+    // 4. Landed, fully-fueled VN launches to space
+    ship_struct landed_fueled_data{};
+    landed_fueled_data.number = 704;
+    landed_fueled_data.owner = 1;
+    landed_fueled_data.type = ShipType::OTYPE_VN;
+    landed_fueled_data.storbits = 0;
+    landed_fueled_data.pnumorbits = 0;
+    landed_fueled_data.deststar = 0;
+    landed_fueled_data.destpnum = 0;
+    landed_fueled_data.whatdest = ScopeLevel::LEVEL_PLAN;
+    landed_fueled_data.docked = 1;
+    landed_fueled_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
+    landed_fueled_data.fuel = 100.0;
+    landed_fueled_data.special = MindData{.busy = false};
+    auto landed_fueled = ShipFactory::create(landed_fueled_data);
+    test::expect_true(landed_fueled->is_landed());
+    do_VN(em, *landed_fueled, stats);
+    test::expect_true(stats.Stinfo[0][0].inhab);
+    test::expect_false(landed_fueled->is_landed());
+    test::expect_eq(landed_fueled->whatdest(), ScopeLevel::LEVEL_UNIV);
+
+    // 5. Landed, underfueled VN steals planetary resources
+    em.mutate_planet(0, 0,
+                     [](Planet& p) { p.info(player_t{2}).resource = 200; });
+    ship_struct landed_low_fuel_data{};
+    landed_low_fuel_data.number = 705;
+    landed_low_fuel_data.owner = 1;
+    landed_low_fuel_data.type = ShipType::OTYPE_VN;
+    landed_low_fuel_data.storbits = 0;
+    landed_low_fuel_data.pnumorbits = 0;
+    landed_low_fuel_data.deststar = 0;
+    landed_low_fuel_data.destpnum = 0;
+    landed_low_fuel_data.whatdest = ScopeLevel::LEVEL_PLAN;
+    landed_low_fuel_data.docked = 1;
+    landed_low_fuel_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
+    landed_low_fuel_data.max_resource =
+        ship_template(ShipType::OTYPE_VN).max_cargo;
+    landed_low_fuel_data.fuel = 10.0;  // Underfueled (capacity is 100)
+    landed_low_fuel_data.special = MindData{.busy = false};
+    auto landed_low_fuel = ShipFactory::create(landed_low_fuel_data);
+    test::expect_true(landed_low_fuel->is_landed());
+    do_VN(em, *landed_low_fuel, stats);
+    test::expect_true(landed_low_fuel->is_landed());
+    test::expect_true(landed_low_fuel->resource() > 0);
+
+    std::println(std::cout, "  ✓ do_VN handles unlanded and landed lifecycles");
+  }
+
+  // =========================================================================
+  // 16. planet_doVN tests
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: planet_doVN");
+
+    TurnStats stats{};
+    Planet planet(PlanetType::EARTH, Coordinates{5, 5});
+    SectorMap smap(planet);
+    for (Sector& s : smap) {
+      s.set_resource(0);
+    }
+
+    // 1. Non-autonomous ship is ignored
+    ship_struct cargo_data{};
+    cargo_data.number = 801;
+    cargo_data.owner = 1;
+    cargo_data.type = ShipType::STYPE_CARGO;
+    auto cargo = ShipFactory::create(cargo_data);
+    planet_doVN(*cargo, planet, smap, em, stats);
+
+    // 2. Unlanded VN attempts landing
+    smap.get(Coordinates{2, 2}).set_resource(50);
+    ship_struct orbiting_vn_data{};
+    orbiting_vn_data.number = 802;
+    orbiting_vn_data.owner = 1;
+    orbiting_vn_data.type = ShipType::OTYPE_VN;
+    orbiting_vn_data.storbits = 0;
+    orbiting_vn_data.pnumorbits = 0;
+    orbiting_vn_data.deststar = 0;
+    orbiting_vn_data.destpnum = 0;
+    orbiting_vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
+    orbiting_vn_data.docked = 0;
+    orbiting_vn_data.special = MindData{.busy = true};
+    orbiting_vn_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
+    orbiting_vn_data.max_resource = ship_template(ShipType::OTYPE_VN).max_cargo;
+    auto orbiting_vn = ShipFactory::create(orbiting_vn_data);
+    test::expect_false(orbiting_vn->is_landed());
+
+    planet_doVN(*orbiting_vn, planet, smap, em, stats);
+    test::expect_true(orbiting_vn->is_landed());
+    test::expect_eq(orbiting_vn->land_coords(), (Coordinates{2, 2}));
+
+    // 3. Landed busy VN on rich sector mines resources
+    const auto initial_fuel = orbiting_vn->fuel();
+    planet_doVN(*orbiting_vn, planet, smap, em, stats);
+    test::expect_true(orbiting_vn->resource() > 0);
+    test::expect_true(orbiting_vn->fuel() > initial_fuel);
+    test::expect_true(smap.get(Coordinates{2, 2}).get_resource() < 50);
+
+    // 4. Landed busy VN on depleted sector roams to adjacent sector
+    smap.get(Coordinates{2, 2}).set_resource(0);
+    Coordinates old_coords = orbiting_vn->land_coords();
+    planet_doVN(*orbiting_vn, planet, smap, em, stats);
+    test::expect_ne(orbiting_vn->land_coords(), old_coords);
+
+    std::println(
+        std::cout,
+        "  ✓ planet_doVN handles landing, mining, roaming, and replication");
+  }
+
   std::println(std::cout,
                "\nAll VN navigation and turn tests passed successfully!");
   return 0;

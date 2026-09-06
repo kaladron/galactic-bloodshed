@@ -4,7 +4,6 @@
 /// \brief Interactive race generator.
 
 #include <strings.h>
-#include <unistd.h>
 
 import std;
 import gb.entities;
@@ -14,22 +13,12 @@ import gb.services;
 #include <cstdio>
 #include <cstdlib>
 
+#include "gb/creator/enroll.h"
 #include "gb/creator/racegen.h"
 
 static int do_racegen();
 
 char buf[2047];
-
-#ifdef PRIV /* Extra stuff for privileged racegen */
-
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-
-#endif
-
-static int fd;
-static int isserver = 0;
 
 static int critique_modification();
 static void execute(int argc, const char** argv);
@@ -80,54 +69,7 @@ int main(int argc, char** argv) {
     }
   }
 
-#ifdef PRIV
-  if (isserver) { /* Server version of racegen */
-    int sockfd;
-    socklen_t clilen;
-    struct sockaddr_in cli_addr, serv_addr;
-    int port = 2020;
-
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      fprintf(stderr, "server: can't open stream socket");
-      std::exit(0);
-    }
-    serv_addr = {};
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(port);
-
-    if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-      fprintf(stderr, "server: can't bind local address");
-      std::exit(0);
-    }
-
-    listen(sockfd, 5);
-
-    if (fork()) {
-      printf("Racegen set up on port %d\n", port);
-      printf("Now accepting connections.\n\n");
-      std::exit(0);
-    }
-
-    for (;;) {
-      clilen = sizeof(cli_addr);
-      fd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
-      if (fd < 0) fprintf(stderr, "server: accept error");
-      if (fork()) {
-        dup2(fd, 1);
-        dup2(fd, 0);
-        do_racegen();
-        close(fd);
-        std::exit(0);
-      }
-      close(fd);
-    }
-  } else
-    do_racegen(); /* Non-server enroll version of racegen */
-
-#else /* Non-PRIV version */
   do_racegen();
-#endif
   return 0;
 }
 
@@ -648,11 +590,10 @@ static int critique_modification() {
  * accordingly so that the cost of this race's attributes is zero.
  */
 static void initialize() {
-  int i;
-
   race_info = {};
-  for (i = 0; i < N_ATTRIBUTES; i++)
+  for (int i = 0; i < N_ATTRIBUTES; ++i) {
     race_info.attr[i] = attr[i].init;
+  }
   race_info.race_type = R_NORMAL;
   race_info.priv_type = P_NORMAL;
   race_info.home_planet_type = H_EARTH;
@@ -664,12 +605,10 @@ static void initialize() {
   normal();
   last = race_info;
   cost_of_race();
-  for (i = 0; i < N_ATTRIBUTES; i++)
+  for (int i = 0; i < N_ATTRIBUTES; ++i) {
     attr[i].l_fudge += -cost_info.attr[i];
+  }
   cost_of_race();
-#ifdef ENROLL
-  init_enroll();
-#endif
 }
 
 /**************
@@ -678,50 +617,45 @@ static void initialize() {
  * with it to get the idea.
  */
 static void help(int argc, const char* argv[]) {
-  int i;
-  int j;
-  int helpp;
-  int load;
-  int modify;
-  int print;
-  int save;
-  int send2;
-  int quit;
+  bool enroll = false;
+  bool helpp = false;
+  bool load = false;
+  bool modify = false;
+  bool print = false;
+  bool process = false;
+  bool save = false;
+  bool send2 = false;
+  bool quit = false;
 
   if (argc == 1) {
-    helpp = load = modify = print = save = send2 = quit = 1;
+    enroll = helpp = load = modify = print = process = save = send2 = quit =
+        true;
     printf("\n");
     printf(
         "To execute a command, type it at the command line.  All commands\n");
     printf("and command arguments maybe either upper or lower case, and/or\n");
     printf("abbreviated.  The available commands are:\n");
   } else {
-    helpp = load = modify = print = save = send2 = quit = 0;
-    for (i = 1; i < argc; i++) {
-      j = std::strlen(argv[i]);
-#ifdef PRIV
-      if (!strncasecmp(argv[i], "enroll", j) && (!isserver))
-        enroll = 1;
-      else
-#endif
-          if (!strncasecmp(argv[i], "help", j))
-        helpp = 1;
-      else if (!strncasecmp(argv[i], "load", j) && (!isserver))
-        load = 1;
-      else if (!strncasecmp(argv[i], "modify", j))
-        modify = 1;
-      else if (!strncasecmp(argv[i], "print", j))
-        print = 1;
-#ifdef PRIV
-      else if (!strncasecmp(argv[i], "process", j) && (!isserver))
-        process = 1;
-#endif
-      else if (!strncasecmp(argv[i], "save", j) && (!isserver))
-        save = 1;
-      else if (!strncasecmp(argv[i], "send", j))
-        send2 = 1;
-      else if (!strncasecmp(argv[i], "quit", j))
-        quit = 1;
+    for (int i = 1; i < argc; ++i) {
+      const auto len = std::strlen(argv[i]);
+      if (!strncasecmp(argv[i], "enroll", len))
+        enroll = true;
+      else if (!strncasecmp(argv[i], "help", len))
+        helpp = true;
+      else if (!strncasecmp(argv[i], "load", len))
+        load = true;
+      else if (!strncasecmp(argv[i], "modify", len))
+        modify = true;
+      else if (!strncasecmp(argv[i], "print", len))
+        print = true;
+      else if (!strncasecmp(argv[i], "process", len))
+        process = true;
+      else if (!strncasecmp(argv[i], "save", len))
+        save = true;
+      else if (!strncasecmp(argv[i], "send", len))
+        send2 = true;
+      else if (!strncasecmp(argv[i], "quit", len))
+        quit = true;
       else {
         printf("\n");
         printf("\"%s\" is not a command.\n", argv[i]);
@@ -729,7 +663,6 @@ static void help(int argc, const char* argv[]) {
     }
   }
 
-#ifdef PRIV
   if (enroll) {
     printf("\n");
     printf("Enroll\n");
@@ -737,7 +670,6 @@ static void help(int argc, const char* argv[]) {
     printf("\t\t after checking to make sure it has all points spent, and\n");
     printf("\t\t other such administrivia.\n");
   }
-#endif
 
   if (helpp) {
     printf("\n");
@@ -769,43 +701,42 @@ static void help(int argc, const char* argv[]) {
     printf("\t\t                  | modify name <string>\n");
     printf("\t\t                  | modify password <string>\n");
     printf("\t\t                  | modify planet <planettype>\n");
-#ifdef PRIV
     printf("\t\t                  | modify privilege <privtype>\n");
-#endif
     printf("\t\t                  | modify race <racetype>\n");
     printf("\t\t                  | modify <sectortype> <value>\n");
 
     printf("\t\t   <attribute>  ::= %s", attr[0].print_name);
-    for (i = 1; i < N_ATTRIBUTES; i++) {
+    for (int i = 1; i < N_ATTRIBUTES; ++i) {
       printf(" | %s", attr[i].print_name);
       if ((i % 3) == 2) printf("\n\t\t                 ");
     }
     printf("\n");
 
     printf("\t\t   <planettype> ::= %s", planet_print_name[0]);
-    for (i = FIRST_HOME_PLANET_TYPE + 1;
-         i <= std::min(4, LAST_HOME_PLANET_TYPE); i++) {
-      printf(" | %s", planet_print_name[i]);
+    int p_idx = FIRST_HOME_PLANET_TYPE + 1;
+    for (; p_idx <= std::min(4, LAST_HOME_PLANET_TYPE); ++p_idx) {
+      printf(" | %s", planet_print_name[p_idx]);
     }
     printf("\n\t\t                 ");
-    for (; i <= LAST_HOME_PLANET_TYPE; i++) {
-      printf(" | %s", planet_print_name[i]);
+    for (; p_idx <= LAST_HOME_PLANET_TYPE; ++p_idx) {
+      printf(" | %s", planet_print_name[p_idx]);
     }
     printf("\n");
 
     printf("\t\t   <racetype>   ::= %s", race_print_name[0]);
-    for (i = FIRST_RACE_TYPE + 1; i <= LAST_RACE_TYPE; i++) {
+    for (int i = FIRST_RACE_TYPE + 1; i <= LAST_RACE_TYPE; ++i) {
       printf(" | %s", race_print_name[i]);
     }
     printf("\n");
 
     printf("\t\t   <sectortype> ::= %s", sector_print_name[1]);
-    for (i = FIRST_SECTOR_TYPE + 2; i <= std::min(5, LAST_SECTOR_TYPE); i++) {
-      printf(" | %s", sector_print_name[i]);
+    int s_idx = FIRST_SECTOR_TYPE + 2;
+    for (; s_idx <= std::min(5, LAST_SECTOR_TYPE); ++s_idx) {
+      printf(" | %s", sector_print_name[s_idx]);
     }
     printf("\n\t\t                 ");
-    for (; i <= LAST_SECTOR_TYPE; i++) {
-      printf(" | %s", sector_print_name[i]);
+    for (; s_idx <= LAST_SECTOR_TYPE; ++s_idx) {
+      printf(" | %s", sector_print_name[s_idx]);
     }
     printf("\n");
   }
@@ -819,7 +750,6 @@ static void help(int argc, const char* argv[]) {
     printf("\t\t specified in the first argument.\n");
   }
 
-#ifdef PRIV
   if (process) {
     printf("\n");
     printf("Process filename\n");
@@ -827,7 +757,6 @@ static void help(int argc, const char* argv[]) {
     printf("\t\t and then try to enroll them.  You can thus easily \n");
     printf("\t\t enroll tens of players at once.  \n");
   }
-#endif
 
   if (save) {
     printf("\n");
@@ -858,7 +787,6 @@ static void help(int argc, const char* argv[]) {
 /*
  * Return non-zero on failure, zero on success. */
 int load_from_file(std::FILE* g) {
-  int i;
   char buf[80];
   char from_address[80];
 
@@ -884,10 +812,10 @@ int load_from_file(std::FILE* g) {
     normal();
   else
     metamorph();
-  for (i = 0; i < N_ATTRIBUTES; i++)
+  for (int i = 0; i < N_ATTRIBUTES; ++i)
     FSCANF(g, " %lf", &race_info.attr[i]);
   fix_up_iq();
-  for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++)
+  for (int i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; ++i)
     FSCANF(g, " %lf", &race_info.compat[i]);
   do {
     FSCANF(g, " %s", buf);
@@ -916,12 +844,12 @@ static int load_from_filename(const char* filename) {
 
 static void load(int argc, const char* argv[]) {
   char c[64];
-  int i;
 
   last = race_info;
   if (altered) {
-    i = Dialogue("This race has been altered; load anyway?", "yes", "no", 0);
-    if (i == 1) return;
+    const int choice =
+        Dialogue("This race has been altered; load anyway?", "yes", "no", 0);
+    if (choice == 1) return;
   }
   if (argc > 1)
     std::strcpy(c, argv[1]);
@@ -939,74 +867,73 @@ static void load(int argc, const char* argv[]) {
 }
 
 static int modify(int argc, const char* argv[]) {
-  int i;
-  int j;
   static const char* help_strings[2] = {nullptr, "modify"};
-  double f;
 
   if (argc < 3) {
     help(2, help_strings);
     return -1;
   }
-  j = std::strlen(argv[1]);
+  const auto field_len = std::strlen(argv[1]);
 
   last = race_info;
 
   /*
    * Check for attribute modification: */
-  for (i = 0; i < N_ATTRIBUTES; i++)
-    if (!strncasecmp(argv[1], attr[i].print_name, j)) {
+  for (int i = 0; i < N_ATTRIBUTES; ++i) {
+    if (!strncasecmp(argv[1], attr[i].print_name, field_len)) {
+      double f = 0.0;
       if (attr[i].is_integral == 2) { /* Boolean attribute. */
-        j = std::strlen(argv[2]);
-        if (!strncasecmp(argv[2], "no", j))
+        const auto val_len = std::strlen(argv[2]);
+        if (!strncasecmp(argv[2], "no", val_len))
           f = 0.0;
-        else if (!strncasecmp(argv[2], "yes", j))
+        else if (!strncasecmp(argv[2], "yes", val_len))
           f = 1.0;
         else
           f = std::atof(argv[2]);
-      } else
+      } else {
         f = std::atof(argv[2]);
+      }
 
       race_info.attr[i] = f;
       fix_up_iq();
       return critique_modification();
     }
+  }
 
   /*
    * Check for name modification:  */
-  if (!strncasecmp(argv[1], "name", j)) {
+  if (!strncasecmp(argv[1], "name", field_len)) {
     std::strcpy(race_info.name, argv[2]);
     return critique_modification();
   }
 
   /*
    * Check for from-address modification:  */
-  if (!strncasecmp(argv[1], "address", j)) {
+  if (!strncasecmp(argv[1], "address", field_len)) {
     std::strcpy(race_info.address, argv[2]);
     return critique_modification();
   }
 
-#ifdef PRIV
   /*
    * Check for privilege modification:  */
-  if (!strncasecmp(argv[1], "privilege", j)) {
-    j = std::strlen(argv[2]);
-    for (i = FIRST_PRIV_TYPE; i <= LAST_PRIV_TYPE; i++)
-      if (!strncasecmp(argv[2], priv_print_name[i], j)) {
+  if (!strncasecmp(argv[1], "privilege", field_len)) {
+    const auto val_len = std::strlen(argv[2]);
+    for (int i = FIRST_PRIV_TYPE; i <= LAST_PRIV_TYPE; ++i) {
+      if (!strncasecmp(argv[2], priv_print_name[i], val_len)) {
         race_info.priv_type = i;
         return critique_modification();
       }
+    }
     race_info.priv_type = std::atof(argv[2]);
     return critique_modification();
   }
-#endif
 
   /*
    * Check for planet modification:  */
-  if (!strncasecmp(argv[1], "planet", j)) {
-    j = std::strlen(argv[2]);
-    for (i = FIRST_HOME_PLANET_TYPE; i <= LAST_HOME_PLANET_TYPE; i++)
-      if (!strncasecmp(argv[2], planet_print_name[i], j)) {
+  if (!strncasecmp(argv[1], "planet", field_len)) {
+    const auto val_len = std::strlen(argv[2]);
+    for (int i = FIRST_HOME_PLANET_TYPE; i <= LAST_HOME_PLANET_TYPE; ++i) {
+      if (!strncasecmp(argv[2], planet_print_name[i], val_len)) {
         if (i == H_JOVIAN) {
           race_info.compat = {};
           race_info.compat[S_GAS] = 100.0;
@@ -1017,23 +944,24 @@ static int modify(int argc, const char* argv[]) {
         race_info.home_planet_type = i;
         return critique_modification();
       }
+    }
     printf("\"%s\" is not a valid planet type.\n", argv[2]);
     return -1;
   }
 
   /*
    * Check for password modification:  */
-  if (!strncasecmp(argv[1], "password", j)) {
+  if (!strncasecmp(argv[1], "password", field_len)) {
     std::strcpy(race_info.password, argv[2]);
     return critique_modification();
   }
 
   /*
    * Check for race modification:  */
-  if (!strncasecmp(argv[1], "race", j)) {
-    j = std::strlen(argv[2]);
-    for (i = FIRST_RACE_TYPE; i <= LAST_RACE_TYPE; i++)
-      if (!strncasecmp(argv[2], race_print_name[i], j)) {
+  if (!strncasecmp(argv[1], "race", field_len)) {
+    const auto val_len = std::strlen(argv[2]);
+    for (int i = FIRST_RACE_TYPE; i <= LAST_RACE_TYPE; ++i) {
+      if (!strncasecmp(argv[2], race_print_name[i], val_len)) {
         if (i == R_METAMORPH) {
           race_info.attr[ABSORB] = 1;
           race_info.attr[PODS] = 1;
@@ -1048,29 +976,32 @@ static int modify(int argc, const char* argv[]) {
         race_info.race_type = i;
         return critique_modification();
       }
+    }
     printf("\"%s\" is not a valid race type.\n", argv[2]);
     return -1;
   }
 
   /*
    * Check for sector_type modification: */
-  for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++)
-
-#ifndef PRIV
-    if (i == S_PLATED)
-      continue; /* Players should never need to modify this. */
-    else
-#endif
-        if (!strncasecmp(argv[1], sector_print_name[i], j)) {
+  for (int i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; ++i) {
+    if (i == S_PLATED) {
+      continue; /* Plated compatibility is fixed. */
+    }
+    if (!strncasecmp(argv[1], sector_print_name[i], field_len)) {
       race_info.compat[i] = std::atof(argv[2]);
       return critique_modification();
     }
+  }
 
   /*
    * Print error */
-  printf("\n");
-  printf("Modify: didn't recognize the first argument \"%s\".\n", argv[1]);
-  printf("Type \"help modify\" for more information on modify.\n");
+  printf("Cannot modify \"%s\".  Valid fields to modify are:\n", argv[1]);
+  printf("\tName, Password, Address, Planet, Race, Privilege,\n\t");
+  for (int i = 0; i < N_ATTRIBUTES; ++i)
+    printf("%s, ", attr[i].print_name);
+  printf("\n\t");
+  for (int i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; ++i)
+    if (i != S_PLATED) printf("%s, ", sector_print_name[i]);
   printf("\n");
   return -1;
 }
@@ -1078,7 +1009,6 @@ static int modify(int argc, const char* argv[]) {
 void print_to_file(std::FILE* f, int verbose) {
 #define FPRINTF                                                                \
   if (verbose) std::fprintf
-  int i;
 
   if (!verbose) std::fprintf(f, START_RECORD_STRING);
 
@@ -1094,18 +1024,12 @@ void print_to_file(std::FILE* f, int verbose) {
   fprintf(f, " %s", race_info.password);
   FPRINTF(f, "\n");
 
-#ifdef PRIV
   FPRINTF(f, "Privileges:");
   if (verbose)
     fprintf(f, "%11.11s", priv_print_name[race_info.priv_type]);
   else
-#endif
-      if (!verbose)
     fprintf(f, " %d", race_info.priv_type);
-
-#ifdef PRIV
   FPRINTF(f, "\n");
-#endif
 
   FPRINTF(f, "Planet   :");
   if (verbose)
@@ -1123,7 +1047,7 @@ void print_to_file(std::FILE* f, int verbose) {
   FPRINTF(f, "\n");
 
   FPRINTF(f, "Attributes:\n");
-  for (i = 0; i < N_ATTRIBUTES; i++) {
+  for (int i = 0; i < N_ATTRIBUTES; ++i) {
     FPRINTF(f, "%13.13s:", attr[i].print_name);
     if (verbose && (attr[i].is_integral == 2))
       fprintf(f, (race_info.attr[i] > 0.0) ? "  yes   " : "   no   ");
@@ -1132,12 +1056,12 @@ void print_to_file(std::FILE* f, int verbose) {
     FPRINTF(f, "  [%4.0f]", cost_info.attr[i]);
     FPRINTF(f, (i & 01) ? "\n" : "     ");
   }
-  if (i & 01) FPRINTF(f, "\n");
+  if (N_ATTRIBUTES & 01) FPRINTF(f, "\n");
   FPRINTF(f, "\n");
 
   FPRINTF(f, "Sector Types:    %2d     [%4d]\n", race_info.n_sector_types,
           cost_info.n_sector_types);
-  for (i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; i++) {
+  for (int i = FIRST_SECTOR_TYPE; i <= LAST_SECTOR_TYPE; ++i) {
     FPRINTF(f, "%13.13s: ", sector_print_name[i]);
     fprintf(f, " %3.0f", race_info.compat[i]);
     FPRINTF(f, "%%   %c[%4.0f]",
@@ -1186,52 +1110,24 @@ static void save(int argc, const char* argv[]) {
 }
 
 static void send2(int, const char**) {
-  FILE* f;
-
   last = race_info;
   if (critique_to_file(stdout, 1, IS_PLAYER)) return;
 
-  f = fopen(race_info.password, "w");
+  const char* dest = race_info.filename[0] ? race_info.filename : SAVETO;
+  FILE* f = fopen(dest, "w");
   if (f == nullptr) {
-    printf("Unable to open file \"%s\".\n", race_info.password);
+    std::println(std::cout, "Unable to open file \"{}\".", dest);
     return;
   }
-  fprintf(f, "From: %s\n", race_info.address);
-  fprintf(f, "Subject: %s Race Submission\n", GAME);
-  fprintf(f, "\n");
+  std::println(f, "From: {}", race_info.address);
+  std::println(f, "Subject: {} Race Submission\n", GAME);
   print_to_file(f, 0);
   fclose(f);
 
-  fflush(stdout);
-  printf("Mailing race to %s : ", TO);
-  std::string sys =
-      std::format("cat {} | {} {}", race_info.password, MAILER, TO);
-  if (std::system(sys.c_str()) < 0) {
-    perror("gaaaaaaah");
-    std::exit(-1);
-  }
-  printf("done.\n");
-
-  f = fopen(race_info.password, "w");
-  if (f == nullptr) {
-    printf("Unable to open file \"%s\".\n", race_info.password);
-    return;
-  }
-  fprintf(f, "From: %s\n", race_info.address);
-  fprintf(f, "Subject: %s Race Submission\n\n", GAME);
-  print_to_file(f, 1);
-  fclose(f);
-
-  fflush(stdout);
-  printf("Mailing race to %s : ", race_info.address);
-  sys = std::format("cat {} | {} {}", race_info.password, MAILER,
-                    race_info.address);
-  if (std::system(sys.c_str()) < 0) {
-    perror("gaaaaaaah");
-    std::exit(-1);
-  }
-  printf("done.\n");
-  unlink(race_info.password);
+  std::println(std::cout,
+               "Race \"{}\" validated and saved to \"{}\" for submission.",
+               race_info.name, dest);
+  altered = false;
 }
 
 int Dialogue(const char* prompt, ...) {
@@ -1239,8 +1135,6 @@ int Dialogue(const char* prompt, ...) {
 #define INPUTSIZE 512
   char input[INPUTSIZE];
   char* carg;
-  int len;
-  int i;
   int argc = 0;
   int init = 0;
   char* argv[16];
@@ -1261,40 +1155,34 @@ int Dialogue(const char* prompt, ...) {
   fflush(stdout);
   while (fgets(input, INPUTSIZE, stdin) != nullptr) {
     if (argc == 0) return -1;
-    len = std::strlen(input) - 1;
+    const auto len = std::strlen(input) - 1;
 
-    for (i = 0; i < argc; i++)
+    for (int i = 0; i < argc; ++i) {
       if (!strncasecmp(argv[i], input, len)) return i;
+    }
     /*
      * The input did not match any of the valid responses: */
     printf("Please enter ");
-    for (i = 0; i < argc - 1; i++) {
+    for (int i = 0; i < argc - 1; ++i) {
       printf("\"%s\", ", argv[i]);
     }
-    printf("or \"%s\"> ", argv[i]);
+    printf("or \"%s\"> ", argv[argc - 1]);
   }
   return 0;
 }
 
 static void quit(int, const char**) {
-  int i;
-
   if (please_quit) { /* This could happen if ^c is hit while here. */
-    if (isserver) close(fd);
     std::exit(0);
   }
   please_quit = true;
   if (altered) {
-    if (!isserver) {
-      i = Dialogue("Save this race before quitting?", "yes", "no", "abort", 0);
-      if (i == 0)
-        save(1, nullptr);
-      else if (i == 2)
-        please_quit = false;
-    } else {
-      i = Dialogue("Are you sure?", "yes", "no", "abort", 0);
-      if (i == 1) please_quit = false;
-    }
+    const int choice =
+        Dialogue("Save this race before quitting?", "yes", "no", "abort", 0);
+    if (choice == 0)
+      save(1, nullptr);
+    else if (choice == 2)
+      please_quit = false;
   }
 }
 
@@ -1303,43 +1191,31 @@ static void quit(int, const char**) {
  * one of the commands above.
  */
 static void execute(int argc, const char** argv) {
-  int i;
-
-#if 0
-  for (i = 0; i < argc; i++)
-    printf ("%d: \"%s\"\n", i, argv[i]);
-#endif
   if (argc == 0) {
     printf("Type \"help\" for help.\n");
     return;
   }
-  i = std::strlen(argv[0]);
-#ifdef PRIV
-  if (!strncasecmp(argv[0], "enroll", i) && !isserver)
+  const auto len = std::strlen(argv[0]);
+  if (!strncasecmp(argv[0], "enroll", len))
     enroll(argc, argv);
-  else
-#endif
-      if (!strncasecmp(argv[0], "help", i))
+  else if (!strncasecmp(argv[0], "help", len))
     help(argc, argv);
-  else if (!strncasecmp(argv[0], "load", i) && !isserver)
+  else if (!strncasecmp(argv[0], "load", len))
     load(argc, argv);
-  else if (!strncasecmp(argv[0], "modify", i))
+  else if (!strncasecmp(argv[0], "modify", len))
     modify(argc, argv);
-  else if (!strncasecmp(argv[0], "print", i))
+  else if (!strncasecmp(argv[0], "print", len))
     print(argc, argv);
-#ifdef PRIV
-  else if (!strncasecmp(argv[0], "process", i) && !isserver)
+  else if (!strncasecmp(argv[0], "process", len))
     process(argc, argv);
-#endif
-  else if (!strncasecmp(argv[0], "save", i) && !isserver)
+  else if (!strncasecmp(argv[0], "save", len))
     save(argc, argv);
-  else if (!strncasecmp(argv[0], "send", i))
+  else if (!strncasecmp(argv[0], "send", len))
     send2(argc, argv);
-  else if (!strncasecmp(argv[0], "quit", i))
+  else if (!strncasecmp(argv[0], "quit", len))
     quit(argc, argv);
   else {
     printf("Unknown command \"%s\".  Type \"help\" for help.\n", argv[0]);
-    return;
   }
 }
 
@@ -1354,7 +1230,6 @@ void modify_print_loop(int) {
   char buf[BUFSIZE];
   char* com;
   const char* args[4];
-  int i;
 
   while (!please_quit) {
     last_npoints = npoints;
@@ -1364,28 +1239,21 @@ void modify_print_loop(int) {
       print_to_file(stdout, 1);
       changed = false;
     }
-#ifdef PRIV
-    if (isserver)
-      printf("Command [help/modify/print/send/quit]> ");
-    else
-      printf(
-          "Command [enroll/help/load/modify/print/process/save/send/quit]> ");
-#else
-    printf("Command [help/load/modify/print/save/send/quit]> ");
-#endif
+    printf("Command [enroll/help/load/modify/print/process/save/send/quit]> ");
     fflush(stdout);
     com = fgets(buf, BUFSIZE, stdin);
     buf[std::strlen(buf) - 1] = '\0';
 
-    for (i = 0; i < 4; i++) {
+    int argc = 0;
+    for (; argc < 4; ++argc) {
       while (*com && (*com == ' '))
         *com++ = '\0';
       if (!*com) break;
-      args[i] = com;
+      args[argc] = com;
       while (*com && (*com != ' '))
         com++;
     }
-    execute(i, args);
+    execute(argc, args);
   }
   printf("\n");
 }

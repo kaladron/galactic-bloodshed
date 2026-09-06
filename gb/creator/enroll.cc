@@ -89,16 +89,8 @@ static int enroll_player_race(const char* failure_filename) {
     print_to_file(g, 1);
     fclose(g);
 
-    std::print("Sending critique to {} via {}...", race_info.address, MAILER);
-    fflush(stdout);
-    std::string cmd =
-        std::format("cat {} | {} {}", TMP, MAILER, race_info.address);
-    if (system(cmd.c_str()) < 0) {
-      perror("gaaaaaah");
-      std::exit(-1);
-    }
-    std::println(std::cout, "done.");
-
+    std::println(std::cout, "Rejection critique written to \"{}\" for {}.", TMP,
+                 race_info.address);
     return 1;
   }
 
@@ -118,27 +110,10 @@ static int enroll_player_race(const char* failure_filename) {
   std::println(g, "Subject: {} Race Accepted", GAME);
   std::println(g, "");
   std::println(g, "The race you submitted ({}) was accepted.", race_info.name);
-#if 0
-  if (race.modified_by_diety) {
-    fprintf(g, "The race was altered in order to be acceptable.\n") ;
-    fprintf(g, "Your race now looks like this:\n") ;
-    fprintf(g, "\n") ;
-    print_to_file(g, verbose, 0) ;
-    fprintf(g, "\n") ;
-    }
-#endif
   fclose(g);
 
-  std::print("Sending acceptance to {} via {}...", race_info.address, MAILER);
-  fflush(stdout);
-  std::string cmd =
-      std::format("cat {} | {} {}", TMP, MAILER, race_info.address);
-  if (system(cmd.c_str()) < 0) {
-    perror("gaaaaaah");
-    std::exit(-1);
-  }
-  std::println(std::cout, "done.");
-
+  std::println(std::cout, "Acceptance notification written to \"{}\" for {}.",
+               TMP, race_info.address);
   return 0;
 }
 

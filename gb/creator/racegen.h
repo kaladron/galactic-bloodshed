@@ -25,7 +25,6 @@
 /**************
  * System dependencies.  These will likely not change much.
  */
-#define MAILER "/usr/lib/sendmail"
 #define SAVETO "racegen.save"
 #define TMP "/tmp/racegen.save"
 

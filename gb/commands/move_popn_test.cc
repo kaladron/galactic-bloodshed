@@ -4,7 +4,6 @@
 /// \brief Unit tests for move and deploy commands
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,10 +12,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Testers", 100.0, false, player_t{1})
-      .add_star("Test Star", 100, starnum_t{0})
-      .add_planet(0, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
   // Set race fighters
   ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
@@ -156,9 +152,6 @@ void test_move_popn_domain_errors() {
 void test_move_popn_assault_and_unowned() {
   TestContext ctx;
   setup_test_world(ctx);
-
-  // Add enemy race (Player 2)
-  TestWorldBuilder(ctx).add_race("AlienEnemy", 100.0, false, player_t{2});
 
   // Setup sectors: (5,5) owned by P1, (5,6) unowned (owner 0), (5,7) owned by
   // P2

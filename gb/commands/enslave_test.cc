@@ -4,7 +4,6 @@
 /// \brief Unit tests for enslave command
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,11 +12,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Enslavers", 100.0, false, player_t{1})
-      .add_race("Victims", 100.0, false, player_t{2})
-      .add_star("Test Star", 100, starnum_t{0})
-      .add_planet(0, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
   // Setup planet info
   ctx.em.mutate_planet(0, 0, [](Planet& planet) {
@@ -86,16 +81,7 @@ void test_enslave_role_rejection() {
   setup_test_world(ctx);
 
   // Create guest race
-  Race guest{};
-  guest.Playernum = 3;
-  guest.name = "GuestEnslaver";
-  guest.Guest = true;
-  guest.governor[0].active = true;
-  {
-    JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(guest);
-  }
+  TestWorldBuilder(ctx).add_race("GuestEnslaver", 100.0, true, player_t{3});
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

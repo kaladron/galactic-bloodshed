@@ -203,6 +203,14 @@ TestContext& TestContext::with_standard_universe() {
   r2.metabolism = 1.0;
   race_repo.save(r2);
 
+  // Setup standard alliance blocks for Player 1 and Player 2
+  BlockRepository block_repo(store);
+  for (player_t pid : {player_t{1}, player_t{2}}) {
+    block b{};
+    b.Playernum = pid;
+    block_repo.save(b);
+  }
+
   // 2. Setup Star 0 (Sol) with 100 AP for both races, explored and inhabited
   star_struct ss0{};
   ss0.star_id = 0;

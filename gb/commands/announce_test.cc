@@ -4,7 +4,6 @@
 /// \brief Test announce, broadcast, shout, and think communication commands and
 /// role checks.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -14,10 +13,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Federation", 100.0, false, player_t{1})
-      .add_race("Empire", 100.0, false, player_t{2})
-      .add_star("Sol", 100, starnum_t{0});
+  ctx.with_standard_universe();
 
   // Setup governors and names
   ctx.em.mutate_race(1, [](Race& r) {
@@ -27,12 +23,6 @@ void setup_test_world(TestContext& ctx) {
   });
 
   ctx.em.mutate_race(2, [](Race& r) { r.governor[0].name = "Emperor"; });
-
-  // Mark star inhabited by both races
-  ctx.em.mutate_star(0, [](Star& star) {
-    star.mark_inhabited_by(player_t{1});
-    star.mark_inhabited_by(player_t{2});
-  });
 }
 
 void test_announce_dispatch() {

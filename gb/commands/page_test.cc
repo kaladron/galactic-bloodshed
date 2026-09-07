@@ -4,7 +4,6 @@
 /// \brief Test page command functionality, alliance block paging, and scope
 /// validations.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -14,20 +13,14 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Federation", 100.0, false, player_t{1})
-      .add_race("Klingons", 100.0, false, player_t{2})
-      .add_star("Sol", 10, starnum_t{0});
+  ctx.with_standard_universe();
 
   // Setup alliance block for player 1
-  block block1{};
-  block1.Playernum = 1;
-  block1.name = "AlphaAlliance";
-  block1.invite = 0b11;
-  block1.pledge = 0b11;
-  JsonStore store(ctx.db);
-  BlockRepository blocks(store);
-  blocks.save(block1);
+  ctx.em.mutate_block(1, [](block& b) {
+    b.name = "AlphaAlliance";
+    b.invite = 0b11;
+    b.pledge = 0b11;
+  });
 }
 
 void test_page_dispatch() {

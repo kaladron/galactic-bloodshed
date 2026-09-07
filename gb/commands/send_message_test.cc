@@ -3,7 +3,6 @@
 /// \file send_message_test.cc
 /// \brief Unit tests for send message command and translation updates
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,10 +12,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("TestRace", 100.0, false, player_t{1})
-      .add_race("AlienRace", 100.0, false, player_t{2})
-      .add_star("Sol", 10, starnum_t{0});
+  ctx.with_standard_universe();
 
   ctx.em.mutate_race(1, [](Race& r) {
     r.governor[0].name = "TestGovernor";

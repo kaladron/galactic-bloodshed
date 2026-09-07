@@ -47,7 +47,7 @@ Examples:
 
 ### Test File Template
 
-Every command test file should follow this pattern:
+Every command test file should follow this pattern using `TestContext` and `with_standard_universe()`:
 
 ```cpp
 // SPDX-License-Identifier: Apache-2.0
@@ -55,112 +55,80 @@ Every command test file should follow this pattern:
 /// \file commandname_test.cc
 /// \brief Unit tests for commandname command
 
+import commands;
 import dallib;
 import gb.entities;
 import gb.services;
-import commands;
 import test;
 import std;
 
-#include <cassert>
+namespace {
 
-// Test 1: Database persistence
+void test_commandname_matrix() {
+  TestContext ctx;
+  ctx.with_standard_universe();  // Sol (0), Earth (0), Vega (1), Vega Prime (0), P1 (Federation), P2 (Klingons)
+
+  // 1. Setup test entities via fluent builders
+  shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                          .owned_by(1, 0)
+                          .in_star_orbit(0)
+                          .with_fuel(100.0)
+                          .build();
+
+  // 2. Setup GameObj via TestContext helper (auto-populates g.race)
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+
+  // 3. 4-Way Command Matrix runner
+  TestCommandMatrix(ctx, "commandname")
+      .with_valid_argv({"commandname", std::format("#{}", ship_id.value)})
+      .with_invalid_argv({"commandname", "#999"})
+      .with_valid_scope(ScopeLevel::LEVEL_STAR)
+      .with_expected_star_ap(1)
+      .run_matrix(g);
+
+  // 4. Verify domain invariants across all entities
+  ctx.verify_universe_invariants();
+}
+
 void test_commandname_persistence() {
-  // 1. Create in-memory database
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  // 2. Create test entities via Repository (simulates universe creation)
-  JsonStore store(db);
-  // ... create entities ...
-  // ... save via repository ...
+  // Mutate via production path (auto-saves on lambda exit)
+  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+    planet.popn() += 500;
+  });
 
-  // 3. Verify initial state via EntityManager
-  em.clear_cache();
-  {
-    const auto* entity = em.peek_entity(id);
-    assert(entity);
-    assert(entity->field == initial_value);
-  }
-
-  // 4. Simulate command execution via EntityManager
-  {
-    auto entity_handle = em.get_entity(id);
-    assert(entity_handle.get());
-    auto& entity = *entity_handle;
-    entity.field = new_value;
-    // Auto-saves on scope exit
-  }
-
-  // 5. Verify changes persisted after cache clear
-  em.clear_cache();
-  const auto* final_entity = em.peek_entity(id);
-  assert(final_entity);
-  assert(final_entity->field == new_value);
-
-  std::println("✓ commandname persistence test passed");
+  // Verify persistence via cache clear
+  ctx.em.clear_cache();
+  const auto* planet = ctx.em.peek_planet(0, 0);
+  test::expect_eq(planet->popn(), 1500);
 }
 
-// Test 2: Command logic (specific business rules)
-void test_commandname_logic() {
-  // Test specific command behavior, validation, etc.
-  std::println("✓ commandname logic test passed");
-}
-
-// Test 3: Edge cases
-void test_commandname_edge_cases() {
-  // Test boundary conditions, error handling
-  std::println("✓ commandname edge cases test passed");
-}
+}  // namespace
 
 int main() {
+  test_commandname_matrix();
   test_commandname_persistence();
-  test_commandname_logic();
-  test_commandname_edge_cases();
 
-  std::println("\n✅ All commandname tests passed!");
+  std::println(std::cout, "\n✅ All commandname tests passed!");
   return 0;
 }
 ```
 
 ### Critical Database Test Pattern
 
-**⚠️ ALWAYS follow this pattern for database tests:**
+**⚠️ ALWAYS follow this pattern for command tests:**
 
-```cpp
-// 1. Create in-memory database BEFORE initialize_schema()
-Database db(":memory:");
-initialize_schema(db);
-EntityManager em(db);
-
-// 2. Create entities via Repository (not EntityManager!)
-JsonStore store(db);
-SomeRepository repo(store);
-Entity entity{};
-// ... initialize entity ...
-repo.save(entity);
-
-// 3. Clear cache before verifying initial state
-em.clear_cache();
-
-// 4. Use EntityManager for modifications
-auto handle = em.get_entity(id);
-auto& entity = *handle;
-entity.field = new_value;
-// Auto-saves on scope exit
-
-// 5. Clear cache before final verification
-em.clear_cache();
-const auto* result = em.peek_entity(id);
-assert(result->field == new_value);
-```
-
-**Why this pattern?**
-- Creates entities in DB (not just in cache)
-- Tests actual persistence, not just in-memory changes
-- Simulates real game flow: universe creation → command execution → verification
-- `clear_cache()` forces reload from database
+1. **Use `TestContext` & `with_standard_universe()`**: Automatically handles in-memory database creation (`db(":memory:")`), table schema initialization (`initialize_schema(db)`), and provision of canonical solar systems with verified invariants.
+2. **Use `TestShipBuilder`**: Populates test ships with canonical template parameters (`ShipTemplate`) rather than raw magic numbers.
+3. **Use `ctx.setup_game_obj(g, player, gov)`**: Guarantees that `g.race` is pre-populated, preventing null pointer crashes.
+4. **Mutate via `ctx.em.mutate_*()`**: Scoped monadic mutations ensure automatic persistence upon lambda exit.
+5. **Clear cache before verifying disk persistence**: `ctx.em.clear_cache()` forces reload from SQLite to prove actual persistence.
 
 ---
 

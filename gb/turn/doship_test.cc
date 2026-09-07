@@ -14,6 +14,12 @@ import std;
 
 namespace {
 
+void expect_near(double actual, double expected, double tolerance = 1e-5) {
+  test::expect_true(std::abs(actual - expected) <= tolerance,
+                    std::format("Expected {} to be near {}, difference is {}",
+                                actual, expected, std::abs(actual - expected)));
+}
+
 Race createTestRace(player_t playernum = player_t{1}) {
   Race race{};
   race.Playernum = playernum;
@@ -33,105 +39,310 @@ Star createTestStar(starnum_t id = starnum_t{1}) {
 }
 
 void test_domass_and_doown() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  Race race = createTestRace(player_t{1});
-  RaceRepository races(store);
-  races.save(race);
+  shipnum_t parent_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                            .owned_by(1)
+                            .in_star_orbit(0)
+                            .build();
 
-  ship_struct parent_data{
-      .owner = player_t{1},
-      .type = ShipType::STYPE_CARRIER,
-      .active = 1,
-      .alive = 1,
-  };
-  auto parent_handle = em.create_ship(parent_data);
-  Ship& parent = *parent_handle;
+  shipnum_t child_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(2)
+                           .docked_to(parent_id, 0)
+                           .with_crew(10, 0)
+                           .build();
 
-  ship_struct child_data{
-      .owner = player_t{2},
-      .popn = 10,
-      .whatorbits = ScopeLevel::LEVEL_SHIP,
-      .type = ShipType::STYPE_SHUTTLE,
-      .active = 1,
-      .alive = 1,
-  };
-  child_data.destshipno = parent.number();
-  auto child_handle = em.create_ship(child_data);
-  Ship& child = *child_handle;
+  ctx.em.mutate_ship(parent_id, [&](Ship& parent) {
+    parent.ships() = child_id;
+    doown(parent, ctx.em);
+  });
 
-  parent.ships() = child.number();
+  const auto* child = ctx.em.peek_ship(child_id);
+  test::expect_eq(child->owner(), player_t{1});
 
-  doown(parent, em);
-  test::expect_eq(child.owner(), player_t{1});
-
-  domass(parent, em);
-  test::expect_gt(parent.mass(), 0.0);
+  ctx.em.mutate_ship(parent_id, [&](Ship& parent) {
+    domass(parent, ctx.em);
+    test::expect_gt(parent.mass(), 0.0);
+  });
 }
 
 void test_do_habitat() {
   seed_rand(42);
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.birthrate = 0.1; });
 
-  Race race = createTestRace(player_t{1});
-  RaceRepository races(store);
-  races.save(race);
+  shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                          .owned_by(1)
+                          .in_star_orbit(0)
+                          .with_fuel(100.0)
+                          .with_crew(1000, 0)
+                          .with_resource(10)
+                          .with_on(true)
+                          .build();
 
-  ship_struct sdata{
-      .owner = player_t{1},
-      .fuel = 100.0,
-      .max_crew = 100,
-      .max_resource = 1000,
-      .resource = 10,
-      .popn = 50,
-      .type = ShipType::STYPE_HABITAT,
-      .active = 1,
-      .alive = 1,
-  };
-  auto ship_handle = em.create_ship(sdata);
-  Ship& ship = *ship_handle;
-  ship.on() = 1;
-
-  do_habitat(ship, em);
-
-  test::expect_gt(ship.resource(), 10);
-  test::expect_gt(ship.popn(), 50);
+  ctx.em.mutate_ship(ship_id, [&](Ship& ship) {
+    do_habitat(ship, ctx.em);
+    test::expect_gt(ship.resource(), 10);
+    test::expect_gt(ship.popn(), 1000);
+  });
 }
 
 void test_do_weapon_plant() {
   seed_rand(42);
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  Race race = createTestRace(player_t{1});
-  race.tech = 100.0;
-  RaceRepository races(store);
-  races.save(race);
+  shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
+                          .owned_by(1)
+                          .in_star_orbit(0)
+                          .with_fuel(100.0)
+                          .with_crew(100, 0)
+                          .with_resource(500)
+                          .build();
 
-  ship_struct sdata{
-      .owner = player_t{1},
-      .fuel = 100.0,
-      .max_crew = 100,
-      .resource = 500,
-      .popn = 100,
-      .type = ShipType::OTYPE_WPLANT,
-      .active = 1,
-      .alive = 1,
-  };
-  auto ship_handle = em.create_ship(sdata);
-  Ship& ship = *ship_handle;
+  ctx.em.mutate_ship(ship_id, [&](Ship& ship) {
+    int produced = do_weapon_plant(ship, ctx.em);
+    test::expect_gt(produced, 0);
+    test::expect_lt(ship.resource(), 500);
+  });
+}
 
-  int produced = do_weapon_plant(ship, em);
-  test::expect_gt(produced, 0);
-  test::expect_lt(ship.resource(), 500);
+void test_do_habitat_zero_rate_and_offline() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Case 1: Ship offline (on == 0)
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(100.0)
+                       .with_crew(1000, 0)
+                       .with_resource(10)
+                       .with_on(false)
+                       .build();
+
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      do_habitat(ship, ctx.em);
+      expect_near(ship.fuel(), 100.0);
+      test::expect_eq(ship.resource(), 10);
+    });
+  }
+
+  // Case 2: Zero crew (crew_ratio == 0)
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(100.0)
+                       .with_crew(0, 0)
+                       .with_resource(10)
+                       .with_on(true)
+                       .build();
+
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      do_habitat(ship, ctx.em);
+      expect_near(ship.fuel(), 100.0);
+      test::expect_eq(ship.resource(), 10);
+    });
+  }
+
+  // Case 3: 100% damage (hull_efficiency == 0)
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(100.0)
+                       .with_crew(1000, 0)
+                       .with_resource(10)
+                       .with_damage(100)
+                       .with_on(true)
+                       .build();
+
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      do_habitat(ship, ctx.em);
+      expect_near(ship.fuel(), 100.0);
+      test::expect_eq(ship.resource(), 10);
+    });
+  }
+}
+
+void test_do_habitat_capacity_capped() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Full resource capacity: available_resource_capacity() == 0
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(100.0)
+                       .with_crew(2000, 0)
+                       .with_resource(5000)
+                       .with_on(true)
+                       .build();
+
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      do_habitat(ship, ctx.em);
+      expect_near(ship.fuel(), 100.0);
+      test::expect_eq(ship.resource(), 5000);
+    });
+  }
+
+  // Partial capacity: only 1 unit of resource room
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(100.0)
+                       .with_crew(2000, 0)
+                       .with_resource(4999)
+                       .with_on(true)
+                       .build();
+
+    // fuse would be 100.0, add would be 5, but room is only 1.
+    // add = 1, fuse = 20.0, fuel consumed = 20.0 -> remaining fuel 80.0
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      do_habitat(ship, ctx.em);
+      test::expect_eq(ship.resource(), 5000);
+      expect_near(ship.fuel(), 80.0);
+    });
+  }
+}
+
+void test_do_habitat_nested_weapon_plant() {
+  seed_rand(42);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 50.0; });
+
+  shipnum_t hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                         .owned_by(1)
+                         .in_star_orbit(0)
+                         .with_fuel(100.0)
+                         .with_crew(100, 0)
+                         .with_resource(500)
+                         .with_destruct(0)
+                         .with_on(true)
+                         .build();
+
+  shipnum_t wplant_id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
+                            .owned_by(1)
+                            .docked_to(hab_id, 0)
+                            .with_fuel(50.0)
+                            .with_crew(50, 0)
+                            .with_resource(100)
+                            .build();
+
+  ctx.em.mutate_ship(hab_id, [&](Ship& habitat) {
+    habitat.ships() = wplant_id;
+    do_habitat(habitat, ctx.em);
+    test::expect_gt(habitat.destruct(), 0);
+  });
+
+  const auto* wplant = ctx.em.peek_ship(wplant_id);
+  test::expect_lt(wplant->resource(), 100);
+  test::expect_lt(wplant->fuel(), 50.0);
+}
+
+void test_do_weapon_plant_zero_rate_and_shortages() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Case 1: 100% damage (hull_efficiency == 0)
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(100.0)
+                       .with_crew(100, 0)
+                       .with_resource(500)
+                       .with_damage(100)
+                       .build();
+
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      int produced = do_weapon_plant(ship, ctx.em);
+      test::expect_eq(produced, 0);
+      expect_near(ship.fuel(), 100.0);
+      test::expect_eq(ship.resource(), 500);
+    });
+  }
+
+  // Case 2: Zero crew (crew_ratio == 0)
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(100.0)
+                       .with_crew(0, 0)
+                       .with_resource(500)
+                       .build();
+
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      int produced = do_weapon_plant(ship, ctx.em);
+      test::expect_eq(produced, 0);
+      expect_near(ship.fuel(), 100.0);
+      test::expect_eq(ship.resource(), 500);
+    });
+  }
+
+  // Case 3: Zero fuel
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(0.0)
+                       .with_crew(100, 0)
+                       .with_resource(500)
+                       .build();
+
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      int produced = do_weapon_plant(ship, ctx.em);
+      test::expect_eq(produced, 0);
+      test::expect_eq(ship.resource(), 500);
+    });
+  }
+
+  // Case 4: Zero resource
+  {
+    shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
+                       .owned_by(1)
+                       .in_star_orbit(0)
+                       .with_fuel(100.0)
+                       .with_crew(100, 0)
+                       .with_resource(0)
+                       .build();
+
+    ctx.em.mutate_ship(id, [&](Ship& ship) {
+      int produced = do_weapon_plant(ship, ctx.em);
+      test::expect_eq(produced, 0);
+      expect_near(ship.fuel(), 100.0);
+    });
+  }
+}
+
+void test_do_weapon_plant_tech_capping_and_consumption() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 4.0; });
+
+  shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
+                     .owned_by(1)
+                     .in_star_orbit(0)
+                     .with_fuel(100.0)
+                     .with_crew(100, 0)
+                     .with_resource(500)
+                     .build();
+
+  ctx.em.mutate_ship(id, [&](Ship& ship) {
+    int produced = do_weapon_plant(ship, ctx.em);
+    // Tech = 4.0 caps production to at most 2
+    test::expect_eq(produced, 2);
+    test::expect_eq(ship.resource(), 500 - 2 * RES_COST_WPLANT);
+    expect_near(ship.fuel(), 100.0 - 2.0 * FUEL_COST_WPLANT);
+  });
 }
 
 void test_do_meta_infect() {
@@ -1274,10 +1485,15 @@ int main() {
 
   std::println(std::cout, "  Testing do_habitat... ");
   test_do_habitat();
+  test_do_habitat_zero_rate_and_offline();
+  test_do_habitat_capacity_capped();
+  test_do_habitat_nested_weapon_plant();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_weapon_plant... ");
   test_do_weapon_plant();
+  test_do_weapon_plant_zero_rate_and_shortages();
+  test_do_weapon_plant_tech_capping_and_consumption();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing do_meta_infect... ");

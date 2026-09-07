@@ -54,17 +54,12 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
 
   /* In v5.0+ Habitats make resources out of fuel */
   if (ship.on() && ship.max_crew_capacity() > 0) {
-    double fuse = ship.fuel() *
-                  (static_cast<double>(ship.popn()) /
-                   static_cast<double>(ship.max_crew_capacity())) *
-                  (1.0 - 0.01 * static_cast<double>(ship.damage()));
-    auto add = static_cast<int>(fuse / 20.0);
-    if (ship.resource() + add > ship.max_resource_capacity()) {
-      add = ship.max_resource_capacity() - ship.resource();
-    }
+    double fuse = ship.fuel() * ship.crew_ratio() * ship.hull_efficiency();
+    auto add = std::min(static_cast<resource_t>(fuse / 20.0),
+                        ship.available_resource_capacity());
     fuse = 20.0 * static_cast<double>(add);
     ship.add_resource(add);
-    ship.consume_fuel(fuse);
+    static_cast<void>(ship.consume_up_to_fuel(fuse));
 
     for (auto nested_ship : ShipList(entity_manager, ship.ships())) {
       if (nested_ship->type() == ShipType::OTYPE_WPLANT) {
@@ -75,9 +70,6 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
 
   if (ship.max_crew_capacity() > 0) {
     auto add = round_rand(static_cast<double>(ship.popn()) * race.birthrate);
-    if (ship.popn() + add > ship.max_crew_capacity()) {
-      add = ship.max_crew_capacity() - ship.popn();
-    }
     ship.add_popn(add, race.mass);
   }
 }
@@ -856,22 +848,32 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
 
 int do_weapon_plant(Ship& ship, EntityManager& entity_manager) {
   const auto& race = *entity_manager.peek_race(ship.owner());
-  double tech = race.tech;
-  auto maxrate = static_cast<int>(tech / 2.0);
+  auto maxrate = static_cast<int>(race.tech / 2.0);
 
-  auto max_crew = ship.max_crew_capacity();
-  if (max_crew == 0) {
+  if (ship.crew_ratio() <= 0.0 || ship.hull_efficiency() <= 0.0) {
     return 0;
   }
 
-  auto rate = round_rand(std::min(static_cast<double>(ship.resource()) /
-                                      static_cast<double>(RES_COST_WPLANT),
-                                  ship.fuel() / FUEL_COST_WPLANT) *
-                         (1.0 - 0.01 * static_cast<double>(ship.damage())) *
-                         static_cast<double>(ship.popn()) /
-                         static_cast<double>(max_crew));
-  rate = std::min(rate, maxrate);
-  ship.consume_resource(rate * RES_COST_WPLANT);
-  ship.consume_fuel(static_cast<double>(rate) * FUEL_COST_WPLANT);
+  double available_batches = std::min(static_cast<double>(ship.resource()) /
+                                          static_cast<double>(RES_COST_WPLANT),
+                                      ship.fuel() / FUEL_COST_WPLANT);
+  auto rate = round_rand(available_batches * ship.hull_efficiency() *
+                         ship.crew_ratio());
+  rate = std::min({rate, maxrate,
+                   static_cast<int>(ship.resource() / RES_COST_WPLANT),
+                   static_cast<int>(ship.fuel() / FUEL_COST_WPLANT)});
+  if (rate <= 0) {
+    return 0;
+  }
+
+  auto res_cost = rate * RES_COST_WPLANT;
+  auto fuel_cost = static_cast<double>(rate) * FUEL_COST_WPLANT;
+  if (!ship.try_consume_resource(res_cost)) {
+    return 0;
+  }
+  if (!ship.try_consume_fuel(fuel_cost)) {
+    ship.add_resource(res_cost);
+    return 0;
+  }
   return rate;
 }

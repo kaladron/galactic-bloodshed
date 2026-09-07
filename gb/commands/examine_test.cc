@@ -13,49 +13,12 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
+  ctx.with_standard_universe();
 
-  // Initialize universe
-  universe_struct us{};
-  us.id = 1;
-  us.numstars = 1;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  // Initialize player race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Inspectors";
-  race.Guest = false;
-  race.governor[0].active = true;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Initialize star
-  star_struct ss0{};
-  ss0.star_id = 0;
-  ss0.name = "Sol";
-  ss0.xpos = 0.0;
-  ss0.ypos = 0.0;
-  ss0.inhabited = (1ULL << 1);  // Player 1 inhabits
-  Star star0(ss0);
-  StarRepository stars(store);
-  stars.save(star0);
-
-  // Create a ship owned by player 1 at star 0
-  ship_struct sdata{};
-  sdata.number = 1;
-  sdata.owner = 1;
-  sdata.type = ShipType::STYPE_SHUTTLE;
-  sdata.whatorbits = ScopeLevel::LEVEL_STAR;
-  sdata.storbits = 0;
-  sdata.alive = 1;
-  sdata.active = 1;
-
-  Ship ship1(sdata);
-  ShipRepository ships(store);
-  ships.save(ship1);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(1)
+      .in_star_orbit(starnum_t{0})
+      .build();
 
   // Seed / set a custom ShipExam description in SQLite
   ctx.em.mutate_ship_exam(ShipType::STYPE_SHUTTLE, [&](ShipExam& exam) {

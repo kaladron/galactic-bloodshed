@@ -436,17 +436,34 @@ void test_standard_universe_fixture() {
   test::expect_eq(r2->tech, 100.0);
 
   // 2. Verify Star 0 (Sol)
-  const auto* star = ctx.em.peek_star(0);
-  test::expect_true(star != nullptr, "Star 0 must exist");
-  test::expect_eq(star->get_name(), "Sol");
-  test::expect_true(star->is_explored_by(player_t{1}));
-  test::expect_true(star->is_explored_by(player_t{2}));
-  test::expect_true(star->is_inhabited_by(player_t{1}));
-  test::expect_true(star->is_inhabited_by(player_t{2}));
-  test::expect_eq(star->AP(player_t{1}), 100);
-  test::expect_eq(star->AP(player_t{2}), 100);
+  const auto* star0 = ctx.em.peek_star(0);
+  test::expect_true(star0 != nullptr, "Star 0 must exist");
+  test::expect_eq(star0->get_name(), "Sol");
+  test::expect_eq(star0->xpos(), 0.0);
+  test::expect_eq(star0->ypos(), 0.0);
+  test::expect_eq(star0->stability(), 15);
+  test::expect_true(star0->is_explored_by(player_t{1}));
+  test::expect_true(star0->is_explored_by(player_t{2}));
+  test::expect_true(star0->is_inhabited_by(player_t{1}));
+  test::expect_true(star0->is_inhabited_by(player_t{2}));
+  test::expect_eq(star0->AP(player_t{1}), 100);
+  test::expect_eq(star0->AP(player_t{2}), 100);
 
-  // 3. Verify Planet 0 (Earth)
+  // Verify Star 1 (Vega)
+  const auto* star1 = ctx.em.peek_star(1);
+  test::expect_true(star1 != nullptr, "Star 1 must exist");
+  test::expect_eq(star1->get_name(), "Vega");
+  test::expect_eq(star1->xpos(), 300.0);
+  test::expect_eq(star1->ypos(), 400.0);
+  test::expect_eq(star1->stability(), 45);
+  test::expect_true(star1->is_explored_by(player_t{1}));
+  test::expect_true(star1->is_explored_by(player_t{2}));
+  test::expect_true(star1->is_inhabited_by(player_t{1}));
+  test::expect_true(star1->is_inhabited_by(player_t{2}));
+  test::expect_eq(star1->AP(player_t{1}), 100);
+  test::expect_eq(star1->AP(player_t{2}), 100);
+
+  // 3. Verify Planet 0 on Star 0 (Earth)
   const auto* planet = ctx.em.peek_planet(0, 0);
   test::expect_true(planet != nullptr, "Planet 0,0 must exist");
   test::expect_eq(planet->type(), PlanetType::EARTH);
@@ -457,10 +474,17 @@ void test_standard_universe_fixture() {
   test::expect_eq(planet->info(player_t{1}).fuel, 1000);
   test::expect_eq(planet->info(player_t{1}).resource, 1000);
 
+  // Verify Planet 0 on Star 1 (Vega Prime)
+  const auto* planet1 = ctx.em.peek_planet(1, 0);
+  test::expect_true(planet1 != nullptr, "Planet 1,0 must exist");
+  test::expect_eq(planet1->type(), PlanetType::EARTH);
+  test::expect_eq(planet1->info(player_t{1}).explored, 1);
+  test::expect_eq(planet1->info(player_t{2}).explored, 1);
+
   // 4. Verify Universe AP and invariants
   const auto* univ = ctx.em.peek_universe();
   test::expect_true(univ != nullptr, "Universe must exist");
-  test::expect_ge(univ->numstars, 1);
+  test::expect_eq(univ->numstars, 2);
   test::expect_eq(univ->AP[player_t{1}], 100);
   test::expect_eq(univ->AP[player_t{2}], 100);
 

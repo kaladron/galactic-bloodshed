@@ -204,63 +204,109 @@ TestContext& TestContext::with_standard_universe() {
   race_repo.save(r2);
 
   // 2. Setup Star 0 (Sol) with 100 AP for both races, explored and inhabited
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "Sol";
-  ss.xpos = 0.0;
-  ss.ypos = 0.0;
-  ss.stability = 100;
-  ss.gravity = 1.0;
-  ss.temperature = 50;
-  ss.AP[player_t{1}] = 100;
-  ss.AP[player_t{2}] = 100;
-  ss.pnames.push_back("Earth");
-  Star star{ss};
-  star.mark_explored_by(player_t{1});
-  star.mark_explored_by(player_t{2});
-  star.mark_inhabited_by(player_t{1});
-  star.mark_inhabited_by(player_t{2});
-  StarRepository(store).save(star);
+  star_struct ss0{};
+  ss0.star_id = 0;
+  ss0.name = "Sol";
+  ss0.xpos = 0.0;
+  ss0.ypos = 0.0;
+  ss0.stability = 15;
+  ss0.gravity = 1.0;
+  ss0.temperature = 50;
+  ss0.AP[player_t{1}] = 100;
+  ss0.AP[player_t{2}] = 100;
+  ss0.pnames.push_back("Earth");
+  Star star0{ss0};
+  star0.mark_explored_by(player_t{1});
+  star0.mark_explored_by(player_t{2});
+  star0.mark_inhabited_by(player_t{1});
+  star0.mark_inhabited_by(player_t{2});
+  StarRepository(store).save(star0);
 
   // 3. Setup Planet 0 on Star 0 (Earth)
-  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.xpos() = 100.0;
-  planet.ypos() = 0.0;
-  planet.explored() = true;
+  Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
+  planet0.star_id() = 0;
+  planet0.planet_order() = 0;
+  planet0.xpos() = 100.0;
+  planet0.ypos() = 0.0;
+  planet0.explored() = true;
   for (player_t pid : {player_t{1}, player_t{2}}) {
-    planet.info(pid).explored = 1;
-    planet.info(pid).destruct = 1000;
-    planet.info(pid).fuel = 1000;
-    planet.info(pid).resource = 1000;
-    planet.info(pid).tax = 10;
-    planet.info(pid).newtax = 10;
+    planet0.info(pid).explored = 1;
+    planet0.info(pid).destruct = 1000;
+    planet0.info(pid).fuel = 1000;
+    planet0.info(pid).resource = 1000;
+    planet0.info(pid).tax = 10;
+    planet0.info(pid).newtax = 10;
   }
-  PlanetRepository(store).save(planet);
+  PlanetRepository(store).save(planet0);
 
   // 4. Setup SectorMap for Earth with valid coordinates
-  SectorMap smap(planet);
+  SectorMap smap0(planet0);
   for (int y = 0; y < 10; ++y) {
     for (int x = 0; x < 10; ++x) {
-      smap.get(Coordinates{x, y}).set_x(x);
-      smap.get(Coordinates{x, y}).set_y(y);
+      smap0.get(Coordinates{x, y}).set_x(x);
+      smap0.get(Coordinates{x, y}).set_y(y);
     }
   }
-  SectorRepository(store).save_map(smap);
+  SectorRepository(store).save_map(smap0);
 
-  // 5. Setup Universe record with 100 AP for both races
+  // 5. Setup Star 1 (Vega) at (300, 400) -> distance 500 from Sol
+  star_struct ss1{};
+  ss1.star_id = 1;
+  ss1.name = "Vega";
+  ss1.xpos = 300.0;
+  ss1.ypos = 400.0;
+  ss1.stability = 45;
+  ss1.gravity = 1.0;
+  ss1.temperature = 40;
+  ss1.AP[player_t{1}] = 100;
+  ss1.AP[player_t{2}] = 100;
+  ss1.pnames.push_back("Vega Prime");
+  Star star1{ss1};
+  star1.mark_explored_by(player_t{1});
+  star1.mark_explored_by(player_t{2});
+  star1.mark_inhabited_by(player_t{1});
+  star1.mark_inhabited_by(player_t{2});
+  StarRepository(store).save(star1);
+
+  // 6. Setup Planet 0 on Star 1 (Vega Prime)
+  Planet planet1{PlanetType::EARTH, Coordinates{10, 10}};
+  planet1.star_id() = 1;
+  planet1.planet_order() = 0;
+  planet1.xpos() = 100.0;
+  planet1.ypos() = 0.0;
+  planet1.explored() = true;
+  for (player_t pid : {player_t{1}, player_t{2}}) {
+    planet1.info(pid).explored = 1;
+    planet1.info(pid).destruct = 1000;
+    planet1.info(pid).fuel = 1000;
+    planet1.info(pid).resource = 1000;
+    planet1.info(pid).tax = 10;
+    planet1.info(pid).newtax = 10;
+  }
+  PlanetRepository(store).save(planet1);
+
+  // 7. Setup SectorMap for Vega Prime with valid coordinates
+  SectorMap smap1(planet1);
+  for (int y = 0; y < 10; ++y) {
+    for (int x = 0; x < 10; ++x) {
+      smap1.get(Coordinates{x, y}).set_x(x);
+      smap1.get(Coordinates{x, y}).set_y(y);
+    }
+  }
+  SectorRepository(store).save_map(smap1);
+
+  // 8. Setup Universe record with numstars = 2, 100 AP for both races
   UniverseRepository univ_repo(store);
   auto u = univ_repo.find(1);
   if (!u) {
     universe_struct new_u{};
     new_u.id = 1;
-    new_u.numstars = 1;
+    new_u.numstars = 2;
     new_u.AP[player_t{1}] = 100;
     new_u.AP[player_t{2}] = 100;
     univ_repo.save(new_u);
   } else {
-    u->numstars = std::max(u->numstars, 1u);
+    u->numstars = std::max(u->numstars, 2u);
     u->AP[player_t{1}] = 100;
     u->AP[player_t{2}] = 100;
     univ_repo.save(*u);

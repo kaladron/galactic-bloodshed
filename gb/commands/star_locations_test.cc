@@ -13,44 +13,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
-
-  // Initialize universe
-  universe_struct us{};
-  us.id = 1;
-  us.numstars = 2;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  // Initialize player race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Astronomers";
-  race.Guest = false;
-  race.governor[0].active = true;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Star 0 at (0, 0)
-  star_struct ss0{};
-  ss0.star_id = 0;
-  ss0.name = "Sol";
-  ss0.xpos = 0.0;
-  ss0.ypos = 0.0;
-  Star star0(ss0);
-
-  // Star 1 at (300, 400) -> distance = 500 from (0, 0)
-  star_struct ss1{};
-  ss1.star_id = 1;
-  ss1.name = "Vega";
-  ss1.xpos = 300.0;
-  ss1.ypos = 400.0;
-  Star star1(ss1);
-
-  StarRepository stars(store);
-  stars.save(star0);
-  stars.save(star1);
+  ctx.with_standard_universe();
 }
 
 void test_stars_dispatch() {

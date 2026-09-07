@@ -4,7 +4,6 @@
 /// \brief Unit tests for fuel (proj_fuel) command
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -14,23 +13,12 @@ namespace {
 
 void test_fuel_matrix() {
   TestContext ctx;
-  TestWorldBuilder(ctx)
-      .add_race("Stargazers", 100.0)
-      .add_star("OriginStar", 100, starnum_t{0})
-      .add_planet(0, PlanetType::EARTH)
-      .add_star("DestStar", 100, starnum_t{1})
-      .add_planet(1, PlanetType::EARTH);
-
-  // Position DestStar at (100, 100)
-  ctx.em.mutate_star(1, [](Star& s) {
-    s.xpos() = 100.0;
-    s.ypos() = 100.0;
-  });
+  ctx.with_standard_universe();
 
   shipnum_t ship_num = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                            .owned_by(1, 0)
                            .named("Explorer")
-                           .in_star_orbit(0, 0.0, 0.0)
+                           .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
                            .with_speed(2)
                            .with_fuel(100.0)
                            .build();
@@ -43,9 +31,8 @@ void test_fuel_matrix() {
 
   // 1. 4-Way Command Matrix runner on fuel projection
   TestCommandMatrix(ctx, "fuel")
-      .with_valid_argv(
-          {"fuel", std::format("#{}", ship_num.value), "/DestStar"})
-      .with_invalid_argv({"fuel", "#999", "/DestStar"})
+      .with_valid_argv({"fuel", std::format("#{}", ship_num.value), "/Vega"})
+      .with_invalid_argv({"fuel", "#999", "/Vega"})
       .with_valid_scope(ScopeLevel::LEVEL_STAR)
       .with_expected_star_ap(0)
       .run_matrix(g);
@@ -57,8 +44,10 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(), "Syntax: fuel <#ship> [<destination>]");
 
   // 3. Bad argument format (not starting with #)
-  ctx.assert_dispatch_rejected(g, {"fuel", "1", "/DestStar"});
+  ctx.assert_dispatch_rejected(g, {"fuel", "1", "/Vega"});
   test::expect_contains(g.out.str(), "Invalid first option");
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

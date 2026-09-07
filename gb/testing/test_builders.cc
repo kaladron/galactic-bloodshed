@@ -254,6 +254,11 @@ TestShipBuilder& TestShipBuilder::with_nextship(shipnum_t next) {
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::with_special(SpecialData special) {
+  ship_.special = std::move(special);
+  return *this;
+}
+
 shipnum_t TestShipBuilder::build() {
   auto handle = em_.create_ship(ship_);
   return handle->number();

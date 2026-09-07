@@ -568,6 +568,7 @@ public:
   TestShipBuilder& with_size(ship_size_t size);
   TestShipBuilder& with_on(bool on);
   TestShipBuilder& with_nextship(shipnum_t next);
+  TestShipBuilder& with_special(SpecialData special);
 
   shipnum_t build();
 

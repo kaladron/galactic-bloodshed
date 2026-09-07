@@ -4,7 +4,6 @@
 /// \brief Unit tests for scrap command
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,104 +12,39 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
+  ctx.with_standard_universe().with_populated_planet(0, 0, 1, 1000,
+                                                     Coordinates{5, 5});
 
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.governor[0].active = true;
-  race.mass = 1.0;
-  race.fighters = 1.0;
-  race.tech = 100.0;
-  race.morale = 100;
-  RaceRepository races(store);
-  races.save(race);
+  auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                        .owned_by(player_t{1}, governor_t{0})
+                        .named("Carrier")
+                        .in_star_orbit(0)
+                        .with_crew(10, 0)
+                        .with_fuel(100.0)
+                        .with_resource(100)
+                        .build();
 
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "TestStar";
-  ss.xpos = 100.0;
-  ss.ypos = 200.0;
-  ss.explored = (1ULL << 1);
-  ss.AP[player_t{1}] = 10;
-  Star star(ss);
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
+  auto fighter_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                        .owned_by(player_t{1}, governor_t{0})
+                        .named("ToScrap")
+                        .in_star_orbit(0)
+                        .with_crew(5, 0)
+                        .with_fuel(50.0)
+                        .with_resource(20)
+                        .with_destruct(10)
+                        .build();
 
-  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.popn() = 1000;
-  planet.info(player_t{1}).numsectsowned = 1;
-  planet.info(player_t{1}).popn = 1000;
-  planet.info(player_t{1}).resource = 500;
-  PlanetRepository planets_repo(store);
-  planets_repo.save(planet);
-
-  SectorMap smap(planet);
-  auto& sector = smap.get(Coordinates{5, 5});
-  sector.set_owner(1);
-  sector.set_popn_exact(100);
-  sector.set_resource(50);
-  sector.set_efficiency_bounded(100);
-  SectorRepository sector_repo(store);
-  sector_repo.save_map(smap);
-
-  Ship ship1{};
-  ship1.number() = 1;
-  ship1.owner() = 1;
-  ship1.governor() = 0;
-  ship1.alive() = true;
-  ship1.active() = true;
-  ship1.type() = ShipType::STYPE_CARRIER;
-  ship1.name() = "Carrier";
-  ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship1.storbits() = 1;
-  ship1.xpos() = 100.0;
-  ship1.ypos() = 200.0;
-  ship1.fuel() = 100.0;
-  ship1.max_fuel() = 500.0;
-  ship1.resource() = 100;
-  ship1.max_resource() = 1000;
-  ship1.popn() = 10;
-  ship1.max_crew() = 100;
-  ship1.destruct() = 0;
-  ship1.max_destruct() = 100;
-  ship1.mass() = 100.0;
-  ship1.docked() = 1;
-  ship1.whatdest() = ScopeLevel::LEVEL_SHIP;
-  ship1.destshipno() = 2;
-
-  Ship ship2{};
-  ship2.number() = 2;
-  ship2.owner() = 1;
-  ship2.governor() = 0;
-  ship2.alive() = true;
-  ship2.active() = true;
-  ship2.type() = ShipType::STYPE_FIGHTER;
-  ship2.build_type() = ShipType::STYPE_FIGHTER;
-  ship2.name() = "ToScrap";
-  ship2.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship2.storbits() = 1;
-  ship2.xpos() = 100.0;
-  ship2.ypos() = 200.0;
-  ship2.fuel() = 50.0;
-  ship2.max_fuel() = 100.0;
-  ship2.resource() = 20;
-  ship2.max_resource() = 50;
-  ship2.popn() = 5;
-  ship2.max_crew() = 10;
-  ship2.destruct() = 10;
-  ship2.max_destruct() = 20;
-  ship2.mass() = 10.0;
-  ship2.build_cost() = 100;
-  ship2.docked() = 1;
-  ship2.whatdest() = ScopeLevel::LEVEL_SHIP;
-  ship2.destshipno() = 1;
-
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship1);
-  ships_repo.save(ship2);
+  ctx.em.mutate_ship(carrier_id, [&](Ship& s) {
+    s.docked() = 1;
+    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    s.destshipno() = fighter_id;
+  });
+  ctx.em.mutate_ship(fighter_id, [&](Ship& s) {
+    s.docked() = 1;
+    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    s.destshipno() = carrier_id;
+    s.build_cost() = 100;
+  });
 }
 
 void test_scrap_happy_paths() {
@@ -121,7 +55,7 @@ void test_scrap_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_snum(0);
 
   // 1. Scrap docked fighter (1 AP deducted via dynamic AP)
   ctx.assert_dispatch_success(g, {"scrap", "#2"}, 1);
@@ -135,6 +69,8 @@ void test_scrap_happy_paths() {
   test::expect_ne(carrier_after, nullptr);
   test::expect_gt(carrier_after->resource(), 100);
   test::expect_eq(carrier_after->docked(), 0);
+
+  ctx.verify_universe_invariants();
 }
 
 void test_scrap_insufficient_ap() {
@@ -142,13 +78,13 @@ void test_scrap_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_snum(0);
 
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
   test::expect_contains(g.out.str(), "action points");
@@ -162,7 +98,7 @@ void test_scrap_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_snum(0);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"scrap"});
@@ -183,28 +119,17 @@ void test_scrap_toxic_waste_warning() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
+  g.set_snum(0);
   g.set_pnum(0);
 
   // Create Toxic Waste Canister landed on planet
-  ship_struct tox_data{};
-  tox_data.number = 3;
-  tox_data.owner = 1;
-  tox_data.governor = 0;
-  tox_data.alive = true;
-  tox_data.active = true;
-  tox_data.type = ShipType::OTYPE_TOXWC;
-  tox_data.name = "HazMat";
-  tox_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  tox_data.storbits = starnum_t{1};
-  tox_data.pnumorbits = planetnum_t{0};
-  tox_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  tox_data.land_coords = {5, 5};
-  tox_data.docked = 1;
-  tox_data.popn = 1;
-  tox_data.special = WasteData{.toxic = 25};
-  auto tox_handle = ctx.em.create_ship(tox_data);
-  const auto tox_id = tox_handle->number();
+  auto tox_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
+                    .owned_by(player_t{1}, governor_t{0})
+                    .named("HazMat")
+                    .landed_on(0, 0, Coordinates{5, 5})
+                    .with_crew(1, 0)
+                    .with_special(WasteData{.toxic = 25})
+                    .build();
 
   ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", tox_id.value)},
                               1);
@@ -214,6 +139,8 @@ void test_scrap_toxic_waste_warning() {
   ctx.em.clear_cache();
   const auto* scrapped = ctx.em.peek_ship(tox_id);
   test::expect_eq(scrapped->alive(), 0);
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

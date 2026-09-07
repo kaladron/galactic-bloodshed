@@ -4,7 +4,6 @@
 /// \brief Unit tests for capital command
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -14,27 +13,26 @@ namespace {
 
 void test_capital_matrix() {
   TestContext ctx;
-  TestWorldBuilder(ctx)
-      .add_race("TestRace", 100.0)
-      .add_star("TestStar", 100, starnum_t{1})
-      .add_planet(1, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
-  // Landed government center ship
+  ctx.em.mutate_race(1, [](Race& r) { r.governor[1].active = true; });
+
+  // Landed government center ship on Earth (0, 0)
   shipnum_t landed_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
                              .owned_by(1, 0)
-                             .landed_on(1, 0, Coordinates{10, 10})
+                             .landed_on(0, 0, Coordinates{10, 10})
                              .build();
 
-  // Orbiting non-landed government center ship
+  // Orbiting non-landed government center ship around Sol (0)
   shipnum_t orbit_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
                             .owned_by(1, 0)
-                            .in_star_orbit(1, 10.0, 10.0)
+                            .in_star_orbit(0, SystemCoordinates{10.0, 10.0})
                             .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
-  g.set_snum(1);
+  g.set_snum(0);
 
   // 1. 4-Way Command Matrix runner on capital designation
   TestCommandMatrix(ctx, "capital")
@@ -45,19 +43,21 @@ void test_capital_matrix() {
       .run_matrix(g);
 
   test::expect_eq(ctx.em.peek_race(1)->Gov_ship, landed_gov.value);
-  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 50);
+  test::expect_eq(ctx.em.peek_star(0)->AP(player_t{1}), 50);
 
   // 2. Query mode: Free inquiry (0 AP)
   ctx.assert_dispatch_success(g, {"capital"}, /*expected_star_ap_deducted=*/0);
-  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 50);
+  test::expect_eq(ctx.em.peek_star(0)->AP(player_t{1}), 50);
 
   // 3. Role Rejection: Governor 1 cannot designate capital
   ctx.setup_game_obj(g, 1, 1);
-  g.set_snum(1);
+  g.set_snum(0);
   ctx.assert_dispatch_rejected(g,
                                {"capital", std::to_string(landed_gov.value)});
   test::expect_contains(g.out.str(),
                         "Only the leader (Governor 0) may use this command.");
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

@@ -4,7 +4,6 @@
 /// \brief Test production command functionality and reporting via
 /// CommandDescriptor.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -14,16 +13,9 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Terrans", 100.0, false, player_t{1})
-      .add_star("Sol", 100, starnum_t{0})
-      .add_planet(0, PlanetType::EARTH, "Earth");
-
-  ctx.em.mutate_star(0,
-                     [](Star& star) { star.mark_inhabited_by(player_t{1}); });
+  ctx.with_standard_universe();
 
   ctx.em.mutate_planet(0, 0, [](Planet& planet) {
-    planet.info(player_t{1}).explored = 1;
     planet.info(player_t{1}).numsectsowned = 10;
     planet.info(player_t{1}).prod_res = 100;
     planet.info(player_t{1}).prod_fuel = 50;

@@ -339,6 +339,42 @@ public:
     return data_.type;
   }
 
+  /// \brief Returns whether a sector type is common (native) on this planet.
+  [[nodiscard]] constexpr bool
+  is_common_sector(SectorType sector) const noexcept {
+    return is_common_sector(data_.type, sector);
+  }
+
+  /// \brief Returns whether a sector type is common (native) on a planet type.
+  [[nodiscard]] static constexpr bool
+  is_common_sector(PlanetType planet, SectorType sector) noexcept {
+    switch (planet) {
+      case PlanetType::EARTH:
+        return sector == SectorType::SEC_SEA || sector == SectorType::SEC_LAND;
+      case PlanetType::FOREST:
+        return sector == SectorType::SEC_SEA ||
+               sector == SectorType::SEC_FOREST;
+      case PlanetType::DESERT:
+        return sector == SectorType::SEC_LAND ||
+               sector == SectorType::SEC_MOUNT ||
+               sector == SectorType::SEC_DESERT;
+      case PlanetType::WATER:
+        return sector == SectorType::SEC_SEA;
+      case PlanetType::MARS:
+        return sector == SectorType::SEC_LAND ||
+               sector == SectorType::SEC_MOUNT ||
+               sector == SectorType::SEC_DESERT;
+      case PlanetType::ICEBALL:
+        return sector == SectorType::SEC_LAND ||
+               sector == SectorType::SEC_MOUNT || sector == SectorType::SEC_ICE;
+      case PlanetType::GASGIANT:
+        return sector == SectorType::SEC_GAS;
+      case PlanetType::ASTEROID:
+        return false;
+    }
+    return false;
+  }
+
   [[nodiscard]] std::uint32_t expltimer() const noexcept {
     return data_.expltimer;
   }

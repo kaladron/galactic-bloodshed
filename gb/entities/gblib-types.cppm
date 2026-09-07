@@ -37,10 +37,60 @@ export constexpr std::array all_planet_types = {
     PlanetType::FOREST,  PlanetType::DESERT,
 };
 
+/// Returns the display string for a PlanetType.
+export constexpr std::string_view to_string(PlanetType type) noexcept {
+  switch (type) {
+    case PlanetType::EARTH:
+      return "Class M";
+    case PlanetType::ASTEROID:
+      return "Asteroid";
+    case PlanetType::MARS:
+      return "Airless";
+    case PlanetType::ICEBALL:
+      return "Iceball";
+    case PlanetType::GASGIANT:
+      return "Jovian";
+    case PlanetType::WATER:
+      return "Waterball";
+    case PlanetType::FOREST:
+      return "Forest";
+    case PlanetType::DESERT:
+      return "Desert";
+  }
+  return "Unknown";
+}
+
 export template <>
-struct std::formatter<PlanetType> : std::formatter<int> {
+struct std::formatter<PlanetType> {
+  enum class Mode {
+    String,
+    Int
+  };
+  Mode mode{Mode::String};
+  std::formatter<std::string_view> str_fmt;
+  std::formatter<int> int_fmt;
+
+  constexpr auto parse(std::format_parse_context& ctx) {
+    auto it = ctx.begin();
+    const auto end = ctx.end();
+    while (it != end && *it != '}') {
+      if (*it == 'd') {
+        mode = Mode::Int;
+        break;
+      }
+      ++it;
+    }
+    if (mode == Mode::Int) {
+      return int_fmt.parse(ctx);
+    }
+    return str_fmt.parse(ctx);
+  }
+
   auto format(PlanetType type, format_context& ctx) const {
-    return formatter<int>::format(static_cast<int>(type), ctx);
+    if (mode == Mode::Int) {
+      return int_fmt.format(std::to_underlying(type), ctx);
+    }
+    return str_fmt.format(to_string(type), ctx);
   }
 };
 
@@ -69,19 +119,71 @@ export constexpr std::array all_sector_types = {
     SectorType::SEC_DESERT, SectorType::SEC_PLATED, SectorType::SEC_WASTED,
 };
 
-export template <>
-struct std::formatter<SectorType> : std::formatter<int> {
-  auto format(SectorType type, format_context& ctx) const {
-    return formatter<int>::format(static_cast<int>(type), ctx);
-  }
-};
-
 export constexpr std::optional<SectorType> to_sector_type(int val) noexcept {
   if (val >= SectorType::SEC_SEA && val <= SectorType::SEC_WASTED) {
     return static_cast<SectorType>(val);
   }
   return std::nullopt;
 }
+
+/// Returns the display string for a SectorType.
+export constexpr std::string_view to_string(SectorType type) noexcept {
+  switch (type) {
+    case SectorType::SEC_SEA:
+      return "ocean";
+    case SectorType::SEC_LAND:
+      return "land";
+    case SectorType::SEC_MOUNT:
+      return "mountainous";
+    case SectorType::SEC_GAS:
+      return "gaseous";
+    case SectorType::SEC_ICE:
+      return "ice";
+    case SectorType::SEC_FOREST:
+      return "forest";
+    case SectorType::SEC_DESERT:
+      return "desert";
+    case SectorType::SEC_PLATED:
+      return "plated";
+    case SectorType::SEC_WASTED:
+      return "wasted";
+  }
+  return "unknown";
+}
+
+export template <>
+struct std::formatter<SectorType> {
+  enum class Mode {
+    String,
+    Int
+  };
+  Mode mode{Mode::String};
+  std::formatter<std::string_view> str_fmt;
+  std::formatter<int> int_fmt;
+
+  constexpr auto parse(std::format_parse_context& ctx) {
+    auto it = ctx.begin();
+    const auto end = ctx.end();
+    while (it != end && *it != '}') {
+      if (*it == 'd') {
+        mode = Mode::Int;
+        break;
+      }
+      ++it;
+    }
+    if (mode == Mode::Int) {
+      return int_fmt.parse(ctx);
+    }
+    return str_fmt.parse(ctx);
+  }
+
+  auto format(SectorType type, format_context& ctx) const {
+    if (mode == Mode::Int) {
+      return int_fmt.format(std::to_underlying(type), ctx);
+    }
+    return str_fmt.format(to_string(type), ctx);
+  }
+};
 
 export enum class PopulationType {
   CIV,

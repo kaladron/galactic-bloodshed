@@ -196,7 +196,7 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES creator/creator.cppm
   PRIVATE creator/enrollment_service.cc creator/archetypes.cc
           creator/universe_generator.cc creator/makeplanet.cc
-          creator/racegen_engine.cc)
+          creator/racegen_engine.cc creator/racegen_session.cc)
 target_link_libraries(gb_creator PUBLIC gblib gb_entities gb_services gb_repositories dallib tabulate_module)
 
 # Create session library (Server Layer)
@@ -489,6 +489,7 @@ gb_add_test(quit_test SOURCES commands/quit_test.cc)
 gb_add_test(race_repository_test SOURCES repositories/race_repository_test.cc)
 gb_add_test(race_test SOURCES entities/race_test.cc)
 gb_add_test(racegen_test SOURCES creator/racegen_test.cc EXTRA_LIBS gb_creator)
+gb_add_test(racegen_session_test SOURCES creator/racegen_session_test.cc EXTRA_LIBS gb_creator)
 gb_add_test(rand_test SOURCES entities/rand_test.cc)
 gb_add_test(relation_test SOURCES commands/relation_test.cc)
 gb_add_test(repair_test SOURCES commands/repair_test.cc)

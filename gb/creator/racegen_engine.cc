@@ -585,7 +585,7 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     bool has_common_sector = false;
     for (std::size_t i = 0; i < num_settleable_sectors; ++i) {
       const auto st = static_cast<SectorType>(i);
-      if (planet_compat_cov_multiplier(spec.home_planet_type, st) == 1.00 &&
+      if (Planet::is_common_sector(spec.home_planet_type, st) &&
           spec.sector_compatibilities[st] == 1.0) {
         has_common_sector = true;
         break;

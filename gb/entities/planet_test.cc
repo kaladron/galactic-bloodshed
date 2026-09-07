@@ -495,6 +495,44 @@ int main() {
     test::expect_eq(abs_via_coords, UniverseCoordinates(5100.0, 9800.0));
   }
 
+  // Test 21: Planet is_common_sector native terrain queries
+  {
+    Planet earth(PlanetType::EARTH, Coordinates{10, 10});
+    test::expect_true(earth.is_common_sector(SectorType::SEC_SEA));
+    test::expect_true(earth.is_common_sector(SectorType::SEC_LAND));
+    test::expect_false(earth.is_common_sector(SectorType::SEC_GAS));
+    test::expect_false(earth.is_common_sector(SectorType::SEC_DESERT));
+
+    // Static constexpr queries
+    test::expect_true(
+        Planet::is_common_sector(PlanetType::GASGIANT, SectorType::SEC_GAS));
+    test::expect_false(
+        Planet::is_common_sector(PlanetType::GASGIANT, SectorType::SEC_LAND));
+
+    test::expect_true(
+        Planet::is_common_sector(PlanetType::WATER, SectorType::SEC_SEA));
+    test::expect_false(
+        Planet::is_common_sector(PlanetType::WATER, SectorType::SEC_LAND));
+
+    test::expect_true(
+        Planet::is_common_sector(PlanetType::FOREST, SectorType::SEC_FOREST));
+    test::expect_true(
+        Planet::is_common_sector(PlanetType::FOREST, SectorType::SEC_SEA));
+
+    test::expect_true(
+        Planet::is_common_sector(PlanetType::DESERT, SectorType::SEC_DESERT));
+    test::expect_true(
+        Planet::is_common_sector(PlanetType::DESERT, SectorType::SEC_LAND));
+    test::expect_true(
+        Planet::is_common_sector(PlanetType::DESERT, SectorType::SEC_MOUNT));
+
+    test::expect_true(
+        Planet::is_common_sector(PlanetType::ICEBALL, SectorType::SEC_ICE));
+
+    test::expect_false(
+        Planet::is_common_sector(PlanetType::ASTEROID, SectorType::SEC_LAND));
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

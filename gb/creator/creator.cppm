@@ -417,4 +417,64 @@ private:
       morph_cov_{};
 };
 
+/// Interactive session for player race generation and customization.
+export class RacegenSession {
+public:
+  explicit RacegenSession(std::istream& in = std::cin,
+                          std::ostream& out = std::cout);
+
+  /// Runs the interactive command loop until 'quit' or EOF.
+  void run();
+
+  /// Executes a single command line. Returns true if session should continue,
+  /// false if 'quit' was requested.
+  bool execute_command(std::string_view line);
+
+  /// Accessors for state inspection.
+  [[nodiscard]] const RaceEnrollmentSpec& spec() const noexcept {
+    return spec_;
+  }
+  [[nodiscard]] RaceEnrollmentSpec& mutable_spec() noexcept {
+    return spec_;
+  }
+  [[nodiscard]] const RaceCostBreakdown& cost() const noexcept {
+    return cost_;
+  }
+  [[nodiscard]] bool should_quit() const noexcept {
+    return quit_requested_;
+  }
+
+  /// Prints formatted race specification and cost breakdown to output.
+  void print_race();
+
+  /// Prints help text for available commands or a specific topic.
+  void print_help(std::string_view topic = "");
+
+  /// Modifies a field in the race specification. Returns true on success,
+  /// or false (with error output) on invalid field/value/bounds.
+  bool modify_field(std::string_view field, std::string_view value);
+
+private:
+  std::istream& in_;
+  std::ostream& out_;
+  RacegenEngine engine_;
+  RaceEnrollmentSpec spec_;
+  RaceCostBreakdown cost_;
+  bool quit_requested_{false};
+
+  struct CommandDescriptor {
+    std::string_view name;
+    std::string_view syntax;
+    std::string_view description;
+    bool (RacegenSession::*handler)(std::string_view args);
+  };
+  static const std::array<CommandDescriptor, 4>& commands();
+
+  void update_cost();
+  bool do_modify(std::string_view args);
+  bool do_print(std::string_view args);
+  bool do_help(std::string_view args);
+  bool do_quit(std::string_view args);
+};
+
 }  // namespace GB::creator

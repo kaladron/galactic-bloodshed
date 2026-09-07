@@ -290,9 +290,5 @@ TestWorldBuilder& TestWorldBuilder::add_planet(
 }
 
 void TestWorldBuilder::create_standard_solar_system(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Federation", 100.0)
-      .add_race("Klingons", 100.0)
-      .add_star("Sol", 100)
-      .add_planet(0, PlanetType::EARTH, "Earth");
+  ctx.with_standard_universe();
 }

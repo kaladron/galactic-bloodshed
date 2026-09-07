@@ -412,6 +412,116 @@ void test_universe_invariants() {
                "  ✓ verify_universe_invariants verified successfully");
 }
 
+void test_standard_universe_fixture() {
+  std::println(std::cout, "Test: TestContext::with_standard_universe fixture");
+
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // 1. Verify standard races
+  const auto* r1 = ctx.em.peek_race(1);
+  test::expect_true(r1 != nullptr, "Race 1 must exist");
+  test::expect_eq(r1->name, "Federation");
+  test::expect_eq(r1->Playernum, player_t{1});
+  test::expect_eq(r1->tech, 100.0);
+  test::expect_eq(r1->Gov_ship, shipnum_t{100});
+  test::expect_false(r1->Guest);
+  test::expect_true(r1->governor[0].active);
+  test::expect_eq(r1->governor[0].money, 10'000);
+
+  const auto* r2 = ctx.em.peek_race(2);
+  test::expect_true(r2 != nullptr, "Race 2 must exist");
+  test::expect_eq(r2->name, "Klingons");
+  test::expect_eq(r2->Playernum, player_t{2});
+  test::expect_eq(r2->tech, 100.0);
+
+  // 2. Verify Star 0 (Sol)
+  const auto* star = ctx.em.peek_star(0);
+  test::expect_true(star != nullptr, "Star 0 must exist");
+  test::expect_eq(star->get_name(), "Sol");
+  test::expect_true(star->is_explored_by(player_t{1}));
+  test::expect_true(star->is_explored_by(player_t{2}));
+  test::expect_true(star->is_inhabited_by(player_t{1}));
+  test::expect_true(star->is_inhabited_by(player_t{2}));
+  test::expect_eq(star->AP(player_t{1}), 100);
+  test::expect_eq(star->AP(player_t{2}), 100);
+
+  // 3. Verify Planet 0 (Earth)
+  const auto* planet = ctx.em.peek_planet(0, 0);
+  test::expect_true(planet != nullptr, "Planet 0,0 must exist");
+  test::expect_eq(planet->type(), PlanetType::EARTH);
+  test::expect_eq(planet->info(player_t{1}).explored, 1);
+  test::expect_eq(planet->info(player_t{2}).explored, 1);
+  test::expect_eq(planet->info(player_t{1}).tax, 10);
+  test::expect_eq(planet->info(player_t{1}).destruct, 1000);
+  test::expect_eq(planet->info(player_t{1}).fuel, 1000);
+  test::expect_eq(planet->info(player_t{1}).resource, 1000);
+
+  // 4. Verify Universe AP and invariants
+  const auto* univ = ctx.em.peek_universe();
+  test::expect_true(univ != nullptr, "Universe must exist");
+  test::expect_ge(univ->numstars, 1);
+  test::expect_eq(univ->AP[player_t{1}], 100);
+  test::expect_eq(univ->AP[player_t{2}], 100);
+
+  test::expect_no_throw(
+      [&]() { ctx.verify_universe_invariants(); },
+      "with_standard_universe must satisfy universe invariants");
+
+  // 5. Test with_populated_planet fluent chaining
+  ctx.with_populated_planet(0, 0, player_t{1}, 1500, Coordinates{2, 3});
+  const auto* pop_planet = ctx.em.peek_planet(0, 0);
+  test::expect_eq(pop_planet->popn(), 1500);
+  test::expect_eq(pop_planet->info(player_t{1}).numsectsowned, 1);
+
+  const auto* smap = ctx.em.peek_sectormap(0, 0);
+  const auto& sect = smap->get(Coordinates{2, 3});
+  test::expect_eq(sect.get_owner(), player_t{1});
+  test::expect_eq(sect.get_popn(), 1500);
+  test::expect_eq(sect.get_condition(), SectorType::SEC_LAND);
+  test::expect_eq(sect.get_fert(), 100);
+
+  test::expect_no_throw(
+      [&]() { ctx.verify_universe_invariants(); },
+      "with_populated_planet must satisfy universe invariants");
+
+  std::println(std::cout, "  ✓ with_standard_universe verified successfully");
+}
+
+void test_procedural_universe_fixture() {
+  std::println(std::cout,
+               "Test: TestContext::with_universe procedural generation");
+
+  TestContext ctx;
+  ctx.with_universe();
+
+  const auto* univ = ctx.em.peek_universe();
+  test::expect_true(univ != nullptr, "Universe must exist");
+  test::expect_eq(univ->numstars, 3);
+  test::expect_eq(univ->AP[player_t{1}], 100);
+  test::expect_eq(univ->AP[player_t{2}], 100);
+
+  // Verify all stars explored with 100 AP
+  for (starnum_t snum = 0; snum < 3; ++snum) {
+    const auto* star = ctx.em.peek_star(snum);
+    test::expect_true(star != nullptr, "Generated star must exist");
+    test::expect_true(star->is_explored_by(player_t{1}));
+    test::expect_true(star->is_explored_by(player_t{2}));
+    test::expect_eq(star->AP(player_t{1}), 100);
+    test::expect_eq(star->AP(player_t{2}), 100);
+  }
+
+  // Verify races exist
+  const auto* r1 = ctx.em.peek_race(1);
+  test::expect_true(r1 != nullptr);
+  test::expect_eq(r1->name, "Federation");
+
+  test::expect_no_throw([&]() { ctx.verify_universe_invariants(); },
+                        "Procedural universe must satisfy universe invariants");
+
+  std::println(std::cout, "  ✓ with_universe verified successfully");
+}
+
 }  // namespace
 
 int main() {
@@ -422,6 +532,8 @@ int main() {
   test_recording_session_registry();
   test_test_command_matrix();
   test_universe_invariants();
+  test_standard_universe_fixture();
+  test_procedural_universe_fixture();
   std::println(std::cout, "✓ test_context_test passed!");
   return 0;
 }

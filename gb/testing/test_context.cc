@@ -14,6 +14,7 @@ import dallib;
 import gb.entities;
 import gb.services;
 import gb.repositories;
+import gb.creator;
 import std;
 
 TestContext::TestContext() : db(":memory:"), em(db) {
@@ -172,4 +173,190 @@ void TestContext::assert_dispatch_rejected(GameObj& g, const command_t& argv) {
 
 void TestContext::verify_universe_invariants(std::source_location loc) {
   test::verify_universe_invariants(em, loc);
+}
+
+TestContext& TestContext::with_standard_universe() {
+  JsonStore store(db);
+
+  // 1. Setup standard races: Player 1 (Federation) and Player 2 (Klingons)
+  RaceRepository race_repo(store);
+  Race r1{};
+  r1.Playernum = 1;
+  r1.name = "Federation";
+  r1.tech = 100.0;
+  r1.Guest = false;
+  r1.governor[0].active = true;
+  r1.governor[0].money = 10'000;
+  r1.Gov_ship = 100;
+  r1.mass = 1.0;
+  r1.metabolism = 1.0;
+  race_repo.save(r1);
+
+  Race r2{};
+  r2.Playernum = 2;
+  r2.name = "Klingons";
+  r2.tech = 100.0;
+  r2.Guest = false;
+  r2.governor[0].active = true;
+  r2.governor[0].money = 10'000;
+  r2.mass = 1.0;
+  r2.metabolism = 1.0;
+  race_repo.save(r2);
+
+  // 2. Setup Star 0 (Sol) with 100 AP for both races, explored and inhabited
+  star_struct ss{};
+  ss.star_id = 0;
+  ss.name = "Sol";
+  ss.xpos = 0.0;
+  ss.ypos = 0.0;
+  ss.stability = 100;
+  ss.gravity = 1.0;
+  ss.temperature = 50;
+  ss.AP[player_t{1}] = 100;
+  ss.AP[player_t{2}] = 100;
+  ss.pnames.push_back("Earth");
+  Star star{ss};
+  star.mark_explored_by(player_t{1});
+  star.mark_explored_by(player_t{2});
+  star.mark_inhabited_by(player_t{1});
+  star.mark_inhabited_by(player_t{2});
+  StarRepository(store).save(star);
+
+  // 3. Setup Planet 0 on Star 0 (Earth)
+  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
+  planet.star_id() = 0;
+  planet.planet_order() = 0;
+  planet.xpos() = 100.0;
+  planet.ypos() = 0.0;
+  planet.explored() = true;
+  for (player_t pid : {player_t{1}, player_t{2}}) {
+    planet.info(pid).explored = 1;
+    planet.info(pid).destruct = 1000;
+    planet.info(pid).fuel = 1000;
+    planet.info(pid).resource = 1000;
+    planet.info(pid).tax = 10;
+    planet.info(pid).newtax = 10;
+  }
+  PlanetRepository(store).save(planet);
+
+  // 4. Setup SectorMap for Earth with valid coordinates
+  SectorMap smap(planet);
+  for (int y = 0; y < 10; ++y) {
+    for (int x = 0; x < 10; ++x) {
+      smap.get(Coordinates{x, y}).set_x(x);
+      smap.get(Coordinates{x, y}).set_y(y);
+    }
+  }
+  SectorRepository(store).save_map(smap);
+
+  // 5. Setup Universe record with 100 AP for both races
+  UniverseRepository univ_repo(store);
+  auto u = univ_repo.find(1);
+  if (!u) {
+    universe_struct new_u{};
+    new_u.id = 1;
+    new_u.numstars = 1;
+    new_u.AP[player_t{1}] = 100;
+    new_u.AP[player_t{2}] = 100;
+    univ_repo.save(new_u);
+  } else {
+    u->numstars = std::max(u->numstars, 1u);
+    u->AP[player_t{1}] = 100;
+    u->AP[player_t{2}] = 100;
+    univ_repo.save(*u);
+  }
+
+  return *this;
+}
+
+TestContext& TestContext::with_populated_planet(starnum_t snum,
+                                                planetnum_t pnum,
+                                                player_t owner,
+                                                population_t popn,
+                                                Coordinates capital_coords) {
+  em.mutate_planet(snum, pnum, [&](Planet& p) {
+    p.popn() = popn;
+    p.info(owner).numsectsowned = 1;
+  });
+
+  em.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
+    smap.get(capital_coords).colonize(owner, popn);
+    smap.get(capital_coords).set_condition(SectorType::SEC_LAND);
+    smap.get(capital_coords).set_fert(100);
+    smap.get(capital_coords).set_resource(100);
+    smap.get(capital_coords).set_efficiency_bounded(100);
+  });
+
+  return *this;
+}
+
+TestContext&
+TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
+  db = Database(":memory:");
+  GB::creator::UniverseConfig cfg = config.value_or(GB::creator::UniverseConfig{
+      .num_stars = 3,
+      .min_planets = 1,
+      .max_planets = 3,
+      .planetless_chance_percent = 0,
+      .auto_name_stars = true,
+      .auto_name_planets = true,
+      .print_star_info = false,
+      .print_planet_info = false,
+  });
+
+  GB::creator::UniverseGenerator generator(cfg);
+  generator.generate(db);
+
+  JsonStore store(db);
+
+  // Setup standard races
+  RaceRepository race_repo(store);
+  Race r1{};
+  r1.Playernum = 1;
+  r1.name = "Federation";
+  r1.tech = 100.0;
+  r1.Guest = false;
+  r1.governor[0].active = true;
+  r1.governor[0].money = 10'000;
+  r1.Gov_ship = 100;
+  r1.mass = 1.0;
+  r1.metabolism = 1.0;
+  race_repo.save(r1);
+
+  Race r2{};
+  r2.Playernum = 2;
+  r2.name = "Klingons";
+  r2.tech = 100.0;
+  r2.Guest = false;
+  r2.governor[0].active = true;
+  r2.governor[0].money = 10'000;
+  r2.mass = 1.0;
+  r2.metabolism = 1.0;
+  race_repo.save(r2);
+
+  // Mark all generated stars explored and with 100 AP
+  StarRepository star_repo(store);
+  for (starnum_t snum = 0; snum < cfg.num_stars; ++snum) {
+    auto star_opt = star_repo.find(snum);
+    if (star_opt) {
+      star_opt->mark_explored_by(player_t{1});
+      star_opt->mark_explored_by(player_t{2});
+      star_opt->mark_inhabited_by(player_t{1});
+      star_opt->mark_inhabited_by(player_t{2});
+      star_opt->AP(player_t{1}) = 100;
+      star_opt->AP(player_t{2}) = 100;
+      star_repo.save(*star_opt);
+    }
+  }
+
+  // Set universe AP
+  UniverseRepository univ_repo(store);
+  auto u = univ_repo.find(1);
+  if (u) {
+    u->AP[player_t{1}] = 100;
+    u->AP[player_t{2}] = 100;
+    univ_repo.save(*u);
+  }
+
+  return *this;
 }

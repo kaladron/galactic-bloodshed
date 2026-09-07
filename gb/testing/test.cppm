@@ -19,6 +19,7 @@ import dallib; // For Database, initialize_schema
 import gb.entities;
 import gb.services;
 import gb.repositories;
+import gb.creator;
 import std;
 
 export namespace test {
@@ -453,6 +454,23 @@ public:
   /// Helper to verify universe domain invariants across all entities.
   void verify_universe_invariants(
       std::source_location loc = std::source_location::current());
+
+  /// Initializes a standard 2-player solar system with Sol (Star 0) and
+  /// Earth (Planet 0 on Star 0), populated by Federation (Player 1) and
+  /// Klingons (Player 2) with 100 AP each. Enables fluent chaining.
+  TestContext& with_standard_universe();
+
+  /// Colonizes and seeds population on a planet sector, keeping planet and
+  /// sectormap populations aligned for universe invariant verification.
+  TestContext& with_populated_planet(starnum_t snum = 0, planetnum_t pnum = 0,
+                                     player_t owner = 1,
+                                     population_t popn = 1000,
+                                     Coordinates capital_coords = {0, 0});
+
+  /// Procedurally generates a universe using UniverseGenerator into the test
+  /// database and registers standard test races. Enables fluent chaining.
+  TestContext& with_universe(
+      std::optional<GB::creator::UniverseConfig> config = std::nullopt);
 };
 
 /// Helper runner to execute standardized 4-way command matrix tests:

@@ -38,7 +38,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
       .owned_by(2, 0)
       .named("Factory")
-      .in_planet_orbit(0, 0, 0.0, 0.0)
+      .in_planet_orbit(0, 0)
       .with_armor(100)
       .build();
 }

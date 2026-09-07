@@ -13,10 +13,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("NormalRace", 10.0, false, player_t{1})
-      .add_race("GuestRace", 10.0, true, player_t{2})
-      .add_star("TestStar", 10);
+  ctx.with_standard_universe();
 
   // Ship 1: Player 1 Fighter
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
@@ -117,6 +114,7 @@ void test_assault_insufficient_ap() {
 void test_assault_guest_rejection() {
   TestContext ctx;
   setup_test_world(ctx);
+  ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

@@ -10,10 +10,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Testers", 100.0, false, player_t{1})
-      .add_star("Test Star", 100, starnum_t{0})
-      .add_planet(0, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
   // Set race likes
   {

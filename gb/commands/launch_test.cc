@@ -13,10 +13,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("TestRace", 100.0, false, player_t{1})
-      .add_star("TestStar", 100)
-      .add_planet(0, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
   // Create test shuttle landed on the planet at (5, 5)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)

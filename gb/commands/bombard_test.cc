@@ -32,7 +32,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
       .owned_by(1, 0)
       .named("Battleship")
-      .in_planet_orbit(0, 0, 100.0, 200.0)
+      .in_planet_orbit(0, 0)
       .with_guns(guntype_t::LIGHT, 10)
       .with_destruct(100)
       .with_crew(10, 10)

@@ -85,26 +85,60 @@ TestShipBuilder& TestShipBuilder::with_active(bool active) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum, double x,
-                                                double y) {
+TestShipBuilder&
+TestShipBuilder::in_star_orbit(starnum_t snum,
+                               std::optional<UniverseCoordinates> coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_STAR;
   ship_.storbits = snum;
   ship_.pnumorbits = 0;
-  ship_.xpos = x;
-  ship_.ypos = y;
   ship_.docked = 0;
+  if (coords) {
+    ship_.xpos = coords->x;
+    ship_.ypos = coords->y;
+  } else {
+    const auto* star = em_.peek_star(snum);
+    ship_.xpos = star->coordinates().x;
+    ship_.ypos = star->coordinates().y;
+  }
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum, double x,
+                                                double y) {
+  return in_star_orbit(snum, UniverseCoordinates{x, y});
+}
+
+TestShipBuilder&
+TestShipBuilder::in_planet_orbit(starnum_t snum, planetnum_t pnum,
+                                 std::optional<UniverseCoordinates> coords) {
+  ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
+  ship_.storbits = snum;
+  ship_.pnumorbits = pnum;
+  ship_.docked = 0;
+  if (coords) {
+    ship_.xpos = coords->x;
+    ship_.ypos = coords->y;
+  } else {
+    const auto* star = em_.peek_star(snum);
+    const auto* planet = em_.peek_planet(snum, pnum);
+    UniverseCoordinates abs_coords = planet->absolute_coordinates(*star);
+    ship_.xpos = abs_coords.x;
+    ship_.ypos = abs_coords.y;
+  }
   return *this;
 }
 
 TestShipBuilder& TestShipBuilder::in_planet_orbit(starnum_t snum,
-                                                  planetnum_t pnum, double x,
-                                                  double y) {
+                                                  planetnum_t pnum,
+                                                  SystemCoordinates coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
   ship_.storbits = snum;
   ship_.pnumorbits = pnum;
-  ship_.xpos = x;
-  ship_.ypos = y;
   ship_.docked = 0;
+  const auto* star = em_.peek_star(snum);
+  UniverseCoordinates abs_coords = star->coordinates() + coords;
+  ship_.xpos = abs_coords.x;
+  ship_.ypos = abs_coords.y;
   return *this;
 }
 
@@ -116,6 +150,11 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
   ship_.pnumorbits = pnum;
   ship_.docked = 1;
   ship_.land_coords = coords;
+  const auto* star = em_.peek_star(snum);
+  const auto* planet = em_.peek_planet(snum, pnum);
+  UniverseCoordinates abs_coords = planet->absolute_coordinates(*star);
+  ship_.xpos = abs_coords.x;
+  ship_.ypos = abs_coords.y;
   return *this;
 }
 

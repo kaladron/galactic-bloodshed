@@ -280,6 +280,45 @@ void test_test_ship_builder() {
   test::expect_eq(fighter->destshipno(), bb_num);
   test::expect_true(fighter->docked());
 
+  // 4. In-planet-orbit ship automatically resolves planet coordinates (Earth at
+  // 100, 0)
+  shipnum_t shuttle_num = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                              .owned_by(1)
+                              .in_planet_orbit(0, 0)
+                              .build();
+  const auto* shuttle = ctx.em.peek_ship(shuttle_num);
+  test::expect_true(shuttle != nullptr);
+  test::expect_eq(shuttle->whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(shuttle->storbits(), starnum_t{0});
+  test::expect_eq(shuttle->pnumorbits(), planetnum_t{0});
+  test::expect_eq(shuttle->xpos(), 100.0);
+  test::expect_eq(shuttle->ypos(), 0.0);
+
+  // Verify lander also resolved planet coordinates
+  test::expect_eq(lander->xpos(), 100.0);
+  test::expect_eq(lander->ypos(), 0.0);
+
+  // 5. In-planet-orbit ship with explicit UniverseCoordinates
+  shipnum_t univ_orbiter_num =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+          .owned_by(1)
+          .in_planet_orbit(0, 0, UniverseCoordinates{105.0, 5.0})
+          .build();
+  const auto* univ_orbiter = ctx.em.peek_ship(univ_orbiter_num);
+  test::expect_true(univ_orbiter != nullptr);
+  test::expect_eq(univ_orbiter->coordinates(), UniverseCoordinates(105.0, 5.0));
+
+  // 6. In-planet-orbit ship with explicit SystemCoordinates (relative to star
+  // at 0, 0)
+  shipnum_t sys_orbiter_num =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+          .owned_by(1)
+          .in_planet_orbit(0, 0, SystemCoordinates{110.0, 10.0})
+          .build();
+  const auto* sys_orbiter = ctx.em.peek_ship(sys_orbiter_num);
+  test::expect_true(sys_orbiter != nullptr);
+  test::expect_eq(sys_orbiter->coordinates(), UniverseCoordinates(110.0, 10.0));
+
   std::println(std::cout, "  ✓ TestShipBuilder verified successfully");
 }
 

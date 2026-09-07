@@ -13,16 +13,13 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Lander", 100.0, false, player_t{1})
-      .add_star("LandingStar", 10)
-      .add_planet(0, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
   // Create a ship that can land (shuttle)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(1, 0)
       .named("TestShuttle")
-      .in_planet_orbit(0, 0, 0.0, 0.0)
+      .in_planet_orbit(0, 0)
       .with_crew(2, 0)
       .with_fuel(20.0)
       .build();

@@ -13,58 +13,7 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
-
-  universe_struct us{};
-  us.id = 1;
-  us.numstars = 2;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  // Create test race via repository
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.Guest = false;
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create test star via repository
-  StarRepository stars(store);
-  star_struct star0_data{};
-  star0_data.star_id = 0;
-  star0_data.name = "TestStar";
-  star0_data.pnames.push_back("TestPlanet");
-  star0_data.explored = (1ULL << 1);
-  Star star0(star0_data);
-  stars.save(star0);
-
-  // Create destination star for route
-  star_struct star1_data{};
-  star1_data.star_id = 1;
-  star1_data.name = "DestStar";
-  star1_data.pnames.push_back("DestPlanet");
-  star1_data.explored = (1ULL << 1);
-  Star star1(star1_data);
-  stars.save(star1);
-
-  // Create test planets via repository
-  PlanetRepository planets(store);
-  Planet planet0{};
-  planet0.star_id() = 0;
-  planet0.planet_order() = 0;
-  planet0.dimensions() = Coordinates{10, 10};
-  planet0.info(player_t{1}).numsectsowned = 5;
-  planet0.info(player_t{1}).explored = 1;
-  planets.save(planet0);
-
-  Planet planet1{};
-  planet1.star_id() = 1;
-  planet1.planet_order() = 0;
-  planet1.dimensions() = Coordinates{10, 10};
-  planet1.info(player_t{1}).numsectsowned = 5;
-  planet1.info(player_t{1}).explored = 1;
-  planets.save(planet1);
+  ctx.with_standard_universe();
 }
 
 void test_route_persistence() {
@@ -158,7 +107,7 @@ void test_route_command_dispatch() {
 
   // Set destination
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"route", "1", "/DestStar/DestPlanet"});
+  ctx.assert_dispatch_success(g, {"route", "1", "/Vega/Vega Prime"});
   test::expect_contains(g.out.str(), "Set");
 
   // Set land coords

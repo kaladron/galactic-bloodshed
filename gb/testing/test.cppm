@@ -539,10 +539,15 @@ public:
   TestShipBuilder& with_tech(double tech);
   TestShipBuilder& with_alive(bool alive);
   TestShipBuilder& with_active(bool active);
-  TestShipBuilder& in_star_orbit(starnum_t snum, double x = 0.0,
-                                 double y = 0.0);
+  TestShipBuilder&
+  in_star_orbit(starnum_t snum,
+                std::optional<UniverseCoordinates> coords = std::nullopt);
+  TestShipBuilder& in_star_orbit(starnum_t snum, double x, double y);
+  TestShipBuilder&
+  in_planet_orbit(starnum_t snum, planetnum_t pnum,
+                  std::optional<UniverseCoordinates> coords = std::nullopt);
   TestShipBuilder& in_planet_orbit(starnum_t snum, planetnum_t pnum,
-                                   double x = 0.0, double y = 0.0);
+                                   SystemCoordinates coords);
   TestShipBuilder& landed_on(starnum_t snum, planetnum_t pnum,
                              Coordinates coords);
   TestShipBuilder& docked_to(shipnum_t dest_ship, starnum_t snum);

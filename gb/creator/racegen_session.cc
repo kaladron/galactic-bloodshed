@@ -5,6 +5,9 @@
 
 module;
 
+import strong_id;
+import glaze.core;
+import glaze.json;
 import gb.entities;
 import std;
 
@@ -106,14 +109,21 @@ std::optional<T> parse_number(std::string_view s) {
 
 }  // namespace
 
-const std::array<RacegenSession::CommandDescriptor, 4>&
+const std::array<RacegenSession::CommandDescriptor, 7>&
 RacegenSession::commands() {
-  static constexpr std::array<CommandDescriptor, 4> cmds{{
+  static constexpr std::array<CommandDescriptor, 7> cmds{{
       {"modify", "modify <field> <value>",
        "Modify a race attribute, sector compatibility, or setting",
        &RacegenSession::do_modify},
       {"print", "print", "Display current specification and point costs",
        &RacegenSession::do_print},
+      {"save", "save [filename]", "Save the race specification to a JSON file",
+       &RacegenSession::do_save},
+      {"load", "load <filename>", "Load a race specification from a JSON file",
+       &RacegenSession::do_load},
+      {"enroll", "enroll",
+       "Enroll the configured race into the active universe database",
+       &RacegenSession::do_enroll},
       {"help", "help [topic]", "Show help for commands or modifiable fields",
        &RacegenSession::do_help},
       {"quit", "quit", "Exit the race generator", &RacegenSession::do_quit},
@@ -121,8 +131,10 @@ RacegenSession::commands() {
   return cmds;
 }
 
-RacegenSession::RacegenSession(std::istream& in, std::ostream& out)
-    : in_(in), out_(out), engine_(), spec_(engine_.create_default_spec(false)) {
+RacegenSession::RacegenSession(std::istream& in, std::ostream& out,
+                               EnrollmentService* enrollment_service)
+    : in_(in), out_(out), enrollment_service_(enrollment_service), engine_(),
+      spec_(engine_.create_default_spec(false)) {
   update_cost();
 }
 
@@ -193,6 +205,138 @@ bool RacegenSession::do_modify(std::string_view args) {
 
 bool RacegenSession::do_print(std::string_view) {
   print_race();
+  return true;
+}
+
+bool RacegenSession::save_to_file(const std::filesystem::path& path) {
+  auto json = glz::write_json(spec_);
+  if (!json) {
+    std::println(out_,
+                 "Error: Failed to serialize race specification to JSON.");
+    return false;
+  }
+  std::ofstream file(path);
+  if (!file.is_open()) {
+    std::println(out_, "Error: Cannot open file '{}' for writing.",
+                 path.string());
+    return false;
+  }
+  file << *json;
+  return true;
+}
+
+bool RacegenSession::load_from_file(const std::filesystem::path& path) {
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    std::println(out_, "Error: Cannot open file '{}' for reading.",
+                 path.string());
+    return false;
+  }
+  std::string content((std::istreambuf_iterator<char>(file)),
+                      std::istreambuf_iterator<char>());
+  RaceEnrollmentSpec loaded{};
+  auto ec = glz::read_json(loaded, content);
+  if (ec) {
+    std::println(out_, "Error: Failed to parse JSON file '{}'.", path.string());
+    return false;
+  }
+  spec_ = loaded;
+  update_cost();
+  return true;
+}
+
+EnrollmentResult RacegenSession::enroll() {
+  if (!enrollment_service_) {
+    return {.success = false,
+            .message = "No active universe database connected to session."};
+  }
+
+  if (cost_.points_remaining < 0) {
+    return {.success = false,
+            .message = std::format(
+                "Cannot enroll: specification exceeds point budget by {} "
+                "points.",
+                -cost_.points_remaining)};
+  }
+
+  auto errors =
+      engine_.validate(spec_, /*is_player=*/!spec_.is_god && !spec_.is_guest);
+  if (!errors.empty()) {
+    std::string msg = "Cannot enroll: validation errors:";
+    for (const auto& err : errors) {
+      msg += "\n  - " + err;
+    }
+    return {.success = false, .message = std::move(msg)};
+  }
+
+  return enrollment_service_->enroll_player(spec_);
+}
+
+bool RacegenSession::do_save(std::string_view args) {
+  std::string_view filename = trim(args);
+  std::string target_file;
+  if (filename.empty()) {
+    if (spec_.name.empty() || spec_.name == "Unknown") {
+      std::println(out_, "Usage: save <filename>");
+      return true;
+    }
+    target_file = spec_.name + ".json";
+  } else {
+    target_file = std::string(filename);
+    if (!target_file.ends_with(".json")) {
+      target_file += ".json";
+    }
+  }
+
+  if (save_to_file(target_file)) {
+    std::println(out_, "Specification saved to '{}'.", target_file);
+  }
+  return true;
+}
+
+bool RacegenSession::do_load(std::string_view args) {
+  std::string_view filename = trim(args);
+  if (filename.empty()) {
+    std::println(out_, "Usage: load <filename>");
+    return true;
+  }
+  std::string target_file(filename);
+  if (!target_file.ends_with(".json") &&
+      !std::filesystem::exists(target_file)) {
+    if (std::filesystem::exists(target_file + ".json")) {
+      target_file += ".json";
+    }
+  }
+
+  if (load_from_file(target_file)) {
+    std::println(out_, "Specification loaded from '{}'.", target_file);
+    print_race();
+  }
+  return true;
+}
+
+bool RacegenSession::do_enroll(std::string_view) {
+  if (!enrollment_service_) {
+    std::println(
+        out_, "Error: Cannot enroll: no active universe database connected.");
+    return true;
+  }
+
+  std::println(out_, "Enrolling player '{}'...", spec_.name);
+  auto res = enroll();
+  if (res.success) {
+    std::println(out_, "Enrollment successful!");
+    std::println(out_, "  Player ID    : {}", res.player_num);
+    std::println(out_, "  Home Star    : {}", res.star);
+    std::println(out_, "  Home Planet  : {}", res.pnum);
+    std::println(out_, "  Capital      : ({}, {})", res.capital_coords.x,
+                 res.capital_coords.y);
+    std::println(out_, "  Gov Ship     : #{}", res.gov_ship);
+    quit_requested_ = true;
+    return false;
+  }
+
+  std::println(out_, "Enrollment failed: {}", res.message);
   return true;
 }
 
@@ -420,7 +564,9 @@ bool RacegenSession::modify_field(std::string_view field_name,
   }
 
   // Validate changes against non-rigorous game rules
-  auto errors = engine_.validate(spec_, /*is_player=*/true, /*rigorous=*/false);
+  auto errors =
+      engine_.validate(spec_, /*is_player=*/!spec_.is_god && !spec_.is_guest,
+                       /*rigorous=*/false);
   if (!errors.empty()) {
     std::println(out_, "Error: {}", errors.front());
     spec_ = backup;

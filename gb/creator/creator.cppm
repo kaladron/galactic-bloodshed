@@ -6,6 +6,10 @@
 
 module;
 
+import strong_id;
+import glaze.core;
+import glaze.json;
+
 export module gb.creator;
 
 import dallib;
@@ -208,6 +212,32 @@ export struct RaceEnrollmentSpec {
   std::array<double, SectorType::SEC_WASTED + 1> sector_compatibilities{};
   std::optional<SectorType> likesbest{std::nullopt};
 };
+
+}  // namespace GB::creator
+
+export namespace glz {
+
+template <>
+struct meta<GB::creator::RaceEnrollmentSpec> {
+  using T = GB::creator::RaceEnrollmentSpec;
+  static constexpr auto value = object(
+      "name", &T::name, "password", &T::password, "governor_password",
+      &T::governor_password, "address", &T::address, "home_planet_type",
+      &T::home_planet_type, "preferred_sector", &T::preferred_sector,
+      "capital_coords", &T::capital_coords, "target_planet", &T::target_planet,
+      "candidate_stars", &T::candidate_stars, "is_god", &T::is_god, "is_guest",
+      &T::is_guest, "mass", &T::mass, "birthrate", &T::birthrate, "fighters",
+      &T::fighters, "iq", &T::iq, "iq_limit", &T::iq_limit, "metamorph",
+      &T::metamorph, "absorb", &T::absorb, "collective_iq", &T::collective_iq,
+      "pods", &T::pods, "adventurism", &T::adventurism, "number_sexes",
+      &T::number_sexes, "metabolism", &T::metabolism, "fertilize",
+      &T::fertilize, "sector_compatibilities", &T::sector_compatibilities,
+      "likesbest", &T::likesbest);
+};
+
+}  // namespace glz
+
+namespace GB::creator {
 
 /// Result of an enrollment attempt.
 export struct EnrollmentResult {
@@ -421,7 +451,8 @@ private:
 export class RacegenSession {
 public:
   explicit RacegenSession(std::istream& in = std::cin,
-                          std::ostream& out = std::cout);
+                          std::ostream& out = std::cout,
+                          EnrollmentService* enrollment_service = nullptr);
 
   /// Runs the interactive command loop until 'quit' or EOF.
   void run();
@@ -444,6 +475,15 @@ public:
     return quit_requested_;
   }
 
+  /// Saves current race specification to a JSON file.
+  bool save_to_file(const std::filesystem::path& path);
+
+  /// Loads race specification from a JSON file.
+  bool load_from_file(const std::filesystem::path& path);
+
+  /// Attempts to enroll the player with the current specification.
+  EnrollmentResult enroll();
+
   /// Prints formatted race specification and cost breakdown to output.
   void print_race();
 
@@ -457,6 +497,7 @@ public:
 private:
   std::istream& in_;
   std::ostream& out_;
+  EnrollmentService* enrollment_service_{nullptr};
   RacegenEngine engine_;
   RaceEnrollmentSpec spec_;
   RaceCostBreakdown cost_;
@@ -468,11 +509,14 @@ private:
     std::string_view description;
     bool (RacegenSession::*handler)(std::string_view args);
   };
-  static const std::array<CommandDescriptor, 4>& commands();
+  static const std::array<CommandDescriptor, 7>& commands();
 
   void update_cost();
   bool do_modify(std::string_view args);
   bool do_print(std::string_view args);
+  bool do_save(std::string_view args);
+  bool do_load(std::string_view args);
+  bool do_enroll(std::string_view args);
   bool do_help(std::string_view args);
   bool do_quit(std::string_view args);
 };

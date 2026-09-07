@@ -5,8 +5,11 @@
 /// interactive execution.
 
 import std;
+import dallib;
 import gb.creator;
 import gb.entities;
+import gb.repositories;
+import gb.services;
 import test;
 
 namespace {
@@ -246,6 +249,204 @@ void test_eof_handling() {
                   "birthrate modification must persist before EOF");
 }
 
+void test_save_and_load_roundtrip() {
+  const auto tmp_file =
+      std::filesystem::temp_directory_path() / "test_race_roundtrip.json";
+  std::filesystem::remove(tmp_file);
+
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out);
+
+  test::expect_true(session.modify_field("name", "Vulcan"));
+  test::expect_true(session.modify_field("mass", "1.5"));
+  test::expect_true(session.modify_field("birthrate", "0.85"));
+  test::expect_true(session.modify_field("fighters", "14"));
+  test::expect_true(session.modify_field("iq", "150"));
+  test::expect_true(session.modify_field("planet", "Desert"));
+  test::expect_true(session.modify_field("preferred", "desert"));
+
+  test::expect_true(session.save_to_file(tmp_file),
+                    "save_to_file must succeed");
+  test::expect_true(std::filesystem::exists(tmp_file),
+                    "file must exist on disk");
+
+  // Load into a separate fresh session
+  std::istringstream in2;
+  std::ostringstream out2;
+  GB::creator::RacegenSession session2(in2, out2);
+
+  test::expect_true(session2.load_from_file(tmp_file),
+                    "load_from_file must succeed");
+  test::expect_eq(session2.spec().name, "Vulcan");
+  test::expect_eq(session2.spec().mass, 1.5);
+  test::expect_eq(session2.spec().birthrate, 0.85);
+  test::expect_eq(session2.spec().fighters, 14);
+  test::expect_eq(session2.spec().iq, 150);
+  test::expect_eq(session2.spec().home_planet_type, PlanetType::DESERT);
+  test::expect_eq(session2.spec().preferred_sector, SectorType::SEC_DESERT);
+  test::expect_eq(session2.cost().points_remaining,
+                  session.cost().points_remaining,
+                  "recalculated cost must match");
+
+  std::filesystem::remove(tmp_file);
+}
+
+void test_save_load_via_commands() {
+  const auto tmp_file =
+      std::filesystem::temp_directory_path() / "test_cmd_race.json";
+  std::filesystem::remove(tmp_file);
+
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out);
+
+  test::expect_true(session.execute_command("modify name Romulan"));
+  test::expect_true(session.execute_command("modify fighters 16"));
+  test::expect_true(
+      session.execute_command(std::format("save {}", tmp_file.string())));
+  test::expect_true(out.str().contains("Specification saved to"),
+                    "save output must confirm save");
+  test::expect_true(std::filesystem::exists(tmp_file), "saved file must exist");
+
+  // Mutate session state
+  test::expect_true(session.execute_command("modify name Klingon"));
+  test::expect_true(session.execute_command("modify fighters 8"));
+  test::expect_eq(session.spec().name, "Klingon");
+
+  // Reload saved spec via command
+  out.str("");
+  test::expect_true(
+      session.execute_command(std::format("load {}", tmp_file.string())));
+  test::expect_true(out.str().contains("Specification loaded from"),
+                    "load output must confirm load");
+  test::expect_eq(session.spec().name, "Romulan");
+  test::expect_eq(session.spec().fighters, 16);
+
+  std::filesystem::remove(tmp_file);
+}
+
+void test_load_corrupted_file() {
+  const auto tmp_file =
+      std::filesystem::temp_directory_path() / "test_corrupted.json";
+  {
+    std::ofstream out_f(tmp_file);
+    out_f << "{ corrupted json data: [ invalid ]";
+  }
+
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out);
+  const auto initial_spec = session.spec();
+
+  test::expect_false(session.load_from_file(tmp_file),
+                     "loading corrupt json must fail");
+  test::expect_eq(session.spec().name, initial_spec.name,
+                  "spec must not change on load failure");
+
+  std::filesystem::remove(tmp_file);
+}
+
+void test_load_nonexistent_file() {
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out);
+
+  test::expect_false(
+      session.load_from_file("/path/to/definitely/nonexistent/file.json"),
+      "loading missing file must fail");
+}
+
+void test_enroll_without_service() {
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out);
+
+  test::expect_true(session.execute_command("enroll"));
+  test::expect_true(out.str().contains(
+      "Cannot enroll: no active universe database connected"));
+  test::expect_false(session.should_quit());
+}
+
+void test_enroll_rejected_when_over_budget() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  GB::creator::EnrollmentService service(em, db);
+
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out, &service);
+
+  // Force cost to exceed 1400 points
+  test::expect_true(session.execute_command("modify mass 3.0"));
+  test::expect_true(session.execute_command("modify birthrate 1.0"));
+  test::expect_true(session.execute_command("modify fighters 20"));
+  test::expect_true(session.execute_command("modify iq 220"));
+  test::expect_true(session.execute_command("modify metabolism 4.0"));
+  test::expect_true(session.cost().points_remaining < 0,
+                    "points remaining must be negative");
+
+  auto res = session.enroll();
+  test::expect_false(res.success, "enrollment must fail when over budget");
+  test::expect_true(res.message.contains("exceeds point budget"),
+                    "error message must mention exceeding point budget");
+}
+
+void test_enroll_with_service_success() {
+  Database db(":memory:");
+  initialize_schema(db);
+  JsonStore store(db);
+
+  universe_struct us{};
+  us.id = 1;
+  us.numstars = 1;
+  UniverseRepository(store).save(us);
+
+  star_struct ss{};
+  ss.star_id = 0;
+  ss.inhabited = 0;
+  ss.name = "Sol";
+  ss.pnames = {"Earth", "Mars"};
+  StarRepository(store).save(Star(ss));
+
+  Planet p0{PlanetType::EARTH, Coordinates{5, 5}};
+  p0.star_id() = 0;
+  p0.planet_order() = 0;
+  p0.conditions(RTEMP) = 20;
+  PlanetRepository(store).save(p0);
+
+  SectorMap smap(p0);
+  for (int y = 0; y < 5; ++y) {
+    for (int x = 0; x < 5; ++x) {
+      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_LAND);
+    }
+  }
+  SectorRepository(store).save_map(smap);
+
+  EntityManager em(db);
+  GB::creator::EnrollmentService service(em, db);
+
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out, &service);
+
+  session.mutable_spec().is_god = true;
+  test::expect_true(session.execute_command("modify name Terran"));
+  test::expect_true(session.execute_command("modify password secret"));
+  test::expect_true(session.execute_command("modify address user@example.com"));
+
+  test::expect_false(
+      session.execute_command("enroll"),
+      "enroll must return false to request session quit on success");
+  test::expect_true(session.should_quit(),
+                    "quit must be flagged on enrollment");
+  test::expect_true(out.str().contains("Enrollment successful!"),
+                    "output must report enrollment success");
+  test::expect_true(out.str().contains("Player ID    : 1"),
+                    "output must report player ID 1");
+}
+
 }  // namespace
 
 int main() {
@@ -261,6 +462,13 @@ int main() {
   test_unknown_command_and_missing_arguments();
   test_interactive_run_loop();
   test_eof_handling();
+  test_save_and_load_roundtrip();
+  test_save_load_via_commands();
+  test_load_corrupted_file();
+  test_load_nonexistent_file();
+  test_enroll_without_service();
+  test_enroll_rejected_when_over_budget();
+  test_enroll_with_service_success();
 
   std::println(std::cout, "✅ All RacegenSession tests passed!");
   return 0;

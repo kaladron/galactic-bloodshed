@@ -197,7 +197,7 @@ target_sources(
   PRIVATE creator/enrollment_service.cc creator/archetypes.cc
           creator/universe_generator.cc creator/makeplanet.cc
           creator/racegen_engine.cc creator/racegen_session.cc)
-target_link_libraries(gb_creator PUBLIC gblib gb_entities gb_services gb_repositories dallib tabulate_module)
+target_link_libraries(gb_creator PUBLIC gblib gb_entities gb_services gb_repositories dallib tabulate_module glaze_json_module glaze_core_module)
 
 # Create session library (Server Layer)
 add_library(session)

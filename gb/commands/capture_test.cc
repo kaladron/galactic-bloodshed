@@ -4,7 +4,6 @@
 /// \brief Unit tests for capture command
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,39 +12,36 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("AttackerRace", 10.0, false, player_t{1})
-      .add_race("DefenderRace", 5.0, false, player_t{2})
-      .add_star("TestStar", 10, starnum_t{0})
-      .add_planet(0, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
   // Set attacker race likes and governor
-  {
-    ctx.em.mutate_race(1, [](Race& r) {
-      r.fighters = 10.0;
-      r.mass = 1.0;
-      r.morale = 100;
-      r.likes[SectorType::SEC_LAND] = 50;
-      r.governor[1].active = true;
-    });
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.fighters = 10.0;
+    r.mass = 1.0;
+    r.morale = 100;
+    r.likes[SectorType::SEC_LAND] = 50;
+    r.governor[1].active = true;
+  });
 
-    ctx.em.mutate_race(2, [](Race& r) {
-      r.fighters = 1.0;
-      r.mass = 1.0;
-      r.morale = 50;
-    });
-  }
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.fighters = 1.0;
+    r.mass = 1.0;
+    r.morale = 50;
+  });
 
   // Create sectormap with troops for attacker
   ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
-    smap.get(Coordinates{5, 5}).set_owner(1);
-    smap.get(Coordinates{5, 5}).set_popn_exact(50);
-    smap.get(Coordinates{5, 5}).set_troops(100);
-    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
+    auto& sect = smap.get(Coordinates{5, 5});
+    sect.set_owner(1);
+    sect.set_popn_exact(50);
+    sect.set_troops(100);
+    sect.set_condition(SectorType::SEC_LAND);
   });
 
   ctx.em.mutate_planet(0, 0, [](Planet& planet) {
-    planet.popn() = 50;
+    planet.info(player_t{1}).numsectsowned += 1;
+    planet.popn() += 50;
+    planet.troops() += 100;
     planet.ships() = 1;
   });
 

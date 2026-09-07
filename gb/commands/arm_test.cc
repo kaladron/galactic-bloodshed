@@ -3,7 +3,6 @@
 /// \file arm_test.cc
 /// \brief Unit tests for arm and disarm commands.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -16,52 +15,24 @@ void test_arm_and_disarm() {
   std::println(std::cout,
                "Test: arm and disarm command dispatch and domain logic");
   TestContext ctx;
-  JsonStore store(ctx.db);
+  ctx.with_standard_universe();
 
-  // Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Testers";
-  race.Guest = false;
-  race.governor[0].active = true;
-  race.governor[0].money = 10000;
-  race.fighters = 100;
+  ctx.em.mutate_race(1, [](Race& r) { r.fighters = 100; });
 
-  RaceRepository races(store);
-  races.save(race);
+  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+    planet.info(player_t{1}).numsectsowned += 1;
+    planet.info(player_t{1}).destruct = 1000;
+    planet.popn() += 1000;
+  });
 
-  // Create test star
-  star_struct star{};
-  star.star_id = 0;
-  star.name = "Test Star";
-  star.governor[player_t{1}] = 0;
-  star.AP[player_t{1}] = 100;
-
-  StarRepository stars(store);
-  stars.save(star);
-
-  // Create test planet
-  Planet planet{};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.dimensions() = Coordinates{10, 10};
-  planet.info(player_t{1}).destruct = 1000;
-
-  PlanetRepository planets(store);
-  planets.save(planet);
-
-  // Create test sectormap
-  {
-    SectorMap smap(planet);
-    smap.get(Coordinates{5, 5}).set_owner(1);
-    smap.get(Coordinates{5, 5}).set_popn_exact(1000);
-    smap.get(Coordinates{5, 5}).set_troops(0);
-    smap.get(Coordinates{5, 5}).set_mobilization(1);
-    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
-
-    SectorRepository sectors(store);
-    sectors.save_map(smap);
-  }
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    auto& sect = smap.get(Coordinates{5, 5});
+    sect.set_owner(1);
+    sect.set_popn_exact(1000);
+    sect.set_troops(0);
+    sect.set_mobilization(1);
+    sect.set_condition(SectorType::SEC_MOUNT);
+  });
 
   // Create GameObj
   auto& registry = get_test_session_registry();
@@ -133,6 +104,8 @@ void test_arm_and_disarm() {
   const auto& saved_sect2 = saved_smap->get(Coordinates{5, 5});
   test::expect_eq(saved_sect2.get_troops(), 50);
   test::expect_eq(saved_sect2.get_popn(), 950);
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

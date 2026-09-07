@@ -4,7 +4,6 @@
 /// \brief Unit tests for bombard command
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,20 +12,21 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Attacker", 100.0, false, player_t{1})
-      .add_race("Defender", 100.0, false, player_t{2})
-      .add_star("CombatStar", 100, starnum_t{0})
-      .add_planet(0, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
-  // Configure target sector (5,5) on planet (0,0)
+  // Configure target sector (5,5) on planet (0,0) for defender (player 2)
   ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
-    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
-    smap.get(Coordinates{5, 5}).set_popn_exact(100);
-    smap.get(Coordinates{5, 5}).set_owner(2);
-    smap.get(Coordinates{5, 5}).set_troops(10);
+    auto& sect = smap.get(Coordinates{5, 5});
+    sect.set_condition(SectorType::SEC_LAND);
+    sect.set_popn_exact(100);
+    sect.set_owner(2);
+    sect.set_troops(10);
   });
-  ctx.em.mutate_planet(0, 0, [](Planet& planet) { planet.popn() = 100; });
+  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+    planet.info(player_t{2}).numsectsowned += 1;
+    planet.popn() += 100;
+    planet.troops() += 10;
+  });
 
   // Create attacker ship in orbit with guns and ammo
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
@@ -97,16 +97,8 @@ void test_bombard_role_and_scope_rejections() {
   setup_test_world(ctx);
 
   // Create Guest Race
-  Race guest_race{};
-  guest_race.Playernum = 3;
-  guest_race.name = "GuestAttacker";
-  guest_race.Guest = true;
-  guest_race.governor[0].active = true;
-  {
-    JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(guest_race);
-  }
+  TestWorldBuilder(ctx).add_race("GuestAttacker", 100.0, /*guest=*/true,
+                                 player_t{3});
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

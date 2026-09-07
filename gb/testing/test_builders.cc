@@ -103,6 +103,18 @@ TestShipBuilder::in_star_orbit(starnum_t snum,
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum,
+                                                SystemCoordinates coords) {
+  ship_.whatorbits = ScopeLevel::LEVEL_STAR;
+  ship_.storbits = snum;
+  ship_.docked = 0;
+  const auto* star = em_.peek_star(snum);
+  UniverseCoordinates abs_coords = star->coordinates() + coords;
+  ship_.xpos = abs_coords.x;
+  ship_.ypos = abs_coords.y;
+  return *this;
+}
+
 TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum, double x,
                                                 double y) {
   return in_star_orbit(snum, UniverseCoordinates{x, y});
@@ -224,6 +236,21 @@ TestShipBuilder& TestShipBuilder::with_damage(damage_t damage) {
 
 TestShipBuilder& TestShipBuilder::with_armor(armor_t armor) {
   ship_.armor = armor;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_size(ship_size_t size) {
+  ship_.size = size;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_on(bool on) {
+  ship_.on = on;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_nextship(shipnum_t next) {
+  ship_.nextship = next;
   return *this;
 }
 

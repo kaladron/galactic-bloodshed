@@ -542,6 +542,7 @@ public:
   TestShipBuilder&
   in_star_orbit(starnum_t snum,
                 std::optional<UniverseCoordinates> coords = std::nullopt);
+  TestShipBuilder& in_star_orbit(starnum_t snum, SystemCoordinates coords);
   TestShipBuilder& in_star_orbit(starnum_t snum, double x, double y);
   TestShipBuilder&
   in_planet_orbit(starnum_t snum, planetnum_t pnum,
@@ -564,6 +565,9 @@ public:
   TestShipBuilder& with_destruct(resource_t destruct);
   TestShipBuilder& with_damage(damage_t damage);
   TestShipBuilder& with_armor(armor_t armor);
+  TestShipBuilder& with_size(ship_size_t size);
+  TestShipBuilder& with_on(bool on);
+  TestShipBuilder& with_nextship(shipnum_t next);
 
   shipnum_t build();
 

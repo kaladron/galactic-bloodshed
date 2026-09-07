@@ -4,7 +4,6 @@
 /// \brief Unit tests for fire and cew commands
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,16 +12,13 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Attacker", 100.0, false, player_t{1})
-      .add_race("Defender", 100.0, false, player_t{2})
-      .add_star("CombatStar", 100, starnum_t{0});
+  ctx.with_standard_universe();
 
   // Create attacker ship - armed with guns
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
       .owned_by(1, 0)
       .named("Battleship")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(0, SystemCoordinates{100.0, 200.0})
       .with_guns(guntype_t::LIGHT, 10)
       .with_destruct(100)
       .with_crew(10, 10)
@@ -33,7 +29,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
       .owned_by(2, 0)
       .named("Target")
-      .in_star_orbit(0, 110.0, 210.0)
+      .in_star_orbit(0, SystemCoordinates{110.0, 210.0})
       .with_armor(10)
       .with_crew(10, 0)
       .build();
@@ -42,7 +38,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
       .owned_by(1, 0)
       .named("CEWBattleship")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(0, SystemCoordinates{100.0, 200.0})
       .with_cew(20, 1000)
       .with_crew(10, 0)
       .with_fuel(1000.0)
@@ -130,16 +126,8 @@ void test_fire_role_and_guest_rejections() {
   setup_test_world(ctx);
 
   // Create Guest Race
-  Race guest_race{};
-  guest_race.Playernum = 3;
-  guest_race.name = "GuestAttacker";
-  guest_race.Guest = true;
-  guest_race.governor[0].active = true;
-  {
-    JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(guest_race);
-  }
+  TestWorldBuilder(ctx).add_race("GuestAttacker", 100.0, /*guest=*/true,
+                                 player_t{3});
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

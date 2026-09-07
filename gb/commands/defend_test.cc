@@ -4,7 +4,6 @@
 /// \brief Unit tests for defend command
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,25 +12,23 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx)
-      .add_race("Testers", 100.0, false, player_t{1})
-      .add_race("Enemies", 100.0, false, player_t{2})
-      .add_star("Test Star", 100, starnum_t{0})
-      .add_planet(0, PlanetType::EARTH);
+  ctx.with_standard_universe();
 
-  // Setup planet info and sectors
+  // Setup planet info and sectors for player 1 defense
   ctx.em.mutate_planet(0, 0, [](Planet& planet) {
-    planet.info(player_t{1}).numsectsowned = 1;
+    planet.info(player_t{1}).numsectsowned += 1;
     planet.info(player_t{1}).guns = 50;
     planet.info(player_t{1}).destruct = 100;
-    planet.popn() = 1000;
+    planet.popn() += 1000;
+    planet.troops() += 500;
   });
 
   ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
-    smap.get(Coordinates{5, 5}).set_owner(1);
-    smap.get(Coordinates{5, 5}).set_popn_exact(1000);
-    smap.get(Coordinates{5, 5}).set_troops(500);
-    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
+    auto& sect = smap.get(Coordinates{5, 5});
+    sect.set_owner(1);
+    sect.set_popn_exact(1000);
+    sect.set_troops(500);
+    sect.set_condition(SectorType::SEC_MOUNT);
   });
 
   // Create attacking enemy ship in planet orbit

@@ -4,7 +4,6 @@
 /// \brief Unit tests for detonate command
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,85 +12,33 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  // Create test context
-  JsonStore store(ctx.db);
-
-  // Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "MineLayer";
-  race.Guest = false;
-  race.Gov_ship = 0;
-  race.governor[0].active = true;
-  race.governor[0].toggle.highlight = true;
-  race.tech = 100.0;
-  race.morale = 100;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create target race
-  Race target_race{};
-  target_race.Playernum = 2;
-  target_race.name = "TargetRace";
-  target_race.Guest = false;
-  target_race.governor[0].active = true;
-  target_race.tech = 100.0;
-  races.save(target_race);
-
-  // Create star with ship list pointing to mine (ship #1)
-  star_struct star{};
-  star.star_id = 0;
-  star.name = "MineStar";
-  star.ships = 1;  // Head of ship list
-
-  StarRepository stars(store);
-  stars.save(star);
+  ctx.with_standard_universe();
 
   // Create mine ship (activated)
-  ship_struct mine{};
-  mine.number = 1;
-  mine.owner = 1;
-  mine.governor = 0;
-  mine.type = ShipType::STYPE_MINE;
-  mine.xpos = 100.0;
-  mine.ypos = 100.0;
-  mine.whatorbits = ScopeLevel::LEVEL_STAR;
-  mine.storbits = 0;
-  mine.on = true;
-  mine.alive = true;
-  mine.active = true;
-  mine.docked = false;
-  mine.destruct = 10;  // Mine charge
-  mine.nextship = 2;   // Link to target ship
-  mine.size = 10;      // Ship size for combat calculations
-  mine.tech = 10.0;    // Tech level for range calculations
-
-  auto mine_handle = ctx.em.create_ship(mine);
-  mine_handle.save();
+  TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+      .owned_by(1, 0)
+      .named("Mine")
+      .in_star_orbit(0, SystemCoordinates{100.0, 100.0})
+      .with_destruct(10)
+      .with_on(true)
+      .with_size(10)
+      .with_tech(10.0)
+      .with_nextship(2)
+      .build();
 
   // Create target ship nearby
-  ship_struct target{};
-  target.number = 2;
-  target.owner = 2;
-  target.governor = 0;
-  target.type = ShipType::STYPE_CARGO;
-  target.xpos = 105.0;  // Close to mine
-  target.ypos = 105.0;
-  target.whatorbits = ScopeLevel::LEVEL_STAR;
-  target.storbits = 0;
-  target.on = true;
-  target.alive = true;
-  target.active = true;
-  target.armor = 10;
-  target.damage = 0;
-  target.nextship = 0;  // End of ship list
-  target.size = 20;     // Ship size for combat calculations
-  target.popn = 10;
-  target.tech = 10.0;
+  TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+      .owned_by(2, 0)
+      .named("Target")
+      .in_star_orbit(0, SystemCoordinates{105.0, 105.0})
+      .with_armor(10)
+      .with_crew(10, 0)
+      .with_size(20)
+      .with_tech(10.0)
+      .build();
 
-  auto target_handle = ctx.em.create_ship(target);
-  target_handle.save();
+  // Star ship list points to mine (#1)
+  ctx.em.mutate_star(0, [](Star& s) { s.ships() = 1; });
 }
 
 void test_detonate_happy_path() {
@@ -126,6 +73,8 @@ void test_detonate_happy_path() {
 
   std::println(std::cout,
                "✓ detonate command: Mine detonation persisted to database");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_detonate_role_rejection() {
@@ -133,16 +82,8 @@ void test_detonate_role_rejection() {
   setup_test_world(ctx);
 
   // Create Guest Race
-  Race guest_race{};
-  guest_race.Playernum = 3;
-  guest_race.name = "GuestMineLayer";
-  guest_race.Guest = true;
-  guest_race.governor[0].active = true;
-  {
-    JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(guest_race);
-  }
+  TestWorldBuilder(ctx).add_race("GuestMineLayer", 100.0, /*guest=*/true,
+                                 player_t{3});
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -152,6 +93,8 @@ void test_detonate_role_rejection() {
 
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_detonate_domain_errors() {
@@ -177,6 +120,8 @@ void test_detonate_domain_errors() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
   test::expect_contains(g.out.str(), "not activated");
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

@@ -6,6 +6,8 @@
 #include <sqlite3.h>
 
 import dallib;
+import gb.entities;
+import gb.repositories;
 import test;
 import std;
 
@@ -191,26 +193,28 @@ int main() {
     // Initial state: 0 planets
     test::expect_eq(db.count_non_asteroid_planets(), 0);
 
-    // Store planet JSON using JsonStore
+    // Store planets using PlanetRepository which serializes via Glaze
     JsonStore store(db);
-    std::vector<std::pair<std::string, KeyValue>> k1 = {{"star_id", 0},
-                                                        {"planet_order", 0}};
-    std::vector<std::pair<std::string, KeyValue>> k2 = {{"star_id", 0},
-                                                        {"planet_order", 1}};
-    std::vector<std::pair<std::string, KeyValue>> k3 = {{"star_id", 0},
-                                                        {"planet_order", 2}};
+    PlanetRepository planets(store);
 
-    // PlanetType enum serializes as string (e.g. "ASTEROID")
-    store.store_multi("tbl_planet", k1,
-                      R"({"type": "EARTH", "name": "Earth"})");
-    store.store_multi("tbl_planet", k2,
-                      R"({"type": "ASTEROID", "name": "Asteroid1"})");
-    store.store_multi("tbl_planet", k3,
-                      R"({"type": "FOREST", "name": "Forest"})");
+    Planet earth(PlanetType::EARTH, Coordinates{10, 10});
+    earth.star_id() = 0;
+    earth.planet_order() = 0;
+    planets.save(earth);
+
+    Planet asteroid(PlanetType::ASTEROID, Coordinates{5, 5});
+    asteroid.star_id() = 0;
+    asteroid.planet_order() = 1;
+    planets.save(asteroid);
+
+    Planet forest(PlanetType::FOREST, Coordinates{10, 10});
+    forest.star_id() = 0;
+    forest.planet_order() = 2;
+    planets.save(forest);
 
     test::expect_eq(db.count_non_asteroid_planets(), 2);
     std::println(std::cout,
-                 "✓ count_non_asteroid_planets excludes type 7 asteroids");
+                 "✓ count_non_asteroid_planets excludes PlanetType::ASTEROID");
   }
 
   // Move semantics

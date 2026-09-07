@@ -237,7 +237,6 @@ void test_do_turn_victory_scores_and_discoveries() {
   universe_struct u{};
   u.id = 1;
   u.numstars = 1;
-  u.planet_count = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -288,7 +287,6 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   universe_struct u{};
   u.id = 1;
   u.numstars = 1;
-  u.planet_count = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 

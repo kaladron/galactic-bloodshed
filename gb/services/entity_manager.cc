@@ -470,6 +470,10 @@ const universe_struct* EntityManager::peek_universe() {
   return global_universe_cache.get();
 }
 
+int EntityManager::count_non_asteroid_planets() {
+  return db.count_non_asteroid_planets();
+}
+
 void EntityManager::release_universe() {
   global_universe_refcount--;
   if (global_universe_refcount <= 0 && !is_deferred_write()) {

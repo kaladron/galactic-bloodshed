@@ -219,6 +219,7 @@ public:
   const block* peek_block(blocknum_t id);
   const power* peek_power(powernum_t id);
   const universe_struct* peek_universe();
+  [[nodiscard]] int count_non_asteroid_planets();
   const ServerState* peek_server_state();
   const ShipExam* peek_ship_exam(ShipType ship_type);
   const SectorMap* peek_sectormap(starnum_t star, planetnum_t pnum);

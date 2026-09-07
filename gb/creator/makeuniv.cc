@@ -55,14 +55,14 @@ int main(int argc, char* argv[]) {
             std::println(std::cerr, "Option \"-l\" requires an argument.");
             return 1;
           }
-          config.min_planets = static_cast<planetnum_t>(std::atoi(argv[++i]));
+          config.min_planets = std::atoi(argv[++i]);
           break;
         case 'm':
           if (i + 1 >= argc) {
             std::println(std::cerr, "Option \"-m\" requires an argument.");
             return 1;
           }
-          config.max_planets = static_cast<planetnum_t>(std::atoi(argv[++i]));
+          config.max_planets = std::atoi(argv[++i]);
           break;
         case 's':
           if (i + 1 >= argc) {

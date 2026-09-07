@@ -269,8 +269,8 @@ export Planet makeplanet(double dist, short stemp, PlanetType type,
 /// Configuration parameters for procedural universe creation.
 export struct UniverseConfig {
   starnum_t num_stars{128};
-  planetnum_t min_planets{1};
-  planetnum_t max_planets{10};
+  int min_planets{1};
+  int max_planets{10};
   int planetless_chance_percent{0};
   bool auto_name_stars{true};
   bool auto_name_planets{true};
@@ -284,7 +284,7 @@ export struct UniverseConfig {
 /// Summary of a generated universe.
 export struct UniverseGenerationResult {
   starnum_t num_stars{0};
-  planetnum_t planet_count{0};
+  int planet_count{0};
   int total_resources{0};
   std::array<int, PlanetType::DESERT + 1> planets_by_type{};
 };

@@ -456,8 +456,7 @@ void calculate_victory_scores(EntityManager& entity_manager) {
 }
 
 static void finalize_turn(TurnState& state, bool update) {
-  const planetnum_t planet_count =
-      state.entity_manager.peek_universe()->planet_count;
+  const int planet_count = state.entity_manager.count_non_asteroid_planets();
   if (update) {
     for (auto race_handle : RaceList(state.entity_manager)) {
       const player_t player = race_handle->Playernum;
@@ -469,14 +468,14 @@ static void finalize_turn(TurnState& state, bool update) {
       check_technological_discoveries(state.entity_manager, *race_handle);
       race_handle->turn += 1;
       if (race_handle->controlled_planets >=
-          planet_count.value * VICTORY_PERCENT / 100) {
+          planet_count * VICTORY_PERCENT / 100) {
         race_handle->victory_turns++;
       } else {
         race_handle->victory_turns = 0;
       }
 
       if (race_handle->controlled_planets >=
-          planet_count.value * VICTORY_PERCENT / 200) {
+          planet_count * VICTORY_PERCENT / 200) {
         for (auto other_race : RaceList(state.entity_manager)) {
           other_race->translate[player] = 100;
         }
@@ -657,13 +656,13 @@ enum class WinCategory {
 void handle_victory(EntityManager& em) {
   if (!VICTORY) return;
 
-  const planetnum_t planet_count = em.peek_universe()->planet_count;
+  const int planet_count = em.count_non_asteroid_planets();
   int game_over = 0;
   PlayerVector<WinCategory, MAXPLAYERS> win_category{};
 
   for (const Race& race : RaceList::readonly(em)) {
     const player_t player = race.Playernum;
-    if (race.controlled_planets >= planet_count.value * VICTORY_PERCENT / 100) {
+    if (race.controlled_planets >= planet_count * VICTORY_PERCENT / 100) {
       win_category[player] = WinCategory::LITTLE_WINNER;
     }
     if (race.victory_turns >= VICTORY_UPDATES) {

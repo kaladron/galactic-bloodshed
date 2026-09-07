@@ -42,7 +42,9 @@ void test_universe_generator_in_memory() {
   auto universe_opt = universe_repo.get_global_data();
   test::expect_true(universe_opt.has_value());
   test::expect_eq(universe_opt->numstars, 5);
-  test::expect_eq(universe_opt->planet_count, result.planet_count);
+  test::expect_eq(db.count_non_asteroid_planets(), result.planet_count);
+  EntityManager em(db);
+  test::expect_eq(em.count_non_asteroid_planets(), result.planet_count);
 
   // Verify each star was persisted with valid properties
   StarRepository star_repo(store);

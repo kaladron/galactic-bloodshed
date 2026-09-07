@@ -15,9 +15,8 @@ import std;
 // as it contains universe-wide data, not star-specific data
 export struct universe_struct {
   int id{0};  // Universe ID for database persistence (always 1 for singleton)
-  std::uint32_t numstars{0};   /* Total # of stars in universe */
-  shipnum_t ships{0};          /* Head of universe-wide ship list */
-  planetnum_t planet_count{0}; /* Count of non-asteroid planets (for victory) */
+  std::uint32_t numstars{0}; /* Total # of stars in universe */
+  shipnum_t ships{0};        /* Head of universe-wide ship list */
   PlayerVector<ap_t, MAXPLAYERS> AP;
   PlayerVector<std::uint32_t, MAXPLAYERS> VN_hitlist;
   /* # of ships destroyed by each player */

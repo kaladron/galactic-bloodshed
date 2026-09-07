@@ -394,7 +394,7 @@ int Database::count_non_asteroid_planets() {
   }
 
   const char* sql = "SELECT COUNT(*) FROM tbl_planet WHERE "
-                    "json_extract(data, '$.type') != 'ASTEROID'";
+                    "json_extract(data, '$.type') != 1";
 
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
 

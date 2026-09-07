@@ -165,8 +165,7 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
                  star.gravity, static_cast<int>(star.temperature));
   }
 
-  int num_planets =
-      int_rand(config_.min_planets.value, config_.max_planets.value);
+  int num_planets = int_rand(config_.min_planets, config_.max_planets);
   if (config_.planetless_chance_percent > 0 &&
       int_rand(1, 100) <= config_.planetless_chance_percent) {
     num_planets = 0;
@@ -254,9 +253,7 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
     stars.push_back(make_star_system(db, snum, result));
   }
 
-  universe_data.planet_count =
-      static_cast<planetnum_t>(db.count_non_asteroid_planets());
-  result.planet_count = universe_data.planet_count;
+  result.planet_count = db.count_non_asteroid_planets();
 
   JsonStore store(db);
   UniverseRepository universe_repo(store);

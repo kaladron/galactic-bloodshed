@@ -1022,6 +1022,45 @@ void test_deletion_barrier() {
                           "ships");
 }
 
+void test_entity_manager_count_non_asteroid_planets() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore store(db);
+  PlanetRepository planets(store);
+
+  std::println(std::cout, "Test: EntityManager count_non_asteroid_planets");
+
+  test::expect_eq(em.count_non_asteroid_planets(), 0);
+
+  Planet earth{};
+  earth.star_id() = 0;
+  earth.planet_order() = 0;
+  earth.type() = PlanetType::EARTH;
+  planets.save(earth);
+
+  test::expect_eq(em.count_non_asteroid_planets(), 1);
+
+  Planet asteroid{};
+  asteroid.star_id() = 0;
+  asteroid.planet_order() = 1;
+  asteroid.type() = PlanetType::ASTEROID;
+  planets.save(asteroid);
+
+  // Asteroid must not increment the non-asteroid count
+  test::expect_eq(em.count_non_asteroid_planets(), 1);
+
+  Planet gas_giant{};
+  gas_giant.star_id() = 1;
+  gas_giant.planet_order() = 0;
+  gas_giant.type() = PlanetType::GASGIANT;
+  planets.save(gas_giant);
+
+  test::expect_eq(em.count_non_asteroid_planets(), 2);
+  std::println(std::cout,
+               "  ✓ count_non_asteroid_planets correctly excludes asteroids");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -1046,6 +1085,7 @@ int main() {
   test_entity_manager_create_ship();
   test_entity_manager_with_scoped_peeks();
   test_deletion_barrier();
+  test_entity_manager_count_non_asteroid_planets();
 
   std::println(std::cout, "\n✅ All EntityManager tests passed!");
   return 0;

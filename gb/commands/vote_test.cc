@@ -83,7 +83,6 @@ void test_unanimous_vote_lifecycle() {
     universe_struct u{};
     u.id = 1;
     u.numstars = 1;
-    u.planet_count = 1;
     UniverseRepository univs(store);
     univs.save(u);
 

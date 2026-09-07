@@ -1103,12 +1103,12 @@ gb/
 │   ├── universe_generator.cc   # Procedural universe generation engine
 │   ├── enrollment_service.cc   # Canonical player onboarding service
 │   ├── racegen_engine.cc       # Point-budget calculation and validation engine
+│   ├── racegen_session.cc      # Interactive race configuration session
 │   ├── archetypes.cc           # Pre-calibrated racial archetypes & tabulation
 │   ├── makeplanet.cc           # Planetary surface and geography generation
 │   ├── makeuniv.cc             # Universe generator CLI entrypoint
 │   ├── enrol.cc                # Guided player enrollment wizard CLI
 │   ├── racegen.cc              # Interactive genetic design sandbox CLI
-│   ├── enroll.cc               # Batch racegen enrollment adapter
 │   └── *_test.cc               # Creator unit & invariant tests
 │
 ├── testing/                     # Test Framework & Invariant Checking (test)

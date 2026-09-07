@@ -58,6 +58,9 @@ export void do_canister(Ship& ship, EntityManager& entity_manager,
 export void do_greenhouse(Ship& ship, EntityManager& entity_manager,
                           TurnStats& stats);
 
+/// \brief Simulates orbital assault platform intimidation of the planet below.
+export void do_oap(Ship& ship, TurnStats& stats);
+
 /// \brief Simulates focused space mirror heating against ships, planets, or
 /// stars.
 export void do_mirror(Ship& ship, EntityManager& entity_manager,

@@ -174,7 +174,9 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
 }
 
 void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
-  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed()) {
+  if (ship.type() != ShipType::OTYPE_CANIST ||
+      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
+      !ship.alive()) {
     return;
   }
 
@@ -208,7 +210,9 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
 void do_greenhouse(Ship& ship, EntityManager& entity_manager,
                    TurnStats& stats) {
-  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed()) {
+  if (ship.type() != ShipType::OTYPE_GREEN ||
+      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
+      !ship.alive()) {
     return;
   }
   auto* canist = ship.as<CanisterShip>();
@@ -359,10 +363,14 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
 }
 
 void do_oap(Ship& ship, TurnStats& stats) {
-  /* "indimidate" the planet below, for enslavement purposes. */
-  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN)
-    stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].intimidated =
-        true;
+  /* "intimidate" the planet below, for enslavement purposes. */
+  if (ship.type() != ShipType::STYPE_OAP ||
+      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
+      !ship.alive() || !ship.active() || !ship.on()) {
+    return;
+  }
+  stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].intimidated =
+      true;
 }
 
 bool process_ship_radiation(Ship& ship, bool update) {

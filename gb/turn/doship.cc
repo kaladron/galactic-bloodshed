@@ -460,95 +460,125 @@ void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
   }
 }
 
-void doship(Ship& ship, bool update, EntityManager& entity_manager,
-            TurnStats& stats) {
-  /*ship is active */
+bool prepare_ship_for_flight(Ship& ship, bool update) {
+  /* ship is active */
   ship.active() = 1;
 
-  if (ship.owner() == 0) ship.alive() = 0;
+  if (ship.owner() == 0) {
+    ship.alive() = 0;
+  }
 
-  if (ship.alive()) {
-    /* repair radiation & check mobility */
-    ship.active() = process_ship_radiation(ship, update);
+  if (!ship.alive()) {
+    return false;
+  }
 
-    if (!ship.popn() && ship.max_crew_capacity() && !ship.docked())
-      ship.whatdest() = ScopeLevel::LEVEL_UNIV;
+  /* repair radiation & check mobility */
+  ship.active() = process_ship_radiation(ship, update);
 
-    // Check for supernova damage
-    if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
-      const auto& star = *entity_manager.peek_star(ship.storbits());
-      const auto& state = *entity_manager.peek_server_state();
-      if (!process_ship_supernova(ship, star, state, entity_manager)) {
-        return;
-      }
+  if (!ship.popn() && ship.max_crew_capacity() && !ship.docked()) {
+    ship.whatdest() = ScopeLevel::LEVEL_UNIV;
+  }
+
+  return true;
+}
+
+bool evaluate_ship_hazards(Ship& ship, EntityManager& entity_manager) {
+  if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
+    const auto& star = *entity_manager.peek_star(ship.storbits());
+    const auto& state = *entity_manager.peek_server_state();
+    if (!process_ship_supernova(ship, star, state, entity_manager)) {
+      return false;
     }
+  }
+  return true;
+}
 
-    const auto& race = *entity_manager.peek_race(ship.owner());
-    sync_factory_technology(ship, race);
+void dispatch_ship_subsystems(Ship& ship, bool update,
+                              EntityManager& entity_manager, TurnStats& stats) {
+  /* bombard the planet */
+  if (ship.can_bombard() && ship.bombard() &&
+      ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
+      ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
+      ship.deststar() == ship.storbits() &&
+      ship.destpnum() == ship.pnumorbits()) {
+    /* ship bombards planet */
+    stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].inhab = true;
+  }
 
-    if (ship.active()) moveship(entity_manager, ship, update, 1, 0);
+  /* repair ship by the amount of crew it has */
+  /* industrial complexes can repair (robot ships
+     and offline factories can't repair) */
+  if (ship.damage() && ship.repair_capacity()) {
+    do_repair(ship, entity_manager);
+  }
 
-    ship.size() = ship_size(ship); /* for debugging */
-
-    synchronize_docked_carrier_ownership(ship, entity_manager);
-    update_ship_inhabited_and_exploration(ship, entity_manager, stats);
-    accumulate_ship_power_stats(ship, stats, update);
-
-    if (ship.active()) {
-      /* bombard the planet */
-      if (ship.can_bombard() && ship.bombard() &&
-          ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
-          ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
-          ship.deststar() == ship.storbits() &&
-          ship.destpnum() == ship.pnumorbits()) {
-        /* ship bombards planet */
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].inhab =
-            true;
-      }
-
-      /* repair ship by the amount of crew it has */
-      /* industrial complexes can repair (robot ships
-         and offline factories can't repair) */
-      if (ship.damage() && ship.repair_capacity())
-        do_repair(ship, entity_manager);
-
-      if (update) switch (ship.type()) { /* do this stuff during updates only*/
-          case ShipType::OTYPE_CANIST:
-            do_canister(ship, entity_manager, stats);
-            break;
-          case ShipType::OTYPE_GREEN:
-            do_greenhouse(ship, entity_manager, stats);
-            break;
-          case ShipType::STYPE_MIRROR:
-            do_mirror(ship, entity_manager, stats);
-            break;
-          case ShipType::STYPE_GOD:
-            do_god(ship, entity_manager);
-            break;
-          case ShipType::OTYPE_AP:
-            do_ap(ship, entity_manager);
-            break;
-          case ShipType::OTYPE_VN: /* Von Neumann machine */
-          case ShipType::OTYPE_BERS:
-            if (auto* auto_ship = ship.as<AutonomousShip>()) {
-              if (auto_ship->progenitor() == 0) {
-                // TODO(jeffbailey): Why is setting this to 1 correct?
-                auto_ship->mind().progenitor = 1;
-              }
-              do_VN(entity_manager, *auto_ship, stats);
-            }
-            break;
-          case ShipType::STYPE_OAP:
-            do_oap(ship, stats);
-            break;
-          case ShipType::STYPE_HABITAT:
-            do_habitat(ship, entity_manager);
-            break;
-          default:
-            break;
+  if (update) {
+    switch (ship.type()) { /* do this stuff during updates only*/
+      case ShipType::OTYPE_CANIST:
+        do_canister(ship, entity_manager, stats);
+        break;
+      case ShipType::OTYPE_GREEN:
+        do_greenhouse(ship, entity_manager, stats);
+        break;
+      case ShipType::STYPE_MIRROR:
+        do_mirror(ship, entity_manager, stats);
+        break;
+      case ShipType::STYPE_GOD:
+        do_god(ship, entity_manager);
+        break;
+      case ShipType::OTYPE_AP:
+        do_ap(ship, entity_manager);
+        break;
+      case ShipType::OTYPE_VN: /* Von Neumann machine */
+      case ShipType::OTYPE_BERS:
+        if (auto* auto_ship = ship.as<AutonomousShip>()) {
+          if (auto_ship->progenitor() == 0) {
+            // TODO(jeffbailey): Why is setting this to 1 correct?
+            auto_ship->mind().progenitor = 1;
+          }
+          do_VN(entity_manager, *auto_ship, stats);
         }
-      if (ship.type() == ShipType::STYPE_POD) do_pod(ship, entity_manager);
+        break;
+      case ShipType::STYPE_OAP:
+        do_oap(ship, stats);
+        break;
+      case ShipType::STYPE_HABITAT:
+        do_habitat(ship, entity_manager);
+        break;
+      default:
+        break;
     }
+  }
+  if (ship.type() == ShipType::STYPE_POD) {
+    do_pod(ship, entity_manager);
+  }
+}
+
+void doship(Ship& ship, bool update, EntityManager& entity_manager,
+            TurnStats& stats) {
+  if (!prepare_ship_for_flight(ship, update)) {
+    return;
+  }
+
+  if (!evaluate_ship_hazards(ship, entity_manager)) {
+    return;
+  }
+
+  const auto& race = *entity_manager.peek_race(ship.owner());
+  sync_factory_technology(ship, race);
+
+  if (ship.active()) {
+    moveship(entity_manager, ship, update, 1, 0);
+  }
+
+  ship.size() = ship_size(ship); /* for debugging */
+
+  synchronize_docked_carrier_ownership(ship, entity_manager);
+  update_ship_inhabited_and_exploration(ship, entity_manager, stats);
+  accumulate_ship_power_stats(ship, stats, update);
+
+  if (ship.active()) {
+    dispatch_ship_subsystems(ship, update, entity_manager, stats);
   }
 }
 

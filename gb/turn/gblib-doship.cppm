@@ -171,6 +171,33 @@ export void update_ship_inhabited_and_exploration(const Ship& ship,
 export void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
                                         bool update);
 
+/// \brief Prepares a ship for turn flight, validating ownership, alive status,
+/// radiation mobility, and derelict uncrewed drifting.
+/// \param ship Ship to evaluate.
+/// \param update Whether this is a full turn update pass (true) or segment
+/// (false).
+/// \return True if ship is alive and ready for turn processing, false if dead
+/// or unowned.
+export bool prepare_ship_for_flight(Ship& ship, bool update);
+
+/// \brief Evaluates environmental hazards (such as supernovae) against an
+/// active ship.
+/// \param ship Ship undergoing hazard evaluation.
+/// \param entity_manager Entity manager for star and server state queries.
+/// \return True if ship survived all hazards, false if destroyed.
+export bool evaluate_ship_hazards(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Dispatches ship subsystem simulation routines (bombardment, repairs,
+/// and specialized ship role handlers).
+/// \param ship Active ship.
+/// \param update Whether this is a full turn update pass (true) or segment
+/// (false).
+/// \param entity_manager Entity manager for mutations.
+/// \param stats Turn stats accumulator.
+export void dispatch_ship_subsystems(Ship& ship, bool update,
+                                     EntityManager& entity_manager,
+                                     TurnStats& stats);
+
 /// \brief Top two nearest star systems identified by navigation scanning.
 export struct StarTargetResult {
   starnum_t closest{0};         ///< Primary nearest star system

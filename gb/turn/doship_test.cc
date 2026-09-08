@@ -1882,6 +1882,209 @@ void test_special_subsystems_extended() {
   test::expect_true(target_after == nullptr || target_after->alive() == 0);
 }
 
+void test_prepare_ship_for_flight() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // 1. Dead ship returns false
+  shipnum_t dead_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                          .owned_by(1)
+                          .with_alive(false)
+                          .build();
+  ctx.em.mutate_ship(dead_id, [&](Ship& s) {
+    test::expect_false(prepare_ship_for_flight(s, true));
+  });
+
+  // 2. Unowned ship (owner == 0) is marked dead and returns false
+  shipnum_t unowned_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(0).build();
+  ctx.em.mutate_ship(unowned_id, [&](Ship& s) {
+    test::expect_false(prepare_ship_for_flight(s, true));
+    test::expect_false(s.alive());
+  });
+
+  // 3. Derelict uncrewed manned ship gets redirected to LEVEL_UNIV
+  shipnum_t derelict_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                              .owned_by(1)
+                              .in_star_orbit(0)
+                              .with_crew(0, 0)
+                              .build();
+  ctx.em.mutate_ship(derelict_id, [&](Ship& s) {
+    s.whatdest() = ScopeLevel::LEVEL_PLAN;
+    test::expect_true(prepare_ship_for_flight(s, true));
+    test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
+  });
+
+  // 4. Docked uncrewed manned ship is NOT redirected to LEVEL_UNIV
+  shipnum_t station_id = TestShipBuilder(ctx.em, ShipType::STYPE_STATION)
+                             .owned_by(1)
+                             .in_star_orbit(0)
+                             .build();
+  shipnum_t docked_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                            .owned_by(1)
+                            .in_star_orbit(0)
+                            .docked_to(station_id, 0)
+                            .with_crew(0, 0)
+                            .build();
+  ctx.em.mutate_ship(docked_id, [&](Ship& s) {
+    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    test::expect_true(prepare_ship_for_flight(s, true));
+    test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_SHIP);
+  });
+}
+
+void test_evaluate_ship_hazards() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  const auto& state = *ctx.em.peek_server_state();
+  test::expect_ge(state.segments, 1);
+
+  // 1. Deep space ship (LEVEL_UNIV) bypasses supernova hazards
+  shipnum_t deep_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(1).build();
+  ctx.em.mutate_ship(deep_id, [&](Ship& s) {
+    s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+    test::expect_true(evaluate_ship_hazards(s, ctx.em));
+  });
+
+  // 2. Star with nova_stage == 0 causes no damage
+  shipnum_t calm_star_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                                 .owned_by(1)
+                                 .in_star_orbit(0)
+                                 .build();
+  ctx.em.mutate_ship(calm_star_ship, [&](Ship& s) {
+    test::expect_true(evaluate_ship_hazards(s, ctx.em));
+    test::expect_eq(s.damage(), 0);
+  });
+
+  // 3. Star with nova_stage > 0 damages ship; survives if damage < 100
+  ctx.em.mutate_star(0, [](Star& star) { star.nova_stage() = 4; });
+  shipnum_t armored_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                               .owned_by(1)
+                               .in_star_orbit(0)
+                               .with_armor(5)
+                               .build();
+  ctx.em.mutate_ship(armored_ship, [&](Ship& s) {
+    test::expect_true(evaluate_ship_hazards(s, ctx.em));
+    test::expect_gt(s.damage(), 0);
+    test::expect_lt(s.damage(), 100);
+  });
+
+  // 4. Unarmored ship taking fatal damage (nova_stage high) is destroyed
+  ctx.em.mutate_star(0, [](Star& star) { star.nova_stage() = 25; });
+  shipnum_t doomed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                              .owned_by(1)
+                              .in_star_orbit(0)
+                              .with_armor(0)
+                              .with_damage(95)
+                              .build();
+  ctx.em.mutate_ship(doomed_ship, [&](Ship& s) {
+    test::expect_false(evaluate_ship_hazards(s, ctx.em));
+    test::expect_false(s.alive());
+  });
+}
+
+void test_dispatch_ship_subsystems() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+  TurnStats stats{};
+
+  // 1. Bombarding ship in planet orbit marks Stinfo inhabited
+  shipnum_t bombardier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                .owned_by(1)
+                                .in_planet_orbit(0, 0)
+                                .build();
+  ctx.em.mutate_ship(bombardier_id, [&](Ship& s) {
+    s.whatdest() = ScopeLevel::LEVEL_PLAN;
+    s.deststar() = 0;
+    s.destpnum() = 0;
+    s.bombard() = 1;
+    dispatch_ship_subsystems(s, true, ctx.em, stats);
+    test::expect_true(stats.Stinfo[0][0].inhab);
+  });
+
+  // 2. Segment pass (update == false) skips update-only subsystems (e.g.
+  // canister)
+  shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+                         .owned_by(1)
+                         .in_planet_orbit(0, 0)
+                         .build();
+  ctx.em.mutate_ship(can_id, [&](Ship& s) {
+    auto* can = s.as<CanisterShip>();
+    test::expect_true(can != nullptr);
+    can->set_count(DISSIPATE - 1);
+    dispatch_ship_subsystems(s, false, ctx.em, stats);
+    // Canister is only updated/dissipated during update pass!
+    test::expect_true(s.alive());
+    test::expect_eq(can->count(), DISSIPATE - 1);
+  });
+
+  // 3. Update pass (update == true) executes canister dissipate & destruction
+  ctx.em.mutate_ship(can_id, [&](Ship& s) {
+    dispatch_ship_subsystems(s, true, ctx.em, stats);
+    test::expect_false(s.alive());
+  });
+}
+
+void test_doship_pipeline_types() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+  TurnStats stats{};
+
+  // Exercise different ship types through the full doship pipeline:
+  // Shuttle, Station, Canister, Habitat, Pod
+  shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                             .owned_by(1)
+                             .in_star_orbit(0)
+                             .build();
+  ctx.em.mutate_ship(shuttle_id, [&](Ship& s) {
+    doship(s, true, ctx.em, stats);
+    test::expect_true(s.alive());
+    test::expect_true(s.active());
+  });
+
+  shipnum_t station_id = TestShipBuilder(ctx.em, ShipType::STYPE_STATION)
+                             .owned_by(1)
+                             .in_star_orbit(0)
+                             .build();
+  ctx.em.mutate_ship(station_id, [&](Ship& s) {
+    doship(s, true, ctx.em, stats);
+    test::expect_true(s.alive());
+  });
+
+  shipnum_t canist_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+                            .owned_by(1)
+                            .in_planet_orbit(0, 0)
+                            .build();
+  ctx.em.mutate_ship(canist_id, [&](Ship& s) {
+    doship(s, true, ctx.em, stats);
+    test::expect_true(s.alive());
+  });
+
+  shipnum_t habitat_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                             .owned_by(1)
+                             .in_star_orbit(0)
+                             .with_crew(100, 0)
+                             .with_fuel(50.0)
+                             .with_on(true)
+                             .build();
+  ctx.em.mutate_ship(habitat_id, [&](Ship& s) {
+    doship(s, true, ctx.em, stats);
+    test::expect_true(s.alive());
+  });
+
+  shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                         .owned_by(1)
+                         .in_star_orbit(0)
+                         .with_pod(10, 0)
+                         .build();
+  ctx.em.mutate_ship(pod_id, [&](Ship& s) {
+    doship(s, true, ctx.em, stats);
+    test::expect_true(s.alive());
+  });
+}
+
 }  // namespace
 
 int main() {
@@ -2003,6 +2206,22 @@ int main() {
 
   std::println(std::cout, "  Testing special subsystems extended... ");
   test_special_subsystems_extended();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing prepare_ship_for_flight... ");
+  test_prepare_ship_for_flight();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing evaluate_ship_hazards... ");
+  test_evaluate_ship_hazards();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing dispatch_ship_subsystems... ");
+  test_dispatch_ship_subsystems();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing doship pipeline across ship types... ");
+  test_doship_pipeline_types();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doship tests passed!");

@@ -674,7 +674,122 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
-void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
+bool check_mine_proximity_trigger(const Ship& mine,
+                                  EntityManager& entity_manager) {
+  if (mine.type() != ShipType::STYPE_MINE || !mine.alive() ||
+      mine.owner() == 0 || !mine.on()) {
+    return false;
+  }
+  if (mine.whatorbits() != ScopeLevel::LEVEL_STAR &&
+      mine.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return false;
+  }
+
+  const auto* mine_data = mine.as<MineShip>();
+  if (!mine_data) {
+    return false;
+  }
+
+  const auto& race = *entity_manager.peek_race(mine.owner());
+  const ShipList scoped_ships =
+      (mine.whatorbits() == ScopeLevel::LEVEL_STAR)
+          ? ShipList::readonly_in_star(entity_manager, mine.storbits())
+          : ShipList::readonly_on_planet(entity_manager, mine.storbits(),
+                                         mine.pnumorbits());
+
+  for (const auto& s : scoped_ships) {
+    if (s.number() == mine.number() || !s.alive()) {
+      continue;
+    }
+    if (s.owner() == mine.owner() || race.is_allied_with(s.owner())) {
+      continue;
+    }
+    double range = mine.coordinates().distance_to(s.coordinates());
+    if (range <= static_cast<double>(mine_data->trigger_radius())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void detonate_mine_against_ships(Ship& mine, EntityManager& entity_manager) {
+  if (mine.whatorbits() != ScopeLevel::LEVEL_STAR &&
+      mine.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return;
+  }
+
+  std::vector<shipnum_t> victims;
+  const ShipList scoped_ships =
+      (mine.whatorbits() == ScopeLevel::LEVEL_STAR)
+          ? ShipList::readonly_in_star(entity_manager, mine.storbits())
+          : ShipList::readonly_on_planet(entity_manager, mine.storbits(),
+                                         mine.pnumorbits());
+
+  for (const auto& s : scoped_ships) {
+    if (s.number() != mine.number() && s.alive() &&
+        s.type() != ShipType::OTYPE_CANIST &&
+        s.type() != ShipType::OTYPE_GREEN) {
+      victims.push_back(s.number());
+    }
+  }
+
+  for (shipnum_t victim_num : victims) {
+    entity_manager.mutate_ship(victim_num, [&](Ship& s) {
+      if (!s.alive()) return;
+      auto s2sresult = shoot_ship_to_ship(
+          entity_manager, mine, s, static_cast<int>(mine.destruct()), 0, false);
+      if (s2sresult) {
+        auto const& [damage, short_buf, long_buf] = *s2sresult;
+        post(entity_manager, short_buf, NewsType::COMBAT);
+        push_telegram(entity_manager, s.owner(), s.governor(), long_buf);
+      }
+    });
+  }
+}
+
+void detonate_mine_against_planet(Ship& mine, const std::string& postmsg,
+                                  EntityManager& entity_manager) {
+  if (mine.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return;
+  }
+
+  /* pick a random sector to nuke */
+  entity_manager.mutate_planet(
+      mine.storbits(), mine.pnumorbits(), [&](Planet& planet) {
+        entity_manager.mutate_sectormap(
+            mine.storbits(), mine.pnumorbits(), [&](SectorMap& smap) {
+              const Coordinates target_coords =
+                  mine.is_landed() ? mine.land_coords()
+                                   : smap.get_random().coords();
+
+              if (auto result_opt = shoot_ship_to_planet(
+                      entity_manager, mine, planet,
+                      static_cast<int>(mine.destruct()), target_coords, smap, 0,
+                      guntype_t::LIGHT)) {
+                std::stringstream telegram;
+                telegram << postmsg;
+                if (result_opt->sectors_destroyed > 0) {
+                  telegram << std::format(" - {} sectors destroyed.",
+                                          result_opt->sectors_destroyed);
+                }
+                telegram << "\n";
+
+                const auto& star = *entity_manager.peek_star(mine.storbits());
+                for (const Race& race : RaceList::readonly(entity_manager)) {
+                  if (result_opt->nuked_players[race.Playernum]) {
+                    push_telegram(entity_manager, race.Playernum,
+                                  star.governor(race.Playernum),
+                                  telegram.str());
+                  }
+                }
+                push_telegram(entity_manager, mine.owner(), mine.governor(),
+                              telegram.str());
+              }
+            });
+      });
+}
+
+void domine(Ship& ship, bool detonate, EntityManager& entity_manager) {
   if (ship.type() != ShipType::STYPE_MINE || !ship.alive() ||
       ship.owner() == 0) {
     return;
@@ -686,43 +801,11 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   }
 
   if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV ||
-      ship.whatorbits() == ScopeLevel::LEVEL_SHIP)
+      ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
     return;
-
-  auto sh = [&ship, &entity_manager] -> shipnum_t {
-    if (ship.whatorbits() == ScopeLevel::LEVEL_STAR) {
-      const auto& star = *entity_manager.peek_star(ship.storbits());
-      return star.ships();
-    } else {  // ScopeLevel::LEVEL_PLAN
-      const auto& planet =
-          *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-      return planet.ships();
-    }
-  }();
-
-  // traverse the list, look for ships that are closer than the trigger
-  // radius.
-  bool rad = false;
-  if (!detonate) {
-    const auto& race = *entity_manager.peek_race(ship.owner());
-
-    for (const auto& s : ShipList::readonly(entity_manager, sh)) {
-      double xd = s.xpos() - ship.xpos();
-      double yd = s.ypos() - ship.ypos();
-      double range = std::hypot(xd, yd);
-      if (const auto* mine = ship.as<MineShip>()) {
-        if (!race.is_allied_with(s.owner()) && (s.owner() != ship.owner()) &&
-            (range <= static_cast<double>(mine->trigger_radius()))) {
-          rad = true;
-          break;
-        }
-      }
-    }
-  } else {
-    rad = true;
   }
 
-  if (!rad) {
+  if (!detonate && !check_mine_proximity_trigger(ship, entity_manager)) {
     return;
   }
 
@@ -732,66 +815,8 @@ void domine(Ship& ship, int detonate, EntityManager& entity_manager) {
   telegram_star(entity_manager, ship.storbits(), ship.owner(), ship.governor(),
                 postmsg);
 
-  // Collect victim ship IDs
-  std::vector<shipnum_t> victims;
-  for (const auto& s : ShipList::readonly(entity_manager, sh)) {
-    if (s.number() != ship.number() && s.alive() &&
-        (s.type() != ShipType::OTYPE_CANIST) &&
-        (s.type() != ShipType::OTYPE_GREEN)) {
-      victims.push_back(s.number());
-    }
-  }
-
-  for (shipnum_t victim_num : victims) {
-    entity_manager.mutate_ship(victim_num, [&](Ship& s) {
-      if (!s.alive()) return;
-      auto s2sresult = shoot_ship_to_ship(
-          entity_manager, ship, s, static_cast<int>(ship.destruct()), 0, false);
-      if (s2sresult) {
-        auto const& [damage, short_buf, long_buf] = *s2sresult;
-        post(entity_manager, short_buf, NewsType::COMBAT);
-        push_telegram(entity_manager, s.owner(), s.governor(), long_buf);
-      }
-    });
-  }
-
-  /* if the mine is in orbit around a planet, nuke the planet too! */
-  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    /* pick a random sector to nuke */
-    entity_manager.mutate_planet(
-        ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
-          entity_manager.mutate_sectormap(
-              ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
-                const Coordinates target_coords =
-                    ship.is_landed() ? ship.land_coords()
-                                     : smap.get_random().coords();
-
-                if (auto result_opt = shoot_ship_to_planet(
-                        entity_manager, ship, planet,
-                        static_cast<int>(ship.destruct()), target_coords, smap,
-                        0, guntype_t::LIGHT)) {
-                  std::stringstream telegram;
-                  telegram << postmsg;
-                  if (result_opt->sectors_destroyed > 0) {
-                    telegram << std::format(" - {} sectors destroyed.",
-                                            result_opt->sectors_destroyed);
-                  }
-                  telegram << "\n";
-
-                  const auto& star = *entity_manager.peek_star(ship.storbits());
-                  for (const Race& race : RaceList::readonly(entity_manager)) {
-                    if (result_opt->nuked_players[race.Playernum]) {
-                      push_telegram(entity_manager, race.Playernum,
-                                    star.governor(race.Playernum),
-                                    telegram.str());
-                    }
-                  }
-                  push_telegram(entity_manager, ship.owner(), ship.governor(),
-                                telegram.str());
-                }
-              });
-        });
-  }
+  detonate_mine_against_ships(ship, entity_manager);
+  detonate_mine_against_planet(ship, postmsg, entity_manager);
 
   entity_manager.kill_ship(ship.owner(), ship);
 }

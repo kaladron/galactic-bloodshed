@@ -107,7 +107,7 @@ static void process_ships(TurnState& state) {
   // Process mine detonation for each ship
   for (auto ship_handle :
        ShipList(state.entity_manager, ShipList::IterationType::All)) {
-    domine(*ship_handle, 0, state.entity_manager);
+    domine(*ship_handle, /*detonate=*/false, state.entity_manager);
   }
 }
 

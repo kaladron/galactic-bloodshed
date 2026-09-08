@@ -271,8 +271,9 @@ std::vector<shipnum_t> ShipRepository::find_in_star(starnum_t star_id,
 std::vector<shipnum_t> ShipRepository::find_on_planet(starnum_t star_id,
                                                       planetnum_t planet_id,
                                                       bool alive_only) {
-  std::string where = "storbits = ? AND pnumorbits = ?";
-  std::vector<KeyValue> params{star_id.value, planet_id.value};
+  std::string where = "storbits = ? AND pnumorbits = ? AND whatorbits = ?";
+  std::vector<KeyValue> params{star_id.value, planet_id.value,
+                               static_cast<int>(ScopeLevel::LEVEL_PLAN)};
   if (alive_only) {
     where += " AND alive = 1";
   }

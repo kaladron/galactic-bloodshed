@@ -37,7 +37,7 @@ bool detonate(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    domine(s, 1, g.entity_manager);
+    domine(s, /*detonate=*/true, g.entity_manager);
     any_detonated = true;
   }
 

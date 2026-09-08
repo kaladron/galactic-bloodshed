@@ -259,6 +259,11 @@ TestShipBuilder& TestShipBuilder::with_special(SpecialData special) {
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::with_trigger_radius(unsigned short radius) {
+  ship_.special = TriggerData{.radius = radius};
+  return *this;
+}
+
 shipnum_t TestShipBuilder::build() {
   auto handle = em_.create_ship(ship_);
   return handle->number();

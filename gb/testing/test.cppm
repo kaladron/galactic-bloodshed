@@ -569,6 +569,7 @@ public:
   TestShipBuilder& with_on(bool on);
   TestShipBuilder& with_nextship(shipnum_t next);
   TestShipBuilder& with_special(SpecialData special);
+  TestShipBuilder& with_trigger_radius(unsigned short radius);
 
   shipnum_t build();
 

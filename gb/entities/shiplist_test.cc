@@ -136,6 +136,7 @@ int main() {
   g.set_snum(0);
   g.set_pnum(0);
   g.race = ctx.em.peek_race(1);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
 
   // Scope iteration at universe level
   {
@@ -230,6 +231,7 @@ int main() {
     planet_ship.alive() = true;
     planet_ship.storbits() = 10;
     planet_ship.pnumorbits() = 3;  // At planet 3 of star 10
+    planet_ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
     planet_ship.type() = ShipType::STYPE_CARGO;
     planet_ship.nextship() = 0;
 

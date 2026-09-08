@@ -546,86 +546,275 @@ void test_domissile_planet_bombardment_and_ship_attack() {
   test::expect_gt(target.damage(), 0);
 }
 
+void test_check_mine_proximity_trigger() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+  TestWorldBuilder(ctx).add_race("Vulcans", 100.0, false, player_t{3});
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(3); });
+  ctx.em.mutate_race(3, [](Race& r) { r.declare_alliance_with(1); });
+
+  // Player 1 mine at (0.0, 0.0) with trigger radius 20
+  shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                          .owned_by(1)
+                          .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                          .with_destruct(50)
+                          .with_trigger_radius(20)
+                          .with_on(true)
+                          .build();
+
+  // 1. Enemy ship out of range (distance 25 > 20)
+  shipnum_t enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(2)
+                           .in_star_orbit(0, SystemCoordinates{25.0, 0.0})
+                           .build();
+
+  ctx.em.with_ship(mine_id, [&](const Ship& mine) {
+    test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
+  });
+
+  // 2. Enemy ship moves into range (distance 15 <= 20)
+  ctx.em.mutate_ship(enemy_id, [](Ship& s) {
+    s.set_coordinates(UniverseCoordinates{15.0, 0.0});
+  });
+  ctx.em.with_ship(mine_id, [&](const Ship& mine) {
+    test::expect_true(check_mine_proximity_trigger(mine, ctx.em));
+  });
+
+  // 3. Allied ship in range (distance 5 <= 20) does not trigger
+  // Move enemy far away first
+  ctx.em.mutate_ship(enemy_id, [](Ship& s) {
+    s.set_coordinates(UniverseCoordinates{500.0, 0.0});
+  });
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(3)
+      .in_star_orbit(0, SystemCoordinates{5.0, 0.0})
+      .build();
+  ctx.em.with_ship(mine_id, [&](const Ship& mine) {
+    test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
+  });
+
+  // 4. Own ship in range (distance 0 <= 20) does not trigger
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(1)
+      .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+      .build();
+  ctx.em.with_ship(mine_id, [&](const Ship& mine) {
+    test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
+  });
+
+  // 5. Offline mine (on = false) does not trigger even with enemy nearby
+  ctx.em.mutate_ship(enemy_id, [](Ship& s) {
+    s.set_coordinates(UniverseCoordinates{5.0, 0.0});
+  });
+  ctx.em.mutate_ship(mine_id, [](Ship& m) { m.on() = false; });
+  ctx.em.with_ship(mine_id, [&](const Ship& mine) {
+    test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
+  });
+
+  // 6. Dead mine (alive = false) does not trigger
+  ctx.em.mutate_ship(mine_id, [](Ship& m) {
+    m.on() = true;
+    m.alive() = false;
+  });
+  ctx.em.with_ship(mine_id, [&](const Ship& mine) {
+    test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
+  });
+
+  // 7. Planet-orbit mine triggers only on ships orbiting the same planet
+  shipnum_t plan_mine_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+          .owned_by(1)
+          .in_planet_orbit(0, 0, SystemCoordinates{0.0, 0.0})
+          .with_destruct(50)
+          .with_trigger_radius(20)
+          .with_on(true)
+          .build();
+
+  // Enemy on planet 1 does not trigger planet 0 mine
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(2)
+      .in_planet_orbit(0, 1, SystemCoordinates{0.0, 0.0})
+      .build();
+  ctx.em.with_ship(plan_mine_id, [&](const Ship& mine) {
+    test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
+  });
+
+  // Enemy on planet 0 within range triggers!
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(2)
+      .in_planet_orbit(0, 0, SystemCoordinates{10.0, 0.0})
+      .build();
+  ctx.em.with_ship(plan_mine_id, [&](const Ship& mine) {
+    test::expect_true(check_mine_proximity_trigger(mine, ctx.em));
+  });
+}
+
+void test_detonate_mine_against_ships() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                          .owned_by(1)
+                          .in_star_orbit(0)
+                          .with_destruct(50)
+                          .with_on(true)
+                          .build();
+
+  shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                            .owned_by(2)
+                            .in_star_orbit(0)
+                            .with_size(10)
+                            .with_tech(10.0)
+                            .build();
+
+  shipnum_t dead_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                          .owned_by(2)
+                          .in_star_orbit(0)
+                          .build();
+  ctx.em.mutate_ship(dead_id, [](Ship& s) { s.alive() = false; });
+
+  shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+                         .owned_by(2)
+                         .in_star_orbit(0)
+                         .build();
+
+  ctx.em.mutate_ship(
+      mine_id, [&](Ship& mine) { detonate_mine_against_ships(mine, ctx.em); });
+
+  const auto* target = ctx.em.peek_ship(target_id);
+  test::expect_gt(target->damage(), 0);
+
+  const auto* dead = ctx.em.peek_ship(dead_id);
+  test::expect_false(dead->alive());
+
+  const auto* can = ctx.em.peek_ship(can_id);
+  test::expect_eq(can->damage(), 0);
+}
+
+void test_detonate_mine_against_planet() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Populate sectors on Planet (0, 0)
+  int initial_populated_sectors = 0;
+  ctx.em.mutate_sectormap(0, 0, [&](SectorMap& smap) {
+    for (auto& sec : smap) {
+      sec.colonize(2, 500);
+      ++initial_populated_sectors;
+    }
+  });
+
+  // 1. Star-orbit mine does not damage planet
+  shipnum_t star_mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                               .owned_by(1)
+                               .in_star_orbit(0)
+                               .with_destruct(100)
+                               .with_on(true)
+                               .build();
+
+  ctx.em.mutate_ship(star_mine_id, [&](Ship& mine) {
+    detonate_mine_against_planet(mine, "Test detonation", ctx.em);
+  });
+  const auto& smap_star = *ctx.em.peek_sectormap(0, 0);
+  int populated_sectors = 0;
+  for (const auto& sec : smap_star) {
+    if (sec.is_populated()) ++populated_sectors;
+  }
+  test::expect_eq(populated_sectors, initial_populated_sectors);
+
+  // 2. Planet-orbit mine detonates against planet
+  shipnum_t plan_mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                               .owned_by(1)
+                               .in_planet_orbit(0, 0)
+                               .with_destruct(100)
+                               .with_on(true)
+                               .build();
+
+  ctx.em.mutate_ship(plan_mine_id, [&](Ship& mine) {
+    detonate_mine_against_planet(mine, "Orbital detonation", ctx.em);
+  });
+  const auto& smap_after = *ctx.em.peek_sectormap(0, 0);
+  int damaged_sectors = 0;
+  for (const auto& sec : smap_after) {
+    if (sec.is_wasted() || sec.get_popn() < 500) {
+      ++damaged_sectors;
+    }
+  }
+  test::expect_gt(damaged_sectors, 0);
+}
+
 void test_domine_trigger_and_detonation() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  TestWorldBuilder(ctx).add_race("Vulcans", 100.0, false, player_t{3});
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(3); });
+  ctx.em.mutate_race(3, [](Race& r) { r.declare_alliance_with(1); });
 
-  Race race1 = createTestRace(player_t{1});
-  Race race2 = createTestRace(player_t{2});
-  Race race3 = createTestRace(player_t{3});
-  race1.declare_alliance_with(player_t{3});
-  race3.declare_alliance_with(player_t{1});
-  RaceRepository(store).save(race1);
-  RaceRepository(store).save(race2);
-  RaceRepository(store).save(race3);
+  // 1. Allied ship in trigger range does NOT trigger mine detonation
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(3)
+      .in_star_orbit(0, SystemCoordinates{5.0, 5.0})
+      .with_size(10)
+      .with_tech(10.0)
+      .build();
 
-  Star star = createTestStar(starnum_t{1});
-  StarRepository(store).save(star);
+  shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                          .owned_by(1)
+                          .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                          .with_size(1)
+                          .with_tech(10.0)
+                          .with_destruct(50)
+                          .with_trigger_radius(20)
+                          .with_on(true)
+                          .build();
 
-  // 1. Allied ship in trigger range does NOT detonate mine
-  ship_struct ally_data{
-      .owner = player_t{3},
-      .size = 10,
-      .tech = 10.0,
-      .storbits = starnum_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::STYPE_SHUTTLE,
-      .active = 1,
-      .alive = 1,
-  };
-  ally_data.xpos = 5.0;
-  ally_data.ypos = 5.0;
-  auto ally_handle = em.create_ship(ally_data);
+  ctx.em.mutate_ship(mine_id, [&](Ship& m) {
+    domine(m, /*detonate=*/false, ctx.em);
+    test::expect_true(m.alive());
+  });
 
-  ship_struct mine_data{
-      .owner = player_t{1},
-      .size = 1,
-      .tech = 10.0,
-      .destruct = 50,
-      .storbits = starnum_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::STYPE_MINE,
-      .active = 1,
-      .alive = 1,
-  };
-  mine_data.xpos = 0.0;
-  mine_data.ypos = 0.0;
-  mine_data.special = TriggerData{.radius = 20};
-  auto mine_handle = em.create_ship(mine_data);
-  mine_handle->on() = 1;
+  // 2. Enemy ship in trigger range triggers natural mine detonation
+  shipnum_t enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(2)
+                           .in_star_orbit(0, SystemCoordinates{5.0, 5.0})
+                           .with_size(10)
+                           .with_tech(10.0)
+                           .build();
 
-  em.mutate_star(starnum_t{1},
-                 [&](Star& s) { s.ships() = ally_handle->number(); });
-  ally_handle->ships() = mine_handle->number();
+  ctx.em.mutate_ship(mine_id, [&](Ship& m) {
+    domine(m, /*detonate=*/false, ctx.em);
+    test::expect_false(m.alive());
+  });
 
-  domine(*mine_handle, 0, em);
-  test::expect_eq(mine_handle->alive(), 1);
-
-  // 2. Enemy ship in trigger range triggers mine detonation
-  ship_struct enemy_data{
-      .owner = player_t{2},
-      .size = 10,
-      .tech = 10.0,
-      .storbits = starnum_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::STYPE_SHUTTLE,
-      .active = 1,
-      .alive = 1,
-  };
-  enemy_data.xpos = 5.0;
-  enemy_data.ypos = 5.0;
-  auto enemy_handle = em.create_ship(enemy_data);
-
-  em.mutate_star(starnum_t{1},
-                 [&](Star& s) { s.ships() = enemy_handle->number(); });
-  enemy_handle->ships() = mine_handle->number();
-
-  domine(*mine_handle, 0, em);
-  test::expect_eq(mine_handle->alive(), 0);
-  const auto* enemy_after = em.peek_ship(enemy_handle->number());
+  const auto* enemy_after = ctx.em.peek_ship(enemy_id);
   test::expect_gt(enemy_after->damage(), 0);
+
+  // 3. Forced detonation (detonate = true) in planet orbit detonates without
+  // proximity
+  shipnum_t plan_mine_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+          .owned_by(1)
+          .in_planet_orbit(0, 0, SystemCoordinates{0.0, 0.0})
+          .with_destruct(50)
+          .with_trigger_radius(20)
+          .with_on(true)
+          .build();
+
+  shipnum_t plan_target_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+          .owned_by(2)
+          .in_planet_orbit(0, 0, SystemCoordinates{100.0, 100.0})
+          .with_size(10)
+          .with_tech(10.0)
+          .build();
+
+  ctx.em.mutate_ship(plan_mine_id, [&](Ship& m) {
+    domine(m, /*detonate=*/true, ctx.em);
+    test::expect_false(m.alive());
+  });
+
+  const auto* plan_target_after = ctx.em.peek_ship(plan_target_id);
+  test::expect_gt(plan_target_after->damage(), 0);
 }
 
 void test_doabm_intercept() {
@@ -1658,6 +1847,18 @@ int main() {
       std::cout,
       "  Testing domissile planet bombardment and ship-to-ship attack... ");
   test_domissile_planet_bombardment_and_ship_attack();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing check_mine_proximity_trigger... ");
+  test_check_mine_proximity_trigger();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing detonate_mine_against_ships... ");
+  test_detonate_mine_against_ships();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing detonate_mine_against_planet... ");
+  test_detonate_mine_against_planet();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing domine trigger and detonation... ");

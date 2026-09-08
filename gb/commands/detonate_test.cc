@@ -23,7 +23,6 @@ void setup_test_world(TestContext& ctx) {
       .with_on(true)
       .with_size(10)
       .with_tech(10.0)
-      .with_nextship(2)
       .build();
 
   // Create target ship nearby
@@ -36,9 +35,6 @@ void setup_test_world(TestContext& ctx) {
       .with_size(20)
       .with_tech(10.0)
       .build();
-
-  // Star ship list points to mine (#1)
-  ctx.em.mutate_star(0, [](Star& s) { s.ships() = 1; });
 }
 
 void test_detonate_happy_path() {

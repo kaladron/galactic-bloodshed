@@ -570,6 +570,9 @@ public:
   TestShipBuilder& with_nextship(shipnum_t next);
   TestShipBuilder& with_special(SpecialData special);
   TestShipBuilder& with_trigger_radius(unsigned short radius);
+  TestShipBuilder& targeting_planet(starnum_t snum, planetnum_t pnum);
+  TestShipBuilder& targeting_ship(shipnum_t target_ship);
+  TestShipBuilder& with_impact(Coordinates coords, bool scatter = false);
 
   shipnum_t build();
 

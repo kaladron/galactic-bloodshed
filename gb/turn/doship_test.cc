@@ -391,159 +391,262 @@ void test_do_meta_infect() {
   test::expect_eq(planet.info(player_t{1}).explored, 1);
 }
 
-void test_domissile_pdn_interception() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+void test_intercept_missile_by_pdn() {
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  Race race = createTestRace(player_t{1});
-  RaceRepository races(store);
-  races.save(race);
+  // Create missile targeting Planet (0, 0)
+  shipnum_t missile_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+                             .owned_by(1)
+                             .in_planet_orbit(0, 0)
+                             .targeting_planet(0, 0)
+                             .build();
 
-  Star star = createTestStar(starnum_t{1});
-  StarRepository(store).save(star);
+  // 1. Non-PDN ship (shuttle) does not intercept
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(2)
+      .in_planet_orbit(0, 0)
+      .build();
 
-  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  PlanetRepository(store).save(planet);
+  ctx.em.mutate_ship(missile_id, [&](Ship& m) {
+    test::expect_false(intercept_missile_by_pdn(m, ctx.em));
+    test::expect_eq(m.whatdest(), ScopeLevel::LEVEL_PLAN);
+  });
 
-  // Create PDN ship on planet
-  ship_struct pdn_data{
-      .owner = player_t{2},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_PLANDEF,
-      .active = 1,
-      .alive = 1,
-  };
-  pdn_data.storbits = starnum_t{1};
-  pdn_data.pnumorbits = planetnum_t{0};
-  pdn_data.xpos = 10.0;
-  pdn_data.ypos = 20.0;
-  auto pdn_handle = em.create_ship(pdn_data);
-  Ship& pdn = *pdn_handle;
+  // 2. Dead PDN does not intercept
+  TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
+      .owned_by(2)
+      .in_planet_orbit(0, 0)
+      .with_alive(false)
+      .build();
 
-  planet.ships() = pdn.number();
-  PlanetRepository(store).save(planet);
+  ctx.em.mutate_ship(missile_id, [&](Ship& m) {
+    test::expect_false(intercept_missile_by_pdn(m, ctx.em));
+    test::expect_eq(m.whatdest(), ScopeLevel::LEVEL_PLAN);
+  });
 
-  // Create incoming missile
-  ship_struct missile_data{
-      .owner = player_t{1},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_MISSILE,
-      .active = 1,
-      .alive = 1,
-  };
-  missile_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  missile_data.storbits = starnum_t{1};
-  missile_data.pnumorbits = planetnum_t{0};
-  missile_data.deststar = starnum_t{1};
-  missile_data.destpnum = planetnum_t{0};
-  auto missile_handle = em.create_ship(missile_data);
-  Ship& missile = *missile_handle;
-  missile.on() = 1;
+  // 3. Active alive PDN intercepts and redirects missile
+  shipnum_t pdn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
+                         .owned_by(2)
+                         .in_planet_orbit(0, 0, SystemCoordinates{15.0, 25.0})
+                         .build();
 
-  domissile(missile, em);
-
-  // Missile should have re-targeted the PDN ship
-  test::expect_eq(missile.whatdest(), ScopeLevel::LEVEL_SHIP);
-  test::expect_eq(missile.destshipno(), pdn.number());
-  test::expect_eq(missile.xpos(), 10.0);
-  test::expect_eq(missile.ypos(), 20.0);
+  ctx.em.mutate_ship(missile_id, [&](Ship& m) {
+    test::expect_true(intercept_missile_by_pdn(m, ctx.em));
+    test::expect_eq(m.whatdest(), ScopeLevel::LEVEL_SHIP);
+    test::expect_eq(m.destshipno(), pdn_id);
+    const auto* pdn = ctx.em.peek_ship(pdn_id);
+    test::expect_eq(m.coordinates().x, pdn->coordinates().x);
+    test::expect_eq(m.coordinates().y, pdn->coordinates().y);
+  });
 }
 
-void test_domissile_planet_bombardment_and_ship_attack() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+void test_execute_missile_planet_strike() {
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  Race race1 = createTestRace(player_t{1});
-  Race race2 = createTestRace(player_t{2});
-  RaceRepository(store).save(race1);
-  RaceRepository(store).save(race2);
+  // Colonize sector (5, 3) on Planet (0, 0) owned by Player 2
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{5, 3}).colonize(2, 500);
+  });
 
-  Star star = createTestStar(starnum_t{1});
-  StarRepository(store).save(star);
+  // 1. Targeted strike with positive coordinate wrapping (15, 3) on 10x10
+  // planet -> wraps to (5, 3)
+  shipnum_t m1_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+                        .owned_by(1)
+                        .in_planet_orbit(0, 0)
+                        .targeting_planet(0, 0)
+                        .with_destruct(20)
+                        .with_impact(Coordinates{15, 3}, /*scatter=*/false)
+                        .with_on(true)
+                        .build();
 
-  Planet planet{PlanetType::EARTH, Coordinates{4, 4}};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  PlanetRepository(store).save(planet);
+  ctx.em.mutate_ship(m1_id, [&](Ship& m) {
+    execute_missile_planet_strike(m, ctx.em);
+    test::expect_false(m.alive());
+  });
 
-  SectorMap smap(planet);
-  smap.get({1, 1}).set_owner(2);
-  smap.get({1, 1}).set_popn_exact(50);
-  smap.get({1, 1}).set_type(SectorType::SEC_LAND);
-  SectorRepository(store).save_map(smap);
+  const auto& smap_after1 = *ctx.em.peek_sectormap(0, 0);
+  const auto& sec1 = smap_after1.get(Coordinates{5, 3});
+  test::expect_true(sec1.is_wasted() || sec1.get_popn() < 500);
 
-  // 1. Planet bombardment test
-  ship_struct missile1_data{
-      .owner = player_t{1},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_MISSILE,
-      .active = 1,
-      .alive = 1,
-  };
-  missile1_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  missile1_data.storbits = starnum_t{1};
-  missile1_data.pnumorbits = planetnum_t{0};
-  missile1_data.deststar = starnum_t{1};
-  missile1_data.destpnum = planetnum_t{0};
-  missile1_data.destruct = 10;
-  missile1_data.special = ImpactData{.coords = {1, 1}, .scatter = false};
-  auto m1_handle = em.create_ship(missile1_data);
-  Ship& m1 = *m1_handle;
-  m1.on() = 1;
+  // 2. Targeted strike with negative coordinate wrapping (-1, 2) on 10x10
+  // planet -> wraps to (9, 2)
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{9, 2}).colonize(2, 500);
+  });
 
-  domissile(m1, em);
-  test::expect_eq(m1.alive(), 0);
+  shipnum_t m2_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+                        .owned_by(1)
+                        .in_planet_orbit(0, 0)
+                        .targeting_planet(0, 0)
+                        .with_destruct(20)
+                        .with_impact(Coordinates{-1, 2}, /*scatter=*/false)
+                        .with_on(true)
+                        .build();
 
-  // 2. Ship-to-ship attack test
-  ship_struct target_data{
-      .owner = player_t{2},
-      .size = 10,
-      .max_crew = 10,
-      .tech = 10.0,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_SHUTTLE,
-      .active = 1,
-      .alive = 1,
-  };
-  target_data.storbits = starnum_t{1};
-  target_data.pnumorbits = planetnum_t{0};
-  target_data.xpos = 0.0;
-  target_data.ypos = 0.0;
-  auto target_handle = em.create_ship(target_data);
-  Ship& target = *target_handle;
+  ctx.em.mutate_ship(m2_id, [&](Ship& m) {
+    execute_missile_planet_strike(m, ctx.em);
+    test::expect_false(m.alive());
+  });
 
-  ship_struct missile2_data{
-      .owner = player_t{1},
-      .size = 1,
-      .tech = 10.0,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_MISSILE,
-      .active = 1,
-      .alive = 1,
-  };
-  missile2_data.whatdest = ScopeLevel::LEVEL_SHIP;
-  missile2_data.destshipno = target.number();
-  missile2_data.storbits = starnum_t{1};
-  missile2_data.pnumorbits = planetnum_t{0};
-  missile2_data.deststar = starnum_t{1};
-  missile2_data.destpnum = planetnum_t{0};
-  missile2_data.speed = 10;
-  missile2_data.destruct = 20;
-  missile2_data.xpos = 0.0;
-  missile2_data.ypos = 0.0;
-  auto m2_handle = em.create_ship(missile2_data);
-  Ship& m2 = *m2_handle;
-  m2.on() = 1;
+  const auto& smap_after2 = *ctx.em.peek_sectormap(0, 0);
+  const auto& sec2 = smap_after2.get(Coordinates{9, 2});
+  test::expect_true(sec2.is_wasted() || sec2.get_popn() < 500);
 
-  domissile(m2, em);
-  test::expect_eq(m2.alive(), 0);
-  test::expect_gt(target.damage(), 0);
+  // 3. Scattered strike
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    for (auto& sec : smap) {
+      sec.colonize(2, 500);
+    }
+  });
+
+  shipnum_t m3_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+                        .owned_by(1)
+                        .in_planet_orbit(0, 0)
+                        .targeting_planet(0, 0)
+                        .with_destruct(20)
+                        .with_impact(Coordinates{0, 0}, /*scatter=*/true)
+                        .with_on(true)
+                        .build();
+
+  ctx.em.mutate_ship(m3_id, [&](Ship& m) {
+    execute_missile_planet_strike(m, ctx.em);
+    test::expect_false(m.alive());
+  });
+
+  const auto& smap_after3 = *ctx.em.peek_sectormap(0, 0);
+  int damaged = 0;
+  for (const auto& sec : smap_after3) {
+    if (sec.is_wasted() || sec.get_popn() < 500) {
+      ++damaged;
+    }
+  }
+  test::expect_gt(damaged, 0);
+}
+
+void test_execute_missile_ship_strike() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                            .owned_by(2)
+                            .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                            .with_size(10)
+                            .with_tech(10.0)
+                            .build();
+
+  // 1. Target out of strike range (dist = 500.0, strike_range = 10 * 5.5 * 1.0
+  // = 55.0)
+  shipnum_t distant_missile_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+          .owned_by(1)
+          .in_star_orbit(0, SystemCoordinates{500.0, 0.0})
+          .targeting_ship(target_id)
+          .with_speed(10)
+          .with_destruct(20)
+          .with_on(true)
+          .build();
+
+  ctx.em.mutate_ship(distant_missile_id, [&](Ship& m) {
+    execute_missile_ship_strike(m, ctx.em);
+    test::expect_true(m.alive());
+  });
+  const auto* target_before = ctx.em.peek_ship(target_id);
+  test::expect_eq(target_before->damage(), 0);
+
+  // 2. Target within strike range (dist = 10.0 <= 55.0)
+  shipnum_t close_missile_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+          .owned_by(1)
+          .in_star_orbit(0, SystemCoordinates{10.0, 0.0})
+          .targeting_ship(target_id)
+          .with_speed(10)
+          .with_destruct(20)
+          .with_on(true)
+          .build();
+
+  ctx.em.mutate_ship(close_missile_id, [&](Ship& m) {
+    execute_missile_ship_strike(m, ctx.em);
+    test::expect_false(m.alive());
+  });
+  const auto* target_after = ctx.em.peek_ship(target_id);
+  test::expect_gt(target_after->damage(), 0);
+}
+
+void test_domissile_integration() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // 1. Missile arrives at planet with PDN present -> re-targeted to PDN
+  shipnum_t pdn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
+                         .owned_by(2)
+                         .in_planet_orbit(0, 0, SystemCoordinates{10.0, 10.0})
+                         .build();
+
+  shipnum_t m1_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+                        .owned_by(1)
+                        .in_planet_orbit(0, 0)
+                        .targeting_planet(0, 0)
+                        .with_destruct(20)
+                        .with_on(true)
+                        .build();
+
+  ctx.em.mutate_ship(m1_id, [&](Ship& m) {
+    domissile(m, ctx.em);
+    test::expect_true(m.alive());
+    test::expect_eq(m.whatdest(), ScopeLevel::LEVEL_SHIP);
+    test::expect_eq(m.destshipno(), pdn_id);
+  });
+
+  // Remove PDN for subsequent tests
+  ctx.em.mutate_ship(pdn_id, [](Ship& s) { s.alive() = false; });
+
+  // 2. Missile arrives at planet without PDN -> strikes planet surface
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{2, 2}).colonize(2, 500);
+  });
+
+  shipnum_t m2_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+                        .owned_by(1)
+                        .in_planet_orbit(0, 0)
+                        .targeting_planet(0, 0)
+                        .with_destruct(20)
+                        .with_impact(Coordinates{2, 2}, /*scatter=*/false)
+                        .with_on(true)
+                        .build();
+
+  ctx.em.mutate_ship(m2_id, [&](Ship& m) {
+    domissile(m, ctx.em);
+    test::expect_false(m.alive());
+  });
+  const auto& smap = *ctx.em.peek_sectormap(0, 0);
+  const auto& sec = smap.get(Coordinates{2, 2});
+  test::expect_true(sec.is_wasted() || sec.get_popn() < 500);
+
+  // 3. Missile arrives targeting ship in range -> strikes target
+  shipnum_t victim_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                            .owned_by(2)
+                            .in_planet_orbit(0, 0, SystemCoordinates{0.0, 0.0})
+                            .with_size(10)
+                            .with_tech(10.0)
+                            .build();
+
+  shipnum_t m3_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+                        .owned_by(1)
+                        .in_planet_orbit(0, 0, SystemCoordinates{5.0, 0.0})
+                        .targeting_ship(victim_id)
+                        .with_speed(10)
+                        .with_destruct(20)
+                        .with_on(true)
+                        .build();
+
+  ctx.em.mutate_ship(m3_id, [&](Ship& m) {
+    domissile(m, ctx.em);
+    test::expect_false(m.alive());
+  });
+  const auto* victim = ctx.em.peek_ship(victim_id);
+  test::expect_gt(victim->damage(), 0);
 }
 
 void test_check_mine_proximity_trigger() {
@@ -1839,14 +1942,20 @@ int main() {
   test_do_meta_infect();
   std::println(std::cout, "PASS");
 
-  std::println(std::cout, "  Testing domissile PDN interception... ");
-  test_domissile_pdn_interception();
+  std::println(std::cout, "  Testing intercept_missile_by_pdn... ");
+  test_intercept_missile_by_pdn();
   std::println(std::cout, "PASS");
 
-  std::println(
-      std::cout,
-      "  Testing domissile planet bombardment and ship-to-ship attack... ");
-  test_domissile_planet_bombardment_and_ship_attack();
+  std::println(std::cout, "  Testing execute_missile_planet_strike... ");
+  test_execute_missile_planet_strike();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing execute_missile_ship_strike... ");
+  test_execute_missile_ship_strike();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing domissile integration... ");
+  test_domissile_integration();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing check_mine_proximity_trigger... ");

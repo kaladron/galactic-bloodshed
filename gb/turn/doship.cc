@@ -589,88 +589,118 @@ void doown(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
+bool intercept_missile_by_pdn(Ship& missile, EntityManager& entity_manager) {
+  if (missile.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return false;
+  }
+
+  const ShipList scoped_ships = ShipList::readonly_on_planet(
+      entity_manager, missile.storbits(), missile.pnumorbits());
+
+  for (const Ship& s : scoped_ships) {
+    if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF) {
+      /* attack the PDN instead */
+      missile.whatdest() = ScopeLevel::LEVEL_SHIP;
+      missile.set_coordinates(s.coordinates());
+      missile.destshipno() = s.number();
+      return true;
+    }
+  }
+  return false;
+}
+
+void execute_missile_planet_strike(Ship& missile,
+                                   EntityManager& entity_manager) {
+  if (missile.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return;
+  }
+
+  entity_manager.mutate_planet(
+      missile.storbits(), missile.pnumorbits(), [&](Planet& p) {
+        entity_manager.mutate_sectormap(
+            missile.storbits(), missile.pnumorbits(), [&](SectorMap& smap) {
+              Coordinates bomb_coords = [&]() -> Coordinates {
+                if (const auto* m = missile.as<MissileShip>()) {
+                  if (!m->is_scatter()) {
+                    auto coords = p.wrap(m->impact_coords());
+                    coords.y = std::clamp(coords.y, 0, p.dimensions().y - 1);
+                    return coords;
+                  }
+                }
+                return smap.get_random().coords();
+              }();
+
+              if (auto result_opt = shoot_ship_to_planet(
+                      entity_manager, missile, p,
+                      static_cast<int>(missile.destruct()), bomb_coords, smap,
+                      0, guntype_t::HEAVY)) {
+                push_telegram(entity_manager, missile.owner(),
+                              missile.governor(), result_opt->long_message);
+                entity_manager.kill_ship(missile.owner(), missile);
+                std::string sectors_destroyed_msg = std::format(
+                    "{} dropped on {}.\n\t{} sectors destroyed.\n", missile,
+                    prin_ship_orbits(entity_manager, missile),
+                    result_opt->sectors_destroyed);
+                const auto& star =
+                    *entity_manager.peek_star(missile.storbits());
+                for (const Race& race : RaceList::readonly(entity_manager)) {
+                  if (p.info(race.Playernum).numsectsowned &&
+                      race.Playernum != missile.owner()) {
+                    push_telegram(entity_manager, race.Playernum,
+                                  star.governor(race.Playernum),
+                                  sectors_destroyed_msg);
+                  }
+                }
+                if (result_opt->sectors_destroyed) {
+                  std::string dropmsg =
+                      std::format("{} dropped on {}.\n", missile,
+                                  prin_ship_orbits(entity_manager, missile));
+                  post(entity_manager, dropmsg, NewsType::COMBAT);
+                }
+              }
+            });
+      });
+}
+
+void execute_missile_ship_strike(Ship& missile, EntityManager& entity_manager) {
+  auto target_num = missile.destshipno();
+  entity_manager.mutate_ship(target_num, [&](Ship& target) {
+    if (!target.alive()) return;
+    double dist = missile.coordinates().distance_to(target.coordinates());
+    double strike_range = static_cast<double>(missile.speed()) *
+                          STRIKE_DISTANCE_FACTOR * missile.hull_efficiency();
+    if (dist <= strike_range) {
+      /* do the attack */
+      auto s2sresult =
+          shoot_ship_to_ship(entity_manager, missile, target,
+                             static_cast<int>(missile.destruct()), 0);
+      if (s2sresult) {
+        auto const& [damage, short_buf, long_buf] = *s2sresult;
+        push_telegram(entity_manager, missile.owner(), missile.governor(),
+                      long_buf);
+        push_telegram(entity_manager, target.owner(), target.governor(),
+                      long_buf);
+        post(entity_manager, short_buf, NewsType::COMBAT);
+      }
+      entity_manager.kill_ship(missile.owner(), missile);
+    }
+  });
+}
+
 void domissile(Ship& ship, EntityManager& entity_manager) {
   if (!ship.alive() || ship.owner() == 0) return;
   if (!ship.on() || ship.docked()) return;
 
-  /* check to see if it has arrived at it's destination */
+  /* check to see if it has arrived at its destination */
   if (ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
       ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
       ship.destpnum() == ship.pnumorbits()) {
-    entity_manager.mutate_planet(
-        ship.storbits(), ship.pnumorbits(), [&](Planet& p) {
-          /* check to see if PDNs are present */
-          for (const Ship& s : ShipList::readonly(entity_manager, p.ships())) {
-            if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF) {
-              /* attack the PDN instead */
-              ship.whatdest() =
-                  ScopeLevel::LEVEL_SHIP; /* move missile to PDN for attack */
-              ship.xpos() = s.xpos();
-              ship.ypos() = s.ypos();
-              ship.destshipno() = s.number();
-              return;
-            }
-          }
-
-          entity_manager.mutate_sectormap(
-              ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
-                Coordinates bomb_coords = [&]() -> Coordinates {
-                  if (const auto* missile = ship.as<MissileShip>()) {
-                    if (!missile->is_scatter()) {
-                      return Coordinates{
-                          missile->impact_coords().x % p.dimensions().x,
-                          missile->impact_coords().y % p.dimensions().y};
-                    }
-                  }
-                  return smap.get_random().coords();
-                }();
-
-                if (auto result_opt = shoot_ship_to_planet(
-                        entity_manager, ship, p, (int)ship.destruct(),
-                        bomb_coords, smap, 0, guntype_t::HEAVY)) {
-                  push_telegram(entity_manager, ship.owner(), ship.governor(),
-                                result_opt->long_message);
-                  entity_manager.kill_ship(ship.owner(), ship);
-                  std::string sectors_destroyed_msg = std::format(
-                      "{} dropped on {}.\n\t{} sectors destroyed.\n", ship,
-                      prin_ship_orbits(entity_manager, ship),
-                      result_opt->sectors_destroyed);
-                  const auto& star = *entity_manager.peek_star(ship.storbits());
-                  for (const Race& race : RaceList::readonly(entity_manager)) {
-                    if (p.info(race.Playernum).numsectsowned &&
-                        race.Playernum != ship.owner()) {
-                      push_telegram(entity_manager, race.Playernum,
-                                    star.governor(race.Playernum),
-                                    sectors_destroyed_msg);
-                    }
-                  }
-                  if (result_opt->sectors_destroyed) {
-                    std::string dropmsg =
-                        std::format("{} dropped on {}.\n", ship,
-                                    prin_ship_orbits(entity_manager, ship));
-                    post(entity_manager, dropmsg, NewsType::COMBAT);
-                  }
-                }
-              });
-        });
+    if (intercept_missile_by_pdn(ship, entity_manager)) {
+      return;
+    }
+    execute_missile_planet_strike(ship, entity_manager);
   } else if (ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
-    auto sh2 = ship.destshipno();
-    entity_manager.mutate_ship(sh2, [&](Ship& target) {
-      auto dist =
-          std::hypot(ship.xpos() - target.xpos(), ship.ypos() - target.ypos());
-      if (dist <= ((double)ship.speed() * STRIKE_DISTANCE_FACTOR *
-                   (100.0 - (double)ship.damage()) / 100.0)) {
-        /* do the attack */
-        auto s2sresult = shoot_ship_to_ship(entity_manager, ship, target,
-                                            (int)ship.destruct(), 0);
-        auto const& [damage, short_buf, long_buf] = *s2sresult;
-        push_telegram(entity_manager, ship.owner(), ship.governor(), long_buf);
-        push_telegram(entity_manager, target.owner(), target.governor(),
-                      long_buf);
-        entity_manager.kill_ship(ship.owner(), ship);
-        post(entity_manager, short_buf, NewsType::COMBAT);
-      }
-    });
+    execute_missile_ship_strike(ship, entity_manager);
   }
 }
 

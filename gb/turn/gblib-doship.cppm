@@ -14,7 +14,35 @@ import :turnstats;
 export void doship(Ship&, bool update, EntityManager&, TurnStats& stats);
 export void domass(Ship&, EntityManager&);
 export void doown(Ship&, EntityManager&);
-export void domissile(Ship&, EntityManager&);
+/// \brief Simulates turn-phase missile navigation, PDN interception, and
+/// terminal impacts against planetary surfaces or targeted ships.
+/// \param ship Missile ship executing turn processing.
+/// \param entity_manager Entity manager for spatial queries and mutations.
+export void domissile(Ship& ship, EntityManager& entity_manager);
+
+/// \brief Checks if planetary defense nodes (PDN) are present on the target
+/// planet and redirects the missile to attack the PDN if found.
+/// \param missile Missile ship executing attack.
+/// \param entity_manager Entity manager for scoped ship queries.
+/// \return True if intercepted and redirected to a PDN, false otherwise.
+export bool intercept_missile_by_pdn(Ship& missile,
+                                     EntityManager& entity_manager);
+
+/// \brief Executes a missile impact strike against a planet's surface,
+/// resolving damage against either designated target coordinates (with toroidal
+/// wrapping) or scattered random sectors.
+/// \param missile Missile ship executing planetary bombardment.
+/// \param entity_manager Entity manager for planet, sectormap, and ship
+/// mutations.
+export void execute_missile_planet_strike(Ship& missile,
+                                          EntityManager& entity_manager);
+
+/// \brief Executes a ship-to-ship missile strike against its destination ship
+/// if within effective strike distance.
+/// \param missile Missile ship executing the strike.
+/// \param entity_manager Entity manager for target mutation and notifications.
+export void execute_missile_ship_strike(Ship& missile,
+                                        EntityManager& entity_manager);
 /// \brief Simulates proximity triggering, detonation, ship collateral damage,
 /// and orbital planetary bombardment for space mines.
 /// \param ship Mine ship executing turn processing.

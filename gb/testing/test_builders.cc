@@ -264,6 +264,26 @@ TestShipBuilder& TestShipBuilder::with_trigger_radius(unsigned short radius) {
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::targeting_planet(starnum_t snum,
+                                                   planetnum_t pnum) {
+  ship_.whatdest = ScopeLevel::LEVEL_PLAN;
+  ship_.deststar = snum;
+  ship_.destpnum = pnum;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::targeting_ship(shipnum_t target_ship) {
+  ship_.whatdest = ScopeLevel::LEVEL_SHIP;
+  ship_.destshipno = target_ship;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_impact(Coordinates coords,
+                                              bool scatter) {
+  ship_.special = ImpactData{.coords = coords, .scatter = scatter};
+  return *this;
+}
+
 shipnum_t TestShipBuilder::build() {
   auto handle = em_.create_ship(ship_);
   return handle->number();

@@ -1200,225 +1200,177 @@ void test_do_oap() {
 }
 
 void test_do_ap_and_god() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  Race god_race = createTestRace(player_t{1});
-  god_race.God = 1;
-  Race ap_race = createTestRace(player_t{2});
-  ap_race.conditions[RTEMP + 1] = 50;
-  RaceRepository(store).save(god_race);
-  RaceRepository(store).save(ap_race);
+  ctx.em.mutate_race(1, [](Race& r) { r.God = 1; });
 
-  Star star = createTestStar(starnum_t{1});
-  StarRepository(store).save(star);
+  // 1. Test do_god fills god ship to maximum capacity
+  shipnum_t god_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                              .owned_by(1)
+                              .with_fuel(0.0)
+                              .with_destruct(0)
+                              .with_resource(0)
+                              .build();
 
-  Planet planet{PlanetType::EARTH, Coordinates{4, 4}};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.conditions(static_cast<Conditions>(RTEMP + 1)) = 10;
-  PlanetRepository(store).save(planet);
+  ctx.em.mutate_ship(god_ship_id, [&](Ship& god_ship) {
+    do_god(god_ship, ctx.em);
+    test::expect_eq(god_ship.fuel(), god_ship.max_fuel_capacity());
+    test::expect_eq(god_ship.destruct(), god_ship.max_destruct_capacity());
+    test::expect_eq(god_ship.resource(), god_ship.max_resource_capacity());
+  });
 
-  // 1. Test do_god
-  ship_struct god_ship_data{
-      .owner = player_t{1},
-      .max_resource = 2000,
-      .max_destruct = 500,
-      .max_fuel = 1000,
-      .type = ShipType::STYPE_HABITAT,
-      .active = 1,
-      .alive = 1,
-  };
-  auto ghandle = em.create_ship(god_ship_data);
-  Ship& god_ship = *ghandle;
-  do_god(god_ship, em);
-  test::expect_eq(god_ship.fuel(), 1000.0);
-  test::expect_eq(god_ship.destruct(), 500);
-  test::expect_eq(god_ship.resource(), 2000);
+  // 2. Test do_ap (modifies planetary atmosphere using ship.crew_ratio())
+  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+    p.conditions(static_cast<Conditions>(RTEMP + 1)) = 10;
+  });
 
-  // 2. Test do_ap
-  ship_struct ap_ship_data{
-      .owner = player_t{2},
-      .fuel = 10.0,
-      .max_crew = 100,
-      .popn = 100,
-      .type = ShipType::OTYPE_AP,
-      .active = 1,
-      .alive = 1,
-  };
-  ap_ship_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  ap_ship_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  ap_ship_data.deststar = starnum_t{1};
-  ap_ship_data.destpnum = planetnum_t{0};
-  ap_ship_data.storbits = starnum_t{1};
-  ap_ship_data.pnumorbits = planetnum_t{0};
-  auto aphandle = em.create_ship(ap_ship_data);
-  Ship& ap_ship = *aphandle;
-  ap_ship.on() = 1;
-  ap_ship.docked() = 1;
+  shipnum_t ap_ship_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AP)
+                             .owned_by(1)
+                             .landed_on(0, 0, Coordinates{0, 0})
+                             .with_fuel(10.0)
+                             .with_crew(100, 0)
+                             .with_on(true)
+                             .build();
 
-  do_ap(ap_ship, em);
-  test::expect_lt(ap_ship.fuel(), 10.0);
+  ctx.em.mutate_ship(ap_ship_id, [&](Ship& ap_ship) {
+    do_ap(ap_ship, ctx.em);
+    test::expect_lt(ap_ship.fuel(), 10.0);
+  });
 }
 
 void test_do_pod() {
-  seed_rand(42);
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  Race race = createTestRace(player_t{1});
-  race.number_sexes = 2;
-  race.likesbest = SectorType::SEC_LAND;
-  RaceRepository(store).save(race);
+  // 1. Pod in star system with temperature below POD_THRESHOLD -> warms up,
+  // remains alive
+  shipnum_t warming_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                 .owned_by(1)
+                                 .in_star_orbit(0)
+                                 .with_pod(10, 0)
+                                 .build();
 
-  // 1. Test Spore pod in star system with a planet
-  Star star = createTestStar(starnum_t{2});
-  StarRepository(store).save(star);
+  ctx.em.mutate_ship(warming_pod_id, [&](Ship& pod) {
+    do_pod(pod, ctx.em);
+    test::expect_true(pod.alive());
+    const auto* pod_ship = pod.as<SporePodShip>();
+    test::expect_gt(pod_ship->temperature(), 10);
+  });
 
-  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
-  planet.star_id() = 2;
-  planet.planet_order() = 0;
-  PlanetRepository(store).save(planet);
+  // 2. Pod in star system with temperature >= POD_THRESHOLD -> warms, explodes,
+  // infects planet
+  shipnum_t exploding_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                   .owned_by(1)
+                                   .in_star_orbit(0)
+                                   .with_pod(POD_THRESHOLD + 10, 0)
+                                   .build();
 
-  SectorMap smap(planet);
-  for (int y = 0; y < 2; ++y) {
-    for (int x = 0; x < 2; ++x) {
-      smap.get({x, y}).set_owner(0);
-      smap.get({x, y}).set_type(SectorType::SEC_LAND);
-    }
-  }
-  SectorRepository(store).save_map(smap);
+  ctx.em.mutate_ship(exploding_pod_id, [&](Ship& pod) {
+    do_pod(pod, ctx.em);
+    test::expect_false(pod.alive());
+  });
 
-  ship_struct pod_planet_data{
-      .owner = player_t{1},
-      .type = ShipType::STYPE_POD,
-      .active = 1,
-      .alive = 1,
-  };
-  pod_planet_data.whatorbits = ScopeLevel::LEVEL_STAR;
-  pod_planet_data.storbits = starnum_t{2};
-  auto pod_planet_handle = em.create_ship(pod_planet_data);
-  Ship& pod_planet = *pod_planet_handle;
-  auto* pod_planet_ship = pod_planet.as<SporePodShip>();
-  pod_planet_ship->set_temperature(POD_THRESHOLD + 10);
+  // 3. Pod in planet orbit with decay < POD_DECAY -> decays incrementally,
+  // remains alive
+  shipnum_t decaying_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                  .owned_by(1)
+                                  .in_planet_orbit(0, 0)
+                                  .with_pod(0, 1)
+                                  .build();
 
-  do_pod(pod_planet, em);
-  test::expect_eq(pod_planet.alive(), 0);
+  ctx.em.mutate_ship(decaying_pod_id, [&](Ship& pod) {
+    do_pod(pod, ctx.em);
+    test::expect_true(pod.alive());
+    const auto* pod_ship = pod.as<SporePodShip>();
+    test::expect_ge(pod_ship->decay(), 1);
+  });
 
-  // 3. Test Spore pod on planet surface decay
-  ship_struct pod_decay_data{
-      .owner = player_t{1},
-      .type = ShipType::STYPE_POD,
-      .active = 1,
-      .alive = 1,
-  };
-  pod_decay_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  pod_decay_data.storbits = starnum_t{2};
-  pod_decay_data.pnumorbits = planetnum_t{0};
-  auto pod_decay_handle = em.create_ship(pod_decay_data);
-  Ship& pod_decay = *pod_decay_handle;
-  auto* pod_decay_ship = pod_decay.as<SporePodShip>();
-  pod_decay_ship->set_decay(POD_DECAY + 5);
+  // 4. Pod in planet orbit with decay >= POD_DECAY -> decays to death, killed
+  shipnum_t dead_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                              .owned_by(1)
+                              .in_planet_orbit(0, 0)
+                              .with_pod(0, POD_DECAY)
+                              .build();
 
-  do_pod(pod_decay, em);
-  test::expect_eq(pod_decay.alive(), 0);
+  ctx.em.mutate_ship(dead_pod_id, [&](Ship& pod) {
+    do_pod(pod, ctx.em);
+    test::expect_false(pod.alive());
+  });
 }
 
 void test_do_mirror() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
   TurnStats stats{};
 
-  Race race = createTestRace(player_t{1});
-  RaceRepository(store).save(race);
+  // 1. Space mirror aimed at another ship in same star system
+  shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                            .owned_by(2)
+                            .in_star_orbit(0, SystemCoordinates{10.0, 10.0})
+                            .with_size(10)
+                            .with_tech(10.0)
+                            .build();
 
-  // Set up Universe with 2 stars (star 0 and star 1)
-  UniverseRepository(store).save(universe_struct{.id = 1, .numstars = 2});
+  shipnum_t mirror_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
+                                 .owned_by(1)
+                                 .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                                 .with_aim(AimedAtData{
+                                     .shipno = target_id,
+                                     .intensity = 100,
+                                     .level = ScopeLevel::LEVEL_SHIP,
+                                 })
+                                 .build();
 
-  star_struct s0_data{
-      .name = "StarZero",
-      .pnames = {"PlanetZero"},
-      .star_id = starnum_t{0},
-  };
-  Star star0{s0_data};
-  star0.stability() = 50;
-  StarRepository(store).save(star0);
+  ctx.em.mutate_ship(mirror_ship_id,
+                     [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
+  const auto* target = ctx.em.peek_ship(target_id);
+  test::expect_ge(target->damage(), 0);
 
-  Planet p0{PlanetType::EARTH, Coordinates{2, 2}};
-  p0.star_id() = 0;
-  p0.planet_order() = 0;
-  PlanetRepository(store).save(p0);
+  // 2. Space mirror aimed at planet (verifies
+  // planet.absolute_coordinates(star))
+  shipnum_t mirror_plan_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
+                                 .owned_by(1)
+                                 .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                                 .with_aim(AimedAtData{
+                                     .intensity = 50,
+                                     .pnum = 0,
+                                     .level = ScopeLevel::LEVEL_PLAN,
+                                 })
+                                 .build();
 
-  // 1. Test Space Mirror aimed at Star 0 (verifying Star 0 is not ignored)
-  ship_struct mirror_star_data{
-      .owner = player_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::STYPE_MIRROR,
-      .active = 1,
-      .alive = 1,
-  };
-  mirror_star_data.storbits = starnum_t{0};
-  auto mirror_star_handle = em.create_ship(mirror_star_data);
-  Ship& mirror_star = *mirror_star_handle;
-  auto* mirror_star_ship = mirror_star.as<SpaceMirrorShip>();
-  test::expect_true(mirror_star_ship != nullptr);
-  mirror_star_ship->aim().level = ScopeLevel::LEVEL_STAR;
-  mirror_star_ship->aim().snum = starnum_t{0};
-  mirror_star_ship->aim().intensity = 50;
-
-  do_mirror(mirror_star, em, stats);
-  const auto& star0_updated = *em.peek_star(starnum_t{0});
-  test::expect_ge(star0_updated.stability(), 50);
-
-  // 2. Test Space Mirror not aimed (LEVEL_UNIV default)
-  ship_struct mirror_unaimed_data{
-      .owner = player_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::STYPE_MIRROR,
-      .active = 1,
-      .alive = 1,
-  };
-  mirror_unaimed_data.storbits = starnum_t{0};
-  auto mirror_unaimed_handle = em.create_ship(mirror_unaimed_data);
-  Ship& mirror_unaimed = *mirror_unaimed_handle;
-  auto* mirror_unaimed_ship = mirror_unaimed.as<SpaceMirrorShip>();
-  test::expect_true(mirror_unaimed_ship != nullptr);
-  test::expect_eq(mirror_unaimed_ship->aim().level, ScopeLevel::LEVEL_UNIV);
-  do_mirror(mirror_unaimed, em, stats);
-
-  // 3. Test Space Mirror aimed at valid Planet 0
-  mirror_unaimed_ship->aim().level = ScopeLevel::LEVEL_PLAN;
-  mirror_unaimed_ship->aim().pnum = planetnum_t{0};
-  mirror_unaimed_ship->aim().intensity = 50;
-  do_mirror(mirror_unaimed, em, stats);
+  ctx.em.mutate_ship(mirror_plan_id,
+                     [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
   test::expect_gt(stats.Stinfo[0][0].temp_add, 0);
 
-  // 4. Test Space Mirror aimed at another ship
-  ship_struct target_data{
-      .owner = player_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::STYPE_SHUTTLE,
-      .active = 1,
-      .alive = 1,
-  };
-  target_data.storbits = starnum_t{0};
-  target_data.damage = 0;
-  auto target_handle = em.create_ship(target_data);
-  Ship& target = *target_handle;
+  // 3. Space mirror aimed at star
+  int initial_stability = ctx.em.peek_star(0)->stability();
+  shipnum_t mirror_star_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
+                                 .owned_by(1)
+                                 .in_star_orbit(0)
+                                 .with_aim(AimedAtData{
+                                     .snum = 0,
+                                     .intensity = 50,
+                                     .level = ScopeLevel::LEVEL_STAR,
+                                 })
+                                 .build();
 
-  mirror_unaimed_ship->aim().level = ScopeLevel::LEVEL_SHIP;
-  mirror_unaimed_ship->aim().shipno = target.number();
-  mirror_unaimed_ship->aim().intensity = 100;
+  ctx.em.mutate_ship(mirror_star_id,
+                     [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
+  test::expect_ge(ctx.em.peek_star(0)->stability(), initial_stability);
 
-  do_mirror(mirror_unaimed, em, stats);
-  const auto& target_updated = *em.peek_ship(target.number());
-  test::expect_ge(target_updated.damage(), 0);
+  // 4. Unaimed mirror (LEVEL_UNIV) does nothing
+  shipnum_t mirror_unaimed_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
+          .owned_by(1)
+          .in_star_orbit(0)
+          .with_aim(AimedAtData{.level = ScopeLevel::LEVEL_UNIV})
+          .build();
+
+  auto temp_before = stats.Stinfo[0][0].temp_add;
+  ctx.em.mutate_ship(mirror_unaimed_id,
+                     [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
+  test::expect_eq(stats.Stinfo[0][0].temp_add, temp_before);
 }
 
 void test_ship_domain_operations() {
@@ -1497,52 +1449,66 @@ void test_ship_domain_operations() {
   test::expect_eq(ship.mass(), initial_mass + 20.0);
 }
 
-void test_do_repair_zero_crew() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-  JsonStore store(db);
+void test_do_repair() {
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  ServerState state{.segments = 1};
-  ServerStateRepository(store).save(state);
+  // 1. Probe with max_crew = 0 (verifies division-by-zero fix, maxrep = 0)
+  shipnum_t probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                           .owned_by(1)
+                           .in_star_orbit(0)
+                           .with_damage(50)
+                           .with_resource(100)
+                           .build();
 
-  Race race = createTestRace(player_t{1});
-  RaceRepository(store).save(race);
+  ctx.em.mutate_ship(probe_id, [&](Ship& probe) {
+    do_repair(probe, ctx.em);
+    test::expect_eq(probe.damage(), 50);
+    test::expect_eq(probe.resource(), 100);
+  });
 
-  // 1. Probe with max_crew = 0 (verifies division-by-zero fix)
-  ship_struct probe_data{
-      .owner = player_t{1},
-      .max_crew = 0,
-      .resource = 100,
-      .damage = 50,
-      .type = ShipType::OTYPE_PROBE,
-      .alive = 1,
-  };
-  auto probe_handle = em.create_ship(probe_data);
-  Ship& probe = *probe_handle;
+  // 2. Manned ship with crew repairs damage and consumes resources
+  shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                             .owned_by(1)
+                             .in_star_orbit(0)
+                             .with_crew(10, 0)
+                             .with_resource(100)
+                             .with_damage(50)
+                             .build();
 
-  do_repair(probe, em);
-  // Probe with 0 crew should safely do 0 repairs without crashing or division
-  // by zero
-  test::expect_eq(probe.damage(), 50);
+  ctx.em.mutate_ship(shuttle_id, [&](Ship& shuttle) {
+    do_repair(shuttle, ctx.em);
+    test::expect_lt(shuttle.damage(), 50);
+    test::expect_lt(shuttle.resource(), 100);
+  });
 
-  // 2. Manned ship with crew repairs damage
-  ship_struct manned_data{
-      .owner = player_t{1},
-      .max_crew = 10,
-      .build_cost = 100,
-      .resource = 100,
-      .popn = 10,
-      .damage = 50,
-      .type = ShipType::STYPE_SHUTTLE,
-      .alive = 1,
-  };
-  auto manned_handle = em.create_ship(manned_data);
-  Ship& manned = *manned_handle;
+  // 3. Ship docked with a space station repairs for free (0 cost) even with 0
+  // resources and 0 crew!
+  shipnum_t station_id = TestShipBuilder(ctx.em, ShipType::STYPE_STATION)
+                             .owned_by(1)
+                             .in_star_orbit(0)
+                             .build();
 
-  do_repair(manned, em);
-  test::expect_lt(manned.damage(), 50);
-  test::expect_lt(manned.resource(), 100);
+  shipnum_t docked_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                                 .owned_by(1)
+                                 .in_star_orbit(0)
+                                 .docked_to(station_id, 0)
+                                 .with_damage(40)
+                                 .with_resource(0)
+                                 .build();
+
+  ctx.em.mutate_ship(docked_ship_id, [&](Ship& ship) {
+    do_repair(ship, ctx.em);
+    test::expect_lt(ship.damage(), 40);
+    test::expect_eq(ship.resource(), 0);  // Free repairs from space station!
+  });
+
+  // 4. Space station itself repairs for free
+  ctx.em.mutate_ship(station_id, [](Ship& s) { s.damage() = 30; });
+  ctx.em.mutate_ship(station_id, [&](Ship& station) {
+    do_repair(station, ctx.em);
+    test::expect_lt(station.damage(), 30);
+  });
 }
 
 void test_process_ship_radiation() {
@@ -2002,8 +1968,8 @@ int main() {
   test_ship_domain_operations();
   std::println(std::cout, "PASS");
 
-  std::println(std::cout, "  Testing do_repair on zero-crew probe... ");
-  test_do_repair_zero_crew();
+  std::println(std::cout, "  Testing do_repair... ");
+  test_do_repair();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing process_ship_radiation... ");

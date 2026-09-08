@@ -32,7 +32,7 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
       maxrep = 0.0;
       return 0;
     }
-    maxrep *= static_cast<double>(ship.popn()) / static_cast<double>(max_crew);
+    maxrep *= ship.crew_ratio();
     return static_cast<int>(0.005 * maxrep *
                             static_cast<double>(ship.effective_cost()));
   }();
@@ -257,8 +257,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
             (target.whatorbits() == ScopeLevel::LEVEL_STAR ||
              target.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
             ship.storbits() == target.storbits() && target.alive()) {
-          auto range = std::hypot(ship.xpos() - target.xpos(),
-                                  ship.ypos() - target.ypos());
+          double range = ship.coordinates().distance_to(target.coordinates());
           const auto body = std::max<ship_size_t>(1, target.shipbody());
           auto max_dmg = round_rand((2.0 / static_cast<double>(body)) *
                                     static_cast<double>(mirror->intensity()) /
@@ -283,19 +282,21 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       break;
     }
     case ScopeLevel::LEVEL_PLAN: {
+      if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+        break;
+      }
       const auto& star = *entity_manager.peek_star(ship.storbits());
       const auto& planet =
           *entity_manager.peek_planet(ship.storbits(), mirror->aimed_planet());
 
-      double range = std::hypot(ship.xpos() - (star.xpos() + planet.xpos()),
-                                ship.ypos() - (star.ypos() + planet.ypos()));
+      double range =
+          ship.coordinates().distance_to(planet.absolute_coordinates(star));
 
       int i = range > PLORBITSIZE
                   ? static_cast<int>(PLORBITSIZE * mirror->intensity() / range)
                   : mirror->intensity();
 
-      i = round_rand(0.01 * (100.0 - static_cast<double>(ship.damage())) *
-                     static_cast<double>(i));
+      i = round_rand(ship.hull_efficiency() * static_cast<double>(i));
       stats.Stinfo[ship.storbits().value][mirror->aimed_planet().value]
           .temp_add += i;
       break;
@@ -330,12 +331,6 @@ constexpr double ap_planet_factor(const Planet& p) {
   return (AP_FACTOR / (AP_FACTOR + x));
 }
 
-double crew_factor(const Ship& ship) {
-  int maxcrew = ship.max_crew_capacity();
-  if (!maxcrew) return 0.0;
-  return (static_cast<double>(ship.popn()) / static_cast<double>(maxcrew));
-}
-
 void do_ap(Ship& ship, EntityManager& entity_manager) {
   /* if landed on planet, change conditions to be like race */
   if (ship.is_landed() && ship.on()) {
@@ -347,7 +342,7 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
             for (int j = RTEMP + 1; j <= OTHER; j++) {
               auto cond = static_cast<Conditions>(j);
               auto d = round_rand(
-                  ap_planet_factor(p) * crew_factor(ship) *
+                  ap_planet_factor(p) * ship.crew_ratio() *
                   static_cast<double>(race.conditions[j] - p.conditions(cond)));
               if (d) {
                 p.conditions(cond) = std::clamp(p.conditions(cond) + d, 0, 100);

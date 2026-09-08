@@ -52,11 +52,13 @@ TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
                                                 : ActiveBattery::NONE;
   ship_.retaliate = ship_.primary_battery.count;
 
-  // Calculate baseline size and mass using canonical ship functions
+  // Calculate baseline size, mass, and build cost using canonical ship
+  // functions
   Ship temp_ship{ship_};
   ship_.size = static_cast<ship_size_t>(ship_size(temp_ship));
   ship_.base_mass = getmass(temp_ship);
   ship_.mass = ship_.base_mass;
+  ship_.build_cost = static_cast<money_t>(cost(temp_ship));
 }
 
 TestShipBuilder& TestShipBuilder::owned_by(player_t owner, governor_t gov) {
@@ -281,6 +283,17 @@ TestShipBuilder& TestShipBuilder::targeting_ship(shipnum_t target_ship) {
 TestShipBuilder& TestShipBuilder::with_impact(Coordinates coords,
                                               bool scatter) {
   ship_.special = ImpactData{.coords = coords, .scatter = scatter};
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_aim(AimedAtData aim) {
+  ship_.special = aim;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_pod(unsigned char temp,
+                                           unsigned char decay) {
+  ship_.special = PodData{.decay = decay, .temperature = temp};
   return *this;
 }
 

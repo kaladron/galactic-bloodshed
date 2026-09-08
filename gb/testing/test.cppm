@@ -573,6 +573,8 @@ public:
   TestShipBuilder& targeting_planet(starnum_t snum, planetnum_t pnum);
   TestShipBuilder& targeting_ship(shipnum_t target_ship);
   TestShipBuilder& with_impact(Coordinates coords, bool scatter = false);
+  TestShipBuilder& with_aim(AimedAtData aim);
+  TestShipBuilder& with_pod(unsigned char temp, unsigned char decay = 0);
 
   shipnum_t build();
 

@@ -290,8 +290,7 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
     return;
   }
 
-  stats.Stinfo[auto_ship->storbits().value][auto_ship->pnumorbits().value]
-      .inhab = true;
+  stats.mark_inhabited(auto_ship->storbits(), auto_ship->pnumorbits());
 
   if (!try_launch_unassigned_vn(em, *auto_ship)) {
     steal_planetary_resources(em, *auto_ship);

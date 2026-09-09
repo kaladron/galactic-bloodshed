@@ -1498,7 +1498,7 @@ void test_process_planet_climate() {
   planet.conditions(RTEMP) = 20;
 
   TurnStats stats{};
-  stats.Stinfo[3][1].temp_add = 10;
+  stats.set_temp_add(3, 1, 10);
 
   process_planet_climate(planet, star, stats);
 
@@ -2258,8 +2258,7 @@ void test_process_enslavement_and_revolts() {
   s_master.set_popn_exact(5);
 
   TurnStats stats3{};
-  stats3.Stinfo[star.star_id().value][planet.planet_order().value].intimidated =
-      true;
+  stats3.set_intimidated(star.star_id(), planet.planet_order(), true);
 
   auto res3 = process_enslavement_and_revolts(em, star, planet, smap, stats3);
   test::expect_eq(res3.outcome, EnslavementOutcome::SlaveRevolt);
@@ -2775,7 +2774,7 @@ void test_send_planet_turn_telegrams() {
   stats.prod_fuel[player_t{1}] = 20;
   stats.prod_destruct[player_t{1}] = 10;
   stats.prod_crystals[player_t{1}] = 3;
-  stats.Stinfo[star.star_id().value][planet.planet_order().value].temp_add = 50;
+  stats.set_temp_add(star.star_id(), planet.planet_order(), 50);
   stats.tot_captured = 3;
 
   send_planet_turn_telegrams(em, star, planet, Coordinates{1, 1}, stats);
@@ -2886,22 +2885,22 @@ void test_send_planet_turn_telegrams_nova() {
   }
 }
 
-void test_stinfo_simulation_defaults_and_types() {
-  Stinfo info{};
-  test::expect_eq(info.temp_add, 0);
-  test::expect_false(info.thing_add);
-  test::expect_false(info.inhab);
-  test::expect_false(info.intimidated);
+void test_planet_turn_simulation_defaults() {
+  TurnStats stats{};
+  test::expect_eq(stats.temp_add(0, 0), 0);
+  test::expect_false(stats.has_alien_colony(0, 0));
+  test::expect_false(stats.is_inhabited(0, 0));
+  test::expect_false(stats.is_intimidated(0, 0));
 
-  info.temp_add = -25;
-  info.thing_add = true;
-  info.inhab = true;
-  info.intimidated = true;
+  stats.set_temp_add(0, 0, -25);
+  stats.set_alien_colony(0, 0, true);
+  stats.mark_inhabited(0, 0, true);
+  stats.set_intimidated(0, 0, true);
 
-  test::expect_eq(info.temp_add, -25);
-  test::expect_true(info.thing_add);
-  test::expect_true(info.inhab);
-  test::expect_true(info.intimidated);
+  test::expect_eq(stats.temp_add(0, 0), -25);
+  test::expect_true(stats.has_alien_colony(0, 0));
+  test::expect_true(stats.is_inhabited(0, 0));
+  test::expect_true(stats.is_intimidated(0, 0));
 }
 
 }  // namespace
@@ -3079,8 +3078,9 @@ int main() {
   test_turnstats_playervector_accumulation();
   std::println(std::cout, "PASS");
 
-  std::println(std::cout, "  Testing Stinfo simulation defaults and types... ");
-  test_stinfo_simulation_defaults_and_types();
+  std::println(std::cout,
+               "  Testing planet turn simulation defaults and types... ");
+  test_planet_turn_simulation_defaults();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doplanet tests passed!");

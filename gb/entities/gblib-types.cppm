@@ -241,17 +241,6 @@ export constexpr std::array all_atmosphere_conditions = {
     Conditions::OTHER,
 };
 
-/// Temporary per-planet simulation state tracking across turn update passes.
-export struct Stinfo {
-  int temp_add{0};  ///< Thermal adjustment applied to planet temperature
-  bool thing_add{
-      false};  ///< Whether a new alien Thing colony spawned on this planet
-  bool inhab{
-      false};  ///< Whether any race inhabits or explored this planet this turn
-  bool intimidated{
-      false};  ///< Whether an assault platform is suppressing slave revolts
-};
-
 export struct Vnbrain {
   std::uint32_t total_mad{0}; /* total # of VN's destroyed so far */
   player_t most_mad{0};       /* player most mad at */

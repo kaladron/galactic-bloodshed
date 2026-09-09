@@ -41,6 +41,8 @@ export using hangar_t = std::uint32_t;  ///< Internal carried ship hangar space
 export using ship_size_t = std::uint32_t;  ///< Ship physical size / volume
 export using weapon_power_t =
     std::uint32_t;  ///< Concentrated energy weapon / laser power setting
+export using temp_delta_t =
+    int;  ///< Thermal adjustment applied to planet temperature
 
 // Race biological and societal metric types
 export using iq_t = std::int32_t;  ///< Race intelligence rating

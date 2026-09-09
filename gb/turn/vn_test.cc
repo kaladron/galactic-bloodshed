@@ -757,7 +757,7 @@ int main() {
     cargo_data.type = ShipType::STYPE_CARGO;
     auto cargo = ShipFactory::create(cargo_data);
     do_VN(em, *cargo, stats);
-    test::expect_false(stats.Stinfo[0][0].inhab);
+    test::expect_false(stats.is_inhabited(0, 0));
 
     // 2. Unlanded, non-busy VN is ignored
     ship_struct unlanded_idle_data{};
@@ -817,7 +817,7 @@ int main() {
     auto landed_fueled = ShipFactory::create(landed_fueled_data);
     test::expect_true(landed_fueled->is_landed());
     do_VN(em, *landed_fueled, stats);
-    test::expect_true(stats.Stinfo[0][0].inhab);
+    test::expect_true(stats.is_inhabited(0, 0));
     test::expect_false(landed_fueled->is_landed());
     test::expect_eq(landed_fueled->whatdest(), ScopeLevel::LEVEL_UNIV);
 

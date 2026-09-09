@@ -611,7 +611,7 @@ void process_planet_climate(Planet& planet, const Star& star,
                             const TurnStats& stats) {
   const starnum_t starnum = star.star_id();
   const planetnum_t planetnum = planet.planet_order();
-  planet.update_climate(stats.Stinfo[starnum.value][planetnum.value].temp_add);
+  planet.update_climate(stats.temp_add(starnum, planetnum));
 }
 
 std::optional<Coordinates>
@@ -890,8 +890,7 @@ EnslavementResult process_enslavement_and_revolts(EntityManager& entity_manager,
   }
 
   const bool intimidated =
-      stats.Stinfo[star.star_id().value][planet.planet_order().value]
-          .intimidated;
+      stats.is_intimidated(star.star_id(), planet.planet_order());
   return execute_slave_revolt(entity_manager, star, planet, smap, intimidated);
 }
 
@@ -1051,7 +1050,7 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
       telegram_buf << std::format("\nFrom /{}/{}\n", star.get_name(),
                                   star.get_planet_name(planetnum));
 
-      if (stats.Stinfo[starnum.value][planetnum.value].temp_add) {
+      if (stats.temp_add(starnum, planetnum)) {
         telegram_buf << std::format("Temp: {} to {}\n",
                                     planet.conditions(RTEMP),
                                     planet.conditions(TEMP));

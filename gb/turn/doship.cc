@@ -187,9 +187,10 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
 
   canist->set_count(canist->count() + 1);
   if (canist->count() < DISSIPATE) {
-    auto& temp_add =
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add;
-    temp_add = std::max(-100, temp_add - 10);
+    stats.set_temp_add(
+        ship.storbits(), ship.pnumorbits(),
+        std::max(-100,
+                 stats.temp_add(ship.storbits(), ship.pnumorbits()) - 10));
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
 
@@ -222,9 +223,9 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
 
   canist->set_count(canist->count() + 1);
   if (canist->count() < DISSIPATE) {
-    auto& temp_add =
-        stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].temp_add;
-    temp_add = std::min(100, temp_add + 10);
+    stats.set_temp_add(
+        ship.storbits(), ship.pnumorbits(),
+        std::min(100, stats.temp_add(ship.storbits(), ship.pnumorbits()) + 10));
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
     std::string telegram =
@@ -297,8 +298,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
                   : mirror->intensity();
 
       i = round_rand(ship.hull_efficiency() * static_cast<double>(i));
-      stats.Stinfo[ship.storbits().value][mirror->aimed_planet().value]
-          .temp_add += i;
+      stats.add_temp(ship.storbits(), mirror->aimed_planet(), i);
       break;
     }
     case ScopeLevel::LEVEL_STAR:
@@ -364,8 +364,7 @@ void do_oap(Ship& ship, TurnStats& stats) {
       !ship.alive() || !ship.active() || !ship.on()) {
     return;
   }
-  stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].intimidated =
-      true;
+  stats.set_intimidated(ship.storbits(), ship.pnumorbits(), true);
 }
 
 bool process_ship_radiation(Ship& ship, bool update) {
@@ -502,7 +501,7 @@ void dispatch_ship_subsystems(Ship& ship, bool update,
       ship.deststar() == ship.storbits() &&
       ship.destpnum() == ship.pnumorbits()) {
     /* ship bombards planet */
-    stats.Stinfo[ship.storbits().value][ship.pnumorbits().value].inhab = true;
+    stats.mark_inhabited(ship.storbits(), ship.pnumorbits());
   }
 
   /* repair ship by the amount of crew it has */

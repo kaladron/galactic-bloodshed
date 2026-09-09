@@ -1027,12 +1027,12 @@ void test_do_canister_and_greenhouse() {
 
     do_canister(canister, ctx.em, stats);
     test::expect_eq(canist_ship->count(), 1);
-    test::expect_eq(stats.Stinfo[0][0].temp_add, -10);
+    test::expect_eq(stats.temp_add(0, 0), -10);
 
     // Clamped at -100
-    stats.Stinfo[0][0].temp_add = -95;
+    stats.set_temp_add(0, 0, -95);
     do_canister(canister, ctx.em, stats);
-    test::expect_eq(stats.Stinfo[0][0].temp_add, -100);
+    test::expect_eq(stats.temp_add(0, 0), -100);
 
     // Dissipation on timer expiration
     canist_ship->set_count(DISSIPATE);
@@ -1041,7 +1041,7 @@ void test_do_canister_and_greenhouse() {
   });
 
   // 2. Test do_greenhouse
-  stats.Stinfo[0][0].temp_add = 0;
+  stats.set_temp_add(0, 0, 0);
   shipnum_t gh_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
                         .owned_by(1)
                         .in_planet_orbit(0, 0)
@@ -1054,12 +1054,12 @@ void test_do_canister_and_greenhouse() {
 
     do_greenhouse(gh, ctx.em, stats);
     test::expect_eq(gh_ship->count(), 1);
-    test::expect_eq(stats.Stinfo[0][0].temp_add, 10);
+    test::expect_eq(stats.temp_add(0, 0), 10);
 
     // Clamped at +100
-    stats.Stinfo[0][0].temp_add = 95;
+    stats.set_temp_add(0, 0, 95);
     do_greenhouse(gh, ctx.em, stats);
-    test::expect_eq(stats.Stinfo[0][0].temp_add, 100);
+    test::expect_eq(stats.temp_add(0, 0), 100);
 
     // Dissipation on timer expiration
     gh_ship->set_count(DISSIPATE);
@@ -1069,7 +1069,7 @@ void test_do_canister_and_greenhouse() {
 
   // 3. Test do_greenhouse scope and landing guards
   {
-    stats.Stinfo[0][0].temp_add = 0;
+    stats.set_temp_add(0, 0, 0);
     shipnum_t landed_gh = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
                               .owned_by(1)
                               .landed_on(0, 0, Coordinates{0, 0})
@@ -1078,7 +1078,7 @@ void test_do_canister_and_greenhouse() {
     ctx.em.mutate_ship(landed_gh, [&](Ship& gh) {
       do_greenhouse(gh, ctx.em, stats);
       test::expect_eq(gh.as<CanisterShip>()->count(), 0);
-      test::expect_eq(stats.Stinfo[0][0].temp_add, 0);
+      test::expect_eq(stats.temp_add(0, 0), 0);
     });
 
     shipnum_t star_gh = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
@@ -1089,13 +1089,13 @@ void test_do_canister_and_greenhouse() {
     ctx.em.mutate_ship(star_gh, [&](Ship& gh) {
       do_greenhouse(gh, ctx.em, stats);
       test::expect_eq(gh.as<CanisterShip>()->count(), 0);
-      test::expect_eq(stats.Stinfo[0][0].temp_add, 0);
+      test::expect_eq(stats.temp_add(0, 0), 0);
     });
   }
 
   // 4. Test integrated doship() turn update for greenhouse
   {
-    stats.Stinfo[0][0].temp_add = 0;
+    stats.set_temp_add(0, 0, 0);
     shipnum_t turn_gh = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
                             .owned_by(1)
                             .in_planet_orbit(0, 0)
@@ -1106,14 +1106,14 @@ void test_do_canister_and_greenhouse() {
     ctx.em.mutate_ship(turn_gh, [&](Ship& gh) {
       doship(gh, /*update=*/false, ctx.em, stats);
       test::expect_eq(gh.as<CanisterShip>()->count(), 0);
-      test::expect_eq(stats.Stinfo[0][0].temp_add, 0);
+      test::expect_eq(stats.temp_add(0, 0), 0);
     });
 
     // Full update pass (update = true) DOES trigger greenhouse
     ctx.em.mutate_ship(turn_gh, [&](Ship& gh) {
       doship(gh, /*update=*/true, ctx.em, stats);
       test::expect_eq(gh.as<CanisterShip>()->count(), 1);
-      test::expect_eq(stats.Stinfo[0][0].temp_add, 10);
+      test::expect_eq(stats.temp_add(0, 0), 10);
     });
   }
 }
@@ -1130,26 +1130,26 @@ void test_do_oap() {
                          .with_on(true)
                          .build();
 
-  test::expect_false(stats.Stinfo[0][0].intimidated);
+  test::expect_false(stats.is_intimidated(0, 0));
   ctx.em.mutate_ship(oap_id, [&](Ship& oap) {
     do_oap(oap, stats);
-    test::expect_true(stats.Stinfo[0][0].intimidated);
+    test::expect_true(stats.is_intimidated(0, 0));
   });
 
   // 2. Integration via doship() update pass
-  stats.Stinfo[0][0].intimidated = false;
+  stats.set_intimidated(0, 0, false);
   ctx.em.mutate_ship(oap_id, [&](Ship& oap) {
     doship(oap, /*update=*/false, ctx.em, stats);
-    test::expect_false(stats.Stinfo[0][0].intimidated);
+    test::expect_false(stats.is_intimidated(0, 0));
 
     doship(oap, /*update=*/true, ctx.em, stats);
-    test::expect_true(stats.Stinfo[0][0].intimidated);
+    test::expect_true(stats.is_intimidated(0, 0));
   });
 
   // 3. Domain guards: landed, offline, star orbit, inactive
   {
     // Landed OAP does not intimidate
-    stats.Stinfo[0][0].intimidated = false;
+    stats.set_intimidated(0, 0, false);
     shipnum_t landed_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                                .owned_by(1)
                                .landed_on(0, 0, Coordinates{0, 0})
@@ -1157,11 +1157,11 @@ void test_do_oap() {
                                .build();
     ctx.em.mutate_ship(landed_oap, [&](Ship& oap) {
       do_oap(oap, stats);
-      test::expect_false(stats.Stinfo[0][0].intimidated);
+      test::expect_false(stats.is_intimidated(0, 0));
     });
 
     // Offline OAP does not intimidate
-    stats.Stinfo[0][0].intimidated = false;
+    stats.set_intimidated(0, 0, false);
     shipnum_t offline_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                                 .owned_by(1)
                                 .in_planet_orbit(0, 0)
@@ -1169,11 +1169,11 @@ void test_do_oap() {
                                 .build();
     ctx.em.mutate_ship(offline_oap, [&](Ship& oap) {
       do_oap(oap, stats);
-      test::expect_false(stats.Stinfo[0][0].intimidated);
+      test::expect_false(stats.is_intimidated(0, 0));
     });
 
     // Star-orbiting OAP does not intimidate a planet
-    stats.Stinfo[0][0].intimidated = false;
+    stats.set_intimidated(0, 0, false);
     shipnum_t star_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                              .owned_by(1)
                              .in_star_orbit(0)
@@ -1181,11 +1181,11 @@ void test_do_oap() {
                              .build();
     ctx.em.mutate_ship(star_oap, [&](Ship& oap) {
       do_oap(oap, stats);
-      test::expect_false(stats.Stinfo[0][0].intimidated);
+      test::expect_false(stats.is_intimidated(0, 0));
     });
 
     // Inactive OAP does not intimidate
-    stats.Stinfo[0][0].intimidated = false;
+    stats.set_intimidated(0, 0, false);
     shipnum_t inactive_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                                  .owned_by(1)
                                  .in_planet_orbit(0, 0)
@@ -1194,7 +1194,7 @@ void test_do_oap() {
                                  .build();
     ctx.em.mutate_ship(inactive_oap, [&](Ship& oap) {
       do_oap(oap, stats);
-      test::expect_false(stats.Stinfo[0][0].intimidated);
+      test::expect_false(stats.is_intimidated(0, 0));
     });
   }
 }
@@ -1341,7 +1341,7 @@ void test_do_mirror() {
 
   ctx.em.mutate_ship(mirror_plan_id,
                      [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
-  test::expect_gt(stats.Stinfo[0][0].temp_add, 0);
+  test::expect_gt(stats.temp_add(0, 0), 0);
 
   // 3. Space mirror aimed at star
   int initial_stability = ctx.em.peek_star(0)->stability();
@@ -1367,10 +1367,10 @@ void test_do_mirror() {
           .with_aim(AimedAtData{.level = ScopeLevel::LEVEL_UNIV})
           .build();
 
-  auto temp_before = stats.Stinfo[0][0].temp_add;
+  auto temp_before = stats.temp_add(0, 0);
   ctx.em.mutate_ship(mirror_unaimed_id,
                      [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
-  test::expect_eq(stats.Stinfo[0][0].temp_add, temp_before);
+  test::expect_eq(stats.temp_add(0, 0), temp_before);
 }
 
 void test_ship_domain_operations() {
@@ -1832,9 +1832,9 @@ void test_special_subsystems_extended() {
       .alive = true,
   };
   auto can_handle = em.create_ship(can_data);
-  stats.Stinfo[1][0].temp_add = -95;
+  stats.set_temp_add(1, 0, -95);
   do_canister(*can_handle, em, stats);
-  test::expect_eq(stats.Stinfo[1][0].temp_add, -100);
+  test::expect_eq(stats.temp_add(1, 0), -100);
 
   // 4. Greenhouse clamped at +100
   ship_struct gh_data{
@@ -1847,9 +1847,9 @@ void test_special_subsystems_extended() {
       .alive = true,
   };
   auto gh_handle = em.create_ship(gh_data);
-  stats.Stinfo[1][0].temp_add = 95;
+  stats.set_temp_add(1, 0, 95);
   do_greenhouse(*gh_handle, em, stats);
-  test::expect_eq(stats.Stinfo[1][0].temp_add, 100);
+  test::expect_eq(stats.temp_add(1, 0), 100);
 
   // 5. Space mirror destroys target ship when damage exceeds 100
   ship_struct target_data{
@@ -1990,7 +1990,7 @@ void test_dispatch_ship_subsystems() {
   ctx.with_standard_universe();
   TurnStats stats{};
 
-  // 1. Bombarding ship in planet orbit marks Stinfo inhabited
+  // 1. Bombarding ship in planet orbit marks planet inhabited
   shipnum_t bombardier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                                 .owned_by(1)
                                 .in_planet_orbit(0, 0)
@@ -2001,7 +2001,7 @@ void test_dispatch_ship_subsystems() {
     s.destpnum() = 0;
     s.bombard() = 1;
     dispatch_ship_subsystems(s, true, ctx.em, stats);
-    test::expect_true(stats.Stinfo[0][0].inhab);
+    test::expect_true(stats.is_inhabited(0, 0));
   });
 
   // 2. Segment pass (update == false) skips update-only subsystems (e.g.

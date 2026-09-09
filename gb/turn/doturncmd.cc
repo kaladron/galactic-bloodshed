@@ -845,9 +845,73 @@ const ScheduleInfo& get_schedule_info() {
   return schedule_info;
 }
 
+std::string format_server_start_time(std::time_t start_time) {
+  return std::format("Server started  : {}", std::ctime(&start_time));
+}
+
 void set_server_start_time(std::time_t start_time) {
-  schedule_info.start_buf =
-      std::format("Server started  : {}", std::ctime(&start_time));
+  schedule_info.start_buf = format_server_start_time(start_time);
+}
+
+ScheduleCalculation compute_update_schedule(const ServerState& state,
+                                            std::time_t current_time,
+                                            bool force) {
+  assert(state.segments >= 1);
+  const unsigned long segs = std::max(1UL, state.segments);
+  ScheduleCalculation result{};
+
+  if (segs <= 1) {
+    result.next_segment_time = current_time + (144 * 3600);
+    result.nsegments_done = segs;
+  } else {
+    if (force) {
+      result.next_segment_time =
+          current_time + (state.update_time_minutes * 60) / segs;
+    } else {
+      result.next_segment_time =
+          state.next_update_time + (state.update_time_minutes * 60) / segs;
+    }
+    result.nsegments_done = 1;
+  }
+
+  if (force) {
+    result.next_update_time = current_time + (state.update_time_minutes * 60);
+  } else {
+    result.next_update_time =
+        state.next_update_time + (state.update_time_minutes * 60);
+  }
+
+  return result;
+}
+
+ScheduleCalculation compute_segment_schedule(const ServerState& state,
+                                             std::time_t current_time,
+                                             bool override,
+                                             int target_segment) {
+  assert(state.segments >= 1);
+  const unsigned long segs = std::max(1UL, state.segments);
+  ScheduleCalculation result{};
+
+  if (override) {
+    result.next_segment_time =
+        current_time + (state.update_time_minutes * 60) / segs;
+    if (target_segment > 0) {
+      result.nsegments_done = target_segment;
+      result.next_update_time =
+          current_time +
+          (state.update_time_minutes * 60 * (segs - target_segment + 1)) / segs;
+    } else {
+      result.nsegments_done = state.nsegments_done + 1;
+      result.next_update_time = state.next_update_time;
+    }
+  } else {
+    result.next_segment_time =
+        state.next_segment_time + (state.update_time_minutes * 60) / segs;
+    result.nsegments_done = state.nsegments_done + 1;
+    result.next_update_time = state.next_update_time;
+  }
+
+  return result;
 }
 
 void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
@@ -872,24 +936,10 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
   int total_segs = 0;
 
   entity_manager.mutate_server_state([&](ServerState& state) {
-    if (state.segments <= 1) {
-      /* Disables movement segments. */
-      state.next_segment_time = clk + (144 * 3600);
-      state.nsegments_done = state.segments;
-    } else {
-      if (force)
-        state.next_segment_time =
-            clk + state.update_time_minutes * 60 / state.segments;
-      else
-        state.next_segment_time =
-            state.next_update_time +
-            state.update_time_minutes * 60 / state.segments;
-      state.nsegments_done = 1;
-    }
-    if (force)
-      state.next_update_time = clk + state.update_time_minutes * 60;
-    else
-      state.next_update_time += state.update_time_minutes * 60;
+    auto calc = compute_update_schedule(state, clk, force);
+    state.next_segment_time = calc.next_segment_time;
+    state.next_update_time = calc.next_update_time;
+    state.nsegments_done = calc.nsegments_done;
 
     next_seg_time = state.next_segment_time;
     next_upd_time = state.next_update_time;
@@ -935,6 +985,7 @@ void do_segment(EntityManager& entity_manager,
 
   const auto* state_ptr = entity_manager.peek_server_state();
   if (!state_ptr) return;
+  assert(state_ptr->segments >= 1);
   if (!override && state_ptr->segments <= 1) return;
 
   bool fakeit = (!override && stat(nogofl, &stbuf) >= 0);
@@ -953,22 +1004,11 @@ void do_segment(EntityManager& entity_manager,
   int segs_done = 0;
 
   entity_manager.mutate_server_state([&](ServerState& state) {
-    if (override) {
-      state.next_segment_time =
-          clk + state.update_time_minutes * 60 / state.segments;
-      if (segment) {
-        state.nsegments_done = segment;
-        state.next_update_time = clk + state.update_time_minutes * 60 *
-                                           (state.segments - segment + 1) /
-                                           state.segments;
-      } else {
-        state.nsegments_done++;
-      }
-    } else {
-      state.next_segment_time +=
-          state.update_time_minutes * 60 / state.segments;
-      state.nsegments_done++;
-    }
+    auto calc = compute_segment_schedule(state, clk, override != 0, segment);
+    state.next_segment_time = calc.next_segment_time;
+    state.next_update_time = calc.next_update_time;
+    state.nsegments_done = calc.nsegments_done;
+
     next_seg_time = state.next_segment_time;
     segs_done = state.nsegments_done;
   });

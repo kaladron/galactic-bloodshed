@@ -245,6 +245,7 @@ TestContext& TestContext::with_standard_universe() {
     planet0.info(pid).tax = 10;
     planet0.info(pid).newtax = 10;
   }
+  planet0.ships() = 100;
   PlanetRepository(store).save(planet0);
 
   // 4. Setup SectorMap for Earth with valid coordinates
@@ -319,6 +320,14 @@ TestContext& TestContext::with_standard_universe() {
     u->AP[player_t{2}] = 100;
     univ_repo.save(*u);
   }
+
+  // 9. Setup Player 1 Government Center (Ship #100) landed on Earth
+  TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
+      .owned_by(1, 0)
+      .landed_on(0, 0, Coordinates{0, 0})
+      .with_crew(100, 0)
+      .with_alive(true)
+      .build();
 
   return *this;
 }

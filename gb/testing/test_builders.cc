@@ -19,8 +19,7 @@ import std;
 TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
                                  std::optional<shipnum_t> explicit_number)
     : em_(em) {
-  shipnum_t number = explicit_number.value_or(
-      shipnum_t{static_cast<shipnum_t::value_type>(em.num_ships().value + 1)});
+  shipnum_t number = explicit_number.value_or(0);
   ship_.number = number;
   ship_.type = type;
   ship_.build_type = type;
@@ -257,7 +256,7 @@ TestShipBuilder& TestShipBuilder::with_nextship(shipnum_t next) {
 }
 
 TestShipBuilder& TestShipBuilder::with_special(SpecialData special) {
-  ship_.special = std::move(special);
+  ship_.special = special;
   return *this;
 }
 

@@ -19,8 +19,8 @@ class SessionRegistry;
 /// \brief Result structure from victory condition evaluation.
 export struct VictoryResult {
   bool game_over{false};
-  std::vector<player_t> big_winners{};
-  std::vector<player_t> lesser_winners{};
+  std::vector<player_t> big_winners;
+  std::vector<player_t> lesser_winners;
 };
 
 /// \brief Executes a turn simulation pass (movement segment or full turn
@@ -142,9 +142,40 @@ export struct ScheduleInfo {
   std::time_t last_segment_time{0};
 };
 
+/// \brief Pure calculation result for schedule progression.
+export struct ScheduleCalculation {
+  std::time_t next_segment_time{0};
+  std::time_t next_update_time{0};
+  segments_t nsegments_done{0};
+
+  bool operator==(const ScheduleCalculation&) const = default;
+};
+
 /// \brief Gets current schedule status for display commands.
 export const ScheduleInfo& get_schedule_info();
+
+/// \brief Formats server startup timestamp into standard status display string.
+/// \param start_time UNIX epoch timestamp when server started.
+export std::string format_server_start_time(std::time_t start_time);
 
 /// \brief Sets server start time timestamp and formatted status string.
 /// \param start_time UNIX epoch timestamp when the server started.
 export void set_server_start_time(std::time_t start_time);
+
+/// \brief Computes schedule timestamps for an update pass.
+/// \param state Current server state.
+/// \param current_time Current UNIX epoch timestamp.
+/// \param force Whether the update was forced immediately.
+export ScheduleCalculation compute_update_schedule(const ServerState& state,
+                                                   std::time_t current_time,
+                                                   bool force = false);
+
+/// \brief Computes schedule timestamps for a movement segment pass.
+/// \param state Current server state.
+/// \param current_time Current UNIX epoch timestamp.
+/// \param override Whether segment was manually triggered or overridden.
+/// \param target_segment Specific target segment index if overriding schedule.
+export ScheduleCalculation compute_segment_schedule(const ServerState& state,
+                                                    std::time_t current_time,
+                                                    bool override = false,
+                                                    int target_segment = 0);

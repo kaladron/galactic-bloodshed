@@ -906,10 +906,162 @@ void test_calculate_victory_scores_large_accumulation() {
   test::expect_ge(race_after->victory_score, 600'000LL);
 }
 
+void test_schedule_calculation_pure() {
+  ServerState state{};
+  state.segments = 4;
+  state.update_time_minutes =
+      60;  // 3600 seconds total -> 900 seconds per segment
+  state.next_update_time = 10'000;
+  state.next_segment_time = 9'100;
+  state.nsegments_done = 2;
+
+  // 1. Normal Update Schedule (force = false)
+  // next_update_time becomes 10000 + 3600 = 13600
+  // next_segment_time becomes next_update_time (10000) + 3600 / 4 = 10900
+  // nsegments_done becomes 1
+  auto upd =
+      compute_update_schedule(state, /*current_time=*/9'900, /*force=*/false);
+  test::expect_eq(upd.next_update_time, 13'600);
+  test::expect_eq(upd.next_segment_time, 10'900);
+  test::expect_eq(upd.nsegments_done, 1U);
+
+  // 2. Forced Update Schedule (force = true)
+  // based on current_time = 9900
+  // next_update_time becomes 9900 + 3600 = 13500
+  // next_segment_time becomes 9900 + 900 = 10800
+  // nsegments_done becomes 1
+  auto forced_upd =
+      compute_update_schedule(state, /*current_time=*/9'900, /*force=*/true);
+  test::expect_eq(forced_upd.next_update_time, 13'500);
+  test::expect_eq(forced_upd.next_segment_time, 10'800);
+  test::expect_eq(forced_upd.nsegments_done, 1U);
+
+  // 3. Single-Segment Game (segments = 1) -> movement segments disabled
+  ServerState single_seg_state{};
+  single_seg_state.segments = 1;
+  single_seg_state.update_time_minutes = 60;
+  auto single_upd = compute_update_schedule(
+      single_seg_state, /*current_time=*/10'000, /*force=*/true);
+  test::expect_eq(single_upd.next_segment_time, 10'000 + (144 * 3600));
+  test::expect_eq(single_upd.nsegments_done, 1U);
+
+  // 4. Normal Segment Cadence (override = false)
+  // next_segment_time advances by 3600 / 4 = 900: 9100 + 900 = 10000
+  // nsegments_done increments from 2 to 3
+  // next_update_time preserved as 10000
+  auto seg = compute_segment_schedule(state, /*current_time=*/9'200,
+                                      /*override=*/false);
+  test::expect_eq(seg.next_segment_time, 10'000);
+  test::expect_eq(seg.nsegments_done, 3U);
+  test::expect_eq(seg.next_update_time, 10'000);
+
+  // 5. Override Segment with specific segment (override = true, target_segment
+  // = 2) next_segment_time becomes current_time + 900 = 9200 + 900 = 10100
+  // nsegments_done becomes 2
+  // next_update_time = current_time + (3600 * (4 - 2 + 1)) / 4 = 9200 + 2700 =
+  // 11900
+  auto override_seg = compute_segment_schedule(
+      state, /*current_time=*/9'200, /*override=*/true, /*target_segment=*/2);
+  test::expect_eq(override_seg.next_segment_time, 10'100);
+  test::expect_eq(override_seg.nsegments_done, 2U);
+  test::expect_eq(override_seg.next_update_time, 11'900);
+
+  // 6. format_server_start_time
+  std::time_t t = 1'700'000'000;
+  std::string formatted = format_server_start_time(t);
+  test::expect_contains(formatted, "Server started  : ");
+}
+
+void test_do_segment_execution() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_server_state([](ServerState& s) {
+    s.segments = 3;
+    s.update_time_minutes = 30;  // 1800s / 3 = 600s per segment
+    s.nsegments_done = 1;
+    s.next_segment_time = 1'000'000;
+    s.next_update_time = 1'001'200;
+  });
+
+  RecordingSessionRegistry reg;
+
+  // Execute normal segment
+  do_segment(ctx.em, reg, 0, 0);
+
+  const auto* state = ctx.em.peek_server_state();
+  test::expect_ne(state, nullptr);
+  test::expect_eq(state->nsegments_done, 2U);
+  test::expect_eq(state->next_segment_time, 1'000'600);
+
+  // Notifications broadcast
+  test::expect_true(reg.has_broadcast("DOING MOVEMENT"));
+  test::expect_true(reg.has_broadcast("Segment finished"));
+
+  // If segments <= 1 and no override, do_segment returns immediately without
+  // running
+  ctx.em.mutate_server_state([](ServerState& s) {
+    s.segments = 1;
+    s.nsegments_done = 1;
+  });
+  reg.clear_notifications();
+  do_segment(ctx.em, reg, 0, 0);
+  test::expect_false(reg.has_broadcast("DOING MOVEMENT"));
+}
+
+void test_do_next_thing_dispatch() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_server_state([](ServerState& s) {
+    s.segments = 3;
+    s.update_time_minutes = 30;
+    s.nsegments_done = 1;
+    s.next_segment_time = 1'000'000;
+    s.next_update_time = 1'001'200;
+  });
+
+  RecordingSessionRegistry reg;
+
+  // 1. When nsegments_done (1) < segments (3), do_next_thing dispatches
+  // do_segment()
+  do_next_thing(ctx.em, reg);
+  const auto* state1 = ctx.em.peek_server_state();
+  test::expect_eq(state1->nsegments_done, 2U);
+  test::expect_true(reg.has_broadcast("DOING MOVEMENT"));
+
+  // Advance to final segment
+  ctx.em.mutate_server_state([](ServerState& s) { s.nsegments_done = 3; });
+  reg.clear_notifications();
+
+  const unsigned int updates_before = get_schedule_info().nupdates_done;
+
+  // 2. When nsegments_done (3) >= segments (3), do_next_thing dispatches
+  // do_update()
+  do_next_thing(ctx.em, reg);
+  const auto* state2 = ctx.em.peek_server_state();
+  test::expect_eq(state2->nsegments_done, 1U);
+  test::expect_true(reg.has_broadcast("DOING UPDATE"));
+  test::expect_true(reg.has_broadcast("Update"));
+  test::expect_eq(get_schedule_info().nupdates_done, updates_before + 1);
+}
+
 }  // namespace
 
 int main() {
   std::println(std::cout, "Running doturn unit tests...\n");
+
+  std::println(std::cout, "  Testing schedule calculation pure... ");
+  test_schedule_calculation_pure();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing do_segment execution... ");
+  test_do_segment_execution();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing do_next_thing dispatch... ");
+  test_do_next_thing_dispatch();
+  std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing handle_victory disabled... ");
   test_handle_victory_disabled();

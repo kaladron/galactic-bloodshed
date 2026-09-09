@@ -202,10 +202,11 @@ void EntityManager::release_ship(shipnum_t num) {
 }
 
 EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
-  // Get next available ship number
-  shipnum_t num = ships.next_ship_number();
+  // Get next available ship number if not explicitly specified
+  shipnum_t num =
+      init_data.number != 0 ? init_data.number : ships.next_ship_number();
 
-  // Create ship_struct, copying from provided data but overriding number
+  // Create ship_struct, copying from provided data but setting number
   ship_struct data = init_data;
   data.number = num;
   auto new_ship = ShipFactory::create(std::move(data));

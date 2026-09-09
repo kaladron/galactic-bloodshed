@@ -127,6 +127,47 @@ export void update_von_neumann_target(EntityManager& em, TurnStats& stats);
 /// \param r Race entity undergoing tech progression.
 export void check_technological_discoveries(EntityManager& em, Race& r);
 
+/// \brief Advances an empire's turn progression, updating IQ, tech, morale,
+/// discoveries, and maintenance.
+/// \param race Race entity undergoing turn progression.
+/// \param stats Turn statistics containing population and planet counts.
+/// \param em Entity manager for discovery telegrams.
+export void advance_race_technology(Race& race, const TurnStats& stats,
+                                    EntityManager& em);
+
+/// \brief Updates consecutive victory turns based on controlled planet
+/// threshold.
+/// \param race Race entity whose victory turns are updated.
+/// \param planet_count Total non-asteroid planets in the universe.
+export void update_victory_progress(Race& race, int planet_count);
+
+/// \brief Checks if an empire controls enough planets (50% victory threshold)
+/// to unlock universal language translation for all other empires.
+/// \param player Player number of the empire being evaluated.
+/// \param controlled_planets Count of planets controlled by the player.
+/// \param planet_count Total non-asteroid planets in the universe.
+/// \param em Entity manager for updating other races' translation matrices.
+/// \return true if translation was unlocked, false otherwise.
+export bool check_language_translation_unlock(player_t player,
+                                              int controlled_planets,
+                                              int planet_count,
+                                              EntityManager& em);
+
+/// \brief Updates alliance block victory points based on systems owned.
+/// \param player Player number of the block owner.
+/// \param em Entity manager for mutating the block.
+export void update_alliance_block_vps(player_t player, EntityManager& em);
+
+/// \brief Synchronizes power ratings, block power, and treasury monies.
+/// \param em Entity manager for reading and mutating power entities.
+/// \param stats Turn statistics containing power metrics.
+export void sync_power_ratings(EntityManager& em, TurnStats& stats);
+
+/// \brief Executes full end-of-turn finalization for an update pass.
+/// \param em Entity manager for loading and saving entities.
+/// \param stats Turn statistics for tech, victory, and power evaluation.
+export void finalize_turn_update(EntityManager& em, TurnStats& stats);
+
 /// \brief Fluctuates star solar stability and checks for nova initiation.
 /// \param em Entity manager for news notifications.
 /// \param s Star entity undergoing stability check.

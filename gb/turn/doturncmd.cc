@@ -459,77 +459,100 @@ void calculate_victory_scores(EntityManager& entity_manager) {
   }
 }
 
+void advance_race_technology(Race& race, const TurnStats& stats,
+                             EntityManager& entity_manager) {
+  const player_t player = race.Playernum;
+
+  race.update_collective_intelligence(stats.Power[player].popn);
+  race.tech += static_cast<double>(race.IQ) / 100.0;
+  race.morale += stats.Power[player].planets_owned;
+  check_technological_discoveries(entity_manager, race);
+  race.turn += 1;
+  if (MARKET) {
+    for (auto& governor : race.governor) {
+      if (governor.active) {
+        race.deduct_maintenance(governor, governor.maintain);
+      }
+    }
+  }
+}
+
+void update_victory_progress(Race& race, int planet_count) {
+  const int threshold = std::max(1, planet_count * VICTORY_PERCENT / 100);
+  if (race.controlled_planets > 0 && race.controlled_planets >= threshold) {
+    race.victory_turns++;
+  } else {
+    race.victory_turns = 0;
+  }
+}
+
+bool check_language_translation_unlock(player_t player, int controlled_planets,
+                                       int planet_count,
+                                       EntityManager& entity_manager) {
+  if (controlled_planets <= 0) {
+    return false;
+  }
+  const int threshold = std::max(1, planet_count * VICTORY_PERCENT / 200);
+  if (controlled_planets >= threshold) {
+    for (auto other_race : RaceList(entity_manager)) {
+      other_race->translate[player] = 100;
+    }
+    return true;
+  }
+  return false;
+}
+
+void update_alliance_block_vps(player_t player, EntityManager& entity_manager) {
+  try {
+    entity_manager.mutate_block(
+        player.value, [](struct block& b) { b.VPs = 10L * b.systems_owned; });
+  } catch (const EntityNotFoundError&) {
+  }
+}
+
+void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {
+  compute_power_blocks(entity_manager);
+  for (auto race_handle : RaceList(entity_manager)) {
+    const player_t player = race_handle->Playernum;
+    stats.Power[player].money = 0;
+    for (auto& governor : race_handle->governor) {
+      if (governor.active) {
+        stats.Power[player].money += governor.money;
+      }
+    }
+  }
+  // Save power data via EntityManager
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    const player_t i = race.Playernum;
+    try {
+      entity_manager.mutate_power(powernum_t{i.value}, [&](struct power& p) {
+        p = stats.Power[i];
+        p.id = i.value;
+      });
+    } catch (const EntityNotFoundError&) {
+    }
+  }
+}
+
+void finalize_turn_update(EntityManager& entity_manager, TurnStats& stats) {
+  const int planet_count = entity_manager.count_non_asteroid_planets();
+
+  for (auto race_handle : RaceList(entity_manager)) {
+    const player_t player = race_handle->Playernum;
+    advance_race_technology(*race_handle, stats, entity_manager);
+    update_victory_progress(*race_handle, planet_count);
+    check_language_translation_unlock(player, race_handle->controlled_planets,
+                                      planet_count, entity_manager);
+    update_alliance_block_vps(player, entity_manager);
+  }
+
+  sync_power_ratings(entity_manager, stats);
+}
+
 static void finalize_turn(TurnState& state, bool update) {
-  const int planet_count = state.entity_manager.count_non_asteroid_planets();
   if (update) {
-    for (auto race_handle : RaceList(state.entity_manager)) {
-      const player_t player = race_handle->Playernum;
-
-      race_handle->update_collective_intelligence(
-          state.stats.Power[player].popn);
-      race_handle->tech += static_cast<double>(race_handle->IQ) / 100.0;
-      race_handle->morale += state.stats.Power[player].planets_owned;
-      check_technological_discoveries(state.entity_manager, *race_handle);
-      race_handle->turn += 1;
-      if (race_handle->controlled_planets >=
-          planet_count * VICTORY_PERCENT / 100) {
-        race_handle->victory_turns++;
-      } else {
-        race_handle->victory_turns = 0;
-      }
-
-      if (race_handle->controlled_planets >=
-          planet_count * VICTORY_PERCENT / 200) {
-        for (auto other_race : RaceList(state.entity_manager)) {
-          other_race->translate[player] = 100;
-        }
-      }
-
-      try {
-        state.entity_manager.mutate_block(player.value, [](struct block& b) {
-          b.VPs = 10L * b.systems_owned;
-        });
-      } catch (const EntityNotFoundError&) {
-      }
-      if (MARKET) {
-        for (auto& governor : race_handle->governor) {
-          if (governor.active) {
-            race_handle->deduct_maintenance(governor, governor.maintain);
-          }
-        }
-      }
-    }
+    finalize_turn_update(state.entity_manager, state.stats);
   }
-
-  // No manual free() needed - vector cleanup is automatic
-
-  if (update) {
-    compute_power_blocks(state.entity_manager);
-    for (auto race_handle : RaceList(state.entity_manager)) {
-      const player_t player = race_handle->Playernum;
-      state.stats.Power[player].money = 0;
-      for (auto& governor : race_handle->governor) {
-        if (governor.active) {
-          state.stats.Power[player].money += governor.money;
-        }
-      }
-    }
-    // Save power data via EntityManager
-    for (const Race& race : RaceList::readonly(state.entity_manager)) {
-      const player_t i = race.Playernum;
-      try {
-        state.entity_manager.mutate_power(powernum_t{i.value},
-                                          [&](struct power& p) {
-                                            p = state.stats.Power[i];
-                                            p.id = i.value;
-                                          });
-      } catch (const EntityNotFoundError&) {
-      }
-    }
-  }
-
-  // Note: Notification to players about update/segment completion is now
-  // handled by the caller (do_update/do_segment in GB_server.cc)
 }
 
 bool compute_governed_status(const Race& race, EntityManager& entity_manager) {

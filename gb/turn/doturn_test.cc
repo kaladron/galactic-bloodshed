@@ -6,6 +6,7 @@
 
 import dallib;
 import gb.entities;
+import gb.repositories;
 import gb.services;
 import gb.turn;
 import test;
@@ -1046,10 +1047,184 @@ void test_do_next_thing_dispatch() {
   test::expect_eq(get_schedule_info().nupdates_done, updates_before + 1);
 }
 
+void test_advance_race_technology() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  TurnStats stats{};
+  stats.Power[player_t{1}].popn = 10'000;
+  stats.Power[player_t{1}].planets_owned = 2;
+
+  ctx.em.mutate_race(player_t{1}, [](Race& r) {
+    r.IQ = 100;
+    r.tech = 49.5;
+    r.morale = 10;
+    r.turn = 5;
+    r.governor[0].active = true;
+    r.governor[0].maintain = 100;
+    r.governor[0].money = 1000;
+  });
+
+  auto r_handle = ctx.em.peek_race(player_t{1});
+  Race test_race = *r_handle;
+
+  advance_race_technology(test_race, stats, ctx.em);
+
+  test::expect_gt(test_race.IQ, 0);
+  test::expect_gt(test_race.tech, 49.0);
+  test::expect_eq(test_race.morale, 12);
+  test::expect_eq(test_race.turn, 6);
+  test::expect_true(test_race.discoveries.hyperdrive);
+  test::expect_eq(test_race.governor[0].money, 900);
+}
+
+void test_update_victory_progress() {
+  Race r{};
+  r.Playernum = 1;
+  r.victory_turns = 2;
+
+  // 1. Zero controlled planets -> victory_turns reset to 0
+  r.controlled_planets = 0;
+  update_victory_progress(r, /*planet_count=*/10);
+  test::expect_eq(r.victory_turns, 0);
+
+  // 2. Below threshold (10 planets * 10% = 1 planet threshold, race has 0)
+  r.victory_turns = 1;
+  r.controlled_planets = 0;
+  update_victory_progress(r, /*planet_count=*/10);
+  test::expect_eq(r.victory_turns, 0);
+
+  // 3. At or above threshold (10 planets * 10% = 1 planet, race controls 1)
+  r.controlled_planets = 1;
+  update_victory_progress(r, /*planet_count=*/10);
+  test::expect_eq(r.victory_turns, 1);
+
+  // Increments on consecutive turns
+  update_victory_progress(r, /*planet_count=*/10);
+  test::expect_eq(r.victory_turns, 2);
+
+  // 4. Threshold scaling with 100 planets -> 10 planets required
+  r.controlled_planets = 5;
+  update_victory_progress(r, /*planet_count=*/100);
+  test::expect_eq(r.victory_turns, 0);
+}
+
+void test_check_language_translation_unlock() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Reset player 2's translation of player 1 to 0
+  ctx.em.mutate_race(player_t{2},
+                     [](Race& r) { r.translate[player_t{1}] = 0; });
+
+  // 1. Zero controlled planets: no unlock
+  bool unlocked0 = check_language_translation_unlock(
+      player_t{1}, /*controlled_planets=*/0, /*planet_count=*/20, ctx.em);
+  test::expect_false(unlocked0);
+  test::expect_eq(ctx.em.peek_race(player_t{2})->translate[player_t{1}], 0);
+
+  // 2. Below threshold (20 planets * 10% / 2 = 1 planet threshold, player
+  // controls 0)
+  bool unlocked_below = check_language_translation_unlock(
+      player_t{1}, /*controlled_planets=*/0, /*planet_count=*/20, ctx.em);
+  test::expect_false(unlocked_below);
+  test::expect_eq(ctx.em.peek_race(player_t{2})->translate[player_t{1}], 0);
+
+  // 3. At or above threshold (20 planets * 10% / 2 = 1 planet, player controls
+  // 1)
+  bool unlocked = check_language_translation_unlock(
+      player_t{1}, /*controlled_planets=*/1, /*planet_count=*/20, ctx.em);
+  test::expect_true(unlocked);
+  test::expect_eq(ctx.em.peek_race(player_t{2})->translate[player_t{1}], 100);
+}
+
+void test_sync_power_ratings() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  JsonStore store(ctx.db);
+  PowerRepository power_repo(store);
+  power p1{};
+  p1.id = 1;
+  power_repo.save(p1);
+
+  TurnStats stats{};
+  stats.Power[player_t{1}].popn = 5000;
+  stats.Power[player_t{1}].planets_owned = 1;
+
+  ctx.em.mutate_race(player_t{1}, [](Race& r) {
+    r.governor[0].active = true;
+    r.governor[0].money = 12'345;
+  });
+
+  sync_power_ratings(ctx.em, stats);
+
+  // Verified aggregated money in stats
+  test::expect_eq(stats.Power[player_t{1}].money, 12'345);
+
+  // Verified persisted power record
+  const auto* power = ctx.em.peek_power(powernum_t{1});
+  test::expect_ne(power, nullptr);
+  test::expect_eq(power->money, 12'345);
+  test::expect_eq(power->popn, 5000);
+}
+
+void test_finalize_turn_update_integration() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  JsonStore store(ctx.db);
+  PowerRepository power_repo(store);
+  power p1{};
+  p1.id = 1;
+  power_repo.save(p1);
+
+  TurnStats stats{};
+  stats.Power[player_t{1}].popn = 1000;
+  stats.Power[player_t{1}].planets_owned = 1;
+
+  ctx.em.mutate_race(player_t{1}, [](Race& r) {
+    r.IQ = 100;
+    r.controlled_planets = 1;
+    r.tech = 49.5;
+  });
+
+  finalize_turn_update(ctx.em, stats);
+
+  const auto* r1 = ctx.em.peek_race(player_t{1});
+  test::expect_gt(r1->tech, 49.5);
+  test::expect_true(r1->discoveries.hyperdrive);
+  test::expect_ge(r1->victory_turns, 1);
+
+  // Other race translation unlocked at 50% threshold
+  const auto* r2 = ctx.em.peek_race(player_t{2});
+  test::expect_eq(r2->translate[player_t{1}], 100);
+}
+
 }  // namespace
 
 int main() {
   std::println(std::cout, "Running doturn unit tests...\n");
+
+  std::println(std::cout, "  Testing advance_race_technology... ");
+  test_advance_race_technology();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing update_victory_progress... ");
+  test_update_victory_progress();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing check_language_translation_unlock... ");
+  test_check_language_translation_unlock();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing sync_power_ratings... ");
+  test_sync_power_ratings();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing finalize_turn_update integration... ");
+  test_finalize_turn_update_integration();
+  std::println(std::cout, "PASS");
 
   std::println(std::cout, "  Testing schedule calculation pure... ");
   test_schedule_calculation_pure();

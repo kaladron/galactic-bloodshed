@@ -386,13 +386,13 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
 
 void calculate_victory_scores(EntityManager& entity_manager) {
   struct victstruct {
-    int numsects{0};
-    int shipcost{0};
+    std::int64_t numsects{0};
+    std::int64_t shipcost{0};
     double shiptech{0.0};
-    int morale{0};
+    std::int64_t morale{0};
     resource_t res{0};
-    int des{0};
-    int fuel{0};
+    std::int64_t des{0};
+    std::int64_t fuel{0};
     money_t money{0};
   };
 
@@ -418,7 +418,7 @@ void calculate_victory_scores(EntityManager& entity_manager) {
           continue;
         }
         victory[player].numsects +=
-            static_cast<int>(planet.info(player).numsectsowned);
+            static_cast<std::int64_t>(planet.info(player).numsectsowned);
         victory[player].res += planet.info(player).resource;
         victory[player].des += planet.info(player).destruct;
         victory[player].fuel += planet.info(player).fuel;
@@ -441,17 +441,21 @@ void calculate_victory_scores(EntityManager& entity_manager) {
 
   for (auto race_handle : RaceList(entity_manager)) {
     const player_t player = race_handle->Playernum;
-    race_handle->victory_score =
-        (VICT_SECT * victory[player].numsects) +
-        (VICT_SHIP * (victory[player].shipcost +
-                      static_cast<int>(VICT_TECH * victory[player].shiptech))) +
-        (VICT_RES * (victory[player].res + victory[player].des)) +
-        (VICT_FUEL * victory[player].fuel) +
-        (VICT_MONEY * static_cast<int>(victory[player].money));
-    race_handle->victory_score /= VICT_DIVISOR;
-    race_handle->victory_score = static_cast<int>(
-        morale_factor(static_cast<double>(victory[player].morale)) *
-        race_handle->victory_score);
+    const std::int64_t raw_score =
+        (static_cast<std::int64_t>(VICT_SECT) * victory[player].numsects) +
+        (static_cast<std::int64_t>(VICT_SHIP) *
+         (victory[player].shipcost +
+          static_cast<std::int64_t>(VICT_TECH * victory[player].shiptech))) +
+        (static_cast<std::int64_t>(VICT_RES) *
+         (static_cast<std::int64_t>(victory[player].res) +
+          victory[player].des)) +
+        (static_cast<std::int64_t>(VICT_FUEL) * victory[player].fuel) +
+        (static_cast<std::int64_t>(VICT_MONEY) *
+         static_cast<std::int64_t>(victory[player].money));
+    const std::int64_t scaled_score = raw_score / VICT_DIVISOR;
+    race_handle->victory_score = static_cast<victory_score_t>(
+        std::lround(morale_factor(static_cast<double>(victory[player].morale)) *
+                    static_cast<double>(scaled_score)));
   }
 }
 
@@ -653,52 +657,63 @@ enum class WinCategory {
   LITTLE_WINNER
 };
 
-void handle_victory(EntityManager& em) {
-  if (!VICTORY) return;
+VictoryResult handle_victory(EntityManager& em, bool victory_enabled) {
+  if (!victory_enabled) {
+    return {};
+  }
 
   const int planet_count = em.count_non_asteroid_planets();
-  int game_over = 0;
+  VictoryResult result{};
   PlayerVector<WinCategory, MAXPLAYERS> win_category{};
 
   for (const Race& race : RaceList::readonly(em)) {
     const player_t player = race.Playernum;
-    if (race.controlled_planets >= planet_count * VICTORY_PERCENT / 100) {
+    const int threshold = std::max(1, planet_count * VICTORY_PERCENT / 100);
+    if (planet_count > 0 && race.controlled_planets >= threshold) {
       win_category[player] = WinCategory::LITTLE_WINNER;
     }
     if (race.victory_turns >= VICTORY_UPDATES) {
-      game_over++;
+      result.game_over = true;
       win_category[player] = WinCategory::BIG_WINNER;
     }
   }
 
-  if (game_over) {
+  if (result.game_over) {
+    for (const Race& winner : RaceList::readonly(em)) {
+      const player_t j = winner.Playernum;
+      if (win_category[j] == WinCategory::BIG_WINNER) {
+        result.big_winners.push_back(j);
+      } else if (win_category[j] == WinCategory::LITTLE_WINNER) {
+        result.lesser_winners.push_back(j);
+      }
+    }
+
     for (const Race& race : RaceList::readonly(em)) {
       const player_t i = race.Playernum;
       push_telegram_race(em, i, "*** Attention ***");
       push_telegram_race(em, i,
                          "This game of Galactic Bloodshed is now *over*");
       std::string winner_msg =
-          std::format("The big winner{}", (game_over == 1) ? " is" : "s are");
+          std::format("The big winner{}",
+                      (result.big_winners.size() == 1) ? " is" : "s are");
       push_telegram_race(em, i, winner_msg);
-      for (const Race& winner : RaceList::readonly(em)) {
-        const player_t j = winner.Playernum;
-        if (win_category[j] == WinCategory::BIG_WINNER) {
-          std::string big_winner_msg =
-              std::format("*** [{:2d}] {:<30.30s} ***", j, winner.name);
-          push_telegram_race(em, i, big_winner_msg);
-        }
+      for (const player_t j : result.big_winners) {
+        const auto* winner = em.peek_race(j);
+        std::string big_winner_msg =
+            std::format("*** [{:2d}] {:<30.30s} ***", j, winner->name);
+        push_telegram_race(em, i, big_winner_msg);
       }
       push_telegram_race(em, i, "Lesser winners:");
-      for (const Race& winner : RaceList::readonly(em)) {
-        const player_t j = winner.Playernum;
-        if (win_category[j] == WinCategory::LITTLE_WINNER) {
-          std::string little_winner_msg =
-              std::format("+++ [{:2d}] {:<30.30s} +++", j, winner.name);
-          push_telegram_race(em, i, little_winner_msg);
-        }
+      for (const player_t j : result.lesser_winners) {
+        const auto* winner = em.peek_race(j);
+        std::string little_winner_msg =
+            std::format("+++ [{:2d}] {:<30.30s} +++", j, winner->name);
+        push_telegram_race(em, i, little_winner_msg);
       }
     }
   }
+
+  return result;
 }
 
 void check_technological_discoveries(EntityManager& em, Race& r) {

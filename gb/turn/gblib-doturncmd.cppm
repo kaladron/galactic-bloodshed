@@ -10,10 +10,18 @@ import :race;
 import :services;
 import :star;
 import :turnstats;
+import :tweakables;
 import :types;
 import std;
 
 class SessionRegistry;
+
+/// \brief Result structure from victory condition evaluation.
+export struct VictoryResult {
+  bool game_over{false};
+  std::vector<player_t> big_winners{};
+  std::vector<player_t> lesser_winners{};
+};
 
 /// \brief Executes a turn simulation pass (movement segment or full turn
 /// update).
@@ -52,7 +60,12 @@ export void do_segment(EntityManager& entity_manager,
 /// \brief Evaluates victory condition thresholds (controlled planets, victory
 /// turns) and broadcasts game-over victory bulletins.
 /// \param em Database entity manager.
-export void handle_victory(EntityManager& em);
+/// \param victory_enabled Whether victory evaluation is active (defaults to
+/// VICTORY tweakable).
+/// \return VictoryResult detailing whether the game ended and identifying
+/// winners.
+export VictoryResult handle_victory(EntityManager& em,
+                                    bool victory_enabled = VICTORY);
 
 /// \brief Aggregates power block membership statistics across all empires and
 /// alliances.

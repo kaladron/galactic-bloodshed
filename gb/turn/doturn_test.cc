@@ -764,10 +764,171 @@ void test_do_update_voting_reset_and_scheduling() {
   test::expect_false(sched.update_buf.empty());
 }
 
+void test_handle_victory_disabled() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_race(player_t{1}, [](Race& race) {
+    race.victory_turns = VICTORY_UPDATES + 1;
+  });
+
+  // Victory disabled (false) -> no game over, empty result, no telegrams
+  auto result = handle_victory(ctx.em, false);
+  test::expect_false(result.game_over);
+  test::expect_true(result.big_winners.empty());
+  test::expect_true(result.lesser_winners.empty());
+  test::expect_false(ctx.em.has_telegrams(player_t{1}, governor_t{0}));
+}
+
+void test_handle_victory_single_winner() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_race(player_t{1}, [](Race& race) {
+    race.name = "GloriousEmpire";
+    race.victory_turns = VICTORY_UPDATES;
+    race.governor[0].active = true;
+  });
+  ctx.em.mutate_race(player_t{2}, [](Race& race) {
+    race.name = "OtherEmpire";
+    race.victory_turns = 0;
+    race.governor[0].active = true;
+  });
+
+  auto result = handle_victory(ctx.em, true);
+  test::expect_true(result.game_over);
+  test::expect_eq(result.big_winners.size(), 1U);
+  test::expect_eq(result.big_winners[0], player_t{1});
+  test::expect_true(result.lesser_winners.empty());
+
+  // Both players receive victory broadcast telegrams
+  test::expect_true(ctx.em.has_telegrams(player_t{1}, governor_t{0}));
+  test::expect_true(ctx.em.has_telegrams(player_t{2}, governor_t{0}));
+
+  auto tele1 = ctx.em.get_telegrams(player_t{1}, governor_t{0});
+  bool found_announcement = false;
+  bool found_winner = false;
+  for (const auto& t : tele1) {
+    if (t.message.contains("This game of Galactic Bloodshed is now *over*")) {
+      found_announcement = true;
+    }
+    if (t.message.contains("The big winner is")) {
+      found_winner = true;
+    }
+  }
+  test::expect_true(found_announcement);
+  test::expect_true(found_winner);
+}
+
+void test_handle_victory_multiple_winners_and_lesser_winners() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // with_standard_universe provisions 2 planets (Earth, Vega Prime).
+  // VICTORY_PERCENT is 10, so std::max(1, 2 * 10 / 100) = 1 planet threshold
+  // for lesser winner. Player 1 & 2 are big winners (victory_turns >=
+  // VICTORY_UPDATES)
+  ctx.em.mutate_race(player_t{1}, [](Race& race) {
+    race.name = "EmpireAlpha";
+    race.victory_turns = VICTORY_UPDATES;
+    race.governor[0].active = true;
+  });
+  ctx.em.mutate_race(player_t{2}, [](Race& race) {
+    race.name = "EmpireBeta";
+    race.victory_turns = VICTORY_UPDATES;
+    race.governor[0].active = true;
+  });
+
+  // Player 3 is lesser winner (controlled_planets >= 1, but victory_turns <
+  // VICTORY_UPDATES)
+  JsonStore store(ctx.db);
+  Race race3 = createTestRace(player_t{3});
+  race3.name = "EmpireGamma";
+  race3.controlled_planets = 1;
+  race3.victory_turns = 1;
+  race3.governor[0].active = true;
+  RaceRepository(store).save(race3);
+
+  auto result = handle_victory(ctx.em, true);
+  test::expect_true(result.game_over);
+  test::expect_eq(result.big_winners.size(), 2U);
+  test::expect_eq(result.big_winners[0], player_t{1});
+  test::expect_eq(result.big_winners[1], player_t{2});
+  test::expect_eq(result.lesser_winners.size(), 1U);
+  test::expect_eq(result.lesser_winners[0], player_t{3});
+
+  auto tele3 = ctx.em.get_telegrams(player_t{3}, governor_t{0});
+  bool found_plural_winners = false;
+  bool found_lesser_winner = false;
+  for (const auto& t : tele3) {
+    if (t.message.contains("The big winners are")) {
+      found_plural_winners = true;
+    }
+    if (t.message.contains("EmpireGamma")) {
+      found_lesser_winner = true;
+    }
+  }
+  test::expect_true(found_plural_winners);
+  test::expect_true(found_lesser_winner);
+}
+
+void test_calculate_victory_scores_large_accumulation() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Test 64-bit integer overflow protection:
+  // Accumulate huge money and resources that exceed 32-bit INT_MAX
+  // (2,147,483,647)
+  ctx.em.mutate_race(player_t{1}, [](Race& race) {
+    race.morale = 100;
+    // 3 billion in treasury across governors
+    race.governor[0].money = 3'000'000'000LL;
+  });
+
+  ctx.em.mutate_planet(starnum_t{0}, planetnum_t{0}, [](Planet& planet) {
+    planet.info(player_t{1}).explored = true;
+    planet.info(player_t{1}).numsectsowned = 500;
+    // 3 billion resources on planet
+    planet.info(player_t{1}).resource = 3'000'000'000LL;
+    planet.info(player_t{1}).destruct = 500'000'000LL;
+    planet.info(player_t{1}).fuel = 100'000'000;
+  });
+
+  calculate_victory_scores(ctx.em);
+
+  const auto* race_after = ctx.em.peek_race(player_t{1});
+  test::expect_ne(race_after, nullptr);
+  // (VICT_RES * (3B + 0.5B) + VICT_MONEY * 3B + ...) / VICT_DIVISOR
+  // > 0 and no negative integer overflow
+  test::expect_gt(race_after->victory_score, 0LL);
+  // Specifically: 3.5B res + 3B money = 6.5B raw, divided by 10000 = ~650,000
+  // victory score
+  test::expect_ge(race_after->victory_score, 600'000LL);
+}
+
 }  // namespace
 
 int main() {
   std::println(std::cout, "Running doturn unit tests...\n");
+
+  std::println(std::cout, "  Testing handle_victory disabled... ");
+  test_handle_victory_disabled();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing handle_victory single winner... ");
+  test_handle_victory_single_winner();
+  std::println(std::cout, "PASS");
+
+  std::println(
+      std::cout,
+      "  Testing handle_victory multiple winners and lesser winners... ");
+  test_handle_victory_multiple_winners_and_lesser_winners();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout,
+               "  Testing calculate_victory_scores large accumulation... ");
+  test_calculate_victory_scores_large_accumulation();
+  std::println(std::cout, "PASS");
 
   std::println(std::cout,
                "  Testing do_update voting reset and scheduling... ");

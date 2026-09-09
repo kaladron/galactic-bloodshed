@@ -301,7 +301,7 @@ export struct Victory {
   double tech{0.0};
   int thing{0};
   int iq{0};
-  unsigned long rawscore{0};
+  victory_score_t rawscore{0};
 };
 
 export struct Coordinates {

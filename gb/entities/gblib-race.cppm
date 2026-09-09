@@ -123,8 +123,8 @@ public:
   unsigned short turn{0};
 
   double tech{0.0};
-  TechDiscoveries discoveries{};  /* Tech discoveries. */
-  unsigned long victory_score{0}; /* Number of victory points. */
+  TechDiscoveries discoveries{};    /* Tech discoveries. */
+  victory_score_t victory_score{0}; /* Number of victory points. */
   bool votes{false};
   ap_t planet_points{0}; /* For the determination of global APs */
 

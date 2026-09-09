@@ -76,8 +76,7 @@ bool jettison(const command_t& argv, GameObj& g) {
         break;
       case 'c':
         if ((amt = jettison_check(g, amt, (int)(ship.popn()))) > 0) {
-          ship.popn() -= amt;
-          ship.mass() -= amt * g.race->mass;
+          ship.remove_popn(amt, g.race->mass);
           g.out << std::format("{} crew {} into deep space.\n", amt,
                                (amt == 1) ? "hurls itself" : "hurl themselves");
           g.out << std::format("Complement of {} is now {}.\n", ship,
@@ -91,8 +90,7 @@ bool jettison(const command_t& argv, GameObj& g) {
                                (amt == 1) ? "hurls itself" : "hurl themselves");
           g.out << std::format("Complement of ship #{} is now {}.\n",
                                ship.number(), ship.troops() - amt);
-          ship.troops() -= amt;
-          ship.mass() -= amt * g.race->mass;
+          ship.remove_troops(amt, g.race->mass);
           success = true;
         }
         break;

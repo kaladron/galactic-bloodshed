@@ -183,19 +183,17 @@ bool capture(const command_t& argv, GameObj& g) {
                                   (dstrength + 1.0)));
                 shipdam = int_rand(
                     0, round_rand(25. * (astrength + 1.0) / (dstrength + 1.0)));
-                ship.damage() = std::min(100U, ship.damage() + shipdam);
+                ship.apply_damage(shipdam);
               }
 
               casualties = std::min(boarders, casualties);
               boarders -= casualties;
 
               casualties1 = std::min(olddpopn, casualties1);
-              ship.popn() -= casualties1;
-              ship.mass() -= casualties1 * alien->mass;
+              ship.remove_popn(casualties1, alien->mass);
 
               casualties2 = std::min(olddtroops, casualties2);
-              ship.troops() -= casualties2;
-              ship.mass() -= casualties2 * alien->mass;
+              ship.remove_troops(casualties2, alien->mass);
 
             } else if (ship.destruct()) { /* booby trapped robot ships */
               booby = int_rand(0, 10 * ship.destruct());
@@ -205,7 +203,7 @@ bool capture(const command_t& argv, GameObj& g) {
                 casualties += (int_rand(1, 100) < booby);
               boarders -= casualties;
               shipdam += booby;
-              ship.damage() += booby;
+              ship.apply_damage(booby);
             }
             shipdam = std::min(100, shipdam);
             if (ship.damage() >= 100)
@@ -216,14 +214,13 @@ bool capture(const command_t& argv, GameObj& g) {
               ship.owner() = Playernum;
               ship.governor() = Governor;
               if (what == PopulationType::CIV) {
-                ship.popn() = std::min(boarders, ship.max_crew_capacity());
-                sect.add_popn(boarders -
-                              ship.popn());  // Return excess boarders
-                ship.mass() += ship.popn() * race.mass;
+                const auto taken = std::min(boarders, ship.max_crew_capacity());
+                ship.add_popn(taken, race.mass);
+                sect.add_popn(boarders - taken);  // Return excess boarders
               } else if (what == PopulationType::MIL) {
-                ship.troops() = std::min(boarders, ship.available_mil());
-                sect.set_troops(sect.get_troops() + boarders - ship.troops());
-                ship.mass() += ship.troops() * race.mass;
+                const auto taken = std::min(boarders, ship.available_mil());
+                ship.add_troops(taken, race.mass);
+                sect.set_troops(sect.get_troops() + boarders - taken);
               }
               if (olddpopn + olddtroops &&
                   ship.type() != ShipType::OTYPE_FACTORY) {

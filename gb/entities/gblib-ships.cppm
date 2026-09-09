@@ -2957,6 +2957,11 @@ public:
     data_.popn = std::clamp<population_t>(amt, 0, max_crew_capacity());
   }
 
+  /// \brief Sets military troops clamped to [0, max_crew_capacity()].
+  void set_troops(population_t amt) noexcept {
+    data_.troops = std::clamp<population_t>(amt, 0, max_crew_capacity());
+  }
+
   /// \brief Sets cargo resources clamped to [0, max_resource_capacity()].
   void set_resource(resource_t amt) noexcept {
     data_.resource = std::clamp<resource_t>(amt, 0, max_resource_capacity());
@@ -3123,12 +3128,11 @@ public:
   }
 
   /// \brief Adds population and increments ship mass based on race mass,
-  /// clamped to max crew capacity. If amt is negative, removes population.
+  /// clamped to max crew capacity. If amt is negative, delegates to
+  /// remove_popn(-amt, race_mass).
   void add_popn(population_t amt, double race_mass) noexcept {
     if (amt < 0) {
-      const auto actual = std::min(data_.popn, -amt);
-      data_.popn -= actual;
-      data_.mass -= static_cast<double>(actual) * race_mass;
+      remove_popn(-amt, race_mass);
       return;
     }
     const auto max_cap = max_crew_capacity();
@@ -3138,13 +3142,21 @@ public:
     data_.mass += static_cast<double>(actual) * race_mass;
   }
 
+  /// \brief Removes population and decrements ship mass based on race mass,
+  /// clamped to 0.
+  void remove_popn(population_t amt, double race_mass) noexcept {
+    if (amt <= 0) return;
+    const auto actual = std::min(data_.popn, amt);
+    data_.popn -= actual;
+    data_.mass -= static_cast<double>(actual) * race_mass;
+  }
+
   /// \brief Adds troops and increments ship mass based on race mass,
-  /// clamped to max crew capacity. If amt is negative, removes troops.
+  /// clamped to max crew capacity. If amt is negative, delegates to
+  /// remove_troops(-amt, race_mass).
   void add_troops(population_t amt, double race_mass) noexcept {
     if (amt < 0) {
-      const auto actual = std::min(data_.troops, -amt);
-      data_.troops -= actual;
-      data_.mass -= static_cast<double>(actual) * race_mass;
+      remove_troops(-amt, race_mass);
       return;
     }
     const auto max_cap = max_crew_capacity();
@@ -3152,6 +3164,15 @@ public:
     const auto actual = std::min(amt, max_cap - data_.troops);
     data_.troops += actual;
     data_.mass += static_cast<double>(actual) * race_mass;
+  }
+
+  /// \brief Removes troops and decrements ship mass based on race mass,
+  /// clamped to 0.
+  void remove_troops(population_t amt, double race_mass) noexcept {
+    if (amt <= 0) return;
+    const auto actual = std::min(data_.troops, amt);
+    data_.troops -= actual;
+    data_.mass -= static_cast<double>(actual) * race_mass;
   }
 
   // =========================================================================

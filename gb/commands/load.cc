@@ -72,15 +72,13 @@ void do_transporter(const Race& race, GameObj& g, TransporterShip& s) {
     }
 
     if (s.popn()) {
-      s2.mass() += static_cast<double>(s.popn()) * race.mass;
-      s2.popn() += s.popn();
+      const auto pop = s.popn();
+      s2.add_popn(pop, race.mass);
 
-      g.out << std::format("{} population transferred.\n", s.popn());
-      tele_lines +=
-          std::format("{} {}\n", s.popn(),
-                      race.Metamorph ? "tons of biomass" : "population");
-      s.mass() -= static_cast<double>(s.popn()) * race.mass;
-      s.popn() = 0;
+      g.out << std::format("{} population transferred.\n", pop);
+      tele_lines += std::format(
+          "{} {}\n", pop, race.Metamorph ? "tons of biomass" : "population");
+      s.remove_popn(pop, race.mass);
     }
 
     if (s.crystals()) {
@@ -492,31 +490,45 @@ bool load(const command_t& argv, GameObj& g) {
       g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
         switch (commod) {
           case 'c':
-            s2.popn() -= amt;
-            if (!landed_on(s, s2.number())) s2.mass() -= amt * race.mass;
+            if (landed_on(s, s2.number())) {
+              s2.set_popn(s2.popn() - amt);
+            } else {
+              s2.remove_popn(amt, race.mass);
+            }
             transfercrew = 1;
             break;
           case 'm':
-            s2.troops() -= amt;
-            if (!landed_on(s, s2.number())) s2.mass() -= amt * race.mass;
+            if (landed_on(s, s2.number())) {
+              s2.set_troops(s2.troops() - amt);
+            } else {
+              s2.remove_troops(amt, race.mass);
+            }
             transfercrew = 1;
             break;
           case 'd':
-            s2.destruct() -= amt;
-            if (!landed_on(s, s2.number())) s2.mass() -= amt * MASS_DESTRUCT;
+            if (landed_on(s, s2.number())) {
+              s2.set_destruct(s2.destruct() - amt);
+            } else {
+              s2.consume_destruct(amt);
+            }
             break;
           case 'x':
           case '&':
             s2.crystals() -= amt;
             break;
           case 'f':
-            s2.fuel() -= (double)amt;
-            if (!landed_on(s, s2.number()))
-              s2.mass() -= (double)amt * MASS_FUEL;
+            if (landed_on(s, s2.number())) {
+              s2.set_fuel(s2.fuel() - static_cast<double>(amt));
+            } else {
+              s2.consume_fuel(static_cast<double>(amt));
+            }
             break;
           case 'r':
-            s2.resource() -= amt;
-            if (!landed_on(s, s2.number())) s2.mass() -= amt * MASS_RESOURCE;
+            if (landed_on(s, s2.number())) {
+              s2.set_resource(s2.resource() - amt);
+            } else {
+              s2.consume_resource(amt);
+            }
             break;
         }
 
@@ -654,23 +666,20 @@ bool load(const command_t& argv, GameObj& g) {
     switch (commod) {
       case 'c':
         if (transfercrew) {
-          s.popn() += amt;
-          s.mass() += amt * race.mass;
+          s.add_popn(amt, race.mass);
           g.out << std::format("crew complement of {} is now {}.\n", s,
                                s.popn());
         }
         break;
       case 'm':
         if (transfercrew) {
-          s.troops() += amt;
-          s.mass() += amt * race.mass;
+          s.add_troops(amt, race.mass);
           g.out << std::format("troop complement of {} is now {}.\n", s,
                                s.troops());
         }
         break;
       case 'd':
-        s.destruct() += amt;
-        s.mass() += amt * MASS_DESTRUCT;
+        s.add_destruct(amt);
         g.out << std::format("{} destruct transferred.\n", amt);
         if (!s.max_crew_capacity()) {
           g.out << std::format("\n{} ", s);

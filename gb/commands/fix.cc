@@ -79,27 +79,27 @@ bool fix(const command_t& argv, GameObj& g) {
     bool ok = false;
     g.entity_manager.mutate_ship(g.shipno(), [&](Ship& s) {
       if (argv[2] == "fuel") {
-        if (argv.size() > 3) s.fuel() = (double)std::stoi(argv[3]);
+        if (argv.size() > 3) s.set_fuel(std::stoi(argv[3]));
         g.out << std::format("fuel = {}\n", s.fuel());
       } else if (argv[2] == "max_fuel") {
         if (argv.size() > 3) s.max_fuel() = std::stoi(argv[3]);
         g.out << std::format("fuel = {}\n", s.max_fuel());
       } else if (argv[2] == "destruct") {
-        if (argv.size() > 3) s.destruct() = std::stoi(argv[3]);
+        if (argv.size() > 3) s.set_destruct(std::stoi(argv[3]));
         g.out << std::format("destruct = {}\n", s.destruct());
       } else if (argv[2] == "resource") {
-        if (argv.size() > 3) s.resource() = std::stoi(argv[3]);
+        if (argv.size() > 3) s.set_resource(std::stoi(argv[3]));
         g.out << std::format("resource = {}\n", s.resource());
       } else if (argv[2] == "damage") {
-        if (argv.size() > 3) s.damage() = std::stoi(argv[3]);
+        if (argv.size() > 3) s.set_damage(std::stoi(argv[3]));
         g.out << std::format("damage = {}\n", s.damage());
       } else if (argv[2] == "alive") {
         s.alive() = 1;
-        s.damage() = 0;
+        s.set_damage(0);
         g.out << std::format("{} resurrected\n", s);
       } else if (argv[2] == "dead") {
         s.alive() = 0;
-        s.damage() = 100;
+        s.set_damage(100);
         g.out << std::format("{} destroyed\n", s);
       } else {
         g.out << "No such option for 'fix ship'.\n";

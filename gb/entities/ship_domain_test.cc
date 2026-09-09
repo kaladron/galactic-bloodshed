@@ -158,6 +158,14 @@ void test_bounded_setters() {
   test::expect_eq(ship.destruct(), 100);
   ship.set_destruct(-10);
   test::expect_eq(ship.destruct(), 0);
+
+  // set_troops
+  ship.set_troops(25);
+  test::expect_eq(ship.troops(), 25);
+  ship.set_troops(70);
+  test::expect_eq(ship.troops(), 50);
+  ship.set_troops(-5);
+  test::expect_eq(ship.troops(), 0);
 }
 
 void test_fuel_consumption() {
@@ -318,6 +326,18 @@ void test_clamped_add_and_consume() {
   ship.add_troops(120, 2.0);  // Max 100, currently 10, takes 90
   test::expect_eq(ship.troops(), 100);
   expect_near(ship.mass(), mass_before_troops + 90.0 * 2.0);
+
+  // remove_popn clamping to 0
+  const double mass_before_rem_popn = ship.mass();
+  ship.remove_popn(150, 2.0);  // Currently 100, removes all 100
+  test::expect_eq(ship.popn(), 0);
+  expect_near(ship.mass(), mass_before_rem_popn - 100.0 * 2.0);
+
+  // remove_troops clamping to 0
+  const double mass_before_rem_troops = ship.mass();
+  ship.remove_troops(150, 2.0);  // Currently 100, removes all 100
+  test::expect_eq(ship.troops(), 0);
+  expect_near(ship.mass(), mass_before_rem_troops - 100.0 * 2.0);
 }
 
 void test_dynamic_base_mass() {

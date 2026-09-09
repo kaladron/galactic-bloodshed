@@ -212,7 +212,7 @@ bool proj_fuel(const command_t& argv, GameObj& g) {
   if (!opt_settings) {
     g.out << std::format("The ship will not be able to complete the trip.\n");
   } else {
-    tmpship.fuel() = fuel_usage;
+    tmpship.set_fuel(fuel_usage);
     domass(tmpship, g.entity_manager);
     fuel_output(g, dist, fuel_usage, gravity_factor, tmpship.mass(),
                 number_segments, plan_buf);

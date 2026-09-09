@@ -241,11 +241,11 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
             }
             old2owner = s2.owner();
             old2gov = s2.governor();
-            if (what == PopulationType::MIL)
-              s.troops() -= boarders;
-            else if (what == PopulationType::CIV)
-              s.popn() -= boarders;
-            s.mass() -= boarders * race.mass;
+            if (what == PopulationType::MIL) {
+              s.remove_troops(boarders, race.mass);
+            } else if (what == PopulationType::CIV) {
+              s.remove_popn(boarders, race.mass);
+            }
             g.out << std::format(
                 "Boarding strength :{:.2f}       Defense strength: {:.2f}.\n",
                 bstrength =
@@ -294,7 +294,7 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
               dam = int_rand(
                   0, round_rand(25. * (b2strength + 1.0) / (bstrength + 1.0)));
               dam = MIN(100, dam);
-              s.damage() = MIN(100, s.damage() + dam);
+              s.apply_damage(dam);
               if (s.damage() >= 100) g.entity_manager.kill_ship(Playernum, s);
 
               casualties2 = int_rand(
@@ -305,19 +305,17 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
                   0, round_rand((double)casualty_scale * (bstrength + 1.0) /
                                 (b2strength + 1.0)));
               casualties3 = MIN(s2.troops(), casualties3);
-              s2.popn() -= casualties2;
-              s2.mass() -= casualties2 * alien.mass;
-              s2.troops() -= casualties3;
-              s2.mass() -= casualties3 * alien.mass;
+              s2.remove_popn(casualties2, alien.mass);
+              s2.remove_troops(casualties3, alien.mass);
               /* (their mass) */
               dam2 = int_rand(
                   0, round_rand(25. * (bstrength + 1.0) / (b2strength + 1.0)));
               dam2 = MIN(100, dam2);
-              s2.damage() = MIN(100, s2.damage() + dam2);
+              s2.apply_damage(dam2);
               if (s2.damage() >= 100) g.entity_manager.kill_ship(Playernum, s2);
             } else {
-              s2.popn() = 0;
-              s2.troops() = 0;
+              s2.set_popn(0);
+              s2.set_troops(0);
               booby = 0;
               /* do booby traps */
               /* check for boobytrapping */
@@ -339,21 +337,21 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
               old2gov = s2.governor();
               s2.owner() = s.owner();
               s2.governor() = s.governor();
-              if (what == PopulationType::MIL)
-                s2.troops() = boarders;
-              else
-                s2.popn() = boarders;
-              s2.mass() += boarders * race.mass; /* our mass */
+              if (what == PopulationType::MIL) {
+                s2.add_troops(boarders, race.mass);
+              } else {
+                s2.add_popn(boarders, race.mass);
+              }
               if (casualties2 + casualties3) {
                 /* You must kill to get morale */
                 race.adjust_morale(alien, static_cast<int>(s2.build_cost()));
               }
             } else { /* retreat */
-              if (what == PopulationType::MIL)
-                s.troops() += boarders;
-              else if (what == PopulationType::CIV)
-                s.popn() += boarders;
-              s.mass() += boarders * race.mass;
+              if (what == PopulationType::MIL) {
+                s.add_troops(boarders, race.mass);
+              } else if (what == PopulationType::CIV) {
+                s.add_popn(boarders, race.mass);
+              }
               alien.adjust_morale(race, static_cast<int>(race.fighters));
             }
 

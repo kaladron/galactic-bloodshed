@@ -268,8 +268,7 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
 
   newship.tech() = race.tech;
   const auto& star = *entity_manager.peek_star(snum);
-  newship.xpos() = star.xpos() + planet.xpos();
-  newship.ypos() = star.ypos() + planet.ypos();
+  newship.set_coordinates(planet.absolute_coordinates(star));
   newship.set_land_coords(land_coords);
   newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
                           (newship.type() == ShipType::OTYPE_PLOW))
@@ -341,8 +340,7 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
     newship->docked() = 1;
   }
   newship->tech() = race.tech;
-  newship->xpos() = builder->xpos();
-  newship->ypos() = builder->ypos();
+  newship->set_coordinates(builder->coordinates());
   newship->set_land_coords(builder->land_coords());
   newship->shipclass() = (((newship->type() == ShipType::OTYPE_TERRA) ||
                            (newship->type() == ShipType::OTYPE_PLOW))

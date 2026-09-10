@@ -69,8 +69,7 @@ void setup_test_world(TestContext& ctx) {
   ship1.name() = "TestFighter";
   ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
   ship1.storbits() = 0;
-  ship1.xpos() = 100.0;
-  ship1.ypos() = 200.0;
+  ship1.set_coordinates(UniverseCoordinates{100.0, 200.0});
 
   Ship ship2{};
   ship2.number() = 2;
@@ -81,8 +80,7 @@ void setup_test_world(TestContext& ctx) {
   ship2.type() = ShipType::STYPE_CRUISER;
   ship2.name() = "Voyager";
   ship2.whatorbits() = ScopeLevel::LEVEL_UNIV;
-  ship2.xpos() = 150.0;
-  ship2.ypos() = 250.0;
+  ship2.set_coordinates(UniverseCoordinates{150.0, 250.0});
 
   Ship ship3{};
   ship3.number() = 3;
@@ -95,8 +93,7 @@ void setup_test_world(TestContext& ctx) {
   ship3.whatorbits() = ScopeLevel::LEVEL_PLAN;
   ship3.storbits() = 0;
   ship3.pnumorbits() = 0;
-  ship3.xpos() = 105.0;
-  ship3.ypos() = 205.0;
+  ship3.set_coordinates(UniverseCoordinates{105.0, 205.0});
   ship3.docked() = false;  // Orbiting, not landed
 
   ShipRepository ships_repo(store);
@@ -215,8 +212,7 @@ void test_orbit_space_mirror_aiming() {
   mirror_data.name = "SolarMirror";
   mirror_data.whatorbits = ScopeLevel::LEVEL_STAR;
   mirror_data.storbits = 0;
-  mirror_data.xpos = 100.0;
-  mirror_data.ypos = 200.0;
+  mirror_data.coordinates = UniverseCoordinates{100.0, 200.0};
   mirror_data.special = AimedAtData{
       .shipno = shipnum_t{0},
       .snum = starnum_t{0},
@@ -235,8 +231,8 @@ void test_orbit_space_mirror_aiming() {
   // 1. Target coordinates for planet: Star (100, 200) + Planet (0, 0)
   auto coords = mirror->target_coordinates(ctx.em);
   test::expect_true(coords.has_value());
-  test::expect_eq(coords->first, 100.0);
-  test::expect_eq(coords->second, 200.0);
+  test::expect_eq(coords->x, 100.0);
+  test::expect_eq(coords->y, 200.0);
 
   // 2. Aim at a ship located at (150.0, 250.0) -> south-east heading
   ctx.em.mutate_as<SpaceMirrorShip>(mirror_id, [](SpaceMirrorShip& m) {
@@ -248,8 +244,8 @@ void test_orbit_space_mirror_aiming() {
       ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
   auto ship_coords = updated_mirror->target_coordinates(ctx.em);
   test::expect_true(ship_coords.has_value());
-  test::expect_eq(ship_coords->first, 150.0);
-  test::expect_eq(ship_coords->second, 250.0);
+  test::expect_eq(ship_coords->x, 150.0);
+  test::expect_eq(ship_coords->y, 250.0);
 
   int dir = updated_mirror->aim_direction(ctx.em);
   test::expect_eq(dir, 3);  // slope = +1.0, dy > 0 -> direction 3

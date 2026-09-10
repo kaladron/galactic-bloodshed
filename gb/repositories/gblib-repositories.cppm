@@ -162,6 +162,18 @@ struct meta<Coordinates> {
 };
 
 template <>
+struct meta<UniverseCoordinates> {
+  using T = UniverseCoordinates;
+  static constexpr auto value = object("x", &T::x, "y", &T::y);
+};
+
+template <>
+struct meta<SystemCoordinates> {
+  using T = SystemCoordinates;
+  static constexpr auto value = object("x", &T::x, "y", &T::y);
+};
+
+template <>
 struct meta<toggletype> {
   using T = toggletype;
   static constexpr auto value =

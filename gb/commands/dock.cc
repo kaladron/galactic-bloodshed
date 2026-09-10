@@ -147,7 +147,7 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
           return;
         }
 
-        Dist = std::hypot(s2.xpos() - s.xpos(), s2.ypos() - s.ypos());
+        Dist = s2.coordinates().distance_to(s.coordinates());
         fuel = 0.05 + Dist * 0.025 * (Assault ? 2.0 : 1.0) *
                           std::sqrt((double)s.mass());
 
@@ -260,8 +260,10 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
 
             /* the ship moves into position, regardless of success of attack */
             use_fuel(s, fuel);
-            s.xpos() = s2.xpos() + int_rand(-1, 1);
-            s.ypos() = s2.ypos() + int_rand(-1, 1);
+            s.set_coordinates(
+                s2.coordinates() +
+                SystemCoordinates{static_cast<double>(int_rand(-1, 1)),
+                                  static_cast<double>(int_rand(-1, 1))});
             if (s.hyper_drive().on) {
               s.hyper_drive().on = 0;
               g.out << "Hyper-drive deactivated.\n";
@@ -374,8 +376,10 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
       } else {
         /* the ship moves into position */
         use_fuel(s, fuel);
-        s.xpos() = s2.xpos() + int_rand(-1, 1);
-        s.ypos() = s2.ypos() + int_rand(-1, 1);
+        s.set_coordinates(
+            s2.coordinates() +
+            SystemCoordinates{static_cast<double>(int_rand(-1, 1)),
+                              static_cast<double>(int_rand(-1, 1))});
         if (s.hyper_drive().on) {
           s.hyper_drive().on = 0;
           g.out << "Hyper-drive deactivated.\n";

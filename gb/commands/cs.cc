@@ -90,8 +90,8 @@ bool cs(const command_t& argv, GameObj& g) {
         if (!s->docked()) {
           switch (where.level) {
             case ScopeLevel::LEVEL_UNIV:
-              g.lastx[1] = s->xpos();
-              g.lasty[1] = s->ypos();
+              g.lastx[1] = s->coordinates().x;
+              g.lasty[1] = s->coordinates().y;
               break;
             case ScopeLevel::LEVEL_STAR:
               if (s->whatorbits() >= ScopeLevel::LEVEL_STAR &&
@@ -100,8 +100,8 @@ bool cs(const command_t& argv, GameObj& g) {
                 const auto* orbit_star =
                     g.entity_manager.peek_star(s->storbits());
                 if (orbit_star) {
-                  g.lastx[0] = s->xpos() - orbit_star->xpos();
-                  g.lasty[0] = s->ypos() - orbit_star->ypos();
+                  g.lastx[0] = s->coordinates().x - orbit_star->coordinates().x;
+                  g.lasty[0] = s->coordinates().y - orbit_star->coordinates().y;
                 } else {
                   g.lastx[0] = g.lasty[0] = 0.0;
                 }
@@ -118,8 +118,10 @@ bool cs(const command_t& argv, GameObj& g) {
                 const auto* orbit_star =
                     g.entity_manager.peek_star(s->storbits());
                 if (planet && orbit_star) {
-                  g.lastx[0] = s->xpos() - orbit_star->xpos() - planet->xpos();
-                  g.lasty[0] = s->ypos() - orbit_star->ypos() - planet->ypos();
+                  const auto pl_coords =
+                      planet->absolute_coordinates(*orbit_star);
+                  g.lastx[0] = s->coordinates().x - pl_coords.x;
+                  g.lasty[0] = s->coordinates().y - pl_coords.y;
                 } else {
                   g.lastx[0] = g.lasty[0] = 0.0;
                 }

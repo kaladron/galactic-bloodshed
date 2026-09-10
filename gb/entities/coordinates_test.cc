@@ -366,13 +366,10 @@ int main() {
 
     // Ship continuous coordinates
     ship_struct sh_data{};
-    sh_data.xpos = 2803.0;
-    sh_data.ypos = 5404.0;
+    sh_data.coordinates = UniverseCoordinates(2803.0, 5404.0);
     Ship sh(sh_data);
     test::expect_eq(sh.coordinates(), UniverseCoordinates(2803.0, 5404.0));
     sh.set_coordinates(UniverseCoordinates(3000.0, 6000.0));
-    expect_near(sh.xpos(), 3000.0);
-    expect_near(sh.ypos(), 6000.0);
     test::expect_eq(sh.coordinates(), UniverseCoordinates(3000.0, 6000.0));
 
     // Proximity / distance calculations across entities

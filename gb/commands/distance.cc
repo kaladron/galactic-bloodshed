@@ -12,14 +12,52 @@ import gb.services;
 module commands;
 
 namespace GB::commands {
-bool distance(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player();
-  double x0;
-  double y0;
-  double x1;
-  double y1;
-  double dist;
 
+static std::optional<UniverseCoordinates>
+resolve_scope_coords(const Place& place, player_t player, EntityManager& em,
+                     GameObj& g) {
+  switch (place.level) {
+    case ScopeLevel::LEVEL_SHIP: {
+      const Ship* ship = nullptr;
+      try {
+        ship = em.peek_ship(place.shipno);
+      } catch (const EntityNotFoundError&) {
+        g.out << "Ship not found.\n";
+        return std::nullopt;
+      }
+      if (ship->owner() != player) {
+        g.out << "Nice try.\n";
+        return std::nullopt;
+      }
+      return ship->coordinates();
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto* p = em.peek_planet(place.snum, place.pnum);
+      if (!p) {
+        g.out << "Planet not found.\n";
+        return std::nullopt;
+      }
+      const auto* star = em.peek_star(place.snum);
+      if (!star) {
+        g.out << "Star not found.\n";
+        return std::nullopt;
+      }
+      return p->absolute_coordinates(*star);
+    }
+    case ScopeLevel::LEVEL_STAR: {
+      const auto* star = em.peek_star(place.snum);
+      if (!star) {
+        g.out << "Star not found.\n";
+        return std::nullopt;
+      }
+      return star->coordinates();
+    }
+    default:
+      return std::nullopt;
+  }
+}
+
+bool distance(const command_t& argv, GameObj& g) {
   if (argv.size() < 3) {
     g.out << "Syntax: 'distance <from> <to>'.\n";
     return false;
@@ -36,86 +74,15 @@ bool distance(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  x0 = 0.0;
-  y0 = 0.0;
-  x1 = 0.0;
-  y1 = 0.0;
-  /* get position in absolute units */
-  if (from.level == ScopeLevel::LEVEL_SHIP) {
-    const Ship* ship;
-    try {
-      ship = g.entity_manager.peek_ship(from.shipno);
-    } catch (const EntityNotFoundError&) {
-      g.out << "Ship not found.\n";
-      return false;
-    }
-    if (ship->owner() != Playernum) {
-      g.out << "Nice try.\n";
-      return false;
-    }
-    x0 = ship->xpos();
-    y0 = ship->ypos();
-  } else if (from.level == ScopeLevel::LEVEL_PLAN) {
-    const auto* p = g.entity_manager.peek_planet(from.snum, from.pnum);
-    if (!p) {
-      g.out << "Planet not found.\n";
-      return false;
-    }
-    const auto* star = g.entity_manager.peek_star(from.snum);
-    if (!star) {
-      g.out << "Star not found.\n";
-      return false;
-    }
-    x0 = p->xpos() + star->xpos();
-    y0 = p->ypos() + star->ypos();
-  } else if (from.level == ScopeLevel::LEVEL_STAR) {
-    const auto* star = g.entity_manager.peek_star(from.snum);
-    if (!star) {
-      g.out << "Star not found.\n";
-      return false;
-    }
-    x0 = star->xpos();
-    y0 = star->ypos();
-  }
+  const auto from_coords =
+      resolve_scope_coords(from, g.player(), g.entity_manager, g);
+  if (!from_coords) return false;
 
-  if (to.level == ScopeLevel::LEVEL_SHIP) {
-    const Ship* ship;
-    try {
-      ship = g.entity_manager.peek_ship(to.shipno);
-    } catch (const EntityNotFoundError&) {
-      g.out << "Ship not found.\n";
-      return false;
-    }
-    if (ship->owner() != Playernum) {
-      g.out << "Nice try.\n";
-      return false;
-    }
-    x1 = ship->xpos();
-    y1 = ship->ypos();
-  } else if (to.level == ScopeLevel::LEVEL_PLAN) {
-    const auto* p = g.entity_manager.peek_planet(to.snum, to.pnum);
-    if (!p) {
-      g.out << "Planet not found.\n";
-      return false;
-    }
-    const auto* star = g.entity_manager.peek_star(to.snum);
-    if (!star) {
-      g.out << "Star not found.\n";
-      return false;
-    }
-    x1 = p->xpos() + star->xpos();
-    y1 = p->ypos() + star->ypos();
-  } else if (to.level == ScopeLevel::LEVEL_STAR) {
-    const auto* star = g.entity_manager.peek_star(to.snum);
-    if (!star) {
-      g.out << "Star not found.\n";
-      return false;
-    }
-    x1 = star->xpos();
-    y1 = star->ypos();
-  }
-  /* compute the distance */
-  dist = std::hypot(x0 - x1, y0 - y1);
+  const auto to_coords =
+      resolve_scope_coords(to, g.player(), g.entity_manager, g);
+  if (!to_coords) return false;
+
+  const double dist = from_coords->distance_to(*to_coords);
   g.out << std::format("Distance = {}\n", dist);
   return true;
 }

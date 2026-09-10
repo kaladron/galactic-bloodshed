@@ -312,10 +312,9 @@ export struct ship_struct {
 
   player_t race{0};  ///< Race type (usually equal to owner, distinct after
                      ///< capture/revolt)
-  double xpos{0.0};  ///< X position coordinate
-  double ypos{0.0};  ///< Y position coordinate
-  double fuel{0.0};  ///< Current stored fuel
-  double mass{0.0};  ///< Current total mass
+  UniverseCoordinates coordinates{};  ///< Continuous universe coordinates
+  double fuel{0.0};                   ///< Current stored fuel
+  double mass{0.0};                   ///< Current total mass
   Coordinates land_coords{0, 0};  ///< Planetary surface coordinates when landed
 
   shipnum_t destshipno{0};  ///< Destination / escorted ship number
@@ -2150,29 +2149,14 @@ public:
   }
 
   // Position
-  [[nodiscard]] double xpos() const {
-    return data_.xpos;
-  }
-  double& xpos() {
-    return data_.xpos;
-  }
-
-  [[nodiscard]] double ypos() const {
-    return data_.ypos;
-  }
-  double& ypos() {
-    return data_.ypos;
-  }
-
   /// \brief Returns continuous position in universe coordinates.
   [[nodiscard]] constexpr UniverseCoordinates coordinates() const noexcept {
-    return {data_.xpos, data_.ypos};
+    return data_.coordinates;
   }
 
   /// \brief Sets continuous position in universe coordinates.
   constexpr void set_coordinates(UniverseCoordinates coords) noexcept {
-    data_.xpos = coords.x;
-    data_.ypos = coords.y;
+    data_.coordinates = coords;
   }
 
   // Resources
@@ -3520,8 +3504,8 @@ public:
     return aim().level;
   }
 
-  /// Resolves the absolute coordinates (x, y) of the aimed target.
-  [[nodiscard]] std::optional<std::pair<double, double>>
+  /// Resolves the absolute coordinates of the aimed target.
+  [[nodiscard]] std::optional<UniverseCoordinates>
   target_coordinates(EntityManager& em) const;
 
   /// Calculates the 0..7 compass aim direction heading toward the target.

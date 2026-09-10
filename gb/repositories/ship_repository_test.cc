@@ -28,8 +28,7 @@ int main() {
   test_data.name = "USS Enterprise";
   test_data.shipclass = "Cruiser";
   test_data.race = 2;
-  test_data.xpos = 100.5;
-  test_data.ypos = 200.7;
+  test_data.coordinates = UniverseCoordinates{100.5, 200.7};
   test_data.fuel = 5000.0;
   test_data.mass = 1500.0;
   test_data.armor = 250;
@@ -110,8 +109,7 @@ int main() {
   test::expect_eq(retrieved->name(), test_ship.name());
   test::expect_eq(retrieved->shipclass(), test_ship.shipclass());
   test::expect_eq(retrieved->race(), test_ship.race());
-  test::expect_eq(retrieved->xpos(), test_ship.xpos());
-  test::expect_eq(retrieved->ypos(), test_ship.ypos());
+  test::expect_eq(retrieved->coordinates(), test_ship.coordinates());
   test::expect_eq(retrieved->fuel(), test_ship.fuel());
   test::expect_eq(retrieved->mass(), test_ship.mass());
   test::expect_eq(retrieved->armor(), test_ship.armor());
@@ -164,7 +162,7 @@ int main() {
   retrieved->consume_fuel(2000.0);
   const auto dmg_res = retrieved->apply_damage(50);
   test::expect_eq(dmg_res.damage_applied, 50u);
-  retrieved->xpos() = 150.0;
+  retrieved->set_coordinates(UniverseCoordinates{150.0, 200.7});
   saved = repo.save(*retrieved);
   test::expect_true(saved, "Failed to update ship");
   std::println(std::cout, "  ✓ Ship updated successfully");
@@ -175,7 +173,7 @@ int main() {
   test::expect_true(updated.has_value(), "Failed to retrieve updated ship");
   test::expect_eq(updated->fuel(), 3000.0);
   test::expect_eq(updated->damage(), 50);
-  test::expect_eq(updated->xpos(), 150.0);
+  test::expect_eq(updated->coordinates(), UniverseCoordinates{150.0, 200.7});
   std::println(std::cout, "  ✓ Updated values verified");
 
   // Save multiple ships (use ship_struct which is copyable)

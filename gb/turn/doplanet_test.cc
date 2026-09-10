@@ -1648,8 +1648,7 @@ void test_build_automated_waste_can() {
   test::expect_true(smap.in_bounds(ship->land_coords()));
   test::expect_eq(ship->as<ToxicWasteShip>()->toxic_level(),
                   static_cast<unsigned char>(TOXMAX));
-  test::expect_eq(ship->xpos(), star.xpos() + planet.xpos());
-  test::expect_eq(ship->ypos(), star.ypos() + planet.ypos());
+  test::expect_eq(ship->coordinates(), planet.absolute_coordinates(star));
 
   // 5. Partial extraction (toxicity < TOXMAX)
   planet.conditions(TOXIC) = 15;

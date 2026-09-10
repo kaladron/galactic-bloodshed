@@ -90,8 +90,7 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           return false;
         }
 
-        Dist =
-            std::hypot(s2_check.xpos() - s.xpos(), s2_check.ypos() - s.ypos());
+        Dist = s2_check.coordinates().distance_to(s.coordinates());
         if (Dist > DIST_TO_DOCK) {
           g.out << std::format("{} must be {} or closer to {}.\n", s,
                                DIST_TO_DOCK, s2_check);
@@ -191,8 +190,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
                          star.get_name(), star.get_planet_name(s.pnumorbits()),
                          p.gravity());
 
-    Dist = std::hypot((star.xpos() + p.xpos()) - s.xpos(),
-                      (star.ypos() + p.ypos()) - s.ypos());
+    Dist = s.coordinates().distance_to(p.absolute_coordinates(star));
     g.out << std::format("Distance to planet: {:.2f}.\n", Dist);
 
     if (Dist > DIST_TO_LAND) {
@@ -268,8 +266,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
       return;
     } else {
       s.set_land_coords(target_coords);
-      s.xpos() = p.xpos() + star.xpos();
-      s.ypos() = p.ypos() + star.ypos();
+      s.set_coordinates(p.absolute_coordinates(star));
       use_fuel(s, fuel);
       s.docked() = 1;
       s.whatdest() = ScopeLevel::LEVEL_PLAN;

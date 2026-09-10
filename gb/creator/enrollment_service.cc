@@ -212,8 +212,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   ss.type = ShipType::OTYPE_GOV;
   entity_manager_.with_star(star, [&](const Star& s) {
     entity_manager_.with_planet(star, pnum, [&](const Planet& p) {
-      ss.xpos = s.xpos() + p.xpos();
-      ss.ypos = s.ypos() + p.ypos();
+      ss.coordinates = p.absolute_coordinates(s);
     });
   });
   ss.land_coords = capital_coords;

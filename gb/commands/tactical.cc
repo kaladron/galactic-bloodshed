@@ -114,7 +114,8 @@ class ShipTacticalItem : public TacticalItem {
 
 public:
   explicit ShipTacticalItem(const Ship* ship)
-      : TacticalItem(ship->xpos(), ship->ypos()), ship_(ship) {}
+      : TacticalItem(ship->coordinates().x, ship->coordinates().y),
+        ship_(ship) {}
 
   const Ship& ship() const {
     return *ship_;

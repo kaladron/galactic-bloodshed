@@ -113,8 +113,8 @@ struct meta<ship_struct> {
   using T = ship_struct;
   static constexpr auto value = object(
       "number", &T::number, "owner", &T::owner, "governor", &T::governor,
-      "name", &T::name, "shipclass", &T::shipclass, "race", &T::race, "xpos",
-      &T::xpos, "ypos", &T::ypos, "fuel", &T::fuel, "mass", &T::mass,
+      "name", &T::name, "shipclass", &T::shipclass, "race", &T::race,
+      "coordinates", &T::coordinates, "fuel", &T::fuel, "mass", &T::mass,
       "land_coords", &T::land_coords, "destshipno", &T::destshipno, "nextship",
       &T::nextship, "ships", &T::ships, "armor", &T::armor, "size", &T::size,
       "max_crew", &T::max_crew, "max_resource", &T::max_resource,

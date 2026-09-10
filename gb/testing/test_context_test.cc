@@ -234,8 +234,7 @@ void test_test_ship_builder() {
   test::expect_eq(bb->fuel(), static_cast<double>(battle_tmpl.max_fuel));
   test::expect_eq(bb->whatorbits(), ScopeLevel::LEVEL_STAR);
   test::expect_eq(bb->storbits(), starnum_t{0});
-  test::expect_eq(bb->xpos(), 10.0);
-  test::expect_eq(bb->ypos(), 20.0);
+  test::expect_eq(bb->coordinates(), UniverseCoordinates(10.0, 20.0));
   test::expect_false(bb->docked());
 
   // 2. Landed transport with customized crew, resource, and damage
@@ -291,12 +290,10 @@ void test_test_ship_builder() {
   test::expect_eq(shuttle->whatorbits(), ScopeLevel::LEVEL_PLAN);
   test::expect_eq(shuttle->storbits(), starnum_t{0});
   test::expect_eq(shuttle->pnumorbits(), planetnum_t{0});
-  test::expect_eq(shuttle->xpos(), 100.0);
-  test::expect_eq(shuttle->ypos(), 0.0);
+  test::expect_eq(shuttle->coordinates(), UniverseCoordinates(100.0, 0.0));
 
   // Verify lander also resolved planet coordinates
-  test::expect_eq(lander->xpos(), 100.0);
-  test::expect_eq(lander->ypos(), 0.0);
+  test::expect_eq(lander->coordinates(), UniverseCoordinates(100.0, 0.0));
 
   // 5. In-planet-orbit ship with explicit UniverseCoordinates
   shipnum_t univ_orbiter_num =

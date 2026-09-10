@@ -92,8 +92,8 @@ void moveplanet(EntityManager& entity_manager, const Star& star,
 
   /* adjust ships in orbit around the planet */
   for (auto ship_handle : ShipList(entity_manager, planet.ships())) {
-    ship_handle->xpos() += xadd;
-    ship_handle->ypos() += yadd;
+    ship_handle->set_coordinates(ship_handle->coordinates() +
+                                 SystemCoordinates{xadd, yadd});
   }
 
   planet.xpos() += xadd;

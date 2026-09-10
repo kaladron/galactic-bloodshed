@@ -234,22 +234,37 @@ const CommandDescriptor orbit_cmd{
 
 }  // namespace GB::commands
 
+/// Projects astronomical coordinates to integer screen coordinates on the 2D
+/// display canvas.
+///
+/// \param dx Relative X displacement from the viewport center.
+/// \param dy Relative Y displacement from the viewport center.
+/// \param max_extent Viewport boundary radius for the current scope level
+/// (UNIVSIZE, SYSTEMSIZE, or PLORBITSIZE).
+/// \param zoom Viewport zoom factor.
+/// \return 2D integer screen Coordinates on the display canvas.
+static Coordinates project_to_screen(double dx, double dy, double max_extent,
+                                     double zoom) {
+  const double factor = static_cast<double>(SCALE) / (max_extent * zoom);
+  return Coordinates(static_cast<int>(SCALE + dx * factor),
+                     static_cast<int>(SCALE + dy * factor));
+}
+
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
 // like we should be doing something here.
 static std::string DispStar(const GameObj& g, const ScopeLevel level,
                             const Star& star, int /* DontDispStars */,
                             const Race& r) {
-  int x;
-  int y;
+  Coordinates screen_coords{};
 
   switch (level) {
-    case (ScopeLevel::LEVEL_UNIV):
-      x = (int)(SCALE + ((SCALE * (star.xpos() - Lastx)) / (UNIVSIZE * Zoom)));
-      y = (int)(SCALE + ((SCALE * (star.ypos() - Lasty)) / (UNIVSIZE * Zoom)));
+    case ScopeLevel::LEVEL_UNIV:
+      screen_coords =
+          project_to_screen(star.coordinates().x - Lastx,
+                            star.coordinates().y - Lasty, UNIVSIZE, Zoom);
       break;
-    case (ScopeLevel::LEVEL_STAR):
-      x = (int)(SCALE + (SCALE * (-Lastx)) / (SYSTEMSIZE * Zoom));
-      y = (int)(SCALE + (SCALE * (-Lasty)) / (SYSTEMSIZE * Zoom));
+    case ScopeLevel::LEVEL_STAR:
+      screen_coords = project_to_screen(-Lastx, -Lasty, SYSTEMSIZE, Zoom);
       break;
     default:
       return "";
@@ -258,12 +273,12 @@ static std::string DispStar(const GameObj& g, const ScopeLevel level,
   std::stringstream ss;
   if (r.governor[g.governor().value].toggle.color) {
     char stand = (star.is_explored_by(g.player()) ? g.player().value : 0) + '?';
-    ss << std::format("{} {} {} 0 * ", stand, x, y);
+    ss << std::format("{} {} {} 0 * ", stand, screen_coords.x, screen_coords.y);
     stand = (star.is_inhabited_by(g.player()) ? g.player().value : 0) + '?';
     ss << std::format("{} {};", stand, star.get_name());
   } else {
     int stand = (star.is_explored_by(g.player()) ? 1 : 0);
-    ss << std::format("{} {} {} 0 * ", stand, x, y);
+    ss << std::format("{} {} {} 0 * ", stand, screen_coords.x, screen_coords.y);
     stand = (star.is_inhabited_by(g.player()) ? 1 : 0);
     ss << std::format("{} {};", stand, star.get_name());
   }
@@ -276,17 +291,15 @@ static std::string DispStar(const GameObj& g, const ScopeLevel level,
 static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
                               const Planet& p, std::string_view name,
                               int /* DontDispPlanets */, const Race& r) {
-  int x = 0;  // TODO(jeffbailey): Check if init to 0 is right.
-  int y = 0;
+  Coordinates screen_coords{};
 
   switch (level) {
     case ScopeLevel::LEVEL_STAR:
-      y = (int)(SCALE + (SCALE * (p.ypos() - Lasty)) / (SYSTEMSIZE * Zoom));
-      x = (int)(SCALE + (SCALE * (p.xpos() - Lastx)) / (SYSTEMSIZE * Zoom));
+      screen_coords = project_to_screen(p.xpos() - Lastx, p.ypos() - Lasty,
+                                        SYSTEMSIZE, Zoom);
       break;
     case ScopeLevel::LEVEL_PLAN:
-      y = (int)(SCALE + (SCALE * (-Lasty)) / (PLORBITSIZE * Zoom));
-      x = (int)(SCALE + (SCALE * (-Lastx)) / (PLORBITSIZE * Zoom));
+      screen_coords = project_to_screen(-Lastx, -Lasty, PLORBITSIZE, Zoom);
       break;
     default:
       return "";
@@ -295,13 +308,13 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
 
   if (r.governor[g.governor().value].toggle.color) {
     char stand = (p.info(g.player()).explored ? g.player().value : 0) + '?';
-    ss << std::format("{} {} {} 0 {} ", stand, x, y,
+    ss << std::format("{} {} {} 0 {} ", stand, screen_coords.x, screen_coords.y,
                       (stand > '0' ? Psymbol[p.type()] : '?'));
     stand = (p.info(g.player()).numsectsowned ? g.player().value : 0) + '?';
     ss << std::format("{} {}", stand, name);
   } else {
     int stand = p.info(g.player()).explored ? 1 : 0;
-    ss << std::format("{} {} {} 0 {} ", stand, x, y,
+    ss << std::format("{} {} {} 0 {} ", stand, screen_coords.x, screen_coords.y,
                       (stand ? Psymbol[p.type()] : '?'));
     stand = p.info(g.player()).numsectsowned ? 1 : 0;
     ss << std::format("{} {}", stand, name);
@@ -325,29 +338,28 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
                                ? em.peek_star(where.snum)
                                : nullptr;
 
-  int x = 0;
-  int y = 0;
+  Coordinates screen_coords{};
 
   switch (where.level) {
-    case ScopeLevel::LEVEL_PLAN:
+    case ScopeLevel::LEVEL_PLAN: {
       if (!where_star) return "";
-      x = (int)(SCALE + (SCALE * (ship.xpos() -
-                                  (where_star->xpos() + pl.xpos()) - Lastx)) /
-                            (PLORBITSIZE * Zoom));
-      y = (int)(SCALE + (SCALE * (ship.ypos() -
-                                  (where_star->ypos() + pl.ypos()) - Lasty)) /
-                            (PLORBITSIZE * Zoom));
+      const auto pl_coords = pl.absolute_coordinates(*where_star);
+      screen_coords = project_to_screen(
+          ship.coordinates().x - pl_coords.x - Lastx,
+          ship.coordinates().y - pl_coords.y - Lasty, PLORBITSIZE, Zoom);
       break;
+    }
     case ScopeLevel::LEVEL_STAR:
       if (!where_star) return "";
-      x = (int)(SCALE + (SCALE * (ship.xpos() - where_star->xpos() - Lastx)) /
-                            (SYSTEMSIZE * Zoom));
-      y = (int)(SCALE + (SCALE * (ship.ypos() - where_star->ypos() - Lasty)) /
-                            (SYSTEMSIZE * Zoom));
+      screen_coords = project_to_screen(
+          ship.coordinates().x - where_star->coordinates().x - Lastx,
+          ship.coordinates().y - where_star->coordinates().y - Lasty,
+          SYSTEMSIZE, Zoom);
       break;
     case ScopeLevel::LEVEL_UNIV:
-      x = (int)(SCALE + (SCALE * (ship.xpos() - Lastx)) / (UNIVSIZE * Zoom));
-      y = (int)(SCALE + (SCALE * (ship.ypos() - Lasty)) / (UNIVSIZE * Zoom));
+      screen_coords =
+          project_to_screen(ship.coordinates().x - Lastx,
+                            ship.coordinates().y - Lasty, UNIVSIZE, Zoom);
       break;
     case ScopeLevel::LEVEL_SHIP:
       // Ships can't orbit other ships; this case should never be reached.
@@ -377,17 +389,18 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
       break;
   }
 
-  if (x >= 0 && y >= 0) {
+  if (screen_coords.x >= 0 && screen_coords.y >= 0) {
     if (r.governor[g.governor().value].toggle.color) {
       return std::format("{} {} {} {} {} {} {};",
-                         (char)(ship.owner().value + '?'), x, y, mirror_heading,
-                         ship.type_letter(), (char)(ship.owner().value + '?'),
-                         ship.number().value);
+                         (char)(ship.owner().value + '?'), screen_coords.x,
+                         screen_coords.y, mirror_heading, ship.type_letter(),
+                         (char)(ship.owner().value + '?'), ship.number().value);
     }
     const bool stand =
         (ship.owner() == r.governor[g.governor().value].toggle.highlight);
-    return std::format("{} {} {} {} {} {} {};", stand, x, y, mirror_heading,
-                       ship.type_letter(), stand, ship.number().value);
+    return std::format("{} {} {} {} {} {} {};", stand, screen_coords.x,
+                       screen_coords.y, mirror_heading, ship.type_letter(),
+                       stand, ship.number().value);
   }
   return "";
 }

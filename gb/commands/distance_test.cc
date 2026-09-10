@@ -39,14 +39,24 @@ void setup_test_world(TestContext& ctx) {
   races.save(race1);
   races.save(race2);
 
-  // Initialize star 0 at (0, 0)
+  // Initialize star 0 at (0, 0) with planet Earth at (60, 80)
   star_struct ss0{};
   ss0.star_id = 0;
   ss0.name = "Sol";
   ss0.xpos = 0.0;
   ss0.ypos = 0.0;
   ss0.explored = (1ULL << 1);
+  ss0.pnames.push_back("Earth");
   Star star0(ss0);
+
+  planet_struct ps0{};
+  ps0.star_id = 0;
+  ps0.planet_order = 0;
+  ps0.type = PlanetType::EARTH;
+  ps0.xpos = 60.0;
+  ps0.ypos = 80.0;
+  ps0.info[player_t{1}].explored = true;
+  Planet planet0(ps0);
 
   // Initialize star 1 at (300, 400) -> distance should be 500
   star_struct ss1{};
@@ -61,6 +71,9 @@ void setup_test_world(TestContext& ctx) {
   stars.save(star0);
   stars.save(star1);
 
+  PlanetRepository planets(store);
+  planets.save(planet0);
+
   // Ships
   ShipRepository ships(store);
 
@@ -69,8 +82,7 @@ void setup_test_world(TestContext& ctx) {
   s1.number = 1;
   s1.owner = 1;
   s1.type = ShipType::STYPE_SHUTTLE;
-  s1.xpos = 0.0;
-  s1.ypos = 0.0;
+  s1.coordinates = UniverseCoordinates{0.0, 0.0};
   s1.alive = 1;
   Ship ship1(s1);
   ships.save(ship1);
@@ -80,8 +92,7 @@ void setup_test_world(TestContext& ctx) {
   s2.number = 2;
   s2.owner = 1;
   s2.type = ShipType::STYPE_SHUTTLE;
-  s2.xpos = 30.0;
-  s2.ypos = 40.0;
+  s2.coordinates = UniverseCoordinates{30.0, 40.0};
   s2.alive = 1;
   Ship ship2(s2);
   ships.save(ship2);
@@ -91,8 +102,7 @@ void setup_test_world(TestContext& ctx) {
   s3.number = 3;
   s3.owner = 2;
   s3.type = ShipType::STYPE_SHUTTLE;
-  s3.xpos = 100.0;
-  s3.ypos = 100.0;
+  s3.coordinates = UniverseCoordinates{100.0, 100.0};
   s3.alive = 1;
   Ship ship3(s3);
   ships.save(ship3);
@@ -131,13 +141,53 @@ void test_distance_dispatch() {
   test::expect_contains(g.out.str(), "Distance = 50");
   std::println(std::cout, "    ✓ distance between ships calculated accurately");
 
-  // 5. Domain error: Foreign ship probe rejected
+  // 5. Happy path: distance from planet to its host star (60,80) to (0,0) ->
+  // 100
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"distance", "/Sol/Earth", "/Sol"});
+  test::expect_contains(g.out.str(), "Distance = 100");
+  std::println(std::cout,
+               "    ✓ distance from planet to host star calculated accurately");
+
+  // 6. Happy path: distance from planet to ship (60,80) to (0,0) -> 100
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"distance", "/Sol/Earth", "#1"});
+  test::expect_contains(g.out.str(), "Distance = 100");
+  std::println(std::cout,
+               "    ✓ distance from planet to ship calculated accurately");
+
+  // 7. Happy path: distance from planet to another star (60,80) to (300,400) ->
+  // 400
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"distance", "/Sol/Earth", "/Centauri"});
+  test::expect_contains(g.out.str(), "Distance = 400");
+  std::println(
+      std::cout,
+      "    ✓ cross-system distance from planet to star calculated accurately");
+
+  // 8. Happy path: distance from ship to planet (30,40) to (60,80) -> 50
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"distance", "#2", "/Sol/Earth"});
+  test::expect_contains(g.out.str(), "Distance = 50");
+  std::println(std::cout,
+               "    ✓ distance from ship to planet calculated accurately");
+
+  // 9. Domain error: Foreign ship probe rejected when foreign ship is <to>
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"distance", "#1", "#3"});
   test::expect_contains(g.out.str(), "Nice try");
-  std::println(std::cout, "    ✓ distance rejected query on foreign ship");
+  std::println(
+      std::cout,
+      "    ✓ distance rejected query when foreign ship is destination");
 
-  // 6. Domain error: Bad scope
+  // 10. Domain error: Foreign ship probe rejected when foreign ship is <from>
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"distance", "#3", "#1"});
+  test::expect_contains(g.out.str(), "Nice try");
+  std::println(std::cout,
+               "    ✓ distance rejected query when foreign ship is origin");
+
+  // 11. Domain error: Bad scope
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"distance", "/NonExistentStar", "/Sol"});
   test::expect_true(g.out.str().contains("Bad scope") ||

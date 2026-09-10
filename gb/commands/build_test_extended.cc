@@ -175,8 +175,7 @@ void test_factory_multiple_builds() {
   factory_data.storbits() = fixture.star_id;
   factory_data.pnumorbits() = fixture.planet_id;
   factory_data.set_land_coords({5, 5});  // Land at sector with population
-  factory_data.xpos() = 0.0;
-  factory_data.ypos() = 0.0;
+  factory_data.set_coordinates(UniverseCoordinates{0.0, 0.0});
   factory_data.resource() = 10000;
   factory_data.popn() = 100;                          // Needs crew to build
   factory_data.build_type() = ShipType::OTYPE_PROBE;  // Set what factory builds

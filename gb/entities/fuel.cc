@@ -117,9 +117,8 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
     effective_segment_number++;
     if (effective_segment_number == (state->segments + 1))
       effective_segment_number = 1;
-    double x_0 = tmpship.xpos();
-    double y_0 = tmpship.ypos();
-    double tmpdist = std::hypot(x_0 - x_1, y_0 - y_1);
+    double tmpdist =
+        tmpship.coordinates().distance_to(UniverseCoordinates{x_1, y_1});
     switch (tmpship.whatdest()) {
       case ScopeLevel::LEVEL_STAR:
         if (tmpdist <= SYSTEMSIZE) trip_resolved = true;

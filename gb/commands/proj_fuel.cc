@@ -116,8 +116,8 @@ bool proj_fuel(const command_t& argv, GameObj& g) {
     g.out << "Invalid ship destination.\n";
     return false;
   }
-  double x_0 = ship->xpos();
-  double y_0 = ship->ypos();
+  double x_0 = ship->coordinates().x;
+  double y_0 = ship->coordinates().y;
 
   double x_1;
   double y_1;
@@ -136,8 +136,8 @@ bool proj_fuel(const command_t& argv, GameObj& g) {
       g.out << "Nice try.\n";
       return false;
     }
-    x_1 = tmpship->xpos();
-    y_1 = tmpship->ypos();
+    x_1 = tmpship->coordinates().x;
+    y_1 = tmpship->coordinates().y;
   } else if (tmpdest.level == ScopeLevel::LEVEL_PLAN) {
     const auto* p = g.entity_manager.peek_planet(tmpdest.snum, tmpdest.pnum);
     const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);

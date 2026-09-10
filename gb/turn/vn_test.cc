@@ -207,8 +207,7 @@ int main() {
     vn_data.owner = 1;
     vn_data.type = ShipType::OTYPE_VN;
     vn_data.storbits = 0;
-    vn_data.xpos = 0.0;
-    vn_data.ypos = 0.0;
+    vn_data.coordinates = UniverseCoordinates{0.0, 0.0};
 
     auto vn_ship = ShipFactory::create(vn_data);
     auto* vn = vn_ship->as<VonNeumannShip>();
@@ -703,8 +702,7 @@ int main() {
     vn_data.owner = 1;
     vn_data.type = ShipType::OTYPE_VN;
     vn_data.storbits = 0;
-    vn_data.xpos = 0.0;
-    vn_data.ypos = 0.0;
+    vn_data.coordinates = UniverseCoordinates{0.0, 0.0};
     auto vn = ShipFactory::create(vn_data);
 
     order_VN(em, *vn);
@@ -722,8 +720,7 @@ int main() {
     bers_data.owner = 1;
     bers_data.type = ShipType::OTYPE_BERS;
     bers_data.storbits = 0;
-    bers_data.xpos = 0.0;
-    bers_data.ypos = 0.0;
+    bers_data.coordinates = UniverseCoordinates{0.0, 0.0};
     bers_data.hyper_drive.has = true;
     bers_data.mounted = true;
     bers_data.special = MindData{

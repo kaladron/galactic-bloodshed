@@ -56,8 +56,7 @@ bool launch(const command_t& argv, GameObj& g) {
             s.destpnum() = s2.pnumorbits();
             s.deststar() = s2.deststar();
             s.destshipno() = 0;
-            s.xpos() = s2.xpos();
-            s.ypos() = s2.ypos();
+            s.set_coordinates(s2.coordinates());
             s.set_land_coords(s2.land_coords());
             s.docked() = 1;
             s.whatdest() = ScopeLevel::LEVEL_PLAN;
@@ -72,8 +71,7 @@ bool launch(const command_t& argv, GameObj& g) {
           s.storbits() = s2.storbits();
           s.pnumorbits() = s2.pnumorbits();
           s.destshipno() = 0;
-          s.xpos() = s2.xpos();
-          s.ypos() = s2.ypos();
+          s.set_coordinates(s2.coordinates());
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.set_mass(s2.mass() - s.mass());
@@ -87,8 +85,7 @@ bool launch(const command_t& argv, GameObj& g) {
           s.whatorbits() = ScopeLevel::LEVEL_STAR;
           s.storbits() = s2.storbits();
           s.destshipno() = 0;
-          s.xpos() = s2.xpos();
-          s.ypos() = s2.ypos();
+          s.set_coordinates(s2.coordinates());
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.set_mass(s2.mass() - s.mass());
@@ -100,8 +97,7 @@ bool launch(const command_t& argv, GameObj& g) {
           g.out << std::format("{} launched from {}.\n", s, s2);
           s.whatorbits() = ScopeLevel::LEVEL_UNIV;
           s.destshipno() = 0;
-          s.xpos() = s2.xpos();
-          s.ypos() = s2.ypos();
+          s.set_coordinates(s2.coordinates());
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.set_mass(s2.mass() - s.mass());
@@ -148,12 +144,14 @@ bool launch(const command_t& argv, GameObj& g) {
                   "Planet /{}/{} has gravity field of {:.2f}\n",
                   star.get_name(), star.get_planet_name(s.pnumorbits()),
                   p.gravity());
-              s.xpos() = star.xpos() + p.xpos() +
-                         (double)int_rand((int)(-DIST_TO_LAND / 4),
-                                          (int)(DIST_TO_LAND / 4));
-              s.ypos() = star.ypos() + p.ypos() +
-                         (double)int_rand((int)(-DIST_TO_LAND / 4),
-                                          (int)(DIST_TO_LAND / 4));
+              const double r_x = static_cast<double>(
+                  int_rand(static_cast<int>(-DIST_TO_LAND / 4),
+                           static_cast<int>(DIST_TO_LAND / 4)));
+              const double r_y = static_cast<double>(
+                  int_rand(static_cast<int>(-DIST_TO_LAND / 4),
+                           static_cast<int>(DIST_TO_LAND / 4)));
+              s.set_coordinates(p.absolute_coordinates(star) +
+                                SystemCoordinates{r_x, r_y});
 
               auto fuel = p.gravity() * s.mass() * LAUNCH_GRAV_MASS_FACTOR;
               if (s.fuel() < fuel) {

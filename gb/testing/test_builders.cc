@@ -99,12 +99,10 @@ TestShipBuilder::in_star_orbit(starnum_t snum,
   ship_.pnumorbits = 0;
   ship_.docked = 0;
   if (coords) {
-    ship_.xpos = coords->x;
-    ship_.ypos = coords->y;
+    ship_.coordinates = *coords;
   } else {
     const auto* star = em_.peek_star(snum);
-    ship_.xpos = star->coordinates().x;
-    ship_.ypos = star->coordinates().y;
+    ship_.coordinates = star->coordinates();
   }
   return *this;
 }
@@ -115,9 +113,7 @@ TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum,
   ship_.storbits = snum;
   ship_.docked = 0;
   const auto* star = em_.peek_star(snum);
-  UniverseCoordinates abs_coords = star->coordinates() + coords;
-  ship_.xpos = abs_coords.x;
-  ship_.ypos = abs_coords.y;
+  ship_.coordinates = star->coordinates() + coords;
   return *this;
 }
 
@@ -134,14 +130,11 @@ TestShipBuilder::in_planet_orbit(starnum_t snum, planetnum_t pnum,
   ship_.pnumorbits = pnum;
   ship_.docked = 0;
   if (coords) {
-    ship_.xpos = coords->x;
-    ship_.ypos = coords->y;
+    ship_.coordinates = *coords;
   } else {
     const auto* star = em_.peek_star(snum);
     const auto* planet = em_.peek_planet(snum, pnum);
-    UniverseCoordinates abs_coords = planet->absolute_coordinates(*star);
-    ship_.xpos = abs_coords.x;
-    ship_.ypos = abs_coords.y;
+    ship_.coordinates = planet->absolute_coordinates(*star);
   }
   return *this;
 }
@@ -154,9 +147,7 @@ TestShipBuilder& TestShipBuilder::in_planet_orbit(starnum_t snum,
   ship_.pnumorbits = pnum;
   ship_.docked = 0;
   const auto* star = em_.peek_star(snum);
-  UniverseCoordinates abs_coords = star->coordinates() + coords;
-  ship_.xpos = abs_coords.x;
-  ship_.ypos = abs_coords.y;
+  ship_.coordinates = star->coordinates() + coords;
   return *this;
 }
 
@@ -170,9 +161,7 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
   ship_.land_coords = coords;
   const auto* star = em_.peek_star(snum);
   const auto* planet = em_.peek_planet(snum, pnum);
-  UniverseCoordinates abs_coords = planet->absolute_coordinates(*star);
-  ship_.xpos = abs_coords.x;
-  ship_.ypos = abs_coords.y;
+  ship_.coordinates = planet->absolute_coordinates(*star);
   return *this;
 }
 

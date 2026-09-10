@@ -16,9 +16,8 @@ import gb.services;
 import gb.repositories;
 import std;
 
-TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
-                                 std::optional<shipnum_t> explicit_number)
-    : em_(em) {
+void TestShipBuilder::init(ShipType type,
+                           std::optional<shipnum_t> explicit_number) {
   shipnum_t number = explicit_number.value_or(0);
   ship_.number = number;
   ship_.type = type;
@@ -56,8 +55,14 @@ TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
   Ship temp_ship{ship_};
   ship_.size = static_cast<ship_size_t>(ship_size(temp_ship));
   ship_.base_mass = getmass(temp_ship);
-  ship_.mass = ship_.base_mass;
+  ship_.mass = temp_ship.local_mass(1.0);
   ship_.build_cost = static_cast<money_t>(cost(temp_ship));
+}
+
+TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
+                                 std::optional<shipnum_t> explicit_number)
+    : em_(em) {
+  init(type, explicit_number);
 }
 
 TestShipBuilder& TestShipBuilder::owned_by(player_t owner, governor_t gov) {
@@ -215,8 +220,18 @@ TestShipBuilder& TestShipBuilder::with_speed(speed_t speed) {
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::with_max_speed(speed_t max_speed) {
+  ship_.max_speed = max_speed;
+  return *this;
+}
+
 TestShipBuilder& TestShipBuilder::with_fuel(double fuel) {
   ship_.fuel = fuel;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_max_fuel(double max_fuel) {
+  ship_.max_fuel = max_fuel;
   return *this;
 }
 
@@ -225,8 +240,28 @@ TestShipBuilder& TestShipBuilder::with_resource(resource_t res) {
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::with_max_resource(resource_t max_res) {
+  ship_.max_resource = max_res;
+  return *this;
+}
+
 TestShipBuilder& TestShipBuilder::with_destruct(resource_t destruct) {
   ship_.destruct = destruct;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_max_destruct(resource_t max_destruct) {
+  ship_.max_destruct = max_destruct;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_crystals(crystal_t crystals) {
+  ship_.crystals = crystals;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_mount(unsigned char mount) {
+  ship_.mount = mount;
   return *this;
 }
 
@@ -237,6 +272,11 @@ TestShipBuilder& TestShipBuilder::with_damage(damage_t damage) {
 
 TestShipBuilder& TestShipBuilder::with_armor(armor_t armor) {
   ship_.armor = armor;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_mass(double mass) {
+  ship_.mass = mass;
   return *this;
 }
 

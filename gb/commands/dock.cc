@@ -314,8 +314,7 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
               s2.apply_damage(dam2);
               if (s2.damage() >= 100) g.entity_manager.kill_ship(Playernum, s2);
             } else {
-              s2.set_popn(0);
-              s2.set_troops(0);
+              s2.clear_crew(alien.mass);
               booby = 0;
               /* do booby traps */
               /* check for boobytrapping */

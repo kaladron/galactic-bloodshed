@@ -182,12 +182,13 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   newship->speed() = newship->max_speed_capacity();
   newship->owner() = Playernum;
   newship->governor() = Governor;
-  newship->set_fuel(race.God ? newship->max_fuel_capacity() : load_fuel);
+  newship->admin_override_fuel(
+      race.God ? newship->max_fuel_capacity() : load_fuel, race.mass);
   newship->popn() = race.God ? newship->max_crew_capacity() : load_crew;
   newship->troops() = 0;
   newship->resource() = race.God ? newship->max_resource_capacity() : 0;
   newship->destruct() = race.God ? newship->max_destruct_capacity() : 0;
-  newship->set_crystals(0);
+  newship->admin_override_crystals(0);
   newship->hanger() = 0;
   newship->set_mass(newship->local_mass(race.mass));
   newship->alive() = 1;

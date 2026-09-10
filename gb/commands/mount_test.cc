@@ -41,7 +41,7 @@ void test_mount_persistence() {
   ship.alive() = true;
   ship.active() = true;
   ship.mount() = 1;
-  ship.set_crystals(2);  // Has 2 crystals on board
+  ship.add_crystals(2);  // Has 2 crystals on board
   ship.mounted() = 0;    // Not mounted yet
   ships.save(ship);
 
@@ -79,7 +79,7 @@ void test_dismount_persistence() {
   ship.alive() = true;
   ship.active() = true;
   ship.mount() = 1;
-  ship.set_crystals(1);
+  ship.add_crystals(1);
   ship.mounted() = 1;              // Crystal mounted
   ship.hyper_drive().charge = 50;  // Charged
   ships.save(ship);
@@ -113,17 +113,11 @@ void test_mount_no_crystals() {
   ShipRepository ships(store);
 
   // Create a ship without crystals
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.governor() = 0;
-  ship.type() = ShipType::STYPE_HABITAT;
-  ship.alive() = true;
-  ship.active() = true;
-  ship.mount() = 1;
-  ship.set_crystals(0);  // No crystals
-  ship.mounted() = 0;
-  ships.save(ship);
+  TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT, 1)
+      .owned_by(1, 0)
+      .with_mount(1)
+      .with_crystals(0)
+      .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -151,17 +145,12 @@ void test_dismount_full_storage() {
   ShipRepository ships(store);
 
   // Create a ship with max crystals and one mounted
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.governor() = 0;
-  ship.type() = ShipType::STYPE_HABITAT;
-  ship.alive() = true;
-  ship.active() = true;
-  ship.mount() = 1;
-  ship.set_crystals(ship.max_crystals_capacity());  // Max storage full
-  ship.mounted() = 1;
-  ships.save(ship);
+  TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT, 1)
+      .owned_by(1, 0)
+      .with_mount(1)
+      .with_crystals(127)
+      .build();
+  ctx.em.mutate_ship(1, [](Ship& s) { s.mounted() = 1; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

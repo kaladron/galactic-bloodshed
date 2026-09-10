@@ -278,18 +278,15 @@ void test_playernum_indexing(EntityManager& em) {
   std::println(std::cout, "  Array indexing via Playernum works correctly");
 }
 
-void populate_ships(EntityManager& em, JsonStore& store) {
-  ShipRepository ship_repo(store);
+void populate_ships(EntityManager& em, JsonStore&) {
   for (shipnum_t i = 1; i <= 3; i++) {
-    Ship ship{};
-    ship.number() = i;
-    ship.name() = std::format("Ship{}", i);
-    ship.owner() = 1;
-    ship.alive() = true;
-    ship.max_fuel() = 500.0;
-    ship.set_fuel(100.0 * static_cast<double>(i.value));
-    ship.nextship() = (i.value < 3) ? shipnum_t{i.value + 1} : shipnum_t{0};
-    ship_repo.save(ship);
+    TestShipBuilder(em, ShipType::STYPE_SHUTTLE, i)
+        .named(std::format("Ship{}", i))
+        .owned_by(1, 0)
+        .with_max_fuel(500.0)
+        .with_fuel(100.0 * static_cast<double>(i.value))
+        .with_nextship((i.value < 3) ? shipnum_t{i.value + 1} : shipnum_t{0})
+        .build();
   }
 
   em.clear_cache();

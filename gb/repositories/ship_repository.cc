@@ -218,6 +218,10 @@ std::unique_ptr<Ship> ShipRepository::find_ship(shipnum_t num) {
 }
 
 bool ShipRepository::save(const Ship& ship) {
+  if (ship.is_simulation()) {
+    throw std::logic_error(
+        "Attempted to persist a SimulatedShip to the database!");
+  }
   return Repository<Ship>::save(ship.number(), ship);
 }
 

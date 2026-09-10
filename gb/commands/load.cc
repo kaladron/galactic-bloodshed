@@ -12,10 +12,6 @@ import notification;
 import std;
 
 namespace {
-int landed_on(const Ship& s, const shipnum_t shipno) {
-  return (s.whatorbits() == ScopeLevel::LEVEL_SHIP && s.destshipno() == shipno);
-}
-
 void do_transporter(const Race& race, GameObj& g, TransporterShip& s) {
   if (!s.is_landed()) {
     g.out << "Origin ship not landed.\n";
@@ -86,7 +82,7 @@ void do_transporter(const Race& race, GameObj& g, TransporterShip& s) {
 
       g.out << std::format("{} crystal(s) transferred.\n", s.crystals());
       tele_lines += std::format("{} crystal(s)\n", s.crystals());
-      s.set_crystals(0);
+      s.consume_crystals(s.crystals());
     }
 
     if (s2.owner() != s.owner()) {
@@ -490,45 +486,25 @@ bool load(const command_t& argv, GameObj& g) {
       g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
         switch (commod) {
           case 'c':
-            if (landed_on(s, s2.number())) {
-              s2.set_popn(s2.popn() - amt);
-            } else {
-              s2.remove_popn(amt, race.mass);
-            }
+            s2.remove_popn(amt, race.mass);
             transfercrew = 1;
             break;
           case 'm':
-            if (landed_on(s, s2.number())) {
-              s2.set_troops(s2.troops() - amt);
-            } else {
-              s2.remove_troops(amt, race.mass);
-            }
+            s2.remove_troops(amt, race.mass);
             transfercrew = 1;
             break;
           case 'd':
-            if (landed_on(s, s2.number())) {
-              s2.set_destruct(s2.destruct() - amt);
-            } else {
-              s2.consume_destruct(amt);
-            }
+            s2.consume_destruct(amt);
             break;
           case 'x':
           case '&':
             s2.consume_crystals(amt);
             break;
           case 'f':
-            if (landed_on(s, s2.number())) {
-              s2.set_fuel(s2.fuel() - static_cast<double>(amt));
-            } else {
-              s2.consume_fuel(static_cast<double>(amt));
-            }
+            s2.consume_fuel(static_cast<double>(amt));
             break;
           case 'r':
-            if (landed_on(s, s2.number())) {
-              s2.set_resource(s2.resource() - amt);
-            } else {
-              s2.consume_resource(amt);
-            }
+            s2.consume_resource(amt);
             break;
         }
 

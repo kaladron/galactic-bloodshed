@@ -2090,6 +2090,11 @@ public:
     return *this;
   }
 
+  /// \brief Returns whether this ship is an in-memory simulation clone.
+  [[nodiscard]] virtual bool is_simulation() const noexcept {
+    return false;
+  }
+
   // =========================================================================
   // ACCESSOR METHODS - const and non-const pairs
   // =========================================================================
@@ -2943,39 +2948,71 @@ public:
   // DOMAIN OPERATIONS & STATE TRANSITIONS
   // =========================================================================
 
-  /// \brief Sets hull damage clamped to [0, 100]%.
-  void set_damage(damage_t amt) noexcept {
+  // =========================================================================
+  // ADMIN / DEITY OVERRIDES (Commands: fix, do_god)
+  // =========================================================================
+
+  /// \brief Deity override: sets hull damage clamped to [0, 100]%.
+  void admin_override_damage(damage_t amt) noexcept {
     data_.damage = std::clamp<damage_t>(amt, 0, 100);
   }
 
-  /// \brief Sets fuel clamped to [0.0, max_fuel_capacity()].
-  void set_fuel(fuel_t amt) noexcept {
+  /// \brief Deity override: sets fuel clamped to capacity and synchronizes
+  /// mass.
+  void admin_override_fuel(fuel_t amt, double race_mass = 1.0) noexcept {
     data_.fuel = std::clamp(amt, 0.0, static_cast<double>(max_fuel_capacity()));
+    data_.mass = local_mass(race_mass);
   }
 
-  /// \brief Sets civilian population/crew clamped to [0, max_crew_capacity()].
-  void set_popn(population_t amt) noexcept {
-    data_.popn = std::clamp<population_t>(amt, 0, max_crew_capacity());
-  }
-
-  /// \brief Sets military troops clamped to [0, max_crew_capacity()].
-  void set_troops(population_t amt) noexcept {
-    data_.troops = std::clamp<population_t>(amt, 0, max_crew_capacity());
-  }
-
-  /// \brief Sets cargo resources clamped to [0, max_resource_capacity()].
-  void set_resource(resource_t amt) noexcept {
+  /// \brief Deity override: sets cargo resources clamped to capacity and
+  /// synchronizes mass.
+  void admin_override_resource(resource_t amt,
+                               double race_mass = 1.0) noexcept {
     data_.resource = std::clamp<resource_t>(amt, 0, max_resource_capacity());
+    data_.mass = local_mass(race_mass);
   }
 
-  /// \brief Sets destructive charges clamped to [0, max_destruct_capacity()].
-  void set_destruct(resource_t amt) noexcept {
+  /// \brief Deity override: sets destruct charges clamped to capacity and
+  /// synchronizes mass.
+  void admin_override_destruct(resource_t amt,
+                               double race_mass = 1.0) noexcept {
     data_.destruct = std::clamp<resource_t>(amt, 0, max_destruct_capacity());
+    data_.mass = local_mass(race_mass);
   }
 
-  /// \brief Sets crystals clamped to [0, max_crystals_capacity()].
-  void set_crystals(crystal_t count) noexcept {
+  /// \brief Deity override: sets warp crystal charges clamped to capacity.
+  void admin_override_crystals(crystal_t count) noexcept {
     data_.crystals = std::min(count, max_crystals_capacity());
+  }
+
+  /// \brief Deity override: sets maximum fuel tank capacity.
+  void admin_override_max_fuel(fuel_t amt) noexcept {
+    data_.max_fuel = std::max(0.0, amt);
+  }
+
+  /// \brief Deity override: resurrects a destroyed ship to full operational
+  /// health.
+  void admin_resurrect() noexcept {
+    data_.alive = true;
+    data_.active = true;
+    data_.damage = 0;
+  }
+
+  /// \brief Deity override: marks a ship as destroyed.
+  void admin_destroy() noexcept {
+    data_.alive = false;
+    data_.active = false;
+    data_.damage = 100;
+  }
+
+  /// \brief Atomically eliminates all crew and troops (surrender/boarding) and
+  /// decrements biological mass.
+  void clear_crew(double race_mass = 1.0) noexcept {
+    const auto lost_crew = data_.popn + data_.troops;
+    data_.popn = 0;
+    data_.troops = 0;
+    data_.mass -= static_cast<double>(lost_crew) * race_mass;
+    if (data_.mass < base_mass()) data_.mass = base_mass();
   }
 
   /// \brief Consumes crystals clamped to available stock; returns actual
@@ -3602,6 +3639,40 @@ public:
   }
 };
 
+/// \brief Transient in-memory ship clone for "what-if" flight simulations.
+/// Guarantees that hypothetical modifications cannot be persisted to the
+/// database.
+export class SimulatedShip : public Ship {
+public:
+  explicit SimulatedShip(const Ship& base) : Ship(base.get_struct()) {
+    data_.number = 0;  // Neutralize entity identity: cannot match or overwrite
+                       // real entities
+  }
+
+  [[nodiscard]] bool is_simulation() const noexcept override {
+    return true;
+  }
+
+  /// \brief Sets simulated fuel and updates mass accordingly, clamped to max
+  /// capacity.
+  void set_simulated_fuel(fuel_t fuel, double race_mass = 1.0) noexcept {
+    const auto max_cap = static_cast<double>(max_fuel_capacity());
+    data_.fuel = std::clamp(fuel, 0.0, max_cap);
+    data_.mass = local_mass(race_mass);
+  }
+
+  /// \brief Sets simulated temporary flight destination and undocks.
+  void set_simulated_destination(ScopeLevel level, starnum_t snum,
+                                 planetnum_t pnum,
+                                 shipnum_t shipno = shipnum_t{0}) noexcept {
+    destshipno() = shipno;
+    whatdest() = level;
+    deststar() = snum;
+    destpnum() = pnum;
+    docked() = 0;
+  }
+};
+
 static_assert(sizeof(AutonomousShip) == sizeof(Ship));
 static_assert(sizeof(VonNeumannShip) == sizeof(Ship));
 static_assert(sizeof(BerserkerShip) == sizeof(Ship));
@@ -3614,6 +3685,7 @@ static_assert(sizeof(TerraformerShip) == sizeof(Ship));
 static_assert(sizeof(GroundPlowShip) == sizeof(Ship));
 static_assert(sizeof(TransporterShip) == sizeof(Ship));
 static_assert(sizeof(ToxicWasteShip) == sizeof(Ship));
+static_assert(sizeof(SimulatedShip) == sizeof(Ship));
 
 // Type traits for zero-cost static downcasting
 export template <typename T>

@@ -320,9 +320,9 @@ void do_god(Ship& ship, EntityManager& entity_manager) {
   /* gods have infinite power.... heh heh heh */
   const auto& race = *entity_manager.peek_race(ship.owner());
   if (race.God) {
-    ship.set_fuel(ship.max_fuel_capacity());
-    ship.destruct() = ship.max_destruct_capacity();
-    ship.resource() = ship.max_resource_capacity();
+    ship.admin_override_fuel(ship.max_fuel_capacity(), race.mass);
+    ship.admin_override_destruct(ship.max_destruct_capacity(), race.mass);
+    ship.admin_override_resource(ship.max_resource_capacity(), race.mass);
   }
 }
 

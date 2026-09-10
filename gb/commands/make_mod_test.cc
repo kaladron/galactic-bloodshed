@@ -47,32 +47,16 @@ int main() {
   stars_repo.save(star);
 
   // Create a factory ship (required for make/modify commands)
-  Ship factory{};
-  factory.number() = 1;
-  factory.owner() = 1;
-  factory.governor() = 0;
-  factory.alive() = true;
-  factory.active() = true;
-  factory.type() = ShipType::OTYPE_FACTORY;
-  factory.build_type() = ShipType::OTYPE_FACTORY;
-  factory.name() = "Factory";
-  factory.whatorbits() = ScopeLevel::LEVEL_STAR;
-  factory.storbits() = 0;
-  factory.xpos() = 100.0;
-  factory.ypos() = 200.0;
-  factory.set_fuel(100.0);
-  factory.max_fuel() = 500.0;
-  factory.resource() = 1000;
-  factory.max_resource() = 2000;
-  factory.popn() = 50;
-  factory.max_crew() = 100;
-  factory.set_mass(100.0);
-  factory.on() = 0;  // Factory must be offline to configure
-  factory.size() = 100;
-
-  // Save factory via repository
-  ShipRepository ships_repo(store);
-  ships_repo.save(factory);
+  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 1)
+      .owned_by(1, 0)
+      .named("Factory")
+      .in_star_orbit(0, 100.0, 200.0)
+      .with_fuel(100.0)
+      .with_resource(1000)
+      .with_crew(50, 0)
+      .with_on(false)
+      .with_size(100)
+      .build();
 
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();

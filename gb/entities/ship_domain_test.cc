@@ -20,20 +20,20 @@ void test_hull_efficiency() {
   std::println(std::cout, "Testing Ship::hull_efficiency()...");
   Ship ship;
 
-  ship.set_damage(0);
+  ship.admin_override_damage(0);
   expect_near(ship.hull_efficiency(), 1.0);
 
-  ship.set_damage(25);
+  ship.admin_override_damage(25);
   expect_near(ship.hull_efficiency(), 0.75);
 
-  ship.set_damage(50);
+  ship.admin_override_damage(50);
   expect_near(ship.hull_efficiency(), 0.50);
 
-  ship.set_damage(100);
+  ship.admin_override_damage(100);
   expect_near(ship.hull_efficiency(), 0.0);
 
   // Clamped bounds
-  ship.set_damage(150);
+  ship.admin_override_damage(150);
   test::expect_eq(ship.damage(), 100);
   expect_near(ship.hull_efficiency(), 0.0);
 }
@@ -48,10 +48,10 @@ void test_crew_ratio() {
 
   expect_near(ship.crew_ratio(), 0.0);
 
-  ship.set_popn(50);
+  ship.add_popn(50, 1.0);
   expect_near(ship.crew_ratio(), 0.5);
 
-  ship.set_popn(100);
+  ship.add_popn(50, 1.0);
   expect_near(ship.crew_ratio(), 1.0);
 
   // Zero-capacity ship returns 0.0 without division by zero
@@ -72,21 +72,21 @@ void test_fuel_predicates() {
   test::expect_false(ship.is_fully_fueled());
 
   // Negligible residual fuel below epsilon
-  ship.set_fuel(Ship::FUEL_EPSILON * 0.5);
+  ship.admin_override_fuel(Ship::FUEL_EPSILON * 0.5);
   test::expect_false(ship.has_fuel());
   test::expect_false(ship.is_fully_fueled());
 
   // Normal fuel level
-  ship.set_fuel(100.0);
+  ship.admin_override_fuel(100.0);
   test::expect_true(ship.has_fuel());
   test::expect_false(ship.is_fully_fueled());
 
   // Full fuel within epsilon
-  ship.set_fuel(200.0);
+  ship.admin_override_fuel(200.0);
   test::expect_true(ship.has_fuel());
   test::expect_true(ship.is_fully_fueled());
 
-  ship.set_fuel(200.0 - Ship::FUEL_EPSILON * 0.5);
+  ship.admin_override_fuel(200.0 - Ship::FUEL_EPSILON * 0.5);
   test::expect_true(ship.is_fully_fueled());
 }
 
@@ -100,10 +100,10 @@ void test_available_resource_capacity() {
 
   test::expect_eq(ship.available_resource_capacity(), 500);
 
-  ship.set_resource(200);
+  ship.add_resource(200);
   test::expect_eq(ship.available_resource_capacity(), 300);
 
-  ship.set_resource(500);
+  ship.add_resource(300);
   test::expect_eq(ship.available_resource_capacity(), 0);
 
   // If resource exceeds capacity, returns 0 rather than negative
@@ -111,8 +111,8 @@ void test_available_resource_capacity() {
   test::expect_eq(ship.available_resource_capacity(), 0);
 }
 
-void test_bounded_setters() {
-  std::println(std::cout, "Testing Ship bounded setters...");
+void test_admin_overrides() {
+  std::println(std::cout, "Testing Ship admin overrides and clear_crew...");
   ship_struct sdata{
       .max_crew = 50,
       .max_resource = 200,
@@ -121,51 +121,78 @@ void test_bounded_setters() {
   };
   Ship ship{sdata};
 
-  // set_damage
-  ship.set_damage(40);
+  // admin_override_damage
+  ship.admin_override_damage(40);
   test::expect_eq(ship.damage(), 40);
-  ship.set_damage(120);
+  ship.admin_override_damage(120);
   test::expect_eq(ship.damage(), 100);
 
-  // set_fuel
-  ship.set_fuel(75.0);
+  // admin_override_fuel (with mass synchronization)
+  const double base_mass = ship.base_mass();
+  ship.admin_override_fuel(75.0, 1.0);
   expect_near(ship.fuel(), 75.0);
-  ship.set_fuel(250.0);
+  expect_near(ship.mass(), base_mass + 75.0 * MASS_FUEL);
+  ship.admin_override_fuel(250.0, 1.0);
   expect_near(ship.fuel(), 150.0);
-  ship.set_fuel(-10.0);
+  expect_near(ship.mass(), base_mass + 150.0 * MASS_FUEL);
+  ship.admin_override_fuel(-10.0, 1.0);
   expect_near(ship.fuel(), 0.0);
+  expect_near(ship.mass(), base_mass);
 
-  // set_popn
-  ship.set_popn(30);
-  test::expect_eq(ship.popn(), 30);
-  ship.set_popn(80);
-  test::expect_eq(ship.popn(), 50);
-  ship.set_popn(-5);
-  test::expect_eq(ship.popn(), 0);
-
-  // set_resource
-  ship.set_resource(120);
+  // admin_override_resource (with mass synchronization)
+  ship.admin_override_resource(120, 1.0);
   test::expect_eq(ship.resource(), 120);
-  ship.set_resource(350);
+  expect_near(ship.mass(), base_mass + 120 * MASS_RESOURCE);
+  ship.admin_override_resource(350, 1.0);
   test::expect_eq(ship.resource(), 200);
-  ship.set_resource(-20);
+  expect_near(ship.mass(), base_mass + 200 * MASS_RESOURCE);
+  ship.admin_override_resource(-20, 1.0);
   test::expect_eq(ship.resource(), 0);
+  expect_near(ship.mass(), base_mass);
 
-  // set_destruct
-  ship.set_destruct(60);
+  // admin_override_destruct (with mass synchronization)
+  ship.admin_override_destruct(60, 1.0);
   test::expect_eq(ship.destruct(), 60);
-  ship.set_destruct(180);
+  expect_near(ship.mass(), base_mass + 60 * MASS_DESTRUCT);
+  ship.admin_override_destruct(180, 1.0);
   test::expect_eq(ship.destruct(), 100);
-  ship.set_destruct(-10);
+  expect_near(ship.mass(), base_mass + 100 * MASS_DESTRUCT);
+  ship.admin_override_destruct(-10, 1.0);
   test::expect_eq(ship.destruct(), 0);
+  expect_near(ship.mass(), base_mass);
 
-  // set_troops
-  ship.set_troops(25);
-  test::expect_eq(ship.troops(), 25);
-  ship.set_troops(70);
-  test::expect_eq(ship.troops(), 50);
-  ship.set_troops(-5);
+  // admin_override_crystals
+  ship.admin_override_crystals(50);
+  test::expect_eq(ship.crystals(), 50U);
+  ship.admin_override_crystals(200);
+  test::expect_eq(ship.crystals(), 127U);
+
+  // admin_override_max_fuel
+  ship.admin_override_max_fuel(500.0);
+  expect_near(ship.max_fuel_capacity(), 500.0);
+  ship.admin_override_max_fuel(-50.0);
+  expect_near(ship.max_fuel_capacity(), 0.0);
+
+  // admin_resurrect and admin_destroy
+  ship.admin_destroy();
+  test::expect_false(ship.alive());
+  test::expect_false(ship.active());
+  test::expect_eq(ship.damage(), 100);
+  ship.admin_resurrect();
+  test::expect_true(ship.alive());
+  test::expect_true(ship.active());
+  test::expect_eq(ship.damage(), 0);
+
+  // clear_crew (surrender / capture)
+  ship.add_popn(30, 2.0);
+  ship.add_troops(20, 2.0);
+  test::expect_eq(ship.popn(), 30);
+  test::expect_eq(ship.troops(), 20);
+  const double crew_mass = ship.mass();
+  ship.clear_crew(2.0);
+  test::expect_eq(ship.popn(), 0);
   test::expect_eq(ship.troops(), 0);
+  expect_near(ship.mass(), crew_mass - 50 * 2.0);
 }
 
 void test_fuel_consumption() {
@@ -198,7 +225,7 @@ void test_fuel_consumption() {
   expect_near(ship.fuel(), 0.0);
 
   // consume_up_to_fuel
-  ship.set_fuel(40.0);
+  ship.admin_override_fuel(40.0);
   const double base_mass = ship.mass();
   expect_near(ship.consume_up_to_fuel(0.0), 0.0);
   expect_near(ship.consume_up_to_fuel(15.0), 15.0);
@@ -556,14 +583,14 @@ void test_crystals_domain() {
   test::expect_eq(ship.crystals(), 0U);
   test::expect_eq(ship.max_crystals_capacity(), 127);
 
-  // set_crystals with clamping
-  ship.set_crystals(50);
+  // admin_override_crystals with clamping
+  ship.admin_override_crystals(50);
   test::expect_eq(ship.crystals(), 50U);
-  ship.set_crystals(200);
+  ship.admin_override_crystals(200);
   test::expect_eq(ship.crystals(), 127U);
 
   // consume_crystals
-  ship.set_crystals(10);
+  ship.admin_override_crystals(10);
   auto consumed = ship.consume_crystals(4);
   test::expect_eq(consumed, 4U);
   test::expect_eq(ship.crystals(), 6U);
@@ -616,6 +643,42 @@ void test_local_mass_and_set_mass() {
   expect_near(ship.local_mass(1.5), expected_local);
 }
 
+void test_simulated_ship() {
+  std::println(std::cout, "Testing SimulatedShip...");
+  ship_struct sdata{
+      .number = 42,
+      .fuel = 50.0,
+      .mass = 120.0,
+      .max_fuel = 200.0,
+      .base_mass = 100.0,
+      .type = ShipType::STYPE_SHUTTLE,
+  };
+  Ship base_ship{sdata};
+  test::expect_false(base_ship.is_simulation());
+  test::expect_eq(base_ship.number(), 42);
+
+  SimulatedShip sim{base_ship};
+  test::expect_true(sim.is_simulation());
+  test::expect_eq(sim.number(), 0);  // Identity neutralized
+
+  // Test set_simulated_fuel and mass update
+  sim.set_simulated_fuel(120.0, 1.0);
+  expect_near(sim.fuel(), 120.0);
+  expect_near(sim.mass(), sim.local_mass(1.0));
+
+  // Clamping to max capacity
+  sim.set_simulated_fuel(500.0, 1.0);
+  expect_near(sim.fuel(), 200.0);
+
+  // Test set_simulated_destination
+  sim.docked() = 1;
+  sim.set_simulated_destination(ScopeLevel::LEVEL_PLAN, 3, 2, 0);
+  test::expect_eq(sim.whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(sim.deststar(), 3);
+  test::expect_eq(sim.destpnum(), 2);
+  test::expect_eq(sim.docked(), 0);
+}
+
 }  // namespace
 
 int main() {
@@ -623,7 +686,7 @@ int main() {
   test_crew_ratio();
   test_fuel_predicates();
   test_available_resource_capacity();
-  test_bounded_setters();
+  test_admin_overrides();
   test_fuel_consumption();
   test_resource_consumption();
   test_destruct_consumption();
@@ -635,6 +698,7 @@ int main() {
   test_ship_continuous_coordinates();
   test_crystals_domain();
   test_local_mass_and_set_mass();
+  test_simulated_ship();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

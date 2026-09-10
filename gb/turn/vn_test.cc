@@ -596,7 +596,7 @@ int main() {
     test::expect_false(try_launch_unassigned_vn(em, *vn));
 
     // Idle machine with full fuel launches
-    vn->set_fuel(100.0);
+    vn->add_fuel(100.0);
     test::expect_true(try_launch_unassigned_vn(em, *vn));
     test::expect_false(vn->is_landed());
     test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_UNIV);

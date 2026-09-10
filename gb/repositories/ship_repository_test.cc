@@ -161,8 +161,8 @@ int main() {
 
   // Update ship
   std::println(std::cout, "Update ship...");
-  retrieved->set_fuel(3000.0);
-  retrieved->damage() = 50;
+  retrieved->consume_fuel(2000.0);
+  retrieved->apply_damage(50);
   retrieved->xpos() = 150.0;
   saved = repo.save(*retrieved);
   test::expect_true(saved, "Failed to update ship");
@@ -559,6 +559,20 @@ int main() {
 
     std::println(std::cout,
                  "  ✓ All specialty ship subclasses instantiate and downcast");
+  }
+
+  // Test 10: SimulatedShip cannot be saved
+  std::println(std::cout,
+               "\nTest 10: SimulatedShip cannot be saved to database...");
+  {
+    ship_struct sim_base{};
+    sim_base.number = 999;
+    sim_base.type = ShipType::STYPE_SHUTTLE;
+    Ship base_ship{sim_base};
+    SimulatedShip sim{base_ship};
+    test::expect_true(sim.is_simulation());
+    test::expect_throws<std::logic_error>([&]() { repo.save(sim); });
+    std::println(std::cout, "  ✓ SimulatedShip rejection on save passed");
   }
 
   std::println(std::cout, "\nAll ShipRepository tests passed!");

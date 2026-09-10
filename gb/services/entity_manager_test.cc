@@ -115,14 +115,8 @@ void test_entity_manager_create_delete() {
 
   std::println(std::cout, "Test: EntityManager create/delete");
 
-  shipnum_t ship_num;
-  {
-    auto new_ship = em.create_ship();
-    ship_num = new_ship->number();
-    new_ship->max_fuel() = 100.0;
-    new_ship->set_fuel(100.0);
-    new_ship->set_mass(50.0);
-  }
+  shipnum_t ship_num =
+      TestShipBuilder(em, ShipType::STYPE_SHUTTLE).with_fuel(100.0).build();
   std::println(std::cout, "  ✓ create_ship() creates and saves new ship");
 
   const auto* peek = em.peek_ship(ship_num);
@@ -615,7 +609,7 @@ void test_peek_caching_and_clear_cache() {
     test::expect_eq(peek_ship->fuel(), 1000.0);
 
     // Modify directly in DB
-    ship.set_fuel(2500.0);
+    ship.add_fuel(1500.0);
     ships.save(ship);
 
     em.clear_cache();
@@ -926,13 +920,8 @@ void test_deletion_barrier() {
   test::expect_false(em.is_deletion_barrier_active());
 
   // 3. Deferred ship deletion and pointer stability
-  shipnum_t ship_id;
-  {
-    auto new_ship = em.create_ship();
-    ship_id = new_ship->number();
-    new_ship->max_fuel() = 100.0;
-    new_ship->set_fuel(50.0);
-  }
+  shipnum_t ship_id =
+      TestShipBuilder(em, ShipType::STYPE_SHUTTLE).with_fuel(50.0).build();
   {
     auto barrier = em.create_deletion_barrier();
     const auto* peek1 = em.peek_ship(ship_id);

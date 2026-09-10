@@ -81,8 +81,8 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
  * @return A tuple containing a boolean indicating if the trip was resolved
  * successfully and the number of segments taken.
  */
-std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
-                                     const double fuel,
+std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
+                                     SimulatedShip& tmpship, const double fuel,
                                      const double gravity_factor, double x_1,
                                      const double y_1,
                                      EntityManager& entity_manager) {
@@ -92,14 +92,12 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
     return {false, 0};
   }
 
-  tmpship.set_fuel(fuel); /* load up the pseudo-ship */
+  tmpship.set_simulated_fuel(fuel); /* load up the pseudo-ship */
   segments_t effective_segment_number = state->nsegments_done;
 
   /*  Set our temporary destination.... */
-  tmpship.destshipno() = tmpdest.shipno;
-  tmpship.whatdest() = tmpdest.level;
-  tmpship.deststar() = tmpdest.snum;
-  tmpship.destpnum() = tmpdest.pnum;
+  tmpship.set_simulated_destination(tmpdest.level, tmpdest.snum, tmpdest.pnum,
+                                    tmpdest.shipno);
 
   bool trip_resolved = false;
   segments_t number_segments = 0; /* Reset counter.  */

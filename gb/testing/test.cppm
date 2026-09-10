@@ -531,8 +531,9 @@ private:
 /// with canonical template defaults from ShipTemplate.
 export class TestShipBuilder {
 public:
-  TestShipBuilder(EntityManager& em, ShipType type = ShipType::STYPE_BATTLE,
-                  std::optional<shipnum_t> explicit_number = std::nullopt);
+  explicit TestShipBuilder(
+      EntityManager& em, ShipType type = ShipType::STYPE_BATTLE,
+      std::optional<shipnum_t> explicit_number = std::nullopt);
 
   TestShipBuilder& owned_by(player_t owner, governor_t gov = 0);
   TestShipBuilder& named(std::string_view name);
@@ -560,11 +561,18 @@ public:
                             unsigned short range = 1000);
   TestShipBuilder& with_crew(population_t civilians, population_t military);
   TestShipBuilder& with_speed(speed_t speed);
+  TestShipBuilder& with_max_speed(speed_t max_speed);
   TestShipBuilder& with_fuel(double fuel);
+  TestShipBuilder& with_max_fuel(double max_fuel);
   TestShipBuilder& with_resource(resource_t res);
+  TestShipBuilder& with_max_resource(resource_t max_res);
   TestShipBuilder& with_destruct(resource_t destruct);
+  TestShipBuilder& with_max_destruct(resource_t max_destruct);
+  TestShipBuilder& with_crystals(crystal_t crystals);
+  TestShipBuilder& with_mount(unsigned char mount = 1);
   TestShipBuilder& with_damage(damage_t damage);
   TestShipBuilder& with_armor(armor_t armor);
+  TestShipBuilder& with_mass(double mass);
   TestShipBuilder& with_size(ship_size_t size);
   TestShipBuilder& with_on(bool on);
   TestShipBuilder& with_nextship(shipnum_t next);
@@ -579,6 +587,8 @@ public:
   shipnum_t build();
 
 private:
+  void init(ShipType type, std::optional<shipnum_t> explicit_number);
+
   EntityManager& em_;
   ship_struct ship_{};
 };

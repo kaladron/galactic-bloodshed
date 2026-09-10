@@ -94,7 +94,7 @@ void test_transaction_raii_rollback(TestContext& ctx) {
   {
     auto txn = ctx.em.begin_transaction();
     ctx.em.mutate_ship(shipnum_t{10},
-                       [](Ship& ship) { ship.set_fuel(9999.0); });
+                       [](Ship& ship) { ship.consume_fuel(100.0); });
     // txn goes out of scope here without commit -> RAII rollback triggered
   }
 

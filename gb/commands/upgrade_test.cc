@@ -47,40 +47,17 @@ void test_upgrade_command() {
   stars_repo.save(star);
 
   const auto type = ShipType::STYPE_FIGHTER;
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.governor() = 0;
-  ship.alive() = true;
-  ship.active() = true;
-  ship.type() = type;
-  ship.build_type() = type;
-  ship.name() = "Upgradeable";
-  ship.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship.storbits() = 0;
-  ship.xpos() = 100.0;
-  ship.ypos() = 200.0;
-  ship.set_fuel(10.0);
-  const auto& tmpl = ship_template(type);
-  ship.max_fuel() = tmpl.max_fuel;
-  ship.resource() = 500;  // Need resources to pay for upgrades
-  ship.max_resource() = tmpl.max_cargo;
-  ship.popn() = tmpl.max_crew;
-  ship.max_crew() = tmpl.max_crew;
-  ship.armor() = tmpl.base_armor;
-  ship.max_speed() = 5;
-  ship.max_destruct() = tmpl.max_destruct;
-  ship.set_primary_battery(tmpl.max_guns,
-                           shipdata_primary(ShipType::STYPE_BATTLE));
-  ship.set_secondary_battery(tmpl.max_guns,
-                             shipdata_secondary(ShipType::STYPE_BATTLE));
-  ship.set_mass(10.0);
-  ship.build_cost() = static_cast<int>(cost(ship));
-  ship.damage() = 0;  // No damage - required for upgrades
-
-  // Save ship via repository
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship);
+  TestShipBuilder(ctx.em, type, 1)
+      .owned_by(1, 0)
+      .named("Upgradeable")
+      .in_star_orbit(0, 100.0, 200.0)
+      .with_fuel(10.0)
+      .with_resource(500)
+      .with_guns(shipdata_primary(ShipType::STYPE_BATTLE),
+                 ship_template(type).max_guns)
+      .with_armor(ship_template(type).base_armor)
+      .with_max_speed(5)
+      .build();
 
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();

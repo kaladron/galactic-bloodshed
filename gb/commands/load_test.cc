@@ -56,34 +56,15 @@ void setup_test_world(TestContext& ctx) {
   planets_repo.save(planet);
 
   // Create a landed ship to load cargo onto
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.governor() = 0;
-  ship.alive() = true;
-  ship.active() = true;
-  ship.type() = ShipType::STYPE_CARGO;
-  ship.name() = "CargoHauler";
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = 0;
-  ship.pnumorbits() = 0;
-  ship.whatdest() =
-      ScopeLevel::LEVEL_PLAN;  // Important: must be PLAN for planet loading
-  ship.deststar() = 0;
-  ship.destpnum() = 0;
-  ship.set_land_coords({5, 5});
-  ship.docked() = 1;  // CRITICAL: Ship must be docked to load/unload
-  ship.set_fuel(100.0);
-  ship.max_fuel() = 500.0;
-  ship.resource() = 0;
-  ship.max_resource() = 1000;
-  ship.destruct() = 0;
-  ship.max_destruct() = 300;
-  ship.set_crystals(0);
-  ship.set_mass(100.0);
-
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship);
+  TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 1)
+      .owned_by(1, 0)
+      .named("CargoHauler")
+      .landed_on(0, 0, {5, 5})
+      .with_fuel(100.0)
+      .with_resource(0)
+      .with_destruct(0)
+      .with_crystals(0)
+      .build();
 }
 
 void test_load_happy_path() {

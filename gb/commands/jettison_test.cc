@@ -39,27 +39,16 @@ void setup_test_world(TestContext& ctx) {
   stars_repo.save(star);
 
   // Create a ship with cargo
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.governor() = 0;
-  ship.alive() = true;
-  ship.active() = true;
-  ship.type() = ShipType::STYPE_SHUTTLE;
-  ship.name() = "CargoShip";
-  ship.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship.storbits() = 0;
-  ship.max_fuel() = 100.0;
-  ship.set_fuel(100.0);
-  ship.resource() = 50;
-  ship.destruct() = 20;
-  ship.set_crystals(5);
-  ship.popn() = 10;
-  ship.troops() = 8;
-  ship.set_mass(100.0);
-
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
+      .owned_by(1, 0)
+      .named("CargoShip")
+      .in_star_orbit(0)
+      .with_fuel(100.0)
+      .with_resource(50)
+      .with_destruct(20)
+      .with_crystals(5)
+      .with_crew(10, 8)
+      .build();
 }
 
 void test_jettison_happy_path() {

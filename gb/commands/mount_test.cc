@@ -41,8 +41,8 @@ void test_mount_persistence() {
   ship.alive() = true;
   ship.active() = true;
   ship.mount() = 1;
-  ship.crystals() = 2;  // Has 2 crystals on board
-  ship.mounted() = 0;   // Not mounted yet
+  ship.set_crystals(2);  // Has 2 crystals on board
+  ship.mounted() = 0;    // Not mounted yet
   ships.save(ship);
 
   auto& registry = get_test_session_registry();
@@ -79,7 +79,7 @@ void test_dismount_persistence() {
   ship.alive() = true;
   ship.active() = true;
   ship.mount() = 1;
-  ship.crystals() = 1;
+  ship.set_crystals(1);
   ship.mounted() = 1;              // Crystal mounted
   ship.hyper_drive().charge = 50;  // Charged
   ships.save(ship);
@@ -121,7 +121,7 @@ void test_mount_no_crystals() {
   ship.alive() = true;
   ship.active() = true;
   ship.mount() = 1;
-  ship.crystals() = 0;  // No crystals
+  ship.set_crystals(0);  // No crystals
   ship.mounted() = 0;
   ships.save(ship);
 
@@ -159,7 +159,7 @@ void test_dismount_full_storage() {
   ship.alive() = true;
   ship.active() = true;
   ship.mount() = 1;
-  ship.crystals() = ship.max_crystals_capacity();  // Max storage full
+  ship.set_crystals(ship.max_crystals_capacity());  // Max storage full
   ship.mounted() = 1;
   ships.save(ship);
 

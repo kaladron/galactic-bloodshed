@@ -182,7 +182,7 @@ void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
     ctx.em.mutate_race(player_t{4}, [](Race& r) { r.tech += 5.0; });
 
     // 2. Ship consumes fuel
-    ctx.em.mutate_ship(shipnum_t{10}, [](Ship& s) { s.fuel() -= 50.0; });
+    ctx.em.mutate_ship(shipnum_t{10}, [](Ship& s) { s.consume_fuel(50.0); });
 
     // 3. Star regenerates AP
     ctx.em.mutate_star(starnum_t{2}, [](Star& s) { s.AP(player_t{4}) += 5; });

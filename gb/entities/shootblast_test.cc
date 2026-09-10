@@ -95,7 +95,7 @@ void test_shoot_planet_to_ship_valid_attack() {
   ship.tech() = 10.0;
   ship.size() = 10;
   ship.max_crew() = 10;
-  ship.mass() = 10;
+  ship.set_mass(10.0);
   ship.armor() = 5;
 
   auto res = shoot_planet_to_ship(em, race1, ship, 20);
@@ -286,7 +286,7 @@ void test_zero_body_ship_combat() {
   ship.size() = 0;
   ship.max_hanger() = 0;
   ship.armor() = 0;
-  ship.mass() = 1;
+  ship.set_mass(1.0);
 
   test::expect_eq(ship.shipbody(), 0u);
   test::expect_eq(ship.effective_armor(), 0u);

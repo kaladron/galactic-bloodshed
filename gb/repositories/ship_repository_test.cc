@@ -161,7 +161,7 @@ int main() {
 
   // Update ship
   std::println(std::cout, "Update ship...");
-  retrieved->fuel() = 3000.0;
+  retrieved->set_fuel(3000.0);
   retrieved->damage() = 50;
   retrieved->xpos() = 150.0;
   saved = repo.save(*retrieved);

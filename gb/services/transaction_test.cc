@@ -93,7 +93,8 @@ void test_transaction_raii_rollback(TestContext& ctx) {
   // Open transaction in scope, mutate ship, but do NOT call commit()
   {
     auto txn = ctx.em.begin_transaction();
-    ctx.em.mutate_ship(shipnum_t{10}, [](Ship& ship) { ship.fuel() = 9999.0; });
+    ctx.em.mutate_ship(shipnum_t{10},
+                       [](Ship& ship) { ship.set_fuel(9999.0); });
     // txn goes out of scope here without commit -> RAII rollback triggered
   }
 

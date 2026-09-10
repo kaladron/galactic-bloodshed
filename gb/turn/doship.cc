@@ -320,7 +320,7 @@ void do_god(Ship& ship, EntityManager& entity_manager) {
   /* gods have infinite power.... heh heh heh */
   const auto& race = *entity_manager.peek_race(ship.owner());
   if (race.God) {
-    ship.fuel() = ship.max_fuel_capacity();
+    ship.set_fuel(ship.max_fuel_capacity());
     ship.destruct() = ship.max_destruct_capacity();
     ship.resource() = ship.max_resource_capacity();
   }
@@ -591,18 +591,15 @@ void domass(Ship& ship, EntityManager& entity_manager) {
     }
   }
 
-  ship.mass() = 0.0;
-  ship.hanger() = 0;
+  double carried_mass = 0.0;
+  hangar_t carried_hanger = 0;
   for (auto nested_ship : ShipList(entity_manager, ship.ships())) {
     domass(*nested_ship, entity_manager); /* recursive call */
-    ship.mass() += nested_ship->mass();
-    ship.hanger() += nested_ship->size();
+    carried_mass += nested_ship->mass();
+    carried_hanger += nested_ship->size();
   }
-  ship.mass() += getmass(ship);
-  ship.mass() += (double)(ship.popn() + ship.troops()) * rmass;
-  ship.mass() += (double)ship.destruct() * MASS_DESTRUCT;
-  ship.mass() += ship.fuel() * MASS_FUEL;
-  ship.mass() += (double)ship.resource() * MASS_RESOURCE;
+  ship.hanger() = carried_hanger;
+  ship.set_mass(ship.local_mass(rmass) + carried_mass);
 }
 
 void doown(Ship& ship, EntityManager& entity_manager) {

@@ -49,13 +49,14 @@ void setup_test_world(TestContext& ctx) {
   ship.name() = "CargoShip";
   ship.whatorbits() = ScopeLevel::LEVEL_STAR;
   ship.storbits() = 0;
-  ship.fuel() = 100.0;
+  ship.max_fuel() = 100.0;
+  ship.set_fuel(100.0);
   ship.resource() = 50;
   ship.destruct() = 20;
-  ship.crystals() = 5;
+  ship.set_crystals(5);
   ship.popn() = 10;
   ship.troops() = 8;
-  ship.mass() = 100.0;
+  ship.set_mass(100.0);
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship);

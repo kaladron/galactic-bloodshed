@@ -68,7 +68,7 @@ bool jettison(const command_t& argv, GameObj& g) {
     switch (commod) {
       case 'x':
         if ((amt = jettison_check(g, amt, (int)(ship.crystals()))) > 0) {
-          ship.crystals() -= amt;
+          ship.consume_crystals(amt);
           g.out << std::format("{} crystal{} jettisoned.\n", amt,
                                (amt == 1) ? "" : "s");
           success = true;

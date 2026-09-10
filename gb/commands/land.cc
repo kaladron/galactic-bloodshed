@@ -73,7 +73,7 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           s.whatorbits() = ScopeLevel::LEVEL_SHIP;
           s.whatdest() = ScopeLevel::LEVEL_SHIP;
           s.destshipno() = s2.number();
-          s2.mass() += s.mass();
+          s2.set_mass(s2.mass() + s.mass());
           s2.hanger() += s.size();
           fuel = 0.0;
           g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2,
@@ -120,7 +120,7 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           s.whatorbits() = ScopeLevel::LEVEL_SHIP;
           s.whatdest() = ScopeLevel::LEVEL_SHIP;
           s.destshipno() = s2.number();
-          s2.mass() += s.mass();
+          s2.set_mass(s2.mass() + s.mass());
           s2.hanger() += s.size();
           g.out << std::format("{} landed on {} using {} fuel.\n", s, s2, fuel);
           s.docked() = 1;

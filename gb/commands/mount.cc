@@ -44,7 +44,7 @@ bool mount(const command_t& argv, GameObj& g) {
         continue;
       }
       ship.mounted() = 1;
-      ship.crystals()--;
+      ship.consume_crystals(1);
       g.out << "Mounted.\n";
       success = true;
     } else if (ship.mounted() && !mnt) {
@@ -54,7 +54,7 @@ bool mount(const command_t& argv, GameObj& g) {
         continue;
       }
       ship.mounted() = 0;
-      ship.crystals()++;
+      ship.add_crystals(1);
       g.out << "Dismounted.\n";
       if (ship.hyper_drive().charge > 0) {
         ship.hyper_drive().charge = 0;

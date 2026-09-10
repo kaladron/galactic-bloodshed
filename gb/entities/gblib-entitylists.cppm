@@ -763,7 +763,7 @@ private:
  *   ShipList ships(g.entity_manager, g);
  *   for (auto ship_handle : ships) {
  *     auto& s = *ship_handle;
- *     s.fuel() += 10;  // Marks dirty, will auto-save
+ *     s.add_fuel(10);  // Marks dirty, will auto-save
  *   }
  */
 export class ShipList : public ReadonlyFactory<ShipList> {

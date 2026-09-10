@@ -73,14 +73,14 @@ void setup_test_world(TestContext& ctx) {
   ship.destpnum() = 0;
   ship.set_land_coords({5, 5});
   ship.docked() = 1;  // CRITICAL: Ship must be docked to load/unload
-  ship.fuel() = 100.0;
+  ship.set_fuel(100.0);
   ship.max_fuel() = 500.0;
   ship.resource() = 0;
   ship.max_resource() = 1000;
   ship.destruct() = 0;
   ship.max_destruct() = 300;
-  ship.crystals() = 0;
-  ship.mass() = 100.0;
+  ship.set_crystals(0);
+  ship.set_mass(100.0);
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship);

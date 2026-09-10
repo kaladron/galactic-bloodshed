@@ -60,13 +60,13 @@ int main() {
   factory.storbits() = 0;
   factory.xpos() = 100.0;
   factory.ypos() = 200.0;
-  factory.fuel() = 100.0;
+  factory.set_fuel(100.0);
   factory.max_fuel() = 500.0;
   factory.resource() = 1000;
   factory.max_resource() = 2000;
   factory.popn() = 50;
   factory.max_crew() = 100;
-  factory.mass() = 100.0;
+  factory.set_mass(100.0);
   factory.on() = 0;  // Factory must be offline to configure
   factory.size() = 100;
 

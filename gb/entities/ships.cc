@@ -134,6 +134,13 @@ double Ship::base_mass() const noexcept {
          MASS_GUNS * secondary_battery().mass_contribution();
 }
 
+double Ship::local_mass(double race_mass) const noexcept {
+  return base_mass() + fuel() * MASS_FUEL +
+         static_cast<double>(resource()) * MASS_RESOURCE +
+         static_cast<double>(destruct()) * MASS_DESTRUCT +
+         static_cast<double>(popn() + troops()) * race_mass;
+}
+
 double getmass(const Ship& s) {
   return s.base_mass();
 }
@@ -271,7 +278,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
     if (load.crystals) {
       int amount = p.info(owner).crystals;
       p.info(owner).crystals -= amount;
-      s.crystals() += amount;
+      s.add_crystals(amount);
       telegram << std::format("{}x ", amount);
     }
     if (load.destruct) {
@@ -301,7 +308,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
       int amount = s.crystals();
       p.info(owner).crystals += amount;
       telegram << std::format("{}x ", amount);
-      s.crystals() -= amount;
+      s.consume_crystals(amount);
     }
     if (unload.destruct) {
       int amount = s.destruct();

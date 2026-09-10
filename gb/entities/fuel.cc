@@ -92,7 +92,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
     return {false, 0};
   }
 
-  tmpship.fuel() = fuel; /* load up the pseudo-ship */
+  tmpship.set_fuel(fuel); /* load up the pseudo-ship */
   segments_t effective_segment_number = state->nsegments_done;
 
   /*  Set our temporary destination.... */
@@ -107,7 +107,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest, Ship& tmpship,
   /*  Launch the ship if it's on a planet.  */
   double gravity_fuel =
       gravity_factor * tmpship.mass() * LAUNCH_GRAV_MASS_FACTOR;
-  tmpship.fuel() -= gravity_fuel;
+  tmpship.consume_fuel(gravity_fuel);
   tmpship.docked() = 0;
 
   while (!trip_resolved) {

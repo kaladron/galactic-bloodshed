@@ -34,6 +34,7 @@ int main() {
   ship1.storbits() = 0;
   ship1.pnumorbits() = 0;
   ship1.type() = ShipType::OTYPE_FACTORY;
+  ship1.max_fuel() = 1000.0;
   ship1.nextship() = 2;  // Linked list
 
   Ship ship2{};
@@ -43,6 +44,7 @@ int main() {
   ship2.storbits() = 0;
   ship2.pnumorbits() = 0;
   ship2.type() = ShipType::OTYPE_PROBE;
+  ship2.max_fuel() = 1000.0;
   ship2.nextship() = 3;
 
   Ship ship3{};
@@ -52,6 +54,7 @@ int main() {
   ship3.storbits() = 0;
   ship3.pnumorbits() = 0;
   ship3.type() = ShipType::STYPE_CARGO;
+  ship3.max_fuel() = 1000.0;
   ship3.nextship() = 0;  // End of list
 
   ShipRepository ships_repo(store);
@@ -267,7 +270,7 @@ int main() {
     ShipHandle handle = *it;
     Ship& ship = *handle;
 
-    ship.fuel() += 100.0;
+    ship.add_fuel(100.0);
     // Handle should auto-save on destruction
   }
 
@@ -284,7 +287,7 @@ int main() {
     ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
     for (auto handle : list) {
       Ship& ship = *handle;
-      ship.fuel() += 50.0;
+      ship.add_fuel(50.0);
       ship.destruct() += 10;
     }
     // All modifications should auto-save
@@ -487,7 +490,7 @@ int main() {
       ShipList ships_mutable(ctx.em, shipnum_t{1});
       for (auto ship_handle : ships_mutable) {
         Ship& ship = *ship_handle;
-        ship.fuel() += 50.0;  // Modify ship
+        ship.add_fuel(50.0);  // Modify ship
       }
     }  // Ships auto-save here
 

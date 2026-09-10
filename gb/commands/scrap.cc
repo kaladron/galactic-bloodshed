@@ -224,7 +224,7 @@ bool scrap(const command_t& argv, GameObj& g) {
 
     if (s.is_docked()) {
       g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
-        s2.crystals() += xtalval;
+        s2.add_crystals(xtalval);
         rcv_fuel(s2, fuelval);
         rcv_destruct(s2, destval);
         rcv_resource(s2, scrapval);

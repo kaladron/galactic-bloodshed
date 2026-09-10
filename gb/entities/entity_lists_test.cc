@@ -286,7 +286,8 @@ void populate_ships(EntityManager& em, JsonStore& store) {
     ship.name() = std::format("Ship{}", i);
     ship.owner() = 1;
     ship.alive() = true;
-    ship.fuel() = 100.0 * static_cast<double>(i.value);
+    ship.max_fuel() = 500.0;
+    ship.set_fuel(100.0 * static_cast<double>(i.value));
     ship.nextship() = (i.value < 3) ? shipnum_t{i.value + 1} : shipnum_t{0};
     ship_repo.save(ship);
   }
@@ -320,7 +321,7 @@ void test_ship_list_patterns(EntityManager& em) {
     static_assert(std::is_same_v<decltype(ship), ShipHandle>,
                   "MutableIterator should return ShipHandle");
 
-    ship->fuel() += 50.0;
+    ship->add_fuel(50.0);
     count++;
   }
 
@@ -344,7 +345,7 @@ void test_ship_list_patterns(EntityManager& em) {
 
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;
-    s.fuel() += 25.0;
+    s.add_fuel(25.0);
   }
 
   em.clear_cache();

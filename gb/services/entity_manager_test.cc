@@ -119,8 +119,9 @@ void test_entity_manager_create_delete() {
   {
     auto new_ship = em.create_ship();
     ship_num = new_ship->number();
-    new_ship->fuel() = 100.0;
-    new_ship->mass() = 50.0;
+    new_ship->max_fuel() = 100.0;
+    new_ship->set_fuel(100.0);
+    new_ship->set_mass(50.0);
   }
   std::println(std::cout, "  ✓ create_ship() creates and saves new ship");
 
@@ -604,6 +605,7 @@ void test_peek_caching_and_clear_cache() {
     ship_data.number = 100;
     ship_data.owner = 1;
     ship_data.fuel = 1000.0;
+    ship_data.max_fuel = 5000.0;
     Ship ship(ship_data);
     ShipRepository ships(store);
     ships.save(ship);
@@ -613,7 +615,7 @@ void test_peek_caching_and_clear_cache() {
     test::expect_eq(peek_ship->fuel(), 1000.0);
 
     // Modify directly in DB
-    ship.fuel() = 2500.0;
+    ship.set_fuel(2500.0);
     ships.save(ship);
 
     em.clear_cache();
@@ -928,7 +930,8 @@ void test_deletion_barrier() {
   {
     auto new_ship = em.create_ship();
     ship_id = new_ship->number();
-    new_ship->fuel() = 50.0;
+    new_ship->max_fuel() = 100.0;
+    new_ship->set_fuel(50.0);
   }
   {
     auto barrier = em.create_deletion_barrier();

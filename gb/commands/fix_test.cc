@@ -26,8 +26,8 @@ void test_fix_ship_fuel_persistence() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_SHUTTLE;
   ship.alive() = true;
-  ship.fuel() = 50.0;
   ship.max_fuel() = 200;
+  ship.set_fuel(50.0);
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
@@ -39,7 +39,7 @@ void test_fix_ship_fuel_persistence() {
   }
 
   // 4. Simulate fixing fuel via EntityManager
-  ctx.em.mutate_ship(1, [](Ship& s) { s.fuel() = 200.0; });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.set_fuel(200.0); });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
@@ -294,8 +294,8 @@ void test_fix_command_dispatch() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_SHUTTLE;
   ship.alive() = true;
-  ship.fuel() = 50.0;
   ship.max_fuel() = 200;
+  ship.set_fuel(50.0);
   ShipRepository ships(store);
   ships.save(ship);
 

@@ -172,7 +172,7 @@ void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel) {
   *crew = std::min(s->max_crew_capacity(), b->popn());
   *fuel = std::min(static_cast<double>(s->max_fuel_capacity()), b->fuel());
   b->popn() -= *crew;
-  b->fuel() -= *fuel;
+  b->consume_fuel(*fuel);
 }
 
 void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
@@ -182,17 +182,14 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   newship->speed() = newship->max_speed_capacity();
   newship->owner() = Playernum;
   newship->governor() = Governor;
-  newship->fuel() = race.God ? newship->max_fuel_capacity() : load_fuel;
+  newship->set_fuel(race.God ? newship->max_fuel_capacity() : load_fuel);
   newship->popn() = race.God ? newship->max_crew_capacity() : load_crew;
   newship->troops() = 0;
   newship->resource() = race.God ? newship->max_resource_capacity() : 0;
   newship->destruct() = race.God ? newship->max_destruct_capacity() : 0;
-  newship->crystals() = 0;
+  newship->set_crystals(0);
   newship->hanger() = 0;
-  newship->mass() = newship->base_mass() + (double)newship->popn() * race.mass +
-                    newship->fuel() * MASS_FUEL +
-                    (double)newship->resource() * MASS_RESOURCE +
-                    (double)newship->destruct() * MASS_DESTRUCT;
+  newship->set_mass(newship->local_mass(race.mass));
   newship->alive() = 1;
   newship->active() = 1;
   newship->protect().self = newship->active_guns() > 0;
@@ -385,7 +382,7 @@ void Getship(Ship* s, ShipType i, const Race& r) {
 
   *s = std::move(*ShipFactory::create(std::move(data)));
   s->size() = ship_size(*s);
-  s->mass() = s->base_mass();
+  s->set_mass(s->base_mass());
   s->build_cost() = r.God ? 0 : (int)cost(*s);
 }
 
@@ -414,7 +411,7 @@ Ship Getfactship(const Ship& b) {
 
   Ship s(data);
   s.size() = ship_size(s);
-  s.mass() = s.base_mass();
+  s.set_mass(s.base_mass());
   return s;
 }
 

@@ -82,11 +82,11 @@ void do_transporter(const Race& race, GameObj& g, TransporterShip& s) {
     }
 
     if (s.crystals()) {
-      s2.crystals() += s.crystals();
+      s2.add_crystals(s.crystals());
 
       g.out << std::format("{} crystal(s) transferred.\n", s.crystals());
       tele_lines += std::format("{} crystal(s)\n", s.crystals());
-      s.crystals() = 0;
+      s.set_crystals(0);
     }
 
     if (s2.owner() != s.owner()) {
@@ -139,7 +139,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
         ship->popn() -= people;
       else
         ship->troops() -= people;
-      ship->mass() -= people * race.mass;
+      ship->set_mass(ship->mass() - people * race.mass);
       g.out << std::format("{} {} unloaded...\n", people,
                            what == PopulationType::CIV ? "civ" : "mil");
       g.out << std::format("Crew compliment {} civ  {} mil\n", ship->popn(),
@@ -203,7 +203,7 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, Ship* ship,
           ship->popn() += people;
         else
           ship->troops() += people;
-        ship->mass() += people * race.mass;
+        ship->set_mass(ship->mass() + people * race.mass);
         alien.adjust_morale(race, static_cast<int>(race.fighters));
       }
       std::string telegram =
@@ -514,7 +514,7 @@ bool load(const command_t& argv, GameObj& g) {
             break;
           case 'x':
           case '&':
-            s2.crystals() -= amt;
+            s2.consume_crystals(amt);
             break;
           case 'f':
             if (landed_on(s, s2.number())) {
@@ -692,7 +692,7 @@ bool load(const command_t& argv, GameObj& g) {
         break;
       case 'x':
       case '&':
-        s.crystals() += amt;
+        s.add_crystals(amt);
         g.out << std::format("{} crystal(s) transferred.\n", amt);
         break;
       case 'f':

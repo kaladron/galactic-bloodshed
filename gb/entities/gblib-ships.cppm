@@ -331,11 +331,11 @@ export struct ship_struct {
   double tech{0.0};        ///< Construction technology level
   double complexity{0.0};  ///< Hull structural complexity rating
 
-  resource_t destruct{0};     ///< Current carried destructive charges
-  resource_t resource{0};     ///< Current carried resource cargo
-  population_t popn{0};       ///< Current carried colonists / crew
-  population_t troops{0};     ///< Current carried military troops
-  std::uint32_t crystals{0};  ///< Current carried warp crystal charge
+  resource_t destruct{0};  ///< Current carried destructive charges
+  resource_t resource{0};  ///< Current carried resource cargo
+  population_t popn{0};    ///< Current carried colonists / crew
+  population_t troops{0};  ///< Current carried military troops
+  crystal_t crystals{0};   ///< Current carried warp crystal charge
 
   SpecialData special;  ///< Ship-type-specific payload / mode data
 
@@ -2164,18 +2164,15 @@ public:
   }
 
   // Resources
-  [[nodiscard]] double fuel() const {
-    return data_.fuel;
-  }
-  double& fuel() {
+  [[nodiscard]] double fuel() const noexcept {
     return data_.fuel;
   }
 
-  [[nodiscard]] double mass() const {
+  [[nodiscard]] double mass() const noexcept {
     return data_.mass;
   }
-  double& mass() {
-    return data_.mass;
+  void set_mass(double mass) noexcept {
+    data_.mass = mass;
   }
 
   [[nodiscard]] Coordinates land_coords() const noexcept {
@@ -2319,10 +2316,7 @@ public:
     return data_.troops;
   }
 
-  [[nodiscard]] std::uint32_t crystals() const {
-    return data_.crystals;
-  }
-  std::uint32_t& crystals() {
+  [[nodiscard]] crystal_t crystals() const noexcept {
     return data_.crystals;
   }
 
@@ -2834,14 +2828,19 @@ public:
                : (data_.max_crew - data_.popn);
   }
 
+  /// \brief Epsilon threshold for fuel comparisons and consumption tests.
+  static constexpr double FUEL_EPSILON = 1e-4;
+
   /// Maximum total crew capacity including factory template overrides.
   [[nodiscard]] population_t max_crew_capacity() const noexcept {
+    if (data_.max_crew > 0) return data_.max_crew;
     return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_crew
                                                    : data_.max_crew;
   }
 
   /// Maximum cargo resource capacity including factory template overrides.
   [[nodiscard]] resource_t max_resource_capacity() const noexcept {
+    if (data_.max_resource > 0) return data_.max_resource;
     return (data_.type == ShipType::OTYPE_FACTORY)
                ? ship_template(data_.type).max_cargo
                : data_.max_resource;
@@ -2849,6 +2848,7 @@ public:
 
   /// Maximum fuel tank capacity including factory template overrides.
   [[nodiscard]] fuel_t max_fuel_capacity() const noexcept {
+    if (data_.max_fuel > 0.0) return data_.max_fuel;
     return (data_.type == ShipType::OTYPE_FACTORY)
                ? ship_template(data_.type).max_fuel
                : data_.max_fuel;
@@ -2856,6 +2856,7 @@ public:
 
   /// Maximum ammo / ordnance capacity including factory template overrides.
   [[nodiscard]] resource_t max_destruct_capacity() const noexcept {
+    if (data_.max_destruct > 0) return data_.max_destruct;
     return (data_.type == ShipType::OTYPE_FACTORY)
                ? ship_template(data_.type).max_destruct
                : data_.max_destruct;
@@ -2870,7 +2871,7 @@ public:
   }
 
   /// Maximum alien power crystal storage capacity.
-  [[nodiscard]] int max_crystals_capacity() const noexcept {
+  [[nodiscard]] crystal_t max_crystals_capacity() const noexcept {
     return MAX_CRYSTALS;
   }
 
@@ -2925,12 +2926,12 @@ public:
   [[nodiscard]] bool is_fully_fueled() const noexcept {
     const auto max_fuel = max_fuel_capacity();
     if (max_fuel == 0) return false;
-    return data_.fuel >= static_cast<double>(max_fuel) - 1e-4;
+    return data_.fuel >= static_cast<double>(max_fuel) - FUEL_EPSILON;
   }
 
   /// \brief Returns whether ship has non-negligible fuel remaining.
   [[nodiscard]] bool has_fuel() const noexcept {
-    return data_.fuel > 1e-4;
+    return data_.fuel > FUEL_EPSILON;
   }
 
   /// \brief Available cargo capacity remaining for resources.
@@ -2972,11 +2973,43 @@ public:
     data_.destruct = std::clamp<resource_t>(amt, 0, max_destruct_capacity());
   }
 
+  /// \brief Sets crystals clamped to [0, max_crystals_capacity()].
+  void set_crystals(crystal_t count) noexcept {
+    data_.crystals = std::min(count, max_crystals_capacity());
+  }
+
+  /// \brief Consumes crystals clamped to available stock; returns actual
+  /// consumed.
+  crystal_t consume_crystals(std::int64_t amt) noexcept {
+    if (amt <= 0) return 0;
+    const auto actual =
+        std::min<crystal_t>(data_.crystals, static_cast<crystal_t>(amt));
+    data_.crystals -= actual;
+    return actual;
+  }
+
+  /// \brief Adds crystals clamped to max capacity. Negative values delegate to
+  /// consume_crystals(-amt).
+  void add_crystals(std::int64_t amt) noexcept {
+    if (amt < 0) {
+      consume_crystals(-amt);
+      return;
+    }
+    const auto max_cap = max_crystals_capacity();
+    if (data_.crystals >= max_cap) return;
+    const auto actual = std::min<crystal_t>(static_cast<crystal_t>(amt),
+                                            max_cap - data_.crystals);
+    data_.crystals += actual;
+  }
+
+  /// \brief Authoritative single-ship intrinsic physical mass calculation.
+  [[nodiscard]] double local_mass(double race_mass = 1.0) const noexcept;
+
   /// \brief Attempts to consume an exact amount of fuel; returns true on
   /// success, false if insufficient fuel.
   [[nodiscard]] bool try_consume_fuel(fuel_t cost) noexcept {
     if (cost <= 0.0) return true;
-    if (data_.fuel + 1e-4 < cost) return false;
+    if (data_.fuel + FUEL_EPSILON < cost) return false;
     const auto actual = std::min(data_.fuel, cost);
     data_.fuel -= actual;
     if (data_.fuel < 0.0) data_.fuel = 0.0;

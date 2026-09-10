@@ -24,6 +24,7 @@ export using resource_t = std::int64_t;
 export using money_t = std::int64_t;
 export using population_t = std::int64_t;
 export using fuel_t = double;
+export using crystal_t = std::uint32_t;  ///< Psychic / warp focusing crystals
 export using victory_score_t =
     std::int64_t;  ///< 64-bit empire victory tally score
 

@@ -60,7 +60,7 @@ void test_upgrade_command() {
   ship.storbits() = 0;
   ship.xpos() = 100.0;
   ship.ypos() = 200.0;
-  ship.fuel() = 10.0;
+  ship.set_fuel(10.0);
   const auto& tmpl = ship_template(type);
   ship.max_fuel() = tmpl.max_fuel;
   ship.resource() = 500;  // Need resources to pay for upgrades
@@ -74,7 +74,7 @@ void test_upgrade_command() {
                            shipdata_primary(ShipType::STYPE_BATTLE));
   ship.set_secondary_battery(tmpl.max_guns,
                              shipdata_secondary(ShipType::STYPE_BATTLE));
-  ship.mass() = 10.0;
+  ship.set_mass(10.0);
   ship.build_cost() = static_cast<int>(cost(ship));
   ship.damage() = 0;  // No damage - required for upgrades
 

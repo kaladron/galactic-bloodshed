@@ -72,7 +72,7 @@ void test_fuel_predicates() {
   test::expect_false(ship.is_fully_fueled());
 
   // Negligible residual fuel below epsilon
-  ship.fuel() = 5e-5;
+  ship.set_fuel(Ship::FUEL_EPSILON * 0.5);
   test::expect_false(ship.has_fuel());
   test::expect_false(ship.is_fully_fueled());
 
@@ -86,7 +86,7 @@ void test_fuel_predicates() {
   test::expect_true(ship.has_fuel());
   test::expect_true(ship.is_fully_fueled());
 
-  ship.fuel() = 200.0 - 5e-5;
+  ship.set_fuel(200.0 - Ship::FUEL_EPSILON * 0.5);
   test::expect_true(ship.is_fully_fueled());
 }
 
@@ -549,6 +549,73 @@ void test_ship_continuous_coordinates() {
   test::expect_eq(ship.coordinates(), UniverseCoordinates(300.0, -800.0));
 }
 
+void test_crystals_domain() {
+  ship_struct sdata{};
+  Ship ship{sdata};
+
+  test::expect_eq(ship.crystals(), 0U);
+  test::expect_eq(ship.max_crystals_capacity(), 127);
+
+  // set_crystals with clamping
+  ship.set_crystals(50);
+  test::expect_eq(ship.crystals(), 50U);
+  ship.set_crystals(200);
+  test::expect_eq(ship.crystals(), 127U);
+
+  // consume_crystals
+  ship.set_crystals(10);
+  auto consumed = ship.consume_crystals(4);
+  test::expect_eq(consumed, 4U);
+  test::expect_eq(ship.crystals(), 6U);
+
+  // consume more than available clamps to available
+  consumed = ship.consume_crystals(20);
+  test::expect_eq(consumed, 6U);
+  test::expect_eq(ship.crystals(), 0U);
+
+  // negative or zero consume is no-op
+  consumed = ship.consume_crystals(-5);
+  test::expect_eq(consumed, 0U);
+  test::expect_eq(ship.crystals(), 0U);
+
+  // add_crystals
+  ship.add_crystals(15);
+  test::expect_eq(ship.crystals(), 15U);
+
+  // add_crystals clamps at max capacity
+  ship.add_crystals(200);
+  test::expect_eq(ship.crystals(), 127U);
+
+  // add_crystals with negative delegates to consume
+  ship.add_crystals(-27);
+  test::expect_eq(ship.crystals(), 100U);
+}
+
+void test_local_mass_and_set_mass() {
+  ship_struct sdata{
+      .fuel = 200.0,
+      .armor = 10,
+      .size = 100,
+      .destruct = 5,
+      .resource = 50,
+      .popn = 20,
+      .troops = 10,
+  };
+  Ship ship{sdata};
+
+  // set_mass updates data_.mass directly
+  ship.set_mass(350.0);
+  expect_near(ship.mass(), 350.0);
+
+  // local_mass computes intrinsic mass:
+  // base_mass() + fuel * MASS_FUEL + res * MASS_RESOURCE + des * MASS_DESTRUCT
+  // + (popn + troops) * race_mass
+  const double expected_local = ship.base_mass() + 200.0 * MASS_FUEL +
+                                50.0 * MASS_RESOURCE + 5.0 * MASS_DESTRUCT +
+                                (20.0 + 10.0) * 1.5;
+  expect_near(ship.local_mass(1.5), expected_local);
+}
+
 }  // namespace
 
 int main() {
@@ -566,6 +633,8 @@ int main() {
   test_gun_battery_invariants_and_operations();
   test_active_gun_battery_and_formatting();
   test_ship_continuous_coordinates();
+  test_crystals_domain();
+  test_local_mass_and_set_mass();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

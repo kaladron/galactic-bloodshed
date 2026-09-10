@@ -368,12 +368,12 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
       .docked = true,
   };
 
-  parent.fuel() *= 0.5;
+  parent.consume_fuel(parent.fuel() * 0.5);
 
   auto ship_handle = em.create_ship(s2_data);
   Ship& s2 = *ship_handle;
   s2.size() = ship_size(s2);
-  s2.mass() = s2.base_mass();
+  s2.set_mass(s2.base_mass());
 
   planet.ships() = s2.number();
   return s2.number();
@@ -446,12 +446,12 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
           GunBattery::create(0, shipdata_secondary(ShipType::OTYPE_BERS)),
   };
 
-  parent.fuel() *= 0.5;
+  parent.consume_fuel(parent.fuel() * 0.5);
 
   auto ship_handle = em.create_ship(s2_data);
   Ship& s2 = *ship_handle;
   s2.size() = ship_size(s2);
-  s2.mass() = s2.base_mass();
+  s2.set_mass(s2.base_mass());
 
   planet.ships() = s2.number();
 

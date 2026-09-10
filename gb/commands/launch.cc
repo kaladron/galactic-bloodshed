@@ -61,7 +61,7 @@ bool launch(const command_t& argv, GameObj& g) {
             s.set_land_coords(s2.land_coords());
             s.docked() = 1;
             s.whatdest() = ScopeLevel::LEVEL_PLAN;
-            s2.mass() -= s.mass();
+            s2.set_mass(s2.mass() - s.mass());
             s2.hanger() -= s.size();
             g.out << std::format("Landed on {}/{}.\n", star.get_name(),
                                  star.get_planet_name(s.pnumorbits()));
@@ -76,7 +76,7 @@ bool launch(const command_t& argv, GameObj& g) {
           s.ypos() = s2.ypos();
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
-          s2.mass() -= s.mass();
+          s2.set_mass(s2.mass() - s.mass());
           s2.hanger() -= s.size();
           g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
             g.out << std::format("Orbiting {}/{}.\n", star.get_name(),
@@ -91,7 +91,7 @@ bool launch(const command_t& argv, GameObj& g) {
           s.ypos() = s2.ypos();
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
-          s2.mass() -= s.mass();
+          s2.set_mass(s2.mass() - s.mass());
           s2.hanger() -= s.size();
           g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
             g.out << std::format("Orbiting {}.\n", star.get_name());
@@ -104,7 +104,7 @@ bool launch(const command_t& argv, GameObj& g) {
           s.ypos() = s2.ypos();
           s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
-          s2.mass() -= s.mass();
+          s2.set_mass(s2.mass() - s.mass());
           s2.hanger() -= s.size();
           g.out << "Universe level.\n";
         } else {

@@ -429,7 +429,7 @@ void test_execute_terraforming() {
   test::expect_eq(ship.fuel(), initial_fuel - FUEL_COST_TERRA);
 
   // 4. Insufficient fuel
-  ship.fuel() = 0.0;
+  ship.set_fuel(0.0);
   ship.notified() = 0;
   auto res_fuel = execute_terraforming(ship, planet, smap, em);
   test::expect_false(res_fuel.has_value());
@@ -468,6 +468,7 @@ void test_execute_plowing() {
       .fuel = 50.0,
       .land_coords = {1, 1},
       .max_crew = 100,
+      .max_fuel = 100.0,
       .popn = 100,
       .special = TerraformData{.index = 0},
       .storbits = star.star_id(),
@@ -515,7 +516,7 @@ void test_execute_plowing() {
   test::expect_eq(ship.fuel(), initial_fuel - FUEL_COST_PLOW);
 
   // 4. Insufficient fuel
-  ship.fuel() = 0.0;
+  ship.set_fuel(0.0);
   ship.notified() = 0;
   auto res_fuel = execute_plowing(ship, planet, smap, em);
   test::expect_false(res_fuel.has_value());
@@ -530,7 +531,7 @@ void test_execute_plowing() {
 
   // 6. Not landed
   ship.on() = 1;
-  ship.fuel() = 50.0;
+  ship.set_fuel(50.0);
   ship.docked() = 0;
   auto res_not_landed = execute_plowing(ship, planet, smap, em);
   test::expect_false(res_not_landed.has_value());
@@ -790,6 +791,7 @@ void test_strip_mine_quarry() {
       .fuel = 50.0,
       .land_coords = {3, 3},
       .max_crew = 100,
+      .max_fuel = 100.0,
       .popn = 100,
       .whatdest = ScopeLevel::LEVEL_PLAN,
       .type = ShipType::OTYPE_QUARRY,
@@ -817,7 +819,7 @@ void test_strip_mine_quarry() {
   test::expect_eq(ship.fuel(), 50.0 - FUEL_COST_QUARRY);
 
   // 2. Insufficient fuel
-  ship.fuel() = 0.0;
+  ship.set_fuel(0.0);
   ship.notified() = 0;
   auto res_fuel = strip_mine_quarry(ship, planet, smap, em, stats);
   test::expect_false(res_fuel.has_value());
@@ -833,7 +835,7 @@ void test_strip_mine_quarry() {
 
   // 4. Not landed
   ship.on() = 1;
-  ship.fuel() = 50.0;
+  ship.set_fuel(50.0);
   ship.docked() = 0;
   auto res_not_landed = strip_mine_quarry(ship, planet, smap, em, stats);
   test::expect_false(res_not_landed.has_value());
@@ -977,7 +979,7 @@ void test_process_weapon_plant_turn() {
 
   // 4. Insufficient fuel telegram
   ship.resource() = 50;
-  ship.fuel() = 0.0;
+  ship.set_fuel(0.0);
   process_weapon_plant_turn(em, ship, stats);
   auto tele_fuel = em.get_telegrams(player_t{1}, governor_t{0});
   test::expect_false(tele_fuel.empty());
@@ -1118,20 +1120,20 @@ void test_refuel_gasgiant_orbiters() {
 
   // 4. Habitat in orbit around gas giant: FUEL_GAS_ADD_HABITAT added
   ship.type() = ShipType::STYPE_HABITAT;
-  ship.fuel() = 50.0;
+  ship.set_fuel(50.0);
   double added_hab = refuel_gasgiant_orbiters(gas_giant, ship);
   test::expect_eq(added_hab, FUEL_GAS_ADD_HABITAT);
   test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD_HABITAT);
 
   // 5. Standard ship in orbit around gas giant: FUEL_GAS_ADD added
   ship.type() = ShipType::STYPE_POD;
-  ship.fuel() = 50.0;
+  ship.set_fuel(50.0);
   double added_pod = refuel_gasgiant_orbiters(gas_giant, ship);
   test::expect_eq(added_pod, FUEL_GAS_ADD);
   test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD);
 
   // 6. Capacity clamping near max_fuel
-  ship.fuel() = 495.0;
+  ship.set_fuel(495.0);
   double added_clamp = refuel_gasgiant_orbiters(gas_giant, ship);
   test::expect_eq(added_clamp, 5.0);
   test::expect_eq(ship.fuel(), 500.0);

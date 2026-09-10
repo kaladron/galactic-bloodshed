@@ -183,7 +183,9 @@ bool capture(const command_t& argv, GameObj& g) {
                                   (dstrength + 1.0)));
                 shipdam = int_rand(
                     0, round_rand(25. * (astrength + 1.0) / (dstrength + 1.0)));
-                ship.apply_damage(shipdam);
+                if (ship.apply_damage(shipdam).destroyed) {
+                  g.entity_manager.kill_ship(Playernum, ship);
+                }
               }
 
               casualties = std::min(boarders, casualties);
@@ -203,10 +205,12 @@ bool capture(const command_t& argv, GameObj& g) {
                 casualties += (int_rand(1, 100) < booby);
               boarders -= casualties;
               shipdam += booby;
-              ship.apply_damage(booby);
+              if (ship.apply_damage(booby).destroyed) {
+                g.entity_manager.kill_ship(Playernum, ship);
+              }
             }
             shipdam = std::min(100, shipdam);
-            if (ship.damage() >= 100)
+            if (ship.alive() && ship.damage() >= 100)
               g.entity_manager.kill_ship(Playernum, ship);
 
             if (!(ship.popn() + ship.troops()) && ship.alive()) {

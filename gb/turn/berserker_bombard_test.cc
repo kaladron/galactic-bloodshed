@@ -255,7 +255,7 @@ int main() {
     // destruct
     // -> 20
     test_ship->destruct() = 100;
-    test_ship->damage() = 50;
+    test_ship->admin_override_damage(50);
     test::expect_eq(calculate_bombardment_strength(*test_ship), 20);
 
     // Zero destruct crystals -> 0
@@ -264,7 +264,7 @@ int main() {
 
     // 100% hull damage -> 0
     test_ship->destruct() = 100;
-    test_ship->damage() = 100;
+    test_ship->admin_override_damage(100);
     test::expect_eq(calculate_bombardment_strength(*test_ship), 0);
 
     // Non-combat ship with 0 guns (e.g. Spore Pod) -> 0

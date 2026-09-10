@@ -69,7 +69,6 @@ void setup_test_world(TestContext& ctx) {
   port.alive() = true;
   port.active() = true;
   port.type() = ShipType::OTYPE_GOV;
-  port.damage() = 0.0;
   port.whatorbits() = ScopeLevel::LEVEL_PLAN;
   port.storbits() = 1;
   port.pnumorbits() = 0;

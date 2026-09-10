@@ -307,9 +307,11 @@ void test_clamped_add_and_consume() {
   Ship ship{sdata};
 
   // apply_damage overflow safety and clamping
-  ship.apply_damage(20);
+  const auto d_res1 = ship.apply_damage(20);
+  test::expect_eq(d_res1.damage_applied, 10u);
   test::expect_eq(ship.damage(), 100);
-  ship.apply_damage(std::numeric_limits<damage_t>::max());
+  const auto d_res2 = ship.apply_damage(std::numeric_limits<damage_t>::max());
+  test::expect_eq(d_res2.damage_applied, 0u);
   test::expect_eq(ship.damage(), 100);
 
   // add_fuel clamping to max capacity
@@ -751,6 +753,122 @@ void test_ship_joint_crew_capacity() {
   expect_near(ship.mass(), 0.0);
 }
 
+void test_damage_and_radiation_subsystem() {
+  std::println(std::cout, "Testing Ship damage and radiation subsystem...");
+  ship_struct sdata{
+      .damage = 0,
+      .rad = 0,
+  };
+  Ship ship{sdata};
+
+  // 1. apply_damage returns DamageResult
+  auto res = ship.apply_damage(30);
+  test::expect_eq(res.damage_applied, 30u);
+  test::expect_eq(res.new_damage, 30u);
+  test::expect_false(res.destroyed);
+  test::expect_eq(ship.damage(), 30u);
+
+  // Incremental damage
+  res = ship.apply_damage(20);
+  test::expect_eq(res.damage_applied, 20u);
+  test::expect_eq(res.new_damage, 50u);
+  test::expect_false(res.destroyed);
+  test::expect_eq(ship.damage(), 50u);
+
+  // Lethal damage exactly reaching 100
+  res = ship.apply_damage(50);
+  test::expect_eq(res.damage_applied, 50u);
+  test::expect_eq(res.new_damage, 100u);
+  test::expect_true(res.destroyed);
+  test::expect_eq(ship.damage(), 100u);
+
+  // Damage to already destroyed ship
+  res = ship.apply_damage(20);
+  test::expect_eq(res.damage_applied, 0u);
+  test::expect_eq(res.new_damage, 100u);
+  test::expect_true(res.destroyed);
+  test::expect_eq(ship.damage(), 100u);
+
+  // 2. repair_damage with bounds safety
+  ship.repair_damage(40);
+  test::expect_eq(ship.damage(), 60u);
+
+  // Over-repair clamped to 0 without underflow
+  ship.repair_damage(100);
+  test::expect_eq(ship.damage(), 0u);
+
+  // Signed negative repair is ignored (does not wrap around to full heal)
+  ship.admin_override_damage(50);
+  ship.repair_damage(-20);
+  test::expect_eq(ship.damage(), 50u);
+
+  // 3. Signed negative apply_damage is ignored (does not wrap to instant
+  // destruction)
+  res = ship.apply_damage(-15);
+  test::expect_eq(res.damage_applied, 0u);
+  test::expect_eq(res.new_damage, 50u);
+  test::expect_false(res.destroyed);
+  test::expect_eq(ship.damage(), 50u);
+
+  // 4. Overkill damage clamped to 100 without overflow
+  res = ship.apply_damage(std::numeric_limits<damage_t>::max());
+  test::expect_eq(res.damage_applied, 50u);
+  test::expect_eq(res.new_damage, 100u);
+  test::expect_true(res.destroyed);
+
+  // 5. Floating point overload
+  ship.admin_override_damage(10);
+  res = ship.apply_damage(15.4);
+  test::expect_eq(res.damage_applied, 15u);
+  test::expect_eq(res.new_damage, 25u);
+
+  // 6. apply_radiation peak-dose semantics
+  ship.apply_radiation(30);
+  test::expect_eq(ship.rad(), 30u);
+
+  // Lower dosage does not reduce radiation
+  ship.apply_radiation(20);
+  test::expect_eq(ship.rad(), 30u);
+
+  // Higher dosage sets new peak
+  ship.apply_radiation(75);
+  test::expect_eq(ship.rad(), 75u);
+
+  // Clamped at 100%
+  ship.apply_radiation(150);
+  test::expect_eq(ship.rad(), 100u);
+
+  // Signed negative dosage does not mutate
+  ship.repair_radiation(60);
+  test::expect_eq(ship.rad(), 40u);
+  ship.apply_radiation(-10);
+  test::expect_eq(ship.rad(), 40u);
+
+  // 7. repair_radiation bounds safety
+  ship.repair_radiation(15);
+  test::expect_eq(ship.rad(), 25u);
+
+  // Over-repair clamped to 0 without underflow
+  ship.repair_radiation(50);
+  test::expect_eq(ship.rad(), 0u);
+
+  // Signed negative repair does not mutate
+  ship.apply_radiation(20);
+  ship.repair_radiation(-10);
+  test::expect_eq(ship.rad(), 20u);
+
+  // 8. Admin overrides with signedness protection
+  ship.admin_override_damage(-10);
+  test::expect_eq(ship.damage(), 0u);
+  ship.admin_override_damage(150);
+  test::expect_eq(ship.damage(), 100u);
+
+  ship.admin_override_radiation(-10);
+  test::expect_eq(ship.rad(), 0u);
+  ship.admin_override_radiation(150);
+  test::expect_eq(ship.rad(), 100u);
+}
+
 }  // namespace
 
 int main() {
@@ -772,6 +890,7 @@ int main() {
   test_crystals_domain();
   test_local_mass_and_set_mass();
   test_simulated_ship();
+  test_damage_and_radiation_subsystem();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

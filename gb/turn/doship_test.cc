@@ -1391,9 +1391,12 @@ void test_ship_domain_operations() {
   Ship ship{sdata};
 
   // 1. Damage clamping
-  ship.apply_damage(50);
+  const auto res1 = ship.apply_damage(50);
+  test::expect_eq(res1.damage_applied, 50u);
   test::expect_eq(ship.damage(), 60);
-  ship.apply_damage(60);
+  const auto res2 = ship.apply_damage(60);
+  test::expect_eq(res2.damage_applied, 40u);
+  test::expect_true(res2.destroyed);
   test::expect_eq(ship.damage(), 100);  // Clamped at 100
 
   ship.repair_damage(40);
@@ -1504,7 +1507,7 @@ void test_do_repair() {
   });
 
   // 4. Space station itself repairs for free
-  ctx.em.mutate_ship(station_id, [](Ship& s) { s.damage() = 30; });
+  ctx.em.mutate_ship(station_id, [](Ship& s) { s.admin_override_damage(30); });
   ctx.em.mutate_ship(station_id, [&](Ship& station) {
     do_repair(station, ctx.em);
     test::expect_lt(station.damage(), 30);
@@ -1571,7 +1574,7 @@ void test_process_ship_supernova() {
   test::expect_eq(ship.alive(), 1);
 
   // 2. Ship destroyed by supernova (damage >= 100)
-  ship.damage() = 98;
+  ship.admin_override_damage(98);
   survived = process_ship_supernova(ship, star, state, em);
   test::expect_false(survived);
   test::expect_eq(ship.alive(), 0);

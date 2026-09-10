@@ -162,7 +162,8 @@ int main() {
   // Update ship
   std::println(std::cout, "Update ship...");
   retrieved->consume_fuel(2000.0);
-  retrieved->apply_damage(50);
+  const auto dmg_res = retrieved->apply_damage(50);
+  test::expect_eq(dmg_res.damage_applied, 50u);
   retrieved->xpos() = 150.0;
   saved = repo.save(*retrieved);
   test::expect_true(saved, "Failed to update ship");

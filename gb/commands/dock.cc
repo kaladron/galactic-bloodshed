@@ -294,8 +294,8 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
               dam = int_rand(
                   0, round_rand(25. * (b2strength + 1.0) / (bstrength + 1.0)));
               dam = MIN(100, dam);
-              s.apply_damage(dam);
-              if (s.damage() >= 100) g.entity_manager.kill_ship(Playernum, s);
+              if (s.apply_damage(dam).destroyed)
+                g.entity_manager.kill_ship(Playernum, s);
 
               casualties2 = int_rand(
                   0, round_rand((double)casualty_scale * (bstrength + 1.0) /
@@ -311,8 +311,8 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
               dam2 = int_rand(
                   0, round_rand(25. * (bstrength + 1.0) / (b2strength + 1.0)));
               dam2 = MIN(100, dam2);
-              s2.apply_damage(dam2);
-              if (s2.damage() >= 100) g.entity_manager.kill_ship(Playernum, s2);
+              if (s2.apply_damage(dam2).destroyed)
+                g.entity_manager.kill_ship(Playernum, s2);
             } else {
               s2.clear_crew(alien.mass);
               booby = 0;

@@ -68,7 +68,6 @@ int main() {
   port.alive() = true;
   port.active() = true;
   port.type() = ShipType::OTYPE_GOV;  // Has ABIL_PORT capability
-  port.damage() = 0.0;
   port.whatorbits() = ScopeLevel::LEVEL_PLAN;
   port.storbits() = 0;
   port.pnumorbits() = 0;

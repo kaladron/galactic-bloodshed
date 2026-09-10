@@ -571,6 +571,7 @@ public:
   TestShipBuilder& with_crystals(crystal_t crystals);
   TestShipBuilder& with_mount(unsigned char mount = 1);
   TestShipBuilder& with_damage(damage_t damage);
+  TestShipBuilder& with_radiation(radiation_t rad);
   TestShipBuilder& with_armor(armor_t armor);
   TestShipBuilder& with_mass(double mass);
   TestShipBuilder& with_size(ship_size_t size);

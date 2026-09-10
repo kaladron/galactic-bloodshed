@@ -201,8 +201,8 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   newship->cloaked() = 0;
   newship->fire_laser() = 0;
   newship->mode() = 0;
-  newship->rad() = 0;
-  newship->damage() = race.God ? 0 : newship->get_template().base_damage;
+  newship->admin_override_damage(
+      race.God ? 0 : newship->get_template().base_damage);
   newship->retaliate() = newship->primary_battery().count;
   newship->ships() = 0;
   newship->on() = 0;

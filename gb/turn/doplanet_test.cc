@@ -551,8 +551,8 @@ void test_execute_plowing() {
   ship.as<TerraformerShip>()->set_index(0);
   ship.set_land_coords({1, 1});
   smap.get(Coordinates{1, 2}).set_fert(20);
-  ship.damage() = 50;  // 50% hull efficiency
-  ship.popn() = 50;    // 50% crew ratio
+  ship.admin_override_damage(50);  // 50% hull efficiency
+  ship.popn() = 50;                // 50% crew ratio
   auto res_scaled = execute_plowing(ship, planet, smap, em);
   test::expect_true(res_scaled.has_value());
   test::expect_ge(*res_scaled, 2);
@@ -698,8 +698,8 @@ void test_upgrade_sector_dome() {
   test::expect_eq(smap.get(Coordinates{2, 2}).get_eff(), 100);
 
   // 7. Damage and crew scaling
-  ship.damage() = 50;  // 50% hull efficiency
-  ship.popn() = 50;    // 50% crew ratio
+  ship.admin_override_damage(50);  // 50% hull efficiency
+  ship.popn() = 50;                // 50% crew ratio
   smap.get(Coordinates{2, 2}).set_efficiency_bounded(20);
   auto res_scale = upgrade_sector_dome(em, ship, smap);
   test::expect_true(res_scale.has_value());

@@ -41,7 +41,6 @@ void test_mech_attack_people() {
   ship.type() = ShipType::OTYPE_AFV;
   ship.tech() = 10.0;
   ship.armor() = 10;
-  ship.damage() = 0;
   ship.alive() = true;
   ship.popn() = 10;
   ship.retaliate() = 100;
@@ -96,7 +95,6 @@ void test_people_attack_mech() {
   ship.type() = ShipType::OTYPE_AFV;
   ship.tech() = 10.0;
   ship.armor() = 5;
-  ship.damage() = 0;
   ship.alive() = true;
   ship.popn() = 10;
   ship.retaliate() = 100;

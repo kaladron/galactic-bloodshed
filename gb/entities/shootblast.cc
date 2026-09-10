@@ -288,8 +288,7 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
   int dosage = round_rand(40. * (double)penetrate / (double)body);
   dosage = std::min(100, dosage);
 
-  if (dosage > ship.rad())
-    ship.rad() = std::max(ship.rad(), static_cast<radiation_t>(dosage));
+  ship.apply_radiation(dosage);
   if (success(ship.rad())) ship.active() = false;
 
   int casualties = 0;
@@ -342,7 +341,7 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
   if (crithits) damage += critdam;
 
   damage = std::min(100, damage);
-  ship.damage() = std::min(100, (int)(ship.damage()) + damage);
+  const auto damage_result = ship.apply_damage(damage);
 
   double race_mass = 1.0;
   try {
@@ -382,7 +381,7 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
                        casualties1);
   }
 
-  if (ship.damage() >= 100) em.kill_ship(who, ship);
+  if (damage_result.destroyed) em.kill_ship(who, ship);
   ship.build_cost() = (int)cost(ship);
   return {damage, msg.str()};
 }

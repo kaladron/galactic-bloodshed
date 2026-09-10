@@ -139,6 +139,13 @@ export struct GunBattery {
   constexpr auto operator<=>(const GunBattery&) const noexcept = default;
 };
 
+/// \brief Structured outcome of applying damage to a ship.
+export struct DamageResult {
+  damage_t damage_applied{0};  ///< Actual damage added (clamped to 100 max)
+  damage_t new_damage{0};      ///< New total damage percentage [0..100]
+  bool destroyed{false};       ///< True if new_damage reached 100%
+};
+
 export inline constexpr ActiveBattery PRIMARY = ActiveBattery::PRIMARY;
 export inline constexpr ActiveBattery SECONDARY = ActiveBattery::SECONDARY;
 
@@ -2449,17 +2456,11 @@ public:
   }
 
   // Combat
-  [[nodiscard]] damage_t damage() const {
-    return data_.damage;
-  }
-  damage_t& damage() {
+  [[nodiscard]] damage_t damage() const noexcept {
     return data_.damage;
   }
 
-  [[nodiscard]] radiation_t rad() const {
-    return data_.rad;
-  }
-  radiation_t& rad() {
+  [[nodiscard]] radiation_t rad() const noexcept {
     return data_.rad;
   }
 
@@ -2962,7 +2963,28 @@ public:
 
   /// \brief Deity override: sets hull damage clamped to [0, 100]%.
   void admin_override_damage(damage_t amt) noexcept {
-    data_.damage = std::clamp<damage_t>(amt, 0, 100);
+    data_.damage = std::min<damage_t>(amt, 100);
+  }
+
+  /// \brief Deity override: sets hull damage clamped to [0, 100]%, guarding
+  /// against negative values.
+  template <std::signed_integral T>
+  void admin_override_damage(T amt) noexcept {
+    data_.damage = static_cast<damage_t>(
+        std::clamp<std::int64_t>(static_cast<std::int64_t>(amt), 0, 100));
+  }
+
+  /// \brief Deity override: sets radiation dosage clamped to [0, 100]%.
+  void admin_override_radiation(radiation_t amt) noexcept {
+    data_.rad = std::min<radiation_t>(amt, 100);
+  }
+
+  /// \brief Deity override: sets radiation dosage clamped to [0, 100]%,
+  /// guarding against negative values.
+  template <std::signed_integral T>
+  void admin_override_radiation(T amt) noexcept {
+    data_.rad = static_cast<radiation_t>(
+        std::clamp<std::int64_t>(static_cast<std::int64_t>(amt), 0, 100));
   }
 
   /// \brief Deity override: sets fuel clamped to capacity and synchronizes
@@ -3116,12 +3138,58 @@ public:
   }
 
   /// \brief Increases hull damage by the specified amount, clamped to 100%.
-  void apply_damage(damage_t amt) noexcept {
-    if (amt >= 100 || data_.damage + amt >= 100) {
+  ///
+  /// Protected against unsigned overflow and underflow. Returns a DamageResult
+  /// indicating actual damage added, new damage level, and whether the ship was
+  /// destroyed.
+  [[nodiscard]] DamageResult apply_damage(damage_t amt) noexcept {
+    if (data_.damage >= 100) {
+      data_.damage = 100;
+      return {
+          .damage_applied = 0,
+          .new_damage = 100,
+          .destroyed = true,
+      };
+    }
+    const damage_t prev = data_.damage;
+    if (amt >= 100 || 100 - data_.damage <= amt) {
       data_.damage = 100;
     } else {
       data_.damage += amt;
     }
+    return {
+        .damage_applied = data_.damage - prev,
+        .new_damage = data_.damage,
+        .destroyed = (data_.damage >= 100),
+    };
+  }
+
+  /// \brief Increases hull damage by a signed amount, guarding against negative
+  /// values.
+  template <std::signed_integral T>
+  [[nodiscard]] DamageResult apply_damage(T amt) noexcept {
+    if (amt <= 0) {
+      return {
+          .damage_applied = 0,
+          .new_damage = data_.damage,
+          .destroyed = (data_.damage >= 100),
+      };
+    }
+    return apply_damage(static_cast<damage_t>(amt));
+  }
+
+  /// \brief Increases hull damage by a floating-point amount, rounding and
+  /// guarding against negative values.
+  template <std::floating_point T>
+  [[nodiscard]] DamageResult apply_damage(T amt) noexcept {
+    if (amt <= 0.0) {
+      return {
+          .damage_applied = 0,
+          .new_damage = data_.damage,
+          .destroyed = (data_.damage >= 100),
+      };
+    }
+    return apply_damage(static_cast<damage_t>(std::round(amt)));
   }
 
   /// \brief Repairs hull damage by the specified amount, clamped to 0%.
@@ -3129,9 +3197,40 @@ public:
     data_.damage = (amt >= data_.damage) ? 0 : data_.damage - amt;
   }
 
+  /// \brief Repairs hull damage by a signed amount, guarding against negative
+  /// values.
+  template <std::signed_integral T>
+  void repair_damage(T amt) noexcept {
+    if (amt <= 0) return;
+    repair_damage(static_cast<damage_t>(amt));
+  }
+
+  /// \brief Applies radiation dosage following peak-dose semantics, clamped to
+  /// [0, 100]%.
+  void apply_radiation(radiation_t dosage) noexcept {
+    const auto clamped_dose = std::min<radiation_t>(dosage, 100);
+    data_.rad = std::max(data_.rad, clamped_dose);
+  }
+
+  /// \brief Applies radiation dosage by a signed amount, guarding against
+  /// negative values.
+  template <std::signed_integral T>
+  void apply_radiation(T dosage) noexcept {
+    if (dosage <= 0) return;
+    apply_radiation(static_cast<radiation_t>(dosage));
+  }
+
   /// \brief Reduces accumulated radiation dose, clamped to 0.
   void repair_radiation(radiation_t amt) noexcept {
     data_.rad = (amt >= data_.rad) ? 0 : data_.rad - amt;
+  }
+
+  /// \brief Reduces accumulated radiation dose by a signed amount, guarding
+  /// against negative values.
+  template <std::signed_integral T>
+  void repair_radiation(T amt) noexcept {
+    if (amt <= 0) return;
+    repair_radiation(static_cast<radiation_t>(amt));
   }
 
   /// \brief Consumes fuel and decrements ship mass accordingly, clamped to 0.

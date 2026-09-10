@@ -266,11 +266,12 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
           auto i = int_rand(0, max_dmg);
           std::stringstream telegram_buf;
           telegram_buf << std::format("{} aimed at {}\n", ship, target);
-          target.apply_damage(static_cast<damage_t>(i));
-          if (i) {
-            telegram_buf << std::format("{}% damage done.\n", i);
+          const auto dmg_res = target.apply_damage(i);
+          if (dmg_res.damage_applied > 0) {
+            telegram_buf << std::format("{}% damage done.\n",
+                                        dmg_res.damage_applied);
           }
-          if (target.damage() >= 100) {
+          if (dmg_res.destroyed) {
             telegram_buf << std::format("{} DESTROYED!!!\n", target);
             entity_manager.kill_ship(ship.owner(), target);
           }
@@ -395,8 +396,7 @@ bool process_ship_supernova(Ship& ship, const Star& star,
   }
   auto dmg =
       5UL * star.nova_stage() / ((ship.effective_armor() + 1) * state.segments);
-  ship.apply_damage(static_cast<damage_t>(dmg));
-  if (ship.damage() >= 100) {
+  if (ship.apply_damage(dmg).destroyed) {
     em.kill_ship(ship.owner(), ship);
     return false;
   }

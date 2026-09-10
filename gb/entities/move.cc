@@ -187,9 +187,7 @@ people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   use_destruct(ship, ammo);
   damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
   damage = std::min(100, damage);
-  ship.damage() += damage;
-  if (ship.damage() >= 100) {
-    ship.damage() = 100;
+  if (ship.apply_damage(damage).destroyed) {
     em.kill_ship(race.Playernum, ship);
   }
   auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage, alien.mass);

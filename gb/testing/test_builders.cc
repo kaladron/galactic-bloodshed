@@ -271,6 +271,11 @@ TestShipBuilder& TestShipBuilder::with_damage(damage_t damage) {
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::with_radiation(radiation_t rad) {
+  ship_.rad = rad;
+  return *this;
+}
+
 TestShipBuilder& TestShipBuilder::with_armor(armor_t armor) {
   ship_.armor = armor;
   return *this;

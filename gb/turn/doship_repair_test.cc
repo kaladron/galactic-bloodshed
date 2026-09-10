@@ -55,7 +55,7 @@ int main() {
     ship.type() = ShipType::STYPE_SHUTTLE;  // Has crew, no ABIL_REPAIR
     ship.alive() = 1;
     ship.active() = 1;
-    ship.damage() = 50;
+    ship.admin_override_damage(50);
     ship.popn() = 20;
     ship.max_crew() = 20;
     ship.resource() = 5000;
@@ -110,7 +110,7 @@ int main() {
     ship.type() = ShipType::STYPE_SHUTTLE;
     ship.alive() = 1;
     ship.active() = 1;
-    ship.damage() = 75;
+    ship.admin_override_damage(75);
     ship.popn() = 1;  // Minimal crew
     ship.max_crew() = 20;
     ship.resource() = 5000;
@@ -166,7 +166,7 @@ int main() {
     ship.type() = ShipType::STYPE_SHUTTLE;
     ship.alive() = 1;
     ship.active() = 1;
-    ship.damage() = 0;  // No damage
+    ship.admin_override_damage(0);  // No damage
     ship.popn() = 20;
     ship.max_crew() = 20;
     ship.resource() = 5000;
@@ -219,7 +219,7 @@ int main() {
     ship.alive() = 1;
     ship.active() = 1;
     ship.on() = 1;  // Factory is on
-    ship.damage() = 60;
+    ship.admin_override_damage(60);
     ship.popn() = 0;  // Factories have no crew
     ship.max_crew() = 0;
     ship.resource() = 5000;

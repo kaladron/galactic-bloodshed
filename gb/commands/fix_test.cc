@@ -62,7 +62,7 @@ void test_fix_ship_damage_persistence() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_SHUTTLE;
   ship.alive() = true;
-  ship.damage() = 75;
+  ship.admin_override_damage(75);
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
@@ -74,7 +74,7 @@ void test_fix_ship_damage_persistence() {
   }
 
   // 4. Simulate fixing damage via EntityManager
-  ctx.em.mutate_ship(1, [](Ship& s) { s.damage() = 0; });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.admin_override_damage(0); });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
@@ -101,7 +101,7 @@ void test_fix_ship_alive_persistence() {
   ship.governor() = 0;
   ship.type() = ShipType::STYPE_SHUTTLE;
   ship.alive() = false;
-  ship.damage() = 100;
+  ship.admin_override_damage(100);
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
@@ -116,7 +116,7 @@ void test_fix_ship_alive_persistence() {
   // 4. Simulate resurrecting ship via EntityManager
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.alive() = 1;
-    s.damage() = 0;
+    s.admin_override_damage(0);
   });
 
   // 5. Verify changes persisted after cache clear

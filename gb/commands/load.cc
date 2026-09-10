@@ -486,61 +486,79 @@ bool load(const command_t& argv, GameObj& g) {
       g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
         switch (commod) {
           case 'c':
-            s2.remove_popn(amt, race.mass);
+            if (amt > 0) {
+              s2.remove_popn(amt, race.mass);
+            } else {
+              s2.add_popn(-amt, race.mass);
+            }
             transfercrew = 1;
             break;
           case 'm':
-            s2.remove_troops(amt, race.mass);
+            if (amt > 0) {
+              s2.remove_troops(amt, race.mass);
+            } else {
+              s2.add_troops(-amt, race.mass);
+            }
             transfercrew = 1;
             break;
           case 'd':
-            s2.consume_destruct(amt);
+            if (amt > 0) {
+              s2.consume_destruct(amt);
+            } else {
+              s2.add_destruct(-amt);
+            }
             break;
           case 'x':
           case '&':
-            s2.consume_crystals(amt);
+            if (amt > 0) {
+              s2.consume_crystals(amt);
+            } else {
+              s2.add_crystals(-amt);
+            }
             break;
           case 'f':
-            s2.consume_fuel(static_cast<double>(amt));
+            if (amt > 0) {
+              s2.consume_fuel(static_cast<double>(amt));
+            } else {
+              s2.add_fuel(static_cast<double>(-amt));
+            }
             break;
           case 'r':
-            s2.consume_resource(amt);
+            if (amt > 0) {
+              s2.consume_resource(amt);
+            } else {
+              s2.add_resource(-amt);
+            }
             break;
         }
 
         std::string tele_lines;
         switch (commod) {
           case 'r':
-            g.out << std::format("{} resources transferred.\n", amt);
-            tele_lines += std::format("{} Resources\n", amt);
+            tele_lines += std::format("{} Resources\n", std::abs(amt));
             break;
           case 'f':
-            g.out << std::format("{} fuel transferred.\n", amt);
-            tele_lines += std::format("{} Fuel\n", amt);
+            tele_lines += std::format("{} Fuel\n", std::abs(amt));
             break;
           case 'd':
-            g.out << std::format("{} destruct transferred.\n", amt);
-            tele_lines += std::format("{} Destruct\n", amt);
+            tele_lines += std::format("{} Destruct\n", std::abs(amt));
             break;
           case 'x':
           case '&':
-            g.out << std::format("{} crystals transferred.\n", amt);
-            tele_lines += std::format("{} Crystal(s)\n", amt);
+            tele_lines += std::format("{} Crystal(s)\n", std::abs(amt));
             break;
           case 'c':
-            g.out << std::format("{} popn transferred.\n", amt);
             tele_lines +=
-                std::format("{} {}\n", amt,
+                std::format("{} {}\n", std::abs(amt),
                             race.Metamorph ? "tons of biomass" : "population");
             break;
           case 'm':
-            g.out << std::format("{} military transferred.\n", amt);
             tele_lines +=
-                std::format("{} {}\n", amt,
+                std::format("{} {}\n", std::abs(amt),
                             race.Metamorph ? "tons of biomass" : "population");
             break;
         }
-        if (!tele_lines.empty()) {
+        if (!tele_lines.empty() && s2.owner() != s.owner() && amt < 0) {
           auto s2_owner = s2.owner();
           auto s2_gov = s2.governor();
           warn_player(

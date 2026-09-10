@@ -277,11 +277,204 @@ void test_load_transporter() {
   std::println(std::cout, "✓ Transporter automatic beam transfer succeeded");
 }
 
+void test_load_ship_to_ship() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Create carrier/mothership (s2) in star orbit
+  shipnum_t s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                        .owned_by(1, 0)
+                        .named("Mothership")
+                        .in_star_orbit(0)
+                        .with_fuel(200.0)
+                        .with_max_fuel(500.0)
+                        .with_resource(300)
+                        .with_max_resource(1000)
+                        .with_destruct(100)
+                        .with_max_destruct(200)
+                        .with_crystals(50)
+                        .with_crew(20, 10)
+                        .build();
+
+  // Create tender/cargo ship (s1) docked to s2
+  shipnum_t s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                        .owned_by(1, 0)
+                        .named("Tender")
+                        .docked_to(s2_id, 0)
+                        .with_fuel(50.0)
+                        .with_max_fuel(200.0)
+                        .with_resource(50)
+                        .with_max_resource(500)
+                        .with_destruct(10)
+                        .with_max_destruct(100)
+                        .with_crystals(5)
+                        .with_crew(5, 2)
+                        .build();
+
+  // Set mutual docking on carrier s2
+  ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
+    s2.docked() = 1;
+    s2.destshipno() = s1_id;
+    s2.whatdest() = ScopeLevel::LEVEL_SHIP;
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+
+  // A. Load commodities from s2 into s1
+  {
+    double initial_mass =
+        ctx.em.peek_ship(s1_id)->mass() + ctx.em.peek_ship(s2_id)->mass();
+    int initial_res = ctx.em.peek_ship(s1_id)->resource() +
+                      ctx.em.peek_ship(s2_id)->resource();
+
+    ctx.assert_dispatch_success(
+        g, {"load", std::format("#{}", s1_id.value), "r", "50"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->resource(), 100);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->resource(), 250);
+    test::expect_eq(ctx.em.peek_ship(s1_id)->resource() +
+                        ctx.em.peek_ship(s2_id)->resource(),
+                    initial_res);
+    test::expect_true(std::abs((ctx.em.peek_ship(s1_id)->mass() +
+                                ctx.em.peek_ship(s2_id)->mass()) -
+                               initial_mass) < 0.01);
+
+    ctx.assert_dispatch_success(
+        g, {"load", std::format("#{}", s1_id.value), "f", "30"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->fuel(), 80.0);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->fuel(), 170.0);
+
+    ctx.assert_dispatch_success(
+        g, {"load", std::format("#{}", s1_id.value), "d", "20"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->destruct(), 30);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->destruct(), 80);
+
+    ctx.assert_dispatch_success(
+        g, {"load", std::format("#{}", s1_id.value), "x", "10"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->crystals(), 15);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->crystals(), 40);
+
+    ctx.assert_dispatch_success(
+        g, {"load", std::format("#{}", s1_id.value), "c", "4"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->popn(), 9);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->popn(), 16);
+
+    ctx.assert_dispatch_success(
+        g, {"load", std::format("#{}", s1_id.value), "m", "2"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->troops(), 4);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->troops(), 8);
+    std::println(std::cout,
+                 "✓ Ship-to-ship load conserved commodities and physical mass");
+  }
+
+  // B. Unload commodities from s1 into s2 (verifies fix for silent commodity
+  // destruction)
+  {
+    double initial_mass =
+        ctx.em.peek_ship(s1_id)->mass() + ctx.em.peek_ship(s2_id)->mass();
+    int initial_res = ctx.em.peek_ship(s1_id)->resource() +
+                      ctx.em.peek_ship(s2_id)->resource();
+
+    ctx.assert_dispatch_success(
+        g, {"unload", std::format("#{}", s1_id.value), "r", "40"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->resource(), 60);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->resource(), 290);
+    test::expect_eq(ctx.em.peek_ship(s1_id)->resource() +
+                        ctx.em.peek_ship(s2_id)->resource(),
+                    initial_res);
+    test::expect_true(std::abs((ctx.em.peek_ship(s1_id)->mass() +
+                                ctx.em.peek_ship(s2_id)->mass()) -
+                               initial_mass) < 0.01);
+
+    ctx.assert_dispatch_success(
+        g, {"unload", std::format("#{}", s1_id.value), "f", "20"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->fuel(), 60.0);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->fuel(), 190.0);
+
+    ctx.assert_dispatch_success(
+        g, {"unload", std::format("#{}", s1_id.value), "d", "15"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->destruct(), 15);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->destruct(), 95);
+
+    ctx.assert_dispatch_success(
+        g, {"unload", std::format("#{}", s1_id.value), "x", "5"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->crystals(), 10);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->crystals(), 45);
+
+    ctx.assert_dispatch_success(
+        g, {"unload", std::format("#{}", s1_id.value), "c", "3"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->popn(), 6);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->popn(), 19);
+
+    ctx.assert_dispatch_success(
+        g, {"unload", std::format("#{}", s1_id.value), "m", "1"});
+    test::expect_eq(ctx.em.peek_ship(s1_id)->troops(), 3);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->troops(), 9);
+    std::println(
+        std::cout,
+        "✓ Ship-to-ship unload conserved commodities without silent loss");
+
+    // Verify database persistence via clear_cache
+    ctx.em.clear_cache();
+    test::expect_eq(ctx.em.peek_ship(s1_id)->resource(), 60);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->resource(), 290);
+    test::expect_eq(ctx.em.peek_ship(s1_id)->fuel(), 60.0);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->fuel(), 190.0);
+    test::expect_eq(ctx.em.peek_ship(s1_id)->destruct(), 15);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->destruct(), 95);
+    test::expect_eq(ctx.em.peek_ship(s1_id)->crystals(), 10);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->crystals(), 45);
+    test::expect_eq(ctx.em.peek_ship(s1_id)->popn(), 6);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->popn(), 19);
+    test::expect_eq(ctx.em.peek_ship(s1_id)->troops(), 3);
+    test::expect_eq(ctx.em.peek_ship(s2_id)->troops(), 9);
+    std::println(std::cout, "✓ Ship-to-ship transfers persisted to SQLite");
+  }
+
+  // C. Alien ship transfer rules (can give goods to alien, cannot take)
+  shipnum_t alien_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                           .owned_by(2, 0)
+                           .named("KlingonFreighter")
+                           .in_star_orbit(0)
+                           .with_resource(100)
+                           .with_max_resource(500)
+                           .build();
+
+  // Dock s1 with alien ship
+  ctx.em.mutate_ship(s1_id, [&](Ship& s1) { s1.destshipno() = alien_id; });
+  ctx.em.mutate_ship(alien_id, [&](Ship& alien) {
+    alien.docked() = 1;
+    alien.destshipno() = s1_id;
+    alien.whatdest() = ScopeLevel::LEVEL_SHIP;
+  });
+
+  // Attempt to load from alien ship (must be rejected)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", s1_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "you can only transfer between");
+  test::expect_eq(ctx.em.peek_ship(s1_id)->resource(), 60);
+  test::expect_eq(ctx.em.peek_ship(alien_id)->resource(), 100);
+
+  // Unload to alien ship (must succeed and transfer goods to alien)
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", s1_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "10 resources transferred");
+  test::expect_eq(ctx.em.peek_ship(s1_id)->resource(), 50);
+  test::expect_eq(ctx.em.peek_ship(alien_id)->resource(), 110);
+  std::println(std::cout, "✓ Alien ship transfer constraints enforced");
+}
+
 }  // namespace
 
 int main() {
   test_load_happy_path();
   test_unload_happy_path();
+  test_load_ship_to_ship();
   test_load_transporter();
   test_load_syntax_and_errors();
 

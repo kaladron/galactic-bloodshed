@@ -179,6 +179,7 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
 TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
                                             starnum_t snum) {
   ship_.whatorbits = ScopeLevel::LEVEL_SHIP;
+  ship_.whatdest = ScopeLevel::LEVEL_SHIP;
   ship_.destshipno = dest_ship;
   ship_.storbits = snum;
   ship_.docked = 1;

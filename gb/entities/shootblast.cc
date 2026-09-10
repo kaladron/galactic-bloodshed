@@ -344,8 +344,15 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
   damage = std::min(100, damage);
   ship.damage() = std::min(100, (int)(ship.damage()) + damage);
 
+  double race_mass = 1.0;
+  try {
+    const auto& r = *em.peek_race(ship.owner());
+    race_mass = r.mass;
+  } catch (const EntityNotFoundError&) {
+    race_mass = 1.0;
+  }
   auto [casualties, casualties1, primgundamage, secgundamage] =
-      do_collateral(ship, damage);
+      do_collateral(ship, damage, race_mass);
   /* set laser strength for ships to maximum safe limit */
   if (ship.fire_laser()) {
     int safe = (int)((1.0 - .01 * ship.damage()) * ship.tech() / 4.0);
@@ -544,7 +551,7 @@ static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
   return critmsg.str();
 }
 
-std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage) {
+CollateralDamage do_collateral(Ship& ship, int damage, double race_mass) {
   /* compute crew/troop casualties */
   int casualties = 0;
   int casualties1 = 0;
@@ -553,17 +560,21 @@ std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage) {
 
   for (auto i = 1; i <= ship.popn(); i++)
     casualties += success(damage);
-  ship.popn() -= casualties;
   for (auto i = 1; i <= ship.troops(); i++)
     casualties1 += success(damage);
-  ship.troops() -= casualties1;
+  auto applied = ship.apply_casualties(casualties, casualties1, race_mass);
   for (auto i = 1; i <= ship.primary_battery().count; i++)
     primgundamage += success(damage);
-  primgundamage = ship.damage_primary_guns(primgundamage);
+  const auto prim_lost = ship.damage_primary_guns(primgundamage);
   for (auto i = 1; i <= ship.secondary_battery().count; i++)
     secgundamage += success(damage);
-  secgundamage = ship.damage_secondary_guns(secgundamage);
-  return {casualties, casualties1, primgundamage, secgundamage};
+  const auto sec_lost = ship.damage_secondary_guns(secgundamage);
+  return {
+      .civilian_casualties = applied.crew,
+      .military_casualties = applied.troops,
+      .primary_guns_lost = prim_lost,
+      .secondary_guns_lost = sec_lost,
+  };
 }
 
 double p_factor(double attacker_tech, double defender_tech) {

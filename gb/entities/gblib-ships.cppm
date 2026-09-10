@@ -2833,6 +2833,14 @@ public:
                : (data_.max_crew - data_.popn);
   }
 
+  /// \brief Available berth capacity for crew and troops combined
+  /// (max_crew_capacity() - (popn + troops)).
+  [[nodiscard]] population_t available_crew_capacity() const noexcept {
+    const auto total = data_.popn + data_.troops;
+    const auto max_cap = max_crew_capacity();
+    return (total >= max_cap) ? 0 : (max_cap - total);
+  }
+
   /// \brief Epsilon threshold for fuel comparisons and consumption tests.
   static constexpr double FUEL_EPSILON = 1e-4;
 
@@ -3198,16 +3206,17 @@ public:
   }
 
   /// \brief Adds population and increments ship mass based on race mass,
-  /// clamped to max crew capacity. If amt is negative, delegates to
-  /// remove_popn(-amt, race_mass).
+  /// clamped to available joint crew capacity (popn + troops <=
+  /// max_crew_capacity()). If amt is negative, delegates to remove_popn(-amt,
+  /// race_mass).
   void add_popn(population_t amt, double race_mass) noexcept {
     if (amt < 0) {
       remove_popn(-amt, race_mass);
       return;
     }
-    const auto max_cap = max_crew_capacity();
-    if (data_.popn >= max_cap) return;
-    const auto actual = std::min(amt, max_cap - data_.popn);
+    const auto avail = available_crew_capacity();
+    if (avail == 0) return;
+    const auto actual = std::min(amt, avail);
     data_.popn += actual;
     data_.mass += static_cast<double>(actual) * race_mass;
   }
@@ -3222,16 +3231,17 @@ public:
   }
 
   /// \brief Adds troops and increments ship mass based on race mass,
-  /// clamped to max crew capacity. If amt is negative, delegates to
-  /// remove_troops(-amt, race_mass).
+  /// clamped to available joint crew capacity (popn + troops <=
+  /// max_crew_capacity()). If amt is negative, delegates to remove_troops(-amt,
+  /// race_mass).
   void add_troops(population_t amt, double race_mass) noexcept {
     if (amt < 0) {
       remove_troops(-amt, race_mass);
       return;
     }
-    const auto max_cap = max_crew_capacity();
-    if (data_.troops >= max_cap) return;
-    const auto actual = std::min(amt, max_cap - data_.troops);
+    const auto avail = available_crew_capacity();
+    if (avail == 0) return;
+    const auto actual = std::min(amt, avail);
     data_.troops += actual;
     data_.mass += static_cast<double>(actual) * race_mass;
   }
@@ -3243,6 +3253,24 @@ public:
     const auto actual = std::min(data_.troops, amt);
     data_.troops -= actual;
     data_.mass -= static_cast<double>(actual) * race_mass;
+  }
+
+  /// \brief Casualties inflicted on ship personnel.
+  struct Casualties {
+    population_t crew{0};
+    population_t troops{0};
+  };
+
+  /// \brief Inflicts casualties on ship crew and troops, and updates ship mass
+  /// accordingly. Neither crew nor troops is reduced below 0.
+  /// \return Actual casualties deducted {crew_lost, troops_lost}.
+  Casualties apply_casualties(population_t crew_loss, population_t troop_loss,
+                              double race_mass = 1.0) noexcept {
+    const auto old_popn = data_.popn;
+    const auto old_troops = data_.troops;
+    remove_popn(crew_loss, race_mass);
+    remove_troops(troop_loss, race_mass);
+    return {.crew = old_popn - data_.popn, .troops = old_troops - data_.troops};
   }
 
   // =========================================================================

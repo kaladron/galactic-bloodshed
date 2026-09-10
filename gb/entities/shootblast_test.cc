@@ -344,6 +344,41 @@ void test_penetration_factor_domain() {
   std::println(std::cout, "  ✓ penetration factor domain formulas passed");
 }
 
+void test_do_collateral_casualties() {
+  std::println(
+      std::cout,
+      "Test: do_collateral casualty tracking and mass synchronization");
+
+  ship_struct sdata{
+      .max_crew = 100,
+      .popn = 50,
+      .troops = 30,
+  };
+  Ship ship{sdata};
+  const double initial_mass = ship.local_mass(2.0);
+  ship.set_mass(initial_mass);
+
+  // Damage = 0: no collateral damage or casualties
+  CollateralDamage res0 = do_collateral(ship, 0, 2.0);
+  test::expect_eq(res0.civilian_casualties, 0);
+  test::expect_eq(res0.military_casualties, 0);
+  test::expect_eq(res0.primary_guns_lost, 0u);
+  test::expect_eq(res0.secondary_guns_lost, 0u);
+  test::expect_eq(ship.popn(), 50);
+  test::expect_eq(ship.troops(), 30);
+  test::expect_eq(ship.mass(), initial_mass);
+
+  // Damage = 100: guaranteed collateral casualties (structured binding)
+  auto [cas100_civ, cas100_mil, p1, s1] = do_collateral(ship, 100, 2.0);
+  test::expect_eq(cas100_civ, 50);
+  test::expect_eq(cas100_mil, 30);
+  test::expect_eq(ship.popn(), 0);
+  test::expect_eq(ship.troops(), 0);
+  test::expect_eq(ship.mass(), initial_mass - 80.0 * 2.0);
+
+  std::println(std::cout, "  ✓ do_collateral casualty tracking passed");
+}
+
 int main() {
   test_shoot_planet_to_ship_invalid_cases();
   test_shoot_planet_to_ship_valid_attack();
@@ -352,6 +387,7 @@ int main() {
   test_hit_odds_sizing();
   test_zero_body_ship_combat();
   test_penetration_factor_domain();
+  test_do_collateral_casualties();
 
   std::println(std::cout, "\n✅ All shootblast tests passed!");
   return 0;

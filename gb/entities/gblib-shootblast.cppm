@@ -31,7 +31,17 @@ export std::pair<int, int> hit_odds(double range, double tech, int fdam,
                                     guntype_t caliber, int defense);
 export double tele_range(ShipType tech_level, double base_range);
 export guntype_t current_caliber(const Ship& ship);
-export std::tuple<int, int, int, int> do_collateral(Ship& ship, int damage);
+
+/// \brief Collateral casualties and system damage inflicted on a target ship.
+export struct CollateralDamage {
+  population_t civilian_casualties{0};
+  population_t military_casualties{0};
+  gun_count_t primary_guns_lost{0};
+  gun_count_t secondary_guns_lost{0};
+};
+
+export CollateralDamage do_collateral(Ship& ship, int damage,
+                                      double race_mass = 1.0);
 export int planet_guns(long planet_id);
 
 /// \brief Salvo saturation rule: every 5 hits reduce target effective armor by

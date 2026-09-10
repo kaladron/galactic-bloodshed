@@ -342,29 +342,44 @@ void test_clamped_add_and_consume() {
   test::expect_eq(ship.destruct(), 70010);
   expect_near(ship.mass(), mass_before_des + 70000.0 * MASS_DESTRUCT);
 
-  // add_popn clamping to max crew capacity
+  // add_popn clamping to available joint crew capacity
   const double mass_before_popn = ship.mass();
-  ship.add_popn(100, 2.0);  // Max 100, currently 40, takes 60
-  test::expect_eq(ship.popn(), 100);
-  expect_near(ship.mass(), mass_before_popn + 60.0 * 2.0);
+  ship.add_popn(30, 2.0);  // Available 50 (100 - (40+10)), takes 30
+  test::expect_eq(ship.popn(), 70);
+  expect_near(ship.mass(), mass_before_popn + 30.0 * 2.0);
 
-  // add_troops clamping to max crew capacity
+  // add_troops clamping to remaining joint crew capacity
   const double mass_before_troops = ship.mass();
-  ship.add_troops(120, 2.0);  // Max 100, currently 10, takes 90
-  test::expect_eq(ship.troops(), 100);
-  expect_near(ship.mass(), mass_before_troops + 90.0 * 2.0);
+  ship.add_troops(50, 2.0);  // Available 20 (100 - (70+10)), takes 20
+  test::expect_eq(ship.troops(), 30);
+  expect_near(ship.mass(), mass_before_troops + 20.0 * 2.0);
+
+  // Further additions rejected when joint capacity is reached
+  const double mass_full = ship.mass();
+  ship.add_popn(10, 2.0);  // Available 0, takes 0
+  test::expect_eq(ship.popn(), 70);
+  expect_near(ship.mass(), mass_full);
+
+  // apply_casualties deducting crew and troops and updating mass
+  const double mass_before_cas = ship.mass();
+  auto cas = ship.apply_casualties(20, 10, 2.0);
+  test::expect_eq(cas.crew, 20);
+  test::expect_eq(cas.troops, 10);
+  test::expect_eq(ship.popn(), 50);
+  test::expect_eq(ship.troops(), 20);
+  expect_near(ship.mass(), mass_before_cas - 30.0 * 2.0);
 
   // remove_popn clamping to 0
   const double mass_before_rem_popn = ship.mass();
-  ship.remove_popn(150, 2.0);  // Currently 100, removes all 100
+  ship.remove_popn(150, 2.0);  // Currently 50, removes all 50
   test::expect_eq(ship.popn(), 0);
-  expect_near(ship.mass(), mass_before_rem_popn - 100.0 * 2.0);
+  expect_near(ship.mass(), mass_before_rem_popn - 50.0 * 2.0);
 
   // remove_troops clamping to 0
   const double mass_before_rem_troops = ship.mass();
-  ship.remove_troops(150, 2.0);  // Currently 100, removes all 100
+  ship.remove_troops(150, 2.0);  // Currently 20, removes all 20
   test::expect_eq(ship.troops(), 0);
-  expect_near(ship.mass(), mass_before_rem_troops - 100.0 * 2.0);
+  expect_near(ship.mass(), mass_before_rem_troops - 20.0 * 2.0);
 }
 
 void test_dynamic_base_mass() {
@@ -679,6 +694,63 @@ void test_simulated_ship() {
   test::expect_eq(sim.docked(), 0);
 }
 
+void test_ship_joint_crew_capacity() {
+  std::println(std::cout,
+               "Testing Ship joint crew capacity and casualty operations...");
+  ship_struct sdata{
+      .max_crew = 60,
+      .popn = 0,
+      .troops = 0,
+  };
+  Ship ship{sdata};
+
+  test::expect_eq(ship.available_crew_capacity(), 60);
+
+  // Add 40 civilian crew with race_mass = 1.5
+  ship.add_popn(40, 1.5);
+  test::expect_eq(ship.popn(), 40);
+  test::expect_eq(ship.troops(), 0);
+  test::expect_eq(ship.available_crew_capacity(), 20);
+  expect_near(ship.mass(), 40 * 1.5);
+
+  // Add 30 troops - only 20 berths remaining
+  ship.add_troops(30, 1.5);
+  test::expect_eq(ship.popn(), 40);
+  test::expect_eq(ship.troops(), 20);
+  test::expect_eq(ship.available_crew_capacity(), 0);
+  expect_near(ship.mass(), 60 * 1.5);
+
+  // Further additions fail gracefully when full
+  ship.add_popn(10, 1.5);
+  test::expect_eq(ship.popn(), 40);
+  ship.add_troops(10, 1.5);
+  test::expect_eq(ship.troops(), 20);
+
+  // Negative delta delegates to remove_*
+  ship.add_popn(-10, 1.5);
+  test::expect_eq(ship.popn(), 30);
+  test::expect_eq(ship.available_crew_capacity(), 10);
+  expect_near(ship.mass(), 50 * 1.5);
+
+  // Apply casualties
+  auto cas = ship.apply_casualties(15, 10, 1.5);
+  test::expect_eq(cas.crew, 15);
+  test::expect_eq(cas.troops, 10);
+  test::expect_eq(ship.popn(), 15);
+  test::expect_eq(ship.troops(), 10);
+  test::expect_eq(ship.available_crew_capacity(), 35);
+  expect_near(ship.mass(), 25 * 1.5);
+
+  // Over-casualties clamped to current counts
+  cas = ship.apply_casualties(50, 50, 1.5);
+  test::expect_eq(cas.crew, 15);
+  test::expect_eq(cas.troops, 10);
+  test::expect_eq(ship.popn(), 0);
+  test::expect_eq(ship.troops(), 0);
+  test::expect_eq(ship.available_crew_capacity(), 60);
+  expect_near(ship.mass(), 0.0);
+}
+
 }  // namespace
 
 int main() {
@@ -691,6 +763,7 @@ int main() {
   test_resource_consumption();
   test_destruct_consumption();
   test_clamped_add_and_consume();
+  test_ship_joint_crew_capacity();
   test_dynamic_base_mass();
   test_gun_caliber_domain();
   test_gun_battery_invariants_and_operations();

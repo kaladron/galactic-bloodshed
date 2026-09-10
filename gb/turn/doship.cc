@@ -377,8 +377,9 @@ bool process_ship_radiation(Ship& ship, bool update) {
     active = false;
   }
   if (update) {
-    ship.popn() = round_rand(static_cast<double>(ship.popn()) * 0.80);
-    ship.troops() = round_rand(static_cast<double>(ship.troops()) * 0.80);
+    auto new_popn = round_rand(static_cast<double>(ship.popn()) * 0.80);
+    auto new_troops = round_rand(static_cast<double>(ship.troops()) * 0.80);
+    ship.apply_casualties(ship.popn() - new_popn, ship.troops() - new_troops);
     auto repair_amt = (ship.rad() >= REPAIR_RATE)
                           ? int_rand(0, static_cast<int>(REPAIR_RATE))
                           : int_rand(0, static_cast<int>(ship.rad()));

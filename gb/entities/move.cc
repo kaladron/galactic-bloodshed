@@ -192,7 +192,7 @@ people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
     ship.damage() = 100;
     em.kill_ship(race.Playernum, ship);
   }
-  auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage);
+  auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage, alien.mass);
   std::string short_msg = std::format(
       "{}: {} [{}] {} {}\n", dispshiploc(em, ship), race.name,
       race.Playernum.value, ship.alive() ? "attacked" : "DESTROYED", ship);

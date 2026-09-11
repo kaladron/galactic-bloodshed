@@ -33,6 +33,7 @@ $$\Delta t_{\text{segment}} = \frac{T_{\text{update}}}{N_{\text{segments}}}$$
 | **Ship Movement & Hyperdrive** | Active | Active |
 | **Tactical Missile / ABM Tracking** | Active | Active |
 | **Ship Repair & Damage Control** | Active | Active |
+| **Planetary Orbital Motion (Kepler)** | Paused | Advanced |
 | **Planetary Production & Mining** | Paused | Active |
 | **Population Growth & Attrition** | Paused | Active |
 | **System & Universe Action Points** | Paused | Allocated |

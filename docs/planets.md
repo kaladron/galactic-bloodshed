@@ -2,11 +2,12 @@
 
 ## Overview
 
-Planets form the core sovereign territory, population centers, and industrial engine of empires in **Galactic Bloodshed**. This guide details surface topography, cylindrical grid navigation, thermal dynamics, military mobilization, ground defense batteries, automated ecological cleanup, and enslavement revolt mechanics.
+Planets form the core sovereign territory, population centers, and industrial engine of empires in **Galactic Bloodshed**. This guide details surface topography, cylindrical grid navigation, Keplerian orbital mechanics, thermal dynamics, military mobilization, ground defense batteries, automated ecological cleanup, and enslavement revolt mechanics.
 
 ```mermaid
 flowchart TD
-    Planet["Planetary World"] --> Surface["Surface Grid Topology\nToroidal East/West Seam & Polar Boundaries"]
+    Planet["Planetary World"] --> Orbit["Heliocentric Orbital Motion\nKepler's Third Law & Prograde Motion"]
+    Planet --> Surface["Surface Grid Topology\nToroidal East/West Seam & Polar Boundaries"]
     Planet --> Climate["Climate & Thermal Equilibrium\nStellar Luminosity & Space Mirror Redirection"]
     Planet --> Industry["Industrial & Demographic Production\nResource Mines, Farmland & Plated Cities"]
     Planet --> Military["Defense & Mobilization\nGround Batteries & Combat Readiness"]
@@ -76,7 +77,56 @@ Positioning an orbital tanker or space station in orbit around a star's gas gian
 
 ---
 
-## 3. Climate, Thermal Dynamics, and Space Mirrors
+## 3. Heliocentric Orbital Mechanics and Keplerian Motion
+
+Planets are not static bodies; they travel along circular orbits around their primary star in accordance with **Kepler's Third Law of Planetary Motion** ($T^2 \propto r^3$).
+
+```mermaid
+flowchart TD
+    Star["Central Star\nStellar Gravity (M_star)"] --> Gravity["Gravitational Attraction\nG_system = 10^-4"]
+    Dist["Orbital Radius (r)\nEuclidean Distance sqrt(x^2 + y^2)"] --> Period["Keplerian Orbital Period\nT = r * sqrt(r / (G * M_star))"]
+    Gravity --> Period
+    Period --> Step["Angular Phase Step\nDelta Theta = -1 / T (Counter-Clockwise)"]
+    Step --> PlanetPos["Planet Position Updated\n(x + Delta x, y + Delta y)"]
+    PlanetPos --> Entrain["Orbital Entrainment\nOrbiting Ships Shift by Identical Vector"]
+```
+
+### 1. Keplerian Orbital Period ($T$)
+The time required for a world to complete one full revolution around its star depends on its orbital radius ($r$) and the central star's gravitational mass ($M_{\text{star}}$):
+
+$$r = \sqrt{x_{\text{planet}}^2 + y_{\text{planet}}^2}$$
+
+$$T = r \times \sqrt{\frac{r}{G_{\text{system}} \times M_{\text{star}}}}$$
+
+where $G_{\text{system}} = 10^{-4}$ represents the galactic system gravitational constant. Inner planets closer to their parent star traverse their orbits at high angular velocities, while outer worlds and gas giants require dozens or hundreds of turns to complete a revolution.
+
+### 2. Angular Phase Step and Direction of Motion
+During each **full turn update**, the orbital engine computes the planet's current angular phase $\theta = \operatorname{atan2}(y, x)$ and advances it by the angular step $\Delta \theta = -\frac{1}{T}$:
+
+$$x_{\text{new}} = r \times \cos\left(\theta - \frac{1}{T}\right)$$
+
+$$y_{\text{new}} = r \times \sin\left(\theta - \frac{1}{T}\right)$$
+
+$$\Delta x = x_{\text{new}} - x_{\text{planet}}, \quad \Delta y = y_{\text{new}} - y_{\text{planet}}$$
+
+> [!NOTE]
+> **Left-Handed Coordinate Geometry**: Galactic Bloodshed uses a screen-aligned Cartesian system where $Y$ increases downwards. In this coordinate system, subtracting from the angular phase ($\Delta \theta < 0$) produces **counter-clockwise prograde motion** around the star.
+
+### 3. Orbital Cadence: Turn Updates vs. Movement Segments
+- **Planets step once per full turn update**: Unlike starships, which maneuver during each discrete tactical movement segment, planetary bodies advance their orbital position only during macro-economic full turn updates.
+- **Interplanetary Navigation Intercepts**: Because planets move between turn updates, long-range interplanetary flights using impulse drives or autopilot orders must lead their target world to achieve orbital insertion rather than plotting courses toward where the planet used to be.
+
+### 4. Orbital Entrainment of Stationed Ships
+Whenever a planet shifts along its orbital arc by $(\Delta x, \Delta y)$, the game engine automatically entrains all vessels currently stationed in planetary orbit:
+- All starships, orbital habitats, space stations, and fuel tankers in planetary orbit (`whatorbits = LEVEL_PLAN`) have their coordinates adjusted by the exact displacement vector:
+
+$$\mathbf{x}_{\text{ship}} \leftarrow \mathbf{x}_{\text{ship}} + (\Delta x, \Delta y)$$
+
+- Orbiting craft maintain their relative position above the world automatically without expending propulsion fuel.
+
+---
+
+## 4. Climate, Thermal Dynamics, and Space Mirrors
 
 Each world possesses a natural baseline temperature determined by its star's spectral luminosity, stellar radius, and orbital distance.
 
@@ -98,7 +148,7 @@ $$T_{\text{surface}} = T_{\text{base}} + \Delta T_{\text{mirrors}} \pm 5^{\circ}
 
 ---
 
-## 4. Sector Mobilization and Ground Defense Batteries
+## 5. Sector Mobilization and Ground Defense Batteries
 
 Planetary military readiness is built from the ground up through sector-level mobilization.
 
@@ -124,7 +174,7 @@ flowchart TD
 
 ---
 
-## 5. Automated Ecological Cleanup and Waste Canisters
+## 6. Automated Ecological Cleanup and Waste Canisters
 
 Heavy manufacturing, strip-mining, and nuclear bombardment generate toxic industrial contaminants that degrade habitability.
 
@@ -135,7 +185,7 @@ Governors configure an automated environmental cleanup policy using the `toxicit
 
 ---
 
-## 6. Enslavement and Slave Revolts
+## 7. Enslavement and Slave Revolts
 
 When capturing foreign worlds, conquerors can subjugate the native population using the `enslave` command, compelling them to labor for the master empire.
 

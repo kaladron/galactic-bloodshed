@@ -35,6 +35,9 @@ flowchart TD
 | **Planetary Scope** | Low orbit track or surface grid $[x, y]$ | Orbital bombardment runs, ground troop deployments, resource ferrying, surface landings. |
 | **Carrier Hangars** | Host ship hangar capacity | Fuel-free parasite transportation, fighter staging, automated probe deployment. |
 
+> [!TIP]
+> **Planetary Orbital Entrainment**: Planets move along heliocentric orbits according to Kepler's Third Law ($T^2 \propto r^3$) during each full turn update. Starships stationed in planetary orbit (`LEVEL_PLAN`) are automatically shifted along the orbit with the planet, maintaining orbital lock without expending propellant. See [Planetary Mechanics](planets.md) for Keplerian formulas.
+
 ---
 
 ## 2. Dynamic Vessel Displacement and Mass Physics

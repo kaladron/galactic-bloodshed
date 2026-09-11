@@ -809,6 +809,28 @@ void test_entity_manager_create_ship() {
   test::expect_eq(peek_cargo->type(), ShipType::STYPE_CARGO);
   test::expect_eq(peek_cargo->max_resource(), 1000);
 
+  // Test create_ship from std::unique_ptr<Ship>
+  shipnum_t battle_num;
+  {
+    auto ship_ptr =
+        ShipFactory::create_from_template(ShipType::STYPE_BATTLE, player_t{3});
+    auto battle_handle = em.create_ship(std::move(ship_ptr));
+    test::expect_ne(battle_handle.get(), nullptr);
+    battle_num = battle_handle->number();
+    test::expect_gt(battle_num, cargo_num);
+    test::expect_eq(battle_handle->owner(), 3);
+    test::expect_eq(battle_handle->type(), ShipType::STYPE_BATTLE);
+  }
+
+  const auto* peek_battle = em.peek_ship(battle_num);
+  test::expect_ne(peek_battle, nullptr);
+  test::expect_eq(peek_battle->owner(), 3);
+  test::expect_eq(peek_battle->type(), ShipType::STYPE_BATTLE);
+
+  // Test create_ship with nullptr throws
+  test::expect_throws<std::invalid_argument>(
+      [&]() { em.create_ship(std::unique_ptr<Ship>{nullptr}); });
+
   std::println(std::cout,
                "  ✓ create_ship allocated ID and persisted successfully");
 }

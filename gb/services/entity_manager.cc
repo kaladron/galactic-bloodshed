@@ -201,21 +201,21 @@ void EntityManager::release_ship(shipnum_t num) {
   release_entity_impl<Ship>(num, ship_cache, ship_refcount);
 }
 
-EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
+EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
+  if (!ship) {
+    throw std::invalid_argument("create_ship: null ship provided");
+  }
+
   // Get next available ship number if not explicitly specified
   shipnum_t num =
-      init_data.number != 0 ? init_data.number : ships.next_ship_number();
-
-  // Create ship_struct, copying from provided data but setting number
-  ship_struct data = init_data;
-  data.number = num;
-  auto new_ship = ShipFactory::create(std::move(data));
+      ship->number() != 0 ? ship->number() : ships.next_ship_number();
+  ship->number() = num;
 
   // Save immediately to database
-  ships.save(*new_ship);
+  ships.save(*ship);
 
   // Cache it
-  auto [iter, inserted] = ship_cache.emplace(num, std::move(new_ship));
+  auto [iter, inserted] = ship_cache.emplace(num, std::move(ship));
   ship_refcount[num] = 1;
 
   return {this, iter->second.get(), [this, num](const Ship& s) {
@@ -226,9 +226,12 @@ EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
           }};
 }
 
+EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
+  return create_ship(ShipFactory::create(init_data));
+}
+
 EntityHandle<Ship> EntityManager::create_ship(ShipType type, player_t owner) {
-  auto ship = ShipFactory::create_from_template(type, owner);
-  return create_ship(ship->to_struct());
+  return create_ship(ShipFactory::create_from_template(type, owner));
 }
 
 void EntityManager::delete_ship(shipnum_t num) {

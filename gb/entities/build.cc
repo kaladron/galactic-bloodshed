@@ -356,17 +356,17 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
   push_telegram(entity_manager, Playernum, Governor, techMsg);
 }
 
-void Getship(Ship* s, ShipType i, const Race& r) {
+std::unique_ptr<Ship> getship(ShipType i, const Race& r) {
   auto ship = ShipFactory::create_from_template(i, r.Playernum);
   const auto& tmpl = ship_template(i);
   ship->mount() = r.God && tmpl.can_mount;
   ship->hyper_drive() = {.has = r.God && tmpl.can_hyperjump};
   ship->laser() = r.God && tmpl.can_mount_laser;
   ship->build_cost() = r.God ? 0 : static_cast<money_t>(cost(*ship));
-  *s = std::move(*ship);
+  return ship;
 }
 
-Ship Getfactship(const Ship& b) {
+std::unique_ptr<Ship> getfactship(const Ship& b) {
   ship_struct data{
       .armor = b.armor(),
       .max_crew = b.max_crew(),
@@ -389,17 +389,15 @@ Ship Getfactship(const Ship& b) {
       .max_hanger = b.max_hanger(),
   };
 
-  Ship s(data);
-  s.size() = ship_size(s);
-  s.set_mass(s.base_mass());
+  auto s = ShipFactory::create(std::move(data));
+  s->size() = ship_size(*s);
+  s->set_mass(s->base_mass());
   return s;
 }
 
 int Shipcost(ShipType i, const Race& r) {
-  Ship s;
-
-  Getship(&s, i, r);
-  return ((int)cost(s));
+  auto s = getship(i, r);
+  return static_cast<int>(cost(*s));
 }
 
 std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,

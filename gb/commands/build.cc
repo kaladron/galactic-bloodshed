@@ -88,7 +88,6 @@ bool build(const command_t& argv, GameObj& g) {
   Coordinates build_coords{0, 0};
 
   std::optional<Ship> builder;
-  Ship newship;
 
   if (argv.size() > 1 && argv[1][0] == '?') {
     /* information request */
@@ -230,11 +229,11 @@ bool build(const command_t& argv, GameObj& g) {
             g.out << "Give a positive number of builds.\n";
             return false;
           }
-          Getship(&newship, *what, race);
         }
+        auto newship = getship(*what, race);
         bool built = false;
         g.entity_manager.mutate_planet(snum, pnum, [&](Planet& planet) {
-          if ((shipcost = newship.build_cost()) >
+          if ((shipcost = newship->build_cost()) >
               planet.info(Playernum).resource) {
             g.out << std::format("You need {}r to construct this ship.\n",
                                  shipcost);
@@ -245,21 +244,21 @@ bool build(const command_t& argv, GameObj& g) {
             return;
           }
           create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
-                                newship, planet, snum, pnum, build_coords);
+                                *newship, planet, snum, pnum, build_coords);
           if (race.governor[Governor.value].toggle.autoload &&
               what != ShipType::OTYPE_TRANSDEV && !race.God) {
             g.entity_manager.mutate_sectormap(
                 snum, pnum, [&](SectorMap& sectormap) {
                   auto& sector = sectormap.get(build_coords);
-                  autoload_at_planet(Playernum, &newship, &planet, sector,
+                  autoload_at_planet(Playernum, newship.get(), &planet, sector,
                                      &load_crew, &load_fuel);
                 });
           } else {
             load_crew = 0;
             load_fuel = 0.0;
           }
-          initialize_new_ship(g, race, &newship, load_fuel, load_crew);
-          g.entity_manager.create_ship(newship.to_struct());
+          initialize_new_ship(g, race, newship.get(), load_fuel, load_crew);
+          g.entity_manager.create_ship(std::move(newship));
           built = true;
           any_built = true;
         });
@@ -294,7 +293,6 @@ bool build(const command_t& argv, GameObj& g) {
                 g.out << "Factories can only build when landed on a planet.\n";
                 return false;
               }
-              newship = Getfactship(*builder);
               outside = true;
               break;
             case ShipType::STYPE_SHUTTLE:
@@ -325,7 +323,6 @@ bool build(const command_t& argv, GameObj& g) {
                 g.out << "Give a positive number of builds.\n";
                 return false;
               }
-              Getship(&newship, *what, race);
               break;
           }
           if ((tech = builder->type() == ShipType::OTYPE_FACTORY
@@ -363,11 +360,14 @@ bool build(const command_t& argv, GameObj& g) {
           }
         }
         /* build 'em */
+        auto newship =
+            (builder->type() == ShipType::OTYPE_FACTORY ? getfactship(*builder)
+                                                        : getship(*what, race));
         switch (builder->type()) {
           case ShipType::OTYPE_FACTORY: {
             bool success = false;
             g.entity_manager.mutate_planet(snum, pnum, [&](Planet& planet) {
-              if ((shipcost = newship.build_cost()) >
+              if ((shipcost = newship->build_cost()) >
                   planet.info(Playernum).resource) {
                 g.out << std::format("You need {}r to construct this ship.\n",
                                      shipcost);
@@ -378,15 +378,15 @@ bool build(const command_t& argv, GameObj& g) {
                 return;
               }
               create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
-                                    newship, planet, snum, pnum,
+                                    *newship, planet, snum, pnum,
                                     Coordinates{x, y});
               if (race.governor[Governor.value].toggle.autoload &&
                   what != ShipType::OTYPE_TRANSDEV && !race.God) {
                 g.entity_manager.mutate_sectormap(
                     snum, pnum, [&](SectorMap& sectormap) {
                       auto& sector = sectormap.get(Coordinates{x, y});
-                      autoload_at_planet(Playernum, &newship, &planet, sector,
-                                         &load_crew, &load_fuel);
+                      autoload_at_planet(Playernum, newship.get(), &planet,
+                                         sector, &load_crew, &load_fuel);
                     });
               } else {
                 load_crew = 0;
@@ -401,7 +401,7 @@ bool build(const command_t& argv, GameObj& g) {
           }
           case ShipType::STYPE_SHUTTLE:
           case ShipType::STYPE_CARGO: {
-            if (builder->resource() < (shipcost = newship.build_cost())) {
+            if (builder->resource() < (shipcost = newship->build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
               return any_built;
@@ -411,10 +411,11 @@ bool build(const command_t& argv, GameObj& g) {
               return any_built;
             }
             create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
-                                true, &newship, &*builder);
+                                true, newship.get(), &*builder);
             if (race.governor[Governor.value].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
-              autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
+              autoload_at_ship(newship.get(), &*builder, &load_crew,
+                               &load_fuel);
             else {
               load_crew = 0;
               load_fuel = 0.0;
@@ -422,12 +423,12 @@ bool build(const command_t& argv, GameObj& g) {
             break;
           }
           default:
-            if (builder->hanger() + ship_size(newship) >
+            if (builder->hanger() + ship_size(*newship) >
                 builder->max_hanger()) {
               g.out << "Not enough hanger space.\n";
               return any_built;
             }
-            if (builder->resource() < (shipcost = newship.build_cost())) {
+            if (builder->resource() < (shipcost = newship->build_cost())) {
               g.out << std::format("You need {}r to construct the ship.\n",
                                    shipcost);
               return any_built;
@@ -444,20 +445,22 @@ bool build(const command_t& argv, GameObj& g) {
               }
             }
             create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
-                                false, &newship, &*builder);
+                                false, newship.get(), &*builder);
             if (race.governor[Governor.value].toggle.autoload &&
                 what != ShipType::OTYPE_TRANSDEV && !race.God)
-              autoload_at_ship(&newship, &*builder, &load_crew, &load_fuel);
+              autoload_at_ship(newship.get(), &*builder, &load_crew,
+                               &load_fuel);
             else {
               load_crew = 0;
               load_fuel = 0.0;
             }
             break;
         }
-        initialize_new_ship(g, race, &newship, load_fuel, load_crew);
-        g.entity_manager.create_ship(newship.to_struct());
-        g.entity_manager.mutate_ship(builder->number(),
-                                     [&](Ship& b) { b = std::move(*builder); });
+        initialize_new_ship(g, race, newship.get(), load_fuel, load_crew);
+        g.entity_manager.create_ship(std::move(newship));
+        g.entity_manager.mutate_ship(builder->number(), [&](Ship& b) {
+          b = Ship(builder->to_struct());
+        });
         any_built = true;
         break;
       }

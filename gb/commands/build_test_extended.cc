@@ -161,29 +161,29 @@ void test_factory_multiple_builds() {
 
   // Create a factory ship landed at 5,5 configured to build probes
   const auto* race_ptr = fixture.em.peek_race(1);
-  Ship factory_data{};
-  Getship(&factory_data, ShipType::OTYPE_PROBE, *race_ptr);
-  factory_data.type() = ShipType::OTYPE_FACTORY;
-  factory_data.owner() = 1;
-  factory_data.governor() = 0;
-  factory_data.alive() = 1;
-  factory_data.active() = 1;  // Must be active to build
-  factory_data.on() = 1;
-  factory_data.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  factory_data.whatdest() = ScopeLevel::LEVEL_PLAN;  // Required for landed()
-  factory_data.docked() = 1;                         // Required for landed()
-  factory_data.storbits() = fixture.star_id;
-  factory_data.pnumorbits() = fixture.planet_id;
-  factory_data.set_land_coords({5, 5});  // Land at sector with population
-  factory_data.set_coordinates(UniverseCoordinates{0.0, 0.0});
-  factory_data.resource() = 10000;
-  factory_data.popn() = 100;                          // Needs crew to build
-  factory_data.build_type() = ShipType::OTYPE_PROBE;  // Set what factory builds
-  factory_data.number() = 1;  // Must set a valid ship number (>0)
+  auto factory_data = getship(ShipType::OTYPE_PROBE, *race_ptr);
+  factory_data->type() = ShipType::OTYPE_FACTORY;
+  factory_data->owner() = 1;
+  factory_data->governor() = 0;
+  factory_data->alive() = 1;
+  factory_data->active() = 1;  // Must be active to build
+  factory_data->on() = 1;
+  factory_data->whatorbits() = ScopeLevel::LEVEL_PLAN;
+  factory_data->whatdest() = ScopeLevel::LEVEL_PLAN;  // Required for landed()
+  factory_data->docked() = 1;                         // Required for landed()
+  factory_data->storbits() = fixture.star_id;
+  factory_data->pnumorbits() = fixture.planet_id;
+  factory_data->set_land_coords({5, 5});  // Land at sector with population
+  factory_data->set_coordinates(UniverseCoordinates{0.0, 0.0});
+  factory_data->resource() = 10000;
+  factory_data->popn() = 100;  // Needs crew to build
+  factory_data->build_type() =
+      ShipType::OTYPE_PROBE;   // Set what factory builds
+  factory_data->number() = 1;  // Must set a valid ship number (>0)
 
   ShipRepository ships_repo(fixture.store);
-  ships_repo.save(factory_data);
-  shipnum_t factory_num = factory_data.number();
+  ships_repo.save(*factory_data);
+  shipnum_t factory_num = factory_data->number();
 
   auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);

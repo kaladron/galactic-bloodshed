@@ -15,7 +15,7 @@ shipping_cost(EntityManager& em, starnum_t to, starnum_t from, money_t value);
 export std::expected<void, std::string> can_build_on_ship(ShipType, const Race&,
                                                           const Ship&);
 export std::optional<ShipType> get_build_type(char);
-export void Getship(Ship*, ShipType, const Race&);
+export std::unique_ptr<Ship> getship(ShipType, const Race&);
 export std::optional<ScopeLevel>
 build_at_ship(GameObj& g, Ship* builder, starnum_t* snum, planetnum_t* pnum);
 export void create_ship_by_planet(EntityManager& entity_manager, player_t,
@@ -36,7 +36,7 @@ export void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
 export void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel);
 export void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
                                 double load_fuel, int load_crew);
-export Ship Getfactship(const Ship& b);
+export std::unique_ptr<Ship> getfactship(const Ship& b);
 
 export void create_ship_by_ship(EntityManager& entity_manager,
                                 player_t Playernum, governor_t Governor,

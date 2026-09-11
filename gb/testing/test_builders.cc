@@ -18,45 +18,16 @@ import std;
 
 void TestShipBuilder::init(ShipType type,
                            std::optional<shipnum_t> explicit_number) {
-  shipnum_t number = explicit_number.value_or(0);
-  ship_.number = number;
-  ship_.type = type;
-  ship_.build_type = type;
-  ship_.alive = true;
-  ship_.active = true;
+  auto ship = ShipFactory::create_from_template(type, 1);
+  ship_ = ship->to_struct();
+  ship_.number = explicit_number.value_or(0);
   ship_.on = true;
-  ship_.owner = 1;
-  ship_.governor = 0;
   ship_.tech = 100.0;
-  ship_.name = ship_template(type).name;
-
-  // Canonical baseline initialization from ship_template
-  const auto& tmpl = ship_template(type);
-  ship_.armor = tmpl.base_armor;
-  ship_.max_crew = tmpl.max_crew;
-  ship_.max_resource = tmpl.max_resource;
-  ship_.max_destruct = tmpl.max_destruct;
-  ship_.max_fuel = tmpl.max_fuel;
-  ship_.max_speed = tmpl.base_speed;
-  ship_.build_cost = tmpl.build_cost;
   ship_.fuel = ship_.max_fuel;
   ship_.destruct = ship_.max_destruct;
-  ship_.hanger = 0;
-  ship_.max_hanger = tmpl.max_hangar;
-  ship_.primary_battery =
-      GunBattery::create(tmpl.max_guns, shipdata_primary(type));
-  ship_.secondary_battery = GunBattery::create(0, shipdata_secondary(type));
-  ship_.guns = ship_.primary_battery.has_guns() ? ActiveBattery::PRIMARY
-                                                : ActiveBattery::NONE;
-  ship_.retaliate = ship_.primary_battery.count;
 
-  // Calculate baseline size, mass, and build cost using canonical ship
-  // functions
   Ship temp_ship{ship_};
-  ship_.size = static_cast<ship_size_t>(ship_size(temp_ship));
-  ship_.base_mass = getmass(temp_ship);
   ship_.mass = temp_ship.local_mass(1.0);
-  ship_.build_cost = static_cast<money_t>(cost(temp_ship));
 }
 
 TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,

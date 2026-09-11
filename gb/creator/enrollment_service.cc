@@ -208,51 +208,35 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   race.points.fill(0);
 
   // 6. Build and dock capital government ship
-  ship_struct ss{};
-  ss.type = ShipType::OTYPE_GOV;
+  auto ship_handle =
+      entity_manager_.create_ship(ShipType::OTYPE_GOV, playernum);
+  Ship& ss = *ship_handle;
   entity_manager_.with_star(star, [&](const Star& s) {
     entity_manager_.with_planet(star, pnum, [&](const Planet& p) {
-      ss.coordinates = p.absolute_coordinates(s);
+      ss.set_coordinates(p.absolute_coordinates(s));
     });
   });
-  ss.land_coords = capital_coords;
-  ss.owner = playernum;
-  ss.race = playernum;
-  ss.tech = 100.0;
+  ss.set_land_coords(capital_coords);
+  ss.race() = playernum;
+  ss.tech() = 100.0;
 
   const auto& gov_tmpl = ship_template(ShipType::OTYPE_GOV);
-  ss.build_type = ShipType::OTYPE_GOV;
-  ss.armor = gov_tmpl.base_armor;
-  ss.guns = PRIMARY;
-  ss.primary_battery = GunBattery::create(
-      gov_tmpl.max_guns, shipdata_primary(ShipType::OTYPE_GOV));
-  ss.secondary_battery = GunBattery::create(
-      gov_tmpl.max_guns, shipdata_secondary(ShipType::OTYPE_GOV));
-  ss.max_crew = gov_tmpl.max_crew;
-  ss.max_destruct = gov_tmpl.max_destruct;
-  ss.max_resource = gov_tmpl.max_resource;
-  ss.max_fuel = gov_tmpl.max_fuel;
-  ss.max_speed = gov_tmpl.base_speed;
-  ss.build_cost = gov_tmpl.build_cost;
-  ss.size = 100;
-  ss.base_mass = 100.0;
-  ss.shipclass = "Standard";
-  ss.popn = gov_tmpl.max_crew;
-  ss.mass = ss.base_mass + gov_tmpl.max_crew * race.mass;
-  ss.alive = 1;
-  ss.active = 1;
-  ss.protect.self = 1;
-  ss.docked = 1;
-  ss.whatorbits = ScopeLevel::LEVEL_PLAN;
-  ss.whatdest = ScopeLevel::LEVEL_PLAN;
-  ss.deststar = star;
-  ss.destpnum = pnum;
-  ss.storbits = star;
-  ss.pnumorbits = pnum;
-  ss.on = 1;
+  ss.set_secondary_battery(gov_tmpl.max_guns,
+                           shipdata_secondary(ShipType::OTYPE_GOV));
+  ss.shipclass() = "Standard";
+  ss.popn() = gov_tmpl.max_crew;
+  ss.set_mass(ss.base_mass() + gov_tmpl.max_crew * race.mass);
+  ss.protect().self = 1;
+  ss.docked() = 1;
+  ss.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ss.whatdest() = ScopeLevel::LEVEL_PLAN;
+  ss.deststar() = star;
+  ss.destpnum() = pnum;
+  ss.storbits() = star;
+  ss.pnumorbits() = pnum;
+  ss.on() = 1;
 
-  auto ship_handle = entity_manager_.create_ship(ss);
-  shipnum_t shipno = ship_handle->number();
+  shipnum_t shipno = ss.number();
   race.Gov_ship = shipno;
 
   // 7. Mutate Sector and Planet

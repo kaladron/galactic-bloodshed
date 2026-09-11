@@ -653,43 +653,24 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
   const planetnum_t planetnum = planet.planet_order();
   const player_t player = race.Playernum;
 
-  const auto& tmpl = ship_template(ShipType::OTYPE_TOXWC);
   const auto coords = planet.absolute_coordinates(star);
-  ship_struct s2{
-      .owner = player,
-      .governor = star.governor(player),
-      .coordinates = coords,
-      .mass = 1.0,
-      .land_coords = smap.get_random().coords(),
-      .armor = tmpl.base_armor,
-      .max_crew = tmpl.max_crew,
-      .max_resource = tmpl.max_resource,
-      .max_destruct = tmpl.max_destruct,
-      .max_fuel = tmpl.max_fuel,
-      .max_speed = tmpl.base_speed,
-      .build_cost = Shipcost(ShipType::OTYPE_TOXWC, race),
-      .base_mass = 1.0,
-      .special = WasteData{.toxic = static_cast<unsigned char>(t)},
-      .storbits = starnum,
-      .deststar = starnum,
-      .destpnum = planetnum,
-      .pnumorbits = planetnum,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_TOXWC,
-      .active = true,
-      .alive = true,
-      .docked = true,
-      .guns = ActiveBattery::NONE,
-      .primary_battery = GunBattery::create(
-          tmpl.max_guns, shipdata_primary(ShipType::OTYPE_TOXWC)),
-      .secondary_battery =
-          GunBattery::create(0, shipdata_secondary(ShipType::OTYPE_TOXWC)),
-  };
-  auto ship_handle = entity_manager.create_ship(s2);
+  auto ship_handle = entity_manager.create_ship(ShipType::OTYPE_TOXWC, player);
   Ship& ship = *ship_handle;
+  ship.governor() = star.governor(player);
+  ship.set_coordinates(coords);
+  ship.set_land_coords(smap.get_random().coords());
+  ship.build_cost() = Shipcost(ShipType::OTYPE_TOXWC, race);
+  if (auto* waste = ship.as<ToxicWasteShip>()) {
+    waste->set_toxic_level(static_cast<unsigned char>(t));
+  }
+  ship.storbits() = starnum;
+  ship.deststar() = starnum;
+  ship.destpnum() = planetnum;
+  ship.pnumorbits() = planetnum;
+  ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship.docked() = true;
   ship.name() = std::format("Scum{:04d}", ship.number());
-  ship.size() = ship_size(ship);
   return ship.number();
 }
 

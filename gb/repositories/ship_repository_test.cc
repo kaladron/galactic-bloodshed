@@ -574,6 +574,60 @@ int main() {
     std::println(std::cout, "  ✓ SimulatedShip rejection on save passed");
   }
 
+  // Test 11: ShipFactory::create_from_template canonical construction
+  std::println(
+      std::cout,
+      "\nTest 11: ShipFactory::create_from_template canonical construction...");
+  {
+    // 1. Standard cargo ship
+    auto cargo =
+        ShipFactory::create_from_template(ShipType::STYPE_CARGO, player_t{2});
+    test::expect_true(cargo != nullptr);
+    test::expect_eq(cargo->owner(), player_t{2});
+    test::expect_eq(cargo->type(), ShipType::STYPE_CARGO);
+    test::expect_eq(cargo->name(), "Cargo Ship");
+    test::expect_true(cargo->alive());
+    test::expect_true(cargo->active());
+    test::expect_eq(cargo->max_crew(), 100);
+    test::expect_eq(cargo->max_resource(), 1000);
+    test::expect_eq(cargo->max_fuel(), 1000);
+    test::expect_eq(cargo->max_destruct(), 1000);
+    test::expect_true(cargo->size() > 0);
+    test::expect_true(cargo->base_mass() > 0);
+    test::expect_true(cargo->build_cost() > 0);
+
+    // 2. Combat ship with primary battery
+    auto battle =
+        ShipFactory::create_from_template(ShipType::STYPE_BATTLE, player_t{1});
+    test::expect_true(battle != nullptr);
+    test::expect_eq(battle->type(), ShipType::STYPE_BATTLE);
+    test::expect_eq(battle->armor(), 7);
+    test::expect_eq(battle->max_crew(), 30);
+    test::expect_eq(battle->max_resource(), 235);
+    test::expect_eq(battle->guns(), ActiveBattery::PRIMARY);
+    test::expect_eq(battle->primary_battery().count, 30);
+    test::expect_eq(battle->retaliate(), 30);
+
+    // 3. Autonomous VN ship with progenitor
+    auto vn =
+        ShipFactory::create_from_template(ShipType::OTYPE_VN, player_t{3});
+    test::expect_true(vn != nullptr);
+    auto* vn_ptr = vn->as<VonNeumannShip>();
+    test::expect_true(vn_ptr != nullptr);
+    test::expect_eq(vn_ptr->owner(), player_t{3});
+    test::expect_eq(vn_ptr->progenitor(), player_t{3});
+
+    // 4. Toxic waste specialty ship
+    auto tox =
+        ShipFactory::create_from_template(ShipType::OTYPE_TOXWC, player_t{1});
+    test::expect_true(tox != nullptr);
+    test::expect_true(tox->as<ToxicWasteShip>() != nullptr);
+
+    std::println(
+        std::cout,
+        "  ✓ ShipFactory::create_from_template canonical construction passed");
+  }
+
   std::println(std::cout, "\nAll ShipRepository tests passed!");
   return 0;
 }

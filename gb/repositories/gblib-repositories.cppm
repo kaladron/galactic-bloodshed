@@ -270,6 +270,8 @@ export class ShipFactory {
 public:
   [[nodiscard]] static std::unique_ptr<Ship> create(ship_struct data);
   [[nodiscard]] static std::unique_ptr<Ship>
+  create_from_template(ShipType type, player_t owner = 1);
+  [[nodiscard]] static std::unique_ptr<Ship>
   deserialize(const std::string& json_str);
 };
 

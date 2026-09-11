@@ -226,6 +226,11 @@ EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
           }};
 }
 
+EntityHandle<Ship> EntityManager::create_ship(ShipType type, player_t owner) {
+  auto ship = ShipFactory::create_from_template(type, owner);
+  return create_ship(ship->to_struct());
+}
+
 void EntityManager::delete_ship(shipnum_t num) {
   if (!deletion_barrier_active_) {
     throw DeletionBarrierRequiredError(std::format(

@@ -336,43 +336,27 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
       .who_killed = parent.mind().who_killed,
   };
 
-  ship_struct s2_data{
-      .owner = 1,
-      .governor = 0,
-      .name = generate_vn_binary_name(),
-      .coordinates = parent.coordinates(),
-      .fuel = 0.5 * parent.fuel(),
-      .land_coords = parent.land_coords(),
-      .nextship = planet.ships(),
-      .armor = parent.armor() + 1,
-      .max_crew = tmpl.max_crew,
-      .max_resource = tmpl.max_resource,
-      .max_destruct = tmpl.max_destruct,
-      .max_fuel = tmpl.max_fuel,
-      .max_speed = tmpl.base_speed,
-      .tech = parent.tech() + 20.0,
-      .special = child_mind,
-      .storbits = parent.storbits(),
-      .deststar = parent.deststar(),
-      .destpnum = parent.destpnum(),
-      .pnumorbits = parent.pnumorbits(),
-      .whatdest = parent.whatdest(),
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_VN,
-      .speed = tmpl.base_speed,
-      .active = true,
-      .alive = true,
-      .mode = false,
-      .bombard = false,
-      .docked = true,
-  };
+  auto ship_handle = em.create_ship(ShipType::OTYPE_VN, 1);
+  Ship& s2 = *ship_handle;
+  s2.name() = generate_vn_binary_name();
+  s2.set_coordinates(parent.coordinates());
+  s2.add_fuel(0.5 * parent.fuel());
+  s2.set_land_coords(parent.land_coords());
+  s2.nextship() = planet.ships();
+  s2.armor() = parent.armor() + 1;
+  s2.tech() = parent.tech() + 20.0;
+  if (auto* auto_ship = s2.as<AutonomousShip>()) {
+    auto_ship->mind() = child_mind;
+  }
+  s2.storbits() = parent.storbits();
+  s2.deststar() = parent.deststar();
+  s2.destpnum() = parent.destpnum();
+  s2.pnumorbits() = parent.pnumorbits();
+  s2.whatdest() = parent.whatdest();
+  s2.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  s2.docked() = true;
 
   parent.consume_fuel(parent.fuel() * 0.5);
-
-  auto ship_handle = em.create_ship(s2_data);
-  Ship& s2 = *ship_handle;
-  s2.size() = ship_size(s2);
-  s2.set_mass(s2.base_mass());
 
   planet.ships() = s2.number();
   return s2.number();
@@ -402,54 +386,31 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
       .who_killed = parent.mind().who_killed,
   };
 
-  ship_struct s2_data{
-      .owner = 1,
-      .governor = 0,
-      .coordinates = parent.coordinates(),
-      .fuel = 5.0 * parent.fuel(),
-      .land_coords = parent.land_coords(),
-      .nextship = planet.ships(),
-      .armor = parent.armor() + 11,
-      .max_crew = tmpl.max_crew,
-      .max_resource = tmpl.max_resource,
-      .max_destruct = tmpl.max_destruct,
-      .max_fuel = tmpl.max_fuel,
-      .max_speed = tmpl.base_speed,
-      .tech = parent.tech() + 100.0,
-      .destruct = 500,
-      .special = bers_mind,
-      .protect = ProtectData{.planet = true, .self = true},
-      .hyper_drive = HyperDriveData{.charge = HYPER_DRIVE_READY_CHARGE,
-                                    .on = true,
-                                    .has = true},
-      .storbits = parent.storbits(),
-      .deststar = parent.deststar(),
-      .destpnum = parent.destpnum(),
-      .pnumorbits = parent.pnumorbits(),
-      .whatdest = parent.whatdest(),
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .retaliate = tmpl.max_guns,
-      .type = ShipType::OTYPE_BERS,
-      .speed = tmpl.base_speed,
-      .active = true,
-      .alive = true,
-      .mode = false,
-      .bombard = true,
-      .mounted = true,
-      .docked = true,
-      .guns = tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
-      .primary_battery = GunBattery::create(
-          tmpl.max_guns, shipdata_primary(ShipType::OTYPE_BERS)),
-      .secondary_battery =
-          GunBattery::create(0, shipdata_secondary(ShipType::OTYPE_BERS)),
-  };
-
-  parent.consume_fuel(parent.fuel() * 0.5);
-
-  auto ship_handle = em.create_ship(s2_data);
+  auto ship_handle = em.create_ship(ShipType::OTYPE_BERS, 1);
   Ship& s2 = *ship_handle;
-  s2.size() = ship_size(s2);
-  s2.set_mass(s2.base_mass());
+  s2.set_coordinates(parent.coordinates());
+  s2.add_fuel(5.0 * parent.fuel());
+  parent.consume_fuel(parent.fuel() * 0.5);
+  s2.set_land_coords(parent.land_coords());
+  s2.nextship() = planet.ships();
+  s2.armor() = parent.armor() + 11;
+  s2.tech() = parent.tech() + 100.0;
+  s2.add_destruct(500);
+  if (auto* auto_ship = s2.as<AutonomousShip>()) {
+    auto_ship->mind() = bers_mind;
+  }
+  s2.protect() = ProtectData{.planet = true, .self = true};
+  s2.hyper_drive() = HyperDriveData{
+      .charge = HYPER_DRIVE_READY_CHARGE, .on = true, .has = true};
+  s2.storbits() = parent.storbits();
+  s2.deststar() = parent.deststar();
+  s2.destpnum() = parent.destpnum();
+  s2.pnumorbits() = parent.pnumorbits();
+  s2.whatdest() = parent.whatdest();
+  s2.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  s2.bombard() = true;
+  s2.mounted() = true;
+  s2.docked() = true;
 
   planet.ships() = s2.number();
 

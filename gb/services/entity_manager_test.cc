@@ -789,6 +789,26 @@ void test_entity_manager_create_ship() {
   test::expect_eq(peek->name(), "Discovery");
   test::expect_eq(peek->owner(), 1);
   test::expect_eq(peek->fuel(), 100.0);
+
+  // Test create_ship from template
+  shipnum_t cargo_num;
+  {
+    auto cargo_handle = em.create_ship(ShipType::STYPE_CARGO, player_t{2});
+    test::expect_ne(cargo_handle.get(), nullptr);
+    cargo_num = cargo_handle->number();
+    test::expect_gt(cargo_num, new_ship_num);
+    test::expect_eq(cargo_handle->owner(), 2);
+    test::expect_eq(cargo_handle->name(), "Cargo Ship");
+    test::expect_eq(cargo_handle->max_resource(), 1000);
+    test::expect_true(cargo_handle->alive());
+  }
+
+  const auto* peek_cargo = em.peek_ship(cargo_num);
+  test::expect_ne(peek_cargo, nullptr);
+  test::expect_eq(peek_cargo->owner(), 2);
+  test::expect_eq(peek_cargo->type(), ShipType::STYPE_CARGO);
+  test::expect_eq(peek_cargo->max_resource(), 1000);
+
   std::println(std::cout,
                "  ✓ create_ship allocated ID and persisted successfully");
 }

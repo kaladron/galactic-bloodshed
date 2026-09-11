@@ -175,6 +175,41 @@ std::unique_ptr<Ship> ShipFactory::create(ship_struct data) {
   }
 }
 
+std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,
+                                                        player_t owner) {
+  const auto& tmpl = ship_template(type);
+  ship_struct data{
+      .owner = owner,
+      .name = std::string(tmpl.name),
+      .armor = tmpl.base_armor,
+      .max_crew = tmpl.max_crew,
+      .max_resource = tmpl.max_resource,
+      .max_destruct = tmpl.max_destruct,
+      .max_fuel = tmpl.max_fuel,
+      .max_speed = tmpl.base_speed,
+      .build_type = type,
+      .build_cost = tmpl.build_cost,
+      .retaliate = tmpl.max_guns,
+      .type = type,
+      .active = true,
+      .alive = true,
+      .guns = tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
+      .primary_battery =
+          GunBattery::create(tmpl.max_guns, shipdata_primary(type)),
+      .secondary_battery = GunBattery::create(0, shipdata_secondary(type)),
+      .max_hanger = tmpl.max_hangar,
+  };
+  if (type == ShipType::OTYPE_VN || type == ShipType::OTYPE_BERS) {
+    data.special = MindData{.progenitor = owner};
+  }
+
+  auto ship = create(std::move(data));
+  ship->size() = static_cast<ship_size_t>(ship_size(*ship));
+  ship->set_mass(ship->base_mass());
+  ship->build_cost() = static_cast<money_t>(cost(*ship));
+  return ship;
+}
+
 std::unique_ptr<Ship> ShipFactory::deserialize(const std::string& json_str) {
   ship_struct data{};
   auto result = glz::read_json(data, json_str);

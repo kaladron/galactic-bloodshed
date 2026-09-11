@@ -36,13 +36,18 @@ Before sector simulation begins, the environment performs foundational baseline 
 
 Active surface vehicles, autonomous terraformers, and orbital support craft execute operational orders across the planetary grid:
 
-- **Autonomous Von Neumann Probes**: Extract mineral resources from surface sectors, refine propellant, and replicate new machine offspring when resources suffice.
-- **Berserker Warships**: Orbiting autonomous dreadnoughts execute saturation bombardment runs against designated enemy colonies.
-- **Terraformers**: Autonomous ground vehicles navigate across sectors, conditioning hostile terrain toward their species' ideal biosphere.
-- **Space Plows**: Move across arable land, conditioning topsoil to increase agricultural fertility while generating trace industrial byproducts.
-- **Domes**: Erect climate-controlled habitats, upgrading sector efficiency and shielding colonists from harsh atmospheric conditions.
-- **Quarries**: Strip-mine heavy mineral veins, extracting raw industrial materials into colony stockpiles before leaving behind spent wasteland.
-- **Gas Giant Harvesting**: Tankers and orbital stations stationed in low orbit around gas giants skim atmospheric hydrogen to replenish fleet fuel reserves.
+- **Autonomous Von Neumann Probes (`v`)**: Unmanned machine probes land on mineral-bearing sectors, extract raw resources and propellant, roam adjacent sectors across toroidal grids, and replicate new machines upon reaching construction thresholds ($100\text{ resources}$).
+- **Berserker Warships (`V`)**: Orbiting autonomous dreadnoughts identify target colonies on their imperial hit list, check for defensive Planet Defense Nets (PDNs), and execute tactical saturation bombardment against enemy surfaces.
+- **Terraform Devices (`T`)**: Mobile surface engineering units navigate across landmasses, conditioning hostile sectors toward species-compatible biospheres by raising fertility and altering terrain classification.
+- **Space Plows (`K`)**: Automated agricultural combines move across arable terrain, conditioning topsoil to enhance agricultural fertility while consuming stored propellant and crew staffing.
+- **Domes (`Y`)**: Climate-controlled surface bio-domes erected on harsh sectors, upgrading infrastructure efficiency, protecting colonists from hazardous atmospheric conditions, and stabilizing demographic carrying capacity.
+- **Quarries (`q`)**: Industrial excavators strip-mine heavy mineral veins, extracting raw industrial materials into colony stockpiles before leaving behind spent wasteland.
+- **Weapons Plants (`W`)**: Automated munitions facilities synthesize destructive ordnance (`destruct`) by consuming minerals ($1:1$) and propellant ($0.5:1$) up to available ammunition storage capacity.
+- **Gas Giant Atmospheric Skimming**: Starships in low orbit around gas giants automatically harvest atmospheric hydrogen during turn updates:
+  - **Tankers (`t`)**: $+100.0\text{ fuel}$ per update
+  - **Orbital Habitats (`H`)**: $+200.0\text{ fuel}$ per update
+  - **Space Stations (`S`)**: $+100.0\text{ fuel}$ per update
+  - **Standard Starships**: $+5.0\text{ fuel}$ per update
 
 ---
 
@@ -58,7 +63,11 @@ flowchart LR
 ```
 
 - **Natural Seasonal Drift**: Planetary surface temperatures experience natural atmospheric fluctuations of $\pm 5^{\circ}\text{C}$ around their stellar baseline.
-- **Orbital Space Mirrors**: Giant orbital reflector arrays aimed at the planet focus stellar energy into the upper atmosphere to warm freezing worlds or shade overheated biospheres: $\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$.
+- **Orbital Space Mirrors (`+`)**: Giant orbital reflector arrays aimed at the host star focus solar energy into the upper atmosphere to warm freezing worlds or shade overheated biospheres:
+
+$$\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$$
+
+Thermal modifications are clamped to a maximum shift of $\pm 100^{\circ}\text{C}$ to preserve thermodynamic stability.
 
 ---
 
@@ -69,12 +78,16 @@ The economic and biological heart of the simulation processes every occupied sec
 ### Supernova Impact
 If the host star is undergoing a nova collapse, extreme radiation sweeps across the planet, degrading agricultural fertility, stripping surface vegetation, and searing vulnerable terrain into nuclear wasteland.
 
-### Industrial Resource Extraction
+### Industrial Resource Extraction and Commodity Depletion
 Populated sectors extract raw minerals and petroleum:
-- **Mineral Yield**: Populated sectors extract mineral ore based on racial metabolism and sector efficiency: $\text{Yield} = \min\left(\text{Sector Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$.
+- **Mineral Yield**: Populated sectors extract mineral ore based on racial metabolism and sector efficiency:
+
+$$\text{Yield} = \min\left(\text{Sector Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$$
+
 - **Propellant Synthesis**: Extracting minerals simultaneously generates refined fuel. Sectors classified as Gas Fields yield double fuel output ($2 \times \text{Yield}$).
 - **Munitions Diversion**: If a sector has undergone military mobilization, extracted minerals are automatically refined into destructive ordnance (`destruct`) rather than raw minerals.
 - **Crystal Synthesis**: Advanced empires with crystal discovery extract rare crystalline deposits from mineral-rich sectors.
+- **Depletion vs. Accounting Subtraction**: Routine resource extraction and ship loading enforce strict transactional inventory accounting. In contrast, combat damage and orbital bombardment inflict **resource depletion**, which smoothly clamps available sector resources down to zero without disrupting underlying colony transaction queues.
 
 ### Demographic Breeding and Overpopulation Famine
 
@@ -86,17 +99,31 @@ flowchart TD
     Cap -->|Population > Max Support| Starve["Overpopulation Famine\nCasualties in [0, 2 * Excess]"]
 ```
 
-- **Maximum Demographic Support Capacity**: The sustainable population cap for a sector depends on infrastructure efficiency, soil fertility, atmospheric compatibility, and environmental toxicity: $\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$.
-- **Reproductive Threshold**: If sector population drops below the species' reproductive minimum ($\text{Population} < \text{Reproductive Sexes}$), reproduction ceases entirely.
-- **Population Growth**: Below carrying capacity, populations expand according to racial birthrate: $\Delta \text{Population} = \left\lfloor (\text{Max Population} - \text{Population}) \times \text{Birthrate} \right\rfloor$.
-- **Overpopulation Starvation**: When population exceeds support capacity, severe famine inflicts casualties within the range: $\text{Casualties} \in \left[0, \min\big(2 \times (\text{Population} - \text{Max Population}), \text{Population}\big)\right]$.
+- **Maximum Demographic Support Capacity**: The sustainable population cap for a sector depends on infrastructure efficiency, soil fertility, atmospheric compatibility, and environmental toxicity:
 
-### Spontaneous Colonist Migration and Expansion
+$$\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$$
+
+- **Reproductive Threshold**: If sector population drops below the species' reproductive minimum ($\text{Population} < \text{Reproductive Sexes}$), reproduction ceases entirely.
+- **Population Growth**: Below carrying capacity, populations expand according to racial birthrate:
+
+$$\Delta \text{Population} = \left\lfloor (\text{Max Population} - \text{Population}) \times \text{Birthrate} \right\rfloor$$
+
+- **Overpopulation Starvation**: When population exceeds support capacity, severe famine inflicts casualties within the range:
+
+$$\text{Casualties} \in \left[0, \min\big(2 \times (\text{Population} - \text{Max Population}), \text{Population}\big)\right]$$
+
+### Spontaneous Colonist Migration and Territorial Expansion
 When a sector becomes crowded ($\text{Population} > 0.10 \times \text{Max Population}$), pioneer colonists look to expand into neighboring wilderness:
-- **Migration Pool**: Adventurous colonists form migration parties: $\text{Available Migrants} = \left\lfloor \text{Population} \times \text{Adventurism} \times \frac{100 - \text{Fertility}}{100} \right\rfloor - \text{Reproductive Sexes}$.
-- **Topological Navigation**: Migrants step into adjacent unowned sectors, honoring **toroidal east/west seam wrapping** across meridians while respecting **polar north/south limits**.
-- **Settlement Volume**: Migrants settle eligible unowned territory with positive environmental affinity: $\Delta \text{Settlers} = \left\lfloor \text{Available Migrants} \times \text{Compatibility} \times \frac{\text{Habitat Preference}}{100} \right\rfloor$.
-- **Territorial Claim**: Settlers claim newly occupied sectors, planting imperial colony flags and expanding empire boundaries.
+- **Migration Pool**: Adventurous colonists form migration parties:
+
+$$\text{Available Migrants} = \left\lfloor \text{Population} \times \text{Adventurism} \times \frac{100 - \text{Fertility}}{100} \right\rfloor - \text{Reproductive Sexes}$$
+
+- **Topological Navigation**: Migrants step into adjacent unowned sectors, honoring **toroidal east/west seam wrapping** across meridians while respecting **polar north/south limits** (5 topological neighbors at poles, 8 across equatorial and temperate latitudes).
+- **Settlement Volume**: Migrants settle eligible unowned territory with positive environmental affinity:
+
+$$\Delta \text{Settlers} = \left\lfloor \text{Available Migrants} \times \text{Compatibility} \times \frac{\text{Habitat Preference}}{100} \right\rfloor$$
+
+- **Territorial Claim**: Settlers claim newly occupied sectors, planting imperial colony flags and expanding empire boundaries atomically.
 
 ### Infrastructure Development and Plating
 - Colonists improve sector efficiency over time at a rate influenced by tax rates, racial metabolism, and habitat preference.
@@ -167,18 +194,22 @@ An enslaved population requires an active military presence to maintain order. I
 
 The turn simulation finalizes local economic accounting and defense readiness:
 
-- **Harvest Deposits**: Newly mined resources and synthesized fuels are credited to local colony stockpiles.
-- **Tax Collection**: Civilian taxes are levied and transferred into the system governor's treasury. Tax rate increases are constrained by the $+5\%$ per turn update rate-limiting policy.
-- **Scientific Research**: Planetary research grants are deducted from the governor's treasury, generating imperial technology advancement points.
-- **Ground Defense Batteries**: Total sector mobilization readiness is converted into active ground defense gun batteries: $`N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Points}}{1000} \right\rfloor\right)`$.
-- **Automated Waste Canisters**: If environmental pollution exceeds the governor's configured toxicity threshold, the colony automatically expends minerals to construct a Toxic Waste Canister ship, purging up to $20$ points of toxicity from the biosphere.
+- **Harvest Deposits**: Newly mined mineral resources, petroleum fuel, and extracted crystals are credited directly to local colony stockpiles.
+- **Tax Collection & Rate-Limiting**: Civilian income taxes are levied and transferred into the planetary governor's treasury. To prevent destabilizing social unrest and economic collapse, tax rate increases are constrained to a maximum increase of **$+5\%$ per turn update**.
+- **Scientific Research & Technology Grants**: Research allocations set by the governor are deducted from imperial revenues and converted into imperial technology advancement points ($`\text{Tech}`$), unlocking advanced ship hulls, warp crystal drives, and weapons.
+- **Ground Defense Batteries**: Total sector mobilization points across all owned territory are converted into active ground defense gun batteries:
+
+$$N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Points}}{1000} \right\rfloor\right)$$
+
+Surface batteries defend against landing assault craft and return counter-battery fire during enemy orbital bombardment.
+- **Automated Waste Canisters**: If planetary pollution exceeds the governor's configured toxicity threshold, local shipyards automatically consume mineral resources to fabricate a **Toxic Waste Canister (`w`)** vessel, absorbing up to $20$ points of toxicity from the biosphere.
 
 ---
 
 ## 11. Automated Telegrams and Communications
 
 Upon completing simulation passes, automated intelligence bulletins and telegrams are dispatched to system governors:
-- **Autoreports**: Summarize commodity production totals, newly mined crystals, and temperature shifts.
+- **Autoreports**: Summarize commodity production totals, newly mined crystals, demographic growth, and temperature shifts.
 - **Disaster Notices**: Alert governors to industrial toxicity disasters and sector devastation.
 - **Nova Warnings**: Emergency evacuation bulletins warn of stellar nova collapses and boiling seas.
 - **Revolt Bulletins**: Urgent war notices signal slave uprisings or planetary liberation events.
@@ -192,5 +223,8 @@ Upon completing simulation passes, automated intelligence bulletins and telegram
 - [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
 - [Tactical Combat, Naval Gunnery, and Planetary Warfare](combat.md)
 - [Governance, Capitals, and Imperial Administration](governance.md)
-- [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
+- [Interstellar Navigation, Propulsion, and Hyperspace Mechanics](navigation.md)
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
+- [Ship Classes and Construction Catalog](ship_types.md)
+- [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
+- [Autonomous Machine AI, Von Neumann Probes, and Berserker Warships](von_neumann.md)

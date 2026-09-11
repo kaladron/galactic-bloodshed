@@ -44,7 +44,39 @@ Autonomous robotic probes and migrating colonists utilize these topological rule
 
 ---
 
-## 2. Climate, Thermal Dynamics, and Space Mirrors
+## 2. Planetary Archetypes and Gas Giant Harvesters
+
+Star systems host diverse planetary classes categorized into solid terrestrial worlds and gaseous Jovian giants:
+
+```mermaid
+flowchart TD
+    Worlds["Star System Planetary Bodies"] --> Terrestrial["Solid Terrestrial Worlds\n(Earth, Forest, Desert, Water, Ice, Asteroid)"]
+    Worlds --> Jovian["Jovian Gas Giants\nCrushing Atmospheric Pressures & Deep Gravity Wells"]
+    
+    Terrestrial --> SurfaceColonization["Surface Colonization\nSolid Sectors, Mining, Cities & Agriculture"]
+    Jovian --> AtmosphericSkimming["Orbital Propellant Skimming\nFree Fuel Harvesting during Turn Updates"]
+    Jovian --> NoLanding["Surface Landings Prohibited\nHulls Crushed by Atmospheric Pressure"]
+```
+
+### Terrestrial Worlds vs. Gas Giants
+- **Terrestrial Worlds** (Earth-like, Forest, Desert, Water, Mountainous, Ice, Asteroid): Possess solid surface sector grids. Colonists can land, establish cities, extract mineral deposits, plow farmland, and build defense installations.
+- **Gas Giants**: Massive, high-gravity worlds composed of compressed light gases and atmospheric storms. They possess no solid surface; ships attempting to land on a gas giant are destroyed by crushing atmospheric pressure.
+
+### Orbital Propellant Harvesting (Gas Giant Skimming)
+While uninhabitable on the surface, gas giants serve as strategic orbital refueling stations. During every turn update, starships stationed in low orbit around a gas giant world automatically scoop volatile atmospheric propellant directly into their tanks:
+
+| Vessel Class | Fuel Harvested / Update | Strategic Purpose & Fleet Utility |
+| :--- | :---: | :--- |
+| **Tanker (`t`)** | **$+100.0\text{ fuel}$** | Rapid fleet replenishment; acts as a mobile offshore gas station. |
+| **Orbital Habitat (`H`)** | **$+200.0\text{ fuel}$** | Supports massive population biospheres and orbital manufacturing. |
+| **Space Station (`S`)** | **$+100.0\text{ fuel}$** | Permanent system defense staging base and fuel depot. |
+| **Standard Starships** | **$+5.0\text{ fuel}$** | Cruisers, freighters, and scouts top off tactical reserves without tanker support. |
+
+Positioning an orbital tanker or space station in orbit around a star's gas giant provides an empire with a permanent, zero-cost refueling waypoint for long-range exploration fleets and battle groups.
+
+---
+
+## 3. Climate, Thermal Dynamics, and Space Mirrors
 
 Each world possesses a natural baseline temperature determined by its star's spectral luminosity, stellar radius, and orbital distance.
 
@@ -66,7 +98,7 @@ $$T_{\text{surface}} = T_{\text{base}} + \Delta T_{\text{mirrors}} \pm 5^{\circ}
 
 ---
 
-## 3. Sector Mobilization and Ground Defense Batteries
+## 4. Sector Mobilization and Ground Defense Batteries
 
 Planetary military readiness is built from the ground up through sector-level mobilization.
 
@@ -92,7 +124,7 @@ flowchart TD
 
 ---
 
-## 4. Automated Ecological Cleanup and Waste Canisters
+## 5. Automated Ecological Cleanup and Waste Canisters
 
 Heavy manufacturing, strip-mining, and nuclear bombardment generate toxic industrial contaminants that degrade habitability.
 
@@ -103,7 +135,7 @@ Governors configure an automated environmental cleanup policy using the `toxicit
 
 ---
 
-## 5. Enslavement and Slave Revolts
+## 6. Enslavement and Slave Revolts
 
 When capturing foreign worlds, conquerors can subjugate the native population using the `enslave` command, compelling them to labor for the master empire.
 
@@ -143,5 +175,6 @@ a planetary **slave revolt** is immediately triggered.
 - [Tactical Combat, Naval Gunnery, and Planetary Warfare](combat.md)
 - [Governance, Capitals, and Imperial Administration](governance.md)
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
+- [Interstellar Navigation, Propulsion, and Hyperspace Mechanics](navigation.md)
 - [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
 - [Autonomous Machine AI, Von Neumann Probes, and Berserker Warships](von_neumann.md)

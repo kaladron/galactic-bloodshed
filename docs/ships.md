@@ -57,6 +57,22 @@ A ship's physical displacement profile determines its target signature in tactic
 
 $$\text{Displacement Size} = \left\lfloor 1.0 + 0.1 \times (N_{\text{primary}} + N_{\text{secondary}}) + 0.01 \times \text{Crew Capacity} + 0.02 \times \text{Resource Capacity} + 0.01 \times \text{Fuel Capacity} + 0.02 \times \text{Destruct Capacity} + \text{Hangar Capacity} \right\rfloor$$
 
+#### Joint Berthing Capacity and Crew Compartments
+A critical structural invariant of starship architecture is that **civilian crew and military ground troops share the exact same physical living quarters**:
+
+$$\text{Civilian Crew} + \text{Military Troops} \le \text{Maximum Berthing Capacity}$$
+
+- **Trade-Off**: Embarking planetary assault troops directly displaces civilian crew berths. If civilian crew drops below the operational requirement for active gun mounts ($1\text{ crew per gun}$) or damage control, the vessel's combat and repair readiness suffers.
+- **Dynamic Casualty Mass Updates**: When combat fire or radiation sickness inflicts casualties, the ship's operational displacement drops instantaneously:
+
+$$\Delta \text{Mass} = -(\Delta \text{Crew} + \Delta \text{Troops}) \times M_{\text{race}}$$
+
+#### Strategic Warp Crystals and Drive Racks
+Strategic warp crystals are required to power faster-than-light hyperspace jump drives and direct-fire combat lasers:
+- **Zero Displacement**: Warp crystals possess zero physical mass, allowing ships to carry strategic reserves without incurring propulsion penalties.
+- **Drive Racks (`mount` command)**: Jump-capable warships and assault transports are equipped with internal drive racks. A crystal must be explicitly mounted into the drive core (`mount <ship>`) before hyperdrives can be charged or combat lasers activated.
+- **Shatter Risks**: Executing long-range hyperspace jumps or drawing peak power for combat lasers stresses the crystal matrix, carrying risks of matrix degradation or sudden crystallization shatter.
+
 ---
 
 ## 3. Planetary and Stellar Exploration
@@ -94,11 +110,19 @@ flowchart TD
     Repair --> Special["10. Special Systems (Mirrors, Habitats, Mines)"]
 ```
 
-### 1. Radiation Hazards and Crew Sickness
-Ships contaminated by nuclear fallout, stellar flares, or weapon detonations ($\text{Radiation} > 0$) experience system failures and crew casualties:
-- **Mobility Gating**: Guidance and engine systems have a probability of failing proportional to radiation intensity: $P(\text{Immobilized}) = \frac{\text{Radiation Level}}{100}$.
-- **Crew Attrition**: On full turn updates, radiation sickness claims $20\%$ of living crew and carried military troops: $`\text{Crew}_{\text{new}} = \left\lfloor \text{Crew}_{\text{old}} \times 0.80 \right\rfloor, \quad \text{Troops}_{\text{new}} = \left\lfloor \text{Troops}_{\text{old}} \times 0.80 \right\rfloor`$.
-- **Natural Decontamination**: Radiation dissipates over time during update passes: $\Delta \text{Radiation} = -\text{UniformRandom}\Big(0, \min\big(\text{Radiation}, \text{Base Decontamination Rate}\big)\Big)$.
+### 1. Structural Damage, Peak-Dose Radiation, and Crew Attrition
+Hulls endure environmental hazards and weapon fire with strict physical damage boundaries:
+- **Structural Integrity and Instant Destruction**: Hull damage is bounded strictly within $[0\%, 100\%]$. When cumulative structural damage reaches or exceeds $100\%$, the vessel suffers catastrophic structural failure and is instantaneously destroyed and removed from active naval registries.
+- **Peak-Dose Radiation Model**: Vessels exposed to nuclear detonations, stellar flares, or toxic fallout accumulate radiation using peak-dose semantics: minor subsequent radiation exposures never overwrite or dilute higher historical contamination levels.
+- **Guidance and Propulsion Immobilization**: Severe radiation fries avionics and incapacitates helm crews. During movement segments, contaminated ships face an immobilization risk directly proportional to radiation severity:
+
+$$P(\text{Immobilized}) = \frac{\text{Radiation Level}}{100}$$
+
+- **Radiation Sickness & Crew Attrition**: During full turn updates, lethal radiation sickness claims $20\%$ of living crew and carried military troops:
+
+$$\text{Crew}_{\text{new}} = \left\lfloor \text{Crew}_{\text{old}} \times 0.80 \right\rfloor, \quad \text{Troops}_{\text{new}} = \left\lfloor \text{Troops}_{\text{old}} \times 0.80 \right\rfloor$$
+
+- **Natural Decontamination**: Radiation dissipates gradually over time during update passes: $\Delta \text{Radiation} = -\text{UniformRandom}\Big(0, \min\big(\text{Radiation}, \text{Base Decontamination Rate}\big)\Big)$.
 
 ### 2. Supernova Blast Waves
 Vessels caught in a star system undergoing a nova collapse suffer extreme radiant heat and physical shockwave damage:
@@ -116,6 +140,18 @@ Damaged vessels ($\text{Damage} > 0$) attempt structural repairs during turn upd
 - **Crew Repair Scaling**: The effective repair output scales with available crew staffing: $`r_{\text{crew}} = \frac{\text{Current Crew}}{\text{Maximum Crew Capacity}}`$, yielding maximum repair potential $`\text{Max Repair} = \text{Base Repair Rate} \times r_{\text{crew}}`$.
 - **Resource Cost**: Repairing hull damage consumes refined minerals: $\text{Resource Cost} = \left\lfloor 0.005 \times \text{Max Repair} \times \text{Ship Construction Cost} \right\rfloor$.
 - **Partial Maintenance**: If stored resources are insufficient to cover full maintenance, all available resources are expended for proportional partial repairs: $\text{Damage Repaired} = \left\lfloor \text{Max Repair} \times \left(\frac{\text{Stored Resources}}{\text{Resource Cost}}\right) \right\rfloor$. Unmanned sensor probes safely bypass crewed maintenance formulas.
+
+### 5. Atmospheric Propellant Harvesting (Gas Giant Skimming)
+Gas giant planets function as natural, limitless propellant refueling hubs for orbital naval forces. During each turn update, vessels stationed in low orbit around a gas giant world automatically scoop volatile atmospheric hydrogen to replenish fuel tanks:
+
+| Vessel Class | Turn Update Fuel Harvested | Strategic Operational Role |
+| :--- | :---: | :--- |
+| **Tanker (`t`)** | **$+100.0\text{ fuel}$** | Deep-space mobile filling station; harvests high-volume fuel loads for fleet replenishment. |
+| **Habitat (`H`)** | **$+200.0\text{ fuel}$** | Giant orbital biome; harvests massive fuel volumes to sustain population life support and synthesis. |
+| **Space Station (`S`)** | **$+100.0\text{ fuel}$** | Orbital defense and staging depot; maintains permanent fuel stockpiles for passing warships. |
+| **Standard Starships** | **$+5.0\text{ fuel}$** | Scout craft, transports, and combatants maintain basic maneuvering reserves without tanker support. |
+
+Harvested fuel increases the vessel's operational mass dynamically ($+0.05\text{ mass per fuel unit}$), automatically updating launch thrust and hyperjump requirements.
 
 ---
 

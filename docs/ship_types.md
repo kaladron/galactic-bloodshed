@@ -151,10 +151,10 @@ Large orbital structures acting as regional command centers, industrial shipyard
 | **AVPM Transporter** | `[` | 200 | 300 | 0 | 0 | 1000 | 1000 | 1000 | 100 | 0 | Switch, Anti-Matter Mass Transporter |
 
 ### Tactical Notes
-- **Habitat (`H`)**: Massive space colony housing up to $2000$ colonists in orbit. Acts as an operational starport and internal shipyard capable of manufacturing factories, pods, and light craft.
+- **Habitat (`H`)**: Massive space colony housing up to $2000$ colonists in orbit. Acts as an operational starport and internal shipyard capable of manufacturing factories, pods, and light craft. Automatically scoops $+200.0\text{ fuel}$ per update when orbiting gas giants.
 - **Space Port (`J`)**: Essential planetary infrastructure for market bidding, merchant shipping, commodity trading, and off-world exports.
-- **Space Mirror (`+`)**: Orbiting solar reflector used to warm planets, melt ice sheets, or focus concentrated solar radiation against hostile ground targets.
-- **Orbital Assault Platform (`O`)**: Formidable defense station armed with $50$ heavy guns and concentrated energy weapons to repel invading fleets.
+- **Space Mirror (`+`)**: Orbiting solar reflector array. Must be actively aligned with its host star. Stationed in planetary orbit, it redirects stellar energy to alter atmospheric temperature ($`\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor`$). It can also be aimed at specific hostile vessels or planetary sectors to focus destructive radiant thermal beams.
+- **Orbital Assault Platform (`O`)**: Formidable heavy fortress armed with $50$ heavy guns and concentrated energy weapons. In planetary orbit, it projects a continuous intimidation aura over the colony below, blockading merchant trade and demoralizing defending populations.
 
 ---
 
@@ -196,6 +196,12 @@ Specialized terraforming equipment used to alter planetary atmospheres, adjust t
 | **Tox Waste Canistr** | `w` | 0 | 5 | 4 | 20 | 0 | 0 | Injects toxic contaminants (environmental warfare) |
 | **Space Plow** | `K` | 5 | 10 | 0 | 200 | 0 | 10 | Cleans orbital debris and purges lingering radiation |
 
+### Tactical Notes
+- **Spore Pod (`p`)**: Specialized biological seeder. In planetary orbit, the pod gradually warms over simulation segments until it initiates orbital descent, detonating on the surface to seed an alien meta-colony while consuming the pod chassis.
+- **Dust Canister (`g`)**: Deployed into the upper atmosphere to release dense particulate screens that reflect stellar radiation, lowering surface temperature ($\Delta T < 0$, clamped to a $-100^{\circ}\text{C}$ maximum shift). The aerosol cloud slowly dissipates over turn updates.
+- **Greenhouse Gases (`h`)**: Injects infrared-trapping gases into planetary atmospheres, raising surface temperatures ($\Delta T > 0$, clamped to a $+100^{\circ}\text{C}$ maximum shift) to warm frozen biospheres toward habitable equilibrium.
+- **Toxic Waste Canister (`w`)**: Ecological containment hull automatically constructed by planetary shipyards when surface toxicity exceeds the governor's configured threshold, trapping $20$ toxicity points for orbital disposal or hostile deployment.
+
 ---
 
 ## 8. Scientific & Optical Instruments
@@ -219,6 +225,10 @@ Autonomous self-replicating robotic units and automated combat machines.
 | **Bers Cntrl Center** | `;` | 9999 | 3 | 10 | 0 | 0 | 50 | 0 | Deity/admin automated machine AI command center |
 | **Bers Autofac** | `Z` | 9999 | 8 | 10 | 0 | 1000 | 1000 | 0 | Deity/admin automated berserker fabrication shipyard |
 | **GODSHIP** | `!` | 9999 | 10 | 100 | 9 | 20000 | 20000 | 1000 | Omnipotent deity administrative vessel |
+
+### Tactical Notes
+- **Von Neumann Machine (`v`)**: Unmanned self-replicating exploration probe. Navigates autonomously to uninhabited star systems, enters planetary orbit, lands on mineral-rich surface sectors, extracts resources and fuel, roams adjacent sectors, and fabricates replica probes to seed subsequent star systems.
+- **Berserker War Machine (`V`)**: Heavy automated combat vessel. Navigates toward target star systems based on programmed target lists, scans for defensive Planet Defense Nets (PDNs), and conducts automated orbital saturation strikes against alien surface colonies.
 
 ---
 

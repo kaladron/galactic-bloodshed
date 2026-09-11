@@ -34,7 +34,7 @@ void TestShipBuilder::init(ShipType type,
   const auto& tmpl = ship_template(type);
   ship_.armor = tmpl.base_armor;
   ship_.max_crew = tmpl.max_crew;
-  ship_.max_resource = tmpl.max_cargo;
+  ship_.max_resource = tmpl.max_resource;
   ship_.max_destruct = tmpl.max_destruct;
   ship_.max_fuel = tmpl.max_fuel;
   ship_.max_speed = tmpl.base_speed;

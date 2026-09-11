@@ -32,6 +32,8 @@ int main() {
                     (static_cast<int>(tmpl.build_time) & 1) != 0);
     test::expect_eq(tmpl.can_construct_ships(),
                     static_cast<int>(tmpl.construction_cost) != 0);
+    test::expect_true(tmpl.max_resource >= 0,
+                      "Template max_resource must be non-negative");
   }
   test::expect_eq(seen_letters.size(), static_cast<std::size_t>(NUMSTYPES));
   std::println(std::cout,
@@ -68,6 +70,7 @@ int main() {
     test::expect_eq(battle_tmpl.letter, 'B');
     test::expect_eq(battle_tmpl.base_armor, 7);
     test::expect_eq(battle_tmpl.max_crew, 30);
+    test::expect_eq(battle_tmpl.max_resource, 235);
     test::expect_eq(battle_tmpl.max_fuel, 200);
     test::expect_true(battle_tmpl.can_modify);
     test::expect_true(battle_tmpl.can_mount);
@@ -78,16 +81,26 @@ int main() {
     const auto& factory_tmpl = ship_template(ShipType::OTYPE_FACTORY);
     test::expect_eq(factory_tmpl.name, "Factory");
     test::expect_eq(factory_tmpl.letter, 'F');
+    test::expect_eq(factory_tmpl.max_resource, 50);
     test::expect_true(factory_tmpl.can_construct_ships());
     test::expect_true(factory_tmpl.has_switch);
 
     const auto& hab_tmpl = ship_template(ShipType::STYPE_HABITAT);
     test::expect_eq(hab_tmpl.name, "Habitat");
     test::expect_eq(hab_tmpl.letter, 'H');
+    test::expect_eq(hab_tmpl.max_resource, 5000);
     test::expect_true(hab_tmpl.is_starport);
     test::expect_true(hab_tmpl.can_repair);
     test::expect_true(hab_tmpl.requires_maintenance);
     test::expect_false(hab_tmpl.can_land);
+
+    const auto& cargo_tmpl = ship_template(ShipType::STYPE_CARGO);
+    test::expect_eq(cargo_tmpl.name, "Cargo Ship");
+    test::expect_eq(cargo_tmpl.letter, 'c');
+    test::expect_eq(cargo_tmpl.max_crew, 100);
+    test::expect_eq(cargo_tmpl.max_resource, 1000);
+    test::expect_eq(cargo_tmpl.max_fuel, 1000);
+    test::expect_true(cargo_tmpl.can_modify);
   }
 
   std::println(std::cout, "Testing Ship entity helper accessors...");

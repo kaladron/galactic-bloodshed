@@ -833,7 +833,7 @@ int main() {
     landed_low_fuel_data.docked = 1;
     landed_low_fuel_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
     landed_low_fuel_data.max_resource =
-        ship_template(ShipType::OTYPE_VN).max_cargo;
+        ship_template(ShipType::OTYPE_VN).max_resource;
     landed_low_fuel_data.fuel = 10.0;  // Underfueled (capacity is 100)
     landed_low_fuel_data.special = MindData{.busy = false};
     auto landed_low_fuel = ShipFactory::create(landed_low_fuel_data);
@@ -880,7 +880,8 @@ int main() {
     orbiting_vn_data.docked = 0;
     orbiting_vn_data.special = MindData{.busy = true};
     orbiting_vn_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
-    orbiting_vn_data.max_resource = ship_template(ShipType::OTYPE_VN).max_cargo;
+    orbiting_vn_data.max_resource =
+        ship_template(ShipType::OTYPE_VN).max_resource;
     auto orbiting_vn = ShipFactory::create(orbiting_vn_data);
     test::expect_false(orbiting_vn->is_landed());
 

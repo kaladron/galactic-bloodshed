@@ -376,7 +376,7 @@ double complexity(const Ship& s) {
   cost.add(s.primary_battery().count, tmpl.max_guns);
   cost.add(s.secondary_battery().count, tmpl.max_guns);
   cost.add(s.max_crew(), tmpl.max_crew);
-  cost.add(s.max_resource(), tmpl.max_cargo);
+  cost.add(s.max_resource(), tmpl.max_resource);
   cost.add(s.max_fuel(), tmpl.max_fuel);
   cost.add(s.max_destruct(), tmpl.max_destruct);
   cost.add(s.max_speed(), tmpl.base_speed);

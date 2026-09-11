@@ -111,7 +111,7 @@ int main() {
     test::expect_eq(fact.repair_capacity(), 1L);
     const auto& fact_tmpl = ship_template(ShipType::OTYPE_FACTORY);
     test::expect_eq(fact.max_crew_capacity(), fact_tmpl.max_crew);
-    test::expect_eq(fact.max_resource_capacity(), fact_tmpl.max_cargo);
+    test::expect_eq(fact.max_resource_capacity(), fact_tmpl.max_resource);
   }
 
   std::println(std::cout, "✓ gblib_test passed!");

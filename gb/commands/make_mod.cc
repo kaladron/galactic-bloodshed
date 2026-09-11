@@ -147,7 +147,7 @@ bool make_mod(const command_t& argv, GameObj& g) {
       dirship.set_primary_battery(itmpl.max_guns, shipdata_primary(*i));
       dirship.set_secondary_battery(itmpl.max_guns, shipdata_secondary(*i));
       dirship.max_crew() = itmpl.max_crew;
-      dirship.max_resource() = itmpl.max_cargo;
+      dirship.max_resource() = itmpl.max_resource;
       dirship.max_hanger() = itmpl.max_hangar;
       dirship.max_fuel() = itmpl.max_fuel;
       dirship.max_destruct() = itmpl.max_destruct;
@@ -199,7 +199,8 @@ bool make_mod(const command_t& argv, GameObj& g) {
           dirship.armor() = std::min<armor_t>(value, 100);
         } else if (argv[1] == "crew" && btmpl.max_crew) {
           dirship.max_crew() = std::min<population_t>(value, 10000);
-        } else if (argv[1] == "cargo" && btmpl.max_cargo) {
+        } else if ((argv[1] == "cargo" || argv[1] == "resource") &&
+                   btmpl.max_resource) {
           dirship.max_resource() = std::min<resource_t>(value, 10000);
         } else if (argv[1] == "hanger" && btmpl.max_hangar) {
           dirship.max_hanger() = std::min<hangar_t>(value, 10000);

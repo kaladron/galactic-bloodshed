@@ -57,7 +57,7 @@ void add_ship_spec_row(tabulate::Table& table, ShipType i, const Race& race) {
   const auto& tmpl = ship_template(i);
   table.add_row(
       {std::string(1, tmpl.letter), std::string(tmpl.name),
-       std::format("{}", tmpl.max_cargo), std::format("{}", tmpl.max_hangar),
+       std::format("{}", tmpl.max_resource), std::format("{}", tmpl.max_hangar),
        std::format("{}", tmpl.base_armor), std::format("{}", tmpl.max_destruct),
        std::format("{}", tmpl.max_guns),
        std::format("{}", gun_caliber(tmpl.max_primary_caliber)),

@@ -63,7 +63,8 @@ bool upgrade(const command_t& argv, GameObj& g) {
       ship.armor() = MAX(dirship.armor(), MIN(value, 100));
     } else if (argv[1] == "crew" && btmpl.max_crew) {
       ship.max_crew() = MAX(dirship.max_crew(), MIN(value, 10000));
-    } else if (argv[1] == "cargo" && btmpl.max_cargo) {
+    } else if ((argv[1] == "cargo" || argv[1] == "resource") &&
+               btmpl.max_resource) {
       ship.max_resource() = MAX(dirship.max_resource(), MIN(value, 10000));
     } else if (argv[1] == "hanger" && btmpl.max_hangar) {
       ship.max_hanger() = MAX(dirship.max_hanger(), MIN(value, 10000));

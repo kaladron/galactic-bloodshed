@@ -361,7 +361,7 @@ void Getship(Ship* s, ShipType i, const Race& r) {
   ship_struct data{
       .armor = tmpl.base_armor,
       .max_crew = tmpl.max_crew,
-      .max_resource = tmpl.max_cargo,
+      .max_resource = tmpl.max_resource,
       .max_destruct = tmpl.max_destruct,
       .max_fuel = tmpl.max_fuel,
       .max_speed = tmpl.base_speed,

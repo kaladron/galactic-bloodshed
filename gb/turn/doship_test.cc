@@ -944,59 +944,44 @@ void test_doabm_intercept() {
   PlanetRepository(store).save(planet);
 
   // 1. Hostile enemy missile in orbit
-  ship_struct hostile_missile_data{
-      .owner = player_t{2},
-      .size = 1,
-      .tech = 10.0,
-      .storbits = starnum_t{1},
-      .pnumorbits = planetnum_t{0},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_MISSILE,
-      .active = 1,
-      .alive = 1,
-  };
-  auto hostile_handle = em.create_ship(hostile_missile_data);
+  auto hostile_handle = TestShipBuilder(em, ShipType::STYPE_MISSILE)
+                            .owned_by(2)
+                            .with_size(1)
+                            .with_tech(10.0)
+                            .in_planet_orbit(1, 0)
+                            .with_active(true)
+                            .with_alive(true)
+                            .build_handle();
 
   // 2. Allied missile in orbit (should be spared)
-  ship_struct allied_missile_data{
-      .owner = player_t{3},
-      .size = 1,
-      .tech = 10.0,
-      .storbits = starnum_t{1},
-      .pnumorbits = planetnum_t{0},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_MISSILE,
-      .active = 1,
-      .alive = 1,
-  };
-  auto allied_handle = em.create_ship(allied_missile_data);
+  auto allied_handle = TestShipBuilder(em, ShipType::STYPE_MISSILE)
+                           .owned_by(3)
+                           .with_size(1)
+                           .with_tech(10.0)
+                           .in_planet_orbit(1, 0)
+                           .with_active(true)
+                           .with_alive(true)
+                           .build_handle();
 
   em.mutate_planet(starnum_t{1}, planetnum_t{0},
                    [&](Planet& p) { p.ships() = hostile_handle->number(); });
   hostile_handle->ships() = allied_handle->number();
 
-  ship_struct abm_data{
-      .owner = player_t{1},
-      .size = 1,
-      .max_crew = 10,
-      .tech = 10.0,
-      .destruct = 50,
-      .popn = 10,
-      .storbits = starnum_t{1},
-      .deststar = starnum_t{1},
-      .destpnum = planetnum_t{0},
-      .pnumorbits = planetnum_t{0},
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .retaliate = 50,
-      .type = ShipType::OTYPE_ABM,
-      .active = 1,
-      .alive = 1,
-  };
-  abm_data.primary_battery = GunBattery::create(10, guntype_t::HEAVY);
-  auto abm_handle = em.create_ship(abm_data);
+  auto abm_handle = TestShipBuilder(em, ShipType::OTYPE_ABM)
+                        .owned_by(1)
+                        .with_size(1)
+                        .with_max_crew(10)
+                        .with_tech(10.0)
+                        .with_destruct(50)
+                        .with_crew(10, 0)
+                        .in_planet_orbit(1, 0)
+                        .targeting_planet(1, 0)
+                        .with_retaliate(50)
+                        .with_guns(guntype_t::HEAVY, 10, ActiveBattery::PRIMARY)
+                        .with_active(true)
+                        .with_alive(true)
+                        .build_handle();
   Ship& abm = *abm_handle;
-  abm.guns() = PRIMARY;
   abm.on() = 1;
   abm.docked() = 1;
 
@@ -1558,14 +1543,12 @@ void test_process_ship_supernova() {
   ServerState state{.segments = 1};
 
   // 1. Surviving ship
-  ship_struct ship_data{
-      .owner = player_t{1},
-      .armor = 2,
-      .damage = 10,
-      .type = ShipType::STYPE_BATTLE,
-      .alive = 1,
-  };
-  auto ship_handle = em.create_ship(ship_data);
+  auto ship_handle = TestShipBuilder(em, ShipType::STYPE_BATTLE)
+                         .owned_by(1)
+                         .with_armor(2)
+                         .with_damage(10)
+                         .with_alive(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
 
   bool survived = process_ship_supernova(ship, star, state, em);
@@ -1645,31 +1628,24 @@ void test_update_ship_inhabited_and_exploration() {
   PlanetRepository(store).save(planet);
 
   // 1. Probe in star orbit explores star
-  ship_struct probe_data{
-      .owner = player_t{1},
-      .popn = 0,
-      .storbits = starnum_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::OTYPE_PROBE,
-      .alive = 1,
-  };
-  auto probe_handle = em.create_ship(probe_data);
+  auto probe_handle = TestShipBuilder(em, ShipType::OTYPE_PROBE)
+                          .owned_by(1)
+                          .with_crew(0, 0)
+                          .in_star_orbit(1)
+                          .with_alive(true)
+                          .build_handle();
   update_ship_inhabited_and_exploration(*probe_handle, em, stats);
   test::expect_eq(stats.StarsInhab[1], 1);
   const auto& star_after_probe = *em.peek_star(starnum_t{1});
   test::expect_true(star_after_probe.is_explored_by(player_t{1}));
 
   // 2. Manned ship in planet orbit explores star & planet
-  ship_struct manned_data{
-      .owner = player_t{1},
-      .popn = 10,
-      .storbits = starnum_t{1},
-      .pnumorbits = planetnum_t{0},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_SHUTTLE,
-      .alive = 1,
-  };
-  auto manned_handle = em.create_ship(manned_data);
+  auto manned_handle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1)
+                           .with_crew(10, 0)
+                           .in_planet_orbit(1, 0)
+                           .with_alive(true)
+                           .build_handle();
   update_ship_inhabited_and_exploration(*manned_handle, em, stats);
   const auto& planet_after_manned =
       *em.peek_planet(starnum_t{1}, planetnum_t{0});
@@ -1681,16 +1657,12 @@ void test_update_ship_inhabited_and_exploration() {
   planet2.planet_order() = 1;
   PlanetRepository(store).save(planet2);
 
-  ship_struct cargo_data{
-      .owner = player_t{2},
-      .popn = 0,
-      .storbits = starnum_t{1},
-      .pnumorbits = planetnum_t{1},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_CARGO,
-      .alive = 1,
-  };
-  auto cargo_handle = em.create_ship(cargo_data);
+  auto cargo_handle = TestShipBuilder(em, ShipType::STYPE_CARGO)
+                          .owned_by(2)
+                          .with_crew(0, 0)
+                          .in_planet_orbit(1, 1)
+                          .with_alive(true)
+                          .build_handle();
   update_ship_inhabited_and_exploration(*cargo_handle, em, stats);
   const auto& planet2_after = *em.peek_planet(starnum_t{1}, planetnum_t{1});
   test::expect_false(planet2_after.is_explored_by(player_t{2}));
@@ -1708,24 +1680,17 @@ void test_synchronize_docked_carrier_ownership() {
   RaceRepository(store).save(race2);
 
   // Carrier owned by Player 1
-  ship_struct carrier_data{
-      .owner = player_t{1},
-      .governor = governor_t{0},
-      .type = ShipType::STYPE_CARRIER,
-      .alive = 1,
-  };
-  auto carrier_handle = em.create_ship(carrier_data);
+  auto carrier_handle = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                            .owned_by(1)
+                            .with_alive(true)
+                            .build_handle();
 
   // Docked fighter initially owned by Player 2
-  ship_struct fighter_data{
-      .owner = player_t{2},
-      .governor = governor_t{0},
-      .destshipno = carrier_handle->number(),
-      .whatorbits = ScopeLevel::LEVEL_SHIP,
-      .type = ShipType::STYPE_FIGHTER,
-      .alive = 1,
-  };
-  auto fighter_handle = em.create_ship(fighter_data);
+  auto fighter_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                            .owned_by(2)
+                            .docked_to(carrier_handle->number(), 0)
+                            .with_alive(true)
+                            .build_handle();
   Ship& fighter = *fighter_handle;
 
   synchronize_docked_carrier_ownership(fighter, em);
@@ -1798,82 +1763,64 @@ void test_special_subsystems_extended() {
   PlanetRepository(store).save(planet);
 
   // 1. Habitat with 0 max_crew does not divide by zero
-  ship_struct hab_data{
-      .owner = player_t{1},
-      .fuel = 100.0,
-      .max_crew = 0,
-      .type = ShipType::STYPE_HABITAT,
-      .alive = 1,
-      .on = 1,
-  };
-  auto hab_handle = em.create_ship(hab_data);
+  auto hab_handle = TestShipBuilder(em, ShipType::STYPE_HABITAT)
+                        .owned_by(1)
+                        .with_fuel(100.0)
+                        .with_max_crew(0)
+                        .with_alive(true)
+                        .with_on(true)
+                        .build_handle();
   do_habitat(*hab_handle, em);
   test::expect_eq(hab_handle->resource(), 0);
 
   // 2. Weapon plant with 0 max_crew does not divide by zero
-  ship_struct wplant_data{
-      .owner = player_t{1},
-      .fuel = 100.0,
-      .max_crew = 0,
-      .resource = 100,
-      .type = ShipType::OTYPE_WPLANT,
-      .alive = 1,
-      .on = 1,
-  };
-  auto wplant_handle = em.create_ship(wplant_data);
+  auto wplant_handle = TestShipBuilder(em, ShipType::OTYPE_WPLANT)
+                           .owned_by(1)
+                           .with_fuel(100.0)
+                           .with_max_crew(0)
+                           .with_resource(100)
+                           .with_alive(true)
+                           .with_on(true)
+                           .build_handle();
   int produced = do_weapon_plant(*wplant_handle, em);
   test::expect_eq(produced, 0);
 
   // 3. Canister clamped at -100
-  ship_struct can_data{
-      .owner = player_t{1},
-      .storbits = starnum_t{1},
-      .pnumorbits = planetnum_t{0},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_CANIST,
-      .active = true,
-      .alive = true,
-  };
-  auto can_handle = em.create_ship(can_data);
+  auto can_handle = TestShipBuilder(em, ShipType::OTYPE_CANIST)
+                        .owned_by(1)
+                        .in_planet_orbit(1, 0)
+                        .with_active(true)
+                        .with_alive(true)
+                        .build_handle();
   stats.set_temp_add(1, 0, -95);
   do_canister(*can_handle, em, stats);
   test::expect_eq(stats.temp_add(1, 0), -100);
 
   // 4. Greenhouse clamped at +100
-  ship_struct gh_data{
-      .owner = player_t{1},
-      .storbits = starnum_t{1},
-      .pnumorbits = planetnum_t{0},
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_GREEN,
-      .active = true,
-      .alive = true,
-  };
-  auto gh_handle = em.create_ship(gh_data);
+  auto gh_handle = TestShipBuilder(em, ShipType::OTYPE_GREEN)
+                       .owned_by(1)
+                       .in_planet_orbit(1, 0)
+                       .with_active(true)
+                       .with_alive(true)
+                       .build_handle();
   stats.set_temp_add(1, 0, 95);
   do_greenhouse(*gh_handle, em, stats);
   test::expect_eq(stats.temp_add(1, 0), 100);
 
   // 5. Space mirror destroys target ship when damage exceeds 100
-  ship_struct target_data{
-      .owner = player_t{1},
-      .size = 10,
-      .storbits = starnum_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .damage = 99,
-      .type = ShipType::STYPE_SHUTTLE,
-      .alive = 1,
-  };
-  auto target_handle = em.create_ship(target_data);
+  auto target_handle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1)
+                           .with_size(10)
+                           .in_star_orbit(1)
+                           .with_damage(99)
+                           .with_alive(true)
+                           .build_handle();
 
-  ship_struct mirror_data{
-      .owner = player_t{1},
-      .storbits = starnum_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::STYPE_MIRROR,
-      .alive = 1,
-  };
-  auto mirror_handle = em.create_ship(mirror_data);
+  auto mirror_handle = TestShipBuilder(em, ShipType::STYPE_MIRROR)
+                           .owned_by(1)
+                           .in_star_orbit(1)
+                           .with_alive(true)
+                           .build_handle();
   auto* mirror_ship = mirror_handle->as<SpaceMirrorShip>();
   mirror_ship->aim().level = ScopeLevel::LEVEL_SHIP;
   mirror_ship->aim().shipno = target_handle->number();

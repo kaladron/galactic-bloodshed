@@ -176,6 +176,11 @@ TestShipBuilder& TestShipBuilder::with_crew(population_t civilians,
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::with_max_crew(population_t max_crew) {
+  ship_.max_crew = max_crew;
+  return *this;
+}
+
 TestShipBuilder& TestShipBuilder::with_speed(speed_t speed) {
   ship_.speed = speed;
   return *this;

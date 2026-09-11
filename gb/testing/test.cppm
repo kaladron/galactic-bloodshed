@@ -560,6 +560,7 @@ public:
   TestShipBuilder& with_cew(weapon_power_t cew_power,
                             unsigned short range = 1000);
   TestShipBuilder& with_crew(population_t civilians, population_t military);
+  TestShipBuilder& with_max_crew(population_t max_crew);
   TestShipBuilder& with_speed(speed_t speed);
   TestShipBuilder& with_max_speed(speed_t max_speed);
   TestShipBuilder& with_fuel(double fuel);

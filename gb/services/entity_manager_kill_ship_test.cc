@@ -75,15 +75,13 @@ int main() {
 
   // Basic ship kill
   {
-    ship_struct ship_data{};
-    ship_data.owner = 2;
-    ship_data.alive = 1;
-    ship_data.notified = 1;
-    ship_data.type = ShipType::STYPE_FIGHTER;
-    ship_data.build_cost = 100;
-
-    auto ship_handle = em.create_ship(ship_data);
+    auto ship_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                           .owned_by(2)
+                           .with_alive(true)
+                           .build_handle();
     auto& ship = *ship_handle;
+    ship.notified() = 1;
+    ship.build_cost() = 100;
 
     em.kill_ship(1, ship);
 
@@ -94,12 +92,10 @@ int main() {
 
   // AutonomousShip who_killed tracking
   {
-    ship_struct ship_data{};
-    ship_data.owner = 2;
-    ship_data.alive = 1;
-    ship_data.type = ShipType::OTYPE_VN;
-
-    auto ship_handle = em.create_ship(ship_data);
+    auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_VN)
+                           .owned_by(2)
+                           .with_alive(true)
+                           .build_handle();
     auto& ship = *ship_handle;
 
     em.kill_ship(1, ship);
@@ -112,14 +108,12 @@ int main() {
 
   // Gov_ship gets cleared when government ship is killed
   {
-    ship_struct ship_data{};
-    ship_data.owner = 2;
-    ship_data.alive = 1;
-    ship_data.type = ShipType::STYPE_BATTLE;
-    ship_data.build_cost = 500;
-
-    auto ship_handle = em.create_ship(ship_data);
+    auto ship_handle = TestShipBuilder(em, ShipType::STYPE_BATTLE)
+                           .owned_by(2)
+                           .with_alive(true)
+                           .build_handle();
     auto& ship = *ship_handle;
+    ship.build_cost() = 500;
     shipnum_t ship_num = ship.number();
 
     // Set this ship as victim's government ship
@@ -139,14 +133,12 @@ int main() {
 
   // Morale adjustment for non-VN kills
   {
-    ship_struct ship_data{};
-    ship_data.owner = 2;
-    ship_data.alive = 1;
-    ship_data.type = ShipType::STYPE_DREADNT;
-    ship_data.build_cost = 1000;
-
-    auto ship_handle = em.create_ship(ship_data);
+    auto ship_handle = TestShipBuilder(em, ShipType::STYPE_DREADNT)
+                           .owned_by(2)
+                           .with_alive(true)
+                           .build_handle();
     auto& ship = *ship_handle;
+    ship.build_cost() = 1000;
 
     em.kill_ship(1, ship);
 
@@ -165,14 +157,12 @@ int main() {
 
   // VN hitlist tracking
   {
-    ship_struct ship_data{};
-    ship_data.owner = 2;
-    ship_data.alive = 1;
-    ship_data.type = ShipType::OTYPE_VN;
-    ship_data.storbits = 0;
-
-    ship_data.special = MindData{.who_killed = 1};
-    auto ship_handle = em.create_ship(ship_data);
+    auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_VN)
+                           .owned_by(2)
+                           .with_alive(true)
+                           .in_star_orbit(0)
+                           .with_special(MindData{.who_killed = 1})
+                           .build_handle();
     auto& ship = *ship_handle;
 
     em.kill_ship(1, ship);
@@ -188,16 +178,12 @@ int main() {
 
   // TOXWC increases planet toxicity
   {
-    ship_struct ship_data{};
-    ship_data.owner = 2;
-    ship_data.alive = 1;
-    ship_data.type = ShipType::OTYPE_TOXWC;
-    ship_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-    ship_data.storbits = 0;
-    ship_data.pnumorbits = 0;
-    ship_data.special = WasteData{.toxic = 20};
-
-    auto ship_handle = em.create_ship(ship_data);
+    auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_TOXWC)
+                           .owned_by(2)
+                           .with_alive(true)
+                           .in_planet_orbit(0, 0)
+                           .with_special(WasteData{.toxic = 20})
+                           .build_handle();
     auto& ship = *ship_handle;
 
     em.kill_ship(1, ship);
@@ -216,24 +202,18 @@ int main() {
 
     // Phase 1: Create and set up docked ships, then release handles
     {
-      ship_struct ship1_data{};
-      ship1_data.owner = 1;
-      ship1_data.alive = 1;
-      ship1_data.type = ShipType::STYPE_CARRIER;
-      ship1_data.whatorbits = ScopeLevel::LEVEL_STAR;
-      ship1_data.storbits = 0;
-
-      ship_struct ship2_data{};
-      ship2_data.owner = 1;
-      ship2_data.alive = 1;
-      ship2_data.type = ShipType::STYPE_FIGHTER;
-      ship2_data.whatorbits = ScopeLevel::LEVEL_STAR;
-      ship2_data.storbits = 0;
-
-      auto ship1_handle = em.create_ship(ship1_data);
+      auto ship1_handle = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                              .owned_by(1)
+                              .with_alive(true)
+                              .in_star_orbit(0)
+                              .build_handle();
       ship1_num = ship1_handle->number();
 
-      auto ship2_handle = em.create_ship(ship2_data);
+      auto ship2_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                              .owned_by(1)
+                              .with_alive(true)
+                              .in_star_orbit(0)
+                              .build_handle();
       ship2_num = ship2_handle->number();
 
       // Dock them together (both point to each other)
@@ -271,36 +251,27 @@ int main() {
 
     // Phase 1: Create carrier and fighters, set up landing relationship
     {
-      ship_struct carrier_data{};
-      carrier_data.owner = 1;
-      carrier_data.alive = 1;
-      carrier_data.type = ShipType::STYPE_CARRIER;
-      carrier_data.whatorbits = ScopeLevel::LEVEL_STAR;
-      carrier_data.storbits = 0;
-
-      auto carrier_handle = em.create_ship(carrier_data);
+      auto carrier_handle = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                                .owned_by(1)
+                                .with_alive(true)
+                                .in_star_orbit(0)
+                                .build_handle();
       carrier_num = carrier_handle->number();
 
       // Create fighter1 landed on carrier
-      ship_struct fighter1_data{};
-      fighter1_data.owner = 1;
-      fighter1_data.alive = 1;
-      fighter1_data.type = ShipType::STYPE_FIGHTER;
-      fighter1_data.whatorbits = ScopeLevel::LEVEL_SHIP;
-      fighter1_data.destshipno = carrier_num;
-
-      auto fighter1_handle = em.create_ship(fighter1_data);
+      auto fighter1_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                                 .owned_by(1)
+                                 .with_alive(true)
+                                 .docked_to(carrier_num, 0)
+                                 .build_handle();
       fighter1_num = fighter1_handle->number();
 
       // Create fighter2 landed on carrier
-      ship_struct fighter2_data{};
-      fighter2_data.owner = 1;
-      fighter2_data.alive = 1;
-      fighter2_data.type = ShipType::STYPE_FIGHTER;
-      fighter2_data.whatorbits = ScopeLevel::LEVEL_SHIP;
-      fighter2_data.destshipno = carrier_num;
-
-      auto fighter2_handle = em.create_ship(fighter2_data);
+      auto fighter2_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                                 .owned_by(1)
+                                 .with_alive(true)
+                                 .docked_to(carrier_num, 0)
+                                 .build_handle();
       fighter2_num = fighter2_handle->number();
 
       // Link fighters to carrier's ships list

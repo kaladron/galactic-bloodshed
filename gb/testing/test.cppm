@@ -586,6 +586,7 @@ public:
   TestShipBuilder& with_pod(unsigned char temp, unsigned char decay = 0);
 
   shipnum_t build();
+  EntityHandle<Ship> build_handle();
 
 private:
   void init(ShipType type, std::optional<shipnum_t> explicit_number);

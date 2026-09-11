@@ -63,20 +63,11 @@ void test_give_dispatch() {
   planets_repo.save(planet);
 
   // Create a test ship owned by race 1
-  Ship ship{};
-  ship.owner() = 1;
-  ship.governor() = 0;
-  ship.type() = ShipType::OTYPE_PROBE;
-  ship.alive() = 1;
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = star_id;
-  ship.pnumorbits() = 0;
-  ship.popn() = 0;
-  ship.troops() = 0;
-  ship.ships() = 0;
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship);
-  const shipnum_t ship_id = ship.number();
+  const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                .owned_by(1, 0)
+                                .with_alive(true)
+                                .in_planet_orbit(star_id, 0)
+                                .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -85,34 +76,33 @@ void test_give_dispatch() {
   g.set_snum(star_id);
   g.set_pnum(0);
 
-  // 1. Give ship to allied player
+  // 1. Happy path: give ship to allied race
   ctx.assert_dispatch_success(
       g, {"give", "Receiver", std::format("#{}", ship_id.value)});
-  const auto* ship_verify = ctx.em.peek_ship(ship_id);
-  test::expect_ne(ship_verify, nullptr);
-  test::expect_eq(ship_verify->owner(), 2);
-  test::expect_eq(ship_verify->governor(), 0);
+  test::expect_contains(g.out.str(), "Owner changed.");
+
+  // Verify ownership changed
+  ctx.em.clear_cache();
+  const auto* transferred = ctx.em.peek_ship(ship_id);
+  test::expect_ne(transferred, nullptr);
+  test::expect_eq(transferred->owner(), 2);
 
   const auto* planet_verify = ctx.em.peek_planet(star_id, 0);
   test::expect_ne(planet_verify, nullptr);
   test::expect_eq(planet_verify->info(player_t{2}).explored, 1);
 
+  // Verify recipient explored the system
   const auto* star_verify = ctx.em.peek_star(star_id);
   test::expect_ne(star_verify, nullptr);
   test::expect_true(star_verify->is_explored_by(player_t{2}));
   std::println(std::cout, "    ✓ Ship ownership transferred to ally");
 
   // 2. Non-leader governor rejected
-  auto ship2_handle = ctx.em.create_ship();
-  auto& ship2 = *ship2_handle;
-  ship2.owner() = 1;
-  ship2.governor() = 0;
-  ship2.type() = ShipType::OTYPE_PROBE;
-  ship2.alive() = 1;
-  ship2.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship2.storbits() = star_id;
-  ship2.pnumorbits() = 0;
-  const shipnum_t ship2_id = ship2.number();
+  const shipnum_t ship2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                 .owned_by(1, 0)
+                                 .with_alive(true)
+                                 .in_planet_orbit(star_id, 0)
+                                 .build();
 
   g.set_governor(1);
   g.out.str("");
@@ -124,17 +114,12 @@ void test_give_dispatch() {
 
   // 3. Crewed ship cannot be given away
   g.set_governor(0);
-  auto ship3_handle = ctx.em.create_ship();
-  auto& ship3 = *ship3_handle;
-  ship3.owner() = 1;
-  ship3.governor() = 0;
-  ship3.type() = ShipType::OTYPE_PROBE;
-  ship3.alive() = 1;
-  ship3.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship3.storbits() = star_id;
-  ship3.pnumorbits() = 0;
-  ship3.popn() = 10;
-  const shipnum_t ship3_id = ship3.number();
+  const shipnum_t ship3_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                 .owned_by(1, 0)
+                                 .with_alive(true)
+                                 .in_planet_orbit(star_id, 0)
+                                 .with_crew(10, 0)
+                                 .build();
 
   g.out.str("");
   ctx.assert_dispatch_rejected(

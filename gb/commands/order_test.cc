@@ -150,17 +150,12 @@ void test_order_specialty_ships() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   // 1. Missile orders (impact and scatter)
-  ship_struct missile_data{};
-  missile_data.number = 10;
-  missile_data.owner = 1;
-  missile_data.governor = 0;
-  missile_data.alive = true;
-  missile_data.active = true;
-  missile_data.type = ShipType::STYPE_MISSILE;
-  missile_data.name = "Tomahawk";
-  missile_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  auto missile_handle = ctx.em.create_ship(missile_data);
-  const auto missile_id = missile_handle->number();
+  const auto missile_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE, 10)
+                              .owned_by(1)
+                              .named("Tomahawk")
+                              .with_alive(true)
+                              .with_active(true)
+                              .build();
 
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", missile_id.value), "impact", "12,34"});
@@ -178,16 +173,12 @@ void test_order_specialty_ships() {
   test::expect_true(missile->is_scatter());
 
   // 2. Mine orders (trigger radius, explosive, radiative)
-  ship_struct mine_data{};
-  mine_data.number = 20;
-  mine_data.owner = 1;
-  mine_data.governor = 0;
-  mine_data.alive = true;
-  mine_data.active = true;
-  mine_data.type = ShipType::STYPE_MINE;
-  mine_data.name = "ProximityMine";
-  auto mine_handle = ctx.em.create_ship(mine_data);
-  const auto mine_id = mine_handle->number();
+  const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 20)
+                           .owned_by(1)
+                           .named("ProximityMine")
+                           .with_alive(true)
+                           .with_active(true)
+                           .build();
 
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", mine_id.value), "trigger", "15"});
@@ -207,16 +198,12 @@ void test_order_specialty_ships() {
   test::expect_false(mine->is_radiative());
 
   // 3. Transporter orders (target ship)
-  ship_struct trans_data{};
-  trans_data.number = 30;
-  trans_data.owner = 1;
-  trans_data.governor = 0;
-  trans_data.alive = true;
-  trans_data.active = true;
-  trans_data.type = ShipType::OTYPE_TRANSDEV;
-  trans_data.name = "Transporter";
-  auto trans_handle = ctx.em.create_ship(trans_data);
-  const auto trans_id = trans_handle->number();
+  const auto trans_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 30)
+                            .owned_by(1)
+                            .named("Transporter")
+                            .with_alive(true)
+                            .with_active(true)
+                            .build();
 
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", trans_id.value), "transport", "1"});
@@ -226,16 +213,13 @@ void test_order_specialty_ships() {
   test::expect_eq(trans->target_ship(), shipnum_t{1});
 
   // 4. Space Mirror intensity
-  ship_struct mirror_data{};
-  mirror_data.number = 40;
-  mirror_data.owner = 1;
-  mirror_data.governor = 0;
-  mirror_data.alive = true;
-  mirror_data.active = true;
-  mirror_data.type = ShipType::STYPE_MIRROR;
-  mirror_data.name = "Helios";
-  auto mirror_handle = ctx.em.create_ship(mirror_data);
-  const auto mirror_id = mirror_handle->number();
+  const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 40)
+                             .owned_by(1)
+                             .named("Helios")
+                             .with_alive(true)
+                             .with_active(true)
+                             .with_crew(10, 0)
+                             .build();
 
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", mirror_id.value), "intensity", "85"});
@@ -245,16 +229,13 @@ void test_order_specialty_ships() {
   test::expect_eq(mirror->intensity(), 85);
 
   // 5. Terraformer move sequence
-  ship_struct terra_data{};
-  terra_data.number = 50;
-  terra_data.owner = 1;
-  terra_data.governor = 0;
-  terra_data.alive = true;
-  terra_data.active = true;
-  terra_data.type = ShipType::OTYPE_TERRA;
-  terra_data.name = "TerraDev";
-  auto terra_handle = ctx.em.create_ship(terra_data);
-  const auto terra_id = terra_handle->number();
+  const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA, 50)
+                            .owned_by(1)
+                            .named("TerraDev")
+                            .with_alive(true)
+                            .with_active(true)
+                            .with_crew(10, 0)
+                            .build();
 
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", terra_id.value), "move", "1234c"});

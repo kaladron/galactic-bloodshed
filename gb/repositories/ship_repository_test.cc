@@ -407,7 +407,7 @@ int main() {
 
     // 5. EntityManager polymorphic integration and monadic mutation
     EntityManager em(db);
-    em.create_ship(vn_data);
+    em.create_ship(ShipFactory::create(vn_data));
 
     // Mutate as VonNeumannShip
     bool mutated =

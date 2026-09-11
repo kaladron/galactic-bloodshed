@@ -767,16 +767,13 @@ void test_entity_manager_create_ship() {
 
   std::println(std::cout, "Test: EntityManager create_ship");
 
-  ship_struct init_data{};
-  init_data.owner = 1;
-  init_data.governor = 0;
-  init_data.name = "Discovery";
-  init_data.type = ShipType::OTYPE_PROBE;
-  init_data.fuel = 100.0;
-
   shipnum_t new_ship_num;
   {
-    auto new_ship_handle = em.create_ship(init_data);
+    auto new_ship_handle = TestShipBuilder(em, ShipType::OTYPE_PROBE)
+                               .owned_by(1)
+                               .named("Discovery")
+                               .with_fuel(100.0)
+                               .build_handle();
     test::expect_ne(new_ship_handle.get(), nullptr);
     new_ship_num = new_ship_handle->number();
     test::expect_gt(new_ship_num, 0);

@@ -222,46 +222,29 @@ void test_load_transporter() {
   g.set_pnum(0);
 
   // Target receiver transporter ship 2
-  ship_struct trans2_data{};
-  trans2_data.number = 2;
-  trans2_data.owner = 1;
-  trans2_data.governor = 0;
-  trans2_data.alive = true;
-  trans2_data.active = true;
-  trans2_data.on = 1;
-  trans2_data.type = ShipType::OTYPE_TRANSDEV;
-  trans2_data.name = "TransporterReceiver";
-  trans2_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  trans2_data.storbits = starnum_t{0};
-  trans2_data.pnumorbits = planetnum_t{0};
-  trans2_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  trans2_data.land_coords = {5, 5};
-  trans2_data.docked = 1;
-  trans2_data.max_resource = 1000;
-  auto trans2_handle = ctx.em.create_ship(trans2_data);
-  const auto trans2_id = trans2_handle->number();
+  const auto trans2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 2)
+                             .owned_by(1)
+                             .named("TransporterReceiver")
+                             .with_alive(true)
+                             .with_active(true)
+                             .with_on(true)
+                             .landed_on(0, 0, {5, 5})
+                             .with_max_resource(1000)
+                             .build();
 
   // Source transmitter transporter ship 3
-  ship_struct trans1_data{};
-  trans1_data.number = 3;
-  trans1_data.owner = 1;
-  trans1_data.governor = 0;
-  trans1_data.alive = true;
-  trans1_data.active = true;
-  trans1_data.on = 1;
-  trans1_data.type = ShipType::OTYPE_TRANSDEV;
-  trans1_data.name = "TransporterSender";
-  trans1_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  trans1_data.storbits = starnum_t{0};
-  trans1_data.pnumorbits = planetnum_t{0};
-  trans1_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  trans1_data.land_coords = {5, 5};
-  trans1_data.docked = 1;
-  trans1_data.max_resource = 1000;
-  trans1_data.special =
-      TransportData{.target = static_cast<unsigned short>(trans2_id.value)};
-  auto trans1_handle = ctx.em.create_ship(trans1_data);
-  const auto trans1_id = trans1_handle->number();
+  const auto trans1_id =
+      TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 3)
+          .owned_by(1)
+          .named("TransporterSender")
+          .with_alive(true)
+          .with_active(true)
+          .with_on(true)
+          .landed_on(0, 0, {5, 5})
+          .with_max_resource(1000)
+          .with_special(TransportData{
+              .target = static_cast<unsigned short>(trans2_id.value)})
+          .build();
 
   g.out.str("");
   ctx.assert_dispatch_success(

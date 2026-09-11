@@ -201,27 +201,22 @@ void test_orbit_space_mirror_aiming() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  // Setup a space mirror ship at position (100.0, 200.0)
-  ship_struct mirror_data{};
-  mirror_data.number = 10;
-  mirror_data.owner = 1;
-  mirror_data.governor = 0;
-  mirror_data.alive = true;
-  mirror_data.active = true;
-  mirror_data.type = ShipType::STYPE_MIRROR;
-  mirror_data.name = "SolarMirror";
-  mirror_data.whatorbits = ScopeLevel::LEVEL_STAR;
-  mirror_data.storbits = 0;
-  mirror_data.coordinates = UniverseCoordinates{100.0, 200.0};
-  mirror_data.special = AimedAtData{
-      .shipno = shipnum_t{0},
-      .snum = starnum_t{0},
-      .intensity = 5,
-      .pnum = planetnum_t{0},
-      .level = ScopeLevel::LEVEL_PLAN,
-  };
-  auto mirror_handle = ctx.em.create_ship(mirror_data);
-  const auto mirror_id = mirror_handle->number();
+  // Space Mirror direction projection
+  const auto mirror_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 4)
+          .owned_by(1)
+          .named("SolarMirror")
+          .with_alive(true)
+          .with_active(true)
+          .in_star_orbit(0, UniverseCoordinates{100.0, 200.0})
+          .with_aim(AimedAtData{
+              .shipno = shipnum_t{0},
+              .snum = starnum_t{0},
+              .intensity = 5,
+              .pnum = planetnum_t{0},
+              .level = ScopeLevel::LEVEL_PLAN,
+          })
+          .build();
 
   const auto* ship = ctx.em.peek_ship(mirror_id);
   test::expect_ne(ship, nullptr);

@@ -302,9 +302,13 @@ TestShipBuilder& TestShipBuilder::with_pod(unsigned char temp,
   return *this;
 }
 
+EntityHandle<Ship> TestShipBuilder::build_handle() {
+  auto ship_obj = ShipFactory::create(std::move(ship_));
+  return em_.create_ship(std::move(ship_obj));
+}
+
 shipnum_t TestShipBuilder::build() {
-  auto handle = em_.create_ship(ship_);
-  return handle->number();
+  return build_handle()->number();
 }
 
 TestWorldBuilder::TestWorldBuilder(TestContext& ctx) : store_(ctx.db) {}

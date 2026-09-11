@@ -123,25 +123,16 @@ void test_launch_canister_ships() {
   g.set_pnum(0);
 
   // Create test canister ship landed on planet with initial count 5
-  ship_struct canist_data{};
-  canist_data.number = 2;
-  canist_data.owner = 1;
-  canist_data.governor = 0;
-  canist_data.alive = true;
-  canist_data.active = true;
-  canist_data.type = ShipType::OTYPE_CANIST;
-  canist_data.name = "DustCanister";
-  canist_data.max_speed = 1;
-  canist_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  canist_data.storbits = starnum_t{0};
-  canist_data.pnumorbits = planetnum_t{0};
-  canist_data.whatdest = ScopeLevel::LEVEL_PLAN;
-  canist_data.land_coords = {5, 5};
-  canist_data.docked = 1;
-  canist_data.fuel = 1000.0;
-  canist_data.special = TimerData{.count = 5};
-  auto canist_handle = ctx.em.create_ship(canist_data);
-  const auto canist_id = canist_handle->number();
+  const auto canist_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+                             .owned_by(1)
+                             .named("DustCanister")
+                             .with_alive(true)
+                             .with_active(true)
+                             .with_max_speed(1)
+                             .landed_on(0, 0, {5, 5})
+                             .with_fuel(1000.0)
+                             .with_special(TimerData{.count = 5})
+                             .build();
 
   ctx.assert_dispatch_success(
       g, {"launch", std::format("#{}", canist_id.value)}, 1);

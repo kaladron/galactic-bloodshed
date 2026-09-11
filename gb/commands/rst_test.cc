@@ -184,18 +184,15 @@ void test_rst_dispatch() {
   std::println(std::cout, "    ✓ report rejected non-existent ship");
 
   // 11. Spore Pod temperature suffix
-  ship_struct s_pod{};
-  s_pod.number = 3;
-  s_pod.owner = 1;
-  s_pod.type = ShipType::STYPE_POD;
-  s_pod.name = "PodAlpha";
-  s_pod.alive = 1;
-  s_pod.active = 1;
-  s_pod.whatorbits = ScopeLevel::LEVEL_STAR;
-  s_pod.storbits = 0;
-  s_pod.size = 10;
-  s_pod.special = PodData{.temperature = 88};
-  auto pod_handle = ctx.em.create_ship(s_pod);
+  TestShipBuilder(ctx.em, ShipType::STYPE_POD, 3)
+      .owned_by(1)
+      .named("PodAlpha")
+      .with_alive(true)
+      .with_active(true)
+      .in_star_orbit(0)
+      .with_size(10)
+      .with_pod(88)
+      .build();
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stats", "#3"});

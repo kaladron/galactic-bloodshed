@@ -226,10 +226,6 @@ EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
           }};
 }
 
-EntityHandle<Ship> EntityManager::create_ship(const ship_struct& init_data) {
-  return create_ship(ShipFactory::create(init_data));
-}
-
 EntityHandle<Ship> EntityManager::create_ship(ShipType type, player_t owner) {
   return create_ship(ShipFactory::create_from_template(type, owner));
 }

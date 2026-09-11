@@ -70,21 +70,16 @@ void test_moveship_onplanet() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
 
-  ship_struct sdata{
-      .owner = player_t{1},
-      .land_coords = {5, 5},
-      .special = TerraformData{.index = 0},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_TERRA,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
+                         .owned_by(1)
+                         .landed_on(star.star_id(), 0, {5, 5})
+                         .with_special(TerraformData{.index = 0})
+                         .with_alive(true)
+                         .with_active(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
   ship.shipclass() = "2222";
 
@@ -105,16 +100,13 @@ void test_moveship_onplanet() {
   test::expect_eq(ship.shipclass()[0], '2');
 
   // Test non-terraform ship error
-  ship_struct non_terra_data{
-      .owner = player_t{1},
-      .land_coords = {5, 5},
-      .special = WasteData{},
-      .type = ShipType::OTYPE_CANIST,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-  };
-  auto non_terra_handle = em.create_ship(non_terra_data);
+  auto non_terra_handle = TestShipBuilder(em, ShipType::OTYPE_CANIST)
+                              .owned_by(1)
+                              .landed_on(star.star_id(), 0, {5, 5})
+                              .with_special(WasteData{})
+                              .with_alive(true)
+                              .with_active(true)
+                              .build_handle();
   Ship& non_terra = *non_terra_handle;
   auto non_terra_order = get_ground_order(non_terra, 0);
   test::expect_false(non_terra_order.has_value());
@@ -127,16 +119,13 @@ void test_moveship_onplanet() {
   test::expect_eq(non_terra.on(), 0);
 
   // Test stopped ground ship ('s')
-  ship_struct stopped_data{
-      .owner = player_t{1},
-      .land_coords = {5, 5},
-      .special = TerraformData{.index = 0},
-      .type = ShipType::OTYPE_TERRA,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-  };
-  auto stopped_handle = em.create_ship(stopped_data);
+  auto stopped_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
+                            .owned_by(1)
+                            .landed_on(star.star_id(), 0, {5, 5})
+                            .with_special(TerraformData{.index = 0})
+                            .with_alive(true)
+                            .with_active(true)
+                            .build_handle();
   Ship& stopped_ship = *stopped_handle;
   stopped_ship.shipclass() = "s";
   stopped_ship.on() = 1;
@@ -149,19 +138,13 @@ void test_moveship_onplanet() {
   test::expect_eq(stopped_ship.on(), 0);
 
   // Test polar bouncing at south pole (y >= Maxy -> bounce y -= 2, flip order)
-  ship_struct bounce_data{
-      .owner = player_t{1},
-      .land_coords = {5, 9},
-      .special = TerraformData{.index = 0},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_TERRA,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-  };
-  auto bounce_handle = em.create_ship(bounce_data);
+  auto bounce_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
+                           .owned_by(1)
+                           .landed_on(star.star_id(), 0, {5, 9})
+                           .with_special(TerraformData{.index = 0})
+                           .with_alive(true)
+                           .with_active(true)
+                           .build_handle();
   Ship& bounce_ship = *bounce_handle;
   bounce_ship.shipclass() = "2";  // Single move south from y=9 on 10-high
                                   // planet -> y=10 >= 10 -> bounce to 8
@@ -171,19 +154,13 @@ void test_moveship_onplanet() {
   test::expect_eq(bounce_ship.shipclass()[0], '8');  // '2' flipped to '8'
 
   // Test out-of-orders notification on multi-step orders
-  ship_struct ooo_data{
-      .owner = player_t{1},
-      .land_coords = {5, 5},
-      .special = TerraformData{.index = 0},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_TERRA,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-  };
-  auto ooo_handle = em.create_ship(ooo_data);
+  auto ooo_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
+                        .owned_by(1)
+                        .landed_on(star.star_id(), 0, {5, 5})
+                        .with_special(TerraformData{.index = 0})
+                        .with_alive(true)
+                        .with_active(true)
+                        .build_handle();
   Ship& ooo_ship = *ooo_handle;
   ooo_ship.shipclass() = "88";
   test::expect_eq(ooo_ship.notified(), 0);
@@ -191,19 +168,13 @@ void test_moveship_onplanet() {
   test::expect_true(ooo_move.has_value());
   // Test polar bouncing at north pole (y < 0 -> bounce y = 1, flip order '8' ->
   // '2')
-  ship_struct north_bounce_data{
-      .owner = player_t{1},
-      .land_coords = {5, 0},
-      .special = TerraformData{.index = 0},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_TERRA,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-  };
-  auto nb_handle = em.create_ship(north_bounce_data);
+  auto nb_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
+                       .owned_by(1)
+                       .landed_on(star.star_id(), 0, {5, 0})
+                       .with_special(TerraformData{.index = 0})
+                       .with_alive(true)
+                       .with_active(true)
+                       .build_handle();
   Ship& nb_ship = *nb_handle;
   nb_ship.shipclass() = "8";
   auto nb_move = advance_ground_vehicle(nb_ship, planet, em);
@@ -212,19 +183,13 @@ void test_moveship_onplanet() {
   test::expect_eq(nb_ship.shipclass()[0], '2');
 
   // Test cycling order ('c') resetting index
-  ship_struct cycle_data{
-      .owner = player_t{1},
-      .land_coords = {5, 5},
-      .special = TerraformData{.index = 1},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_TERRA,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-  };
-  auto cycle_handle = em.create_ship(cycle_data);
+  auto cycle_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
+                          .owned_by(1)
+                          .landed_on(star.star_id(), 0, {5, 5})
+                          .with_special(TerraformData{.index = 1})
+                          .with_alive(true)
+                          .with_active(true)
+                          .build_handle();
   Ship& cycle_ship = *cycle_handle;
   cycle_ship.shipclass() = "2c";
   auto cycle_move = advance_ground_vehicle(cycle_ship, planet, em);
@@ -234,16 +199,13 @@ void test_moveship_onplanet() {
   test::expect_eq(terra_cycle->index(), 1);
 
   // Test cycling orders with empty cycle ("c") turning off ship
-  ship_struct empty_cycle_data{
-      .owner = player_t{1},
-      .land_coords = {5, 5},
-      .special = TerraformData{.index = 0},
-      .type = ShipType::OTYPE_TERRA,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-  };
-  auto empty_cycle_handle = em.create_ship(empty_cycle_data);
+  auto empty_cycle_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
+                                .owned_by(1)
+                                .landed_on(star.star_id(), 0, {5, 5})
+                                .with_special(TerraformData{.index = 0})
+                                .with_alive(true)
+                                .with_active(true)
+                                .build_handle();
   Ship& ec_ship = *empty_cycle_handle;
   ec_ship.shipclass() = "c";
   ec_ship.on() = 1;
@@ -378,25 +340,18 @@ void test_execute_terraforming() {
   Planet planet = createTestPlanet();
   SectorMap smap(planet);
 
-  ship_struct sdata{
-      .owner = player_t{1},
-      .fuel = 100.0,
-      .land_coords = {2, 2},
-      .max_crew = 100,
-      .popn = 100,
-      .special = TerraformData{.index = 0},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_TERRA,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
+                         .owned_by(1)
+                         .with_fuel(100.0)
+                         .landed_on(star.star_id(), 0, {2, 2})
+                         .targeting_planet(star.star_id(), 0)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_special(TerraformData{.index = 0})
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
   ship.shipclass() = "2222";  // Moves south: (2, 2) -> (2, 3)
 
@@ -463,26 +418,19 @@ void test_execute_plowing() {
   Planet planet = createTestPlanet();
   SectorMap smap(planet);
 
-  ship_struct sdata{
-      .owner = player_t{1},
-      .fuel = 50.0,
-      .land_coords = {1, 1},
-      .max_crew = 100,
-      .max_fuel = 100.0,
-      .popn = 100,
-      .special = TerraformData{.index = 0},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_PLOW,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_PLOW)
+                         .owned_by(1)
+                         .with_fuel(50.0)
+                         .with_max_fuel(100.0)
+                         .landed_on(star.star_id(), 0, {1, 1})
+                         .targeting_planet(star.star_id(), 0)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_special(TerraformData{.index = 0})
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
   ship.shipclass() = "2222";  // Moves south: (1, 1) -> (1, 2)
 
@@ -579,27 +527,19 @@ void test_process_plow_turn() {
   smap.get(Coordinates{1, 2}).set_condition(SectorType::SEC_LAND);
   smap.get(Coordinates{1, 2}).set_fert(40);
 
-  ship_struct sdata{
-      .number = 12,
-      .owner = player_t{1},
-      .fuel = 50.0,
-      .land_coords = {1, 1},
-      .max_crew = 100,
-      .max_fuel = 100,
-      .popn = 100,
-      .special = TerraformData{.index = 0},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_PLOW,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_PLOW, 12)
+                         .owned_by(1)
+                         .with_fuel(50.0)
+                         .with_max_fuel(100.0)
+                         .landed_on(star.star_id(), 0, {1, 1})
+                         .targeting_planet(star.star_id(), 0)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_special(TerraformData{.index = 0})
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
   ship.shipclass() = "2222";  // Moves south: (1, 1) -> (1, 2)
 
@@ -639,21 +579,17 @@ void test_upgrade_sector_dome() {
   Planet planet = createTestPlanet();
   SectorMap smap(planet);
 
-  ship_struct sdata{
-      .owner = player_t{1},
-      .land_coords = {2, 2},
-      .max_crew = 100,
-      .resource = 50,
-      .popn = 100,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_DOME,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_DOME)
+                         .owned_by(1)
+                         .landed_on(0, 0, {2, 2})
+                         .targeting_planet(0, 0)
+                         .with_resource(50)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
 
   // 1. Sector already optimal (100% efficiency)
@@ -722,23 +658,18 @@ void test_process_dome_turn() {
   SectorMap smap(planet);
   smap.get(Coordinates{2, 2}).set_efficiency_bounded(30);
 
-  ship_struct sdata{
-      .number = 7,
-      .owner = player_t{1},
-      .land_coords = {2, 2},
-      .max_crew = 100,
-      .max_resource = 100,
-      .resource = 50,
-      .popn = 100,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_DOME,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_DOME, 7)
+                         .owned_by(1)
+                         .landed_on(0, 0, {2, 2})
+                         .targeting_planet(0, 0)
+                         .with_resource(50)
+                         .with_max_resource(100)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
 
   // 1. Successful dome turn
@@ -783,25 +714,25 @@ void test_strip_mine_quarry() {
   RaceRepository races(store);
   races.save(race);
 
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
   Planet planet = createTestPlanet();
   SectorMap smap(planet);
 
-  ship_struct sdata{
-      .owner = player_t{1},
-      .fuel = 50.0,
-      .land_coords = {3, 3},
-      .max_crew = 100,
-      .max_fuel = 100.0,
-      .popn = 100,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_QUARRY,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_QUARRY)
+                         .owned_by(1)
+                         .with_fuel(50.0)
+                         .with_max_fuel(100.0)
+                         .landed_on(0, 0, {3, 3})
+                         .targeting_planet(0, 0)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
 
   smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
@@ -872,24 +803,18 @@ void test_process_quarry_turn() {
   smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
   smap.get(Coordinates{3, 3}).set_fert(50);
 
-  ship_struct sdata{
-      .number = 42,
-      .owner = player_t{1},
-      .fuel = 50.0,
-      .land_coords = {3, 3},
-      .max_crew = 100,
-      .max_fuel = 100,
-      .popn = 100,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_QUARRY,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_QUARRY, 42)
+                         .owned_by(1)
+                         .with_fuel(50.0)
+                         .with_max_fuel(100.0)
+                         .landed_on(0, 0, {3, 3})
+                         .targeting_planet(0, 0)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
   TurnStats stats;
 
@@ -936,24 +861,20 @@ void test_process_weapon_plant_turn() {
   RaceRepository races(store);
   races.save(race);
 
-  ship_struct sdata{
-      .number = 99,
-      .owner = player_t{1},
-      .fuel = 50.0,
-      .max_crew = 100,
-      .max_resource = 100,
-      .max_fuel = 100,
-      .resource = 50,
-      .popn = 100,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_WPLANT,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_WPLANT, 99)
+                         .owned_by(1)
+                         .with_fuel(50.0)
+                         .with_max_fuel(100.0)
+                         .landed_on(0, 0, {0, 0})
+                         .targeting_planet(0, 0)
+                         .with_resource(50)
+                         .with_max_resource(100)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
   Ship& ship = *ship_handle;
   TurnStats stats;
 
@@ -1034,28 +955,22 @@ void test_execute_berserker_bombardment() {
   }
 
   // Berserker ship in orbit
-  ship_struct b_ship{
-      .owner = player_t{1},
-      .destruct = 100,
-      .special = MindData{.progenitor = player_t{1}, .who_killed = player_t{2}},
-      .storbits = 0,
-      .deststar = 0,
-      .destpnum = 0,
-      .pnumorbits = 0,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_BERS,
-      .active = true,
-      .alive = true,
-      .bombard = true,
-      .docked = false,
-      .on = true,
-      .guns = ActiveBattery::PRIMARY,
-      .primary_battery = GunBattery::create(10, guntype_t::HEAVY),
-  };
-
-  auto ship_handle = em.create_ship(b_ship);
+  auto ship_handle =
+      TestShipBuilder(em, ShipType::OTYPE_BERS)
+          .owned_by(1)
+          .with_destruct(100)
+          .with_special(
+              MindData{.progenitor = player_t{1}, .who_killed = player_t{2}})
+          .in_planet_orbit(0, 0)
+          .targeting_planet(0, 0)
+          .with_active(true)
+          .with_alive(true)
+          .with_on(true)
+          .with_guns(guntype_t::HEAVY, 10, ActiveBattery::PRIMARY)
+          .build_handle();
   Ship& ship = *ship_handle;
+  ship.bombard() = true;
+  ship.docked() = false;
 
   // 1. Landed ship fails preconditions
   ship.docked() = true;
@@ -1087,21 +1002,18 @@ void test_refuel_gasgiant_orbiters() {
   Planet gas_giant(PlanetType::GASGIANT, Coordinates{0, 0});
   Planet earth(PlanetType::EARTH, Coordinates{0, 0});
 
-  ship_struct sdata{
-      .owner = player_t{1},
-      .fuel = 50.0,
-      .max_fuel = 500,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_TANKER,
-      .active = 1,
-      .alive = 1,
-      .docked = 0,
-      .on = 1,
-  };
-
-  auto ship_handle = em.create_ship(sdata);
-  Ship& ship = *ship_handle;
+  auto tanker_handle = TestShipBuilder(em, ShipType::STYPE_TANKER)
+                           .owned_by(1)
+                           .with_fuel(50.0)
+                           .with_max_fuel(500.0)
+                           .in_planet_orbit(0, 0)
+                           .targeting_planet(0, 0)
+                           .with_active(true)
+                           .with_alive(true)
+                           .with_on(true)
+                           .build_handle();
+  Ship& ship = *tanker_handle;
+  ship.docked() = 0;
 
   // 1. Not a gas giant: 0 fuel added
   test::expect_eq(refuel_gasgiant_orbiters(earth, ship), 0.0);
@@ -1170,56 +1082,43 @@ void test_process_planetary_ships() {
   TurnStats stats{};
 
   // 1. Dead plow ship (should be skipped)
-  ship_struct dead_plow{
-      .owner = player_t{1},
-      .land_coords = {0, 0},
-      .type = ShipType::OTYPE_PLOW,
-      .active = 1,
-      .alive = 0,
-      .docked = 1,
-      .on = 1,
-  };
-  em.create_ship(dead_plow);
+  TestShipBuilder(em, ShipType::OTYPE_PLOW)
+      .owned_by(1)
+      .landed_on(star.star_id(), 0, {0, 0})
+      .with_active(true)
+      .with_alive(false)
+      .with_on(true)
+      .build_handle();
 
   // 2. Active Landed Plow on (1, 1) moving South to (1, 2)
-  ship_struct active_plow{
-      .owner = player_t{1},
-      .shipclass = "2222",
-      .fuel = 50.0,
-      .land_coords = {1, 1},
-      .max_crew = 100,
-      .max_fuel = 100,
-      .popn = 100,
-      .special = TerraformData{.index = 0},
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::OTYPE_PLOW,
-      .active = 1,
-      .alive = 1,
-      .docked = 1,
-      .on = 1,
-  };
-  auto plow_handle = em.create_ship(active_plow);
+  auto plow_handle = TestShipBuilder(em, ShipType::OTYPE_PLOW)
+                         .owned_by(1)
+                         .with_fuel(50.0)
+                         .with_max_fuel(100.0)
+                         .landed_on(star.star_id(), 0, {1, 1})
+                         .targeting_planet(star.star_id(), 0)
+                         .with_crew(100, 0)
+                         .with_max_crew(100)
+                         .with_special(TerraformData{.index = 0})
+                         .with_alive(true)
+                         .with_active(true)
+                         .with_on(true)
+                         .build_handle();
+  plow_handle->shipclass() = "2222";
 
   // 3. Orbiting Tanker (should receive gas giant fuel)
-  ship_struct tanker{
-      .owner = player_t{1},
-      .fuel = 50.0,
-      .nextship = plow_handle->number(),
-      .max_fuel = 500,
-      .storbits = star.star_id(),
-      .pnumorbits = 0,
-      .whatdest = ScopeLevel::LEVEL_PLAN,
-      .whatorbits = ScopeLevel::LEVEL_PLAN,
-      .type = ShipType::STYPE_TANKER,
-      .active = 1,
-      .alive = 1,
-      .docked = 0,
-      .on = 1,
-  };
-  auto tanker_handle = em.create_ship(tanker);
+  auto tanker_handle = TestShipBuilder(em, ShipType::STYPE_TANKER)
+                           .owned_by(1)
+                           .with_fuel(50.0)
+                           .with_max_fuel(500.0)
+                           .in_planet_orbit(star.star_id(), 0)
+                           .targeting_planet(star.star_id(), 0)
+                           .with_nextship(plow_handle->number())
+                           .with_alive(true)
+                           .with_active(true)
+                           .with_on(true)
+                           .build_handle();
+  tanker_handle->docked() = 0;
 
   // Link ships head to planet
   planet.ships() = tanker_handle->number();

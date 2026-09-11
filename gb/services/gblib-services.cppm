@@ -379,7 +379,6 @@ public:
   }
 
   // Create new entities
-  EntityHandle<Ship> create_ship(const ship_struct& data = {});
   EntityHandle<Ship> create_ship(std::unique_ptr<Ship> ship);
   EntityHandle<Ship> create_ship(ShipType type, player_t owner = 1);
   void delete_ship(shipnum_t num);

@@ -72,8 +72,12 @@ TestShipBuilder::in_star_orbit(starnum_t snum,
   if (coords) {
     ship_.coordinates = *coords;
   } else {
-    const auto* star = em_.peek_star(snum);
-    ship_.coordinates = star->coordinates();
+    try {
+      const auto* star = em_.peek_star(snum);
+      ship_.coordinates = star->coordinates();
+    } catch (const EntityNotFoundError&) {
+      // Star not present in EntityManager (isolated unit tests)
+    }
   }
   return *this;
 }
@@ -83,8 +87,12 @@ TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum,
   ship_.whatorbits = ScopeLevel::LEVEL_STAR;
   ship_.storbits = snum;
   ship_.docked = 0;
-  const auto* star = em_.peek_star(snum);
-  ship_.coordinates = star->coordinates() + coords;
+  try {
+    const auto* star = em_.peek_star(snum);
+    ship_.coordinates = star->coordinates() + coords;
+  } catch (const EntityNotFoundError&) {
+    // Star not present in EntityManager (isolated unit tests)
+  }
   return *this;
 }
 
@@ -103,9 +111,13 @@ TestShipBuilder::in_planet_orbit(starnum_t snum, planetnum_t pnum,
   if (coords) {
     ship_.coordinates = *coords;
   } else {
-    const auto* star = em_.peek_star(snum);
-    const auto* planet = em_.peek_planet(snum, pnum);
-    ship_.coordinates = planet->absolute_coordinates(*star);
+    try {
+      const auto* star = em_.peek_star(snum);
+      const auto* planet = em_.peek_planet(snum, pnum);
+      ship_.coordinates = planet->absolute_coordinates(*star);
+    } catch (const EntityNotFoundError&) {
+      // Star or planet not present in EntityManager (isolated unit tests)
+    }
   }
   return *this;
 }
@@ -117,8 +129,12 @@ TestShipBuilder& TestShipBuilder::in_planet_orbit(starnum_t snum,
   ship_.storbits = snum;
   ship_.pnumorbits = pnum;
   ship_.docked = 0;
-  const auto* star = em_.peek_star(snum);
-  ship_.coordinates = star->coordinates() + coords;
+  try {
+    const auto* star = em_.peek_star(snum);
+    ship_.coordinates = star->coordinates() + coords;
+  } catch (const EntityNotFoundError&) {
+    // Star not present in EntityManager (isolated unit tests)
+  }
   return *this;
 }
 
@@ -130,9 +146,13 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
   ship_.pnumorbits = pnum;
   ship_.docked = 1;
   ship_.land_coords = coords;
-  const auto* star = em_.peek_star(snum);
-  const auto* planet = em_.peek_planet(snum, pnum);
-  ship_.coordinates = planet->absolute_coordinates(*star);
+  try {
+    const auto* star = em_.peek_star(snum);
+    const auto* planet = em_.peek_planet(snum, pnum);
+    ship_.coordinates = planet->absolute_coordinates(*star);
+  } catch (const EntityNotFoundError&) {
+    // Star or planet not present in EntityManager (isolated unit tests)
+  }
   return *this;
 }
 

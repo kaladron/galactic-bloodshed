@@ -1007,7 +1007,7 @@ void test_deletion_barrier() {
   // 5. Active handle at drain time throws EntityInUseError
   shipnum_t handle_ship_id;
   {
-    auto new_ship = em.create_ship();
+    auto new_ship = em.create_ship(ShipType::STYPE_SHUTTLE);
     handle_ship_id = new_ship->number();
   }
   em.mutate_ship(handle_ship_id, [&](Ship&) {
@@ -1025,15 +1025,15 @@ void test_deletion_barrier() {
   // 6. Safe inline deletion during ShipList iteration
   shipnum_t s1, s2, s3;
   {
-    auto ship1 = em.create_ship();
+    auto ship1 = em.create_ship(ShipType::STYPE_SHUTTLE);
     s1 = ship1->number();
     ship1->alive() = true;
 
-    auto ship2 = em.create_ship();
+    auto ship2 = em.create_ship(ShipType::STYPE_SHUTTLE);
     s2 = ship2->number();
     ship2->alive() = false;
 
-    auto ship3 = em.create_ship();
+    auto ship3 = em.create_ship(ShipType::STYPE_SHUTTLE);
     s3 = ship3->number();
     ship3->alive() = true;
   }

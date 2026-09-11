@@ -118,20 +118,15 @@ int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
   return 0;
 }
 
-void do_pod(Ship& ship, EntityManager& entity_manager) {
-  auto* pod = ship.as<SporePodShip>();
-  if (!pod) {
-    return;
-  }
-
+void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
   switch (ship.whatorbits()) {
     case ScopeLevel::LEVEL_STAR: {
       const auto& star = *entity_manager.peek_star(ship.storbits());
 
-      if (pod->temperature() < POD_THRESHOLD) {
+      if (ship.temperature() < POD_THRESHOLD) {
         const auto& state = *entity_manager.peek_server_state();
-        pod->set_temperature(
-            pod->temperature() +
+        ship.set_temperature(
+            ship.temperature() +
             round_rand((double)star.temperature() / (double)state.segments));
         return;
       }
@@ -153,9 +148,9 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
     }
 
     case ScopeLevel::LEVEL_PLAN: {
-      if (pod->decay() < POD_DECAY) {
+      if (ship.decay() < POD_DECAY) {
         const auto& state = *entity_manager.peek_server_state();
-        pod->set_decay(pod->decay() + round_rand(1.0 / (double)state.segments));
+        ship.set_decay(ship.decay() + round_rand(1.0 / (double)state.segments));
         return;
       }
 
@@ -173,20 +168,16 @@ void do_pod(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
-void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
+void do_canister(CanisterShip& ship, EntityManager& entity_manager,
+                 TurnStats& stats) {
   if (ship.type() != ShipType::OTYPE_CANIST ||
       ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
       !ship.alive()) {
     return;
   }
 
-  auto* canist = ship.as<CanisterShip>();
-  if (!canist) {
-    return;
-  }
-
-  canist->set_count(canist->count() + 1);
-  if (canist->count() < DISSIPATE) {
+  ship.set_count(ship.count() + 1);
+  if (ship.count() < DISSIPATE) {
     stats.set_temp_add(
         ship.storbits(), ship.pnumorbits(),
         std::max(-100,
@@ -209,20 +200,16 @@ void do_canister(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
   }
 }
 
-void do_greenhouse(Ship& ship, EntityManager& entity_manager,
+void do_greenhouse(CanisterShip& ship, EntityManager& entity_manager,
                    TurnStats& stats) {
   if (ship.type() != ShipType::OTYPE_GREEN ||
       ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
       !ship.alive()) {
     return;
   }
-  auto* canist = ship.as<CanisterShip>();
-  if (!canist) {
-    return;
-  }
 
-  canist->set_count(canist->count() + 1);
-  if (canist->count() < DISSIPATE) {
+  ship.set_count(ship.count() + 1);
+  if (ship.count() < DISSIPATE) {
     stats.set_temp_add(
         ship.storbits(), ship.pnumorbits(),
         std::min(100, stats.temp_add(ship.storbits(), ship.pnumorbits()) + 10));
@@ -243,16 +230,12 @@ void do_greenhouse(Ship& ship, EntityManager& entity_manager,
   }
 }
 
-void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
-  auto* mirror = ship.as<SpaceMirrorShip>();
-  if (!mirror) {
-    return;
-  }
-
-  switch (mirror->aimed_level()) {
+void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
+               TurnStats& stats) {
+  switch (ship.aimed_level()) {
     case ScopeLevel::LEVEL_SHIP: { /* ship aimed at is a legal ship now */
       /* if in the same system */
-      entity_manager.mutate_ship(mirror->aimed_ship(), [&](Ship& target) {
+      entity_manager.mutate_ship(ship.aimed_ship(), [&](Ship& target) {
         if ((ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
              ship.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
             (target.whatorbits() == ScopeLevel::LEVEL_STAR ||
@@ -261,7 +244,7 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
           double range = ship.coordinates().distance_to(target.coordinates());
           const auto body = std::max<ship_size_t>(1, target.shipbody());
           auto max_dmg = round_rand((2.0 / static_cast<double>(body)) *
-                                    static_cast<double>(mirror->intensity()) /
+                                    static_cast<double>(ship.intensity()) /
                                     (range / PLORBITSIZE + 1.0));
           auto i = int_rand(0, max_dmg);
           std::stringstream telegram_buf;
@@ -289,24 +272,24 @@ void do_mirror(Ship& ship, EntityManager& entity_manager, TurnStats& stats) {
       }
       const auto& star = *entity_manager.peek_star(ship.storbits());
       const auto& planet =
-          *entity_manager.peek_planet(ship.storbits(), mirror->aimed_planet());
+          *entity_manager.peek_planet(ship.storbits(), ship.aimed_planet());
 
       double range =
           ship.coordinates().distance_to(planet.absolute_coordinates(star));
 
       int i = range > PLORBITSIZE
-                  ? static_cast<int>(PLORBITSIZE * mirror->intensity() / range)
-                  : mirror->intensity();
+                  ? static_cast<int>(PLORBITSIZE * ship.intensity() / range)
+                  : ship.intensity();
 
       i = round_rand(ship.hull_efficiency() * static_cast<double>(i));
-      stats.add_temp(ship.storbits(), mirror->aimed_planet(), i);
+      stats.add_temp(ship.storbits(), ship.aimed_planet(), i);
       break;
     }
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
          it's not too fair.. */
       if (ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
-          mirror->aimed_star() == ship.storbits()) {
+          ship.aimed_star() == ship.storbits()) {
         entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
           star.stability() += static_cast<unsigned char>(int_rand(0, 1));
         });
@@ -515,13 +498,19 @@ void dispatch_ship_subsystems(Ship& ship, bool update,
   if (update) {
     switch (ship.type()) { /* do this stuff during updates only*/
       case ShipType::OTYPE_CANIST:
-        do_canister(ship, entity_manager, stats);
+        if (auto* canist = ship.as<CanisterShip>()) {
+          do_canister(*canist, entity_manager, stats);
+        }
         break;
       case ShipType::OTYPE_GREEN:
-        do_greenhouse(ship, entity_manager, stats);
+        if (auto* canist = ship.as<CanisterShip>()) {
+          do_greenhouse(*canist, entity_manager, stats);
+        }
         break;
       case ShipType::STYPE_MIRROR:
-        do_mirror(ship, entity_manager, stats);
+        if (auto* mirror = ship.as<SpaceMirrorShip>()) {
+          do_mirror(*mirror, entity_manager, stats);
+        }
         break;
       case ShipType::STYPE_GOD:
         do_god(ship, entity_manager);
@@ -550,7 +539,9 @@ void dispatch_ship_subsystems(Ship& ship, bool update,
     }
   }
   if (ship.type() == ShipType::STYPE_POD) {
-    do_pod(ship, entity_manager);
+    if (auto* pod = ship.as<SporePodShip>()) {
+      do_pod(*pod, entity_manager);
+    }
   }
 }
 

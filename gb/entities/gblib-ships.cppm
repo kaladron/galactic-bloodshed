@@ -149,53 +149,152 @@ export struct DamageResult {
 export inline constexpr ActiveBattery PRIMARY = ActiveBattery::PRIMARY;
 export inline constexpr ActiveBattery SECONDARY = ActiveBattery::SECONDARY;
 
+/// \brief Operational and structural ship type classifications.
+///
+/// Prefix conventions:
+/// - `STYPE_*`: Mobile spacefaring vessels, orbital stations, and tactical
+/// craft.
+/// - `OTYPE_*`: Planetary installations, ground structures, specialized orbital
+/// devices, and terraforming machinery.
 export enum ShipType : int {
+  /// \brief Biological spore pod ('p') launched to seed meta-colonies across
+  /// star systems.
   STYPE_POD,
+  /// \brief Light sublight personnel transport and planetary shuttle ('s').
   STYPE_SHUTTLE,
+  /// \brief Heavy fleet capital carrier ('X') equipped with massive hangar bays
+  /// for carried craft.
   STYPE_CARRIER,
+  /// \brief Super-heavy dreadnaught battleship ('D') featuring heavy armor and
+  /// dual gun batteries.
   STYPE_DREADNT,
+  /// \brief Front-line capital battleship ('B') designed for sustained orbital
+  /// and deep-space combat.
   STYPE_BATTLE,
+  /// \brief Fast high-acceleration interceptor ('I') optimized for patrol and
+  /// dogfighting.
   STYPE_INTCPT,
+  /// \brief Medium multi-role combat cruiser ('C') balancing firepower, armor,
+  /// and range.
   STYPE_CRUISER,
+  /// \brief Fleet escort destroyer ('d') specialized for anti-fighter and
+  /// screening operations.
   STYPE_DESTROYER,
+  /// \brief Parasite fighter group ('f') carried in hangars for short-range
+  /// combat sorties.
   STYPE_FIGHTER,
+  /// \brief Long-range sensor explorer ('e') built for stellar reconnaissance
+  /// and mapping.
   STYPE_EXPLORER,
+  /// \brief Massive self-contained orbital habitat ('H') housing civilian
+  /// population and nested factories.
   STYPE_HABITAT,
+  /// \brief Heavy orbital space station ('S') serving as a military redoubt or
+  /// logistical hub.
   STYPE_STATION,
+  /// \brief Orbital Assault Platform ('O') providing orbital bombardment and
+  /// surface intimidation.
   STYPE_OAP,
+  /// \brief Heavy cargo transport ('c') built for bulk commodity and resource
+  /// hauling.
   STYPE_CARGO,
+  /// \brief Specialized liquid fuel transport ('t') supplying operational
+  /// fleets.
   STYPE_TANKER,
+  /// \brief Invulnerable deity administration vessel ('!') with infinite fuel
+  /// and ordnance recharge.
   STYPE_GOD,
+  /// \brief Autonomous proximity space mine ('+') detonating when hostile
+  /// vessels enter detection radius.
   STYPE_MINE,
+  /// \brief Orbital space mirror ('M') focusing stellar radiation to warm
+  /// planets or scorch targets.
   STYPE_MIRROR,
+  /// \brief Orbital space telescope ('=') providing long-range stellar
+  /// surveillance.
   OTYPE_STELE,
+  /// \brief Surface-based ground telescope ('\') providing deep-space tracking
+  /// from planetary soil.
   OTYPE_GTELE,
+  /// \brief Orbital tractor-repulsor beam projector ('-') manipulating local
+  /// ship vectors.
   OTYPE_TRACT,
+  /// \brief Atmospheric processor ('a') actively terraforming atmospheric
+  /// composition over time.
   OTYPE_AP,
+  /// \brief Atmospheric dust canister ('g') cooling planetary climates through
+  /// aerosol dispersal.
   OTYPE_CANIST,
+  /// \brief Greenhouse gas canister ('h') warming planetary climates through
+  /// thermal trapping.
   OTYPE_GREEN,
+  /// \brief Self-replicating Von Neumann machine ('v') harvesting resources to
+  /// build planetary copies.
   OTYPE_VN,
+  /// \brief Rogue autonomous Berserker war machine ('V') hunting and destroying
+  /// alien life.
   OTYPE_BERS,
+  /// \brief Planetary Government Center ('@') anchoring planetary
+  /// administration and sector taxation.
   OTYPE_GOV,
+  /// \brief Orbital Mind Control Laser ('l') projecting pacification beams onto
+  /// rebellious populations.
   OTYPE_OMCL,
+  /// \brief Hazardous toxic waste canister ('w') dumping nuclear and chemical
+  /// slag onto planet surfaces.
   OTYPE_TOXWC,
+  /// \brief Unmanned automated space probe (':') for expendable planetary and
+  /// system reconnaissance.
   OTYPE_PROBE,
+  /// \brief Orbital gamma-ray laser weapon ('G') delivering high-energy
+  /// directed-energy surface strikes.
   OTYPE_GR,
+  /// \brief Surface industrial manufacturing factory ('F') producing weapons
+  /// and consumer goods.
   OTYPE_FACTORY,
+  /// \brief Mobile planetary terraforming device ('T') engineering surface soil
+  /// and vegetation.
   OTYPE_TERRA,
+  /// \brief Berserker control center (';') coordinating autonomous machine
+  /// fleets.
   OTYPE_BERSCTLC,
+  /// \brief Automated Berserker assembly complex ('Z') continuously fabricating
+  /// robotic war machines.
   OTYPE_AUTOFAC,
+  /// \brief AVPM orbital matter transporter ('[') beaming cargo and resources
+  /// directly to surfaces.
   OTYPE_TRANSDEV,
+  /// \brief Guided orbital bombardment or anti-ship missile ('^') detonating on
+  /// impact.
   STYPE_MISSILE,
+  /// \brief Planetary surface defense battery network ('P') firing at hostile
+  /// ships in orbit.
   OTYPE_PLANDEF,
+  /// \brief Heavy surface mineral extraction quarry ('q') harvesting planetary
+  /// metals and resources.
   OTYPE_QUARRY,
+  /// \brief Surface-crawling mechanized space plow ('K') excavating and
+  /// restructuring terrain sectors.
   OTYPE_PLOW,
+  /// \brief Pressurized environmental biodome ('Y') shielding delicate
+  /// colonists from hostile climates.
   OTYPE_DOME,
+  /// \brief Heavy surface weapons plant ('W') fabricating ordnance and
+  /// destructive munitions.
   OTYPE_WPLANT,
+  /// \brief Commercial orbital spaceport ('J') facilitating interstellar trade
+  /// and passenger embarkation.
   OTYPE_PORT,
+  /// \brief Anti-Ballistic Missile battery ('&') intercepting incoming missiles
+  /// and orbital strikes.
   OTYPE_ABM,
+  /// \brief Armored fighting vehicle / mechanized combat walker ('R') for
+  /// planetary ground warfare.
   OTYPE_AFV,
+  /// \brief Fortified military command bunker ('b') protecting troops and
+  /// leadership from bombardment.
   OTYPE_BUNKER,
+  /// \brief Surface assault transport and planetary landing craft ('L').
   STYPE_LANDER,
 };
 

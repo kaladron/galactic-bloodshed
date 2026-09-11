@@ -747,14 +747,13 @@ int main() {
 
     TurnStats stats{};
 
-    // 1. Non-autonomous ship is ignored
+    // 1. Non-autonomous ship is not an AutonomousShip
     ship_struct cargo_data{};
     cargo_data.number = 701;
     cargo_data.owner = 1;
     cargo_data.type = ShipType::STYPE_CARGO;
     auto cargo = ShipFactory::create(cargo_data);
-    do_VN(em, *cargo, stats);
-    test::expect_false(stats.is_inhabited(0, 0));
+    test::expect_true(cargo->as<AutonomousShip>() == nullptr);
 
     // 2. Unlanded, non-busy VN is ignored
     ship_struct unlanded_idle_data{};
@@ -765,7 +764,7 @@ int main() {
     unlanded_idle_data.whatdest = ScopeLevel::LEVEL_UNIV;
     unlanded_idle_data.special = MindData{.busy = false};
     auto unlanded_idle = ShipFactory::create(unlanded_idle_data);
-    do_VN(em, *unlanded_idle, stats);
+    do_VN(em, *unlanded_idle->as<AutonomousShip>(), stats);
     test::expect_eq(unlanded_idle->whatdest(), ScopeLevel::LEVEL_UNIV);
 
     // 3. Unlanded, busy VN orders destination
@@ -777,7 +776,7 @@ int main() {
     unlanded_busy_data.whatdest = ScopeLevel::LEVEL_UNIV;
     unlanded_busy_data.special = MindData{.busy = true};
     auto unlanded_busy = ShipFactory::create(unlanded_busy_data);
-    do_VN(em, *unlanded_busy, stats);
+    do_VN(em, *unlanded_busy->as<AutonomousShip>(), stats);
     test::expect_eq(unlanded_busy->deststar(), starnum_t{2});
     test::expect_eq(unlanded_busy->whatdest(), ScopeLevel::LEVEL_PLAN);
 
@@ -793,7 +792,7 @@ int main() {
     unlanded_bers_data.mounted = true;
     unlanded_bers_data.special = MindData{.busy = true};
     auto unlanded_bers = ShipFactory::create(unlanded_bers_data);
-    do_VN(em, *unlanded_bers, stats);
+    do_VN(em, *unlanded_bers->as<AutonomousShip>(), stats);
     test::expect_eq(unlanded_bers->deststar(), starnum_t{1});
     test::expect_eq(unlanded_bers->whatdest(), ScopeLevel::LEVEL_PLAN);
 
@@ -813,7 +812,7 @@ int main() {
     landed_fueled_data.special = MindData{.busy = false};
     auto landed_fueled = ShipFactory::create(landed_fueled_data);
     test::expect_true(landed_fueled->is_landed());
-    do_VN(em, *landed_fueled, stats);
+    do_VN(em, *landed_fueled->as<AutonomousShip>(), stats);
     test::expect_true(stats.is_inhabited(0, 0));
     test::expect_false(landed_fueled->is_landed());
     test::expect_eq(landed_fueled->whatdest(), ScopeLevel::LEVEL_UNIV);
@@ -838,7 +837,7 @@ int main() {
     landed_low_fuel_data.special = MindData{.busy = false};
     auto landed_low_fuel = ShipFactory::create(landed_low_fuel_data);
     test::expect_true(landed_low_fuel->is_landed());
-    do_VN(em, *landed_low_fuel, stats);
+    do_VN(em, *landed_low_fuel->as<AutonomousShip>(), stats);
     test::expect_true(landed_low_fuel->is_landed());
     test::expect_true(landed_low_fuel->resource() > 0);
 

@@ -270,19 +270,14 @@ bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
 }
 
 /*  do_VN() -- called by doship() */
-void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
-  auto* auto_ship = ship.as<AutonomousShip>();
-  if (!auto_ship) {
-    return;
-  }
-
-  if (!auto_ship->is_landed()) {
-    if (!auto_ship->is_busy()) {
+void do_VN(EntityManager& em, AutonomousShip& ship, TurnStats& stats) {
+  if (!ship.is_landed()) {
+    if (!ship.is_busy()) {
       return;
     }
 
     // we were just built & launched
-    if (auto_ship->type() == ShipType::OTYPE_BERS) {
+    if (ship.type() == ShipType::OTYPE_BERS) {
       order_berserker(em, ship, stats);
     } else {
       order_VN(em, ship);
@@ -290,10 +285,10 @@ void do_VN(EntityManager& em, Ship& ship, TurnStats& stats) {
     return;
   }
 
-  stats.mark_inhabited(auto_ship->storbits(), auto_ship->pnumorbits());
+  stats.mark_inhabited(ship.storbits(), ship.pnumorbits());
 
-  if (!try_launch_unassigned_vn(em, *auto_ship)) {
-    steal_planetary_resources(em, *auto_ship);
+  if (!try_launch_unassigned_vn(em, ship)) {
+    steal_planetary_resources(em, ship);
   }
 }
 

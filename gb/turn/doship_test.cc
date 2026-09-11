@@ -1010,18 +1010,18 @@ void test_do_canister_and_greenhouse() {
     auto* canist_ship = canister.as<CanisterShip>();
     test::expect_true(canist_ship != nullptr);
 
-    do_canister(canister, ctx.em, stats);
+    do_canister(*canist_ship, ctx.em, stats);
     test::expect_eq(canist_ship->count(), 1);
     test::expect_eq(stats.temp_add(0, 0), -10);
 
     // Clamped at -100
     stats.set_temp_add(0, 0, -95);
-    do_canister(canister, ctx.em, stats);
+    do_canister(*canist_ship, ctx.em, stats);
     test::expect_eq(stats.temp_add(0, 0), -100);
 
     // Dissipation on timer expiration
     canist_ship->set_count(DISSIPATE);
-    do_canister(canister, ctx.em, stats);
+    do_canister(*canist_ship, ctx.em, stats);
     test::expect_false(canister.alive());
   });
 
@@ -1037,18 +1037,18 @@ void test_do_canister_and_greenhouse() {
     auto* gh_ship = gh.as<CanisterShip>();
     test::expect_true(gh_ship != nullptr);
 
-    do_greenhouse(gh, ctx.em, stats);
+    do_greenhouse(*gh_ship, ctx.em, stats);
     test::expect_eq(gh_ship->count(), 1);
     test::expect_eq(stats.temp_add(0, 0), 10);
 
     // Clamped at +100
     stats.set_temp_add(0, 0, 95);
-    do_greenhouse(gh, ctx.em, stats);
+    do_greenhouse(*gh_ship, ctx.em, stats);
     test::expect_eq(stats.temp_add(0, 0), 100);
 
     // Dissipation on timer expiration
     gh_ship->set_count(DISSIPATE);
-    do_greenhouse(gh, ctx.em, stats);
+    do_greenhouse(*gh_ship, ctx.em, stats);
     test::expect_false(gh.alive());
   });
 
@@ -1060,9 +1060,9 @@ void test_do_canister_and_greenhouse() {
                               .landed_on(0, 0, Coordinates{0, 0})
                               .with_special(TimerData{.count = 0})
                               .build();
-    ctx.em.mutate_ship(landed_gh, [&](Ship& gh) {
+    ctx.em.mutate_as<CanisterShip>(landed_gh, [&](CanisterShip& gh) {
       do_greenhouse(gh, ctx.em, stats);
-      test::expect_eq(gh.as<CanisterShip>()->count(), 0);
+      test::expect_eq(gh.count(), 0);
       test::expect_eq(stats.temp_add(0, 0), 0);
     });
 
@@ -1071,9 +1071,9 @@ void test_do_canister_and_greenhouse() {
                             .in_star_orbit(0)
                             .with_special(TimerData{.count = 0})
                             .build();
-    ctx.em.mutate_ship(star_gh, [&](Ship& gh) {
+    ctx.em.mutate_as<CanisterShip>(star_gh, [&](CanisterShip& gh) {
       do_greenhouse(gh, ctx.em, stats);
-      test::expect_eq(gh.as<CanisterShip>()->count(), 0);
+      test::expect_eq(gh.count(), 0);
       test::expect_eq(stats.temp_add(0, 0), 0);
     });
   }
@@ -1236,11 +1236,10 @@ void test_do_pod() {
                                  .with_pod(10, 0)
                                  .build();
 
-  ctx.em.mutate_ship(warming_pod_id, [&](Ship& pod) {
+  ctx.em.mutate_as<SporePodShip>(warming_pod_id, [&](SporePodShip& pod) {
     do_pod(pod, ctx.em);
     test::expect_true(pod.alive());
-    const auto* pod_ship = pod.as<SporePodShip>();
-    test::expect_gt(pod_ship->temperature(), 10);
+    test::expect_gt(pod.temperature(), 10);
   });
 
   // 2. Pod in star system with temperature >= POD_THRESHOLD -> warms, explodes,
@@ -1251,7 +1250,7 @@ void test_do_pod() {
                                    .with_pod(POD_THRESHOLD + 10, 0)
                                    .build();
 
-  ctx.em.mutate_ship(exploding_pod_id, [&](Ship& pod) {
+  ctx.em.mutate_as<SporePodShip>(exploding_pod_id, [&](SporePodShip& pod) {
     do_pod(pod, ctx.em);
     test::expect_false(pod.alive());
   });
@@ -1264,11 +1263,10 @@ void test_do_pod() {
                                   .with_pod(0, 1)
                                   .build();
 
-  ctx.em.mutate_ship(decaying_pod_id, [&](Ship& pod) {
+  ctx.em.mutate_as<SporePodShip>(decaying_pod_id, [&](SporePodShip& pod) {
     do_pod(pod, ctx.em);
     test::expect_true(pod.alive());
-    const auto* pod_ship = pod.as<SporePodShip>();
-    test::expect_ge(pod_ship->decay(), 1);
+    test::expect_ge(pod.decay(), 1);
   });
 
   // 4. Pod in planet orbit with decay >= POD_DECAY -> decays to death, killed
@@ -1278,7 +1276,7 @@ void test_do_pod() {
                               .with_pod(0, POD_DECAY)
                               .build();
 
-  ctx.em.mutate_ship(dead_pod_id, [&](Ship& pod) {
+  ctx.em.mutate_as<SporePodShip>(dead_pod_id, [&](SporePodShip& pod) {
     do_pod(pod, ctx.em);
     test::expect_false(pod.alive());
   });
@@ -1307,8 +1305,9 @@ void test_do_mirror() {
                                  })
                                  .build();
 
-  ctx.em.mutate_ship(mirror_ship_id,
-                     [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
+  ctx.em.mutate_as<SpaceMirrorShip>(
+      mirror_ship_id,
+      [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
   const auto* target = ctx.em.peek_ship(target_id);
   test::expect_ge(target->damage(), 0);
 
@@ -1324,8 +1323,9 @@ void test_do_mirror() {
                                  })
                                  .build();
 
-  ctx.em.mutate_ship(mirror_plan_id,
-                     [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
+  ctx.em.mutate_as<SpaceMirrorShip>(
+      mirror_plan_id,
+      [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
   test::expect_gt(stats.temp_add(0, 0), 0);
 
   // 3. Space mirror aimed at star
@@ -1340,8 +1340,9 @@ void test_do_mirror() {
                                  })
                                  .build();
 
-  ctx.em.mutate_ship(mirror_star_id,
-                     [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
+  ctx.em.mutate_as<SpaceMirrorShip>(
+      mirror_star_id,
+      [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
   test::expect_ge(ctx.em.peek_star(0)->stability(), initial_stability);
 
   // 4. Unaimed mirror (LEVEL_UNIV) does nothing
@@ -1353,8 +1354,9 @@ void test_do_mirror() {
           .build();
 
   auto temp_before = stats.temp_add(0, 0);
-  ctx.em.mutate_ship(mirror_unaimed_id,
-                     [&](Ship& mirror) { do_mirror(mirror, ctx.em, stats); });
+  ctx.em.mutate_as<SpaceMirrorShip>(
+      mirror_unaimed_id,
+      [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
   test::expect_eq(stats.temp_add(0, 0), temp_before);
 }
 
@@ -1793,7 +1795,7 @@ void test_special_subsystems_extended() {
                         .with_alive(true)
                         .build_handle();
   stats.set_temp_add(1, 0, -95);
-  do_canister(*can_handle, em, stats);
+  do_canister(*can_handle->as<CanisterShip>(), em, stats);
   test::expect_eq(stats.temp_add(1, 0), -100);
 
   // 4. Greenhouse clamped at +100
@@ -1804,7 +1806,7 @@ void test_special_subsystems_extended() {
                        .with_alive(true)
                        .build_handle();
   stats.set_temp_add(1, 0, 95);
-  do_greenhouse(*gh_handle, em, stats);
+  do_greenhouse(*gh_handle->as<CanisterShip>(), em, stats);
   test::expect_eq(stats.temp_add(1, 0), 100);
 
   // 5. Space mirror destroys target ship when damage exceeds 100
@@ -1826,7 +1828,7 @@ void test_special_subsystems_extended() {
   mirror_ship->aim().shipno = target_handle->number();
   mirror_ship->aim().intensity = 100;
 
-  do_mirror(*mirror_handle, em, stats);
+  do_mirror(*mirror_ship, em, stats);
   const auto* target_after = em.peek_ship(target_handle->number());
   // Destroyed ship is killed via em.kill_ship
   test::expect_true(target_after == nullptr || target_after->alive() == 0);

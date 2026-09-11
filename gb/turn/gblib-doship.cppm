@@ -98,14 +98,14 @@ export void do_repair(Ship& ship, EntityManager& entity_manager);
 export void do_habitat(Ship& ship, EntityManager& entity_manager);
 /// \brief Simulates spore pod warming, detonation, and planetary meta-colony
 /// seeding.
-export void do_pod(Ship& ship, EntityManager& entity_manager);
+export void do_pod(SporePodShip& ship, EntityManager& entity_manager);
 
 /// \brief Simulates dust canister atmospheric cooling and eventual dissipation.
-export void do_canister(Ship& ship, EntityManager& entity_manager,
+export void do_canister(CanisterShip& ship, EntityManager& entity_manager,
                         TurnStats& stats);
 
 /// \brief Simulates greenhouse gas warming and eventual dissipation.
-export void do_greenhouse(Ship& ship, EntityManager& entity_manager,
+export void do_greenhouse(CanisterShip& ship, EntityManager& entity_manager,
                           TurnStats& stats);
 
 /// \brief Simulates orbital assault platform intimidation of the planet below.
@@ -113,7 +113,7 @@ export void do_oap(Ship& ship, TurnStats& stats);
 
 /// \brief Simulates focused space mirror heating against ships, planets, or
 /// stars.
-export void do_mirror(Ship& ship, EntityManager& entity_manager,
+export void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
                       TurnStats& stats);
 export void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum,
                            Planet& p, EntityManager& entity_manager);
@@ -226,7 +226,7 @@ export void order_VN(EntityManager& em, Ship& ship);
 
 /// \brief Performs turn processing for an autonomous Von Neumann or Berserker
 /// machine.
-export void do_VN(EntityManager& em, Ship& ship, TurnStats& stats);
+export void do_VN(EntityManager& em, AutonomousShip& ship, TurnStats& stats);
 
 /// \brief Performs planetary surface operations (landing, mining, replication)
 /// for an autonomous machine.

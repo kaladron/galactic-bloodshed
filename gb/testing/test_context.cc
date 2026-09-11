@@ -231,34 +231,24 @@ TestContext& TestContext::with_standard_universe() {
   StarRepository(store).save(star0);
 
   // 3. Setup Planet 0 on Star 0 (Earth)
-  Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
-  planet0.star_id() = 0;
-  planet0.planet_order() = 0;
-  planet0.xpos() = 100.0;
-  planet0.ypos() = 0.0;
-  planet0.explored() = true;
-  for (player_t pid : {player_t{1}, player_t{2}}) {
-    planet0.info(pid).explored = 1;
-    planet0.info(pid).destruct = 1000;
-    planet0.info(pid).fuel = 1000;
-    planet0.info(pid).resource = 1000;
-    planet0.info(pid).tax = 10;
-    planet0.info(pid).newtax = 10;
-  }
-  planet0.ships() = 100;
-  PlanetRepository(store).save(planet0);
+  TestPlanetBuilder(*this, 0, PlanetType::EARTH, Coordinates{10, 10}, 0)
+      .named("Earth")
+      .with_position(SystemCoordinates{100.0, 0.0})
+      .with_stockpiles(1, 1000, 1000, 1000)
+      .with_stockpiles(2, 1000, 1000, 1000)
+      .with_explored(1, true)
+      .with_explored(2, true)
+      .with_colony(1, 1000, Coordinates{0, 0})
+      .build();
+  em.mutate_planet(0, 0, [](Planet& p) {
+    p.ships() = 100;
+    p.info(player_t{1}).tax = 10;
+    p.info(player_t{1}).newtax = 10;
+    p.info(player_t{2}).tax = 10;
+    p.info(player_t{2}).newtax = 10;
+  });
 
-  // 4. Setup SectorMap for Earth with valid coordinates
-  SectorMap smap0(planet0);
-  for (int y = 0; y < 10; ++y) {
-    for (int x = 0; x < 10; ++x) {
-      smap0.get(Coordinates{x, y}).set_x(x);
-      smap0.get(Coordinates{x, y}).set_y(y);
-    }
-  }
-  SectorRepository(store).save_map(smap0);
-
-  // 5. Setup Star 1 (Vega) at (300, 400) -> distance 500 from Sol
+  // 4. Setup Star 1 (Vega) at (300, 400) -> distance 500 from Sol
   star_struct ss1{};
   ss1.star_id = 1;
   ss1.name = "Vega";
@@ -277,34 +267,24 @@ TestContext& TestContext::with_standard_universe() {
   star1.mark_inhabited_by(player_t{2});
   StarRepository(store).save(star1);
 
-  // 6. Setup Planet 0 on Star 1 (Vega Prime)
-  Planet planet1{PlanetType::EARTH, Coordinates{10, 10}};
-  planet1.star_id() = 1;
-  planet1.planet_order() = 0;
-  planet1.xpos() = 100.0;
-  planet1.ypos() = 0.0;
-  planet1.explored() = true;
-  for (player_t pid : {player_t{1}, player_t{2}}) {
-    planet1.info(pid).explored = 1;
-    planet1.info(pid).destruct = 1000;
-    planet1.info(pid).fuel = 1000;
-    planet1.info(pid).resource = 1000;
-    planet1.info(pid).tax = 10;
-    planet1.info(pid).newtax = 10;
-  }
-  PlanetRepository(store).save(planet1);
+  // 5. Setup Planet 0 on Star 1 (Vega Prime)
+  TestPlanetBuilder(*this, 1, PlanetType::EARTH, Coordinates{10, 10}, 0)
+      .named("Vega Prime")
+      .with_position(SystemCoordinates{100.0, 0.0})
+      .with_stockpiles(1, 1000, 1000, 1000)
+      .with_stockpiles(2, 1000, 1000, 1000)
+      .with_explored(1, true)
+      .with_explored(2, true)
+      .with_colony(2, 1000, Coordinates{0, 0})
+      .build();
+  em.mutate_planet(1, 0, [](Planet& p) {
+    p.info(player_t{1}).tax = 10;
+    p.info(player_t{1}).newtax = 10;
+    p.info(player_t{2}).tax = 10;
+    p.info(player_t{2}).newtax = 10;
+  });
 
-  // 7. Setup SectorMap for Vega Prime with valid coordinates
-  SectorMap smap1(planet1);
-  for (int y = 0; y < 10; ++y) {
-    for (int x = 0; x < 10; ++x) {
-      smap1.get(Coordinates{x, y}).set_x(x);
-      smap1.get(Coordinates{x, y}).set_y(y);
-    }
-  }
-  SectorRepository(store).save_map(smap1);
-
-  // 8. Setup Universe record with numstars = 2, 100 AP for both races
+  // 6. Setup Universe record with numstars = 2, 100 AP for both races
   UniverseRepository univ_repo(store);
   auto u = univ_repo.find(1);
   if (!u) {
@@ -321,7 +301,7 @@ TestContext& TestContext::with_standard_universe() {
     univ_repo.save(*u);
   }
 
-  // 9. Setup Player 1 Government Center (Ship #100) landed on Earth
+  // 7. Setup Player 1 Government Center (Ship #100) landed on Earth
   TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
       .owned_by(1, 0)
       .landed_on(0, 0, Coordinates{0, 0})
@@ -337,11 +317,6 @@ TestContext& TestContext::with_populated_planet(starnum_t snum,
                                                 player_t owner,
                                                 population_t popn,
                                                 Coordinates capital_coords) {
-  em.mutate_planet(snum, pnum, [&](Planet& p) {
-    p.popn() = popn;
-    p.info(owner).numsectsowned = 1;
-  });
-
   em.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
     smap.get(capital_coords).colonize(owner, popn);
     smap.get(capital_coords).set_condition(SectorType::SEC_LAND);
@@ -350,7 +325,32 @@ TestContext& TestContext::with_populated_planet(starnum_t snum,
     smap.get(capital_coords).set_efficiency_bounded(100);
   });
 
+  em.mutate_planet(snum, pnum, [&](Planet& p) {
+    const auto* smap = em.peek_sectormap(snum, pnum);
+    population_t total_pop = 0;
+    population_t owner_pop = 0;
+    int sects_owned = 0;
+    for (const Sector& sect : *smap) {
+      total_pop += sect.get_popn();
+      if (sect.get_owner() == owner) {
+        owner_pop += sect.get_popn();
+        if (sect.is_populated() || sect.is_owned()) {
+          sects_owned++;
+        }
+      }
+    }
+    p.popn() = total_pop;
+    p.info(owner).popn = owner_pop;
+    p.info(owner).numsectsowned = sects_owned;
+  });
+
   return *this;
+}
+
+TestPlanetBuilder
+TestContext::create_planet(starnum_t snum, PlanetType type, Coordinates dims,
+                           std::optional<planetnum_t> explicit_pnum) {
+  return TestPlanetBuilder(*this, snum, type, dims, explicit_pnum);
 }
 
 TestContext&

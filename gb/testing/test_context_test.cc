@@ -344,6 +344,73 @@ void test_test_ship_builder() {
   std::println(std::cout, "  ✓ TestShipBuilder verified successfully");
 }
 
+void test_test_planet_builder() {
+  std::println(std::cout, "Test: TestPlanetBuilder fluent construction");
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // 1. Build a custom desert planet on Star 0 using create_planet
+  planetnum_t mars_id =
+      ctx.create_planet(0, PlanetType::MARS, Coordinates{6, 6})
+          .named("Mars")
+          .with_position(SystemCoordinates{200.0, 150.0})
+          .with_toxicity(25)
+          .with_temperature(65)
+          .with_stockpiles(1, 500, 300, 100)
+          .with_explored(1, true)
+          .with_all_sectors(SectorType::SEC_DESERT, 40, 60, 80)
+          .with_colony(1, 2000, Coordinates{1, 1}, /*fert=*/80, /*eff=*/100,
+                       /*res=*/150, /*troops=*/200)
+          .build();
+
+  test::expect_eq(mars_id, planetnum_t{1});
+  const auto* mars = ctx.em.peek_planet(0, mars_id);
+  test::expect_true(mars != nullptr, "Mars must exist");
+  test::expect_eq(mars->type(), PlanetType::MARS);
+  test::expect_eq(mars->dimensions().x, 6);
+  test::expect_eq(mars->dimensions().y, 6);
+  test::expect_eq(mars->system_coordinates(), SystemCoordinates{200.0, 150.0});
+  test::expect_eq(mars->conditions(TOXIC), 25);
+  test::expect_eq(mars->conditions(TEMP), 65);
+  test::expect_eq(mars->info(player_t{1}).explored, 1);
+  test::expect_eq(mars->info(player_t{1}).resource, 500);
+  test::expect_eq(mars->info(player_t{1}).fuel, 300);
+  test::expect_eq(mars->info(player_t{1}).destruct, 100);
+  test::expect_eq(mars->popn(), 2000);
+  test::expect_eq(mars->troops(), 200);
+  test::expect_eq(mars->info(player_t{1}).numsectsowned, 1);
+  test::expect_eq(mars->info(player_t{1}).popn, 2000);
+  test::expect_eq(mars->info(player_t{1}).troops, 200);
+
+  // Verify SectorMap
+  const auto* smap = ctx.em.peek_sectormap(0, mars_id);
+  test::expect_true(smap != nullptr, "SectorMap must exist");
+  const auto& capital = smap->get(Coordinates{1, 1});
+  test::expect_eq(capital.get_owner(), player_t{1});
+  test::expect_eq(capital.get_popn(), 2000);
+  test::expect_eq(capital.get_troops(), 200);
+  test::expect_eq(capital.get_fert(), 80);
+  test::expect_eq(capital.get_eff(), 100);
+  test::expect_eq(capital.get_resource(), 150);
+
+  const auto& wild = smap->get(Coordinates{0, 0});
+  test::expect_eq(wild.get_condition(), SectorType::SEC_DESERT);
+  test::expect_eq(wild.get_owner(), player_t{0});
+  test::expect_eq(wild.get_fert(), 40);
+  test::expect_eq(wild.get_eff(), 60);
+  test::expect_eq(wild.get_resource(), 80);
+
+  // Verify star planet name synchronized
+  const auto* star = ctx.em.peek_star(0);
+  test::expect_eq(star->get_planet_name(mars_id), "Mars");
+
+  // Invariant verification across the universe
+  test::expect_no_throw([&]() { ctx.verify_universe_invariants(); },
+                        "TestPlanetBuilder must satisfy universe invariants");
+
+  std::println(std::cout, "  ✓ TestPlanetBuilder verified successfully");
+}
+
 void test_recording_session_registry() {
   std::println(
       std::cout,
@@ -500,8 +567,7 @@ void test_standard_universe_fixture() {
   const auto* star0 = ctx.em.peek_star(0);
   test::expect_true(star0 != nullptr, "Star 0 must exist");
   test::expect_eq(star0->get_name(), "Sol");
-  test::expect_eq(star0->xpos(), 0.0);
-  test::expect_eq(star0->ypos(), 0.0);
+  test::expect_eq(star0->coordinates(), UniverseCoordinates{0.0, 0.0});
   test::expect_eq(star0->stability(), 15);
   test::expect_true(star0->is_explored_by(player_t{1}));
   test::expect_true(star0->is_explored_by(player_t{2}));
@@ -514,8 +580,7 @@ void test_standard_universe_fixture() {
   const auto* star1 = ctx.em.peek_star(1);
   test::expect_true(star1 != nullptr, "Star 1 must exist");
   test::expect_eq(star1->get_name(), "Vega");
-  test::expect_eq(star1->xpos(), 300.0);
-  test::expect_eq(star1->ypos(), 400.0);
+  test::expect_eq(star1->coordinates(), UniverseCoordinates{300.0, 400.0});
   test::expect_eq(star1->stability(), 45);
   test::expect_true(star1->is_explored_by(player_t{1}));
   test::expect_true(star1->is_explored_by(player_t{2}));
@@ -534,6 +599,9 @@ void test_standard_universe_fixture() {
   test::expect_eq(planet->info(player_t{1}).destruct, 1000);
   test::expect_eq(planet->info(player_t{1}).fuel, 1000);
   test::expect_eq(planet->info(player_t{1}).resource, 1000);
+  test::expect_eq(planet->popn(), 1000);
+  test::expect_eq(planet->info(player_t{1}).numsectsowned, 1);
+  test::expect_eq(planet->info(player_t{1}).popn, 1000);
 
   // Verify Planet 0 on Star 1 (Vega Prime)
   const auto* planet1 = ctx.em.peek_planet(1, 0);
@@ -541,6 +609,9 @@ void test_standard_universe_fixture() {
   test::expect_eq(planet1->type(), PlanetType::EARTH);
   test::expect_eq(planet1->info(player_t{1}).explored, 1);
   test::expect_eq(planet1->info(player_t{2}).explored, 1);
+  test::expect_eq(planet1->popn(), 1000);
+  test::expect_eq(planet1->info(player_t{2}).numsectsowned, 1);
+  test::expect_eq(planet1->info(player_t{2}).popn, 1000);
 
   // 4. Verify Universe AP and invariants
   const auto* univ = ctx.em.peek_universe();
@@ -566,8 +637,9 @@ void test_standard_universe_fixture() {
   // 5. Test with_populated_planet fluent chaining
   ctx.with_populated_planet(0, 0, player_t{1}, 1500, Coordinates{2, 3});
   const auto* pop_planet = ctx.em.peek_planet(0, 0);
-  test::expect_eq(pop_planet->popn(), 1500);
-  test::expect_eq(pop_planet->info(player_t{1}).numsectsowned, 1);
+  test::expect_eq(pop_planet->popn(), 2500);
+  test::expect_eq(pop_planet->info(player_t{1}).numsectsowned, 2);
+  test::expect_eq(pop_planet->info(player_t{1}).popn, 2500);
 
   const auto* smap = ctx.em.peek_sectormap(0, 0);
   const auto& sect = smap->get(Coordinates{2, 3});
@@ -624,6 +696,7 @@ int main() {
   test_test_context_dispatch_helpers();
   test_test_world_builder();
   test_test_ship_builder();
+  test_test_planet_builder();
   test_recording_session_registry();
   test_test_command_matrix();
   test_universe_invariants();

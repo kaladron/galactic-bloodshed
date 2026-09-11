@@ -400,6 +400,8 @@ public:
   void clear_notifications();
 };
 
+export class TestPlanetBuilder;
+
 /// Test context providing database, entity manager, GameObj setup, and
 /// dispatch assertion helpers
 ///
@@ -466,6 +468,12 @@ public:
                                      player_t owner = 1,
                                      population_t popn = 1000,
                                      Coordinates capital_coords = {0, 0});
+
+  /// Constructs a fluent TestPlanetBuilder targeting this TestContext.
+  TestPlanetBuilder
+  create_planet(starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
+                Coordinates dims = {10, 10},
+                std::optional<planetnum_t> explicit_pnum = std::nullopt);
 
   /// Procedurally generates a universe using UniverseGenerator into the test
   /// database and registers standard test races. Enables fluent chaining.
@@ -594,6 +602,54 @@ private:
 
   EntityManager& em_;
   ship_struct ship_{};
+};
+
+/// Fluent fixture builder for constructing consistent test planet entities and
+/// their associated SectorMap with verified cross-entity invariants.
+export class TestPlanetBuilder {
+public:
+  explicit TestPlanetBuilder(
+      EntityManager& em, Database& db, starnum_t snum = 0,
+      PlanetType type = PlanetType::EARTH, Coordinates dims = {10, 10},
+      std::optional<planetnum_t> explicit_pnum = std::nullopt);
+  explicit TestPlanetBuilder(
+      TestContext& ctx, starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
+      Coordinates dims = {10, 10},
+      std::optional<planetnum_t> explicit_pnum = std::nullopt);
+
+  TestPlanetBuilder& named(std::string_view name);
+  TestPlanetBuilder& with_type(PlanetType type);
+  TestPlanetBuilder& with_dimensions(Coordinates dims);
+  TestPlanetBuilder& with_position(SystemCoordinates coords);
+  TestPlanetBuilder& with_toxicity(int toxic);
+  TestPlanetBuilder& with_temperature(int temp);
+  TestPlanetBuilder& with_explored(player_t player, bool explored = true);
+  TestPlanetBuilder& with_stockpiles(player_t player, resource_t res = 1000,
+                                     resource_t fuel = 1000,
+                                     resource_t destruct = 1000);
+  TestPlanetBuilder& with_sector(Coordinates coords, SectorType type,
+                                 int fert = 100, int eff = 100,
+                                 resource_t res = 100, player_t owner = 0,
+                                 population_t popn = 0,
+                                 population_t troops = 0);
+  TestPlanetBuilder& with_all_sectors(SectorType type, int fert = 100,
+                                      int eff = 100, resource_t res = 100);
+  TestPlanetBuilder& with_colony(player_t owner, population_t popn,
+                                 Coordinates capital_coords = {0, 0},
+                                 int fert = 100, int eff = 100,
+                                 resource_t res = 100, population_t troops = 0);
+
+  planetnum_t build();
+  const Planet* build_and_peek();
+
+private:
+  EntityManager& em_;
+  Database& db_;
+  starnum_t snum_;
+  std::optional<planetnum_t> explicit_pnum_;
+  std::string name_;
+  Planet planet_;
+  SectorMap smap_;
 };
 
 /// Fluent fixture builder for configuring test universes, races, stars, and

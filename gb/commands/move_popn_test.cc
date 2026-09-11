@@ -24,6 +24,9 @@ void setup_test_world(TestContext& ctx) {
   });
 
   ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{0, 0}).set_owner(0);
+    smap.get(Coordinates{0, 0}).set_popn_exact(0);
+
     smap.get(Coordinates{5, 5}).set_owner(1);
     smap.get(Coordinates{5, 5}).set_popn_exact(1000);
     smap.get(Coordinates{5, 5}).set_troops(500);

@@ -435,3 +435,208 @@ TestWorldBuilder& TestWorldBuilder::add_planet(
 void TestWorldBuilder::create_standard_solar_system(TestContext& ctx) {
   ctx.with_standard_universe();
 }
+
+TestPlanetBuilder::TestPlanetBuilder(EntityManager& em, Database& db,
+                                     starnum_t snum, PlanetType type,
+                                     Coordinates dims,
+                                     std::optional<planetnum_t> explicit_pnum)
+    : em_(em), db_(db), snum_(snum), explicit_pnum_(explicit_pnum),
+      planet_([&]() {
+        Planet p{type, dims};
+        p.star_id() = snum;
+        if (explicit_pnum) {
+          p.planet_order() = *explicit_pnum;
+        } else {
+          try {
+            const auto* star = em.peek_star(snum);
+            p.planet_order() = planetnum_t{
+                static_cast<planetnum_t::value_type>(star->numplanets())};
+          } catch (const EntityNotFoundError&) {
+            p.planet_order() = planetnum_t{0};
+          }
+        }
+        return p;
+      }()),
+      smap_(planet_) {
+  for (int y = 0; y < dims.y; ++y) {
+    for (int x = 0; x < dims.x; ++x) {
+      smap_.get(Coordinates{x, y}).set_x(x);
+      smap_.get(Coordinates{x, y}).set_y(y);
+    }
+  }
+}
+
+TestPlanetBuilder::TestPlanetBuilder(TestContext& ctx, starnum_t snum,
+                                     PlanetType type, Coordinates dims,
+                                     std::optional<planetnum_t> explicit_pnum)
+    : TestPlanetBuilder(ctx.em, ctx.db, snum, type, dims, explicit_pnum) {}
+
+TestPlanetBuilder& TestPlanetBuilder::named(std::string_view name) {
+  name_ = name;
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_type(PlanetType type) {
+  planet_.type() = type;
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_dimensions(Coordinates dims) {
+  planet_.dimensions() = dims;
+  smap_ = SectorMap(planet_);
+  for (int y = 0; y < dims.y; ++y) {
+    for (int x = 0; x < dims.x; ++x) {
+      smap_.get(Coordinates{x, y}).set_x(x);
+      smap_.get(Coordinates{x, y}).set_y(y);
+    }
+  }
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_position(SystemCoordinates coords) {
+  planet_.set_system_coordinates(coords);
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_toxicity(int toxic) {
+  planet_.conditions(TOXIC) = toxic;
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_temperature(int temp) {
+  planet_.conditions(TEMP) = temp;
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_explored(player_t player,
+                                                    bool explored) {
+  planet_.info(player).explored = explored ? 1 : 0;
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_stockpiles(player_t player,
+                                                      resource_t res,
+                                                      resource_t fuel,
+                                                      resource_t destruct) {
+  planet_.info(player).resource = res;
+  planet_.info(player).fuel = fuel;
+  planet_.info(player).destruct = destruct;
+  return *this;
+}
+
+TestPlanetBuilder&
+TestPlanetBuilder::with_sector(Coordinates coords, SectorType type, int fert,
+                               int eff, resource_t res, player_t owner,
+                               population_t popn, population_t troops) {
+  auto& sect = smap_.get(coords);
+  sect.set_condition(type);
+  sect.set_fert(fert);
+  sect.set_efficiency_bounded(eff);
+  sect.set_resource(res);
+  if (owner.value > 0 && (popn > 0 || troops > 0)) {
+    sect.colonize(owner, popn);
+    if (troops > 0) {
+      sect.set_troops(troops);
+    }
+  }
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_all_sectors(SectorType type,
+                                                       int fert, int eff,
+                                                       resource_t res) {
+  for (auto& sect : smap_) {
+    sect.set_condition(type);
+    sect.set_fert(fert);
+    sect.set_efficiency_bounded(eff);
+    sect.set_resource(res);
+  }
+  return *this;
+}
+
+TestPlanetBuilder&
+TestPlanetBuilder::with_colony(player_t owner, population_t popn,
+                               Coordinates capital_coords, int fert, int eff,
+                               resource_t res, population_t troops) {
+  with_sector(capital_coords, SectorType::SEC_LAND, fert, eff, res, owner, popn,
+              troops);
+  with_explored(owner, true);
+  return *this;
+}
+
+planetnum_t TestPlanetBuilder::build() {
+  planetnum_t pnum{0};
+  if (explicit_pnum_) {
+    pnum = *explicit_pnum_;
+  } else {
+    try {
+      const auto* star = em_.peek_star(snum_);
+      pnum =
+          planetnum_t{static_cast<planetnum_t::value_type>(star->numplanets())};
+    } catch (const EntityNotFoundError&) {
+      pnum = planetnum_t{0};
+    }
+  }
+  planet_.planet_order() = pnum;
+  if (pnum != smap_.planet_order()) {
+    SectorMap updated_smap(planet_);
+    for (Sector& sect : smap_) {
+      updated_smap.get(Coordinates{static_cast<int>(sect.get_x()),
+                                   static_cast<int>(sect.get_y())}) =
+          std::move(sect);
+    }
+    smap_ = std::move(updated_smap);
+  }
+
+  // Calculate sector-aggregate invariants
+  population_t total_pop = 0;
+  population_t total_troops = 0;
+  PlayerVector<population_t, MAXPLAYERS> player_pop{};
+  PlayerVector<population_t, MAXPLAYERS> player_troops{};
+  PlayerVector<int, MAXPLAYERS> player_sects{};
+
+  for (const auto& sect : smap_) {
+    total_pop += sect.get_popn();
+    total_troops += sect.get_troops();
+    if (sect.get_owner().value > 0) {
+      player_pop[sect.get_owner()] += sect.get_popn();
+      player_troops[sect.get_owner()] += sect.get_troops();
+      if (sect.is_populated() || sect.is_owned()) {
+        player_sects[sect.get_owner()]++;
+      }
+    }
+  }
+
+  planet_.popn() = total_pop;
+  planet_.troops() = total_troops;
+  planet_.maxpopn() = std::max(total_pop, population_t{10000});
+  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+    if (player_sects[p] > 0 || player_pop[p] > 0) {
+      planet_.info(p).popn = player_pop[p];
+      planet_.info(p).troops = player_troops[p];
+      planet_.info(p).numsectsowned = player_sects[p];
+    }
+  }
+
+  JsonStore store(db_);
+  PlanetRepository(store).save(planet_);
+  SectorRepository(store).save_map(smap_);
+
+  try {
+    em_.mutate_star(snum_, [&](Star& s) {
+      std::string planet_name =
+          name_.empty() ? std::format("Planet-{}", pnum.value) : name_;
+      s.set_planet_name(pnum, planet_name);
+    });
+  } catch (const EntityNotFoundError&) {
+    // Star not present in EntityManager
+  }
+
+  em_.clear_cache();
+  return pnum;
+}
+
+const Planet* TestPlanetBuilder::build_and_peek() {
+  planetnum_t pnum = build();
+  return em_.peek_planet(snum_, pnum);
+}

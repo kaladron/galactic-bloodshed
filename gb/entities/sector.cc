@@ -139,6 +139,13 @@ void Sector::add_resource(resource_t amount) noexcept {
 void Sector::subtract_resource(resource_t amount) noexcept {
   if (amount == 0) return;
 
+  if (amount < 0) {
+    log_invariant_violation("Sector", "resource",
+                            std::format("subtract {}", amount),
+                            "negative amount ignored");
+    return;
+  }
+
   // Log if trying to subtract more than available
   if (amount > data_.resource) {
     log_invariant_violation("Sector", "resource",
@@ -147,6 +154,14 @@ void Sector::subtract_resource(resource_t amount) noexcept {
   } else {
     data_.resource -= amount;
   }
+}
+
+resource_t Sector::deplete_resource(resource_t amount) noexcept {
+  if (amount <= 0) return 0;
+
+  const resource_t actual = std::min(amount, data_.resource);
+  data_.resource -= actual;
+  return actual;
 }
 
 // Efficiency operation implementations (0-100 bounds)

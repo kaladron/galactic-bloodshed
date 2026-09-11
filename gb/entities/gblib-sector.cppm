@@ -136,8 +136,13 @@ public:
   void add_resource(resource_t amount) noexcept;
 
   /// Remove resources from sector, clamping to zero.
-  /// Logs if amount > current resource (invariant violation).
+  /// Logs if amount > current resource (invariant violation) or if amount < 0.
   void subtract_resource(resource_t amount) noexcept;
+
+  /// Deplete resources from combat, bombardment, or environmental damage.
+  /// Clamps smoothly to zero without logging an invariant violation.
+  /// Returns the actual quantity depleted.
+  resource_t deplete_resource(resource_t amount) noexcept;
 
   /// Efficiency operations with bounds (0-100)
   /// Set efficiency to exact value, clamping to 0-100 bounds.

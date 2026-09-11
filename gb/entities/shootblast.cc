@@ -236,7 +236,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
           s.set_fert(std::max(0, (int)s.get_fert() - (int)fac));
           s.degrade_efficiency(std::lround(fac));
           s.set_mobilization(std::max(0, (int)s.get_mobilization() - (int)fac));
-          s.subtract_resource(std::lround(fac));
+          s.deplete_resource(std::lround(fac));
         }
       }
       if (s.get_owner() != 0) sum_mob[s.get_owner()] += s.get_mobilization();

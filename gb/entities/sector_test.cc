@@ -168,6 +168,10 @@ void test_sector_invariants() {
   // Resources
   s1.add_resource(50);
   test::expect_eq(s1.get_resource(), 150);
+  s1.subtract_resource(50);
+  test::expect_eq(s1.get_resource(), 100);
+  s1.subtract_resource(-20);  // Negative ignored
+  test::expect_eq(s1.get_resource(), 100);
   s1.subtract_resource(200);  // Clamps to 0
   test::expect_eq(s1.get_resource(), 0);
 }
@@ -713,6 +717,31 @@ void test_sector_mine_crystals() {
   test::expect_eq(stats.prod_crystals[player_t{1}], 1);
 }
 
+void test_sector_deplete_resource() {
+  Sector s(sector_struct{.resource = 100});
+
+  // 1. Partial depletion
+  resource_t depleted = s.deplete_resource(35);
+  test::expect_eq(depleted, 35);
+  test::expect_eq(s.get_resource(), 65);
+
+  // 2. Excess depletion smoothly clamps to 0 without error
+  depleted = s.deplete_resource(200);
+  test::expect_eq(depleted, 65);
+  test::expect_eq(s.get_resource(), 0);
+
+  // 3. Depletion on empty sector returns 0
+  depleted = s.deplete_resource(50);
+  test::expect_eq(depleted, 0);
+  test::expect_eq(s.get_resource(), 0);
+
+  // 4. Zero or negative depletion is a no-op
+  s.add_resource(50);
+  test::expect_eq(s.deplete_resource(0), 0);
+  test::expect_eq(s.deplete_resource(-10), 0);
+  test::expect_eq(s.get_resource(), 50);
+}
+
 }  // namespace
 
 int main() {
@@ -732,5 +761,6 @@ int main() {
   test_sector_update_efficiency();
   test_sector_produce_resources();
   test_sector_mine_crystals();
+  test_sector_deplete_resource();
   return 0;
 }

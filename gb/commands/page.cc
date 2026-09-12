@@ -64,8 +64,7 @@ bool page(const command_t& argv, GameObj& g) {
       return false;
     }
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-      if (block_player->is_invited(i) && block_player->is_pledged(i) &&
-          i != Playernum) {
+      if (block_player->is_member(i) && i != Playernum) {
         g.session_registry.notify_race(i, msg);
       }
     }

@@ -372,7 +372,7 @@ void test_enroll_rejected_when_over_budget() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   std::istringstream in;
   std::ostringstream out;
@@ -425,7 +425,7 @@ void test_enroll_with_service_success() {
   SectorRepository(store).save_map(smap);
 
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   std::istringstream in;
   std::ostringstream out;

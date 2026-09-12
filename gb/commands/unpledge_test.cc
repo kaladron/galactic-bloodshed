@@ -38,8 +38,10 @@ void test_unpledge_dispatch() {
   block block2{};
   block2.Playernum = 2;
   block2.name = "LeaderBlock";
-  block2.invite = (1ULL << 1) | (1ULL << 2);
-  block2.pledge = (1ULL << 1) | (1ULL << 2);
+  block2.invite(player_t{1});
+  block2.invite(player_t{2});
+  block2.pledge(player_t{1});
+  block2.pledge(player_t{2});
   BlockRepository blocks(store);
   blocks.save(block2);
 

@@ -1092,6 +1092,69 @@ void test_entity_manager_count_non_asteroid_planets() {
                "  ✓ count_non_asteroid_planets correctly excludes asteroids");
 }
 
+void test_entity_manager_create_race() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  std::println(std::cout, "Test: EntityManager create_race auto-seeding");
+
+  // Verify standard universe races (players 1 & 2) auto-seeded blocks & powers
+  for (player_t pid : {player_t{1}, player_t{2}}) {
+    const auto* r = ctx.em.peek_race(pid);
+    test::expect_ne(r, nullptr);
+    const auto* b = ctx.em.peek_block(blocknum_t{pid.value});
+    test::expect_ne(b, nullptr);
+    test::expect_eq(b->Playernum, pid);
+    test::expect_eq(b->name, r->name);
+    const auto* p = ctx.em.peek_power(powernum_t{pid.value});
+    test::expect_ne(p, nullptr);
+    test::expect_eq(p->id, pid.value);
+  }
+
+  // Create an additional race (Player 3)
+  Race race{};
+  race.name = "Martians";
+
+  auto race_handle = ctx.em.create_race(race);
+  player_t p3 = race_handle->Playernum;
+  test::expect_eq(p3, 3);
+
+  const auto* created_race = ctx.em.peek_race(p3);
+  test::expect_ne(created_race, nullptr);
+  test::expect_eq(created_race->name, "Martians");
+  test::expect_eq(created_race->Playernum, p3);
+
+  // Auto-seeded block and power checks in cache
+  const auto* created_block = ctx.em.peek_block(blocknum_t{p3.value});
+  test::expect_ne(created_block, nullptr);
+  test::expect_eq(created_block->Playernum, p3);
+  test::expect_eq(created_block->name, "Martians");
+
+  const auto* created_power = ctx.em.peek_power(powernum_t{p3.value});
+  test::expect_ne(created_power, nullptr);
+  test::expect_eq(created_power->id, p3.value);
+
+  // Persistence check across cache flush/clear
+  ctx.em.clear_cache();
+
+  const auto* persisted_race = ctx.em.peek_race(p3);
+  test::expect_ne(persisted_race, nullptr);
+  test::expect_eq(persisted_race->name, "Martians");
+
+  const auto* persisted_block = ctx.em.peek_block(blocknum_t{p3.value});
+  test::expect_ne(persisted_block, nullptr);
+  test::expect_eq(persisted_block->Playernum, p3);
+  test::expect_eq(persisted_block->name, "Martians");
+
+  const auto* persisted_power = ctx.em.peek_power(powernum_t{p3.value});
+  test::expect_ne(persisted_power, nullptr);
+  test::expect_eq(persisted_power->id, p3.value);
+
+  std::println(
+      std::cout,
+      "  ✓ create_race correctly creates and auto-seeds block and power");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -1117,6 +1180,7 @@ int main() {
   test_entity_manager_with_scoped_peeks();
   test_deletion_barrier();
   test_entity_manager_count_non_asteroid_planets();
+  test_entity_manager_create_race();
 
   std::println(std::cout, "\n✅ All EntityManager tests passed!");
   return 0;

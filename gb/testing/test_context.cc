@@ -179,7 +179,6 @@ TestContext& TestContext::with_standard_universe() {
   JsonStore store(db);
 
   // 1. Setup standard races: Player 1 (Federation) and Player 2 (Klingons)
-  RaceRepository race_repo(store);
   Race r1{};
   r1.Playernum = 1;
   r1.name = "Federation";
@@ -190,7 +189,7 @@ TestContext& TestContext::with_standard_universe() {
   r1.Gov_ship = 100;
   r1.mass = 1.0;
   r1.metabolism = 1.0;
-  race_repo.save(r1);
+  em.create_race(r1);
 
   Race r2{};
   r2.Playernum = 2;
@@ -201,15 +200,7 @@ TestContext& TestContext::with_standard_universe() {
   r2.governor[0].money = 10'000;
   r2.mass = 1.0;
   r2.metabolism = 1.0;
-  race_repo.save(r2);
-
-  // Setup standard alliance blocks for Player 1 and Player 2
-  BlockRepository block_repo(store);
-  for (player_t pid : {player_t{1}, player_t{2}}) {
-    block b{};
-    b.Playernum = pid;
-    block_repo.save(b);
-  }
+  em.create_race(r2);
 
   // 2. Setup Star 0 (Sol) with 100 AP for both races, explored and inhabited
   star_struct ss0{};

@@ -124,7 +124,7 @@ void test_first_race_requires_god() {
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "MortalRace",
@@ -158,7 +158,7 @@ void test_max_players_rejected() {
   }
 
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "OverflowEmpire",
@@ -180,7 +180,7 @@ void test_no_free_planet_rejected() {
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   // Request FOREST planet (none exist in test universe)
   GB::creator::RaceEnrollmentSpec spec{
@@ -203,7 +203,7 @@ void test_enroll_first_race_god_success() {
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Terrans",
@@ -299,7 +299,7 @@ void test_enroll_second_race_mortal_success() {
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   // First enroll Deity
   GB::creator::RaceEnrollmentSpec god_spec{
@@ -350,7 +350,7 @@ void test_enroll_second_race_god_success() {
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   // Enroll player 1 as God on Earth
   GB::creator::RaceEnrollmentSpec god1_spec{
@@ -390,7 +390,7 @@ void test_enroll_gas_giant_cold_success() {
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Jovians",
@@ -424,7 +424,7 @@ void test_enroll_explicit_capital_coords() {
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   Coordinates explicit_coords{3, 4};
   GB::creator::RaceEnrollmentSpec spec{
@@ -458,7 +458,7 @@ void test_find_suitable_planet_shuffle() {
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   // Sol (star 0) has Earth and Gas Giant, Vega (star 2) has Iceball and Desert.
   // Star 1 has Mars, but only 1 planet, so it is skipped.

@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
   // Create Database, EntityManager, and EnrollmentService
   Database database{db_path};
   EntityManager entity_manager{database};
-  GB::creator::EnrollmentService service{entity_manager, database};
+  GB::creator::EnrollmentService service{entity_manager};
 
   if ((Playernum = player_t{entity_manager.num_races().value + 1}) >=
       player_t{MAXPLAYERS}) {

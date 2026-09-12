@@ -140,8 +140,8 @@ void initialize_block_data(EntityManager& entity_manager) {
     const player_t i = race.Playernum;
     try {
       entity_manager.mutate_block(i.value, [&](struct block& b) {
-        b.invite_player(i);
-        b.pledge_player(i);
+        b.invite(i);
+        b.pledge(i);
       });
     } catch (const EntityNotFoundError&) {
     }

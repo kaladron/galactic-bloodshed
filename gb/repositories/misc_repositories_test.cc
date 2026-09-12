@@ -86,8 +86,8 @@ void test_block_repository() {
   b1.Playernum = 1;
   b1.name = "Alliance Alpha";
   b1.motto = "United we stand";
-  b1.invite = 1;
-  b1.pledge = 1;
+  b1.invited = 1;
+  b1.pledged = 1;
   b1.atwar = 2;
   b1.allied = 3;
   b1.next = 0;

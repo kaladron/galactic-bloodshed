@@ -211,7 +211,7 @@ struct meta<block> {
   using T = block;
   static constexpr auto value =
       object("Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
-             "invite", &T::invite, "pledge", &T::pledge, "atwar", &T::atwar,
+             "invited", &T::invited, "pledged", &T::pledged, "atwar", &T::atwar,
              "allied", &T::allied, "next", &T::next, "systems_owned",
              &T::systems_owned, "VPs", &T::VPs, "money", &T::money);
 };

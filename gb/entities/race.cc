@@ -29,28 +29,32 @@ void Race::make_peace_with(player_t p) noexcept {
   clrbit(atwar, p);
 }
 
+bool block::is_member(player_t p) const noexcept {
+  return is_pledged(p) && is_invited(p);
+}
+
 bool block::is_invited(player_t p) const noexcept {
-  return isset(invite, p);
+  return isset(invited, p);
 }
 
-void block::invite_player(player_t p) noexcept {
-  setbit(invite, p);
+void block::invite(player_t p) noexcept {
+  setbit(invited, p);
 }
 
-void block::cancel_invite(player_t p) noexcept {
-  clrbit(invite, p);
+void block::uninvite(player_t p) noexcept {
+  clrbit(invited, p);
 }
 
 bool block::is_pledged(player_t p) const noexcept {
-  return isset(pledge, p);
+  return isset(pledged, p);
 }
 
-void block::pledge_player(player_t p) noexcept {
-  setbit(pledge, p);
+void block::pledge(player_t p) noexcept {
+  setbit(pledged, p);
 }
 
-void block::unpledge_player(player_t p) noexcept {
-  clrbit(pledge, p);
+void block::unpledge(player_t p) noexcept {
+  clrbit(pledged, p);
 }
 
 bool block::is_allied_with(player_t p) const noexcept {

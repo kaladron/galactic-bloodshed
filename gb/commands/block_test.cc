@@ -46,24 +46,24 @@ void test_block_dispatch() {
   block1.name = "ZeroVPBlock";
   block1.motto = "We have no VPs yet";
   block1.VPs = 0;
-  block1.invite = (1ULL << 1);
-  block1.pledge = (1ULL << 1);
+  block1.invite(player_t{1});
+  block1.pledge(player_t{1});
 
   block block2{};
   block2.Playernum = 2;
   block2.name = "HasVPsBlock";
   block2.motto = "We have some VPs";
   block2.VPs = 100;
-  block2.invite = (1ULL << 2);
-  block2.pledge = (1ULL << 2);
+  block2.invite(player_t{2});
+  block2.pledge(player_t{2});
 
   block block3{};
   block3.Playernum = 3;
   block3.name = "EmptyBlock";
   block3.motto = "Nobody here";
   block3.VPs = 50;
-  block3.invite = 0;
-  block3.pledge = 0;
+  block3.invited = 0;
+  block3.pledged = 0;
 
   BlockRepository blocks(store);
   blocks.save(block1);

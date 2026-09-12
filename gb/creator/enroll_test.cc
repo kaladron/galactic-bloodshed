@@ -21,7 +21,7 @@ void test_enroll_first_race_god_requirement() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Mortal",
@@ -53,7 +53,7 @@ void test_enroll_max_players() {
   }
 
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Overflow",
@@ -96,7 +96,7 @@ void test_enroll_no_free_planet_type() {
   planet_repo.save(planet);
 
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Terrans",
@@ -224,7 +224,7 @@ void test_find_suitable_planet_deterministic_search() {
   planet_repo.save(p5_1);
 
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   // Test 1: Given order [0, 1, 3, 2, 4, 5], should skip 0 and 1, and select
   // Star 3 (first valid candidate in order)
@@ -316,7 +316,7 @@ void test_enroll_valid_race_success() {
   sector_repo.save_map(smap);
 
   EntityManager em(db);
-  GB::creator::EnrollmentService service(em, db);
+  GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Jovians",

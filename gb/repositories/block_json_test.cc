@@ -24,8 +24,8 @@ int main() {
   test_blocks[0].Playernum = 1;
   test_blocks[0].name = "TestPlayer1";
   test_blocks[0].motto = "TestMotto1";
-  test_blocks[0].invite = 0x123;
-  test_blocks[0].pledge = 0x456;
+  test_blocks[0].invited = 0x123;
+  test_blocks[0].pledged = 0x456;
   test_blocks[0].atwar = 0x789;
   test_blocks[0].allied = 0xABC;
   test_blocks[0].next = 2;
@@ -36,8 +36,8 @@ int main() {
   test_blocks[1].Playernum = 2;
   test_blocks[1].name = "TestPlayer2";
   test_blocks[1].motto = "TestMotto2";
-  test_blocks[1].invite = 0xDEF;
-  test_blocks[1].pledge = 0x321;
+  test_blocks[1].invited = 0xDEF;
+  test_blocks[1].pledged = 0x321;
   test_blocks[1].atwar = 0x654;
   test_blocks[1].allied = 0x987;
   test_blocks[1].next = 3;
@@ -72,8 +72,8 @@ int main() {
   test::expect_eq(retrieved_blocks[0].Playernum, test_blocks[0].Playernum);
   test::expect_eq(retrieved_blocks[0].name, test_blocks[0].name);
   test::expect_eq(retrieved_blocks[0].motto, test_blocks[0].motto);
-  test::expect_eq(retrieved_blocks[0].invite, test_blocks[0].invite);
-  test::expect_eq(retrieved_blocks[0].pledge, test_blocks[0].pledge);
+  test::expect_eq(retrieved_blocks[0].invited, test_blocks[0].invited);
+  test::expect_eq(retrieved_blocks[0].pledged, test_blocks[0].pledged);
   test::expect_eq(retrieved_blocks[0].atwar, test_blocks[0].atwar);
   test::expect_eq(retrieved_blocks[0].allied, test_blocks[0].allied);
   test::expect_eq(retrieved_blocks[0].next, test_blocks[0].next);
@@ -86,8 +86,8 @@ int main() {
   test::expect_eq(retrieved_blocks[1].Playernum, test_blocks[1].Playernum);
   test::expect_eq(retrieved_blocks[1].name, test_blocks[1].name);
   test::expect_eq(retrieved_blocks[1].motto, test_blocks[1].motto);
-  test::expect_eq(retrieved_blocks[1].invite, test_blocks[1].invite);
-  test::expect_eq(retrieved_blocks[1].pledge, test_blocks[1].pledge);
+  test::expect_eq(retrieved_blocks[1].invited, test_blocks[1].invited);
+  test::expect_eq(retrieved_blocks[1].pledged, test_blocks[1].pledged);
   test::expect_eq(retrieved_blocks[1].atwar, test_blocks[1].atwar);
   test::expect_eq(retrieved_blocks[1].allied, test_blocks[1].allied);
   test::expect_eq(retrieved_blocks[1].next, test_blocks[1].next);

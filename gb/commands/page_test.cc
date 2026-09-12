@@ -18,8 +18,10 @@ void setup_test_world(TestContext& ctx) {
   // Setup alliance block for player 1
   ctx.em.mutate_block(1, [](block& b) {
     b.name = "AlphaAlliance";
-    b.invite = 0b11;
-    b.pledge = 0b11;
+    b.invite(player_t{1});
+    b.invite(player_t{2});
+    b.pledge(player_t{1});
+    b.pledge(player_t{2});
   });
 }
 

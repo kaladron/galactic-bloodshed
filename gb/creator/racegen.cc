@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
   if (std::filesystem::exists(db_path)) {
     db.emplace(db_path);
     em.emplace(*db);
-    service.emplace(*em, *db);
+    service.emplace(*em);
   } else if (db_path_specified) {
     std::println(std::cerr,
                  "Warning: Database '{}' not found. Running in offline design "

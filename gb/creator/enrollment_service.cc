@@ -15,8 +15,7 @@ module gb.creator;
 
 namespace GB::creator {
 
-EnrollmentService::EnrollmentService(EntityManager& em, Database& db)
-    : entity_manager_(em), store_(db), races_(store_) {}
+EnrollmentService::EnrollmentService(EntityManager& em) : entity_manager_(em) {}
 
 std::optional<std::pair<starnum_t, planetnum_t>>
 EnrollmentService::find_suitable_planet(PlanetType ppref,
@@ -256,13 +255,8 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
     });
   });
 
-  // 8. Save race
-  if (!races_.save(race)) {
-    return EnrollmentResult{
-        .success = false,
-        .message = "Failed to save race to database.",
-    };
-  }
+  // 8. Save race and auto-seed baseline alliance block and power records
+  entity_manager_.create_race(race);
 
   // 9. Mutate star
   entity_manager_.mutate_star(star, [&](Star& s) {

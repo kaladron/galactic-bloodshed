@@ -365,8 +365,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
           try {
             const auto* block_player =
                 state.entity_manager.peek_block(player.value);
-            std::uint64_t allied_members =
-                block_player->invite & block_player->pledge;
+            std::uint64_t allied_members = block_player->member_mask();
             if ((inhabited[star.value] | allied_members) == allied_members) {
               state.entity_manager.mutate_block(
                   player.value, [](struct block& b) { b.systems_owned++; });
@@ -841,7 +840,7 @@ void compute_power_blocks(EntityManager& entity_manager) {
     for (const Race& race_j : RaceList::readonly(entity_manager)) {
       const player_t j = race_j.Playernum;
 
-      if (block_i->is_invited(j) && block_i->is_pledged(j)) {
+      if (block_i->is_member(j)) {
         try {
           const auto* power_ptr =
               entity_manager.peek_power(powernum_t{j.value});

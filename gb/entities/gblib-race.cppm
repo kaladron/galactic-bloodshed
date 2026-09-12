@@ -330,8 +330,8 @@ export struct block {
   player_t Playernum;
   std::string name;
   std::string motto;
-  std::uint64_t invite;
-  std::uint64_t pledge;
+  std::uint64_t invited;
+  std::uint64_t pledged;
   std::uint64_t atwar;
   std::uint64_t allied;
   unsigned short next;
@@ -339,23 +339,33 @@ export struct block {
   unsigned long VPs;
   unsigned long money;
 
+  /// Returns whether the given player is a member of this bloc (both invited
+  /// and pledged).
+  [[nodiscard]] bool is_member(player_t p) const noexcept;
+
+  /// Returns the bitmask of all members (players that are both invited and
+  /// pledged).
+  [[nodiscard]] std::uint64_t member_mask() const noexcept {
+    return invited & pledged;
+  }
+
   /// Returns whether the given player is invited to this bloc.
   [[nodiscard]] bool is_invited(player_t p) const noexcept;
 
   /// Invites the given player to this bloc.
-  void invite_player(player_t p) noexcept;
+  void invite(player_t p) noexcept;
 
-  /// Cancels the invitation for the given player to this bloc.
-  void cancel_invite(player_t p) noexcept;
+  /// Uninvites the given player from this bloc.
+  void uninvite(player_t p) noexcept;
 
   /// Returns whether the given player is pledged to this bloc.
   [[nodiscard]] bool is_pledged(player_t p) const noexcept;
 
   /// Pledges the given player to this bloc.
-  void pledge_player(player_t p) noexcept;
+  void pledge(player_t p) noexcept;
 
   /// Unpledges the given player from this bloc.
-  void unpledge_player(player_t p) noexcept;
+  void unpledge(player_t p) noexcept;
 
   /// Returns whether this bloc is allied with the given player.
   [[nodiscard]] bool is_allied_with(player_t p) const noexcept;

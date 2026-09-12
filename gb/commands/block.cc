@@ -34,7 +34,7 @@ bool block(const command_t& argv, GameObj& g) {
     bool found_any = false;
     g.out << std::format("Race #{} [{}] is a member of ", p, r->name);
     for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
-      if (block_i.is_pledged(p) && block_i.is_invited(p)) {
+      if (block_i.is_member(p)) {
         g.out << std::format("{}{}", found_any ? ", " : " ", block_i.Playernum);
         found_any = true;
       }
@@ -107,9 +107,7 @@ bool block(const command_t& argv, GameObj& g) {
     table[0].format().font_style({tabulate::FontStyle::bold});
 
     for (const Race& r : RaceList::readonly(g.entity_manager)) {
-      if (!block_p->is_pledged(r.Playernum) ||
-          !block_p->is_invited(r.Playernum) || r.dissolved)
-        continue;
+      if (!block_p->is_member(r.Playernum) || r.dissolved) continue;
       try {
         g.entity_manager.with_power(
             powernum_t{r.Playernum.value}, [&](const auto& p_info) {

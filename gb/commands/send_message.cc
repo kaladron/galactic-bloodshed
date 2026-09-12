@@ -139,8 +139,7 @@ bool send_message(const command_t& argv, GameObj& g) {
         race.name, race.governor[Governor.value].name, Playernum, Governor,
         block_target->name, who);
     for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
-      if (block_target->is_invited(i) && block_target->is_pledged(i) &&
-          i != Playernum) {
+      if (block_target->is_member(i) && i != Playernum) {
         g.entity_manager.mutate_race(i, [&](Race& alien) {
           alien.translate[Playernum] =
               std::min(alien.translate[Playernum] + 2, 100);

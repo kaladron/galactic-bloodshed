@@ -66,23 +66,31 @@ int main() {
 
     test::expect_false(b.is_invited(player_t{2}));
     test::expect_false(b.is_pledged(player_t{2}));
+    test::expect_false(b.is_member(player_t{2}));
 
-    b.invite_player(player_t{2});
+    b.invite(player_t{2});
     test::expect_true(b.is_invited(player_t{2}));
     test::expect_false(b.is_pledged(player_t{2}));
+    test::expect_false(b.is_member(player_t{2}));
 
-    b.pledge_player(player_t{2});
+    b.pledge(player_t{2});
     test::expect_true(b.is_invited(player_t{2}));
     test::expect_true(b.is_pledged(player_t{2}));
+    test::expect_true(b.is_member(player_t{2}));
+    test::expect_eq(b.member_mask(), (1ULL << 2));
 
-    b.cancel_invite(player_t{2});
+    b.uninvite(player_t{2});
     test::expect_false(b.is_invited(player_t{2}));
     test::expect_true(b.is_pledged(player_t{2}));
+    test::expect_false(b.is_member(player_t{2}));
+    test::expect_eq(b.member_mask(), 0ULL);
 
-    b.unpledge_player(player_t{2});
+    b.unpledge(player_t{2});
     test::expect_false(b.is_pledged(player_t{2}));
-    std::println(std::cout,
-                 "  ✓ block invitation and pledge methods work as expected");
+    test::expect_false(b.is_member(player_t{2}));
+    test::expect_eq(b.member_mask(), 0ULL);
+    std::println(std::cout, "  ✓ block invitation, pledge, and membership "
+                            "methods work as expected");
   }
 
   // block alliance and war methods

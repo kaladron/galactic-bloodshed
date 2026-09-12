@@ -154,6 +154,44 @@ void EntityManager::release_race(player_t player) {
   release_entity_impl<Race>(player, race_cache, race_refcount);
 }
 
+EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
+  player_t player = race_data.Playernum != 0
+                        ? race_data.Playernum
+                        : player_t{max_race_player().value + 1};
+  Race new_race = race_data;
+  new_race.Playernum = player;
+
+  // Save through repository (DAL)
+  races.save(new_race);
+
+  // Auto-seed baseline block if not existing
+  if (!blocks.find_by_id(blocknum_t{player.value})) {
+    block b{};
+    b.Playernum = player;
+    b.name = new_race.name;
+    blocks.save(b);
+  }
+
+  // Auto-seed baseline power if not existing
+  if (!powers.find_by_id(powernum_t{player.value})) {
+    power p{};
+    p.id = player.value;
+    powers.save(p);
+  }
+
+  // Cache it
+  auto [iter, inserted] =
+      race_cache.insert_or_assign(player, std::make_unique<Race>(new_race));
+  race_refcount[player] = 1;
+
+  return {this, iter->second.get(), [this, player](const Race& r) {
+            if (!is_deferred_write()) {
+              races.save(r);
+            }
+            release_race(player);
+          }};
+}
+
 // Ship entity methods
 EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
   auto it = ship_cache.find(num);

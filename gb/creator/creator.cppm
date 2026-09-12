@@ -253,7 +253,7 @@ export struct EnrollmentResult {
 /// Domain service coordinating player empire enrollment.
 export class EnrollmentService {
 public:
-  EnrollmentService(EntityManager& em, Database& db);
+  explicit EnrollmentService(EntityManager& em);
 
   /// Enrolls a new player empire using the provided specification.
   EnrollmentResult enroll_player(const RaceEnrollmentSpec& spec);
@@ -266,8 +266,6 @@ public:
 
 private:
   EntityManager& entity_manager_;
-  JsonStore store_;
-  RaceRepository races_;
 };
 
 /// Baseline cosmic temperature floor in Celsius (~4 Kelvin, near cosmic

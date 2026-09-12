@@ -217,13 +217,8 @@ int main() {
       ship2_num = ship2_handle->number();
 
       // Dock them together (both point to each other)
-      ship1_handle->docked() = 1;
-      ship1_handle->whatdest() = ScopeLevel::LEVEL_SHIP;
-      ship1_handle->destshipno() = ship2_num;
-
-      ship2_handle->docked() = 1;
-      ship2_handle->whatdest() = ScopeLevel::LEVEL_SHIP;
-      ship2_handle->destshipno() = ship1_num;
+      ship1_handle->dock_with_ship(ship2_num);
+      ship2_handle->dock_with_ship(ship1_num);
 
       // Handles auto-save when they go out of scope
     }

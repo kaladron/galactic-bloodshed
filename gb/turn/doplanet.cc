@@ -668,9 +668,7 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
   ship.deststar() = starnum;
   ship.destpnum() = planetnum;
   ship.pnumorbits() = planetnum;
-  ship.whatdest() = ScopeLevel::LEVEL_PLAN;
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.docked() = true;
+  ship.land_on_planet();
   ship.name() = std::format("Scum{:04d}", ship.number());
   return ship.number();
 }

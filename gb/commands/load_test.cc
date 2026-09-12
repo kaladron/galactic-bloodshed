@@ -295,11 +295,7 @@ void test_load_ship_to_ship() {
                         .build();
 
   // Set mutual docking on carrier s2
-  ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
-    s2.docked() = 1;
-    s2.destshipno() = s1_id;
-    s2.whatdest() = ScopeLevel::LEVEL_SHIP;
-  });
+  ctx.em.mutate_ship(s2_id, [&](Ship& s2) { s2.dock_with_ship(s1_id); });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -428,11 +424,8 @@ void test_load_ship_to_ship() {
 
   // Dock s1 with alien ship
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) { s1.destshipno() = alien_id; });
-  ctx.em.mutate_ship(alien_id, [&](Ship& alien) {
-    alien.docked() = 1;
-    alien.destshipno() = s1_id;
-    alien.whatdest() = ScopeLevel::LEVEL_SHIP;
-  });
+  ctx.em.mutate_ship(alien_id,
+                     [&](Ship& alien) { alien.dock_with_ship(s1_id); });
 
   // Attempt to load from alien ship (must be rejected)
   g.out.str("");

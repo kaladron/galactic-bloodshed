@@ -841,10 +841,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   /* undock the stuff docked with it */
   if (ship.docked() && ship.whatorbits() != ScopeLevel::LEVEL_SHIP &&
       ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
-    mutate_ship(ship.destshipno(), [](Ship& s) {
-      s.docked() = 0;
-      s.whatdest() = ScopeLevel::LEVEL_UNIV;
-    });
+    mutate_ship(ship.destshipno(), [](Ship& s) { s.undock_from_ship(); });
   }
 
   /* landed ships are killed */

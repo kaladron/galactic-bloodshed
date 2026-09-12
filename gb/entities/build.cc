@@ -273,13 +273,11 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
                           (newship.type() == ShipType::OTYPE_PLOW))
                              ? "5"
                              : "Standard");
-  newship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  newship.whatdest() = ScopeLevel::LEVEL_PLAN;
+  newship.land_on_planet();
   newship.deststar() = snum;
   newship.destpnum() = pnum;
   newship.storbits() = snum;
   newship.pnumorbits() = pnum;
-  newship.docked() = 1;
   planet.info(Playernum).resource -= newship.build_cost();
 
   // Ship number will be assigned by EntityManager when created
@@ -287,7 +285,6 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   newship.number() = shipno;
   newship.owner() = Playernum;
   newship.governor() = Governor;
-  newship.whatorbits() = ScopeLevel::LEVEL_PLAN;
   if (auto* waste_ship = newship.as<ToxicWasteShip>()) {
     std::string message = std::format("Toxin concentration on planet was {}%,",
                                       planet.conditions(TOXIC));
@@ -320,22 +317,18 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
   newship->owner() = Playernum;
   newship->governor() = Governor;
   if (outside) {
-    newship->whatorbits() = builder->whatorbits();
+    newship->launch_to_orbit(builder->whatorbits());
     newship->whatdest() = ScopeLevel::LEVEL_UNIV;
     newship->deststar() = builder->deststar();
     newship->destpnum() = builder->destpnum();
     newship->storbits() = builder->storbits();
     newship->pnumorbits() = builder->pnumorbits();
-    newship->docked() = 0;
   } else {
-    newship->whatorbits() = ScopeLevel::LEVEL_SHIP;
-    newship->whatdest() = ScopeLevel::LEVEL_SHIP;
+    newship->dock_into_carrier(builder->number());
     newship->deststar() = builder->deststar();
     newship->destpnum() = builder->destpnum();
-    newship->destshipno() = builder->number();
     newship->storbits() = builder->storbits();
     newship->pnumorbits() = builder->pnumorbits();
-    newship->docked() = 1;
   }
   newship->tech() = race.tech;
   newship->set_coordinates(builder->coordinates());

@@ -230,11 +230,8 @@ bool scrap(const command_t& argv, GameObj& g) {
         rcv_resource(s2, scrapval);
         rcv_troops(s2, troopval, g.race->mass);
         rcv_popn(s2, crewval, g.race->mass);
-        /* check for docking status in case scrapped ship is landed. Maarten */
         if (s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
-          s2.docked() = 0; /* undock the surviving ship */
-          s2.whatdest() = ScopeLevel::LEVEL_UNIV;
-          s2.destshipno() = 0;
+          s2.undock_from_ship(); /* undock the surviving ship */
         }
       });
     }

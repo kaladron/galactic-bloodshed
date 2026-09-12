@@ -62,6 +62,13 @@ export enum class ActiveBattery : std::uint8_t {
   SECONDARY = 2,
 };
 
+/// \brief Physical mooring / surface status of a ship.
+export enum class DockState : std::uint8_t {
+  Spaceborne = 0,  ///< Orbiting or moving through space
+  Landed = 1,      ///< Landed on a planetary surface
+  Docked = 2,      ///< Docked inside a carrier ship's hangar
+};
+
 /// \brief Value object representing a ship's gun battery mount, encapsulating
 /// weapon count and caliber while enforcing domain invariants.
 ///
@@ -476,14 +483,15 @@ export struct ship_struct {
   bool alive{false};   ///< Ship hull intact / not destroyed
   bool mode{
       false};  ///< Warhead detonation mode (false: explosive, true: radiative)
-  bool bombard{false};   ///< Planetary bombardment enabled
-  bool mounted{false};   ///< Warp crystal currently mounted in jump drive
-  bool cloaked{false};   ///< Cloaking device active
-  bool sheep{false};     ///< Sub-light exploration automation enabled
-  bool docked{false};    ///< Docked inside a carrier ship
-  bool notified{false};  ///< Player notified of arrival / event
-  bool examined{false};  ///< Ship surveyed / examined
-  bool on{false};        ///< Factory / power generator online
+  bool bombard{false};  ///< Planetary bombardment enabled
+  bool mounted{false};  ///< Warp crystal currently mounted in jump drive
+  bool cloaked{false};  ///< Cloaking device active
+  bool sheep{false};    ///< Sub-light exploration automation enabled
+  DockState dock_state{
+      DockState::Spaceborne};  ///< Physical mooring or landing status
+  bool notified{false};        ///< Player notified of arrival / event
+  bool examined{false};        ///< Ship surveyed / examined
+  bool on{false};              ///< Factory / power generator online
 
   bool merchant{false};                     ///< Commercial trade vessel status
   ActiveBattery guns{ActiveBattery::NONE};  ///< Active gun battery mode
@@ -2670,11 +2678,11 @@ public:
     return data_.sheep;
   }
 
-  [[nodiscard]] bool docked() const {
-    return data_.docked;
+  [[nodiscard]] DockState dock_state() const noexcept {
+    return data_.dock_state;
   }
-  bool& docked() {
-    return data_.docked;
+  [[nodiscard]] bool docked() const noexcept {
+    return data_.dock_state != DockState::Spaceborne;
   }
 
   [[nodiscard]] bool notified() const {
@@ -2808,12 +2816,78 @@ public:
 
   /// Whether ship is currently docked inside another ship (mothership/carrier).
   [[nodiscard]] bool is_docked() const noexcept {
-    return data_.docked && data_.whatdest == ScopeLevel::LEVEL_SHIP;
+    return data_.dock_state == DockState::Docked;
   }
 
   /// Whether ship is currently landed on a planet surface.
   [[nodiscard]] bool is_landed() const noexcept {
-    return data_.whatdest == ScopeLevel::LEVEL_PLAN && data_.docked;
+    return data_.dock_state == DockState::Landed;
+  }
+
+  /// Whether ship is spaceborne (orbiting or flying in deep space).
+  [[nodiscard]] bool is_spaceborne() const noexcept {
+    return data_.dock_state == DockState::Spaceborne;
+  }
+
+  /// Returns the carrier ship ID if currently docked inside a carrier hangar.
+  [[nodiscard]] std::optional<shipnum_t> carrier_id() const noexcept {
+    if (is_docked() && data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
+      return data_.destshipno;
+    }
+    return std::nullopt;
+  }
+
+  /// Returns the other ship ID if currently moored to another spaceborne ship.
+  [[nodiscard]] std::optional<shipnum_t> moored_ship_id() const noexcept {
+    if (is_docked() && data_.whatorbits != ScopeLevel::LEVEL_SHIP &&
+        data_.whatdest == ScopeLevel::LEVEL_SHIP) {
+      return data_.destshipno;
+    }
+    return std::nullopt;
+  }
+
+  /// Lands the ship on a planet surface.
+  void land_on_planet() noexcept {
+    data_.dock_state = DockState::Landed;
+    data_.whatorbits = ScopeLevel::LEVEL_PLAN;
+    data_.whatdest = ScopeLevel::LEVEL_PLAN;
+  }
+
+  /// Docks the ship inside a carrier ship's hangar.
+  void dock_into_carrier(shipnum_t carrier) noexcept {
+    data_.dock_state = DockState::Docked;
+    data_.destshipno = carrier;
+    data_.whatorbits = ScopeLevel::LEVEL_SHIP;
+    data_.whatdest = ScopeLevel::LEVEL_SHIP;
+  }
+
+  /// Moors the ship to another spaceborne ship (ship-to-ship docking).
+  ///
+  /// Note: Unlike carrier hangar docking (`dock_into_carrier`), the ship
+  /// remains in its existing orbital reference frame (`whatorbits`).
+  void dock_with_ship(shipnum_t other_ship) noexcept {
+    data_.dock_state = DockState::Docked;
+    data_.destshipno = other_ship;
+    data_.whatdest = ScopeLevel::LEVEL_SHIP;
+  }
+
+  /// Undocks the ship from a moored ship in space. Preserves whatorbits.
+  void undock_from_ship() noexcept {
+    data_.dock_state = DockState::Spaceborne;
+    data_.destshipno = 0;
+    data_.whatdest = ScopeLevel::LEVEL_UNIV;
+  }
+
+  /// Launches the ship into orbit or deep space.
+  void
+  launch_to_orbit(ScopeLevel orbit_level = ScopeLevel::LEVEL_PLAN) noexcept {
+    data_.dock_state = DockState::Spaceborne;
+    if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
+      data_.destshipno = 0;
+    }
+    if (orbit_level != ScopeLevel::LEVEL_SHIP) {
+      data_.whatorbits = orbit_level;
+    }
   }
 
   /// Whether ship has an active combat laser armed and ready to fire.
@@ -3859,11 +3933,11 @@ public:
   void set_simulated_destination(ScopeLevel level, starnum_t snum,
                                  planetnum_t pnum,
                                  shipnum_t shipno = shipnum_t{0}) noexcept {
+    data_.dock_state = DockState::Spaceborne;
     destshipno() = shipno;
     whatdest() = level;
     deststar() = snum;
     destpnum() = pnum;
-    docked() = 0;
   }
 };
 

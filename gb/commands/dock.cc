@@ -182,14 +182,11 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
 
     if (s.docked() && Assault) {
       /* first undock the target ship */
-      s.docked() = 0;
-      s.whatdest() = ScopeLevel::LEVEL_UNIV;
       if (s.destshipno() != 0) {
-        g.entity_manager.mutate_ship(s.destshipno(), [](Ship& s3) {
-          s3.docked() = 0;
-          s3.whatdest() = ScopeLevel::LEVEL_UNIV;
-        });
+        g.entity_manager.mutate_ship(s.destshipno(),
+                                     [](Ship& s3) { s3.undock_from_ship(); });
       }
+      s.undock_from_ship();
     }
 
     /* defending fire gets defensive fire */
@@ -272,16 +269,11 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
             /* if the assaulted ship is docked, undock it first */
             if (s2.docked() && s2.whatdest() == ScopeLevel::LEVEL_SHIP) {
               if (s2.destshipno() != 0) {
-                g.entity_manager.mutate_ship(s2.destshipno(), [](Ship& s3) {
-                  s3.docked() = 0;
-                  s3.whatdest() = ScopeLevel::LEVEL_UNIV;
-                  s3.destshipno() = 0;
-                });
+                g.entity_manager.mutate_ship(
+                    s2.destshipno(), [](Ship& s3) { s3.undock_from_ship(); });
               }
 
-              s2.docked() = 0;
-              s2.whatdest() = ScopeLevel::LEVEL_UNIV;
-              s2.destshipno() = 0;
+              s2.undock_from_ship();
             }
             /* nuke both populations, ships */
             casualty_scale = MIN(boarders, s2.troops() + s2.popn());
@@ -327,13 +319,8 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
 
             if ((!s2.popn() && !s2.troops()) && s.alive() && s2.alive()) {
               /* we got 'em */
-              s.docked() = 1;
-              s.whatdest() = ScopeLevel::LEVEL_SHIP;
-              s.destshipno() = ship2no;
-
-              s2.docked() = 1;
-              s2.whatdest() = ScopeLevel::LEVEL_SHIP;
-              s2.destshipno() = shipno;
+              s.dock_with_ship(ship2no);
+              s2.dock_with_ship(shipno);
               old2owner = s2.owner();
               old2gov = s2.governor();
               s2.owner() = s.owner();
@@ -385,13 +372,8 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
           g.out << "Hyper-drive deactivated.\n";
         }
 
-        s.docked() = 1;
-        s.whatdest() = ScopeLevel::LEVEL_SHIP;
-        s.destshipno() = ship2no;
-
-        s2.docked() = 1;
-        s2.whatdest() = ScopeLevel::LEVEL_SHIP;
-        s2.destshipno() = shipno;
+        s.dock_with_ship(ship2no);
+        s2.dock_with_ship(shipno);
       }
 
       if (Assault) {

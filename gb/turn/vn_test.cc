@@ -577,7 +577,7 @@ int main() {
     vn_data.type = ShipType::OTYPE_VN;
     vn_data.storbits = 0;
     vn_data.pnumorbits = 0;
-    vn_data.docked = 1;
+    vn_data.dock_state = DockState::Landed;
     vn_data.max_fuel = 100;
     vn_data.fuel = 50.0;  // Partial fuel
     vn_data.special = MindData{
@@ -642,7 +642,7 @@ int main() {
     vn_data.deststar = 0;
     vn_data.destpnum = 0;
     vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    vn_data.docked = 0;
+    vn_data.dock_state = DockState::Spaceborne;
     vn_data.special = MindData{
         .progenitor = player_t{1},
         .target = player_t{0},
@@ -811,7 +811,7 @@ int main() {
     landed_fueled_data.deststar = 0;
     landed_fueled_data.destpnum = 0;
     landed_fueled_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    landed_fueled_data.docked = 1;
+    landed_fueled_data.dock_state = DockState::Landed;
     landed_fueled_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
     landed_fueled_data.fuel = 100.0;
     landed_fueled_data.special = MindData{.busy = false};
@@ -834,7 +834,7 @@ int main() {
     landed_low_fuel_data.deststar = 0;
     landed_low_fuel_data.destpnum = 0;
     landed_low_fuel_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    landed_low_fuel_data.docked = 1;
+    landed_low_fuel_data.dock_state = DockState::Landed;
     landed_low_fuel_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
     landed_low_fuel_data.max_resource =
         ship_template(ShipType::OTYPE_VN).max_resource;
@@ -881,7 +881,7 @@ int main() {
     orbiting_vn_data.deststar = 0;
     orbiting_vn_data.destpnum = 0;
     orbiting_vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    orbiting_vn_data.docked = 0;
+    orbiting_vn_data.dock_state = DockState::Spaceborne;
     orbiting_vn_data.special = MindData{.busy = true};
     orbiting_vn_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
     orbiting_vn_data.max_resource =

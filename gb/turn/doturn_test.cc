@@ -477,7 +477,7 @@ void test_compute_governed_status() {
   gov_ship.number() = 1;
   gov_ship.owner() = player_t{1};
   gov_ship.alive() = false;
-  gov_ship.docked() = false;
+  gov_ship.launch_to_orbit();
   ShipRepository ship_repo(store);
   ship_repo.save(gov_ship);
   race.Gov_ship = 1;
@@ -486,8 +486,7 @@ void test_compute_governed_status() {
   // Case 4: Ship alive and docked at planet
   em.mutate_ship(1, [](Ship& s) {
     s.alive() = true;
-    s.docked() = true;
-    s.whatdest() = ScopeLevel::LEVEL_PLAN;
+    s.land_on_planet();
   });
   test::expect_true(compute_governed_status(race, em));
 
@@ -500,11 +499,7 @@ void test_compute_governed_status() {
   habitat.whatorbits() = ScopeLevel::LEVEL_PLAN;
   ship_repo.save(habitat);
 
-  em.mutate_ship(1, [](Ship& s) {
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = 2;
-  });
+  em.mutate_ship(1, [](Ship& s) { s.dock_into_carrier(2); });
   test::expect_true(compute_governed_status(race, em));
 }
 
@@ -527,8 +522,7 @@ void test_action_points_computation_and_distribution() {
   gov_ship.number() = 1;
   gov_ship.owner() = player_t{1};
   gov_ship.alive() = true;
-  gov_ship.docked() = true;
-  gov_ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+  gov_ship.land_on_planet();
   ShipRepository ship_repo(store);
   ship_repo.save(gov_ship);
   race.Gov_ship = 1;

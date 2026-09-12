@@ -264,7 +264,7 @@ bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
   const SystemCoordinates launch_offset{double_rand(-10.0, 10.0),
                                         double_rand(-10.0, 10.0)};
   ship.set_coordinates(planet.absolute_coordinates(star) + launch_offset);
-  ship.docked() = 0;
+  ship.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
   ship.whatdest() = ScopeLevel::LEVEL_UNIV;
   return true;
 }
@@ -347,8 +347,7 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
   s2.destpnum() = parent.destpnum();
   s2.pnumorbits() = planet.planet_order();
   s2.whatdest() = parent.whatdest();
-  s2.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  s2.docked() = true;
+  s2.land_on_planet();
 
   parent.consume_fuel(parent.fuel() * 0.5);
 
@@ -399,10 +398,9 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   s2.destpnum() = parent.destpnum();
   s2.pnumorbits() = planet.planet_order();
   s2.whatdest() = parent.whatdest();
-  s2.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  s2.land_on_planet();
   s2.bombard() = true;
   s2.mounted() = true;
-  s2.docked() = true;
 
   auto buf =
       std::format("{0} constructed {1}.", static_cast<const Ship&>(parent), s2);
@@ -464,8 +462,7 @@ bool attempt_planet_landing(EntityManager& em, AutonomousShip& ship,
 
   for (Sector& sect :
        smap.shuffle() | std::views::filter(&Sector::has_resource)) {
-    ship.docked() = 1;
-    ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+    ship.land_on_planet();
     ship.deststar() = ship.storbits();
     ship.destpnum() = ship.pnumorbits();
     const auto& star = *em.peek_star(ship.storbits());

@@ -687,12 +687,14 @@ void test_simulated_ship() {
   expect_near(sim.fuel(), 200.0);
 
   // Test set_simulated_destination
-  sim.docked() = 1;
+  sim.land_on_planet();
+  test::expect_true(sim.is_landed());
   sim.set_simulated_destination(ScopeLevel::LEVEL_PLAN, 3, 2, 0);
   test::expect_eq(sim.whatdest(), ScopeLevel::LEVEL_PLAN);
   test::expect_eq(sim.deststar(), 3);
   test::expect_eq(sim.destpnum(), 2);
-  test::expect_eq(sim.docked(), 0);
+  test::expect_eq(sim.dock_state(), DockState::Spaceborne);
+  test::expect_false(sim.docked());
 }
 
 void test_ship_joint_crew_capacity() {
@@ -868,6 +870,92 @@ void test_damage_and_radiation_subsystem() {
   test::expect_eq(ship.rad(), 100u);
 }
 
+void test_dock_state_transitions() {
+  std::println(std::cout,
+               "Testing Ship DockState transitions and invariants...");
+  ship_struct sdata{};
+  Ship ship(sdata);
+
+  // Default initial state is Spaceborne
+  test::expect_eq(ship.dock_state(), DockState::Spaceborne);
+  test::expect_true(ship.is_spaceborne());
+  test::expect_false(ship.is_landed());
+  test::expect_false(ship.is_docked());
+  test::expect_false(ship.docked());
+  test::expect_false(ship.carrier_id().has_value());
+
+  // Transition to Landed
+  ship.land_on_planet();
+  test::expect_eq(ship.dock_state(), DockState::Landed);
+  test::expect_false(ship.is_spaceborne());
+  test::expect_true(ship.is_landed());
+  test::expect_false(ship.is_docked());
+  test::expect_true(ship.docked());
+  test::expect_eq(ship.whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(ship.whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_false(ship.carrier_id().has_value());
+
+  // Transition to Docked in carrier
+  const shipnum_t carrier_no{42};
+  ship.dock_into_carrier(carrier_no);
+  test::expect_eq(ship.dock_state(), DockState::Docked);
+  test::expect_false(ship.is_spaceborne());
+  test::expect_false(ship.is_landed());
+  test::expect_true(ship.is_docked());
+  test::expect_true(ship.docked());
+  test::expect_true(ship.carrier_id().has_value());
+  test::expect_eq(*ship.carrier_id(), carrier_no);
+  test::expect_eq(ship.destshipno(), carrier_no);
+  test::expect_eq(ship.whatorbits(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(ship.whatdest(), ScopeLevel::LEVEL_SHIP);
+
+  // Launch to star orbit clears carrier reference
+  ship.launch_to_orbit(ScopeLevel::LEVEL_STAR);
+  test::expect_eq(ship.dock_state(), DockState::Spaceborne);
+  test::expect_true(ship.is_spaceborne());
+  test::expect_false(ship.is_landed());
+  test::expect_false(ship.is_docked());
+  test::expect_false(ship.docked());
+  test::expect_false(ship.carrier_id().has_value());
+  test::expect_eq(ship.destshipno(), shipnum_t{0});
+  test::expect_eq(ship.whatorbits(), ScopeLevel::LEVEL_STAR);
+
+  // Re-land and launch to planet orbit (default level)
+  ship.land_on_planet();
+  test::expect_true(ship.is_landed());
+  ship.launch_to_orbit();
+  test::expect_eq(ship.dock_state(), DockState::Spaceborne);
+  test::expect_true(ship.is_spaceborne());
+  test::expect_eq(ship.whatorbits(), ScopeLevel::LEVEL_PLAN);
+
+  // Transition to Docked with another spaceborne ship (ship-to-ship mooring)
+  const shipnum_t other_ship_no{99};
+  ship.dock_with_ship(other_ship_no);
+  test::expect_eq(ship.dock_state(), DockState::Docked);
+  test::expect_true(ship.is_docked());
+  test::expect_false(ship.is_landed());
+  test::expect_false(ship.is_spaceborne());
+  test::expect_true(ship.docked());
+  // whatorbits remains LEVEL_PLAN (orbital frame is preserved!)
+  test::expect_eq(ship.whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(ship.whatdest(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(ship.destshipno(), other_ship_no);
+  // Not in a carrier hangar:
+  test::expect_false(ship.carrier_id().has_value());
+  test::expect_true(ship.moored_ship_id().has_value());
+  test::expect_eq(*ship.moored_ship_id(), other_ship_no);
+
+  // Undock from spaceborne ship
+  ship.undock_from_ship();
+  test::expect_eq(ship.dock_state(), DockState::Spaceborne);
+  test::expect_true(ship.is_spaceborne());
+  test::expect_false(ship.is_docked());
+  test::expect_eq(ship.whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(ship.destshipno(), shipnum_t{0});
+  test::expect_eq(ship.whatdest(), ScopeLevel::LEVEL_UNIV);
+  test::expect_false(ship.moored_ship_id().has_value());
+}
+
 }  // namespace
 
 int main() {
@@ -890,6 +978,7 @@ int main() {
   test_local_mass_and_set_mass();
   test_simulated_ship();
   test_damage_and_radiation_subsystem();
+  test_dock_state_transitions();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

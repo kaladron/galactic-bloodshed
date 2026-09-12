@@ -54,9 +54,7 @@ void test_launch_happy_paths() {
   // 2. Undock alias dispatch
   // Re-dock ship to another ship to test undock
   ctx.em.mutate_ship(1, [](Ship& s) {
-    s.docked() = 1;
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = 1;  // Mock target
+    s.dock_with_ship(1);  // Mock target
   });
   ctx.assert_dispatch_success(g, {"undock", "#1"}, 0);
   test::expect_contains(g.out.str(), "undocked");
@@ -101,8 +99,7 @@ void test_launch_domain_errors() {
 
   // 2. Launch non-docked/non-landed ship
   ctx.em.mutate_ship(1, [](Ship& s) {
-    s.docked() = 0;
-    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+    s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
     s.whatdest() = ScopeLevel::LEVEL_UNIV;
   });
   ctx.assert_dispatch_rejected(g, {"launch", "#1"});

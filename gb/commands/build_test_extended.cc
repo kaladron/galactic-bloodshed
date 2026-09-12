@@ -168,9 +168,7 @@ void test_factory_multiple_builds() {
   factory_data->alive() = 1;
   factory_data->active() = 1;  // Must be active to build
   factory_data->on() = 1;
-  factory_data->whatorbits() = ScopeLevel::LEVEL_PLAN;
-  factory_data->whatdest() = ScopeLevel::LEVEL_PLAN;  // Required for landed()
-  factory_data->docked() = 1;                         // Required for landed()
+  factory_data->land_on_planet();
   factory_data->storbits() = fixture.star_id;
   factory_data->pnumorbits() = fixture.planet_id;
   factory_data->set_land_coords({5, 5});  // Land at sector with population

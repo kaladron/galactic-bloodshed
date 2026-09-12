@@ -311,7 +311,7 @@ bool load(const command_t& argv, GameObj& g) {
                                s2.destshipno() == s.number())) {
             /* the ship it was docked with died or
                undocked with it or something. */
-            s.docked() = 0;
+            s.launch_to_orbit(s.whatorbits());
             s.whatdest() = ScopeLevel::LEVEL_UNIV;
 
             g.out << std::format("{} is not docked.\n", s2);

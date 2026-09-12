@@ -70,15 +70,12 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
         }
         /* ok, load 'em up */
         g.entity_manager.mutate_ship(ship2no, [&](Ship& s2) {
-          s.whatorbits() = ScopeLevel::LEVEL_SHIP;
-          s.whatdest() = ScopeLevel::LEVEL_SHIP;
-          s.destshipno() = s2.number();
+          s.dock_into_carrier(s2.number());
           s2.set_mass(s2.mass() + s.mass());
           s2.hanger() += s.size();
           fuel = 0.0;
           g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2,
                                fuel);
-          s.docked() = 1;
         });
         return true;
       } else if (s.docked()) {
@@ -116,13 +113,10 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
         }
 
         g.entity_manager.mutate_ship(ship2no, [&](Ship& s2) {
-          s.whatorbits() = ScopeLevel::LEVEL_SHIP;
-          s.whatdest() = ScopeLevel::LEVEL_SHIP;
-          s.destshipno() = s2.number();
+          s.dock_into_carrier(s2.number());
           s2.set_mass(s2.mass() + s.mass());
           s2.hanger() += s.size();
           g.out << std::format("{} landed on {} using {} fuel.\n", s, s2, fuel);
-          s.docked() = 1;
         });
         return true;
       }
@@ -268,8 +262,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
       s.set_land_coords(target_coords);
       s.set_coordinates(p.absolute_coordinates(star));
       use_fuel(s, fuel);
-      s.docked() = 1;
-      s.whatdest() = ScopeLevel::LEVEL_PLAN;
+      s.land_on_planet();
       s.deststar() = s.storbits();
       s.destpnum() = s.pnumorbits();
     }

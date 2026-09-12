@@ -52,14 +52,13 @@ bool launch(const command_t& argv, GameObj& g) {
           g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
             s.whatorbits() = ScopeLevel::LEVEL_PLAN;
             s.storbits() = s2.storbits();
+            s.land_on_planet();
             s.pnumorbits() = s2.pnumorbits();
             s.destpnum() = s2.pnumorbits();
             s.deststar() = s2.deststar();
             s.destshipno() = 0;
             s.set_coordinates(s2.coordinates());
             s.set_land_coords(s2.land_coords());
-            s.docked() = 1;
-            s.whatdest() = ScopeLevel::LEVEL_PLAN;
             s2.set_mass(s2.mass() - s.mass());
             s2.hanger() -= s.size();
             g.out << std::format("Landed on {}/{}.\n", star.get_name(),
@@ -67,12 +66,10 @@ bool launch(const command_t& argv, GameObj& g) {
           });
         } else if (s2.whatorbits() == ScopeLevel::LEVEL_PLAN) {
           g.out << std::format("{} launched from {}.\n", s, s2);
-          s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+          s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
           s.storbits() = s2.storbits();
           s.pnumorbits() = s2.pnumorbits();
-          s.destshipno() = 0;
           s.set_coordinates(s2.coordinates());
-          s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.set_mass(s2.mass() - s.mass());
           s2.hanger() -= s.size();
@@ -82,11 +79,9 @@ bool launch(const command_t& argv, GameObj& g) {
           });
         } else if (s2.whatorbits() == ScopeLevel::LEVEL_STAR) {
           g.out << std::format("{} launched from {}.\n", s, s2);
-          s.whatorbits() = ScopeLevel::LEVEL_STAR;
+          s.launch_to_orbit(ScopeLevel::LEVEL_STAR);
           s.storbits() = s2.storbits();
-          s.destshipno() = 0;
           s.set_coordinates(s2.coordinates());
-          s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.set_mass(s2.mass() - s.mass());
           s2.hanger() -= s.size();
@@ -95,10 +90,8 @@ bool launch(const command_t& argv, GameObj& g) {
           });
         } else if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
           g.out << std::format("{} launched from {}.\n", s, s2);
-          s.whatorbits() = ScopeLevel::LEVEL_UNIV;
-          s.destshipno() = 0;
+          s.launch_to_orbit(ScopeLevel::LEVEL_UNIV);
           s.set_coordinates(s2.coordinates());
-          s.docked() = 0;
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           s2.set_mass(s2.mass() - s.mass());
           s2.hanger() -= s.size();
@@ -122,12 +115,8 @@ bool launch(const command_t& argv, GameObj& g) {
             return;
           }
         }
-        s.docked() = 0;
-        s.whatdest() = ScopeLevel::LEVEL_UNIV;
-        s.destshipno() = 0;
-        s2.docked() = 0;
-        s2.whatdest() = ScopeLevel::LEVEL_UNIV;
-        s2.destshipno() = 0;
+        s.undock_from_ship();
+        s2.undock_from_ship();
         g.out << std::format("{} undocked from {}.\n", s, s2);
         any_launched = true;
       });
@@ -160,7 +149,7 @@ bool launch(const command_t& argv, GameObj& g) {
                 return;
               }
               use_fuel(s, fuel);
-              s.docked() = 0;
+              s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
               s.whatdest() = ScopeLevel::LEVEL_UNIV;
               if (auto* canist = s.as<CanisterShip>()) {
                 canist->reset_timer();

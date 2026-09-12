@@ -132,8 +132,8 @@ struct meta<ship_struct> {
       &T::damage, "rad", &T::rad, "retaliate", &T::retaliate, "target",
       &T::target, "type", &T::type, "speed", &T::speed, "active", &T::active,
       "alive", &T::alive, "mode", &T::mode, "bombard", &T::bombard, "mounted",
-      &T::mounted, "cloaked", &T::cloaked, "sheep", &T::sheep, "docked",
-      &T::docked, "notified", &T::notified, "examined", &T::examined, "on",
+      &T::mounted, "cloaked", &T::cloaked, "sheep", &T::sheep, "dock_state",
+      &T::dock_state, "notified", &T::notified, "examined", &T::examined, "on",
       &T::on, "merchant", &T::merchant, "guns", &T::guns, "primary_battery",
       &T::primary_battery, "secondary_battery", &T::secondary_battery, "hanger",
       &T::hanger, "max_hanger", &T::max_hanger);

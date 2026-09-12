@@ -249,8 +249,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
     const auto& star = *em.peek_star(s.storbits());
     s.set_coordinates(p.absolute_coordinates(star));
     use_fuel(s, fuel);
-    s.docked() = 1;
-    s.whatdest() = ScopeLevel::LEVEL_PLAN;
+    s.land_on_planet();
     s.deststar() = s.storbits();
     s.destpnum() = s.pnumorbits();
   }
@@ -323,11 +322,9 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
     telegram << "\t\tNot enough fuel to launch!\n";
     return 1;
   }
-  /* ship is ready to fly - order the ship to its next destination */
-  s.whatdest() = ScopeLevel::LEVEL_PLAN;
+  s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
   s.deststar() = p.info(owner).route[j].dest_star;
   s.destpnum() = p.info(owner).route[j].dest_planet;
-  s.docked() = 0;
   use_fuel(s, fuel);
   telegram << std::format("\t\tDestination set to {}\n", prin_ship_dest(s));
   if (s.hyper_drive().has) { /* order the ship to jump if it can */

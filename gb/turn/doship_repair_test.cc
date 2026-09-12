@@ -60,8 +60,7 @@ int main() {
     ship.max_crew() = 20;
     ship.resource() = 5000;
     ship.build_cost() = 100;
-    ship.whatorbits() = ScopeLevel::LEVEL_UNIV;
-    ship.docked() = 0;
+    ship.launch_to_orbit(ScopeLevel::LEVEL_UNIV);
 
     {
       JsonStore store(db);
@@ -91,16 +90,16 @@ int main() {
                  saved_ship->resource());
 
     // maxrep = REPAIR_RATE(25) / 1 segment * (20/20 crew) = 25.0
-    // cost = (int)(0.005 * 25 * shipcost) = 12
-    // drep = (int)25 = 25 -> damage: 50 - 25 = 25
+    // cost = (int)(0.005 * 25.0 * shipcost) = 12
+    // drep = 25 -> damage: 50 - 25 = 25
     test::expect_eq(saved_ship->damage(), 25);
     test::expect_eq(saved_ship->resource(), 4988);
     std::println(std::cout, "  ✓ Test passed\n");
   }
 
-  // Ship with low crew (less efficient repair)
+  // Ship with partial crew (proportionate repair rate)
   {
-    std::println(std::cout, "Ship with minimal crew and damage");
+    std::println(std::cout, "Ship with partial crew (proportionate repair)");
 
     Ship ship{};
     ship.number() = 2;
@@ -115,8 +114,7 @@ int main() {
     ship.max_crew() = 20;
     ship.resource() = 5000;
     ship.build_cost() = 100;
-    ship.whatorbits() = ScopeLevel::LEVEL_UNIV;
-    ship.docked() = 0;
+    ship.launch_to_orbit(ScopeLevel::LEVEL_UNIV);
 
     {
       JsonStore store(db);
@@ -171,8 +169,7 @@ int main() {
     ship.max_crew() = 20;
     ship.resource() = 5000;
     ship.build_cost() = 100;
-    ship.whatorbits() = ScopeLevel::LEVEL_UNIV;
-    ship.docked() = 0;
+    ship.launch_to_orbit(ScopeLevel::LEVEL_UNIV);
 
     {
       JsonStore store(db);
@@ -224,8 +221,7 @@ int main() {
     ship.max_crew() = 0;
     ship.resource() = 5000;
     ship.build_cost() = 1000;
-    ship.whatorbits() = ScopeLevel::LEVEL_UNIV;
-    ship.docked() = 0;
+    ship.launch_to_orbit(ScopeLevel::LEVEL_UNIV);
 
     {
       JsonStore store(db);

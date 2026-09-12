@@ -975,7 +975,7 @@ void test_doabm_intercept() {
                         .build_handle();
   Ship& abm = *abm_handle;
   abm.on() = 1;
-  abm.docked() = 1;
+  abm.land_on_planet();
 
   doabm(abm, em);
   test::expect_lt(abm.destruct(), 50);

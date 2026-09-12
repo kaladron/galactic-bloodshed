@@ -227,9 +227,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   ss.popn() = gov_tmpl.max_crew;
   ss.set_mass(ss.base_mass() + gov_tmpl.max_crew * race.mass);
   ss.protect().self = 1;
-  ss.docked() = 1;
-  ss.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ss.whatdest() = ScopeLevel::LEVEL_PLAN;
+  ss.land_on_planet();
   ss.deststar() = star;
   ss.destpnum() = pnum;
   ss.storbits() = star;

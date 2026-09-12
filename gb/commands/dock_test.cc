@@ -80,11 +80,7 @@ void test_dock_happy_paths() {
 
   // 2. Successful assault (1 AP deducted via dynamic AP)
   // Undock first for assault test
-  ctx.em.mutate_ship(1, [](Ship& s) {
-    s.docked() = 0;
-    s.destshipno() = 0;
-    s.whatdest() = ScopeLevel::LEVEL_UNIV;
-  });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.undock_from_ship(); });
   ctx.assert_dispatch_success(g, {"assault", "#1", "#3"}, 1);
   test::expect_true(g.out.str().contains("VICTORY") ||
                     g.out.str().contains("CAPTURED"));

@@ -34,15 +34,10 @@ void setup_test_world(TestContext& ctx) {
                         .with_destruct(10)
                         .build();
 
-  ctx.em.mutate_ship(carrier_id, [&](Ship& s) {
-    s.docked() = 1;
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = fighter_id;
-  });
+  ctx.em.mutate_ship(carrier_id,
+                     [&](Ship& s) { s.dock_with_ship(fighter_id); });
   ctx.em.mutate_ship(fighter_id, [&](Ship& s) {
-    s.docked() = 1;
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = carrier_id;
+    s.dock_with_ship(carrier_id);
     s.build_cost() = 100;
   });
 }

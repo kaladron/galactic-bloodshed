@@ -89,11 +89,10 @@ void setup_test_world(TestContext& ctx) {
   ship3.active() = true;
   ship3.type() = ShipType::STYPE_SHUTTLE;
   ship3.name() = "OrbitShuttle";
-  ship3.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship3.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
   ship3.storbits() = 0;
   ship3.pnumorbits() = 0;
   ship3.set_coordinates(UniverseCoordinates{105.0, 205.0});
-  ship3.docked() = false;  // Orbiting, not landed
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship1);

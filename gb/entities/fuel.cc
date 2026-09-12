@@ -106,7 +106,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
   double gravity_fuel =
       gravity_factor * tmpship.mass() * LAUNCH_GRAV_MASS_FACTOR;
   tmpship.consume_fuel(gravity_fuel);
-  tmpship.docked() = 0;
+  tmpship.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
 
   while (!trip_resolved) {
     domass(tmpship, entity_manager);

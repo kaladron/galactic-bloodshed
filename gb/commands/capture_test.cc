@@ -149,7 +149,7 @@ void test_capture_domain_errors() {
       g.out.str(), "Syntax: capture <ship> [<number>] [civilians|military]");
 
   // 2. Ship not landed
-  ctx.em.mutate_ship(1, [](Ship& s) { s.docked() = false; });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.launch_to_orbit(); });
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "not landed");
 

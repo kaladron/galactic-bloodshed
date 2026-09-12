@@ -54,7 +54,7 @@ int main() {
     data.laser = true;
     data.fire_laser = true;
     data.hyper_drive = {.charge = 10, .on = false, .has = true};
-    data.docked = true;
+    data.dock_state = DockState::Docked;
     data.whatdest = ScopeLevel::LEVEL_SHIP;
 
     Ship ship(data);
@@ -62,14 +62,17 @@ int main() {
     // Docked / Landed predicates
     test::expect_true(ship.is_docked());
     test::expect_false(ship.is_landed());
+    test::expect_false(ship.is_spaceborne());
 
-    ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+    ship.land_on_planet();
     test::expect_false(ship.is_docked());
     test::expect_true(ship.is_landed());
+    test::expect_false(ship.is_spaceborne());
 
-    ship.docked() = false;
+    ship.launch_to_orbit();
     test::expect_false(ship.is_docked());
     test::expect_false(ship.is_landed());
+    test::expect_true(ship.is_spaceborne());
 
     // Laser & Hyperdrive
     test::expect_true(ship.is_laser_on());

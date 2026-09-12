@@ -68,7 +68,7 @@ TestShipBuilder::in_star_orbit(starnum_t snum,
   ship_.whatorbits = ScopeLevel::LEVEL_STAR;
   ship_.storbits = snum;
   ship_.pnumorbits = 0;
-  ship_.docked = 0;
+  ship_.dock_state = DockState::Spaceborne;
   if (coords) {
     ship_.coordinates = *coords;
   } else {
@@ -86,7 +86,7 @@ TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum,
                                                 SystemCoordinates coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_STAR;
   ship_.storbits = snum;
-  ship_.docked = 0;
+  ship_.dock_state = DockState::Spaceborne;
   try {
     const auto* star = em_.peek_star(snum);
     ship_.coordinates = star->coordinates() + coords;
@@ -107,7 +107,7 @@ TestShipBuilder::in_planet_orbit(starnum_t snum, planetnum_t pnum,
   ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
   ship_.storbits = snum;
   ship_.pnumorbits = pnum;
-  ship_.docked = 0;
+  ship_.dock_state = DockState::Spaceborne;
   if (coords) {
     ship_.coordinates = *coords;
   } else {
@@ -128,7 +128,7 @@ TestShipBuilder& TestShipBuilder::in_planet_orbit(starnum_t snum,
   ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
   ship_.storbits = snum;
   ship_.pnumorbits = pnum;
-  ship_.docked = 0;
+  ship_.dock_state = DockState::Spaceborne;
   try {
     const auto* star = em_.peek_star(snum);
     ship_.coordinates = star->coordinates() + coords;
@@ -144,7 +144,7 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
   ship_.whatdest = ScopeLevel::LEVEL_PLAN;
   ship_.storbits = snum;
   ship_.pnumorbits = pnum;
-  ship_.docked = 1;
+  ship_.dock_state = DockState::Landed;
   ship_.land_coords = coords;
   try {
     const auto* star = em_.peek_star(snum);
@@ -162,7 +162,7 @@ TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
   ship_.whatdest = ScopeLevel::LEVEL_SHIP;
   ship_.destshipno = dest_ship;
   ship_.storbits = snum;
-  ship_.docked = 1;
+  ship_.dock_state = DockState::Docked;
   return *this;
 }
 

@@ -87,10 +87,9 @@ void test_land_on_friendly_carrier() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  // Reset shuttle to undocked state with land_coords at 5,5
+  // Reset shuttle to spaceborne state with land_coords at 5,5
   ctx.em.mutate_ship(1, [](Ship& s) {
-    s.docked() = false;
-    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+    s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
     s.set_land_coords({5, 5});
   });
 

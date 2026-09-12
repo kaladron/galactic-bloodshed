@@ -147,6 +147,26 @@ struct to<JSON, Modular<Tag, T, Mod>> {
   }
 };
 
+template <std::size_t N>
+struct from<JSON, PlayerBitset<N>> {
+  template <auto Opts>
+  static void op(PlayerBitset<N>& b, is_context auto&& ctx, auto&& it,
+                 auto&& end) {
+    std::uint64_t val{};
+    parse<JSON>::op<Opts>(val, ctx, it, end);
+    b = PlayerBitset<N>(val);
+  }
+};
+
+template <std::size_t N>
+struct to<JSON, PlayerBitset<N>> {
+  template <auto Opts>
+  static void op(const PlayerBitset<N>& b, is_context auto&& ctx, auto&& buf,
+                 auto&& ix) {
+    serialize<JSON>::op<Opts>(b.to_ullong(), ctx, buf, ix);
+  }
+};
+
 template <typename T, std::size_t N>
 struct meta<PlayerVector<T, N>> {
   using Type = PlayerVector<T, N>;

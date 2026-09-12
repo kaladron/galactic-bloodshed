@@ -673,6 +673,254 @@ private:
   std::array<T, N> data_{};
 };
 
+/// \brief 1-indexed fixed-size player bitset wrapper indexed by player_t
+/// (1..N).
+export template <std::size_t N = 64>
+class PlayerBitset {
+public:
+  using size_type = std::size_t;
+  using reference = typename std::bitset<N>::reference;
+
+  constexpr PlayerBitset() noexcept = default;
+
+  /// \brief Construct from an unsigned integer bitmask where bit 0 is player 1.
+  explicit constexpr PlayerBitset(unsigned long long val) noexcept
+      : bits_(val) {}
+
+  /// \brief Returns a bitset with only the specified player set.
+  [[nodiscard]] static constexpr PlayerBitset singleton(player_t player) {
+    PlayerBitset b;
+    b.set(player);
+    return b;
+  }
+
+  /// \brief 1-indexed checked test via player_t.
+  [[nodiscard]] constexpr bool test(player_t player) const {
+    check_bounds(player);
+    return bits_.test(player.value - 1);
+  }
+
+  /// \brief 1-indexed checked set via player_t.
+  constexpr PlayerBitset& set(player_t player, bool value = true) {
+    check_bounds(player);
+    bits_.set(player.value - 1, value);
+    return *this;
+  }
+
+  /// \brief Sets all bits to true.
+  constexpr PlayerBitset& set() noexcept {
+    bits_.set();
+    return *this;
+  }
+
+  /// \brief 1-indexed checked reset via player_t.
+  constexpr PlayerBitset& reset(player_t player) {
+    check_bounds(player);
+    bits_.reset(player.value - 1);
+    return *this;
+  }
+
+  /// \brief Resets all bits to false.
+  constexpr PlayerBitset& reset() noexcept {
+    bits_.reset();
+    return *this;
+  }
+
+  /// \brief 1-indexed checked flip via player_t.
+  constexpr PlayerBitset& flip(player_t player) {
+    check_bounds(player);
+    bits_.flip(player.value - 1);
+    return *this;
+  }
+
+  /// \brief Flips all bits.
+  constexpr PlayerBitset& flip() noexcept {
+    bits_.flip();
+    return *this;
+  }
+
+  /// \brief 1-indexed subscript access via player_t.
+  [[nodiscard]] constexpr reference operator[](player_t player) {
+    check_bounds(player);
+    return bits_[player.value - 1];
+  }
+
+  /// \brief 1-indexed const subscript access via player_t.
+  [[nodiscard]] constexpr bool operator[](player_t player) const {
+    check_bounds(player);
+    return bits_[player.value - 1];
+  }
+
+  /// \brief Access via race-like object with .Playernum.
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  [[nodiscard]] constexpr reference operator[](const RaceLike& race) {
+    return (*this)[race.Playernum];
+  }
+
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  [[nodiscard]] constexpr bool operator[](const RaceLike& race) const {
+    return (*this)[race.Playernum];
+  }
+
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  [[nodiscard]] constexpr bool test(const RaceLike& race) const {
+    return test(race.Playernum);
+  }
+
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  constexpr PlayerBitset& set(const RaceLike& race, bool value = true) {
+    return set(race.Playernum, value);
+  }
+
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  constexpr PlayerBitset& reset(const RaceLike& race) {
+    return reset(race.Playernum);
+  }
+
+  template <typename RaceLike>
+    requires requires(const RaceLike& r) {
+      { r.Playernum } -> std::convertible_to<player_t>;
+    }
+  constexpr PlayerBitset& flip(const RaceLike& race) {
+    return flip(race.Playernum);
+  }
+
+  [[nodiscard]] constexpr bool all() const noexcept {
+    return bits_.all();
+  }
+  [[nodiscard]] constexpr bool any() const noexcept {
+    return bits_.any();
+  }
+  [[nodiscard]] constexpr bool none() const noexcept {
+    return bits_.none();
+  }
+  [[nodiscard]] constexpr size_type count() const noexcept {
+    return bits_.count();
+  }
+  [[nodiscard]] constexpr size_type size() const noexcept {
+    return N;
+  }
+  [[nodiscard]] constexpr size_type max_size() const noexcept {
+    return N;
+  }
+  [[nodiscard]] constexpr bool empty() const noexcept {
+    return N == 0;
+  }
+
+  [[nodiscard]] unsigned long to_ulong() const {
+    return bits_.to_ulong();
+  }
+
+  [[nodiscard]] unsigned long long to_ullong() const {
+    return bits_.to_ullong();
+  }
+
+  [[nodiscard]] std::string to_string(char zero = '0', char one = '1') const {
+    return bits_.to_string(zero, one);
+  }
+
+  /// \brief Range view over all player IDs set in this bitset.
+  [[nodiscard]] auto players() const {
+    return std::views::iota(std::size_t{1}, N + 1) |
+           std::views::filter(
+               [this](std::size_t i) { return bits_.test(i - 1); }) |
+           std::views::transform([](std::size_t i) {
+             return player_t{static_cast<player_t::value_type>(i)};
+           });
+  }
+
+  /// \brief Underlying std::bitset reference for direct bitwise operations /
+  /// serialization.
+  [[nodiscard]] constexpr std::bitset<N>& raw_bitset() noexcept {
+    return bits_;
+  }
+  [[nodiscard]] constexpr const std::bitset<N>& raw_bitset() const noexcept {
+    return bits_;
+  }
+
+  // Bitwise operators
+  [[nodiscard]] constexpr PlayerBitset operator~() const noexcept {
+    PlayerBitset result;
+    result.bits_ = ~bits_;
+    return result;
+  }
+
+  constexpr PlayerBitset& operator&=(const PlayerBitset& other) noexcept {
+    bits_ &= other.bits_;
+    return *this;
+  }
+
+  constexpr PlayerBitset& operator|=(const PlayerBitset& other) noexcept {
+    bits_ |= other.bits_;
+    return *this;
+  }
+
+  constexpr PlayerBitset& operator^=(const PlayerBitset& other) noexcept {
+    bits_ ^= other.bits_;
+    return *this;
+  }
+
+  [[nodiscard]] friend constexpr PlayerBitset
+  operator&(const PlayerBitset& lhs, const PlayerBitset& rhs) noexcept {
+    PlayerBitset result = lhs;
+    result &= rhs;
+    return result;
+  }
+
+  [[nodiscard]] friend constexpr PlayerBitset
+  operator|(const PlayerBitset& lhs, const PlayerBitset& rhs) noexcept {
+    PlayerBitset result = lhs;
+    result |= rhs;
+    return result;
+  }
+
+  [[nodiscard]] friend constexpr PlayerBitset
+  operator^(const PlayerBitset& lhs, const PlayerBitset& rhs) noexcept {
+    PlayerBitset result = lhs;
+    result ^= rhs;
+    return result;
+  }
+
+  constexpr bool operator==(const PlayerBitset& other) const noexcept = default;
+
+private:
+  constexpr void check_bounds(player_t player) const {
+    if (player.value < 1 || static_cast<std::size_t>(player.value) > N) {
+      throw std::out_of_range(
+          std::format("Player index {} out of range (1..{})", player.value, N));
+    }
+  }
+
+  std::bitset<N> bits_{};
+};
+
+export template <std::size_t N, typename CharT>
+struct std::formatter<PlayerBitset<N>, CharT> {
+  constexpr auto parse(std::basic_format_parse_context<CharT>& ctx) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const PlayerBitset<N>& b, FormatContext& ctx) const {
+    return std::format_to(ctx.out(), "{}", b.to_string());
+  }
+};
+
 /**
  * \brief Convert input string to a shipnum_t
  * \param s User-provided input string

@@ -31,13 +31,10 @@ bool fire(const command_t& argv, GameObj& g) {
     cew_mode = 0;
   }
   shipnum_t toship;
-  shipnum_t sh;
   int strength;
   int maxstrength;
   int retal;
   bool any_fired = false;
-
-  sh = 0;  // TODO(jeffbailey): No idea what this is, init to 0.
 
   if (argv.size() < 3) {
     std::string msg =
@@ -232,21 +229,17 @@ bool fire(const command_t& argv, GameObj& g) {
     /* protecting ships retaliate individually if damage was inflicted */
     /* AFVs immune to retaliation of this type */
     if (from.alive() && from.type() != ShipType::OTYPE_AFV) {
-      if (to->whatorbits() == ScopeLevel::LEVEL_STAR) { /* star level ships */
-        g.entity_manager.with_star(
-            to->storbits(), [&](const Star& star) { sh = star.ships(); });
-      }
-      if (to->whatorbits() == ScopeLevel::LEVEL_PLAN) { /* planet level ships */
-        g.entity_manager.with_planet(to->storbits(), to->pnumorbits(),
-                                     [&](const Planet& p) { sh = p.ships(); });
-      }
-      ShipList shiplist(g.entity_manager, sh);
+      ShipList shiplist =
+          (to->whatorbits() == ScopeLevel::LEVEL_STAR)
+              ? ShipList::in_star(g.entity_manager, to->storbits())
+              : ShipList::on_planet(g.entity_manager, to->storbits(),
+                                    to->pnumorbits());
       for (auto ship_handle : shiplist) {
         if (!from.alive()) break;
         Ship& ship = *ship_handle;
         if (ship.protect().on && (ship.protect().ship == toship) &&
-            (ship.protect().ship == toship) && ship.number() != from.number() &&
-            ship.number() != toship && ship.alive() && ship.active()) {
+            ship.number() != from.number() && ship.number() != toship &&
+            ship.alive() && ship.active()) {
           strength = check_retal_strength(ship);
           if (ship.is_laser_on())
             check_overload(g.entity_manager, ship, 0, &strength);

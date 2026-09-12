@@ -445,8 +445,8 @@ void report_planet_ships(GameObj& g, RstContext& ctx, player_t player_num,
   if (!planet) return;
 
   if (planet->info(player_num).explored) {
-    const ShipList ships(g.entity_manager, planet->ships());
-    for (const Ship& ship : ships) {
+    for (const Ship& ship :
+         ShipList::readonly_on_planet(g.entity_manager, snum, pnum)) {
       ship_report(g, ctx, ship, rep_on);
     }
   }
@@ -458,8 +458,8 @@ void report_star_ships(GameObj& g, RstContext& ctx, player_t player_num,
   if (!star) return;
 
   if (star->is_explored_by(player_num)) {
-    const ShipList ships(g.entity_manager, star->ships());
-    for (const Ship& ship : ships) {
+    for (const Ship& ship :
+         ShipList::readonly_in_star(g.entity_manager, snum)) {
       ship_report(g, ctx, ship, rep_on);
     }
 
@@ -542,9 +542,8 @@ bool rst(const command_t& argv, GameObj& g) {
 
   switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV: {
-      const auto* universe = g.entity_manager.peek_universe();
-      const ShipList univ_ships(g.entity_manager, universe->ships);
-      for (const Ship& ship : univ_ships) {
+      for (const Ship& ship :
+           ShipList::readonly(g.entity_manager, ScopeLevel::LEVEL_UNIV)) {
         ship_report(g, ctx, ship, report_types);
       }
 
@@ -580,8 +579,8 @@ bool rst(const command_t& argv, GameObj& g) {
       ship_report(g, ctx, *scoped_ship, report_types);
 
       // Report on ships docked in this ship
-      const ShipList docked_ships(g.entity_manager, scoped_ship->ships());
-      for (const Ship& ship : docked_ships) {
+      for (const Ship& ship : ShipList::readonly_in_carrier(
+               g.entity_manager, scoped_ship->number())) {
         ship_report(g, ctx, ship, report_types);
       }
       break;

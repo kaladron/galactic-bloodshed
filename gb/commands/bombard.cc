@@ -172,8 +172,8 @@ bool bombard(const command_t& argv, GameObj& g) {
           /* AFVs are immune to this */
           if (result.sectors_destroyed && from.alive() &&
               from.type() != ShipType::OTYPE_AFV) {
-            ShipList shiplist(g.entity_manager, p.ships());
-            for (auto ship_handle : shiplist) {
+            for (auto ship_handle : ShipList::on_planet(
+                     g.entity_manager, from.storbits(), from.pnumorbits())) {
               Ship& ship = *ship_handle;
               if (ship.protect().planet && ship.number() != from.number() &&
                   ship.alive() && ship.active()) {

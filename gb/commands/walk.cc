@@ -83,8 +83,7 @@ bool walk(const command_t& argv, GameObj& g) {
   }
   /* if the sector is occupied by non-aligned AFVs, each one will attack */
   g.entity_manager.mutate_ship(*shipno, [&](Ship& ship) {
-    ShipList shiplist(g.entity_manager, p.ships());
-    for (auto ship_handle : shiplist) {
+    for (auto ship_handle : ShipList::on_planet(g.entity_manager, snum, pnum)) {
       Ship& ship2 = *ship_handle;
       if (ship2.owner() != Playernum && ship2.type() == ShipType::OTYPE_AFV &&
           ship2.is_landed() && retal_strength(ship2) &&

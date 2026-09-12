@@ -203,8 +203,8 @@ void plan_get_tactical_items(GameObj& g,
   items.push_back(std::make_unique<PlanetTacticalItem>(planet, x, y));
 
   if (planet->info(player_num).explored) {
-    const ShipList ships(g.entity_manager, planet->ships());
-    for (const Ship& ship : ships) {
+    for (const Ship& ship :
+         ShipList::readonly_on_planet(g.entity_manager, snum, pnum)) {
       add_tactical_ship(items, &ship);
     }
   }
@@ -217,8 +217,8 @@ void star_get_tactical_items(GameObj& g,
   if (!star) return;
 
   if (star->is_explored_by(player_num)) {
-    const ShipList ships(g.entity_manager, star->ships());
-    for (const Ship& ship : ships) {
+    for (const Ship& ship :
+         ShipList::readonly_in_star(g.entity_manager, snum)) {
       add_tactical_ship(items, &ship);
     }
 

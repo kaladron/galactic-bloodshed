@@ -19,8 +19,7 @@ void setup_test_world(TestContext& ctx) {
     });
   }
 
-  // Setup planet and sectormap
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.ships() = 1; });
+  // Setup sectormap
   ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
     smap.get(Coordinates{5, 5}).set_owner(1);
     smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);

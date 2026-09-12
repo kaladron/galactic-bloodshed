@@ -195,8 +195,8 @@ bool defend(const command_t& argv, GameObj& g) {
               /* protecting ships retaliate individually if damage was inflicted
                */
               if (damage) {
-                const ShipList shiplist(g.entity_manager, p.ships());
-                for (const Ship& ship : shiplist) {
+                for (const Ship& ship : ShipList::readonly_on_planet(
+                         g.entity_manager, g.snum(), g.pnum())) {
                   if (ship.protect().on && (ship.protect().ship == toship) &&
                       ship.number() != toship && ship.alive() &&
                       ship.active()) {

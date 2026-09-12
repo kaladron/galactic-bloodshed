@@ -74,8 +74,8 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
   else
     mil = *people;
 
-  ShipList shiplist(g.entity_manager, p.ships());
-  for (auto ship_handle : shiplist) {
+  for (auto ship_handle :
+       ShipList::on_planet(g.entity_manager, p.star_id(), p.planet_order())) {
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
     if (ship.owner() != g.player() && ship.type() == ShipType::OTYPE_AFV &&

@@ -36,8 +36,8 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
        ships here. */
     iq = !!p.info(Playernum).numsectsowned;
 
-    const ShipList shiplist(g.entity_manager, p.ships());
-    for (const Ship& s : shiplist) {
+    for (const Ship& s :
+         ShipList::readonly_on_planet(g.entity_manager, snum, pnum)) {
       if (s.owner() == Playernum && authorized(Governor, s) &&
           (s.popn() || (s.type() == ShipType::OTYPE_PROBE)))
         iq = 1;

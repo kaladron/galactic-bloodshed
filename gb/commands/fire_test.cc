@@ -174,6 +174,62 @@ void test_fire_domain_errors() {
   ctx.verify_universe_invariants();
 }
 
+void test_protecting_ship_retaliation() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Create an escort ship protecting Target (Ship #2)
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+      .owned_by(2, 0)
+      .named("Escort")
+      .in_star_orbit(0, SystemCoordinates{110.0, 210.0})
+      .with_guns(guntype_t::LIGHT, 1)
+      .with_destruct(100)
+      .with_crew(10, 10)
+      .with_fuel(1000.0)
+      .build();
+
+  // Set escort to protect Ship #2
+  ctx.em.mutate_ship(4, [](Ship& escort) {
+    escort.protect().on = true;
+    escort.protect().ship = 2;
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+
+  // 1. Live protecting ship retaliates when target takes damage
+  ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "10"}, 1);
+
+  const auto* escort = ctx.em.peek_ship(4);
+  test::expect_true(escort != nullptr);
+  // Escort used destruct munitions to return fire against attacker (Ship #1)
+  test::expect_lt(escort->destruct(), 100);
+
+  const auto* attacker = ctx.em.peek_ship(1);
+  test::expect_true(attacker != nullptr);
+  test::expect_true(attacker->alive());
+  test::expect_gt(attacker->damage(), 0);
+
+  // 2. Dead protecting ship does NOT retaliate
+  ctx.em.mutate_ship(4, [](Ship& s) { s.alive() = false; });
+  const auto destruct_before = ctx.em.peek_ship(4)->destruct();
+  const auto attacker_damage_before = ctx.em.peek_ship(1)->damage();
+
+  // Attacker fires on target again
+  ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "10"}, 1);
+
+  // Escort is dead, so it should not have fired (destruct unchanged)
+  test::expect_eq(ctx.em.peek_ship(4)->destruct(), destruct_before);
+  // Attacker damage unchanged by escort
+  test::expect_eq(ctx.em.peek_ship(1)->damage(), attacker_damage_before);
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -182,6 +238,7 @@ int main() {
   test_fire_insufficient_ap();
   test_fire_role_and_guest_rejections();
   test_fire_domain_errors();
+  test_protecting_ship_retaliation();
 
   std::println(std::cout, "✓ fire_test passed!");
   return 0;

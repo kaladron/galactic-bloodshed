@@ -73,8 +73,8 @@ bool enslave(const command_t& argv, GameObj& g) {
               return;
             }
 
-            const ShipList kShiplist(g.entity_manager, p.ships());
-            for (const Ship& s2 : kShiplist) {
+            for (const Ship& s2 : ShipList::readonly_on_planet(
+                     g.entity_manager, s.storbits(), s.pnumorbits())) {
               if (s2.alive() && s2.active()) {
                 if (p.info(s2.owner()).numsectsowned && s2.owner() != Playernum)
                   def += s2.destruct();

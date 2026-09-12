@@ -22,7 +22,6 @@ void setup_test_world(TestContext& ctx) {
     planet.info(player_t{1}).destruct = 1000;
     planet.info(player_t{2}).destruct = 100;
     planet.slaved_to() = 0;
-    planet.ships() = 1;
   });
 
   // Create OAP ship in planet orbit
@@ -132,7 +131,6 @@ void test_enslave_maxplayers_boundary() {
     planet.info(player_t{1}).destruct = 1000;
     planet.info(player_t{MAXPLAYERS}).destruct = 100;
     planet.slaved_to() = 0;
-    planet.ships() = 1;
   });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_OAP)

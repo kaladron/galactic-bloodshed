@@ -253,8 +253,8 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   bool inhere = false;  // Track if player has presence on planet
   if (is_csp_format) {
     inhere = p.info(g.player()).numsectsowned > 0;
-    const ShipList kShips(g.entity_manager, p.ships());
-    for (const Ship& shipa : kShips) {
+    for (const Ship& shipa : ShipList::readonly_on_planet(
+             g.entity_manager, where.snum, where.pnum)) {
       if (shipa.owner() == g.player() &&
           (shipa.popn() || (shipa.type() == ShipType::OTYPE_PROBE))) {
         inhere = true;

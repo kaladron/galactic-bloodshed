@@ -20,7 +20,46 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 set(CMAKE_CXX_FLAGS "-stdlib=libc++")
 
-project("galactic-bloodshed" VERSION 0.1.0 LANGUAGES CXX)
+# Dynamic SemVer extraction from Git tags
+find_package(Git QUIET)
+
+set(DEFAULT_VERSION "0.0.0-dev")
+set(RAW_VERSION "")
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+  # Extracted source tarball (generated during packaging)
+  file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" RAW_VERSION LIMIT_COUNT 1)
+elseif(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+  # Git working tree
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --match "v[0-9]*" --always
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE RAW_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+endif()
+
+# Check if RAW_VERSION starts with a valid version tag (vX.Y...)
+if(RAW_VERSION MATCHES "^v?([0-9]+\\.[0-9]+.*)")
+  # Strip leading 'v'
+  string(REGEX REPLACE "^v" "" FULL_SEMVER "${RAW_VERSION}")
+  # Extract numeric major.minor.patch for CMake project()
+  string(REGEX MATCH "^[0-9]+(\\.[0-9]+)*" NUMERIC_VERSION "${FULL_SEMVER}")
+else()
+  # Untagged commit or unknown version
+  if(RAW_VERSION)
+    set(FULL_SEMVER "${DEFAULT_VERSION}+${RAW_VERSION}")
+  else()
+    set(FULL_SEMVER "${DEFAULT_VERSION}")
+  endif()
+  set(NUMERIC_VERSION "0.0.0")
+endif()
+
+project("galactic-bloodshed" VERSION ${NUMERIC_VERSION} LANGUAGES CXX)
+
+set(PROJECT_VERSION_FULL "${FULL_SEMVER}" CACHE STRING "Full SemVer with pre-release/git metadata")
+message(STATUS "Project Version: ${PROJECT_VERSION} (Full: ${PROJECT_VERSION_FULL})")
 
 # Include GNUInstallDirs to get canonical paths
 include(GNUInstallDirs)
@@ -158,7 +197,7 @@ if(NOT CPACK_PACKAGE_VERSION)
   if(PROJECT_VERSION)
     set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
   else()
-    set(CPACK_PACKAGE_VERSION "0.1.0")
+    set(CPACK_PACKAGE_VERSION "0.0.0-dev")
   endif()
 endif()
 

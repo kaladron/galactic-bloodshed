@@ -23,7 +23,7 @@ EnrollmentService::find_suitable_planet(PlanetType ppref,
   auto check_star = [&](starnum_t star, const Star& star_data)
       -> std::optional<std::pair<starnum_t, planetnum_t>> {
     /* skip over inhabited stars - or stars with just one planet! */
-    if (star_data.inhabited() != 0 || star_data.numplanets() < 2) {
+    if (star_data.is_inhabited() || star_data.numplanets() < 2) {
       return std::nullopt;
     }
 

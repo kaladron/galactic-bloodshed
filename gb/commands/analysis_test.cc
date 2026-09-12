@@ -50,7 +50,7 @@ int main() {
   ss.xpos = 100.0;
   ss.ypos = 200.0;
   ss.pnames.emplace_back("TestPlanet");
-  ss.explored = (1ULL << 1) | (1ULL << 2);  // Players 1 and 2 explored
+  ss.explored.set(player_t{1}).set(player_t{2});
   Star star(ss);
 
   StarRepository stars_repo(store);

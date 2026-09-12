@@ -29,8 +29,8 @@ int main() {
   test_star_data.temperature = 15;
   test_star_data.gravity = 1.0;
   test_star_data.star_id = 1;
-  test_star_data.explored = 0b101010;
-  test_star_data.inhabited = 0b110011;
+  test_star_data.explored = PlayerBitset<MAXPLAYERS>{0b101010};
+  test_star_data.inhabited = PlayerBitset<MAXPLAYERS>{0b110011};
 
   // Initialize governor array
   for (player_t p : all_players()) {
@@ -77,8 +77,8 @@ int main() {
   test::expect_eq(retrieved->nova_stage(), 0);
   test::expect_eq(retrieved->temperature(), 15);
   test::expect_eq(retrieved->gravity(), 1.0);
-  test::expect_eq(retrieved->explored(), 0b101010);
-  test::expect_eq(retrieved->inhabited(), 0b110011);
+  test::expect_eq(retrieved->explored(), PlayerBitset<MAXPLAYERS>{0b101010});
+  test::expect_eq(retrieved->inhabited(), PlayerBitset<MAXPLAYERS>{0b110011});
 
   // Verify governor array using accessor (player_t is 1-indexed)
   for (player_t p : all_players()) {

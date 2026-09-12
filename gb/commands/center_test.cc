@@ -35,7 +35,7 @@ void setup_test_world(TestContext& ctx) {
   ss.name = "Alpha";
   ss.xpos = 150.0;
   ss.ypos = 250.0;
-  ss.explored = (1ULL << 1);
+  ss.explored.set(player_t{1});
 
   StarRepository stars(store);
   stars.save(ss);

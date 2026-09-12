@@ -41,7 +41,7 @@ void setup_test_world(TestContext& ctx) {
   ss0.xpos = 0.0;
   ss0.ypos = 0.0;
   ss0.stability = 45;
-  ss0.explored = (1ULL << 1);  // Player 1 explored
+  ss0.explored.set(player_t{1});
   ss0.AP[player_t{1}] = 20;
   ss0.pnames.push_back("Earth");
   Star star0(ss0);
@@ -64,7 +64,6 @@ void setup_test_world(TestContext& ctx) {
   ss1.xpos = 500.0;
   ss1.ypos = 500.0;
   ss1.stability = 20;
-  ss1.explored = 0;
   Star star1(ss1);
   stars.save(star1);
 }

@@ -237,6 +237,13 @@ int main() {
     star.clear_all_inhabitants();
     test::expect_false(star.is_inhabited());
     test::expect_false(star.is_inhabited_by(player_t{2}));
+
+    // Verify PlayerBitset direct accessor and bitwise manipulation
+    star.inhabited().set(player_t{3});
+    test::expect_true(star.is_inhabited_by(player_t{3}));
+    test::expect_true(star.inhabited().test(player_t{3}));
+    test::expect_eq(star.inhabited().count(), 1);
+
     std::println(std::cout, "  ✓ Star inhabitation methods work as expected");
   }
 

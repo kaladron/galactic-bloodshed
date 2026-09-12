@@ -49,7 +49,7 @@ void test_give_dispatch() {
   star_data.pnames = {"TestPlanet"};
   Star star{star_data};
   star.AP(player_t{1}) = 100;
-  setbit<std::uint64_t>(star.explored(), 1U);
+  star.mark_explored_by(player_t{1});
   StarRepository stars_repo(store);
   stars_repo.save(star);
   const starnum_t star_id = star_data.star_id;

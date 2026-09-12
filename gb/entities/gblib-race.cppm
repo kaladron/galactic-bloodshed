@@ -81,8 +81,8 @@ public:
   PlayerVector<int, MAXPLAYERS>
       translate{}; /* translation mod for each player */
 
-  PlayerBitset<MAXPLAYERS> atwar{};
-  PlayerBitset<MAXPLAYERS> allied{};
+  PlayerBitset<MAXPLAYERS> atwar;
+  PlayerBitset<MAXPLAYERS> allied;
 
   /// Returns whether this race is allied with the given player.
   [[nodiscard]] bool is_allied_with(player_t p) const noexcept;
@@ -330,10 +330,10 @@ export struct block {
   player_t Playernum;
   std::string name;
   std::string motto;
-  PlayerBitset<MAXPLAYERS> invited{};
-  PlayerBitset<MAXPLAYERS> pledged{};
-  PlayerBitset<MAXPLAYERS> atwar{};
-  PlayerBitset<MAXPLAYERS> allied{};
+  PlayerBitset<MAXPLAYERS> invited;
+  PlayerBitset<MAXPLAYERS> pledged;
+  PlayerBitset<MAXPLAYERS> atwar;
+  PlayerBitset<MAXPLAYERS> allied;
   unsigned short next;
   unsigned short systems_owned;
   unsigned long VPs;

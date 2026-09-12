@@ -48,7 +48,7 @@ void setup_test_world(TestContext& ctx) {
   star.pnames.emplace_back("Test Planet");
   star.governor[player_t{1}] = 0;
   star.governor[player_t{2}] = 0;
-  star.explored = (1ULL << 1) | (1ULL << 2);
+  star.explored.set(player_t{1}).set(player_t{2});
 
   StarRepository stars(store);
   stars.save(star);

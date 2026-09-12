@@ -41,8 +41,8 @@ int main() {
   }
 
   // Initialize explored and inhabited bitmasks
-  test_star.explored = 0b101010;
-  test_star.inhabited = 0b110011;
+  test_star.explored = PlayerBitset<MAXPLAYERS>{0b101010};
+  test_star.inhabited = PlayerBitset<MAXPLAYERS>{0b110011};
 
   // Initialize planet names - now using vector
   for (int i = 0; i < 5; i++) {

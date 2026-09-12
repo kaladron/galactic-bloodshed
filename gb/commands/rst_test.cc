@@ -40,8 +40,8 @@ void setup_test_world(TestContext& ctx) {
   ss0.name = "Sol";
   ss0.xpos = 0.0;
   ss0.ypos = 0.0;
-  ss0.explored = (1ULL << 1);
-  ss0.inhabited = (1ULL << 1);
+  ss0.explored.set(player_t{1});
+  ss0.inhabited.set(player_t{1});
   ss0.pnames.push_back("Earth");
   Star star0(ss0);
 

@@ -405,7 +405,6 @@ void test_enroll_with_service_success() {
 
   star_struct ss{};
   ss.star_id = 0;
-  ss.inhabited = 0;
   ss.name = "Sol";
   ss.pnames = {"Earth", "Mars"};
   StarRepository(store).save(Star(ss));

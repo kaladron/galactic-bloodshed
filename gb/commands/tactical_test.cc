@@ -38,8 +38,8 @@ void setup_test_universe(TestContext& ctx) {
   star.star_id = 1;
   star.name = "TestStar";
   star.pnames.push_back("TestPlanet");
-  star.explored = 2;   // Player 1 has explored (bit 1 set: 1 << 1 = 2)
-  star.inhabited = 2;  // Player 1 inhabits (bit 1 set)
+  star.explored.set(player_t{1});
+  star.inhabited.set(player_t{1});
   star.governor[player_t{1}] = 0;  // Player 1 governor
 
   StarRepository stars(store);

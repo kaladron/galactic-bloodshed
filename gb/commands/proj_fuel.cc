@@ -107,7 +107,7 @@ bool proj_fuel(const command_t& argv, GameObj& g) {
       ((ship->storbits() != tmpdest.snum) &&
        tmpdest.level != ScopeLevel::LEVEL_STAR)) {
     const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
-    if (!dest_star || isclr(dest_star->explored(), ship->owner())) {
+    if (!dest_star || !dest_star->is_explored_by(ship->owner())) {
       g.out << "You haven't explored the destination system.\n";
       return false;
     }

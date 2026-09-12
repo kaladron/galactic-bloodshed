@@ -48,8 +48,8 @@ void setup_test_world(TestContext& ctx) {
   ss0.name = "TestStar";
   ss0.xpos = 100.0;
   ss0.ypos = 200.0;
-  ss0.stability = 40;          // Stable star (< 50)
-  ss0.explored = (1ULL << 1);  // Player 1 has explored
+  ss0.stability = 40;  // Stable star (< 50)
+  ss0.explored.set(player_t{1});
   ss0.pnames.push_back("TestPlanet");
   Star star0(ss0);
   StarRepository stars_repo(store);
@@ -115,7 +115,7 @@ void setup_test_world(TestContext& ctx) {
   ss1.xpos = 300.0;
   ss1.ypos = 400.0;
   ss1.stability = 75;  // Unstable (> 50)
-  ss1.explored = (1ULL << 1);
+  ss1.explored.set(player_t{1});
   ss1.pnames.push_back("UnstablePlanet");
   Star star1(ss1);
   stars_repo.save(star1);

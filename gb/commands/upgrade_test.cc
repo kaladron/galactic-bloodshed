@@ -38,7 +38,7 @@ void test_upgrade_command() {
   ss.name = "TestStar";
   ss.xpos = 100.0;
   ss.ypos = 200.0;
-  ss.explored = (1ULL << 1);  // Player 1 has explored
+  ss.explored.set(player_t{1});
   ss.AP[player_t{1}] = 10;
   Star star(ss);
 

@@ -118,8 +118,8 @@ static void process_stars_and_planets(TurnState& state, bool update) {
     if (update) {
       fix_stability(state.entity_manager, *star_handle); /* nova */
 
-      state.stats.StarsInhab[star.value] = !!(star_handle->inhabited());
-      state.stats.StarsExpl[star.value] = !!(star_handle->explored());
+      state.stats.StarsInhab[star.value] = star_handle->is_inhabited();
+      state.stats.StarsExpl[star.value] = star_handle->is_explored();
     }
 
     for (auto planet_handle :

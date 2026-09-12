@@ -13,9 +13,9 @@ export struct star_struct {
   std::string name; /* name of star */
   PlayerVector<governor_t, MAXPLAYERS>
       governor; /* which subordinate maintains the system */
-  PlayerVector<ap_t, MAXPLAYERS> AP; /* action pts alotted */
-  std::uint64_t explored{0};         /* who's been here 64 bits*/
-  std::uint64_t inhabited{0};        /* who lives here now 64 bits*/
+  PlayerVector<ap_t, MAXPLAYERS> AP;  /* action pts alotted */
+  PlayerBitset<MAXPLAYERS> explored;  /* who's been here */
+  PlayerBitset<MAXPLAYERS> inhabited; /* who lives here now */
   double xpos{0.0}, ypos{0.0};
 
   std::vector<std::string>
@@ -62,11 +62,10 @@ public:
     return !star_struct.pnames[pnum.value].empty();
   };
 
-  // This is used both as a boolean and a setter.
-  std::uint64_t& explored() {
+  PlayerBitset<MAXPLAYERS>& explored() noexcept {
     return star_struct.explored;
   }
-  [[nodiscard]] std::uint64_t explored() const {
+  [[nodiscard]] const PlayerBitset<MAXPLAYERS>& explored() const noexcept {
     return star_struct.explored;
   }
 
@@ -79,10 +78,10 @@ public:
   /// Returns whether any player has explored this star system.
   [[nodiscard]] bool is_explored() const noexcept;
 
-  std::uint64_t& inhabited() {
+  PlayerBitset<MAXPLAYERS>& inhabited() noexcept {
     return star_struct.inhabited;
   }
-  [[nodiscard]] std::uint64_t inhabited() const {
+  [[nodiscard]] const PlayerBitset<MAXPLAYERS>& inhabited() const noexcept {
     return star_struct.inhabited;
   }
 

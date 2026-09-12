@@ -30,7 +30,6 @@ void setup_test_universe(Database& db) {
   // Star 0: 2 planets (Earth, Gas Giant)
   star_struct ss0{};
   ss0.star_id = 0;
-  ss0.inhabited = 0;
   ss0.name = "Sol";
   ss0.pnames = {"Earth", "Jupiter"};
   Star star0(ss0);
@@ -69,7 +68,6 @@ void setup_test_universe(Database& db) {
   // Star 1: 1 planet (Mars) -> single planet star should be skipped
   star_struct ss1{};
   ss1.star_id = 1;
-  ss1.inhabited = 0;
   ss1.name = "Alpha";
   ss1.pnames = {"Mars"};
   Star star1(ss1);
@@ -83,7 +81,6 @@ void setup_test_universe(Database& db) {
   // Star 2: 2 planets (Iceball, Desert)
   star_struct ss2{};
   ss2.star_id = 2;
-  ss2.inhabited = 0;
   ss2.name = "Vega";
   ss2.pnames = {"Hoth", "Dune"};
   Star star2(ss2);

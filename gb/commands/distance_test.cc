@@ -45,7 +45,7 @@ void setup_test_world(TestContext& ctx) {
   ss0.name = "Sol";
   ss0.xpos = 0.0;
   ss0.ypos = 0.0;
-  ss0.explored = (1ULL << 1);
+  ss0.explored.set(player_t{1});
   ss0.pnames.push_back("Earth");
   Star star0(ss0);
 
@@ -64,7 +64,7 @@ void setup_test_world(TestContext& ctx) {
   ss1.name = "Centauri";
   ss1.xpos = 300.0;
   ss1.ypos = 400.0;
-  ss1.explored = (1ULL << 1);
+  ss1.explored.set(player_t{1});
   Star star1(ss1);
 
   StarRepository stars(store);

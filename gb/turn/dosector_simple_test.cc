@@ -88,8 +88,6 @@ Star createTestStar() {
   star_data.temperature = 100;
   star_data.gravity = 1.0;
   star_data.star_id = 0;
-  star_data.explored = 0;
-  star_data.inhabited = 0;
   star_data.pnames.push_back("TestPlanet");
 
   return Star(star_data);

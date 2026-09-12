@@ -78,36 +78,6 @@ bool isclr(const T target, const Unsigned auto pos)
   return !isset(target, pos);
 }
 
-// Overloads for ID types (player_t, governor_t, etc.)
-// These handle the .value extraction and cast to unsigned automatically
-export template <typename T, FixedString Tag, typename IDValueType>
-void setbit(T& target, const ID<Tag, IDValueType> id)
-  requires Unsigned<T> && std::integral<IDValueType>
-{
-  setbit(target, static_cast<unsigned>(id.value));
-}
-
-export template <typename T, FixedString Tag, typename IDValueType>
-void clrbit(T& target, const ID<Tag, IDValueType> id)
-  requires Unsigned<T> && std::integral<IDValueType>
-{
-  clrbit(target, static_cast<unsigned>(id.value));
-}
-
-export template <typename T, FixedString Tag, typename IDValueType>
-bool isset(const T target, const ID<Tag, IDValueType> id)
-  requires Unsigned<T> && std::integral<IDValueType>
-{
-  return isset(target, static_cast<unsigned>(id.value));
-}
-
-export template <typename T, FixedString Tag, typename IDValueType>
-bool isclr(const T target, const ID<Tag, IDValueType> id)
-  requires Unsigned<T> && std::integral<IDValueType>
-{
-  return isclr(target, static_cast<unsigned>(id.value));
-}
-
 export template <typename T, typename U>
 constexpr auto MIN(const T& x, const U& y) {
   return (x < y) ? x : y;

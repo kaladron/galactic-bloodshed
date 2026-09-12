@@ -132,7 +132,7 @@ void test_find_suitable_planet_deterministic_search() {
   // Star 0: Inhabited -> skip
   star_struct ss0{};
   ss0.star_id = 0;
-  ss0.inhabited = 1;
+  ss0.inhabited.set(player_t{1});
   ss0.pnames = {"P1", "P2"};
   Star star0(ss0);
   star_repo.save(star0);
@@ -140,7 +140,6 @@ void test_find_suitable_planet_deterministic_search() {
   // Star 1: Only 1 planet -> skip
   star_struct ss1{};
   ss1.star_id = 1;
-  ss1.inhabited = 0;
   ss1.pnames = {"P1"};
   Star star1(ss1);
   star_repo.save(star1);
@@ -148,7 +147,6 @@ void test_find_suitable_planet_deterministic_search() {
   // Star 2: 2 planets, candidate Earth planet at pnum 1 (valid)
   star_struct ss2{};
   ss2.star_id = 2;
-  ss2.inhabited = 0;
   ss2.pnames = {"P1", "P2"};
   Star star2(ss2);
   star_repo.save(star2);
@@ -167,7 +165,6 @@ void test_find_suitable_planet_deterministic_search() {
   // Star 3: 2 planets, candidate Earth planet at pnum 0 (valid)
   star_struct ss3{};
   ss3.star_id = 3;
-  ss3.inhabited = 0;
   ss3.pnames = {"P1", "P2"};
   Star star3(ss3);
   star_repo.save(star3);
@@ -186,7 +183,6 @@ void test_find_suitable_planet_deterministic_search() {
   // Star 4: 2 planets, candidate Gas Giant at pnum 1 (cold: RTEMP = -80)
   star_struct ss4{};
   ss4.star_id = 4;
-  ss4.inhabited = 0;
   ss4.pnames = {"P1", "P2"};
   Star star4(ss4);
   star_repo.save(star4);
@@ -206,7 +202,6 @@ void test_find_suitable_planet_deterministic_search() {
   // at pnum 1 (RTEMP = 150)
   star_struct ss5{};
   ss5.star_id = 5;
-  ss5.inhabited = 0;
   ss5.pnames = {"P1", "P2"};
   Star star5(ss5);
   star_repo.save(star5);
@@ -288,7 +283,6 @@ void test_enroll_valid_race_success() {
   // Star 0 has 2 planets: Planet 0 is MARS, Planet 1 is GASGIANT
   star_struct ss0{};
   ss0.star_id = 0;
-  ss0.inhabited = 0;
   ss0.pnames = {"Ares", "Jupiter"};
   Star star0(ss0);
   StarRepository star_repo(store);

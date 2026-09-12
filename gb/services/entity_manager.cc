@@ -841,7 +841,18 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   /* undock the stuff docked with it */
   if (ship.docked() && ship.whatorbits() != ScopeLevel::LEVEL_SHIP &&
       ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
-    mutate_ship(ship.destshipno(), [](Ship& s) { s.undock_from_ship(); });
+    if (auto res = unmoor_ships(ship.number()); !res) {
+      // Invariant note: unmooring attempted before destruction; ignore if
+      // already detached
+    }
+  }
+
+  /* if this ship is inside a carrier, adjust the carrier's hangar and mass */
+  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP && ship.destshipno() != 0) {
+    if (peek_ship(ship.destshipno())) {
+      mutate_ship(ship.destshipno(),
+                  [&](Ship& carrier) { carrier.unload_docked_craft(ship); });
+    }
   }
 
   /* landed ships are killed */
@@ -849,6 +860,126 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     Ship& s = *ship_handle;   // Get mutable reference
     kill_ship(Playernum, s);  // Recursive call to member function
   }
+}
+
+std::expected<void, DockError>
+EntityManager::dock_carrier(shipnum_t child_id, shipnum_t carrier_id) {
+  if (child_id == carrier_id) {
+    return std::unexpected(DockError::SelfDocking);
+  }
+
+  const auto* child_peek = peek_ship(child_id);
+  const auto* carrier_peek = peek_ship(carrier_id);
+  if (!child_peek || !carrier_peek) {
+    return std::unexpected(DockError::ShipNotFound);
+  }
+
+  // 1-Level Hierarchy & Symmetry invariant:
+  // - Child cannot contain docked ships in its hangar
+  // - Carrier cannot itself be inside another carrier
+  if (child_peek->hanger() > 0 ||
+      !ShipList::readonly_in_carrier(*this, child_id).empty() ||
+      carrier_peek->whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    return std::unexpected(DockError::NestedCarrierDisallowed);
+  }
+
+  if (child_peek->size() > carrier_peek->hanger_space()) {
+    return std::unexpected(DockError::CarrierFull);
+  }
+
+  // Atomically mutate carrier and child
+  mutate_ship(carrier_id, [&](Ship& carrier) {
+    mutate_ship(child_id, [&](Ship& child) {
+      child.dock_into_carrier(carrier_id);
+      carrier.load_docked_craft(child);
+    });
+  });
+
+  return {};
+}
+
+std::expected<void, UndockError>
+EntityManager::undock_carrier(shipnum_t child_id, ScopeLevel orbit_level) {
+  const auto* child_peek = peek_ship(child_id);
+  if (!child_peek) {
+    return std::unexpected(UndockError::ShipNotFound);
+  }
+
+  if (!child_peek->is_docked() ||
+      child_peek->whatorbits() != ScopeLevel::LEVEL_SHIP) {
+    return std::unexpected(UndockError::NotDocked);
+  }
+
+  const auto carrier_id = child_peek->destshipno();
+  const auto* carrier_peek = peek_ship(carrier_id);
+  if (!carrier_peek) {
+    return std::unexpected(UndockError::CarrierNotFound);
+  }
+
+  mutate_ship(carrier_id, [&](Ship& carrier) {
+    mutate_ship(child_id, [&](Ship& child) {
+      carrier.unload_docked_craft(child);
+      child.launch_to_orbit(orbit_level);
+    });
+  });
+
+  return {};
+}
+
+std::expected<void, DockError> EntityManager::moor_ships(shipnum_t ship1_id,
+                                                         shipnum_t ship2_id) {
+  if (ship1_id == ship2_id) {
+    return std::unexpected(DockError::SelfDocking);
+  }
+
+  const auto* s1_peek = peek_ship(ship1_id);
+  const auto* s2_peek = peek_ship(ship2_id);
+  if (!s1_peek || !s2_peek) {
+    return std::unexpected(DockError::ShipNotFound);
+  }
+
+  if (!s1_peek->is_spaceborne() || !s2_peek->is_spaceborne()) {
+    return std::unexpected(DockError::NotSpaceborne);
+  }
+
+  if (s1_peek->whatorbits() != s2_peek->whatorbits()) {
+    return std::unexpected(DockError::ScopeMismatch);
+  }
+
+  mutate_ship(ship1_id, [&](Ship& s1) {
+    mutate_ship(ship2_id, [&](Ship& s2) {
+      s1.dock_with_ship(ship2_id);
+      s2.dock_with_ship(ship1_id);
+    });
+  });
+
+  return {};
+}
+
+std::expected<void, UndockError>
+EntityManager::unmoor_ships(shipnum_t ship_id) {
+  const auto* s_peek = peek_ship(ship_id);
+  if (!s_peek) {
+    return std::unexpected(UndockError::ShipNotFound);
+  }
+
+  if (!s_peek->is_docked() || s_peek->whatorbits() == ScopeLevel::LEVEL_SHIP ||
+      s_peek->whatdest() != ScopeLevel::LEVEL_SHIP) {
+    return std::unexpected(UndockError::NotDocked);
+  }
+
+  const auto other_id = s_peek->destshipno();
+  mutate_ship(ship_id, [&](Ship& s1) { s1.undock_from_ship(); });
+
+  if (other_id != 0 && peek_ship(other_id)) {
+    mutate_ship(other_id, [&](Ship& s2) {
+      if (s2.destshipno() == ship_id) {
+        s2.undock_from_ship();
+      }
+    });
+  }
+
+  return {};
 }
 
 // SectorMap operations (cached with RAII like other entities)

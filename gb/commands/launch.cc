@@ -103,23 +103,30 @@ bool launch(const command_t& argv, GameObj& g) {
         any_launched = true;
       });
     } else if (s.whatdest() == ScopeLevel::LEVEL_SHIP) {
-      g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
-        if (s2.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-          if (!g.deduct_univ_ap(1)) {
-            g.out << "You need 1 universe action point.\n";
-            return;
-          }
-        } else {
-          if (!g.deduct_ap(s.storbits(), 1)) {
-            g.out << "You don't have 1 action points there.\n";
-            return;
-          }
+      const auto s2_no = s.destshipno();
+      const auto* s2_peek = g.entity_manager.peek_ship(s2_no);
+      if (!s2_peek) {
+        g.out << "Target ship not found.\n";
+        continue;
+      }
+      if (s2_peek->whatorbits() == ScopeLevel::LEVEL_UNIV) {
+        if (!g.deduct_univ_ap(1)) {
+          g.out << "You need 1 universe action point.\n";
+          continue;
         }
-        s.undock_from_ship();
-        s2.undock_from_ship();
-        g.out << std::format("{} undocked from {}.\n", s, s2);
-        any_launched = true;
-      });
+      } else {
+        if (!g.deduct_ap(s.storbits(), 1)) {
+          g.out << "You don't have 1 action points there.\n";
+          continue;
+        }
+      }
+      const auto s2_str = std::format("{}", *s2_peek);
+      if (auto res = g.entity_manager.unmoor_ships(s.number()); !res) {
+        g.out << "Failed to unmoor ship.\n";
+        continue;
+      }
+      g.out << std::format("{} undocked from {}.\n", s, s2_str);
+      any_launched = true;
     } else {
       if (!g.deduct_ap(s.storbits(), 1)) {
         g.out << "You don't have 1 action points there.\n";

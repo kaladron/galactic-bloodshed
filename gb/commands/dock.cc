@@ -181,12 +181,11 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
     }
 
     if (s.docked() && Assault) {
-      /* first undock the target ship */
-      if (s.destshipno() != 0) {
-        g.entity_manager.mutate_ship(s.destshipno(),
-                                     [](Ship& s3) { s3.undock_from_ship(); });
+      /* first undock the attacking ship */
+      if (auto res = g.entity_manager.unmoor_ships(s.number()); !res) {
+        g.out << "Failed to unmoor ship before assault.\n";
+        continue;
       }
-      s.undock_from_ship();
     }
 
     /* defending fire gets defensive fire */
@@ -267,13 +266,12 @@ bool do_dock(const command_t& argv, GameObj& g, bool Assault) {
             }
 
             /* if the assaulted ship is docked, undock it first */
-            if (s2.docked() && s2.whatdest() == ScopeLevel::LEVEL_SHIP) {
-              if (s2.destshipno() != 0) {
-                g.entity_manager.mutate_ship(
-                    s2.destshipno(), [](Ship& s3) { s3.undock_from_ship(); });
+            if (s2.docked() && s2.whatorbits() != ScopeLevel::LEVEL_SHIP &&
+                s2.whatdest() == ScopeLevel::LEVEL_SHIP) {
+              if (auto res = g.entity_manager.unmoor_ships(s2.number()); !res) {
+                g.out << "Failed to unmoor assaulted ship.\n";
+                return;
               }
-
-              s2.undock_from_ship();
             }
             /* nuke both populations, ships */
             casualty_scale = MIN(boarders, s2.troops() + s2.popn());

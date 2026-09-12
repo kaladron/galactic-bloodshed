@@ -956,6 +956,54 @@ void test_dock_state_transitions() {
   test::expect_false(ship.moored_ship_id().has_value());
 }
 
+void test_carrier_craft_loading_and_unloading() {
+  std::println(std::cout,
+               "Testing Carrier craft loading and unloading encapsulation...");
+  ship_struct carrier_data{
+      .mass = 500.0,
+      .base_mass = 500.0,
+      .type = ShipType::STYPE_CARRIER,
+      .hanger = 0,
+      .max_hanger = 100,
+  };
+  Ship carrier{carrier_data};
+
+  ship_struct child_data{
+      .mass = 50.0,
+      .size = 10,
+      .base_mass = 40.0,
+      .type = ShipType::STYPE_FIGHTER,
+  };
+  Ship child{child_data};
+
+  // Load craft into carrier
+  carrier.load_docked_craft(child);
+  test::expect_eq(carrier.hanger(), 10);
+  expect_near(carrier.mass(), 550.0);
+
+  // Load second craft using size & mass directly
+  carrier.load_docked_craft(15, 75.0);
+  test::expect_eq(carrier.hanger(), 25);
+  expect_near(carrier.mass(), 625.0);
+
+  // Unload second craft
+  carrier.unload_docked_craft(15, 75.0);
+  test::expect_eq(carrier.hanger(), 10);
+  expect_near(carrier.mass(), 550.0);
+
+  // Unload child craft
+  carrier.unload_docked_craft(child);
+  test::expect_eq(carrier.hanger(), 0);
+  expect_near(carrier.mass(), 500.0);
+
+  // Underflow safety: unloading more mass than carried clamps cleanly to
+  // base_mass()
+  const double base = carrier.base_mass();
+  carrier.unload_docked_craft(20, carrier.mass() + 100.0);
+  test::expect_eq(carrier.hanger(), 0);
+  expect_near(carrier.mass(), base);
+}
+
 }  // namespace
 
 int main() {
@@ -979,6 +1027,7 @@ int main() {
   test_simulated_ship();
   test_damage_and_radiation_subsystem();
   test_dock_state_transitions();
+  test_carrier_craft_loading_and_unloading();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

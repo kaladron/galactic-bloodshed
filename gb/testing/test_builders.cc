@@ -276,6 +276,16 @@ TestShipBuilder& TestShipBuilder::with_size(ship_size_t size) {
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::with_hanger(hangar_t hanger) {
+  ship_.hanger = hanger;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_max_hanger(hangar_t max_hanger) {
+  ship_.max_hanger = max_hanger;
+  return *this;
+}
+
 TestShipBuilder& TestShipBuilder::with_on(bool on) {
   ship_.on = on;
   return *this;

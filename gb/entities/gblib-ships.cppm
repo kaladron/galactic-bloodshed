@@ -2890,6 +2890,35 @@ public:
     }
   }
 
+  /// \brief Embeds a child craft into this carrier's hangar, updating occupied
+  /// hangar space and aggregate mass.
+  void load_docked_craft(ship_size_t craft_size, double craft_mass) noexcept {
+    data_.hanger += craft_size;
+    data_.mass += craft_mass;
+  }
+
+  /// \brief Embeds a child craft into this carrier's hangar, updating occupied
+  /// hangar space and aggregate mass.
+  void load_docked_craft(const Ship& craft) noexcept {
+    load_docked_craft(craft.size(), craft.mass());
+  }
+
+  /// \brief Removes a child craft from this carrier's hangar, updating occupied
+  /// hangar space (clamped to 0) and aggregate mass.
+  void unload_docked_craft(ship_size_t craft_size, double craft_mass) noexcept {
+    data_.hanger = (data_.hanger > craft_size) ? data_.hanger - craft_size : 0;
+    data_.mass -= craft_mass;
+    if (data_.mass < base_mass()) {
+      data_.mass = base_mass();
+    }
+  }
+
+  /// \brief Removes a child craft from this carrier's hangar, updating occupied
+  /// hangar space (clamped to 0) and aggregate mass.
+  void unload_docked_craft(const Ship& craft) noexcept {
+    unload_docked_craft(craft.size(), craft.mass());
+  }
+
   /// Whether ship has an active combat laser armed and ready to fire.
   [[nodiscard]] bool is_laser_on() const noexcept {
     return data_.laser && data_.fire_laser;

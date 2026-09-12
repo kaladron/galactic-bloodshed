@@ -42,6 +42,23 @@ struct hash<std::pair<starnum_t, planetnum_t>> {
 };
 }  // namespace std
 
+/// \brief Errors that can occur during ship docking or mooring operations.
+export enum class DockError : std::uint8_t {
+  ShipNotFound,
+  SelfDocking,
+  NotSpaceborne,
+  ScopeMismatch,
+  CarrierFull,
+  NestedCarrierDisallowed,
+};
+
+/// \brief Errors that can occur during ship undocking or unmooring operations.
+export enum class UndockError : std::uint8_t {
+  ShipNotFound,
+  NotDocked,
+  CarrierNotFound,
+};
+
 // Forward declaration
 export class EntityManager;
 
@@ -418,6 +435,17 @@ public:
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);
   void kill_ship(player_t destroyer, Ship& ship);
+
+  // Docking & Mooring operations (service layer)
+  [[nodiscard]] std::expected<void, DockError>
+  dock_carrier(shipnum_t child_id, shipnum_t carrier_id);
+  [[nodiscard]] std::expected<void, UndockError>
+  undock_carrier(shipnum_t child_id,
+                 ScopeLevel orbit_level = ScopeLevel::LEVEL_PLAN);
+  [[nodiscard]] std::expected<void, DockError> moor_ships(shipnum_t ship1_id,
+                                                          shipnum_t ship2_id);
+  [[nodiscard]] std::expected<void, UndockError>
+  unmoor_ships(shipnum_t ship_id);
 
   // News operations (service layer)
   void post_news(NewsType type, std::string_view message);

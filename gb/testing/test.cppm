@@ -584,6 +584,8 @@ public:
   TestShipBuilder& with_armor(armor_t armor);
   TestShipBuilder& with_mass(double mass);
   TestShipBuilder& with_size(ship_size_t size);
+  TestShipBuilder& with_hanger(hangar_t hanger);
+  TestShipBuilder& with_max_hanger(hangar_t max_hanger);
   TestShipBuilder& with_on(bool on);
   TestShipBuilder& with_special(SpecialData special);
   TestShipBuilder& with_trigger_radius(unsigned short radius);

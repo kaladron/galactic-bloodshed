@@ -214,27 +214,21 @@ bool scrap(const command_t& argv, GameObj& g) {
       }
     }
 
-    /* more adjustments needed here for hanger. Maarten */
-    if (s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      g.entity_manager.mutate_ship(s.destshipno(),
-                                   [&](Ship& s2) { s2.hanger() -= s.size(); });
-    }
+    const bool was_docked = s.is_docked();
+    const shipnum_t dest_ship = s.destshipno();
 
-    g.entity_manager.kill_ship(g.player(), s);
-
-    if (s.is_docked()) {
-      g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
+    if (was_docked && dest_ship != 0) {
+      g.entity_manager.mutate_ship(dest_ship, [&](Ship& s2) {
         s2.add_crystals(xtalval);
         rcv_fuel(s2, fuelval);
         rcv_destruct(s2, destval);
         rcv_resource(s2, scrapval);
         rcv_troops(s2, troopval, g.race->mass);
         rcv_popn(s2, crewval, g.race->mass);
-        if (s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
-          s2.undock_from_ship(); /* undock the surviving ship */
-        }
       });
     }
+
+    g.entity_manager.kill_ship(g.player(), s);
 
     if (is_landed_on_planet) {
       g.entity_manager.mutate_sectormap(

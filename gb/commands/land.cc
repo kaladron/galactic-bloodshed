@@ -69,14 +69,17 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           return false;
         }
         /* ok, load 'em up */
-        g.entity_manager.mutate_ship(ship2no, [&](Ship& s2) {
-          s.dock_into_carrier(s2.number());
-          s2.set_mass(s2.mass() + s.mass());
-          s2.hanger() += s.size();
-          fuel = 0.0;
-          g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2,
-                               fuel);
-        });
+        auto dock_res = g.entity_manager.dock_carrier(s.number(), ship2no);
+        if (!dock_res) {
+          if (dock_res.error() == DockError::NestedCarrierDisallowed) {
+            g.out << "Carriers cannot be loaded onto other ships.\n";
+          }
+          return false;
+        }
+        s.dock_into_carrier(ship2no);
+        fuel = 0.0;
+        g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2_check,
+                             fuel);
         return true;
       } else if (s.docked()) {
         g.out << std::format("{} is already docked or landed.\n", s);
@@ -112,12 +115,16 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
           return false;
         }
 
-        g.entity_manager.mutate_ship(ship2no, [&](Ship& s2) {
-          s.dock_into_carrier(s2.number());
-          s2.set_mass(s2.mass() + s.mass());
-          s2.hanger() += s.size();
-          g.out << std::format("{} landed on {} using {} fuel.\n", s, s2, fuel);
-        });
+        auto dock_res = g.entity_manager.dock_carrier(s.number(), ship2no);
+        if (!dock_res) {
+          if (dock_res.error() == DockError::NestedCarrierDisallowed) {
+            g.out << "Carriers cannot be loaded onto other ships.\n";
+          }
+          return false;
+        }
+        s.dock_into_carrier(ship2no);
+        g.out << std::format("{} landed on {} using {} fuel.\n", s, s2_check,
+                             fuel);
         return true;
       }
     });

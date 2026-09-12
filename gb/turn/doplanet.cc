@@ -568,7 +568,8 @@ void do_recover(EntityManager& entity_manager, const Star& star,
 
 void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
                              SectorMap& smap, TurnStats& stats) {
-  for (auto ship_handle : ShipList(entity_manager, planet.ships())) {
+  for (auto ship_handle : ShipList::on_planet(entity_manager, planet.star_id(),
+                                              planet.planet_order())) {
     auto& ship = *ship_handle;
     if (ship.alive() && !ship.rad()) {
       /* planet level functions - do these here because they use the sector map

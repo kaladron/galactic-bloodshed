@@ -115,8 +115,8 @@ int SpaceMirrorShip::aim_direction(EntityManager& em) const {
 }
 
 void capture_stuff(const Ship& ship, GameObj& g) {
-  ShipList ships(g.entity_manager, ship.ships());
-  for (auto ship_handle : ships) {
+  for (auto ship_handle :
+       ShipList::in_carrier(g.entity_manager, ship.number())) {
     Ship& s = *ship_handle;
     capture_stuff(s, g); /* recursive call */
     s.owner() =

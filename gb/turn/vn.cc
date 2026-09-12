@@ -337,23 +337,21 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
   s2.set_coordinates(parent.coordinates());
   s2.add_fuel(0.5 * parent.fuel());
   s2.set_land_coords(parent.land_coords());
-  s2.nextship() = planet.ships();
   s2.armor() = parent.armor() + 1;
   s2.tech() = parent.tech() + 20.0;
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
     auto_ship->mind() = child_mind;
   }
-  s2.storbits() = parent.storbits();
+  s2.storbits() = planet.star_id();
   s2.deststar() = parent.deststar();
   s2.destpnum() = parent.destpnum();
-  s2.pnumorbits() = parent.pnumorbits();
+  s2.pnumorbits() = planet.planet_order();
   s2.whatdest() = parent.whatdest();
   s2.whatorbits() = ScopeLevel::LEVEL_PLAN;
   s2.docked() = true;
 
   parent.consume_fuel(parent.fuel() * 0.5);
 
-  planet.ships() = s2.number();
   return s2.number();
 }
 
@@ -387,7 +385,6 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   s2.add_fuel(5.0 * parent.fuel());
   parent.consume_fuel(parent.fuel() * 0.5);
   s2.set_land_coords(parent.land_coords());
-  s2.nextship() = planet.ships();
   s2.armor() = parent.armor() + 11;
   s2.tech() = parent.tech() + 100.0;
   s2.add_destruct(500);
@@ -397,17 +394,15 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   s2.protect() = ProtectData{.planet = true, .self = true};
   s2.hyper_drive() = HyperDriveData{
       .charge = HYPER_DRIVE_READY_CHARGE, .on = true, .has = true};
-  s2.storbits() = parent.storbits();
+  s2.storbits() = planet.star_id();
   s2.deststar() = parent.deststar();
   s2.destpnum() = parent.destpnum();
-  s2.pnumorbits() = parent.pnumorbits();
+  s2.pnumorbits() = planet.planet_order();
   s2.whatdest() = parent.whatdest();
   s2.whatorbits() = ScopeLevel::LEVEL_PLAN;
   s2.bombard() = true;
   s2.mounted() = true;
   s2.docked() = true;
-
-  planet.ships() = s2.number();
 
   auto buf =
       std::format("{0} constructed {1}.", static_cast<const Ship&>(parent), s2);

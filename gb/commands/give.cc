@@ -59,7 +59,9 @@ bool give(const command_t& argv, GameObj& g) {
                      "board.\n";
             return;
           }
-          if (ship.ships() != 0 && !race.God) {
+          if (!ShipList::readonly_in_carrier(g.entity_manager, ship.number())
+                   .empty() &&
+              !race.God) {
             g.out << "You can't give away this ship, it has other ships "
                      "loaded on it.\n";
             return;

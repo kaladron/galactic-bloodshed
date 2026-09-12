@@ -274,11 +274,6 @@ int main() {
                                  .build_handle();
       fighter2_num = fighter2_handle->number();
 
-      // Link fighters to carrier's ships list
-      carrier_handle->ships() = fighter1_num;
-      fighter1_handle->nextship() = fighter2_num;
-      fighter2_handle->nextship() = 0;
-
       // Handles auto-save when they go out of scope
     }
 

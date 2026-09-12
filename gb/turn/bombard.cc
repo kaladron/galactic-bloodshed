@@ -11,7 +11,8 @@ module gblib;
 
 bool check_orbital_pdn_defense(EntityManager& entity_manager,
                                const Planet& planet, player_t attacker) {
-  for (const auto& s : ShipList::readonly(entity_manager, planet.ships())) {
+  for (const auto& s : ShipList::readonly_on_planet(
+           entity_manager, planet.star_id(), planet.planet_order())) {
     if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF &&
         s.owner() != attacker) {
       return true;

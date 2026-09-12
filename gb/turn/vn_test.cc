@@ -429,12 +429,13 @@ int main() {
     const auto cost = ship_template(ShipType::OTYPE_VN).build_cost;
     shipnum_t child_num = construct_replicated_vn(em, *parent, planet);
     test::expect_true(child_num != 0);
-    test::expect_eq(planet.ships(), child_num);
     test::expect_eq(parent->resource(), 250 - cost);
     test::expect_eq(parent->fuel(), 30.0);
 
     const auto* child = em.peek_ship(child_num);
     test::expect_true(child != nullptr);
+    test::expect_eq(child->storbits(), planet.star_id());
+    test::expect_eq(child->pnumorbits(), planet.planet_order());
     test::expect_eq(child->type(), ShipType::OTYPE_VN);
     test::expect_eq(child->tech(), 520.0);
     test::expect_eq(child->armor(), 3);
@@ -488,12 +489,13 @@ int main() {
     shipnum_t bers_num =
         construct_replicated_berserker(em, *parent, planet, bers_stats);
     test::expect_true(bers_num != 0);
-    test::expect_eq(planet.ships(), bers_num);
     test::expect_eq(parent->resource(), 500 - cost);
     test::expect_eq(parent->fuel(), 20.0);
 
     const auto* bers = em.peek_ship(bers_num);
     test::expect_true(bers != nullptr);
+    test::expect_eq(bers->storbits(), planet.star_id());
+    test::expect_eq(bers->pnumorbits(), planet.planet_order());
     test::expect_eq(bers->type(), ShipType::OTYPE_BERS);
     test::expect_eq(bers->tech(), 600.0);
     test::expect_eq(bers->armor(), 13);    // parent armor (2) + 11
@@ -551,7 +553,10 @@ int main() {
     int bers_count = replicate_machines(em, *parent, planet, enraged_stats);
     test::expect_eq(bers_count, 1);
     test::expect_eq(parent->resource(), 0);
-    const auto* newly_replicated = em.peek_ship(planet.ships());
+    auto replicated_ships =
+        em.ships_on_planet(planet.star_id(), planet.planet_order(), true);
+    test::expect_false(replicated_ships.empty());
+    const auto* newly_replicated = em.peek_ship(replicated_ships.back());
     test::expect_ne(newly_replicated, nullptr);
     test::expect_true(newly_replicated->type() == ShipType::OTYPE_BERS ||
                       newly_replicated->type() == ShipType::OTYPE_VN);

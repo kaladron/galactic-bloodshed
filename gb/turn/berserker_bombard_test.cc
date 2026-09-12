@@ -92,9 +92,7 @@ int main() {
                         .with_alive(true)
                         .with_on(true)
                         .in_planet_orbit(0, 0)
-                        .with_nextship(planet.ships())
                         .build_handle();
-  planet.ships() = pdn_handle->number();
 
   int pdn_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
   test::expect_eq(pdn_destroyed, 0);
@@ -130,9 +128,8 @@ int main() {
     ship.destpnum() = 0;
     ship.notified() = 0;
     ship.destruct() = 0;
-    // Clear PDNs
-    planet.ships() = 0;
-    planet_repo.save(planet);
+    // Disable PDN defense
+    pdn_handle->alive() = false;
 
     int no_weapon_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
     test::expect_eq(no_weapon_destroyed, 0);
@@ -159,8 +156,6 @@ int main() {
                         .with_alive(true)
                         .in_planet_orbit(0, 2)
                         .build_handle();
-    orbit_planet.ships() = f_handle->number();
-    planet_repo.save(orbit_planet);
 
     test::expect_false(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
@@ -170,10 +165,7 @@ int main() {
                         .owned_by(2)
                         .with_alive(true)
                         .in_planet_orbit(0, 2)
-                        .with_nextship(orbit_planet.ships())
                         .build_handle();
-    orbit_planet.ships() = c_handle->number();
-    planet_repo.save(orbit_planet);
 
     test::expect_false(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
@@ -183,10 +175,7 @@ int main() {
                         .owned_by(2)
                         .with_alive(false)
                         .in_planet_orbit(0, 2)
-                        .with_nextship(orbit_planet.ships())
                         .build_handle();
-    orbit_planet.ships() = d_handle->number();
-    planet_repo.save(orbit_planet);
 
     test::expect_false(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
@@ -196,10 +185,7 @@ int main() {
                         .owned_by(2)
                         .with_alive(true)
                         .in_planet_orbit(0, 2)
-                        .with_nextship(orbit_planet.ships())
                         .build_handle();
-    orbit_planet.ships() = h_handle->number();
-    planet_repo.save(orbit_planet);
 
     test::expect_true(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));

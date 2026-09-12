@@ -91,7 +91,8 @@ void moveplanet(EntityManager& entity_manager, const Star& star,
   double yadd = (dist * std::sin(((-1. / period) + phase))) - planet.ypos();
 
   /* adjust ships in orbit around the planet */
-  for (auto ship_handle : ShipList(entity_manager, planet.ships())) {
+  for (auto ship_handle : ShipList::on_planet(entity_manager, planet.star_id(),
+                                              planet.planet_order())) {
     ship_handle->set_coordinates(ship_handle->coordinates() +
                                  SystemCoordinates{xadd, yadd});
   }

@@ -83,6 +83,17 @@ ShipList::ShipList(EntityManager& em, IterationType type) : em_(&em) {
 ShipList::ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids)
     : em_(&em), ship_ids_(std::move(ship_ids)) {}
 
+ShipList ShipList::in_carrier(EntityManager& em, shipnum_t carrier_id,
+                              bool alive_only) {
+  return ShipList(em, em.ships_in_hangar(carrier_id, alive_only));
+}
+
+const ShipList ShipList::readonly_in_carrier(EntityManager& em,
+                                             shipnum_t carrier_id,
+                                             bool alive_only) {
+  return ShipList(em, em.ships_in_hangar(carrier_id, alive_only));
+}
+
 // ShipList iterator methods
 
 ShipList::MutableIterator ShipList::begin() {

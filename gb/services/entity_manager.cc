@@ -848,8 +848,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 
   /* landed ships are killed */
-  ShipList shiplist(*this, ship.ships());
-  for (auto ship_handle : shiplist) {
+  for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
     Ship& s = *ship_handle;   // Get mutable reference
     kill_ship(Playernum, s);  // Recursive call to member function
   }

@@ -75,9 +75,6 @@ void setup_test_world(TestContext& ctx) {
 
   ShipRepository ships_repo(store);
   ships_repo.save(port);
-
-  // Link ship to planet
-  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.ships() = 1; });
 }
 
 void test_sell_happy_paths() {

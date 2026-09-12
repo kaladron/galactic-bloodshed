@@ -61,7 +61,8 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
     ship.add_resource(add);
     static_cast<void>(ship.consume_up_to_fuel(fuse));
 
-    for (auto nested_ship : ShipList(entity_manager, ship.ships())) {
+    for (auto nested_ship :
+         ShipList::in_carrier(entity_manager, ship.number())) {
       if (nested_ship->type() == ShipType::OTYPE_WPLANT) {
         ship.add_destruct(do_weapon_plant(*nested_ship, entity_manager));
       }
@@ -585,7 +586,7 @@ void domass(Ship& ship, EntityManager& entity_manager) {
 
   double carried_mass = 0.0;
   hangar_t carried_hanger = 0;
-  for (auto nested_ship : ShipList(entity_manager, ship.ships())) {
+  for (auto nested_ship : ShipList::in_carrier(entity_manager, ship.number())) {
     domass(*nested_ship, entity_manager); /* recursive call */
     carried_mass += nested_ship->mass();
     carried_hanger += nested_ship->size();
@@ -595,7 +596,7 @@ void domass(Ship& ship, EntityManager& entity_manager) {
 }
 
 void doown(Ship& ship, EntityManager& entity_manager) {
-  for (auto nested_ship : ShipList(entity_manager, ship.ships())) {
+  for (auto nested_ship : ShipList::in_carrier(entity_manager, ship.number())) {
     doown(*nested_ship, entity_manager); /* recursive call */
     nested_ship->owner() = ship.owner();
     nested_ship->governor() = ship.governor();
@@ -875,8 +876,8 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
 
     // 1. Identify threat missiles and mines in orbit
     std::vector<shipnum_t> threats;
-    for (const auto& target :
-         ShipList::readonly(entity_manager, planet.ships())) {
+    for (const auto& target : ShipList::readonly_on_planet(
+             entity_manager, planet.star_id(), planet.planet_order())) {
       if (!target.alive()) continue;
       if (target.type() != ShipType::STYPE_MISSILE &&
           target.type() != ShipType::STYPE_MINE) {

@@ -1113,15 +1113,11 @@ void test_process_planetary_ships() {
                            .with_max_fuel(500.0)
                            .in_planet_orbit(star.star_id(), 0)
                            .targeting_planet(star.star_id(), 0)
-                           .with_nextship(plow_handle->number())
                            .with_alive(true)
                            .with_active(true)
                            .with_on(true)
                            .build_handle();
   tanker_handle->docked() = 0;
-
-  // Link ships head to planet
-  planet.ships() = tanker_handle->number();
 
   process_planetary_ships(em, planet, smap, stats);
 

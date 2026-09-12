@@ -75,9 +75,6 @@ int main() {
   ShipRepository ships_repo(store);
   ships_repo.save(port);
 
-  // Link ship to planet
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.ships() = 1; });
-
   // Create a commodity lot for sale using Repository
   CommodRepository commod_repo(store);
   {

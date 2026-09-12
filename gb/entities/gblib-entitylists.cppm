@@ -798,9 +798,8 @@ public:
                             planetnum_t planet_id, bool alive_only = true) {
     return ShipList(em, star_id, planet_id, alive_only);
   }
-  static ShipList in_carrier(EntityManager& em, shipnum_t carrier_id) {
-    return ShipList(em, carrier_id, IterationType::Nested);
-  }
+  static ShipList in_carrier(EntityManager& em, shipnum_t carrier_id,
+                             bool alive_only = true);
 
   static const ShipList readonly_in_star(EntityManager& em, starnum_t star_id,
                                          bool alive_only = true) {
@@ -812,9 +811,8 @@ public:
     return ShipList(em, star_id, planet_id, alive_only);
   }
   static const ShipList readonly_in_carrier(EntityManager& em,
-                                            shipnum_t carrier_id) {
-    return ShipList(em, carrier_id, IterationType::Nested);
-  }
+                                            shipnum_t carrier_id,
+                                            bool alive_only = true);
 
   // Forward declaration for iterators
   class MutableIterator;

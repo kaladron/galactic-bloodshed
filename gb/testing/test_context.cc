@@ -241,7 +241,6 @@ TestContext& TestContext::with_standard_universe() {
       .with_colony(1, 1000, Coordinates{0, 0})
       .build();
   em.mutate_planet(0, 0, [](Planet& p) {
-    p.ships() = 100;
     p.info(player_t{1}).tax = 10;
     p.info(player_t{1}).newtax = 10;
     p.info(player_t{2}).tax = 10;

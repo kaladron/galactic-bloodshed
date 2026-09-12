@@ -316,19 +316,17 @@ void test_test_ship_builder() {
   test::expect_true(sys_orbiter != nullptr);
   test::expect_eq(sys_orbiter->coordinates(), UniverseCoordinates(110.0, 10.0));
 
-  // 7. Mine with size, on, and nextship linkage
+  // 7. Mine with size and on status
   shipnum_t mine_num = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                            .owned_by(1)
                            .with_destruct(10)
                            .with_size(15)
                            .with_on(true)
-                           .with_nextship(2)
                            .build();
   const auto* mine = ctx.em.peek_ship(mine_num);
   test::expect_true(mine != nullptr);
   test::expect_eq(mine->size(), 15U);
   test::expect_true(mine->on());
-  test::expect_eq(mine->nextship(), shipnum_t{2});
 
   // 8. In-star-orbit ship with explicit SystemCoordinates
   shipnum_t star_sys_orbiter_num =

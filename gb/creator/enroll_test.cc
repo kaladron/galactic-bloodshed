@@ -359,7 +359,12 @@ void test_enroll_valid_race_success() {
   test::expect_true(planet != nullptr);
   if (planet) {
     test::expect_gt(planet->popn(), 0);
-    test::expect_eq(planet->ships(), enrolled_race->Gov_ship);
+  }
+  const auto* gov_ship = em.peek_ship(enrolled_race->Gov_ship);
+  test::expect_true(gov_ship != nullptr);
+  if (gov_ship) {
+    test::expect_eq(gov_ship->storbits(), starnum_t{0});
+    test::expect_eq(gov_ship->pnumorbits(), planetnum_t{1});
   }
 
   std::println(std::cout, "  ✓ enroll_valid_race completed successfully");

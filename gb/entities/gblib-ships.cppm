@@ -417,8 +417,6 @@ export struct ship_struct {
   Coordinates land_coords{0, 0};  ///< Planetary surface coordinates when landed
 
   shipnum_t destshipno{0};  ///< Destination / escorted ship number
-  shipnum_t nextship{0};    ///< Next ship in fleet or sector linked list
-  shipnum_t ships{0};       ///< First ship landed on or docked in this carrier
 
   armor_t armor{0};     ///< Armor protection rating
   ship_size_t size{0};  ///< Ship hull volume / physical size
@@ -2283,20 +2281,6 @@ public:
   }
   shipnum_t& destshipno() {
     return data_.destshipno;
-  }
-
-  [[nodiscard]] shipnum_t nextship() const {
-    return data_.nextship;
-  }
-  shipnum_t& nextship() {
-    return data_.nextship;
-  }
-
-  [[nodiscard]] shipnum_t ships() const {
-    return data_.ships;
-  }
-  shipnum_t& ships() {
-    return data_.ships;
   }
 
   // Stats

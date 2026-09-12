@@ -17,24 +17,6 @@ import :ships;
 
 // ShipList constructors
 
-ShipList::ShipList(EntityManager& em, shipnum_t start, IterationType type)
-    : em_(&em) {
-  if (type == IterationType::Nested) {
-    for (shipnum_t curr = start; curr != 0;) {
-      const auto* ship = em.peek_ship(curr);
-      if (!ship) break;
-      ship_ids_.push_back(curr);
-      curr = ship->nextship();
-    }
-  } else if (type == IterationType::Scope) {
-    ship_ids_ = em.ships_alive();
-  } else if (type == IterationType::AllAlive) {
-    ship_ids_ = em.ships_alive();
-  } else if (type == IterationType::All) {
-    ship_ids_ = em.ships_all();
-  }
-}
-
 ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
     : em_(&em) {
   if (type == IterationType::All) {

@@ -53,13 +53,13 @@ struct meta<plinfo> {
 template <>
 struct meta<planet_struct> {
   using T = planet_struct;
-  static constexpr auto value = object(
-      "xpos", &T::xpos, "ypos", &T::ypos, "ships", &T::ships, "dimensions",
-      &T::dimensions, "info", &T::info, "conditions", &T::conditions, "popn",
-      &T::popn, "troops", &T::troops, "maxpopn", &T::maxpopn, "total_resources",
-      &T::total_resources, "slaved_to", &T::slaved_to, "type", &T::type,
-      "expltimer", &T::expltimer, "explored", &T::explored, "star_id",
-      &T::star_id, "planet_order", &T::planet_order);
+  static constexpr auto value =
+      object("xpos", &T::xpos, "ypos", &T::ypos, "dimensions", &T::dimensions,
+             "info", &T::info, "conditions", &T::conditions, "popn", &T::popn,
+             "troops", &T::troops, "maxpopn", &T::maxpopn, "total_resources",
+             &T::total_resources, "slaved_to", &T::slaved_to, "type", &T::type,
+             "expltimer", &T::expltimer, "explored", &T::explored, "star_id",
+             &T::star_id, "planet_order", &T::planet_order);
 };
 
 }  // namespace glz

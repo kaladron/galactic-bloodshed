@@ -281,11 +281,6 @@ TestShipBuilder& TestShipBuilder::with_on(bool on) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_nextship(shipnum_t next) {
-  ship_.nextship = next;
-  return *this;
-}
-
 TestShipBuilder& TestShipBuilder::with_special(SpecialData special) {
   ship_.special = special;
   return *this;

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file shiplist_test.cc
-/// \brief Comprehensive unit tests for ShipList iterations (nested, scope, all,
-/// all_alive), filters, and const semantics.
+/// \brief Comprehensive unit tests for ShipList iterations (scope, all,
+/// all_alive, in_star, in_carrier), filters, and const semantics.
 
 import dallib;
 import gb.entities;
@@ -33,9 +33,9 @@ int main() {
   ship1.alive() = true;
   ship1.storbits() = 0;
   ship1.pnumorbits() = 0;
+  ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
   ship1.type() = ShipType::OTYPE_FACTORY;
   ship1.max_fuel() = 1000.0;
-  ship1.nextship() = 2;  // Linked list
 
   Ship ship2{};
   ship2.number() = 2;
@@ -43,9 +43,9 @@ int main() {
   ship2.alive() = true;
   ship2.storbits() = 0;
   ship2.pnumorbits() = 0;
+  ship2.whatorbits() = ScopeLevel::LEVEL_STAR;
   ship2.type() = ShipType::OTYPE_PROBE;
   ship2.max_fuel() = 1000.0;
-  ship2.nextship() = 3;
 
   Ship ship3{};
   ship3.number() = 3;
@@ -53,18 +53,18 @@ int main() {
   ship3.alive() = true;
   ship3.storbits() = 0;
   ship3.pnumorbits() = 0;
+  ship3.whatorbits() = ScopeLevel::LEVEL_STAR;
   ship3.type() = ShipType::STYPE_CARGO;
   ship3.max_fuel() = 1000.0;
-  ship3.nextship() = 0;  // End of list
 
   ShipRepository ships_repo(store);
   ships_repo.save(ship1);
   ships_repo.save(ship2);
   ships_repo.save(ship3);
 
-  // Nested iteration (follows nextship linked list)
+  // Test 1: Star-scoped iteration via ShipList::in_star
   {
-    ShipList list(ctx.em, shipnum_t{1});  // Start at ship 1, nested iteration
+    auto list = ShipList::in_star(ctx.em, starnum_t{0});
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -73,11 +73,12 @@ int main() {
       test::expect_eq(ship.owner(), 1);
     }
     test::expect_eq(count, 3);
-    std::println(std::cout, "✓ Test 1 passed: Nested iteration found {} ships",
+    std::println(std::cout,
+                 "✓ Test 1 passed: Star-scoped iteration found {} ships",
                  count);
   }
 
-  // Test 1b: Multi-level nested iteration (ships within ships)
+  // Test 1b: Carrier hangar iteration via ShipList::in_carrier
   {
     // Create a cargo ship that contains other ships
     Ship cargo{};
@@ -86,36 +87,32 @@ int main() {
     cargo.alive() = true;
     cargo.storbits() = 0;
     cargo.pnumorbits() = 0;
+    cargo.whatorbits() = ScopeLevel::LEVEL_STAR;
     cargo.type() = ShipType::STYPE_CARGO;
-    cargo.ships() = 5;  // Contains ship 5
-    cargo.nextship() = 0;
+    cargo.max_fuel() = 1000.0;
 
     Ship inner1{};
     inner1.number() = 5;
     inner1.owner() = 1;
     inner1.alive() = true;
-    inner1.storbits() = 0;
-    inner1.pnumorbits() = 0;
+    inner1.destshipno() = 4;
+    inner1.whatorbits() = ScopeLevel::LEVEL_SHIP;
     inner1.type() = ShipType::OTYPE_PROBE;
-    inner1.ships() = 0;
-    inner1.nextship() = 6;  // Linked to ship 6
 
     Ship inner2{};
     inner2.number() = 6;
     inner2.owner() = 1;
     inner2.alive() = true;
-    inner2.storbits() = 0;
-    inner2.pnumorbits() = 0;
+    inner2.destshipno() = 4;
+    inner2.whatorbits() = ScopeLevel::LEVEL_SHIP;
     inner2.type() = ShipType::OTYPE_PROBE;
-    inner2.ships() = 0;
-    inner2.nextship() = 0;
 
     ships_repo.save(cargo);
     ships_repo.save(inner1);
     ships_repo.save(inner2);
 
-    // Iterate over ships contained in cargo (ship 5's nextship chain)
-    ShipList list(ctx.em, cargo.ships());
+    // Iterate over ships contained in cargo via ShipList::in_carrier
+    auto list = ShipList::in_carrier(ctx.em, shipnum_t{4});
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -127,8 +124,7 @@ int main() {
     test::expect_eq(count, 2);
     std::println(
         std::cout,
-        "✓ Test 1b passed: Multi-level nested iteration found {} inner "
-        "ships",
+        "✓ Test 1b passed: Carrier hangar iteration found {} inner ships",
         count);
   }
 
@@ -159,7 +155,7 @@ int main() {
 
   // Test 2a: Scope iteration without GameObj defaults to universe scope
   {
-    ShipList list(ctx.em, 1, ShipList::IterationType::Scope);
+    ShipList list(ctx.em, ShipList::IterationType::Scope);
     int mutable_count = 0;
     for (auto handle : list) {
       mutable_count++;
@@ -167,7 +163,7 @@ int main() {
     }
     test::expect_eq(mutable_count, 6);
 
-    const ShipList readonly_list(ctx.em, 1, ShipList::IterationType::Scope);
+    const ShipList readonly_list(ctx.em, ShipList::IterationType::Scope);
     int readonly_count = 0;
     for (const Ship& ship : readonly_list) {
       readonly_count++;
@@ -189,8 +185,8 @@ int main() {
     star_ship1.alive() = true;
     star_ship1.storbits() = 5;  // At star 5
     star_ship1.pnumorbits() = -1;
+    star_ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
     star_ship1.type() = ShipType::OTYPE_FACTORY;
-    star_ship1.nextship() = 0;
 
     Ship star_ship2{};
     star_ship2.number() = 8;
@@ -198,8 +194,8 @@ int main() {
     star_ship2.alive() = true;
     star_ship2.storbits() = 5;  // Also at star 5
     star_ship2.pnumorbits() = -1;
+    star_ship2.whatorbits() = ScopeLevel::LEVEL_STAR;
     star_ship2.type() = ShipType::OTYPE_PROBE;
-    star_ship2.nextship() = 0;
 
     ships_repo.save(star_ship1);
     ships_repo.save(star_ship2);
@@ -236,7 +232,6 @@ int main() {
     planet_ship.pnumorbits() = 3;  // At planet 3 of star 10
     planet_ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
     planet_ship.type() = ShipType::STYPE_CARGO;
-    planet_ship.nextship() = 0;
 
     ships_repo.save(planet_ship);
 
@@ -265,7 +260,7 @@ int main() {
 
   // Modify ship via handle
   {
-    ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
+    auto list = ShipList::in_star(ctx.em, starnum_t{0});
     auto it = list.begin();
     ShipHandle handle = *it;
     Ship& ship = *handle;
@@ -284,7 +279,7 @@ int main() {
 
   // Test 3b: Multiple ships modified in sequence
   {
-    ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
+    auto list = ShipList::in_star(ctx.em, starnum_t{0});
     for (auto handle : list) {
       Ship& ship = *handle;
       ship.add_fuel(50.0);
@@ -310,7 +305,7 @@ int main() {
 
   // Test 3c: Read-only access via peek()
   {
-    ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
+    auto list = ShipList::in_star(ctx.em, starnum_t{0});
     auto it = list.begin();
     ShipHandle handle = *it;
 
@@ -398,7 +393,7 @@ int main() {
 
   // Test 4d: Filtering during iteration
   {
-    ShipList list(ctx.em, 1, ShipList::IterationType::Nested);
+    auto list = ShipList::in_star(ctx.em, starnum_t{0});
     int factory_count = 0;
     int probe_count = 0;
 
@@ -419,8 +414,8 @@ int main() {
   {
     std::println(std::cout, "\nTest 5: Const iteration (read-only)");
 
-    // Create a const ShipList using const reference
-    const ShipList ships_const(ctx.em, shipnum_t{1});
+    // Create a const ShipList using readonly_in_star
+    const auto ships_const = ShipList::readonly_in_star(ctx.em, starnum_t{0});
 
     // Iterate with const iterators - should use peek_ship internally
     int count = 0;
@@ -433,7 +428,7 @@ int main() {
                    static_cast<int>(ship.type()));
     }
 
-    test::expect_eq(count, 3);  // Should see ship1, ship2, ship3
+    test::expect_eq(count, 4);  // Should see ship1, ship2, ship3, ship4
 
     // Verify ships weren't marked dirty by THIS iteration
     // (they were already modified by Test 3b, so we just check we didn't change
@@ -441,13 +436,16 @@ int main() {
     const auto* check1 = ctx.em.peek_ship(1);
     const auto* check2 = ctx.em.peek_ship(2);
     const auto* check3 = ctx.em.peek_ship(3);
+    const auto* check4 = ctx.em.peek_ship(4);
     double fuel1_before = check1->fuel();
     double fuel2_before = check2->fuel();
     double fuel3_before = check3->fuel();
+    double fuel4_before = check4->fuel();
 
     // Do another const iteration - fuel should remain unchanged
     {
-      const ShipList ships_const2(ctx.em, shipnum_t{1});
+      const auto ships_const2 =
+          ShipList::readonly_in_star(ctx.em, starnum_t{0});
       for (const Ship& ship : ships_const2) {
         [[maybe_unused]] auto fuel = ship.fuel();
       }
@@ -457,6 +455,7 @@ int main() {
     test::expect_eq(ctx.em.peek_ship(1)->fuel(), fuel1_before);
     test::expect_eq(ctx.em.peek_ship(2)->fuel(), fuel2_before);
     test::expect_eq(ctx.em.peek_ship(3)->fuel(), fuel3_before);
+    test::expect_eq(ctx.em.peek_ship(4)->fuel(), fuel4_before);
 
     std::println(std::cout,
                  "✓ Test 5 passed: Const iteration is truly read-only");
@@ -470,10 +469,11 @@ int main() {
     double fuel1_initial = ctx.em.peek_ship(1)->fuel();
     double fuel2_initial = ctx.em.peek_ship(2)->fuel();
     double fuel3_initial = ctx.em.peek_ship(3)->fuel();
+    double fuel4_initial = ctx.em.peek_ship(4)->fuel();
 
     // First, use const iteration - should NOT mark dirty
     {
-      const ShipList ships_const(ctx.em, shipnum_t{1});
+      const auto ships_const = ShipList::readonly_in_star(ctx.em, starnum_t{0});
       for (const Ship& ship : ships_const) {
         // Just reading data
         [[maybe_unused]] auto fuel = ship.fuel();
@@ -484,10 +484,11 @@ int main() {
     test::expect_eq(ctx.em.peek_ship(1)->fuel(), fuel1_initial);
     test::expect_eq(ctx.em.peek_ship(2)->fuel(), fuel2_initial);
     test::expect_eq(ctx.em.peek_ship(3)->fuel(), fuel3_initial);
+    test::expect_eq(ctx.em.peek_ship(4)->fuel(), fuel4_initial);
 
     // Now use mutable iteration and actually modify
     {
-      ShipList ships_mutable(ctx.em, shipnum_t{1});
+      auto ships_mutable = ShipList::in_star(ctx.em, starnum_t{0});
       for (auto ship_handle : ships_mutable) {
         Ship& ship = *ship_handle;
         ship.add_fuel(50.0);  // Modify ship
@@ -498,6 +499,7 @@ int main() {
     test::expect_eq(ctx.em.peek_ship(1)->fuel(), fuel1_initial + 50.0);
     test::expect_eq(ctx.em.peek_ship(2)->fuel(), fuel2_initial + 50.0);
     test::expect_eq(ctx.em.peek_ship(3)->fuel(), fuel3_initial + 50.0);
+    test::expect_eq(ctx.em.peek_ship(4)->fuel(), fuel4_initial + 50.0);
 
     std::println(
         std::cout,
@@ -550,8 +552,8 @@ int main() {
     dead_ship.alive() = false;  // This ship is dead
     dead_ship.storbits() = 0;
     dead_ship.pnumorbits() = 0;
+    dead_ship.whatorbits() = ScopeLevel::LEVEL_STAR;
     dead_ship.type() = ShipType::OTYPE_FACTORY;
-    dead_ship.nextship() = 0;
     ships_repo.save(dead_ship);
 
     // All iteration should include dead ships

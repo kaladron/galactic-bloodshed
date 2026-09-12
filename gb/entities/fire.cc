@@ -14,14 +14,16 @@ module gblib;
  * @brief Checks to see if there are any planetary defense networks on the
  * planet.
  *
- * @param shipno The ship number.
+ * @param star_id The star id.
+ * @param planet_order The planet order.
  * @param Playernum The player number.
  * @return True if there are planetary defense networks, false otherwise.
  */
-bool has_planet_defense(EntityManager& entity_manager, const shipnum_t shipno,
+bool has_planet_defense(EntityManager& entity_manager, const starnum_t star_id,
+                        const planetnum_t planet_order,
                         const player_t Playernum) {
-  const ShipList shiplist(entity_manager, shipno);
-  for (const Ship& s : shiplist) {
+  for (const Ship& s :
+       ShipList::readonly_on_planet(entity_manager, star_id, planet_order)) {
     if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF &&
         s.owner() != Playernum) {
       return true;

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file ship_spatial_parity_test.cc
-/// \brief Parity test suite comparing indexed spatial queries against legacy
-/// nextship/ships linked lists.
+///// \file ship_spatial_parity_test.cc
+/// \brief Test suite verifying indexed spatial queries and ShipList spatial
+/// helpers.
 
 import dallib;
 import gb.entities;
@@ -33,10 +33,8 @@ void test_star_spatial_parity(TestContext& ctx) {
   ShipRepository ships_repo(store);
   StarRepository stars_repo(store);
 
-  // Setup Star 0 with 3 ships in orbit (linked list: Star.ships -> s1 -> s2 ->
-  // s3)
+  // Setup Star 0 with 3 ships in orbit
   star_struct star_data{};
-  star_data.ships = 1;
   Star star(star_data);
   stars_repo.save(star);
 
@@ -46,7 +44,6 @@ void test_star_spatial_parity(TestContext& ctx) {
   s1_data.storbits = 0;
   s1_data.whatorbits = ScopeLevel::LEVEL_STAR;
   s1_data.alive = true;
-  s1_data.nextship = 2;
   ships_repo.save(Ship(s1_data));
 
   ship_struct s2_data{};
@@ -55,7 +52,6 @@ void test_star_spatial_parity(TestContext& ctx) {
   s2_data.storbits = 0;
   s2_data.whatorbits = ScopeLevel::LEVEL_STAR;
   s2_data.alive = false;  // Dead ship in star list
-  s2_data.nextship = 3;
   ships_repo.save(Ship(s2_data));
 
   ship_struct s3_data{};
@@ -64,32 +60,30 @@ void test_star_spatial_parity(TestContext& ctx) {
   s3_data.storbits = 0;
   s3_data.whatorbits = ScopeLevel::LEVEL_STAR;
   s3_data.alive = true;
-  s3_data.nextship = 0;
   ships_repo.save(Ship(s3_data));
 
-  // 1. Traverse legacy star.ships() linked list
-  std::vector<shipnum_t> linked_all;
-  std::vector<shipnum_t> linked_alive;
-  for (shipnum_t curr = star.ships(); curr != 0;) {
-    auto ship_opt = ships_repo.find_by_number(curr);
-    test::expect_true(ship_opt.has_value());
-    linked_all.push_back(curr);
-    if (ship_opt->alive()) {
-      linked_alive.push_back(curr);
-    }
-    curr = ship_opt->nextship();
-  }
-
-  // 2. Query via ShipRepository indexed spatial queries
+  // 1. Query via ShipRepository indexed spatial queries
   auto indexed_alive = ships_repo.find_in_star(starnum_t{0}, true);
   auto indexed_all = ships_repo.find_in_star(starnum_t{0}, false);
 
-  // 3. Verify 100% parity between legacy linked list and indexed query
-  test::expect_eq(indexed_alive.size(), linked_alive.size());
-  test::expect_eq(indexed_alive, linked_alive);
+  test::expect_eq(indexed_alive.size(), 2);
+  test::expect_eq(indexed_alive, (std::vector<shipnum_t>{1, 3}));
+  test::expect_eq(indexed_all.size(), 3);
+  test::expect_eq(indexed_all, (std::vector<shipnum_t>{1, 2, 3}));
 
-  test::expect_eq(indexed_all.size(), linked_all.size());
-  test::expect_eq(indexed_all, linked_all);
+  // 2. Query via ShipList::readonly_in_star
+  std::vector<shipnum_t> shiplist_in_star_alive;
+  for (const Ship& s : ShipList::readonly_in_star(ctx.em, starnum_t{0})) {
+    shiplist_in_star_alive.push_back(s.number());
+  }
+  test::expect_eq(indexed_alive, shiplist_in_star_alive);
+
+  // 3. Query via ShipList::in_star (mutable)
+  std::vector<shipnum_t> shiplist_in_star_mutable;
+  for (auto handle : ShipList::in_star(ctx.em, starnum_t{0})) {
+    shiplist_in_star_mutable.push_back(handle->number());
+  }
+  test::expect_eq(indexed_alive, shiplist_in_star_mutable);
 
   // 4. Verify GameObj Star ScopeLevel matches
   auto& registry = get_test_session_registry();
@@ -107,8 +101,7 @@ void test_star_spatial_parity(TestContext& ctx) {
   }
   test::expect_eq(indexed_alive, shiplist_scope_alive);
 
-  std::println(std::cout,
-               "✓ Star spatial query vs linked list parity verified");
+  std::println(std::cout, "✓ Star spatial query parity verified");
 }
 
 void test_planet_spatial_parity(TestContext& ctx) {
@@ -116,10 +109,8 @@ void test_planet_spatial_parity(TestContext& ctx) {
   ShipRepository ships_repo(store);
   PlanetRepository planets_repo(store);
 
-  // Setup Planet (Star 1, Planet 0) with 2 ships in orbit (linked list:
-  // planet.ships -> s10 -> s11)
+  // Setup Planet (Star 1, Planet 0) with 2 ships in orbit
   Planet planet{};
-  planet.ships() = 10;
   planet.star_id() = 1;
   planet.planet_order() = 0;
   planets_repo.save(planet);
@@ -131,7 +122,6 @@ void test_planet_spatial_parity(TestContext& ctx) {
   s10_data.pnumorbits = 0;
   s10_data.whatorbits = ScopeLevel::LEVEL_PLAN;
   s10_data.alive = true;
-  s10_data.nextship = 11;
   ships_repo.save(Ship(s10_data));
 
   ship_struct s11_data{};
@@ -141,7 +131,6 @@ void test_planet_spatial_parity(TestContext& ctx) {
   s11_data.pnumorbits = 0;
   s11_data.whatorbits = ScopeLevel::LEVEL_PLAN;
   s11_data.alive = true;
-  s11_data.nextship = 0;
   ships_repo.save(Ship(s11_data));
 
   // Dead ship on same planet (should be excluded by default)
@@ -152,27 +141,27 @@ void test_planet_spatial_parity(TestContext& ctx) {
   s12_data.pnumorbits = 0;
   s12_data.whatorbits = ScopeLevel::LEVEL_PLAN;
   s12_data.alive = false;
-  s12_data.nextship = 0;
   ships_repo.save(Ship(s12_data));
 
-  // 1. Traverse legacy planet.ships() linked list
-  std::vector<shipnum_t> linked_alive;
-  for (shipnum_t curr = planet.ships(); curr != 0;) {
-    auto ship_opt = ships_repo.find_by_number(curr);
-    test::expect_true(ship_opt.has_value());
-    if (ship_opt->alive()) {
-      linked_alive.push_back(curr);
-    }
-    curr = ship_opt->nextship();
-  }
-
-  // 2. Query via ShipRepository indexed spatial query
+  // 1. Query via ShipRepository indexed spatial query
   auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{0},
                                                  /*alive_only=*/true);
+  auto indexed_all = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{0},
+                                               /*alive_only=*/false);
 
-  // 3. Verify parity
+  // 2. Verify results
   test::expect_eq(indexed_alive.size(), 2);
-  test::expect_eq(indexed_alive, linked_alive);
+  test::expect_eq(indexed_alive, (std::vector<shipnum_t>{10, 11}));
+  test::expect_eq(indexed_all.size(), 3);
+  test::expect_eq(indexed_all, (std::vector<shipnum_t>{10, 11, 12}));
+
+  // 3. Query via ShipList::readonly_on_planet
+  std::vector<shipnum_t> shiplist_on_planet;
+  for (const Ship& s :
+       ShipList::readonly_on_planet(ctx.em, starnum_t{1}, planetnum_t{0})) {
+    shiplist_on_planet.push_back(s.number());
+  }
+  test::expect_eq(indexed_alive, shiplist_on_planet);
 
   // 4. Verify ShipList Scope iteration at planet scope
   auto& registry = get_test_session_registry();
@@ -191,24 +180,20 @@ void test_planet_spatial_parity(TestContext& ctx) {
   }
   test::expect_eq(indexed_alive, shiplist_scope_alive);
 
-  std::println(std::cout,
-               "✓ Planet spatial query vs linked list parity verified");
+  std::println(std::cout, "✓ Planet spatial query parity verified");
 }
 
 void test_hangar_docked_parity(TestContext& ctx) {
   JsonStore store(ctx.db);
   ShipRepository ships_repo(store);
 
-  // Carrier ship 20 contains docked fighters s21 and s22 (carrier.ships() ->
-  // s21 -> s22)
+  // Carrier ship 20 contains docked fighters s21 and s22
   ship_struct carrier_data{};
   carrier_data.number = 20;
   carrier_data.owner = 1;
   carrier_data.storbits = 0;
   carrier_data.whatorbits = ScopeLevel::LEVEL_STAR;
   carrier_data.alive = true;
-  carrier_data.ships = 21;  // Head of docked ships list
-  carrier_data.nextship = 0;
   ships_repo.save(Ship(carrier_data));
 
   ship_struct s21_data{};
@@ -217,7 +202,6 @@ void test_hangar_docked_parity(TestContext& ctx) {
   s21_data.destshipno = 20;
   s21_data.whatorbits = ScopeLevel::LEVEL_SHIP;
   s21_data.alive = true;
-  s21_data.nextship = 22;
   ships_repo.save(Ship(s21_data));
 
   ship_struct s22_data{};
@@ -226,35 +210,30 @@ void test_hangar_docked_parity(TestContext& ctx) {
   s22_data.destshipno = 20;
   s22_data.whatorbits = ScopeLevel::LEVEL_SHIP;
   s22_data.alive = true;
-  s22_data.nextship = 0;
   ships_repo.save(Ship(s22_data));
 
-  // 1. Traverse legacy carrier.ships() linked list
-  std::vector<shipnum_t> linked_docked;
-  for (shipnum_t curr = carrier_data.ships; curr != 0;) {
-    auto ship_opt = ships_repo.find_by_number(curr);
-    test::expect_true(ship_opt.has_value());
-    linked_docked.push_back(curr);
-    curr = ship_opt->nextship();
-  }
-
-  // 2. Query via ShipRepository indexed hangar query
+  // 1. Query via ShipRepository indexed hangar query
   auto indexed_hangar = ships_repo.find_in_hangar(shipnum_t{20}, true);
 
-  // 3. Verify parity
+  // 2. Verify results
   test::expect_eq(indexed_hangar.size(), 2);
-  test::expect_eq(indexed_hangar, linked_docked);
+  test::expect_eq(indexed_hangar, (std::vector<shipnum_t>{21, 22}));
 
-  // 4. Verify ShipList Nested iteration from carrier
-  std::vector<shipnum_t> shiplist_nested;
-  for (const Ship& s : ShipList::readonly(ctx.em, carrier_data.ships,
-                                          ShipList::IterationType::Nested)) {
-    shiplist_nested.push_back(s.number());
+  // 3. Verify ShipList::readonly_in_carrier
+  std::vector<shipnum_t> shiplist_carrier;
+  for (const Ship& s : ShipList::readonly_in_carrier(ctx.em, shipnum_t{20})) {
+    shiplist_carrier.push_back(s.number());
   }
-  test::expect_eq(indexed_hangar, shiplist_nested);
+  test::expect_eq(indexed_hangar, shiplist_carrier);
 
-  std::println(std::cout,
-               "✓ Hangar docked query vs linked list parity verified");
+  // 4. Verify ShipList::in_carrier (mutable)
+  std::vector<shipnum_t> shiplist_carrier_mutable;
+  for (auto handle : ShipList::in_carrier(ctx.em, shipnum_t{20})) {
+    shiplist_carrier_mutable.push_back(handle->number());
+  }
+  test::expect_eq(indexed_hangar, shiplist_carrier_mutable);
+
+  std::println(std::cout, "✓ Hangar docked query parity verified");
 }
 
 void test_empire_and_global_parity(TestContext& ctx) {

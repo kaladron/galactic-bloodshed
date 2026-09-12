@@ -267,7 +267,6 @@ void test_enroll_first_race_god_success() {
   test::expect_true(planet != nullptr);
   if (planet) {
     test::expect_eq(planet->popn(), 2);
-    test::expect_eq(planet->ships(), result.gov_ship);
     test::expect_eq(planet->info(player_t{1}).numsectsowned, 1u);
     test::expect_true(planet->info(player_t{1}).explored);
   }

@@ -125,7 +125,6 @@ star_struct create_star(starnum_t snum) {
   star_struct star{};
   star.star_id = snum;
   star.name = std::format("Star{}", snum);
-  star.ships = 0;
   star.explored = 0;
   star.inhabited = 0;
   star.xpos = 0;

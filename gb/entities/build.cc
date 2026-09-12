@@ -204,8 +204,7 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
   newship->admin_override_damage(
       race.God ? 0 : newship->get_template().base_damage);
   newship->retaliate() = newship->primary_battery().count;
-  newship->ships() = 0;
-  newship->on() = 0;
+  newship->on() = false;
   switch (newship->type()) {
     case ShipType::OTYPE_VN:
       if (auto* vn = newship->as<VonNeumannShip>()) {
@@ -227,7 +226,7 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
       if (auto* trans = newship->as<TransporterShip>()) {
         trans->set_target_ship(shipnum_t{0});
       }
-      newship->on() = 0;
+      newship->on() = false;
       g.out << "Receive OFF.  Change with order.\n";
       break;
     case ShipType::OTYPE_AP:
@@ -288,7 +287,6 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   newship.number() = shipno;
   newship.owner() = Playernum;
   newship.governor() = Governor;
-  newship.ships() = 0;
   newship.whatorbits() = ScopeLevel::LEVEL_PLAN;
   if (auto* waste_ship = newship.as<ToxicWasteShip>()) {
     std::string message = std::format("Toxin concentration on planet was {}%,",

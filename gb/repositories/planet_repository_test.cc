@@ -26,7 +26,6 @@ int main() {
   planet1.planet_order() = 2;  // Planet 2
   planet1.xpos() = 100.5;
   planet1.ypos() = 200.7;
-  planet1.ships() = 10;
   planet1.popn() = 100000;
   planet1.troops() = 5000;
   planet1.maxpopn() = 150000;
@@ -45,7 +44,6 @@ int main() {
   test::expect_eq(retrieved1->planet_order(), 2);
   test::expect_eq(retrieved1->xpos(), 100.5);
   test::expect_eq(retrieved1->ypos(), 200.7);
-  test::expect_eq(retrieved1->ships(), 10);
   test::expect_eq(retrieved1->dimensions(), Coordinates(20, 20));
   test::expect_eq(retrieved1->popn(), 100000);
   test::expect_eq(retrieved1->troops(), 5000);

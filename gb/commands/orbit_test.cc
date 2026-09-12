@@ -51,7 +51,6 @@ void setup_test_world(TestContext& ctx) {
   ps.star_id = 0;
   ps.planet_order = 0;
   ps.type = PlanetType::EARTH;
-  ps.ships = 3;  // First ship in planet ship list
   ps.info[player_t{1}].explored = true;
   Planet planet(ps);
 

@@ -10,8 +10,7 @@ import :tweakables;
 import std;
 
 export struct star_struct {
-  shipnum_t ships{0}; /* 1st ship in orbit */
-  std::string name;   /* name of star */
+  std::string name; /* name of star */
   PlayerVector<governor_t, MAXPLAYERS>
       governor; /* which subordinate maintains the system */
   PlayerVector<ap_t, MAXPLAYERS> AP; /* action pts alotted */
@@ -108,13 +107,6 @@ public:
 
   /// \brief Returns a random planet index (0..numplanets-1).
   [[nodiscard]] planetnum_t get_random_planet_index() const;
-
-  shipnum_t& ships() {
-    return star_struct.ships;
-  }
-  [[nodiscard]] shipnum_t ships() const {
-    return star_struct.ships;
-  }
 
   double& xpos() {
     return star_struct.xpos;

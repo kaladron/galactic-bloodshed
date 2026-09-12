@@ -53,10 +53,7 @@ void test_domass_and_doown() {
                            .with_crew(10, 0)
                            .build();
 
-  ctx.em.mutate_ship(parent_id, [&](Ship& parent) {
-    parent.ships() = child_id;
-    doown(parent, ctx.em);
-  });
+  ctx.em.mutate_ship(parent_id, [&](Ship& parent) { doown(parent, ctx.em); });
 
   const auto* child = ctx.em.peek_ship(child_id);
   test::expect_eq(child->owner(), player_t{1});
@@ -237,7 +234,6 @@ void test_do_habitat_nested_weapon_plant() {
                             .build();
 
   ctx.em.mutate_ship(hab_id, [&](Ship& habitat) {
-    habitat.ships() = wplant_id;
     do_habitat(habitat, ctx.em);
     test::expect_gt(habitat.destruct(), 0);
   });
@@ -962,10 +958,6 @@ void test_doabm_intercept() {
                            .with_active(true)
                            .with_alive(true)
                            .build_handle();
-
-  em.mutate_planet(starnum_t{1}, planetnum_t{0},
-                   [&](Planet& p) { p.ships() = hostile_handle->number(); });
-  hostile_handle->ships() = allied_handle->number();
 
   auto abm_handle = TestShipBuilder(em, ShipType::OTYPE_ABM)
                         .owned_by(1)

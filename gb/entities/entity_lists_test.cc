@@ -283,9 +283,9 @@ void populate_ships(EntityManager& em, JsonStore&) {
     TestShipBuilder(em, ShipType::STYPE_SHUTTLE, i)
         .named(std::format("Ship{}", i))
         .owned_by(1, 0)
+        .in_star_orbit(0)
         .with_max_fuel(500.0)
         .with_fuel(100.0 * static_cast<double>(i.value))
-        .with_nextship((i.value < 3) ? shipnum_t{i.value + 1} : shipnum_t{0})
         .build();
   }
 
@@ -295,11 +295,11 @@ void populate_ships(EntityManager& em, JsonStore&) {
 void test_ship_list_patterns(EntityManager& em) {
   std::println(std::cout, "Testing ShipList iteration patterns...");
 
-  std::println(std::cout, "  Testing ShipList::readonly()...");
+  std::println(std::cout, "  Testing ShipList::readonly_in_star()...");
   int count = 0;
   double total_fuel = 0.0;
 
-  for (const Ship& ship : ShipList::readonly(em, shipnum_t{1})) {
+  for (const Ship& ship : ShipList::readonly_in_star(em, starnum_t{0})) {
     static_assert(std::is_same_v<decltype(ship), const Ship&>,
                   "ShipList::readonly() should yield const Ship&");
     count++;
@@ -314,7 +314,7 @@ void test_ship_list_patterns(EntityManager& em) {
   std::println(std::cout, "  Testing mutable ShipList (with modifications)...");
   count = 0;
 
-  for (auto ship : ShipList{em, shipnum_t{1}}) {
+  for (auto ship : ShipList::in_star(em, starnum_t{0})) {
     static_assert(std::is_same_v<decltype(ship), ShipHandle>,
                   "MutableIterator should return ShipHandle");
 
@@ -338,7 +338,7 @@ void test_ship_list_patterns(EntityManager& em) {
 
   std::println(std::cout,
                "  Testing mutable ShipList with dereference pattern...");
-  ShipList shiplist(em, shipnum_t{1});
+  ShipList shiplist = ShipList::in_star(em, starnum_t{0});
 
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;

@@ -21,7 +21,6 @@ int main() {
 
   // Create a test star_struct first, then wrap in Star
   star_struct test_star_data{};
-  test_star_data.ships = 42;
   test_star_data.name = "Sol";
   test_star_data.xpos = 100.5;
   test_star_data.ypos = 200.75;
@@ -99,7 +98,6 @@ int main() {
 
   // Update star using Star methods
   std::println(std::cout, "Update star...");
-  retrieved->ships() = 100;
   retrieved->temperature() = 20;
   retrieved->stability() = 8;
   saved = repo.save(*retrieved);
@@ -111,7 +109,6 @@ int main() {
   auto updated = repo.find_by_number(1);
   test::expect_true(updated.has_value(), "Failed to retrieve updated star");
   auto updated_data = updated->get_struct();
-  test::expect_eq(updated_data.ships, 100);
   test::expect_eq(updated->temperature(), 20);
   test::expect_eq(updated->stability(), 8);
   std::println(std::cout, "  ✓ Updated values verified");

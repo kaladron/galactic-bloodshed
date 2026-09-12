@@ -193,7 +193,6 @@ export struct plinfo {      // planetary stockpiles
 export struct planet_struct {
   double xpos = 0;
   double ypos = 0;
-  shipnum_t ships = 0;
   Coordinates dimensions{0, 0};
 
   PlayerVector<plinfo, MAXPLAYERS> info;
@@ -266,13 +265,6 @@ public:
   /// \brief Computes absolute galactic position given the host star entity.
   [[nodiscard]] UniverseCoordinates
   absolute_coordinates(const Star& star) const noexcept;
-
-  [[nodiscard]] shipnum_t ships() const {
-    return data_.ships;
-  }
-  shipnum_t& ships() {
-    return data_.ships;
-  }
 
   [[nodiscard]] constexpr Coordinates dimensions() const noexcept {
     return data_.dimensions;

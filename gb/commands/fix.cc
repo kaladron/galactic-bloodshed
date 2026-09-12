@@ -27,9 +27,6 @@ bool fix(const command_t& argv, GameObj& g) {
       } else if (argv[2] == "ypos") {
         if (argv.size() > 3) p.ypos() = (double)std::stoi(argv[3]);
         g.out << std::format("ypos = {}\n", p.ypos());
-      } else if (argv[2] == "ships") {
-        if (argv.size() > 3) p.ships() = std::stoi(argv[3]);
-        g.out << std::format("ships = {}\n", p.ships());
       } else if (argv[2] == "rtemp") {
         if (argv.size() > 3) p.conditions(RTEMP) = std::stoi(argv[3]);
         g.out << std::format("RTEMP = {}\n", p.conditions(RTEMP));

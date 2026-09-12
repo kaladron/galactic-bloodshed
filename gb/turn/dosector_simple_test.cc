@@ -80,7 +80,6 @@ Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
 // Helper function to create a test star
 Star createTestStar() {
   star_struct star_data{};
-  star_data.ships = 0;
   star_data.name = "TestStar";
   star_data.xpos = 0.0;
   star_data.ypos = 0.0;

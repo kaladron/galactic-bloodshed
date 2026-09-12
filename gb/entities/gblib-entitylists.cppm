@@ -769,15 +769,12 @@ private:
 export class ShipList : public ReadonlyFactory<ShipList> {
 public:
   enum class IterationType {
-    Nested,   ///< Follow ship.ships linked list / hangar
     Scope,    ///< All ships at current scope (universe/star/planet/ship)
     All,      ///< All ships in game (1..num_ships), including dead
     AllAlive  ///< All alive ships in game (1..num_ships)
   };
 
   // Constructors
-  ShipList(EntityManager& em, shipnum_t start,
-           IterationType type = IterationType::Nested);
   ShipList(EntityManager& em, const GameObj& g,
            IterationType type = IterationType::Scope);
   explicit ShipList(const GameObj& g,

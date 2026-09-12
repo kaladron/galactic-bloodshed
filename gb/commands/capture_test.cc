@@ -42,7 +42,6 @@ void setup_test_world(TestContext& ctx) {
     planet.info(player_t{1}).numsectsowned += 1;
     planet.popn() += 50;
     planet.troops() += 100;
-    planet.ships() = 1;
   });
 
   // Create defender's ship (landed on planet at 5, 5)

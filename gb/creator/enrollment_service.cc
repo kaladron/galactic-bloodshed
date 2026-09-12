@@ -253,7 +253,6 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
       planet.info(playernum).explored = 1;
       planet.popn() = race.number_sexes;
       planet.troops() = 0;
-      planet.ships() = shipno;
       planet.maxpopn() =
           maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
     });

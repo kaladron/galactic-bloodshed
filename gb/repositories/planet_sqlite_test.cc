@@ -26,7 +26,6 @@ int main() {
   test_planet.planet_order() = 2;
   test_planet.xpos() = 100.5;
   test_planet.ypos() = 200.7;
-  test_planet.ships() = 10;
   test_planet.popn() = 100000;
   test_planet.troops() = 5000;
   test_planet.maxpopn() = 150000;
@@ -135,7 +134,6 @@ int main() {
   test::expect_eq(retrieved.planet_order(), test_planet.planet_order());
   test::expect_eq(retrieved.xpos(), test_planet.xpos());
   test::expect_eq(retrieved.ypos(), test_planet.ypos());
-  test::expect_eq(retrieved.ships(), test_planet.ships());
   test::expect_eq(retrieved.dimensions(), test_planet.dimensions());
   test::expect_eq(retrieved.popn(), test_planet.popn());
   test::expect_eq(retrieved.troops(), test_planet.troops());

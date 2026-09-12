@@ -56,13 +56,16 @@ for (const Planet* p : PlanetList::readonly(em, snum, *star)) {
 
 ## ShipList Iteration Modes
 
-`ShipList` accepts an `IterationType` because ships are scattered across linked lists by location:
+`ShipList` accepts an `IterationType` for global queries:
 
 ```cpp
 // All living ships
 for (auto sh : ShipList(em, ShipList::IterationType::AllAlive)) { ... }
 
-// Ships in a star system / planet / fleet — see ShipList declaration
+// Scoped iteration uses dynamic scope queries:
+// ShipList::in_star(em, star_id)
+// ShipList::on_planet(em, star_id, planet_id)
+// ShipList::in_carrier(em, carrier_id)
 ```
 
 Read-only equivalent uses `ShipList::readonly(em, IterationType::AllAlive)`.

@@ -585,7 +585,6 @@ public:
   TestShipBuilder& with_mass(double mass);
   TestShipBuilder& with_size(ship_size_t size);
   TestShipBuilder& with_on(bool on);
-  TestShipBuilder& with_nextship(shipnum_t next);
   TestShipBuilder& with_special(SpecialData special);
   TestShipBuilder& with_trigger_radius(unsigned short radius);
   TestShipBuilder& targeting_planet(starnum_t snum, planetnum_t pnum);

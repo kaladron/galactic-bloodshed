@@ -126,7 +126,9 @@ static void process_stars_and_planets(TurnState& state, bool update) {
          PlanetList(state.entity_manager, star, *star_handle)) {
       const planetnum_t pnum = planet_handle->planet_order();
       if (update) {
-        if (planet_handle->popn() || planet_handle->ships() != 0) {
+        if (planet_handle->popn() ||
+            !ShipList::readonly_on_planet(state.entity_manager, star, pnum)
+                 .empty()) {
           state.stats.mark_inhabited(star, pnum);
         }
         moveplanet(state.entity_manager, *star_handle, *planet_handle);

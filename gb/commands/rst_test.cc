@@ -42,7 +42,6 @@ void setup_test_world(TestContext& ctx) {
   ss0.ypos = 0.0;
   ss0.explored = (1ULL << 1);
   ss0.inhabited = (1ULL << 1);
-  ss0.ships = 1;
   ss0.pnames.push_back("Earth");
   Star star0(ss0);
 
@@ -53,7 +52,6 @@ void setup_test_world(TestContext& ctx) {
   Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
   planet0.star_id() = 0;
   planet0.planet_order() = 0;
-  planet0.ships() = 2;
   planet0.info(player_t{1}).explored = 1;
   planet0.info(player_t{1}).numsectsowned = 5;
 

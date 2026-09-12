@@ -20,12 +20,12 @@ namespace glz {
 template <>
 struct meta<star_struct> {
   using T = star_struct;
-  static constexpr auto value = object(
-      "ships", &T::ships, "name", &T::name, "governor", &T::governor, "AP",
-      &T::AP, "explored", &T::explored, "inhabited", &T::inhabited, "xpos",
-      &T::xpos, "ypos", &T::ypos, "pnames", &T::pnames, "stability",
-      &T::stability, "nova_stage", &T::nova_stage, "temperature",
-      &T::temperature, "gravity", &T::gravity, "star_id", &T::star_id);
+  static constexpr auto value =
+      object("name", &T::name, "governor", &T::governor, "AP", &T::AP,
+             "explored", &T::explored, "inhabited", &T::inhabited, "xpos",
+             &T::xpos, "ypos", &T::ypos, "pnames", &T::pnames, "stability",
+             &T::stability, "nova_stage", &T::nova_stage, "temperature",
+             &T::temperature, "gravity", &T::gravity, "star_id", &T::star_id);
 };
 
 }  // namespace glz

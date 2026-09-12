@@ -21,7 +21,6 @@ int main() {
   star_struct test_star{};
 
   // Initialize scalar fields
-  test_star.ships = 42;
   test_star.name = "TestStar";
   test_star.xpos = 100.5;
   test_star.ypos = 200.75;
@@ -67,7 +66,6 @@ int main() {
   star_struct retrieved = retrieved_star_ptr->get_struct();
 
   // Verify scalar fields
-  test::expect_eq(retrieved.ships, test_star.ships);
   test::expect_eq(retrieved.name, test_star.name);
   test::expect_eq(retrieved.xpos, test_star.xpos);
   test::expect_eq(retrieved.ypos, test_star.ypos);

@@ -69,6 +69,38 @@ export enum class DockState : std::uint8_t {
   Docked = 2,      ///< Docked inside a carrier ship's hangar
 };
 
+/// \brief Commodity and personnel cargo types transferable between ships.
+export enum class ShipCargoType : std::uint8_t {
+  Resource,
+  Destruct,
+  Fuel,
+  Crystal,
+  Crew,
+  Troops,
+};
+
+/// \brief Converts single-character commodity abbreviation to ShipCargoType.
+export constexpr std::optional<ShipCargoType>
+char_to_ship_cargo(char c) noexcept {
+  switch (c) {
+    case 'r':
+      return ShipCargoType::Resource;
+    case 'd':
+      return ShipCargoType::Destruct;
+    case 'f':
+      return ShipCargoType::Fuel;
+    case 'x':
+    case '&':
+      return ShipCargoType::Crystal;
+    case 'c':
+      return ShipCargoType::Crew;
+    case 'm':
+      return ShipCargoType::Troops;
+    default:
+      return std::nullopt;
+  }
+}
+
 /// \brief Value object representing a ship's gun battery mount, encapsulating
 /// weapon count and caliber while enforcing domain invariants.
 ///
@@ -2918,6 +2950,18 @@ public:
   void unload_docked_craft(const Ship& craft) noexcept {
     unload_docked_craft(craft.size(), craft.mass());
   }
+
+  /// \brief Atomically transfers cargo or personnel from this ship to a
+  /// destination ship, updating inventories, capacity limits, and physical
+  /// masses.
+  /// \param destination Target vessel receiving the cargo.
+  /// \param cargo Type of cargo or personnel being transferred.
+  /// \param amount Maximum quantity to transfer (must be positive).
+  /// \param race_mass Biological mass factor for crew and troops.
+  /// \return Quantity of cargo actually transferred.
+  std::int64_t transfer_cargo_to(Ship& destination, ShipCargoType cargo,
+                                 std::int64_t amount,
+                                 double race_mass = 1.0) noexcept;
 
   /// Whether ship has an active combat laser armed and ready to fire.
   [[nodiscard]] bool is_laser_on() const noexcept {

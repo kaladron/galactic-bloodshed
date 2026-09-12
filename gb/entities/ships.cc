@@ -847,3 +847,120 @@ bool followable(EntityManager& em, const Ship& s1, const Ship& s2) {
   return (s1.owner() == s2.owner()) || r->is_allied_with(s1.owner()) ||
          (s1.coordinates().distance_to(s2.coordinates()) <= range);
 }
+
+std::int64_t Ship::transfer_cargo_to(Ship& destination, ShipCargoType cargo,
+                                     std::int64_t amount,
+                                     double race_mass) noexcept {
+  if (amount <= 0) {
+    return 0;
+  }
+
+  switch (cargo) {
+    case ShipCargoType::Resource: {
+      const std::int64_t available_stock = resource();
+      if (available_stock <= 0) return 0;
+
+      const auto max_cap = destination.max_resource_capacity();
+      const auto current = destination.resource();
+      const std::int64_t capacity =
+          (max_cap > current) ? (max_cap - current) : 0;
+
+      const std::int64_t to_transfer =
+          std::min({amount, available_stock, capacity});
+      if (to_transfer <= 0) return 0;
+
+      consume_resource(to_transfer);
+      destination.add_resource(to_transfer);
+      return to_transfer;
+    }
+    case ShipCargoType::Destruct: {
+      const std::int64_t available_stock = destruct();
+      if (available_stock <= 0) return 0;
+
+      const auto max_cap = destination.max_destruct_capacity();
+      const auto current = destination.destruct();
+      const std::int64_t capacity =
+          (max_cap > current) ? (max_cap - current) : 0;
+
+      const std::int64_t to_transfer =
+          std::min({amount, available_stock, capacity});
+      if (to_transfer <= 0) return 0;
+
+      consume_destruct(to_transfer);
+      destination.add_destruct(to_transfer);
+      return to_transfer;
+    }
+    case ShipCargoType::Fuel: {
+      const std::int64_t available_stock = static_cast<std::int64_t>(fuel());
+      if (available_stock <= 0) return 0;
+
+      const auto max_cap =
+          static_cast<std::int64_t>(destination.max_fuel_capacity());
+      const auto current = static_cast<std::int64_t>(destination.fuel());
+      const std::int64_t capacity =
+          (max_cap > current) ? (max_cap - current) : 0;
+
+      const std::int64_t to_transfer =
+          std::min({amount, available_stock, capacity});
+      if (to_transfer <= 0) return 0;
+
+      consume_fuel(static_cast<double>(to_transfer));
+      destination.add_fuel(static_cast<double>(to_transfer));
+      return to_transfer;
+    }
+    case ShipCargoType::Crystal: {
+      const std::int64_t available_stock =
+          static_cast<std::int64_t>(crystals());
+      if (available_stock <= 0) return 0;
+
+      const auto max_cap =
+          static_cast<std::int64_t>(destination.max_crystals_capacity());
+      const auto current = static_cast<std::int64_t>(destination.crystals());
+      const std::int64_t capacity =
+          (max_cap > current) ? (max_cap - current) : 0;
+
+      const std::int64_t to_transfer =
+          std::min({amount, available_stock, capacity});
+      if (to_transfer <= 0) return 0;
+
+      consume_crystals(static_cast<crystal_t>(to_transfer));
+      destination.add_crystals(static_cast<crystal_t>(to_transfer));
+      return to_transfer;
+    }
+    case ShipCargoType::Crew: {
+      const std::int64_t available_stock = popn();
+      if (available_stock <= 0) return 0;
+
+      const auto max_cap = destination.max_crew_capacity();
+      const auto current = destination.popn();
+      const std::int64_t capacity =
+          (max_cap > current) ? (max_cap - current) : 0;
+
+      const std::int64_t to_transfer =
+          std::min({amount, available_stock, capacity});
+      if (to_transfer <= 0) return 0;
+
+      remove_popn(to_transfer, race_mass);
+      destination.add_popn(to_transfer, race_mass);
+      return to_transfer;
+    }
+    case ShipCargoType::Troops: {
+      const std::int64_t available_stock = troops();
+      if (available_stock <= 0) return 0;
+
+      const auto current_troops = destination.troops();
+      const auto avail_mil = destination.available_mil();
+      const std::int64_t capacity =
+          (avail_mil > current_troops) ? (avail_mil - current_troops) : 0;
+
+      const std::int64_t to_transfer =
+          std::min({amount, available_stock, capacity});
+      if (to_transfer <= 0) return 0;
+
+      remove_troops(to_transfer, race_mass);
+      destination.add_troops(to_transfer, race_mass);
+      return to_transfer;
+    }
+  }
+  return 0;
+}

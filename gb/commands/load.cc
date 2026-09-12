@@ -48,41 +48,49 @@ void do_transporter(const Race& race, GameObj& g, TransporterShip& s) {
     /* send stuff to other ship (could be transport device) */
     std::string tele_lines;
     if (s.resource()) {
-      rcv_resource(s2, s.resource());
-      g.out << std::format("{} resources transferred.\n", s.resource());
-      tele_lines += std::format("{} Resources\n", s.resource());
-      use_resource(s, s.resource());
+      auto transferred =
+          s.transfer_cargo_to(s2, ShipCargoType::Resource, s.resource());
+      if (transferred > 0) {
+        g.out << std::format("{} resources transferred.\n", transferred);
+        tele_lines += std::format("{} Resources\n", transferred);
+      }
     }
     if (s.fuel()) {
-      rcv_fuel(s2, s.fuel());
-      g.out << std::format("{} fuel transferred.\n", s.fuel());
-      tele_lines += std::format("{} Fuel\n", s.fuel());
-      use_fuel(s, s.fuel());
+      auto transferred = s.transfer_cargo_to(
+          s2, ShipCargoType::Fuel, static_cast<std::int64_t>(s.fuel()));
+      if (transferred > 0) {
+        g.out << std::format("{} fuel transferred.\n", transferred);
+        tele_lines += std::format("{} Fuel\n", transferred);
+      }
     }
 
     if (s.destruct()) {
-      rcv_destruct(s2, s.destruct());
-      g.out << std::format("{} destruct transferred.\n", s.destruct());
-      tele_lines += std::format("{} Destruct\n", s.destruct());
-      use_destruct(s, s.destruct());
+      auto transferred =
+          s.transfer_cargo_to(s2, ShipCargoType::Destruct, s.destruct());
+      if (transferred > 0) {
+        g.out << std::format("{} destruct transferred.\n", transferred);
+        tele_lines += std::format("{} Destruct\n", transferred);
+      }
     }
 
     if (s.popn()) {
-      const auto pop = s.popn();
-      s2.add_popn(pop, race.mass);
-
-      g.out << std::format("{} population transferred.\n", pop);
-      tele_lines += std::format(
-          "{} {}\n", pop, race.Metamorph ? "tons of biomass" : "population");
-      s.remove_popn(pop, race.mass);
+      auto transferred =
+          s.transfer_cargo_to(s2, ShipCargoType::Crew, s.popn(), race.mass);
+      if (transferred > 0) {
+        g.out << std::format("{} population transferred.\n", transferred);
+        tele_lines +=
+            std::format("{} {}\n", transferred,
+                        race.Metamorph ? "tons of biomass" : "population");
+      }
     }
 
     if (s.crystals()) {
-      s2.add_crystals(s.crystals());
-
-      g.out << std::format("{} crystal(s) transferred.\n", s.crystals());
-      tele_lines += std::format("{} crystal(s)\n", s.crystals());
-      s.consume_crystals(s.crystals());
+      auto transferred =
+          s.transfer_cargo_to(s2, ShipCargoType::Crystal, s.crystals());
+      if (transferred > 0) {
+        g.out << std::format("{} crystal(s) transferred.\n", transferred);
+        tele_lines += std::format("{} crystal(s)\n", transferred);
+      }
     }
 
     if (s2.owner() != s.owner()) {
@@ -484,52 +492,15 @@ bool load(const command_t& argv, GameObj& g) {
 
     if (sh) {
       g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
-        switch (commod) {
-          case 'c':
-            if (amt > 0) {
-              s2.remove_popn(amt, race.mass);
-            } else {
-              s2.add_popn(-amt, race.mass);
-            }
-            transfercrew = 1;
-            break;
-          case 'm':
-            if (amt > 0) {
-              s2.remove_troops(amt, race.mass);
-            } else {
-              s2.add_troops(-amt, race.mass);
-            }
-            transfercrew = 1;
-            break;
-          case 'd':
-            if (amt > 0) {
-              s2.consume_destruct(amt);
-            } else {
-              s2.add_destruct(-amt);
-            }
-            break;
-          case 'x':
-          case '&':
-            if (amt > 0) {
-              s2.consume_crystals(amt);
-            } else {
-              s2.add_crystals(-amt);
-            }
-            break;
-          case 'f':
-            if (amt > 0) {
-              s2.consume_fuel(static_cast<double>(amt));
-            } else {
-              s2.add_fuel(static_cast<double>(-amt));
-            }
-            break;
-          case 'r':
-            if (amt > 0) {
-              s2.consume_resource(amt);
-            } else {
-              s2.add_resource(-amt);
-            }
-            break;
+        const auto cargo_opt = char_to_ship_cargo(commod);
+        if (cargo_opt) {
+          if (amt > 0) {
+            // Loading into s from s2: transfer from s2 to s
+            s2.transfer_cargo_to(s, *cargo_opt, amt, race.mass);
+          } else {
+            // Unloading from s to s2: transfer from s to s2
+            s.transfer_cargo_to(s2, *cargo_opt, -amt, race.mass);
+          }
         }
 
         std::string tele_lines;
@@ -548,10 +519,6 @@ bool load(const command_t& argv, GameObj& g) {
             tele_lines += std::format("{} Crystal(s)\n", std::abs(amt));
             break;
           case 'c':
-            tele_lines +=
-                std::format("{} {}\n", std::abs(amt),
-                            race.Metamorph ? "tons of biomass" : "population");
-            break;
           case 'm':
             tele_lines +=
                 std::format("{} {}\n", std::abs(amt),
@@ -657,46 +624,81 @@ bool load(const command_t& argv, GameObj& g) {
       }
     }
 
-    switch (commod) {
-      case 'c':
-        if (transfercrew) {
-          s.add_popn(amt, race.mass);
+    if (sh) {
+      // Ship-to-ship transfer was handled atomically via transfer_cargo_to.
+      switch (commod) {
+        case 'c':
           g.out << std::format("crew complement of {} is now {}.\n", s,
                                s.popn());
-        }
-        break;
-      case 'm':
-        if (transfercrew) {
-          s.add_troops(amt, race.mass);
+          break;
+        case 'm':
           g.out << std::format("troop complement of {} is now {}.\n", s,
                                s.troops());
-        }
-        break;
-      case 'd':
-        s.add_destruct(amt);
-        g.out << std::format("{} destruct transferred.\n", amt);
-        if (!s.max_crew_capacity()) {
-          g.out << std::format("\n{} ", s);
-          if (s.destruct()) {
-            g.out << "now boobytrapped.\n";
-          } else {
-            g.out << "no longer boobytrapped.\n";
+          break;
+        case 'd':
+          g.out << std::format("{} destruct transferred.\n", amt);
+          if (!s.max_crew_capacity()) {
+            g.out << std::format("\n{} ", s);
+            if (s.destruct()) {
+              g.out << "now boobytrapped.\n";
+            } else {
+              g.out << "no longer boobytrapped.\n";
+            }
           }
-        }
-        break;
-      case 'x':
-      case '&':
-        s.add_crystals(amt);
-        g.out << std::format("{} crystal(s) transferred.\n", amt);
-        break;
-      case 'f':
-        rcv_fuel(s, static_cast<double>(amt));
-        g.out << std::format("{} fuel transferred.\n", amt);
-        break;
-      case 'r':
-        rcv_resource(s, amt);
-        g.out << std::format("{} resources transferred.\n", amt);
-        break;
+          break;
+        case 'x':
+        case '&':
+          g.out << std::format("{} crystal(s) transferred.\n", amt);
+          break;
+        case 'f':
+          g.out << std::format("{} fuel transferred.\n", amt);
+          break;
+        case 'r':
+          g.out << std::format("{} resources transferred.\n", amt);
+          break;
+      }
+    } else {
+      switch (commod) {
+        case 'c':
+          if (transfercrew) {
+            s.add_popn(amt, race.mass);
+            g.out << std::format("crew complement of {} is now {}.\n", s,
+                                 s.popn());
+          }
+          break;
+        case 'm':
+          if (transfercrew) {
+            s.add_troops(amt, race.mass);
+            g.out << std::format("troop complement of {} is now {}.\n", s,
+                                 s.troops());
+          }
+          break;
+        case 'd':
+          s.add_destruct(amt);
+          g.out << std::format("{} destruct transferred.\n", amt);
+          if (!s.max_crew_capacity()) {
+            g.out << std::format("\n{} ", s);
+            if (s.destruct()) {
+              g.out << "now boobytrapped.\n";
+            } else {
+              g.out << "no longer boobytrapped.\n";
+            }
+          }
+          break;
+        case 'x':
+        case '&':
+          s.add_crystals(amt);
+          g.out << std::format("{} crystal(s) transferred.\n", amt);
+          break;
+        case 'f':
+          rcv_fuel(s, static_cast<double>(amt));
+          g.out << std::format("{} fuel transferred.\n", amt);
+          break;
+        case 'r':
+          rcv_resource(s, amt);
+          g.out << std::format("{} resources transferred.\n", amt);
+          break;
+      }
     }
     success = true;
 

@@ -1004,6 +1004,122 @@ void test_carrier_craft_loading_and_unloading() {
   expect_near(carrier.mass(), base);
 }
 
+void test_ship_cargo_transfer() {
+  std::println(std::cout, "Testing Ship::transfer_cargo_to()...");
+
+  // Test char_to_ship_cargo mapping
+  test::expect_eq(char_to_ship_cargo('r'), ShipCargoType::Resource);
+  test::expect_eq(char_to_ship_cargo('d'), ShipCargoType::Destruct);
+  test::expect_eq(char_to_ship_cargo('f'), ShipCargoType::Fuel);
+  test::expect_eq(char_to_ship_cargo('x'), ShipCargoType::Crystal);
+  test::expect_eq(char_to_ship_cargo('&'), ShipCargoType::Crystal);
+  test::expect_eq(char_to_ship_cargo('c'), ShipCargoType::Crew);
+  test::expect_eq(char_to_ship_cargo('m'), ShipCargoType::Troops);
+  test::expect_eq(char_to_ship_cargo('z'), std::nullopt);
+
+  // Set up source and destination ships
+  ship_struct src_data{
+      .fuel = 150.0,
+      .mass = 1000.0,
+      .max_crew = 100,
+      .max_resource = 500,
+      .max_destruct = 200,
+      .max_fuel = 300.0,
+      .destruct = 80,
+      .resource = 200,
+      .popn = 50,
+      .troops = 20,
+      .crystals = 30,
+  };
+  Ship src{src_data};
+
+  ship_struct dst_data{
+      .fuel = 50.0,
+      .mass = 800.0,
+      .max_crew = 100,
+      .max_resource = 500,
+      .max_destruct = 200,
+      .max_fuel = 300.0,
+      .destruct = 20,
+      .resource = 100,
+      .popn = 10,
+      .troops = 5,
+      .crystals = 10,
+  };
+  Ship dst{dst_data};
+
+  const double initial_aggregate_mass = src.mass() + dst.mass();
+
+  // 1. Transfer Resource
+  auto transferred = src.transfer_cargo_to(dst, ShipCargoType::Resource, 50);
+  test::expect_eq(transferred, 50);
+  test::expect_eq(src.resource(), 150);
+  test::expect_eq(dst.resource(), 150);
+  expect_near(src.mass() + dst.mass(), initial_aggregate_mass);
+
+  // 2. Transfer Destruct
+  transferred = src.transfer_cargo_to(dst, ShipCargoType::Destruct, 30);
+  test::expect_eq(transferred, 30);
+  test::expect_eq(src.destruct(), 50);
+  test::expect_eq(dst.destruct(), 50);
+  expect_near(src.mass() + dst.mass(), initial_aggregate_mass);
+
+  // 3. Transfer Fuel
+  transferred = src.transfer_cargo_to(dst, ShipCargoType::Fuel, 40);
+  test::expect_eq(transferred, 40);
+  expect_near(src.fuel(), 110.0);
+  expect_near(dst.fuel(), 90.0);
+  expect_near(src.mass() + dst.mass(), initial_aggregate_mass);
+
+  // 4. Transfer Crystal
+  transferred = src.transfer_cargo_to(dst, ShipCargoType::Crystal, 5);
+  test::expect_eq(transferred, 5);
+  test::expect_eq(src.crystals(), 25);
+  test::expect_eq(dst.crystals(), 15);
+  expect_near(src.mass() + dst.mass(), initial_aggregate_mass);
+
+  // 5. Transfer Crew
+  transferred = src.transfer_cargo_to(dst, ShipCargoType::Crew, 15, 2.0);
+  test::expect_eq(transferred, 15);
+  test::expect_eq(src.popn(), 35);
+  test::expect_eq(dst.popn(), 25);
+  expect_near(src.mass() + dst.mass(), initial_aggregate_mass);
+
+  // 6. Transfer Troops
+  transferred = src.transfer_cargo_to(dst, ShipCargoType::Troops, 10, 2.0);
+  test::expect_eq(transferred, 10);
+  test::expect_eq(src.troops(), 10);
+  test::expect_eq(dst.troops(), 15);
+  expect_near(src.mass() + dst.mass(), initial_aggregate_mass);
+
+  // 7. Capacity clamping: destination capacity limit
+  // dst has max_resource=500, currently 150 -> capacity is 350
+  // src has resource=150 -> transfer request of 200 should be clamped to 150
+  transferred = src.transfer_cargo_to(dst, ShipCargoType::Resource, 200);
+  test::expect_eq(transferred, 150);
+  test::expect_eq(src.resource(), 0);
+  test::expect_eq(dst.resource(), 300);
+
+  // 8. Source exhaustion: transferring when source has 0 returns 0
+  transferred = src.transfer_cargo_to(dst, ShipCargoType::Resource, 50);
+  test::expect_eq(transferred, 0);
+
+  // 9. Negative or zero amount returns 0
+  transferred = dst.transfer_cargo_to(src, ShipCargoType::Resource, 0);
+  test::expect_eq(transferred, 0);
+  transferred = dst.transfer_cargo_to(src, ShipCargoType::Resource, -10);
+  test::expect_eq(transferred, 0);
+
+  // 10. Destination capacity clamping
+  dst.consume_resource(dst.resource());  // reset dst to 0
+  dst.add_resource(480);                 // dst has 480 / 500 (20 remaining)
+  src.add_resource(50);                  // src has 50
+  transferred = src.transfer_cargo_to(dst, ShipCargoType::Resource, 50);
+  test::expect_eq(transferred, 20);
+  test::expect_eq(src.resource(), 30);
+  test::expect_eq(dst.resource(), 500);
+}
+
 }  // namespace
 
 int main() {
@@ -1028,6 +1144,7 @@ int main() {
   test_damage_and_radiation_subsystem();
   test_dock_state_transitions();
   test_carrier_craft_loading_and_unloading();
+  test_ship_cargo_transfer();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

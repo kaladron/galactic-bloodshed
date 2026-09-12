@@ -34,9 +34,41 @@ flowchart TD
 
 Capital vessels and space stations (such as Fleet Carriers, Mobile Factories, and Orbital Stations) are equipped with internal hangar bays capable of docking smaller parasite craft (such as Fighters, Shuttles, and Probes).
 
-### Hangar Operations
-- **Docking**: Smaller vessels can dock with friendly carriers or stations to be transported across interstellar distances without expending their own fuel.
-- **Fleet Allegiance**: Docked craft operate under the direct command of the host carrier. Whenever a vessel is docked inside a carrier, the carrier's commanding empire and governor maintain operational control of all carried craft. If a carrier changes allegiance, all docked craft within its hangars transition with the carrier.
+### Carrier Hangars vs. Spaceborne Mooring
+Naval operations distinguish between two forms of ship-to-ship connection:
+
+1. **Carrier Hangar Docking (`land <craft> <carrier>`)**:
+   - **Internal Stature**: The smaller vessel lands inside the host vessel's internal hangars, transitioning to the internal ship reference frame (`LEVEL_SHIP`).
+   - **Displacement & Propulsion**: The carrier absorbs the parasite vessel's physical size into its active hangar usage ($\Delta \text{Hangar} = \text{Size}_{\text{craft}}$) and incorporates the parasite's entire mass into its operational displacement.
+   - **Movement & Command**: Carried craft do not consume propellant during travel; they move alongside the host carrier and operate under the carrier's commanding empire and governor.
+   - **Debarkation**: Carried craft launch back into the parent carrier's orbital scope via `launch <craft>`.
+   - **Destruction Cascade**: If a carrier is destroyed or scuttled, all parasite vessels berthed in its hangars are eliminated in the explosion.
+
+2. **Spaceborne Mooring (`dock <ship1> <ship2>`)**:
+   - **Tethered Alignment**: Two spaceborne vessels in the same orbital reference frame (deep space, star orbit, or planetary orbit) link airlocks or tractor moorings for boarding assaults or inter-ship logistics.
+   - **Frame Preservation**: Neither ship enters the other's hangar; both retain their external orbital coordinates and independent displacement profiles.
+   - **Symmetrical Decoupling**: Executing `undock` or `launch` on either vessel decouples the tether symmetrically, leaving both vessels intact in their orbital reference frame without destruction cascades.
+
+### Carrier Hierarchy and Nested Ships
+Large structures such as Orbital Stations, Habitats, Mobile Factories, and Fleet Carriers can transport parasite craft provided sufficient hangar volume is available:
+
+- **Hangar Capacity Invariant**:
+  $$\sum \text{Size}_{\text{docked craft}} \le \text{Maximum Hangar Capacity}$$
+- **Displacement Nesting**: When a parasite vessel is berthed, its entire physical displacement (including its own structural hull, fuel reserves, carried resources, and onboard crew) contributes recursively to the parent carrier's operational mass.
+- **Hierarchical Launching**: A parasite vessel berthed inside a carrier cannot launch into independent orbit while its host carrier is itself berthed or immobilized inside a higher-tier facility; the parent vessel must launch or deploy first before subsidiary parasite craft can debark.
+
+### Inter-Ship Cargo and Personnel Logistics (`load`)
+Moored vessels and carrier-berthed craft can transfer raw materials, propellant, munitions, and living populations using shipboard cargo gantries and transporter beams:
+
+$$\text{Transferred Amount} = \min\Big(\text{Requested Amount},\; \text{Available Source Stock},\; \text{Destination Remaining Capacity}\Big)$$
+
+- **Atomic Mass Conservation**: Transferring commodities decrements mass from the donor vessel and increments mass on the recipient vessel instantaneously by the exact physical displacement of the transferred commodity:
+  - **Refined Minerals**: $\pm 0.10 \text{ mass units per unit}$
+  - **Destructive Munitions**: $\pm 0.15 \text{ mass units per unit}$
+  - **Liquid Propellant**: $\pm 0.05 \text{ mass units per unit}$
+  - **Living Crew & Troops**: $\pm M_{\text{race}} \text{ mass units per individual}$
+  - **Warp Crystals**: $0.0 \text{ mass units}$
+- **Berthing & Cargo Clamping**: Transfers strictly respect the recipient ship's physical volume limits (`max_resource`, `max_fuel`, `max_destruct`, and `max_crew`). Any excess requested beyond available capacity remains on the source vessel, preventing commodity destruction or silent cargo loss.
 
 ### Dynamic Operational Mass and Displacement Metrics
 A vessel's total displacement includes its baseline structure, stored consumables, carried populations, and any docked parasite craft:

@@ -71,8 +71,8 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
         /* ok, load 'em up */
         auto dock_res = g.entity_manager.dock_carrier(s.number(), ship2no);
         if (!dock_res) {
-          if (dock_res.error() == DockError::NestedCarrierDisallowed) {
-            g.out << "Carriers cannot be loaded onto other ships.\n";
+          if (dock_res.error() == DockError::CycleDetected) {
+            g.out << "Cannot dock a ship into its own parasite craft.\n";
           }
           return false;
         }
@@ -117,8 +117,8 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
 
         auto dock_res = g.entity_manager.dock_carrier(s.number(), ship2no);
         if (!dock_res) {
-          if (dock_res.error() == DockError::NestedCarrierDisallowed) {
-            g.out << "Carriers cannot be loaded onto other ships.\n";
+          if (dock_res.error() == DockError::CycleDetected) {
+            g.out << "Cannot dock a ship into its own parasite craft.\n";
           }
           return false;
         }

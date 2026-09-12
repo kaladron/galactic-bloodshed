@@ -13,6 +13,12 @@ import std;
 
 namespace {
 
+void expect_near(double actual, double expected, double eps = 1e-5) {
+  test::expect_true(std::abs(actual - expected) <= eps,
+                    std::format("Expected {} to be near {}, difference is {}",
+                                actual, expected, std::abs(actual - expected)));
+}
+
 void test_dock_carrier_happy_path() {
   Database db(":memory:");
   initialize_schema(db);
@@ -58,69 +64,11 @@ void test_dock_carrier_happy_path() {
   test::expect_eq(*fighter_after->carrier_id(), carrier_id);
 }
 
-void test_dock_carrier_errors_and_1level_hierarchy() {
+void test_dock_carrier_errors_and_nested_hierarchy() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
 
-  const auto carrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
-                              .owned_by(1)
-                              .with_alive(true)
-                              .in_star_orbit(0)
-                              .with_hanger(0)
-                              .with_max_hanger(30)
-                              .build();
-
-  const auto fighter_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
-                              .owned_by(1)
-                              .with_alive(true)
-                              .in_star_orbit(0)
-                              .with_size(10)
-                              .with_hanger(0)
-                              .with_max_hanger(0)
-                              .build();
-
-  // 1. Self docking rejected
-  auto self_res = em.dock_carrier(carrier_id, carrier_id);
-  test::expect_false(self_res.has_value());
-  test::expect_eq(self_res.error(), DockError::SelfDocking);
-
-  // 2. Carrier full rejected
-  em.mutate_ship(carrier_id, [](Ship& c) { c.hanger() = 25; });
-  auto full_res = em.dock_carrier(fighter_id, carrier_id);
-  test::expect_false(full_res.has_value());
-  test::expect_eq(full_res.error(), DockError::CarrierFull);
-  em.mutate_ship(carrier_id, [](Ship& c) { c.hanger() = 0; });
-
-  // 3. Child contains ships in its hangar (nested carrier rejected)
-  const auto subcarrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
-                                 .owned_by(1)
-                                 .with_alive(true)
-                                 .in_star_orbit(0)
-                                 .with_size(15)
-                                 .with_hanger(5)
-                                 .with_max_hanger(10)
-                                 .build();
-  auto nest_res = em.dock_carrier(subcarrier_id, carrier_id);
-  test::expect_false(nest_res.has_value());
-  test::expect_eq(nest_res.error(), DockError::NestedCarrierDisallowed);
-
-  // 3b. Empty shuttle (max_hanger > 0, hanger == 0) CAN dock into carrier
-  const auto shuttle_id = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
-                              .owned_by(1)
-                              .with_alive(true)
-                              .in_star_orbit(0)
-                              .with_size(5)
-                              .with_hanger(0)
-                              .with_max_hanger(2)
-                              .build();
-  auto shuttle_dock_res = em.dock_carrier(shuttle_id, carrier_id);
-  test::expect_true(shuttle_dock_res.has_value());
-  auto shuttle_undock_res =
-      em.undock_carrier(shuttle_id, ScopeLevel::LEVEL_STAR);
-  test::expect_true(shuttle_undock_res.has_value());
-
-  // 4. Carrier itself is docked in another carrier (rejected)
   const auto supercarrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                                    .owned_by(1)
                                    .with_alive(true)
@@ -128,11 +76,104 @@ void test_dock_carrier_errors_and_1level_hierarchy() {
                                    .with_hanger(0)
                                    .with_max_hanger(100)
                                    .build();
-  em.mutate_ship(carrier_id,
-                 [&](Ship& c) { c.dock_into_carrier(supercarrier_id); });
-  auto nested_host_res = em.dock_carrier(fighter_id, carrier_id);
-  test::expect_false(nested_host_res.has_value());
-  test::expect_eq(nested_host_res.error(), DockError::NestedCarrierDisallowed);
+  const double supercarrier_base_mass = em.peek_ship(supercarrier_id)->mass();
+
+  const auto subcarrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                                 .owned_by(1)
+                                 .with_alive(true)
+                                 .in_star_orbit(0)
+                                 .with_size(15)
+                                 .with_hanger(0)
+                                 .with_max_hanger(10)
+                                 .build();
+  const double subcarrier_base_mass = em.peek_ship(subcarrier_id)->mass();
+
+  const auto fighter1_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                               .owned_by(1)
+                               .with_alive(true)
+                               .in_star_orbit(0)
+                               .with_size(5)
+                               .with_hanger(0)
+                               .with_max_hanger(0)
+                               .build();
+  const double fighter1_mass = em.peek_ship(fighter1_id)->mass();
+
+  const auto fighter2_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                               .owned_by(1)
+                               .with_alive(true)
+                               .in_star_orbit(0)
+                               .with_size(4)
+                               .with_hanger(0)
+                               .with_max_hanger(0)
+                               .build();
+  const double fighter2_mass = em.peek_ship(fighter2_id)->mass();
+
+  // 1. Self docking rejected
+  auto self_res = em.dock_carrier(supercarrier_id, supercarrier_id);
+  test::expect_false(self_res.has_value());
+  test::expect_eq(self_res.error(), DockError::SelfDocking);
+
+  // 2. Carrier full rejected
+  em.mutate_ship(subcarrier_id, [](Ship& c) { c.hanger() = 8; });
+  auto full_res = em.dock_carrier(fighter1_id, subcarrier_id);
+  test::expect_false(full_res.has_value());
+  test::expect_eq(full_res.error(), DockError::CarrierFull);
+  em.mutate_ship(subcarrier_id, [](Ship& c) { c.hanger() = 0; });
+
+  // 3. Multi-tier carrier nesting:
+  // Dock Fighter 1 into Subcarrier (hanger: 0 -> 5)
+  auto f1_dock = em.dock_carrier(fighter1_id, subcarrier_id);
+  test::expect_true(f1_dock.has_value());
+  test::expect_eq(em.peek_ship(subcarrier_id)->hanger(), 5);
+  expect_near(em.peek_ship(subcarrier_id)->mass(),
+              subcarrier_base_mass + fighter1_mass);
+
+  // Dock Subcarrier (containing Fighter 1) into Supercarrier
+  auto sub_dock = em.dock_carrier(subcarrier_id, supercarrier_id);
+  test::expect_true(sub_dock.has_value());
+  test::expect_eq(em.peek_ship(supercarrier_id)->hanger(), 15);
+  expect_near(em.peek_ship(supercarrier_id)->mass(),
+              supercarrier_base_mass + subcarrier_base_mass + fighter1_mass);
+
+  // 4. Cycle detection: Supercarrier cannot dock into Subcarrier or Fighter 1
+  auto cycle_sub = em.dock_carrier(supercarrier_id, subcarrier_id);
+  test::expect_false(cycle_sub.has_value());
+  test::expect_eq(cycle_sub.error(), DockError::CycleDetected);
+
+  auto cycle_f1 = em.dock_carrier(supercarrier_id, fighter1_id);
+  test::expect_false(cycle_f1.has_value());
+  test::expect_eq(cycle_f1.error(), DockError::CycleDetected);
+
+  // 5. Dock Fighter 2 into Subcarrier while Subcarrier is inside Supercarrier!
+  // Mass delta must propagate up to Supercarrier.
+  auto f2_dock = em.dock_carrier(fighter2_id, subcarrier_id);
+  test::expect_true(f2_dock.has_value());
+  test::expect_eq(em.peek_ship(subcarrier_id)->hanger(), 9);
+  expect_near(em.peek_ship(subcarrier_id)->mass(),
+              subcarrier_base_mass + fighter1_mass + fighter2_mass);
+  expect_near(em.peek_ship(supercarrier_id)->mass(),
+              supercarrier_base_mass + subcarrier_base_mass + fighter1_mass +
+                  fighter2_mass);
+
+  // 6. Undock Fighter 2 from Subcarrier: mass reduction propagates up to
+  // Supercarrier
+  auto f2_undock = em.undock_carrier(fighter2_id, ScopeLevel::LEVEL_STAR);
+  test::expect_true(f2_undock.has_value());
+  test::expect_eq(em.peek_ship(subcarrier_id)->hanger(), 5);
+  expect_near(em.peek_ship(subcarrier_id)->mass(),
+              subcarrier_base_mass + fighter1_mass);
+  expect_near(em.peek_ship(supercarrier_id)->mass(),
+              supercarrier_base_mass + subcarrier_base_mass + fighter1_mass);
+
+  // 7. Undock Subcarrier from Supercarrier: restores Supercarrier mass &
+  // hangar, while Subcarrier still contains Fighter 1.
+  auto sub_undock = em.undock_carrier(subcarrier_id, ScopeLevel::LEVEL_STAR);
+  test::expect_true(sub_undock.has_value());
+  test::expect_eq(em.peek_ship(supercarrier_id)->hanger(), 0);
+  expect_near(em.peek_ship(supercarrier_id)->mass(), supercarrier_base_mass);
+  test::expect_eq(em.peek_ship(subcarrier_id)->hanger(), 5);
+  expect_near(em.peek_ship(subcarrier_id)->mass(),
+              subcarrier_base_mass + fighter1_mass);
 }
 
 void test_undock_carrier() {
@@ -293,13 +334,45 @@ void test_kill_ship_carrier_and_child_accounting() {
   const auto* fighter_after = em.peek_ship(fighter_id);
   test::expect_ne(fighter_after, nullptr);
   test::expect_false(fighter_after->alive());
+
+  // 3-tier cascade test: Supercarrier -> Subcarrier -> Fighter
+  const auto super_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                            .owned_by(1)
+                            .with_alive(true)
+                            .in_star_orbit(0)
+                            .with_max_hanger(50)
+                            .build();
+  const auto sub_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                          .owned_by(1)
+                          .with_alive(true)
+                          .in_star_orbit(0)
+                          .with_size(15)
+                          .with_max_hanger(10)
+                          .build();
+  const auto craft_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                            .owned_by(1)
+                            .with_alive(true)
+                            .in_star_orbit(0)
+                            .with_size(5)
+                            .build();
+
+  test::expect_true(em.dock_carrier(craft_id, sub_id).has_value());
+  test::expect_true(em.dock_carrier(sub_id, super_id).has_value());
+
+  // Killing Supercarrier destroys Subcarrier and craft recursively
+  em.mutate_ship(super_id, [&](Ship& s) { em.kill_ship(1, s); });
+
+  em.clear_cache();
+  test::expect_false(em.peek_ship(super_id)->alive());
+  test::expect_false(em.peek_ship(sub_id)->alive());
+  test::expect_false(em.peek_ship(craft_id)->alive());
 }
 
 }  // namespace
 
 int main() {
   test_dock_carrier_happy_path();
-  test_dock_carrier_errors_and_1level_hierarchy();
+  test_dock_carrier_errors_and_nested_hierarchy();
   test_undock_carrier();
   test_moor_and_unmoor_ships();
   test_kill_ship_carrier_and_child_accounting();

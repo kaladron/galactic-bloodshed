@@ -49,7 +49,7 @@ export enum class DockError : std::uint8_t {
   NotSpaceborne,
   ScopeMismatch,
   CarrierFull,
-  NestedCarrierDisallowed,
+  CycleDetected,
 };
 
 /// \brief Errors that can occur during ship undocking or unmooring operations.
@@ -555,6 +555,8 @@ private:
   void release_ship_exam(ShipType ship_type);
 
   void drain_pending_deletions();
+  void propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
+                                     double delta_mass);
 };
 
 export inline void record_vn_destruction_site(int& index1, int& index2,

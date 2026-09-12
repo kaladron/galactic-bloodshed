@@ -96,6 +96,12 @@ bool launch(const command_t& argv, GameObj& g) {
           s2.set_mass(s2.mass() - s.mass());
           s2.hanger() -= s.size();
           g.out << "Universe level.\n";
+        } else if (s2.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+          g.out << std::format(
+              "{}'s mothership is currently berthed inside another vessel; "
+              "launch {} first.\n",
+              s, s2);
+          return;
         } else {
           g.out << "You can't launch that ship.\n";
           return;

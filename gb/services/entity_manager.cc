@@ -852,6 +852,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     if (peek_ship(ship.destshipno())) {
       mutate_ship(ship.destshipno(),
                   [&](Ship& carrier) { carrier.unload_docked_craft(ship); });
+      propagate_ancestor_mass_delta(ship.destshipno(), -ship.mass());
     }
   }
 
@@ -859,6 +860,27 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
     Ship& s = *ship_handle;   // Get mutable reference
     kill_ship(Playernum, s);  // Recursive call to member function
+  }
+}
+
+void EntityManager::propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
+                                                  double delta_mass) {
+  if (std::abs(delta_mass) < 1e-9) return;
+  const auto* direct_carrier = peek_ship(direct_carrier_id);
+  if (!direct_carrier ||
+      direct_carrier->whatorbits() != ScopeLevel::LEVEL_SHIP) {
+    return;
+  }
+  shipnum_t ancestor = direct_carrier->destshipno();
+  while (ancestor != 0) {
+    const auto* anc_peek = peek_ship(ancestor);
+    if (!anc_peek) break;
+    mutate_ship(ancestor, [&](Ship& anc) {
+      anc.set_mass(std::max(anc.base_mass(), anc.mass() + delta_mass));
+    });
+    ancestor = (anc_peek->whatorbits() == ScopeLevel::LEVEL_SHIP)
+                   ? anc_peek->destshipno()
+                   : shipnum_t{0};
   }
 }
 
@@ -874,18 +896,24 @@ EntityManager::dock_carrier(shipnum_t child_id, shipnum_t carrier_id) {
     return std::unexpected(DockError::ShipNotFound);
   }
 
-  // 1-Level Hierarchy & Symmetry invariant:
-  // - Child cannot contain docked ships in its hangar
-  // - Carrier cannot itself be inside another carrier
-  if (child_peek->hanger() > 0 ||
-      !ShipList::readonly_in_carrier(*this, child_id).empty() ||
-      carrier_peek->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    return std::unexpected(DockError::NestedCarrierDisallowed);
+  // Cycle detection: ensure child_id is not an ancestor of carrier_id
+  shipnum_t ancestor = carrier_id;
+  while (ancestor != 0) {
+    if (ancestor == child_id) {
+      return std::unexpected(DockError::CycleDetected);
+    }
+    const auto* anc_peek = peek_ship(ancestor);
+    if (!anc_peek || anc_peek->whatorbits() != ScopeLevel::LEVEL_SHIP) {
+      break;
+    }
+    ancestor = anc_peek->destshipno();
   }
 
   if (child_peek->size() > carrier_peek->hanger_space()) {
     return std::unexpected(DockError::CarrierFull);
   }
+
+  const double child_mass = child_peek->mass();
 
   // Atomically mutate carrier and child
   mutate_ship(carrier_id, [&](Ship& carrier) {
@@ -894,6 +922,9 @@ EntityManager::dock_carrier(shipnum_t child_id, shipnum_t carrier_id) {
       carrier.load_docked_craft(child);
     });
   });
+
+  // Propagate mass delta up ancestor carriers
+  propagate_ancestor_mass_delta(carrier_id, child_mass);
 
   return {};
 }
@@ -916,12 +947,17 @@ EntityManager::undock_carrier(shipnum_t child_id, ScopeLevel orbit_level) {
     return std::unexpected(UndockError::CarrierNotFound);
   }
 
+  const double child_mass = child_peek->mass();
+
   mutate_ship(carrier_id, [&](Ship& carrier) {
     mutate_ship(child_id, [&](Ship& child) {
       carrier.unload_docked_craft(child);
       child.launch_to_orbit(orbit_level);
     });
   });
+
+  // Propagate mass reduction up ancestor carriers
+  propagate_ancestor_mass_delta(carrier_id, -child_mass);
 
   return {};
 }

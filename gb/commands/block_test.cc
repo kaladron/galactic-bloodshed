@@ -62,8 +62,8 @@ void test_block_dispatch() {
   block3.name = "EmptyBlock";
   block3.motto = "Nobody here";
   block3.VPs = 50;
-  block3.invited = 0;
-  block3.pledged = 0;
+  block3.invited.reset();
+  block3.pledged.reset();
 
   BlockRepository blocks(store);
   blocks.save(block1);

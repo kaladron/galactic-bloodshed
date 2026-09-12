@@ -6,27 +6,27 @@
 module gblib;
 
 bool Race::is_allied_with(player_t p) const noexcept {
-  return isset(allied, p);
+  return allied.test(p);
 }
 
 void Race::declare_alliance_with(player_t p) noexcept {
-  setbit(allied, p);
+  allied.set(p);
 }
 
 void Race::rescind_alliance_with(player_t p) noexcept {
-  clrbit(allied, p);
+  allied.reset(p);
 }
 
 bool Race::is_at_war_with(player_t p) const noexcept {
-  return isset(atwar, p);
+  return atwar.test(p);
 }
 
 void Race::declare_war_on(player_t p) noexcept {
-  setbit(atwar, p);
+  atwar.set(p);
 }
 
 void Race::make_peace_with(player_t p) noexcept {
-  clrbit(atwar, p);
+  atwar.reset(p);
 }
 
 bool block::is_member(player_t p) const noexcept {
@@ -34,49 +34,49 @@ bool block::is_member(player_t p) const noexcept {
 }
 
 bool block::is_invited(player_t p) const noexcept {
-  return isset(invited, p);
+  return invited.test(p);
 }
 
 void block::invite(player_t p) noexcept {
-  setbit(invited, p);
+  invited.set(p);
 }
 
 void block::uninvite(player_t p) noexcept {
-  clrbit(invited, p);
+  invited.reset(p);
 }
 
 bool block::is_pledged(player_t p) const noexcept {
-  return isset(pledged, p);
+  return pledged.test(p);
 }
 
 void block::pledge(player_t p) noexcept {
-  setbit(pledged, p);
+  pledged.set(p);
 }
 
 void block::unpledge(player_t p) noexcept {
-  clrbit(pledged, p);
+  pledged.reset(p);
 }
 
 bool block::is_allied_with(player_t p) const noexcept {
-  return isset(allied, p);
+  return allied.test(p);
 }
 
 void block::declare_alliance_with(player_t p) noexcept {
-  setbit(allied, p);
+  allied.set(p);
 }
 
 void block::rescind_alliance_with(player_t p) noexcept {
-  clrbit(allied, p);
+  allied.reset(p);
 }
 
 bool block::is_at_war_with(player_t p) const noexcept {
-  return isset(atwar, p);
+  return atwar.test(p);
 }
 
 void block::declare_war_on(player_t p) noexcept {
-  setbit(atwar, p);
+  atwar.set(p);
 }
 
 void block::make_peace_with(player_t p) noexcept {
-  clrbit(atwar, p);
+  atwar.reset(p);
 }

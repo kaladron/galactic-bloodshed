@@ -405,17 +405,16 @@ bool check_mutual_alliances(EntityManager& entity_manager,
   if (players.size() <= 1) {
     return true;
   }
-  std::bitset<MAXPLAYERS + 1> required_mask;
+  PlayerBitset<MAXPLAYERS> required_mask;
   for (const player_t p : players) {
-    required_mask.set(p.value);
+    required_mask.set(p);
   }
 
   return std::ranges::all_of(players, [&](player_t p) {
     const auto& race = *entity_manager.peek_race(p);
-    std::bitset<MAXPLAYERS + 1> peers_mask = required_mask;
-    peers_mask.reset(p.value);
-    const std::bitset<MAXPLAYERS + 1> race_allied(race.allied);
-    return (race_allied & peers_mask) == peers_mask;
+    PlayerBitset<MAXPLAYERS> peers_mask = required_mask;
+    peers_mask.reset(p);
+    return (race.allied & peers_mask) == peers_mask;
   });
 }
 

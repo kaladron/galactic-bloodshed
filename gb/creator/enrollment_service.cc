@@ -202,8 +202,8 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   race.tech = 0.0;
   race.morale = 0;
   race.turn = 0;
-  race.allied = 0;
-  race.atwar = 0;
+  race.allied.reset();
+  race.atwar.reset();
   race.points.fill(0);
 
   // 6. Build and dock capital government ship

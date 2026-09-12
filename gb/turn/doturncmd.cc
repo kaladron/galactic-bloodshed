@@ -313,7 +313,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
   }
 
   // Local inhabited bitmap - tracks which players inhabit each star this turn
-  std::array<std::uint64_t, NUMSTARS> inhabited{};
+  std::array<PlayerBitset<MAXPLAYERS>, NUMSTARS> inhabited{};
 
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;
@@ -324,7 +324,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         const player_t player = race_handle->Playernum;
 
         if (planet_handle->info(player).numsectsowned) {
-          setbit(inhabited[star.value], player);
+          inhabited[star.value].set(player);
         }
 
         if (planet_handle->type() != PlanetType::ASTEROID &&
@@ -361,11 +361,12 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
           star_handle->AP(player) = std::min(APs, LIMIT_APs);
         }
         // Compute victory points for the block
-        if (inhabited[star.value] != 0) {
+        if (inhabited[star.value].any()) {
           try {
             const auto* block_player =
                 state.entity_manager.peek_block(player.value);
-            std::uint64_t allied_members = block_player->member_mask();
+            const PlayerBitset<MAXPLAYERS> allied_members =
+                block_player->member_mask();
             if ((inhabited[star.value] | allied_members) == allied_members) {
               state.entity_manager.mutate_block(
                   player.value, [](struct block& b) { b.systems_owned++; });

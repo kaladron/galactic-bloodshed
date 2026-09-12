@@ -81,8 +81,8 @@ public:
   PlayerVector<int, MAXPLAYERS>
       translate{}; /* translation mod for each player */
 
-  std::uint64_t atwar{0};
-  std::uint64_t allied{0};
+  PlayerBitset<MAXPLAYERS> atwar{};
+  PlayerBitset<MAXPLAYERS> allied{};
 
   /// Returns whether this race is allied with the given player.
   [[nodiscard]] bool is_allied_with(player_t p) const noexcept;
@@ -330,10 +330,10 @@ export struct block {
   player_t Playernum;
   std::string name;
   std::string motto;
-  std::uint64_t invited;
-  std::uint64_t pledged;
-  std::uint64_t atwar;
-  std::uint64_t allied;
+  PlayerBitset<MAXPLAYERS> invited{};
+  PlayerBitset<MAXPLAYERS> pledged{};
+  PlayerBitset<MAXPLAYERS> atwar{};
+  PlayerBitset<MAXPLAYERS> allied{};
   unsigned short next;
   unsigned short systems_owned;
   unsigned long VPs;
@@ -343,9 +343,9 @@ export struct block {
   /// and pledged).
   [[nodiscard]] bool is_member(player_t p) const noexcept;
 
-  /// Returns the bitmask of all members (players that are both invited and
+  /// Returns the bitset of all members (players that are both invited and
   /// pledged).
-  [[nodiscard]] std::uint64_t member_mask() const noexcept {
+  [[nodiscard]] PlayerBitset<MAXPLAYERS> member_mask() const noexcept {
     return invited & pledged;
   }
 

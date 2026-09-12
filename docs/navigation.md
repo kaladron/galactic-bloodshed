@@ -111,6 +111,30 @@ $$\text{Landing Fuel Cost} = \left\lfloor \text{Gravity} \times \text{Mass}_{\te
 - **Hostile Touchdowns**: Landing in hostile sectors defended by armed surface batteries triggers retaliatory ground fire before touchdown.
 - **Gas Giant Hazards**: Gas giant worlds possess no solid surface; vessels attempting landings on gas giants are crushed by extreme atmospheric pressures. However, orbiting vessels can safely skim gas giant upper atmospheres to harvest free propellant during turn updates.
 
+### Carrier Recovery, Surface Mothership Loading, and Mooring
+Beyond planetary touchdowns, naval flight operations encompass berthing into host carriers and spaceborne mooring:
+
+1. **Carrier Recovery (`land <craft> <#carrier>`)**:
+   - Parasite craft maneuver into the internal hangar bay of an orbital carrier or station in the same orbital reference frame.
+   - Proximity approach propellant depends on spatial separation and vessel displacement:
+
+$$\text{Approach Fuel Cost} = 0.05 + \text{Distance} \times 0.025 \times \sqrt{\text{Mass}_{\text{craft}}}$$
+
+   - Once berthed, the parasite craft enters the internal carrier scope, contributes its physical mass to the carrier, and consumes zero fuel during host transit.
+
+2. **Planetary Surface Mothership Loading (`land <craft> <#mothership>`)**:
+   - Surface vehicles (such as ground tanks, exploration buggies, and uncrewed probes) can be loaded into a landed mothership or mobile factory located in the **exact same surface sector**.
+   - **Prerequisites**: The parasite craft must be powered down (`off`), the mothership must be landed in the identical sector, and the mothership must have sufficient remaining hangar volume.
+   - **Fuel Cost**: Consumes $0.0\text{ propellant}$ (transferred via ground gantry cranes).
+
+3. **Spaceborne Mooring (`dock <ship1> <ship2>`)**:
+   - Symmetrically tethers two spaceborne vessels within proximity ($D \le 1.0$) in the same orbital frame for boarding assaults or cargo transfer.
+   - Neither ship enters the other's hangar; both retain independent displacement and external orbital coordinates.
+   - Decoupling (`undock` or `launch`) cleanly detaches both vessels without hazard.
+
+4. **Hierarchical Debarkation Order (`launch`)**:
+   - A parasite craft berthed inside a carrier cannot launch into independent orbit while its parent carrier is berthed inside a higher-tier vessel. The host carrier must launch or deploy first before subsidiary craft can debark.
+
 ---
 
 ## 5. Trip Planning, Propellant Projections, and the Flight Simulator

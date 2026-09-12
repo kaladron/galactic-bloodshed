@@ -70,6 +70,19 @@ $$\text{Transferred Amount} = \min\Big(\text{Requested Amount},\; \text{Availabl
   - **Warp Crystals**: $0.0 \text{ mass units}$
 - **Berthing & Cargo Clamping**: Transfers strictly respect the recipient ship's physical volume limits (`max_resource`, `max_fuel`, `max_destruct`, and `max_crew`). Any excess requested beyond available capacity remains on the source vessel, preventing commodity destruction or silent cargo loss.
 
+### Vessel Decommissioning and Material Reclamation (`scrap`)
+When starships become obsolete, structurally compromised, or surplus to imperial fleet requirements, commanders can decommission them using the `scrap` command (`scrap <ship>`):
+
+$$\text{Reclaimed Mineral Resources} = \left\lfloor \frac{\text{Base Hull Construction Cost}}{2} \right\rfloor + \text{Stored Cargo Resources}$$
+
+- **Full Commodity & Personnel Conservation**: Decommissioning recovers $100\%$ of carried propellant reserves, destructive munitions (`destruct`), warp crystals, living civilian crew, and military ground troops.
+- **Salvage Disposition by Reference Frame**:
+  - **Carrier Hangars**: Reclaimed minerals, propellant, munitions, crystals, and personnel are transferred directly into the host carrier's inventory (clamped by carrier storage capacities). The parasite craft is dismantled, immediately freeing its hangar volume ($\Delta \text{Hangar} = -\text{Size}_{\text{craft}}$) and reducing the host carrier's operational displacement.
+  - **Moored Alongside Vessel**: Salvaged materials and personnel are transferred into the moored partner vessel's inventory.
+  - **Landed on Planetary Surface**: Salvaged minerals, propellant, munitions, and crystals are deposited into local planetary colony stockpiles. Carried civilian crew and military personnel disembark into the planetary population.
+  - **Unmoored Deep Space**: Scuttling an unmoored vessel in space permanently loses all hull materials, cargo, and carried personnel to the void.
+- **Ecological Containment Hazards**: Dismantling a **Toxic Waste Canister** on a planetary surface immediately ruptures containment seals, releasing all trapped toxicity points directly back into the world's biosphere.
+
 ### Dynamic Operational Mass and Displacement Metrics
 A vessel's total displacement includes its baseline structure, stored consumables, carried populations, and any docked parasite craft:
 

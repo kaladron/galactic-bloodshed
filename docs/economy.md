@@ -39,6 +39,17 @@ Every settled world maintains independent commodity stockpiles for each inhabiti
 
 During each turn update, planetary mining and harvesting operations deposit newly extracted commodities directly into local colony stockpiles.
 
+### Naval Scrapping and Capital Recycling (`scrap`)
+Empires can decommission obsolete, damaged, or surplus naval hulls to recover vital industrial minerals using the `scrap` command (`scrap <ship>`):
+
+$$\text{Reclaimed Mineral Stockpile} = \left\lfloor \frac{\text{Hull Construction Cost}}{2} \right\rfloor + \text{Stored Cargo Minerals}$$
+
+- **Commodity & Personnel Recovery**: Decommissioning returns $100\%$ of carried propellant, destructive munitions, warp crystals, civilian crew, and military ground troops.
+- **Stockpile Depositories**:
+  - When decommissioned while landed on a planetary surface, all reclaimed minerals and commodities are deposited directly into local planetary colony stockpiles, and carried personnel rejoin the civilian workforce.
+  - When decommissioned inside a carrier's hangar or while moored to another vessel, recovered assets are transferred to the host/moored vessel. Unmoored vessels scuttled in open space yield no recoverable materials.
+- For complete operational rules, multi-tier berthing, and hazardous waste constraints, see [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md).
+
 ---
 
 ## 2. Taxation System and Revenue Generation

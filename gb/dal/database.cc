@@ -105,6 +105,10 @@ void Database::begin_transaction() {
   if (!conn) {
     throw SqliteError("Database not open");
   }
+  if (is_in_transaction()) {
+    throw SqliteError(
+        "Transaction already active (transactions are not reentrant)");
+  }
   exec_sql(conn, "BEGIN TRANSACTION", "Failed to begin transaction");
 }
 
@@ -120,6 +124,13 @@ void Database::rollback() {
     throw SqliteError("Database not open");
   }
   exec_sql(conn, "ROLLBACK", "Failed to rollback transaction");
+}
+
+bool Database::is_in_transaction() const {
+  if (!conn) {
+    return false;
+  }
+  return sqlite3_get_autocommit(conn) == 0;
 }
 
 void Database::optimize() {

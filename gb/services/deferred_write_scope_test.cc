@@ -215,6 +215,20 @@ void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
                "✓ test_deferred_write_multi_entity_simulation passed");
 }
 
+void test_deferred_write_rejects_nested_transaction(TestContext& ctx) {
+  // Opening DeferredWriteScope commit inside an active transaction throws
+  // to enforce strict non-reentrancy invariant
+  auto outer_txn = ctx.em.begin_transaction();
+  {
+    auto scope = ctx.em.create_deferred_write_scope();
+    test::expect_throws<SqliteError>([&]() { scope.commit(); });
+  }
+  outer_txn.rollback();
+
+  std::println(std::cout,
+               "✓ test_deferred_write_rejects_nested_transaction passed");
+}
+
 }  // namespace
 
 int main() {
@@ -225,6 +239,7 @@ int main() {
   test_deferred_write_explicit_rollback(ctx);
   test_deferred_write_raii_rollback_on_exception(ctx);
   test_deferred_write_multi_entity_simulation(ctx);
+  test_deferred_write_rejects_nested_transaction(ctx);
 
   std::println(std::cout, "\nAll DeferredWriteScope tests passed!");
   return 0;

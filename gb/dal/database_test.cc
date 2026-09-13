@@ -51,12 +51,15 @@ int main() {
 
     // Initial state: news table is empty
     test::expect_eq(db.news_get_latest_id(1), 0);
+    test::expect_false(db.is_in_transaction());
 
     // Transaction 1: insert and commit
     db.begin_transaction();
+    test::expect_true(db.is_in_transaction());
     auto id1 = db.news_add(1, "Committed news", 1000);
     test::expect_true(id1.has_value());
     db.commit();
+    test::expect_false(db.is_in_transaction());
 
     auto news_committed = db.news_get_since(1, 0);
     test::expect_eq(news_committed.size(), 1);
@@ -65,9 +68,11 @@ int main() {
 
     // Transaction 2: insert and rollback
     db.begin_transaction();
+    test::expect_true(db.is_in_transaction());
     auto id2 = db.news_add(1, "Rolled back news", 2000);
     test::expect_true(id2.has_value());
     db.rollback();
+    test::expect_false(db.is_in_transaction());
 
     auto news_after_rollback = db.news_get_since(1, 0);
     test::expect_eq(news_after_rollback.size(), 1);

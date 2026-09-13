@@ -39,6 +39,7 @@ const CommandDescriptor segment_cmd{
     .syntax = "@@segment [seg_num]",
     .description = "Trigger segment movement (deity only)",
     .handler = &segment,
+    .transactional = false,
 };
 
 }  // namespace GB::commands

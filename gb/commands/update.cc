@@ -28,6 +28,7 @@ const CommandDescriptor update_cmd{
     .ap = APCost::free(),
     .description = "Trigger a game update (deity only)",
     .handler = &update,
+    .transactional = false,
 };
 
 }  // namespace GB::commands

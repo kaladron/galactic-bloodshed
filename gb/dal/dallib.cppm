@@ -45,6 +45,7 @@ public:
   void begin_transaction();
   void commit();
   void rollback();
+  [[nodiscard]] bool is_in_transaction() const;
 
   // Run lightweight SQLite maintenance
   void optimize();

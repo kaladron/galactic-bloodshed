@@ -85,12 +85,18 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     return false;
   }
 
-  auto txn = g.entity_manager.begin_transaction();
+  std::optional<EntityManager::Transaction> txn;
+  if (desc.transactional) {
+    txn.emplace(g.entity_manager.begin_transaction());
+  }
+
   bool success = false;
   try {
     success = desc.handler(argv, g);
   } catch (...) {
-    txn.rollback();
+    if (txn) {
+      txn->rollback();
+    }
     throw;
   }
 
@@ -105,10 +111,12 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     }
   }
 
-  if (success) {
-    txn.commit();
-  } else {
-    txn.rollback();
+  if (txn) {
+    if (success) {
+      txn->commit();
+    } else {
+      txn->rollback();
+    }
   }
 
   return success;

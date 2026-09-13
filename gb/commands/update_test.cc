@@ -74,10 +74,50 @@ void test_update_matrix() {
   }
 }
 
+void test_update_population_growth_persistence() {
+  TestContext ctx;
+  ctx.with_standard_universe().with_populated_planet(0, 0, 1, 100,
+                                                     Coordinates{0, 0});
+
+  // Ensure Player 1 is a deity with viable reproduction traits
+  ctx.em.mutate_race(player_t{1}, [](Race& r) {
+    r.God = true;
+    r.likes[SectorType::SEC_LAND] = 1.0;
+    r.likes[SectorType::SEC_PLATED] = 1.0;
+    r.birthrate = 0.5;
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_god(true);
+
+  // Initial population before @@update
+  const auto* initial_planet = ctx.em.peek_planet(0, 0);
+  test::expect_true(initial_planet != nullptr);
+  auto initial_popn = initial_planet->popn();
+  test::expect_eq(initial_popn, 100);
+
+  // Dispatch @@update through dispatch_command
+  g.out.str("");
+  test::expect_true(GB::commands::dispatch_command(g, GB::commands::update_cmd,
+                                                   {"@@update"}));
+  std::string out = g.out.str();
+  test::expect_contains(out, "Starting update...");
+  test::expect_contains(out, "Update completed.");
+
+  // Clear cache to verify persistence in SQLite
+  ctx.em.clear_cache();
+  const auto* updated_planet = ctx.em.peek_planet(0, 0);
+  test::expect_true(updated_planet != nullptr);
+  test::expect_gt(updated_planet->popn(), initial_popn);
+}
+
 }  // namespace
 
 int main() {
   test_update_matrix();
+  test_update_population_growth_persistence();
   std::println(std::cout, "✓ update_test passed!");
   return 0;
 }

@@ -94,6 +94,7 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
       calculate_victory_scores(state.entity_manager);
     }
     finalize_turn(state, update);
+    defer_scope.commit();
   }
 
   // Run SQLite maintenance after turn writes complete.

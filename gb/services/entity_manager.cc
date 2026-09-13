@@ -1262,7 +1262,16 @@ void EntityManager::DeferredWriteScope::commit() {
   if (!committed_ && em_) {
     em_->deferred_write_depth_--;
     em_->db.begin_transaction();
-    em_->flush_all();
+    try {
+      em_->flush_all();
+    } catch (...) {
+      try {
+        em_->db.rollback();
+      } catch (...) {
+      }
+      committed_ = true;
+      throw;
+    }
     em_->db.commit();
     committed_ = true;
   }

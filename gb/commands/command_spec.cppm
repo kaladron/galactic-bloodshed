@@ -100,6 +100,7 @@ export struct CommandDescriptor {
   std::string_view syntax = "";
   std::string_view description = "";
   CommandFn handler = nullptr;
+  bool transactional = true;
 };
 
 /// Centralized command dispatch pipeline executing validation and AP management

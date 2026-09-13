@@ -240,6 +240,43 @@ Governors can automate turn-by-turn industrial surveillance across their planeta
 
 ---
 
+## 11. Divine Intervention and Deity Blessings (`bless`)
+
+Game administrators and deities wield absolute administrative power via the `bless` command (`bless <player> <what> <+amount>`, costing $0$ APs, scoped exclusively to planetary level). Blessings allow targeted divine interventions to adjust player species attributes, tune environmental preferences, manipulate planetary exploration metadata, or grant emergency stockpiles.
+
+### Blessing Categories
+
+#### 1. Racial Characteristics and Governance Attributes
+Deities can grant or adjust core racial statistics:
+- **Treasury Capital (`money`)**: Deposits treasury funds directly into the target race's Prime Governor (Governor 0) treasury.
+- **Morale (`morale`)**: Adds or subtracts racial morale points.
+- **Scientific Progress (`technology`)**: Advances technological research levels.
+- **Combat & Biological Attributes**: Sets racial fighting prowess (`fight`), intelligence (`IQ`), maximum IQ threshold (`maxiq`), and fertilization speed (`fertility`).
+- **Physiological Dimensions**: Overwrites species mass (`mass`), metabolic rate (`metabolism`), reproductive birth rate (`birthrate`), and colonization drive percentage (`adventurism`).
+- **Racial Privileges & Governance Class**:
+  - `god`: Elevates a race to divine status.
+  - `guest`: Marks a race with guest privileges.
+  - `mortal`: Strips divine and guest privileges, returning the race to standard mortal status.
+  - `pods` / `nopods`: Grants or revokes spore pod colonization ability.
+  - `collectiveiq` / `nocollectiveiq`: Grants or revokes gestalt collective intelligence scaling.
+  - `password`: Overwrites race access credentials.
+
+#### 2. Sector Environmental Preferences
+Deities can modify species habitat preferences across all 8 sector types (`water`, `land`, `mountain`, `gas`, `ice`, `forest`, `desert`, `plated`), setting the compatibility percentage ($0\%\dots100\%$).
+
+#### 3. Planetary and Stellar State
+At planetary scope, deities can adjust surface and orbital tracking variables:
+- **Exploration Bits (`explorebit` / `noexplorebit`)**: Marks or clears exploration awareness for the target player on the current planet and its parent star.
+- **Stellar Inhabitation (`inhabited`)**: Marks the parent star system as inhabited by the target player.
+- **Colony Header Overrides (`planetpopulation`, `numsectsowned`)**: Directly updates the colony summary records for the target player on the current world.
+
+#### 4. Commodity Grants and Action Points
+Deities can inject resources into local stockpiles or grant system authority:
+- **Planetary Stockpiles**: Injects resources (`resource` / `r`), destruct (`destruct` / `d`), fuel (`fuel` / `f`), or crystals (`crystal` / `x`) directly into the recipient's planetary storage.
+- **Stellar Action Points (`ap` / `a`)**: Instantly credits Action Points to the recipient in the host star system.
+
+---
+
 ## See Also
 - [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
 - [Planetary Mechanics, Colonization, and Surface Topography](planets.md)

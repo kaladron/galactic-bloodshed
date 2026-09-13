@@ -12,120 +12,91 @@ import std;
 
 namespace {
 
-void test_autoreport_database_persistence() {
-  std::println(std::cout, "Test: autoreport command database persistence");
+void test_autoreport_dispatch() {
+  std::println(std::cout, "Test: autoreport command dispatch and persistence");
 
-  // Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // Setup: Create a star
-  star_struct star{};
-  star.star_id = 1;
-  star.name = "Test Star";
-  star.pnames.push_back("Test Planet");
-  star.governor[player_t{1}] = 0;  // Player 1 governor 0
-
-  JsonStore store(ctx.db);
-  StarRepository stars(store);
-  stars.save(star);
-
-  // Setup: Create a planet with autoreport initially OFF
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.info(player_t{1}).numsectsowned = 10;  // Player 1 owns sectors
-  planet.info(player_t{1}).autorep = 0;         // Initially OFF
-
-  PlanetRepository planets(store);
-  planets.save(planet);
-
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 0);
 
-  // 1. Scope rejection at UNIV level
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
-  g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"autoreport"});
-  test::expect_contains(g.out.str(), "Invalid scope for this command.");
-  std::println(std::cout, "    ✓ Scope rejection at universe level verified");
-
-  // 2. Star control authorization rejection
+  // 1. Happy path: toggle autoreport ON at planet scope without args
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
+  g.set_snum(0);
   g.set_pnum(0);
-  g.set_governor(2);
+
+  ctx.assert_dispatch_success(g, {"autoreport"});
+  test::expect_contains(g.out.str(), "has been set");
+
+  // Verify persistence in DB
+  ctx.em.clear_cache();
+  const auto* p_on = ctx.em.peek_planet(0, 0);
+  test::expect_ne(p_on, nullptr);
+  test::expect_eq(p_on->info(player_t{1}).autorep, TELEG_MAX_AUTO);
+  std::println(std::cout, "    ✓ Autoreport toggled ON and persisted");
+
+  // 2. Happy path: toggle autoreport OFF at planet scope without args
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"autoreport"});
+  test::expect_contains(g.out.str(), "has been unset");
+
+  ctx.em.clear_cache();
+  const auto* p_off = ctx.em.peek_planet(0, 0);
+  test::expect_ne(p_off, nullptr);
+  test::expect_eq(p_off->info(player_t{1}).autorep, 0);
+  std::println(std::cout, "    ✓ Autoreport toggled OFF and persisted");
+
+  // 3. Happy path: toggle autoreport with explicit planet argument from star
+  // scope
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"autoreport", "Earth"});
+  test::expect_contains(g.out.str(), "has been set");
+
+  ctx.em.clear_cache();
+  const auto* p_arg = ctx.em.peek_planet(0, 0);
+  test::expect_ne(p_arg, nullptr);
+  test::expect_eq(p_arg->info(player_t{1}).autorep, TELEG_MAX_AUTO);
+  std::println(std::cout,
+               "    ✓ Autoreport toggled with explicit planet argument");
+
+  // 4. Star scope without args rejected
+  g.set_level(ScopeLevel::LEVEL_STAR);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"autoreport"});
-  test::expect_contains(g.out.str(),
-                        "You are not authorized to do that in this system.");
-  std::println(std::cout,
-               "    ✓ Star control rejection for governor 2 verified");
+  test::expect_contains(g.out.str(), "Scope must be a planet.");
+  std::println(std::cout, "    ✓ Star scope without planet argument rejected");
 
-  // Restore authorized governor
-  g.set_governor(0);
+  // 5. Explicit argument resolving to non-planet rejected
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"autoreport", "/Sol"});
+  test::expect_contains(g.out.str(), "Scope must be a planet.");
+  std::println(std::cout, "    ✓ Non-planet target argument rejected");
 
-  // TEST 1: Toggle autoreport ON
-  std::println(std::cout, "  Testing: Toggle autoreport ON");
-  {
-    ctx.assert_dispatch_success(g, {"autoreport"});
+  // 6. Invalid number of arguments (> 2) rejected
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"autoreport", "0", "extra_arg"});
+  test::expect_contains(g.out.str(), "Invalid number of arguments.");
+  std::println(std::cout, "    ✓ Extra arguments rejected");
 
-    // Verify output message
-    std::string out_str = g.out.str();
-    test::expect_contains(out_str, "has been set");
-    std::println(std::cout, "    ✓ Output message correct");
-    g.out.str("");  // Clear output for next test
-
-    // Verify database: autorep should be TELEG_MAX_AUTO (63)
-    auto saved = planets.find_by_location(1, 0);
-    test::expect_true(saved.has_value());
-    test::expect_eq(saved->info(player_t{1}).autorep, TELEG_MAX_AUTO);
-    std::println(std::cout, "    ✓ Database: autorep = {} (ON)",
-                 saved->info(player_t{1}).autorep);
-  }
-
-  // TEST 2: Toggle autoreport OFF
-  std::println(std::cout, "  Testing: Toggle autoreport OFF");
-  {
-    ctx.assert_dispatch_success(g, {"autoreport"});
-
-    // Verify output message
-    std::string out_str = g.out.str();
-    test::expect_contains(out_str, "has been unset");
-    std::println(std::cout, "    ✓ Output message correct");
-    g.out.str("");  // Clear output
-
-    // Verify database: autorep should be 0
-    auto saved = planets.find_by_location(1, 0);
-    test::expect_true(saved.has_value());
-    test::expect_eq(saved->info(player_t{1}).autorep, 0);
-    std::println(std::cout, "    ✓ Database: autorep = {} (OFF)",
-                 saved->info(player_t{1}).autorep);
-  }
-
-  // TEST 3: Toggle back ON again
-  std::println(std::cout, "  Testing: Toggle back ON");
-  {
-    ctx.assert_dispatch_success(g, {"autoreport"});
-
-    // Verify database: should be ON again
-    auto saved = planets.find_by_location(1, 0);
-    test::expect_true(saved.has_value());
-    test::expect_eq(saved->info(player_t{1}).autorep, TELEG_MAX_AUTO);
-    std::println(std::cout, "    ✓ Database: autorep = {} (ON)",
-                 saved->info(player_t{1}).autorep);
-  }
-
-  std::println(std::cout,
-               "  ✅ All autoreport database persistence tests passed!");
+  // 7. Command matrix validation (roles, guests, governor, scopes)
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+  TestCommandMatrix(ctx, "autoreport")
+      .with_valid_argv({"autoreport"})
+      .with_invalid_argv({"autoreport", "0", "extra"})
+      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
+      .run_matrix(g);
 }
 
 }  // namespace
 
 int main() {
-  test_autoreport_database_persistence();
+  test_autoreport_dispatch();
   std::println(std::cout, "\n✅ All autoreport tests passed!");
   return 0;
 }

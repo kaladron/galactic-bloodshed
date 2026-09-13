@@ -158,6 +158,88 @@ Interstellar communication in Galactic Bloodshed is divided into private telegra
 
 ---
 
+## 7. Planetary Defense Batteries (`defend`)
+
+Planetary governors can direct planetary defense gun batteries to engage hostile or trespassing warships in planetary orbit using the `defend` command (`defend <ship> <sector> [<strength>]`, costing $1$ Star Action Point).
+
+### Battery Availability and Destruct Stockpiles
+A colony's defensive firepower depends on sector mobilization status and stored planetary destruct resources:
+
+$$\text{Available Guns} = \min\left(20, \left\lfloor \frac{\sum \text{Sector Mobilization Points}}{1000} \right\rfloor \right)$$
+
+$$\text{Effective Attack Strength} = \min(\text{Requested Strength}, \text{Available Guns}, \text{Planetary Destruct Stockpile})$$
+
+- **Targeting Restrictions**: Gun batteries can only target spaceborne vessels stationed in **orbit around the defending planet**. Vessels landed on the planetary surface, vessels orbiting parent stars, or ships docked inside other hulls cannot be targeted by planetary guns. Firing on already destroyed hulls is rejected.
+- **Surface Origin**: The firing origin sector must be an occupied sector owned by the defending player. Firing expends planetary destruct points on a $1:1$ ratio with attack strength.
+- **Naval Retaliation**: If the defending planet inflicts damage on the target vessel:
+  1. If the target has self-defense enabled (`protect.self`), it immediately retaliates with orbital bombardment against the designated firing sector using pre-damage weapons systems.
+  2. Any active escort vessels in planetary orbit assigned to protect the target (`protect.ship = target`) independently launch retaliatory orbital strikes against the firing sector.
+
+---
+
+## 8. Covert Operations: Planetary Insurgency (`insurgency`)
+
+Governors can fund clandestine rebel movements to overthrow enemy colonies and incite planetary uprisings using the `insurgency` command (`insurgency <player> <planet> <amount>`, costing $1$ Star Action Point).
+
+```mermaid
+flowchart TD
+    Fund["Fund Rebellion\n(Governor Deducts Treasury Amount)"] --> Check{"Prerequisites Met?\nTarget on Planet & Instigator in Star System"}
+    Check -->|No| Reject["Operation Aborted\n(Treasury Untouched)"]
+    Check -->|Yes| Roll["Evaluate Success Probability\nTax Burden, Population Density & Morale Differential"]
+    Roll --> Outcome{"Random Roll <= Success Chance"}
+    Outcome -->|Success| Win["Colony Liberated!\nTarget Sectors Transfer to Instigator\nInherit Target Tax Rate\nCombat News Dispatched"]
+    Outcome -->|Failure| Lose["Insurgency Suppressed\nFunds Forfeited\nTarget Retains Control"]
+```
+
+### Insurgency Mechanics and Probability
+To fund an insurgency:
+1. The target player must occupy sectors on the designated planet.
+2. The instigating player must maintain at least one colonized sector in the host star system.
+3. The instigating governor must have sufficient funds in their local star system treasury.
+
+The probability of sparking a successful planetary revolution is determined by:
+
+$$P(\text{Success}) = \text{Amount} \times \left(\frac{\text{Target Tax Rate}}{\text{Target Population}}\right) \times \left(1.0 + \frac{\text{Target Morale} - \text{Instigator Morale}}{100.0}\right) \times \frac{1}{50.0}$$
+
+- **High Tax Vulnerability**: Oppressive planetary tax rates dramatically increase citizen unrest, making heavily taxed colonies vulnerable to low-cost insurgencies.
+- **Population Resistance**: Dense populations dilute rebel funding per capita, requiring larger financial backing to incite revolt.
+- **Morale Influence**: A demoralized target population is more susceptible to external agitation.
+- **Victory Outcomes**: Upon success, **all sectors owned by the target player on the planet are transferred to the instigator**, and the instigator inherits the target's active tax rate. A news bulletin is automatically posted to the galactic **Combat** desk.
+- **Failed Revolts**: If the revolt fails, the funds are forfeit and the colony remains under enemy control.
+
+---
+
+## 9. Demographic Profiles and Intelligence Decryption (`profile`)
+
+Governors examine the racial attributes, physiological traits, and technological discoveries of known civilizations using the `profile` command (`profile [<player>]`).
+
+### Translation Decryption Thresholds
+Intelligence gathering on foreign empires depends on the linguistic and cultural translation status achieved with that race:
+
+| Decryption Level | Translation Range | Information Disclosed |
+|---|---|---|
+| **Obscured** | $\le 50\%$ | Species classification, race name, and home planet name. Full demographic and technological attributes are classified. |
+| **Decrypted** | $> 50\%$ | Complete physiological profiles, mass, metabolism, birth rates, environmental affinities, tech levels, discoveries, and moral standing. |
+| **Omniscient** | Deity / Self | Unrestricted access to all racial metrics, internal governance ships, and hidden parameters regardless of translation level. |
+
+### Demographic Metrics
+- **Species Classification**: Identifies physical archetype (e.g., Humanoid, Insectoid, Avian, Robotic, Amphibian).
+- **Physiological Traits**: Displays biological mass, metabolic rate, reproductive speed, and temperature/methane environmental tolerances.
+- **Technological Discoveries**: Tracks major breakthrough milestones including Hyper-Drive, Laser Optics, Crystal Synthesizers, Planetary Defense shields, and Terraforming arrays.
+- **Metamorphosis State**: For polymorphic species, tracks stage transitions and developmental maturation.
+
+---
+
+## 10. Automated Production Reporting (`autoreport`)
+
+Governors can automate turn-by-turn industrial surveillance across their planetary empire using the `autoreport` command (`autoreport [<planet>]`).
+
+- **Per-Planet Toggle**: Alternates the automated production delivery flag between **ON** and **OFF** for the designated world.
+- **Scope Flexibility**: Can be issued directly from planetary scope (`autoreport`), or from star system scope targeting a specific planet by name or index (`autoreport Earth` or `autoreport 0`).
+- **Turn Delivery**: When enabled, comprehensive industrial production tallies (resource extraction, fuel synthesis, manufacturing throughput, and population growth) are automatically dispatched to the governor's session during turn cycle processing.
+
+---
+
 ## See Also
 - [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
 - [Planetary Mechanics, Colonization, and Surface Topography](planets.md)
@@ -166,3 +248,4 @@ Interstellar communication in Galactic Bloodshed is divided into private telegra
 - [Covert Operations, Espionage, and Insurgency](covert_ops.md)
 - [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
+

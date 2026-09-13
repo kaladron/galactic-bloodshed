@@ -16,30 +16,12 @@ namespace GB::commands {
 bool defend(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  ap_t APcount = 1;
   int strength;
   int retal;
   int damage;
 
   if (!DEFENSE) return false;
 
-  /* get the planet from the players current scope */
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "You have to set scope to the planet first.\n";
-    return false;
-  }
-
-  if (argv.size() < 3) {
-    g.out << "Syntax: 'defend <ship> <sector> [<strength>]'.\n";
-    return false;
-  }
-  bool auth = g.entity_manager.with_star(g.snum(), [&](const Star& star) {
-    return (Governor == 0 || star.governor(Playernum) == Governor);
-  });
-  if (!auth) {
-    g.out << "You are not authorized to do that in this system.\n";
-    return false;
-  }
   auto toshiptmp = string_to_shipnum(argv[1]);
   if (!toshiptmp || *toshiptmp <= 0) {
     g.out << "Bad ship number.\n";
@@ -47,14 +29,13 @@ bool defend(const command_t& argv, GameObj& g) {
   }
   auto toship = *toshiptmp;
 
-  if (!g.deduct_ap(g.snum(), APcount)) {
-    g.out << "You don't have enough action points.\n";
-    return false;
-  }
-
   bool valid_target = false;
   try {
     valid_target = g.entity_manager.with_ship(toship, [&](const Ship& to) {
+      if (!to.alive()) {
+        g.out << "That ship is already destroyed.\n";
+        return false;
+      }
       if (to.whatorbits() != ScopeLevel::LEVEL_PLAN) {
         g.out << "The ship is not in planet orbit.\n";
         return false;
@@ -138,6 +119,7 @@ bool defend(const command_t& argv, GameObj& g) {
       });
   if (!can_attack) return false;
 
+  bool fired = false;
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
     g.entity_manager.mutate_ship(toship, [&](Ship& target_ship) {
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
@@ -149,6 +131,7 @@ bool defend(const command_t& argv, GameObj& g) {
                 g.out << std::format("Target out of range  {}!\n", SYSTEMSIZE);
                 return;
               }
+              fired = true;
               auto [p_damage, p_short, p_long] = *p2s_opt;
               damage = p_damage;
 
@@ -233,7 +216,7 @@ bool defend(const command_t& argv, GameObj& g) {
     });
   });
 
-  return true;
+  return fired;
 }
 
 const CommandDescriptor defend_cmd{
@@ -243,7 +226,7 @@ const CommandDescriptor defend_cmd{
             .star_control = true,
         },
     .scopes = AllowedScopes::planet_only(),
-    .ap = APCost::dynamic(),
+    .ap = APCost::fixed_star(1),
     .min_args = 3,
     .syntax = "defend <ship> <sector> [<strength>]",
     .description =

@@ -464,6 +464,7 @@ gb_add_test(makeplanet_test SOURCES creator/makeplanet_test.cc EXTRA_LIBS gb_cre
 gb_add_test(makeuniv_test SOURCES creator/makeuniv_test.cc EXTRA_LIBS gb_creator)
 gb_add_test(map_test SOURCES commands/map_test.cc)
 gb_add_test(misc_repositories_test SOURCES repositories/misc_repositories_test.cc)
+gb_add_test(misc_test SOURCES entities/misc_test.cc)
 gb_add_test(mobilize_test SOURCES commands/mobilize_test.cc)
 gb_add_test(motto_test SOURCES commands/motto_test.cc)
 gb_add_test(mount_test SOURCES commands/mount_test.cc)

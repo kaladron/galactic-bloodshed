@@ -140,12 +140,79 @@ void test_descriptor_validation_invariants() {
       error, "Free or Dynamic AP model but declares non-zero amount");
 }
 
+void test_command_spec_utilities() {
+  using GB::commands::AllowedScopes;
+  using GB::commands::APCost;
+  using GB::commands::APModel;
+
+  // 1. Test AllowedScopes presets and allows()
+  auto any_scopes = AllowedScopes::any();
+  test::expect_true(any_scopes.allows(ScopeLevel::LEVEL_UNIV));
+  test::expect_true(any_scopes.allows(ScopeLevel::LEVEL_STAR));
+  test::expect_true(any_scopes.allows(ScopeLevel::LEVEL_PLAN));
+  test::expect_true(any_scopes.allows(ScopeLevel::LEVEL_SHIP));
+
+  auto plan_or_ship = AllowedScopes::planet_or_ship();
+  test::expect_false(plan_or_ship.allows(ScopeLevel::LEVEL_UNIV));
+  test::expect_false(plan_or_ship.allows(ScopeLevel::LEVEL_STAR));
+  test::expect_true(plan_or_ship.allows(ScopeLevel::LEVEL_PLAN));
+  test::expect_true(plan_or_ship.allows(ScopeLevel::LEVEL_SHIP));
+
+  auto plan_only = AllowedScopes::planet_only();
+  test::expect_false(plan_only.allows(ScopeLevel::LEVEL_UNIV));
+  test::expect_false(plan_only.allows(ScopeLevel::LEVEL_STAR));
+  test::expect_true(plan_only.allows(ScopeLevel::LEVEL_PLAN));
+  test::expect_false(plan_only.allows(ScopeLevel::LEVEL_SHIP));
+
+  auto ship_only = AllowedScopes::ship_only();
+  test::expect_false(ship_only.allows(ScopeLevel::LEVEL_UNIV));
+  test::expect_false(ship_only.allows(ScopeLevel::LEVEL_STAR));
+  test::expect_false(ship_only.allows(ScopeLevel::LEVEL_PLAN));
+  test::expect_true(ship_only.allows(ScopeLevel::LEVEL_SHIP));
+
+  auto star_only = AllowedScopes::star_only();
+  test::expect_false(star_only.allows(ScopeLevel::LEVEL_UNIV));
+  test::expect_true(star_only.allows(ScopeLevel::LEVEL_STAR));
+  test::expect_false(star_only.allows(ScopeLevel::LEVEL_PLAN));
+  test::expect_false(star_only.allows(ScopeLevel::LEVEL_SHIP));
+
+  auto star_or_univ = AllowedScopes::star_or_univ();
+  test::expect_true(star_or_univ.allows(ScopeLevel::LEVEL_UNIV));
+  test::expect_true(star_or_univ.allows(ScopeLevel::LEVEL_STAR));
+  test::expect_false(star_or_univ.allows(ScopeLevel::LEVEL_PLAN));
+  test::expect_false(star_or_univ.allows(ScopeLevel::LEVEL_SHIP));
+
+  auto non_univ = AllowedScopes::non_universe();
+  test::expect_false(non_univ.allows(ScopeLevel::LEVEL_UNIV));
+  test::expect_true(non_univ.allows(ScopeLevel::LEVEL_STAR));
+  test::expect_true(non_univ.allows(ScopeLevel::LEVEL_PLAN));
+  test::expect_true(non_univ.allows(ScopeLevel::LEVEL_SHIP));
+
+  // 2. Test APCost helpers
+  auto free_ap = APCost::free();
+  test::expect_eq(free_ap.model, APModel::Free);
+  test::expect_eq(free_ap.amount, 0);
+
+  auto star_ap = APCost::fixed_star(5);
+  test::expect_eq(star_ap.model, APModel::FixedStar);
+  test::expect_eq(star_ap.amount, 5);
+
+  auto univ_ap = APCost::fixed_univ(10);
+  test::expect_eq(univ_ap.model, APModel::FixedUniv);
+  test::expect_eq(univ_ap.amount, 10);
+
+  auto dyn_ap = APCost::dynamic();
+  test::expect_eq(dyn_ap.model, APModel::Dynamic);
+  test::expect_eq(dyn_ap.amount, 0);
+}
+
 }  // namespace
 
 int main() {
   test_live_registry_integrity();
   test_find_command_descriptor_not_found();
   test_descriptor_validation_invariants();
+  test_command_spec_utilities();
 
   std::println(std::cout, "✓ command_registry_test passed!");
   return 0;

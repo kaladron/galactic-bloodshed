@@ -344,6 +344,28 @@ int main() {
         "✓ idx_ship_destship query returns matching docked/carrier rows");
   }
 
+  // Test SqliteError and KeyValue helpers from dallib
+  {
+    SqliteError err("Custom error", 42);
+    test::expect_eq(err.code(), 42);
+    test::expect_eq(std::string(err.what()), "Custom error");
+
+    KeyValue kv_double(3.14159);
+    test::expect_true(std::holds_alternative<double>(kv_double.val));
+    test::expect_eq(std::get<double>(kv_double.val), 3.14159);
+
+    KeyValue kv_str(std::string("hello"));
+    test::expect_true(std::holds_alternative<std::string>(kv_str.val));
+    test::expect_eq(std::get<std::string>(kv_str.val), "hello");
+
+    KeyValue kv_cstr("world");
+    test::expect_true(std::holds_alternative<std::string>(kv_cstr.val));
+    test::expect_eq(std::get<std::string>(kv_cstr.val), "world");
+
+    std::println(std::cout,
+                 "✓ SqliteError and KeyValue helpers work as expected");
+  }
+
   std::println(std::cout, "\nAll Database tests passed!");
   return 0;
 }

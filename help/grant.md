@@ -24,6 +24,11 @@ the game.  Things that can be "grant"ed include:
      MONEY - Gives the governor money to be put in the treasury.  Each
              governor has a separate treasury.  Money is used automatically
              in updates for ship up-keep, and can be used for insurgencies.
+             Positive amounts transfer funds to the governor, automatically
+             clamped to the leader's available treasury. Negative amounts dock
+             funds from the governor back into the leader's treasury (only
+             leaders may take away money), automatically clamped to the
+             governor's current balance.
              Syntax:   "grant <governor #> money <amount>"
 
    To take any of these items back from the governor, the <governor #> can be

@@ -7,16 +7,23 @@ In **Galactic Bloodshed**, interstellar survival requires not only military migh
 ```mermaid
 flowchart TD
     Statecraft["Interstellar Statecraft"] --> Stances["Bilateral Diplomatic Stances\nWar, Neutrality, Alliance & Pledges"]
+    Statecraft --> Grants["Imperial Delegations & Grants\nJurisdictions, Fleets & Treasury Allocations"]
+    Statecraft --> Gifts["Naval Technology Transfers\nAllied Ship Gifting & Intelligence Sharing"]
     Statecraft --> Blocs["Power Blocks & Coalitions\nMutual Defense & Coalition Victory Points"]
     Statecraft --> Comms["Galactic Communications & Intelligence\nTelegrams, Broadcasts & Universal Translation"]
-    Statecraft --> Trade["Economic & Military Cooperation\nShared Minefields & Plunder Division"]
 ```
 
 ---
 
 ## 1. Bilateral Diplomatic Stances and Treaties
 
-Empires configure their official diplomatic posture toward every foreign power using the `declare` command:
+Empires configure their official diplomatic posture toward foreign powers using the `declare` command:
+
+```text
+declare <race> <alliance|neutral|war> [<modifier>]
+```
+
+Diplomatic declarations are restricted to Imperial Leaders (Governor 0) and cost **1 Universe Action Point**. An empire cannot declare a stance on itself.
 
 ```mermaid
 stateDiagram-v2
@@ -31,13 +38,82 @@ stateDiagram-v2
 | Diplomatic Stance | Operational Rules & Engagement Doctrine | Strategic Implications |
 | :--- | :--- | :--- |
 | **Neutral** | Default diplomatic posture. Weapons do not fire automatically; market trade permitted. | Standard interstellar coexistence. |
-| **Allied** | Mutual trust. Shared safe passage through minefields; combined plunder sharing on conquered worlds. | Coalition partnership and joint naval operations. |
+| **Allied** | Mutual trust. Shared safe passage through minefields; combined plunder sharing on conquered worlds. | Coalition partnership, ship transfers, and joint naval operations. |
 | **War** | Active hostilities. Automated Berserkers prioritize colonies; tactical counter-fire authorized. | Unrestricted fleet engagements and orbital bombardment. |
 | **Pledged** | Deep political and military integration within a formal Power Block. | Shared coalition victory points and block hegemony. |
 
+### Cryptological Intelligence from Declarations
+
+Whenever an empire executes `declare`, foreign cryptographers analyze the official transmissions, gaining signals intelligence:
+
+$$\text{Knowledge}_{\text{alien}\to\text{declarant}} = \min(\text{Knowledge} + \Delta_{\text{mod}}, 100\%)$$
+
+- **Neutrality or War**: Increases foreign translation knowledge by $+30\%$.
+- **Alliance**: Increases foreign translation knowledge by $\max(\text{modifier}, 30)\%$, where $\text{modifier}$ defaults to $30\%$ if not explicitly specified.
+
 ---
 
-## 2. Multilateral Power Blocks and Coalitions
+## 2. Imperial Delegations and Provincial Grants
+
+Imperial Leaders (Governor 0) can delegate star systems, naval vessels, and imperial treasury funds to subordinate provincial governors using the `grant` command:
+
+```text
+grant <governor #> <star|ship|money> [<shiplist|amount>]
+```
+
+`grant` is restricted to Imperial Leaders and consumes **0 Action Points**. Subordinate governors cannot execute grants or reassign imperial jurisdictions.
+
+| Grant Type | Syntax | Rules & Delegation Scope |
+| :--- | :--- | :--- |
+| **Star System** | `grant <gov> star` | Reassigns administrative jurisdiction of the current star system to the specified governor. The commanding officer must first be scoped to the star system (`cs /<star>`). |
+| **Starships** | `grant <gov> ship <shiplist>` | Reassigns governor jurisdiction for all vessels matching `<shiplist>` authorized under the leader's command. |
+| **Treasury Funds** | `grant <gov> money <amount>` | Transfers imperial credits between the leader's treasury and the provincial governor's treasury. Positive amounts deposit funds into the governor's account (clamped to available imperial funds). Negative amounts deduct funds from the governor back into the imperial treasury (clamped to the governor's balance). |
+
+---
+
+## 3. Naval Transfers to Mutual Allies
+
+Empires can transfer starships directly to sovereign foreign powers using the `give` command:
+
+```text
+give <foreign_race> <ship_number>
+```
+
+Naval gifting represents a major technology transfer and is governed by strict diplomatic and military protocols:
+
+```mermaid
+flowchart TD
+    Initiate["Execute: give <race> <ship>"] --> CheckLeader{"Is Commander\nImperial Leader?"}
+    CheckLeader -->|No| RejectLeader["Rejected: Leaders Only"]
+    CheckLeader -->|Yes| CheckGuest{"Is Recipient\nGuest Account?"}
+    CheckGuest -->|Yes| RejectGuest["Rejected: Cannot Gift to Guests"]
+    CheckGuest -->|No| CheckAlly{"Are Both Empires\nMutually Allied?"}
+    CheckAlly -->|No| RejectAlly["Rejected: Mutual Alliance Required"]
+    CheckAlly -->|Yes| CheckShip{"Ship Verification\n- Alive & Owned?\n- Not Spore Pod?\n- Zero Crew & Troops?\n- No Docked Ships?"}
+    CheckShip -->|Fails Check| RejectShip["Rejected: Vessel Ineligible"]
+    CheckShip -->|Passes Check| CheckAP{"Action Point Check\n- Deep Space: 5 Universe AP\n- Stellar/Orbit: 5 Star AP"}
+    CheckAP -->|Insufficient| RejectAP["Rejected: Insufficient AP"]
+    CheckAP -->|Deducted| Transfer["Transfer Completed\n- Owner updated to foreign leader\n- Star/Planet marked explored\n- Public transfer bulletin posted"]
+```
+
+### Transfer Prerequisites & Restrictions
+
+1. **Leader Role**: Only the Imperial Leader (Governor 0) may gift naval vessels.
+2. **Mutual Alliance Required**: Both the donor and recipient empires must have formally declared an alliance with each other (`declare <race> allied`). Unilateral alliances are insufficient.
+3. **No Guest Recipients**: Vessels cannot be gifted to temporary guest accounts.
+4. **Vessel Invariants**:
+   - **Spore Pod Prohibition**: Biological spore pods cannot be transferred between empires.
+   - **Uncrewed Vessels**: Starships must be completely evacuated ($0\text{ crew}$ and $0\text{ troops}$). Military personnel and colonists cannot be gifted or conscripted into foreign service.
+   - **Empty Hangars**: Carriers and transport vessels cannot contain any loaded or docked parasite craft.
+5. **Action Point Costs**:
+   - Vessels located in deep space (`LEVEL_UNIV`) require **5 Universe Action Points**.
+   - Vessels in stellar space or planetary orbit (`LEVEL_STAR` or `LEVEL_PLAN`) require **5 Star Action Points** in that star system.
+6. **Automatic Astrogational Intelligence**: When transferred in orbit, the recipient empire immediately gains discovery and exploration status for that star system (and planet if in planetary orbit). Surface sector ownership is unaffected.
+7. **Galactic Bulletin**: Every successful ship gift publishes an interstellar diplomatic bulletin to the galactic news feed.
+
+---
+
+## 4. Multilateral Power Blocks and Coalitions
 
 Empires can band together to form formal geopolitical coalitions known as **Power Blocks**. Power blocks serve as galactic voting and score-sharing alliances that compete collectively for coalition victory.
 
@@ -134,7 +210,7 @@ Your knowledge percentage is determined by your bilateral translation matrix ($`
 
 ---
 
-## 3. Galactic Communications and Universal Translation
+## 5. Galactic Communications and Universal Translation
 
 Interstellar diplomacy relies on secure communication networks and cryptological translation:
 

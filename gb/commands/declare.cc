@@ -23,12 +23,13 @@ bool declare(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  const auto* alien_peek = g.entity_manager.peek_race(n);
-  if (!alien_peek) {
-    g.out << "Alien race not found.\n";
+  if (n == Playernum) {
+    g.out << "You cannot declare against yourself.\n";
     return false;
   }
-  const std::string alien_name = alien_peek->name;
+
+  const auto& alien = *g.entity_manager.peek_race(n);
+  const std::string alien_name = alien.name;
 
   int d_mod = 30;
   std::string news_msg;

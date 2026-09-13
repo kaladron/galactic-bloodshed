@@ -88,7 +88,7 @@ bool grant(const command_t& argv, GameObj& g) {
     }
     long amount = parsed_amount->value();
     if (amount < 0 && Governor != 0) {
-      g.out << "Only leaders may make take away money.\n";
+      g.out << "Only leaders may take away money.\n";
       return false;
     }
     g.entity_manager.mutate_race(Playernum, [&](Race& race_mut) {

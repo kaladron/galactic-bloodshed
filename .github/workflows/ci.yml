@@ -205,5 +205,5 @@ jobs:
           
           echo "### 📊 Code Coverage Summary" >> $GITHUB_STEP_SUMMARY
           echo '```text' >> $GITHUB_STEP_SUMMARY
-          llvm-cov report "$FIRST_BIN" $EXTRA_BINS -instr-profile=build/coverage.profdata -ignore-filename-regex='(build/|third_party/|_test\.cc)' >> $GITHUB_STEP_SUMMARY
+          llvm-cov report "$FIRST_BIN" $EXTRA_BINS -instr-profile=build/coverage.profdata --show-mcdc-summary -ignore-filename-regex='(build/|third_party/|_test\.cc)' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

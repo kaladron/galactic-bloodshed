@@ -48,6 +48,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare -Wdocume
 option(ENABLE_COVERAGE "Enable code coverage testing" OFF)
 if(ENABLE_COVERAGE)
     message(STATUS "Enabling code coverage instrumentation")
-    add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
+    add_compile_options(-fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc)
     add_link_options(-fprofile-instr-generate)
 endif()

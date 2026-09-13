@@ -13,54 +13,58 @@ module commands;
 
 namespace GB::commands {
 
-bool help(const command_t& argv, GameObj& g) {
-  if (argv.size() == 1) {
-    // Display general help from HELP_FILE
-    std::string filename = HELP_FILE;
-    if (!std::filesystem::exists(filename)) {
-      if (std::filesystem::exists("help/help.md")) {
-        filename = "help/help.md";
-      } else if (std::filesystem::exists("../help/help.md")) {
-        filename = "../help/help.md";
-      } else if (std::filesystem::exists("../../help/help.md")) {
-        filename = "../../help/help.md";
-      }
-    }
-    if (auto f = std::ifstream(filename)) {
-      std::string line;
-      while (std::getline(f, line)) {
-        g.out << line << "\n";
-      }
-    } else {
-      g.out << "Help file not found.\n";
-      return false;
-    }
-  } else {
-    // Display topic-specific help
-    std::string filename = std::format("{}/{}.md", HELPDIR, argv[1]);
-    if (!std::filesystem::exists(filename)) {
-      if (std::filesystem::exists(std::format("help/{}.md", argv[1]))) {
-        filename = std::format("help/{}.md", argv[1]);
-      } else if (std::filesystem::exists(
-                     std::format("../help/{}.md", argv[1]))) {
-        filename = std::format("../help/{}.md", argv[1]);
-      } else if (std::filesystem::exists(
-                     std::format("../../help/{}.md", argv[1]))) {
-        filename = std::format("../../help/{}.md", argv[1]);
-      }
-    }
-    if (auto f = std::ifstream(filename)) {
-      std::string line;
-      while (std::getline(f, line)) {
-        g.out << line << "\n";
-      }
-      g.out << "----\nFinished.\n";
-    } else {
-      g.out << "Help on that subject unavailable.\n";
-      return false;
+static std::optional<std::filesystem::path>
+resolve_help_path(std::string_view topic) {
+  if (topic.empty() || topic.find_first_of("/\\.") != std::string_view::npos) {
+    return std::nullopt;
+  }
+  const char* env_help = std::getenv("GB_HELPDIR");
+  std::filesystem::path help_dir = (env_help && *env_help != '\0')
+                                       ? std::filesystem::path(env_help)
+                                       : std::filesystem::path(HELPDIR);
+  auto path = help_dir / std::format("{}.md", topic);
+  if (std::filesystem::exists(path)) {
+    return path;
+  }
+  for (const auto& dev_dir : {"help", "../help", "../../help"}) {
+    auto dev_path =
+        std::filesystem::path(dev_dir) / std::format("{}.md", topic);
+    if (std::filesystem::exists(dev_path)) {
+      return dev_path;
     }
   }
+  return std::nullopt;
+}
+
+static bool print_help_file(const std::filesystem::path& path, GameObj& g) {
+  auto f = std::ifstream(path);
+  if (!f) {
+    return false;
+  }
+  std::string line;
+  while (std::getline(f, line)) {
+    g.out << line << "\n";
+  }
   return true;
+}
+
+bool help(const command_t& argv, GameObj& g) {
+  if (argv.size() == 1) {
+    auto path = resolve_help_path("help");
+    if (path && print_help_file(*path, g)) {
+      return true;
+    }
+    g.out << "Help file not found.\n";
+    return false;
+  }
+
+  auto path = resolve_help_path(argv[1]);
+  if (path && print_help_file(*path, g)) {
+    g.out << "----\nFinished.\n";
+    return true;
+  }
+  g.out << "Help on that subject unavailable.\n";
+  return false;
 }
 
 const CommandDescriptor help_cmd{

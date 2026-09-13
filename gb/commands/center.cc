@@ -27,13 +27,12 @@ bool center(const command_t& argv, GameObj& g) {
     g.out << "CHEATER!!!\n";
     return false;
   }
-  const auto* star = g.entity_manager.peek_star(where.snum);
-  if (!star) {
-    g.out << "center: star data not found.\n";
+  if (where.level == ScopeLevel::LEVEL_UNIV) {
+    g.out << "center: bad scope.\n";
     return false;
   }
-  g.lastx[1] = star->xpos();
-  g.lasty[1] = star->ypos();
+  const auto& star = *g.entity_manager.peek_star(where.snum);
+  g.set_universe_center(star.coordinates());
   return true;
 }
 

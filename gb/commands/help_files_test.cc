@@ -8,16 +8,16 @@ import test;
 import std;
 
 std::filesystem::path get_help_dir() {
+  if (const char* env_help = std::getenv("GB_HELPDIR");
+      env_help && *env_help != '\0') {
+    return env_help;
+  }
   std::filesystem::path help_dir(HELPDIR);
-  if (!std::filesystem::exists(help_dir / "help.md")) {
-    if (std::filesystem::exists("../../help/help.md")) {
-      return "../../help";
-    }
-    if (std::filesystem::exists("../help/help.md")) {
-      return "../help";
-    }
-    if (std::filesystem::exists("help/help.md")) {
-      return "help";
+  if (!std::filesystem::exists(help_dir)) {
+    for (const auto& dev_dir : {"help", "../help", "../../help"}) {
+      if (std::filesystem::exists(std::filesystem::path(dev_dir) / "help.md")) {
+        return dev_dir;
+      }
     }
   }
   return help_dir;

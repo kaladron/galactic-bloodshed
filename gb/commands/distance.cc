@@ -32,27 +32,16 @@ resolve_scope_coords(const Place& place, player_t player, EntityManager& em,
       return ship->coordinates();
     }
     case ScopeLevel::LEVEL_PLAN: {
-      const auto* p = em.peek_planet(place.snum, place.pnum);
-      if (!p) {
-        g.out << "Planet not found.\n";
-        return std::nullopt;
-      }
-      const auto* star = em.peek_star(place.snum);
-      if (!star) {
-        g.out << "Star not found.\n";
-        return std::nullopt;
-      }
-      return p->absolute_coordinates(*star);
+      const auto& p = *em.peek_planet(place.snum, place.pnum);
+      const auto& star = *em.peek_star(place.snum);
+      return p.absolute_coordinates(star);
     }
     case ScopeLevel::LEVEL_STAR: {
-      const auto* star = em.peek_star(place.snum);
-      if (!star) {
-        g.out << "Star not found.\n";
-        return std::nullopt;
-      }
-      return star->coordinates();
+      const auto& star = *em.peek_star(place.snum);
+      return star.coordinates();
     }
     default:
+      g.out << "Scope has no spatial coordinates.\n";
       return std::nullopt;
   }
 }

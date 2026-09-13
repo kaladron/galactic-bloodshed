@@ -91,6 +91,28 @@ public:
     level_ = l;
   }
 
+  /// Set the universe scope viewport center coordinates.
+  void set_universe_center(UniverseCoordinates coords) noexcept {
+    lastx[1] = coords.x;
+    lasty[1] = coords.y;
+  }
+
+  /// Get the universe scope viewport center coordinates.
+  [[nodiscard]] UniverseCoordinates universe_center() const noexcept {
+    return {lastx[1], lasty[1]};
+  }
+
+  /// Set the system scope viewport center coordinates.
+  void set_system_center(SystemCoordinates coords) noexcept {
+    lastx[0] = coords.x;
+    lasty[0] = coords.y;
+  }
+
+  /// Get the system scope viewport center coordinates.
+  [[nodiscard]] SystemCoordinates system_center() const noexcept {
+    return {lastx[0], lasty[0]};
+  }
+
   /// Deduct action points for a star system.
   /// \param snum Star system number.
   /// \param amount Number of AP to deduct.

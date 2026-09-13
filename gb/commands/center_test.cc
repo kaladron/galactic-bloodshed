@@ -12,52 +12,48 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
-
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Stargazers";
-  race.Guest = false;
-  race.governor[0].active = true;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  universe_struct us{};
-  us.id = 1;
-  us.numstars = 1;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "Alpha";
-  ss.xpos = 150.0;
-  ss.ypos = 250.0;
-  ss.explored.set(player_t{1});
-
-  StarRepository stars(store);
-  stars.save(ss);
-}
-
-void test_center_happy_path() {
+void test_center_matrix() {
   TestContext ctx;
-  setup_test_world(ctx);
+  ctx.with_standard_universe();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  ctx.assert_dispatch_success(g, {"center", "/Alpha"});
-  test::expect_eq(g.lastx[1], 150.0);
-  test::expect_eq(g.lasty[1], 250.0);
+  TestCommandMatrix(ctx, "center")
+      .with_valid_argv({"center", "/Sol"})
+      .with_invalid_argv({"center", "/NonexistentStar"})
+      .with_valid_scope(ScopeLevel::LEVEL_UNIV)
+      .with_expected_star_ap(0)
+      .run_matrix(g);
+}
+
+void test_center_happy_path() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+
+  // 1. Center on Sol at (0, 0)
+  ctx.assert_dispatch_success(g, {"center", "/Sol"});
+  test::expect_eq(g.universe_center(), UniverseCoordinates(0.0, 0.0));
+
+  // 2. Center on Vega at (300, 400)
+  ctx.assert_dispatch_success(g, {"center", "/Vega"});
+  test::expect_eq(g.universe_center(), UniverseCoordinates(300.0, 400.0));
+
+  // 3. Center on Antares at (-300, -400)
+  ctx.assert_dispatch_success(g, {"center", "/Antares"});
+  test::expect_eq(g.universe_center(), UniverseCoordinates(-300.0, -400.0));
 }
 
 void test_center_domain_errors() {
   TestContext ctx;
-  setup_test_world(ctx);
+  ctx.with_standard_universe();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -68,7 +64,22 @@ void test_center_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"center"});
   test::expect_contains(g.out.str(), "Syntax: center <star>");
 
-  // 2. Non-existent star
+  // 2. Extra args check (> 2 args)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"center", "/Sol", "extra"});
+  test::expect_contains(g.out.str(), "center: which star?");
+
+  // 3. Ship scope rejection (Ship #100 is Player 1 Government Center)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"center", "#100"});
+  test::expect_contains(g.out.str(), "CHEATER!!!");
+
+  // 4. Universe scope rejection
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"center", "/"});
+  test::expect_contains(g.out.str(), "center: bad scope.");
+
+  // 5. Non-existent star
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"center", "/NonexistentStar"});
   test::expect_contains(g.out.str(), "center: bad scope.");
@@ -77,6 +88,7 @@ void test_center_domain_errors() {
 }  // namespace
 
 int main() {
+  test_center_matrix();
   test_center_happy_path();
   test_center_domain_errors();
 

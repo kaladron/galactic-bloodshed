@@ -12,105 +12,37 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
+void setup_distance_ships(TestContext& ctx) {
+  ctx.with_standard_universe();
 
-  // Initialize universe
-  universe_struct us{};
-  us.id = 1;
-  us.numstars = 2;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  // Initialize player races
-  Race race1{};
-  race1.Playernum = 1;
-  race1.name = "Rangers";
-  race1.Guest = false;
-  race1.governor[0].active = true;
-
-  Race race2{};
-  race2.Playernum = 2;
-  race2.name = "Aliens";
-  race2.Guest = false;
-  race2.governor[0].active = true;
-
-  RaceRepository races(store);
-  races.save(race1);
-  races.save(race2);
-
-  // Initialize star 0 at (0, 0) with planet Earth at (60, 80)
-  star_struct ss0{};
-  ss0.star_id = 0;
-  ss0.name = "Sol";
-  ss0.xpos = 0.0;
-  ss0.ypos = 0.0;
-  ss0.explored.set(player_t{1});
-  ss0.pnames.push_back("Earth");
-  Star star0(ss0);
-
-  planet_struct ps0{};
-  ps0.star_id = 0;
-  ps0.planet_order = 0;
-  ps0.type = PlanetType::EARTH;
-  ps0.xpos = 60.0;
-  ps0.ypos = 80.0;
-  ps0.info[player_t{1}].explored = true;
-  Planet planet0(ps0);
-
-  // Initialize star 1 at (300, 400) -> distance should be 500
-  star_struct ss1{};
-  ss1.star_id = 1;
-  ss1.name = "Centauri";
-  ss1.xpos = 300.0;
-  ss1.ypos = 400.0;
-  ss1.explored.set(player_t{1});
-  Star star1(ss1);
-
-  StarRepository stars(store);
-  stars.save(star0);
-  stars.save(star1);
-
-  PlanetRepository planets(store);
-  planets.save(planet0);
-
-  // Ships
-  ShipRepository ships(store);
+  // Set Earth to (60, 80) system coordinates for standard 3-4-5 Pythagorean
+  // tests
+  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+    p.set_system_coordinates(SystemCoordinates{60.0, 80.0});
+  });
 
   // Ship 1: Player 1 at (0, 0)
-  ship_struct s1{};
-  s1.number = 1;
-  s1.owner = 1;
-  s1.type = ShipType::STYPE_SHUTTLE;
-  s1.coordinates = UniverseCoordinates{0.0, 0.0};
-  s1.alive = 1;
-  Ship ship1(s1);
-  ships.save(ship1);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
+      .owned_by(1, 0)
+      .in_star_orbit(0, UniverseCoordinates{0.0, 0.0})
+      .build();
 
   // Ship 2: Player 1 at (30, 40) -> distance to ship 1 should be 50
-  ship_struct s2{};
-  s2.number = 2;
-  s2.owner = 1;
-  s2.type = ShipType::STYPE_SHUTTLE;
-  s2.coordinates = UniverseCoordinates{30.0, 40.0};
-  s2.alive = 1;
-  Ship ship2(s2);
-  ships.save(ship2);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2)
+      .owned_by(1, 0)
+      .in_star_orbit(0, UniverseCoordinates{30.0, 40.0})
+      .build();
 
   // Ship 3: Player 2 (enemy)
-  ship_struct s3{};
-  s3.number = 3;
-  s3.owner = 2;
-  s3.type = ShipType::STYPE_SHUTTLE;
-  s3.coordinates = UniverseCoordinates{100.0, 100.0};
-  s3.alive = 1;
-  Ship ship3(s3);
-  ships.save(ship3);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 3)
+      .owned_by(2, 0)
+      .in_star_orbit(0, UniverseCoordinates{100.0, 100.0})
+      .build();
 }
 
 void test_distance_dispatch() {
   TestContext ctx;
-  setup_test_world(ctx);
+  setup_distance_ships(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -125,13 +57,13 @@ void test_distance_dispatch() {
 
   // 2. Happy path: distance between two stars (0,0) and (300,400) -> 500
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"distance", "/Sol", "/Centauri"});
+  ctx.assert_dispatch_success(g, {"distance", "/Sol", "/Vega"});
   test::expect_contains(g.out.str(), "Distance = 500");
   std::println(std::cout, "    ✓ distance between stars calculated accurately");
 
   // 3. Happy path: alias dist
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"dist", "/Sol", "/Centauri"});
+  ctx.assert_dispatch_success(g, {"dist", "/Sol", "/Vega"});
   test::expect_contains(g.out.str(), "Distance = 500");
   std::println(std::cout, "    ✓ dist alias succeeded");
 
@@ -159,7 +91,7 @@ void test_distance_dispatch() {
   // 7. Happy path: distance from planet to another star (60,80) to (300,400) ->
   // 400
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"distance", "/Sol/Earth", "/Centauri"});
+  ctx.assert_dispatch_success(g, {"distance", "/Sol/Earth", "/Vega"});
   test::expect_contains(g.out.str(), "Distance = 400");
   std::println(
       std::cout,
@@ -187,17 +119,58 @@ void test_distance_dispatch() {
   std::println(std::cout,
                "    ✓ distance rejected query when foreign ship is origin");
 
-  // 11. Domain error: Bad scope
+  // 11. Domain error: Bad origin scope
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"distance", "/NonExistentStar", "/Sol"});
   test::expect_true(g.out.str().contains("Bad scope") ||
                     g.out.str().contains("No such star"));
-  std::println(std::cout, "    ✓ distance rejected invalid scope");
+  std::println(std::cout, "    ✓ distance rejected invalid origin scope");
+
+  // 12. Domain error: Bad destination scope
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"distance", "/Sol", "/NonExistentStar"});
+  test::expect_true(g.out.str().contains("Bad scope") ||
+                    g.out.str().contains("No such star"));
+  std::println(std::cout, "    ✓ distance rejected invalid destination scope");
+
+  // 13. Happy path: Cross-quadrant negative coordinates (300,400) to
+  // (-300,-400) -> 1000
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"distance", "/Vega", "/Antares"});
+  test::expect_contains(g.out.str(), "Distance = 1000");
+  std::println(
+      std::cout,
+      "    ✓ cross-quadrant negative coordinates calculated accurately");
+
+  // 14. Domain error: Universe root scope has no spatial coordinates
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"distance", "/", "/Sol"});
+  test::expect_contains(g.out.str(), "Scope has no spatial coordinates.");
+  std::println(std::cout,
+               "    ✓ distance rejected scope with no spatial coordinates");
+}
+
+void test_distance_matrix() {
+  TestContext ctx;
+  setup_distance_ships(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+
+  TestCommandMatrix(ctx, "distance")
+      .with_valid_argv({"distance", "/Sol", "/Vega"})
+      .with_invalid_argv({"distance", "/NonExistentStar", "/Sol"})
+      .with_valid_scope(ScopeLevel::LEVEL_UNIV)
+      .with_expected_star_ap(0)
+      .run_matrix(g);
 }
 
 }  // namespace
 
 int main() {
+  test_distance_matrix();
   test_distance_dispatch();
 
   std::println(std::cout, "All distance tests passed!");

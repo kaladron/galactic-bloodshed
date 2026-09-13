@@ -203,6 +203,24 @@ Advanced scientific vessels (such as Tractor-Repulsor Beam Platforms `-`) utiliz
 
 ---
 
+## 8. Astrogation Utilities: Astrometric Distance and Map Centering
+
+### Astrometric Distance Calculation (`distance` / `dist`)
+The `distance` command (`distance <from> <to>`) evaluates the Euclidean spatial separation between any two astrometric objects across continuous coordinate space:
+
+- **Stars**: Measured using heliocentric global coordinates $(X_s, Y_s)$.
+- **Planets**: Measured using absolute system coordinates $X_p = X_s + x_p$, $Y_p = Y_s + y_p$.
+- **Ships**: Measured using the vessel's continuous universe position $(X, Y)$.
+- **Security & Sensor Invisibility**: Probing distances to or from foreign vessels is strictly prohibited (`"Nice try."`), preventing players from triangulating enemy fleet movements in sensor shadow.
+- **Euclidean Separation**:
+
+$$D = \sqrt{(X_{\text{to}} - X_{\text{from}})^2 + (Y_{\text{to}} - Y_{\text{from}})^2}$$
+
+### Map Centering (`center`)
+The `center` command (`center <star>`) resets the commander's global navigational map viewport to center on the designated star system. Subsequent tactical displays and sector maps align with the targeted star's coordinates $(X_s, Y_s)$. Attempting to center the map viewport on a ship (`#ship`) or unscoped universe root is rejected.
+
+---
+
 ## See Also
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
 - [Ship Classes and Construction Catalog](ship_types.md)

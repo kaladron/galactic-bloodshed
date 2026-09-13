@@ -611,10 +611,20 @@ void test_standard_universe_fixture() {
   test::expect_eq(planet1->info(player_t{2}).numsectsowned, 1);
   test::expect_eq(planet1->info(player_t{2}).popn, 1000);
 
+  // Verify Planet 0 on Star 2 (Antares Prime)
+  const auto* planet2 = ctx.em.peek_planet(2, 0);
+  test::expect_true(planet2 != nullptr, "Planet 2,0 must exist");
+  test::expect_eq(planet2->type(), PlanetType::EARTH);
+  test::expect_eq(planet2->info(player_t{1}).explored, 1);
+  test::expect_eq(planet2->info(player_t{2}).explored, 1);
+  test::expect_eq(planet2->popn(), 1000);
+  test::expect_eq(planet2->info(player_t{1}).numsectsowned, 1);
+  test::expect_eq(planet2->info(player_t{1}).popn, 1000);
+
   // 4. Verify Universe AP and invariants
   const auto* univ = ctx.em.peek_universe();
   test::expect_true(univ != nullptr, "Universe must exist");
-  test::expect_eq(univ->numstars, 2);
+  test::expect_eq(univ->numstars, 3);
   test::expect_eq(univ->AP[player_t{1}], 100);
   test::expect_eq(univ->AP[player_t{2}], 100);
 

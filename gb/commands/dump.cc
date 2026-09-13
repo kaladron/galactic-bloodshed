@@ -15,61 +15,52 @@ module commands;
 
 namespace GB::commands {
 
-bool dump(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  starnum_t star_id = 0;
+static void transfer_star_data(EntityManager& em, player_t donor_id,
+                               player_t recipient_id, Star& star) {
+  if (!star.is_explored_by(donor_id)) {
+    return;
+  }
+  star.mark_explored_by(recipient_id);
+  const starnum_t star_id = star.get_struct().star_id;
+  for (auto planet_handle : PlanetList(em, star_id, star)) {
+    auto& planet = *planet_handle;
+    if (planet.info(donor_id).explored) {
+      planet.info(recipient_id).explored = 1;
+    }
+  }
+}
 
-  player_t player = get_player(g.entity_manager, argv[1]);
-  if (player.value == 0) {
+bool dump(const command_t& argv, GameObj& g) {
+  const player_t donor_id = g.player();
+
+  const player_t recipient_id = get_player(g.entity_manager, argv[1]);
+  if (recipient_id.value == 0) {
     g.out << "No such player.\n";
     return false;
   }
 
-  /* transfer all planet and star knowledge to the player */
-  /* get all stars and planets */
+  // Transfer all planet and star knowledge to the recipient
   if (argv.size() < 3) {
     for (auto current_star_handle : StarList(g.entity_manager)) {
-      auto& current_star = *current_star_handle;
-      star_id = current_star.get_struct().star_id;
-
-      if (current_star.is_explored_by(Playernum)) {
-        current_star.mark_explored_by(player);
-
-        for (auto planet_handle :
-             PlanetList(g.entity_manager, star_id, current_star)) {
-          auto& planet = *planet_handle;
-          if (planet.info(Playernum).explored) {
-            planet.info(player).explored = 1;
-          }
-        }
-      }
+      transfer_star_data(g.entity_manager, donor_id, recipient_id,
+                         *current_star_handle);
     }
   } else { /* list of places given */
     for (const auto& place_arg : argv | std::views::drop(2)) {
       Place where{g, place_arg, true};
       if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
           where.level != ScopeLevel::LEVEL_SHIP) {
-        star_id = where.snum;
-        g.entity_manager.mutate_star(star_id, [&](Star& current_star) {
-          if (current_star.is_explored_by(Playernum)) {
-            current_star.mark_explored_by(player);
-
-            for (auto planet_handle :
-                 PlanetList(g.entity_manager, star_id, current_star)) {
-              auto& planet = *planet_handle;
-              if (planet.info(Playernum).explored) {
-                planet.info(player).explored = 1;
-              }
-            }
-          }
+        g.entity_manager.mutate_star(where.snum, [&](Star& current_star) {
+          transfer_star_data(g.entity_manager, donor_id, recipient_id,
+                             current_star);
         });
       }
     }
   }
 
-  warn_race(g.session_registry, g.entity_manager, player,
+  warn_race(g.session_registry, g.entity_manager, recipient_id,
             std::format("{} [{}] has given you exploration data.\n",
-                        g.race->name, Playernum));
+                        g.race->name, donor_id));
   g.out << "Exploration Data transferred.\n";
   return true;
 }

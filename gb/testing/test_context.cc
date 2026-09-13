@@ -3,10 +3,6 @@
 /// \file test_context.cc
 /// \brief Implementation of TestContext fixture and dispatch assertion helpers.
 
-module;
-
-#include <cassert>
-
 module test;
 
 import commands;
@@ -274,24 +270,61 @@ TestContext& TestContext::with_standard_universe() {
     p.info(player_t{2}).newtax = 10;
   });
 
-  // 6. Setup Universe record with numstars = 2, 100 AP for both races
+  // 6. Setup Star 2 (Antares) at (-300, -400) -> distance 500 from Sol, 1000
+  // from Vega
+  star_struct ss2{};
+  ss2.star_id = 2;
+  ss2.name = "Antares";
+  ss2.xpos = -300.0;
+  ss2.ypos = -400.0;
+  ss2.stability = 25;
+  ss2.gravity = 1.2;
+  ss2.temperature = 60;
+  ss2.AP[player_t{1}] = 100;
+  ss2.AP[player_t{2}] = 100;
+  ss2.pnames.push_back("Antares Prime");
+  Star star2{ss2};
+  star2.mark_explored_by(player_t{1});
+  star2.mark_explored_by(player_t{2});
+  star2.mark_inhabited_by(player_t{1});
+  star2.mark_inhabited_by(player_t{2});
+  StarRepository(store).save(star2);
+
+  // 7. Setup Planet 0 on Star 2 (Antares Prime)
+  TestPlanetBuilder(*this, 2, PlanetType::EARTH, Coordinates{10, 10}, 0)
+      .named("Antares Prime")
+      .with_position(SystemCoordinates{100.0, 0.0})
+      .with_stockpiles(1, 1000, 1000, 1000)
+      .with_stockpiles(2, 1000, 1000, 1000)
+      .with_explored(1, true)
+      .with_explored(2, true)
+      .with_colony(1, 1000, Coordinates{0, 0})
+      .build();
+  em.mutate_planet(2, 0, [](Planet& p) {
+    p.info(player_t{1}).tax = 10;
+    p.info(player_t{1}).newtax = 10;
+    p.info(player_t{2}).tax = 10;
+    p.info(player_t{2}).newtax = 10;
+  });
+
+  // 8. Setup Universe record with numstars = 3, 100 AP for both races
   UniverseRepository univ_repo(store);
   auto u = univ_repo.find(1);
   if (!u) {
     universe_struct new_u{};
     new_u.id = 1;
-    new_u.numstars = 2;
+    new_u.numstars = 3;
     new_u.AP[player_t{1}] = 100;
     new_u.AP[player_t{2}] = 100;
     univ_repo.save(new_u);
   } else {
-    u->numstars = std::max(u->numstars, 2u);
+    u->numstars = std::max(u->numstars, 3u);
     u->AP[player_t{1}] = 100;
     u->AP[player_t{2}] = 100;
     univ_repo.save(*u);
   }
 
-  // 7. Setup Player 1 Government Center (Ship #100) landed on Earth
+  // 9. Setup Player 1 Government Center (Ship #100) landed on Earth
   TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
       .owned_by(1, 0)
       .landed_on(0, 0, Coordinates{0, 0})

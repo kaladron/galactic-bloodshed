@@ -138,6 +138,26 @@ To end anarchy:
 
 ---
 
+## 6. Imperial Communications (Telegrams and Galactic News)
+
+Interstellar communication in Galactic Bloodshed is divided into private telegram dispatches and public news broadcasts:
+
+### Private Telegrams (`read`, `read telegram`)
+- **Governor Mailbox Isolation**: Telegrams are delivered to specific `(player, governor)` pairs. A system governor reading their dispatches does not access or clear messages destined for the Prime Governor or other system administrators.
+- **Delete-on-Read Semantics**: Reading telegrams displays all queued messages prefixed with local calendar timestamps (`MM/DD HH:MM:SS`) and automatically purges the recipient's mailbox.
+- **Login Waiting Prompts**: When unread telegrams are queued, the server notifies the player upon session login or prompt generation to issue `read`.
+
+### Galactic News Bulletins (`read news`)
+- **Four News Categories**: Public dispatches are organized into four separate news desks:
+  1. **Declarations**: Diplomatic treaties, war pacts, alliances, and power block alignments.
+  2. **Combat**: Naval engagements, orbital bombardments, planetary invasions, and ground skirmishes.
+  3. **Business**: Interstellar commodity transfers, market sales, and commerce.
+  4. **Bulletins**: General announcements, server updates, and player notices.
+- **Independent Read Watermarks**: Each governor independently tracks their last-read article ID (`newspos`) across all four categories. Reading news updates the governor's watermark to the latest article ID, preventing redundant repeats during subsequent reads.
+- **Message Formatting Delimiters**: In public broadcasts, semicolons (`;`) are automatically converted into line breaks (`\n`) and vertical pipes (`|`) into tabular tab stops (`\t`).
+
+---
+
 ## See Also
 - [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
 - [Planetary Mechanics, Colonization, and Surface Topography](planets.md)

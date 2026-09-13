@@ -14,6 +14,10 @@ module commands;
 namespace GB::commands {
 
 bool read_messages(const command_t& argv, GameObj& g) {
+  if (argv.size() > 2) {
+    g.out << "Read what?\n";
+    return false;
+  }
   if (argv.size() == 1 || argv[1] == "telegram") {
     teleg_read(g);
     return true;

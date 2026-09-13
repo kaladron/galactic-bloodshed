@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// /file tele.cc
+/// \file tele.cc
 /// \brief Telegram functions
 
 module;
@@ -9,6 +9,27 @@ import std;
 #undef stdout
 
 module gblib;
+
+namespace {
+
+void print_timestamped_message(GameObj& g, std::int64_t raw_timestamp,
+                               std::string_view message) {
+  const auto timestamp_time = static_cast<std::time_t>(raw_timestamp);
+  const auto* calendar_time = std::localtime(&timestamp_time);
+  if (calendar_time != nullptr) {
+    g.out << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
+                         calendar_time->tm_mon + 1, calendar_time->tm_mday,
+                         calendar_time->tm_hour, calendar_time->tm_min,
+                         calendar_time->tm_sec, message);
+  } else {
+    g.out << std::format("--/-- --:--:-- {}", message);
+  }
+  if (!message.empty() && message.back() != '\n') {
+    g.out << "\n";
+  }
+}
+
+}  // namespace
 
 /**
  * \brief Sends a message to everyone from person to person
@@ -86,14 +107,7 @@ void teleg_read(GameObj& g) {
 
   // Display telegrams with timestamps
   for (const auto& telegram : telegrams) {
-    auto timestamp_time = static_cast<std::time_t>(telegram.timestamp);
-    auto* tm = std::localtime(&timestamp_time);
-    g.out << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
-                         tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min,
-                         tm->tm_sec, telegram.message);
-    if (!telegram.message.empty() && telegram.message.back() != '\n') {
-      g.out << "\n";
-    }
+    print_timestamped_message(g, telegram.timestamp, telegram.message);
   }
 
   // Delete telegrams after reading (delete-on-read behavior)
@@ -128,14 +142,7 @@ void news_read(NewsType type, GameObj& g) {
 
   // Display news items with timestamps
   for (const auto& item : news_items) {
-    auto timestamp_time = static_cast<std::time_t>(item.timestamp);
-    auto* tm = std::localtime(&timestamp_time);
-    g.out << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
-                         tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min,
-                         tm->tm_sec, item.message);
-    if (!item.message.empty() && item.message.back() != '\n') {
-      g.out << "\n";
-    }
+    print_timestamped_message(g, item.timestamp, item.message);
   }
 
   // Update the last read position to the latest ID

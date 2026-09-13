@@ -35,8 +35,13 @@ bool zoom(const command_t& argv, GameObj& g) {
     }
   }
 
+  const auto [lastx, lasty] =
+      (g.level() == ScopeLevel::LEVEL_UNIV)
+          ? std::pair{g.universe_center().x, g.universe_center().y}
+          : std::pair{g.system_center().x, g.system_center().y};
+
   g.out << std::format("Zoom value {0}, lastx = {1}, lasty = {2}.\n", g.zoom[i],
-                       g.lastx[i], g.lasty[i]);
+                       lastx, lasty);
   return true;
 }
 

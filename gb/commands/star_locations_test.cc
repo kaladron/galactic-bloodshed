@@ -24,8 +24,7 @@ void test_stars_dispatch() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.lastx[1] = 0.0;
-  g.lasty[1] = 0.0;
+  g.set_universe_center({0.0, 0.0});
 
   // 1. Happy path: stars without distance argument (lists all stars)
   ctx.assert_dispatch_success(g, {"stars"});
@@ -43,13 +42,18 @@ void test_stars_dispatch() {
   std::println(std::cout, "    ✓ stars radius filter matched proximate star");
 
   // 3. Radius filter matching no stars if player is far away
-  g.lastx[1] = 10000.0;
-  g.lasty[1] = 10000.0;
+  g.set_universe_center({10000.0, 10000.0});
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stars", "10"});
   test::expect_contains(g.out.str(),
                         "No stars found within specified distance.");
   std::println(std::cout, "    ✓ stars handled empty search radius cleanly");
+
+  // 4. Matrix runner
+  TestCommandMatrix(ctx, "stars")
+      .with_valid_argv({"stars"})
+      .with_valid_scope(ScopeLevel::LEVEL_UNIV)
+      .run_matrix(g);
 }
 
 }  // namespace

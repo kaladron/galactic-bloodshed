@@ -22,8 +22,6 @@ public:
   SessionRegistry& session_registry;  ///< Session registry for notifications
 
   // Public utility fields (direct access retained for legacy code patterns)
-  double lastx[2] = {0.0, 0.0};
-  double lasty[2] = {0.0, 0.0};
   double zoom[2] = {0.5, 0.5};  ///< last coords for zoom
 
   // Constructor for new Server-based architecture
@@ -93,24 +91,22 @@ public:
 
   /// Set the universe scope viewport center coordinates.
   void set_universe_center(UniverseCoordinates coords) noexcept {
-    lastx[1] = coords.x;
-    lasty[1] = coords.y;
+    universe_center_ = coords;
   }
 
   /// Get the universe scope viewport center coordinates.
   [[nodiscard]] UniverseCoordinates universe_center() const noexcept {
-    return {lastx[1], lasty[1]};
+    return universe_center_;
   }
 
   /// Set the system scope viewport center coordinates.
   void set_system_center(SystemCoordinates coords) noexcept {
-    lastx[0] = coords.x;
-    lasty[0] = coords.y;
+    system_center_ = coords;
   }
 
   /// Get the system scope viewport center coordinates.
   [[nodiscard]] SystemCoordinates system_center() const noexcept {
-    return {lastx[0], lasty[0]};
+    return system_center_;
   }
 
   /// Deduct action points for a star system.
@@ -137,4 +133,6 @@ private:
   planetnum_t pnum_ = 0;
   shipnum_t shipno_ = 0;
   ScopeLevel level_ = ScopeLevel::LEVEL_PLAN;
+  UniverseCoordinates universe_center_{0.0, 0.0};
+  SystemCoordinates system_center_{0.0, 0.0};
 };

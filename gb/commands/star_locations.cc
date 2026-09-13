@@ -30,8 +30,9 @@ bool star_locations(const command_t& argv, GameObj& g) {
   table.add_row({"#", "Name", "X", "Y", "Dist"});
   table[0].format().font_style({tabulate::FontStyle::bold});
 
+  const auto center = g.universe_center();
   for (const Star& star : StarList::readonly(g.entity_manager)) {
-    auto dist = std::hypot(star.xpos() - g.lastx[1], star.ypos() - g.lasty[1]);
+    auto dist = star.coordinates().distance_to(center);
     if (std::floor(dist) <= max_dist) {
       table.add_row(
           {std::format("{}", star.star_id()), std::string(star.get_name()),

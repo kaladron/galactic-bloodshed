@@ -77,10 +77,15 @@ bool orbit(const command_t& argv, GameObj& g) {
   std::unique_ptr<Place> where;
   if (argv.size() == 1) {
     where = std::make_unique<Place>(g, ":");
-    int i = (g.level() == ScopeLevel::LEVEL_UNIV);
-    Lastx = g.lastx[i];
-    Lasty = g.lasty[i];
-    Zoom = g.zoom[i];
+    if (g.level() == ScopeLevel::LEVEL_UNIV) {
+      Lastx = g.universe_center().x;
+      Lasty = g.universe_center().y;
+      Zoom = g.zoom[1];
+    } else {
+      Lastx = g.system_center().x;
+      Lasty = g.system_center().y;
+      Zoom = g.zoom[0];
+    }
   } else {
     where = std::make_unique<Place>(g, argv[argv.size() - 1]);
     Lastx = Lasty = 0.0;

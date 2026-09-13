@@ -32,9 +32,8 @@ bool cs(const command_t& argv, GameObj& g) {
     g.set_pnum(g.race->governor[Governor.value].defplanetnum);
     if (g.pnum() >= star.numplanets()) g.set_pnum(star.numplanets() - 1);
     g.set_shipno(0);
-    g.lastx[0] = g.lasty[0] = 0.0;
-    g.lastx[1] = star.xpos();
-    g.lasty[1] = star.ypos();
+    g.set_system_center({0.0, 0.0});
+    g.set_universe_center(star.coordinates());
     return true;
   }
 
@@ -44,75 +43,73 @@ bool cs(const command_t& argv, GameObj& g) {
 
     if (where.err) {
       g.out << "cs: bad scope.\n";
-      g.lastx[0] = g.lasty[0] = 0.0;
+      g.set_system_center({0.0, 0.0});
       return false;
     }
 
-    /* fix lastx, lasty coordinates */
+    /* fix viewport center coordinates */
     switch (g.level()) {
       case ScopeLevel::LEVEL_UNIV:
-        g.lastx[0] = g.lasty[0] = 0.0;
+        g.set_system_center({0.0, 0.0});
         break;
       case ScopeLevel::LEVEL_STAR:
         if (where.level == ScopeLevel::LEVEL_UNIV) {
           const auto* star = g.entity_manager.peek_star(g.snum());
           if (star) {
-            g.lastx[1] = star->xpos();
-            g.lasty[1] = star->ypos();
+            g.set_universe_center(star->coordinates());
           }
-        } else
-          g.lastx[0] = g.lasty[0] = 0.0;
+        } else {
+          g.set_system_center({0.0, 0.0});
+        }
         break;
       case ScopeLevel::LEVEL_PLAN: {
         const auto* planet = g.entity_manager.peek_planet(g.snum(), g.pnum());
         if (!planet) {
-          g.lastx[0] = g.lasty[0] = 0.0;
+          g.set_system_center({0.0, 0.0});
           break;
         }
         const auto* star = g.entity_manager.peek_star(g.snum());
         if (where.level == ScopeLevel::LEVEL_STAR && where.snum == g.snum()) {
-          g.lastx[0] = planet->xpos();
-          g.lasty[0] = planet->ypos();
+          g.set_system_center(planet->system_coordinates());
         } else if (where.level == ScopeLevel::LEVEL_UNIV) {
           if (star) {
-            g.lastx[1] = star->xpos() + planet->xpos();
-            g.lasty[1] = star->ypos() + planet->ypos();
+            g.set_universe_center(planet->absolute_coordinates(*star));
           }
-        } else
-          g.lastx[0] = g.lasty[0] = 0.0;
+        } else {
+          g.set_system_center({0.0, 0.0});
+        }
       } break;
       case ScopeLevel::LEVEL_SHIP: {
         const auto* s = g.entity_manager.peek_ship(g.shipno());
         if (!s) {
-          g.lastx[0] = g.lasty[0] = 0.0;
+          g.set_system_center({0.0, 0.0});
           break;
         }
         if (!s->docked()) {
           switch (where.level) {
             case ScopeLevel::LEVEL_UNIV:
-              g.lastx[1] = s->coordinates().x;
-              g.lasty[1] = s->coordinates().y;
+              g.set_universe_center(s->coordinates());
               break;
             case ScopeLevel::LEVEL_STAR:
               if (s->whatorbits() >= ScopeLevel::LEVEL_STAR &&
                   s->storbits() == where.snum) {
-                /* we are going UP from the ship.. change last*/
+                /* we are going UP from the ship.. change system center */
                 const auto* orbit_star =
                     g.entity_manager.peek_star(s->storbits());
                 if (orbit_star) {
-                  g.lastx[0] = s->coordinates().x - orbit_star->coordinates().x;
-                  g.lasty[0] = s->coordinates().y - orbit_star->coordinates().y;
+                  g.set_system_center(s->coordinates() -
+                                      orbit_star->coordinates());
                 } else {
-                  g.lastx[0] = g.lasty[0] = 0.0;
+                  g.set_system_center({0.0, 0.0});
                 }
-              } else
-                g.lastx[0] = g.lasty[0] = 0.0;
+              } else {
+                g.set_system_center({0.0, 0.0});
+              }
               break;
             case ScopeLevel::LEVEL_PLAN:
               if (s->whatorbits() == ScopeLevel::LEVEL_PLAN &&
                   s->storbits() == where.snum &&
                   s->pnumorbits() == where.pnum) {
-                /* same */
                 const auto* planet = g.entity_manager.peek_planet(
                     s->storbits(), s->pnumorbits());
                 const auto* orbit_star =
@@ -120,20 +117,21 @@ bool cs(const command_t& argv, GameObj& g) {
                 if (planet && orbit_star) {
                   const auto pl_coords =
                       planet->absolute_coordinates(*orbit_star);
-                  g.lastx[0] = s->coordinates().x - pl_coords.x;
-                  g.lasty[0] = s->coordinates().y - pl_coords.y;
+                  g.set_system_center(s->coordinates() - pl_coords);
                 } else {
-                  g.lastx[0] = g.lasty[0] = 0.0;
+                  g.set_system_center({0.0, 0.0});
                 }
-              } else
-                g.lastx[0] = g.lasty[0] = 0.0;
+              } else {
+                g.set_system_center({0.0, 0.0});
+              }
               break;
             case ScopeLevel::LEVEL_SHIP:
-              g.lastx[0] = g.lasty[0] = 0.0;
+              g.set_system_center({0.0, 0.0});
               break;
           }
-        } else
-          g.lastx[0] = g.lasty[0] = 0.0;
+        } else {
+          g.set_system_center({0.0, 0.0});
+        }
       } break;
     }
     g.set_level(where.level);

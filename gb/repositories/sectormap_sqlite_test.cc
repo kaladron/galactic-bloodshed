@@ -293,6 +293,95 @@ void test_sectormap_random_and_shuffle() {
   std::println(std::cout, "  SectorMap shuffle and get_random: PASSED");
 }
 
+void test_sectormap_dirty_tracking_views_persistence(EntityManager& em,
+                                                     Database& db) {
+  std::println(
+      std::cout,
+      "Testing SectorMap dirty tracking on range views and shuffle...");
+
+  JsonStore store(db);
+  PlanetRepository planets(store);
+  SectorRepository sectors(store);
+
+  Planet test_planet{PlanetType::EARTH, Coordinates{4, 4}};
+  test_planet.star_id() = 9;
+  test_planet.planet_order() = 0;
+  planets.save(test_planet);
+
+  SectorMap initial_smap(test_planet);
+  for (int y = 0; y < test_planet.dimensions().y; ++y) {
+    for (int x = 0; x < test_planet.dimensions().x; ++x) {
+      initial_smap.get(Coordinates{x, y}).set_type(SectorType::SEC_LAND);
+      initial_smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_LAND);
+    }
+  }
+  initial_smap.get(Coordinates{1, 1}).colonize(1, 200);
+  sectors.save_map(initial_smap);
+
+  // 1. Test that smap.occupied() marks only the occupied sector dirty and
+  // persists
+  {
+    SectorMap smap = sectors.load_map(test_planet);
+    test::expect_eq(smap.dirty_count(), 0);
+
+    for (Sector& s : smap.occupied()) {
+      s.set_popn_exact(500);
+    }
+
+    test::expect_eq(smap.dirty_count(), 1);
+    test::expect_true(smap.is_dirty(Coordinates{1, 1}));
+    sectors.save_map(smap);
+  }
+
+  em.clear_cache();
+  {
+    SectorMap smap = sectors.load_map(test_planet);
+    test::expect_eq(smap.get(Coordinates{1, 1}).get_popn(), 500);
+  }
+
+  // 2. Test that smap.shuffle() marks vended sectors dirty and persists
+  {
+    SectorMap smap = sectors.load_map(test_planet);
+    test::expect_eq(smap.dirty_count(), 0);
+
+    for (Sector& s :
+         smap.shuffle() | std::views::filter(&Sector::is_occupied)) {
+      s.set_popn_exact(900);
+    }
+
+    test::expect_gt(smap.dirty_count(), 0);
+    sectors.save_map(smap);
+  }
+
+  {
+    SectorMap smap = sectors.load_map(test_planet);
+    test::expect_eq(smap.get(Coordinates{1, 1}).get_popn(), 900);
+  }
+
+  // 3. Test that direct non-const iteration marks sectors dirty and persists
+  {
+    SectorMap smap = sectors.load_map(test_planet);
+    test::expect_eq(smap.dirty_count(), 0);
+
+    for (Sector& s : smap) {
+      if (s.coords() == Coordinates{2, 2}) {
+        s.set_popn_exact(1234);
+      }
+    }
+
+    test::expect_eq(smap.dirty_count(), 16);
+    sectors.save_map(smap);
+  }
+
+  {
+    SectorMap smap = sectors.load_map(test_planet);
+    test::expect_eq(smap.get(Coordinates{2, 2}).get_popn(), 1234);
+  }
+
+  std::println(std::cout,
+               "  SectorMap dirty tracking views persistence: PASSED");
+}
+
 int main() {
   // CRITICAL: Always create in-memory database BEFORE calling
   // initialize_schema()
@@ -308,6 +397,7 @@ int main() {
   test_entitymanager_sectormap(em, db);
   test_multiple_planets_isolation(em, db);
   test_sectormap_random_and_shuffle();
+  test_sectormap_dirty_tracking_views_persistence(em, db);
 
   std::println(std::cout, "\nAll SectorMap tests passed!");
   return 0;

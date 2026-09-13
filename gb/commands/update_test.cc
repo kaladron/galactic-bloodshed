@@ -98,6 +98,9 @@ void test_update_population_growth_persistence() {
   auto initial_popn = initial_planet->popn();
   test::expect_eq(initial_popn, 100);
 
+  // Clear cache before @@update to ensure clean SectorMap loaded from SQLite
+  ctx.em.clear_cache();
+
   // Dispatch @@update through dispatch_command
   g.out.str("");
   test::expect_true(GB::commands::dispatch_command(g, GB::commands::update_cmd,
@@ -111,6 +114,10 @@ void test_update_population_growth_persistence() {
   const auto* updated_planet = ctx.em.peek_planet(0, 0);
   test::expect_true(updated_planet != nullptr);
   test::expect_gt(updated_planet->popn(), initial_popn);
+
+  const auto* updated_smap = ctx.em.peek_sectormap(0, 0);
+  test::expect_true(updated_smap != nullptr);
+  test::expect_gt(updated_smap->get(Coordinates{0, 0}).get_popn(), 100);
 }
 
 }  // namespace

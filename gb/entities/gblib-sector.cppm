@@ -410,17 +410,97 @@ public:
     std::ranges::fill(dirty_, false);
   }
 
-  auto begin() {
-    return grid_.begin();
+  class SectorIterator {
+  public:
+    using iterator_category = std::random_access_iterator_tag;
+    using iterator_concept = std::random_access_iterator_tag;
+    using value_type = Sector;
+    using difference_type = std::ptrdiff_t;
+    using pointer = Sector*;
+    using reference = Sector&;
+
+    SectorIterator() = default;
+    SectorIterator(SectorMap* map, std::size_t idx) : map_(map), idx_(idx) {}
+
+    reference operator*() const noexcept {
+      map_->dirty_[idx_] = true;
+      return map_->grid_[idx_];
+    }
+    pointer operator->() const noexcept {
+      map_->dirty_[idx_] = true;
+      return &map_->grid_[idx_];
+    }
+    reference operator[](difference_type n) const noexcept {
+      auto i = static_cast<std::size_t>(static_cast<difference_type>(idx_) + n);
+      map_->dirty_[i] = true;
+      return map_->grid_[i];
+    }
+
+    SectorIterator& operator++() noexcept {
+      ++idx_;
+      return *this;
+    }
+    SectorIterator operator++(int) noexcept {
+      auto tmp = *this;
+      ++idx_;
+      return tmp;
+    }
+    SectorIterator& operator--() noexcept {
+      --idx_;
+      return *this;
+    }
+    SectorIterator operator--(int) noexcept {
+      auto tmp = *this;
+      --idx_;
+      return tmp;
+    }
+
+    SectorIterator& operator+=(difference_type n) noexcept {
+      idx_ = static_cast<std::size_t>(static_cast<difference_type>(idx_) + n);
+      return *this;
+    }
+    SectorIterator& operator-=(difference_type n) noexcept {
+      idx_ = static_cast<std::size_t>(static_cast<difference_type>(idx_) - n);
+      return *this;
+    }
+
+    friend SectorIterator operator+(SectorIterator it,
+                                    difference_type n) noexcept {
+      return it += n;
+    }
+    friend SectorIterator operator+(difference_type n,
+                                    SectorIterator it) noexcept {
+      return it += n;
+    }
+    friend SectorIterator operator-(SectorIterator it,
+                                    difference_type n) noexcept {
+      return it -= n;
+    }
+    friend difference_type operator-(const SectorIterator& a,
+                                     const SectorIterator& b) noexcept {
+      return static_cast<difference_type>(a.idx_) -
+             static_cast<difference_type>(b.idx_);
+    }
+
+    friend auto operator<=>(const SectorIterator&,
+                            const SectorIterator&) noexcept = default;
+
+  private:
+    SectorMap* map_{nullptr};
+    std::size_t idx_{0};
+  };
+
+  [[nodiscard]] SectorIterator begin() noexcept {
+    return SectorIterator(this, 0);
   }
-  auto end() {
-    return grid_.end();
+  [[nodiscard]] SectorIterator end() noexcept {
+    return SectorIterator(this, grid_.size());
   }
-  [[nodiscard]] auto begin() const {
-    return grid_.begin();
+  [[nodiscard]] auto begin() const noexcept {
+    return grid_.cbegin();
   }
-  [[nodiscard]] auto end() const {
-    return grid_.end();
+  [[nodiscard]] auto end() const noexcept {
+    return grid_.cend();
   }
 
   [[nodiscard]] bool in_bounds(const Coordinates c) const noexcept {
@@ -643,65 +723,262 @@ public:
     return IndexedDirtySectorsViewImpl<const SectorMap, const Sector&>(*this);
   }
 
+  template <typename Pred>
+  class FilteredSectorsView {
+  public:
+    class Iterator {
+    public:
+      using iterator_category = std::forward_iterator_tag;
+      using iterator_concept = std::forward_iterator_tag;
+      using value_type = Sector;
+      using difference_type = std::ptrdiff_t;
+      using pointer = Sector*;
+      using reference = Sector&;
+
+      Iterator() = default;
+      Iterator(SectorMap* map, std::size_t idx, Pred pred)
+          : map_(map), idx_(idx), pred_(pred) {
+        advance_to_match();
+      }
+
+      reference operator*() const noexcept {
+        map_->dirty_[idx_] = true;
+        return map_->grid_[idx_];
+      }
+      pointer operator->() const noexcept {
+        map_->dirty_[idx_] = true;
+        return &map_->grid_[idx_];
+      }
+
+      Iterator& operator++() noexcept {
+        ++idx_;
+        advance_to_match();
+        return *this;
+      }
+      Iterator operator++(int) noexcept {
+        auto tmp = *this;
+        ++(*this);
+        return tmp;
+      }
+
+      friend bool operator==(const Iterator& a, const Iterator& b) noexcept {
+        return a.idx_ == b.idx_;
+      }
+
+    private:
+      void advance_to_match() noexcept {
+        while (map_ && idx_ < map_->grid_.size()) {
+          if (pred_(map_->grid_[idx_])) {
+            return;
+          }
+          ++idx_;
+        }
+      }
+
+      SectorMap* map_{nullptr};
+      std::size_t idx_{0};
+      Pred pred_{};
+    };
+
+    FilteredSectorsView(SectorMap& map, Pred pred) : map_(&map), pred_(pred) {}
+
+    [[nodiscard]] Iterator begin() const noexcept {
+      return Iterator(map_, 0, pred_);
+    }
+    [[nodiscard]] Iterator end() const noexcept {
+      return Iterator(map_, map_->grid_.size(), pred_);
+    }
+
+  private:
+    SectorMap* map_{nullptr};
+    Pred pred_{};
+  };
+
+  class ShuffledSectorsView {
+  public:
+    class Iterator {
+    public:
+      using iterator_category = std::forward_iterator_tag;
+      using iterator_concept = std::forward_iterator_tag;
+      using value_type = Sector;
+      using difference_type = std::ptrdiff_t;
+      using pointer = Sector*;
+      using reference = Sector&;
+
+      Iterator() = default;
+      Iterator(SectorMap* map, std::vector<std::size_t>::const_iterator it)
+          : map_(map), it_(it) {}
+
+      reference operator*() const noexcept {
+        map_->dirty_[*it_] = true;
+        return map_->grid_[*it_];
+      }
+      pointer operator->() const noexcept {
+        map_->dirty_[*it_] = true;
+        return &map_->grid_[*it_];
+      }
+
+      Iterator& operator++() noexcept {
+        ++it_;
+        return *this;
+      }
+      Iterator operator++(int) noexcept {
+        auto tmp = *this;
+        ++it_;
+        return tmp;
+      }
+
+      friend bool operator==(const Iterator& a, const Iterator& b) noexcept {
+        return a.it_ == b.it_;
+      }
+
+    private:
+      SectorMap* map_{nullptr};
+      std::vector<std::size_t>::const_iterator it_;
+    };
+
+    ShuffledSectorsView(SectorMap& map, std::vector<std::size_t> indices)
+        : map_(&map), indices_(std::move(indices)) {}
+
+    [[nodiscard]] Iterator begin() const noexcept {
+      return Iterator(map_, indices_.cbegin());
+    }
+    [[nodiscard]] Iterator end() const noexcept {
+      return Iterator(map_, indices_.cend());
+    }
+
+  private:
+    SectorMap* map_{nullptr};
+    std::vector<std::size_t> indices_;
+  };
+
+  struct IsOwnedPred {
+    bool operator()(const Sector& s) const noexcept {
+      return s.is_owned();
+    }
+  };
+  struct IsOwnedByPred {
+    player_t player;
+    bool operator()(const Sector& s) const noexcept {
+      return s.get_owner() == player;
+    }
+  };
+  struct IsPopulatedPred {
+    bool operator()(const Sector& s) const noexcept {
+      return s.is_populated();
+    }
+  };
+  struct IsPopulatedByPred {
+    player_t player;
+    bool operator()(const Sector& s) const noexcept {
+      return s.get_owner() == player && s.is_populated();
+    }
+  };
+  struct IsOccupiedPred {
+    bool operator()(const Sector& s) const noexcept {
+      return s.is_occupied();
+    }
+  };
+
+  class ConstShuffledSectorsView {
+  public:
+    class Iterator {
+    public:
+      using iterator_category = std::forward_iterator_tag;
+      using iterator_concept = std::forward_iterator_tag;
+      using value_type = const Sector;
+      using difference_type = std::ptrdiff_t;
+      using pointer = const Sector*;
+      using reference = const Sector&;
+
+      Iterator() = default;
+      Iterator(const SectorMap* map,
+               std::vector<std::size_t>::const_iterator it)
+          : map_(map), it_(it) {}
+
+      reference operator*() const noexcept {
+        return map_->grid_[*it_];
+      }
+      pointer operator->() const noexcept {
+        return &map_->grid_[*it_];
+      }
+
+      Iterator& operator++() noexcept {
+        ++it_;
+        return *this;
+      }
+      Iterator operator++(int) noexcept {
+        auto tmp = *this;
+        ++it_;
+        return tmp;
+      }
+
+      friend bool operator==(const Iterator& a, const Iterator& b) noexcept {
+        return a.it_ == b.it_;
+      }
+
+    private:
+      const SectorMap* map_{nullptr};
+      std::vector<std::size_t>::const_iterator it_;
+    };
+
+    ConstShuffledSectorsView(const SectorMap& map,
+                             std::vector<std::size_t> indices)
+        : map_(&map), indices_(std::move(indices)) {}
+
+    [[nodiscard]] Iterator begin() const noexcept {
+      return Iterator(map_, indices_.cbegin());
+    }
+    [[nodiscard]] Iterator end() const noexcept {
+      return Iterator(map_, indices_.cend());
+    }
+
+  private:
+    const SectorMap* map_{nullptr};
+    std::vector<std::size_t> indices_;
+  };
+
   /// \brief Returns a non-allocating lazy view of all owned sectors.
   [[nodiscard]] auto owned() noexcept {
-    return grid_ | std::views::filter(
-                       [](const Sector& s) noexcept { return s.is_owned(); });
+    return FilteredSectorsView(*this, IsOwnedPred{});
   }
   [[nodiscard]] auto owned() const noexcept {
-    return grid_ | std::views::filter(
-                       [](const Sector& s) noexcept { return s.is_owned(); });
+    return grid_ | std::views::filter(IsOwnedPred{});
   }
 
   /// \brief Returns a non-allocating lazy view of sectors owned by a specific
   /// player.
   [[nodiscard]] auto owned_by(player_t player) noexcept {
-    return grid_ | std::views::filter([player](const Sector& s) noexcept {
-             return s.get_owner() == player;
-           });
+    return FilteredSectorsView(*this, IsOwnedByPred{player});
   }
   [[nodiscard]] auto owned_by(player_t player) const noexcept {
-    return grid_ | std::views::filter([player](const Sector& s) noexcept {
-             return s.get_owner() == player;
-           });
+    return grid_ | std::views::filter(IsOwnedByPred{player});
   }
 
   /// \brief Returns a non-allocating lazy view of all populated sectors.
   [[nodiscard]] auto populated() noexcept {
-    return grid_ | std::views::filter([](const Sector& s) noexcept {
-             return s.is_populated();
-           });
+    return FilteredSectorsView(*this, IsPopulatedPred{});
   }
   [[nodiscard]] auto populated() const noexcept {
-    return grid_ | std::views::filter([](const Sector& s) noexcept {
-             return s.is_populated();
-           });
+    return grid_ | std::views::filter(IsPopulatedPred{});
   }
 
   /// \brief Returns a non-allocating lazy view of populated sectors owned by a
   /// specific player.
   [[nodiscard]] auto populated_by(player_t player) noexcept {
-    return grid_ | std::views::filter([player](const Sector& s) noexcept {
-             return s.get_owner() == player && s.is_populated();
-           });
+    return FilteredSectorsView(*this, IsPopulatedByPred{player});
   }
   [[nodiscard]] auto populated_by(player_t player) const noexcept {
-    return grid_ | std::views::filter([player](const Sector& s) noexcept {
-             return s.get_owner() == player && s.is_populated();
-           });
+    return grid_ | std::views::filter(IsPopulatedByPred{player});
   }
 
   /// \brief Returns a non-allocating lazy view of all occupied (owned and
   /// populated) sectors.
   [[nodiscard]] auto occupied() noexcept {
-    return grid_ | std::views::filter([](const Sector& s) noexcept {
-             return s.is_occupied();
-           });
+    return FilteredSectorsView(*this, IsOccupiedPred{});
   }
   [[nodiscard]] auto occupied() const noexcept {
-    return grid_ | std::views::filter([](const Sector& s) noexcept {
-             return s.is_occupied();
-           });
+    return grid_ | std::views::filter(IsOccupiedPred{});
   }
 
   template <typename URBG>
@@ -721,30 +998,24 @@ public:
   const Sector& get_random() const;
 
   template <typename URBG>
-  [[nodiscard]] auto shuffle(URBG& g) {
+  [[nodiscard]] ShuffledSectorsView shuffle(URBG& g) {
     std::vector<std::size_t> indices(grid_.size());
     std::iota(indices.begin(), indices.end(), 0);
     std::ranges::shuffle(indices, g);
-
-    return std::views::all(std::move(indices)) |
-           std::views::transform(
-               [this](std::size_t idx) -> Sector& { return grid_[idx]; });
+    return ShuffledSectorsView(*this, std::move(indices));
   }
-  [[nodiscard]] auto shuffle() {
+  [[nodiscard]] ShuffledSectorsView shuffle() {
     return shuffle(game_rng());
   }  /// Randomizes the order of the SectorMap.
 
   template <typename URBG>
-  [[nodiscard]] auto shuffle(URBG& g) const {
+  [[nodiscard]] ConstShuffledSectorsView shuffle(URBG& g) const {
     std::vector<std::size_t> indices(grid_.size());
     std::iota(indices.begin(), indices.end(), 0);
     std::ranges::shuffle(indices, g);
-
-    return std::views::all(std::move(indices)) |
-           std::views::transform(
-               [this](std::size_t idx) -> const Sector& { return grid_[idx]; });
+    return ConstShuffledSectorsView(*this, std::move(indices));
   }
-  [[nodiscard]] auto shuffle() const {
+  [[nodiscard]] ConstShuffledSectorsView shuffle() const {
     return shuffle(game_rng());
   }  /// Randomizes the order of the SectorMap (const).
 

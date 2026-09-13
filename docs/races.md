@@ -59,9 +59,24 @@ Reproductive sexes defines the minimum number of individuals required to form a 
 - **Colonization Resilience**: Species with $`N_{\text{sexes}} = 1`$ (such as Metamorphs) can colonize worlds from a single pioneer colonist, whereas species with $`N_{\text{sexes}} = 3+`$ require larger initial landing parties.
 
 ### Birthrate ($B$)
-Birthrate determines how rapidly a colony's population expands toward environmental carrying capacity:
+Birthrate governs how rapidly a civilization's population expands during each turn update, operating under two distinct biological growth models depending on environment:
 
-$$\Delta \text{Population} = \left\lfloor (\text{Max Supported Population} - \text{Current Population}) \times \text{Birthrate} \right\rfloor$$
+- **Planetary Sector Growth (Newtonian Relaxation Toward Carrying Capacity)**: On planetary surfaces, Galactic Bloodshed models sector demographics not as Malthusian reproduction ($\Delta P \propto P$), but as **Newtonian relaxation towards carrying capacity**:
+
+$$\Delta P = \left\lfloor (K - P) \times \text{Birthrate} \right\rfloor$$
+
+  where $P$ is the current sector population and $K$ is the sector's current carrying capacity ($\text{Max Supported Population}$).
+  - **Why Gap $(K - P)$ Closes by $100\%$ at Maximum Birthrate**: Because $\Delta P$ is proportional to the *unused capacity gap* $(K - P)$ rather than existing headcount $P$, a species with $\text{Birthrate} = 1.00$ closes **$100\%$ of the $(K - P)$ gap in a single update**, jumping directly to $K$.
+  - **Worked Example**: Consider a newly colonized sector with $P = 11$ colonists, $\text{Efficiency} = 10\%$, $\text{Fertility} = 100$, $\text{Compatibility} = 98\%$, and $\text{Toxicity} = 2\%$:
+    1. Its carrying capacity is $K = \lfloor (10 + 1) \times 100 \times 0.98 \times 0.98 \rfloor = 1{,}056$.
+    2. Under a Malthusian model ($\Delta P = P \times \text{Birthrate}$), $11$ colonists with $\text{Birthrate} = 1.00$ would only produce $11$ offspring.
+    3. Under Galactic Bloodshed's Newtonian relaxation model, $\Delta P = \lfloor (1{,}056 - 11) \times 1.00 \rfloor = 1{,}045$, immediately expanding the sector to $1{,}056$ citizens in a single update.
+  - **Infrastructure Rate-Limiting**: Once $P$ reaches $K$, demographic growth in that sector pauses ($\Delta P = 0$) until colonists construct higher sector efficiency ($\text{Efficiency} \to 100\%$), which progressively raises $K$.
+- **Starship & Habitat Growth (Malthusian Compounding Model)**: In contrast to planetary sectors, civilian crews aboard population-supporting vessels (such as Space Stations, Habitats, and Biospheres) compound proportional to current crew size:
+
+$$\Delta \text{Crew} = \text{Round}\left(\text{Current Crew} \times \text{Birthrate}\right)$$
+
+  clamped to the vessel's maximum hull crew capacity ($\text{Max Crew}$).
 
 ### Adventurism ($A$)
 Adventurism governs the urge of pioneering citizens to spontaneously migrate from crowded sectors into neighboring unowned territory:

@@ -99,18 +99,29 @@ flowchart TD
     Cap -->|Population > Max Support| Starve["Overpopulation Famine\nCasualties in [0, 2 * Excess]"]
 ```
 
-- **Maximum Demographic Support Capacity**: The sustainable population cap for a sector depends on infrastructure efficiency, soil fertility, atmospheric compatibility, and environmental toxicity:
+- **Maximum Demographic Support Capacity ($K$)**: The sustainable population cap for a sector depends on infrastructure efficiency, soil fertility, atmospheric compatibility, and environmental toxicity:
 
-$$\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$$
+$$K = \text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$$
 
 - **Reproductive Threshold**: If sector population drops below the species' reproductive minimum ($\text{Population} < \text{Reproductive Sexes}$), reproduction ceases entirely.
-- **Population Growth**: Below carrying capacity, populations expand according to racial birthrate:
+- **Population Growth (Newtonian Relaxation Toward Carrying Capacity)**: Galactic Bloodshed models planetary sector demographics not as Malthusian reproduction ($\Delta P \propto P$), but as **Newtonian relaxation towards carrying capacity**:
 
-$$\Delta \text{Population} = \left\lfloor (\text{Max Population} - \text{Population}) \times \text{Birthrate} \right\rfloor$$
+$$\Delta P = \left\lfloor (K - P) \times \text{Birthrate} \right\rfloor$$
 
-- **Overpopulation Starvation**: When population exceeds support capacity, severe famine inflicts casualties within the range:
+  - **Why Colonized Sectors Fill Instantly at High Birthrate**: Because $\Delta P$ is proportional to the *unused capacity gap* $(K - P)$ rather than existing headcount $P$, a species with $\text{Birthrate} = 1.00$ closes **$100\%$ of the $(K - P)$ gap in a single update**, jumping directly to $K$.
+  - **Worked Example**: Suppose a newly colonized sector has $P = 11$ colonists, $\text{Efficiency} = 10\%$, $\text{Fertility} = 100$, $\text{Compatibility} = 98\%$, and $\text{Toxicity} = 2\%$:
+    1. Its carrying capacity is $K = \lfloor (10 + 1) \times 100 \times 0.98 \times 0.98 \rfloor = 1{,}056$.
+    2. Under a Malthusian model ($\Delta P = P \times \text{Birthrate}$), $11$ colonists with $\text{Birthrate} = 1.00$ would only add $11$ people.
+    3. Under Galactic Bloodshed's Newtonian relaxation model, $\Delta P = \lfloor (1{,}056 - 11) \times 1.00 \rfloor = 1{,}045$, immediately expanding the sector to $1{,}056$ citizens in a single update.
+  - **Infrastructure Rate-Limiting**: Once $P$ reaches $K$, further growth in that sector halts ($\Delta P = 0$) until colonists construct additional sector efficiency ($\text{Efficiency} \to 100\%$). Long-term planetary population growth is therefore rate-limited by infrastructure construction rather than biological compounding.
+- **Starship & Habitat Growth (Malthusian Compounding)**: In contrast to planetary sectors, civilian crews aboard population-supporting ships (such as Space Stations, Habitats, and Biospheres) compound proportional to current headcount:
 
-$$\text{Casualties} \in \left[0, \min\big(2 \times (\text{Population} - \text{Max Population}), \text{Population}\big)\right]$$
+$$\Delta \text{Crew} = \text{Round}\left(\text{Current Crew} \times \text{Birthrate}\right)$$
+
+  clamped to the vessel's maximum hull crew capacity ($\text{Max Crew}$).
+- **Overpopulation Starvation**: When population exceeds support capacity ($P > K$), severe famine inflicts casualties within the range:
+
+$$\text{Casualties} \in \left[0, \min\big(2 \times (P - K), P\big)\right]$$
 
 ### Spontaneous Colonist Migration and Territorial Expansion
 When a sector becomes crowded ($\text{Population} > 0.10 \times \text{Max Population}$), pioneer colonists look to expand into neighboring wilderness:

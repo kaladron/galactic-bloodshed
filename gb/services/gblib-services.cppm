@@ -273,6 +273,14 @@ public:
   }
 
   template <typename Fn>
+  decltype(auto) with_planet_and_sectors(starnum_t star, planetnum_t pnum,
+                                         Fn&& fn) {
+    const auto* planet = peek_planet(star, pnum);
+    const auto* smap = peek_sectormap(star, pnum);
+    return std::forward<Fn>(fn)(*planet, *smap);
+  }
+
+  template <typename Fn>
   decltype(auto) with_universe(Fn&& fn) {
     const auto* u = peek_universe();
     return std::forward<Fn>(fn)(*u);
@@ -357,6 +365,14 @@ public:
   decltype(auto) mutate_sectormap(starnum_t star, planetnum_t pnum, Fn&& fn) {
     auto handle = get_sectormap(star, pnum);
     return std::forward<Fn>(fn)(*handle);
+  }
+
+  template <typename Fn>
+  decltype(auto) mutate_planet_and_sectors(starnum_t star, planetnum_t pnum,
+                                           Fn&& fn) {
+    auto planet_handle = get_planet(star, pnum);
+    auto smap_handle = get_sectormap(star, pnum);
+    return std::forward<Fn>(fn)(*planet_handle, *smap_handle);
   }
 
   template <typename Fn>

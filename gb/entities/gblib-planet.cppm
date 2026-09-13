@@ -15,6 +15,8 @@ import std;
 // Forward declaration to avoid circular dependency with :services
 export class EntityManager;
 export class Star;
+export class Sector;
+export class SectorMap;
 
 /// Set of commodities selected for loading or unloading on a shipping route.
 export struct CommodityManifest {
@@ -125,7 +127,7 @@ export struct plinfo {      // planetary stockpiles
   /* merchant shipping parameters */
   plroute route[MAX_ROUTES];
 
-  long mob_points = 0;
+  std::uint32_t mob_points = 0;
   double est_production = 0;  // estimated production
 
   /// \brief Returns a snapshot of current stockpiles.
@@ -186,7 +188,7 @@ export struct plinfo {      // planetary stockpiles
 
   /// \brief Updates combat readiness and planetary defense guns based on
   /// average mobilization.
-  void update_combat_readiness(long total_mob_points) noexcept;
+  void update_combat_readiness(std::uint32_t total_mob_points) noexcept;
 };
 
 // Internal struct holding raw planet data for serialization
@@ -465,6 +467,13 @@ public:
     return data_.slaved_to != 0;
   }
 
+  /// \brief Returns whether this planet is currently enslaved to a foreign
+  /// player.
+  [[nodiscard]] constexpr bool
+  is_enslaved_to_foreign(player_t player) const noexcept {
+    return data_.slaved_to != 0 && data_.slaved_to != player;
+  }
+
   /// \brief Checks if a slave revolt is triggered.
   ///
   /// A slave revolt occurs on an enslaved planet when the slave master's
@@ -514,6 +523,24 @@ public:
         break;
     }
   }
+
+  /// \brief Adjusts a sector's population, automatically maintaining
+  /// planet-level demographic totals, player colony statistics, and
+  /// state-driven sector colonization and abandonment transitions.
+  void adjust_sector_population(Sector& sect, player_t player,
+                                population_t civ_delta,
+                                population_t mil_delta) noexcept;
+
+  /// \brief Transfers population between sectors on this planet, handling
+  /// colonization and abandonment transitions automatically.
+  void move_sector_population(Sector& from, Sector& to, player_t player,
+                              population_t amount,
+                              PopulationType type) noexcept;
+
+  /// \brief Reconciles and synchronizes all planet population totals, troop
+  /// garrisons, owned sector counts, and mobilization points directly from the
+  /// ground-truth sector grid.
+  void sync_demographics(const SectorMap& smap) noexcept;
 
   // For repository serialization
   [[nodiscard]] planet_struct get_struct() const {

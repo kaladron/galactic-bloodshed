@@ -927,7 +927,48 @@ void test_entity_manager_with_scoped_peeks() {
       ShipType::OTYPE_PROBE, [](const ShipExam& ex) { return ex.name; });
   test::expect_eq(exam_name, "Space Probe");
 
+  // 9. with_planet_and_sectors
+  bool paired_check = em.with_planet_and_sectors(
+      0, 1, [](const Planet& pl, const SectorMap& map) {
+        return pl.popn() == 5000 &&
+               map.get(Coordinates{2, 3}).get_owner() == player_t{1};
+      });
+  test::expect_true(paired_check);
+
   std::println(std::cout, "  ✓ All with_* scoped peek helpers passed");
+}
+
+void test_entity_manager_mutate_planet_and_sectors() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  std::println(std::cout, "Test: EntityManager mutate_planet_and_sectors");
+
+  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& pl, SectorMap& map) {
+    pl.popn() = 2500;
+    map.get(Coordinates{1, 1}).set_owner(player_t{2});
+  });
+
+  // Verify persistence beyond cache
+  ctx.em.clear_cache();
+
+  test::expect_eq(ctx.em.peek_planet(0, 0)->popn(), 2500);
+  test::expect_eq(
+      ctx.em.peek_sectormap(0, 0)->get(Coordinates{1, 1}).get_owner(),
+      player_t{2});
+
+  // Verify throws on non-existent planet or sectors
+  test::expect_throws<EntityNotFoundError>([&]() {
+    ctx.em.mutate_planet_and_sectors(999, 999, [](Planet&, SectorMap&) {});
+  });
+  test::expect_throws<EntityNotFoundError>([&]() {
+    ctx.em.with_planet_and_sectors(
+        999, 999, [](const Planet&, const SectorMap&) { return 0; });
+  });
+
+  std::println(
+      std::cout,
+      "  ✓ mutate_planet_and_sectors atomic coordination and auto-save passed");
 }
 
 void test_deletion_barrier() {
@@ -1178,6 +1219,7 @@ int main() {
   test_entity_manager_powers();
   test_entity_manager_create_ship();
   test_entity_manager_with_scoped_peeks();
+  test_entity_manager_mutate_planet_and_sectors();
   test_deletion_barrier();
   test_entity_manager_count_non_asteroid_planets();
   test_entity_manager_create_race();

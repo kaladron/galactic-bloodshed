@@ -533,6 +533,160 @@ int main() {
         Planet::is_common_sector(PlanetType::ASTEROID, SectorType::SEC_LAND));
   }
 
+  // Test 22: is_enslaved_to_foreign predicate
+  {
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    test::expect_false(planet.is_enslaved());
+    test::expect_false(planet.is_enslaved_to_foreign(player_t{1}));
+    test::expect_false(planet.is_enslaved_to_foreign(player_t{2}));
+
+    planet.enslave_to(player_t{2});
+    test::expect_true(planet.is_enslaved());
+    test::expect_false(planet.is_enslaved_to_foreign(player_t{2}));
+    test::expect_true(planet.is_enslaved_to_foreign(player_t{1}));
+    test::expect_true(planet.is_enslaved_to_foreign(player_t{3}));
+
+    planet.free_slaves();
+    test::expect_false(planet.is_enslaved());
+    test::expect_false(planet.is_enslaved_to_foreign(player_t{1}));
+  }
+
+  // Test 23: adjust_sector_population colonization and abandonment
+  {
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    Sector sect{};
+    sect.set_mobilization(25);
+    test::expect_false(sect.is_owned());
+    test::expect_true(sect.is_empty());
+
+    // 1. Colonize unowned sector
+    planet.adjust_sector_population(sect, player_t{1}, 100, 50);
+    test::expect_eq(sect.get_owner(), 1);
+    test::expect_eq(sect.get_popn(), 100);
+    test::expect_eq(sect.get_troops(), 50);
+    test::expect_eq(planet.popn(), 100);
+    test::expect_eq(planet.troops(), 50);
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 1U);
+    test::expect_eq(planet.info(player_t{1}).mob_points, 25);
+    test::expect_eq(planet.info(player_t{1}).popn, 100);
+    test::expect_eq(planet.info(player_t{1}).troops, 50);
+
+    // 2. Increase population
+    planet.adjust_sector_population(sect, player_t{1}, 50, 20);
+    test::expect_eq(sect.get_popn(), 150);
+    test::expect_eq(sect.get_troops(), 70);
+    test::expect_eq(planet.popn(), 150);
+    test::expect_eq(planet.troops(), 70);
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 1U);
+
+    // 3. Partial loss (does not empty)
+    planet.adjust_sector_population(sect, player_t{1}, -50, -30);
+    test::expect_eq(sect.get_popn(), 100);
+    test::expect_eq(sect.get_troops(), 40);
+    test::expect_eq(planet.popn(), 100);
+    test::expect_eq(planet.troops(), 40);
+    test::expect_eq(sect.get_owner(), 1);
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 1U);
+
+    // 4. Complete loss triggers automatic abandonment
+    planet.adjust_sector_population(sect, player_t{1}, -100, -40);
+    test::expect_eq(sect.get_popn(), 0);
+    test::expect_eq(sect.get_troops(), 0);
+    test::expect_true(sect.is_empty());
+    test::expect_false(sect.is_owned());
+    test::expect_eq(sect.get_owner(), 0);
+    test::expect_eq(planet.popn(), 0);
+    test::expect_eq(planet.troops(), 0);
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 0U);
+    test::expect_eq(planet.info(player_t{1}).mob_points, 0);
+    test::expect_eq(planet.info(player_t{1}).popn, 0);
+    test::expect_eq(planet.info(player_t{1}).troops, 0);
+  }
+
+  // Test 24: move_sector_population between friendly and empty sectors
+  {
+    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    Sector from_sect{};
+    from_sect.set_mobilization(30);
+    Sector to_sect{};
+    to_sect.set_mobilization(20);
+
+    // Seed origin sector
+    planet.adjust_sector_population(from_sect, player_t{1}, 500, 200);
+    test::expect_eq(planet.popn(), 500);
+    test::expect_eq(planet.troops(), 200);
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 1U);
+    test::expect_eq(planet.info(player_t{1}).mob_points, 30);
+
+    // Move all civilians to unowned sector
+    planet.move_sector_population(from_sect, to_sect, player_t{1}, 500,
+                                  PopulationType::CIV);
+    test::expect_eq(from_sect.get_popn(), 0);
+    test::expect_eq(from_sect.get_troops(), 200);
+    test::expect_eq(from_sect.get_owner(), 1);  // troops still hold it
+    test::expect_eq(to_sect.get_popn(), 500);
+    test::expect_eq(to_sect.get_owner(), 1);  // colonized!
+    test::expect_eq(planet.popn(), 500);      // conserved
+    test::expect_eq(planet.troops(), 200);    // conserved
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 2U);
+    test::expect_eq(planet.info(player_t{1}).mob_points, 50);  // 30 + 20
+
+    // Move all troops out of from_sect, emptying it completely
+    planet.move_sector_population(from_sect, to_sect, player_t{1}, 200,
+                                  PopulationType::MIL);
+    test::expect_true(from_sect.is_empty());
+    test::expect_eq(from_sect.get_owner(), 0);  // abandoned!
+    test::expect_eq(to_sect.get_troops(), 200);
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 1U);
+    test::expect_eq(planet.info(player_t{1}).mob_points, 20);
+  }
+
+  // Test 25: sync_demographics full reconciliation from SectorMap
+  {
+    Planet planet(PlanetType::EARTH, Coordinates{5, 5});
+    SectorMap smap(planet);
+
+    // Setup 2 sectors for player 1, 1 sector for player 2
+    auto& s1 = smap.get(Coordinates{1, 1});
+    s1.set_owner(1);
+    s1.set_popn_exact(300);
+    s1.set_troops_exact(100);
+    s1.set_mobilization(15);
+
+    auto& s2 = smap.get(Coordinates{2, 2});
+    s2.set_owner(1);
+    s2.set_popn_exact(200);
+    s2.set_troops_exact(50);
+    s2.set_mobilization(25);
+
+    auto& s3 = smap.get(Coordinates{3, 3});
+    s3.set_owner(2);
+    s3.set_popn_exact(150);
+    s3.set_troops_exact(75);
+    s3.set_mobilization(40);
+
+    // Corrupt planet totals
+    planet.popn() = 9999;
+    planet.troops() = 8888;
+    planet.info(player_t{1}).popn = 0;
+    planet.info(player_t{1}).numsectsowned = 0;
+
+    // Full synchronization from SectorMap
+    planet.sync_demographics(smap);
+
+    test::expect_eq(planet.popn(), 650);    // 300 + 200 + 150
+    test::expect_eq(planet.troops(), 225);  // 100 + 50 + 75
+    test::expect_eq(planet.info(player_t{1}).popn, 500);
+    test::expect_eq(planet.info(player_t{1}).troops, 150);
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 2U);
+    test::expect_eq(planet.info(player_t{1}).mob_points, 40);  // 15 + 25
+
+    test::expect_eq(planet.info(player_t{2}).popn, 150);
+    test::expect_eq(planet.info(player_t{2}).troops, 75);
+    test::expect_eq(planet.info(player_t{2}).numsectsowned, 1U);
+    test::expect_eq(planet.info(player_t{2}).mob_points, 40);
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

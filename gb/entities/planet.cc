@@ -180,10 +180,10 @@ double plinfo::invest_tech(Race::gov& gov, Race& race) noexcept {
   return prod_tech;
 }
 
-void plinfo::update_combat_readiness(long total_mob_points) noexcept {
+void plinfo::update_combat_readiness(std::uint32_t total_mob_points) noexcept {
   mob_points = total_mob_points;
   if (numsectsowned > 0) {
-    comread = static_cast<std::uint32_t>(total_mob_points / numsectsowned);
+    comread = total_mob_points / numsectsowned;
   } else {
     comread = 0;
   }
@@ -193,4 +193,103 @@ void plinfo::update_combat_readiness(long total_mob_points) noexcept {
 UniverseCoordinates
 Planet::absolute_coordinates(const Star& star) const noexcept {
   return star.coordinates() + system_coordinates();
+}
+
+void Planet::adjust_sector_population(Sector& sect, player_t player,
+                                      population_t civ_delta,
+                                      population_t mil_delta) noexcept {
+  // Colonization transition: unowned sector gains population
+  if (!sect.is_owned() && player != 0 && (civ_delta > 0 || mil_delta > 0)) {
+    sect.set_owner(player);
+    sect.set_race(player);
+    data_.info[player].numsectsowned += 1;
+    data_.info[player].mob_points += sect.get_mobilization();
+  }
+
+  const player_t owner = sect.get_owner();
+
+  // Adjust civilian population
+  if (civ_delta > 0) {
+    sect.add_popn(civ_delta);
+    data_.popn += civ_delta;
+    if (owner != 0) {
+      data_.info[owner].popn += civ_delta;
+    }
+  } else if (civ_delta < 0) {
+    const population_t loss = std::min(sect.get_popn(), -civ_delta);
+    sect.subtract_popn(loss);
+    data_.popn = (data_.popn >= loss) ? (data_.popn - loss) : 0;
+    if (owner != 0) {
+      auto& pinfo = data_.info[owner];
+      pinfo.popn = (pinfo.popn >= loss) ? (pinfo.popn - loss) : 0;
+    }
+  }
+
+  // Adjust military population
+  if (mil_delta > 0) {
+    sect.add_troops(mil_delta);
+    data_.troops += mil_delta;
+    if (owner != 0) {
+      data_.info[owner].troops += mil_delta;
+    }
+  } else if (mil_delta < 0) {
+    const population_t loss = std::min(sect.get_troops(), -mil_delta);
+    sect.subtract_troops(loss);
+    data_.troops = (data_.troops >= loss) ? (data_.troops - loss) : 0;
+    if (owner != 0) {
+      auto& pinfo = data_.info[owner];
+      pinfo.troops = (pinfo.troops >= loss) ? (pinfo.troops - loss) : 0;
+    }
+  }
+
+  // Abandonment transition: occupied sector loses all population
+  if (owner != 0 && sect.is_empty()) {
+    sect.set_owner(0);
+    sect.set_race(0);
+    auto& pinfo = data_.info[owner];
+    if (pinfo.numsectsowned > 0) {
+      pinfo.numsectsowned -= 1;
+    }
+    const auto sect_mob = sect.get_mobilization();
+    pinfo.mob_points =
+        (pinfo.mob_points >= sect_mob) ? (pinfo.mob_points - sect_mob) : 0;
+  }
+}
+
+void Planet::move_sector_population(Sector& from, Sector& to, player_t player,
+                                    population_t amount,
+                                    PopulationType type) noexcept {
+  if (amount <= 0) {
+    return;
+  }
+  if (type == PopulationType::CIV) {
+    adjust_sector_population(from, from.get_owner(), -amount, 0);
+    adjust_sector_population(to, player, amount, 0);
+  } else if (type == PopulationType::MIL) {
+    adjust_sector_population(from, from.get_owner(), 0, -amount);
+    adjust_sector_population(to, player, 0, amount);
+  }
+}
+
+void Planet::sync_demographics(const SectorMap& smap) noexcept {
+  data_.popn = 0;
+  data_.troops = 0;
+  for (plinfo& pinfo : data_.info) {
+    pinfo.popn = 0;
+    pinfo.troops = 0;
+    pinfo.numsectsowned = 0;
+    pinfo.mob_points = 0;
+  }
+
+  for (const Sector& s : smap) {
+    data_.popn += s.get_popn();
+    data_.troops += s.get_troops();
+    if (s.is_owned()) {
+      const player_t owner = s.get_owner();
+      data_.info[owner].popn += s.get_popn();
+      data_.info[owner].troops += s.get_troops();
+      data_.info[owner].numsectsowned += 1;
+      data_.info[owner].mob_points += s.get_mobilization();
+    }
+  }
 }

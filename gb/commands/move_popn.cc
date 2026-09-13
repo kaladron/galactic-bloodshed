@@ -61,6 +61,9 @@ bool move_popn(const command_t& argv, GameObj& g) {
   done = 0;
   n = 0;
   while (!done) {
+    if (n >= argv[2].size()) {
+      break;
+    }
     const auto& smap_peek =
         *g.entity_manager.peek_sectormap(g.snum(), g.pnum());
     const auto& sect_curr = smap_peek.get(curr_coords);
@@ -258,15 +261,93 @@ bool move_popn(const command_t& argv, GameObj& g) {
               }
               g.entity_manager.mutate_planet(
                   g.snum(), g.pnum(), [&](Planet& planet) {
-                    planet.info(Playernum).mob_points +=
-                        (int)sect2.get_mobilization();
-                    planet.info(old2owner).mob_points -=
-                        (int)sect2.get_mobilization();
+                    const population_t civ_lost =
+                        casualties2 +
+                        (what == PopulationType::CIV ? casualties : 0);
+                    if (planet.popn() + absorbed >= civ_lost) {
+                      planet.popn() = planet.popn() + absorbed - civ_lost;
+                    } else {
+                      planet.popn() = 0;
+                    }
+
+                    const population_t mil_lost =
+                        casualties3 +
+                        (what == PopulationType::MIL ? casualties : 0);
+                    if (planet.troops() >= mil_lost) {
+                      planet.troops() -= mil_lost;
+                    } else {
+                      planet.troops() = 0;
+                    }
+
+                    auto& p_info = planet.info(Playernum);
+                    p_info.mob_points += (int)sect2.get_mobilization();
+                    p_info.numsectsowned += 1;
+                    if (what == PopulationType::CIV) {
+                      p_info.popn = (p_info.popn + absorbed >= casualties)
+                                        ? (p_info.popn + absorbed - casualties)
+                                        : 0;
+                    } else {
+                      p_info.popn += absorbed;
+                      p_info.troops = (p_info.troops >= casualties)
+                                          ? (p_info.troops - casualties)
+                                          : 0;
+                    }
+
+                    auto& d_info = planet.info(old2owner);
+                    d_info.mob_points -= (int)sect2.get_mobilization();
+                    if (d_info.numsectsowned > 0) {
+                      d_info.numsectsowned -= 1;
+                    }
+                    d_info.popn = (d_info.popn >= casualties2)
+                                      ? (d_info.popn - casualties2)
+                                      : 0;
+                    d_info.troops = (d_info.troops >= casualties3)
+                                        ? (d_info.troops - casualties3)
+                                        : 0;
                   });
             } else {
               g.out << std::format("The invasion was repulsed; try again.\n");
               telegram += "You fought them off!\n";
               done = 1; /* end loop */
+              g.entity_manager.mutate_planet(
+                  g.snum(), g.pnum(), [&](Planet& planet) {
+                    const population_t civ_lost =
+                        casualties2 +
+                        (what == PopulationType::CIV ? casualties : 0);
+                    if (planet.popn() + absorbed >= civ_lost) {
+                      planet.popn() = planet.popn() + absorbed - civ_lost;
+                    } else {
+                      planet.popn() = 0;
+                    }
+
+                    const population_t mil_lost =
+                        casualties3 +
+                        (what == PopulationType::MIL ? casualties : 0);
+                    if (planet.troops() >= mil_lost) {
+                      planet.troops() -= mil_lost;
+                    } else {
+                      planet.troops() = 0;
+                    }
+
+                    auto& p_info = planet.info(Playernum);
+                    if (what == PopulationType::CIV) {
+                      p_info.popn = (p_info.popn >= casualties)
+                                        ? (p_info.popn - casualties)
+                                        : 0;
+                    } else {
+                      p_info.troops = (p_info.troops >= casualties)
+                                          ? (p_info.troops - casualties)
+                                          : 0;
+                    }
+
+                    auto& d_info = planet.info(old2owner);
+                    d_info.popn = (d_info.popn + absorbed >= casualties2)
+                                      ? (d_info.popn + absorbed - casualties2)
+                                      : 0;
+                    d_info.troops = (d_info.troops >= casualties3)
+                                        ? (d_info.troops - casualties3)
+                                        : 0;
+                  });
             }
 
             if (!(sect.get_popn() + sect.get_troops() + people)) {
@@ -299,6 +380,9 @@ bool move_popn(const command_t& argv, GameObj& g) {
                   g.snum(), g.pnum(), [&](Planet& planet) {
                     planet.info(Playernum).mob_points -=
                         (int)sect.get_mobilization();
+                    if (planet.info(Playernum).numsectsowned > 0) {
+                      planet.info(Playernum).numsectsowned -= 1;
+                    }
                   });
               sect.set_owner(0);
             }
@@ -328,6 +412,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
                   g.snum(), g.pnum(), [&](Planet& planet) {
                     planet.info(Playernum).mob_points +=
                         (int)sect2.get_mobilization();
+                    planet.info(Playernum).numsectsowned += 1;
                   });
             }
             sect2.set_owner(Playernum);
@@ -337,6 +422,9 @@ bool move_popn(const command_t& argv, GameObj& g) {
                   g.snum(), g.pnum(), [&](Planet& planet) {
                     planet.info(Playernum).mob_points -=
                         (int)sect.get_mobilization();
+                    if (planet.info(Playernum).numsectsowned > 0) {
+                      planet.info(Playernum).numsectsowned -= 1;
+                    }
                   });
               sect.set_owner(0);
             }

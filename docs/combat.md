@@ -138,9 +138,9 @@ Allied warships stationed in the same planetary or stellar orbit can be assigned
 
 ---
 
-## 4. Planetary Surface Defense and Ground Warfare
+## 4. Planetary Surface Defense, Ground Warfare, and Boarding Actions
 
-Planetary defenses combine fixed surface batteries with mechanized ground forces:
+Planetary defenses combine fixed surface batteries, mechanized ground forces, surface maneuvers, and amphibious boarding operations:
 
 ### Surface-to-Orbit Defense Batteries
 Planets convert sector mobilization points into up to $20$ heavy surface gun batteries:
@@ -150,12 +150,69 @@ $$N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Po
 - **Defend Command**: Planetary governors command surface batteries to fire on enemy warships in orbit or intercept incoming assault landers during descent (`defend <planet> <target_ship>`).
 - Surface batteries consume destructive ordnance from local colony stockpiles and fire medium-caliber volleys at point-blank range.
 
-### Planetary Invasions and Ground Assaults
-Conquering settled worlds requires amphibious planetary landings and ground warfare:
-- **Assault Landers (`L`)**: Heavily armored landing craft capable of delivering up to $500$ ground soldiers through heavy defensive fire.
-- **Mechanized AFVs (`R`)**: Armored fighting vehicles that provide mobile heavy fire support on planetary sector grids.
-- **Fortified Bunkers (`b`)**: Surface strongholds that garrison troops, house parasite hangars, and resist orbital bombardment.
-- **Sector Capture**: Defeating all defending troops and civilian population in a sector transfers territorial ownership to the attacking empire, capturing local infrastructure and resource deposits.
+### Ground Movement and Maneuver Costs
+Ground populations maneuver across adjacent planetary sectors using `move` (for civilians) and `deploy` (for military troops).
+- **Directional Paths**: Movement commands accept multi-step compass paths (`h`, `j`, `k`, `l`, `y`, `u`, `b`, `n`) traversing toroidal east/west seams and polar boundaries.
+- **Population Quantities**: Omitting the quantity moves the entire sector population. Passing a negative number $-N$ moves all but $N$ personnel.
+- **Action Point (AP) Costs**: Tactical maneuver costs scale logarithmically with group size, with an additional surcharge for assaulting foreign-occupied sectors:
+  - **Civilian Movement (`move`)**:
+    $$\text{AP} = \text{MOVE\_FACTOR} \times \left(\lfloor \ln(1 + \text{Personnel}) \rfloor + \text{Assault}\right) + 1$$
+  - **Military Deployment (`deploy`)**:
+    $$\text{AP} = \text{MOVE\_FACTOR} \times \left(\lfloor \log_{10}(1 + \text{Troops}) \rfloor + \text{Assault}\right) + 1$$
+  where $\text{Assault} = 1$ when entering an enemy-occupied sector, and $0$ when traversing friendly or unowned territory.
+- **Colonization and Abandonment**: Moving population into an unowned sector immediately colonizes it, claiming territory and adding mobilization points. Vacating all personnel from an origin sector abandons it, resetting sector ownership to neutral ($0$) and updating planetary records atomically.
+
+### Ground Assault Resolution
+When entering an enemy sector, troops or armed civilians execute a ground assault:
+- **Mechanized Perimeter Defense**: Defending Armored Fighting Vehicles (AFVs `R`) in the target sector automatically open fire on advancing forces before ground engagement resolves.
+- **Combat Strength Factors**: Attacker and defender combat strengths evaluate personnel count, military fighter ratings, technological superiority, environmental terrain preferences, sector defensive fortification factors, and morale differentials:
+  $$\text{Strength}_{\text{atk}} = \text{Personnel} \times (\text{Military} \text{ ? } (\text{Fighters} \times 10) : 1) \times 0.01 \times \text{Tech} \times (\text{Preference}_{\text{terrain}} + 0.01) \times (\text{Fortification} + 1.0) \times \text{MoraleFactor}(\Delta \text{Morale})$$
+- **Assault Victory**: If defending forces are eliminated, the attacker captures the sector. Victorious civilians or military personnel occupy the territory.
+- **Metamorph Flesh Absorption**: Species with the Metamorph genetic trait absorb fallen alien corpses:
+  - Victorious metamorph attackers absorb random casualties as new citizens ($\text{Absorbed} \in [0, \text{Defenders}_{\text{killed}}]$).
+  - Defending metamorphs that successfully repel an invasion absorb fallen attackers into their population.
+- **Assault Repulse**: If defenders survive, surviving attackers retreat to their origin sector with reciprocal morale adjustments.
+
+### Amphibious Boarding Operations and Ship Capture
+Landed starships are vulnerable to boarding operations executed from the host sector via the `capture` command (`capture <ship> [<boarders>] [civilians|military]`):
+
+```mermaid
+flowchart TD
+    Capture["Boarding Order Issued (capture)"] --> Valid{"Landed on Controlled Sector &\nPlanet Not Enslaved?"}
+    Valid -->|No| Reject["Operation Rejected"]
+    Valid -->|Yes| CrewCheck{"Does Target Ship Have Living Crew?"}
+    
+    CrewCheck -->|Yes| CrewCombat["Hand-to-Hand Hull Combat\nAttacker Boarding Strength vs Ship Defense Strength"]
+    CrewCombat --> Damage["Mutual Casualties & Collateral Ship Damage\n(Risk of Hull Breach / Destruction)"]
+    Damage --> Breached{"All Defending Crew Eliminated?"}
+    Breached -->|No| Retreat["Boarders Repulsed\nSurvivors Return to Sector"]
+    Breached -->|Yes| TakeShip
+    
+    CrewCheck -->|No| BoobyCheck{"Ship Rigged with Destruct Ammo?"}
+    BoobyCheck -->|Yes| BoobyTrap["Booby Trap Detonation!\nBlast Casualties & Hull Damage"]
+    BoobyCheck -->|No| TakeShip["Ship Captured!\nOwnership Transferred to Conqueror"]
+    BoobyTrap --> HullIntact{"Ship Survives Blast?"}
+    HullIntact -->|Yes| TakeShip
+    HullIntact -->|No| ShipDestroyed["Ship Destroyed in Detonation"]
+    
+    TakeShip --> CrewTransfer["Boarders Crew the Ship up to Capacity\nExcess Boarders Return to Sector Surface"]
+```
+
+#### Boarding Combat Resolution
+1. **Prerequisites**: Target ship must be landed on a planet sector owned by the boarding player. Boarding is prohibited on worlds enslaved by foreign empires.
+2. **Boarding Strength**:
+   $$\text{Strength}_{\text{atk}} = \text{Boarders} \times (\text{Military} \text{ ? } (\text{Fighters} \times 10) : 1) \times 0.01 \times \text{Tech}_{\text{atk}} \times (\text{Preference}_{\text{terrain}} + 0.01) \times (\text{Defense}_{\text{terrain}} + 1.0) \times \text{MoraleFactor}(\text{Morale}_{\text{atk}} - \text{Morale}_{\text{def}})$$
+3. **Ship Defensive Strength**: Defending crew leverage internal ship bulkheads, armor plating, and ship systems:
+   $$\text{Strength}_{\text{def}} = (\text{Crew}_{\text{civ}} + \text{Crew}_{\text{mil}} \times 10 \times \text{Fighters}_{\text{def}}) \times 0.01 \times \text{Tech}_{\text{def}} \times (\text{Armor}_{\text{eff}} + 0.01) \times 0.01 \times (100 - \text{Damage}) \times \text{MoraleFactor}(\text{Morale}_{\text{def}} - \text{Morale}_{\text{atk}})$$
+4. **Casualties and Collateral Hull Damage**: Both boarding parties and defending crews suffer proportional casualties. Internal firefights inflict up to $25\%$ collateral structural damage on the vessel, risking hull destruction if damage reaches $100\%$.
+5. **Booby Traps on Crewless Vessels**: Unmanned robot craft or abandoned vessels storing destructive munitions (`destruct`) trigger internal anti-tamper booby traps:
+   $$\text{Explosion Severity} = \min(100, \text{UniformRandom}(0, 10 \times \text{Destruct}))$$
+   Each boarder faces a percentage chance equal to the explosion severity of being killed in the blast, and the vessel sustains equal structural damage.
+6. **Vessel Seizure & Crew Integration**:
+   - If defending crew is eliminated and the hull survives, the vessel transfers to the conqueror.
+   - Surviving boarders crew the ship up to operational capacity (`max_crew_capacity` for civilians, `available_mil` for troops), with excess personnel returning to the planetary sector.
+   - Planetary population totals and sector garrison counts decrement accurately to reflect personnel transferred into space and casualties sustained.
+   - Docked parasite ships and carried cargo pods transfer to the new owner.
 
 ---
 

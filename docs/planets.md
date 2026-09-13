@@ -43,6 +43,9 @@ flowchart LR
 
 Autonomous robotic probes and migrating colonists utilize these topological rules to navigate across landmasses without boundary clipping errors.
 
+### Population Movement, Colonization, and Sector Abandonment
+Colonists and military garrisons maneuver across adjacent sectors using `move` and `deploy`. Moving into unowned territory immediately claims and colonizes the sector, whereas transferring all personnel away abandons the sector back to neutral status ($0$) and updates planetary mobilization records. For full AP cost formulas, ground assault combat factors, and amphibious boarding operations, see [Tactical Combat, Naval Gunnery, and Planetary Warfare](combat.md#4-planetary-surface-defense-ground-warfare-and-boarding-actions).
+
 ---
 
 ## 2. Planetary Archetypes and Gas Giant Harvesters

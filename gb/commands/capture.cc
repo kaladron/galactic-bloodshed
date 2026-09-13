@@ -37,9 +37,20 @@ bool capture(const command_t& argv, GameObj& g) {
     g.out << "Capture what?\n";
     return false;
   }
+  const auto& planet_peek = *g.entity_manager.peek_planet(g.snum(), g.pnum());
+  if (planet_peek.slaved_to() > 0 && planet_peek.slaved_to() != Playernum) {
+    g.out << "That planet has been enslaved!\n";
+    return false;
+  }
   if (Governor != 0 &&
       g.entity_manager.peek_star(g.snum())->governor(Playernum) != Governor) {
     g.out << "You are not authorized in this system.\n";
+    return false;
+  }
+
+  auto target_shipno = string_to_shipnum(argv[1]);
+  if (!target_shipno) {
+    g.out << "Illegal ship value.\n";
     return false;
   }
 
@@ -47,6 +58,9 @@ bool capture(const command_t& argv, GameObj& g) {
   for (auto ship_handle : shiplist) {
     Ship& ship = *ship_handle;
     shipnum_t shipno = ship.number();
+    if (shipno != *target_shipno) {
+      continue;
+    }
     if (ship.owner() != Playernum) {
       if (!ship.is_landed()) {
         g.out << std::format("{} #{} is not landed on a planet.\n",
@@ -81,9 +95,9 @@ bool capture(const command_t& argv, GameObj& g) {
 
       if (argv.size() < 4)
         what = PopulationType::CIV;
-      else if (argv[3] == "civilians")
+      else if (argv[3] == "civilians" || argv[3] == "civ")
         what = PopulationType::CIV;
-      else if (argv[3] == "military")
+      else if (argv[3] == "military" || argv[3] == "mil")
         what = PopulationType::MIL;
       else {
         g.out << "Capture with what?\n";
@@ -137,10 +151,15 @@ bool capture(const command_t& argv, GameObj& g) {
       casualties1 = 0;
       casualties2 = 0;
 
+      population_t net_civ_lost = 0;
+      population_t net_mil_lost = 0;
+      bool sect_emptied = false;
+      unsigned int sect_mob = 0;
       player_t sect_owner_display = 0;
       g.entity_manager.mutate_sectormap(
           ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
             auto& sect = smap.get(ship.land_coords());
+            sect_mob = sect.get_mobilization();
             if (what == PopulationType::CIV)
               sect.subtract_popn(boarders);
             else if (what == PopulationType::MIL)
@@ -221,10 +240,12 @@ bool capture(const command_t& argv, GameObj& g) {
                 const auto taken = std::min(boarders, ship.max_crew_capacity());
                 ship.add_popn(taken, race.mass);
                 sect.add_popn(boarders - taken);  // Return excess boarders
+                net_civ_lost = taken + casualties;
               } else if (what == PopulationType::MIL) {
                 const auto taken = std::min(boarders, ship.available_mil());
                 ship.add_troops(taken, race.mass);
                 sect.set_troops(sect.get_troops() + boarders - taken);
+                net_mil_lost = taken + casualties;
               }
               if (olddpopn + olddtroops &&
                   ship.type() != ShipType::OTYPE_FACTORY) {
@@ -236,15 +257,52 @@ bool capture(const command_t& argv, GameObj& g) {
               }
               /* unoccupied ships and factories don't count */
             } else { /* retreat */
-              if (what == PopulationType::CIV)
+              if (what == PopulationType::CIV) {
                 sect.add_popn(boarders);
-              else if (what == PopulationType::MIL)
+                net_civ_lost = casualties;
+              } else if (what == PopulationType::MIL) {
                 sect.set_troops(sect.get_troops() + boarders);
+                net_mil_lost = casualties;
+              }
             }
 
-            sect.clear_owner_if_empty();
+            if (sect.is_empty()) {
+              sect_emptied = true;
+              sect.set_owner(0);
+            }
             sect_owner_display = sect.get_owner();
           });
+
+      if (net_civ_lost > 0 || net_mil_lost > 0 || sect_emptied) {
+        g.entity_manager.mutate_planet(
+            ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
+              if (net_civ_lost > 0) {
+                planet.popn() = (planet.popn() >= net_civ_lost)
+                                    ? (planet.popn() - net_civ_lost)
+                                    : 0;
+                auto& p_info = planet.info(Playernum);
+                p_info.popn = (p_info.popn >= net_civ_lost)
+                                  ? (p_info.popn - net_civ_lost)
+                                  : 0;
+              }
+              if (net_mil_lost > 0) {
+                planet.troops() = (planet.troops() >= net_mil_lost)
+                                      ? (planet.troops() - net_mil_lost)
+                                      : 0;
+                auto& p_info = planet.info(Playernum);
+                p_info.troops = (p_info.troops >= net_mil_lost)
+                                    ? (p_info.troops - net_mil_lost)
+                                    : 0;
+              }
+              if (sect_emptied) {
+                auto& p_info = planet.info(Playernum);
+                if (p_info.numsectsowned > 0) {
+                  p_info.numsectsowned -= 1;
+                }
+                p_info.mob_points -= static_cast<long>(sect_mob);
+              }
+            });
+      }
 
       const auto& star = *g.entity_manager.peek_star(ship.storbits());
       std::string telegram =

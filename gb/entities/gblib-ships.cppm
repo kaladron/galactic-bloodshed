@@ -3479,17 +3479,38 @@ public:
     data_.mass -= static_cast<double>(actual) * MASS_RESOURCE;
   }
 
+  /// Whether this vessel can strap mineral resources to its external hull
+  /// beyond its internal cargo bay capacity (true for shuttles not berthed in a
+  /// hangar).
+  [[nodiscard]] bool can_strap_cargo_to_hull() const noexcept {
+    return data_.type == ShipType::STYPE_SHUTTLE &&
+           data_.whatorbits != ScopeLevel::LEVEL_SHIP;
+  }
+
+  /// Returns the current fuel level truncated to integer cargo units.
+  [[nodiscard]] resource_t fuel_units() const noexcept {
+    return data_.fuel > 0.0 ? static_cast<resource_t>(data_.fuel) : 0;
+  }
+
+  /// Returns remaining fuel capacity in integer cargo units.
+  [[nodiscard]] resource_t available_fuel_capacity() const noexcept {
+    const double diff = max_fuel_capacity() - data_.fuel;
+    return diff > 0.0 ? static_cast<resource_t>(diff) : 0;
+  }
+
   /// \brief Adds resources and increments ship mass accordingly, clamped to
-  /// max resource capacity. If amt is negative, delegates to
-  /// consume_resource(-amt).
+  /// max resource capacity unless the ship can strap cargo to its external
+  /// hull. If amt is negative, delegates to consume_resource(-amt).
   void add_resource(resource_t amt) noexcept {
     if (amt < 0) {
       consume_resource(-amt);
       return;
     }
     const auto max_cap = max_resource_capacity();
-    if (data_.resource >= max_cap) return;
-    const auto actual = std::min(amt, max_cap - data_.resource);
+    if (!can_strap_cargo_to_hull() && data_.resource >= max_cap) return;
+    const auto actual = can_strap_cargo_to_hull()
+                            ? amt
+                            : std::min(amt, max_cap - data_.resource);
     data_.resource += actual;
     data_.mass += static_cast<double>(actual) * MASS_RESOURCE;
   }

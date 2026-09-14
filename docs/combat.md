@@ -173,6 +173,13 @@ When entering an enemy sector, troops or armed civilians execute a ground assaul
   - Defending metamorphs that successfully repel an invasion absorb fallen attackers into their population.
 - **Assault Repulse**: If defenders survive, surviving attackers retreat to their origin sector with reciprocal morale adjustments.
 
+### Orbital Disembarkation Assaults (`unload`)
+When a landed starship unloads civilian personnel (`c`) or military troops (`m`) onto a sector controlled by a foreign empire (`unload <ship> c|m <amount>`), the disembarking force launches an immediate amphibious ground assault against the defending sector garrison:
+- **Landing Craft Cover Bonus**: The landing craft's hull armor plating and structural integrity ($1.0 - \text{Damage}/100$) provide protective cover for the disembarking troops, pitted against the defender's terrain defense multiplier and environmental terrain affinity.
+- **Diplomatic & Linguistic Contact**: Both empires gain $+5\%$ mutual translation knowledge (up to $100\%$).
+- **Sector Capture & Biomass Absorption**: If all defenders are eliminated, the disembarking force captures the sector (with Metamorph attackers absorbing fallen defenders into the sector population), and planetary demographic summaries resynchronize atomically.
+- **Repulsed Disembarkation**: If the defending garrison holds the sector, surviving attackers retreat back aboard the landing craft (restoring ship crew and troop mass), while defending Metamorphs absorb fallen attackers.
+
 ### Amphibious Boarding Operations and Ship Capture
 Landed starships are vulnerable to boarding operations executed from the host sector via the `capture` command (`capture <ship> [<boarders>] [civilians|military]`):
 

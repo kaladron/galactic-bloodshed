@@ -445,6 +445,530 @@ void test_load_ship_to_ship() {
   std::println(std::cout, "✓ Alien ship transfer constraints enforced");
 }
 
+void test_planet_crew_load_and_unload() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Create landed cargo ship with crew capacity and initial crew/troops
+  shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                          .owned_by(1, 0)
+                          .named("ColonyShip")
+                          .landed_on(0, 0, {5, 5})
+                          .with_crew(50, 20)
+                          .with_max_crew(100)
+                          .build();
+
+  // Ensure sector (5, 5) is empty land
+  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& map) {
+    auto& sect = map.get({5, 5});
+    sect.set_condition(SectorType::SEC_LAND);
+    sect.set_owner(0);
+    sect.set_popn_exact(0);
+    sect.set_troops(0);
+    p.sync_demographics(map);
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // 1. Unload civilians onto empty sector -> sector COLONIZED
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", ship_id.value), "c", "10"});
+  test::expect_contains(g.out.str(), "sector 5,5 COLONIZED");
+  test::expect_eq(ctx.em.peek_ship(ship_id)->popn(), 40);
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_popn(), 10);
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_owner(), 1);
+  ctx.verify_universe_invariants();
+
+  // 2. Load civilians back until sector is empty -> sector evacuated
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", ship_id.value), "c", "10"});
+  test::expect_contains(g.out.str(), "sector 5,5 evacuated");
+  test::expect_eq(ctx.em.peek_ship(ship_id)->popn(), 50);
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_popn(), 0);
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_owner(), 0);
+  ctx.verify_universe_invariants();
+
+  // 3. Unload military onto empty sector -> sector OCCUPIED
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", ship_id.value), "m", "5"});
+  test::expect_contains(g.out.str(), "sector 5,5 OCCUPIED");
+  test::expect_eq(ctx.em.peek_ship(ship_id)->troops(), 15);
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_troops(), 5);
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_owner(), 1);
+  ctx.verify_universe_invariants();
+
+  // 4. Load military with omitted amount (default maximum available) ->
+  // evacuated
+  g.out.str("");
+  ctx.assert_dispatch_success(g,
+                              {"load", std::format("#{}", ship_id.value), "m"});
+  test::expect_contains(g.out.str(), "sector 5,5 evacuated");
+  test::expect_eq(ctx.em.peek_ship(ship_id)->troops(), 20);
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_troops(), 0);
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_owner(), 0);
+  ctx.verify_universe_invariants();
+  std::println(std::cout,
+               "✓ Planetary crew colonization and evacuation verified");
+}
+
+void test_unload_onto_alien_sector() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // Setup Player 1 (attacker) and Player 2 (defender)
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.fighters = 10;
+    r.absorb = true;  // Metamorph body absorption test on victory
+  });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.fighters = 1;
+    r.absorb = false;
+  });
+
+  // Create assault transport for Player 1 landed at (2, 2)
+  shipnum_t assault_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                             .owned_by(1, 0)
+                             .named("DropShip")
+                             .landed_on(0, 0, {2, 2})
+                             .with_crew(100, 100)
+                             .with_max_crew(200)
+                             .build();
+
+  // Populate sector (2, 2) with weak Player 2 forces
+  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& map) {
+    auto& sect = map.get({2, 2});
+    sect.set_condition(SectorType::SEC_LAND);
+    sect.set_owner(2);
+    sect.set_popn_exact(2);
+    sect.set_troops(1);
+    p.sync_demographics(map);
+  });
+  ctx.verify_universe_invariants();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // 1. Victory assault with troops (and metamorph body absorption)
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", assault_id.value), "m", "50"});
+  test::expect_contains(g.out.str(),
+                        "That sector is already occupied by another player!");
+  test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
+  test::expect_contains(g.out.str(), "alien bodies absorbed");
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({2, 2}).get_owner(), 1);
+  // Verify planet demographics were synced after ground assault casualties
+  ctx.verify_universe_invariants();
+
+  // 2. Defeat assault with military: Player 2 has overwhelming defense and
+  // metamorph absorption
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.fighters = 1;
+    r.absorb = false;
+  });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.fighters = 15;
+    r.absorb = true;
+  });
+  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& map) {
+    auto& sect = map.get({2, 2});
+    sect.set_owner(2);
+    sect.set_popn_exact(100);
+    sect.set_troops(500);
+    p.sync_demographics(map);
+  });
+  ctx.verify_universe_invariants();
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", assault_id.value), "m", "5"});
+  test::expect_contains(g.out.str(), "DEFEAT!  Your assault was repulsed.");
+  test::expect_contains(g.out.str(), "Metamorphs have absorbed");
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({2, 2}).get_owner(), 2);
+  ctx.verify_universe_invariants();
+
+  // Also test civilian defeat branch
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", assault_id.value), "c", "5"});
+  test::expect_contains(g.out.str(), "DEFEAT!  Your assault was repulsed.");
+  ctx.verify_universe_invariants();
+
+  // 3. Attempting to load (instead of unload) from an alien-occupied sector
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", assault_id.value), "c", "5"});
+  test::expect_contains(g.out.str(),
+                        "You have to unload to assault alien sectors.");
+
+  // 4. Victory assault with civilians
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.fighters = 15;
+    r.absorb = true;
+  });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.fighters = 1;
+    r.absorb = false;
+  });
+  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& map) {
+    auto& sect = map.get({2, 2});
+    sect.set_owner(2);
+    sect.set_popn_exact(1);
+    sect.set_troops(0);
+    p.sync_demographics(map);
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", assault_id.value), "c", "50"});
+  test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
+  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({2, 2}).get_owner(), 1);
+  ctx.verify_universe_invariants();
+  std::println(std::cout, "✓ Amphibious alien sector assaults (victory, "
+                          "defeat, metamorph) verified");
+}
+
+void test_transporter_edge_cases() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // Target receiver transporter owned by Player 2
+  JsonStore store(ctx.db);
+  Race r2{};
+  r2.Playernum = 2;
+  r2.name = "ReceiverRace";
+  RaceRepository(store).save(r2);
+
+  const auto recv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 10)
+                           .owned_by(2, 0)
+                           .named("AlienReceiver")
+                           .with_alive(true)
+                           .with_active(true)
+                           .with_on(true)
+                           .landed_on(0, 0, {5, 5})
+                           .with_fuel(0.0)
+                           .with_max_fuel(500.0)
+                           .with_resource(0)
+                           .with_max_resource(500)
+                           .with_destruct(0)
+                           .with_max_destruct(200)
+                           .with_crystals(0)
+                           .with_crew(0, 0)
+                           .with_max_crew(100)
+                           .build();
+
+  const auto send_id =
+      TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 11)
+          .owned_by(1, 0)
+          .named("SenderDevice")
+          .with_alive(true)
+          .with_active(true)
+          .with_on(true)
+          .landed_on(0, 0, {5, 5})
+          .with_fuel(0.0)
+          .with_max_fuel(500.0)
+          .with_resource(0)
+          .with_max_resource(500)
+          .with_destruct(0)
+          .with_max_destruct(200)
+          .with_crystals(0)
+          .with_crew(0, 0)
+          .with_max_crew(100)
+          .with_special(TransportData{
+              .target = static_cast<unsigned short>(recv_id.value)})
+          .build();
+
+  // 1. Target device damaged
+  ctx.em.mutate_ship(recv_id, [](Ship& s) { s.admin_override_damage(50); });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "Target device is damaged");
+
+  // 2. Target device not receiving (off)
+  ctx.em.mutate_ship(recv_id, [](Ship& s) {
+    s.admin_override_damage(0);
+    s.on() = false;
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "The target device is not receiving");
+
+  // 3. Origin device damaged
+  ctx.em.mutate_ship(recv_id, [](Ship& s) { s.on() = true; });
+  ctx.em.mutate_ship(send_id, [](Ship& s) { s.admin_override_damage(25); });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "Origin device is damaged");
+
+  // 4. Target device not landed
+  ctx.em.mutate_ship(send_id, [](Ship& s) { s.admin_override_damage(0); });
+  ctx.em.mutate_ship(
+      recv_id, [](Ship& s) { s.launch_to_orbit(ScopeLevel::LEVEL_STAR); });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "Target ship not landed");
+
+  // 5a. Hopper blocked (target ship == 0)
+  ctx.em.mutate_ship(recv_id, [](Ship& s) { s.land_on_planet(); });
+  ctx.em.mutate_ship(send_id, [](Ship& s) {
+    static_cast<TransporterShip&>(s).transport().target = 0;
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "The hopper seems to be blocked");
+
+  // 5b. Hopper blocked (target ship doesn't exist)
+  ctx.em.mutate_ship(send_id, [](Ship& s) {
+    static_cast<TransporterShip&>(s).transport().target = 9999;
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "The hopper seems to be blocked");
+
+  // 6. Successful multi-commodity transfer to another player's receiver (sends
+  // telegram)
+  ctx.em.mutate_ship(send_id, [&](Ship& s) {
+    static_cast<TransporterShip&>(s).transport().target =
+        static_cast<unsigned short>(recv_id.value);
+    s.add_fuel(30.0);
+    s.destruct() = 15;
+    s.add_crystals(5);
+    s.popn() = 4;
+    s.troops() = 2;
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "Zap");
+  test::expect_eq(ctx.em.peek_ship(recv_id)->resource(), 70);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->fuel(), 30.0);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->destruct(), 15);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->crystals(), 5);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->popn(), 4);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->troops(), 2);
+  std::println(std::cout,
+               "✓ Transporter edge cases and cross-player telegrams verified");
+}
+
+void test_docking_and_validation_edge_cases() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // 1. Irradiated and inactive ship rejection
+  shipnum_t rad_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                         .owned_by(1, 0)
+                         .named("RadShip")
+                         .landed_on(0, 0, {1, 1})
+                         .with_active(false)
+                         .build();
+  ctx.em.mutate_ship(rad_id, [](Ship& s) { s.apply_radiation(10); });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", rad_id.value), "r", "10"});
+
+  // 2. Un-docked ship in orbit rejection
+  shipnum_t orb_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                         .owned_by(1, 0)
+                         .named("OrbitShip")
+                         .in_star_orbit(0)
+                         .build();
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", orb_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "is not landed or docked");
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+
+  // 3. Wrong planet scope rejection (attempting to load landed ship from star
+  // scope)
+  shipnum_t wrong_plan_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                                .owned_by(1, 0)
+                                .named("OtherPlanetShip")
+                                .landed_on(0, 0, {1, 1})
+                                .build();
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", wrong_plan_id.value), "r", "10"});
+  test::expect_contains(g.out.str(),
+                        "Change scope to the planet this ship is landed on");
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+
+  // 4. Von Neumann machine unload rejection
+  shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
+                        .owned_by(1, 0)
+                        .named("VNProbe")
+                        .landed_on(0, 0, {1, 1})
+                        .with_resource(50)
+                        .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"unload", std::format("#{}", vn_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "You can't unload VNs");
+
+  // 5. Invalid non-numeric amount argument and empty commodity
+  shipnum_t cargo_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                           .owned_by(1, 0)
+                           .named("GoodCargo")
+                           .landed_on(0, 0, {1, 1})
+                           .with_max_resource(500)
+                           .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", cargo_id.value), "r", "notanumber"});
+  test::expect_contains(g.out.str(), "Invalid amount");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", cargo_id.value), ""});
+  test::expect_contains(g.out.str(), "Load what?");
+
+  // 6. Out of bounds amount argument
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", cargo_id.value), "r", "999999"});
+  test::expect_contains(g.out.str(), "you can only transfer between");
+
+  // 7. Boobytrap message when loading/unloading destruct on robot ship
+  // (max_crew == 0)
+  shipnum_t robot_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                           .owned_by(1, 0)
+                           .named("MineShip")
+                           .landed_on(0, 0, {1, 1})
+                           .with_max_crew(0)
+                           .with_destruct(0)
+                           .with_max_destruct(100)
+                           .build();
+  ctx.em.mutate_planet(0, 0,
+                       [](Planet& p) { p.info(player_t{1}).destruct = 100; });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", robot_id.value), "d", "10"});
+  test::expect_contains(g.out.str(), "now boobytrapped");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", robot_id.value), "d", "10"});
+  test::expect_contains(g.out.str(), "no longer boobytrapped");
+
+  // 8. Shuttle ship-to-ship resource load/unload (external hull strapping
+  // beyond standard internal max_resource = 25)
+  shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                             .owned_by(1, 0)
+                             .named("ShuttleCraft")
+                             .in_star_orbit(0)
+                             .with_resource(10)
+                             .with_max_resource(25)
+                             .build();
+  shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                             .owned_by(1, 0)
+                             .named("CarrierShip")
+                             .in_star_orbit(0)
+                             .with_resource(100)
+                             .with_max_resource(500)
+                             .build();
+  ctx.em.mutate_ship(shuttle_id,
+                     [&](Ship& s) { s.dock_with_ship(carrier_id); });
+  ctx.em.mutate_ship(carrier_id,
+                     [&](Ship& s) { s.dock_with_ship(shuttle_id); });
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", shuttle_id.value), "r", "50"});
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 60);
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", shuttle_id.value), "r", "30"});
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 30);
+
+  // Also test unloading from carrier to shuttle (lolim branch) and invalid
+  // ship-to-ship commodity
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", carrier_id.value), "r", "10"});
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 40);
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", shuttle_id.value), "z", "10"});
+  test::expect_contains(g.out.str(), "No such commodity");
+
+  // 9. Overloaded destination ship, destshipno == 0, bogus destination ship,
+  // and un-docked destination ship
+  ctx.em.mutate_ship(carrier_id,
+                     [&](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_SHIP; });
+  ctx.em.mutate_ship(carrier_id,
+                     [&](Ship& s) { s.dock_with_ship(shuttle_id); });
+  ctx.em.mutate_ship(shuttle_id, [&](Ship& s) {
+    s.dock_with_ship(carrier_id);
+    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
+  });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", carrier_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "is overloaded!");
+
+  ctx.em.mutate_ship(shuttle_id, [](Ship& s) {
+    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    s.destshipno() = 0;
+  });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "is not docked");
+
+  ctx.em.mutate_ship(shuttle_id, [](Ship& s) { s.destshipno() = 9999; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "Destination ship is bogus");
+
+  ctx.em.mutate_ship(shuttle_id, [&](Ship& s) {
+    s.whatorbits() = ScopeLevel::LEVEL_STAR;
+    s.destshipno() = carrier_id;
+  });
+  ctx.em.mutate_ship(carrier_id, [](Ship& s) { s.destshipno() = 0; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "is not docked");
+
+  std::println(std::cout,
+               "✓ Docking, VN, boobytrap, and validation edge cases verified");
+}
+
 }  // namespace
 
 int main() {
@@ -453,6 +977,10 @@ int main() {
   test_load_ship_to_ship();
   test_load_transporter();
   test_load_syntax_and_errors();
+  test_planet_crew_load_and_unload();
+  test_unload_onto_alien_sector();
+  test_transporter_edge_cases();
+  test_docking_and_validation_edge_cases();
 
   std::println(std::cout, "\n✅ All load command tests passed!");
   return 0;

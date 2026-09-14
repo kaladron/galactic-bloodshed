@@ -863,7 +863,9 @@ std::int64_t Ship::transfer_cargo_to(Ship& destination, ShipCargoType cargo,
       const auto max_cap = destination.max_resource_capacity();
       const auto current = destination.resource();
       const std::int64_t capacity =
-          (max_cap > current) ? (max_cap - current) : 0;
+          destination.can_strap_cargo_to_hull()
+              ? available_stock
+              : ((max_cap > current) ? (max_cap - current) : 0);
 
       const std::int64_t to_transfer =
           std::min({amount, available_stock, capacity});

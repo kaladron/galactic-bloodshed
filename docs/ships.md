@@ -69,6 +69,8 @@ $$\text{Transferred Amount} = \min\Big(\text{Requested Amount},\; \text{Availabl
   - **Living Crew & Troops**: $\pm M_{\text{race}} \text{ mass units per individual}$
   - **Warp Crystals**: $0.0 \text{ mass units}$
 - **Berthing & Cargo Clamping**: Transfers strictly respect the recipient ship's physical volume limits (`max_resource`, `max_fuel`, `max_destruct`, and `max_crew`). Any excess requested beyond available capacity remains on the source vessel, preventing commodity destruction or silent cargo loss.
+- **Shuttle Hull-Strapping**: Light personnel shuttles (`s`) operating outside carrier hangars can strap mineral resources directly to their external hull beyond their internal cargo bay (`25` resource units). An overloaded shuttle cannot launch or land inside a carrier until excess cargo is jettisoned or unloaded.
+- **Audio-Vibratory-Physio-Molecular Transporters (`[`)**: Landed, operational transporter devices automatically beam all loaded cargo (minerals, fuel, destruct, crystals, civilian crew, and military troops) instantaneously to their configured receiving transporter, notifying foreign recipients via imperial telegram.
 
 ### Vessel Decommissioning and Material Reclamation (`scrap`)
 When starships become obsolete, structurally compromised, or surplus to imperial fleet requirements, commanders can decommission them using the `scrap` command (`scrap <ship>`):

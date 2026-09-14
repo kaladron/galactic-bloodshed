@@ -221,6 +221,16 @@ flowchart TD
    - Planetary population totals and sector garrison counts decrement accurately to reflect personnel transferred into space and casualties sustained.
    - Docked parasite ships and carried cargo pods transfer to the new owner.
 
+### Spaceborne Boarding Assaults (`assault`)
+Warships operating in deep space, star orbit, or planetary orbit can execute spaceborne boarding assaults against hostile vessels within docking range ($D \le 10.0$) via `assault <ship> <target> [<boarders>] [civ|mil]`:
+- **Maneuvering Fuel & Action Point Cost**: Executing an assault consumes $1$ Action Point (universe AP in deep space, star AP in orbit) and burns maneuvering propellant:
+  $$\text{Fuel Burn} = 0.05 + 0.05 \times D \times \sqrt{\text{Mass}_{\text{attacker}}}$$
+- **Defensive Fire Phase**: Before boarding airlocks link, the target vessel fires a defensive volley (`fire-from-dock`) against the approaching attacker. If either ship is destroyed during defensive fire, the boarding operation terminates.
+- **Moored Vessel Decoupling**: If the target ship is spaceborne-moored alongside a partner vessel, the assault automatically decouples the mooring tether before boarding combat begins. (Landed ships and parasite craft inside carrier hangars cannot be space-assaulted.)
+- **Boarding Combat & Booby Traps**: Boarding parties fight defending crews with proportional casualties and collateral hull damage (up to $25\%$ structural damage per side). Unmanned robot craft rigged with destructive ordnance (`destruct`) detonate internal booby traps against the boarding ship:
+  $$\text{Booby Trap Damage} = \min(100, \text{UniformRandom}(0, 10 \times \text{Destruct}))$$
+  inflicting direct hull damage on the attacking vessel.
+
 ---
 
 ## 5. Orbital Bombardment and Strategic Deterrence

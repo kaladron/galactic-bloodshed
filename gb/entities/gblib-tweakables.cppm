@@ -190,6 +190,13 @@ export constexpr double FUEL_MANEUVER = 0.3;  // Fuel it costs to change aim
 export constexpr double DIST_TO_LAND = 10.0;
 export constexpr double DIST_TO_DOCK = 10.0;
 
+export constexpr double DOCK_BASE_FUEL_COST =
+    0.05;  // base thruster ignition fuel cost for docking/assault
+export constexpr double DOCK_DISTANCE_FUEL_FACTOR =
+    0.025;  // fuel factor per unit distance per sqrt(mass) for docking
+export constexpr double ASSAULT_FUEL_MULTIPLIER =
+    2.0;  // distance fuel multiplier during boarding assaults
+
 export constexpr double LAUNCH_GRAV_MASS_FACTOR =
     0.18;  // fuel use modifier for taking off
 export constexpr double LAND_GRAV_MASS_FACTOR = 0.0145;

@@ -2903,6 +2903,22 @@ public:
     data_.whatdest = ScopeLevel::LEVEL_SHIP;
   }
 
+  /// Moors the ship to another spaceborne ship (overload taking Ship
+  /// reference).
+  void dock_with_ship(const Ship& other) noexcept {
+    dock_with_ship(other.number());
+  }
+
+  /// Computes the fuel required to maneuver and dock with or assault target.
+  [[nodiscard]] double
+  docking_fuel_cost(const Ship& target,
+                    bool is_assault = false) const noexcept {
+    const double dist = target.coordinates().distance_to(coordinates());
+    const double multiplier = is_assault ? ASSAULT_FUEL_MULTIPLIER : 1.0;
+    return DOCK_BASE_FUEL_COST + dist * DOCK_DISTANCE_FUEL_FACTOR * multiplier *
+                                     std::sqrt(static_cast<double>(mass()));
+  }
+
   /// Undocks the ship from a moored ship in space. Preserves whatorbits.
   void undock_from_ship() noexcept {
     data_.dock_state = DockState::Spaceborne;

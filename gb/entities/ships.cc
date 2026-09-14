@@ -416,25 +416,23 @@ double complexity(ShipType type) {
   return ship_template(type).base_tech;
 }
 
-bool testship(const Ship& s, GameObj& g) {
-  const player_t playernum = g.player();
-  const governor_t governor = g.governor();
-  if (!s.alive()) {
-    g.out << std::format("{} has been destroyed.\n", s);
-    return true;
+bool Ship::check_commandable(GameObj& g) const {
+  if (!alive()) {
+    g.out << std::format("{} has been destroyed.\n", *this);
+    return false;
   }
 
-  if (s.owner() != playernum || !authorized(governor, s)) {
-    DontOwnErr(g.entity_manager, playernum, governor, s.number());
-    return true;
+  if (owner() != g.player() || !is_authorized_for(g.governor())) {
+    DontOwnErr(g.entity_manager, g.player(), g.governor(), number());
+    return false;
   }
 
-  if (!s.active()) {
-    g.out << std::format("{} is irradiated {}% and inactive.\n", s, s.rad());
-    return true;
+  if (!active()) {
+    g.out << std::format("{} is irradiated {}% and inactive.\n", *this, rad());
+    return false;
   }
 
-  return false;
+  return true;
 }
 
 std::string dispshiploc_brief(EntityManager& em, const Ship& ship) {

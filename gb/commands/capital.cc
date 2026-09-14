@@ -37,7 +37,7 @@ bool capital(const command_t& argv, GameObj& g) {
     return g.entity_manager.with_ship(shipno, [&](const Ship& s) {
       if (argv.size() == 2) {
         starnum_t snum = s.storbits();
-        if (testship(s, g)) {
+        if (!s.check_commandable(g)) {
           g.out << "You can't do that!\n";
           return false;
         }

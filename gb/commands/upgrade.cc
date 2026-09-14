@@ -27,7 +27,7 @@ bool upgrade(const command_t& argv, GameObj& g) {
   }
   bool ok = false;
   g.entity_manager.mutate_ship(g.shipno(), [&](Ship& dirship) {
-    if (testship(dirship, g)) {
+    if (!dirship.check_commandable(g)) {
       return;
     }
     if (dirship.damage()) {

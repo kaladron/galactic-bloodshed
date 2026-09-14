@@ -2909,6 +2909,30 @@ public:
     dock_with_ship(other.number());
   }
 
+  /// Symmetrically moors this ship and other together in space.
+  void moor_together(Ship& other) noexcept {
+    dock_with_ship(other);
+    other.dock_with_ship(*this);
+  }
+
+  /// Returns true if governor is authorized to command this ship (deity/leader
+  /// governor 0 or the assigned governor).
+  [[nodiscard]] bool is_authorized_for(governor_t gov) const noexcept {
+    return gov == 0 || data_.governor == gov;
+  }
+
+  /// Returns true if this ship is alive, active, owned by player, and
+  /// authorized for governor.
+  [[nodiscard]] bool is_commandable_by(player_t player,
+                                       governor_t gov) const noexcept {
+    return alive() && active() && owner() == player && is_authorized_for(gov);
+  }
+
+  /// Validates that this ship is alive, owned by g.player(), authorized for
+  /// g.governor(), and active (not irradiated). Emits diagnostic error messages
+  /// to g.out and returns false if any precondition fails.
+  [[nodiscard]] bool check_commandable(GameObj& g) const;
+
   /// Computes the fuel required to maneuver and dock with or assault target.
   [[nodiscard]] double
   docking_fuel_cost(const Ship& target,
@@ -4178,7 +4202,6 @@ export double getmass(const Ship&);
 export unsigned int ship_size(const Ship&);
 export double complexity(const Ship&);
 export double complexity(ShipType);  // Complexity for default ship of this type
-export bool testship(const Ship&, GameObj&);
 export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
 export void do_VN(EntityManager&, Ship&, TurnStats&);
 export std::optional<player_t>

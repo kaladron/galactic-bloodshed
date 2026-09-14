@@ -32,7 +32,7 @@ bool walk(const command_t& argv, GameObj& g) {
     g.out << "No such ship.\n";
     return false;
   }
-  if (testship(*ship_peek, g)) {
+  if (!ship_peek->check_commandable(g)) {
     g.out << "You do not control this ship.\n";
     return false;
   }

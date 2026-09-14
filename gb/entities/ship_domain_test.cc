@@ -5,6 +5,7 @@
 /// invariants.
 
 import gb.entities;
+import gb.services;
 import std;
 import test;
 
@@ -1120,6 +1121,82 @@ void test_ship_cargo_transfer() {
   test::expect_eq(dst.resource(), 500);
 }
 
+void test_ship_moor_together_and_commandability() {
+  std::println(
+      std::cout,
+      "Testing Ship::moor_together() and commandability predicates...");
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  shipnum_t s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                        .owned_by(1, 2)
+                        .in_star_orbit(0)
+                        .build();
+  shipnum_t s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                        .owned_by(1, 0)
+                        .in_star_orbit(0)
+                        .build();
+
+  // Symmetric mooring via moor_together
+  ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
+    ctx.em.mutate_ship(s2_id, [&](Ship& s2) { s1.moor_together(s2); });
+  });
+
+  const auto* s1_peek = ctx.em.peek_ship(s1_id);
+  const auto* s2_peek = ctx.em.peek_ship(s2_id);
+  test::expect_true(s1_peek->is_docked());
+  test::expect_true(s2_peek->is_docked());
+  test::expect_eq(s1_peek->destshipno(), s2_id);
+  test::expect_eq(s2_peek->destshipno(), s1_id);
+
+  // Authorization checks: governor 0 or matching governor
+  test::expect_true(s1_peek->is_authorized_for(0));
+  test::expect_true(s1_peek->is_authorized_for(2));
+  test::expect_false(s1_peek->is_authorized_for(1));
+
+  // Commandability checks
+  test::expect_true(s1_peek->is_commandable_by(1, 0));
+  test::expect_true(s1_peek->is_commandable_by(1, 2));
+  test::expect_false(s1_peek->is_commandable_by(2, 0));
+  test::expect_false(s1_peek->is_commandable_by(1, 1));
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 2);
+  test::expect_true(s1_peek->check_commandable(g));
+
+  // Unauthorized governor fails check_commandable and receives telegram via
+  // DontOwnErr
+  ctx.setup_game_obj(g, 1, 1);
+  test::expect_false(s1_peek->check_commandable(g));
+  auto t_p1g1 = ctx.em.get_telegrams(1, 1);
+  test::expect_eq(t_p1g1.size(), 1u);
+  test::expect_true(t_p1g1[0].message.find("don't own") != std::string::npos);
+
+  // Wrong player fails check_commandable and receives telegram via DontOwnErr
+  ctx.setup_game_obj(g, 2, 0);
+  test::expect_false(s1_peek->check_commandable(g));
+  auto t_p2g0 = ctx.em.get_telegrams(2, 0);
+  test::expect_eq(t_p2g0.size(), 1u);
+  test::expect_true(t_p2g0[0].message.find("don't own") != std::string::npos);
+
+  // Irradiated inactive ship fails check_commandable
+  ctx.em.mutate_ship(s1_id, [](Ship& s1) {
+    s1.active() = false;
+    s1.apply_radiation(100);
+  });
+  ctx.setup_game_obj(g, 1, 0);
+  g.out.str("");
+  test::expect_false(ctx.em.peek_ship(s1_id)->check_commandable(g));
+  test::expect_true(g.out.str().find("irradiated") != std::string::npos);
+
+  // Destroyed ship fails check_commandable
+  ctx.em.mutate_ship(s1_id, [](Ship& s1) { s1.alive() = false; });
+  g.out.str("");
+  test::expect_false(ctx.em.peek_ship(s1_id)->check_commandable(g));
+  test::expect_true(g.out.str().find("destroyed") != std::string::npos);
+}
+
 }  // namespace
 
 int main() {
@@ -1145,6 +1222,7 @@ int main() {
   test_dock_state_transitions();
   test_carrier_craft_loading_and_unloading();
   test_ship_cargo_transfer();
+  test_ship_moor_together_and_commandability();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

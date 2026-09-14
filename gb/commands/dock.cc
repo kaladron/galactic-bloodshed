@@ -43,7 +43,7 @@ bool validate_boarding_ship(const Ship& s, bool is_assault, PopulationType what,
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
-  if (s.owner() != Playernum || !authorized(Governor, s) || !s.alive()) {
+  if (s.owner() != Playernum || !s.is_authorized_for(Governor) || !s.alive()) {
     return false;
   }
   if (!s.active()) {
@@ -94,7 +94,7 @@ DockTargetValidation validate_target_ship_for_dock(const Ship& s,
   DockTargetValidation val{};
   try {
     g.entity_manager.with_ship(ship2no, [&](const Ship& s2) {
-      if (!is_assault && testship(s2, g)) {
+      if (!is_assault && !s2.check_commandable(g)) {
         g.out << "You are not authorized to do this.\n";
         val.abort_loop = true;
         return;
@@ -172,8 +172,7 @@ void maneuver_ship_to_target(Ship& s, const Ship& s2, double fuel, GameObj& g) {
 
 void execute_peaceful_dock(Ship& s, Ship& s2, double fuel, GameObj& g) {
   maneuver_ship_to_target(s, s2, fuel, g);
-  s.dock_with_ship(s2);
-  s2.dock_with_ship(s);
+  s.moor_together(s2);
   g.out << std::format("{} docked with {}.\n", s, s2);
 }
 
@@ -247,8 +246,7 @@ void finalize_boarding_ownership_and_morale(Ship& s, Ship& s2, Race& race,
                                             BoardingCombatOutcome& outcome,
                                             player_t Playernum) {
   if (!s2.popn() && !s2.troops() && s.alive() && s2.alive()) {
-    s.dock_with_ship(s2);
-    s2.dock_with_ship(s);
+    s.moor_together(s2);
     s2.owner() = s.owner();
     s2.governor() = s.governor();
     if (what == PopulationType::MIL) {

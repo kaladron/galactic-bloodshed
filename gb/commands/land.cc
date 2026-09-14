@@ -33,7 +33,7 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
 
   try {
     return g.entity_manager.with_ship(ship2no, [&](const Ship& s2_check) {
-      if (testship(s2_check, g)) {
+      if (!s2_check.check_commandable(g)) {
         g.out << "Illegal format.\n";
         return false;
       }

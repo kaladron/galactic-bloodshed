@@ -1021,10 +1021,7 @@ std::expected<void, DockError> EntityManager::moor_ships(shipnum_t ship1_id,
   }
 
   mutate_ship(ship1_id, [&](Ship& s1) {
-    mutate_ship(ship2_id, [&](Ship& s2) {
-      s1.dock_with_ship(ship2_id);
-      s2.dock_with_ship(ship1_id);
-    });
+    mutate_ship(ship2_id, [&](Ship& s2) { s1.moor_together(s2); });
   });
 
   return {};

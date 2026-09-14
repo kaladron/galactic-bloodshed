@@ -21,37 +21,108 @@ import std;
 
 namespace GB::creator {
 
+///// Returns default pre-rolled sector compatibilities and preferred sector for
+/// a
+/// given home planet type.
+export constexpr std::pair<SectorType,
+                           std::array<double, SectorType::SEC_WASTED + 1>>
+default_sector_compatibilities_for_planet(PlanetType planet) noexcept {
+  std::array<double, SectorType::SEC_WASTED + 1> compat{};
+  SectorType pref = SectorType::SEC_LAND;
+  switch (planet) {
+    case PlanetType::EARTH:
+      pref = SectorType::SEC_LAND;
+      compat[SectorType::SEC_LAND] = 1.0;
+      compat[SectorType::SEC_SEA] = 0.5;
+      compat[SectorType::SEC_PLATED] = 1.0;
+      break;
+    case PlanetType::FOREST:
+      pref = SectorType::SEC_FOREST;
+      compat[SectorType::SEC_FOREST] = 1.0;
+      compat[SectorType::SEC_LAND] = 0.5;
+      compat[SectorType::SEC_PLATED] = 1.0;
+      break;
+    case PlanetType::DESERT:
+      pref = SectorType::SEC_DESERT;
+      compat[SectorType::SEC_DESERT] = 1.0;
+      compat[SectorType::SEC_MOUNT] = 0.5;
+      compat[SectorType::SEC_PLATED] = 1.0;
+      break;
+    case PlanetType::WATER:
+      pref = SectorType::SEC_SEA;
+      compat[SectorType::SEC_SEA] = 1.0;
+      compat[SectorType::SEC_LAND] = 0.5;
+      compat[SectorType::SEC_PLATED] = 1.0;
+      break;
+    case PlanetType::MARS:
+      pref = SectorType::SEC_LAND;
+      compat[SectorType::SEC_LAND] = 1.0;
+      compat[SectorType::SEC_MOUNT] = 0.5;
+      compat[SectorType::SEC_PLATED] = 1.0;
+      break;
+    case PlanetType::ICEBALL:
+      pref = SectorType::SEC_ICE;
+      compat[SectorType::SEC_ICE] = 1.0;
+      compat[SectorType::SEC_MOUNT] = 0.5;
+      compat[SectorType::SEC_PLATED] = 1.0;
+      break;
+    case PlanetType::GASGIANT:
+      pref = SectorType::SEC_GAS;
+      compat[SectorType::SEC_GAS] = 1.0;
+      break;
+    default:
+      pref = SectorType::SEC_LAND;
+      compat[SectorType::SEC_LAND] = 1.0;
+      compat[SectorType::SEC_PLATED] = 1.0;
+      break;
+  }
+  return {pref, compat};
+}
+
+/// Forward declaration for archetype specification generator.
+export struct RaceEnrollmentSpec;
+
 /// Preset racial archetype for quick-start player enrollment.
 export struct RaceArchetype {
   std::string_view name;
+  PlanetType default_planet{PlanetType::EARTH};
   bool is_metamorphic{false};
-  mass_t base_mass{0.125};
+  mass_t base_mass{0.5};
   birthrate_t base_birthrate{0.5};
   fighters_t base_fighters{5};
   iq_t base_iq{150};
-  adventurism_t base_adventurism{0.7};
+  iq_t base_iq_limit{0};
+  adventurism_t base_adventurism{0.6};
   sexes_t min_sexes{2};
   sexes_t max_sexes{4};
-  metabolism_t base_metabolism{1.5};
+  metabolism_t base_metabolism{1.0};
 
   [[nodiscard]] mass_t sample_mass() const {
-    return base_mass + 0.001 * int_rand(-25, 25);
+    return std::clamp(base_mass + 0.001 * int_rand(-25, 25), 0.10, 3.00);
   }
   [[nodiscard]] birthrate_t sample_birthrate() const {
-    return base_birthrate + 0.01 * int_rand(-10, 10);
+    return std::clamp(base_birthrate + 0.01 * int_rand(-10, 10), 0.20, 1.00);
   }
   [[nodiscard]] fighters_t sample_fighters() const {
     int val = static_cast<int>(base_fighters) + int_rand(-1, 1);
-    return static_cast<fighters_t>(std::max(0, val));
+    return static_cast<fighters_t>(std::clamp(val, 1, 20));
   }
   [[nodiscard]] iq_t sample_iq() const {
     if (is_metamorphic) {
       return 0;
     }
-    return base_iq + int_rand(-10, 10);
+    int val = static_cast<int>(base_iq) + int_rand(-10, 10);
+    return static_cast<iq_t>(std::clamp(val, 50, 220));
+  }
+  [[nodiscard]] iq_t sample_iq_limit() const {
+    if (!is_metamorphic) {
+      return 0;
+    }
+    int val = static_cast<int>(base_iq_limit) + int_rand(-10, 10);
+    return static_cast<iq_t>(std::clamp(val, 50, 220));
   }
   [[nodiscard]] adventurism_t sample_adventurism() const {
-    return base_adventurism + 0.01 * int_rand(-10, 10);
+    return std::clamp(base_adventurism + 0.01 * int_rand(-10, 10), 0.05, 0.99);
   }
   [[nodiscard]] sexes_t sample_sexes() const {
     int max_val =
@@ -59,121 +130,147 @@ export struct RaceArchetype {
     return static_cast<sexes_t>(int_rand(static_cast<int>(min_sexes), max_val));
   }
   [[nodiscard]] metabolism_t sample_metabolism() const {
-    return base_metabolism + 0.01 * int_rand(-15, 15);
+    return std::clamp(base_metabolism + 0.01 * int_rand(-15, 15), 0.10, 4.00);
   }
+
+  /// Generates a complete RaceEnrollmentSpec with pre-rolled sector
+  /// compatibilities for the selected planet type.
+  [[nodiscard]] RaceEnrollmentSpec
+  to_enrollment_spec(std::optional<PlanetType> planet_override = std::nullopt,
+                     bool randomize = true) const;
 };
 
 export constexpr std::array<RaceArchetype, 10> race_archetypes = {{
     // 1: Metamorphic predators
     {.name = "Metamorphic Predator",
+     .default_planet = PlanetType::FOREST,
      .is_metamorphic = true,
-     .base_mass = 0.1,
-     .base_birthrate = 0.9,
-     .base_fighters = 9,
+     .base_mass = 0.25,
+     .base_birthrate = 0.65,
+     .base_fighters = 6,
      .base_iq = 0,
-     .base_adventurism = 0.89,
+     .base_iq_limit = 120,
+     .base_adventurism = 0.65,
      .min_sexes = 1,
      .max_sexes = 1,
-     .base_metabolism = 3.0},
+     .base_metabolism = 1.10},
     // 2: Metamorphic heavyweights
     {.name = "Metamorphic Heavyweight",
+     .default_planet = PlanetType::DESERT,
      .is_metamorphic = true,
-     .base_mass = 0.15,
-     .base_birthrate = 0.85,
-     .base_fighters = 10,
+     .base_mass = 0.80,
+     .base_birthrate = 0.65,
+     .base_fighters = 7,
      .base_iq = 0,
-     .base_adventurism = 0.89,
+     .base_iq_limit = 120,
+     .base_adventurism = 0.60,
      .min_sexes = 1,
      .max_sexes = 1,
-     .base_metabolism = 2.7},
+     .base_metabolism = 1.10},
     // 3: Metamorphic colossi
     {.name = "Metamorphic Colossus",
+     .default_planet = PlanetType::MARS,
      .is_metamorphic = true,
-     .base_mass = 0.2,
-     .base_birthrate = 0.8,
-     .base_fighters = 11,
+     .base_mass = 1.50,
+     .base_birthrate = 0.60,
+     .base_fighters = 8,
      .base_iq = 0,
-     .base_adventurism = 0.89,
+     .base_iq_limit = 115,
+     .base_adventurism = 0.55,
      .min_sexes = 1,
      .max_sexes = 1,
-     .base_metabolism = 2.4},
+     .base_metabolism = 1.05},
     // 4: High intelligence, low combat
     {.name = "Cerebral Researcher",
+     .default_planet = PlanetType::EARTH,
      .is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.5,
+     .base_mass = 0.50,
+     .base_birthrate = 0.50,
      .base_fighters = 2,
-     .base_iq = 190,
-     .base_adventurism = 0.6,
+     .base_iq = 180,
+     .base_iq_limit = 0,
+     .base_adventurism = 0.50,
      .min_sexes = 2,
      .max_sexes = 2,
-     .base_metabolism = 1.0},
+     .base_metabolism = 0.95},
     // 5
     {.name = "High IQ Scholar",
+     .default_planet = PlanetType::WATER,
      .is_metamorphic = false,
-     .base_mass = 0.125,
+     .base_mass = 0.60,
      .base_birthrate = 0.55,
      .base_fighters = 3,
-     .base_iq = 180,
-     .base_adventurism = 0.65,
+     .base_iq = 175,
+     .base_iq_limit = 0,
+     .base_adventurism = 0.55,
      .min_sexes = 2,
      .max_sexes = 2,
-     .base_metabolism = 1.15},
+     .base_metabolism = 1.00},
     // 6
     {.name = "Progressive Technocrat",
+     .default_planet = PlanetType::EARTH,
      .is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.6,
+     .base_mass = 0.70,
+     .base_birthrate = 0.60,
      .base_fighters = 4,
-     .base_iq = 170,
-     .base_adventurism = 0.7,
+     .base_iq = 165,
+     .base_iq_limit = 0,
+     .base_adventurism = 0.60,
      .min_sexes = 2,
      .max_sexes = 4,
-     .base_metabolism = 1.30},
+     .base_metabolism = 1.05},
     // 7
     {.name = "Balanced Expansionist",
+     .default_planet = PlanetType::EARTH,
      .is_metamorphic = false,
-     .base_mass = 0.125,
+     .base_mass = 0.80,
      .base_birthrate = 0.65,
      .base_fighters = 5,
-     .base_iq = 160,
-     .base_adventurism = 0.7,
+     .base_iq = 155,
+     .base_iq_limit = 0,
+     .base_adventurism = 0.65,
      .min_sexes = 2,
      .max_sexes = 4,
-     .base_metabolism = 1.45},
+     .base_metabolism = 1.10},
     // 8
     {.name = "Adaptive Explorer",
+     .default_planet = PlanetType::ICEBALL,
      .is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.7,
+     .base_mass = 0.75,
+     .base_birthrate = 0.70,
      .base_fighters = 6,
-     .base_iq = 150,
-     .base_adventurism = 0.75,
+     .base_iq = 145,
+     .base_iq_limit = 0,
+     .base_adventurism = 0.70,
      .min_sexes = 2,
      .max_sexes = 4,
-     .base_metabolism = 1.6},
+     .base_metabolism = 1.15},
     // 9
     {.name = "Aggressive Colonizer",
+     .default_planet = PlanetType::FOREST,
      .is_metamorphic = false,
-     .base_mass = 0.125,
+     .base_mass = 0.85,
      .base_birthrate = 0.75,
      .base_fighters = 7,
      .base_iq = 140,
-     .base_adventurism = 0.75,
+     .base_iq_limit = 0,
+     .base_adventurism = 0.70,
      .min_sexes = 2,
      .max_sexes = 4,
-     .base_metabolism = 1.75},
+     .base_metabolism = 1.10},
     // 10: Balanced military
     {.name = "Militaristic Legionnaire",
+     .default_planet = PlanetType::MARS,
      .is_metamorphic = false,
-     .base_mass = 0.125,
-     .base_birthrate = 0.8,
+     .base_mass = 1.00,
+     .base_birthrate = 0.70,
      .base_fighters = 8,
-     .base_iq = 130,
-     .base_adventurism = 0.8,
+     .base_iq = 135,
+     .base_iq_limit = 0,
+     .base_adventurism = 0.70,
      .min_sexes = 2,
      .max_sexes = 4,
-     .base_metabolism = 1.9},
+     .base_metabolism = 1.15},
 }};
 
 /// Builds a formatted tabulate::Table summarizing all preset racial archetypes.

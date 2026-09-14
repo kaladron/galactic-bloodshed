@@ -44,20 +44,20 @@ A species' physical, intellectual, and reproductive characteristics are governed
 
 ## 2. The Ten Preset Evolutionary Archetypes
 
-For players seeking immediate entry into the galaxy without spending time in the genetic point sandbox, the onboarding system provides **ten balanced archetypes**:
+For players seeking immediate entry into the galaxy without spending time in the genetic point sandbox, the onboarding system provides **ten balanced archetypes** with pre-configured homeworld affinities and sector compatibilities:
 
-| # | Archetype Name | Biology | Mass | Birth | Fight | IQ | Advent | Sexes | Metab | Strategic Profile |
-| :-: | :--- | :--- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :--- |
-| **1** | **Metamorphic Predator** | Metamorph | 0.10 | 0.90 | 9 | 0 (Lim) | 0.89 | 1 | 3.00 | Hyper-aggressive solitary asexual hunter; rapid organic growth. |
-| **2** | **Metamorphic Heavyweight** | Metamorph | 0.15 | 0.85 | 10 | 0 (Lim) | 0.89 | 1 | 2.70 | High physical mass with superior ground assault leverage. |
-| **3** | **Metamorphic Colossus** | Metamorph | 0.20 | 0.80 | 11 | 0 (Lim) | 0.89 | 1 | 2.40 | Maximum natural physical combat rating; biological juggernaut. |
-| **4** | **Cerebral Researcher** | Normal | 0.12 | 0.50 | 2 | 190 | 0.60 | 2 | 1.00 | Scientific prodigy; accelerated tech research; fragile infantry. |
-| **5** | **High IQ Scholar** | Normal | 0.12 | 0.55 | 3 | 180 | 0.65 | 2 | 1.15 | High scientific output with slightly improved industrial baseline. |
-| **6** | **Progressive Technocrat** | Normal | 0.12 | 0.60 | 4 | 170 | 0.70 | 2–4 | 1.30 | Flexible multi-sex genetics; balanced technological expansion. |
-| **7** | **Balanced Expansionist** | Normal | 0.12 | 0.65 | 5 | 160 | 0.70 | 2–4 | 1.45 | Balanced demographic growth, military defense, and science. |
-| **8** | **Adaptive Explorer** | Normal | 0.12 | 0.70 | 6 | 150 | 0.75 | 2–4 | 1.60 | High adventurism drive; rapid scouting and boundary expansion. |
-| **9** | **Aggressive Colonizer** | Normal | 0.12 | 0.75 | 7 | 140 | 0.75 | 2–4 | 1.75 | Vigorous demographic reproduction; rapid industrial mobilization. |
-| **10** | **Militaristic Legionnaire** | Normal | 0.12 | 0.80 | 8 | 130 | 0.80 | 2–4 | 1.90 | Conventional military superpower; hardy soldiers and high drive. |
+| # | Archetype Name | Homeworld | Biology | Mass | Birth | Fight | IQ / Ceiling | Advent | Sexes | Metab | Strategic Profile |
+| :-: | :--- | :--- | :--- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :--- |
+| **1** | **Metamorphic Predator** | Forest | Metamorph | 0.25 | 0.65 | 6 | 120 (Col) | 0.65 | 1 | 1.10 | Fast-reproducing solitary asexual hunter; pods and absorption. |
+| **2** | **Metamorphic Heavyweight** | Desert | Metamorph | 0.80 | 0.65 | 7 | 120 (Col) | 0.60 | 1 | 1.10 | High physical mass with strong planetary surface assault leverage. |
+| **3** | **Metamorphic Colossus** | Airless | Metamorph | 1.50 | 0.60 | 8 | 115 (Col) | 0.55 | 1 | 1.05 | Heavy-gravity biological juggernaut; high ground combat rating. |
+| **4** | **Cerebral Researcher** | Class M | Normal | 0.50 | 0.50 | 2 | 180 | 0.50 | 2 | 0.95 | Scientific prodigy; accelerated tech research; fragile infantry. |
+| **5** | **High IQ Scholar** | Waterball | Normal | 0.60 | 0.55 | 3 | 175 | 0.55 | 2 | 1.00 | High scientific output with oceanic and continental adaptability. |
+| **6** | **Progressive Technocrat** | Class M | Normal | 0.70 | 0.60 | 4 | 165 | 0.60 | 2–4 | 1.05 | Flexible multi-sex genetics; balanced technological expansion. |
+| **7** | **Balanced Expansionist** | Class M | Normal | 0.80 | 0.65 | 5 | 155 | 0.65 | 2–4 | 1.10 | Balanced demographic growth, military defense, and science. |
+| **8** | **Adaptive Explorer** | Iceball | Normal | 0.75 | 0.70 | 6 | 145 | 0.70 | 2–4 | 1.15 | Cryogenic explorer; high adventurism drive and boundary expansion. |
+| **9** | **Aggressive Colonizer** | Forest | Normal | 0.85 | 0.75 | 7 | 140 | 0.70 | 2–4 | 1.10 | Vigorous demographic reproduction; rapid industrial mobilization. |
+| **10** | **Militaristic Legionnaire** | Airless | Normal | 1.00 | 0.70 | 8 | 135 | 0.70 | 2–4 | 1.15 | Conventional military superpower; hardy soldiers and high drive. |
 
 ---
 

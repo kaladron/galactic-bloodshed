@@ -37,6 +37,12 @@ export constexpr std::array all_planet_types = {
     PlanetType::FOREST,  PlanetType::DESERT,
 };
 
+export constexpr std::array habitable_planet_types = {
+    PlanetType::EARTH,    PlanetType::MARS,  PlanetType::ICEBALL,
+    PlanetType::GASGIANT, PlanetType::WATER, PlanetType::FOREST,
+    PlanetType::DESERT,
+};
+
 /// Returns the display string for a PlanetType.
 export constexpr std::string_view to_string(PlanetType type) noexcept {
   switch (type) {

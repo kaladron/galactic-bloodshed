@@ -119,7 +119,7 @@ RacegenSession::commands() {
        &RacegenSession::do_print},
       {"save", "save [filename]", "Save the race specification to a JSON file",
        &RacegenSession::do_save},
-      {"load", "load <filename>", "Load a race specification from a JSON file",
+      {"load", "load [filename]", "Load a race specification from a JSON file",
        &RacegenSession::do_load},
       {"enroll", "enroll",
        "Enroll the configured race into the active universe database",
@@ -129,6 +129,40 @@ RacegenSession::commands() {
       {"quit", "quit", "Exit the race generator", &RacegenSession::do_quit},
   }};
   return cmds;
+}
+
+std::expected<void, std::string>
+save_race_spec(const RaceEnrollmentSpec& spec,
+               const std::filesystem::path& path) {
+  auto json = glz::write_json(spec);
+  if (!json) {
+    return std::unexpected("Failed to serialize race specification to JSON.");
+  }
+  std::ofstream file(path);
+  if (!file.is_open()) {
+    return std::unexpected(
+        std::format("Cannot open file '{}' for writing.", path.string()));
+  }
+  file << *json;
+  return {};
+}
+
+std::expected<RaceEnrollmentSpec, std::string>
+load_race_spec(const std::filesystem::path& path) {
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    return std::unexpected(
+        std::format("Cannot open file '{}' for reading.", path.string()));
+  }
+  std::string content((std::istreambuf_iterator<char>(file)),
+                      std::istreambuf_iterator<char>());
+  RaceEnrollmentSpec loaded{};
+  auto ec = glz::read_json(loaded, content);
+  if (ec) {
+    return std::unexpected(
+        std::format("Failed to parse JSON file '{}'.", path.string()));
+  }
+  return loaded;
 }
 
 RacegenSession::RacegenSession(std::istream& in, std::ostream& out,
@@ -209,38 +243,21 @@ bool RacegenSession::do_print(std::string_view) {
 }
 
 bool RacegenSession::save_to_file(const std::filesystem::path& path) {
-  auto json = glz::write_json(spec_);
-  if (!json) {
-    std::println(out_,
-                 "Error: Failed to serialize race specification to JSON.");
+  auto res = save_race_spec(spec_, path);
+  if (!res) {
+    std::println(out_, "Error: {}", res.error());
     return false;
   }
-  std::ofstream file(path);
-  if (!file.is_open()) {
-    std::println(out_, "Error: Cannot open file '{}' for writing.",
-                 path.string());
-    return false;
-  }
-  file << *json;
   return true;
 }
 
 bool RacegenSession::load_from_file(const std::filesystem::path& path) {
-  std::ifstream file(path);
-  if (!file.is_open()) {
-    std::println(out_, "Error: Cannot open file '{}' for reading.",
-                 path.string());
+  auto res = load_race_spec(path);
+  if (!res) {
+    std::println(out_, "Error: {}", res.error());
     return false;
   }
-  std::string content((std::istreambuf_iterator<char>(file)),
-                      std::istreambuf_iterator<char>());
-  RaceEnrollmentSpec loaded{};
-  auto ec = glz::read_json(loaded, content);
-  if (ec) {
-    std::println(out_, "Error: Failed to parse JSON file '{}'.", path.string());
-    return false;
-  }
-  spec_ = loaded;
+  spec_ = *res;
   update_cost();
   return true;
 }
@@ -276,11 +293,7 @@ bool RacegenSession::do_save(std::string_view args) {
   std::string_view filename = trim(args);
   std::string target_file;
   if (filename.empty()) {
-    if (spec_.name.empty() || spec_.name == "Unknown") {
-      std::println(out_, "Usage: save <filename>");
-      return true;
-    }
-    target_file = spec_.name + ".json";
+    target_file = std::string(DEFAULT_RACEGEN_FILENAME);
   } else {
     target_file = std::string(filename);
     if (!target_file.ends_with(".json")) {
@@ -296,15 +309,16 @@ bool RacegenSession::do_save(std::string_view args) {
 
 bool RacegenSession::do_load(std::string_view args) {
   std::string_view filename = trim(args);
+  std::string target_file;
   if (filename.empty()) {
-    std::println(out_, "Usage: load <filename>");
-    return true;
-  }
-  std::string target_file(filename);
-  if (!target_file.ends_with(".json") &&
-      !std::filesystem::exists(target_file)) {
-    if (std::filesystem::exists(target_file + ".json")) {
-      target_file += ".json";
+    target_file = std::string(DEFAULT_RACEGEN_FILENAME);
+  } else {
+    target_file = std::string(filename);
+    if (!target_file.ends_with(".json") &&
+        !std::filesystem::exists(target_file)) {
+      if (std::filesystem::exists(target_file + ".json")) {
+        target_file += ".json";
+      }
     }
   }
 

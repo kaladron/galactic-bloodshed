@@ -239,6 +239,18 @@ struct meta<GB::creator::RaceEnrollmentSpec> {
 
 namespace GB::creator {
 
+/// Default JSON filename for saving and loading race specifications.
+export constexpr std::string_view DEFAULT_RACEGEN_FILENAME = "racegen.json";
+
+/// Serializes a RaceEnrollmentSpec to a JSON file using Glaze.
+export std::expected<void, std::string>
+save_race_spec(const RaceEnrollmentSpec& spec,
+               const std::filesystem::path& path = DEFAULT_RACEGEN_FILENAME);
+
+/// Deserializes a RaceEnrollmentSpec from a JSON file using Glaze.
+export std::expected<RaceEnrollmentSpec, std::string>
+load_race_spec(const std::filesystem::path& path = DEFAULT_RACEGEN_FILENAME);
+
 /// Result of an enrollment attempt.
 export struct EnrollmentResult {
   bool success{false};

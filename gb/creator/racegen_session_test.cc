@@ -446,6 +446,70 @@ void test_enroll_with_service_success() {
                     "output must report player ID 1");
 }
 
+void test_standalone_save_and_load_race_spec() {
+  const auto tmp_file =
+      std::filesystem::temp_directory_path() / "test_standalone_spec.json";
+  std::filesystem::remove(tmp_file);
+
+  GB::creator::RacegenEngine engine;
+  auto spec = engine.create_default_spec(false);
+  spec.name = "Andorian";
+  spec.mass = 1.25;
+  spec.fighters = 11;
+  spec.home_planet_type = PlanetType::ICEBALL;
+
+  auto save_res = GB::creator::save_race_spec(spec, tmp_file);
+  test::expect_true(save_res.has_value(), "save_race_spec must succeed");
+
+  auto load_res = GB::creator::load_race_spec(tmp_file);
+  test::expect_true(load_res.has_value(), "load_race_spec must succeed");
+  if (load_res) {
+    test::expect_eq(load_res->name, "Andorian");
+    test::expect_eq(load_res->mass, 1.25);
+    test::expect_eq(load_res->fighters, 11);
+    test::expect_eq(load_res->home_planet_type, PlanetType::ICEBALL);
+  }
+
+  // Test error on nonexistent file
+  auto missing_res =
+      GB::creator::load_race_spec("/path/to/missing/racegen.json");
+  test::expect_false(missing_res.has_value(),
+                     "load_race_spec must fail on missing file");
+
+  std::filesystem::remove(tmp_file);
+}
+
+void test_default_racegen_json_filename() {
+  const auto default_path =
+      std::filesystem::current_path() / GB::creator::DEFAULT_RACEGEN_FILENAME;
+  std::filesystem::remove(default_path);
+
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out);
+
+  test::expect_true(session.execute_command("modify name Cardassian"));
+  test::expect_true(session.execute_command("modify fighters 13"));
+  test::expect_true(session.execute_command("save"));
+  test::expect_true(out.str().contains("Specification saved to 'racegen.json'"),
+                    "save without argument must default to racegen.json");
+  test::expect_true(std::filesystem::exists(default_path),
+                    "racegen.json must exist in current directory");
+
+  test::expect_true(session.execute_command("modify name Bajoran"));
+  test::expect_eq(session.spec().name, "Bajoran");
+
+  out.str("");
+  test::expect_true(session.execute_command("load"));
+  test::expect_true(
+      out.str().contains("Specification loaded from 'racegen.json'"),
+      "load without argument must default to racegen.json");
+  test::expect_eq(session.spec().name, "Cardassian");
+  test::expect_eq(session.spec().fighters, 13);
+
+  std::filesystem::remove(default_path);
+}
+
 }  // namespace
 
 int main() {
@@ -468,6 +532,8 @@ int main() {
   test_enroll_without_service();
   test_enroll_rejected_when_over_budget();
   test_enroll_with_service_success();
+  test_standalone_save_and_load_race_spec();
+  test_default_racegen_json_filename();
 
   std::println(std::cout, "✅ All RacegenSession tests passed!");
   return 0;

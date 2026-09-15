@@ -50,6 +50,25 @@ RaceArchetype::to_enrollment_spec(std::optional<PlanetType> planet_override,
     spec.number_sexes = min_sexes;
     spec.metabolism = base_metabolism;
   }
+
+  // When a terrestrial archetype is overridden onto an expensive planet (e.g.,
+  // PlanetType::GASGIANT at +600 points), scale down metabolism (and secondary
+  // growth/migration traits if needed) so the generated spec stays within the
+  // 1400-point budget.
+  RacegenEngine engine;
+  while (spec.metabolism > 0.10 &&
+         engine.calculate_cost(spec).points_remaining < 0) {
+    spec.metabolism = std::max(0.10, spec.metabolism - 0.05);
+  }
+  while (spec.adventurism > 0.05 &&
+         engine.calculate_cost(spec).points_remaining < 0) {
+    spec.adventurism = std::max(0.05, spec.adventurism - 0.05);
+  }
+  while (spec.birthrate > 0.20 &&
+         engine.calculate_cost(spec).points_remaining < 0) {
+    spec.birthrate = std::max(0.20, spec.birthrate - 0.05);
+  }
+
   return spec;
 }
 

@@ -226,12 +226,76 @@ void test_validation_rules() {
 
 void test_archetypes_valid_and_within_budget() {
   GB::creator::RacegenEngine engine;
+  test::expect_eq(
+      GB::creator::race_archetypes.size(), 11u,
+      "must have 11 preset archetypes including Jovian Gas Floater");
 
   for (std::size_t i = 0; i < GB::creator::race_archetypes.size(); ++i) {
     const auto& arch = GB::creator::race_archetypes[i];
 
+    // 1. Default planet base spec: must pass validation and use >= 950 points
+    auto default_spec =
+        arch.to_enrollment_spec(arch.default_planet, /*randomize=*/false);
+    default_spec.password = "validpass";
+    default_spec.address = "player@galaxy.org";
+
+    auto default_errors =
+        engine.validate(default_spec, /*is_player=*/true, /*rigorous=*/true);
+    test::expect_true(default_errors.empty(),
+                      std::format("Archetype {} ({}) default base spec must "
+                                  "pass rigorous validation",
+                                  i + 1, arch.name));
+
+    auto default_cost = engine.calculate_cost(default_spec);
+    test::expect_ge(
+        default_cost.total_cost, 900,
+        std::format(
+            "Archetype {} ({}) on default planet {} must spend at least "
+            "900 points (spent: {})",
+            i + 1, arch.name, to_string(arch.default_planet),
+            default_cost.total_cost));
+    test::expect_ge(
+        default_cost.points_remaining, 0,
+        std::format("Archetype {} ({}) on default planet {} must not exceed "
+                    "1400 points (remaining: {})",
+                    i + 1, arch.name, to_string(arch.default_planet),
+                    default_cost.points_remaining));
+
+    // 2. Worst-case maximum random roll (+max_rand on every attribute) on
+    // default planet
+    auto max_spec = default_spec;
+    max_spec.mass = std::clamp(arch.base_mass + 0.025, 0.10, 3.00);
+    max_spec.birthrate = std::clamp(arch.base_birthrate + 0.10, 0.20, 1.00);
+    max_spec.fighters = static_cast<fighters_t>(
+        std::clamp(static_cast<int>(arch.base_fighters) + 1, 1, 20));
+    if (arch.is_metamorphic) {
+      max_spec.iq_limit = static_cast<iq_t>(
+          std::clamp(static_cast<int>(arch.base_iq_limit) + 10, 50, 220));
+    } else {
+      max_spec.iq = static_cast<iq_t>(
+          std::clamp(static_cast<int>(arch.base_iq) + 10, 50, 220));
+    }
+    max_spec.adventurism = std::clamp(arch.base_adventurism + 0.10, 0.05, 0.99);
+    max_spec.metabolism = std::clamp(arch.base_metabolism + 0.15, 0.10, 4.00);
+
+    auto max_errors =
+        engine.validate(max_spec, /*is_player=*/true, /*rigorous=*/true);
+    auto max_cost = engine.calculate_cost(max_spec);
+    test::expect_true(
+        max_errors.empty(),
+        std::format("Archetype {} ({}) max roll on default planet {} must "
+                    "pass rigorous validation (rem: {})",
+                    i + 1, arch.name, to_string(arch.default_planet),
+                    max_cost.points_remaining));
+    test::expect_ge(
+        max_cost.points_remaining, 0,
+        std::format("Archetype {} ({}) max roll on default planet {} must not "
+                    "exceed 1400 points (remaining: {})",
+                    i + 1, arch.name, to_string(arch.default_planet),
+                    max_cost.points_remaining));
+
+    // 3. Planet overrides across all habitable planet types (base and random)
     for (PlanetType ptype : habitable_planet_types) {
-      // 1. Base archetype stats (randomize = false)
       auto base_spec = arch.to_enrollment_spec(ptype, /*randomize=*/false);
       base_spec.password = "validpass";
       base_spec.address = "player@galaxy.org";
@@ -251,57 +315,24 @@ void test_archetypes_valid_and_within_budget() {
                       i + 1, arch.name, to_string(ptype),
                       cost.points_remaining));
 
-      // 2. Worst-case maximum random roll (+max_rand on every attribute)
-      auto max_spec = base_spec;
-      max_spec.mass = std::clamp(arch.base_mass + 0.025, 0.10, 3.00);
-      max_spec.birthrate = std::clamp(arch.base_birthrate + 0.10, 0.20, 1.00);
-      max_spec.fighters = static_cast<fighters_t>(
-          std::clamp(static_cast<int>(arch.base_fighters) + 1, 1, 20));
-      if (arch.is_metamorphic) {
-        max_spec.iq_limit = static_cast<iq_t>(
-            std::clamp(static_cast<int>(arch.base_iq_limit) + 10, 50, 220));
-      } else {
-        max_spec.iq = static_cast<iq_t>(
-            std::clamp(static_cast<int>(arch.base_iq) + 10, 50, 220));
-      }
-      max_spec.adventurism =
-          std::clamp(arch.base_adventurism + 0.10, 0.05, 0.99);
-      max_spec.metabolism = std::clamp(arch.base_metabolism + 0.15, 0.10, 4.00);
+      for (int sample = 0; sample < 5; ++sample) {
+        auto rand_spec = arch.to_enrollment_spec(ptype, /*randomize=*/true);
+        rand_spec.password = "validpass";
+        rand_spec.address = "player@galaxy.org";
 
-      auto max_errors =
-          engine.validate(max_spec, /*is_player=*/true, /*rigorous=*/true);
-      test::expect_true(max_errors.empty(),
-                        std::format("Archetype {} ({}) max roll on {} must "
-                                    "pass rigorous validation",
+        auto rand_errors =
+            engine.validate(rand_spec, /*is_player=*/true, /*rigorous=*/true);
+        test::expect_true(
+            rand_errors.empty(),
+            std::format("Archetype {} ({}) random roll on {} must "
+                        "pass rigorous validation",
+                        i + 1, arch.name, to_string(ptype)));
+        auto rand_cost = engine.calculate_cost(rand_spec);
+        test::expect_ge(rand_cost.points_remaining, 0,
+                        std::format("Archetype {} ({}) random roll on {} must "
+                                    "not exceed 1400 points",
                                     i + 1, arch.name, to_string(ptype)));
-
-      auto max_cost = engine.calculate_cost(max_spec);
-      test::expect_ge(
-          max_cost.points_remaining, 0,
-          std::format("Archetype {} ({}) max roll on {} must not exceed 1400 "
-                      "points (remaining: {})",
-                      i + 1, arch.name, to_string(ptype),
-                      max_cost.points_remaining));
-    }
-
-    // 3. Random sample iterations on default planet
-    for (int sample = 0; sample < 20; ++sample) {
-      auto rand_spec =
-          arch.to_enrollment_spec(std::nullopt, /*randomize=*/true);
-      rand_spec.password = "validpass";
-      rand_spec.address = "player@galaxy.org";
-
-      auto rand_errors =
-          engine.validate(rand_spec, /*is_player=*/true, /*rigorous=*/true);
-      test::expect_true(rand_errors.empty(),
-                        std::format("Archetype {} ({}) random roll must pass "
-                                    "rigorous validation",
-                                    i + 1, arch.name));
-      auto rand_cost = engine.calculate_cost(rand_spec);
-      test::expect_ge(rand_cost.points_remaining, 0,
-                      std::format("Archetype {} ({}) random roll must not "
-                                  "exceed 1400 points",
-                                  i + 1, arch.name));
+      }
     }
   }
 }

@@ -2,14 +2,14 @@
 
 ## Overview
 
-In **Galactic Bloodshed**, every interstellar empire originates through **race generation**. Players can either inaugurate their civilization by adopting one of ten calibrated **evolutionary archetypes**, or engineer a custom species from scratch within the **1400-point genetic design sandbox**.
+In **Galactic Bloodshed**, every interstellar empire originates through **race generation**. Players can either inaugurate their civilization by adopting one of eleven calibrated **evolutionary archetypes**, or engineer a custom species from scratch within the **1400-point genetic design sandbox**.
 
 Once biological attributes and environmental tolerances are balanced, the imperial onboarding system discovers an optimal solar system, establishes the ancestral capital colony, and commissions the imperial government flagship.
 
 ```mermaid
 flowchart TD
     Choice{"Civilization Origin Path\nSelect Preset Archetype or Custom Design?"}
-    Choice -->|"Preset (Quick Start)"| Arch["Select from 10 Evolutionary Archetypes\nCalibrated Traits & Immediate Enrollment"]
+    Choice -->|"Preset (Quick Start)"| Arch["Select from 11 Evolutionary Archetypes\nCalibrated Traits & Immediate Enrollment"]
     Choice -->|"Custom (Sandbox)"| Budget["1400-Point Genetic Design Sandbox\nTune 11 Biological Attributes & Biome Compats"]
     Budget --> Cov["Covariance & Physics Balancing\nCalculate Trait Synergies, Planet & Sector Costs"]
     Budget --> Invar{"Validation Check\nPoints >= 0 and Game Invariants Satisfied?"}
@@ -42,22 +42,23 @@ A species' physical, intellectual, and reproductive characteristics are governed
 
 ---
 
-## 2. The Ten Preset Evolutionary Archetypes
+## 2. The Eleven Preset Evolutionary Archetypes
 
-For players seeking immediate entry into the galaxy without spending time in the genetic point sandbox, the onboarding system provides **ten balanced archetypes** with pre-configured homeworld affinities and sector compatibilities:
+For players seeking immediate entry into the galaxy without spending time in the genetic point sandbox, the onboarding system provides **eleven balanced archetypes** (ten terrestrial and one Jovian gas giant dweller) with pre-configured homeworld affinities and sector compatibilities:
 
 | # | Archetype Name | Homeworld | Biology | Mass | Birth | Fight | IQ / Ceiling | Advent | Sexes | Metab | Strategic Profile |
 | :-: | :--- | :--- | :--- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :--- |
-| **1** | **Metamorphic Predator** | Forest | Metamorph | 0.25 | 0.65 | 6 | 120 (Col) | 0.65 | 1 | 1.10 | Fast-reproducing solitary asexual hunter; pods and absorption. |
-| **2** | **Metamorphic Heavyweight** | Desert | Metamorph | 0.80 | 0.65 | 7 | 120 (Col) | 0.60 | 1 | 1.10 | High physical mass with strong planetary surface assault leverage. |
-| **3** | **Metamorphic Colossus** | Airless | Metamorph | 1.50 | 0.60 | 8 | 115 (Col) | 0.55 | 1 | 1.05 | Heavy-gravity biological juggernaut; high ground combat rating. |
-| **4** | **Cerebral Researcher** | Class M | Normal | 0.50 | 0.50 | 2 | 180 | 0.50 | 2 | 0.95 | Scientific prodigy; accelerated tech research; fragile infantry. |
-| **5** | **High IQ Scholar** | Waterball | Normal | 0.60 | 0.55 | 3 | 175 | 0.55 | 2 | 1.00 | High scientific output with oceanic and continental adaptability. |
-| **6** | **Progressive Technocrat** | Class M | Normal | 0.70 | 0.60 | 4 | 165 | 0.60 | 2–4 | 1.05 | Flexible multi-sex genetics; balanced technological expansion. |
-| **7** | **Balanced Expansionist** | Class M | Normal | 0.80 | 0.65 | 5 | 155 | 0.65 | 2–4 | 1.10 | Balanced demographic growth, military defense, and science. |
-| **8** | **Adaptive Explorer** | Iceball | Normal | 0.75 | 0.70 | 6 | 145 | 0.70 | 2–4 | 1.15 | Cryogenic explorer; high adventurism drive and boundary expansion. |
-| **9** | **Aggressive Colonizer** | Forest | Normal | 0.85 | 0.75 | 7 | 140 | 0.70 | 2–4 | 1.10 | Vigorous demographic reproduction; rapid industrial mobilization. |
-| **10** | **Militaristic Legionnaire** | Airless | Normal | 1.00 | 0.70 | 8 | 135 | 0.70 | 2–4 | 1.15 | Conventional military superpower; hardy soldiers and high drive. |
+| **1** | **Metamorphic Predator** | Forest | Metamorph | 0.30 | 0.80 | 8 | 135 (Col) | 0.70 | 1 | 1.00 | Fast-reproducing solitary asexual hunter; pods and absorption. |
+| **2** | **Metamorphic Heavyweight** | Desert | Metamorph | 1.60 | 0.70 | 10 | 130 (Col) | 0.60 | 1 | 1.15 | High physical mass with strong planetary surface assault leverage. |
+| **3** | **Metamorphic Colossus** | Airless | Metamorph | 2.50 | 0.65 | 12 | 125 (Col) | 0.55 | 1 | 1.20 | Heavy-gravity biological juggernaut; high ground combat rating. |
+| **4** | **Cerebral Researcher** | Class M | Normal | 0.50 | 0.60 | 2 | 190 | 0.50 | 2 | 1.00 | Scientific prodigy; accelerated tech research; fragile infantry. |
+| **5** | **High IQ Scholar** | Waterball | Normal | 0.65 | 0.60 | 4 | 185 | 0.50 | 2 | 1.05 | High scientific output with oceanic and continental adaptability. |
+| **6** | **Progressive Technocrat** | Class M | Normal | 0.75 | 0.65 | 6 | 175 | 0.65 | 2–4 | 1.10 | Flexible multi-sex genetics; balanced technological expansion. |
+| **7** | **Balanced Expansionist** | Class M | Normal | 0.85 | 0.70 | 7 | 160 | 0.70 | 2–4 | 1.20 | Balanced demographic growth, military defense, and science. |
+| **8** | **Adaptive Explorer** | Iceball | Normal | 0.75 | 0.70 | 7 | 150 | 0.85 | 2–4 | 1.40 | Cryogenic explorer; high adventurism drive and boundary expansion. |
+| **9** | **Aggressive Colonizer** | Forest | Normal | 0.85 | 0.85 | 8 | 145 | 0.75 | 2–4 | 1.15 | Vigorous demographic reproduction; rapid industrial mobilization. |
+| **10** | **Militaristic Legionnaire** | Airless | Normal | 1.20 | 0.70 | 12 | 140 | 0.65 | 2–4 | 1.20 | Conventional military superpower; hardy soldiers and high drive. |
+| **11** | **Jovian Gas Floater** | Jovian | Normal | 0.40 | 0.60 | 5 | 165 | 0.70 | 2 | 1.00 | Buoyant gas-giant organism; dense Jovian atmospheric mastery. |
 
 ---
 

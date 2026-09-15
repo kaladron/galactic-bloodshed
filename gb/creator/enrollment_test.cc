@@ -216,7 +216,7 @@ void test_enroll_first_race_god_success() {
       .iq = 100,
       .number_sexes = 2,
       .metabolism = 1.0,
-      .sector_compatibilities = {0.5, 1.0, 0.4, 0.0, 0.2, 0.8, 0.3, 0.0, 0.0},
+      .sector_compatibilities = {0.5, 1.0, 0.0, 0.0, 0.0, 0.8, 0.0, 1.0, 0.0},
       .likesbest = SectorType::SEC_LAND,
   };
 
@@ -316,11 +316,12 @@ void test_enroll_second_race_mortal_success() {
       .preferred_sector = SectorType::SEC_DESERT,
       .is_god = false,
       .mass = 0.8,
-      .birthrate = 1.2,
-      .fighters = 12,
-      .iq = 90,
+      .birthrate = 0.8,
+      .fighters = 8,
+      .iq = 120,
       .number_sexes = 1,
       .metabolism = 1.1,
+      .sector_compatibilities = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0},
       .likesbest = SectorType::SEC_DESERT,
   };
 
@@ -396,6 +397,7 @@ void test_enroll_gas_giant_cold_success() {
       .preferred_sector = SectorType::SEC_GAS,
       .is_god = true,
       .number_sexes = 1,
+      .sector_compatibilities = {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
       .likesbest = SectorType::SEC_GAS,
   };
 
@@ -514,6 +516,79 @@ void test_archetypes_table() {
                "  ✓ Archetypes table generation and structure passed");
 }
 
+void test_enroll_validation_and_budget_rejection() {
+  std::println(std::cout, "Test: EnrollmentService rejects invalid attributes "
+                          "and budget overflows");
+
+  Database db(":memory:");
+  setup_test_universe(db);
+  EntityManager em(db);
+  GB::creator::EnrollmentService service(em);
+
+  // 1. Reject attribute out of bounds (birthrate > 1.0)
+  GB::creator::RaceEnrollmentSpec bad_birthrate{
+      .name = "IllegalBirthrate",
+      .password = "pass",
+      .home_planet_type = PlanetType::EARTH,
+      .is_god = true,
+      .birthrate = 1.5,
+  };
+  auto res_birthrate = service.enroll_player(bad_birthrate);
+  test::expect_false(res_birthrate.success);
+  test::expect_contains(res_birthrate.message, "Birthrate");
+
+  // 2. Reject Metamorph with IQ Limit < 50
+  GB::creator::RaceEnrollmentSpec bad_morph{
+      .name = "BrainDeadMorph",
+      .password = "pass",
+      .home_planet_type = PlanetType::EARTH,
+      .is_god = true,
+      .iq = 0,
+      .iq_limit = 0,
+      .metamorph = true,
+      .absorb = true,
+      .collective_iq = true,
+      .pods = true,
+  };
+  auto res_morph = service.enroll_player(bad_morph);
+  test::expect_false(res_morph.success);
+  test::expect_contains(res_morph.message, "IQ");
+
+  // 3. Reject non-Jovian without 100% plated sector compatibility
+  GB::creator::RaceEnrollmentSpec bad_plated{
+      .name = "NoPlated",
+      .password = "pass",
+      .home_planet_type = PlanetType::EARTH,
+      .is_god = true,
+      .sector_compatibilities = {0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+  };
+  auto res_plated = service.enroll_player(bad_plated);
+  test::expect_false(res_plated.success);
+  test::expect_contains(res_plated.message, "plated");
+
+  // 4. Reject over-budget specification (points_remaining < 0)
+  GB::creator::RaceEnrollmentSpec over_budget{
+      .name = "MaxStats",
+      .password = "pass",
+      .home_planet_type = PlanetType::EARTH,
+      .is_god = true,
+      .mass = 3.0,
+      .birthrate = 1.0,
+      .fighters = 20,
+      .iq = 220,
+      .adventurism = 0.99,
+      .metabolism = 4.0,
+      .fertilize = 1,
+      .sector_compatibilities = {1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0},
+  };
+  auto res_budget = service.enroll_player(over_budget);
+  test::expect_false(res_budget.success);
+  test::expect_contains(res_budget.message, "negative points left");
+
+  std::println(std::cout,
+               "  ✓ EnrollmentService validation and budget rejection passed");
+}
+
 }  // namespace
 
 int main() {
@@ -527,6 +602,7 @@ int main() {
   test_enroll_explicit_capital_coords();
   test_find_suitable_planet_shuffle();
   test_archetypes_table();
+  test_enroll_validation_and_budget_rejection();
 
   std::println(std::cout, "\n✅ All EnrollmentService unit tests passed!");
   return 0;

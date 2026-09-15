@@ -86,7 +86,24 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
     };
   }
 
-  // 3. Find candidate planet
+  // 3. Validate racial specification and point budget
+  RacegenEngine engine;
+  auto errors = engine.validate(spec, /*is_player=*/false, /*rigorous=*/false);
+  if (!errors.empty()) {
+    return EnrollmentResult{
+        .success = false,
+        .message = errors.front(),
+    };
+  }
+  const auto cost = engine.calculate_cost(spec);
+  if (cost.points_remaining < 0) {
+    return EnrollmentResult{
+        .success = false,
+        .message = "You can't have negative points left!",
+    };
+  }
+
+  // 4. Find candidate planet
   starnum_t star{0};
   planetnum_t pnum{0};
   if (spec.target_planet.has_value()) {

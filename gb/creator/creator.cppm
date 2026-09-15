@@ -292,21 +292,22 @@ export struct RaceEnrollmentSpec {
 
   // Biological & racial attributes
   mass_t mass{1.0};
-  birthrate_t birthrate{1.0};
-  fighters_t fighters{10};
-  iq_t iq{100};
+  birthrate_t birthrate{0.6};
+  fighters_t fighters{4};
+  iq_t iq{150};
   iq_t iq_limit{0};
   bool metamorph{false};
   bool absorb{false};
   bool collective_iq{false};
   bool pods{false};
-  adventurism_t adventurism{1.0};
+  adventurism_t adventurism{0.4};
   sexes_t number_sexes{2};
   metabolism_t metabolism{1.0};
   fertilize_t fertilize{0};
 
   // Sector compatibility preferences (0.0 to 1.0 per SectorType)
-  std::array<double, SectorType::SEC_WASTED + 1> sector_compatibilities{};
+  std::array<double, SectorType::SEC_WASTED + 1> sector_compatibilities{
+      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
   std::optional<SectorType> likesbest{std::nullopt};
 };
 

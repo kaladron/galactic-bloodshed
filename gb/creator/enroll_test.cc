@@ -319,11 +319,12 @@ void test_enroll_valid_race_success() {
       .preferred_sector = SectorType::SEC_GAS,
       .is_god = true,
       .mass = 1.0,
-      .birthrate = 1.0,
-      .fighters = 10,
-      .iq = 100,
+      .birthrate = 0.6,
+      .fighters = 5,
+      .iq = 140,
       .number_sexes = 1,
       .metabolism = 1.0,
+      .sector_compatibilities = {},
       .likesbest = SectorType::SEC_GAS,
   };
   spec.sector_compatibilities[SectorType::SEC_GAS] = 1.0;

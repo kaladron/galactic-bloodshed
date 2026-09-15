@@ -11,21 +11,11 @@ import dallib;
 import scnlib;
 #undef stdout
 
-namespace GB::enrol {
-
-struct SectorTypeSummary {
-  bool present{false};
-  Coordinates coords{};
-  int count{0};
-};
-
-}  // namespace GB::enrol
-
 int main(int argc, char* argv[]) {
-  using namespace GB::enrol;
   using namespace GB::creator;
 
   std::string db_path = PKGSTATEDIR "gb.db";
+  std::optional<std::filesystem::path> spec_file;
 
   for (int i = 1; i < argc; ++i) {
     std::string_view arg = argv[i];
@@ -37,6 +27,10 @@ int main(int argc, char* argv[]) {
                    "  -d, --database, --db <path> Path to SQLite database "
                    "(default: {}gb.db)",
                    PKGSTATEDIR);
+      std::println(std::cout,
+                   "  -f, --file [path]           Enroll directly from a JSON "
+                   "race specification file (default: {})",
+                   DEFAULT_RACEGEN_FILENAME);
       std::println(std::cout,
                    "  -h, --help                  Display this help message "
                    "and exit");
@@ -53,39 +47,71 @@ int main(int argc, char* argv[]) {
       db_path = arg.substr(std::string_view("--database=").size());
     } else if (arg.starts_with("--db=")) {
       db_path = arg.substr(std::string_view("--db=").size());
+    } else if (arg == "-f" || arg == "--file") {
+      if (i + 1 < argc && !std::string_view(argv[i + 1]).starts_with("-")) {
+        spec_file = argv[++i];
+      } else {
+        spec_file = DEFAULT_RACEGEN_FILENAME;
+      }
+    } else if (arg.starts_with("--file=")) {
+      spec_file = arg.substr(std::string_view("--file=").size());
     } else {
       std::println(std::cerr, "Unknown option \"{}\".", arg);
-      std::println(std::cerr,
-                   "Usage: enrol [-d|--database|--db <path>] [-h|--help]");
+      std::println(
+          std::cerr,
+          "Usage: enrol [-d|--database|--db <path>] [-f|--file [path]] "
+          "[-h|--help]");
       return 1;
     }
   }
 
-  planetnum_t pnum{0};
-  starnum_t star{0};
-  bool found = false;
-  player_t Playernum;
-  PlanetType ppref;
-  char c;
-  std::array<SectorTypeSummary, SectorType::SEC_WASTED + 1> secttypes{};
-  std::set<PlanetType> exhausted_planet_types;
-
   // Create Database, EntityManager, and EnrollmentService
   Database database{db_path};
   EntityManager entity_manager{database};
-  GB::creator::EnrollmentService service{entity_manager};
+  EnrollmentService service{entity_manager};
 
-  if ((Playernum = player_t{entity_manager.num_races().value + 1}) >=
-      player_t{MAXPLAYERS}) {
+  // Direct non-interactive enrollment from JSON file
+  if (spec_file) {
+    auto loaded = load_race_spec(*spec_file);
+    if (!loaded) {
+      std::println(std::cerr, "Error: {}", loaded.error());
+      return 1;
+    }
+    auto result = service.enroll_player(*loaded);
+    if (!result.success) {
+      std::println(std::cerr, "Error: Enrollment failed - {}", result.message);
+      return 1;
+    }
+    std::println(std::cout, "\nYou are player {}.\n", result.player_num);
+    std::println(std::cout, "Your race has been created on sector {},{} on",
+                 result.capital_coords.x, result.capital_coords.y);
+    entity_manager.with_star(result.star, [&](const Star& home_star) {
+      std::println(std::cout, "{}/{}.\n", home_star.get_name(),
+                   home_star.get_planet_name(result.pnum));
+    });
+    return 0;
+  }
+
+  // Interactive quick-start enrollment wizard
+  player_t Playernum{entity_manager.num_races().value + 1};
+  if (Playernum >= player_t{MAXPLAYERS}) {
     std::println(std::cout, "There are already {} players; No more allowed.",
                  MAXPLAYERS - 1);
     return -1;
   }
 
+  const auto* universe_ptr = entity_manager.peek_universe();
+  if (!universe_ptr) {
+    std::println(std::cerr, "Error: Cannot load universe data");
+    return -1;
+  }
+  std::println(std::cout, "There is still space for player {}.", Playernum);
+
   std::println(std::cout, "\n=== Available Racial Archetypes ===\n");
   std::cout << create_archetypes_table() << "\n\n";
 
-  std::print("Enter racial type to be created (1-{}):", race_archetypes.size());
+  std::print("Enter racial type to be created (1-{}): ",
+             race_archetypes.size());
   std::string input_line;
   std::getline(std::cin, input_line);
   auto idx_result = scn::scan<std::size_t>(input_line, "{}");
@@ -100,56 +126,90 @@ int main(int argc, char* argv[]) {
     std::println(std::cout, "Bad racial index.");
     return 1;
   }
-  std::size_t idx = chosen_idx - 1;
+  const auto& archetype = race_archetypes[chosen_idx - 1];
 
-  const auto* universe_ptr = entity_manager.peek_universe();
-  if (!universe_ptr) {
-    std::println(std::cerr, "Error: Cannot load universe data");
-    return -1;
+  std::print("Enter the name of this race [{}]: ", archetype.name);
+  std::string race_name;
+  std::getline(std::cin, race_name);
+  if (race_name.empty()) {
+    race_name = std::string(archetype.name);
   }
-  std::println(std::cout, "There is still space for player {}.", Playernum);
+
+  std::print("Enter the password for this race: ");
+  std::string race_password;
+  std::getline(std::cin, race_password);
+
+  std::print("Enter the password for this leader: ");
+  std::string gov_password;
+  std::getline(std::cin, gov_password);
+
+  std::print("Enter your email address [player@localhost]: ");
+  std::string email_address;
+  std::getline(std::cin, email_address);
+  if (email_address.empty()) {
+    email_address = "player@localhost";
+  }
+
+  std::print("\n\tDeity/Guest/Normal (d/g/n) [{}]? ",
+             Playernum == 1 ? 'd' : 'n');
+  std::string deity_line;
+  std::getline(std::cin, deity_line);
+  char role_char =
+      (!deity_line.empty()) ? deity_line[0] : (Playernum == 1 ? 'd' : 'n');
+  bool is_god = (role_char == 'd');
+  bool is_guest = (role_char == 'g');
+
+  starnum_t star{0};
+  planetnum_t pnum{0};
+  PlanetType ppref = archetype.default_planet;
+  bool found = false;
+  std::set<PlanetType> exhausted_planet_types;
 
   do {
-    std::print("\nLive on what type planet:\n     (e)arth, (g)asgiant, (m)ars, "
-               "(i)ce, (w)ater, (d)esert, (f)orest? ");
+    std::print(
+        "\nLive on what type planet (default: {}):\n     (e)arth, (g)asgiant, "
+        "(m)ars, (i)ce, (w)ater, (d)esert, (f)orest? ",
+        Planet_types[archetype.default_planet]);
     std::string planet_line;
     std::getline(std::cin, planet_line);
-    c = (!planet_line.empty()) ? planet_line[0] : '\0';
+    char c = (!planet_line.empty()) ? planet_line[0] : '\0';
 
-    switch (c) {
-      case 'w':
-        ppref = PlanetType::WATER;
-        break;
-      case 'e':
-        ppref = PlanetType::EARTH;
-        break;
-      case 'm':
-        ppref = PlanetType::MARS;
-        break;
-      case 'g':
-        ppref = PlanetType::GASGIANT;
-        break;
-      case 'i':
-        ppref = PlanetType::ICEBALL;
-        break;
-      case 'd':
-        ppref = PlanetType::DESERT;
-        break;
-      case 'f':
-        ppref = PlanetType::FOREST;
-        break;
-      default:
-        std::println(std::cout, "Oh well.");
-        return -1;
+    if (c == '\0') {
+      ppref = archetype.default_planet;
+    } else {
+      switch (c) {
+        case 'w':
+          ppref = PlanetType::WATER;
+          break;
+        case 'e':
+          ppref = PlanetType::EARTH;
+          break;
+        case 'm':
+          ppref = PlanetType::MARS;
+          break;
+        case 'g':
+          ppref = PlanetType::GASGIANT;
+          break;
+        case 'i':
+          ppref = PlanetType::ICEBALL;
+          break;
+        case 'd':
+          ppref = PlanetType::DESERT;
+          break;
+        case 'f':
+          ppref = PlanetType::FOREST;
+          break;
+        default:
+          std::println(std::cout, "Oh well.");
+          return -1;
+      }
     }
 
-    std::println(std::cout, "Looking for type {} planet...", ppref);
+    std::println(std::cout, "Looking for type {} planet...",
+                 Planet_types[ppref]);
 
-    /* find first planet of right type */
     found = false;
-
-    auto found_loc = service.find_suitable_planet(ppref);
-    if (found_loc) {
+    if (auto found_loc = service.find_suitable_planet(ppref)) {
       star = found_loc->first;
       pnum = found_loc->second;
       found = true;
@@ -158,175 +218,75 @@ int main(int argc, char* argv[]) {
     if (!found) {
       std::println(std::cout, "planet type not found in any free systems.");
       exhausted_planet_types.insert(ppref);
-      if (exhausted_planet_types.size() >= all_planet_types.size()) {
+      if (exhausted_planet_types.size() >= habitable_planet_types.size()) {
         std::println(std::cout,
                      "Looks like there aren't any free planets left.  bye..");
         return -1;
       }
       std::println(std::cout, "  Try a different one...");
     }
-
   } while (!found);
 
-  std::print("\n\tDeity/Guest/Normal (d/g/n) ?");
-  std::string deity_line;
-  std::getline(std::cin, deity_line);
-  c = (!deity_line.empty()) ? deity_line[0] : '\0';
-
-  bool is_god = (c == 'd');
-  bool is_guest = (c == 'g');
-
-  std::print("Enter the password for this race:");
-  std::string password_line;
-  std::getline(std::cin, password_line);
-  std::string race_password = password_line;
-
-  std::print("Enter the password for this leader:");
-  std::string gov_password_line;
-  std::getline(std::cin, gov_password_line);
-  std::string gov_password = gov_password_line;
-
-  /* assign racial characteristics */
-  const auto& archetype = race_archetypes[idx];
-  mass_t race_mass{};
-  birthrate_t race_birthrate{};
-  fighters_t race_fighters{};
-  iq_t race_iq{};
-  bool race_metamorph = archetype.is_metamorphic;
-  bool race_absorb = archetype.is_metamorphic;
-  bool race_collective_iq = archetype.is_metamorphic;
-  bool race_pods = archetype.is_metamorphic;
-  adventurism_t race_adventurism{};
-  sexes_t race_sexes{};
-  metabolism_t race_metabolism{};
-
+  RacegenEngine engine;
+  RaceEnrollmentSpec spec;
   char ok_char = '\0';
   do {
-    race_mass = archetype.sample_mass();
-    race_birthrate = archetype.sample_birthrate();
-    race_fighters = archetype.sample_fighters();
-    race_iq = archetype.sample_iq();
-    race_adventurism = archetype.sample_adventurism();
-    race_sexes = archetype.sample_sexes();
-    race_metabolism = archetype.sample_metabolism();
+    spec = archetype.to_enrollment_spec(ppref, /*randomize=*/true);
+    spec.name = race_name;
+    spec.password = race_password;
+    spec.governor_password = gov_password;
+    spec.address = email_address;
+    spec.is_god = is_god;
+    spec.is_guest = is_guest;
+    spec.target_planet = std::make_pair(star, pnum);
 
-    std::println(std::cout, "{}", race_metamorph ? "METAMORPHIC" : "");
-    std::println(std::cout, "       Birthrate: {:.3f}", race_birthrate);
-    std::println(std::cout, "Fighting ability: {}", race_fighters);
-    std::println(std::cout, "              IQ: {}", race_iq);
-    std::println(std::cout, "      Metabolism: {:.2f}", race_metabolism);
-    std::println(std::cout, "     Adventurism: {:.2f}", race_adventurism);
-    std::println(std::cout, "            Mass: {:.2f}", race_mass);
+    const auto cost = engine.calculate_cost(spec);
+
+    std::println(std::cout,
+                 "\n=== Sampled Race Specification ({}) ===", archetype.name);
+    if (spec.metamorph) {
+      std::println(std::cout, "       Race Type: METAMORPHIC (Absorb, Pods)");
+      std::println(std::cout, "        IQ Limit: {}", spec.iq_limit);
+    } else {
+      std::println(std::cout, "       Race Type: Normal");
+      std::println(std::cout, "              IQ: {}", spec.iq);
+    }
+    std::println(std::cout, "       Birthrate: {:.3f}", spec.birthrate);
+    std::println(std::cout, "Fighting ability: {}", spec.fighters);
+    std::println(std::cout, "      Metabolism: {:.2f}", spec.metabolism);
+    std::println(std::cout, "     Adventurism: {:.2f}", spec.adventurism);
+    std::println(std::cout, "            Mass: {:.2f}", spec.mass);
     std::println(std::cout, " Number of sexes: {} (min req'd for colonization)",
-                 race_sexes);
+                 spec.number_sexes);
+    std::println(std::cout, "     Home Planet: {}", Planet_types[ppref]);
 
-    std::print("\n\nLook OK(y/n)?");
+    std::print("  Sector Compats: ");
+    bool first = true;
+    for (auto [st, compat] : spec.sector_compatibilities.settleable()) {
+      if (compat > 0.0) {
+        if (!first) std::print(", ");
+        std::print("{} {:.0f}%", Desnames[st], compat * 100.0);
+        first = false;
+      }
+    }
+    std::println(std::cout, "");
+    std::println(std::cout, "      Total Cost: {} / {} pts ({} remaining)",
+                 cost.total_cost, STARTING_POINTS, cost.points_remaining);
+
+    std::print("\nLook OK(y/n)? ");
     std::string ok_line;
     std::getline(std::cin, ok_line);
     ok_char = (!ok_line.empty()) ? ok_line[0] : '\0';
   } while (ok_char != 'y');
 
-  const auto* planet_ptr = entity_manager.peek_planet(star, pnum);
-  if (!planet_ptr) {
-    std::println(std::cerr, "Error: Cannot load planet for sector analysis");
-    return -1;
+  if (auto save_res = save_race_spec(spec); !save_res) {
+    std::println(std::cerr, "Warning: Could not save {}: {}",
+                 DEFAULT_RACEGEN_FILENAME, save_res.error());
+  } else {
+    std::println(std::cout, "Saved race specification to '{}'.",
+                 DEFAULT_RACEGEN_FILENAME);
   }
 
-  std::println(std::cout,
-               "\nChoose a primary sector preference. This race will prefer to "
-               "live\non this type of sector.");
-
-  // Shuffle to randomize initial home sector coordinates across the world
-  // so each newly enrolled player doesn't start in the top-left (0,0) corner.
-  entity_manager.with_sectormap(star, pnum, [&](const SectorMap& smap) {
-    for (const Sector& sector : smap.shuffle()) {
-      secttypes[sector.get_condition()].count++;
-      if (!secttypes[sector.get_condition()].present) {
-        secttypes[sector.get_condition()].present = true;
-        secttypes[sector.get_condition()].coords = sector.coords();
-      }
-    }
-    // Temporarily show sectors during selection (no need to persist)
-    for (SectorType st : all_sector_types) {
-      if (secttypes[st].present) {
-        std::println(
-            std::cout, "({:2d}): {} ({}, {}) ({}, {} sectors)", st,
-            get_sector_char(smap.get(secttypes[st].coords).get_condition()),
-            secttypes[st].coords.x, secttypes[st].coords.y, Desnames[st],
-            secttypes[st].count);
-      }
-    }
-  });
-
-  SectorType chosen_sector{};
-  bool sector_chosen = false;
-  do {
-    std::print("\nchoice (enter the number): ");
-    std::string choice_line;
-    std::getline(std::cin, choice_line);
-    auto choice_result = scn::scan<int>(choice_line, "{}");
-    if (!choice_result) {
-      std::println(std::cerr, "Error: Cannot read input - {}",
-                   choice_result.error().msg());
-      return -1;
-    }
-    auto parsed = to_sector_type(choice_result->value());
-    if (!parsed || !secttypes[*parsed].present) {
-      std::println(std::cout, "There are none of that type here..");
-    } else {
-      chosen_sector = *parsed;
-      sector_chosen = true;
-    }
-  } while (!sector_chosen);
-
-  SectorCompatibilities sector_compat{};
-  sector_compat[chosen_sector] = 1.0;
-  sector_compat[SectorType::SEC_PLATED] = 1.0;
-  sector_compat[SectorType::SEC_WASTED] = 0.0;
-  std::println(std::cout, "\nEnter compatibilities of other sectors -");
-  for (SectorType st : settleable_sector_types) {
-    if (st < SectorType::SEC_PLATED && st != chosen_sector) {
-      std::print("{:6s} ({:3d} sectors) :", Desnames[st], secttypes[st].count);
-      std::string compat_line;
-      std::getline(std::cin, compat_line);
-      auto compat_result = scn::scan<int>(compat_line, "{}");
-      if (!compat_result) {
-        std::println(std::cerr, "Error: Cannot read input - {}",
-                     compat_result.error().msg());
-        return -1;
-      }
-      sector_compat[st] = compat_result->value() / 100.0;
-    }
-  }
-
-  GB::creator::RaceEnrollmentSpec spec{
-      .name = "Unknown",
-      .password = race_password,
-      .governor_password = gov_password,
-      .home_planet_type = ppref,
-      .preferred_sector = chosen_sector,
-      .capital_coords = secttypes[chosen_sector].coords,
-      .target_planet = std::make_pair(star, pnum),
-      .is_god = is_god,
-      .is_guest = is_guest,
-      .mass = race_mass,
-      .birthrate = race_birthrate,
-      .fighters = race_fighters,
-      .iq = race_iq,
-      .metamorph = race_metamorph,
-      .absorb = race_absorb,
-      .collective_iq = race_collective_iq,
-      .pods = race_pods,
-      .adventurism = race_adventurism,
-      .number_sexes = race_sexes,
-      .metabolism = race_metabolism,
-      .sector_compatibilities = sector_compat,
-      .likesbest = chosen_sector,
-  };
-
-  // EnrollmentService handles complete entity setup: creating Race with
-  // properly initialized Leader and inactive governors 1..MAXGOVERNORS,
-  // configuring capital sector, home planet, Star, and government ship.
   auto result = service.enroll_player(spec);
   if (!result.success) {
     std::println(std::cerr, "Error: Enrollment failed - {}", result.message);

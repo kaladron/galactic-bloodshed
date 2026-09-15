@@ -166,19 +166,28 @@ Once a species is validated and points remaining $\ge 0$, the imperial onboardin
 
 ## 7. Interactive Onboarding Utilities
 
-Players and game operators access race generation through two dedicated command-line tools:
+Players and game operators access race generation through two dedicated command-line tools that share a unified `racegen.json` specification format:
 
-- **`enrol` (Interactive Registration Wizard)**:
-  - Designed for players joining an active game.
-  - Presents imperial credentials, archetype selection, homeworld preferences, and automated sector founding.
+- **`enrol` (Quick-Start Registration Wizard & JSON Enrollment)**:
+  - Designed for players joining an active game quickly without micromanaging sector covariance matrices.
+  - Interactive mode presents imperial credentials, preset archetype selection (`1-10`), and homeworld choice, automatically generating pre-rolled sector compatibilities and saving the finalized specification to `racegen.json`.
+  - Non-interactive mode (`-f, --file [path]`, defaulting to `racegen.json`) loads a saved Glaze JSON race specification and enrolls the empire directly into the universe database:
   ```bash
+  # Interactive quick-start wizard (saves racegen.json and enrolls)
   ./build/gb/enrol -d /var/games/gb/galaxy.db
+
+  # Non-interactive enrollment from racegen.json (or custom file)
+  ./build/gb/enrol -d /var/games/gb/galaxy.db -f racegen.json
   ```
 - **`racegen` (Genetic Design Sandbox)**:
-  - Designed for advanced species engineering and point budgeting.
-  - Allows players to inspect mathematical point costs, adjust individual traits, test covariance impacts, and save species profiles to disk.
+  - Designed for custom species engineering and granular point budgeting.
+  - Allows players to inspect mathematical point costs, adjust individual traits, test covariance impacts, and save/load species profiles (`racegen.json` by default) or enroll directly from the interactive shell.
   ```bash
+  # Launch interactive race designer
   ./build/gb/racegen -d /var/games/gb/galaxy.db
+
+  # Pre-load an existing racegen.json specification into the designer
+  ./build/gb/racegen -d /var/games/gb/galaxy.db -f racegen.json
   ```
 
 ---

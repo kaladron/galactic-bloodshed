@@ -598,6 +598,53 @@ void test_enroll_validation_and_budget_rejection() {
                "  ✓ EnrollmentService validation and budget rejection passed");
 }
 
+void test_quickstart_archetype_json_roundtrip_and_enroll() {
+  std::println(
+      std::cout,
+      "Test: Quickstart archetype -> racegen.json roundtrip -> enroll_player");
+
+  Database db(":memory:");
+  setup_test_universe(db);
+  EntityManager em(db);
+  GB::creator::EnrollmentService service(em);
+
+  const auto& archetype = GB::creator::race_archetypes[0];
+  auto spec = archetype.to_enrollment_spec(PlanetType::EARTH, false);
+  spec.name = "Xenomorphs";
+  spec.password = "queenpass";
+  spec.governor_password = "hivepass";
+  spec.address = "hive@lv426.org";
+  spec.is_god = true;
+
+  const auto tmp_file =
+      std::filesystem::temp_directory_path() / "test_quickstart_racegen.json";
+  std::filesystem::remove(tmp_file);
+
+  auto save_res = GB::creator::save_race_spec(spec, tmp_file);
+  test::expect_true(save_res.has_value());
+
+  auto load_res = GB::creator::load_race_spec(tmp_file);
+  test::expect_true(load_res.has_value());
+  if (load_res) {
+    auto enroll_res = service.enroll_player(*load_res);
+    test::expect_true(enroll_res.success);
+    test::expect_eq(enroll_res.player_num, player_t{1});
+
+    const auto* race = em.peek_race(player_t{1});
+    test::expect_true(race != nullptr);
+    if (race) {
+      test::expect_eq(race->name, std::string("Xenomorphs"));
+      test::expect_true(race->Metamorph);
+      test::expect_eq(race->IQ_limit, archetype.base_iq_limit);
+      test::expect_eq(race->likes[SectorType::SEC_PLATED], 1.0);
+    }
+  }
+
+  std::filesystem::remove(tmp_file);
+  std::println(std::cout,
+               "  ✓ Quickstart archetype JSON roundtrip and enrollment passed");
+}
+
 }  // namespace
 
 int main() {
@@ -612,6 +659,7 @@ int main() {
   test_find_suitable_planet_shuffle();
   test_archetypes_table();
   test_enroll_validation_and_budget_rejection();
+  test_quickstart_archetype_json_roundtrip_and_enroll();
 
   std::println(std::cout, "\n✅ All EnrollmentService unit tests passed!");
   return 0;

@@ -324,10 +324,9 @@ void test_enroll_valid_race_success() {
       .iq = 140,
       .number_sexes = 1,
       .metabolism = 1.0,
-      .sector_compatibilities = {},
+      .sector_compatibilities = {.gas = 1.0, .plated = 0.0},
       .likesbest = SectorType::SEC_GAS,
   };
-  spec.sector_compatibilities[SectorType::SEC_GAS] = 1.0;
 
   auto result = service.enroll_player(spec);
   test::expect_true(result.success);

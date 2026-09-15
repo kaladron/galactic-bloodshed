@@ -26,7 +26,7 @@ void test_default_race_costs() {
   test::expect_eq(breakdown.planet_cost, 75, "Earth planet cost must be 75");
 
   // Sector costs: Plated (100%) = 100
-  test::expect_eq(breakdown.sector_costs[SectorType::SEC_PLATED], 100.0,
+  test::expect_eq(breakdown.sector_costs.plated, 100.0,
                   "100% plated sector cost must be 100");
 
   // Sector count penalty: 1 type = 0
@@ -105,7 +105,7 @@ void test_sector_compatibility_costs() {
   spec.home_planet_type = PlanetType::WATER;
 
   // Add Water (SectorType::SEC_SEA = 0) at 100%
-  spec.sector_compatibilities[SectorType::SEC_SEA] = 1.0;
+  spec.sector_compatibilities.sea = 1.0;
 
   auto breakdown = engine.calculate_cost(spec);
   // Sector count jumps from 1 (cost 0) to 2 (cost 50)
@@ -114,14 +114,13 @@ void test_sector_compatibility_costs() {
 
   // Water on Water planet has planet_compat_cov == 1.00 (not > 1.01), so no
   // penalty multiplier
-  test::expect_eq(breakdown.sector_costs[SectorType::SEC_SEA], 100.0,
+  test::expect_eq(breakdown.sector_costs.sea, 100.0,
                   "100% sea cost on water planet must be 100");
 
   // Desert on Water planet has planet_compat_cov == 3.00, costing 3x as much!
-  spec.sector_compatibilities[SectorType::SEC_DESERT] = 0.5;
+  spec.sector_compatibilities.desert = 0.5;
   auto desert_breakdown = engine.calculate_cost(spec);
-  test::expect_true(desert_breakdown.sector_costs[SectorType::SEC_DESERT] >
-                        100.0,
+  test::expect_true(desert_breakdown.sector_costs.desert > 100.0,
                     "desert on water world must be heavily penalized by planet "
                     "compatibility covariance");
 }
@@ -133,7 +132,7 @@ void test_validation_rules() {
   spec.password = "secretpass";
   spec.address = "admin@earth.gov";
   // Add 100% Land compatibility (common on Earth)
-  spec.sector_compatibilities[SectorType::SEC_LAND] = 1.0;
+  spec.sector_compatibilities.land = 1.0;
 
   // Standard non-rigorous validation should pass cleanly
   auto errors = engine.validate(spec, /*is_player=*/true, /*rigorous=*/false);
@@ -179,14 +178,14 @@ void test_validation_rules() {
   spec.home_planet_type = PlanetType::EARTH;
 
   // 5. Jovian sector restrictions
-  spec.sector_compatibilities[SectorType::SEC_GAS] = 0.5;
+  spec.sector_compatibilities.gas = 0.5;
   errors = engine.validate(spec, true, false);
   test::expect_true(
       !errors.empty() &&
           errors[0].contains(
               "Non-jovian races may never have gas compatibility"),
       "should reject gas compatibility on non-Jovian planet");
-  spec.sector_compatibilities[SectorType::SEC_GAS] = 0.0;
+  spec.sector_compatibilities.gas = 0.0;
 
   // 6. Rigorous: default password
   spec.password = "XXXX";
@@ -211,11 +210,13 @@ void test_validation_rules() {
   spec.birthrate = 1.0;
   spec.metabolism = 4.0;
   spec.mass = 3.0;
-  for (std::size_t i = 0; i < 8; ++i) {
-    if (i != SectorType::SEC_GAS) {
-      spec.sector_compatibilities[static_cast<SectorType>(i)] = 1.0;
-    }
-  }
+  spec.sector_compatibilities = {.sea = 1.0,
+                                 .land = 1.0,
+                                 .mount = 1.0,
+                                 .ice = 1.0,
+                                 .forest = 1.0,
+                                 .desert = 1.0,
+                                 .plated = 1.0};
   errors = engine.validate(spec, true, true);
   test::expect_true(
       !errors.empty() &&

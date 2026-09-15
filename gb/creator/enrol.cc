@@ -279,12 +279,12 @@ int main(int argc, char* argv[]) {
     }
   } while (!sector_chosen);
 
-  std::array<double, SectorType::SEC_WASTED + 1> sector_compat{};
+  SectorCompatibilities sector_compat{};
   sector_compat[chosen_sector] = 1.0;
   sector_compat[SectorType::SEC_PLATED] = 1.0;
   sector_compat[SectorType::SEC_WASTED] = 0.0;
   std::println(std::cout, "\nEnter compatibilities of other sectors -");
-  for (SectorType st : all_sector_types) {
+  for (SectorType st : settleable_sector_types) {
     if (st < SectorType::SEC_PLATED && st != chosen_sector) {
       std::print("{:6s} ({:3d} sectors) :", Desnames[st], secttypes[st].count);
       std::string compat_line;

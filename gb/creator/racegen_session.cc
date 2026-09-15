@@ -414,13 +414,12 @@ bool RacegenSession::modify_field(std::string_view field_name,
     }
     spec_.home_planet_type = *ptype;
     if (*ptype == PlanetType::GASGIANT) {
-      spec_.sector_compatibilities = {};
-      spec_.sector_compatibilities[SectorType::SEC_GAS] = 1.0;
+      spec_.sector_compatibilities = {.gas = 1.0, .plated = 0.0};
       spec_.likesbest = SectorType::SEC_GAS;
       spec_.preferred_sector = SectorType::SEC_GAS;
-    } else if (spec_.sector_compatibilities[SectorType::SEC_GAS] > 0.0) {
-      spec_.sector_compatibilities[SectorType::SEC_GAS] = 0.0;
-      spec_.sector_compatibilities[SectorType::SEC_PLATED] = 1.0;
+    } else if (spec_.sector_compatibilities.gas > 0.0) {
+      spec_.sector_compatibilities.gas = 0.0;
+      spec_.sector_compatibilities.plated = 1.0;
       spec_.likesbest = SectorType::SEC_PLATED;
       spec_.preferred_sector = SectorType::SEC_PLATED;
     }

@@ -216,7 +216,10 @@ void test_enroll_first_race_god_success() {
       .iq = 100,
       .number_sexes = 2,
       .metabolism = 1.0,
-      .sector_compatibilities = {0.5, 1.0, 0.0, 0.0, 0.0, 0.8, 0.0, 1.0, 0.0},
+      .sector_compatibilities = {.sea = 0.5,
+                                 .land = 1.0,
+                                 .forest = 0.8,
+                                 .plated = 1.0},
       .likesbest = SectorType::SEC_LAND,
   };
 
@@ -321,7 +324,7 @@ void test_enroll_second_race_mortal_success() {
       .iq = 120,
       .number_sexes = 1,
       .metabolism = 1.1,
-      .sector_compatibilities = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0},
+      .sector_compatibilities = {.desert = 1.0, .plated = 1.0},
       .likesbest = SectorType::SEC_DESERT,
   };
 
@@ -397,7 +400,7 @@ void test_enroll_gas_giant_cold_success() {
       .preferred_sector = SectorType::SEC_GAS,
       .is_god = true,
       .number_sexes = 1,
-      .sector_compatibilities = {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+      .sector_compatibilities = {.gas = 1.0, .plated = 0.0},
       .likesbest = SectorType::SEC_GAS,
   };
 
@@ -560,7 +563,7 @@ void test_enroll_validation_and_budget_rejection() {
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
       .is_god = true,
-      .sector_compatibilities = {0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+      .sector_compatibilities = {.land = 1.0, .plated = 0.0},
   };
   auto res_plated = service.enroll_player(bad_plated);
   test::expect_false(res_plated.success);
@@ -579,7 +582,13 @@ void test_enroll_validation_and_budget_rejection() {
       .adventurism = 0.99,
       .metabolism = 4.0,
       .fertilize = 1,
-      .sector_compatibilities = {1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0},
+      .sector_compatibilities = {.sea = 1.0,
+                                 .land = 1.0,
+                                 .mount = 1.0,
+                                 .ice = 1.0,
+                                 .forest = 1.0,
+                                 .desert = 1.0,
+                                 .plated = 1.0},
   };
   auto res_budget = service.enroll_player(over_budget);
   test::expect_false(res_budget.success);

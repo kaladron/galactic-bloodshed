@@ -50,8 +50,8 @@ Race createTestRace(player_t playernum = 1) {
   race.adventurism = 0.5;
 
   // Set sector compatibility
-  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    race.likes[i] = 0.8;
+  for (SectorType st : all_sector_types) {
+    race.likes[st] = 0.8;
   }
   race.likes[SectorType::SEC_PLATED] = 1.0;
   race.likes[SectorType::SEC_WASTED] = 0.0;

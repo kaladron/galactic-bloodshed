@@ -118,71 +118,114 @@ constexpr bool is_habitable_home_planet(PlanetType type) noexcept {
   return get_planet_cost(type).has_value();
 }
 
-constexpr std::size_t num_settleable_sectors = 8;
-
 constexpr std::array<int, 9> sector_count_costs = {
     -1, 0, 50, 100, 200, 300, 400, 500, 600,
 };
 
-constexpr std::array<std::array<double, num_settleable_sectors>,
-                     num_settleable_sectors>
-    sector_compat_cov = {{
-        /* . Water (0) */ {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        /* * Land (1) */ {0.001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        /* ^ Mount (2) */ {0.002, -0.0005, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        /* ~ Gas (3) */ {999.0, 999.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        /* # Ice (4) */ {0.001, 0.0, -0.002, 999.0, 0.0, 0.0, 0.0, 0.0},
-        /* ) Forest (5) */ {0.0, -0.001, 0.0, 999.0, 0.001, 0.0, 0.0, 0.0},
-        /* - Desert (6) */ {0.003, -0.0005, 0.0, 999.0, 0.0, 0.001, 0.0, 0.0},
-        /* o Plated (7) */ {0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0},
-    }};
+double sector_compat_covariance(SectorType a, SectorType b) {
+  if (a > b) {
+    std::swap(a, b);
+  }
+  // TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
+  // constexpr when P3372 (constexpr containers and adaptors) lands.
+  static const std::flat_map<SectorType, SectorCompatibilities> cov_map = {
+      {SectorType::SEC_LAND, {.sea = 0.001, .plated = 0.0}},
+      {SectorType::SEC_MOUNT, {.sea = 0.002, .land = -0.0005, .plated = 0.0}},
+      {SectorType::SEC_GAS,
+       {.sea = 999.0, .land = 999.0, .mount = 999.0, .plated = 0.0}},
+      {SectorType::SEC_ICE,
+       {.sea = 0.001, .mount = -0.002, .gas = 999.0, .plated = 0.0}},
+      {SectorType::SEC_FOREST,
+       {.land = -0.001, .gas = 999.0, .ice = 0.001, .plated = 0.0}},
+      {SectorType::SEC_DESERT,
+       {.sea = 0.003,
+        .land = -0.0005,
+        .gas = 999.0,
+        .forest = 0.001,
+        .plated = 0.0}},
+      {SectorType::SEC_PLATED, {.gas = 999.0, .plated = 0.0}},
+  };
+  if (auto it = cov_map.find(b); it != cov_map.end()) {
+    return it->second[a];
+  }
+  return 0.0;
+}
 
-constexpr double planet_compat_cov_multiplier(PlanetType planet,
-                                              SectorType sector) noexcept {
+double planet_compat_cov_multiplier(PlanetType planet, SectorType sector) {
   if (sector < SectorType::SEC_SEA || sector > SectorType::SEC_PLATED) {
     return 1.0;
   }
-  // Sector order: SEC_SEA(0), SEC_LAND(1), SEC_MOUNT(2), SEC_GAS(3),
-  // SEC_ICE(4), SEC_FOREST(5), SEC_DESERT(6), SEC_PLATED(7)
-  switch (planet) {
-    case PlanetType::EARTH: {
-      constexpr std::array<double, num_settleable_sectors> cov = {
-          1.00, 1.00, 2.00, 99.00, 1.01, 1.50, 3.00, 1.01};
-      return cov[sector];
-    }
-    case PlanetType::FOREST: {
-      constexpr std::array<double, num_settleable_sectors> cov = {
-          1.01, 1.50, 2.00, 99.00, 1.01, 1.00, 3.00, 1.01};
-      return cov[sector];
-    }
-    case PlanetType::DESERT: {
-      constexpr std::array<double, num_settleable_sectors> cov = {
-          3.00, 1.01, 1.01, 99.00, 1.50, 3.00, 1.00, 1.01};
-      return cov[sector];
-    }
-    case PlanetType::WATER: {
-      constexpr std::array<double, num_settleable_sectors> cov = {
-          1.00, 1.50, 3.00, 99.00, 1.01, 1.01, 3.00, 1.01};
-      return cov[sector];
-    }
-    case PlanetType::MARS: {  // Airless
-      constexpr std::array<double, num_settleable_sectors> cov = {
-          1.01, 1.00, 1.00, 99.00, 1.01, 1.01, 1.00, 1.01};
-      return cov[sector];
-    }
-    case PlanetType::ICEBALL: {
-      constexpr std::array<double, num_settleable_sectors> cov = {
-          3.00, 1.01, 1.00, 99.00, 1.00, 1.50, 2.00, 1.01};
-      return cov[sector];
-    }
-    case PlanetType::GASGIANT: {  // Jovian
-      constexpr std::array<double, num_settleable_sectors> cov = {
-          99.00, 99.00, 99.00, 1.00, 99.00, 99.00, 99.00, 99.00};
-      return cov[sector];
-    }
-    default:
-      return 1.0;
+  // TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
+  // constexpr when P3372 (constexpr containers and adaptors) lands.
+  static const std::flat_map<PlanetType, SectorCompatibilities> cov_map = {
+      {PlanetType::EARTH,
+       {.sea = 1.00,
+        .land = 1.00,
+        .mount = 2.00,
+        .gas = 99.00,
+        .ice = 1.01,
+        .forest = 1.50,
+        .desert = 3.00,
+        .plated = 1.01}},
+      {PlanetType::FOREST,
+       {.sea = 1.01,
+        .land = 1.50,
+        .mount = 2.00,
+        .gas = 99.00,
+        .ice = 1.01,
+        .forest = 1.00,
+        .desert = 3.00,
+        .plated = 1.01}},
+      {PlanetType::DESERT,
+       {.sea = 3.00,
+        .land = 1.01,
+        .mount = 1.01,
+        .gas = 99.00,
+        .ice = 1.50,
+        .forest = 3.00,
+        .desert = 1.00,
+        .plated = 1.01}},
+      {PlanetType::WATER,
+       {.sea = 1.00,
+        .land = 1.50,
+        .mount = 3.00,
+        .gas = 99.00,
+        .ice = 1.01,
+        .forest = 1.01,
+        .desert = 3.00,
+        .plated = 1.01}},
+      {PlanetType::MARS,
+       {.sea = 1.01,
+        .land = 1.00,
+        .mount = 1.00,
+        .gas = 99.00,
+        .ice = 1.01,
+        .forest = 1.01,
+        .desert = 1.00,
+        .plated = 1.01}},
+      {PlanetType::ICEBALL,
+       {.sea = 3.00,
+        .land = 1.01,
+        .mount = 1.00,
+        .gas = 99.00,
+        .ice = 1.00,
+        .forest = 1.50,
+        .desert = 2.00,
+        .plated = 1.01}},
+      {PlanetType::GASGIANT,
+       {.sea = 99.00,
+        .land = 99.00,
+        .mount = 99.00,
+        .gas = 1.00,
+        .ice = 99.00,
+        .forest = 99.00,
+        .desert = 99.00,
+        .plated = 99.00}},
+  };
+  if (auto it = cov_map.find(planet); it != cov_map.end()) {
+    return it->second[sector];
   }
+  return 1.0;
 }
 
 }  // namespace
@@ -380,7 +423,7 @@ RacegenEngine::create_default_spec(bool metamorph) const noexcept {
   spec.number_sexes = 2;
   spec.metabolism = 1.0;
 
-  spec.sector_compatibilities[SectorType::SEC_PLATED] = 1.0;
+  spec.sector_compatibilities = {.plated = 1.0};
   spec.likesbest = SectorType::SEC_PLATED;
   spec.preferred_sector = SectorType::SEC_PLATED;
 
@@ -418,12 +461,8 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
   sum += breakdown.race_type_cost;
 
   // 3. Sector compatibility costs
-  // Settleable sector types: SEC_SEA (0) through SEC_PLATED (7).
-  // Compatibilities in spec are 0.0 to 1.0, scaled to 0.0 to 100.0 for classic
-  // formula.
   std::size_t sector_types_count = 0;
-  for (std::size_t i = 0; i < num_settleable_sectors; ++i) {
-    const auto st = static_cast<SectorType>(i);
+  for (SectorType st : settleable_sector_types) {
     const double compat_pct = spec.sector_compatibilities[st] * 100.0;
     if (compat_pct > 0.0) {
       ++sector_types_count;
@@ -432,23 +471,20 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
         compat_pct * 0.5 + 10.8 * std::log(1.0 + compat_pct);
   }
 
-  for (std::size_t i = 0; i < num_settleable_sectors; ++i) {
-    const auto st_i = static_cast<SectorType>(i);
-    const double compat_i = spec.sector_compatibilities[st_i] * 100.0;
-    for (std::size_t j = i + 1; j < num_settleable_sectors; ++j) {
-      const auto st_j = static_cast<SectorType>(j);
-      const double compat_j = spec.sector_compatibilities[st_j] * 100.0;
-      if (sector_compat_cov[j][i] != 0.0) {
-        breakdown.sector_costs[st_i] *=
-            (1.0 + sector_compat_cov[j][i] * compat_j);
-        breakdown.sector_costs[st_j] *=
-            (1.0 + sector_compat_cov[j][i] * compat_i);
+  for (SectorType st_i : settleable_sector_types) {
+    for (SectorType st_j : settleable_sector_types) {
+      if (st_j <= st_i) continue;
+      const double cov = sector_compat_covariance(st_i, st_j);
+      if (cov != 0.0) {
+        const double compat_i = spec.sector_compatibilities[st_i] * 100.0;
+        const double compat_j = spec.sector_compatibilities[st_j] * 100.0;
+        breakdown.sector_costs[st_i] *= (1.0 + cov * compat_j);
+        breakdown.sector_costs[st_j] *= (1.0 + cov * compat_i);
       }
     }
   }
 
-  for (std::size_t i = 0; i < num_settleable_sectors; ++i) {
-    const auto st = static_cast<SectorType>(i);
+  for (SectorType st : settleable_sector_types) {
     const double multiplier =
         planet_compat_cov_multiplier(spec.home_planet_type, st);
     if (multiplier > 1.01) {
@@ -456,12 +492,11 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
     }
   }
 
-  for (std::size_t i = 0; i < num_settleable_sectors; ++i) {
-    const auto st = static_cast<SectorType>(i);
+  for (SectorType st : settleable_sector_types) {
     breakdown.sector_costs[st] = std::round(breakdown.sector_costs[st]);
     sum += static_cast<int>(breakdown.sector_costs[st]);
   }
-  breakdown.sector_costs[SectorType::SEC_WASTED] = 0.0;
+  breakdown.sector_costs.wasted = 0.0;
 
   breakdown.sector_count_cost = sector_count_costs[std::min(
       sector_types_count, sector_count_costs.size() - 1)];
@@ -479,10 +514,10 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
 
   // 1. Attribute bounds and validity
   for (std::size_t i = 0; i < num_race_attributes; ++i) {
-    const auto attr_idx = static_cast<AttributeIndex>(i);
     const auto& p = base_attr_[i];
+    const auto attr_idx = static_cast<AttributeIndex>(i);
     const double val = get_attribute_value(spec, attr_idx);
-    const auto name = attribute_name(spec, attr_idx);
+    const std::string name = attribute_name(spec, attr_idx);
 
     if (p.is_integral == 2 && val != 0.0 && val != 1.0) {
       errors.push_back(
@@ -526,14 +561,11 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
   // 6. Sector compatibilities
   const bool is_jovian = (spec.home_planet_type == PlanetType::GASGIANT);
 
-  if (!is_jovian &&
-      spec.sector_compatibilities[SectorType::SEC_PLATED] != 1.0) {
+  if (!is_jovian && spec.sector_compatibilities.plated != 1.0) {
     errors.push_back("Non-jovian races must have 100% plated compat.");
   }
 
-  for (std::size_t i = 0; i < num_settleable_sectors; ++i) {
-    const auto st = static_cast<SectorType>(i);
-    const double compat = spec.sector_compatibilities[st];
+  for (auto [st, compat] : spec.sector_compatibilities.settleable()) {
     if (compat < 0.0) {
       errors.push_back("Sector compatibility is at minimum 0%.");
     }
@@ -569,9 +601,8 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     }
 
     std::size_t count = 0;
-    for (std::size_t i = 0; i < num_settleable_sectors; ++i) {
-      const auto st = static_cast<SectorType>(i);
-      if (spec.sector_compatibilities[st] > 0.0) {
+    for (auto [st, compat] : spec.sector_compatibilities.settleable()) {
+      if (compat > 0.0) {
         ++count;
       }
     }
@@ -583,10 +614,9 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     }
 
     bool has_common_sector = false;
-    for (std::size_t i = 0; i < num_settleable_sectors; ++i) {
-      const auto st = static_cast<SectorType>(i);
+    for (auto [st, compat] : spec.sector_compatibilities.settleable()) {
       if (Planet::is_common_sector(spec.home_planet_type, st) &&
-          spec.sector_compatibilities[st] == 1.0) {
+          compat == 1.0) {
         has_common_sector = true;
         break;
       }

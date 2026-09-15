@@ -21,62 +21,42 @@ import std;
 
 namespace GB::creator {
 
-///// Returns default pre-rolled sector compatibilities and preferred sector for
-/// a
+/// Returns default pre-rolled sector compatibilities and preferred sector for a
 /// given home planet type.
-export constexpr std::pair<SectorType,
-                           std::array<double, SectorType::SEC_WASTED + 1>>
-default_sector_compatibilities_for_planet(PlanetType planet) noexcept {
-  std::array<double, SectorType::SEC_WASTED + 1> compat{};
-  SectorType pref = SectorType::SEC_LAND;
-  switch (planet) {
-    case PlanetType::EARTH:
-      pref = SectorType::SEC_LAND;
-      compat[SectorType::SEC_LAND] = 1.0;
-      compat[SectorType::SEC_SEA] = 0.5;
-      compat[SectorType::SEC_PLATED] = 1.0;
-      break;
-    case PlanetType::FOREST:
-      pref = SectorType::SEC_FOREST;
-      compat[SectorType::SEC_FOREST] = 1.0;
-      compat[SectorType::SEC_LAND] = 0.5;
-      compat[SectorType::SEC_PLATED] = 1.0;
-      break;
-    case PlanetType::DESERT:
-      pref = SectorType::SEC_DESERT;
-      compat[SectorType::SEC_DESERT] = 1.0;
-      compat[SectorType::SEC_MOUNT] = 0.5;
-      compat[SectorType::SEC_PLATED] = 1.0;
-      break;
-    case PlanetType::WATER:
-      pref = SectorType::SEC_SEA;
-      compat[SectorType::SEC_SEA] = 1.0;
-      compat[SectorType::SEC_LAND] = 0.5;
-      compat[SectorType::SEC_PLATED] = 1.0;
-      break;
-    case PlanetType::MARS:
-      pref = SectorType::SEC_LAND;
-      compat[SectorType::SEC_LAND] = 1.0;
-      compat[SectorType::SEC_MOUNT] = 0.5;
-      compat[SectorType::SEC_PLATED] = 1.0;
-      break;
-    case PlanetType::ICEBALL:
-      pref = SectorType::SEC_ICE;
-      compat[SectorType::SEC_ICE] = 1.0;
-      compat[SectorType::SEC_MOUNT] = 0.5;
-      compat[SectorType::SEC_PLATED] = 1.0;
-      break;
-    case PlanetType::GASGIANT:
-      pref = SectorType::SEC_GAS;
-      compat[SectorType::SEC_GAS] = 1.0;
-      break;
-    default:
-      pref = SectorType::SEC_LAND;
-      compat[SectorType::SEC_LAND] = 1.0;
-      compat[SectorType::SEC_PLATED] = 1.0;
-      break;
+export inline std::pair<SectorType, SectorCompatibilities>
+default_sector_compatibilities_for_planet(PlanetType planet) {
+  // TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
+  // constexpr when P3372 (constexpr containers and adaptors) lands.
+  static const std::flat_map<PlanetType,
+                             std::pair<SectorType, SectorCompatibilities>>
+      defaults = {
+          {PlanetType::EARTH,
+           {SectorType::SEC_LAND,
+            SectorCompatibilities{.sea = 0.5, .land = 1.0, .plated = 1.0}}},
+          {PlanetType::FOREST,
+           {SectorType::SEC_FOREST,
+            SectorCompatibilities{.land = 0.5, .forest = 1.0, .plated = 1.0}}},
+          {PlanetType::DESERT,
+           {SectorType::SEC_DESERT,
+            SectorCompatibilities{.mount = 0.5, .desert = 1.0, .plated = 1.0}}},
+          {PlanetType::WATER,
+           {SectorType::SEC_SEA,
+            SectorCompatibilities{.sea = 1.0, .land = 0.5, .plated = 1.0}}},
+          {PlanetType::MARS,
+           {SectorType::SEC_LAND,
+            SectorCompatibilities{.land = 1.0, .mount = 0.5, .plated = 1.0}}},
+          {PlanetType::ICEBALL,
+           {SectorType::SEC_ICE,
+            SectorCompatibilities{.mount = 0.5, .ice = 1.0, .plated = 1.0}}},
+          {PlanetType::GASGIANT,
+           {SectorType::SEC_GAS,
+            SectorCompatibilities{.gas = 1.0, .plated = 0.0}}},
+      };
+  if (auto it = defaults.find(planet); it != defaults.end()) {
+    return it->second;
   }
-  return {pref, compat};
+  return {SectorType::SEC_LAND,
+          SectorCompatibilities{.land = 1.0, .plated = 1.0}};
 }
 
 /// Forward declaration for archetype specification generator.
@@ -306,14 +286,22 @@ export struct RaceEnrollmentSpec {
   fertilize_t fertilize{0};
 
   // Sector compatibility preferences (0.0 to 1.0 per SectorType)
-  std::array<double, SectorType::SEC_WASTED + 1> sector_compatibilities{
-      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+  SectorCompatibilities sector_compatibilities{};
   std::optional<SectorType> likesbest{std::nullopt};
 };
 
 }  // namespace GB::creator
 
 export namespace glz {
+
+template <>
+struct meta<SectorCompatibilities> {
+  using T = SectorCompatibilities;
+  static constexpr auto value =
+      object("sea", &T::sea, "land", &T::land, "mount", &T::mount, "gas",
+             &T::gas, "ice", &T::ice, "forest", &T::forest, "desert",
+             &T::desert, "plated", &T::plated, "wasted", &T::wasted);
+};
 
 template <>
 struct meta<GB::creator::RaceEnrollmentSpec> {
@@ -466,7 +454,7 @@ export constexpr std::size_t num_race_attributes = 11;
 /// Itemized cost breakdown resulting from race point calculations.
 export struct RaceCostBreakdown {
   std::array<double, num_race_attributes> attribute_costs{};
-  std::array<double, SectorType::SEC_WASTED + 1> sector_costs{};
+  SectorCompatibilities sector_costs{.plated = 0.0};
   int planet_cost{0};
   int race_type_cost{0};
   int sector_count_cost{0};

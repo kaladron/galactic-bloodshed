@@ -64,8 +64,8 @@ int main() {
   for (int i = 0; i <= OTHER; ++i) {
     test_race.conditions[i] = 50 + i;
   }
-  for (int i = 0; i <= SectorType::SEC_WASTED; ++i) {
-    test_race.likes[i] = 0.5 + (i * 0.1);
+  for (SectorType st : all_sector_types) {
+    test_race.likes[st] = 0.5 + (static_cast<int>(st) * 0.1);
   }
   test_race.likesbest = SectorType::SEC_SEA;
 

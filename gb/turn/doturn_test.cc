@@ -23,8 +23,8 @@ Race createTestRace(player_t playernum = player_t{1}) {
   race.fertilize = 10;
   race.adventurism = 0.5;
   race.likesbest = SectorType::SEC_LAND;
-  for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-    race.likes[i] = 0.8;
+  for (SectorType st : all_sector_types) {
+    race.likes[st] = 0.8;
   }
   race.likes[SectorType::SEC_PLATED] = 1.0;
   return race;

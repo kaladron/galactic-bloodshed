@@ -133,18 +133,17 @@ void test_modify_planet_and_gas_restrictions() {
   // Switch to Jovian
   test::expect_true(session.execute_command("modify planet jovian"));
   test::expect_eq(session.spec().home_planet_type, PlanetType::GASGIANT);
-  test::expect_eq(session.spec().sector_compatibilities[SectorType::SEC_GAS],
-                  1.0, "Jovian home planet must set gas compatibility to 100%");
-  test::expect_eq(session.spec().sector_compatibilities[SectorType::SEC_PLATED],
-                  0.0, "Jovian home planet must clear plated compatibility");
+  test::expect_eq(session.spec().sector_compatibilities.gas, 1.0,
+                  "Jovian home planet must set gas compatibility to 100%");
+  test::expect_eq(session.spec().sector_compatibilities.plated, 0.0,
+                  "Jovian home planet must clear plated compatibility");
 
   // Switch to Water
   test::expect_true(session.execute_command("modify planet water"));
   test::expect_eq(session.spec().home_planet_type, PlanetType::WATER);
-  test::expect_eq(session.spec().sector_compatibilities[SectorType::SEC_GAS],
-                  0.0, "non-Jovian home planet must clear gas compatibility");
-  test::expect_eq(session.spec().sector_compatibilities[SectorType::SEC_PLATED],
-                  1.0,
+  test::expect_eq(session.spec().sector_compatibilities.gas, 0.0,
+                  "non-Jovian home planet must clear gas compatibility");
+  test::expect_eq(session.spec().sector_compatibilities.plated, 1.0,
                   "non-Jovian home planet must restore plated compatibility");
 }
 
@@ -155,13 +154,11 @@ void test_modify_sector_compatibilities() {
 
   // Set Land to 100%
   test::expect_true(session.execute_command("modify land 100"));
-  test::expect_eq(session.spec().sector_compatibilities[SectorType::SEC_LAND],
-                  1.0);
+  test::expect_eq(session.spec().sector_compatibilities.land, 1.0);
 
   // Set Mountain to 50%
   test::expect_true(session.execute_command("modify mountain 50%"));
-  test::expect_eq(session.spec().sector_compatibilities[SectorType::SEC_MOUNT],
-                  0.5);
+  test::expect_eq(session.spec().sector_compatibilities.mount, 0.5);
 
   // Plated sector compatibility is immutable
   out.str("");

@@ -215,6 +215,282 @@ int main() {
                  "Test 10 passed: Dead quarry doesn't block new construction");
   }
 
-  std::println(std::cout, "\nAll can_build_on_sector tests passed!");
+  // Test 11: autoload_at_planet synchronizes planetary demographics and
+  // sector abandonment
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+
+    ctx.em.mutate_planet(0, 0, [](Planet& p) {
+      p.popn() = 100;
+      p.info(1).popn = 100;
+      p.info(1).numsectsowned = 1;
+      p.info(1).fuel = 500;
+    });
+    ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+      for (auto& s : smap) {
+        s.clear_popn();
+        s.set_troops_exact(0);
+        s.set_owner(0);
+      }
+      auto& sect = smap.get(Coordinates{1, 1});
+      sect.set_owner(1);
+      sect.set_popn_exact(100);
+    });
+
+    auto ship = getship(ShipType::STYPE_SHUTTLE, *ctx.em.peek_race(1));
+    ship->max_crew() = 100;
+    ship->max_fuel() = 50;
+    int crew = 0;
+    double fuel = 0.0;
+
+    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
+      ctx.em.mutate_sectormap(0, 0, [&](SectorMap& smap) {
+        auto& sect = smap.get(Coordinates{1, 1});
+        autoload_at_planet(1, ship.get(), &p, sect, &crew, &fuel);
+      });
+    });
+
+    test::expect_eq(crew, 100);
+    test::expect_eq(fuel, 50.0);
+    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* smap_after = ctx.em.peek_sectormap(0, 0);
+    test::expect_eq(p_after->popn(), 0);
+    test::expect_eq(p_after->info(1).popn, 0);
+    test::expect_eq(p_after->info(1).numsectsowned, 0);
+    test::expect_eq(p_after->info(1).fuel, 450);
+    test::expect_eq(smap_after->get(Coordinates{1, 1}).get_owner(), 0);
+    std::println(std::cout,
+                 "Test 11 passed: autoload_at_planet synchronizes planetary "
+                 "demographics");
+  }
+
+  // Test 12: autoload_at_ship transfers crew and fuel from builder ship
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+    const auto& r1 = *ctx.em.peek_race(1);
+    auto builder = getship(ShipType::STYPE_CARRIER, r1);
+    builder->popn() = 50;
+    builder->admin_override_fuel(200.0, r1.mass);
+
+    auto target = getship(ShipType::STYPE_FIGHTER, r1);
+    int crew = 0;
+    double fuel = 0.0;
+    autoload_at_ship(target.get(), builder.get(), &crew, &fuel);
+    test::expect_gt(crew, 0);
+    test::expect_gt(fuel, 0.0);
+    test::expect_eq(builder->popn(), 50 - crew);
+    std::println(std::cout,
+                 "Test 12 passed: autoload_at_ship transfers crew and fuel");
+  }
+
+  // Test 13: can_build_this technology and discovery checks
+  {
+    Race low_tech{};
+    low_tech.Playernum = 1;
+    low_tech.tech = 0.0;
+    low_tech.pods = false;
+
+    auto pod_res = can_build_this(ShipType::STYPE_POD, low_tech);
+    test::expect_false(pod_res.has_value());
+    test::expect_contains(pod_res.error(), "Metamorphic");
+
+    auto god_res = can_build_this(ShipType::STYPE_GOD, low_tech);
+    test::expect_false(god_res.has_value());
+    test::expect_contains(god_res.error(), "Only Gods");
+
+    auto vn_res = can_build_this(ShipType::OTYPE_VN, low_tech);
+    test::expect_false(vn_res.has_value());
+    test::expect_contains(vn_res.error(), "VN technology");
+
+    auto trans_res = can_build_this(ShipType::OTYPE_TRANSDEV, low_tech);
+    test::expect_false(trans_res.has_value());
+    test::expect_contains(trans_res.error(), "AVPM technology");
+
+    low_tech.discoveries.vn = true;
+    auto vn_tech_res = can_build_this(ShipType::OTYPE_VN, low_tech);
+    test::expect_false(vn_tech_res.has_value());
+    test::expect_contains(vn_tech_res.error(), "not advanced enough");
+    std::println(
+        std::cout,
+        "Test 13 passed: can_build_this enforces tech and discoveries");
+  }
+
+  // Test 14: initialize_new_ship special ship types and diagnostics
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+    auto& registry = get_test_session_registry();
+    GameObj g(ctx.em, registry);
+    ctx.setup_game_obj(g, 1, 0);
+    const auto& r1 = *ctx.em.peek_race(1);
+
+    // VN Ship
+    auto vn = getship(ShipType::OTYPE_VN, r1);
+    initialize_new_ship(g, r1, vn.get(), 0.0, 0);
+    test::expect_contains(g.out.str(), "robotic");
+
+    // Mine Ship
+    g.out.str("");
+    auto mine = getship(ShipType::STYPE_MINE, r1);
+    initialize_new_ship(g, r1, mine.get(), 0.0, 0);
+    test::expect_contains(g.out.str(), "Mine disarmed");
+
+    // Transporter Ship
+    g.out.str("");
+    auto trans = getship(ShipType::OTYPE_TRANSDEV, r1);
+    initialize_new_ship(g, r1, trans.get(), 0.0, 0);
+    test::expect_contains(g.out.str(), "Receive OFF");
+
+    // Atmospheric Processor
+    g.out.str("");
+    auto ap = getship(ShipType::OTYPE_AP, r1);
+    initialize_new_ship(g, r1, ap.get(), 10.0, 5);
+    test::expect_contains(g.out.str(), "Processor OFF");
+
+    // Space Telescope
+    g.out.str("");
+    auto tele = getship(ShipType::OTYPE_STELE, r1);
+    initialize_new_ship(g, r1, tele.get(), 0.0, 0);
+    test::expect_contains(g.out.str(), "Telescope range");
+
+    // Factory
+    g.out.str("");
+    auto fact = getship(ShipType::OTYPE_FACTORY, r1);
+    initialize_new_ship(g, r1, fact.get(), 10.0, 5);
+    test::expect_contains(g.out.str(),
+                          "Warning: This ship is constructed with");
+    test::expect_contains(g.out.str(), "factory may not begin repairs");
+    std::println(std::cout,
+                 "Test 14 passed: initialize_new_ship special types and logs");
+  }
+
+  // Test 15: create_ship_by_planet with ToxicWasteShip and shipping_cost
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+    const auto& r1 = *ctx.em.peek_race(1);
+
+    ctx.em.mutate_planet(0, 0, [](Planet& p) {
+      p.conditions(TOXIC) = 80;
+      p.info(1).resource = 1000;
+    });
+
+    auto tox_ship = getship(ShipType::OTYPE_TOXWC, r1);
+    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
+      create_ship_by_planet(ctx.em, 1, 0, r1, *tox_ship, p, 0, 0,
+                            Coordinates{2, 2});
+    });
+
+    const auto* p_after = ctx.em.peek_planet(0, 0);
+    test::expect_lt(p_after->conditions(TOXIC), 80);
+
+    auto [scost, sdist] = shipping_cost(ctx.em, 0, 1, 1000);
+    test::expect_gt(sdist, 0.0);
+    test::expect_ge(scost, 0);
+    std::println(std::cout,
+                 "Test 15 passed: ToxicWasteShip extraction and shipping_cost");
+  }
+
+  // Test 16: can_build_at_planet, can_build_on_ship, build_at_ship,
+  // create_ship_by_ship, and getfactship
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+    auto& registry = get_test_session_registry();
+    GameObj g(ctx.em, registry);
+    ctx.setup_game_obj(g, 1, 0);
+    const auto& r1 = *ctx.em.peek_race(1);
+
+    // can_build_at_planet: enslaved planet
+    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = 2; });
+    test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(0),
+                                           *ctx.em.peek_planet(0, 0)));
+    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = 0; });
+
+    // can_build_at_planet: unauthorized governor
+    ctx.setup_game_obj(g, 1, 2);
+    test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(0),
+                                           *ctx.em.peek_planet(0, 0)));
+    ctx.setup_game_obj(g, 1, 0);
+
+    // can_build_on_ship
+    auto probe = getship(ShipType::OTYPE_PROBE, r1);
+    auto shuttle = getship(ShipType::STYPE_SHUTTLE, r1);
+    test::expect_false(
+        can_build_on_ship(ShipType::STYPE_FIGHTER, r1, *probe).has_value());
+    test::expect_true(
+        can_build_on_ship(ShipType::STYPE_STATION, r1, *shuttle).has_value());
+
+    // build_at_ship error paths
+    starnum_t snum = 0;
+    planetnum_t pnum = 0;
+    probe->owner() = 1;
+    probe->alive() = true;
+    probe->active() = true;
+    test::expect_false(build_at_ship(g, probe.get(), &snum, &pnum).has_value());
+
+    shuttle->owner() = 1;
+    shuttle->alive() = true;
+    shuttle->active() = true;
+    shuttle->popn() = 0;
+    test::expect_false(
+        build_at_ship(g, shuttle.get(), &snum, &pnum).has_value());
+
+    shuttle->popn() = 10;
+    shuttle->dock_with_ship(99);
+    test::expect_false(
+        build_at_ship(g, shuttle.get(), &snum, &pnum).has_value());
+    shuttle->undock_from_ship();
+
+    shuttle->admin_override_damage(50);
+    test::expect_false(
+        build_at_ship(g, shuttle.get(), &snum, &pnum).has_value());
+    shuttle->admin_override_damage(0);
+
+    auto factory = getship(ShipType::OTYPE_FACTORY, r1);
+    factory->owner() = 1;
+    factory->alive() = true;
+    factory->active() = true;
+    factory->popn() = 10;
+    factory->admin_override_damage(0);
+    factory->on() = false;
+    test::expect_false(
+        build_at_ship(g, factory.get(), &snum, &pnum).has_value());
+    factory->on() = true;
+    factory->launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+    test::expect_false(
+        build_at_ship(g, factory.get(), &snum, &pnum).has_value());
+    factory->land_on_planet();
+    test::expect_true(
+        build_at_ship(g, factory.get(), &snum, &pnum).has_value());
+
+    // create_ship_by_ship (outside and hangar) and getfactship
+    factory->build_type() = ShipType::OTYPE_PROBE;
+    auto fact_product = getfactship(*factory);
+    test::expect_eq(fact_product->type(), ShipType::OTYPE_PROBE);
+
+    shuttle->number() = 10;
+    shuttle->resource() = 1000;
+    auto built_station = getship(ShipType::STYPE_STATION, r1);
+    create_ship_by_ship(ctx.em, 1, 0, r1, true, built_station.get(),
+                        shuttle.get());
+    test::expect_true(built_station->is_spaceborne());
+
+    auto carrier = getship(ShipType::STYPE_CARRIER, r1);
+    carrier->number() = 11;
+    carrier->resource() = 1000;
+    auto built_fighter = getship(ShipType::STYPE_FIGHTER, r1);
+    create_ship_by_ship(ctx.em, 1, 0, r1, false, built_fighter.get(),
+                        carrier.get());
+    test::expect_true(built_fighter->is_docked());
+    std::println(std::cout,
+                 "Test 16 passed: build_at_ship, create_ship_by_ship, and "
+                 "getfactship");
+  }
+
+  std::println(std::cout,
+               "\nAll can_build_on_sector and build entity tests passed!");
   return 0;
 }

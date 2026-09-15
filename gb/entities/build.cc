@@ -163,9 +163,8 @@ void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
   *crew = std::min(s->max_crew_capacity(), sector.get_popn());
   *fuel = std::min(static_cast<double>(s->max_fuel_capacity()),
                    static_cast<double>(planet->info(Playernum).fuel));
-  sector.subtract_popn(*crew);
-  if (!sector.get_popn() && !sector.get_troops()) sector.set_owner(0);
-  planet->info(Playernum).fuel -= (int)(*fuel);
+  planet->adjust_sector_population(sector, Playernum, -*crew, 0);
+  planet->info(Playernum).fuel -= static_cast<int>(*fuel);
 }
 
 void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel) {
@@ -175,58 +174,15 @@ void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel) {
   b->consume_fuel(*fuel);
 }
 
-void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
-                         double load_fuel, int load_crew) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  newship->speed() = newship->max_speed_capacity();
-  newship->owner() = Playernum;
-  newship->governor() = Governor;
-  newship->admin_override_fuel(
-      race.God ? newship->max_fuel_capacity() : load_fuel, race.mass);
-  newship->popn() = race.God ? newship->max_crew_capacity() : load_crew;
-  newship->troops() = 0;
-  newship->resource() = race.God ? newship->max_resource_capacity() : 0;
-  newship->destruct() = race.God ? newship->max_destruct_capacity() : 0;
-  newship->admin_override_crystals(0);
-  newship->hanger() = 0;
-  newship->set_mass(newship->local_mass(race.mass));
-  newship->alive() = 1;
-  newship->active() = 1;
-  newship->protect().self = newship->active_guns() > 0;
-  newship->hyper_drive().on = false;
-  newship->hyper_drive().charge = 0;
-  newship->mounted() = race.God ? newship->mount() : 0;
-  newship->cloak() = 0;
-  newship->cloaked() = 0;
-  newship->fire_laser() = 0;
-  newship->mode() = 0;
-  newship->admin_override_damage(
-      race.God ? 0 : newship->get_template().base_damage);
-  newship->retaliate() = newship->primary_battery().count;
-  newship->on() = false;
-  switch (newship->type()) {
-    case ShipType::OTYPE_VN:
-      if (auto* vn = newship->as<VonNeumannShip>()) {
-        vn->mind() = MindData{.progenitor = Playernum,
-                              .target = 0,
-                              .generation = 1,
-                              .busy = 1,
-                              .tampered = 0,
-                              .who_killed = 0};
-      }
-      break;
+namespace {
+
+void report_new_ship_status(GameObj& g, const Ship& newship, int load_crew,
+                            double load_fuel) {
+  switch (newship.type()) {
     case ShipType::STYPE_MINE:
-      if (auto* mine = newship->as<MineShip>()) {
-        mine->set_trigger_radius(100);
-      }
       g.out << "Mine disarmed.\nTrigger radius set at 100.\n";
       break;
     case ShipType::OTYPE_TRANSDEV:
-      if (auto* trans = newship->as<TransporterShip>()) {
-        trans->set_target_ship(shipnum_t{0});
-      }
-      newship->on() = false;
       g.out << "Receive OFF.  Change with order.\n";
       break;
     case ShipType::OTYPE_AP:
@@ -235,28 +191,37 @@ void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
     case ShipType::OTYPE_STELE:
     case ShipType::OTYPE_GTELE:
       g.out << std::format("Telescope range is {:.2f}.\n",
-                           tele_range(newship->type(), newship->tech()));
+                           tele_range(newship.type(), newship.tech()));
       break;
     default:
       break;
   }
-  if (newship->damage()) {
+  if (newship.damage()) {
     g.out << std::format(
         "Warning: This ship is constructed with a {}% damage level.\n",
-        newship->damage());
-    if (!newship->can_repair() && newship->max_crew_capacity())
+        newship.damage());
+    if (!newship.can_repair() && newship.max_crew_capacity())
       g.out << "It will need resources to become fully operational.\n";
   }
-  if (newship->can_repair() && newship->max_crew_capacity())
+  if (newship.can_repair() && newship.max_crew_capacity())
     g.out << "This ship does not need resources to repair.\n";
-  if (newship->type() == ShipType::OTYPE_FACTORY)
+  if (newship.type() == ShipType::OTYPE_FACTORY)
     g.out
         << "This factory may not begin repairs until it has been activated.\n";
-  if (!newship->max_crew_capacity())
+  if (!newship.max_crew_capacity())
     g.out << "This ship is robotic, and may not repair itself.\n";
 
   g.out << std::format("Loaded with {} crew and {:.1f} fuel.\n", load_crew,
                        load_fuel);
+}
+
+}  // namespace
+
+void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
+                         double load_fuel, int load_crew) {
+  newship->initialize_constructed_state(race, g.governor(), load_fuel,
+                                        load_crew);
+  report_new_ship_status(g, *newship, load_crew, load_fuel);
 }
 
 void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,

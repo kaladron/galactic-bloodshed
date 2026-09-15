@@ -57,6 +57,21 @@ Large structures such as Orbital Stations, Habitats, Mobile Factories, and Fleet
 - **Displacement Nesting**: When a parasite vessel is berthed, its entire physical displacement (including its own structural hull, fuel reserves, carried resources, and onboard crew) contributes recursively to the parent carrier's operational mass.
 - **Hierarchical Launching**: A parasite vessel berthed inside a carrier cannot launch into independent orbit while its host carrier is itself berthed or immobilized inside a higher-tier facility; the parent vessel must launch or deploy first before subsidiary parasite craft can debark.
 
+### Ship Construction and Autoloading Mechanics (`build`)
+Starships and orbital structures are constructed through three distinct manufacturing pipelines depending on scope:
+
+1. **Planetary Surface Construction (`build <type> <x,y> [count]`)**:
+   - **Sector Preconditions**: The target sector $(x, y)$ must be owned by the empire, contain at least one civilian colonist, and not be nuclear wasteland. Only one automated Quarry (`q`) may operate on any given sector.
+   - **Planetary Detoxification**: Constructing a Toxic Waste Container (`w`) on a planet automatically extracts up to $20\%$ atmospheric toxicity from the planetary environment and seals it inside the container's payload bay.
+   - **Autoloading Demographic Synchronization**: When governor autoloading (`toggle autoload`) is enabled, newly constructed vessels automatically draw up to their maximum crew capacity from the construction sector's civilian population and draw fuel from the planetary stockpile. If autoloading evacuates the last civilian and troop from the sector, the sector is automatically abandoned and planetary population/sector counts are updated synchronously.
+
+2. **Mobile Factory Production (`build [count]`)**:
+   - **Pre-Programmed Assembly**: Landed, online Mobile Factories (`F`) manufacture ships matching their locked blueprint specifications using planetary resource stockpiles, deploying completed hulls directly onto the factory's surface sector.
+
+3. **Shipboard Construction (`build <type> [count]`)**:
+   - **Hangar Assembly**: Carriers, Habitats, and Orbital Stations assemble smaller vessels directly inside their internal hangars ($\Delta \text{Hangar} = \text{Size}_{\text{ship}}$) using onboard resource stores.
+   - **External Orbital Deployment**: Spaceborne Shuttles and Cargo ships construct large orbital structures (such as Space Stations, Habitats, and Orbital Mirrors) directly into the surrounding orbital reference frame without consuming internal hangar capacity.
+
 ### Inter-Ship Cargo and Personnel Logistics (`load`)
 Moored vessels and carrier-berthed craft can transfer raw materials, propellant, munitions, and living populations using shipboard cargo gantries and transporter beams:
 

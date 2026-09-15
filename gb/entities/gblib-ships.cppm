@@ -2933,6 +2933,11 @@ public:
   /// to g.out and returns false if any precondition fails.
   [[nodiscard]] bool check_commandable(GameObj& g) const;
 
+  /// Initializes pure domain state for a newly constructed ship from template
+  /// defaults, race attributes, and autoloaded crew/fuel quantities.
+  void initialize_constructed_state(const Race& race, governor_t gov,
+                                    double load_fuel, population_t load_crew);
+
   /// Computes the fuel required to maneuver and dock with or assault target.
   [[nodiscard]] double
   docking_fuel_cost(const Ship& target,

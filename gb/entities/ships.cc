@@ -435,6 +435,52 @@ bool Ship::check_commandable(GameObj& g) const {
   return true;
 }
 
+void Ship::initialize_constructed_state(const Race& race, governor_t gov,
+                                        double load_fuel,
+                                        population_t load_crew) {
+  data_.speed = max_speed_capacity();
+  data_.owner = race.Playernum;
+  data_.governor = gov;
+  admin_override_fuel(race.God ? max_fuel_capacity() : load_fuel, race.mass);
+  data_.popn = race.God ? max_crew_capacity() : load_crew;
+  if (race.God) {
+    data_.resource = max_resource_capacity();
+    data_.destruct = max_destruct_capacity();
+    data_.mounted = data_.mount;
+  }
+  data_.alive = true;
+  data_.active = true;
+  data_.protect.self = active_guns() > 0;
+  admin_override_damage(race.God ? 0 : get_template().base_damage);
+  data_.retaliate = data_.primary_battery.count;
+  set_mass(local_mass(race.mass));
+
+  switch (data_.type) {
+    case ShipType::OTYPE_VN:
+      if (auto* vn = as<VonNeumannShip>()) {
+        vn->mind() = MindData{.progenitor = race.Playernum,
+                              .target = 0,
+                              .generation = 1,
+                              .busy = 1,
+                              .tampered = 0,
+                              .who_killed = 0};
+      }
+      break;
+    case ShipType::STYPE_MINE:
+      if (auto* mine = as<MineShip>()) {
+        mine->set_trigger_radius(100);
+      }
+      break;
+    case ShipType::OTYPE_TRANSDEV:
+      if (auto* trans = as<TransporterShip>()) {
+        trans->set_target_ship(shipnum_t{0});
+      }
+      break;
+    default:
+      break;
+  }
+}
+
 std::string dispshiploc_brief(EntityManager& em, const Ship& ship) {
   switch (ship.whatorbits()) {
     case ScopeLevel::LEVEL_STAR: {

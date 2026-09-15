@@ -682,6 +682,10 @@ shipnum_t EntityManager::num_ships() {
   return store.list_ids("tbl_ship").size();
 }
 
+shipnum_t EntityManager::next_available_ship_number() {
+  return ships.next_ship_number();
+}
+
 shipnum_t EntityManager::max_ship_number() {
   auto ids = store.list_ids("tbl_ship");
   return ids.empty()

@@ -419,6 +419,7 @@ public:
   EntityHandle<Commod> create_commod(const Commod& data = {});
   void delete_commod(int id);
   int next_available_commod_id();
+  shipnum_t next_available_ship_number();
 
   // Count and ID boundary methods (for queries and iteration)
   int num_commods();

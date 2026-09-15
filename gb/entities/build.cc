@@ -246,7 +246,7 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   planet.info(Playernum).resource -= newship.build_cost();
 
   // Ship number will be assigned by EntityManager when created
-  shipno = shipnum_t{entity_manager.num_ships().value + 1};
+  shipno = entity_manager.next_available_ship_number();
   newship.number() = shipno;
   newship.owner() = Playernum;
   newship.governor() = Governor;
@@ -277,7 +277,7 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
                          governor_t Governor, const Race& race, bool outside,
                          Ship* newship, Ship* builder) {
   // Ship number will be assigned by EntityManager when created
-  shipnum_t shipno = shipnum_t{entity_manager.num_ships().value + 1};
+  shipnum_t shipno = entity_manager.next_available_ship_number();
   newship->number() = shipno;
   newship->owner() = Playernum;
   newship->governor() = Governor;
@@ -318,7 +318,7 @@ std::unique_ptr<Ship> getship(ShipType i, const Race& r) {
   ship->mount() = r.God && tmpl.can_mount;
   ship->hyper_drive() = {.has = r.God && tmpl.can_hyperjump};
   ship->laser() = r.God && tmpl.can_mount_laser;
-  ship->build_cost() = r.God ? 0 : static_cast<money_t>(cost(*ship));
+  ship->build_cost() = r.God ? 0 : static_cast<resource_t>(cost(*ship));
   return ship;
 }
 
@@ -346,14 +346,14 @@ std::unique_ptr<Ship> getfactship(const Ship& b) {
   };
 
   auto s = ShipFactory::create(std::move(data));
-  s->size() = ship_size(*s);
+  s->size() = s->calculate_size();
   s->set_mass(s->base_mass());
   return s;
 }
 
-int Shipcost(ShipType i, const Race& r) {
+resource_t Shipcost(ShipType i, const Race& r) {
   auto s = getship(i, r);
-  return static_cast<int>(cost(*s));
+  return static_cast<resource_t>(cost(*s));
 }
 
 std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,

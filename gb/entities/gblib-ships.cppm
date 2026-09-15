@@ -467,7 +467,7 @@ export struct ship_struct {
   speed_t max_speed{0};        ///< Maximum engine impulse speed
   ShipType build_type{
       ShipType::STYPE_POD};  ///< Ship template type when constructed
-  money_t build_cost{0};     ///< Construction cost in resources
+  resource_t build_cost{0};  ///< Construction cost in resources
 
   double base_mass{0.0};   ///< Empty hull baseline mass
   double tech{0.0};        ///< Construction technology level
@@ -554,7 +554,7 @@ export struct ShipTemplate {
   fuel_t max_fuel{0.0};           ///< Maximum fuel tank capacity
   population_t max_crew{0};       ///< Maximum crew accommodation capacity
   armor_t base_armor{0};          ///< Baseline hull armor rating
-  money_t build_cost{0};          ///< Base construction cost in currency
+  resource_t build_cost{0};       ///< Base construction cost in resources
   speed_t base_speed{0};          ///< Base engine throttle speed rating
   damage_t base_damage{0};        ///< Base structural damage threshold
   double build_time{0.0};         ///< Construction build time factor
@@ -2381,16 +2381,20 @@ public:
     return data_.build_type;
   }
 
-  [[nodiscard]] money_t build_cost() const {
+  [[nodiscard]] resource_t build_cost() const {
     return data_.build_cost;
   }
-  money_t& build_cost() {
+  resource_t& build_cost() {
     return data_.build_cost;
   }
 
   /// \brief Calculates empty hull baseline mass based on armor, size, hangar,
   /// and gun batteries.
   [[nodiscard]] double base_mass() const noexcept;
+
+  /// \brief Computes the physical hull size (volume) of this ship from its
+  /// gun batteries, crew, cargo, fuel, destruct, and hangar capacities.
+  [[nodiscard]] ship_size_t calculate_size() const noexcept;
 
   [[nodiscard]] double tech() const {
     return data_.tech;
@@ -2965,6 +2969,18 @@ public:
     if (orbit_level != ScopeLevel::LEVEL_SHIP) {
       data_.whatorbits = orbit_level;
     }
+  }
+
+  /// \brief Returns true if a craft of the given physical size can fit inside
+  /// this ship's remaining hangar space.
+  [[nodiscard]] bool can_fit_in_hangar(ship_size_t craft_size) const noexcept {
+    return data_.hanger + craft_size <= data_.max_hanger;
+  }
+
+  /// \brief Returns true if the given child craft can fit inside this ship's
+  /// remaining hangar space.
+  [[nodiscard]] bool can_fit_in_hangar(const Ship& craft) const noexcept {
+    return can_fit_in_hangar(craft.size());
   }
 
   /// \brief Embeds a child craft into this carrier's hangar, updating occupied

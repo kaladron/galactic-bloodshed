@@ -13,54 +13,17 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  // Initialize database
-  JsonStore store(ctx.db);
-
-  // Create a test race
-  Race race{};
-  race.Playernum = 1;
-  race.governor[0].active = true;
-  race.name = "TestRace";
-  race.Guest = false;
-  race.God = false;
-  race.tech = 500.0;  // High tech to build any ship
-  race.pods = false;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create a test star
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.governor[player_t{1}] = 0;
-  star_data.name = "TestStar";
-  star_data.xpos = 100.0;
-  star_data.ypos = 100.0;
-  star_data.AP[player_t{1}] = 100;
-  Star star{star_data};
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Create a test planet with resources
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.dimensions() = Coordinates{10, 10};
-  planet.xpos() = 0.0;
-  planet.ypos() = 0.0;
-  planet.info(player_t{1}).resource = 10000;  // Plenty of resources
-  planet.info(player_t{1}).fuel = 1000;
-
-  PlanetRepository planets_repo(store);
-  planets_repo.save(planet);
-
-  // Create a sectormap with a sector with population for building
-  SectorMap smap(planet);  // Initialize empty sectors
-  smap.get(Coordinates{5, 5}).set_owner(1);
-  smap.get(Coordinates{5, 5}).set_popn_exact(100);
-  smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
-  SectorRepository sectors_repo(store);
-  sectors_repo.save_map(smap);
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 500.0; });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+    p.info(player_t{1}).resource = 10000;
+    p.info(player_t{1}).fuel = 1000;
+  });
+  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    smap.get(Coordinates{5, 5}).set_owner(1);
+    smap.get(Coordinates{5, 5}).set_popn_exact(100);
+    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
+  });
 }
 
 void test_build_happy_paths() {
@@ -72,7 +35,7 @@ void test_build_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
+  g.set_snum(0);
   g.set_pnum(0);
 
   // 1. Build info query (0 AP)
@@ -86,18 +49,18 @@ void test_build_happy_paths() {
 
   // Verify planet resources were deducted
   ctx.em.clear_cache();
-  const auto* planet_verify = ctx.em.peek_planet(1, 0);
+  const auto* planet_verify = ctx.em.peek_planet(0, 0);
   test::expect_ne(planet_verify, nullptr);
   test::expect_lt(planet_verify->info(player_t{1}).resource,
                   10000);  // Resources should be deducted
 
-  // Verify ship was created (it should be ship #1)
+  // Verify ship was created (assigned lowest available ship ID #1)
   const auto* ship = ctx.em.peek_ship(1);
   test::expect_ne(ship, nullptr);
   test::expect_eq(ship->type(), ShipType::OTYPE_PROBE);
   test::expect_eq(ship->owner(), player_t{1});
   test::expect_eq(ship->whatorbits(), ScopeLevel::LEVEL_PLAN);
-  test::expect_eq(ship->storbits(), 1);
+  test::expect_eq(ship->storbits(), 0);
   test::expect_eq(ship->pnumorbits(), 0);
   test::expect_eq(ship->land_coords(), Coordinates(5, 5));
 }
@@ -107,13 +70,13 @@ void test_build_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
+  g.set_snum(0);
   g.set_pnum(0);
 
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
@@ -128,24 +91,110 @@ void test_build_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
+  g.set_snum(0);
   g.set_pnum(0);
 
-  // 1. Min args check (< 2 args)
+  // 1. Missing type argument at planet scope
   ctx.assert_dispatch_rejected(g, {"build"});
-  test::expect_contains(g.out.str(),
-                        "Syntax: build <type> <x,y> [count] | build ? [type]");
+  test::expect_contains(g.out.str(), "Build what?");
 
-  // 2. Test: Build with insufficient resources
+  // 2. Missing coordinates argument at planet scope
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"build", ":"});
+  test::expect_contains(g.out.str(), "Build where?");
+
+  // 3. Test: Build with insufficient resources
   // Drain resources completely
-  ctx.em.mutate_planet(1, 0,
+  ctx.em.mutate_planet(0, 0,
                        [](Planet& p) { p.info(player_t{1}).resource = 0; });
   g.out.str("");
   // Try to build probe with no resources
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
-  // The build command should fail due to insufficient resources. The error is
-  // written to g.out
   test::expect_contains(g.out.str(), "You need");
+}
+
+void test_build_info_queries() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+
+  // Specific ship type query (":" = Space Probe)
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"build", "?", ":"}, 0);
+  test::expect_contains(g.out.str(), "Space Probe");
+  test::expect_contains(g.out.str(), "Can be constructed on planet.");
+
+  // Invalid ship type query
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"build", "?", "9"});
+  test::expect_contains(g.out.str(), "No such ship type.");
+}
+
+void test_build_from_ships() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+
+  shipnum_t initial_ships = ctx.em.num_ships();
+
+  // 1. Factory building with 0 args ("build") and 2 args ("build 2")
+  shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                             .owned_by(1, 0)
+                             .landed_on(0, 0, {5, 5})
+                             .with_resource(5000)
+                             .with_crew(100, 0)
+                             .with_on(true)
+                             .with_build_type(ShipType::OTYPE_PROBE)
+                             .build();
+
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_snum(0);
+  g.set_pnum(0);
+  g.set_shipno(factory_id);
+
+  // "build" with no arguments in factory scope builds 1 ship
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"build"}, 1);
+  test::expect_eq(ctx.em.num_ships(), shipnum_t{initial_ships.value + 2});
+
+  // "build 2" in factory scope builds 2 ships
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"build", "2"}, 2);
+  test::expect_eq(ctx.em.num_ships(), shipnum_t{initial_ships.value + 4});
+
+  // 2. Shuttle building outside in star orbit ("build H 1")
+  shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                             .owned_by(1, 0)
+                             .in_star_orbit(0)
+                             .with_resource(50000)
+                             .with_crew(50, 0)
+                             .build();
+
+  g.set_shipno(shuttle_id);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"build", "H", "1"}, 1);
+  test::expect_eq(ctx.em.num_ships(), shipnum_t{initial_ships.value + 6});
+
+  // 3. Habitat building inside hangar in universe orbit
+  shipnum_t hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                         .owned_by(1, 0)
+                         .in_deep_space()
+                         .with_resource(5000)
+                         .with_max_hanger(500)
+                         .with_hanger(0)
+                         .with_crew(100, 0)
+                         .build();
+
+  g.set_shipno(hab_id);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"build", ":", "1"}, 0, 1);
+  test::expect_eq(ctx.em.num_ships(), shipnum_t{initial_ships.value + 8});
 }
 
 }  // namespace
@@ -154,6 +203,8 @@ int main() {
   test_build_happy_paths();
   test_build_insufficient_ap();
   test_build_domain_errors();
+  test_build_info_queries();
+  test_build_from_ships();
 
   std::println(std::cout, "✓ build_test passed!");
   return 0;

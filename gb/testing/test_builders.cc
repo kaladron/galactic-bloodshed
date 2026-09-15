@@ -156,6 +156,13 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::in_deep_space(UniverseCoordinates coords) {
+  ship_.whatorbits = ScopeLevel::LEVEL_UNIV;
+  ship_.dock_state = DockState::Spaceborne;
+  ship_.coordinates = coords;
+  return *this;
+}
+
 TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
                                             starnum_t snum) {
   ship_.whatorbits = ScopeLevel::LEVEL_SHIP;
@@ -163,6 +170,11 @@ TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
   ship_.destshipno = dest_ship;
   ship_.storbits = snum;
   ship_.dock_state = DockState::Docked;
+  return *this;
+}
+
+TestShipBuilder& TestShipBuilder::with_build_type(ShipType build_type) {
+  ship_.build_type = build_type;
   return *this;
 }
 

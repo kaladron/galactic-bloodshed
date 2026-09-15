@@ -548,6 +548,7 @@ public:
   TestShipBuilder& with_tech(double tech);
   TestShipBuilder& with_alive(bool alive);
   TestShipBuilder& with_active(bool active);
+  TestShipBuilder& in_deep_space(UniverseCoordinates coords = {0.0, 0.0});
   TestShipBuilder&
   in_star_orbit(starnum_t snum,
                 std::optional<UniverseCoordinates> coords = std::nullopt);
@@ -561,6 +562,7 @@ public:
   TestShipBuilder& landed_on(starnum_t snum, planetnum_t pnum,
                              Coordinates coords);
   TestShipBuilder& docked_to(shipnum_t dest_ship, starnum_t snum);
+  TestShipBuilder& with_build_type(ShipType build_type);
   TestShipBuilder&
   with_guns(guntype_t primtype, gun_count_t count,
             ActiveBattery active_battery = ActiveBattery::PRIMARY);

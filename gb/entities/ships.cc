@@ -144,14 +144,17 @@ double getmass(const Ship& s) {
   return s.base_mass();
 }
 
+ship_size_t Ship::calculate_size() const noexcept {
+  const double calculated =
+      1.0 + SIZE_GUNS * static_cast<double>(primary_battery().count) +
+      SIZE_GUNS * static_cast<double>(secondary_battery().count) +
+      SIZE_CREW * max_crew() + SIZE_RESOURCE * max_resource() +
+      SIZE_FUEL * max_fuel() + SIZE_DESTRUCT * max_destruct() + max_hanger();
+  return static_cast<ship_size_t>(std::floor(calculated));
+}
+
 unsigned int ship_size(const Ship& s) {
-  const double size =
-      1.0 + SIZE_GUNS * static_cast<double>(s.primary_battery().count) +
-      SIZE_GUNS * static_cast<double>(s.secondary_battery().count) +
-      SIZE_CREW * s.max_crew() + SIZE_RESOURCE * s.max_resource() +
-      SIZE_FUEL * s.max_fuel() + SIZE_DESTRUCT * s.max_destruct() +
-      s.max_hanger();
-  return (std::floor(size));
+  return s.calculate_size();
 }
 
 double cost(const Ship& s) {

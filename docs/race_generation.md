@@ -60,6 +60,11 @@ For players seeking immediate entry into the galaxy without spending time in the
 | **10** | **Militaristic Legionnaire** | Airless | Normal | 1.20 | 0.70 | 12 | 140 | 0.65 | 2–4 | 1.20 | Conventional military superpower; hardy soldiers and high drive. |
 | **11** | **Jovian Gas Floater** | Jovian | Normal | 0.40 | 0.60 | 5 | 165 | 0.70 | 2 | 1.00 | Buoyant gas-giant organism; dense Jovian atmospheric mastery. |
 
+### Pre-Loading Archetypes in `racegen`
+In addition to direct quick-start enrollment via `enrol`, any of these eleven archetypes can be loaded into `racegen` as a starting template to customize:
+- **Interactive Sandbox Command**: Type `archetype` (or `preset`) at the `racegen>` prompt to display the preset table, or `archetype <1-11|name>` (e.g., `archetype 3` or `archetype colossus`) to load its deterministic base traits while preserving any already-configured empire name, passwords, and credentials. Append `random` (e.g., `archetype 3 random`) to sample randomized variance.
+- **CLI Option**: Launch `racegen -a <1-11|name>` (or `--archetype <1-11|name>`) to open the interactive sandbox pre-loaded with that preset.
+
 ---
 
 ## 3. The 1400-Point Genetic Design Sandbox

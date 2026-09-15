@@ -269,6 +269,11 @@ export constexpr std::array<RaceArchetype, 11> race_archetypes = {{
 /// Builds a formatted tabulate::Table summarizing all preset racial archetypes.
 export tabulate::Table create_archetypes_table();
 
+/// Looks up a preset racial archetype by 1-based index ("1".."11") or
+/// case-insensitive name/substring match. Returns nullptr if not found.
+export [[nodiscard]] const RaceArchetype*
+find_archetype(std::string_view query);
+
 /// Specification for enrolling a new player empire into the game.
 export struct RaceEnrollmentSpec {
   std::string name;
@@ -590,6 +595,11 @@ public:
   /// Loads race specification from a JSON file.
   bool load_from_file(const std::filesystem::path& path);
 
+  /// Loads a preset racial archetype by 1-based index or name into the session,
+  /// preserving any already-configured empire name, passwords, email, and role
+  /// flags. Defaults to deterministic base stats (randomize = false).
+  bool apply_archetype(std::string_view query, bool randomize = false);
+
   /// Attempts to enroll the player with the current specification.
   EnrollmentResult enroll();
 
@@ -618,10 +628,11 @@ private:
     std::string_view description;
     bool (RacegenSession::*handler)(std::string_view args);
   };
-  static const std::array<CommandDescriptor, 7>& commands();
+  static const std::array<CommandDescriptor, 8>& commands();
 
   void update_cost();
   bool do_modify(std::string_view args);
+  bool do_archetype(std::string_view args);
   bool do_print(std::string_view args);
   bool do_save(std::string_view args);
   bool do_load(std::string_view args);

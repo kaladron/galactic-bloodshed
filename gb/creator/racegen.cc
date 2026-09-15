@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
   std::string db_path = PKGSTATEDIR "gb.db";
   bool db_path_specified = false;
   std::optional<std::filesystem::path> spec_file;
+  std::optional<std::string> archetype_arg;
 
   for (int i = 1; i < argc; ++i) {
     std::string_view arg = argv[i];
@@ -28,6 +29,10 @@ int main(int argc, char* argv[]) {
                    "  -f, --file [path]           Load race specification from "
                    "JSON file (default: {})",
                    GB::creator::DEFAULT_RACEGEN_FILENAME);
+      std::println(
+          std::cout,
+          "  -a, --archetype <id|name>   Pre-load one of the 11 preset "
+          "evolutionary archetypes");
       std::println(std::cout,
                    "  -h, --help                  Display this help message "
                    "and exit");
@@ -55,12 +60,21 @@ int main(int argc, char* argv[]) {
       }
     } else if (arg.starts_with("--file=")) {
       spec_file = arg.substr(std::string_view("--file=").size());
+    } else if (arg == "-a" || arg == "--archetype") {
+      if (i + 1 >= argc) {
+        std::println(std::cerr, "Error: Option \"{}\" requires an argument.",
+                     arg);
+        return 1;
+      }
+      archetype_arg = argv[++i];
+    } else if (arg.starts_with("--archetype=")) {
+      archetype_arg = arg.substr(std::string_view("--archetype=").size());
     } else {
       std::println(std::cerr, "Unknown option \"{}\".", arg);
       std::println(
           std::cerr,
           "Usage: racegen [-d|--database|--db <path>] [-f|--file [path]] "
-          "[-h|--help]");
+          "[-a|--archetype <id|name>] [-h|--help]");
       return 1;
     }
   }
@@ -88,6 +102,14 @@ int main(int argc, char* argv[]) {
     }
     std::println(std::cout, "Loaded specification from '{}'.",
                  spec_file->string());
+  }
+  if (archetype_arg) {
+    if (!session.apply_archetype(*archetype_arg, /*randomize=*/false)) {
+      return 1;
+    }
+    const auto* arch = GB::creator::find_archetype(*archetype_arg);
+    std::println(std::cout, "Pre-loaded archetype '{}' ({} points remaining).",
+                 arch->name, session.cost().points_remaining);
   }
   session.run();
   return 0;

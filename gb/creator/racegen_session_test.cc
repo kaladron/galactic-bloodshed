@@ -507,6 +507,72 @@ void test_default_racegen_json_filename() {
   std::filesystem::remove(default_path);
 }
 
+void test_archetype_lookup_and_command() {
+  // 1. Direct lookup via find_archetype()
+  const auto* by_index = GB::creator::find_archetype("3");
+  test::expect_true(by_index != nullptr, "find_archetype('3') must succeed");
+  test::expect_eq(by_index->name, "Metamorphic Colossus");
+
+  const auto* by_name = GB::creator::find_archetype("colossus");
+  test::expect_true(by_name != nullptr,
+                    "find_archetype('colossus') substring must succeed");
+  test::expect_eq(by_name->name, "Metamorphic Colossus");
+
+  const auto* jovian = GB::creator::find_archetype("11");
+  test::expect_true(jovian != nullptr, "find_archetype('11') must succeed");
+  test::expect_eq(jovian->name, "Jovian Gas Floater");
+
+  test::expect_true(GB::creator::find_archetype("0") == nullptr,
+                    "find_archetype('0') must return nullptr");
+  test::expect_true(GB::creator::find_archetype("99") == nullptr,
+                    "find_archetype('99') must return nullptr");
+  test::expect_true(GB::creator::find_archetype("nonexistent") == nullptr,
+                    "find_archetype('nonexistent') must return nullptr");
+
+  // 2. Interactive archetype command with no args lists presets
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out);
+
+  test::expect_true(session.execute_command("archetype"));
+  test::expect_true(
+      out.str().contains("Available Preset Evolutionary Archetypes"),
+      "archetype with no args must print preset table");
+  test::expect_true(out.str().contains("Jovian Gas Floater"),
+                    "preset table must include Jovian Gas Floater");
+
+  // 3. Preserve customized identity/credentials when loading an archetype
+  session.execute_command("modify name CustomEmpire");
+  session.execute_command("modify password secretpass");
+  session.execute_command("modify address leader@empire.org");
+
+  out.str("");
+  test::expect_true(session.execute_command("archetype 3"));
+  test::expect_true(
+      out.str().contains("Loaded base archetype 'Metamorphic Colossus'"),
+      "must confirm loading base archetype");
+
+  // Identity fields must be preserved
+  test::expect_eq(session.spec().name, "CustomEmpire");
+  test::expect_eq(session.spec().password, "secretpass");
+  test::expect_eq(session.spec().address, "leader@empire.org");
+
+  // Biological attributes must match Metamorphic Colossus deterministic base
+  test::expect_true(session.spec().metamorph, "must be metamorphic");
+  test::expect_eq(session.spec().mass, 2.50, "must have base mass 2.50");
+  test::expect_eq(session.spec().fighters, 12, "must have base fighters 12");
+  test::expect_eq(session.spec().home_planet_type, PlanetType::MARS,
+                  "must have home planet MARS");
+
+  // 4. 'preset' alias and optional 'random' keyword
+  out.str("");
+  test::expect_true(session.execute_command("preset jovian random"));
+  test::expect_true(
+      out.str().contains("Loaded randomized archetype 'Jovian Gas Floater'"),
+      "preset alias with random keyword must load randomized Jovian");
+  test::expect_eq(session.spec().home_planet_type, PlanetType::GASGIANT);
+}
+
 }  // namespace
 
 int main() {
@@ -531,6 +597,7 @@ int main() {
   test_enroll_with_service_success();
   test_standalone_save_and_load_race_spec();
   test_default_racegen_json_filename();
+  test_archetype_lookup_and_command();
 
   std::println(std::cout, "✅ All RacegenSession tests passed!");
   return 0;

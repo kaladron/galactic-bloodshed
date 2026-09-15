@@ -124,4 +124,59 @@ tabulate::Table create_archetypes_table() {
   return table;
 }
 
+const RaceArchetype* find_archetype(std::string_view query) {
+  while (!query.empty() &&
+         std::isspace(static_cast<unsigned char>(query.front()))) {
+    query.remove_prefix(1);
+  }
+  while (!query.empty() &&
+         std::isspace(static_cast<unsigned char>(query.back()))) {
+    query.remove_suffix(1);
+  }
+  if (query.empty()) {
+    return nullptr;
+  }
+
+  // 1. Check if query is a 1-based numeric index ("1".."11")
+  std::size_t idx = 0;
+  auto [ptr, ec] =
+      std::from_chars(query.data(), query.data() + query.size(), idx);
+  if (ec == std::errc{} && ptr == query.data() + query.size()) {
+    if (idx >= 1 && idx <= race_archetypes.size()) {
+      return &race_archetypes[idx - 1];
+    }
+    return nullptr;
+  }
+
+  // Convert query to lowercase for case-insensitive matching
+  std::string lower_query(query);
+  std::ranges::transform(lower_query, lower_query.begin(), [](unsigned char c) {
+    return static_cast<char>(std::tolower(c));
+  });
+
+  // 2. Exact case-insensitive match first
+  for (const auto& arch : race_archetypes) {
+    std::string lower_name(arch.name);
+    std::ranges::transform(lower_name, lower_name.begin(), [](unsigned char c) {
+      return static_cast<char>(std::tolower(c));
+    });
+    if (lower_name == lower_query) {
+      return &arch;
+    }
+  }
+
+  // 3. Substring case-insensitive match fallback
+  for (const auto& arch : race_archetypes) {
+    std::string lower_name(arch.name);
+    std::ranges::transform(lower_name, lower_name.begin(), [](unsigned char c) {
+      return static_cast<char>(std::tolower(c));
+    });
+    if (lower_name.contains(lower_query)) {
+      return &arch;
+    }
+  }
+
+  return nullptr;
+}
+
 }  // namespace GB::creator

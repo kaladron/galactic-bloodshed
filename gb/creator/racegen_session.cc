@@ -109,12 +109,15 @@ std::optional<T> parse_number(std::string_view s) {
 
 }  // namespace
 
-const std::array<RacegenSession::CommandDescriptor, 7>&
+const std::array<RacegenSession::CommandDescriptor, 8>&
 RacegenSession::commands() {
-  static constexpr std::array<CommandDescriptor, 7> cmds{{
+  static constexpr std::array<CommandDescriptor, 8> cmds{{
       {"modify", "modify <field> <value>",
        "Modify a race attribute, sector compatibility, or setting",
        &RacegenSession::do_modify},
+      {"archetype", "archetype [1-11|name] [random]",
+       "List or load one of the 11 preset evolutionary archetypes",
+       &RacegenSession::do_archetype},
       {"print", "print", "Display current specification and point costs",
        &RacegenSession::do_print},
       {"save", "save [filename]", "Save the race specification to a JSON file",
@@ -207,6 +210,9 @@ bool RacegenSession::execute_command(std::string_view line) {
     }
   }
 
+  if (iequals(cmd_str, "preset")) {
+    return do_archetype(args);
+  }
   if (iequals(cmd_str, "exit")) {
     return do_quit(args);
   }
@@ -239,6 +245,77 @@ bool RacegenSession::do_modify(std::string_view args) {
 
 bool RacegenSession::do_print(std::string_view) {
   print_race();
+  return true;
+}
+
+bool RacegenSession::apply_archetype(std::string_view query, bool randomize) {
+  const auto* arch = find_archetype(query);
+  if (!arch) {
+    std::println(out_,
+                 "Error: Unknown archetype '{}'. Type 'archetype' for a list "
+                 "of available presets (1-{}).",
+                 query, race_archetypes.size());
+    return false;
+  }
+
+  // Preserve user identity and credential fields if already customized
+  std::string saved_name = spec_.name;
+  std::string saved_pass = spec_.password;
+  std::string saved_gov_pass = spec_.governor_password;
+  std::string saved_address = spec_.address;
+  bool saved_god = spec_.is_god;
+  bool saved_guest = spec_.is_guest;
+
+  RaceEnrollmentSpec loaded =
+      arch->to_enrollment_spec(arch->default_planet, randomize);
+
+  if (!saved_name.empty() && saved_name != "New Empire") {
+    loaded.name = std::move(saved_name);
+  }
+  loaded.password = std::move(saved_pass);
+  loaded.governor_password = std::move(saved_gov_pass);
+  loaded.address = std::move(saved_address);
+  loaded.is_god = saved_god;
+  loaded.is_guest = saved_guest;
+
+  spec_ = std::move(loaded);
+  update_cost();
+  return true;
+}
+
+bool RacegenSession::do_archetype(std::string_view args) {
+  std::string_view trimmed = trim(args);
+  if (trimmed.empty()) {
+    std::println(out_, "\n=== Available Preset Evolutionary Archetypes ===\n");
+    out_ << create_archetypes_table() << "\n";
+    std::println(
+        out_,
+        "Usage: archetype <1-{}|name> [random]  (loads deterministic base "
+        "stats by default)\n",
+        race_archetypes.size());
+    return true;
+  }
+
+  bool randomize = false;
+  std::string_view query = trimmed;
+
+  // Check if trailing token is 'random' or 'rand'
+  auto last_space = trimmed.find_last_of(" \t");
+  if (last_space != std::string_view::npos) {
+    std::string_view suffix = trim(trimmed.substr(last_space));
+    if (iequals(suffix, "random") || iequals(suffix, "rand")) {
+      randomize = true;
+      query = trim(trimmed.substr(0, last_space));
+    }
+  }
+
+  if (apply_archetype(query, randomize)) {
+    const auto* arch = find_archetype(query);
+    std::println(out_, "Loaded {} archetype '{}' ({} points remaining).",
+                 randomize ? "randomized" : "base", arch->name,
+                 cost_.points_remaining);
+    print_race();
+  }
   return true;
 }
 
@@ -731,14 +808,21 @@ void RacegenSession::print_help(std::string_view topic) {
     return;
   }
 
+  if (iequals(topic, "archetype") || iequals(topic, "archetypes") ||
+      iequals(topic, "preset") || iequals(topic, "presets")) {
+    do_archetype("");
+    return;
+  }
+
   std::println(out_, "Galactic Bloodshed Race Generator Commands:");
   for (const auto& cmd : commands()) {
-    std::println(out_, "  {:<24} {}", cmd.syntax, cmd.description);
+    std::println(out_, "  {:<32} {}", cmd.syntax, cmd.description);
   }
   std::println(out_);
   std::println(
       out_,
-      "Type 'help fields' or 'help modify' to see all modifiable fields.");
+      "Type 'help fields' or 'help modify' to see all modifiable fields, or "
+      "'archetype' to list the 11 presets.");
 }
 
 }  // namespace GB::creator

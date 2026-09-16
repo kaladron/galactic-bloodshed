@@ -26,13 +26,6 @@ std::optional<int> parse_non_negative_int(std::string_view arg) {
   return res->value();
 }
 
-std::optional<guntype_t> parse_caliber_name(std::string_view name) {
-  if (name == "light") return guntype_t::LIGHT;
-  if (name == "medium") return guntype_t::MEDIUM;
-  if (name == "heavy") return guntype_t::HEAVY;
-  return std::nullopt;
-}
-
 std::string format_factory_guns(const ShipTemplate& btmpl,
                                 const Ship& dirship) {
   std::string guns = "Guns:";

@@ -56,6 +56,16 @@ export constexpr char caliber_char(guntype_t caliber) {
   }
 }
 
+/// \brief Parses a gun battery caliber name ("light", "medium", "heavy") into a
+/// guntype_t.
+export constexpr std::optional<guntype_t>
+parse_caliber_name(std::string_view name) noexcept {
+  if (name == "light") return guntype_t::LIGHT;
+  if (name == "medium") return guntype_t::MEDIUM;
+  if (name == "heavy") return guntype_t::HEAVY;
+  return std::nullopt;
+}
+
 export enum class ActiveBattery : std::uint8_t {
   NONE = 0,
   PRIMARY = 1,

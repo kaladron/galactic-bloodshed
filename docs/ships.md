@@ -85,6 +85,15 @@ Mobile Factories (`F`) can be programmed to manufacture custom-engineered starsh
 - **Technological Complexity Scaling**: Customizing a hull beyond its baseline template increases its **Design Complexity**. An empire can only program designs whose complexity does not exceed its current technological level ($\text{Tech}_{\text{empire}} \ge \text{Complexity}$).
 - **Resource Cost Ceiling**: Each structural upgrade, weapon battery, and speed enhancement increases the hull's construction cost (`build_cost`). A factory blueprint cannot exceed the architectural manufacturing ceiling of $65,535$ resource units per vessel.
 
+### In-Service Vessel Retrofitting (`upgrade`)
+Active starships that support field modification (`modifiable` template trait, excluding factories) can be retrofitted in service at ship scope (`upgrade <characteristic> [value]`):
+
+- **Undamaged Hull Precondition**: A vessel cannot be retrofitted while sustaining hull damage ($\text{Damage} > 0\%$). All structural damage must be repaired before field upgrades can proceed.
+- **Monotonic Attribute Scaling**: Unlike offline factory blueprints, in-service upgrades are strictly **non-decreasing**—an attribute (`crew`, `cargo`, `hangar`, `fuel`, `destruct`, `armor`, `speed`, `primary`, `secondary`, or `cew`) can only be increased above its current value, and weapon calibers cannot be downgraded to a smaller bore.
+- **Retrofit Resource Cost**: Field retrofitting consumes twice the incremental construction cost delta directly from the vessel's onboard mineral cargo bay (with a minimum expenditure of $1$ resource unit for mortal empires):
+  $$\text{Retrofit Cost} = \max\Big(1,\; 2 \times (\text{Cost}_{\text{upgraded}} - \text{Cost}_{\text{current}})\Big)$$
+- **Carrier Hangar & Displacement Synchronization**: Expanding crew berths, cargo bays, fuel tanks, munitions magazines, or hangar volume increases the vessel's physical size ($\text{Size}_{\text{ship}}$) and structural base mass ($\text{Base Mass}$). If the vessel is berthed inside a carrier or station hangar, the retrofit is rejected if the expanded hull size would exceed the host carrier's remaining hangar capacity; otherwise, the host carrier's occupied hangar volume and total operational mass are updated synchronously.
+
 ### Inter-Ship Cargo and Personnel Logistics (`load`)
 Moored vessels and carrier-berthed craft can transfer raw materials, propellant, munitions, and living populations using shipboard cargo gantries and transporter beams:
 

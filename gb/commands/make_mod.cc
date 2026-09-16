@@ -9,6 +9,7 @@ import gb.entities;
 import gb.services;
 import scnlib;
 import std;
+import tabulate;
 #undef stdout
 
 module commands;
@@ -32,6 +33,20 @@ std::optional<guntype_t> parse_caliber_name(std::string_view name) {
   return std::nullopt;
 }
 
+std::string format_factory_guns(const ShipTemplate& btmpl,
+                                const Ship& dirship) {
+  std::string guns = "Guns:";
+  if (btmpl.has_primary() && dirship.primary_battery().has_guns()) {
+    guns += std::format("{:3}{:c}", dirship.primary_battery().count,
+                        caliber_char(dirship.primary_battery().caliber));
+  }
+  if (btmpl.has_secondary() && dirship.secondary_battery().has_guns()) {
+    guns += std::format("/{:}{:c}", dirship.secondary_battery().count,
+                        caliber_char(dirship.secondary_battery().caliber));
+  }
+  return guns;
+}
+
 bool print_factory_design_specs(GameObj& g, const Ship& dirship,
                                 const Race& race) {
   if (!dirship.has_factory_design()) {
@@ -40,62 +55,48 @@ bool print_factory_design_specs(GameObj& g, const Ship& dirship,
   }
   g.out << "  --- Current Production Specifications ---\n";
   const auto& btmpl = ship_template(dirship.build_type());
-  g.out << std::format("{}\t\t\tArmor:    {:4}\t\tGuns:",
-                       (dirship.on() ? "Online" : "Offline"), dirship.armor());
-  if (btmpl.has_primary() && dirship.primary_battery().has_guns()) {
-    g.out << std::format("{:3}{:c}", dirship.primary_battery().count,
-                         caliber_char(dirship.primary_battery().caliber));
-  }
-  if (btmpl.has_secondary() && dirship.secondary_battery().has_guns()) {
-    g.out << std::format("/{:}{:c}", dirship.secondary_battery().count,
-                         caliber_char(dirship.secondary_battery().caliber));
-  }
-  g.out << "\n";
-  g.out << std::format("Ship:  {:<16.16s}\tCrew:     {:4}", btmpl.name,
-                       dirship.max_crew());
-  if (btmpl.can_mount) {
-    g.out << std::format("\t\tXtal Mount: {}\n",
-                         (dirship.mount() ? "yes" : "no"));
-  } else {
-    g.out << "\n";
-  }
-  g.out << std::format("Class: {}\t\tFuel:     {:4}", dirship.shipclass(),
-                       dirship.max_fuel());
-  if (btmpl.can_hyperjump) {
-    g.out << std::format("\t\tHyperdrive: {}\n",
-                         (dirship.hyper_drive().has ? "yes" : "no"));
-  } else {
-    g.out << "\n";
-  }
-  g.out << std::format("Cost:  {} r\t\tCargo:    {:4}", dirship.build_cost(),
-                       dirship.max_resource());
-  if (btmpl.can_mount_laser) {
-    g.out << std::format("\t\tCombat Lasers: {}\n",
-                         (dirship.laser() ? "yes" : "no"));
-  } else {
-    g.out << "\n";
-  }
-  g.out << std::format("Mass:  {:.1f}\t\tHanger:   {:4}", dirship.base_mass(),
-                       dirship.max_hanger());
-  if (btmpl.has_cew) {
-    g.out << std::format("\t\tCEW: {}\n", (dirship.cew() ? "yes" : "no"));
-  } else {
-    g.out << "\n";
-  }
-  g.out << std::format("Size:  {:<6}\t\tDestruct: {:4}", dirship.size(),
-                       dirship.max_destruct());
-  if (btmpl.has_cew && dirship.cew()) {
-    g.out << std::format("\t\t   Opt Range: {:4}\n", dirship.cew_range());
-  } else {
-    g.out << "\n";
-  }
-  g.out << std::format("Tech:  {:.1f} ({:.1f})\tSpeed:    {:4}",
-                       dirship.complexity(), race.tech, dirship.max_speed());
-  if (btmpl.has_cew && dirship.cew()) {
-    g.out << std::format("\t\t   Energy:    {:4d}\n", dirship.cew());
-  } else {
-    g.out << "\n";
-  }
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("    ");
+
+  table.add_row({dirship.on() ? "Online" : "Offline",
+                 std::format("Armor:    {:4}", dirship.armor()),
+                 format_factory_guns(btmpl, dirship)});
+  table.add_row({std::format("Ship:  {}", btmpl.name),
+                 std::format("Crew:     {:4}", dirship.max_crew()),
+                 btmpl.can_mount ? std::format("Xtal Mount: {}",
+                                               dirship.mount() ? "yes" : "no")
+                                 : ""});
+  table.add_row({std::format("Class: {}", dirship.shipclass()),
+                 std::format("Fuel:     {:4}", dirship.max_fuel()),
+                 btmpl.can_hyperjump
+                     ? std::format("Hyperdrive: {}",
+                                   dirship.hyper_drive().has ? "yes" : "no")
+                     : ""});
+  table.add_row(
+      {std::format("Cost:  {} r", dirship.build_cost()),
+       std::format("Cargo:    {:4}", dirship.max_resource()),
+       btmpl.can_mount_laser
+           ? std::format("Combat Lasers: {}", dirship.laser() ? "yes" : "no")
+           : ""});
+  table.add_row({std::format("Mass:  {:.1f}", dirship.base_mass()),
+                 std::format("Hanger:   {:4}", dirship.max_hanger()),
+                 btmpl.has_cew
+                     ? std::format("CEW: {}", dirship.cew() ? "yes" : "no")
+                     : ""});
+  table.add_row({std::format("Size:  {}", dirship.size()),
+                 std::format("Destruct: {:4}", dirship.max_destruct()),
+                 (btmpl.has_cew && dirship.cew())
+                     ? std::format("   Opt Range: {:4}", dirship.cew_range())
+                     : ""});
+  table.add_row(
+      {std::format("Tech:  {:.1f} ({:.1f})", dirship.complexity(), race.tech),
+       std::format("Speed:    {:4}", dirship.max_speed()),
+       (btmpl.has_cew && dirship.cew())
+           ? std::format("   Energy:    {:4d}", dirship.cew())
+           : ""});
+
+  g.out << table << "\n";
 
   if (race.tech < dirship.complexity()) {
     g.out << "Your engineering capability is not "

@@ -19,7 +19,12 @@ export using blocknum_t = ID<"block", int>;
 export using powernum_t = ID<"power", int>;
 
 export using segments_t = std::uint32_t;
+export using turn_t = std::uint32_t;  ///< Full update turn counter
 export using ap_t = std::uint32_t;
+export using ship_count_t =
+    std::uint32_t;  ///< Cardinality / tally of ships (distinct from shipnum_t)
+export using planet_count_t =
+    std::uint32_t;  ///< Cardinality / tally of planets or star systems
 export using resource_t = std::int64_t;
 export using money_t = std::int64_t;
 export using population_t = std::int64_t;
@@ -42,6 +47,8 @@ export using hangar_t = std::uint32_t;  ///< Internal carried ship hangar space
 export using ship_size_t = std::uint32_t;  ///< Ship physical size / volume
 export using weapon_power_t =
     std::uint32_t;  ///< Concentrated energy weapon / laser power setting
+export using weapon_range_t =
+    std::uint32_t;  ///< Tactical weapon or mine proximity trigger range
 export using temp_delta_t =
     int;  ///< Thermal adjustment applied to planet temperature
 

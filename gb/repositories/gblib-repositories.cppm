@@ -232,8 +232,8 @@ struct meta<block> {
   static constexpr auto value =
       object("Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
              "invited", &T::invited, "pledged", &T::pledged, "atwar", &T::atwar,
-             "allied", &T::allied, "next", &T::next, "systems_owned",
-             &T::systems_owned, "VPs", &T::VPs, "money", &T::money);
+             "allied", &T::allied, "systems_owned", &T::systems_owned, "VPs",
+             &T::VPs, "money", &T::money);
 };
 
 // Glaze reflection for power

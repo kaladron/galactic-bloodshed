@@ -118,9 +118,9 @@ public:
     loser.morale -= amount;
     points[loser] += amount;
   }
-  unsigned short controlled_planets{0}; /* Number of planets under control. */
-  unsigned short victory_turns{0};
-  unsigned short turn{0};
+  planet_count_t controlled_planets{0}; /* Number of planets under control. */
+  turn_t victory_turns{0};
+  turn_t turn{0};
 
   double tech{0.0};
   TechDiscoveries discoveries{};    /* Tech discoveries. */
@@ -190,9 +190,10 @@ public:
   /// possesses collective intelligence traits.
   void update_collective_intelligence(population_t total_popn) noexcept {
     if (collective_iq) {
-      double x = ((2.0 / std::numbers::pi) *
-                  std::atan(static_cast<double>(total_popn) / MESO_POP_SCALE));
-      IQ = static_cast<unsigned short>(IQ_limit * x * x);
+      const double x =
+          (2.0 / std::numbers::pi) *
+          std::atan(static_cast<double>(total_popn) / MESO_POP_SCALE);
+      IQ = static_cast<iq_t>(static_cast<double>(IQ_limit) * x * x);
     }
   }
 
@@ -312,14 +313,14 @@ inline auto Race::all_governors() const {
 }
 
 export struct power {
-  int id{0};           // Power entry ID for database persistence
-  population_t troops; /* total troops */
-  population_t popn;   /* total population */
-  resource_t resource; /* total resource in stock */
-  unsigned long fuel;
-  unsigned long destruct;     /* total dest in stock */
-  unsigned short ships_owned; /* # of ships owned */
-  unsigned short planets_owned;
+  int id{0};                // Power entry ID for database persistence
+  population_t troops;      /* total troops */
+  population_t popn;        /* total population */
+  resource_t resource;      /* total resource in stock */
+  resource_t fuel;          /* total fuel in stock */
+  resource_t destruct;      /* total dest in stock */
+  ship_count_t ships_owned; /* # of ships owned */
+  planet_count_t planets_owned;
   unsigned long sectors_owned;
   money_t money;
   unsigned long sum_mob; /* total mobilization */
@@ -334,8 +335,7 @@ export struct block {
   PlayerBitset<MAXPLAYERS> pledged;
   PlayerBitset<MAXPLAYERS> atwar;
   PlayerBitset<MAXPLAYERS> allied;
-  unsigned short next;
-  unsigned short systems_owned;
+  planet_count_t systems_owned;
   unsigned long VPs;
   unsigned long money;
 
@@ -388,13 +388,13 @@ export struct block {
 
 export struct PowerBlockStats {
   std::uint32_t members{0};
-  population_t troops{0};       /* total troops */
-  population_t popn{0};         /* total population */
-  resource_t resource{0};       /* total resource in stock */
-  resource_t fuel{0};           /* total fuel in stock */
-  resource_t destruct{0};       /* total dest in stock */
-  std::uint32_t ships_owned{0}; /* # of ships owned */
-  std::uint32_t systems_owned{0};
+  population_t troops{0};      /* total troops */
+  population_t popn{0};        /* total population */
+  resource_t resource{0};      /* total resource in stock */
+  resource_t fuel{0};          /* total fuel in stock */
+  resource_t destruct{0};      /* total dest in stock */
+  ship_count_t ships_owned{0}; /* # of ships owned */
+  planet_count_t systems_owned{0};
   std::uint32_t sectors_owned{0};
   money_t money{0};
   std::uint64_t VPs{0};

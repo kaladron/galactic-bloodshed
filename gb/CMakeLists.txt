@@ -163,7 +163,7 @@ target_sources(
           services/tele.cc
           server/victory.cc
           turn/vn.cc)
-target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module tabulate_module)
+target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module scnlib_module tabulate_module)
 
 # Dedicated Subsystem Modules (Phase 6)
 add_library(gb_entities)

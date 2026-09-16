@@ -568,7 +568,7 @@ public:
             ActiveBattery active_battery = ActiveBattery::PRIMARY);
   TestShipBuilder& with_retaliate(weapon_power_t retaliate);
   TestShipBuilder& with_cew(weapon_power_t cew_power,
-                            unsigned short range = 1000);
+                            weapon_range_t range = 1000);
   TestShipBuilder& with_crew(population_t civilians, population_t military);
   TestShipBuilder& with_max_crew(population_t max_crew);
   TestShipBuilder& with_speed(speed_t speed);
@@ -590,7 +590,7 @@ public:
   TestShipBuilder& with_max_hanger(hangar_t max_hanger);
   TestShipBuilder& with_on(bool on);
   TestShipBuilder& with_special(SpecialData special);
-  TestShipBuilder& with_trigger_radius(unsigned short radius);
+  TestShipBuilder& with_trigger_radius(weapon_range_t radius);
   TestShipBuilder& targeting_planet(starnum_t snum, planetnum_t pnum);
   TestShipBuilder& targeting_ship(shipnum_t target_ship);
   TestShipBuilder& with_impact(Coordinates coords, bool scatter = false);

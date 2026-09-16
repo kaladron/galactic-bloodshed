@@ -90,7 +90,6 @@ void test_block_repository() {
   b1.pledged = PlayerBitset<MAXPLAYERS>(1);
   b1.atwar = PlayerBitset<MAXPLAYERS>(2);
   b1.allied = PlayerBitset<MAXPLAYERS>(3);
-  b1.next = 0;
   b1.systems_owned = 10;
   b1.VPs = 1000;
   b1.money = 5000;

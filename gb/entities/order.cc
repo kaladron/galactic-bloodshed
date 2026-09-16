@@ -5,6 +5,7 @@
 
 module;
 
+import scnlib;
 import std;
 
 module gblib;
@@ -301,9 +302,10 @@ void order_laser(GameObj& g, const command_t& argv, Ship& ship) {
   if (ship.laser()) {
     if (ship.can_bombard()) {
       if (ship.mounted()) {
-        if (argv[3] == "on")
-          ship.fire_laser() = std::stoi(argv[4]);
-        else
+        if (argv[3] == "on") {
+          auto res = scn::scan<weapon_power_t>(argv[4], "{}");
+          ship.fire_laser() = res ? res->value() : 0;
+        } else
           ship.fire_laser() = 0;
       } else
         g.out << "You do not have a crystal mounted.\n";
@@ -317,24 +319,23 @@ void order_merchant(GameObj& g, const command_t& argv, Ship& ship) {
   if (argv[3] == "off")
     ship.merchant() = 0;
   else {
-    int j = std::stoi(argv[3]);
-    if (j < 0 || j > MAX_ROUTES) {
+    auto res = scn::scan<int>(argv[3], "{}");
+    if (!res || res->value() < 0 || res->value() > MAX_ROUTES) {
       g.out << "Bad route number.\n";
       return;
     }
-    ship.merchant() = j;
+    ship.merchant() = res->value();
   }
 }
 
 void order_speed(GameObj& g, const command_t& argv, Ship& ship) {
   if (ship.max_speed_capacity()) {
-    int j = std::stoi(argv[3]);
-    if (j < 0) {
+    auto res = scn::scan<speed_t>(argv[3], "{}");
+    if (!res) {
       g.out << "Specify a positive speed.\n";
       return;
     }
-    j = std::min<int>(j, ship.max_speed_capacity());
-    ship.speed() = j;
+    ship.speed() = std::min(res->value(), ship.max_speed_capacity());
   } else {
     g.out << "This ship does not have a speed rating.\n";
   }
@@ -342,16 +343,13 @@ void order_speed(GameObj& g, const command_t& argv, Ship& ship) {
 
 void order_salvo(GameObj& g, const command_t& argv, Ship& ship) {
   if (ship.can_bombard()) {
-    int j = std::stoi(argv[3]);
-    if (j < 0) {
+    auto res = scn::scan<gun_count_t>(argv[3], "{}");
+    if (!res) {
       g.out << "Specify a positive number of guns.\n";
       return;
     }
     const auto* battery = ship.active_gun_battery();
-    ship.retaliate() =
-        battery
-            ? std::min<gun_count_t>(static_cast<gun_count_t>(j), battery->count)
-            : 0;
+    ship.retaliate() = battery ? std::min(res->value(), battery->count) : 0;
   } else {
     g.out << "This ship cannot be set to retaliate.\n";
   }
@@ -369,15 +367,14 @@ void order_battery(GameObj& g, const command_t& argv, Ship& ship,
   }
   if (argv.size() < 4) {
     ship.guns() = mode;
-    ship.retaliate() = std::min<unsigned long>(ship.retaliate(), battery.count);
+    ship.retaliate() = std::min(ship.retaliate(), battery.count);
   } else {
-    int j = std::stoi(argv[3]);
-    if (j < 0) {
+    auto res = scn::scan<gun_count_t>(argv[3], "{}");
+    if (!res) {
       g.out << "Specify a nonnegative number of guns.\n";
       return;
     }
-    ship.retaliate() =
-        std::min<unsigned long>(static_cast<unsigned long>(j), battery.count);
+    ship.retaliate() = std::min(res->value(), battery.count);
     ship.guns() = mode;
   }
 }
@@ -455,9 +452,8 @@ void order_move(GameObj& g, const command_t& argv, Ship& ship) {
 void order_trigger(GameObj& g, const command_t& argv, Ship& ship) {
   auto* mine = ship.as<MineShip>();
   if (mine) {
-    int radius = std::stoi(argv[3]);
-    mine->set_trigger_radius(radius < 0 ? 0
-                                        : static_cast<unsigned short>(radius));
+    auto res = scn::scan<weapon_range_t>(argv[3], "{}");
+    mine->set_trigger_radius(res ? res->value() : 0);
   } else {
     g.out << "This ship cannot be assigned a trigger radius.\n";
   }
@@ -466,14 +462,15 @@ void order_trigger(GameObj& g, const command_t& argv, Ship& ship) {
 void order_transport(GameObj& g, const command_t& argv, Ship& ship) {
   auto* transporter = ship.as<TransporterShip>();
   if (transporter) {
-    unsigned short target = std::stoi(argv[3]);
-    if (shipnum_t{target} == ship.number()) {
+    auto res = scn::scan<shipnum_t::value_type>(argv[3], "{}");
+    shipnum_t target = res ? shipnum_t{res->value()} : 0;
+    if (target == ship.number()) {
       g.out << "A transporter cannot transport to itself.";
       target = 0;
     } else {
       g.out << std::format("Target ship is {}.\n", target);
     }
-    transporter->set_target_ship(shipnum_t{target});
+    transporter->set_target_ship(target);
   } else {
     g.out << "This ship is not a transporter.\n";
   }
@@ -517,8 +514,9 @@ void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
 
 void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
   if (auto* mirror = ship.as<SpaceMirrorShip>()) {
+    auto res = scn::scan<int>(argv[3], "{}");
     mirror->set_intensity(
-        static_cast<char>(std::clamp(std::stoi(argv[3]), 0, 100)));
+        static_cast<char>(std::clamp(res ? res->value() : 0, 0, 100)));
   }
 }
 

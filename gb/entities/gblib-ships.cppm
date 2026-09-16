@@ -381,7 +381,7 @@ export struct ImpactData {
 };
 
 export struct TriggerData {
-  unsigned short radius;
+  weapon_range_t radius{0};
 };
 
 export struct TerraformData {
@@ -389,7 +389,7 @@ export struct TerraformData {
 };
 
 export struct TransportData {
-  unsigned short target;
+  shipnum_t target{0};
 };
 
 export struct WasteData {
@@ -489,7 +489,7 @@ export struct ship_struct {
   bool mount{false};            ///< Crystal mount equipped
   HyperDriveData hyper_drive;   ///< Hyperspace jump drive systems
   weapon_power_t cew{0};        ///< Concentrated energy weapon power rating
-  unsigned short cew_range{0};  ///< CEW beam operational range
+  weapon_range_t cew_range{0};  ///< CEW beam operational range
   bool cloak{false};            ///< Cloaking device equipped
   bool laser{false};            ///< Combat laser weapon equipped
   bool focus{false};            ///< Laser focus mode enabled
@@ -2500,10 +2500,10 @@ public:
     return data_.cew;
   }
 
-  [[nodiscard]] unsigned short cew_range() const {
+  [[nodiscard]] weapon_range_t cew_range() const {
     return data_.cew_range;
   }
-  unsigned short& cew_range() {
+  weapon_range_t& cew_range() {
     return data_.cew_range;
   }
 
@@ -3965,10 +3965,10 @@ public:
     static const TriggerData default_trigger{};
     return default_trigger;
   }
-  [[nodiscard]] unsigned short trigger_radius() const noexcept {
+  [[nodiscard]] weapon_range_t trigger_radius() const noexcept {
     return trigger().radius;
   }
-  void set_trigger_radius(unsigned short radius) noexcept {
+  void set_trigger_radius(weapon_range_t radius) noexcept {
     trigger().radius = radius;
   }
   [[nodiscard]] bool is_radiative() const noexcept {
@@ -4037,10 +4037,10 @@ public:
     return default_transport;
   }
   [[nodiscard]] shipnum_t target_ship() const noexcept {
-    return shipnum_t{transport().target};
+    return transport().target;
   }
   void set_target_ship(shipnum_t target) noexcept {
-    transport().target = static_cast<unsigned short>(target.value);
+    transport().target = target;
   }
 };
 

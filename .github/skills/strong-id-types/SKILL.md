@@ -28,6 +28,9 @@ export using blocknum_t  = ID<"block", int>;
 export using powernum_t  = ID<"power", int>;
 
 // Semantic Metric Aliases:
+export using turn_t         = std::uint32_t;  ///< Full update turn counter
+export using ship_count_t   = std::uint32_t;  ///< Cardinality / tally of ships (distinct from shipnum_t)
+export using planet_count_t = std::uint32_t;  ///< Cardinality / tally of planets or star systems
 export using armor_t        = std::uint32_t;  ///< Armor rating absorbing combat damage
 export using damage_t       = std::uint32_t;  ///< Hull damage percentage (0..100)
 export using speed_t        = std::uint32_t;  ///< Tactical engine speed setting
@@ -37,6 +40,7 @@ export using bearing_t      = std::uint32_t;  ///< Course navigation heading ang
 export using hangar_t       = std::uint32_t;  ///< Internal carried ship hangar capacity/space
 export using ship_size_t    = std::uint32_t;  ///< Ship physical size / volume
 export using weapon_power_t = std::uint32_t;  ///< Concentrated energy weapon / laser power setting
+export using weapon_range_t = std::uint32_t;  ///< Tactical weapon or mine proximity trigger range
 ```
 
 ## Always Use the Typed Name

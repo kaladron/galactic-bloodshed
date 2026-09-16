@@ -199,7 +199,7 @@ TestShipBuilder& TestShipBuilder::with_retaliate(weapon_power_t retaliate) {
 }
 
 TestShipBuilder& TestShipBuilder::with_cew(weapon_power_t cew_power,
-                                           unsigned short range) {
+                                           weapon_range_t range) {
   ship_.cew = cew_power;
   ship_.cew_range = range;
   ship_.mounted = true;
@@ -314,7 +314,7 @@ TestShipBuilder& TestShipBuilder::with_special(SpecialData special) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_trigger_radius(unsigned short radius) {
+TestShipBuilder& TestShipBuilder::with_trigger_radius(weapon_range_t radius) {
   ship_.special = TriggerData{.radius = radius};
   return *this;
 }

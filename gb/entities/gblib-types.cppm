@@ -388,7 +388,7 @@ export struct Victory {
   bool no_count = false;
   double tech{0.0};
   int thing{0};
-  int iq{0};
+  iq_t iq{0};
   victory_score_t rawscore{0};
 };
 

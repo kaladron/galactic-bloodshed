@@ -233,18 +233,16 @@ void test_load_transporter() {
                              .build();
 
   // Source transmitter transporter ship 3
-  const auto trans1_id =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 3)
-          .owned_by(1)
-          .named("TransporterSender")
-          .with_alive(true)
-          .with_active(true)
-          .with_on(true)
-          .landed_on(0, 0, {5, 5})
-          .with_max_resource(1000)
-          .with_special(TransportData{
-              .target = static_cast<unsigned short>(trans2_id.value)})
-          .build();
+  const auto trans1_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 3)
+                             .owned_by(1)
+                             .named("TransporterSender")
+                             .with_alive(true)
+                             .with_active(true)
+                             .with_on(true)
+                             .landed_on(0, 0, {5, 5})
+                             .with_max_resource(1000)
+                             .with_special(TransportData{.target = trans2_id})
+                             .build();
 
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -675,26 +673,24 @@ void test_transporter_edge_cases() {
                            .with_max_crew(100)
                            .build();
 
-  const auto send_id =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 11)
-          .owned_by(1, 0)
-          .named("SenderDevice")
-          .with_alive(true)
-          .with_active(true)
-          .with_on(true)
-          .landed_on(0, 0, {5, 5})
-          .with_fuel(0.0)
-          .with_max_fuel(500.0)
-          .with_resource(0)
-          .with_max_resource(500)
-          .with_destruct(0)
-          .with_max_destruct(200)
-          .with_crystals(0)
-          .with_crew(0, 0)
-          .with_max_crew(100)
-          .with_special(TransportData{
-              .target = static_cast<unsigned short>(recv_id.value)})
-          .build();
+  const auto send_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 11)
+                           .owned_by(1, 0)
+                           .named("SenderDevice")
+                           .with_alive(true)
+                           .with_active(true)
+                           .with_on(true)
+                           .landed_on(0, 0, {5, 5})
+                           .with_fuel(0.0)
+                           .with_max_fuel(500.0)
+                           .with_resource(0)
+                           .with_max_resource(500)
+                           .with_destruct(0)
+                           .with_max_destruct(200)
+                           .with_crystals(0)
+                           .with_crew(0, 0)
+                           .with_max_crew(100)
+                           .with_special(TransportData{.target = recv_id})
+                           .build();
 
   // 1. Target device damaged
   ctx.em.mutate_ship(recv_id, [](Ship& s) { s.admin_override_damage(50); });
@@ -752,8 +748,7 @@ void test_transporter_edge_cases() {
   // 6. Successful multi-commodity transfer to another player's receiver (sends
   // telegram)
   ctx.em.mutate_ship(send_id, [&](Ship& s) {
-    static_cast<TransporterShip&>(s).transport().target =
-        static_cast<unsigned short>(recv_id.value);
+    static_cast<TransporterShip&>(s).transport().target = recv_id;
     s.add_fuel(30.0);
     s.destruct() = 15;
     s.add_crystals(5);

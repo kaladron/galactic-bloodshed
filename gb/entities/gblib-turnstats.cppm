@@ -23,10 +23,10 @@ export struct TurnStats {
   std::array<PlayerVector<unsigned long, MAXPLAYERS>, NUMSTARS> starpopns{};
 
   // Per-star ship counts for each player
-  std::array<PlayerVector<unsigned short, MAXPLAYERS>, NUMSTARS> starnumships{};
+  std::array<PlayerVector<ship_count_t, MAXPLAYERS>, NUMSTARS> starnumships{};
 
   // Global ship counts per player (for Sdata)
-  PlayerVector<unsigned short, MAXPLAYERS> Sdatanumships;
+  PlayerVector<ship_count_t, MAXPLAYERS> Sdatanumships;
 
   // Global population counts per player (for Sdata)
   PlayerVector<unsigned long, MAXPLAYERS> Sdatapopns;

@@ -11,6 +11,9 @@ import test;
 import std;
 
 int main() {
+  test::expect_false(GB_VERSION.empty());
+  test::expect_ne(GB_VERSION, "Standard GB 5.0");
+
   std::uint8_t test8 = 0;
   std::uint32_t test32 = 0;
   std::uint64_t test64 = 0;

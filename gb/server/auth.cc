@@ -51,7 +51,7 @@ ConnectionPassword parse_connect(const std::string_view message) {
 }
 
 void welcome_user(Session& session, EntityManager& entity_manager) {
-  session.out() << std::format("***   Welcome to Galactic Bloodshed {} ***\n"
+  session.out() << std::format("***   Welcome to Galactic Bloodshed v{} ***\n"
                                "Please enter your password:\n",
                                GB_VERSION);
 

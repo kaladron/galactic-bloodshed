@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   Database database{config.db_path};
   EntityManager entity_manager{database};
 
-  std::println(std::cout, "      ***   Galactic Bloodshed ver {0} ***",
+  std::println(std::cout, "      ***   Galactic Bloodshed v{0} ***",
                GB_VERSION);
   std::println(std::cout, "");
   std::time_t clk = std::time(nullptr);

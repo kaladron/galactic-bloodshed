@@ -20,45 +20,30 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 set(CMAKE_CXX_FLAGS "-stdlib=libc++")
 
-# Dynamic SemVer extraction from Git tags
-find_package(Git QUIET)
+# Release version resolution (defaults to 0.0.0-dev outside release builds)
+set(GB_RELEASE_VERSION "" CACHE STRING "Explicit release version string")
+set(RAW_VERSION "${GB_RELEASE_VERSION}")
 
-set(DEFAULT_VERSION "0.0.0-dev")
-set(RAW_VERSION "")
-
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
-  # Extracted source tarball (generated during packaging)
+if(NOT RAW_VERSION AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+  # Extracted release source tarball (generated during packaging)
   file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" RAW_VERSION LIMIT_COUNT 1)
-elseif(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
-  # Git working tree
-  execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --tags --match "v[0-9]*" --always
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    OUTPUT_VARIABLE RAW_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-  )
+  string(STRIP "${RAW_VERSION}" RAW_VERSION)
 endif()
 
-# Check if RAW_VERSION starts with a valid version tag (vX.Y...)
+# Check if RAW_VERSION starts with a valid version tag (vX.Y... or X.Y...)
 if(RAW_VERSION MATCHES "^v?([0-9]+\\.[0-9]+.*)")
   # Strip leading 'v'
-  string(REGEX REPLACE "^v" "" FULL_SEMVER "${RAW_VERSION}")
+  string(REGEX REPLACE "^v" "" GB_VERSION_STR "${RAW_VERSION}")
   # Extract numeric major.minor.patch for CMake project()
-  string(REGEX MATCH "^[0-9]+(\\.[0-9]+)*" NUMERIC_VERSION "${FULL_SEMVER}")
+  string(REGEX MATCH "^[0-9]+(\\.[0-9]+)*" NUMERIC_VERSION "${GB_VERSION_STR}")
 else()
-  # Untagged commit or unknown version
-  if(RAW_VERSION)
-    set(FULL_SEMVER "${DEFAULT_VERSION}+${RAW_VERSION}")
-  else()
-    set(FULL_SEMVER "${DEFAULT_VERSION}")
-  endif()
+  set(GB_VERSION_STR "0.0.0-dev")
   set(NUMERIC_VERSION "0.0.0")
 endif()
 
 project("galactic-bloodshed" VERSION ${NUMERIC_VERSION} LANGUAGES CXX)
 
-set(PROJECT_VERSION_FULL "${FULL_SEMVER}" CACHE STRING "Full SemVer with pre-release/git metadata")
+set(PROJECT_VERSION_FULL "${GB_VERSION_STR}" CACHE STRING "Full SemVer version string" FORCE)
 message(STATUS "Project Version: ${PROJECT_VERSION} (Full: ${PROJECT_VERSION_FULL})")
 
 # Include GNUInstallDirs to get canonical paths
@@ -194,11 +179,7 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 
 if(NOT CPACK_PACKAGE_VERSION)
-  if(PROJECT_VERSION)
-    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-  else()
-    set(CPACK_PACKAGE_VERSION "0.0.0-dev")
-  endif()
+  set(CPACK_PACKAGE_VERSION "${GB_VERSION_STR}")
 endif()
 
 # Debian-specific packaging options

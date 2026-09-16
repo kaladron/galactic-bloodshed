@@ -69,7 +69,8 @@ void test_welcome_user() {
   std::array<char, 512> buf{};
   std::size_t len = client_sock.read_some(asio::buffer(buf));
   std::string output(buf.data(), len);
-  test::expect_contains(output, "Welcome to Galactic Bloodshed");
+  test::expect_contains(
+      output, std::format("Welcome to Galactic Bloodshed v{}", GB_VERSION));
   test::expect_contains(output, "Custom Welcome MotD");
 }
 

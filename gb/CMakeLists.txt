@@ -52,6 +52,7 @@ else()
 endif()
 add_definitions(-DDOCDIR="${DOCDIR}")
 add_definitions(-DHELPDIR="${HELPDIR}")
+add_compile_definitions(GB_VERSION_STR="${GB_VERSION_STR}")
 
 # Make Doxygen optional - gracefully skip documentation if not found
 find_package(Doxygen QUIET OPTIONAL_COMPONENTS dot)

@@ -4,14 +4,21 @@
 /// \brief Module interface partition for game constants, build options, and
 /// tweakables.
 
+module;
+
+#ifndef GB_VERSION_STR
+#define GB_VERSION_STR "0.0.0-dev"
+#endif
+
 export module gblib:tweakables;
 
+import std;
 import :types;
 
 // Game dependencies.  These will likely change for each game.
 export constexpr const char* DEADLINE = "June 22 23:00 GMT";
 export constexpr const char* GAME = "The Return of Galactic Bloodshed II";
-export constexpr const char* GB_VERSION = "Standard GB 5.0";
+export constexpr std::string_view GB_VERSION = GB_VERSION_STR;
 export constexpr const char* LOCATION = "courses.cstudies.ubc.ca 2010";
 export constexpr const char* MODERATOR = "Chris Brougham";
 export constexpr const char* PLAYERS = "25";

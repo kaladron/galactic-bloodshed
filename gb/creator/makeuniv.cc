@@ -23,6 +23,18 @@ int main(int argc, char* argv[]) {
     if (arg == "-h" || arg == "--help") {
       goto usage;
     }
+    if (arg == "-v" || arg == "--version") {
+      std::println(std::cout, "makeuniv {}", GB_VERSION);
+      return 0;
+    }
+    if (arg == "--print-planets") {
+      config.print_planet_info = true;
+      continue;
+    }
+    if (arg == "--print-stars") {
+      config.print_star_info = true;
+      continue;
+    }
     if (arg == "--database" || arg == "--db" || arg == "-D") {
       if (i + 1 >= argc) {
         std::println(std::cerr, "Option \"{}\" requires an argument.", arg);
@@ -71,7 +83,7 @@ int main(int argc, char* argv[]) {
           }
           config.num_stars = static_cast<starnum_t>(std::atoi(argv[++i]));
           break;
-        case 'v':
+        case 'p':
           config.print_planet_info = true;
           break;
         case 'w':
@@ -92,8 +104,9 @@ int main(int argc, char* argv[]) {
 usage:
           std::println(std::cout,
                        "Usage: makeuniv [-a] [-b] [-d] [-e E] [-l MIN] [-m "
-                       "MAX] [-s N] [-v] "
-                       "[-w] [-D|--database|--db <path>] [-h|--help]");
+                       "MAX] [-s N] [-p|--print-planets] "
+                       "[-w|--print-stars] [-D|--database|--db <path>] "
+                       "[-v|--version] [-h|--help]");
           std::println(std::cout,
                        "  -a                         Autoload star names.");
           std::println(std::cout,
@@ -110,14 +123,17 @@ usage:
           std::println(
               std::cout,
               "  -s S                       The universe will have S stars.");
-          std::println(std::cout, "  -v                         Print info and "
+          std::println(std::cout, "  -p, --print-planets        Print info and "
                                   "map of planets generated.");
           std::println(
               std::cout,
-              "  -w                         Print info on stars generated.");
+              "  -w, --print-stars          Print info on stars generated.");
           std::println(std::cout,
                        "  -D, --database, --db <path> Path to SQLite database "
                        "(default: " PKGSTATEDIR "gb.db)");
+          std::println(std::cout,
+                       "  -v, --version              Display version "
+                       "information and exit.");
           std::println(std::cout, "  -h, --help                 Display this "
                                   "help message and exit.\n");
           return 0;

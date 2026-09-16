@@ -20,6 +20,7 @@ export struct ServerConfig {
   std::chrono::minutes update_time{DEFAULT_UPDATE_TIME};
   int segments{MOVES_PER_UPDATE};
   bool show_help{false};
+  bool show_version{false};
   bool has_error{false};
 };
 

@@ -19,6 +19,10 @@ int main(int argc, char* argv[]) {
 
   for (int i = 1; i < argc; ++i) {
     std::string_view arg = argv[i];
+    if (arg == "-v" || arg == "--version") {
+      std::println(std::cout, "enrol {}", GB_VERSION);
+      return 0;
+    }
     if (arg == "-h" || arg == "--help") {
       std::println(std::cout, "Usage: enrol [options]");
       std::println(std::cout, "");
@@ -31,6 +35,9 @@ int main(int argc, char* argv[]) {
                    "  -f, --file [path]           Enroll directly from a JSON "
                    "race specification file (default: {})",
                    DEFAULT_RACEGEN_FILENAME);
+      std::println(std::cout,
+                   "  -v, --version               Display version information "
+                   "and exit");
       std::println(std::cout,
                    "  -h, --help                  Display this help message "
                    "and exit");
@@ -60,7 +67,7 @@ int main(int argc, char* argv[]) {
       std::println(
           std::cerr,
           "Usage: enrol [-d|--database|--db <path>] [-f|--file [path]] "
-          "[-h|--help]");
+          "[-v|--version] [-h|--help]");
       return 1;
     }
   }

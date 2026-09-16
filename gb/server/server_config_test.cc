@@ -79,12 +79,31 @@ void test_parse_server_args_help() {
     const char* argv[] = {"GB", "-h"};
     ServerConfig config = parse_server_args(2, argv);
     test::expect_true(config.show_help);
+    test::expect_false(config.show_version);
     test::expect_false(config.has_error);
   }
   {
     const char* argv[] = {"GB", "--help"};
     ServerConfig config = parse_server_args(2, argv);
     test::expect_true(config.show_help);
+    test::expect_false(config.show_version);
+    test::expect_false(config.has_error);
+  }
+}
+
+void test_parse_server_args_version() {
+  {
+    const char* argv[] = {"GB", "-v"};
+    ServerConfig config = parse_server_args(2, argv);
+    test::expect_true(config.show_version);
+    test::expect_false(config.show_help);
+    test::expect_false(config.has_error);
+  }
+  {
+    const char* argv[] = {"GB", "--version"};
+    ServerConfig config = parse_server_args(2, argv);
+    test::expect_true(config.show_version);
+    test::expect_false(config.show_help);
     test::expect_false(config.has_error);
   }
 }
@@ -195,6 +214,7 @@ int main() {
   test_parse_server_args_custom_segments();
   test_parse_server_args_flags();
   test_parse_server_args_help();
+  test_parse_server_args_version();
   test_parse_server_args_errors();
   test_initialize_schedule_state_first_run();
   test_initialize_schedule_state_single_segment();

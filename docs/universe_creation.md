@@ -113,18 +113,20 @@ Game operators initialize a new universe using the administrative generation too
 ./build/gb/makeuniv
 
 # Generate a dense 50-star cluster in a custom database file
-./build/gb/makeuniv --db /var/games/gb/cluster.db --stars 50
+./build/gb/makeuniv --db /var/games/gb/cluster.db -s 50
 
-# Generate a deterministic universe using a specific random seed
-./build/gb/makeuniv -d test.db -s 25 -r 1337
+# Generate a non-interactive universe using default parameters
+./build/gb/makeuniv -D test.db -d -s 25
 ```
 
 | Flag | Parameter | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `-d`, `--db` | `<filepath>` | `/usr/local/var/galactic-bloodshed/gb.db` | Target SQLite database file. |
-| `-s`, `--stars` | `<integer>` | `25` | Number of star systems to place in the galaxy. |
-| `-p`, `--planets` | `<integer>` | `10` | Maximum planets permitted per star system. |
-| `-r`, `--seed` | `<integer>` | Random | Deterministic pseudo-random number generator seed. |
+| `-D`, `--database`, `--db` | `<filepath>` | `/var/lib/galactic-bloodshed/gb.db` | Target SQLite database file. |
+| `-s` | `<integer>` | `128` | Number of star systems to place in the galaxy. |
+| `-l` / `-m` | `<integer>` | `1` / `10` | Minimum and maximum planets permitted per star system. |
+| `-p`, `--print-planets` | — | `false` | Print generated planet maps and information. |
+| `-w`, `--print-stars` | — | `false` | Print generated star system information. |
+| `-v`, `--version` | — | — | Display binary version information and exit. |
 
 ---
 

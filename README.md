@@ -56,7 +56,7 @@ cmake --build build
 
 ### Command-Line Utilities
 
-All utilities support `-h` / `--help` to show usage information and `-d` / `--database` / `--db` (or `-D` for `makeuniv`) to specify an alternative database location (defaulting to `/var/lib/galactic-bloodshed/gb.db` in release builds or `build/gamedata/gb.db` in debug builds).
+All utilities support `-h` / `--help` to show usage information, `-v` / `--version` to display the binary version, and `-d` / `--database` / `--db` (or `-D` for `makeuniv`) to specify an alternative database location (defaulting to `/var/lib/galactic-bloodshed/gb.db` in release builds or `build/gamedata/gb.db` in debug builds).
 
 #### `GB` (Main Game Server)
 Starts the Galactic Bloodshed server.
@@ -65,6 +65,7 @@ Starts the Galactic Bloodshed server.
 ```
 * `-p, --port <port>`: Port to listen on (default: `2010`).
 * `-d, --database, --db <path>`: Path to SQLite database.
+* `-v, --version`: Display version information and exit.
 * `-h, --help`: Display help message and exit.
 
 #### `makeuniv` (Universe Generator)
@@ -80,8 +81,9 @@ Initializes and populates a new game universe database with procedural stars, pl
 * `-l <MIN>`: Minimum planets per system.
 * `-m <MAX>`: Maximum planets per system.
 * `-s <N>`: Total number of stars in the universe.
-* `-v`: Print generated planet maps and info.
-* `-w`: Print generated star info.
+* `-p, --print-planets`: Print generated planet maps and info.
+* `-w, --print-stars`: Print generated star info.
+* `-v, --version`: Display version information and exit.
 * `-h, --help`: Display help message and exit.
 
 For detailed documentation on procedural star placement, galaxy geometry, orbital physics, and planetary temperature gradients, see the [Universe Creation Guide](docs/universe_creation.md).
@@ -92,6 +94,7 @@ Interactive CLI tool to enroll new player races into an existing game database. 
 ./build/gb/enrol [options]
 ```
 * `-d, --database, --db <path>`: Path to SQLite database.
+* `-v, --version`: Display version information and exit.
 * `-h, --help`: Display help message and exit.
 
 For details on the racial archetypes, biological attributes, and homeworld discovery invariants, see the [Race Generation and Imperial Onboarding Guide](docs/race_generation.md).
@@ -102,6 +105,7 @@ Interactive species engineering and point-budget design sandbox. Allows customiz
 ./build/gb/racegen [options]
 ```
 * `-d, --database, --db <path>`: Path to SQLite database.
+* `-v, --version`: Display version information and exit.
 * `-h, --help`: Display help message and exit.
 
 For in-depth mathematical cost curves, biological covariances, and sector habitability formulas, see the [Race Generation and Imperial Onboarding Guide](docs/race_generation.md).

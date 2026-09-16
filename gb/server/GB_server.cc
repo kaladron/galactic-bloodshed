@@ -17,6 +17,10 @@ import gb.server;
 
 int main(int argc, char** argv) {
   ServerConfig config = parse_server_args(argc, argv);
+  if (config.show_version) {
+    std::println(std::cout, "GB {}", GB_VERSION);
+    return 0;
+  }
   if (config.show_help) {
     print_server_usage(argv[0]);
     return 0;

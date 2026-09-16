@@ -17,6 +17,10 @@ int main(int argc, char* argv[]) {
 
   for (int i = 1; i < argc; ++i) {
     std::string_view arg = argv[i];
+    if (arg == "-v" || arg == "--version") {
+      std::println(std::cout, "racegen {}", GB_VERSION);
+      return 0;
+    }
     if (arg == "-h" || arg == "--help") {
       std::println(std::cout, "Usage: racegen [options]");
       std::println(std::cout, "");
@@ -33,6 +37,9 @@ int main(int argc, char* argv[]) {
           std::cout,
           "  -a, --archetype <id|name>   Pre-load one of the 11 preset "
           "evolutionary archetypes");
+      std::println(std::cout,
+                   "  -v, --version               Display version information "
+                   "and exit");
       std::println(std::cout,
                    "  -h, --help                  Display this help message "
                    "and exit");
@@ -74,7 +81,7 @@ int main(int argc, char* argv[]) {
       std::println(
           std::cerr,
           "Usage: racegen [-d|--database|--db <path>] [-f|--file [path]] "
-          "[-a|--archetype <id|name>] [-h|--help]");
+          "[-a|--archetype <id|name>] [-v|--version] [-h|--help]");
       return 1;
     }
   }

@@ -23,6 +23,10 @@ ServerConfig parse_server_args(int argc, const char* const* argv) {
       config.show_help = true;
       return config;
     }
+    if (arg == "-v" || arg == "--version") {
+      config.show_version = true;
+      return config;
+    }
     if (arg == "-p" || arg == "--port") {
       if (i + 1 >= argc) {
         std::println(std::cerr, "Error: Option \"{}\" requires an argument.",
@@ -108,6 +112,9 @@ void print_server_usage(const char* prog_name) {
                "  -d, --database, --db <path> Path to SQLite database "
                "(default: {}gb.db)",
                PKGSTATEDIR);
+  std::println(std::cout,
+               "  -v, --version               Display version information and "
+               "exit");
   std::println(std::cout,
                "  -h, --help                  Display this help message and "
                "exit");

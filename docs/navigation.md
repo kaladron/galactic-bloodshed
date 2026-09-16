@@ -98,18 +98,25 @@ flowchart TD
 ### Surface Lift-Off and Escape Velocity
 Launching a vessel from a planetary surface into low orbit requires expending escape propellant proportional to the world's surface gravity ($g$) and total vessel displacement ($`M_{\text{total}}`$):
 
-$$\text{Launch Fuel Cost} = \left\lceil \text{Gravity} \times \text{Mass}_{\text{total}} \times 0.18 \right\rceil$$
+$$\text{Launch Fuel Cost} = \text{Gravity} \times \text{Mass}_{\text{total}} \times 0.18$$
 
-A vessel whose fuel tanks cannot cover this escape threshold cannot achieve orbital velocity and remains grounded.
+- **Pre-Launch Fuel & AP Verification**: Fuel sufficiency ($\text{Fuel}_{\text{ship}} \ge \text{Launch Fuel Cost}$) is verified before deducting $1\text{ Star AP}$ or altering the vessel's surface coordinates. A vessel without sufficient escape propellant remains safely grounded on its sector with its action points intact.
+- **Orbital Insertion Jitter**: Upon liftoff, the vessel ascends into low planetary orbit (`LEVEL_PLAN`) with a randomized coordinate offset $\Delta x, \Delta y \in [-2, +2]$ ($\pm D_{\text{land}} / 4$) relative to the planet's center and marks the planet as explored.
+- **Atmospheric Canister Deployment**: Launching a **Dust Canister** (`g`) or **Greenhouse Gas Canister** (`h`) resets its internal dissipation timer to $0$ and disperses climate-altering aerosols or greenhouse gases into the planet's upper atmosphere.
 
 ### Planetary Landing Operations
-Vessels equipped with atmospheric landing gear (`Land` capability) can descend from low orbit to land on specific surface sectors $[x, y]$:
-- **Controlled De-Orbit Burn**: Touchdown requires firing deceleration thrusters to bleed off orbital velocity without catastrophic impact:
+Vessels equipped with atmospheric landing gear (`Land` capability) and maneuvering thrusters ($\text{Max Speed} > 0$) within landing range ($D \le 10.0$) can descend from low orbit to touch down on a specific surface sector $[x, y]$:
+- **Pre-Descent Validation**: Orbital range ($D \le 10.0$) and sector coordinate bounds ($0 \le x < X_{\max}, 0 \le y < Y_{\max}$) are validated prior to deducting $1\text{ Star AP}$.
+- **Controlled De-Orbit Burn**: Touchdown requires firing deceleration thrusters proportional to local surface gravity and total ship mass:
 
-$$\text{Landing Fuel Cost} = \left\lfloor \text{Gravity} \times \text{Mass}_{\text{total}} \times 0.0145 \right\rfloor$$
+$$\text{Landing Fuel Cost} = \text{Gravity} \times \text{Mass}_{\text{total}} \times 0.0145$$
 
-- **Hostile Touchdowns**: Landing in hostile sectors defended by armed surface batteries triggers retaliatory ground fire before touchdown.
-- **Gas Giant Hazards**: Gas giant worlds possess no solid surface; vessels attempting landings on gas giants are crushed by extreme atmospheric pressures. However, orbiting vessels can safely skim gas giant upper atmospheres to harvest free propellant during turn updates.
+- **Hostile Surface Defense Fire**: Before touchdown, any enemy empire at war with the ship's owner that possesses planetary population, surface defense guns, and destructive munitions fires a defensive salvo of strength $\min(\text{Guns}, \text{Destruct})$ at the descending vessel. If the ship is destroyed during descent, the landing aborts.
+- **Crash Landing & Impact Detonation**: A surviving vessel crashes on the target sector if either:
+  1. **Propellant Exhaustion**: $\text{Fuel}_{\text{ship}} < \text{Landing Fuel Cost}$, or
+  2. **Structural Failure**: The vessel is damaged ($\text{Damage}\% > 0$) and rolls $d_{100} \le \text{Damage}\%$ on $1\text{--}100$.
+  When a vessel crashes, it is destroyed on impact and its onboard munitions detonate on the target sector with heavy-caliber bombardment force equivalent to $\text{round\_rand}(\text{Destruct} / 3)$, devastating surrounding surface sectors.
+- **Gas Giant Hazards**: Gas giant worlds possess no solid surface; vessels cannot land on gas giants, though orbiting vessels can safely skim gas giant upper atmospheres to harvest free propellant during turn updates.
 
 ### Carrier Recovery, Surface Mothership Loading, and Mooring
 Beyond planetary touchdowns, naval flight operations encompass berthing into host carriers and spaceborne mooring:

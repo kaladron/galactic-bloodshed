@@ -17,19 +17,107 @@ module commands;
 namespace {
 
 /**
- * @brief Land a friendly ship onto another ship or planet.
+ * @brief Load a landed ship onto a friendly mothership in the same sector.
+ */
+bool load_landed_onto_mothership(GameObj& g, Ship& s, const Ship& mothership) {
+  if (!mothership.is_landed()) {
+    g.out << std::format("{} is not landed on a planet.\n", mothership);
+    return false;
+  }
+  if (mothership.storbits() != s.storbits()) {
+    g.out << "These ships are not in the same star system.\n";
+    return false;
+  }
+  if (mothership.pnumorbits() != s.pnumorbits()) {
+    g.out << "These ships are not landed on the same planet.\n";
+    return false;
+  }
+  if (mothership.land_coords() != s.land_coords()) {
+    g.out << "These ships are not in the same sector.\n";
+    return false;
+  }
+  if (s.on()) {
+    g.out << std::format("{} must be turned off before loading.\n", s);
+    return false;
+  }
+  if (s.size() > mothership.hanger_space()) {
+    g.out << std::format("Mothership does not have {} hanger space "
+                         "available to load ship.\n",
+                         s.size());
+    return false;
+  }
+
+  auto dock_res =
+      g.entity_manager.dock_carrier(s.number(), mothership.number());
+  if (!dock_res) {
+    if (dock_res.error() == DockError::CycleDetected) {
+      g.out << "Cannot dock a ship into its own parasite craft.\n";
+    }
+    return false;
+  }
+  s.dock_into_carrier(mothership.number());
+  g.out << std::format("{} loaded onto {} using 0 fuel.\n", s, mothership);
+  return true;
+}
+
+/**
+ * @brief Land a spaceborne ship into a friendly carrier in orbit.
+ */
+bool land_spaceborne_on_carrier(GameObj& g, Ship& s, const Ship& carrier) {
+  if (s.whatorbits() != carrier.whatorbits()) {
+    g.out << "Those ships are not in the same scope.\n";
+    return false;
+  }
+  if (s.whatorbits() != ScopeLevel::LEVEL_PLAN &&
+      s.whatorbits() != ScopeLevel::LEVEL_STAR) {
+    g.out << "Ship is not in planet or star scope.\n";
+    return false;
+  }
+
+  const double dist = carrier.coordinates().distance_to(s.coordinates());
+  if (dist > DIST_TO_DOCK) {
+    g.out << std::format("{} must be {} or closer to {}.\n", s, DIST_TO_DOCK,
+                         carrier);
+    return false;
+  }
+
+  const double fuel = DOCK_BASE_FUEL_COST +
+                      dist * DOCK_DISTANCE_FUEL_FACTOR * std::sqrt(s.mass());
+  if (s.fuel() < fuel) {
+    g.out << "Not enough fuel.\n";
+    return false;
+  }
+  if (s.size() > carrier.hanger_space()) {
+    g.out << std::format("Mothership does not have {} hanger space "
+                         "available to load ship.\n",
+                         s.size());
+    return false;
+  }
+
+  auto dock_res = g.entity_manager.dock_carrier(s.number(), carrier.number());
+  if (!dock_res) {
+    if (dock_res.error() == DockError::CycleDetected) {
+      g.out << "Cannot dock a ship into its own parasite craft.\n";
+    }
+    return false;
+  }
+  use_fuel(s, fuel);
+  s.dock_into_carrier(carrier.number());
+  g.out << std::format("{} landed on {} using {} fuel.\n", s, carrier, fuel);
+  return true;
+}
+
+/**
+ * @brief Land a friendly ship onto another ship or mothership.
  */
 bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
-  double fuel;
-  double Dist;
-
   auto ship2tmp = string_to_shipnum(argv[2]);
   if (!ship2tmp) {
     g.out << std::format("Ship {} wasn't found.\n", argv[2]);
     return false;
   }
 
-  auto ship2no = *ship2tmp;
+  const auto ship2no = *ship2tmp;
 
   try {
     return g.entity_manager.with_ship(ship2no, [&](const Ship& s2_check) {
@@ -42,91 +130,13 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
         return false;
       }
       if (s.is_landed()) {
-        if (!s2_check.is_landed()) {
-          g.out << std::format("{} is not landed on a planet.\n", s2_check);
-          return false;
-        }
-        if (s2_check.storbits() != s.storbits()) {
-          g.out << "These ships are not in the same star system.\n";
-          return false;
-        }
-        if (s2_check.pnumorbits() != s.pnumorbits()) {
-          g.out << "These ships are not landed on the same planet.\n";
-          return false;
-        }
-        if (s2_check.land_coords() != s.land_coords()) {
-          g.out << "These ships are not in the same sector.\n";
-          return false;
-        }
-        if (s.on()) {
-          g.out << std::format("{} must be turned off before loading.\n", s);
-          return false;
-        }
-        if (s.size() > s2_check.hanger_space()) {
-          g.out << std::format("Mothership does not have {} hanger space "
-                               "available to load ship.\n",
-                               s.size());
-          return false;
-        }
-        /* ok, load 'em up */
-        auto dock_res = g.entity_manager.dock_carrier(s.number(), ship2no);
-        if (!dock_res) {
-          if (dock_res.error() == DockError::CycleDetected) {
-            g.out << "Cannot dock a ship into its own parasite craft.\n";
-          }
-          return false;
-        }
-        s.dock_into_carrier(ship2no);
-        fuel = 0.0;
-        g.out << std::format("{} loaded onto {} using {} fuel.\n", s, s2_check,
-                             fuel);
-        return true;
-      } else if (s.docked()) {
+        return load_landed_onto_mothership(g, s, s2_check);
+      }
+      if (s.docked()) {
         g.out << std::format("{} is already docked or landed.\n", s);
         return false;
-      } else {
-        if (s.whatorbits() != s2_check.whatorbits()) {
-          g.out << "Those ships are not in the same scope.\n";
-          return false;
-        }
-
-        Dist = s2_check.coordinates().distance_to(s.coordinates());
-        if (Dist > DIST_TO_DOCK) {
-          g.out << std::format("{} must be {} or closer to {}.\n", s,
-                               DIST_TO_DOCK, s2_check);
-          return false;
-        }
-        fuel = 0.05 + Dist * 0.025 * std::sqrt(s.mass());
-        if (s.fuel() < fuel) {
-          g.out << "Not enough fuel.\n";
-          return false;
-        }
-        if (s.size() > s2_check.hanger_space()) {
-          g.out << std::format("Mothership does not have {} hanger space "
-                               "available to load ship.\n",
-                               s.size());
-          return false;
-        }
-        use_fuel(s, fuel);
-
-        if (s.whatorbits() != ScopeLevel::LEVEL_PLAN &&
-            s.whatorbits() != ScopeLevel::LEVEL_STAR) {
-          g.out << "Ship is not in planet or star scope.\n";
-          return false;
-        }
-
-        auto dock_res = g.entity_manager.dock_carrier(s.number(), ship2no);
-        if (!dock_res) {
-          if (dock_res.error() == DockError::CycleDetected) {
-            g.out << "Cannot dock a ship into its own parasite craft.\n";
-          }
-          return false;
-        }
-        s.dock_into_carrier(ship2no);
-        g.out << std::format("{} landed on {} using {} fuel.\n", s, s2_check,
-                             fuel);
-        return true;
       }
+      return land_spaceborne_on_carrier(g, s, s2_check);
     });
   } catch (const EntityNotFoundError&) {
     g.out << std::format("Ship #{} wasn't found.\n", ship2no);
@@ -135,15 +145,122 @@ bool land_friendly(const command_t& argv, GameObj& g, Ship& s) {
 }
 
 /**
+ * @brief Resolve planetary surface-to-orbit defensive gun fire against a
+ * descending ship.
+ */
+void resolve_planetary_defense_fire(GameObj& g, Ship& s, const Star& star,
+                                    Planet& p) {
+  if (!DEFENSE) return;
+
+  const player_t playernum = g.player();
+  for (const Race& alien_race : RaceList::readonly(g.entity_manager)) {
+    const player_t i = alien_race.Playernum;
+    if (!s.alive() || i == playernum) continue;
+    if (!p.info(i).popn || !p.info(i).guns || !p.info(i).destruct) continue;
+    if (!alien_race.is_at_war_with(s.owner())) continue;
+
+    g.entity_manager.mutate_race(i, [&](Race& alien) {
+      const int strength = std::min(static_cast<int>(p.info(i).guns),
+                                    static_cast<int>(p.info(i).destruct));
+      if (strength <= 0) return;
+
+      if (auto p2s_opt =
+              shoot_planet_to_ship(g.entity_manager, alien, s, strength)) {
+        const auto& [p_damage, p_short, p_long] = *p2s_opt;
+        post(g.entity_manager, p_short, NewsType::COMBAT);
+        notify_star(g.session_registry, g.entity_manager, 0, 0, s.storbits(),
+                    p_short);
+        warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
+                    p_long);
+        g.session_registry.notify_player(s.owner(), s.governor(), p_long);
+      }
+      p.info(i).destruct -= strength;
+    });
+  }
+}
+
+/**
+ * @brief Resolve ship crash impact, collateral sector destruction, and player
+ * notifications.
+ */
+void handle_landing_crash(GameObj& g, Ship& s, const Star& star, Planet& p,
+                          Coordinates target_coords, double fuel, int roll) {
+  int numdest = 0;
+  g.entity_manager.mutate_sectormap(
+      s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {
+        auto result_opt = shoot_ship_to_planet(
+            g.entity_manager, s, p,
+            round_rand(static_cast<double>(s.destruct()) / 3.0), target_coords,
+            smap, 0, guntype_t::HEAVY);
+        numdest = result_opt ? result_opt->sectors_destroyed : 0;
+      });
+
+  const auto buf =
+      std::format("BOOM!! {} crashes on sector {} with blast radius of {}.\n",
+                  s, target_coords, numdest);
+  for (const Race& race : RaceList::readonly(g.entity_manager)) {
+    const player_t i = race.Playernum;
+    if (p.info(i).numsectsowned || i == g.player()) {
+      warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
+                  buf);
+    }
+  }
+
+  if (roll) {
+    g.out << std::format("Ship damage {}% (you rolled a {})\n", s.damage(),
+                         roll);
+  } else {
+    g.out << std::format("You had {:.1f}f while the landing required {:.1f}f\n",
+                         s.fuel(), fuel);
+  }
+  g.entity_manager.kill_ship(s.owner(), s);
+}
+
+/**
+ * @brief Report sector terrain/ownership status and notify planetary neighbors
+ * of touchdown.
+ */
+void report_landing_sector_status(GameObj& g, const Ship& s, const Star& star,
+                                  const Planet& p, Coordinates target_coords) {
+  const player_t playernum = g.player();
+  g.entity_manager.with_sectormap(
+      s.storbits(), s.pnumorbits(), [&](const SectorMap& smap) {
+        const auto& sector = smap.get(target_coords);
+        if (sector.is_wasted()) {
+          g.out << "Warning: That sector is a wasteland!\n";
+          return;
+        }
+        if (sector.get_owner() != 0 && sector.get_owner() != playernum) {
+          g.entity_manager.with_race(
+              sector.get_owner(), [&](const Race& alien) {
+                if (g.race->is_allied_with(sector.get_owner()) &&
+                    alien.is_allied_with(playernum)) {
+                  g.out << std::format(
+                      "You have landed on allied sector ({}).\n", alien.name);
+                } else {
+                  g.out << std::format(
+                      "You have landed on an alien sector ({}).\n", alien.name);
+                }
+              });
+        }
+      });
+
+  const auto landing_msg = std::format(
+      "{} observed landing on sector {},planet /{}/{}.\n", s, s.land_coords(),
+      star.get_name(), star.get_planet_name(s.pnumorbits()));
+  for (const Race& race : RaceList::readonly(g.entity_manager)) {
+    const player_t i = race.Playernum;
+    if (p.info(i).numsectsowned && i != playernum) {
+      g.session_registry.notify_player(i, star.governor(i), landing_msg);
+    }
+  }
+  g.out << std::format("{} landed on planet.\n", s);
+}
+
+/**
  * @brief Lands a ship on a planet.
  */
 bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
-  player_t Playernum = g.player();
-  int numdest = 0;
-  int strength;
-  double fuel;
-  double Dist;
-
   if (s.docked()) {
     g.out << std::format("{} is docked.\n", s);
     return false;
@@ -173,141 +290,54 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
 
   const auto& star = *g.entity_manager.peek_star(s.storbits());
 
-  if (s.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-    if (!g.deduct_univ_ap(1)) {
-      g.out << "You need 1 universe action point.\n";
-      return false;
-    }
-  } else {
-    if (!g.deduct_ap(s.storbits(), 1)) {
-      g.out << "You don't have 1 action points there.\n";
-      return false;
-    }
-  }
-
   bool ok = false;
   g.entity_manager.mutate_planet(s.storbits(), s.pnumorbits(), [&](Planet& p) {
     g.out << std::format("Planet /{}/{} has gravity field of {:.2f}.\n",
                          star.get_name(), star.get_planet_name(s.pnumorbits()),
                          p.gravity());
 
-    Dist = s.coordinates().distance_to(p.absolute_coordinates(star));
-    g.out << std::format("Distance to planet: {:.2f}.\n", Dist);
+    const double dist =
+        s.coordinates().distance_to(p.absolute_coordinates(star));
+    g.out << std::format("Distance to planet: {:.2f}.\n", dist);
 
-    if (Dist > DIST_TO_LAND) {
+    if (dist > DIST_TO_LAND) {
       g.out << std::format(
           "{} must be {:.3g} or closer to the planet ({:.2f}).\n", s,
-          DIST_TO_LAND, Dist);
+          DIST_TO_LAND, dist);
       return;
     }
-
-    fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
 
     if (!p.is_valid(target_coords)) {
       g.out << "Illegal coordinates.\n";
       return;
     }
 
-    if (DEFENSE) {
-      for (const Race& alien_race : RaceList::readonly(g.entity_manager)) {
-        const auto i = alien_race.Playernum;
-        if (s.alive() && i != Playernum && p.info(i).popn && p.info(i).guns &&
-            p.info(i).destruct) {
-          if (alien_race.is_at_war_with(s.owner())) {
-            g.entity_manager.mutate_race(i, [&](Race& alien) {
-              strength = MIN((int)p.info(i).guns, (int)p.info(i).destruct);
-              if (strength) {
-                if (auto p2s_opt = shoot_planet_to_ship(g.entity_manager, alien,
-                                                        s, strength)) {
-                  auto [p_damage, p_short, p_long] = *p2s_opt;
-                  post(g.entity_manager, p_short, NewsType::COMBAT);
-                  notify_star(g.session_registry, g.entity_manager, 0, 0,
-                              s.storbits(), p_short);
-                  warn_player(g.session_registry, g.entity_manager, i,
-                              star.governor(i), p_long);
-                  g.session_registry.notify_player(s.owner(), s.governor(),
-                                                   p_long);
-                }
-                p.info(i).destruct -= strength;
-              }
-            });
-          }
-        }
-      }
-      if (!s.alive()) {
-        return;
-      }
+    if (!g.deduct_ap(s.storbits(), 1)) {
+      g.out << "You don't have 1 action points there.\n";
+      return;
+    }
+
+    ok = true;
+    const double fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
+
+    resolve_planetary_defense_fire(g, s, star, p);
+    if (!s.alive()) {
+      return;
     }
 
     if (auto [did_crash, roll] = crash(s, fuel); did_crash) {
-      g.entity_manager.mutate_sectormap(
-          s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {
-            auto result_opt = shoot_ship_to_planet(
-                g.entity_manager, s, p, round_rand((double)(s.destruct()) / 3.),
-                target_coords, smap, 0, guntype_t::HEAVY);
-            numdest = result_opt ? result_opt->sectors_destroyed : 0;
-          });
-      auto buf = std::format(
-          "BOOM!! {} crashes on sector {} with blast radius of {}.\n", s,
-          target_coords, numdest);
-      for (const Race& race : RaceList::readonly(g.entity_manager)) {
-        const auto i = race.Playernum;
-        if (p.info(i).numsectsowned || i == Playernum)
-          warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
-                      buf);
-      }
-      if (roll)
-        g.out << std::format("Ship damage {}% (you rolled a {})\n",
-                             (int)s.damage(), roll);
-      else
-        g.out << std::format(
-            "You had {:.1f}f while the landing required {:.1f}f\n", s.fuel(),
-            fuel);
-      g.entity_manager.kill_ship(s.owner(), s);
+      handle_landing_crash(g, s, star, p, target_coords, fuel, roll);
       return;
-    } else {
-      s.set_land_coords(target_coords);
-      s.set_coordinates(p.absolute_coordinates(star));
-      use_fuel(s, fuel);
-      s.land_on_planet();
-      s.deststar() = s.storbits();
-      s.destpnum() = s.pnumorbits();
     }
 
-    g.entity_manager.with_sectormap(
-        s.storbits(), s.pnumorbits(), [&](const SectorMap& smap) {
-          const auto& sector = smap.get(target_coords);
+    s.set_land_coords(target_coords);
+    s.set_coordinates(p.absolute_coordinates(star));
+    use_fuel(s, fuel);
+    s.land_on_planet();
+    s.deststar() = s.storbits();
+    s.destpnum() = s.pnumorbits();
 
-          if (sector.is_wasted()) {
-            g.out << "Warning: That sector is a wasteland!\n";
-          } else if (sector.get_owner() != 0 &&
-                     sector.get_owner() != Playernum) {
-            g.entity_manager.with_race(
-                sector.get_owner(), [&](const Race& alien) {
-                  if (!(g.race->is_allied_with(sector.get_owner()) &&
-                        alien.is_allied_with(Playernum))) {
-                    g.out << std::format(
-                        "You have landed on an alien sector ({}).\n",
-                        alien.name);
-                  } else {
-                    g.out << std::format(
-                        "You have landed on allied sector ({}).\n", alien.name);
-                  }
-                });
-          }
-        });
-
-    auto landing_msg = std::format(
-        "{} observed landing on sector {},planet /{}/{}.\n", s, s.land_coords(),
-        star.get_name(), star.get_planet_name(s.pnumorbits()));
-    for (const Race& race : RaceList::readonly(g.entity_manager)) {
-      const auto i = race.Playernum;
-      if (p.info(i).numsectsowned && i != Playernum) {
-        g.session_registry.notify_player(i, star.governor(i), landing_msg);
-      }
-    }
-    g.out << std::format("{} landed on planet.\n", s);
-    ok = true;
+    report_landing_sector_status(g, s, star, p, target_coords);
   });
   return ok;
 }
@@ -316,7 +346,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
 namespace GB::commands {
 
 bool land(const command_t& argv, GameObj& g) {
-  governor_t Governor = g.governor();
+  const governor_t governor = g.governor();
   bool any_landed = false;
 
   ShipList ships(g);
@@ -325,7 +355,7 @@ bool land(const command_t& argv, GameObj& g) {
     Ship& s = *ship_handle;
 
     if (!GB::ship_matches_filter(argv[1], s)) continue;
-    if (!authorized(Governor, s)) continue;
+    if (!authorized(governor, s)) continue;
 
     if (s.is_overloaded()) {
       g.out << std::format("{} is too overloaded to land.\n", s);

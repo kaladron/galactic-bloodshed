@@ -10,7 +10,7 @@ Original C client: gbII (circa 1990-1993)
 Python port: 2025
 """
 
-__version__ = "0.1.0"
+__version__ = "0.0.0-dev"
 
 # Export main classes for convenient imports
 from .models import (

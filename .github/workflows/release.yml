@@ -52,9 +52,12 @@ jobs:
 
       - name: Configure CMake (Release)
         run: |
+          RELEASE_VER="${GITHUB_REF_NAME#v}"
+          echo "RELEASE_VER=${RELEASE_VER}" >> "${GITHUB_ENV}"
           cmake -S . -G Ninja -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr \
+            -DGB_RELEASE_VERSION="${RELEASE_VER}" \
             -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" \
             -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION}"
 
@@ -79,6 +82,17 @@ jobs:
           # Check executables
           dpkg -c "${DEB_FILE}" | grep -q "./usr/bin/GB" || { echo "❌ Missing /usr/bin/GB"; exit 1; }
           dpkg -c "${DEB_FILE}" | grep -q "./usr/bin/makeuniv" || { echo "❌ Missing /usr/bin/makeuniv"; exit 1; }
+          dpkg -c "${DEB_FILE}" | grep -q "./usr/bin/enrol" || { echo "❌ Missing /usr/bin/enrol"; exit 1; }
+          dpkg -c "${DEB_FILE}" | grep -q "./usr/bin/racegen" || { echo "❌ Missing /usr/bin/racegen"; exit 1; }
+          
+          # Verify baked version strings across all executables
+          for bin in GB makeuniv enrol racegen; do
+            BIN_VER=$("./build/gb/${bin}" --version)
+            if [ "${BIN_VER}" != "${bin} ${RELEASE_VER}" ]; then
+              echo "❌ Version mismatch for ${bin}: expected '${bin} ${RELEASE_VER}', got '${BIN_VER}'"
+              exit 1
+            fi
+          done
           
           # Check star and planet lists
           dpkg -c "${DEB_FILE}" | grep -q "./usr/share/galactic-bloodshed/star.list" || { echo "❌ Missing star.list"; exit 1; }
@@ -95,7 +109,7 @@ jobs:
           # Check state directory
           dpkg -c "${DEB_FILE}" | grep -q "./var/lib/galactic-bloodshed" || { echo "❌ Missing /var/lib/galactic-bloodshed"; exit 1; }
           
-          echo "✅ All essential executables, catalogs, help manuals, and state paths verified."
+          echo "✅ All essential executables, baked versions, catalogs, help manuals, and state paths verified."
 
       - name: Create Binary and Source Tarballs (.tar.gz)
         run: |
@@ -104,8 +118,9 @@ jobs:
           cp build/*-Linux-*.tar.gz dist/
 
           # Source tarball (embed VERSION so offline builds preserve SemVer)
-          git describe --tags --always > VERSION
+          echo "${RELEASE_VER}" > VERSION
           cpack --config build/CPackSourceConfig.cmake
+          rm -f VERSION
           mv galactic-bloodshed-*-source.tar.gz dist/ 2>/dev/null || mv build/galactic-bloodshed-*-source.tar.gz dist/ 2>/dev/null || true
 
       - name: Generate SPDX SBOM (Syft)

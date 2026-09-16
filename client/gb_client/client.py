@@ -23,7 +23,7 @@ from .protocol import CSPProtocol, MapParser, OrbitMapParser, SurveyParser
 from .commands import CommandProcessor
 
 
-__version__ = "0.1.0"
+from . import __version__
 
 
 class GBClient:

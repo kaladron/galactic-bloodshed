@@ -26,7 +26,7 @@ gitGraph
 ```
 
 ### Branches
-- **`main`**: Active development branch. All feature PRs and general development land here. Unreleased development builds automatically identify as `0.0.0-dev+<commit>` in CMake.
+- **`main`**: Active development branch. All feature PRs and general development land here. Unreleased development builds automatically identify as `0.0.0-dev` in CMake and across all compiled binaries.
 - **`release/vX.Y` (e.g. `release/v0.1`)**: Stabilization branches cut from `main` when a version is feature-complete. Only bug fixes, packaging fixes, and release documentation land here.
 - **Point Releases (`vX.Y.Z`)**: Tags cut directly from the corresponding `release/vX.Y` branch (e.g. `v0.1.0`, `v0.1.1`).
 - **Fix Synchronization**: Bug fixes can land on `main` and be cherry-picked to `release/vX.Y` (or vice-versa).
@@ -71,12 +71,45 @@ Pushing the tag triggers the `Release` workflow, which compiles, packages, attes
 
 ---
 
+### Method C: Cutting a Bugfix / Point Release (`vX.Y.Z`)
+
+When a bug is discovered in an existing release series (e.g. `v0.1.0`), fixes are backported to the corresponding `release/vX.Y` branch and released as a new patch tag (e.g. `v0.1.1`):
+
+1. **Land the fix on `main` first** (including unit tests) so trunk always has the fix and passes CI.
+2. **Cherry-pick the fix onto the release branch**:
+   ```bash
+   git fetch origin
+   git checkout release/v0.1
+   git pull origin release/v0.1
+   git cherry-pick -x <commit-sha>
+   ```
+   *(Alternatively, if the bug only exists on `release/v0.1`, commit the fix directly to `release/v0.1` and cherry-pick it to `main` if applicable.)*
+3. **Verify the build and test suite locally**:
+   ```bash
+   ninja -C build && (cd build && ctest --output-on-failure)
+   ```
+4. **Push the updated release branch**:
+   ```bash
+   git push origin release/v0.1
+   ```
+5. **Tag and publish the point release (`v0.1.1`)**:
+   - **Via Git CLI**:
+     ```bash
+     git tag -a v0.1.1 -m "Release v0.1.1"
+     git push origin v0.1.1
+     ```
+   - **Via GitHub Web UI**: Follow **Method A** above, entering `v0.1.1` as the new tag and selecting `release/v0.1` in the **Target** branch dropdown.
+
+The `Release` workflow will automatically extract `0.1.1` from the `v0.1.1` tag, bake `0.1.1` into all compiled binaries via `-DGB_RELEASE_VERSION=0.1.1`, verify `--version` output across all packaged binaries, and publish the `v0.1.1` artifacts.
+
+---
+
 ## 3. Automated Release Pipeline
 
 When triggered by a tag push (`v*`) or a published release, the `.github/workflows/release.yml` workflow automatically runs:
 
 1. **Toolchain Setup**: Configures the Clang/LLVM toolchain inside the container (`ghcr.io/kaladron/cpp-image/dev-env:latest`) parameterized via `LLVM_VERSION: "22"`.
-2. **Dynamic SemVer Discovery**: CMake queries `git describe` to detect the release version from the tag, sanitizing the numeric `X.Y.Z` for `project(VERSION ...)` and setting `PROJECT_VERSION_FULL`.
+2. **Release Version Injection**: Extracts the release version from `GITHUB_REF_NAME` and passes `-DGB_RELEASE_VERSION=<version>` to CMake, baking the version into `GB_VERSION` across all compiled binaries (`GB`, `makeuniv`, `enrol`, `racegen`) while keeping `0.0.0-dev` for non-release builds.
 3. **Test Suite Gate**: Runs `ctest --output-on-failure`. All unit and integration tests must pass before any packaging begins.
 4. **Standalone Debian Package (`.deb`)**:
    - Generated via CPack (`cpack -G DEB`).
@@ -84,7 +117,7 @@ When triggered by a tag push (`v*`) or a published release, the `.github/workflo
    - The only runtime package dependency is **`libc6`** (`Depends: libc6 (>= 2.38)`).
    - Populates `/usr/bin/` (`GB`, `makeuniv`, `enrol`, `racegen`), `/usr/share/galactic-bloodshed/` (`star.list`, `planet.list`, `exam.dat`, `ship.dat`), `/usr/share/galactic-bloodshed/help/` (all 136 help manuals), and `/var/lib/galactic-bloodshed/` (game database directory).
 5. **Automated Package Verification**:
-   - `dpkg -c` checks that executables, catalogs, all 136 help files, and `/var/lib/galactic-bloodshed/` are present in the package before proceeding.
+   - `dpkg -c` checks that executables, catalogs, all 136 help files, and `/var/lib/galactic-bloodshed/` are present in the package, and verifies that each binary outputs the expected release version via `--version`.
 6. **Binary & Source Tarballs**:
    - Standalone binary tarball (`galactic-bloodshed-<version>-Linux-x86_64.tar.gz`).
    - Source archive (`galactic-bloodshed-<version>-source.tar.gz`) with an embedded `VERSION` file so offline builds preserve SemVer.

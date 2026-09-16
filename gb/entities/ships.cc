@@ -160,7 +160,7 @@ unsigned int ship_size(const Ship& s) {
 double cost(const Ship& s) {
   /* compute how much it costs to build this ship */
   double factor = 0.0;
-  factor += static_cast<double>(s.get_template().build_cost);
+  factor += static_cast<double>(ship_template(s.build_type()).build_cost);
   factor += GUN_COST * static_cast<double>(s.primary_battery().count);
   factor += GUN_COST * static_cast<double>(s.secondary_battery().count);
   factor += CREW_COST * (double)s.max_crew();
@@ -370,7 +370,7 @@ static int do_merchant(EntityManager& em, Ship& s, Planet& p,
  * @return The complexity value of the ship.
  */
 double complexity(const Ship& s) {
-  const auto& tmpl = s.get_template();
+  const auto& tmpl = ship_template(s.build_type());
   SystemCost cost;
 
   cost.add(s.primary_battery().count, tmpl.max_guns);
@@ -436,6 +436,36 @@ bool Ship::check_commandable(GameObj& g) const {
   }
 
   return true;
+}
+
+void Ship::set_factory_blueprint(ShipType build_type,
+                                 const Race* race) noexcept {
+  const auto& itmpl = ship_template(build_type);
+  data_.build_type = build_type;
+  data_.armor = itmpl.base_armor;
+  data_.guns = ActiveBattery::NONE;
+  data_.primary_battery =
+      GunBattery::create(itmpl.max_guns, shipdata_primary(build_type));
+  data_.secondary_battery =
+      GunBattery::create(itmpl.max_guns, shipdata_secondary(build_type));
+  data_.max_crew = itmpl.max_crew;
+  data_.max_resource = itmpl.max_resource;
+  data_.max_hanger = itmpl.max_hangar;
+  data_.max_fuel = itmpl.max_fuel;
+  data_.max_destruct = itmpl.max_destruct;
+  data_.max_speed = itmpl.base_speed;
+  data_.mount = itmpl.can_mount && (!race || race->discoveries.crystal);
+  data_.hyper_drive.has =
+      itmpl.can_hyperjump && (!race || race->discoveries.hyperdrive);
+  data_.cloak = itmpl.can_cloak && (!race || race->discoveries.cloak);
+  data_.laser = itmpl.can_mount_laser && (!race || race->discoveries.laser);
+  data_.cew = 0;
+  data_.mode = 0;
+  data_.size = calculate_size();
+  data_.build_cost =
+      (race && race->God) ? 0 : static_cast<resource_t>(::cost(*this));
+  data_.base_mass = base_mass();
+  data_.complexity = ::complexity(*this);
 }
 
 void Ship::initialize_constructed_state(const Race& race, governor_t gov,

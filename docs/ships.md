@@ -72,6 +72,19 @@ Starships and orbital structures are constructed through three distinct manufact
    - **Hangar Assembly**: Carriers, Habitats, and Orbital Stations assemble smaller vessels directly inside their internal hangars ($\Delta \text{Hangar} = \text{Size}_{\text{ship}}$) using onboard resource stores.
    - **External Orbital Deployment**: Spaceborne Shuttles and Cargo ships construct large orbital structures (such as Space Stations, Habitats, and Orbital Mirrors) directly into the surrounding orbital reference frame without consuming internal hangar capacity.
 
+### Custom Ship Design and Factory Programming (`make` and `modify`)
+Mobile Factories (`F`) can be programmed to manufacture custom-engineered starships tailored to an empire's tactical doctrine:
+
+- **Factory Offline Requirement**: A factory's design specifications can only be altered while the factory is **offline** (`order <factory> off`). Once activated (`order <factory> on`), its blueprint is locked and cannot be modified until powered down.
+- **Selecting a Base Hull (`make <type>`)**: Issuing `make <type>` loads the baseline hull specifications for the target ship class into the factory's design buffer.
+- **Customizing Hull Specifications (`modify <attribute> [value]`)**: Commanders can customize hull attributes on modifiable templates:
+  - **Structural & Storage Capacities**: `armor` ($0\text{--}100$), `crew`, `cargo`, `fuel`, `destruct`, and `hangar` capacity.
+  - **Propulsion Systems**: Sublight `speed` rating ($0\text{--}9$), `hyperdrive` toggle, and crystal drive `mount` toggle.
+  - **Kinetic Gun Batteries**: `primary` and `secondary` batteries can be configured for weapon `caliber` (`light`, `medium`, or `heavy`) and gun count (`strength`).
+  - **Directed Energy & Confined Energy Weapons**: Standard combat `laser` toggle, plus Confined Energy Weapon (`cew`) `strength` and optimal targeting `range`.
+- **Technological Complexity Scaling**: Customizing a hull beyond its baseline template increases its **Design Complexity**. An empire can only program designs whose complexity does not exceed its current technological level ($\text{Tech}_{\text{empire}} \ge \text{Complexity}$).
+- **Resource Cost Ceiling**: Each structural upgrade, weapon battery, and speed enhancement increases the hull's construction cost (`build_cost`). A factory blueprint cannot exceed the architectural manufacturing ceiling of $65,535$ resource units per vessel.
+
 ### Inter-Ship Cargo and Personnel Logistics (`load`)
 Moored vessels and carrier-berthed craft can transfer raw materials, propellant, munitions, and living populations using shipboard cargo gantries and transporter beams:
 

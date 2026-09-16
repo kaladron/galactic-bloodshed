@@ -175,6 +175,12 @@ TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
 
 TestShipBuilder& TestShipBuilder::with_build_type(ShipType build_type) {
   ship_.build_type = build_type;
+  if (ship_.type == ShipType::OTYPE_FACTORY &&
+      build_type != ShipType::OTYPE_FACTORY) {
+    Ship temp{ship_};
+    temp.set_factory_blueprint(build_type);
+    ship_ = temp.to_struct();
+  }
   return *this;
 }
 

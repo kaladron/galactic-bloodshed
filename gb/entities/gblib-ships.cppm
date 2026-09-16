@@ -2381,6 +2381,18 @@ public:
     return data_.build_type;
   }
 
+  /// \brief Returns whether this factory ship has been programmed with a ship
+  /// design.
+  [[nodiscard]] bool has_factory_design() const noexcept {
+    return data_.type == ShipType::OTYPE_FACTORY &&
+           data_.build_type != ShipType::OTYPE_FACTORY;
+  }
+
+  /// \brief Initializes this factory ship's blueprint attributes from a target
+  /// ship class template, applying optional racial technology discoveries.
+  void set_factory_blueprint(ShipType build_type,
+                             const Race* race = nullptr) noexcept;
+
   [[nodiscard]] resource_t build_cost() const {
     return data_.build_cost;
   }

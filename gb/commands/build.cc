@@ -296,6 +296,10 @@ validate_factory_ship_build(const command_t& argv, GameObj& g,
     g.out << "Give a positive number of builds.\n";
     return std::nullopt;
   }
+  if (!builder.has_factory_design()) {
+    g.out << "This factory has not been designated to build a ship type.\n";
+    return std::nullopt;
+  }
   if (!builder.is_landed()) {
     g.out << "Factories can only build when landed on a planet.\n";
     return std::nullopt;

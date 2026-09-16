@@ -7,24 +7,336 @@ module;
 
 import gb.entities;
 import gb.services;
+import scnlib;
 import std;
 #undef stdout
 
 module commands;
 
 namespace GB::commands {
-bool make_mod(const command_t& argv, GameObj& g) {
-  int mode;
-  if (argv[0] == "make")
-    mode = 0;
-  else
-    mode = 1 /* modify */;
-  int value;
-  unsigned short size;
-  char shipc;
-  double cost0;
 
+namespace {
+
+std::optional<int> parse_non_negative_int(std::string_view arg) {
+  auto res = scn::scan<int>(arg, "{}");
+  if (!res || res->value() < 0) {
+    return std::nullopt;
+  }
+  return res->value();
+}
+
+std::optional<guntype_t> parse_caliber_name(std::string_view name) {
+  if (name == "light") return guntype_t::LIGHT;
+  if (name == "medium") return guntype_t::MEDIUM;
+  if (name == "heavy") return guntype_t::HEAVY;
+  return std::nullopt;
+}
+
+bool print_factory_design_specs(GameObj& g, const Ship& dirship,
+                                const Race& race) {
+  if (!dirship.has_factory_design()) {
+    g.out << "No ship type specified.\n";
+    return false;
+  }
+  g.out << "  --- Current Production Specifications ---\n";
+  const auto& btmpl = ship_template(dirship.build_type());
+  g.out << std::format("{}\t\t\tArmor:    {:4}\t\tGuns:",
+                       (dirship.on() ? "Online" : "Offline"), dirship.armor());
+  if (btmpl.has_primary() && dirship.primary_battery().has_guns()) {
+    g.out << std::format("{:3}{:c}", dirship.primary_battery().count,
+                         caliber_char(dirship.primary_battery().caliber));
+  }
+  if (btmpl.has_secondary() && dirship.secondary_battery().has_guns()) {
+    g.out << std::format("/{:}{:c}", dirship.secondary_battery().count,
+                         caliber_char(dirship.secondary_battery().caliber));
+  }
+  g.out << "\n";
+  g.out << std::format("Ship:  {:<16.16s}\tCrew:     {:4}", btmpl.name,
+                       dirship.max_crew());
+  if (btmpl.can_mount) {
+    g.out << std::format("\t\tXtal Mount: {}\n",
+                         (dirship.mount() ? "yes" : "no"));
+  } else {
+    g.out << "\n";
+  }
+  g.out << std::format("Class: {}\t\tFuel:     {:4}", dirship.shipclass(),
+                       dirship.max_fuel());
+  if (btmpl.can_hyperjump) {
+    g.out << std::format("\t\tHyperdrive: {}\n",
+                         (dirship.hyper_drive().has ? "yes" : "no"));
+  } else {
+    g.out << "\n";
+  }
+  g.out << std::format("Cost:  {} r\t\tCargo:    {:4}", dirship.build_cost(),
+                       dirship.max_resource());
+  if (btmpl.can_mount_laser) {
+    g.out << std::format("\t\tCombat Lasers: {}\n",
+                         (dirship.laser() ? "yes" : "no"));
+  } else {
+    g.out << "\n";
+  }
+  g.out << std::format("Mass:  {:.1f}\t\tHanger:   {:4}", dirship.base_mass(),
+                       dirship.max_hanger());
+  if (btmpl.has_cew) {
+    g.out << std::format("\t\tCEW: {}\n", (dirship.cew() ? "yes" : "no"));
+  } else {
+    g.out << "\n";
+  }
+  g.out << std::format("Size:  {:<6}\t\tDestruct: {:4}", dirship.size(),
+                       dirship.max_destruct());
+  if (btmpl.has_cew && dirship.cew()) {
+    g.out << std::format("\t\t   Opt Range: {:4}\n", dirship.cew_range());
+  } else {
+    g.out << "\n";
+  }
+  g.out << std::format("Tech:  {:.1f} ({:.1f})\tSpeed:    {:4}",
+                       dirship.complexity(), race.tech, dirship.max_speed());
+  if (btmpl.has_cew && dirship.cew()) {
+    g.out << std::format("\t\t   Energy:    {:4d}\n", dirship.cew());
+  } else {
+    g.out << "\n";
+  }
+
+  if (race.tech < dirship.complexity()) {
+    g.out << "Your engineering capability is not "
+             "advanced enough to produce this "
+             "design.\n";
+  }
+  return true;
+}
+
+bool designate_factory_ship_type(GameObj& g, Ship& dirship, const Race& race,
+                                 char shipc) {
+  auto i = get_build_type(shipc);
+  if ((!i) || ((*i == ShipType::STYPE_POD) && (!race.pods))) {
+    g.out << "Illegal ship letter.\n";
+    return false;
+  }
+  const auto& itmpl = ship_template(*i);
+  if (itmpl.is_god_only && !race.God) {
+    g.out << "Nice try!\n";
+    return false;
+  }
+  if (!itmpl.can_be_built_by(ship_template(ShipType::OTYPE_FACTORY))) {
+    g.out << "This kind of ship does not require a factory to construct.\n";
+    return false;
+  }
+
+  dirship.set_factory_blueprint(*i, &race);
+  dirship.shipclass() = std::format("mod {}", g.shipno());
+
+  g.out << std::format("Factory designated to produce {}s.\n", itmpl.name);
+  g.out << std::format("Design complexity {:.1f} ({:.1f}).\n",
+                       dirship.complexity(), race.tech);
+  if (dirship.complexity() > race.tech) {
+    g.out << "You can't produce this design yet!\n";
+  }
+  return true;
+}
+
+bool modify_battery(GameObj& g, Ship& dirship, const command_t& argv,
+                    bool is_primary) {
+  if (argv.size() < 4) {
+    g.out << "No such gun characteristic.\n";
+    return false;
+  }
+  if (argv[2] == "strength") {
+    auto strength = parse_non_negative_int(argv[3]);
+    if (!strength) {
+      g.out << "That's a ridiculous setting.\n";
+      return false;
+    }
+    if (is_primary) {
+      dirship.set_primary_battery(*strength, dirship.primary_battery().caliber);
+    } else {
+      dirship.set_secondary_battery(*strength,
+                                    dirship.secondary_battery().caliber);
+    }
+    return true;
+  }
+  if (argv[2] == "caliber") {
+    auto new_caliber = parse_caliber_name(argv[3]);
+    if (!new_caliber) {
+      g.out << "No such caliber.\n";
+      return false;
+    }
+    if (is_primary) {
+      dirship.set_primary_battery(
+          dirship.primary_battery().count,
+          std::min(shipdata_primary(dirship.build_type()), *new_caliber));
+    } else {
+      dirship.set_secondary_battery(
+          dirship.secondary_battery().count,
+          std::min(shipdata_secondary(dirship.build_type()), *new_caliber));
+    }
+    return true;
+  }
+  g.out << "No such gun characteristic.\n";
+  return false;
+}
+
+bool modify_cew(GameObj& g, Ship& dirship, const Race& race,
+                const command_t& argv) {
+  if (!race.discoveries.cew) {
+    g.out << "Your race does not understand confined energy weapons.\n";
+    return false;
+  }
+  if (argv.size() < 4) {
+    g.out << "No such option for CEWs.\n";
+    return false;
+  }
+  auto value = parse_non_negative_int(argv[3]);
+  if (!value) {
+    g.out << "That's a ridiculous setting.\n";
+    return false;
+  }
+  if (argv[2] == "strength") {
+    dirship.cew() = *value;
+    return true;
+  }
+  if (argv[2] == "range") {
+    dirship.cew_range() = *value;
+    return true;
+  }
+  g.out << "No such option for CEWs.\n";
+  return false;
+}
+
+bool modify_simple_attribute(GameObj& g, Ship& dirship, const Race& race,
+                             const ShipTemplate& btmpl, const command_t& argv) {
+  std::string_view attr = argv[1];
+  if (attr == "mount" && btmpl.can_mount && race.discoveries.crystal) {
+    dirship.mount() = !dirship.mount();
+    return true;
+  }
+  if (attr == "hyperdrive" && btmpl.can_hyperjump &&
+      race.discoveries.hyperdrive) {
+    dirship.hyper_drive().has = !dirship.hyper_drive().has;
+    return true;
+  }
+  if (attr == "laser" && btmpl.can_mount_laser) {
+    if (!race.discoveries.laser) {
+      g.out << "Your race does not understand lasers yet.\n";
+      return false;
+    }
+    dirship.laser() = !dirship.laser();
+    return true;
+  }
+
+  int value = 0;
+  if (argv.size() >= 3) {
+    auto parsed = parse_non_negative_int(argv[2]);
+    if (!parsed) {
+      g.out << "That's a ridiculous setting.\n";
+      return false;
+    }
+    value = *parsed;
+  }
+
+  if (attr == "armor") {
+    dirship.armor() = std::min<armor_t>(value, 100);
+    return true;
+  }
+  if (attr == "crew" && btmpl.max_crew) {
+    dirship.max_crew() = std::min<population_t>(value, 10000);
+    return true;
+  }
+  if ((attr == "cargo" || attr == "resource") && btmpl.max_resource) {
+    dirship.max_resource() = std::min<resource_t>(value, 10000);
+    return true;
+  }
+  if (attr == "hanger" && btmpl.max_hangar) {
+    dirship.max_hanger() = std::min<hangar_t>(value, 10000);
+    return true;
+  }
+  if (attr == "fuel" && btmpl.max_fuel) {
+    dirship.max_fuel() = std::min<fuel_t>(value, 10000);
+    return true;
+  }
+  if (attr == "destruct" && btmpl.max_destruct) {
+    dirship.max_destruct() = std::min<resource_t>(value, 10000);
+    return true;
+  }
+  if (attr == "speed" && btmpl.base_speed) {
+    dirship.max_speed() = std::clamp<speed_t>(value, 1, 9);
+    return true;
+  }
+
+  g.out << "That characteristic either doesn't exist or can't be modified.\n";
+  return false;
+}
+
+bool apply_factory_modification(GameObj& g, Ship& dirship, const Race& race,
+                                const command_t& argv) {
+  if (!dirship.has_factory_design()) {
+    g.out << "No ship design specified. Use 'make <ship type>' first.\n";
+    return false;
+  }
+  if (argv.size() < 2) {
+    g.out << "You have to specify the characteristic you wish to modify.\n";
+    return false;
+  }
+
+  const auto& btmpl = ship_template(dirship.build_type());
+  if (!btmpl.can_modify) {
+    if (race.discoveries.hyperdrive) {
+      if (argv[1] == "hyperdrive") {
+        dirship.hyper_drive().has = !dirship.hyper_drive().has;
+        return true;
+      }
+      g.out << "You may only modify hyperdrive installation on this kind of "
+               "ship.\n";
+      return false;
+    }
+    g.out << "Sorry, but you can't modify this ship right now.\n";
+    return false;
+  }
+
+  if (argv[1] == "primary" && btmpl.has_primary()) {
+    return modify_battery(g, dirship, argv, true);
+  }
+  if (argv[1] == "secondary" && btmpl.has_secondary()) {
+    return modify_battery(g, dirship, argv, false);
+  }
+  if (argv[1] == "cew" && btmpl.has_cew) {
+    return modify_cew(g, dirship, race, argv);
+  }
+  return modify_simple_attribute(g, dirship, race, btmpl, argv);
+}
+
+bool finalize_factory_design_stats(GameObj& g, Ship& dirship, const Race& race,
+                                   ship_size_t original_size) {
+  double cost0 = cost(dirship);
+  if (cost0 > 65535.0) {
+    g.out << "Woah!! YOU CHEATER!!!  The max cost allowed "
+             "is 65535!!! I'm Telllllllling!!!\n";
+    dirship.size() = original_size;
+    return false;
+  }
+
+  dirship.build_cost() = race.God ? 0 : static_cast<resource_t>(cost0);
+  g.out << std::format("The current cost of the ship is {} resources.\n",
+                       dirship.build_cost());
+  dirship.size() = dirship.calculate_size();
+  g.out << std::format(
+      "The current base mass of the ship is {:.1f} - size is {}.\n",
+      dirship.base_mass(), dirship.size());
+  dirship.complexity() = complexity(dirship);
+  g.out << std::format("Ship complexity is {:.1f} (you have {:.1f} engineering "
+                       "technology).\n",
+                       dirship.complexity(), race.tech);
+
+  /* Restore size to what it was before.  Maarten */
+  dirship.size() = original_size;
+  return true;
+}
+
+}  // namespace
+
+bool make_mod(const command_t& argv, GameObj& g) {
+  const bool is_make = (argv[0] == "make");
   bool ok = false;
+
   g.entity_manager.mutate_ship(g.shipno(), [&](Ship& dirship) {
     if (!dirship.check_commandable(g)) {
       return;
@@ -39,296 +351,29 @@ bool make_mod(const command_t& argv, GameObj& g) {
     }
     const auto& race = *g.race;
 
-    /* Save  size of the factory, and set it to the
+    /* Save size of the factory, and set it to the
        correct values for the design.  Maarten */
-    size = dirship.size();
-    dirship.size() = ship_size(dirship);
+    const ship_size_t original_size = dirship.size();
+    dirship.size() = dirship.calculate_size();
 
-    if (mode == 0) {
-      if (argv.size() < 2) { /* list the current settings for the factory */
-        if (!dirship.build_type()) {
-          g.out << "No ship type specified.\n";
-          return;
-        }
-        g.out << "  --- Current Production Specifications ---\n";
-        const auto& btmpl = ship_template(dirship.build_type());
-        g.out << std::format("{}\t\t\tArmor:    {:4}\t\tGuns:",
-                             (dirship.on() ? "Online" : "Offline"),
-                             dirship.armor());
-        if (btmpl.has_primary() && dirship.primary_battery().has_guns()) {
-          g.out << std::format("{:3}{:c}", dirship.primary_battery().count,
-                               caliber_char(dirship.primary_battery().caliber));
-        }
-        if (btmpl.has_secondary() && dirship.secondary_battery().has_guns()) {
-          g.out << std::format(
-              "/{:}{:c}", dirship.secondary_battery().count,
-              caliber_char(dirship.secondary_battery().caliber));
-        }
-        g.out << "\n";
-        g.out << std::format("Ship:  {:<16.16s}\tCrew:     {:4}", btmpl.name,
-                             dirship.max_crew());
-        if (btmpl.can_mount) {
-          g.out << std::format("\t\tXtal Mount: {}\n",
-                               (dirship.mount() ? "yes" : "no"));
-        } else {
-          g.out << "\n";
-        }
-        g.out << std::format("Class: {}\t\tFuel:     {:4}", dirship.shipclass(),
-                             dirship.max_fuel());
-        if (btmpl.can_hyperjump) {
-          g.out << std::format("\t\tHyperdrive: {}\n",
-                               (dirship.hyper_drive().has ? "yes" : "no"));
-        } else {
-          g.out << "\n";
-        }
-        g.out << std::format("Cost:  {} r\t\tCargo:    {:4}",
-                             dirship.build_cost(), dirship.max_resource());
-        if (btmpl.can_mount_laser) {
-          g.out << std::format("\t\tCombat Lasers: {}\n",
-                               (dirship.laser() ? "yes" : "no"));
-        } else {
-          g.out << "\n";
-        }
-        g.out << std::format("Mass:  {:.1f}\t\tHanger:   {:4}",
-                             dirship.base_mass(), dirship.max_hanger());
-        if (btmpl.has_cew) {
-          g.out << std::format("\t\tCEW: {}\n", (dirship.cew() ? "yes" : "no"));
-        } else {
-          g.out << "\n";
-        }
-        g.out << std::format("Size:  {:<6}\t\tDestruct: {:4}", dirship.size(),
-                             dirship.max_destruct());
-        if (btmpl.has_cew && dirship.cew()) {
-          g.out << std::format("\t\t   Opt Range: {:4}\n", dirship.cew_range());
-        } else {
-          g.out << "\n";
-        }
-        g.out << std::format("Tech:  {:.1f} ({:.1f})\tSpeed:    {:4}",
-                             dirship.complexity(), race.tech,
-                             dirship.max_speed());
-        if (btmpl.has_cew && dirship.cew()) {
-          g.out << std::format("\t\t   Energy:    {:4d}\n", dirship.cew());
-        } else {
-          g.out << "\n";
-        }
-
-        if (race.tech < dirship.complexity()) {
-          g.out << "Your engineering capability is not "
-                   "advanced enough to produce this "
-                   "design.\n";
-        }
-        dirship.size() = size;
-        ok = true;
-        return;
-      }
-
-      shipc = argv[1][0];
-
-      auto i = get_build_type(shipc);
-
-      if ((!i) || ((*i == ShipType::STYPE_POD) && (!race.pods))) {
-        g.out << "Illegal ship letter.\n";
-        return;
-      }
-      const auto& itmpl = ship_template(*i);
-      if (itmpl.is_god_only && !race.God) {
-        g.out << "Nice try!\n";
-        return;
-      }
-      if (!itmpl.can_be_built_by(ship_template(ShipType::OTYPE_FACTORY))) {
-        g.out << "This kind of ship does not require a factory to construct.\n";
-        return;
-      }
-
-      dirship.build_type() = *i;
-      dirship.armor() = itmpl.base_armor;
-      dirship.guns() =
-          ActiveBattery::NONE; /* this keeps track of the factory status! */
-      dirship.set_primary_battery(itmpl.max_guns, shipdata_primary(*i));
-      dirship.set_secondary_battery(itmpl.max_guns, shipdata_secondary(*i));
-      dirship.max_crew() = itmpl.max_crew;
-      dirship.max_resource() = itmpl.max_resource;
-      dirship.max_hanger() = itmpl.max_hangar;
-      dirship.max_fuel() = itmpl.max_fuel;
-      dirship.max_destruct() = itmpl.max_destruct;
-      dirship.max_speed() = itmpl.base_speed;
-
-      dirship.mount() = itmpl.can_mount * race.discoveries.crystal;
-      dirship.hyper_drive().has =
-          itmpl.can_hyperjump * race.discoveries.hyperdrive;
-      dirship.cloak() = itmpl.can_cloak * race.discoveries.cloak;
-      dirship.laser() = itmpl.can_mount_laser && race.discoveries.laser;
-      dirship.cew() = 0;
-      dirship.mode() = 0;
-
-      dirship.size() = ship_size(dirship);
-      dirship.complexity() = complexity(dirship);
-
-      dirship.shipclass() = std::format("mod {}", g.shipno());
-
-      g.out << std::format("Factory designated to produce {}s.\n", itmpl.name);
-      g.out << std::format("Design complexity {:.1f} ({:.1f}).\n",
-                           dirship.complexity(), race.tech);
-      if (dirship.complexity() > race.tech)
-        g.out << "You can't produce this design yet!\n";
-
-    } else if (mode == 1) {
-      if (!dirship.build_type()) {
-        g.out << "No ship design specified. Use 'make <ship type>' first.\n";
-        return;
-      }
-
+    if (is_make) {
       if (argv.size() < 2) {
-        g.out << "You have to specify the characteristic you wish to modify.\n";
+        ok = print_factory_design_specs(g, dirship, race);
+        dirship.size() = original_size;
         return;
       }
-
-      if (argv.size() == 3)
-        value = std::stoi(argv[2]);
-      else
-        value = 0;
-
-      if (value < 0) {
-        g.out << "That's a ridiculous setting.\n";
-        return;
-      }
-
-      const auto& btmpl = ship_template(dirship.build_type());
-      if (btmpl.can_modify) {
-        if (argv[1] == "armor") {
-          dirship.armor() = std::min<armor_t>(value, 100);
-        } else if (argv[1] == "crew" && btmpl.max_crew) {
-          dirship.max_crew() = std::min<population_t>(value, 10000);
-        } else if ((argv[1] == "cargo" || argv[1] == "resource") &&
-                   btmpl.max_resource) {
-          dirship.max_resource() = std::min<resource_t>(value, 10000);
-        } else if (argv[1] == "hanger" && btmpl.max_hangar) {
-          dirship.max_hanger() = std::min<hangar_t>(value, 10000);
-        } else if (argv[1] == "fuel" && btmpl.max_fuel) {
-          dirship.max_fuel() = std::min<unsigned short>(value, 10000);
-        } else if (argv[1] == "destruct" && btmpl.max_destruct) {
-          dirship.max_destruct() = std::min<unsigned short>(value, 10000);
-        } else if (argv[1] == "speed" && btmpl.base_speed) {
-          dirship.max_speed() = std::clamp<speed_t>(value, 1, 9);
-        } else if (argv[1] == "mount" && btmpl.can_mount &&
-                   race.discoveries.crystal) {
-          dirship.mount() = !dirship.mount();
-        } else if (argv[1] == "hyperdrive" && btmpl.can_hyperjump &&
-                   race.discoveries.hyperdrive) {
-          dirship.hyper_drive().has = !dirship.hyper_drive().has;
-        } else if (argv[1] == "primary" && btmpl.has_primary()) {
-          if (argv[2] == "strength") {
-            dirship.set_primary_battery(std::stoi(argv[3]),
-                                        dirship.primary_battery().caliber);
-          } else if (argv[2] == "caliber") {
-            guntype_t new_caliber{guntype_t::NONE};
-            if (argv[3] == "light")
-              new_caliber = guntype_t::LIGHT;
-            else if (argv[3] == "medium")
-              new_caliber = guntype_t::MEDIUM;
-            else if (argv[3] == "heavy")
-              new_caliber = guntype_t::HEAVY;
-            else {
-              g.out << "No such caliber.\n";
-              return;
-            }
-            new_caliber =
-                std::min(shipdata_primary(dirship.build_type()), new_caliber);
-            dirship.set_primary_battery(dirship.primary_battery().count,
-                                        new_caliber);
-          } else {
-            g.out << "No such gun characteristic.\n";
-            return;
-          }
-        } else if (argv[1] == "secondary" && btmpl.has_secondary()) {
-          if (argv[2] == "strength") {
-            dirship.set_secondary_battery(std::stoi(argv[3]),
-                                          dirship.secondary_battery().caliber);
-          } else if (argv[2] == "caliber") {
-            guntype_t new_caliber{guntype_t::NONE};
-            if (argv[3] == "light")
-              new_caliber = guntype_t::LIGHT;
-            else if (argv[3] == "medium")
-              new_caliber = guntype_t::MEDIUM;
-            else if (argv[3] == "heavy")
-              new_caliber = guntype_t::HEAVY;
-            else {
-              g.out << "No such caliber.\n";
-              return;
-            }
-            new_caliber =
-                std::min(shipdata_secondary(dirship.build_type()), new_caliber);
-            dirship.set_secondary_battery(dirship.secondary_battery().count,
-                                          new_caliber);
-          } else {
-            g.out << "No such gun characteristic.\n";
-            return;
-          }
-        } else if (argv[1] == "cew" && btmpl.has_cew) {
-          if (!race.discoveries.cew) {
-            g.out << "Your race does not understand confined energy weapons.\n";
-            return;
-          }
-          value = std::stoi(argv[3]);
-          if (argv[2] == "strength") {
-            dirship.cew() = value;
-          } else if (argv[2] == "range") {
-            dirship.cew_range() = value;
-          } else {
-            g.out << "No such option for CEWs.\n";
-            return;
-          }
-        } else if (argv[1] == "laser" && btmpl.can_mount_laser) {
-          if (!race.discoveries.laser) {
-            g.out << "Your race does not understand lasers yet.\n";
-            return;
-          }
-          dirship.laser() = !dirship.laser();
-        } else {
-          g.out << "That characteristic either doesn't exist or can't be "
-                   "modified.\n";
-          return;
-        }
-      } else if (race.discoveries.hyperdrive) {
-        if (argv[1] == "hyperdrive") {
-          dirship.hyper_drive().has = !dirship.hyper_drive().has;
-        } else {
-          g.out << "You may only modify hyperdrive "
-                   "installation on this kind of ship.\n";
-          return;
-        }
-      } else {
-        g.out << "Sorry, but you can't modify this ship right now.\n";
+      if (!designate_factory_ship_type(g, dirship, race, argv[1][0])) {
+        dirship.size() = original_size;
         return;
       }
     } else {
-      g.out << "Weird error.\n";
-      return;
-    }
-    /* compute how much it's going to cost to build the ship */
-
-    if ((cost0 = cost(dirship)) > 65535.0) {
-      g.out << "Woah!! YOU CHEATER!!!  The max cost allowed "
-               "is 65535!!! I'm Telllllllling!!!\n";
-      return;
+      if (!apply_factory_modification(g, dirship, race, argv)) {
+        dirship.size() = original_size;
+        return;
+      }
     }
 
-    dirship.build_cost() = race.God ? 0 : (int)cost0;
-    g.out << std::format("The current cost of the ship is {} resources.\n",
-                         dirship.build_cost());
-    dirship.size() = ship_size(dirship);
-    g.out << std::format(
-        "The current base mass of the ship is {:.1f} - size is {}.\n",
-        dirship.base_mass(), dirship.size());
-    dirship.complexity() = complexity(dirship);
-    g.out << std::format(
-        "Ship complexity is {:.1f} (you have {:.1f} engineering "
-        "technology).\n",
-        dirship.complexity(), race.tech);
-
-    /* Restore size to what it was before.  Maarten */
-    dirship.size() = size;
-    ok = true;
+    ok = finalize_factory_design_stats(g, dirship, race, original_size);
   });
   return ok;
 }
@@ -349,8 +394,8 @@ const CommandDescriptor modify_cmd{
     .roles = {.no_guests = true},
     .scopes = AllowedScopes::ship_only(),
     .ap = APCost::free(),
-    .min_args = 3,
-    .syntax = "modify <characteristic> <value> [<extra>]",
+    .min_args = 1,
+    .syntax = "modify <characteristic> [<value>] [<extra>]",
     .description = "Modify ship specifications at a factory installation",
     .handler = &make_mod,
 };

@@ -41,7 +41,7 @@ bool has_planet_defense(EntityManager& entity_manager, const starnum_t star_id,
  * @param strength A pointer to the strength value of the ship.
  */
 void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
-                    int* strength) {
+                    weapon_power_t* strength) {
   if (!(ship.laser() && ship.fire_laser()) && (cew == 0)) {
     return;
   }
@@ -68,32 +68,4 @@ void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
     *strength = 0;
     push_telegram(entity_manager, ship.owner(), ship.governor(), message);
   }
-}
-
-int check_retal_strength(const Ship& ship) {
-  // irradiated ships dont retaliate
-  if (!ship.active() || !ship.alive()) return 0;
-
-  if (ship.is_laser_on()) return MIN(ship.fire_laser(), (int)ship.fuel() / 2);
-
-  return retal_strength(ship);
-}
-
-int retal_strength(const Ship& s) {
-  if (!s.alive()) return 0;
-  if (!s.get_template().base_speed && !s.is_landed()) return 0;
-  /* land based ships */
-  if (!s.popn() && (s.type() != ShipType::OTYPE_BERS)) return 0;
-
-  const auto* battery = s.active_gun_battery();
-  if (!battery) return 0;
-
-  weapon_power_t avail =
-      (s.type() == ShipType::STYPE_FIGHTER || s.type() == ShipType::OTYPE_AFV ||
-       s.type() == ShipType::OTYPE_BERS)
-          ? battery->count
-          : std::min(static_cast<weapon_power_t>(s.popn()), battery->count);
-
-  avail = std::min(s.retaliate(), avail);
-  return std::min(static_cast<weapon_power_t>(s.destruct()), avail);
 }

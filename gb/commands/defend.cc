@@ -16,9 +16,9 @@ namespace GB::commands {
 bool defend(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  int strength;
-  int retal;
-  int damage;
+  weapon_power_t strength;
+  weapon_power_t retal;
+  damage_t damage;
 
   if (!DEFENSE) return false;
 
@@ -52,7 +52,7 @@ bool defend(const command_t& argv, GameObj& g) {
       // Calculate retaliation strength BEFORE damage is applied.
       // This pre-damage strength will be used if the target retaliates,
       // even though the ship itself will be modified by taking damage.
-      retal = check_retal_strength(to);
+      retal = to.check_retal_strength();
       return true;
     });
   } catch (const EntityNotFoundError&) {
@@ -97,18 +97,23 @@ bool defend(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() >= 4) {
-    strength = std::stoi(argv[3]);
+    int parsed_strength = std::stoi(argv[3]);
+    strength =
+        parsed_strength > 0 ? static_cast<weapon_power_t>(parsed_strength) : 0;
   } else {
     strength =
         g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
-          return p.info(Playernum).guns;
+          return static_cast<weapon_power_t>(p.info(Playernum).guns);
         });
   }
 
   bool can_attack =
       g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
-        strength = MIN(strength, p.info(Playernum).destruct);
-        strength = MIN(strength, p.info(Playernum).guns);
+        strength =
+            std::min(strength, static_cast<weapon_power_t>(std::max<resource_t>(
+                                   0, p.info(Playernum).destruct)));
+        strength = std::min(
+            strength, static_cast<weapon_power_t>(p.info(Playernum).guns));
         if (strength <= 0) {
           g.out << std::format("No attack - {} guns, {}d\n",
                                p.info(Playernum).guns,
@@ -157,11 +162,12 @@ bool defend(const command_t& argv, GameObj& g) {
 
                 if (auto result_opt = shoot_ship_to_planet(
                         g.entity_manager, target_ship, p, strength,
-                        sector_coords, smap, 0, guntype_t::NONE)) {
+                        sector_coords, smap, false, guntype_t::NONE)) {
                   if (target_ship.is_laser_on())
-                    use_fuel(target_ship, 2.0 * (double)strength);
+                    target_ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
+                                             static_cast<double>(strength));
                   else
-                    use_destruct(target_ship, strength);
+                    target_ship.consume_destruct(strength);
 
                   post(g.entity_manager, result_opt->short_message,
                        NewsType::COMBAT);
@@ -183,20 +189,22 @@ bool defend(const command_t& argv, GameObj& g) {
                   if (ship.protect().on && (ship.protect().ship == toship) &&
                       ship.number() != toship && ship.alive() &&
                       ship.active()) {
-                    strength = check_retal_strength(ship);
+                    strength = ship.check_retal_strength();
                     if (ship.is_laser_on())
                       check_overload(g.entity_manager, const_cast<Ship&>(ship),
                                      0, &strength);
 
                     if (auto result2_opt = shoot_ship_to_planet(
                             g.entity_manager, ship, p, strength, sector_coords,
-                            smap, 0, guntype_t::NONE)) {
+                            smap, false, guntype_t::NONE)) {
                       g.entity_manager.mutate_ship(
                           ship.number(), [&](Ship& ship_mut) {
                             if (ship.is_laser_on())
-                              use_fuel(ship_mut, 2.0 * (double)strength);
+                              ship_mut.consume_fuel(
+                                  ENERGY_WEAPON_FUEL_PER_STRENGTH *
+                                  static_cast<double>(strength));
                             else
-                              use_destruct(ship_mut, strength);
+                              ship_mut.consume_destruct(strength);
                           });
                       post(g.entity_manager, result2_opt->short_message,
                            NewsType::COMBAT);

@@ -55,7 +55,7 @@ int main() {
     data.max_speed = 6;
     data.speed = 4;
     data.laser = true;
-    data.fire_laser = true;
+    data.fire_laser = 10;
     data.hyper_drive = {.charge = 10, .on = false, .has = true};
     data.dock_state = DockState::Docked;
     data.whatdest = ScopeLevel::LEVEL_SHIP;
@@ -80,7 +80,7 @@ int main() {
     // Laser & Hyperdrive
     test::expect_true(ship.is_laser_on());
     test::expect_true(ship.is_hyper_drive_ready());
-    ship.fire_laser() = false;
+    ship.fire_laser() = 0;
     test::expect_false(ship.is_laser_on());
 
     // Capabilities

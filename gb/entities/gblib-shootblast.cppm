@@ -7,14 +7,16 @@ import :race;
 import :ships;
 
 // Damage, Short, Long
-export std::optional<std::tuple<int, std::string, std::string>>
+export std::optional<std::tuple<damage_t, std::string, std::string>>
 shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
-                   int cew_strength, int range, bool ignore = false);
-export std::optional<std::tuple<int, std::string, std::string>>
-shoot_planet_to_ship(EntityManager& em, Race& race, Ship& target, int strength);
+                   weapon_power_t cew_strength, weapon_range_t range,
+                   bool ignore = false);
+export std::optional<std::tuple<damage_t, std::string, std::string>>
+shoot_planet_to_ship(EntityManager& em, Race& race, Ship& target,
+                     weapon_power_t strength);
 
 export struct BombardResult {
-  int sectors_destroyed{0};
+  sector_count_t sectors_destroyed{0};
   PlayerVector<bool, MAXPLAYERS> nuked_players{};
   std::string short_message;
   std::string long_message;
@@ -22,13 +24,13 @@ export struct BombardResult {
 
 export std::optional<BombardResult>
 shoot_ship_to_planet(EntityManager& em, const Ship& attacker, Planet& target,
-                     int strength, Coordinates target_sector,
-                     SectorMap& sector_map, int ignore,
+                     weapon_power_t strength, Coordinates target_sector,
+                     SectorMap& sector_map, bool ignore = false,
                      guntype_t caliber = guntype_t::NONE);
-export std::pair<int, int> hit_odds(double range, double tech, int fdam,
-                                    bool fev, bool tev, speed_t fspeed,
-                                    speed_t tspeed, ship_size_t body,
-                                    guntype_t caliber, int defense);
+export std::pair<hit_odds_t, weapon_range_t>
+hit_odds(double range, double tech, damage_t fdam, bool fev, bool tev,
+         speed_t fspeed, speed_t tspeed, ship_size_t body, guntype_t caliber,
+         armor_t defense);
 export double tele_range(ShipType tech_level, double base_range);
 export guntype_t current_caliber(const Ship& ship);
 
@@ -40,9 +42,9 @@ export struct CollateralDamage {
   gun_count_t secondary_guns_lost{0};
 };
 
-export CollateralDamage do_collateral(Ship& ship, int damage,
+export CollateralDamage do_collateral(Ship& ship, damage_t damage,
                                       double race_mass = 1.0);
-export int planet_guns(long planet_id);
+export gun_count_t planet_guns(resource_t mob_points);
 
 /// \brief Salvo saturation rule: every 5 hits reduce target effective armor by
 /// 1 for that attack (help/fireformula.md).

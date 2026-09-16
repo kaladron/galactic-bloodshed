@@ -242,6 +242,7 @@ export constexpr int PLAN_FACT_ON_COST = 2;
 
 export constexpr double SECTOR_DAMAGE = 0.3;
 export constexpr double SHIP_DAMAGE = 2.0;
+export constexpr double ENERGY_WEAPON_FUEL_PER_STRENGTH = 2.0;
 
 export constexpr double VN_RES_TAKE =
     0.5;  // amt of resource of a sector the VN's take

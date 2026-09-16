@@ -486,14 +486,14 @@ export struct ship_struct {
   NavigateData navigate;  ///< Standing navigational heading orders
   ProtectData protect;    ///< Escort, defense, and evasion orders
 
-  bool mount{false};            ///< Crystal mount equipped
-  HyperDriveData hyper_drive;   ///< Hyperspace jump drive systems
-  weapon_power_t cew{0};        ///< Concentrated energy weapon power rating
-  weapon_range_t cew_range{0};  ///< CEW beam operational range
-  bool cloak{false};            ///< Cloaking device equipped
-  bool laser{false};            ///< Combat laser weapon equipped
-  bool focus{false};            ///< Laser focus mode enabled
-  bool fire_laser{false};       ///< Combat laser armed for firing
+  bool mount{false};             ///< Crystal mount equipped
+  HyperDriveData hyper_drive;    ///< Hyperspace jump drive systems
+  weapon_power_t cew{0};         ///< Concentrated energy weapon power rating
+  weapon_range_t cew_range{0};   ///< CEW beam operational range
+  bool cloak{false};             ///< Cloaking device equipped
+  bool laser{false};             ///< Combat laser weapon equipped
+  bool focus{false};             ///< Laser focus mode enabled
+  weapon_power_t fire_laser{0};  ///< Armed combat laser firing strength
 
   starnum_t storbits{0};      ///< Star system currently orbited
   starnum_t deststar{0};      ///< Destination star system
@@ -2528,10 +2528,10 @@ public:
     return data_.focus;
   }
 
-  [[nodiscard]] bool fire_laser() const {
+  [[nodiscard]] weapon_power_t fire_laser() const {
     return data_.fire_laser;
   }
-  bool& fire_laser() {
+  weapon_power_t& fire_laser() {
     return data_.fire_laser;
   }
 
@@ -3038,7 +3038,39 @@ public:
 
   /// Whether ship has an active combat laser armed and ready to fire.
   [[nodiscard]] bool is_laser_on() const noexcept {
-    return data_.laser && data_.fire_laser;
+    return data_.laser && data_.fire_laser > 0;
+  }
+
+  /// \brief Computes kinetic retaliation firepower bounded by crew staffing,
+  /// programmed salvo limit, and stored destruct munitions.
+  [[nodiscard]] weapon_power_t retal_strength() const noexcept {
+    if (!alive()) return 0;
+    if (!get_template().base_speed && !is_landed()) return 0;
+    if (!popn() && type() != ShipType::OTYPE_BERS) return 0;
+
+    const auto* battery = active_gun_battery();
+    if (!battery) return 0;
+
+    weapon_power_t avail =
+        (type() == ShipType::STYPE_FIGHTER || type() == ShipType::OTYPE_AFV ||
+         type() == ShipType::OTYPE_BERS)
+            ? battery->count
+            : std::min(static_cast<weapon_power_t>(popn()), battery->count);
+
+    avail = std::min(retaliate(), avail);
+    return std::min(static_cast<weapon_power_t>(destruct()), avail);
+  }
+
+  /// \brief Computes effective defensive or offensive weapon strength (armed
+  /// combat laser strength bounded by fuel, or kinetic retaliation strength).
+  [[nodiscard]] weapon_power_t check_retal_strength() const noexcept {
+    if (!active() || !alive()) return 0;
+    if (is_laser_on()) {
+      return std::min(fire_laser(),
+                      static_cast<weapon_power_t>(
+                          fuel() / ENERGY_WEAPON_FUEL_PER_STRENGTH));
+    }
+    return retal_strength();
   }
 
   /// Whether hyperspace jump drive has accumulated sufficient charge to jump.
@@ -4228,7 +4260,7 @@ const Derived* Ship::as() const noexcept {
   return nullptr;
 }
 
-export int getdefense(EntityManager&, const Ship&);
+export armor_t getdefense(EntityManager&, const Ship&);
 export void capture_stuff(const Ship&, GameObj&);
 export double cost(const Ship&);
 export double getmass(const Ship&);

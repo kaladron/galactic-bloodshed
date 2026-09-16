@@ -7,27 +7,44 @@ import std;
 
 module gblib;
 
-static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
-                                                int strength, int hits);
-static std::pair<int, std::string>
+struct SalvoHitRoll {
+  hit_count_t hits{0};
+  hit_odds_t probability{0};
+};
+
+struct CriticalHitResult {
+  hit_count_t count{0};
+  damage_t damage{0};
+  std::string message;
+};
+
+static std::pair<damage_t, std::string> do_radiation(Ship& ship, double tech,
+                                                     weapon_power_t strength,
+                                                     hit_count_t hits);
+static std::pair<damage_t, std::string>
 do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
-          int strength, int hits, int defense, guntype_t caliber, double range,
-          const std::string_view weapon, int hit_probability);
+          weapon_power_t strength, hit_count_t hits, armor_t defense,
+          guntype_t caliber, double range, const std::string_view weapon,
+          hit_odds_t hit_probability);
 
 static std::tuple<bool, speed_t, ship_size_t>
 ship_disposition(const Ship& ship);
-static int CEW_hit(double dist, int cew_range);
-static int Num_hits(double dist, bool focus, int strength, double tech,
-                    int damage, bool fevade, bool tevade, speed_t fspeed,
-                    speed_t tspeed, ship_size_t tbody, guntype_t caliber,
-                    int defense, int* hit_probability);
-static int cew_hit_odds(double dist, int cew_range);
-static std::string do_critical_hits(int penetrate, Ship& ship, int* hits,
-                                    int* damage, guntype_t caliber);
+static SalvoHitRoll roll_cew_hits(double dist, weapon_power_t cew_strength,
+                                  weapon_range_t cew_range);
+static SalvoHitRoll roll_salvo_hits(double dist, bool focus,
+                                    weapon_power_t guns, double tech,
+                                    damage_t fdam, bool fevade, bool tevade,
+                                    speed_t fspeed, speed_t tspeed,
+                                    ship_size_t tbody, guntype_t caliber,
+                                    armor_t defense);
+static hit_odds_t cew_hit_odds(double dist, weapon_range_t cew_range);
+static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
+                                          guntype_t caliber);
 
-std::optional<std::tuple<int, std::string, std::string>>
+std::optional<std::tuple<damage_t, std::string, std::string>>
 shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
-                   const int cew_strength, const int range, const bool ignore) {
+                   const weapon_power_t cew_strength,
+                   const weapon_range_t range, const bool ignore) {
   if (cew_strength <= 0) return std::nullopt;
 
   if (!(attacker.alive() || ignore) || !target.alive()) return std::nullopt;
@@ -65,12 +82,11 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
 
   bool focus = attacker.is_laser_on() && attacker.focus();
 
-  int hit_probability;
-  int hits = (range != 0)
-                 ? cew_strength * CEW_hit(dist, (int)attacker.cew_range())
-                 : Num_hits(dist, focus, cew_strength, attacker.tech(),
-                            (int)attacker.damage(), fevade, tevade, fspeed,
-                            tspeed, tbody, caliber, defense, &hit_probability);
+  const auto [hits, hit_probability] =
+      (range != 0) ? roll_cew_hits(dist, cew_strength, attacker.cew_range())
+                   : roll_salvo_hits(dist, focus, cew_strength, attacker.tech(),
+                                     attacker.damage(), fevade, tevade, fspeed,
+                                     tspeed, tbody, caliber, defense);
 
   // mode is whether a ship has been set to radiative with the orders command.
   if (attacker.mode()) {
@@ -82,7 +98,6 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
     std::string long_msg = short_msg;
     long_msg += damage_msg;
     return std::make_tuple(damage, short_msg, long_msg);
-    ;
   }
 
   // CEW, destruct, lasers
@@ -119,17 +134,18 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   return std::make_tuple(damage, short_msg, long_msg);
 }
 
-std::optional<std::tuple<int, std::string, std::string>>
-shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship, int strength) {
+std::optional<std::tuple<damage_t, std::string, std::string>>
+shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
+                     weapon_power_t strength) {
   if (strength <= 0) return std::nullopt;
   if (!ship.alive()) return std::nullopt;
   if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return std::nullopt;
 
   auto [evade, speed, body] = ship_disposition(ship);
 
-  int hit_probability;
-  int hits = Num_hits(0.0, false, strength, race.tech, 0, evade, 0, speed, 0,
-                      body, guntype_t::MEDIUM, 1, &hit_probability);
+  const auto [hits, hit_probability] =
+      roll_salvo_hits(0.0, false, strength, race.tech, 0, evade, false, speed,
+                      0, body, guntype_t::MEDIUM, 1);
 
   auto [damage, damage_msg] =
       do_damage(em, race.Playernum, ship, race.tech, strength, hits, 0,
@@ -149,15 +165,15 @@ shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship, int strength) {
  */
 std::optional<BombardResult>
 shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
-                     int strength, Coordinates target_sector, SectorMap& smap,
-                     int ignore, guntype_t caliber) {
+                     weapon_power_t strength, Coordinates target_sector,
+                     SectorMap& smap, bool ignore, guntype_t caliber) {
   if (strength <= 0) return std::nullopt;
   if (!(ship.alive() || ignore)) return std::nullopt;
   if (ship.has_switch() && !ship.on()) return std::nullopt;
   if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return std::nullopt;
   if (!pl.is_valid(target_sector)) return std::nullopt;
 
-  int numdest{0};
+  sector_count_t numdest{0};
   PlayerVector<bool, MAXPLAYERS> nuked{};
 
   double r = .4 * strength;
@@ -266,8 +282,9 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   };
 }
 
-static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
-                                                int strength, int hits) {
+static std::pair<damage_t, std::string> do_radiation(Ship& ship, double tech,
+                                                     weapon_power_t strength,
+                                                     hit_count_t hits) {
   std::stringstream msg;
   const double fac = p_factor(tech, ship.tech());
 
@@ -278,32 +295,34 @@ static std::pair<int, std::string> do_radiation(Ship& ship, double tech,
                           : 0;
   const auto body = std::max<ship_size_t>(1, ship.shipbody());
 
-  int penetrate = 0;
+  hit_count_t penetrate = 0;
   const double r = std::pow(fac, static_cast<double>(arm));
 
-  for (int i = 1; i <= hits; i++) /* check to see how many hits penetrate */
+  /* check to see how many hits penetrate */
+  for (auto _ : std::views::iota(hit_count_t{0}, hits)) {
     if (double_rand() <= r) penetrate += 1;
+  }
 
-  int dosage = round_rand(40. * (double)penetrate / (double)body);
-  dosage = std::min(100, dosage);
+  auto dosage = static_cast<radiation_t>(std::max(
+      0, round_rand(40. * static_cast<double>(penetrate) / (double)body)));
+  dosage = std::min<radiation_t>(100, dosage);
 
   ship.apply_radiation(dosage);
   if (success(ship.rad())) ship.active() = false;
 
-  int casualties = 0;
-  int casualties1 = 0;
+  // Radiation does not kill crew immediately upon impact; instead, irradiated
+  // ships suffer 20% crew/troop attrition per turn update in
+  // process_ship_radiation() (help/ships.md).
   msg << std::format("\tAttack: {} radiation\n\t  Hits: {}\n", strength, hits);
   msg << std::format("\t   Rad: {}% for a total of {}%\n", dosage, ship.rad());
-  if (casualties || casualties1) {
-    msg << std::format("\tKilled: {} civ + {} mil\n", casualties, casualties1);
-  }
-  return {dosage, msg.str()};
+  return {static_cast<damage_t>(dosage), msg.str()};
 }
 
-static std::pair<int, std::string>
+static std::pair<damage_t, std::string>
 do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
-          int strength, int hits, int defense, guntype_t caliber, double range,
-          const std::string_view weapon, int hit_probability) {
+          weapon_power_t strength, hit_count_t hits, armor_t defense,
+          guntype_t caliber, double range, const std::string_view weapon,
+          hit_odds_t hit_probability) {
   std::stringstream msg;
 
   msg << std::format("\tAttack: {} {} at a range of {:.0f}\n", strength, weapon,
@@ -317,29 +336,30 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
     }
 
   const double fac = p_factor(tech, ship.tech());
-  const int arm =
-      std::max(0, static_cast<int>(ship.effective_armor()) + defense -
-                      static_cast<int>(hits / HITS_PER_ARMOR_PENETRATION));
+  const armor_t total_defense = ship.effective_armor() + defense;
+  const armor_t saturation = hits / HITS_PER_ARMOR_PENETRATION;
+  const armor_t arm =
+      total_defense > saturation ? total_defense - saturation : 0;
   const auto body_size = std::max<ship_size_t>(1, ship.shipbody());
   const double body = std::sqrt(0.1 * static_cast<double>(body_size));
 
-  int critdam = 0;
-  int crithits = 0;
-  int penetrate = 0;
+  hit_count_t penetrate = 0;
   const double r = std::pow(fac, static_cast<double>(arm));
 
-  for (int i = 1; i <= hits; i++) /* check to see how many hits penetrate */
+  /* check to see how many hits penetrate */
+  for (auto _ : std::views::iota(hit_count_t{0}, hits)) {
     if (double_rand() <= r) penetrate += 1;
+  }
 
-  int damage = round_rand(SHIP_DAMAGE * (double)gun_caliber(caliber) *
-                          (double)penetrate / (double)body);
+  auto damage = static_cast<damage_t>(std::max(
+      0, round_rand(SHIP_DAMAGE * static_cast<double>(gun_caliber(caliber)) *
+                    static_cast<double>(penetrate) / body)));
 
-  auto critmsg =
-      do_critical_hits(penetrate, ship, &crithits, &critdam, caliber);
+  const auto crit = do_critical_hits(penetrate, ship, caliber);
 
-  if (crithits) damage += critdam;
+  if (crit.count > 0) damage += crit.damage;
 
-  damage = std::min(100, damage);
+  damage = std::min<damage_t>(100, damage);
   const auto damage_result = ship.apply_damage(damage);
 
   double race_mass = 1.0;
@@ -353,7 +373,8 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
       do_collateral(ship, damage, race_mass);
   /* set laser strength for ships to maximum safe limit */
   if (ship.fire_laser()) {
-    int safe = (int)((1.0 - .01 * ship.damage()) * ship.tech() / 4.0);
+    const auto safe = static_cast<weapon_power_t>(
+        std::max(0.0, (1.0 - .01 * ship.damage()) * ship.tech() / 4.0));
     if (ship.fire_laser() > safe) ship.fire_laser() = safe;
   }
 
@@ -362,10 +383,10 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
         "\t\t{} penetrations  eff armor={} defense={} prob={:.3f}\n", penetrate,
         arm, defense, r);
   }
-  if (crithits) {
-    msg << std::format("\t\t{} CRITICAL hits do {}% damage\n", crithits,
-                       critdam);
-    msg << critmsg;
+  if (crit.count > 0) {
+    msg << std::format("\t\t{} CRITICAL hits do {}% damage\n", crit.count,
+                       crit.damage);
+    msg << crit.message;
   }
   if (damage) {
     msg << std::format("\tDamage: {}% damage for a total of {}%\n", damage,
@@ -381,7 +402,7 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
   }
 
   if (damage_result.destroyed) em.kill_ship(who, ship);
-  ship.build_cost() = (int)cost(ship);
+  ship.build_cost() = static_cast<resource_t>(cost(ship));
   return {damage, msg.str()};
 }
 
@@ -407,34 +428,40 @@ ship_disposition(const Ship& ship) {
   return {evade, speed, body};
 }
 
-// TODO(jeffbailey): return bool.
-static int CEW_hit(double dist, int cew_range) {
-  int hits = 0;
-  int prob = cew_hit_odds(dist, cew_range);
-
-  if (success(prob)) hits = 1;
-
-  return hits;
+static SalvoHitRoll roll_cew_hits(double dist, weapon_power_t cew_strength,
+                                  weapon_range_t cew_range) {
+  const hit_odds_t prob = cew_hit_odds(dist, cew_range);
+  return {
+      .hits = success(prob) ? cew_strength : 0u,
+      .probability = prob,
+  };
 }
 
-static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
-                    bool fev, bool tev, speed_t fspeed, speed_t tspeed,
-                    ship_size_t body, guntype_t caliber, int defense,
-                    int* hit_probability) {
+static SalvoHitRoll roll_salvo_hits(double dist, bool focus,
+                                    weapon_power_t guns, double tech,
+                                    damage_t fdam, bool fev, bool tev,
+                                    speed_t fspeed, speed_t tspeed,
+                                    ship_size_t body, guntype_t caliber,
+                                    armor_t defense) {
   auto [prob, factor] = hit_odds(dist, tech, fdam, fev, tev, fspeed, tspeed,
                                  body, caliber, defense);
 
-  int hits = 0;
+  hit_count_t hits = 0;
+  hit_odds_t hit_probability = 0;
   if (focus) {
-    if (success(prob * prob / 100)) hits = guns;
-    *hit_probability = prob * prob / 100;
+    hit_probability = (prob * prob) / 100;
+    if (success(hit_probability)) hits = guns;
   } else {
-    for (auto i = 1; i <= guns; i++)
+    for (auto _ : std::views::iota(weapon_power_t{0}, guns)) {
       if (success(prob)) hits++;
-    *hit_probability = prob;
+    }
+    hit_probability = prob;
   }
 
-  return hits;
+  return {
+      .hits = hits,
+      .probability = hit_probability,
+  };
 }
 
 /**
@@ -455,12 +482,14 @@ static int Num_hits(double dist, bool focus, int guns, double tech, int fdam,
  * @param body      The body size of the target.
  * @param caliber   The caliber of the gun (guntype_t).
  * @param defense   The defense factor of the target (percentage, 0-100).
- * @return std::pair<int, int> A pair where the first element is the hit odds
- * (percentage), and the second element is the computed range factor.
+ * @return std::pair<hit_odds_t, weapon_range_t> A pair where the first element
+ * is the hit odds (percentage), and the second element is the computed range
+ * factor.
  */
-std::pair<int, int> hit_odds(double range, double tech, int fdam, bool fev,
-                             bool tev, speed_t fspeed, speed_t tspeed,
-                             ship_size_t body, guntype_t caliber, int defense) {
+std::pair<hit_odds_t, weapon_range_t>
+hit_odds(double range, double tech, damage_t fdam, bool fev, bool tev,
+         speed_t fspeed, speed_t tspeed, ship_size_t body, guntype_t caliber,
+         armor_t defense) {
   if (caliber == guntype_t::NONE) {
     return {0, 0};
   }
@@ -472,19 +501,25 @@ std::pair<int, int> hit_odds(double range, double tech, int fdam, bool fev,
   double b = 72.0 / ((2.0 + tev_d) * (2.0 + fev_d) *
                      (18.0 + (double)tspeed + (double)fspeed));
   double c = a * b / static_cast<double>(gun_caliber(caliber));
-  int factor = (int)(c * (1.0 - (double)fdam / 100.)); /* 50% hit range */
-  int odds = 0;
-  if (factor > 0)
-    odds = (int)((double)((factor) * 100) / ((double)((factor) + (int)range)));
-  odds = (int)((double)odds * (1.0 - 0.1 * (double)defense));
+  const auto factor = static_cast<weapon_range_t>(std::max(
+      0.0, c * (1.0 - static_cast<double>(fdam) / 100.))); /* 50% hit range */
+  hit_odds_t odds = 0;
+  if (factor > 0) {
+    const double raw_odds =
+        (static_cast<double>(factor) * 100.0) /
+        (static_cast<double>(factor) + std::max(0.0, range));
+    const double mitigated =
+        raw_odds * std::max(0.0, 1.0 - 0.1 * static_cast<double>(defense));
+    odds = static_cast<hit_odds_t>(mitigated);
+  }
   return {odds, factor};
 }
 
-static int cew_hit_odds(double range, int cew_range) {
+static hit_odds_t cew_hit_odds(double range, weapon_range_t cew_range) {
   double factor =
       (range + 1.0) / ((double)cew_range + 1.0); /* maximum chance */
-  int odds = (int)(100.0 *
-                   std::exp((double)(-50.0 * (factor - 1.0) * (factor - 1.0))));
+  const auto odds = static_cast<hit_odds_t>(
+      100.0 * std::exp((double)(-50.0 * (factor - 1.0) * (factor - 1.0))));
   return odds;
 }
 
@@ -505,67 +540,79 @@ guntype_t current_caliber(const Ship& ship) {
   return ship.active_gun_caliber();
 }
 
-static std::string do_critical_hits(int penetrate, Ship& ship, int* crithits,
-                                    int* critdam, guntype_t caliber) {
+static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
+                                          guntype_t caliber) {
   std::stringstream critmsg;
-  *critdam = 0;
+  hit_count_t crithits = 0;
+  damage_t critdam = 0;
   const unsigned int caliber_val = std::max(1u, gun_caliber(caliber));
   const auto eff_size = std::max<ship_size_t>(1, ship.shipbody() / caliber_val);
-  for (auto i = 1; i <= penetrate; i++)
+  for (auto _ : std::views::iota(hit_count_t{0}, penetrate)) {
     if (!int_rand(0, static_cast<int>(eff_size) - 1)) {
-      *crithits += 1;
-      int dam = int_rand(0, 100);
-      *critdam += dam;
+      crithits += 1;
+      const auto dam = static_cast<damage_t>(int_rand(0, 100));
+      critdam += dam;
     }
-  *critdam = std::min(100, *critdam);
+  }
+  critdam = std::min<damage_t>(100, critdam);
   /* check for special systems damage */
   critmsg << "\t\tSpecial systems damage: ";
-  if (ship.cew() && success(*critdam)) {
+  if (ship.cew() && success(critdam)) {
     critmsg << "CEW ";
     ship.cew() = 0;
   }
-  if (ship.laser() && success(*critdam)) {
+  if (ship.laser() && success(critdam)) {
     critmsg << "Laser ";
     ship.laser() = 0;
   }
-  if (ship.cloak() && success(*critdam)) {
+  if (ship.cloak() && success(critdam)) {
     critmsg << "Cloak ";
     ship.cloak() = 0;
   }
-  if (ship.hyper_drive().has && success(*critdam)) {
+  if (ship.hyper_drive().has && success(critdam)) {
     critmsg << "Hyper-drive ";
     ship.hyper_drive().has = 0;
   }
-  if (ship.max_speed() && success(*critdam)) {
+  if (ship.max_speed() && success(critdam)) {
     ship.speed() = 0;
-    ship.max_speed() = int_rand(0, (int)ship.max_speed() - 1);
+    ship.max_speed() = int_rand(0, ship.max_speed() - 1);
     critmsg << std::format("Speed={} ", ship.max_speed());
   }
-  if (ship.armor() && success(*critdam)) {
-    ship.armor() = int_rand(0, (int)ship.armor() - 1);
+  if (ship.armor() && success(critdam)) {
+    ship.armor() = int_rand(0, ship.armor() - 1);
     critmsg << std::format("Armor={} ", ship.armor());
   }
   critmsg << "\n";
-  return critmsg.str();
+  return {
+      .count = crithits,
+      .damage = critdam,
+      .message = critmsg.str(),
+  };
 }
 
-CollateralDamage do_collateral(Ship& ship, int damage, double race_mass) {
+CollateralDamage do_collateral(Ship& ship, damage_t damage, double race_mass) {
   /* compute crew/troop casualties */
-  int casualties = 0;
-  int casualties1 = 0;
-  int primgundamage = 0;
-  int secgundamage = 0;
+  population_t casualties = 0;
+  population_t casualties1 = 0;
+  gun_count_t primgundamage = 0;
+  gun_count_t secgundamage = 0;
 
-  for (auto i = 1; i <= ship.popn(); i++)
+  for (auto _ : std::views::iota(population_t{0}, ship.popn())) {
     casualties += success(damage);
-  for (auto i = 1; i <= ship.troops(); i++)
+  }
+  for (auto _ : std::views::iota(population_t{0}, ship.troops())) {
     casualties1 += success(damage);
+  }
   auto applied = ship.apply_casualties(casualties, casualties1, race_mass);
-  for (auto i = 1; i <= ship.primary_battery().count; i++)
+  for (auto _ :
+       std::views::iota(gun_count_t{0}, ship.primary_battery().count)) {
     primgundamage += success(damage);
+  }
   const auto prim_lost = ship.damage_primary_guns(primgundamage);
-  for (auto i = 1; i <= ship.secondary_battery().count; i++)
+  for (auto _ :
+       std::views::iota(gun_count_t{0}, ship.secondary_battery().count)) {
     secgundamage += success(damage);
+  }
   const auto sec_lost = ship.damage_secondary_guns(secgundamage);
   return {
       .civilian_casualties = applied.crew,
@@ -581,7 +628,7 @@ double p_factor(double attacker_tech, double defender_tech) {
                    ((attacker_tech + 1.0) / (defender_tech + 1.0)));
 }
 
-int planet_guns(long points) {
+gun_count_t planet_guns(resource_t points) {
   if (points < 0) return 0; /* shouldn't happen */
-  return std::min(20L, points / 1000);
+  return static_cast<gun_count_t>(std::min<resource_t>(20, points / 1000));
 }

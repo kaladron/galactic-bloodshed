@@ -10,12 +10,12 @@ import std;
 
 module gblib;
 
-int getdefense(EntityManager& em, const Ship& ship) {
+armor_t getdefense(EntityManager& em, const Ship& ship) {
   if (ship.is_landed()) {
     const auto* smap = em.peek_sectormap(ship.storbits(), ship.pnumorbits());
     if (!smap) return 0;
     const auto& sect = smap->get(ship.land_coords());
-    return (2 * Defensedata[sect.get_condition()]);
+    return 2 * Defensedata[sect.get_condition()];
   }
   // No defense
   return 0;

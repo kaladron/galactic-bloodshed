@@ -230,6 +230,100 @@ void test_protecting_ship_retaliation() {
   ctx.verify_universe_invariants();
 }
 
+void test_fire_cew_and_surface_geometry_edge_cases() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+
+  const ap_t ap_before = ctx.em.peek_star(0)->AP(1);
+
+  // 1. Bad target ship number
+  ctx.assert_dispatch_rejected(g, {"fire", "#1", "invalid"});
+  test::expect_contains(g.out.str(), "Bad ship number.");
+  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+
+  // 2. CEW errors do NOT deduct Star AP
+  ctx.assert_dispatch_rejected(g, {"cew", "#1", "#2"});
+  test::expect_contains(g.out.str(), "not equipped to fire CEWs");
+  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+
+  ctx.em.mutate_ship(3, [](Ship& s) { s.mounted() = false; });
+  ctx.assert_dispatch_rejected(g, {"cew", "#3", "#2"});
+  test::expect_contains(g.out.str(), "crystal mounted to fire CEWs");
+
+  ctx.em.mutate_ship(3, [](Ship& s) {
+    s.mounted() = true;
+    s.consume_fuel(s.fuel());
+  });
+  ctx.assert_dispatch_rejected(g, {"cew", "#3", "#2"});
+  test::expect_contains(g.out.str(), "fuel to fire CEWs");
+
+  // 3. CEW from/to landed ship rejected
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_pnum(0);
+  ctx.em.mutate_ship(3, [](Ship& s) {
+    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+    s.pnumorbits() = 0;
+    s.land_on_planet();
+    s.add_fuel(100.0);
+  });
+  ctx.assert_dispatch_rejected(g, {"cew", "#3", "#2"});
+  test::expect_contains(g.out.str(), "CEWs cannot originate from or targeted");
+
+  // 4. AFV and surface combat geometry checks
+  const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                          .owned_by(1, 0)
+                          .in_planet_orbit(0, 0)
+                          .with_guns(guntype_t::LIGHT, 5)
+                          .with_destruct(20)
+                          .with_crew(5, 5)
+                          .build();
+  ctx.assert_dispatch_rejected(
+      g, {"fire", std::format("#{}", afv_id.value), "#2"});
+  test::expect_contains(g.out.str(), "isn't landed on a planet!");
+
+  // Land AFV at (0, 0) and target #2 in orbit -> rejected
+  ctx.em.mutate_ship(afv_id, [](Ship& s) {
+    s.land_on_planet();
+    s.set_land_coords({0, 0});
+  });
+  ctx.assert_dispatch_rejected(
+      g, {"fire", std::format("#{}", afv_id.value), "#2"});
+
+  // Land target #2 on non-adjacent sector (5, 5) -> rejected
+  ctx.em.mutate_ship(2, [](Ship& s) {
+    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+    s.pnumorbits() = 0;
+    s.land_on_planet();
+    s.set_land_coords({5, 5});
+  });
+  ctx.assert_dispatch_rejected(
+      g, {"fire", std::format("#{}", afv_id.value), "#2"});
+  test::expect_contains(g.out.str(), "You are not adjacent to your target!");
+
+  // 5. Target self-retaliation (protect().self) and laser fire clamping
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.laser() = true;
+    s.fire_laser() = 10;
+    s.mounted() = true;
+  });
+  ctx.em.mutate_ship(2, [](Ship& s) {
+    s.launch_to_orbit(ScopeLevel::LEVEL_STAR);
+    s.set_primary_battery(5, guntype_t::LIGHT);
+    s.destruct() = 50;
+    s.protect().self = true;
+  });
+  ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "999"}, 1);
+  test::expect_contains(g.out.str(), "Laser strength set to");
+  test::expect_lt(ctx.em.peek_ship(2)->destruct(), 50);
+}
+
 }  // namespace
 
 int main() {
@@ -239,6 +333,7 @@ int main() {
   test_fire_role_and_guest_rejections();
   test_fire_domain_errors();
   test_protecting_ship_retaliation();
+  test_fire_cew_and_surface_geometry_edge_cases();
 
   std::println(std::cout, "✓ fire_test passed!");
   return 0;

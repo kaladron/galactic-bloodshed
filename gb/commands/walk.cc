@@ -86,7 +86,7 @@ bool walk(const command_t& argv, GameObj& g) {
     for (auto ship_handle : ShipList::on_planet(g.entity_manager, snum, pnum)) {
       Ship& ship2 = *ship_handle;
       if (ship2.owner() != Playernum && ship2.type() == ShipType::OTYPE_AFV &&
-          ship2.is_landed() && retal_strength(ship2) &&
+          ship2.is_landed() && ship2.retal_strength() &&
           (ship2.land_coords() == new_coords)) {
         const auto* alien = g.entity_manager.peek_race(ship2.owner());
         if (!alien) {
@@ -94,11 +94,11 @@ bool walk(const command_t& argv, GameObj& g) {
         }
         if (!g.race->is_allied_with(ship2.owner()) ||
             !alien->is_allied_with(Playernum)) {
-          int strength;
-          int strength1;
-          while ((strength = retal_strength(ship2)) &&
-                 (strength1 = retal_strength(ship))) {
-            use_destruct(ship2, strength);
+          weapon_power_t strength;
+          weapon_power_t strength1;
+          while ((strength = ship2.retal_strength()) &&
+                 (strength1 = ship.retal_strength())) {
+            ship2.consume_destruct(strength);
             std::string short_msg =
                 std::format("{} AFV #{} attacked by AFV #{}\n",
                             dispshiploc(g.entity_manager, ship2),
@@ -114,7 +114,7 @@ bool walk(const command_t& argv, GameObj& g) {
             notify_star(g.session_registry, g.entity_manager, Playernum,
                         Governor, ship.storbits(), short_msg);
             if (strength1) {
-              use_destruct(ship, strength1);
+              ship.consume_destruct(strength1);
               std::string short_msg2 =
                   std::format("{} AFV #{} retaliated against AFV #{}\n",
                               dispshiploc(g.entity_manager, ship),
@@ -146,11 +146,11 @@ bool walk(const command_t& argv, GameObj& g) {
         const auto* alien = g.entity_manager.peek_race(oldowner);
         if (alien && (!g.race->is_allied_with(oldowner) ||
                       !alien->is_allied_with(Playernum))) {
-          if (!retal_strength(ship)) {
+          if (!ship.retal_strength()) {
             g.out << "You have nothing to attack with!\n";
           } else {
             while ((sect.get_popn() + sect.get_troops()) &&
-                   retal_strength(ship)) {
+                   ship.retal_strength()) {
               auto civ = sect.get_popn();
               auto mil = sect.get_troops();
               auto [short_buf, long_buf] =

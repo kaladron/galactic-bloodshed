@@ -572,13 +572,13 @@ void test_active_gun_battery_and_formatting() {
   ship.popn() = 100;
   ship.destruct() = 50;
   ship.retaliate() = 10;
-  test::expect_eq(retal_strength(ship), 8);  // limited by 8 primary guns
+  test::expect_eq(ship.retal_strength(), 8u);  // limited by 8 primary guns
 
   ship.retaliate() = 5;
-  test::expect_eq(retal_strength(ship), 5);  // limited by salvo order
+  test::expect_eq(ship.retal_strength(), 5u);  // limited by salvo order
 
   ship.guns() = ActiveBattery::NONE;
-  test::expect_eq(retal_strength(ship), 0);  // offline weapons
+  test::expect_eq(ship.retal_strength(), 0u);  // offline weapons
 }
 
 void test_ship_continuous_coordinates() {

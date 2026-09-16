@@ -247,18 +247,24 @@ flowchart TD
     Strike --> RetalFire["Defending Surface Batteries Return Retaliatory Ground Fire"]
 ```
 
-### Orbital Bombardment Firepower
-Effective orbital bombardment power scales with operational gun mounts, vessel structural health, and available destructive munitions:
+### Orbital Bombardment Firepower and Blast Geometry
+Effective orbital bombardment power (`bombard <ship> [<x,y> [<strength>]]`) is bounded by the ship's maximum retaliation strength (either active gun battery count or armed laser strength, clamped by stored `destruct` or `fuel / 2`) and costs $1$ Star AP per firing ship:
+- **Blast Radius**: A bombardment strike of strength $S$ affects all planetary sectors within toroidal Euclidean distance:
+  $$r = 0.4 \times S$$
+  If target coordinates `<x,y>` are omitted, a random sector on the planet is targeted.
+- **Distance-Attenuated Sector Damage Factor**: Each sector at distance $d \le r$ from ground zero sustains a blast intensity factor:
+  $$\text{Factor}(d) = \frac{0.2 \times S \times K}{d + 1}$$
+  where $K \in \{1, 2, 3\}$ is the active gun caliber multiplier ($K = 1$ for armed combat lasers).
+- **Landed Armored Fighting Vehicles (AFVs)**: Landed AFVs (`R`) can bombard only adjacent sectors ($\max(|dx|, |dy|) \le 1$), bypass orbital Point Defense Network deterrence, and are immune to surface-to-orbit gun and orbital fleet retaliation.
 
-$$\text{Strike Firepower} = \min\left(\left\lfloor \text{Template Gun Mounts} \times \frac{100 - \text{Damage}}{100} \right\rfloor, \text{Stored Destruct Ammo}\right)$$
+### Surface Devastation, Nuclear Fallout, and Retaliation
+- **Wasteland Conversion & Fallout**: Sectors where $\text{round}(\text{Factor}(d))$ exceeds terrain fortification times a random roll ($[0, 10]$) are converted into radioactive wasteland (`SEC_WASTED`), eliminating civilian populations and increasing planetary atmospheric toxicity:
+  $$\Delta \text{Toxicity} = (100 - \text{Toxicity}) \times \frac{N_{\text{destroyed}}}{N_{\text{total\_sectors}}}$$
+- **Surface-to-Orbit & Orbital Protector Retaliation**: Whenever an orbital bombardment destroys one or more sectors ($N_{\text{destroyed}} > 0$) on an unenslaved planet, every empire whose sectors were devastated immediately fires its planetary surface defense batteries ($\min(\text{Guns}, \text{Destruct})$) back at the bombarding vessel, followed by counter-fire from all active ships in orbit configured with planetary protection orders (`order <ship> protect`).
 
-### Surface Devastation and Nuclear Fallout
-Orbital bombardment converts targeted planetary sectors into radioactive nuclear wasteland, obliterating civilian populations, demolishing industrial facilities, and creating toxic pollution that raises planetary toxicity levels.
-
-### Point Defense Networks (PDNs) and Absolute Deterrence
+### Point Defense Networks (PDNs) and Strategic Deterrence
 Point Defense Networks (PDNs `P`) are heavy defensive grid installations stationed on planetary surfaces:
-- The presence of any active, unallied PDN on a world acts as an **absolute strategic deterrent** against automated Berserker saturation strikes and orbital bombardment.
-- Automated bombardment runs are immediately aborted upon detecting active foreign PDNs, shielding the biosphere from devastation.
+- The presence of any active, unallied PDN on a world blocks orbital bombardment from spaceborne warships (`Target has planetary defense networks`) without deducting Action Points, and acts as an **absolute strategic deterrent** against automated Berserker saturation strikes.
 
 ---
 

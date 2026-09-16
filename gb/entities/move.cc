@@ -79,13 +79,13 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
     if (ship.owner() != g.player() && ship.type() == ShipType::OTYPE_AFV &&
-        ship.is_landed() && retal_strength(ship) &&
+        ship.is_landed() && ship.retal_strength() &&
         (ship.land_coords() == target_coords)) {
       const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
       if (!g.race->is_allied_with(ship.owner()) ||
           !alien_ptr->is_allied_with(g.player())) {
         const auto* star = g.entity_manager.peek_star(ship.storbits());
-        while ((civ + mil) > 0 && retal_strength(ship)) {
+        while ((civ + mil) > 0 && ship.retal_strength()) {
           oldgov = star->governor(alien_ptr->Playernum);
           auto [short_buf, long_buf] =
               mech_attack_people(g.entity_manager, ship, &civ, &mil, *alien_ptr,
@@ -116,7 +116,7 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
   auto oldciv = *civ;
   auto oldmil = *mil;
 
-  auto strength = retal_strength(ship);
+  auto strength = ship.retal_strength();
   auto astrength = MECH_ATTACK * ship.tech() * (double)strength *
                    ((double)ship.armor() + 1.0) * .01 *
                    (100.0 - (double)ship.damage()) * .01 *
@@ -130,11 +130,12 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
                    morale_factor((double)(alien.morale - race.morale));
 
   if (ignore) {
-    auto ammo = static_cast<int>(std::log10(dstrength + 1.0)) - 1;
-    ammo = std::min(std::max(ammo, 0), strength);
-    use_destruct(ship, ammo);
+    auto raw_ammo = static_cast<int>(std::log10(dstrength + 1.0)) - 1;
+    auto ammo =
+        std::min(static_cast<weapon_power_t>(std::max(raw_ammo, 0)), strength);
+    ship.consume_destruct(ammo);
   } else {
-    use_destruct(ship, strength);
+    ship.consume_destruct(strength);
   }
 
   auto cas_civ =
@@ -164,28 +165,24 @@ std::tuple<std::string, std::string>
 people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
                    const Race& race, const Race& alien, const Sector& sect,
                    Coordinates target_coords) {
-  int strength;
-  double astrength;
-  double dstrength;
-  int damage;
-  int ammo;
+  auto strength = ship.retal_strength();
 
-  strength = retal_strength(ship);
+  const double dstrength = MECH_ATTACK * ship.tech() * (double)strength *
+                           ((double)ship.armor() + 1.0) * .01 *
+                           (100.0 - (double)ship.damage()) * .01 *
+                           (alien.likes[sect.get_condition()] + 1.0) *
+                           morale_factor((double)(alien.morale - race.morale));
 
-  dstrength = MECH_ATTACK * ship.tech() * (double)strength *
-              ((double)ship.armor() + 1.0) * .01 *
-              (100.0 - (double)ship.damage()) * .01 *
-              (alien.likes[sect.get_condition()] + 1.0) *
-              morale_factor((double)(alien.morale - race.morale));
-
-  astrength = (double)(10 * mil * race.fighters + civ) * .01 * race.tech * .01 *
-              (race.likes[sect.get_condition()] + 1.0) *
-              ((double)Defensedata[sect.get_condition()] + 1.0) *
-              morale_factor((double)(race.morale - alien.morale));
-  ammo = (int)std::log10((double)astrength + 1.0) - 1;
-  ammo = std::min(strength, std::max(0, ammo));
-  use_destruct(ship, ammo);
-  damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
+  const double astrength = (double)(10 * mil * race.fighters + civ) * .01 *
+                           race.tech * .01 *
+                           (race.likes[sect.get_condition()] + 1.0) *
+                           ((double)Defensedata[sect.get_condition()] + 1.0) *
+                           morale_factor((double)(race.morale - alien.morale));
+  auto raw_ammo = (int)std::log10((double)astrength + 1.0) - 1;
+  auto ammo =
+      std::min(strength, static_cast<weapon_power_t>(std::max(0, raw_ammo)));
+  ship.consume_destruct(ammo);
+  auto damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
   damage = std::min(100, damage);
   if (ship.apply_damage(damage).destroyed) {
     em.kill_ship(race.Playernum, ship);

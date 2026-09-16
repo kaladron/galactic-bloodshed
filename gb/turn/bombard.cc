@@ -186,13 +186,14 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   std::optional<BombardResult> opt_result;
   entity_manager.mutate_sectormap(
       ship.storbits(), ship.pnumorbits(), [&](SectorMap& smap) {
-        opt_result = shoot_ship_to_planet(entity_manager, ship, planet, str,
-                                          *target, smap, 0, guntype_t::NONE);
+        opt_result =
+            shoot_ship_to_planet(entity_manager, ship, planet, str, *target,
+                                 smap, false, guntype_t::NONE);
       });
   if (!opt_result) return 0;
   const auto& result = *opt_result;
   /* (0=dont get smap) */
-  const auto numdest = std::max(result.sectors_destroyed, 0);
+  const auto numdest = result.sectors_destroyed;
 
   dispatch_bombardment_alerts(entity_manager, ship, star, *target, oldown,
                               numdest, result);

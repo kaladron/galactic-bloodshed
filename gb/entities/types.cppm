@@ -49,6 +49,12 @@ export using weapon_power_t =
     std::uint32_t;  ///< Concentrated energy weapon / laser power setting
 export using weapon_range_t =
     std::uint32_t;  ///< Tactical weapon or mine proximity trigger range
+export using hit_count_t =
+    std::uint32_t;  ///< Number of successful weapon hits or penetrations
+export using hit_odds_t =
+    std::uint32_t;  ///< Weapon hit probability percentage (0..100)
+export using sector_count_t =
+    std::uint32_t;  ///< Cardinality / tally of planetary sectors
 export using temp_delta_t =
     int;  ///< Thermal adjustment applied to planet temperature
 

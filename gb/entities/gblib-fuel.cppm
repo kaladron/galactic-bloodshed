@@ -11,7 +11,7 @@ import :gameobj;
 
 export std::tuple<bool, segments_t> do_trip(const Place&, SimulatedShip&,
                                             double fuel, double gravity_factor,
-                                            double x_1, double y_1,
+                                            UniverseCoordinates dest_coords,
                                             EntityManager&);
 
 export void fuel_output(GameObj& g, double dist, double fuel, double grav,

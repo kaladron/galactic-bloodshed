@@ -165,7 +165,6 @@ std::string Place::to_string() {
           out << "/" << star->get_name();
         }
       }
-      out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_PLAN:
       if (entity_manager) {
@@ -174,15 +173,12 @@ std::string Place::to_string() {
           out << "/" << star->get_name() << "/" << star->get_planet_name(pnum);
         }
       }
-      out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_SHIP:
       out << "#" << shipno;
-      out << std::ends;
       return out.str();
     case ScopeLevel::LEVEL_UNIV:
       out << "/";
-      out << std::ends;
       return out.str();
   }
 }

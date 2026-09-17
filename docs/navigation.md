@@ -228,6 +228,23 @@ The `center` command (`center <star>`) resets the commander's global navigationa
 
 ---
 
+## 9. Automated Merchant Shipping Routes (`route`) and Surface AFV Maneuvers (`walk`)
+
+### Automated Planetary Shipping Routes (`route`)
+Each planet supports up to $4$ independent automated merchant shipping routes (`1` through `4`) per empire:
+- **Activation & Destination (`route <1..4> activate|deactivate|<planet>`)**: Routes must be activated and pointed at a destination planet (`LEVEL_PLAN`). Merchant vessels assigned to route $N$ (`order #<ship> merchant <N>`) automatically receive launch, transit, and landing orders during movement segments and turn updates.
+- **Touchdown Coordinates (`route <1..4> land <x,y>`)**: Arriving merchant ships descend onto the configured surface sector $[x, y]$ if the sector is owned by the empire or unowned and the vessel carries sufficient landing propellant.
+- **Automated Cargo Manifests (`route <1..4> load|unload <fdrx>`)**: Upon touchdown, merchant ships automatically embark (`load`) and debark (`unload`) the maximum available quantities of the configured commodities (`f` Fuel, `d` Destruct, `r` Resources, `x` Crystals) before ascending toward the next stop in the loop.
+
+### Armored Fighting Vehicle (AFV) Surface Movement (`walk`)
+Landed **Armored Fighting Vehicles** (`OTYPE_AFV`) traverse adjacent planetary surface sectors directly using the `walk <ship> <direction>` command (`1` Star AP, $1.0\text{ Fuel}$ per sector step):
+1. **Terrain & Precondition Checks**: The AFV must be landed, crewed ($\text{Crew} > 0$), carry at least $1.0\text{ Fuel}$, and move onto a valid adjacent sector whose terrain condition is compatible with the owning race.
+2. **AFV-vs-AFV Surface Duels**: If the destination sector contains non-allied landed AFVs with active retaliation strength, each defending AFV fires a conventional gun salvo at the advancing AFV and the advancing AFV retaliates using its pre-damage gun strength until one side is destroyed or exhausts its ammunition.
+3. **Mechanized Assault on Sector Population**: If the advancing AFV survives any defending AFVs and the sector is owned by a non-allied empire, the AFV engages the defending civilians and troops in repeated mechanized ground combat rounds until either the sector population is wiped out (clearing sector ownership and synchronizing planetary demographics) or the AFV loses its offensive capability.
+4. **Occupation**: Once the destination sector is friendly, allied, or cleared of hostile ownership, the AFV advances onto the new coordinates and expends $1.0\text{ Fuel}$.
+
+---
+
 ## See Also
 - [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md)
 - [Ship Classes and Construction Catalog](ship_types.md)

@@ -125,15 +125,69 @@ void test_route_command_dispatch() {
   ctx.assert_dispatch_success(g, {"route"});
   test::expect_contains(g.out.str(), "Done");
 
-  // 3. Domain error: Bad route number
+  // 3. Domain error: Bad route number (out-of-range and non-numeric)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"route", "99"});
   test::expect_contains(g.out.str(), "Bad route number");
 
-  // 4. Domain error: Bad coordinates
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"route", "abc"});
+  test::expect_contains(g.out.str(), "Bad route number");
+
+  // 4. Domain error: Bad coordinates (unparseable and out-of-bounds)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"route", "1", "land", "invalid"});
+  test::expect_contains(g.out.str(), "Bad sector coordinates");
+
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"route", "1", "land", "99,99"});
   test::expect_contains(g.out.str(), "Bad sector coordinates");
+
+  // 5. Unload commodities and single route inspection
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "1", "unload", "fdx"});
+  test::expect_contains(g.out.str(), "Set");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "1", "load", "fdrx"});
+  test::expect_contains(g.out.str(), "Set");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "1"});
+  test::expect_contains(g.out.str(), "load: fdrx");
+  test::expect_contains(g.out.str(), "unload: fdx");
+  test::expect_contains(g.out.str(), "Done");
+
+  // Inspecting an inactive route prints Done without route details
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "2"});
+  test::expect_contains(g.out.str(), "Done");
+
+  // 6. Deactivate route and verify
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "1", "deactivate"});
+  test::expect_contains(g.out.str(), "Set");
+  test::expect_false(ctx.em.peek_planet(0, 0)->info(player_t{1}).route[0].set);
+
+  // 7. Destination validation errors and unknown 4-arg subcommand
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"route", "1", "/NoSuchStar"});
+  test::expect_contains(g.out.str(), "Illegal destination");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"route", "1", "/Vega"});
+  test::expect_contains(g.out.str(), "You have to designate a planet");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"route", "1", "bogus", "fr"});
+  test::expect_contains(g.out.str(), "What are you trying to do?");
+
+  // 8. Direct handler scope guard
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.out.str("");
+  test::expect_false(GB::commands::route({"route"}, g));
+  test::expect_contains(g.out.str(),
+                        "You have to 'cs' to a planet to examine routes.");
 }
 
 }  // namespace

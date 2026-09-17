@@ -74,8 +74,7 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
  * @param tmpship The ship to perform the trip.
  * @param fuel The amount of fuel available for the trip.
  * @param gravity_factor The gravity factor affecting the ship's movement.
- * @param x_1 The x-coordinate of the destination.
- * @param y_1 The y-coordinate of the destination.
+ * @param dest_coords The universe coordinates of the destination.
  * @param entity_manager The EntityManager for entity access.
  *
  * @return A tuple containing a boolean indicating if the trip was resolved
@@ -83,8 +82,8 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
  */
 std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
                                      SimulatedShip& tmpship, const double fuel,
-                                     const double gravity_factor, double x_1,
-                                     const double y_1,
+                                     const double gravity_factor,
+                                     const UniverseCoordinates dest_coords,
                                      EntityManager& entity_manager) {
   const auto* state = entity_manager.peek_server_state();
   if (!state) {
@@ -117,8 +116,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
     effective_segment_number++;
     if (effective_segment_number == (state->segments + 1))
       effective_segment_number = 1;
-    double tmpdist =
-        tmpship.coordinates().distance_to(UniverseCoordinates{x_1, y_1});
+    double tmpdist = tmpship.coordinates().distance_to(dest_coords);
     switch (tmpship.whatdest()) {
       case ScopeLevel::LEVEL_STAR:
         if (tmpdist <= SYSTEMSIZE) trip_resolved = true;

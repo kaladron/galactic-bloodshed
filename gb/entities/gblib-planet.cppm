@@ -25,6 +25,34 @@ export struct CommodityManifest {
   bool resources{false};  ///< Minerals / resources commodity
   bool crystals{false};   ///< Power crystals commodity
 
+  /// Parse commodity character flags ('f', 'd', 'r', 'x') into a manifest.
+  [[nodiscard]] static constexpr CommodityManifest
+  parse(std::string_view flags) noexcept {
+    CommodityManifest manifest{};
+    for (char c : flags) {
+      if (c == 'f') manifest.fuel = true;
+      if (c == 'd') manifest.destruct = true;
+      if (c == 'r') manifest.resources = true;
+      if (c == 'x') manifest.crystals = true;
+    }
+    return manifest;
+  }
+
+  /// Format as a fixed 4-character string ('fdrx' or spaces).
+  [[nodiscard]] std::string format_padded() const {
+    return std::format("{}{}{}{}", fuel ? 'f' : ' ', destruct ? 'd' : ' ',
+                       resources ? 'r' : ' ', crystals ? 'x' : ' ');
+  }
+
+  /// Format as a compact string containing only active commodity flags.
+  [[nodiscard]] std::string format_compact() const {
+    std::string flags = fuel ? "f" : "";
+    if (destruct) flags += 'd';
+    if (resources) flags += 'r';
+    if (crystals) flags += 'x';
+    return flags;
+  }
+
   /// Returns whether any commodity is selected.
   [[nodiscard]] constexpr bool any() const noexcept {
     return fuel || destruct || resources || crystals;

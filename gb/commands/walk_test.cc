@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file walk_test.cc
+/// \brief Unit tests for walk command.
+
 import dallib;
 import gb.entities;
 import gb.services;
@@ -58,9 +61,95 @@ void test_walk_role_and_domain_errors() {
   g.set_snum(0);
   g.set_pnum(0);
 
-  // 2. Invalid ship rejection
+  // 2. Invalid ship number & non-existent ship rejection
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"walk", "0", "k"});
+  test::expect_contains(g.out.str(), "Bad ship number.");
+
+  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"walk", "999", "k"});
   test::expect_contains(g.out.str(), "No such ship.");
+
+  // 3. Unowned ship rejection
+  shipnum_t enemy_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                            .owned_by(2, 0)
+                            .landed_on(0, 0, Coordinates(4, 4))
+                            .with_crew(10, 0)
+                            .with_fuel(100.0)
+                            .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"walk", std::format("{}", enemy_afv.value), "k"});
+  test::expect_contains(g.out.str(), "You do not control this ship.");
+
+  // 4. Non-AFV ship rejection
+  shipnum_t pod_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                           .owned_by(1, 0)
+                           .landed_on(0, 0, Coordinates(4, 5))
+                           .with_crew(5, 0)
+                           .with_fuel(100.0)
+                           .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"walk", std::format("{}", pod_ship.value), "k"});
+  test::expect_contains(g.out.str(), "This ship doesn't walk!");
+
+  // 5. Unlanded AFV rejection
+  shipnum_t orbiting_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                               .owned_by(1, 0)
+                               .in_planet_orbit(0, 0)
+                               .with_crew(10, 0)
+                               .with_fuel(100.0)
+                               .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"walk", std::format("{}", orbiting_afv.value), "k"});
+  test::expect_contains(g.out.str(), "This ship is not landed on a planet.");
+
+  // 6. Crewless AFV rejection
+  shipnum_t crewless_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                               .owned_by(1, 0)
+                               .landed_on(0, 0, Coordinates(3, 3))
+                               .with_crew(0, 0)
+                               .with_fuel(100.0)
+                               .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"walk", std::format("{}", crewless_afv.value), "k"});
+  test::expect_contains(g.out.str(), "No crew.");
+
+  // 7. Insufficient fuel rejection
+  shipnum_t empty_fuel_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                                 .owned_by(1, 0)
+                                 .landed_on(0, 0, Coordinates(3, 4))
+                                 .with_crew(10, 0)
+                                 .with_fuel(0.0)
+                                 .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"walk", std::format("{}", empty_fuel_afv.value), "k"});
+  test::expect_contains(g.out.str(), "You don't have 1.0 fuel to move it.");
+
+  // 8. Illegal move direction & disliked sector condition
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"walk", "1", "5"});
+  test::expect_contains(g.out.str(), "Illegal move.");
+
+  ctx.em.mutate_race(1,
+                     [](Race& r) { r.likes[SectorType::SEC_MOUNT] = false; });
+  ctx.setup_game_obj(g);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
+  test::expect_contains(g.out.str(),
+                        "Your ships cannot walk into that sector type!");
+
+  // 9. Insufficient Star AP rejection
+  ctx.em.mutate_race(1, [](Race& r) { r.likes[SectorType::SEC_MOUNT] = true; });
+  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.setup_game_obj(g);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
+  test::expect_contains(g.out.str(), "You don't have 1 action points there.");
 
   ctx.verify_universe_invariants();
 }
@@ -93,11 +182,87 @@ void test_walk_happy_path() {
   ctx.verify_universe_invariants();
 }
 
+void test_walk_afv_and_sector_combat() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Create an armed Player 1 AFV at (5, 5)
+  shipnum_t armed_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                            .owned_by(1, 0)
+                            .named("HeavyAFV")
+                            .landed_on(0, 0, Coordinates(5, 5))
+                            .with_guns(guntype_t::LIGHT, 2)
+                            .with_destruct(50)
+                            .with_armor(10)
+                            .with_crew(10, 0)
+                            .with_fuel(100.0)
+                            .build();
+
+  // Place a hostile Player 2 AFV with 1 destruct and hostile civilians/troops
+  // at (5, 6)
+  shipnum_t enemy_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                            .owned_by(2, 0)
+                            .named("EnemyTank")
+                            .landed_on(0, 0, Coordinates(5, 6))
+                            .with_guns(guntype_t::LIGHT, 1)
+                            .with_crew(5, 0)
+                            .with_fuel(50.0)
+                            .with_destruct(1)
+                            .with_armor(0)
+                            .build();
+
+  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& smap) {
+    auto& sect = smap.get(Coordinates{5, 6});
+    sect.set_owner(2);
+    sect.set_popn_exact(1);
+    sect.set_troops(0);
+    p.sync_demographics(smap);
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // Execute walk into hostile sector (5, 6)
+  ctx.assert_dispatch_success(
+      g, {"walk", std::format("{}", armed_afv.value), "k"});
+  test::expect_lt(ctx.em.peek_ship(enemy_afv)->destruct(), 1);
+  test::expect_lt(ctx.em.peek_ship(armed_afv)->destruct(), 50);
+
+  // Also test unarmed AFV walking onto a hostile populated sector
+  shipnum_t unarmed_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                              .owned_by(1, 0)
+                              .landed_on(0, 0, Coordinates(2, 2))
+                              .with_crew(10, 0)
+                              .with_fuel(50.0)
+                              .with_destruct(0)
+                              .build();
+  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& smap) {
+    auto& sect = smap.get(Coordinates{2, 3});
+    sect.set_owner(2);
+    sect.set_condition(SectorType::SEC_MOUNT);
+    sect.set_popn_exact(50);
+    p.sync_demographics(smap);
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"walk", std::format("{}", unarmed_afv.value), "k"});
+  test::expect_contains(g.out.str(), "You have nothing to attack with!");
+  test::expect_eq(ctx.em.peek_ship(unarmed_afv)->land_coords(),
+                  Coordinates(2, 2));
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
   test_walk_role_and_domain_errors();
   test_walk_happy_path();
+  test_walk_afv_and_sector_combat();
 
   std::println(std::cout, "✓ walk_test passed!");
   return 0;

@@ -43,9 +43,100 @@ void test_fuel_matrix() {
   ctx.assert_dispatch_rejected(g, {"fuel"});
   test::expect_contains(g.out.str(), "Syntax: fuel <#ship> [<destination>]");
 
-  // 3. Bad argument format (not starting with #)
+  // 3. Bad argument format (not starting with #) and too many args
   ctx.assert_dispatch_rejected(g, {"fuel", "1", "/Vega"});
   test::expect_contains(g.out.str(), "Invalid first option");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fuel", "#1", "/Vega", "extra"});
+  test::expect_contains(g.out.str(), "Invalid number of options");
+
+  // 4. Non-numeric #ship (verifies no nullopt dereference crash)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fuel", "#abc", "/Vega"});
+  test::expect_contains(g.out.str(), "rst: no such ship #abc");
+
+  // 5. Unowned ship, landed ship without destination, stationary ship, factory
+  shipnum_t enemy_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                             .owned_by(2, 0)
+                             .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                             .with_speed(2)
+                             .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", enemy_ship.value), "/Vega"});
+  test::expect_contains(g.out.str(), "You do not own this ship.");
+
+  shipnum_t landed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                              .owned_by(1, 0)
+                              .landed_on(0, 0, Coordinates(1, 1))
+                              .with_speed(2)
+                              .with_fuel(200.0)
+                              .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g,
+                               {"fuel", std::format("#{}", landed_ship.value)});
+  test::expect_contains(
+      g.out.str(),
+      "You must specify a destination for landed or docked ships...");
+
+  // Landed ship WITH destination (planet scope destination in explored system)
+  ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(1); });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"fuel", std::format("#{}", landed_ship.value), "/Vega/Vega Prime"});
+  test::expect_contains(g.out.str(), "FUEL ESTIMATES");
+
+  shipnum_t stopped_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                               .owned_by(1, 0)
+                               .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                               .with_speed(0)
+                               .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", stopped_ship.value), "/Vega"});
+  test::expect_contains(g.out.str(), "That ship is not moving!");
+
+  shipnum_t factory_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                               .owned_by(1, 0)
+                               .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                               .with_speed(1)
+                               .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", factory_ship.value), "/Vega"});
+  test::expect_contains(g.out.str(),
+                        "That ship does not have a speed rating...");
+
+  // 6. Destination resolution errors: no destination orders, explicit '/',
+  // bad scope, within 10.0 units, and unexplored system
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fuel", std::format("#{}", ship_num.value)});
+  test::expect_contains(g.out.str(),
+                        "That ship currently has no destination orders...");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", ship_num.value), "/"});
+  test::expect_contains(g.out.str(), "Invalid ship destination.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", ship_num.value), "/NoSuchStar"});
+  test::expect_contains(g.out.str(), "fuel:  bad scope.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", ship_num.value), "/Sol"});
+  test::expect_contains(g.out.str(),
+                        "That ship is within 10.0 units of the destination.");
+
+  ctx.em.mutate_star(1, [](Star& s) { s.explored().reset(); });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", ship_num.value), "/Vega/Vega Prime"});
+  test::expect_contains(g.out.str(),
+                        "You haven't explored the destination system.");
 
   ctx.verify_universe_invariants();
 }

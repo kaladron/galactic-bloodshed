@@ -5,8 +5,6 @@ export module gblib:order;
 import :ships;
 import :types;
 
-export void DispOrders(EntityManager& em, player_t Playernum,
-                       governor_t Governor, const Ship& ship);
-export void DispOrdersHeader(EntityManager& em, player_t Playernum,
-                             governor_t Governor);
+export void display_orders(GameObj& g, const Ship& ship);
+export void display_orders_header(GameObj& g);
 export void give_orders(GameObj&, const command_t&, int, Ship&);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file order.cc
-/// \brief Give orders to ships.
+/// \brief Give orders to ships and format standing ship order reports.
 
 module;
 
@@ -11,20 +11,36 @@ import std;
 module gblib;
 
 namespace {
-std::string prin_aimed_at(const Ship& ship) {
+
+std::string format_aim_target(EntityManager& em, const Ship& ship) {
   const auto* mirror = ship.as<SpaceMirrorShip>();
   if (!mirror) {
     return "Not aimed";
   }
   const auto& aimed_at = mirror->aim();
-  Place targ{aimed_at.level, aimed_at.snum, aimed_at.pnum, aimed_at.shipno};
-  return targ.to_string();
+  switch (aimed_at.level) {
+    case ScopeLevel::LEVEL_UNIV:
+      return "";
+    case ScopeLevel::LEVEL_STAR: {
+      const auto* star = em.peek_star(aimed_at.snum);
+      return std::format("/{}", star ? star->get_name() : "Unknown");
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto* star = em.peek_star(aimed_at.snum);
+      return std::format("/{}/{}", star ? star->get_name() : "Unknown",
+                         star ? star->get_planet_name(aimed_at.pnum)
+                              : "Unknown");
+    }
+    case ScopeLevel::LEVEL_SHIP:
+      return std::format("#{}", aimed_at.shipno);
+  }
+  return "";
 }
 
 /*
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
-void mk_expl_aimed_at(GameObj& g, const Ship& s) {
+void survey_aim_target(GameObj& g, const Ship& s) {
   const auto* mirror = s.as<SpaceMirrorShip>();
   if (!mirror) {
     g.out << "Ship is not aimed.\n";
@@ -32,7 +48,6 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
   }
   const auto& aimed_at = mirror->aim();
   const auto& str = *g.entity_manager.peek_star(aimed_at.snum);
-
   const auto coords = s.coordinates();
 
   switch (aimed_at.level) {
@@ -40,7 +55,7 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       g.out << "There is nothing out here to aim at.\n";
       break;
     case ScopeLevel::LEVEL_STAR:
-      g.out << std::format("Star {}\n", prin_aimed_at(s));
+      g.out << std::format("Star {}\n", format_aim_target(g.entity_manager, s));
       if (auto dist = coords.distance_to(str.coordinates());
           dist <= tele_range(s.type(), s.tech())) {
         g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
@@ -53,7 +68,8 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       }
       break;
     case ScopeLevel::LEVEL_PLAN: {
-      g.out << std::format("Planet {}\n", prin_aimed_at(s));
+      g.out << std::format("Planet {}\n",
+                           format_aim_target(g.entity_manager, s));
       const auto& p =
           *g.entity_manager.peek_planet(aimed_at.snum, aimed_at.pnum);
       if (auto dist = coords.distance_to(p.absolute_coordinates(str));
@@ -71,20 +87,17 @@ void mk_expl_aimed_at(GameObj& g, const Ship& s) {
       }
     } break;
     case ScopeLevel::LEVEL_SHIP:
-      g.out << std::format("You can't see anything of use there.\n");
+      g.out << "You can't see anything of use there.\n";
       break;
   }
 }
 
 void order_defense(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.can_bombard()) {
-    if (argv[3] == "off")
-      ship.protect().planet = false;
-    else
-      ship.protect().planet = true;
-  } else {
+  if (!ship.can_bombard()) {
     g.out << "That ship cannot be assigned those orders.\n";
+    return;
   }
+  ship.protect().planet = (argv.size() <= 3 || argv[3] != "off");
 }
 
 void order_scatter(GameObj& g, const command_t& /*argv*/, Ship& ship) {
@@ -102,7 +115,7 @@ void order_impact(GameObj& g, const command_t& argv, Ship& ship) {
     g.out << "Only missiles can be designated for this.\n";
     return;
   }
-  auto coords = Coordinates::parse(argv[3]);
+  auto coords = (argv.size() > 3) ? Coordinates::parse(argv[3]) : std::nullopt;
   if (!coords) {
     g.out << "Usage: order <ship> designate <x>,<y>\n";
     return;
@@ -115,58 +128,66 @@ void order_jump(GameObj& g, const command_t& argv, Ship& ship) {
     g.out << "That ship is docked. Use 'launch' or 'undock' first.\n";
     return;
   }
-  if (ship.hyper_drive().has) {
-    if (argv[3] == "off")
-      ship.hyper_drive().on = 0;
-    else {
-      if (ship.whatdest() != ScopeLevel::LEVEL_STAR &&
-          ship.whatdest() != ScopeLevel::LEVEL_PLAN) {
-        g.out << "Destination must be star or planet.\n";
-        return;
-      }
-      ship.hyper_drive().on = true;
-      ship.navigate().on = false;
-      if (ship.mounted()) {
-        ship.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
-      }
-    }
-  } else {
+  if (!ship.hyper_drive().has) {
     g.out << "This ship does not have hyper drive capability.\n";
+    return;
+  }
+  if (argv.size() > 3 && argv[3] == "off") {
+    ship.hyper_drive().on = 0;
+    return;
+  }
+  if (ship.whatdest() != ScopeLevel::LEVEL_STAR &&
+      ship.whatdest() != ScopeLevel::LEVEL_PLAN) {
+    g.out << "Destination must be star or planet.\n";
+    return;
+  }
+  ship.hyper_drive().on = true;
+  ship.navigate().on = false;
+  if (ship.mounted()) {
+    ship.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
   }
 }
 
 void order_protect(GameObj& g, const command_t& argv, Ship& ship) {
-  shipnum_t j{0};
+  shipnum_t target_ship{0};
   if (argv.size() > 3) {
     if (auto target_num = string_to_shipnum(argv[3])) {
-      j = *target_num;
+      target_ship = *target_num;
     }
   }
-  if (j == ship.number()) {
+  if (target_ship == ship.number()) {
     g.out << "You can't do that.\n";
     return;
   }
-  if (ship.can_bombard()) {
-    if (j == 0) {
-      ship.protect().on = false;
-    } else {
-      ship.protect().on = true;
-      ship.protect().ship = j;
-    }
-  } else {
+  if (!ship.can_bombard()) {
     g.out << "That ship cannot protect.\n";
+    return;
+  }
+  if (target_ship == 0) {
+    ship.protect().on = false;
+  } else {
+    ship.protect().on = true;
+    ship.protect().ship = target_ship;
   }
 }
 
 void order_navigate(GameObj& /*g*/, const command_t& argv, Ship& ship) {
   if (argv.size() >= 5) {
-    ship.navigate().on = true;
-    ship.navigate().bearing = std::stoul(argv[3]);
-    ship.navigate().turns = std::stoul(argv[4]);
+    auto bearing = scn::scan<unsigned>(argv[3], "{}");
+    auto turns = scn::scan<unsigned>(argv[4], "{}");
+    if (bearing && turns) {
+      ship.navigate().on = true;
+      ship.navigate().bearing = bearing->value();
+      ship.navigate().turns = turns->value();
+    } else {
+      ship.navigate().on = false;
+    }
   } else {
     ship.navigate().on = false;
   }
-  if (ship.hyper_drive().on) ship.hyper_drive().on = false;
+  if (ship.hyper_drive().on) {
+    ship.hyper_drive().on = false;
+  }
 }
 
 void order_switch(GameObj& g, const command_t& /*argv*/, Ship& ship) {
@@ -174,188 +195,210 @@ void order_switch(GameObj& g, const command_t& /*argv*/, Ship& ship) {
     g.out << "Use \"on\" to bring factory online.\n";
     return;
   }
-  if (ship.has_switch()) {
-    if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      g.out << "That ship is being transported.\n";
-      return;
-    }
-    ship.on() = !ship.on();
-  } else {
+  if (!ship.has_switch()) {
     g.out << "That ship does not have an on/off setting.\n";
     return;
   }
-  if (ship.on()) {
-    switch (ship.type()) {
-      case ShipType::STYPE_MINE:
-        g.out << "Mine armed and ready.\n";
-        break;
-      case ShipType::OTYPE_TRANSDEV:
-        g.out << "Transporter ready to receive.\n";
-        break;
-      default:
-        break;
-    }
-  } else {
-    switch (ship.type()) {
-      case ShipType::STYPE_MINE:
-        g.out << "Mine disarmed.\n";
-        break;
-      case ShipType::OTYPE_TRANSDEV:
-        g.out << "No longer receiving.\n";
-        break;
-      default:
-        break;
-    }
+  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    g.out << "That ship is being transported.\n";
+    return;
+  }
+  ship.on() = !ship.on();
+  if (ship.type() == ShipType::STYPE_MINE) {
+    g.out << (ship.on() ? "Mine armed and ready.\n" : "Mine disarmed.\n");
+  } else if (ship.type() == ShipType::OTYPE_TRANSDEV) {
+    g.out << (ship.on() ? "Transporter ready to receive.\n"
+                        : "No longer receiving.\n");
   }
 }
 
-void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.max_speed_capacity()) {
-    if (ship.docked()) {
-      g.out << "That ship is docked; use undock or launch first.\n";
+void set_ship_follow_destination(GameObj& g, Ship& ship,
+                                 shipnum_t target_ship) {
+  try {
+    bool is_followable = false;
+    g.entity_manager.with_ship(target_ship, [&](const Ship& tmpship) {
+      is_followable = followable(g.entity_manager, ship, tmpship);
+    });
+    if (!is_followable) {
+      g.out << "Warning: that ship is out of range.\n";
       return;
     }
-    Place where{g, argv[3], true};
-    if (!where.err) {
-      if (where.level == ScopeLevel::LEVEL_SHIP) {
-        try {
-          bool is_followable = false;
-          g.entity_manager.with_ship(where.shipno, [&](const Ship& tmpship) {
-            if (followable(g.entity_manager, ship, tmpship)) {
-              is_followable = true;
-            }
-          });
-          if (!is_followable) {
-            g.out << "Warning: that ship is out of range.\n";
-            return;
-          }
-        } catch (const EntityNotFoundError&) {
-          g.out << "Warning: that ship is out of range.\n";
-          return;
-        }
-        ship.destshipno() = where.shipno;
-        ship.whatdest() = ScopeLevel::LEVEL_SHIP;
-      } else {
-        /* to foil cheaters */
-        if (where.level != ScopeLevel::LEVEL_UNIV &&
-            ((ship.storbits() != where.snum) &&
-             where.level != ScopeLevel::LEVEL_STAR) &&
-            !g.entity_manager.peek_star(where.snum)
-                 ->is_explored_by(ship.owner())) {
-          g.out << "You haven't explored this system.\n";
-          return;
-        }
-        ship.whatdest() = where.level;
-        ship.deststar() = where.snum;
-        ship.destpnum() = where.pnum;
-      }
-    }
-  } else {
+  } catch (const EntityNotFoundError&) {
+    g.out << "Warning: that ship is out of range.\n";
+    return;
+  }
+  ship.destshipno() = target_ship;
+  ship.whatdest() = ScopeLevel::LEVEL_SHIP;
+}
+
+void set_celestial_destination(GameObj& g, Ship& ship, const Place& where) {
+  /* to foil cheaters */
+  if (where.level != ScopeLevel::LEVEL_UNIV && ship.storbits() != where.snum &&
+      where.level != ScopeLevel::LEVEL_STAR &&
+      !g.entity_manager.peek_star(where.snum)->is_explored_by(ship.owner())) {
+    g.out << "You haven't explored this system.\n";
+    return;
+  }
+  ship.whatdest() = where.level;
+  ship.deststar() = where.snum;
+  ship.destpnum() = where.pnum;
+}
+
+void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
+  if (!ship.max_speed_capacity()) {
     g.out << "That ship cannot be launched.\n";
+    return;
+  }
+  if (ship.docked()) {
+    g.out << "That ship is docked; use undock or launch first.\n";
+    return;
+  }
+  if (argv.size() <= 3) {
+    return;
+  }
+  Place where{g, argv[3], true};
+  if (where.err) {
+    return;
+  }
+  if (where.level == ScopeLevel::LEVEL_SHIP) {
+    set_ship_follow_destination(g, ship, where.shipno);
+  } else {
+    set_celestial_destination(g, ship, where);
   }
 }
 
 void order_evade(GameObj& /*g*/, const command_t& argv, Ship& ship) {
-  if (ship.max_crew_capacity() && ship.max_speed_capacity()) {
-    if (argv[3] == "on")
-      ship.protect().evade = true;
-    else if (argv[3] == "off")
-      ship.protect().evade = false;
+  if (!ship.max_crew_capacity() || !ship.max_speed_capacity() ||
+      argv.size() <= 3) {
+    return;
+  }
+  if (argv[3] == "on") {
+    ship.protect().evade = true;
+  } else if (argv[3] == "off") {
+    ship.protect().evade = false;
   }
 }
 
 void order_bombard(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.type() != ShipType::OTYPE_OMCL) {
-    if (ship.can_bombard()) {
-      if (argv[3] == "off")
-        ship.bombard() = 0;
-      else if (argv[3] == "on")
-        ship.bombard() = 1;
-    } else
-      g.out << "This type of ship cannot be set to retaliate.\n";
+  if (ship.type() == ShipType::OTYPE_OMCL) {
+    return;
+  }
+  if (!ship.can_bombard()) {
+    g.out << "This type of ship cannot be set to retaliate.\n";
+    return;
+  }
+  if (argv.size() <= 3) {
+    return;
+  }
+  if (argv[3] == "off") {
+    ship.bombard() = 0;
+  } else if (argv[3] == "on") {
+    ship.bombard() = 1;
   }
 }
 
 void order_retaliate(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.type() != ShipType::OTYPE_OMCL) {
-    if (ship.can_bombard()) {
-      if (argv[3] == "off")
-        ship.protect().self = false;
-      else if (argv[3] == "on")
-        ship.protect().self = true;
-    } else
-      g.out << "This type of ship cannot be set to retaliate.\n";
+  if (ship.type() == ShipType::OTYPE_OMCL) {
+    return;
+  }
+  if (!ship.can_bombard()) {
+    g.out << "This type of ship cannot be set to retaliate.\n";
+    return;
+  }
+  if (argv.size() <= 3) {
+    return;
+  }
+  if (argv[3] == "off") {
+    ship.protect().self = false;
+  } else if (argv[3] == "on") {
+    ship.protect().self = true;
   }
 }
 
 void order_focus(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.laser()) {
-    if (argv[3] == "on")
-      ship.focus() = 1;
-    else
-      ship.focus() = 0;
-  } else
+  if (!ship.laser()) {
     g.out << "No laser.\n";
+    return;
+  }
+  ship.focus() = (argv.size() > 3 && argv[3] == "on") ? 1 : 0;
 }
 
 void order_laser(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.laser()) {
-    if (ship.can_bombard()) {
-      if (ship.mounted()) {
-        if (argv[3] == "on") {
-          auto res = scn::scan<weapon_power_t>(argv[4], "{}");
-          ship.fire_laser() = res ? res->value() : 0;
-        } else
-          ship.fire_laser() = 0;
-      } else
-        g.out << "You do not have a crystal mounted.\n";
-    } else
-      g.out << "This type of ship cannot be set to retaliate.\n";
-  } else
+  if (!ship.laser()) {
     g.out << "This ship is not equipped with combat lasers.\n";
+    return;
+  }
+  if (!ship.can_bombard()) {
+    g.out << "This type of ship cannot be set to retaliate.\n";
+    return;
+  }
+  if (!ship.mounted()) {
+    g.out << "You do not have a crystal mounted.\n";
+    return;
+  }
+  if (argv.size() > 3 && argv[3] == "on") {
+    if (argv.size() > 4) {
+      auto res = scn::scan<weapon_power_t>(argv[4], "{}");
+      ship.fire_laser() = res ? res->value() : 0;
+    } else {
+      ship.fire_laser() = 0;
+    }
+  } else {
+    ship.fire_laser() = 0;
+  }
 }
 
 void order_merchant(GameObj& g, const command_t& argv, Ship& ship) {
-  if (argv[3] == "off")
-    ship.merchant() = 0;
-  else {
-    auto res = scn::scan<int>(argv[3], "{}");
-    if (!res || res->value() < 0 || res->value() > MAX_ROUTES) {
-      g.out << "Bad route number.\n";
-      return;
-    }
-    ship.merchant() = res->value();
+  if (argv.size() <= 3) {
+    return;
   }
+  if (argv[3] == "off") {
+    ship.merchant() = 0;
+    return;
+  }
+  auto res = scn::scan<int>(argv[3], "{}");
+  if (!res || res->value() < 0 || res->value() > MAX_ROUTES) {
+    g.out << "Bad route number.\n";
+    return;
+  }
+  ship.merchant() = res->value();
 }
 
 void order_speed(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.max_speed_capacity()) {
-    auto res = scn::scan<speed_t>(argv[3], "{}");
-    if (!res) {
-      g.out << "Specify a positive speed.\n";
-      return;
-    }
-    ship.speed() = std::min(res->value(), ship.max_speed_capacity());
-  } else {
+  if (!ship.max_speed_capacity()) {
     g.out << "This ship does not have a speed rating.\n";
+    return;
   }
+  if (argv.size() <= 3) {
+    g.out << "Specify a positive speed.\n";
+    return;
+  }
+  auto res = scn::scan<speed_t>(argv[3], "{}");
+  if (!res) {
+    g.out << "Specify a positive speed.\n";
+    return;
+  }
+  ship.speed() = std::min(res->value(), ship.max_speed_capacity());
 }
 
 void order_salvo(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.can_bombard()) {
-    auto res = scn::scan<gun_count_t>(argv[3], "{}");
-    if (!res) {
-      g.out << "Specify a positive number of guns.\n";
-      return;
-    }
-    const auto* battery = ship.active_gun_battery();
-    ship.retaliate() = battery ? std::min(res->value(), battery->count) : 0;
-  } else {
+  if (!ship.can_bombard()) {
     g.out << "This ship cannot be set to retaliate.\n";
+    return;
   }
+  if (argv.size() <= 3) {
+    g.out << "Specify a positive number of guns.\n";
+    return;
+  }
+  auto res = scn::scan<gun_count_t>(argv[3], "{}");
+  if (!res) {
+    g.out << "Specify a positive number of guns.\n";
+    return;
+  }
+  const auto* battery = ship.active_gun_battery();
+  ship.retaliate() = battery ? std::min(res->value(), battery->count) : 0;
 }
 
-namespace {
 void order_battery(GameObj& g, const command_t& argv, Ship& ship,
                    ActiveBattery mode) {
   const auto& battery =
@@ -368,17 +411,16 @@ void order_battery(GameObj& g, const command_t& argv, Ship& ship,
   if (argv.size() < 4) {
     ship.guns() = mode;
     ship.retaliate() = std::min(ship.retaliate(), battery.count);
-  } else {
-    auto res = scn::scan<gun_count_t>(argv[3], "{}");
-    if (!res) {
-      g.out << "Specify a nonnegative number of guns.\n";
-      return;
-    }
-    ship.retaliate() = std::min(res->value(), battery.count);
-    ship.guns() = mode;
+    return;
   }
+  auto res = scn::scan<gun_count_t>(argv[3], "{}");
+  if (!res) {
+    g.out << "Specify a nonnegative number of guns.\n";
+    return;
+  }
+  ship.retaliate() = std::min(res->value(), battery.count);
+  ship.guns() = mode;
 }
-}  // namespace
 
 void order_primary(GameObj& g, const command_t& argv, Ship& ship) {
   order_battery(g, argv, ship, PRIMARY);
@@ -404,20 +446,8 @@ void order_radiative(GameObj& /*g*/, const command_t& /*argv*/, Ship& ship) {
   }
 }
 
-void order_move(GameObj& g, const command_t& argv, Ship& ship) {
-  auto* terraform = ship.as<TerraformerShip>();
-  if (!terraform) {
-    g.out << "That ship is not a terraformer or a space plow.\n";
-    return;
-  }
-  std::string moveseq;
-  if (argv.size() > 3) {
-    moveseq = argv[3];
-  } else { /* The move list might be empty.. */
-    moveseq = "5";
-  }
-  for (auto i = 0; i < moveseq.size(); ++i) {
-    /* Make sure the list of moves is short enough. */
+bool validate_move_sequence(GameObj& g, std::string& moveseq) {
+  for (std::size_t i = 0; i < moveseq.size(); ++i) {
     if (i == SHIP_NAMESIZE - 1) {
       g.out << std::format("Warning: that is more than {} moves.\n",
                            SHIP_NAMESIZE - 1);
@@ -425,13 +455,12 @@ void order_move(GameObj& g, const command_t& argv, Ship& ship) {
       moveseq.resize(i);
       break;
     }
-    /* Make sure this move is OK. */
-    if ((moveseq[i] == 'c') || (moveseq[i] == 's')) {
-      if ((i == 0) && (moveseq[0] == 'c')) {
+    if (moveseq[i] == 'c' || moveseq[i] == 's') {
+      if (i == 0 && moveseq[0] == 'c') {
         g.out << "Cycling move orders can not be empty!\n";
-        return;
+        return false;
       }
-      if (moveseq[i + 1]) {
+      if (i + 1 < moveseq.size()) {
         g.out << std::format(
             "Warning: '{}' should be the last character in the move order.\n",
             moveseq[i]);
@@ -439,89 +468,176 @@ void order_move(GameObj& g, const command_t& argv, Ship& ship) {
         moveseq.resize(i + 1);
         break;
       }
-    } else if ((moveseq[i] < '1') || ('9' < moveseq[i])) {
+    } else if (moveseq[i] < '1' || moveseq[i] > '9') {
       g.out << std::format("'{}' is not a valid move direction.\n", moveseq[i]);
-      return;
+      return false;
     }
   }
+  return true;
+}
+
+void order_move(GameObj& g, const command_t& argv, Ship& ship) {
+  auto* terraform = ship.as<TerraformerShip>();
+  if (!terraform) {
+    g.out << "That ship is not a terraformer or a space plow.\n";
+    return;
+  }
+  std::string moveseq = (argv.size() > 3) ? argv[3] : "5";
+  if (!validate_move_sequence(g, moveseq)) {
+    return;
+  }
   terraform->shipclass() = moveseq;
-  /* This is the index keeping track of which order in shipclass is next. */
   terraform->set_index(0);
 }
 
 void order_trigger(GameObj& g, const command_t& argv, Ship& ship) {
   auto* mine = ship.as<MineShip>();
-  if (mine) {
-    auto res = scn::scan<weapon_range_t>(argv[3], "{}");
-    mine->set_trigger_radius(res ? res->value() : 0);
-  } else {
+  if (!mine) {
     g.out << "This ship cannot be assigned a trigger radius.\n";
+    return;
   }
+  if (argv.size() <= 3) {
+    mine->set_trigger_radius(0);
+    return;
+  }
+  auto res = scn::scan<weapon_range_t>(argv[3], "{}");
+  mine->set_trigger_radius(res ? res->value() : 0);
 }
 
 void order_transport(GameObj& g, const command_t& argv, Ship& ship) {
   auto* transporter = ship.as<TransporterShip>();
-  if (transporter) {
-    auto res = scn::scan<shipnum_t::value_type>(argv[3], "{}");
-    shipnum_t target = res ? shipnum_t{res->value()} : 0;
-    if (target == ship.number()) {
-      g.out << "A transporter cannot transport to itself.";
-      target = 0;
-    } else {
-      g.out << std::format("Target ship is {}.\n", target);
-    }
-    transporter->set_target_ship(target);
-  } else {
+  if (!transporter) {
     g.out << "This ship is not a transporter.\n";
+    return;
   }
+  shipnum_t target{0};
+  if (argv.size() > 3) {
+    auto res = scn::scan<shipnum_t::value_type>(argv[3], "{}");
+    target = res ? shipnum_t{res->value()} : 0;
+  }
+  if (target == ship.number()) {
+    g.out << "A transporter cannot transport to itself.\n";
+    target = 0;
+  } else {
+    g.out << std::format("Target ship is {}.\n", target);
+  }
+  transporter->set_target_ship(target);
+}
+
+bool requires_maneuver_fuel_to_aim(const Ship& ship) {
+  return ship.type() != ShipType::OTYPE_GTELE &&
+         ship.type() != ShipType::OTYPE_TRACT;
 }
 
 void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
-  if (ship.can_aim()) {
-    if (ship.type() == ShipType::OTYPE_GTELE ||
-        ship.type() == ShipType::OTYPE_TRACT || ship.fuel() >= FUEL_MANEUVER) {
-      if (ship.type() == ShipType::STYPE_MIRROR && ship.docked()) {
-        g.out << "docked; use undock or launch first.\n";
-        return;
-      }
-      Place pl{g, argv[3], true};
-      if (pl.err) {
-        g.out << "Error in destination.\n";
-        return;
-      }
-      if (auto* mirror = ship.as<SpaceMirrorShip>()) {
-        mirror->aim() = AimedAtData{.shipno = pl.shipno,
-                                    .snum = pl.snum,
-                                    .intensity = 0,
-                                    .pnum = pl.pnum,
-                                    .level = pl.level};
-      }
-      if (ship.type() != ShipType::OTYPE_TRACT &&
-          ship.type() != ShipType::OTYPE_GTELE)
-        use_fuel(ship, FUEL_MANEUVER);
-      if (ship.type() == ShipType::OTYPE_GTELE ||
-          ship.type() == ShipType::OTYPE_STELE)
-        mk_expl_aimed_at(g, ship);
-      g.out << std::format("Aimed at {}\n", prin_aimed_at(ship));
-    } else {
-      g.out << std::format("Not enough maneuvering fuel ({:.2f}).\n",
-                           FUEL_MANEUVER);
-    }
-  } else {
+  if (!ship.can_aim()) {
     g.out << "You can't aim that kind of ship.\n";
+    return;
   }
+  if (requires_maneuver_fuel_to_aim(ship) && ship.fuel() < FUEL_MANEUVER) {
+    g.out << std::format("Not enough maneuvering fuel ({:.2f}).\n",
+                         FUEL_MANEUVER);
+    return;
+  }
+  if (ship.type() == ShipType::STYPE_MIRROR && ship.docked()) {
+    g.out << "docked; use undock or launch first.\n";
+    return;
+  }
+  if (argv.size() <= 3) {
+    g.out << "Error in destination.\n";
+    return;
+  }
+  Place pl{g, argv[3], true};
+  if (pl.err) {
+    g.out << "Error in destination.\n";
+    return;
+  }
+  if (auto* mirror = ship.as<SpaceMirrorShip>()) {
+    mirror->aim() = AimedAtData{.shipno = pl.shipno,
+                                .snum = pl.snum,
+                                .intensity = 0,
+                                .pnum = pl.pnum,
+                                .level = pl.level};
+  }
+  if (requires_maneuver_fuel_to_aim(ship)) {
+    use_fuel(ship, FUEL_MANEUVER);
+  }
+  if (ship.type() == ShipType::OTYPE_GTELE ||
+      ship.type() == ShipType::OTYPE_STELE) {
+    survey_aim_target(g, ship);
+  }
+  g.out << std::format("Aimed at {}\n",
+                       format_aim_target(g.entity_manager, ship));
 }
 
 void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
   if (auto* mirror = ship.as<SpaceMirrorShip>()) {
-    auto res = scn::scan<int>(argv[3], "{}");
-    mirror->set_intensity(
-        static_cast<char>(std::clamp(res ? res->value() : 0, 0, 100)));
+    int val = 0;
+    if (argv.size() > 3) {
+      if (auto res = scn::scan<int>(argv[3], "{}")) {
+        val = res->value();
+      }
+    }
+    mirror->set_intensity(static_cast<char>(std::clamp(val, 0, 100)));
   }
 }
 
+bool activate_factory_on_habitat(GameObj& g, Ship& factory,
+                                 resource_t& oncost) {
+  bool ok = false;
+  g.entity_manager.mutate_ship(factory.destshipno(), [&](Ship& habitat) {
+    if (habitat.type() != ShipType::STYPE_HABITAT) {
+      g.out << "The factory is currently being transported.\n";
+      return;
+    }
+    oncost = HAB_FACT_ON_COST * factory.build_cost();
+    if (habitat.resource() < oncost) {
+      g.out << std::format(
+          "You don't have {} resources on Habitat #{} to activate this "
+          "factory.\n",
+          oncost, factory.destshipno());
+      return;
+    }
+    const int new_size =
+        1 + static_cast<int>(HAB_FACT_SIZE *
+                             static_cast<double>(ship_size(factory)));
+    const int hanger_needed =
+        new_size - ((habitat.max_hanger() - habitat.hanger()) + factory.size());
+    if (hanger_needed > 0) {
+      g.out << std::format(
+          "Not enough hanger space free on Habitat #{}. Need {} more.\n",
+          factory.destshipno(), hanger_needed);
+      return;
+    }
+    habitat.resource() -= oncost;
+    habitat.hanger() -= factory.size();
+    factory.size() = new_size;
+    habitat.hanger() += factory.size();
+    ok = true;
+  });
+  return ok;
+}
+
+bool activate_factory_on_planet(GameObj& g, const Ship& factory,
+                                resource_t& oncost) {
+  bool ok = false;
+  g.entity_manager.mutate_planet(
+      factory.deststar(), factory.destpnum(), [&](Planet& planet) {
+        oncost = 2 * factory.build_cost();
+        if (planet.info(g.player()).resource < oncost) {
+          g.out << std::format(
+              "You don't have {} resources on the planet to activate this "
+              "factory.\n",
+              oncost);
+          return;
+        }
+        planet.info(g.player()).resource -= oncost;
+        ok = true;
+      });
+  return ok;
+}
+
 void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
-  player_t Playernum = g.player();
   if (!ship.has_switch()) {
     g.out << "This ship does not have an on/off setting.\n";
     return;
@@ -535,61 +651,14 @@ void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
     return;
   }
   if (ship.type() == ShipType::OTYPE_FACTORY) {
-    unsigned int oncost = 0;
+    resource_t oncost = 0;
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      bool ok = false;
-      g.entity_manager.mutate_ship(ship.destshipno(), [&](Ship& s2) {
-        if (s2.type() == ShipType::STYPE_HABITAT) {
-          oncost = HAB_FACT_ON_COST * ship.build_cost();
-          if (s2.resource() < oncost) {
-            g.out << std::format(
-                "You don't have {} resources on Habitat #{} to activate this "
-                "factory.\n",
-                oncost, ship.destshipno());
-            return;
-          }
-          int hangerneeded =
-              (1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship))) -
-              ((s2.max_hanger() - s2.hanger()) + ship.size());
-          if (hangerneeded > 0) {
-            g.out << std::format(
-                "Not enough hanger space free on Habitat #{}. Need {} more.\n",
-                ship.destshipno(), hangerneeded);
-            return;
-          }
-          s2.resource() -= oncost;
-          s2.hanger() -= ship.size();
-          ship.size() = 1 + (int)(HAB_FACT_SIZE * (double)ship_size(ship));
-          s2.hanger() += ship.size();
-          ok = true;
-        } else {
-          g.out << "The factory is currently being transported.\n";
-        }
-      });
-      if (!ok) {
-        return;
-      }
+      if (!activate_factory_on_habitat(g, ship, oncost)) return;
     } else if (!ship.is_landed()) {
       g.out << "You cannot activate the factory here.\n";
       return;
     } else {
-      bool ok = false;
-      g.entity_manager.mutate_planet(
-          ship.deststar(), ship.destpnum(), [&](Planet& planet) {
-            oncost = 2 * ship.build_cost();
-            if (planet.info(Playernum).resource < oncost) {
-              g.out << std::format(
-                  "You don't have {} resources on the planet to activate this "
-                  "factory.\n",
-                  oncost);
-              return;
-            }
-            planet.info(Playernum).resource -= oncost;
-            ok = true;
-          });
-      if (!ok) {
-        return;
-      }
+      if (!activate_factory_on_planet(g, ship, oncost)) return;
     }
     g.out << std::format("Factory activated at a cost of {} resources.\n",
                          oncost);
@@ -604,6 +673,175 @@ void order_off(GameObj& g, const command_t& /*argv*/, Ship& ship) {
     return;
   }
   ship.on() = 0;
+}
+
+struct OrderDispatchEntry {
+  std::string_view name;
+  void (*handler)(GameObj&, const command_t&, Ship&);
+};
+
+constexpr std::array<OrderDispatchEntry, 27> order_handlers = {{
+    {"defense", &order_defense},
+    {"scatter", &order_scatter},
+    {"impact", &order_impact},
+    {"jump", &order_jump},
+    {"protect", &order_protect},
+    {"navigate", &order_navigate},
+    {"switch", &order_switch},
+    {"destination", &order_destination},
+    {"evade", &order_evade},
+    {"bombard", &order_bombard},
+    {"retaliate", &order_retaliate},
+    {"focus", &order_focus},
+    {"laser", &order_laser},
+    {"merchant", &order_merchant},
+    {"speed", &order_speed},
+    {"salvo", &order_salvo},
+    {"primary", &order_primary},
+    {"secondary", &order_secondary},
+    {"explosive", &order_explosive},
+    {"radiative", &order_radiative},
+    {"move", &order_move},
+    {"trigger", &order_trigger},
+    {"transport", &order_transport},
+    {"aim", &order_aim},
+    {"intensity", &order_intensity},
+    {"on", &order_on},
+    {"off", &order_off},
+}};
+
+std::string format_ship_destination(const Ship& ship) {
+  if (!ship.docked()) {
+    return prin_ship_dest(ship);
+  }
+  if (ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
+    return std::format("D#{}", ship.destshipno());
+  }
+  return std::format("L{:2d},{:2d}", ship.land_coords().x,
+                     ship.land_coords().y);
+}
+
+std::string format_active_battery_option(const Ship& ship) {
+  if (ship.guns() == ActiveBattery::NONE) {
+    return "";
+  }
+  const auto* battery = ship.active_gun_battery();
+  if (!battery) {
+    return "/none";
+  }
+  std::string_view cal_prefix;
+  switch (battery->caliber) {
+    case guntype_t::LIGHT:
+      cal_prefix = "/lgt ";
+      break;
+    case guntype_t::MEDIUM:
+      cal_prefix = "/med ";
+      break;
+    case guntype_t::HEAVY:
+      cal_prefix = "/hvy ";
+      break;
+    default:
+      break;
+  }
+  std::string_view bat_name =
+      (ship.guns() == PRIMARY)
+          ? "primary"
+          : ((battery->caliber == guntype_t::LIGHT) ? "secondary" : "secndry");
+  return std::format("{}{}", cal_prefix, bat_name);
+}
+
+std::string format_combat_options(const Ship& ship) {
+  std::string out;
+  if (ship.hyper_drive().on) {
+    out += std::format("/jump {} {}",
+                       (ship.hyper_drive().is_ready() ? "ready" : "charging"),
+                       ship.hyper_drive().charge);
+  }
+  if (ship.protect().self) out += "/retal";
+  out += format_active_battery_option(ship);
+  if (ship.fire_laser()) out += std::format("/laser {}", ship.fire_laser());
+  if (ship.focus()) out += "/focus";
+  if (ship.retaliate()) out += std::format("/salvo {}", ship.retaliate());
+  if (ship.protect().planet) out += "/defense";
+  if (ship.protect().on) out += std::format("/prot {}", ship.protect().ship);
+  return out;
+}
+
+std::string format_navigation_and_switch_options(const Ship& ship) {
+  std::string out;
+  if (ship.navigate().on) {
+    out += std::format("/nav {} ({})", ship.navigate().bearing,
+                       ship.navigate().turns);
+  }
+  if (ship.merchant()) out += std::format("/merchant {}", ship.merchant());
+  if (ship.has_switch()) {
+    out += ship.on() ? "/on" : "/off";
+  }
+  if (ship.protect().evade) out += "/evade";
+  return out;
+}
+
+std::string format_specialty_options(EntityManager& em, const Ship& ship) {
+  std::string out;
+  if (const auto* mine = ship.as<MineShip>()) {
+    out += mine->mode() ? "/radiate" : "/explode";
+    out += std::format("/trigger {}", mine->trigger_radius());
+  } else if (ship.type() == ShipType::OTYPE_GR) {
+    out += ship.mode() ? "/radiate" : "/explode";
+  }
+
+  if (const auto* terraform = ship.as<TerraformerShip>()) {
+    std::string temp = &(terraform->shipclass()[terraform->index()]);
+    out += std::format("/move {}", temp);
+    if (!temp.empty() && temp.back() == 'c') {
+      std::string hidden = terraform->shipclass().substr(0, terraform->index());
+      out += std::format("{}c", hidden);
+    }
+  }
+
+  if (const auto* missile = ship.as<MissileShip>()) {
+    if (missile->whatdest() == ScopeLevel::LEVEL_PLAN) {
+      out += missile->is_scatter()
+                 ? "/scatter"
+                 : std::format("/impact {},{}", missile->impact_coords().x,
+                               missile->impact_coords().y);
+    }
+  }
+
+  if (const auto* trans = ship.as<TransporterShip>()) {
+    out += std::format("/target {}", trans->target_ship().value);
+  }
+
+  if (const auto* mirror = ship.as<SpaceMirrorShip>()) {
+    out += std::format("/aim {}/int {}", format_aim_target(em, *mirror),
+                       static_cast<int>(mirror->intensity()));
+  }
+  return out;
+}
+
+std::string format_hyperdrive_jump_summary(EntityManager& em,
+                                           const Ship& ship) {
+  if (!ship.hyper_drive().on) {
+    return "";
+  }
+  const auto* dest_star = em.peek_star(ship.deststar());
+  if (!dest_star) {
+    return "";
+  }
+  const double dist = ship.coordinates().distance_to(dest_star->coordinates());
+  const double distfac = HYPER_DIST_FACTOR * (ship.tech() + 100.0);
+  const double ratio = dist / distfac;
+  const double fuse =
+      (ship.mounted() && dist > distfac)
+          ? HYPER_DRIVE_FUEL_USE * std::sqrt(ship.mass()) * ratio
+          : HYPER_DRIVE_FUEL_USE * std::sqrt(ship.mass()) * ratio * ratio;
+
+  std::string out = std::format(
+      "  *** distance {:.0f} - jump will cost {:.1f}f ***\n", dist, fuse);
+  if (ship.max_fuel_capacity() < fuse) {
+    out += "Your ship cannot carry enough fuel to do this jump.\n";
+  }
+  return out;
 }
 
 }  // namespace
@@ -622,218 +860,37 @@ void give_orders(GameObj& g, const command_t& argv, int /* APcount */,
     return;
   }
 
-  if (argv[2] == "defense") {
-    order_defense(g, argv, ship);
-  } else if (argv[2] == "scatter") {
-    order_scatter(g, argv, ship);
-  } else if (argv[2] == "impact") {
-    order_impact(g, argv, ship);
-  } else if (argv[2] == "jump") {
-    order_jump(g, argv, ship);
-  } else if (argv[2] == "protect") {
-    order_protect(g, argv, ship);
-  } else if (argv[2] == "navigate") {
-    order_navigate(g, argv, ship);
-  } else if (argv[2] == "switch") {
-    order_switch(g, argv, ship);
-  } else if (argv[2] == "destination") {
-    order_destination(g, argv, ship);
-  } else if (argv[2] == "evade") {
-    order_evade(g, argv, ship);
-  } else if (argv[2] == "bombard") {
-    order_bombard(g, argv, ship);
-  } else if (argv[2] == "retaliate") {
-    order_retaliate(g, argv, ship);
-  } else if (argv[2] == "focus") {
-    order_focus(g, argv, ship);
-  } else if (argv[2] == "laser") {
-    order_laser(g, argv, ship);
-  } else if (argv[2] == "merchant") {
-    order_merchant(g, argv, ship);
-  } else if (argv[2] == "speed") {
-    order_speed(g, argv, ship);
-  } else if (argv[2] == "salvo") {
-    order_salvo(g, argv, ship);
-  } else if (argv[2] == "primary") {
-    order_primary(g, argv, ship);
-  } else if (argv[2] == "secondary") {
-    order_secondary(g, argv, ship);
-  } else if (argv[2] == "explosive") {
-    order_explosive(g, argv, ship);
-  } else if (argv[2] == "radiative") {
-    order_radiative(g, argv, ship);
-  } else if (argv[2] == "move") {
-    order_move(g, argv, ship);
-  } else if (argv[2] == "trigger") {
-    order_trigger(g, argv, ship);
-  } else if (argv[2] == "transport") {
-    order_transport(g, argv, ship);
-  } else if (argv[2] == "aim") {
-    order_aim(g, argv, ship);
-  } else if (argv[2] == "intensity") {
-    order_intensity(g, argv, ship);
-  } else if (argv[2] == "on") {
-    order_on(g, argv, ship);
-  } else if (argv[2] == "off") {
-    order_off(g, argv, ship);
+  if (argv.size() > 2) {
+    for (const auto& entry : order_handlers) {
+      if (entry.name == argv[2]) {
+        entry.handler(g, argv, ship);
+        break;
+      }
+    }
   }
   ship.notified() = 0;
 }
 
-void DispOrdersHeader(EntityManager& em, player_t Playernum,
-                      governor_t Governor) {
-  push_telegram(em, Playernum, Governor,
-                "    #       name       sp orbits     destin     options\n");
+void display_orders_header(GameObj& g) {
+  g.out << "    #       name       sp orbits     destin     options\n";
 }
 
-void DispOrders(EntityManager& em, player_t Playernum, governor_t Governor,
-                const Ship& ship) {
-  if (ship.owner() != Playernum || !authorized(Governor, ship) || !ship.alive())
+void display_orders(GameObj& g, const Ship& ship) {
+  if (ship.owner() != g.player() || !authorized(g.governor(), ship) ||
+      !ship.alive()) {
     return;
-
-  std::stringstream buffer;
-  if (ship.docked())
-    if (ship.whatdest() == ScopeLevel::LEVEL_SHIP)
-      buffer << "D#" << ship.destshipno();
-    else
-      buffer << std::format("L{:2d},{:2d}", ship.land_coords().x,
-                            ship.land_coords().y);
-  else
-    buffer << prin_ship_dest(ship);
-
-  buffer << std::format(
-      "{:5} {} {:14.14} {}{} {:10.10} {}", ship.number(), ship.type_letter(),
-      ship.name(), ship.hyper_drive().has ? (ship.mounted() ? '+' : '*') : ' ',
-      ship.speed(), dispshiploc_brief(em, ship), buffer.str());
-
-  if (ship.hyper_drive().on) {
-    buffer << std::format(
-        "/jump {} {}", (ship.hyper_drive().is_ready() ? "ready" : "charging"),
-        ship.hyper_drive().charge);
-  }
-  if (ship.protect().self) {
-    buffer << "/retal";
   }
 
-  if (ship.guns() != ActiveBattery::NONE) {
-    const auto* battery = ship.active_gun_battery();
-    if (!battery) {
-      buffer << "/none";
-    } else {
-      std::string_view cal_prefix;
-      switch (battery->caliber) {
-        case guntype_t::LIGHT:
-          cal_prefix = "/lgt ";
-          break;
-        case guntype_t::MEDIUM:
-          cal_prefix = "/med ";
-          break;
-        case guntype_t::HEAVY:
-          cal_prefix = "/hvy ";
-          break;
-        default:
-          break;
-      }
-      std::string_view bat_name =
-          (ship.guns() == PRIMARY)
-              ? "primary"
-              : ((battery->caliber == guntype_t::LIGHT) ? "secondary"
-                                                        : "secndry");
-      buffer << cal_prefix << bat_name;
-    }
-  }
+  const char hyper_indicator =
+      ship.hyper_drive().has ? (ship.mounted() ? '+' : '*') : ' ';
+  const std::string dest_str = format_ship_destination(ship);
 
-  if (ship.fire_laser()) {
-    buffer << std::format("/laser {}", ship.fire_laser());
-  }
-  if (ship.focus()) buffer << "/focus";
+  g.out << std::format(
+      "{:5} {} {:14.14} {}{} {:10.10} {}{}{}{}\n", ship.number(),
+      ship.type_letter(), ship.name(), hyper_indicator, ship.speed(),
+      dispshiploc_brief(g.entity_manager, ship), dest_str,
+      format_combat_options(ship), format_navigation_and_switch_options(ship),
+      format_specialty_options(g.entity_manager, ship));
 
-  if (ship.retaliate()) {
-    buffer << std::format("/salvo {}", ship.retaliate());
-  }
-  if (ship.protect().planet) buffer << "/defense";
-  if (ship.protect().on) {
-    buffer << std::format("/prot {}", ship.protect().ship);
-  }
-  if (ship.navigate().on) {
-    buffer << std::format("/nav {} ({})", ship.navigate().bearing,
-                          ship.navigate().turns);
-  }
-  if (ship.merchant()) {
-    buffer << std::format("/merchant {}", ship.merchant());
-  }
-  if (ship.has_switch()) {
-    if (ship.on())
-      buffer << "/on";
-    else
-      buffer << "/off";
-  }
-  if (ship.protect().evade) buffer << "/evade";
-  if (const auto* mine = ship.as<MineShip>()) {
-    if (mine->mode())
-      buffer << "/radiate";
-    else
-      buffer << "/explode";
-    buffer << std::format("/trigger {}", mine->trigger_radius());
-  } else if (ship.type() == ShipType::OTYPE_GR) {
-    if (ship.mode())
-      buffer << "/radiate";
-    else
-      buffer << "/explode";
-  }
-
-  if (const auto* terraform = ship.as<TerraformerShip>()) {
-    std::string temp = &(terraform->shipclass()[terraform->index()]);
-    buffer << std::format("/move {}", temp);
-
-    if (temp[temp.length() - 1] == 'c') {
-      std::string hidden = temp;
-      hidden = hidden.substr(0, terraform->index());
-      buffer << std::format("{}c", hidden);
-    }
-  }
-
-  if (const auto* missile = ship.as<MissileShip>()) {
-    if (missile->whatdest() == ScopeLevel::LEVEL_PLAN) {
-      if (missile->is_scatter())
-        buffer << "/scatter";
-      else {
-        buffer << std::format("/impact {},{}", missile->impact_coords().x,
-                              missile->impact_coords().y);
-      }
-    }
-  }
-
-  if (const auto* trans = ship.as<TransporterShip>()) {
-    buffer << std::format("/target {}", trans->target_ship().value);
-  }
-
-  if (const auto* mirror = ship.as<SpaceMirrorShip>()) {
-    buffer << std::format("/aim {}/int {}", prin_aimed_at(*mirror),
-                          static_cast<int>(mirror->intensity()));
-  }
-
-  buffer << "\n";
-  push_telegram(em, Playernum, Governor, buffer.str());
-  /* if hyper space is on estimate how much fuel it will cost to get to the
-   * destination */
-  if (ship.hyper_drive().on) {
-    const auto& dest_star = *em.peek_star(ship.deststar());
-    double dist = ship.coordinates().distance_to(dest_star.coordinates());
-    auto distfac = HYPER_DIST_FACTOR * (ship.tech() + 100.0);
-
-    double fuse =
-        ship.mounted() && dist > distfac
-            ? HYPER_DRIVE_FUEL_USE * std::sqrt(ship.mass()) * (dist / distfac)
-            : HYPER_DRIVE_FUEL_USE * std::sqrt(ship.mass()) * (dist / distfac) *
-                  (dist / distfac);
-
-    push_telegram(
-        em, Playernum, Governor,
-        std::format("  *** distance {:.0f} - jump will cost {:.1f}f ***\n",
-                    dist, fuse));
-    if (ship.max_fuel_capacity() < fuse)
-      push_telegram(em, Playernum, Governor,
-                    "Your ship cannot carry enough fuel to do this jump.\n");
-  }
+  g.out << format_hyperdrive_jump_summary(g.entity_manager, ship);
 }

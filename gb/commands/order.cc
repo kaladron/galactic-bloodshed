@@ -14,33 +14,33 @@ module commands;
 
 namespace GB::commands {
 bool order(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  ap_t APcount = 1;
+  player_t playernum = g.player();
+  governor_t governor = g.governor();
+  ap_t ap_count = 1;
 
   if (argv.size() == 1) { /* display all ship orders */
-    DispOrdersHeader(g.entity_manager, Playernum, Governor);
-    const ShipList kShips(g.entity_manager, g, ShipList::IterationType::Scope);
-    for (const Ship& ship : kShips) {
-      if (ship.owner() == Playernum && authorized(Governor, ship)) {
-        DispOrders(g.entity_manager, Playernum, Governor, ship);
+    display_orders_header(g);
+    const ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
+    for (const Ship& ship : ships) {
+      if (ship.owner() == playernum && authorized(governor, ship)) {
+        display_orders(g, ship);
       }
     }
     return true;
   } else if (argv.size() >= 2) {
-    DispOrdersHeader(g.entity_manager, Playernum, Governor);
+    display_orders_header(g);
     ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
     for (auto ship_handle : ships) {
       Ship& ship = *ship_handle;
 
       if (!ship_matches_filter(argv[1], ship)) continue;
-      if (!authorized(Governor, ship)) continue;
+      if (!authorized(governor, ship)) continue;
 
       if (argv.size() > 2) {
-        give_orders(g, argv, APcount, ship);
+        give_orders(g, argv, ap_count, ship);
       }
 
-      DispOrders(g.entity_manager, Playernum, Governor, ship);
+      display_orders(g, ship);
 
       // Early exit for specific ship number filters
       if (is_ship_number_filter(argv[1])) break;

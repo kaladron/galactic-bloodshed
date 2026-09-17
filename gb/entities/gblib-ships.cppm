@@ -535,7 +535,8 @@ export struct ship_struct {
   bool examined{false};        ///< Ship surveyed / examined
   bool on{false};              ///< Factory / power generator online
 
-  bool merchant{false};                     ///< Commercial trade vessel status
+  int merchant{0};  ///< Assigned merchant shipping route (0 = off,
+                    ///< 1..MAX_ROUTES = route number)
   ActiveBattery guns{ActiveBattery::NONE};  ///< Active gun battery mode
   GunBattery primary_battery;               ///< Primary gun battery
   GunBattery secondary_battery;             ///< Secondary gun battery
@@ -2770,10 +2771,10 @@ public:
   }
 
   // Merchant and weapons
-  [[nodiscard]] bool merchant() const {
+  [[nodiscard]] int merchant() const {
     return data_.merchant;
   }
-  bool& merchant() {
+  int& merchant() {
     return data_.merchant;
   }
 

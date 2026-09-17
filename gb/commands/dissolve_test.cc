@@ -13,45 +13,34 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
+  ctx.with_standard_universe();
 
-  // Create test race via repository
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.password = "testpass";
-  race.Guest = false;
-  race.governor[0].active = true;
-  race.governor[0].password = "govpass";
-  race.governor[1].active = true;
-  race.governor[1].password = "subpass";
-  race.dissolved = false;
+  ctx.em.mutate_race(1, [](Race& race) {
+    race.password = "testpass";
+    race.governor[0].password = "govpass";
+    race.governor[1].active = true;
+    race.governor[1].password = "subpass";
+    race.dissolved = false;
+  });
 
-  // NOTE: Not creating ships for this test because kill_ship() still uses
-  // global races[] We're just testing that the dissolved flag gets set
-  // correctly
+  ctx.em.mutate_race(2, [](Race& race2) {
+    race2.password = "otherpass";
+    race2.governor[0].password = "othergov";
+  });
 
-  // Save via repositories
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup universe_struct (required by dissolve command)
-  UniverseRepository universe_repo(store);
-  universe_struct sdata{};
-  sdata.id = 1;
-  sdata.numstars = 0;  // No stars, simplifies test
-  universe_repo.save(sdata);
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 1)
+      .owned_by(1, 0)
+      .in_planet_orbit(0, 0)
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2)
+      .owned_by(2, 0)
+      .in_planet_orbit(0, 0)
+      .build();
 
   // Load race into EntityManager cache to ensure getracenum can find it
   const auto* loaded_race = ctx.em.peek_race(1);
   test::expect_ne(loaded_race, nullptr);
   test::expect_eq(loaded_race->password, "testpass");
-  std::println(std::cout,
-               "Race loaded into EntityManager: player={}, password={}",
-               loaded_race->Playernum, loaded_race->password);
-  std::println(std::cout, "Governor 0: active={}, password='{}'",
-               loaded_race->governor[0].active,
-               loaded_race->governor[0].password);
   test::expect_eq(loaded_race->governor[0].password, "govpass");
 }
 
@@ -65,10 +54,11 @@ void test_dissolve_happy_path() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  std::println(std::cout, "Dissolve race with correct passwords");
+  std::println(std::cout, "Dissolve race with correct passwords and waste");
   {
-    ctx.assert_dispatch_success(g, {"dissolve", "testpass", "govpass"});
-    std::println(std::cout, "Command output: {}", g.out.str());
+    ctx.assert_dispatch_success(g,
+                                {"dissolve", "testpass", "govpass", "waste"});
+    test::expect_contains(g.out.str(), "Ship #1, self-destruct enabled");
 
     // Clear cache to force reload from database
     ctx.em.clear_cache();
@@ -76,22 +66,38 @@ void test_dissolve_happy_path() {
     // Verify race was dissolved
     const auto* saved_race = ctx.em.peek_race(1);
     test::expect_ne(saved_race, nullptr);
-    std::println(std::cout, "DEBUG: Race dissolved = {}",
-                 saved_race->dissolved);
-    std::println(std::cout, "DEBUG: Race name = {}", saved_race->name);
     test::expect_true(saved_race->dissolved);
-    std::println(std::cout, "    ✓ Race dissolved flag set to true");
 
-    // TODO: Re-enable ship destruction test after kill_ship() migrated to
-    // EntityManager (Phase 3.7) Currently disabled because kill_ship() uses
-    // global races[] array Expected behavior: ship->alive should be false or
-    // ship->owner should be 0
-    //
-    // Verify ship was destroyed (alive flag should be false)
-    // const auto* saved_ship = ctx.em.peek_ship(1);
-    // assert(saved_ship != nullptr);
-    // assert(saved_ship->alive == false || saved_ship->owner == 0);
-    // std::println(std::cout, "    ✓ Ship destroyed or ownership removed");
+    // Verify ship #1 was destroyed while player 2's ship #2 remains alive
+    const auto* saved_ship1 = ctx.em.peek_ship(1);
+    test::expect_ne(saved_ship1, nullptr);
+    test::expect_false(saved_ship1->alive());
+    const auto* saved_ship2 = ctx.em.peek_ship(2);
+    test::expect_ne(saved_ship2, nullptr);
+    test::expect_true(saved_ship2->alive());
+
+    // Verify Earth sector (0,0) was cleared and wasted, planet demographics
+    // synced, and star inhabitation cleared for player 1
+    const auto* smap = ctx.em.peek_sectormap(0, 0);
+    test::expect_eq(smap->get({0, 0}).get_owner(), 0);
+    test::expect_eq(smap->get({0, 0}).get_popn(), 0);
+    test::expect_eq(smap->get({0, 0}).get_troops(), 0);
+    test::expect_eq(smap->get({0, 0}).get_condition(), SectorType::SEC_WASTED);
+
+    const auto* pl = ctx.em.peek_planet(0, 0);
+    test::expect_eq(pl->popn(), 0);
+    test::expect_eq(pl->troops(), 0);
+    test::expect_eq(pl->info(player_t{1}).numsectsowned, 0);
+
+    const auto* star0 = ctx.em.peek_star(0);
+    test::expect_false(star0->is_inhabited_by(1));
+
+    // Verify Vega Prime (Player 2 colony) remains intact
+    const auto* vega_pl = ctx.em.peek_planet(1, 0);
+    test::expect_eq(vega_pl->popn(), 1000);
+    test::expect_eq(vega_pl->info(player_t{2}).numsectsowned, 1);
+
+    ctx.verify_universe_invariants();
   }
 }
 
@@ -101,7 +107,7 @@ void test_dissolve_role_rejections() {
 
   // Create Guest Race
   Race guest_race{};
-  guest_race.Playernum = 2;
+  guest_race.Playernum = 3;
   guest_race.name = "GuestRace";
   guest_race.password = "guestpass";
   guest_race.Guest = true;
@@ -117,17 +123,23 @@ void test_dissolve_role_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Guest race rejection
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 3, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"dissolve", "guestpass", "guestgov"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
-  // 2. Leader-only rejection (Governor 1)
+  // 2. Leader-only rejection (Governor 1 via dispatcher)
   g.out.str("");
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"dissolve", "testpass", "subpass"});
   test::expect_contains(g.out.str(), "leader (Governor 0)");
+
+  // 3. Direct handler governor != 0 leader notification check
+  g.out.str("");
+  test::expect_false(
+      GB::commands::dissolve({"dissolve", "testpass", "subpass"}, g));
+  test::expect_contains(g.out.str(), "The leader has been notified");
 }
 
 void test_dissolve_domain_errors() {
@@ -139,16 +151,34 @@ void test_dissolve_domain_errors() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  // 1. Min args (< 3 args)
+  // 1. Min args (< 3 args via dispatcher and direct handler)
   ctx.assert_dispatch_rejected(g, {"dissolve", "testpass"});
   test::expect_contains(
       g.out.str(),
       "Syntax: dissolve <race password> <leader password> [waste]");
+  g.out.str("");
+  test::expect_false(GB::commands::dissolve({"dissolve", "testpass"}, g));
+  test::expect_contains(g.out.str(),
+                        "Self-Destruct sequence requires passwords.");
 
-  // 2. Password mismatch
+  // 2. Password mismatch (non-existent credentials)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"dissolve", "wrongpass", "wronggov"});
   test::expect_contains(g.out.str(), "Password mismatch");
+
+  // 3. Cross-player password rejection (Player 1 supplying Player 2's valid
+  // leader credentials must be rejected!)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"dissolve", "otherpass", "othergov"});
+  test::expect_contains(g.out.str(), "Password mismatch");
+  test::expect_false(ctx.em.peek_race(1)->dissolved);
+
+  // 4. Subordinate governor password rejection (Player 1 supplying their own
+  // Governor 1 password instead of Governor 0 leader password)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"dissolve", "testpass", "subpass"});
+  test::expect_contains(g.out.str(), "Password mismatch");
+  test::expect_false(ctx.em.peek_race(1)->dissolved);
 }
 
 }  // namespace

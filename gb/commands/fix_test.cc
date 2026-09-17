@@ -306,7 +306,7 @@ void test_fix_command_dispatch() {
   g.set_pnum(0);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "planet", "temperature", "100"});
-  test::expect_contains(g.out.str(), "TEMP = 100");
+  test::expect_contains(g.out.str(), "temperature = 100");
 
   // 3. Deity happy path - ship fix
   g.set_level(ScopeLevel::LEVEL_SHIP);
@@ -320,6 +320,93 @@ void test_fix_command_dispatch() {
   ctx.assert_dispatch_rejected(g, {"fix", "planet"});
   test::expect_contains(g.out.str(),
                         "Syntax: fix <planet|ship> <property> [<value>]");
+
+  // 5. Unknown target ("Fix what?")
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "star", "temperature"});
+  test::expect_contains(g.out.str(), "Fix what?");
+
+  // 6. Planet scope error & invalid numeric value & all condition options
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "100"});
+  test::expect_contains(g.out.str(), "Change scope to the planet first.");
+
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "abc"});
+  test::expect_contains(g.out.str(), "Invalid numeric value.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "planet", "nonexistent", "10"});
+  test::expect_contains(g.out.str(), "No such option for 'fix planet'.");
+
+  // Exercise xpos, ypos, and all condition options (set + inspect)
+  ctx.assert_dispatch_success(g, {"fix", "planet", "xpos", "250"});
+  test::expect_contains(g.out.str(), "xpos = 250");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "ypos", "-125"});
+  test::expect_contains(g.out.str(), "ypos = -125");
+
+  for (Conditions cond : all_condition_types) {
+    const std::string opt{to_string(cond)};
+    const int val = static_cast<int>(cond) + 10;
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"fix", "planet", opt, std::to_string(val)});
+    test::expect_contains(g.out.str(), std::format("{} = {}", cond, val));
+
+    // Read-only inspection without value argument
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"fix", "planet", opt});
+    test::expect_contains(g.out.str(), std::format("{} = {}", cond, val));
+  }
+
+  // 7. Ship scope error, invalid numeric value, and all ship options
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "ship", "fuel", "100"});
+  test::expect_contains(g.out.str(),
+                        "Change scope to the ship you wish to fix.");
+
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "ship", "fuel", "notanumber"});
+  test::expect_contains(g.out.str(), "Invalid numeric value.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "ship", "shields", "10"});
+  test::expect_contains(g.out.str(), "No such option for 'fix ship'.");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "max_fuel", "350"});
+  test::expect_contains(g.out.str(), "fuel = 350");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "destruct", "2"});
+  test::expect_contains(g.out.str(), "destruct = 2");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "resource", "20"});
+  test::expect_contains(g.out.str(), "resource = 20");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "damage", "35"});
+  test::expect_contains(g.out.str(), "damage = 35");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
+  test::expect_contains(g.out.str(), "destroyed");
+  test::expect_false(ctx.em.peek_ship(1)->alive());
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "alive"});
+  test::expect_contains(g.out.str(), "resurrected");
+  test::expect_true(ctx.em.peek_ship(1)->alive());
+  test::expect_eq(ctx.em.peek_ship(1)->damage(), 0);
 }
 
 int main() {

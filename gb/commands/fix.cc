@@ -1,115 +1,137 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file fix.cc
+/// \brief Deity fix-it utilities for planets and ships.
 
 module;
 
 import gb.entities;
 import gb.services;
+import scnlib;
 import std;
-#undef stdout
 
 module commands;
 
+namespace {
+
+/**
+ * @brief Parse an optional integer value argument (`argv[3]`) if provided.
+ */
+bool parse_optional_int(const command_t& argv, GameObj& g,
+                        std::optional<int>& out_val) {
+  if (argv.size() <= 3) {
+    out_val = std::nullopt;
+    return true;
+  }
+  auto parsed = scn::scan<int>(argv[3], "{}");
+  if (!parsed) {
+    g.out << "Invalid numeric value.\n";
+    return false;
+  }
+  out_val = parsed->value();
+  return true;
+}
+
+/**
+ * @brief Apply or inspect deity overrides on the current planet.
+ */
+bool fix_planet(const command_t& argv, GameObj& g) {
+  if (g.level() != ScopeLevel::LEVEL_PLAN) {
+    g.out << "Change scope to the planet first.\n";
+    return false;
+  }
+
+  std::optional<int> opt_val;
+  if (!parse_optional_int(argv, g, opt_val)) {
+    return false;
+  }
+
+  bool ok = false;
+  g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
+    if (argv[2] == "xpos") {
+      if (opt_val) p.xpos() = static_cast<double>(*opt_val);
+      g.out << std::format("xpos = {}\n", p.xpos());
+      ok = true;
+      return;
+    }
+    if (argv[2] == "ypos") {
+      if (opt_val) p.ypos() = static_cast<double>(*opt_val);
+      g.out << std::format("ypos = {}\n", p.ypos());
+      ok = true;
+      return;
+    }
+
+    if (const auto cond = parse_condition(argv[2])) {
+      if (opt_val) p.conditions(*cond) = *opt_val;
+      g.out << std::format("{} = {}\n", *cond, p.conditions(*cond));
+      ok = true;
+      return;
+    }
+
+    g.out << "No such option for 'fix planet'.\n";
+  });
+  return ok;
+}
+
+/**
+ * @brief Apply or inspect deity overrides on the current ship.
+ */
+bool fix_ship(const command_t& argv, GameObj& g) {
+  if (g.level() != ScopeLevel::LEVEL_SHIP) {
+    g.out << "Change scope to the ship you wish to fix.\n";
+    return false;
+  }
+
+  std::optional<int> opt_val;
+  if (argv[2] != "alive" && argv[2] != "dead" &&
+      !parse_optional_int(argv, g, opt_val)) {
+    return false;
+  }
+
+  bool ok = false;
+  g.entity_manager.mutate_ship(g.shipno(), [&](Ship& s) {
+    const auto& race = *g.entity_manager.peek_race(s.owner());
+    if (argv[2] == "fuel") {
+      if (opt_val) s.admin_override_fuel(*opt_val, race.mass);
+      g.out << std::format("fuel = {}\n", s.fuel());
+    } else if (argv[2] == "max_fuel") {
+      if (opt_val) s.admin_override_max_fuel(*opt_val);
+      g.out << std::format("fuel = {}\n", s.max_fuel());
+    } else if (argv[2] == "destruct") {
+      if (opt_val) s.admin_override_destruct(*opt_val, race.mass);
+      g.out << std::format("destruct = {}\n", s.destruct());
+    } else if (argv[2] == "resource") {
+      if (opt_val) s.admin_override_resource(*opt_val, race.mass);
+      g.out << std::format("resource = {}\n", s.resource());
+    } else if (argv[2] == "damage") {
+      if (opt_val) s.admin_override_damage(*opt_val);
+      g.out << std::format("damage = {}\n", s.damage());
+    } else if (argv[2] == "alive") {
+      s.admin_resurrect();
+      g.out << std::format("{} resurrected\n", s);
+    } else if (argv[2] == "dead") {
+      s.admin_destroy();
+      g.out << std::format("{} destroyed\n", s);
+    } else {
+      g.out << "No such option for 'fix ship'.\n";
+      return;
+    }
+    ok = true;
+  });
+  return ok;
+}
+
+}  // namespace
+
 namespace GB::commands {
+
 /** Deity fix-it utilities */
 bool fix(const command_t& argv, GameObj& g) {
   if (argv[1] == "planet") {
-    if (g.level() != ScopeLevel::LEVEL_PLAN) {
-      g.out << "Change scope to the planet first.\n";
-      return false;
-    }
-    bool ok = false;
-    g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      if (argv[2] == "xpos") {
-        if (argv.size() > 3) p.xpos() = (double)std::stoi(argv[3]);
-        g.out << std::format("xpos = {}\n", p.xpos());
-      } else if (argv[2] == "ypos") {
-        if (argv.size() > 3) p.ypos() = (double)std::stoi(argv[3]);
-        g.out << std::format("ypos = {}\n", p.ypos());
-      } else if (argv[2] == "rtemp") {
-        if (argv.size() > 3) p.conditions(RTEMP) = std::stoi(argv[3]);
-        g.out << std::format("RTEMP = {}\n", p.conditions(RTEMP));
-      } else if (argv[2] == "temperature") {
-        if (argv.size() > 3) p.conditions(TEMP) = std::stoi(argv[3]);
-        g.out << std::format("TEMP = {}\n", p.conditions(TEMP));
-      } else if (argv[2] == "methane") {
-        if (argv.size() > 3) p.conditions(METHANE) = std::stoi(argv[3]);
-        g.out << std::format("METHANE = {}\n", p.conditions(METHANE));
-      } else if (argv[2] == "oxygen") {
-        if (argv.size() > 3) p.conditions(OXYGEN) = std::stoi(argv[3]);
-        g.out << std::format("OXYGEN = {}\n", p.conditions(OXYGEN));
-      } else if (argv[2] == "co2") {
-        if (argv.size() > 3) p.conditions(CO2) = std::stoi(argv[3]);
-        g.out << std::format("CO2 = {}\n", p.conditions(CO2));
-      } else if (argv[2] == "hydrogen") {
-        if (argv.size() > 3) p.conditions(HYDROGEN) = std::stoi(argv[3]);
-        g.out << std::format("HYDROGEN = {}\n", p.conditions(HYDROGEN));
-      } else if (argv[2] == "nitrogen") {
-        if (argv.size() > 3) p.conditions(NITROGEN) = std::stoi(argv[3]);
-        g.out << std::format("NITROGEN = {}\n", p.conditions(NITROGEN));
-      } else if (argv[2] == "sulfur") {
-        if (argv.size() > 3) p.conditions(SULFUR) = std::stoi(argv[3]);
-        g.out << std::format("SULFUR = {}\n", p.conditions(SULFUR));
-      } else if (argv[2] == "helium") {
-        if (argv.size() > 3) p.conditions(HELIUM) = std::stoi(argv[3]);
-        g.out << std::format("HELIUM = {}\n", p.conditions(HELIUM));
-      } else if (argv[2] == "other") {
-        if (argv.size() > 3) p.conditions(OTHER) = std::stoi(argv[3]);
-        g.out << std::format("OTHER = {}\n", p.conditions(OTHER));
-      } else if (argv[2] == "toxic") {
-        if (argv.size() > 3) p.conditions(TOXIC) = std::stoi(argv[3]);
-        g.out << std::format("TOXIC = {}\n", p.conditions(TOXIC));
-      } else {
-        g.out << "No such option for 'fix planet'.\n";
-        return;
-      }
-      ok = true;
-    });
-    return ok;
+    return fix_planet(argv, g);
   }
   if (argv[1] == "ship") {
-    if (g.level() != ScopeLevel::LEVEL_SHIP) {
-      g.out << "Change scope to the ship you wish to fix.\n";
-      return false;
-    }
-    bool ok = false;
-    g.entity_manager.mutate_ship(g.shipno(), [&](Ship& s) {
-      const auto& race = *g.entity_manager.peek_race(s.owner());
-      if (argv[2] == "fuel") {
-        if (argv.size() > 3) {
-          s.admin_override_fuel(std::stoi(argv[3]), race.mass);
-        }
-        g.out << std::format("fuel = {}\n", s.fuel());
-      } else if (argv[2] == "max_fuel") {
-        if (argv.size() > 3) s.admin_override_max_fuel(std::stoi(argv[3]));
-        g.out << std::format("fuel = {}\n", s.max_fuel());
-      } else if (argv[2] == "destruct") {
-        if (argv.size() > 3) {
-          s.admin_override_destruct(std::stoi(argv[3]), race.mass);
-        }
-        g.out << std::format("destruct = {}\n", s.destruct());
-      } else if (argv[2] == "resource") {
-        if (argv.size() > 3) {
-          s.admin_override_resource(std::stoi(argv[3]), race.mass);
-        }
-        g.out << std::format("resource = {}\n", s.resource());
-      } else if (argv[2] == "damage") {
-        if (argv.size() > 3) s.admin_override_damage(std::stoi(argv[3]));
-        g.out << std::format("damage = {}\n", s.damage());
-      } else if (argv[2] == "alive") {
-        s.admin_resurrect();
-        g.out << std::format("{} resurrected\n", s);
-      } else if (argv[2] == "dead") {
-        s.admin_destroy();
-        g.out << std::format("{} destroyed\n", s);
-      } else {
-        g.out << "No such option for 'fix ship'.\n";
-        return;
-      }
-      ok = true;
-    });
-    return ok;
+    return fix_ship(argv, g);
   }
   g.out << "Fix what?\n";
   return false;

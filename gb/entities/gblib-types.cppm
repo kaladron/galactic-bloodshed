@@ -340,6 +340,51 @@ export constexpr std::array all_atmosphere_conditions = {
     Conditions::OTHER,
 };
 
+export constexpr std::string_view to_string(Conditions cond) noexcept {
+  switch (cond) {
+    case Conditions::RTEMP:
+      return "rtemp";
+    case Conditions::TEMP:
+      return "temperature";
+    case Conditions::METHANE:
+      return "methane";
+    case Conditions::OXYGEN:
+      return "oxygen";
+    case Conditions::CO2:
+      return "co2";
+    case Conditions::HYDROGEN:
+      return "hydrogen";
+    case Conditions::NITROGEN:
+      return "nitrogen";
+    case Conditions::SULFUR:
+      return "sulfur";
+    case Conditions::HELIUM:
+      return "helium";
+    case Conditions::OTHER:
+      return "other";
+    case Conditions::TOXIC:
+      return "toxic";
+  }
+  return "unknown";
+}
+
+export constexpr std::optional<Conditions>
+parse_condition(std::string_view name) noexcept {
+  for (Conditions cond : all_condition_types) {
+    if (to_string(cond) == name) {
+      return cond;
+    }
+  }
+  return std::nullopt;
+}
+
+export template <>
+struct std::formatter<Conditions> : std::formatter<std::string_view> {
+  auto format(Conditions cond, format_context& ctx) const {
+    return formatter<std::string_view>::format(to_string(cond), ctx);
+  }
+};
+
 export struct Vnbrain {
   std::uint32_t total_mad{0}; /* total # of VN's destroyed so far */
   player_t most_mad{0};       /* player most mad at */

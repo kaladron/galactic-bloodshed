@@ -13,55 +13,12 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
-
-  universe_struct us{};
-  us.id = 1;
-  us.numstars = 2;
-  us.ships = 0;
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.Guest = false;
-  race.governor[0].active = true;
-  race.governor[0].deflevel = ScopeLevel::LEVEL_STAR;
-  race.governor[0].defsystem = 0;
-  race.governor[0].defplanetnum = 0;
-  RaceRepository races(store);
-  races.save(race);
-
-  star_struct ss0{};
-  ss0.star_id = 0;
-  ss0.name = "Alpha";
-  ss0.xpos = 100.0;
-  ss0.ypos = 200.0;
-  ss0.pnames.emplace_back("AlphaPrime");
-  ss0.explored.set(player_t{1});
-  Star star0(ss0);
-
-  star_struct ss1{};
-  ss1.star_id = 1;
-  ss1.name = "Beta";
-  ss1.xpos = 300.0;
-  ss1.ypos = 400.0;
-  ss1.explored.set(player_t{1});
-  Star star1(ss1);
-
-  StarRepository stars_repo(store);
-  stars_repo.save(star0);
-  stars_repo.save(star1);
-
-  Planet planet{PlanetType::EARTH, Coordinates{5, 5}};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.explored() = true;
-  planet.info(player_t{1}).explored = true;
-
-  PlanetRepository planets_repo(store);
-  planets_repo.save(planet);
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.governor[0].deflevel = ScopeLevel::LEVEL_STAR;
+    r.governor[0].defsystem = 0;
+    r.governor[0].defplanetnum = 0;
+  });
 }
 
 void test_cs_happy_paths() {
@@ -78,13 +35,13 @@ void test_cs_happy_paths() {
   ctx.assert_dispatch_success(g, {"cs", "/"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
 
-  // 2. Switch to star Beta by name
-  ctx.assert_dispatch_success(g, {"cs", "Beta"}, 0);
+  // 2. Switch to star Vega by name
+  ctx.assert_dispatch_success(g, {"cs", "Vega"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
   test::expect_eq(g.snum(), 1);
 
-  // 3. Switch to planet AlphaPrime via full path
-  ctx.assert_dispatch_success(g, {"cs", "/Alpha/AlphaPrime"}, 0);
+  // 3. Switch to planet Earth via full path
+  ctx.assert_dispatch_success(g, {"cs", "/Sol/Earth"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
   test::expect_eq(g.snum(), 0);
   test::expect_eq(g.pnum(), 0);
@@ -97,6 +54,18 @@ void test_cs_happy_paths() {
   // 5. Change default system with -d
   ctx.assert_dispatch_success(g, {"cs", "-d", "/"}, 0);
   test::expect_contains(g.out.str(), "New home system");
+
+  // 6. Default cs clamps out-of-bounds defsystem/defplanetnum to last star and
+  // planet
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.governor[0].deflevel = ScopeLevel::LEVEL_PLAN;
+    r.governor[0].defsystem = 99;
+    r.governor[0].defplanetnum = 5;
+  });
+  ctx.setup_game_obj(g, 1, 0);
+  ctx.assert_dispatch_success(g, {"cs"}, 0);
+  test::expect_eq(g.snum(), 2);
+  test::expect_eq(g.pnum(), 0);
 }
 
 void test_cs_domain_errors() {
@@ -117,6 +86,18 @@ void test_cs_domain_errors() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"cs", "-d", "NonExistentStar"});
   test::expect_contains(g.out.str(), "cs: bad home system");
+
+  // 3. Ship scope rejected as default home system
+  shipnum_t snum =
+      TestShipBuilder(ctx.em, ShipType::STYPE_POD).owned_by(1, 0).build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"cs", "-d", std::format("#{}", snum)});
+  test::expect_contains(g.out.str(), "cs: bad home system");
+
+  // 4. Invalid 3-argument invocation without -d
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"cs", "-x", "/Alpha"});
+  test::expect_contains(g.out.str(), "cs: bad scope");
 }
 
 void test_cs_viewport_coordinates() {

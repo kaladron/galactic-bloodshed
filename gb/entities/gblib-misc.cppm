@@ -110,15 +110,6 @@ export int mod(int a, int b) {
 }
 
 /**
- * \brief Scales used in production efficiency etc.
- * \param x Integer from 0-100
- * \return Float 0.0 - 1.0 (logscaleOB 0.5 - .95)
- */
-export constexpr double logscale(const int x) {
-  return std::log10((double)x + 1.0) / 2.0;
-}
-
-/**
  * @brief Formats a numeric value as an estimated string with K/M suffixes.
  *
  * Provides translated estimates of numeric values based on the observer's

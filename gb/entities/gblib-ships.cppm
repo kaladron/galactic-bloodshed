@@ -2425,6 +2425,11 @@ public:
     return data_.tech;
   }
 
+  /// \brief Returns the maximum effective range of this ship's gun weaponry.
+  [[nodiscard]] constexpr double gun_range() const noexcept {
+    return ::gun_range(data_.tech);
+  }
+
   [[nodiscard]] double complexity() const {
     return data_.complexity;
   }

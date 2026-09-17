@@ -30,8 +30,8 @@ public:
   std::string to_string();
 
 private:
-  EntityManager*
-      entity_manager;  // For accessing star/planet names in to_string()
+  EntityManager* entity_manager =
+      nullptr;  // For accessing star/planet names in to_string()
   void getplace2(GameObj& g, std::string_view string, const bool ignoreexpl);
 };
 

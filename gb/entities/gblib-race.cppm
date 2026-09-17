@@ -123,7 +123,14 @@ public:
   turn_t turn{0};
 
   double tech{0.0};
-  TechDiscoveries discoveries{};    /* Tech discoveries. */
+  TechDiscoveries discoveries{}; /* Tech discoveries. */
+
+  /// \brief Returns the maximum effective range of this race's planetary
+  /// defense guns.
+  [[nodiscard]] constexpr double gun_range() const noexcept {
+    return ::gun_range(tech);
+  }
+
   victory_score_t victory_score{0}; /* Number of victory points. */
   bool votes{false};
   ap_t planet_points{0}; /* For the determination of global APs */

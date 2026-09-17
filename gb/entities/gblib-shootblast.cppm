@@ -66,7 +66,7 @@ export double p_factor(double attacker_tech, double defender_tech);
  * @return The computed gun range as a double.
  */
 export constexpr double gun_range(const Race& r) {
-  return logscale((int)(r.tech + 1.0)) * SYSTEMSIZE;
+  return r.gun_range();
 }
 
 /**
@@ -77,5 +77,5 @@ export constexpr double gun_range(const Race& r) {
  * @return The computed gun range as a double.
  */
 export constexpr double gun_range(const Ship& s) {
-  return logscale((int)(s.tech() + 1.0)) * SYSTEMSIZE;
+  return s.gun_range();
 }

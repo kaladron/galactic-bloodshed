@@ -8,7 +8,6 @@
 /// current scope.
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -16,64 +15,70 @@ import std;
 
 namespace {
 
-// Create a minimal universe with ships for testing
+// Create a universe with combat ships and planets for tactical testing
 void setup_test_universe(TestContext& ctx) {
-  JsonStore store(ctx.db);
+  ctx.with_standard_universe();
 
-  // Create a race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.tech = 100.0;
-  race.mass = 1.0;
-  race.metabolism = 1.0;
-  race.governor[0].active = true;
-  race.governor[0].name = "Governor1";
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_war_on(2); });
 
-  RaceRepository races(store);
-  races.save(race);
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.info(1).guns = 5; });
 
-  // Create a star
-  star_struct star{};
-  star.star_id = 1;
-  star.name = "TestStar";
-  star.pnames.push_back("TestPlanet");
-  star.explored.set(player_t{1});
-  star.inhabited.set(player_t{1});
-  star.governor[player_t{1}] = 0;  // Player 1 governor
+  // Ship 1: Player 1 Factory at planet scope (has sight, no guns)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 1)
+      .owned_by(1)
+      .named("Factory1")
+      .in_planet_orbit(0, 0)
+      .build();
 
-  StarRepository stars(store);
-  stars.save(star);
+  // Ship 2: Player 1 Destroyer at same planet coordinates, armed,
+  // moving/evading, laser focused
+  {
+    auto s2 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 2)
+                  .owned_by(1)
+                  .named("Destroyer1")
+                  .in_planet_orbit(0, 0)
+                  .with_guns(guntype_t::MEDIUM, 4)
+                  .with_crew(20, 0)
+                  .with_speed(6)
+                  .build_handle();
+    s2->laser() = 1;
+    s2->fire_laser() = 5;
+    s2->focus() = 1;
+    s2->navigate().on = 1;
+    s2->protect().evade = true;
+  }
 
-  // Create a planet
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.popn() = 1000;
-  planet.info(player_t{1}).numsectsowned = 10;
-  planet.info(player_t{1}).explored = 1;  // Player 1 has explored this planet
+  // Ship 3: Player 2 Cruiser at exact same planet coordinates (dist == 0)
+  {
+    auto s3 = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 3)
+                  .owned_by(2)
+                  .named("EnemyCruiser")
+                  .with_tech(80.0)
+                  .in_planet_orbit(0, 0)
+                  .with_speed(4)
+                  .build_handle();
+    s3->navigate().on = 1;
+    s3->protect().evade = true;
+  }
 
-  PlanetRepository planets(store);
-  planets.save(planet);
+  // Ship 4: Player 2 Landed inactive AFV on Earth
+  TestShipBuilder(ctx.em, ShipType::OTYPE_AFV, 4)
+      .owned_by(2)
+      .named("EnemyTank")
+      .with_active(false)
+      .with_radiation(50)
+      .landed_on(0, 0, {2, 3})
+      .build();
 
-  // Create some ships for the player
-  // Ship 1: At planet scope
-  Ship ship1{};
-  ship1.number() = 1;
-  ship1.type() = ShipType::OTYPE_FACTORY;
-  ship1.owner() = 1;
-  ship1.governor() = 0;
-  ship1.alive() = true;
-  ship1.name() = "Factory1";
-  ship1.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship1.storbits() = 1;
-  ship1.pnumorbits() = 0;
-
-  ShipRepository ships(store);
-  ships.save(ship1);
+  // Ship 5: Canister (should be excluded from tactical target rows)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 5)
+      .owned_by(2)
+      .named("DustCanister")
+      .in_planet_orbit(0, 0)
+      .build();
 }
 
-/// Test tactical at planet scope - shows ships orbiting the planet
+/// Test tactical at planet scope - shows ships and targets orbiting the planet
 void test_tactical_planet_scope() {
   std::println(std::cout, "Test: Tactical at planet scope");
 
@@ -84,24 +89,35 @@ void test_tactical_planet_scope() {
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_PLAN);
-  g_tactical.set_snum(1);
+  g_tactical.set_snum(0);
   g_tactical.set_pnum(0);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
 
-  // Verify tactical produces output
   test::expect_false(tactical_output.empty(),
                      "Tactical should produce output at planet scope");
-
-  // Verify the output mentions the planet
-  test::expect_contains(tactical_output, "TestPlanet",
+  test::expect_contains(tactical_output, "Earth",
                         "Tactical at planet scope should show planet");
+  // Verify same-coordinate enemy targets (dist == 0) are shown and canisters
+  // excluded
+  test::expect_contains(
+      tactical_output, "EnemyCruiser",
+      "Tactical should include enemy ship at same orbital coordinates");
+  test::expect_contains(tactical_output, "EnemyTank",
+                        "Tactical should include landed inactive enemy ship");
+  test::expect_contains(tactical_output, "INACTIVE",
+                        "Tactical should mark inactive target ship");
+  test::expect_false(tactical_output.contains("DustCanister"),
+                     "Tactical should exclude canisters from targets");
 
-  std::println(std::cout, "  ✓ Planet scope produces tactical output");
+  std::println(
+      std::cout,
+      "  ✓ Planet scope produces tactical output with same-coordinate targets");
 }
 
-/// Test tactical at ship scope - shows surrounding area (planet + ships)
+/// Test tactical at ship scope - shows surrounding area without duplicating the
+/// scoped ship
 void test_tactical_ship_scope() {
   std::println(std::cout, "Test: Tactical at ship scope");
 
@@ -112,24 +128,31 @@ void test_tactical_ship_scope() {
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_SHIP);
-  g_tactical.set_snum(1);
+  g_tactical.set_snum(0);
   g_tactical.set_pnum(0);
-  g_tactical.set_shipno(1);
+  g_tactical.set_shipno(2);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
 
-  // Verify we got output
   test::expect_false(tactical_output.empty(),
                      "Tactical should produce output at ship scope");
-
-  // Verify the output contains the planet name (showing surrounding area)
   test::expect_contains(
-      tactical_output, "TestPlanet",
+      tactical_output, "Earth",
       "Tactical at ship scope should show surrounding planet");
+  test::expect_contains(
+      tactical_output, "EnemyCruiser",
+      "Tactical at ship scope should show enemy ship in same orbit");
 
-  std::println(std::cout,
-               "  ✓ Ship scope produces tactical output with surrounding area");
+  // Ensure Destroyer1 header is printed only once (not duplicated)
+  auto first_pos = tactical_output.find("Destroyer1");
+  test::expect_true(first_pos != std::string::npos);
+  auto second_pos = tactical_output.find("Destroyer1", first_pos + 1);
+  test::expect_true(second_pos == std::string::npos,
+                    "Scoped ship should not be reported twice");
+
+  std::println(std::cout, "  ✓ Ship scope produces deduplicated tactical "
+                          "output with surrounding area");
 }
 
 /// Test tactical at star scope - shows planets and ships in the star system
@@ -143,21 +166,67 @@ void test_tactical_star_scope() {
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_STAR);
-  g_tactical.set_snum(1);
+  g_tactical.set_snum(0);
   g_tactical.set_pnum(0);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
 
-  // Verify tactical produces output
   test::expect_false(tactical_output.empty(),
                      "Tactical should produce output at star scope");
-
-  // Verify the output mentions the planet
-  test::expect_contains(tactical_output, "TestPlanet",
+  test::expect_contains(tactical_output, "Earth",
                         "Tactical at star scope should show planet");
 
   std::println(std::cout, "  ✓ Star scope produces tactical output");
+}
+
+/// Test tactical explicit ship number, player filter, ship type filter, and
+/// error paths
+void test_tactical_explicit_ship_and_filters() {
+  std::println(std::cout, "Test: Tactical explicit ship and filters");
+
+  TestContext ctx;
+  setup_test_universe(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(0);
+  g.set_pnum(0);
+
+  // Explicit ship + player filter: tactical #2 2
+  ctx.assert_dispatch_success(g, {"tactical", "#2", "2"});
+  test::expect_contains(g.out.str(), "Destroyer1");
+  test::expect_contains(g.out.str(), "EnemyCruiser");
+
+  // Ship type filter + player filter: tactical C 2 (only Cruisers owned by
+  // Player 2)
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"tactical", "C", "2"});
+  test::expect_contains(g.out.str(), "EnemyCruiser");
+  test::expect_false(g.out.str().contains("EnemyTank"),
+                     "Ship type filter 'C' should exclude AFVs");
+
+  // Non-existent ship number: tactical #999
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"tactical", "#999"});
+  test::expect_contains(g.out.str(), "no such ship");
+
+  // Malformed ship number: tactical #abc
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"tactical", "#abc"});
+  test::expect_contains(g.out.str(), "invalid ship argument");
+
+  // Ship scope with shipno == 0
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"tactical"});
+  test::expect_contains(g.out.str(), "No ship is currently scoped");
+
+  std::println(std::cout,
+               "  ✓ Explicit ship and filter arguments work properly");
 }
 
 void test_tactical_scope_rejection() {
@@ -184,6 +253,7 @@ int main() {
   test_tactical_planet_scope();
   test_tactical_ship_scope();
   test_tactical_star_scope();
+  test_tactical_explicit_ship_and_filters();
   test_tactical_scope_rejection();
 
   std::println(std::cout, "\n✅ All tactical tests passed!");

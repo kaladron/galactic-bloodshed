@@ -63,12 +63,16 @@ public:
     return sessions_.size();
   }
 
+  void on_timer();
+  void update_quotas(std::chrono::steady_clock::time_point now =
+                         std::chrono::steady_clock::now());
+  void process_commands();
+  void check_idle_sessions(std::time_t now = std::time(nullptr));
+  void check_turn_events(std::time_t current_time = std::time(nullptr));
+
 private:
   void do_accept();
   void schedule_next_event();
-  void on_timer();
-  void process_commands();
-  void check_idle_sessions();
   void remove_session(std::shared_ptr<Session> session);
   bool do_command(Session& session, std::string_view comm);
   void process_command(GameObj& g, const command_t& argv);

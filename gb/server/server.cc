@@ -94,26 +94,44 @@ void Server::schedule_next_event() {
 }
 
 void Server::on_timer() {
-  // Update quotas (rate limiting for commands)
-  auto now = std::chrono::steady_clock::now();
+  update_quotas();
+  process_commands();
+  check_idle_sessions();
+  check_turn_events();
+}
+
+void Server::update_quotas(std::chrono::steady_clock::time_point now) {
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
       now - last_quota_update_);
   if (elapsed.count() >= COMMAND_TIME_MSEC) {
-    int nslices = elapsed.count() / COMMAND_TIME_MSEC;
+    int nslices = static_cast<int>(elapsed.count() / COMMAND_TIME_MSEC);
     for (auto& session : sessions_) {
       session->add_quota(COMMANDS_PER_TIME * nslices);
     }
-    last_quota_update_ = now;
+    last_quota_update_ +=
+        std::chrono::milliseconds(nslices * COMMAND_TIME_MSEC);
+  }
+}
+
+void Server::check_idle_sessions(std::time_t now) {
+  std::vector<std::shared_ptr<Session>> to_disconnect;
+
+  for (auto& session : sessions_) {
+    if (session->connected() &&
+        (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
+      std::println(stderr, "Disconnecting idle session (timeout)");
+      session->out() << "Connection timed out due to inactivity.\n";
+      to_disconnect.push_back(session);
+    }
   }
 
-  // Process pending commands from all sessions
-  process_commands();
+  // Disconnect after iteration to avoid iterator invalidation
+  for (auto& session : to_disconnect) {
+    session->disconnect();
+  }
+}
 
-  // Check for idle sessions (disconnect after IDLE_TIMEOUT_SECONDS)
-  check_idle_sessions();
-
-  // Time-based game events (updates/segments)
-  std::time_t current_time = std::time(nullptr);
+void Server::check_turn_events(std::time_t current_time) {
   const auto* state = entity_manager_.peek_server_state();
   if (state && go_time_ == 0) {
     if (current_time >= state->next_update_time) {
@@ -129,25 +147,6 @@ void Server::on_timer() {
     do_next_thing(entity_manager_, *this);
     go_time_ = 0;
     pending_turn_ = false;
-  }
-}
-
-void Server::check_idle_sessions() {
-  std::time_t now = std::time(nullptr);
-  std::vector<std::shared_ptr<Session>> to_disconnect;
-
-  for (auto& session : sessions_) {
-    if (session->connected() &&
-        (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
-      std::println(stderr, "Disconnecting idle session (timeout)");
-      session->out() << "Connection timed out due to inactivity.\n";
-      to_disconnect.push_back(session);
-    }
-  }
-
-  // Disconnect after iteration to avoid iterator invalidation
-  for (auto& session : to_disconnect) {
-    session->disconnect();
   }
 }
 
@@ -251,67 +250,62 @@ void Server::remove_session(std::shared_ptr<Session> session) {
   sessions_.erase(session);
 }
 
+namespace {
+
+void sync_game_obj_from_session(GameObj& g, Session& session) {
+  g.set_player(session.player());
+  g.set_governor(session.governor());
+  g.set_god(session.god());
+  g.set_snum(session.snum());
+  g.set_pnum(session.pnum());
+  g.set_shipno(session.shipno());
+  g.set_level(session.level());
+  g.race = session.entity_manager().peek_race(g.player());
+}
+
+void sync_session_from_game_obj(Session& session, const GameObj& g) {
+  session.set_player(g.player());
+  session.set_governor(g.governor());
+  session.set_god(g.god());
+  session.set_snum(g.snum());
+  session.set_pnum(g.pnum());
+  session.set_shipno(g.shipno());
+  session.set_level(g.level());
+}
+
+}  // namespace
+
 bool Server::do_command(Session& session, std::string_view comm) {
-  if (session.connected()) {
-    auto argv = make_command_t(comm);
-    GameObj g(session.entity_manager(), session.registry());
-    g.set_player(session.player());
-    g.set_governor(session.governor());
-    g.set_god(session.god());
-    g.set_snum(session.snum());
-    g.set_pnum(session.pnum());
-    g.set_shipno(session.shipno());
-    g.set_level(session.level());
-    g.race = session.entity_manager().peek_race(g.player());
-
-    process_command(g, argv);
-
-    if (g.shutdown_requested()) {
-      shutdown_flag_ = true;
-    }
-
-    if (g.disconnect_requested()) {
-      session.out() << g.out.str();
-      return false;
-    }
-
-    session.set_player(g.player());
-    session.set_governor(g.governor());
-    session.set_god(g.god());
-    session.set_snum(g.snum());
-    session.set_pnum(g.pnum());
-    session.set_shipno(g.shipno());
-    session.set_level(g.level());
-
-    session.out() << g.out.str();
-  } else {
+  if (!session.connected()) {
     check_connect(session, comm);
     if (!session.connected()) {
       session.out() << "Goodbye!\n";
       return false;
     }
     GameObj g(session.entity_manager(), session.registry());
-    g.set_player(session.player());
-    g.set_governor(session.governor());
-    g.set_god(session.god());
-    g.set_snum(session.snum());
-    g.set_pnum(session.pnum());
-    g.set_shipno(session.shipno());
-    g.set_level(session.level());
-    g.race = session.entity_manager().peek_race(g.player());
-
+    sync_game_obj_from_session(g, session);
     check_for_telegrams(g);
-
-    command_t call_cs = {"cs"};
-    process_command(g, call_cs);
-
-    session.set_snum(g.snum());
-    session.set_pnum(g.pnum());
-    session.set_shipno(g.shipno());
-    session.set_level(g.level());
-
+    process_command(g, {"cs"});
+    sync_session_from_game_obj(session, g);
     session.out() << g.out.str();
+    return true;
   }
+
+  GameObj g(session.entity_manager(), session.registry());
+  sync_game_obj_from_session(g, session);
+  process_command(g, make_command_t(comm));
+
+  if (g.shutdown_requested()) {
+    shutdown_flag_ = true;
+  }
+
+  if (g.disconnect_requested()) {
+    session.out() << g.out.str();
+    return false;
+  }
+
+  sync_session_from_game_obj(session, g);
+  session.out() << g.out.str();
   return true;
 }
 

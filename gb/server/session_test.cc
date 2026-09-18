@@ -335,14 +335,134 @@ int main() {
     std::println(std::cout, "✓ Long messages handled correctly");
   }
 
-  std::println(std::cout, "\n✅ All session module tests passed!");
-  std::println(
-      std::cout,
-      "\nNote: These tests validate SessionRegistry notification logic.");
-  std::println(std::cout, "Async I/O behavior (read/write/disconnect) is "
-                          "tested via integration tests");
-  std::println(std::cout,
-               "with real network sockets and requires a running server.");
+  // Real Session state accessors, quota rate-limiting, and async I/O
+  {
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(
+        io, asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), 0));
+    asio::ip::tcp::socket client_socket(io);
+    client_socket.connect(acceptor.local_endpoint());
+    asio::ip::tcp::socket server_socket = acceptor.accept();
 
+    MockSessionRegistry registry;
+    bool disconnected = false;
+    auto session = std::make_shared<Session>(
+        std::move(server_socket), em, registry,
+        [&disconnected](std::shared_ptr<Session>) { disconnected = true; });
+
+    // Initial state
+    test::expect_false(session->connected());
+    test::expect_eq(session->player().value, 0);
+    test::expect_eq(session->governor().value, 0);
+    test::expect_false(session->god());
+    test::expect_eq(session->snum(), 0);
+    test::expect_eq(session->pnum(), 0);
+    test::expect_eq(session->shipno(), 0);
+    test::expect_true(session->level() == ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(session->quota(), COMMAND_BURST_SIZE);
+    test::expect_eq(session->last_time(), 0);
+    test::expect_false(session->has_pending_input());
+    test::expect_eq(session->pop_input(), "");
+    test::expect_false(session->has_pending_output());
+    test::expect_eq(session->write_queue_size(), 0u);
+    test::expect_true(&session->entity_manager() == &em);
+    test::expect_true(&session->registry() == &registry);
+
+    // State mutations
+    session->set_connected(true);
+    session->set_player(2);
+    session->set_governor(3);
+    session->set_god(true);
+    session->set_snum(4);
+    session->set_pnum(5);
+    session->set_shipno(6);
+    session->set_level(ScopeLevel::LEVEL_PLAN);
+    session->touch();
+
+    test::expect_true(session->connected());
+    test::expect_eq(session->player().value, 2);
+    test::expect_eq(session->governor().value, 3);
+    test::expect_true(session->god());
+    test::expect_eq(session->snum(), 4);
+    test::expect_eq(session->pnum(), 5);
+    test::expect_eq(session->shipno(), 6);
+    test::expect_true(session->level() == ScopeLevel::LEVEL_PLAN);
+    test::expect_true(session->last_time() > 0);
+
+    // Rate limiting quota mechanics
+    session->use_quota();
+    test::expect_eq(session->quota(), COMMAND_BURST_SIZE - 1);
+    session->add_quota(10);
+    test::expect_eq(session->quota(), COMMAND_BURST_SIZE);
+    for (int i = 0; i < COMMAND_BURST_SIZE + 5; ++i) {
+      session->use_quota();
+    }
+    test::expect_eq(session->quota(), 0);
+    session->add_quota(5);
+    test::expect_eq(session->quota(), 5);
+
+    // Async input reading (\n, \r\n, and empty line filtering)
+    session->start();
+    std::string raw_input = "first_cmd\nsecond_cmd\r\n\n";
+    client_socket.write_some(asio::buffer(raw_input));
+    io.poll();
+
+    test::expect_true(session->has_pending_input());
+    test::expect_eq(session->pop_input(), "first_cmd");
+    test::expect_true(session->has_pending_input());
+    test::expect_eq(session->pop_input(), "second_cmd");
+    test::expect_false(session->has_pending_input());
+
+    // Output buffering and network flush
+    session->out() << "Server reply line\n";
+    test::expect_true(session->has_pending_output());
+    session->flush_to_network();
+    test::expect_false(session->has_pending_output());
+    io.poll();
+
+    std::array<char, 128> read_buf{};
+    std::size_t bytes = client_socket.read_some(asio::buffer(read_buf));
+    test::expect_eq(std::string(read_buf.data(), bytes), "Server reply line\n");
+
+    // Graceful disconnect
+    session->disconnect();
+    test::expect_true(disconnected);
+
+    std::println(
+        std::cout,
+        "✓ Real Session state accessors, quotas, and async I/O verified");
+  }
+
+  // Input flooding overflow disconnects session
+  {
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(
+        io, asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), 0));
+    asio::ip::tcp::socket client_socket(io);
+    client_socket.connect(acceptor.local_endpoint());
+    asio::ip::tcp::socket server_socket = acceptor.accept();
+
+    MockSessionRegistry registry;
+    bool flood_disconnected = false;
+    auto session = std::make_shared<Session>(
+        std::move(server_socket), em, registry,
+        [&flood_disconnected](std::shared_ptr<Session>) {
+          flood_disconnected = true;
+        });
+
+    session->start();
+    std::string flood_payload;
+    for (std::size_t i = 0; i <= MAX_INPUT_QUEUE_SIZE; ++i) {
+      flood_payload += "cmd\n";
+    }
+    client_socket.write_some(asio::buffer(flood_payload));
+    io.poll();
+
+    test::expect_true(flood_disconnected);
+    std::println(std::cout,
+                 "✓ Input queue overflow disconnects flooding client");
+  }
+
+  std::println(std::cout, "\n✅ All session module tests passed!");
   return 0;
 }

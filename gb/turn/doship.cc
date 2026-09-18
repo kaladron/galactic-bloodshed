@@ -560,7 +560,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
   sync_factory_technology(ship, race);
 
   if (ship.active()) {
-    moveship(entity_manager, ship, update, 1, 0);
+    moveship(entity_manager, ship, update, true, false);
   }
 
   ship.size() = ship_size(ship); /* for debugging */

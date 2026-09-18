@@ -73,10 +73,20 @@ Vessels cruise at discrete engine speeds from $0$ (stationary) to $9$ (maximum s
 - Slower vessels resolve movement earlier in the turn sequence, allowing faster interceptors and fighters to adjust trajectories.
 - Setting course vectors $(dx, dy)$ with the `course` command directs the vessel along a continuous trajectory across planetary orbits or interplanetary space.
 
-### Propellant Expenditure
-Impulse thrusters consume fuel during each movement segment proportional to cruising speed, distance traversed, and total vessel displacement:
+### Propellant Expenditure and Deep-Space Stranding
+Impulse thrusters consume fuel during each movement segment proportional to engine speed, evasive maneuver state, and total vessel displacement:
 
-$$\text{Fuel Burn} = \left\lfloor \frac{\text{Speed} \times \text{Distance} \times \text{Mass}_{\text{total}}}{1000} \right\rfloor$$
+$$\text{Fuel Burn}_{\text{segment}} = \frac{\text{EvadeMultiplier} \times \text{Speed} \times \text{Mass}_{\text{total}} \times 0.02}{\text{Segments}}, \quad \text{EvadeMultiplier} = \begin{cases} 0.5 & \text{normal cruise} \\ 1.0 & \text{evasive maneuvers (`evade`)} \end{cases}$$
+
+- **Normal Cruise vs. Evasive Maneuvers (`evade`)**: During standard straight-line cruise, impulse thrusters burn fuel at half the maximum thruster rate ($\text{EvadeMultiplier} = 0.5$, historically written as $0.5 \times (1 + \mathbb{I}_{\text{evade}})$). Enabling evasive maneuvers (`order <ship> evade on`) doubles propellant consumption to the full $1.0\times$ base rate ($\text{EvadeMultiplier} = 1.0$) to power continuous jinking thrusters.
+- **Deep-Space Stranding & Vessel Loss**: If a vessel exhausts its propellant in interstellar deep space (`LEVEL_UNIV`) and is either an inexpensive hull ($\text{Build Cost} \le 50$) or an automated Von Neumann / Berserker probe, it is permanently lost in deep space and destroyed.
+
+### Vessel Pursuit and Sensor Tracking (`destination #<ship>`)
+A spaceborne vessel can be ordered to shadow and follow another target vessel (`order #<ship> dest #<target>`) provided:
+1. The pursuing vessel is active and the target vessel is alive and not berthed inside a carrier hangar (`LEVEL_SHIP`).
+2. The target vessel belongs to the same empire, an allied empire, or lies within sensor tracking range:
+
+$$R_{\text{track}} = 4.0 \times \text{logscale}(\lfloor \text{Tech} + 1 \rfloor) \times \text{SystemSize}$$
 
 ---
 
@@ -191,12 +201,20 @@ A starship can execute FTL jumps only if it satisfies all of the following requi
 3. **Mounted Warp Crystal**: The vessel must have an active warp crystal mounted in its drive core (`mounted = true`).
 4. **Pre-Charged Drive**: The hyperdrive must be pre-charged and primed before jump initiation.
 
-### Jump Propellant Calculation
-The fuel required to rip a portal into hyperspace and traverse interstellar coordinates scales with Cartesian distance ($`D_{\text{jump}}`$) and total vessel displacement:
+### Jump Propellant Calculation and Drive Charging
+The fuel required to open a hyperspace conduit scales with the Euclidean distance to the destination star ($`D_{\text{jump}}`$), the vessel's technology-scaled jump distance factor ($D_{\text{fac}} = 250 \times (\text{Tech} + 100)$), and the square root of total vessel mass:
 
 $$D_{\text{jump}} = \sqrt{(X_{\text{dest}} - X_{\text{origin}})^2 + (Y_{\text{dest}} - Y_{\text{origin}})^2}$$
 
-$$\text{Jump Fuel Cost} = \left\lfloor \frac{D_{\text{jump}} \times \text{Mass}_{\text{total}}}{500} \right\rfloor$$
+- **Crystal-Mounted Long-Range Jumps ($D_{\text{jump}} > D_{\text{fac}}$ and `mounted = true`)**:
+
+$$\text{Jump Fuel Cost} = 5.0 \times \sqrt{\text{Mass}_{\text{total}}} \times \left(\frac{D_{\text{jump}}}{D_{\text{fac}}}\right)$$
+
+- **Short-Range or Unmounted Jumps ($D_{\text{jump}} \le D_{\text{fac}}$ or `mounted = false`)**:
+
+$$\text{Jump Fuel Cost} = 5.0 \times \sqrt{\text{Mass}_{\text{total}}} \times \left(\frac{D_{\text{jump}}}{D_{\text{fac}}}\right)^2$$
+
+- **Capacitor Charge Cycle**: Unmounted hyperdrives accumulate $+1$ charge per movement segment up to the readiness threshold of $5$, whereas crystal-mounted hyperdrives reach full charge ($5$) in a single movement segment.
 
 ---
 

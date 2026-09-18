@@ -710,9 +710,9 @@ constexpr std::array<OrderDispatchEntry, 27> order_handlers = {{
     {"off", &order_off},
 }};
 
-std::string format_ship_destination(const Ship& ship) {
+std::string format_ship_destination(EntityManager& em, const Ship& ship) {
   if (!ship.docked()) {
-    return prin_ship_dest(ship);
+    return format_ship_dest(em, ship);
   }
   if (ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
     return std::format("D#{}", ship.destshipno());
@@ -883,7 +883,7 @@ void display_orders(GameObj& g, const Ship& ship) {
 
   const char hyper_indicator =
       ship.hyper_drive().has ? (ship.mounted() ? '+' : '*') : ' ';
-  const std::string dest_str = format_ship_destination(ship);
+  const std::string dest_str = format_ship_destination(g.entity_manager, ship);
 
   g.out << std::format(
       "{:5} {} {:14.14} {}{} {:10.10} {}{}{}{}\n", ship.number(),

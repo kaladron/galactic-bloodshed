@@ -111,7 +111,7 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
     domass(tmpship, entity_manager);
     double fuel_level1 = tmpship.fuel();
     moveship(entity_manager, tmpship,
-             (effective_segment_number == state->segments), 0, 1);
+             (effective_segment_number == state->segments), false, true);
     number_segments++;
     effective_segment_number++;
     if (effective_segment_number == (state->segments + 1))

@@ -4278,7 +4278,7 @@ const Derived* Ship::as() const noexcept {
 
 export armor_t getdefense(EntityManager&, const Ship&);
 export void capture_stuff(const Ship&, GameObj&);
-export double cost(const Ship&);
+export resource_t cost(const Ship&);
 export double getmass(const Ship&);
 export unsigned int ship_size(const Ship&);
 export double complexity(const Ship&);
@@ -4298,14 +4298,11 @@ export void rcv_destruct(Ship&, resource_t);
 export void rcv_popn(Ship&, population_t, double);
 export void rcv_troops(Ship&, population_t, double);
 export std::string prin_ship_orbits(EntityManager&, const Ship&);
-export std::string prin_ship_dest(const Ship&);
-export void moveship(EntityManager&, Ship& ship, int x, int y, int z);
+export std::string format_ship_dest(EntityManager&, const Ship&);
+export void moveship(EntityManager&, Ship& ship, bool is_update,
+                     bool send_messages, bool checking_fuel);
 export void msg_OOF(EntityManager&, const Ship& ship);
 export bool followable(EntityManager&, const Ship& ship, const Ship& target);
-
-export shipnum_t Num_ships;
-
-export Ship** ships;
 
 export std::string dispshiploc_brief(EntityManager&, const Ship&);
 export std::string dispshiploc(EntityManager&, const Ship&);

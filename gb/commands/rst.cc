@@ -357,7 +357,7 @@ void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
     locstrn =
         std::format("nav:{} ({})", s.navigate().bearing, s.navigate().turns);
   } else {
-    locstrn = prin_ship_dest(s);
+    locstrn = format_ship_dest(g.entity_manager, s);
   }
 
   // Build name string (may have special formatting for inactive ships)

@@ -318,7 +318,7 @@ std::unique_ptr<Ship> getship(ShipType i, const Race& r) {
   ship->mount() = r.God && tmpl.can_mount;
   ship->hyper_drive() = {.has = r.God && tmpl.can_hyperjump};
   ship->laser() = r.God && tmpl.can_mount_laser;
-  ship->build_cost() = r.God ? 0 : static_cast<resource_t>(cost(*ship));
+  ship->build_cost() = r.God ? 0 : cost(*ship);
   return ship;
 }
 
@@ -353,7 +353,7 @@ std::unique_ptr<Ship> getfactship(const Ship& b) {
 
 resource_t Shipcost(ShipType i, const Race& r) {
   auto s = getship(i, r);
-  return static_cast<resource_t>(cost(*s));
+  return cost(*s);
 }
 
 std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,

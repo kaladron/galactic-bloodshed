@@ -9,6 +9,7 @@ import gb.entities;
 import gb.services;
 import scnlib;
 import std;
+import tabulate;
 #undef stdout
 
 module commands;
@@ -27,28 +28,54 @@ std::optional<int> parse_route_index(std::string_view arg, GameObj& g) {
   return parsed->value();
 }
 
+tabulate::Table create_routes_table() {
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+  table.column(0).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(1).format().width(11);
+  table.column(2).format().width(12);
+  table.column(3).format().width(14);
+  table.column(4).format().width(24);
+  return table;
+}
+
+void append_route_row(tabulate::Table& table, EntityManager& em, int route_num,
+                      const plroute& rt) {
+  const auto* dest_star = em.peek_star(rt.dest_star);
+  const std::string star_name = dest_star ? dest_star->get_name() : "???";
+  const std::string planet_name =
+      (dest_star && rt.dest_planet < dest_star->numplanets())
+          ? dest_star->get_planet_name(rt.dest_planet)
+          : "???";
+
+  table.add_row({
+      std::format("{}", route_num),
+      std::format("land {:2},{:2}", rt.dest_coords.x, rt.dest_coords.y),
+      rt.load.any() ? std::format("load: {}", rt.load.format_compact()) : "",
+      rt.unload.any() ? std::format("unload: {}", rt.unload.format_compact())
+                      : "",
+      std::format("-> {}/{}", star_name, planet_name),
+  });
+}
+
 /**
  * @brief Display all active shipping routes on the current planet.
  */
 void show_all_routes(GameObj& g) {
   const player_t playernum = g.player();
+  tabulate::Table table = create_routes_table();
   g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
     int route_num = 0;
     for (const auto& rt : p.info(playernum).route) {
       ++route_num;
-      if (!rt.set) {
-        continue;
+      if (rt.set) {
+        append_route_row(table, g.entity_manager, route_num, rt);
       }
-      const auto* dest_star = g.entity_manager.peek_star(rt.dest_star);
-      g.out << std::format(
-          "{:2}  land {:2},{:2}   load: {}  unload: {}  -> {}/{}\n", route_num,
-          rt.dest_coords.x, rt.dest_coords.y, rt.load.format_padded(),
-          rt.unload.format_padded(), dest_star ? dest_star->get_name() : "???",
-          (dest_star && rt.dest_planet < dest_star->numplanets())
-              ? dest_star->get_planet_name(rt.dest_planet)
-              : "???");
     }
   });
+  if (table.size() > 0) {
+    g.out << table << "\n";
+  }
   g.out << "Done.\n";
 }
 
@@ -57,25 +84,16 @@ void show_all_routes(GameObj& g) {
  */
 void show_single_route(GameObj& g, int route_num) {
   const player_t playernum = g.player();
+  tabulate::Table table = create_routes_table();
   g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
-    const auto& rt = p.info(playernum).route[route_num - 1];
-    if (!rt.set) {
-      return;
+    const auto& rt = p.info(playernum).route_at(route_num);
+    if (rt.set) {
+      append_route_row(table, g.entity_manager, route_num, rt);
     }
-    const auto* dest_star = g.entity_manager.peek_star(rt.dest_star);
-    g.out << std::format(
-        "{:2}  land {:2},{:2}   {}{}  -> {}/{}\n", route_num, rt.dest_coords.x,
-        rt.dest_coords.y,
-        (rt.load.any() ? std::format("load: {}", rt.load.format_compact())
-                       : std::string{}),
-        (rt.unload.any()
-             ? std::format("  unload: {}", rt.unload.format_compact())
-             : std::string{}),
-        dest_star ? dest_star->get_name() : "???",
-        (dest_star && rt.dest_planet < dest_star->numplanets())
-            ? dest_star->get_planet_name(rt.dest_planet)
-            : "???");
   });
+  if (table.size() > 0) {
+    g.out << table << "\n";
+  }
   g.out << "Done.\n";
 }
 
@@ -89,7 +107,7 @@ bool configure_route_target(GameObj& g, int route_num,
   if (target_arg == "activate" || target_arg == "deactivate") {
     const bool active = (target_arg == "activate");
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      p.info(playernum).route[route_num - 1].set = active;
+      p.info(playernum).route_at(route_num).set = active;
     });
     g.out << "Set.\n";
     return true;
@@ -105,7 +123,7 @@ bool configure_route_target(GameObj& g, int route_num,
     return false;
   }
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-    auto& rt = p.info(playernum).route[route_num - 1];
+    auto& rt = p.info(playernum).route_at(route_num);
     rt.dest_star = where.snum;
     rt.dest_planet = where.pnum;
   });
@@ -133,7 +151,7 @@ bool configure_route_attribute(GameObj& g, int route_num,
         return;
       }
       valid = true;
-      p.info(playernum).route[route_num - 1].dest_coords = coords;
+      p.info(playernum).route_at(route_num).dest_coords = coords;
     });
     if (!valid) {
       g.out << "Bad sector coordinates.\n";
@@ -144,7 +162,7 @@ bool configure_route_attribute(GameObj& g, int route_num,
   }
   if (subcmd == "load") {
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      p.info(playernum).route[route_num - 1].load =
+      p.info(playernum).route_at(route_num).load =
           CommodityManifest::parse(value_arg);
     });
     g.out << "Set.\n";
@@ -152,7 +170,7 @@ bool configure_route_attribute(GameObj& g, int route_num,
   }
   if (subcmd == "unload") {
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      p.info(playernum).route[route_num - 1].unload =
+      p.info(playernum).route_at(route_num).unload =
           CommodityManifest::parse(value_arg);
     });
     g.out << "Set.\n";

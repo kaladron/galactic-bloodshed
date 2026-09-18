@@ -402,7 +402,7 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
   }
 
   if (damage_result.destroyed) em.kill_ship(who, ship);
-  ship.build_cost() = static_cast<resource_t>(cost(ship));
+  ship.build_cost() = cost(ship);
   return {damage, msg.str()};
 }
 

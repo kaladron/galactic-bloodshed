@@ -38,12 +38,6 @@ export struct CommodityManifest {
     return manifest;
   }
 
-  /// Format as a fixed 4-character string ('fdrx' or spaces).
-  [[nodiscard]] std::string format_padded() const {
-    return std::format("{}{}{}{}", fuel ? 'f' : ' ', destruct ? 'd' : ' ',
-                       resources ? 'r' : ' ', crystals ? 'x' : ' ');
-  }
-
   /// Format as a compact string containing only active commodity flags.
   [[nodiscard]] std::string format_compact() const {
     std::string flags = fuel ? "f" : "";
@@ -153,7 +147,16 @@ export struct plinfo {      // planetary stockpiles
   std::uint32_t guns = 0;    // number of planet guns (mob/5)
 
   /* merchant shipping parameters */
-  plroute route[MAX_ROUTES];
+  std::array<plroute, MAX_ROUTES> route{};
+
+  /// \brief Access a merchant route slot by its 1-based route number
+  /// (`1..MAX_ROUTES`). Throws `std::out_of_range` if out of bounds.
+  [[nodiscard]] const plroute& route_at(int route_number) const {
+    return route.at(static_cast<std::size_t>(route_number - 1));
+  }
+  [[nodiscard]] plroute& route_at(int route_number) {
+    return route.at(static_cast<std::size_t>(route_number - 1));
+  }
 
   std::uint32_t mob_points = 0;
   double est_production = 0;  // estimated production

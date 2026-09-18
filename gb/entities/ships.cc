@@ -53,6 +53,29 @@ SpaceMirrorShip::target_coordinates(EntityManager& em) const {
   }
 }
 
+namespace {
+
+constexpr double TAN_22_5_DEG = std::numbers::sqrt2 - 1.0;
+constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
+
+[[nodiscard]] int octant_for_positive_dy(double slope) noexcept {
+  if (slope < -TAN_67_5_DEG || slope > TAN_67_5_DEG) return 4;
+  if (slope > TAN_22_5_DEG) return 3;
+  if (slope > 0.000) return 2;
+  if (slope > -TAN_22_5_DEG) return 6;
+  return 5;
+}
+
+[[nodiscard]] int octant_for_negative_dy(double slope) noexcept {
+  if (slope < -TAN_67_5_DEG || slope > TAN_67_5_DEG) return 0;
+  if (slope > TAN_22_5_DEG) return 7;
+  if (slope > 0.000) return 6;
+  if (slope > -TAN_22_5_DEG) return 2;
+  return 1;
+}
+
+}  // namespace
+
 /// \brief Computes the 8-octant compass heading (0..7) toward the mirror's
 /// aimed target.
 ///
@@ -79,39 +102,18 @@ int SpaceMirrorShip::aim_direction(EntityManager& em) const {
     return 0;
   }
 
-  // Trigonometric slope thresholds for 8-octant compass headings (22.5°
-  // and 67.5°) Using standard C++ <numbers> mathematical constants: tan(22.5°)
-  // = tan(pi/8) = sqrt(2) - 1 tan(67.5°) = tan(3pi/8) = sqrt(2) + 1
-  constexpr double TAN_22_5_DEG = std::numbers::sqrt2 - 1.0;
-  constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
-
   const auto [xt, yt] = *target;
   const auto my_coords = coordinates();
   if (xt == my_coords.x) {
     return (yt > my_coords.y) ? 4 : 0;
   }
-
-  const double slope = (yt - my_coords.y) / (xt - my_coords.x);
   if (yt == my_coords.y) {
     return (xt > my_coords.x) ? 2 : 6;
   }
 
-  if (yt > my_coords.y) {
-    if (slope < -TAN_67_5_DEG) return 4;
-    if (slope > TAN_67_5_DEG) return 4;
-    if (slope > TAN_22_5_DEG) return 3;
-    if (slope > 0.000) return 2;
-    if (slope > -TAN_22_5_DEG) return 6;
-    return 5;
-  }
-
-  // yt < my_coords.y
-  if (slope < -TAN_67_5_DEG) return 0;
-  if (slope > TAN_67_5_DEG) return 0;
-  if (slope > TAN_22_5_DEG) return 7;
-  if (slope > 0.000) return 6;
-  if (slope > -TAN_22_5_DEG) return 2;
-  return 1;
+  const double slope = (yt - my_coords.y) / (xt - my_coords.x);
+  return (yt > my_coords.y) ? octant_for_positive_dy(slope)
+                            : octant_for_negative_dy(slope);
 }
 
 void capture_stuff(const Ship& ship, GameObj& g) {
@@ -157,7 +159,7 @@ unsigned int ship_size(const Ship& s) {
   return s.calculate_size();
 }
 
-double cost(const Ship& s) {
+resource_t cost(const Ship& s) {
   /* compute how much it costs to build this ship */
   double factor = 0.0;
   factor += static_cast<double>(ship_template(s.build_type()).build_cost);
@@ -182,7 +184,7 @@ double cost(const Ship& s) {
   advantage += 0.5 * !!s.mount();
 
   factor *= std::sqrt(1.0 + advantage);
-  return factor;
+  return static_cast<resource_t>(factor);
 }
 
 namespace {
@@ -222,127 +224,159 @@ private:
   double disadvantage_ = 0.0;
 };
 
+[[nodiscard]] bool merchant_land_ship(EntityManager& em, Ship& s,
+                                      const Planet& p,
+                                      const Coordinates& dest_coords,
+                                      std::stringstream& telegram) {
+  if (s.is_landed()) return true;
+
+  const double fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
+  if (s.fuel() < fuel) {
+    s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    telegram << "\t\tNot enough fuel to land!\n";
+    return false;
+  }
+  s.set_land_coords(dest_coords);
+  telegram << std::format("\t\tLanded on sector {}\n", s.land_coords());
+  const auto& star = *em.peek_star(s.storbits());
+  s.set_coordinates(p.absolute_coordinates(star));
+  use_fuel(s, fuel);
+  s.land_on_planet();
+  s.deststar() = s.storbits();
+  s.destpnum() = s.pnumorbits();
+  return true;
+}
+
+void merchant_load_cargo(Ship& s, plinfo& pinfo, const auto& load,
+                         std::stringstream& telegram) {
+  if (!load.any()) return;
+
+  telegram << "\t\t";
+  if (load.fuel) {
+    const int room = std::max(0, static_cast<int>(s.max_fuel_capacity()) -
+                                     static_cast<int>(s.fuel()));
+    const int amount = std::clamp<int>(room, 0, pinfo.fuel);
+    pinfo.fuel -= amount;
+    rcv_fuel(s, static_cast<double>(amount));
+    telegram << std::format("{}f ", amount);
+  }
+  if (load.resources) {
+    const int room = std::max(0, static_cast<int>(s.max_resource_capacity()) -
+                                     static_cast<int>(s.resource()));
+    const int amount = std::clamp<int>(room, 0, pinfo.resource);
+    pinfo.resource -= amount;
+    rcv_resource(s, amount);
+    telegram << std::format("{}r ", amount);
+  }
+  if (load.crystals) {
+    const int room = std::max(0, static_cast<int>(s.max_crystals_capacity()) -
+                                     static_cast<int>(s.crystals()));
+    const int amount = std::clamp<int>(room, 0, pinfo.crystals);
+    pinfo.crystals -= amount;
+    s.add_crystals(amount);
+    telegram << std::format("{}x ", amount);
+  }
+  if (load.destruct) {
+    const int room = std::max(0, static_cast<int>(s.max_destruct_capacity()) -
+                                     static_cast<int>(s.destruct()));
+    const int amount = std::clamp<int>(room, 0, pinfo.destruct);
+    pinfo.destruct -= amount;
+    rcv_destruct(s, amount);
+    telegram << std::format("{}d ", amount);
+  }
+  telegram << "loaded\n";
+}
+
+void merchant_unload_cargo(Ship& s, plinfo& pinfo, const auto& unload,
+                           std::stringstream& telegram) {
+  if (!unload.any()) return;
+
+  telegram << "\t\t";
+  if (unload.fuel) {
+    const int amount = static_cast<int>(s.fuel());
+    pinfo.fuel += amount;
+    telegram << std::format("{}f ", amount);
+    use_fuel(s, static_cast<double>(amount));
+  }
+  if (unload.resources) {
+    const int amount = s.resource();
+    pinfo.resource += amount;
+    telegram << std::format("{}r ", amount);
+    use_resource(s, amount);
+  }
+  if (unload.crystals) {
+    const int amount = s.crystals();
+    pinfo.crystals += amount;
+    telegram << std::format("{}x ", amount);
+    s.consume_crystals(amount);
+  }
+  if (unload.destruct) {
+    const int amount = s.destruct();
+    pinfo.destruct += amount;
+    telegram << std::format("{}d ", amount);
+    use_destruct(s, amount);
+  }
+  telegram << "unloaded\n";
+}
+
+void merchant_launch_to_next_stop(EntityManager& em, Ship& s, const Planet& p,
+                                  const plroute& route,
+                                  std::stringstream& telegram) {
+  const double fuel = s.mass() * p.gravity() * LAUNCH_GRAV_MASS_FACTOR;
+  if (s.fuel() < fuel) {
+    telegram << "\t\tNot enough fuel to launch!\n";
+    return;
+  }
+  s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+  s.deststar() = route.dest_star;
+  s.destpnum() = route.dest_planet;
+  use_fuel(s, fuel);
+  telegram << std::format("\t\tDestination set to {}\n",
+                          format_ship_dest(em, s));
+  if (s.hyper_drive().has && s.storbits() != s.deststar()) {
+    s.navigate().on = false;
+    s.hyper_drive().on = true;
+    s.hyper_drive().charge = s.mounted() ? HYPER_DRIVE_READY_CHARGE : 0;
+    telegram << "\t\tJump orders set\n";
+  }
+}
+
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target Planet */
-static int do_merchant(EntityManager& em, Ship& s, Planet& p,
-                       std::stringstream& telegram) {
-  player_t owner = s.owner();
-  int j = s.merchant() - 1; /* try to speed things up a bit */
-
-  if (!s.merchant() || !p.info(owner).route[j].set) /* not on shipping route */
-    return 0;
-  /* check to see if the sector is owned by the player */
+static bool do_merchant(EntityManager& em, Ship& s, Planet& p,
+                        std::stringstream& telegram) {
+  if (!s.merchant()) {
+    return false;
+  }
+  const player_t owner = s.owner();
+  const auto& route = p.info(owner).route_at(s.merchant());
+  if (!route.set) {
+    return false;
+  }
   const auto* smap = em.peek_sectormap(s.storbits(), s.pnumorbits());
-  if (!smap) return 0;
-  const auto& sect = smap->get(p.info(owner).route[j].dest_coords);
-  if (sect.get_owner() != 0 && (sect.get_owner() != s.owner())) {
-    return 0;
+  if (!smap) return false;
+  const auto& sect = smap->get(route.dest_coords);
+  if (sect.get_owner() != 0 && sect.get_owner() != owner) {
+    return false;
   }
 
-  if (!s.is_landed()) { /* try to land the ship */
-    double fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
-    if (s.fuel() < fuel) { /* ship can't land - cancel all orders */
-      s.whatdest() = ScopeLevel::LEVEL_UNIV;
-      telegram << "\t\tNot enough fuel to land!\n";
-      return 1;
-    }
-    s.set_land_coords(p.info(owner).route[j].dest_coords);
-    telegram << std::format("\t\tLanded on sector {}\n", s.land_coords());
-    const auto& star = *em.peek_star(s.storbits());
-    s.set_coordinates(p.absolute_coordinates(star));
-    use_fuel(s, fuel);
-    s.land_on_planet();
-    s.deststar() = s.storbits();
-    s.destpnum() = s.pnumorbits();
+  if (!merchant_land_ship(em, s, p, route.dest_coords, telegram)) {
+    return true;
   }
-  /* load and unload supplies specified by the planet */
-  const auto& load = p.info(owner).route[j].load;
-  const auto& unload = p.info(owner).route[j].unload;
-  if (load.any()) {
-    telegram << "\t\t";
-    if (load.fuel) {
-      int amount = (int)s.max_fuel_capacity() - (int)s.fuel();
-      if (amount > p.info(owner).fuel) amount = p.info(owner).fuel;
-      p.info(owner).fuel -= amount;
-      rcv_fuel(s, (double)amount);
-      telegram << std::format("{}f ", amount);
-    }
-    if (load.resources) {
-      int amount = (int)s.max_resource_capacity() - (int)s.resource();
-      if (amount > p.info(owner).resource) amount = p.info(owner).resource;
-      p.info(owner).resource -= amount;
-      rcv_resource(s, amount);
-      telegram << std::format("{}r ", amount);
-    }
-    if (load.crystals) {
-      int amount = p.info(owner).crystals;
-      p.info(owner).crystals -= amount;
-      s.add_crystals(amount);
-      telegram << std::format("{}x ", amount);
-    }
-    if (load.destruct) {
-      int amount = (int)s.max_destruct_capacity() - (int)s.destruct();
-      if (amount > p.info(owner).destruct) amount = p.info(owner).destruct;
-      p.info(owner).destruct -= amount;
-      rcv_destruct(s, amount);
-      telegram << std::format("{}d ", amount);
-    }
-    telegram << "loaded\n";
-  }
-  if (unload.any()) {
-    telegram << "\t\t";
-    if (unload.fuel) {
-      int amount = (int)s.fuel();
-      p.info(owner).fuel += amount;
-      telegram << std::format("{}f ", amount);
-      use_fuel(s, (double)amount);
-    }
-    if (unload.resources) {
-      int amount = s.resource();
-      p.info(owner).resource += amount;
-      telegram << std::format("{}r ", amount);
-      use_resource(s, amount);
-    }
-    if (unload.crystals) {
-      int amount = s.crystals();
-      p.info(owner).crystals += amount;
-      telegram << std::format("{}x ", amount);
-      s.consume_crystals(amount);
-    }
-    if (unload.destruct) {
-      int amount = s.destruct();
-      p.info(owner).destruct += amount;
-      telegram << std::format("{}d ", amount);
-      use_destruct(s, amount);
-    }
-    telegram << "unloaded\n";
-  }
+  merchant_load_cargo(s, p.info(owner), route.load, telegram);
+  merchant_unload_cargo(s, p.info(owner), route.unload, telegram);
+  merchant_launch_to_next_stop(em, s, p, route, telegram);
+  return true;
+}
 
-  /* launch the ship */
-  double fuel = s.mass() * p.gravity() * LAUNCH_GRAV_MASS_FACTOR;
-  if (s.fuel() < fuel) {
-    telegram << "\t\tNot enough fuel to launch!\n";
-    return 1;
-  }
-  s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-  s.deststar() = p.info(owner).route[j].dest_star;
-  s.destpnum() = p.info(owner).route[j].dest_planet;
-  use_fuel(s, fuel);
-  telegram << std::format("\t\tDestination set to {}\n", prin_ship_dest(s));
-  if (s.hyper_drive().has) { /* order the ship to jump if it can */
-    if (s.storbits() != s.deststar()) {
-      s.navigate().on = false;
-      s.hyper_drive().on = true;
-      if (s.mounted()) {
-        s.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
-      } else {
-        s.hyper_drive().charge = 0;
-      }
-      telegram << "\t\tJump orders set\n";
-    }
-  }
-  return 1;
+void apply_blueprint_capabilities(ship_struct& data, const ShipTemplate& itmpl,
+                                  const Race* race) noexcept {
+  data.mount = itmpl.can_mount && (!race || race->discoveries.crystal);
+  data.hyper_drive.has =
+      itmpl.can_hyperjump && (!race || race->discoveries.hyperdrive);
+  data.cloak = itmpl.can_cloak && (!race || race->discoveries.cloak);
+  data.laser = itmpl.can_mount_laser && (!race || race->discoveries.laser);
 }
 
 }  // namespace
@@ -454,19 +488,46 @@ void Ship::set_factory_blueprint(ShipType build_type,
   data_.max_fuel = itmpl.max_fuel;
   data_.max_destruct = itmpl.max_destruct;
   data_.max_speed = itmpl.base_speed;
-  data_.mount = itmpl.can_mount && (!race || race->discoveries.crystal);
-  data_.hyper_drive.has =
-      itmpl.can_hyperjump && (!race || race->discoveries.hyperdrive);
-  data_.cloak = itmpl.can_cloak && (!race || race->discoveries.cloak);
-  data_.laser = itmpl.can_mount_laser && (!race || race->discoveries.laser);
+  apply_blueprint_capabilities(data_, itmpl, race);
   data_.cew = 0;
   data_.mode = 0;
   data_.size = calculate_size();
-  data_.build_cost =
-      (race && race->God) ? 0 : static_cast<resource_t>(::cost(*this));
+  const bool free_build = race ? race->God : false;
+  data_.build_cost = free_build ? 0 : ::cost(*this);
   data_.base_mass = base_mass();
   data_.complexity = ::complexity(*this);
 }
+
+namespace {
+
+void initialize_constructed_specialty(Ship& s, player_t owner) {
+  switch (s.type()) {
+    case ShipType::OTYPE_VN:
+      if (auto* vn = s.as<VonNeumannShip>()) {
+        vn->mind() = MindData{.progenitor = owner,
+                              .target = 0,
+                              .generation = 1,
+                              .busy = 1,
+                              .tampered = 0,
+                              .who_killed = 0};
+      }
+      break;
+    case ShipType::STYPE_MINE:
+      if (auto* mine = s.as<MineShip>()) {
+        mine->set_trigger_radius(100);
+      }
+      break;
+    case ShipType::OTYPE_TRANSDEV:
+      if (auto* trans = s.as<TransporterShip>()) {
+        trans->set_target_ship(shipnum_t{0});
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+}  // namespace
 
 void Ship::initialize_constructed_state(const Race& race, governor_t gov,
                                         double load_fuel,
@@ -487,31 +548,7 @@ void Ship::initialize_constructed_state(const Race& race, governor_t gov,
   admin_override_damage(race.God ? 0 : get_template().base_damage);
   data_.retaliate = data_.primary_battery.count;
   set_mass(local_mass(race.mass));
-
-  switch (data_.type) {
-    case ShipType::OTYPE_VN:
-      if (auto* vn = as<VonNeumannShip>()) {
-        vn->mind() = MindData{.progenitor = race.Playernum,
-                              .target = 0,
-                              .generation = 1,
-                              .busy = 1,
-                              .tampered = 0,
-                              .who_killed = 0};
-      }
-      break;
-    case ShipType::STYPE_MINE:
-      if (auto* mine = as<MineShip>()) {
-        mine->set_trigger_radius(100);
-      }
-      break;
-    case ShipType::OTYPE_TRANSDEV:
-      if (auto* trans = as<TransporterShip>()) {
-        trans->set_target_ship(shipnum_t{0});
-      }
-      break;
-    default:
-      break;
-  }
+  initialize_constructed_specialty(*this, race.Playernum);
 }
 
 std::string dispshiploc_brief(EntityManager& em, const Ship& ship) {
@@ -587,320 +624,491 @@ std::string prin_ship_orbits(EntityManager& em, const Ship& s) {
   }
 }
 
-std::string prin_ship_dest(const Ship& ship) {
-  Place dest{ship.whatdest(), ship.deststar(), ship.destpnum(),
-             ship.destshipno()};
-  return dest.to_string();
+std::string format_ship_dest(EntityManager& em, const Ship& ship) {
+  switch (ship.whatdest()) {
+    case ScopeLevel::LEVEL_UNIV:
+      return "/";
+    case ScopeLevel::LEVEL_STAR:
+      if (const auto* star = em.peek_star(ship.deststar())) {
+        return std::format("/{}", star->get_name());
+      }
+      return "/";
+    case ScopeLevel::LEVEL_PLAN:
+      if (const auto* star = em.peek_star(ship.deststar())) {
+        return std::format("/{}/{}", star->get_name(),
+                           star->get_planet_name(ship.destpnum()));
+      }
+      return "/";
+    case ScopeLevel::LEVEL_SHIP:
+      return std::format("#{}", ship.destshipno());
+  }
 }
 
-void moveship(EntityManager& em, Ship& s, int mode, int send_messages,
-              int checking_fuel) {
-  const auto* state = em.peek_server_state();
-  if (!state) return;  // Can't move ships without knowing segments
+namespace {
 
-  double stardist;
-  double movedist;
-  double truedist;
-  double dist;
-  double sn;
-  double cs;
-  double mfactor;
-  double heading;
-  double distfac;
-  double fuse;
-  ScopeLevel destlevel;
-  starnum_t deststar = 0;
-  planetnum_t destpnum = 0;
-  Ship* dsh;
+constexpr double DEGREES_TO_RADIANS = std::numbers::pi / 180.0;
 
-  if (s.hyper_drive().has && s.hyper_drive().on) { /* do a hyperspace jump */
-    if (!mode) return; /* we're not ready to jump until the update */
-    if (s.hyper_drive().is_ready()) {
-      const auto* dest_star = em.peek_star(s.deststar());
-      if (!dest_star) return;
-      dist = s.coordinates().distance_to(dest_star->coordinates());
-      distfac = HYPER_DIST_FACTOR * (s.tech() + 100.0);
-      if (s.mounted() && dist > distfac)
-        fuse = HYPER_DRIVE_FUEL_USE * std::sqrt(s.mass()) * (dist / distfac);
-      else
-        fuse = HYPER_DRIVE_FUEL_USE * std::sqrt(s.mass()) * (dist / distfac) *
-               (dist / distfac);
+[[nodiscard]] double compute_hyperjump_fuel(const Ship& s,
+                                            double dist) noexcept {
+  const double distfac = HYPER_DIST_FACTOR * (s.tech() + 100.0);
+  const double ratio = dist / distfac;
+  if (s.mounted() && dist > distfac) {
+    return HYPER_DRIVE_FUEL_USE * std::sqrt(s.mass()) * ratio;
+  }
+  return HYPER_DRIVE_FUEL_USE * std::sqrt(s.mass()) * ratio * ratio;
+}
 
-      if (s.fuel() < fuse) {
-        std::string telegram = std::format(
-            "{} at system {} does not have {:.1f}f to do hyperspace jump.", s,
-            prin_ship_orbits(em, s), fuse);
-        if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
-        s.hyper_drive().on = false;
-        return;
-      }
-      use_fuel(s, fuse);
-      heading = std::atan2(dest_star->coordinates().x - s.coordinates().x,
-                           dest_star->coordinates().y - s.coordinates().y);
-      sn = std::sin(heading);
-      cs = std::cos(heading);
-      s.set_coordinates(UniverseCoordinates{
-          dest_star->coordinates().x - sn * 0.9 * SYSTEMSIZE,
-          dest_star->coordinates().y - cs * 0.9 * SYSTEMSIZE});
+void charge_hyperdrive_capacitor(Ship& s) noexcept {
+  if (s.mounted()) {
+    s.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
+  } else if (s.hyper_drive().charge < HYPER_DRIVE_READY_CHARGE) {
+    s.hyper_drive().charge += 1;
+  }
+}
+
+void execute_hyperdrive_jump(EntityManager& em, Ship& s, bool is_update,
+                             bool send_messages) {
+  if (!is_update) return; /* we're not ready to jump until the update */
+
+  if (!s.hyper_drive().is_ready()) {
+    charge_hyperdrive_capacitor(s);
+    return;
+  }
+
+  const auto* dest_star = em.peek_star(s.deststar());
+  if (!dest_star) return;
+
+  const double dist = s.coordinates().distance_to(dest_star->coordinates());
+  const double fuse = compute_hyperjump_fuel(s, dist);
+  if (s.fuel() < fuse) {
+    if (send_messages) {
+      push_telegram(em, s.owner(), s.governor(),
+                    std::format("{} at system {} does not have {:.1f}f to do "
+                                "hyperspace jump.",
+                                s, prin_ship_orbits(em, s), fuse));
+    }
+    s.hyper_drive().on = false;
+    return;
+  }
+
+  use_fuel(s, fuse);
+  const double heading =
+      std::atan2(dest_star->coordinates().x - s.coordinates().x,
+                 dest_star->coordinates().y - s.coordinates().y);
+  const double sn = std::sin(heading);
+  const double cs = std::cos(heading);
+  s.set_coordinates(
+      UniverseCoordinates{dest_star->coordinates().x - sn * 0.9 * SYSTEMSIZE,
+                          dest_star->coordinates().y - cs * 0.9 * SYSTEMSIZE});
+  s.whatorbits() = ScopeLevel::LEVEL_STAR;
+  s.storbits() = s.deststar();
+  s.protect().planet = false;
+  s.hyper_drive().on = false;
+  s.hyper_drive().charge = 0;
+  if (send_messages) {
+    push_telegram(em, s.owner(), s.governor(),
+                  std::format("{} arrived at {}.", s, prin_ship_orbits(em, s)));
+  }
+}
+
+[[nodiscard]] bool is_expendable_or_probe_ship(const Ship& s) noexcept {
+  return s.build_cost() <= 50 || s.type() == ShipType::OTYPE_VN ||
+         s.type() == ShipType::OTYPE_BERS;
+}
+
+void handle_sublight_out_of_fuel(EntityManager& em, Ship& s,
+                                 bool send_messages) {
+  if (!send_messages) return;
+
+  msg_OOF(em, s);
+  if (s.whatorbits() == ScopeLevel::LEVEL_UNIV &&
+      is_expendable_or_probe_ship(s)) {
+    push_telegram(em, s.owner(), s.governor(),
+                  std::format("{} has been lost in deep space.", s));
+    em.kill_ship(s.owner(), s);
+  }
+}
+
+void check_and_break_orbit(EntityManager& em, Ship& s) {
+  if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+    const auto* ost = em.peek_star(s.storbits());
+    const auto* opl = em.peek_planet(s.storbits(), s.pnumorbits());
+    if (ost && opl &&
+        s.coordinates().distance_to(opl->absolute_coordinates(*ost)) >
+            PLORBITSIZE) {
       s.whatorbits() = ScopeLevel::LEVEL_STAR;
-      s.storbits() = s.deststar();
       s.protect().planet = false;
-      s.hyper_drive().on = false;
-      s.hyper_drive().charge = 0;
-      std::string telegram =
-          std::format("{} arrived at {}.", s, prin_ship_orbits(em, s));
-      if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
-    } else if (s.mounted()) {
-      s.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
-    } else {
-      if (s.hyper_drive().charge < HYPER_DRIVE_READY_CHARGE) {
-        s.hyper_drive().charge += 1;
-      }
+    }
+  } else if (s.whatorbits() == ScopeLevel::LEVEL_STAR) {
+    const auto* ost = em.peek_star(s.storbits());
+    if (ost && s.coordinates().distance_to(ost->coordinates()) > SYSTEMSIZE) {
+      s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+      s.protect().evade = false;
+      s.protect().planet = false;
+    }
+  }
+}
+
+[[nodiscard]] double
+compute_sublight_move_factor(const Ship& s, segments_t segments) noexcept {
+  return SHIP_MOVE_SCALE * (1.0 - 0.01 * static_cast<double>(s.rad())) *
+         (1.0 - 0.01 * static_cast<double>(s.damage())) *
+         SpeedConsts[s.speed()] * MoveConsts[s.whatorbits()] /
+         static_cast<double>(segments);
+}
+
+void execute_navigation_step(EntityManager& em, Ship& s, double fuse,
+                             double mfactor) {
+  const double heading = DEGREES_TO_RADIANS * s.navigate().bearing;
+  use_fuel(s, fuse);
+  const double sn = std::sin(heading);
+  const double cs = std::cos(heading);
+  s.set_coordinates(s.coordinates() +
+                    SystemCoordinates{sn * mfactor, -cs * mfactor});
+  s.navigate().turns--;
+  if (!s.navigate().turns) {
+    s.navigate().on = false;
+  }
+  check_and_break_orbit(em, s);
+}
+
+struct ResolvedDestination {
+  ScopeLevel level{ScopeLevel::LEVEL_UNIV};
+  starnum_t star{0};
+  planetnum_t pnum{0};
+  UniverseCoordinates coords{};
+  const Ship* target_ship{nullptr};
+  bool valid{true};
+};
+
+void resolve_ship_destination_target(EntityManager& em, Ship& s,
+                                     ResolvedDestination& res) {
+  res.target_ship = em.peek_ship(s.destshipno());
+  if (!res.target_ship) {
+    s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    s.protect().evade = false;
+    res.valid = false;
+    return;
+  }
+  s.deststar() = res.target_ship->storbits();
+  s.destpnum() = res.target_ship->pnumorbits();
+  res.star = s.deststar();
+  res.pnum = s.destpnum();
+  res.coords = res.target_ship->coordinates();
+
+  const ScopeLevel dsh_orbit = res.target_ship->whatorbits();
+  if (dsh_orbit == ScopeLevel::LEVEL_PLAN &&
+      (s.whatorbits() != ScopeLevel::LEVEL_PLAN ||
+       s.pnumorbits() != res.target_ship->pnumorbits())) {
+    res.level = ScopeLevel::LEVEL_PLAN;
+  } else if (dsh_orbit == ScopeLevel::LEVEL_STAR &&
+             (s.whatorbits() != ScopeLevel::LEVEL_STAR ||
+              s.storbits() != res.target_ship->storbits())) {
+    res.level = ScopeLevel::LEVEL_STAR;
+  }
+}
+
+[[nodiscard]] bool needs_interstellar_approach(const Ship& s,
+                                               ScopeLevel level) noexcept {
+  if (level == ScopeLevel::LEVEL_STAR) return true;
+  if (level != ScopeLevel::LEVEL_PLAN) return false;
+  return s.storbits() != s.deststar() ||
+         s.whatorbits() == ScopeLevel::LEVEL_UNIV;
+}
+
+[[nodiscard]] ResolvedDestination resolve_destination_target(EntityManager& em,
+                                                             Ship& s) {
+  ResolvedDestination res{
+      .level = s.whatdest(),
+      .star = s.deststar(),
+      .pnum = s.destpnum(),
+  };
+
+  if (res.level == ScopeLevel::LEVEL_SHIP) {
+    resolve_ship_destination_target(em, s, res);
+    if (!res.valid) return res;
+  }
+
+  if (needs_interstellar_approach(s, res.level)) {
+    res.level = ScopeLevel::LEVEL_STAR;
+    res.star = s.deststar();
+    res.coords = em.peek_star(res.star)->coordinates();
+  } else if (res.level == ScopeLevel::LEVEL_PLAN &&
+             s.storbits() == s.deststar()) {
+    res.level = ScopeLevel::LEVEL_PLAN;
+    res.star = s.deststar();
+    res.pnum = s.destpnum();
+    const auto& dest_star = *em.peek_star(res.star);
+    const auto& dest_planet = *em.peek_planet(res.star, res.pnum);
+    res.coords = dest_planet.absolute_coordinates(dest_star);
+  }
+  return res;
+}
+
+[[nodiscard]] bool can_ship_explore(const Ship& s,
+                                    bool checking_fuel) noexcept {
+  if (checking_fuel) return false;
+  return s.popn() > 0 || s.type() == ShipType::OTYPE_PROBE;
+}
+
+void explore_arrived_star(EntityManager& em, const Ship& s,
+                          starnum_t deststar) {
+  em.mutate_star(deststar, [&](Star& dst_star) {
+    if (!dst_star.is_inhabited_by(s.owner())) {
+      dst_star.governor(s.owner()) = s.governor();
+    }
+    dst_star.mark_explored_by(s.owner());
+    dst_star.mark_inhabited_by(s.owner());
+  });
+}
+
+void handle_star_arrival(EntityManager& em, Ship& s, starnum_t deststar,
+                         bool send_messages, bool checking_fuel) {
+  const auto& dst = *em.peek_star(deststar);
+  if (s.coordinates().distance_to(dst.coordinates()) > SYSTEMSIZE * 1.5) {
+    return;
+  }
+
+  s.whatorbits() = ScopeLevel::LEVEL_STAR;
+  s.protect().planet = false;
+  s.storbits() = deststar;
+  if (can_ship_explore(s, checking_fuel)) {
+    explore_arrived_star(em, s, deststar);
+  }
+  if (send_messages && s.type() != ShipType::OTYPE_VN) {
+    push_telegram(em, s.owner(), s.governor(),
+                  std::format("{} arrived at {}.", s, prin_ship_orbits(em, s)));
+  }
+  if (s.whatdest() == ScopeLevel::LEVEL_STAR) {
+    s.whatdest() = ScopeLevel::LEVEL_UNIV;
+  }
+}
+
+void explore_arrived_planet(EntityManager& em, const Ship& s,
+                            starnum_t deststar, planetnum_t destpnum) {
+  em.mutate_planet(deststar, destpnum,
+                   [&](Planet& p) { p.info(s.owner()).explored = 1; });
+  em.mutate_star(deststar, [&](Star& dst_star) {
+    dst_star.mark_explored_by(s.owner());
+    dst_star.mark_inhabited_by(s.owner());
+  });
+}
+
+void handle_planet_landing_distance(EntityManager& em, Ship& s,
+                                    starnum_t deststar, planetnum_t destpnum,
+                                    bool checking_fuel,
+                                    std::stringstream& telegram) {
+  telegram << std::format("{} within landing distance of {}.", s,
+                          prin_ship_orbits(em, s));
+  em.mutate_planet(deststar, destpnum, [&](Planet& dpl_planet) {
+    const bool merch =
+        checking_fuel ? false : do_merchant(em, s, dpl_planet, telegram);
+    if (!merch && s.whatdest() == ScopeLevel::LEVEL_PLAN) {
+      s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    }
+  });
+}
+
+void handle_planet_arrival(EntityManager& em, Ship& s, starnum_t deststar,
+                           planetnum_t destpnum, bool send_messages,
+                           bool checking_fuel) {
+  const auto& dst = *em.peek_star(deststar);
+  const auto& dpl = *em.peek_planet(deststar, destpnum);
+  const double dist =
+      s.coordinates().distance_to(dpl.absolute_coordinates(dst));
+  if (dist > PLORBITSIZE) return;
+
+  if (can_ship_explore(s, checking_fuel)) {
+    explore_arrived_planet(em, s, deststar, destpnum);
+  }
+  s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  s.pnumorbits() = destpnum;
+
+  std::stringstream telegram;
+  if (dist <= static_cast<double>(DIST_TO_LAND)) {
+    handle_planet_landing_distance(em, s, deststar, destpnum, checking_fuel,
+                                   telegram);
+  } else {
+    telegram << std::format("{} arriving at {}.", s, prin_ship_orbits(em, s));
+  }
+  if (s.type() == ShipType::STYPE_OAP) {
+    telegram << "\nEnslavement of the planet is now possible.";
+  }
+  if (send_messages && s.type() != ShipType::OTYPE_VN) {
+    push_telegram(em, s.owner(), s.governor(), telegram.str());
+  }
+}
+
+void handle_ship_arrival(Ship& s, const Ship& dsh) {
+  if (s.coordinates().distance_to(dsh.coordinates()) > PLORBITSIZE) return;
+
+  if (dsh.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
+    s.storbits() = dsh.storbits();
+    s.pnumorbits() = dsh.pnumorbits();
+  } else if (dsh.whatorbits() == ScopeLevel::LEVEL_STAR) {
+    s.whatorbits() = ScopeLevel::LEVEL_STAR;
+    s.storbits() = dsh.storbits();
+    s.protect().planet = false;
+  }
+}
+
+[[nodiscard]] bool is_already_at_destination(const Ship& s,
+                                             const ResolvedDestination& dest,
+                                             double truedist) noexcept {
+  if (truedist >= DIST_TO_LAND) return false;
+  if (s.whatorbits() != dest.level) return false;
+  return s.storbits() == dest.star && s.pnumorbits() == dest.pnum;
+}
+
+[[nodiscard]] double adjust_approach_distance(const Ship& s,
+                                              const ResolvedDestination& dest,
+                                              double truedist) noexcept {
+  if (dest.level == ScopeLevel::LEVEL_STAR &&
+      (s.storbits() != dest.star || s.whatorbits() == ScopeLevel::LEVEL_UNIV)) {
+    return truedist - SYSTEMSIZE * 0.90;
+  }
+  if (dest.level == ScopeLevel::LEVEL_PLAN &&
+      s.whatorbits() == ScopeLevel::LEVEL_STAR && s.storbits() == dest.star &&
+      truedist >= PLORBITSIZE) {
+    return truedist - PLORBITSIZE * 0.90;
+  }
+  return truedist;
+}
+
+void dispatch_destination_arrival(EntityManager& em, Ship& s,
+                                  const ResolvedDestination& dest,
+                                  bool send_messages, bool checking_fuel) {
+  if (needs_interstellar_approach(s, dest.level)) {
+    handle_star_arrival(em, s, dest.star, send_messages, checking_fuel);
+  } else if (dest.level == ScopeLevel::LEVEL_PLAN &&
+             dest.star == s.storbits()) {
+    handle_planet_arrival(em, s, dest.star, dest.pnum, send_messages,
+                          checking_fuel);
+  } else if (dest.level == ScopeLevel::LEVEL_SHIP && dest.target_ship) {
+    handle_ship_arrival(s, *dest.target_ship);
+  }
+}
+
+void execute_destination_step(EntityManager& em, Ship& s, double fuse,
+                              double mfactor, bool send_messages,
+                              bool checking_fuel) {
+  const auto dest = resolve_destination_target(em, s);
+  if (!dest.valid) return;
+
+  const double truedist = s.coordinates().distance_to(dest.coords);
+  if (is_already_at_destination(s, dest, truedist)) {
+    return;
+  }
+
+  if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
+      (!dest.target_ship || !followable(em, s, *dest.target_ship))) {
+    s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    s.protect().evade = false;
+    if (send_messages) {
+      push_telegram(em, s.owner(), s.governor(),
+                    std::format("{} at {} lost sight of destination ship #{}.",
+                                s, prin_ship_orbits(em, s), s.destshipno()));
     }
     return;
   }
-  if (s.speed() && !s.docked() && s.alive() &&
-      (s.whatdest() != ScopeLevel::LEVEL_UNIV || s.navigate().on)) {
-    fuse = 0.5 * s.speed() * (1.0 + (s.protect().evade ? 1.0 : 0.0)) *
-           s.mass() * FUEL_USE / (double)state->segments;
-    if (s.fuel() < fuse) {
-      if (send_messages) msg_OOF(em, s); /* send OOF notify */
-      if (s.whatorbits() == ScopeLevel::LEVEL_UNIV &&
-          (s.build_cost() <= 50 || s.type() == ShipType::OTYPE_VN ||
-           s.type() == ShipType::OTYPE_BERS)) {
-        std::string telegram =
-            std::format("{} has been lost in deep space.", s);
-        if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
-        if (send_messages) em.kill_ship((int)(s.owner()), s);
-      }
-      return;
-    }
-    if (s.navigate().on) { /* follow navigational orders */
-      heading = .0174329252 * s.navigate().bearing;
-      mfactor = SHIP_MOVE_SCALE * (1.0 - .01 * s.rad()) *
-                (1.0 - .01 * s.damage()) * SpeedConsts[s.speed()] *
-                MoveConsts[s.whatorbits()] / (double)state->segments;
-      use_fuel(s, (double)fuse);
-      sn = std::sin(heading);
-      cs = std::cos(heading);
-      s.set_coordinates(s.coordinates() +
-                        SystemCoordinates{sn * mfactor, -cs * mfactor});
-      s.navigate().turns--;
-      if (!s.navigate().turns) s.navigate().on = false;
-      /* check here for orbit breaking as well. Maarten */
-      const auto* ost = em.peek_star(s.storbits());
-      const auto* opl = em.peek_planet(s.storbits(), s.pnumorbits());
-      if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        dist = s.coordinates().distance_to(opl->absolute_coordinates(*ost));
-        if (dist > PLORBITSIZE) {
-          s.whatorbits() = ScopeLevel::LEVEL_STAR;
-          s.protect().planet = false;
-        }
-      } else if (s.whatorbits() == ScopeLevel::LEVEL_STAR) {
-        dist = s.coordinates().distance_to(ost->coordinates());
-        if (dist > SYSTEMSIZE) {
-          s.whatorbits() = ScopeLevel::LEVEL_UNIV;
-          s.protect().evade = false;
-          s.protect().planet = false;
-        }
-      }
-    } else { /*		navigate is off            */
-      UniverseCoordinates dest_coords{};
-      destlevel = s.whatdest();
-      if (destlevel == ScopeLevel::LEVEL_SHIP) {
-        dsh = ships[s.destshipno().value];
-        s.deststar() = dsh->storbits();
-        s.destpnum() = dsh->pnumorbits();
-        dest_coords = dsh->coordinates();
-        switch (dsh->whatorbits()) {
-          case ScopeLevel::LEVEL_UNIV:
-            break;
-          case ScopeLevel::LEVEL_PLAN:
-            if (s.whatorbits() != dsh->whatorbits() ||
-                s.pnumorbits() != dsh->pnumorbits())
-              destlevel = ScopeLevel::LEVEL_PLAN;
-            break;
-          case ScopeLevel::LEVEL_STAR:
-            if (s.whatorbits() != dsh->whatorbits() ||
-                s.storbits() != dsh->storbits())
-              destlevel = ScopeLevel::LEVEL_STAR;
-            break;
-          case ScopeLevel::LEVEL_SHIP:
-            // TODO(jeffbailey): Prove that this is impossible.
-            break;
-        }
-        /*			if (std::hypot(s.xpos - xdest, s.ypos - ydest)
-                   <= DIST_TO_LAND || !(dsh->alive)) {
-                           destlevel = ScopeLevel::LEVEL_UNIV;
-                                                   s.whatdest=ScopeLevel::LEVEL_UNIV;
-                                   } */
-      }
-      /*		else */
-      if (destlevel == ScopeLevel::LEVEL_STAR ||
-          (destlevel == ScopeLevel::LEVEL_PLAN &&
-           (s.storbits() != s.deststar() ||
-            s.whatorbits() == ScopeLevel::LEVEL_UNIV))) {
-        destlevel = ScopeLevel::LEVEL_STAR;
-        deststar = s.deststar();
-        const auto& dest_star = *em.peek_star(deststar);
-        dest_coords = dest_star.coordinates();
-      } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
-                 s.storbits() == s.deststar()) {
-        destlevel = ScopeLevel::LEVEL_PLAN;
-        deststar = s.deststar();
-        destpnum = s.destpnum();
-        const auto& dest_star = *em.peek_star(deststar);
-        const auto& dest_planet = *em.peek_planet(deststar, destpnum);
-        dest_coords = dest_planet.absolute_coordinates(dest_star);
-        if (s.coordinates().distance_to(dest_coords) <= DIST_TO_LAND)
-          destlevel = ScopeLevel::LEVEL_UNIV;
-      }
-      const auto& dst = *em.peek_star(deststar);
-      const auto& ost = *em.peek_star(s.storbits());
-      const auto& dpl = *em.peek_planet(deststar, destpnum);
-      const auto& opl = *em.peek_planet(s.storbits(), s.pnumorbits());
-      truedist = movedist = s.coordinates().distance_to(dest_coords);
-      /* Save some unneccesary calculation and domain errors for atan2
-            Maarten */
-      if (truedist < DIST_TO_LAND && s.whatorbits() == destlevel &&
-          s.storbits() == deststar && s.pnumorbits() == destpnum)
-        return;
-      heading = std::atan2(dest_coords.x - s.coordinates().x,
-                           -dest_coords.y + s.coordinates().y);
-      mfactor = SHIP_MOVE_SCALE * (1. - .01 * (double)s.rad()) *
-                (1. - .01 * (double)s.damage()) * SpeedConsts[s.speed()] *
-                MoveConsts[s.whatorbits()] / (double)state->segments;
 
-      /* keep from ending up in the middle of the system. */
-      if (destlevel == ScopeLevel::LEVEL_STAR &&
-          (s.storbits() != deststar ||
-           s.whatorbits() == ScopeLevel::LEVEL_UNIV))
-        movedist -= SYSTEMSIZE * 0.90;
-      else if (destlevel == ScopeLevel::LEVEL_PLAN &&
-               s.whatorbits() == ScopeLevel::LEVEL_STAR &&
-               s.storbits() == deststar && truedist >= PLORBITSIZE)
-        movedist -= PLORBITSIZE * 0.90;
+  if (truedist > DIST_TO_LAND) {
+    use_fuel(s, fuse);
+    const double movedist = adjust_approach_distance(s, dest, truedist);
+    const double heading = std::atan2(dest.coords.x - s.coordinates().x,
+                                      -dest.coords.y + s.coordinates().y);
+    const double step = std::min(mfactor, movedist);
+    s.set_coordinates(
+        s.coordinates() +
+        SystemCoordinates{std::sin(heading) * step, -std::cos(heading) * step});
+  }
 
-      if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-          !followable(em, s, *ships[s.destshipno().value])) {
-        s.whatdest() = ScopeLevel::LEVEL_UNIV;
-        s.protect().evade = false;
-        std::string telegram =
-            std::format("{} at {} lost sight of destination ship #{}.", s,
-                        prin_ship_orbits(em, s), s.destshipno());
-        if (send_messages) push_telegram(em, s.owner(), s.governor(), telegram);
-        return;
-      }
-      if (truedist > DIST_TO_LAND) {
-        use_fuel(s, (double)fuse);
-        /* dont overshoot */
-        sn = std::sin(heading);
-        cs = std::cos(heading);
-        const double step = std::min(mfactor, movedist);
-        s.set_coordinates(s.coordinates() +
-                          SystemCoordinates{sn * step, -cs * step});
-      }
-      // Check if far enough away from object it's orbiting to break orbit
-      if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        dist = s.coordinates().distance_to(opl.absolute_coordinates(ost));
-        if (dist > PLORBITSIZE) {
-          s.whatorbits() = ScopeLevel::LEVEL_STAR;
-          s.protect().planet = false;
-        }
-      } else if (s.whatorbits() == ScopeLevel::LEVEL_STAR) {
-        dist = s.coordinates().distance_to(ost.coordinates());
-        if (dist > SYSTEMSIZE) {
-          s.whatorbits() = ScopeLevel::LEVEL_UNIV;
-          s.protect().evade = false;
-          s.protect().planet = false;
-        }
-      }
+  check_and_break_orbit(em, s);
+  dispatch_destination_arrival(em, s, dest, send_messages, checking_fuel);
+}
 
-      // Check for arriving at destination
-      if (destlevel == ScopeLevel::LEVEL_STAR ||
-          (destlevel == ScopeLevel::LEVEL_PLAN &&
-           (s.storbits() != deststar ||
-            s.whatorbits() == ScopeLevel::LEVEL_UNIV))) {
-        stardist = s.coordinates().distance_to(dst.coordinates());
-        if (stardist <= SYSTEMSIZE * 1.5) {
-          s.whatorbits() = ScopeLevel::LEVEL_STAR;
-          s.protect().planet = false;
-          s.storbits() = deststar;
-          /* if this system isn't inhabited by you, give it to the
-             governor of the ship */
-          if (!checking_fuel &&
-              (s.popn() || s.type() == ShipType::OTYPE_PROBE)) {
-            em.mutate_star(deststar, [&](Star& dst_star) {
-              if (!dst_star.is_inhabited_by(s.owner())) {
-                dst_star.governor(s.owner()) = s.governor();
-              }
-              dst_star.mark_explored_by(s.owner());
-              dst_star.mark_inhabited_by(s.owner());
-            });
-          }
-          if (s.type() != ShipType::OTYPE_VN) {
-            std::string telegram =
-                std::format("{} arrived at {}.", s, prin_ship_orbits(em, s));
-            if (send_messages)
-              push_telegram(em, s.owner(), s.governor(), telegram);
-          }
-          if (s.whatdest() == ScopeLevel::LEVEL_STAR)
-            s.whatdest() = ScopeLevel::LEVEL_UNIV;
-        }
-      } else if (destlevel == ScopeLevel::LEVEL_PLAN &&
-                 deststar == s.storbits()) {
-        // Headed for a planet in the same system, & not already there.
-        dist = s.coordinates().distance_to(dpl.absolute_coordinates(dst));
-        if (dist <= PLORBITSIZE) {
-          if (!checking_fuel &&
-              (s.popn() || s.type() == ShipType::OTYPE_PROBE)) {
-            em.mutate_planet(deststar, destpnum, [&](Planet& p) {
-              p.info(s.owner()).explored = 1;
-            });
-            em.mutate_star(deststar, [&](Star& dst_star) {
-              dst_star.mark_explored_by(s.owner());
-              dst_star.mark_inhabited_by(s.owner());
-            });
-          }
-          s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-          s.pnumorbits() = destpnum;
-          std::stringstream telegram;
-          if (dist <= (double)DIST_TO_LAND) {
-            telegram << std::format("{} within landing distance of {}.", s,
-                                    prin_ship_orbits(em, s));
-            em.mutate_planet(deststar, destpnum, [&](Planet& dpl_planet) {
-              if (checking_fuel || !do_merchant(em, s, dpl_planet, telegram))
-                if (s.whatdest() == ScopeLevel::LEVEL_PLAN)
-                  s.whatdest() = ScopeLevel::LEVEL_UNIV;
-            });
-          } else {
-            telegram << std::format("{} arriving at {}.", s,
-                                    prin_ship_orbits(em, s));
-          }
-          if (s.type() == ShipType::STYPE_OAP) {
-            telegram << std::format(
-                "\nEnslavement of the planet is now possible.");
-          }
-          if (send_messages && s.type() != ShipType::OTYPE_VN)
-            push_telegram(em, s.owner(), s.governor(), telegram.str());
-        }
-      } else if (destlevel == ScopeLevel::LEVEL_SHIP) {
-        dist = s.coordinates().distance_to(dsh->coordinates());
-        if (dist <= PLORBITSIZE) {
-          if (dsh->whatorbits() == ScopeLevel::LEVEL_PLAN) {
-            s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-            s.storbits() = dsh->storbits();
-            s.pnumorbits() = dsh->pnumorbits();
-          } else if (dsh->whatorbits() == ScopeLevel::LEVEL_STAR) {
-            s.whatorbits() = ScopeLevel::LEVEL_STAR;
-            s.storbits() = dsh->storbits();
-            s.protect().planet = false;
-          }
-        }
-      }
-    } /* 'destination' orders */
-  } /* if impulse drive */
-}  // namespace void moveship(Ship&s,intmode,intsend_messages,intchecking_fuel)
+template <typename StockT, typename CapT>
+[[nodiscard]] constexpr std::int64_t
+clamp_cargo_transfer(std::int64_t requested, StockT available_stock,
+                     StockT current_dest, CapT max_dest,
+                     bool unlimited_dest = false) noexcept {
+  const auto avail = static_cast<std::int64_t>(available_stock);
+  if (requested <= 0 || avail <= 0) return 0;
+  const auto cur = static_cast<std::int64_t>(current_dest);
+  const auto max_cap = static_cast<std::int64_t>(max_dest);
+  const std::int64_t capacity =
+      unlimited_dest ? avail : std::max<std::int64_t>(0, max_cap - cur);
+  return std::max<std::int64_t>(0, std::min({requested, avail, capacity}));
+}
+
+[[nodiscard]] bool can_ship_move_sublight(const Ship& s) noexcept {
+  if (!s.speed() || s.docked() || !s.alive()) return false;
+  return s.whatdest() != ScopeLevel::LEVEL_UNIV || s.navigate().on;
+}
+
+[[nodiscard]] std::int64_t
+compute_cargo_transfer_amount(const Ship& src, const Ship& dst,
+                              ShipCargoType cargo,
+                              std::int64_t amount) noexcept {
+  switch (cargo) {
+    case ShipCargoType::Resource:
+      return clamp_cargo_transfer(amount, src.resource(), dst.resource(),
+                                  dst.max_resource_capacity(),
+                                  dst.can_strap_cargo_to_hull());
+    case ShipCargoType::Destruct:
+      return clamp_cargo_transfer(amount, src.destruct(), dst.destruct(),
+                                  dst.max_destruct_capacity());
+    case ShipCargoType::Fuel:
+      return clamp_cargo_transfer(amount, src.fuel(), dst.fuel(),
+                                  dst.max_fuel_capacity());
+    case ShipCargoType::Crystal:
+      return clamp_cargo_transfer(amount, src.crystals(), dst.crystals(),
+                                  dst.max_crystals_capacity());
+    case ShipCargoType::Crew:
+      return clamp_cargo_transfer(amount, src.popn(), dst.popn(),
+                                  dst.max_crew_capacity());
+    case ShipCargoType::Troops:
+      return clamp_cargo_transfer(amount, src.troops(), dst.troops(),
+                                  dst.available_mil());
+  }
+  return 0;
+}
+
+}  // namespace
+
+void moveship(EntityManager& em, Ship& s, bool is_update, bool send_messages,
+              bool checking_fuel) {
+  const auto* state = em.peek_server_state();
+  if (!state) return;  // Can't move ships without knowing segments
+
+  if (s.hyper_drive().has && s.hyper_drive().on) {
+    execute_hyperdrive_jump(em, s, is_update, send_messages);
+    return;
+  }
+
+  if (!can_ship_move_sublight(s)) {
+    return;
+  }
+
+  // Normal sublight cruise burns 0.5x the base fuel rate; evasive maneuvers
+  // double fuel consumption to the full 1.0x rate.
+  const double evade_multiplier = s.protect().evade ? 1.0 : 0.5;
+  const double fuse = evade_multiplier * s.speed() * s.mass() * FUEL_USE /
+                      static_cast<double>(state->segments);
+  if (s.fuel() < fuse) {
+    handle_sublight_out_of_fuel(em, s, send_messages);
+    return;
+  }
+
+  const double mfactor = compute_sublight_move_factor(s, state->segments);
+  if (s.navigate().on) {
+    execute_navigation_step(em, s, fuse, mfactor);
+  } else {
+    execute_destination_step(em, s, fuse, mfactor, send_messages,
+                             checking_fuel);
+  }
+}
 
 /* deliver an "out of fuel" message.  Used by a number of ship-updating
  *  code segments; so that code isn't duplicated.
@@ -914,7 +1122,7 @@ void msg_OOF(EntityManager& em, const Ship& s) {
 /* followable: returns 1 iff s1 can follow s2 */
 bool followable(EntityManager& em, const Ship& s1, const Ship& s2) {
   if (!s2.alive() || !s1.active() || s2.whatorbits() == ScopeLevel::LEVEL_SHIP)
-    return true;
+    return false;
 
   double range = 4.0 * logscale((int)(s1.tech() + 1.0)) * SYSTEMSIZE;
 
@@ -928,118 +1136,35 @@ bool followable(EntityManager& em, const Ship& s1, const Ship& s2) {
 std::int64_t Ship::transfer_cargo_to(Ship& destination, ShipCargoType cargo,
                                      std::int64_t amount,
                                      double race_mass) noexcept {
-  if (amount <= 0) {
-    return 0;
-  }
+  const auto to_transfer =
+      compute_cargo_transfer_amount(*this, destination, cargo, amount);
+  if (to_transfer <= 0) return 0;
 
   switch (cargo) {
-    case ShipCargoType::Resource: {
-      const std::int64_t available_stock = resource();
-      if (available_stock <= 0) return 0;
-
-      const auto max_cap = destination.max_resource_capacity();
-      const auto current = destination.resource();
-      const std::int64_t capacity =
-          destination.can_strap_cargo_to_hull()
-              ? available_stock
-              : ((max_cap > current) ? (max_cap - current) : 0);
-
-      const std::int64_t to_transfer =
-          std::min({amount, available_stock, capacity});
-      if (to_transfer <= 0) return 0;
-
+    case ShipCargoType::Resource:
       consume_resource(to_transfer);
       destination.add_resource(to_transfer);
-      return to_transfer;
-    }
-    case ShipCargoType::Destruct: {
-      const std::int64_t available_stock = destruct();
-      if (available_stock <= 0) return 0;
-
-      const auto max_cap = destination.max_destruct_capacity();
-      const auto current = destination.destruct();
-      const std::int64_t capacity =
-          (max_cap > current) ? (max_cap - current) : 0;
-
-      const std::int64_t to_transfer =
-          std::min({amount, available_stock, capacity});
-      if (to_transfer <= 0) return 0;
-
+      break;
+    case ShipCargoType::Destruct:
       consume_destruct(to_transfer);
       destination.add_destruct(to_transfer);
-      return to_transfer;
-    }
-    case ShipCargoType::Fuel: {
-      const std::int64_t available_stock = static_cast<std::int64_t>(fuel());
-      if (available_stock <= 0) return 0;
-
-      const auto max_cap =
-          static_cast<std::int64_t>(destination.max_fuel_capacity());
-      const auto current = static_cast<std::int64_t>(destination.fuel());
-      const std::int64_t capacity =
-          (max_cap > current) ? (max_cap - current) : 0;
-
-      const std::int64_t to_transfer =
-          std::min({amount, available_stock, capacity});
-      if (to_transfer <= 0) return 0;
-
+      break;
+    case ShipCargoType::Fuel:
       consume_fuel(static_cast<double>(to_transfer));
       destination.add_fuel(static_cast<double>(to_transfer));
-      return to_transfer;
-    }
-    case ShipCargoType::Crystal: {
-      const std::int64_t available_stock =
-          static_cast<std::int64_t>(crystals());
-      if (available_stock <= 0) return 0;
-
-      const auto max_cap =
-          static_cast<std::int64_t>(destination.max_crystals_capacity());
-      const auto current = static_cast<std::int64_t>(destination.crystals());
-      const std::int64_t capacity =
-          (max_cap > current) ? (max_cap - current) : 0;
-
-      const std::int64_t to_transfer =
-          std::min({amount, available_stock, capacity});
-      if (to_transfer <= 0) return 0;
-
+      break;
+    case ShipCargoType::Crystal:
       consume_crystals(static_cast<crystal_t>(to_transfer));
       destination.add_crystals(static_cast<crystal_t>(to_transfer));
-      return to_transfer;
-    }
-    case ShipCargoType::Crew: {
-      const std::int64_t available_stock = popn();
-      if (available_stock <= 0) return 0;
-
-      const auto max_cap = destination.max_crew_capacity();
-      const auto current = destination.popn();
-      const std::int64_t capacity =
-          (max_cap > current) ? (max_cap - current) : 0;
-
-      const std::int64_t to_transfer =
-          std::min({amount, available_stock, capacity});
-      if (to_transfer <= 0) return 0;
-
+      break;
+    case ShipCargoType::Crew:
       remove_popn(to_transfer, race_mass);
       destination.add_popn(to_transfer, race_mass);
-      return to_transfer;
-    }
-    case ShipCargoType::Troops: {
-      const std::int64_t available_stock = troops();
-      if (available_stock <= 0) return 0;
-
-      const auto current_troops = destination.troops();
-      const auto avail_mil = destination.available_mil();
-      const std::int64_t capacity =
-          (avail_mil > current_troops) ? (avail_mil - current_troops) : 0;
-
-      const std::int64_t to_transfer =
-          std::min({amount, available_stock, capacity});
-      if (to_transfer <= 0) return 0;
-
+      break;
+    case ShipCargoType::Troops:
       remove_troops(to_transfer, race_mass);
       destination.add_troops(to_transfer, race_mass);
-      return to_transfer;
-    }
+      break;
   }
-  return 0;
+  return to_transfer;
 }

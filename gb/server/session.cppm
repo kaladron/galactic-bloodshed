@@ -148,7 +148,7 @@ private:
   void queue_for_write(std::string content);  // Internal: add to write queue
 
   asio::ip::tcp::socket socket_;
-  asio::streambuf input_buffer_;
+  asio::streambuf input_buffer_{MAX_COMMAND_LEN * 16};
   std::ostringstream out_buffer_;        // Where out() writes go
   std::deque<std::string> write_queue_;  // Pending async writes (internal)
   std::deque<std::string> input_queue_;

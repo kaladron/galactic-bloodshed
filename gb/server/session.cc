@@ -5,11 +5,8 @@
 
 module;
 
-#include <cstdio>
-
 import asio;
 import std;
-#undef stdout
 
 module session;
 
@@ -22,7 +19,7 @@ Session::Session(asio::ip::tcp::socket socket, EntityManager& em,
   asio::error_code ec;
   auto endpoint = socket_.remote_endpoint(ec);
   if (!ec) {
-    std::println(stderr, "NEW CONNECTION from {}",
+    std::println(std::cerr, "NEW CONNECTION from {}",
                  endpoint.address().to_string());
   }
 }
@@ -43,7 +40,7 @@ void Session::do_read() {
 
         // Check for input flooding
         if (input_queue_.size() >= MAX_INPUT_QUEUE_SIZE) {
-          std::println(stderr,
+          std::println(std::cerr,
                        "Disconnecting flooding client (input queue overflow)");
           disconnect();
           return;
@@ -55,6 +52,13 @@ void Session::do_read() {
         std::getline(is, line);
         // Remove trailing \r if present (Windows clients)
         if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.size() > MAX_COMMAND_LEN) {
+          std::println(
+              std::cerr,
+              "Disconnecting client (command exceeds MAX_COMMAND_LEN)");
+          disconnect();
+          return;
+        }
         // Add to input queue for command processing
         if (!line.empty()) {
           input_queue_.push_back(std::move(line));
@@ -81,7 +85,7 @@ void Session::flush_to_network() {
 
   // Check for slow client - if queue is too large, disconnect
   if (write_queue_size() > MAX_WRITE_QUEUE_SIZE) {
-    std::println(stderr, "Disconnecting slow client (queue overflow)");
+    std::println(std::cerr, "Disconnecting slow client (queue overflow)");
     disconnect();
     return;
   }
@@ -121,6 +125,17 @@ void Session::do_write() {
 void Session::disconnect() {
   if (socket_.is_open()) {
     asio::error_code ec;
+    if (has_pending_output()) {
+      std::string remaining = out_buffer_.str();
+      out_buffer_.str("");
+      out_buffer_.clear();
+      std::size_t offset = 0;
+      while (offset < remaining.size() && !ec) {
+        offset += socket_.write_some(
+            asio::buffer(remaining.data() + offset, remaining.size() - offset),
+            ec);
+      }
+    }
     // Errors during disconnect are ignored - socket may already be closed
     (void)socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
     (void)socket_.close(ec);

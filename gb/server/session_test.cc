@@ -463,6 +463,35 @@ int main() {
                  "✓ Input queue overflow disconnects flooding client");
   }
 
+  // Oversized command line (> MAX_COMMAND_LEN) disconnects session
+  {
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(
+        io, asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), 0));
+    asio::ip::tcp::socket client_socket(io);
+    client_socket.connect(acceptor.local_endpoint());
+    asio::ip::tcp::socket server_socket = acceptor.accept();
+
+    MockSessionRegistry registry;
+    bool oversized_disconnected = false;
+    auto session = std::make_shared<Session>(
+        std::move(server_socket), em, registry,
+        [&oversized_disconnected](std::shared_ptr<Session>) {
+          oversized_disconnected = true;
+        });
+
+    session->start();
+    std::string oversized_line(MAX_COMMAND_LEN + 10, 'A');
+    oversized_line.push_back('\n');
+    client_socket.write_some(asio::buffer(oversized_line));
+    io.poll();
+
+    test::expect_true(oversized_disconnected);
+    test::expect_false(session->has_pending_input());
+    std::println(std::cout,
+                 "✓ Oversized command (> MAX_COMMAND_LEN) disconnects client");
+  }
+
   std::println(std::cout, "\n✅ All session module tests passed!");
   return 0;
 }

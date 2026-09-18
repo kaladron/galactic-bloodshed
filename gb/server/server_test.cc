@@ -132,6 +132,9 @@ void test_server_network_lifecycle_and_session_handling() {
     server.process_commands();
     io.poll();
 
+    std::string bad_reply = drain_socket(bad_client);
+    test::expect_contains(bad_reply, "Connection refused.");
+    test::expect_contains(bad_reply, "Goodbye!");
     test::expect_eq(server.session_count(), 0u);
   }
 
@@ -199,6 +202,8 @@ void test_server_network_lifecycle_and_session_handling() {
   server.process_commands();
   io.poll();
 
+  std::string quit_reply = drain_socket(client_socket);
+  test::expect_eq(quit_reply, "Goodbye!\n");
   test::expect_eq(server.session_count(), 0u);
   test::expect_false(server.is_connected(1, 0));
 
@@ -239,6 +244,9 @@ void test_server_quotas_idle_timeout_and_turn_events() {
 
   // Idle timeout check disconnects session exceeding IDLE_TIMEOUT_SECONDS
   server.check_idle_sessions(std::time(nullptr) + IDLE_TIMEOUT_SECONDS + 10);
+  std::string timeout_reply = drain_socket(client_socket);
+  test::expect_contains(timeout_reply,
+                        "Connection timed out due to inactivity.");
   test::expect_eq(server.session_count(), 0u);
 
   // Turn events: segment trigger and update trigger

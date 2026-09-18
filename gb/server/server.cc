@@ -6,7 +6,6 @@
 module;
 
 #include <csignal>
-#include <cstdio>
 
 module server;
 
@@ -32,7 +31,7 @@ Server::Server(asio::io_context& io, int port, EntityManager& em)
   // Handle signals for graceful shutdown
   signals_.async_wait([this](asio::error_code ec, int signum) {
     if (!ec) {
-      std::println(stderr, "Received signal {}, shutting down...", signum);
+      std::println(std::cerr, "Received signal {}, shutting down...", signum);
       shutdown();
     }
   });
@@ -68,7 +67,7 @@ void Server::do_accept() {
       [this](asio::error_code ec, asio::ip::tcp::socket socket) {
         if (ec) {
           if (!shutdown_flag_) {
-            std::println(stderr, "Accept error: {}", ec.message());
+            std::println(std::cerr, "Accept error: {}", ec.message());
           }
           return;
         }
@@ -119,7 +118,7 @@ void Server::check_idle_sessions(std::time_t now) {
   for (auto& session : sessions_) {
     if (session->connected() &&
         (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
-      std::println(stderr, "Disconnecting idle session (timeout)");
+      std::println(std::cerr, "Disconnecting idle session (timeout)");
       session->out() << "Connection timed out due to inactivity.\n";
       to_disconnect.push_back(session);
     }
@@ -242,10 +241,10 @@ std::vector<SessionInfo> Server::get_connected_sessions() const {
 
 void Server::remove_session(std::shared_ptr<Session> session) {
   if (session->connected()) {
-    std::println(stderr, "DISCONNECT Race={} Governor={}", session->player(),
+    std::println(std::cerr, "DISCONNECT Race={} Governor={}", session->player(),
                  session->governor());
   } else {
-    std::println(stderr, "DISCONNECT never connected");
+    std::println(std::cerr, "DISCONNECT never connected");
   }
   sessions_.erase(session);
 }
@@ -326,6 +325,8 @@ void Server::process_command(GameObj& g, const command_t& argv) {
   }
 
   /* compute the prompt and send to the player */
-  g.out << do_prompt(g);
+  if (!g.disconnect_requested() && !g.shutdown_requested()) {
+    g.out << do_prompt(g);
+  }
   g.race = nullptr;
 }

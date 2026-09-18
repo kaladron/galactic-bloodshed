@@ -13,6 +13,56 @@ import std;
 
 module server_config;
 
+namespace {
+
+std::optional<int> parse_int_arg(std::string_view str) {
+  if (str.empty()) return std::nullopt;
+  int value = 0;
+  auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
+  if (ec != std::errc{} || ptr != str.data() + str.size()) {
+    return std::nullopt;
+  }
+  return value;
+}
+
+bool parse_port_option(ServerConfig& config, std::string_view val) {
+  auto port = parse_int_arg(val);
+  if (!port) {
+    std::println(std::cerr, "Error: Invalid port number \"{}\".", val);
+    config.has_error = true;
+    return false;
+  }
+  config.port = *port;
+  return true;
+}
+
+bool handle_positional_arg(ServerConfig& config, int& positional_index,
+                           std::string_view arg) {
+  if (positional_index >= 3) {
+    std::println(std::cerr, "Error: Unexpected positional argument \"{}\".",
+                 arg);
+    config.has_error = true;
+    return false;
+  }
+  auto value = parse_int_arg(arg);
+  if (!value) {
+    std::println(std::cerr, "Error: Invalid numerical argument \"{}\".", arg);
+    config.has_error = true;
+    return false;
+  }
+  if (positional_index == 0) {
+    config.port = *value;
+  } else if (positional_index == 1) {
+    config.update_time = std::chrono::minutes(*value);
+  } else {
+    config.segments = *value;
+  }
+  ++positional_index;
+  return true;
+}
+
+}  // namespace
+
 ServerConfig parse_server_args(int argc, const char* const* argv) {
   ServerConfig config{};
   int positional_index = 0;
@@ -34,20 +84,10 @@ ServerConfig parse_server_args(int argc, const char* const* argv) {
         config.has_error = true;
         return config;
       }
-      try {
-        config.port = std::stoi(argv[++i]);
-      } catch (const std::exception&) {
-        std::println(std::cerr, "Error: Invalid port number \"{}\".", argv[i]);
-        config.has_error = true;
-        return config;
-      }
+      if (!parse_port_option(config, argv[++i])) return config;
     } else if (arg.starts_with("--port=")) {
-      auto val = arg.substr(std::string_view("--port=").size());
-      try {
-        config.port = std::stoi(std::string(val));
-      } catch (const std::exception&) {
-        std::println(std::cerr, "Error: Invalid port number \"{}\".", val);
-        config.has_error = true;
+      if (!parse_port_option(config,
+                             arg.substr(std::string_view("--port=").size()))) {
         return config;
       }
     } else if (arg == "-d" || arg == "--database" || arg == "--db") {
@@ -66,33 +106,8 @@ ServerConfig parse_server_args(int argc, const char* const* argv) {
       std::println(std::cerr, "Error: Unknown option \"{}\".", arg);
       config.has_error = true;
       return config;
-    } else {
-      // Positional argument
-      try {
-        switch (positional_index) {
-          case 0:
-            config.port = std::stoi(std::string(arg));
-            break;
-          case 1:
-            config.update_time =
-                std::chrono::minutes(std::stoi(std::string(arg)));
-            break;
-          case 2:
-            config.segments = std::stoi(std::string(arg));
-            break;
-          default:
-            std::println(std::cerr,
-                         "Error: Unexpected positional argument \"{}\".", arg);
-            config.has_error = true;
-            return config;
-        }
-        positional_index++;
-      } catch (const std::exception&) {
-        std::println(std::cerr, "Error: Invalid numerical argument \"{}\".",
-                     arg);
-        config.has_error = true;
-        return config;
-      }
+    } else if (!handle_positional_arg(config, positional_index, arg)) {
+      return config;
     }
   }
   return config;

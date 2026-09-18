@@ -6,14 +6,12 @@
 module;
 
 import std;
-#undef stdout
 
 module gblib;
 
 std::vector<Victory> create_victory_list(EntityManager& entity_manager) {
   std::vector<Victory> victories;
-  for (auto race_handle : RaceList(entity_manager)) {
-    const auto& race = race_handle.read();
+  for (const Race& race : RaceList::readonly(entity_manager)) {
     Victory vic{.racenum = race.Playernum,
                 .name = race.name,
                 .tech = race.tech,

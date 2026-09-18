@@ -11,7 +11,6 @@ module notification;
 
 import gb.entities;
 import gb.services;
-#undef stdout
 
 // Complex notification functions implemented using SessionRegistry primitives.
 // These iterate over races/governors and use notify_player() for delivery.
@@ -20,11 +19,9 @@ import gb.services;
 void d_broadcast(SessionRegistry& registry, EntityManager& em, player_t sender,
                  governor_t sender_gov, const std::string& message) {
   // Send to all connected players except sender, respecting gag settings
-  for (player_t p = 1; p <= em.num_races(); p++) {
-    const auto* race = em.peek_race(p);
-    if (!race) continue;
-
-    for (auto [g, gov] : race->active_governors()) {
+  for (const Race& race : RaceList::readonly(em)) {
+    const player_t p = race.Playernum;
+    for (auto [g, gov] : race.active_governors()) {
       if (p == sender && g == sender_gov) continue;
       if (gov.toggle.gag) continue;
 
@@ -40,14 +37,12 @@ void d_announce(SessionRegistry& registry, EntityManager& em, player_t sender,
   if (!star_ptr) return;
 
   // Send to players who inhabit this star system, respecting gag
-  for (player_t p = 1; p <= em.num_races(); p++) {
-    const auto* race = em.peek_race(p);
-    if (!race) continue;
-
+  for (const Race& race : RaceList::readonly(em)) {
+    const player_t p = race.Playernum;
     // Must inhabit the star (or be God)
-    if (!star_ptr->is_inhabited_by(p) && !race->God) continue;
+    if (!star_ptr->is_inhabited_by(p) && !race.God) continue;
 
-    for (auto [g, gov] : race->active_governors()) {
+    for (auto [g, gov] : race.active_governors()) {
       if (p == sender && g == sender_gov) continue;
       if (gov.toggle.gag) continue;
 
@@ -73,11 +68,9 @@ void d_think(SessionRegistry& registry, EntityManager& em, player_t race_num,
 void d_shout(SessionRegistry& registry, EntityManager& em, player_t sender,
              governor_t sender_gov, const std::string& message) {
   // Send to all connected players except sender (ignores gag)
-  for (player_t p = 1; p <= em.num_races(); p++) {
-    const auto* race = em.peek_race(p);
-    if (!race) continue;
-
-    for (auto [g, gov] : race->active_governors()) {
+  for (const Race& race : RaceList::readonly(em)) {
+    const player_t p = race.Playernum;
+    for (auto [g, gov] : race.active_governors()) {
       if (p == sender && g == sender_gov) continue;
 
       registry.notify_player(p, g, message);
@@ -119,35 +112,16 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
   const auto* star_ptr = em.peek_star(star);
   if (!star_ptr) return;
 
-  // During updates, use telegram for all
-  if (registry.update_in_progress()) {
-    for (player_t p = 1; p <= em.num_races(); p++) {
-      if (p == sender && sender_gov == 0) continue;
-      if (!star_ptr->is_inhabited_by(p)) continue;
-
-      const auto* race = em.peek_race(p);
-      if (!race) continue;
-
-      for (auto [g, gov] : race->active_governors()) {
-        if (p == sender && g == sender_gov) continue;
-        push_telegram(em, p, g, message);
-      }
-    }
-    return;
-  }
-
-  // Try real-time, fall back to telegram
-  for (player_t p = 1; p <= em.num_races(); p++) {
+  const bool in_update = registry.update_in_progress();
+  for (const Race& race : RaceList::readonly(em)) {
+    const player_t p = race.Playernum;
     if (p == sender && sender_gov == 0) continue;
     if (!star_ptr->is_inhabited_by(p)) continue;
 
-    const auto* race = em.peek_race(p);
-    if (!race) continue;
-
-    for (auto [g, gov] : race->active_governors()) {
+    for (auto [g, gov] : race.active_governors()) {
       if (p == sender && g == sender_gov) continue;
 
-      if (!registry.notify_player(p, g, message)) {
+      if (in_update || !registry.notify_player(p, g, message)) {
         push_telegram(em, p, g, message);
       }
     }
@@ -160,7 +134,8 @@ void warn_star(SessionRegistry& registry, EntityManager& em, player_t sender,
   if (!star_ptr) return;
 
   // Send to all players who inhabit the star system (except sender)
-  for (player_t p = 1; p <= em.num_races(); p++) {
+  for (const Race& race : RaceList::readonly(em)) {
+    const player_t p = race.Playernum;
     if (p == sender) continue;
     if (!star_ptr->is_inhabited_by(p)) continue;
 

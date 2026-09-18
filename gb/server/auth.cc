@@ -6,8 +6,6 @@
 
 module;
 
-#include <cstdio>
-
 import commands;
 import dallib;
 import gb.entities;
@@ -85,7 +83,8 @@ void check_connect(Session& session, std::string_view message) {
 
   if (Playernum == 0) {
     session.out() << "Connection refused.\n";
-    std::println(stderr, "FAILED CONNECT {},{}", race_password, gov_password);
+    std::println(std::cerr, "FAILED CONNECT {},{}", race_password,
+                 gov_password);
     return;
   }
 
@@ -99,7 +98,7 @@ void check_connect(Session& session, std::string_view message) {
       }
       authenticated = true;
 
-      std::println(stderr, "CONNECTED {} \"{}\" [{},{}]", race.name,
+      std::println(std::cerr, "CONNECTED {} \"{}\" [{},{}]", race.name,
                    race.governor[Governor.value].name, Playernum, Governor);
       session.set_connected(true);
       session.set_god(race.God);

@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file map.cc
+/// \brief Planetary surface map rendering and sector character formatting.
+
 module;
 
 import std;
@@ -8,184 +11,185 @@ import std;
 module gblib;
 
 namespace {
-// Converts a sector's owner ID to a printable ASCII character.
-// Owner 0 → '?', Owner 1 → '@', Owner 2 → 'A', etc.
-// This allows player numbers to be displayed as readable characters in map
-// output.
-char get_owner_char(const Sector& sector) {
-  return (char)(sector.get_owner().value + '?');
+
+// Base ASCII character ('?', 0x3F) used to pack a numeric player_t (0..64)
+// into a single printable byte in the '$' planet map client-server wire
+// protocol. Unowned (0) encodes as '?', Player 1 as '@', Player 2 as 'A', etc.,
+// and clients decode the owner ID via (byte - '?').
+constexpr char map_protocol_owner_base_char = '?';
+
+char encode_map_protocol_owner(const Sector& sector) {
+  return static_cast<char>(map_protocol_owner_base_char +
+                           sector.get_owner().value);
 }
-}  // namespace
 
-void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
-              const Planet& p) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  int iq = 0;
-  char shiplocs[MAX_X][MAX_Y] = {};
+char format_troop_sector_char(player_t playernum, const Race& r,
+                              const Sector& s) {
+  if (s.get_owner() == playernum) return CHAR_MY_TROOPS;
+  if (r.is_allied_with(s.get_owner())) return CHAR_ALLIED_TROOPS;
+  if (r.is_at_war_with(s.get_owner())) return CHAR_ATWAR_TROOPS;
+  return CHAR_NEUTRAL_TROOPS;
+}
 
-  const int show = 1;  // TODO(jeffbailey): This was always set to on, but this
-                       // fact is output to the client, which might affect the
-                       // client interface.  Can remove the conditional as soon
-                       // as we know that it's not client affecting.
+std::optional<char> format_owned_sector_digit(const Race::gov& gov,
+                                              const Sector& s) {
+  if (s.get_owner() == 0 || gov.toggle.geography || gov.toggle.color) {
+    return std::nullopt;
+  }
+  if (gov.toggle.inverse && s.get_owner() == gov.toggle.highlight) {
+    return std::nullopt;
+  }
+  const int owner_val = s.get_owner().value;
+  if (!gov.toggle.double_digits || owner_val < 10 || (s.get_x() % 2) != 0) {
+    return static_cast<char>((owner_val % 10) + '0');
+  }
+  return static_cast<char>((owner_val / 10) + '0');
+}
 
-  auto& race = *g.race;
-  const auto* smap = g.entity_manager.peek_sectormap(snum, pnum);
-  if (!race.governor[Governor.value].toggle.geography) {
-    /* traverse ship list on planet; find out if we can look at
-       ships here. */
-    iq = !!p.info(Playernum).numsectsowned;
+struct LandedShipGrid {
+  bool has_visual_iq{false};
+  std::array<std::array<char, MAX_Y>, MAX_X> shiplocs{};
+};
 
-    for (const Ship& s :
-         ShipList::readonly_on_planet(g.entity_manager, snum, pnum)) {
-      if (s.owner() == Playernum && authorized(Governor, s) &&
-          (s.popn() || (s.type() == ShipType::OTYPE_PROBE)))
-        iq = 1;
-      if (s.alive() && s.is_landed()) {
-        Coordinates land = s.land_coords();
-        shiplocs[land.x][land.y] = s.type_letter();
-      }
+LandedShipGrid scan_planet_ships_for_map(EntityManager& em, starnum_t snum,
+                                         planetnum_t pnum, const Planet& p,
+                                         player_t playernum,
+                                         governor_t governor,
+                                         const Race& race) {
+  LandedShipGrid grid{};
+  if (race.governor[governor.value].toggle.geography) {
+    return grid;
+  }
+  grid.has_visual_iq = p.info(playernum).numsectsowned > 0;
+  for (const Ship& s : ShipList::readonly_on_planet(em, snum, pnum)) {
+    if (s.owner() == playernum && authorized(governor, s) &&
+        (s.popn() > 0 || s.type() == ShipType::OTYPE_PROBE)) {
+      grid.has_visual_iq = true;
+    }
+    if (s.alive() && s.is_landed()) {
+      const Coordinates land = s.land_coords();
+      grid.shiplocs[land.x][land.y] = s.type_letter();
     }
   }
-  /* report that this is a planet map */
-  g.out << '$';
-  const auto* star = g.entity_manager.peek_star(snum);
-  g.out << std::format("{};", star->get_planet_name(pnum));
-  g.out << std::format("{};{};{};", p.dimensions().x, p.dimensions().y, show);
+  return grid;
+}
 
-  /* send map data */
-  for (auto [c, sector] : smap->indexed_sectors()) {
-    bool owned1 =
-        (sector.get_owner() == race.governor[Governor.value].toggle.highlight);
-    if (shiplocs[c.x][c.y] && iq) {
-      if (race.governor[Governor.value].toggle.color)
-        g.out << std::format("{}{}", get_owner_char(sector),
-                             shiplocs[c.x][c.y]);
-      else {
-        if (owned1 && race.governor[Governor.value].toggle.inverse)
-          g.out << std::format("1{}{}", get_owner_char(sector),
-                               shiplocs[c.x][c.y]);
+void output_map_sector_cell(GameObj& g, player_t playernum, governor_t governor,
+                            const Race& race, const Sector& sector,
+                            char ship_char, bool has_visual_iq) {
+  const auto& toggle = race.governor[governor.value].toggle;
+  const char display_char = (ship_char != '\0' && has_visual_iq)
+                                ? ship_char
+                                : desshow(playernum, governor, race, sector);
+  if (toggle.color) {
+    g.out << std::format("{}{}", encode_map_protocol_owner(sector),
+                         display_char);
+    return;
+  }
+  const char highlight_prefix =
+      (sector.get_owner() == toggle.highlight && toggle.inverse) ? '1' : '0';
+  g.out << std::format("{}{}{}", highlight_prefix,
+                       encode_map_protocol_owner(sector), display_char);
+}
 
-        else
-          g.out << std::format("0{}{}", get_owner_char(sector),
-                               shiplocs[c.x][c.y]);
-      }
-    } else {
-      if (race.governor[Governor.value].toggle.color) {
-        g.out << std::format("{}{}", get_owner_char(sector),
-                             desshow(Playernum, Governor, race, sector));
-      } else {
-        if (owned1 && race.governor[Governor.value].toggle.inverse) {
-          g.out << std::format("1{}{}", get_owner_char(sector),
-                               desshow(Playernum, Governor, race, sector));
-        } else {
-          g.out << std::format("0{}{}", get_owner_char(sector),
-                               desshow(Playernum, Governor, race, sector));
-        }
-      }
+void show_planet_aliens(GameObj& g, const Planet& p, player_t playernum,
+                        const Race& race) {
+  if (!p.explored() && race.tech < TECH_EXPLORE) {
+    g.out << "???";
+    return;
+  }
+  bool found_alien = false;
+  for (player_t i : all_players()) {
+    if (p.info(i).numsectsowned != 0 && i != playernum) {
+      found_alien = true;
+      g.out << std::format("{}{}", race.is_at_war_with(i) ? '*' : ' ', i);
     }
   }
-  g.out << '\n';
+  if (!found_alien) {
+    g.out << "(none)\n";
+  }
+}
 
-  if (!show) return;
-
+void show_planet_stats(GameObj& g, const Planet& p, player_t playernum,
+                       const Race& race) {
+  const auto& pinfo = p.info(playernum);
   g.out << std::format(
       "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", Planet_types[p.type()],
-      race.Metamorph ? "covered" : "owned", p.info(Playernum).numsectsowned);
-  if (p.explored() || race.tech >= TECH_EXPLORE) {
-    bool f = false;
-    for (player_t i : all_players()) {
-      if (p.info(i).numsectsowned != 0 && i != Playernum) {
-        f = true;
-        g.out << std::format("{}{}", race.is_at_war_with(i) ? '*' : ' ', i);
-      }
-    }
-    if (!f) g.out << "(none)\n";
-  } else {
-    g.out << R"(???)";
-  }
+      race.Metamorph ? "covered" : "owned", pinfo.numsectsowned);
+  show_planet_aliens(g, p, playernum, race);
   g.out << "\n";
   g.out << std::format(
-      "              Guns : {:<3}             Mob Points : {}\n",
-      p.info(Playernum).guns, p.info(Playernum).mob_points);
+      "              Guns : {:<3}             Mob Points : {}\n", pinfo.guns,
+      pinfo.mob_points);
   g.out << std::format(
       "      Mobilization : {:<3} ({:<3})     Compatibility: {:.2f}%",
-      p.info(Playernum).comread, p.info(Playernum).mob_set,
-      p.compatibility(race));
+      pinfo.comread, pinfo.mob_set, p.compatibility(race));
   if (p.conditions(TOXIC) > 50) {
     g.out << std::format("    ({}% TOXIC)\n", p.conditions(TOXIC));
   }
   g.out << "\n";
   g.out << std::format("Resource stockpile : {:<9}    Fuel stockpile: {}\n",
-                       p.info(Playernum).resource, p.info(Playernum).fuel);
+                       pinfo.resource, pinfo.fuel);
   g.out << std::format(
-      "      Destruct cap : {:<9} {:>18}: {:<5} ({:<5}/{:<})\n",
-      p.info(Playernum).destruct,
-      race.Metamorph ? "Tons of biomass" : "Total Population",
-      p.info(Playernum).popn, p.popn(),
-      round_rand(.01 * (100. - p.conditions(TOXIC)) * p.maxpopn()));
+      "      Destruct cap : {:<9} {:>18}: {:<5} ({:<5}/{:<})\n", pinfo.destruct,
+      race.Metamorph ? "Tons of biomass" : "Total Population", pinfo.popn,
+      p.popn(), round_rand(.01 * (100. - p.conditions(TOXIC)) * p.maxpopn()));
   g.out << std::format("          Crystals : {:<9} {:>18}: {:<5} ({:<5})\n",
-                       p.info(Playernum).crystals, "Ground forces",
-                       p.info(Playernum).troops, p.troops());
+                       pinfo.crystals, "Ground forces", pinfo.troops,
+                       p.troops());
   g.out << std::format("{} Total Resource Deposits     Tax rate {}%  New {}%\n",
-                       p.total_resources(), p.info(Playernum).tax,
-                       p.info(Playernum).newtax);
+                       p.total_resources(), pinfo.tax, pinfo.newtax);
   g.out << std::format("Estimated Production Next Update : {:.2f}\n",
-                       p.info(Playernum).est_production);
+                       pinfo.est_production);
   if (p.slaved_to() != 0) {
     g.out << std::format("      ENSLAVED to player {};\n", p.slaved_to());
   }
 }
 
-char get_sector_char(unsigned int condition) {
-  switch (condition) {
-    case SectorType::SEC_WASTED:
-      return CHAR_WASTED;
-    case SectorType::SEC_SEA:
-      return CHAR_SEA;
-    case SectorType::SEC_LAND:
-      return CHAR_LAND;
-    case SectorType::SEC_MOUNT:
-      return CHAR_MOUNT;
-    case SectorType::SEC_GAS:
-      return CHAR_GAS;
-    case SectorType::SEC_PLATED:
-      return CHAR_PLATED;
-    case SectorType::SEC_ICE:
-      return CHAR_ICE;
-    case SectorType::SEC_DESERT:
-      return CHAR_DESERT;
-    case SectorType::SEC_FOREST:
-      return CHAR_FOREST;
-    default:
-      return ('?');
+}  // namespace
+
+void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
+              const Planet& p) {
+  const player_t playernum = g.player();
+  const governor_t governor = g.governor();
+  const int show = 1;  // TODO(jeffbailey): This was always set to on, but this
+                       // fact is output to the client, which might affect the
+                       // client interface. Can remove the conditional as soon
+                       // as we know that it's not client affecting.
+
+  const auto& race = *g.race;
+  const auto* smap = g.entity_manager.peek_sectormap(snum, pnum);
+  const LandedShipGrid grid = scan_planet_ships_for_map(
+      g.entity_manager, snum, pnum, p, playernum, governor, race);
+
+  /* report that this is a planet map */
+  const auto* star = g.entity_manager.peek_star(snum);
+  g.out << std::format("${};{};{};{};", star->get_planet_name(pnum),
+                       p.dimensions().x, p.dimensions().y, show);
+
+  /* send map data */
+  for (auto [c, sector] : smap->indexed_sectors()) {
+    output_map_sector_cell(g, playernum, governor, race, sector,
+                           grid.shiplocs[c.x][c.y], grid.has_visual_iq);
+  }
+  g.out << '\n';
+
+  if (show) {
+    show_planet_stats(g, p, playernum, race);
   }
 }
 
 char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
              const Sector& s) {
-  if (s.get_troops() && !r.governor[Governor.value].toggle.geography) {
-    if (s.get_owner() == Playernum) return CHAR_MY_TROOPS;
-    if (r.is_allied_with(s.get_owner())) return CHAR_ALLIED_TROOPS;
-    if (r.is_at_war_with(s.get_owner())) return CHAR_ATWAR_TROOPS;
-
-    return CHAR_NEUTRAL_TROOPS;
+  const auto& gov = r.governor[Governor.value];
+  if (s.get_troops() && !gov.toggle.geography) {
+    return format_troop_sector_char(Playernum, r, s);
   }
-
-  if (s.get_owner() != 0 && !r.governor[Governor.value].toggle.geography &&
-      !r.governor[Governor.value].toggle.color) {
-    if (!r.governor[Governor.value].toggle.inverse ||
-        s.get_owner() != r.governor[Governor.value].toggle.highlight) {
-      if (!r.governor[Governor.value].toggle.double_digits)
-        return (s.get_owner().value % 10) + '0';
-
-      if (s.get_owner().value < 10 || s.get_x() % 2)
-        return (s.get_owner().value % 10) + '0';
-      return (s.get_owner().value / 10) + '0';
-    }
+  if (const auto digit = format_owned_sector_digit(gov, s)) {
+    return *digit;
   }
-
-  if (s.get_crystals() && (r.discoveries.crystal || r.God)) return CHAR_CRYSTAL;
-
-  return get_sector_char(s.get_condition());
+  if (s.get_crystals() && (r.discoveries.crystal || r.God)) {
+    return CHAR_CRYSTAL;
+  }
+  return s.condition_symbol();
 }

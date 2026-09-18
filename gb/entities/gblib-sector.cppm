@@ -7,9 +7,39 @@
 export module gblib:sector;
 
 import :types;
+import :tweakables;
 import :planet;
 import :race;
 import :turnstats;
+
+/// Returns the single-character map symbol for a SectorType.
+export constexpr char get_sector_char(SectorType condition) {
+  switch (condition) {
+    case SectorType::SEC_SEA:
+      return CHAR_SEA;
+    case SectorType::SEC_LAND:
+      return CHAR_LAND;
+    case SectorType::SEC_MOUNT:
+      return CHAR_MOUNT;
+    case SectorType::SEC_GAS:
+      return CHAR_GAS;
+    case SectorType::SEC_ICE:
+      return CHAR_ICE;
+    case SectorType::SEC_FOREST:
+      return CHAR_FOREST;
+    case SectorType::SEC_DESERT:
+      return CHAR_DESERT;
+    case SectorType::SEC_PLATED:
+      return CHAR_PLATED;
+    case SectorType::SEC_WASTED:
+      return CHAR_WASTED;
+  }
+  throw std::domain_error("Invalid SectorType in get_sector_char");
+}
+
+export template <typename T>
+  requires(!std::same_as<T, SectorType>)
+constexpr char get_sector_char(T) = delete;
 
 // POD struct containing all Sector data fields
 export struct sector_struct {
@@ -109,6 +139,12 @@ public:
   }
   [[nodiscard]] SectorType get_condition() const noexcept {
     return data_.condition;
+  }
+  [[nodiscard]] constexpr char type_symbol() const {
+    return get_sector_char(data_.type);
+  }
+  [[nodiscard]] constexpr char condition_symbol() const {
+    return get_sector_char(data_.condition);
   }
 
   // Write accessors (non-const)

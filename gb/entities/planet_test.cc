@@ -687,6 +687,128 @@ int main() {
     test::expect_eq(planet.info(player_t{2}).mob_points, 40);
   }
 
+  // Test 26: Zero-dimension adjacent_coordinates and non-positive
+  // move_sector_population
+  {
+    Planet zero_planet(PlanetType::EARTH, Coordinates{0, 0});
+    test::expect_true(zero_planet.adjacent_coordinates({2, 2}).empty());
+    test::expect_eq(zero_planet.random_adjacent_coordinates({2, 2}),
+                    Coordinates(2, 2));
+
+    Planet planet(PlanetType::EARTH, Coordinates{5, 5});
+    Sector s1{};
+    Sector s2{};
+    planet.adjust_sector_population(s1, player_t{1}, 100, 0);
+    planet.move_sector_population(s1, s2, player_t{1}, 0, PopulationType::CIV);
+    test::expect_eq(s1.get_popn(), 100);
+    test::expect_eq(s2.get_popn(), 0);
+  }
+
+  // Test 27: revolt() demographic synchronization and troop suppression
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+
+    // Missing race throws EntityNotFoundError (fail-fast on corrupted IDs)
+    Planet* earth = nullptr;
+    ctx.em.mutate_planet(0, 0, [&](Planet& p) { earth = &p; });
+    test::expect_throws<EntityNotFoundError>([&]() {
+      (void)revolt(*earth, ctx.em, 0, 0, player_t{99}, player_t{2});
+    });
+
+    // Populate Earth sector (0,0) with player 1 civilians, 100% tax, 0 troops
+    ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+      for (Sector& s : smap) {
+        s.set_owner(0);
+        s.set_popn_exact(0);
+        s.set_troops(0);
+      }
+      auto& s0 = smap.get({0, 0});
+      s0.set_owner(1);
+      s0.set_popn_exact(500);
+      s0.set_troops(0);
+      s0.set_mobilization(20);
+    });
+    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
+      p.sync_demographics(*ctx.em.peek_sectormap(0, 0));
+      p.info(1).tax = 100;
+    });
+
+    // High troop garrison suppresses revolt
+    ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
+    ctx.em.mutate_sectormap(
+        0, 0, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(500); });
+    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
+      p.sync_demographics(*ctx.em.peek_sectormap(0, 0));
+      const int suppressed = revolt(p, ctx.em, 0, 0, player_t{1}, player_t{2});
+      test::expect_eq(suppressed, 0);
+    });
+
+    // Zero troops with 100% tax triggers revolt to player 2 and syncs
+    // demographics
+    ctx.em.mutate_sectormap(
+        0, 0, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(0); });
+    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
+      p.sync_demographics(*ctx.em.peek_sectormap(0, 0));
+      p.info(1).tax = 100;
+      const int revolted = revolt(p, ctx.em, 0, 0, player_t{1}, player_t{2});
+      test::expect_eq(revolted, 1);
+      test::expect_eq(p.info(1).numsectsowned, 0U);
+      test::expect_eq(p.info(2).numsectsowned, 1U);
+      test::expect_eq(p.info(1).popn, 0);
+      test::expect_eq(p.info(2).popn, p.popn());
+    });
+    ctx.verify_universe_invariants();
+  }
+
+  // Test 28: moveplanet() Keplerian orbit update and co-orbiting ship
+  // translation
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+
+    const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                             .owned_by(1, 0)
+                             .in_planet_orbit(0, 0)
+                             .build();
+
+    const auto* star0 = ctx.em.peek_star(0);
+    double old_px = 0.0;
+    double old_py = 0.0;
+    double old_sx = 0.0;
+    double old_sy = 0.0;
+    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
+      p.xpos() = 100.0;
+      p.ypos() = 0.0;
+      old_px = p.xpos();
+      old_py = p.ypos();
+      ctx.em.mutate_ship(ship_id, [&](Ship& s) {
+        s.set_coordinates(p.absolute_coordinates(*star0));
+        old_sx = s.coordinates().x;
+        old_sy = s.coordinates().y;
+      });
+
+      moveplanet(ctx.em, *star0, p);
+      test::expect_true(std::abs(std::hypot(p.xpos(), p.ypos()) - 100.0) <
+                        1e-4);
+      test::expect_true(p.xpos() != old_px || p.ypos() != old_py);
+
+      // Corrupted zero orbital radius fails fast instead of producing NaN
+      Planet zero_p(PlanetType::EARTH, Coordinates{5, 5});
+      zero_p.xpos() = 0.0;
+      zero_p.ypos() = 0.0;
+      test::expect_throws<std::domain_error>(
+          [&]() { moveplanet(ctx.em, *star0, zero_p); });
+    });
+
+    const auto* moved_ship = ctx.em.peek_ship(ship_id);
+    const auto* moved_planet = ctx.em.peek_planet(0, 0);
+    test::expect_true(std::abs((moved_ship->coordinates().x - old_sx) -
+                               (moved_planet->xpos() - old_px)) < 1e-6);
+    test::expect_true(std::abs((moved_ship->coordinates().y - old_sy) -
+                               (moved_planet->ypos() - old_py)) < 1e-6);
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

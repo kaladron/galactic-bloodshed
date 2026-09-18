@@ -361,14 +361,10 @@ export constexpr std::array<const char*, 8> Planet_types = {
     "Class M", "Asteroid",  "Airless", "Iceball",
     "Jovian",  "Waterball", "Forest",  "Desert"};
 
-// Sector type names and symbols
+// Sector type names
 export constexpr std::array<const char*, 9> Desnames = {
     "ocean",  "land",   "mountainous", "gaseous", "ice",
     "forest", "desert", "plated",      "wasted"};
-
-export constexpr std::array<const char, 9> Dessymbols = {
-    CHAR_SEA,    CHAR_LAND,   CHAR_MOUNT,  CHAR_GAS,   CHAR_ICE,
-    CHAR_FOREST, CHAR_DESERT, CHAR_PLATED, CHAR_WASTED};
 
 // Natural defenses for each sector type (maps to SectorType)
 export constexpr std::array<int, 9> Defensedata = {1, 1, 3, 2, 2, 3, 2, 4, 0};

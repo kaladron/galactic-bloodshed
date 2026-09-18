@@ -214,8 +214,7 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
                    planet.dimensions().y);
       for (int y = 0; y < planet.dimensions().y; ++y) {
         for (int x = 0; x < planet.dimensions().x; ++x) {
-          std::cout << get_sector_char(
-              smap.get(Coordinates{x, y}).get_condition());
+          std::cout << smap.get(Coordinates{x, y}).condition_symbol();
         }
         std::cout << '\n';
       }

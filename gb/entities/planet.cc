@@ -27,37 +27,35 @@ module gblib;
 int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
            const planetnum_t pnum, const player_t victim,
            const player_t agent) {
-  int revolted_sectors = 0;
-
-  try {
-    entity_manager.with_race(victim, [&](const Race& victim_race) {
-      entity_manager.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
-        for (auto [c, s] : smap.indexed_sectors()) {
-          if (s.get_owner() != victim || s.get_popn() == 0) continue;
-
-          // Revolt rate is a function of tax rate.
-          if (!success(pl.info(victim).tax)) continue;
-
-          if (long_rand(1, s.get_popn()) <=
-              10L * victim_race.fighters * s.get_troops())
-            continue;
-
-          // Revolt successful.
-          s.set_owner(agent); /* enemy gets it */
-          s.subtract_popn(
-              long_rand(0, s.get_popn() - 1)); /* some people killed */
-          s.set_troops(0);                     /* all troops destroyed */
-          pl.info(victim).numsectsowned -= 1;
-          pl.info(agent).numsectsowned += 1;
-          pl.info(victim).mob_points -= s.get_mobilization();
-          pl.info(agent).mob_points += s.get_mobilization();
-          revolted_sectors++;
-        }
-      });
-    });
-  } catch (const EntityNotFoundError&) {
+  const auto* victim_race = entity_manager.peek_race(victim);
+  if (!victim_race) {
     return 0;
   }
+
+  int revolted_sectors = 0;
+  entity_manager.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
+    for (Sector& s : smap) {
+      if (s.get_owner() != victim || s.get_popn() == 0) continue;
+
+      // Revolt rate is a function of tax rate.
+      if (!success(pl.info(victim).tax)) continue;
+
+      if (long_rand(1, s.get_popn()) <=
+          10L * victim_race->fighters * s.get_troops()) {
+        continue;
+      }
+
+      // Revolt successful: sector transfers to agent, some civilians die, and
+      // defending troops are eliminated.
+      s.set_owner(agent);
+      s.subtract_popn(long_rand(0, s.get_popn() - 1));
+      s.set_troops(0);
+      revolted_sectors++;
+    }
+    if (revolted_sectors > 0) {
+      pl.sync_demographics(smap);
+    }
+  });
 
   return revolted_sectors;
 }
@@ -82,13 +80,19 @@ int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
  */
 void moveplanet(EntityManager& entity_manager, const Star& star,
                 Planet& planet) {
-  double dist = std::hypot(planet.ypos(), planet.xpos());
+  const double dist = std::hypot(planet.ypos(), planet.xpos());
+  if (dist <= 0.0 || star.gravity() <= 0.0) {
+    throw std::domain_error(
+        "Invalid orbital radius or stellar gravity in moveplanet");
+  }
+  const double phase = std::atan2(planet.ypos(), planet.xpos());
+  const double period =
+      dist * std::sqrt((dist / (SYSTEMGRAVCONST * star.gravity())));
 
-  double phase = std::atan2(planet.ypos(), planet.xpos());
-  double period = dist * std::sqrt((dist / (SYSTEMGRAVCONST * star.gravity())));
-
-  double xadd = (dist * std::cos(((-1. / period) + phase))) - planet.xpos();
-  double yadd = (dist * std::sin(((-1. / period) + phase))) - planet.ypos();
+  const double xadd =
+      (dist * std::cos(((-1. / period) + phase))) - planet.xpos();
+  const double yadd =
+      (dist * std::sin(((-1. / period) + phase))) - planet.ypos();
 
   /* adjust ships in orbit around the planet */
   for (auto ship_handle : ShipList::on_planet(entity_manager, planet.star_id(),
@@ -195,6 +199,64 @@ Planet::absolute_coordinates(const Star& star) const noexcept {
   return star.coordinates() + system_coordinates();
 }
 
+namespace {
+
+void apply_sector_civ_delta(Sector& sect, planet_struct& data, player_t owner,
+                            population_t civ_delta) noexcept {
+  if (civ_delta > 0) {
+    sect.add_popn(civ_delta);
+    data.popn += civ_delta;
+    if (owner != 0) {
+      data.info[owner].popn += civ_delta;
+    }
+  } else if (civ_delta < 0) {
+    const population_t loss = std::min(sect.get_popn(), -civ_delta);
+    sect.subtract_popn(loss);
+    data.popn = (data.popn >= loss) ? (data.popn - loss) : 0;
+    if (owner != 0) {
+      auto& pinfo = data.info[owner];
+      pinfo.popn = (pinfo.popn >= loss) ? (pinfo.popn - loss) : 0;
+    }
+  }
+}
+
+void apply_sector_mil_delta(Sector& sect, planet_struct& data, player_t owner,
+                            population_t mil_delta) noexcept {
+  if (mil_delta > 0) {
+    sect.add_troops(mil_delta);
+    data.troops += mil_delta;
+    if (owner != 0) {
+      data.info[owner].troops += mil_delta;
+    }
+  } else if (mil_delta < 0) {
+    const population_t loss = std::min(sect.get_troops(), -mil_delta);
+    sect.subtract_troops(loss);
+    data.troops = (data.troops >= loss) ? (data.troops - loss) : 0;
+    if (owner != 0) {
+      auto& pinfo = data.info[owner];
+      pinfo.troops = (pinfo.troops >= loss) ? (pinfo.troops - loss) : 0;
+    }
+  }
+}
+
+void abandon_sector_if_empty(Sector& sect, planet_struct& data,
+                             player_t owner) noexcept {
+  if (owner == 0 || !sect.is_empty()) {
+    return;
+  }
+  sect.set_owner(0);
+  sect.set_race(0);
+  auto& pinfo = data.info[owner];
+  if (pinfo.numsectsowned > 0) {
+    pinfo.numsectsowned -= 1;
+  }
+  const auto sect_mob = sect.get_mobilization();
+  pinfo.mob_points =
+      (pinfo.mob_points >= sect_mob) ? (pinfo.mob_points - sect_mob) : 0;
+}
+
+}  // namespace
+
 void Planet::adjust_sector_population(Sector& sect, player_t player,
                                       population_t civ_delta,
                                       population_t mil_delta) noexcept {
@@ -207,53 +269,9 @@ void Planet::adjust_sector_population(Sector& sect, player_t player,
   }
 
   const player_t owner = sect.get_owner();
-
-  // Adjust civilian population
-  if (civ_delta > 0) {
-    sect.add_popn(civ_delta);
-    data_.popn += civ_delta;
-    if (owner != 0) {
-      data_.info[owner].popn += civ_delta;
-    }
-  } else if (civ_delta < 0) {
-    const population_t loss = std::min(sect.get_popn(), -civ_delta);
-    sect.subtract_popn(loss);
-    data_.popn = (data_.popn >= loss) ? (data_.popn - loss) : 0;
-    if (owner != 0) {
-      auto& pinfo = data_.info[owner];
-      pinfo.popn = (pinfo.popn >= loss) ? (pinfo.popn - loss) : 0;
-    }
-  }
-
-  // Adjust military population
-  if (mil_delta > 0) {
-    sect.add_troops(mil_delta);
-    data_.troops += mil_delta;
-    if (owner != 0) {
-      data_.info[owner].troops += mil_delta;
-    }
-  } else if (mil_delta < 0) {
-    const population_t loss = std::min(sect.get_troops(), -mil_delta);
-    sect.subtract_troops(loss);
-    data_.troops = (data_.troops >= loss) ? (data_.troops - loss) : 0;
-    if (owner != 0) {
-      auto& pinfo = data_.info[owner];
-      pinfo.troops = (pinfo.troops >= loss) ? (pinfo.troops - loss) : 0;
-    }
-  }
-
-  // Abandonment transition: occupied sector loses all population
-  if (owner != 0 && sect.is_empty()) {
-    sect.set_owner(0);
-    sect.set_race(0);
-    auto& pinfo = data_.info[owner];
-    if (pinfo.numsectsowned > 0) {
-      pinfo.numsectsowned -= 1;
-    }
-    const auto sect_mob = sect.get_mobilization();
-    pinfo.mob_points =
-        (pinfo.mob_points >= sect_mob) ? (pinfo.mob_points - sect_mob) : 0;
-  }
+  apply_sector_civ_delta(sect, data_, owner, civ_delta);
+  apply_sector_mil_delta(sect, data_, owner, mil_delta);
+  abandon_sector_if_empty(sect, data_, owner);
 }
 
 void Planet::move_sector_population(Sector& from, Sector& to, player_t player,

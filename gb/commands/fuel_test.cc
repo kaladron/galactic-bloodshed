@@ -141,10 +141,84 @@ void test_fuel_matrix() {
   ctx.verify_universe_invariants();
 }
 
+void test_fuel_output_and_do_trip_branches() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+
+  // 1. fuel_output with grav == 0 and segments == 1
+  ctx.em.mutate_server_state([](ServerState& st) {
+    st.segments = 1;
+    st.nsegments_done = 1;
+    st.update_time_minutes = 60;
+  });
+  g.out.str("");
+  fuel_output(g, 100.0, 25.0, 0.0, 10.0, 2, "Earth");
+  test::expect_contains(g.out.str(), "ESTIMATED Arrival Time:");
+
+  // 2. fuel_output with grav > 0 and segments > 1
+  ctx.em.mutate_server_state([](ServerState& st) {
+    st.segments = 4;
+    st.nsegments_done = 2;
+  });
+  g.out.str("");
+  fuel_output(g, 100.0, 25.0, 1.0, 10.0, 3, "Earth");
+  test::expect_contains(g.out.str(), "used to launch from Earth");
+  test::expect_contains(g.out.str(), "ESTIMATED Arrival Time:");
+
+  // 3. fuel_output with segment discrepancy (nsegments_done > segments)
+  ctx.em.mutate_server_state([](ServerState& st) {
+    st.segments = 2;
+    st.nsegments_done = 5;
+  });
+  g.out.str("");
+  fuel_output(g, 100.0, 25.0, 0.0, 10.0, 1, "Earth");
+  test::expect_contains(
+      g.out.str(),
+      "Estimated arrival time not available due to segment # discrepancy.");
+
+  // 4. do_trip with LEVEL_SHIP destination and out-of-fuel failure case
+  ctx.em.mutate_server_state([](ServerState& st) {
+    st.segments = 1;
+    st.nsegments_done = 1;
+  });
+  const auto target_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                             .owned_by(1, 0)
+                             .in_star_orbit(0, SystemCoordinates{25.0, 0.0})
+                             .build();
+  const auto runner_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                             .owned_by(1, 0)
+                             .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                             .with_speed(9)
+                             .build();
+
+  Place ship_dest{ScopeLevel::LEVEL_SHIP, 0, 0, target_id};
+  const auto target_coords = ctx.em.peek_ship(target_id)->coordinates();
+  {
+    SimulatedShip sim{*ctx.em.peek_ship(runner_id)};
+    const auto [ok, segs] =
+        do_trip(ship_dest, sim, 500.0, 0.0, target_coords, ctx.em);
+    test::expect_true(ok);
+    test::expect_gt(segs, 0U);
+  }
+  {
+    // Insufficient fuel (0.0) fails to resolve trip
+    SimulatedShip sim{*ctx.em.peek_ship(runner_id)};
+    const auto [ok, segs] =
+        do_trip(ship_dest, sim, 0.0, 0.0, target_coords, ctx.em);
+    test::expect_false(ok);
+    test::expect_eq(segs, 1U);
+  }
+}
+
 }  // namespace
 
 int main() {
   test_fuel_matrix();
+  test_fuel_output_and_do_trip_branches();
   std::println(std::cout, "✓ fuel_test passed!");
   return 0;
 }

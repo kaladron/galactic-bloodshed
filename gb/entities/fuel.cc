@@ -63,6 +63,25 @@ void fuel_output(GameObj& g, const double dist, const double fuel,
                        std::ctime(&effective_time));
 }
 
+namespace {
+
+bool has_reached_trip_destination(const SimulatedShip& tmpship,
+                                  const UniverseCoordinates dest_coords) {
+  const double tmpdist = tmpship.coordinates().distance_to(dest_coords);
+  switch (tmpship.whatdest()) {
+    case ScopeLevel::LEVEL_STAR:
+      return tmpdist <= SYSTEMSIZE;
+    case ScopeLevel::LEVEL_PLAN:
+      return tmpdist <= PLORBITSIZE;
+    case ScopeLevel::LEVEL_SHIP:
+      return tmpdist <= DIST_TO_LAND;
+    default:
+      return true;
+  }
+}
+
+}  // namespace
+
 /**
  * @brief Performs a trip for a ship to a destination.
  *
@@ -94,44 +113,33 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
   tmpship.set_simulated_fuel(fuel); /* load up the pseudo-ship */
   segments_t effective_segment_number = state->nsegments_done;
 
-  /*  Set our temporary destination.... */
+  /* Set our temporary destination.... */
   tmpship.set_simulated_destination(tmpdest.level, tmpdest.snum, tmpdest.pnum,
                                     tmpdest.shipno);
 
   bool trip_resolved = false;
-  segments_t number_segments = 0; /* Reset counter.  */
+  segments_t number_segments = 0; /* Reset counter. */
 
-  /*  Launch the ship if it's on a planet.  */
-  double gravity_fuel =
-      gravity_factor * tmpship.mass() * LAUNCH_GRAV_MASS_FACTOR;
-  tmpship.consume_fuel(gravity_fuel);
-  tmpship.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+  /* Launch the ship if it's on a planet. */
+  if (tmpship.is_landed()) {
+    const double gravity_fuel =
+        gravity_factor * tmpship.mass() * LAUNCH_GRAV_MASS_FACTOR;
+    tmpship.consume_fuel(gravity_fuel);
+    tmpship.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+  }
 
   while (!trip_resolved) {
     domass(tmpship, entity_manager);
-    double fuel_level1 = tmpship.fuel();
+    const double fuel_level1 = tmpship.fuel();
     moveship(entity_manager, tmpship,
              (effective_segment_number == state->segments), false, true);
     number_segments++;
-    effective_segment_number++;
-    if (effective_segment_number == (state->segments + 1))
-      effective_segment_number = 1;
-    double tmpdist = tmpship.coordinates().distance_to(dest_coords);
-    switch (tmpship.whatdest()) {
-      case ScopeLevel::LEVEL_STAR:
-        if (tmpdist <= SYSTEMSIZE) trip_resolved = true;
-        break;
-      case ScopeLevel::LEVEL_PLAN:
-        if (tmpdist <= PLORBITSIZE) trip_resolved = true;
-        break;
-      case ScopeLevel::LEVEL_SHIP:
-        if (tmpdist <= DIST_TO_LAND) trip_resolved = true;
-        break;
-      default:
-        trip_resolved = true;
-    }
-    if (((tmpship.fuel() == fuel_level1) && (!tmpship.hyper_drive().on)) &&
-        (trip_resolved == 0)) {
+    effective_segment_number = (effective_segment_number == state->segments)
+                                   ? 1
+                                   : (effective_segment_number + 1);
+    trip_resolved = has_reached_trip_destination(tmpship, dest_coords);
+    if (!trip_resolved && tmpship.fuel() == fuel_level1 &&
+        !tmpship.hyper_drive().on) {
       return {false, number_segments};
     }
   }

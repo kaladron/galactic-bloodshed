@@ -116,8 +116,8 @@ void report_alien_sector_assault(
   std::string telegram = std::format(
       "/{}/{}: {} [{}] {} assaults {} [{}] {}({}) {}\n", star.get_name(),
       star.get_planet_name(g.pnum()), race.name, attacker_player, ship,
-      alien.name, alien.Playernum, Dessymbols[sect.get_condition()],
-      ship.land_coords(), attacker_won ? "VICTORY" : "DEFEAT");
+      alien.name, alien.Playernum, sect.condition_symbol(), ship.land_coords(),
+      attacker_won ? "VICTORY" : "DEFEAT");
 
   if (attacker_won) {
     g.out << "VICTORY! The sector is yours!\n";

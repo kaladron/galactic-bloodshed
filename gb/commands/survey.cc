@@ -104,8 +104,8 @@ void render_human_survey(std::ostream& out, const Race& race,
       table.add_row({std::format("{},{}", row.x, row.y), "?  (    ?)", "", "",
                      "", "", "", "", "", "", "", ""});
     } else {
-      std::string cond_type = std::format(
-          " {}   {}", Dessymbols[s.get_condition()], Dessymbols[s.get_type()]);
+      std::string cond_type =
+          std::format(" {}   {}", s.condition_symbol(), s.type_symbol());
       std::string crystals =
           (s.get_crystals() && (race.discoveries.crystal || race.God)) ? "yes"
                                                                        : "";
@@ -142,7 +142,7 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
   // Write sector rows
   for (const auto& row : rows) {
     const auto& s = *row.sector;
-    char sect_char = get_sector_char(s.get_condition());
+    char sect_char = s.condition_symbol();
 
     out << std::format(
         "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", GB::csp::CSP_CLIENT,

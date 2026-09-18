@@ -18,7 +18,7 @@ static constexpr int CARE = 5;
 namespace {
 struct AnalSect {
   unsigned int x, y;
-  unsigned int des;
+  SectorType des{SectorType::SEC_SEA};
   resource_t value = -1;  // -1 means not set
 };
 
@@ -93,8 +93,8 @@ void print_top(GameObj& g, const std::array<struct AnalSect, CARE> kArr,
 
   for (const auto& as : kArr) {
     if (as.value == -1) continue;
-    g.out << std::format("{:>5}{}({:>2},{:>2})", as.value, Dessymbols[as.des],
-                         as.x, as.y);
+    g.out << std::format("{:>5}{}({:>2},{:>2})", as.value,
+                         get_sector_char(as.des), as.x, as.y);
   }
   g.out << "\n";
 }
@@ -317,8 +317,8 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
           // Build header row
           std::vector<std::string> table_header = {
               "Pl", "sec", "popn", "troops", "a.eff", "a.mob", "res", "x"};
-          for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-            table_header.emplace_back(1, Dessymbols[i]);
+          for (SectorType st : all_sector_types) {
+            table_header.emplace_back(1, get_sector_char(st));
           }
           table.add_row(
               tabulate::Table::Row_t(table_header.begin(), table_header.end()));

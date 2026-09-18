@@ -248,9 +248,8 @@ bool move_popn(const command_t& argv, GameObj& g) {
             std::string telegram = std::format(
                 "/{}/{}: {} [{}] {}{} assaults {} [{}] {} {}\n",
                 star.get_name(), star.get_planet_name(g.pnum()), race.name,
-                Playernum, Dessymbols[sect.get_condition()], curr_coords,
-                alien.name, alien.Playernum, Dessymbols[sect2.get_condition()],
-                next_coords,
+                Playernum, sect.condition_symbol(), curr_coords, alien.name,
+                alien.Playernum, sect2.condition_symbol(), next_coords,
                 (sect2.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
 
             if (sect2.get_owner() == Playernum) {

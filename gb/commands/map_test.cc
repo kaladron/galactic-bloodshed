@@ -176,10 +176,129 @@ void test_map_dispatch() {
   std::println(std::cout, "    ✓ Map rejected at ship scope");
 }
 
+void test_sector_char_and_desshow_branches() {
+  // 1. All 9 terrain characters + fail-fast on invalid SectorType
+  test::expect_eq(get_sector_char(SectorType::SEC_SEA), CHAR_SEA);
+  test::expect_eq(get_sector_char(SectorType::SEC_LAND), CHAR_LAND);
+  test::expect_eq(get_sector_char(SectorType::SEC_MOUNT), CHAR_MOUNT);
+  test::expect_eq(get_sector_char(SectorType::SEC_GAS), CHAR_GAS);
+  test::expect_eq(get_sector_char(SectorType::SEC_ICE), CHAR_ICE);
+  test::expect_eq(get_sector_char(SectorType::SEC_FOREST), CHAR_FOREST);
+  test::expect_eq(get_sector_char(SectorType::SEC_DESERT), CHAR_DESERT);
+  test::expect_eq(get_sector_char(SectorType::SEC_PLATED), CHAR_PLATED);
+  test::expect_eq(get_sector_char(SectorType::SEC_WASTED), CHAR_WASTED);
+
+  bool threw_on_invalid_sector = false;
+  try {
+    (void)get_sector_char(static_cast<SectorType>(99));
+  } catch (const std::domain_error&) {
+    threw_on_invalid_sector = true;
+  }
+  test::expect_true(threw_on_invalid_sector);
+
+  // 2. desshow() troop symbols (own, allied, war, neutral)
+  Race r{};
+  r.Playernum = 1;
+  r.allied.set(player_t{2});
+  r.atwar.set(player_t{3});
+
+  Sector s{};
+  s.set_type(SectorType::SEC_MOUNT);
+  s.set_condition(SectorType::SEC_LAND);
+  test::expect_eq(s.type_symbol(), CHAR_MOUNT);
+  test::expect_eq(s.condition_symbol(), CHAR_LAND);
+  s.set_troops_exact(10);
+
+  s.set_owner(1);
+  test::expect_eq(desshow(1, 0, r, s), CHAR_MY_TROOPS);
+  s.set_owner(2);
+  test::expect_eq(desshow(1, 0, r, s), CHAR_ALLIED_TROOPS);
+  s.set_owner(3);
+  test::expect_eq(desshow(1, 0, r, s), CHAR_ATWAR_TROOPS);
+  s.set_owner(4);
+  test::expect_eq(desshow(1, 0, r, s), CHAR_NEUTRAL_TROOPS);
+
+  // 3. desshow() owned digits (single digit, double digits on even/odd x,
+  // inverse highlight, color toggle, geography toggle)
+  s.set_troops_exact(0);
+  s.set_owner(12);
+  r.governor[0].toggle.double_digits = false;
+  test::expect_eq(desshow(1, 0, r, s), '2');
+
+  r.governor[0].toggle.double_digits = true;
+  s.set_x(0);  // Even x -> tens digit ('1')
+  test::expect_eq(desshow(1, 0, r, s), '1');
+  s.set_x(1);  // Odd x -> ones digit ('2')
+  test::expect_eq(desshow(1, 0, r, s), '2');
+
+  // Inverse highlight on owner 12 falls through to crystal / terrain char
+  r.governor[0].toggle.inverse = true;
+  r.governor[0].toggle.highlight = 12;
+  s.set_crystals(true);
+  r.discoveries.crystal = false;
+  r.God = true;
+  test::expect_eq(desshow(1, 0, r, s), CHAR_CRYSTAL);
+  r.God = false;
+  test::expect_eq(desshow(1, 0, r, s), CHAR_LAND);
+}
+
+void test_show_map_rendering_options() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 0);
+
+  // Land a probe on planet 0 at (0,0) and configure color/inverse, high
+  // toxicity, Metamorph, enslaved status, and alien war/peace presence
+  const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                            .owned_by(1, 0)
+                            .landed_on(0, 0, Coordinates{0, 0})
+                            .build();
+  (void)probe_id;
+
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.Metamorph = true;
+    r.atwar.set(player_t{2});
+    r.governor[0].toggle.color = true;
+  });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+    p.conditions(TOXIC) = 75;
+    p.enslave_to(player_t{2});
+    p.info(player_t{2}).numsectsowned = 1;
+    p.info(player_t{3}).numsectsowned = 1;
+  });
+  ctx.setup_game_obj(g, 1, 0);
+
+  g.out.str("");
+  show_map(g, 0, 0, *ctx.em.peek_planet(0, 0));
+  test::expect_contains(g.out.str(), "Tons of biomass");
+  test::expect_contains(g.out.str(), "(75% TOXIC)");
+  test::expect_contains(g.out.str(), "ENSLAVED to player 2;");
+  test::expect_contains(g.out.str(), "*2");
+
+  // Test monochrome inverse highlight and unexplored planet ("Aliens:???")
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.governor[0].toggle.color = false;
+    r.governor[0].toggle.inverse = true;
+    r.governor[0].toggle.highlight = 1;
+    r.tech = 0.0;
+  });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.explored() = false; });
+  ctx.setup_game_obj(g, 1, 0);
+
+  g.out.str("");
+  show_map(g, 0, 0, *ctx.em.peek_planet(0, 0));
+  test::expect_contains(g.out.str(), "Aliens:???");
+}
+
 }  // namespace
 
 int main() {
   test_map_dispatch();
+  test_sector_char_and_desshow_branches();
+  test_show_map_rendering_options();
 
   std::println(std::cout, "\n✅ All map tests passed!");
   return 0;

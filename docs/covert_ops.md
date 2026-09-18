@@ -35,15 +35,18 @@ flowchart TD
 ```
 
 ### Insurrection Probability Factors
-The likelihood of an insurgency succeeding depends directly on local planetary discontent:
-- **Taxation Grievances**: High tax rates create deep resentment. The higher the tax rate levied by the enemy governor, the greater the probability of the local population joining the uprising.
-- **Imperial Morale**: Empires suffering from maintenance deficits and depressed morale are highly vulnerable to internal subversion.
-- **Defending Garrisons**: Heavy military troop presence suppresses insurgent cells, reducing success odds.
+The likelihood of an insurgency succeeding depends directly on local planetary discontent and sector garrison strength:
+- **Taxation Grievances**: Each populated sector owned by the target empire rolls against the target governor's active planetary tax rate ($\text{Tax}\%$). Higher tax rates directly increase the probability of a sector joining the uprising.
+- **Garrison Suppression Formula**: When a sector's population attempts to revolt, a random uprising roll $R \in [1, \text{Population}]$ is compared against the defending garrison's suppression threshold:
+
+$$\text{Suppression Threshold} = 10 \times \text{Fighters}_{\text{race}} \times \text{Troops}_{\text{sector}}$$
+
+  If $R \le \text{Suppression Threshold}$, the stationed troops crush the uprising in that sector; if $R > \text{Suppression Threshold}$, the sector successfully revolts.
 
 ### Consequences of a Successful Insurgency
-1. **Infrastructure Sabotage**: Power plants, manufacturing factories, and defense grids are sabotaged.
-2. **Garrison Attrition**: Defending soldier garrisons suffer casualties in localized street battles.
-3. **Sector Devastation**: Populated sectors are damaged, disrupting commodity output and tax revenues.
+1. **Sector Defection**: Every revolting sector immediately transfers ownership to the instigating empire.
+2. **Garrison Elimination**: All defending military troops ($\text{Troops}_{\text{sector}}$) stationed in the revolting sector are wiped out.
+3. **Civilian Casualties & Demographic Sync**: Street fighting inflicts random civilian casualties between $0$ and $\text{Population} - 1$, and planetary civilian, military, sector ownership, and mobilization totals are immediately reconciled across both empires.
 
 ---
 

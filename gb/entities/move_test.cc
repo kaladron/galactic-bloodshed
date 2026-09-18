@@ -234,6 +234,98 @@ int main() {
     test::expect_eq(start.y, 2);
   }
 
+  // Test mech_defend, mech_attack_people, people_attack_mech, and ground_attack
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+    ctx.em.mutate_race(1, [](Race& r) {
+      r.tech = 50.0;
+      r.fighters = 5;
+      r.morale = 1000;
+      r.likes[SectorType::SEC_LAND] = 1.0;
+    });
+    ctx.em.mutate_race(2, [](Race& r) {
+      r.tech = 20.0;
+      r.fighters = 2;
+      r.morale = 500;
+      r.likes[SectorType::SEC_LAND] = 1.0;
+    });
+
+    auto& registry = get_test_session_registry();
+    GameObj g(ctx.em, registry);
+    ctx.setup_game_obj(g, 1, 0);
+    g.set_level(ScopeLevel::LEVEL_PLAN);
+    g.set_snum(0);
+    g.set_pnum(0);
+
+    // Create a hostile Player 2 AFV landed at (3, 3) with 1 destruct
+    const shipnum_t afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                                 .owned_by(2, 0)
+                                 .landed_on(0, 0, Coordinates{3, 3})
+                                 .with_crew(1, 0)
+                                 .with_guns(guntype_t::MEDIUM, 2)
+                                 .with_retaliate(2)
+                                 .with_destruct(1)
+                                 .with_tech(20.0)
+                                 .build();
+
+    const auto* p_earth = ctx.em.peek_planet(0, 0);
+    const auto* smap = ctx.em.peek_sectormap(0, 0);
+    const Sector& target_sect = smap->get(Coordinates{3, 3});
+
+    // 1. Allied AFVs do not fire on allied troops
+    ctx.em.mutate_race(1, [](Race& r) { r.allied.set(player_t{2}); });
+    ctx.em.mutate_race(2, [](Race& r) { r.allied.set(player_t{1}); });
+    ctx.setup_game_obj(g, 1, 0);
+    population_t entering_troops = 1000;
+    mech_defend(g, &entering_troops, PopulationType::MIL, *p_earth,
+                Coordinates{3, 3}, target_sect);
+    test::expect_eq(entering_troops, 1000u);
+
+    // 2. Hostile AFV engages entering troops and takes counter-attack damage
+    // even when its destruct drops to 0 after firing its last shell
+    ctx.em.mutate_race(1, [](Race& r) { r.allied.reset(player_t{2}); });
+    ctx.em.mutate_race(2, [](Race& r) { r.allied.reset(player_t{1}); });
+    ctx.setup_game_obj(g, 1, 0);
+    seed_rand(42);
+    mech_defend(g, &entering_troops, PopulationType::MIL, *p_earth,
+                Coordinates{3, 3}, target_sect);
+    const auto* afv_after = ctx.em.peek_ship(afv_id);
+    test::expect_eq(afv_after->destruct(), 0);
+    test::expect_true(afv_after->damage() > 0 || !afv_after->alive());
+
+    // 3. Direct mech_attack_people with ignore=false (consumes full salvo)
+    ctx.em.mutate_ship(afv_id, [](Ship& s) {
+      s.alive() = true;
+      s.repair_damage(100);
+      s.destruct() = 5;
+    });
+    population_t civ = 20;
+    population_t mil = 10;
+    ctx.em.mutate_ship(afv_id, [&](Ship& s) {
+      auto [short_msg, long_msg] =
+          mech_attack_people(ctx.em, s, &civ, &mil, *ctx.em.peek_race(2),
+                             *ctx.em.peek_race(1), target_sect, false);
+      test::expect_contains(long_msg, "Battle at 3,3");
+      test::expect_eq(s.destruct(), 3);  // 5 - 2 salvo
+    });
+
+    // 4. ground_attack with CIV and MIL attackers
+    population_t atk_civ = 100;
+    population_t def_civ = 20;
+    population_t def_mil = 5;
+    double astrength = 0.0;
+    double dstrength = 0.0;
+    population_t cas_atk = 0;
+    population_t cas_def_civ = 0;
+    population_t cas_def_mil = 0;
+    ground_attack(*ctx.em.peek_race(1), *ctx.em.peek_race(2), &atk_civ,
+                  PopulationType::CIV, &def_civ, &def_mil, 1, 1, 1.0, 1.0,
+                  &astrength, &dstrength, &cas_atk, &cas_def_civ, &cas_def_mil);
+    test::expect_true(astrength > 0.0);
+    test::expect_true(dstrength > 0.0);
+  }
+
   std::println(std::cout, "All get_move tests passed!");
   return 0;
 }

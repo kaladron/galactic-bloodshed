@@ -1166,14 +1166,15 @@ void test_ship_moor_together_and_commandability() {
   test::expect_true(s1_peek->check_commandable(g));
 
   // Unauthorized governor fails check_commandable and receives telegram via
-  // DontOwnErr
+  // notify_dont_own_ship
   ctx.setup_game_obj(g, 1, 1);
   test::expect_false(s1_peek->check_commandable(g));
   auto t_p1g1 = ctx.em.get_telegrams(1, 1);
   test::expect_eq(t_p1g1.size(), 1u);
   test::expect_true(t_p1g1[0].message.find("don't own") != std::string::npos);
 
-  // Wrong player fails check_commandable and receives telegram via DontOwnErr
+  // Wrong player fails check_commandable and receives telegram via
+  // notify_dont_own_ship
   ctx.setup_game_obj(g, 2, 0);
   test::expect_false(s1_peek->check_commandable(g));
   auto t_p2g0 = ctx.em.get_telegrams(2, 0);

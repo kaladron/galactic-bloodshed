@@ -9,6 +9,56 @@ import std;
 
 module gblib;
 
+namespace {
+
+// TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
+// constexpr when P3372 (constexpr containers and adaptors) lands.
+const std::flat_map<char, Coordinates> direction_mappings{
+    {'1', {-1, 1}},  {'b', {-1, 1}},   // Southwest
+    {'2', {0, 1}},   {'k', {0, 1}},    // South
+    {'3', {1, 1}},   {'n', {1, 1}},    // Southeast
+    {'4', {-1, 0}},  {'h', {-1, 0}},   // West
+    {'6', {1, 0}},   {'l', {1, 0}},    // East
+    {'7', {-1, -1}}, {'y', {-1, -1}},  // Northwest
+    {'8', {0, -1}},  {'j', {0, -1}},   // North
+    {'9', {1, -1}},  {'u', {1, -1}},   // Northeast
+};
+
+bool is_hostile_defending_afv(const GameObj& g, const Ship& ship,
+                              Coordinates target_coords,
+                              const Race& alien_race) {
+  if (ship.owner() == g.player() || ship.type() != ShipType::OTYPE_AFV ||
+      !ship.is_landed() || ship.retal_strength() == 0 ||
+      ship.land_coords() != target_coords) {
+    return false;
+  }
+  return !g.race->is_allied_with(ship.owner()) ||
+         !alien_race.is_allied_with(g.player());
+}
+
+void resolve_afv_sector_engagement(const GameObj& g, Ship& ship,
+                                   const Race& alien_race, governor_t alien_gov,
+                                   const Sector& sect,
+                                   Coordinates target_coords, population_t& civ,
+                                   population_t& mil) {
+  while ((civ + mil) > 0 && ship.retal_strength() > 0) {
+    auto [short_buf, long_buf] = mech_attack_people(
+        g.entity_manager, ship, &civ, &mil, alien_race, *g.race, sect, true);
+    push_telegram(g.entity_manager, g.player(), g.governor(), long_buf);
+    push_telegram(g.entity_manager, alien_race.Playernum, alien_gov, long_buf);
+    if (civ + mil > 0) {
+      auto [short_buf2, long_buf2] =
+          people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
+                             alien_race, sect, target_coords);
+      push_telegram(g.entity_manager, g.player(), g.governor(), long_buf2);
+      push_telegram(g.entity_manager, alien_race.Playernum, alien_gov,
+                    long_buf2);
+    }
+  }
+}
+
+}  // namespace
+
 /**
  * @brief Calculates the new coordinates based on the given direction.
  *
@@ -23,88 +73,31 @@ module gblib;
  */
 Coordinates get_move(const Planet& planet, const char direction,
                      const Coordinates from) {
-  Coordinates offset{0, 0};
-  switch (direction) {
-    case '1':
-    case 'b':
-      offset = {-1, 1};
-      break;
-    case '2':
-    case 'k':
-      offset = {0, 1};
-      break;
-    case '3':
-    case 'n':
-      offset = {1, 1};
-      break;
-    case '4':
-    case 'h':
-      offset = {-1, 0};
-      break;
-    case '6':
-    case 'l':
-      offset = {1, 0};
-      break;
-    case '7':
-    case 'y':
-      offset = {-1, -1};
-      break;
-    case '8':
-    case 'j':
-      offset = {0, -1};
-      break;
-    case '9':
-    case 'u':
-      offset = {1, -1};
-      break;
-    default:
-      return from;
+  if (const auto it = direction_mappings.find(direction);
+      it != direction_mappings.end()) {
+    return planet.wrap(from + it->second);
   }
-  return planet.wrap(from + offset);
+  return from;
 }
 
 void mech_defend(const GameObj& g, population_t* people, PopulationType type,
                  const Planet& p, Coordinates target_coords, const Sector& s2) {
-  population_t civ = 0;
-  population_t mil = 0;
-  governor_t oldgov;
-
-  if (type == PopulationType::CIV)
-    civ = *people;
-  else
-    mil = *people;
+  population_t civ = (type == PopulationType::CIV) ? *people : 0;
+  population_t mil = (type == PopulationType::CIV) ? 0 : *people;
 
   for (auto ship_handle :
        ShipList::on_planet(g.entity_manager, p.star_id(), p.planet_order())) {
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
-    if (ship.owner() != g.player() && ship.type() == ShipType::OTYPE_AFV &&
-        ship.is_landed() && ship.retal_strength() &&
-        (ship.land_coords() == target_coords)) {
-      const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
-      if (!g.race->is_allied_with(ship.owner()) ||
-          !alien_ptr->is_allied_with(g.player())) {
-        const auto* star = g.entity_manager.peek_star(ship.storbits());
-        while ((civ + mil) > 0 && ship.retal_strength()) {
-          oldgov = star->governor(alien_ptr->Playernum);
-          auto [short_buf, long_buf] =
-              mech_attack_people(g.entity_manager, ship, &civ, &mil, *alien_ptr,
-                                 *g.race, s2, true);
-          push_telegram(g.entity_manager, g.player(), g.governor(), long_buf);
-          push_telegram(g.entity_manager, alien_ptr->Playernum, oldgov,
-                        long_buf);
-          if (civ + mil) {
-            auto [short_buf2, long_buf2] =
-                people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
-                                   *alien_ptr, s2, target_coords);
-            push_telegram(g.entity_manager, g.player(), g.governor(),
-                          long_buf2);
-            push_telegram(g.entity_manager, alien_ptr->Playernum, oldgov,
-                          long_buf2);
-          }
-        }
-      }
+    const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
+    if (!alien_ptr ||
+        !is_hostile_defending_afv(g, ship, target_coords, *alien_ptr)) {
+      continue;
     }
+    const auto* star = g.entity_manager.peek_star(ship.storbits());
+    const governor_t oldgov = star->governor(alien_ptr->Playernum);
+    resolve_afv_sector_engagement(g, ship, *alien_ptr, oldgov, s2,
+                                  target_coords, civ, mil);
   }
   *people = civ + mil;
 }
@@ -138,11 +131,11 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
     ship.consume_destruct(strength);
   }
 
-  auto cas_civ =
-      int_rand(0, round_rand((double)oldciv * astrength / dstrength));
+  const double ratio = (dstrength > 0.0) ? std::min(1e6, astrength / dstrength)
+                                         : (astrength > 0.0 ? 1e6 : 0.0);
+  auto cas_civ = int_rand(0, round_rand(static_cast<double>(oldciv) * ratio));
   cas_civ = MIN(oldciv, cas_civ);
-  auto cas_mil =
-      int_rand(0, round_rand((double)oldmil * astrength / dstrength));
+  auto cas_mil = int_rand(0, round_rand(static_cast<double>(oldmil) * ratio));
   cas_mil = MIN(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
@@ -182,7 +175,10 @@ people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   auto ammo =
       std::min(strength, static_cast<weapon_power_t>(std::max(0, raw_ammo)));
   ship.consume_destruct(ammo);
-  auto damage = int_rand(0, round_rand(100.0 * astrength / dstrength));
+  const double damage_ceiling =
+      (dstrength > 0.0) ? std::min(1e6, 100.0 * astrength / dstrength)
+                        : (astrength > 0.0 ? 100.0 : 0.0);
+  auto damage = int_rand(0, round_rand(damage_ceiling));
   damage = std::min(100, damage);
   if (ship.apply_damage(damage).destroyed) {
     em.kill_ship(race.Playernum, ship);

@@ -460,7 +460,7 @@ bool Ship::check_commandable(GameObj& g) const {
   }
 
   if (owner() != g.player() || !is_authorized_for(g.governor())) {
-    DontOwnErr(g.entity_manager, g.player(), g.governor(), number());
+    notify_dont_own_ship(g, number());
     return false;
   }
 

@@ -46,7 +46,7 @@ bool give(const command_t& argv, GameObj& g) {
       try {
         g.entity_manager.mutate_ship(*shipno, [&](Ship& ship) {
           if (ship.owner() != Playernum || !ship.alive()) {
-            DontOwnErr(g.entity_manager, Playernum, g.governor(), *shipno);
+            notify_dont_own_ship(g, *shipno);
             return;
           }
           if (ship.type() == ShipType::STYPE_POD) {

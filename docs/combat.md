@@ -164,7 +164,7 @@ Ground populations maneuver across adjacent planetary sectors using `move` (for 
 
 ### Ground Assault Resolution
 When entering an enemy sector, troops or armed civilians execute a ground assault:
-- **Mechanized Perimeter Defense**: Defending Armored Fighting Vehicles (AFVs `R`) in the target sector automatically open fire on advancing forces before ground engagement resolves.
+- **Mechanized Perimeter Defense**: Defending Armored Fighting Vehicles (AFVs `R`) in the target sector automatically open fire on advancing unallied forces before ground engagement resolves, expending up to $\max(0, \lfloor \log_{10}(\text{Strength}_{\text{def}} + 1) \rfloor - 1)$ units of `destruct` per exchange. Surviving ground troops immediately counter-attack the AFV; if the AFV exhausts its `destruct` ammunition ($S = 0$), its defensive firepower drops to zero and counter-attacking troops can inflict up to $100\%$ structural damage.
 - **Combat Strength Factors**: Attacker and defender combat strengths evaluate personnel count, military fighter ratings, technological superiority, environmental terrain preferences, sector defensive fortification factors, and morale differentials:
   $$\text{Strength}_{\text{atk}} = \text{Personnel} \times (\text{Military} \text{ ? } (\text{Fighters} \times 10) : 1) \times 0.01 \times \text{Tech} \times (\text{Preference}_{\text{terrain}} + 0.01) \times (\text{Fortification} + 1.0) \times \text{MoraleFactor}(\Delta \text{Morale})$$
 - **Assault Victory**: If defending forces are eliminated, the attacker captures the sector. Victorious civilians or military personnel occupy the territory.

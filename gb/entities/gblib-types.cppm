@@ -43,6 +43,73 @@ export constexpr std::array habitable_planet_types = {
     PlanetType::DESERT,
 };
 
+/// Named values indexed by PlanetType.
+export template <typename T>
+struct PlanetValues {
+  T earth{};
+  T asteroid{};
+  T mars{};
+  T iceball{};
+  T gasgiant{};
+  T water{};
+  T forest{};
+  T desert{};
+
+  [[nodiscard]] constexpr T& operator[](PlanetType type) {
+    switch (type) {
+      case PlanetType::EARTH:
+        return earth;
+      case PlanetType::ASTEROID:
+        return asteroid;
+      case PlanetType::MARS:
+        return mars;
+      case PlanetType::ICEBALL:
+        return iceball;
+      case PlanetType::GASGIANT:
+        return gasgiant;
+      case PlanetType::WATER:
+        return water;
+      case PlanetType::FOREST:
+        return forest;
+      case PlanetType::DESERT:
+        return desert;
+    }
+    throw std::out_of_range("Invalid PlanetType");
+  }
+
+  [[nodiscard]] constexpr const T& operator[](PlanetType type) const {
+    switch (type) {
+      case PlanetType::EARTH:
+        return earth;
+      case PlanetType::ASTEROID:
+        return asteroid;
+      case PlanetType::MARS:
+        return mars;
+      case PlanetType::ICEBALL:
+        return iceball;
+      case PlanetType::GASGIANT:
+        return gasgiant;
+      case PlanetType::WATER:
+        return water;
+      case PlanetType::FOREST:
+        return forest;
+      case PlanetType::DESERT:
+        return desert;
+    }
+    throw std::out_of_range("Invalid PlanetType");
+  }
+
+  template <typename U>
+    requires(!std::same_as<U, PlanetType>)
+  constexpr T& operator[](U) = delete;
+
+  template <typename U>
+    requires(!std::same_as<U, PlanetType>)
+  constexpr const T& operator[](U) const = delete;
+
+  constexpr bool operator==(const PlanetValues&) const noexcept = default;
+};
+
 /// Returns the display string for a PlanetType.
 export constexpr std::string_view to_string(PlanetType type) noexcept {
   switch (type) {
@@ -131,19 +198,20 @@ export constexpr std::array settleable_sector_types = {
     SectorType::SEC_DESERT, SectorType::SEC_PLATED,
 };
 
-/// Named sector compatibility ratings (0.0 to 1.0) for each terrain type.
-export struct SectorCompatibilities {
-  double sea{0.0};
-  double land{0.0};
-  double mount{0.0};
-  double gas{0.0};
-  double ice{0.0};
-  double forest{0.0};
-  double desert{0.0};
-  double plated{1.0};
-  double wasted{0.0};
+/// Named values indexed by SectorType.
+export template <typename T = double, T DefaultPlated = T{}>
+struct SectorValues {
+  T sea{};
+  T land{};
+  T mount{};
+  T gas{};
+  T ice{};
+  T forest{};
+  T desert{};
+  T plated{DefaultPlated};
+  T wasted{};
 
-  [[nodiscard]] constexpr double& operator[](SectorType type) noexcept {
+  [[nodiscard]] constexpr T& operator[](SectorType type) {
     switch (type) {
       case SectorType::SEC_SEA:
         return sea;
@@ -164,11 +232,10 @@ export struct SectorCompatibilities {
       case SectorType::SEC_WASTED:
         return wasted;
     }
-    std::unreachable();
+    throw std::out_of_range("Invalid SectorType");
   }
 
-  [[nodiscard]] constexpr const double&
-  operator[](SectorType type) const noexcept {
+  [[nodiscard]] constexpr const T& operator[](SectorType type) const {
     switch (type) {
       case SectorType::SEC_SEA:
         return sea;
@@ -189,18 +256,18 @@ export struct SectorCompatibilities {
       case SectorType::SEC_WASTED:
         return wasted;
     }
-    std::unreachable();
+    throw std::out_of_range("Invalid SectorType");
   }
 
-  template <typename T>
-    requires(!std::same_as<T, SectorType>)
-  constexpr double& operator[](T) = delete;
+  template <typename U>
+    requires(!std::same_as<U, SectorType>)
+  constexpr T& operator[](U) = delete;
 
-  template <typename T>
-    requires(!std::same_as<T, SectorType>)
-  constexpr const double& operator[](T) const = delete;
+  template <typename U>
+    requires(!std::same_as<U, SectorType>)
+  constexpr const T& operator[](U) const = delete;
 
-  [[nodiscard]] constexpr std::array<std::pair<SectorType, double>, 8>
+  [[nodiscard]] constexpr std::array<std::pair<SectorType, T>, 8>
   settleable() const noexcept {
     return {{
         {SectorType::SEC_SEA, sea},
@@ -214,9 +281,11 @@ export struct SectorCompatibilities {
     }};
   }
 
-  constexpr bool
-  operator==(const SectorCompatibilities&) const noexcept = default;
+  constexpr bool operator==(const SectorValues&) const noexcept = default;
 };
+
+/// Named sector compatibility ratings (0.0 to 1.0) for each terrain type.
+export using SectorCompatibilities = SectorValues<double, 1.0>;
 
 export constexpr std::optional<SectorType> to_sector_type(int val) noexcept {
   if (val >= SectorType::SEC_SEA && val <= SectorType::SEC_WASTED) {

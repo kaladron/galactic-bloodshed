@@ -71,34 +71,37 @@ public:
   SectorType likesbest{
       SectorType::SEC_LAND}; /* 100% compat sector condition for this race. */
 
-  /// Returns this race's compatibility factor [0.0, 1.0] for the given sector
-  /// condition, returning 0.0 if out of bounds.
+  /// Returns this race's compatibility [0.0, 1.0] with the given sector
+  /// condition. Throws `std::out_of_range` if `condition` is out of bounds.
   [[nodiscard]] constexpr double
-  sector_compatibility(SectorType type) const noexcept {
-    if (static_cast<std::size_t>(type) >= std::size(likes)) return 0.0;
-    return likes[static_cast<std::size_t>(type)];
+  sector_compatibility(const SectorType condition) const {
+    if (static_cast<std::size_t>(condition) >= std::size(likes)) {
+      throw std::out_of_range(
+          "Invalid SectorType in Race::sector_compatibility");
+    }
+    return likes[static_cast<std::size_t>(condition)];
   }
 
-  /// Returns this race's compatibility factor [0.0, 1.0] for the given sector's
-  /// current condition.
-  [[nodiscard]] double
-  sector_compatibility(const class Sector& sect) const noexcept;
+  /// Returns this race's compatibility [0.0, 1.0] with the given sector's
+  /// current surface condition.
+  [[nodiscard]] constexpr double
+  sector_compatibility(const class Sector& sect) const;
 
   /// Returns whether this race can inhabit or traverse a sector with the given
-  /// condition (`sector_compatibility(condition) > 0.0`).
+  /// surface condition (`sector_compatibility(condition) > 0.0`).
   [[nodiscard]] constexpr bool
-  tolerates_sector(SectorType condition) const noexcept {
+  tolerates_sector(const SectorType condition) const {
     return sector_compatibility(condition) > 0.0;
   }
 
   /// Returns whether this race can inhabit or traverse the given sector
   /// (`sector_compatibility(sect) > 0.0`).
-  [[nodiscard]] bool tolerates_sector(const class Sector& sect) const noexcept;
+  [[nodiscard]] constexpr bool tolerates_sector(const class Sector& sect) const;
 
   /// Returns this race's combat effectiveness multiplier [1.0, 2.0] on the
   /// given sector (`1.0 + sector_compatibility(sect)`).
-  [[nodiscard]] double
-  sector_combat_factor(const class Sector& sect) const noexcept;
+  [[nodiscard]] constexpr double
+  sector_combat_factor(const class Sector& sect) const;
 
   bool dissolved{false}; /* Player has quit. */
   bool God{false};       /* Player is a God race. */

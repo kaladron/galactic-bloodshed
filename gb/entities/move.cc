@@ -102,6 +102,55 @@ void mech_defend(const GameObj& g, population_t* people, PopulationType type,
   *people = civ + mil;
 }
 
+namespace {
+
+/// \brief Computes the combat strength of a mechanized AFV (ship) engaging
+/// ground forces on a planetary sector.
+///
+/// Formula:
+///   MECH_ATTACK * tech * retal_strength * ((armor + 1) / 100)
+///   * ((100 - damage) / 100) * (1 + owner_sector_compatibility)
+///   * morale_factor(owner_morale - opponent_morale)
+constexpr double calculate_mech_combat_strength(
+    const Ship& ship, const weapon_power_t retal_strength,
+    const Race& mech_owner, const Race& opponent, const Sector& sect) {
+  const double armor_factor =
+      percent_to_fraction(static_cast<double>(ship.armor()) + 1.0);
+  const double hull_integrity_factor =
+      percent_to_fraction(100.0 - static_cast<double>(ship.damage()));
+  return MECH_ATTACK * ship.tech() * static_cast<double>(retal_strength) *
+         armor_factor * hull_integrity_factor *
+         mech_owner.sector_combat_factor(sect) *
+         morale_factor(
+             static_cast<double>(mech_owner.morale - opponent.morale));
+}
+
+/// \brief Computes the combat strength of a sector's civilian and military
+/// population engaging a mechanized AFV.
+///
+/// Formula:
+///   ((10 * troops * fighters + civilians) / 100) * (tech / 100)
+///   * (1 + garrison_sector_compatibility) * (1 + sector_defense_bonus)
+///   * morale_factor(garrison_morale - opponent_morale)
+constexpr double calculate_garrison_combat_strength(const population_t civ,
+                                                    const population_t mil,
+                                                    const Race& garrison_race,
+                                                    const Race& opponent,
+                                                    const Sector& sect) {
+  const double weighted_personnel =
+      MILITARY_COMBAT_MULTIPLIER * static_cast<double>(mil) *
+          static_cast<double>(garrison_race.fighters) +
+      static_cast<double>(civ);
+  return percent_to_fraction(weighted_personnel) *
+         percent_to_fraction(garrison_race.tech) *
+         garrison_race.sector_combat_factor(sect) *
+         sect.combat_defense_factor() *
+         morale_factor(
+             static_cast<double>(garrison_race.morale - opponent.morale));
+}
+
+}  // namespace
+
 std::tuple<std::string, std::string>
 mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
                    population_t* mil, const Race& race, const Race& alien,
@@ -109,17 +158,11 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
   auto oldciv = *civ;
   auto oldmil = *mil;
 
-  auto strength = ship.retal_strength();
-  auto astrength = MECH_ATTACK * ship.tech() * (double)strength *
-                   ((double)ship.armor() + 1.0) * .01 *
-                   (100.0 - (double)ship.damage()) * .01 *
-                   race.sector_combat_factor(sect) *
-                   morale_factor((double)(race.morale - alien.morale));
-
-  auto dstrength = (double)(10 * oldmil * alien.fighters + oldciv) * 0.01 *
-                   alien.tech * .01 * alien.sector_combat_factor(sect) *
-                   sect.combat_defense_factor() *
-                   morale_factor((double)(alien.morale - race.morale));
+  const auto strength = ship.retal_strength();
+  const auto astrength =
+      calculate_mech_combat_strength(ship, strength, race, alien, sect);
+  const auto dstrength =
+      calculate_garrison_combat_strength(oldciv, oldmil, alien, race, sect);
 
   if (ignore) {
     auto raw_ammo = static_cast<int>(std::log10(dstrength + 1.0)) - 1;
@@ -157,18 +200,12 @@ std::tuple<std::string, std::string>
 people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
                    const Race& race, const Race& alien, const Sector& sect,
                    Coordinates target_coords) {
-  auto strength = ship.retal_strength();
+  const auto strength = ship.retal_strength();
 
-  const double dstrength = MECH_ATTACK * ship.tech() * (double)strength *
-                           ((double)ship.armor() + 1.0) * .01 *
-                           (100.0 - (double)ship.damage()) * .01 *
-                           alien.sector_combat_factor(sect) *
-                           morale_factor((double)(alien.morale - race.morale));
-
-  const double astrength = (double)(10 * mil * race.fighters + civ) * .01 *
-                           race.tech * .01 * race.sector_combat_factor(sect) *
-                           sect.combat_defense_factor() *
-                           morale_factor((double)(race.morale - alien.morale));
+  const double dstrength =
+      calculate_mech_combat_strength(ship, strength, alien, race, sect);
+  const double astrength =
+      calculate_garrison_combat_strength(civ, mil, race, alien, sect);
   auto raw_ammo = (int)std::log10((double)astrength + 1.0) - 1;
   auto ammo =
       std::min(strength, static_cast<weapon_power_t>(std::max(0, raw_ammo)));
@@ -197,40 +234,68 @@ people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   return std::make_tuple(short_msg, long_msg);
 }
 
-void ground_attack(const Race& race, const Race& alien, population_t* people,
-                   PopulationType what, population_t* civ, population_t* mil,
-                   unsigned int def1, unsigned int def2, double alikes,
-                   double dlikes, double* astrength, double* dstrength,
-                   population_t* casualties, population_t* casualties2,
-                   population_t* casualties3) {
-  int casualty_scale;
+GroundAttackResult ground_attack(const GroundAttackParams& p) {
+  const double attacker_type_weight = (p.attacker_type == PopulationType::MIL)
+                                          ? MILITARY_COMBAT_MULTIPLIER
+                                          : 1.0;
+  const double astrength =
+      static_cast<double>(p.attacker_force) *
+      static_cast<double>(p.attacker.fighters) * attacker_type_weight *
+      (p.attacker_compatibility + 1.0) *
+      (static_cast<double>(p.attacker_defense_bonus) + 1.0) *
+      morale_factor(static_cast<double>(p.attacker.morale - p.defender.morale));
 
-  *astrength = (double)(*people * race.fighters *
-                        (what == PopulationType::MIL ? 10 : 1)) *
-               (alikes + 1.0) * ((double)def1 + 1.0) *
-               morale_factor((double)(race.morale - alien.morale));
-  *dstrength = (double)((*civ + *mil * 10) * alien.fighters) * (dlikes + 1.0) *
-               ((double)def2 + 1.0) *
-               morale_factor((double)(alien.morale - race.morale));
-  /* nuke both populations */
-  casualty_scale =
-      MIN(*people * (what == PopulationType::MIL ? 10 : 1) * race.fighters,
-          (*civ + *mil * 10) * alien.fighters);
+  const double dstrength =
+      (static_cast<double>(p.defender_civ) +
+       static_cast<double>(p.defender_mil) * MILITARY_COMBAT_MULTIPLIER) *
+      static_cast<double>(p.defender.fighters) *
+      (p.defender_compatibility + 1.0) *
+      (static_cast<double>(p.defender_defense_bonus) + 1.0) *
+      morale_factor(static_cast<double>(p.defender.morale - p.attacker.morale));
 
-  *casualties =
-      int_rand(0, round_rand((double)((casualty_scale /
-                                       (what == PopulationType::MIL ? 10 : 1)) *
-                                      *dstrength / *astrength)));
-  *casualties = std::min(*people, *casualties);
-  *people -= *casualties;
+  const int attacker_effective_scale =
+      static_cast<int>(p.attacker_force) *
+      (p.attacker_type == PopulationType::MIL
+           ? static_cast<int>(MILITARY_COMBAT_MULTIPLIER)
+           : 1) *
+      p.attacker.fighters;
+  const int defender_effective_scale =
+      static_cast<int>(p.defender_civ +
+                       p.defender_mil *
+                           static_cast<int>(MILITARY_COMBAT_MULTIPLIER)) *
+      p.defender.fighters;
+  const int casualty_scale =
+      std::min(attacker_effective_scale, defender_effective_scale);
 
-  *casualties2 =
-      int_rand(0, round_rand((double)casualty_scale * *astrength / *dstrength));
-  *casualties2 = MIN(*civ, *casualties2);
-  *civ -= *casualties2;
-  /* and for troops */
-  *casualties3 = int_rand(
-      0, round_rand((double)(casualty_scale / 10) * *astrength / *dstrength));
-  *casualties3 = MIN(*mil, *casualties3);
-  *mil -= *casualties3;
+  const int attacker_divisor =
+      (p.attacker_type == PopulationType::MIL)
+          ? static_cast<int>(MILITARY_COMBAT_MULTIPLIER)
+          : 1;
+  population_t attacker_casualties = int_rand(
+      0, round_rand(static_cast<double>(casualty_scale / attacker_divisor) *
+                    dstrength / astrength));
+  attacker_casualties = std::min(p.attacker_force, attacker_casualties);
+
+  population_t defender_civ_casualties =
+      int_rand(0, round_rand(static_cast<double>(casualty_scale) * astrength /
+                             dstrength));
+  defender_civ_casualties = std::min(p.defender_civ, defender_civ_casualties);
+
+  population_t defender_mil_casualties =
+      int_rand(0, round_rand(static_cast<double>(
+                                 casualty_scale /
+                                 static_cast<int>(MILITARY_COMBAT_MULTIPLIER)) *
+                             astrength / dstrength));
+  defender_mil_casualties = std::min(p.defender_mil, defender_mil_casualties);
+
+  return GroundAttackResult{
+      .attack_strength = astrength,
+      .defense_strength = dstrength,
+      .surviving_attackers = p.attacker_force - attacker_casualties,
+      .surviving_defender_civ = p.defender_civ - defender_civ_casualties,
+      .surviving_defender_mil = p.defender_mil - defender_mil_casualties,
+      .attacker_casualties = attacker_casualties,
+      .defender_civ_casualties = defender_civ_casualties,
+      .defender_mil_casualties = defender_mil_casualties,
+  };
 }

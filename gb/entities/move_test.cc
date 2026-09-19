@@ -311,19 +311,26 @@ int main() {
     });
 
     // 4. ground_attack with CIV and MIL attackers
-    population_t atk_civ = 100;
-    population_t def_civ = 20;
-    population_t def_mil = 5;
-    double astrength = 0.0;
-    double dstrength = 0.0;
-    population_t cas_atk = 0;
-    population_t cas_def_civ = 0;
-    population_t cas_def_mil = 0;
-    ground_attack(*ctx.em.peek_race(1), *ctx.em.peek_race(2), &atk_civ,
-                  PopulationType::CIV, &def_civ, &def_mil, 1, 1, 1.0, 1.0,
-                  &astrength, &dstrength, &cas_atk, &cas_def_civ, &cas_def_mil);
-    test::expect_true(astrength > 0.0);
-    test::expect_true(dstrength > 0.0);
+    const auto outcome = ground_attack({
+        .attacker = *ctx.em.peek_race(1),
+        .defender = *ctx.em.peek_race(2),
+        .attacker_force = 100,
+        .attacker_type = PopulationType::CIV,
+        .defender_civ = 20,
+        .defender_mil = 5,
+        .attacker_defense_bonus = 1,
+        .defender_defense_bonus = 1,
+        .attacker_compatibility = 1.0,
+        .defender_compatibility = 1.0,
+    });
+    test::expect_true(outcome.attack_strength > 0.0);
+    test::expect_true(outcome.defense_strength > 0.0);
+    test::expect_eq(outcome.surviving_attackers + outcome.attacker_casualties,
+                    100);
+    test::expect_eq(
+        outcome.surviving_defender_civ + outcome.defender_civ_casualties, 20);
+    test::expect_eq(
+        outcome.surviving_defender_mil + outcome.defender_mil_casualties, 5);
   }
 
   std::println(std::cout, "All get_move tests passed!");

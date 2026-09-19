@@ -215,8 +215,11 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
             else
               s.subtract_popn(kills);
           }
+          // Entrenched troops are sheltered unless blast intensity exceeds
+          // TROOP_BOMBARD_FORTIFICATION_SCALE times the sector defense bonus.
           if (s.get_troops() &&
-              (fac > 5.0 * static_cast<double>(s.defense_bonus()))) {
+              (fac > TROOP_BOMBARD_FORTIFICATION_SCALE *
+                         static_cast<double>(s.defense_bonus()))) {
             kills = int_rand(0, ((int)(fac / 20.0) * s.get_troops())) /
                     (1 + s.is_plated());
             if (kills > s.get_troops())
@@ -228,8 +231,9 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
           s.clear_owner_if_empty();
         }
 
-        if (fac >= 5.0 && !int_rand(0, 10)) {
-          // mutate_sector: reset condition to underlying type
+        // High-intensity blasts can strip surface terraforming back to the
+        // sector's underlying geological type.
+        if (fac >= TERRAFORM_STRIP_BLAST_THRESHOLD && !int_rand(0, 10)) {
           if (int_rand(0, 6) >= s.defense_bonus())
             s.set_condition(s.get_type());
         }

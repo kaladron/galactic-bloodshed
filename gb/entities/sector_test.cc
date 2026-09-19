@@ -759,14 +759,16 @@ void test_sector_defense_bonus() {
   test::expect_eq(forest.defense_bonus(), 3);
   test::expect_eq(plated.defense_bonus(), 4);
   test::expect_eq(wasted.defense_bonus(), 0);
-  test::expect_eq(invalid.defense_bonus(), 0);
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)invalid.defense_bonus(); });
 
   test::expect_eq(sea.combat_defense_factor(), 2.0);
   test::expect_eq(mount.combat_defense_factor(), 4.0);
   test::expect_eq(forest.combat_defense_factor(), 4.0);
   test::expect_eq(plated.combat_defense_factor(), 5.0);
   test::expect_eq(wasted.combat_defense_factor(), 1.0);
-  test::expect_eq(invalid.combat_defense_factor(), 1.0);
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)invalid.combat_defense_factor(); });
 }
 
 }  // namespace

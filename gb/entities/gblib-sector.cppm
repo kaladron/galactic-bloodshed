@@ -137,7 +137,7 @@ public:
   [[nodiscard]] SectorType get_type() const noexcept {
     return data_.type;
   }
-  [[nodiscard]] SectorType get_condition() const noexcept {
+  [[nodiscard]] constexpr SectorType get_condition() const noexcept {
     return data_.condition;
   }
   [[nodiscard]] constexpr char type_symbol() const {
@@ -149,15 +149,12 @@ public:
 
   /// Returns the natural terrain defense bonus for this sector's current
   /// condition (`sector_defense_bonus[condition]`).
-  [[nodiscard]] constexpr int defense_bonus() const noexcept {
-    if (static_cast<std::size_t>(data_.condition) >=
-        sector_defense_bonus.size())
-      return 0;
-    return sector_defense_bonus[static_cast<std::size_t>(data_.condition)];
+  [[nodiscard]] constexpr int defense_bonus() const {
+    return sector_defense_bonus[data_.condition];
   }
 
   /// Returns the terrain combat defense multiplier (`1.0 + defense_bonus()`).
-  [[nodiscard]] constexpr double combat_defense_factor() const noexcept {
+  [[nodiscard]] constexpr double combat_defense_factor() const {
     return static_cast<double>(defense_bonus()) + 1.0;
   }
 
@@ -400,6 +397,18 @@ public:
 
   friend std::ostream& operator<<(std::ostream&, const Sector&);
 };
+
+constexpr double Race::sector_compatibility(const Sector& sect) const {
+  return sector_compatibility(sect.get_condition());
+}
+
+constexpr bool Race::tolerates_sector(const Sector& sect) const {
+  return sector_compatibility(sect) > 0.0;
+}
+
+constexpr double Race::sector_combat_factor(const Sector& sect) const {
+  return 1.0 + sector_compatibility(sect);
+}
 
 export class SectorMap {
 public:

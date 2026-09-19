@@ -11,10 +11,32 @@ import :types;
 export Coordinates get_move(const Planet& planet, char direction,
                             Coordinates from);
 
-export void ground_attack(const Race&, const Race&, population_t*,
-                          PopulationType, population_t*, population_t*,
-                          unsigned int, unsigned int, double, double, double*,
-                          double*, population_t*, population_t*, population_t*);
+export struct GroundAttackParams {
+  const Race& attacker;
+  const Race& defender;
+  population_t attacker_force;
+  PopulationType attacker_type;
+  population_t defender_civ;
+  population_t defender_mil;
+  int attacker_defense_bonus;
+  int defender_defense_bonus;
+  double attacker_compatibility;
+  double defender_compatibility;
+};
+
+export struct GroundAttackResult {
+  double attack_strength{0.0};
+  double defense_strength{0.0};
+  population_t surviving_attackers{0};
+  population_t surviving_defender_civ{0};
+  population_t surviving_defender_mil{0};
+  population_t attacker_casualties{0};
+  population_t defender_civ_casualties{0};
+  population_t defender_mil_casualties{0};
+};
+
+export [[nodiscard]] GroundAttackResult
+ground_attack(const GroundAttackParams& params);
 
 export void mech_defend(const GameObj& g, population_t* people,
                         PopulationType what, const Planet& p,

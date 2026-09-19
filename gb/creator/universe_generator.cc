@@ -29,9 +29,16 @@ namespace {
 constexpr double PLANET_DIST_MAX = 1900.0;
 constexpr double PLANET_DIST_MIN = 100.0;
 
-constexpr const char* PlanetTypeNames[] = {"Earth",   "Asteroid", "Airless",
-                                           "Iceball", "Gaseous",  "Water",
-                                           "Forest",  "Desert",   "Unknown"};
+constexpr PlanetValues<const char*> PlanetTypeNames = {
+    .earth = "Earth",
+    .asteroid = "Asteroid",
+    .mars = "Airless",
+    .iceball = "Iceball",
+    .gasgiant = "Gaseous",
+    .water = "Water",
+    .forest = "Forest",
+    .desert = "Desert",
+};
 
 PlanetType roll_planet_type(int temperature) {
   int roll = int_rand(1, 100);
@@ -199,12 +206,12 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
     planet.ypos() = ypos;
     planet.total_resources() = 0;
 
-    result.planets_by_type[std::to_underlying(type)]++;
+    result.planets_by_type[type]++;
 
     if (config_.print_planet_info) {
       std::println(std::cout, "Planet {}: temp {}, type {} ({})",
                    star.pnames[i], planet.conditions(RTEMP),
-                   PlanetTypeNames[std::to_underlying(planet.type())],
+                   PlanetTypeNames[planet.type()],
                    static_cast<unsigned int>(planet.type()));
       std::println(
           std::cout,

@@ -320,6 +320,34 @@ export constexpr double AFV_FUEL_COST = 1.0;
 
 export constexpr double MECH_ATTACK = 3.0;
 
+// Ground and boarding combat constants
+export constexpr double MILITARY_COMBAT_MULTIPLIER =
+    10.0;  // Combat weight of 1 military troop relative to 1 civilian
+export constexpr double COMBAT_FLOOR_EPSILON =
+    0.01;  // Minimum baseline floor for sector compatibility or armor in
+           // boarding combat
+export constexpr double MAX_BOARDING_COLLATERAL_DAMAGE =
+    25.0;  // Base percentage hull damage inflicted in an even (1:1) boarding
+           // firefight
+
+// Orbital bombardment thresholds
+export constexpr double TROOP_BOMBARD_FORTIFICATION_SCALE =
+    5.0;  // Blast intensity multiplier per point of sector defense bonus needed
+          // to kill entrenched troops
+export constexpr double TERRAFORM_STRIP_BLAST_THRESHOLD =
+    5.0;  // Minimum blast intensity required to strip surface terraforming back
+          // to base geology
+
+/// Converts a percentage value (0..100) to a fractional multiplier (0.0..1.0).
+export inline constexpr double percent_to_fraction(const double pct) noexcept {
+  return pct * 0.01;
+}
+
+/// Converts a fractional multiplier (0.0..1.0) to a percentage value (0..100).
+export inline constexpr double fraction_to_percent(const double frac) noexcept {
+  return frac * 100.0;
+}
+
 export constexpr double SPORE_SUCCESS_RATE = 25;
 
 export constexpr char CLIENT_CHAR = '|';
@@ -354,21 +382,53 @@ export constexpr char TELEG_DELIM = '~';
 export constexpr const char* CUTE_MESSAGE = "\nThe Galactic News\n\n";
 
 // Planet type symbols and names
-export constexpr std::array<const char, 8> Psymbol = {'@', 'o', 'O', '#',
-                                                      '~', '.', ')', '-'};
+export constexpr PlanetValues<char> Psymbol = {
+    .earth = '@',
+    .asteroid = 'o',
+    .mars = 'O',
+    .iceball = '#',
+    .gasgiant = '~',
+    .water = '.',
+    .forest = ')',
+    .desert = '-',
+};
 
-export constexpr std::array<const char*, 8> Planet_types = {
-    "Class M", "Asteroid",  "Airless", "Iceball",
-    "Jovian",  "Waterball", "Forest",  "Desert"};
+export constexpr PlanetValues<const char*> Planet_types = {
+    .earth = "Class M",
+    .asteroid = "Asteroid",
+    .mars = "Airless",
+    .iceball = "Iceball",
+    .gasgiant = "Jovian",
+    .water = "Waterball",
+    .forest = "Forest",
+    .desert = "Desert",
+};
 
 // Sector type names
-export constexpr std::array<const char*, 9> Desnames = {
-    "ocean",  "land",   "mountainous", "gaseous", "ice",
-    "forest", "desert", "plated",      "wasted"};
+export constexpr SectorValues<const char*> Desnames = {
+    .sea = "ocean",
+    .land = "land",
+    .mount = "mountainous",
+    .gas = "gaseous",
+    .ice = "ice",
+    .forest = "forest",
+    .desert = "desert",
+    .plated = "plated",
+    .wasted = "wasted",
+};
 
 // Natural defenses for each sector type (maps to SectorType)
-export constexpr std::array<int, 9> sector_defense_bonus = {1, 1, 3, 2, 2,
-                                                            3, 2, 4, 0};
+export constexpr SectorValues<int> sector_defense_bonus = {
+    .sea = 1,
+    .land = 1,
+    .mount = 3,
+    .gas = 2,
+    .ice = 2,
+    .forest = 3,
+    .desert = 2,
+    .plated = 4,
+    .wasted = 0,
+};
 
 /**
  * \brief Scales used in production efficiency etc.

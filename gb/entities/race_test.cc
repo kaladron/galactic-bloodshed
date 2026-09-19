@@ -190,19 +190,22 @@ int main() {
     test::expect_eq(race.sector_compatibility(forest_sect), 0.75);
     test::expect_eq(race.sector_compatibility(sea_sect), 0.0);
     test::expect_eq(race.sector_compatibility(wasted_sect), 0.0);
-    test::expect_eq(race.sector_compatibility(invalid_sect), 0.0);
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)race.sector_compatibility(invalid_sect); });
 
     test::expect_true(race.tolerates_sector(SectorType::SEC_LAND));
     test::expect_true(race.tolerates_sector(land_sect));
     test::expect_true(race.tolerates_sector(forest_sect));
     test::expect_false(race.tolerates_sector(sea_sect));
     test::expect_false(race.tolerates_sector(wasted_sect));
-    test::expect_false(race.tolerates_sector(invalid_sect));
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)race.tolerates_sector(invalid_sect); });
 
     test::expect_eq(race.sector_combat_factor(land_sect), 2.0);
     test::expect_eq(race.sector_combat_factor(forest_sect), 1.75);
     test::expect_eq(race.sector_combat_factor(sea_sect), 1.0);
-    test::expect_eq(race.sector_combat_factor(invalid_sect), 1.0);
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)race.sector_combat_factor(invalid_sect); });
     std::println(std::cout,
                  "  ✓ Race sector compatibility and combat methods verified");
   }

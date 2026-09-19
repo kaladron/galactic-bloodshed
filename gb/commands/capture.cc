@@ -14,6 +14,46 @@ import session;
 module commands;
 
 namespace GB::commands {
+
+namespace {
+
+/// \brief Computes the boarding attack strength of a sector force assaulting
+/// a landed starship.
+constexpr double calculate_boarding_attack_strength(const population_t boarders,
+                                                    const PopulationType what,
+                                                    const Race& attacker,
+                                                    const Race& defender,
+                                                    const Sector& sect) {
+  const double force_weight =
+      what == PopulationType::MIL
+          ? static_cast<double>(attacker.fighters) * MILITARY_COMBAT_MULTIPLIER
+          : 1.0;
+  return static_cast<double>(boarders) * force_weight *
+         percent_to_fraction(attacker.tech) *
+         (attacker.sector_compatibility(sect) + COMBAT_FLOOR_EPSILON) *
+         sect.combat_defense_factor() *
+         morale_factor(static_cast<double>(attacker.morale - defender.morale));
+}
+
+/// \brief Computes the internal defensive strength of a landed starship's
+/// crew against boarders.
+constexpr double calculate_boarding_defense_strength(const Ship& ship,
+                                                     const Race& defender,
+                                                     const Race& attacker) {
+  const double crew_weight = static_cast<double>(ship.popn()) +
+                             static_cast<double>(ship.troops()) *
+                                 MILITARY_COMBAT_MULTIPLIER *
+                                 static_cast<double>(defender.fighters);
+  const double hull_integrity_factor =
+      percent_to_fraction(100.0 - static_cast<double>(ship.damage()));
+  return crew_weight * percent_to_fraction(defender.tech) *
+         (static_cast<double>(ship.effective_armor()) + COMBAT_FLOOR_EPSILON) *
+         hull_integrity_factor *
+         morale_factor(static_cast<double>(defender.morale - attacker.morale));
+}
+
+}  // namespace
+
 bool capture(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
@@ -160,26 +200,14 @@ bool capture(const command_t& argv, GameObj& g) {
           auto& sect = smap.get(ship.land_coords());
 
           if (olddpopn + olddtroops) {
+            astrength = calculate_boarding_attack_strength(boarders, what, race,
+                                                           *alien, sect);
+            dstrength = calculate_boarding_defense_strength(ship, *alien, race);
             g.session_registry.notify_player(
                 Playernum, Governor,
                 std::format(
                     "Attack strength: {:.2f}     Defense strength: {:.2f}\n",
-                    astrength =
-                        (double)boarders *
-                        (what == PopulationType::MIL
-                             ? (double)race.fighters * 10.0
-                             : 1.0) *
-                        .01 * race.tech *
-                        (race.sector_compatibility(sect) + 0.01) *
-                        sect.combat_defense_factor() *
-                        morale_factor((double)(race.morale - alien->morale)),
-                    dstrength =
-                        ((double)ship.popn() + (double)ship.troops() * 10.0 *
-                                                   (double)alien->fighters) *
-                        .01 * alien->tech *
-                        ((double)(ship.effective_armor()) + 0.01) * .01 *
-                        (100.0 - (double)ship.damage()) *
-                        morale_factor((double)(alien->morale - race.morale))));
+                    astrength, dstrength));
             casualty_scale = std::min(boarders, ship.popn() + ship.troops());
             if (astrength > 0.0)
               casualties = int_rand(
@@ -193,8 +221,9 @@ bool capture(const command_t& argv, GameObj& g) {
               casualties2 = int_rand(
                   0, round_rand((double)casualty_scale * (astrength + 1.0) /
                                 (dstrength + 1.0)));
-              shipdam = int_rand(
-                  0, round_rand(25. * (astrength + 1.0) / (dstrength + 1.0)));
+              shipdam = int_rand(0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE *
+                                               (astrength + 1.0) /
+                                               (dstrength + 1.0)));
               if (ship.apply_damage(shipdam).destroyed) {
                 g.entity_manager.kill_ship(Playernum, ship);
               }

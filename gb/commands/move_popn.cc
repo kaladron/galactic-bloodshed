@@ -191,17 +191,27 @@ bool move_popn(const command_t& argv, GameObj& g) {
             old2popn = sect2.get_popn();
             old3popn = sect2.get_troops();
 
-            auto sect2_popn = sect2.get_popn();
-            auto sect2_troops = sect2.get_troops();
-            ground_attack(race, alien, &people, what, &sect2_popn,
-                          &sect2_troops, sect.defense_bonus(),
-                          sect2.defense_bonus(),
-                          race.sector_compatibility(sect),
-                          alien.sector_compatibility(sect2), &astrength,
-                          &dstrength, &casualties, &casualties2, &casualties3);
+            const auto outcome = ground_attack({
+                .attacker = race,
+                .defender = alien,
+                .attacker_force = people,
+                .attacker_type = what,
+                .defender_civ = sect2.get_popn(),
+                .defender_mil = sect2.get_troops(),
+                .attacker_defense_bonus = sect.defense_bonus(),
+                .defender_defense_bonus = sect2.defense_bonus(),
+                .attacker_compatibility = race.sector_compatibility(sect),
+                .defender_compatibility = alien.sector_compatibility(sect2),
+            });
+            people = outcome.surviving_attackers;
+            astrength = outcome.attack_strength;
+            dstrength = outcome.defense_strength;
+            casualties = outcome.attacker_casualties;
+            casualties2 = outcome.defender_civ_casualties;
+            casualties3 = outcome.defender_mil_casualties;
 
-            sect2.set_popn_exact(sect2_popn);
-            sect2.set_troops(sect2_troops);
+            sect2.set_popn_exact(outcome.surviving_defender_civ);
+            sect2.set_troops(outcome.surviving_defender_mil);
 
             g.out << std::format("Attack: {:.2f}   Defense: {:.2f}.\n",
                                  astrength, dstrength);

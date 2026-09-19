@@ -164,27 +164,27 @@ void resolve_alien_sector_combat(GameObj& g, Race& race, Race& alien,
   population_t initial_defender_civ = sect.get_popn();
   population_t initial_defender_mil = sect.get_troops();
 
-  int defense = sect.defense_bonus();
-  auto temp_popn = sect.get_popn();
-  auto temp_troops = sect.get_troops();
-  double astrength = 0.0;
-  double dstrength = 0.0;
-  population_t attacker_casualties = 0;
-  population_t defender_civ_casualties = 0;
-  population_t defender_mil_casualties = 0;
-
-  ground_attack(race, alien, &people, what, &temp_popn, &temp_troops,
-                static_cast<int>(ship.armor()), defense,
-                1.0 - static_cast<double>(ship.damage()) / 100.0,
-                alien.sector_compatibility(sect), &astrength, &dstrength,
-                &attacker_casualties, &defender_civ_casualties,
-                &defender_mil_casualties);
-  sect.set_popn_exact(temp_popn);
-  sect.set_troops(temp_troops);
+  const auto outcome = ground_attack({
+      .attacker = race,
+      .defender = alien,
+      .attacker_force = people,
+      .attacker_type = what,
+      .defender_civ = sect.get_popn(),
+      .defender_mil = sect.get_troops(),
+      .attacker_defense_bonus = static_cast<int>(ship.armor()),
+      .defender_defense_bonus = sect.defense_bonus(),
+      .attacker_compatibility =
+          percent_to_fraction(100.0 - static_cast<double>(ship.damage())),
+      .defender_compatibility = alien.sector_compatibility(sect),
+  });
+  people = outcome.surviving_attackers;
+  sect.set_popn_exact(outcome.surviving_defender_civ);
+  sect.set_troops(outcome.surviving_defender_mil);
 
   g.session_registry.notify_player(
       attacker_player, attacker_gov,
-      std::format("Attack: {:.2f}   Defense: {:.2f}.\n", astrength, dstrength));
+      std::format("Attack: {:.2f}   Defense: {:.2f}.\n",
+                  outcome.attack_strength, outcome.defense_strength));
 
   if (sect.is_empty()) {
     int absorbed = 0;
@@ -223,10 +223,10 @@ void resolve_alien_sector_combat(GameObj& g, Race& race, Race& alien,
     alien.adjust_morale(race, static_cast<int>(race.fighters));
   }
 
-  report_alien_sector_assault(g, race, alien, ship, sect, what, people,
-                              attacker_player, attacker_gov, defender_owner,
-                              defender_gov, attacker_casualties,
-                              defender_civ_casualties, defender_mil_casualties);
+  report_alien_sector_assault(
+      g, race, alien, ship, sect, what, people, attacker_player, attacker_gov,
+      defender_owner, defender_gov, outcome.attacker_casualties,
+      outcome.defender_civ_casualties, outcome.defender_mil_casualties);
 }
 
 void unload_onto_alien_sector(GameObj& g, Planet& planet, SectorMap& smap,

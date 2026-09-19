@@ -430,7 +430,7 @@ export struct UniverseGenerationResult {
   starnum_t num_stars{0};
   int planet_count{0};
   int total_resources{0};
-  std::array<int, PlanetType::DESERT + 1> planets_by_type{};
+  PlanetValues<int> planets_by_type{};
 };
 
 /// Procedural engine that generates stars, planets, sectormaps, and universe

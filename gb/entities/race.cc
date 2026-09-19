@@ -29,18 +29,6 @@ void Race::make_peace_with(player_t p) noexcept {
   atwar.reset(p);
 }
 
-double Race::sector_compatibility(const Sector& sect) const noexcept {
-  return sector_compatibility(sect.get_condition());
-}
-
-bool Race::tolerates_sector(const Sector& sect) const noexcept {
-  return sector_compatibility(sect) > 0.0;
-}
-
-double Race::sector_combat_factor(const Sector& sect) const noexcept {
-  return 1.0 + sector_compatibility(sect);
-}
-
 bool block::is_member(player_t p) const noexcept {
   return is_pledged(p) && is_invited(p);
 }

@@ -2335,7 +2335,7 @@ public:
   }
 
   // Stats
-  [[nodiscard]] armor_t armor() const {
+  [[nodiscard]] constexpr armor_t armor() const noexcept {
     return data_.armor;
   }
   armor_t& armor() {
@@ -2419,7 +2419,7 @@ public:
   /// gun batteries, crew, cargo, fuel, destruct, and hangar capacities.
   [[nodiscard]] ship_size_t calculate_size() const noexcept;
 
-  [[nodiscard]] double tech() const {
+  [[nodiscard]] constexpr double tech() const noexcept {
     return data_.tech;
   }
   double& tech() {
@@ -2453,14 +2453,14 @@ public:
     return data_.resource;
   }
 
-  [[nodiscard]] population_t popn() const {
+  [[nodiscard]] constexpr population_t popn() const noexcept {
     return data_.popn;
   }
   population_t& popn() {
     return data_.popn;
   }
 
-  [[nodiscard]] population_t troops() const {
+  [[nodiscard]] constexpr population_t troops() const noexcept {
     return data_.troops;
   }
   population_t& troops() {
@@ -2595,7 +2595,7 @@ public:
   }
 
   // Combat
-  [[nodiscard]] damage_t damage() const noexcept {
+  [[nodiscard]] constexpr damage_t damage() const noexcept {
     return data_.damage;
   }
 
@@ -3131,7 +3131,7 @@ public:
   }
 
   /// Effective armor accounting for factory overrides and structural damage.
-  [[nodiscard]] armor_t effective_armor() const noexcept {
+  [[nodiscard]] constexpr armor_t effective_armor() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
                ? get_template().base_armor
                : static_cast<armor_t>(data_.armor * (100 - data_.damage) / 100);

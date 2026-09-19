@@ -799,21 +799,18 @@ static bool attack_planet(const Ship& ship) {
 }
 
 void output_ground_attacks(EntityManager& em) {
-  for (const Star& star : StarList::readonly(em)) {
-    const starnum_t star_num = star.star_id();
-
+  for (auto star_handle : StarList(em)) {
     for (const Race& race_i : RaceList::readonly(em)) {
-      const player_t i = race_i.Playernum;
-
       for (const Race& race_j : RaceList::readonly(em)) {
-        const player_t j = race_j.Playernum;
-
-        if (ground_assaults[i][j][star_num]) {
+        if (const auto assaults =
+                star_handle->ground_assault_count(race_i, race_j);
+            assaults > 0) {
           std::string assault_news = std::format(
-              "{}: {} [{}] assaults {} [{}] {} times.\n", star.get_name(),
-              race_i.name, i, race_j.name, j, ground_assaults[i][j][star_num]);
+              "{}: {} [{}] assaults {} [{}] {} times.\n",
+              star_handle->get_name(), race_i.name, race_i.Playernum,
+              race_j.name, race_j.Playernum, assaults);
           post(em, assault_news, NewsType::COMBAT);
-          ground_assaults[i][j][star_num] = 0;
+          star_handle->clear_ground_assaults(race_i, race_j);
         }
       }
     }
@@ -822,68 +819,42 @@ void output_ground_attacks(EntityManager& em) {
 
 void compute_power_blocks(EntityManager& entity_manager) {
   /* compute alliance block power */
-  Power_blocks.time = std::time(nullptr);
+  const std::time_t now = std::time(nullptr);
+  entity_manager.mutate_server_state(
+      [now](ServerState& state) { state.last_update_time = now; });
+
   for (const Race& race_i : RaceList::readonly(entity_manager)) {
     const player_t i = race_i.Playernum;
 
-    const block* block_i = nullptr;
     try {
-      block_i = entity_manager.peek_block(i.value);
+      entity_manager.mutate_block(i.value, [&](block& block_i) {
+        block_i.clear_power_stats();
+
+        for (const Race& race_j : RaceList::readonly(entity_manager)) {
+          const player_t j = race_j.Playernum;
+
+          if (block_i.is_member(j)) {
+            try {
+              const auto* power_ptr =
+                  entity_manager.peek_power(powernum_t{j.value});
+              block_i.accumulate_member_power(*power_ptr);
+            } catch (const EntityNotFoundError&) {
+              continue;
+            }
+          }
+        }
+      });
     } catch (const EntityNotFoundError&) {
       continue;
     }
-
-    auto& stats = Power_blocks.blocks[i];
-    stats = PowerBlockStats{
-        .systems_owned = block_i->systems_owned,
-        .VPs = block_i->VPs,
-    };
-
-    for (const Race& race_j : RaceList::readonly(entity_manager)) {
-      const player_t j = race_j.Playernum;
-
-      if (block_i->is_member(j)) {
-        try {
-          const auto* power_ptr =
-              entity_manager.peek_power(powernum_t{j.value});
-          stats.members += 1;
-          stats.sectors_owned += power_ptr->sectors_owned;
-          stats.money += power_ptr->money;
-          stats.popn += power_ptr->popn;
-          stats.ships_owned += power_ptr->ships_owned;
-          stats.resource += power_ptr->resource;
-          stats.fuel += power_ptr->fuel;
-          stats.destruct += power_ptr->destruct;
-        } catch (const EntityNotFoundError&) {
-          continue;
-        }
-      }
-    }
   }
-}
-
-// --- Update/Segment state (previously in GB_server.cc) ---
-namespace {
-ScheduleInfo schedule_info;
-}  // namespace
-
-const ScheduleInfo& get_schedule_info() {
-  return schedule_info;
-}
-
-std::string format_server_start_time(std::time_t start_time) {
-  return std::format("Server started  : {}", std::ctime(&start_time));
-}
-
-void set_server_start_time(std::time_t start_time) {
-  schedule_info.start_buf = format_server_start_time(start_time);
 }
 
 ScheduleCalculation compute_update_schedule(const ServerState& state,
                                             std::time_t current_time,
                                             bool force) {
   assert(state.segments >= 1);
-  const unsigned long segs = std::max(1UL, state.segments);
+  const segments_t segs = std::max<segments_t>(1, state.segments);
   ScheduleCalculation result{};
 
   if (segs <= 1) {
@@ -915,14 +886,14 @@ ScheduleCalculation compute_segment_schedule(const ServerState& state,
                                              bool override,
                                              int target_segment) {
   assert(state.segments >= 1);
-  const unsigned long segs = std::max(1UL, state.segments);
+  const segments_t segs = std::max<segments_t>(1, state.segments);
   ScheduleCalculation result{};
 
   if (override) {
     result.next_segment_time =
         current_time + (state.update_time_minutes * 60) / segs;
     if (target_segment > 0) {
-      result.nsegments_done = target_segment;
+      result.nsegments_done = static_cast<segments_t>(target_segment);
       result.next_update_time =
           current_time +
           (state.update_time_minutes * 60 * (segs - target_segment + 1)) / segs;
@@ -947,7 +918,8 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
 
   bool fakeit = (!force && stat(nogofl, &stbuf) >= 0);
 
-  std::string update_msg = std::format("{}DOING UPDATE...\n", std::ctime(&clk));
+  std::string update_msg =
+      std::format("{}\nDOING UPDATE...\n", format_timestamp(clk));
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       session_registry.notify_race(i, update_msg);
@@ -958,45 +930,38 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
 
   std::time_t next_seg_time = 0;
   std::time_t next_upd_time = 0;
-  int segs_done = 0;
-  int total_segs = 0;
+  segments_t segs_done = 0;
+  segments_t total_segs = 0;
+  turn_t updates_done = 0;
 
   entity_manager.mutate_server_state([&](ServerState& state) {
     auto calc = compute_update_schedule(state, clk, force);
     state.next_segment_time = calc.next_segment_time;
     state.next_update_time = calc.next_update_time;
     state.nsegments_done = calc.nsegments_done;
+    state.record_update_completed(clk, !fakeit);
 
     next_seg_time = state.next_segment_time;
     next_upd_time = state.next_update_time;
     segs_done = state.nsegments_done;
     total_segs = state.segments;
+    updates_done = state.nupdates_done;
   });
 
-  if (!fakeit) schedule_info.nupdates_done++;
-
-  Power_blocks.time = clk;
-  schedule_info.last_update_time = clk;
-  schedule_info.update_buf =
-      std::format("Last Update {0:3d} : {1}", schedule_info.nupdates_done,
-                  std::ctime(&clk));
-  std::print(std::cerr, "{}", std::ctime(&clk));
-  std::print(std::cerr, "Next Update {0:3d} : {1}",
-             schedule_info.nupdates_done + 1, std::ctime(&next_upd_time));
-  schedule_info.last_segment_time = clk;
-  schedule_info.segment_buf =
-      std::format("Last Segment {0:2d} : {1}", segs_done, std::ctime(&clk));
-  std::print(std::cerr, "{}", std::ctime(&clk));
-  std::print(std::cerr, "Next Segment {0:2d} : {1}",
-             segs_done == total_segs ? 1 : segs_done + 1,
-             std::ctime(&next_seg_time));
+  std::println(std::cerr, "{}", format_timestamp(clk));
+  std::println(std::cerr, "Next Update {:3d} : {}", updates_done + 1,
+               format_timestamp(next_upd_time));
+  std::println(std::cerr, "{}", format_timestamp(clk));
+  std::println(std::cerr, "Next Segment {:2d} : {}",
+               segs_done == total_segs ? 1U : segs_done + 1U,
+               format_timestamp(next_seg_time));
 
   session_registry.set_update_in_progress(true);
   if (!fakeit) do_turn(entity_manager, session_registry, true);
   session_registry.set_update_in_progress(false);
   clk = std::time(nullptr);
-  std::string finish_msg = std::format(
-      "{}Update {} finished\n", std::ctime(&clk), schedule_info.nupdates_done);
+  std::string finish_msg = std::format("{}\nUpdate {} finished\n",
+                                       format_timestamp(clk), updates_done);
   handle_victory(entity_manager);
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
@@ -1017,7 +982,7 @@ void do_segment(EntityManager& entity_manager,
   bool fakeit = (!override && stat(nogofl, &stbuf) >= 0);
 
   std::string movement_msg =
-      std::format("{}DOING MOVEMENT...\n", std::ctime(&clk));
+      std::format("{}\nDOING MOVEMENT...\n", format_timestamp(clk));
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       session_registry.notify_race(i, movement_msg);
@@ -1027,13 +992,14 @@ void do_segment(EntityManager& entity_manager,
   }
 
   std::time_t next_seg_time = 0;
-  int segs_done = 0;
+  segments_t segs_done = 0;
 
   entity_manager.mutate_server_state([&](ServerState& state) {
     auto calc = compute_segment_schedule(state, clk, override != 0, segment);
     state.next_segment_time = calc.next_segment_time;
     state.next_update_time = calc.next_update_time;
     state.nsegments_done = calc.nsegments_done;
+    state.record_segment_completed(clk);
 
     next_seg_time = state.next_segment_time;
     segs_done = state.nsegments_done;
@@ -1042,15 +1008,12 @@ void do_segment(EntityManager& entity_manager,
   session_registry.set_update_in_progress(true);
   if (!fakeit) do_turn(entity_manager, session_registry, false);
   session_registry.set_update_in_progress(false);
-  schedule_info.last_segment_time = clk;
-  schedule_info.segment_buf =
-      std::format("Last Segment {0:2d} : {1}", segs_done, std::ctime(&clk));
-  std::print(std::cerr, "{0}", std::ctime(&clk));
-  std::print(std::cerr, "Next Segment {0:2d} : {1}", segs_done,
-             std::ctime(&next_seg_time));
+  std::println(std::cerr, "{}", format_timestamp(clk));
+  std::println(std::cerr, "Next Segment {:2d} : {}", segs_done,
+               format_timestamp(next_seg_time));
   clk = std::time(nullptr);
   std::string segment_msg =
-      std::format("{}Segment finished\n", std::ctime(&clk));
+      std::format("{}\nSegment finished\n", format_timestamp(clk));
   if (!fakeit) {
     for (auto i = 1; i <= entity_manager.num_races(); i++)
       session_registry.notify_race(i, segment_msg);

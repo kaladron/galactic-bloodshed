@@ -8,7 +8,6 @@ export module gblib:place;
 
 import :entitylists;
 import :gameobj;
-import :globals;
 import :services;
 import :shlmisc;
 import :star;

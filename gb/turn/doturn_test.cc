@@ -571,11 +571,12 @@ void test_output_ground_attacks() {
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
-  ground_assaults[player_t{1}][player_t{2}][starnum_t{0}] = 3;
+  em.mutate_star(0, [](Star& s) { s.record_ground_assault(1, 2, 3); });
+  test::expect_eq(em.peek_star(0)->ground_assault_count(1, 2), 3U);
 
   output_ground_attacks(em);
 
-  test::expect_eq(ground_assaults[player_t{1}][player_t{2}][starnum_t{0}], 0U);
+  test::expect_eq(em.peek_star(0)->ground_assault_count(1, 2), 0U);
 }
 
 void test_race_turn_accounting_and_maintenance() {
@@ -753,10 +754,11 @@ void test_do_update_voting_reset_and_scheduling() {
   test::expect_false(r1->votes);
   test::expect_false(r2->votes);
 
-  // Verify ScheduleInfo updated
-  const auto& sched = get_schedule_info();
-  test::expect_gt(sched.nupdates_done, 0U);
-  test::expect_false(sched.update_buf.empty());
+  // Verify ServerState schedule buffers updated
+  const auto* updated_state = em.peek_server_state();
+  test::expect_ne(updated_state, nullptr);
+  test::expect_gt(updated_state->nupdates_done, 0U);
+  test::expect_false(updated_state->update_buf.empty());
 }
 
 void test_handle_victory_disabled() {
@@ -961,10 +963,11 @@ void test_schedule_calculation_pure() {
   test::expect_eq(override_seg.nsegments_done, 2U);
   test::expect_eq(override_seg.next_update_time, 11'900);
 
-  // 6. format_server_start_time
+  // 6. ServerState::record_server_start
   std::time_t t = 1'700'000'000;
-  std::string formatted = format_server_start_time(t);
-  test::expect_contains(formatted, "Server started  : ");
+  state.record_server_start(t);
+  test::expect_eq(state.server_start_time, t);
+  test::expect_contains(state.start_buf, "Server started  : ");
 }
 
 void test_do_segment_execution() {
@@ -1029,7 +1032,7 @@ void test_do_next_thing_dispatch() {
   ctx.em.mutate_server_state([](ServerState& s) { s.nsegments_done = 3; });
   reg.clear_notifications();
 
-  const unsigned int updates_before = get_schedule_info().nupdates_done;
+  const unsigned int updates_before = ctx.em.peek_server_state()->nupdates_done;
 
   // 2. When nsegments_done (3) >= segments (3), do_next_thing dispatches
   // do_update()
@@ -1038,7 +1041,7 @@ void test_do_next_thing_dispatch() {
   test::expect_eq(state2->nsegments_done, 1U);
   test::expect_true(reg.has_broadcast("DOING UPDATE"));
   test::expect_true(reg.has_broadcast("Update"));
-  test::expect_eq(get_schedule_info().nupdates_done, updates_before + 1);
+  test::expect_eq(state2->nupdates_done, updates_before + 1);
 }
 
 void test_advance_race_technology() {

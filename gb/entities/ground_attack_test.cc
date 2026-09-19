@@ -118,24 +118,31 @@ void test_ground_assault_matrix() {
 
   player_t attacker{1};
   player_t defender{2};
-  starnum_t star{5};
+  Star star(star_struct{.star_id = 5});
 
-  ground_assaults[attacker][defender][star] = 0;
-  ground_assaults[attacker][defender][star] += 3;
-  test::expect_eq(ground_assaults[attacker][defender][star], 3U);
+  test::expect_eq(star.ground_assault_count(attacker, defender), 0U);
+  star.record_ground_assault(attacker, defender, 3);
+  test::expect_eq(star.ground_assault_count(attacker, defender), 3U);
 
   // Bounds rejection tests
   test::expect_throws<std::out_of_range>(
-      [] { (void)ground_assaults[player_t{0}]; });
+      [&] { (void)star.ground_assault_count(player_t{0}, defender); });
+  test::expect_throws<std::out_of_range>([&] {
+    (void)star.ground_assault_count(player_t{MAXPLAYERS + 1}, defender);
+  });
   test::expect_throws<std::out_of_range>(
-      [] { (void)ground_assaults[player_t{MAXPLAYERS + 1}]; });
-  test::expect_throws<std::out_of_range>([attacker, defender] {
-    (void)ground_assaults[attacker][defender][starnum_t{NUMSTARS}];
+      [&] { (void)star.ground_assault_count(attacker, player_t{0}); });
+  test::expect_throws<std::out_of_range>([&] {
+    (void)star.ground_assault_count(attacker, player_t{MAXPLAYERS + 1});
   });
 
-  // Clear
-  ground_assaults[attacker][defender][star] = 0;
-  test::expect_eq(ground_assaults[attacker][defender][star], 0U);
+  // Clear specific pair and all tallies
+  star.clear_ground_assaults(attacker, defender);
+  test::expect_eq(star.ground_assault_count(attacker, defender), 0U);
+
+  star.record_ground_assault(attacker, defender, 2);
+  star.clear_all_ground_assaults();
+  test::expect_eq(star.ground_assault_count(attacker, defender), 0U);
   std::println(std::cout, "  ✓ ground_assault_matrix passed");
 }
 

@@ -173,16 +173,6 @@ export void finalize_turn_update(EntityManager& em, TurnStats& stats);
 /// \param s Star entity undergoing stability check.
 export void fix_stability(EntityManager& em, Star& s);
 
-/// \brief Schedule status info for display commands.
-export struct ScheduleInfo {
-  std::string start_buf;    // "Server started  : <time>"
-  std::string update_buf;   // "Last Update N : <time>"
-  std::string segment_buf;  // "Last Segment N : <time>"
-  unsigned int nupdates_done{0};
-  std::time_t last_update_time{0};
-  std::time_t last_segment_time{0};
-};
-
 /// \brief Pure calculation result for schedule progression.
 export struct ScheduleCalculation {
   std::time_t next_segment_time{0};
@@ -191,17 +181,6 @@ export struct ScheduleCalculation {
 
   bool operator==(const ScheduleCalculation&) const = default;
 };
-
-/// \brief Gets current schedule status for display commands.
-export const ScheduleInfo& get_schedule_info();
-
-/// \brief Formats server startup timestamp into standard status display string.
-/// \param start_time UNIX epoch timestamp when server started.
-export std::string format_server_start_time(std::time_t start_time);
-
-/// \brief Sets server start time timestamp and formatted status string.
-/// \param start_time UNIX epoch timestamp when the server started.
-export void set_server_start_time(std::time_t start_time);
 
 /// \brief Computes schedule timestamps for an update pass.
 /// \param state Current server state.

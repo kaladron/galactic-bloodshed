@@ -241,6 +241,38 @@ public:
 
   // Iterate over all governors (active or not)
   [[nodiscard]] auto all_governors() const;
+
+  /**
+   * Provides translated estimates of numeric values based on this race's
+   * translation capability toward `target`. Values are rounded based on
+   * translation level and formatted with K (thousands) or M (millions)
+   * suffixes for readability.
+   */
+  template <typename T>
+    requires std::is_arithmetic_v<T>
+  [[nodiscard]] std::string estimate(const T data,
+                                     const player_t target) const {
+    if (translate[target] > 10) {
+      int k = 101 - std::min(translate[target], 100);
+      int est = (std::abs(static_cast<int>(data)) / k) * k;
+      if (est < 1000) return std::format("{}", est);
+      if (est < 10000) {
+        return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
+      }
+      if (est < 1000000) {
+        return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
+      }
+
+      return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
+    }
+    return "?";
+  }
+
+  template <typename T>
+    requires std::is_arithmetic_v<T>
+  [[nodiscard]] std::string estimate(const T data, const Race& target) const {
+    return estimate(data, target.Playernum);
+  }
 };
 
 // Entry returned when iterating over governors (const version)
@@ -360,23 +392,63 @@ export struct power {
   resource_t destruct;      /* total dest in stock */
   ship_count_t ships_owned; /* # of ships owned */
   planet_count_t planets_owned;
-  unsigned long sectors_owned;
+  sector_count_t sectors_owned;
   money_t money;
   unsigned long sum_mob; /* total mobilization */
   unsigned long sum_eff; /* total efficiency */
 };
 
 export struct block {
-  player_t Playernum;
+  player_t Playernum{0};
   std::string name;
   std::string motto;
   PlayerBitset<MAXPLAYERS> invited;
   PlayerBitset<MAXPLAYERS> pledged;
   PlayerBitset<MAXPLAYERS> atwar;
   PlayerBitset<MAXPLAYERS> allied;
-  planet_count_t systems_owned;
-  unsigned long VPs;
-  unsigned long money;
+  std::uint32_t members{0};
+  population_t troops{0};      /* total troops */
+  population_t popn{0};        /* total population */
+  resource_t resource{0};      /* total resource in stock */
+  resource_t fuel{0};          /* total fuel in stock */
+  resource_t destruct{0};      /* total dest in stock */
+  ship_count_t ships_owned{0}; /* # of ships owned */
+  planet_count_t systems_owned{0};
+  sector_count_t sectors_owned{0};
+  victory_score_t VPs{0};
+  money_t money{0};
+
+  /// Resets aggregated member power statistics prior to recomputation.
+  void clear_power_stats() noexcept {
+    members = 0;
+    troops = 0;
+    popn = 0;
+    resource = 0;
+    fuel = 0;
+    destruct = 0;
+    ships_owned = 0;
+    sectors_owned = 0;
+    money = 0;
+  }
+
+  /// Accumulates a member race's power report into this bloc's totals.
+  void accumulate_member_power(const power& p) noexcept {
+    members += 1;
+    troops += p.troops;
+    popn += p.popn;
+    resource += p.resource;
+    fuel += p.fuel;
+    destruct += p.destruct;
+    ships_owned += p.ships_owned;
+    sectors_owned += p.sectors_owned;
+    money += p.money;
+  }
+
+  /// Adds a player as a full member (both invited and pledged).
+  void add_member(player_t p) noexcept {
+    invite(p);
+    pledge(p);
+  }
 
   /// Returns whether the given player is a member of this bloc (both invited
   /// and pledged).
@@ -423,25 +495,6 @@ export struct block {
 
   /// Makes peace between this bloc and the given player.
   void make_peace_with(player_t p) noexcept;
-};
-
-export struct PowerBlockStats {
-  std::uint32_t members{0};
-  population_t troops{0};      /* total troops */
-  population_t popn{0};        /* total population */
-  resource_t resource{0};      /* total resource in stock */
-  resource_t fuel{0};          /* total fuel in stock */
-  resource_t destruct{0};      /* total dest in stock */
-  ship_count_t ships_owned{0}; /* # of ships owned */
-  planet_count_t systems_owned{0};
-  std::uint32_t sectors_owned{0};
-  money_t money{0};
-  std::uint64_t VPs{0};
-};
-
-export struct power_blocks {
-  std::time_t time{0};
-  PlayerVector<PowerBlockStats, MAXPLAYERS> blocks{};
 };
 
 export constexpr double TECH_HYPER_DRIVE = 50.0;

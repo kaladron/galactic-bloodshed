@@ -212,16 +212,16 @@ void test_move_popn_assault_and_unowned() {
   g.set_pnum(0);
 
   // 1. Move into unowned sector (owner == 0) -> does not trigger assault
-  ground_assaults[player_t{1}][player_t{2}][starnum_t{0}] = 0;
+  ctx.em.mutate_star(0, [](Star& s) { s.clear_all_ground_assaults(); });
   ctx.assert_dispatch_success(g, {"move", "5,5", "k", "100"});
-  test::expect_eq(ground_assaults[player_t{1}][player_t{2}][starnum_t{0}], 0U);
+  test::expect_eq(ctx.em.peek_star(0)->ground_assault_count(1, 2), 0U);
 
   // 2. Move into enemy sector (owner == 2) -> triggers assault
   ctx.assert_dispatch_success(g, {"move", "5,6", "k", "50"});
-  test::expect_ge(ground_assaults[player_t{1}][player_t{2}][starnum_t{0}], 1U);
+  test::expect_ge(ctx.em.peek_star(0)->ground_assault_count(1, 2), 1U);
 
   // Clean up
-  ground_assaults[player_t{1}][player_t{2}][starnum_t{0}] = 0;
+  ctx.em.mutate_star(0, [](Star& s) { s.clear_all_ground_assaults(); });
   ctx.verify_universe_invariants();
 }
 

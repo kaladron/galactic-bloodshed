@@ -156,7 +156,6 @@ bool move_popn(const command_t& argv, GameObj& g) {
     }
 
     if (Assault) {
-      ground_assaults[Playernum][sect2_peek.get_owner()][g.snum()] += 1;
       old2owner = sect2_peek.get_owner();
       old2gov = star.governor(old2owner);
 
@@ -166,6 +165,9 @@ bool move_popn(const command_t& argv, GameObj& g) {
       }
       Race alien = *alien_peek;
       Race race = *g.race;
+
+      g.entity_manager.mutate_star(
+          g.snum(), [&](Star& s) { s.record_ground_assault(race, alien); });
 
       /* races find out about each other */
       alien.translate[Playernum] = MIN(alien.translate[Playernum] + 5, 100);

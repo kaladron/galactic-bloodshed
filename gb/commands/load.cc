@@ -240,10 +240,12 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, SectorMap& smap,
     return;
   }
   player_t defender_owner = sect.get_owner();
-  ground_assaults[Playernum][defender_owner][g.snum()] += 1;
 
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
     g.entity_manager.mutate_race(defender_owner, [&](Race& alien) {
+      g.entity_manager.mutate_star(
+          g.snum(), [&](Star& s) { s.record_ground_assault(race, alien); });
+
       alien.translate[Playernum] = MIN(alien.translate[Playernum] + 5, 100);
       race.translate[defender_owner] =
           MIN(race.translate[defender_owner] + 5, 100);

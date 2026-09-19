@@ -40,56 +40,53 @@ void test_block_dispatch() {
   races.save(race2);
   races.save(race3);
 
-  // Create blocks for each player
-  block block1{};
-  block1.Playernum = 1;
-  block1.name = "ZeroVPBlock";
-  block1.motto = "We have no VPs yet";
-  block1.VPs = 0;
-  block1.invite(player_t{1});
-  block1.pledge(player_t{1});
+  // Create blocks for each player using designated initializers
+  const block block1{
+      .Playernum = 1,
+      .name = "ZeroVPBlock",
+      .motto = "We have no VPs yet",
+      .invited = PlayerBitset<MAXPLAYERS>::singleton(1),
+      .pledged = PlayerBitset<MAXPLAYERS>::singleton(1),
+      .members = 1,
+      .popn = 10000,
+      .ships_owned = 5,
+      .VPs = 0,
+      .money = 1000,
+  };
 
-  block block2{};
-  block2.Playernum = 2;
-  block2.name = "HasVPsBlock";
-  block2.motto = "We have some VPs";
-  block2.VPs = 100;
-  block2.invite(player_t{2});
-  block2.pledge(player_t{2});
+  // Block 2: Has VPs and members
+  const block block2{
+      .Playernum = 2,
+      .name = "HasVPsBlock",
+      .motto = "We are winning",
+      .invited = PlayerBitset<MAXPLAYERS>::singleton(2),
+      .pledged = PlayerBitset<MAXPLAYERS>::singleton(2),
+      .members = 1,
+      .popn = 50000,
+      .ships_owned = 20,
+      .systems_owned = 5,
+      .VPs = 100,
+      .money = 5000,
+  };
 
-  block block3{};
-  block3.Playernum = 3;
-  block3.name = "EmptyBlock";
-  block3.motto = "Nobody here";
-  block3.VPs = 50;
-  block3.invited.reset();
-  block3.pledged.reset();
+  // Block 3: Has VPs but NO members (no matching invite+pledge)
+  const block block3{
+      .Playernum = 3,
+      .name = "EmptyBlock",
+      .motto = "Nobody home",
+      .members = 0,
+      .systems_owned = 1,
+      .VPs = 50,
+      .money = 500,
+  };
 
   BlockRepository blocks(store);
   blocks.save(block1);
   blocks.save(block2);
   blocks.save(block3);
 
-  // Setup Power_blocks global with member counts
-  Power_blocks.time = std::time(nullptr);
-  Power_blocks.blocks[player_t{1}] = PowerBlockStats{
-      .members = 1,
-      .popn = 10000,
-      .ships_owned = 5,
-      .money = 1000,
-      .VPs = 0,
-  };
-  Power_blocks.blocks[player_t{2}] = PowerBlockStats{
-      .members = 1,
-      .popn = 50000,
-      .ships_owned = 20,
-      .money = 5000,
-      .VPs = 100,
-  };
-  Power_blocks.blocks[player_t{3}] = PowerBlockStats{
-      .members = 0,
-      .VPs = 50,
-  };
+  ctx.em.mutate_server_state(
+      [](ServerState& state) { state.last_update_time = std::time(nullptr); });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
                GB_VERSION);
   std::println(std::cout, "");
   std::time_t clk = std::time(nullptr);
-  std::print("      {0}", std::ctime(&clk));
+  std::println("      {}", format_timestamp(clk));
   if (EXTERNAL_TRIGGER) {
     std::println(std::cout, "      The update  password is '%s'.",
                  UPDATE_PASSWORD);
@@ -55,17 +55,16 @@ int main(int argc, char** argv) {
     std::cerr << "      " << config.update_time << " minutes between updates"
               << '\n';
     std::cerr << "      " << state.segments << " segments/update" << '\n';
-    set_server_start_time(clk);
 
     // Print initial schedule status
-    std::print(stderr, "Last Update {:3d} : {}", 0, std::ctime(&clk));
-    std::print(stderr, "Last Segment {0:2d} : {1}", state.nsegments_done,
-               std::ctime(&clk));
+    std::println(stderr, "Last Update {:3d} : {}", 0, format_timestamp(clk));
+    std::println(stderr, "Last Segment {:2d} : {}", state.nsegments_done,
+                 format_timestamp(clk));
     srandom(getpid());
-    std::print(stderr, "      Next Update {0}  : {1}", 1,
-               std::ctime(&state.next_update_time));
-    std::print(stderr, "      Next Segment   : {0}",
-               std::ctime(&state.next_segment_time));
+    std::println(stderr, "      Next Update {}  : {}", 1,
+                 format_timestamp(state.next_update_time));
+    std::println(stderr, "      Next Segment   : {}",
+                 format_timestamp(state.next_segment_time));
   });
 
   // Verify universe is initialized (created by makeuniv)

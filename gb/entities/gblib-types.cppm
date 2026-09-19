@@ -459,14 +459,51 @@ export struct Vnbrain {
   player_t most_mad{0};       /* player most mad at */
 };
 
+/// \brief Formats a UNIX epoch timestamp in standard 24-character
+/// "Day Mon DD HH:MM:SS YYYY" format using C++26 std::chrono formatting
+/// (without a trailing newline, thread-safe, no static C buffers).
+export [[nodiscard]] inline std::string format_timestamp(std::time_t t) {
+  const auto tp = std::chrono::floor<std::chrono::seconds>(
+      std::chrono::system_clock::from_time_t(t));
+  return std::format("{:%a %b %e %H:%M:%S %Y}", tp);
+}
+
 export struct ServerState {
   int id{1};                         // Always 1 - singleton entity
-  unsigned long segments{1};         // Number of movement segments
+  segments_t segments{1};            // Number of movement segments
   std::time_t next_update_time{0};   // Next update timestamp
   std::time_t next_segment_time{0};  // Next segment timestamp
   int update_time_minutes{10};       // Interval between updates in minutes
   segments_t nsegments_done{0};      // Segments completed this update
+  turn_t nupdates_done{0};           // Total updates completed
+  std::time_t server_start_time{0};  // Timestamp when server started
+  std::time_t last_update_time{0};   // Timestamp of most recent update
+  std::time_t last_segment_time{0};  // Timestamp of most recent segment
+  std::string start_buf;             // "Server started  : <time>"
+  std::string update_buf;            // "Last Update N : <time>"
+  std::string segment_buf;           // "Last Segment N : <time>"
   std::string welcome_message;  // Welcome message shown to connecting players
+
+  void record_server_start(std::time_t clk) {
+    server_start_time = clk;
+    start_buf = std::format("Server started  : {}\n", format_timestamp(clk));
+  }
+
+  void record_update_completed(std::time_t clk, bool increment_updates) {
+    if (increment_updates) {
+      ++nupdates_done;
+    }
+    last_update_time = clk;
+    update_buf = std::format("Last Update {:3d} : {}\n", nupdates_done,
+                             format_timestamp(clk));
+    record_segment_completed(clk);
+  }
+
+  void record_segment_completed(std::time_t clk) {
+    last_segment_time = clk;
+    segment_buf = std::format("Last Segment {:2d} : {}\n", nsegments_done,
+                              format_timestamp(clk));
+  }
 };
 
 export struct Commod {

@@ -139,6 +139,7 @@ void initialize_schedule_state(ServerState& state, const ServerConfig& config,
                                std::time_t current_time) {
   state.update_time_minutes = config.update_time.count();
   state.segments = config.segments;
+  state.record_server_start(current_time);
 
   if (state.next_update_time == 0) {
     state.next_update_time = current_time + (state.update_time_minutes * 60);
@@ -161,10 +162,8 @@ void initialize_block_data(EntityManager& entity_manager) {
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t i = race.Playernum;
     try {
-      entity_manager.mutate_block(i.value, [&](struct block& b) {
-        b.invite(i);
-        b.pledge(i);
-      });
+      entity_manager.mutate_block(i.value,
+                                  [&](struct block& b) { b.add_member(i); });
     } catch (const EntityNotFoundError&) {
     }
   }

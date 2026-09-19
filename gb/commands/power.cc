@@ -41,14 +41,13 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
 
   table.add_row(
       {rank_col, std::format("[{:2d}]", i), alliance_them + alliance_us,
-       std::string(r.name), estimate(r.victory_score, race, i),
-       estimate(power_ptr->troops, race, i), estimate(power_ptr->popn, race, i),
-       estimate(power_ptr->money, race, i),
-       estimate(power_ptr->ships_owned, race, i),
-       estimate(power_ptr->planets_owned, race, i),
-       estimate(power_ptr->resource, race, i),
-       estimate(power_ptr->fuel, race, i),
-       estimate(power_ptr->destruct, race, i), estimate(r.morale, race, i),
+       std::string(r.name), race.estimate(r.victory_score, i),
+       race.estimate(power_ptr->troops, i), race.estimate(power_ptr->popn, i),
+       race.estimate(power_ptr->money, i),
+       race.estimate(power_ptr->ships_owned, i),
+       race.estimate(power_ptr->planets_owned, i),
+       race.estimate(power_ptr->resource, i), race.estimate(power_ptr->fuel, i),
+       race.estimate(power_ptr->destruct, i), race.estimate(r.morale, i),
        know_col});
 }
 }  // namespace

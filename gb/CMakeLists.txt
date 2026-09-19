@@ -106,7 +106,6 @@ target_sources(
           entities/gblib-fire.cppm
           entities/gblib-fuel.cppm
           services/gblib-gameobj.cppm
-          entities/gblib-globals.cppm
           entities/gblib-map.cppm
           entities/gblib-misc.cppm
           entities/gblib-move.cppm

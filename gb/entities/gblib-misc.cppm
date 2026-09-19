@@ -108,35 +108,3 @@ export int mod(int a, int b) {
   int dum = a % b;
   return std::abs(dum);
 }
-
-/**
- * @brief Formats a numeric value as an estimated string with K/M suffixes.
- *
- * Provides translated estimates of numeric values based on the observer's
- * translation capability. Values are rounded based on translation level
- * and formatted with K (thousands) or M (millions) suffixes for readability.
- *
- * @tparam T Arithmetic type (int, double, float, etc.)
- * @param data The numeric value to estimate
- * @param r The observing race
- * @param p The player number being observed
- * @return Formatted string with K/M suffix, or "?" if translation too low
- */
-export template <typename T>
-  requires std::is_arithmetic_v<T>
-std::string estimate(const T data, const Race& r, const player_t p) {
-  if (r.translate[p] > 10) {
-    int k = 101 - std::min(r.translate[p], 100);
-    int est = (std::abs(static_cast<int>(data)) / k) * k;
-    if (est < 1000) return std::format("{}", est);
-    if (est < 10000) {
-      return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
-    }
-    if (est < 1000000) {
-      return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
-    }
-
-    return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
-  }
-  return "?";
-}

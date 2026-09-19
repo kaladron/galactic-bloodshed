@@ -41,7 +41,6 @@ export import :tele;
 export import :turnstats;
 export import :tweakables;
 export import :universe;
-export import :globals;
 
 export constexpr double morale_factor(const double x) {
   return (std::atan((double)x / 10000.) / 3.14159565 + .5);

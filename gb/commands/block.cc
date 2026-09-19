@@ -113,14 +113,14 @@ bool block(const command_t& argv, GameObj& g) {
             powernum_t{r.Playernum.value}, [&](const auto& p_info) {
               table.add_row({std::format("{}", r.Playernum),
                              std::string(r.name),
-                             estimate(p_info.troops, *race, r.Playernum),
-                             estimate(p_info.popn, *race, r.Playernum),
-                             estimate(p_info.money, *race, r.Playernum),
-                             estimate(p_info.ships_owned, *race, r.Playernum),
-                             estimate(p_info.planets_owned, *race, r.Playernum),
-                             estimate(p_info.resource, *race, r.Playernum),
-                             estimate(p_info.fuel, *race, r.Playernum),
-                             estimate(p_info.destruct, *race, r.Playernum),
+                             race->estimate(p_info.troops, r),
+                             race->estimate(p_info.popn, r),
+                             race->estimate(p_info.money, r),
+                             race->estimate(p_info.ships_owned, r),
+                             race->estimate(p_info.planets_owned, r),
+                             race->estimate(p_info.resource, r),
+                             race->estimate(p_info.fuel, r),
+                             race->estimate(p_info.destruct, r),
                              std::format("{}%", race->translate[r])});
             });
       } catch (const EntityNotFoundError&) {
@@ -131,16 +131,12 @@ bool block(const command_t& argv, GameObj& g) {
     g.out << table << "\n";
   } else {
     /* list power report for all the alliance blocks (as of the last update) */
-    std::string time_str = std::asctime(std::localtime(&Power_blocks.time));
-    // Remove trailing newline from asctime
-    if (!time_str.empty() && time_str.back() == '\n') {
-      time_str.pop_back();
-    }
+    const auto* state = g.entity_manager.peek_server_state();
+    const std::time_t update_time = state ? state->last_update_time : 0;
+    const std::string time_str = format_timestamp(update_time);
     g.out << std::format(
         "         ========== Global Alliance Block Report ==========\n");
-    g.out << std::format("                 (updated: {:<24.24})\n",
-                         time_str.length() > 0 ? time_str.substr(0, 24)
-                                               : "Unknown");
+    g.out << std::format("                 (updated: {:<24.24})\n", time_str);
 
     tabulate::Table table;
     table.format().hide_border().column_separator("  ");
@@ -164,17 +160,16 @@ bool block(const command_t& argv, GameObj& g) {
 
     for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
       player_t i = block_i.Playernum;
-      const auto& stats = Power_blocks.blocks[i];
-      if (stats.members == 0) continue;
+      if (block_i.members == 0) continue;
 
       table.add_row(
           {std::format("{}", i), std::string(block_i.name),
-           std::format("{}", stats.members), estimate(stats.money, *race, i),
-           estimate(stats.popn, *race, i),
-           estimate(stats.ships_owned, *race, i),
-           estimate(stats.systems_owned, *race, i),
-           estimate(stats.resource, *race, i), estimate(stats.fuel, *race, i),
-           estimate(stats.destruct, *race, i), estimate(stats.VPs, *race, i),
+           std::format("{}", block_i.members), race->estimate(block_i.money, i),
+           race->estimate(block_i.popn, i),
+           race->estimate(block_i.ships_owned, i),
+           race->estimate(block_i.systems_owned, i),
+           race->estimate(block_i.resource, i), race->estimate(block_i.fuel, i),
+           race->estimate(block_i.destruct, i), race->estimate(block_i.VPs, i),
            std::format("{}%", race->translate[i])});
     }
 

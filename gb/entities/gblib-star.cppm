@@ -5,6 +5,7 @@
 
 export module gblib:star;
 
+import :race;
 import :types;
 import :tweakables;
 import std;
@@ -27,10 +28,58 @@ export struct star_struct {
   double gravity{0.0};          /* attraction of star in "Standards". */
 
   starnum_t star_id{0};
+  PlayerVector<PlayerVector<std::uint32_t, MAXPLAYERS>, MAXPLAYERS>
+      ground_assaults{}; /* per-turn ground assault tallies [attacker][defender]
+                          */
 };
 
 export class Star {
 public:
+  /// Records a ground assault by `attacker` against `defender` in this star
+  /// system during the current turn.
+  void record_ground_assault(player_t attacker, player_t defender,
+                             std::uint32_t count = 1) {
+    star_struct.ground_assaults[attacker][defender] += count;
+  }
+
+  /// Records a ground assault by `attacker` against `defender` in this star
+  /// system during the current turn.
+  void record_ground_assault(const Race& attacker, const Race& defender,
+                             std::uint32_t count = 1) {
+    record_ground_assault(attacker.Playernum, defender.Playernum, count);
+  }
+
+  /// Returns the number of ground assaults by `attacker` against `defender` in
+  /// this star system during the current turn.
+  [[nodiscard]] std::uint32_t ground_assault_count(player_t attacker,
+                                                   player_t defender) const {
+    return star_struct.ground_assaults[attacker][defender];
+  }
+
+  /// Returns the number of ground assaults by `attacker` against `defender` in
+  /// this star system during the current turn.
+  [[nodiscard]] std::uint32_t ground_assault_count(const Race& attacker,
+                                                   const Race& defender) const {
+    return ground_assault_count(attacker.Playernum, defender.Playernum);
+  }
+
+  /// Clears ground assault tallies between `attacker` and `defender` in this
+  /// star system.
+  void clear_ground_assaults(player_t attacker, player_t defender) {
+    star_struct.ground_assaults[attacker][defender] = 0;
+  }
+
+  /// Clears ground assault tallies between `attacker` and `defender` in this
+  /// star system.
+  void clear_ground_assaults(const Race& attacker, const Race& defender) {
+    clear_ground_assaults(attacker.Playernum, defender.Playernum);
+  }
+
+  /// Resets all ground assault tallies in this star system to zero.
+  void clear_all_ground_assaults() noexcept {
+    star_struct.ground_assaults = {};
+  }
+
   [[nodiscard]] std::string get_name() const {
     return star_struct.name;
   }

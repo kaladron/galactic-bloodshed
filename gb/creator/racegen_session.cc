@@ -9,6 +9,7 @@ import strong_id;
 import glaze.core;
 import glaze.json;
 import gb.entities;
+import gb.repositories.glaze;
 import std;
 
 module gb.creator;

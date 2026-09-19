@@ -5,7 +5,7 @@
 /// serialization.
 
 import gb.entities;
-import gb.repositories;
+import gb.repositories.glaze;
 import test;
 import glaze.core;
 import glaze.json;

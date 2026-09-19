@@ -7,6 +7,7 @@ export module gblib;
 
 export import strong_id;  // Third-party strong type ID system
 export import gb.entities;
+export import gb.repositories;
 
 export import :bombard;
 export import :build;
@@ -24,7 +25,6 @@ export import :move;
 export import :order;
 export import :place;
 export import :prompt;
-export import :repositories;
 export import :services;
 export import :sessionregistry;  // Cross-cutting session interface
 export import :shlmisc;

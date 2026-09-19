@@ -4,7 +4,7 @@ export module gblib:services;
 
 import dallib;
 import gb.entities;
-import :repositories;
+import gb.repositories;
 import std;
 
 // Exception thrown when an entity is not found in the database

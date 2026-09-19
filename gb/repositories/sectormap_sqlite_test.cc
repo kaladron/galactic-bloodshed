@@ -7,6 +7,7 @@
 import dallib;
 import gb.entities;
 import gb.repositories;
+import gb.services;
 import test;
 import std;
 

@@ -10,9 +10,11 @@ import strong_id;
 import glaze.core;
 import glaze.json;
 
-module gblib;
+module gb.repositories;
 
+import gb.repositories.glaze;
 import dallib;
+import gb.entities;
 import std;
 
 namespace glz {

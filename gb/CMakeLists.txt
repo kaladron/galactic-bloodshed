@@ -122,6 +122,23 @@ target_sources(
           entities/star.cc)
 target_link_libraries(gb_entities PUBLIC strong_id_module types_module scnlib_module)
 
+# Standalone Tier-2 Data Repositories Library (gb.repositories has zero Glaze imports; gb.repositories.glaze provides opt-in Glaze schemas)
+add_library(gb_repositories)
+target_sources(
+  gb_repositories
+  PUBLIC FILE_SET CXX_MODULES FILES
+         repositories/repositories.cppm
+         repositories/glaze_schemas.cppm
+  PRIVATE repositories/misc_repositories.cc
+          repositories/planet_repository.cc
+          repositories/race_repository.cc
+          repositories/sector_repository.cc
+          repositories/ship_repository.cc
+          repositories/star_repository.cc)
+target_link_libraries(
+  gb_repositories
+  PUBLIC gb_entities dallib glaze::glaze glaze_json_module glaze_core_module strong_id_module)
+
 add_library(gblib)
 target_sources(
   gblib
@@ -145,7 +162,6 @@ target_sources(
           entities/gblib-order.cppm
           entities/gblib-place.cppm
           services/gblib-prompt.cppm
-          repositories/gblib-repositories.cppm
           services/gblib-services.cppm
           services/gblib-sessionregistry.cppm
           services/gblib-shlmisc.cppm
@@ -169,23 +185,12 @@ target_sources(
           entities/navigation.cc
           entities/order.cc
           services/prompt.cc
-          repositories/planet_repository.cc
-          repositories/race_repository.cc
-          repositories/sector_repository.cc
-          repositories/ship_repository.cc
-          repositories/star_repository.cc
           services/shlmisc.cc
           entities/shootblast.cc
           services/tele.cc
           server/victory.cc
           turn/vn.cc)
-target_link_libraries(gblib PUBLIC gb_entities glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module scnlib_module tabulate_module)
-
-add_library(gb_repositories)
-target_sources(
-  gb_repositories
-  PUBLIC FILE_SET CXX_MODULES FILES repositories/repositories.cppm)
-target_link_libraries(gb_repositories PUBLIC gblib)
+target_link_libraries(gblib PUBLIC gb_entities gb_repositories strong_id_module dallib types_module scnlib_module tabulate_module)
 
 add_library(gb_services)
 target_sources(

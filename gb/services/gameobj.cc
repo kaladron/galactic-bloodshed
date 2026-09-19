@@ -38,3 +38,23 @@ bool GameObj::deduct_univ_ap(ap_t amount) {
     return false;
   }
 }
+
+bool GameObj::check_commandable(const Ship& ship) {
+  if (!ship.alive()) {
+    out << std::format("{} has been destroyed.\n", ship);
+    return false;
+  }
+
+  if (ship.owner() != player_ || !ship.is_authorized_for(governor_)) {
+    notify_dont_own_ship(*this, ship.number());
+    return false;
+  }
+
+  if (!ship.active()) {
+    out << std::format("{} is irradiated {}% and inactive.\n", ship,
+                       ship.rad());
+    return false;
+  }
+
+  return true;
+}

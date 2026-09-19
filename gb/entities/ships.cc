@@ -21,38 +21,6 @@ armor_t getdefense(EntityManager& em, const Ship& ship) {
   return 0;
 }
 
-/// \brief Resolves the absolute 2D universe coordinates of a space mirror's
-/// aimed target.
-///
-/// Looks up the aimed target entity (star, planet, or ship) in the entity
-/// manager and computes its absolute coordinates.
-///
-/// \param em Entity manager for entity queries.
-/// \return Absolute coordinates if target exists, or std::nullopt otherwise.
-std::optional<UniverseCoordinates>
-SpaceMirrorShip::target_coordinates(EntityManager& em) const {
-  switch (aim().level) {
-    case ScopeLevel::LEVEL_STAR: {
-      const auto* star = em.peek_star(aim().snum);
-      if (!star) return std::nullopt;
-      return star->coordinates();
-    }
-    case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = em.peek_star(aim().snum);
-      const auto* planet = em.peek_planet(aim().snum, aim().pnum);
-      if (!star || !planet) return std::nullopt;
-      return planet->absolute_coordinates(*star);
-    }
-    case ScopeLevel::LEVEL_SHIP: {
-      const auto* target_ship = em.peek_ship(aim().shipno);
-      if (!target_ship) return std::nullopt;
-      return target_ship->coordinates();
-    }
-    default:
-      return std::nullopt;
-  }
-}
-
 namespace {
 
 constexpr double TAN_22_5_DEG = std::numbers::sqrt2 - 1.0;
@@ -76,8 +44,8 @@ constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
 
 }  // namespace
 
-/// \brief Computes the 8-octant compass heading (0..7) toward the mirror's
-/// aimed target.
+/// \brief Computes the 8-octant compass heading (0..7) toward the given
+/// target coordinates.
 ///
 /// The 8 compass directions correspond to:
 /// - 0: North (0 deg)
@@ -94,15 +62,11 @@ constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
 /// - tan(22.5 deg) = sqrt(2) - 1 ≈ 0.4142
 /// - tan(67.5 deg) = sqrt(2) + 1 ≈ 2.4142
 ///
-/// \param em Entity manager for resolving target coordinates.
+/// \param target_coords Absolute universe coordinates of the target.
 /// \return Compass direction heading index (0..7).
-int SpaceMirrorShip::aim_direction(EntityManager& em) const {
-  auto target = target_coordinates(em);
-  if (!target) {
-    return 0;
-  }
-
-  const auto [xt, yt] = *target;
+int SpaceMirrorShip::aim_direction(
+    UniverseCoordinates target_coords) const noexcept {
+  const auto [xt, yt] = target_coords;
   const auto my_coords = coordinates();
   if (xt == my_coords.x) {
     return (yt > my_coords.y) ? 4 : 0;
@@ -451,25 +415,6 @@ double complexity(ShipType type) {
   // For an unmodified ship, complexity() returns exactly the base tech.
   // We can compute this directly without creating a full Ship object.
   return ship_template(type).base_tech;
-}
-
-bool Ship::check_commandable(GameObj& g) const {
-  if (!alive()) {
-    g.out << std::format("{} has been destroyed.\n", *this);
-    return false;
-  }
-
-  if (owner() != g.player() || !is_authorized_for(g.governor())) {
-    notify_dont_own_ship(g, number());
-    return false;
-  }
-
-  if (!active()) {
-    g.out << std::format("{} is irradiated {}% and inactive.\n", *this, rad());
-    return false;
-  }
-
-  return true;
 }
 
 void Ship::set_factory_blueprint(ShipType build_type,

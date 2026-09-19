@@ -1163,12 +1163,12 @@ void test_ship_moor_together_and_commandability() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 2);
-  test::expect_true(s1_peek->check_commandable(g));
+  test::expect_true(g.check_commandable(*s1_peek));
 
   // Unauthorized governor fails check_commandable and receives telegram via
   // notify_dont_own_ship
   ctx.setup_game_obj(g, 1, 1);
-  test::expect_false(s1_peek->check_commandable(g));
+  test::expect_false(g.check_commandable(*s1_peek));
   auto t_p1g1 = ctx.em.get_telegrams(1, 1);
   test::expect_eq(t_p1g1.size(), 1u);
   test::expect_true(t_p1g1[0].message.find("don't own") != std::string::npos);
@@ -1176,7 +1176,7 @@ void test_ship_moor_together_and_commandability() {
   // Wrong player fails check_commandable and receives telegram via
   // notify_dont_own_ship
   ctx.setup_game_obj(g, 2, 0);
-  test::expect_false(s1_peek->check_commandable(g));
+  test::expect_false(g.check_commandable(*s1_peek));
   auto t_p2g0 = ctx.em.get_telegrams(2, 0);
   test::expect_eq(t_p2g0.size(), 1u);
   test::expect_true(t_p2g0[0].message.find("don't own") != std::string::npos);
@@ -1188,13 +1188,13 @@ void test_ship_moor_together_and_commandability() {
   });
   ctx.setup_game_obj(g, 1, 0);
   g.out.str("");
-  test::expect_false(ctx.em.peek_ship(s1_id)->check_commandable(g));
+  test::expect_false(g.check_commandable(*ctx.em.peek_ship(s1_id)));
   test::expect_true(g.out.str().find("irradiated") != std::string::npos);
 
   // Destroyed ship fails check_commandable
   ctx.em.mutate_ship(s1_id, [](Ship& s1) { s1.alive() = false; });
   g.out.str("");
-  test::expect_false(ctx.em.peek_ship(s1_id)->check_commandable(g));
+  test::expect_false(g.check_commandable(*ctx.em.peek_ship(s1_id)));
   test::expect_true(g.out.str().find("destroyed") != std::string::npos);
 }
 
@@ -1256,21 +1256,25 @@ void test_mirror_aim_and_formatting_helpers() {
   test::expect_eq(format_ship_dest(ctx.em, *ctx.em.peek_ship(mirror_id)),
                   "/Vega");
 
-  // Test SpaceMirrorShip::target_coordinates and aim_direction across octants
+  // Test SpaceMirrorShip::aim_direction and EntityManager mirror resolution
+  // across octants
   ctx.em.mutate_ship(mirror_id, [&](Ship& m) {
     auto* mirror = m.as<SpaceMirrorShip>();
     test::expect_ne(mirror, nullptr);
 
     // Unaimed (LEVEL_UNIV)
     mirror->aim() = {.level = ScopeLevel::LEVEL_UNIV};
-    test::expect_false(mirror->target_coordinates(ctx.em).has_value());
-    test::expect_eq(mirror->aim_direction(ctx.em), 0);
+    test::expect_false(
+        ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
+    test::expect_eq(ctx.em.resolve_mirror_aim_direction(*mirror), 0);
 
     // Aimed at star 0 and planet (0,0)
     mirror->aim() = {.snum = 0, .level = ScopeLevel::LEVEL_STAR};
-    test::expect_true(mirror->target_coordinates(ctx.em).has_value());
+    test::expect_true(
+        ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
     mirror->aim() = {.snum = 0, .pnum = 0, .level = ScopeLevel::LEVEL_PLAN};
-    test::expect_true(mirror->target_coordinates(ctx.em).has_value());
+    test::expect_true(
+        ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
 
     // Aimed at target_ship_id across all 8 compass headings and axes
     mirror->aim() = {.shipno = target_ship_id, .level = ScopeLevel::LEVEL_SHIP};
@@ -1278,7 +1282,7 @@ void test_mirror_aim_and_formatting_helpers() {
       ctx.em.mutate_ship(target_ship_id, [&](Ship& t) {
         t.set_coordinates(UniverseCoordinates{tx, ty});
       });
-      return mirror->aim_direction(ctx.em);
+      return ctx.em.resolve_mirror_aim_direction(*mirror);
     };
 
     test::expect_eq(check_heading(0.0, -10.0), 0);  // North (xt == x, yt < y)
@@ -1298,6 +1302,16 @@ void test_mirror_aim_and_formatting_helpers() {
     test::expect_eq(check_heading(10.0, -10.0),
                     1);  // NE (slope = -1.0, yt < y)
   });
+
+  // Verify kill_ship clears any SpaceMirrorShip aimed at the destroyed ship to
+  // maintain foreign key referential integrity
+  ctx.em.mutate_ship(target_ship_id,
+                     [&](Ship& t) { ctx.em.kill_ship(player_t{1}, t); });
+  const auto* mirror_after_kill =
+      ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
+  test::expect_eq(mirror_after_kill->aimed_level(), ScopeLevel::LEVEL_UNIV);
+  test::expect_false(
+      ctx.em.resolve_mirror_target_coordinates(*mirror_after_kill).has_value());
 }
 
 void test_blueprint_complexity_defense_and_capture() {

@@ -33,7 +33,7 @@ const Ship* validate_walk_afv(GameObj& g, std::string_view ship_arg,
     g.out << "No such ship.\n";
     return nullptr;
   }
-  if (!ship_peek->check_commandable(g)) {
+  if (!g.check_commandable(*ship_peek)) {
     g.out << "You do not control this ship.\n";
     return nullptr;
   }

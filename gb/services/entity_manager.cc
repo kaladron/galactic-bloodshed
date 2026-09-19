@@ -898,6 +898,21 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     }
   }
 
+  /* clear any space mirrors aimed at this ship to preserve foreign key
+     referential integrity */
+  for (shipnum_t other_id : ships_alive()) {
+    if (other_id == ship.number()) continue;
+    const auto* other = peek_ship(other_id);
+    if (const auto* mirror = other->as<SpaceMirrorShip>()) {
+      if (mirror->aimed_level() == ScopeLevel::LEVEL_SHIP &&
+          mirror->aimed_ship() == ship.number()) {
+        mutate_as<SpaceMirrorShip>(other_id, [](SpaceMirrorShip& m) {
+          m.aim() = {.level = ScopeLevel::LEVEL_UNIV};
+        });
+      }
+    }
+  }
+
   /* landed ships are killed */
   for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
     Ship& s = *ship_handle;   // Get mutable reference
@@ -1367,4 +1382,34 @@ EntityManager::DeletionBarrier::operator=(DeletionBarrier&& other) noexcept {
 
 EntityManager::DeletionBarrier EntityManager::create_deletion_barrier() {
   return DeletionBarrier(*this);
+}
+
+std::optional<UniverseCoordinates>
+EntityManager::resolve_mirror_target_coordinates(
+    const SpaceMirrorShip& mirror) {
+  switch (mirror.aimed_level()) {
+    case ScopeLevel::LEVEL_STAR:
+      return peek_star(mirror.aimed_star())->coordinates();
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto& star = *peek_star(mirror.aimed_star());
+      const auto& planet =
+          *peek_planet(mirror.aimed_star(), mirror.aimed_planet());
+      return planet.absolute_coordinates(star);
+    }
+    case ScopeLevel::LEVEL_SHIP: {
+      const auto& target_ship = *peek_ship(mirror.aimed_ship());
+      if (!target_ship.alive()) return std::nullopt;
+      return target_ship.coordinates();
+    }
+    default:
+      return std::nullopt;
+  }
+}
+
+int EntityManager::resolve_mirror_aim_direction(const SpaceMirrorShip& mirror) {
+  const auto target_coords = resolve_mirror_target_coordinates(mirror);
+  if (!target_coords) {
+    return 0;
+  }
+  return mirror.aim_direction(*target_coords);
 }

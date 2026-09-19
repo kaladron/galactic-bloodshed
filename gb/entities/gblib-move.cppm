@@ -2,6 +2,7 @@
 
 export module gblib:move;
 
+import :gameobj;
 import :planet;
 import :sector;
 import :services;

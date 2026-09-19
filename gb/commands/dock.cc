@@ -94,7 +94,7 @@ DockTargetValidation validate_target_ship_for_dock(const Ship& s,
   DockTargetValidation val{};
   try {
     g.entity_manager.with_ship(ship2no, [&](const Ship& s2) {
-      if (!is_assault && !s2.check_commandable(g)) {
+      if (!is_assault && !g.check_commandable(s2)) {
         g.out << "You are not authorized to do this.\n";
         val.abort_loop = true;
         return;

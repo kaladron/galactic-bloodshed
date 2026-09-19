@@ -222,7 +222,7 @@ void test_orbit_space_mirror_aiming() {
   test::expect_ne(mirror, nullptr);
 
   // 1. Target coordinates for planet: Star (100, 200) + Planet (0, 0)
-  auto coords = mirror->target_coordinates(ctx.em);
+  auto coords = ctx.em.resolve_mirror_target_coordinates(*mirror);
   test::expect_true(coords.has_value());
   test::expect_eq(coords->x, 100.0);
   test::expect_eq(coords->y, 200.0);
@@ -235,12 +235,12 @@ void test_orbit_space_mirror_aiming() {
 
   const auto* updated_mirror =
       ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
-  auto ship_coords = updated_mirror->target_coordinates(ctx.em);
+  auto ship_coords = ctx.em.resolve_mirror_target_coordinates(*updated_mirror);
   test::expect_true(ship_coords.has_value());
   test::expect_eq(ship_coords->x, 150.0);
   test::expect_eq(ship_coords->y, 250.0);
 
-  int dir = updated_mirror->aim_direction(ctx.em);
+  int dir = ctx.em.resolve_mirror_aim_direction(*updated_mirror);
   test::expect_eq(dir, 3);  // slope = +1.0, dy > 0 -> direction 3
 
   // 3. Verify orbit command includes the mirror in system view

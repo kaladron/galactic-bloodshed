@@ -8,7 +8,6 @@ export module gblib:ships;
 
 import std;
 
-import :gameobj;
 import :planet;
 import :sector;
 import :types;
@@ -2959,11 +2958,6 @@ public:
     return alive() && active() && owner() == player && is_authorized_for(gov);
   }
 
-  /// Validates that this ship is alive, owned by g.player(), authorized for
-  /// g.governor(), and active (not irradiated). Emits diagnostic error messages
-  /// to g.out and returns false if any precondition fails.
-  [[nodiscard]] bool check_commandable(GameObj& g) const;
-
   /// Initializes pure domain state for a newly constructed ship from template
   /// defaults, race attributes, and autoloaded crew/fuel quantities.
   void initialize_constructed_state(const Race& race, governor_t gov,
@@ -3875,12 +3869,10 @@ public:
     return aim().level;
   }
 
-  /// Resolves the absolute coordinates of the aimed target.
-  [[nodiscard]] std::optional<UniverseCoordinates>
-  target_coordinates(EntityManager& em) const;
-
-  /// Calculates the 0..7 compass aim direction heading toward the target.
-  [[nodiscard]] int aim_direction(EntityManager& em) const;
+  /// Calculates the 0..7 compass aim direction heading toward the given target
+  /// coordinates.
+  [[nodiscard]] int
+  aim_direction(UniverseCoordinates target_coords) const noexcept;
 };
 
 export class SporePodShip : public Ship {
@@ -4275,8 +4267,6 @@ const Derived* Ship::as() const noexcept {
   return nullptr;
 }
 
-export armor_t getdefense(EntityManager&, const Ship&);
-export void capture_stuff(const Ship&, GameObj&);
 export resource_t cost(const Ship&);
 export double getmass(const Ship&);
 export unsigned int ship_size(const Ship&);
@@ -4291,15 +4281,6 @@ export void rcv_resource(Ship&, resource_t);
 export void rcv_destruct(Ship&, resource_t);
 export void rcv_popn(Ship&, population_t, double);
 export void rcv_troops(Ship&, population_t, double);
-export std::string prin_ship_orbits(EntityManager&, const Ship&);
-export std::string format_ship_dest(EntityManager&, const Ship&);
-export void moveship(EntityManager&, Ship& ship, bool is_update,
-                     bool send_messages, bool checking_fuel);
-export void msg_OOF(EntityManager&, const Ship& ship);
-export bool followable(EntityManager&, const Ship& ship, const Ship& target);
-
-export std::string dispshiploc_brief(EntityManager&, const Ship&);
-export std::string dispshiploc(EntityManager&, const Ship&);
 
 export template <std::derived_from<Ship> T>
 struct std::formatter<T> {

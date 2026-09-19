@@ -2,6 +2,7 @@
 
 export module gblib:order;
 
+import :gameobj;
 import :ships;
 import :types;
 

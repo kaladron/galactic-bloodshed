@@ -128,7 +128,7 @@ can_build_on_ship(ShipType what, const Race& race, const Ship& builder) {
 
 std::optional<ScopeLevel> build_at_ship(GameObj& g, Ship* builder,
                                         starnum_t* snum, planetnum_t* pnum) {
-  if (!builder->check_commandable(g)) return {};
+  if (!g.check_commandable(*builder)) return {};
   if (!builder->can_construct_ships()) {
     g.out << "This ship cannot construct other ships.\n";
     return {};

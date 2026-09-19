@@ -10,8 +10,9 @@ import :race;
 import :sessionregistry;  // For SessionRegistry interface
 import std;
 
-// Forward declaration for EntityManager (defined in gblib:services)
+// Forward declarations to avoid coupling gblib:gameobj to :services or :ships
 export class EntityManager;
+export class Ship;
 
 export class GameObj {
 public:
@@ -121,6 +122,11 @@ public:
   /// \return true if deduction was successful (or 0 cost / god mode), false if
   /// insufficient AP or universe not found.
   bool deduct_univ_ap(ap_t amount);
+
+  /// Validates that a ship is alive, owned by player(), authorized for
+  /// governor(), and active (not irradiated). Emits diagnostic error messages
+  /// to out and returns false if any precondition fails.
+  [[nodiscard]] bool check_commandable(const Ship& ship);
 
 private:
   // All state stored locally

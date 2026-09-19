@@ -453,6 +453,9 @@ public:
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);
   void kill_ship(player_t destroyer, Ship& ship);
+  [[nodiscard]] std::optional<UniverseCoordinates>
+  resolve_mirror_target_coordinates(const SpaceMirrorShip& mirror);
+  [[nodiscard]] int resolve_mirror_aim_direction(const SpaceMirrorShip& mirror);
 
   // Docking & Mooring operations (service layer)
   [[nodiscard]] std::expected<void, DockError>

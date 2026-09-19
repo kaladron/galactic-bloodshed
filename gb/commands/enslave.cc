@@ -27,7 +27,7 @@ bool enslave(const command_t& argv, GameObj& g) {
   try {
     bool ok = false;
     g.entity_manager.with_ship(*shipno, [&](const Ship& s) {
-      if (!s.check_commandable(g)) {
+      if (!g.check_commandable(s)) {
         return;
       }
       if (s.type() != ShipType::STYPE_OAP) {

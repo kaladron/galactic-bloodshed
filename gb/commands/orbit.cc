@@ -377,7 +377,7 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
   switch (ship.type()) {
     case ShipType::STYPE_MIRROR: {
       const auto* mirror = ship.as<SpaceMirrorShip>();
-      mirror_heading = mirror ? mirror->aim_direction(em) : 0;
+      mirror_heading = mirror ? em.resolve_mirror_aim_direction(*mirror) : 0;
       break;
     }
 

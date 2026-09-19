@@ -280,38 +280,33 @@ void Sector::update_efficiency(const Race& race,
   }
 }
 
-void Sector::produce_resources(const Race& race, TurnStats& stats) noexcept {
+Stockpile Sector::produce_resources(const Race& race) noexcept {
   if (!is_owned() || data_.resource <= 0 ||
       !success(static_cast<int>(data_.eff))) {
-    return;
+    return {};
   }
 
   const double eff_scale =
       double_rand(1.0, std::max(1.0, static_cast<double>(data_.eff)));
   resource_t prod = round_rand<resource_t>(race.metabolism * eff_scale);
   prod = std::clamp(prod, resource_t{0}, data_.resource);
-  if (prod == 0) return;
+  if (prod == 0) return {};
 
   data_.resource -= prod;
 
   const auto pfuel = prod * (1 + (data_.condition == SectorType::SEC_GAS));
-  const player_t owner = data_.owner;
 
   if (success(static_cast<int>(data_.mobilization))) {
-    stats.prod_destruct[owner] += prod;
-  } else {
-    stats.prod_res[owner] += prod;
+    return Stockpile{.destruct = prod, .fuel = pfuel};
   }
-
-  stats.prod_fuel[owner] += pfuel;
+  return Stockpile{.resources = prod, .fuel = pfuel};
 }
 
-bool Sector::mine_crystals(const Race& race, TurnStats& stats) noexcept {
+bool Sector::mine_crystals(const Race& race) noexcept {
   if (!is_owned() || data_.crystals == 0 || !race.discoveries.crystal ||
       !success(static_cast<int>(data_.eff))) {
     return false;
   }
-  stats.prod_crystals[data_.owner]++;
   --data_.crystals;
   return true;
 }

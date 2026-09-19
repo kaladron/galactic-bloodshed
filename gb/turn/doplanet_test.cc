@@ -1350,11 +1350,9 @@ void test_turnstats_playervector_accumulation() {
   test::expect_eq(stats.prod_destruct[player_t{1}], 0);
   test::expect_eq(stats.prod_crystals[player_t{1}], 0);
   test::expect_eq(stats.Power[player_t{1}].popn, 0U);
-  test::expect_eq(stats.starpopns[0][player_t{1}], 0UL);
+  test::expect_eq(stats.starpopns[0][player_t{1}], 0);
   test::expect_eq(stats.starnumships[0][player_t{1}], 0U);
-  test::expect_eq(stats.Sdatanumships[player_t{1}], 0U);
-  test::expect_eq(stats.Sdatapopns[player_t{1}], 0UL);
-  test::expect_eq(stats.avg_mob[player_t{1}], 0UL);
+  test::expect_eq(stats.total_mob_points[player_t{1}], 0U);
 
   // Mutate player stats using strongly-typed player_t keys
   stats.prod_res[player_t{1}] += 5000;
@@ -1366,7 +1364,7 @@ void test_turnstats_playervector_accumulation() {
   test::expect_eq(stats.prod_res[player_t{1}], 5000);
   test::expect_eq(stats.prod_fuel[player_t{1}], 2500);
   test::expect_eq(stats.Power[player_t{1}].popn, 10000U);
-  test::expect_eq(stats.starpopns[1][player_t{1}], 8000UL);
+  test::expect_eq(stats.starpopns[1][player_t{1}], 8000);
   test::expect_eq(stats.starnumships[1][player_t{1}], 12U);
 
   // Verify bounds safety on 0 and > MAXPLAYERS
@@ -2476,7 +2474,7 @@ void test_process_planet_economy() {
   stats.prod_res[player_t{1}] = 15;
   stats.prod_destruct[player_t{1}] = 10;
   stats.prod_crystals[player_t{1}] = 2;
-  stats.avg_mob[player_t{1}] = 50;
+  stats.total_mob_points[player_t{1}] = 50;
 
   process_planet_economy(em, star, planet, smap, stats);
 
@@ -2574,12 +2572,14 @@ void test_reset_planet_turn_state() {
 
   TurnStats stats{};
   stats.Claims = true;
+  stats.tot_captured = 4;
   stats.prod_fuel[player_t{1}] = 10;
   stats.prod_res[player_t{1}] = 20;
 
   reset_planet_turn_state(em, planet, stats);
 
   test::expect_false(stats.Claims);
+  test::expect_eq(stats.tot_captured, 0U);
   test::expect_eq(planet.maxpopn(), 0);
   test::expect_eq(planet.popn(), 0);
   test::expect_eq(planet.troops(), 0);

@@ -125,7 +125,7 @@ target_sources(
           entities/gblib-shootblast.cppm
           entities/gblib-star.cppm
           services/gblib-tele.cppm
-          entities/gblib-turnstats.cppm
+          turn/gblib-turnstats.cppm
           entities/gblib-tweakables.cppm
           entities/gblib-types.cppm
           entities/gblib-universe.cppm
@@ -543,7 +543,7 @@ gb_add_test(toxicity_test SOURCES commands/toxicity_test.cc)
 gb_add_test(transaction_test SOURCES services/transaction_test.cc)
 gb_add_test(transfer_test SOURCES commands/transfer_test.cc)
 gb_add_test(treasury_test SOURCES commands/treasury_test.cc)
-gb_add_test(turnstats_test SOURCES entities/turnstats_test.cc)
+gb_add_test(turnstats_test SOURCES turn/turnstats_test.cc)
 gb_add_test(universe_test SOURCES entities/universe_test.cc)
 gb_add_test(unpledge_test SOURCES commands/unpledge_test.cc)
 gb_add_test(update_test SOURCES commands/update_test.cc)

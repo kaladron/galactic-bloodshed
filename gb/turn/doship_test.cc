@@ -1608,7 +1608,6 @@ void test_update_ship_inhabited_and_exploration() {
   initialize_schema(db);
   EntityManager em(db);
   JsonStore store(db);
-  TurnStats stats{};
 
   Race race = createTestRace(player_t{1});
   RaceRepository(store).save(race);
@@ -1628,9 +1627,9 @@ void test_update_ship_inhabited_and_exploration() {
                           .in_star_orbit(1)
                           .with_alive(true)
                           .build_handle();
-  update_ship_inhabited_and_exploration(*probe_handle, em, stats);
-  test::expect_eq(stats.StarsInhab[1], 1);
+  update_ship_inhabited_and_exploration(*probe_handle, em);
   const auto& star_after_probe = *em.peek_star(starnum_t{1});
+  test::expect_true(star_after_probe.is_inhabited_by(player_t{1}));
   test::expect_true(star_after_probe.is_explored_by(player_t{1}));
 
   // 2. Manned ship in planet orbit explores star & planet
@@ -1640,7 +1639,7 @@ void test_update_ship_inhabited_and_exploration() {
                            .in_planet_orbit(1, 0)
                            .with_alive(true)
                            .build_handle();
-  update_ship_inhabited_and_exploration(*manned_handle, em, stats);
+  update_ship_inhabited_and_exploration(*manned_handle, em);
   const auto& planet_after_manned =
       *em.peek_planet(starnum_t{1}, planetnum_t{0});
   test::expect_true(planet_after_manned.is_explored_by(player_t{1}));
@@ -1657,7 +1656,7 @@ void test_update_ship_inhabited_and_exploration() {
                           .in_planet_orbit(1, 1)
                           .with_alive(true)
                           .build_handle();
-  update_ship_inhabited_and_exploration(*cargo_handle, em, stats);
+  update_ship_inhabited_and_exploration(*cargo_handle, em);
   const auto& planet2_after = *em.peek_planet(starnum_t{1}, planetnum_t{1});
   test::expect_false(planet2_after.is_explored_by(player_t{2}));
 }
@@ -1719,7 +1718,7 @@ void test_accumulate_ship_power_stats() {
   test::expect_eq(stats.starnumships[1][player_t{1}], 1);
   test::expect_eq(stats.starpopns[1][player_t{1}], 10);
 
-  // 2. Deep space ship in LEVEL_UNIV
+  // 2. Deep space ship in LEVEL_UNIV does not increment star-level census
   ship_struct univ_ship_data{
       .owner = player_t{1},
       .popn = 20,
@@ -1730,8 +1729,10 @@ void test_accumulate_ship_power_stats() {
   Ship univ_ship{univ_ship_data};
 
   accumulate_ship_power_stats(univ_ship, stats, false);
-  test::expect_eq(stats.Sdatanumships[player_t{1}], 1);
-  test::expect_eq(stats.Sdatapopns[player_t{1}], 20);
+  test::expect_eq(stats.starnumships[1][player_t{1}], 1);
+  test::expect_eq(stats.starpopns[1][player_t{1}], 10);
+  test::expect_eq(stats.starnumships[0][player_t{1}], 0);
+  test::expect_eq(stats.starpopns[0][player_t{1}], 0);
 }
 
 void test_special_subsystems_extended() {

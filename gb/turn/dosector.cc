@@ -115,14 +115,12 @@ void update_mobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
     if (pinf.resource + stats.prod_res[owner] > 0) {
       s.adjust_mobilization(1);
       stats.prod_res[owner] -= round_rand(MOB_COST);
-      stats.prod_mob++;
     }
   } else if (s.get_mobilization() > pinf.mob_set) {
     s.adjust_mobilization(-1);
-    stats.prod_mob--;
   }
 
-  stats.avg_mob[owner] += s.get_mobilization();
+  stats.total_mob_points[owner] += s.get_mobilization();
 }
 
 namespace {
@@ -162,8 +160,11 @@ void produce(EntityManager& entity_manager, const Star& star,
 
   entity_manager.with_race(s.get_owner(), [&](const Race& race) {
     // Process production and resources
-    s.produce_resources(race, stats);
-    s.mine_crystals(race, stats);
+    Stockpile produced = s.produce_resources(race);
+    if (s.mine_crystals(race)) {
+      produced.crystals += 1;
+    }
+    stats.record_production(s.get_owner(), produced);
 
     // Handle mobilization
     const auto& pinf = planet.info(s.get_owner());

@@ -10,7 +10,6 @@ import :types;
 import :tweakables;
 import :planet;
 import :race;
-import :turnstats;
 
 /// Returns the single-character map symbol for a SectorType.
 export constexpr char get_sector_char(SectorType condition) {
@@ -344,11 +343,12 @@ public:
 
   /// \brief Extracts raw resources or fuel from a populated sector based on
   /// metabolism and efficiency.
-  void produce_resources(const Race& race, TurnStats& stats) noexcept;
+  /// \return Extracted commodity bundle (`Stockpile`).
+  [[nodiscard]] Stockpile produce_resources(const Race& race) noexcept;
 
   /// \brief Mines crystal deposits from a sector if race has crystal discovery.
   /// \return True if a crystal deposit was successfully mined.
-  bool mine_crystals(const Race& race, TurnStats& stats) noexcept;
+  [[nodiscard]] bool mine_crystals(const Race& race) noexcept;
 
   /// Clear ownership if sector is empty (no popn or troops)
   void clear_owner_if_empty() noexcept {

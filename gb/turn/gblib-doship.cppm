@@ -155,12 +155,10 @@ export void sync_factory_technology(Ship& ship, const Race& race);
 export void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em);
 
 /// \brief Updates star and planet exploration/inhabitation status for a ship.
-/// \param ship Ship exploring or inhabiting the system.
+/// \param ship The ship being processed.
 /// \param em Entity manager for mutating star and planet exploration flags.
-/// \param stats Per-turn stats tracking inhabited stars.
 export void update_ship_inhabited_and_exploration(const Ship& ship,
-                                                  EntityManager& em,
-                                                  TurnStats& stats);
+                                                  EntityManager& em);
 
 /// \brief Accumulates ship counts, population, fuel, resources, and ordnance
 /// into turn statistics for power ratings and census reporting.
@@ -238,6 +236,11 @@ export struct StealResult {
   player_t victim{0};    ///< Player ID victimized, or 0 if none
   resource_t amount{0};  ///< Quantity of resources stolen
 };
+
+/// \brief Selects an alien colony on the planet to steal resources from.
+export std::optional<player_t>
+select_victim_to_steal_from(const Planet& planet,
+                            std::span<const player_t> race_order);
 
 /// \brief Steals resources from alien colonies on the currently landed planet.
 export StealResult steal_planetary_resources(EntityManager& em,

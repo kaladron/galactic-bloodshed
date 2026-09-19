@@ -404,14 +404,13 @@ void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em) {
   }
 }
 
-void update_ship_inhabited_and_exploration(const Ship& ship, EntityManager& em,
-                                           TurnStats& stats) {
+void update_ship_inhabited_and_exploration(const Ship& ship,
+                                           EntityManager& em) {
   if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV ||
       !ship.is_exploration_capable()) {
     return;
   }
 
-  stats.StarsInhab[ship.storbits().value] = 1;
   em.mutate_star(ship.storbits(), [&](Star& star) {
     star.mark_inhabited_by(ship.owner());
     star.mark_explored_by(ship.owner());
@@ -435,10 +434,7 @@ void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
     stats.Power[ship.owner()].troops += ship.troops();
   }
 
-  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-    stats.Sdatanumships[ship.owner()]++;
-    stats.Sdatapopns[ship.owner()] += ship.popn();
-  } else {
+  if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
     stats.starnumships[ship.storbits().value][ship.owner()]++;
     stats.starpopns[ship.storbits().value][ship.owner()] += ship.popn();
   }
@@ -566,7 +562,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
   ship.size() = ship_size(ship); /* for debugging */
 
   synchronize_docked_carrier_ownership(ship, entity_manager);
-  update_ship_inhabited_and_exploration(ship, entity_manager, stats);
+  update_ship_inhabited_and_exploration(ship, entity_manager);
   accumulate_ship_power_stats(ship, stats, update);
 
   if (ship.active()) {

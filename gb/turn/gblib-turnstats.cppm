@@ -10,6 +10,7 @@ import std;
 
 export module gblib:turnstats;
 
+import :planet;
 import :race;
 import :tweakables;
 import :types;
@@ -20,16 +21,10 @@ import :types;
 // arrays.
 export struct TurnStats {
   // Per-star population counts for each player
-  std::array<PlayerVector<unsigned long, MAXPLAYERS>, NUMSTARS> starpopns{};
+  std::array<PlayerVector<population_t, MAXPLAYERS>, NUMSTARS> starpopns{};
 
   // Per-star ship counts for each player
   std::array<PlayerVector<ship_count_t, MAXPLAYERS>, NUMSTARS> starnumships{};
-
-  // Global ship counts per player (for Sdata)
-  PlayerVector<ship_count_t, MAXPLAYERS> Sdatanumships;
-
-  // Global population counts per player (for Sdata)
-  PlayerVector<unsigned long, MAXPLAYERS> Sdatapopns;
 
   // --- Planetary Simulation Tracking ---
 
@@ -113,33 +108,29 @@ export struct TurnStats {
     planet_turn_info_[snum.value][pnum.value].alien_colony = spawned;
   }
 
-  // Stars inhabited bitmap (one per star)
-  std::array<unsigned long, NUMSTARS> StarsInhab{};
-
-  // Stars explored bitmap (one per star)
-  std::array<unsigned long, NUMSTARS> StarsExpl{};
-
   // Power statistics for each player
   PlayerVector<power, MAXPLAYERS> Power;
 
-  // Production statistics per player
+  // Production statistics per player (per-planet accumulators)
   PlayerVector<resource_t, MAXPLAYERS> prod_res;
   PlayerVector<resource_t, MAXPLAYERS> prod_fuel;
   PlayerVector<resource_t, MAXPLAYERS> prod_destruct;
   PlayerVector<resource_t, MAXPLAYERS> prod_crystals;
-  PlayerVector<money_t, MAXPLAYERS> prod_money;
 
-  // Average mobility per player
-  PlayerVector<unsigned long, MAXPLAYERS> avg_mob;
+  /// \brief Accumulates a sector's produced stockpile (resources, destruct,
+  /// fuel, crystals) into the owning player's per-turn production totals.
+  void record_production(player_t owner, const Stockpile& produced) noexcept {
+    prod_res[owner] += produced.resources;
+    prod_destruct[owner] += produced.destruct;
+    prod_fuel[owner] += produced.fuel;
+    prod_crystals[owner] += produced.crystals;
+  }
 
-  // Total production statistics (global accumulators)
-  unsigned long tot_resdep{};
-  unsigned long prod_eff{};
-  unsigned long tot_captured{};
-  unsigned long prod_mob{};
+  // Per-planet total sector mobilization points accumulated per player
+  PlayerVector<std::uint32_t, MAXPLAYERS> total_mob_points;
 
-  // Inhabited sectors bitmap (one per star)
-  std::array<std::uint64_t, NUMSTARS> inhabited{};
+  // Per-planet count of newly captured/spread sectors
+  sector_count_t tot_captured{};
 
   // Compatibility values per player (computed at planet start)
   PlayerVector<double, MAXPLAYERS> Compat;

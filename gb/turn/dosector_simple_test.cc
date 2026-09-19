@@ -465,23 +465,21 @@ void test_update_mobilization() {
       createTestSector(0, 0, 50, 50, 10, 0, 100, 1000, 0, player_t{1});
   update_mobilization(low_mob, pinf, stats);
   test::expect_eq(low_mob.get_mobilization(), 11);
-  test::expect_eq(stats.prod_mob, 1);
-  test::expect_eq(stats.avg_mob[player_t{1}], 11);
+  test::expect_eq(stats.total_mob_points[player_t{1}], 11U);
 
   // 2. Sector mobilization above target: decreases by 1, tracks stats
   Sector high_mob =
       createTestSector(0, 0, 50, 50, 25, 0, 100, 1000, 0, player_t{1});
   update_mobilization(high_mob, pinf, stats);
   test::expect_eq(high_mob.get_mobilization(), 24);
-  test::expect_eq(stats.prod_mob, 0);               // 1 - 1 = 0
-  test::expect_eq(stats.avg_mob[player_t{1}], 35);  // 11 + 24 = 35
+  test::expect_eq(stats.total_mob_points[player_t{1}], 35U);  // 11 + 24 = 35
 
   // 3. Sector mobilization at target: remains unchanged
   Sector equal_mob =
       createTestSector(0, 0, 50, 50, 20, 0, 100, 1000, 0, player_t{1});
   update_mobilization(equal_mob, pinf, stats);
   test::expect_eq(equal_mob.get_mobilization(), 20);
-  test::expect_eq(stats.prod_mob, 0);
+  test::expect_eq(stats.total_mob_points[player_t{1}], 55U);  // 35 + 20 = 55
 
   // 4. Insufficient resources: mobilization cannot increase
   plinfo poor_pinf{};
@@ -492,7 +490,7 @@ void test_update_mobilization() {
       createTestSector(0, 0, 50, 50, 10, 0, 100, 1000, 0, player_t{1});
   update_mobilization(poor_mob, poor_pinf, zero_res_stats);
   test::expect_eq(poor_mob.get_mobilization(), 10);
-  test::expect_eq(zero_res_stats.prod_mob, 0);
+  test::expect_eq(zero_res_stats.total_mob_points[player_t{1}], 10U);
 }
 
 void test_produce_sector_lifecycle() {
@@ -531,7 +529,7 @@ void test_produce_sector_lifecycle() {
 
   // Verifies mobilization was incremented towards target
   test::expect_eq(s.get_mobilization(), 1);
-  test::expect_eq(stats.prod_mob, 1);
+  test::expect_eq(stats.total_mob_points[player_t{1}], 1U);
 
   // Verifies sector at 100% efficiency was plated
   test::expect_eq(s.get_condition(), SectorType::SEC_PLATED);

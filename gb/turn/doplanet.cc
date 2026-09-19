@@ -961,13 +961,14 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
     stats.Power[p].fuel += info.fuel;
     stats.Power[p].sectors_owned += info.numsectsowned;
     stats.Power[p].planets_owned += !!info.numsectsowned;
-    info.update_combat_readiness(stats.avg_mob[p]);
+    info.update_combat_readiness(stats.total_mob_points[p]);
   }
 }
 
 void reset_planet_turn_state(EntityManager& entity_manager, Planet& planet,
                              TurnStats& stats) {
   stats.Claims = false;
+  stats.tot_captured = 0;
   planet.maxpopn() = 0;
   planet.popn() = 0;
   planet.troops() = 0;
@@ -985,7 +986,7 @@ void reset_planet_turn_state(EntityManager& entity_manager, Planet& planet,
     stats.prod_fuel[p] = 0;
     stats.prod_destruct[p] = 0;
     stats.prod_res[p] = 0;
-    stats.avg_mob[p] = 0;
+    stats.total_mob_points[p] = 0;
   }
 }
 

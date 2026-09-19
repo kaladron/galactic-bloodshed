@@ -553,8 +553,6 @@ void test_sector_produce_resources() {
   race.Playernum = player_t{1};
   race.metabolism = 1.0;
 
-  TurnStats stats{};
-
   // 1. Unowned sector does not produce or throw
   Sector unowned(sector_struct{
       .eff = 100,
@@ -562,9 +560,9 @@ void test_sector_produce_resources() {
       .owner = player_t{0},
       .condition = SectorType::SEC_LAND,
   });
-  unowned.produce_resources(race, stats);
+  const Stockpile unowned_prod = unowned.produce_resources(race);
   test::expect_eq(unowned.get_resource(), 500);
-  test::expect_eq(stats.prod_res[player_t{1}], 0);
+  test::expect_true(unowned_prod.empty());
 
   // 2. Standard resource extraction on land sector
   Sector land(sector_struct{
@@ -575,15 +573,14 @@ void test_sector_produce_resources() {
       .condition = SectorType::SEC_LAND,
   });
   seed_rand(42);
-  land.produce_resources(race, stats);
+  const Stockpile land_prod = land.produce_resources(race);
   const resource_t extracted = 1000 - land.get_resource();
   test::expect_true(extracted > 0);
-  test::expect_eq(stats.prod_res[player_t{1}], extracted);
-  test::expect_eq(stats.prod_destruct[player_t{1}], 0);
-  test::expect_eq(stats.prod_fuel[player_t{1}], extracted);
+  test::expect_eq(land_prod.resources, extracted);
+  test::expect_eq(land_prod.destruct, 0);
+  test::expect_eq(land_prod.fuel, extracted);
 
   // 3. Gas sector doubles fuel production
-  TurnStats gas_stats{};
   Sector gas(sector_struct{
       .eff = 100,
       .mobilization = 0,
@@ -592,14 +589,13 @@ void test_sector_produce_resources() {
       .condition = SectorType::SEC_GAS,
   });
   seed_rand(42);
-  gas.produce_resources(race, gas_stats);
+  const Stockpile gas_prod = gas.produce_resources(race);
   const resource_t gas_extracted = 1000 - gas.get_resource();
   test::expect_true(gas_extracted > 0);
-  test::expect_eq(gas_stats.prod_res[player_t{1}], gas_extracted);
-  test::expect_eq(gas_stats.prod_fuel[player_t{1}], gas_extracted * 2);
+  test::expect_eq(gas_prod.resources, gas_extracted);
+  test::expect_eq(gas_prod.fuel, gas_extracted * 2);
 
   // 4. Mobilized sector produces destruct instead of resources
-  TurnStats mob_stats{};
   Sector mobilized(sector_struct{
       .eff = 100,
       .mobilization = 100,
@@ -608,14 +604,13 @@ void test_sector_produce_resources() {
       .condition = SectorType::SEC_LAND,
   });
   seed_rand(42);
-  mobilized.produce_resources(race, mob_stats);
+  const Stockpile mob_prod = mobilized.produce_resources(race);
   const resource_t mob_extracted = 1000 - mobilized.get_resource();
   test::expect_true(mob_extracted > 0);
-  test::expect_eq(mob_stats.prod_res[player_t{1}], 0);
-  test::expect_eq(mob_stats.prod_destruct[player_t{1}], mob_extracted);
+  test::expect_eq(mob_prod.resources, 0);
+  test::expect_eq(mob_prod.destruct, mob_extracted);
 
   // 5. Continuous fractional metabolism scaling
-  TurnStats frac_stats{};
   Race low_metabolism{};
   low_metabolism.Playernum = player_t{1};
   low_metabolism.metabolism = 0.5;
@@ -627,13 +622,12 @@ void test_sector_produce_resources() {
       .condition = SectorType::SEC_LAND,
   });
   seed_rand(42);
-  frac_sector.produce_resources(low_metabolism, frac_stats);
+  const Stockpile frac_prod = frac_sector.produce_resources(low_metabolism);
   const resource_t frac_extracted = 1000 - frac_sector.get_resource();
   test::expect_true(frac_extracted > 0);
-  test::expect_eq(frac_stats.prod_res[player_t{1}], frac_extracted);
+  test::expect_eq(frac_prod.resources, frac_extracted);
 
   // 6. Sector depletion cannot exceed available resource
-  TurnStats dep_stats{};
   Race productive_race{};
   productive_race.Playernum = player_t{1};
   productive_race.metabolism = 10.0;
@@ -644,21 +638,20 @@ void test_sector_produce_resources() {
       .owner = player_t{1},
       .condition = SectorType::SEC_LAND,
   });
-  scarce_sector.produce_resources(productive_race, dep_stats);
+  const Stockpile dep_prod = scarce_sector.produce_resources(productive_race);
   test::expect_eq(scarce_sector.get_resource(), 0);
-  test::expect_eq(dep_stats.prod_res[player_t{1}], 5);
+  test::expect_eq(dep_prod.resources, 5);
 
   // 7. Zero resource or zero efficiency produces nothing
-  TurnStats empty_stats{};
   Sector empty_sec(sector_struct{
       .eff = 0,
       .resource = 100,
       .owner = player_t{1},
       .condition = SectorType::SEC_LAND,
   });
-  empty_sec.produce_resources(race, empty_stats);
+  const Stockpile empty_prod = empty_sec.produce_resources(race);
   test::expect_eq(empty_sec.get_resource(), 100);
-  test::expect_eq(empty_stats.prod_res[player_t{1}], 0);
+  test::expect_true(empty_prod.empty());
 }
 
 void test_sector_mine_crystals() {
@@ -666,15 +659,13 @@ void test_sector_mine_crystals() {
   race.Playernum = player_t{1};
   race.discoveries.crystal = true;
 
-  TurnStats stats{};
-
   // 1. Unowned sector cannot be mined
   Sector unowned(sector_struct{
       .eff = 100,
       .crystals = 5,
       .owner = player_t{0},
   });
-  test::expect_false(unowned.mine_crystals(race, stats));
+  test::expect_false(unowned.mine_crystals(race));
   test::expect_eq(unowned.get_crystals(), 5);
 
   // 2. Sector with no crystals returns false
@@ -683,7 +674,7 @@ void test_sector_mine_crystals() {
       .crystals = 0,
       .owner = player_t{1},
   });
-  test::expect_false(empty.mine_crystals(race, stats));
+  test::expect_false(empty.mine_crystals(race));
 
   // 3. Race without crystal discovery cannot mine
   Race undiscovered{};
@@ -694,7 +685,7 @@ void test_sector_mine_crystals() {
       .crystals = 5,
       .owner = player_t{1},
   });
-  test::expect_false(with_crystals.mine_crystals(undiscovered, stats));
+  test::expect_false(with_crystals.mine_crystals(undiscovered));
   test::expect_eq(with_crystals.get_crystals(), 5);
 
   // 4. Sector with zero efficiency cannot mine
@@ -703,18 +694,17 @@ void test_sector_mine_crystals() {
       .crystals = 5,
       .owner = player_t{1},
   });
-  test::expect_false(zero_eff.mine_crystals(race, stats));
+  test::expect_false(zero_eff.mine_crystals(race));
   test::expect_eq(zero_eff.get_crystals(), 5);
 
-  // 5. Successful crystal mining decrements crystals and tallies stats
-  Sector viable(sector_struct{
+  // 5. Sector with 100% efficiency and discovery mines 1 crystal
+  Sector rich(sector_struct{
       .eff = 100,
       .crystals = 3,
       .owner = player_t{1},
   });
-  test::expect_true(viable.mine_crystals(race, stats));
-  test::expect_eq(viable.get_crystals(), 2);
-  test::expect_eq(stats.prod_crystals[player_t{1}], 1);
+  test::expect_true(rich.mine_crystals(race));
+  test::expect_eq(rich.get_crystals(), 2);
 }
 
 void test_sector_deplete_resource() {

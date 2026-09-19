@@ -13,7 +13,6 @@ import :planet;
 import :sector;
 import :types;
 import :tweakables;
-import :turnstats;
 
 export enum class guntype_t : std::uint8_t {
   NONE = 0,
@@ -4284,11 +4283,6 @@ export unsigned int ship_size(const Ship&);
 export double complexity(const Ship&);
 export double complexity(ShipType);  // Complexity for default ship of this type
 export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
-export void do_VN(EntityManager&, Ship&, TurnStats&);
-export std::optional<player_t>
-select_victim_to_steal_from(const Planet& planet,
-                            std::span<const player_t> race_order);
-export void planet_doVN(Ship&, Planet&, SectorMap&, EntityManager&, TurnStats&);
 export void use_fuel(Ship&, fuel_t);
 export void use_destruct(Ship&, resource_t);
 export void use_resource(Ship&, resource_t);

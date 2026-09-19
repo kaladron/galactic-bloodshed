@@ -121,6 +121,23 @@ void test_turnstats_bounds_checking() {
       [&]() { stats.set_alien_colony(valid_star, out_planet); });
 }
 
+void test_turnstats_record_production() {
+  TurnStats stats{};
+  const Stockpile batch1{
+      .resources = 25, .destruct = 10, .fuel = 50, .crystals = 1};
+  const Stockpile batch2{
+      .resources = 15, .destruct = 5, .fuel = 30, .crystals = 2};
+
+  stats.record_production(1, batch1);
+  stats.record_production(1, batch2);
+
+  test::expect_eq(stats.prod_res[1], 40);
+  test::expect_eq(stats.prod_destruct[1], 15);
+  test::expect_eq(stats.prod_fuel[1], 80);
+  test::expect_eq(stats.prod_crystals[1], 3);
+  test::expect_eq(stats.prod_res[2], 0);
+}
+
 }  // namespace
 
 int main() {
@@ -140,6 +157,10 @@ int main() {
 
   std::println(std::cout, "  Testing TurnStats bounds checking... ");
   test_turnstats_bounds_checking();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing TurnStats record_production... ");
+  test_turnstats_record_production();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "\nAll TurnStats unit tests passed!");

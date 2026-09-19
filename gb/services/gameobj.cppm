@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-gameobj.cppm
+/// \file gameobj.cppm
 /// \brief Module partition for GameObj player command execution context.
 
-export module gblib:gameobj;
+export module gb.services:gameobj;
 
 import gb.entities;
 import :sessionregistry;  // For SessionRegistry interface

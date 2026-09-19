@@ -8,7 +8,7 @@ export module gblib:doplanet;
 
 import std;
 import gb.entities;
-import :services;
+import gb.services;
 import :turnstats;
 import :misc;
 

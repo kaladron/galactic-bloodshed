@@ -6,6 +6,7 @@ export import :spec;
 
 import gb.entities;
 import gb.services;
+import gblib;
 namespace GB::commands {
 
 // God commands

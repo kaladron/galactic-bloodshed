@@ -7,7 +7,7 @@
 export module gblib:bombard;
 
 import gb.entities;
-import :services;
+import gb.services;
 import :shootblast;
 import :turnstats;
 import std;

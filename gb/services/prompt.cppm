@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-prompt.cppm
+/// \file prompt.cppm
 /// \brief Module partition for player command prompt generation.
 
 module;
 
 import std;
 
-export module gblib:prompt;
+export module gb.services:prompt;
 
 import gb.entities;
 import :gameobj;

@@ -35,56 +35,6 @@ bool in_list(const player_t playernum, const std::string_view list,
   return false;
 }
 
-void notify_dont_own_ship(EntityManager& em, player_t playernum,
-                          governor_t governor, shipnum_t shipno) {
-  std::string error_msg = std::format("You don't own ship #{}.\n", shipno);
-  push_telegram(em, playernum, governor, error_msg);
-}
-
-void notify_dont_own_ship(const GameObj& g, shipnum_t shipno) {
-  notify_dont_own_ship(g.entity_manager, g.player(), g.governor(), shipno);
-}
-
-/**
- * \brief Find the player/governor that matches passwords
- * \param racepass Password for the race
- * \param govpass Password for the governor
- * \return player and governor numbers, or 0 and 0 if not found
- */
-std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
-                                            const std::string& racepass,
-                                            const std::string& govpass) {
-  // Iterate through all races to find password match
-  for (auto race_handle : RaceList(entity_manager)) {
-    const auto& race = race_handle.read();
-    if (racepass == race.password) {
-      for (auto [j, gov] : race.all_governors()) {
-        if (!gov.password.empty() && govpass == gov.password) {
-          return {race.Playernum, j};
-        }
-      }
-    }
-  }
-  return {0, 0};
-}
-
-/* returns player # from string containing that players name or #. */
-player_t get_player(EntityManager& em, const std::string& name) {
-  player_t rnum = 0;
-
-  if (name.empty()) return 0;
-
-  if (std::isdigit(name[0])) {
-    if ((rnum = std::stoi(name)) < 1 || rnum > em.num_races()) return 0;
-    return rnum;
-  }
-  for (auto race_handle : RaceList(em)) {
-    const auto& race = race_handle.read();
-    if (name == race.name) return race.Playernum;
-  }
-  return 0;
-}
-
 std::optional<std::tuple<int, int, int, int>> get4args(std::string_view s) {
   if (s.empty()) return std::nullopt;
 

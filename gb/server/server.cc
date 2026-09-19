@@ -15,6 +15,7 @@ import commands;
 import dallib;
 import gb.entities;
 import gb.services;
+import gb.turn;
 import notification;
 import session;
 import std;

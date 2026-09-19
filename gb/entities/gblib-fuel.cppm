@@ -6,8 +6,9 @@ import std;
 
 export module gblib:fuel;
 
-import :place;
-import :gameobj;
+export import gb.entities;
+import gb.services;
+import std;
 
 export std::tuple<bool, segments_t> do_trip(const Place&, SimulatedShip&,
                                             double fuel, double gravity_factor,

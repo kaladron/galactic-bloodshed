@@ -13,6 +13,7 @@ import asio;
 import dallib;
 import gb.entities;
 import gb.services;
+import gb.turn;
 import gb.server;
 
 int main(int argc, char** argv) {

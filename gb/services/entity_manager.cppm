@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-export module gblib:services;
+/// \file entity_manager.cppm
+/// \brief EntityManager service and RAII entity handles.
+
+export module gb.services:services;
 
 import dallib;
 import gb.entities;

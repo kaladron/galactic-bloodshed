@@ -3,8 +3,8 @@
 export module gblib:build;
 
 import gb.entities;
-import :gameobj;
-import :services;
+import gb.services;
+import std;
 
 export resource_t Shipcost(ShipType, const Race&);
 export std::tuple<money_t, double>

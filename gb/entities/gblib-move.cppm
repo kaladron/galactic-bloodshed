@@ -3,8 +3,8 @@
 export module gblib:move;
 
 import gb.entities;
-import :gameobj;
-import :services;
+import gb.services;
+import std;
 
 export Coordinates get_move(const Planet& planet, char direction,
                             Coordinates from);

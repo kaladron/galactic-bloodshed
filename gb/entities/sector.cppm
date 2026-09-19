@@ -1098,3 +1098,55 @@ private:
   std::vector<Sector> grid_;
   std::vector<bool> dirty_;
 };
+
+/// Scaling divisor for raw morale in the arctangent normalization curve.
+/// At +/-10,000 morale, atan(x / MORALE_ATAN_SCALE) reaches +/-pi/4
+/// (yielding morale_factor = 0.75 or 0.25).
+export constexpr double MORALE_ATAN_SCALE = 10000.0;
+
+/// Baseline morale factor when raw morale is 0 (atan(0) / pi + 0.5 = 0.5).
+export constexpr double MORALE_FACTOR_MIDPOINT = 0.5;
+
+/// Maps an empire's raw morale score (-infinity, +infinity) onto a normalized
+/// multiplier in the open interval (0.0, 1.0), centered at 0.5 when morale = 0:
+///   morale_factor(x) = atan(x / 10000) / pi + 0.5
+export constexpr double morale_factor(const double x) {
+  return (std::atan(x / MORALE_ATAN_SCALE) / std::numbers::pi +
+          MORALE_FACTOR_MIDPOINT);
+}
+
+/**
+ * @brief Calculate the maximum population a sector can support for a given
+ * race.
+ *
+ * Determines the carrying capacity of a sector based on multiple factors
+ * including the race's preference for the sector type, sector productivity
+ * (efficiency and fertility), race-planet compatibility, and environmental
+ * toxicity.
+ *
+ * @param r The race that owns or would own the sector
+ * @param s The sector being evaluated
+ * @param c Compatibility factor (0.0-100.0) representing how well the race
+ * adapts to the planet's overall conditions
+ * @param toxic Toxicity level (0-100) of the planet - higher values reduce
+ * capacity
+ *
+ * @return Maximum population the sector can support. Returns 0 if the race
+ * cannot inhabit this sector type (likes value is 0).
+ *
+ * @note The calculation incorporates:
+ *       - Race preference: r.likes[sector_type] must be non-zero
+ *       - Sector productivity: (efficiency + 1) * fertility
+ *       - Compatibility: Scaled by race's adaptation to planet conditions
+ *       - Toxicity penalty: Reduces capacity as (100 - toxic)%
+ */
+export constexpr auto maxsupport(const Race& r, const Sector& s, const double c,
+                                 const int toxic) {
+  if (!r.tolerates_sector(s)) return 0L;
+  double a = ((double)s.get_eff() + 1.0) * (double)s.get_fert();
+  double b = (.01 * c);
+
+  auto val = std::lround(a * b * .01 * (100.0 - (double)toxic));
+
+  return val;
+}

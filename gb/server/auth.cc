@@ -10,6 +10,7 @@ import commands;
 import dallib;
 import gb.entities;
 import gb.services;
+import gb.turn;
 import session;
 import std;
 

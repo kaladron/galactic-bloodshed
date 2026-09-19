@@ -8,7 +8,7 @@ module;
 import std;
 import dallib;
 
-module gblib;
+module gb.services;
 
 std::string format_ship_prompt(EntityManager& em, const player_t player,
                                const shipnum_t shipno) {

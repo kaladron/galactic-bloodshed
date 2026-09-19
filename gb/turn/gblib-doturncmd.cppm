@@ -6,12 +6,9 @@
 export module gblib:doturncmd;
 
 import gb.entities;
-import :gameobj;
-import :services;
+import gb.services;
 import :turnstats;
 import std;
-
-class SessionRegistry;
 
 /// \brief Result structure from victory condition evaluation.
 export struct VictoryResult {

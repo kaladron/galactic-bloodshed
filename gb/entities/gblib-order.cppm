@@ -3,7 +3,8 @@
 export module gblib:order;
 
 import gb.entities;
-import :gameobj;
+import gb.services;
+import std;
 
 export void display_orders(GameObj& g, const Ship& ship);
 export void display_orders_header(GameObj& g);

@@ -7,7 +7,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.services;
 
 // ShipList constructors
 
@@ -156,4 +156,36 @@ bool ShipList::ConstIterator::operator==(const ConstIterator& other) const {
 
 bool ShipList::ConstIterator::operator!=(const ConstIterator& other) const {
   return it_ != other.it_;
+}
+
+std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
+                                            const std::string& racepass,
+                                            const std::string& govpass) {
+  for (auto race_handle : RaceList(entity_manager)) {
+    const auto& race = race_handle.read();
+    if (racepass == race.password) {
+      for (auto [j, gov] : race.all_governors()) {
+        if (!gov.password.empty() && govpass == gov.password) {
+          return {race.Playernum, j};
+        }
+      }
+    }
+  }
+  return {0, 0};
+}
+
+player_t get_player(EntityManager& em, const std::string& name) {
+  player_t rnum = 0;
+
+  if (name.empty()) return 0;
+
+  if (std::isdigit(name[0])) {
+    if ((rnum = std::stoi(name)) < 1 || rnum > em.num_races()) return 0;
+    return rnum;
+  }
+  for (auto race_handle : RaceList(em)) {
+    const auto& race = race_handle.read();
+    if (name == race.name) return race.Playernum;
+  }
+  return 0;
 }

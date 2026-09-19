@@ -7,10 +7,9 @@ module;
 
 import std;
 
-module notification;
+module gb.services;
 
 import gb.entities;
-import gb.services;
 
 // Complex notification functions implemented using SessionRegistry primitives.
 // These iterate over races/governors and use notify_player() for delivery.

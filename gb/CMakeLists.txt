@@ -139,6 +139,33 @@ target_link_libraries(
   gb_repositories
   PUBLIC gb_entities dallib glaze::glaze glaze_json_module glaze_core_module strong_id_module)
 
+# Standalone Tier-3 Service Layer Library (EntityManager, GameObj, Place, EntityLists, Notification, Prompt, Telegrams)
+add_library(gb_services)
+target_sources(
+  gb_services
+  PUBLIC FILE_SET
+         CXX_MODULES
+         FILES
+          services/services.cppm
+          services/session_registry.cppm
+          services/entity_manager.cppm
+          services/gameobj.cppm
+          services/entitylists.cppm
+          services/tele.cppm
+          services/place.cppm
+          services/prompt.cppm
+          services/notification.cppm
+  PRIVATE services/entity_manager.cc
+          services/entitylists.cc
+          services/gameobj.cc
+          services/prompt.cc
+          services/tele.cc
+          services/notification.cc)
+target_link_libraries(
+  gb_services
+  PUBLIC gb_entities dallib
+  PRIVATE gb_repositories)
+
 add_library(gblib)
 target_sources(
   gblib
@@ -152,21 +179,14 @@ target_sources(
           turn/gblib-dosector.cppm
           turn/gblib-doship.cppm
           turn/gblib-doturncmd.cppm
-          entities/gblib-entitylists.cppm
           entities/gblib-fire.cppm
           entities/gblib-fuel.cppm
-          services/gblib-gameobj.cppm
           entities/gblib-map.cppm
           entities/gblib-misc.cppm
           entities/gblib-move.cppm
           entities/gblib-order.cppm
-          entities/gblib-place.cppm
-          services/gblib-prompt.cppm
-          services/gblib-services.cppm
-          services/gblib-sessionregistry.cppm
           services/gblib-shlmisc.cppm
           entities/gblib-shootblast.cppm
-          services/gblib-tele.cppm
           turn/gblib-turnstats.cppm
   PRIVATE turn/bombard.cc
           entities/build.cc
@@ -174,32 +194,20 @@ target_sources(
           turn/dosector.cc
           turn/doship.cc
           turn/doturncmd.cc
-          entities/entitylists.cc
-          services/entity_manager.cc
           entities/fire.cc
           entities/fuel.cc
-          services/gameobj.cc
           entities/map.cc
           entities/misc.cc
           entities/move.cc
           entities/navigation.cc
           entities/order.cc
-          services/prompt.cc
           services/shlmisc.cc
           entities/shootblast.cc
-          services/tele.cc
           server/victory.cc
           turn/vn.cc)
 target_link_libraries(
   gblib
-  PUBLIC gb_entities strong_id_module dallib types_module scnlib_module tabulate_module
-  PRIVATE gb_repositories)
-
-add_library(gb_services)
-target_sources(
-  gb_services
-  PUBLIC FILE_SET CXX_MODULES FILES services/services.cppm)
-target_link_libraries(gb_services PUBLIC gblib)
+  PUBLIC gb_entities gb_services strong_id_module dallib types_module scnlib_module tabulate_module)
 
 add_library(gb_turn)
 target_sources(
@@ -214,7 +222,7 @@ target_sources(
   PRIVATE creator/enrollment_service.cc creator/archetypes.cc
           creator/universe_generator.cc creator/makeplanet.cc
           creator/racegen_engine.cc creator/racegen_session.cc)
-target_link_libraries(gb_creator PUBLIC gblib gb_entities gb_services gb_repositories dallib tabulate_module glaze_json_module glaze_core_module)
+target_link_libraries(gb_creator PUBLIC gb_entities gb_services gb_repositories dallib tabulate_module glaze_json_module glaze_core_module)
 
 # Create session library (Server Layer)
 add_library(session)
@@ -222,15 +230,14 @@ target_sources(
   session
   PUBLIC FILE_SET CXX_MODULES FILES server/session.cppm
   PRIVATE server/session.cc)
-target_link_libraries(session PUBLIC gblib gb_entities gb_services asio_module)
+target_link_libraries(session PUBLIC gb_entities gb_services asio_module)
 
-# Create notification library (Server Layer)
+# Create notification compatibility library (re-exports gb.services)
 add_library(notification)
 target_sources(
   notification
-  PUBLIC FILE_SET CXX_MODULES FILES server/notification.cppm
-  PRIVATE server/notification.cc)
-target_link_libraries(notification PUBLIC gblib gb_entities gb_services session)
+  PUBLIC FILE_SET CXX_MODULES FILES server/notification.cppm)
+target_link_libraries(notification PUBLIC gb_services)
 
 # Create server_config library (Server Layer)
 add_library(server_config)
@@ -238,7 +245,7 @@ target_sources(
   server_config
   PUBLIC FILE_SET CXX_MODULES FILES server/server_config.cppm
   PRIVATE server/server_config.cc)
-target_link_libraries(server_config PUBLIC gblib gb_entities gb_services dallib)
+target_link_libraries(server_config PUBLIC gb_entities gb_services dallib)
 
 # Create auth library (Server Layer)
 add_library(auth)
@@ -246,7 +253,7 @@ target_sources(
   auth
   PUBLIC FILE_SET CXX_MODULES FILES server/auth.cppm
   PRIVATE server/auth.cc)
-target_link_libraries(auth PUBLIC gblib gb_entities gb_services session commands)
+target_link_libraries(auth PUBLIC gblib gb_turn gb_entities gb_services session commands)
 
 # Create server library (Server Layer)
 add_library(server)
@@ -254,7 +261,7 @@ target_sources(
   server
   PUBLIC FILE_SET CXX_MODULES FILES server/server.cppm
   PRIVATE server/server.cc)
-target_link_libraries(server PUBLIC gblib gb_entities gb_services asio_module session auth notification commands dallib)
+target_link_libraries(server PUBLIC gblib gb_turn gb_entities gb_services asio_module session auth notification commands dallib)
 
 add_library(gb_server)
 target_sources(
@@ -374,16 +381,16 @@ target_link_libraries(test_module PUBLIC gblib gb_entities gb_repositories gb_se
 
 # Executable targets
 add_executable(makeuniv creator/makeuniv.cc)
-target_link_libraries(makeuniv PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(makeuniv PRIVATE gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
 
 add_executable(enrol creator/enrol.cc)
-target_link_libraries(enrol PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze scnlib_module tabulate_module)
+target_link_libraries(enrol PRIVATE gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze scnlib_module tabulate_module)
 
 add_executable(racegen creator/racegen.cc)
-target_link_libraries(racegen PRIVATE gblib gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(racegen PRIVATE gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
 
 add_executable(GB server/GB_server.cc)
-target_link_libraries(GB PRIVATE gblib gb_entities gb_services gb_server commands asio_module dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(GB PRIVATE gblib gb_turn gb_entities gb_services gb_server commands asio_module dallib SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB makeuniv enrol racegen)
 
 # Test helper function

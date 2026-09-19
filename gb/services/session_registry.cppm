@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-sessionregistry.cppm
+/// \file session_registry.cppm
 /// \brief SessionRegistry interface - cross-cutting concern for session
 /// management
 ///
@@ -12,7 +12,7 @@
 /// Complex notification logic (gag checks, star system filtering) belongs in
 /// the notification service layer, which uses these primitives.
 
-export module gblib:sessionregistry;
+export module gb.services:sessionregistry;
 
 import gb.entities;
 import std;

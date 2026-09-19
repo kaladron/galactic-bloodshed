@@ -6,8 +6,9 @@
 export module gblib:doship;
 
 import gb.entities;
-import :gameobj;
+import gb.services;
 import :turnstats;
+import std;
 
 export void doship(Ship&, bool update, EntityManager&, TurnStats& stats);
 export void domass(Ship&, EntityManager&);

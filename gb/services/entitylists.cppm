@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-entitylists.cppm
+/// \file entitylists.cppm
 /// \brief Entity list iterators for type-safe, RAII-based iteration over game
 /// entities.
 
-export module gblib:entitylists;
+export module gb.services:entitylists;
 
 import std;
 
 import gb.entities;
 import :gameobj;
 import :services;
+
+export std::tuple<player_t, governor_t>
+getracenum(EntityManager&, const std::string&, const std::string&);
+export player_t get_player(EntityManager&, const std::string&);
 
 export template <typename Entity>
 struct EntityListTraits;

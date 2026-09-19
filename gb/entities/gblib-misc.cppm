@@ -5,7 +5,7 @@ module;
 export module gblib:misc;
 
 import gb.entities;
-import :gameobj;
+import gb.services;
 
 import strong_id;
 import std;

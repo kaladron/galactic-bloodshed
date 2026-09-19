@@ -6,8 +6,9 @@
 export module gblib:dosector;
 
 import gb.entities;
-import :services;
+import gb.services;
 import :turnstats;
+import std;
 
 export population_t calculate_migrating_colonists(const Race&, double,
                                                   const Sector&, population_t);

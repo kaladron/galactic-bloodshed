@@ -8,7 +8,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.services;
 
 import dallib;
 import gb.repositories;
@@ -917,7 +917,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
       mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
         planet.conditions(TOXIC) =
-            MIN(100, planet.conditions(TOXIC) + tox->toxic_level());
+            std::min(100, planet.conditions(TOXIC) + tox->toxic_level());
       });
     }
   }

@@ -7,7 +7,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.services;
 
 bool GameObj::deduct_ap(starnum_t snum, ap_t amount) {
   if (amount == 0 || god_) return true;

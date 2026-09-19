@@ -169,6 +169,44 @@ int main() {
     std::println(std::cout, "  ✓ Race::adjust_morale works as expected");
   }
 
+  // Race sector compatibility, toleration, and combat factor domain methods
+  std::println(std::cout, "Race sector_compatibility, tolerates_sector, and "
+                          "sector_combat_factor...");
+  {
+    Race race{};
+    race.likes[SectorType::SEC_LAND] = 1.0;
+    race.likes[SectorType::SEC_FOREST] = 0.75;
+    race.likes[SectorType::SEC_SEA] = 0.0;
+
+    Sector land_sect(sector_struct{.condition = SectorType::SEC_LAND});
+    Sector forest_sect(sector_struct{.condition = SectorType::SEC_FOREST});
+    Sector sea_sect(sector_struct{.condition = SectorType::SEC_SEA});
+    Sector wasted_sect(sector_struct{.condition = SectorType::SEC_WASTED});
+    Sector invalid_sect(
+        sector_struct{.condition = static_cast<SectorType>(99)});
+
+    test::expect_eq(race.sector_compatibility(SectorType::SEC_LAND), 1.0);
+    test::expect_eq(race.sector_compatibility(land_sect), 1.0);
+    test::expect_eq(race.sector_compatibility(forest_sect), 0.75);
+    test::expect_eq(race.sector_compatibility(sea_sect), 0.0);
+    test::expect_eq(race.sector_compatibility(wasted_sect), 0.0);
+    test::expect_eq(race.sector_compatibility(invalid_sect), 0.0);
+
+    test::expect_true(race.tolerates_sector(SectorType::SEC_LAND));
+    test::expect_true(race.tolerates_sector(land_sect));
+    test::expect_true(race.tolerates_sector(forest_sect));
+    test::expect_false(race.tolerates_sector(sea_sect));
+    test::expect_false(race.tolerates_sector(wasted_sect));
+    test::expect_false(race.tolerates_sector(invalid_sect));
+
+    test::expect_eq(race.sector_combat_factor(land_sect), 2.0);
+    test::expect_eq(race.sector_combat_factor(forest_sect), 1.75);
+    test::expect_eq(race.sector_combat_factor(sea_sect), 1.0);
+    test::expect_eq(race.sector_combat_factor(invalid_sect), 1.0);
+    std::println(std::cout,
+                 "  ✓ Race sector compatibility and combat methods verified");
+  }
+
   std::println(std::cout, "\n✓ All Race entity tests passed!");
   return 0;
 }

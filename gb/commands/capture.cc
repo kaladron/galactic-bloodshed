@@ -170,8 +170,8 @@ bool capture(const command_t& argv, GameObj& g) {
                              ? (double)race.fighters * 10.0
                              : 1.0) *
                         .01 * race.tech *
-                        (race.likes[sect.get_condition()] + 0.01) *
-                        ((double)Defensedata[sect.get_condition()] + 1.0) *
+                        (race.sector_compatibility(sect) + 0.01) *
+                        sect.combat_defense_factor() *
                         morale_factor((double)(race.morale - alien->morale)),
                     dstrength =
                         ((double)ship.popn() + (double)ship.troops() * 10.0 *

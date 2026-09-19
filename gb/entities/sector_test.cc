@@ -742,6 +742,33 @@ void test_sector_deplete_resource() {
   test::expect_eq(s.get_resource(), 50);
 }
 
+void test_sector_defense_bonus() {
+  Sector sea(sector_struct{.condition = SectorType::SEC_SEA});
+  Sector land(sector_struct{.condition = SectorType::SEC_LAND});
+  Sector mount(sector_struct{.condition = SectorType::SEC_MOUNT});
+  Sector desert(sector_struct{.condition = SectorType::SEC_DESERT});
+  Sector forest(sector_struct{.condition = SectorType::SEC_FOREST});
+  Sector plated(sector_struct{.condition = SectorType::SEC_PLATED});
+  Sector wasted(sector_struct{.condition = SectorType::SEC_WASTED});
+  Sector invalid(sector_struct{.condition = static_cast<SectorType>(99)});
+
+  test::expect_eq(sea.defense_bonus(), 1);
+  test::expect_eq(land.defense_bonus(), 1);
+  test::expect_eq(mount.defense_bonus(), 3);
+  test::expect_eq(desert.defense_bonus(), 2);
+  test::expect_eq(forest.defense_bonus(), 3);
+  test::expect_eq(plated.defense_bonus(), 4);
+  test::expect_eq(wasted.defense_bonus(), 0);
+  test::expect_eq(invalid.defense_bonus(), 0);
+
+  test::expect_eq(sea.combat_defense_factor(), 2.0);
+  test::expect_eq(mount.combat_defense_factor(), 4.0);
+  test::expect_eq(forest.combat_defense_factor(), 4.0);
+  test::expect_eq(plated.combat_defense_factor(), 5.0);
+  test::expect_eq(wasted.combat_defense_factor(), 1.0);
+  test::expect_eq(invalid.combat_defense_factor(), 1.0);
+}
+
 }  // namespace
 
 int main() {
@@ -762,5 +789,6 @@ int main() {
   test_sector_produce_resources();
   test_sector_mine_crystals();
   test_sector_deplete_resource();
+  test_sector_defense_bonus();
   return 0;
 }

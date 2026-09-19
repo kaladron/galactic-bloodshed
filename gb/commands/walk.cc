@@ -81,7 +81,7 @@ std::optional<Coordinates> resolve_walk_destination(GameObj& g,
     return std::nullopt;
   }
   const auto& sect_check = smap.get(new_coords);
-  if (!g.race->likes[sect_check.get_condition()]) {
+  if (!g.race->tolerates_sector(sect_check)) {
     g.out << "Your ships cannot walk into that sector type!\n";
     return std::nullopt;
   }

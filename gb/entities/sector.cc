@@ -268,7 +268,7 @@ void Sector::update_efficiency(const Race& race,
   if (data_.eff < 100) {
     const int chance =
         round_rand((100.0 - static_cast<double>(planet.info(data_.owner).tax)) *
-                   race.likes[data_.condition]);
+                   race.sector_compatibility(*this));
     if (success(chance)) {
       improve_efficiency(round_rand(race.metabolism));
       if (data_.eff >= 100) {

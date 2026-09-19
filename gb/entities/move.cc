@@ -113,13 +113,12 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
   auto astrength = MECH_ATTACK * ship.tech() * (double)strength *
                    ((double)ship.armor() + 1.0) * .01 *
                    (100.0 - (double)ship.damage()) * .01 *
-                   (race.likes[sect.get_condition()] + 1.0) *
+                   race.sector_combat_factor(sect) *
                    morale_factor((double)(race.morale - alien.morale));
 
   auto dstrength = (double)(10 * oldmil * alien.fighters + oldciv) * 0.01 *
-                   alien.tech * .01 *
-                   (alien.likes[sect.get_condition()] + 1.0) *
-                   ((double)Defensedata[sect.get_condition()] + 1.0) *
+                   alien.tech * .01 * alien.sector_combat_factor(sect) *
+                   sect.combat_defense_factor() *
                    morale_factor((double)(alien.morale - race.morale));
 
   if (ignore) {
@@ -163,13 +162,12 @@ people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
   const double dstrength = MECH_ATTACK * ship.tech() * (double)strength *
                            ((double)ship.armor() + 1.0) * .01 *
                            (100.0 - (double)ship.damage()) * .01 *
-                           (alien.likes[sect.get_condition()] + 1.0) *
+                           alien.sector_combat_factor(sect) *
                            morale_factor((double)(alien.morale - race.morale));
 
   const double astrength = (double)(10 * mil * race.fighters + civ) * .01 *
-                           race.tech * .01 *
-                           (race.likes[sect.get_condition()] + 1.0) *
-                           ((double)Defensedata[sect.get_condition()] + 1.0) *
+                           race.tech * .01 * race.sector_combat_factor(sect) *
+                           sect.combat_defense_factor() *
                            morale_factor((double)(race.morale - alien.morale));
   auto raw_ammo = (int)std::log10((double)astrength + 1.0) - 1;
   auto ammo =

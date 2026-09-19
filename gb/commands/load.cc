@@ -164,7 +164,7 @@ void resolve_alien_sector_combat(GameObj& g, Race& race, Race& alien,
   population_t initial_defender_civ = sect.get_popn();
   population_t initial_defender_mil = sect.get_troops();
 
-  int defense = Defensedata[sect.get_condition()];
+  int defense = sect.defense_bonus();
   auto temp_popn = sect.get_popn();
   auto temp_troops = sect.get_troops();
   double astrength = 0.0;
@@ -176,7 +176,7 @@ void resolve_alien_sector_combat(GameObj& g, Race& race, Race& alien,
   ground_attack(race, alien, &people, what, &temp_popn, &temp_troops,
                 static_cast<int>(ship.armor()), defense,
                 1.0 - static_cast<double>(ship.damage()) / 100.0,
-                alien.likes[sect.get_condition()], &astrength, &dstrength,
+                alien.sector_compatibility(sect), &astrength, &dstrength,
                 &attacker_casualties, &defender_civ_casualties,
                 &defender_mil_casualties);
   sect.set_popn_exact(temp_popn);

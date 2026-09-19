@@ -25,7 +25,7 @@ population_t calculate_migrating_colonists(const Race& race,
   if (available_migrants <= 0 || target.is_owned()) {
     return 0;
   }
-  const double likes_factor = race.likes[target.get_condition()];
+  const double likes_factor = race.sector_compatibility(target);
   const double move_calc = static_cast<double>(available_migrants) *
                            compatibility * likes_factor / 100.0;
   return std::clamp(std::lround(move_calc), population_t{0},

@@ -193,7 +193,7 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
 
   auto& s = smap.get(ship.land_coords());
   const auto& race = *entity_manager.peek_race(ship.owner());
-  if (!race.likes[s.get_condition()]) {
+  if (!race.tolerates_sector(s)) {
     return std::unexpected(GroundActionError::IncompatibleSector);
   }
   if (s.get_fert() >= 100) {

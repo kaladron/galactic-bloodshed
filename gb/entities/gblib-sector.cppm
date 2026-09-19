@@ -147,6 +147,20 @@ public:
     return get_sector_char(data_.condition);
   }
 
+  /// Returns the natural terrain defense bonus for this sector's current
+  /// condition (`sector_defense_bonus[condition]`).
+  [[nodiscard]] constexpr int defense_bonus() const noexcept {
+    if (static_cast<std::size_t>(data_.condition) >=
+        sector_defense_bonus.size())
+      return 0;
+    return sector_defense_bonus[static_cast<std::size_t>(data_.condition)];
+  }
+
+  /// Returns the terrain combat defense multiplier (`1.0 + defense_bonus()`).
+  [[nodiscard]] constexpr double combat_defense_factor() const noexcept {
+    return static_cast<double>(defense_bonus()) + 1.0;
+  }
+
   // Write accessors (non-const)
   void set_coords(Coordinates val) noexcept {
     data_.coords = val;

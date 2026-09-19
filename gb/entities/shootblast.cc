@@ -216,7 +216,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
               s.subtract_popn(kills);
           }
           if (s.get_troops() &&
-              (fac > 5.0 * (double)Defensedata[s.get_condition()])) {
+              (fac > 5.0 * static_cast<double>(s.defense_bonus()))) {
             kills = int_rand(0, ((int)(fac / 20.0) * s.get_troops())) /
                     (1 + s.is_plated());
             if (kills > s.get_troops())
@@ -230,12 +230,11 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 
         if (fac >= 5.0 && !int_rand(0, 10)) {
           // mutate_sector: reset condition to underlying type
-          if (int_rand(0, 6) >= Defensedata[s.get_condition()])
+          if (int_rand(0, 6) >= s.defense_bonus())
             s.set_condition(s.get_type());
         }
 
-        if (round_rand(fac) >
-            Defensedata[s.get_condition()] * int_rand(0, 10)) {
+        if (round_rand(fac) > s.defense_bonus() * int_rand(0, 10)) {
           if (s.get_owner() != 0) nuked[s.get_owner()] = true;
           s.clear_popn();
           s.set_troops(int_rand(0, (int)s.get_troops()));

@@ -15,7 +15,7 @@ armor_t getdefense(EntityManager& em, const Ship& ship) {
     const auto* smap = em.peek_sectormap(ship.storbits(), ship.pnumorbits());
     if (!smap) return 0;
     const auto& sect = smap->get(ship.land_coords());
-    return 2 * Defensedata[sect.get_condition()];
+    return 2 * sect.defense_bonus();
   }
   // No defense
   return 0;

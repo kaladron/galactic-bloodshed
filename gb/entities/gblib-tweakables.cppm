@@ -367,7 +367,8 @@ export constexpr std::array<const char*, 9> Desnames = {
     "forest", "desert", "plated",      "wasted"};
 
 // Natural defenses for each sector type (maps to SectorType)
-export constexpr std::array<int, 9> Defensedata = {1, 1, 3, 2, 2, 3, 2, 4, 0};
+export constexpr std::array<int, 9> sector_defense_bonus = {1, 1, 3, 2, 2,
+                                                            3, 2, 4, 0};
 
 /**
  * \brief Scales used in production efficiency etc.

@@ -94,6 +94,14 @@ export struct NewsItem {
   std::int64_t timestamp{0};
 };
 
+export struct TelegramItem {
+  int id{0};
+  player_t recipient_player{0};
+  governor_t recipient_governor{0};
+  std::string message;
+  std::int64_t timestamp{0};
+};
+
 export struct KeyValue {
   std::variant<std::uint32_t, std::int32_t, std::uint64_t, std::int64_t, double,
                std::string>

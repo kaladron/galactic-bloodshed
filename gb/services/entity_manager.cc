@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file entity_manager.cc
+/// \brief Implementation of EntityManager caching, transactions, and DAL
+/// persistence.
+
 module;
 
 import std;
-#undef stdout
 
 module gblib;
 
-// Implementation of EntityManager class declared in gblib:services partition
+import dallib;
+import gb.repositories;
 
 namespace {
 // Private template helpers for reducing code duplication
@@ -120,18 +124,42 @@ void flush_cache_impl(
 }
 }  // namespace
 
+struct EntityManager::Storage {
+  Database& db;
+  JsonStore store;
+  RaceRepository races;
+  ShipRepository ships;
+  PlanetRepository planets;
+  StarRepository stars;
+  SectorRepository sectors;
+  CommodRepository commods;
+  BlockRepository blocks;
+  PowerRepository powers;
+  UniverseRepository universe_repo;
+  ServerStateRepository server_state_repo;
+  ShipExamRepository ship_exams;
+  NewsRepository news;
+  TelegramRepository telegrams;
+
+  explicit Storage(Database& database)
+      : db(database), store(database), races(store), ships(store),
+        planets(store), stars(store), sectors(store), commods(store),
+        blocks(store), powers(store), universe_repo(store),
+        server_state_repo(store), ship_exams(store), news(database),
+        telegrams(database) {}
+};
+
 EntityManager::EntityManager(Database& database)
-    : db(database), store(database), races(store), ships(store), planets(store),
-      stars(store), sectors(store), commods(store), blocks(store),
-      powers(store), universe_repo(store), server_state_repo(store),
-      ship_exams(store), news(database), telegrams(database) {}
+    : storage_(std::make_unique<Storage>(database)) {}
+
+EntityManager::~EntityManager() = default;
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
   auto handle = get_entity_impl<Race>(
       this, player, race_cache, race_refcount,
-      [this](player_t p) { return races.find_by_player(p); },
-      [this](const Race& r) { races.save(r); },
+      [this](player_t p) { return storage_->races.find_by_player(p); },
+      [this](const Race& r) { storage_->races.save(r); },
       [this](player_t p) { release_race(p); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Race not found: player={}", player));
@@ -142,7 +170,7 @@ EntityHandle<Race> EntityManager::get_race(player_t player) {
 const Race* EntityManager::peek_race(player_t player) {
   const auto* race =
       peek_entity_impl<Race>(player, race_cache, [this](player_t p) {
-        return races.find_by_player(p);
+        return storage_->races.find_by_player(p);
       });
   if (!race) {
     throw EntityNotFoundError(std::format("Race not found: player={}", player));
@@ -162,21 +190,21 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
   new_race.Playernum = player;
 
   // Save through repository (DAL)
-  races.save(new_race);
+  storage_->races.save(new_race);
 
   // Auto-seed baseline block if not existing
-  if (!blocks.find_by_id(blocknum_t{player.value})) {
+  if (!storage_->blocks.find_by_id(blocknum_t{player.value})) {
     block b{};
     b.Playernum = player;
     b.name = new_race.name;
-    blocks.save(b);
+    storage_->blocks.save(b);
   }
 
   // Auto-seed baseline power if not existing
-  if (!powers.find_by_id(powernum_t{player.value})) {
+  if (!storage_->powers.find_by_id(powernum_t{player.value})) {
     power p{};
     p.id = player.value;
-    powers.save(p);
+    storage_->powers.save(p);
   }
 
   // Cache it
@@ -186,7 +214,7 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
 
   return {this, iter->second.get(), [this, player](const Race& r) {
             if (!is_deferred_write()) {
-              races.save(r);
+              storage_->races.save(r);
             }
             release_race(player);
           }};
@@ -199,13 +227,13 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
     ship_refcount[num]++;
     return {this, it->second.get(), [this, num](const Ship& s) {
               if (!is_deferred_write()) {
-                ships.save(s);
+                storage_->ships.save(s);
               }
               release_ship(num);
             }};
   }
 
-  auto ship_ptr = ships.find_ship(num);
+  auto ship_ptr = storage_->ships.find_ship(num);
   if (!ship_ptr) {
     throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
   }
@@ -214,7 +242,7 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
   ship_refcount[num] = 1;
   return {this, iter->second.get(), [this, num](const Ship& s) {
             if (!is_deferred_write()) {
-              ships.save(s);
+              storage_->ships.save(s);
             }
             release_ship(num);
           }};
@@ -226,7 +254,7 @@ const Ship* EntityManager::peek_ship(shipnum_t num) {
     return it->second.get();
   }
 
-  auto ship_ptr = ships.find_ship(num);
+  auto ship_ptr = storage_->ships.find_ship(num);
   if (!ship_ptr) {
     throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
   }
@@ -246,11 +274,11 @@ EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
 
   // Get next available ship number if not explicitly specified
   shipnum_t num =
-      ship->number() != 0 ? ship->number() : ships.next_ship_number();
+      ship->number() != 0 ? ship->number() : storage_->ships.next_ship_number();
   ship->number() = num;
 
   // Save immediately to database
-  ships.save(*ship);
+  storage_->ships.save(*ship);
 
   // Cache it
   auto [iter, inserted] = ship_cache.emplace(num, std::move(ship));
@@ -258,7 +286,7 @@ EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
 
   return {this, iter->second.get(), [this, num](const Ship& s) {
             if (!is_deferred_write()) {
-              ships.save(s);
+              storage_->ships.save(s);
             }
             release_ship(num);
           }};
@@ -286,14 +314,14 @@ void EntityManager::delete_commod(int id) {
 
 EntityHandle<Commod> EntityManager::create_commod(const Commod& init_data) {
   // Get next available commod ID
-  int id = commods.next_available_id();
+  int id = storage_->commods.next_available_id();
 
   // Create Commod, copying from provided data but overriding id
   Commod new_commod = init_data;
   new_commod.id = id;
 
   // Save through repository (DAL)
-  commods.save(new_commod);
+  storage_->commods.save(new_commod);
 
   // Cache it
   auto [iter, inserted] =
@@ -301,7 +329,7 @@ EntityHandle<Commod> EntityManager::create_commod(const Commod& init_data) {
   commod_refcount[id] = 1;
 
   return {this, iter->second.get(), [this, id](const Commod& c) {
-            commods.save(c);
+            storage_->commods.save(c);
             release_commod(id);
           }};
 }
@@ -317,14 +345,14 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
     planet_refcount[key]++;
     return {this, it->second.get(), [this, star, pnum](const Planet& p) {
               if (!is_deferred_write()) {
-                planets.save(p);
+                storage_->planets.save(p);
               }
               release_planet(star, pnum);
             }};
   }
 
   // Load from repository
-  auto planet_opt = planets.find_by_location(star, pnum);
+  auto planet_opt = storage_->planets.find_by_location(star, pnum);
   if (!planet_opt) {
     throw EntityNotFoundError(
         std::format("Planet not found: star_id={}, planet_id={}", star, pnum));
@@ -337,7 +365,7 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
 
   return {this, iter->second.get(), [this, star, pnum](const Planet& p) {
             if (!is_deferred_write()) {
-              planets.save(p);
+              storage_->planets.save(p);
             }
             release_planet(star, pnum);
           }};
@@ -347,7 +375,7 @@ const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
   auto key = std::make_pair(star, pnum);
   const auto* planet =
       peek_entity_impl<Planet>(key, planet_cache, [this, star, pnum](auto) {
-        return planets.find_by_location(star, pnum);
+        return storage_->planets.find_by_location(star, pnum);
       });
   if (!planet) {
     throw EntityNotFoundError(
@@ -371,14 +399,16 @@ void EntityManager::release_planet(starnum_t star, planetnum_t pnum) {
 EntityHandle<Star> EntityManager::get_star(starnum_t num) {
   return get_entity_impl<Star>(
       this, num, star_cache, star_refcount,
-      [this](starnum_t n) { return stars.find_by_number(n); },
-      [this](const Star& s) { stars.save(s); },
+      [this](starnum_t n) { return storage_->stars.find_by_number(n); },
+      [this](const Star& s) { storage_->stars.save(s); },
       [this](starnum_t n) { release_star(n); });
 }
 
 const Star* EntityManager::peek_star(starnum_t num) {
-  const auto* star = peek_entity_impl<Star>(
-      num, star_cache, [this](starnum_t n) { return stars.find_by_number(n); });
+  const auto* star =
+      peek_entity_impl<Star>(num, star_cache, [this](starnum_t n) {
+        return storage_->stars.find_by_number(n);
+      });
   if (!star) {
     throw EntityNotFoundError(std::format("Star not found: star_id={}", num));
   }
@@ -393,8 +423,8 @@ void EntityManager::release_star(starnum_t num) {
 EntityHandle<Commod> EntityManager::get_commod(int id) {
   auto handle = get_entity_impl<Commod>(
       this, id, commod_cache, commod_refcount,
-      [this](int i) { return commods.find_by_id(i); },
-      [this](const Commod& c) { commods.save(c); },
+      [this](int i) { return storage_->commods.find_by_id(i); },
+      [this](const Commod& c) { storage_->commods.save(c); },
       [this](int i) { release_commod(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Commodity not found: id={}", id));
@@ -403,8 +433,10 @@ EntityHandle<Commod> EntityManager::get_commod(int id) {
 }
 
 const Commod* EntityManager::peek_commod(int id) {
-  const auto* commod = peek_entity_impl<Commod>(
-      id, commod_cache, [this](int i) { return commods.find_by_id(i); });
+  const auto* commod =
+      peek_entity_impl<Commod>(id, commod_cache, [this](int i) {
+        return storage_->commods.find_by_id(i);
+      });
   if (!commod) {
     throw EntityNotFoundError(std::format("Commodity not found: id={}", id));
   }
@@ -419,8 +451,8 @@ void EntityManager::release_commod(int id) {
 EntityHandle<block> EntityManager::get_block(blocknum_t id) {
   auto handle = get_entity_impl<block>(
       this, id, block_cache, block_refcount,
-      [this](blocknum_t i) { return blocks.find_by_id(i); },
-      [this](const block& b) { blocks.save(b); },
+      [this](blocknum_t i) { return storage_->blocks.find_by_id(i); },
+      [this](const block& b) { storage_->blocks.save(b); },
       [this](blocknum_t i) { release_block(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Block not found: id={}", id));
@@ -429,8 +461,10 @@ EntityHandle<block> EntityManager::get_block(blocknum_t id) {
 }
 
 const block* EntityManager::peek_block(blocknum_t id) {
-  const auto* b = peek_entity_impl<block>(
-      id, block_cache, [this](blocknum_t i) { return blocks.find_by_id(i); });
+  const auto* b =
+      peek_entity_impl<block>(id, block_cache, [this](blocknum_t i) {
+        return storage_->blocks.find_by_id(i);
+      });
   if (!b) {
     throw EntityNotFoundError(std::format("Block not found: id={}", id));
   }
@@ -445,8 +479,8 @@ void EntityManager::release_block(blocknum_t id) {
 EntityHandle<power> EntityManager::get_power(powernum_t id) {
   auto handle = get_entity_impl<power>(
       this, id, power_cache, power_refcount,
-      [this](powernum_t i) { return powers.find_by_id(i); },
-      [this](const power& p) { powers.save(p); },
+      [this](powernum_t i) { return storage_->powers.find_by_id(i); },
+      [this](const power& p) { storage_->powers.save(p); },
       [this](powernum_t i) { release_power(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Power not found: id={}", id));
@@ -455,8 +489,10 @@ EntityHandle<power> EntityManager::get_power(powernum_t id) {
 }
 
 const power* EntityManager::peek_power(powernum_t id) {
-  const auto* p = peek_entity_impl<power>(
-      id, power_cache, [this](powernum_t i) { return powers.find_by_id(i); });
+  const auto* p =
+      peek_entity_impl<power>(id, power_cache, [this](powernum_t i) {
+        return storage_->powers.find_by_id(i);
+      });
   if (!p) {
     throw EntityNotFoundError(std::format("Power not found: id={}", id));
   }
@@ -474,13 +510,13 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
     return {this, global_universe_cache.get(),
             [this](const universe_struct& sd) {
               if (!is_deferred_write()) {
-                universe_repo.save(sd);
+                storage_->universe_repo.save(sd);
               }
               release_universe();
             }};
   }
 
-  auto universe_opt = universe_repo.get_global_data();
+  auto universe_opt = storage_->universe_repo.get_global_data();
   if (!universe_opt) {
     throw EntityNotFoundError("Universe not found");
   }
@@ -490,7 +526,7 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
 
   return {this, global_universe_cache.get(), [this](const universe_struct& sd) {
             if (!is_deferred_write()) {
-              universe_repo.save(sd);
+              storage_->universe_repo.save(sd);
             }
             release_universe();
           }};
@@ -503,7 +539,7 @@ const universe_struct* EntityManager::peek_universe() {
   }
 
   // Load from repository if not cached
-  auto universe_opt = universe_repo.get_global_data();
+  auto universe_opt = storage_->universe_repo.get_global_data();
   if (!universe_opt) {
     throw EntityNotFoundError("Universe not found");
   }
@@ -514,7 +550,7 @@ const universe_struct* EntityManager::peek_universe() {
 }
 
 int EntityManager::count_non_asteroid_planets() {
-  return db.count_non_asteroid_planets();
+  return storage_->db.count_non_asteroid_planets();
 }
 
 void EntityManager::release_universe() {
@@ -531,13 +567,13 @@ EntityHandle<ServerState> EntityManager::get_server_state() {
     server_state_refcount++;
     return {this, server_state_cache.get(), [this](const ServerState& state) {
               if (!is_deferred_write()) {
-                server_state_repo.save(state);
+                storage_->server_state_repo.save(state);
               }
               release_server_state();
             }};
   }
 
-  auto state_opt = server_state_repo.get_state();
+  auto state_opt = storage_->server_state_repo.get_state();
   if (!state_opt) {
     // If not in DB, create default state
     ServerState default_state{};
@@ -547,7 +583,7 @@ EntityHandle<ServerState> EntityManager::get_server_state() {
     return {this, server_state_cache.get(),
             [this](const ServerState& state) {
               if (!is_deferred_write()) {
-                server_state_repo.save(state);
+                storage_->server_state_repo.save(state);
               }
               release_server_state();
             },
@@ -559,7 +595,7 @@ EntityHandle<ServerState> EntityManager::get_server_state() {
 
   return {this, server_state_cache.get(), [this](const ServerState& state) {
             if (!is_deferred_write()) {
-              server_state_repo.save(state);
+              storage_->server_state_repo.save(state);
             }
             release_server_state();
           }};
@@ -572,7 +608,7 @@ const ServerState* EntityManager::peek_server_state() {
   }
 
   // Load from repository if not cached
-  auto state_opt = server_state_repo.get_state();
+  auto state_opt = storage_->server_state_repo.get_state();
   if (!state_opt) {
     // If not in DB, create default state
     ServerState default_state{};
@@ -603,19 +639,19 @@ EntityHandle<ShipExam> EntityManager::get_ship_exam(ShipType ship_type) {
   auto handle = get_entity_impl<ShipExam>(
       this, ship_type, ship_exam_cache, ship_exam_refcount,
       [this](ShipType type) -> std::optional<ShipExam> {
-        auto existing = ship_exams.find_by_type(type);
+        auto existing = storage_->ship_exams.find_by_type(type);
         if (existing) return existing;
         int type_val = std::to_underlying(type);
         if (type_val >= 0 && type_val < NUMSTYPES) {
           ShipExam new_exam{.ship_type = type,
                             .name = std::string(ship_template(type).name),
                             .description = load_default_ship_description(type)};
-          ship_exams.save(new_exam);
+          storage_->ship_exams.save(new_exam);
           return new_exam;
         }
         return std::nullopt;
       },
-      [this](const ShipExam& exam) { ship_exams.save(exam); },
+      [this](const ShipExam& exam) { storage_->ship_exams.save(exam); },
       [this](ShipType type) { release_ship_exam(type); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("ShipExam not found: ship_type={}",
@@ -628,14 +664,14 @@ const ShipExam* EntityManager::peek_ship_exam(ShipType ship_type) {
   const auto* exam = peek_entity_impl<ShipExam>(
       ship_type, ship_exam_cache,
       [this](ShipType type) -> std::optional<ShipExam> {
-        auto existing = ship_exams.find_by_type(type);
+        auto existing = storage_->ship_exams.find_by_type(type);
         if (existing) return existing;
         int type_val = std::to_underlying(type);
         if (type_val >= 0 && type_val < NUMSTYPES) {
           ShipExam new_exam{.ship_type = type,
                             .name = std::string(ship_template(type).name),
                             .description = load_default_ship_description(type)};
-          ship_exams.save(new_exam);
+          storage_->ship_exams.save(new_exam);
           return new_exam;
         }
         return std::nullopt;
@@ -654,100 +690,101 @@ void EntityManager::release_ship_exam(ShipType ship_type) {
 // Query methods
 int EntityManager::num_commods() {
   // Count commods by listing all IDs in the database
-  return store.list_ids("tbl_commod").size();
+  return storage_->store.list_ids("tbl_commod").size();
 }
 
 int EntityManager::max_commod_id() {
-  auto ids = store.list_ids("tbl_commod");
+  auto ids = storage_->store.list_ids("tbl_commod");
   return ids.empty() ? 0 : ids.back();
 }
 
 int EntityManager::next_available_commod_id() {
-  CommodRepository commod_repo(store);
-  return commod_repo.next_available_id();
+  return storage_->commods.next_available_id();
 }
 
 player_t EntityManager::num_races() {
   // Count races by listing all IDs in the database
-  return store.list_ids("tbl_race").size();
+  return storage_->store.list_ids("tbl_race").size();
 }
 
 player_t EntityManager::max_race_player() {
-  auto ids = store.list_ids("tbl_race");
+  auto ids = storage_->store.list_ids("tbl_race");
   return ids.empty() ? player_t{0} : player_t{ids.back()};
 }
 
 shipnum_t EntityManager::num_ships() {
   // Count ships by listing all IDs in the database
-  return store.list_ids("tbl_ship").size();
+  return storage_->store.list_ids("tbl_ship").size();
 }
 
 shipnum_t EntityManager::next_available_ship_number() {
-  return ships.next_ship_number();
+  return storage_->ships.next_ship_number();
 }
 
 shipnum_t EntityManager::max_ship_number() {
-  auto ids = store.list_ids("tbl_ship");
+  auto ids = storage_->store.list_ids("tbl_ship");
   return ids.empty()
              ? shipnum_t{0}
              : shipnum_t{static_cast<shipnum_t::value_type>(ids.back())};
 }
 
 blocknum_t EntityManager::num_blocks() {
-  return blocknum_t{static_cast<int>(store.list_ids("tbl_block").size())};
+  return blocknum_t{
+      static_cast<int>(storage_->store.list_ids("tbl_block").size())};
 }
 
 blocknum_t EntityManager::max_block_id() {
-  auto ids = store.list_ids("tbl_block");
+  auto ids = storage_->store.list_ids("tbl_block");
   return ids.empty() ? blocknum_t{0} : blocknum_t{ids.back()};
 }
 
 powernum_t EntityManager::num_powers() {
-  return powernum_t{static_cast<int>(store.list_ids("tbl_power").size())};
+  return powernum_t{
+      static_cast<int>(storage_->store.list_ids("tbl_power").size())};
 }
 
 powernum_t EntityManager::max_power_id() {
-  auto ids = store.list_ids("tbl_power");
+  auto ids = storage_->store.list_ids("tbl_power");
   return ids.empty() ? powernum_t{0} : powernum_t{ids.back()};
 }
 
 std::vector<shipnum_t> EntityManager::ships_in_star_system(starnum_t star_id,
                                                            bool alive_only) {
-  return ships.find_in_star_system(star_id, alive_only);
+  return storage_->ships.find_in_star_system(star_id, alive_only);
 }
 
 std::vector<shipnum_t> EntityManager::ships_in_star(starnum_t star_id,
                                                     bool alive_only) {
-  return ships.find_in_star(star_id, alive_only);
+  return storage_->ships.find_in_star(star_id, alive_only);
 }
 
 std::vector<shipnum_t> EntityManager::ships_on_planet(starnum_t star_id,
                                                       planetnum_t planet_id,
                                                       bool alive_only) {
-  return ships.find_on_planet(star_id, planet_id, alive_only);
+  return storage_->ships.find_on_planet(star_id, planet_id, alive_only);
 }
 
 std::vector<shipnum_t> EntityManager::ships_in_hangar(shipnum_t carrier_id,
                                                       bool alive_only) {
-  return ships.find_in_hangar(carrier_id, alive_only);
+  return storage_->ships.find_in_hangar(carrier_id, alive_only);
 }
 
 std::vector<shipnum_t> EntityManager::ships_by_owner(player_t owner_id,
                                                      bool alive_only) {
-  return ships.find_by_owner(owner_id, alive_only);
+  return storage_->ships.find_by_owner(owner_id, alive_only);
 }
 
 std::vector<shipnum_t> EntityManager::ships_at_scope(ScopeLevel scope,
                                                      bool alive_only) {
-  return ships.find_at_scope(scope, alive_only);
+  return storage_->ships.find_at_scope(scope, alive_only);
 }
 
 std::vector<shipnum_t> EntityManager::ships_alive() {
-  return ships.find_alive();
+  return storage_->ships.find_alive();
 }
 
 std::vector<shipnum_t> EntityManager::ships_all() {
-  auto ids = store.list_ids("tbl_ship");
+  auto ids = storage_->store.list_ids("tbl_ship");
   std::vector<shipnum_t> result;
   result.reserve(ids.size());
   for (int id : ids) {
@@ -759,33 +796,38 @@ std::vector<shipnum_t> EntityManager::ships_all() {
 // Utility methods
 void EntityManager::flush_all() {
   // Save all cached entities - entities now contain their own IDs
-  flush_cache_impl<Race>(race_cache, [this](const Race& r) { races.save(r); });
-  flush_cache_impl<Ship>(ship_cache, [this](const Ship& s) { ships.save(s); });
-  flush_cache_impl<Planet>(planet_cache,
-                           [this](const Planet& p) { planets.save(p); });
-  flush_cache_impl<Star>(star_cache, [this](const Star& s) { stars.save(s); });
-  flush_cache_impl<SectorMap>(
-      sectormap_cache, [this](const SectorMap& sm) { sectors.save_map(sm); });
-  flush_cache_impl<Commod>(commod_cache,
-                           [this](const Commod& c) { commods.save(c); });
+  flush_cache_impl<Race>(race_cache,
+                         [this](const Race& r) { storage_->races.save(r); });
+  flush_cache_impl<Ship>(ship_cache,
+                         [this](const Ship& s) { storage_->ships.save(s); });
+  flush_cache_impl<Planet>(
+      planet_cache, [this](const Planet& p) { storage_->planets.save(p); });
+  flush_cache_impl<Star>(star_cache,
+                         [this](const Star& s) { storage_->stars.save(s); });
+  flush_cache_impl<SectorMap>(sectormap_cache, [this](const SectorMap& sm) {
+    storage_->sectors.save_map(sm);
+  });
+  flush_cache_impl<Commod>(
+      commod_cache, [this](const Commod& c) { storage_->commods.save(c); });
   flush_cache_impl<block>(block_cache,
-                          [this](const block& b) { blocks.save(b); });
+                          [this](const block& b) { storage_->blocks.save(b); });
   flush_cache_impl<power>(power_cache,
-                          [this](const power& p) { powers.save(p); });
-  flush_cache_impl<ShipExam>(ship_exam_cache,
-                             [this](const ShipExam& e) { ship_exams.save(e); });
+                          [this](const power& p) { storage_->powers.save(p); });
+  flush_cache_impl<ShipExam>(ship_exam_cache, [this](const ShipExam& e) {
+    storage_->ship_exams.save(e);
+  });
 
   if (global_universe_cache) {
-    universe_repo.save(*global_universe_cache);
+    storage_->universe_repo.save(*global_universe_cache);
   }
 
   if (server_state_cache) {
-    server_state_repo.save(*server_state_cache);
+    storage_->server_state_repo.save(*server_state_cache);
   }
 }
 
 void EntityManager::optimize() {
-  db.optimize();
+  storage_->db.optimize();
 }
 
 void EntityManager::clear_cache() {
@@ -1083,7 +1125,7 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
     sectormap_refcount[key]++;
     return {this, it->second.get(), [this, star, pnum](const SectorMap& sm) {
               if (!is_deferred_write()) {
-                sectors.save_map(sm);
+                storage_->sectors.save_map(sm);
               }
               release_sectormap(star, pnum);
             }};
@@ -1092,7 +1134,7 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
   // peek_planet checks cache first, then loads from DB, or throws
   // EntityNotFoundError
   const auto& planet = *peek_planet(star, pnum);
-  SectorMap loaded_map = sectors.load_map(planet);
+  SectorMap loaded_map = storage_->sectors.load_map(planet);
 
   // Cache the entity
   auto [iter, inserted] = sectormap_cache.emplace(
@@ -1101,7 +1143,7 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
 
   return {this, iter->second.get(), [this, star, pnum](const SectorMap& sm) {
             if (!is_deferred_write()) {
-              sectors.save_map(sm);
+              storage_->sectors.save_map(sm);
             }
             release_sectormap(star, pnum);
           }};
@@ -1113,7 +1155,7 @@ const SectorMap* EntityManager::peek_sectormap(starnum_t star,
   const auto* sectormap = peek_entity_impl<SectorMap>(
       key, sectormap_cache, [this, star, pnum](auto) {
         const auto& planet = *peek_planet(star, pnum);
-        return std::optional<SectorMap>(sectors.load_map(planet));
+        return std::optional<SectorMap>(storage_->sectors.load_map(planet));
       });
   if (!sectormap) {
     throw EntityNotFoundError(std::format(
@@ -1135,53 +1177,53 @@ void EntityManager::release_sectormap(starnum_t star, planetnum_t pnum) {
 
 // News operations (Service Layer)
 void EntityManager::post_news(NewsType type, std::string_view message) {
-  news.add(type, message);
+  storage_->news.add(type, message);
 }
 
 std::vector<NewsItem> EntityManager::get_news_since(NewsType type,
                                                     int since_id) {
-  return news.get_since(type, since_id);
+  return storage_->news.get_since(type, since_id);
 }
 
 int EntityManager::get_latest_news_id(NewsType type) {
-  return news.get_latest_id(type);
+  return storage_->news.get_latest_id(type);
 }
 
 void EntityManager::purge_news_type(NewsType type) {
-  news.purge_type(type);
+  storage_->news.purge_type(type);
 }
 
 void EntityManager::purge_all_news() {
-  news.purge_all();
+  storage_->news.purge_all();
 }
 
 // Telegram operations (Service Layer)
 void EntityManager::post_telegram(player_t player, governor_t governor,
                                   std::string_view message) {
-  telegrams.add(player, governor, message);
+  storage_->telegrams.add(player, governor, message);
 }
 
 std::vector<TelegramItem> EntityManager::get_telegrams(player_t player,
                                                        governor_t governor) {
-  return telegrams.get(player, governor);
+  return storage_->telegrams.get(player, governor);
 }
 
 void EntityManager::delete_telegrams(player_t player, governor_t governor) {
-  telegrams.delete_for_governor(player, governor);
+  storage_->telegrams.delete_for_governor(player, governor);
 }
 
 bool EntityManager::has_telegrams(player_t player, governor_t governor) {
-  return telegrams.count(player, governor) > 0;
+  return storage_->telegrams.count(player, governor) > 0;
 }
 
 void EntityManager::purge_all_telegrams() {
-  telegrams.purge_all();
+  storage_->telegrams.purge_all();
 }
 
 // Transaction implementation
 EntityManager::Transaction::Transaction(EntityManager& em)
     : em_(&em), active_(true) {
-  em_->db.begin_transaction();
+  em_->storage_->db.begin_transaction();
 }
 
 EntityManager::Transaction::~Transaction() {
@@ -1214,14 +1256,14 @@ EntityManager::Transaction::operator=(Transaction&& other) noexcept {
 
 void EntityManager::Transaction::commit() {
   if (active_ && em_) {
-    em_->db.commit();
+    em_->storage_->db.commit();
     active_ = false;
   }
 }
 
 void EntityManager::Transaction::rollback() {
   if (active_ && em_) {
-    em_->db.rollback();
+    em_->storage_->db.rollback();
     em_->clear_cache();
     active_ = false;
   }
@@ -1277,18 +1319,18 @@ EntityManager::DeferredWriteScope& EntityManager::DeferredWriteScope::operator=(
 void EntityManager::DeferredWriteScope::commit() {
   if (!committed_ && em_) {
     em_->deferred_write_depth_--;
-    em_->db.begin_transaction();
+    em_->storage_->db.begin_transaction();
     try {
       em_->flush_all();
     } catch (...) {
       try {
-        em_->db.rollback();
+        em_->storage_->db.rollback();
       } catch (...) {
       }
       committed_ = true;
       throw;
     }
-    em_->db.commit();
+    em_->storage_->db.commit();
     committed_ = true;
   }
 }
@@ -1315,7 +1357,7 @@ void EntityManager::drain_pending_deletions() {
     }
     ship_cache.erase(num);
     ship_refcount.erase(num);
-    ships.delete_ship(num);
+    storage_->ships.delete_ship(num);
   }
   pending_ship_deletions_.clear();
 
@@ -1329,7 +1371,7 @@ void EntityManager::drain_pending_deletions() {
     }
     commod_cache.erase(id);
     commod_refcount.erase(id);
-    commods.delete_commod(id);
+    storage_->commods.delete_commod(id);
   }
   pending_commod_deletions_.clear();
 }

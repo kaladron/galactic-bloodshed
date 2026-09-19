@@ -18,7 +18,7 @@ import commands;
 import dallib; // For Database, initialize_schema
 import gb.entities;
 import gb.services;
-import gb.repositories;
+export import gb.repositories;
 import gb.creator;
 import std;
 

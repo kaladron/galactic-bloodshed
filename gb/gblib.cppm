@@ -7,7 +7,6 @@ export module gblib;
 
 export import strong_id;  // Third-party strong type ID system
 export import gb.entities;
-export import gb.repositories;
 
 export import :bombard;
 export import :build;

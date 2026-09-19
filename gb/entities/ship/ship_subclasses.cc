@@ -67,3 +67,71 @@ int SpaceMirrorShip::aim_direction(
   return (yt > my_coords.y) ? octant_for_positive_dy(slope)
                             : octant_for_negative_dy(slope);
 }
+
+std::unique_ptr<Ship> ShipFactory::create(ship_struct data) {
+  switch (data.type) {
+    case ShipType::OTYPE_VN:
+      return std::make_unique<VonNeumannShip>(std::move(data));
+    case ShipType::OTYPE_BERS:
+      return std::make_unique<BerserkerShip>(std::move(data));
+    case ShipType::STYPE_MIRROR:
+    case ShipType::OTYPE_STELE:
+    case ShipType::OTYPE_GTELE:
+    case ShipType::OTYPE_TRACT:
+      return std::make_unique<SpaceMirrorShip>(std::move(data));
+    case ShipType::STYPE_POD:
+      return std::make_unique<SporePodShip>(std::move(data));
+    case ShipType::OTYPE_CANIST:
+    case ShipType::OTYPE_GREEN:
+      return std::make_unique<CanisterShip>(std::move(data));
+    case ShipType::STYPE_MISSILE:
+      return std::make_unique<MissileShip>(std::move(data));
+    case ShipType::STYPE_MINE:
+      return std::make_unique<MineShip>(std::move(data));
+    case ShipType::OTYPE_TERRA:
+      return std::make_unique<TerraformerShip>(std::move(data));
+    case ShipType::OTYPE_PLOW:
+      return std::make_unique<GroundPlowShip>(std::move(data));
+    case ShipType::OTYPE_TRANSDEV:
+      return std::make_unique<TransporterShip>(std::move(data));
+    case ShipType::OTYPE_TOXWC:
+      return std::make_unique<ToxicWasteShip>(std::move(data));
+    default:
+      return std::make_unique<Ship>(std::move(data));
+  }
+}
+
+std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,
+                                                        player_t owner) {
+  const auto& tmpl = ship_template(type);
+  ship_struct data{
+      .owner = owner,
+      .name = std::string(tmpl.name),
+      .armor = tmpl.base_armor,
+      .max_crew = tmpl.max_crew,
+      .max_resource = tmpl.max_resource,
+      .max_destruct = tmpl.max_destruct,
+      .max_fuel = tmpl.max_fuel,
+      .max_speed = tmpl.base_speed,
+      .build_type = type,
+      .build_cost = tmpl.build_cost,
+      .retaliate = tmpl.max_guns,
+      .type = type,
+      .active = true,
+      .alive = true,
+      .guns = tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
+      .primary_battery =
+          GunBattery::create(tmpl.max_guns, shipdata_primary(type)),
+      .secondary_battery = GunBattery::create(0, shipdata_secondary(type)),
+      .max_hanger = tmpl.max_hangar,
+  };
+  if (type == ShipType::OTYPE_VN || type == ShipType::OTYPE_BERS) {
+    data.special = MindData{.progenitor = owner};
+  }
+
+  auto ship = create(std::move(data));
+  ship->size() = ship->calculate_size();
+  ship->set_mass(ship->base_mass());
+  ship->build_cost() = cost(*ship);
+  return ship;
+}

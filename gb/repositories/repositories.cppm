@@ -91,16 +91,6 @@ protected:
   deserialize(const std::string& json_str) const override;
 };
 
-// ShipFactory - creates and deserializes polymorphic Ship subclasses
-export class ShipFactory {
-public:
-  [[nodiscard]] static std::unique_ptr<Ship> create(ship_struct data);
-  [[nodiscard]] static std::unique_ptr<Ship>
-  create_from_template(ShipType type, player_t owner = 1);
-  [[nodiscard]] static std::unique_ptr<Ship>
-  deserialize(const std::string& json_str);
-};
-
 // ShipRepository - provides type-safe access to Ship entities
 export class ShipRepository : public Repository<Ship> {
 public:
@@ -440,14 +430,6 @@ public:
 // TelegramRepository - Repository for telegram items
 // Delegates all SQL operations to the DAL layer
 // ============================================================================
-export struct TelegramItem {
-  int id{0};
-  player_t recipient_player{0};
-  governor_t recipient_governor{0};
-  std::string message;
-  std::int64_t timestamp{0};
-};
-
 export class TelegramRepository {
 private:
   Database& db;

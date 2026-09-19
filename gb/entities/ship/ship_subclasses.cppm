@@ -500,3 +500,12 @@ export template <>
 struct ShipTypeTraits<ToxicWasteShip> {
   static constexpr ShipType expected_type = ShipType::OTYPE_TOXWC;
 };
+
+// ShipFactory - instantiates polymorphic Ship subclasses from ship_struct or
+// ShipType templates
+export class ShipFactory {
+public:
+  [[nodiscard]] static std::unique_ptr<Ship> create(ship_struct data);
+  [[nodiscard]] static std::unique_ptr<Ship>
+  create_from_template(ShipType type, player_t owner = 1);
+};

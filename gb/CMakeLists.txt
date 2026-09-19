@@ -190,7 +190,10 @@ target_sources(
           services/tele.cc
           server/victory.cc
           turn/vn.cc)
-target_link_libraries(gblib PUBLIC gb_entities gb_repositories strong_id_module dallib types_module scnlib_module tabulate_module)
+target_link_libraries(
+  gblib
+  PUBLIC gb_entities strong_id_module dallib types_module scnlib_module tabulate_module
+  PRIVATE gb_repositories)
 
 add_library(gb_services)
 target_sources(

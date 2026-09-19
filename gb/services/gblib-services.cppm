@@ -4,7 +4,6 @@ export module gblib:services;
 
 import dallib;
 import gb.entities;
-import gb.repositories;
 import std;
 
 // Exception thrown when an entity is not found in the database
@@ -158,23 +157,8 @@ export class EntityManager {
   template <typename Entity>
   friend struct EntityListTraits;
 
-  Database& db;
-  JsonStore store;
-
-  // Repositories
-  RaceRepository races;
-  ShipRepository ships;
-  PlanetRepository planets;
-  StarRepository stars;
-  SectorRepository sectors;
-  CommodRepository commods;
-  BlockRepository blocks;
-  PowerRepository powers;
-  UniverseRepository universe_repo;
-  ServerStateRepository server_state_repo;
-  ShipExamRepository ship_exams;
-  NewsRepository news;
-  TelegramRepository telegrams;
+  struct Storage;
+  std::unique_ptr<Storage> storage_;
 
   // In-memory cache (only one copy of each entity)
   std::unordered_map<player_t, std::unique_ptr<Race>> race_cache;
@@ -225,6 +209,9 @@ export class EntityManager {
 
 public:
   explicit EntityManager(Database& database);
+  ~EntityManager();
+  EntityManager(const EntityManager&) = delete;
+  EntityManager& operator=(const EntityManager&) = delete;
 
   // Direct access for read-only operations (no RAII overhead)
   // Throws EntityNotFoundError if entity not found

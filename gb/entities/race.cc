@@ -3,7 +3,7 @@
 /// \file race.cc
 /// \brief Race and power bloc entity member functions.
 
-module gblib;
+module gb.entities;
 
 bool Race::is_allied_with(player_t p) const noexcept {
   return allied.test(p);

@@ -7,13 +7,9 @@
 export module gblib:doplanet;
 
 import std;
-import :planet;
-import :sector;
+import gb.entities;
 import :services;
-import :ships;
-import :star;
 import :turnstats;
-import :types;
 import :misc;
 
 export void doplanet(EntityManager&, const Star& star, Planet& planet,
@@ -21,6 +17,9 @@ export void doplanet(EntityManager&, const Star& star, Planet& planet,
 
 export void moveplanet(EntityManager& entity_manager, const Star& star,
                        Planet& planet);
+
+export int revolt(Planet& p, EntityManager& entity_manager, starnum_t star,
+                  planetnum_t pnum, player_t victim, player_t agent);
 
 export enum class GroundMovementError {
   NotTerraformVehicle,

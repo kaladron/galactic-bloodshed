@@ -88,6 +88,40 @@ target_sources(
   PRIVATE dal/database.cc dal/json_store.cc dal/schema.cc)
 target_link_libraries(dallib PUBLIC SQLite::SQLite3 types_module)
 
+# Standalone Tier-1 Domain Entities Library (Zero DB, Glaze, or Service Dependencies)
+add_library(gb_entities)
+target_sources(
+  gb_entities
+  PUBLIC FILE_SET
+         CXX_MODULES
+         FILES
+          entities/entities.cppm
+          entities/csp.cppm
+          entities/domain_types.cppm
+          entities/planet.cppm
+          entities/race.cppm
+          entities/rand.cppm
+          entities/sector.cppm
+          entities/ship/ship.cppm
+          entities/ship/ship_base.cppm
+          entities/ship/ship_subclasses.cppm
+          entities/ship/ship_templates.cppm
+          entities/ship/ship_types.cppm
+          entities/shipfilter.cppm
+          entities/star.cppm
+          entities/tweakables.cppm
+          entities/universe.cppm
+  PRIVATE entities/planet.cc
+          entities/race.cc
+          entities/rand.cc
+          entities/sector.cc
+          entities/sectormap.cc
+          entities/ship/ship_base.cc
+          entities/ship/ship_subclasses.cc
+          entities/ship/ship_templates.cc
+          entities/star.cc)
+target_link_libraries(gb_entities PUBLIC strong_id_module types_module scnlib_module)
+
 add_library(gblib)
 target_sources(
   gblib
@@ -97,7 +131,6 @@ target_sources(
           gblib.cppm
           turn/gblib-bombard.cppm
           entities/gblib-build.cppm
-          entities/gblib-csp.cppm
           turn/gblib-doplanet.cppm
           turn/gblib-dosector.cppm
           turn/gblib-doship.cppm
@@ -111,28 +144,14 @@ target_sources(
           entities/gblib-move.cppm
           entities/gblib-order.cppm
           entities/gblib-place.cppm
-          entities/gblib-planet.cppm
           services/gblib-prompt.cppm
-          entities/gblib-race.cppm
-          entities/gblib-rand.cppm
           repositories/gblib-repositories.cppm
           services/gblib-services.cppm
-          entities/gblib-sector.cppm
           services/gblib-sessionregistry.cppm
-          entities/ship/ship.cppm
-          entities/ship/ship_base.cppm
-          entities/ship/ship_subclasses.cppm
-          entities/ship/ship_templates.cppm
-          entities/ship/ship_types.cppm
-          entities/gblib-shipfilter.cppm
           services/gblib-shlmisc.cppm
           entities/gblib-shootblast.cppm
-          entities/gblib-star.cppm
           services/gblib-tele.cppm
           turn/gblib-turnstats.cppm
-          entities/gblib-tweakables.cppm
-          entities/gblib-types.cppm
-          entities/gblib-universe.cppm
   PRIVATE turn/bombard.cc
           entities/build.cc
           turn/doplanet.cc
@@ -149,34 +168,18 @@ target_sources(
           entities/move.cc
           entities/navigation.cc
           entities/order.cc
-          entities/planet.cc
           services/prompt.cc
           repositories/planet_repository.cc
           repositories/race_repository.cc
           repositories/sector_repository.cc
           repositories/ship_repository.cc
           repositories/star_repository.cc
-          entities/race.cc
-          entities/rand.cc
-          entities/sectormap.cc
-          entities/sector.cc
-          entities/ship/ship_base.cc
-          entities/ship/ship_subclasses.cc
-          entities/ship/ship_templates.cc
           services/shlmisc.cc
           entities/shootblast.cc
-          entities/star.cc
           services/tele.cc
           server/victory.cc
           turn/vn.cc)
-target_link_libraries(gblib PUBLIC glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module scnlib_module tabulate_module)
-
-# Dedicated Subsystem Modules (Phase 6)
-add_library(gb_entities)
-target_sources(
-  gb_entities
-  PUBLIC FILE_SET CXX_MODULES FILES entities/entities.cppm)
-target_link_libraries(gb_entities PUBLIC gblib)
+target_link_libraries(gblib PUBLIC gb_entities glaze::glaze glaze_json_module glaze_core_module strong_id_module dallib types_module scnlib_module tabulate_module)
 
 add_library(gb_repositories)
 target_sources(

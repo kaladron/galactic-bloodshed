@@ -9,7 +9,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.entities;
 
 namespace {
 std::mt19937& get_rng() {

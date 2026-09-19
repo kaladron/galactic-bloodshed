@@ -2,12 +2,9 @@
 
 export module gblib:move;
 
+import gb.entities;
 import :gameobj;
-import :planet;
-import :sector;
 import :services;
-import :ships;
-import :types;
 
 export Coordinates get_move(const Planet& planet, char direction,
                             Coordinates from);

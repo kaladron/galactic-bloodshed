@@ -3,7 +3,7 @@
 /// \file ship_base.cppm
 /// \brief Base Ship domain entity class and core ship calculations.
 
-export module gblib:ship_base;
+export module gb.entities:ship_base;
 
 import std;
 

@@ -4,8 +4,8 @@ export module gblib:tele;
 
 import std;
 
+import gb.entities;
 import :gameobj;
-import :types;
 
 export void check_for_telegrams(GameObj&);
 export void purge(EntityManager&);

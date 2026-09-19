@@ -2,10 +2,8 @@
 
 export module gblib:fire;
 
+import gb.entities;
 import :gameobj;
-import :planet;
-import :ships;
-import :types;
 
 export bool has_planet_defense(EntityManager&, starnum_t, planetnum_t,
                                player_t);

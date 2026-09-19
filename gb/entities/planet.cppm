@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-planet.cppm
+/// \file planet.cppm
 /// \brief Module interface partition for Planet entity, routes, and planetary
 /// exploration models.
 
-export module gblib:planet;
+export module gb.entities:planet;
 
 import :race;
 import :rand;
@@ -12,8 +12,6 @@ import :types;
 import :tweakables;
 import std;
 
-// Forward declaration to avoid circular dependency with :services
-export class EntityManager;
 export class Star;
 export class Sector;
 export class SectorMap;
@@ -627,5 +625,14 @@ ap_t Planet::get_points() const {
   }
 }
 
-export int revolt(Planet& p, EntityManager& entity_manager, starnum_t star,
-                  planetnum_t pnum, player_t victim, player_t agent);
+export inline double tech_prod(const money_t investment,
+                               const population_t popn) noexcept {
+  double scale = static_cast<double>(popn) / 10000.;
+  return (TECH_INVEST *
+          std::log10(static_cast<double>(investment) * scale + 1.0));
+}
+
+export constexpr gun_count_t planet_guns(resource_t points) noexcept {
+  if (points < 0) return 0; /* shouldn't happen */
+  return static_cast<gun_count_t>(std::min<resource_t>(20, points / 1000));
+}

@@ -8,7 +8,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.entities;
 
 double Ship::base_mass() const noexcept {
   return 1.0 + MASS_ARMOR * armor() + MASS_SIZE * shipbody() +

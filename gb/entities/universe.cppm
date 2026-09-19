@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-universe.cppm
+/// \file universe.cppm
 /// \brief Module interface partition for Universe entity and game-wide
 /// statistics.
 
-export module gblib:universe;
+export module gb.entities:universe;
 
 import :types;
 import :tweakables;

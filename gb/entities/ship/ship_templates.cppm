@@ -3,7 +3,7 @@
 /// \file ship_templates.cppm
 /// \brief Immutable ship template definitions and lookup functions.
 
-export module gblib:ship_templates;
+export module gb.entities:ship_templates;
 
 import std;
 

@@ -7,7 +7,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.entities;
 
 /**
  * @brief Calculate the complexity (tech level) for a default ship of a type.

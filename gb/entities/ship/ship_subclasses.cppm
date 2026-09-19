@@ -3,7 +3,7 @@
 /// \file ship_subclasses.cppm
 /// \brief Specialized Ship domain subclasses and downcast type traits.
 
-export module gblib:ship_subclasses;
+export module gb.entities:ship_subclasses;
 
 import std;
 

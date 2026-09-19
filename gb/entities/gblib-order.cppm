@@ -2,9 +2,8 @@
 
 export module gblib:order;
 
+import gb.entities;
 import :gameobj;
-import :ships;
-import :types;
 
 export void display_orders(GameObj& g, const Ship& ship);
 export void display_orders_header(GameObj& g);

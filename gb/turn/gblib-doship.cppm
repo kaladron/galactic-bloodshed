@@ -5,10 +5,8 @@
 
 export module gblib:doship;
 
+import gb.entities;
 import :gameobj;
-import :ships;
-import :star;
-import :types;
 import :turnstats;
 
 export void doship(Ship&, bool update, EntityManager&, TurnStats& stats);

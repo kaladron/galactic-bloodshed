@@ -10,10 +10,7 @@ import std;
 
 export module gblib:turnstats;
 
-import :planet;
-import :race;
-import :tweakables;
-import :types;
+import gb.entities;
 
 // TurnStats: Encapsulates per-turn accumulating statistics.
 // Passed through doplanet() and doship() to replace global array usage.

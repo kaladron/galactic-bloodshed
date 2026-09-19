@@ -5,10 +5,8 @@
 
 export module gblib:dosector;
 
-import :planet;
-import :sector;
+import gb.entities;
 import :services;
-import :star;
 import :turnstats;
 
 export population_t calculate_migrating_colonists(const Race&, double,

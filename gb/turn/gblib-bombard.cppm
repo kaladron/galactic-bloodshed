@@ -6,14 +6,10 @@
 
 export module gblib:bombard;
 
-import :planet;
-import :race;
+import gb.entities;
 import :services;
-import :ships;
 import :shootblast;
-import :star;
 import :turnstats;
-import :types;
 import std;
 
 /// \brief Checks whether any active foreign Point Defense Networks (PDNs) are

@@ -7,7 +7,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.entities;
 
 std::ostream& operator<<(std::ostream& os, const Sector& s) {
   os << "Efficiency: " << s.get_eff() << std::endl;

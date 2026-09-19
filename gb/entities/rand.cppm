@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
+/// \file rand.cppm
+/// \brief Random number generation utilities.
 
-export module gblib:rand;
+export module gb.entities:rand;
 
 import std;
 

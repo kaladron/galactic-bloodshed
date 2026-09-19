@@ -5,6 +5,7 @@
 
 import dallib;
 import gb.entities;
+import gb.services;
 import test;
 import std;
 

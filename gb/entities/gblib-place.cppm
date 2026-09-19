@@ -6,11 +6,11 @@
 
 export module gblib:place;
 
+import gb.entities;
 import :entitylists;
 import :gameobj;
 import :services;
 import :shlmisc;
-import :star;
 
 export class Place { /* used in function return for finding place */
 public:

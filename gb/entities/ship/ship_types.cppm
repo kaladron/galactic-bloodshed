@@ -4,7 +4,7 @@
 /// \brief Ship domain enums, component value objects, and serialization POD
 /// struct.
 
-export module gblib:ship_types;
+export module gb.entities:ship_types;
 
 import std;
 

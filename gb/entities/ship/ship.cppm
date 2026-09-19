@@ -3,7 +3,7 @@
 /// \file ship.cppm
 /// \brief Umbrella module partition re-exporting all Ship domain partitions.
 
-export module gblib:ships;
+export module gb.entities:ships;
 
 export import :ship_types;
 export import :ship_templates;

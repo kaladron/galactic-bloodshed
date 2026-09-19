@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-shipfilter.cppm
+/// \file shipfilter.cppm
 /// \brief Ship filtering helpers for ShipList iteration
 
-export module gblib:shipfilter;
+export module gb.entities:shipfilter;
 
 import :ships;
 import :types;

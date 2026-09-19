@@ -14,7 +14,7 @@
 
 export module gblib:sessionregistry;
 
-import :types;
+import gb.entities;
 import std;
 
 /// Session metadata for the 'who' command (without exposing Session type)

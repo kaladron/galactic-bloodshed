@@ -3,7 +3,7 @@
 /// \file star.cc
 /// \brief Star class member functions.
 
-module gblib;
+module gb.entities;
 
 bool Star::control(player_t Playernum, governor_t Governor) const {
   return Governor == 0 || star_struct.governor[Playernum] == Governor;

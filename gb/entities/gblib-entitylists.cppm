@@ -8,14 +8,9 @@ export module gblib:entitylists;
 
 import std;
 
+import gb.entities;
 import :gameobj;
 import :services;
-import :types;
-import :rand;
-import :race;
-import :star;
-import :planet;
-import :ships;
 
 export template <typename Entity>
 struct EntityListTraits;

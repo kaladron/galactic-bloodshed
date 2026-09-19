@@ -630,8 +630,3 @@ double p_factor(double attacker_tech, double defender_tech) {
          std::atan(TECH_PENETRATION_SCALE *
                    ((attacker_tech + 1.0) / (defender_tech + 1.0)));
 }
-
-gun_count_t planet_guns(resource_t points) {
-  if (points < 0) return 0; /* shouldn't happen */
-  return static_cast<gun_count_t>(std::min<resource_t>(20, points / 1000));
-}

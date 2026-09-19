@@ -9,12 +9,6 @@ import std;
 
 module gblib;
 
-import :types;
-import :services;
-import :gameobj;
-import :ships;
-#undef stdout
-
 // ShipList constructors
 
 ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)

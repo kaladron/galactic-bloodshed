@@ -9,13 +9,7 @@ import glaze.json;
 export module gblib:repositories;
 
 import dallib;
-import :types;
-import :race;
-import :ships;
-import :star;
-import :planet;
-import :sector;
-import :universe;
+import gb.entities;
 import std;
 
 // Base template for repositories

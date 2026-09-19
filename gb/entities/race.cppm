@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-race.cppm
+/// \file race.cppm
 /// \brief Module interface partition for Race entity and governance models.
 
-export module gblib:race;
+export module gb.entities:race;
 
 import :types;
 import :tweakables;

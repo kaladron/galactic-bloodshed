@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-types.cppm
+/// \file domain_types.cppm
 /// \brief Module interface partition for foundational game types, vectors,
 /// coordinates, and scopes.
 
-export module gblib:types;
+export module gb.entities:types;
 
 import std;
 
@@ -1186,4 +1186,19 @@ string_to_shipnum(std::string_view s) {
     return std::stoi(std::string(s.begin(), s.end()));
   }
   return {};
+}
+
+// Diagnostic logging for invariant violations
+export constexpr bool DEBUG_INVARIANTS = true;
+
+export template <typename T, typename U>
+void log_invariant_violation(
+    std::string_view entity, std::string_view field, T attempted, U clamped_to,
+    std::source_location loc = std::source_location::current()) {
+  if constexpr (DEBUG_INVARIANTS) {
+    std::print(std::cerr,
+               "[INVARIANT] {}::{}: attempted {}, clamped to {} (at {}:{})\n",
+               entity, field, attempted, clamped_to, loc.file_name(),
+               loc.line());
+  }
 }

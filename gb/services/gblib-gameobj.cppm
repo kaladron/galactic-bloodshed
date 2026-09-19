@@ -5,14 +5,12 @@
 
 export module gblib:gameobj;
 
-import :types;
-import :race;
+import gb.entities;
 import :sessionregistry;  // For SessionRegistry interface
 import std;
 
-// Forward declarations to avoid coupling gblib:gameobj to :services or :ships
+// Forward declaration to avoid coupling gblib:gameobj to :services
 export class EntityManager;
-export class Ship;
 
 export class GameObj {
 public:

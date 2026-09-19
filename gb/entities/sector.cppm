@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-sector.cppm
+/// \file sector.cppm
 /// \brief Module interface partition for Sector entity and SectorMap grid
 /// models.
 
-export module gblib:sector;
+export module gb.entities:sector;
 
 import :types;
 import :tweakables;

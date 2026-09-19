@@ -2,9 +2,8 @@
 
 export module gblib:shlmisc;
 
+import gb.entities;
 import :gameobj;
-import :ships;
-import :star;
 
 export bool authorized(governor_t, const Ship&);
 export shipnum_t start_shiplist(GameObj&, const std::string_view);

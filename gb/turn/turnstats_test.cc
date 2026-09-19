@@ -5,6 +5,7 @@
 /// domain methods, and bounds checking.
 
 import gb.entities;
+import gb.turn;
 import test;
 import std;
 

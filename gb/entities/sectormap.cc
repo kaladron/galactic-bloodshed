@@ -6,9 +6,8 @@
 module;
 
 import std;
-#undef stdout
 
-module gblib;
+module gb.entities;
 
 Sector& SectorMap::get_random() {
   return get_random(game_rng());

@@ -5,13 +5,10 @@
 
 export module gblib:doturncmd;
 
+import gb.entities;
 import :gameobj;
-import :race;
 import :services;
-import :star;
 import :turnstats;
-import :tweakables;
-import :types;
 import std;
 
 class SessionRegistry;

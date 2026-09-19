@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-star.cppm
+/// \file star.cppm
 /// \brief Module interface partition for Star entity and system models.
 
-export module gblib:star;
+export module gb.entities:star;
 
 import :race;
 import :types;

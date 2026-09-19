@@ -6,10 +6,10 @@
 export module gblib;
 
 export import strong_id;  // Third-party strong type ID system
+export import gb.entities;
 
 export import :bombard;
 export import :build;
-export import :csp;
 export import :doplanet;
 export import :dosector;
 export import :doship;
@@ -22,25 +22,15 @@ export import :map;
 export import :misc;
 export import :move;
 export import :order;
-export import :planet;
 export import :place;
 export import :prompt;
-export import :types;
-export import :sector;
-export import :race;
-export import :rand;
 export import :repositories;
 export import :services;
 export import :sessionregistry;  // Cross-cutting session interface
-export import :ships;
-export import :shipfilter;
 export import :shlmisc;
 export import :shootblast;
-export import :star;
 export import :tele;
 export import :turnstats;
-export import :tweakables;
-export import :universe;
 
 export constexpr double morale_factor(const double x) {
   return (std::atan((double)x / 10000.) / 3.14159565 + .5);

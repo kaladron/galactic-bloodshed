@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Client-Server Protocol (CSP) constants and types
+/// \file csp.cppm
+/// \brief Client-Server Protocol (CSP) constants and types.
 
-export module gblib:csp;
+export module gb.entities:csp;
 
 export namespace GB::csp {
 

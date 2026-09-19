@@ -7,7 +7,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.entities;
 
 namespace {
 

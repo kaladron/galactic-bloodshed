@@ -2,9 +2,8 @@
 
 export module gblib:shootblast;
 
+import gb.entities;
 import :misc;
-import :race;
-import :ships;
 
 // Damage, Short, Long
 export std::optional<std::tuple<damage_t, std::string, std::string>>
@@ -44,7 +43,6 @@ export struct CollateralDamage {
 
 export CollateralDamage do_collateral(Ship& ship, damage_t damage,
                                       double race_mass = 1.0);
-export gun_count_t planet_guns(resource_t mob_points);
 
 /// \brief Salvo saturation rule: every 5 hits reduce target effective armor by
 /// 1 for that attack (help/fireformula.md).

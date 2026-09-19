@@ -560,7 +560,7 @@ void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
                                 .level = pl.level};
   }
   if (requires_maneuver_fuel_to_aim(ship)) {
-    use_fuel(ship, FUEL_MANEUVER);
+    ship.consume_fuel(FUEL_MANEUVER);
   }
   if (ship.type() == ShipType::OTYPE_GTELE ||
       ship.type() == ShipType::OTYPE_STELE) {
@@ -600,7 +600,7 @@ bool activate_factory_on_habitat(GameObj& g, Ship& factory,
     }
     const int new_size =
         1 + static_cast<int>(HAB_FACT_SIZE *
-                             static_cast<double>(ship_size(factory)));
+                             static_cast<double>(factory.calculate_size()));
     const int hanger_needed =
         new_size - ((habitat.max_hanger() - habitat.hanger()) + factory.size());
     if (hanger_needed > 0) {
@@ -622,7 +622,7 @@ bool activate_factory_on_planet(GameObj& g, const Ship& factory,
                                 resource_t& oncost) {
   bool ok = false;
   g.entity_manager.mutate_planet(
-      factory.deststar(), factory.destpnum(), [&](Planet& planet) {
+      factory.storbits(), factory.pnumorbits(), [&](Planet& planet) {
         oncost = 2 * factory.build_cost();
         if (planet.info(g.player()).resource < oncost) {
           g.out << std::format(

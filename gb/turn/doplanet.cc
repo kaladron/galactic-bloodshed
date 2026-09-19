@@ -160,7 +160,7 @@ execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
   if (success(chance)) {
     /* only condition can be terraformed, type doesn't change */
     s.terraform(race.likesbest);
-    use_fuel(ship, FUEL_COST_TERRA);
+    ship.consume_fuel(FUEL_COST_TERRA);
     if (success(50) && (planet.conditions(TOXIC) < 100)) {
       planet.conditions(TOXIC) += 1;
     }
@@ -395,7 +395,7 @@ double refuel_gasgiant_orbiters(const Planet& planet, Ship& ship) {
       static_cast<double>(ship.max_fuel_capacity()) - ship.fuel();
   const double added = std::clamp(fadd, 0.0, std::max(0.0, capacity));
   if (added > 0.0) {
-    rcv_fuel(ship, added);
+    ship.add_fuel(added);
   }
   return added;
 }

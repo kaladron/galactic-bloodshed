@@ -203,7 +203,7 @@ std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,
   }
 
   auto ship = create(std::move(data));
-  ship->size() = static_cast<ship_size_t>(ship_size(*ship));
+  ship->size() = ship->calculate_size();
   ship->set_mass(ship->base_mass());
   ship->build_cost() = cost(*ship);
   return ship;

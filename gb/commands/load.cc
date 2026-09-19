@@ -634,10 +634,10 @@ bool execute_planet_transfer(Ship& s, char commod, std::int64_t amt,
       s.add_crystals(amt);
       break;
     case 'f':
-      rcv_fuel(s, static_cast<double>(amt));
+      s.add_fuel(static_cast<double>(amt));
       break;
     case 'r':
-      rcv_resource(s, amt);
+      s.add_resource(amt);
       break;
   }
 

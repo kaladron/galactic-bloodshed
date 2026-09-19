@@ -559,7 +559,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
     moveship(entity_manager, ship, update, true, false);
   }
 
-  ship.size() = ship_size(ship); /* for debugging */
+  ship.size() = ship.calculate_size(); /* for debugging */
 
   synchronize_docked_carrier_ownership(ship, entity_manager);
   update_ship_inhabited_and_exploration(ship, entity_manager);

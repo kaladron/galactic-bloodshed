@@ -160,7 +160,7 @@ bool deduct_assault_ap(const Ship& s, GameObj& g) {
 }
 
 void maneuver_ship_to_target(Ship& s, const Ship& s2, double fuel, GameObj& g) {
-  use_fuel(s, fuel);
+  s.consume_fuel(fuel);
   s.set_coordinates(s2.coordinates() +
                     SystemCoordinates{static_cast<double>(int_rand(-1, 1)),
                                       static_cast<double>(int_rand(-1, 1))});

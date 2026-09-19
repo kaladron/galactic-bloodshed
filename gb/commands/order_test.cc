@@ -366,15 +366,18 @@ void test_order_factory_activation_and_errors() {
                 .with_on(false)
                 .build_handle();
   f1->build_cost() = 50;
-  f1->deststar() = 0;
+  f1->deststar() = 1;
   f1->destpnum() = 0;
 
+  const auto initial_res = ctx.em.peek_planet(0, 0)->info(1).resource;
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", "#60", "on"});
   test::expect_contains(g.out.str(),
                         "Factory activated at a cost of 100 resources");
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(60)->on(), 1);
+  test::expect_eq(ctx.em.peek_planet(0, 0)->info(1).resource,
+                  initial_res - 100);
 
   // Cannot turn off an online factory
   g.out.str("");

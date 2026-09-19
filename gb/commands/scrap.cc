@@ -220,11 +220,11 @@ bool scrap(const command_t& argv, GameObj& g) {
     if (was_docked && dest_ship != 0) {
       g.entity_manager.mutate_ship(dest_ship, [&](Ship& s2) {
         s2.add_crystals(xtalval);
-        rcv_fuel(s2, fuelval);
-        rcv_destruct(s2, destval);
-        rcv_resource(s2, scrapval);
-        rcv_troops(s2, troopval, g.race->mass);
-        rcv_popn(s2, crewval, g.race->mass);
+        s2.add_fuel(fuelval);
+        s2.add_destruct(destval);
+        s2.add_resource(scrapval);
+        s2.add_troops(troopval, g.race->mass);
+        s2.add_popn(crewval, g.race->mass);
       });
     }
 

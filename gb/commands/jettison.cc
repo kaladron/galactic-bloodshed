@@ -96,7 +96,7 @@ bool jettison(const command_t& argv, GameObj& g) {
         break;
       case 'd':
         if ((amt = jettison_check(g, amt, (int)(ship.destruct()))) > 0) {
-          use_destruct(ship, amt);
+          ship.consume_destruct(amt);
           g.out << std::format("{} destruct jettisoned.\n", amt);
           if (!ship.max_crew_capacity()) {
             g.out << std::format("\n{} ", ship);
@@ -111,14 +111,14 @@ bool jettison(const command_t& argv, GameObj& g) {
         break;
       case 'f':
         if ((amt = jettison_check(g, amt, (int)(ship.fuel()))) > 0) {
-          use_fuel(ship, (double)amt);
+          ship.consume_fuel(static_cast<double>(amt));
           g.out << std::format("{} fuel jettisoned.\n", amt);
           success = true;
         }
         break;
       case 'r':
         if ((amt = jettison_check(g, amt, (int)(ship.resource()))) > 0) {
-          use_resource(ship, amt);
+          ship.consume_resource(amt);
           g.out << std::format("{} resources jettisoned.\n", amt);
           success = true;
         }

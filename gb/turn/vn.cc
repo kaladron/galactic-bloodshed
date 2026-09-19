@@ -188,12 +188,12 @@ StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
 
   std::string buf;
   if (ship.type() == ShipType::OTYPE_VN) {
-    rcv_resource(ship, prod);
+    ship.add_resource(prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, ship.type_letter(), ship.number(),
                       prin_ship_orbits(em, ship));
   } else if (ship.type() == ShipType::OTYPE_BERS) {
-    rcv_destruct(ship, prod);
+    ship.add_destruct(prod);
     buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
                       f, ship.type_letter(), ship.number(),
                       prin_ship_orbits(em, ship));
@@ -221,11 +221,11 @@ resource_t mine_sector(AutonomousShip& ship, Sector& sector) {
   const resource_t prod = (newres == oldres) ? 1 : (oldres - newres);
   sector.set_resource(oldres - prod);
   if (ship.type() == ShipType::OTYPE_VN) {
-    rcv_resource(ship, prod);
+    ship.add_resource(prod);
   } else if (ship.type() == ShipType::OTYPE_BERS) {
-    rcv_destruct(ship, 5 * prod);
+    ship.add_destruct(5 * prod);
   }
-  rcv_fuel(ship, prod);
+  ship.add_fuel(prod);
   return prod;
 }
 
@@ -320,7 +320,7 @@ std::string generate_vn_binary_name() {
 shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
                                   Planet& planet) {
   const auto& tmpl = ship_template(ShipType::OTYPE_VN);
-  use_resource(parent, tmpl.build_cost);
+  parent.consume_resource(tmpl.build_cost);
 
   MindData child_mind{
       .progenitor = parent.mind().progenitor,
@@ -367,7 +367,7 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
                                          AutonomousShip& parent, Planet& planet,
                                          const TurnStats& stats) {
   const auto& tmpl = ship_template(ShipType::OTYPE_BERS);
-  use_resource(parent, tmpl.build_cost);
+  parent.consume_resource(tmpl.build_cost);
 
   MindData bers_mind{
       .progenitor = parent.mind().progenitor,

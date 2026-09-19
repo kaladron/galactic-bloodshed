@@ -404,13 +404,11 @@ void test_dynamic_base_mass() {
   // expected = 1.0 + 1.0 * 5 + 0.2 * 40 + 0.1 * 10 + 0.2 * 4 * 2 + 0.2 * 2 * 1
   //          = 1.0 + 5.0 + 8.0 + 1.0 + 1.6 + 0.4 = 17.0
   expect_near(ship.base_mass(), 17.0);
-  expect_near(getmass(ship), 17.0);
 
   // Dynamically reacts to structural changes without manual base_mass
   // assignment
   ship.armor() = 10;  // +5.0 mass
   expect_near(ship.base_mass(), 22.0);
-  expect_near(getmass(ship), 22.0);
 
   // Underflow protection: max_hanger > size clamps to 0
   ship.max_hanger() = 100;
@@ -1323,12 +1321,13 @@ void test_blueprint_complexity_defense_and_capture() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
 
-  // Blueprint and constructed state initialization for VN, Mine, Transdev, God
+  // Blueprint and constructed state initialization for VN, Berserker, Mine,
+  // Transdev, and specialty ships
   const auto* race1 = ctx.em.peek_race(1);
   Ship factory_ship;
   factory_ship.set_factory_blueprint(ShipType::STYPE_CRUISER, race1);
   test::expect_eq(factory_ship.build_type(), ShipType::STYPE_CRUISER);
-  test::expect_true(ship_size(factory_ship) > 0);
+  test::expect_true(factory_ship.calculate_size() > 0);
   test::expect_true(cost(factory_ship) > 0.0);
   expect_near(complexity(factory_ship), complexity(ShipType::STYPE_CRUISER));
 
@@ -1338,12 +1337,48 @@ void test_blueprint_complexity_defense_and_capture() {
   test::expect_true(complexity(factory_ship) > 0.0);
 
   for (const auto stype :
-       {ShipType::OTYPE_VN, ShipType::STYPE_MINE, ShipType::OTYPE_TRANSDEV}) {
+       {ShipType::OTYPE_VN, ShipType::OTYPE_BERS, ShipType::STYPE_MIRROR,
+        ShipType::STYPE_POD, ShipType::OTYPE_CANIST, ShipType::STYPE_MISSILE,
+        ShipType::STYPE_MINE, ShipType::OTYPE_TERRA, ShipType::OTYPE_TRANSDEV,
+        ShipType::OTYPE_TOXWC}) {
     ship_struct sd{.build_type = stype, .type = stype};
     Ship special{sd};
     special.set_factory_blueprint(stype, race1);
     special.initialize_constructed_state(*race1, 0, 10.0, 5);
     test::expect_true(special.alive());
+
+    const Ship& const_special = special;
+    if (stype == ShipType::OTYPE_VN || stype == ShipType::OTYPE_BERS) {
+      const auto* auto_ship = const_special.as<AutonomousShip>();
+      test::expect_true(auto_ship != nullptr);
+      test::expect_eq(auto_ship->progenitor(), player_t{1});
+      test::expect_eq(auto_ship->generation(), 1u);
+      test::expect_true(auto_ship->is_busy());
+      test::expect_true(
+          std::holds_alternative<MindData>(const_special.get_struct().special));
+    } else if (stype == ShipType::STYPE_POD) {
+      test::expect_true(
+          std::holds_alternative<PodData>(const_special.get_struct().special));
+    } else if (stype == ShipType::OTYPE_CANIST) {
+      test::expect_true(std::holds_alternative<TimerData>(
+          const_special.get_struct().special));
+    } else if (stype == ShipType::STYPE_MISSILE) {
+      test::expect_true(std::holds_alternative<ImpactData>(
+          const_special.get_struct().special));
+    } else if (stype == ShipType::STYPE_MINE) {
+      test::expect_true(std::holds_alternative<TriggerData>(
+          const_special.get_struct().special));
+      test::expect_eq(const_special.as<MineShip>()->trigger_radius(), 100);
+    } else if (stype == ShipType::OTYPE_TERRA) {
+      test::expect_true(std::holds_alternative<TerraformData>(
+          const_special.get_struct().special));
+    } else if (stype == ShipType::OTYPE_TRANSDEV) {
+      test::expect_true(std::holds_alternative<TransportData>(
+          const_special.get_struct().special));
+    } else if (stype == ShipType::OTYPE_TOXWC) {
+      test::expect_true(std::holds_alternative<WasteData>(
+          const_special.get_struct().special));
+    }
   }
 
   // crash() fuel and damage checks

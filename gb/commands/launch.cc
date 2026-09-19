@@ -158,7 +158,7 @@ bool launch_from_planet(GameObj& g, Ship& s) {
           s.set_coordinates(p.absolute_coordinates(star) +
                             SystemCoordinates{r_x, r_y});
 
-          use_fuel(s, fuel);
+          s.consume_fuel(fuel);
           s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
           s.whatdest() = ScopeLevel::LEVEL_UNIV;
           if (auto* canist = s.as<CanisterShip>()) {

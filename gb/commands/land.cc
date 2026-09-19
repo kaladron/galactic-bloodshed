@@ -101,7 +101,7 @@ bool land_spaceborne_on_carrier(GameObj& g, Ship& s, const Ship& carrier) {
     }
     return false;
   }
-  use_fuel(s, fuel);
+  s.consume_fuel(fuel);
   s.dock_into_carrier(carrier.number());
   g.out << std::format("{} landed on {} using {} fuel.\n", s, carrier, fuel);
   return true;
@@ -332,7 +332,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
 
     s.set_land_coords(target_coords);
     s.set_coordinates(p.absolute_coordinates(star));
-    use_fuel(s, fuel);
+    s.consume_fuel(fuel);
     s.land_on_planet();
     s.deststar() = s.storbits();
     s.destpnum() = s.pnumorbits();

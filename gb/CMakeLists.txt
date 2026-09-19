@@ -119,7 +119,11 @@ target_sources(
           services/gblib-services.cppm
           entities/gblib-sector.cppm
           services/gblib-sessionregistry.cppm
-          entities/gblib-ships.cppm
+          entities/ship/ship.cppm
+          entities/ship/ship_base.cppm
+          entities/ship/ship_subclasses.cppm
+          entities/ship/ship_templates.cppm
+          entities/ship/ship_types.cppm
           entities/gblib-shipfilter.cppm
           services/gblib-shlmisc.cppm
           entities/gblib-shootblast.cppm
@@ -140,10 +144,10 @@ target_sources(
           entities/fire.cc
           entities/fuel.cc
           services/gameobj.cc
-          entities/load.cc
           entities/map.cc
           entities/misc.cc
           entities/move.cc
+          entities/navigation.cc
           entities/order.cc
           entities/planet.cc
           services/prompt.cc
@@ -156,7 +160,9 @@ target_sources(
           entities/rand.cc
           entities/sectormap.cc
           entities/sector.cc
-          entities/ships.cc
+          entities/ship/ship_base.cc
+          entities/ship/ship_subclasses.cc
+          entities/ship/ship_templates.cc
           services/shlmisc.cc
           entities/shootblast.cc
           entities/star.cc

@@ -25,8 +25,7 @@ int main() {
   // Initialize scalar fields
   test_planet.star_id() = 1;  // Match the star we'll create below
   test_planet.planet_order() = 2;
-  test_planet.xpos() = 100.5;
-  test_planet.ypos() = 200.7;
+  test_planet.set_system_coordinates({100.5, 200.7});
   test_planet.popn() = 100000;
   test_planet.troops() = 5000;
   test_planet.maxpopn() = 150000;
@@ -133,8 +132,8 @@ int main() {
   // Verify scalar fields
   test::expect_eq(retrieved.star_id(), test_planet.star_id());
   test::expect_eq(retrieved.planet_order(), test_planet.planet_order());
-  test::expect_eq(retrieved.xpos(), test_planet.xpos());
-  test::expect_eq(retrieved.ypos(), test_planet.ypos());
+  test::expect_eq(retrieved.system_coordinates(),
+                  test_planet.system_coordinates());
   test::expect_eq(retrieved.dimensions(), test_planet.dimensions());
   test::expect_eq(retrieved.popn(), test_planet.popn());
   test::expect_eq(retrieved.troops(), test_planet.troops());

@@ -46,8 +46,7 @@ Planet createTestPlanet(starnum_t star_id = 0, planetnum_t pnum = 0) {
   Planet planet(PlanetType::EARTH, Coordinates{5, 5});
   planet.star_id() = star_id;
   planet.planet_order() = pnum;
-  planet.xpos() = 1000.0;
-  planet.ypos() = 1000.0;
+  planet.set_system_coordinates({1000.0, 1000.0});
   planet.slaved_to() = 0;
   planet.conditions(TOXIC) = 0;
   planet.conditions(RTEMP) = 50;
@@ -116,8 +115,7 @@ void test_do_turn_segment_vs_update() {
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
       auto& s = initial_smap.get(Coordinates{x, y});
-      s.set_x(x);
-      s.set_y(y);
+      s.set_coords({x, y});
       s.set_owner(1);
       s.set_popn_exact(100);
       s.set_efficiency_bounded(50);
@@ -389,7 +387,7 @@ void test_process_market_transactions_isolated() {
 
   Star star1 = createTestStar(starnum_t{0});
   Star star2 = createTestStar(starnum_t{1});
-  star2.xpos() = 50000.0;
+  star2.set_coordinates({50000.0, 0.0});
   StarRepository star_repo(store);
   star_repo.save(star1);
   star_repo.save(star2);

@@ -953,27 +953,27 @@ void doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
  */
 void moveplanet(EntityManager& entity_manager, const Star& star,
                 Planet& planet) {
-  const double dist = std::hypot(planet.ypos(), planet.xpos());
+  const auto sys_coords = planet.system_coordinates();
+  const double dist = sys_coords.distance_to({0.0, 0.0});
   if (dist <= 0.0 || star.gravity() <= 0.0) {
     throw std::domain_error(
         "Invalid orbital radius or stellar gravity in moveplanet");
   }
-  const double phase = std::atan2(planet.ypos(), planet.xpos());
+  const double phase = std::atan2(sys_coords.y, sys_coords.x);
   const double period =
       dist * std::sqrt((dist / (SYSTEMGRAVCONST * star.gravity())));
 
-  const double xadd =
-      (dist * std::cos(((-1. / period) + phase))) - planet.xpos();
-  const double yadd =
-      (dist * std::sin(((-1. / period) + phase))) - planet.ypos();
+  const SystemCoordinates new_coords{
+      dist * std::cos((-1. / period) + phase),
+      dist * std::sin((-1. / period) + phase),
+  };
+  const SystemCoordinates delta = new_coords - sys_coords;
 
   /* adjust ships in orbit around the planet */
   for (auto ship_handle : ShipList::on_planet(entity_manager, planet.star_id(),
                                               planet.planet_order())) {
-    ship_handle->set_coordinates(ship_handle->coordinates() +
-                                 SystemCoordinates{xadd, yadd});
+    ship_handle->set_coordinates(ship_handle->coordinates() + delta);
   }
 
-  planet.xpos() += xadd;
-  planet.ypos() += yadd;
+  planet.set_system_coordinates(new_coords);
 }

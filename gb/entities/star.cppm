@@ -17,7 +17,7 @@ export struct star_struct {
   PlayerVector<ap_t, MAXPLAYERS> AP;  /* action pts alotted */
   PlayerBitset<MAXPLAYERS> explored;  /* who's been here */
   PlayerBitset<MAXPLAYERS> inhabited; /* who lives here now */
-  double xpos{0.0}, ypos{0.0};
+  UniverseCoordinates coordinates{};
 
   std::vector<std::string>
       pnames; /* names of planets (vector size = numplanets) */
@@ -156,26 +156,14 @@ public:
   /// \brief Returns a random planet index (0..numplanets-1).
   [[nodiscard]] planetnum_t get_random_planet_index() const;
 
-  double& xpos() {
-    return star_struct.xpos;
-  }
-  [[nodiscard]] double xpos() const {
-    return star_struct.xpos;
-  }
-
-  double& ypos() {
-    return star_struct.ypos;
-  }
-  [[nodiscard]] double ypos() const {
-    return star_struct.ypos;
-  }
-
   [[nodiscard]] constexpr UniverseCoordinates coordinates() const noexcept {
-    return {star_struct.xpos, star_struct.ypos};
+    return star_struct.coordinates;
+  }
+  constexpr UniverseCoordinates& coordinates() noexcept {
+    return star_struct.coordinates;
   }
   constexpr void set_coordinates(UniverseCoordinates coords) noexcept {
-    star_struct.xpos = coords.x;
-    star_struct.ypos = coords.y;
+    star_struct.coordinates = coords;
   }
 
   // Action points (1-indexed via PlayerVector)

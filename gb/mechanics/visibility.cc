@@ -39,7 +39,7 @@ std::optional<char> format_owned_sector_digit(const Race::gov& gov,
     return std::nullopt;
   }
   const int owner_val = s.get_owner().value;
-  if (!gov.toggle.double_digits || owner_val < 10 || (s.get_x() % 2) != 0) {
+  if (!gov.toggle.double_digits || owner_val < 10 || (s.coords().x % 2) != 0) {
     return static_cast<char>((owner_val % 10) + '0');
   }
   return static_cast<char>((owner_val / 10) + '0');

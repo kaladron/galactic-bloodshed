@@ -17,7 +17,7 @@ static constexpr int CARE = 5;
 
 namespace {
 struct AnalSect {
-  unsigned int x, y;
+  Coordinates coords{};
   SectorType des{SectorType::SEC_SEA};
   resource_t value = -1;  // -1 means not set
 };
@@ -94,7 +94,7 @@ void print_top(GameObj& g, const std::array<struct AnalSect, CARE> kArr,
   for (const auto& as : kArr) {
     if (as.value == -1) continue;
     g.out << std::format("{:>5}{}({:>2},{:>2})", as.value,
-                         get_sector_char(as.des), as.x, as.y);
+                         get_sector_char(as.des), as.coords.x, as.coords.y);
   }
   g.out << "\n";
 }
@@ -175,41 +175,25 @@ TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
   for (const auto& sect : smap) {
     if (!sector_type || *sector_type == sect.get_condition()) {
       if (filter.matches(sect.get_owner())) {
+        const auto coords = sect.coords();
+        const auto cond = sect.get_condition();
         insert(mode, tops.res,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_resource()});
+               {.coords = coords, .des = cond, .value = sect.get_resource()});
         insert(mode, tops.eff,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_eff()});
-        insert(mode, tops.mob,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_mobilization()});
+               {.coords = coords, .des = cond, .value = sect.get_eff()});
+        insert(
+            mode, tops.mob,
+            {.coords = coords, .des = cond, .value = sect.get_mobilization()});
         insert(mode, tops.frt,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_fert()});
+               {.coords = coords, .des = cond, .value = sect.get_fert()});
         insert(mode, tops.popn,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_popn()});
+               {.coords = coords, .des = cond, .value = sect.get_popn()});
         insert(mode, tops.troops,
-               {.x = sect.get_x(),
-                .y = sect.get_y(),
-                .des = sect.get_condition(),
-                .value = sect.get_troops()});
+               {.coords = coords, .des = cond, .value = sect.get_troops()});
         insert(
             mode, tops.m_popn,
-            {.x = sect.get_x(),
-             .y = sect.get_y(),
-             .des = sect.get_condition(),
+            {.coords = coords,
+             .des = cond,
              .value = maxsupport(*g.race, sect, planet.compatibility(*g.race),
                                  planet.conditions(TOXIC))});
       }

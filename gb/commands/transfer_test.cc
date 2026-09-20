@@ -35,8 +35,7 @@ int main() {
   star_struct ss{};
   ss.star_id = 0;
   ss.name = "TransferHub";
-  ss.xpos = 100.0;
-  ss.ypos = 200.0;
+  ss.coordinates = {100.0, 200.0};
   ss.AP[player_t{1}] = 50;  // Give player 1 enough APs
   ss.pnames.emplace_back("TransferPlanet");
   Star star(ss);

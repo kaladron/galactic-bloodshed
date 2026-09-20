@@ -150,8 +150,7 @@ void UniverseGenerator::place_star(star_struct& star) {
     const std::size_t j = to_grid_bin(pos.y);
     if (!star_grid_occupancy_[i][j]) {
       star_grid_occupancy_[i][j] = true;
-      star.xpos = pos.x;
-      star.ypos = pos.y;
+      star.coordinates = pos;
       return;
     }
   }
@@ -190,8 +189,8 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
     int temperature =
         calculate_temperature(dist, static_cast<int>(star.temperature));
     double angle = 2.0 * std::numbers::pi * double_rand();
-    double xpos = dist * std::sin(angle);
-    double ypos = dist * std::cos(angle);
+    const SystemCoordinates sys_pos{dist * std::sin(angle),
+                                    dist * std::cos(angle)};
 
     star.pnames.push_back(next_planet_name(static_cast<planetnum_t>(i)));
 
@@ -202,8 +201,7 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
                              snum, static_cast<planetnum_t>(i), smap_opt);
     auto& smap = *smap_opt;
 
-    planet.xpos() = xpos;
-    planet.ypos() = ypos;
+    planet.set_system_coordinates(sys_pos);
     planet.total_resources() = 0;
 
     result.planets_by_type[type]++;
@@ -216,7 +214,8 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
       std::println(
           std::cout,
           "Position is ({:.0f},{:.0f}) relative to {}; distance {:.0f}.",
-          planet.xpos(), planet.ypos(), star.name, dist);
+          planet.system_coordinates().x, planet.system_coordinates().y,
+          star.name, dist);
       std::println(std::cout, "sect map({}x{}):", planet.dimensions().x,
                    planet.dimensions().y);
       for (int y = 0; y < planet.dimensions().y; ++y) {

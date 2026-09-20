@@ -30,8 +30,7 @@ void setup_test_world(TestContext& ctx) {
   star_struct ss{};
   ss.star_id = 0;
   ss.name = "JettisonStar";
-  ss.xpos = 100.0;
-  ss.ypos = 200.0;
+  ss.coordinates = {100.0, 200.0};
   ss.AP[player_t{1}] = 10;
   Star star(ss);
 

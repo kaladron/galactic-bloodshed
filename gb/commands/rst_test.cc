@@ -37,8 +37,7 @@ void setup_test_world(TestContext& ctx) {
   star_struct ss0{};
   ss0.star_id = 0;
   ss0.name = "Sol";
-  ss0.xpos = 0.0;
-  ss0.ypos = 0.0;
+  ss0.coordinates = {0.0, 0.0};
   ss0.explored.set(player_t{1});
   ss0.inhabited.set(player_t{1});
   ss0.pnames.push_back("Earth");

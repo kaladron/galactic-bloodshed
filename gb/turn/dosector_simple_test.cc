@@ -81,8 +81,7 @@ Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
 Star createTestStar() {
   star_struct star_data{};
   star_data.name = "TestStar";
-  star_data.xpos = 0.0;
-  star_data.ypos = 0.0;
+  star_data.coordinates = {0.0, 0.0};
   star_data.stability = 50;
   star_data.nova_stage = 0;
   star_data.temperature = 100;
@@ -98,8 +97,7 @@ void test_sector_creation() {
   auto sector = createTestSector(5, 7, 80, 60, 25, 3, 200, 5000, 100, 2);
 
   // Test basic properties
-  test::expect_eq(sector.get_x(), 5);
-  test::expect_eq(sector.get_y(), 7);
+  test::expect_eq(sector.coords(), Coordinates{5, 7});
   test::expect_eq(sector.get_eff(), 80);
   test::expect_eq(sector.get_fert(), 60);
   test::expect_eq(sector.get_mobilization(), 25);
@@ -253,8 +251,8 @@ void test_star_creation() {
 
   // Test basic properties
   test::expect_eq(star.get_name(), "TestStar");
-  test::expect_eq(star.xpos(), 0.0);
-  test::expect_eq(star.ypos(), 0.0);
+  test::expect_eq(star.coordinates().x, 0.0);
+  test::expect_eq(star.coordinates().y, 0.0);
   test::expect_eq(star.numplanets(), 1);
   test::expect_eq(star.stability(), 50);
   test::expect_eq(star.nova_stage(), 0);
@@ -265,10 +263,9 @@ void test_star_creation() {
   star.set_name("ModifiedStar");
   test::expect_eq(star.get_name(), "ModifiedStar");
 
-  star.xpos() = 100.5;
-  star.ypos() = 200.7;
-  test::expect_eq(star.xpos(), 100.5);
-  test::expect_eq(star.ypos(), 200.7);
+  star.set_coordinates({100.5, 200.7});
+  test::expect_eq(star.coordinates().x, 100.5);
+  test::expect_eq(star.coordinates().y, 200.7);
 
   star.stability() = 75;
   star.temperature() = 150;
@@ -289,15 +286,13 @@ void test_sectormap_functionality() {
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
       auto& sector = smap.get(Coordinates{x, y});
-      sector.set_x(x);
-      sector.set_y(y);
+      sector.set_coords({x, y});
       sector.set_owner(1);
       sector.set_popn_exact(100 * (x + y));
       sector.set_condition(SectorType::SEC_LAND);
 
       // Verify the sector was set correctly
-      test::expect_eq(smap.get(Coordinates{x, y}).get_x(), x);
-      test::expect_eq(smap.get(Coordinates{x, y}).get_y(), y);
+      test::expect_eq(smap.get(Coordinates{x, y}).coords(), Coordinates{x, y});
       test::expect_eq(smap.get(Coordinates{x, y}).get_owner(), 1);
       test::expect_eq(smap.get(Coordinates{x, y}).get_popn(), 100 * (x + y));
       test::expect_eq(smap.get(Coordinates{x, y}).get_condition(),
@@ -356,8 +351,7 @@ void test_edge_cases() {
   // Test sectors with maximum values
   auto max_sector = createTestSector(255, 255, 100, 100, 100, 255, 65535,
                                      1000000, 1000000, MAXPLAYERS - 1);
-  test::expect_eq(max_sector.get_x(), 255);
-  test::expect_eq(max_sector.get_y(), 255);
+  test::expect_eq(max_sector.coords(), Coordinates{255, 255});
   test::expect_eq(max_sector.get_eff(), 100);
   test::expect_eq(max_sector.get_fert(), 100);
 
@@ -560,8 +554,7 @@ void test_spread_population() {
   }
 
   auto& center = smap.get(Coordinates{2, 2});
-  center.set_x(2);
-  center.set_y(2);
+  center.set_coords({2, 2});
   center.set_owner(1);
   center.set_popn_exact(10000);
   center.set_fert(0);

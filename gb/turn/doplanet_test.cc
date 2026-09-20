@@ -1187,8 +1187,7 @@ void test_doplanet_full_cycle() {
   for (int y = 0; y < 10; y++) {
     for (int x = 0; x < 10; x++) {
       auto& s = initial_smap.get(Coordinates{x, y});
-      s.set_x(x);
-      s.set_y(y);
+      s.set_coords({x, y});
       s.set_owner(1);
       s.set_popn_exact(100);
       s.set_efficiency_bounded(50);
@@ -1236,8 +1235,7 @@ void test_exploration_island_discovery() {
   for (int y = 0; y < 10; y++) {
     for (int x = 0; x < 10; x++) {
       auto& s = initial_smap.get(Coordinates{x, y});
-      s.set_x(x);
-      s.set_y(y);
+      s.set_coords({x, y});
       s.set_owner(0);
       s.clear_popn();
       s.set_condition(SectorType::SEC_SEA);
@@ -1306,8 +1304,7 @@ void test_64bit_production_and_stockpiles() {
   for (int y = 0; y < 10; ++y) {
     for (int x = 0; x < 10; ++x) {
       auto& sect = smap.get(Coordinates{x, y});
-      sect.set_x(x);
-      sect.set_y(y);
+      sect.set_coords({x, y});
       if (y == 0 && x < 5) {
         sect.set_owner(1);
         sect.set_popn_exact(100);

@@ -36,8 +36,7 @@ void setup_test_world(TestContext& ctx) {
   star_struct ss{};
   ss.star_id = 0;
   ss.name = "TestStar";
-  ss.xpos = 100.0;
-  ss.ypos = 200.0;
+  ss.coordinates = {100.0, 200.0};
   ss.explored.set(player_t{1});
   ss.pnames.push_back("TestPlanet");
   Star star(ss);

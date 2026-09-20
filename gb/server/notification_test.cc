@@ -125,8 +125,7 @@ star_struct create_star(starnum_t snum) {
   star_struct star{};
   star.star_id = snum;
   star.name = std::format("Star{}", snum);
-  star.xpos = 0;
-  star.ypos = 0;
+  star.coordinates = {0.0, 0.0};
   star.stability = 100;
   star.nova_stage = 0;
   star.temperature = 50;

@@ -46,8 +46,7 @@ int main() {
   star_struct ss{};
   ss.star_id = 0;
   ss.name = "TestStar";
-  ss.xpos = 100.0;
-  ss.ypos = 200.0;
+  ss.coordinates = {100.0, 200.0};
   ss.pnames.emplace_back("TestPlanet");
   ss.explored.set(player_t{1}).set(player_t{2});
   Star star(ss);
@@ -72,8 +71,7 @@ int main() {
   // Initialize all sector coordinates first
   for (int y = 0; y < 5; y++) {
     for (int x = 0; x < 5; x++) {
-      smap.get(Coordinates{x, y}).set_x(x);
-      smap.get(Coordinates{x, y}).set_y(y);
+      smap.get(Coordinates{x, y}).set_coords({x, y});
     }
   }
 

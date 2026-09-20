@@ -34,10 +34,11 @@ bool star_locations(const command_t& argv, GameObj& g) {
   for (const Star& star : StarList::readonly(g.entity_manager)) {
     auto dist = star.coordinates().distance_to(center);
     if (std::floor(dist) <= max_dist) {
-      table.add_row(
-          {std::format("{}", star.star_id()), std::string(star.get_name()),
-           std::format("{:.0f}", star.xpos()),
-           std::format("{:.0f}", star.ypos()), std::format("{:.0f}", dist)});
+      table.add_row({std::format("{}", star.star_id()),
+                     std::string(star.get_name()),
+                     std::format("{:.0f}", star.coordinates().x),
+                     std::format("{:.0f}", star.coordinates().y),
+                     std::format("{:.0f}", dist)});
     }
   }
 

@@ -213,9 +213,10 @@ void Makesurface(const Planet& p, SectorMap& smap) {
       s.set_crystals(int_rand(4, 8));
 
     // We ice up the poles.
-    if ((s.get_y() != 0) && (s.get_y() != smap.dimensions().y - 1)) continue;
+    if ((s.coords().y != 0) && (s.coords().y != smap.dimensions().y - 1))
+      continue;
 
-    int temp = SectTemp(p, s.get_y());
+    int temp = SectTemp(p, s.coords().y);
     switch (s.get_type()) {
       case SectorType::SEC_SEA:
         if (success(-temp)) s.set_condition(SectorType::SEC_ICE);

@@ -37,8 +37,7 @@ int main() {
   star_struct ss{};
   ss.star_id = 0;
   ss.name = "MarketHub";
-  ss.xpos = 100.0;
-  ss.ypos = 200.0;
+  ss.coordinates = {100.0, 200.0};
   ss.AP[player_t{1}] = 100;
   ss.governor[player_t{1}] = 0;
   ss.pnames.emplace_back("MarketPlanet");

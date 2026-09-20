@@ -202,8 +202,7 @@ void test_test_world_builder() {
 
   const auto* smap = ctx.em.peek_sectormap(0, 0);
   test::expect_true(smap != nullptr, "SectorMap for /0/0 must exist");
-  test::expect_eq(smap->get(Coordinates{0, 0}).get_x(), 0);
-  test::expect_eq(smap->get(Coordinates{0, 0}).get_y(), 0);
+  test::expect_eq(smap->get(Coordinates{0, 0}).coords(), Coordinates{0, 0});
 
   std::println(std::cout, "  ✓ TestWorldBuilder verified successfully");
 }

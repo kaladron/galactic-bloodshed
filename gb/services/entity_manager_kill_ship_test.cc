@@ -51,8 +51,7 @@ int main() {
   // Create a test star
   star_struct star_data{};
   star_data.star_id = 0;
-  star_data.xpos = 100.0;
-  star_data.ypos = 100.0;
+  star_data.coordinates = {100.0, 100.0};
   Star star{star_data};
   StarRepository star_repo(store);
   star_repo.save(star);
@@ -61,8 +60,7 @@ int main() {
   Planet planet{};
   planet.star_id() = 0;
   planet.planet_order() = 0;
-  planet.xpos() = 10.0;
-  planet.ypos() = 10.0;
+  planet.set_system_coordinates({10.0, 10.0});
   planet.conditions(TOXIC) = 10;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);

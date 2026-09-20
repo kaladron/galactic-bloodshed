@@ -103,26 +103,22 @@ int main() {
 
     star_struct s0{};
     s0.star_id = 0;
-    s0.xpos = 0.0;
-    s0.ypos = 0.0;
+    s0.coordinates = {0.0, 0.0};
     s0.pnames = {"P1", "P2"};
 
     star_struct s1{};
     s1.star_id = 1;
-    s1.xpos = 10.0;
-    s1.ypos = 0.0;
+    s1.coordinates = {10.0, 0.0};
     s1.pnames = {"P1", "P2"};
 
     star_struct s2{};
     s2.star_id = 2;
-    s2.xpos = 25.0;
-    s2.ypos = 0.0;
+    s2.coordinates = {25.0, 0.0};
     s2.pnames = {"P1"};
 
     star_struct s3{};
     s3.star_id = 3;
-    s3.xpos = 100.0;
-    s3.ypos = 0.0;
+    s3.coordinates = {100.0, 0.0};
     s3.pnames = {"P1"};
 
     star_repo.save(Star{s0});

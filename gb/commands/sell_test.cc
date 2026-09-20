@@ -35,8 +35,7 @@ void setup_test_world(TestContext& ctx) {
   star_struct ss{};
   ss.star_id = 1;
   ss.name = "TradeHub";
-  ss.xpos = 100.0;
-  ss.ypos = 200.0;
+  ss.coordinates = {100.0, 200.0};
   ss.explored.set(player_t{1});
   ss.AP[player_t{1}] = 100;
   ss.governor[player_t{1}] = 1;  // Star controlled by Governor 1 for Player 1

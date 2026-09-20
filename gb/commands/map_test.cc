@@ -44,8 +44,7 @@ void setup_test_world(TestContext& ctx) {
   star_struct ss0{};
   ss0.star_id = 0;
   ss0.name = "TestStar";
-  ss0.xpos = 100.0;
-  ss0.ypos = 200.0;
+  ss0.coordinates = {100.0, 200.0};
   ss0.stability = 40;  // Stable star (< 50)
   ss0.explored.set(player_t{1});
   ss0.pnames.push_back("TestPlanet");
@@ -110,8 +109,7 @@ void setup_test_world(TestContext& ctx) {
   star_struct ss1{};
   ss1.star_id = 1;
   ss1.name = "UnstableStar";
-  ss1.xpos = 300.0;
-  ss1.ypos = 400.0;
+  ss1.coordinates = {300.0, 400.0};
   ss1.stability = 75;  // Unstable (> 50)
   ss1.explored.set(player_t{1});
   ss1.pnames.push_back("UnstablePlanet");
@@ -224,9 +222,9 @@ void test_sector_char_and_desshow_branches() {
   test::expect_eq(desshow(1, 0, r, s), '2');
 
   r.governor[0].toggle.double_digits = true;
-  s.set_x(0);  // Even x -> tens digit ('1')
+  s.set_coords({0, 0});  // Even x -> tens digit ('1')
   test::expect_eq(desshow(1, 0, r, s), '1');
-  s.set_x(1);  // Odd x -> ones digit ('2')
+  s.set_coords({1, 0});  // Odd x -> ones digit ('2')
   test::expect_eq(desshow(1, 0, r, s), '2');
 
   // Inverse highlight on owner 12 falls through to crystal / terrain char

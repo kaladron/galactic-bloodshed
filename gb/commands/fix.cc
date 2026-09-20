@@ -49,14 +49,14 @@ bool fix_planet(const command_t& argv, GameObj& g) {
   bool ok = false;
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
     if (argv[2] == "xpos") {
-      if (opt_val) p.xpos() = static_cast<double>(*opt_val);
-      g.out << std::format("xpos = {}\n", p.xpos());
+      if (opt_val) p.system_coordinates().x = static_cast<double>(*opt_val);
+      g.out << std::format("xpos = {}\n", p.system_coordinates().x);
       ok = true;
       return;
     }
     if (argv[2] == "ypos") {
-      if (opt_val) p.ypos() = static_cast<double>(*opt_val);
-      g.out << std::format("ypos = {}\n", p.ypos());
+      if (opt_val) p.system_coordinates().y = static_cast<double>(*opt_val);
+      g.out << std::format("ypos = {}\n", p.system_coordinates().y);
       ok = true;
       return;
     }

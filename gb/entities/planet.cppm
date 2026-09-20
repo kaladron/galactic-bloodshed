@@ -222,8 +222,7 @@ export struct plinfo {      // planetary stockpiles
 
 // Internal struct holding raw planet data for serialization
 export struct planet_struct {
-  double xpos = 0;
-  double ypos = 0;
+  SystemCoordinates system_coordinates{0.0, 0.0};
   Coordinates dimensions{0, 0};
 
   PlayerVector<plinfo, MAXPLAYERS> info;
@@ -258,32 +257,19 @@ public:
   Planet& operator=(Planet&&) = default;
   ~Planet() = default;
 
-  // Accessor methods for simple fields
-  [[nodiscard]] double xpos() const {
-    return data_.xpos;
-  }
-  double& xpos() {
-    return data_.xpos;
-  }
-
-  [[nodiscard]] double ypos() const {
-    return data_.ypos;
-  }
-  double& ypos() {
-    return data_.ypos;
-  }
-
   /// \brief Returns continuous in-system coordinates relative to the host star
   /// (+/- SYSTEMSIZE = 2,000).
   [[nodiscard]] constexpr SystemCoordinates
   system_coordinates() const noexcept {
-    return {data_.xpos, data_.ypos};
+    return data_.system_coordinates;
+  }
+  constexpr SystemCoordinates& system_coordinates() noexcept {
+    return data_.system_coordinates;
   }
 
   /// \brief Sets continuous in-system coordinates relative to the host star.
   constexpr void set_system_coordinates(SystemCoordinates coords) noexcept {
-    data_.xpos = coords.x;
-    data_.ypos = coords.y;
+    data_.system_coordinates = coords;
   }
 
   /// \brief Computes absolute galactic position given host star universe

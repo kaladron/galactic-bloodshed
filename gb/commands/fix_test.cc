@@ -217,8 +217,7 @@ void test_fix_planet_position_persistence() {
   planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.dimensions() = Coordinates{10, 10};
-  planet.xpos() = 100.0;
-  planet.ypos() = 200.0;
+  planet.set_system_coordinates({100.0, 200.0});
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
@@ -226,22 +225,19 @@ void test_fix_planet_position_persistence() {
   {
     const auto* p = ctx.em.peek_planet(1, 0);
     test::expect_ne(p, nullptr);
-    test::expect_eq(p->xpos(), 100.0);
-    test::expect_eq(p->ypos(), 200.0);
+    test::expect_eq(p->system_coordinates(), SystemCoordinates{100.0, 200.0});
   }
 
   // 4. Simulate fixing position via EntityManager
-  ctx.em.mutate_planet(1, 0, [](Planet& p) {
-    p.xpos() = 500.0;
-    p.ypos() = 600.0;
-  });
+  ctx.em.mutate_planet(
+      1, 0, [](Planet& p) { p.set_system_coordinates({500.0, 600.0}); });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_planet = ctx.em.peek_planet(1, 0);
   test::expect_ne(final_planet, nullptr);
-  test::expect_eq(final_planet->xpos(), 500.0);
-  test::expect_eq(final_planet->ypos(), 600.0);
+  test::expect_eq(final_planet->system_coordinates(),
+                  SystemCoordinates{500.0, 600.0});
 
   std::println(std::cout, "✓ fix planet position persistence test passed");
 }

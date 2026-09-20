@@ -121,15 +121,13 @@ int main() {
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 3, 4);
   test::expect_true(sec2.has_value());
   test::expect_eq(sec2->get_type(), SectorType::SEC_SEA);
-  test::expect_eq(sec2->get_x(), 3);
-  test::expect_eq(sec2->get_y(), 4);
+  test::expect_eq(sec2->coords(), Coordinates{3, 4});
 
   auto sec3 =
       repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 8, 2);
   test::expect_true(sec3.has_value());
   test::expect_eq(sec3->get_type(), SectorType::SEC_MOUNT);
-  test::expect_eq(sec3->get_x(), 8);
-  test::expect_eq(sec3->get_y(), 2);
+  test::expect_eq(sec3->coords(), Coordinates{8, 2});
   std::println(std::cout, "  ✓ Different sectors retrieved correctly");
 
   // Find non-existent sector
@@ -180,8 +178,7 @@ int main() {
   for (int y = 0; y < 3; y++) {
     for (int x = 0; x < 3; x++) {
       auto& sec = test_map.get(Coordinates{x, y});
-      sec.set_x(x);
-      sec.set_y(y);
+      sec.set_coords({x, y});
       sec.set_efficiency_bounded(50 + x + y);
       sec.set_fert(40);
       sec.set_popn_exact(1000 + (x + y));  // Simple population value
@@ -205,8 +202,7 @@ int main() {
     for (int x = 0; x < 3; x++) {
       const auto& original = test_map.get(Coordinates{x, y});
       const auto& loaded = loaded_map.get(Coordinates{x, y});
-      test::expect_eq(loaded.get_x(), original.get_x());
-      test::expect_eq(loaded.get_y(), original.get_y());
+      test::expect_eq(loaded.coords(), original.coords());
       test::expect_eq(loaded.get_eff(), original.get_eff());
       test::expect_eq(loaded.get_fert(), original.get_fert());
       test::expect_eq(loaded.get_popn(), original.get_popn());

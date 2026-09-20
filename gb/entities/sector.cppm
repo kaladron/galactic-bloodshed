@@ -100,12 +100,6 @@ public:
   [[nodiscard]] Coordinates coords() const noexcept {
     return data_.coords;
   }
-  [[nodiscard]] unsigned int get_x() const noexcept {
-    return static_cast<unsigned int>(data_.coords.x);
-  }
-  [[nodiscard]] unsigned int get_y() const noexcept {
-    return static_cast<unsigned int>(data_.coords.y);
-  }
   [[nodiscard]] unsigned int get_eff() const noexcept {
     return data_.eff;
   }
@@ -160,12 +154,6 @@ public:
   // Write accessors (non-const)
   void set_coords(Coordinates val) noexcept {
     data_.coords = val;
-  }
-  void set_x(unsigned int val) noexcept {
-    data_.coords.x = static_cast<int>(val);
-  }
-  void set_y(unsigned int val) noexcept {
-    data_.coords.y = static_cast<int>(val);
   }
   void set_fert(unsigned int val) noexcept {
     data_.fert = val;

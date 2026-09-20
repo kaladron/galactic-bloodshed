@@ -23,8 +23,7 @@ int main() {
 
   // Initialize scalar fields
   test_star.name = "TestStar";
-  test_star.xpos = 100.5;
-  test_star.ypos = 200.75;
+  test_star.coordinates = {100.5, 200.75};
   test_star.stability = 10;
   test_star.nova_stage = 0;
   test_star.temperature = 15;
@@ -68,8 +67,7 @@ int main() {
 
   // Verify scalar fields
   test::expect_eq(retrieved.name, test_star.name);
-  test::expect_eq(retrieved.xpos, test_star.xpos);
-  test::expect_eq(retrieved.ypos, test_star.ypos);
+  test::expect_eq(retrieved.coordinates, test_star.coordinates);
   test::expect_eq(retrieved.pnames.size(), test_star.pnames.size());
   test::expect_eq(retrieved.stability, test_star.stability);
   test::expect_eq(retrieved.nova_stage, test_star.nova_stage);

@@ -473,20 +473,18 @@ int main() {
   // Test 20: Planet system_coordinates and absolute_coordinates
   {
     Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-    planet.xpos() = -120.0;
-    planet.ypos() = 250.0;
+    planet.set_system_coordinates({-120.0, 250.0});
     test::expect_eq(planet.system_coordinates(),
                     SystemCoordinates(-120.0, 250.0));
 
     planet.set_system_coordinates(SystemCoordinates(100.0, -200.0));
-    test::expect_eq(planet.xpos(), 100.0);
-    test::expect_eq(planet.ypos(), -200.0);
+    test::expect_eq(planet.system_coordinates().x, 100.0);
+    test::expect_eq(planet.system_coordinates().y, -200.0);
     test::expect_eq(planet.system_coordinates(),
                     SystemCoordinates(100.0, -200.0));
 
     star_struct sdata{};
-    sdata.xpos = 5000.0;
-    sdata.ypos = 10000.0;
+    sdata.coordinates = {5000.0, 10000.0};
     Star star(sdata);
 
     UniverseCoordinates abs_via_star = planet.absolute_coordinates(star);
@@ -773,10 +771,9 @@ int main() {
     double old_sx = 0.0;
     double old_sy = 0.0;
     ctx.em.mutate_planet(0, 0, [&](Planet& p) {
-      p.xpos() = 100.0;
-      p.ypos() = 0.0;
-      old_px = p.xpos();
-      old_py = p.ypos();
+      p.set_system_coordinates({100.0, 0.0});
+      old_px = p.system_coordinates().x;
+      old_py = p.system_coordinates().y;
       ctx.em.mutate_ship(ship_id, [&](Ship& s) {
         s.set_coordinates(p.absolute_coordinates(*star0));
         old_sx = s.coordinates().x;
@@ -784,24 +781,27 @@ int main() {
       });
 
       moveplanet(ctx.em, *star0, p);
-      test::expect_true(std::abs(std::hypot(p.xpos(), p.ypos()) - 100.0) <
-                        1e-4);
-      test::expect_true(p.xpos() != old_px || p.ypos() != old_py);
+      test::expect_true(
+          std::abs(p.system_coordinates().distance_to({0.0, 0.0}) - 100.0) <
+          1e-4);
+      test::expect_true(p.system_coordinates().x != old_px ||
+                        p.system_coordinates().y != old_py);
 
       // Corrupted zero orbital radius fails fast instead of producing NaN
       Planet zero_p(PlanetType::EARTH, Coordinates{5, 5});
-      zero_p.xpos() = 0.0;
-      zero_p.ypos() = 0.0;
+      zero_p.set_system_coordinates({0.0, 0.0});
       test::expect_throws<std::domain_error>(
           [&]() { moveplanet(ctx.em, *star0, zero_p); });
     });
 
     const auto* moved_ship = ctx.em.peek_ship(ship_id);
     const auto* moved_planet = ctx.em.peek_planet(0, 0);
-    test::expect_true(std::abs((moved_ship->coordinates().x - old_sx) -
-                               (moved_planet->xpos() - old_px)) < 1e-6);
-    test::expect_true(std::abs((moved_ship->coordinates().y - old_sy) -
-                               (moved_planet->ypos() - old_py)) < 1e-6);
+    test::expect_true(
+        std::abs((moved_ship->coordinates().x - old_sx) -
+                 (moved_planet->system_coordinates().x - old_px)) < 1e-6);
+    test::expect_true(
+        std::abs((moved_ship->coordinates().y - old_sy) -
+                 (moved_planet->system_coordinates().y - old_py)) < 1e-6);
   }
 
   std::println("Planet unit tests passed successfully!");

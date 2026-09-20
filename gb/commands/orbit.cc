@@ -291,8 +291,9 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
 
   switch (level) {
     case ScopeLevel::LEVEL_STAR:
-      screen_coords = project_to_screen(p.xpos() - Lastx, p.ypos() - Lasty,
-                                        SYSTEMSIZE, Zoom);
+      screen_coords =
+          project_to_screen(p.system_coordinates().x - Lastx,
+                            p.system_coordinates().y - Lasty, SYSTEMSIZE, Zoom);
       break;
     case ScopeLevel::LEVEL_PLAN:
       screen_coords = project_to_screen(-Lastx, -Lasty, PLORBITSIZE, Zoom);

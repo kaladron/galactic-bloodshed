@@ -300,9 +300,11 @@ void survey_planet_overview(GameObj& g, const Place& where) {
   g.out << std::format("{}:\n", star.get_planet_name(where.pnum));
   g.out << std::format("gravity   x,y absolute     x,y relative to {}\n",
                        star.get_name());
+  const auto abs_coords = p.absolute_coordinates(star);
+  const auto sys_coords = p.system_coordinates();
   g.out << std::format("{:7.2f}   {:7.1f},{:7.1f}   {:8.1f},{:8.1f}\n",
-                       p.gravity(), p.xpos() + star.xpos(),
-                       p.ypos() + star.ypos(), p.xpos(), p.ypos());
+                       p.gravity(), abs_coords.x, abs_coords.y, sys_coords.x,
+                       sys_coords.y);
   g.out << "======== Planetary conditions: ========\n";
   g.out << "atmosphere concentrations:\n";
   g.out << std::format(
@@ -366,7 +368,7 @@ void survey_star(GameObj& g, const Place& where) {
   const auto& star = *g.entity_manager.peek_star(where.snum);
 
   g.out << std::format("Star {}\n", star.get_name());
-  g.out << std::format("locn: {},{}\n", star.xpos(), star.ypos());
+  g.out << std::format("locn: {}\n", star.coordinates());
 
   if (race.God) {
     for (int i = 0; i < star.numplanets(); i++) {

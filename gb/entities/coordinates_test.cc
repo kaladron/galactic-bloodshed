@@ -335,24 +335,22 @@ int main() {
   {
     // Star continuous coordinates
     star_struct sdata{};
-    sdata.xpos = 1200.0;
-    sdata.ypos = -3400.0;
+    sdata.coordinates = {1200.0, -3400.0};
     Star star(sdata);
     test::expect_eq(star.coordinates(), UniverseCoordinates(1200.0, -3400.0));
     star.set_coordinates(UniverseCoordinates(2500.0, 5000.0));
-    expect_near(star.xpos(), 2500.0);
-    expect_near(star.ypos(), 5000.0);
+    expect_near(star.coordinates().x, 2500.0);
+    expect_near(star.coordinates().y, 5000.0);
     test::expect_eq(star.coordinates(), UniverseCoordinates(2500.0, 5000.0));
 
     // Planet in-system and absolute coordinates
     Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-    planet.xpos() = 150.0;
-    planet.ypos() = -200.0;
+    planet.set_system_coordinates({150.0, -200.0});
     test::expect_eq(planet.system_coordinates(),
                     SystemCoordinates(150.0, -200.0));
     planet.set_system_coordinates(SystemCoordinates(300.0, 400.0));
-    expect_near(planet.xpos(), 300.0);
-    expect_near(planet.ypos(), 400.0);
+    expect_near(planet.system_coordinates().x, 300.0);
+    expect_near(planet.system_coordinates().y, 400.0);
     test::expect_eq(planet.system_coordinates(),
                     SystemCoordinates(300.0, 400.0));
 

@@ -155,12 +155,11 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
                   alien.Playernum.value);
   std::string long_msg =
       short_msg +
-      std::format("\tBattle at {},{} {}: {} guns fired on {} civ/{} mil\n"
+      std::format("\tBattle at {} {}: {} guns fired on {} civ/{} mil\n"
                   "\tAttack: {:.3f}   Defense: {:.3f}.\n"
                   "\t{} civ/{} mil killed.\n",
-                  sect.get_x(), sect.get_y(), Desnames[sect.get_condition()],
-                  strength, oldciv, oldmil, astrength, dstrength, cas_civ,
-                  cas_mil);
+                  sect.coords(), Desnames[sect.get_condition()], strength,
+                  oldciv, oldmil, astrength, dstrength, cas_civ, cas_mil);
   return std::make_tuple(short_msg, long_msg);
 }
 

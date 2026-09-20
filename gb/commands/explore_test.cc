@@ -38,8 +38,7 @@ void setup_test_world(TestContext& ctx) {
   star_struct ss0{};
   ss0.star_id = 0;
   ss0.name = "Sol";
-  ss0.xpos = 0.0;
-  ss0.ypos = 0.0;
+  ss0.coordinates = {0.0, 0.0};
   ss0.stability = 45;
   ss0.explored.set(player_t{1});
   ss0.AP[player_t{1}] = 20;
@@ -61,8 +60,7 @@ void setup_test_world(TestContext& ctx) {
   star_struct ss1{};
   ss1.star_id = 1;
   ss1.name = "Centauri";
-  ss1.xpos = 500.0;
-  ss1.ypos = 500.0;
+  ss1.coordinates = {500.0, 500.0};
   ss1.stability = 20;
   Star star1(ss1);
   stars.save(star1);

@@ -17,8 +17,7 @@ void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
   for (int y = 0; y < planet.dimensions().y; y++) {
     for (int x = 0; x < planet.dimensions().x; x++) {
       auto& sector = smap.get(Coordinates{x, y});
-      sector.set_x(x);
-      sector.set_y(y);
+      sector.set_coords({x, y});
       sector.set_efficiency_bounded(base_eff + (x * y));
       sector.set_fert(30 + x);
       sector.set_mobilization(10 + y);
@@ -56,8 +55,7 @@ void verify_sectormap_equal(const SectorMap& original,
       const auto& orig = original.get(Coordinates{x, y});
       const auto& retr = retrieved.get(Coordinates{x, y});
 
-      test::expect_eq(retr.get_x(), orig.get_x());
-      test::expect_eq(retr.get_y(), orig.get_y());
+      test::expect_eq(retr.coords(), orig.coords());
       test::expect_eq(retr.get_eff(), orig.get_eff());
       test::expect_eq(retr.get_fert(), orig.get_fert());
       test::expect_eq(retr.get_mobilization(), orig.get_mobilization());
@@ -195,8 +193,7 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   for (int y = 0; y < planet2.dimensions().y; y++) {
     for (int x = 0; x < planet2.dimensions().x; x++) {
       auto& sector = smap2.get(Coordinates{x, y});
-      sector.set_x(x);
-      sector.set_y(y);
+      sector.set_coords({x, y});
       sector.set_efficiency_bounded(99);
       sector.set_popn_exact(12345);
       sector.set_type(SectorType::SEC_SEA);
@@ -241,12 +238,12 @@ void test_sectormap_random_and_shuffle() {
 
   std::vector<std::pair<int, int>> coords1;
   for (Sector& s : smap.shuffle(mock_rng1)) {
-    coords1.push_back({s.get_x(), s.get_y()});
+    coords1.push_back({s.coords().x, s.coords().y});
   }
 
   std::vector<std::pair<int, int>> coords2;
   for (Sector& s : smap.shuffle(mock_rng2)) {
-    coords2.push_back({s.get_x(), s.get_y()});
+    coords2.push_back({s.coords().x, s.coords().y});
   }
 
   test::expect_eq(coords1.size(), 20);
@@ -270,22 +267,22 @@ void test_sectormap_random_and_shuffle() {
   // 3. Test get_random with deterministic mock engine
   std::mt19937 mock_rng3(999);
   auto& rand_sector = smap.get_random(mock_rng3);
-  test::expect_ge(rand_sector.get_x(), 0);
-  test::expect_lt(rand_sector.get_x(), 5);
-  test::expect_ge(rand_sector.get_y(), 0);
-  test::expect_lt(rand_sector.get_y(), 4);
+  test::expect_ge(rand_sector.coords().x, 0);
+  test::expect_lt(rand_sector.coords().x, 5);
+  test::expect_ge(rand_sector.coords().y, 0);
+  test::expect_lt(rand_sector.coords().y, 4);
 
   // 4. Test production game_rng() integration with seed_rand
   seed_rand(12345);
   std::vector<std::pair<int, int>> prod_coords1;
   for (Sector& s : smap.shuffle()) {
-    prod_coords1.push_back({s.get_x(), s.get_y()});
+    prod_coords1.push_back({s.coords().x, s.coords().y});
   }
 
   seed_rand(12345);
   std::vector<std::pair<int, int>> prod_coords2;
   for (Sector& s : smap.shuffle()) {
-    prod_coords2.push_back({s.get_x(), s.get_y()});
+    prod_coords2.push_back({s.coords().x, s.coords().y});
   }
 
   test::expect_eq(prod_coords1.size(), 20);

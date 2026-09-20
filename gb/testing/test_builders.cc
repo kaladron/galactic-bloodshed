@@ -447,8 +447,7 @@ TestWorldBuilder& TestWorldBuilder::add_planet(
   SectorMap smap(p);
   for (int y = 0; y < maxy; ++y) {
     for (int x = 0; x < maxx; ++x) {
-      smap.get(Coordinates{Coordinates{x, y}}).set_x(x);
-      smap.get(Coordinates{Coordinates{x, y}}).set_y(y);
+      smap.get(Coordinates{x, y}).set_coords({x, y});
     }
   }
   SectorRepository(store_).save_map(smap);
@@ -483,8 +482,7 @@ TestPlanetBuilder::TestPlanetBuilder(EntityManager& em, Database& db,
       smap_(planet_) {
   for (int y = 0; y < dims.y; ++y) {
     for (int x = 0; x < dims.x; ++x) {
-      smap_.get(Coordinates{x, y}).set_x(x);
-      smap_.get(Coordinates{x, y}).set_y(y);
+      smap_.get(Coordinates{x, y}).set_coords({x, y});
     }
   }
 }
@@ -509,8 +507,7 @@ TestPlanetBuilder& TestPlanetBuilder::with_dimensions(Coordinates dims) {
   smap_ = SectorMap(planet_);
   for (int y = 0; y < dims.y; ++y) {
     for (int x = 0; x < dims.x; ++x) {
-      smap_.get(Coordinates{x, y}).set_x(x);
-      smap_.get(Coordinates{x, y}).set_y(y);
+      smap_.get(Coordinates{x, y}).set_coords({x, y});
     }
   }
   return *this;
@@ -604,9 +601,7 @@ planetnum_t TestPlanetBuilder::build() {
   if (pnum != smap_.planet_order()) {
     SectorMap updated_smap(planet_);
     for (Sector& sect : smap_) {
-      updated_smap.get(Coordinates{static_cast<int>(sect.get_x()),
-                                   static_cast<int>(sect.get_y())}) =
-          std::move(sect);
+      updated_smap.get(sect.coords()) = std::move(sect);
     }
     smap_ = std::move(updated_smap);
   }

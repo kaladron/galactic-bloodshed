@@ -202,8 +202,7 @@ TestContext& TestContext::with_standard_universe() {
   star_struct ss0{};
   ss0.star_id = 0;
   ss0.name = "Sol";
-  ss0.xpos = 0.0;
-  ss0.ypos = 0.0;
+  ss0.coordinates = {0.0, 0.0};
   ss0.stability = 15;
   ss0.gravity = 1.0;
   ss0.temperature = 50;
@@ -238,8 +237,7 @@ TestContext& TestContext::with_standard_universe() {
   star_struct ss1{};
   ss1.star_id = 1;
   ss1.name = "Vega";
-  ss1.xpos = 300.0;
-  ss1.ypos = 400.0;
+  ss1.coordinates = {300.0, 400.0};
   ss1.stability = 45;
   ss1.gravity = 1.0;
   ss1.temperature = 40;
@@ -275,8 +273,7 @@ TestContext& TestContext::with_standard_universe() {
   star_struct ss2{};
   ss2.star_id = 2;
   ss2.name = "Antares";
-  ss2.xpos = -300.0;
-  ss2.ypos = -400.0;
+  ss2.coordinates = {-300.0, -400.0};
   ss2.stability = 25;
   ss2.gravity = 1.2;
   ss2.temperature = 60;

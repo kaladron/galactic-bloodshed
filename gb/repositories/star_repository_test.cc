@@ -22,8 +22,7 @@ int main() {
   // Create a test star_struct first, then wrap in Star
   star_struct test_star_data{};
   test_star_data.name = "Sol";
-  test_star_data.xpos = 100.5;
-  test_star_data.ypos = 200.75;
+  test_star_data.coordinates = {100.5, 200.75};
   test_star_data.stability = 10;
   test_star_data.nova_stage = 0;
   test_star_data.temperature = 15;
@@ -59,6 +58,13 @@ int main() {
   std::println(std::cout, "Save star...");
   bool saved = repo.save(test_star);
   test::expect_true(saved, "Failed to save star");
+  auto star_json = store.retrieve("tbl_star", 1);
+  test::expect_true(star_json.has_value());
+  test::expect_true(
+      star_json->find("\"coordinates\":{\"x\":100.5,\"y\":200.75}") !=
+          std::string::npos,
+      "star_struct::coordinates must serialize as a UniverseCoordinates "
+      "object");
   std::println(std::cout, "  ✓ Star saved successfully");
 
   // Retrieve by star number
@@ -70,8 +76,7 @@ int main() {
   // Verify data integrity using Star accessor methods
   std::println(std::cout, "Verify data integrity...");
   test::expect_eq(retrieved->get_name(), "Sol");
-  test::expect_eq(retrieved->xpos(), 100.5);
-  test::expect_eq(retrieved->ypos(), 200.75);
+  test::expect_eq(retrieved->coordinates(), UniverseCoordinates(100.5, 200.75));
   test::expect_eq(retrieved->numplanets(), 8);
   test::expect_eq(retrieved->stability(), 10);
   test::expect_eq(retrieved->nova_stage(), 0);
@@ -118,16 +123,14 @@ int main() {
   star_struct star2_data = test_star_data;
   star2_data.star_id = 2;
   star2_data.name = "Alpha Centauri";
-  star2_data.xpos = 50.0;
-  star2_data.ypos = 75.0;
+  star2_data.coordinates = {50.0, 75.0};
   Star star2(star2_data);
   repo.save(star2);
 
   star_struct star3_data = test_star_data;
   star3_data.star_id = 5;  // Gap at 3 and 4
   star3_data.name = "Proxima";
-  star3_data.xpos = 200.0;
-  star3_data.ypos = 150.0;
+  star3_data.coordinates = {200.0, 150.0};
   Star star3(star3_data);
   repo.save(star3);
 
@@ -138,7 +141,8 @@ int main() {
   auto star2_retrieved = repo.find_by_number(2);
   test::expect_true(star2_retrieved.has_value());
   test::expect_eq(star2_retrieved->get_name(), "Alpha Centauri");
-  test::expect_eq(star2_retrieved->xpos(), 50.0);
+  test::expect_eq(star2_retrieved->coordinates(),
+                  UniverseCoordinates(50.0, 75.0));
   std::println(std::cout, "  ✓ Second star retrieved correctly");
 
   // Retrieve third star
@@ -146,7 +150,8 @@ int main() {
   auto star3_retrieved = repo.find_by_number(5);
   test::expect_true(star3_retrieved.has_value());
   test::expect_eq(star3_retrieved->get_name(), "Proxima");
-  test::expect_eq(star3_retrieved->xpos(), 200.0);
+  test::expect_eq(star3_retrieved->coordinates(),
+                  UniverseCoordinates(200.0, 150.0));
   std::println(std::cout, "  ✓ Third star retrieved correctly");
 
   // Next available star number (should find gap at 3)

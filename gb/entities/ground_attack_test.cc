@@ -23,14 +23,14 @@ void test_mech_attack_people() {
   race.name = "AttackerRace";
   race.tech = 10.0;
   race.morale = 10;
-  std::ranges::fill(race.likes, 1.0);
+  race.likes[SectorType::SEC_LAND] = 1.0;
 
   Race alien{};
   alien.Playernum = player_t{2};
   alien.name = "DefenderRace";
   alien.tech = 10.0;
   alien.morale = 10;
-  std::ranges::fill(alien.likes, 1.0);
+  alien.likes[SectorType::SEC_LAND] = 1.0;
 
   Sector sect{};
   sect.set_condition(SectorType::SEC_LAND);
@@ -77,14 +77,14 @@ void test_people_attack_mech() {
   race.tech = 10.0;
   race.fighters = 5;
   race.morale = 10;
-  std::ranges::fill(race.likes, 1.0);
+  race.likes[SectorType::SEC_LAND] = 1.0;
 
   Race alien{};
   alien.Playernum = player_t{2};
   alien.name = "MechOwner";
   alien.tech = 10.0;
   alien.morale = 10;
-  std::ranges::fill(alien.likes, 1.0);
+  alien.likes[SectorType::SEC_LAND] = 1.0;
 
   Sector sect{};
   sect.set_condition(SectorType::SEC_LAND);

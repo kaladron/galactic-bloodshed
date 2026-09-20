@@ -578,7 +578,7 @@ void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
         val = res->value();
       }
     }
-    mirror->set_intensity(static_cast<char>(std::clamp(val, 0, 100)));
+    mirror->set_intensity(std::clamp(val, 0, 100));
   }
 }
 
@@ -814,7 +814,7 @@ std::string format_specialty_options(EntityManager& em, const Ship& ship) {
 
   if (const auto* mirror = ship.as<SpaceMirrorShip>()) {
     out += std::format("/aim {}/int {}", format_aim_target(em, *mirror),
-                       static_cast<int>(mirror->intensity()));
+                       mirror->intensity());
   }
   return out;
 }

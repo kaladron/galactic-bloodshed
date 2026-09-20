@@ -64,8 +64,9 @@ public:
   birthrate_t birthrate{0.0};
   mass_t mass{0.0};
   metabolism_t metabolism{0.0};
-  short conditions[OTHER + 1]{}; /* Atmosphere/temperature this race likes. */
-  double likes[SectorType::SEC_WASTED + 1]{}; /* Sector condition compats. */
+  ConditionValues<int>
+      conditions{};              /* Atmosphere/temperature this race likes. */
+  SectorCompatibilities likes{}; /* Sector condition compats. */
   SectorType likesbest{
       SectorType::SEC_LAND}; /* 100% compat sector condition for this race. */
 
@@ -73,11 +74,7 @@ public:
   /// condition. Throws `std::out_of_range` if `condition` is out of bounds.
   [[nodiscard]] constexpr double
   sector_compatibility(const SectorType condition) const {
-    if (static_cast<std::size_t>(condition) >= std::size(likes)) {
-      throw std::out_of_range(
-          "Invalid SectorType in Race::sector_compatibility");
-    }
-    return likes[static_cast<std::size_t>(condition)];
+    return likes[condition];
   }
 
   /// Returns this race's compatibility [0.0, 1.0] with the given sector's
@@ -179,7 +176,7 @@ public:
     planetnum_t defplanetnum{0}; /* current default */
     starnum_t homesystem{0};
     planetnum_t homeplanetnum{0}; /* home place */
-    unsigned long newspos[4]{};   /* news file pointers */
+    NewsValues<int> newspos{};    /* last-read news database IDs per NewsType */
     toggletype toggle{};
     money_t money{0};
     unsigned long income{0};
@@ -188,7 +185,8 @@ public:
     unsigned long cost_market{0};
     unsigned long profit_market{0};
     std::time_t login{0}; /* last login for this governor */
-  } governor[MAXGOVERNORS + 1];
+  };
+  std::array<gov, MAXGOVERNORS + 1> governor{};
 
   /// \brief Resets turn-level economic accounting ledgers, controlled planet
   /// tallies, and player update votes at the start of a turn update.

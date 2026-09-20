@@ -264,8 +264,7 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
     std::string message = std::format("Toxin concentration on planet was {}%,",
                                       planet.conditions(TOXIC));
     push_telegram(entity_manager, Playernum, Governor, message);
-    const auto toxic_amount =
-        static_cast<unsigned char>(std::min(TOXMAX, planet.conditions(TOXIC)));
+    const int toxic_amount = std::min(TOXMAX, planet.conditions(TOXIC));
     waste_ship->set_toxic_level(toxic_amount);
     planet.conditions(TOXIC) -= toxic_amount;
     std::string toxMsg = std::format(" now {}%.\n", planet.conditions(TOXIC));

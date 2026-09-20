@@ -154,8 +154,8 @@ int main() {
     planet.conditions(TOXIC) = 0;
 
     Race race{};
-    for (int i = 0; i <= OTHER; ++i) {
-      race.conditions[i] = 50;
+    for (Conditions c : all_atmosphere_conditions) {
+      race.conditions[c] = 50;
     }
     race.conditions[TEMP] = 100;
 

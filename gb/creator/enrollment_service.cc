@@ -209,9 +209,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   race.fertilize = spec.fertilize;
 
   // Sector preferences
-  for (SectorType st : all_sector_types) {
-    race.likes[st] = spec.sector_compatibilities[st];
-  }
+  race.likes = spec.sector_compatibilities;
   race.likesbest = pref;
 
   race.discoveries = {};

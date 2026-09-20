@@ -126,11 +126,11 @@ public:
     }
     return std::get<AimedAtData>(data_.special);
   }
-  [[nodiscard]] char intensity() const noexcept {
+  [[nodiscard]] int intensity() const noexcept {
     return aim().intensity;
   }
-  void set_intensity(char intensity) noexcept {
-    aim().intensity = intensity;
+  void set_intensity(int intensity) noexcept {
+    aim().intensity = std::clamp(intensity, 0, 100);
   }
   [[nodiscard]] starnum_t aimed_star() const noexcept {
     return aim().snum;
@@ -175,17 +175,17 @@ public:
     }
     return std::get<PodData>(data_.special);
   }
-  [[nodiscard]] unsigned char decay() const noexcept {
+  [[nodiscard]] int decay() const noexcept {
     return pod().decay;
   }
-  void set_decay(unsigned char decay) noexcept {
-    pod().decay = decay;
+  void set_decay(int decay) noexcept {
+    pod().decay = std::max(0, decay);
   }
-  [[nodiscard]] unsigned char temperature() const noexcept {
+  [[nodiscard]] int temperature() const noexcept {
     return pod().temperature;
   }
-  void set_temperature(unsigned char temp) noexcept {
-    pod().temperature = temp;
+  void set_temperature(int temp) noexcept {
+    pod().temperature = std::max(0, temp);
   }
 };
 
@@ -213,11 +213,11 @@ public:
     }
     return std::get<TimerData>(data_.special);
   }
-  [[nodiscard]] unsigned char count() const noexcept {
+  [[nodiscard]] int count() const noexcept {
     return timer().count;
   }
-  void set_count(unsigned char count) noexcept {
-    timer().count = count;
+  void set_count(int count) noexcept {
+    timer().count = std::max(0, count);
   }
   void reset_timer() noexcept {
     timer().count = 0;
@@ -326,11 +326,11 @@ public:
     }
     return std::get<TerraformData>(data_.special);
   }
-  [[nodiscard]] unsigned char index() const noexcept {
+  [[nodiscard]] int index() const noexcept {
     return terraform().index;
   }
-  void set_index(unsigned char idx) noexcept {
-    terraform().index = idx;
+  void set_index(int idx) noexcept {
+    terraform().index = std::max(0, idx);
   }
 };
 
@@ -399,11 +399,11 @@ public:
     }
     return std::get<WasteData>(data_.special);
   }
-  [[nodiscard]] unsigned char toxic_level() const noexcept {
+  [[nodiscard]] int toxic_level() const noexcept {
     return waste().toxic;
   }
-  void set_toxic_level(unsigned char toxic) noexcept {
-    waste().toxic = toxic;
+  void set_toxic_level(int toxic) noexcept {
+    waste().toxic = std::clamp(toxic, 0, 100);
   }
 };
 

@@ -355,11 +355,11 @@ export struct ShipExam {
 
 // Special ship function data structures (converted from union members)
 export struct AimedAtData {
-  shipnum_t shipno; /* aimed at what ship */
-  starnum_t snum;   /* aimed at what star */
-  char intensity;   /* intensity of aiming */
-  planetnum_t pnum; /* aimed at what planet */
-  ScopeLevel level; /* aimed at what level */
+  shipnum_t shipno{0};                      /* aimed at what ship */
+  starnum_t snum{0};                        /* aimed at what star */
+  int intensity{0};                         /* intensity of aiming */
+  planetnum_t pnum{0};                      /* aimed at what planet */
+  ScopeLevel level{ScopeLevel::LEVEL_UNIV}; /* aimed at what level */
 };
 
 /// Brain parameters for Von Neumann machines and Berserkers.
@@ -375,12 +375,12 @@ export struct MindData {
 };
 
 export struct PodData {
-  unsigned char decay;
-  unsigned char temperature;
+  int decay{0};
+  int temperature{0};
 };
 
 export struct TimerData {
-  unsigned char count;
+  int count{0};
 };
 
 export struct ImpactData {
@@ -393,7 +393,7 @@ export struct TriggerData {
 };
 
 export struct TerraformData {
-  unsigned char index;
+  int index{0};
 };
 
 export struct TransportData {
@@ -401,7 +401,7 @@ export struct TransportData {
 };
 
 export struct WasteData {
-  unsigned char toxic;
+  int toxic{0};
 };
 
 // Variant type for special ship functions (std::monostate is index 0 for

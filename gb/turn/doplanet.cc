@@ -537,7 +537,7 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
   ship.set_land_coords(smap.get_random().coords());
   ship.build_cost() = Shipcost(ShipType::OTYPE_TOXWC, race);
   if (auto* waste = ship.as<ToxicWasteShip>()) {
-    waste->set_toxic_level(static_cast<unsigned char>(t));
+    waste->set_toxic_level(t);
   }
   ship.storbits() = starnum;
   ship.deststar() = starnum;

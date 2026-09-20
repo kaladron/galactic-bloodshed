@@ -292,7 +292,7 @@ void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
       if (ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
           ship.aimed_star() == ship.storbits()) {
         entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-          star.stability() += static_cast<unsigned char>(int_rand(0, 1));
+          star.stability() += int_rand(0, 1);
         });
       }
       break;
@@ -326,16 +326,16 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
             ship.consume_fuel(3.0);
             for (int j = RTEMP + 1; j <= OTHER; j++) {
               auto cond = static_cast<Conditions>(j);
-              auto d = round_rand(
-                  ap_planet_factor(p) * ship.crew_ratio() *
-                  static_cast<double>(race.conditions[j] - p.conditions(cond)));
+              auto d = round_rand(ap_planet_factor(p) * ship.crew_ratio() *
+                                  static_cast<double>(race.conditions[cond] -
+                                                      p.conditions(cond)));
               if (d) {
                 p.conditions(cond) = std::clamp(p.conditions(cond) + d, 0, 100);
               }
             }
           } else if (!ship.notified()) {
-            ship.notified() = 1;
-            ship.on() = 0;
+            ship.notified() = true;
+            ship.on() = false;
             msg_OOF(entity_manager, ship);
           }
         });

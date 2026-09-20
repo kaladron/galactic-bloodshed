@@ -227,7 +227,7 @@ export struct planet_struct {
   Coordinates dimensions{0, 0};
 
   PlayerVector<plinfo, MAXPLAYERS> info;
-  std::array<int, TOXIC + 1> conditions{};
+  ConditionValues<int> conditions{};
 
   population_t popn = 0;
   population_t troops = 0;
@@ -692,8 +692,8 @@ double Planet::compatibility(const Race& race) const {
   double sum = 1.0 - ((double)std::abs(add) / 100.0);
 
   /* step through and report compatibility of each planetary gas */
-  for (int i = TEMP + 1; i <= OTHER; i++) {
-    add = (double)conditions(static_cast<Conditions>(i)) - race.conditions[i];
+  for (Conditions cond : all_gas_conditions) {
+    add = (double)conditions(cond) - race.conditions[cond];
     atmosphere *= 1.0 - ((double)std::abs(add) / 100.0);
   }
   sum *= atmosphere;

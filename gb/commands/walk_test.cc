@@ -18,7 +18,8 @@ void setup_test_world(TestContext& ctx) {
   // Set race likes
   {
     ctx.em.mutate_race(1, [](Race& r) {
-      std::fill(std::begin(r.likes), std::end(r.likes), true);
+      r.likes[SectorType::SEC_MOUNT] = 1.0;
+      r.likes[SectorType::SEC_LAND] = 1.0;
     });
   }
 
@@ -135,8 +136,7 @@ void test_walk_role_and_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"walk", "1", "5"});
   test::expect_contains(g.out.str(), "Illegal move.");
 
-  ctx.em.mutate_race(1,
-                     [](Race& r) { r.likes[SectorType::SEC_MOUNT] = false; });
+  ctx.em.mutate_race(1, [](Race& r) { r.likes[SectorType::SEC_MOUNT] = 0.0; });
   ctx.setup_game_obj(g);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
@@ -144,7 +144,7 @@ void test_walk_role_and_domain_errors() {
                         "Your ships cannot walk into that sector type!");
 
   // 9. Insufficient Star AP rejection
-  ctx.em.mutate_race(1, [](Race& r) { r.likes[SectorType::SEC_MOUNT] = true; });
+  ctx.em.mutate_race(1, [](Race& r) { r.likes[SectorType::SEC_MOUNT] = 1.0; });
   ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
   ctx.setup_game_obj(g);
   g.out.str("");

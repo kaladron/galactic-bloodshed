@@ -16,6 +16,7 @@ import dallib;
 import gb.entities;
 import gb.services;
 import gb.repositories;
+import gb.repositories.glaze;
 import tabulate;
 import std;
 
@@ -311,15 +312,6 @@ export struct RaceEnrollmentSpec {
 }  // namespace GB::creator
 
 export namespace glz {
-
-template <>
-struct meta<SectorCompatibilities> {
-  using T = SectorCompatibilities;
-  static constexpr auto value =
-      object("sea", &T::sea, "land", &T::land, "mount", &T::mount, "gas",
-             &T::gas, "ice", &T::ice, "forest", &T::forest, "desert",
-             &T::desert, "plated", &T::plated, "wasted", &T::wasted);
-};
 
 template <>
 struct meta<GB::creator::RaceEnrollmentSpec> {

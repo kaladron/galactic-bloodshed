@@ -14,7 +14,7 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe().with_populated_planet(0, 0, 1, 1000,
                                                      Coordinates{0, 0});
-  ctx.em.mutate_race(1, [](Race& race) { race.conditions[0] = 50; });
+  ctx.em.mutate_race(1, [](Race& race) { race.conditions[RTEMP] = 50; });
 }
 
 void test_colonies_dispatch() {

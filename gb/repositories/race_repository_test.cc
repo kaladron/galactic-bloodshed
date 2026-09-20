@@ -58,9 +58,9 @@ int main() {
   test_race.discoveries.laser = true;
   test_race.discoveries.crystal = true;
 
-  // Initialize some arrays
-  for (int i = 0; i <= OTHER; ++i) {
-    test_race.conditions[i] = 50 + i;
+  // Initialize conditions and sector compatibilities
+  for (Conditions c : all_atmosphere_conditions) {
+    test_race.conditions[c] = 50 + static_cast<int>(c);
   }
   for (SectorType st : all_sector_types) {
     test_race.likes[st] = 0.5 + (static_cast<int>(st) * 0.1);
@@ -73,11 +73,28 @@ int main() {
   test_race.governor[0].active = true;
   test_race.governor[0].money = 10000;
   test_race.governor[0].income = 5000;
+  test_race.governor[0].newspos = {
+      .announce = 10, .combat = 20, .declaration = 30, .transfer = 40};
 
   // Save race
   std::println(std::cout, "Save race...");
   bool saved = repo.save(test_race);
   test::expect_true(saved, "Failed to save race");
+  auto race_json = store.retrieve("tbl_race", 1);
+  test::expect_true(race_json.has_value());
+  test::expect_true(
+      race_json->find("\"conditions\":{\"rtemp\":50,\"temp\":51") !=
+          std::string::npos,
+      "Race::conditions must serialize as a named ConditionValues JSON object");
+  test::expect_true(race_json->find("\"likes\":{\"sea\":0.5,\"land\":0.6") !=
+                        std::string::npos,
+                    "Race::likes must serialize as a named "
+                    "SectorCompatibilities JSON object");
+  test::expect_true(
+      race_json->find("\"newspos\":{\"announce\":10,\"combat\":20,"
+                      "\"declaration\":30,\"transfer\":40}") !=
+          std::string::npos,
+      "Race::gov::newspos must serialize as a named NewsValues JSON object");
   std::println(std::cout, "  ✓ Race saved successfully");
 
   // Retrieve by player number
@@ -100,6 +117,8 @@ int main() {
   test::expect_eq(retrieved->IQ, test_race.IQ);
   test::expect_eq(retrieved->tech, test_race.tech);
   test::expect_eq(retrieved->discoveries, test_race.discoveries);
+  test::expect_true(retrieved->conditions == test_race.conditions);
+  test::expect_true(retrieved->likes == test_race.likes);
   test::expect_eq(retrieved->translate[player_t{1}],
                   test_race.translate[player_t{1}]);
   test::expect_eq(retrieved->translate[player_t{2}],
@@ -108,6 +127,8 @@ int main() {
                   test_race.points[player_t{2}]);
   test::expect_eq(retrieved->governor[0].name, test_race.governor[0].name);
   test::expect_eq(retrieved->governor[0].money, test_race.governor[0].money);
+  test::expect_true(retrieved->governor[0].newspos ==
+                    test_race.governor[0].newspos);
   std::println(std::cout, "  ✓ All fields match original");
 
   // Update race

@@ -131,4 +131,31 @@ struct meta<toggletype> {
              &T::highlight, "compat", &T::compat);
 };
 
+template <>
+struct meta<SectorCompatibilities> {
+  using T = SectorCompatibilities;
+  static constexpr auto value =
+      object("sea", &T::sea, "land", &T::land, "mount", &T::mount, "gas",
+             &T::gas, "ice", &T::ice, "forest", &T::forest, "desert",
+             &T::desert, "plated", &T::plated, "wasted", &T::wasted);
+};
+
+template <>
+struct meta<ConditionValues<int>> {
+  using T = ConditionValues<int>;
+  static constexpr auto value =
+      object("rtemp", &T::rtemp, "temp", &T::temp, "methane", &T::methane,
+             "oxygen", &T::oxygen, "co2", &T::co2, "hydrogen", &T::hydrogen,
+             "nitrogen", &T::nitrogen, "sulfur", &T::sulfur, "helium",
+             &T::helium, "other", &T::other, "toxic", &T::toxic);
+};
+
+template <>
+struct meta<NewsValues<int>> {
+  using T = NewsValues<int>;
+  static constexpr auto value =
+      object("announce", &T::announce, "combat", &T::combat, "declaration",
+             &T::declaration, "transfer", &T::transfer);
+};
+
 }  // namespace glz

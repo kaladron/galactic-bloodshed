@@ -174,6 +174,53 @@ export enum class NewsType {
   TRANSFER,
 };
 
+/// Named values indexed by NewsType (e.g., last-read SQLite news item IDs).
+export template <typename T = int>
+struct NewsValues {
+  T announce{};
+  T combat{};
+  T declaration{};
+  T transfer{};
+
+  [[nodiscard]] constexpr T& operator[](NewsType type) {
+    switch (type) {
+      case NewsType::ANNOUNCE:
+        return announce;
+      case NewsType::COMBAT:
+        return combat;
+      case NewsType::DECLARATION:
+        return declaration;
+      case NewsType::TRANSFER:
+        return transfer;
+    }
+    throw std::out_of_range("Invalid NewsType");
+  }
+
+  [[nodiscard]] constexpr const T& operator[](NewsType type) const {
+    switch (type) {
+      case NewsType::ANNOUNCE:
+        return announce;
+      case NewsType::COMBAT:
+        return combat;
+      case NewsType::DECLARATION:
+        return declaration;
+      case NewsType::TRANSFER:
+        return transfer;
+    }
+    throw std::out_of_range("Invalid NewsType");
+  }
+
+  template <typename U>
+    requires(!std::same_as<U, NewsType>)
+  constexpr T& operator[](U) = delete;
+
+  template <typename U>
+    requires(!std::same_as<U, NewsType>)
+  constexpr const T& operator[](U) const = delete;
+
+  constexpr bool operator==(const NewsValues&) const noexcept = default;
+};
+
 export enum SectorType {
   SEC_SEA = 0,
   SEC_LAND = 1,
@@ -407,6 +454,94 @@ export constexpr std::array all_atmosphere_conditions = {
     Conditions::OXYGEN,   Conditions::CO2,    Conditions::HYDROGEN,
     Conditions::NITROGEN, Conditions::SULFUR, Conditions::HELIUM,
     Conditions::OTHER,
+};
+
+export constexpr std::array all_gas_conditions = {
+    Conditions::METHANE,  Conditions::OXYGEN,   Conditions::CO2,
+    Conditions::HYDROGEN, Conditions::NITROGEN, Conditions::SULFUR,
+    Conditions::HELIUM,   Conditions::OTHER,
+};
+
+/// Named values indexed by Conditions.
+export template <typename T = int>
+struct ConditionValues {
+  T rtemp{};
+  T temp{};
+  T methane{};
+  T oxygen{};
+  T co2{};
+  T hydrogen{};
+  T nitrogen{};
+  T sulfur{};
+  T helium{};
+  T other{};
+  T toxic{};
+
+  [[nodiscard]] constexpr T& operator[](Conditions cond) {
+    switch (cond) {
+      case Conditions::RTEMP:
+        return rtemp;
+      case Conditions::TEMP:
+        return temp;
+      case Conditions::METHANE:
+        return methane;
+      case Conditions::OXYGEN:
+        return oxygen;
+      case Conditions::CO2:
+        return co2;
+      case Conditions::HYDROGEN:
+        return hydrogen;
+      case Conditions::NITROGEN:
+        return nitrogen;
+      case Conditions::SULFUR:
+        return sulfur;
+      case Conditions::HELIUM:
+        return helium;
+      case Conditions::OTHER:
+        return other;
+      case Conditions::TOXIC:
+        return toxic;
+    }
+    throw std::out_of_range("Invalid Conditions");
+  }
+
+  [[nodiscard]] constexpr const T& operator[](Conditions cond) const {
+    switch (cond) {
+      case Conditions::RTEMP:
+        return rtemp;
+      case Conditions::TEMP:
+        return temp;
+      case Conditions::METHANE:
+        return methane;
+      case Conditions::OXYGEN:
+        return oxygen;
+      case Conditions::CO2:
+        return co2;
+      case Conditions::HYDROGEN:
+        return hydrogen;
+      case Conditions::NITROGEN:
+        return nitrogen;
+      case Conditions::SULFUR:
+        return sulfur;
+      case Conditions::HELIUM:
+        return helium;
+      case Conditions::OTHER:
+        return other;
+      case Conditions::TOXIC:
+        return toxic;
+    }
+    throw std::out_of_range("Invalid Conditions");
+  }
+
+  template <typename U>
+    requires(!std::same_as<U, Conditions>)
+  constexpr T& operator[](U) = delete;
+
+  template <typename U>
+    requires(!std::same_as<U, Conditions>)
+  constexpr const T& operator[](U) const = delete;
+
+  constexpr bool operator==(const ConditionValues&) const noexcept = default;
 };
 
 export constexpr std::string_view to_string(Conditions cond) noexcept {

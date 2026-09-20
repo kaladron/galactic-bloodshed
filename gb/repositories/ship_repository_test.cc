@@ -446,17 +446,23 @@ int main() {
     mirror_data.special = AimedAtData{
         .shipno = shipnum_t{0},
         .snum = starnum_t{3},
-        .intensity = 5,
+        .intensity = 85,
         .pnum = planetnum_t{2},
         .level = ScopeLevel::LEVEL_PLAN,
     };
     auto mirror_ship = ShipFactory::create(mirror_data);
     test::expect_true(mirror_ship != nullptr);
+    test::expect_true(repo.save(*mirror_ship));
+    auto mirror_json = store.retrieve("tbl_ship", 201);
+    test::expect_true(mirror_json.has_value());
+    test::expect_true(mirror_json->find("\"intensity\":85") !=
+                          std::string::npos,
+                      "AimedAtData::intensity must serialize as a JSON number");
     auto* mirror = mirror_ship->as<SpaceMirrorShip>();
     test::expect_true(mirror != nullptr);
     test::expect_eq(mirror->aimed_star(), starnum_t{3});
     test::expect_eq(mirror->aimed_planet(), planetnum_t{2});
-    test::expect_eq(mirror->intensity(), 5);
+    test::expect_eq(mirror->intensity(), 85);
 
     // SporePodShip
     ship_struct pod_data{};

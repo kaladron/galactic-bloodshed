@@ -1602,6 +1602,52 @@ void test_moveship_and_followable() {
   });
 }
 
+void test_subclass_special_data_clamping() {
+  std::println(std::cout, "Testing Ship subclass special data clamping...");
+
+  // 1. SpaceMirrorShip intensity clamped to [0, 100]
+  SpaceMirrorShip mirror{};
+  mirror.set_intensity(150);
+  test::expect_eq(mirror.intensity(), 100);
+  mirror.set_intensity(-20);
+  test::expect_eq(mirror.intensity(), 0);
+  mirror.set_intensity(75);
+  test::expect_eq(mirror.intensity(), 75);
+
+  // 2. ToxicWasteShip toxic_level clamped to [0, 100]
+  ToxicWasteShip toxic{};
+  toxic.set_toxic_level(120);
+  test::expect_eq(toxic.toxic_level(), 100);
+  toxic.set_toxic_level(-10);
+  test::expect_eq(toxic.toxic_level(), 0);
+  toxic.set_toxic_level(45);
+  test::expect_eq(toxic.toxic_level(), 45);
+
+  // 3. SporePodShip decay and temperature clamped to >= 0
+  SporePodShip pod{};
+  pod.set_decay(-5);
+  test::expect_eq(pod.decay(), 0);
+  pod.set_decay(8);
+  test::expect_eq(pod.decay(), 8);
+  pod.set_temperature(-3);
+  test::expect_eq(pod.temperature(), 0);
+  pod.set_temperature(12);
+  test::expect_eq(pod.temperature(), 12);
+
+  // 4. CanisterShip count and TerraformerShip index clamped to >= 0
+  CanisterShip canister{};
+  canister.set_count(-1);
+  test::expect_eq(canister.count(), 0);
+  canister.set_count(5);
+  test::expect_eq(canister.count(), 5);
+
+  TerraformerShip terra{};
+  terra.set_index(-4);
+  test::expect_eq(terra.index(), 0);
+  terra.set_index(3);
+  test::expect_eq(terra.index(), 3);
+}
+
 }  // namespace
 
 int main() {
@@ -1631,6 +1677,7 @@ int main() {
   test_mirror_aim_and_formatting_helpers();
   test_blueprint_complexity_defense_and_capture();
   test_moveship_and_followable();
+  test_subclass_special_data_clamping();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

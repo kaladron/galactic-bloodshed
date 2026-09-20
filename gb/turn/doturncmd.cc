@@ -641,10 +641,7 @@ void fix_stability(EntityManager& em, Star& s) {
       s.stability() += a;
   } else {
     a = int_rand(-1, 1);
-    if (((int)s.stability() + a) < 0)
-      s.stability() = 0;
-    else
-      s.stability() += a;
+    s.stability() = std::max(0, s.stability() + a);
   }
 }
 

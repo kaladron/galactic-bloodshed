@@ -22,10 +22,10 @@ export struct star_struct {
   std::vector<std::string>
       pnames; /* names of planets (vector size = numplanets) */
 
-  unsigned char stability{0};   /* how close to nova it is */
-  unsigned char nova_stage{0};  /* stage of nova */
-  unsigned char temperature{0}; /* factor which expresses how hot the star is*/
-  double gravity{0.0};          /* attraction of star in "Standards". */
+  int stability{0};    /* how close to nova it is */
+  int nova_stage{0};   /* stage of nova */
+  int temperature{0};  /* factor which expresses how hot the star is*/
+  double gravity{0.0}; /* attraction of star in "Standards". */
 
   starnum_t star_id{0};
   PlayerVector<PlayerVector<std::uint32_t, MAXPLAYERS>, MAXPLAYERS>
@@ -195,26 +195,26 @@ public:
   }
 
   // how close to nova it is
-  unsigned char& stability() {
+  int& stability() {
     return star_struct.stability;
   }
-  [[nodiscard]] unsigned char stability() const {
+  [[nodiscard]] int stability() const {
     return star_struct.stability;
   }
 
   // stage of nova
-  unsigned char& nova_stage() {
+  int& nova_stage() {
     return star_struct.nova_stage;
   }
-  [[nodiscard]] unsigned char nova_stage() const {
+  [[nodiscard]] int nova_stage() const {
     return star_struct.nova_stage;
   }
 
   // factor which expresses how hot the star is
-  unsigned char& temperature() {
+  int& temperature() {
     return star_struct.temperature;
   }
-  [[nodiscard]] unsigned char temperature() const {
+  [[nodiscard]] int temperature() const {
     return star_struct.temperature;
   }
 

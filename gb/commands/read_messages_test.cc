@@ -174,18 +174,13 @@ void test_read_news() {
   int latest_announce = ctx.em.get_latest_news_id(NewsType::ANNOUNCE);
 
   ctx.em.with_race(1, [&](const Race& race) {
-    test::expect_eq(
-        race.governor[0].newspos[std::to_underlying(NewsType::DECLARATION)],
-        latest_decl);
-    test::expect_eq(
-        race.governor[0].newspos[std::to_underlying(NewsType::COMBAT)],
-        latest_combat);
-    test::expect_eq(
-        race.governor[0].newspos[std::to_underlying(NewsType::TRANSFER)],
-        latest_transfer);
-    test::expect_eq(
-        race.governor[0].newspos[std::to_underlying(NewsType::ANNOUNCE)],
-        latest_announce);
+    test::expect_eq(race.governor[0].newspos[NewsType::DECLARATION],
+                    latest_decl);
+    test::expect_eq(race.governor[0].newspos[NewsType::COMBAT], latest_combat);
+    test::expect_eq(race.governor[0].newspos[NewsType::TRANSFER],
+                    latest_transfer);
+    test::expect_eq(race.governor[0].newspos[NewsType::ANNOUNCE],
+                    latest_announce);
   });
 
   // Reading again immediately produces no new articles

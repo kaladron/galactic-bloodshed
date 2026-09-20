@@ -165,7 +165,8 @@ cmake --build build --clean-first
 │   ├── dal/              # Data Access Layer (dallib)
 │   ├── entities/         # Domain entities, strong IDs, collections (gb.entities)
 │   ├── repositories/     # Repository pattern implementations (gb.repositories)
-│   ├── services/         # Service layer (EntityManager, GameObj) (gb.services)
+│   ├── services/         # Service layer (EntityManager, GameObj, Place) (gb.services)
+│   ├── mechanics/        # Shared stateless multi-entity game rules (gb.mechanics)
 │   ├── turn/             # Turn simulation engine & passes (gb.turn)
 │   ├── server/           # Asio server, session, auth, notification (gb.server)
 │   ├── commands/         # Player command implementations (commands)
@@ -181,14 +182,15 @@ cmake --build build --clean-first
 ```
 
 ### Module Architecture
-The codebase uses C++ Modules with the following structure:
-- **`gb.entities`**: Domain models (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Place`, `TurnStats`), strong IDs, `PlayerVector`, `Coordinates`, `Tweakables`
-- **`gb.repositories`**: Repository DAL adapters (`RaceRepository`, `ShipRepository`, `PlanetRepository`, `StarRepository`, `SectorRepository`, etc.)
-- **`gb.services`**: Core game services (`EntityManager`, `GameObj`, `do_prompt`, `SessionRegistry`, `DeferredWriteScope`)
-- **`gb.turn`**: Turn simulation engine (`doplanet`, `doship`, `dosector`, `doturncmd`, `do_update`, `do_segment`)
-- **`gb.server`**: Server networking, session management, authentication, and notifications
-- **`dallib`**: Data Access Layer module (`Database`, `JsonStore`, `Schema`)
-- **`commands`**: Player command implementations module (`GB::commands`)
+The codebase uses a 7-Tier C++26 Module DAG with the following structure:
+- **`dallib`** (Tier 1): Data Access Layer module (`Database`, `JsonStore`, `Schema`, `TelegramItem`)
+- **`gb.entities`** (Tier 1): Pure in-memory domain models (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`), strong IDs, `PlayerVector`, `Coordinates`, `Tweakables`
+- **`gb.repositories`** (Tier 2): Repository DAL adapters (`RaceRepository`, `ShipRepository`, `PlanetRepository`, `StarRepository`, `SectorRepository`, etc.)
+- **`gb.services`** (Tier 3): Core game services (`EntityManager`, `GameObj`, `Place`, `EntityLists`, `do_prompt`, `SessionRegistry`, `DeferredWriteScope`)
+- **`gb.mechanics`** (Tier 4): Shared stateless multi-entity game rules (`:navigation`, `:combat`, `:construction`, `:visibility`, `:victory`)
+- **`gb.turn`** (Tier 5): Turn simulation engine (`TurnStats`, `doplanet`, `doship`, `dosector`, `do_VN`, `doturncmd`, `do_update`, `do_segment`)
+- **`commands` & `gb.creator`** (Tier 6): Player command implementations (`GB::commands`) and universe generation/enrollment (`gb.creator`)
+- **`gb.server`** (Tier 7): Server networking, session management, authentication, and notifications
 - **`test`**: Testing framework, fixtures, and matrix runner
 
 ## 📝 Coding Standards & Conventions
@@ -365,7 +367,7 @@ Rules:
 
 #### Multi-Player Simulation Arrays (`PlayerVector<T, N>`)
 
-- **Strong `player_t` Indexing**: Use `PlayerVector<T, MAXPLAYERS>` (`gblib:types`) for multi-player simulation metrics (`TurnStats`, colony arrays, power tallies) to ensure 1-based indexing, bounds safety, and Glaze JSON serialization support without raw C-arrays.
+- **Strong `player_t` Indexing**: Use `PlayerVector<T, MAXPLAYERS>` (`gb.entities`) for multi-player simulation metrics (`TurnStats`, colony arrays, power tallies) to ensure 1-based indexing, bounds safety, and Glaze JSON serialization support without raw C-arrays.
 
 #### Domain Documentation in `docs/`
 
@@ -504,26 +506,26 @@ See [`.github/skills/database-test-pattern/SKILL.md`](.github/skills/database-te
 ## ⚠️ Critical Rules & Anti-patterns
 
 ### DO NOT:
-- ❌ Use `#include` for new code (except for legacy constants from `gb/entities/files.h`, `gb/buffers.h`)
+- ❌ Use `#include` for C++ or C headers — always use C++26 modules (`import std;`, `import gb.entities;`, etc.)
 - ❌ Use `printf`, `std::cout`, or direct console I/O
 - ❌ Use raw `new`/`delete` or manual memory management
 - ❌ Add external dependencies without approval
 - ❌ Hardcode file paths or magic numbers
 - ❌ Create global state variables
-- ❌ Bypass the gblib access layer for data persistence
+- ❌ Bypass `EntityManager` (`gb.services`) for data persistence
 - ❌ Check for null pointers from `peek_star()`, `peek_planet()`, or `peek_sectormap()` - these throw exceptions instead
 - ❌ Catch or suppress `EntityNotFoundError` on internal/validated IDs (e.g., `g.snum()`, `where.snum`) - let it fail fast on data corruption
 - ❌ Drop, shorten, or consolidate away existing test cases, assertions, or explanatory comments during modernization
 
 ### ALWAYS:
-- ✅ Use fine-grained module imports (`import gb.entities;`, `import gb.services;`, etc.) and prefer `import std;` over `import std.compat;`
+- ✅ Use fine-grained module imports (`import gb.entities;`, `import gb.services;`, `import gb.mechanics;`, etc.) and prefer `import std;` over `import std.compat;`
 - ✅ For tests, also add `import test;` and `import dallib;`
 - ✅ Write all output through `g.out`
 - ✅ Check `std::optional` values before use
 - ✅ Use early returns with clear error messages
 - ✅ Use `std::format` for string formatting
 - ✅ End output lines with `\n`
-- ✅ Use existing constants from `gb/entities/files.h` and `gblib:tweakables`
+- ✅ Use existing constants from `gb.entities` (`tweakables.cppm`)
 - ✅ Dereference `peek_star()`, `peek_planet()`, and `peek_sectormap()` results directly - they throw on not-found
 - ✅ Wrap in `try/catch` only when looking up untrusted user-supplied raw IDs (e.g. parsed strings)
 - ✅ Retain all docstrings, stanza comments, inline explanatory comments, and test setup explanations verbatim

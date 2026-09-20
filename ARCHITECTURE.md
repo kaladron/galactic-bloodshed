@@ -74,17 +74,13 @@ These are the architectural guarantees the project is converging toward. Some ar
 
 Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. Subsystems are organized into distinct, modular libraries in `gb/`:
 
-### Core Subsystem Modules
+### Core Subsystem Modules (7-Tier Module DAG)
 
-- **`dallib`** (Data Access Layer) - `gb/dal/dallib.cppm`
-  - Database, JsonStore, Schema classes
-  - Only layer with direct dependency on SQLite3
-
-- **`gb.entities`** (Domain Model) - `gb/entities/entities.cppm`
-  - Core domain entities: `Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Place`, `TurnStats`
-  - Polymorphic specialized ship hierarchy with compile-time checked downcasting via `Ship::as<T>()`, `ShipFactory` deserialization, and encapsulated typed members (eliminating raw variant unpacking):
-    - Base: `Ship`
-    - Autonomous / Replicating: `AutonomousShip` $\to$ (`VonNeumannShip`, `BerserkerShip`)
+- **Tier 1: `gb.entities`** (Domain Model) - `gb/entities/entities.cppm` (`gb_entities` target)
+  - Pure in-memory domain entities (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Commod`) with zero database, Glaze, or service dependencies
+  - Polymorphic specialized ship hierarchy (`gb/entities/ship/`) with compile-time checked downcasting via `Ship::as<T>()`, `ShipFactory` deserialization, and encapsulated typed members (eliminating raw variant unpacking):
+    - Base: `Ship` (`ship_base.cppm`)
+    - Autonomous / Replicating: `AutonomousShip` $\to$ (`VonNeumannShip`, `BerserkerShip`) (`ship_subclasses.cppm`)
     - Directed Energy & Optics: `SpaceMirrorShip` (space mirrors, orbital/ground telescopes, tractor beams)
     - Biological / Spores: `SporePodShip` (thermal germination and orbital decay)
     - Atmospheric Alteration: `CanisterShip` (cooling dust canisters, greenhouse gas canisters)
@@ -94,60 +90,63 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
     - Cargo Transfer: `TransporterShip` (target recipient vessels)
     - Ecological Containment: `ToxicWasteShip` (planetary toxin harvesting and storage)
   - Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), `PlayerVector<T, N>`, `Coordinates`
-  - First-class domain methods and computed predicates (`Ship::is_docked()`, `Ship::is_landed()`, `Ship::is_laser_on()`, `HyperDriveData::is_ready()`, `Planet::is_adjacent()`, `Planet::adjacent_coordinates()`, `Planet::random_adjacent_coordinates()`, `Star::is_explored_by()`, `Race::is_allied_with()`, `block::is_invited()`)
-  - Strongly-typed manifests and flags (`CommodityManifest`, `TechDiscoveries`)
-  - Configuration constants (`Tweakables`), entity lists, ship capabilities and filters
+  - First-class domain methods and computed predicates (`Ship::is_docked()`, `Ship::refuel_from_gas_giant()`, `Ship::process_radiation()`, `Ship::prepare_for_flight()`, `Planet::update_toxicity()`, `Planet::process_toxic_environmental_damage()`, `Planet::select_victim_to_steal_from()`, `SectorMap::process_supernova_devastation()`, `AutonomousShip::mine_sector()`, `AutonomousShip::roam_to_adjacent_sector()`)
+  - Configuration constants (`Tweakables`), random utilities (`rand.cppm`), ship templates (`ship_templates.cppm`), and ship filters (`shipfilter.cppm`)
 
-- **`gb.repositories`** (Repository Pattern) - `gb/repositories/repositories.cppm`
+- **Tier 1: `dallib`** (Data Access Layer) - `gb/dal/dallib.cppm` (`dallib` target)
+  - `Database`, `JsonStore`, `TelegramItem`, and `initialize_schema()`
+  - Only layer with direct dependency on SQLite3
+
+- **Tier 2: `gb.repositories`** (Repository Pattern) - `gb/repositories/repositories.cppm` (`gb_repositories` target)
   - Persistence mapping layer between `EntityManager` and `dallib`
   - Specific repositories for races, ships, planets, stars, sectors, commodities, power, and blocks
+  - `gb.repositories` exports zero Glaze headers; `glz::meta<T>` schemas are isolated inside `gb.repositories.glaze` (`gb/repositories/glaze_schemas.cppm`) and `.cc` implementation units
 
-- **`gb.services`** (Service Layer) - `gb/services/services.cppm`
-  - `EntityManager`: Central entity lifecycle, caching, and monadic transaction coordinator
-  - `GameObj`: Per-command execution context and AP deduction helpers
-  - `SessionRegistry`: Cross-cutting abstract interface for session notifications
-  - `DeferredWriteScope`: Scoped batched persistence manager
+- **Tier 3: `gb.services`** (Service Layer) - `gb/services/services.cppm` (`gb_services` target)
+  - `EntityManager`: Central entity lifecycle, caching, and monadic transaction coordinator (`entity_manager.cppm`), using `struct EntityManager::Storage` PIMPL so `gb.repositories` is never exported in `gb.services`'s public interface
+  - `GameObj`: Per-command execution context, `check_commandable(const Ship&)`, and AP deduction helpers (`gameobj.cppm`)
+  - `Place`: Hierarchical scope path parser and formatter (`place.cppm`)
+  - `RaceList`, `StarList`, `PlanetList`, `ShipList`, `CommodList`, `BlockList`: RAII and readonly collection views (`entitylists.cppm`)
+  - `SessionRegistry` & Notification routing (`session_registry.cppm`, `notification.cppm`, `tele.cppm`, `prompt.cppm`)
 
-- **`gb.turn`** (Turn Simulation Engine) - `gb/turn/turn.cppm`
-  - Multi-pass simulation pipeline (`doplanet`, `doship`, `dosector`, `doturncmd`, `do_update`, `do_segment`)
+- **Tier 4: `gb.mechanics`** (Shared Stateless Game Rules) - `gb/mechanics/mechanics.cppm` (`gb_mechanics` target)
+  - Multi-entity rules shared between interactive player commands (`commands`) and the turn engine (`gb.turn`):
+    - `:navigation`: `moveship`, `do_merchant`, `followable`, `msg_OOF`, `autonav`, `dock`, `land`, `launch`, `fuel`, `order`
+    - `:combat`: `shoot_ship_to_ship`, `shoot_planet_to_ship`, `shoot_ship_to_planet`, `resolve_ground_attack`, `domine`, `detonate_mine`
+    - `:construction`: `can_build_at_planet`, `can_build_on_ship`, `create_new_ship`, `build_cost`, `get_build_tech`
+    - `:visibility`: `in_range`, `can_see_ship`, `optical_range`, `ships_at_star`, `get4args`
+    - `:victory`: `create_victory_list`, `compute_power_blocks`
 
-- **`gb.creator`** (Universe Generation & Imperial Onboarding) - `gb/creator/creator.cppm`
-  - Encapsulates procedural galaxy generation, empire initialization, and species design
-  - `UniverseGenerator`: Procedural universe generation engine producing stars, planetary systems, and sector geography according to configurable astrophysical parameters
-  - `EnrollmentService`: Canonical service for player registration, homeworld cartography, capital colony establishment, and government flagship commissioning
-  - `RacegenEngine`: Pure point-budget calculation and validation engine for the 1400-point genetic design sandbox, trait covariances, and biome affinities
-  - `RaceArchetype`: Pre-calibrated evolutionary racial archetypes and formatted terminal tabulation
+- **Tier 5: `gb.turn`** (Turn Simulation Engine) - `gb/turn/turn.cppm` (`gb_turn` target)
+  - Multi-pass simulation pipeline (`:turnstats`, `:bombard`, `:doplanet`, `:dosector`, `:doship`, `:vn`, `:doturncmd`)
 
-- **`gb.server`** (Server & Networking) - `gb/server/server_module.cppm`
+- **Tier 6: `commands` & `gb.creator`** (Application & Onboarding Layers)
+  - **`commands`** (`gb/commands/commands.cppm`): 89 player command implementations authored with declarative `CommandDescriptor`s (`command_spec.cppm`) and domain handlers
+  - **`gb.creator`** (`gb/creator/creator.cppm`): Procedural galaxy generation (`UniverseGenerator`), player registration (`EnrollmentService`), and 1400-point species design (`RacegenEngine`, `RaceArchetype`)
+
+- **Tier 7: `gb.server`** (Server & Networking) - `gb/server/server_module.cppm` (`gb_server` target)
   - Asio-backed TCP server (`Server`), client sessions (`Session`), authentication (`auth`), notifications (`notification`), and startup configuration (`server_config`)
 
-- **`commands`** (Application Layer) - `gb/commands/commands.cppm`
-  - 89 player command implementations authored with declarative `CommandDescriptor`s and domain handlers
+### Strict 3-Tier Domain Logic Placement Rule
 
-- **`gblib`** (Legacy Aggregated Module) - `gb/gblib.cppm`
-  - Transitional partition aggregator retained for backwards compatibility
+Every game function must reside in the lowest tier capable of expressing its inputs:
+1. **`gb.entities` (`gb/entities/`)**: Pure in-memory operations on a single entity or small value set (`Planet`, `SectorMap`, `Sector`, `Ship`, `Race`) that do **not** touch `EntityManager`, `TurnStats`, or `push_telegram`. Single-entity logic is exposed as member methods (e.g., `Planet::update_toxicity()`, `Ship::refuel_from_gas_giant()`, `AutonomousShip::mine_sector()`) without redundant C-style free function wrappers.
+2. **`gb.mechanics` (`gb/mechanics/`)**: Multi-entity domain operations requiring `EntityManager` or `SessionRegistry` that are invoked by both interactive player commands and turn processing (e.g., `moveship`, `shoot_ship_to_ship`, `compute_power_blocks`).
+3. **`gb.turn` (`gb/turn/`)**: Turn-only batch passes that orchestrate `EntityManager` iterations, accumulate `TurnStats`, and dispatch turn-end telegram bulletins (`doplanet`, `dosector`, `doship`, `do_VN`, `doturncmd`).
 
-### Module Dependencies
+### Module Dependencies (Strict Acyclic DAG)
 
 ```
-commands      --> gb.entities, gb.services, dallib, session, notification
-gb.turn       --> gb.entities, gb.services
-gb.creator    --> gb.entities, gb.services, gb.repositories, dallib, tabulate
-gb.services   --> gb.entities, gb.repositories, dallib
-gb.repositories --> gb.entities, dallib
-gb.server     --> gb.entities, gb.services, commands, dallib, asio
-gb.entities   --> (standalone domain types, strong IDs, utilities)
-dallib        --> SQLite3, Glaze
+gb.server       --> commands, gb.turn, gb.mechanics, gb.services, gb.entities, dallib, asio
+commands        --> gb.turn, gb.mechanics, gb.services, gb.entities, session, notification
+gb.creator      --> gb.services, gb.repositories, gb.entities, dallib, tabulate
+gb.turn         --> gb.mechanics, gb.services, gb.entities, dallib, tabulate
+gb.mechanics    --> gb.services, gb.entities, scnlib
+gb.services     --> PUBLIC: gb.entities, dallib | PRIVATE: gb.repositories
+gb.repositories --> gb.entities, dallib, glaze
+gb.entities     --> strong_id, types_module, scnlib (zero DB, zero Glaze, zero services)
+dallib          --> SQLite3, types_module
 ```
-
-### Why This Structure?
-
-1. **`dallib` is standalone** - It's the foundation; no other modules depend on internal DAL types
-2. **`gb.entities` contains domain models** - Defines pure game data structures and strong types without dependencies on storage or business logic
-3. **`gb.services` encapsulates business orchestration** - Centralizes entity mutations and session coordination
-4. **`commands` imports only needed subsystems** - Player action handlers depend cleanly on entities and services
-5. **`gb.creator` isolates universe setup and player onboarding** - Keeps galaxy generation algorithms, point-budget math, and enrollment orchestration separate from the runtime server daemon and turn loop
-6. **Clear boundaries** - Module imports enforce architectural constraints at compile time
 
 ---
 
@@ -226,7 +225,7 @@ export void initialize_schema(Database& db);
 
 ### Layer 2: Repository Layer
 **Location**: `gb/repositories/`  
-**Module**: `gblib:repositories`
+**Module**: `gb.repositories` (`gb/repositories/repositories.cppm`)
 
 Repositories provide type-safe access to game entities and handle JSON serialization.
 
@@ -331,8 +330,8 @@ struct meta<Ship> {
 ### Layer 3: Service Layer
 **Location**: `gb/services/`  
 **Modules**: 
-- `gblib:services` - Core game service (EntityManager)
-- `session` - Session management (standalone module)
+- `gb.services` - Core game services (`EntityManager`, `GameObj`, `Place`, `EntityLists`, `SessionRegistry`)
+- `session` - Asio session management (`gb/server/session.cppm`)
 
 Services contain business logic and coordinate operations across multiple repositories.
 
@@ -571,7 +570,7 @@ flowchart TD
 2. **Point-of-Action State Consistency**:
    Domain mutating methods (`Sector::devastate()`, `Sector::terraform()`, `Planet::free_slaves()`, `plinfo::collect_tax()`) leave entities in an invariant-satisfying state atomically at the point of action, eliminating end-of-loop cleanup sweeps.
 3. **`PlayerVector<T, N>` Strong ID Container**:
-   Multi-player metrics are stored in `PlayerVector<T, N>` (`gblib:types`), offering 1-indexed `player_t` bounds checking, container iteration, and zero-allocation JSON serialization via `glz::meta`.
+   Multi-player metrics are stored in `PlayerVector<T, N>` (`gb.entities`), offering 1-indexed `player_t` bounds checking, container iteration, and zero-allocation JSON serialization via `glz::meta`.
 4. **Dimensions & `num_sectors()` Encapsulation**:
    Planetary grids are sized by `Coordinates dimensions` (`data_.dimensions.x`, `data_.dimensions.y`) and `num_sectors()` (`dimensions.x * dimensions.y`), providing uniform toroidal wrapping and geometric validation without raw dimensions arithmetic.
 
@@ -673,49 +672,69 @@ Database (SQLite)
 
 ```mermaid
 graph TD
-    subgraph AppLayer ["Application Layer"]
+    subgraph ServerLayer ["Tier 7: Server & Networking (gb.server)"]
+        Server["server / auth / session / notification"]
+        AsioWrapper["asio (Boost.Asio Wrapper)"]
+        Server --> AsioWrapper
+    end
+
+    subgraph AppLayer ["Tier 6: Application & Onboarding"]
         Commands["commands (Player Commands)"]
         Spec["commands:spec (CommandDescriptor & Dispatch)"]
+        Creator["gb.creator (UniverseGenerator, Enrollment, Racegen)"]
         Commands --> Spec
     end
 
-    subgraph ServiceLayer ["Service & Network Layer"]
-        Session["session (Asio Networking)"]
-        Notification["notification (Message Routing)"]
-        AsioWrapper["asio (Boost.Asio Wrapper)"]
-        Session --> AsioWrapper
+    subgraph TurnLayer ["Tier 5: Turn Simulation Engine (gb.turn)"]
+        Turn["gb.turn (:turnstats, :bombard, :doplanet, :dosector, :doship, :vn, :doturncmd)"]
     end
 
-    subgraph CoreLayer ["gblib (Core Game Library)"]
-        GameObjPart["gblib:gameobj (GameObj & AP Helpers)"]
-        ServicesPart["gblib:services (EntityManager)"]
-        ReposPart["gblib:repositories (Entity Repositories)"]
-        SessionRegPart["gblib:sessionregistry (Session Registry Interface)"]
-        DomainPart["gblib domain partitions (:types, :star, :planet, :ships, ...)"]
-        
-        ServicesPart --> ReposPart
-        ServicesPart --> DomainPart
-        ReposPart --> DomainPart
+    subgraph MechanicsLayer ["Tier 4: Shared Stateless Game Rules (gb.mechanics)"]
+        Mechanics["gb.mechanics (:navigation, :combat, :construction, :visibility, :victory)"]
     end
 
-    subgraph DalLayer ["Data Access Layer (dallib)"]
+    subgraph ServicesLayer ["Tier 3: Service Layer (gb.services)"]
+        EntityMgr["EntityManager (PIMPL Storage)"]
+        GameObjPart["GameObj & Place & EntityLists"]
+        SessionRegPart["SessionRegistry & Notification Routing"]
+    end
+
+    subgraph ReposLayer ["Tier 2: Repository Layer (gb.repositories)"]
+        Repos["gb.repositories (RaceRepository, ShipRepository, ...)"]
+        GlazeSchemas["gb.repositories.glaze (Internal Glaze Schemas)"]
+        Repos -.-> GlazeSchemas
+    end
+
+    subgraph FoundationLayer ["Tier 1: Domain Entities & DAL"]
+        Entities["gb.entities (Race, Star, Planet, Ship, Sector, Coordinates)"]
         DAL["dallib (Database, JsonStore, Schema)"]
         SQLite[("SQLite3 Storage")]
         DAL --> SQLite
     end
 
-    Commands --> GameObjPart
-    Commands --> ServicesPart
-    Commands --> Notification
+    Server --> Commands
+    Server --> Turn
+    Server --> ServicesLayer
 
-    Notification --> ServicesPart
-    Notification --> SessionRegPart
+    Commands --> Turn
+    Commands --> Mechanics
+    Commands --> ServicesLayer
 
-    Session --> SessionRegPart
-    Session --> DomainPart
+    Creator --> ServicesLayer
+    Creator --> Repos
 
-    ReposPart --> DAL
-    ServicesPart --> DAL
+    Turn --> Mechanics
+    Turn --> ServicesLayer
+
+    Mechanics --> ServicesLayer
+    Mechanics --> Entities
+
+    ServicesLayer --> Entities
+    ServicesLayer --> DAL
+    EntityMgr -. "PRIVATE (.cc only)" .-> Repos
+
+    Repos --> Entities
+    Repos --> DAL
 ```
 
 ### Export Philosophy
@@ -729,26 +748,21 @@ graph TD
 - Internal implementation details
 - Helper functions
 - Database connection objects
-- JSON serialization internals
+- JSON serialization internals (`glz::meta<T>`)
 
 **Example Module Interface:**
 
 ```cpp
-// gblib-repositories.cppm
-export module gblib:repositories;
+// gb/repositories/repositories.cppm
+export module gb.repositories;
 
 import dallib;
-import :types;
+import gb.entities;
 
-// Export the repository classes
+// Export the repository classes (zero Glaze imports in interface!)
 export class RaceRepository { /* ... */ };
 export class ShipRepository { /* ... */ };
 // ... other repositories
-
-// Do NOT export:
-// - Glaze reflection (internal detail)
-// - Helper functions like serialize/deserialize
-// - JsonStore (DAL concern)
 ```
 
 ---
@@ -1042,47 +1056,60 @@ gb/
 │   ├── schema.cc               # Schema migrations & table setup
 │   └── *_test.cc               # In-memory DAL test suites
 │
-├── entities/                    # Domain Entities & Types (gb.entities)
+├── entities/                    # Tier-1 Domain Entities & Types (gb.entities)
 │   ├── entities.cppm           # Domain entities module interface
-│   ├── gblib-race.cppm         # Race entity structure
-│   ├── gblib-ships.cppm        # Ship entity structure & types
-│   ├── gblib-star.cppm         # Star entity structure & class
-│   ├── gblib-planet.cppm       # Planet entity structure & Stockpile
-│   ├── gblib-sector.cppm       # Sector entity structure
-│   ├── gblib-galaxy.cppm       # Universe & Galaxy structures
-│   ├── gblib-types.cppm        # Strong ID types & PlayerVector<T, N>
-│   ├── gblib-entitylists.cppm  # Entity list iteration views
+│   ├── types.cppm              # Strong ID types & PlayerVector<T, N>
+│   ├── domain_types.cppm       # Coordinates, Stockpile, ServerState
+│   ├── race.cppm / .cc         # Race & alliance block domain models
+│   ├── star.cppm / .cc         # Star system domain model
+│   ├── planet.cppm / .cc       # Planet domain model & toxicity/plunder math
+│   ├── sector.cppm / .cc       # Sector & SectorMap domain models
+│   ├── ship/                   # Polymorphic Ship hierarchy
+│   │   ├── ship.cppm           # Ship module interface aggregator
+│   │   ├── ship_types.cppm     # ShipType enum & payload structs
+│   │   ├── ship_templates.cppm # Static ship hull specifications
+│   │   ├── ship_base.cppm / .cc        # Base Ship class
+│   │   └── ship_subclasses.cppm / .cc  # Specialized Ship subclasses & ShipFactory
+│   ├── universe.cppm           # Universe & VN index structures
 │   └── *_test.cc               # Entity unit tests
 │
-├── repositories/                # Repository Pattern DAL Adapters (gb.repositories)
-│   ├── repositories.cppm       # Repositories module interface
-│   ├── race_repository.cc      # Race persistence
-│   ├── ship_repository.cc      # Ship persistence
-│   ├── planet_repository.cc    # Planet persistence
-│   ├── star_repository.cc      # Star persistence
-│   ├── sector_repository.cc    # Sector persistence
-│   ├── commod_repository.cc    # Commodity persistence
-│   ├── block_repository.cc     # Communication block persistence
-│   ├── power_repository.cc     # Power metrics persistence
+├── repositories/                # Tier-2 Repository DAL Adapters (gb.repositories)
+│   ├── repositories.cppm       # Repositories module interface (zero Glaze imports)
+│   ├── glaze_schemas.cppm      # Internal Glaze serialization traits (gb.repositories.glaze)
+│   ├── *_repository.cc         # Out-of-line entity persistence & JSON mapping
 │   └── *_test.cc               # Repository unit tests
 │
-├── services/                    # Domain Services & Orchestration (gb.services)
+├── services/                    # Tier-3 Domain Services & Orchestration (gb.services)
 │   ├── services.cppm           # Services module interface
-│   ├── entity_manager.cc       # Central lifecycle & monadic mutations
-│   ├── gameobj.cc              # Per-command execution context
-│   ├── prompt.cc               # Contextual prompt formatting
-│   ├── session_registry.cc     # Cross-cutting notification dispatch
+│   ├── entity_manager.cppm/.cc # Central lifecycle & PIMPL repository storage
+│   ├── gameobj.cppm / .cc      # Per-command execution context
+│   ├── entitylists.cppm / .cc  # RAII & readonly collection iteration views
+│   ├── place.cppm / .cc        # Hierarchical scope path parser & formatter
+│   ├── prompt.cppm / .cc       # Contextual prompt formatting
+│   ├── session_registry.cppm   # Cross-cutting notification interface
+│   ├── notification.cppm / .cc # Broadcast & player notification routing
 │   └── *_test.cc               # Service unit tests
 │
-├── turn/                        # Turn Simulation Engine (gb.turn)
+├── mechanics/                   # Tier-4 Shared Stateless Game Rules (gb.mechanics)
+│   ├── mechanics.cppm          # Mechanics module interface
+│   ├── navigation.cppm / .cc   # Ship movement, docking, landing, launching, fuel
+│   ├── combat.cppm / .cc       # Ship-to-ship, bombardment, ground combat, mines
+│   ├── construction.cppm / .cc # Ship construction & tech formulas
+│   ├── visibility.cppm / .cc   # Optical range, sighting, target resolution
+│   └── victory.cppm / .cc      # Victory rankings & alliance power block calculation
+│
+├── turn/                        # Tier-5 Turn Simulation Engine (gb.turn)
 │   ├── turn.cppm               # Turn engine module interface
-│   ├── doplanet.cc             # Planetary lifecycle & movement
-│   ├── doship.cc               # Ship navigation & combat passes
-│   ├── dosector.cc             # Sector population & ecology passes
-│   ├── doturncmd.cc            # Turn update & segment loop
+│   ├── turnstats.cppm          # TurnStats per-turn accumulator
+│   ├── bombard.cppm / .cc      # Autonomous orbital bombardment pass
+│   ├── doplanet.cppm / .cc     # Planetary lifecycle & ground vehicle pass
+│   ├── dosector.cppm / .cc     # Sector production, migration & spread pass
+│   ├── doship.cppm / .cc       # Ship turn simulation pass
+│   ├── vn.cppm / .cc           # Autonomous Von Neumann & Berserker replication pass
+│   ├── doturncmd.cppm / .cc    # Turn update & movement segment orchestration
 │   └── *_test.cc               # Turn engine unit tests
 │
-├── server/                      # Server & Networking Layer (gb.server)
+├── server/                      # Tier-7 Server & Networking Layer (gb.server)
 │   ├── server_module.cppm      # Server subsystem module interface
 │   ├── server.cc               # Asio TCP server implementation
 │   ├── session.cc              # Connected player session management
@@ -1092,13 +1119,13 @@ gb/
 │   ├── GB_server.cc            # Main server entrypoint
 │   └── *_test.cc               # Server unit tests
 │
-├── commands/                    # Player Commands (commands)
+├── commands/                    # Tier-6 Player Commands (commands)
 │   ├── commands.cppm           # Commands module interface
 │   ├── command_spec.cppm       # CommandDescriptor specification
 │   ├── *.cc                    # 89 individual player commands
 │   └── *_test.cc               # 4-way command unit test matrix
 │
-├── creator/                     # Universe Generation & Onboarding (gb.creator)
+├── creator/                     # Tier-6 Universe Generation & Onboarding (gb.creator)
 │   ├── creator.cppm            # Creator subsystem module interface
 │   ├── universe_generator.cc   # Procedural universe generation engine
 │   ├── enrollment_service.cc   # Canonical player onboarding service

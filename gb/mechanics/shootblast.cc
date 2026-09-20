@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file shootblast.cc
+/// \brief Ship-to-ship, planet-to-ship, and orbital bombardment combat
+/// resolution.
+
 module;
 
 import std;
-#undef stdout
 
-module gblib;
+module gb.mechanics;
 
 struct SalvoHitRoll {
   hit_count_t hits{0};

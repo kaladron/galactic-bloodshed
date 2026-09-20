@@ -23,7 +23,7 @@ void test_adjust_morale() {
   loser.name = "Defeated";
   loser.morale = 100.0;
 
-  adjust_morale(winner, loser, 25);
+  winner.adjust_morale(loser, 25);
   test::expect_true(winner.morale > 100.0,
                     "Winner morale should increase after victory");
   test::expect_true(loser.morale < 100.0,

@@ -6,9 +6,8 @@
 module;
 
 import std;
-#undef stdout
 
-module gblib;
+module gb.mechanics;
 
 /**
  * @brief Checks to see if there are any planetary defense networks on the

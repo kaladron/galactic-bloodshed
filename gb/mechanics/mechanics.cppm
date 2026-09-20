@@ -6,3 +6,4 @@
 export module gb.mechanics;
 
 export import :navigation;
+export import :combat;

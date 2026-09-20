@@ -96,6 +96,25 @@ void push_telegram_race(EntityManager& em, const player_t recipient,
     push_telegram(em, recipient, j, msg);
 }
 
+void telegram_star(EntityManager& em, starnum_t star, player_t sender,
+                   governor_t sender_gov, const std::string& message) {
+  const auto* star_ptr = em.peek_star(star);
+  if (!star_ptr) return;
+
+  for (player_t p = 1; p <= em.num_races(); p++) {
+    if ((p != sender || sender_gov != 0) && star_ptr->is_inhabited_by(p)) {
+      const auto* race = em.peek_race(p);
+      if (race) {
+        for (auto [i, gov] : race->active_governors()) {
+          if (!(p == sender && i == sender_gov)) {
+            push_telegram(em, p, i, message);
+          }
+        }
+      }
+    }
+  }
+}
+
 /**
  * \brief Read the telegrams for the player.
  *

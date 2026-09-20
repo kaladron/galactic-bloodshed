@@ -16,12 +16,9 @@ export import :doplanet;
 export import :dosector;
 export import :doship;
 export import :doturncmd;
-export import :fire;
 export import :map;
 export import :misc;
-export import :move;
 export import :shlmisc;
-export import :shootblast;
 export import :turnstats;
 
 export std::vector<Victory> create_victory_list(EntityManager&);

@@ -13,29 +13,6 @@ module gblib;
 // - notify_race, notify_player (methods on SessionRegistry interface)
 // - notify_star, warn_star (free functions with game logic)
 
-void telegram_star(EntityManager& em, starnum_t star, player_t sender,
-                   governor_t sender_gov, const std::string& message) {
-  const auto* star_ptr = em.peek_star(star);
-  if (!star_ptr) return;
-
-  for (player_t p = 1; p <= em.num_races(); p++) {
-    if ((p != sender || sender_gov != 0) && star_ptr->is_inhabited_by(p)) {
-      const auto* race = em.peek_race(p);
-      if (race) {
-        for (auto [i, gov] : race->active_governors()) {
-          if (!(p == sender && i == sender_gov)) {
-            push_telegram(em, p, i, message);
-          }
-        }
-      }
-    }
-  }
-}
-
-void adjust_morale(Race& winner, Race& loser, int amount) {
-  winner.adjust_morale(loser, amount);
-}
-
 void add_to_queue(std::deque<std::string>& q, const std::string& b) {
   if (b.empty()) return;
 

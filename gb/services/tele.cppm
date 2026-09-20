@@ -20,5 +20,7 @@ export void push_telegram(EntityManager&, player_t recipient, governor_t gov,
                           std::string_view msg);
 export void push_telegram_race(EntityManager&, const player_t,
                                std::string_view);
+export void telegram_star(EntityManager&, starnum_t, player_t sender,
+                          governor_t sender_gov, const std::string& message);
 export void teleg_read(GameObj&);
 export void news_read(NewsType type, GameObj& g);

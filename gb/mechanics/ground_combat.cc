@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file move.cc
-/// \brief Move population and assault aliens on target sector.
+/// \file ground_combat.cc
+/// \brief Ground population assault and mechanized AFV sector combat mechanics.
 
 module;
 
 import std;
 
-module gblib;
+module gb.mechanics;
 
 namespace {
 
@@ -141,10 +141,12 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
 
   const double ratio = (dstrength > 0.0) ? std::min(1e6, astrength / dstrength)
                                          : (astrength > 0.0 ? 1e6 : 0.0);
-  auto cas_civ = int_rand(0, round_rand(static_cast<double>(oldciv) * ratio));
-  cas_civ = MIN(oldciv, cas_civ);
-  auto cas_mil = int_rand(0, round_rand(static_cast<double>(oldmil) * ratio));
-  cas_mil = MIN(oldmil, cas_mil);
+  population_t cas_civ =
+      int_rand(0, round_rand(static_cast<double>(oldciv) * ratio));
+  cas_civ = std::min(oldciv, cas_civ);
+  population_t cas_mil =
+      int_rand(0, round_rand(static_cast<double>(oldmil) * ratio));
+  cas_mil = std::min(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
   std::string short_msg =

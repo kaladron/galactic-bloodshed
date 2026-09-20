@@ -15,13 +15,7 @@ import std;
 // - warn_player, warn_race, notify_star, warn_star
 // notify_race and notify_player are now methods on SessionRegistry
 
-export void adjust_morale(Race&, Race&, int);
-
 export void add_to_queue(std::deque<std::string>&, const std::string&);
-
-// Helper for turn processing: send telegram to all inhabitants of a star
-export void telegram_star(EntityManager&, starnum_t, player_t sender,
-                          governor_t sender_gov, const std::string& message);
 
 export template <typename T>
 concept Unsigned = std::is_unsigned_v<T>;

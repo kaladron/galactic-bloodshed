@@ -175,9 +175,13 @@ target_sources(
          FILES
           mechanics/mechanics.cppm
           mechanics/navigation.cppm
+          mechanics/combat.cppm
   PRIVATE mechanics/navigation.cc
           mechanics/fuel.cc
-          mechanics/order.cc)
+          mechanics/order.cc
+          mechanics/fire.cc
+          mechanics/shootblast.cc
+          mechanics/ground_combat.cc)
 target_link_libraries(
   gb_mechanics
   PUBLIC gb_entities gb_services scnlib_module)
@@ -195,12 +199,9 @@ target_sources(
           turn/gblib-dosector.cppm
           turn/gblib-doship.cppm
           turn/gblib-doturncmd.cppm
-          entities/gblib-fire.cppm
           entities/gblib-map.cppm
           entities/gblib-misc.cppm
-          entities/gblib-move.cppm
           services/gblib-shlmisc.cppm
-          entities/gblib-shootblast.cppm
           turn/gblib-turnstats.cppm
   PRIVATE turn/bombard.cc
           entities/build.cc
@@ -208,12 +209,9 @@ target_sources(
           turn/dosector.cc
           turn/doship.cc
           turn/doturncmd.cc
-          entities/fire.cc
           entities/map.cc
           entities/misc.cc
-          entities/move.cc
           services/shlmisc.cc
-          entities/shootblast.cc
           server/victory.cc
           turn/vn.cc)
 target_link_libraries(

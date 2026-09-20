@@ -4,10 +4,7 @@
 /// \brief Unit tests for string_to_shipnum and get4args coordinate range
 /// parsing utilities.
 
-import dallib;
 import gb.entities;
-import gb.services;
-import gb.turn;
 import test;
 import std;
 
@@ -34,69 +31,57 @@ void test_string_to_shipnum() {
 
 // Tests for get4args
 void test_single_values() {
-  // Test "5,10" -> (5, 5, 10, 10)
+  // Test "5,10" -> ({5, 10}, {5, 10})
   auto result = get4args("5,10");
   test::expect_true(result.has_value());
-  auto [xl, xh, yl, yh] = *result;
-  test::expect_eq(xl, 5);
-  test::expect_eq(xh, 5);
-  test::expect_eq(yl, 10);
-  test::expect_eq(yh, 10);
+  auto [low, high] = *result;
+  test::expect_eq(low, Coordinates{5, 10});
+  test::expect_eq(high, Coordinates{5, 10});
 }
 
 void test_x_range_y_single() {
-  // Test "1:5,10" -> (1, 5, 10, 10)
+  // Test "1:5,10" -> ({1, 10}, {5, 10})
   auto result = get4args("1:5,10");
   test::expect_true(result.has_value());
-  auto [xl, xh, yl, yh] = *result;
-  test::expect_eq(xl, 1);
-  test::expect_eq(xh, 5);
-  test::expect_eq(yl, 10);
-  test::expect_eq(yh, 10);
+  auto [low, high] = *result;
+  test::expect_eq(low, Coordinates{1, 10});
+  test::expect_eq(high, Coordinates{5, 10});
 }
 
 void test_x_single_y_range() {
-  // Test "5,3:8" -> (5, 5, 3, 8)
+  // Test "5,3:8" -> ({5, 3}, {5, 8})
   auto result = get4args("5,3:8");
   test::expect_true(result.has_value());
-  auto [xl, xh, yl, yh] = *result;
-  test::expect_eq(xl, 5);
-  test::expect_eq(xh, 5);
-  test::expect_eq(yl, 3);
-  test::expect_eq(yh, 8);
+  auto [low, high] = *result;
+  test::expect_eq(low, Coordinates{5, 3});
+  test::expect_eq(high, Coordinates{5, 8});
 }
 
 void test_both_ranges() {
-  // Test "1:10,20:30" -> (1, 10, 20, 30)
+  // Test "1:10,20:30" -> ({1, 20}, {10, 30})
   auto result = get4args("1:10,20:30");
   test::expect_true(result.has_value());
-  auto [xl, xh, yl, yh] = *result;
-  test::expect_eq(xl, 1);
-  test::expect_eq(xh, 10);
-  test::expect_eq(yl, 20);
-  test::expect_eq(yh, 30);
+  auto [low, high] = *result;
+  test::expect_eq(low, Coordinates{1, 20});
+  test::expect_eq(high, Coordinates{10, 30});
 }
 
 void test_negative_values() {
-  // Test "-5:5,-10:10" -> (-5, 5, -10, 10)
+  // Test "-5:5,-10:10" -> ({-5, -10}, {5, 10})
   auto result = get4args("-5:5,-10:10");
   test::expect_true(result.has_value());
-  auto [xl, xh, yl, yh] = *result;
-  test::expect_eq(xl, -5);
-  test::expect_eq(xh, 5);
-  test::expect_eq(yl, -10);
-  test::expect_eq(yh, 10);
+  auto [low, high] = *result;
+  test::expect_eq(low, Coordinates{-5, -10});
+  test::expect_eq(high, Coordinates{5, 10});
 }
 
 void test_zero_values() {
-  // Test "0:0,0:0" -> (0, 0, 0, 0)
+  // Test "0:0,0:0" -> ({0, 0}, {0, 0})
   auto result = get4args("0:0,0:0");
   test::expect_true(result.has_value());
-  auto [xl, xh, yl, yh] = *result;
-  test::expect_eq(xl, 0);
-  test::expect_eq(xh, 0);
-  test::expect_eq(yl, 0);
-  test::expect_eq(yh, 0);
+  auto [low, high] = *result;
+  test::expect_eq(low, Coordinates{0, 0});
+  test::expect_eq(high, Coordinates{0, 0});
 }
 
 void test_empty_string() {
@@ -155,25 +140,21 @@ void test_whitespace() {
 }
 
 void test_large_numbers() {
-  // Test "999:9999,8888:7777" -> (999, 9999, 8888, 7777)
+  // Test "999:9999,8888:7777" -> ({999, 8888}, {9999, 7777})
   auto result = get4args("999:9999,8888:7777");
   test::expect_true(result.has_value());
-  auto [xl, xh, yl, yh] = *result;
-  test::expect_eq(xl, 999);
-  test::expect_eq(xh, 9999);
-  test::expect_eq(yl, 8888);
-  test::expect_eq(yh, 7777);
+  auto [low, high] = *result;
+  test::expect_eq(low, Coordinates{999, 8888});
+  test::expect_eq(high, Coordinates{9999, 7777});
 }
 
 void test_single_digit_values() {
-  // Test "1,2" -> (1, 1, 2, 2)
+  // Test "1,2" -> ({1, 2}, {1, 2})
   auto result = get4args("1,2");
   test::expect_true(result.has_value());
-  auto [xl, xh, yl, yh] = *result;
-  test::expect_eq(xl, 1);
-  test::expect_eq(xh, 1);
-  test::expect_eq(yl, 2);
-  test::expect_eq(yh, 2);
+  auto [low, high] = *result;
+  test::expect_eq(low, Coordinates{1, 2});
+  test::expect_eq(high, Coordinates{1, 2});
 }
 
 void test_colon_without_second_value() {

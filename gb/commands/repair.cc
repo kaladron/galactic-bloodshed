@@ -14,10 +14,7 @@ module commands;
 namespace GB::commands {
 bool repair(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
-  int hix;
-  int lowy;
-  int hiy;
-  int x2;
+  std::pair<Coordinates, Coordinates> bounds{};
 
   std::unique_ptr<Place> where;
   if (argv.size() == 1) { /* no args */
@@ -52,46 +49,37 @@ bool repair(const command_t& argv, GameObj& g) {
 
         if (argv.size() > 1 && !argv[1].empty() && std::isdigit(argv[1][0]) &&
             argv[1].find(',') != std::string::npos) {
-          // translate from lowx:hix,lowy:hiy
           auto coords = get4args(argv[1]);
           if (!coords) {
             g.out << "Invalid coordinate format. Use: x,y or xl:xh,yl:yh\n";
             return false;
           }
-          auto [x_low, x_high, y_low, y_high] = *coords;
-          x2 = std::max(0, x_low);
-          hix = std::min(x_high, p.dimensions().x - 1);
-          lowy = std::max(0, y_low);
-          hiy = std::min(y_high, p.dimensions().y - 1);
+          bounds = *coords;
         } else {
           /* repair entire planet */
-          x2 = 0;
-          hix = p.dimensions().x - 1;
-          lowy = 0;
-          hiy = p.dimensions().y - 1;
+          bounds = {Coordinates{0, 0}, p.dimensions() - Coordinates{1, 1}};
         }
         return true;
       });
   if (!valid_planet) return false;
 
+  const auto [low, high] = bounds;
   int sectors = 0;
   int cost = 0;
   g.entity_manager.mutate_sectormap(
       where->snum, where->pnum, [&](SectorMap& smap) {
         g.entity_manager.mutate_planet(
             where->snum, where->pnum, [&](Planet& p) {
-              for (int y = lowy; y <= hiy; y++) {
-                for (int lowx = x2; lowx <= hix; lowx++) {
-                  if (p.info(Playernum).resource >= SECTOR_REPAIR_COST) {
-                    auto& s = smap.get(Coordinates{lowx, y});
-                    if (s.is_wasted() &&
-                        (s.get_owner() == Playernum || !s.is_owned())) {
-                      s.set_condition(s.get_type());
-                      s.set_fert(std::min(100U, s.get_fert() + 20));
-                      p.info(Playernum).resource -= SECTOR_REPAIR_COST;
-                      cost += SECTOR_REPAIR_COST;
-                      sectors += 1;
-                    }
+              for (auto [c, s] : smap.indexed_sectors()) {
+                if (!c.within_bounds(low, high)) continue;
+                if (p.info(Playernum).resource >= SECTOR_REPAIR_COST) {
+                  if (s.is_wasted() &&
+                      (s.get_owner() == Playernum || !s.is_owned())) {
+                    s.set_condition(s.get_type());
+                    s.set_fert(std::min(100U, s.get_fert() + 20));
+                    p.info(Playernum).resource -= SECTOR_REPAIR_COST;
+                    cost += SECTOR_REPAIR_COST;
+                    sectors += 1;
                   }
                 }
               }

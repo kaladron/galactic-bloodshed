@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-export module gblib:map;
+/// \file visibility.cppm
+/// \brief Planetary surface map rendering and sector character visibility.
+
+export module gb.mechanics:visibility;
 
 import gb.entities;
 import gb.services;

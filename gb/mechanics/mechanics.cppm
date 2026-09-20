@@ -7,3 +7,5 @@ export module gb.mechanics;
 
 export import :navigation;
 export import :combat;
+export import :construction;
+export import :visibility;

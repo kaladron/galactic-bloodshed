@@ -54,7 +54,7 @@ struct SectorShipData {
 
 // Sector row data for rendering
 struct SectorRowData {
-  int x, y;
+  Coordinates coords;
   const Sector* sector;
   char desshow_char;
   double compat;
@@ -101,8 +101,8 @@ void render_human_survey(std::ostream& out, const Race& race,
   for (const auto& row : rows) {
     const auto& s = *row.sector;
     if (row.desshow_char == CHAR_CLOAKED) {
-      table.add_row({std::format("{},{}", row.x, row.y), "?  (    ?)", "", "",
-                     "", "", "", "", "", "", "", ""});
+      table.add_row({std::format("{}", row.coords), "?  (    ?)", "", "", "",
+                     "", "", "", "", "", "", ""});
     } else {
       std::string cond_type =
           std::format(" {}   {}", s.condition_symbol(), s.type_symbol());
@@ -110,7 +110,7 @@ void render_human_survey(std::ostream& out, const Race& race,
           (s.get_crystals() && (race.discoveries.crystal || race.God)) ? "yes"
                                                                        : "";
       table.add_row(
-          {std::format("{},{}", row.x, row.y), cond_type,
+          {std::format("{}", row.coords), cond_type,
            std::format("{}", s.get_owner()), std::format("{}", s.get_race()),
            std::format("{}", s.get_eff()),
            std::format("{}", s.get_mobilization()),
@@ -146,9 +146,9 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
 
     out << std::format(
         "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", GB::csp::CSP_CLIENT,
-        GB::csp::CSP_SURVEY_SECTOR, row.x, row.y, sect_char, row.desshow_char,
-        (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(), s.get_fert(),
-        s.get_mobilization(),
+        GB::csp::CSP_SURVEY_SECTOR, row.coords.x, row.coords.y, sect_char,
+        row.desshow_char, (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(),
+        s.get_fert(), s.get_mobilization(),
         ((s.get_crystals() && (race.discoveries.crystal || race.God)) ? 1 : 0),
         s.get_resource(), s.get_popn(), s.get_troops(),
         maxsupport(race, s, row.compat, row.toxic));
@@ -227,12 +227,8 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
 
   // Determine sector range
-
-  // Default for all.
-  int lowx = 0;
-  int hix = p.dimensions().x - 1;
-  int lowy = 0;
-  int hiy = p.dimensions().y - 1;
+  std::pair<Coordinates, Coordinates> bounds{
+      Coordinates{0, 0}, p.dimensions() - Coordinates{1, 1}};
 
   if (!all) {
     auto coords = get4args(range_arg);
@@ -240,12 +236,9 @@ void survey_planet_sectors(GameObj& g, const Place& where,
       g.out << "Invalid coordinate format. Use: x,y or xl:xh,yl:yh\n";
       return;
     }
-    auto [x2, x_high, y_low, y_high] = *coords;
-    lowx = std::max(0, x2);
-    hix = std::min(x_high, p.dimensions().x - 1);
-    lowy = std::max(0, y_low);
-    hiy = std::min(y_high, p.dimensions().y - 1);
+    bounds = *coords;
   }
+  const auto [low, high] = bounds;
 
   // Build ship location data if needed (only for CSP format)
   std::vector<std::vector<SectorShipData>> shiplocs(
@@ -275,12 +268,11 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   // Accumulate sector row data
   std::vector<SectorRowData> rows;
   for (auto [c, s] : smap->indexed_sectors()) {
-    if (c.x < lowx || c.x > hix || c.y < lowy || c.y > hiy) continue;
+    if (!c.within_bounds(low, high)) continue;
 
     const SectorShipData* ship_data =
         (shiplocs[c.x][c.y].count > 0) ? &shiplocs[c.x][c.y] : nullptr;
-    rows.push_back({.x = c.x,
-                    .y = c.y,
+    rows.push_back({.coords = c,
                     .sector = &s,
                     .desshow_char = desshow(g.player(), g.governor(), race, s),
                     .compat = compat,

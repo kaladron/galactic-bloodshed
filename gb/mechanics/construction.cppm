@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-export module gblib:build;
+/// \file construction.cppm
+/// \brief Ship construction validation, factory spawning, and shipping cost
+/// mechanics.
+
+export module gb.mechanics:construction;
 
 import gb.entities;
 import gb.services;
@@ -13,8 +17,9 @@ export std::expected<void, std::string> can_build_on_ship(ShipType, const Race&,
                                                           const Ship&);
 export std::optional<ShipType> get_build_type(char);
 export std::unique_ptr<Ship> getship(ShipType, const Race&);
-export std::optional<ScopeLevel>
-build_at_ship(GameObj& g, Ship* builder, starnum_t* snum, planetnum_t* pnum);
+export std::optional<ScopeLevel> build_at_ship(GameObj& g, const Ship& builder,
+                                               starnum_t& snum,
+                                               planetnum_t& pnum);
 export void create_ship_by_planet(EntityManager& entity_manager, player_t,
                                   governor_t, const Race&, Ship&, Planet&,
                                   starnum_t, planetnum_t,
@@ -28,14 +33,17 @@ can_build_on_sector(EntityManager& entity_manager, ShipType what,
                     const Race& race, const Planet& planet,
                     const Sector& sector, const Coordinates& c);
 export int getcount(const command_t& argv, std::size_t elem);
-export void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
-                               Sector& sector, int* crew, double* fuel);
-export void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel);
-export void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
-                                double load_fuel, int load_crew);
+export std::pair<population_t, fuel_t> autoload_at_planet(player_t Playernum,
+                                                          const Ship& s,
+                                                          Planet& planet,
+                                                          Sector& sector);
+export std::pair<population_t, fuel_t> autoload_at_ship(const Ship& s, Ship& b,
+                                                        double race_mass = 1.0);
+export void initialize_new_ship(GameObj& g, const Race& race, Ship& newship,
+                                fuel_t load_fuel, population_t load_crew);
 export std::unique_ptr<Ship> getfactship(const Ship& b);
 
 export void create_ship_by_ship(EntityManager& entity_manager,
                                 player_t Playernum, governor_t Governor,
-                                const Race& race, bool outside, Ship* newship,
-                                Ship* builder);
+                                const Race& race, bool outside, Ship& newship,
+                                Ship& builder);

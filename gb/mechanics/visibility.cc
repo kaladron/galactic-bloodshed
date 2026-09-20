@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file map.cc
+/// \file visibility.cc
 /// \brief Planetary surface map rendering and sector character formatting.
 
 module;
 
 import std;
-#undef stdout
 
-module gblib;
+module gb.mechanics;
 
 namespace {
 

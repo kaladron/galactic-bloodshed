@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file construction.cc
+/// \brief Ship construction validation, factory spawning, and shipping cost
+/// mechanics implementation.
+
 module;
 
 import std;
-#undef stdout
 
-module gblib;
+module gb.mechanics;
 
 /**
  * @brief Determines if a ship can be built on a specific sector of a planet.
@@ -126,58 +129,65 @@ can_build_on_ship(ShipType what, const Race& race, const Ship& builder) {
   return {};
 }
 
-std::optional<ScopeLevel> build_at_ship(GameObj& g, Ship* builder,
-                                        starnum_t* snum, planetnum_t* pnum) {
-  if (!g.check_commandable(*builder)) return {};
-  if (!builder->can_construct_ships()) {
+std::optional<ScopeLevel> build_at_ship(GameObj& g, const Ship& builder,
+                                        starnum_t& snum, planetnum_t& pnum) {
+  if (!g.check_commandable(builder)) return {};
+  if (!builder.can_construct_ships()) {
     g.out << "This ship cannot construct other ships.\n";
     return {};
   }
-  if (!builder->popn()) {
+  if (!builder.popn()) {
     g.out << "This ship has no crew.\n";
     return {};
   }
-  if (builder->is_docked()) {
+  if (builder.is_docked()) {
     g.out << "Undock this ship first.\n";
     return {};
   }
-  if (builder->damage()) {
+  if (builder.damage()) {
     g.out << "This ship is damaged and cannot build.\n";
     return {};
   }
-  if (builder->type() == ShipType::OTYPE_FACTORY && !builder->on()) {
+  if (builder.type() == ShipType::OTYPE_FACTORY && !builder.on()) {
     g.out << "This factory is not online.\n";
     return {};
   }
-  if (builder->type() == ShipType::OTYPE_FACTORY && !builder->is_landed()) {
+  if (builder.type() == ShipType::OTYPE_FACTORY && !builder.is_landed()) {
     g.out << "Factories must be landed on a planet.\n";
     return {};
   }
-  *snum = builder->storbits();
-  *pnum = builder->pnumorbits();
-  return (builder->whatorbits());
+  snum = builder.storbits();
+  pnum = builder.pnumorbits();
+  return builder.whatorbits();
 }
 
-void autoload_at_planet(player_t Playernum, Ship* s, Planet* planet,
-                        Sector& sector, int* crew, double* fuel) {
-  *crew = std::min(s->max_crew_capacity(), sector.get_popn());
-  *fuel = std::min(static_cast<double>(s->max_fuel_capacity()),
-                   static_cast<double>(planet->info(Playernum).fuel));
-  planet->adjust_sector_population(sector, Playernum, -*crew, 0);
-  planet->info(Playernum).fuel -= static_cast<int>(*fuel);
+std::pair<population_t, fuel_t> autoload_at_planet(player_t Playernum,
+                                                   const Ship& s,
+                                                   Planet& planet,
+                                                   Sector& sector) {
+  const population_t crew = std::min(s.max_crew_capacity(), sector.get_popn());
+  const fuel_t fuel =
+      std::min(static_cast<fuel_t>(s.max_fuel_capacity()),
+               static_cast<fuel_t>(planet.info(Playernum).fuel));
+  planet.adjust_sector_population(sector, Playernum, -crew, 0);
+  planet.info(Playernum).fuel -= static_cast<resource_t>(fuel);
+  return {crew, fuel};
 }
 
-void autoload_at_ship(Ship* s, Ship* b, int* crew, double* fuel) {
-  *crew = std::min(s->max_crew_capacity(), b->popn());
-  *fuel = std::min(static_cast<double>(s->max_fuel_capacity()), b->fuel());
-  b->popn() -= *crew;
-  b->consume_fuel(*fuel);
+std::pair<population_t, fuel_t> autoload_at_ship(const Ship& s, Ship& b,
+                                                 double race_mass) {
+  const population_t crew = std::min(s.max_crew_capacity(), b.popn());
+  const fuel_t fuel =
+      std::min(static_cast<fuel_t>(s.max_fuel_capacity()), b.fuel());
+  b.remove_popn(crew, race_mass);
+  b.consume_fuel(fuel);
+  return {crew, fuel};
 }
 
 namespace {
 
-void report_new_ship_status(GameObj& g, const Ship& newship, int load_crew,
-                            double load_fuel) {
+void report_new_ship_status(GameObj& g, const Ship& newship,
+                            population_t load_crew, fuel_t load_fuel) {
   switch (newship.type()) {
     case ShipType::STYPE_MINE:
       g.out << "Mine disarmed.\nTrigger radius set at 100.\n";
@@ -217,11 +227,11 @@ void report_new_ship_status(GameObj& g, const Ship& newship, int load_crew,
 
 }  // namespace
 
-void initialize_new_ship(GameObj& g, const Race& race, Ship* newship,
-                         double load_fuel, int load_crew) {
-  newship->initialize_constructed_state(race, g.governor(), load_fuel,
-                                        load_crew);
-  report_new_ship_status(g, *newship, load_crew, load_fuel);
+void initialize_new_ship(GameObj& g, const Race& race, Ship& newship,
+                         fuel_t load_fuel, population_t load_crew) {
+  newship.initialize_constructed_state(race, g.governor(), load_fuel,
+                                       load_crew);
+  report_new_ship_status(g, newship, load_crew, load_fuel);
 }
 
 void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
@@ -275,40 +285,40 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
 
 void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
                          governor_t Governor, const Race& race, bool outside,
-                         Ship* newship, Ship* builder) {
+                         Ship& newship, Ship& builder) {
   // Ship number will be assigned by EntityManager when created
   shipnum_t shipno = entity_manager.next_available_ship_number();
-  newship->number() = shipno;
-  newship->owner() = Playernum;
-  newship->governor() = Governor;
+  newship.number() = shipno;
+  newship.owner() = Playernum;
+  newship.governor() = Governor;
   if (outside) {
-    newship->launch_to_orbit(builder->whatorbits());
-    newship->whatdest() = ScopeLevel::LEVEL_UNIV;
-    newship->deststar() = builder->deststar();
-    newship->destpnum() = builder->destpnum();
-    newship->storbits() = builder->storbits();
-    newship->pnumorbits() = builder->pnumorbits();
+    newship.launch_to_orbit(builder.whatorbits());
+    newship.whatdest() = ScopeLevel::LEVEL_UNIV;
+    newship.deststar() = builder.deststar();
+    newship.destpnum() = builder.destpnum();
+    newship.storbits() = builder.storbits();
+    newship.pnumorbits() = builder.pnumorbits();
   } else {
-    newship->dock_into_carrier(builder->number());
-    newship->deststar() = builder->deststar();
-    newship->destpnum() = builder->destpnum();
-    newship->storbits() = builder->storbits();
-    newship->pnumorbits() = builder->pnumorbits();
+    newship.dock_into_carrier(builder.number());
+    newship.deststar() = builder.deststar();
+    newship.destpnum() = builder.destpnum();
+    newship.storbits() = builder.storbits();
+    newship.pnumorbits() = builder.pnumorbits();
   }
-  newship->tech() = race.tech;
-  newship->set_coordinates(builder->coordinates());
-  newship->set_land_coords(builder->land_coords());
-  newship->shipclass() = (((newship->type() == ShipType::OTYPE_TERRA) ||
-                           (newship->type() == ShipType::OTYPE_PLOW))
-                              ? "5"
-                              : "Standard");
-  builder->resource() -= newship->build_cost();
+  newship.tech() = race.tech;
+  newship.set_coordinates(builder.coordinates());
+  newship.set_land_coords(builder.land_coords());
+  newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
+                          (newship.type() == ShipType::OTYPE_PLOW))
+                             ? "5"
+                             : "Standard");
+  builder.consume_resource(newship.build_cost());
 
   std::string message = std::format("{} built at a cost of {} resources.\n",
-                                    *newship, newship->build_cost());
+                                    newship, newship.build_cost());
   push_telegram(entity_manager, Playernum, Governor, message);
 
-  std::string techMsg = std::format("Technology {:.1f}.\n", newship->tech());
+  std::string techMsg = std::format("Technology {:.1f}.\n", newship.tech());
   push_telegram(entity_manager, Playernum, Governor, techMsg);
 }
 

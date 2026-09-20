@@ -11,14 +11,11 @@ export import gb.services;
 export import gb.mechanics;
 
 export import :bombard;
-export import :build;
 export import :doplanet;
 export import :dosector;
 export import :doship;
 export import :doturncmd;
-export import :map;
 export import :misc;
-export import :shlmisc;
 export import :turnstats;
 
 export std::vector<Victory> create_victory_list(EntityManager&);

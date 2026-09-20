@@ -7,8 +7,9 @@
 
 import dallib;
 import gb.entities;
+import gb.repositories;
 import gb.services;
-import gb.turn;
+import gb.mechanics;
 import test;
 import std;
 
@@ -241,16 +242,16 @@ int main() {
     auto ship = getship(ShipType::STYPE_SHUTTLE, *ctx.em.peek_race(1));
     ship->max_crew() = 100;
     ship->max_fuel() = 50;
-    int crew = 0;
-    double fuel = 0.0;
+    std::pair<population_t, fuel_t> loaded{};
 
     ctx.em.mutate_planet(0, 0, [&](Planet& p) {
       ctx.em.mutate_sectormap(0, 0, [&](SectorMap& smap) {
         auto& sect = smap.get(Coordinates{1, 1});
-        autoload_at_planet(1, ship.get(), &p, sect, &crew, &fuel);
+        loaded = autoload_at_planet(1, *ship, p, sect);
       });
     });
 
+    const auto [crew, fuel] = loaded;
     test::expect_eq(crew, 100);
     test::expect_eq(fuel, 50.0);
     const auto* p_after = ctx.em.peek_planet(0, 0);
@@ -275,9 +276,7 @@ int main() {
     builder->admin_override_fuel(200.0, r1.mass);
 
     auto target = getship(ShipType::STYPE_FIGHTER, r1);
-    int crew = 0;
-    double fuel = 0.0;
-    autoload_at_ship(target.get(), builder.get(), &crew, &fuel);
+    auto [crew, fuel] = autoload_at_ship(*target, *builder, r1.mass);
     test::expect_gt(crew, 0);
     test::expect_gt(fuel, 0.0);
     test::expect_eq(builder->popn(), 50 - crew);
@@ -328,37 +327,37 @@ int main() {
 
     // VN Ship
     auto vn = getship(ShipType::OTYPE_VN, r1);
-    initialize_new_ship(g, r1, vn.get(), 0.0, 0);
+    initialize_new_ship(g, r1, *vn, 0.0, 0);
     test::expect_contains(g.out.str(), "robotic");
 
     // Mine Ship
     g.out.str("");
     auto mine = getship(ShipType::STYPE_MINE, r1);
-    initialize_new_ship(g, r1, mine.get(), 0.0, 0);
+    initialize_new_ship(g, r1, *mine, 0.0, 0);
     test::expect_contains(g.out.str(), "Mine disarmed");
 
     // Transporter Ship
     g.out.str("");
     auto trans = getship(ShipType::OTYPE_TRANSDEV, r1);
-    initialize_new_ship(g, r1, trans.get(), 0.0, 0);
+    initialize_new_ship(g, r1, *trans, 0.0, 0);
     test::expect_contains(g.out.str(), "Receive OFF");
 
     // Atmospheric Processor
     g.out.str("");
     auto ap = getship(ShipType::OTYPE_AP, r1);
-    initialize_new_ship(g, r1, ap.get(), 10.0, 5);
+    initialize_new_ship(g, r1, *ap, 10.0, 5);
     test::expect_contains(g.out.str(), "Processor OFF");
 
     // Space Telescope
     g.out.str("");
     auto tele = getship(ShipType::OTYPE_STELE, r1);
-    initialize_new_ship(g, r1, tele.get(), 0.0, 0);
+    initialize_new_ship(g, r1, *tele, 0.0, 0);
     test::expect_contains(g.out.str(), "Telescope range");
 
     // Factory
     g.out.str("");
     auto fact = getship(ShipType::OTYPE_FACTORY, r1);
-    initialize_new_ship(g, r1, fact.get(), 10.0, 5);
+    initialize_new_ship(g, r1, *fact, 10.0, 5);
     test::expect_contains(g.out.str(),
                           "Warning: This ship is constructed with");
     test::expect_contains(g.out.str(), "factory may not begin repairs");
@@ -429,24 +428,21 @@ int main() {
     probe->owner() = 1;
     probe->alive() = true;
     probe->active() = true;
-    test::expect_false(build_at_ship(g, probe.get(), &snum, &pnum).has_value());
+    test::expect_false(build_at_ship(g, *probe, snum, pnum).has_value());
 
     shuttle->owner() = 1;
     shuttle->alive() = true;
     shuttle->active() = true;
     shuttle->popn() = 0;
-    test::expect_false(
-        build_at_ship(g, shuttle.get(), &snum, &pnum).has_value());
+    test::expect_false(build_at_ship(g, *shuttle, snum, pnum).has_value());
 
     shuttle->popn() = 10;
     shuttle->dock_with_ship(99);
-    test::expect_false(
-        build_at_ship(g, shuttle.get(), &snum, &pnum).has_value());
+    test::expect_false(build_at_ship(g, *shuttle, snum, pnum).has_value());
     shuttle->undock_from_ship();
 
     shuttle->admin_override_damage(50);
-    test::expect_false(
-        build_at_ship(g, shuttle.get(), &snum, &pnum).has_value());
+    test::expect_false(build_at_ship(g, *shuttle, snum, pnum).has_value());
     shuttle->admin_override_damage(0);
 
     auto factory = getship(ShipType::OTYPE_FACTORY, r1);
@@ -456,15 +452,12 @@ int main() {
     factory->popn() = 10;
     factory->admin_override_damage(0);
     factory->on() = false;
-    test::expect_false(
-        build_at_ship(g, factory.get(), &snum, &pnum).has_value());
+    test::expect_false(build_at_ship(g, *factory, snum, pnum).has_value());
     factory->on() = true;
     factory->launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-    test::expect_false(
-        build_at_ship(g, factory.get(), &snum, &pnum).has_value());
+    test::expect_false(build_at_ship(g, *factory, snum, pnum).has_value());
     factory->land_on_planet();
-    test::expect_true(
-        build_at_ship(g, factory.get(), &snum, &pnum).has_value());
+    test::expect_true(build_at_ship(g, *factory, snum, pnum).has_value());
 
     // create_ship_by_ship (outside and hangar) and getfactship
     factory->build_type() = ShipType::OTYPE_PROBE;
@@ -474,16 +467,14 @@ int main() {
     shuttle->number() = 10;
     shuttle->resource() = 1000;
     auto built_station = getship(ShipType::STYPE_STATION, r1);
-    create_ship_by_ship(ctx.em, 1, 0, r1, true, built_station.get(),
-                        shuttle.get());
+    create_ship_by_ship(ctx.em, 1, 0, r1, true, *built_station, *shuttle);
     test::expect_true(built_station->is_spaceborne());
 
     auto carrier = getship(ShipType::STYPE_CARRIER, r1);
     carrier->number() = 11;
     carrier->resource() = 1000;
     auto built_fighter = getship(ShipType::STYPE_FIGHTER, r1);
-    create_ship_by_ship(ctx.em, 1, 0, r1, false, built_fighter.get(),
-                        carrier.get());
+    create_ship_by_ship(ctx.em, 1, 0, r1, false, *built_fighter, *carrier);
     test::expect_true(built_fighter->is_docked());
     std::println(std::cout,
                  "Test 16 passed: build_at_ship, create_ship_by_ship, and "

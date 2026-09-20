@@ -136,40 +136,39 @@ void check_connect(Session& session, std::string_view message) {
           "You are {}.\n", race.governor[Governor.value].toggle.invisible
                                ? "invisible"
                                : "visible");
-
-      // Display time
-      GameObj temp_g(session.entity_manager(), session.registry());
-      temp_g.set_player(Playernum);
-      temp_g.set_governor(Governor);
-      temp_g.race = &race;
-      GB::commands::time({}, temp_g);
-      session.out() << temp_g.out.str();
-      temp_g.out.str("");
-
-      session.out() << std::format(
-          "\nLast login      : {}",
-          std::ctime(&(race.governor[Governor.value].login)));
-
-      if (race.Gov_ship == 0) {
-        session.out()
-            << "You have no Governmental Center.  No action points will be "
-               "produced\nuntil you build one and designate a capital.\n";
-      } else {
-        session.out() << std::format("Government Center #{} is active.\n",
-                                     race.Gov_ship);
-      }
-      session.out() << std::format("     Morale: {}\n", race.morale);
-
-      GB::commands::treasury({}, temp_g);
-
-      // Flush temp_g output to session
-      session.out() << temp_g.out.str();
     });
   } catch (const EntityNotFoundError&) {
     session.out() << "Connection refused.\n";
     return;
   }
   if (!authenticated) return;
+
+  // Display time and treasury via centralized command dispatch pipeline
+  GameObj temp_g(session.entity_manager(), session.registry());
+  temp_g.set_player(Playernum);
+  temp_g.set_governor(Governor);
+  GB::commands::dispatch_command(temp_g, {"time"});
+  session.out() << temp_g.out.str();
+  temp_g.out.str("");
+
+  session.entity_manager().with_race(Playernum, [&](const Race& race) {
+    session.out() << std::format(
+        "\nLast login      : {}",
+        std::ctime(&(race.governor[Governor.value].login)));
+
+    if (race.Gov_ship == 0) {
+      session.out()
+          << "You have no Governmental Center.  No action points will be "
+             "produced\nuntil you build one and designate a capital.\n";
+    } else {
+      session.out() << std::format("Government Center #{} is active.\n",
+                                   race.Gov_ship);
+    }
+    session.out() << std::format("     Morale: {}\n", race.morale);
+  });
+
+  GB::commands::dispatch_command(temp_g, {"treasury"});
+  session.out() << temp_g.out.str();
 
   // Update login time
   session.entity_manager().mutate_race(Playernum, [&](Race& race_mut) {

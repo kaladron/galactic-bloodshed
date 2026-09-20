@@ -107,6 +107,10 @@ export struct CommandDescriptor {
 export bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
                              const command_t& argv);
 
+/// Look up a command descriptor by argv[0] and execute it through the
+/// centralized dispatch pipeline.
+export bool dispatch_command(GameObj& g, const command_t& argv);
+
 /// Validates command descriptor invariants (non-empty name, non-null handler,
 /// valid scopes, syntax present when args required, and AP amount consistency).
 export bool validate_command_descriptor(const CommandDescriptor& desc,

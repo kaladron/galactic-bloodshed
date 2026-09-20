@@ -122,4 +122,15 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   return success;
 }
 
+bool dispatch_command(GameObj& g, const command_t& argv) {
+  if (argv.empty()) {
+    return false;
+  }
+  const auto* desc = find_command_descriptor(argv[0]);
+  if (!desc) {
+    return false;
+  }
+  return dispatch_command(g, *desc, argv);
+}
+
 }  // namespace GB::commands

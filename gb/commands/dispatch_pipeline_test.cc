@@ -318,6 +318,27 @@ void test_fixed_univ_ap_transactions() {
   ctx.verify_universe_invariants();
 }
 
+void test_dispatch_by_command_name() {
+  TestContext ctx;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+
+  // Empty argv returns false
+  test::expect_false(GB::commands::dispatch_command(g, {}));
+
+  // Unknown command name returns false
+  test::expect_false(
+      GB::commands::dispatch_command(g, {"nonexistent_command"}));
+
+  // Known command ("treasury") dispatches through registry and succeeds
+  g.out.str("");
+  test::expect_true(GB::commands::dispatch_command(g, {"treasury"}));
+  test::expect_contains(g.out.str(), "You have:");
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -329,6 +350,7 @@ int main() {
   test_argument_validation();
   test_fixed_star_ap_transactions();
   test_fixed_univ_ap_transactions();
+  test_dispatch_by_command_name();
 
   std::println(std::cout, "✓ dispatch_pipeline_test passed!");
   return 0;

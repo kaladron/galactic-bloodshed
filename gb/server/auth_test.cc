@@ -61,7 +61,7 @@ void test_welcome_user() {
 
   auto& registry = get_test_session_registry();
   auto session = std::make_shared<Session>(std::move(server_sock), ctx.em,
-                                           registry, [](auto) {});
+                                           registry, [](const auto&) {});
 
   welcome_user(*session, ctx.em);
   io.poll();
@@ -80,7 +80,7 @@ void test_check_connect_failure() {
   asio::ip::tcp::socket socket1(io);
   auto& registry = get_test_session_registry();
   auto session1 = std::make_shared<Session>(std::move(socket1), ctx.em,
-                                            registry, [](auto) {});
+                                            registry, [](const auto&) {});
 
   // 1. Invalid argument count
   check_connect(*session1, "only_one");
@@ -89,11 +89,10 @@ void test_check_connect_failure() {
   // 2. Non-existent credentials
   asio::ip::tcp::socket socket2(io);
   auto session2 = std::make_shared<Session>(std::move(socket2), ctx.em,
-                                            registry, [](auto) {});
+                                            registry, [](const auto&) {});
   check_connect(*session2, "wrong password");
   test::expect_false(session2->connected());
-  std::ostringstream& out_stream =
-      static_cast<std::ostringstream&>(session2->out());
+  auto& out_stream = static_cast<std::ostringstream&>(session2->out());
   test::expect_contains(out_stream.str(), "Connection refused.");
 }
 
@@ -121,12 +120,11 @@ void test_check_connect_duplicate_session_rejection() {
   asio::io_context io;
   asio::ip::tcp::socket socket(io);
   auto session = std::make_shared<Session>(std::move(socket), ctx.em,
-                                           busy_registry, [](auto) {});
+                                           busy_registry, [](const auto&) {});
 
   check_connect(*session, "raceword govword");
   test::expect_false(session->connected());
-  std::ostringstream& out_stream =
-      static_cast<std::ostringstream&>(session->out());
+  auto& out_stream = static_cast<std::ostringstream&>(session->out());
   test::expect_contains(out_stream.str(), "Connection refused.");
 }
 
@@ -168,7 +166,7 @@ void test_check_connect_success_and_clamping() {
   asio::ip::tcp::socket socket(io);
   auto& registry = get_test_session_registry();
   auto session = std::make_shared<Session>(std::move(socket), ctx.em, registry,
-                                           [](auto) {});
+                                           [](const auto&) {});
 
   check_connect(*session, "raceword govword");
 
@@ -184,12 +182,12 @@ void test_check_connect_success_and_clamping() {
   test::expect_gt(updated_race->governor[0].login, 0);
 
   // Verify login output
-  std::ostringstream& out_stream =
-      static_cast<std::ostringstream&>(session->out());
+  auto& out_stream = static_cast<std::ostringstream&>(session->out());
   std::string output = out_stream.str();
   test::expect_contains(output, "TestRace \"Gov0\" [1,0] logged on.");
   test::expect_contains(output, "Government Center #42 is active.");
   test::expect_contains(output, "Morale: 100");
+  test::expect_contains(output, "You have:");
 }
 
 }  // namespace

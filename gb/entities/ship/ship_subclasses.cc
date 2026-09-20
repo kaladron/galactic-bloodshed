@@ -115,6 +115,7 @@ std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,
       .max_speed = tmpl.base_speed,
       .build_type = type,
       .build_cost = tmpl.build_cost,
+      .special = default_special_data(type, owner),
       .retaliate = tmpl.max_guns,
       .type = type,
       .active = true,
@@ -125,9 +126,6 @@ std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,
       .secondary_battery = GunBattery::create(0, shipdata_secondary(type)),
       .max_hanger = tmpl.max_hangar,
   };
-  if (type == ShipType::OTYPE_VN || type == ShipType::OTYPE_BERS) {
-    data.special = MindData{.progenitor = owner};
-  }
 
   auto ship = create(std::move(data));
   ship->size() = ship->calculate_size();

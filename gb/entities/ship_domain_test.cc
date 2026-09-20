@@ -1381,6 +1381,19 @@ void test_blueprint_complexity_defense_and_capture() {
     }
   }
 
+  // Verify exhaustive SpecialData invariant across all ship templates (standard
+  // hulls hold std::monostate; specialty hulls hold their exact payload_type)
+  for (const auto& tmpl : ship_templates) {
+    auto tmpl_ship = ShipFactory::create_from_template(tmpl.type, 1);
+    test::expect_true(tmpl_ship != nullptr);
+    test::expect_true(
+        holds_expected_special_data(tmpl.type, tmpl_ship->to_struct().special));
+  }
+  const auto cruiser_tmpl =
+      ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+  test::expect_true(std::holds_alternative<std::monostate>(
+      cruiser_tmpl->to_struct().special));
+
   // roll_landing_crash() fuel and damage checks
   ship_struct crash_sd{.fuel = 5.0, .damage = 100};
   Ship crash_ship{crash_sd};

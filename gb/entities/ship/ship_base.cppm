@@ -20,10 +20,22 @@ protected:
   ship_struct
       data_;  // Protected data member for encapsulation and subclass access
 
+  /// Ensures `data_.special` holds the active variant alternative required by
+  /// `data_.type`.
+  void ensure_valid_special_data() const noexcept {
+    if (!holds_expected_special_data(data_.type, data_.special)) {
+      data_.special = default_special_data(data_.type, data_.owner);
+    }
+  }
+
 public:
   // Constructors
-  Ship() = default;
-  Ship(ship_struct in) : data_(std::move(in)) {}
+  Ship() {
+    ensure_valid_special_data();
+  }
+  Ship(ship_struct in) : data_(std::move(in)) {
+    ensure_valid_special_data();
+  }
   virtual ~Ship() = default;
 
   template <typename Derived>
@@ -1576,9 +1588,11 @@ public:
 
   // Direct access to internal struct (FOR SERIALIZATION USE ONLY)
   [[nodiscard]] virtual ship_struct to_struct() const {
+    ensure_valid_special_data();
     return data_;
   }
   [[nodiscard]] ship_struct& to_struct() noexcept {
+    ensure_valid_special_data();
     return data_;
   }
 
@@ -1619,10 +1633,12 @@ Derived* Ship::as() noexcept {
                 "Derived must inherit from Ship");
   if constexpr (requires { ShipTypeTraits<Derived>::matches(type()); }) {
     if (ShipTypeTraits<Derived>::matches(type())) {
+      ensure_valid_special_data();
       return static_cast<Derived*>(this);
     }
   } else {
     if (type() == ShipTypeTraits<Derived>::expected_type) {
+      ensure_valid_special_data();
       return static_cast<Derived*>(this);
     }
   }
@@ -1635,10 +1651,12 @@ const Derived* Ship::as() const noexcept {
                 "Derived must inherit from Ship");
   if constexpr (requires { ShipTypeTraits<Derived>::matches(type()); }) {
     if (ShipTypeTraits<Derived>::matches(type())) {
+      ensure_valid_special_data();
       return static_cast<const Derived*>(this);
     }
   } else {
     if (type() == ShipTypeTraits<Derived>::expected_type) {
+      ensure_valid_special_data();
       return static_cast<const Derived*>(this);
     }
   }

@@ -107,69 +107,6 @@ void apply_blueprint_capabilities(ship_struct& data, const ShipTemplate& itmpl,
   data.laser = itmpl.can_mount_laser && (!race || race->discoveries.laser);
 }
 
-void initialize_constructed_specialty(Ship& s, player_t owner) {
-  switch (s.type()) {
-    case ShipType::OTYPE_VN:
-    case ShipType::OTYPE_BERS:
-      if (auto* autonomous = s.as<AutonomousShip>()) {
-        autonomous->mind() = MindData{.progenitor = owner,
-                                      .target = 0,
-                                      .generation = 1,
-                                      .busy = true,
-                                      .tampered = false,
-                                      .who_killed = 0};
-      }
-      break;
-    case ShipType::STYPE_MIRROR:
-    case ShipType::OTYPE_STELE:
-    case ShipType::OTYPE_GTELE:
-    case ShipType::OTYPE_TRACT:
-      if (auto* mirror = s.as<SpaceMirrorShip>()) {
-        mirror->aim() = AimedAtData{};
-      }
-      break;
-    case ShipType::STYPE_POD:
-      if (auto* pod = s.as<SporePodShip>()) {
-        pod->pod() = PodData{};
-      }
-      break;
-    case ShipType::OTYPE_CANIST:
-    case ShipType::OTYPE_GREEN:
-      if (auto* canister = s.as<CanisterShip>()) {
-        canister->timer() = TimerData{};
-      }
-      break;
-    case ShipType::STYPE_MISSILE:
-      if (auto* missile = s.as<MissileShip>()) {
-        missile->impact() = ImpactData{};
-      }
-      break;
-    case ShipType::STYPE_MINE:
-      if (auto* mine = s.as<MineShip>()) {
-        mine->set_trigger_radius(100);
-      }
-      break;
-    case ShipType::OTYPE_TERRA:
-    case ShipType::OTYPE_PLOW:
-      if (auto* terra = s.as<TerraformerShip>()) {
-        terra->terraform() = TerraformData{};
-      }
-      break;
-    case ShipType::OTYPE_TRANSDEV:
-      if (auto* trans = s.as<TransporterShip>()) {
-        trans->set_target_ship(shipnum_t{0});
-      }
-      break;
-    case ShipType::OTYPE_TOXWC:
-      if (auto* waste = s.as<ToxicWasteShip>()) {
-        waste->waste() = WasteData{};
-      }
-      break;
-    default:
-      break;
-  }
-}
-
 template <typename StockT, typename CapT>
 [[nodiscard]] constexpr std::int64_t
 clamp_cargo_transfer(std::int64_t requested, StockT available_stock,
@@ -316,7 +253,7 @@ void Ship::initialize_constructed_state(const Race& race, governor_t gov,
   admin_override_damage(race.God ? 0 : get_template().base_damage);
   data_.retaliate = data_.primary_battery.count;
   set_mass(local_mass(race.mass));
-  initialize_constructed_specialty(*this, race.Playernum);
+  data_.special = default_special_data(data_.type, race.Playernum);
 }
 
 /// Determine whether the ship crashed or not.

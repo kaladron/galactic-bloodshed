@@ -557,6 +557,24 @@ int main() {
     test::expect_true(waste != nullptr);
     test::expect_eq(waste->toxic_level(), 95);
 
+    // Standard ship (STYPE_CRUISER) serializes std::monostate as "special":null
+    ship_struct std_cruiser_data{};
+    std_cruiser_data.number = 210;
+    std_cruiser_data.type = ShipType::STYPE_CRUISER;
+    std_cruiser_data.build_type = ShipType::STYPE_CRUISER;
+    auto std_cruiser = ShipFactory::create(std_cruiser_data);
+    test::expect_true(std::holds_alternative<std::monostate>(
+        std_cruiser->to_struct().special));
+    test::expect_true(repo.save(*std_cruiser));
+    auto raw_json = store.retrieve("tbl_ship", 210);
+    test::expect_true(raw_json.has_value());
+    test::expect_contains(*raw_json, "\"special\":null");
+    auto loaded_cruiser = repo.find_ship(210);
+    test::expect_true(loaded_cruiser != nullptr);
+    test::expect_true(std::holds_alternative<std::monostate>(
+        loaded_cruiser->to_struct().special));
+    repo.delete_ship(210);
+
     std::println(std::cout,
                  "  ✓ All specialty ship subclasses instantiate and downcast");
   }

@@ -402,18 +402,99 @@ export struct WasteData {
   unsigned char toxic;
 };
 
-// Variant type for special ship functions
+// Variant type for special ship functions (std::monostate is index 0 for
+// standard hulls that have no specialized payload)
 export using SpecialData =
-    std::variant<AimedAtData,   // Space Mirror
-                 MindData,      /* VNs and berserkers */
-                 PodData,       /* spore pods */
-                 TimerData,     /* dust canisters, greenhouse gases */
-                 ImpactData,    /* missiles */
-                 TriggerData,   /* mines */
-                 TerraformData, /* terraformers */
-                 TransportData, /* AVPM */
-                 WasteData      /* toxic waste containers */
+    std::variant<std::monostate, /* standard ships with no special payload */
+                 AimedAtData,    /* Space Mirror, telescopes, tractor beams */
+                 MindData,       /* VNs and berserkers */
+                 PodData,        /* spore pods */
+                 TimerData,      /* dust canisters, greenhouse gases */
+                 ImpactData,     /* missiles */
+                 TriggerData,    /* mines */
+                 TerraformData,  /* terraformers, ground plows */
+                 TransportData,  /* AVPM transporter */
+                 WasteData       /* toxic waste containers */
                  >;
+
+/// Returns the canonical default SpecialData variant alternative for a given
+/// ShipType and owner. Intentionally omits a `default:` label so the compiler
+/// enforces exhaustive coverage across all ShipType enumerators.
+export [[nodiscard]] constexpr SpecialData
+default_special_data(ShipType type, player_t owner = 0) noexcept {
+  switch (type) {
+    case ShipType::OTYPE_VN:
+    case ShipType::OTYPE_BERS:
+      return MindData{.progenitor = owner,
+                      .target = 0,
+                      .generation = 1,
+                      .busy = true,
+                      .tampered = false,
+                      .who_killed = 0};
+    case ShipType::STYPE_MIRROR:
+    case ShipType::OTYPE_STELE:
+    case ShipType::OTYPE_GTELE:
+    case ShipType::OTYPE_TRACT:
+      return AimedAtData{};
+    case ShipType::STYPE_POD:
+      return PodData{};
+    case ShipType::OTYPE_CANIST:
+    case ShipType::OTYPE_GREEN:
+      return TimerData{};
+    case ShipType::STYPE_MISSILE:
+      return ImpactData{};
+    case ShipType::STYPE_MINE:
+      return TriggerData{.radius = 100};
+    case ShipType::OTYPE_TERRA:
+    case ShipType::OTYPE_PLOW:
+      return TerraformData{};
+    case ShipType::OTYPE_TRANSDEV:
+      return TransportData{};
+    case ShipType::OTYPE_TOXWC:
+      return WasteData{};
+    case ShipType::STYPE_SHUTTLE:
+    case ShipType::STYPE_CARRIER:
+    case ShipType::STYPE_DREADNT:
+    case ShipType::STYPE_BATTLE:
+    case ShipType::STYPE_INTCPT:
+    case ShipType::STYPE_CRUISER:
+    case ShipType::STYPE_DESTROYER:
+    case ShipType::STYPE_FIGHTER:
+    case ShipType::STYPE_EXPLORER:
+    case ShipType::STYPE_HABITAT:
+    case ShipType::STYPE_STATION:
+    case ShipType::STYPE_OAP:
+    case ShipType::STYPE_CARGO:
+    case ShipType::STYPE_TANKER:
+    case ShipType::STYPE_GOD:
+    case ShipType::OTYPE_AP:
+    case ShipType::OTYPE_GOV:
+    case ShipType::OTYPE_OMCL:
+    case ShipType::OTYPE_PROBE:
+    case ShipType::OTYPE_GR:
+    case ShipType::OTYPE_FACTORY:
+    case ShipType::OTYPE_BERSCTLC:
+    case ShipType::OTYPE_AUTOFAC:
+    case ShipType::OTYPE_PLANDEF:
+    case ShipType::OTYPE_QUARRY:
+    case ShipType::OTYPE_DOME:
+    case ShipType::OTYPE_WPLANT:
+    case ShipType::OTYPE_PORT:
+    case ShipType::OTYPE_ABM:
+    case ShipType::OTYPE_AFV:
+    case ShipType::OTYPE_BUNKER:
+    case ShipType::STYPE_LANDER:
+      return std::monostate{};
+  }
+  std::unreachable();
+}
+
+/// Returns true if `special` holds the expected variant alternative for `type`.
+export [[nodiscard]] constexpr bool
+holds_expected_special_data(ShipType type,
+                            const SpecialData& special) noexcept {
+  return special.index() == default_special_data(type).index();
+}
 
 /// Automated navigation course parameters for a ship.
 export struct NavigateData {
@@ -485,7 +566,7 @@ export struct ship_struct {
   population_t troops{0};  ///< Current carried military troops
   crystal_t crystals{0};   ///< Current carried warp crystal charge
 
-  SpecialData special;  ///< Ship-type-specific payload / mode data
+  mutable SpecialData special;  ///< Ship-type-specific payload / mode data
 
   player_t who_killed{0};  ///< Player ID responsible for destroying the ship
 

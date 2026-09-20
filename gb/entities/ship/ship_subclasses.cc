@@ -135,3 +135,82 @@ std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,
   ship->build_cost() = cost(*ship);
   return ship;
 }
+
+std::expected<char, GroundMovementError> get_ground_order(const Ship& ship,
+                                                          std::size_t index) {
+  const auto* terraform = ship.as<TerraformerShip>();
+  if (!terraform) {
+    return std::unexpected(GroundMovementError::NotTerraformVehicle);
+  }
+  const auto& orders = ship.shipclass();
+  if (orders.empty()) {
+    return std::unexpected(GroundMovementError::EmptyOrders);
+  }
+  if (index >= orders.size()) {
+    return std::unexpected(GroundMovementError::InvalidIndex);
+  }
+  const char order = orders[index];
+  if (order == '\0') {
+    return std::unexpected(GroundMovementError::EmptyOrders);
+  }
+  if (order == 's') {
+    return std::unexpected(GroundMovementError::Stopped);
+  }
+  return order;
+}
+
+GroundStepResult calculate_ground_step(const Planet& planet, char order,
+                                       Coordinates from) noexcept {
+  Coordinates target = get_move(planet, order, from);
+  bool bounced = false;
+
+  if (target.y >= planet.dimensions().y) {
+    bounced = true;
+    target.y -= 2; /* bounce off of south pole! */
+  } else if (target.y < 0) {
+    target.y = 1;
+    bounced = true; /* bounce off of north pole! */
+  }
+  if (planet.dimensions().y == 1) {
+    target.y = 0;
+  }
+
+  return GroundStepResult{.destination = target, .bounced = bounced};
+}
+
+resource_t AutonomousShip::mine_sector(Sector& sector) {
+  const resource_t oldres = sector.get_resource();
+  if (oldres <= 0) {
+    return 0;
+  }
+
+  const resource_t newres = static_cast<resource_t>(oldres * VN_RES_TAKE);
+  // Guarantee at least 1 resource is extracted to prevent infinite loops on
+  // low-resource sectors
+  const resource_t prod = (newres == oldres) ? 1 : (oldres - newres);
+  sector.set_resource(oldres - prod);
+  if (type() == ShipType::OTYPE_VN) {
+    add_resource(prod);
+  } else if (type() == ShipType::OTYPE_BERS) {
+    add_destruct(5 * prod);
+  }
+  add_fuel(prod);
+  return prod;
+}
+
+Coordinates AutonomousShip::roam_to_adjacent_sector(const Planet& planet) {
+  const Coordinates new_coords =
+      planet.random_adjacent_coordinates(land_coords());
+  set_land_coords(new_coords);
+  return new_coords;
+}
+
+std::string AutonomousShip::generate_binary_name() {
+  const int len = int_rand(3, std::min(10, SHIP_NAMESIZE));
+  std::string name;
+  name.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    name.push_back(bool_rand() ? '1' : '0');
+  }
+  return name;
+}

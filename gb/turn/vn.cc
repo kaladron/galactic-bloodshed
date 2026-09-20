@@ -149,17 +149,6 @@ void order_VN(EntityManager& em, Ship& ship) {
   }
 }
 
-std::optional<player_t>
-select_victim_to_steal_from(const Planet& planet,
-                            std::span<const player_t> race_order) {
-  for (player_t candidate : race_order) {
-    if (planet.info(candidate).resource > 0) {
-      return candidate;
-    }
-  }
-  return std::nullopt;
-}
-
 /// \brief Steals resources from landed non-Player-1 colony stockpiles.
 ///
 /// \param em Entity manager for entity queries, mutations, and messaging.
@@ -176,7 +165,7 @@ StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
   resource_t prod = 0;
   player_t f = 0;
   em.mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet_mut) {
-    auto victim = select_victim_to_steal_from(planet_mut, race_order);
+    auto victim = planet_mut.select_victim_to_steal_from(race_order);
     if (!victim) return;
     f = *victim;
     prod = std::min(planet_mut.info(f).resource,
@@ -202,45 +191,6 @@ StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
   push_telegram_race(em, f, buf);
   if (f != ship.owner()) push_telegram(em, ship.owner(), ship.governor(), buf);
   return StealResult{.victim = f, .amount = prod};
-}
-
-/// \brief Mines resources and fuel from the currently occupied sector.
-///
-/// \param ship Autonomous ship mining the sector.
-/// \param sector Sector being mined.
-/// \return Quantity of resources extracted from the sector.
-resource_t mine_sector(AutonomousShip& ship, Sector& sector) {
-  const resource_t oldres = sector.get_resource();
-  if (oldres <= 0) {
-    return 0;
-  }
-
-  const resource_t newres = static_cast<resource_t>(oldres * VN_RES_TAKE);
-  // Guarantee at least 1 resource is extracted to prevent infinite loops on
-  // low-resource sectors
-  const resource_t prod = (newres == oldres) ? 1 : (oldres - newres);
-  sector.set_resource(oldres - prod);
-  if (ship.type() == ShipType::OTYPE_VN) {
-    ship.add_resource(prod);
-  } else if (ship.type() == ShipType::OTYPE_BERS) {
-    ship.add_destruct(5 * prod);
-  }
-  ship.add_fuel(prod);
-  return prod;
-}
-
-/// \brief Moves an autonomous machine to an adjacent sector when current
-/// sector is depleted.
-///
-/// \param ship Autonomous ship to move.
-/// \param planet Planet being explored.
-/// \return New landed coordinates on the planet.
-Coordinates roam_to_adjacent_sector(AutonomousShip& ship,
-                                    const Planet& planet) {
-  const Coordinates new_coords =
-      planet.random_adjacent_coordinates(ship.land_coords());
-  ship.set_land_coords(new_coords);
-  return new_coords;
 }
 
 /// \brief Attempts to launch an unassigned, fully fueled Von Neumann machine
@@ -292,23 +242,6 @@ void do_VN(EntityManager& em, AutonomousShip& ship, TurnStats& stats) {
   }
 }
 
-/// \brief Generates a random binary name (e.g. "01101") for a new Von Neumann
-/// machine.
-///
-/// In Galactic Bloodshed, ship names are non-unique cosmetic designations.
-/// Uniqueness is guaranteed by the unique shipnum_t assigned during creation.
-///
-/// \return std::string of random binary digits ('0' or '1').
-std::string generate_vn_binary_name() {
-  const int len = int_rand(3, std::min(10, SHIP_NAMESIZE));
-  std::string name;
-  name.reserve(len);
-  for (int i = 0; i < len; ++i) {
-    name.push_back(bool_rand() ? '1' : '0');
-  }
-  return name;
-}
-
 /// \brief Constructs and deploys a newly replicated Von Neumann machine on a
 /// planet.
 ///
@@ -333,7 +266,7 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
 
   auto ship_handle = em.create_ship(ShipType::OTYPE_VN, 1);
   Ship& s2 = *ship_handle;
-  s2.name() = generate_vn_binary_name();
+  s2.name() = AutonomousShip::generate_binary_name();
   s2.set_coordinates(parent.coordinates());
   s2.add_fuel(0.5 * parent.fuel());
   s2.set_land_coords(parent.land_coords());
@@ -492,10 +425,10 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
       auto& s = smap.get(auto_ship->land_coords());
       if (!s.has_resource()) {
         /* move to another sector */
-        roam_to_adjacent_sector(*auto_ship, planet);
+        auto_ship->roam_to_adjacent_sector(planet);
       } else {
         /* mine the sector */
-        mine_sector(*auto_ship, s);
+        auto_ship->mine_sector(s);
       }
       replicate_machines(entity_manager, *auto_ship, planet, stats);
     }

@@ -37,20 +37,20 @@ int main() {
     // 1. Order [1, 2, 3, 4] -> Should pick player 2 (first with resources > 0)
     std::vector<player_t> order1 = {player_t{1}, player_t{2}, player_t{3},
                                     player_t{4}};
-    auto victim1 = select_victim_to_steal_from(planet, order1);
+    auto victim1 = planet.select_victim_to_steal_from(order1);
     test::expect_true(victim1.has_value());
     test::expect_eq(victim1->value, 2);
 
     // 2. Order [3, 2, 1, 4] -> Should pick player 3
     std::vector<player_t> order2 = {player_t{3}, player_t{2}, player_t{1},
                                     player_t{4}};
-    auto victim2 = select_victim_to_steal_from(planet, order2);
+    auto victim2 = planet.select_victim_to_steal_from(order2);
     test::expect_true(victim2.has_value());
     test::expect_eq(victim2->value, 3);
 
     // 3. Order [1, 4] -> None have resources -> Should return std::nullopt
     std::vector<player_t> order3 = {player_t{1}, player_t{4}};
-    auto victim3 = select_victim_to_steal_from(planet, order3);
+    auto victim3 = planet.select_victim_to_steal_from(order3);
     test::expect_false(victim3.has_value());
 
     // 4. Test shuffled_indices produces valid race IDs permutation
@@ -258,7 +258,7 @@ int main() {
     Sector sector(s_data);
 
     // Mine sector with 100 resource: takes 50%, yields 50
-    resource_t yield = mine_sector(*vn, sector);
+    resource_t yield = vn->mine_sector(sector);
     test::expect_eq(yield, 50);
     test::expect_eq(sector.get_resource(), 50);
     test::expect_eq(vn->resource(), 50);
@@ -266,7 +266,7 @@ int main() {
 
     // Mine depleted sector
     sector.set_resource(0);
-    resource_t empty_yield = mine_sector(*vn, sector);
+    resource_t empty_yield = vn->mine_sector(sector);
     test::expect_eq(empty_yield, 0);
     test::expect_eq(vn->resource(), 50);
 
@@ -284,7 +284,7 @@ int main() {
     test::expect_true(bers != nullptr);
 
     sector.set_resource(200);
-    resource_t bers_yield = mine_sector(*bers, sector);
+    resource_t bers_yield = bers->mine_sector(sector);
     test::expect_eq(bers_yield, 100);
     test::expect_eq(sector.get_resource(), 100);
     test::expect_eq(bers->destruct(), 500);  // 5 * 100
@@ -292,7 +292,7 @@ int main() {
 
     // Test 1-mineral sector extraction prevents infinite loop and depletes to 0
     sector.set_resource(1);
-    resource_t one_yield = mine_sector(*vn, sector);
+    resource_t one_yield = vn->mine_sector(sector);
     test::expect_eq(one_yield, 1);
     test::expect_eq(sector.get_resource(), 0);
 
@@ -318,7 +318,7 @@ int main() {
     test::expect_true(vn != nullptr);
 
     seed_rand(42);
-    Coordinates new_c = roam_to_adjacent_sector(*vn, planet);
+    Coordinates new_c = vn->roam_to_adjacent_sector(planet);
     test::expect_true(std::abs(new_c.x - 5) <= 1 || new_c.x == 9 ||
                       new_c.x == 0);
     test::expect_true(std::abs(new_c.y - 5) <= 1);
@@ -327,7 +327,7 @@ int main() {
     // North pole clamping: at y == 0, the machine cannot move north (y < 0),
     // so y is always in [0, 1] and strictly adjacent to {0, 0}.
     vn->set_land_coords({0, 0});
-    Coordinates north_polar_c = roam_to_adjacent_sector(*vn, planet);
+    Coordinates north_polar_c = vn->roam_to_adjacent_sector(planet);
     test::expect_true(north_polar_c.y >= 0 && north_polar_c.y <= 1);
     test::expect_true(planet.is_adjacent({0, 0}, north_polar_c));
 
@@ -335,7 +335,7 @@ int main() {
     // south (y >= 10), so y is always in [8, 9] and strictly adjacent to {5,
     // 9}.
     vn->set_land_coords({5, 9});
-    Coordinates south_polar_c = roam_to_adjacent_sector(*vn, planet);
+    Coordinates south_polar_c = vn->roam_to_adjacent_sector(planet);
     test::expect_true(south_polar_c.y >= 8 && south_polar_c.y <= 9);
     test::expect_true(planet.is_adjacent({5, 9}, south_polar_c));
 
@@ -387,7 +387,7 @@ int main() {
     std::println(std::cout, "\nTest: generate_vn_binary_name");
 
     for (int i = 0; i < 50; ++i) {
-      std::string name = generate_vn_binary_name();
+      std::string name = AutonomousShip::generate_binary_name();
       test::expect_true(name.length() >= 3 && name.length() <= 10);
       for (char c : name) {
         test::expect_true(c == '0' || c == '1');

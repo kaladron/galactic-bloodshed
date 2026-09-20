@@ -577,6 +577,26 @@ public:
   /// \return Number of sectors that revolted.
   int revolt(SectorMap& smap, const Race& victim_race, player_t agent);
 
+  /// \brief Updates planetary toxicity based on population overcapacity
+  /// relative to maximum supportable capacity. Clamps toxicity within [0, 100].
+  void update_toxicity() noexcept {
+    if (data_.maxpopn > 0 && data_.conditions[TOXIC] < 100) {
+      data_.conditions[TOXIC] += data_.popn / data_.maxpopn;
+    }
+    data_.conditions[TOXIC] =
+        std::clamp<short>(data_.conditions[TOXIC], 0, 100);
+  }
+
+  /// \brief If planetary toxicity exceeds ENVIR_DAMAGE_TOX, devastates a random
+  /// sector and returns the devastated coordinates, or std::nullopt if no
+  /// damage occurred.
+  std::optional<Coordinates>
+  process_toxic_environmental_damage(SectorMap& smap) const;
+
+  /// \brief Selects an alien colony on the planet to steal resources from.
+  [[nodiscard]] std::optional<player_t>
+  select_victim_to_steal_from(std::span<const player_t> race_order) const;
+
   // For repository serialization
   [[nodiscard]] planet_struct get_struct() const {
     return data_;
@@ -585,6 +605,79 @@ public:
 private:
   planet_struct data_{};
 };
+
+export enum class PlunderError {
+  NoConquerors,
+  EmptyLoot,
+};
+
+export struct PlayerLootShare {
+  player_t player{0};
+  Stockpile share{};
+
+  [[nodiscard]] bool
+  operator==(const PlayerLootShare&) const noexcept = default;
+};
+
+export struct PlunderDistribution {
+  std::vector<PlayerLootShare> shares;
+  Stockpile total_loot{};
+
+  [[nodiscard]] bool
+  operator==(const PlunderDistribution&) const noexcept = default;
+};
+
+/// \brief Divvies up a looted stockpile among conquerors.
+/// The first (N - 1) conquerors receive their rounded share, while the final
+/// conqueror receives all exact remaining leftovers, ensuring zero loss or
+/// creation of commodities. Returns PlunderDistribution on success, or
+/// PlunderError if conquerors list is empty or loot is empty.
+export std::expected<PlunderDistribution, PlunderError>
+calculate_plunder_distribution(Stockpile total_loot,
+                               std::span<const player_t> conquerors);
+
+/// \brief Localized exploration state grid for a planet map during turn
+/// processing, replacing static TurnStats.Sectinfo arrays.
+export class PlanetExplorationContext {
+public:
+  explicit PlanetExplorationContext(Coordinates dimensions);
+  explicit PlanetExplorationContext(const Planet& planet);
+
+  [[nodiscard]] Coordinates dimensions() const noexcept {
+    return dimensions_;
+  }
+
+  [[nodiscard]] bool in_bounds(Coordinates c) const noexcept;
+  [[nodiscard]] bool is_explored(Coordinates c, player_t player) const;
+  [[nodiscard]] bool is_explored(Coordinates c) const;
+
+  void set_explored(Coordinates c, player_t player);
+  void clear_explored(Coordinates c, player_t player);
+
+  [[nodiscard]] bool all_explored(player_t player) const;
+  [[nodiscard]] bool all_explored() const;
+
+  /// \brief Explores sectors surrounding sectors currently explored for player
+  /// `p`. If `s.coords()` is already explored by `p`, marks adjacent neighbors
+  /// as explored by `p`. If `s.coords()` is not explored by `p`, but owned by
+  /// `p`, marks `s.coords()` as explored by `p`.
+  void explore_sector(const Planet& planet, const Sector& s, player_t p);
+
+private:
+  [[nodiscard]] std::size_t index(Coordinates c) const noexcept {
+    return static_cast<std::size_t>(c.y) *
+               static_cast<std::size_t>(dimensions_.x) +
+           static_cast<std::size_t>(c.x);
+  }
+
+  Coordinates dimensions_{0, 0};
+  std::vector<std::bitset<MAXPLAYERS + 1>> explored_;
+};
+
+/// \brief Calculates destination coordinates on a planet grid for a single
+/// compass/keypad direction step with horizontal toroidal wrapping.
+export Coordinates get_move(const Planet& planet, char direction,
+                            Coordinates from);
 
 //* Return gravity for the Planet
 double Planet::gravity() const {

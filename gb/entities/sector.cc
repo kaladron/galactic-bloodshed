@@ -310,3 +310,47 @@ bool Sector::mine_crystals(const Race& race) noexcept {
   --data_.crystals;
   return true;
 }
+
+population_t calculate_migrating_colonists(const Race& race,
+                                           double compatibility,
+                                           const Sector& target,
+                                           population_t available_migrants) {
+  if (available_migrants <= 0 || target.is_owned()) {
+    return 0;
+  }
+  const double likes_factor = race.sector_compatibility(target);
+  const double move_calc = static_cast<double>(available_migrants) *
+                           compatibility * likes_factor / 100.0;
+  return std::clamp(std::lround(move_calc), population_t{0},
+                    available_migrants);
+}
+
+population_t calculate_population_change(const Race& race, const Sector& s,
+                                         population_t maxsup) {
+  const population_t popn = s.get_popn();
+  if (popn <= 0) {
+    return 0;
+  }
+
+  const population_t diff = popn - maxsup;
+
+  if (diff < 0) {
+    if (popn >= race.number_sexes) {
+      return round_rand<population_t>(-static_cast<double>(diff) *
+                                      race.birthrate);
+    }
+    return 0;
+  }
+
+  if (diff == 0) {
+    return 0;
+  }
+
+  // Overpopulation starvation die-off: range [0, min(2 * diff, popn)]
+  // Saturate 2 * diff to prevent integer overflow
+  const population_t max_die_off =
+      (diff > std::numeric_limits<population_t>::max() / 2)
+          ? popn
+          : std::min(2 * diff, popn);
+  return -long_rand(0, max_die_off);
+}

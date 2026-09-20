@@ -1503,7 +1503,7 @@ void test_process_ship_radiation() {
       .rad = 0,
   };
   Ship clean_ship{clean_data};
-  test::expect_true(process_ship_radiation(clean_ship, true));
+  test::expect_true(clean_ship.process_radiation(true));
   test::expect_eq(clean_ship.popn(), 100);
 
   // 2. Ship with radiation on update pass decays crew and repairs rad
@@ -1513,7 +1513,7 @@ void test_process_ship_radiation() {
       .rad = 20,
   };
   Ship rad_ship{rad_data};
-  process_ship_radiation(rad_ship, true);
+  rad_ship.process_radiation(true);
   test::expect_le(rad_ship.popn(), 100);
   test::expect_le(rad_ship.troops(), 50);
   test::expect_le(rad_ship.rad(), 20);
@@ -1568,7 +1568,7 @@ void test_sync_factory_technology() {
       .on = 0,
   };
   Ship offline_factory{offline_factory_data};
-  sync_factory_technology(offline_factory, race);
+  offline_factory.sync_factory_technology(race);
   test::expect_eq(offline_factory.tech(), 150.0);
 
   // 2. Online factory preserves tech
@@ -1578,7 +1578,7 @@ void test_sync_factory_technology() {
       .on = 1,
   };
   Ship online_factory{online_factory_data};
-  sync_factory_technology(online_factory, race);
+  online_factory.sync_factory_technology(race);
   test::expect_eq(online_factory.tech(), 50.0);
 }
 
@@ -1837,14 +1837,14 @@ void test_prepare_ship_for_flight() {
                           .with_alive(false)
                           .build();
   ctx.em.mutate_ship(dead_id, [&](Ship& s) {
-    test::expect_false(prepare_ship_for_flight(s, true));
+    test::expect_false(s.prepare_for_flight(true));
   });
 
   // 2. Unowned ship (owner == 0) is marked dead and returns false
   shipnum_t unowned_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(0).build();
   ctx.em.mutate_ship(unowned_id, [&](Ship& s) {
-    test::expect_false(prepare_ship_for_flight(s, true));
+    test::expect_false(s.prepare_for_flight(true));
     test::expect_false(s.alive());
   });
 
@@ -1856,7 +1856,7 @@ void test_prepare_ship_for_flight() {
                               .build();
   ctx.em.mutate_ship(derelict_id, [&](Ship& s) {
     s.whatdest() = ScopeLevel::LEVEL_PLAN;
-    test::expect_true(prepare_ship_for_flight(s, true));
+    test::expect_true(s.prepare_for_flight(true));
     test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
   });
 
@@ -1873,7 +1873,7 @@ void test_prepare_ship_for_flight() {
                             .build();
   ctx.em.mutate_ship(docked_id, [&](Ship& s) {
     s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    test::expect_true(prepare_ship_for_flight(s, true));
+    test::expect_true(s.prepare_for_flight(true));
     test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_SHIP);
   });
 }

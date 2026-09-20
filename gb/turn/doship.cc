@@ -352,27 +352,6 @@ void do_oap(Ship& ship, TurnStats& stats) {
   stats.set_intimidated(ship.storbits(), ship.pnumorbits(), true);
 }
 
-bool process_ship_radiation(Ship& ship, bool update) {
-  if (!ship.rad()) {
-    return true;
-  }
-  bool active = true;
-  /* irradiated ships are immobile if radiation check fails */
-  if (success(ship.rad())) {
-    active = false;
-  }
-  if (update) {
-    auto new_popn = round_rand(static_cast<double>(ship.popn()) * 0.80);
-    auto new_troops = round_rand(static_cast<double>(ship.troops()) * 0.80);
-    ship.apply_casualties(ship.popn() - new_popn, ship.troops() - new_troops);
-    auto repair_amt = (ship.rad() >= REPAIR_RATE)
-                          ? int_rand(0, static_cast<int>(REPAIR_RATE))
-                          : int_rand(0, static_cast<int>(ship.rad()));
-    ship.repair_radiation(static_cast<radiation_t>(repair_amt));
-  }
-  return active;
-}
-
 bool process_ship_supernova(Ship& ship, const Star& star,
                             const ServerState& state, EntityManager& em) {
   if (star.nova_stage() == 0) {
@@ -385,12 +364,6 @@ bool process_ship_supernova(Ship& ship, const Star& star,
     return false;
   }
   return true;
-}
-
-void sync_factory_technology(Ship& ship, const Race& race) {
-  if (ship.type() == ShipType::OTYPE_FACTORY && !ship.on()) {
-    ship.tech() = race.tech;
-  }
 }
 
 void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em) {
@@ -438,28 +411,6 @@ void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
     stats.starnumships[ship.storbits().value][ship.owner()]++;
     stats.starpopns[ship.storbits().value][ship.owner()] += ship.popn();
   }
-}
-
-bool prepare_ship_for_flight(Ship& ship, bool update) {
-  /* ship is active */
-  ship.active() = 1;
-
-  if (ship.owner() == 0) {
-    ship.alive() = 0;
-  }
-
-  if (!ship.alive()) {
-    return false;
-  }
-
-  /* repair radiation & check mobility */
-  ship.active() = process_ship_radiation(ship, update);
-
-  if (!ship.popn() && ship.max_crew_capacity() && !ship.docked()) {
-    ship.whatdest() = ScopeLevel::LEVEL_UNIV;
-  }
-
-  return true;
 }
 
 bool evaluate_ship_hazards(Ship& ship, EntityManager& entity_manager) {
@@ -544,7 +495,7 @@ void dispatch_ship_subsystems(Ship& ship, bool update,
 
 void doship(Ship& ship, bool update, EntityManager& entity_manager,
             TurnStats& stats) {
-  if (!prepare_ship_for_flight(ship, update)) {
+  if (!ship.prepare_for_flight(update)) {
     return;
   }
 
@@ -553,7 +504,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
   }
 
   const auto& race = *entity_manager.peek_race(ship.owner());
-  sync_factory_technology(ship, race);
+  ship.sync_factory_technology(race);
 
   if (ship.active()) {
     moveship(entity_manager, ship, update, true, false);

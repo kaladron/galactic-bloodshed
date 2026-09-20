@@ -17,65 +17,6 @@ export void doplanet(EntityManager&, const Star& star, Planet& planet,
 export void moveplanet(EntityManager& entity_manager, const Star& star,
                        Planet& planet);
 
-export enum class GroundMovementError {
-  NotTerraformVehicle,
-  Stopped,
-  EmptyOrders,
-  InvalidIndex,
-};
-
-export std::expected<char, GroundMovementError>
-get_ground_order(const Ship& ship, std::size_t index);
-
-/// \brief Result of a single ground vehicle movement step.
-export struct GroundStepResult {
-  Coordinates destination;
-  bool bounced{false};
-
-  constexpr bool operator==(const GroundStepResult&) const = default;
-};
-
-/// \brief Reflects a keypad movement direction vertically across a polar
-/// boundary.
-///
-/// Terraformer and ground vehicle movement sequences use standard numeric
-/// keypad directions: '1'-'3' (Southwest/South/Southeast), '4'/'6' (West/East),
-/// and '7'-'9' (Northwest/North/Northeast).
-///
-/// When a vehicle reaches the end of its order sequence and bounces off the
-/// North pole (y < 0) or South pole (y >= height), the game inverts its
-/// vertical direction so subsequent turns head back into playable territory
-/// rather than repeatedly colliding with the pole.
-///
-/// Inverts the vertical (Y) component while preserving lateral direction:
-/// - Southwest ('1') <-> Northwest ('7')
-/// - South ('2')     <-> North ('8')
-/// - Southeast ('3') <-> Northeast ('9')
-/// Non-polar keys ('4', '6') and control flags ('c', 's') remain unchanged.
-export constexpr char reflect_polar_order(char order) noexcept {
-  switch (order) {
-    case '1':
-      return '7';
-    case '2':
-      return '8';
-    case '3':
-      return '9';
-    case '7':
-      return '1';
-    case '8':
-      return '2';
-    case '9':
-      return '3';
-    default:
-      return order;
-  }
-}
-
-/// \brief Calculates destination coordinates and polar bounce status for a
-/// ground movement step.
-export GroundStepResult calculate_ground_step(const Planet& planet, char order,
-                                              Coordinates from) noexcept;
-
 export std::expected<Coordinates, GroundMovementError>
 advance_ground_vehicle(Ship& ship, const Planet& planet,
                        EntityManager& entity_manager);
@@ -146,11 +87,6 @@ export void process_weapon_plant_turn(EntityManager& entity_manager, Ship& ship,
 export bool execute_berserker_bombardment(EntityManager& entity_manager,
                                           Ship& ship, Planet& planet);
 
-/// \brief Refuels ships in orbit around a gas giant planet based on ship type
-/// capacity. Returns amount of fuel added (0.0 if not in orbit or not a gas
-/// giant).
-export double refuel_gasgiant_orbiters(const Planet& planet, Ship& ship);
-
 /// \brief Processes all planetary ships (VN replication, berserker bombardment,
 /// terraforming, plowing, dome construction, weapon plants, quarrying, and gas
 /// refueling).
@@ -162,18 +98,6 @@ export void process_planetary_ships(EntityManager& entity_manager,
 /// warming/cooling trends.
 export void process_planet_climate(Planet& planet, const Star& star,
                                    const TurnStats& stats);
-
-/// \brief If planetary toxicity exceeds ENVIR_DAMAGE_TOX, devastates a random
-/// sector and returns the devastated coordinates, or std::nullopt if no damage
-/// occurred.
-export std::optional<Coordinates>
-process_toxic_environmental_damage(const Planet& planet, SectorMap& smap);
-
-/// \brief If star is undergoing supernova, applies radiation devastation
-/// across all inhabited sectors. Returns true if any inhabited sectors were
-/// affected.
-export bool process_supernova_sector_devastation(const Star& star,
-                                                 SectorMap& smap);
 
 /// \brief If automated waste canister threshold is set and conditions met,
 /// builds a toxic waste canister ship, reduces planetary toxicity, and places
@@ -188,36 +112,6 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
 /// loaded or if any pair is not mutually allied.
 export bool check_mutual_alliances(EntityManager& entity_manager,
                                    std::span<const player_t> players);
-
-export enum class PlunderError {
-  NoConquerors,
-  EmptyLoot,
-};
-
-export struct PlayerLootShare {
-  player_t player{0};
-  Stockpile share{};
-
-  [[nodiscard]] bool
-  operator==(const PlayerLootShare&) const noexcept = default;
-};
-
-export struct PlunderDistribution {
-  std::vector<PlayerLootShare> shares;
-  Stockpile total_loot{};
-
-  [[nodiscard]] bool
-  operator==(const PlunderDistribution&) const noexcept = default;
-};
-
-/// \brief Divvies up a looted stockpile among conquerors.
-/// The first (N - 1) conquerors receive their rounded share, while the final
-/// conqueror receives all exact remaining leftovers, ensuring zero loss or
-/// creation of commodities. Returns PlunderDistribution on success, or
-/// PlunderError if conquerors list is empty or loot is empty.
-export std::expected<PlunderDistribution, PlunderError>
-calculate_plunder_distribution(Stockpile total_loot,
-                               std::span<const player_t> conquerors);
 
 export struct RecoveryReport {
   starnum_t star_id{0};
@@ -257,44 +151,6 @@ export void dispatch_recovery_telegrams(EntityManager& entity_manager,
 
 export void do_recover(EntityManager& entity_manager, const Star& star,
                        Planet& planet);
-
-/// \brief Localized exploration state grid for a planet map during turn
-/// processing, replacing static TurnStats.Sectinfo arrays.
-export class PlanetExplorationContext {
-public:
-  explicit PlanetExplorationContext(Coordinates dimensions);
-  explicit PlanetExplorationContext(const Planet& planet);
-
-  [[nodiscard]] Coordinates dimensions() const noexcept {
-    return dimensions_;
-  }
-
-  [[nodiscard]] bool in_bounds(Coordinates c) const noexcept;
-  [[nodiscard]] bool is_explored(Coordinates c, player_t player) const;
-  [[nodiscard]] bool is_explored(Coordinates c) const;
-
-  void set_explored(Coordinates c, player_t player);
-  void clear_explored(Coordinates c, player_t player);
-
-  [[nodiscard]] bool all_explored(player_t player) const;
-  [[nodiscard]] bool all_explored() const;
-
-  /// \brief Explores sectors surrounding sectors currently explored for player
-  /// `p`. If `s.coords()` is already explored by `p`, marks adjacent neighbors
-  /// as explored by `p`. If `s.coords()` is not explored by `p`, but owned by
-  /// `p`, marks `s.coords()` as explored by `p`.
-  void explore_sector(const Planet& planet, const Sector& s, player_t p);
-
-private:
-  [[nodiscard]] std::size_t index(Coordinates c) const noexcept {
-    return static_cast<std::size_t>(c.y) *
-               static_cast<std::size_t>(dimensions_.x) +
-           static_cast<std::size_t>(c.x);
-  }
-
-  Coordinates dimensions_{0, 0};
-  std::vector<std::bitset<MAXPLAYERS + 1>> explored_;
-};
 
 /// \brief Represents an island sector discovered and colonized during
 /// exploration.
@@ -367,10 +223,6 @@ process_enslavement_and_revolts(EntityManager& entity_manager, const Star& star,
 export void recalculate_census(EntityManager& entity_manager, const Star& star,
                                Planet& planet, const SectorMap& smap,
                                TurnStats& stats);
-
-/// \brief Updates planetary toxicity based on population overcapacity relative
-/// to maximum supportable capacity. Clamps toxicity within [0, 100].
-export void update_planet_toxicity(Planet& planet);
 
 /// \brief Executes the post-production planetary economy pass: deposits
 /// production into stockpiles, collects taxes, invests in technology,

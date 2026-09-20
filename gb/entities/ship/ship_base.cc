@@ -381,3 +381,77 @@ double tele_range(ShipType type, double tech) {
 double Ship::tele_range() const noexcept {
   return ::tele_range(type(), tech());
 }
+
+double Ship::refuel_from_gas_giant(const Planet& planet) {
+  if (is_landed() || planet.type() != PlanetType::GASGIANT) {
+    return 0.0;
+  }
+
+  double fadd = 0.0;
+  switch (type()) {
+    case ShipType::STYPE_TANKER:
+      fadd = FUEL_GAS_ADD_TANKER;
+      break;
+    case ShipType::STYPE_HABITAT:
+      fadd = FUEL_GAS_ADD_HABITAT;
+      break;
+    default:
+      fadd = FUEL_GAS_ADD;
+      break;
+  }
+  const double capacity = static_cast<double>(max_fuel_capacity()) - fuel();
+  const double added = std::clamp(fadd, 0.0, std::max(0.0, capacity));
+  if (added > 0.0) {
+    add_fuel(added);
+  }
+  return added;
+}
+
+bool Ship::process_radiation(bool update) {
+  if (!rad()) {
+    return true;
+  }
+  bool is_mobile = true;
+  /* irradiated ships are immobile if radiation check fails */
+  if (success(rad())) {
+    is_mobile = false;
+  }
+  if (update) {
+    auto new_popn = round_rand(static_cast<double>(popn()) * 0.80);
+    auto new_troops = round_rand(static_cast<double>(troops()) * 0.80);
+    apply_casualties(popn() - new_popn, troops() - new_troops);
+    auto repair_amt = (rad() >= REPAIR_RATE)
+                          ? int_rand(0, static_cast<int>(REPAIR_RATE))
+                          : int_rand(0, static_cast<int>(rad()));
+    repair_radiation(static_cast<radiation_t>(repair_amt));
+  }
+  return is_mobile;
+}
+
+bool Ship::prepare_for_flight(bool update) {
+  /* ship is active */
+  active() = true;
+
+  if (owner() == 0) {
+    alive() = false;
+  }
+
+  if (!alive()) {
+    return false;
+  }
+
+  /* repair radiation & check mobility */
+  active() = process_radiation(update);
+
+  if (!popn() && max_crew_capacity() && !docked()) {
+    whatdest() = ScopeLevel::LEVEL_UNIV;
+  }
+
+  return true;
+}
+
+void Ship::sync_factory_technology(const Race& race) noexcept {
+  if (type() == ShipType::OTYPE_FACTORY && !on()) {
+    tech() = race.tech;
+  }
+}

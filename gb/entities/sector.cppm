@@ -1084,6 +1084,11 @@ public:
   SectorMap(SectorMap&&) = default;
   SectorMap& operator=(SectorMap&&) = default;
 
+  /// \brief If star is undergoing supernova, applies radiation devastation
+  /// across all inhabited sectors. Returns true if any inhabited sectors were
+  /// affected.
+  bool process_supernova_devastation(const Star& star);
+
 private:
   [[nodiscard]] constexpr std::size_t
   coord_to_idx(const Coordinates c) const noexcept {
@@ -1150,3 +1155,15 @@ export constexpr auto maxsupport(const Race& r, const Sector& s, const double c,
 
   return val;
 }
+
+/// \brief Computes how many colonists migrate to an unowned adjacent target
+/// sector.
+export population_t
+calculate_migrating_colonists(const Race& race, double compatibility,
+                              const Sector& target,
+                              population_t available_migrants);
+
+/// \brief Computes population change for a sector during turn simulation.
+export population_t calculate_population_change(const Race& race,
+                                                const Sector& s,
+                                                population_t maxsup);

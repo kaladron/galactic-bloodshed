@@ -12,9 +12,6 @@ import gb.entities;
 import gb.services;
 import std;
 
-export Coordinates get_move(const Planet& planet, char direction,
-                            Coordinates from);
-
 export armor_t getdefense(EntityManager&, const Ship&);
 export void capture_stuff(const Ship&, GameObj&);
 export void domass(Ship&, EntityManager&);

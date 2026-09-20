@@ -1581,6 +1581,30 @@ public:
   [[nodiscard]] ship_struct& to_struct() noexcept {
     return data_;
   }
+
+  /// \brief Refuels ship in orbit around a gas giant planet based on ship type
+  /// capacity. Returns amount of fuel added (0.0 if not in orbit or not a gas
+  /// giant).
+  double refuel_from_gas_giant(const Planet& planet);
+
+  /// \brief Processes radiation effects on ship crew and accumulated radiation
+  /// decay.
+  /// \param update Whether this is a full turn update pass (true) or segment
+  /// (false).
+  /// \return Whether the ship remains active/mobile after radiation checks.
+  bool process_radiation(bool update);
+
+  /// \brief Prepares a ship for turn flight, validating ownership, alive
+  /// status, radiation mobility, and derelict uncrewed drifting.
+  /// \param update Whether this is a full turn update pass (true) or segment
+  /// (false).
+  /// \return True if ship is alive and ready for turn processing, false if dead
+  /// or unowned.
+  bool prepare_for_flight(bool update);
+
+  /// \brief Synchronizes offline factory technological capability with current
+  /// empire technology.
+  void sync_factory_technology(const Race& race) noexcept;
 };
 
 // Type traits for zero-cost static downcasting (specialized in ship_subclasses)

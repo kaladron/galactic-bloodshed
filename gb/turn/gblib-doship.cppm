@@ -94,14 +94,6 @@ export void do_ap(Ship& ship, EntityManager& entity_manager);
 /// ships.
 export void do_god(Ship& ship, EntityManager& entity_manager);
 
-/// \brief Processes radiation effects on ship crew and accumulated radiation
-/// decay.
-/// \param ship Ship experiencing radiation.
-/// \param update Whether this is a full turn update pass (true) or segment
-/// (false).
-/// \return Whether the ship remains active/mobile after radiation checks.
-export bool process_ship_radiation(Ship& ship, bool update);
-
 /// \brief Processes supernova radiation and blast wave damage on ships in the
 /// system.
 /// \param ship Ship in the star system.
@@ -111,12 +103,6 @@ export bool process_ship_radiation(Ship& ship, bool update);
 /// \return True if ship survived, false if destroyed.
 export bool process_ship_supernova(Ship& ship, const Star& star,
                                    const ServerState& state, EntityManager& em);
-
-/// \brief Synchronizes offline factory technological capability with current
-/// empire technology.
-/// \param ship Factory ship to synchronize.
-/// \param race Race owning the factory.
-export void sync_factory_technology(Ship& ship, const Race& race);
 
 /// \brief Synchronizes docked ship ownership with its carrier ship.
 /// \param ship Docked ship to synchronize.
@@ -137,15 +123,6 @@ export void update_ship_inhabited_and_exploration(const Ship& ship,
 /// (false).
 export void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
                                         bool update);
-
-/// \brief Prepares a ship for turn flight, validating ownership, alive status,
-/// radiation mobility, and derelict uncrewed drifting.
-/// \param ship Ship to evaluate.
-/// \param update Whether this is a full turn update pass (true) or segment
-/// (false).
-/// \return True if ship is alive and ready for turn processing, false if dead
-/// or unowned.
-export bool prepare_ship_for_flight(Ship& ship, bool update);
 
 /// \brief Evaluates environmental hazards (such as supernovae) against an
 /// active ship.
@@ -206,26 +183,9 @@ export struct StealResult {
   resource_t amount{0};  ///< Quantity of resources stolen
 };
 
-/// \brief Selects an alien colony on the planet to steal resources from.
-export std::optional<player_t>
-select_victim_to_steal_from(const Planet& planet,
-                            std::span<const player_t> race_order);
-
 /// \brief Steals resources from alien colonies on the currently landed planet.
 export StealResult steal_planetary_resources(EntityManager& em,
                                              AutonomousShip& ship);
-
-/// \brief Mines resources from a sector, transferring extracted yield to cargo
-/// and fuel.
-export resource_t mine_sector(AutonomousShip& ship, Sector& sector);
-
-/// \brief Moves an autonomous machine to an adjacent sector when current sector
-/// is depleted.
-export Coordinates roam_to_adjacent_sector(AutonomousShip& ship,
-                                           const Planet& planet);
-
-/// \brief Generates a random binary name for a new Von Neumann machine.
-export std::string generate_vn_binary_name();
 
 /// \brief Constructs and deploys a newly replicated Von Neumann machine on a
 /// planet.

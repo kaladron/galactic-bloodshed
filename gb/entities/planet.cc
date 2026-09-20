@@ -244,3 +244,133 @@ int Planet::revolt(SectorMap& smap, const Race& victim_race,
 
   return revolted_sectors;
 }
+
+std::expected<PlunderDistribution, PlunderError>
+calculate_plunder_distribution(Stockpile total_loot,
+                               std::span<const player_t> conquerors) {
+  if (conquerors.empty()) {
+    return std::unexpected(PlunderError::NoConquerors);
+  }
+  if (total_loot.empty()) {
+    return std::unexpected(PlunderError::EmptyLoot);
+  }
+
+  const std::size_t shares_count = conquerors.size();
+  Stockpile remaining = total_loot;
+  std::vector<PlayerLootShare> shares;
+  shares.reserve(shares_count);
+
+  for (const player_t conqueror : conquerors.first(shares_count - 1)) {
+    const Stockpile allocated =
+        total_loot.split_share(shares_count).clamp_to(remaining);
+    remaining -= allocated;
+    shares.push_back(PlayerLootShare{.player = conqueror, .share = allocated});
+  }
+
+  // Last conqueror gets all leftovers
+  shares.push_back(
+      PlayerLootShare{.player = conquerors.back(), .share = remaining});
+
+  return PlunderDistribution{
+      .shares = std::move(shares),
+      .total_loot = total_loot,
+  };
+}
+
+PlanetExplorationContext::PlanetExplorationContext(Coordinates dimensions)
+    : dimensions_(dimensions),
+      explored_(static_cast<std::size_t>(dimensions.x) *
+                static_cast<std::size_t>(dimensions.y)) {}
+
+PlanetExplorationContext::PlanetExplorationContext(const Planet& planet)
+    : PlanetExplorationContext(planet.dimensions()) {}
+
+bool PlanetExplorationContext::in_bounds(Coordinates c) const noexcept {
+  return c.x >= 0 && c.y >= 0 && c.x < dimensions_.x && c.y < dimensions_.y;
+}
+
+bool PlanetExplorationContext::is_explored(Coordinates c,
+                                           player_t player) const {
+  return explored_[index(c)].test(player.value);
+}
+
+bool PlanetExplorationContext::is_explored(Coordinates c) const {
+  return explored_[index(c)].any();
+}
+
+void PlanetExplorationContext::set_explored(Coordinates c, player_t player) {
+  explored_[index(c)].set(player.value);
+}
+
+void PlanetExplorationContext::clear_explored(Coordinates c, player_t player) {
+  explored_[index(c)].reset(player.value);
+}
+
+bool PlanetExplorationContext::all_explored(player_t player) const {
+  return std::ranges::all_of(explored_, [player](const auto& bitset) {
+    return bitset.test(player.value);
+  });
+}
+
+bool PlanetExplorationContext::all_explored() const {
+  return std::ranges::all_of(explored_,
+                             [](const auto& bitset) { return bitset.any(); });
+}
+
+void PlanetExplorationContext::explore_sector(const Planet& planet,
+                                              const Sector& s, player_t p) {
+  const Coordinates c = s.coords();
+  if (is_explored(c, p)) {
+    for (const auto& neighbor : planet.adjacent_coordinates(c)) {
+      set_explored(neighbor, p);
+    }
+  } else if (s.get_owner() == p) {
+    set_explored(c, p);
+  }
+}
+
+std::optional<Coordinates>
+Planet::process_toxic_environmental_damage(SectorMap& smap) const {
+  if (conditions(TOXIC) <= ENVIR_DAMAGE_TOX) {
+    return std::nullopt;
+  }
+  auto& p = smap.get_random();
+  p.devastate();
+  return p.coords();
+}
+
+std::optional<player_t> Planet::select_victim_to_steal_from(
+    std::span<const player_t> race_order) const {
+  for (player_t candidate : race_order) {
+    if (info(candidate).resource > 0) {
+      return candidate;
+    }
+  }
+  return std::nullopt;
+}
+
+namespace {
+
+// TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
+// constexpr when P3372 (constexpr containers and adaptors) lands.
+const std::flat_map<char, Coordinates> direction_mappings{
+    {'1', {-1, 1}},  {'b', {-1, 1}},   // Southwest
+    {'2', {0, 1}},   {'k', {0, 1}},    // South
+    {'3', {1, 1}},   {'n', {1, 1}},    // Southeast
+    {'4', {-1, 0}},  {'h', {-1, 0}},   // West
+    {'6', {1, 0}},   {'l', {1, 0}},    // East
+    {'7', {-1, -1}}, {'y', {-1, -1}},  // Northwest
+    {'8', {0, -1}},  {'j', {0, -1}},   // North
+    {'9', {1, -1}},  {'u', {1, -1}},   // Northeast
+};
+
+}  // namespace
+
+Coordinates get_move(const Planet& planet, const char direction,
+                     const Coordinates from) {
+  if (const auto it = direction_mappings.find(direction);
+      it != direction_mappings.end()) {
+    return planet.wrap(from + it->second);
+  }
+  return from;
+}

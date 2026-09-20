@@ -10,14 +10,10 @@ import gb.services;
 import :turnstats;
 import std;
 
-export population_t calculate_migrating_colonists(const Race&, double,
-                                                  const Sector&, population_t);
 export population_t attempt_colonist_migration(EntityManager&, const Planet&,
                                                Sector&, Coordinates,
                                                population_t, SectorMap&,
                                                TurnStats&);
-export population_t calculate_population_change(const Race&, const Sector&,
-                                                population_t);
 
 export void update_mobilization(Sector&, const plinfo&, TurnStats&);
 export void produce(EntityManager&, const Star&, const Planet&, Sector&,

@@ -1009,38 +1009,38 @@ void test_refuel_gasgiant_orbiters() {
   Ship& ship = *tanker_handle;
 
   // 1. Not a gas giant: 0 fuel added
-  test::expect_eq(refuel_gasgiant_orbiters(earth, ship), 0.0);
+  test::expect_eq(ship.refuel_from_gas_giant(earth), 0.0);
   test::expect_eq(ship.fuel(), 50.0);
 
   // 2. Landed ship on gas giant: 0 fuel added
   ship.land_on_planet();
-  test::expect_eq(refuel_gasgiant_orbiters(gas_giant, ship), 0.0);
+  test::expect_eq(ship.refuel_from_gas_giant(gas_giant), 0.0);
   test::expect_eq(ship.fuel(), 50.0);
   ship.launch_to_orbit();
 
   // 3. Tanker in orbit around gas giant: FUEL_GAS_ADD_TANKER added
-  double added_tanker = refuel_gasgiant_orbiters(gas_giant, ship);
+  double added_tanker = ship.refuel_from_gas_giant(gas_giant);
   test::expect_eq(added_tanker, FUEL_GAS_ADD_TANKER);
   test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD_TANKER);
 
   // 4. Habitat in orbit around gas giant: FUEL_GAS_ADD_HABITAT added
   ship.consume_fuel(added_tanker);
   ship.type() = ShipType::STYPE_HABITAT;
-  double added_hab = refuel_gasgiant_orbiters(gas_giant, ship);
+  double added_hab = ship.refuel_from_gas_giant(gas_giant);
   test::expect_eq(added_hab, FUEL_GAS_ADD_HABITAT);
   test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD_HABITAT);
 
   // 5. Standard ship in orbit around gas giant: FUEL_GAS_ADD added
   ship.consume_fuel(added_hab);
   ship.type() = ShipType::STYPE_POD;
-  double added_pod = refuel_gasgiant_orbiters(gas_giant, ship);
+  double added_pod = ship.refuel_from_gas_giant(gas_giant);
   test::expect_eq(added_pod, FUEL_GAS_ADD);
   test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD);
 
   // 6. Capacity clamping near max_fuel
   ship.consume_fuel(added_pod);
   ship.add_fuel(445.0);
-  double added_clamp = refuel_gasgiant_orbiters(gas_giant, ship);
+  double added_clamp = ship.refuel_from_gas_giant(gas_giant);
   test::expect_eq(added_clamp, 5.0);
   test::expect_eq(ship.fuel(), 500.0);
 }
@@ -1413,12 +1413,12 @@ void test_process_toxic_environmental_damage() {
 
   // 1. Below or at toxic threshold (ENVIR_DAMAGE_TOX = 70) -> no damage
   planet.conditions(TOXIC) = ENVIR_DAMAGE_TOX;
-  auto safe_res = process_toxic_environmental_damage(planet, smap);
+  auto safe_res = planet.process_toxic_environmental_damage(smap);
   test::expect_false(safe_res.has_value());
 
   // 2. Above toxic threshold -> sector devastated
   planet.conditions(TOXIC) = ENVIR_DAMAGE_TOX + 1;
-  auto damage_res = process_toxic_environmental_damage(planet, smap);
+  auto damage_res = planet.process_toxic_environmental_damage(smap);
   test::expect_true(damage_res.has_value());
   test::expect_true(smap.in_bounds(*damage_res));
 
@@ -1451,7 +1451,7 @@ void test_process_supernova_sector_devastation() {
   star_struct normal_star_data{};
   normal_star_data.nova_stage = 0;
   Star normal_star(normal_star_data);
-  test::expect_false(process_supernova_sector_devastation(normal_star, smap));
+  test::expect_false(smap.process_supernova_devastation(normal_star));
   test::expect_eq(inhabited.get_popn(), 1000);
 
   // 2. Active radiation stage (nova_stage = 5) -> casualties, mineral deposits,
@@ -1459,7 +1459,7 @@ void test_process_supernova_sector_devastation() {
   star_struct active_star_data{};
   active_star_data.nova_stage = 5;
   Star active_star(active_star_data);
-  test::expect_true(process_supernova_sector_devastation(active_star, smap));
+  test::expect_true(smap.process_supernova_devastation(active_star));
   test::expect_lt(inhabited.get_popn(), 1000);
   test::expect_gt(inhabited.get_resource(), 50);
   test::expect_lt(inhabited.get_fert(), 80);
@@ -1469,7 +1469,7 @@ void test_process_supernova_sector_devastation() {
   star_struct terminal_star_data{};
   terminal_star_data.nova_stage = 14;
   Star terminal_star(terminal_star_data);
-  test::expect_true(process_supernova_sector_devastation(terminal_star, smap));
+  test::expect_true(smap.process_supernova_devastation(terminal_star));
   test::expect_eq(inhabited.get_popn(), 0);
   test::expect_eq(inhabited.get_owner(), player_t{0});
   test::expect_eq(inhabited.get_troops(), 0);
@@ -2411,7 +2411,7 @@ void test_update_planet_toxicity() {
   planet.popn() = 250;
   planet.maxpopn() = 100;
 
-  update_planet_toxicity(planet);
+  planet.update_toxicity();
   // 10 + (250 / 100) = 12
   test::expect_eq(planet.conditions(TOXIC), 12);
 
@@ -2419,14 +2419,14 @@ void test_update_planet_toxicity() {
   planet.conditions(TOXIC) = 90;
   planet.popn() = 2000;
   planet.maxpopn() = 100;
-  update_planet_toxicity(planet);
+  planet.update_toxicity();
   test::expect_eq(planet.conditions(TOXIC), 100);
 
   // Zero maxpopn edge case - no division by zero
   planet.conditions(TOXIC) = 15;
   planet.popn() = 50;
   planet.maxpopn() = 0;
-  update_planet_toxicity(planet);
+  planet.update_toxicity();
   test::expect_eq(planet.conditions(TOXIC), 15);
 }
 

@@ -7,6 +7,8 @@ export module gb.entities:ship_subclasses;
 
 import std;
 
+import :planet;
+import :sector;
 import :ship_base;
 import :ship_types;
 import :types;
@@ -88,6 +90,17 @@ public:
   void set_tampered(bool tampered) noexcept {
     mind().tampered = tampered;
   }
+
+  /// \brief Mines resources from a sector, transferring extracted yield to
+  /// cargo and fuel.
+  resource_t mine_sector(Sector& sector);
+
+  /// \brief Moves an autonomous machine to an adjacent sector when current
+  /// sector is depleted.
+  Coordinates roam_to_adjacent_sector(const Planet& planet);
+
+  /// \brief Generates a random binary name for a new Von Neumann machine.
+  [[nodiscard]] static std::string generate_binary_name();
 };
 
 export class VonNeumannShip : public AutonomousShip {
@@ -509,3 +522,47 @@ public:
   [[nodiscard]] static std::unique_ptr<Ship>
   create_from_template(ShipType type, player_t owner = 1);
 };
+
+export enum class GroundMovementError {
+  NotTerraformVehicle,
+  Stopped,
+  EmptyOrders,
+  InvalidIndex,
+};
+
+export std::expected<char, GroundMovementError>
+get_ground_order(const Ship& ship, std::size_t index);
+
+/// \brief Result of a single ground vehicle movement step.
+export struct GroundStepResult {
+  Coordinates destination;
+  bool bounced{false};
+
+  constexpr bool operator==(const GroundStepResult&) const = default;
+};
+
+/// \brief Reflects a keypad movement direction vertically across a polar
+/// boundary.
+export constexpr char reflect_polar_order(char order) noexcept {
+  switch (order) {
+    case '1':
+      return '7';
+    case '2':
+      return '8';
+    case '3':
+      return '9';
+    case '7':
+      return '1';
+    case '8':
+      return '2';
+    case '9':
+      return '3';
+    default:
+      return order;
+  }
+}
+
+/// \brief Calculates destination coordinates and polar bounce status for a
+/// ground movement step.
+export GroundStepResult calculate_ground_step(const Planet& planet, char order,
+                                              Coordinates from) noexcept;

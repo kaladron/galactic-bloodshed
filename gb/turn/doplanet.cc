@@ -12,48 +12,6 @@ import tabulate;
 
 module gblib;
 
-std::expected<char, GroundMovementError> get_ground_order(const Ship& ship,
-                                                          std::size_t index) {
-  const auto* terraform = ship.as<TerraformerShip>();
-  if (!terraform) {
-    return std::unexpected(GroundMovementError::NotTerraformVehicle);
-  }
-  const auto& orders = ship.shipclass();
-  if (orders.empty()) {
-    return std::unexpected(GroundMovementError::EmptyOrders);
-  }
-  if (index >= orders.size()) {
-    return std::unexpected(GroundMovementError::InvalidIndex);
-  }
-  const char order = orders[index];
-  if (order == '\0') {
-    return std::unexpected(GroundMovementError::EmptyOrders);
-  }
-  if (order == 's') {
-    return std::unexpected(GroundMovementError::Stopped);
-  }
-  return order;
-}
-
-GroundStepResult calculate_ground_step(const Planet& planet, char order,
-                                       Coordinates from) noexcept {
-  Coordinates target = get_move(planet, order, from);
-  bool bounced = false;
-
-  if (target.y >= planet.dimensions().y) {
-    bounced = true;
-    target.y -= 2; /* bounce off of south pole! */
-  } else if (target.y < 0) {
-    target.y = 1;
-    bounced = true; /* bounce off of north pole! */
-  }
-  if (planet.dimensions().y == 1) {
-    target.y = 0;
-  }
-
-  return GroundStepResult{.destination = target, .bounced = bounced};
-}
-
 std::expected<Coordinates, GroundMovementError>
 advance_ground_vehicle(Ship& ship, const Planet& planet,
                        EntityManager& entity_manager) {
@@ -374,32 +332,6 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
   return true;
 }
 
-double refuel_gasgiant_orbiters(const Planet& planet, Ship& ship) {
-  if (ship.is_landed() || planet.type() != PlanetType::GASGIANT) {
-    return 0.0;
-  }
-
-  double fadd = 0.0;
-  switch (ship.type()) {
-    case ShipType::STYPE_TANKER:
-      fadd = FUEL_GAS_ADD_TANKER;
-      break;
-    case ShipType::STYPE_HABITAT:
-      fadd = FUEL_GAS_ADD_HABITAT;
-      break;
-    default:
-      fadd = FUEL_GAS_ADD;
-      break;
-  }
-  const double capacity =
-      static_cast<double>(ship.max_fuel_capacity()) - ship.fuel();
-  const double added = std::clamp(fadd, 0.0, std::max(0.0, capacity));
-  if (added > 0.0) {
-    ship.add_fuel(added);
-  }
-  return added;
-}
-
 bool check_mutual_alliances(EntityManager& entity_manager,
                             std::span<const player_t> players) {
   if (players.size() <= 1) {
@@ -416,39 +348,6 @@ bool check_mutual_alliances(EntityManager& entity_manager,
     peers_mask.reset(p);
     return (race.allied & peers_mask) == peers_mask;
   });
-}
-
-std::expected<PlunderDistribution, PlunderError>
-calculate_plunder_distribution(Stockpile total_loot,
-                               std::span<const player_t> conquerors) {
-  if (conquerors.empty()) {
-    return std::unexpected(PlunderError::NoConquerors);
-  }
-  if (total_loot.empty()) {
-    return std::unexpected(PlunderError::EmptyLoot);
-  }
-
-  const std::size_t shares_count = conquerors.size();
-  Stockpile remaining = total_loot;
-  std::vector<PlayerLootShare> shares;
-  shares.reserve(shares_count);
-
-  for (std::size_t idx = 0; idx + 1 < shares_count; ++idx) {
-    const player_t conqueror = conquerors[idx];
-    const Stockpile allocated =
-        total_loot.split_share(shares_count).clamp_to(remaining);
-    remaining -= allocated;
-    shares.push_back(PlayerLootShare{.player = conqueror, .share = allocated});
-  }
-
-  // Last conqueror gets all leftovers
-  shares.push_back(
-      PlayerLootShare{.player = conquerors.back(), .share = remaining});
-
-  return PlunderDistribution{
-      .shares = std::move(shares),
-      .total_loot = total_loot,
-  };
 }
 
 std::optional<RecoveryReport>
@@ -602,7 +501,7 @@ void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
           break;
       }
       /* add fuel for ships orbiting a gas giant */
-      refuel_gasgiant_orbiters(planet, ship);
+      ship.refuel_from_gas_giant(planet);
     }
   }
 }
@@ -612,28 +511,6 @@ void process_planet_climate(Planet& planet, const Star& star,
   const starnum_t starnum = star.star_id();
   const planetnum_t planetnum = planet.planet_order();
   planet.update_climate(stats.temp_add(starnum, planetnum));
-}
-
-std::optional<Coordinates>
-process_toxic_environmental_damage(const Planet& planet, SectorMap& smap) {
-  if (planet.conditions(TOXIC) <= ENVIR_DAMAGE_TOX) {
-    return std::nullopt;
-  }
-  auto& p = smap.get_random();
-  p.devastate();
-  return p.coords();
-}
-
-bool process_supernova_sector_devastation(const Star& star, SectorMap& smap) {
-  if (!star.nova_stage()) {
-    return false;
-  }
-  bool affected = false;
-  for (Sector& p : smap.occupied()) {
-    p.apply_supernova(star.nova_stage());
-    affected = true;
-  }
-  return affected;
 }
 
 std::optional<shipnum_t>
@@ -675,58 +552,6 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
 double est_production(const Sector& s, EntityManager& entity_manager) {
   const auto& race = *entity_manager.peek_race(s.get_owner());
   return (race.metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
-}
-
-PlanetExplorationContext::PlanetExplorationContext(Coordinates dimensions)
-    : dimensions_(dimensions),
-      explored_(static_cast<std::size_t>(dimensions.x) *
-                static_cast<std::size_t>(dimensions.y)) {}
-
-PlanetExplorationContext::PlanetExplorationContext(const Planet& planet)
-    : PlanetExplorationContext(planet.dimensions()) {}
-
-bool PlanetExplorationContext::in_bounds(Coordinates c) const noexcept {
-  return c.x >= 0 && c.y >= 0 && c.x < dimensions_.x && c.y < dimensions_.y;
-}
-
-bool PlanetExplorationContext::is_explored(Coordinates c,
-                                           player_t player) const {
-  return explored_[index(c)].test(player.value);
-}
-
-bool PlanetExplorationContext::is_explored(Coordinates c) const {
-  return explored_[index(c)].any();
-}
-
-void PlanetExplorationContext::set_explored(Coordinates c, player_t player) {
-  explored_[index(c)].set(player.value);
-}
-
-void PlanetExplorationContext::clear_explored(Coordinates c, player_t player) {
-  explored_[index(c)].reset(player.value);
-}
-
-bool PlanetExplorationContext::all_explored(player_t player) const {
-  return std::ranges::all_of(explored_, [player](const auto& bitset) {
-    return bitset.test(player.value);
-  });
-}
-
-bool PlanetExplorationContext::all_explored() const {
-  return std::ranges::all_of(explored_,
-                             [](const auto& bitset) { return bitset.any(); });
-}
-
-void PlanetExplorationContext::explore_sector(const Planet& planet,
-                                              const Sector& s, player_t p) {
-  const Coordinates c = s.coords();
-  if (is_explored(c, p)) {
-    for (const auto& neighbor : planet.adjacent_coordinates(c)) {
-      set_explored(neighbor, p);
-    }
-  } else if (s.get_owner() == p) {
-    set_explored(c, p);
-  }
 }
 
 std::optional<IslandDiscovery>
@@ -916,14 +741,6 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
   }
 }
 
-void update_planet_toxicity(Planet& planet) {
-  if (planet.maxpopn() > 0 && planet.conditions(TOXIC) < 100) {
-    planet.conditions(TOXIC) += planet.popn() / planet.maxpopn();
-  }
-  planet.conditions(TOXIC) =
-      std::clamp<short>(planet.conditions(TOXIC), 0, 100);
-}
-
 void process_planet_economy(EntityManager& entity_manager, const Star& star,
                             Planet& planet, SectorMap& smap, TurnStats& stats) {
   for (auto race_handle : RaceList(entity_manager)) {
@@ -951,7 +768,7 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
     build_automated_waste_can(entity_manager, star, planet, smap, race);
   }
 
-  update_planet_toxicity(planet);
+  planet.update_toxicity();
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t p = race.Playernum;
@@ -994,7 +811,7 @@ void process_planet_production(EntityManager& entity_manager, const Star& star,
                                Planet& planet, SectorMap& smap,
                                TurnStats& stats) {
   if (star.nova_stage()) {
-    process_supernova_sector_devastation(star, smap);
+    smap.process_supernova_devastation(star);
     return;
   }
 
@@ -1104,7 +921,7 @@ void doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
         process_island_exploration(entity_manager, star, planet, smap, stats);
 
         const auto envir_damage =
-            process_toxic_environmental_damage(planet, smap);
+            planet.process_toxic_environmental_damage(smap);
 
         send_planet_turn_telegrams(entity_manager, star, planet, envir_damage,
                                    stats);

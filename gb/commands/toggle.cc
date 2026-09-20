@@ -18,7 +18,7 @@ void tog(GameObj& g, bool* op, const char* name) {
   g.out << std::format("{0} is now {1}\n", name, *op ? "on" : "off");
 }
 
-void display_toggles(GameObj& g, const Race::gov& governor, const Race& race) {
+void display_toggles(GameObj& g, const Race::gov& governor) {
   g.out << std::format("gag is {}\n", governor.toggle.gag ? "ON" : "OFF");
   g.out << std::format("inverse is {}\n",
                        governor.toggle.inverse ? "ON" : "OFF");
@@ -28,15 +28,11 @@ void display_toggles(GameObj& g, const Race::gov& governor, const Race& race) {
                        governor.toggle.geography ? "ON" : "OFF");
   g.out << std::format("autoload is {}\n",
                        governor.toggle.autoload ? "ON" : "OFF");
-  g.out << std::format("color is {}\n", governor.toggle.color ? "ON" : "OFF");
   g.out << std::format("compatibility is {}\n",
                        governor.toggle.compat ? "ON" : "OFF");
   g.out << std::format("{}\n",
                        governor.toggle.invisible ? "INVISIBLE" : "VISIBLE");
   g.out << std::format("highlight player {}\n", governor.toggle.highlight);
-  if (race.God) {
-    g.out << std::format("monitor is {}\n", race.monitor ? "ON" : "OFF");
-  }
 }
 }  // namespace
 
@@ -48,7 +44,7 @@ bool toggle(const command_t& argv, GameObj& g) {
 
   if (argv.size() == 1) {
     g.entity_manager.with_race(Playernum, [&](const Race& race) {
-      display_toggles(g, race.governor[Governor.value], race);
+      display_toggles(g, race.governor[Governor.value]);
     });
     return true;
   }
@@ -71,14 +67,8 @@ bool toggle(const command_t& argv, GameObj& g) {
     } else if (argv[1] == "autoload") {
       tog(g, &race.governor[Governor.value].toggle.autoload, "autoload");
       result = true;
-    } else if (argv[1] == "color") {
-      tog(g, &race.governor[Governor.value].toggle.color, "color");
-      result = true;
     } else if (argv[1] == "visible") {
       tog(g, &race.governor[Governor.value].toggle.invisible, "invisible");
-      result = true;
-    } else if (race.God && argv[1] == "monitor") {
-      tog(g, &race.monitor, "monitor");
       result = true;
     } else if (argv[1] == "compatibility") {
       tog(g, &race.governor[Governor.value].toggle.compat, "compatibility");

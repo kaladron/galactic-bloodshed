@@ -458,8 +458,8 @@ void advance_race_technology(Race& race, const TurnStats& stats,
   race.update_collective_intelligence(stats.Power[player].popn);
   race.tech += static_cast<double>(race.IQ) / 100.0;
   race.morale += stats.Power[player].planets_owned;
-  check_technological_discoveries(entity_manager, race);
   race.turn += 1;
+  check_technological_discoveries(entity_manager, race);
   if (MARKET) {
     for (auto& governor : race.governor) {
       if (governor.active) {

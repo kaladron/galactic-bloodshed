@@ -103,13 +103,13 @@ void test_order_happy_path() {
     ctx.assert_dispatch_success(g, {"order", "#1", "retaliate", "on"});
     ctx.assert_dispatch_success(g, {"order", "#1", "bombard", "on"});
     ctx.em.clear_cache();
-    test::expect_true(ctx.em.peek_ship(1)->protect().self);
+    test::expect_true(ctx.em.peek_ship(1)->protect().retaliate);
     test::expect_eq(ctx.em.peek_ship(1)->bombard(), 1);
 
     ctx.assert_dispatch_success(g, {"order", "#1", "retaliate", "off"});
     ctx.assert_dispatch_success(g, {"order", "#1", "bombard", "off"});
     ctx.em.clear_cache();
-    test::expect_false(ctx.em.peek_ship(1)->protect().self);
+    test::expect_false(ctx.em.peek_ship(1)->protect().retaliate);
     test::expect_eq(ctx.em.peek_ship(1)->bombard(), 0);
   }
 

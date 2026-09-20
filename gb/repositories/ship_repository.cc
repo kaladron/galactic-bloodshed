@@ -92,8 +92,8 @@ template <>
 struct meta<ProtectData> {
   using T = ProtectData;
   static constexpr auto value =
-      object("maxrng", &T::maxrng, "on", &T::on, "planet", &T::planet, "self",
-             &T::self, "evade", &T::evade, "ship", &T::ship);
+      object("on", &T::on, "planet", &T::planet, "retaliate", &T::retaliate,
+             "evade", &T::evade, "ship", &T::ship);
 };
 
 template <>
@@ -133,12 +133,11 @@ struct meta<ship_struct> {
       &T::whatdest, "whatorbits", &T::whatorbits, "damage", &T::damage, "rad",
       &T::rad, "retaliate", &T::retaliate, "type", &T::type, "speed", &T::speed,
       "active", &T::active, "alive", &T::alive, "mode", &T::mode, "bombard",
-      &T::bombard, "mounted", &T::mounted, "cloaked", &T::cloaked, "sheep",
-      &T::sheep, "dock_state", &T::dock_state, "notified", &T::notified,
-      "examined", &T::examined, "on", &T::on, "merchant", &T::merchant, "guns",
-      &T::guns, "primary_battery", &T::primary_battery, "secondary_battery",
-      &T::secondary_battery, "hanger", &T::hanger, "max_hanger",
-      &T::max_hanger);
+      &T::bombard, "mounted", &T::mounted, "dock_state", &T::dock_state,
+      "notified", &T::notified, "examined", &T::examined, "on", &T::on,
+      "merchant", &T::merchant, "guns", &T::guns, "primary_battery",
+      &T::primary_battery, "secondary_battery", &T::secondary_battery, "hanger",
+      &T::hanger, "max_hanger", &T::max_hanger);
 };
 
 }  // namespace glz

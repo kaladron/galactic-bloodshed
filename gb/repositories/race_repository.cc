@@ -32,15 +32,14 @@ struct meta<TechDiscoveries> {
 template <>
 struct meta<Race::gov> {
   using T = Race::gov;
-  static constexpr auto value =
-      object("name", &T::name, "password", &T::password, "active", &T::active,
-             "deflevel", &T::deflevel, "defsystem", &T::defsystem,
-             "defplanetnum", &T::defplanetnum, "homelevel", &T::homelevel,
-             "homesystem", &T::homesystem, "homeplanetnum", &T::homeplanetnum,
-             "newspos", &T::newspos, "toggle", &T::toggle, "money", &T::money,
-             "income", &T::income, "maintain", &T::maintain, "cost_tech",
-             &T::cost_tech, "cost_market", &T::cost_market, "profit_market",
-             &T::profit_market, "login", &T::login);
+  static constexpr auto value = object(
+      "name", &T::name, "password", &T::password, "active", &T::active,
+      "deflevel", &T::deflevel, "defsystem", &T::defsystem, "defplanetnum",
+      &T::defplanetnum, "homesystem", &T::homesystem, "homeplanetnum",
+      &T::homeplanetnum, "newspos", &T::newspos, "toggle", &T::toggle, "money",
+      &T::money, "income", &T::income, "maintain", &T::maintain, "cost_tech",
+      &T::cost_tech, "cost_market", &T::cost_market, "profit_market",
+      &T::profit_market, "login", &T::login);
 };
 
 template <>
@@ -55,14 +54,13 @@ struct meta<Race> {
       &T::adventurism, "birthrate", &T::birthrate, "mass", &T::mass,
       "metabolism", &T::metabolism, "conditions", &T::conditions, "likes",
       &T::likes, "likesbest", &T::likesbest, "dissolved", &T::dissolved, "God",
-      &T::God, "Guest", &T::Guest, "Metamorph", &T::Metamorph, "monitor",
-      &T::monitor, "translate", &T::translate, "atwar", &T::atwar, "allied",
-      &T::allied, "Gov_ship", &T::Gov_ship, "morale", &T::morale, "points",
-      &T::points, "controlled_planets", &T::controlled_planets, "victory_turns",
+      &T::God, "Guest", &T::Guest, "Metamorph", &T::Metamorph, "translate",
+      &T::translate, "atwar", &T::atwar, "allied", &T::allied, "Gov_ship",
+      &T::Gov_ship, "morale", &T::morale, "points", &T::points,
+      "controlled_planets", &T::controlled_planets, "victory_turns",
       &T::victory_turns, "turn", &T::turn, "tech", &T::tech, "discoveries",
       &T::discoveries, "victory_score", &T::victory_score, "votes", &T::votes,
-      "planet_points", &T::planet_points, "governors", &T::governors,
-      "governor", &T::governor);
+      "planet_points", &T::planet_points, "governor", &T::governor);
 };
 
 }  // namespace glz

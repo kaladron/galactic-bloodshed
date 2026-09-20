@@ -761,11 +761,11 @@ void test_do_update_voting_reset_and_scheduling() {
   test::expect_false(r1->votes);
   test::expect_false(r2->votes);
 
-  // Verify ServerState schedule buffers updated
+  // Verify ServerState schedule lines updated
   const auto* updated_state = em.peek_server_state();
   test::expect_ne(updated_state, nullptr);
   test::expect_gt(updated_state->nupdates_done, 0U);
-  test::expect_false(updated_state->update_buf.empty());
+  test::expect_false(updated_state->update_line().empty());
 }
 
 void test_handle_victory_disabled() {
@@ -974,7 +974,7 @@ void test_schedule_calculation_pure() {
   std::time_t t = 1'700'000'000;
   state.record_server_start(t);
   test::expect_eq(state.server_start_time, t);
-  test::expect_contains(state.start_buf, "Server started  : ");
+  test::expect_contains(state.start_line(), "Server started  : ");
 }
 
 void test_do_segment_execution() {

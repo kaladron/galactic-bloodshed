@@ -15,8 +15,7 @@ module commands;
 static double Lastx, Lasty, Zoom;
 static const int SCALE = 100;
 
-static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int,
-                            const Race&);
+static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int);
 static std::string DispPlanet(const GameObj&, const ScopeLevel, const Planet&,
                               std::string_view, int, const Race&);
 static std::string DispShip(const GameObj&, EntityManager&, const Place&,
@@ -116,8 +115,8 @@ bool orbit(const command_t& argv, GameObj& g) {
       }
       for (const Star& star_ref : StarList::readonly(g.entity_manager)) {
         if (DontDispNum != star_ref.star_id()) {
-          std::string star = DispStar(g, ScopeLevel::LEVEL_UNIV, star_ref,
-                                      DontDispStars, Race);
+          std::string star =
+              DispStar(g, ScopeLevel::LEVEL_UNIV, star_ref, DontDispStars);
           system_map_text += star;
         }
       }
@@ -138,7 +137,7 @@ bool orbit(const command_t& argv, GameObj& g) {
         return false;
       }
       std::string star =
-          DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars, Race);
+          DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars);
       system_map_text += star;
 
       for (planetnum_t i = 0; i < star_ptr->numplanets(); i++)
@@ -258,8 +257,7 @@ static Coordinates project_to_screen(double dx, double dy, double max_extent,
 // TODO(jeffbailey) Remove DontDispStar parameter as unused, but it really looks
 // like we should be doing something here.
 static std::string DispStar(const GameObj& g, const ScopeLevel level,
-                            const Star& star, int /* DontDispStars */,
-                            const Race& r) {
+                            const Star& star, int /* DontDispStars */) {
   Coordinates screen_coords{};
 
   switch (level) {
@@ -276,17 +274,10 @@ static std::string DispStar(const GameObj& g, const ScopeLevel level,
   }
 
   std::stringstream ss;
-  if (r.governor[g.governor().value].toggle.color) {
-    char stand = (star.is_explored_by(g.player()) ? g.player().value : 0) + '?';
-    ss << std::format("{} {} {} 0 * ", stand, screen_coords.x, screen_coords.y);
-    stand = (star.is_inhabited_by(g.player()) ? g.player().value : 0) + '?';
-    ss << std::format("{} {};", stand, star.get_name());
-  } else {
-    int stand = (star.is_explored_by(g.player()) ? 1 : 0);
-    ss << std::format("{} {} {} 0 * ", stand, screen_coords.x, screen_coords.y);
-    stand = (star.is_inhabited_by(g.player()) ? 1 : 0);
-    ss << std::format("{} {};", stand, star.get_name());
-  }
+  int stand = (star.is_explored_by(g.player()) ? 1 : 0);
+  ss << std::format("{} {} {} 0 * ", stand, screen_coords.x, screen_coords.y);
+  stand = (star.is_inhabited_by(g.player()) ? 1 : 0);
+  ss << std::format("{} {};", stand, star.get_name());
 
   return ss.str();
 }
@@ -311,19 +302,11 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
   }
   std::stringstream ss;
 
-  if (r.governor[g.governor().value].toggle.color) {
-    char stand = (p.info(g.player()).explored ? g.player().value : 0) + '?';
-    ss << std::format("{} {} {} 0 {} ", stand, screen_coords.x, screen_coords.y,
-                      (stand > '0' ? Psymbol[p.type()] : '?'));
-    stand = (p.info(g.player()).numsectsowned ? g.player().value : 0) + '?';
-    ss << std::format("{} {}", stand, name);
-  } else {
-    int stand = p.info(g.player()).explored ? 1 : 0;
-    ss << std::format("{} {} {} 0 {} ", stand, screen_coords.x, screen_coords.y,
-                      (stand ? Psymbol[p.type()] : '?'));
-    stand = p.info(g.player()).numsectsowned ? 1 : 0;
-    ss << std::format("{} {}", stand, name);
-  }
+  int stand = p.info(g.player()).explored ? 1 : 0;
+  ss << std::format("{} {} {} 0 {} ", stand, screen_coords.x, screen_coords.y,
+                    (stand ? Psymbol[p.type()] : '?'));
+  stand = p.info(g.player()).numsectsowned ? 1 : 0;
+  ss << std::format("{} {}", stand, name);
   if (r.governor[g.governor().value].toggle.compat &&
       p.info(g.player()).explored) {
     ss << std::format("({})", (int)p.compatibility(r));
@@ -395,12 +378,6 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
   }
 
   if (screen_coords.x >= 0 && screen_coords.y >= 0) {
-    if (r.governor[g.governor().value].toggle.color) {
-      return std::format("{} {} {} {} {} {} {};",
-                         (char)(ship.owner().value + '?'), screen_coords.x,
-                         screen_coords.y, mirror_heading, ship.type_letter(),
-                         (char)(ship.owner().value + '?'), ship.number().value);
-    }
     const bool stand =
         (ship.owner() == r.governor[g.governor().value].toggle.highlight);
     return std::format("{} {} {} {} {} {} {};", stand, screen_coords.x,

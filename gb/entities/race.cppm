@@ -11,8 +11,6 @@ import std;
 
 export using toggletype = struct {
   bool invisible;
-  bool standby;
-  bool color; /* true if you are using a color client */
   bool gag;
   bool double_digits;
   bool inverse;
@@ -107,8 +105,6 @@ public:
   bool God{false};       /* Player is a God race. */
   bool Guest{false};     /* Player is a guest race. */
   bool Metamorph{false}; /* Player is a morph; (for printing). */
-  bool monitor{false};
-  /* God is monitering this race. */  // TODO(jeffbailey): Remove this.
 
   PlayerVector<int, MAXPLAYERS>
       translate{}; /* translation mod for each player */
@@ -174,7 +170,6 @@ public:
   bool votes{false};
   ap_t planet_points{0}; /* For the determination of global APs */
 
-  int governors{0};
   struct gov {
     std::string name;
     std::string password;
@@ -182,7 +177,6 @@ public:
     ScopeLevel deflevel{ScopeLevel::LEVEL_UNIV};
     starnum_t defsystem{0};
     planetnum_t defplanetnum{0}; /* current default */
-    ScopeLevel homelevel{ScopeLevel::LEVEL_UNIV};
     starnum_t homesystem{0};
     planetnum_t homeplanetnum{0}; /* home place */
     unsigned long newspos[4]{};   /* news file pointers */
@@ -391,18 +385,15 @@ inline auto Race::all_governors() const {
 }
 
 export struct power {
-  int id{0};                // Power entry ID for database persistence
-  population_t troops;      /* total troops */
-  population_t popn;        /* total population */
-  resource_t resource;      /* total resource in stock */
-  resource_t fuel;          /* total fuel in stock */
-  resource_t destruct;      /* total dest in stock */
-  ship_count_t ships_owned; /* # of ships owned */
-  planet_count_t planets_owned;
-  sector_count_t sectors_owned;
-  money_t money;
-  unsigned long sum_mob; /* total mobilization */
-  unsigned long sum_eff; /* total efficiency */
+  int id{0};                   // Power entry ID for database persistence
+  population_t troops{0};      /* total troops */
+  population_t popn{0};        /* total population */
+  resource_t resource{0};      /* total resource in stock */
+  resource_t fuel{0};          /* total fuel in stock */
+  resource_t destruct{0};      /* total dest in stock */
+  ship_count_t ships_owned{0}; /* # of ships owned */
+  planet_count_t planets_owned{0};
+  money_t money{0};
 };
 
 export struct block {
@@ -411,43 +402,35 @@ export struct block {
   std::string motto;
   PlayerBitset<MAXPLAYERS> invited;
   PlayerBitset<MAXPLAYERS> pledged;
-  PlayerBitset<MAXPLAYERS> atwar;
-  PlayerBitset<MAXPLAYERS> allied;
   std::uint32_t members{0};
-  population_t troops{0};      /* total troops */
   population_t popn{0};        /* total population */
   resource_t resource{0};      /* total resource in stock */
   resource_t fuel{0};          /* total fuel in stock */
   resource_t destruct{0};      /* total dest in stock */
   ship_count_t ships_owned{0}; /* # of ships owned */
   planet_count_t systems_owned{0};
-  sector_count_t sectors_owned{0};
   victory_score_t VPs{0};
   money_t money{0};
 
   /// Resets aggregated member power statistics prior to recomputation.
   void clear_power_stats() noexcept {
     members = 0;
-    troops = 0;
     popn = 0;
     resource = 0;
     fuel = 0;
     destruct = 0;
     ships_owned = 0;
-    sectors_owned = 0;
     money = 0;
   }
 
   /// Accumulates a member race's power report into this bloc's totals.
   void accumulate_member_power(const power& p) noexcept {
     members += 1;
-    troops += p.troops;
     popn += p.popn;
     resource += p.resource;
     fuel += p.fuel;
     destruct += p.destruct;
     ships_owned += p.ships_owned;
-    sectors_owned += p.sectors_owned;
     money += p.money;
   }
 
@@ -484,24 +467,6 @@ export struct block {
 
   /// Unpledges the given player from this bloc.
   void unpledge(player_t p) noexcept;
-
-  /// Returns whether this bloc is allied with the given player.
-  [[nodiscard]] bool is_allied_with(player_t p) const noexcept;
-
-  /// Declares this bloc's alliance with the given player.
-  void declare_alliance_with(player_t p) noexcept;
-
-  /// Rescinds this bloc's alliance with the given player.
-  void rescind_alliance_with(player_t p) noexcept;
-
-  /// Returns whether this bloc is at war with the given player.
-  [[nodiscard]] bool is_at_war_with(player_t p) const noexcept;
-
-  /// Declares this bloc at war with the given player.
-  void declare_war_on(player_t p) noexcept;
-
-  /// Makes peace between this bloc and the given player.
-  void make_peace_with(player_t p) noexcept;
 };
 
 export constexpr double TECH_HYPER_DRIVE = 50.0;

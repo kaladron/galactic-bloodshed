@@ -508,12 +508,12 @@ export struct NavigateData {
 
 /// Defensive escort and auto-retaliation parameters for a ship.
 export struct ProtectData {
-  double maxrng{0.0};  ///< Maximum engagement range for defense fire
   shipnum_t ship{0};   ///< Target ship number being protected
   bool on{false};      ///< Whether escort / protection mode is active
   bool planet{false};  ///< Whether assigned as a planetary defense interceptor
-  bool self{false};    ///< Whether ship automatically retaliates when attacked
-  bool evade{false};   ///< Whether ship executes evasive maneuvers in combat
+  bool retaliate{
+      false};         ///< Whether ship automatically retaliates when attacked
+  bool evade{false};  ///< Whether ship executes evasive maneuvers in combat
 };
 
 /// Faster-than-light hyperdrive parameters.
@@ -603,8 +603,6 @@ export struct ship_struct {
       false};  ///< Warhead detonation mode (false: explosive, true: radiative)
   bool bombard{false};  ///< Planetary bombardment enabled
   bool mounted{false};  ///< Warp crystal currently mounted in jump drive
-  bool cloaked{false};  ///< Cloaking device active
-  bool sheep{false};    ///< Sub-light exploration automation enabled
   DockState dock_state{
       DockState::Spaceborne};  ///< Physical mooring or landing status
   bool notified{false};        ///< Player notified of arrival / event

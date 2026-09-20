@@ -32,7 +32,6 @@ void setup_test_world(TestContext& ctx) {
   race.tech = 50.0;
   race.governor[0].active = true;
   race.governor[0].toggle.geography = false;
-  race.governor[0].toggle.color = false;
   race.governor[0].toggle.inverse = false;
   race.governor[0].toggle.double_digits = false;
   race.governor[0].toggle.highlight = 1;
@@ -260,7 +259,6 @@ void test_show_map_rendering_options() {
   ctx.em.mutate_race(1, [](Race& r) {
     r.Metamorph = true;
     r.atwar.set(player_t{2});
-    r.governor[0].toggle.color = true;
   });
   ctx.em.mutate_planet(0, 0, [](Planet& p) {
     p.conditions(TOXIC) = 75;
@@ -277,9 +275,8 @@ void test_show_map_rendering_options() {
   test::expect_contains(g.out.str(), "ENSLAVED to player 2;");
   test::expect_contains(g.out.str(), "*2");
 
-  // Test monochrome inverse highlight and unexplored planet ("Aliens:???")
+  // Test inverse highlight and unexplored planet ("Aliens:???")
   ctx.em.mutate_race(1, [](Race& r) {
-    r.governor[0].toggle.color = false;
     r.governor[0].toggle.inverse = true;
     r.governor[0].toggle.highlight = 1;
     r.tech = 0.0;

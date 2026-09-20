@@ -151,7 +151,7 @@ bool defend(const command_t& argv, GameObj& g) {
 
               /* defending ship retaliates */
               strength = 0;
-              if (retal && damage && target_ship.protect().self) {
+              if (retal && damage && target_ship.protect().retaliate) {
                 // Use pre-damage retaliation strength (saved in 'retal' above).
                 // shoot_ship_to_planet() uses the explicit strength parameter,
                 // not the ship's current damage state, so this correctly

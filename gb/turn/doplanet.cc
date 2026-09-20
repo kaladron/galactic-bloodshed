@@ -734,8 +734,6 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
     auto& power = stats.Power[owner];
     power.troops += s.get_troops();
     power.popn += s.get_popn();
-    power.sum_eff += s.get_eff();
-    power.sum_mob += s.get_mobilization();
     stats.starpopns[star_id][owner] += s.get_popn();
   }
 }
@@ -775,7 +773,6 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
     stats.Power[p].resource += info.resource;
     stats.Power[p].destruct += info.destruct;
     stats.Power[p].fuel += info.fuel;
-    stats.Power[p].sectors_owned += info.numsectsowned;
     stats.Power[p].planets_owned += !!info.numsectsowned;
     info.update_combat_readiness(stats.total_mob_points[p]);
   }

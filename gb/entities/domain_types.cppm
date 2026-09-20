@@ -479,30 +479,41 @@ export struct ServerState {
   std::time_t server_start_time{0};  // Timestamp when server started
   std::time_t last_update_time{0};   // Timestamp of most recent update
   std::time_t last_segment_time{0};  // Timestamp of most recent segment
-  std::string start_buf;             // "Server started  : <time>"
-  std::string update_buf;            // "Last Update N : <time>"
-  std::string segment_buf;           // "Last Segment N : <time>"
   std::string welcome_message;  // Welcome message shown to connecting players
 
-  void record_server_start(std::time_t clk) {
+  void record_server_start(std::time_t clk) noexcept {
     server_start_time = clk;
-    start_buf = std::format("Server started  : {}\n", format_timestamp(clk));
   }
 
-  void record_update_completed(std::time_t clk, bool increment_updates) {
+  void record_update_completed(std::time_t clk,
+                               bool increment_updates) noexcept {
     if (increment_updates) {
       ++nupdates_done;
     }
     last_update_time = clk;
-    update_buf = std::format("Last Update {:3d} : {}\n", nupdates_done,
-                             format_timestamp(clk));
     record_segment_completed(clk);
   }
 
-  void record_segment_completed(std::time_t clk) {
+  void record_segment_completed(std::time_t clk) noexcept {
     last_segment_time = clk;
-    segment_buf = std::format("Last Segment {:2d} : {}\n", nsegments_done,
-                              format_timestamp(clk));
+  }
+
+  [[nodiscard]] std::string start_line() const {
+    if (server_start_time == 0) return {};
+    return std::format("Server started  : {}\n",
+                       format_timestamp(server_start_time));
+  }
+
+  [[nodiscard]] std::string update_line() const {
+    if (last_update_time == 0) return {};
+    return std::format("Last Update {:3d} : {}\n", nupdates_done,
+                       format_timestamp(last_update_time));
+  }
+
+  [[nodiscard]] std::string segment_line() const {
+    if (last_segment_time == 0) return {};
+    return std::format("Last Segment {:2d} : {}\n", nsegments_done,
+                       format_timestamp(last_segment_time));
   }
 };
 

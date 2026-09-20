@@ -94,31 +94,6 @@ int main() {
                             "methods work as expected");
   }
 
-  // block alliance and war methods
-  std::println(std::cout, "block alliance and war methods...");
-  {
-    block b{};
-    b.Playernum = 1;
-
-    test::expect_false(b.is_allied_with(player_t{3}));
-    test::expect_false(b.is_at_war_with(player_t{3}));
-
-    b.declare_alliance_with(player_t{3});
-    test::expect_true(b.is_allied_with(player_t{3}));
-    test::expect_false(b.is_at_war_with(player_t{3}));
-
-    b.rescind_alliance_with(player_t{3});
-    test::expect_false(b.is_allied_with(player_t{3}));
-
-    b.declare_war_on(player_t{3});
-    test::expect_true(b.is_at_war_with(player_t{3}));
-
-    b.make_peace_with(player_t{3});
-    test::expect_false(b.is_at_war_with(player_t{3}));
-    std::println(std::cout,
-                 "  ✓ block alliance and war methods work as expected");
-  }
-
   // Race translate and points PlayerVector tests
   std::println(std::cout,
                "Race translate and points PlayerVector accessors...");

@@ -106,7 +106,7 @@ void test_defend_retaliation_and_escort() {
                                   .with_armor(50)
                                   .build();
 
-  ctx.em.mutate_ship(target_id, [](Ship& s) { s.protect().self = true; });
+  ctx.em.mutate_ship(target_id, [](Ship& s) { s.protect().retaliate = true; });
 
   // Escort ship on planet protecting target_id
   const shipnum_t escort_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)

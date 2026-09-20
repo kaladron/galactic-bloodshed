@@ -88,8 +88,6 @@ void test_block_repository() {
   b1.motto = "United we stand";
   b1.invited = PlayerBitset<MAXPLAYERS>(1);
   b1.pledged = PlayerBitset<MAXPLAYERS>(1);
-  b1.atwar = PlayerBitset<MAXPLAYERS>(2);
-  b1.allied = PlayerBitset<MAXPLAYERS>(3);
   b1.systems_owned = 10;
   b1.VPs = 1000;
   b1.money = 5000;
@@ -144,10 +142,7 @@ void test_power_repository() {
   p1.destruct = 100;
   p1.ships_owned = 25;
   p1.planets_owned = 5;
-  p1.sectors_owned = 100;
   p1.money = 10000;
-  p1.sum_mob = 75;
-  p1.sum_eff = 85;
   p1.id = 1;
 
   // Save and retrieve

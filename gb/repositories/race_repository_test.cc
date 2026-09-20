@@ -42,7 +42,6 @@ int main() {
   test_race.God = false;
   test_race.Guest = false;
   test_race.Metamorph = false;
-  test_race.monitor = false;
   test_race.Gov_ship = 100;
   test_race.morale = 1000;
   test_race.controlled_planets = 5;
@@ -52,7 +51,6 @@ int main() {
   test_race.victory_score = 5000;
   test_race.votes = true;
   test_race.planet_points = 100;
-  test_race.governors = 3;
   test_race.translate[player_t{1}] = 100;
   test_race.translate[player_t{2}] = 75;
   test_race.points[player_t{2}] = 350;
@@ -102,7 +100,6 @@ int main() {
   test::expect_eq(retrieved->IQ, test_race.IQ);
   test::expect_eq(retrieved->tech, test_race.tech);
   test::expect_eq(retrieved->discoveries, test_race.discoveries);
-  test::expect_eq(retrieved->governors, test_race.governors);
   test::expect_eq(retrieved->translate[player_t{1}],
                   test_race.translate[player_t{1}]);
   test::expect_eq(retrieved->translate[player_t{2}],

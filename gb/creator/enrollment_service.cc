@@ -167,15 +167,14 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   // Note: Governors 1 through MAXGOVERNORS are value-initialized to inactive
   // (active = false) by Race::gov in-class member initializers on `Race
   // race{};`.
+  race.turn = 0;
   race.governor[0].name = "Leader";
   race.governor[0].password = spec.governor_password;
-  race.governor[0].homelevel = race.governor[0].deflevel =
-      ScopeLevel::LEVEL_PLAN;
+  race.governor[0].deflevel = ScopeLevel::LEVEL_PLAN;
   race.governor[0].homesystem = race.governor[0].defsystem = star;
   race.governor[0].homeplanetnum = race.governor[0].defplanetnum = pnum;
   race.governor[0].toggle.highlight = playernum;
   race.governor[0].toggle.inverse = true;
-  race.governor[0].toggle.color = false;
   race.governor[0].active = true;
 
   // Conditions copied from home planet
@@ -218,7 +217,6 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   race.discoveries = {};
   race.tech = 0.0;
   race.morale = 0;
-  race.turn = 0;
   race.allied.reset();
   race.atwar.reset();
   race.points.fill(0);
@@ -242,7 +240,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   ss.shipclass() = "Standard";
   ss.popn() = gov_tmpl.max_crew;
   ss.set_mass(ss.base_mass() + gov_tmpl.max_crew * race.mass);
-  ss.protect().self = 1;
+  ss.protect().retaliate = true;
   ss.land_on_planet();
   ss.deststar() = star;
   ss.destpnum() = pnum;

@@ -26,8 +26,6 @@ int main() {
   test_blocks[0].motto = "TestMotto1";
   test_blocks[0].invited = PlayerBitset<MAXPLAYERS>(0x123);
   test_blocks[0].pledged = PlayerBitset<MAXPLAYERS>(0x456);
-  test_blocks[0].atwar = PlayerBitset<MAXPLAYERS>(0x789);
-  test_blocks[0].allied = PlayerBitset<MAXPLAYERS>(0xABC);
   test_blocks[0].systems_owned = 5;
   test_blocks[0].VPs = 1000;
   test_blocks[0].money = 50000;
@@ -37,8 +35,6 @@ int main() {
   test_blocks[1].motto = "TestMotto2";
   test_blocks[1].invited = PlayerBitset<MAXPLAYERS>(0xDEF);
   test_blocks[1].pledged = PlayerBitset<MAXPLAYERS>(0x321);
-  test_blocks[1].atwar = PlayerBitset<MAXPLAYERS>(0x654);
-  test_blocks[1].allied = PlayerBitset<MAXPLAYERS>(0x987);
   test_blocks[1].systems_owned = 3;
   test_blocks[1].VPs = 800;
   test_blocks[1].money = 30000;
@@ -72,8 +68,6 @@ int main() {
   test::expect_eq(retrieved_blocks[0].motto, test_blocks[0].motto);
   test::expect_eq(retrieved_blocks[0].invited, test_blocks[0].invited);
   test::expect_eq(retrieved_blocks[0].pledged, test_blocks[0].pledged);
-  test::expect_eq(retrieved_blocks[0].atwar, test_blocks[0].atwar);
-  test::expect_eq(retrieved_blocks[0].allied, test_blocks[0].allied);
   test::expect_eq(retrieved_blocks[0].systems_owned,
                   test_blocks[0].systems_owned);
   test::expect_eq(retrieved_blocks[0].VPs, test_blocks[0].VPs);
@@ -85,8 +79,6 @@ int main() {
   test::expect_eq(retrieved_blocks[1].motto, test_blocks[1].motto);
   test::expect_eq(retrieved_blocks[1].invited, test_blocks[1].invited);
   test::expect_eq(retrieved_blocks[1].pledged, test_blocks[1].pledged);
-  test::expect_eq(retrieved_blocks[1].atwar, test_blocks[1].atwar);
-  test::expect_eq(retrieved_blocks[1].allied, test_blocks[1].allied);
   test::expect_eq(retrieved_blocks[1].systems_owned,
                   test_blocks[1].systems_owned);
   test::expect_eq(retrieved_blocks[1].VPs, test_blocks[1].VPs);

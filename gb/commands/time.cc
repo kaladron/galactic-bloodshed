@@ -17,9 +17,9 @@ bool time(const command_t&, GameObj& g) {
     g.out << "Server state unavailable.\n";
     return false;
   }
-  g.out << state->start_buf;
-  g.out << state->update_buf;
-  g.out << state->segment_buf;
+  g.out << state->start_line();
+  g.out << state->update_line();
+  g.out << state->segment_line();
   g.out << std::format("Current time    : {}\n", format_timestamp(clk));
   return true;
 }

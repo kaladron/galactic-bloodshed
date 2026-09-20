@@ -543,20 +543,6 @@ public:
     return data_.mounted;
   }
 
-  [[nodiscard]] bool cloaked() const {
-    return data_.cloaked;
-  }
-  bool& cloaked() {
-    return data_.cloaked;
-  }
-
-  [[nodiscard]] bool sheep() const {
-    return data_.sheep;
-  }
-  bool& sheep() {
-    return data_.sheep;
-  }
-
   [[nodiscard]] DockState dock_state() const noexcept {
     return data_.dock_state;
   }

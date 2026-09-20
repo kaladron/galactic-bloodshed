@@ -127,7 +127,7 @@ bool deduct_fire_ap(const command_t& argv, GameObj& g, const Ship& from) {
  */
 void resolve_target_self_retaliation(GameObj& g, Ship& from, Ship& to_ship,
                                      weapon_power_t retal, damage_t damage) {
-  if (!retal || !damage || !to_ship.protect().self) {
+  if (!retal || !damage || !to_ship.protect().retaliate) {
     return;
   }
 

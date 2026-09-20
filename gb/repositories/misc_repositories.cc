@@ -41,39 +41,34 @@ struct meta<universe_struct> {
 template <>
 struct meta<block> {
   using T = block;
-  static constexpr auto value =
-      object("Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
-             "invited", &T::invited, "pledged", &T::pledged, "atwar", &T::atwar,
-             "allied", &T::allied, "members", &T::members, "troops", &T::troops,
-             "popn", &T::popn, "resource", &T::resource, "fuel", &T::fuel,
-             "destruct", &T::destruct, "ships_owned", &T::ships_owned,
-             "systems_owned", &T::systems_owned, "sectors_owned",
-             &T::sectors_owned, "VPs", &T::VPs, "money", &T::money);
+  static constexpr auto value = object(
+      "Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
+      "invited", &T::invited, "pledged", &T::pledged, "members", &T::members,
+      "popn", &T::popn, "resource", &T::resource, "fuel", &T::fuel, "destruct",
+      &T::destruct, "ships_owned", &T::ships_owned, "systems_owned",
+      &T::systems_owned, "VPs", &T::VPs, "money", &T::money);
 };
 
 template <>
 struct meta<power> {
   using T = power;
-  static constexpr auto value =
-      object("id", &T::id, "troops", &T::troops, "popn", &T::popn, "resource",
-             &T::resource, "fuel", &T::fuel, "destruct", &T::destruct,
-             "ships_owned", &T::ships_owned, "planets_owned", &T::planets_owned,
-             "sectors_owned", &T::sectors_owned, "money", &T::money, "sum_mob",
-             &T::sum_mob, "sum_eff", &T::sum_eff);
+  static constexpr auto value = object(
+      "id", &T::id, "troops", &T::troops, "popn", &T::popn, "resource",
+      &T::resource, "fuel", &T::fuel, "destruct", &T::destruct, "ships_owned",
+      &T::ships_owned, "planets_owned", &T::planets_owned, "money", &T::money);
 };
 
 template <>
 struct meta<ServerState> {
   using T = ServerState;
-  static constexpr auto value = object(
-      "id", &T::id, "segments", &T::segments, "next_update_time",
-      &T::next_update_time, "next_segment_time", &T::next_segment_time,
-      "update_time_minutes", &T::update_time_minutes, "nsegments_done",
-      &T::nsegments_done, "nupdates_done", &T::nupdates_done,
-      "server_start_time", &T::server_start_time, "last_update_time",
-      &T::last_update_time, "last_segment_time", &T::last_segment_time,
-      "start_buf", &T::start_buf, "update_buf", &T::update_buf, "segment_buf",
-      &T::segment_buf, "welcome_message", &T::welcome_message);
+  static constexpr auto value =
+      object("id", &T::id, "segments", &T::segments, "next_update_time",
+             &T::next_update_time, "next_segment_time", &T::next_segment_time,
+             "update_time_minutes", &T::update_time_minutes, "nsegments_done",
+             &T::nsegments_done, "nupdates_done", &T::nupdates_done,
+             "server_start_time", &T::server_start_time, "last_update_time",
+             &T::last_update_time, "last_segment_time", &T::last_segment_time,
+             "welcome_message", &T::welcome_message);
 };
 
 template <>

@@ -57,7 +57,6 @@ int main() {
   test_data.mode = false;
   test_data.bombard = false;
   test_data.mounted = false;
-  test_data.cloaked = false;
   test_data.dock_state = DockState::Spaceborne;
   test_data.hanger = 10;
   test_data.max_hanger = 20;
@@ -74,9 +73,8 @@ int main() {
 
   test_data.protect.on = true;
   test_data.protect.planet = true;
-  test_data.protect.self = true;
+  test_data.protect.retaliate = true;
   test_data.protect.evade = false;
-  test_data.protect.maxrng = 150.0;
   test_data.protect.ship = shipnum_t{42};
 
   test_data.hyper_drive.has = true;
@@ -124,7 +122,6 @@ int main() {
   test::expect_false(retrieved->mode());
   test::expect_false(retrieved->bombard());
   test::expect_false(retrieved->mounted());
-  test::expect_false(retrieved->cloaked());
   test::expect_false(retrieved->docked());
   test::expect_eq(retrieved->dock_state(), DockState::Spaceborne);
   test::expect_eq(retrieved->retaliate(), 5U);
@@ -142,9 +139,8 @@ int main() {
   // Verify ProtectData integrity
   test::expect_true(retrieved->protect().on);
   test::expect_true(retrieved->protect().planet);
-  test::expect_true(retrieved->protect().self);
+  test::expect_true(retrieved->protect().retaliate);
   test::expect_false(retrieved->protect().evade);
-  test::expect_eq(retrieved->protect().maxrng, 150.0);
   test::expect_eq(retrieved->protect().ship, shipnum_t{42});
 
   // Verify HyperDriveData and computed is_ready() integrity

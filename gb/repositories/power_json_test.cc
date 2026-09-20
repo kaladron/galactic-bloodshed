@@ -29,10 +29,7 @@ int main() {
   test_power[0].destruct = 500;
   test_power[0].ships_owned = 20;
   test_power[0].planets_owned = 3;
-  test_power[0].sectors_owned = 150;
   test_power[0].money = 100000;
-  test_power[0].sum_mob = 75;
-  test_power[0].sum_eff = 85;
 
   test_power[1].id = 2;  // CRITICAL: Set power id
   test_power[1].troops = 800;
@@ -42,10 +39,7 @@ int main() {
   test_power[1].destruct = 400;
   test_power[1].ships_owned = 15;
   test_power[1].planets_owned = 2;
-  test_power[1].sectors_owned = 120;
   test_power[1].money = 80000;
-  test_power[1].sum_mob = 60;
-  test_power[1].sum_eff = 70;
 
   // Initialize remaining power entries to zero (but with id set!)
   for (int i = 2; i < MAXPLAYERS; i++) {
@@ -83,10 +77,7 @@ int main() {
   test::expect_eq(loaded_power[0].destruct, test_power[0].destruct);
   test::expect_eq(loaded_power[0].ships_owned, test_power[0].ships_owned);
   test::expect_eq(loaded_power[0].planets_owned, test_power[0].planets_owned);
-  test::expect_eq(loaded_power[0].sectors_owned, test_power[0].sectors_owned);
   test::expect_eq(loaded_power[0].money, test_power[0].money);
-  test::expect_eq(loaded_power[0].sum_mob, test_power[0].sum_mob);
-  test::expect_eq(loaded_power[0].sum_eff, test_power[0].sum_eff);
 
   test::expect_eq(loaded_power[1].troops, test_power[1].troops);
   test::expect_eq(loaded_power[1].popn, test_power[1].popn);
@@ -95,10 +86,7 @@ int main() {
   test::expect_eq(loaded_power[1].destruct, test_power[1].destruct);
   test::expect_eq(loaded_power[1].ships_owned, test_power[1].ships_owned);
   test::expect_eq(loaded_power[1].planets_owned, test_power[1].planets_owned);
-  test::expect_eq(loaded_power[1].sectors_owned, test_power[1].sectors_owned);
   test::expect_eq(loaded_power[1].money, test_power[1].money);
-  test::expect_eq(loaded_power[1].sum_mob, test_power[1].sum_mob);
-  test::expect_eq(loaded_power[1].sum_eff, test_power[1].sum_eff);
 
   std::println(std::cout, "All power JSON serialization tests passed!");
   return 0;

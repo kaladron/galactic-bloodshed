@@ -26,10 +26,8 @@ void test_toggle_database_persistence() {
   race.governor[0].toggle.double_digits = false;
   race.governor[0].toggle.geography = false;
   race.governor[0].toggle.autoload = false;
-  race.governor[0].toggle.color = false;
   race.governor[0].toggle.compat = false;
   race.governor[0].toggle.invisible = false;
-  race.monitor = false;
 
   JsonStore store(ctx.db);
   RaceRepository races(store);
@@ -52,7 +50,6 @@ void test_toggle_database_persistence() {
     test::expect_contains(out_str, "double_digits");
     test::expect_contains(out_str, "geography");
     test::expect_contains(out_str, "autoload");
-    test::expect_contains(out_str, "color");
     test::expect_contains(out_str, "compatibility");
     test::expect_contains(out_str, "VISIBLE");
     std::println(std::cout, "    ✓ Output displays all toggles");
@@ -140,19 +137,6 @@ void test_toggle_database_persistence() {
     g.out.str("");
   }
 
-  // TEST 7: Toggle color setting
-  std::println(std::cout, "  Testing: Toggle color setting");
-  {
-    ctx.assert_dispatch_success(g, {"toggle", "color"});
-
-    // Verify database
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->governor[0].toggle.color);
-    std::println(std::cout, "    ✓ Database: color = true");
-    g.out.str("");
-  }
-
   // TEST 8: Toggle compatibility setting
   std::println(std::cout, "  Testing: Toggle compatibility setting");
   {
@@ -176,25 +160,6 @@ void test_toggle_database_persistence() {
     test::expect_true(saved.has_value());
     test::expect_true(saved->governor[0].toggle.invisible);
     std::println(std::cout, "    ✓ Database: invisible = true");
-    g.out.str("");
-  }
-
-  // TEST 10: Toggle monitor setting (God only)
-  std::println(std::cout, "  Testing: Toggle monitor setting (God mode)");
-  {
-    // First set race as God
-    ctx.em.mutate_race(1, [](Race& r) { r.God = 1; });
-
-    // Update g.race pointer
-    g.race = ctx.em.peek_race(1);
-
-    ctx.assert_dispatch_success(g, {"toggle", "monitor"});
-
-    // Verify database
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->monitor);
-    std::println(std::cout, "    ✓ Database: monitor = true (God mode)");
     g.out.str("");
   }
 

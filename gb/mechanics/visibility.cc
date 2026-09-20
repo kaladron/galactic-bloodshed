@@ -32,7 +32,7 @@ char format_troop_sector_char(player_t playernum, const Race& r,
 
 std::optional<char> format_owned_sector_digit(const Race::gov& gov,
                                               const Sector& s) {
-  if (s.get_owner() == 0 || gov.toggle.geography || gov.toggle.color) {
+  if (s.get_owner() == 0 || gov.toggle.geography) {
     return std::nullopt;
   }
   if (gov.toggle.inverse && s.get_owner() == gov.toggle.highlight) {
@@ -80,11 +80,6 @@ void output_map_sector_cell(GameObj& g, player_t playernum, governor_t governor,
   const char display_char = (ship_char != '\0' && has_visual_iq)
                                 ? ship_char
                                 : desshow(playernum, governor, race, sector);
-  if (toggle.color) {
-    g.out << std::format("{}{}", encode_map_protocol_owner(sector),
-                         display_char);
-    return;
-  }
   const char highlight_prefix =
       (sector.get_owner() == toggle.highlight && toggle.inverse) ? '1' : '0';
   g.out << std::format("{}{}{}", highlight_prefix,

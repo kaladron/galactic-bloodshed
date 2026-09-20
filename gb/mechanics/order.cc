@@ -309,9 +309,9 @@ void order_retaliate(GameObj& g, const command_t& argv, Ship& ship) {
     return;
   }
   if (argv[3] == "off") {
-    ship.protect().self = false;
+    ship.protect().retaliate = false;
   } else if (argv[3] == "on") {
-    ship.protect().self = true;
+    ship.protect().retaliate = true;
   }
 }
 
@@ -757,7 +757,7 @@ std::string format_combat_options(const Ship& ship) {
                        (ship.hyper_drive().is_ready() ? "ready" : "charging"),
                        ship.hyper_drive().charge);
   }
-  if (ship.protect().self) out += "/retal";
+  if (ship.protect().retaliate) out += "/retal";
   out += format_active_battery_option(ship);
   if (ship.fire_laser()) out += std::format("/laser {}", ship.fire_laser());
   if (ship.focus()) out += "/focus";

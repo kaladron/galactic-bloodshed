@@ -177,8 +177,7 @@ bool governors(const command_t& argv, GameObj& g) {
         return;
       }
       race.governor[gov.value].active = true;
-      race.governor[gov.value].homelevel = race.governor[gov.value].deflevel =
-          race.governor[0].deflevel;
+      race.governor[gov.value].deflevel = race.governor[0].deflevel;
       race.governor[gov.value].homesystem = race.governor[gov.value].defsystem =
           race.governor[0].defsystem;
       race.governor[gov.value].homeplanetnum =

@@ -323,7 +323,7 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
     auto_ship->mind() = bers_mind;
   }
-  s2.protect() = ProtectData{.planet = true, .self = true};
+  s2.protect() = ProtectData{.planet = true, .retaliate = true};
   s2.hyper_drive() = HyperDriveData{
       .charge = HYPER_DRIVE_READY_CHARGE, .on = true, .has = true};
   s2.storbits() = planet.star_id();

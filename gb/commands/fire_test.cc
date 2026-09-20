@@ -306,7 +306,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
       g, {"fire", std::format("#{}", afv_id.value), "#2"});
   test::expect_contains(g.out.str(), "You are not adjacent to your target!");
 
-  // 5. Target self-retaliation (protect().self) and laser fire clamping
+  // 5. Target self-retaliation (protect().retaliate) and laser fire clamping
   g.set_level(ScopeLevel::LEVEL_STAR);
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.laser() = true;
@@ -317,7 +317,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
     s.launch_to_orbit(ScopeLevel::LEVEL_STAR);
     s.set_primary_battery(5, guntype_t::LIGHT);
     s.destruct() = 50;
-    s.protect().self = true;
+    s.protect().retaliate = true;
   });
   ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "999"}, 1);
   test::expect_contains(g.out.str(), "Laser strength set to");

@@ -2392,13 +2392,9 @@ void test_recalculate_census() {
 
   test::expect_eq(stats.Power[player_t{1}].popn, 300);
   test::expect_eq(stats.Power[player_t{1}].troops, 50);
-  test::expect_eq(stats.Power[player_t{1}].sum_eff, 170);
-  test::expect_eq(stats.Power[player_t{1}].sum_mob, 110);
 
   test::expect_eq(stats.Power[player_t{2}].popn, 300);
   test::expect_eq(stats.Power[player_t{2}].troops, 40);
-  test::expect_eq(stats.Power[player_t{2}].sum_eff, 70);
-  test::expect_eq(stats.Power[player_t{2}].sum_mob, 40);
 
   test::expect_eq(stats.starpopns[star.star_id().value][player_t{1}], 300);
   test::expect_eq(stats.starpopns[star.star_id().value][player_t{2}], 300);
@@ -2491,11 +2487,9 @@ void test_process_planet_economy() {
   test::expect_eq(stats.Power[player_t{1}].resource, 115);
   test::expect_eq(stats.Power[player_t{1}].fuel, 75);
   test::expect_eq(stats.Power[player_t{1}].destruct, 30);
-  test::expect_eq(stats.Power[player_t{1}].sectors_owned, 2);
   test::expect_eq(stats.Power[player_t{1}].planets_owned, 1);
 
   // Player 2 with 0 sectors owned has 0 power accumulation
-  test::expect_eq(stats.Power[player_t{2}].sectors_owned, 0);
   test::expect_eq(stats.Power[player_t{2}].planets_owned, 0);
 }
 

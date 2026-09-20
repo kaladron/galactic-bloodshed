@@ -248,7 +248,7 @@ public:
    * suffixes for readability.
    */
   template <typename T>
-    requires std::is_arithmetic_v<T>
+    requires(std::is_arithmetic_v<T> || std::convertible_to<T, int>)
   [[nodiscard]] std::string estimate(const T data,
                                      const player_t target) const {
     if (translate[target] > 10) {
@@ -268,7 +268,7 @@ public:
   }
 
   template <typename T>
-    requires std::is_arithmetic_v<T>
+    requires(std::is_arithmetic_v<T> || std::convertible_to<T, int>)
   [[nodiscard]] std::string estimate(const T data, const Race& target) const {
     return estimate(data, target.Playernum);
   }

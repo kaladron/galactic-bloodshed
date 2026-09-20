@@ -408,20 +408,38 @@ int main() {
     test::expect_eq(anarchic_race.governor[0].money, 500);
   }
 
-  // Test 16: plinfo::update_combat_readiness
+  // Test 16: plinfo::update_combat_readiness & Percentage clamping
   {
     plinfo info{};
-    info.numsectsowned = 4;
+    info.numsectsowned = 25;
 
-    info.update_combat_readiness(2000);  // 2000 mob points across 4 sectors
+    info.update_combat_readiness(2000);  // 2000 mob points across 25 sectors
     test::expect_eq(info.mob_points, 2000);
-    test::expect_eq(info.comread, 500U);  // 2000 / 4
-    test::expect_eq(info.guns, 2U);       // 2000 / 1000
+    test::expect_eq(info.comread, 80U);  // 2000 / 25
+    test::expect_eq(info.guns, 2U);      // 2000 / 1000
+
+    // Out-of-bounds average (> 100% per sector) clamps comread to 100%
+    info.numsectsowned = 4;
+    info.update_combat_readiness(2000);
+    test::expect_eq(info.comread, 100U);
+    test::expect_eq(info.guns, 2U);
 
     info.numsectsowned = 0;
     info.update_combat_readiness(0);
     test::expect_eq(info.comread, 0U);
     test::expect_eq(info.guns, 0U);
+
+    // Percentage domain methods & clamping
+    Percentage p{25};
+    test::expect_eq(p.value(), 25);
+    test::expect_eq(p.as_fraction(), 0.25);
+    test::expect_eq(p.complement(), 75);
+    p.adjust(90);
+    test::expect_eq(p, 100);
+    p.adjust(-120);
+    test::expect_eq(p, 0);
+    test::expect_eq(Percentage{-15}, 0);
+    test::expect_eq(Percentage{175}, 100);
   }
 
   // Test 17: Stockpile value type & plinfo atomic operations

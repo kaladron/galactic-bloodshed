@@ -160,8 +160,26 @@ public:
   // DEFAULT CONSTRUCTOR (Trivial default constructible)
   constexpr Bounded() = default;
 
+  template <typename U>
+    requires(std::integral<U> || std::floating_point<U>)
+  static constexpr T clamp_value(U v) noexcept {
+    if constexpr ((std::signed_integral<U> || std::floating_point<U>) &&
+                  std::unsigned_integral<T>) {
+      if (v <= static_cast<U>(Min)) return Min;
+      if (v >= static_cast<U>(Max)) return Max;
+      return static_cast<T>(v);
+    } else {
+      return std::clamp(static_cast<T>(v), Min, Max);
+    }
+  }
+
   // VALUE CONSTRUCTORS
   constexpr explicit Bounded(T v) noexcept : value(std::clamp(v, Min, Max)) {}
+
+  template <typename U>
+    requires((std::integral<U> || std::floating_point<U>) &&
+             !std::same_as<U, T>)
+  constexpr explicit Bounded(U v) noexcept : value(clamp_value(v)) {}
 
   // CONVERSIONS & ACCESSORS
   [[nodiscard]] constexpr T get() const noexcept {

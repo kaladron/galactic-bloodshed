@@ -43,9 +43,9 @@ constexpr char get_sector_char(T) = delete;
 // POD struct containing all Sector data fields
 export struct sector_struct {
   Coordinates coords;
-  unsigned int eff{0};          /* efficiency (0-100) */
-  unsigned int fert{0};         /* max popn is proportional to this */
-  unsigned int mobilization{0}; /* percent popn is mobilized for war */
+  Percentage eff{0};          /* efficiency (0-100) */
+  Percentage fert{0};         /* max popn is proportional to this */
+  Percentage mobilization{0}; /* percent popn is mobilized for war */
   unsigned int crystals{0};
   resource_t resource{0};
 
@@ -69,11 +69,10 @@ public:
   // Constructor from sector_struct (for new pattern)
   explicit Sector(const sector_struct& s) : data_(s) {}
 
-  Sector(Coordinates coords_, unsigned int eff_, unsigned int fert_,
-         unsigned int mobilization_, unsigned int crystals_,
-         resource_t resource_, population_t popn_, population_t troops_,
-         player_t owner_, player_t race_, SectorType type_,
-         SectorType condition_)
+  Sector(Coordinates coords_, Percentage eff_, Percentage fert_,
+         Percentage mobilization_, unsigned int crystals_, resource_t resource_,
+         population_t popn_, population_t troops_, player_t owner_,
+         player_t race_, SectorType type_, SectorType condition_)
       : data_{coords_, eff_,    fert_,  mobilization_, crystals_, resource_,
               popn_,   troops_, owner_, race_,         type_,     condition_} {}
 
@@ -100,13 +99,13 @@ public:
   [[nodiscard]] Coordinates coords() const noexcept {
     return data_.coords;
   }
-  [[nodiscard]] unsigned int get_eff() const noexcept {
+  [[nodiscard]] Percentage get_eff() const noexcept {
     return data_.eff;
   }
-  [[nodiscard]] unsigned int get_fert() const noexcept {
+  [[nodiscard]] Percentage get_fert() const noexcept {
     return data_.fert;
   }
-  [[nodiscard]] unsigned int get_mobilization() const noexcept {
+  [[nodiscard]] Percentage get_mobilization() const noexcept {
     return data_.mobilization;
   }
   [[nodiscard]] unsigned int get_crystals() const noexcept {
@@ -155,9 +154,7 @@ public:
   void set_coords(Coordinates val) noexcept {
     data_.coords = val;
   }
-  void set_fert(unsigned int val) noexcept {
-    data_.fert = val;
-  }
+  void set_fert(int val) noexcept;
   void set_crystals(unsigned int val) noexcept {
     data_.crystals = val;
   }
@@ -199,8 +196,8 @@ public:
   /// Mobilization operations with bounds (0-100)
   void adjust_mobilization(int delta) noexcept;
   void set_mobilization_bounded(int val) noexcept;
-  void set_mobilization(unsigned int val) noexcept {
-    data_.mobilization = val;
+  void set_mobilization(int val) noexcept {
+    set_mobilization_bounded(val);
   }
 
   /// Troops operations with invariant protection

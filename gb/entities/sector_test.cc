@@ -149,7 +149,12 @@ void test_sector_invariants() {
   test::expect_eq(s1.get_popn(), 0);
   test::expect_eq(s2.get_popn(), 700);
 
-  // Efficiency bounds (0-100)
+  // Efficiency & Fertility bounds (0-100)
+  s1.set_fert(150);
+  test::expect_eq(s1.get_fert(), 100);
+  s1.set_fert(-20);
+  test::expect_eq(s1.get_fert(), 0);
+
   s1.set_efficiency_bounded(150);
   test::expect_eq(s1.get_eff(), 100);
   s1.set_efficiency_bounded(-20);

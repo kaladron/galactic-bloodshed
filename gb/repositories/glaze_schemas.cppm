@@ -54,6 +54,26 @@ struct to<JSON, Bounded<Tag, T, Min, Max>> {
   }
 };
 
+template <>
+struct from<JSON, Percentage> {
+  template <auto Opts>
+  static void op(Percentage& p, is_context auto&& ctx, auto&& it, auto&& end) {
+    int val{};
+    parse<JSON>::op<Opts>(val, ctx, it, end);
+    p = Percentage{val};
+  }
+};
+
+template <>
+struct to<JSON, Percentage> {
+  template <auto Opts>
+  static void op(const Percentage& p, is_context auto&& ctx, auto&& buf,
+                 auto&& ix) noexcept {
+    const int val = p.value();
+    serialize<JSON>::op<Opts>(val, ctx, buf, ix);
+  }
+};
+
 template <FixedString Tag, typename T, T Modulus>
 struct from<JSON, Modular<Tag, T, Modulus>> {
   template <auto Opts>

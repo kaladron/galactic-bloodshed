@@ -76,7 +76,7 @@ bool repair(const command_t& argv, GameObj& g) {
                   if (s.is_wasted() &&
                       (s.get_owner() == Playernum || !s.is_owned())) {
                     s.set_condition(s.get_type());
-                    s.set_fert(std::min(100U, s.get_fert() + 20));
+                    s.set_fert(std::min(100, s.get_fert() + 20));
                     p.info(Playernum).resource -= SECTOR_REPAIR_COST;
                     cost += SECTOR_REPAIR_COST;
                     sectors += 1;

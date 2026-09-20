@@ -133,16 +133,16 @@ export struct plinfo {      // planetary stockpiles
   money_t tech_invest = 0;
   std::uint32_t numsectsowned = 0;
 
-  std::uint32_t comread = 0;  // combat readiness (mobilization)
-  std::uint32_t mob_set = 0;  // mobilization target
-  std::optional<std::uint32_t> tox_thresh =
+  Percentage comread{0};  // combat readiness (mobilization)
+  Percentage mob_set{0};  // mobilization target
+  std::optional<Percentage> tox_thresh =
       std::nullopt;  // min to build a waste can
 
   bool explored = false;
   std::uint32_t autorep = 0;
-  std::uint32_t tax = 0;     // tax rate
-  std::uint32_t newtax = 0;  // new tax rate (after update)
-  std::uint32_t guns = 0;    // number of planet guns (mob/5)
+  Percentage tax{0};       // tax rate
+  Percentage newtax{0};    // new tax rate (after update)
+  std::uint32_t guns = 0;  // number of planet guns (mob/5)
 
   /* merchant shipping parameters */
   std::array<plroute, MAX_ROUTES> route{};
@@ -434,6 +434,10 @@ public:
   /// \brief Marks this planet as explored by the given player.
   constexpr void mark_explored_by(player_t player) noexcept {
     data_.info[player].explored = true;
+  }
+
+  [[nodiscard]] Percentage toxicity() const noexcept {
+    return Percentage{data_.conditions[TOXIC]};
   }
 
   [[nodiscard]] int conditions(Conditions cond) const {

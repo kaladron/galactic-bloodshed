@@ -161,7 +161,7 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
 
   const int adjust =
       round_rand(10.0 * ship.hull_efficiency() * ship.crew_ratio());
-  s.set_fert(std::min(100U, s.get_fert() + adjust));
+  s.set_fert(std::min(100, s.get_fert() + adjust));
   if (s.get_fert() >= 100) {
     push_telegram(entity_manager, ship.owner(), ship.governor(),
                   std::format(" K{} is full of zealots!!!", ship.number()));

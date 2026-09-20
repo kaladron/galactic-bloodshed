@@ -66,13 +66,12 @@ int main() {
     // Construction clamping
     bounded_damage_t d_normal{50};
     bounded_damage_t d_underflow{0};
-    bounded_damage_t d_negative{static_cast<std::uint32_t>(
-        -10)};  // large unsigned wraps down to max or up from min
+    bounded_damage_t d_negative{-10};
     bounded_damage_t d_overflow{150};
 
     test::expect_eq(d_normal.value, 50u);
     test::expect_eq(d_underflow.value, 0u);
-    test::expect_eq(d_negative.value, 100u);
+    test::expect_eq(d_negative.value, 0u);
     test::expect_eq(d_overflow.value, 100u);
     test::expect_eq(bounded_damage_t::min(), 0u);
     test::expect_eq(bounded_damage_t::max(), 100u);

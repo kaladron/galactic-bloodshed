@@ -110,24 +110,11 @@ void Sector::subtract_troops(population_t amount) noexcept {
 }
 
 void Sector::adjust_mobilization(int delta) noexcept {
-  if (delta > 0) {
-    int new_mob = static_cast<int>(data_.mobilization) + delta;
-    data_.mobilization =
-        std::min(100U, static_cast<unsigned int>(std::max(0, new_mob)));
-  } else if (delta < 0) {
-    auto udelta = static_cast<unsigned int>(-delta);
-    data_.mobilization =
-        (data_.mobilization > udelta) ? data_.mobilization - udelta : 0;
-  }
+  data_.mobilization.adjust(delta);
 }
 
 void Sector::set_mobilization_bounded(int val) noexcept {
-  if (val < 0 || val > 100) {
-    log_invariant_violation(
-        "Sector", "mobilization", std::format("{}", val),
-        std::format("clamped to {}", std::clamp(val, 0, 100)));
-  }
-  data_.mobilization = std::clamp(val, 0, 100);
+  data_.mobilization = Percentage{val};
 }
 
 // Resource operation implementations
@@ -164,14 +151,13 @@ resource_t Sector::deplete_resource(resource_t amount) noexcept {
   return actual;
 }
 
-// Efficiency operation implementations (0-100 bounds)
+// Efficiency and fertility operation implementations (0-100 bounds)
+void Sector::set_fert(int val) noexcept {
+  data_.fert = Percentage{val};
+}
+
 void Sector::set_efficiency_bounded(int eff) noexcept {
-  if (eff < 0 || eff > 100) {
-    log_invariant_violation(
-        "Sector", "eff", std::format("{}", eff),
-        std::format("clamped to {}", std::clamp(eff, 0, 100)));
-  }
-  data_.eff = std::clamp(eff, 0, 100);
+  data_.eff = Percentage{eff};
 }
 
 void Sector::improve_efficiency(int delta) noexcept {
@@ -185,15 +171,7 @@ void Sector::improve_efficiency(int delta) noexcept {
     return;
   }
 
-  int new_eff = static_cast<int>(data_.eff) + delta;
-  if (new_eff > 100) {
-    log_invariant_violation("Sector", "eff",
-                            std::format("{} + {}", data_.eff, delta),
-                            "saturated to 100");
-    data_.eff = 100;
-  } else {
-    data_.eff = new_eff;
-  }
+  data_.eff.adjust(delta);
 }
 
 void Sector::degrade_efficiency(int delta) noexcept {
@@ -209,19 +187,15 @@ void Sector::degrade_efficiency(int delta) noexcept {
 
   // Normal operation: degrade by delta, clamping to zero
   // Don't log if delta exceeds current eff - this is expected in combat
-  if (delta > static_cast<int>(data_.eff)) {
-    data_.eff = 0;
-  } else {
-    data_.eff -= delta;
-  }
+  data_.eff.adjust(-delta);
 }
 
 namespace {
 // Supernova stellar radiation and environmental constants
 constexpr resource_t nova_resource_deposit = 1;
-constexpr unsigned int fertility_loss_percent = 20;  // 20% fertility loss
-constexpr int terminal_nova_stage = 14;              // Final stellar explosion
-constexpr double radiation_casualty_rate = 0.50;     // ~50% casualties per turn
+constexpr Percentage fertility_loss_percent{20};   // 20% fertility loss
+constexpr int terminal_nova_stage = 14;            // Final stellar explosion
+constexpr Percentage radiation_casualty_rate{50};  // ~50% casualties per turn
 }  // namespace
 
 void Sector::apply_supernova(int stage) noexcept {
@@ -231,7 +205,7 @@ void Sector::apply_supernova(int stage) noexcept {
 
   // Intense thermal and ionizing radiation degrades planetary agricultural
   // fertility.
-  data_.fert -= (data_.fert * fertility_loss_percent) / 100;
+  data_.fert -= (data_.fert.value() * fertility_loss_percent.value()) / 100;
 
   // Stage 14 represents the terminal stellar explosion, completely incinerating
   // all life.
@@ -242,8 +216,8 @@ void Sector::apply_supernova(int stage) noexcept {
   } else {
     // Active nova radiation: kills approximately 50% of the living population
     // per turn.
-    auto deaths =
-        round_rand(static_cast<double>(data_.popn) * radiation_casualty_rate);
+    auto deaths = round_rand(static_cast<double>(data_.popn) *
+                             radiation_casualty_rate.as_fraction());
     subtract_popn(deaths);
   }
 
@@ -251,10 +225,10 @@ void Sector::apply_supernova(int stage) noexcept {
 }
 
 void Sector::recover_fertility(const Race& race) noexcept {
-  if (!is_wasted() && race.fertilize > 0 && data_.fert < 100) {
-    data_.fert += (int_rand(0, 100) < static_cast<int>(race.fertilize));
+  if (!is_wasted() && race.fertilize > 0 && data_.fert < 100 &&
+      int_rand(0, 100) < race.fertilize) {
+    ++data_.fert;
   }
-  data_.fert = std::min(data_.fert, 100U);
 
   if (is_wasted() && success(NATURAL_REPAIR)) {
     data_.condition = data_.type;

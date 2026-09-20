@@ -462,7 +462,169 @@ export constexpr std::array all_gas_conditions = {
     Conditions::HELIUM,   Conditions::OTHER,
 };
 
-/// Named values indexed by Conditions.
+// Diagnostic logging for invariant violations
+export constexpr bool DEBUG_INVARIANTS = true;
+
+export template <typename T, typename U>
+void log_invariant_violation(
+    std::string_view entity, std::string_view field, T attempted, U clamped_to,
+    std::source_location loc = std::source_location::current()) {
+  if constexpr (DEBUG_INVARIANTS) {
+    std::print(std::cerr,
+               "[INVARIANT] {}::{}: attempted {}, clamped to {} (at {}:{})\n",
+               entity, field, attempted, clamped_to, loc.file_name(),
+               loc.line());
+  }
+}
+
+/// \brief Strongly-typed integer percentage in `[0, 100]`.
+///
+/// Logs an invariant violation via `log_invariant_violation` and clamps to
+/// `[0, 100]` if constructed or assigned with a value outside `[0, 100]`.
+/// Meaningless binary arithmetic between two `Percentage` instances
+/// (`Percentage + Percentage`, `Percentage * Percentage`, etc.) is deleted,
+/// while conversions and comparisons with primitive integers/floats preserve
+/// exact game formulas.
+export class Percentage {
+public:
+  constexpr Percentage() noexcept = default;
+
+  template <std::integral T>
+  constexpr Percentage(T v, std::source_location loc =
+                                std::source_location::current()) noexcept {
+    if constexpr (std::signed_integral<T>) {
+      const int clamped = static_cast<int>(std::clamp<T>(v, 0, 100));
+      if !consteval {
+        if (v < 0 || v > 100) {
+          log_invariant_violation("Percentage", "value", v, clamped, loc);
+        }
+      }
+      value_ = clamped;
+    } else {
+      const int clamped = static_cast<int>(std::min<T>(v, 100));
+      if !consteval {
+        if (v > 100) {
+          log_invariant_violation("Percentage", "value", v, clamped, loc);
+        }
+      }
+      value_ = clamped;
+    }
+  }
+
+  template <std::floating_point T>
+  explicit constexpr Percentage(
+      T v,
+      std::source_location loc = std::source_location::current()) noexcept {
+    const int rounded = static_cast<int>(std::round(v));
+    const int clamped = std::clamp(rounded, 0, 100);
+    if !consteval {
+      if (rounded < 0 || rounded > 100) {
+        log_invariant_violation("Percentage", "value", v, clamped, loc);
+      }
+    }
+    value_ = clamped;
+  }
+
+  [[nodiscard]] constexpr int value() const noexcept {
+    return value_;
+  }
+
+  [[nodiscard]] constexpr operator int() const noexcept {
+    return value_;
+  }
+
+  /// \brief Returns the percentage as a unit fraction in `[0.0, 1.0]`.
+  [[nodiscard]] constexpr double as_fraction() const noexcept {
+    return static_cast<double>(value_) / 100.0;
+  }
+
+  /// \brief Returns the complementary percentage `100 - value()`.
+  [[nodiscard]] constexpr Percentage complement() const noexcept {
+    return Percentage{100 - value_};
+  }
+
+  /// \brief Adjusts the percentage by a signed delta, saturating smoothly at
+  /// `[0, 100]` without logging an invariant violation.
+  constexpr Percentage& adjust(int delta) noexcept {
+    value_ = std::clamp(value_ + delta, 0, 100);
+    return *this;
+  }
+
+  constexpr Percentage& operator+=(int delta) noexcept {
+    return adjust(delta);
+  }
+
+  constexpr Percentage& operator-=(int delta) noexcept {
+    return adjust(-delta);
+  }
+
+  constexpr Percentage& operator++() noexcept {
+    return adjust(1);
+  }
+  constexpr Percentage operator++(int) noexcept {
+    Percentage tmp = *this;
+    adjust(1);
+    return tmp;
+  }
+  constexpr Percentage& operator--() noexcept {
+    return adjust(-1);
+  }
+  constexpr Percentage operator--(int) noexcept {
+    Percentage tmp = *this;
+    adjust(-1);
+    return tmp;
+  }
+
+  template <std::same_as<Percentage> P1, std::same_as<Percentage> P2>
+  friend constexpr void operator+(P1, P2) = delete;
+  template <std::same_as<Percentage> P1, std::same_as<Percentage> P2>
+  friend constexpr void operator-(P1, P2) = delete;
+  template <std::same_as<Percentage> P1, std::same_as<Percentage> P2>
+  friend constexpr void operator*(P1, P2) = delete;
+  template <std::same_as<Percentage> P1, std::same_as<Percentage> P2>
+  friend constexpr void operator/(P1, P2) = delete;
+
+  [[nodiscard]] friend constexpr bool operator==(Percentage lhs,
+                                                 Percentage rhs) noexcept {
+    return lhs.value_ == rhs.value_;
+  }
+  [[nodiscard]] friend constexpr auto operator<=>(Percentage lhs,
+                                                  Percentage rhs) noexcept {
+    return lhs.value_ <=> rhs.value_;
+  }
+
+  template <typename T>
+    requires(std::integral<T> || std::floating_point<T>)
+  [[nodiscard]] friend constexpr bool operator==(Percentage lhs,
+                                                 T rhs) noexcept {
+    return static_cast<T>(lhs.value_) == rhs;
+  }
+  template <typename T>
+    requires(std::integral<T> || std::floating_point<T>)
+  [[nodiscard]] friend constexpr auto operator<=>(Percentage lhs,
+                                                  T rhs) noexcept {
+    return static_cast<T>(lhs.value_) <=> rhs;
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, Percentage p) {
+    return os << p.value_;
+  }
+
+private:
+  int value_{0};
+};
+
+export using percent_t = Percentage;
+export using fertilize_t = Percentage;
+
+export template <>
+struct std::formatter<Percentage, char> : std::formatter<int, char> {
+  auto format(Percentage p, auto& ctx) const {
+    return std::formatter<int, char>::format(p.value(), ctx);
+  }
+};
+
+/// Type-safe planetary/racial environmental conditions indexed by `Conditions`.
 export template <typename T = int>
 struct ConditionValues {
   T rtemp{};
@@ -1414,19 +1576,4 @@ get4args(std::string_view s) {
   }
 
   return std::make_pair(Coordinates{xl, yl}, Coordinates{xh, yh});
-}
-
-// Diagnostic logging for invariant violations
-export constexpr bool DEBUG_INVARIANTS = true;
-
-export template <typename T, typename U>
-void log_invariant_violation(
-    std::string_view entity, std::string_view field, T attempted, U clamped_to,
-    std::source_location loc = std::source_location::current()) {
-  if constexpr (DEBUG_INVARIANTS) {
-    std::print(std::cerr,
-               "[INVARIANT] {}::{}: attempted {}, clamped to {} (at {}:{})\n",
-               entity, field, attempted, clamped_to, loc.file_name(),
-               loc.line());
-  }
 }

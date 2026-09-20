@@ -269,7 +269,6 @@ void test_entity_manager_singleton_universe() {
   universe_struct univ{};
   univ.id = 1;
   univ.numstars = 50;
-  univ.ships = 200;
   JsonStore store(db);
   UniverseRepository univ_repo(store);
   univ_repo.save(univ);
@@ -425,10 +424,6 @@ void test_entity_manager_kill_ship() {
 
   universe_struct univ_data{};
   univ_data.id = 1;
-  for (auto& idx : univ_data.VN_index1)
-    idx = -1;
-  for (auto& idx : univ_data.VN_index2)
-    idx = -1;
   univ_data.VN_hitlist[player_t{1}] = 5;
   UniverseRepository univ_repo(store);
   univ_repo.save(univ_data);
@@ -437,7 +432,7 @@ void test_entity_manager_kill_ship() {
   std::println(std::cout, "  ✓ VN ship killed without errors");
 
   em.with_universe([&](const universe_struct& univ) {
-    test::expect_eq(univ.VN_index1[player_t{2}], 5);
+    test::expect_eq(univ.VN_index1[player_t{2}], starnum_t{5});
   });
   std::println(std::cout,
                "  ✓ VN tracking (VN_hitlist and VN_index) updated correctly");
@@ -469,6 +464,7 @@ void test_entity_manager_kill_ship_gov_ship() {
   Race victim{};
   victim.Playernum = 1;
   victim.name = "Victim";
+  victim.Gov_ship = shipnum_t{100};
   Race killer{};
   killer.Playernum = 2;
   killer.name = "Killer";
@@ -492,7 +488,8 @@ void test_entity_manager_kill_ship_gov_ship() {
   em.kill_ship(2, ship);
   std::println(std::cout, "  ✓ Government ship killed");
 
-  em.with_race(1, [](const Race& v) { test::expect_eq(v.Gov_ship, 0); });
+  em.with_race(
+      1, [](const Race& v) { test::expect_eq(v.Gov_ship, std::nullopt); });
   std::println(std::cout,
                "  ✓ Gov_ship field cleared when government ship is killed");
 }

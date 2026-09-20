@@ -17,7 +17,7 @@ namespace GB::commands {
 bool tax(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
 
-  if (g.race->Gov_ship == 0) {
+  if (!g.race->has_government_center()) {
     g.out << "You have no government center active.\n";
     return false;
   }

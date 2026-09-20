@@ -186,12 +186,19 @@ int main() {
     test::expect_true(bers->hyper_drive().on);
     test::expect_eq(bers->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
 
-    // Test hitlist target routing
+    // Test hitlist target routing when only one destruction site is recorded
+    // (VN_index1 set, VN_index2 == std::nullopt)
+    em.mutate_universe([](universe_struct& u) {
+      u.VN_index1[player_t{3}] = starnum_t{3};
+      u.VN_index2[player_t{3}] = std::nullopt;
+    });
     stats.VN_brain.most_mad = player_t{3};
-    select_berserker_destination(em, *bers, stats);
-    test::expect_eq(bers->deststar(), starnum_t{3});
-    test::expect_eq(bers->destpnum(), planetnum_t{0});
-    test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
+    for (int i = 0; i < 10; ++i) {
+      select_berserker_destination(em, *bers, stats);
+      test::expect_eq(bers->deststar(), starnum_t{3});
+      test::expect_eq(bers->destpnum(), planetnum_t{0});
+      test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
+    }
 
     std::println(std::cout, "  ✓ select_berserker_destination targets hitlist");
   }
@@ -420,7 +427,7 @@ int main() {
         .generation = 2,
         .busy = true,
         .tampered = false,
-        .who_killed = player_t{0},
+        .who_killed = std::nullopt,
     };
     auto parent_ship = ShipFactory::create(vn_data);
     auto* parent = parent_ship->as<VonNeumannShip>();
@@ -472,11 +479,11 @@ int main() {
     vn_data.fuel = 40.0;
     vn_data.special = MindData{
         .progenitor = player_t{1},
-        .target = player_t{0},
+        .target = std::nullopt,
         .generation = 2,
         .busy = true,
         .tampered = false,
-        .who_killed = player_t{0},
+        .who_killed = std::nullopt,
     };
     auto parent_ship = ShipFactory::create(vn_data);
     auto* parent = parent_ship->as<VonNeumannShip>();
@@ -582,11 +589,11 @@ int main() {
     vn_data.fuel = 50.0;  // Partial fuel
     vn_data.special = MindData{
         .progenitor = player_t{1},
-        .target = player_t{0},
+        .target = std::nullopt,
         .generation = 1,
         .busy = true,
         .tampered = false,
-        .who_killed = player_t{0},
+        .who_killed = std::nullopt,
     };
     auto vn_ship = ShipFactory::create(vn_data);
     auto* vn = vn_ship->as<VonNeumannShip>();
@@ -645,11 +652,11 @@ int main() {
     vn_data.dock_state = DockState::Spaceborne;
     vn_data.special = MindData{
         .progenitor = player_t{1},
-        .target = player_t{0},
+        .target = std::nullopt,
         .generation = 1,
         .busy = true,
         .tampered = false,
-        .who_killed = player_t{0},
+        .who_killed = std::nullopt,
     };
     auto vn_ship = ShipFactory::create(vn_data);
     auto* vn = vn_ship->as<VonNeumannShip>();

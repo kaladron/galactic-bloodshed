@@ -81,9 +81,12 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
 
   // Route toward the offending player if valid, flipping a coin between
   // primary and secondary target stars recorded in the universe index.
-  if (is_valid_player(target)) {
-    ship.deststar() =
-        bool_rand() ? universe.VN_index1[target] : universe.VN_index2[target];
+  if (target && is_valid_player(*target)) {
+    const auto primary = universe.VN_index1[*target];
+    const auto secondary = universe.VN_index2[*target];
+    const auto chosen = bool_rand() ? (primary ? primary : secondary)
+                                    : (secondary ? secondary : primary);
+    ship.deststar() = chosen.value_or(int_rand(0, universe.numstars - 1));
   } else {
     ship.deststar() = int_rand(0, universe.numstars - 1);
   }

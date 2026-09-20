@@ -469,7 +469,7 @@ void test_compute_governed_status() {
 
   Race race = createTestRace(player_t{1});
   // Case 1: No Gov_ship
-  race.Gov_ship = 0;
+  race.Gov_ship = std::nullopt;
   test::expect_false(compute_governed_status(race, em));
 
   // Case 2: Ship exists but dead or undocked
@@ -643,12 +643,19 @@ void test_update_von_neumann_target() {
   universe_struct u{};
   u.id = 1;
   u.numstars = 1;
-  u.VN_hitlist[player_t{1}] = 10;
-  u.VN_hitlist[player_t{2}] = 25;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
+  // When no VN machines have been destroyed, most_mad remains std::nullopt
   TurnStats stats{};
+  update_von_neumann_target(em, stats);
+  test::expect_eq(stats.VN_brain.total_mad, 0);
+  test::expect_eq(stats.VN_brain.most_mad, std::nullopt);
+
+  em.mutate_universe([](universe_struct& univ) {
+    univ.VN_hitlist[player_t{1}] = 10;
+    univ.VN_hitlist[player_t{2}] = 25;
+  });
   update_von_neumann_target(em, stats);
 
   test::expect_eq(stats.VN_brain.total_mad, 35);

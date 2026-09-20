@@ -300,13 +300,6 @@ public:
     return data_.crystals;
   }
 
-  [[nodiscard]] player_t who_killed() const {
-    return data_.who_killed;
-  }
-  player_t& who_killed() {
-    return data_.who_killed;
-  }
-
   // Navigation
   [[nodiscard]] const NavigateData& navigate() const {
     return data_.navigate;
@@ -437,13 +430,6 @@ public:
   }
   weapon_power_t& retaliate() {
     return data_.retaliate;
-  }
-
-  [[nodiscard]] shipnum_t target() const {
-    return data_.target;
-  }
-  shipnum_t& target() {
-    return data_.target;
   }
 
   // Type and speed

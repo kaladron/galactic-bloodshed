@@ -364,12 +364,14 @@ export struct AimedAtData {
 
 /// Brain parameters for Von Neumann machines and Berserkers.
 export struct MindData {
-  player_t progenitor{0};       ///< Original race that created this strain
-  player_t target{0};           ///< Target player to destroy (for Berserkers)
+  player_t progenitor{0};  ///< Original race that created this strain
+  std::optional<player_t> target{
+      std::nullopt};            ///< Target player to destroy (for Berserkers)
   std::uint32_t generation{0};  ///< Reproduction generation counter
   bool busy{false};      ///< Whether machine is currently occupied with a task
   bool tampered{false};  ///< Whether machine brain was reprogrammed by an alien
-  player_t who_killed{0};  ///< Player who destroyed progenitor machine
+  std::optional<player_t> who_killed{
+      std::nullopt};  ///< Player who destroyed progenitor machine
 };
 
 export struct PodData {
@@ -426,11 +428,11 @@ default_special_data(ShipType type, player_t owner = 0) noexcept {
     case ShipType::OTYPE_VN:
     case ShipType::OTYPE_BERS:
       return MindData{.progenitor = owner,
-                      .target = 0,
+                      .target = std::nullopt,
                       .generation = 1,
                       .busy = true,
                       .tampered = false,
-                      .who_killed = 0};
+                      .who_killed = std::nullopt};
     case ShipType::STYPE_MIRROR:
     case ShipType::OTYPE_STELE:
     case ShipType::OTYPE_GTELE:
@@ -568,8 +570,6 @@ export struct ship_struct {
 
   mutable SpecialData special;  ///< Ship-type-specific payload / mode data
 
-  player_t who_killed{0};  ///< Player ID responsible for destroying the ship
-
   NavigateData navigate;  ///< Standing navigational heading orders
   ProtectData protect;    ///< Escort, defense, and evasion orders
 
@@ -593,7 +593,6 @@ export struct ship_struct {
   damage_t damage{0};           ///< Structural damage percentage (0-100)
   radiation_t rad{0};           ///< Radiation contamination level
   weapon_power_t retaliate{0};  ///< Salvo size / max power used in retaliation
-  shipnum_t target{0};          ///< Current tactical weapon target ship number
 
   ShipType type{ShipType::STYPE_POD};  ///< Operational ship type classification
   speed_t speed{0};                    ///< Current impulse speed throttle

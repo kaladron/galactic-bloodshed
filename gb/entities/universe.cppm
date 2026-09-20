@@ -16,13 +16,12 @@ import std;
 export struct universe_struct {
   int id{0};  // Universe ID for database persistence (always 1 for singleton)
   std::uint32_t numstars{0}; /* Total # of stars in universe */
-  shipnum_t ships{0};        /* Head of universe-wide ship list */
   PlayerVector<ap_t, MAXPLAYERS> AP;
   PlayerVector<std::uint32_t, MAXPLAYERS> VN_hitlist;
   /* # of ships destroyed by each player */
-  PlayerVector<int, MAXPLAYERS> VN_index1; /* negative value is used */
-  PlayerVector<int, MAXPLAYERS> VN_index2; /* VN's record of destroyed ships
-                                              systems where they bought it */
+  PlayerVector<std::optional<starnum_t>, MAXPLAYERS> VN_index1;
+  PlayerVector<std::optional<starnum_t>, MAXPLAYERS> VN_index2;
+  /* VN's record of destroyed ships systems where they bought it */
 };
 
 // Wrapper class for Universe data (like Star wraps star_struct)
@@ -39,13 +38,6 @@ public:
   }
   void set_numstars(std::uint32_t value) {
     data.numstars = value;
-  }
-
-  [[nodiscard]] shipnum_t ships() const {
-    return data.ships;
-  }
-  void set_ships(shipnum_t value) {
-    data.ships = value;
   }
 
   // Action Point (AP) methods
@@ -82,19 +74,19 @@ public:
     if (data.VN_hitlist[p] > 0) data.VN_hitlist[p]--;
   }
 
-  [[nodiscard]] int get_VN_index1(player_t p) const {
+  [[nodiscard]] std::optional<starnum_t> get_VN_index1(player_t p) const {
     return data.VN_index1[p];
   }
 
-  void set_VN_index1(player_t p, int value) {
+  void set_VN_index1(player_t p, std::optional<starnum_t> value) {
     data.VN_index1[p] = value;
   }
 
-  [[nodiscard]] int get_VN_index2(player_t p) const {
+  [[nodiscard]] std::optional<starnum_t> get_VN_index2(player_t p) const {
     return data.VN_index2[p];
   }
 
-  void set_VN_index2(player_t p, int value) {
+  void set_VN_index2(player_t p, std::optional<starnum_t> value) {
     data.VN_index2[p] = value;
   }
 

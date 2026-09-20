@@ -23,7 +23,7 @@ int main() {
   attacker_race.Guest = false;
   attacker_race.God = false;
   attacker_race.morale = 100;
-  attacker_race.Gov_ship = 0;
+  attacker_race.Gov_ship = std::nullopt;
 
   Race victim_race{};
   victim_race.Playernum = 2;
@@ -42,12 +42,6 @@ int main() {
   UniverseRepository universe_repo(store);
   universe_struct u{};
   u.id = 1;
-  for (auto& h : u.VN_hitlist)
-    h = 0;
-  for (auto& idx : u.VN_index1)
-    idx = -1;
-  for (auto& idx : u.VN_index2)
-    idx = -1;
   universe_repo.save(u);
 
   // Now EntityManager can access it
@@ -127,7 +121,7 @@ int main() {
     em.clear_cache();
     const auto* victim = em.peek_race(2);
     test::expect_ne(victim, nullptr);
-    test::expect_eq(victim->Gov_ship, 0);
+    test::expect_eq(victim->Gov_ship, std::nullopt);
     std::println(std::cout, "✓ Gov_ship cleared when government ship killed");
   }
 
@@ -171,8 +165,8 @@ int main() {
     const auto* universe_after = em.peek_universe();
     test::expect_ne(universe_after, nullptr);
     test::expect_gt(universe_after->VN_hitlist[player_t{1}], 0);
-    test::expect_true(universe_after->VN_index1[player_t{1}] == 0 ||
-                      universe_after->VN_index2[player_t{1}] == 0);
+    test::expect_true(universe_after->VN_index1[player_t{1}] == starnum_t{0} ||
+                      universe_after->VN_index2[player_t{1}] == starnum_t{0});
     std::println(std::cout, "✓ VN hitlist tracking works");
   }
 
@@ -296,28 +290,28 @@ int main() {
 
   // Deterministic testing of record_vn_destruction_site
   {
-    int index1{-1};
-    int index2{-1};
+    std::optional<starnum_t> index1{std::nullopt};
+    std::optional<starnum_t> index2{std::nullopt};
 
     // Slot 1 empty -> recorded in index1
     record_vn_destruction_site(index1, index2, 10, true);
-    test::expect_eq(index1, 10);
-    test::expect_eq(index2, -1);
+    test::expect_eq(index1, starnum_t{10});
+    test::expect_eq(index2, std::nullopt);
 
     // Slot 2 empty -> recorded in index2
     record_vn_destruction_site(index1, index2, 20, false);
-    test::expect_eq(index1, 10);
-    test::expect_eq(index2, 20);
+    test::expect_eq(index1, starnum_t{10});
+    test::expect_eq(index2, starnum_t{20});
 
     // Both slots filled -> supplant slot 1 when supplant_first is true
     record_vn_destruction_site(index1, index2, 30, true);
-    test::expect_eq(index1, 30);
-    test::expect_eq(index2, 20);
+    test::expect_eq(index1, starnum_t{30});
+    test::expect_eq(index2, starnum_t{20});
 
     // Both slots filled -> supplant slot 2 when supplant_first is false
     record_vn_destruction_site(index1, index2, 40, false);
-    test::expect_eq(index1, 30);
-    test::expect_eq(index2, 40);
+    test::expect_eq(index1, starnum_t{30});
+    test::expect_eq(index2, starnum_t{40});
 
     std::println(std::cout,
                  "✓ record_vn_destruction_site deterministic test works");

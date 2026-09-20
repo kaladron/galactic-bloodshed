@@ -16,25 +16,24 @@ namespace GB::commands {
 bool capital(const command_t& argv, GameObj& g) {
   const ap_t kAPCost = 50;
 
-  shipnum_t shipno = 0;
+  std::optional<shipnum_t> shipno;
   if (argv.size() != 2) {
     shipno = g.race->Gov_ship;
   } else {
-    auto shiptmp = string_to_shipnum(argv[1]);
-    if (!shiptmp) {
+    shipno = string_to_shipnum(argv[1]);
+    if (!shipno) {
       g.out << "Specify a valid ship number.\n";
       return false;
     }
-    shipno = *shiptmp;
   }
 
-  if (shipno == 0) {
+  if (!shipno) {
     g.out << "Change the capital to be what ship?\n";
     return false;
   }
 
   try {
-    return g.entity_manager.with_ship(shipno, [&](const Ship& s) {
+    return g.entity_manager.with_ship(*shipno, [&](const Ship& s) {
       if (argv.size() == 2) {
         starnum_t snum = s.storbits();
         if (!g.check_commandable(s)) {

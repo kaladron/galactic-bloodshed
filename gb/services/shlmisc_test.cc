@@ -26,6 +26,10 @@ void test_string_to_shipnum() {
   test::expect_false(e.has_value());
   auto f = string_to_shipnum("");
   test::expect_false(f.has_value());
+  auto g = string_to_shipnum("0");
+  test::expect_false(g.has_value());
+  auto h = string_to_shipnum("#0");
+  test::expect_false(h.has_value());
   std::println(std::cout, "✓ string_to_shipnum tests passed");
 }
 

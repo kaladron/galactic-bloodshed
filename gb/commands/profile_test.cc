@@ -37,7 +37,7 @@ void test_profile_dispatch() {
   // discoveries
   ctx.em.mutate_race(1, [](Race& r) {
     r.God = true;
-    r.Gov_ship = 0;
+    r.Gov_ship = std::nullopt;
     r.morale = 100;
     r.Metamorph = true;
     r.discoveries.crystal = true;

@@ -887,8 +887,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
       ship.type() != ShipType::OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
     mutate_race(ship.owner(), [&](Race& victim) {
-      if (victim.Gov_ship == ship.number()) victim.Gov_ship = 0;
-
+      if (victim.Gov_ship == ship.number()) victim.Gov_ship = std::nullopt;
       if (!victim.God && Playernum != ship.owner() &&
           ship.type() != ShipType::OTYPE_VN) {
         mutate_race(Playernum, [&](Race& killer) {
@@ -904,12 +903,14 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   if (const auto* auto_ship = ship.as<AutonomousShip>()) {
     mutate_universe([&](universe_struct& Sdata) {
       /* add ship to VN shit list */
-      Sdata.VN_hitlist[auto_ship->who_killed()] += 1;
+      if (const auto killer = auto_ship->who_killed()) {
+        Sdata.VN_hitlist[*killer] += 1;
+      }
 
       /* keep track of where these VN's were shot up */
-      record_vn_destruction_site(
-          Sdata.VN_index1[Playernum], Sdata.VN_index2[Playernum],
-          static_cast<int>(ship.storbits().value), int_rand(0, 1) == 0);
+      record_vn_destruction_site(Sdata.VN_index1[Playernum],
+                                 Sdata.VN_index2[Playernum], ship.storbits(),
+                                 int_rand(0, 1) == 0);
     });
   }
 

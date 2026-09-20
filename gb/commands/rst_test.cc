@@ -20,7 +20,6 @@ void setup_test_world(TestContext& ctx) {
   universe_struct us{};
   us.id = 1;
   us.numstars = 1;
-  us.ships = 2;
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
 

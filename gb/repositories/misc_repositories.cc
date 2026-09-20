@@ -33,10 +33,9 @@ struct meta<Commod> {
 template <>
 struct meta<universe_struct> {
   using T = universe_struct;
-  static constexpr auto value =
-      object("id", &T::id, "numstars", &T::numstars, "ships", &T::ships, "AP",
-             &T::AP, "VN_hitlist", &T::VN_hitlist, "VN_index1", &T::VN_index1,
-             "VN_index2", &T::VN_index2);
+  static constexpr auto value = object(
+      "id", &T::id, "numstars", &T::numstars, "AP", &T::AP, "VN_hitlist",
+      &T::VN_hitlist, "VN_index1", &T::VN_index1, "VN_index2", &T::VN_index2);
 };
 
 template <>

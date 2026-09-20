@@ -93,8 +93,8 @@ void test_tax_domain_errors() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  // Reset Gov_ship to 0 (no government center active)
-  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 0; });
+  // Reset Gov_ship to std::nullopt (no government center active)
+  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = std::nullopt; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

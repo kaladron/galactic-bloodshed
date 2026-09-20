@@ -42,7 +42,7 @@ void test_capital_matrix() {
       .with_expected_star_ap(50)
       .run_matrix(g);
 
-  test::expect_eq(ctx.em.peek_race(1)->Gov_ship, landed_gov.value);
+  test::expect_eq(ctx.em.peek_race(1)->Gov_ship, landed_gov);
   test::expect_eq(ctx.em.peek_star(0)->AP(player_t{1}), 50);
 
   // 2. Query mode: Free inquiry (0 AP)

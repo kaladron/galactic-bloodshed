@@ -54,16 +54,16 @@ public:
   [[nodiscard]] player_t progenitor() const noexcept {
     return mind().progenitor;
   }
-  [[nodiscard]] player_t target() const noexcept {
+  [[nodiscard]] std::optional<player_t> target() const noexcept {
     return mind().target;
   }
-  void set_target(player_t target) noexcept {
+  void set_target(std::optional<player_t> target) noexcept {
     mind().target = target;
   }
-  [[nodiscard]] player_t who_killed() const noexcept {
+  [[nodiscard]] std::optional<player_t> who_killed() const noexcept {
     return mind().who_killed;
   }
-  void set_who_killed(player_t killer) noexcept {
+  void set_who_killed(std::optional<player_t> killer) noexcept {
     mind().who_killed = killer;
   }
   [[nodiscard]] std::uint32_t generation() const noexcept {

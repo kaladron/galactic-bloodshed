@@ -456,7 +456,7 @@ struct std::formatter<Conditions> : std::formatter<std::string_view> {
 
 export struct Vnbrain {
   std::uint32_t total_mad{0}; /* total # of VN's destroyed so far */
-  player_t most_mad{0};       /* player most mad at */
+  std::optional<player_t> most_mad{std::nullopt}; /* player most mad at */
 };
 
 /// \brief Formats a UNIX epoch timestamp in standard 24-character
@@ -1190,7 +1190,10 @@ string_to_shipnum(std::string_view s) {
   }
 
   if (!s.empty() && std::isdigit(s.front())) {
-    return std::stoi(std::string(s.begin(), s.end()));
+    int val = std::stoi(std::string(s.begin(), s.end()));
+    if (val > 0) {
+      return shipnum_t{static_cast<shipnum_t::value_type>(val)};
+    }
   }
   return {};
 }

@@ -59,7 +59,6 @@ int main() {
   test_data.mounted = false;
   test_data.cloaked = false;
   test_data.dock_state = DockState::Spaceborne;
-  test_data.who_killed = player_t{4};
   test_data.hanger = 10;
   test_data.max_hanger = 20;
   test_data.guns = ActiveBattery::PRIMARY;
@@ -121,7 +120,6 @@ int main() {
   test::expect_eq(retrieved->alive(), test_ship.alive());
   test::expect_eq(retrieved->hanger(), 10U);
   test::expect_eq(retrieved->max_hanger(), 20U);
-  test::expect_eq(retrieved->who_killed(), player_t{4});
   test::expect_eq(retrieved->guns(), ActiveBattery::PRIMARY);
   test::expect_false(retrieved->mode());
   test::expect_false(retrieved->bombard());

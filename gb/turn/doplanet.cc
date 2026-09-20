@@ -320,10 +320,10 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
 
   if (const auto* mind_ship = ship.as<AutonomousShip>()) {
     const auto who = mind_ship->who_killed();
-    if (who > 0 && who <= MAXPLAYERS) {
+    if (who && is_valid_player(*who)) {
       entity_manager.mutate_universe([&](universe_struct& u) {
-        if (u.VN_hitlist[who] > 0) {
-          --u.VN_hitlist[who];
+        if (u.VN_hitlist[*who] > 0) {
+          --u.VN_hitlist[*who];
         }
       });
     }

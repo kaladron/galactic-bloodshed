@@ -140,9 +140,10 @@ public:
   /// Makes peace with the given player, clearing the at-war state.
   void make_peace_with(player_t p) noexcept;
 
-  shipnum_t Gov_ship{0}; /* Shipnumber of government ship. */
-  [[nodiscard]] bool has_government_center() const noexcept {
-    return Gov_ship != 0;
+  std::optional<shipnum_t> Gov_ship{
+      std::nullopt}; /* Shipnumber of government ship. */
+  [[nodiscard]] constexpr bool has_government_center() const noexcept {
+    return Gov_ship.has_value();
   }
   long morale{0}; /* race's morale level */
   PlayerVector<std::uint32_t, MAXPLAYERS>

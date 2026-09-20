@@ -30,10 +30,10 @@ bool profile(const command_t& argv, GameObj& g) {
     g.out << std::format("Default Scope: /{}/{}\n", homestar.get_name(),
                          homestar.get_planet_name(
                              race.governor[g.governor().value].homeplanetnum));
-    if (race.Gov_ship == 0)
+    if (!race.Gov_ship)
       g.out << "NO DESIGNATED CAPITAL!!\n";
     else
-      g.out << std::format("Designated Capital: #{}\n", race.Gov_ship);
+      g.out << std::format("Designated Capital: #{}\n", *race.Gov_ship);
     g.out << std::format("Morale: {}\n", race.morale);
     g.out << std::format("Updates active: {}\n", race.turn);
     g.out << "Ranges:\n";

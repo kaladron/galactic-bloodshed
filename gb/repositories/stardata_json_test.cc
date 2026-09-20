@@ -23,12 +23,11 @@ int main() {
 
   // Initialize some basic fields for testing
   test_stardata.numstars = 100;
-  test_stardata.ships = 5;
   test_stardata.AP[player_t{1}] = 10;
   test_stardata.AP[player_t{2}] = 20;
   test_stardata.VN_hitlist[player_t{1}] = 3;
-  test_stardata.VN_index1[player_t{1}] = 1;
-  test_stardata.VN_index2[player_t{1}] = 2;
+  test_stardata.VN_index1[player_t{1}] = starnum_t{1};
+  test_stardata.VN_index2[player_t{1}] = starnum_t{2};
 
   // Test EntityManager - stores and retrieves universe data
   // First save using repository to create the database record
@@ -43,7 +42,6 @@ int main() {
 
   // Verify key fields
   test::expect_eq(retrieved->numstars, test_stardata.numstars);
-  test::expect_eq(retrieved->ships, test_stardata.ships);
   test::expect_eq(retrieved->AP[player_t{1}], test_stardata.AP[player_t{1}]);
   test::expect_eq(retrieved->AP[player_t{2}], test_stardata.AP[player_t{2}]);
   test::expect_eq(retrieved->VN_hitlist[player_t{1}],

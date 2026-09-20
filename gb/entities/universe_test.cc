@@ -18,22 +18,16 @@ void test_universe_wrapper_accessors() {
   universe_struct u_data{};
   u_data.id = 1;
   u_data.numstars = 100;
-  u_data.ships = 42;
 
   Universe universe(u_data);
 
   // Test basic accessors
   test::expect_eq(universe.numstars(), 100);
-  test::expect_eq(universe.ships(), 42);
 
   // Test setters
   universe.set_numstars(150);
   test::expect_eq(universe.numstars(), 150);
   test::expect_eq(u_data.numstars, 150);  // Verify underlying data changed
-
-  universe.set_ships(50);
-  test::expect_eq(universe.ships(), 50);
-  test::expect_eq(u_data.ships, 50);
 
   std::println(std::cout, "  ✓ Basic accessors work");
 }
@@ -103,17 +97,17 @@ void test_universe_VN_methods() {
   universe.decrement_VN_hitlist(2);
   test::expect_eq(universe.get_VN_hitlist(2), 0);
 
-  // Test VN indices (can be negative)
-  universe.set_VN_index1(1, -5);
-  test::expect_eq(universe.get_VN_index1(1), -5);
+  // Test VN indices (std::optional<starnum_t>)
+  universe.set_VN_index1(1, std::nullopt);
+  test::expect_eq(universe.get_VN_index1(1), std::nullopt);
 
-  universe.set_VN_index2(1, 100);
-  test::expect_eq(universe.get_VN_index2(1), 100);
+  universe.set_VN_index2(1, starnum_t{100});
+  test::expect_eq(universe.get_VN_index2(1), starnum_t{100});
 
-  universe.set_VN_index1(2, 42);
-  universe.set_VN_index2(2, -99);
-  test::expect_eq(universe.get_VN_index1(2), 42);
-  test::expect_eq(universe.get_VN_index2(2), -99);
+  universe.set_VN_index1(2, starnum_t{42});
+  universe.set_VN_index2(2, std::nullopt);
+  test::expect_eq(universe.get_VN_index1(2), starnum_t{42});
+  test::expect_eq(universe.get_VN_index2(2), std::nullopt);
 
   // Test boundary conditions (invalid player numbers throw std::out_of_range)
   test::expect_throws<std::out_of_range>(
@@ -135,8 +129,6 @@ void test_universe_direct_access() {
 
   // Test operator->
   test::expect_eq(universe->numstars, 50);
-  universe->ships = 123;
-  test::expect_eq(universe->ships, 123);
 
   // Test operator*
   universe_struct& ref = *universe;
@@ -168,7 +160,6 @@ void test_universe_persistence() {
     universe_struct u{};
     u.id = 1;
     u.numstars = 200;
-    u.ships = 500;
     u.AP[player_t{1}] = 1000;
     u.AP[player_t{2}] = 2000;
     u.VN_hitlist[player_t{1}] = 5;
@@ -181,16 +172,13 @@ void test_universe_persistence() {
   const auto* universe = em.peek_universe();
   test::expect_ne(universe, nullptr);
   test::expect_eq(universe->numstars, 200);
-  test::expect_eq(universe->ships, 500);
   test::expect_eq(universe->AP[player_t{1}], 1000);
   test::expect_eq(universe->AP[player_t{2}], 2000);
   test::expect_eq(universe->VN_hitlist[player_t{1}], 5);
 
   // Modify via EntityManager
-  em.mutate_universe([](universe_struct& universe_mut) {
-    universe_mut.numstars = 250;
-    universe_mut.ships = 600;
-  });
+  em.mutate_universe(
+      [](universe_struct& universe_mut) { universe_mut.numstars = 250; });
 
   // Clear cache to force reload from DB
   em.clear_cache();
@@ -199,7 +187,6 @@ void test_universe_persistence() {
   const auto* universe2 = em.peek_universe();
   test::expect_ne(universe2, nullptr);
   test::expect_eq(universe2->numstars, 250);
-  test::expect_eq(universe2->ships, 600);
   test::expect_eq(universe2->AP[player_t{1}], 1000);
   test::expect_eq(universe2->AP[player_t{2}], 2000);
   test::expect_eq(universe2->VN_hitlist[player_t{1}], 5);

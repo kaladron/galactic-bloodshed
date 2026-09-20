@@ -30,8 +30,7 @@ find_bombardment_target(EntityManager& entity_manager, const Ship& ship,
       ship.storbits(), ship.pnumorbits(), [&](const SectorMap& smap) {
         const auto* bers = ship.as<BerserkerShip>();
         const std::optional<player_t> programmed_target =
-            bers && bers->target() != 0 ? std::optional{bers->target()}
-                                        : std::nullopt;
+            bers ? bers->target() : std::nullopt;
 
         auto candidates =
             smap.shuffle() | std::views::filter([&](const Sector& s) noexcept {

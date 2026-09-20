@@ -548,11 +548,11 @@ static void finalize_turn(TurnState& state, bool update) {
 }
 
 bool compute_governed_status(const Race& race, EntityManager& entity_manager) {
-  if (race.Gov_ship == 0) {
+  if (!race.Gov_ship) {
     return false;
   }
 
-  const auto* gov_ship = entity_manager.peek_ship(race.Gov_ship);
+  const auto* gov_ship = entity_manager.peek_ship(*race.Gov_ship);
   if (!gov_ship || !gov_ship->alive() || !gov_ship->docked()) {
     return false;
   }
@@ -649,7 +649,7 @@ void fix_stability(EntityManager& em, Star& s) {
 }
 
 void update_von_neumann_target(EntityManager& em, TurnStats& stats) {
-  stats.VN_brain.most_mad = player_t{0};
+  stats.VN_brain.most_mad = std::nullopt;
   stats.VN_brain.total_mad = 0;
 
   const auto* sdata = em.peek_universe();
@@ -657,15 +657,14 @@ void update_von_neumann_target(EntityManager& em, TurnStats& stats) {
 
   for (const Race& race : RaceList::readonly(em)) {
     const player_t player = race.Playernum;
-    stats.VN_brain.total_mad += sdata->VN_hitlist[player];
-    if (stats.VN_brain.most_mad == player_t{0} ||
-        sdata->VN_hitlist[stats.VN_brain.most_mad] <=
-            sdata->VN_hitlist[player]) {
+    const auto hits = sdata->VN_hitlist[player];
+    stats.VN_brain.total_mad += hits;
+    if (hits > 0 && (!stats.VN_brain.most_mad ||
+                     sdata->VN_hitlist[*stats.VN_brain.most_mad] <= hits)) {
       stats.VN_brain.most_mad = player;
     }
   }
 }
-
 enum class WinCategory {
   NONE,
   BIG_WINNER,

@@ -365,7 +365,7 @@ int main() {
 
     // Case C: No government center disables tax collection
     Race anarchic_race{};
-    anarchic_race.Gov_ship = 0;
+    anarchic_race.Gov_ship = std::nullopt;
     info.collect_tax(anarchic_race.governor[0], anarchic_race);
     test::expect_eq(info.prod_money, 0);
     test::expect_eq(anarchic_race.governor[0].money, 0);
@@ -400,7 +400,7 @@ int main() {
 
     // Case C: No government center
     Race anarchic_race{};
-    anarchic_race.Gov_ship = 0;
+    anarchic_race.Gov_ship = std::nullopt;
     anarchic_race.governor[0].money = 500;
     const double no_gov_gain =
         info.invest_tech(anarchic_race.governor[0], anarchic_race);

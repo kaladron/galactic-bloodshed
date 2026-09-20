@@ -11,8 +11,6 @@ import :turnstats;
 import std;
 
 export void doship(Ship&, bool update, EntityManager&, TurnStats& stats);
-export void domass(Ship&, EntityManager&);
-export void doown(Ship&, EntityManager&);
 /// \brief Simulates turn-phase missile navigation, PDN interception, and
 /// terminal impacts against planetary surfaces or targeted ships.
 /// \param ship Missile ship executing turn processing.

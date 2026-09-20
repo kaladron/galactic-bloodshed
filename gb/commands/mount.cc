@@ -24,7 +24,7 @@ bool mount(const command_t& argv, GameObj& g) {
     Ship& ship = *ship_handle;
 
     if (!ship_matches_filter(argv[1], ship)) continue;
-    if (!authorized(Governor, ship)) continue;
+    if (!ship.is_authorized_for(Governor)) continue;
 
     if (!ship.mount()) {
       g.out << "This ship is not equipped with a crystal mount.\n";

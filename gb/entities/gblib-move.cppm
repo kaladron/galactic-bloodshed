@@ -6,9 +6,6 @@ import gb.entities;
 import gb.services;
 import std;
 
-export Coordinates get_move(const Planet& planet, char direction,
-                            Coordinates from);
-
 export struct GroundAttackParams {
   const Race& attacker;
   const Race& defender;

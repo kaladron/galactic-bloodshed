@@ -651,7 +651,7 @@ bool process_ship_load(Ship& s, std::string_view filter, char commod,
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
-  if (!GB::ship_matches_filter(filter, s) || !authorized(Governor, s) ||
+  if (!GB::ship_matches_filter(filter, s) || !s.is_authorized_for(Governor) ||
       s.owner() != Playernum || !s.alive()) {
     return false;
   }

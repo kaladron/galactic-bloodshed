@@ -7,7 +7,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.mechanics;
 
 /**
  * @brief Outputs fuel information and estimated arrival time.

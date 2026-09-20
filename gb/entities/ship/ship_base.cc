@@ -320,12 +320,13 @@ void Ship::initialize_constructed_state(const Race& race, governor_t gov,
 }
 
 /// Determine whether the ship crashed or not.
-std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept {
+std::tuple<bool, int>
+Ship::roll_landing_crash(const double required_fuel) const noexcept {
   // Crash from insufficient fuel.
-  if (s.fuel() < fuel) return {true, 0};
+  if (fuel() < required_fuel) return {true, 0};
 
   // Damaged ships stand of chance of crash landing.
-  if (auto roll = int_rand(1, 100); roll <= s.damage()) return {true, roll};
+  if (auto roll = int_rand(1, 100); roll <= damage()) return {true, roll};
 
   // No crash.
   return {false, 0};
@@ -365,4 +366,18 @@ std::int64_t Ship::transfer_cargo_to(Ship& destination, ShipCargoType cargo,
       break;
   }
   return to_transfer;
+}
+
+/*
+ * range of telescopes, ground or space, given race and ship
+ */
+double tele_range(ShipType type, double tech) {
+  if (type == ShipType::OTYPE_GTELE)
+    return std::log1p((double)tech) * 400 + SYSTEMSIZE / 8;
+
+  return std::log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
+}
+
+double Ship::tele_range() const noexcept {
+  return ::tele_range(type(), tech());
 }

@@ -37,7 +37,7 @@ bool profile(const command_t& argv, GameObj& g) {
     g.out << std::format("Morale: {}\n", race.morale);
     g.out << std::format("Updates active: {}\n", race.turn);
     g.out << "Ranges:\n";
-    g.out << std::format("  guns:   {:.2f}\n", gun_range(race));
+    g.out << std::format("  guns:   {:.2f}\n", race.gun_range());
     g.out << std::format("  space:  {:.2f}\n",
                          tele_range(ShipType::OTYPE_STELE, race.tech));
     g.out << std::format("  ground: {:.2f}\n\n",
@@ -177,7 +177,7 @@ bool profile(const command_t& argv, GameObj& g) {
       g.out << std::format("\t\t  oxygen   {}%",
                            race.estimate(r.conditions[OXYGEN], p));
       g.out << std::format("\t\t  guns:   {}\n",
-                           race.estimate(gun_range(r), p));
+                           race.estimate(r.gun_range(), p));
       g.out << std::format("Fight:   {}", race.estimate(r.fighters, p));
       g.out << std::format("\t\t  helium   {}%",
                            race.estimate(r.conditions[HELIUM], p));

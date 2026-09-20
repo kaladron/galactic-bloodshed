@@ -62,7 +62,7 @@ LandedShipGrid scan_planet_ships_for_map(EntityManager& em, starnum_t snum,
   }
   grid.has_visual_iq = p.info(playernum).numsectsowned > 0;
   for (const Ship& s : ShipList::readonly_on_planet(em, snum, pnum)) {
-    if (s.owner() == playernum && authorized(governor, s) &&
+    if (s.owner() == playernum && s.is_authorized_for(governor) &&
         (s.popn() > 0 || s.type() == ShipType::OTYPE_PROBE)) {
       grid.has_visual_iq = true;
     }

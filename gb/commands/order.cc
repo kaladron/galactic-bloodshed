@@ -22,7 +22,7 @@ bool order(const command_t& argv, GameObj& g) {
     display_orders_header(g);
     const ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
     for (const Ship& ship : ships) {
-      if (ship.owner() == playernum && authorized(governor, ship)) {
+      if (ship.owner() == playernum && ship.is_authorized_for(governor)) {
         display_orders(g, ship);
       }
     }
@@ -34,7 +34,7 @@ bool order(const command_t& argv, GameObj& g) {
       Ship& ship = *ship_handle;
 
       if (!ship_matches_filter(argv[1], ship)) continue;
-      if (!authorized(governor, ship)) continue;
+      if (!ship.is_authorized_for(governor)) continue;
 
       if (argv.size() > 2) {
         give_orders(g, argv, ap_count, ship);

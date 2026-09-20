@@ -21,7 +21,7 @@ bool scrap(const command_t& argv, GameObj& g) {
     Ship& s = *ship_handle;
 
     if (!ship_matches_filter(argv[1], s)) continue;
-    if (!authorized(g.governor(), s)) continue;
+    if (!s.is_authorized_for(g.governor())) continue;
 
     if (s.max_crew_capacity() && !s.popn()) {
       g.out << "Can't scrap that ship - no crew.\n";

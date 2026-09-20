@@ -325,7 +325,7 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
       return;
     }
 
-    if (auto [did_crash, roll] = crash(s, fuel); did_crash) {
+    if (auto [did_crash, roll] = s.roll_landing_crash(fuel); did_crash) {
       handle_landing_crash(g, s, star, p, target_coords, fuel, roll);
       return;
     }
@@ -355,7 +355,7 @@ bool land(const command_t& argv, GameObj& g) {
     Ship& s = *ship_handle;
 
     if (!GB::ship_matches_filter(argv[1], s)) continue;
-    if (!authorized(governor, s)) continue;
+    if (!s.is_authorized_for(governor)) continue;
 
     if (s.is_overloaded()) {
       g.out << std::format("{} is too overloaded to land.\n", s);

@@ -1381,13 +1381,13 @@ void test_blueprint_complexity_defense_and_capture() {
     }
   }
 
-  // crash() fuel and damage checks
+  // roll_landing_crash() fuel and damage checks
   ship_struct crash_sd{.fuel = 5.0, .damage = 100};
   Ship crash_ship{crash_sd};
-  test::expect_true(std::get<0>(crash(crash_ship, 10.0)));
-  test::expect_true(std::get<0>(crash(crash_ship, 1.0)));
+  test::expect_true(std::get<0>(crash_ship.roll_landing_crash(10.0)));
+  test::expect_true(std::get<0>(crash_ship.roll_landing_crash(1.0)));
   crash_ship.admin_override_damage(0);
-  test::expect_false(std::get<0>(crash(crash_ship, 1.0)));
+  test::expect_false(std::get<0>(crash_ship.roll_landing_crash(1.0)));
 
   // getdefense() spaceborne vs landed
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 10)

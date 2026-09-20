@@ -22,7 +22,7 @@ bool detonate(const command_t& argv, GameObj& g) {
     Ship& s = *ship_handle;
 
     if (!ship_matches_filter(argv[1], s)) continue;
-    if (!authorized(Governor, s)) continue;
+    if (!s.is_authorized_for(Governor)) continue;
 
     if (s.type() != ShipType::STYPE_MINE) {
       g.out << "That is not a mine.\n";

@@ -334,7 +334,7 @@ bool is_valid_ship_target(const Ship& s, const GameObj& g,
   if (!ctx.shiplist.empty() && !listed(s.type(), ctx.shiplist)) {
     return false;
   }
-  if (s.owner() == g.player() && authorized(g.governor(), s)) {
+  if (s.owner() == g.player() && s.is_authorized_for(g.governor())) {
     return false;
   }
   if (!s.alive() || s.type() == ShipType::OTYPE_CANIST ||
@@ -399,7 +399,7 @@ TacticalParams ShipTacticalItem::get_tactical_params(const Race&) const {
       .tech = s.tech(),
       .weapon_range = s.gun_range(),
       .damage = s.damage(),
-      .caliber = current_caliber(s),
+      .caliber = s.current_caliber(),
       .laser_focused = (s.is_laser_on() && s.focus()),
   };
 
@@ -415,8 +415,8 @@ TacticalParams ShipTacticalItem::get_tactical_params(const Race&) const {
 bool ShipTacticalItem::should_report_tactical(player_t player_num,
                                               governor_t governor) const {
   const auto& s = *ship_;
-  return s.alive() && s.owner() == player_num && authorized(governor, s) &&
-         s.has_sight();
+  return s.alive() && s.owner() == player_num &&
+         s.is_authorized_for(governor) && s.has_sight();
 }
 
 // ============================================================================

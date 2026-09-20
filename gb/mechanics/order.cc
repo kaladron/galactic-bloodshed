@@ -8,7 +8,7 @@ module;
 import scnlib;
 import std;
 
-module gblib;
+module gb.mechanics;
 
 namespace {
 
@@ -57,14 +57,14 @@ void survey_aim_target(GameObj& g, const Ship& s) {
     case ScopeLevel::LEVEL_STAR:
       g.out << std::format("Star {}\n", format_aim_target(g.entity_manager, s));
       if (auto dist = coords.distance_to(str.coordinates());
-          dist <= tele_range(s.type(), s.tech())) {
+          dist <= s.tele_range()) {
         g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
           star.mark_explored_by(g.player());
         });
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
-                             tele_range(s.type(), s.tech()));
+                             s.tele_range());
       }
       break;
     case ScopeLevel::LEVEL_PLAN: {
@@ -73,7 +73,7 @@ void survey_aim_target(GameObj& g, const Ship& s) {
       const auto& p =
           *g.entity_manager.peek_planet(aimed_at.snum, aimed_at.pnum);
       if (auto dist = coords.distance_to(p.absolute_coordinates(str));
-          dist <= tele_range(s.type(), s.tech())) {
+          dist <= s.tele_range()) {
         g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
           star.mark_explored_by(g.player());
         });
@@ -83,7 +83,7 @@ void survey_aim_target(GameObj& g, const Ship& s) {
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
-                             tele_range(s.type(), s.tech()));
+                             s.tele_range());
       }
     } break;
     case ScopeLevel::LEVEL_SHIP:
@@ -876,7 +876,7 @@ void display_orders_header(GameObj& g) {
 }
 
 void display_orders(GameObj& g, const Ship& ship) {
-  if (ship.owner() != g.player() || !authorized(g.governor(), ship) ||
+  if (ship.owner() != g.player() || !ship.is_authorized_for(g.governor()) ||
       !ship.alive()) {
     return;
   }

@@ -58,7 +58,7 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   if (attacker.has_switch() && !attacker.on()) return std::nullopt;
 
   /* compute caliber */
-  const auto caliber = current_caliber(attacker);
+  const auto caliber = attacker.current_caliber();
 
   double dist = [&attacker, &target]() -> double {
     if (attacker.type() ==
@@ -73,7 +73,7 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
     return dist;
   }();
 
-  if (dist > gun_range(attacker)) return std::nullopt;
+  if (dist > attacker.gun_range()) return std::nullopt;
 
   /* attack parameters */
   auto [fevade, fspeed, fbody] = ship_disposition(attacker);
@@ -524,23 +524,6 @@ static hit_odds_t cew_hit_odds(double range, weapon_range_t cew_range) {
   const auto odds = static_cast<hit_odds_t>(
       100.0 * std::exp((double)(-50.0 * (factor - 1.0) * (factor - 1.0))));
   return odds;
-}
-
-/*
- * range of telescopes, ground or space, given race and ship
- */
-double tele_range(ShipType type, double tech) {
-  if (type == ShipType::OTYPE_GTELE)
-    return std::log1p((double)tech) * 400 + SYSTEMSIZE / 8;
-
-  return std::log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
-}
-
-guntype_t current_caliber(const Ship& ship) {
-  if (ship.laser() && ship.fire_laser()) return guntype_t::LIGHT;
-  if (ship.type() == ShipType::STYPE_MINE) return guntype_t::LIGHT;
-  if (ship.type() == ShipType::STYPE_MISSILE) return guntype_t::HEAVY;
-  return ship.active_gun_caliber();
 }
 
 static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,

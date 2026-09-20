@@ -210,7 +210,7 @@ bool launch(const command_t& argv, GameObj& g) {
     Ship& s = *ship_handle;
 
     if (!ship_matches_filter(argv[1], s)) continue;
-    if (!authorized(governor, s)) continue;
+    if (!s.is_authorized_for(governor)) continue;
 
     if (!s.max_speed_capacity() && s.is_landed()) {
       g.out << "That ship is not designed to be launched.\n";

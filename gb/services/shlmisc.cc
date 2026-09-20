@@ -9,10 +9,6 @@ import std;
 
 module gblib;
 
-bool authorized(const governor_t Governor, const Ship& ship) {
-  return ship.is_authorized_for(Governor);
-}
-
 /**
  * \brief Check is the ship is in the given input string.
  *

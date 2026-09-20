@@ -42,7 +42,7 @@ bool jettison(const command_t& argv, GameObj& g) {
     const Ship& s = ship_handle.peek();
 
     if (!ship_matches_filter(argv[1], s)) continue;
-    if (!authorized(Governor, s)) continue;
+    if (!s.is_authorized_for(Governor)) continue;
 
     if (s.owner() != Playernum || !s.alive()) {
       continue;

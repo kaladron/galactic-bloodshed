@@ -63,7 +63,7 @@ bool grant(const command_t& argv, GameObj& g) {
       Ship& ship = *ship_handle;
 
       if (!ship_matches_filter(argv[3], ship)) continue;
-      if (!authorized(Governor, ship)) continue;
+      if (!ship.is_authorized_for(Governor)) continue;
 
       ship.governor() = gov;
       warn_player(g.session_registry, g.entity_manager, Playernum, gov,

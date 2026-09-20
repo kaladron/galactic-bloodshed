@@ -8,7 +8,41 @@ module;
 
 import std;
 
-module gblib;
+module gb.mechanics;
+
+namespace {
+
+// TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
+// constexpr when P3372 (constexpr containers and adaptors) lands.
+const std::flat_map<char, Coordinates> direction_mappings{
+    {'1', {-1, 1}},  {'b', {-1, 1}},   // Southwest
+    {'2', {0, 1}},   {'k', {0, 1}},    // South
+    {'3', {1, 1}},   {'n', {1, 1}},    // Southeast
+    {'4', {-1, 0}},  {'h', {-1, 0}},   // West
+    {'6', {1, 0}},   {'l', {1, 0}},    // East
+    {'7', {-1, -1}}, {'y', {-1, -1}},  // Northwest
+    {'8', {0, -1}},  {'j', {0, -1}},   // North
+    {'9', {1, -1}},  {'u', {1, -1}},   // Northeast
+};
+
+}  // namespace
+
+/**
+ * @brief Calculates the new coordinates based on the given direction.
+ *
+ * @param planet The Planet object representing the game world.
+ * @param direction The direction character indicating the movement direction.
+ * @param from The current coordinates.
+ * @return The new coordinates after the movement.
+ */
+Coordinates get_move(const Planet& planet, const char direction,
+                     const Coordinates from) {
+  if (const auto it = direction_mappings.find(direction);
+      it != direction_mappings.end()) {
+    return planet.wrap(from + it->second);
+  }
+  return from;
+}
 
 armor_t getdefense(EntityManager& em, const Ship& ship) {
   if (ship.is_landed()) {
@@ -30,6 +64,35 @@ void capture_stuff(const Ship& ship, GameObj& g) {
         ship.owner(); /* make sure he gets all of the ships landed on it */
     s.governor() = ship.governor();
     g.out << std::format("{} CAPTURED!\n", s);
+  }
+}
+
+void domass(Ship& ship, EntityManager& entity_manager) {
+  // Get race mass from EntityManager
+  double rmass = 1.0;
+  if (ship.owner() != 0) {
+    const auto* race = entity_manager.peek_race(ship.owner());
+    if (race) {
+      rmass = race->mass;
+    }
+  }
+
+  double carried_mass = 0.0;
+  hangar_t carried_hanger = 0;
+  for (auto nested_ship : ShipList::in_carrier(entity_manager, ship.number())) {
+    domass(*nested_ship, entity_manager); /* recursive call */
+    carried_mass += nested_ship->mass();
+    carried_hanger += nested_ship->size();
+  }
+  ship.hanger() = carried_hanger;
+  ship.set_mass(ship.local_mass(rmass) + carried_mass);
+}
+
+void doown(Ship& ship, EntityManager& entity_manager) {
+  for (auto nested_ship : ShipList::in_carrier(entity_manager, ship.number())) {
+    doown(*nested_ship, entity_manager); /* recursive call */
+    nested_ship->owner() = ship.owner();
+    nested_ship->governor() = ship.governor();
   }
 }
 

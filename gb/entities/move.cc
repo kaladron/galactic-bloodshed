@@ -11,19 +11,6 @@ module gblib;
 
 namespace {
 
-// TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
-// constexpr when P3372 (constexpr containers and adaptors) lands.
-const std::flat_map<char, Coordinates> direction_mappings{
-    {'1', {-1, 1}},  {'b', {-1, 1}},   // Southwest
-    {'2', {0, 1}},   {'k', {0, 1}},    // South
-    {'3', {1, 1}},   {'n', {1, 1}},    // Southeast
-    {'4', {-1, 0}},  {'h', {-1, 0}},   // West
-    {'6', {1, 0}},   {'l', {1, 0}},    // East
-    {'7', {-1, -1}}, {'y', {-1, -1}},  // Northwest
-    {'8', {0, -1}},  {'j', {0, -1}},   // North
-    {'9', {1, -1}},  {'u', {1, -1}},   // Northeast
-};
-
 bool is_hostile_defending_afv(const GameObj& g, const Ship& ship,
                               Coordinates target_coords,
                               const Race& alien_race) {
@@ -58,27 +45,6 @@ void resolve_afv_sector_engagement(const GameObj& g, Ship& ship,
 }
 
 }  // namespace
-
-/**
- * @brief Calculates the new coordinates based on the given direction.
- *
- * This function takes a Planet object, a direction character, and the current
- * coordinates as input. It calculates and returns the new coordinates based on
- * the given direction.
- *
- * @param planet The Planet object representing the game world.
- * @param direction The direction character indicating the movement direction.
- * @param from The current coordinates.
- * @return The new coordinates after the movement.
- */
-Coordinates get_move(const Planet& planet, const char direction,
-                     const Coordinates from) {
-  if (const auto it = direction_mappings.find(direction);
-      it != direction_mappings.end()) {
-    return planet.wrap(from + it->second);
-  }
-  return from;
-}
 
 void mech_defend(const GameObj& g, population_t* people, PopulationType type,
                  const Planet& p, Coordinates target_coords, const Sector& s2) {

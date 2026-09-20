@@ -401,7 +401,7 @@ bool should_report_ship(const Ship& s, player_t player_num, governor_t governor,
   if (s.owner() != player_num) return false;
 
   // Don't report on ships this governor is not authorized for
-  if (!authorized(governor, s)) return false;
+  if (!s.is_authorized_for(governor)) return false;
 
   // Don't report on ships whose type isn't in the requested report filter
   if (!rep_on.contains(s.type_letter())) return false;

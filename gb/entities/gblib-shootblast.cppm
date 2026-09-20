@@ -30,8 +30,6 @@ export std::pair<hit_odds_t, weapon_range_t>
 hit_odds(double range, double tech, damage_t fdam, bool fev, bool tev,
          speed_t fspeed, speed_t tspeed, ship_size_t body, guntype_t caliber,
          armor_t defense);
-export double tele_range(ShipType tech_level, double base_range);
-export guntype_t current_caliber(const Ship& ship);
 
 /// \brief Collateral casualties and system damage inflicted on a target ship.
 export struct CollateralDamage {
@@ -55,25 +53,3 @@ export constexpr double TECH_PENETRATION_SCALE = 5.0;
 /// \brief Computes per-armor-point penetration factor based on relative
 /// technology (help/fireformula.md).
 export double p_factor(double attacker_tech, double defender_tech);
-
-/**
- * @brief Calculates the gun range for a given race based on its technology
- * level.
- *
- * @param r The race whose gun range is to be calculated.
- * @return The computed gun range as a double.
- */
-export constexpr double gun_range(const Race& r) {
-  return r.gun_range();
-}
-
-/**
- * @brief Calculates the gun range for a given ship based on its technology
- * level.
- *
- * @param s The ship whose gun range is to be calculated.
- * @return The computed gun range as a double.
- */
-export constexpr double gun_range(const Ship& s) {
-  return s.gun_range();
-}

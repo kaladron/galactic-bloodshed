@@ -570,35 +570,6 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
   }
 }
 
-void domass(Ship& ship, EntityManager& entity_manager) {
-  // Get race mass from EntityManager
-  double rmass = 1.0;
-  if (ship.owner() != 0) {
-    const auto* race = entity_manager.peek_race(ship.owner());
-    if (race) {
-      rmass = race->mass;
-    }
-  }
-
-  double carried_mass = 0.0;
-  hangar_t carried_hanger = 0;
-  for (auto nested_ship : ShipList::in_carrier(entity_manager, ship.number())) {
-    domass(*nested_ship, entity_manager); /* recursive call */
-    carried_mass += nested_ship->mass();
-    carried_hanger += nested_ship->size();
-  }
-  ship.hanger() = carried_hanger;
-  ship.set_mass(ship.local_mass(rmass) + carried_mass);
-}
-
-void doown(Ship& ship, EntityManager& entity_manager) {
-  for (auto nested_ship : ShipList::in_carrier(entity_manager, ship.number())) {
-    doown(*nested_ship, entity_manager); /* recursive call */
-    nested_ship->owner() = ship.owner();
-    nested_ship->governor() = ship.governor();
-  }
-}
-
 bool intercept_missile_by_pdn(Ship& missile, EntityManager& entity_manager) {
   if (missile.whatorbits() != ScopeLevel::LEVEL_PLAN) {
     return false;

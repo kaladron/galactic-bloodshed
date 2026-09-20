@@ -191,7 +191,7 @@ void report_new_ship_status(GameObj& g, const Ship& newship, int load_crew,
     case ShipType::OTYPE_STELE:
     case ShipType::OTYPE_GTELE:
       g.out << std::format("Telescope range is {:.2f}.\n",
-                           tele_range(newship.type(), newship.tech()));
+                           newship.tele_range());
       break;
     default:
       break;

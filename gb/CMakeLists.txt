@@ -166,6 +166,22 @@ target_link_libraries(
   PUBLIC gb_entities dallib
   PRIVATE gb_repositories)
 
+# Standalone Tier-4 Multi-Entity Game Mechanics Library (Navigation, Combat, Construction, Visibility, Planetary)
+add_library(gb_mechanics)
+target_sources(
+  gb_mechanics
+  PUBLIC FILE_SET
+         CXX_MODULES
+         FILES
+          mechanics/mechanics.cppm
+          mechanics/navigation.cppm
+  PRIVATE mechanics/navigation.cc
+          mechanics/fuel.cc
+          mechanics/order.cc)
+target_link_libraries(
+  gb_mechanics
+  PUBLIC gb_entities gb_services scnlib_module)
+
 add_library(gblib)
 target_sources(
   gblib
@@ -180,11 +196,9 @@ target_sources(
           turn/gblib-doship.cppm
           turn/gblib-doturncmd.cppm
           entities/gblib-fire.cppm
-          entities/gblib-fuel.cppm
           entities/gblib-map.cppm
           entities/gblib-misc.cppm
           entities/gblib-move.cppm
-          entities/gblib-order.cppm
           services/gblib-shlmisc.cppm
           entities/gblib-shootblast.cppm
           turn/gblib-turnstats.cppm
@@ -195,19 +209,16 @@ target_sources(
           turn/doship.cc
           turn/doturncmd.cc
           entities/fire.cc
-          entities/fuel.cc
           entities/map.cc
           entities/misc.cc
           entities/move.cc
-          entities/navigation.cc
-          entities/order.cc
           services/shlmisc.cc
           entities/shootblast.cc
           server/victory.cc
           turn/vn.cc)
 target_link_libraries(
   gblib
-  PUBLIC gb_entities gb_services strong_id_module dallib types_module scnlib_module tabulate_module)
+  PUBLIC gb_entities gb_services gb_mechanics strong_id_module dallib types_module scnlib_module tabulate_module)
 
 add_library(gb_turn)
 target_sources(

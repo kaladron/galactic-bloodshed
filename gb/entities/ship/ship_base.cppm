@@ -230,6 +230,24 @@ public:
     return ::gun_range(data_.tech);
   }
 
+  /// \brief Returns the telescope observation range for this ship.
+  [[nodiscard]] double tele_range() const noexcept;
+
+  /// \brief Returns the effective weapon caliber for combat resolution (lasers
+  /// and mines fire as LIGHT; missiles fire as HEAVY; otherwise uses the
+  /// active gun battery's caliber).
+  [[nodiscard]] constexpr guntype_t current_caliber() const noexcept {
+    if (laser() && fire_laser()) return guntype_t::LIGHT;
+    if (type() == ShipType::STYPE_MINE) return guntype_t::LIGHT;
+    if (type() == ShipType::STYPE_MISSILE) return guntype_t::HEAVY;
+    return active_gun_caliber();
+  }
+
+  /// \brief Evaluates whether the ship crashes during a planetary landing
+  /// due to insufficient fuel or hull damage.
+  [[nodiscard]] std::tuple<bool, int>
+  roll_landing_crash(double required_fuel) const noexcept;
+
   [[nodiscard]] double complexity() const {
     return data_.complexity;
   }
@@ -1580,7 +1598,7 @@ const Derived* Ship::as() const noexcept {
 
 export resource_t cost(const Ship&);
 export double complexity(const Ship&);
-export std::tuple<bool, int> crash(const Ship& s, const double fuel) noexcept;
+export double tele_range(ShipType tech_level, double base_range);
 
 export template <std::derived_from<Ship> T>
 struct std::formatter<T> {

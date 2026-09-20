@@ -321,7 +321,7 @@ bool fire(const command_t& argv, GameObj& g) {
     Ship& from = *ship_handle;
 
     if (!ship_matches_filter(argv[1], from)) continue;
-    if (!authorized(governor, from)) continue;
+    if (!from.is_authorized_for(governor)) continue;
     if (!from.active()) {
       g.out << std::format("{} is irradiated and inactive.\n", from);
       continue;

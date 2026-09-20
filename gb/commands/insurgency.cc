@@ -96,8 +96,10 @@ bool insurgency(const command_t& argv, GameObj& g) {
         who, g.race->morale, Playernum, alien->morale, who, amount,
         p.info(who).popn, p.info(who).tax, chance);
     if (success(chance)) {
-      changed_hands =
-          revolt(p, g.entity_manager, g.snum(), g.pnum(), who, Playernum);
+      g.entity_manager.mutate_sectormap(
+          g.snum(), g.pnum(), [&](SectorMap& smap) {
+            changed_hands = p.revolt(smap, *alien, Playernum);
+          });
       g.out << long_msg;
       g.out << std::format("Success!  You liberate {} sector{}.\n",
                            changed_hands, (changed_hands == 1) ? "" : "s");

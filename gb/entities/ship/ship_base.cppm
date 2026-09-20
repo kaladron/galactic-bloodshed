@@ -886,7 +886,7 @@ public:
             : std::min(static_cast<weapon_power_t>(popn()), battery->count);
 
     avail = std::min(retaliate(), avail);
-    return std::min(static_cast<weapon_power_t>(destruct()), avail);
+    return std::min(destruct_power(), avail);
   }
 
   /// \brief Computes effective defensive or offensive weapon strength (armed
@@ -899,6 +899,14 @@ public:
                           fuel() / ENERGY_WEAPON_FUEL_PER_STRENGTH));
     }
     return retal_strength();
+  }
+
+  /// \brief Computes effective orbital bombardment firepower based on gun
+  /// capacity, hull efficiency, and available destruct munitions.
+  [[nodiscard]] weapon_power_t bombardment_strength() const noexcept {
+    const auto effective_guns = static_cast<weapon_power_t>(
+        static_cast<double>(max_guns_capacity()) * hull_efficiency());
+    return std::min(effective_guns, destruct_power());
   }
 
   /// Whether hyperspace jump drive has accumulated sufficient charge to jump.
@@ -1098,6 +1106,23 @@ public:
   /// \brief Available cargo capacity remaining for resources.
   [[nodiscard]] resource_t available_resource_capacity() const noexcept {
     return std::max<resource_t>(0, max_resource_capacity() - data_.resource);
+  }
+
+  /// \brief Available cargo capacity remaining for destructive munitions.
+  [[nodiscard]] resource_t available_destruct_capacity() const noexcept {
+    return std::max<resource_t>(0, max_destruct_capacity() - data_.destruct);
+  }
+
+  /// \brief Available cargo capacity remaining for warp crystals.
+  [[nodiscard]] crystal_t available_crystals_capacity() const noexcept {
+    const auto cap = max_crystals_capacity();
+    return cap > data_.crystals ? cap - data_.crystals : 0;
+  }
+
+  /// \brief Returns carried destructive munitions expressed as weapon power
+  /// (for warhead detonation yield and ammunition-limited salvo caps).
+  [[nodiscard]] weapon_power_t destruct_power() const noexcept {
+    return static_cast<weapon_power_t>(std::max<resource_t>(0, data_.destruct));
   }
 
   // =========================================================================

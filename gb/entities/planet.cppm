@@ -571,6 +571,12 @@ public:
   /// ground-truth sector grid.
   void sync_demographics(const SectorMap& smap) noexcept;
 
+  /// \brief Executes a planetary insurgency revolt against sectors owned by
+  /// `victim_race`, transferring revolted sectors to `agent`, eliminating
+  /// defending troops, and synchronizing planet demographics.
+  /// \return Number of sectors that revolted.
+  int revolt(SectorMap& smap, const Race& victim_race, player_t agent);
+
   // For repository serialization
   [[nodiscard]] planet_struct get_struct() const {
     return data_;

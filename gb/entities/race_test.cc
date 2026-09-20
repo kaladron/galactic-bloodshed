@@ -148,6 +148,11 @@ int main() {
         [&]() { (void)race.points[player_t{0}]; });
     test::expect_throws<std::out_of_range>(
         [&]() { (void)race.points[player_t{MAXPLAYERS + 1}]; });
+    // increase_translation increments and clamps to [0, 100]
+    race.increase_translation(player_t{2}, 15);
+    test::expect_eq(race.translate[player_t{2}], 90);
+    race.increase_translation(player_t{2}, 25);
+    test::expect_eq(race.translate[player_t{2}], 100);
     std::println(std::cout, "  ✓ Race PlayerVector accessors verified");
   }
 

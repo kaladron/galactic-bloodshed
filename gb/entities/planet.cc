@@ -215,3 +215,32 @@ void Planet::sync_demographics(const SectorMap& smap) noexcept {
     }
   }
 }
+
+int Planet::revolt(SectorMap& smap, const Race& victim_race,
+                   const player_t agent) {
+  const player_t victim = victim_race.Playernum;
+  int revolted_sectors = 0;
+  for (Sector& s : smap) {
+    if (s.get_owner() != victim || s.get_popn() == 0) continue;
+
+    // Revolt rate is a function of tax rate.
+    if (!success(info(victim).tax)) continue;
+
+    if (long_rand(1, s.get_popn()) <=
+        10L * victim_race.fighters * s.get_troops()) {
+      continue;
+    }
+
+    // Revolt successful: sector transfers to agent, some civilians die, and
+    // defending troops are eliminated.
+    s.set_owner(agent);
+    s.subtract_popn(long_rand(0, s.get_popn() - 1));
+    s.set_troops(0);
+    revolted_sectors++;
+  }
+  if (revolted_sectors > 0) {
+    sync_demographics(smap);
+  }
+
+  return revolted_sectors;
+}

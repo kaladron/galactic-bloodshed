@@ -192,44 +192,45 @@ int main() {
   }
 
   // =========================================================================
-  // Test 6: calculate_bombardment_strength unit tests
+  // Test 6: Ship::bombardment_strength unit tests
   // =========================================================================
   {
     auto test_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 301)
                          .owned_by(1)
+                         .with_guns(guntype_t::HEAVY, 40)
                          .with_destruct(500)
                          .with_damage(0)
                          .build_handle();
 
     // Full guns (40), 0 damage, 500 destruct -> 40
-    test::expect_eq(calculate_bombardment_strength(*test_ship), 40);
+    test::expect_eq(test_ship->bombardment_strength(), 40U);
 
     // Bounded by available destruct crystals: 40 guns, 15 destruct -> 15
     test_ship->destruct() = 15;
-    test::expect_eq(calculate_bombardment_strength(*test_ship), 15);
+    test::expect_eq(test_ship->bombardment_strength(), 15U);
 
     // Hull efficiency degradation: 50% damage -> 20 effective guns, 100
     // destruct
     // -> 20
     test_ship->destruct() = 100;
     test_ship->admin_override_damage(50);
-    test::expect_eq(calculate_bombardment_strength(*test_ship), 20);
+    test::expect_eq(test_ship->bombardment_strength(), 20U);
 
     // Zero destruct crystals -> 0
     test_ship->destruct() = 0;
-    test::expect_eq(calculate_bombardment_strength(*test_ship), 0);
+    test::expect_eq(test_ship->bombardment_strength(), 0U);
 
     // 100% hull damage -> 0
     test_ship->destruct() = 100;
     test_ship->admin_override_damage(100);
-    test::expect_eq(calculate_bombardment_strength(*test_ship), 0);
+    test::expect_eq(test_ship->bombardment_strength(), 0U);
 
     // Non-combat ship with 0 guns (e.g. Spore Pod) -> 0
     auto pod_test_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD, 302)
                              .owned_by(1)
                              .with_destruct(100)
                              .build_handle();
-    test::expect_eq(calculate_bombardment_strength(*pod_test_ship), 0);
+    test::expect_eq(pod_test_ship->bombardment_strength(), 0U);
   }
 
   // =========================================================================

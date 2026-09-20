@@ -96,7 +96,7 @@ bool sell(const command_t& argv, GameObj& g) {
       return false;
   }
 
-  ap_t APcount = MIN(20, amount);
+  ap_t APcount = std::min<ap_t>(20, amount);
   if (!g.deduct_ap(snum, APcount)) {
     g.out << std::format("You don't have {} action points there.\n", APcount);
     return false;

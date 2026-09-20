@@ -814,39 +814,6 @@ void output_ground_attacks(EntityManager& em) {
   }
 }
 
-void compute_power_blocks(EntityManager& entity_manager) {
-  /* compute alliance block power */
-  const std::time_t now = std::time(nullptr);
-  entity_manager.mutate_server_state(
-      [now](ServerState& state) { state.last_update_time = now; });
-
-  for (const Race& race_i : RaceList::readonly(entity_manager)) {
-    const player_t i = race_i.Playernum;
-
-    try {
-      entity_manager.mutate_block(i.value, [&](block& block_i) {
-        block_i.clear_power_stats();
-
-        for (const Race& race_j : RaceList::readonly(entity_manager)) {
-          const player_t j = race_j.Playernum;
-
-          if (block_i.is_member(j)) {
-            try {
-              const auto* power_ptr =
-                  entity_manager.peek_power(powernum_t{j.value});
-              block_i.accumulate_member_power(*power_ptr);
-            } catch (const EntityNotFoundError&) {
-              continue;
-            }
-          }
-        }
-      });
-    } catch (const EntityNotFoundError&) {
-      continue;
-    }
-  }
-}
-
 ScheduleCalculation compute_update_schedule(const ServerState& state,
                                             std::time_t current_time,
                                             bool force) {

@@ -6,26 +6,12 @@
 import dallib;
 import gb.entities;
 import gb.services;
-import gb.turn;
 import test;
 import std;
 
 int main() {
   test::expect_false(GB_VERSION.empty());
   test::expect_ne(GB_VERSION, "Standard GB 5.0");
-
-  std::uint8_t test8 = 0;
-  std::uint32_t test32 = 0;
-  std::uint64_t test64 = 0;
-
-  setbit(test8, 4U);
-  test::expect_eq(test8, 16);
-
-  setbit(test32, 22U);
-  test::expect_eq(test32, 4194304);
-
-  setbit(test64, 48U);
-  test::expect_eq(test64, static_cast<std::uint64_t>(std::exp2(48)));
 
   // Test bool_rand
   test::expect_false(bool_rand(0.0));
@@ -96,9 +82,12 @@ int main() {
     test::expect_eq(ship.active_guns(), 40U);
 
     // Capacities & Overload
-    test::expect_eq(ship.available_crew(), 70U);  // 100 - 30
-    test::expect_eq(ship.available_mil(), 60U);   // 100 - 40
+    test::expect_eq(ship.available_crew(), 70U);               // 100 - 30
+    test::expect_eq(ship.available_mil(), 60U);                // 100 - 40
+    test::expect_eq(ship.available_destruct_capacity(), 30L);  // 50 - 20
+    test::expect_eq(ship.destruct_power(), 20U);
     test::expect_eq(ship.max_crystals_capacity(), MAX_CRYSTALS);
+    test::expect_eq(ship.available_crystals_capacity(), MAX_CRYSTALS);
     test::expect_false(ship.is_overloaded());
 
     ship.resource() = 600;

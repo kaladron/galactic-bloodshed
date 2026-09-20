@@ -7,6 +7,7 @@ module;
 
 import gb.entities;
 import gb.services;
+import gb.turn;
 import std;
 
 module commands;

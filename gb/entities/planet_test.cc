@@ -706,17 +706,10 @@ int main() {
     test::expect_eq(s2.get_popn(), 0);
   }
 
-  // Test 27: revolt() demographic synchronization and troop suppression
+  // Test 27: Planet::revolt() demographic synchronization and troop suppression
   {
     TestContext ctx;
     ctx.with_standard_universe();
-
-    // Missing race throws EntityNotFoundError (fail-fast on corrupted IDs)
-    Planet* earth = nullptr;
-    ctx.em.mutate_planet(0, 0, [&](Planet& p) { earth = &p; });
-    test::expect_throws<EntityNotFoundError>([&]() {
-      (void)revolt(*earth, ctx.em, 0, 0, player_t{99}, player_t{2});
-    });
 
     // Populate Earth sector (0,0) with player 1 civilians, 100% tax, 0 troops
     ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
@@ -740,9 +733,9 @@ int main() {
     ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
     ctx.em.mutate_sectormap(
         0, 0, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(500); });
-    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
-      p.sync_demographics(*ctx.em.peek_sectormap(0, 0));
-      const int suppressed = revolt(p, ctx.em, 0, 0, player_t{1}, player_t{2});
+    ctx.em.mutate_planet_and_sectors(0, 0, [&](Planet& p, SectorMap& smap) {
+      p.sync_demographics(smap);
+      const int suppressed = p.revolt(smap, *ctx.em.peek_race(1), player_t{2});
       test::expect_eq(suppressed, 0);
     });
 
@@ -750,10 +743,10 @@ int main() {
     // demographics
     ctx.em.mutate_sectormap(
         0, 0, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(0); });
-    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
-      p.sync_demographics(*ctx.em.peek_sectormap(0, 0));
+    ctx.em.mutate_planet_and_sectors(0, 0, [&](Planet& p, SectorMap& smap) {
+      p.sync_demographics(smap);
       p.info(1).tax = 100;
-      const int revolted = revolt(p, ctx.em, 0, 0, player_t{1}, player_t{2});
+      const int revolted = p.revolt(smap, *ctx.em.peek_race(1), player_t{2});
       test::expect_eq(revolted, 1);
       test::expect_eq(p.info(1).numsectsowned, 0U);
       test::expect_eq(p.info(2).numsectsowned, 1U);

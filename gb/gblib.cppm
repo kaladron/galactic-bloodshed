@@ -15,7 +15,4 @@ export import :doplanet;
 export import :dosector;
 export import :doship;
 export import :doturncmd;
-export import :misc;
 export import :turnstats;
-
-export std::vector<Victory> create_victory_list(EntityManager&);

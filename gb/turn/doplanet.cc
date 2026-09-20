@@ -1121,56 +1121,6 @@ void doplanet(EntityManager& entity_manager, const Star& star, Planet& planet,
 }
 
 /**
- * @brief Performs a revolt on a planet.
- *
- * This function calculates the number of sectors that revolt on a planet owned
- * by a victim player and assigns them to an agent player. The revolt rate is
- * determined by the tax rate of the victim player. If the revolt is successful,
- * the sectors are transferred to the agent player, some population is killed,
- * and all troops are destroyed. The number of revolted sectors is returned.
- *
- * @param pl The planet on which the revolt is performed.
- * @param victim The player who currently owns the planet.
- * @param agent The player who will receive the revolted sectors.
- * @return The number of sectors that revolted.
- */
-int revolt(Planet& pl, EntityManager& entity_manager, const starnum_t snum,
-           const planetnum_t pnum, const player_t victim,
-           const player_t agent) {
-  const auto* victim_race = entity_manager.peek_race(victim);
-  if (!victim_race) {
-    return 0;
-  }
-
-  int revolted_sectors = 0;
-  entity_manager.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
-    for (Sector& s : smap) {
-      if (s.get_owner() != victim || s.get_popn() == 0) continue;
-
-      // Revolt rate is a function of tax rate.
-      if (!success(pl.info(victim).tax)) continue;
-
-      if (long_rand(1, s.get_popn()) <=
-          10L * victim_race->fighters * s.get_troops()) {
-        continue;
-      }
-
-      // Revolt successful: sector transfers to agent, some civilians die, and
-      // defending troops are eliminated.
-      s.set_owner(agent);
-      s.subtract_popn(long_rand(0, s.get_popn() - 1));
-      s.set_troops(0);
-      revolted_sectors++;
-    }
-    if (revolted_sectors > 0) {
-      pl.sync_demographics(smap);
-    }
-  });
-
-  return revolted_sectors;
-}
-
-/**
  * @brief Updates the orbital position of a planet and its orbiting ships.
  *
  * This function calculates the new orbital position of a planet based on

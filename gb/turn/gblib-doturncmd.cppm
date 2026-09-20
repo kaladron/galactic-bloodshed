@@ -61,11 +61,6 @@ export void do_segment(EntityManager& entity_manager,
 export VictoryResult handle_victory(EntityManager& em,
                                     bool victory_enabled = VICTORY);
 
-/// \brief Aggregates power block membership statistics across all empires and
-/// alliances.
-/// \param em Database entity manager.
-export void compute_power_blocks(EntityManager& em);
-
 /// \brief Evaluates open interstellar market lots, transfers purchased
 /// commodities, charges freight shipping fees, and deposits goods at recipient
 /// planets.

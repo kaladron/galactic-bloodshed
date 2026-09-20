@@ -36,12 +36,6 @@ export std::optional<Coordinates>
 find_bombardment_target(EntityManager& entity_manager, const Ship& ship,
                         const Race& attacker_race);
 
-/// \brief Calculates the effective bombardment strength based on guns, hull
-/// efficiency, and available destruct crystals.
-/// \param ship Bombarding ship.
-/// \return Weapon strength capped by available destruct resources.
-export int calculate_bombardment_strength(const Ship& ship);
-
 /// \brief Dispatches telegram reports and alerts to the attacker and victim
 /// races, and posts public combat news.
 /// \param entity_manager Entity manager for messaging.

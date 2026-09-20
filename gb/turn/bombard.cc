@@ -58,13 +58,6 @@ find_bombardment_target(EntityManager& entity_manager, const Ship& ship,
   return target;
 }
 
-int calculate_bombardment_strength(const Ship& ship) {
-  const double effective_guns =
-      static_cast<double>(ship.max_guns_capacity()) * ship.hull_efficiency();
-  return std::max(0, std::min(static_cast<int>(effective_guns),
-                              static_cast<int>(ship.destruct())));
-}
-
 void dispatch_bombardment_alerts(EntityManager& entity_manager,
                                  const Ship& ship, const Star& star,
                                  Coordinates target, player_t old_owner,
@@ -161,11 +154,11 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
     return 0;
   }
 
-  const int str = calculate_bombardment_strength(ship);
-  if (str <= 0) {
+  const weapon_power_t str = ship.bombardment_strength();
+  if (str == 0) {
     /* no weapons! */
     if (!ship.notified()) {
-      ship.notified() = 1;
+      ship.notified() = true;
       std::string telegram =
           std::format("Bulletin\n\n {}{} {} has no weapons to bombard with.\n",
                       ship.type_letter(), ship.number(), ship.name());

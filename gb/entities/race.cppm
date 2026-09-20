@@ -113,6 +113,12 @@ public:
   PlayerVector<int, MAXPLAYERS>
       translate{}; /* translation mod for each player */
 
+  /// Increases this race's translation knowledge of `other` by `amount`,
+  /// clamped to [0, 100].
+  void increase_translation(player_t other, int amount = 5) noexcept {
+    translate[other] = std::clamp(translate[other] + amount, 0, 100);
+  }
+
   PlayerBitset<MAXPLAYERS> atwar;
   PlayerBitset<MAXPLAYERS> allied;
 

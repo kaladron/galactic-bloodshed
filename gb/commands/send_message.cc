@@ -56,9 +56,8 @@ bool deduct_message_ap(GameObj& g, ap_t ap_cost) {
  */
 void increment_translation_skill(EntityManager& em, player_t recipient,
                                  player_t sender) {
-  em.mutate_race(recipient, [&](Race& alien) {
-    alien.translate[sender] = std::min(alien.translate[sender] + 2, 100);
-  });
+  em.mutate_race(recipient,
+                 [&](Race& alien) { alien.increase_translation(sender, 2); });
 }
 
 /**

@@ -266,16 +266,14 @@ void finalize_boarding_ownership_and_morale(Ship& s, Ship& s2, Race& race,
     alien.adjust_morale(race, static_cast<int>(race.fighters));
   }
 
-  alien.translate[Playernum] = std::min(alien.translate[Playernum] + 5, 100);
-  race.translate[outcome.old_defender_owner] =
-      std::min(race.translate[outcome.old_defender_owner] + 5, 100);
+  alien.increase_translation(Playernum);
+  race.increase_translation(outcome.old_defender_owner);
 
   if (!outcome.boarders && (s2.popn() + s2.troops())) {
-    alien.translate[Playernum] = std::min(alien.translate[Playernum] + 25, 100);
+    alien.increase_translation(Playernum, 25);
   }
   if (s2.owner() == Playernum) {
-    race.translate[outcome.old_defender_owner] =
-        std::min(race.translate[outcome.old_defender_owner] + 25, 100);
+    race.increase_translation(outcome.old_defender_owner, 25);
   }
 }
 

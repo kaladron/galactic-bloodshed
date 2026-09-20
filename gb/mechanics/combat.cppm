@@ -106,3 +106,32 @@ export std::tuple<std::string, std::string>
 people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
                    const Race& race, const Race& alien, const Sector& sect,
                    Coordinates target_coords);
+
+/// \brief Simulates proximity triggering, detonation, ship collateral damage,
+/// and orbital planetary bombardment for space mines.
+/// \param ship Mine ship executing turn processing or manual detonation.
+/// \param detonate Whether manual or forced detonation is triggered.
+/// \param entity_manager Entity manager for spatial queries and mutations.
+export void domine(Ship& ship, bool detonate, EntityManager& entity_manager);
+
+/// \brief Checks whether an activated space mine's proximity fuse is tripped
+/// by an enemy or non-allied ship within its trigger radius.
+/// \param mine Mine ship evaluating proximity.
+/// \param entity_manager Entity manager for spatial queries and alliance
+/// lookups.
+/// \return True if an enemy or non-allied ship is within trigger radius.
+export bool check_mine_proximity_trigger(const Ship& mine,
+                                         EntityManager& entity_manager);
+
+/// \brief Detonates a mine against all valid victim ships in the same scope.
+/// \param mine Mine ship delivering explosive payload.
+/// \param entity_manager Entity manager for ship mutations and telegrams.
+export void detonate_mine_against_ships(Ship& mine,
+                                        EntityManager& entity_manager);
+
+/// \brief Detonates an orbital mine against the planetary surface.
+/// \param mine Mine ship delivering orbital bombardment.
+/// \param postmsg Base notification message to append to damage reports.
+/// \param entity_manager Entity manager for planetary mutations.
+export void detonate_mine_against_planet(Ship& mine, const std::string& postmsg,
+                                         EntityManager& entity_manager);

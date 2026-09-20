@@ -10,16 +10,12 @@ import std;
 import gb.entities;
 import gb.services;
 import :turnstats;
-import :misc;
 
 export void doplanet(EntityManager&, const Star& star, Planet& planet,
                      TurnStats& stats);
 
 export void moveplanet(EntityManager& entity_manager, const Star& star,
                        Planet& planet);
-
-export int revolt(Planet& p, EntityManager& entity_manager, starnum_t star,
-                  planetnum_t pnum, player_t victim, player_t agent);
 
 export enum class GroundMovementError {
   NotTerraformVehicle,

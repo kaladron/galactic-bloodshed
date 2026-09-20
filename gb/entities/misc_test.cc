@@ -30,23 +30,6 @@ void test_adjust_morale() {
                     "Loser morale should decrease after defeat");
 }
 
-void test_add_to_queue() {
-  std::deque<std::string> q;
-
-  // Empty string should be ignored
-  add_to_queue(q, "");
-  test::expect_true(q.empty(), "Empty string must not be queued");
-
-  // Non-empty strings should be queued in FIFO order
-  add_to_queue(q, "first line");
-  test::expect_eq(q.size(), 1);
-  test::expect_eq(q.front(), "first line");
-
-  add_to_queue(q, "second line");
-  test::expect_eq(q.size(), 2);
-  test::expect_eq(q.back(), "second line");
-}
-
 void test_telegram_star() {
   TestContext ctx;
   ctx.with_standard_universe();
@@ -105,7 +88,6 @@ void test_telegram_star() {
 
 int main() {
   test_adjust_morale();
-  test_add_to_queue();
   test_telegram_star();
 
   std::println(std::cout, "✓ misc_test passed!");

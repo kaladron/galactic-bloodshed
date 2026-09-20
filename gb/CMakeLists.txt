@@ -178,6 +178,7 @@ target_sources(
           mechanics/combat.cppm
           mechanics/construction.cppm
           mechanics/visibility.cppm
+          mechanics/victory.cppm
   PRIVATE mechanics/navigation.cc
           mechanics/fuel.cc
           mechanics/order.cc
@@ -185,7 +186,8 @@ target_sources(
           mechanics/shootblast.cc
           mechanics/ground_combat.cc
           mechanics/construction.cc
-          mechanics/visibility.cc)
+          mechanics/visibility.cc
+          mechanics/victory.cc)
 target_link_libraries(
   gb_mechanics
   PUBLIC gb_entities gb_services scnlib_module)
@@ -202,15 +204,12 @@ target_sources(
           turn/gblib-dosector.cppm
           turn/gblib-doship.cppm
           turn/gblib-doturncmd.cppm
-          entities/gblib-misc.cppm
           turn/gblib-turnstats.cppm
   PRIVATE turn/bombard.cc
           turn/doplanet.cc
           turn/dosector.cc
           turn/doship.cc
           turn/doturncmd.cc
-          entities/misc.cc
-          server/victory.cc
           turn/vn.cc)
 target_link_libraries(
   gblib
@@ -371,7 +370,7 @@ target_sources(
           commands/who.cc
           commands/whois.cc
           commands/zoom.cc)
-target_link_libraries(commands PRIVATE gblib gb_entities gb_services session notification SQLite::SQLite3 glaze::glaze
+target_link_libraries(commands PRIVATE gb_turn gb_mechanics gb_entities gb_services session notification SQLite::SQLite3 glaze::glaze
                                        scnlib_module tabulate_module)
 
 # Create test utilities module (standalone - not part of gblib)

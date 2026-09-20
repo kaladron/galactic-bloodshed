@@ -127,33 +127,29 @@ void merchant_load_cargo(Ship& s, plinfo& pinfo, const auto& load,
 
   telegram << "\t\t";
   if (load.fuel) {
-    const int room = std::max(0, static_cast<int>(s.max_fuel_capacity()) -
-                                     static_cast<int>(s.fuel()));
-    const int amount = std::clamp<int>(room, 0, pinfo.fuel);
+    const resource_t amount =
+        std::min<resource_t>(s.available_fuel_capacity(), pinfo.fuel);
     pinfo.fuel -= amount;
-    s.add_fuel(static_cast<double>(amount));
+    s.add_fuel(amount);
     telegram << std::format("{}f ", amount);
   }
   if (load.resources) {
-    const int room = std::max(0, static_cast<int>(s.max_resource_capacity()) -
-                                     static_cast<int>(s.resource()));
-    const int amount = std::clamp<int>(room, 0, pinfo.resource);
+    const resource_t amount =
+        std::min<resource_t>(s.available_resource_capacity(), pinfo.resource);
     pinfo.resource -= amount;
     s.add_resource(amount);
     telegram << std::format("{}r ", amount);
   }
   if (load.crystals) {
-    const int room = std::max(0, static_cast<int>(s.max_crystals_capacity()) -
-                                     static_cast<int>(s.crystals()));
-    const int amount = std::clamp<int>(room, 0, pinfo.crystals);
+    const crystal_t amount =
+        std::min<crystal_t>(s.available_crystals_capacity(), pinfo.crystals);
     pinfo.crystals -= amount;
     s.add_crystals(amount);
     telegram << std::format("{}x ", amount);
   }
   if (load.destruct) {
-    const int room = std::max(0, static_cast<int>(s.max_destruct_capacity()) -
-                                     static_cast<int>(s.destruct()));
-    const int amount = std::clamp<int>(room, 0, pinfo.destruct);
+    const resource_t amount =
+        std::min<resource_t>(s.available_destruct_capacity(), pinfo.destruct);
     pinfo.destruct -= amount;
     s.add_destruct(amount);
     telegram << std::format("{}d ", amount);
@@ -167,25 +163,25 @@ void merchant_unload_cargo(Ship& s, plinfo& pinfo, const auto& unload,
 
   telegram << "\t\t";
   if (unload.fuel) {
-    const int amount = static_cast<int>(s.fuel());
+    const resource_t amount = s.fuel_units();
     pinfo.fuel += amount;
     telegram << std::format("{}f ", amount);
-    s.consume_fuel(static_cast<double>(amount));
+    s.consume_fuel(amount);
   }
   if (unload.resources) {
-    const int amount = s.resource();
+    const resource_t amount = s.resource();
     pinfo.resource += amount;
     telegram << std::format("{}r ", amount);
     s.consume_resource(amount);
   }
   if (unload.crystals) {
-    const int amount = s.crystals();
+    const crystal_t amount = s.crystals();
     pinfo.crystals += amount;
     telegram << std::format("{}x ", amount);
     s.consume_crystals(amount);
   }
   if (unload.destruct) {
-    const int amount = s.destruct();
+    const resource_t amount = s.destruct();
     pinfo.destruct += amount;
     telegram << std::format("{}d ", amount);
     s.consume_destruct(amount);

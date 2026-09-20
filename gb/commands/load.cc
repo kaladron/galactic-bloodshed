@@ -246,9 +246,8 @@ void unload_onto_alien_sector(GameObj& g, Planet& planet, SectorMap& smap,
       g.entity_manager.mutate_star(
           g.snum(), [&](Star& s) { s.record_ground_assault(race, alien); });
 
-      alien.translate[Playernum] = MIN(alien.translate[Playernum] + 5, 100);
-      race.translate[defender_owner] =
-          MIN(race.translate[defender_owner] + 5, 100);
+      alien.increase_translation(Playernum);
+      race.increase_translation(defender_owner);
 
       const auto& star = *g.entity_manager.peek_star(g.snum());
       governor_t defender_gov = star.governor(defender_owner);

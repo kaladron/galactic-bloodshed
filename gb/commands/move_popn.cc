@@ -170,8 +170,8 @@ bool move_popn(const command_t& argv, GameObj& g) {
           g.snum(), [&](Star& s) { s.record_ground_assault(race, alien); });
 
       /* races find out about each other */
-      alien.translate[Playernum] = MIN(alien.translate[Playernum] + 5, 100);
-      race.translate[old2owner] = MIN(race.translate[old2owner] + 5, 100);
+      alien.increase_translation(Playernum);
+      race.increase_translation(old2owner);
 
       g.entity_manager.mutate_planet_and_sectors(
           g.snum(), g.pnum(), [&](Planet& planet, SectorMap& smap) {
@@ -281,15 +281,13 @@ bool move_popn(const command_t& argv, GameObj& g) {
             if (!(sect.get_popn() + sect.get_troops() + people)) {
               telegram += "You killed all of them!\n";
               /* increase modifier */
-              race.translate[old2owner] =
-                  MIN(race.translate[old2owner] + 5, 100);
+              race.increase_translation(old2owner);
             }
             if (!people) {
               g.out << std::format(
                   "Oh no! They killed your party to the last man!\n");
               /* increase modifier */
-              alien.translate[Playernum] =
-                  MIN(alien.translate[Playernum] + 5, 100);
+              alien.increase_translation(Playernum);
             }
 
             telegram +=

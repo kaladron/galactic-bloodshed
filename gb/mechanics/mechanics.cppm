@@ -9,3 +9,4 @@ export import :navigation;
 export import :combat;
 export import :construction;
 export import :visibility;
+export import :victory;

@@ -127,7 +127,7 @@ bool declare(const command_t& argv, GameObj& g) {
 
   g.entity_manager.mutate_race(n, [&](Race& alien) {
     /* They, of course, learn more about you */
-    alien.translate[Playernum] = MIN(alien.translate[Playernum] + d_mod, 100);
+    alien.increase_translation(Playernum, d_mod);
   });
 
   post(g.entity_manager, news_msg, NewsType::DECLARATION);

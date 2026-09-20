@@ -5,12 +5,9 @@
 
 module;
 
-#include <cstdlib>
-
 import std;
-#undef stdout
 
-module gblib;
+module gb.turn;
 
 /// \brief Finds the closest and second-closest star systems to the specified
 /// coordinates, excluding the current star system.

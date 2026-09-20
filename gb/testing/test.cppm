@@ -16,9 +16,10 @@ export module test;
 
 import commands;
 import dallib; // For Database, initialize_schema
-import gb.entities;
-import gb.services;
-export import gblib;
+export import gb.entities;
+export import gb.services;
+export import gb.mechanics;
+export import gb.turn;
 export import gb.repositories;
 import gb.creator;
 import std;

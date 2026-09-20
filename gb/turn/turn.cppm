@@ -8,4 +8,14 @@ module;
 
 export module gb.turn;
 
-export import gblib;
+import gb.entities;
+import gb.services;
+import gb.mechanics;
+
+export import :turnstats;
+export import :bombard;
+export import :doplanet;
+export import :dosector;
+export import :doship;
+export import :vn;
+export import :doturncmd;

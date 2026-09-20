@@ -6,9 +6,8 @@
 module;
 
 import std;
-#undef stdout
 
-module gblib;
+module gb.turn;
 
 /// \brief Attempts to migrate colonists from a source sector to an adjacent
 /// target coordinate.

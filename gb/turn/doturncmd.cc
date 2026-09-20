@@ -5,13 +5,9 @@
 
 module;
 
-#include "gb/entities/files.h"
-#include <sys/stat.h>
-#include <cassert>
-
 import std;
 
-module gblib;
+module gb.turn;
 
 namespace {
 // TurnState: Encapsulates turn-processing state that was previously global.
@@ -31,17 +27,13 @@ struct TurnState {
   explicit TurnState(EntityManager& em) : entity_manager(em) {}
 
   // Bounds-checked accessors for star population data (delegate to stats)
-  population_t& star_popn(starnum_t star, player_t player) noexcept {
-    assert(star.value >= 0 && star.value < NUMSTARS &&
-           "Star index out of bounds");
-    return stats.starpopns[star.value][player];
+  population_t& star_popn(starnum_t star, player_t player) {
+    return stats.starpopns.at(star.value)[player];
   }
 
   [[nodiscard]] const population_t& star_popn(starnum_t star,
-                                              player_t player) const noexcept {
-    assert(star.value >= 0 && star.value < NUMSTARS &&
-           "Star index out of bounds");
-    return stats.starpopns[star.value][player];
+                                              player_t player) const {
+    return stats.starpopns.at(star.value)[player];
   }
 };
 
@@ -817,7 +809,6 @@ void output_ground_attacks(EntityManager& em) {
 ScheduleCalculation compute_update_schedule(const ServerState& state,
                                             std::time_t current_time,
                                             bool force) {
-  assert(state.segments >= 1);
   const segments_t segs = std::max<segments_t>(1, state.segments);
   ScheduleCalculation result{};
 
@@ -849,7 +840,6 @@ ScheduleCalculation compute_segment_schedule(const ServerState& state,
                                              std::time_t current_time,
                                              bool override,
                                              int target_segment) {
-  assert(state.segments >= 1);
   const segments_t segs = std::max<segments_t>(1, state.segments);
   ScheduleCalculation result{};
 
@@ -878,9 +868,8 @@ ScheduleCalculation compute_segment_schedule(const ServerState& state,
 void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
                bool force) {
   std::time_t clk = std::time(nullptr);
-  struct stat stbuf;
 
-  bool fakeit = (!force && stat(nogofl, &stbuf) >= 0);
+  bool fakeit = (!force && std::filesystem::exists(PKGSTATEDIR "nogo"));
 
   std::string update_msg =
       std::format("{}\nDOING UPDATE...\n", format_timestamp(clk));
@@ -936,14 +925,12 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
 void do_segment(EntityManager& entity_manager,
                 SessionRegistry& session_registry, int override, int segment) {
   std::time_t clk = std::time(nullptr);
-  struct stat stbuf;
 
   const auto* state_ptr = entity_manager.peek_server_state();
   if (!state_ptr) return;
-  assert(state_ptr->segments >= 1);
   if (!override && state_ptr->segments <= 1) return;
 
-  bool fakeit = (!override && stat(nogofl, &stbuf) >= 0);
+  bool fakeit = (!override && std::filesystem::exists(PKGSTATEDIR "nogo"));
 
   std::string movement_msg =
       std::format("{}\nDOING MOVEMENT...\n", format_timestamp(clk));

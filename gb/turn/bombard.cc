@@ -7,7 +7,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.turn;
 
 bool check_orbital_pdn_defense(EntityManager& entity_manager,
                                const Planet& planet, player_t attacker) {

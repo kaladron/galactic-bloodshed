@@ -5,12 +5,11 @@
 /// processing.
 
 module;
-#include <cstdlib>
 
 import std;
 import tabulate;
 
-module gblib;
+module gb.turn;
 
 std::expected<Coordinates, GroundMovementError>
 advance_ground_vehicle(Ship& ship, const Planet& planet,

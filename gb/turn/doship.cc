@@ -7,7 +7,7 @@ module;
 
 import std;
 
-module gblib;
+module gb.turn;
 
 void do_repair(Ship& ship, EntityManager& entity_manager) {
   const auto& state = *entity_manager.peek_server_state();

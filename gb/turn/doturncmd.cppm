@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-doturncmd.cppm
+/// \file doturncmd.cppm
 /// \brief Module interface partition for turn orchestration and scheduling.
 
-export module gblib:doturncmd;
+export module gb.turn:doturncmd;
 
 import gb.entities;
 import gb.services;

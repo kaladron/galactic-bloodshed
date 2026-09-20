@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-bombard.cppm
+/// \file bombard.cppm
 /// \brief Module interface partition for autonomous berserker planetary
 /// bombardment.
 
-export module gblib:bombard;
+export module gb.turn:bombard;
 
 import gb.entities;
 import gb.services;

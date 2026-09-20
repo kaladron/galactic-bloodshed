@@ -192,19 +192,21 @@ target_link_libraries(
   gb_mechanics
   PUBLIC gb_entities gb_services scnlib_module)
 
-add_library(gblib)
+# Standalone Tier-5 Turn & Segment Simulation Engine Library
+add_library(gb_turn)
 target_sources(
-  gblib
+  gb_turn
   PUBLIC FILE_SET
          CXX_MODULES
          FILES
-          gblib.cppm
-          turn/gblib-bombard.cppm
-          turn/gblib-doplanet.cppm
-          turn/gblib-dosector.cppm
-          turn/gblib-doship.cppm
-          turn/gblib-doturncmd.cppm
-          turn/gblib-turnstats.cppm
+          turn/turn.cppm
+          turn/turnstats.cppm
+          turn/bombard.cppm
+          turn/doplanet.cppm
+          turn/dosector.cppm
+          turn/doship.cppm
+          turn/vn.cppm
+          turn/doturncmd.cppm
   PRIVATE turn/bombard.cc
           turn/doplanet.cc
           turn/dosector.cc
@@ -212,14 +214,8 @@ target_sources(
           turn/doturncmd.cc
           turn/vn.cc)
 target_link_libraries(
-  gblib
-  PUBLIC gb_entities gb_services gb_mechanics strong_id_module dallib types_module scnlib_module tabulate_module)
-
-add_library(gb_turn)
-target_sources(
   gb_turn
-  PUBLIC FILE_SET CXX_MODULES FILES turn/turn.cppm)
-target_link_libraries(gb_turn PUBLIC gblib)
+  PUBLIC gb_entities gb_services gb_mechanics strong_id_module dallib types_module scnlib_module tabulate_module)
 
 add_library(gb_creator)
 target_sources(
@@ -259,7 +255,7 @@ target_sources(
   auth
   PUBLIC FILE_SET CXX_MODULES FILES server/auth.cppm
   PRIVATE server/auth.cc)
-target_link_libraries(auth PUBLIC gblib gb_turn gb_entities gb_services session commands)
+target_link_libraries(auth PUBLIC gb_turn gb_entities gb_services session commands)
 
 # Create server library (Server Layer)
 add_library(server)
@@ -267,7 +263,7 @@ target_sources(
   server
   PUBLIC FILE_SET CXX_MODULES FILES server/server.cppm
   PRIVATE server/server.cc)
-target_link_libraries(server PUBLIC gblib gb_turn gb_entities gb_services asio_module session auth notification commands dallib)
+target_link_libraries(server PUBLIC gb_turn gb_entities gb_services asio_module session auth notification commands dallib)
 
 add_library(gb_server)
 target_sources(
@@ -373,7 +369,7 @@ target_sources(
 target_link_libraries(commands PRIVATE gb_turn gb_mechanics gb_entities gb_services session notification SQLite::SQLite3 glaze::glaze
                                        scnlib_module tabulate_module)
 
-# Create test utilities module (standalone - not part of gblib)
+# Create test utilities module
 add_library(test_module)
 target_sources(
   test_module
@@ -383,7 +379,7 @@ target_sources(
           testing/test_context.cc
           testing/test_matrix.cc
           testing/test_builders.cc)
-target_link_libraries(test_module PUBLIC gblib gb_entities gb_repositories gb_services gb_turn gb_server gb_creator dallib session commands)
+target_link_libraries(test_module PUBLIC gb_entities gb_repositories gb_services gb_mechanics gb_turn gb_server gb_creator dallib session commands)
 
 # Executable targets
 add_executable(makeuniv creator/makeuniv.cc)
@@ -396,7 +392,7 @@ add_executable(racegen creator/racegen.cc)
 target_link_libraries(racegen PRIVATE gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
 
 add_executable(GB server/GB_server.cc)
-target_link_libraries(GB PRIVATE gblib gb_turn gb_entities gb_services gb_server commands asio_module dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(GB PRIVATE gb_turn gb_mechanics gb_entities gb_services gb_server commands asio_module dallib SQLite::SQLite3 glaze::glaze)
 install(TARGETS GB makeuniv enrol racegen)
 
 # Test helper function
@@ -407,7 +403,7 @@ function(gb_add_test name)
   endif()
   add_executable(${name} ${ARG_SOURCES})
   target_link_libraries(${name} PRIVATE
-    test_module dallib gblib gb_entities gb_repositories gb_services gb_turn gb_server commands SQLite::SQLite3 glaze::glaze ${ARG_EXTRA_LIBS}
+    test_module dallib gb_entities gb_repositories gb_services gb_mechanics gb_turn gb_server commands SQLite::SQLite3 glaze::glaze ${ARG_EXTRA_LIBS}
   )
   add_test(NAME GB_${name} COMMAND ${name})
   set_tests_properties(GB_${name} PROPERTIES ENVIRONMENT

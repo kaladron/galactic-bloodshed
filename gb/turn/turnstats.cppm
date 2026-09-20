@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file gblib-turnstats.cppm
+/// \file turnstats.cppm
 /// \brief Module interface partition for TurnStats turn-scoped statistics
 /// accumulator.
 
@@ -8,7 +8,7 @@ module;
 
 import std;
 
-export module gblib:turnstats;
+export module gb.turn:turnstats;
 
 import gb.entities;
 

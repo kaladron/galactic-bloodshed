@@ -97,7 +97,7 @@ bool enslave(const command_t& argv, GameObj& g) {
                                     planet_name);
 
             if (def <= 2 * attack) {
-              p.slaved_to() = Playernum;
+              p.enslave_to(Playernum);
 
               /* send telegs to anyone there */
               telegram << std::format("ENSLAVED by {}!!\n", s);

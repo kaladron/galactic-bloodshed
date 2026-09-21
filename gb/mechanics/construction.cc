@@ -68,9 +68,9 @@ int getcount(const command_t& argv, const std::size_t elem) {
 bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
-  if (planet.slaved_to() != 0 && planet.slaved_to() != Playernum) {
+  if (planet.is_enslaved_to_foreign(Playernum)) {
     std::string message = std::format("This planet is enslaved by player {}.\n",
-                                      planet.slaved_to());
+                                      *planet.slaved_to());
     push_telegram(g.entity_manager, Playernum, Governor, message);
     return false;
   }

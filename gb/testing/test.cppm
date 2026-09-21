@@ -27,8 +27,18 @@ import std;
 export namespace test {
 
 template <typename T>
+struct is_std_optional : std::false_type {};
+
+template <typename V>
+struct is_std_optional<std::optional<V>> : std::true_type {};
+
+template <typename T>
 std::string format_or_fallback(const T& val) {
-  if constexpr (std::formattable<T, char>) {
+  if constexpr (std::same_as<std::remove_cvref_t<T>, std::nullopt_t>) {
+    return "nullopt";
+  } else if constexpr (is_std_optional<std::remove_cvref_t<T>>::value) {
+    return val ? format_or_fallback(*val) : "nullopt";
+  } else if constexpr (std::formattable<T, char>) {
     return std::format("{}", val);
   } else if constexpr (std::is_enum<T>::value) {
     return std::format("{}", static_cast<std::underlying_type_t<T>>(val));

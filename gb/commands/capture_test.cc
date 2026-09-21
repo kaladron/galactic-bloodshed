@@ -149,11 +149,11 @@ void test_capture_domain_errors() {
       g.out.str(), "Syntax: capture <ship> [<number>] [civilians|military]");
 
   // 2. Enslaved planet check
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = 2; });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.enslave_to(2); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "enslaved");
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = 0; });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.free_slaves(); });
 
   // 3. Ship not landed
   ctx.em.mutate_ship(1, [](Ship& s) { s.launch_to_orbit(); });

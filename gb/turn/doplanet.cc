@@ -637,7 +637,7 @@ void notify_slave_revolt(EntityManager& entity_manager, const Star& star,
 EnslavementResult execute_slave_revolt(EntityManager& entity_manager,
                                        const Star& star, Planet& planet,
                                        SectorMap& smap, bool intimidated) {
-  const player_t former_master = planet.slaved_to();
+  const player_t former_master = planet.slaved_to().value_or(0);
   int collateral_devastated = 0;
   int revolt_sectors = planet.calculate_revolt_devastation_count();
   while (--revolt_sectors) {
@@ -681,7 +681,7 @@ EnslavementResult process_enslavement_and_revolts(EntityManager& entity_manager,
     return EnslavementResult{.outcome = EnslavementOutcome::None};
   }
 
-  const player_t master = planet.slaved_to();
+  const player_t master = *planet.slaved_to();
   if (!planet.is_slave_revolt_triggered()) {
     divert_slave_tribute(entity_manager, planet, stats, master);
     return EnslavementResult{
@@ -866,9 +866,9 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
         telegram_buf << std::format("Environmental damage on sector {},{}\n",
                                     envir_damage->x, envir_damage->y);
       }
-      if (planet.slaved_to() != 0) {
+      if (planet.slaved_to()) {
         telegram_buf << std::format("ENSLAVED to player {}\n",
-                                    planet.slaved_to());
+                                    *planet.slaved_to());
       }
       push_telegram(entity_manager, p, star.governor(p), telegram_buf.str());
     }

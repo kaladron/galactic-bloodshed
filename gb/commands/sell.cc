@@ -36,9 +36,9 @@ bool sell(const command_t& argv, GameObj& g) {
 
   const auto& p_peek = *g.entity_manager.peek_planet(snum, pnum);
 
-  if (p_peek.slaved_to() != 0 && p_peek.slaved_to() != Playernum) {
+  if (p_peek.is_enslaved_to_foreign(Playernum)) {
     g.out << std::format("This planet is enslaved to player {}.\n",
-                         p_peek.slaved_to());
+                         *p_peek.slaved_to());
     return false;
   }
 
@@ -137,7 +137,7 @@ bool sell(const command_t& argv, GameObj& g) {
   c.amount = amount;
   c.deliver = false;
   c.bid = 0;
-  c.bidder = 0;
+  c.bidder = std::nullopt;
   c.star_from = snum;
   c.planet_from = pnum;
   c.star_to = 0;

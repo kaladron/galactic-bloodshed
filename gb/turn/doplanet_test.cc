@@ -31,7 +31,7 @@ Race createTestRace(player_t playernum = player_t{1}) {
 
 Planet createTestPlanet(Coordinates dimensions = Coordinates{10, 10}) {
   Planet planet(PlanetType::EARTH, dimensions);
-  planet.slaved_to() = 0;
+  planet.free_slaves();
   planet.toxic() = 0;
   planet.rtemp() = 50;
   planet.temp() = 50;
@@ -2148,7 +2148,7 @@ void test_process_enslavement_and_revolts() {
   test::expect_eq(res3.outcome, EnslavementOutcome::SlaveRevolt);
   test::expect_eq(res3.master, player_t{1});
   test::expect_false(planet.is_enslaved());
-  test::expect_eq(planet.slaved_to(), 0);
+  test::expect_eq(planet.slaved_to(), std::nullopt);
 
   // Verify telegram was pushed to slave player
   auto telegrams = em.get_telegrams(player_t{2}, governor_t{0});
@@ -2262,7 +2262,7 @@ void test_execute_slave_revolt() {
     test::expect_gt(res.collateral_devastated_count, 0);
     test::expect_eq(res.master_devastated_count, 0);
     test::expect_false(planet.is_enslaved());
-    test::expect_eq(planet.slaved_to(), 0);
+    test::expect_eq(planet.slaved_to(), std::nullopt);
 
     auto tele1 = em.get_telegrams(player_t{1}, governor_t{0});
     test::expect_false(tele1.empty());
@@ -2298,7 +2298,7 @@ void test_execute_slave_revolt() {
     test::expect_eq(res.collateral_devastated_count, 0);
     test::expect_ge(res.master_devastated_count, 0);
     test::expect_false(planet.is_enslaved());
-    test::expect_eq(planet.slaved_to(), 0);
+    test::expect_eq(planet.slaved_to(), std::nullopt);
   }
 }
 

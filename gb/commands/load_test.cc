@@ -725,10 +725,10 @@ void test_transporter_edge_cases() {
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "Target ship not landed");
 
-  // 5a. Hopper blocked (target ship == 0)
+  // 5a. Hopper blocked (target ship == std::nullopt)
   ctx.em.mutate_ship(recv_id, [](Ship& s) { s.land_on_planet(); });
   ctx.em.mutate_ship(send_id, [](Ship& s) {
-    static_cast<TransporterShip&>(s).transport().target = 0;
+    static_cast<TransporterShip&>(s).transport().target = std::nullopt;
   });
   g.out.str("");
   ctx.assert_dispatch_success(

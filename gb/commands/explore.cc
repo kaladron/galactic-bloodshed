@@ -77,7 +77,7 @@ bool explore(const command_t& argv, GameObj& g) {
             if (pl.info(Playernum).explored) attrs += "Ex ";
             if (pl.info(Playernum).autorep) attrs += "Rep ";
             if (pl.info(Playernum).numsectsowned) attrs += "Inhab ";
-            if (pl.slaved_to() != 0) attrs += "SLAVED ";
+            if (pl.is_enslaved()) attrs += "SLAVED ";
 
             for (player_t j{1}; j <= g.entity_manager.num_races(); ++j) {
               if (j != Playernum && pl.info(j).numsectsowned) {

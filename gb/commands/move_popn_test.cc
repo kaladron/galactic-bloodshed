@@ -311,12 +311,12 @@ void test_move_popn_enslaved_and_origin_validations() {
   g.set_pnum(0);
 
   // 1. Enslaved planet check
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = 2; });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.enslave_to(2); });
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "100"});
   test::expect_contains(g.out.str(), "enslaved");
 
   // Restore slaved_to
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = 0; });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.free_slaves(); });
 
   // 2. Bad sector format
   g.out.str("");

@@ -74,7 +74,7 @@ bool defend(const command_t& argv, GameObj& g) {
           g.out << "You do not occupy any sectors here.\n";
           return false;
         }
-        if (p.slaved_to() != 0 && p.slaved_to() != Playernum) {
+        if (p.is_enslaved_to_foreign(Playernum)) {
           g.out << "This planet is enslaved.\n";
           return false;
         }

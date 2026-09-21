@@ -135,8 +135,8 @@ void show_planet_stats(GameObj& g, const Planet& p, player_t playernum,
                        p.total_resources(), pinfo.tax, pinfo.newtax);
   g.out << std::format("Estimated Production Next Update : {:.2f}\n",
                        pinfo.est_production);
-  if (p.slaved_to() != 0) {
-    g.out << std::format("      ENSLAVED to player {};\n", p.slaved_to());
+  if (p.slaved_to()) {
+    g.out << std::format("      ENSLAVED to player {};\n", *p.slaved_to());
   }
 }
 

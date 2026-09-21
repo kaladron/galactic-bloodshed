@@ -316,7 +316,7 @@ int main() {
 
     planet.free_slaves();
     test::expect_false(planet.is_enslaved());
-    test::expect_eq(planet.slaved_to(), player_t{0});
+    test::expect_eq(planet.slaved_to(), std::nullopt);
     test::expect_false(planet.is_slave_revolt_triggered());
   }
 

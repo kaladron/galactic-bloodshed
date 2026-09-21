@@ -315,6 +315,75 @@ int main() {
                  "✓ record_vn_destruction_site deterministic test works");
   }
 
+  // Foreign key referential integrity cleanup on kill_ship (SpaceMirrorShip,
+  // TransporterShip, ProtectData)
+  {
+    shipnum_t target_id{};
+    shipnum_t mirror_id{};
+    shipnum_t trans_id{};
+    shipnum_t escort_id{};
+
+    {
+      auto target_handle = TestShipBuilder(em, ShipType::STYPE_DESTROYER)
+                               .owned_by(2)
+                               .with_alive(true)
+                               .in_star_orbit(0)
+                               .build_handle();
+      target_id = target_handle->number();
+
+      auto mirror_handle = TestShipBuilder(em, ShipType::STYPE_MIRROR)
+                               .owned_by(1)
+                               .with_alive(true)
+                               .in_star_orbit(0)
+                               .with_aim(AimedAtData{
+                                   .shipno = target_id,
+                                   .snum = starnum_t{0},
+                                   .intensity = 75,
+                                   .level = ScopeLevel::LEVEL_SHIP,
+                               })
+                               .build_handle();
+      mirror_id = mirror_handle->number();
+
+      auto trans_handle = TestShipBuilder(em, ShipType::OTYPE_TRANSDEV)
+                              .owned_by(1)
+                              .with_alive(true)
+                              .landed_on(0, 0, {1, 1})
+                              .with_special(TransportData{.target = target_id})
+                              .build_handle();
+      trans_id = trans_handle->number();
+
+      auto escort_handle = TestShipBuilder(em, ShipType::STYPE_CRUISER)
+                               .owned_by(1)
+                               .with_alive(true)
+                               .in_star_orbit(0)
+                               .build_handle();
+      escort_handle->protect().on = true;
+      escort_handle->protect().ship = target_id;
+      escort_id = escort_handle->number();
+    }
+
+    em.clear_cache();
+    em.mutate_ship(target_id, [&](Ship& target) { em.kill_ship(1, target); });
+
+    em.clear_cache();
+    const auto* mirror_after = em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
+    test::expect_ne(mirror_after, nullptr);
+    test::expect_eq(mirror_after->aimed_level(), ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(mirror_after->aimed_ship(), std::nullopt);
+
+    const auto* trans_after = em.peek_ship(trans_id)->as<TransporterShip>();
+    test::expect_ne(trans_after, nullptr);
+    test::expect_eq(trans_after->target_ship(), std::nullopt);
+
+    const auto* escort_after = em.peek_ship(escort_id);
+    test::expect_ne(escort_after, nullptr);
+    test::expect_false(escort_after->protect().on);
+    test::expect_eq(escort_after->protect().ship, std::nullopt);
+    std::println(std::cout,
+                 "✓ kill_ship clears SpaceMirrorShip, TransporterShip, and "
+                 "ProtectData references");
+  }
+
   std::println(std::cout, "\n✅ All EntityManager::kill_ship() tests passed!");
   return 0;
 }

@@ -47,7 +47,7 @@ Planet createTestPlanet(starnum_t star_id = 0, planetnum_t pnum = 0) {
   planet.star_id() = star_id;
   planet.planet_order() = pnum;
   planet.set_system_coordinates({1000.0, 1000.0});
-  planet.slaved_to() = 0;
+  planet.free_slaves();
   planet.toxic() = 0;
   planet.rtemp() = 50;
   planet.temp() = 50;
@@ -432,7 +432,7 @@ void test_process_market_transactions_isolated() {
   const auto* lot1_cleared = em.peek_commod(1);
   test::expect_ne(lot1_cleared, nullptr);
   test::expect_eq(lot1_cleared->bid, 0);
-  test::expect_eq(lot1_cleared->bidder, player_t{0});
+  test::expect_eq(lot1_cleared->bidder, std::nullopt);
 
   // 3. Successful transaction: Valid bid executed, money transferred, lot
   // deleted

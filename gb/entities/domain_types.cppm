@@ -916,7 +916,7 @@ export struct Commod {
   std::uint64_t amount{0};
   bool deliver{false}; /* whether the lot is ready for shipping or not */
   money_t bid{0};
-  player_t bidder{0};
+  std::optional<player_t> bidder{std::nullopt};
   governor_t bidder_gov{0};
   starnum_t star_from{0}; /* where the stuff originated from */
   planetnum_t planet_from{0};

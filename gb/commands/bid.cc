@@ -52,7 +52,7 @@ tabulate::Table create_commodity_table() {
 
 // Helper function to add commodity row to table
 void add_commodity_row(tabulate::Table& table, const Commod* c, GameObj& g) {
-  auto rate = (double)c->bid / (double)c->amount;
+  auto rate = static_cast<double>(c->bid) / static_cast<double>(c->amount);
   const auto* star_to = g.entity_manager.peek_star(c->star_to);
   std::string player_details =
       (c->bidder == g.player())
@@ -65,7 +65,8 @@ void add_commodity_row(tabulate::Table& table, const Commod* c, GameObj& g) {
 
   table.add_row({std::format("{}", c->id), c->deliver ? "*" : "",
                  std::format("{}", c->amount), std::format("{}", c->type),
-                 std::format("{}", c->owner), std::format("{}", c->bidder),
+                 std::format("{}", c->owner),
+                 std::format("{}", c->bidder.value_or(0)),
                  std::format("{}", c->bid), std::format("{:.2f}", rate),
                  std::format("{}", cost), player_details});
 }
@@ -133,9 +134,9 @@ bool place_bid(const command_t& argv, GameObj& g) {
   }
   const auto* p = g.entity_manager.peek_planet(snum, pnum);
 
-  if (p->slaved_to() != 0 && p->slaved_to() != g.player()) {
+  if (p->is_enslaved_to_foreign(g.player())) {
     g.out << std::format("This planet is enslaved to player {}.\n",
-                         p->slaved_to());
+                         *p->slaved_to());
     return false;
   }
   /* check to see if there is an undamaged gov center or space port here */
@@ -184,7 +185,8 @@ bool place_bid(const command_t& argv, GameObj& g) {
              "lot from the location it was sold.\n";
     return false;
   }
-  money_t minbid = (int)((double)c_peek->bid * (1.0 + UP_BID));
+  money_t minbid =
+      static_cast<money_t>(static_cast<double>(c_peek->bid) * (1.0 + UP_BID));
   if (bid0 < minbid) {
     g.out << std::format("You have to bid more than {}.\n", minbid);
     return false;
@@ -202,11 +204,11 @@ bool place_bid(const command_t& argv, GameObj& g) {
   money_t shipping = 0;
   g.entity_manager.mutate_commod(lot, [&](Commod& c) {
     /* notify the previous bidder that he was just outbidded */
-    if (c.bidder != 0) {
+    if (c.bidder) {
       std::string bid_message = std::format(
           "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
           c.amount, c.type, bid0, g.race->name, g.player());
-      g.session_registry.notify_player(c.bidder, c.bidder_gov, bid_message);
+      g.session_registry.notify_player(*c.bidder, c.bidder_gov, bid_message);
     }
     c.bid = bid0;
     c.bidder = g.player();

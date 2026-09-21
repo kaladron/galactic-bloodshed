@@ -62,7 +62,7 @@ Race createTestRace(player_t playernum = 1) {
 // Helper function to create a test planet
 Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
   Planet planet(PlanetType::EARTH, Coordinates{maxx, maxy});
-  planet.slaved_to() = 0;
+  planet.free_slaves();
 
   // Initialize conditions
   planet.toxic() = 0;
@@ -224,7 +224,7 @@ void test_planet_creation() {
   // Test basic properties
   test::expect_eq(planet.dimensions().x, 15);
   test::expect_eq(planet.dimensions().y, 20);
-  test::expect_eq(planet.slaved_to(), 0);
+  test::expect_eq(planet.slaved_to(), std::nullopt);
   test::expect_eq(planet.toxic(), 0);
 
   // Test different planet types

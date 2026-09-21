@@ -136,7 +136,7 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
         GB::csp::CSP_SURVEY_INTRO, p.dimensions().x, p.dimensions().y,
         star.get_name(), planet_name, p.info(player).resource,
         p.info(player).fuel, p.info(player).destruct, p.popn(), p.maxpopn(),
-        p.toxic(), p.compatibility(race), p.slaved_to().value);
+        p.toxic(), p.compatibility(race), p.slaved_to().value_or(0));
   }
 
   // Write sector rows
@@ -356,8 +356,9 @@ void survey_planet_overview(GameObj& g, const Place& where) {
   g.out << std::format("{:10}  {:14} {:9}  {:7}{:11}\n",
                        p.info(g.player()).fuel, p.info(g.player()).resource,
                        p.info(g.player()).destruct, p.popn(), p.maxpopn());
-  if (p.slaved_to() != 0) {
-    g.out << std::format("This planet ENSLAVED to player {}!\n", p.slaved_to());
+  if (p.slaved_to()) {
+    g.out << std::format("This planet ENSLAVED to player {}!\n",
+                         *p.slaved_to());
   }
 }
 

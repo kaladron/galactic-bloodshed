@@ -169,8 +169,9 @@ void process_market_transactions(EntityManager& entity_manager) {
       continue;
     }
 
-    if (c.owner != 0 && c.bidder != 0) {
-      const auto* bidder_race = entity_manager.peek_race(c.bidder);
+    if (c.owner != 0 && c.bidder) {
+      const player_t bidder = *c.bidder;
+      const auto* bidder_race = entity_manager.peek_race(bidder);
       const auto* owner_race = entity_manager.peek_race(c.owner);
 
       if (bidder_race && owner_race &&
@@ -178,7 +179,7 @@ void process_market_transactions(EntityManager& entity_manager) {
         auto [cost, dist] =
             shipping_cost(entity_manager, c.star_to, c.star_from, c.bid);
 
-        entity_manager.mutate_race(c.bidder, [&](Race& b_race) {
+        entity_manager.mutate_race(bidder, [&](Race& b_race) {
           b_race.governor[c.bidder_gov.value].money -= c.bid;
           b_race.governor[c.bidder_gov.value].cost_market += c.bid + cost;
           b_race.deduct_maintenance(c.bidder_gov, cost);
@@ -190,7 +191,7 @@ void process_market_transactions(EntityManager& entity_manager) {
 
         entity_manager.mutate_planet(
             c.star_to, c.planet_to, [&](Planet& planet) {
-              planet.deposit_commodity(c.type, c.amount, c.bidder);
+              planet.deposit_commodity(c.type, c.amount, bidder);
             });
 
         const auto* star = entity_manager.peek_star(c.star_to);
@@ -200,22 +201,22 @@ void process_market_transactions(EntityManager& entity_manager) {
             c.id, owner_race->name, c.owner, c.bid, c.amount, c.type,
             star ? star->get_name() : "unknown",
             star ? star->get_planet_name(c.planet_to) : "unknown");
-        push_telegram(entity_manager, c.bidder, c.bidder_gov, purchased_msg);
+        push_telegram(entity_manager, bidder, c.bidder_gov, purchased_msg);
         std::string sold_msg = std::format(
             "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
-            c.type, bidder_race->name, c.bidder, c.bid);
+            c.type, bidder_race->name, bidder, c.bid);
         push_telegram(entity_manager, c.owner, c.governor, sold_msg);
         c.owner = 0;
         c.governor = 0;
-        c.bidder = 0;
+        c.bidder = std::nullopt;
         c.bidder_gov = 0;
       } else {
-        c.bidder = 0;
+        c.bidder = std::nullopt;
         c.bidder_gov = 0;
         c.bid = 0;
       }
     } else {
-      c.bidder = 0;
+      c.bidder = std::nullopt;
       c.bidder_gov = 0;
       c.bid = 0;
     }

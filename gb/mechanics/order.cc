@@ -32,7 +32,7 @@ std::string format_aim_target(EntityManager& em, const Ship& ship) {
                               : "Unknown");
     }
     case ScopeLevel::LEVEL_SHIP:
-      return std::format("#{}", aimed_at.shipno);
+      return std::format("#{}", aimed_at.shipno.value_or(0));
   }
   return "";
 }
@@ -149,9 +149,10 @@ void order_jump(GameObj& g, const command_t& argv, Ship& ship) {
 }
 
 void order_protect(GameObj& g, const command_t& argv, Ship& ship) {
-  shipnum_t target_ship{0};
+  std::optional<shipnum_t> target_ship{std::nullopt};
   if (argv.size() > 3) {
-    if (auto target_num = string_to_shipnum(argv[3])) {
+    if (auto target_num = string_to_shipnum(argv[3]);
+        target_num && *target_num > 0) {
       target_ship = *target_num;
     }
   }
@@ -163,8 +164,9 @@ void order_protect(GameObj& g, const command_t& argv, Ship& ship) {
     g.out << "That ship cannot protect.\n";
     return;
   }
-  if (target_ship == 0) {
+  if (!target_ship) {
     ship.protect().on = false;
+    ship.protect().ship = std::nullopt;
   } else {
     ship.protect().on = true;
     ship.protect().ship = target_ship;
@@ -510,16 +512,18 @@ void order_transport(GameObj& g, const command_t& argv, Ship& ship) {
     g.out << "This ship is not a transporter.\n";
     return;
   }
-  shipnum_t target{0};
+  std::optional<shipnum_t> target{std::nullopt};
   if (argv.size() > 3) {
     auto res = scn::scan<shipnum_t::value_type>(argv[3], "{}");
-    target = res ? shipnum_t{res->value()} : 0;
+    if (res && res->value() > 0) {
+      target = shipnum_t{res->value()};
+    }
   }
   if (target == ship.number()) {
     g.out << "A transporter cannot transport to itself.\n";
-    target = 0;
+    target = std::nullopt;
   } else {
-    g.out << std::format("Target ship is {}.\n", target);
+    g.out << std::format("Target ship is {}.\n", target.value_or(0));
   }
   transporter->set_target_ship(target);
 }
@@ -553,11 +557,14 @@ void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
     return;
   }
   if (auto* mirror = ship.as<SpaceMirrorShip>()) {
-    mirror->aim() = AimedAtData{.shipno = pl.shipno,
-                                .snum = pl.snum,
-                                .intensity = 0,
-                                .pnum = pl.pnum,
-                                .level = pl.level};
+    mirror->aim() =
+        AimedAtData{.shipno = (pl.level == ScopeLevel::LEVEL_SHIP)
+                                  ? std::optional<shipnum_t>{pl.shipno}
+                                  : std::nullopt,
+                    .snum = pl.snum,
+                    .intensity = 0,
+                    .pnum = pl.pnum,
+                    .level = pl.level};
   }
   if (requires_maneuver_fuel_to_aim(ship)) {
     ship.consume_fuel(FUEL_MANEUVER);
@@ -763,7 +770,9 @@ std::string format_combat_options(const Ship& ship) {
   if (ship.focus()) out += "/focus";
   if (ship.retaliate()) out += std::format("/salvo {}", ship.retaliate());
   if (ship.protect().planet) out += "/defense";
-  if (ship.protect().on) out += std::format("/prot {}", ship.protect().ship);
+  if (ship.protect().on && ship.protect().ship) {
+    out += std::format("/prot {}", *ship.protect().ship);
+  }
   return out;
 }
 
@@ -809,7 +818,7 @@ std::string format_specialty_options(EntityManager& em, const Ship& ship) {
   }
 
   if (const auto* trans = ship.as<TransporterShip>()) {
-    out += std::format("/target {}", trans->target_ship().value);
+    out += std::format("/target {}", trans->target_ship().value_or(0));
   }
 
   if (const auto* mirror = ship.as<SpaceMirrorShip>()) {

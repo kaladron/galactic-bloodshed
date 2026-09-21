@@ -236,7 +236,7 @@ export struct planet_struct {
   population_t maxpopn = 0;
   resource_t total_resources = 0;
 
-  player_t slaved_to = 0;
+  std::optional<player_t> slaved_to{std::nullopt};
   PlanetType type = PlanetType::EARTH;
   std::uint32_t expltimer = 0;
   bool explored = false;
@@ -337,10 +337,10 @@ public:
     return data_.total_resources;
   }
 
-  [[nodiscard]] player_t slaved_to() const {
+  [[nodiscard]] std::optional<player_t> slaved_to() const noexcept {
     return data_.slaved_to;
   }
-  player_t& slaved_to() {
+  std::optional<player_t>& slaved_to() noexcept {
     return data_.slaved_to;
   }
 
@@ -514,15 +514,15 @@ public:
   void update_climate(int temp_variance = 0) noexcept;
 
   /// \brief Returns whether this planet is currently enslaved to a player.
-  [[nodiscard]] bool is_enslaved() const noexcept {
-    return data_.slaved_to != 0;
+  [[nodiscard]] constexpr bool is_enslaved() const noexcept {
+    return data_.slaved_to.has_value();
   }
 
   /// \brief Returns whether this planet is currently enslaved to a foreign
   /// player.
   [[nodiscard]] constexpr bool
   is_enslaved_to_foreign(player_t player) const noexcept {
-    return data_.slaved_to != 0 && data_.slaved_to != player;
+    return data_.slaved_to.has_value() && *data_.slaved_to != player;
   }
 
   /// \brief Checks if a slave revolt is triggered.
@@ -532,8 +532,8 @@ public:
   /// total planet population, leaving insufficient forces to suppress the
   /// revolt.
   [[nodiscard]] bool is_slave_revolt_triggered() const noexcept {
-    if (data_.slaved_to == 0) return false;
-    return data_.info[data_.slaved_to].popn <= (data_.popn / 1000);
+    if (!data_.slaved_to) return false;
+    return data_.info[*data_.slaved_to].popn <= (data_.popn / 1000);
   }
 
   /// \brief Calculates the number of random sectors devastated during a slave
@@ -549,7 +549,7 @@ public:
 
   /// \brief Frees the planet from enslavement.
   void free_slaves() noexcept {
-    data_.slaved_to = 0;
+    data_.slaved_to = std::nullopt;
   }
 
   /// \brief Deposits purchased or delivered commodities into the player's

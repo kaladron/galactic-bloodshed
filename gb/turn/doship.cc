@@ -235,8 +235,9 @@ void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
                TurnStats& stats) {
   switch (ship.aimed_level()) {
     case ScopeLevel::LEVEL_SHIP: { /* ship aimed at is a legal ship now */
+      if (!ship.aimed_ship()) break;
       /* if in the same system */
-      entity_manager.mutate_ship(ship.aimed_ship(), [&](Ship& target) {
+      entity_manager.mutate_ship(*ship.aimed_ship(), [&](Ship& target) {
         if ((ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
              ship.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
             (target.whatorbits() == ScopeLevel::LEVEL_STAR ||

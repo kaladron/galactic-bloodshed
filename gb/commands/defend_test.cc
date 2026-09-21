@@ -212,11 +212,11 @@ void test_defend_planetary_validations() {
       0, 0, [](Planet& p) { p.info(player_t{1}).numsectsowned = 5; });
 
   // 2. Planet enslaved to another player
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = player_t{2}; });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.enslave_to(player_t{2}); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "10"});
   test::expect_contains(g.out.str(), "This planet is enslaved.");
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = player_t{0}; });
+  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.free_slaves(); });
 
   // 3. Illegal sector coordinates (out of bounds)
   g.out.str("");

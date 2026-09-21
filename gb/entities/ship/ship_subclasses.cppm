@@ -138,7 +138,7 @@ public:
   [[nodiscard]] planetnum_t aimed_planet() const noexcept {
     return aim().pnum;
   }
-  [[nodiscard]] shipnum_t aimed_ship() const noexcept {
+  [[nodiscard]] std::optional<shipnum_t> aimed_ship() const noexcept {
     return aim().shipno;
   }
   [[nodiscard]] ScopeLevel aimed_level() const noexcept {
@@ -367,10 +367,10 @@ public:
     }
     return std::get<TransportData>(data_.special);
   }
-  [[nodiscard]] shipnum_t target_ship() const noexcept {
+  [[nodiscard]] std::optional<shipnum_t> target_ship() const noexcept {
     return transport().target;
   }
-  void set_target_ship(shipnum_t target) noexcept {
+  void set_target_ship(std::optional<shipnum_t> target) noexcept {
     transport().target = target;
   }
 };

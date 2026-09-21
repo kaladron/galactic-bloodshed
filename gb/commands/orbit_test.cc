@@ -206,7 +206,7 @@ void test_orbit_space_mirror_aiming() {
           .with_active(true)
           .in_star_orbit(0, UniverseCoordinates{100.0, 200.0})
           .with_aim(AimedAtData{
-              .shipno = shipnum_t{0},
+              .shipno = std::nullopt,
               .snum = starnum_t{0},
               .intensity = 5,
               .pnum = planetnum_t{0},

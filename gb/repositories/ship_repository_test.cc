@@ -444,7 +444,7 @@ int main() {
     mirror_data.number = 201;
     mirror_data.type = ShipType::STYPE_MIRROR;
     mirror_data.special = AimedAtData{
-        .shipno = shipnum_t{0},
+        .shipno = std::nullopt,
         .snum = starnum_t{3},
         .intensity = 85,
         .pnum = planetnum_t{2},

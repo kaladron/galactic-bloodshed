@@ -66,7 +66,7 @@ std::optional<Coordinates> resolve_bombard_target_coords(const command_t& argv,
 void resolve_planetary_retaliation(GameObj& g, Ship& from, Planet& p,
                                    const BombardResult& result) {
   if (!DEFENSE || !result.sectors_destroyed ||
-      from.type() == ShipType::OTYPE_AFV || p.slaved_to() != 0) {
+      from.type() == ShipType::OTYPE_AFV || p.is_enslaved()) {
     return;
   }
 

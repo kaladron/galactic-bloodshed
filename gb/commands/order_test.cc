@@ -194,6 +194,7 @@ void test_order_combat_and_movement_options() {
   ctx.assert_dispatch_success(g, {"order", "#1", "protect"});
   ctx.em.clear_cache();
   test::expect_false(ctx.em.peek_ship(1)->protect().on);
+  test::expect_eq(ctx.em.peek_ship(1)->protect().ship, std::nullopt);
 
   std::println(std::cout, "    ✓ Combat and movement options verified");
 }
@@ -281,6 +282,10 @@ void test_order_specialty_ships() {
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", trans_id.value), "transport", "30"});
   test::expect_contains(g.out.str(), "cannot transport to itself");
+  ctx.em.clear_cache();
+  test::expect_eq(
+      ctx.em.peek_ship(trans_id)->as<TransporterShip>()->target_ship(),
+      std::nullopt);
 
   // 4. Space Mirror aim & intensity, plus Telescope survey
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 40)
@@ -298,6 +303,14 @@ void test_order_specialty_ships() {
   ctx.em.clear_cache();
   const auto* mirror = ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
   test::expect_eq(mirror->intensity(), 85);
+  test::expect_eq(mirror->aimed_ship(), std::nullopt);
+
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", mirror_id.value), "aim", "#1"});
+  ctx.em.clear_cache();
+  test::expect_eq(
+      ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>()->aimed_ship(),
+      shipnum_t{1});
 
   const auto tele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_STELE, 45)
                            .owned_by(1)

@@ -65,13 +65,13 @@ void do_transporter(const Race& race, GameObj& g, TransporterShip& s) {
     g.out << "Origin device is damaged.\n";
     return;
   }
-  if (!s.target_ship().value) {
+  if (!s.target_ship()) {
     g.out << "The hopper seems to be blocked.\n";
     return;
   }
 
   try {
-    g.entity_manager.mutate_ship(s.target_ship(), [&](Ship& s2) {
+    g.entity_manager.mutate_ship(*s.target_ship(), [&](Ship& s2) {
       if (!s2.alive() || s2.type() != ShipType::OTYPE_TRANSDEV || !s2.on()) {
         g.out << "The target device is not receiving.\n";
         return;

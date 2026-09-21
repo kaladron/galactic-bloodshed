@@ -355,11 +355,11 @@ export struct ShipExam {
 
 // Special ship function data structures (converted from union members)
 export struct AimedAtData {
-  shipnum_t shipno{0};                      /* aimed at what ship */
-  starnum_t snum{0};                        /* aimed at what star */
-  int intensity{0};                         /* intensity of aiming */
-  planetnum_t pnum{0};                      /* aimed at what planet */
-  ScopeLevel level{ScopeLevel::LEVEL_UNIV}; /* aimed at what level */
+  std::optional<shipnum_t> shipno{std::nullopt}; /* aimed at what ship */
+  starnum_t snum{0};                             /* aimed at what star */
+  int intensity{0};                              /* intensity of aiming */
+  planetnum_t pnum{0};                           /* aimed at what planet */
+  ScopeLevel level{ScopeLevel::LEVEL_UNIV};      /* aimed at what level */
 };
 
 /// Brain parameters for Von Neumann machines and Berserkers.
@@ -397,7 +397,7 @@ export struct TerraformData {
 };
 
 export struct TransportData {
-  shipnum_t target{0};
+  std::optional<shipnum_t> target{std::nullopt};
 };
 
 export struct WasteData {
@@ -508,7 +508,8 @@ export struct NavigateData {
 
 /// Defensive escort and auto-retaliation parameters for a ship.
 export struct ProtectData {
-  shipnum_t ship{0};   ///< Target ship number being protected
+  std::optional<shipnum_t> ship{
+      std::nullopt};   ///< Target ship number being protected
   bool on{false};      ///< Whether escort / protection mode is active
   bool planet{false};  ///< Whether assigned as a planetary defense interceptor
   bool retaliate{

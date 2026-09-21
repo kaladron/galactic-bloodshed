@@ -403,10 +403,10 @@ int main() {
     const auto& r1 = *ctx.em.peek_race(1);
 
     // can_build_at_planet: enslaved planet
-    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = 2; });
+    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.enslave_to(2); });
     test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(0),
                                            *ctx.em.peek_planet(0, 0)));
-    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.slaved_to() = 0; });
+    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.free_slaves(); });
 
     // can_build_at_planet: unauthorized governor
     ctx.setup_game_obj(g, 1, 2);

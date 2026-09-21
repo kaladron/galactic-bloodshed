@@ -21,7 +21,7 @@ void setup_test_world(TestContext& ctx) {
     planet.info(player_t{2}).numsectsowned = 5;
     planet.info(player_t{1}).destruct = 1000;
     planet.info(player_t{2}).destruct = 100;
-    planet.slaved_to() = 0;
+    planet.free_slaves();
   });
 
   // Create OAP ship in planet orbit
@@ -50,7 +50,7 @@ void test_enslave_happy_path() {
   // Verify planet is slaved to player 1
   const auto* planet = ctx.em.peek_planet(0, 0);
   test::expect_true(planet != nullptr);
-  test::expect_eq(planet->slaved_to(), 1);
+  test::expect_eq(planet->slaved_to(), player_t{1});
 
   ctx.verify_universe_invariants();
 }
@@ -130,7 +130,7 @@ void test_enslave_maxplayers_boundary() {
     planet.info(player_t{MAXPLAYERS}).numsectsowned = 5;
     planet.info(player_t{1}).destruct = 1000;
     planet.info(player_t{MAXPLAYERS}).destruct = 100;
-    planet.slaved_to() = 0;
+    planet.free_slaves();
   });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
@@ -151,7 +151,7 @@ void test_enslave_maxplayers_boundary() {
 
   const auto* planet = ctx.em.peek_planet(0, 0);
   test::expect_true(planet != nullptr);
-  test::expect_eq(planet->slaved_to(), 1);
+  test::expect_eq(planet->slaved_to(), player_t{1});
 
   ctx.verify_universe_invariants();
 }

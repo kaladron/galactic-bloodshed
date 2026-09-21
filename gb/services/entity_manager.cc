@@ -940,8 +940,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     }
   }
 
-  /* clear any space mirrors aimed at this ship to preserve foreign key
-     referential integrity */
+  /* clear any foreign key references to this ship on other alive ships */
   for (shipnum_t other_id : ships_alive()) {
     if (other_id == ship.number()) continue;
     const auto* other = peek_ship(other_id);
@@ -952,6 +951,18 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
           m.aim() = {.level = ScopeLevel::LEVEL_UNIV};
         });
       }
+    } else if (const auto* trans = other->as<TransporterShip>()) {
+      if (trans->target_ship() == ship.number()) {
+        mutate_as<TransporterShip>(other_id, [](TransporterShip& t) {
+          t.set_target_ship(std::nullopt);
+        });
+      }
+    }
+    if (other->protect().ship == ship.number()) {
+      mutate_ship(other_id, [](Ship& s) {
+        s.protect().ship = std::nullopt;
+        s.protect().on = false;
+      });
     }
   }
 
@@ -1439,7 +1450,8 @@ EntityManager::resolve_mirror_target_coordinates(
       return planet.absolute_coordinates(star);
     }
     case ScopeLevel::LEVEL_SHIP: {
-      const auto& target_ship = *peek_ship(mirror.aimed_ship());
+      if (!mirror.aimed_ship()) return std::nullopt;
+      const auto& target_ship = *peek_ship(*mirror.aimed_ship());
       if (!target_ship.alive()) return std::nullopt;
       return target_ship.coordinates();
     }

@@ -85,7 +85,7 @@ int main() {
     commod.amount = 100;
     commod.deliver = false;
     commod.bid = 500;  // Minimum bid
-    commod.bidder = 0;
+    commod.bidder = std::nullopt;
     commod.star_from = 0;
     commod.planet_from = 0;
     commod.star_to = 0;
@@ -121,7 +121,7 @@ int main() {
   {
     const auto* c_before = ctx.em.peek_commod(1);
     std::println(std::cout, "  Before: bid={}, bidder={}", c_before->bid,
-                 c_before->bidder);
+                 c_before->bidder.value_or(0));
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"bid", "1", "1000"});
@@ -130,9 +130,9 @@ int main() {
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
     std::println(std::cout, "  After: bid={}, bidder={}", c_after->bid,
-                 c_after->bidder);
+                 c_after->bidder.value_or(0));
     test::expect_eq(c_after->bid, 1000);
-    test::expect_eq(c_after->bidder, 1);
+    test::expect_eq(c_after->bidder, player_t{1});
     test::expect_eq(c_after->bidder_gov, 0);
     test::expect_eq(c_after->star_to, 0);
     test::expect_eq(c_after->planet_to, 0);
@@ -153,7 +153,7 @@ int main() {
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
     test::expect_eq(c_after->bid, new_bid);
-    test::expect_eq(c_after->bidder, 1);
+    test::expect_eq(c_after->bidder, player_t{1});
     std::println(std::cout, "✓ Bid raised successfully");
   }
 

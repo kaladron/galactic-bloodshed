@@ -129,7 +129,7 @@ void produce(EntityManager& entity_manager, const Star& star,
 void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
             SectorMap& smap, TurnStats& stats) {
   if (!s.is_owned()) return;
-  if (pl.slaved_to() != 0 && pl.slaved_to() != s.get_owner()) {
+  if (pl.is_enslaved_to_foreign(s.get_owner())) {
     return; /* no one wants to go anywhere */
   }
 

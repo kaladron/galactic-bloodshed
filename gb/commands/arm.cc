@@ -20,7 +20,7 @@ bool arm(const command_t& argv, GameObj& g) {
   const bool is_arm = (argv[0] == "arm");
 
   const auto& planet_peek = *g.entity_manager.peek_planet(g.snum(), g.pnum());
-  if (planet_peek.slaved_to() > 0 && planet_peek.slaved_to() != Playernum) {
+  if (planet_peek.is_enslaved_to_foreign(Playernum)) {
     g.out << "That planet has been enslaved!\n";
     return false;
   }

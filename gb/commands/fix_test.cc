@@ -143,7 +143,7 @@ void test_fix_planet_temp_persistence() {
   planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.dimensions() = Coordinates{10, 10};
-  planet.conditions(TEMP) = 50;  // Initial temperature
+  planet.temp() = 50;  // Initial temperature
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
@@ -151,17 +151,17 @@ void test_fix_planet_temp_persistence() {
   {
     const auto* p = ctx.em.peek_planet(1, 0);
     test::expect_ne(p, nullptr);
-    test::expect_eq(p->conditions(TEMP), 50);
+    test::expect_eq(p->temp(), 50);
   }
 
   // 4. Simulate fixing temperature via EntityManager
-  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.conditions(TEMP) = 100; });
+  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.temp() = 100; });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_planet = ctx.em.peek_planet(1, 0);
   test::expect_ne(final_planet, nullptr);
-  test::expect_eq(final_planet->conditions(TEMP), 100);
+  test::expect_eq(final_planet->temp(), 100);
 
   std::println(std::cout, "✓ fix planet temperature persistence test passed");
 }
@@ -180,7 +180,7 @@ void test_fix_planet_oxygen_persistence() {
   planet.star_id() = 1;
   planet.planet_order() = 0;
   planet.dimensions() = Coordinates{10, 10};
-  planet.conditions(OXYGEN) = 10;  // Initial oxygen
+  planet.conditions().oxygen = 10;  // Initial oxygen
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
@@ -192,7 +192,7 @@ void test_fix_planet_oxygen_persistence() {
   }
 
   // 4. Simulate fixing oxygen via EntityManager
-  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.conditions(OXYGEN) = 50; });
+  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.conditions().oxygen = 50; });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
@@ -275,7 +275,7 @@ void test_fix_command_dispatch() {
   planet.star_id() = 0;
   planet.planet_order() = 0;
   planet.dimensions() = Coordinates{10, 10};
-  planet.conditions(TEMP) = 50;
+  planet.temp() = 50;
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -340,13 +340,17 @@ void test_fix_command_dispatch() {
   ctx.assert_dispatch_rejected(g, {"fix", "planet", "nonexistent", "10"});
   test::expect_contains(g.out.str(), "No such option for 'fix planet'.");
 
-  // Exercise xpos, ypos, and all condition options (set + inspect)
+  // Exercise xpos, ypos, rtemp, toxic, and all atmosphere conditions
   ctx.assert_dispatch_success(g, {"fix", "planet", "xpos", "250"});
   test::expect_contains(g.out.str(), "xpos = 250");
   ctx.assert_dispatch_success(g, {"fix", "planet", "ypos", "-125"});
   test::expect_contains(g.out.str(), "ypos = -125");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "rtemp", "42"});
+  test::expect_contains(g.out.str(), "rtemp = 42");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "toxic", "35"});
+  test::expect_contains(g.out.str(), "toxic = 35");
 
-  for (Conditions cond : all_condition_types) {
+  for (AtmosphereConditions cond : all_atmosphere_conditions) {
     const std::string opt{to_string(cond)};
     const int val = static_cast<int>(cond) + 10;
     g.out.str("");

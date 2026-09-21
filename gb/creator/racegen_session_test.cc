@@ -409,7 +409,7 @@ void test_enroll_with_service_success() {
   Planet p0{PlanetType::EARTH, Coordinates{5, 5}};
   p0.star_id() = 0;
   p0.planet_order() = 0;
-  p0.conditions(RTEMP) = 20;
+  p0.rtemp() = 20;
   PlanetRepository(store).save(p0);
 
   SectorMap smap(p0);

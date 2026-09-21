@@ -195,7 +195,7 @@ TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
             {.coords = coords,
              .des = cond,
              .value = maxsupport(*g.race, sect, planet.compatibility(*g.race),
-                                 planet.conditions(TOXIC))});
+                                 planet.toxic())});
       }
     }
   }

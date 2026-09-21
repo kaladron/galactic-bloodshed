@@ -273,8 +273,8 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   }
 
   /* planet toxicity goes up a bit */
-  pl.conditions(TOXIC) +=
-      (100 - pl.conditions(TOXIC)) * ((double)numdest / (double)num_sectors);
+  pl.toxic() += static_cast<int>((100 - pl.toxic()) *
+                                 ((double)numdest / (double)num_sectors));
 
   std::string short_msg = std::format("{} bombards {} [{}]\n", ship,
                                       dispshiploc(em, ship), oldowner);

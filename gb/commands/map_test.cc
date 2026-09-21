@@ -71,7 +71,7 @@ void setup_test_world(TestContext& ctx) {
   planet0.info(player_t{1}).tax = 10;
   planet0.info(player_t{1}).newtax = 12;
   planet0.info(player_t{1}).est_production = 150.5;
-  planet0.conditions(TOXIC) = 25;
+  planet0.toxic() = 25;
 
   PlanetRepository planets_repo(store);
   planets_repo.save(planet0);
@@ -259,7 +259,7 @@ void test_show_map_rendering_options() {
     r.atwar.set(player_t{2});
   });
   ctx.em.mutate_planet(0, 0, [](Planet& p) {
-    p.conditions(TOXIC) = 75;
+    p.toxic() = 75;
     p.enslave_to(player_t{2});
     p.info(player_t{2}).numsectsowned = 1;
     p.info(player_t{3}).numsectsowned = 1;

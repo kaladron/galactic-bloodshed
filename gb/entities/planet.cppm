@@ -226,7 +226,10 @@ export struct planet_struct {
   Coordinates dimensions{0, 0};
 
   PlayerVector<plinfo, MAXPLAYERS> info;
-  ConditionValues<int> conditions{};
+  temperature_t rtemp{0};
+  temperature_t temp{0};
+  Percentage toxic{0};
+  ConditionValues conditions{};
 
   population_t popn = 0;
   population_t troops = 0;
@@ -436,23 +439,52 @@ public:
     data_.info[player].explored = true;
   }
 
-  [[nodiscard]] Percentage toxicity() const noexcept {
-    return Percentage{data_.conditions[TOXIC]};
+  [[nodiscard]] constexpr temperature_t rtemp() const noexcept {
+    return data_.rtemp;
+  }
+  constexpr temperature_t& rtemp() noexcept {
+    return data_.rtemp;
   }
 
-  [[nodiscard]] int conditions(Conditions cond) const {
-    if (cond < 0 || cond > TOXIC) {
+  [[nodiscard]] constexpr temperature_t temp() const noexcept {
+    return data_.temp;
+  }
+  constexpr temperature_t& temp() noexcept {
+    return data_.temp;
+  }
+
+  [[nodiscard]] Percentage toxic() const noexcept {
+    return data_.toxic;
+  }
+  Percentage& toxic() noexcept {
+    return data_.toxic;
+  }
+
+  [[nodiscard]] Percentage toxicity() const noexcept {
+    return data_.toxic;
+  }
+
+  [[nodiscard]] const ConditionValues& conditions() const noexcept {
+    return data_.conditions;
+  }
+  [[nodiscard]] ConditionValues& conditions() noexcept {
+    return data_.conditions;
+  }
+
+  [[nodiscard]] Percentage conditions(AtmosphereConditions cond) const {
+    if (cond < METHANE || cond > OTHER) {
       throw std::runtime_error(std::format("Condition {} out of range (max {})",
                                            static_cast<int>(cond),
-                                           static_cast<int>(TOXIC)));
+                                           static_cast<int>(OTHER)));
     }
     return data_.conditions[cond];
   }
-  int& conditions(Conditions cond) {
-    if (cond < 0 || cond > TOXIC) {
+
+  [[nodiscard]] Percentage& conditions(AtmosphereConditions cond) {
+    if (cond < METHANE || cond > OTHER) {
       throw std::runtime_error(std::format("Condition {} out of range (max {})",
                                            static_cast<int>(cond),
-                                           static_cast<int>(TOXIC)));
+                                           static_cast<int>(OTHER)));
     }
     return data_.conditions[cond];
   }
@@ -570,11 +602,9 @@ public:
   /// \brief Updates planetary toxicity based on population overcapacity
   /// relative to maximum supportable capacity. Clamps toxicity within [0, 100].
   void update_toxicity() noexcept {
-    if (data_.maxpopn > 0 && data_.conditions[TOXIC] < 100) {
-      data_.conditions[TOXIC] += data_.popn / data_.maxpopn;
+    if (data_.maxpopn > 0 && data_.toxic < 100) {
+      data_.toxic.adjust(static_cast<int>(data_.popn / data_.maxpopn));
     }
-    data_.conditions[TOXIC] =
-        std::clamp<short>(data_.conditions[TOXIC], 0, 100);
   }
 
   /// \brief If planetary toxicity exceeds ENVIR_DAMAGE_TOX, devastates a random
@@ -678,16 +708,16 @@ double Planet::compatibility(const Race& race) const {
   double atmosphere = 1.0;
 
   /* make an adjustment for planetary temperature */
-  int add = 0.1 * ((double)conditions(TEMP) - race.conditions[TEMP]);
+  int add = 0.1 * ((double)temp() - race.temp);
   double sum = 1.0 - ((double)std::abs(add) / 100.0);
 
   /* step through and report compatibility of each planetary gas */
-  for (Conditions cond : all_gas_conditions) {
+  for (AtmosphereConditions cond : all_atmosphere_conditions) {
     add = (double)conditions(cond) - race.conditions[cond];
     atmosphere *= 1.0 - ((double)std::abs(add) / 100.0);
   }
   sum *= atmosphere;
-  sum *= 100.0 - conditions(TOXIC);
+  sum *= 100.0 - toxic();
 
   if (sum < 0.0) return 0.0;
   return sum;

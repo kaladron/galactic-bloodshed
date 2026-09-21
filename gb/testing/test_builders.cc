@@ -519,12 +519,12 @@ TestPlanetBuilder& TestPlanetBuilder::with_position(SystemCoordinates coords) {
 }
 
 TestPlanetBuilder& TestPlanetBuilder::with_toxicity(int toxic) {
-  planet_.conditions(TOXIC) = toxic;
+  planet_.toxic() = toxic;
   return *this;
 }
 
 TestPlanetBuilder& TestPlanetBuilder::with_temperature(int temp) {
-  planet_.conditions(TEMP) = temp;
+  planet_.temp() = temp;
   return *this;
 }
 

@@ -147,17 +147,17 @@ int main() {
   // Test 6: Planet compatibility with race conditions
   {
     Planet planet(PlanetType::EARTH, Coordinates{0, 0});
-    for (int i = 0; i <= TOXIC; ++i) {
-      planet.conditions(static_cast<Conditions>(i)) = 50;
+    for (AtmosphereConditions c : all_atmosphere_conditions) {
+      planet.conditions(c) = 50;
     }
-    planet.conditions(TEMP) = 100;
-    planet.conditions(TOXIC) = 0;
+    planet.temp() = 100;
+    planet.toxic() = 0;
 
     Race race{};
-    for (Conditions c : all_atmosphere_conditions) {
+    for (AtmosphereConditions c : all_atmosphere_conditions) {
       race.conditions[c] = 50;
     }
-    race.conditions[TEMP] = 100;
+    race.temp = 100;
 
     const double compat = planet.compatibility(race);
     test::expect_gt(compat, 90.0);
@@ -283,15 +283,13 @@ int main() {
   // Test 11: Planet::update_climate
   {
     Planet planet(PlanetType::EARTH, Coordinates{0, 0});
-    planet.conditions(RTEMP) = 75;
+    planet.rtemp() = 75;
 
     planet.update_climate(10);
-    test::expect_true(planet.conditions(TEMP) >= 80 &&
-                      planet.conditions(TEMP) <= 90);
+    test::expect_true(planet.temp() >= 80 && planet.temp() <= 90);
 
     planet.update_climate(-20);
-    test::expect_true(planet.conditions(TEMP) >= 50 &&
-                      planet.conditions(TEMP) <= 60);
+    test::expect_true(planet.temp() >= 50 && planet.temp() <= 60);
   }
 
   // Test 12: Enslavement, revolt threshold, and slave liberation
@@ -820,6 +818,31 @@ int main() {
     test::expect_true(
         std::abs((moved_ship->coordinates().y - old_sy) -
                  (moved_planet->system_coordinates().y - old_py)) < 1e-6);
+  }
+
+  // Test 28: temperature_t (Temperature) absolute-zero floor and affine delta
+  // arithmetic
+  {
+    Planet planet(PlanetType::ICEBALL, Coordinates{5, 5});
+    planet.rtemp() = -200;
+    planet.temp() = -260;
+    test::expect_eq(planet.rtemp().value(), -200);
+    test::expect_eq(planet.temp().value(), -260);
+
+    // Nuclear winter cooling saturates smoothly at absolute zero (-273 C)
+    planet.temp() -= 50;
+    test::expect_eq(planet.temp().value(), Temperature::ABSOLUTE_ZERO_CELSIUS);
+
+    // Direct assignment below absolute zero clamps at -273 C
+    planet.rtemp() = -500;
+    test::expect_eq(planet.rtemp().value(), Temperature::ABSOLUTE_ZERO_CELSIUS);
+
+    // Difference of two Temperature values yields temp_delta_t
+    Race race{};
+    race.temp = 20;
+    planet.temp() = -80;
+    const temp_delta_t delta = planet.temp() - race.temp;
+    test::expect_eq(delta, -100);
   }
 
   std::println("Planet unit tests passed successfully!");

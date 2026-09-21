@@ -208,7 +208,7 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
 
     if (config_.print_planet_info) {
       std::println(std::cout, "Planet {}: temp {}, type {} ({})",
-                   star.pnames[i], planet.conditions(RTEMP),
+                   star.pnames[i], planet.rtemp(),
                    PlanetTypeNames[planet.type()],
                    static_cast<unsigned int>(planet.type()));
       std::println(

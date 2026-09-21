@@ -118,8 +118,8 @@ execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
     /* only condition can be terraformed, type doesn't change */
     s.terraform(race.likesbest);
     ship.consume_fuel(FUEL_COST_TERRA);
-    if (success(50) && (planet.conditions(TOXIC) < 100)) {
-      planet.conditions(TOXIC) += 1;
+    if (success(50) && (planet.toxic() < 100)) {
+      planet.toxic() += 1;
     }
     if ((ship.fuel() < static_cast<double>(FUEL_COST_TERRA)) &&
         (!ship.notified())) {
@@ -167,8 +167,8 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
                   std::format(" K{} is full of zealots!!!", ship.number()));
   }
   ship.consume_fuel(FUEL_COST_PLOW);
-  if (success(50) && (planet.conditions(TOXIC) < 100)) {
-    planet.conditions(TOXIC) += 1;
+  if (success(50) && (planet.toxic() < 100)) {
+    planet.toxic() += 1;
   }
   return adjust;
 }
@@ -250,7 +250,7 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
   const int prod = round_rand(race.metabolism * ship.crew_ratio());
   stats.prod_res[ship.owner()] += prod;
   const int tox = int_rand(0, int_rand(0, prod));
-  planet.conditions(TOXIC) = std::min(100, planet.conditions(TOXIC) + tox);
+  planet.toxic() += tox;
   if (s.get_fert() >= prod) {
     s.set_fert(s.get_fert() - prod);
   } else {
@@ -516,14 +516,13 @@ std::optional<shipnum_t>
 build_automated_waste_can(EntityManager& entity_manager, const Star& star,
                           Planet& planet, SectorMap& smap, const Race& race) {
   auto& info = planet.info(race);
-  if (!info.tox_thresh.has_value() ||
-      planet.conditions(TOXIC) < *info.tox_thresh ||
+  if (!info.tox_thresh.has_value() || planet.toxic() < *info.tox_thresh ||
       info.resource < Shipcost(ShipType::OTYPE_TOXWC, race)) {
     return std::nullopt;
   }
 
-  const int t = std::min(TOXMAX, planet.conditions(TOXIC));
-  planet.conditions(TOXIC) -= t;
+  const int t = std::min(TOXMAX, static_cast<int>(planet.toxic()));
+  planet.toxic() -= t;
 
   const starnum_t starnum = star.star_id();
   const planetnum_t planetnum = planet.planet_order();
@@ -711,7 +710,7 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
     info.troops = 0;
   }
 
-  const auto toxic = planet.conditions(TOXIC);
+  const auto toxic = planet.toxic();
   const auto star_id = star.star_id().value;
 
   for (const Sector& s : smap) {
@@ -843,9 +842,8 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
                                   star.get_planet_name(planetnum));
 
       if (stats.temp_add(starnum, planetnum)) {
-        telegram_buf << std::format("Temp: {} to {}\n",
-                                    planet.conditions(RTEMP),
-                                    planet.conditions(TEMP));
+        telegram_buf << std::format("Temp: {} to {}\n", planet.rtemp(),
+                                    planet.temp());
       }
       telegram_buf << std::format("Total      Prod: {}r {}f {}d\n",
                                   stats.prod_res[p], stats.prod_fuel[p],

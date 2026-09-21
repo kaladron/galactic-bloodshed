@@ -36,16 +36,17 @@ int main() {
   test_planet.explored() = true;
 
   // Initialize conditions
-  test_planet.conditions(TEMP) = 50;
-  test_planet.conditions(OXYGEN) = 20;
-  test_planet.conditions(CO2) = 5;
-  test_planet.conditions(HYDROGEN) = 10;
-  test_planet.conditions(NITROGEN) = 15;
-  test_planet.conditions(SULFUR) = 2;
-  test_planet.conditions(HELIUM) = 8;
-  test_planet.conditions(OTHER) = 3;
-  test_planet.conditions(METHANE) = 1;
-  test_planet.conditions(TOXIC) = 25;
+  test_planet.rtemp() = 45;
+  test_planet.temp() = 50;
+  test_planet.conditions().oxygen = 20;
+  test_planet.conditions().co2 = 5;
+  test_planet.conditions().hydrogen = 10;
+  test_planet.conditions().nitrogen = 15;
+  test_planet.conditions().sulfur = 2;
+  test_planet.conditions().helium = 8;
+  test_planet.conditions().other = 3;
+  test_planet.conditions().methane = 1;
+  test_planet.toxic() = 25;
 
   // Initialize plinfo for player 1
   test_planet.info(1).fuel = 500;
@@ -145,7 +146,8 @@ int main() {
   test::expect_eq(retrieved.explored(), test_planet.explored());
 
   // Verify conditions
-  test::expect_eq(retrieved.conditions(TEMP), test_planet.conditions(TEMP));
+  test::expect_eq(retrieved.rtemp(), test_planet.rtemp());
+  test::expect_eq(retrieved.temp(), test_planet.temp());
   test::expect_eq(retrieved.conditions(OXYGEN), test_planet.conditions(OXYGEN));
   test::expect_eq(retrieved.conditions(CO2), test_planet.conditions(CO2));
   test::expect_eq(retrieved.conditions(HYDROGEN),
@@ -157,7 +159,7 @@ int main() {
   test::expect_eq(retrieved.conditions(OTHER), test_planet.conditions(OTHER));
   test::expect_eq(retrieved.conditions(METHANE),
                   test_planet.conditions(METHANE));
-  test::expect_eq(retrieved.conditions(TOXIC), test_planet.conditions(TOXIC));
+  test::expect_eq(retrieved.toxic(), test_planet.toxic());
 
   // Verify plinfo for player 1
   test::expect_eq(retrieved.info(1).fuel, test_planet.info(1).fuel);

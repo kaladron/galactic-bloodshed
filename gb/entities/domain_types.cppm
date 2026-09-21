@@ -428,38 +428,22 @@ struct std::formatter<CommodType> : std::formatter<std::string_view> {
   }
 };
 
-export enum Conditions {
-  RTEMP = 0,   /* regular temp for planet */
-  TEMP = 1,    /* temperature */
-  METHANE = 2, /* %age of gases for terraforming */
-  OXYGEN = 3,
-  CO2 = 4,
-  HYDROGEN = 5,
-  NITROGEN = 6,
-  SULFUR = 7,
-  HELIUM = 8,
-  OTHER = 9,
-  TOXIC = 10,
-};
-
-export constexpr std::array all_condition_types = {
-    Conditions::RTEMP,    Conditions::TEMP,   Conditions::METHANE,
-    Conditions::OXYGEN,   Conditions::CO2,    Conditions::HYDROGEN,
-    Conditions::NITROGEN, Conditions::SULFUR, Conditions::HELIUM,
-    Conditions::OTHER,    Conditions::TOXIC,
+export enum AtmosphereConditions {
+  METHANE = 0, /* %age of gases for terraforming */
+  OXYGEN = 1,
+  CO2 = 2,
+  HYDROGEN = 3,
+  NITROGEN = 4,
+  SULFUR = 5,
+  HELIUM = 6,
+  OTHER = 7,
 };
 
 export constexpr std::array all_atmosphere_conditions = {
-    Conditions::RTEMP,    Conditions::TEMP,   Conditions::METHANE,
-    Conditions::OXYGEN,   Conditions::CO2,    Conditions::HYDROGEN,
-    Conditions::NITROGEN, Conditions::SULFUR, Conditions::HELIUM,
-    Conditions::OTHER,
-};
-
-export constexpr std::array all_gas_conditions = {
-    Conditions::METHANE,  Conditions::OXYGEN,   Conditions::CO2,
-    Conditions::HYDROGEN, Conditions::NITROGEN, Conditions::SULFUR,
-    Conditions::HELIUM,   Conditions::OTHER,
+    AtmosphereConditions::METHANE,  AtmosphereConditions::OXYGEN,
+    AtmosphereConditions::CO2,      AtmosphereConditions::HYDROGEN,
+    AtmosphereConditions::NITROGEN, AtmosphereConditions::SULFUR,
+    AtmosphereConditions::HELIUM,   AtmosphereConditions::OTHER,
 };
 
 // Diagnostic logging for invariant violations
@@ -624,119 +608,229 @@ struct std::formatter<Percentage, char> : std::formatter<int, char> {
   }
 };
 
-/// Type-safe planetary/racial environmental conditions indexed by `Conditions`.
-export template <typename T = int>
-struct ConditionValues {
-  T rtemp{};
-  T temp{};
-  T methane{};
-  T oxygen{};
-  T co2{};
-  T hydrogen{};
-  T nitrogen{};
-  T sulfur{};
-  T helium{};
-  T other{};
-  T toxic{};
+/// \brief Planetary and racial temperature in degrees Celsius (`>= -273` °C).
+///
+/// Models temperature as a 1D affine space over `temp_delta_t` (`int`):
+/// - Direct construction or assignment clamps at absolute zero (`-273` °C) and
+///   logs an invariant violation if a sub-absolute-zero value is supplied.
+/// - Relative thermal adjustments (`adjust(delta)`, `+=`, `-=`) saturate
+///   smoothly at `-273` °C without logging an invariant violation (e.g., during
+///   nuclear winter bombardment).
+/// - Subtracting two `Temperature` values yields a `temp_delta_t` (`int`),
+///   while adding or multiplying two `Temperature` values is deleted.
+export class Temperature {
+public:
+  static constexpr int ABSOLUTE_ZERO_CELSIUS = -273;
 
-  [[nodiscard]] constexpr T& operator[](Conditions cond) {
-    switch (cond) {
-      case Conditions::RTEMP:
-        return rtemp;
-      case Conditions::TEMP:
-        return temp;
-      case Conditions::METHANE:
-        return methane;
-      case Conditions::OXYGEN:
-        return oxygen;
-      case Conditions::CO2:
-        return co2;
-      case Conditions::HYDROGEN:
-        return hydrogen;
-      case Conditions::NITROGEN:
-        return nitrogen;
-      case Conditions::SULFUR:
-        return sulfur;
-      case Conditions::HELIUM:
-        return helium;
-      case Conditions::OTHER:
-        return other;
-      case Conditions::TOXIC:
-        return toxic;
+  constexpr Temperature() noexcept = default;
+
+  template <std::signed_integral T>
+  constexpr Temperature(T v, std::source_location loc =
+                                 std::source_location::current()) noexcept {
+    const int clamped = static_cast<int>(std::max<T>(v, ABSOLUTE_ZERO_CELSIUS));
+    if !consteval {
+      if (v < ABSOLUTE_ZERO_CELSIUS) {
+        log_invariant_violation("Temperature", "celsius", v, clamped, loc);
+      }
     }
-    throw std::out_of_range("Invalid Conditions");
+    value_ = clamped;
   }
 
-  [[nodiscard]] constexpr const T& operator[](Conditions cond) const {
-    switch (cond) {
-      case Conditions::RTEMP:
-        return rtemp;
-      case Conditions::TEMP:
-        return temp;
-      case Conditions::METHANE:
-        return methane;
-      case Conditions::OXYGEN:
-        return oxygen;
-      case Conditions::CO2:
-        return co2;
-      case Conditions::HYDROGEN:
-        return hydrogen;
-      case Conditions::NITROGEN:
-        return nitrogen;
-      case Conditions::SULFUR:
-        return sulfur;
-      case Conditions::HELIUM:
-        return helium;
-      case Conditions::OTHER:
-        return other;
-      case Conditions::TOXIC:
-        return toxic;
+  template <std::floating_point T>
+  explicit constexpr Temperature(
+      T v,
+      std::source_location loc = std::source_location::current()) noexcept {
+    const int rounded = static_cast<int>(std::round(v));
+    const int clamped = std::max(rounded, ABSOLUTE_ZERO_CELSIUS);
+    if !consteval {
+      if (rounded < ABSOLUTE_ZERO_CELSIUS) {
+        log_invariant_violation("Temperature", "celsius", v, clamped, loc);
+      }
     }
-    throw std::out_of_range("Invalid Conditions");
+    value_ = clamped;
+  }
+
+  [[nodiscard]] constexpr int value() const noexcept {
+    return value_;
+  }
+
+  [[nodiscard]] constexpr operator int() const noexcept {
+    return value_;
+  }
+
+  /// \brief Adjusts the temperature by a signed thermal delta, saturating
+  /// smoothly at absolute zero (`-273` °C) without logging an invariant
+  /// violation.
+  constexpr Temperature& adjust(temp_delta_t delta) noexcept {
+    value_ = std::max(value_ + delta, ABSOLUTE_ZERO_CELSIUS);
+    return *this;
+  }
+
+  constexpr Temperature& operator+=(temp_delta_t delta) noexcept {
+    return adjust(delta);
+  }
+
+  constexpr Temperature& operator-=(temp_delta_t delta) noexcept {
+    return adjust(-delta);
+  }
+
+  [[nodiscard]] friend constexpr Temperature
+  operator+(Temperature lhs, temp_delta_t delta) noexcept {
+    lhs += delta;
+    return lhs;
+  }
+
+  [[nodiscard]] friend constexpr Temperature
+  operator-(Temperature lhs, temp_delta_t delta) noexcept {
+    lhs -= delta;
+    return lhs;
+  }
+
+  [[nodiscard]] friend constexpr temp_delta_t
+  operator-(Temperature lhs, Temperature rhs) noexcept {
+    return lhs.value_ - rhs.value_;
+  }
+
+  template <std::same_as<Temperature> T1, std::same_as<Temperature> T2>
+  friend constexpr void operator+(T1, T2) = delete;
+  template <std::same_as<Temperature> T1, std::same_as<Temperature> T2>
+  friend constexpr void operator*(T1, T2) = delete;
+  template <std::same_as<Temperature> T1, std::same_as<Temperature> T2>
+  friend constexpr void operator/(T1, T2) = delete;
+
+  [[nodiscard]] friend constexpr bool operator==(Temperature lhs,
+                                                 Temperature rhs) noexcept {
+    return lhs.value_ == rhs.value_;
+  }
+  [[nodiscard]] friend constexpr auto operator<=>(Temperature lhs,
+                                                  Temperature rhs) noexcept {
+    return lhs.value_ <=> rhs.value_;
+  }
+
+  template <typename T>
+    requires(std::integral<T> || std::floating_point<T>)
+  [[nodiscard]] friend constexpr bool operator==(Temperature lhs,
+                                                 T rhs) noexcept {
+    return static_cast<T>(lhs.value_) == rhs;
+  }
+  template <typename T>
+    requires(std::integral<T> || std::floating_point<T>)
+  [[nodiscard]] friend constexpr auto operator<=>(Temperature lhs,
+                                                  T rhs) noexcept {
+    return static_cast<T>(lhs.value_) <=> rhs;
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, Temperature t) {
+    return os << t.value_;
+  }
+
+private:
+  int value_{0};
+};
+
+export using temperature_t = Temperature;
+
+export template <>
+struct std::formatter<Temperature, char> : std::formatter<int, char> {
+  auto format(Temperature t, std::format_context& ctx) const {
+    return std::formatter<int, char>::format(t.value(), ctx);
+  }
+};
+
+/// Planetary and racial atmospheric gas composition (`[0, 100]%` percentages).
+export struct ConditionValues {
+  Percentage methane{0};
+  Percentage oxygen{0};
+  Percentage co2{0};
+  Percentage hydrogen{0};
+  Percentage nitrogen{0};
+  Percentage sulfur{0};
+  Percentage helium{0};
+  Percentage other{0};
+
+  [[nodiscard]] constexpr Percentage&
+  operator[](AtmosphereConditions cond) noexcept {
+    switch (cond) {
+      case AtmosphereConditions::METHANE:
+        return methane;
+      case AtmosphereConditions::OXYGEN:
+        return oxygen;
+      case AtmosphereConditions::CO2:
+        return co2;
+      case AtmosphereConditions::HYDROGEN:
+        return hydrogen;
+      case AtmosphereConditions::NITROGEN:
+        return nitrogen;
+      case AtmosphereConditions::SULFUR:
+        return sulfur;
+      case AtmosphereConditions::HELIUM:
+        return helium;
+      case AtmosphereConditions::OTHER:
+        return other;
+    }
+    std::unreachable();
+  }
+
+  [[nodiscard]] constexpr const Percentage&
+  operator[](AtmosphereConditions cond) const noexcept {
+    switch (cond) {
+      case AtmosphereConditions::METHANE:
+        return methane;
+      case AtmosphereConditions::OXYGEN:
+        return oxygen;
+      case AtmosphereConditions::CO2:
+        return co2;
+      case AtmosphereConditions::HYDROGEN:
+        return hydrogen;
+      case AtmosphereConditions::NITROGEN:
+        return nitrogen;
+      case AtmosphereConditions::SULFUR:
+        return sulfur;
+      case AtmosphereConditions::HELIUM:
+        return helium;
+      case AtmosphereConditions::OTHER:
+        return other;
+    }
+    std::unreachable();
   }
 
   template <typename U>
-    requires(!std::same_as<U, Conditions>)
-  constexpr T& operator[](U) = delete;
+    requires(!std::same_as<U, AtmosphereConditions>)
+  constexpr Percentage& operator[](U) = delete;
 
   template <typename U>
-    requires(!std::same_as<U, Conditions>)
-  constexpr const T& operator[](U) const = delete;
+    requires(!std::same_as<U, AtmosphereConditions>)
+  constexpr const Percentage& operator[](U) const = delete;
 
   constexpr bool operator==(const ConditionValues&) const noexcept = default;
 };
 
-export constexpr std::string_view to_string(Conditions cond) noexcept {
+export constexpr std::string_view
+to_string(AtmosphereConditions cond) noexcept {
   switch (cond) {
-    case Conditions::RTEMP:
-      return "rtemp";
-    case Conditions::TEMP:
-      return "temperature";
-    case Conditions::METHANE:
+    case AtmosphereConditions::METHANE:
       return "methane";
-    case Conditions::OXYGEN:
+    case AtmosphereConditions::OXYGEN:
       return "oxygen";
-    case Conditions::CO2:
+    case AtmosphereConditions::CO2:
       return "co2";
-    case Conditions::HYDROGEN:
+    case AtmosphereConditions::HYDROGEN:
       return "hydrogen";
-    case Conditions::NITROGEN:
+    case AtmosphereConditions::NITROGEN:
       return "nitrogen";
-    case Conditions::SULFUR:
+    case AtmosphereConditions::SULFUR:
       return "sulfur";
-    case Conditions::HELIUM:
+    case AtmosphereConditions::HELIUM:
       return "helium";
-    case Conditions::OTHER:
+    case AtmosphereConditions::OTHER:
       return "other";
-    case Conditions::TOXIC:
-      return "toxic";
   }
-  return "unknown";
+  std::unreachable();
 }
 
-export constexpr std::optional<Conditions>
+export constexpr std::optional<AtmosphereConditions>
 parse_condition(std::string_view name) noexcept {
-  for (Conditions cond : all_condition_types) {
+  for (AtmosphereConditions cond : all_atmosphere_conditions) {
     if (to_string(cond) == name) {
       return cond;
     }
@@ -745,8 +839,8 @@ parse_condition(std::string_view name) noexcept {
 }
 
 export template <>
-struct std::formatter<Conditions> : std::formatter<std::string_view> {
-  auto format(Conditions cond, format_context& ctx) const {
+struct std::formatter<AtmosphereConditions> : std::formatter<std::string_view> {
+  auto format(AtmosphereConditions cond, format_context& ctx) const {
     return formatter<std::string_view>::format(to_string(cond), ctx);
   }
 };

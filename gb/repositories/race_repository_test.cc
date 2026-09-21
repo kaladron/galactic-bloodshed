@@ -59,7 +59,8 @@ int main() {
   test_race.discoveries.crystal = true;
 
   // Initialize conditions and sector compatibilities
-  for (Conditions c : all_atmosphere_conditions) {
+  test_race.temp = 22;
+  for (AtmosphereConditions c : all_atmosphere_conditions) {
     test_race.conditions[c] = 50 + static_cast<int>(c);
   }
   for (SectorType st : all_sector_types) {
@@ -83,7 +84,7 @@ int main() {
   auto race_json = store.retrieve("tbl_race", 1);
   test::expect_true(race_json.has_value());
   test::expect_true(
-      race_json->find("\"conditions\":{\"rtemp\":50,\"temp\":51") !=
+      race_json->find("\"conditions\":{\"methane\":50,\"oxygen\":51") !=
           std::string::npos,
       "Race::conditions must serialize as a named ConditionValues JSON object");
   test::expect_true(race_json->find("\"likes\":{\"sea\":0.5,\"land\":0.6") !=
@@ -116,6 +117,7 @@ int main() {
   test::expect_eq(retrieved->fighters, test_race.fighters);
   test::expect_eq(retrieved->IQ, test_race.IQ);
   test::expect_eq(retrieved->tech, test_race.tech);
+  test::expect_eq(retrieved->temp, test_race.temp);
   test::expect_eq(retrieved->discoveries, test_race.discoveries);
   test::expect_true(retrieved->conditions == test_race.conditions);
   test::expect_true(retrieved->likes == test_race.likes);

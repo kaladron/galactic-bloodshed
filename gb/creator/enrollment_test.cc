@@ -38,8 +38,8 @@ void setup_test_universe(Database& db) {
   Planet p0_0{PlanetType::EARTH, Coordinates{5, 5}};
   p0_0.star_id() = 0;
   p0_0.planet_order() = 0;
-  p0_0.conditions(RTEMP) = 20;
-  p0_0.conditions(OXYGEN) = 21;
+  p0_0.rtemp() = 20;
+  p0_0.conditions().oxygen = 21;
   planet_repo.save(p0_0);
 
   SectorMap smap0_0(p0_0);
@@ -53,8 +53,8 @@ void setup_test_universe(Database& db) {
   Planet p0_1{PlanetType::GASGIANT, Coordinates{5, 5}};
   p0_1.star_id() = 0;
   p0_1.planet_order() = 1;
-  p0_1.conditions(RTEMP) = -80;
-  p0_1.conditions(METHANE) = 90;
+  p0_1.rtemp() = -80;
+  p0_1.conditions().methane = 90;
   planet_repo.save(p0_1);
 
   SectorMap smap0_1(p0_1);
@@ -89,7 +89,7 @@ void setup_test_universe(Database& db) {
   Planet p2_0{PlanetType::ICEBALL, Coordinates{5, 5}};
   p2_0.star_id() = 2;
   p2_0.planet_order() = 0;
-  p2_0.conditions(RTEMP) = -120;
+  p2_0.rtemp() = -120;
   planet_repo.save(p2_0);
 
   SectorMap smap2_0(p2_0);
@@ -103,7 +103,7 @@ void setup_test_universe(Database& db) {
   Planet p2_1{PlanetType::DESERT, Coordinates{5, 5}};
   p2_1.star_id() = 2;
   p2_1.planet_order() = 1;
-  p2_1.conditions(RTEMP) = 140;
+  p2_1.rtemp() = 140;
   planet_repo.save(p2_1);
 
   SectorMap smap2_1(p2_1);
@@ -239,7 +239,7 @@ void test_enroll_first_race_god_success() {
     test::expect_eq(race->Playernum, player_t{1});
     test::expect_eq(race->Gov_ship, result.gov_ship);
     test::expect_eq(race->number_sexes, 2u);
-    test::expect_eq(race->conditions[RTEMP], 20);
+    test::expect_eq(race->temp, 20);
     test::expect_eq(race->conditions[OXYGEN], 21);
     test::expect_eq(race->likesbest, SectorType::SEC_LAND);
     test::expect_eq(race->likes[SectorType::SEC_LAND], 1.0);
@@ -339,7 +339,7 @@ void test_enroll_second_race_mortal_success() {
   if (mortal_race) {
     test::expect_eq(mortal_race->name, std::string("DesertFolk"));
     test::expect_false(mortal_race->God);
-    test::expect_eq(mortal_race->conditions[RTEMP], 140);
+    test::expect_eq(mortal_race->temp, 140);
   }
 
   std::println(std::cout, "  ✓ Enroll second race mortal success passed");
@@ -412,7 +412,7 @@ void test_enroll_gas_giant_cold_success() {
   const auto* race = em.peek_race(player_t{1});
   test::expect_true(race != nullptr);
   if (race) {
-    test::expect_eq(race->conditions[RTEMP], -80);
+    test::expect_eq(race->temp, -80);
     test::expect_eq(race->conditions[METHANE], 90);
     test::expect_eq(race->likesbest, SectorType::SEC_GAS);
   }

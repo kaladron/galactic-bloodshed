@@ -60,7 +60,7 @@ Coordinates Planet::random_adjacent_coordinates(Coordinates from) const {
 }
 
 void Planet::update_climate(int temp_variance) noexcept {
-  conditions(TEMP) = conditions(RTEMP) + temp_variance + int_rand(-5, 5);
+  data_.temp = data_.rtemp + temp_variance + int_rand(-5, 5);
 }
 
 money_t plinfo::collect_tax(Race::gov& gov, const Race& race) noexcept {
@@ -331,7 +331,7 @@ void PlanetExplorationContext::explore_sector(const Planet& planet,
 
 std::optional<Coordinates>
 Planet::process_toxic_environmental_damage(SectorMap& smap) const {
-  if (conditions(TOXIC) <= ENVIR_DAMAGE_TOX) {
+  if (toxic() <= ENVIR_DAMAGE_TOX) {
     return std::nullopt;
   }
   auto& p = smap.get_random();

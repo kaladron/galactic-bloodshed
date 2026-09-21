@@ -61,23 +61,25 @@ int main() {
   planet2.star_id() = 2;       // Star 2
   planet2.planet_order() = 1;  // Planet 1
   planet2.set_system_coordinates({50.0, 75.0});
-  planet2.conditions(TEMP) = 50;
-  planet2.conditions(OXYGEN) = 20;
-  planet2.conditions(CO2) = 5;
-  planet2.conditions(HYDROGEN) = 10;
-  planet2.conditions(NITROGEN) = 15;
-  planet2.conditions(SULFUR) = 2;
-  planet2.conditions(HELIUM) = 8;
-  planet2.conditions(OTHER) = 3;
-  planet2.conditions(METHANE) = 1;
-  planet2.conditions(TOXIC) = 25;
+  planet2.rtemp() = 45;
+  planet2.temp() = 50;
+  planet2.conditions().oxygen = 20;
+  planet2.conditions().co2 = 5;
+  planet2.conditions().hydrogen = 10;
+  planet2.conditions().nitrogen = 15;
+  planet2.conditions().sulfur = 2;
+  planet2.conditions().helium = 8;
+  planet2.conditions().other = 3;
+  planet2.conditions().methane = 1;
+  planet2.toxic() = 25;
 
   test::expect_true(repo.save(planet2));
 
   auto retrieved2 = repo.find_by_location(2, 1);
   test::expect_true(retrieved2.has_value());
   test::expect_eq(retrieved2->planet_order(), 1);
-  test::expect_eq(retrieved2->conditions(TEMP), 50);
+  test::expect_eq(retrieved2->rtemp(), 45);
+  test::expect_eq(retrieved2->temp(), 50);
   test::expect_eq(retrieved2->conditions(OXYGEN), 20);
   test::expect_eq(retrieved2->conditions(CO2), 5);
   test::expect_eq(retrieved2->conditions(HYDROGEN), 10);
@@ -86,7 +88,7 @@ int main() {
   test::expect_eq(retrieved2->conditions(HELIUM), 8);
   test::expect_eq(retrieved2->conditions(OTHER), 3);
   test::expect_eq(retrieved2->conditions(METHANE), 1);
-  test::expect_eq(retrieved2->conditions(TOXIC), 25);
+  test::expect_eq(retrieved2->toxic(), 25);
   std::println(std::cout, "✓ Atmospheric conditions preserved correctly");
 
   // Save planet with player info

@@ -84,7 +84,7 @@ bool explore(const command_t& argv, GameObj& g) {
                 attrs += std::format("{} ", j);
               }
             }
-            if (pl.conditions(TOXIC) > 70) attrs += "TOXIC ";
+            if (pl.toxic() > 70) attrs += "TOXIC ";
 
             type_col = Planet_types[pl.type()];
             compat_col = std::format("{:.0f}%", pl.compatibility(*g.race));

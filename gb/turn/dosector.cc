@@ -70,8 +70,8 @@ namespace {
 void update_population_and_owner(EntityManager& entity_manager, Sector& s,
                                  const Race& race, const Star& star,
                                  const Planet& planet, TurnStats& stats) {
-  auto maxsup = maxsupport(race, s, stats.Compat[s.get_owner()],
-                           planet.conditions(TOXIC));
+  auto maxsup =
+      maxsupport(race, s, stats.Compat[s.get_owner()], planet.toxic());
   s.add_popn(calculate_population_change(race, s, maxsup));
 
   // Handle troops maintenance costs - mutate race for governor update

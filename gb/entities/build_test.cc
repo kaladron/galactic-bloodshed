@@ -372,8 +372,8 @@ int main() {
     const auto& r1 = *ctx.em.peek_race(1);
 
     ctx.em.mutate_planet(0, 0, [](Planet& p) {
-      p.conditions(TOXIC) = 80;
-      p.info(1).resource = 1000;
+      p.toxic() = 80;
+      p.info(player_t{1}).resource = 1000;
     });
 
     auto tox_ship = getship(ShipType::OTYPE_TOXWC, r1);
@@ -383,7 +383,7 @@ int main() {
     });
 
     const auto* p_after = ctx.em.peek_planet(0, 0);
-    test::expect_lt(p_after->conditions(TOXIC), 80);
+    test::expect_lt(p_after->toxic(), 80);
 
     auto [scost, sdist] = shipping_cost(ctx.em, 0, 1, 1000);
     test::expect_gt(sdist, 0.0);

@@ -36,7 +36,7 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
         pl.info(Playernum).popn, pl.info(Playernum).crystals,
         pl.info(Playernum).resource, pl.info(Playernum).destruct,
         pl.info(Playernum).fuel, pl.info(Playernum).tax,
-        pl.info(Playernum).newtax, pl.compatibility(race), pl.conditions(TOXIC),
+        pl.info(Playernum).newtax, pl.compatibility(race), pl.toxic(),
         pl.info(Playernum).comread, pl.info(Playernum).mob_set);
     g.out << formatted;
     for (player_t j{1}; j <= g.entity_manager.num_races(); ++j)

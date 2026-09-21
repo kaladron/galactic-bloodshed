@@ -72,8 +72,7 @@ bool profile(const command_t& argv, GameObj& g) {
 
     // Add data rows with proper alignment
     race_table.add_row({"Fert:", std::format("{}%", race.fertilize), "",
-                        "Temp:", std::format("{}", race.conditions[TEMP]), "",
-                        "", "", ""});
+                        "Temp:", std::format("{}", race.temp), "", "", "", ""});
     race_table.add_row(
         {"Rate:", std::format("{:.2f}", race.birthrate), "",
          "methane:", std::format("{}%", race.conditions[METHANE]), "",
@@ -160,15 +159,13 @@ bool profile(const command_t& argv, GameObj& g) {
                              r.Metamorph ? "Metamorphic Race"
                                          : "Normal Race\t");
         g.out << std::format("Fert:    {}", race.estimate(r.fertilize, p));
-        g.out << std::format("\t\t  Temp:\t{}\n",
-                             race.estimate(r.conditions[TEMP], p));
+        g.out << std::format("\t\t  Temp:\t{}\n", race.estimate(r.temp, p));
         g.out << std::format("Rate:    {}%%",
                              race.estimate(r.birthrate * 100.0, p));
       } else {
         g.out << "Unknown Race\t\t  Planet Conditions\n";
         g.out << std::format("Fert:    {}", race.estimate(r.fertilize, p));
-        g.out << std::format("\t\t  Temp:\t{}\n",
-                             race.estimate(r.conditions[TEMP], p));
+        g.out << std::format("\t\t  Temp:\t{}\n", race.estimate(r.temp, p));
         g.out << std::format("Rate:    {}", race.estimate(r.birthrate, p));
       }
       g.out << std::format("\t\t  methane  {}%\t\tRanges:\n",

@@ -118,8 +118,8 @@ void show_planet_stats(GameObj& g, const Planet& p, player_t playernum,
   g.out << std::format(
       "      Mobilization : {:<3} ({:<3})     Compatibility: {:.2f}%",
       pinfo.comread, pinfo.mob_set, p.compatibility(race));
-  if (p.conditions(TOXIC) > 50) {
-    g.out << std::format("    ({}% TOXIC)\n", p.conditions(TOXIC));
+  if (p.toxic() > 50) {
+    g.out << std::format("    ({}% TOXIC)\n", p.toxic());
   }
   g.out << "\n";
   g.out << std::format("Resource stockpile : {:<9}    Fuel stockpile: {}\n",
@@ -127,7 +127,7 @@ void show_planet_stats(GameObj& g, const Planet& p, player_t playernum,
   g.out << std::format(
       "      Destruct cap : {:<9} {:>18}: {:<5} ({:<5}/{:<})\n", pinfo.destruct,
       race.Metamorph ? "Tons of biomass" : "Total Population", pinfo.popn,
-      p.popn(), round_rand(.01 * (100. - p.conditions(TOXIC)) * p.maxpopn()));
+      p.popn(), round_rand(.01 * (100. - p.toxic()) * p.maxpopn()));
   g.out << std::format("          Crystals : {:<9} {:>18}: {:<5} ({:<5})\n",
                        pinfo.crystals, "Ground forces", pinfo.troops,
                        p.troops());

@@ -324,13 +324,13 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
         ship.storbits(), ship.pnumorbits(), [&](Planet& p) {
           if (ship.fuel() >= 3.0) {
             ship.consume_fuel(3.0);
-            for (int j = RTEMP + 1; j <= OTHER; j++) {
-              auto cond = static_cast<Conditions>(j);
-              auto d = round_rand(ap_planet_factor(p) * ship.crew_ratio() *
-                                  static_cast<double>(race.conditions[cond] -
-                                                      p.conditions(cond)));
+            for (AtmosphereConditions cond : all_atmosphere_conditions) {
+              auto d =
+                  round_rand(ap_planet_factor(p) * ship.crew_ratio() *
+                             static_cast<double>(race.conditions[cond].value() -
+                                                 p.conditions(cond).value()));
               if (d) {
-                p.conditions(cond) = std::clamp(p.conditions(cond) + d, 0, 100);
+                p.conditions(cond) += d;
               }
             }
           } else if (!ship.notified()) {

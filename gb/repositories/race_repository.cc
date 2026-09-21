@@ -45,22 +45,23 @@ struct meta<Race::gov> {
 template <>
 struct meta<Race> {
   using T = Race;
-  static constexpr auto value = object(
-      "Playernum", &T::Playernum, "name", &T::name, "password", &T::password,
-      "info", &T::info, "motto", &T::motto, "absorb", &T::absorb,
-      "collective_iq", &T::collective_iq, "pods", &T::pods, "fighters",
-      &T::fighters, "IQ", &T::IQ, "IQ_limit", &T::IQ_limit, "number_sexes",
-      &T::number_sexes, "fertilize", &T::fertilize, "adventurism",
-      &T::adventurism, "birthrate", &T::birthrate, "mass", &T::mass,
-      "metabolism", &T::metabolism, "conditions", &T::conditions, "likes",
-      &T::likes, "likesbest", &T::likesbest, "dissolved", &T::dissolved, "God",
-      &T::God, "Guest", &T::Guest, "Metamorph", &T::Metamorph, "translate",
-      &T::translate, "atwar", &T::atwar, "allied", &T::allied, "Gov_ship",
-      &T::Gov_ship, "morale", &T::morale, "points", &T::points,
-      "controlled_planets", &T::controlled_planets, "victory_turns",
-      &T::victory_turns, "turn", &T::turn, "tech", &T::tech, "discoveries",
-      &T::discoveries, "victory_score", &T::victory_score, "votes", &T::votes,
-      "planet_points", &T::planet_points, "governor", &T::governor);
+  static constexpr auto value =
+      object("Playernum", &T::Playernum, "name", &T::name, "password",
+             &T::password, "info", &T::info, "motto", &T::motto, "absorb",
+             &T::absorb, "collective_iq", &T::collective_iq, "pods", &T::pods,
+             "fighters", &T::fighters, "IQ", &T::IQ, "IQ_limit", &T::IQ_limit,
+             "number_sexes", &T::number_sexes, "fertilize", &T::fertilize,
+             "adventurism", &T::adventurism, "birthrate", &T::birthrate, "mass",
+             &T::mass, "metabolism", &T::metabolism, "temp", &T::temp,
+             "conditions", &T::conditions, "likes", &T::likes, "likesbest",
+             &T::likesbest, "dissolved", &T::dissolved, "God", &T::God, "Guest",
+             &T::Guest, "Metamorph", &T::Metamorph, "translate", &T::translate,
+             "atwar", &T::atwar, "allied", &T::allied, "Gov_ship", &T::Gov_ship,
+             "morale", &T::morale, "points", &T::points, "controlled_planets",
+             &T::controlled_planets, "victory_turns", &T::victory_turns, "turn",
+             &T::turn, "tech", &T::tech, "discoveries", &T::discoveries,
+             "victory_score", &T::victory_score, "votes", &T::votes,
+             "planet_points", &T::planet_points, "governor", &T::governor);
 };
 
 }  // namespace glz

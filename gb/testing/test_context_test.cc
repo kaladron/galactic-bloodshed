@@ -367,8 +367,8 @@ void test_test_planet_builder() {
   test::expect_eq(mars->dimensions().x, 6);
   test::expect_eq(mars->dimensions().y, 6);
   test::expect_eq(mars->system_coordinates(), SystemCoordinates{200.0, 150.0});
-  test::expect_eq(mars->conditions(TOXIC), 25);
-  test::expect_eq(mars->conditions(TEMP), 65);
+  test::expect_eq(mars->toxic(), 25);
+  test::expect_eq(mars->temp(), 65);
   test::expect_eq(mars->info(player_t{1}).explored, 1);
   test::expect_eq(mars->info(player_t{1}).resource, 500);
   test::expect_eq(mars->info(player_t{1}).fuel, 300);

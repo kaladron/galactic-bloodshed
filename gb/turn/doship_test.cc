@@ -1197,16 +1197,19 @@ void test_do_ap_and_god() {
     test::expect_eq(god_ship.resource(), god_ship.max_resource_capacity());
   });
 
-  // 2. Test do_ap (modifies planetary atmosphere using ship.crew_ratio())
+  // 2. Test do_ap (modifies planetary atmosphere gases without altering temp)
+  ctx.em.mutate_race(1, [](Race& r) { r.conditions.methane = 80; });
   ctx.em.mutate_planet(0, 0, [](Planet& p) {
-    p.conditions(static_cast<Conditions>(RTEMP + 1)) = 10;
+    p.temp() = -50;
+    p.conditions().methane = 10;
   });
 
   shipnum_t ap_ship_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AP)
                              .owned_by(1)
-                             .landed_on(0, 0, Coordinates{0, 0})
+                             .landed_on(0, 0, {0, 0})
                              .with_fuel(10.0)
                              .with_crew(100, 0)
+                             .with_max_crew(100)
                              .with_on(true)
                              .build();
 
@@ -1214,6 +1217,9 @@ void test_do_ap_and_god() {
     do_ap(ap_ship, ctx.em);
     test::expect_lt(ap_ship.fuel(), 10.0);
   });
+  const auto* p_after = ctx.em.peek_planet(0, 0);
+  test::expect_eq(p_after->temp(), -50);
+  test::expect_gt(p_after->conditions(METHANE), 10);
 }
 
 void test_do_pod() {
@@ -1743,8 +1749,8 @@ void test_special_subsystems_extended() {
   TurnStats stats{};
 
   Race race = createTestRace(player_t{1});
-  race.conditions[RTEMP] = 50;
-  race.conditions[OXYGEN] = 80;
+  race.temp = 50;
+  race.conditions.oxygen = 80;
   RaceRepository(store).save(race);
 
   Star star = createTestStar(starnum_t{1});
@@ -1753,8 +1759,8 @@ void test_special_subsystems_extended() {
   Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
   planet.star_id() = 1;
   planet.planet_order() = 0;
-  planet.conditions(RTEMP) = 10;
-  planet.conditions(OXYGEN) = 10;
+  planet.rtemp() = 10;
+  planet.conditions().oxygen = 10;
   PlanetRepository(store).save(planet);
 
   // 1. Habitat with 0 max_crew does not divide by zero

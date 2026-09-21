@@ -261,13 +261,13 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   newship.owner() = Playernum;
   newship.governor() = Governor;
   if (auto* waste_ship = newship.as<ToxicWasteShip>()) {
-    std::string message = std::format("Toxin concentration on planet was {}%,",
-                                      planet.conditions(TOXIC));
+    std::string message =
+        std::format("Toxin concentration on planet was {}%,", planet.toxic());
     push_telegram(entity_manager, Playernum, Governor, message);
-    const int toxic_amount = std::min(TOXMAX, planet.conditions(TOXIC));
+    const int toxic_amount = std::min(TOXMAX, static_cast<int>(planet.toxic()));
     waste_ship->set_toxic_level(toxic_amount);
-    planet.conditions(TOXIC) -= toxic_amount;
-    std::string toxMsg = std::format(" now {}%.\n", planet.conditions(TOXIC));
+    planet.toxic() -= toxic_amount;
+    std::string toxMsg = std::format(" now {}%.\n", planet.toxic());
     push_telegram(entity_manager, Playernum, Governor, toxMsg);
   }
   std::string message = std::format("{} built at a cost of {} resources.\n",

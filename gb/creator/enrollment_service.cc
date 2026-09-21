@@ -179,7 +179,8 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
 
   // Conditions copied from home planet
   entity_manager_.with_planet(star, pnum, [&](const Planet& p) {
-    for (Conditions c : all_atmosphere_conditions) {
+    race.temp = p.rtemp();
+    for (AtmosphereConditions c : all_atmosphere_conditions) {
       race.conditions[c] = p.conditions(c);
     }
   });

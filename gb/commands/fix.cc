@@ -61,6 +61,25 @@ bool fix_planet(const command_t& argv, GameObj& g) {
       return;
     }
 
+    if (argv[2] == "rtemp") {
+      if (opt_val) p.rtemp() = *opt_val;
+      g.out << std::format("rtemp = {}\n", p.rtemp());
+      ok = true;
+      return;
+    }
+    if (argv[2] == "temperature") {
+      if (opt_val) p.temp() = *opt_val;
+      g.out << std::format("temperature = {}\n", p.temp());
+      ok = true;
+      return;
+    }
+    if (argv[2] == "toxic") {
+      if (opt_val) p.toxic() = *opt_val;
+      g.out << std::format("toxic = {}\n", p.toxic());
+      ok = true;
+      return;
+    }
+
     if (const auto cond = parse_condition(argv[2])) {
       if (opt_val) p.conditions(*cond) = *opt_val;
       g.out << std::format("{} = {}\n", *cond, p.conditions(*cond));

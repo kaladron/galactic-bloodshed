@@ -74,6 +74,26 @@ struct to<JSON, Percentage> {
   }
 };
 
+template <>
+struct from<JSON, Temperature> {
+  template <auto Opts>
+  static void op(Temperature& t, is_context auto&& ctx, auto&& it, auto&& end) {
+    int val{};
+    parse<JSON>::op<Opts>(val, ctx, it, end);
+    t = Temperature{val};
+  }
+};
+
+template <>
+struct to<JSON, Temperature> {
+  template <auto Opts>
+  static void op(const Temperature& t, is_context auto&& ctx, auto&& buf,
+                 auto&& ix) noexcept {
+    const int val = t.value();
+    serialize<JSON>::op<Opts>(val, ctx, buf, ix);
+  }
+};
+
 template <FixedString Tag, typename T, T Modulus>
 struct from<JSON, Modular<Tag, T, Modulus>> {
   template <auto Opts>
@@ -161,13 +181,12 @@ struct meta<SectorCompatibilities> {
 };
 
 template <>
-struct meta<ConditionValues<int>> {
-  using T = ConditionValues<int>;
+struct meta<ConditionValues> {
+  using T = ConditionValues;
   static constexpr auto value =
-      object("rtemp", &T::rtemp, "temp", &T::temp, "methane", &T::methane,
-             "oxygen", &T::oxygen, "co2", &T::co2, "hydrogen", &T::hydrogen,
-             "nitrogen", &T::nitrogen, "sulfur", &T::sulfur, "helium",
-             &T::helium, "other", &T::other, "toxic", &T::toxic);
+      object("methane", &T::methane, "oxygen", &T::oxygen, "co2", &T::co2,
+             "hydrogen", &T::hydrogen, "nitrogen", &T::nitrogen, "sulfur",
+             &T::sulfur, "helium", &T::helium, "other", &T::other);
 };
 
 template <>

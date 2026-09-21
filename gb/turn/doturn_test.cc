@@ -48,9 +48,9 @@ Planet createTestPlanet(starnum_t star_id = 0, planetnum_t pnum = 0) {
   planet.planet_order() = pnum;
   planet.set_system_coordinates({1000.0, 1000.0});
   planet.slaved_to() = 0;
-  planet.conditions(TOXIC) = 0;
-  planet.conditions(RTEMP) = 50;
-  planet.conditions(TEMP) = 50;
+  planet.toxic() = 0;
+  planet.rtemp() = 50;
+  planet.temp() = 50;
   for (int i = 1; i <= MAXPLAYERS; i++) {
     planet.info(player_t{i}).tax = 10;
     planet.info(player_t{i}).mob_set = 0;

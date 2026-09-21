@@ -61,7 +61,7 @@ int main() {
   planet.star_id() = 0;
   planet.planet_order() = 0;
   planet.set_system_coordinates({10.0, 10.0});
-  planet.conditions(TOXIC) = 10;
+  planet.toxic() = 10;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -183,7 +183,7 @@ int main() {
     // Check planet toxicity increased
     const auto* planet_after = em.peek_planet(0, 0);
     test::expect_ne(planet_after, nullptr);
-    test::expect_ge(planet_after->conditions(TOXIC), 30);  // Was 10, added 20
+    test::expect_ge(planet_after->toxic(), 30);  // Was 10, added 20
     std::println(std::cout, "✓ TOXWC increases planet toxicity on death");
   }
 

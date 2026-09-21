@@ -65,7 +65,7 @@ Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
   planet.slaved_to() = 0;
 
   // Initialize conditions
-  planet.conditions(TOXIC) = 0;
+  planet.toxic() = 0;
 
   // Initialize player info
   for (int i = 1; i <= MAXPLAYERS; i++) {
@@ -225,7 +225,7 @@ void test_planet_creation() {
   test::expect_eq(planet.dimensions().x, 15);
   test::expect_eq(planet.dimensions().y, 20);
   test::expect_eq(planet.slaved_to(), 0);
-  test::expect_eq(planet.conditions(TOXIC), 0);
+  test::expect_eq(planet.toxic(), 0);
 
   // Test different planet types
   Planet earth_planet(PlanetType::EARTH, Coordinates{10, 10});

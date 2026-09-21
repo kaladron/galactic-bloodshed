@@ -32,9 +32,9 @@ Race createTestRace(player_t playernum = player_t{1}) {
 Planet createTestPlanet(Coordinates dimensions = Coordinates{10, 10}) {
   Planet planet(PlanetType::EARTH, dimensions);
   planet.slaved_to() = 0;
-  planet.conditions(TOXIC) = 0;
-  planet.conditions(RTEMP) = 50;
-  planet.conditions(TEMP) = 50;
+  planet.toxic() = 0;
+  planet.rtemp() = 50;
+  planet.temp() = 50;
   for (int i = 1; i <= MAXPLAYERS; i++) {
     planet.info(player_t{i}).tax = 10;
     planet.info(player_t{i}).mob_set = 0;
@@ -1379,16 +1379,16 @@ void test_process_planet_climate() {
   Planet planet(PlanetType::EARTH, Coordinates{10, 10});
   planet.star_id() = 3;
   planet.planet_order() = 1;
-  planet.conditions(TEMP) = 20;
-  planet.conditions(RTEMP) = 20;
+  planet.temp() = 20;
+  planet.rtemp() = 20;
 
   TurnStats stats{};
   stats.set_temp_add(3, 1, 10);
 
   process_planet_climate(planet, star, stats);
 
-  test::expect_ge(planet.conditions(TEMP), 25);
-  test::expect_le(planet.conditions(TEMP), 35);
+  test::expect_ge(planet.temp(), 25);
+  test::expect_le(planet.temp(), 35);
 }
 
 void test_process_toxic_environmental_damage() {
@@ -1409,12 +1409,12 @@ void test_process_toxic_environmental_damage() {
   }
 
   // 1. Below or at toxic threshold (ENVIR_DAMAGE_TOX = 70) -> no damage
-  planet.conditions(TOXIC) = ENVIR_DAMAGE_TOX;
+  planet.toxic() = ENVIR_DAMAGE_TOX;
   auto safe_res = planet.process_toxic_environmental_damage(smap);
   test::expect_false(safe_res.has_value());
 
   // 2. Above toxic threshold -> sector devastated
-  planet.conditions(TOXIC) = ENVIR_DAMAGE_TOX + 1;
+  planet.toxic() = ENVIR_DAMAGE_TOX + 1;
   auto damage_res = planet.process_toxic_environmental_damage(smap);
   test::expect_true(damage_res.has_value());
   test::expect_true(smap.in_bounds(*damage_res));
@@ -1481,7 +1481,7 @@ void test_build_automated_waste_can() {
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
   planet.planet_order() = 0;
-  planet.conditions(TOXIC) = 80;
+  planet.toxic() = 80;
 
   SectorMap smap(planet);
   for (int y = 0; y < planet.dimensions().y; ++y) {
@@ -1499,13 +1499,13 @@ void test_build_automated_waste_can() {
   planet.info(race).resource = 1000;
   auto res1 = build_automated_waste_can(em, star, planet, smap, race);
   test::expect_false(res1.has_value());
-  test::expect_eq(planet.conditions(TOXIC), 80);
+  test::expect_eq(planet.toxic(), 80);
 
   // 2. Threshold higher than toxicity (90 > 80) -> returns nullopt
   planet.info(race).tox_thresh = 90;
   auto res2 = build_automated_waste_can(em, star, planet, smap, race);
   test::expect_false(res2.has_value());
-  test::expect_eq(planet.conditions(TOXIC), 80);
+  test::expect_eq(planet.toxic(), 80);
 
   // 3. Threshold met (50 <= 80), but insufficient resources (0) -> returns
   // nullopt
@@ -1513,14 +1513,14 @@ void test_build_automated_waste_can() {
   planet.info(race).resource = 0;
   auto res3 = build_automated_waste_can(em, star, planet, smap, race);
   test::expect_false(res3.has_value());
-  test::expect_eq(planet.conditions(TOXIC), 80);
+  test::expect_eq(planet.toxic(), 80);
 
   // 4. Threshold met and resources available -> builds toxic waste can holding
   // min(TOXMAX, 80) = 20
   planet.info(race).resource = 1000;
   auto res4 = build_automated_waste_can(em, star, planet, smap, race);
   test::expect_true(res4.has_value());
-  test::expect_eq(planet.conditions(TOXIC), 80 - TOXMAX);
+  test::expect_eq(planet.toxic(), 80 - TOXMAX);
 
   const auto* ship = em.peek_ship(*res4);
   test::expect_true(ship != nullptr);
@@ -1533,23 +1533,23 @@ void test_build_automated_waste_can() {
   test::expect_eq(ship->coordinates(), planet.absolute_coordinates(star));
 
   // 5. Partial extraction (toxicity < TOXMAX)
-  planet.conditions(TOXIC) = 15;
+  planet.toxic() = 15;
   planet.info(race).tox_thresh = 10;
   planet.info(race).resource = 1000;
   auto res5 = build_automated_waste_can(em, star, planet, smap, race);
   test::expect_true(res5.has_value());
-  test::expect_eq(planet.conditions(TOXIC), 0);
+  test::expect_eq(planet.toxic(), 0);
   const auto* ship5 = em.peek_ship(*res5);
   test::expect_true(ship5 != nullptr);
   test::expect_eq(ship5->as<ToxicWasteShip>()->toxic_level(), 15);
 
   // 6. Exact threshold boundary (toxicity == tox_thresh)
-  planet.conditions(TOXIC) = 25;
+  planet.toxic() = 25;
   planet.info(race).tox_thresh = 25;
   planet.info(race).resource = 1000;
   auto res6 = build_automated_waste_can(em, star, planet, smap, race);
   test::expect_true(res6.has_value());
-  test::expect_eq(planet.conditions(TOXIC), 5);
+  test::expect_eq(planet.toxic(), 5);
 }
 
 void test_check_mutual_alliances() {
@@ -2324,7 +2324,7 @@ void test_recalculate_census() {
   planet.star_id() = star.star_id();
   planet.planet_order() = 0;
   planet.dimensions() = Coordinates{2, 2};
-  planet.conditions(TOXIC) = 10;
+  planet.toxic() = 10;
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -2400,27 +2400,27 @@ void test_recalculate_census() {
 
 void test_update_planet_toxicity() {
   Planet planet = createTestPlanet();
-  planet.conditions(TOXIC) = 10;
+  planet.toxic() = 10;
   planet.popn() = 250;
   planet.maxpopn() = 100;
 
   planet.update_toxicity();
   // 10 + (250 / 100) = 12
-  test::expect_eq(planet.conditions(TOXIC), 12);
+  test::expect_eq(planet.toxic(), 12);
 
   // Severe overpopulation clamping to 100
-  planet.conditions(TOXIC) = 90;
+  planet.toxic() = 90;
   planet.popn() = 2000;
   planet.maxpopn() = 100;
   planet.update_toxicity();
-  test::expect_eq(planet.conditions(TOXIC), 100);
+  test::expect_eq(planet.toxic(), 100);
 
   // Zero maxpopn edge case - no division by zero
-  planet.conditions(TOXIC) = 15;
+  planet.toxic() = 15;
   planet.popn() = 50;
   planet.maxpopn() = 0;
   planet.update_toxicity();
-  test::expect_eq(planet.conditions(TOXIC), 15);
+  test::expect_eq(planet.toxic(), 15);
 }
 
 void test_process_planet_economy() {
@@ -2445,7 +2445,7 @@ void test_process_planet_economy() {
   planet.star_id() = star.star_id();
   planet.planet_order() = 0;
   planet.dimensions() = Coordinates{2, 2};
-  planet.conditions(TOXIC) = 5;
+  planet.toxic() = 5;
   planet.popn() = 200;
   planet.maxpopn() = 100;
   planet.info(player_t{1}).numsectsowned = 2;
@@ -2478,7 +2478,7 @@ void test_process_planet_economy() {
   test::expect_eq(planet.info(player_t{1}).crystals, 7);
 
   // Toxicity updated: 5 + (200 / 100) = 7
-  test::expect_eq(planet.conditions(TOXIC), 7);
+  test::expect_eq(planet.toxic(), 7);
 
   // Power metrics accumulated
   test::expect_eq(stats.Power[player_t{1}].resource, 115);
@@ -2509,7 +2509,7 @@ void test_process_planet_economy_automated_waste_can() {
   planet.star_id() = star.star_id();
   planet.planet_order() = 0;
   planet.dimensions() = Coordinates{2, 2};
-  planet.conditions(TOXIC) = 50;
+  planet.toxic() = 50;
   planet.popn() = 100;
   planet.maxpopn() = 1000;
   planet.info(player_t{1}).numsectsowned = 1;
@@ -2533,7 +2533,7 @@ void test_process_planet_economy_automated_waste_can() {
   // Toxicity reduced by TOXMAX (20): 50 - 20 = 30.
   // Then update_planet_toxicity adds popn / maxpopn = 100 / 1000 = 0 ->
   // stays 30.
-  test::expect_eq(planet.conditions(TOXIC), 30);
+  test::expect_eq(planet.toxic(), 30);
   test::expect_eq(planet.info(player_t{1}).resource, 500);
 }
 
@@ -2644,8 +2644,8 @@ void test_send_planet_turn_telegrams() {
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
   planet.planet_order() = 0;
-  planet.conditions(RTEMP) = 200;
-  planet.conditions(TEMP) = 250;
+  planet.rtemp() = 200;
+  planet.temp() = 250;
   planet.enslave_to(2);
   planet.info(player_t{1}).autorep = 2;
 

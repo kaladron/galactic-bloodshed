@@ -136,7 +136,7 @@ void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
         GB::csp::CSP_SURVEY_INTRO, p.dimensions().x, p.dimensions().y,
         star.get_name(), planet_name, p.info(player).resource,
         p.info(player).fuel, p.info(player).destruct, p.popn(), p.maxpopn(),
-        p.conditions(TOXIC), p.compatibility(race), p.slaved_to().value);
+        p.toxic(), p.compatibility(race), p.slaved_to().value);
   }
 
   // Write sector rows
@@ -276,7 +276,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
                     .sector = &s,
                     .desshow_char = desshow(g.player(), g.governor(), race, s),
                     .compat = compat,
-                    .toxic = p.conditions(TOXIC),
+                    .toxic = p.toxic(),
                     .ship_data = ship_data});
   }
 
@@ -315,19 +315,19 @@ void survey_planet_overview(GameObj& g, const Place& where) {
                        "{:02d}%({:02d}%)      temperature: {:3d} ({:3d})\n",
                        p.conditions(CO2), race.conditions[CO2],
                        p.conditions(HYDROGEN), race.conditions[HYDROGEN],
-                       p.conditions(TEMP), race.conditions[TEMP]);
+                       p.temp(), race.temp);
   g.out << std::format("    nitrogen {:02d}%({:02d}%)     sulfur "
                        "{:02d}%({:02d}%)           normal: {:3d}\n",
                        p.conditions(NITROGEN), race.conditions[NITROGEN],
                        p.conditions(SULFUR), race.conditions[SULFUR],
-                       p.conditions(RTEMP));
+                       p.rtemp());
   g.out << std::format(
       "      helium {:02d}%({:02d}%)      other {:02d}%({:02d}%)\n",
       p.conditions(HELIUM), race.conditions[HELIUM], p.conditions(OTHER),
       race.conditions[OTHER]);
 
-  g.out << std::format("                     Toxicity: {}% ({})\n",
-                       p.conditions(TOXIC), get_tox(p.conditions(TOXIC)));
+  g.out << std::format("                     Toxicity: {}% ({})\n", p.toxic(),
+                       get_tox(p.toxic()));
   g.out << std::format("Total planetary compatibility: {:.2f}%\n",
                        p.compatibility(race));
 

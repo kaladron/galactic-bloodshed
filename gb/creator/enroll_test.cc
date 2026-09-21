@@ -159,7 +159,7 @@ void test_find_suitable_planet_deterministic_search() {
   Planet p2_1{PlanetType::EARTH, Coordinates{10, 10}};
   p2_1.star_id() = 2;
   p2_1.planet_order() = 1;
-  p2_1.conditions(RTEMP) = 20;
+  p2_1.rtemp() = 20;
   planet_repo.save(p2_1);
 
   // Star 3: 2 planets, candidate Earth planet at pnum 0 (valid)
@@ -172,7 +172,7 @@ void test_find_suitable_planet_deterministic_search() {
   Planet p3_0{PlanetType::EARTH, Coordinates{10, 10}};
   p3_0.star_id() = 3;
   p3_0.planet_order() = 0;
-  p3_0.conditions(RTEMP) = 15;
+  p3_0.rtemp() = 15;
   planet_repo.save(p3_0);
 
   Planet p3_1{PlanetType::MARS, Coordinates{10, 10}};
@@ -180,7 +180,7 @@ void test_find_suitable_planet_deterministic_search() {
   p3_1.planet_order() = 1;
   planet_repo.save(p3_1);
 
-  // Star 4: 2 planets, candidate Gas Giant at pnum 1 (cold: RTEMP = -80)
+  // Star 4: 2 planets, candidate Gas Giant at pnum 1 (cold: rtemp = -80)
   star_struct ss4{};
   ss4.star_id = 4;
   ss4.pnames = {"P1", "P2"};
@@ -195,11 +195,11 @@ void test_find_suitable_planet_deterministic_search() {
   Planet p4_1{PlanetType::GASGIANT, Coordinates{10, 10}};
   p4_1.star_id() = 4;
   p4_1.planet_order() = 1;
-  p4_1.conditions(RTEMP) = -80;
+  p4_1.rtemp() = -80;
   planet_repo.save(p4_1);
 
-  // Star 5: 2 planets, cryogenic Iceball at pnum 0 (RTEMP = -120), hot Desert
-  // at pnum 1 (RTEMP = 150)
+  // Star 5: 2 planets, cryogenic Iceball at pnum 0 (rtemp = -120), hot Desert
+  // at pnum 1 (rtemp = 150)
   star_struct ss5{};
   ss5.star_id = 5;
   ss5.pnames = {"P1", "P2"};
@@ -209,13 +209,13 @@ void test_find_suitable_planet_deterministic_search() {
   Planet p5_0{PlanetType::ICEBALL, Coordinates{10, 10}};
   p5_0.star_id() = 5;
   p5_0.planet_order() = 0;
-  p5_0.conditions(RTEMP) = -120;
+  p5_0.rtemp() = -120;
   planet_repo.save(p5_0);
 
   Planet p5_1{PlanetType::DESERT, Coordinates{10, 10}};
   p5_1.star_id() = 5;
   p5_1.planet_order() = 1;
-  p5_1.conditions(RTEMP) = 150;
+  p5_1.rtemp() = 150;
   planet_repo.save(p5_1);
 
   EntityManager em(db);
@@ -297,7 +297,7 @@ void test_enroll_valid_race_success() {
   Planet p1{PlanetType::GASGIANT, Coordinates{5, 5}};
   p1.star_id() = 0;
   p1.planet_order() = 1;
-  p1.conditions(RTEMP) = -80;
+  p1.rtemp() = -80;
   planet_repo.save(p1);
 
   SectorRepository sector_repo(store);

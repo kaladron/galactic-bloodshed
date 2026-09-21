@@ -64,8 +64,9 @@ public:
   birthrate_t birthrate{0.0};
   mass_t mass{0.0};
   metabolism_t metabolism{0.0};
-  ConditionValues<int>
-      conditions{};              /* Atmosphere/temperature this race likes. */
+  temperature_t temp{0}; /* Temperature (Celsius) this race likes. */
+  ConditionValues
+      conditions{}; /* Atmospheric gas percentages this race likes. */
   SectorCompatibilities likes{}; /* Sector condition compats. */
   SectorType likesbest{
       SectorType::SEC_LAND}; /* 100% compat sector condition for this race. */

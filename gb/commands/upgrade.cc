@@ -208,18 +208,18 @@ bool apply_upgrade_characteristic(GameObj& g, Ship& ship, const Ship& dirship,
 
 bool check_carrier_hangar_capacity(GameObj& g, const Ship& dirship,
                                    const Ship& candidate) {
-  if (dirship.whatorbits() != ScopeLevel::LEVEL_SHIP) {
+  if (dirship.whatorbits() != ScopeLevel::LEVEL_SHIP || !dirship.destshipno()) {
     return true;
   }
   bool fits = true;
-  g.entity_manager.with_ship(dirship.destshipno(), [&](const Ship& carrier) {
+  g.entity_manager.with_ship(*dirship.destshipno(), [&](const Ship& carrier) {
     const long available_space = static_cast<long>(carrier.max_hanger()) -
                                  (static_cast<long>(carrier.hanger()) -
                                   static_cast<long>(dirship.size()));
     const long needed_size = static_cast<long>(candidate.calculate_size());
     if (available_space < needed_size) {
       g.out << std::format("Not enough free hanger space on {}{}.\n",
-                           carrier.type_letter(), dirship.destshipno());
+                           carrier.type_letter(), *dirship.destshipno());
       g.out << std::format("{} more needed.\n", needed_size - available_space);
       fits = false;
     }
@@ -259,8 +259,8 @@ void commit_ship_upgrade(GameObj& g, Ship& dirship, const Ship& candidate,
   dirship.build_cost() = race.God ? 0 : static_cast<resource_t>(cost(dirship));
   dirship.complexity() = complexity(dirship);
 
-  if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    g.entity_manager.mutate_ship(dirship.destshipno(), [&](Ship& carrier) {
+  if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP && dirship.destshipno()) {
+    g.entity_manager.mutate_ship(*dirship.destshipno(), [&](Ship& carrier) {
       carrier.unload_docked_craft(old_size, old_mass);
       carrier.load_docked_craft(dirship);
     });

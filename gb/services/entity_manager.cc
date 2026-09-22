@@ -932,13 +932,22 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 
   /* if this ship is inside a carrier, adjust the carrier's hangar and mass */
-  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP && ship.destshipno() != 0) {
-    if (peek_ship(ship.destshipno())) {
-      mutate_ship(ship.destshipno(),
+  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP && ship.destshipno()) {
+    const shipnum_t carrier_id = *ship.destshipno();
+    if (peek_ship(carrier_id)) {
+      mutate_ship(carrier_id,
                   [&](Ship& carrier) { carrier.unload_docked_craft(ship); });
-      propagate_ancestor_mass_delta(ship.destshipno(), -ship.mass());
+      propagate_ancestor_mass_delta(carrier_id, -ship.mass());
     }
   }
+
+  /* landed ships are killed */
+  for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
+    Ship& s = *ship_handle;   // Get mutable reference
+    kill_ship(Playernum, s);  // Recursive call to member function
+  }
+
+  ship.destshipno() = std::nullopt;
 
   /* clear any foreign key references to this ship on other alive ships */
   for (shipnum_t other_id : ships_alive()) {
@@ -964,12 +973,18 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
         s.protect().on = false;
       });
     }
-  }
-
-  /* landed ships are killed */
-  for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
-    Ship& s = *ship_handle;   // Get mutable reference
-    kill_ship(Playernum, s);  // Recursive call to member function
+    if (other->destshipno() == ship.number()) {
+      mutate_ship(other_id, [](Ship& s) {
+        if (s.is_docked()) {
+          s.undock_from_ship();
+        } else {
+          s.destshipno() = std::nullopt;
+          if (s.whatdest() == ScopeLevel::LEVEL_SHIP) {
+            s.whatdest() = ScopeLevel::LEVEL_UNIV;
+          }
+        }
+      });
+    }
   }
 }
 
@@ -981,16 +996,16 @@ void EntityManager::propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
       direct_carrier->whatorbits() != ScopeLevel::LEVEL_SHIP) {
     return;
   }
-  shipnum_t ancestor = direct_carrier->destshipno();
-  while (ancestor != 0) {
-    const auto* anc_peek = peek_ship(ancestor);
+  std::optional<shipnum_t> ancestor = direct_carrier->destshipno();
+  while (ancestor && *ancestor != 0) {
+    const auto* anc_peek = peek_ship(*ancestor);
     if (!anc_peek) break;
-    mutate_ship(ancestor, [&](Ship& anc) {
+    mutate_ship(*ancestor, [&](Ship& anc) {
       anc.set_mass(std::max(anc.base_mass(), anc.mass() + delta_mass));
     });
     ancestor = (anc_peek->whatorbits() == ScopeLevel::LEVEL_SHIP)
                    ? anc_peek->destshipno()
-                   : shipnum_t{0};
+                   : std::nullopt;
   }
 }
 
@@ -1007,12 +1022,12 @@ EntityManager::dock_carrier(shipnum_t child_id, shipnum_t carrier_id) {
   }
 
   // Cycle detection: ensure child_id is not an ancestor of carrier_id
-  shipnum_t ancestor = carrier_id;
-  while (ancestor != 0) {
-    if (ancestor == child_id) {
+  std::optional<shipnum_t> ancestor = carrier_id;
+  while (ancestor && *ancestor != 0) {
+    if (*ancestor == child_id) {
       return std::unexpected(DockError::CycleDetected);
     }
-    const auto* anc_peek = peek_ship(ancestor);
+    const auto* anc_peek = peek_ship(*ancestor);
     if (!anc_peek || anc_peek->whatorbits() != ScopeLevel::LEVEL_SHIP) {
       break;
     }
@@ -1047,11 +1062,12 @@ EntityManager::undock_carrier(shipnum_t child_id, ScopeLevel orbit_level) {
   }
 
   if (!child_peek->is_docked() ||
-      child_peek->whatorbits() != ScopeLevel::LEVEL_SHIP) {
+      child_peek->whatorbits() != ScopeLevel::LEVEL_SHIP ||
+      !child_peek->destshipno()) {
     return std::unexpected(UndockError::NotDocked);
   }
 
-  const auto carrier_id = child_peek->destshipno();
+  const shipnum_t carrier_id = *child_peek->destshipno();
   const auto* carrier_peek = peek_ship(carrier_id);
   if (!carrier_peek) {
     return std::unexpected(UndockError::CarrierNotFound);
@@ -1114,8 +1130,8 @@ EntityManager::unmoor_ships(shipnum_t ship_id) {
   const auto other_id = s_peek->destshipno();
   mutate_ship(ship_id, [&](Ship& s1) { s1.undock_from_ship(); });
 
-  if (other_id != 0 && peek_ship(other_id)) {
-    mutate_ship(other_id, [&](Ship& s2) {
+  if (other_id && *other_id != 0 && peek_ship(*other_id)) {
+    mutate_ship(*other_id, [&](Ship& s2) {
       if (s2.destshipno() == ship_id) {
         s2.undock_from_ship();
       }

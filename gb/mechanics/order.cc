@@ -591,8 +591,11 @@ void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
 
 bool activate_factory_on_habitat(GameObj& g, Ship& factory,
                                  resource_t& oncost) {
+  if (!factory.destshipno()) {
+    return false;
+  }
   bool ok = false;
-  g.entity_manager.mutate_ship(factory.destshipno(), [&](Ship& habitat) {
+  g.entity_manager.mutate_ship(*factory.destshipno(), [&](Ship& habitat) {
     if (habitat.type() != ShipType::STYPE_HABITAT) {
       g.out << "The factory is currently being transported.\n";
       return;
@@ -602,7 +605,7 @@ bool activate_factory_on_habitat(GameObj& g, Ship& factory,
       g.out << std::format(
           "You don't have {} resources on Habitat #{} to activate this "
           "factory.\n",
-          oncost, factory.destshipno());
+          oncost, *factory.destshipno());
       return;
     }
     const int new_size =
@@ -613,7 +616,7 @@ bool activate_factory_on_habitat(GameObj& g, Ship& factory,
     if (hanger_needed > 0) {
       g.out << std::format(
           "Not enough hanger space free on Habitat #{}. Need {} more.\n",
-          factory.destshipno(), hanger_needed);
+          *factory.destshipno(), hanger_needed);
       return;
     }
     habitat.resource() -= oncost;
@@ -722,7 +725,7 @@ std::string format_ship_destination(EntityManager& em, const Ship& ship) {
     return format_ship_dest(em, ship);
   }
   if (ship.whatdest() == ScopeLevel::LEVEL_SHIP) {
-    return std::format("D#{}", ship.destshipno());
+    return std::format("D#{}", ship.destshipno().value_or(0));
   }
   return std::format("L{:2d},{:2d}", ship.land_coords().x,
                      ship.land_coords().y);

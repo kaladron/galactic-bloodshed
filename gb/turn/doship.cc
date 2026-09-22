@@ -20,9 +20,10 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
       return 0;
     }
     // Check if docked with a station
-    if (ship.docked() && (ship.whatdest() == ScopeLevel::LEVEL_SHIP ||
-                          ship.whatorbits() == ScopeLevel::LEVEL_SHIP)) {
-      const auto* dest_ship = entity_manager.peek_ship(ship.destshipno());
+    if (ship.docked() && ship.destshipno() &&
+        (ship.whatdest() == ScopeLevel::LEVEL_SHIP ||
+         ship.whatorbits() == ScopeLevel::LEVEL_SHIP)) {
+      const auto* dest_ship = entity_manager.peek_ship(*ship.destshipno());
       if (dest_ship && dest_ship->type() == ShipType::STYPE_STATION) {
         return 0;
       }
@@ -368,8 +369,8 @@ bool process_ship_supernova(Ship& ship, const Star& star,
 }
 
 void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em) {
-  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    if (const auto* carrier = em.peek_ship(ship.destshipno())) {
+  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP && ship.destshipno()) {
+    if (const auto* carrier = em.peek_ship(*ship.destshipno())) {
       if (ship.owner() != carrier->owner()) {
         ship.owner() = carrier->owner();
         ship.governor() = carrier->governor();
@@ -596,7 +597,10 @@ void execute_missile_planet_strike(Ship& missile,
 
 void execute_missile_ship_strike(Ship& missile, EntityManager& entity_manager) {
   auto target_num = missile.destshipno();
-  entity_manager.mutate_ship(target_num, [&](Ship& target) {
+  if (!target_num) {
+    return;
+  }
+  entity_manager.mutate_ship(*target_num, [&](Ship& target) {
     if (!target.alive()) return;
     double dist = missile.coordinates().distance_to(target.coordinates());
     double strike_range = static_cast<double>(missile.speed()) *

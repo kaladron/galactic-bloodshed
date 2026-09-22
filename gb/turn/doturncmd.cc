@@ -564,8 +564,9 @@ bool compute_governed_status(const Race& race, EntityManager& entity_manager) {
   }
 
   // Check if docked at a habitat that's orbiting a planet or star
-  if (gov_ship->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    const auto* habitat = entity_manager.peek_ship(gov_ship->destshipno());
+  if (gov_ship->whatorbits() == ScopeLevel::LEVEL_SHIP &&
+      gov_ship->destshipno()) {
+    const auto* habitat = entity_manager.peek_ship(*gov_ship->destshipno());
     if (habitat && habitat->type() == ShipType::STYPE_HABITAT &&
         (habitat->whatorbits() == ScopeLevel::LEVEL_PLAN ||
          habitat->whatorbits() == ScopeLevel::LEVEL_STAR)) {

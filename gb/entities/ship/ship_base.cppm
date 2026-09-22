@@ -138,10 +138,10 @@ public:
   }
 
   // Ship references
-  [[nodiscard]] shipnum_t destshipno() const {
+  [[nodiscard]] std::optional<shipnum_t> destshipno() const noexcept {
     return data_.destshipno;
   }
-  shipnum_t& destshipno() {
+  std::optional<shipnum_t>& destshipno() noexcept {
     return data_.destshipno;
   }
 
@@ -779,7 +779,7 @@ public:
   /// Undocks the ship from a moored ship in space. Preserves whatorbits.
   void undock_from_ship() noexcept {
     data_.dock_state = DockState::Spaceborne;
-    data_.destshipno = 0;
+    data_.destshipno = std::nullopt;
     data_.whatdest = ScopeLevel::LEVEL_UNIV;
   }
 
@@ -788,7 +788,7 @@ public:
   launch_to_orbit(ScopeLevel orbit_level = ScopeLevel::LEVEL_PLAN) noexcept {
     data_.dock_state = DockState::Spaceborne;
     if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
-      data_.destshipno = 0;
+      data_.destshipno = std::nullopt;
     }
     if (orbit_level != ScopeLevel::LEVEL_SHIP) {
       data_.whatorbits = orbit_level;

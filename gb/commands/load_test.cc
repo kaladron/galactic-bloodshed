@@ -936,7 +936,7 @@ void test_docking_and_validation_edge_cases() {
 
   ctx.em.mutate_ship(shuttle_id, [](Ship& s) {
     s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = 0;
+    s.destshipno() = std::nullopt;
   });
   g.out.str("");
   ctx.assert_dispatch_rejected(
@@ -953,7 +953,8 @@ void test_docking_and_validation_edge_cases() {
     s.whatorbits() = ScopeLevel::LEVEL_STAR;
     s.destshipno() = carrier_id;
   });
-  ctx.em.mutate_ship(carrier_id, [](Ship& s) { s.destshipno() = 0; });
+  ctx.em.mutate_ship(carrier_id,
+                     [](Ship& s) { s.destshipno() = std::nullopt; });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});

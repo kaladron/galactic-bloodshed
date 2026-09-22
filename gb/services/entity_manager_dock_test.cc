@@ -216,7 +216,7 @@ void test_undock_carrier() {
   test::expect_eq(fighter_after->dock_state(), DockState::Spaceborne);
   test::expect_true(fighter_after->is_spaceborne());
   test::expect_false(fighter_after->is_docked());
-  test::expect_eq(fighter_after->destshipno(), shipnum_t{0});
+  test::expect_eq(fighter_after->destshipno(), std::nullopt);
   test::expect_eq(fighter_after->whatorbits(), ScopeLevel::LEVEL_STAR);
 
   // Undocking an already undocked ship fails
@@ -283,8 +283,8 @@ void test_moor_and_unmoor_ships() {
 
   test::expect_eq(s1_after->dock_state(), DockState::Spaceborne);
   test::expect_eq(s2_after->dock_state(), DockState::Spaceborne);
-  test::expect_eq(s1_after->destshipno(), shipnum_t{0});
-  test::expect_eq(s2_after->destshipno(), shipnum_t{0});
+  test::expect_eq(s1_after->destshipno(), std::nullopt);
+  test::expect_eq(s2_after->destshipno(), std::nullopt);
 }
 
 void test_kill_ship_carrier_and_child_accounting() {

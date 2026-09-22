@@ -430,11 +430,11 @@ public:
   }
 
   /// \brief Sets simulated temporary flight destination and undocks.
-  void set_simulated_destination(ScopeLevel level, starnum_t snum,
-                                 planetnum_t pnum,
-                                 shipnum_t shipno = shipnum_t{0}) noexcept {
+  void set_simulated_destination(
+      ScopeLevel level, starnum_t snum, planetnum_t pnum,
+      std::optional<shipnum_t> shipno = std::nullopt) noexcept {
     data_.dock_state = DockState::Spaceborne;
-    destshipno() = shipno;
+    destshipno() = (shipno && *shipno > 0) ? shipno : std::nullopt;
     whatdest() = level;
     deststar() = snum;
     destpnum() = pnum;

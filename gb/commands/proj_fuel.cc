@@ -94,9 +94,10 @@ resolve_fuel_trip_target(const command_t& argv, GameObj& g, const Ship& ship) {
                            star_ptr->get_planet_name(ship.pnumorbits()));
   }
 
-  Place tmpdest = (argv.size() == 2) ? Place{ship.whatdest(), ship.deststar(),
-                                             ship.destpnum(), ship.destshipno()}
-                                     : Place{g, argv[2], true};
+  Place tmpdest = (argv.size() == 2)
+                      ? Place{ship.whatdest(), ship.deststar(), ship.destpnum(),
+                              ship.destshipno().value_or(0)}
+                      : Place{g, argv[2], true};
   if (tmpdest.err) {
     g.out << "fuel:  bad scope.\n";
     return std::nullopt;

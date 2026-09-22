@@ -306,14 +306,14 @@ std::optional<DockingContext> validate_ship_docking(Ship& s, GameObj& g) {
                           .is_different_owner = false};
   }
 
-  if (s.destshipno() == 0) {
+  if (!s.destshipno()) {
     g.out << std::format("{} is not docked.\n", s);
     return std::nullopt;
   }
 
   std::optional<DockingContext> ctx;
   try {
-    g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
+    g.entity_manager.with_ship(*s.destshipno(), [&](const Ship& s2) {
       bool mutually_docked = (s.whatorbits() == ScopeLevel::LEVEL_SHIP ||
                               s2.destshipno() == s.number());
       if (!s2.alive() || !mutually_docked) {
@@ -518,7 +518,10 @@ void print_post_transfer_message(const Ship& s, char commod, std::int64_t amt,
 
 void execute_ship_to_ship_transfer(Ship& s, char commod, std::int64_t amt,
                                    const Race& race, GameObj& g) {
-  g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
+  if (!s.destshipno()) {
+    return;
+  }
+  g.entity_manager.mutate_ship(*s.destshipno(), [&](Ship& s2) {
     const auto cargo_opt = char_to_ship_cargo(commod);
     if (cargo_opt) {
       if (amt > 0) {
@@ -667,8 +670,8 @@ bool process_ship_load(Ship& s, std::string_view filter, char commod,
   }
 
   TransferLimits lim{};
-  if (dock_ctx->is_docked_to_ship) {
-    g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
+  if (dock_ctx->is_docked_to_ship && s.destshipno()) {
+    g.entity_manager.with_ship(*s.destshipno(), [&](const Ship& s2) {
       lim = compute_ship_transfer_limits(s, s2, commod,
                                          dock_ctx->is_different_owner);
     });

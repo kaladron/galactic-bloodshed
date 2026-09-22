@@ -63,9 +63,12 @@ bool scrap(const command_t& argv, GameObj& g) {
     }
 
     if (s.is_docked()) {
+      if (!s.destshipno()) {
+        continue;
+      }
       bool valid_dock = true;
       try {
-        g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
+        g.entity_manager.with_ship(*s.destshipno(), [&](const Ship& s2) {
           if ((!s2.docked() || s2.destshipno() != s.number()) &&
               s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
             g.out << "Warning, other ship not docked..\n";
@@ -139,8 +142,8 @@ bool scrap(const command_t& argv, GameObj& g) {
         xtalval = 0;
       }
 
-      if (s.whatdest() == ScopeLevel::LEVEL_SHIP) {
-        g.entity_manager.with_ship(s.destshipno(), [&](const Ship& s2) {
+      if (s.whatdest() == ScopeLevel::LEVEL_SHIP && s.destshipno()) {
+        g.entity_manager.with_ship(*s.destshipno(), [&](const Ship& s2) {
           if (s2.resource() + scrapval > s2.max_resource_capacity() &&
               s2.type() != ShipType::STYPE_SHUTTLE) {
             scrapval = s2.max_resource_capacity() - s2.resource();
@@ -215,10 +218,10 @@ bool scrap(const command_t& argv, GameObj& g) {
     }
 
     const bool was_docked = s.is_docked();
-    const shipnum_t dest_ship = s.destshipno();
+    const auto dest_ship = s.destshipno();
 
-    if (was_docked && dest_ship != 0) {
-      g.entity_manager.mutate_ship(dest_ship, [&](Ship& s2) {
+    if (was_docked && dest_ship) {
+      g.entity_manager.mutate_ship(*dest_ship, [&](Ship& s2) {
         s2.add_crystals(xtalval);
         s2.add_fuel(fuelval);
         s2.add_destruct(destval);

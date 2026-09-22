@@ -61,7 +61,7 @@ void Place::ascend_parent_scope(GameObj& g, std::string_view string,
       }
       level = ship->whatorbits();
       if (level == ScopeLevel::LEVEL_SHIP) {
-        shipno = ship->destshipno();
+        shipno = ship->destshipno().value_or(0);
         const auto* parent = g.entity_manager.peek_ship(shipno);
         snum = parent->storbits();
         pnum = parent->pnumorbits();

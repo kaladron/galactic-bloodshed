@@ -916,7 +916,7 @@ void test_dock_state_transitions() {
   test::expect_false(ship.is_docked());
   test::expect_false(ship.docked());
   test::expect_false(ship.carrier_id().has_value());
-  test::expect_eq(ship.destshipno(), shipnum_t{0});
+  test::expect_eq(ship.destshipno(), std::nullopt);
   test::expect_eq(ship.whatorbits(), ScopeLevel::LEVEL_STAR);
 
   // Re-land and launch to planet orbit (default level)
@@ -950,7 +950,7 @@ void test_dock_state_transitions() {
   test::expect_true(ship.is_spaceborne());
   test::expect_false(ship.is_docked());
   test::expect_eq(ship.whatorbits(), ScopeLevel::LEVEL_PLAN);
-  test::expect_eq(ship.destshipno(), shipnum_t{0});
+  test::expect_eq(ship.destshipno(), std::nullopt);
   test::expect_eq(ship.whatdest(), ScopeLevel::LEVEL_UNIV);
   test::expect_false(ship.moored_ship_id().has_value());
 }

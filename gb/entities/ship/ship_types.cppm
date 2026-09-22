@@ -545,7 +545,8 @@ export struct ship_struct {
   double mass{0.0};                   ///< Current total mass
   Coordinates land_coords{0, 0};  ///< Planetary surface coordinates when landed
 
-  shipnum_t destshipno{0};  ///< Destination / escorted ship number
+  std::optional<shipnum_t> destshipno{
+      std::nullopt};  ///< Destination / escorted ship number
 
   armor_t armor{0};     ///< Armor protection rating
   ship_size_t size{0};  ///< Ship hull volume / physical size

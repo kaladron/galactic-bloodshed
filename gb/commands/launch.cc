@@ -26,8 +26,13 @@ bool launch_from_carrier(GameObj& g, Ship& s) {
     return false;
   }
 
+  if (!s.destshipno()) {
+    g.out << "Target ship not found.\n";
+    return false;
+  }
+
   bool launched = false;
-  g.entity_manager.mutate_ship(s.destshipno(), [&](Ship& s2) {
+  g.entity_manager.mutate_ship(*s.destshipno(), [&](Ship& s2) {
     if (s2.whatorbits() == ScopeLevel::LEVEL_SHIP) {
       g.out << std::format(
           "{}'s mothership is currently berthed inside another vessel; "
@@ -44,7 +49,7 @@ bool launch_from_carrier(GameObj& g, Ship& s) {
         s.pnumorbits() = s2.pnumorbits();
         s.destpnum() = s2.pnumorbits();
         s.deststar() = s2.deststar();
-        s.destshipno() = 0;
+        s.destshipno() = std::nullopt;
         s.set_coordinates(s2.coordinates());
         s.set_land_coords(s2.land_coords());
         s2.set_mass(s2.mass() - s.mass());
@@ -96,7 +101,11 @@ bool launch_from_carrier(GameObj& g, Ship& s) {
  */
 bool undock_moored_ship(GameObj& g, Ship& s) {
   const auto s2_no = s.destshipno();
-  const auto* s2_peek = g.entity_manager.peek_ship(s2_no);
+  if (!s2_no) {
+    g.out << "Target ship not found.\n";
+    return false;
+  }
+  const auto* s2_peek = g.entity_manager.peek_ship(*s2_no);
   if (!s2_peek) {
     g.out << "Target ship not found.\n";
     return false;

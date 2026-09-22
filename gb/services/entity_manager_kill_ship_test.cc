@@ -316,12 +316,13 @@ int main() {
   }
 
   // Foreign key referential integrity cleanup on kill_ship (SpaceMirrorShip,
-  // TransporterShip, ProtectData)
+  // TransporterShip, ProtectData, destshipno)
   {
     shipnum_t target_id{};
     shipnum_t mirror_id{};
     shipnum_t trans_id{};
     shipnum_t escort_id{};
+    shipnum_t chaser_id{};
 
     {
       auto target_handle = TestShipBuilder(em, ShipType::STYPE_DESTROYER)
@@ -360,6 +361,15 @@ int main() {
       escort_handle->protect().on = true;
       escort_handle->protect().ship = target_id;
       escort_id = escort_handle->number();
+
+      auto chaser_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                               .owned_by(1)
+                               .with_alive(true)
+                               .in_star_orbit(0)
+                               .build_handle();
+      chaser_handle->whatdest() = ScopeLevel::LEVEL_SHIP;
+      chaser_handle->destshipno() = target_id;
+      chaser_id = chaser_handle->number();
     }
 
     em.clear_cache();
@@ -379,9 +389,14 @@ int main() {
     test::expect_ne(escort_after, nullptr);
     test::expect_false(escort_after->protect().on);
     test::expect_eq(escort_after->protect().ship, std::nullopt);
+
+    const auto* chaser_after = em.peek_ship(chaser_id);
+    test::expect_ne(chaser_after, nullptr);
+    test::expect_eq(chaser_after->whatdest(), ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(chaser_after->destshipno(), std::nullopt);
     std::println(std::cout,
-                 "✓ kill_ship clears SpaceMirrorShip, TransporterShip, and "
-                 "ProtectData references");
+                 "✓ kill_ship clears SpaceMirrorShip, TransporterShip, "
+                 "ProtectData, and destshipno references");
   }
 
   std::println(std::cout, "\n✅ All EntityManager::kill_ship() tests passed!");

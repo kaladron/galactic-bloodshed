@@ -349,7 +349,7 @@ void report_general(GameObj& g, RstContext& ctx, const Ship& s) {
   std::string locstrn;
   if (s.docked()) {
     if (s.whatdest() == ScopeLevel::LEVEL_SHIP)
-      locstrn = std::format("D#{}", s.destshipno());
+      locstrn = std::format("D#{}", s.destshipno().value_or(0));
     else
       locstrn =
           std::format("L{:2},{:<2}", s.land_coords().x, s.land_coords().y);

@@ -18,13 +18,13 @@ std::string format_ship_prompt(EntityManager& em, const player_t player,
   std::unordered_set<shipnum_t> visited{shipno};
 
   while (current_ship->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    const shipnum_t parent_no = current_ship->destshipno();
-    if (parent_no == 0 || visited.contains(parent_no)) {
+    const auto parent_no = current_ship->destshipno();
+    if (!parent_no || *parent_no == 0 || visited.contains(*parent_no)) {
       break;
     }
-    visited.insert(parent_no);
-    current_ship = em.peek_ship(parent_no);
-    ship_chain.push_back(parent_no);
+    visited.insert(*parent_no);
+    current_ship = em.peek_ship(*parent_no);
+    ship_chain.push_back(*parent_no);
   }
 
   ap_t ap = 0;

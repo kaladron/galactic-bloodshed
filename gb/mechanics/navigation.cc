@@ -220,7 +220,7 @@ std::string dispshiploc_brief(EntityManager& em, const Ship& ship) {
                          star.get_planet_name(ship.pnumorbits()));
     }
     case ScopeLevel::LEVEL_SHIP:
-      return std::format("#{0}", ship.destshipno());
+      return std::format("#{0}", ship.destshipno().value_or(0));
     case ScopeLevel::LEVEL_UNIV:
       return "/";
   }
@@ -238,7 +238,7 @@ std::string dispshiploc(EntityManager& em, const Ship& ship) {
                          star->get_planet_name(ship.pnumorbits()));
     }
     case ScopeLevel::LEVEL_SHIP:
-      return std::format("#{0}", ship.destshipno());
+      return std::format("#{0}", ship.destshipno().value_or(0));
     case ScopeLevel::LEVEL_UNIV:
       return "/";
   }
@@ -261,11 +261,12 @@ std::string prin_ship_orbits(EntityManager& em, const Ship& s) {
       }
       return "/";
     case ScopeLevel::LEVEL_SHIP:
-      if (const auto* mothership = em.peek_ship(s.destshipno())) {
-        return prin_ship_orbits(em, *mothership);
-      } else {
-        return "/";
+      if (s.destshipno()) {
+        if (const auto* mothership = em.peek_ship(*s.destshipno())) {
+          return prin_ship_orbits(em, *mothership);
+        }
       }
+      return "/";
   }
 }
 
@@ -285,7 +286,7 @@ std::string format_ship_dest(EntityManager& em, const Ship& ship) {
       }
       return "/";
     case ScopeLevel::LEVEL_SHIP:
-      return std::format("#{}", ship.destshipno());
+      return std::format("#{}", ship.destshipno().value_or(0));
   }
 }
 
@@ -428,9 +429,10 @@ struct ResolvedDestination {
 
 void resolve_ship_destination_target(EntityManager& em, Ship& s,
                                      ResolvedDestination& res) {
-  res.target_ship = em.peek_ship(s.destshipno());
+  res.target_ship = s.destshipno() ? em.peek_ship(*s.destshipno()) : nullptr;
   if (!res.target_ship) {
     s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    s.destshipno() = std::nullopt;
     s.protect().evade = false;
     res.valid = false;
     return;
@@ -648,12 +650,14 @@ void execute_destination_step(EntityManager& em, Ship& s, double fuse,
 
   if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
       (!dest.target_ship || !followable(em, s, *dest.target_ship))) {
+    const auto lost_dest = s.destshipno().value_or(0);
     s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    s.destshipno() = std::nullopt;
     s.protect().evade = false;
     if (send_messages) {
       push_telegram(em, s.owner(), s.governor(),
                     std::format("{} at {} lost sight of destination ship #{}.",
-                                s, prin_ship_orbits(em, s), s.destshipno()));
+                                s, prin_ship_orbits(em, s), lost_dest));
     }
     return;
   }

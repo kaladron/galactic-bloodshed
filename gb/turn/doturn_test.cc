@@ -30,7 +30,7 @@ Race createTestRace(player_t playernum = player_t{1}) {
   return race;
 }
 
-Star createTestStar(starnum_t id = 0) {
+Star createTestStar(starnum_t id = 1) {
   star_struct star_data{};
   star_data.name = "TestStar";
   star_data.star_id = id;
@@ -42,7 +42,7 @@ Star createTestStar(starnum_t id = 0) {
   return Star(star_data);
 }
 
-Planet createTestPlanet(starnum_t star_id = 0, planetnum_t pnum = 0) {
+Planet createTestPlanet(starnum_t star_id = 1, planetnum_t pnum = 1) {
   Planet planet(PlanetType::EARTH, Coordinates{5, 5});
   planet.star_id() = star_id;
   planet.planet_order() = pnum;
@@ -103,11 +103,11 @@ void test_do_turn_segment_vs_update() {
   RaceRepository races(store);
   races.save(race);
 
-  Star star = createTestStar(0);
+  Star star = createTestStar(1);
   StarRepository stars(store);
   stars.save(star);
 
-  Planet planet = createTestPlanet(0, 0);
+  Planet planet = createTestPlanet(1, 1);
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -165,14 +165,14 @@ void test_do_turn_market_and_maintenance() {
   race_repo.save(race1);
   race_repo.save(race2);
 
-  Star star1 = createTestStar(starnum_t{0});
-  Star star2 = createTestStar(starnum_t{1});
+  Star star1 = createTestStar(starnum_t{1});
+  Star star2 = createTestStar(starnum_t{2});
   StarRepository star_repo(store);
   star_repo.save(star1);
   star_repo.save(star2);
 
-  Planet planet1 = createTestPlanet(starnum_t{0}, planetnum_t{0});
-  Planet planet2 = createTestPlanet(starnum_t{1}, planetnum_t{0});
+  Planet planet1 = createTestPlanet(starnum_t{1}, planetnum_t{1});
+  Planet planet2 = createTestPlanet(starnum_t{2}, planetnum_t{1});
   PlanetRepository planet_repo(store);
   planet_repo.save(planet1);
   planet_repo.save(planet2);
@@ -190,10 +190,10 @@ void test_do_turn_market_and_maintenance() {
   commod.governor = governor_t{0};
   commod.type = CommodType::RESOURCE;
   commod.amount = 100;
-  commod.star_from = starnum_t{0};
-  commod.planet_from = planetnum_t{0};
-  commod.star_to = starnum_t{1};
-  commod.planet_to = planetnum_t{0};
+  commod.star_from = starnum_t{1};
+  commod.planet_from = planetnum_t{1};
+  commod.star_to = starnum_t{2};
+  commod.planet_to = planetnum_t{1};
   commod.bidder = player_t{2};
   commod.bidder_gov = governor_t{0};
   commod.bid = 500;
@@ -222,7 +222,7 @@ void test_do_turn_market_and_maintenance() {
   test::expect_gt(seller->governor[0].money, 1000);
 
   // Bidder 2 received resources on planet2
-  const auto& p2_after = *em.peek_planet(starnum_t{1}, planetnum_t{0});
+  const auto& p2_after = *em.peek_planet(starnum_t{2}, planetnum_t{1});
   test::expect_eq(p2_after.info(player_t{2}).resource, 100);
 }
 
@@ -246,11 +246,11 @@ void test_do_turn_victory_scores_and_discoveries() {
   RaceRepository race_repo(store);
   race_repo.save(race);
 
-  Star star = createTestStar(starnum_t{0});
+  Star star = createTestStar(starnum_t{1});
   StarRepository star_repo(store);
   star_repo.save(star);
 
-  Planet planet = createTestPlanet(starnum_t{0}, planetnum_t{0});
+  Planet planet = createTestPlanet(starnum_t{1}, planetnum_t{1});
   planet.info(player_t{1}).numsectsowned = 5;
   planet.info(player_t{1}).explored = 1;
   planet.info(player_t{1}).resource = 100000;
@@ -302,11 +302,11 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   race2.governor[0].money = 2000;
   race_repo.save(race2);
 
-  Star star = createTestStar(starnum_t{0});
+  Star star = createTestStar(starnum_t{1});
   StarRepository star_repo(store);
   star_repo.save(star);
 
-  Planet planet = createTestPlanet(starnum_t{0}, planetnum_t{0});
+  Planet planet = createTestPlanet(starnum_t{1}, planetnum_t{1});
   planet.info(player_t{1}).numsectsowned = 10;
   planet.info(player_t{1}).explored = 1;
   planet.info(player_t{1}).resource = 50000;
@@ -385,15 +385,15 @@ void test_process_market_transactions_isolated() {
   race_repo.save(race1);
   race_repo.save(race2);
 
-  Star star1 = createTestStar(starnum_t{0});
-  Star star2 = createTestStar(starnum_t{1});
+  Star star1 = createTestStar(starnum_t{1});
+  Star star2 = createTestStar(starnum_t{2});
   star2.set_coordinates({50000.0, 0.0});
   StarRepository star_repo(store);
   star_repo.save(star1);
   star_repo.save(star2);
 
-  Planet planet1 = createTestPlanet(starnum_t{0}, planetnum_t{0});
-  Planet planet2 = createTestPlanet(starnum_t{1}, planetnum_t{0});
+  Planet planet1 = createTestPlanet(starnum_t{1}, planetnum_t{1});
+  Planet planet2 = createTestPlanet(starnum_t{2}, planetnum_t{1});
   PlanetRepository planet_repo(store);
   planet_repo.save(planet1);
   planet_repo.save(planet2);
@@ -407,10 +407,10 @@ void test_process_market_transactions_isolated() {
   lot1.governor = governor_t{0};
   lot1.type = CommodType::FUEL;
   lot1.amount = 50;
-  lot1.star_from = starnum_t{0};
-  lot1.planet_from = planetnum_t{0};
-  lot1.star_to = starnum_t{1};
-  lot1.planet_to = planetnum_t{0};
+  lot1.star_from = starnum_t{1};
+  lot1.planet_from = planetnum_t{1};
+  lot1.star_to = starnum_t{2};
+  lot1.planet_to = planetnum_t{1};
   lot1.bidder = player_t{2};
   lot1.bidder_gov = governor_t{0};
   lot1.bid = 200;
@@ -454,7 +454,7 @@ void test_process_market_transactions_isolated() {
   // Buyer charged bid + freight, and received fuel on destination planet
   const auto* buyer = em.peek_race(player_t{2});
   test::expect_lt(buyer->governor[0].money, 700);  // 1000 - 300 - shipping_cost
-  const auto& dest_planet = *em.peek_planet(starnum_t{1}, planetnum_t{0});
+  const auto& dest_planet = *em.peek_planet(starnum_t{2}, planetnum_t{1});
   test::expect_eq(dest_planet.info(player_t{2}).fuel, 50);
 }
 
@@ -559,7 +559,7 @@ void test_output_ground_attacks() {
   race_repo.save(race1);
   race_repo.save(race2);
 
-  Star star = createTestStar(starnum_t{0});
+  Star star = createTestStar(starnum_t{1});
   StarRepository star_repo(store);
   star_repo.save(star);
 
@@ -569,12 +569,12 @@ void test_output_ground_attacks() {
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
-  em.mutate_star(0, [](Star& s) { s.record_ground_assault(1, 2, 3); });
-  test::expect_eq(em.peek_star(0)->ground_assault_count(1, 2), 3U);
+  em.mutate_star(1, [](Star& s) { s.record_ground_assault(1, 2, 3); });
+  test::expect_eq(em.peek_star(1)->ground_assault_count(1, 2), 3U);
 
   output_ground_attacks(em);
 
-  test::expect_eq(em.peek_star(0)->ground_assault_count(1, 2), 0U);
+  test::expect_eq(em.peek_star(1)->ground_assault_count(1, 2), 0U);
 }
 
 void test_race_turn_accounting_and_maintenance() {
@@ -700,11 +700,11 @@ void test_calculate_victory_scores_isolated() {
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
-  Star star = createTestStar(starnum_t{0});
+  Star star = createTestStar(starnum_t{1});
   StarRepository star_repo(store);
   star_repo.save(star);
 
-  Planet planet = createTestPlanet(starnum_t{0}, planetnum_t{0});
+  Planet planet = createTestPlanet(starnum_t{1}, planetnum_t{1});
   planet.info(player_t{1}).explored = true;
   planet.info(player_t{1}).numsectsowned = 10;
   planet.info(player_t{1}).resource = 100;
@@ -887,7 +887,7 @@ void test_calculate_victory_scores_large_accumulation() {
     race.governor[0].money = 3'000'000'000LL;
   });
 
-  ctx.em.mutate_planet(starnum_t{0}, planetnum_t{0}, [](Planet& planet) {
+  ctx.em.mutate_planet(starnum_t{1}, planetnum_t{1}, [](Planet& planet) {
     planet.info(player_t{1}).explored = true;
     planet.info(player_t{1}).numsectsowned = 500;
     // 3 billion resources on planet

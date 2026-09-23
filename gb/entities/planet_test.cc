@@ -726,7 +726,7 @@ int main() {
     ctx.with_standard_universe();
 
     // Populate Earth sector (0,0) with player 1 civilians, 100% tax, 0 troops
-    ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
       for (Sector& s : smap) {
         s.set_owner(0);
         s.set_popn_exact(0);
@@ -738,16 +738,16 @@ int main() {
       s0.set_troops(0);
       s0.set_mobilization(20);
     });
-    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
-      p.sync_demographics(*ctx.em.peek_sectormap(0, 0));
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+      p.sync_demographics(*ctx.em.peek_sectormap(1, 1));
       p.info(1).tax = 100;
     });
 
     // High troop garrison suppresses revolt
     ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
     ctx.em.mutate_sectormap(
-        0, 0, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(500); });
-    ctx.em.mutate_planet_and_sectors(0, 0, [&](Planet& p, SectorMap& smap) {
+        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(500); });
+    ctx.em.mutate_planet_and_sectors(1, 1, [&](Planet& p, SectorMap& smap) {
       p.sync_demographics(smap);
       const int suppressed = p.revolt(smap, *ctx.em.peek_race(1), player_t{2});
       test::expect_eq(suppressed, 0);
@@ -756,8 +756,8 @@ int main() {
     // Zero troops with 100% tax triggers revolt to player 2 and syncs
     // demographics
     ctx.em.mutate_sectormap(
-        0, 0, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(0); });
-    ctx.em.mutate_planet_and_sectors(0, 0, [&](Planet& p, SectorMap& smap) {
+        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(0); });
+    ctx.em.mutate_planet_and_sectors(1, 1, [&](Planet& p, SectorMap& smap) {
       p.sync_demographics(smap);
       p.info(1).tax = 100;
       const int revolted = p.revolt(smap, *ctx.em.peek_race(1), player_t{2});
@@ -778,15 +778,15 @@ int main() {
 
     const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                              .owned_by(1, 0)
-                             .in_planet_orbit(0, 0)
+                             .in_planet_orbit(1, 1)
                              .build();
 
-    const auto* star0 = ctx.em.peek_star(0);
+    const auto* star0 = ctx.em.peek_star(1);
     double old_px = 0.0;
     double old_py = 0.0;
     double old_sx = 0.0;
     double old_sy = 0.0;
-    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
       p.set_system_coordinates({100.0, 0.0});
       old_px = p.system_coordinates().x;
       old_py = p.system_coordinates().y;
@@ -811,7 +811,7 @@ int main() {
     });
 
     const auto* moved_ship = ctx.em.peek_ship(ship_id);
-    const auto* moved_planet = ctx.em.peek_planet(0, 0);
+    const auto* moved_planet = ctx.em.peek_planet(1, 1);
     test::expect_true(
         std::abs((moved_ship->coordinates().x - old_sx) -
                  (moved_planet->system_coordinates().x - old_px)) < 1e-6);

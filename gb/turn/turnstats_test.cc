@@ -14,15 +14,15 @@ namespace {
 void test_turnstats_defaults() {
   TurnStats stats{};
 
-  // Check default values at origin and arbitrary coordinates
-  test::expect_eq(stats.temp_add(starnum_t{0}, planetnum_t{0}), 0);
-  test::expect_false(stats.is_intimidated(starnum_t{0}, planetnum_t{0}));
-  test::expect_false(stats.is_inhabited(starnum_t{0}, planetnum_t{0}));
-  test::expect_false(stats.has_alien_colony(starnum_t{0}, planetnum_t{0}));
+  // Check default values at minimum valid 1-based coordinates
+  test::expect_eq(stats.temp_add(starnum_t{1}, planetnum_t{1}), 0);
+  test::expect_false(stats.is_intimidated(starnum_t{1}, planetnum_t{1}));
+  test::expect_false(stats.is_inhabited(starnum_t{1}, planetnum_t{1}));
+  test::expect_false(stats.has_alien_colony(starnum_t{1}, planetnum_t{1}));
 
   // Maximum valid indices
-  const starnum_t max_star{NUMSTARS - 1};
-  const planetnum_t max_planet{MAXPLANETS - 1};
+  const starnum_t max_star{NUMSTARS};
+  const planetnum_t max_planet{MAXPLANETS};
   test::expect_eq(stats.temp_add(max_star, max_planet), 0);
   test::expect_false(stats.is_intimidated(max_star, max_planet));
   test::expect_false(stats.is_inhabited(max_star, max_planet));
@@ -46,8 +46,8 @@ void test_turnstats_temperature_operations() {
   test::expect_eq(stats.temp_add(snum, pnum), -20);
 
   // Other planets unaffected
-  test::expect_eq(stats.temp_add(starnum_t{0}, planetnum_t{0}), 0);
-  test::expect_eq(stats.temp_add(snum, planetnum_t{0}), 0);
+  test::expect_eq(stats.temp_add(starnum_t{1}, planetnum_t{1}), 0);
+  test::expect_eq(stats.temp_add(snum, planetnum_t{1}), 0);
 }
 
 void test_turnstats_status_flags() {
@@ -76,12 +76,16 @@ void test_turnstats_status_flags() {
 
 void test_turnstats_bounds_checking() {
   TurnStats stats{};
-  const starnum_t out_star{NUMSTARS};
-  const planetnum_t valid_planet{0};
-  const starnum_t valid_star{0};
-  const planetnum_t out_planet{MAXPLANETS};
+  const starnum_t zero_star{0};
+  const starnum_t out_star{NUMSTARS + 1};
+  const planetnum_t valid_planet{1};
+  const starnum_t valid_star{1};
+  const planetnum_t zero_planet{0};
+  const planetnum_t out_planet{MAXPLANETS + 1};
 
-  // Star out of bounds
+  // Star out of bounds (0 and NUMSTARS + 1)
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)stats.temp_add(zero_star, valid_planet); });
   test::expect_throws<std::out_of_range>(
       [&]() { (void)stats.temp_add(out_star, valid_planet); });
   test::expect_throws<std::out_of_range>(
@@ -101,7 +105,9 @@ void test_turnstats_bounds_checking() {
   test::expect_throws<std::out_of_range>(
       [&]() { stats.set_alien_colony(out_star, valid_planet); });
 
-  // Planet out of bounds
+  // Planet out of bounds (0 and MAXPLANETS + 1)
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)stats.temp_add(valid_star, zero_planet); });
   test::expect_throws<std::out_of_range>(
       [&]() { (void)stats.temp_add(valid_star, out_planet); });
   test::expect_throws<std::out_of_range>(

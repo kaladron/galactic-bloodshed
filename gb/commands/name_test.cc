@@ -181,7 +181,7 @@ void test_name_planet_persistence() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
-  g.set_pnum(0);
+  g.set_pnum(1);
   g.set_god(true);
   g.race =
       ctx.em.peek_race(g.player());  // Set race pointer like production does
@@ -194,9 +194,9 @@ void test_name_planet_persistence() {
     // Verify database
     auto saved = stars_repo.find_by_number(1);
     test::expect_true(saved.has_value());
-    test::expect_eq(saved->get_planet_name(0), "New Earth");
+    test::expect_eq(saved->get_planet_name(1), "New Earth");
     std::println(std::cout, "    ✓ Database: planet name = '{}'",
-                 saved->get_planet_name(0));
+                 saved->get_planet_name(1));
   }
 
   std::println(std::cout, "  ✅ Planet naming test passed!");
@@ -449,7 +449,7 @@ void test_name_permissions_and_scope() {
   {
     g.set_level(ScopeLevel::LEVEL_PLAN);
     g.set_snum(1);
-    g.set_pnum(0);
+    g.set_pnum(1);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "planet", "Forbidden"});
     test::expect_contains(g.out.str(), "Only deity can rename planets.");

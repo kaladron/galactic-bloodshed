@@ -1128,11 +1128,11 @@ void test_ship_moor_together_and_commandability() {
 
   shipnum_t s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                         .owned_by(1, 2)
-                        .in_star_orbit(0)
+                        .in_star_orbit(1)
                         .build();
   shipnum_t s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                         .owned_by(1, 0)
-                        .in_star_orbit(0)
+                        .in_star_orbit(1)
                         .build();
 
   // Symmetric mooring via moor_together
@@ -1205,13 +1205,13 @@ void test_mirror_aim_and_formatting_helpers() {
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 1)
                              .owned_by(1)
                              .named("SolarMirror")
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .build();
   const auto target_ship_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 2)
           .owned_by(1)
           .named("TargetCraft")
-          .in_planet_orbit(0, 0)
+          .in_planet_orbit(1, 1)
           .build();
   const auto child_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 3)
                                  .owned_by(1)
@@ -1245,7 +1245,7 @@ void test_mirror_aim_and_formatting_helpers() {
     m.whatorbits() = ScopeLevel::LEVEL_UNIV;
     m.set_coordinates({0.0, 0.0});
     m.whatdest() = ScopeLevel::LEVEL_STAR;
-    m.deststar() = 1;
+    m.deststar() = 2;
   });
   test::expect_eq(dispshiploc_brief(ctx.em, *ctx.em.peek_ship(mirror_id)), "/");
   test::expect_eq(dispshiploc(ctx.em, *ctx.em.peek_ship(mirror_id)), "/");
@@ -1266,11 +1266,11 @@ void test_mirror_aim_and_formatting_helpers() {
         ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
     test::expect_eq(ctx.em.resolve_mirror_aim_direction(*mirror), 0);
 
-    // Aimed at star 0 and planet (0,0)
-    mirror->aim() = {.snum = 0, .level = ScopeLevel::LEVEL_STAR};
+    // Aimed at star 1 and planet (1,1)
+    mirror->aim() = {.snum = 1, .level = ScopeLevel::LEVEL_STAR};
     test::expect_true(
         ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
-    mirror->aim() = {.snum = 0, .pnum = 0, .level = ScopeLevel::LEVEL_PLAN};
+    mirror->aim() = {.snum = 1, .pnum = 1, .level = ScopeLevel::LEVEL_PLAN};
     test::expect_true(
         ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
 
@@ -1405,7 +1405,7 @@ void test_blueprint_complexity_defense_and_capture() {
   // getdefense() spaceborne vs landed
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 10)
                               .owned_by(1, 0)
-                              .in_planet_orbit(0, 0)
+                              .in_planet_orbit(1, 1)
                               .build();
   test::expect_eq(getdefense(ctx.em, *ctx.em.peek_ship(carrier_id)), 0);
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
@@ -1430,14 +1430,14 @@ void test_moveship_and_followable() {
   ctx.with_standard_universe();
 
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 100.0; });
-  const auto star0_coords = ctx.em.peek_star(0)->coordinates();
+  const auto star0_coords = ctx.em.peek_star(1)->coordinates();
   const auto p0_coords =
-      ctx.em.peek_planet(0, 0)->absolute_coordinates(*ctx.em.peek_star(0));
+      ctx.em.peek_planet(1, 1)->absolute_coordinates(*ctx.em.peek_star(1));
 
   // 1. followable() checks: alive, active, carrier-docked, same owner, range
   const auto s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 20)
                          .owned_by(1, 0)
-                         .in_star_orbit(0)
+                         .in_star_orbit(1)
                          .with_crew(50, 0)
                          .with_fuel(500.0)
                          .with_speed(9)
@@ -1445,7 +1445,7 @@ void test_moveship_and_followable() {
                          .build();
   const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 21)
                          .owned_by(2, 0)
-                         .in_star_orbit(0)
+                         .in_star_orbit(1)
                          .with_crew(50, 0)
                          .with_fuel(500.0)
                          .with_speed(9)
@@ -1474,7 +1474,7 @@ void test_moveship_and_followable() {
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.hyper_drive() = {.charge = 0, .on = true, .has = true};
     s1.mounted() = false;
-    s1.deststar() = 1;
+    s1.deststar() = 2;
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.hyper_drive().charge, 1);
 
@@ -1489,21 +1489,21 @@ void test_moveship_and_followable() {
     moveship(ctx.em, s1, true, true, false);
     test::expect_false(s1.hyper_drive().on);
 
-    // Sufficient fuel executes hyperdrive jump to star 1
+    // Sufficient fuel executes hyperdrive jump to star 2
     s1.admin_override_fuel(500.0);
     s1.hyper_drive().on = true;
     s1.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
-    test::expect_eq(s1.storbits(), starnum_t{1});
+    test::expect_eq(s1.storbits(), starnum_t{2});
     test::expect_false(s1.hyper_drive().on);
   });
 
   // 3. Sublight navigation step and orbit breaking (PLAN -> STAR -> UNIV) + OOF
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s1.storbits() = 0;
-    s1.pnumorbits() = 0;
+    s1.storbits() = 1;
+    s1.pnumorbits() = 1;
     s1.set_coordinates(p0_coords + SystemCoordinates{PLORBITSIZE + 5.0, 0.0});
     s1.navigate() = {.on = true, .turns = 1, .bearing = 90};
     moveship(ctx.em, s1, true, true, false);
@@ -1517,21 +1517,21 @@ void test_moveship_and_followable() {
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_UNIV);
 
-    // Sublight arrival at star 0
+    // Sublight arrival at star 1
     s1.set_coordinates(star0_coords + SystemCoordinates{SYSTEMSIZE * 0.5, 0.0});
     s1.whatdest() = ScopeLevel::LEVEL_STAR;
-    s1.deststar() = 0;
+    s1.deststar() = 1;
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
-    test::expect_eq(s1.storbits(), starnum_t{0});
+    test::expect_eq(s1.storbits(), starnum_t{1});
   });
 
-  // 4. Sublight arrival at planet (0,0) + automated merchant route execution
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  // 4. Sublight arrival at planet (1,1) + automated merchant route execution
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     auto& route = p.info(1).route_at(1);
     route.set = 1;
-    route.dest_star = 1;
-    route.dest_planet = 0;
+    route.dest_star = 2;
+    route.dest_planet = 1;
     route.dest_coords = {0, 0};
     route.load = {
         .fuel = true, .destruct = true, .resources = true, .crystals = true};
@@ -1545,31 +1545,31 @@ void test_moveship_and_followable() {
 
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.whatorbits() = ScopeLevel::LEVEL_STAR;
-    s1.storbits() = 0;
-    s1.pnumorbits() = 0;
+    s1.storbits() = 1;
+    s1.pnumorbits() = 1;
     s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
     s1.whatdest() = ScopeLevel::LEVEL_PLAN;
-    s1.deststar() = 0;
-    s1.destpnum() = 0;
+    s1.deststar() = 1;
+    s1.destpnum() = 1;
     s1.merchant() = 1;
     s1.admin_override_fuel(500.0);
     moveship(ctx.em, s1, true, true, false);
     // Merchant landed, loaded/unloaded, launched to orbit, and set jump orders
     test::expect_false(s1.is_landed());
-    test::expect_eq(s1.deststar(), starnum_t{1});
+    test::expect_eq(s1.deststar(), starnum_t{2});
     test::expect_true(s1.hyper_drive().on);
   });
 
   // 5. Sublight LEVEL_SHIP following and losing sight when out of range
   ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
     s2.whatorbits() = ScopeLevel::LEVEL_STAR;
-    s2.storbits() = 0;
+    s2.storbits() = 1;
     s2.set_coordinates(star0_coords + SystemCoordinates{1.0, 0.0});
   });
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.hyper_drive().on = false;
     s1.whatorbits() = ScopeLevel::LEVEL_STAR;
-    s1.storbits() = 0;
+    s1.storbits() = 1;
     s1.set_coordinates(star0_coords + SystemCoordinates{5.0, 0.0});
     s1.whatdest() = ScopeLevel::LEVEL_SHIP;
     s1.destshipno() = s2_id;
@@ -1596,7 +1596,7 @@ void test_moveship_and_followable() {
     probe.set_coordinates({50000.0, 50000.0});
     probe.whatorbits() = ScopeLevel::LEVEL_UNIV;
     probe.whatdest() = ScopeLevel::LEVEL_STAR;
-    probe.deststar() = 0;
+    probe.deststar() = 1;
     moveship(ctx.em, probe, true, true, false);
     test::expect_false(probe.alive());
   });

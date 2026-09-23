@@ -82,7 +82,7 @@ void test_enroll_no_free_planet_type() {
   univ_repo.save(us);
 
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "Sol";
   ss.pnames = {"MarsPlanet"};
   Star star(ss);
@@ -90,8 +90,8 @@ void test_enroll_no_free_planet_type() {
   star_repo.save(star);
 
   Planet planet{PlanetType::MARS, Coordinates{10, 10}};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -129,136 +129,136 @@ void test_find_suitable_planet_deterministic_search() {
   StarRepository star_repo(store);
   PlanetRepository planet_repo(store);
 
-  // Star 0: Inhabited -> skip
-  star_struct ss0{};
-  ss0.star_id = 0;
-  ss0.inhabited.set(player_t{1});
-  ss0.pnames = {"P1", "P2"};
-  Star star0(ss0);
-  star_repo.save(star0);
-
-  // Star 1: Only 1 planet -> skip
+  // Star 1: Inhabited -> skip
   star_struct ss1{};
   ss1.star_id = 1;
-  ss1.pnames = {"P1"};
+  ss1.inhabited.set(player_t{1});
+  ss1.pnames = {"P1", "P2"};
   Star star1(ss1);
   star_repo.save(star1);
 
-  // Star 2: 2 planets, candidate Earth planet at pnum 1 (valid)
+  // Star 2: Only 1 planet -> skip
   star_struct ss2{};
   ss2.star_id = 2;
-  ss2.pnames = {"P1", "P2"};
+  ss2.pnames = {"P1"};
   Star star2(ss2);
   star_repo.save(star2);
 
-  Planet p2_0{PlanetType::MARS, Coordinates{10, 10}};
-  p2_0.star_id() = 2;
-  p2_0.planet_order() = 0;
-  planet_repo.save(p2_0);
-
-  Planet p2_1{PlanetType::EARTH, Coordinates{10, 10}};
-  p2_1.star_id() = 2;
-  p2_1.planet_order() = 1;
-  p2_1.rtemp() = 20;
-  planet_repo.save(p2_1);
-
-  // Star 3: 2 planets, candidate Earth planet at pnum 0 (valid)
+  // Star 3: 2 planets, candidate Earth planet at pnum 2 (valid)
   star_struct ss3{};
   ss3.star_id = 3;
   ss3.pnames = {"P1", "P2"};
   Star star3(ss3);
   star_repo.save(star3);
 
-  Planet p3_0{PlanetType::EARTH, Coordinates{10, 10}};
-  p3_0.star_id() = 3;
-  p3_0.planet_order() = 0;
-  p3_0.rtemp() = 15;
-  planet_repo.save(p3_0);
-
   Planet p3_1{PlanetType::MARS, Coordinates{10, 10}};
   p3_1.star_id() = 3;
   p3_1.planet_order() = 1;
   planet_repo.save(p3_1);
 
-  // Star 4: 2 planets, candidate Gas Giant at pnum 1 (cold: rtemp = -80)
+  Planet p3_2{PlanetType::EARTH, Coordinates{10, 10}};
+  p3_2.star_id() = 3;
+  p3_2.planet_order() = 2;
+  p3_2.rtemp() = 20;
+  planet_repo.save(p3_2);
+
+  // Star 4: 2 planets, candidate Earth planet at pnum 1 (valid)
   star_struct ss4{};
   ss4.star_id = 4;
   ss4.pnames = {"P1", "P2"};
   Star star4(ss4);
   star_repo.save(star4);
 
-  Planet p4_0{PlanetType::MARS, Coordinates{10, 10}};
-  p4_0.star_id() = 4;
-  p4_0.planet_order() = 0;
-  planet_repo.save(p4_0);
-
-  Planet p4_1{PlanetType::GASGIANT, Coordinates{10, 10}};
+  Planet p4_1{PlanetType::EARTH, Coordinates{10, 10}};
   p4_1.star_id() = 4;
   p4_1.planet_order() = 1;
-  p4_1.rtemp() = -80;
+  p4_1.rtemp() = 15;
   planet_repo.save(p4_1);
 
-  // Star 5: 2 planets, cryogenic Iceball at pnum 0 (rtemp = -120), hot Desert
-  // at pnum 1 (rtemp = 150)
+  Planet p4_2{PlanetType::MARS, Coordinates{10, 10}};
+  p4_2.star_id() = 4;
+  p4_2.planet_order() = 2;
+  planet_repo.save(p4_2);
+
+  // Star 5: 2 planets, candidate Gas Giant at pnum 2 (cold: rtemp = -80)
   star_struct ss5{};
   ss5.star_id = 5;
   ss5.pnames = {"P1", "P2"};
   Star star5(ss5);
   star_repo.save(star5);
 
-  Planet p5_0{PlanetType::ICEBALL, Coordinates{10, 10}};
-  p5_0.star_id() = 5;
-  p5_0.planet_order() = 0;
-  p5_0.rtemp() = -120;
-  planet_repo.save(p5_0);
-
-  Planet p5_1{PlanetType::DESERT, Coordinates{10, 10}};
+  Planet p5_1{PlanetType::MARS, Coordinates{10, 10}};
   p5_1.star_id() = 5;
   p5_1.planet_order() = 1;
-  p5_1.rtemp() = 150;
   planet_repo.save(p5_1);
+
+  Planet p5_2{PlanetType::GASGIANT, Coordinates{10, 10}};
+  p5_2.star_id() = 5;
+  p5_2.planet_order() = 2;
+  p5_2.rtemp() = -80;
+  planet_repo.save(p5_2);
+
+  // Star 6: 2 planets, cryogenic Iceball at pnum 1 (rtemp = -120), hot Desert
+  // at pnum 2 (rtemp = 150)
+  star_struct ss6{};
+  ss6.star_id = 6;
+  ss6.pnames = {"P1", "P2"};
+  Star star6(ss6);
+  star_repo.save(star6);
+
+  Planet p6_1{PlanetType::ICEBALL, Coordinates{10, 10}};
+  p6_1.star_id() = 6;
+  p6_1.planet_order() = 1;
+  p6_1.rtemp() = -120;
+  planet_repo.save(p6_1);
+
+  Planet p6_2{PlanetType::DESERT, Coordinates{10, 10}};
+  p6_2.star_id() = 6;
+  p6_2.planet_order() = 2;
+  p6_2.rtemp() = 150;
+  planet_repo.save(p6_2);
 
   EntityManager em(db);
   GB::creator::EnrollmentService service(em);
 
-  // Test 1: Given order [0, 1, 3, 2, 4, 5], should skip 0 and 1, and select
-  // Star 3 (first valid candidate in order)
-  std::vector<starnum_t> order1 = {0, 1, 3, 2, 4, 5};
+  // Test 1: Given order [1, 2, 4, 3, 5, 6], should skip 1 and 2, and select
+  // Star 4 (first valid candidate in order)
+  std::vector<starnum_t> order1 = {1, 2, 4, 3, 5, 6};
   auto res1 = service.find_suitable_planet(PlanetType::EARTH, order1);
   test::expect_true(res1.has_value());
   if (!res1) return;
-  test::expect_eq(res1->first, starnum_t{3});
-  test::expect_eq(res1->second, planetnum_t{0});
+  test::expect_eq(res1->first, starnum_t{4});
+  test::expect_eq(res1->second, planetnum_t{1});
 
-  // Test 2: Given order [0, 1, 2, 3, 4, 5], should skip 0 and 1, and select
-  // Star 2 (first valid candidate in order)
-  std::vector<starnum_t> order2 = {0, 1, 2, 3, 4, 5};
+  // Test 2: Given order [1, 2, 3, 4, 5, 6], should skip 1 and 2, and select
+  // Star 3 (first valid candidate in order)
+  std::vector<starnum_t> order2 = {1, 2, 3, 4, 5, 6};
   auto res2 = service.find_suitable_planet(PlanetType::EARTH, order2);
   test::expect_true(res2.has_value());
   if (!res2) return;
-  test::expect_eq(res2->first, starnum_t{2});
-  test::expect_eq(res2->second, planetnum_t{1});
+  test::expect_eq(res2->first, starnum_t{3});
+  test::expect_eq(res2->second, planetnum_t{2});
 
   // Test 3: Gas Giant enrollment regression test (cold gas giant at -80C)
   auto res_gas = service.find_suitable_planet(PlanetType::GASGIANT, order2);
   test::expect_true(res_gas.has_value());
   if (!res_gas) return;
-  test::expect_eq(res_gas->first, starnum_t{4});
-  test::expect_eq(res_gas->second, planetnum_t{1});
+  test::expect_eq(res_gas->first, starnum_t{5});
+  test::expect_eq(res_gas->second, planetnum_t{2});
 
   // Test 4: Cryogenic Iceball enrollment (cold iceball at -120C)
   auto res_ice = service.find_suitable_planet(PlanetType::ICEBALL, order2);
   test::expect_true(res_ice.has_value());
   if (!res_ice) return;
-  test::expect_eq(res_ice->first, starnum_t{5});
-  test::expect_eq(res_ice->second, planetnum_t{0});
+  test::expect_eq(res_ice->first, starnum_t{6});
+  test::expect_eq(res_ice->second, planetnum_t{1});
 
   // Test 5: Hot Desert enrollment (warm desert world at 150C)
   auto res_desert = service.find_suitable_planet(PlanetType::DESERT, order2);
   test::expect_true(res_desert.has_value());
   if (!res_desert) return;
-  test::expect_eq(res_desert->first, starnum_t{5});
-  test::expect_eq(res_desert->second, planetnum_t{1});
+  test::expect_eq(res_desert->first, starnum_t{6});
+  test::expect_eq(res_desert->second, planetnum_t{2});
 
   // Test 6: Looking for FOREST -> no matching planet -> returns std::nullopt
   auto res_none = service.find_suitable_planet(PlanetType::FOREST, order2);
@@ -280,28 +280,28 @@ void test_enroll_valid_race_success() {
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
-  // Star 0 has 2 planets: Planet 0 is MARS, Planet 1 is GASGIANT
-  star_struct ss0{};
-  ss0.star_id = 0;
-  ss0.pnames = {"Ares", "Jupiter"};
-  Star star0(ss0);
+  // Star 1 has 2 planets: Planet 1 is MARS, Planet 2 is GASGIANT
+  star_struct ss1{};
+  ss1.star_id = 1;
+  ss1.pnames = {"Ares", "Jupiter"};
+  Star star1(ss1);
   StarRepository star_repo(store);
-  star_repo.save(star0);
+  star_repo.save(star1);
 
   PlanetRepository planet_repo(store);
-  Planet p0{PlanetType::MARS, Coordinates{5, 5}};
-  p0.star_id() = 0;
-  p0.planet_order() = 0;
-  planet_repo.save(p0);
-
-  Planet p1{PlanetType::GASGIANT, Coordinates{5, 5}};
-  p1.star_id() = 0;
+  Planet p1{PlanetType::MARS, Coordinates{5, 5}};
+  p1.star_id() = 1;
   p1.planet_order() = 1;
-  p1.rtemp() = -80;
   planet_repo.save(p1);
 
+  Planet p2{PlanetType::GASGIANT, Coordinates{5, 5}};
+  p2.star_id() = 1;
+  p2.planet_order() = 2;
+  p2.rtemp() = -80;
+  planet_repo.save(p2);
+
   SectorRepository sector_repo(store);
-  SectorMap smap(p1);
+  SectorMap smap(p2);
   for (int y = 0; y < 5; ++y) {
     for (int x = 0; x < 5; ++x) {
       smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_GAS);
@@ -342,14 +342,14 @@ void test_enroll_valid_race_success() {
     test::expect_true(enrolled_race->God);
   }
 
-  const auto* star = em.peek_star(0);
+  const auto* star = em.peek_star(1);
   test::expect_true(star != nullptr);
   if (star) {
     test::expect_true(star->is_explored_by(player_t{1}));
     test::expect_true(star->is_inhabited_by(player_t{1}));
   }
 
-  const auto* planet = em.peek_planet(0, 1);
+  const auto* planet = em.peek_planet(1, 2);
   test::expect_true(planet != nullptr);
   if (planet) {
     test::expect_gt(planet->popn(), 0);
@@ -358,8 +358,8 @@ void test_enroll_valid_race_success() {
   const auto* gov_ship = em.peek_ship(*enrolled_race->Gov_ship);
   test::expect_true(gov_ship != nullptr);
   if (gov_ship) {
-    test::expect_eq(gov_ship->storbits(), starnum_t{0});
-    test::expect_eq(gov_ship->pnumorbits(), planetnum_t{1});
+    test::expect_eq(gov_ship->storbits(), starnum_t{1});
+    test::expect_eq(gov_ship->pnumorbits(), planetnum_t{2});
   }
 
   std::println(std::cout, "  ✓ enroll_valid_race completed successfully");

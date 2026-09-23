@@ -27,7 +27,7 @@ void test_grant_dispatch() {
 
   shipnum_t cruiser_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                              .owned_by(1, 0)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .build();
 
   auto& registry = get_test_session_registry();
@@ -78,10 +78,10 @@ void test_grant_dispatch() {
 
   // 6. Grant star when scoped to star
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"grant", "1", "star"});
-  const auto* saved_star = ctx.em.peek_star(0);
+  const auto* saved_star = ctx.em.peek_star(1);
   test::expect_ne(saved_star, nullptr);
   test::expect_eq(saved_star->governor(player_t{1}), 1);
   std::println(std::cout, "    ✓ Star granted to governor");

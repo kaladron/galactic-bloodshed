@@ -20,8 +20,8 @@ void test_tax_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Query current tax rate
   ctx.assert_dispatch_success(g, {"tax"});
@@ -32,17 +32,17 @@ void test_tax_happy_paths() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tax", "25"});
   test::expect_contains(g.out.str(), "Set.");
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(1).newtax, 25);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).newtax, 25);
 
   // 3. Set new tax rate to 100% (max)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tax", "100"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(1).newtax, 100);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).newtax, 100);
 
   // 4. Set new tax rate to 0% (min)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tax", "0"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(1).newtax, 0);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).newtax, 0);
 
   ctx.verify_universe_invariants();
 }
@@ -64,13 +64,13 @@ void test_tax_role_and_scope_rejections() {
   // 1. Guest race rejection
   ctx.setup_game_obj(g, 2, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Star control rejection (Governor 2 on star assigned to Governor 1)
-  ctx.em.mutate_star(0, [](Star& s) {
+  ctx.em.mutate_star(1, [](Star& s) {
     s.governor(1) = 1;  // Star assigned to Governor 1
   });
   g.out.str("");
@@ -100,8 +100,8 @@ void test_tax_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Domain error: No government center active
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
@@ -112,12 +112,12 @@ void test_tax_domain_errors() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tax", "150"});
   test::expect_contains(g.out.str(), "Illegal value.");
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(1).newtax, 10);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).newtax, 10);
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tax", "-10"});
   test::expect_contains(g.out.str(), "Illegal value.");
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(1).newtax, 10);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).newtax, 10);
 
   ctx.verify_universe_invariants();
 }

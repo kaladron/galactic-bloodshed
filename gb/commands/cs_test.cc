@@ -16,8 +16,8 @@ void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
   ctx.em.mutate_race(1, [](Race& r) {
     r.governor[0].deflevel = ScopeLevel::LEVEL_STAR;
-    r.governor[0].defsystem = 0;
-    r.governor[0].defplanetnum = 0;
+    r.governor[0].defsystem = 1;
+    r.governor[0].defplanetnum = 1;
   });
 }
 
@@ -31,25 +31,25 @@ void test_cs_happy_paths() {
 
   // 1. Switch to universe scope (free AP)
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   ctx.assert_dispatch_success(g, {"cs", "/"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
 
   // 2. Switch to star Vega by name
   ctx.assert_dispatch_success(g, {"cs", "Vega"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
-  test::expect_eq(g.snum(), 1);
+  test::expect_eq(g.snum(), 2);
 
   // 3. Switch to planet Earth via full path
   ctx.assert_dispatch_success(g, {"cs", "/Sol/Earth"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
-  test::expect_eq(g.snum(), 0);
-  test::expect_eq(g.pnum(), 0);
+  test::expect_eq(g.snum(), 1);
+  test::expect_eq(g.pnum(), 1);
 
   // 4. Default cs without arguments
   ctx.assert_dispatch_success(g, {"cs"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
-  test::expect_eq(g.snum(), 0);
+  test::expect_eq(g.snum(), 1);
 
   // 5. Change default system with -d
   ctx.assert_dispatch_success(g, {"cs", "-d", "/"}, 0);
@@ -64,8 +64,8 @@ void test_cs_happy_paths() {
   });
   ctx.setup_game_obj(g, 1, 0);
   ctx.assert_dispatch_success(g, {"cs"}, 0);
-  test::expect_eq(g.snum(), 2);
-  test::expect_eq(g.pnum(), 0);
+  test::expect_eq(g.snum(), 3);
+  test::expect_eq(g.pnum(), 1);
 }
 
 void test_cs_domain_errors() {
@@ -110,11 +110,11 @@ void test_cs_viewport_coordinates() {
 
   // 1. Planet to star and universe viewport coordinates
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
-  const auto* earth = ctx.em.peek_planet(0, 0);
-  const auto* sol = ctx.em.peek_star(0);
+  const auto* earth = ctx.em.peek_planet(1, 1);
+  const auto* sol = ctx.em.peek_star(1);
   test::expect_ne(earth, nullptr);
   test::expect_ne(sol, nullptr);
 
@@ -138,7 +138,7 @@ void test_cs_viewport_coordinates() {
   // 2. Ship orbiting star viewport coordinates
   shipnum_t ship_star = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                             .owned_by(1, 0)
-                            .in_star_orbit(0, UniverseCoordinates{15.0, 25.0})
+                            .in_star_orbit(1, UniverseCoordinates{15.0, 25.0})
                             .build();
 
   ctx.assert_dispatch_success(g, {"cs", std::format("#{}", ship_star.value)});
@@ -156,7 +156,7 @@ void test_cs_viewport_coordinates() {
   // 3. Ship orbiting planet viewport coordinates
   shipnum_t ship_plan = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                             .owned_by(1, 0)
-                            .in_planet_orbit(0, 0,
+                            .in_planet_orbit(1, 1,
                                              earth->absolute_coordinates(*sol) +
                                                  SystemCoordinates{2.0, 3.0})
                             .build();

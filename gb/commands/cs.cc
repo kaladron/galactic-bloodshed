@@ -27,14 +27,14 @@ bool change_to_default_scope(GameObj& g) {
   const auto& gov = g.race->governor[g.governor().value];
   g.set_level(gov.deflevel);
   g.set_snum(gov.defsystem);
-  if (g.snum() >= universe->numstars) {
-    g.set_snum(universe->numstars - 1);
+  if (g.snum() < 1 || g.snum() > universe->numstars) {
+    g.set_snum(universe->numstars);
   }
 
   const auto& star = *g.entity_manager.peek_star(g.snum());
   g.set_pnum(gov.defplanetnum);
-  if (g.pnum() >= star.numplanets()) {
-    g.set_pnum(star.numplanets() - 1);
+  if (g.pnum() < 1 || g.pnum() > star.numplanets()) {
+    g.set_pnum(star.numplanets());
   }
 
   g.set_shipno(0);

@@ -20,7 +20,7 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
   const auto& star_ref = *g.entity_manager.peek_star(star);
   if (!star_ref.is_explored_by(Playernum)) return;
 
-  for (auto i = 0; i < star_ref.numplanets(); i++) {
+  for (planetnum_t i = 1; i <= star_ref.numplanets(); i++) {
     const auto& pl = *g.entity_manager.peek_planet(star, i);
 
     if (pl.info(Playernum).explored && pl.info(Playernum).numsectsowned &&

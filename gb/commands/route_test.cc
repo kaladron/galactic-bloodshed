@@ -21,10 +21,10 @@ void test_route_persistence() {
   setup_test_world(ctx);
 
   // Test: Set route destination
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.info(player_t{1}).route[0].set = true;
-    p.info(player_t{1}).route[0].dest_star = 1;
-    p.info(player_t{1}).route[0].dest_planet = 0;
+    p.info(player_t{1}).route[0].dest_star = 2;
+    p.info(player_t{1}).route[0].dest_planet = 1;
     p.info(player_t{1}).route[0].dest_coords = {5, 5};
     p.info(player_t{1}).route[0].load =
         CommodityManifest{.fuel = true, .resources = true};
@@ -33,12 +33,12 @@ void test_route_persistence() {
 
   // Verify: Route was saved
   {
-    const auto* saved = ctx.em.peek_planet(0, 0);
+    const auto* saved = ctx.em.peek_planet(1, 1);
     test::expect_ne(saved, nullptr);
     test::expect_true(saved->info(player_t{1}).route[0].set);
-    test::expect_eq(saved->info(player_t{1}).route[0].dest_star, starnum_t{1});
+    test::expect_eq(saved->info(player_t{1}).route[0].dest_star, starnum_t{2});
     test::expect_eq(saved->info(player_t{1}).route[0].dest_planet,
-                    planetnum_t{0});
+                    planetnum_t{1});
     test::expect_eq(saved->info(player_t{1}).route[0].dest_coords,
                     Coordinates(5, 5));
     test::expect_true(saved->info(player_t{1}).route[0].load.fuel);
@@ -50,29 +50,29 @@ void test_route_persistence() {
 
   // Test: Deactivate route
   ctx.em.mutate_planet(
-      0, 0, [](Planet& p) { p.info(player_t{1}).route[0].set = false; });
+      1, 1, [](Planet& p) { p.info(player_t{1}).route[0].set = false; });
 
   // Verify: Route deactivated
   {
-    const auto* saved = ctx.em.peek_planet(0, 0);
+    const auto* saved = ctx.em.peek_planet(1, 1);
     test::expect_ne(saved, nullptr);
     test::expect_false(saved->info(player_t{1}).route[0].set);
     std::println(std::cout, "✓ Route deactivation saved correctly");
   }
 
   // Test: Multiple routes
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     for (int i = 0; i < MAX_ROUTES; i++) {
       p.info(player_t{1}).route[i].set = true;
-      p.info(player_t{1}).route[i].dest_star = 1;
-      p.info(player_t{1}).route[i].dest_planet = 0;
+      p.info(player_t{1}).route[i].dest_star = 2;
+      p.info(player_t{1}).route[i].dest_planet = 1;
       p.info(player_t{1}).route[i].load = CommodityManifest{.fuel = true};
     }
   });
 
   // Verify: All routes saved
   {
-    const auto* saved = ctx.em.peek_planet(0, 0);
+    const auto* saved = ctx.em.peek_planet(1, 1);
     test::expect_ne(saved, nullptr);
     for (int i = 0; i < MAX_ROUTES; i++) {
       test::expect_true(saved->info(player_t{1}).route[i].set);
@@ -97,13 +97,13 @@ void test_route_command_dispatch() {
 
   // 2. Command dispatch happy paths at PLAN scope
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Activate route 1
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "activate"});
-  test::expect_true(ctx.em.peek_planet(0, 0)->info(player_t{1}).route[0].set);
+  test::expect_true(ctx.em.peek_planet(1, 1)->info(player_t{1}).route[0].set);
 
   // Set destination
   g.out.str("");
@@ -167,7 +167,7 @@ void test_route_command_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "deactivate"});
   test::expect_contains(g.out.str(), "Set");
-  test::expect_false(ctx.em.peek_planet(0, 0)->info(player_t{1}).route[0].set);
+  test::expect_false(ctx.em.peek_planet(1, 1)->info(player_t{1}).route[0].set);
 
   // 7. Destination validation errors and unknown 4-arg subcommand
   g.out.str("");

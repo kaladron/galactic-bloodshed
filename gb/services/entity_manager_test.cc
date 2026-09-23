@@ -499,12 +499,17 @@ void test_peek_star_throws_on_not_found() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout,
-               "Test: peek_star throws EntityNotFoundError on not found");
+  std::println(
+      std::cout,
+      "Test: peek_star and mutate_star throw EntityNotFoundError on not found");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_star(999); });
-  std::println(std::cout,
-               "  ✓ peek_star throws EntityNotFoundError for invalid star_id");
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { em.mutate_star(999, [](Star&) {}); });
+  std::println(
+      std::cout,
+      "  ✓ peek_star and mutate_star throw EntityNotFoundError for invalid "
+      "star_id");
 }
 
 void test_peek_planet_throws_on_not_found() {
@@ -543,18 +548,18 @@ void test_peek_caching_and_clear_cache() {
 
   JsonStore store(db);
   star_struct raw_star{};
-  raw_star.star_id = 0;
+  raw_star.star_id = 1;
   raw_star.name = "TestStar";
   Star star_data{raw_star};
   StarRepository stars(store);
   stars.save(star_data);
 
   {
-    const auto* peek1 = em.peek_star(0);
+    const auto* peek1 = em.peek_star(1);
     test::expect_ne(peek1, nullptr);
     test::expect_eq(peek1->get_name(), "TestStar");
 
-    const auto* peek2 = em.peek_star(0);
+    const auto* peek2 = em.peek_star(1);
     test::expect_eq(peek1, peek2);
     std::println(std::cout, "  ✓ Multiple peeks return same cached instance");
   }
@@ -853,24 +858,24 @@ void test_entity_manager_with_scoped_peeks() {
 
   // 2. with_star
   star_struct raw_star{};
-  raw_star.star_id = 0;
+  raw_star.star_id = 1;
   raw_star.name = "AlphaCentauri";
   Star star(raw_star);
   StarRepository stars(store);
   stars.save(star);
 
-  auto star_name = em.with_star(0, [](const Star& s) { return s.get_name(); });
+  auto star_name = em.with_star(1, [](const Star& s) { return s.get_name(); });
   test::expect_eq(star_name, "AlphaCentauri");
 
   // 3. with_planet
   Planet p{PlanetType::EARTH, Coordinates{5, 5}};
-  p.star_id() = 0;
+  p.star_id() = 1;
   p.planet_order() = 1;
   p.popn() = 5000;
   PlanetRepository planets(store);
   planets.save(p);
 
-  auto popn = em.with_planet(0, 1, [](const Planet& pl) { return pl.popn(); });
+  auto popn = em.with_planet(1, 1, [](const Planet& pl) { return pl.popn(); });
   test::expect_eq(popn, 5000);
 
   // 4. with_ship
@@ -892,7 +897,7 @@ void test_entity_manager_with_scoped_peeks() {
   SectorRepository sectors(store);
   sectors.save_map(smap);
 
-  auto sect_owner = em.with_sectormap(0, 1, [](const SectorMap& map) {
+  auto sect_owner = em.with_sectormap(1, 1, [](const SectorMap& map) {
     return map.get(Coordinates{2, 3}).get_owner();
   });
   test::expect_eq(sect_owner, player_t{1});
@@ -926,7 +931,7 @@ void test_entity_manager_with_scoped_peeks() {
 
   // 9. with_planet_and_sectors
   bool paired_check = em.with_planet_and_sectors(
-      0, 1, [](const Planet& pl, const SectorMap& map) {
+      1, 1, [](const Planet& pl, const SectorMap& map) {
         return pl.popn() == 5000 &&
                map.get(Coordinates{2, 3}).get_owner() == player_t{1};
       });
@@ -941,7 +946,7 @@ void test_entity_manager_mutate_planet_and_sectors() {
 
   std::println(std::cout, "Test: EntityManager mutate_planet_and_sectors");
 
-  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& pl, SectorMap& map) {
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& pl, SectorMap& map) {
     pl.popn() = 2500;
     map.get(Coordinates{1, 1}).set_owner(player_t{2});
   });
@@ -949,9 +954,9 @@ void test_entity_manager_mutate_planet_and_sectors() {
   // Verify persistence beyond cache
   ctx.em.clear_cache();
 
-  test::expect_eq(ctx.em.peek_planet(0, 0)->popn(), 2500);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->popn(), 2500);
   test::expect_eq(
-      ctx.em.peek_sectormap(0, 0)->get(Coordinates{1, 1}).get_owner(),
+      ctx.em.peek_sectormap(1, 1)->get(Coordinates{1, 1}).get_owner(),
       player_t{2});
 
   // Verify throws on non-existent planet or sectors
@@ -1103,16 +1108,16 @@ void test_entity_manager_count_non_asteroid_planets() {
   test::expect_eq(em.count_non_asteroid_planets(), 0);
 
   Planet earth{};
-  earth.star_id() = 0;
-  earth.planet_order() = 0;
+  earth.star_id() = 1;
+  earth.planet_order() = 1;
   earth.type() = PlanetType::EARTH;
   planets.save(earth);
 
   test::expect_eq(em.count_non_asteroid_planets(), 1);
 
   Planet asteroid{};
-  asteroid.star_id() = 0;
-  asteroid.planet_order() = 1;
+  asteroid.star_id() = 1;
+  asteroid.planet_order() = 2;
   asteroid.type() = PlanetType::ASTEROID;
   planets.save(asteroid);
 
@@ -1120,8 +1125,8 @@ void test_entity_manager_count_non_asteroid_planets() {
   test::expect_eq(em.count_non_asteroid_planets(), 1);
 
   Planet gas_giant{};
-  gas_giant.star_id() = 1;
-  gas_giant.planet_order() = 0;
+  gas_giant.star_id() = 2;
+  gas_giant.planet_order() = 1;
   gas_giant.type() = PlanetType::GASGIANT;
   planets.save(gas_giant);
 

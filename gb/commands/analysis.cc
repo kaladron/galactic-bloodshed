@@ -458,7 +458,7 @@ bool analysis(const command_t& argv, GameObj& g) {
       return true;
     case ScopeLevel::LEVEL_STAR: {
       const auto& star = *g.entity_manager.peek_star(where.snum);
-      for (planetnum_t pnum = 0; pnum < star.numplanets(); pnum++) {
+      for (planetnum_t pnum = 1; pnum <= star.numplanets(); pnum++) {
         do_analysis(g, filter, mode, sector_type, where.snum, pnum);
       }
       return true;

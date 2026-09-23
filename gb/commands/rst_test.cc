@@ -33,9 +33,9 @@ void setup_test_world(TestContext& ctx) {
   RaceRepository races(store);
   races.save(race);
 
-  // Star 0
+  // Star 1
   star_struct ss0{};
-  ss0.star_id = 0;
+  ss0.star_id = 1;
   ss0.name = "Sol";
   ss0.coordinates = {0.0, 0.0};
   ss0.explored.set(player_t{1});
@@ -46,10 +46,10 @@ void setup_test_world(TestContext& ctx) {
   StarRepository stars(store);
   stars.save(star0);
 
-  // Planet 0 on Star 0
+  // Planet 1 on Star 1
   Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
-  planet0.star_id() = 0;
-  planet0.planet_order() = 0;
+  planet0.star_id() = 1;
+  planet0.planet_order() = 1;
   planet0.info(player_t{1}).explored = 1;
   planet0.info(player_t{1}).numsectsowned = 5;
 
@@ -68,7 +68,7 @@ void setup_test_world(TestContext& ctx) {
   s1.alive = 1;
   s1.active = 1;
   s1.whatorbits = ScopeLevel::LEVEL_STAR;
-  s1.storbits = 0;
+  s1.storbits = 1;
   s1.popn = 10;
   s1.fuel = 50.0;
   s1.max_fuel = 100;
@@ -91,8 +91,8 @@ void setup_test_world(TestContext& ctx) {
   s2.alive = 1;
   s2.active = 1;
   s2.whatorbits = ScopeLevel::LEVEL_PLAN;
-  s2.storbits = 0;
-  s2.pnumorbits = 0;
+  s2.storbits = 1;
+  s2.pnumorbits = 1;
   s2.popn = 50;
   s2.fuel = 200.0;
   s2.max_fuel = 500;
@@ -111,7 +111,7 @@ void test_rst_dispatch() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. report command: summary of ships
   ctx.assert_dispatch_success(g, {"report"});
@@ -151,8 +151,8 @@ void test_rst_dispatch() {
   // 6. factories command: factory report
   g.out.str("");
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   ctx.assert_dispatch_success(g, {"factories"});
   output = g.out.str();
   test::expect_true(output.contains("Cost") && output.contains("Weapons") &&
@@ -168,7 +168,7 @@ void test_rst_dispatch() {
   // 8. Specific ship letter filter: report s (shuttle)
   g.out.str("");
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   ctx.assert_dispatch_success(g, {"report", "s"});
   test::expect_contains(g.out.str(), "Hermes");
   std::println(std::cout, "    ✓ report shiptype filter succeeded");
@@ -185,7 +185,7 @@ void test_rst_dispatch() {
       .named("PodAlpha")
       .with_alive(true)
       .with_active(true)
-      .in_star_orbit(0)
+      .in_star_orbit(1)
       .with_size(10)
       .with_pod(88)
       .build();

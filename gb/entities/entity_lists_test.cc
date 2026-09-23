@@ -31,11 +31,11 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
   universe_repo.save(ud);
 
   StarRepository star_repo(store);
-  for (starnum_t s = 0; s < 2; s++) {
+  for (starnum_t s = 1; s <= 2; s++) {
     star_struct ss{};
     ss.star_id = s;
     ss.name = std::format("Star{}", s);
-    for (planetnum_t p = 0; p.value <= s.value; p++) {
+    for (planetnum_t p = 1; p.value <= s.value; p++) {
       ss.pnames.push_back(std::format("Planet{}-{}", s, p));
     }
     Star star(ss);
@@ -45,13 +45,13 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
   PlanetRepository planet_repo(store);
   {
     Planet p{};
-    p.star_id() = 0;
-    p.planet_order() = 0;
+    p.star_id() = 1;
+    p.planet_order() = 1;
     planet_repo.save(p);
   }
-  for (planetnum_t pn = 0; pn < 2; pn++) {
+  for (planetnum_t pn = 1; pn <= 2; pn++) {
     Planet p{};
-    p.star_id() = 1;
+    p.star_id() = 2;
     p.planet_order() = pn;
     planet_repo.save(p);
   }
@@ -135,14 +135,13 @@ void test_star_list_readonly(EntityManager& em) {
 
     count++;
     seen_stars.push_back(star.get_struct().star_id);
-    test::expect_eq(star.get_struct().star_id,
-                    static_cast<starnum_t>(count - 1));
+    test::expect_eq(star.get_struct().star_id, static_cast<starnum_t>(count));
   }
 
   test::expect_eq(count, 2);
   test::expect_eq(seen_stars.size(), 2);
-  test::expect_eq(seen_stars[0], 0);
-  test::expect_eq(seen_stars[1], 1);
+  test::expect_eq(seen_stars[0], 1);
+  test::expect_eq(seen_stars[1], 2);
   std::println(std::cout,
                "  StarList: iterated {} stars, all have correct star_id",
                count);
@@ -164,10 +163,10 @@ void test_planet_list_readonly(EntityManager& em) {
       total_planets++;
       test::expect_eq(planet.star_id(), star_id);
       test::expect_eq(planet.planet_order(),
-                      static_cast<planetnum_t>(star_planet_count - 1));
+                      static_cast<planetnum_t>(star_planet_count));
     }
 
-    test::expect_eq(star_planet_count, static_cast<int>(star_id.value + 1));
+    test::expect_eq(star_planet_count, static_cast<int>(star_id.value));
   }
 
   test::expect_eq(total_planets, 3);
@@ -192,8 +191,8 @@ void test_star_list_shuffle(EntityManager& em) {
   test::expect_eq(count, 2);
   test::expect_eq(seen_stars.size(), 2);
   std::ranges::sort(seen_stars);
-  test::expect_eq(seen_stars[0], 0);
-  test::expect_eq(seen_stars[1], 1);
+  test::expect_eq(seen_stars[0], 1);
+  test::expect_eq(seen_stars[1], 2);
 
   // Test member method form on StarList instance
   StarList star_list(em);
@@ -227,10 +226,10 @@ void test_planet_list_shuffle(EntityManager& em) {
     }
 
     test::expect_eq(seen_planets.size(),
-                    static_cast<std::size_t>(star_id.value + 1));
+                    static_cast<std::size_t>(star_id.value));
     std::ranges::sort(seen_planets);
     for (std::size_t i = 0; i < seen_planets.size(); ++i) {
-      test::expect_eq(seen_planets[i], static_cast<planetnum_t>(i));
+      test::expect_eq(seen_planets[i], static_cast<planetnum_t>(i + 1));
     }
   }
 
@@ -285,7 +284,7 @@ void populate_ships(EntityManager& em, JsonStore&) {
     TestShipBuilder(em, ShipType::STYPE_SHUTTLE, i)
         .named(std::format("Ship{}", i))
         .owned_by(1, 0)
-        .in_star_orbit(0)
+        .in_star_orbit(1)
         .with_max_fuel(500.0)
         .with_fuel(100.0 * static_cast<double>(i.value))
         .build();
@@ -301,7 +300,7 @@ void test_ship_list_patterns(EntityManager& em) {
   int count = 0;
   double total_fuel = 0.0;
 
-  for (const Ship& ship : ShipList::readonly_in_star(em, starnum_t{0})) {
+  for (const Ship& ship : ShipList::readonly_in_star(em, starnum_t{1})) {
     static_assert(std::is_same_v<decltype(ship), const Ship&>,
                   "ShipList::readonly() should yield const Ship&");
     count++;
@@ -316,7 +315,7 @@ void test_ship_list_patterns(EntityManager& em) {
   std::println(std::cout, "  Testing mutable ShipList (with modifications)...");
   count = 0;
 
-  for (auto ship : ShipList::in_star(em, starnum_t{0})) {
+  for (auto ship : ShipList::in_star(em, starnum_t{1})) {
     static_assert(std::is_same_v<decltype(ship), ShipHandle>,
                   "MutableIterator should return ShipHandle");
 
@@ -340,7 +339,7 @@ void test_ship_list_patterns(EntityManager& em) {
 
   std::println(std::cout,
                "  Testing mutable ShipList with dereference pattern...");
-  ShipList shiplist = ShipList::in_star(em, starnum_t{0});
+  ShipList shiplist = ShipList::in_star(em, starnum_t{1});
 
   for (auto ship_handle : shiplist) {
     Ship& s = *ship_handle;
@@ -364,11 +363,11 @@ void test_ship_list_patterns(EntityManager& em) {
     std::println(std::cout, "    Univ scope ship count: {}", univ_count);
 
     int star_count = 0;
-    for (const Ship& s : ShipList::readonly(em, starnum_t{0})) {
+    for (const Ship& s : ShipList::readonly(em, starnum_t{1})) {
       (void)s;
       star_count++;
     }
-    std::println(std::cout, "    Star 0 ship count: {}", star_count);
+    std::println(std::cout, "    Star 1 ship count: {}", star_count);
   }
 }
 

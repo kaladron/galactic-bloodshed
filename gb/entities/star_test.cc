@@ -23,9 +23,9 @@ int main() {
 
     test::expect_eq(star.get_name(), "Sol");
     test::expect_eq(star.numplanets(), 3);
-    test::expect_eq(star.get_planet_name(0), "Mercury");
-    test::expect_eq(star.get_planet_name(1), "Venus");
-    test::expect_eq(star.get_planet_name(2), "Earth");
+    test::expect_eq(star.get_planet_name(1), "Mercury");
+    test::expect_eq(star.get_planet_name(2), "Venus");
+    test::expect_eq(star.get_planet_name(3), "Earth");
     std::println(std::cout, "  ✓ Basic creation and access works");
   }
 
@@ -40,12 +40,14 @@ int main() {
     Star star(s);
 
     // Valid access
-    test::expect_eq(star.get_planet_name(0), "Planet1");
-    test::expect_eq(star.get_planet_name(1), "Planet2");
+    test::expect_eq(star.get_planet_name(1), "Planet1");
+    test::expect_eq(star.get_planet_name(2), "Planet2");
 
     // Out of bounds - should throw exception
     test::expect_throws<std::runtime_error>(
-        [&]() { (void)star.get_planet_name(2); });
+        [&]() { (void)star.get_planet_name(0); });
+    test::expect_throws<std::runtime_error>(
+        [&]() { (void)star.get_planet_name(3); });
     std::println(std::cout, "  ✓ Out of bounds access throws exception");
   }
 
@@ -60,11 +62,13 @@ int main() {
 
     Star star(s);
 
-    test::expect_true(star.planet_name_isset(0));   // Has name
-    test::expect_false(star.planet_name_isset(1));  // Empty name
-    test::expect_true(star.planet_name_isset(2));   // Has name
+    test::expect_true(star.planet_name_isset(1));   // Has name
+    test::expect_false(star.planet_name_isset(2));  // Empty name
+    test::expect_true(star.planet_name_isset(3));   // Has name
 
     // Out of bounds - should throw exception
+    test::expect_throws<std::runtime_error>(
+        [&]() { (void)star.planet_name_isset(0); });
     test::expect_throws<std::runtime_error>(
         [&]() { (void)star.planet_name_isset(99); });
     std::println(
@@ -77,22 +81,24 @@ int main() {
   {
     star_struct s{};
     s.name = "Test";
-    s.pnames.push_back("Planet0");
+    s.pnames.push_back("Planet1");
 
     Star star(s);
     test::expect_eq(star.numplanets(), 1);
 
-    // Set planet at index 5 - should auto-resize vector
-    star.set_planet_name(5, "Jupiter");
+    // Set planet at 1-based index 6 - should auto-resize vector to 6
+    star.set_planet_name(6, "Jupiter");
     test::expect_eq(star.numplanets(), 6);
 
     // Check that intermediate planets exist but are empty
-    test::expect_eq(star.get_planet_name(0), "Planet0");
-    test::expect_eq(star.get_planet_name(1), "");
+    test::expect_eq(star.get_planet_name(1), "Planet1");
     test::expect_eq(star.get_planet_name(2), "");
     test::expect_eq(star.get_planet_name(3), "");
     test::expect_eq(star.get_planet_name(4), "");
-    test::expect_eq(star.get_planet_name(5), "Jupiter");
+    test::expect_eq(star.get_planet_name(5), "");
+    test::expect_eq(star.get_planet_name(6), "Jupiter");
+    test::expect_throws<std::runtime_error>(
+        [&]() { star.set_planet_name(0, "Invalid"); });
     std::println(std::cout, "  ✓ Auto-resize works correctly");
   }
 
@@ -104,10 +110,10 @@ int main() {
     s.pnames.push_back("OldName");
 
     Star star(s);
-    test::expect_eq(star.get_planet_name(0), "OldName");
+    test::expect_eq(star.get_planet_name(1), "OldName");
 
-    star.set_planet_name(0, "NewName");
-    test::expect_eq(star.get_planet_name(0), "NewName");
+    star.set_planet_name(1, "NewName");
+    test::expect_eq(star.get_planet_name(1), "NewName");
     test::expect_eq(star.numplanets(), 1);  // Size unchanged
     std::println(std::cout, "  ✓ Overwriting works correctly");
   }
@@ -124,11 +130,11 @@ int main() {
 
     // Out of bounds access should throw
     test::expect_throws<std::runtime_error>(
-        [&]() { (void)star.get_planet_name(0); });
+        [&]() { (void)star.get_planet_name(1); });
 
     // planet_name_isset should also throw
     test::expect_throws<std::runtime_error>(
-        [&]() { (void)star.planet_name_isset(0); });
+        [&]() { (void)star.planet_name_isset(1); });
 
     std::println(
         std::cout,
@@ -152,7 +158,7 @@ int main() {
     test::expect_eq(star2.numplanets(), 3);
 
     // Modify through Star interface
-    star2.set_planet_name(3, "P4");
+    star2.set_planet_name(4, "P4");
     test::expect_eq(star2.numplanets(), 4);
     std::println(std::cout, "  ✓ numplanets() correctly reflects vector size");
   }
@@ -277,22 +283,22 @@ int main() {
   // get_random_planet_index tests
   std::println(std::cout, "Star get_random_planet_index tests...");
   {
-    // Case 1: Single planet system always returns index 0
+    // Case 1: Single planet system always returns index 1
     star_struct s1{};
     s1.name = "Solo";
     s1.pnames = {"SingleWorld"};
     Star star1(s1);
-    test::expect_eq(star1.get_random_planet_index(), planetnum_t{0});
+    test::expect_eq(star1.get_random_planet_index(), planetnum_t{1});
 
-    // Case 2: Multi-planet system returns a valid index in range [0, numplanets
-    // - 1]
+    // Case 2: Multi-planet system returns a valid index in range [1,
+    // numplanets]
     star_struct s3{};
     s3.name = "Trio";
     s3.pnames = {"World1", "World2", "World3"};
     Star star3(s3);
     for (int i = 0; i < 20; ++i) {
       planetnum_t p = star3.get_random_planet_index();
-      test::expect_true(p < star3.numplanets());
+      test::expect_true(p >= 1 && p <= star3.numplanets());
     }
 
     std::println(std::cout, "  ✓ get_random_planet_index verified (bounds)");

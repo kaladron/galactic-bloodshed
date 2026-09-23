@@ -24,12 +24,12 @@ void test_give_dispatch() {
 
   const shipnum_t ship_plan = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
                                   .owned_by(1, 0)
-                                  .in_planet_orbit(0, 0)
+                                  .in_planet_orbit(1, 1)
                                   .build();
 
   const shipnum_t ship_star = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
                                   .owned_by(1, 0)
-                                  .in_star_orbit(0)
+                                  .in_star_orbit(1)
                                   .build();
 
   const shipnum_t ship_univ =
@@ -39,8 +39,8 @@ void test_give_dispatch() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Happy path: give ship in planet orbit to mutual ally
   ctx.assert_dispatch_success(
@@ -54,11 +54,11 @@ void test_give_dispatch() {
   test::expect_eq(transferred->owner(), 2);
   test::expect_eq(transferred->governor(), 0);
 
-  const auto* planet_verify = ctx.em.peek_planet(0, 0);
+  const auto* planet_verify = ctx.em.peek_planet(1, 1);
   test::expect_ne(planet_verify, nullptr);
   test::expect_eq(planet_verify->info(player_t{2}).explored, 1);
 
-  const auto* star_verify = ctx.em.peek_star(0);
+  const auto* star_verify = ctx.em.peek_star(1);
   test::expect_ne(star_verify, nullptr);
   test::expect_true(star_verify->is_explored_by(player_t{2}));
   std::println(std::cout, "    ✓ Ship in planet orbit given to ally");
@@ -80,9 +80,9 @@ void test_give_dispatch() {
   // 4. Insufficient AP in star system
   const shipnum_t ship_no_ap = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
                                    .owned_by(1, 0)
-                                   .in_star_orbit(0)
+                                   .in_star_orbit(1)
                                    .build();
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(player_t{1}) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_no_ap.value)});
@@ -100,7 +100,7 @@ void test_give_dispatch() {
                         "You don't have enough universe action points.");
 
   // Restore AP for subsequent tests
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(player_t{1}) = 100; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 100; });
   ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 100; });
 
   // 6. Non-existent recipient
@@ -137,7 +137,7 @@ void test_give_dispatch() {
   // 11. Ship not owned by donor
   const shipnum_t ship_p2 = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
                                 .owned_by(2, 0)
-                                .in_star_orbit(0)
+                                .in_star_orbit(1)
                                 .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(
@@ -146,7 +146,7 @@ void test_give_dispatch() {
   // 12. Spore pod rejection
   const shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                                .owned_by(1, 0)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(
@@ -157,7 +157,7 @@ void test_give_dispatch() {
   // 13. Crewed ship cannot be given away
   const shipnum_t crewed_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
                                   .owned_by(1, 0)
-                                  .in_star_orbit(0)
+                                  .in_star_orbit(1)
                                   .with_crew(10, 0)
                                   .build();
   g.out.str("");
@@ -168,11 +168,11 @@ void test_give_dispatch() {
   // 14. Carrier with loaded ships
   const shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                                    .owned_by(1, 0)
-                                   .in_star_orbit(0)
+                                   .in_star_orbit(1)
                                    .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
       .owned_by(1, 0)
-      .docked_to(carrier_id, 0)
+      .docked_to(carrier_id, 1)
       .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(

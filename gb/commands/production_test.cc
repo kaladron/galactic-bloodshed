@@ -15,7 +15,7 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
 
-  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+  ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.info(player_t{1}).numsectsowned = 10;
     planet.info(player_t{1}).prod_res = 100;
     planet.info(player_t{1}).prod_fuel = 50;

@@ -62,6 +62,8 @@ Race createTestRace(player_t playernum = 1) {
 // Helper function to create a test planet
 Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
   Planet planet(PlanetType::EARTH, Coordinates{maxx, maxy});
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   planet.free_slaves();
 
   // Initialize conditions
@@ -86,7 +88,7 @@ Star createTestStar() {
   star_data.nova_stage = 0;
   star_data.temperature = 100;
   star_data.gravity = 1.0;
-  star_data.star_id = 0;
+  star_data.star_id = 1;
   star_data.pnames.push_back("TestPlanet");
 
   return Star(star_data);
@@ -273,8 +275,8 @@ void test_star_creation() {
   test::expect_eq(star.temperature(), 150);
 
   // Test planet naming
-  star.set_planet_name(0, "TestPlanet1");
-  test::expect_eq(star.get_planet_name(0), "TestPlanet1");
+  star.set_planet_name(1, "TestPlanet1");
+  test::expect_eq(star.get_planet_name(1), "TestPlanet1");
 }
 
 // Test SectorMap functionality

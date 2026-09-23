@@ -25,14 +25,14 @@ import std;
 
 void test_something() {
   TestContext ctx;
-  ctx.with_standard_universe();  // Provisions Sol (Star 0), Earth (Planet 0), Vega (Star 1),
-                                 // Vega Prime (Planet 0), Federation (Player 1), Klingons (Player 2),
+  ctx.with_standard_universe();  // Provisions Sol (Star 1), Earth (Planet 1), Vega (Star 2),
+                                 // Vega Prime (Planet 1), Federation (Player 1), Klingons (Player 2),
                                  // 100 AP each, and alliance blocks
 
   // Create test ships using the fluent builder populated with canonical ShipTemplate defaults
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                           .owned_by(1, 0)
-                          .in_star_orbit(0)
+                          .in_star_orbit(1)
                           .with_fuel(100.0)
                           .build();
 
@@ -147,15 +147,15 @@ auto& registry = get_test_session_registry();
 GameObj g(ctx.em, registry);
 ctx.setup_game_obj(g, 1, 0);  // Sets player 1, gov 0, and g.race = peek_race(1)
 g.set_level(ScopeLevel::LEVEL_PLAN);
-g.set_snum(0);
-g.set_pnum(0);
+g.set_snum(1);
+g.set_pnum(1);
 
 // Dispatch through command descriptor or TestContext
 bool ok = ctx.dispatch(g, {"commandname", "arg1"});
 test::expect_true(ok);
 
 // Assert observable side effects via EntityManager
-const auto* planet = ctx.em.peek_planet(0, 0);
+const auto* planet = ctx.em.peek_planet(1, 1);
 test::expect_eq(planet->popn(), expected);
 ```
 

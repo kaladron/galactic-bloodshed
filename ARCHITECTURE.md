@@ -90,7 +90,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
     - Geoengineering: `TerraformerShip` $\to$ `GroundPlowShip` (surface order queues and plowing)
     - Cargo Transfer: `TransporterShip` (target recipient vessels)
     - Ecological Containment: `ToxicWasteShip` (planetary toxin harvesting and storage)
-  - Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), `PlayerVector<T, N>`, `Coordinates`
+  - Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t` — all top-level entity primary keys are uniformly 1-based `>= 1`, while sub-entity array/grid indices like `governor_t` and sector `(x, y)` coordinates remain 0-based), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), `PlayerVector<T, N>`, `Coordinates`
   - First-class domain methods and computed predicates (`Ship::is_docked()`, `Ship::refuel_from_gas_giant()`, `Ship::process_radiation()`, `Ship::prepare_for_flight()`, `Planet::update_toxicity()`, `Planet::process_toxic_environmental_damage()`, `Planet::select_victim_to_steal_from()`, `SectorMap::process_supernova_devastation()`, `AutonomousShip::mine_sector()`, `AutonomousShip::roam_to_adjacent_sector()`)
   - Configuration constants (`Tweakables`), random utilities (`rand.cppm`), ship templates (`ship_templates.cppm`), and ship filters (`shipfilter.cppm`)
 

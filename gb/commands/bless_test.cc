@@ -23,8 +23,8 @@ void test_bless_matrix() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   TestCommandMatrix(ctx, "bless")
       .with_valid_argv({"bless", "2", "technology", "10"})
@@ -49,8 +49,8 @@ void test_bless_role_and_scope_rejection() {
   // 1. Role Rejection: Mortal player 2 is rejected
   ctx.setup_game_obj(g, 2, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   g.set_god(false);
   ctx.assert_dispatch_rejected(g, {"bless", "2", "technology", "5"});
   test::expect_contains(g.out.str(), "Only deity can use this command.");
@@ -76,8 +76,8 @@ void test_bless_race_characteristics() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Integer attributes
   ctx.assert_dispatch_success(g, {"bless", "2", "money", "500"});
@@ -180,29 +180,29 @@ void test_bless_planet_and_star() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // explorebit / noexplorebit
   ctx.assert_dispatch_success(g, {"bless", "2", "explorebit", "0"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).explored, 1);
-  test::expect_true(ctx.em.peek_star(0)->explored()[2]);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).explored, 1);
+  test::expect_true(ctx.em.peek_star(1)->explored()[2]);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "noexplorebit", "0"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).explored, 0);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).explored, 0);
 
   // planetpopulation
   ctx.assert_dispatch_success(g, {"bless", "2", "planetpopulation", "2500"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).popn, 2500);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).popn, 2500);
 
   // inhabited bit - verify latent bug fix (marks target race 2, not deity race
   // 1)
   ctx.assert_dispatch_success(g, {"bless", "2", "inhabited", "0"});
-  test::expect_true(ctx.em.peek_star(0)->inhabited()[2]);
+  test::expect_true(ctx.em.peek_star(1)->inhabited()[2]);
 
   // numsectsowned
   ctx.assert_dispatch_success(g, {"bless", "2", "numsectsowned", "42"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).numsectsowned, 42);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).numsectsowned, 42);
 
   ctx.verify_universe_invariants();
 }
@@ -217,38 +217,38 @@ void test_bless_commodities() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // resources: full word and char
   ctx.assert_dispatch_success(g, {"bless", "2", "resource", "100"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).resource, 1100);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).resource, 1100);
   ctx.assert_dispatch_success(g, {"bless", "2", "r", "50"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).resource, 1150);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).resource, 1150);
 
   // destruct
   ctx.assert_dispatch_success(g, {"bless", "2", "destruct", "200"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).destruct, 1200);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).destruct, 1200);
   ctx.assert_dispatch_success(g, {"bless", "2", "d", "50"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).destruct, 1250);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).destruct, 1250);
 
   // fuel
   ctx.assert_dispatch_success(g, {"bless", "2", "fuel", "300"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).fuel, 1300);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).fuel, 1300);
   ctx.assert_dispatch_success(g, {"bless", "2", "f", "50"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).fuel, 1350);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).fuel, 1350);
 
   // crystals
   ctx.assert_dispatch_success(g, {"bless", "2", "crystal", "400"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).crystals, 400);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).crystals, 400);
   ctx.assert_dispatch_success(g, {"bless", "2", "x", "50"});
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(2).crystals, 450);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).crystals, 450);
 
   // action points
   ctx.assert_dispatch_success(g, {"bless", "2", "ap", "30"});
-  test::expect_eq(ctx.em.peek_star(0)->AP(2), 130);
+  test::expect_eq(ctx.em.peek_star(1)->AP(2), 130);
   ctx.assert_dispatch_success(g, {"bless", "2", "a", "20"});
-  test::expect_eq(ctx.em.peek_star(0)->AP(2), 150);
+  test::expect_eq(ctx.em.peek_star(1)->AP(2), 150);
 
   ctx.verify_universe_invariants();
 }
@@ -263,8 +263,8 @@ void test_bless_error_handling() {
   ctx.setup_game_obj(g, 1, 0);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Invalid player number
   ctx.assert_dispatch_rejected(g, {"bless", "99", "technology", "10"});

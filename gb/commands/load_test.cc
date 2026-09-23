@@ -30,7 +30,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create test star
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "LoadStar";
   ss.coordinates = {100.0, 200.0};
   ss.pnames.emplace_back("LoadPlanet");
@@ -41,8 +41,8 @@ void setup_test_world(TestContext& ctx) {
 
   // Create test planet with resources
   planet_struct ps{};
-  ps.star_id = 0;
-  ps.planet_order = 0;
+  ps.star_id = 1;
+  ps.planet_order = 1;
   ps.type = PlanetType::EARTH;
   ps.dimensions = {10, 10};
   ps.info[player_t{1}].fuel = 1000;
@@ -58,7 +58,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 1)
       .owned_by(1, 0)
       .named("CargoHauler")
-      .landed_on(0, 0, {5, 5})
+      .landed_on(1, 1, {5, 5})
       .with_fuel(100.0)
       .with_resource(0)
       .with_destruct(0)
@@ -74,13 +74,13 @@ void test_load_happy_path() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   std::println(std::cout, "Load fuel from planet to ship");
   {
     const auto* s_before = ctx.em.peek_ship(1);
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     test::expect_ne(s_before, nullptr);
     test::expect_ne(p_before, nullptr);
     double initial_ship_fuel = s_before->fuel();
@@ -89,7 +89,7 @@ void test_load_happy_path() {
     ctx.assert_dispatch_success(g, {"load", "#1", "f", "100"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_ne(s_after, nullptr);
     test::expect_ne(p_after, nullptr);
     test::expect_eq(s_after->fuel(), initial_ship_fuel + 100);
@@ -100,7 +100,7 @@ void test_load_happy_path() {
   std::println(std::cout, "Load resources from planet to ship");
   {
     const auto* s_before = ctx.em.peek_ship(1);
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     test::expect_ne(s_before, nullptr);
     test::expect_ne(p_before, nullptr);
     int initial_ship_resource = s_before->resource();
@@ -109,7 +109,7 @@ void test_load_happy_path() {
     ctx.assert_dispatch_success(g, {"load", "#1", "r", "200"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_ne(s_after, nullptr);
     test::expect_ne(p_after, nullptr);
     test::expect_eq(s_after->resource(), initial_ship_resource + 200);
@@ -121,7 +121,7 @@ void test_load_happy_path() {
   std::println(std::cout, "Load destruct from planet to ship");
   {
     const auto* s_before = ctx.em.peek_ship(1);
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     test::expect_ne(s_before, nullptr);
     test::expect_ne(p_before, nullptr);
     int initial_ship_destruct = s_before->destruct();
@@ -130,7 +130,7 @@ void test_load_happy_path() {
     ctx.assert_dispatch_success(g, {"load", "#1", "d", "50"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_ne(s_after, nullptr);
     test::expect_ne(p_after, nullptr);
     test::expect_eq(s_after->destruct(), initial_ship_destruct + 50);
@@ -142,7 +142,7 @@ void test_load_happy_path() {
   std::println(std::cout, "Load crystals from planet to ship");
   {
     const auto* s_before = ctx.em.peek_ship(1);
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     test::expect_ne(s_before, nullptr);
     test::expect_ne(p_before, nullptr);
     int initial_ship_crystals = s_before->crystals();
@@ -151,7 +151,7 @@ void test_load_happy_path() {
     ctx.assert_dispatch_success(g, {"load", "#1", "x", "10"});
 
     const auto* s_after = ctx.em.peek_ship(1);
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_ne(s_after, nullptr);
     test::expect_ne(p_after, nullptr);
     test::expect_eq(s_after->crystals(), initial_ship_crystals + 10);
@@ -169,8 +169,8 @@ void test_unload_happy_path() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // First load resources, then unload
   ctx.assert_dispatch_success(g, {"load", "#1", "r", "200"});
@@ -178,7 +178,7 @@ void test_unload_happy_path() {
 
   ctx.assert_dispatch_success(g, {"unload", "#1", "r", "50"});
   test::expect_eq(ctx.em.peek_ship(1)->resource(), 150);
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(player_t{1}).resource, 350);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).resource, 350);
   std::println(std::cout, "✓ Resources unloaded from ship to planet");
 }
 
@@ -190,8 +190,8 @@ void test_load_syntax_and_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"load"});
@@ -217,8 +217,8 @@ void test_load_transporter() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Target receiver transporter ship 2
   const auto trans2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 2)
@@ -227,7 +227,7 @@ void test_load_transporter() {
                              .with_alive(true)
                              .with_active(true)
                              .with_on(true)
-                             .landed_on(0, 0, {5, 5})
+                             .landed_on(1, 1, {5, 5})
                              .with_max_resource(1000)
                              .build();
 
@@ -238,7 +238,7 @@ void test_load_transporter() {
                              .with_alive(true)
                              .with_active(true)
                              .with_on(true)
-                             .landed_on(0, 0, {5, 5})
+                             .landed_on(1, 1, {5, 5})
                              .with_max_resource(1000)
                              .with_special(TransportData{.target = trans2_id})
                              .build();
@@ -265,7 +265,7 @@ void test_load_ship_to_ship() {
   shipnum_t s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                         .owned_by(1, 0)
                         .named("Mothership")
-                        .in_star_orbit(0)
+                        .in_star_orbit(1)
                         .with_fuel(200.0)
                         .with_max_fuel(500.0)
                         .with_resource(300)
@@ -280,7 +280,7 @@ void test_load_ship_to_ship() {
   shipnum_t s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                         .owned_by(1, 0)
                         .named("Tender")
-                        .docked_to(s2_id, 0)
+                        .docked_to(s2_id, 1)
                         .with_fuel(50.0)
                         .with_max_fuel(200.0)
                         .with_resource(50)
@@ -298,7 +298,7 @@ void test_load_ship_to_ship() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // A. Load commodities from s2 into s1
   {
@@ -414,7 +414,7 @@ void test_load_ship_to_ship() {
   shipnum_t alien_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                            .owned_by(2, 0)
                            .named("KlingonFreighter")
-                           .in_star_orbit(0)
+                           .in_star_orbit(1)
                            .with_resource(100)
                            .with_max_resource(500)
                            .build();
@@ -450,13 +450,13 @@ void test_planet_crew_load_and_unload() {
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                           .owned_by(1, 0)
                           .named("ColonyShip")
-                          .landed_on(0, 0, {5, 5})
+                          .landed_on(1, 1, {5, 5})
                           .with_crew(50, 20)
                           .with_max_crew(100)
                           .build();
 
   // Ensure sector (5, 5) is empty land
-  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& map) {
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
     auto& sect = map.get({5, 5});
     sect.set_condition(SectorType::SEC_LAND);
     sect.set_owner(0);
@@ -469,8 +469,8 @@ void test_planet_crew_load_and_unload() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Unload civilians onto empty sector -> sector COLONIZED
   g.out.str("");
@@ -478,8 +478,8 @@ void test_planet_crew_load_and_unload() {
       g, {"unload", std::format("#{}", ship_id.value), "c", "10"});
   test::expect_contains(g.out.str(), "sector 5,5 COLONIZED");
   test::expect_eq(ctx.em.peek_ship(ship_id)->popn(), 40);
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_popn(), 10);
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_owner(), 1);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_popn(), 10);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_owner(), 1);
   ctx.verify_universe_invariants();
 
   // 2. Load civilians back until sector is empty -> sector evacuated
@@ -488,8 +488,8 @@ void test_planet_crew_load_and_unload() {
       g, {"load", std::format("#{}", ship_id.value), "c", "10"});
   test::expect_contains(g.out.str(), "sector 5,5 evacuated");
   test::expect_eq(ctx.em.peek_ship(ship_id)->popn(), 50);
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_popn(), 0);
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_owner(), 0);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_popn(), 0);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_owner(), 0);
   ctx.verify_universe_invariants();
 
   // 3. Unload military onto empty sector -> sector OCCUPIED
@@ -498,8 +498,8 @@ void test_planet_crew_load_and_unload() {
       g, {"unload", std::format("#{}", ship_id.value), "m", "5"});
   test::expect_contains(g.out.str(), "sector 5,5 OCCUPIED");
   test::expect_eq(ctx.em.peek_ship(ship_id)->troops(), 15);
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_troops(), 5);
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_owner(), 1);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_troops(), 5);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_owner(), 1);
   ctx.verify_universe_invariants();
 
   // 4. Load military with omitted amount (default maximum available) ->
@@ -509,8 +509,8 @@ void test_planet_crew_load_and_unload() {
                               {"load", std::format("#{}", ship_id.value), "m"});
   test::expect_contains(g.out.str(), "sector 5,5 evacuated");
   test::expect_eq(ctx.em.peek_ship(ship_id)->troops(), 20);
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_troops(), 0);
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({5, 5}).get_owner(), 0);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_troops(), 0);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_owner(), 0);
   ctx.verify_universe_invariants();
   std::println(std::cout,
                "✓ Planetary crew colonization and evacuation verified");
@@ -534,13 +534,13 @@ void test_unload_onto_alien_sector() {
   shipnum_t assault_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                              .owned_by(1, 0)
                              .named("DropShip")
-                             .landed_on(0, 0, {2, 2})
+                             .landed_on(1, 1, {2, 2})
                              .with_crew(100, 100)
                              .with_max_crew(200)
                              .build();
 
   // Populate sector (2, 2) with weak Player 2 forces
-  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& map) {
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
     auto& sect = map.get({2, 2});
     sect.set_condition(SectorType::SEC_LAND);
     sect.set_owner(2);
@@ -554,8 +554,8 @@ void test_unload_onto_alien_sector() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Victory assault with troops (and metamorph body absorption)
   g.out.str("");
@@ -565,7 +565,7 @@ void test_unload_onto_alien_sector() {
                         "That sector is already occupied by another player!");
   test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
   test::expect_contains(g.out.str(), "alien bodies absorbed");
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({2, 2}).get_owner(), 1);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 1);
   // Verify planet demographics were synced after ground assault casualties
   ctx.verify_universe_invariants();
 
@@ -579,7 +579,7 @@ void test_unload_onto_alien_sector() {
     r.fighters = 15;
     r.absorb = true;
   });
-  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& map) {
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
     auto& sect = map.get({2, 2});
     sect.set_owner(2);
     sect.set_popn_exact(100);
@@ -593,7 +593,7 @@ void test_unload_onto_alien_sector() {
       g, {"unload", std::format("#{}", assault_id.value), "m", "5"});
   test::expect_contains(g.out.str(), "DEFEAT!  Your assault was repulsed.");
   test::expect_contains(g.out.str(), "Metamorphs have absorbed");
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({2, 2}).get_owner(), 2);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 2);
   ctx.verify_universe_invariants();
 
   // Also test civilian defeat branch
@@ -619,7 +619,7 @@ void test_unload_onto_alien_sector() {
     r.fighters = 1;
     r.absorb = false;
   });
-  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& map) {
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
     auto& sect = map.get({2, 2});
     sect.set_owner(2);
     sect.set_popn_exact(1);
@@ -630,7 +630,7 @@ void test_unload_onto_alien_sector() {
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", assault_id.value), "c", "50"});
   test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
-  test::expect_eq(ctx.em.peek_sectormap(0, 0)->get({2, 2}).get_owner(), 1);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 1);
   ctx.verify_universe_invariants();
   std::println(std::cout, "✓ Amphibious alien sector assaults (victory, "
                           "defeat, metamorph) verified");
@@ -644,8 +644,8 @@ void test_transporter_edge_cases() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Target receiver transporter owned by Player 2
   JsonStore store(ctx.db);
@@ -660,7 +660,7 @@ void test_transporter_edge_cases() {
                            .with_alive(true)
                            .with_active(true)
                            .with_on(true)
-                           .landed_on(0, 0, {5, 5})
+                           .landed_on(1, 1, {5, 5})
                            .with_fuel(0.0)
                            .with_max_fuel(500.0)
                            .with_resource(0)
@@ -678,7 +678,7 @@ void test_transporter_edge_cases() {
                            .with_alive(true)
                            .with_active(true)
                            .with_on(true)
-                           .landed_on(0, 0, {5, 5})
+                           .landed_on(1, 1, {5, 5})
                            .with_fuel(0.0)
                            .with_max_fuel(500.0)
                            .with_resource(0)
@@ -776,14 +776,14 @@ void test_docking_and_validation_edge_cases() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Irradiated and inactive ship rejection
   shipnum_t rad_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                          .owned_by(1, 0)
                          .named("RadShip")
-                         .landed_on(0, 0, {1, 1})
+                         .landed_on(1, 1, {1, 1})
                          .with_active(false)
                          .build();
   ctx.em.mutate_ship(rad_id, [](Ship& s) { s.apply_radiation(10); });
@@ -795,7 +795,7 @@ void test_docking_and_validation_edge_cases() {
   shipnum_t orb_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                          .owned_by(1, 0)
                          .named("OrbitShip")
-                         .in_star_orbit(0)
+                         .in_star_orbit(1)
                          .build();
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.out.str("");
@@ -809,7 +809,7 @@ void test_docking_and_validation_edge_cases() {
   shipnum_t wrong_plan_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                                 .owned_by(1, 0)
                                 .named("OtherPlanetShip")
-                                .landed_on(0, 0, {1, 1})
+                                .landed_on(1, 1, {1, 1})
                                 .build();
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.out.str("");
@@ -823,7 +823,7 @@ void test_docking_and_validation_edge_cases() {
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
                         .owned_by(1, 0)
                         .named("VNProbe")
-                        .landed_on(0, 0, {1, 1})
+                        .landed_on(1, 1, {1, 1})
                         .with_resource(50)
                         .build();
   g.out.str("");
@@ -835,7 +835,7 @@ void test_docking_and_validation_edge_cases() {
   shipnum_t cargo_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                            .owned_by(1, 0)
                            .named("GoodCargo")
-                           .landed_on(0, 0, {1, 1})
+                           .landed_on(1, 1, {1, 1})
                            .with_max_resource(500)
                            .build();
   g.out.str("");
@@ -859,12 +859,12 @@ void test_docking_and_validation_edge_cases() {
   shipnum_t robot_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                            .owned_by(1, 0)
                            .named("MineShip")
-                           .landed_on(0, 0, {1, 1})
+                           .landed_on(1, 1, {1, 1})
                            .with_max_crew(0)
                            .with_destruct(0)
                            .with_max_destruct(100)
                            .build();
-  ctx.em.mutate_planet(0, 0,
+  ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{1}).destruct = 100; });
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -881,14 +881,14 @@ void test_docking_and_validation_edge_cases() {
   shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                              .owned_by(1, 0)
                              .named("ShuttleCraft")
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_resource(10)
                              .with_max_resource(25)
                              .build();
   shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                              .owned_by(1, 0)
                              .named("CarrierShip")
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_resource(100)
                              .with_max_resource(500)
                              .build();

@@ -255,13 +255,13 @@ int main() {
     GameObj g(ctx.em, registry);
     ctx.setup_game_obj(g, 1, 0);
     g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(0);
-    g.set_pnum(0);
+    g.set_snum(1);
+    g.set_pnum(1);
 
     // Create a hostile Player 2 AFV landed at (3, 3) with 1 destruct
     const shipnum_t afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                                  .owned_by(2, 0)
-                                 .landed_on(0, 0, Coordinates{3, 3})
+                                 .landed_on(1, 1, Coordinates{3, 3})
                                  .with_crew(1, 0)
                                  .with_guns(guntype_t::MEDIUM, 2)
                                  .with_retaliate(2)
@@ -269,8 +269,8 @@ int main() {
                                  .with_tech(20.0)
                                  .build();
 
-    const auto* p_earth = ctx.em.peek_planet(0, 0);
-    const auto* smap = ctx.em.peek_sectormap(0, 0);
+    const auto* p_earth = ctx.em.peek_planet(1, 1);
+    const auto* smap = ctx.em.peek_sectormap(1, 1);
     const Sector& target_sect = smap->get(Coordinates{3, 3});
 
     // 1. Allied AFVs do not fire on allied troops

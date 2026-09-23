@@ -12,13 +12,13 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe().with_populated_planet(0, 0, 1, 1000,
+  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 1000,
                                                      Coordinates{5, 5});
 
   auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                         .owned_by(player_t{1}, governor_t{0})
                         .named("Carrier")
-                        .in_star_orbit(0)
+                        .in_star_orbit(1)
                         .with_crew(10, 0)
                         .with_fuel(100.0)
                         .with_resource(100)
@@ -27,7 +27,7 @@ void setup_test_world(TestContext& ctx) {
   auto fighter_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                         .owned_by(player_t{1}, governor_t{0})
                         .named("ToScrap")
-                        .in_star_orbit(0)
+                        .in_star_orbit(1)
                         .with_crew(5, 0)
                         .with_fuel(50.0)
                         .with_resource(20)
@@ -50,7 +50,7 @@ void test_scrap_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Scrap docked fighter (1 AP deducted via dynamic AP)
   ctx.assert_dispatch_success(g, {"scrap", "#2"}, 1);
@@ -73,13 +73,13 @@ void test_scrap_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
   test::expect_contains(g.out.str(), "action points");
@@ -93,7 +93,7 @@ void test_scrap_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"scrap"});
@@ -114,14 +114,14 @@ void test_scrap_toxic_waste_warning() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Create Toxic Waste Canister landed on planet
   auto tox_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
                     .owned_by(player_t{1}, governor_t{0})
                     .named("HazMat")
-                    .landed_on(0, 0, Coordinates{5, 5})
+                    .landed_on(1, 1, Coordinates{5, 5})
                     .with_crew(1, 0)
                     .with_special(WasteData{.toxic = 25})
                     .build();

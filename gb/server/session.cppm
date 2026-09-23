@@ -164,9 +164,9 @@ private:
   player_t player_ = 0;
   governor_t governor_ = 0;
   bool god_ = false;
-  starnum_t snum_ = 0;
-  planetnum_t pnum_ = 0;
-  shipnum_t shipno_ = 0;
+  starnum_t snum_{};
+  planetnum_t pnum_{};
+  shipnum_t shipno_{};
   ScopeLevel level_ = ScopeLevel::LEVEL_UNIV;
 
   std::function<void(std::shared_ptr<Session>)> on_disconnect_;

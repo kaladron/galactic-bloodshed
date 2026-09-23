@@ -27,17 +27,17 @@ void setup_test_universe(Database& db) {
   PlanetRepository planet_repo(store);
   SectorRepository sector_repo(store);
 
-  // Star 0: 2 planets (Earth, Gas Giant)
+  // Star 1: 2 planets (Earth, Gas Giant)
   star_struct ss0{};
-  ss0.star_id = 0;
+  ss0.star_id = 1;
   ss0.name = "Sol";
   ss0.pnames = {"Earth", "Jupiter"};
   Star star0(ss0);
   star_repo.save(star0);
 
   Planet p0_0{PlanetType::EARTH, Coordinates{5, 5}};
-  p0_0.star_id() = 0;
-  p0_0.planet_order() = 0;
+  p0_0.star_id() = 1;
+  p0_0.planet_order() = 1;
   p0_0.rtemp() = 20;
   p0_0.conditions().oxygen = 21;
   planet_repo.save(p0_0);
@@ -51,8 +51,8 @@ void setup_test_universe(Database& db) {
   sector_repo.save_map(smap0_0);
 
   Planet p0_1{PlanetType::GASGIANT, Coordinates{5, 5}};
-  p0_1.star_id() = 0;
-  p0_1.planet_order() = 1;
+  p0_1.star_id() = 1;
+  p0_1.planet_order() = 2;
   p0_1.rtemp() = -80;
   p0_1.conditions().methane = 90;
   planet_repo.save(p0_1);
@@ -65,30 +65,30 @@ void setup_test_universe(Database& db) {
   }
   sector_repo.save_map(smap0_1);
 
-  // Star 1: 1 planet (Mars) -> single planet star should be skipped
+  // Star 2: 1 planet (Mars) -> single planet star should be skipped
   star_struct ss1{};
-  ss1.star_id = 1;
+  ss1.star_id = 2;
   ss1.name = "Alpha";
   ss1.pnames = {"Mars"};
   Star star1(ss1);
   star_repo.save(star1);
 
   Planet p1_0{PlanetType::MARS, Coordinates{5, 5}};
-  p1_0.star_id() = 1;
-  p1_0.planet_order() = 0;
+  p1_0.star_id() = 2;
+  p1_0.planet_order() = 1;
   planet_repo.save(p1_0);
 
-  // Star 2: 2 planets (Iceball, Desert)
+  // Star 3: 2 planets (Iceball, Desert)
   star_struct ss2{};
-  ss2.star_id = 2;
+  ss2.star_id = 3;
   ss2.name = "Vega";
   ss2.pnames = {"Hoth", "Dune"};
   Star star2(ss2);
   star_repo.save(star2);
 
   Planet p2_0{PlanetType::ICEBALL, Coordinates{5, 5}};
-  p2_0.star_id() = 2;
-  p2_0.planet_order() = 0;
+  p2_0.star_id() = 3;
+  p2_0.planet_order() = 1;
   p2_0.rtemp() = -120;
   planet_repo.save(p2_0);
 
@@ -101,8 +101,8 @@ void setup_test_universe(Database& db) {
   sector_repo.save_map(smap2_0);
 
   Planet p2_1{PlanetType::DESERT, Coordinates{5, 5}};
-  p2_1.star_id() = 2;
-  p2_1.planet_order() = 1;
+  p2_1.star_id() = 3;
+  p2_1.planet_order() = 2;
   p2_1.rtemp() = 140;
   planet_repo.save(p2_1);
 
@@ -226,8 +226,8 @@ void test_enroll_first_race_god_success() {
   auto result = service.enroll_player(spec);
   test::expect_true(result.success);
   test::expect_eq(result.player_num, player_t{1});
-  test::expect_eq(result.star, starnum_t{0});
-  test::expect_eq(result.pnum, planetnum_t{0});
+  test::expect_eq(result.star, starnum_t{1});
+  test::expect_eq(result.pnum, planetnum_t{1});
   test::expect_gt(result.gov_ship, shipnum_t{0});
 
   // Verify Race entity
@@ -243,8 +243,8 @@ void test_enroll_first_race_god_success() {
     test::expect_eq(race->conditions[OXYGEN], 21);
     test::expect_eq(race->likesbest, SectorType::SEC_LAND);
     test::expect_eq(race->likes[SectorType::SEC_LAND], 1.0);
-    test::expect_eq(race->governor[0].homesystem, starnum_t{0});
-    test::expect_eq(race->governor[0].homeplanetnum, planetnum_t{0});
+    test::expect_eq(race->governor[0].homesystem, starnum_t{1});
+    test::expect_eq(race->governor[0].homeplanetnum, planetnum_t{1});
     test::expect_eq(race->governor[0].active, true);
     test::expect_eq(race->translate[player_t{1}], 100);
   }
@@ -257,13 +257,13 @@ void test_enroll_first_race_god_success() {
     test::expect_eq(ship->owner(), player_t{1});
     test::expect_true(ship->is_landed());
     test::expect_eq(ship->whatorbits(), ScopeLevel::LEVEL_PLAN);
-    test::expect_eq(ship->storbits(), starnum_t{0});
-    test::expect_eq(ship->pnumorbits(), planetnum_t{0});
+    test::expect_eq(ship->storbits(), starnum_t{1});
+    test::expect_eq(ship->pnumorbits(), planetnum_t{1});
     test::expect_eq(ship->land_coords(), result.capital_coords);
   }
 
   // Verify Planet entity
-  const auto* planet = em.peek_planet(starnum_t{0}, planetnum_t{0});
+  const auto* planet = em.peek_planet(starnum_t{1}, planetnum_t{1});
   test::expect_true(planet != nullptr);
   if (planet) {
     test::expect_eq(planet->popn(), 2);
@@ -272,7 +272,7 @@ void test_enroll_first_race_god_success() {
   }
 
   // Verify SectorMap
-  em.with_sectormap(starnum_t{0}, planetnum_t{0}, [&](const SectorMap& smap) {
+  em.with_sectormap(starnum_t{1}, planetnum_t{1}, [&](const SectorMap& smap) {
     const auto& capital_sect = smap.get(result.capital_coords);
     test::expect_eq(capital_sect.get_owner(), player_t{1});
     test::expect_eq(capital_sect.get_race(), player_t{1});
@@ -282,7 +282,7 @@ void test_enroll_first_race_god_success() {
   });
 
   // Verify Star entity
-  const auto* star = em.peek_star(starnum_t{0});
+  const auto* star = em.peek_star(starnum_t{1});
   test::expect_true(star != nullptr);
   if (star) {
     test::expect_true(star->is_explored_by(player_t{1}));
@@ -311,7 +311,7 @@ void test_enroll_second_race_mortal_success() {
   auto god_result = service.enroll_player(god_spec);
   test::expect_true(god_result.success);
 
-  // Now enroll mortal race on DESERT (Star 2, Planet 1)
+  // Now enroll mortal race on DESERT (Star 3, Planet 2)
   GB::creator::RaceEnrollmentSpec mortal_spec{
       .name = "DesertFolk",
       .password = "mortalpass",
@@ -331,8 +331,8 @@ void test_enroll_second_race_mortal_success() {
   auto mortal_result = service.enroll_player(mortal_spec);
   test::expect_true(mortal_result.success);
   test::expect_eq(mortal_result.player_num, player_t{2});
-  test::expect_eq(mortal_result.star, starnum_t{2});
-  test::expect_eq(mortal_result.pnum, planetnum_t{1});
+  test::expect_eq(mortal_result.star, starnum_t{3});
+  test::expect_eq(mortal_result.pnum, planetnum_t{2});
 
   const auto* mortal_race = em.peek_race(player_t{2});
   test::expect_true(mortal_race != nullptr);
@@ -406,8 +406,8 @@ void test_enroll_gas_giant_cold_success() {
 
   auto result = service.enroll_player(spec);
   test::expect_true(result.success);
-  test::expect_eq(result.star, starnum_t{0});
-  test::expect_eq(result.pnum, planetnum_t{1});
+  test::expect_eq(result.star, starnum_t{1});
+  test::expect_eq(result.pnum, planetnum_t{2});
 
   const auto* race = em.peek_race(player_t{1});
   test::expect_true(race != nullptr);
@@ -462,23 +462,23 @@ void test_find_suitable_planet_shuffle() {
   EntityManager em(db);
   GB::creator::EnrollmentService service(em);
 
-  // Sol (star 0) has Earth and Gas Giant, Vega (star 2) has Iceball and Desert.
-  // Star 1 has Mars, but only 1 planet, so it is skipped.
+  // Sol (star 1) has Earth and Gas Giant, Vega (star 3) has Iceball and Desert.
+  // Star 2 has Mars, but only 1 planet, so it is skipped.
   auto found_earth = service.find_suitable_planet(PlanetType::EARTH);
   test::expect_true(found_earth.has_value());
   if (found_earth) {
-    test::expect_eq(found_earth->first, starnum_t{0});
-    test::expect_eq(found_earth->second, planetnum_t{0});
+    test::expect_eq(found_earth->first, starnum_t{1});
+    test::expect_eq(found_earth->second, planetnum_t{1});
   }
 
   auto found_desert = service.find_suitable_planet(PlanetType::DESERT);
   test::expect_true(found_desert.has_value());
   if (found_desert) {
-    test::expect_eq(found_desert->first, starnum_t{2});
-    test::expect_eq(found_desert->second, planetnum_t{1});
+    test::expect_eq(found_desert->first, starnum_t{3});
+    test::expect_eq(found_desert->second, planetnum_t{2});
   }
 
-  // Single planet star (Mars on star 1) should not be found
+  // Single planet star (Mars on star 2) should not be found
   auto found_mars = service.find_suitable_planet(PlanetType::MARS);
   test::expect_true(!found_mars.has_value());
 

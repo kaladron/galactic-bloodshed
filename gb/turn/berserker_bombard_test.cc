@@ -41,16 +41,18 @@ int main() {
 
   // Create Star system
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.pnames.emplace_back("TestPlanet");
   ss.pnames.emplace_back("WastedPlanet");
+  ss.pnames.emplace_back("OrbitPlanet");
+  ss.pnames.emplace_back("TargetPlanet");
   StarRepository star_repo(store);
   star_repo.save(ss);
 
   // Create Planet
   Planet planet{};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{10, 10};
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
@@ -78,7 +80,7 @@ int main() {
           .with_on(true)
           .with_guns(guntype_t::HEAVY, 10, ActiveBattery::PRIMARY)
           .with_destruct(100)
-          .in_planet_orbit(0, 0)
+          .in_planet_orbit(1, 1)
           .build_handle();
   Ship& ship = *ship_handle;
 
@@ -91,7 +93,7 @@ int main() {
                         .owned_by(2)
                         .with_alive(true)
                         .with_on(true)
-                        .in_planet_orbit(0, 0)
+                        .in_planet_orbit(1, 1)
                         .build_handle();
 
   int pdn_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
@@ -100,8 +102,8 @@ int main() {
   // Test 3: Planet with only wasted sectors has no valid targets
   {
     Planet peaceful_planet{};
-    peaceful_planet.star_id() = 0;
-    peaceful_planet.planet_order() = 1;
+    peaceful_planet.star_id() = 1;
+    peaceful_planet.planet_order() = 2;
     peaceful_planet.dimensions() = Coordinates{5, 5};
     planet_repo.save(peaceful_planet);
 
@@ -112,8 +114,8 @@ int main() {
     }
     smap_repo.save_map(wasted_smap);
 
-    ship.pnumorbits() = 1;
-    ship.destpnum() = 1;
+    ship.pnumorbits() = 2;
+    ship.destpnum() = 2;
     ship.notified() = 0;
     int wasted_destroyed =
         berserker_bombard(ctx.em, ship, peaceful_planet, race1);
@@ -124,8 +126,8 @@ int main() {
   // Test 4: Ship with no weapons (destruct == 0) notifies player of lack of
   // weapons
   {
-    ship.pnumorbits() = 0;
-    ship.destpnum() = 0;
+    ship.pnumorbits() = 1;
+    ship.destpnum() = 1;
     ship.notified() = 0;
     ship.destruct() = 0;
     // Disable PDN defense
@@ -141,8 +143,8 @@ int main() {
   // =========================================================================
   {
     Planet orbit_planet{};
-    orbit_planet.star_id() = 0;
-    orbit_planet.planet_order() = 2;
+    orbit_planet.star_id() = 1;
+    orbit_planet.planet_order() = 3;
     orbit_planet.dimensions() = Coordinates{5, 5};
     planet_repo.save(orbit_planet);
 
@@ -154,7 +156,7 @@ int main() {
     auto f_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 201)
                         .owned_by(1)
                         .with_alive(true)
-                        .in_planet_orbit(0, 2)
+                        .in_planet_orbit(1, 3)
                         .build_handle();
 
     test::expect_false(
@@ -164,7 +166,7 @@ int main() {
     auto c_handle = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 202)
                         .owned_by(2)
                         .with_alive(true)
-                        .in_planet_orbit(0, 2)
+                        .in_planet_orbit(1, 3)
                         .build_handle();
 
     test::expect_false(
@@ -174,7 +176,7 @@ int main() {
     auto d_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 203)
                         .owned_by(2)
                         .with_alive(false)
-                        .in_planet_orbit(0, 2)
+                        .in_planet_orbit(1, 3)
                         .build_handle();
 
     test::expect_false(
@@ -184,7 +186,7 @@ int main() {
     auto h_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 204)
                         .owned_by(2)
                         .with_alive(true)
-                        .in_planet_orbit(0, 2)
+                        .in_planet_orbit(1, 3)
                         .build_handle();
 
     test::expect_true(
@@ -238,12 +240,12 @@ int main() {
   // =========================================================================
   {
     Planet target_planet{};
-    target_planet.star_id() = 0;
-    target_planet.planet_order() = 3;
+    target_planet.star_id() = 1;
+    target_planet.planet_order() = 4;
     target_planet.dimensions() = Coordinates{5, 5};
     planet_repo.save(target_planet);
 
-    // Setup sectors on planet 3:
+    // Setup sectors on planet 4:
     // (1, 1) = owned by Race 3 (foreign, peaceful)
     // (2, 2) = owned by Race 2 (at war)
     // (3, 3) = owned by Race 1 (friendly)
@@ -268,7 +270,7 @@ int main() {
     // 3
     auto gen_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 401)
                         .owned_by(1)
-                        .in_planet_orbit(0, 3)
+                        .in_planet_orbit(1, 4)
                         .build_handle();
 
     auto target = find_bombardment_target(ctx.em, *gen_ship, race1);
@@ -279,7 +281,7 @@ int main() {
     // at (1, 1)
     auto prog_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 402)
                          .owned_by(1)
-                         .in_planet_orbit(0, 3)
+                         .in_planet_orbit(1, 4)
                          .with_special(MindData{.target = player_t{3}})
                          .build_handle();
 
@@ -295,7 +297,7 @@ int main() {
 
     auto neutral_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 403)
                             .owned_by(4)
-                            .in_planet_orbit(0, 3)
+                            .in_planet_orbit(1, 4)
                             .build_handle();
 
     auto neutral_target = find_bombardment_target(ctx.em, *neutral_ship, race4);
@@ -310,11 +312,11 @@ int main() {
   // =========================================================================
   {
     ctx.em.purge_all_telegrams();
-    const auto& star = *ctx.em.peek_star(starnum_t{0});
+    const auto& star = *ctx.em.peek_star(starnum_t{1});
     auto alert_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 501)
                           .owned_by(1)
                           .named("Nemesis")
-                          .in_planet_orbit(0, 0)
+                          .in_planet_orbit(1, 1)
                           .build_handle();
 
     BombardResult result{

@@ -33,7 +33,7 @@ void test_announce_dispatch() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Announce in inhabited star system (separator ':')
   registry.clear_notifications();

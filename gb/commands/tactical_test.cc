@@ -21,13 +21,13 @@ void setup_test_universe(TestContext& ctx) {
 
   ctx.em.mutate_race(1, [](Race& r) { r.declare_war_on(2); });
 
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.info(1).guns = 5; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).guns = 5; });
 
   // Ship 1: Player 1 Factory at planet scope (has sight, no guns)
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 1)
       .owned_by(1)
       .named("Factory1")
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .build();
 
   // Ship 2: Player 1 Destroyer at same planet coordinates, armed,
@@ -36,7 +36,7 @@ void setup_test_universe(TestContext& ctx) {
     auto s2 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 2)
                   .owned_by(1)
                   .named("Destroyer1")
-                  .in_planet_orbit(0, 0)
+                  .in_planet_orbit(1, 1)
                   .with_guns(guntype_t::MEDIUM, 4)
                   .with_crew(20, 0)
                   .with_speed(6)
@@ -54,7 +54,7 @@ void setup_test_universe(TestContext& ctx) {
                   .owned_by(2)
                   .named("EnemyCruiser")
                   .with_tech(80.0)
-                  .in_planet_orbit(0, 0)
+                  .in_planet_orbit(1, 1)
                   .with_speed(4)
                   .build_handle();
     s3->navigate().on = 1;
@@ -67,14 +67,14 @@ void setup_test_universe(TestContext& ctx) {
       .named("EnemyTank")
       .with_active(false)
       .with_radiation(50)
-      .landed_on(0, 0, {2, 3})
+      .landed_on(1, 1, {2, 3})
       .build();
 
   // Ship 5: Canister (should be excluded from tactical target rows)
   TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 5)
       .owned_by(2)
       .named("DustCanister")
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .build();
 }
 
@@ -89,8 +89,8 @@ void test_tactical_planet_scope() {
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_PLAN);
-  g_tactical.set_snum(0);
-  g_tactical.set_pnum(0);
+  g_tactical.set_snum(1);
+  g_tactical.set_pnum(1);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
@@ -128,8 +128,8 @@ void test_tactical_ship_scope() {
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_SHIP);
-  g_tactical.set_snum(0);
-  g_tactical.set_pnum(0);
+  g_tactical.set_snum(1);
+  g_tactical.set_pnum(1);
   g_tactical.set_shipno(2);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
@@ -166,8 +166,8 @@ void test_tactical_star_scope() {
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 0);
   g_tactical.set_level(ScopeLevel::LEVEL_STAR);
-  g_tactical.set_snum(0);
-  g_tactical.set_pnum(0);
+  g_tactical.set_snum(1);
+  g_tactical.set_pnum(1);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
@@ -192,8 +192,8 @@ void test_tactical_explicit_ship_and_filters() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Explicit ship + player filter: tactical #2 2
   ctx.assert_dispatch_success(g, {"tactical", "#2", "2"});

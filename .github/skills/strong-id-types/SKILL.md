@@ -18,14 +18,14 @@ notify_player(governor, player, msg);  // swapped args — should not compile
 
 ```cpp
 // Strong IDs (ID<"brand", T>):
-export using player_t    = ID<"player">;
-export using governor_t  = ID<"governor">;
-export using starnum_t   = ID<"star", std::uint32_t>;
-export using planetnum_t = ID<"planet", std::uint32_t>;
-export using shipnum_t   = ID<"ship", std::uint64_t>;
-export using commodnum_t = ID<"commod", std::int64_t>;
-export using blocknum_t  = ID<"block", int>;
-export using powernum_t  = ID<"power", int>;
+export using player_t    = ID<"player">;                // 1-based (1..MAXPLAYERS)
+export using governor_t  = ID<"governor">;              // 0-based (0..MAXGOVERNORS, 0 = Leader)
+export using starnum_t   = ID<"star", std::uint32_t>;   // 1-based (1..numstars)
+export using planetnum_t = ID<"planet", std::uint32_t>; // 1-based (1..numplanets)
+export using shipnum_t   = ID<"ship", std::uint64_t>;   // 1-based (>= 1)
+export using commodnum_t = ID<"commod", std::int64_t>;  // 1-based (>= 1)
+export using blocknum_t  = ID<"block", int>;            // 1-based (1..MAXPLAYERS)
+export using powernum_t  = ID<"power", int>;            // 1-based (1..MAXPLAYERS)
 
 // Semantic Metric Aliases:
 export using turn_t         = std::uint32_t;  ///< Full update turn counter
@@ -42,6 +42,8 @@ export using ship_size_t    = std::uint32_t;  ///< Ship physical size / volume
 export using weapon_power_t = std::uint32_t;  ///< Concentrated energy weapon / laser power setting
 export using weapon_range_t = std::uint32_t;  ///< Tactical weapon or mine proximity trigger range
 ```
+
+All top-level database entity primary keys (`player_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`) are uniformly **1-based (`>= 1`)**; `0` is never a valid entity ID (and serves as an unassigned sentinel in raw storage where `std::optional` is not yet used). Sub-entity array/grid indices (`governor_t` `0..MAXGOVERNORS` and sector `(x, y)` coordinates) are 0-based.
 
 ## Always Use the Typed Name
 

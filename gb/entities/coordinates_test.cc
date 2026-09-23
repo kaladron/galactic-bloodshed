@@ -387,16 +387,16 @@ int main() {
     ctx.setup_game_obj(g, 1, 0);
 
     // 1. Direct constructors and to_string()
-    Place p_3arg(ScopeLevel::LEVEL_SHIP, 0, 0);
+    Place p_3arg(ScopeLevel::LEVEL_SHIP, 1, 1);
     test::expect_true(p_3arg.err);
-    Place p_star_3arg(ScopeLevel::LEVEL_STAR, 0, 0);
+    Place p_star_3arg(ScopeLevel::LEVEL_STAR, 1, 1);
     test::expect_false(p_star_3arg.err);
     test::expect_eq(p_star_3arg.to_string(), "");  // no EntityManager attached
 
     // 2. Empty and ':' keep current scope; '-' resets to LEVEL_UNIV
     g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(0);
-    g.set_pnum(0);
+    g.set_snum(1);
+    g.set_pnum(1);
     Place p_empty(g, "");
     test::expect_false(p_empty.err);
     test::expect_eq(p_empty.level, ScopeLevel::LEVEL_PLAN);
@@ -432,12 +432,12 @@ int main() {
     const shipnum_t carrier_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
             .owned_by(1, 0)
-            .in_planet_orbit(0, 0, UniverseCoordinates{0.0, 0.0})
+            .in_planet_orbit(1, 1, UniverseCoordinates{0.0, 0.0})
             .build();
     const shipnum_t fighter_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
             .owned_by(1, 0)
-            .in_planet_orbit(0, 0, UniverseCoordinates{0.0, 0.0})
+            .in_planet_orbit(1, 1, UniverseCoordinates{0.0, 0.0})
             .build();
     ctx.em.mutate_ship(fighter_id,
                        [&](Ship& f) { f.dock_into_carrier(carrier_id); });
@@ -448,16 +448,16 @@ int main() {
     test::expect_false(p_from_fighter.err);
     test::expect_eq(p_from_fighter.level, ScopeLevel::LEVEL_SHIP);
     test::expect_eq(p_from_fighter.shipno, carrier_id);
-    test::expect_eq(p_from_fighter.snum, 0);
-    test::expect_eq(p_from_fighter.pnum, 0);
+    test::expect_eq(p_from_fighter.snum, 1);
+    test::expect_eq(p_from_fighter.pnum, 1);
     test::expect_eq(p_from_fighter.to_string(), std::format("#{}", carrier_id));
 
     g.set_shipno(carrier_id);
     Place p_from_carrier(g, ".");
     test::expect_false(p_from_carrier.err);
     test::expect_eq(p_from_carrier.level, ScopeLevel::LEVEL_PLAN);
-    test::expect_eq(p_from_carrier.snum, 0);
-    test::expect_eq(p_from_carrier.pnum, 0);
+    test::expect_eq(p_from_carrier.snum, 1);
+    test::expect_eq(p_from_carrier.pnum, 1);
     test::expect_eq(p_from_carrier.shipno, 0);
 
     g.set_shipno(9999);
@@ -468,7 +468,7 @@ int main() {
 
     // 5. Descending into unexplored vs explored stars & planets, and
     // non-null-terminated substr formatting on compound paths
-    ctx.em.mutate_star(0, [](Star& s) { s.explored().reset(player_t{1}); });
+    ctx.em.mutate_star(1, [](Star& s) { s.explored().reset(player_t{1}); });
     g.set_level(ScopeLevel::LEVEL_UNIV);
     g.out.str("");
     Place p_unexplored_star(g, "/Sol");
@@ -478,20 +478,20 @@ int main() {
     Place p_ignore_explore_star(g, "/Sol", true);
     test::expect_false(p_ignore_explore_star.err);
     test::expect_eq(p_ignore_explore_star.level, ScopeLevel::LEVEL_STAR);
-    test::expect_eq(p_ignore_explore_star.snum, 0);
-    ctx.em.mutate_star(0, [](Star& s) { s.explored().set(player_t{1}); });
+    test::expect_eq(p_ignore_explore_star.snum, 1);
+    ctx.em.mutate_star(1, [](Star& s) { s.explored().set(player_t{1}); });
 
     g.out.str("");
     Place p_bad_compound_star(g, "/BadStar/SomePlanet");
     test::expect_true(p_bad_compound_star.err);
     test::expect_contains(g.out.str(), "No such star BadStar.");
 
-    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.info(1).explored = 0; });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 0; });
     g.out.str("");
     Place p_unexplored_planet(g, "/Sol/Earth");
     test::expect_true(p_unexplored_planet.err);
     test::expect_contains(g.out.str(), "You have not explored Earth yet.");
-    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.info(1).explored = 1; });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
 
     g.out.str("");
     Place p_bad_planet(g, "/Sol/Pluto");
@@ -518,7 +518,7 @@ int main() {
     const shipnum_t alien_ship_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
             .owned_by(2, 0)
-            .in_star_orbit(0, UniverseCoordinates{0.0, 0.0})
+            .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
             .build();
     Place p_alien_ship(g, std::format("#{}", alien_ship_id));
     test::expect_true(p_alien_ship.err);

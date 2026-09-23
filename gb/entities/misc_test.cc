@@ -43,9 +43,9 @@ void test_telegram_star() {
     // Expected fail-fast on missing internal star
   }
 
-  // 2. Sol (Star 0) is inhabited by Player 1 and Player 2.
-  // Player 1 Gov 0 sends telegram to Star 0:
-  telegram_star(ctx.em, 0, 1, 0, "Welcome to Sol!\n");
+  // 2. Sol (Star 1) is inhabited by Player 1 and Player 2.
+  // Player 1 Gov 0 sends telegram to Star 1:
+  telegram_star(ctx.em, 1, 1, 0, "Welcome to Sol!\n");
 
   // Player 2 Gov 0 must receive the telegram
   auto p2_telegrams = ctx.db.telegram_get(2, 0);
@@ -60,7 +60,7 @@ void test_telegram_star() {
   // Activate Gov 1 on Player 1
   ctx.em.mutate_race(1, [](Race& r) { r.governor[1].active = true; });
 
-  telegram_star(ctx.em, 0, 1, 1, "Notice from Gov 1\n");
+  telegram_star(ctx.em, 1, 1, 1, "Notice from Gov 1\n");
 
   // Player 1 Gov 0 should receive this notice (sender was Gov 1)
   p1_g0_telegrams = ctx.db.telegram_get(1, 0);
@@ -72,10 +72,10 @@ void test_telegram_star() {
   test::expect_eq(p1_g1_telegrams.size(), 0);
 
   // 4. Star not inhabited by Player 2
-  ctx.em.mutate_star(2, [](Star& s) { s.clear_inhabited_by(player_t{2}); });
-  telegram_star(ctx.em, 2, 1, 0, "Antares exclusive\n");
+  ctx.em.mutate_star(3, [](Star& s) { s.clear_inhabited_by(player_t{2}); });
+  telegram_star(ctx.em, 3, 1, 0, "Antares exclusive\n");
 
-  // Player 2 should not receive any telegram for Star 2
+  // Player 2 should not receive any telegram for Star 3
   auto p2_new_telegrams = ctx.db.telegram_get(2, 0);
   // Size should still be 2 (from the two earlier Sol telegrams)
   test::expect_eq(p2_new_telegrams.size(), 2);

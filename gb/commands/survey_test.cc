@@ -26,8 +26,8 @@ void test_survey_no_args_planet_scope() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_success(g, {"survey"});
 
@@ -48,8 +48,8 @@ void test_survey_sector_range_with_header() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_success(g, {"survey", "0:2,0:2"});
 
@@ -72,7 +72,7 @@ void test_survey_star_scope() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_snum(2);
 
   ctx.assert_dispatch_success(g, {"survey"});
 
@@ -112,8 +112,8 @@ void test_client_survey_dispatch() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_success(g, {"client_survey", "0:2,0:2"});
   test::expect_false(g.out.str().empty());

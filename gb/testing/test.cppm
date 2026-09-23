@@ -469,21 +469,21 @@ public:
   void verify_universe_invariants(
       std::source_location loc = std::source_location::current());
 
-  /// Initializes a standard 2-player solar system with Sol (Star 0) and
-  /// Earth (Planet 0 on Star 0), populated by Federation (Player 1) and
+  /// Initializes a standard 2-player solar system with Sol (Star 1) and
+  /// Earth (Planet 1 on Star 1), populated by Federation (Player 1) and
   /// Klingons (Player 2) with 100 AP each. Enables fluent chaining.
   TestContext& with_standard_universe();
 
   /// Colonizes and seeds population on a planet sector, keeping planet and
   /// sectormap populations aligned for universe invariant verification.
-  TestContext& with_populated_planet(starnum_t snum = 0, planetnum_t pnum = 0,
+  TestContext& with_populated_planet(starnum_t snum = 1, planetnum_t pnum = 1,
                                      player_t owner = 1,
                                      population_t popn = 1000,
                                      Coordinates capital_coords = {0, 0});
 
   /// Constructs a fluent TestPlanetBuilder targeting this TestContext.
   TestPlanetBuilder
-  create_planet(starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
+  create_planet(starnum_t snum = 1, PlanetType type = PlanetType::EARTH,
                 Coordinates dims = {10, 10},
                 std::optional<planetnum_t> explicit_pnum = std::nullopt);
 
@@ -624,11 +624,11 @@ private:
 export class TestPlanetBuilder {
 public:
   explicit TestPlanetBuilder(
-      EntityManager& em, Database& db, starnum_t snum = 0,
+      EntityManager& em, Database& db, starnum_t snum = 1,
       PlanetType type = PlanetType::EARTH, Coordinates dims = {10, 10},
       std::optional<planetnum_t> explicit_pnum = std::nullopt);
   explicit TestPlanetBuilder(
-      TestContext& ctx, starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
+      TestContext& ctx, starnum_t snum = 1, PlanetType type = PlanetType::EARTH,
       Coordinates dims = {10, 10},
       std::optional<planetnum_t> explicit_pnum = std::nullopt);
 
@@ -684,7 +684,7 @@ public:
            std::optional<player_t> explicit_id = std::nullopt);
 
   /// Add a star to the test world.
-  /// If explicit_snum is std::nullopt, auto-assigns the next star ID (0, 1,
+  /// If explicit_snum is std::nullopt, auto-assigns the next star ID (1, 2,
   /// ...). Automatically marks explored by all races added to this builder.
   TestWorldBuilder&
   add_star(std::string_view name = "Sol", ap_t initial_ap = 100,
@@ -695,7 +695,7 @@ public:
   /// this star. Automatically initializes an empty SectorMap and marks explored
   /// by registered races.
   TestWorldBuilder&
-  add_planet(starnum_t snum = 0, PlanetType type = PlanetType::EARTH,
+  add_planet(starnum_t snum = 1, PlanetType type = PlanetType::EARTH,
              std::string_view name = "", unsigned char maxx = 10,
              unsigned char maxy = 10,
              std::optional<planetnum_t> explicit_pnum = std::nullopt);
@@ -706,7 +706,7 @@ public:
 private:
   JsonStore store_;
   int next_player_id_{1};
-  int next_star_id_{0};
+  int next_star_id_{1};
   std::vector<player_t> registered_races_;
   std::vector<starnum_t> registered_stars_;
 };

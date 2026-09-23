@@ -74,7 +74,7 @@ void test_prompt_planet_scope() {
   ctx.setup_game_obj(g, player_t{1}, governor_t{0});
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
-  g.set_pnum(0);
+  g.set_pnum(1);
 
   std::string prompt = do_prompt(g);
   test::expect_eq(prompt, " ( [50] /Sol/Earth )\n");
@@ -121,7 +121,7 @@ void test_prompt_ship_orbiting_scopes() {
     s12.number = 12;
     s12.whatorbits = ScopeLevel::LEVEL_PLAN;
     s12.storbits = 1;
-    s12.pnumorbits = 0;
+    s12.pnumorbits = 1;
     Ship ship12{s12};
     ship_repo.save(ship12);
   }
@@ -145,7 +145,7 @@ void test_prompt_ship_orbiting_scopes() {
 
   // Ship in planet
   g.set_shipno(12);
-  g.set_pnum(0);
+  g.set_pnum(1);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#12 )\n");
 }
 
@@ -205,7 +205,7 @@ void test_prompt_nested_docked_ships() {
     s25.number = 25;
     s25.whatorbits = ScopeLevel::LEVEL_PLAN;
     s25.storbits = 1;
-    s25.pnumorbits = 0;
+    s25.pnumorbits = 1;
     Ship ship25{s25};
     ship_repo.save(ship25);
 
@@ -214,7 +214,7 @@ void test_prompt_nested_docked_ships() {
     s24.whatorbits = ScopeLevel::LEVEL_SHIP;
     s24.destshipno = 25;
     s24.storbits = 1;
-    s24.pnumorbits = 0;
+    s24.pnumorbits = 1;
     Ship ship24{s24};
     ship_repo.save(ship24);
 
@@ -276,7 +276,7 @@ void test_prompt_nested_docked_ships() {
     s38.number = 38;
     s38.whatorbits = ScopeLevel::LEVEL_PLAN;
     s38.storbits = 1;
-    s38.pnumorbits = 0;
+    s38.pnumorbits = 1;
     Ship ship38{s38};
     ship_repo.save(ship38);
 
@@ -285,7 +285,7 @@ void test_prompt_nested_docked_ships() {
     s37.whatorbits = ScopeLevel::LEVEL_SHIP;
     s37.destshipno = 38;
     s37.storbits = 1;
-    s37.pnumorbits = 0;
+    s37.pnumorbits = 1;
     Ship ship37{s37};
     ship_repo.save(ship37);
 
@@ -294,7 +294,7 @@ void test_prompt_nested_docked_ships() {
     s36.whatorbits = ScopeLevel::LEVEL_SHIP;
     s36.destshipno = 37;
     s36.storbits = 1;
-    s36.pnumorbits = 0;
+    s36.pnumorbits = 1;
     Ship ship36{s36};
     ship_repo.save(ship36);
 
@@ -304,7 +304,7 @@ void test_prompt_nested_docked_ships() {
     s44.number = 44;
     s44.whatorbits = ScopeLevel::LEVEL_PLAN;
     s44.storbits = 1;
-    s44.pnumorbits = 0;
+    s44.pnumorbits = 1;
     Ship ship44{s44};
     ship_repo.save(ship44);
 
@@ -313,7 +313,7 @@ void test_prompt_nested_docked_ships() {
     s43.whatorbits = ScopeLevel::LEVEL_SHIP;
     s43.destshipno = 44;
     s43.storbits = 1;
-    s43.pnumorbits = 0;
+    s43.pnumorbits = 1;
     Ship ship43{s43};
     ship_repo.save(ship43);
 
@@ -322,7 +322,7 @@ void test_prompt_nested_docked_ships() {
     s42.whatorbits = ScopeLevel::LEVEL_SHIP;
     s42.destshipno = 43;
     s42.storbits = 1;
-    s42.pnumorbits = 0;
+    s42.pnumorbits = 1;
     Ship ship42{s42};
     ship_repo.save(ship42);
 
@@ -331,7 +331,7 @@ void test_prompt_nested_docked_ships() {
     s41.whatorbits = ScopeLevel::LEVEL_SHIP;
     s41.destshipno = 42;
     s41.storbits = 1;
-    s41.pnumorbits = 0;
+    s41.pnumorbits = 1;
     Ship ship41{s41};
     ship_repo.save(ship41);
 
@@ -340,7 +340,7 @@ void test_prompt_nested_docked_ships() {
     s40.whatorbits = ScopeLevel::LEVEL_SHIP;
     s40.destshipno = 41;
     s40.storbits = 1;
-    s40.pnumorbits = 0;
+    s40.pnumorbits = 1;
     Ship ship40{s40};
     ship_repo.save(ship40);
   }

@@ -17,24 +17,25 @@ import gb.entities;
 // Created fresh at the start of each turn; value-initialization zeros all
 // arrays.
 export struct TurnStats {
-  // Per-star population counts for each player
-  std::array<PlayerVector<population_t, MAXPLAYERS>, NUMSTARS> starpopns{};
+  // Per-star population counts for each player (1-indexed: 1..NUMSTARS)
+  std::array<PlayerVector<population_t, MAXPLAYERS>, NUMSTARS + 1> starpopns{};
 
-  // Per-star ship counts for each player
-  std::array<PlayerVector<ship_count_t, MAXPLAYERS>, NUMSTARS> starnumships{};
+  // Per-star ship counts for each player (1-indexed: 1..NUMSTARS)
+  std::array<PlayerVector<ship_count_t, MAXPLAYERS>, NUMSTARS + 1>
+      starnumships{};
 
   // --- Planetary Simulation Tracking ---
 
-  /// \brief Checks that star and planet numbers are within bounds, throwing
-  /// std::out_of_range if not.
+  /// \brief Checks that star and planet numbers are within 1-based bounds,
+  /// throwing std::out_of_range if not.
   static constexpr void check_planet_bounds(starnum_t snum, planetnum_t pnum) {
-    if (snum.value >= NUMSTARS) {
-      throw std::out_of_range(std::format("Star index {} out of range (0..{})",
-                                          snum.value, NUMSTARS - 1));
+    if (snum.value < 1 || snum.value > NUMSTARS) {
+      throw std::out_of_range(std::format("Star index {} out of range (1..{})",
+                                          snum.value, NUMSTARS));
     }
-    if (pnum.value >= MAXPLANETS) {
+    if (pnum.value < 1 || pnum.value > MAXPLANETS) {
       throw std::out_of_range(std::format(
-          "Planet index {} out of range (0..{})", pnum.value, MAXPLANETS - 1));
+          "Planet index {} out of range (1..{})", pnum.value, MAXPLANETS));
     }
   }
 
@@ -42,14 +43,14 @@ export struct TurnStats {
   [[nodiscard]] constexpr temp_delta_t temp_add(starnum_t snum,
                                                 planetnum_t pnum) const {
     check_planet_bounds(snum, pnum);
-    return planet_turn_info_[snum.value][pnum.value].temp_add;
+    return planet_turn_info_[snum.value - 1][pnum.value - 1].temp_add;
   }
 
   /// \brief Directly sets the temperature adjustment for the specified planet.
   constexpr void set_temp_add(starnum_t snum, planetnum_t pnum,
                               temp_delta_t temp) {
     check_planet_bounds(snum, pnum);
-    planet_turn_info_[snum.value][pnum.value].temp_add = temp;
+    planet_turn_info_[snum.value - 1][pnum.value - 1].temp_add = temp;
   }
 
   /// \brief Adds a delta to the temperature adjustment for the specified
@@ -57,7 +58,7 @@ export struct TurnStats {
   constexpr void add_temp(starnum_t snum, planetnum_t pnum,
                           temp_delta_t delta) {
     check_planet_bounds(snum, pnum);
-    planet_turn_info_[snum.value][pnum.value].temp_add += delta;
+    planet_turn_info_[snum.value - 1][pnum.value - 1].temp_add += delta;
   }
 
   /// \brief Returns whether slave revolts are intimidated on the specified
@@ -65,14 +66,14 @@ export struct TurnStats {
   [[nodiscard]] constexpr bool is_intimidated(starnum_t snum,
                                               planetnum_t pnum) const {
     check_planet_bounds(snum, pnum);
-    return planet_turn_info_[snum.value][pnum.value].intimidated;
+    return planet_turn_info_[snum.value - 1][pnum.value - 1].intimidated;
   }
 
   /// \brief Sets whether slave revolts are intimidated on the specified planet.
   constexpr void set_intimidated(starnum_t snum, planetnum_t pnum,
                                  bool intimidated = true) {
     check_planet_bounds(snum, pnum);
-    planet_turn_info_[snum.value][pnum.value].intimidated = intimidated;
+    planet_turn_info_[snum.value - 1][pnum.value - 1].intimidated = intimidated;
   }
 
   /// \brief Returns whether any race inhabits or explored this planet this
@@ -80,14 +81,14 @@ export struct TurnStats {
   [[nodiscard]] constexpr bool is_inhabited(starnum_t snum,
                                             planetnum_t pnum) const {
     check_planet_bounds(snum, pnum);
-    return planet_turn_info_[snum.value][pnum.value].inhabited;
+    return planet_turn_info_[snum.value - 1][pnum.value - 1].inhabited;
   }
 
   /// \brief Marks whether any race inhabits or explored this planet this turn.
   constexpr void mark_inhabited(starnum_t snum, planetnum_t pnum,
                                 bool inhabited = true) {
     check_planet_bounds(snum, pnum);
-    planet_turn_info_[snum.value][pnum.value].inhabited = inhabited;
+    planet_turn_info_[snum.value - 1][pnum.value - 1].inhabited = inhabited;
   }
 
   /// \brief Returns whether an alien colony has spawned on this planet this
@@ -95,14 +96,14 @@ export struct TurnStats {
   [[nodiscard]] constexpr bool has_alien_colony(starnum_t snum,
                                                 planetnum_t pnum) const {
     check_planet_bounds(snum, pnum);
-    return planet_turn_info_[snum.value][pnum.value].alien_colony;
+    return planet_turn_info_[snum.value - 1][pnum.value - 1].alien_colony;
   }
 
   /// \brief Sets whether an alien colony has spawned on this planet this turn.
   constexpr void set_alien_colony(starnum_t snum, planetnum_t pnum,
                                   bool spawned = true) {
     check_planet_bounds(snum, pnum);
-    planet_turn_info_[snum.value][pnum.value].alien_colony = spawned;
+    planet_turn_info_[snum.value - 1][pnum.value - 1].alien_colony = spawned;
   }
 
   // Power statistics for each player

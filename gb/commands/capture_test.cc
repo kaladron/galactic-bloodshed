@@ -30,7 +30,7 @@ void setup_test_world(TestContext& ctx) {
   });
 
   // Create sectormap with troops for attacker
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 5});
     sect.set_owner(1);
     sect.set_popn_exact(50);
@@ -38,7 +38,7 @@ void setup_test_world(TestContext& ctx) {
     sect.set_condition(SectorType::SEC_LAND);
   });
 
-  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+  ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.info(player_t{1}).numsectsowned += 1;
     planet.popn() += 50;
     planet.troops() += 100;
@@ -48,7 +48,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
       .owned_by(2, 0)
       .named("Cargo")
-      .landed_on(0, 0, Coordinates(5, 5))
+      .landed_on(1, 1, Coordinates(5, 5))
       .with_crew(10, 5)
       .with_fuel(100.0)
       .build();
@@ -62,8 +62,8 @@ void test_capture_happy_path() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Execute capture command - capture #1 50 military
   ctx.assert_dispatch_success(g, {"capture", "#1", "50", "military"});
@@ -72,7 +72,7 @@ void test_capture_happy_path() {
   const auto* captured_ship = ctx.em.peek_ship(1);
   test::expect_true(captured_ship != nullptr);
 
-  const auto* final_smap = ctx.em.peek_sectormap(0, 0);
+  const auto* final_smap = ctx.em.peek_sectormap(1, 1);
   test::expect_true(final_smap != nullptr);
   const auto& final_sector = final_smap->get(Coordinates{5, 5});
   test::expect_le(final_sector.get_troops(), 100);
@@ -90,14 +90,14 @@ void test_capture_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set AP to 0
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_rejected(g, {"capture", "#1", "50", "military"});
   test::expect_contains(g.out.str(), "action points");
@@ -119,13 +119,13 @@ void test_capture_role_and_scope_rejections() {
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection
-  ctx.em.mutate_star(0, [](Star& s) {
+  ctx.em.mutate_star(1, [](Star& s) {
     s.governor(1) = 2;  // Star governed by Gov 2
   });
   ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "not authorized");
 
@@ -140,8 +140,8 @@ void test_capture_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"capture"});
@@ -149,11 +149,11 @@ void test_capture_domain_errors() {
       g.out.str(), "Syntax: capture <ship> [<number>] [civilians|military]");
 
   // 2. Enslaved planet check
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.enslave_to(2); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "enslaved");
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.free_slaves(); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
 
   // 3. Ship not landed
   ctx.em.mutate_ship(1, [](Ship& s) { s.launch_to_orbit(); });
@@ -165,7 +165,7 @@ void test_capture_domain_errors() {
   // 4. Von Neumann machine rejection
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
                         .owned_by(2, 0)
-                        .landed_on(0, 0, Coordinates(5, 5))
+                        .landed_on(1, 1, Coordinates(5, 5))
                         .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", std::format("#{}", vn_id.value)});
@@ -173,10 +173,10 @@ void test_capture_domain_errors() {
 
   // 5. Unowned landing sector
   ctx.em.mutate_sectormap(
-      0, 0, [](SectorMap& smap) { smap.get(Coordinates{2, 2}).set_owner(0); });
+      1, 1, [](SectorMap& smap) { smap.get(Coordinates{2, 2}).set_owner(0); });
   shipnum_t unowned_sect_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                                     .owned_by(2, 0)
-                                    .landed_on(0, 0, Coordinates(2, 2))
+                                    .landed_on(1, 1, Coordinates(2, 2))
                                     .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(
@@ -203,7 +203,7 @@ void test_capture_civilian_victory() {
   // Setup empty enemy cargo ship with no crew
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                               .owned_by(2, 0)
-                              .landed_on(0, 0, Coordinates(5, 5))
+                              .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(0)
                               .build();
@@ -212,8 +212,8 @@ void test_capture_civilian_victory() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Capture with civilians
   ctx.assert_dispatch_success(
@@ -226,7 +226,7 @@ void test_capture_civilian_victory() {
   test::expect_eq(ship->owner(), 1);
   test::expect_eq(ship->popn(), 20);
 
-  const auto* smap = ctx.em.peek_sectormap(0, 0);
+  const auto* smap = ctx.em.peek_sectormap(1, 1);
   test::expect_eq(smap->get(Coordinates{5, 5}).get_popn(), 30);
 
   ctx.verify_universe_invariants();
@@ -241,7 +241,7 @@ void test_capture_default_boarders_and_allied_ship() {
 
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                               .owned_by(2, 0)
-                              .landed_on(0, 0, Coordinates(5, 5))
+                              .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(0)
                               .build();
@@ -250,8 +250,8 @@ void test_capture_default_boarders_and_allied_ship() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Capture without specifying count or type (defaults to all available civs)
   ctx.assert_dispatch_success(
@@ -272,7 +272,7 @@ void test_capture_booby_trap_robot_ship() {
   // Create booby-trapped robot cargo ship (destruct > 0, crew == 0)
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                               .owned_by(2, 0)
-                              .landed_on(0, 0, Coordinates(5, 5))
+                              .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(5)
                               .build();
@@ -281,8 +281,8 @@ void test_capture_booby_trap_robot_ship() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_success(
       g, {"capture", std::format("#{}", target_ship.value), "10", "military"});
@@ -297,7 +297,7 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
   // Strong defender ship
   shipnum_t dreadnought = TestShipBuilder(ctx.em, ShipType::STYPE_DREADNT)
                               .owned_by(2, 0)
-                              .landed_on(0, 0, Coordinates(5, 5))
+                              .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(500, 200)
                               .with_armor(100)
                               .build();
@@ -312,8 +312,8 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Send 1 civilian against dreadnought -> wiped out
   ctx.assert_dispatch_success(
@@ -331,8 +331,8 @@ void test_capture_command_matrix() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   TestCommandMatrix(ctx, "capture")
       .with_valid_argv({"capture", "#1", "5", "military"})

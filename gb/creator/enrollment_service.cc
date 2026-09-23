@@ -57,7 +57,7 @@ EnrollmentService::find_suitable_planet(PlanetType ppref,
   int numstars = univ->numstars;
 
   for (auto star : star_order) {
-    if (star < 0 || star >= numstars) continue;
+    if (star < 1 || star > numstars) continue;
     const auto* star_ptr = entity_manager_.peek_star(star);
     if (!star_ptr) continue;
     auto res = check_star(star, *star_ptr);
@@ -168,14 +168,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   // (active = false) by Race::gov in-class member initializers on `Race
   // race{};`.
   race.turn = 0;
-  race.governor[0].name = "Leader";
-  race.governor[0].password = spec.governor_password;
-  race.governor[0].deflevel = ScopeLevel::LEVEL_PLAN;
-  race.governor[0].homesystem = race.governor[0].defsystem = star;
-  race.governor[0].homeplanetnum = race.governor[0].defplanetnum = pnum;
-  race.governor[0].toggle.highlight = playernum;
-  race.governor[0].toggle.inverse = true;
-  race.governor[0].active = true;
+  race.init_leader(star, pnum, spec.governor_password);
 
   // Conditions copied from home planet
   entity_manager_.with_planet(star, pnum, [&](const Planet& p) {

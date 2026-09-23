@@ -15,11 +15,11 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 500.0; });
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.info(player_t{1}).resource = 10000;
     p.info(player_t{1}).fuel = 1000;
   });
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{5, 5}).set_owner(1);
     smap.get(Coordinates{5, 5}).set_popn_exact(100);
     smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
@@ -35,8 +35,8 @@ void test_build_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Build info query (0 AP)
   ctx.assert_dispatch_success(g, {"build", "?"}, 0);
@@ -49,7 +49,7 @@ void test_build_happy_paths() {
 
   // Verify planet resources were deducted
   ctx.em.clear_cache();
-  const auto* planet_verify = ctx.em.peek_planet(0, 0);
+  const auto* planet_verify = ctx.em.peek_planet(1, 1);
   test::expect_ne(planet_verify, nullptr);
   test::expect_lt(planet_verify->info(player_t{1}).resource,
                   10000);  // Resources should be deducted
@@ -60,8 +60,8 @@ void test_build_happy_paths() {
   test::expect_eq(ship->type(), ShipType::OTYPE_PROBE);
   test::expect_eq(ship->owner(), player_t{1});
   test::expect_eq(ship->whatorbits(), ScopeLevel::LEVEL_PLAN);
-  test::expect_eq(ship->storbits(), 0);
-  test::expect_eq(ship->pnumorbits(), 0);
+  test::expect_eq(ship->storbits(), 1);
+  test::expect_eq(ship->pnumorbits(), 1);
   test::expect_eq(ship->land_coords(), Coordinates(5, 5));
 }
 
@@ -70,14 +70,14 @@ void test_build_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
   test::expect_contains(g.out.str(), "action points");
@@ -91,8 +91,8 @@ void test_build_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Missing type argument at planet scope
   ctx.assert_dispatch_rejected(g, {"build"});
@@ -105,7 +105,7 @@ void test_build_domain_errors() {
 
   // 3. Test: Build with insufficient resources
   // Drain resources completely
-  ctx.em.mutate_planet(0, 0,
+  ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{1}).resource = 0; });
   g.out.str("");
   // Try to build probe with no resources
@@ -146,7 +146,7 @@ void test_build_from_ships() {
   // 1. Factory building with 0 args ("build") and 2 args ("build 2")
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                              .owned_by(1, 0)
-                             .landed_on(0, 0, {5, 5})
+                             .landed_on(1, 1, {5, 5})
                              .with_resource(5000)
                              .with_crew(100, 0)
                              .with_on(true)
@@ -154,8 +154,8 @@ void test_build_from_ships() {
                              .build();
 
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   g.set_shipno(factory_id);
 
   // "build" with no arguments in factory scope builds 1 ship
@@ -171,7 +171,7 @@ void test_build_from_ships() {
   // 2. Shuttle building outside in star orbit ("build H 1")
   shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                              .owned_by(1, 0)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_resource(50000)
                              .with_crew(50, 0)
                              .build();

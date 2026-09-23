@@ -104,8 +104,7 @@ public:
   bool Guest{false};     /* Player is a guest race. */
   bool Metamorph{false}; /* Player is a morph; (for printing). */
 
-  PlayerVector<int, MAXPLAYERS>
-      translate{}; /* translation mod for each player */
+  PlayerVector<int, MAXPLAYERS> translate; /* translation mod for each player */
 
   /// Increases this race's translation knowledge of `other` by `amount`,
   /// clamped to [0, 100].
@@ -141,8 +140,8 @@ public:
   }
   long morale{0}; /* race's morale level */
   PlayerVector<std::uint32_t, MAXPLAYERS>
-      points{}; /* keep track of war status against another player - for short
-                   reports */
+      points; /* keep track of war status against another player - for short
+                 reports */
 
   /// Adjusts morale and combat victory points following a combat victory over
   /// loser.
@@ -173,11 +172,11 @@ public:
     std::string password;
     bool active{false};
     ScopeLevel deflevel{ScopeLevel::LEVEL_UNIV};
-    starnum_t defsystem{0};
-    planetnum_t defplanetnum{0}; /* current default */
-    starnum_t homesystem{0};
-    planetnum_t homeplanetnum{0}; /* home place */
-    NewsValues<int> newspos{};    /* last-read news database IDs per NewsType */
+    starnum_t defsystem{};
+    planetnum_t defplanetnum{}; /* current default */
+    starnum_t homesystem{};
+    planetnum_t homeplanetnum{}; /* home place */
+    NewsValues<int> newspos{};   /* last-read news database IDs per NewsType */
     toggletype toggle{};
     money_t money{0};
     unsigned long income{0};
@@ -188,6 +187,25 @@ public:
     std::time_t login{0}; /* last login for this governor */
   };
   std::array<gov, MAXGOVERNORS + 1> governor{};
+
+  /// \brief Initializes Governor 0 (the Race Leader) with active status and
+  /// 1-based home/default coordinates.
+  void init_leader(starnum_t home_star = 1, planetnum_t home_planet = 1,
+                   std::string gov_password = "",
+                   ScopeLevel level = ScopeLevel::LEVEL_PLAN) {
+    governor[0].name = "Leader";
+    governor[0].password = std::move(gov_password);
+    governor[0].active = true;
+    governor[0].deflevel = level;
+    governor[0].homesystem = governor[0].defsystem = home_star;
+    governor[0].homeplanetnum = governor[0].defplanetnum = home_planet;
+    governor[0].toggle.highlight = Playernum;
+    governor[0].toggle.inverse = true;
+  }
+
+  Race() {
+    init_leader();
+  }
 
   /// \brief Resets turn-level economic accounting ledgers, controlled planet
   /// tallies, and player update votes at the start of a turn update.

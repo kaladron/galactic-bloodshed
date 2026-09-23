@@ -41,7 +41,7 @@ void dissolve_empire_colonies(GameObj& g, player_t playernum, bool waste) {
       continue;
     }
 
-    for (planetnum_t pnum = 0; pnum < star.numplanets(); ++pnum) {
+    for (planetnum_t pnum = 1; pnum <= star.numplanets(); ++pnum) {
       g.entity_manager.mutate_planet_and_sectors(
           star.star_id(), pnum, [&](Planet& pl, SectorMap& smap) {
             auto& pinfo = pl.info(playernum);

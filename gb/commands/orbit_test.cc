@@ -34,7 +34,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Setup: Create a test star
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "TestStar";
   ss.coordinates = {100.0, 200.0};
   ss.explored.set(player_t{1});
@@ -46,8 +46,8 @@ void setup_test_world(TestContext& ctx) {
 
   // Setup: Create a test planet
   planet_struct ps{};
-  ps.star_id = 0;
-  ps.planet_order = 0;
+  ps.star_id = 1;
+  ps.planet_order = 1;
   ps.type = PlanetType::EARTH;
   ps.info[player_t{1}].explored = true;
   Planet planet(ps);
@@ -65,7 +65,7 @@ void setup_test_world(TestContext& ctx) {
   ship1.type() = ShipType::STYPE_FIGHTER;
   ship1.name() = "TestFighter";
   ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship1.storbits() = 0;
+  ship1.storbits() = 1;
   ship1.set_coordinates(UniverseCoordinates{100.0, 200.0});
 
   Ship ship2{};
@@ -88,8 +88,8 @@ void setup_test_world(TestContext& ctx) {
   ship3.type() = ShipType::STYPE_SHUTTLE;
   ship3.name() = "OrbitShuttle";
   ship3.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-  ship3.storbits() = 0;
-  ship3.pnumorbits() = 0;
+  ship3.storbits() = 1;
+  ship3.pnumorbits() = 1;
   ship3.set_coordinates(UniverseCoordinates{105.0, 205.0});
 
   ShipRepository ships_repo(store);
@@ -110,7 +110,7 @@ void test_orbit_happy_path() {
   std::println(std::cout, "Orbit command displays ship at star");
   {
     g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(0);
+    g.set_snum(1);
 
     ctx.assert_dispatch_success(g, {"orbit"});
 
@@ -119,16 +119,32 @@ void test_orbit_happy_path() {
     test::expect_ne(saved_ship, nullptr);
     test::expect_eq(saved_ship->owner(), player_t{1});
     test::expect_eq(saved_ship->whatorbits(), ScopeLevel::LEVEL_STAR);
-    test::expect_eq(saved_ship->storbits(), 0);
+    test::expect_eq(saved_ship->storbits(), 1);
     std::println(std::cout, "    ✓ Orbit display works correctly");
+  }
+
+  // TEST: Orbit -1 flag suppresses 1-based planet #1 and ship #1
+  std::println(std::cout, "Orbit -1 flag suppresses object #1");
+  {
+    g.set_level(ScopeLevel::LEVEL_STAR);
+    g.set_snum(1);
+
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"orbit", "-1", "/TestStar"});
+    // Planet 1 (TestPlanet) and Ship #1 (f false 1;) must both be suppressed
+    // when -1 is passed (verifies DontDispNum is not decremented to 0).
+    test::expect_false(g.out.str().contains("TestPlanet"));
+    test::expect_false(g.out.str().contains("f false 1;"));
+    std::println(std::cout,
+                 "    ✓ Orbit -1 suppresses 1-based planet 1 and ship #1");
   }
 
   // TEST: Orbit display at planet level
   std::println(std::cout, "Orbit at planet level");
   {
     g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(0);
-    g.set_pnum(0);
+    g.set_snum(1);
+    g.set_pnum(1);
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit"});
@@ -142,7 +158,7 @@ void test_orbit_happy_path() {
   std::println(std::cout, "Orbit options flags (-s, -p)");
   {
     g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(0);
+    g.set_snum(1);
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit", "-s"});
@@ -181,7 +197,7 @@ void test_orbit_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Invalid option number format
   ctx.assert_dispatch_rejected(g, {"orbit", "-abc"});
@@ -204,12 +220,12 @@ void test_orbit_space_mirror_aiming() {
           .named("SolarMirror")
           .with_alive(true)
           .with_active(true)
-          .in_star_orbit(0, UniverseCoordinates{100.0, 200.0})
+          .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
           .with_aim(AimedAtData{
               .shipno = std::nullopt,
-              .snum = starnum_t{0},
+              .snum = starnum_t{1},
               .intensity = 5,
-              .pnum = planetnum_t{0},
+              .pnum = planetnum_t{1},
               .level = ScopeLevel::LEVEL_PLAN,
           })
           .build();
@@ -246,7 +262,7 @@ void test_orbit_space_mirror_aiming() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});

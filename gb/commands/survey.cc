@@ -372,7 +372,7 @@ void survey_star(GameObj& g, const Place& where) {
   g.out << std::format("locn: {}\n", star.coordinates());
 
   if (race.God) {
-    for (int i = 0; i < star.numplanets(); i++) {
+    for (planetnum_t i = 1; i <= star.numplanets(); i++) {
       g.out << std::format(" \"{}\"\n", star.get_planet_name(i));
     }
   }
@@ -388,7 +388,7 @@ void survey_star(GameObj& g, const Place& where) {
 
   g.out << std::format("temperature class (1->10) {}\n", star.temperature());
   g.out << std::format("{} planets are ", star.numplanets());
-  for (int i = 0; i < star.numplanets(); i++) {
+  for (planetnum_t i = 1; i <= star.numplanets(); i++) {
     g.out << std::format("{} ", star.get_planet_name(i));
   }
   g.out << "\n";

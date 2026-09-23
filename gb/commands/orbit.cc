@@ -67,7 +67,6 @@ bool orbit(const command_t& argv, GameObj& g) {
                                    std::string_view(argv[flag]).substr(1));
               return false;
             }
-            if (DontDispNum > 0) DontDispNum--; /* make a '1' into a '0' */
             break;
           }
         }
@@ -140,7 +139,7 @@ bool orbit(const command_t& argv, GameObj& g) {
           DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars);
       system_map_text += star;
 
-      for (planetnum_t i = 0; i < star_ptr->numplanets(); i++)
+      for (planetnum_t i = 1; i <= star_ptr->numplanets(); i++)
         if (DontDispNum != i) {
           const auto* p = g.entity_manager.peek_planet(where->snum, i);
           if (!p) continue;

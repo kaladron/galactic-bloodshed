@@ -25,6 +25,10 @@ void TestShipBuilder::init(ShipType type,
   ship_.tech = 100.0;
   ship_.fuel = ship_.max_fuel;
   ship_.destruct = ship_.max_destruct;
+  ship_.storbits = 1;
+  ship_.pnumorbits = 1;
+  ship_.deststar = 1;
+  ship_.destpnum = 1;
 
   Ship temp_ship{ship_};
   ship_.mass = temp_ship.local_mass(1.0);
@@ -401,8 +405,8 @@ TestWorldBuilder::add_star(std::string_view name, ap_t initial_ap,
   UniverseRepository univ_repo(store_);
   auto u = univ_repo.find(1);
   if (u) {
-    if (snum.value + 1 > u->numstars) {
-      u->numstars = snum.value + 1;
+    if (snum.value > u->numstars) {
+      u->numstars = snum.value;
       univ_repo.save(*u);
     }
   }
@@ -412,14 +416,14 @@ TestWorldBuilder::add_star(std::string_view name, ap_t initial_ap,
 TestWorldBuilder& TestWorldBuilder::add_planet(
     starnum_t snum, PlanetType type, std::string_view name, unsigned char maxx,
     unsigned char maxy, std::optional<planetnum_t> explicit_pnum) {
-  planetnum_t pnum{0};
+  planetnum_t pnum{1};
   if (explicit_pnum) {
     pnum = *explicit_pnum;
   } else {
     StarRepository stars(store_);
     auto star_opt = stars.find(snum);
     pnum = planetnum_t{static_cast<planetnum_t::value_type>(
-        star_opt ? star_opt->numplanets() : 0)};
+        star_opt ? star_opt->numplanets() + 1 : 1)};
   }
   Planet p(type, Coordinates{maxx, maxy});
   p.star_id() = snum;
@@ -431,9 +435,8 @@ TestWorldBuilder& TestWorldBuilder::add_planet(
     p.info(pid).fuel = 1000;
     p.info(pid).resource = 1000;
   }
-  PlanetRepository(store_).save(p);
 
-  // Keep star planet names synchronized
+  // Keep star planet names synchronized before saving child planet
   StarRepository stars(store_);
   auto star_opt = stars.find(snum);
   if (star_opt) {
@@ -442,6 +445,8 @@ TestWorldBuilder& TestWorldBuilder::add_planet(
     star_opt->set_planet_name(pnum, planet_name);
     stars.save(*star_opt);
   }
+
+  PlanetRepository(store_).save(p);
 
   // Save initial SectorMap with coordinate indexing
   SectorMap smap(p);
@@ -472,9 +477,9 @@ TestPlanetBuilder::TestPlanetBuilder(EntityManager& em, Database& db,
           try {
             const auto* star = em.peek_star(snum);
             p.planet_order() = planetnum_t{
-                static_cast<planetnum_t::value_type>(star->numplanets())};
+                static_cast<planetnum_t::value_type>(star->numplanets() + 1)};
           } catch (const EntityNotFoundError&) {
-            p.planet_order() = planetnum_t{0};
+            p.planet_order() = planetnum_t{1};
           }
         }
         return p;
@@ -585,16 +590,16 @@ TestPlanetBuilder::with_colony(player_t owner, population_t popn,
 }
 
 planetnum_t TestPlanetBuilder::build() {
-  planetnum_t pnum{0};
+  planetnum_t pnum{1};
   if (explicit_pnum_) {
     pnum = *explicit_pnum_;
   } else {
     try {
       const auto* star = em_.peek_star(snum_);
-      pnum =
-          planetnum_t{static_cast<planetnum_t::value_type>(star->numplanets())};
+      pnum = planetnum_t{
+          static_cast<planetnum_t::value_type>(star->numplanets() + 1)};
     } catch (const EntityNotFoundError&) {
-      pnum = planetnum_t{0};
+      pnum = planetnum_t{1};
     }
   }
   planet_.planet_order() = pnum;
@@ -636,10 +641,6 @@ planetnum_t TestPlanetBuilder::build() {
     }
   }
 
-  JsonStore store(db_);
-  PlanetRepository(store).save(planet_);
-  SectorRepository(store).save_map(smap_);
-
   try {
     em_.mutate_star(snum_, [&](Star& s) {
       std::string planet_name =
@@ -649,6 +650,10 @@ planetnum_t TestPlanetBuilder::build() {
   } catch (const EntityNotFoundError&) {
     // Star not present in EntityManager
   }
+
+  JsonStore store(db_);
+  PlanetRepository(store).save(planet_);
+  SectorRepository(store).save_map(smap_);
 
   em_.clear_cache();
   return pnum;

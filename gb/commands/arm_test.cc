@@ -19,13 +19,13 @@ void test_arm_and_disarm() {
 
   ctx.em.mutate_race(1, [](Race& r) { r.fighters = 100; });
 
-  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+  ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.info(player_t{1}).numsectsowned += 1;
     planet.info(player_t{1}).destruct = 1000;
     planet.popn() += 1000;
   });
 
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 5});
     sect.set_owner(1);
     sect.set_popn_exact(1000);
@@ -41,7 +41,7 @@ void test_arm_and_disarm() {
 
   // 1. Scope rejection at UNIV scope
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"arm", "5,5", "100"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -49,7 +49,7 @@ void test_arm_and_disarm() {
 
   // 2. Scope rejection at STAR scope
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"disarm", "5,5", "50"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -59,8 +59,8 @@ void test_arm_and_disarm() {
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"arm", "5,5", "100"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -76,14 +76,14 @@ void test_arm_and_disarm() {
 
   // Verify changes persisted
   ctx.em.clear_cache();
-  const auto* saved_smap = ctx.em.peek_sectormap(0, 0);
+  const auto* saved_smap = ctx.em.peek_sectormap(1, 1);
   test::expect_ne(saved_smap, nullptr);
   const auto& saved_sect = saved_smap->get(Coordinates{5, 5});
 
   test::expect_eq(saved_sect.get_troops(), 100);
   test::expect_eq(saved_sect.get_popn(), 900);
 
-  const auto* saved_planet = ctx.em.peek_planet(0, 0);
+  const auto* saved_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(saved_planet, nullptr);
   test::expect_eq(saved_planet->troops(), 100);
 
@@ -94,13 +94,13 @@ void test_arm_and_disarm() {
   // 5. Test disarm command success
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   ctx.assert_dispatch_success(g, {"disarm", "5,5", "50"});
   std::println(std::cout, "    ✓ Disarm command succeeded");
 
   ctx.em.clear_cache();
-  saved_smap = ctx.em.peek_sectormap(0, 0);
+  saved_smap = ctx.em.peek_sectormap(1, 1);
   const auto& saved_sect2 = saved_smap->get(Coordinates{5, 5});
   test::expect_eq(saved_sect2.get_troops(), 50);
   test::expect_eq(saved_sect2.get_popn(), 950);

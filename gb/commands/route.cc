@@ -44,7 +44,8 @@ void append_route_row(tabulate::Table& table, EntityManager& em, int route_num,
   const auto* dest_star = em.peek_star(rt.dest_star);
   const std::string star_name = dest_star ? dest_star->get_name() : "???";
   const std::string planet_name =
-      (dest_star && rt.dest_planet < dest_star->numplanets())
+      (dest_star && rt.dest_planet >= 1 &&
+       rt.dest_planet <= dest_star->numplanets())
           ? dest_star->get_planet_name(rt.dest_planet)
           : "???";
 

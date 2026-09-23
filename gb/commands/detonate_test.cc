@@ -18,7 +18,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
       .owned_by(1, 0)
       .named("Mine")
-      .in_star_orbit(0, SystemCoordinates{100.0, 100.0})
+      .in_star_orbit(1, SystemCoordinates{100.0, 100.0})
       .with_destruct(10)
       .with_on(true)
       .with_size(10)
@@ -29,7 +29,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
       .owned_by(2, 0)
       .named("Target")
-      .in_star_orbit(0, SystemCoordinates{105.0, 105.0})
+      .in_star_orbit(1, SystemCoordinates{105.0, 105.0})
       .with_armor(10)
       .with_crew(10, 0)
       .with_size(20)
@@ -46,7 +46,7 @@ void test_detonate_happy_path() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // Execute detonate command: detonate #1
   ctx.assert_dispatch_success(g, {"detonate", "#1"});
@@ -85,7 +85,7 @@ void test_detonate_role_rejection() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 3, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -101,7 +101,7 @@ void test_detonate_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"detonate"});

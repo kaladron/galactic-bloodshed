@@ -31,7 +31,7 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
     return;
   };
 
-  for (planetnum_t i = 0; i < star.numplanets(); i++) {
+  for (planetnum_t i = 1; i <= star.numplanets(); i++) {
     const auto* pl = g.entity_manager.peek_planet(snum, i);
     if (!pl || !pl->info(Playernum).explored ||
         !pl->info(Playernum).numsectsowned) {

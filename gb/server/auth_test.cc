@@ -139,8 +139,8 @@ void test_check_connect_success_and_clamping() {
   race.governor[0].name = "Gov0";
   race.governor[0].password = "govword";
   race.governor[0].deflevel = ScopeLevel::LEVEL_PLAN;
-  race.governor[0].defsystem = 999;     // Out of bounds -> should clamp to 0
-  race.governor[0].defplanetnum = 999;  // Out of bounds -> should clamp to 0
+  race.governor[0].defsystem = 999;     // Out of bounds -> should clamp to 1
+  race.governor[0].defplanetnum = 999;  // Out of bounds -> should clamp to 1
   race.governor[0].login = 0;
   {
     JsonStore store(ctx.db);
@@ -149,7 +149,7 @@ void test_check_connect_success_and_clamping() {
 
     StarRepository star_repo(store);
     star_struct sdata{};
-    sdata.star_id = 0;
+    sdata.star_id = 1;
     sdata.name = "FirstStar";
     sdata.pnames = {"FirstPlanet"};
     Star star{sdata};
@@ -173,8 +173,8 @@ void test_check_connect_success_and_clamping() {
   test::expect_true(session->connected());
   test::expect_eq(session->player(), player_t{1});
   test::expect_eq(session->governor(), governor_t{0});
-  test::expect_eq(session->snum(), starnum_t{0});    // Clamped from 999
-  test::expect_eq(session->pnum(), planetnum_t{0});  // Clamped from 999
+  test::expect_eq(session->snum(), starnum_t{1});    // Clamped from 999
+  test::expect_eq(session->pnum(), planetnum_t{1});  // Clamped from 999
 
   // Verify race login time updated in database
   const auto* updated_race = ctx.em.peek_race(1);

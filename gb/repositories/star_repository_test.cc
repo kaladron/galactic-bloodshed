@@ -97,7 +97,8 @@ int main() {
 
   // Verify planet names
   for (int i = 0; i < 8; i++) {
-    test::expect_eq(retrieved->get_planet_name(i), test_star_data.pnames[i]);
+    test::expect_eq(retrieved->get_planet_name(i + 1),
+                    test_star_data.pnames[i]);
   }
   std::println(std::cout, "  ✓ All fields match original");
 

@@ -59,8 +59,8 @@ void setup_test_universe(TestContext& ctx) {
   race.governor[0].name = "Gov0";
   race.governor[0].password = "govword";
   race.governor[0].deflevel = ScopeLevel::LEVEL_UNIV;
-  race.governor[0].defsystem = 0;
-  race.governor[0].defplanetnum = 0;
+  race.governor[0].defsystem = 1;
+  race.governor[0].defplanetnum = 1;
 
   JsonStore store(ctx.db);
   RaceRepository races(store);
@@ -68,7 +68,7 @@ void setup_test_universe(TestContext& ctx) {
 
   StarRepository star_repo(store);
   star_struct sdata{};
-  sdata.star_id = 0;
+  sdata.star_id = 1;
   sdata.name = "Sol";
   Star star{sdata};
   star_repo.save(star);

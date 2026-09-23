@@ -28,7 +28,7 @@ void setup_test_world(TestContext& ctx) {
     r.translate[player_t{1}] = 50;
   });
 
-  ctx.em.mutate_star(0, [](Star& s) {
+  ctx.em.mutate_star(1, [](Star& s) {
     s.AP(1) = 10;
     s.inhabited().set(player_t{1});
     s.inhabited().set(player_t{2});
@@ -55,7 +55,7 @@ void test_send_message_and_translation_cap() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.set_god(false);
 
   // Regular message: send 2 Hello World (costs 1 AP, increments translation by
@@ -83,7 +83,7 @@ void test_send_to_governor_and_self() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.set_god(false);
 
   // Send to specific governor 0 of player 2 (costs 1 AP)
@@ -106,7 +106,7 @@ void test_send_block_star_and_post() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.set_god(false);
 
   // Send to alliance block 1
@@ -140,7 +140,7 @@ void test_send_validation_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.set_god(false);
 
   // Missing message arguments for block, star, and governor forms
@@ -176,7 +176,7 @@ void test_send_validation_errors() {
   test::expect_contains(g.out.str(), "No such star.");
 
   // Insufficient AP at star scope
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"send", "2", "No", "AP"});
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");

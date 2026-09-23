@@ -17,7 +17,7 @@ void setup_test_world(TestContext& ctx) {
 
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(1)
-      .in_star_orbit(starnum_t{0})
+      .in_star_orbit(starnum_t{1})
       .build();
 
   // Seed / set a custom ShipExam description in SQLite
@@ -35,7 +35,7 @@ void test_examine_dispatch() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Min args check: examine without arguments
   ctx.assert_dispatch_rejected(g, {"examine"});

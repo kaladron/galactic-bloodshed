@@ -18,7 +18,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
       .owned_by(1, 0)
       .named("Battleship")
-      .in_star_orbit(0, SystemCoordinates{100.0, 200.0})
+      .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
       .with_guns(guntype_t::LIGHT, 10)
       .with_destruct(100)
       .with_crew(10, 10)
@@ -29,7 +29,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
       .owned_by(2, 0)
       .named("Target")
-      .in_star_orbit(0, SystemCoordinates{110.0, 210.0})
+      .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
       .with_armor(10)
       .with_crew(10, 0)
       .build();
@@ -38,7 +38,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
       .owned_by(1, 0)
       .named("CEWBattleship")
-      .in_star_orbit(0, SystemCoordinates{100.0, 200.0})
+      .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
       .with_cew(20, 1000)
       .with_crew(10, 0)
       .with_fuel(1000.0)
@@ -53,7 +53,7 @@ void test_fire_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Execute fire command: Ship #1 attacks Ship #2 with strength 10
   ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "10"}, 1);
@@ -107,13 +107,13 @@ void test_fire_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
   test::expect_contains(g.out.str(), "action points");
@@ -134,7 +134,7 @@ void test_fire_role_and_guest_rejections() {
 
   ctx.setup_game_obj(g, 3, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Guest race rejection for fire
   ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
@@ -155,7 +155,7 @@ void test_fire_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"fire", "#1"});
@@ -182,7 +182,7 @@ void test_protecting_ship_retaliation() {
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
       .owned_by(2, 0)
       .named("Escort")
-      .in_star_orbit(0, SystemCoordinates{110.0, 210.0})
+      .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
       .with_guns(guntype_t::LIGHT, 1)
       .with_destruct(100)
       .with_crew(10, 10)
@@ -199,7 +199,7 @@ void test_protecting_ship_retaliation() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Live protecting ship retaliates when target takes damage
   ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "10"}, 1);
@@ -238,19 +238,19 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
-  const ap_t ap_before = ctx.em.peek_star(0)->AP(1);
+  const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
 
   // 1. Bad target ship number
   ctx.assert_dispatch_rejected(g, {"fire", "#1", "invalid"});
   test::expect_contains(g.out.str(), "Bad ship number.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
 
   // 2. CEW errors do NOT deduct Star AP
   ctx.assert_dispatch_rejected(g, {"cew", "#1", "#2"});
   test::expect_contains(g.out.str(), "not equipped to fire CEWs");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
 
   ctx.em.mutate_ship(3, [](Ship& s) { s.mounted() = false; });
   ctx.assert_dispatch_rejected(g, {"cew", "#3", "#2"});
@@ -265,10 +265,10 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
 
   // 3. CEW from/to landed ship rejected
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_pnum(0);
+  g.set_pnum(1);
   ctx.em.mutate_ship(3, [](Ship& s) {
     s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s.pnumorbits() = 0;
+    s.pnumorbits() = 1;
     s.land_on_planet();
     s.add_fuel(100.0);
   });
@@ -278,7 +278,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
   // 4. AFV and surface combat geometry checks
   const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                           .owned_by(1, 0)
-                          .in_planet_orbit(0, 0)
+                          .in_planet_orbit(1, 1)
                           .with_guns(guntype_t::LIGHT, 5)
                           .with_destruct(20)
                           .with_crew(5, 5)
@@ -298,7 +298,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
   // Land target #2 on non-adjacent sector (5, 5) -> rejected
   ctx.em.mutate_ship(2, [](Ship& s) {
     s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s.pnumorbits() = 0;
+    s.pnumorbits() = 1;
     s.land_on_planet();
     s.set_land_coords({5, 5});
   });

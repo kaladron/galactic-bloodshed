@@ -31,6 +31,8 @@ Race createTestRace(player_t playernum = player_t{1}) {
 
 Planet createTestPlanet(Coordinates dimensions = Coordinates{10, 10}) {
   Planet planet(PlanetType::EARTH, dimensions);
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   planet.free_slaves();
   planet.toxic() = 0;
   planet.rtemp() = 50;
@@ -47,7 +49,7 @@ Planet createTestPlanet(Coordinates dimensions = Coordinates{10, 10}) {
 Star createTestStar() {
   star_struct star_data{};
   star_data.name = "TestStar";
-  star_data.star_id = 0;
+  star_data.star_id = 1;
   star_data.stability = 50;
   star_data.nova_stage = 0;
   star_data.temperature = 100;
@@ -75,7 +77,7 @@ void test_moveship_onplanet() {
 
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
                          .owned_by(1)
-                         .landed_on(star.star_id(), 0, {5, 5})
+                         .landed_on(star.star_id(), 1, {5, 5})
                          .with_special(TerraformData{.index = 0})
                          .with_alive(true)
                          .with_active(true)
@@ -102,7 +104,7 @@ void test_moveship_onplanet() {
   // Test non-terraform ship error
   auto non_terra_handle = TestShipBuilder(em, ShipType::OTYPE_CANIST)
                               .owned_by(1)
-                              .landed_on(star.star_id(), 0, {5, 5})
+                              .landed_on(star.star_id(), 1, {5, 5})
                               .with_special(WasteData{})
                               .with_alive(true)
                               .with_active(true)
@@ -121,7 +123,7 @@ void test_moveship_onplanet() {
   // Test stopped ground ship ('s')
   auto stopped_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
                             .owned_by(1)
-                            .landed_on(star.star_id(), 0, {5, 5})
+                            .landed_on(star.star_id(), 1, {5, 5})
                             .with_special(TerraformData{.index = 0})
                             .with_alive(true)
                             .with_active(true)
@@ -140,7 +142,7 @@ void test_moveship_onplanet() {
   // Test polar bouncing at south pole (y >= Maxy -> bounce y -= 2, flip order)
   auto bounce_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
                            .owned_by(1)
-                           .landed_on(star.star_id(), 0, {5, 9})
+                           .landed_on(star.star_id(), 1, {5, 9})
                            .with_special(TerraformData{.index = 0})
                            .with_alive(true)
                            .with_active(true)
@@ -156,7 +158,7 @@ void test_moveship_onplanet() {
   // Test out-of-orders notification on multi-step orders
   auto ooo_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
                         .owned_by(1)
-                        .landed_on(star.star_id(), 0, {5, 5})
+                        .landed_on(star.star_id(), 1, {5, 5})
                         .with_special(TerraformData{.index = 0})
                         .with_alive(true)
                         .with_active(true)
@@ -170,7 +172,7 @@ void test_moveship_onplanet() {
   // '2')
   auto nb_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
                        .owned_by(1)
-                       .landed_on(star.star_id(), 0, {5, 0})
+                       .landed_on(star.star_id(), 1, {5, 0})
                        .with_special(TerraformData{.index = 0})
                        .with_alive(true)
                        .with_active(true)
@@ -185,7 +187,7 @@ void test_moveship_onplanet() {
   // Test cycling order ('c') resetting index
   auto cycle_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
                           .owned_by(1)
-                          .landed_on(star.star_id(), 0, {5, 5})
+                          .landed_on(star.star_id(), 1, {5, 5})
                           .with_special(TerraformData{.index = 1})
                           .with_alive(true)
                           .with_active(true)
@@ -201,7 +203,7 @@ void test_moveship_onplanet() {
   // Test cycling orders with empty cycle ("c") turning off ship
   auto empty_cycle_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
                                 .owned_by(1)
-                                .landed_on(star.star_id(), 0, {5, 5})
+                                .landed_on(star.star_id(), 1, {5, 5})
                                 .with_special(TerraformData{.index = 0})
                                 .with_alive(true)
                                 .with_active(true)
@@ -343,8 +345,8 @@ void test_execute_terraforming() {
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
                          .owned_by(1)
                          .with_fuel(100.0)
-                         .landed_on(star.star_id(), 0, {2, 2})
-                         .targeting_planet(star.star_id(), 0)
+                         .landed_on(star.star_id(), 1, {2, 2})
+                         .targeting_planet(star.star_id(), 1)
                          .with_crew(100, 0)
                          .with_max_crew(100)
                          .with_special(TerraformData{.index = 0})
@@ -422,8 +424,8 @@ void test_execute_plowing() {
                          .owned_by(1)
                          .with_fuel(50.0)
                          .with_max_fuel(100.0)
-                         .landed_on(star.star_id(), 0, {1, 1})
-                         .targeting_planet(star.star_id(), 0)
+                         .landed_on(star.star_id(), 1, {1, 1})
+                         .targeting_planet(star.star_id(), 1)
                          .with_crew(100, 0)
                          .with_max_crew(100)
                          .with_special(TerraformData{.index = 0})
@@ -528,8 +530,8 @@ void test_process_plow_turn() {
                          .owned_by(1)
                          .with_fuel(50.0)
                          .with_max_fuel(100.0)
-                         .landed_on(0, 0, {1, 1})
-                         .targeting_planet(0, 0)
+                         .landed_on(1, 1, {1, 1})
+                         .targeting_planet(1, 1)
                          .with_crew(100, 0)
                          .with_max_crew(100)
                          .with_special(TerraformData{.index = 0})
@@ -578,8 +580,8 @@ void test_upgrade_sector_dome() {
 
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_DOME)
                          .owned_by(1)
-                         .landed_on(0, 0, {2, 2})
-                         .targeting_planet(0, 0)
+                         .landed_on(1, 1, {2, 2})
+                         .targeting_planet(1, 1)
                          .with_resource(50)
                          .with_crew(100, 0)
                          .with_max_crew(100)
@@ -656,8 +658,8 @@ void test_process_dome_turn() {
 
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_DOME)
                          .owned_by(1)
-                         .landed_on(0, 0, {2, 2})
-                         .targeting_planet(0, 0)
+                         .landed_on(1, 1, {2, 2})
+                         .targeting_planet(1, 1)
                          .with_resource(50)
                          .with_crew(100, 0)
                          .with_max_crew(100)
@@ -720,8 +722,8 @@ void test_strip_mine_quarry() {
                          .owned_by(1)
                          .with_fuel(50.0)
                          .with_max_fuel(100.0)
-                         .landed_on(0, 0, {3, 3})
-                         .targeting_planet(0, 0)
+                         .landed_on(1, 1, {3, 3})
+                         .targeting_planet(1, 1)
                          .with_crew(100, 0)
                          .with_max_crew(100)
                          .with_alive(true)
@@ -802,8 +804,8 @@ void test_process_quarry_turn() {
                          .owned_by(1)
                          .with_fuel(50.0)
                          .with_max_fuel(100.0)
-                         .landed_on(0, 0, {3, 3})
-                         .targeting_planet(0, 0)
+                         .landed_on(1, 1, {3, 3})
+                         .targeting_planet(1, 1)
                          .with_crew(100, 0)
                          .with_max_crew(100)
                          .with_alive(true)
@@ -860,8 +862,8 @@ void test_process_weapon_plant_turn() {
                          .owned_by(1)
                          .with_fuel(50.0)
                          .with_max_fuel(100.0)
-                         .landed_on(0, 0, {0, 0})
-                         .targeting_planet(0, 0)
+                         .landed_on(1, 1, {0, 0})
+                         .targeting_planet(1, 1)
                          .with_resource(50)
                          .with_max_resource(100)
                          .with_crew(100, 0)
@@ -926,20 +928,20 @@ void test_execute_berserker_bombardment() {
 
   // Star system with 2 planets
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.pnames.emplace_back("Planet0");
   ss.pnames.emplace_back("Planet1");
   StarRepository star_repo(store);
   star_repo.save(ss);
 
-  // Planet 0
+  // Planet 1
   Planet planet = createTestPlanet();
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
-  // SectorMap on Planet 0 with enemy population
+  // SectorMap on Planet 1 with enemy population
   {
     SectorMap smap(planet);
     smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
@@ -956,8 +958,8 @@ void test_execute_berserker_bombardment() {
           .with_destruct(100)
           .with_special(
               MindData{.progenitor = player_t{1}, .who_killed = player_t{2}})
-          .in_planet_orbit(0, 0)
-          .targeting_planet(0, 0)
+          .in_planet_orbit(1, 1)
+          .targeting_planet(1, 1)
           .with_active(true)
           .with_alive(true)
           .with_on(true)
@@ -985,7 +987,7 @@ void test_execute_berserker_bombardment() {
                       });
   test::expect_false(execute_berserker_bombardment(em, ship, planet));
   test::expect_eq(ship.whatdest(), ScopeLevel::LEVEL_PLAN);
-  test::expect_eq(ship.deststar(), 0);
+  test::expect_eq(ship.deststar(), 1);
 }
 
 void test_refuel_gasgiant_orbiters() {
@@ -1000,8 +1002,8 @@ void test_refuel_gasgiant_orbiters() {
                            .owned_by(1)
                            .with_fuel(50.0)
                            .with_max_fuel(500.0)
-                           .in_planet_orbit(0, 0)
-                           .targeting_planet(0, 0)
+                           .in_planet_orbit(1, 1)
+                           .targeting_planet(1, 1)
                            .with_active(true)
                            .with_alive(true)
                            .with_on(true)
@@ -1065,7 +1067,7 @@ void test_process_planetary_ships() {
   Planet planet = createTestPlanet();
   planet.type() = PlanetType::GASGIANT;
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
 
   SectorMap smap(planet);
   smap.get(Coordinates{1, 1}).set_condition(SectorType::SEC_WASTED);
@@ -1077,7 +1079,7 @@ void test_process_planetary_ships() {
   // 1. Dead plow ship (should be skipped)
   TestShipBuilder(em, ShipType::OTYPE_PLOW)
       .owned_by(1)
-      .landed_on(star.star_id(), 0, {0, 0})
+      .landed_on(star.star_id(), 1, {0, 0})
       .with_active(true)
       .with_alive(false)
       .with_on(true)
@@ -1088,8 +1090,8 @@ void test_process_planetary_ships() {
                          .owned_by(1)
                          .with_fuel(50.0)
                          .with_max_fuel(100.0)
-                         .landed_on(star.star_id(), 0, {1, 1})
-                         .targeting_planet(star.star_id(), 0)
+                         .landed_on(star.star_id(), 1, {1, 1})
+                         .targeting_planet(star.star_id(), 1)
                          .with_crew(100, 0)
                          .with_max_crew(100)
                          .with_special(TerraformData{.index = 0})
@@ -1104,8 +1106,8 @@ void test_process_planetary_ships() {
                            .owned_by(1)
                            .with_fuel(50.0)
                            .with_max_fuel(500.0)
-                           .in_planet_orbit(star.star_id(), 0)
-                           .targeting_planet(star.star_id(), 0)
+                           .in_planet_orbit(star.star_id(), 1)
+                           .targeting_planet(star.star_id(), 1)
                            .with_alive(true)
                            .with_active(true)
                            .with_on(true)
@@ -1179,7 +1181,7 @@ void test_doplanet_full_cycle() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -1226,7 +1228,7 @@ void test_exploration_island_discovery() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.expltimer() = 0;  // Trigger exploration check this cycle
   PlanetRepository planets(store);
   planets.save(planet);
@@ -1290,7 +1292,7 @@ void test_64bit_production_and_stockpiles() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.info(player_t{1}).numsectsowned = 5;
   planet.info(player_t{1}).resource = 100'000;
   planet.info(player_t{1}).fuel = 200'000;
@@ -1347,8 +1349,8 @@ void test_turnstats_playervector_accumulation() {
   test::expect_eq(stats.prod_destruct[player_t{1}], 0);
   test::expect_eq(stats.prod_crystals[player_t{1}], 0);
   test::expect_eq(stats.Power[player_t{1}].popn, 0U);
-  test::expect_eq(stats.starpopns[0][player_t{1}], 0);
-  test::expect_eq(stats.starnumships[0][player_t{1}], 0U);
+  test::expect_eq(stats.starpopns[1][player_t{1}], 0);
+  test::expect_eq(stats.starnumships[1][player_t{1}], 0U);
   test::expect_eq(stats.total_mob_points[player_t{1}], 0U);
 
   // Mutate player stats using strongly-typed player_t keys
@@ -1394,7 +1396,7 @@ void test_process_planet_climate() {
 void test_process_toxic_environmental_damage() {
   Planet planet(PlanetType::EARTH, Coordinates{10, 10});
   planet.star_id() = 1;
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
 
   SectorMap smap(planet);
   for (int y = 0; y < planet.dimensions().y; ++y) {
@@ -1426,7 +1428,7 @@ void test_process_toxic_environmental_damage() {
 void test_process_supernova_sector_devastation() {
   Planet planet(PlanetType::EARTH, Coordinates{10, 10});
   planet.star_id() = 1;
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
 
   SectorMap smap(planet);
   for (int y = 0; y < planet.dimensions().y; ++y) {
@@ -1480,7 +1482,7 @@ void test_build_automated_waste_can() {
   Star star = createTestStar();
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.toxic() = 80;
 
   SectorMap smap(planet);
@@ -1791,7 +1793,7 @@ void test_format_recovery_report() {
       .star_id = starnum_t{1},
       .star_name = "Sol",
       .planet_name = "Earth",
-      .planet_num = planetnum_t{0},
+      .planet_num = planetnum_t{1},
       .recipients = {player_t{1}, player_t{2}},
       .allocated_shares =
           {
@@ -1999,7 +2001,7 @@ void test_process_island_exploration() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.expltimer() = 3;
   PlanetRepository planets(store);
   planets.save(planet);
@@ -2081,7 +2083,7 @@ void test_process_enslavement_and_revolts() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -2242,7 +2244,7 @@ void test_execute_slave_revolt() {
   {
     Planet planet = createTestPlanet(Coordinates{5, 5});
     planet.star_id() = star.star_id();
-    planet.planet_order() = 0;
+    planet.planet_order() = 1;
     planet.enslave_to(1);
     planet.popn() = 4000;
     planet.info(player_t{1}).numsectsowned = 5;
@@ -2279,7 +2281,7 @@ void test_execute_slave_revolt() {
   {
     Planet planet = createTestPlanet(Coordinates{5, 5});
     planet.star_id() = star.star_id();
-    planet.planet_order() = 0;
+    planet.planet_order() = 1;
     planet.enslave_to(1);
     planet.popn() = 0;
     planet.info(player_t{1}).numsectsowned = 25;
@@ -2322,7 +2324,7 @@ void test_recalculate_census() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{2, 2};
   planet.toxic() = 10;
   PlanetRepository planets(store);
@@ -2443,7 +2445,7 @@ void test_process_planet_economy() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{2, 2};
   planet.toxic() = 5;
   planet.popn() = 200;
@@ -2507,7 +2509,7 @@ void test_process_planet_economy_automated_waste_can() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{2, 2};
   planet.toxic() = 50;
   planet.popn() = 100;
@@ -2604,7 +2606,7 @@ void test_process_planet_production() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{2, 2};
   PlanetRepository planets(store);
   planets.save(planet);
@@ -2643,7 +2645,7 @@ void test_send_planet_turn_telegrams() {
 
   Planet planet = createTestPlanet();
   planet.star_id() = star.star_id();
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.rtemp() = 200;
   planet.temp() = 250;
   planet.enslave_to(2);
@@ -2696,7 +2698,7 @@ void test_send_planet_turn_telegrams_nova() {
   {
     Planet planet = createTestPlanet();
     planet.star_id() = star.star_id();
-    planet.planet_order() = 0;
+    planet.planet_order() = 1;
     planet.type() = PlanetType::EARTH;
     planet.info(player_t{1}).numsectsowned = 5;
     planet.info(player_t{2}).numsectsowned = 0;
@@ -2722,7 +2724,7 @@ void test_send_planet_turn_telegrams_nova() {
   {
     Planet planet_water = createTestPlanet();
     planet_water.star_id() = star.star_id();
-    planet_water.planet_order() = 0;
+    planet_water.planet_order() = 1;
     planet_water.type() = PlanetType::WATER;
     planet_water.info(player_t{1}).numsectsowned = 3;
 
@@ -2735,7 +2737,7 @@ void test_send_planet_turn_telegrams_nova() {
 
     Planet planet_forest = createTestPlanet();
     planet_forest.star_id() = star.star_id();
-    planet_forest.planet_order() = 0;
+    planet_forest.planet_order() = 1;
     planet_forest.type() = PlanetType::FOREST;
     planet_forest.info(player_t{1}).numsectsowned = 3;
 
@@ -2749,7 +2751,7 @@ void test_send_planet_turn_telegrams_nova() {
   {
     Planet planet_desert = createTestPlanet();
     planet_desert.star_id() = star.star_id();
-    planet_desert.planet_order() = 0;
+    planet_desert.planet_order() = 1;
     planet_desert.type() = PlanetType::DESERT;
     planet_desert.info(player_t{1}).numsectsowned = 5;
 
@@ -2767,20 +2769,20 @@ void test_send_planet_turn_telegrams_nova() {
 
 void test_planet_turn_simulation_defaults() {
   TurnStats stats{};
-  test::expect_eq(stats.temp_add(0, 0), 0);
-  test::expect_false(stats.has_alien_colony(0, 0));
-  test::expect_false(stats.is_inhabited(0, 0));
-  test::expect_false(stats.is_intimidated(0, 0));
+  test::expect_eq(stats.temp_add(1, 1), 0);
+  test::expect_false(stats.has_alien_colony(1, 1));
+  test::expect_false(stats.is_inhabited(1, 1));
+  test::expect_false(stats.is_intimidated(1, 1));
 
-  stats.set_temp_add(0, 0, -25);
-  stats.set_alien_colony(0, 0, true);
-  stats.mark_inhabited(0, 0, true);
-  stats.set_intimidated(0, 0, true);
+  stats.set_temp_add(1, 1, -25);
+  stats.set_alien_colony(1, 1, true);
+  stats.mark_inhabited(1, 1, true);
+  stats.set_intimidated(1, 1, true);
 
-  test::expect_eq(stats.temp_add(0, 0), -25);
-  test::expect_true(stats.has_alien_colony(0, 0));
-  test::expect_true(stats.is_inhabited(0, 0));
-  test::expect_true(stats.is_intimidated(0, 0));
+  test::expect_eq(stats.temp_add(1, 1), -25);
+  test::expect_true(stats.has_alien_colony(1, 1));
+  test::expect_true(stats.is_inhabited(1, 1));
+  test::expect_true(stats.is_intimidated(1, 1));
 }
 
 }  // namespace

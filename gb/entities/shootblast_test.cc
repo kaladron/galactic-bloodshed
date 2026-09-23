@@ -53,9 +53,9 @@ void test_shoot_planet_to_ship_valid_attack() {
   JsonStore store(db);
   EntityManager em(db);
 
-  // Create star 0 and planet 0 in db
+  // Create star 1 and planet 1 in db
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "Sol";
   ss.pnames.emplace_back("Terra");
   Star star(ss);
@@ -63,8 +63,8 @@ void test_shoot_planet_to_ship_valid_attack() {
   star_repo.save(star);
 
   Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -88,8 +88,8 @@ void test_shoot_planet_to_ship_valid_attack() {
   ship.owner() = player_t{2};
   ship.type() = ShipType::OTYPE_CANIST;
   ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = 0;
-  ship.pnumorbits() = 0;
+  ship.storbits() = 1;
+  ship.pnumorbits() = 1;
   ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;
@@ -118,8 +118,8 @@ void test_shoot_ship_to_planet_invalid_cases() {
   EntityManager em(db);
 
   Planet planet{PlanetType::EARTH, Coordinates{5, 5}};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
 
   SectorMap smap(planet);
 
@@ -159,7 +159,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   EntityManager em(db);
 
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "Sol";
   ss.pnames.emplace_back("Terra");
   Star star(ss);
@@ -178,8 +178,8 @@ void test_shoot_ship_to_planet_valid_attack() {
   race_repo.save(race2);
 
   Planet planet{PlanetType::EARTH, Coordinates{4, 4}};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -195,8 +195,8 @@ void test_shoot_ship_to_planet_valid_attack() {
   ship.owner() = player_t{1};
   ship.type() = ShipType::OTYPE_CANIST;
   ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = 0;
-  ship.pnumorbits() = 0;
+  ship.storbits() = 1;
+  ship.pnumorbits() = 1;
   ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;
@@ -254,15 +254,15 @@ void test_zero_body_ship_combat() {
   EntityManager em(db);
 
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "Sol";
   ss.pnames.emplace_back("Terra");
   Star star(ss);
   StarRepository(store).save(star);
 
   Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   PlanetRepository(store).save(planet);
 
   Race race{};
@@ -278,8 +278,8 @@ void test_zero_body_ship_combat() {
   ship.owner() = player_t{2};
   ship.type() = ShipType::OTYPE_CANIST;
   ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = 0;
-  ship.pnumorbits() = 0;
+  ship.storbits() = 1;
+  ship.pnumorbits() = 1;
   ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;

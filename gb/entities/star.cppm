@@ -88,27 +88,32 @@ public:
   }
 
   [[nodiscard]] const std::string& get_planet_name(planetnum_t pnum) const {
-    if (pnum.value >= star_struct.pnames.size()) {
+    if (pnum.value < 1 || pnum.value > star_struct.pnames.size()) {
       throw std::runtime_error(std::format(
           "Planet number {} out of range for star '{}' (has {} planets)", pnum,
           star_struct.name, star_struct.pnames.size()));
     }
-    return star_struct.pnames[pnum.value];
+    return star_struct.pnames[pnum.value - 1];
   }
   void set_planet_name(planetnum_t pnum, std::string_view name) {
-    // Resize vector if necessary to accommodate the planet number
-    if (pnum.value >= star_struct.pnames.size()) {
-      star_struct.pnames.resize(pnum.value + 1);
+    if (pnum.value < 1) {
+      throw std::runtime_error(std::format(
+          "Planet number {} out of range for star '{}' (must be >= 1)", pnum,
+          star_struct.name));
     }
-    star_struct.pnames[pnum.value] = name;
+    // Resize vector if necessary to accommodate the 1-based planet number
+    if (pnum.value > star_struct.pnames.size()) {
+      star_struct.pnames.resize(pnum.value);
+    }
+    star_struct.pnames[pnum.value - 1] = name;
   }
   [[nodiscard]] bool planet_name_isset(planetnum_t pnum) const {
-    if (pnum.value >= star_struct.pnames.size()) {
+    if (pnum.value < 1 || pnum.value > star_struct.pnames.size()) {
       throw std::runtime_error(std::format(
           "Planet number {} out of range for star '{}' (has {} planets)", pnum,
           star_struct.name, star_struct.pnames.size()));
     }
-    return !star_struct.pnames[pnum.value].empty();
+    return !star_struct.pnames[pnum.value - 1].empty();
   };
 
   PlayerBitset<MAXPLAYERS>& explored() noexcept {
@@ -153,7 +158,7 @@ public:
     return star_struct.pnames.size();
   }
 
-  /// \brief Returns a random planet index (0..numplanets-1).
+  /// \brief Returns a random 1-based planet index (1..numplanets).
   [[nodiscard]] planetnum_t get_random_planet_index() const;
 
   [[nodiscard]] constexpr UniverseCoordinates coordinates() const noexcept {

@@ -42,7 +42,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create stable star
   star_struct ss0{};
-  ss0.star_id = 0;
+  ss0.star_id = 1;
   ss0.name = "TestStar";
   ss0.coordinates = {100.0, 200.0};
   ss0.stability = 40;  // Stable star (< 50)
@@ -52,10 +52,10 @@ void setup_test_world(TestContext& ctx) {
   StarRepository stars_repo(store);
   stars_repo.save(star0);
 
-  // Create planet on star 0
+  // Create planet on star 1
   Planet planet0{PlanetType::EARTH, Coordinates{5, 5}};
-  planet0.star_id() = 0;
-  planet0.planet_order() = 0;
+  planet0.star_id() = 1;
+  planet0.planet_order() = 1;
   planet0.explored() = true;
   planet0.info(player_t{1}).numsectsowned = 3;
   planet0.info(player_t{1}).guns = 10;
@@ -76,7 +76,7 @@ void setup_test_world(TestContext& ctx) {
   PlanetRepository planets_repo(store);
   planets_repo.save(planet0);
 
-  // Create sectormap for planet 0
+  // Create sectormap for planet 1
   SectorMap smap(planet0);
   for (auto [coord, s] : smap.indexed_sectors()) {
     if (coord.x == 0 && coord.y == 0) {
@@ -107,7 +107,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create unstable star
   star_struct ss1{};
-  ss1.star_id = 1;
+  ss1.star_id = 2;
   ss1.name = "UnstableStar";
   ss1.coordinates = {300.0, 400.0};
   ss1.stability = 75;  // Unstable (> 50)
@@ -116,10 +116,10 @@ void setup_test_world(TestContext& ctx) {
   Star star1(ss1);
   stars_repo.save(star1);
 
-  // Create planet on star 1
+  // Create planet on star 2
   Planet planet1{PlanetType::EARTH, Coordinates{3, 3}};
-  planet1.star_id() = 1;
-  planet1.planet_order() = 0;
+  planet1.star_id() = 2;
+  planet1.planet_order() = 1;
   planet1.explored() = true;
   planet1.info(player_t{1}).numsectsowned = 1;
   planets_repo.save(planet1);
@@ -141,16 +141,16 @@ void test_map_dispatch() {
 
   // 1. Happy path: Map at planet scope (stable star)
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   ctx.assert_dispatch_success(g, {"map"});
   test::expect_false(
       g.out.str().contains("WARNING! This planet's primary is unstable."));
   std::println(std::cout, "    ✓ Map at planet scope (stable star) succeeded");
 
   // 2. Happy path: Map at planet scope (unstable star warning)
-  g.set_snum(1);
-  g.set_pnum(0);
+  g.set_snum(2);
+  g.set_pnum(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"map"});
   test::expect_contains(g.out.str(),
@@ -246,11 +246,11 @@ void test_show_map_rendering_options() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
 
-  // Land a probe on planet 0 at (0,0) and configure color/inverse, high
+  // Land a probe on planet 1 at (0,0) and configure color/inverse, high
   // toxicity, Metamorph, enslaved status, and alien war/peace presence
   const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
                             .owned_by(1, 0)
-                            .landed_on(0, 0, Coordinates{0, 0})
+                            .landed_on(1, 1, Coordinates{0, 0})
                             .build();
   (void)probe_id;
 
@@ -258,7 +258,7 @@ void test_show_map_rendering_options() {
     r.Metamorph = true;
     r.atwar.set(player_t{2});
   });
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.toxic() = 75;
     p.enslave_to(player_t{2});
     p.info(player_t{2}).numsectsowned = 1;
@@ -267,7 +267,7 @@ void test_show_map_rendering_options() {
   ctx.setup_game_obj(g, 1, 0);
 
   g.out.str("");
-  show_map(g, 0, 0, *ctx.em.peek_planet(0, 0));
+  show_map(g, 1, 1, *ctx.em.peek_planet(1, 1));
   test::expect_contains(g.out.str(), "Tons of biomass");
   test::expect_contains(g.out.str(), "(75% TOXIC)");
   test::expect_contains(g.out.str(), "ENSLAVED to player 2;");
@@ -279,11 +279,11 @@ void test_show_map_rendering_options() {
     r.governor[0].toggle.highlight = 1;
     r.tech = 0.0;
   });
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.explored() = false; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.explored() = false; });
   ctx.setup_game_obj(g, 1, 0);
 
   g.out.str("");
-  show_map(g, 0, 0, *ctx.em.peek_planet(0, 0));
+  show_map(g, 1, 1, *ctx.em.peek_planet(1, 1));
   test::expect_contains(g.out.str(), "Aliens:???");
 }
 

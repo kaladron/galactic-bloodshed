@@ -74,11 +74,11 @@ struct EntityListTraits<Star> {
   }
 
   static constexpr index_type first_index() {
-    return index_type{0};
+    return index_type{1};
   }
 
   static index_type end_index(index_type count) {
-    return count;
+    return index_type{count.value + 1};
   }
 
   static index_type next(index_type current) {
@@ -204,11 +204,11 @@ struct EntityListTraits<Planet> {
   using index_type = planetnum_t;
 
   static constexpr index_type first_index() {
-    return index_type{0};
+    return index_type{1};
   }
 
   static index_type end_index(index_type count) {
-    return count;
+    return index_type{count.value + 1};
   }
 
   static index_type next(index_type current) {
@@ -553,7 +553,7 @@ public:
 };
 
 /**
- * Iterator class for stars (0-indexed, 0..numstars-1).
+ * Iterator class for stars (1-indexed, 1..numstars).
  * Returns EntityHandle<Star> for RAII auto-save behavior.
  */
 export class StarList : public SimpleEntityList<Star, StarList> {
@@ -570,7 +570,7 @@ public:
     std::vector<starnum_t> indices(static_cast<std::size_t>(univ->numstars));
     for (unsigned int i = 0; i < static_cast<unsigned int>(univ->numstars);
          ++i) {
-      indices[i] = starnum_t{i};
+      indices[i] = starnum_t{i + 1};
     }
     std::ranges::shuffle(indices, g);
 
@@ -594,7 +594,7 @@ public:
 };
 
 /**
- * Iterator class for planets of a star (0-indexed, 0..numplanets-1).
+ * Iterator class for planets of a star (1-indexed, 1..numplanets).
  * Returns EntityHandle<Planet> for RAII auto-save behavior.
  */
 export class PlanetList : public CompositeEntityList<Planet, PlanetList> {
@@ -615,7 +615,7 @@ public:
     std::vector<planetnum_t> indices(
         static_cast<std::size_t>(numplanets.value));
     for (unsigned int i = 0; i < numplanets.value; ++i) {
-      indices[i] = planetnum_t{i};
+      indices[i] = planetnum_t{i + 1};
     }
     std::ranges::shuffle(indices, g);
 

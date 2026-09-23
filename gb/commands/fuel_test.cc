@@ -18,7 +18,7 @@ void test_fuel_matrix() {
   shipnum_t ship_num = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                            .owned_by(1, 0)
                            .named("Explorer")
-                           .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                           .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                            .with_speed(2)
                            .with_fuel(100.0)
                            .build();
@@ -27,7 +27,7 @@ void test_fuel_matrix() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. 4-Way Command Matrix runner on fuel projection
   TestCommandMatrix(ctx, "fuel")
@@ -59,7 +59,7 @@ void test_fuel_matrix() {
   // 5. Unowned ship, landed ship without destination, stationary ship, factory
   shipnum_t enemy_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                              .owned_by(2, 0)
-                             .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                             .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                              .with_speed(2)
                              .build();
   g.out.str("");
@@ -69,7 +69,7 @@ void test_fuel_matrix() {
 
   shipnum_t landed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                               .owned_by(1, 0)
-                              .landed_on(0, 0, Coordinates(1, 1))
+                              .landed_on(1, 1, Coordinates(1, 1))
                               .with_speed(2)
                               .with_fuel(200.0)
                               .build();
@@ -81,7 +81,7 @@ void test_fuel_matrix() {
       "You must specify a destination for landed or docked ships...");
 
   // Landed ship WITH destination (planet scope destination in explored system)
-  ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(1); });
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(1); });
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"fuel", std::format("#{}", landed_ship.value), "/Vega/Vega Prime"});
@@ -89,7 +89,7 @@ void test_fuel_matrix() {
 
   shipnum_t stopped_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                                .owned_by(1, 0)
-                               .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                               .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                .with_speed(0)
                                .build();
   g.out.str("");
@@ -99,7 +99,7 @@ void test_fuel_matrix() {
 
   shipnum_t factory_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                                .owned_by(1, 0)
-                               .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                               .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                .with_speed(1)
                                .build();
   g.out.str("");
@@ -131,7 +131,7 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(),
                         "That ship is within 10.0 units of the destination.");
 
-  ctx.em.mutate_star(1, [](Star& s) { s.explored().reset(); });
+  ctx.em.mutate_star(2, [](Star& s) { s.explored().reset(); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"fuel", std::format("#{}", ship_num.value), "/Vega/Vega Prime"});
@@ -187,15 +187,15 @@ void test_fuel_output_and_do_trip_branches() {
   });
   const auto target_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                              .owned_by(1, 0)
-                             .in_star_orbit(0, SystemCoordinates{25.0, 0.0})
+                             .in_star_orbit(1, SystemCoordinates{25.0, 0.0})
                              .build();
   const auto runner_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                              .owned_by(1, 0)
-                             .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                             .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                              .with_speed(9)
                              .build();
 
-  Place ship_dest{ScopeLevel::LEVEL_SHIP, 0, 0, target_id};
+  Place ship_dest{ScopeLevel::LEVEL_SHIP, 1, 1, target_id};
   const auto target_coords = ctx.em.peek_ship(target_id)->coordinates();
   {
     SimulatedShip sim{*ctx.em.peek_ship(runner_id)};

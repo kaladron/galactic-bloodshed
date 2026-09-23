@@ -33,7 +33,7 @@ int main() {
 
   // Create test star with APs
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "TransferHub";
   ss.coordinates = {100.0, 200.0};
   ss.AP[player_t{1}] = 50;  // Give player 1 enough APs
@@ -45,8 +45,8 @@ int main() {
 
   // Create test planet with resources for player 1
   planet_struct ps{};
-  ps.star_id = 0;
-  ps.planet_order = 0;
+  ps.star_id = 1;
+  ps.planet_order = 1;
   ps.type = PlanetType::EARTH;
   ps.dimensions = {10, 10};
   ps.info[player_t{1}].explored = true;
@@ -73,7 +73,7 @@ int main() {
 
   // 1. Scope rejection at UNIV level
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -81,7 +81,7 @@ int main() {
 
   // 2. Scope rejection at STAR level
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -91,8 +91,8 @@ int main() {
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -102,19 +102,19 @@ int main() {
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   std::println(std::cout, "Transfer resources");
   {
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     int p1_resource_before = p_before->info(player_t{1}).resource;
     int p2_resource_before = p_before->info(player_t{2}).resource;
 
     ctx.assert_dispatch_success(g, {"transfer", "Receiver", "r", "100"}, 1);
 
     ctx.em.clear_cache();
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_eq(p_after->info(player_t{1}).resource,
                     p1_resource_before - 100);
     test::expect_eq(p_after->info(player_t{2}).resource,
@@ -124,14 +124,14 @@ int main() {
 
   std::println(std::cout, "Transfer fuel");
   {
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     int p1_fuel_before = p_before->info(player_t{1}).fuel;
     int p2_fuel_before = p_before->info(player_t{2}).fuel;
 
     ctx.assert_dispatch_success(g, {"transfer", "Receiver", "f", "75"}, 1);
 
     ctx.em.clear_cache();
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_eq(p_after->info(player_t{1}).fuel, p1_fuel_before - 75);
     test::expect_eq(p_after->info(player_t{2}).fuel, p2_fuel_before + 75);
     std::println(std::cout, "✓ Fuel transferred");
@@ -139,14 +139,14 @@ int main() {
 
   std::println(std::cout, "Transfer destruct");
   {
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     int p1_destruct_before = p_before->info(player_t{1}).destruct;
     int p2_destruct_before = p_before->info(player_t{2}).destruct;
 
     ctx.assert_dispatch_success(g, {"transfer", "Receiver", "d", "50"}, 1);
 
     ctx.em.clear_cache();
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_eq(p_after->info(player_t{1}).destruct,
                     p1_destruct_before - 50);
     test::expect_eq(p_after->info(player_t{2}).destruct,
@@ -156,14 +156,14 @@ int main() {
 
   std::println(std::cout, "Transfer crystals");
   {
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     int p1_crystals_before = p_before->info(player_t{1}).crystals;
     int p2_crystals_before = p_before->info(player_t{2}).crystals;
 
     ctx.assert_dispatch_success(g, {"transfer", "Receiver", "x", "10"}, 1);
 
     ctx.em.clear_cache();
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_eq(p_after->info(player_t{1}).crystals,
                     p1_crystals_before - 10);
     test::expect_eq(p_after->info(player_t{2}).crystals,
@@ -173,7 +173,7 @@ int main() {
 
   std::println(std::cout, "Cannot transfer more than available");
   {
-    const auto* p_before = ctx.em.peek_planet(0, 0);
+    const auto* p_before = ctx.em.peek_planet(1, 1);
     int p1_resource_before = p_before->info(player_t{1}).resource;
     int p2_resource_before = p_before->info(player_t{2}).resource;
 
@@ -182,7 +182,7 @@ int main() {
 
     // Should not have changed (command fails with error message)
     ctx.em.clear_cache();
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_eq(p_after->info(player_t{1}).resource, p1_resource_before);
     test::expect_eq(p_after->info(player_t{2}).resource, p2_resource_before);
     std::println(std::cout, "✓ Transfer prevented when insufficient resources");

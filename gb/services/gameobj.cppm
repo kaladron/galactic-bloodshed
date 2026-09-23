@@ -133,9 +133,9 @@ private:
   bool god_ = false;
   bool disconnect_requested_ = false;
   bool shutdown_requested_ = false;
-  starnum_t snum_ = 0;
-  planetnum_t pnum_ = 0;
-  shipnum_t shipno_ = 0;
+  starnum_t snum_{};
+  planetnum_t pnum_{};
+  shipnum_t shipno_{};
   ScopeLevel level_ = ScopeLevel::LEVEL_PLAN;
   UniverseCoordinates universe_center_{0.0, 0.0};
   SystemCoordinates system_center_{0.0, 0.0};

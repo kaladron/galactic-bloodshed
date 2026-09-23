@@ -34,9 +34,9 @@ void setup_test_world(TestContext& ctx) {
   RaceRepository races(store);
   races.save(race);
 
-  // Initialize star 0 (explored)
+  // Initialize star 1 (explored)
   star_struct ss0{};
-  ss0.star_id = 0;
+  ss0.star_id = 1;
   ss0.name = "Sol";
   ss0.coordinates = {0.0, 0.0};
   ss0.stability = 45;
@@ -47,18 +47,18 @@ void setup_test_world(TestContext& ctx) {
   StarRepository stars(store);
   stars.save(star0);
 
-  // Initialize planet 0 on star 0
+  // Initialize planet 1 on star 1
   Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
-  planet0.star_id() = 0;
-  planet0.planet_order() = 0;
+  planet0.star_id() = 1;
+  planet0.planet_order() = 1;
   planet0.info(player_t{1}).explored = 1;
   planet0.info(player_t{1}).numsectsowned = 5;
   PlanetRepository planets(store);
   planets.save(planet0);
 
-  // Initialize star 1 (unexplored)
+  // Initialize star 2 (unexplored)
   star_struct ss1{};
-  ss1.star_id = 1;
+  ss1.star_id = 2;
   ss1.name = "Centauri";
   ss1.coordinates = {500.0, 500.0};
   ss1.stability = 20;

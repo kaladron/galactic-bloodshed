@@ -30,11 +30,11 @@ void setup_test_world(TestContext& ctx) {
 
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 1)
       .owned_by(1, 0)
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2)
       .owned_by(2, 0)
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .build();
 
   // Load race into EntityManager cache to ensure getracenum can find it
@@ -78,22 +78,22 @@ void test_dissolve_happy_path() {
 
     // Verify Earth sector (0,0) was cleared and wasted, planet demographics
     // synced, and star inhabitation cleared for player 1
-    const auto* smap = ctx.em.peek_sectormap(0, 0);
+    const auto* smap = ctx.em.peek_sectormap(1, 1);
     test::expect_eq(smap->get({0, 0}).get_owner(), 0);
     test::expect_eq(smap->get({0, 0}).get_popn(), 0);
     test::expect_eq(smap->get({0, 0}).get_troops(), 0);
     test::expect_eq(smap->get({0, 0}).get_condition(), SectorType::SEC_WASTED);
 
-    const auto* pl = ctx.em.peek_planet(0, 0);
+    const auto* pl = ctx.em.peek_planet(1, 1);
     test::expect_eq(pl->popn(), 0);
     test::expect_eq(pl->troops(), 0);
     test::expect_eq(pl->info(player_t{1}).numsectsowned, 0);
 
-    const auto* star0 = ctx.em.peek_star(0);
+    const auto* star0 = ctx.em.peek_star(1);
     test::expect_false(star0->is_inhabited_by(1));
 
     // Verify Vega Prime (Player 2 colony) remains intact
-    const auto* vega_pl = ctx.em.peek_planet(1, 0);
+    const auto* vega_pl = ctx.em.peek_planet(2, 1);
     test::expect_eq(vega_pl->popn(), 1000);
     test::expect_eq(vega_pl->info(player_t{2}).numsectsowned, 1);
 

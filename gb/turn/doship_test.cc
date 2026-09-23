@@ -44,12 +44,12 @@ void test_domass_and_doown() {
 
   shipnum_t parent_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                             .owned_by(1)
-                            .in_star_orbit(0)
+                            .in_star_orbit(1)
                             .build();
 
   shipnum_t child_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                            .owned_by(2)
-                           .docked_to(parent_id, 0)
+                           .docked_to(parent_id, 1)
                            .with_crew(10, 0)
                            .build();
 
@@ -72,7 +72,7 @@ void test_do_habitat() {
 
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                           .owned_by(1)
-                          .in_star_orbit(0)
+                          .in_star_orbit(1)
                           .with_fuel(100.0)
                           .with_crew(1000, 0)
                           .with_resource(10)
@@ -93,7 +93,7 @@ void test_do_weapon_plant() {
 
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
                           .owned_by(1)
-                          .in_star_orbit(0)
+                          .in_star_orbit(1)
                           .with_fuel(100.0)
                           .with_crew(100, 0)
                           .with_resource(500)
@@ -114,7 +114,7 @@ void test_do_habitat_zero_rate_and_offline() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(100.0)
                        .with_crew(1000, 0)
                        .with_resource(10)
@@ -132,7 +132,7 @@ void test_do_habitat_zero_rate_and_offline() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(100.0)
                        .with_crew(0, 0)
                        .with_resource(10)
@@ -150,7 +150,7 @@ void test_do_habitat_zero_rate_and_offline() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(100.0)
                        .with_crew(1000, 0)
                        .with_resource(10)
@@ -174,7 +174,7 @@ void test_do_habitat_capacity_capped() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(100.0)
                        .with_crew(2000, 0)
                        .with_resource(5000)
@@ -192,7 +192,7 @@ void test_do_habitat_capacity_capped() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(100.0)
                        .with_crew(2000, 0)
                        .with_resource(4999)
@@ -217,7 +217,7 @@ void test_do_habitat_nested_weapon_plant() {
 
   shipnum_t hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                          .owned_by(1)
-                         .in_star_orbit(0)
+                         .in_star_orbit(1)
                          .with_fuel(100.0)
                          .with_crew(100, 0)
                          .with_resource(500)
@@ -227,7 +227,7 @@ void test_do_habitat_nested_weapon_plant() {
 
   shipnum_t wplant_id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
                             .owned_by(1)
-                            .docked_to(hab_id, 0)
+                            .docked_to(hab_id, 1)
                             .with_fuel(50.0)
                             .with_crew(50, 0)
                             .with_resource(100)
@@ -251,7 +251,7 @@ void test_do_weapon_plant_zero_rate_and_shortages() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(100.0)
                        .with_crew(100, 0)
                        .with_resource(500)
@@ -270,7 +270,7 @@ void test_do_weapon_plant_zero_rate_and_shortages() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(100.0)
                        .with_crew(0, 0)
                        .with_resource(500)
@@ -288,7 +288,7 @@ void test_do_weapon_plant_zero_rate_and_shortages() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(0.0)
                        .with_crew(100, 0)
                        .with_resource(500)
@@ -305,7 +305,7 @@ void test_do_weapon_plant_zero_rate_and_shortages() {
   {
     shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
                        .owned_by(1)
-                       .in_star_orbit(0)
+                       .in_star_orbit(1)
                        .with_fuel(100.0)
                        .with_crew(100, 0)
                        .with_resource(0)
@@ -326,7 +326,7 @@ void test_do_weapon_plant_tech_capping_and_consumption() {
 
   shipnum_t id = TestShipBuilder(ctx.em, ShipType::OTYPE_WPLANT)
                      .owned_by(1)
-                     .in_star_orbit(0)
+                     .in_star_orbit(1)
                      .with_fuel(100.0)
                      .with_crew(100, 0)
                      .with_resource(500)
@@ -364,7 +364,7 @@ void test_do_meta_infect() {
 
   Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
   planet.star_id() = 1;
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   PlanetRepository(store).save(planet);
 
   SectorMap smap(planet);
@@ -382,7 +382,7 @@ void test_do_meta_infect() {
   SectorRepository(store).save_map(smap);
 
   // Infect planet sector
-  do_meta_infect(player_t{1}, starnum_t{1}, planetnum_t{0}, planet, em);
+  do_meta_infect(player_t{1}, starnum_t{1}, planetnum_t{1}, planet, em);
   test::expect_gt(planet.info(player_t{1}).numsectsowned, 0);
   test::expect_eq(planet.info(player_t{1}).explored, 1);
 }
@@ -391,17 +391,17 @@ void test_intercept_missile_by_pdn() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  // Create missile targeting Planet (0, 0)
+  // Create missile targeting Planet (1, 1)
   shipnum_t missile_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
                              .owned_by(1)
-                             .in_planet_orbit(0, 0)
-                             .targeting_planet(0, 0)
+                             .in_planet_orbit(1, 1)
+                             .targeting_planet(1, 1)
                              .build();
 
   // 1. Non-PDN ship (shuttle) does not intercept
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(2)
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .build();
 
   ctx.em.mutate_ship(missile_id, [&](Ship& m) {
@@ -412,7 +412,7 @@ void test_intercept_missile_by_pdn() {
   // 2. Dead PDN does not intercept
   TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
       .owned_by(2)
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .with_alive(false)
       .build();
 
@@ -424,7 +424,7 @@ void test_intercept_missile_by_pdn() {
   // 3. Active alive PDN intercepts and redirects missile
   shipnum_t pdn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
                          .owned_by(2)
-                         .in_planet_orbit(0, 0, SystemCoordinates{15.0, 25.0})
+                         .in_planet_orbit(1, 1, SystemCoordinates{15.0, 25.0})
                          .build();
 
   ctx.em.mutate_ship(missile_id, [&](Ship& m) {
@@ -441,8 +441,8 @@ void test_execute_missile_planet_strike() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  // Colonize sector (5, 3) on Planet (0, 0) owned by Player 2
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  // Colonize sector (5, 3) on Planet (1, 1) owned by Player 2
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{5, 3}).colonize(2, 500);
   });
 
@@ -450,8 +450,8 @@ void test_execute_missile_planet_strike() {
   // planet -> wraps to (5, 3)
   shipnum_t m1_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
                         .owned_by(1)
-                        .in_planet_orbit(0, 0)
-                        .targeting_planet(0, 0)
+                        .in_planet_orbit(1, 1)
+                        .targeting_planet(1, 1)
                         .with_destruct(20)
                         .with_impact(Coordinates{15, 3}, /*scatter=*/false)
                         .with_on(true)
@@ -462,20 +462,20 @@ void test_execute_missile_planet_strike() {
     test::expect_false(m.alive());
   });
 
-  const auto& smap_after1 = *ctx.em.peek_sectormap(0, 0);
+  const auto& smap_after1 = *ctx.em.peek_sectormap(1, 1);
   const auto& sec1 = smap_after1.get(Coordinates{5, 3});
   test::expect_true(sec1.is_wasted() || sec1.get_popn() < 500);
 
   // 2. Targeted strike with negative coordinate wrapping (-1, 2) on 10x10
   // planet -> wraps to (9, 2)
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{9, 2}).colonize(2, 500);
   });
 
   shipnum_t m2_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
                         .owned_by(1)
-                        .in_planet_orbit(0, 0)
-                        .targeting_planet(0, 0)
+                        .in_planet_orbit(1, 1)
+                        .targeting_planet(1, 1)
                         .with_destruct(20)
                         .with_impact(Coordinates{-1, 2}, /*scatter=*/false)
                         .with_on(true)
@@ -486,12 +486,12 @@ void test_execute_missile_planet_strike() {
     test::expect_false(m.alive());
   });
 
-  const auto& smap_after2 = *ctx.em.peek_sectormap(0, 0);
+  const auto& smap_after2 = *ctx.em.peek_sectormap(1, 1);
   const auto& sec2 = smap_after2.get(Coordinates{9, 2});
   test::expect_true(sec2.is_wasted() || sec2.get_popn() < 500);
 
   // 3. Scattered strike
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     for (auto& sec : smap) {
       sec.colonize(2, 500);
     }
@@ -499,8 +499,8 @@ void test_execute_missile_planet_strike() {
 
   shipnum_t m3_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
                         .owned_by(1)
-                        .in_planet_orbit(0, 0)
-                        .targeting_planet(0, 0)
+                        .in_planet_orbit(1, 1)
+                        .targeting_planet(1, 1)
                         .with_destruct(20)
                         .with_impact(Coordinates{0, 0}, /*scatter=*/true)
                         .with_on(true)
@@ -511,7 +511,7 @@ void test_execute_missile_planet_strike() {
     test::expect_false(m.alive());
   });
 
-  const auto& smap_after3 = *ctx.em.peek_sectormap(0, 0);
+  const auto& smap_after3 = *ctx.em.peek_sectormap(1, 1);
   int damaged = 0;
   for (const auto& sec : smap_after3) {
     if (sec.is_wasted() || sec.get_popn() < 500) {
@@ -527,7 +527,7 @@ void test_execute_missile_ship_strike() {
 
   shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                             .owned_by(2)
-                            .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                            .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                             .with_size(10)
                             .with_tech(10.0)
                             .build();
@@ -537,7 +537,7 @@ void test_execute_missile_ship_strike() {
   shipnum_t distant_missile_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
           .owned_by(1)
-          .in_star_orbit(0, SystemCoordinates{500.0, 0.0})
+          .in_star_orbit(1, SystemCoordinates{500.0, 0.0})
           .targeting_ship(target_id)
           .with_speed(10)
           .with_destruct(20)
@@ -555,7 +555,7 @@ void test_execute_missile_ship_strike() {
   shipnum_t close_missile_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
           .owned_by(1)
-          .in_star_orbit(0, SystemCoordinates{10.0, 0.0})
+          .in_star_orbit(1, SystemCoordinates{10.0, 0.0})
           .targeting_ship(target_id)
           .with_speed(10)
           .with_destruct(20)
@@ -577,13 +577,13 @@ void test_domissile_integration() {
   // 1. Missile arrives at planet with PDN present -> re-targeted to PDN
   shipnum_t pdn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
                          .owned_by(2)
-                         .in_planet_orbit(0, 0, SystemCoordinates{10.0, 10.0})
+                         .in_planet_orbit(1, 1, SystemCoordinates{10.0, 10.0})
                          .build();
 
   shipnum_t m1_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
                         .owned_by(1)
-                        .in_planet_orbit(0, 0)
-                        .targeting_planet(0, 0)
+                        .in_planet_orbit(1, 1)
+                        .targeting_planet(1, 1)
                         .with_destruct(20)
                         .with_on(true)
                         .build();
@@ -599,14 +599,14 @@ void test_domissile_integration() {
   ctx.em.mutate_ship(pdn_id, [](Ship& s) { s.alive() = false; });
 
   // 2. Missile arrives at planet without PDN -> strikes planet surface
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{2, 2}).colonize(2, 500);
   });
 
   shipnum_t m2_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
                         .owned_by(1)
-                        .in_planet_orbit(0, 0)
-                        .targeting_planet(0, 0)
+                        .in_planet_orbit(1, 1)
+                        .targeting_planet(1, 1)
                         .with_destruct(20)
                         .with_impact(Coordinates{2, 2}, /*scatter=*/false)
                         .with_on(true)
@@ -616,21 +616,21 @@ void test_domissile_integration() {
     domissile(m, ctx.em);
     test::expect_false(m.alive());
   });
-  const auto& smap = *ctx.em.peek_sectormap(0, 0);
+  const auto& smap = *ctx.em.peek_sectormap(1, 1);
   const auto& sec = smap.get(Coordinates{2, 2});
   test::expect_true(sec.is_wasted() || sec.get_popn() < 500);
 
   // 3. Missile arrives targeting ship in range -> strikes target
   shipnum_t victim_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                             .owned_by(2)
-                            .in_planet_orbit(0, 0, SystemCoordinates{0.0, 0.0})
+                            .in_planet_orbit(1, 1, SystemCoordinates{0.0, 0.0})
                             .with_size(10)
                             .with_tech(10.0)
                             .build();
 
   shipnum_t m3_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
                         .owned_by(1)
-                        .in_planet_orbit(0, 0, SystemCoordinates{5.0, 0.0})
+                        .in_planet_orbit(1, 1, SystemCoordinates{5.0, 0.0})
                         .targeting_ship(victim_id)
                         .with_speed(10)
                         .with_destruct(20)
@@ -655,7 +655,7 @@ void test_check_mine_proximity_trigger() {
   // Player 1 mine at (0.0, 0.0) with trigger radius 20
   shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                           .owned_by(1)
-                          .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                          .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                           .with_destruct(50)
                           .with_trigger_radius(20)
                           .with_on(true)
@@ -664,7 +664,7 @@ void test_check_mine_proximity_trigger() {
   // 1. Enemy ship out of range (distance 25 > 20)
   shipnum_t enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                            .owned_by(2)
-                           .in_star_orbit(0, SystemCoordinates{25.0, 0.0})
+                           .in_star_orbit(1, SystemCoordinates{25.0, 0.0})
                            .build();
 
   ctx.em.with_ship(mine_id, [&](const Ship& mine) {
@@ -686,7 +686,7 @@ void test_check_mine_proximity_trigger() {
   });
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(3)
-      .in_star_orbit(0, SystemCoordinates{5.0, 0.0})
+      .in_star_orbit(1, SystemCoordinates{5.0, 0.0})
       .build();
   ctx.em.with_ship(mine_id, [&](const Ship& mine) {
     test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
@@ -695,7 +695,7 @@ void test_check_mine_proximity_trigger() {
   // 4. Own ship in range (distance 0 <= 20) does not trigger
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(1)
-      .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+      .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
       .build();
   ctx.em.with_ship(mine_id, [&](const Ship& mine) {
     test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
@@ -723,25 +723,25 @@ void test_check_mine_proximity_trigger() {
   shipnum_t plan_mine_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
           .owned_by(1)
-          .in_planet_orbit(0, 0, SystemCoordinates{0.0, 0.0})
+          .in_planet_orbit(1, 1, SystemCoordinates{0.0, 0.0})
           .with_destruct(50)
           .with_trigger_radius(20)
           .with_on(true)
           .build();
 
-  // Enemy on planet 1 does not trigger planet 0 mine
+  // Enemy on planet 2 does not trigger planet 1 mine
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(2)
-      .in_planet_orbit(0, 1, SystemCoordinates{0.0, 0.0})
+      .in_planet_orbit(1, 2, SystemCoordinates{0.0, 0.0})
       .build();
   ctx.em.with_ship(plan_mine_id, [&](const Ship& mine) {
     test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
   });
 
-  // Enemy on planet 0 within range triggers!
+  // Enemy on planet 1 within range triggers!
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(2)
-      .in_planet_orbit(0, 0, SystemCoordinates{10.0, 0.0})
+      .in_planet_orbit(1, 1, SystemCoordinates{10.0, 0.0})
       .build();
   ctx.em.with_ship(plan_mine_id, [&](const Ship& mine) {
     test::expect_true(check_mine_proximity_trigger(mine, ctx.em));
@@ -754,27 +754,27 @@ void test_detonate_mine_against_ships() {
 
   shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                           .owned_by(1)
-                          .in_star_orbit(0)
+                          .in_star_orbit(1)
                           .with_destruct(50)
                           .with_on(true)
                           .build();
 
   shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                             .owned_by(2)
-                            .in_star_orbit(0)
+                            .in_star_orbit(1)
                             .with_size(10)
                             .with_tech(10.0)
                             .build();
 
   shipnum_t dead_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                           .owned_by(2)
-                          .in_star_orbit(0)
+                          .in_star_orbit(1)
                           .build();
   ctx.em.mutate_ship(dead_id, [](Ship& s) { s.alive() = false; });
 
   shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
                          .owned_by(2)
-                         .in_star_orbit(0)
+                         .in_star_orbit(1)
                          .build();
 
   ctx.em.mutate_ship(
@@ -794,9 +794,9 @@ void test_detonate_mine_against_planet() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  // Populate sectors on Planet (0, 0)
+  // Populate sectors on Planet (1, 1)
   int initial_populated_sectors = 0;
-  ctx.em.mutate_sectormap(0, 0, [&](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
     for (auto& sec : smap) {
       sec.colonize(2, 500);
       ++initial_populated_sectors;
@@ -806,7 +806,7 @@ void test_detonate_mine_against_planet() {
   // 1. Star-orbit mine does not damage planet
   shipnum_t star_mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                                .owned_by(1)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .with_destruct(100)
                                .with_on(true)
                                .build();
@@ -814,7 +814,7 @@ void test_detonate_mine_against_planet() {
   ctx.em.mutate_ship(star_mine_id, [&](Ship& mine) {
     detonate_mine_against_planet(mine, "Test detonation", ctx.em);
   });
-  const auto& smap_star = *ctx.em.peek_sectormap(0, 0);
+  const auto& smap_star = *ctx.em.peek_sectormap(1, 1);
   int populated_sectors = 0;
   for (const auto& sec : smap_star) {
     if (sec.is_populated()) ++populated_sectors;
@@ -824,7 +824,7 @@ void test_detonate_mine_against_planet() {
   // 2. Planet-orbit mine detonates against planet
   shipnum_t plan_mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                                .owned_by(1)
-                               .in_planet_orbit(0, 0)
+                               .in_planet_orbit(1, 1)
                                .with_destruct(100)
                                .with_on(true)
                                .build();
@@ -832,7 +832,7 @@ void test_detonate_mine_against_planet() {
   ctx.em.mutate_ship(plan_mine_id, [&](Ship& mine) {
     detonate_mine_against_planet(mine, "Orbital detonation", ctx.em);
   });
-  const auto& smap_after = *ctx.em.peek_sectormap(0, 0);
+  const auto& smap_after = *ctx.em.peek_sectormap(1, 1);
   int damaged_sectors = 0;
   for (const auto& sec : smap_after) {
     if (sec.is_wasted() || sec.get_popn() < 500) {
@@ -852,14 +852,14 @@ void test_domine_trigger_and_detonation() {
   // 1. Allied ship in trigger range does NOT trigger mine detonation
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(3)
-      .in_star_orbit(0, SystemCoordinates{5.0, 5.0})
+      .in_star_orbit(1, SystemCoordinates{5.0, 5.0})
       .with_size(10)
       .with_tech(10.0)
       .build();
 
   shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                           .owned_by(1)
-                          .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                          .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                           .with_size(1)
                           .with_tech(10.0)
                           .with_destruct(50)
@@ -875,7 +875,7 @@ void test_domine_trigger_and_detonation() {
   // 2. Enemy ship in trigger range triggers natural mine detonation
   shipnum_t enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                            .owned_by(2)
-                           .in_star_orbit(0, SystemCoordinates{5.0, 5.0})
+                           .in_star_orbit(1, SystemCoordinates{5.0, 5.0})
                            .with_size(10)
                            .with_tech(10.0)
                            .build();
@@ -893,7 +893,7 @@ void test_domine_trigger_and_detonation() {
   shipnum_t plan_mine_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
           .owned_by(1)
-          .in_planet_orbit(0, 0, SystemCoordinates{0.0, 0.0})
+          .in_planet_orbit(1, 1, SystemCoordinates{0.0, 0.0})
           .with_destruct(50)
           .with_trigger_radius(20)
           .with_on(true)
@@ -902,7 +902,7 @@ void test_domine_trigger_and_detonation() {
   shipnum_t plan_target_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
           .owned_by(2)
-          .in_planet_orbit(0, 0, SystemCoordinates{100.0, 100.0})
+          .in_planet_orbit(1, 1, SystemCoordinates{100.0, 100.0})
           .with_size(10)
           .with_tech(10.0)
           .build();
@@ -936,7 +936,7 @@ void test_doabm_intercept() {
 
   Planet planet{PlanetType::EARTH, Coordinates{4, 4}};
   planet.star_id() = 1;
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   PlanetRepository(store).save(planet);
 
   // 1. Hostile enemy missile in orbit
@@ -944,7 +944,7 @@ void test_doabm_intercept() {
                             .owned_by(2)
                             .with_size(1)
                             .with_tech(10.0)
-                            .in_planet_orbit(1, 0)
+                            .in_planet_orbit(1, 1)
                             .with_active(true)
                             .with_alive(true)
                             .build_handle();
@@ -954,7 +954,7 @@ void test_doabm_intercept() {
                            .owned_by(3)
                            .with_size(1)
                            .with_tech(10.0)
-                           .in_planet_orbit(1, 0)
+                           .in_planet_orbit(1, 1)
                            .with_active(true)
                            .with_alive(true)
                            .build_handle();
@@ -966,8 +966,8 @@ void test_doabm_intercept() {
                         .with_tech(10.0)
                         .with_destruct(50)
                         .with_crew(10, 0)
-                        .in_planet_orbit(1, 0)
-                        .targeting_planet(1, 0)
+                        .in_planet_orbit(1, 1)
+                        .targeting_planet(1, 1)
                         .with_retaliate(50)
                         .with_guns(guntype_t::HEAVY, 10, ActiveBattery::PRIMARY)
                         .with_active(true)
@@ -994,7 +994,7 @@ void test_do_canister_and_greenhouse() {
   // 1. Test do_canister
   shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
                          .owned_by(1)
-                         .in_planet_orbit(0, 0)
+                         .in_planet_orbit(1, 1)
                          .with_special(TimerData{.count = 0})
                          .build();
 
@@ -1004,12 +1004,12 @@ void test_do_canister_and_greenhouse() {
 
     do_canister(*canist_ship, ctx.em, stats);
     test::expect_eq(canist_ship->count(), 1);
-    test::expect_eq(stats.temp_add(0, 0), -10);
+    test::expect_eq(stats.temp_add(1, 1), -10);
 
     // Clamped at -100
-    stats.set_temp_add(0, 0, -95);
+    stats.set_temp_add(1, 1, -95);
     do_canister(*canist_ship, ctx.em, stats);
-    test::expect_eq(stats.temp_add(0, 0), -100);
+    test::expect_eq(stats.temp_add(1, 1), -100);
 
     // Dissipation on timer expiration
     canist_ship->set_count(DISSIPATE);
@@ -1018,10 +1018,10 @@ void test_do_canister_and_greenhouse() {
   });
 
   // 2. Test do_greenhouse
-  stats.set_temp_add(0, 0, 0);
+  stats.set_temp_add(1, 1, 0);
   shipnum_t gh_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
                         .owned_by(1)
-                        .in_planet_orbit(0, 0)
+                        .in_planet_orbit(1, 1)
                         .with_special(TimerData{.count = 0})
                         .build();
 
@@ -1031,12 +1031,12 @@ void test_do_canister_and_greenhouse() {
 
     do_greenhouse(*gh_ship, ctx.em, stats);
     test::expect_eq(gh_ship->count(), 1);
-    test::expect_eq(stats.temp_add(0, 0), 10);
+    test::expect_eq(stats.temp_add(1, 1), 10);
 
     // Clamped at +100
-    stats.set_temp_add(0, 0, 95);
+    stats.set_temp_add(1, 1, 95);
     do_greenhouse(*gh_ship, ctx.em, stats);
-    test::expect_eq(stats.temp_add(0, 0), 100);
+    test::expect_eq(stats.temp_add(1, 1), 100);
 
     // Dissipation on timer expiration
     gh_ship->set_count(DISSIPATE);
@@ -1046,36 +1046,36 @@ void test_do_canister_and_greenhouse() {
 
   // 3. Test do_greenhouse scope and landing guards
   {
-    stats.set_temp_add(0, 0, 0);
+    stats.set_temp_add(1, 1, 0);
     shipnum_t landed_gh = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
                               .owned_by(1)
-                              .landed_on(0, 0, Coordinates{0, 0})
+                              .landed_on(1, 1, Coordinates{0, 0})
                               .with_special(TimerData{.count = 0})
                               .build();
     ctx.em.mutate_as<CanisterShip>(landed_gh, [&](CanisterShip& gh) {
       do_greenhouse(gh, ctx.em, stats);
       test::expect_eq(gh.count(), 0);
-      test::expect_eq(stats.temp_add(0, 0), 0);
+      test::expect_eq(stats.temp_add(1, 1), 0);
     });
 
     shipnum_t star_gh = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
                             .owned_by(1)
-                            .in_star_orbit(0)
+                            .in_star_orbit(1)
                             .with_special(TimerData{.count = 0})
                             .build();
     ctx.em.mutate_as<CanisterShip>(star_gh, [&](CanisterShip& gh) {
       do_greenhouse(gh, ctx.em, stats);
       test::expect_eq(gh.count(), 0);
-      test::expect_eq(stats.temp_add(0, 0), 0);
+      test::expect_eq(stats.temp_add(1, 1), 0);
     });
   }
 
   // 4. Test integrated doship() turn update for greenhouse
   {
-    stats.set_temp_add(0, 0, 0);
+    stats.set_temp_add(1, 1, 0);
     shipnum_t turn_gh = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
                             .owned_by(1)
-                            .in_planet_orbit(0, 0)
+                            .in_planet_orbit(1, 1)
                             .with_special(TimerData{.count = 0})
                             .build();
 
@@ -1083,14 +1083,14 @@ void test_do_canister_and_greenhouse() {
     ctx.em.mutate_ship(turn_gh, [&](Ship& gh) {
       doship(gh, /*update=*/false, ctx.em, stats);
       test::expect_eq(gh.as<CanisterShip>()->count(), 0);
-      test::expect_eq(stats.temp_add(0, 0), 0);
+      test::expect_eq(stats.temp_add(1, 1), 0);
     });
 
     // Full update pass (update = true) DOES trigger greenhouse
     ctx.em.mutate_ship(turn_gh, [&](Ship& gh) {
       doship(gh, /*update=*/true, ctx.em, stats);
       test::expect_eq(gh.as<CanisterShip>()->count(), 1);
-      test::expect_eq(stats.temp_add(0, 0), 10);
+      test::expect_eq(stats.temp_add(1, 1), 10);
     });
   }
 }
@@ -1103,75 +1103,75 @@ void test_do_oap() {
   // 1. Direct do_oap on orbiting active online OAP
   shipnum_t oap_id = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                          .owned_by(1)
-                         .in_planet_orbit(0, 0)
+                         .in_planet_orbit(1, 1)
                          .with_on(true)
                          .build();
 
-  test::expect_false(stats.is_intimidated(0, 0));
+  test::expect_false(stats.is_intimidated(1, 1));
   ctx.em.mutate_ship(oap_id, [&](Ship& oap) {
     do_oap(oap, stats);
-    test::expect_true(stats.is_intimidated(0, 0));
+    test::expect_true(stats.is_intimidated(1, 1));
   });
 
   // 2. Integration via doship() update pass
-  stats.set_intimidated(0, 0, false);
+  stats.set_intimidated(1, 1, false);
   ctx.em.mutate_ship(oap_id, [&](Ship& oap) {
     doship(oap, /*update=*/false, ctx.em, stats);
-    test::expect_false(stats.is_intimidated(0, 0));
+    test::expect_false(stats.is_intimidated(1, 1));
 
     doship(oap, /*update=*/true, ctx.em, stats);
-    test::expect_true(stats.is_intimidated(0, 0));
+    test::expect_true(stats.is_intimidated(1, 1));
   });
 
   // 3. Domain guards: landed, offline, star orbit, inactive
   {
     // Landed OAP does not intimidate
-    stats.set_intimidated(0, 0, false);
+    stats.set_intimidated(1, 1, false);
     shipnum_t landed_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                                .owned_by(1)
-                               .landed_on(0, 0, Coordinates{0, 0})
+                               .landed_on(1, 1, Coordinates{0, 0})
                                .with_on(true)
                                .build();
     ctx.em.mutate_ship(landed_oap, [&](Ship& oap) {
       do_oap(oap, stats);
-      test::expect_false(stats.is_intimidated(0, 0));
+      test::expect_false(stats.is_intimidated(1, 1));
     });
 
     // Offline OAP does not intimidate
-    stats.set_intimidated(0, 0, false);
+    stats.set_intimidated(1, 1, false);
     shipnum_t offline_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                                 .owned_by(1)
-                                .in_planet_orbit(0, 0)
+                                .in_planet_orbit(1, 1)
                                 .with_on(false)
                                 .build();
     ctx.em.mutate_ship(offline_oap, [&](Ship& oap) {
       do_oap(oap, stats);
-      test::expect_false(stats.is_intimidated(0, 0));
+      test::expect_false(stats.is_intimidated(1, 1));
     });
 
     // Star-orbiting OAP does not intimidate a planet
-    stats.set_intimidated(0, 0, false);
+    stats.set_intimidated(1, 1, false);
     shipnum_t star_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                              .owned_by(1)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_on(true)
                              .build();
     ctx.em.mutate_ship(star_oap, [&](Ship& oap) {
       do_oap(oap, stats);
-      test::expect_false(stats.is_intimidated(0, 0));
+      test::expect_false(stats.is_intimidated(1, 1));
     });
 
     // Inactive OAP does not intimidate
-    stats.set_intimidated(0, 0, false);
+    stats.set_intimidated(1, 1, false);
     shipnum_t inactive_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                                  .owned_by(1)
-                                 .in_planet_orbit(0, 0)
+                                 .in_planet_orbit(1, 1)
                                  .with_active(false)
                                  .with_on(true)
                                  .build();
     ctx.em.mutate_ship(inactive_oap, [&](Ship& oap) {
       do_oap(oap, stats);
-      test::expect_false(stats.is_intimidated(0, 0));
+      test::expect_false(stats.is_intimidated(1, 1));
     });
   }
 }
@@ -1199,14 +1199,14 @@ void test_do_ap_and_god() {
 
   // 2. Test do_ap (modifies planetary atmosphere gases without altering temp)
   ctx.em.mutate_race(1, [](Race& r) { r.conditions.methane = 80; });
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.temp() = -50;
     p.conditions().methane = 10;
   });
 
   shipnum_t ap_ship_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AP)
                              .owned_by(1)
-                             .landed_on(0, 0, {0, 0})
+                             .landed_on(1, 1, {0, 0})
                              .with_fuel(10.0)
                              .with_crew(100, 0)
                              .with_max_crew(100)
@@ -1217,7 +1217,7 @@ void test_do_ap_and_god() {
     do_ap(ap_ship, ctx.em);
     test::expect_lt(ap_ship.fuel(), 10.0);
   });
-  const auto* p_after = ctx.em.peek_planet(0, 0);
+  const auto* p_after = ctx.em.peek_planet(1, 1);
   test::expect_eq(p_after->temp(), -50);
   test::expect_gt(p_after->conditions(METHANE), 10);
 }
@@ -1230,7 +1230,7 @@ void test_do_pod() {
   // remains alive
   shipnum_t warming_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                                  .owned_by(1)
-                                 .in_star_orbit(0)
+                                 .in_star_orbit(1)
                                  .with_pod(10, 0)
                                  .build();
 
@@ -1244,7 +1244,7 @@ void test_do_pod() {
   // infects planet
   shipnum_t exploding_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                                    .owned_by(1)
-                                   .in_star_orbit(0)
+                                   .in_star_orbit(1)
                                    .with_pod(POD_THRESHOLD + 10, 0)
                                    .build();
 
@@ -1257,7 +1257,7 @@ void test_do_pod() {
   // remains alive
   shipnum_t decaying_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                                   .owned_by(1)
-                                  .in_planet_orbit(0, 0)
+                                  .in_planet_orbit(1, 1)
                                   .with_pod(0, 1)
                                   .build();
 
@@ -1270,7 +1270,7 @@ void test_do_pod() {
   // 4. Pod in planet orbit with decay >= POD_DECAY -> decays to death, killed
   shipnum_t dead_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                               .owned_by(1)
-                              .in_planet_orbit(0, 0)
+                              .in_planet_orbit(1, 1)
                               .with_pod(0, POD_DECAY)
                               .build();
 
@@ -1288,14 +1288,14 @@ void test_do_mirror() {
   // 1. Space mirror aimed at another ship in same star system
   shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                             .owned_by(2)
-                            .in_star_orbit(0, SystemCoordinates{10.0, 10.0})
+                            .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
                             .with_size(10)
                             .with_tech(10.0)
                             .build();
 
   shipnum_t mirror_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                                  .owned_by(1)
-                                 .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                                 .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                  .with_aim(AimedAtData{
                                      .shipno = target_id,
                                      .intensity = 100,
@@ -1313,10 +1313,10 @@ void test_do_mirror() {
   // planet.absolute_coordinates(star))
   shipnum_t mirror_plan_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                                  .owned_by(1)
-                                 .in_star_orbit(0, SystemCoordinates{0.0, 0.0})
+                                 .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                  .with_aim(AimedAtData{
                                      .intensity = 50,
-                                     .pnum = 0,
+                                     .pnum = 1,
                                      .level = ScopeLevel::LEVEL_PLAN,
                                  })
                                  .build();
@@ -1324,15 +1324,15 @@ void test_do_mirror() {
   ctx.em.mutate_as<SpaceMirrorShip>(
       mirror_plan_id,
       [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
-  test::expect_gt(stats.temp_add(0, 0), 0);
+  test::expect_gt(stats.temp_add(1, 1), 0);
 
   // 3. Space mirror aimed at star
-  int initial_stability = ctx.em.peek_star(0)->stability();
+  int initial_stability = ctx.em.peek_star(1)->stability();
   shipnum_t mirror_star_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                                  .owned_by(1)
-                                 .in_star_orbit(0)
+                                 .in_star_orbit(1)
                                  .with_aim(AimedAtData{
-                                     .snum = 0,
+                                     .snum = 1,
                                      .intensity = 50,
                                      .level = ScopeLevel::LEVEL_STAR,
                                  })
@@ -1341,21 +1341,21 @@ void test_do_mirror() {
   ctx.em.mutate_as<SpaceMirrorShip>(
       mirror_star_id,
       [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
-  test::expect_ge(ctx.em.peek_star(0)->stability(), initial_stability);
+  test::expect_ge(ctx.em.peek_star(1)->stability(), initial_stability);
 
   // 4. Unaimed mirror (LEVEL_UNIV) does nothing
   shipnum_t mirror_unaimed_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
           .owned_by(1)
-          .in_star_orbit(0)
+          .in_star_orbit(1)
           .with_aim(AimedAtData{.level = ScopeLevel::LEVEL_UNIV})
           .build();
 
-  auto temp_before = stats.temp_add(0, 0);
+  auto temp_before = stats.temp_add(1, 1);
   ctx.em.mutate_as<SpaceMirrorShip>(
       mirror_unaimed_id,
       [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
-  test::expect_eq(stats.temp_add(0, 0), temp_before);
+  test::expect_eq(stats.temp_add(1, 1), temp_before);
 }
 
 void test_ship_domain_operations() {
@@ -1444,7 +1444,7 @@ void test_do_repair() {
   // 1. Probe with max_crew = 0 (verifies division-by-zero fix, maxrep = 0)
   shipnum_t probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
                            .owned_by(1)
-                           .in_star_orbit(0)
+                           .in_star_orbit(1)
                            .with_damage(50)
                            .with_resource(100)
                            .build();
@@ -1458,7 +1458,7 @@ void test_do_repair() {
   // 2. Manned ship with crew repairs damage and consumes resources
   shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                              .owned_by(1)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_crew(10, 0)
                              .with_resource(100)
                              .with_damage(50)
@@ -1474,13 +1474,13 @@ void test_do_repair() {
   // resources and 0 crew!
   shipnum_t station_id = TestShipBuilder(ctx.em, ShipType::STYPE_STATION)
                              .owned_by(1)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .build();
 
   shipnum_t docked_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                                  .owned_by(1)
-                                 .in_star_orbit(0)
-                                 .docked_to(station_id, 0)
+                                 .in_star_orbit(1)
+                                 .docked_to(station_id, 1)
                                  .with_damage(40)
                                  .with_resource(0)
                                  .build();
@@ -1623,7 +1623,7 @@ void test_update_ship_inhabited_and_exploration() {
 
   Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
   planet.star_id() = 1;
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   PlanetRepository(store).save(planet);
 
   // 1. Probe in star orbit explores star
@@ -1642,28 +1642,28 @@ void test_update_ship_inhabited_and_exploration() {
   auto manned_handle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
                            .owned_by(1)
                            .with_crew(10, 0)
-                           .in_planet_orbit(1, 0)
+                           .in_planet_orbit(1, 1)
                            .with_alive(true)
                            .build_handle();
   update_ship_inhabited_and_exploration(*manned_handle, em);
   const auto& planet_after_manned =
-      *em.peek_planet(starnum_t{1}, planetnum_t{0});
+      *em.peek_planet(starnum_t{1}, planetnum_t{1});
   test::expect_true(planet_after_manned.is_explored_by(player_t{1}));
 
   // 3. Uncrewed cargo ship does not explore
   Planet planet2{PlanetType::EARTH, Coordinates{2, 2}};
   planet2.star_id() = 1;
-  planet2.planet_order() = 1;
+  planet2.planet_order() = 2;
   PlanetRepository(store).save(planet2);
 
   auto cargo_handle = TestShipBuilder(em, ShipType::STYPE_CARGO)
                           .owned_by(2)
                           .with_crew(0, 0)
-                          .in_planet_orbit(1, 1)
+                          .in_planet_orbit(1, 2)
                           .with_alive(true)
                           .build_handle();
   update_ship_inhabited_and_exploration(*cargo_handle, em);
-  const auto& planet2_after = *em.peek_planet(starnum_t{1}, planetnum_t{1});
+  const auto& planet2_after = *em.peek_planet(starnum_t{1}, planetnum_t{2});
   test::expect_false(planet2_after.is_explored_by(player_t{2}));
 }
 
@@ -1687,7 +1687,7 @@ void test_synchronize_docked_carrier_ownership() {
   // Docked fighter initially owned by Player 2
   auto fighter_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                             .owned_by(2)
-                            .docked_to(carrier_handle->number(), 0)
+                            .docked_to(carrier_handle->number(), 1)
                             .with_alive(true)
                             .build_handle();
   Ship& fighter = *fighter_handle;
@@ -1758,7 +1758,7 @@ void test_special_subsystems_extended() {
 
   Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
   planet.star_id() = 1;
-  planet.planet_order() = 0;
+  planet.planet_order() = 1;
   planet.rtemp() = 10;
   planet.conditions().oxygen = 10;
   PlanetRepository(store).save(planet);
@@ -1789,24 +1789,24 @@ void test_special_subsystems_extended() {
   // 3. Canister clamped at -100
   auto can_handle = TestShipBuilder(em, ShipType::OTYPE_CANIST)
                         .owned_by(1)
-                        .in_planet_orbit(1, 0)
+                        .in_planet_orbit(1, 1)
                         .with_active(true)
                         .with_alive(true)
                         .build_handle();
-  stats.set_temp_add(1, 0, -95);
+  stats.set_temp_add(1, 1, -95);
   do_canister(*can_handle->as<CanisterShip>(), em, stats);
-  test::expect_eq(stats.temp_add(1, 0), -100);
+  test::expect_eq(stats.temp_add(1, 1), -100);
 
   // 4. Greenhouse clamped at +100
   auto gh_handle = TestShipBuilder(em, ShipType::OTYPE_GREEN)
                        .owned_by(1)
-                       .in_planet_orbit(1, 0)
+                       .in_planet_orbit(1, 1)
                        .with_active(true)
                        .with_alive(true)
                        .build_handle();
-  stats.set_temp_add(1, 0, 95);
+  stats.set_temp_add(1, 1, 95);
   do_greenhouse(*gh_handle->as<CanisterShip>(), em, stats);
-  test::expect_eq(stats.temp_add(1, 0), 100);
+  test::expect_eq(stats.temp_add(1, 1), 100);
 
   // 5. Space mirror destroys target ship when damage exceeds 100
   auto target_handle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
@@ -1857,7 +1857,7 @@ void test_prepare_ship_for_flight() {
   // 3. Derelict uncrewed manned ship gets redirected to LEVEL_UNIV
   shipnum_t derelict_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                               .owned_by(1)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .with_crew(0, 0)
                               .build();
   ctx.em.mutate_ship(derelict_id, [&](Ship& s) {
@@ -1869,12 +1869,12 @@ void test_prepare_ship_for_flight() {
   // 4. Docked uncrewed manned ship is NOT redirected to LEVEL_UNIV
   shipnum_t station_id = TestShipBuilder(ctx.em, ShipType::STYPE_STATION)
                              .owned_by(1)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .build();
   shipnum_t docked_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                             .owned_by(1)
-                            .in_star_orbit(0)
-                            .docked_to(station_id, 0)
+                            .in_star_orbit(1)
+                            .docked_to(station_id, 1)
                             .with_crew(0, 0)
                             .build();
   ctx.em.mutate_ship(docked_id, [&](Ship& s) {
@@ -1902,7 +1902,7 @@ void test_evaluate_ship_hazards() {
   // 2. Star with nova_stage == 0 causes no damage
   shipnum_t calm_star_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                                  .owned_by(1)
-                                 .in_star_orbit(0)
+                                 .in_star_orbit(1)
                                  .build();
   ctx.em.mutate_ship(calm_star_ship, [&](Ship& s) {
     test::expect_true(evaluate_ship_hazards(s, ctx.em));
@@ -1910,10 +1910,10 @@ void test_evaluate_ship_hazards() {
   });
 
   // 3. Star with nova_stage > 0 damages ship; survives if damage < 100
-  ctx.em.mutate_star(0, [](Star& star) { star.nova_stage() = 4; });
+  ctx.em.mutate_star(1, [](Star& star) { star.nova_stage() = 4; });
   shipnum_t armored_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                                .owned_by(1)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .with_armor(5)
                                .build();
   ctx.em.mutate_ship(armored_ship, [&](Ship& s) {
@@ -1923,10 +1923,10 @@ void test_evaluate_ship_hazards() {
   });
 
   // 4. Unarmored ship taking fatal damage (nova_stage high) is destroyed
-  ctx.em.mutate_star(0, [](Star& star) { star.nova_stage() = 25; });
+  ctx.em.mutate_star(1, [](Star& star) { star.nova_stage() = 25; });
   shipnum_t doomed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                               .owned_by(1)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .with_armor(0)
                               .with_damage(95)
                               .build();
@@ -1944,22 +1944,22 @@ void test_dispatch_ship_subsystems() {
   // 1. Bombarding ship in planet orbit marks planet inhabited
   shipnum_t bombardier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                                 .owned_by(1)
-                                .in_planet_orbit(0, 0)
+                                .in_planet_orbit(1, 1)
                                 .build();
   ctx.em.mutate_ship(bombardier_id, [&](Ship& s) {
     s.whatdest() = ScopeLevel::LEVEL_PLAN;
-    s.deststar() = 0;
-    s.destpnum() = 0;
+    s.deststar() = 1;
+    s.destpnum() = 1;
     s.bombard() = 1;
     dispatch_ship_subsystems(s, true, ctx.em, stats);
-    test::expect_true(stats.is_inhabited(0, 0));
+    test::expect_true(stats.is_inhabited(1, 1));
   });
 
   // 2. Segment pass (update == false) skips update-only subsystems (e.g.
   // canister)
   shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
                          .owned_by(1)
-                         .in_planet_orbit(0, 0)
+                         .in_planet_orbit(1, 1)
                          .build();
   ctx.em.mutate_ship(can_id, [&](Ship& s) {
     auto* can = s.as<CanisterShip>();
@@ -1987,7 +1987,7 @@ void test_doship_pipeline_types() {
   // Shuttle, Station, Canister, Habitat, Pod
   shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                              .owned_by(1)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .build();
   ctx.em.mutate_ship(shuttle_id, [&](Ship& s) {
     doship(s, true, ctx.em, stats);
@@ -1997,7 +1997,7 @@ void test_doship_pipeline_types() {
 
   shipnum_t station_id = TestShipBuilder(ctx.em, ShipType::STYPE_STATION)
                              .owned_by(1)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .build();
   ctx.em.mutate_ship(station_id, [&](Ship& s) {
     doship(s, true, ctx.em, stats);
@@ -2006,7 +2006,7 @@ void test_doship_pipeline_types() {
 
   shipnum_t canist_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
                             .owned_by(1)
-                            .in_planet_orbit(0, 0)
+                            .in_planet_orbit(1, 1)
                             .build();
   ctx.em.mutate_ship(canist_id, [&](Ship& s) {
     doship(s, true, ctx.em, stats);
@@ -2015,7 +2015,7 @@ void test_doship_pipeline_types() {
 
   shipnum_t habitat_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                              .owned_by(1)
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_crew(100, 0)
                              .with_fuel(50.0)
                              .with_on(true)
@@ -2027,7 +2027,7 @@ void test_doship_pipeline_types() {
 
   shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                          .owned_by(1)
-                         .in_star_orbit(0)
+                         .in_star_orbit(1)
                          .with_pod(10, 0)
                          .build();
   ctx.em.mutate_ship(pod_id, [&](Ship& s) {

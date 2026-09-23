@@ -66,12 +66,12 @@ namespace {
 
 void test_commandname_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();  // Sol (0), Earth (0), Vega (1), Vega Prime (0), P1 (Federation), P2 (Klingons)
+  ctx.with_standard_universe();  // Sol (1), Earth (1), Vega (2), Vega Prime (1), P1 (Federation), P2 (Klingons)
 
   // 1. Setup test entities via fluent builders
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                           .owned_by(1, 0)
-                          .in_star_orbit(0)
+                          .in_star_orbit(1)
                           .with_fuel(100.0)
                           .build();
 
@@ -80,7 +80,7 @@ void test_commandname_matrix() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 3. 4-Way Command Matrix runner
   TestCommandMatrix(ctx, "commandname")
@@ -99,13 +99,13 @@ void test_commandname_persistence() {
   ctx.with_standard_universe();
 
   // Mutate via production path (auto-saves on lambda exit)
-  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+  ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.popn() += 500;
   });
 
   // Verify persistence via cache clear
   ctx.em.clear_cache();
-  const auto* planet = ctx.em.peek_planet(0, 0);
+  const auto* planet = ctx.em.peek_planet(1, 1);
   test::expect_eq(planet->popn(), 1500);
 }
 

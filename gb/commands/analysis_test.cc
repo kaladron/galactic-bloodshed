@@ -44,7 +44,7 @@ int main() {
 
   // Create test star
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "TestStar";
   ss.coordinates = {100.0, 200.0};
   ss.pnames.emplace_back("TestPlanet");
@@ -56,8 +56,8 @@ int main() {
 
   // Create a test planet with a 5x5 grid
   Planet planet{PlanetType::EARTH, Coordinates{5, 5}};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   planet.explored() = true;
   planet.info(player_t{1}).explored = true;  // Player 1 has explored
   planet.info(player_t{2}).explored = true;  // Player 2 has explored
@@ -147,8 +147,8 @@ int main() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   std::println(std::cout,
                "\n========== Analysis Command Output Test ==========\n");

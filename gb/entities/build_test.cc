@@ -222,13 +222,13 @@ int main() {
     TestContext ctx;
     ctx.with_standard_universe();
 
-    ctx.em.mutate_planet(0, 0, [](Planet& p) {
+    ctx.em.mutate_planet(1, 1, [](Planet& p) {
       p.popn() = 100;
       p.info(1).popn = 100;
       p.info(1).numsectsowned = 1;
       p.info(1).fuel = 500;
     });
-    ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+    ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
       for (auto& s : smap) {
         s.clear_popn();
         s.set_troops_exact(0);
@@ -244,8 +244,8 @@ int main() {
     ship->max_fuel() = 50;
     std::pair<population_t, fuel_t> loaded{};
 
-    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
-      ctx.em.mutate_sectormap(0, 0, [&](SectorMap& smap) {
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+      ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
         auto& sect = smap.get(Coordinates{1, 1});
         loaded = autoload_at_planet(1, *ship, p, sect);
       });
@@ -254,8 +254,8 @@ int main() {
     const auto [crew, fuel] = loaded;
     test::expect_eq(crew, 100);
     test::expect_eq(fuel, 50.0);
-    const auto* p_after = ctx.em.peek_planet(0, 0);
-    const auto* smap_after = ctx.em.peek_sectormap(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
+    const auto* smap_after = ctx.em.peek_sectormap(1, 1);
     test::expect_eq(p_after->popn(), 0);
     test::expect_eq(p_after->info(1).popn, 0);
     test::expect_eq(p_after->info(1).numsectsowned, 0);
@@ -371,21 +371,21 @@ int main() {
     ctx.with_standard_universe();
     const auto& r1 = *ctx.em.peek_race(1);
 
-    ctx.em.mutate_planet(0, 0, [](Planet& p) {
+    ctx.em.mutate_planet(1, 1, [](Planet& p) {
       p.toxic() = 80;
       p.info(player_t{1}).resource = 1000;
     });
 
     auto tox_ship = getship(ShipType::OTYPE_TOXWC, r1);
-    ctx.em.mutate_planet(0, 0, [&](Planet& p) {
-      create_ship_by_planet(ctx.em, 1, 0, r1, *tox_ship, p, 0, 0,
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+      create_ship_by_planet(ctx.em, 1, 0, r1, *tox_ship, p, 1, 1,
                             Coordinates{2, 2});
     });
 
-    const auto* p_after = ctx.em.peek_planet(0, 0);
+    const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_lt(p_after->toxic(), 80);
 
-    auto [scost, sdist] = shipping_cost(ctx.em, 0, 1, 1000);
+    auto [scost, sdist] = shipping_cost(ctx.em, 1, 2, 1000);
     test::expect_gt(sdist, 0.0);
     test::expect_ge(scost, 0);
     std::println(std::cout,
@@ -403,15 +403,15 @@ int main() {
     const auto& r1 = *ctx.em.peek_race(1);
 
     // can_build_at_planet: enslaved planet
-    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.enslave_to(2); });
-    test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(0),
-                                           *ctx.em.peek_planet(0, 0)));
-    ctx.em.mutate_planet(0, 0, [](Planet& p) { p.free_slaves(); });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
+    test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(1),
+                                           *ctx.em.peek_planet(1, 1)));
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
 
     // can_build_at_planet: unauthorized governor
     ctx.setup_game_obj(g, 1, 2);
-    test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(0),
-                                           *ctx.em.peek_planet(0, 0)));
+    test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(1),
+                                           *ctx.em.peek_planet(1, 1)));
     ctx.setup_game_obj(g, 1, 0);
 
     // can_build_on_ship
@@ -423,8 +423,8 @@ int main() {
         can_build_on_ship(ShipType::STYPE_STATION, r1, *shuttle).has_value());
 
     // build_at_ship error paths
-    starnum_t snum = 0;
-    planetnum_t pnum = 0;
+    starnum_t snum = 1;
+    planetnum_t pnum = 1;
     probe->owner() = 1;
     probe->alive() = true;
     probe->active() = true;

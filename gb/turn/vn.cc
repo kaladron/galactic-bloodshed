@@ -86,9 +86,9 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
     const auto secondary = universe.VN_index2[*target];
     const auto chosen = bool_rand() ? (primary ? primary : secondary)
                                     : (secondary ? secondary : primary);
-    ship.deststar() = chosen.value_or(int_rand(0, universe.numstars - 1));
+    ship.deststar() = chosen.value_or(int_rand(1, universe.numstars));
   } else {
-    ship.deststar() = int_rand(0, universe.numstars - 1);
+    ship.deststar() = int_rand(1, universe.numstars);
   }
 
   const auto& star = *em.peek_star(ship.deststar());
@@ -122,7 +122,7 @@ void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
   // occupied, pick a random star.
   if (star_min.is_inhabited_by(player_t{1})) {
     if (star_min2.is_inhabited_by(player_t{1})) {
-      ship.deststar() = int_rand(0, universe.numstars - 1);
+      ship.deststar() = int_rand(1, universe.numstars);
     } else {
       ship.deststar() = second_closest;
     }

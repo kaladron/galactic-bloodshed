@@ -181,27 +181,27 @@ void test_test_world_builder() {
   test::expect_eq(r2->name, "Klingons");
   test::expect_eq(r2->Playernum, player_t{2});
 
-  // 2. Verify Star 0 auto-exploration and AP
-  const auto* star = ctx.em.peek_star(0);
-  test::expect_true(star != nullptr, "Star 0 must exist");
+  // 2. Verify Star 1 auto-exploration and AP
+  const auto* star = ctx.em.peek_star(1);
+  test::expect_true(star != nullptr, "Star 1 must exist");
   test::expect_eq(star->get_name(), "Sol");
   test::expect_true(star->is_explored_by(player_t{1}),
-                    "Player 1 explored Star 0");
+                    "Player 1 explored Star 1");
   test::expect_true(star->is_explored_by(player_t{2}),
-                    "Player 2 explored Star 0");
+                    "Player 2 explored Star 1");
   test::expect_eq(star->AP(player_t{1}), 100);
   test::expect_eq(star->AP(player_t{2}), 100);
 
-  // 3. Verify Planet 0,0 auto-exploration and SectorMap
-  const auto* planet = ctx.em.peek_planet(0, 0);
-  test::expect_true(planet != nullptr, "Planet /0/0 must exist");
+  // 3. Verify Planet 1,1 auto-exploration and SectorMap
+  const auto* planet = ctx.em.peek_planet(1, 1);
+  test::expect_true(planet != nullptr, "Planet /1/1 must exist");
   test::expect_eq(planet->type(), PlanetType::EARTH);
   test::expect_eq(planet->info(player_t{1}).explored, 1);
   test::expect_eq(planet->info(player_t{2}).explored, 1);
   test::expect_eq(planet->info(player_t{1}).destruct, 1000);
 
-  const auto* smap = ctx.em.peek_sectormap(0, 0);
-  test::expect_true(smap != nullptr, "SectorMap for /0/0 must exist");
+  const auto* smap = ctx.em.peek_sectormap(1, 1);
+  test::expect_true(smap != nullptr, "SectorMap for /1/1 must exist");
   test::expect_eq(smap->get(Coordinates{0, 0}).coords(), Coordinates{0, 0});
 
   std::println(std::cout, "  ✓ TestWorldBuilder verified successfully");
@@ -217,7 +217,7 @@ void test_test_ship_builder() {
   shipnum_t bb_num = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
                          .owned_by(1)
                          .named("USS Enterprise")
-                         .in_star_orbit(0, 10.0, 20.0)
+                         .in_star_orbit(1, 10.0, 20.0)
                          .build();
 
   test::expect_eq(bb_num, shipnum_t{1});
@@ -232,7 +232,7 @@ void test_test_ship_builder() {
   test::expect_eq(bb->max_fuel(), battle_tmpl.max_fuel);
   test::expect_eq(bb->fuel(), static_cast<double>(battle_tmpl.max_fuel));
   test::expect_eq(bb->whatorbits(), ScopeLevel::LEVEL_STAR);
-  test::expect_eq(bb->storbits(), starnum_t{0});
+  test::expect_eq(bb->storbits(), starnum_t{1});
   test::expect_eq(bb->coordinates(), UniverseCoordinates(10.0, 20.0));
   test::expect_false(bb->docked());
 
@@ -241,7 +241,7 @@ void test_test_ship_builder() {
   shipnum_t lander_num = TestShipBuilder(ctx.em, ShipType::STYPE_LANDER)
                              .owned_by(2)
                              .named("Bird of Prey")
-                             .landed_on(0, 0, land_loc)
+                             .landed_on(1, 1, land_loc)
                              .with_crew(100, 50)
                              .with_resource(500)
                              .with_damage(15)
@@ -253,8 +253,8 @@ void test_test_ship_builder() {
   test::expect_true(lander != nullptr, "Lander must exist");
   test::expect_eq(lander->name(), "Bird of Prey");
   test::expect_eq(lander->whatorbits(), ScopeLevel::LEVEL_PLAN);
-  test::expect_eq(lander->storbits(), starnum_t{0});
-  test::expect_eq(lander->pnumorbits(), planetnum_t{0});
+  test::expect_eq(lander->storbits(), starnum_t{1});
+  test::expect_eq(lander->pnumorbits(), planetnum_t{1});
   test::expect_true(lander->docked());
   test::expect_eq(lander->land_coords().x, 3);
   test::expect_eq(lander->land_coords().y, 4);
@@ -268,7 +268,7 @@ void test_test_ship_builder() {
   // 3. Docked ship attached to parent ship
   shipnum_t fighter_num = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                               .owned_by(1)
-                              .docked_to(bb_num, 0)
+                              .docked_to(bb_num, 1)
                               .build();
 
   test::expect_eq(fighter_num, shipnum_t{3});
@@ -282,13 +282,13 @@ void test_test_ship_builder() {
   // 100, 0)
   shipnum_t shuttle_num = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                               .owned_by(1)
-                              .in_planet_orbit(0, 0)
+                              .in_planet_orbit(1, 1)
                               .build();
   const auto* shuttle = ctx.em.peek_ship(shuttle_num);
   test::expect_true(shuttle != nullptr);
   test::expect_eq(shuttle->whatorbits(), ScopeLevel::LEVEL_PLAN);
-  test::expect_eq(shuttle->storbits(), starnum_t{0});
-  test::expect_eq(shuttle->pnumorbits(), planetnum_t{0});
+  test::expect_eq(shuttle->storbits(), starnum_t{1});
+  test::expect_eq(shuttle->pnumorbits(), planetnum_t{1});
   test::expect_eq(shuttle->coordinates(), UniverseCoordinates(100.0, 0.0));
 
   // Verify lander also resolved planet coordinates
@@ -298,7 +298,7 @@ void test_test_ship_builder() {
   shipnum_t univ_orbiter_num =
       TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
           .owned_by(1)
-          .in_planet_orbit(0, 0, UniverseCoordinates{105.0, 5.0})
+          .in_planet_orbit(1, 1, UniverseCoordinates{105.0, 5.0})
           .build();
   const auto* univ_orbiter = ctx.em.peek_ship(univ_orbiter_num);
   test::expect_true(univ_orbiter != nullptr);
@@ -309,7 +309,7 @@ void test_test_ship_builder() {
   shipnum_t sys_orbiter_num =
       TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
           .owned_by(1)
-          .in_planet_orbit(0, 0, SystemCoordinates{110.0, 10.0})
+          .in_planet_orbit(1, 1, SystemCoordinates{110.0, 10.0})
           .build();
   const auto* sys_orbiter = ctx.em.peek_ship(sys_orbiter_num);
   test::expect_true(sys_orbiter != nullptr);
@@ -331,7 +331,7 @@ void test_test_ship_builder() {
   shipnum_t star_sys_orbiter_num =
       TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
           .owned_by(1)
-          .in_star_orbit(0, SystemCoordinates{50.0, 75.0})
+          .in_star_orbit(1, SystemCoordinates{50.0, 75.0})
           .build();
   const auto* star_sys_orbiter = ctx.em.peek_ship(star_sys_orbiter_num);
   test::expect_true(star_sys_orbiter != nullptr);
@@ -346,9 +346,9 @@ void test_test_planet_builder() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  // 1. Build a custom desert planet on Star 0 using create_planet
+  // 1. Build a custom desert planet on Star 1 using create_planet
   planetnum_t mars_id =
-      ctx.create_planet(0, PlanetType::MARS, Coordinates{6, 6})
+      ctx.create_planet(1, PlanetType::MARS, Coordinates{6, 6})
           .named("Mars")
           .with_position(SystemCoordinates{200.0, 150.0})
           .with_toxicity(25)
@@ -360,8 +360,8 @@ void test_test_planet_builder() {
                        /*res=*/150, /*troops=*/200)
           .build();
 
-  test::expect_eq(mars_id, planetnum_t{1});
-  const auto* mars = ctx.em.peek_planet(0, mars_id);
+  test::expect_eq(mars_id, planetnum_t{2});
+  const auto* mars = ctx.em.peek_planet(1, mars_id);
   test::expect_true(mars != nullptr, "Mars must exist");
   test::expect_eq(mars->type(), PlanetType::MARS);
   test::expect_eq(mars->dimensions().x, 6);
@@ -380,7 +380,7 @@ void test_test_planet_builder() {
   test::expect_eq(mars->info(player_t{1}).troops, 200);
 
   // Verify SectorMap
-  const auto* smap = ctx.em.peek_sectormap(0, mars_id);
+  const auto* smap = ctx.em.peek_sectormap(1, mars_id);
   test::expect_true(smap != nullptr, "SectorMap must exist");
   const auto& capital = smap->get(Coordinates{1, 1});
   test::expect_eq(capital.get_owner(), player_t{1});
@@ -398,7 +398,7 @@ void test_test_planet_builder() {
   test::expect_eq(wild.get_resource(), 80);
 
   // Verify star planet name synchronized
-  const auto* star = ctx.em.peek_star(0);
+  const auto* star = ctx.em.peek_star(1);
   test::expect_eq(star->get_planet_name(mars_id), "Mars");
 
   // Invariant verification across the universe
@@ -464,8 +464,8 @@ void test_test_command_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{0});
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   static auto matrix_cmd_handler = [](const command_t& argv, GameObj& g) {
     if (argv.size() > 1 && argv[1] == "bad") {
@@ -495,7 +495,7 @@ void test_test_command_matrix() {
       .run_matrix(g);
 
   // Star AP was originally 100, deducted 5 on happy path
-  test::expect_eq(ctx.em.peek_star(0)->AP(player_t{1}), 95);
+  test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 95);
   std::println(std::cout, "  ✓ TestCommandMatrix verified successfully");
 }
 
@@ -508,7 +508,7 @@ void test_universe_invariants() {
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
       .owned_by(player_t{1}, governor_t{0})
       .named("Enterprise")
-      .in_star_orbit(starnum_t{0}, 0.0, 0.0)
+      .in_star_orbit(starnum_t{1}, 0.0, 0.0)
       .build();
 
   // Add a commodity
@@ -524,9 +524,9 @@ void test_universe_invariants() {
                         "Standard test world must satisfy universe invariants");
 
   // Verify that population in planet matches sectors
-  ctx.em.mutate_planet(starnum_t{0}, planetnum_t{0},
+  ctx.em.mutate_planet(starnum_t{1}, planetnum_t{1},
                        [](Planet& p) { p.popn() = 1234; });
-  ctx.em.mutate_sectormap(starnum_t{0}, planetnum_t{0}, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(starnum_t{1}, planetnum_t{1}, [](SectorMap& smap) {
     smap.get(Coordinates{0, 0}).set_popn_exact(1234);
   });
   test::expect_no_throw(
@@ -560,9 +560,9 @@ void test_standard_universe_fixture() {
   test::expect_eq(r2->Playernum, player_t{2});
   test::expect_eq(r2->tech, 100.0);
 
-  // 2. Verify Star 0 (Sol)
-  const auto* star0 = ctx.em.peek_star(0);
-  test::expect_true(star0 != nullptr, "Star 0 must exist");
+  // 2. Verify Star 1 (Sol)
+  const auto* star0 = ctx.em.peek_star(1);
+  test::expect_true(star0 != nullptr, "Star 1 must exist");
   test::expect_eq(star0->get_name(), "Sol");
   test::expect_eq(star0->coordinates(), UniverseCoordinates{0.0, 0.0});
   test::expect_eq(star0->stability(), 15);
@@ -573,9 +573,9 @@ void test_standard_universe_fixture() {
   test::expect_eq(star0->AP(player_t{1}), 100);
   test::expect_eq(star0->AP(player_t{2}), 100);
 
-  // Verify Star 1 (Vega)
-  const auto* star1 = ctx.em.peek_star(1);
-  test::expect_true(star1 != nullptr, "Star 1 must exist");
+  // Verify Star 2 (Vega)
+  const auto* star1 = ctx.em.peek_star(2);
+  test::expect_true(star1 != nullptr, "Star 2 must exist");
   test::expect_eq(star1->get_name(), "Vega");
   test::expect_eq(star1->coordinates(), UniverseCoordinates{300.0, 400.0});
   test::expect_eq(star1->stability(), 45);
@@ -586,9 +586,9 @@ void test_standard_universe_fixture() {
   test::expect_eq(star1->AP(player_t{1}), 100);
   test::expect_eq(star1->AP(player_t{2}), 100);
 
-  // 3. Verify Planet 0 on Star 0 (Earth)
-  const auto* planet = ctx.em.peek_planet(0, 0);
-  test::expect_true(planet != nullptr, "Planet 0,0 must exist");
+  // 3. Verify Planet 1 on Star 1 (Earth)
+  const auto* planet = ctx.em.peek_planet(1, 1);
+  test::expect_true(planet != nullptr, "Planet 1,1 must exist");
   test::expect_eq(planet->type(), PlanetType::EARTH);
   test::expect_eq(planet->info(player_t{1}).explored, 1);
   test::expect_eq(planet->info(player_t{2}).explored, 1);
@@ -600,9 +600,9 @@ void test_standard_universe_fixture() {
   test::expect_eq(planet->info(player_t{1}).numsectsowned, 1);
   test::expect_eq(planet->info(player_t{1}).popn, 1000);
 
-  // Verify Planet 0 on Star 1 (Vega Prime)
-  const auto* planet1 = ctx.em.peek_planet(1, 0);
-  test::expect_true(planet1 != nullptr, "Planet 1,0 must exist");
+  // Verify Planet 1 on Star 2 (Vega Prime)
+  const auto* planet1 = ctx.em.peek_planet(2, 1);
+  test::expect_true(planet1 != nullptr, "Planet 2,1 must exist");
   test::expect_eq(planet1->type(), PlanetType::EARTH);
   test::expect_eq(planet1->info(player_t{1}).explored, 1);
   test::expect_eq(planet1->info(player_t{2}).explored, 1);
@@ -610,9 +610,9 @@ void test_standard_universe_fixture() {
   test::expect_eq(planet1->info(player_t{2}).numsectsowned, 1);
   test::expect_eq(planet1->info(player_t{2}).popn, 1000);
 
-  // Verify Planet 0 on Star 2 (Antares Prime)
-  const auto* planet2 = ctx.em.peek_planet(2, 0);
-  test::expect_true(planet2 != nullptr, "Planet 2,0 must exist");
+  // Verify Planet 1 on Star 3 (Antares Prime)
+  const auto* planet2 = ctx.em.peek_planet(3, 1);
+  test::expect_true(planet2 != nullptr, "Planet 3,1 must exist");
   test::expect_eq(planet2->type(), PlanetType::EARTH);
   test::expect_eq(planet2->info(player_t{1}).explored, 1);
   test::expect_eq(planet2->info(player_t{2}).explored, 1);
@@ -642,13 +642,13 @@ void test_standard_universe_fixture() {
   test::expect_eq(gov_ship->whatdest(), ScopeLevel::LEVEL_PLAN);
 
   // 5. Test with_populated_planet fluent chaining
-  ctx.with_populated_planet(0, 0, player_t{1}, 1500, Coordinates{2, 3});
-  const auto* pop_planet = ctx.em.peek_planet(0, 0);
+  ctx.with_populated_planet(1, 1, player_t{1}, 1500, Coordinates{2, 3});
+  const auto* pop_planet = ctx.em.peek_planet(1, 1);
   test::expect_eq(pop_planet->popn(), 2500);
   test::expect_eq(pop_planet->info(player_t{1}).numsectsowned, 2);
   test::expect_eq(pop_planet->info(player_t{1}).popn, 2500);
 
-  const auto* smap = ctx.em.peek_sectormap(0, 0);
+  const auto* smap = ctx.em.peek_sectormap(1, 1);
   const auto& sect = smap->get(Coordinates{2, 3});
   test::expect_eq(sect.get_owner(), player_t{1});
   test::expect_eq(sect.get_popn(), 1500);
@@ -676,7 +676,7 @@ void test_procedural_universe_fixture() {
   test::expect_eq(univ->AP[player_t{2}], 100);
 
   // Verify all stars explored with 100 AP
-  for (starnum_t snum = 0; snum < 3; ++snum) {
+  for (starnum_t snum = 1; snum <= 3; ++snum) {
     const auto* star = ctx.em.peek_star(snum);
     test::expect_true(star != nullptr, "Generated star must exist");
     test::expect_true(star->is_explored_by(player_t{1}));

@@ -41,7 +41,7 @@ void test_command_matrix() {
   ctx.setup_game_obj(g, player_t{1}, governor_t{0});
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
-  g.set_pnum(0);
+  g.set_pnum(1);
 
   // Set initial star AP to 20
   {

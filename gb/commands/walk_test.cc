@@ -24,7 +24,7 @@ void setup_test_world(TestContext& ctx) {
   }
 
   // Setup sectormap
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{5, 5}).set_owner(1);
     smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
     smap.get(Coordinates{5, 6}).set_owner(1);
@@ -35,7 +35,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
       .owned_by(1, 0)
       .named("AFV")
-      .landed_on(0, 0, Coordinates(5, 5))
+      .landed_on(1, 1, Coordinates(5, 5))
       .with_crew(10, 0)
       .with_fuel(100.0)
       .build();
@@ -59,8 +59,8 @@ void test_walk_role_and_domain_errors() {
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 2. Invalid ship number & non-existent ship rejection
   g.out.str("");
@@ -74,7 +74,7 @@ void test_walk_role_and_domain_errors() {
   // 3. Unowned ship rejection
   shipnum_t enemy_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                             .owned_by(2, 0)
-                            .landed_on(0, 0, Coordinates(4, 4))
+                            .landed_on(1, 1, Coordinates(4, 4))
                             .with_crew(10, 0)
                             .with_fuel(100.0)
                             .build();
@@ -86,7 +86,7 @@ void test_walk_role_and_domain_errors() {
   // 4. Non-AFV ship rejection
   shipnum_t pod_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                            .owned_by(1, 0)
-                           .landed_on(0, 0, Coordinates(4, 5))
+                           .landed_on(1, 1, Coordinates(4, 5))
                            .with_crew(5, 0)
                            .with_fuel(100.0)
                            .build();
@@ -98,7 +98,7 @@ void test_walk_role_and_domain_errors() {
   // 5. Unlanded AFV rejection
   shipnum_t orbiting_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                                .owned_by(1, 0)
-                               .in_planet_orbit(0, 0)
+                               .in_planet_orbit(1, 1)
                                .with_crew(10, 0)
                                .with_fuel(100.0)
                                .build();
@@ -110,7 +110,7 @@ void test_walk_role_and_domain_errors() {
   // 6. Crewless AFV rejection
   shipnum_t crewless_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                                .owned_by(1, 0)
-                               .landed_on(0, 0, Coordinates(3, 3))
+                               .landed_on(1, 1, Coordinates(3, 3))
                                .with_crew(0, 0)
                                .with_fuel(100.0)
                                .build();
@@ -122,7 +122,7 @@ void test_walk_role_and_domain_errors() {
   // 7. Insufficient fuel rejection
   shipnum_t empty_fuel_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                                  .owned_by(1, 0)
-                                 .landed_on(0, 0, Coordinates(3, 4))
+                                 .landed_on(1, 1, Coordinates(3, 4))
                                  .with_crew(10, 0)
                                  .with_fuel(0.0)
                                  .build();
@@ -145,7 +145,7 @@ void test_walk_role_and_domain_errors() {
 
   // 9. Insufficient Star AP rejection
   ctx.em.mutate_race(1, [](Race& r) { r.likes[SectorType::SEC_MOUNT] = 1.0; });
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
   ctx.setup_game_obj(g);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
@@ -162,8 +162,8 @@ void test_walk_happy_path() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 3. Test walk command success - move south (k or '2')
   ctx.assert_dispatch_success(g, {"walk", "1", "k"});
@@ -175,7 +175,7 @@ void test_walk_happy_path() {
   test::expect_true(saved_ship->land_coords() == Coordinates(5, 6));
   test::expect_lt(saved_ship->fuel(), 100.0);
 
-  const auto* saved_star = ctx.em.peek_star(0);
+  const auto* saved_star = ctx.em.peek_star(1);
   test::expect_true(saved_star != nullptr);
   test::expect_eq(saved_star->AP(1), 99);  // 1 Star AP deducted
 
@@ -190,7 +190,7 @@ void test_walk_afv_and_sector_combat() {
   shipnum_t armed_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                             .owned_by(1, 0)
                             .named("HeavyAFV")
-                            .landed_on(0, 0, Coordinates(5, 5))
+                            .landed_on(1, 1, Coordinates(5, 5))
                             .with_guns(guntype_t::LIGHT, 2)
                             .with_destruct(50)
                             .with_armor(10)
@@ -203,7 +203,7 @@ void test_walk_afv_and_sector_combat() {
   shipnum_t enemy_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                             .owned_by(2, 0)
                             .named("EnemyTank")
-                            .landed_on(0, 0, Coordinates(5, 6))
+                            .landed_on(1, 1, Coordinates(5, 6))
                             .with_guns(guntype_t::LIGHT, 1)
                             .with_crew(5, 0)
                             .with_fuel(50.0)
@@ -211,7 +211,7 @@ void test_walk_afv_and_sector_combat() {
                             .with_armor(0)
                             .build();
 
-  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& smap) {
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 6});
     sect.set_owner(2);
     sect.set_popn_exact(1);
@@ -223,8 +223,8 @@ void test_walk_afv_and_sector_combat() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Execute walk into hostile sector (5, 6)
   ctx.assert_dispatch_success(
@@ -235,12 +235,12 @@ void test_walk_afv_and_sector_combat() {
   // Also test unarmed AFV walking onto a hostile populated sector
   shipnum_t unarmed_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                               .owned_by(1, 0)
-                              .landed_on(0, 0, Coordinates(2, 2))
+                              .landed_on(1, 1, Coordinates(2, 2))
                               .with_crew(10, 0)
                               .with_fuel(50.0)
                               .with_destruct(0)
                               .build();
-  ctx.em.mutate_planet_and_sectors(0, 0, [](Planet& p, SectorMap& smap) {
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& smap) {
     auto& sect = smap.get(Coordinates{2, 3});
     sect.set_owner(2);
     sect.set_condition(SectorType::SEC_MOUNT);

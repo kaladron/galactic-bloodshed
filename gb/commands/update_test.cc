@@ -76,7 +76,7 @@ void test_update_matrix() {
 
 void test_update_population_growth_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe().with_populated_planet(0, 0, 1, 100,
+  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 100,
                                                      Coordinates{0, 0});
 
   // Ensure Player 1 is a deity with viable reproduction traits
@@ -93,7 +93,7 @@ void test_update_population_growth_persistence() {
   g.set_god(true);
 
   // Initial population before @@update
-  const auto* initial_planet = ctx.em.peek_planet(0, 0);
+  const auto* initial_planet = ctx.em.peek_planet(1, 1);
   test::expect_true(initial_planet != nullptr);
   auto initial_popn = initial_planet->popn();
   test::expect_eq(initial_popn, 100);
@@ -111,11 +111,11 @@ void test_update_population_growth_persistence() {
 
   // Clear cache to verify persistence in SQLite
   ctx.em.clear_cache();
-  const auto* updated_planet = ctx.em.peek_planet(0, 0);
+  const auto* updated_planet = ctx.em.peek_planet(1, 1);
   test::expect_true(updated_planet != nullptr);
   test::expect_gt(updated_planet->popn(), initial_popn);
 
-  const auto* updated_smap = ctx.em.peek_sectormap(0, 0);
+  const auto* updated_smap = ctx.em.peek_sectormap(1, 1);
   test::expect_true(updated_smap != nullptr);
   test::expect_gt(updated_smap->get(Coordinates{0, 0}).get_popn(), 100);
 }

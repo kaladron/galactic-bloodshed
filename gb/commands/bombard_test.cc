@@ -14,15 +14,15 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
 
-  // Configure target sector (5,5) on planet (0,0) for defender (player 2)
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  // Configure target sector (5,5) on planet (1,1) for defender (player 2)
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 5});
     sect.set_condition(SectorType::SEC_LAND);
     sect.set_popn_exact(100);
     sect.set_owner(2);
     sect.set_troops(10);
   });
-  ctx.em.mutate_planet(0, 0, [](Planet& planet) {
+  ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.info(player_t{2}).numsectsowned += 1;
     planet.popn() += 100;
     planet.troops() += 10;
@@ -32,7 +32,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
       .owned_by(1, 0)
       .named("Battleship")
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .with_guns(guntype_t::LIGHT, 10)
       .with_destruct(100)
       .with_crew(10, 10)
@@ -48,8 +48,8 @@ void test_bombard_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Execute bombard command on sector 5,5 with strength 10 (deducts 1 Star AP
   // dynamically)
@@ -62,11 +62,11 @@ void test_bombard_happy_paths() {
   test::expect_eq(ship->number(), 1);
   test::expect_lt(ship->destruct(), 100);  // Ammo consumed
 
-  const auto* planet_after = ctx.em.peek_planet(0, 0);
+  const auto* planet_after = ctx.em.peek_planet(1, 1);
   test::expect_true(planet_after != nullptr);
 
   // Verify sector map persisted and target was damaged
-  const auto* smap_after = ctx.em.peek_sectormap(0, 0);
+  const auto* smap_after = ctx.em.peek_sectormap(1, 1);
   test::expect_true(smap_after != nullptr);
 
   ctx.verify_universe_invariants();
@@ -77,14 +77,14 @@ void test_bombard_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "action points");
@@ -106,8 +106,8 @@ void test_bombard_role_and_scope_rejections() {
   // 1. Guest race rejection
   ctx.setup_game_obj(g, 3, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -130,8 +130,8 @@ void test_bombard_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"bombard"});
@@ -154,33 +154,33 @@ void test_bombard_preconditions_afv_and_retaliation() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
-  const ap_t ap_before = ctx.em.peek_star(0)->AP(1);
+  const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
 
   // 1. Invalid sector format and out-of-bounds sector do NOT deduct Star AP
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "bad_coords", "10"});
   test::expect_contains(g.out.str(), "Invalid sector format.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "99,99", "10"});
   test::expect_contains(g.out.str(), "Illegal sector.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
 
   // 2. Non-numeric or zero strength does NOT deduct Star AP
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "abc"});
   test::expect_contains(g.out.str(), "No attack.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "0"});
   test::expect_contains(g.out.str(), "No attack.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
 
   // 3. Spaceborne AFV cannot bombard
   const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                           .owned_by(1, 0)
-                          .in_planet_orbit(0, 0)
+                          .in_planet_orbit(1, 1)
                           .with_guns(guntype_t::LIGHT, 5)
                           .with_destruct(20)
                           .with_crew(5, 5)
@@ -201,14 +201,14 @@ void test_bombard_preconditions_afv_and_retaliation() {
   // 5. Planetary defense network blocks orbital bombardment without AP loss
   const auto pdef_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
                            .owned_by(2, 0)
-                           .landed_on(0, 0, {5, 5})
+                           .landed_on(1, 1, {5, 5})
                            .with_guns(guntype_t::MEDIUM, 5)
                            .with_destruct(20)
                            .with_crew(5, 5)
                            .build();
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "Target has planetary defense networks.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
 
   // Remove planetary defense network
   ctx.em.mutate_ship(pdef_id, [](Ship& s) { s.alive() = false; });
@@ -220,7 +220,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
     s.fire_laser() = 25;
     s.mounted() = true;
   });
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     for (int y = 0; y < 2; ++y) {
       for (int x = 0; x < 10; ++x) {
         auto& s = smap.get({x, y});
@@ -235,13 +235,13 @@ void test_bombard_preconditions_afv_and_retaliation() {
     target.set_popn_exact(50000);
     target.set_troops(50000);
   });
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.info(2).guns = 3;
     p.info(2).destruct = 5;
   });
   const auto protector_id = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
                                 .owned_by(2, 0)
-                                .in_planet_orbit(0, 0)
+                                .in_planet_orbit(1, 1)
                                 .with_guns(guntype_t::LIGHT, 5)
                                 .with_destruct(50)
                                 .with_crew(10, 10)
@@ -252,7 +252,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
   // Bombard with excessive strength (clamped to maxstrength) on (5,5)
   ctx.assert_dispatch_success(g, {"bombard", "#1", "5,5", "999"}, 1);
   test::expect_contains(g.out.str(), "Laser strength set to");
-  test::expect_lt(ctx.em.peek_planet(0, 0)->info(2).destruct, 5, g.out.str());
+  test::expect_lt(ctx.em.peek_planet(1, 1)->info(2).destruct, 5, g.out.str());
   test::expect_lt(ctx.em.peek_ship(protector_id)->destruct(), 50);
 
   // Bombard with omitted coordinates (random sector selection)

@@ -126,7 +126,7 @@ std::string UniverseGenerator::next_star_name(starnum_t snum) {
       star_name_cursor_ < star_indices_.size()) {
     return star_names_[star_indices_[star_name_cursor_++]];
   }
-  return std::format("Star {}", snum.value + 1);
+  return std::format("Star {}", snum.value);
 }
 
 std::string UniverseGenerator::next_planet_name(planetnum_t pnum) {
@@ -134,7 +134,7 @@ std::string UniverseGenerator::next_planet_name(planetnum_t pnum) {
       planet_name_cursor_ < planet_indices_.size()) {
     return planet_names_[planet_indices_[planet_name_cursor_++]];
   }
-  return std::format("{}", pnum.value + 1);
+  return std::format("{}", pnum.value);
 }
 
 void UniverseGenerator::place_star(star_struct& star) {
@@ -178,7 +178,7 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
   }
   star.pnames.reserve(num_planets);
   for (int i = 0; i < num_planets; ++i) {
-    star.pnames.push_back(next_planet_name(static_cast<planetnum_t>(i)));
+    star.pnames.push_back(next_planet_name(static_cast<planetnum_t>(i + 1)));
   }
 
   JsonStore store(db);
@@ -187,6 +187,7 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
 
   double distmin = PLANET_DIST_MIN;
   for (int i = 0; i < num_planets; ++i) {
+    const planetnum_t pnum{static_cast<planetnum_t::value_type>(i + 1)};
     double distsep =
         (PLANET_DIST_MAX - distmin) / static_cast<double>(num_planets - i);
     double distmax = distmin + distsep;
@@ -203,7 +204,7 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
 
     std::optional<SectorMap> smap_opt;
     auto planet = makeplanet(dist, static_cast<short>(star.temperature), type,
-                             snum, static_cast<planetnum_t>(i), smap_opt);
+                             snum, pnum, smap_opt);
     auto& smap = *smap_opt;
 
     planet.set_system_coordinates(sys_pos);
@@ -262,7 +263,7 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
   std::vector<Star> stars;
   stars.reserve(config_.num_stars.value);
 
-  for (starnum_t snum = 0; snum < config_.num_stars; ++snum) {
+  for (starnum_t snum = 1; snum <= config_.num_stars; ++snum) {
     stars.push_back(make_star_system(db, snum, result));
   }
 
@@ -270,7 +271,7 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
 
   BlockRepository block_repo(store);
   PowerRepository power_repo(store);
-  for (int i : std::views::iota(0, MAXPLAYERS)) {
+  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
     power p{};
     p.id = i;
     power_repo.save(p);

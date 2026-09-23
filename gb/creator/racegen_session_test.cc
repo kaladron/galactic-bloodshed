@@ -401,14 +401,14 @@ void test_enroll_with_service_success() {
   UniverseRepository(store).save(us);
 
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "Sol";
   ss.pnames = {"Earth", "Mars"};
   StarRepository(store).save(Star(ss));
 
   Planet p0{PlanetType::EARTH, Coordinates{5, 5}};
-  p0.star_id() = 0;
-  p0.planet_order() = 0;
+  p0.star_id() = 1;
+  p0.planet_order() = 1;
   p0.rtemp() = 20;
   PlanetRepository(store).save(p0);
 

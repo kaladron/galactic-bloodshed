@@ -397,7 +397,7 @@ const auto& planet = *g.entity_manager.peek_planet(star_id, planet_num);
 const auto* smap = g.entity_manager.peek_sectormap(star_id, planet_num);
 ```
 
-**IMPORTANT:** `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError` instead of returning nullptr. Star/planet indices are always contiguous (0 to N-1), so by the time code has a valid star/planet number, the entity must exist or data is corrupt. These exceptions represent programming errors or data corruption, not expected conditions.
+**IMPORTANT:** `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError` instead of returning nullptr. Star and planet primary keys are 1-based and contiguous (1 to N), so by the time code has a valid star/planet number, the entity must exist or data is corrupt. These exceptions represent programming errors or data corruption, not expected conditions.
 
 **Read-Write Access (monadic mutate methods - automatic persistence):**
 
@@ -451,9 +451,9 @@ The `GameObj& g` parameter provides:
 - `g.governor()` - Current governor number (`governor_t`)
 - `g.race` - **Pointer to current player's race** (already populated by `process_command()`, always valid)
 - `g.level` - Current scope level (UNIV/STAR/PLAN/SHIP)
-- `g.snum()` - Current star number (`starnum_t`)
-- `g.pnum()` - Current planet number (`planetnum_t`)
-- `g.shipno` - Current ship number (`shipnum_t`)
+- `g.snum()` - Current star number (`starnum_t`, 1-indexed)
+- `g.pnum()` - Current planet number (`planetnum_t`, 1-indexed)
+- `g.shipno` - Current ship number (`shipnum_t`, 1-indexed)
 - `g.out` - Output stream to player
 - `g.entity_manager` - Centralized entity access service
 
@@ -481,7 +481,7 @@ void test_something() {
   // Fluent entity creation with canonical templates
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                           .owned_by(1, 0)
-                          .in_star_orbit(0)
+                          .in_star_orbit(1)
                           .with_fuel(100.0)
                           .build();
 

@@ -81,43 +81,43 @@ int main() {
   race_repo.save(r2);
 
   planet_struct p0_data{};
-  p0_data.star_id = 0;
-  p0_data.planet_order = 0;
+  p0_data.star_id = 1;
+  p0_data.planet_order = 1;
   planet_repo.save(Planet{p0_data});
 
   // =========================================================================
-  // 2. find_closest_stars tests (including Bug 1: Star 0 Orbit Search Fix)
+  // 2. find_closest_stars tests (including Bug 1: Star 1 Orbit Search Fix)
   // =========================================================================
   {
     std::println(std::cout, "\nTest: find_closest_stars");
 
     // Setup 4 stars:
-    // Star 0 at (0, 0)
-    // Star 1 at (10, 0) -> dist to Star 0 is 10
-    // Star 2 at (25, 0) -> dist to Star 0 is 25
-    // Star 3 at (100, 0) -> dist to Star 0 is 100
+    // Star 1 at (0, 0)
+    // Star 2 at (10, 0) -> dist to Star 1 is 10
+    // Star 3 at (25, 0) -> dist to Star 1 is 25
+    // Star 4 at (100, 0) -> dist to Star 1 is 100
     universe_struct udata{};
     udata.id = 1;
     udata.numstars = 4;
     universe_repo.save(udata);
 
     star_struct s0{};
-    s0.star_id = 0;
+    s0.star_id = 1;
     s0.coordinates = {0.0, 0.0};
     s0.pnames = {"P1", "P2"};
 
     star_struct s1{};
-    s1.star_id = 1;
+    s1.star_id = 2;
     s1.coordinates = {10.0, 0.0};
     s1.pnames = {"P1", "P2"};
 
     star_struct s2{};
-    s2.star_id = 2;
+    s2.star_id = 3;
     s2.coordinates = {25.0, 0.0};
     s2.pnames = {"P1"};
 
     star_struct s3{};
-    s3.star_id = 3;
+    s3.star_id = 4;
     s3.coordinates = {100.0, 0.0};
     s3.pnames = {"P1"};
 
@@ -126,19 +126,19 @@ int main() {
     star_repo.save(Star{s2});
     star_repo.save(Star{s3});
 
-    // Test search from Star 0: Closest is Star 1 (dist 10), second closest is
-    // Star 2 (dist 25)
+    // Test search from Star 1: Closest is Star 2 (dist 10), second closest is
+    // Star 3 (dist 25)
     auto res0 =
-        find_closest_stars(em, starnum_t{0}, UniverseCoordinates{0.0, 0.0});
-    test::expect_eq(res0.closest, starnum_t{1});
-    test::expect_eq(res0.second_closest, starnum_t{2});
+        find_closest_stars(em, starnum_t{1}, UniverseCoordinates{0.0, 0.0});
+    test::expect_eq(res0.closest, starnum_t{2});
+    test::expect_eq(res0.second_closest, starnum_t{3});
 
-    // Test search from Star 1: Closest is Star 0 (dist 10), second closest is
-    // Star 2 (dist 15)
+    // Test search from Star 2: Closest is Star 1 (dist 10), second closest is
+    // Star 3 (dist 15)
     auto res1 =
-        find_closest_stars(em, starnum_t{1}, UniverseCoordinates{10.0, 0.0});
-    test::expect_eq(res1.closest, starnum_t{0});
-    test::expect_eq(res1.second_closest, starnum_t{2});
+        find_closest_stars(em, starnum_t{2}, UniverseCoordinates{10.0, 0.0});
+    test::expect_eq(res1.closest, starnum_t{1});
+    test::expect_eq(res1.second_closest, starnum_t{3});
 
     std::println(
         std::cout,
@@ -155,10 +155,10 @@ int main() {
     stats.VN_brain.most_mad = player_t{2};
 
     em.mutate_universe([](universe_struct& u) {
-      u.VN_index1[player_t{2}] = 1;
-      u.VN_index2[player_t{2}] = 1;
-      u.VN_index1[player_t{3}] = 3;
-      u.VN_index2[player_t{3}] = 3;
+      u.VN_index1[player_t{2}] = 2;
+      u.VN_index2[player_t{2}] = 2;
+      u.VN_index1[player_t{3}] = 4;
+      u.VN_index2[player_t{3}] = 4;
     });
 
     ship_struct bers_data{};
@@ -176,7 +176,7 @@ int main() {
 
     test::expect_true(bers->bombard());
     test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
-    test::expect_eq(bers->deststar(), starnum_t{1});
+    test::expect_eq(bers->deststar(), starnum_t{2});
     test::expect_eq(bers->mind().target, player_t{2});
     test::expect_true(bers->is_busy());
     test::expect_true(bers->hyper_drive().on);
@@ -185,14 +185,14 @@ int main() {
     // Test hitlist target routing when only one destruction site is recorded
     // (VN_index1 set, VN_index2 == std::nullopt)
     em.mutate_universe([](universe_struct& u) {
-      u.VN_index1[player_t{3}] = starnum_t{3};
+      u.VN_index1[player_t{3}] = starnum_t{4};
       u.VN_index2[player_t{3}] = std::nullopt;
     });
     stats.VN_brain.most_mad = player_t{3};
     for (int i = 0; i < 10; ++i) {
       select_berserker_destination(em, *bers, stats);
-      test::expect_eq(bers->deststar(), starnum_t{3});
-      test::expect_eq(bers->destpnum(), planetnum_t{0});
+      test::expect_eq(bers->deststar(), starnum_t{4});
+      test::expect_eq(bers->destpnum(), planetnum_t{1});
       test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
     }
 
@@ -209,27 +209,27 @@ int main() {
     vn_data.number = 201;
     vn_data.owner = 1;
     vn_data.type = ShipType::OTYPE_VN;
-    vn_data.storbits = 0;
+    vn_data.storbits = 1;
     vn_data.coordinates = UniverseCoordinates{0.0, 0.0};
 
     auto vn_ship = ShipFactory::create(vn_data);
     auto* vn = vn_ship->as<VonNeumannShip>();
     test::expect_true(vn != nullptr);
 
-    // Case A: Closest star (Star 1) is not inhabited by Player 1 -> routes to
-    // Star 1
+    // Case A: Closest star (Star 2) is not inhabited by Player 1 -> routes to
+    // Star 2
     select_vn_destination(em, *vn);
-    test::expect_eq(vn->deststar(), starnum_t{1});
+    test::expect_eq(vn->deststar(), starnum_t{2});
     test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_PLAN);
     test::expect_true(vn->is_busy());
     test::expect_eq(vn->speed(), ship_template(ShipType::OTYPE_VN).base_speed);
 
-    // Case B: Star 1 is inhabited by Player 1 -> routes to Star 2 (second
+    // Case B: Star 2 is inhabited by Player 1 -> routes to Star 3 (second
     // closest)
-    em.mutate_star(1, [](Star& s) { s.mark_inhabited_by(player_t{1}); });
+    em.mutate_star(2, [](Star& s) { s.mark_inhabited_by(player_t{1}); });
 
     select_vn_destination(em, *vn);
-    test::expect_eq(vn->deststar(), starnum_t{2});
+    test::expect_eq(vn->deststar(), starnum_t{3});
     test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_PLAN);
     test::expect_true(vn->is_busy());
 
@@ -353,8 +353,8 @@ int main() {
   {
     std::println(std::cout, "\nTest: steal_planetary_resources");
 
-    // Add Player 2 colony with resources on Star 0, Planet 0
-    em.mutate_planet(0, 0,
+    // Add Player 2 colony with resources on Star 1, Planet 1
+    em.mutate_planet(1, 1,
                      [](Planet& p) { p.info(player_t{2}).resource = 1000; });
 
     ship_struct vn_data{};
@@ -362,8 +362,8 @@ int main() {
     vn_data.owner = 1;
     vn_data.max_resource = 100;
     vn_data.resource = 0;
-    vn_data.storbits = 0;
-    vn_data.pnumorbits = 0;
+    vn_data.storbits = 1;
+    vn_data.pnumorbits = 1;
     vn_data.type = ShipType::OTYPE_VN;
     auto vn_ship = ShipFactory::create(vn_data);
     auto* vn = vn_ship->as<VonNeumannShip>();
@@ -375,7 +375,7 @@ int main() {
     test::expect_eq(result.amount, vn_cost);
     test::expect_eq(vn->resource(), vn_cost);
 
-    const auto& planet_after = *em.peek_planet(0, 0);
+    const auto& planet_after = *em.peek_planet(1, 1);
     test::expect_eq(planet_after.info(player_t{2}).resource, 1000 - vn_cost);
 
     std::println(
@@ -408,6 +408,8 @@ int main() {
     std::println(std::cout, "\nTest: construct_replicated_vn");
 
     Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    planet.star_id() = 1;
+    planet.planet_order() = 1;
 
     ship_struct vn_data{};
     vn_data.number = 401;
@@ -464,6 +466,8 @@ int main() {
     std::println(std::cout, "\nTest: construct_replicated_berserker");
 
     Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    planet.star_id() = 1;
+    planet.planet_order() = 1;
 
     ship_struct vn_data{};
     vn_data.number = 402;
@@ -526,6 +530,8 @@ int main() {
     std::println(std::cout, "\nTest: replicate_machines");
 
     Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    planet.star_id() = 1;
+    planet.planet_order() = 1;
 
     const auto vn_cost = ship_template(ShipType::OTYPE_VN).build_cost;
     ship_struct vn_data{};
@@ -578,8 +584,8 @@ int main() {
     vn_data.number = 501;
     vn_data.owner = 1;
     vn_data.type = ShipType::OTYPE_VN;
-    vn_data.storbits = 0;
-    vn_data.pnumorbits = 0;
+    vn_data.storbits = 1;
+    vn_data.pnumorbits = 1;
     vn_data.dock_state = DockState::Landed;
     vn_data.max_fuel = 100;
     vn_data.fuel = 50.0;  // Partial fuel
@@ -624,7 +630,11 @@ int main() {
     std::println(std::cout, "\nTest: attempt_planet_landing");
 
     Planet gas_giant(PlanetType::GASGIANT, Coordinates{5, 5});
+    gas_giant.star_id() = 1;
+    gas_giant.planet_order() = 1;
     Planet rocky_planet(PlanetType::EARTH, Coordinates{5, 5});
+    rocky_planet.star_id() = 1;
+    rocky_planet.planet_order() = 1;
 
     SectorMap empty_smap(rocky_planet);
     for (Sector& s : empty_smap) {
@@ -640,10 +650,10 @@ int main() {
     vn_data.number = 502;
     vn_data.owner = 1;
     vn_data.type = ShipType::OTYPE_VN;
-    vn_data.storbits = 0;
-    vn_data.pnumorbits = 0;
-    vn_data.deststar = 0;
-    vn_data.destpnum = 0;
+    vn_data.storbits = 1;
+    vn_data.pnumorbits = 1;
+    vn_data.deststar = 1;
+    vn_data.destpnum = 1;
     vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
     vn_data.dock_state = DockState::Spaceborne;
     vn_data.special = MindData{
@@ -694,7 +704,7 @@ int main() {
     cargo_data.number = 601;
     cargo_data.owner = 1;
     cargo_data.type = ShipType::STYPE_CARGO;
-    cargo_data.storbits = 0;
+    cargo_data.storbits = 1;
     auto cargo = ShipFactory::create(cargo_data);
     TurnStats stats{};
 
@@ -709,14 +719,14 @@ int main() {
     vn_data.number = 602;
     vn_data.owner = 1;
     vn_data.type = ShipType::OTYPE_VN;
-    vn_data.storbits = 0;
+    vn_data.storbits = 1;
     vn_data.coordinates = UniverseCoordinates{0.0, 0.0};
     auto vn = ShipFactory::create(vn_data);
 
     order_VN(em, *vn);
-    // Star 1 was marked inhabited by Player 1 in earlier tests, so VN routes to
-    // Star 2
-    test::expect_eq(vn->deststar(), starnum_t{2});
+    // Star 2 was marked inhabited by Player 1 in earlier tests, so VN routes to
+    // Star 3
+    test::expect_eq(vn->deststar(), starnum_t{3});
     test::expect_eq(vn->whatdest(), ScopeLevel::LEVEL_PLAN);
     test::expect_true(vn->as<AutonomousShip>()->is_busy());
     test::expect_eq(vn->speed(), ship_template(ShipType::OTYPE_VN).base_speed);
@@ -727,7 +737,7 @@ int main() {
     bers_data.number = 603;
     bers_data.owner = 1;
     bers_data.type = ShipType::OTYPE_BERS;
-    bers_data.storbits = 0;
+    bers_data.storbits = 1;
     bers_data.coordinates = UniverseCoordinates{0.0, 0.0};
     bers_data.hyper_drive.has = true;
     bers_data.mounted = true;
@@ -739,7 +749,7 @@ int main() {
     auto bers = ShipFactory::create(bers_data);
 
     order_berserker(em, *bers, stats);
-    test::expect_eq(bers->deststar(), starnum_t{1});
+    test::expect_eq(bers->deststar(), starnum_t{2});
     test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
     test::expect_true(bers->as<AutonomousShip>()->is_busy());
 
@@ -768,7 +778,7 @@ int main() {
     unlanded_idle_data.number = 702;
     unlanded_idle_data.owner = 1;
     unlanded_idle_data.type = ShipType::OTYPE_VN;
-    unlanded_idle_data.storbits = 0;
+    unlanded_idle_data.storbits = 1;
     unlanded_idle_data.whatdest = ScopeLevel::LEVEL_UNIV;
     unlanded_idle_data.special = MindData{.busy = false};
     auto unlanded_idle = ShipFactory::create(unlanded_idle_data);
@@ -780,12 +790,12 @@ int main() {
     unlanded_busy_data.number = 703;
     unlanded_busy_data.owner = 1;
     unlanded_busy_data.type = ShipType::OTYPE_VN;
-    unlanded_busy_data.storbits = 0;
+    unlanded_busy_data.storbits = 1;
     unlanded_busy_data.whatdest = ScopeLevel::LEVEL_UNIV;
     unlanded_busy_data.special = MindData{.busy = true};
     auto unlanded_busy = ShipFactory::create(unlanded_busy_data);
     do_VN(em, *unlanded_busy->as<AutonomousShip>(), stats);
-    test::expect_eq(unlanded_busy->deststar(), starnum_t{2});
+    test::expect_eq(unlanded_busy->deststar(), starnum_t{3});
     test::expect_eq(unlanded_busy->whatdest(), ScopeLevel::LEVEL_PLAN);
 
     // 3b. Unlanded, busy Berserker orders destination
@@ -794,14 +804,14 @@ int main() {
     unlanded_bers_data.number = 706;
     unlanded_bers_data.owner = 1;
     unlanded_bers_data.type = ShipType::OTYPE_BERS;
-    unlanded_bers_data.storbits = 0;
+    unlanded_bers_data.storbits = 1;
     unlanded_bers_data.whatdest = ScopeLevel::LEVEL_UNIV;
     unlanded_bers_data.hyper_drive.has = true;
     unlanded_bers_data.mounted = true;
     unlanded_bers_data.special = MindData{.busy = true};
     auto unlanded_bers = ShipFactory::create(unlanded_bers_data);
     do_VN(em, *unlanded_bers->as<AutonomousShip>(), stats);
-    test::expect_eq(unlanded_bers->deststar(), starnum_t{1});
+    test::expect_eq(unlanded_bers->deststar(), starnum_t{2});
     test::expect_eq(unlanded_bers->whatdest(), ScopeLevel::LEVEL_PLAN);
 
     // 4. Landed, fully-fueled VN launches to space
@@ -809,10 +819,10 @@ int main() {
     landed_fueled_data.number = 704;
     landed_fueled_data.owner = 1;
     landed_fueled_data.type = ShipType::OTYPE_VN;
-    landed_fueled_data.storbits = 0;
-    landed_fueled_data.pnumorbits = 0;
-    landed_fueled_data.deststar = 0;
-    landed_fueled_data.destpnum = 0;
+    landed_fueled_data.storbits = 1;
+    landed_fueled_data.pnumorbits = 1;
+    landed_fueled_data.deststar = 1;
+    landed_fueled_data.destpnum = 1;
     landed_fueled_data.whatdest = ScopeLevel::LEVEL_PLAN;
     landed_fueled_data.dock_state = DockState::Landed;
     landed_fueled_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
@@ -821,21 +831,21 @@ int main() {
     auto landed_fueled = ShipFactory::create(landed_fueled_data);
     test::expect_true(landed_fueled->is_landed());
     do_VN(em, *landed_fueled->as<AutonomousShip>(), stats);
-    test::expect_true(stats.is_inhabited(0, 0));
+    test::expect_true(stats.is_inhabited(1, 1));
     test::expect_false(landed_fueled->is_landed());
     test::expect_eq(landed_fueled->whatdest(), ScopeLevel::LEVEL_UNIV);
 
     // 5. Landed, underfueled VN steals planetary resources
-    em.mutate_planet(0, 0,
+    em.mutate_planet(1, 1,
                      [](Planet& p) { p.info(player_t{2}).resource = 200; });
     ship_struct landed_low_fuel_data{};
     landed_low_fuel_data.number = 705;
     landed_low_fuel_data.owner = 1;
     landed_low_fuel_data.type = ShipType::OTYPE_VN;
-    landed_low_fuel_data.storbits = 0;
-    landed_low_fuel_data.pnumorbits = 0;
-    landed_low_fuel_data.deststar = 0;
-    landed_low_fuel_data.destpnum = 0;
+    landed_low_fuel_data.storbits = 1;
+    landed_low_fuel_data.pnumorbits = 1;
+    landed_low_fuel_data.deststar = 1;
+    landed_low_fuel_data.destpnum = 1;
     landed_low_fuel_data.whatdest = ScopeLevel::LEVEL_PLAN;
     landed_low_fuel_data.dock_state = DockState::Landed;
     landed_low_fuel_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
@@ -860,6 +870,8 @@ int main() {
 
     TurnStats stats{};
     Planet planet(PlanetType::EARTH, Coordinates{5, 5});
+    planet.star_id() = 1;
+    planet.planet_order() = 1;
     SectorMap smap(planet);
     for (Sector& s : smap) {
       s.set_resource(0);
@@ -879,10 +891,10 @@ int main() {
     orbiting_vn_data.number = 802;
     orbiting_vn_data.owner = 1;
     orbiting_vn_data.type = ShipType::OTYPE_VN;
-    orbiting_vn_data.storbits = 0;
-    orbiting_vn_data.pnumorbits = 0;
-    orbiting_vn_data.deststar = 0;
-    orbiting_vn_data.destpnum = 0;
+    orbiting_vn_data.storbits = 1;
+    orbiting_vn_data.pnumorbits = 1;
+    orbiting_vn_data.deststar = 1;
+    orbiting_vn_data.destpnum = 1;
     orbiting_vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
     orbiting_vn_data.dock_state = DockState::Spaceborne;
     orbiting_vn_data.special = MindData{.busy = true};

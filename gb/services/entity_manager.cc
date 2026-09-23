@@ -397,11 +397,15 @@ void EntityManager::release_planet(starnum_t star, planetnum_t pnum) {
 
 // Star entity methods
 EntityHandle<Star> EntityManager::get_star(starnum_t num) {
-  return get_entity_impl<Star>(
+  auto handle = get_entity_impl<Star>(
       this, num, star_cache, star_refcount,
       [this](starnum_t n) { return storage_->stars.find_by_number(n); },
       [this](const Star& s) { storage_->stars.save(s); },
       [this](starnum_t n) { release_star(n); });
+  if (!handle.get()) {
+    throw EntityNotFoundError(std::format("Star not found: star_id={}", num));
+  }
+  return handle;
 }
 
 const Star* EntityManager::peek_star(starnum_t num) {

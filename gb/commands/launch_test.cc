@@ -19,7 +19,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(1, 0)
       .named("TestShuttle")
-      .landed_on(0, 0, Coordinates(5, 5))
+      .landed_on(1, 1, Coordinates(5, 5))
       .with_fuel(20.0)
       .build();
 }
@@ -32,8 +32,8 @@ void test_launch_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Launch landed ship from planet (costs 1 Star AP)
   ctx.assert_dispatch_success(g, {"launch", "#1"}, 1);
@@ -47,7 +47,7 @@ void test_launch_happy_paths() {
   test::expect_lt(launched_ship->fuel(), 1000.0);  // Fuel consumed
 
   // Verify planet is now explored
-  const auto* explored_planet = ctx.em.peek_planet(0, 0);
+  const auto* explored_planet = ctx.em.peek_planet(1, 1);
   test::expect_true(explored_planet != nullptr);
   test::expect_eq(explored_planet->explored(), 1);
 
@@ -67,14 +67,14 @@ void test_launch_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_rejected(g, {"launch", "#1"});
   test::expect_contains(g.out.str(), "action points");
@@ -90,8 +90,8 @@ void test_launch_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"launch"});
@@ -116,8 +116,8 @@ void test_launch_canister_ships() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Create test canister ship landed on planet with initial count 5
   const auto canist_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
@@ -126,7 +126,7 @@ void test_launch_canister_ships() {
                              .with_alive(true)
                              .with_active(true)
                              .with_max_speed(1)
-                             .landed_on(0, 0, {5, 5})
+                             .landed_on(1, 1, {5, 5})
                              .with_fuel(1000.0)
                              .with_special(TimerData{.count = 5})
                              .build();
@@ -147,7 +147,7 @@ void test_launch_canister_ships() {
                             .with_alive(true)
                             .with_active(true)
                             .with_max_speed(1)
-                            .landed_on(0, 0, {5, 5})
+                            .landed_on(1, 1, {5, 5})
                             .with_fuel(1000.0)
                             .with_special(TimerData{.count = 3})
                             .build();
@@ -166,13 +166,13 @@ void test_launch_from_carrier_all_scopes() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                               .owned_by(1, 0)
                               .named("MotherCarrier")
-                              .landed_on(0, 0, {5, 5})
+                              .landed_on(1, 1, {5, 5})
                               .with_max_hanger(100)
                               .build();
 
@@ -241,7 +241,7 @@ void test_launch_from_carrier_all_scopes() {
   // 6. Nested carrier (s2.whatorbits() == LEVEL_SHIP) rejected
   const auto super_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                             .owned_by(1, 0)
-                            .in_star_orbit(0)
+                            .in_star_orbit(1)
                             .build();
   ctx.em.mutate_ship(carrier_id,
                      [&](Ship& c) { c.dock_into_carrier(super_id); });
@@ -259,24 +259,24 @@ void test_launch_planet_fuel_precheck_preserves_ap_and_coords() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   const auto no_fuel_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                               .owned_by(1, 0)
-                              .landed_on(0, 0, {5, 5})
+                              .landed_on(1, 1, {5, 5})
                               .with_fuel(0.0)
                               .build();
   ctx.em.mutate_ship(no_fuel_id,
                      [](Ship& s) { s.set_coordinates({42.0, 42.0}); });
 
-  const ap_t ap_before = ctx.em.peek_star(0)->AP(1);
+  const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
   ctx.assert_dispatch_rejected(
       g, {"launch", std::format("#{}", no_fuel_id.value)});
   test::expect_contains(g.out.str(), "does not have enough fuel");
 
   // Verify AP was NOT deducted and landed coordinates were NOT corrupted
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
   test::expect_eq(ctx.em.peek_ship(no_fuel_id)->coordinates(),
                   UniverseCoordinates{42.0, 42.0});
 
@@ -290,7 +290,7 @@ void test_launch_planet_fuel_precheck_preserves_ap_and_coords() {
 
   const auto zero_speed_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                                  .owned_by(1, 0)
-                                 .landed_on(0, 0, {5, 5})
+                                 .landed_on(1, 1, {5, 5})
                                  .with_max_speed(0)
                                  .build();
   ctx.assert_dispatch_rejected(

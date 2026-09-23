@@ -26,14 +26,14 @@ void setup_test_world(TestContext& ctx) {
     r.fighters = 0;
   });
 
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.info(player_t{2}).popn = 100;
     p.info(player_t{2}).troops = 0;
     p.info(player_t{2}).numsectsowned = 5;
     p.info(player_t{2}).tax = 100;
   });
 
-  ctx.em.mutate_sectormap(0, 0, [](SectorMap& smap) {
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     for (int i = 0; i < 5; i++) {
       auto& s = smap.get(Coordinates{i, 0});
       s.set_owner(2);
@@ -52,8 +52,8 @@ void test_insurgency_happy_path_success() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_success(g, {"insurgency", "2", "500000"}, 10);
   test::expect_contains(g.out.str(), "Success!  You liberate");
@@ -65,7 +65,7 @@ void test_insurgency_happy_path_success() {
   test::expect_eq(saved_race->governor[0].money, 500000);
 
   // Verify planet tax rate inherited
-  const auto* saved_planet = ctx.em.peek_planet(0, 0);
+  const auto* saved_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(saved_planet, nullptr);
   test::expect_eq(saved_planet->info(player_t{1}).tax, 100);
   std::println(std::cout, "    ✓ Insurgency success path verified");
@@ -84,7 +84,7 @@ void test_insurgency_failed_revolt() {
     r.morale = 100;
     r.fighters = 20;
   });
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.info(player_t{1}).popn = 1;
     p.info(player_t{1}).troops = 0;
     p.info(player_t{2}).troops = 1000;
@@ -94,8 +94,8 @@ void test_insurgency_failed_revolt() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_success(g, {"insurgency", "2", "100"}, 10);
   test::expect_contains(g.out.str(), "The insurgency failed!");
@@ -107,14 +107,14 @@ void test_insurgency_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set AP to 5 (< 10 required)
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(player_t{1}) = 5; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 5; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
   test::expect_contains(g.out.str(), "action points");
@@ -140,14 +140,14 @@ void test_insurgency_role_and_scope_rejections() {
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection
-  ctx.em.mutate_star(0, [](Star& s) {
+  ctx.em.mutate_star(1, [](Star& s) {
     s.governor(player_t{1}) = 2;  // Star governed by Gov 2
   });
   g.out.str("");
   ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
   test::expect_contains(g.out.str(), "not authorized");
   std::println(std::cout, "    ✓ Role and scope rejections verified");
@@ -161,8 +161,8 @@ void test_insurgency_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"insurgency", "2"});
@@ -186,20 +186,20 @@ void test_insurgency_domain_errors() {
   test::expect_contains(g.out.str(), "yourself");
 
   // 5. Instigator has no population in star system
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.info(player_t{1}).popn = 0; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(player_t{1}).popn = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
   test::expect_contains(g.out.str(),
                         "You must have population in the star system");
-  ctx.em.mutate_planet(0, 0,
+  ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{1}).popn = 1000; });
 
   // 6. Target player does not occupy this planet
-  ctx.em.mutate_planet(0, 0, [](Planet& p) { p.info(player_t{2}).popn = 0; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(player_t{2}).popn = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
   test::expect_contains(g.out.str(), "does not occupy this planet");
-  ctx.em.mutate_planet(0, 0,
+  ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{2}).popn = 1000; });
 
   // 7. Negative money amount

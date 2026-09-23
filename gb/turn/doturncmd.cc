@@ -304,7 +304,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
   }
 
   // Local inhabited bitmap - tracks which players inhabit each star this turn
-  std::array<PlayerBitset<MAXPLAYERS>, NUMSTARS> inhabited{};
+  std::array<PlayerBitset<MAXPLAYERS>, NUMSTARS + 1> inhabited{};
 
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;

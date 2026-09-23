@@ -51,7 +51,7 @@ void test_universe_generator_in_memory() {
   PlanetRepository planet_repo(store);
   SectorRepository sector_repo(store);
 
-  for (starnum_t snum = 0; snum < 5; ++snum) {
+  for (starnum_t snum = 1; snum <= 5; ++snum) {
     auto star_opt = star_repo.find_by_number(snum);
     test::expect_true(star_opt.has_value());
     test::expect_eq(star_opt->star_id(), snum);
@@ -64,7 +64,7 @@ void test_universe_generator_in_memory() {
     test::expect_true(pnames.size() <= 4);
 
     // Verify each planet of the star was persisted
-    for (planetnum_t pnum = 0; pnum < pnames.size(); ++pnum) {
+    for (planetnum_t pnum = 1; pnum <= pnames.size(); ++pnum) {
       auto planet_opt = planet_repo.find_by_location(snum, pnum);
       test::expect_true(planet_opt.has_value());
       test::expect_eq(planet_opt->star_id(), snum);
@@ -82,7 +82,7 @@ void test_universe_generator_in_memory() {
   // Verify victory/player tables initialized
   BlockRepository block_repo(store);
   PowerRepository power_repo(store);
-  for (int i : std::views::iota(0, MAXPLAYERS)) {
+  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
     test::expect_true(
         block_repo.find_by_id(static_cast<blocknum_t>(i)).has_value());
     test::expect_true(
@@ -115,7 +115,7 @@ void test_universe_generator_planetless_stars() {
 
   JsonStore store(db);
   StarRepository star_repo(store);
-  for (starnum_t snum = 0; snum < 10; ++snum) {
+  for (starnum_t snum = 1; snum <= 10; ++snum) {
     auto star_opt = star_repo.find_by_number(snum);
     test::expect_true(star_opt.has_value());
     test::expect_eq(star_opt->get_struct().pnames.size(), 0zu);
@@ -147,7 +147,7 @@ void test_universe_generator_custom_names() {
   JsonStore store(db);
   StarRepository star_repo(store);
   std::set<std::string> expected_names{"Sol", "Alpha Centauri", "Sirius"};
-  for (starnum_t snum = 0; snum < 3; ++snum) {
+  for (starnum_t snum = 1; snum <= 3; ++snum) {
     auto star_opt = star_repo.find_by_number(snum);
     test::expect_true(star_opt.has_value());
     test::expect_true(expected_names.contains(star_opt->get_name()));

@@ -19,7 +19,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
       .owned_by(1, 0)
       .named("Docker")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .with_crew(0, 10)
       .with_fuel(100.0)
       .build();
@@ -28,7 +28,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
       .owned_by(1, 0)
       .named("Carrier")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
       .build();
 
@@ -36,7 +36,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
       .owned_by(2, 0)
       .named("Target")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
       .build();
 
@@ -44,7 +44,7 @@ void setup_test_world(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
       .owned_by(1, 0)
       .named("FarTarget")
-      .in_star_orbit(0, 500.0, 500.0)
+      .in_star_orbit(1, 500.0, 500.0)
       .with_fuel(100.0)
       .build();
 }
@@ -57,7 +57,7 @@ void test_dock_happy_paths() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Successful dock (0 AP)
   ctx.assert_dispatch_success(g, {"dock", "#1", "#2"}, 0);
@@ -93,13 +93,13 @@ void test_assault_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0 for Player 1
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "action points");
@@ -116,7 +116,7 @@ void test_assault_guest_rejection() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 2, 0);  // Player 2 is guest
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   ctx.assert_dispatch_rejected(g, {"assault", "#3", "#1"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -132,7 +132,7 @@ void test_dock_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Min args violation (< 3 args)
   ctx.assert_dispatch_rejected(g, {"dock", "#1"});
@@ -215,22 +215,22 @@ void test_assault_validation_and_ap_invariants() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // Set star AP to 5 to verify failed assaults do NOT deduct AP
-  ctx.em.mutate_star(0, [](Star& s) { s.AP(1) = 5; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
 
   // 1. Invalid population type ("aliens")
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "5", "aliens"});
   test::expect_contains(g.out.str(), "Assault with what?");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
 
   // 2. Pods cannot assault
   shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                          .owned_by(1, 0)
                          .named("SporePod")
-                         .in_star_orbit(0, 100.0, 200.0)
+                         .in_star_orbit(1, 100.0, 200.0)
                          .with_crew(0, 5)
                          .with_fuel(100.0)
                          .build();
@@ -238,14 +238,14 @@ void test_assault_validation_and_ap_invariants() {
   ctx.assert_dispatch_rejected(
       g, {"assault", std::format("#{}", pod_id.value), "#3"});
   test::expect_contains(g.out.str(), "Sorry. Pods cannot be used to assault.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
 
   // 3. No civilians on ship when assaulting with "civ"
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "5", "civ"});
   test::expect_contains(g.out.str(),
                         "You have no crew on this ship to assault with.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
 
   // 4. No troops on ship when assaulting with "mil"
   ctx.em.mutate_ship(1, [](Ship& s) { s.troops() = 0; });
@@ -253,20 +253,20 @@ void test_assault_validation_and_ap_invariants() {
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "5", "mil"});
   test::expect_contains(g.out.str(),
                         "You have no troops on this ship to assault with.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
   ctx.em.mutate_ship(1, [](Ship& s) { s.troops() = 10; });
 
   // 5. Cannot assault Von Neumann machines
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
                         .owned_by(2, 0)
                         .named("VNProbe")
-                        .in_star_orbit(0, 100.0, 200.0)
+                        .in_star_orbit(1, 100.0, 200.0)
                         .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"assault", "#1", std::format("#{}", vn_id.value)});
   test::expect_contains(g.out.str(), "You can't assault Von Neumann machines.");
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
 
   // 6. Cannot use a docked ship or hangar-berthed ship to assault
   ctx.em.mutate_ship(1, [](Ship& s) { s.dock_with_ship(2); });
@@ -282,7 +282,7 @@ void test_assault_validation_and_ap_invariants() {
   test::expect_contains(g.out.str(), "Your ship is landed on another ship.");
   ctx.em.mutate_ship(1,
                      [](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_STAR; });
-  test::expect_eq(ctx.em.peek_star(0)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
 
   ctx.verify_universe_invariants();
 }
@@ -295,7 +295,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1a. Repulsed boarding assault where attacker survives: moderate defense
   ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
@@ -318,7 +318,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   shipnum_t doomed_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                             .owned_by(1, 0)
                             .named("DoomedFighter")
-                            .in_star_orbit(0, 100.0, 200.0)
+                            .in_star_orbit(1, 100.0, 200.0)
                             .with_crew(0, 2)
                             .with_fuel(100.0)
                             .build();
@@ -332,7 +332,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   shipnum_t partner_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                              .owned_by(2, 0)
                              .named("MooredPartner")
-                             .in_star_orbit(0, 100.0, 200.0)
+                             .in_star_orbit(1, 100.0, 200.0)
                              .build();
   ctx.em.mutate_ship(3, [&](Ship& s) {
     s.troops() = 0;
@@ -357,7 +357,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                           .owned_by(2, 0)
                           .named("BoobyMine")
-                          .in_star_orbit(0, 100.0, 200.0)
+                          .in_star_orbit(1, 100.0, 200.0)
                           .with_max_crew(0)
                           .with_destruct(10)
                           .build();
@@ -376,7 +376,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   shipnum_t univ_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                               .owned_by(2, 0)
                               .named("UnivCargo")
-                              .in_star_orbit(0, 100.0, 200.0)
+                              .in_star_orbit(1, 100.0, 200.0)
                               .build();
   ctx.em.mutate_ship(univ_target,
                      [](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_UNIV; });
@@ -395,7 +395,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
 
   // 5. Civilian boarding assault (victory with casualties and morale gain)
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.undock_from_ship();
     s.whatorbits() = ScopeLevel::LEVEL_STAR;
@@ -405,7 +405,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   shipnum_t civ_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                              .owned_by(2, 0)
                              .named("CivTarget")
-                             .in_star_orbit(0, 100.0, 200.0)
+                             .in_star_orbit(1, 100.0, 200.0)
                              .with_crew(2, 0)
                              .build();
   ctx.em.mutate_race(1, [](Race& r) { r.fighters = 15; });
@@ -425,7 +425,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   shipnum_t zero_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                               .owned_by(2, 0)
                               .named("ZeroTarget")
-                              .in_star_orbit(0, 100.0, 200.0)
+                              .in_star_orbit(1, 100.0, 200.0)
                               .with_crew(5, 5)
                               .build();
   g.out.str("");
@@ -449,13 +449,13 @@ void test_assault_combat_boobytrap_and_unmooring() {
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.undock_from_ship();
     s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s.pnumorbits() = 0;
+    s.pnumorbits() = 1;
     s.troops() = 20;
   });
   shipnum_t landed_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                                 .owned_by(2, 0)
                                 .named("LandedTarget")
-                                .landed_on(0, 0, {1, 1})
+                                .landed_on(1, 1, {1, 1})
                                 .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(

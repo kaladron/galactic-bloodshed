@@ -14,8 +14,8 @@ struct BuildTestFixture {
   Database& db = ctx.db;
   EntityManager& em = ctx.em;
   JsonStore store;
-  starnum_t star_id{0};
-  planetnum_t planet_id{0};
+  starnum_t star_id{1};
+  planetnum_t planet_id{1};
 
   BuildTestFixture() : store(ctx.db) {
     ctx.with_standard_universe();

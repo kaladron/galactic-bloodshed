@@ -20,7 +20,7 @@ void setup_test_world(TestContext& ctx) {
   auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 1)
                 .owned_by(1)
                 .named("TestShip")
-                .in_planet_orbit(0, 0)
+                .in_planet_orbit(1, 1)
                 .with_guns(guntype_t::HEAVY, 4)
                 .with_crew(100, 0)
                 .with_speed(5)
@@ -44,8 +44,8 @@ void test_order_happy_path() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   std::println(std::cout, "Set ship defense order");
   {
@@ -129,8 +129,8 @@ void test_order_combat_and_movement_options() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // Speed, primary, secondary, salvo, laser, focus, merchant
   ctx.assert_dispatch_success(g, {"order", "#1", "speed", "7"});
@@ -170,7 +170,7 @@ void test_order_combat_and_movement_options() {
   const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 2)
                          .owned_by(1)
                          .named("EscortTarget")
-                         .in_planet_orbit(0, 0)
+                         .in_planet_orbit(1, 1)
                          .with_crew(20, 0)
                          .with_speed(5)
                          .build();
@@ -207,15 +207,15 @@ void test_order_specialty_ships() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Missile orders (impact and scatter)
   const auto missile_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE, 10)
                               .owned_by(1)
                               .named("Tomahawk")
-                              .in_planet_orbit(0, 0)
-                              .targeting_planet(0, 0)
+                              .in_planet_orbit(1, 1)
+                              .targeting_planet(1, 1)
                               .build();
 
   ctx.assert_dispatch_success(
@@ -237,7 +237,7 @@ void test_order_specialty_ships() {
   const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 20)
                            .owned_by(1)
                            .named("ProximityMine")
-                           .in_planet_orbit(0, 0)
+                           .in_planet_orbit(1, 1)
                            .with_on(false)
                            .build();
 
@@ -267,7 +267,7 @@ void test_order_specialty_ships() {
   const auto trans_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 30)
                             .owned_by(1)
                             .named("Transporter")
-                            .landed_on(0, 0, {1, 1})
+                            .landed_on(1, 1, {1, 1})
                             .build();
 
   ctx.assert_dispatch_success(
@@ -291,7 +291,7 @@ void test_order_specialty_ships() {
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 40)
                              .owned_by(1)
                              .named("Helios")
-                             .in_planet_orbit(0, 0)
+                             .in_planet_orbit(1, 1)
                              .with_crew(10, 0)
                              .with_fuel(50.0)
                              .build();
@@ -315,7 +315,7 @@ void test_order_specialty_ships() {
   const auto tele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_STELE, 45)
                            .owned_by(1)
                            .named("Hubble")
-                           .in_planet_orbit(0, 0)
+                           .in_planet_orbit(1, 1)
                            .with_crew(2, 0)
                            .with_fuel(50.0)
                            .with_tech(200.0)
@@ -329,7 +329,7 @@ void test_order_specialty_ships() {
   const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA, 50)
                             .owned_by(1)
                             .named("TerraDev")
-                            .in_planet_orbit(0, 0)
+                            .in_planet_orbit(1, 1)
                             .with_crew(10, 0)
                             .build();
 
@@ -367,29 +367,29 @@ void test_order_factory_activation_and_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 1. Landed Factory on Earth activated via "order #60 on"
   auto f1 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 60)
                 .owned_by(1)
                 .named("PlanetFact")
-                .landed_on(0, 0, {0, 0})
+                .landed_on(1, 1, {0, 0})
                 .with_crew(5, 0)
                 .with_on(false)
                 .build_handle();
   f1->build_cost() = 50;
   f1->deststar() = 1;
-  f1->destpnum() = 0;
+  f1->destpnum() = 1;
 
-  const auto initial_res = ctx.em.peek_planet(0, 0)->info(1).resource;
+  const auto initial_res = ctx.em.peek_planet(1, 1)->info(1).resource;
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", "#60", "on"});
   test::expect_contains(g.out.str(),
                         "Factory activated at a cost of 100 resources");
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(60)->on(), 1);
-  test::expect_eq(ctx.em.peek_planet(0, 0)->info(1).resource,
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).resource,
                   initial_res - 100);
 
   // Cannot turn off an online factory
@@ -402,7 +402,7 @@ void test_order_factory_activation_and_errors() {
   auto hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT, 61)
                  .owned_by(1)
                  .named("AlphaHab")
-                 .in_planet_orbit(0, 0)
+                 .in_planet_orbit(1, 1)
                  .with_crew(50, 0)
                  .with_resource(500)
                  .with_max_hanger(200)
@@ -413,7 +413,7 @@ void test_order_factory_activation_and_errors() {
   auto f2 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 62)
                 .owned_by(1)
                 .named("HabFact")
-                .docked_to(61, 0)
+                .docked_to(61, 1)
                 .with_crew(5, 0)
                 .with_size(20)
                 .with_on(false)
@@ -432,7 +432,7 @@ void test_order_factory_activation_and_errors() {
   TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 63)
       .owned_by(1)
       .named("RadShip")
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .with_active(false)
       .with_radiation(75)
       .build();
@@ -445,7 +445,7 @@ void test_order_factory_activation_and_errors() {
   TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 64)
       .owned_by(1)
       .named("GhostShip")
-      .in_planet_orbit(0, 0)
+      .in_planet_orbit(1, 1)
       .with_crew(0, 0)
       .build();
   g.out.str("");

@@ -17,26 +17,26 @@ void setup_distance_ships(TestContext& ctx) {
 
   // Set Earth to (60, 80) system coordinates for standard 3-4-5 Pythagorean
   // tests
-  ctx.em.mutate_planet(0, 0, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.set_system_coordinates(SystemCoordinates{60.0, 80.0});
   });
 
   // Ship 1: Player 1 at (0, 0)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
       .owned_by(1, 0)
-      .in_star_orbit(0, UniverseCoordinates{0.0, 0.0})
+      .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
       .build();
 
   // Ship 2: Player 1 at (30, 40) -> distance to ship 1 should be 50
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2)
       .owned_by(1, 0)
-      .in_star_orbit(0, UniverseCoordinates{30.0, 40.0})
+      .in_star_orbit(1, UniverseCoordinates{30.0, 40.0})
       .build();
 
   // Ship 3: Player 2 (enemy)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 3)
       .owned_by(2, 0)
-      .in_star_orbit(0, UniverseCoordinates{100.0, 100.0})
+      .in_star_orbit(1, UniverseCoordinates{100.0, 100.0})
       .build();
 }
 

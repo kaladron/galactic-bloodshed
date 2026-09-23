@@ -20,7 +20,7 @@ void test_upgrade_command() {
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
-  race.governor[0].active = true;
+  race.leader().active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
   race.tech = 500.0;  // High tech to allow upgrades
@@ -200,7 +200,7 @@ void test_upgrade_numeric_attributes_and_validations() {
   Race race{};
   race.Playernum = 1;
   race.name = "BuilderRace";
-  race.governor[0].active = true;
+  race.leader().active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
   race.tech = 500.0;
@@ -304,7 +304,7 @@ void test_upgrade_weapons_and_systems() {
   Race race{};
   race.Playernum = 1;
   race.name = "WeaponRace";
-  race.governor[0].active = true;
+  race.leader().active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
   race.tech = 25000.0;
@@ -453,7 +453,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   Race race{};
   race.Playernum = 1;
   race.name = "CarrierRace";
-  race.governor[0].active = true;
+  race.leader().active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
   race.tech = 25000.0;

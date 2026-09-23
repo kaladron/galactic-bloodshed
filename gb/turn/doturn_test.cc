@@ -153,9 +153,9 @@ void test_do_turn_market_and_maintenance() {
   univ_repo.save(u);
 
   Race race1 = createTestRace(player_t{1});
-  race1.governor[0].money = 1000;
+  race1.leader().money = 1000;
   Race race2 = createTestRace(player_t{2});
-  race2.governor[0].money = 2000;
+  race2.leader().money = 2000;
   RaceRepository race_repo(store);
   race_repo.save(race1);
   race_repo.save(race2);
@@ -214,7 +214,7 @@ void test_do_turn_market_and_maintenance() {
 
   // Seller 1 gained money
   const auto* seller = em.peek_race(player_t{1});
-  test::expect_gt(seller->governor[0].money, 1000);
+  test::expect_gt(seller->leader().money, 1000);
 
   // Bidder 2 received resources on planet2
   const auto& p2_after = *em.peek_planet(starnum_t{2}, planetnum_t{1});
@@ -235,7 +235,7 @@ void test_do_turn_victory_scores_and_discoveries() {
   Race race = createTestRace(player_t{1});
   race.tech = 49.5;  // Just below TECH_HYPER_DRIVE (50.0)
   race.IQ = 100;     // Will gain +1.0 tech during turn
-  race.governor[0].money = 500000;
+  race.leader().money = 500000;
   RaceRepository race_repo(store);
   race_repo.save(race);
 
@@ -282,15 +282,14 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
 
   Race race1 = createTestRace(player_t{1});
   race1.morale = 100;
-  race1.governor[0].money = 1000;
-  race1.governor[1].active = true;
-  race1.governor[1].money = 500;
+  race1.leader().money = 1000;
+  race1.appoint_governor(1, {.money = 500});
   RaceRepository race_repo(store);
   race_repo.save(race1);
 
   Race race2 = createTestRace(player_t{2});
   race2.morale = 100;
-  race2.governor[0].money = 2000;
+  race2.leader().money = 2000;
   race_repo.save(race2);
 
   Star star = createTestStar(starnum_t{1});
@@ -369,9 +368,9 @@ void test_process_market_transactions_isolated() {
   JsonStore store(db);
 
   Race race1 = createTestRace(player_t{1});
-  race1.governor[0].money = 500;
+  race1.leader().money = 500;
   Race race2 = createTestRace(player_t{2});
-  race2.governor[0].money = 1000;
+  race2.leader().money = 1000;
   RaceRepository race_repo(store);
   race_repo.save(race1);
   race_repo.save(race2);
@@ -440,11 +439,11 @@ void test_process_market_transactions_isolated() {
 
   // Seller received payment
   const auto* seller = em.peek_race(player_t{1});
-  test::expect_eq(seller->governor[0].money, 800);  // 500 + 300
+  test::expect_eq(seller->leader().money, 800);  // 500 + 300
 
   // Buyer charged bid + freight, and received fuel on destination planet
   const auto* buyer = em.peek_race(player_t{2});
-  test::expect_lt(buyer->governor[0].money, 700);  // 1000 - 300 - shipping_cost
+  test::expect_lt(buyer->leader().money, 700);  // 1000 - 300 - shipping_cost
   const auto& dest_planet = *em.peek_planet(starnum_t{2}, planetnum_t{1});
   test::expect_eq(dest_planet.info(player_t{2}).fuel, 50);
 }
@@ -568,36 +567,36 @@ void test_race_turn_accounting_and_maintenance() {
   Race race = createTestRace(player_t{1});
   race.controlled_planets = 5;
   race.planet_points = 20;
-  race.governor[0].active = true;
-  race.governor[0].maintain = 100;
-  race.governor[0].income = 50;
-  race.governor[0].cost_market = 30;
-  race.governor[0].profit_market = 40;
-  race.governor[0].cost_tech = 10;
-  race.governor[0].money = 500;
+  race.leader().active = true;
+  race.leader().maintain = 100;
+  race.leader().income = 50;
+  race.leader().cost_market = 30;
+  race.leader().profit_market = 40;
+  race.leader().cost_tech = 10;
+  race.leader().money = 500;
   race.morale = 80;
 
   // 1. Reset turn accounting
   race.reset_turn_accounting();
   test::expect_eq(race.controlled_planets, 0);
   test::expect_eq(race.planet_points, 0);
-  test::expect_eq(race.governor[0].maintain, 0);
-  test::expect_eq(race.governor[0].income, 0UL);
-  test::expect_eq(race.governor[0].cost_market, 0UL);
-  test::expect_eq(race.governor[0].profit_market, 0UL);
-  test::expect_eq(race.governor[0].cost_tech, 0UL);
+  test::expect_eq(race.leader().maintain, 0);
+  test::expect_eq(race.leader().income, 0UL);
+  test::expect_eq(race.leader().cost_market, 0UL);
+  test::expect_eq(race.leader().profit_market, 0UL);
+  test::expect_eq(race.leader().cost_tech, 0UL);
 
   // 2. Deduct maintenance with sufficient funds
-  race.governor[0].money = 500;
+  race.leader().money = 500;
   race.deduct_maintenance(governor_t{0}, 200);
-  test::expect_eq(race.governor[0].money, 300);
+  test::expect_eq(race.leader().money, 300);
   test::expect_eq(race.morale, 80);
 
   // 3. Deduct maintenance with deficit: deducts remaining money, applies morale
   // penalty clamped to [0, 100]
   race.deduct_maintenance(governor_t{0},
                           500);  // Deficit of 200 -> penalty of 20
-  test::expect_eq(race.governor[0].money, 0);
+  test::expect_eq(race.leader().money, 0);
   test::expect_eq(race.morale, 60);
 
   // Deficit clamping: large deficit clamps morale to 0
@@ -675,7 +674,7 @@ void test_calculate_victory_scores_isolated() {
 
   Race race1 = createTestRace(player_t{1});
   race1.morale = 100;
-  race1.governor[0].money = 1000;
+  race1.leader().money = 1000;
   RaceRepository race_repo(store);
   race_repo.save(race1);
 
@@ -769,12 +768,12 @@ void test_handle_victory_single_winner() {
   ctx.em.mutate_race(player_t{1}, [](Race& race) {
     race.name = "GloriousEmpire";
     race.victory_turns = VICTORY_UPDATES;
-    race.governor[0].active = true;
+    race.leader().active = true;
   });
   ctx.em.mutate_race(player_t{2}, [](Race& race) {
     race.name = "OtherEmpire";
     race.victory_turns = 0;
-    race.governor[0].active = true;
+    race.leader().active = true;
   });
 
   auto result = handle_victory(ctx.em, true);
@@ -813,12 +812,12 @@ void test_handle_victory_multiple_winners_and_lesser_winners() {
   ctx.em.mutate_race(player_t{1}, [](Race& race) {
     race.name = "EmpireAlpha";
     race.victory_turns = VICTORY_UPDATES;
-    race.governor[0].active = true;
+    race.leader().active = true;
   });
   ctx.em.mutate_race(player_t{2}, [](Race& race) {
     race.name = "EmpireBeta";
     race.victory_turns = VICTORY_UPDATES;
-    race.governor[0].active = true;
+    race.leader().active = true;
   });
 
   // Player 3 is lesser winner (controlled_planets >= 1, but victory_turns <
@@ -828,7 +827,7 @@ void test_handle_victory_multiple_winners_and_lesser_winners() {
   race3.name = "EmpireGamma";
   race3.controlled_planets = 1;
   race3.victory_turns = 1;
-  race3.governor[0].active = true;
+  race3.leader().active = true;
   RaceRepository(store).save(race3);
 
   auto result = handle_victory(ctx.em, true);
@@ -864,7 +863,7 @@ void test_calculate_victory_scores_large_accumulation() {
   ctx.em.mutate_race(player_t{1}, [](Race& race) {
     race.morale = 100;
     // 3 billion in treasury across governors
-    race.governor[0].money = 3'000'000'000LL;
+    race.leader().money = 3'000'000'000LL;
   });
 
   ctx.em.mutate_planet(starnum_t{1}, planetnum_t{1}, [](Planet& planet) {
@@ -1042,9 +1041,9 @@ void test_advance_race_technology() {
     r.tech = 49.5;
     r.morale = 10;
     r.turn = 5;
-    r.governor[0].active = true;
-    r.governor[0].maintain = 100;
-    r.governor[0].money = 1000;
+    r.leader().active = true;
+    r.leader().maintain = 100;
+    r.leader().money = 1000;
   });
 
   auto r_handle = ctx.em.peek_race(player_t{1});
@@ -1057,7 +1056,7 @@ void test_advance_race_technology() {
   test::expect_eq(test_race.morale, 12);
   test::expect_eq(test_race.turn, 6);
   test::expect_true(test_race.discoveries.hyperdrive);
-  test::expect_eq(test_race.governor[0].money, 900);
+  test::expect_eq(test_race.leader().money, 900);
 }
 
 void test_update_victory_progress() {
@@ -1135,8 +1134,8 @@ void test_sync_power_ratings() {
   stats.Power[player_t{1}].planets_owned = 1;
 
   ctx.em.mutate_race(player_t{1}, [](Race& r) {
-    r.governor[0].active = true;
-    r.governor[0].money = 12'345;
+    r.leader().active = true;
+    r.leader().money = 12'345;
   });
 
   sync_power_ratings(ctx.em, stats);

@@ -17,7 +17,6 @@ namespace GB::commands {
 
 bool page(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
-  governor_t Governor = g.governor();
   ap_t APcount = g.god() ? 0 : 1;
   player_t who = 0;
   governor_t gov{0};
@@ -51,9 +50,9 @@ bool page(const command_t& argv, GameObj& g) {
   }
 
   const auto& star = *g.entity_manager.peek_star(g.snum());
-  auto msg = std::format("{} \"{}\" page(s) you from the {} star system.\n",
-                         g.race->name, g.race->governor[Governor.value].name,
-                         star.get_name());
+  auto msg =
+      std::format("{} \"{}\" page(s) you from the {} star system.\n",
+                  g.race->name, g.current_governor().name, star.get_name());
 
   if (to_block) {
     const struct block* block_player = nullptr;

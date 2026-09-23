@@ -96,7 +96,7 @@ void test_read_telegrams_governor_isolation() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  ctx.em.mutate_race(1, [](Race& race) { race.governor[1].active = true; });
+  ctx.em.mutate_race(1, [](Race& race) { race.appoint_governor(1); });
 
   auto& registry = get_test_session_registry();
   GameObj g0(ctx.em, registry);
@@ -174,13 +174,10 @@ void test_read_news() {
   int latest_announce = ctx.em.get_latest_news_id(NewsType::ANNOUNCE);
 
   ctx.em.with_race(1, [&](const Race& race) {
-    test::expect_eq(race.governor[0].newspos[NewsType::DECLARATION],
-                    latest_decl);
-    test::expect_eq(race.governor[0].newspos[NewsType::COMBAT], latest_combat);
-    test::expect_eq(race.governor[0].newspos[NewsType::TRANSFER],
-                    latest_transfer);
-    test::expect_eq(race.governor[0].newspos[NewsType::ANNOUNCE],
-                    latest_announce);
+    test::expect_eq(race.leader().newspos[NewsType::DECLARATION], latest_decl);
+    test::expect_eq(race.leader().newspos[NewsType::COMBAT], latest_combat);
+    test::expect_eq(race.leader().newspos[NewsType::TRANSFER], latest_transfer);
+    test::expect_eq(race.leader().newspos[NewsType::ANNOUNCE], latest_announce);
   });
 
   // Reading again immediately produces no new articles

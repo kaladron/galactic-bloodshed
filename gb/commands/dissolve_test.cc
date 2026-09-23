@@ -17,15 +17,14 @@ void setup_test_world(TestContext& ctx) {
 
   ctx.em.mutate_race(1, [](Race& race) {
     race.password = "testpass";
-    race.governor[0].password = "govpass";
-    race.governor[1].active = true;
-    race.governor[1].password = "subpass";
+    race.leader().password = "govpass";
+    race.appoint_governor(1, {.password = "subpass"});
     race.dissolved = false;
   });
 
   ctx.em.mutate_race(2, [](Race& race2) {
     race2.password = "otherpass";
-    race2.governor[0].password = "othergov";
+    race2.leader().password = "othergov";
   });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 1)
@@ -41,7 +40,7 @@ void setup_test_world(TestContext& ctx) {
   const auto* loaded_race = ctx.em.peek_race(1);
   test::expect_ne(loaded_race, nullptr);
   test::expect_eq(loaded_race->password, "testpass");
-  test::expect_eq(loaded_race->governor[0].password, "govpass");
+  test::expect_eq(loaded_race->leader().password, "govpass");
 }
 
 void test_dissolve_happy_path() {
@@ -111,8 +110,8 @@ void test_dissolve_role_rejections() {
   guest_race.name = "GuestRace";
   guest_race.password = "guestpass";
   guest_race.Guest = true;
-  guest_race.governor[0].active = true;
-  guest_race.governor[0].password = "guestgov";
+  guest_race.leader().active = true;
+  guest_race.leader().password = "guestgov";
   {
     JsonStore store(ctx.db);
     RaceRepository races(store);

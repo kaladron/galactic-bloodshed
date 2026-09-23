@@ -89,7 +89,7 @@ void test_arm_and_disarm() {
 
   const auto* saved_race = ctx.em.peek_race(1);
   test::expect_ne(saved_race, nullptr);
-  test::expect_eq(saved_race->governor[0].money, 0);
+  test::expect_eq(saved_race->leader().money, 0);
 
   // 5. Test disarm command success
   ctx.setup_game_obj(g);

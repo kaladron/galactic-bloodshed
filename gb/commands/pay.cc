@@ -35,7 +35,7 @@ bool pay(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  if (g.race->governor[g.governor().value].money < amount) {
+  if (g.current_governor().money < amount) {
     g.out << "You don't have that much money to give!\n";
     return false;
   }
@@ -43,7 +43,7 @@ bool pay(const command_t& argv, GameObj& g) {
   std::string alien_name;
   try {
     g.entity_manager.mutate_race(who, [&](Race& alien) {
-      alien.governor[0].money += amount;
+      alien.leader().money += amount;
       alien_name = alien.name;
     });
   } catch (const EntityNotFoundError&) {
@@ -52,11 +52,11 @@ bool pay(const command_t& argv, GameObj& g) {
   }
 
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-    race.governor[g.governor().value].money -= amount;
+    race.governor(g.governor()).money -= amount;
   });
 
   warn_player(
-      g.session_registry, g.entity_manager, who, 0,
+      g.session_registry, g.entity_manager, who, Race::leader_id,
       std::format("{} [{}] payed you {}.\n", g.race->name, Playernum, amount));
   g.out << std::format("{} payed to {} [{}].\n", amount, alien_name, who);
 

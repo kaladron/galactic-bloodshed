@@ -20,7 +20,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
   std::string outmsg =
       std::format("*** Transferring [{0},{1}]'s ownings to [{2},{3}] ***\n\n",
                   race.Playernum, src_gov, race.Playernum, tgt_gov);
-  push_telegram(entity_manager, race.Playernum, (governor_t)0, outmsg);
+  push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
 
   /*  First do stars....  */
   for (auto star_handle : StarList(entity_manager)) {
@@ -28,7 +28,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
     if (star.governor(race.Playernum) == src_gov) {
       star.governor(race.Playernum) = tgt_gov;
       outmsg = std::format("Changed juridiction of /{0}...\n", star.get_name());
-      push_telegram(entity_manager, race.Playernum, 0, outmsg);
+      push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
     }
   }
 
@@ -41,27 +41,19 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
         ship.governor() = tgt_gov;
         outmsg = std::format("Changed ownership of {0}{1}...\n",
                              ship.type_letter(), i);
-        push_telegram(entity_manager, race.Playernum, 0, outmsg);
+        push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
       }
     });
   }
 
   /*  And money too....  */
-  outmsg = std::format("Transferring {0} money...\n",
-                       race.governor[src_gov.value].money);
-  push_telegram(entity_manager, race.Playernum, 0, outmsg);
-  race.governor[tgt_gov.value].money =
-      race.governor[tgt_gov.value].money + race.governor[src_gov.value].money;
-  race.governor[src_gov.value].money = 0;
-
-  /* And last but not least, flag the governor as inactive.... */
-  race.governor[src_gov.value].active = false;
-  race.governor[src_gov.value].password = "";
-  race.governor[src_gov.value].name = "";
+  const money_t transferred = race.revoke_governor(src_gov, tgt_gov);
+  outmsg = std::format("Transferring {0} money...\n", transferred);
+  push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
   outmsg =
       std::format("\n*** Governor [{0},{1}]'s powers have been REVOKED ***\n",
                   race.Playernum, src_gov);
-  push_telegram(entity_manager, race.Playernum, 0, outmsg);
+  push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
 }
 }  // namespace
 
@@ -85,7 +77,7 @@ bool governors(const command_t& argv, GameObj& g) {
         return false;
       }
       governor_t gov{static_cast<governor_t::value_type>(raw_gov)};
-      if (Governor != 0 && Governor != gov) {
+      if (!g.is_leader() && Governor != gov) {
         g.out << "You can only change your own password.\n";
         return false;
       }
@@ -95,11 +87,11 @@ bool governors(const command_t& argv, GameObj& g) {
           g.out << "Guest races cannot change passwords.\n";
           return;
         }
-        if (!race.governor[gov.value].active) {
+        if (!race.has_governor(gov)) {
           g.out << "That governor is inactive.\n";
           return;
         }
-        race.governor[gov.value].password = argv[3];
+        race.governor(gov).password = argv[3];
         g.out << "Password changed.\n";
         success = true;
       });
@@ -111,13 +103,13 @@ bool governors(const command_t& argv, GameObj& g) {
       tabulate::Table table;
       table.format().hide_border().column_separator("  ");
 
-      // Configure columns - password at end, only shown to governor 0
+      // Configure columns - password at end, only shown to leader
       table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
       table.column(1).format().width(15);
       table.column(2).format().width(8);
       table.column(3).format().width(10).font_align(tabulate::FontAlign::right);
       table.column(4).format().width(24);
-      if (Governor == 0) {
+      if (g.is_leader()) {
         table.column(5).format().width(10);
         table.add_row(
             {"#", "Name", "Status", "Money", "Last Login", "Password"});
@@ -137,7 +129,7 @@ bool governors(const command_t& argv, GameObj& g) {
         std::vector<std::string> row = {
             std::format("{}", i.value), std::string(g_entry.name), status,
             std::format("{}", g_entry.money), login_time};
-        if (Governor == 0) {
+        if (g.is_leader()) {
           row.emplace_back(g_entry.password);
         }
         table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
@@ -148,7 +140,7 @@ bool governors(const command_t& argv, GameObj& g) {
   }
 
   if (argv[0] == "appoint") {
-    if (Governor != 0) {
+    if (!g.is_leader()) {
       g.out << "Only the race leader may appoint governors.\n";
       return false;
     }
@@ -172,20 +164,11 @@ bool governors(const command_t& argv, GameObj& g) {
     /* Syntax: 'appoint <gov> <password>' */
     bool success = false;
     g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-      if (race.governor[gov.value].active) {
+      if (race.has_governor(gov)) {
         g.out << "That governor is already appointed.\n";
         return;
       }
-      race.governor[gov.value].active = true;
-      race.governor[gov.value].deflevel = race.governor[0].deflevel;
-      race.governor[gov.value].homesystem = race.governor[gov.value].defsystem =
-          race.governor[0].defsystem;
-      race.governor[gov.value].homeplanetnum =
-          race.governor[gov.value].defplanetnum = race.governor[0].defplanetnum;
-      race.governor[gov.value].money = 0;
-      race.governor[gov.value].toggle.highlight = Playernum;
-      race.governor[gov.value].toggle.inverse = 1;
-      race.governor[gov.value].password = argv[2];
+      race.appoint_governor(gov, {.password = argv[2]});
       g.out << "Governor activated.\n";
       success = true;
     });
@@ -193,7 +176,7 @@ bool governors(const command_t& argv, GameObj& g) {
   }
 
   if (argv[0] == "revoke") {
-    if (Governor != 0) {
+    if (!g.is_leader()) {
       g.out << "Only the race leader may revoke governors.\n";
       return false;
     }
@@ -214,11 +197,11 @@ bool governors(const command_t& argv, GameObj& g) {
     }
     governor_t gov{static_cast<governor_t::value_type>(raw_gov)};
 
-    if (gov == 0) {
+    if (Race::is_leader(gov)) {
       g.out << "You can't revoke your leadership!\n";
       return false;
     }
-    governor_t j{0};
+    governor_t j = Race::leader_id;
     if (argv.size() >= 4) {
       try {
         int raw_j = std::stoi(argv[3]);
@@ -234,15 +217,15 @@ bool governors(const command_t& argv, GameObj& g) {
     }
     bool success = false;
     g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-      if (!race.governor[gov.value].active) {
+      if (!race.has_governor(gov)) {
         g.out << "That governor is not active.\n";
         return;
       }
-      if (race.governor[gov.value].password != argv[2]) {
+      if (race.governor(gov).password != argv[2]) {
         g.out << "Incorrect password.\n";
         return;
       }
-      if (!race.governor[j.value].active || j == gov) {
+      if (!race.has_governor(j) || j == gov) {
         g.out << "Bad target governor.\n";
         return;
       }

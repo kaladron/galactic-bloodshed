@@ -23,7 +23,7 @@ void test_personal_dispatch() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Federation";
-  race1.governor[0].active = true;
+  race1.leader().active = true;
   race1.info = "Old description";
 
   RaceRepository races(store);

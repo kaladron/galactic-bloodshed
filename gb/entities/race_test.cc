@@ -190,6 +190,81 @@ int main() {
                  "  ✓ Race sector compatibility and combat methods verified");
   }
 
+  // Race governor encapsulation methods
+  std::println(std::cout,
+               "Race leader(), governor(), has_governor(), appoint_governor(), "
+               "revoke_governor(), deduct_all_maintenance()...");
+  {
+    Race race{};
+    race.Playernum = 1;
+    race.init_leader(starnum_t{3}, planetnum_t{2}, "leadpass",
+                     ScopeLevel::LEVEL_PLAN);
+
+    // Default constructor / init_leader activates leader
+    test::expect_true(Race::is_leader(Race::leader_id));
+    test::expect_false(Race::is_leader(governor_t{1}));
+    test::expect_true(race.has_governor(Race::leader_id));
+    test::expect_false(race.has_governor(governor_t{1}));
+    test::expect_false(race.has_governor(governor_t{MAXGOVERNORS + 1}));
+
+    // leader() and governor(leader_id) reference the same record
+    race.leader().name = "Supreme Leader";
+    race.leader().money = 5000;
+    race.leader().maintain = 500;
+    test::expect_eq(race.governor(Race::leader_id).name, "Supreme Leader");
+    test::expect_eq(race.governor(Race::leader_id).money, 5000);
+
+    // appoint_governor() activates slot and inherits leader's home/default
+    // scope while applying designated initializer overrides
+    auto& gov1 = race.appoint_governor(
+        1, {.name = "Viceroy", .password = "vpass", .money = 2000});
+    gov1.maintain = 300;
+    test::expect_true(race.has_governor(governor_t{1}));
+    test::expect_eq(gov1.name, "Viceroy");
+    test::expect_eq(gov1.password, "vpass");
+    test::expect_eq(gov1.money, 2000);
+    test::expect_eq(gov1.deflevel, ScopeLevel::LEVEL_PLAN);
+    test::expect_eq(gov1.homesystem, starnum_t{3});
+    test::expect_eq(gov1.defsystem, starnum_t{3});
+    test::expect_eq(gov1.homeplanetnum, planetnum_t{2});
+    test::expect_eq(gov1.defplanetnum, planetnum_t{2});
+    test::expect_eq(gov1.toggle.highlight, player_t{1});
+    test::expect_true(gov1.toggle.inverse);
+
+    const Race& const_race = race;
+    test::expect_eq(const_race.leader().name, "Supreme Leader");
+    test::expect_eq(const_race.governor(1).name, "Viceroy");
+
+    // active_governors() yields only active governors (0 and 1)
+    int active_count = 0;
+    for (auto [gov_id, gov] : const_race.active_governors()) {
+      test::expect_true(gov.active);
+      ++active_count;
+    }
+    test::expect_eq(active_count, 2);
+
+    // deduct_all_maintenance() subtracts maintain from money for all governors
+    race.deduct_all_maintenance();
+    test::expect_eq(race.leader().money, 4500);
+    test::expect_eq(race.governor(1).money, 1700);
+
+    // revoke_governor() transfers treasury to target and resets revoked slot
+    const money_t transferred = race.revoke_governor(1, Race::leader_id);
+    test::expect_eq(transferred, 1700);
+    test::expect_eq(race.leader().money, 6200);
+    test::expect_false(race.has_governor(governor_t{1}));
+    test::expect_eq(race.governor(1).money, 0);
+    test::expect_eq(race.governor(1).name, "");
+    test::expect_eq(race.governor(1).password, "");
+
+    // Out-of-bounds governor ID throws std::out_of_range
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)race.governor(governor_t{MAXGOVERNORS + 1}); });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)const_race.governor(governor_t{MAXGOVERNORS + 1}); });
+    std::println(std::cout, "  ✓ Race governor encapsulation methods verified");
+  }
+
   std::println(std::cout, "\n✓ All Race entity tests passed!");
   return 0;
 }

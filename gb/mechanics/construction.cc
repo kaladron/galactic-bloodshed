@@ -74,7 +74,7 @@ bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
     push_telegram(g.entity_manager, Playernum, Governor, message);
     return false;
   }
-  if (Governor != 0 && star.governor(Playernum) != Governor) {
+  if (!star.control(Playernum, Governor)) {
     g.out << "You are not authorized in this system.\n";
     return false;
   }

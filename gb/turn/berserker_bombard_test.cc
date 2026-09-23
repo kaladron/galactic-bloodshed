@@ -18,20 +18,20 @@ int main() {
   Race race1{};
   race1.Playernum = 1;
   race1.Guest = false;
-  race1.governor[0].active = true;
+  race1.leader().active = true;
   race1.declare_war_on(player_t{2});  // At war with Race 2
 
   // Create Race 2 (Target 1 - At War)
   Race race2{};
   race2.Playernum = 2;
   race2.Guest = false;
-  race2.governor[0].active = true;
+  race2.leader().active = true;
 
   // Create Race 3 (Target 2 - Not At War)
   Race race3{};
   race3.Playernum = 3;
   race3.Guest = false;
-  race3.governor[0].active = true;
+  race3.leader().active = true;
 
   JsonStore store(ctx.db);
   RaceRepository races(store);

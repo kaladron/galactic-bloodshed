@@ -20,7 +20,7 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     race.Playernum = i;
     race.name = std::format("TestRace{}", i.value);
     race.Guest = false;
-    race.governor[0].money = static_cast<money_t>(i.value) * 1000L;
+    race.leader().money = static_cast<money_t>(i.value) * 1000L;
     races.save(race);
   }
 
@@ -108,7 +108,7 @@ void test_race_list_readonly(EntityManager& em) {
     count++;
     seen_players.push_back(race.Playernum);
     test::expect_eq(race.Playernum.value, count);
-    test::expect_eq(race.governor[0].money,
+    test::expect_eq(race.leader().money,
                     static_cast<money_t>(race.Playernum.value) * 1000L);
   }
 
@@ -275,7 +275,7 @@ void test_playernum_indexing(EntityManager& em) {
   std::array<int, 3> power_values{};
 
   for (const Race& race : RaceList::readonly(em)) {
-    power_values[race.Playernum.value - 1] = race.governor[0].money;
+    power_values[race.Playernum.value - 1] = race.leader().money;
   }
 
   test::expect_eq(power_values[0], 1000);

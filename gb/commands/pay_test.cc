@@ -23,16 +23,16 @@ void test_pay_dispatch() {
   payer.Playernum = 1;
   payer.name = "Payer";
   payer.Guest = false;
-  payer.governor[0].money = 10000;
-  payer.governor[0].active = true;
+  payer.leader().money = 10000;
+  payer.leader().active = true;
 
   // Create payee race via repository
   Race payee{};
   payee.Playernum = 2;
   payee.name = "Payee";
   payee.Guest = false;
-  payee.governor[0].money = 1000;
-  payee.governor[0].active = true;
+  payee.leader().money = 1000;
+  payee.leader().active = true;
 
   RaceRepository races(store);
   races.save(payer);
@@ -48,8 +48,8 @@ void test_pay_dispatch() {
   const auto* saved_payee = ctx.em.peek_race(2);
   test::expect_ne(saved_payer, nullptr);
   test::expect_ne(saved_payee, nullptr);
-  test::expect_eq(saved_payer->governor[0].money, 9500);
-  test::expect_eq(saved_payee->governor[0].money, 1500);
+  test::expect_eq(saved_payer->leader().money, 9500);
+  test::expect_eq(saved_payee->leader().money, 1500);
   std::println(std::cout, "    ✓ Money transfer saved correctly");
 
   // 2. Role check: Governor != 0 cannot pay
@@ -88,8 +88,8 @@ void test_pay_dispatch() {
   saved_payee = ctx.em.peek_race(2);
   test::expect_ne(saved_payer, nullptr);
   test::expect_ne(saved_payee, nullptr);
-  test::expect_eq(saved_payer->governor[0].money, 8500);
-  test::expect_eq(saved_payee->governor[0].money, 2500);
+  test::expect_eq(saved_payer->leader().money, 8500);
+  test::expect_eq(saved_payee->leader().money, 2500);
   std::println(std::cout,
                "    ✓ Cumulative transfer verified (payer: 8500, payee: 2500)");
 }

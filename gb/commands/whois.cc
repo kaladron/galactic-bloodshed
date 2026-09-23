@@ -17,7 +17,7 @@ void display_whois(GameObj& g, player_t j) {
     g.entity_manager.with_race(j, [&](const Race& race) {
       if (j == g.player()) {
         g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j, g.governor(),
-                             race.name, race.governor[g.governor().value].name);
+                             race.name, race.governor(g.governor()).name);
       } else {
         g.out << std::format("[{:2d}] {}\n", j, race.name);
       }

@@ -16,7 +16,7 @@ namespace GB::commands {
 
 bool autoreport(const command_t& argv, GameObj& g) {
   bool authorized = g.entity_manager.with_star(g.snum(), [&](const Star& star) {
-    return (g.governor() == 0 || star.governor(g.player()) == g.governor());
+    return star.control(g.player(), g.governor());
   });
 
   if (!authorized) {

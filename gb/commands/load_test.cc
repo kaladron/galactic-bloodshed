@@ -20,7 +20,7 @@ void setup_test_world(TestContext& ctx) {
   race.Playernum = 1;
   race.name = "LoadTester";
   race.Guest = false;
-  race.governor[0].active = true;
+  race.leader().active = true;
   race.mass = 1.0;
   race.absorb = false;
   race.Metamorph = false;

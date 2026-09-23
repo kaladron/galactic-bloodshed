@@ -23,7 +23,7 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
   for (const auto& pl :
        PlanetList::readonly(g.entity_manager, star, star_ref.numplanets())) {
     if (pl.info(Playernum).explored && pl.info(Playernum).numsectsowned &&
-        (Governor == 0 || star_ref.governor(Playernum) == Governor)) {
+        star_ref.control(Playernum, Governor)) {
       const auto star4 = std::string(star_ref.get_name()).substr(0, 4);
       const auto planet4 =
           std::string(star_ref.get_planet_name(pl.planet_order())).substr(0, 4);

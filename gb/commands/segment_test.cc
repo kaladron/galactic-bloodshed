@@ -21,13 +21,13 @@ void test_segment_matrix() {
   deity_race.Playernum = 1;
   deity_race.name = "DeityRace";
   deity_race.God = true;
-  deity_race.governor[0].active = true;
+  deity_race.leader().active = true;
 
   Race mortal_race{};
   mortal_race.Playernum = 2;
   mortal_race.name = "MortalRace";
   mortal_race.God = false;
-  mortal_race.governor[0].active = true;
+  mortal_race.leader().active = true;
 
   {
     JsonStore store(ctx.db);

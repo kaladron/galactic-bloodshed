@@ -15,7 +15,7 @@ void test_capital_matrix() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  ctx.em.mutate_race(1, [](Race& r) { r.governor[1].active = true; });
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(1); });
 
   // Landed government center ship on Earth (1, 1)
   shipnum_t landed_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)

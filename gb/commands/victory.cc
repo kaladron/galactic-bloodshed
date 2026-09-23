@@ -86,7 +86,7 @@ bool victory(const command_t& argv, GameObj& g) {
                  {std::format("{}", vic.rawscore),
                   std::format("{:.2f}", vic.tech), std::format("{}", vic.iq),
                   std::format("{}", race->password),
-                  std::format("{}", race->governor[0].password)});
+                  std::format("{}", race->leader().password)});
     }
 
     table.add_row(row);

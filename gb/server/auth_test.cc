@@ -102,8 +102,8 @@ void test_check_connect_duplicate_session_rejection() {
   race.Playernum = 1;
   race.name = "TestRace";
   race.password = "raceword";
-  race.governor[0].name = "Gov0";
-  race.governor[0].password = "govword";
+  race.leader().name = "Gov0";
+  race.leader().password = "govword";
   {
     JsonStore store(ctx.db);
     RaceRepository races(store);
@@ -136,12 +136,12 @@ void test_check_connect_success_and_clamping() {
   race.password = "raceword";
   race.morale = 100;
   race.Gov_ship = 42;
-  race.governor[0].name = "Gov0";
-  race.governor[0].password = "govword";
-  race.governor[0].deflevel = ScopeLevel::LEVEL_PLAN;
-  race.governor[0].defsystem = 999;     // Out of bounds -> should clamp to 1
-  race.governor[0].defplanetnum = 999;  // Out of bounds -> should clamp to 1
-  race.governor[0].login = 0;
+  race.leader().name = "Gov0";
+  race.leader().password = "govword";
+  race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
+  race.leader().defsystem = 999;     // Out of bounds -> should clamp to 1
+  race.leader().defplanetnum = 999;  // Out of bounds -> should clamp to 1
+  race.leader().login = 0;
   {
     JsonStore store(ctx.db);
     RaceRepository races(store);
@@ -177,7 +177,7 @@ void test_check_connect_success_and_clamping() {
   // Verify race login time updated in database
   const auto* updated_race = ctx.em.peek_race(1);
   test::expect_true(updated_race != nullptr);
-  test::expect_gt(updated_race->governor[0].login, 0);
+  test::expect_gt(updated_race->leader().login, 0);
 
   // Verify login output
   auto& out_stream = static_cast<std::ostringstream&>(session->out());

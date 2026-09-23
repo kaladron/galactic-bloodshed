@@ -263,7 +263,7 @@ void test_name_governor() {
   // Setup: Create a race with initial governor name
   Race race{};
   race.Playernum = 1;
-  race.governor[0].name = "Old Gov";
+  race.leader().name = "Old Gov";
 
   JsonStore store(ctx.db);
   RaceRepository races(store);
@@ -284,7 +284,7 @@ void test_name_governor() {
     // Verify database update
     auto saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_eq(saved->governor[0].name, "Grand Moff");
+    test::expect_eq(saved->leader().name, "Grand Moff");
   }
 
   std::println(std::cout, "  ✅ Governor naming test passed!");

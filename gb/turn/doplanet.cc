@@ -751,8 +751,7 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
                             stats.prod_destruct[player],
                             stats.prod_crystals[player]);
 
-    const auto gov_idx = star.governor(player);
-    auto& gov = race.governor[gov_idx.value];
+    auto& gov = race.governor(star.governor(player));
 
     // Tax the population - set new tax rate when done
     info.collect_tax(gov, race);

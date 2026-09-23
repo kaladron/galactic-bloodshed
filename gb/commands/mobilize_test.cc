@@ -20,7 +20,7 @@ void test_mobilize_dispatch() {
   Race race{};
   race.Playernum = 1;
   race.name = "Mobilizers";
-  race.governor[0].active = true;
+  race.leader().active = true;
   RaceRepository races(store);
   races.save(race);
 

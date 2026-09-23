@@ -22,18 +22,17 @@ void test_emulate_matrix() {
   deity_race.Playernum = 1;
   deity_race.name = "DeityRace";
   deity_race.God = true;
-  deity_race.governor[0].active = true;
-  deity_race.governor[0].name = "Supreme";
+  deity_race.leader().active = true;
+  deity_race.leader().name = "Supreme";
 
   Race target_race{};
   target_race.Playernum = 2;
   target_race.name = "Klingons";
   target_race.God = false;
-  target_race.governor[0].active = true;
-  target_race.governor[0].name = "Leader";
-  target_race.governor[1].active = true;
-  target_race.governor[1].name = "Governor1";
-  target_race.governor[2].active = false;
+  target_race.leader().active = true;
+  target_race.leader().name = "Leader";
+  target_race.appoint_governor(1, {.name = "Governor1"});
+  target_race.governor(2).active = false;
 
   {
     JsonStore store(ctx.db);

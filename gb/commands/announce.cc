@@ -69,10 +69,9 @@ bool announce(const command_t& argv, GameObj& g) {
     }
   }
 
-  std::string msg =
-      std::format("{} \"{}\" [{},{}] {} {}\n", g.race->name,
-                  g.race->governor[Governor.value].name, Playernum, Governor,
-                  static_cast<char>(mode), message);
+  std::string msg = std::format("{} \"{}\" [{},{}] {} {}\n", g.race->name,
+                                g.current_governor().name, Playernum, Governor,
+                                static_cast<char>(mode), message);
 
   switch (mode) {
     case Communicate::ANN:

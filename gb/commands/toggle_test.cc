@@ -21,13 +21,13 @@ void test_toggle_database_persistence() {
   race.Playernum = 1;
   race.Guest = 0;  // Not a guest
   race.God = 0;    // Not God initially
-  race.governor[0].toggle.gag = false;
-  race.governor[0].toggle.inverse = false;
-  race.governor[0].toggle.double_digits = false;
-  race.governor[0].toggle.geography = false;
-  race.governor[0].toggle.autoload = false;
-  race.governor[0].toggle.compat = false;
-  race.governor[0].toggle.invisible = false;
+  race.leader().toggle.gag = false;
+  race.leader().toggle.inverse = false;
+  race.leader().toggle.double_digits = false;
+  race.leader().toggle.geography = false;
+  race.leader().toggle.autoload = false;
+  race.leader().toggle.compat = false;
+  race.leader().toggle.invisible = false;
 
   JsonStore store(ctx.db);
   RaceRepository races(store);
@@ -70,7 +70,7 @@ void test_toggle_database_persistence() {
     // Verify database: gag should be true
     auto saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_true(saved->governor[0].toggle.gag);
+    test::expect_true(saved->leader().toggle.gag);
     std::println(std::cout, "    ✓ Database: gag = true");
 
     // Toggle again - should turn off
@@ -80,7 +80,7 @@ void test_toggle_database_persistence() {
 
     saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_false(saved->governor[0].toggle.gag);
+    test::expect_false(saved->leader().toggle.gag);
     std::println(std::cout, "    ✓ Database: gag = false after second toggle");
     g.out.str("");
   }
@@ -93,7 +93,7 @@ void test_toggle_database_persistence() {
     // Verify database
     auto saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_true(saved->governor[0].toggle.inverse);
+    test::expect_true(saved->leader().toggle.inverse);
     std::println(std::cout, "    ✓ Database: inverse = true");
     g.out.str("");
   }
@@ -106,7 +106,7 @@ void test_toggle_database_persistence() {
     // Verify database
     auto saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_true(saved->governor[0].toggle.double_digits);
+    test::expect_true(saved->leader().toggle.double_digits);
     std::println(std::cout, "    ✓ Database: double_digits = true");
     g.out.str("");
   }
@@ -119,7 +119,7 @@ void test_toggle_database_persistence() {
     // Verify database
     auto saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_true(saved->governor[0].toggle.geography);
+    test::expect_true(saved->leader().toggle.geography);
     std::println(std::cout, "    ✓ Database: geography = true");
     g.out.str("");
   }
@@ -132,7 +132,7 @@ void test_toggle_database_persistence() {
     // Verify database
     auto saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_true(saved->governor[0].toggle.autoload);
+    test::expect_true(saved->leader().toggle.autoload);
     std::println(std::cout, "    ✓ Database: autoload = true");
     g.out.str("");
   }
@@ -145,7 +145,7 @@ void test_toggle_database_persistence() {
     // Verify database
     auto saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_true(saved->governor[0].toggle.compat);
+    test::expect_true(saved->leader().toggle.compat);
     std::println(std::cout, "    ✓ Database: compat = true");
     g.out.str("");
   }
@@ -158,7 +158,7 @@ void test_toggle_database_persistence() {
     // Verify database (invisible flag should toggle)
     auto saved = races.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_true(saved->governor[0].toggle.invisible);
+    test::expect_true(saved->leader().toggle.invisible);
     std::println(std::cout, "    ✓ Database: invisible = true");
     g.out.str("");
   }

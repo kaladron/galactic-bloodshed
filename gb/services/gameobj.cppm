@@ -37,6 +37,14 @@ public:
   governor_t governor() const {
     return governor_;
   }
+  /// Returns true if the active session is the race leader.
+  [[nodiscard]] bool is_leader() const noexcept {
+    return Race::is_leader(governor_);
+  }
+  /// Returns a read-only reference to the active governor's entry on `*race`.
+  [[nodiscard]] const Race::gov& current_governor() const {
+    return race->governor(governor_);
+  }
   bool god() const {
     return god_;
   }

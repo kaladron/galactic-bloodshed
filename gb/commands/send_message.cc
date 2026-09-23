@@ -22,7 +22,7 @@ namespace {
 std::string format_sender_tag(const Race& race, player_t playernum,
                               governor_t governor) {
   return std::format("{} \"{}\" [{},{}]", race.name,
-                     race.governor[governor.value].name, playernum, governor);
+                     race.governor(governor).name, playernum, governor);
 }
 
 /**

@@ -221,8 +221,8 @@ void test_invalid_ship_for_planet() {
 
   // 4. Autoloading enabled on planet build
   {
-    fixture.em.mutate_race(
-        1, [](Race& r) { r.governor[0].toggle.autoload = true; });
+    fixture.em.mutate_race(1,
+                           [](Race& r) { r.leader().toggle.autoload = true; });
     fixture.init_game_obj(g);
     g.out.str("");
     GB::commands::build({"build", ":", "5,5", "1"}, g);
@@ -304,8 +304,7 @@ void test_ship_build_error_paths() {
                          .with_fuel(500.0)
                          .build();
 
-  fixture.em.mutate_race(1,
-                         [](Race& r) { r.governor[0].toggle.autoload = true; });
+  fixture.em.mutate_race(1, [](Race& r) { r.leader().toggle.autoload = true; });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_id);
 
   // Autoloaded build of Space Probe (':') inside Habitat

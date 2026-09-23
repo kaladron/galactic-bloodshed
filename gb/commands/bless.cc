@@ -26,7 +26,7 @@ struct RaceIntProp {
 
 constexpr std::array<RaceIntProp, 7> kRaceIntProps{{
     {.name = "money",
-     .apply = [](Race& r, int amt) { r.governor[0].money += amt; },
+     .apply = [](Race& r, int amt) { r.leader().money += amt; },
      .message =
          [](const Race&, int amt) {
            return std::format("Deity gave you {} money.\n", amt);

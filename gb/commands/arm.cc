@@ -66,14 +66,14 @@ bool arm(const command_t& argv, GameObj& g) {
     }
 
     money_t enlist_cost = g.race->fighters * amount;
-    if (enlist_cost > g.race->governor[Governor.value].money) {
+    if (enlist_cost > g.current_governor().money) {
       g.out << std::format("You need {} money to enlist {} troops.\n",
                            enlist_cost, amount);
       return false;
     }
 
     g.entity_manager.mutate_race(Playernum, [&](Race& race_mut) {
-      race_mut.governor[Governor.value].money -= enlist_cost;
+      race_mut.governor(Governor).money -= enlist_cost;
     });
 
     money_t cost = std::max(

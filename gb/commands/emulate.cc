@@ -43,7 +43,7 @@ bool emulate(const command_t& argv, GameObj& g) {
                          MAXGOVERNORS);
     return false;
   }
-  if (!race->governor[new_gov.value].active) {
+  if (!race->has_governor(new_gov)) {
     g.out << std::format("Governor {} is not active.\n", new_gov);
     return false;
   }
@@ -55,7 +55,7 @@ bool emulate(const command_t& argv, GameObj& g) {
   g.race = race;
 
   g.out << std::format("Emulating {} \"{}\" [{},{}]\n", race->name,
-                       race->governor[new_gov.value].name, new_player, new_gov);
+                       race->governor(new_gov).name, new_player, new_gov);
   return true;
 }
 

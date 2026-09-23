@@ -80,7 +80,7 @@ bool give(const command_t& argv, GameObj& g) {
           }
 
           ship.owner() = who;
-          ship.governor() = 0; /* give to the leader */
+          ship.governor() = Race::leader_id; /* give to the leader */
           capture_stuff(ship, g);
 
           /* set inhabited/explored bits */
@@ -112,7 +112,8 @@ bool give(const command_t& argv, GameObj& g) {
           std::string givemsg =
               std::format("{} [{}] gave you {} at {}.\n", race.name, Playernum,
                           ship, prin_ship_orbits(g.entity_manager, ship));
-          warn_player(g.session_registry, g.entity_manager, who, 0, givemsg);
+          warn_player(g.session_registry, g.entity_manager, who,
+                      Race::leader_id, givemsg);
 
           if (!race.God) {
             std::string postmsg =

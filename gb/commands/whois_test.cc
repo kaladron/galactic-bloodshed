@@ -21,14 +21,14 @@ void test_whois_dispatch() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Federation";
-  race1.governor[0].active = true;
-  race1.governor[0].name = "Kirk";
+  race1.leader().active = true;
+  race1.leader().name = "Kirk";
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "Klingons";
-  race2.governor[0].active = true;
-  race2.governor[0].name = "Kang";
+  race2.leader().active = true;
+  race2.leader().name = "Kang";
 
   RaceRepository races(store);
   races.save(race1);

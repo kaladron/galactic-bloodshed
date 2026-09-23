@@ -431,7 +431,7 @@ void test_produce_and_troop_maintenance() {
   JsonStore store(db);
 
   Race race = createTestRace(player_t{1});
-  race.governor[0].maintain = 0;
+  race.leader().maintain = 0;
   RaceRepository races(store);
   races.save(race);
 
@@ -446,7 +446,7 @@ void test_produce_and_troop_maintenance() {
 
   const auto* updated_race = em.peek_race(player_t{1});
   test::expect_ne(updated_race, nullptr);
-  test::expect_eq(updated_race->governor[0].maintain, UPDATE_TROOP_COST * 50);
+  test::expect_eq(updated_race->leader().maintain, UPDATE_TROOP_COST * 50);
 }
 
 void test_update_mobilization() {

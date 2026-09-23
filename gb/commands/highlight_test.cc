@@ -20,7 +20,7 @@ void test_highlight_database_persistence() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Player 1";
-  race1.governor[0].toggle.highlight = 0;  // Initially no highlight
+  race1.leader().toggle.highlight = 0;  // Initially no highlight
 
   Race race2{};
   race2.Playernum = 2;
@@ -43,9 +43,9 @@ void test_highlight_database_persistence() {
     // Verify database: highlight should be set to 2
     auto saved = races_repo.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_eq(saved->governor[0].toggle.highlight, 2);
+    test::expect_eq(saved->leader().toggle.highlight, 2);
     std::println(std::cout, "    ✓ Database: highlight = {}",
-                 saved->governor[0].toggle.highlight);
+                 saved->leader().toggle.highlight);
   }
 
   // TEST 2: Change highlight to player 1 (self)
@@ -55,9 +55,9 @@ void test_highlight_database_persistence() {
 
     auto saved = races_repo.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_eq(saved->governor[0].toggle.highlight, 1);
+    test::expect_eq(saved->leader().toggle.highlight, 1);
     std::println(std::cout, "    ✓ Database: highlight = {}",
-                 saved->governor[0].toggle.highlight);
+                 saved->leader().toggle.highlight);
   }
 
   // TEST 3: Change back to player 2
@@ -67,9 +67,9 @@ void test_highlight_database_persistence() {
 
     auto saved = races_repo.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_eq(saved->governor[0].toggle.highlight, 2);
+    test::expect_eq(saved->leader().toggle.highlight, 2);
     std::println(std::cout, "    ✓ Database: highlight = {}",
-                 saved->governor[0].toggle.highlight);
+                 saved->leader().toggle.highlight);
   }
 
   // TEST 4: Invalid player number
@@ -85,7 +85,7 @@ void test_highlight_database_persistence() {
     // Verify highlight wasn't changed
     auto saved = races_repo.find_by_player(1);
     test::expect_true(saved.has_value());
-    test::expect_eq(saved->governor[0].toggle.highlight,
+    test::expect_eq(saved->leader().toggle.highlight,
                     2);  // Should still be 2
   }
 

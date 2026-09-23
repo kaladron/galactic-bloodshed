@@ -245,7 +245,7 @@ bool execute_single_planet_build(GameObj& g, const PlanetBuildPlan& plan,
     create_ship_by_planet(g.entity_manager, Playernum, Governor, race, *newship,
                           planet, snum, pnum, plan.coords);
     std::pair<population_t, fuel_t> loaded{0, 0.0};
-    if (race.governor[Governor.value].toggle.autoload &&
+    if (g.current_governor().toggle.autoload &&
         plan.what != ShipType::OTYPE_TRANSDEV && !race.God) {
       g.entity_manager.mutate_sectormap(snum, pnum, [&](SectorMap& sectormap) {
         auto& sector = sectormap.get(plan.coords);
@@ -398,7 +398,7 @@ bool execute_single_factory_build(GameObj& g, Ship& builder,
     }
     create_ship_by_planet(g.entity_manager, Playernum, Governor, race, *newship,
                           planet, snum, pnum, plan.land_coords);
-    if (race.governor[Governor.value].toggle.autoload &&
+    if (g.current_governor().toggle.autoload &&
         plan.what != ShipType::OTYPE_TRANSDEV && !race.God) {
       g.entity_manager.mutate_sectormap(snum, pnum, [&](SectorMap& sectormap) {
         auto& sector = sectormap.get(plan.land_coords);
@@ -452,7 +452,7 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
   create_ship_by_ship(g.entity_manager, Playernum, Governor, race, plan.outside,
                       *newship, builder);
   const auto [load_crew, load_fuel] =
-      (race.governor[Governor.value].toggle.autoload &&
+      (g.current_governor().toggle.autoload &&
        plan.what != ShipType::OTYPE_TRANSDEV && !race.God)
           ? autoload_at_ship(*newship, builder, race.mass)
           : std::pair<population_t, fuel_t>{0, 0.0};

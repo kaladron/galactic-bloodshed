@@ -55,12 +55,12 @@ void setup_test_universe(TestContext& ctx) {
   race.name = "ServerTestRace";
   race.password = "raceword";
   race.God = true;
-  race.governor[0].active = true;
-  race.governor[0].name = "Gov0";
-  race.governor[0].password = "govword";
-  race.governor[0].deflevel = ScopeLevel::LEVEL_UNIV;
-  race.governor[0].defsystem = 1;
-  race.governor[0].defplanetnum = 1;
+  race.leader().active = true;
+  race.leader().name = "Gov0";
+  race.leader().password = "govword";
+  race.leader().deflevel = ScopeLevel::LEVEL_UNIV;
+  race.leader().defsystem = 1;
+  race.leader().defplanetnum = 1;
 
   JsonStore store(ctx.db);
   RaceRepository races(store);

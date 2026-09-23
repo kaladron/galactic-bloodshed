@@ -25,7 +25,7 @@ void setup_test_world(TestContext& ctx) {
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
-  race.governor[0].active = true;
+  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);

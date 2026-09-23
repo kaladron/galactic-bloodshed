@@ -19,10 +19,8 @@ void test_grant_dispatch() {
   ctx.with_standard_universe();
 
   ctx.em.mutate_race(1, [](Race& r) {
-    r.governor[0].money = 1000;
-    r.governor[1].active = true;
-    r.governor[1].money = 500;
-    r.governor[1].name = "SubGov";
+    r.leader().money = 1000;
+    r.appoint_governor(1, {.name = "SubGov", .money = 500});
   });
 
   shipnum_t cruiser_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
@@ -38,8 +36,8 @@ void test_grant_dispatch() {
   ctx.assert_dispatch_success(g, {"grant", "1", "money", "200"});
   const auto* saved_race = ctx.em.peek_race(1);
   test::expect_ne(saved_race, nullptr);
-  test::expect_eq(saved_race->governor[0].money, 800);
-  test::expect_eq(saved_race->governor[1].money, 700);
+  test::expect_eq(saved_race->leader().money, 800);
+  test::expect_eq(saved_race->governor(1).money, 700);
   std::println(std::cout, "    ✓ Money granted to governor");
 
   // 2. Dock money from governor
@@ -47,24 +45,24 @@ void test_grant_dispatch() {
   ctx.assert_dispatch_success(g, {"grant", "1", "money", "-100"});
   saved_race = ctx.em.peek_race(1);
   test::expect_ne(saved_race, nullptr);
-  test::expect_eq(saved_race->governor[0].money, 900);
-  test::expect_eq(saved_race->governor[1].money, 600);
+  test::expect_eq(saved_race->leader().money, 900);
+  test::expect_eq(saved_race->governor(1).money, 600);
   std::println(std::cout, "    ✓ Money docked from governor");
 
   // 3. Grant money clamped to leader treasury
   g.out.str("");
   ctx.assert_dispatch_success(g, {"grant", "1", "money", "999999"});
   saved_race = ctx.em.peek_race(1);
-  test::expect_eq(saved_race->governor[0].money, 0);
-  test::expect_eq(saved_race->governor[1].money, 1500);
+  test::expect_eq(saved_race->leader().money, 0);
+  test::expect_eq(saved_race->governor(1).money, 1500);
   std::println(std::cout, "    ✓ Positive money clamped to treasury");
 
   // 4. Dock money clamped to governor treasury
   g.out.str("");
   ctx.assert_dispatch_success(g, {"grant", "1", "money", "-999999"});
   saved_race = ctx.em.peek_race(1);
-  test::expect_eq(saved_race->governor[0].money, 1500);
-  test::expect_eq(saved_race->governor[1].money, 0);
+  test::expect_eq(saved_race->leader().money, 1500);
+  test::expect_eq(saved_race->governor(1).money, 0);
   std::println(std::cout, "    ✓ Negative money clamped to treasury");
 
   // 5. Money missing amount or bad number

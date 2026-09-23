@@ -21,7 +21,7 @@ bool highlight(const command_t& argv, GameObj& g) {
   }
 
   g.entity_manager.mutate_race(g.player(), [&](Race& race) {
-    race.governor[g.governor().value].toggle.highlight = n;
+    race.governor(g.governor()).toggle.highlight = n;
   });
   return true;
 }

@@ -165,18 +165,18 @@ void process_market_transactions(EntityManager& entity_manager) {
       const auto* owner_race = entity_manager.peek_race(c.owner);
 
       if (bidder_race && owner_race &&
-          (bidder_race->governor[c.bidder_gov.value].money >= c.bid)) {
+          (bidder_race->governor(c.bidder_gov).money >= c.bid)) {
         auto [cost, dist] =
             shipping_cost(entity_manager, c.star_to, c.star_from, c.bid);
 
         entity_manager.mutate_race(bidder, [&](Race& b_race) {
-          b_race.governor[c.bidder_gov.value].money -= c.bid;
-          b_race.governor[c.bidder_gov.value].cost_market += c.bid + cost;
+          b_race.governor(c.bidder_gov).money -= c.bid;
+          b_race.governor(c.bidder_gov).cost_market += c.bid + cost;
           b_race.deduct_maintenance(c.bidder_gov, cost);
         });
         entity_manager.mutate_race(c.owner, [&](Race& o_race) {
-          o_race.governor[c.governor.value].money += c.bid;
-          o_race.governor[c.governor.value].profit_market += c.bid;
+          o_race.governor(c.governor).money += c.bid;
+          o_race.governor(c.governor).profit_market += c.bid;
         });
 
         entity_manager.mutate_planet(
@@ -251,10 +251,10 @@ static void process_ship_turns(TurnState& state, bool update) {
         if (s.requires_maintenance()) {
           state.entity_manager.mutate_race(s.owner(), [&](Race& r) {
             if (s.popn()) {
-              r.governor[s.governor().value].maintain += s.build_cost();
+              r.governor(s.governor()).maintain += s.build_cost();
             }
             if (s.troops()) {
-              r.governor[s.governor().value].maintain +=
+              r.governor(s.governor()).maintain +=
                   UPDATE_TROOP_COST * s.troops();
             }
           });
@@ -382,10 +382,8 @@ void calculate_victory_scores(EntityManager& entity_manager) {
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t player = race.Playernum;
     victory[player].morale = race.morale;
-    for (const auto& governor : race.governor) {
-      if (governor.active) {
-        victory[player].money += governor.money;
-      }
+    for (auto [id, governor] : race.active_governors()) {
+      victory[player].money += governor.money;
     }
   }
 
@@ -450,11 +448,7 @@ void advance_race_technology(Race& race, const TurnStats& stats,
   race.turn += 1;
   check_technological_discoveries(entity_manager, race);
   if (MARKET) {
-    for (auto& governor : race.governor) {
-      if (governor.active) {
-        race.deduct_maintenance(governor, governor.maintain);
-      }
-    }
+    race.deduct_all_maintenance();
   }
 }
 
@@ -496,10 +490,8 @@ void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {
   for (auto race_handle : RaceList(entity_manager)) {
     const player_t player = race_handle->Playernum;
     stats.Power[player].money = 0;
-    for (auto& governor : race_handle->governor) {
-      if (governor.active) {
-        stats.Power[player].money += governor.money;
-      }
+    for (auto [id, governor] : race_handle->active_governors()) {
+      stats.Power[player].money += governor.money;
     }
   }
   // Save power data via EntityManager

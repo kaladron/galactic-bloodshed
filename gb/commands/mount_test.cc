@@ -18,7 +18,7 @@ void setup_test_race(TestContext& ctx) {
   race.Playernum = 1;
   race.name = "Crystallines";
   race.Guest = false;
-  race.governor[0].active = true;
+  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);

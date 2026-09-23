@@ -18,11 +18,9 @@ void test_governors_list() {
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
-  race.governor[0].active = true;
-  race.governor[0].password = "leadpass";
-  race.governor[1].active = true;
-  race.governor[1].name = "GovOne";
-  race.governor[1].password = "gov1pass";
+  race.leader().active = true;
+  race.leader().password = "leadpass";
+  race.appoint_governor(1, {.name = "GovOne", .password = "gov1pass"});
   {
     JsonStore store(ctx.db);
     RaceRepository races(store);
@@ -52,9 +50,8 @@ void test_appoint_and_revoke() {
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
-  race.governor[0].active = true;
-  race.governor[0].password = "leadpass";
-  race.governor[1].active = false;
+  race.leader().active = true;
+  race.leader().password = "leadpass";
   {
     JsonStore store(ctx.db);
     RaceRepository races(store);
@@ -67,8 +64,8 @@ void test_appoint_and_revoke() {
 
   // 1. Appoint Governor 1
   ctx.assert_dispatch_success(g, {"appoint", "1", "secret123"});
-  test::expect_true(ctx.em.peek_race(1)->governor[1].active);
-  test::expect_eq(ctx.em.peek_race(1)->governor[1].password, "secret123");
+  test::expect_true(ctx.em.peek_race(1)->has_governor(1));
+  test::expect_eq(ctx.em.peek_race(1)->governor(1).password, "secret123");
 
   // 2. Appointing already appointed governor fails
   g.out.str("");
@@ -83,7 +80,7 @@ void test_appoint_and_revoke() {
   // 4. Revoke with correct password succeeds
   g.out.str("");
   ctx.assert_dispatch_success(g, {"revoke", "1", "secret123", "0"});
-  test::expect_false(ctx.em.peek_race(1)->governor[1].active);
+  test::expect_false(ctx.em.peek_race(1)->has_governor(1));
 }
 
 // Test changing governor passwords and guest restrictions
@@ -92,9 +89,8 @@ void test_password_change_and_guest_rejection() {
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
-  race.governor[0].active = true;
-  race.governor[1].active = true;
-  race.governor[1].password = "oldpass";
+  race.leader().active = true;
+  race.appoint_governor(1, {.password = "oldpass"});
   {
     JsonStore store(ctx.db);
     RaceRepository races(store);
@@ -107,7 +103,7 @@ void test_password_change_and_guest_rejection() {
 
   // 1. Change password successfully
   ctx.assert_dispatch_success(g, {"governors", "1", "password", "newpass"});
-  test::expect_eq(ctx.em.peek_race(1)->governor[1].password, "newpass");
+  test::expect_eq(ctx.em.peek_race(1)->governor(1).password, "newpass");
 
   // 2. Guest race cannot change password
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });

@@ -16,12 +16,12 @@ void setup_test_world(TestContext& ctx) {
   TestWorldBuilder(ctx).add_race("Bankers", 100.0, false, player_t{1});
 
   ctx.em.mutate_race(1, [](Race& r) {
-    r.governor[0].money = 50000;
-    r.governor[0].income = 1000;
-    r.governor[0].profit_market = 250;
-    r.governor[0].maintain = 300;
-    r.governor[0].cost_tech = 150;
-    r.governor[0].cost_market = 50;
+    r.leader().money = 50000;
+    r.leader().income = 1000;
+    r.leader().profit_market = 250;
+    r.leader().maintain = 300;
+    r.leader().cost_tech = 150;
+    r.leader().cost_market = 50;
   });
 }
 

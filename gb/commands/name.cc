@@ -79,7 +79,7 @@ bool name(const command_t& argv, GameObj& g) {
   }
   if (argv[1] == "block") {
     /* name your alliance block */
-    if (Governor != 0) {
+    if (!g.is_leader()) {
       g.out << "You are not authorized to do this.\n";
       return false;
     }
@@ -121,7 +121,7 @@ bool name(const command_t& argv, GameObj& g) {
     return false;
   }
   if (argv[1] == "race") {
-    if (Governor != 0) {
+    if (!g.is_leader()) {
       g.out << "You are not authorized to do this.\n";
       return false;
     }
@@ -132,7 +132,7 @@ bool name(const command_t& argv, GameObj& g) {
   }
   if (argv[1] == "governor") {
     g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-      race.governor[Governor.value].name = formatted_name;
+      race.governor(Governor).name = formatted_name;
     });
     g.out << std::format("Name changed to `{}'.\n", formatted_name);
     return true;

@@ -99,17 +99,18 @@ void check_connect(Session& session, std::string_view message) {
       }
       authenticated = true;
 
+      const auto& gov = race.governor(Governor);
       std::println(std::cerr, "CONNECTED {} \"{}\" [{},{}]", race.name,
-                   race.governor[Governor.value].name, Playernum, Governor);
+                   gov.name, Playernum, Governor);
       session.set_connected(true);
       session.set_god(race.God);
       session.set_player(Playernum);
       session.set_governor(Governor);
 
       // Initialize scope to default or safe values
-      session.set_level(race.governor[Governor.value].deflevel);
-      session.set_snum(race.governor[Governor.value].defsystem);
-      session.set_pnum(race.governor[Governor.value].defplanetnum);
+      session.set_level(gov.deflevel);
+      session.set_snum(gov.defsystem);
+      session.set_pnum(gov.defplanetnum);
       session.set_shipno(0);
 
       // Validate and clamp star number
@@ -127,13 +128,10 @@ void check_connect(Session& session, std::string_view message) {
           });
 
       // Send login messages
+      session.out() << std::format("\n{} \"{}\" [{},{}] logged on.\n",
+                                   race.name, gov.name, Playernum, Governor);
       session.out() << std::format(
-          "\n{} \"{}\" [{},{}] logged on.\n", race.name,
-          race.governor[Governor.value].name, Playernum, Governor);
-      session.out() << std::format(
-          "You are {}.\n", race.governor[Governor.value].toggle.invisible
-                               ? "invisible"
-                               : "visible");
+          "You are {}.\n", gov.toggle.invisible ? "invisible" : "visible");
     });
   } catch (const EntityNotFoundError&) {
     session.out() << "Connection refused.\n";
@@ -150,9 +148,8 @@ void check_connect(Session& session, std::string_view message) {
   temp_g.out.str("");
 
   session.entity_manager().with_race(Playernum, [&](const Race& race) {
-    session.out() << std::format(
-        "\nLast login      : {}",
-        std::ctime(&(race.governor[Governor.value].login)));
+    session.out() << std::format("\nLast login      : {}",
+                                 std::ctime(&(race.governor(Governor).login)));
 
     if (!race.Gov_ship) {
       session.out()
@@ -170,6 +167,6 @@ void check_connect(Session& session, std::string_view message) {
 
   // Update login time
   session.entity_manager().mutate_race(Playernum, [&](Race& race_mut) {
-    race_mut.governor[Governor.value].login = std::time(nullptr);
+    race_mut.governor(Governor).login = std::time(nullptr);
   });
 }

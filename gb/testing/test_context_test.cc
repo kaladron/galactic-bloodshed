@@ -550,8 +550,8 @@ void test_standard_universe_fixture() {
   test::expect_eq(r1->tech, 100.0);
   test::expect_eq(r1->Gov_ship, shipnum_t{100});
   test::expect_false(r1->Guest);
-  test::expect_true(r1->governor[0].active);
-  test::expect_eq(r1->governor[0].money, 10'000);
+  test::expect_true(r1->leader().active);
+  test::expect_eq(r1->leader().money, 10'000);
 
   const auto* r2 = ctx.em.peek_race(2);
   test::expect_true(r2 != nullptr, "Race 2 must exist");

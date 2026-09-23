@@ -114,8 +114,7 @@ Race create_race(player_t player, bool god = false) {
   race.God = god;
   // Note: Manual loop for modification - iterator returns const references
   for (governor_t i{0}; i <= MAXGOVERNORS; ++i) {
-    race.governor[i.value].active = true;
-    race.governor[i.value].toggle.gag = false;
+    race.appoint_governor(i);
   }
   return race;
 }
@@ -229,11 +228,11 @@ void test_d_broadcast_gag_filtering() {
 
   // Create races with different gag settings
   auto race1 = create_race(1);
-  race1.governor[0].toggle.gag = false;  // Not gagged
-  race1.governor[1].toggle.gag = true;   // Gagged
+  race1.leader().toggle.gag = false;    // Not gagged
+  race1.governor(1).toggle.gag = true;  // Gagged
 
   auto race2 = create_race(2);
-  race2.governor[0].toggle.gag = false;
+  race2.leader().toggle.gag = false;
 
   JsonStore store(db);
   RaceRepository races(store);
@@ -296,9 +295,9 @@ void test_warn_race_all_governors() {
 
   // Create race with 2 active governors
   auto race1 = create_race(1);
-  race1.governor[0].active = true;
-  race1.governor[1].active = true;
-  race1.governor[2].active = false;  // Inactive
+  race1.leader().active = true;
+  race1.appoint_governor(1);
+  race1.governor(2).active = false;  // Inactive
 
   JsonStore store(db);
   RaceRepository races(store);
@@ -408,13 +407,13 @@ void test_telegram_star() {
 
   // Create races with multiple governors
   Race race1 = create_race(1);
-  race1.governor[0].active = true;
-  race1.governor[1].active = true;
-  race1.governor[2].active = false;  // Inactive
+  race1.leader().active = true;
+  race1.appoint_governor(1);
+  race1.governor(2).active = false;  // Inactive
 
   Race race2 = create_race(2);
-  race2.governor[0].active = true;
-  race2.governor[1].active = true;
+  race2.leader().active = true;
+  race2.appoint_governor(1);
 
   RaceRepository races(store);
   races.save(race1);

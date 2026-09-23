@@ -376,8 +376,7 @@ TestWorldBuilder::add_race(std::string_view name, double tech, bool guest,
   race.name = name;
   race.tech = tech;
   race.Guest = guest;
-  race.governor[0].active = true;
-  race.governor[0].money = 10'000;
+  race.leader().money = 10'000;
   race.mass = 1.0;
   race.metabolism = 1.0;
   RaceRepository(store_).save(race);

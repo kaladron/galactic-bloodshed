@@ -82,8 +82,7 @@ bool capture(const command_t& argv, GameObj& g) {
     g.out << "That planet has been enslaved!\n";
     return false;
   }
-  if (Governor != 0 &&
-      g.entity_manager.peek_star(g.snum())->governor(Playernum) != Governor) {
+  if (!g.entity_manager.peek_star(g.snum())->control(Playernum, Governor)) {
     g.out << "You are not authorized in this system.\n";
     return false;
   }

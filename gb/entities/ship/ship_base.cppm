@@ -748,10 +748,10 @@ public:
     other.dock_with_ship(*this);
   }
 
-  /// Returns true if governor is authorized to command this ship (deity/leader
-  /// governor 0 or the assigned governor).
+  /// Returns true if governor is authorized to command this ship (the race
+  /// leader or the assigned governor).
   [[nodiscard]] bool is_authorized_for(governor_t gov) const noexcept {
-    return gov == 0 || data_.governor == gov;
+    return Race::is_leader(gov) || data_.governor == gov;
   }
 
   /// Returns true if this ship is alive, active, owned by player, and

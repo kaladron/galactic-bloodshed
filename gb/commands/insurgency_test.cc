@@ -16,7 +16,7 @@ void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
 
   ctx.em.mutate_race(1, [](Race& r) {
-    r.governor[0].money = 1000000;
+    r.leader().money = 1000000;
     r.morale = 100;
     r.fighters = 10;
   });
@@ -62,7 +62,7 @@ void test_insurgency_happy_path_success() {
   ctx.em.clear_cache();
   const auto* saved_race = ctx.em.peek_race(1);
   test::expect_ne(saved_race, nullptr);
-  test::expect_eq(saved_race->governor[0].money, 500000);
+  test::expect_eq(saved_race->leader().money, 500000);
 
   // Verify planet tax rate inherited
   const auto* saved_planet = ctx.em.peek_planet(1, 1);
@@ -122,7 +122,7 @@ void test_insurgency_insufficient_ap() {
   // Money must not have been deducted
   const auto* race = ctx.em.peek_race(1);
   test::expect_ne(race, nullptr);
-  test::expect_eq(race->governor[0].money, 1000000);
+  test::expect_eq(race->leader().money, 1000000);
   std::println(std::cout, "    ✓ Insufficient AP rejection verified");
 }
 

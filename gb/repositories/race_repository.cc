@@ -61,7 +61,7 @@ struct meta<Race> {
              &T::controlled_planets, "victory_turns", &T::victory_turns, "turn",
              &T::turn, "tech", &T::tech, "discoveries", &T::discoveries,
              "victory_score", &T::victory_score, "votes", &T::votes,
-             "planet_points", &T::planet_points, "governor", &T::governor);
+             "planet_points", &T::planet_points, "governor", &T::governors_);
 };
 
 }  // namespace glz

@@ -32,7 +32,7 @@ void test_victory_dispatch() {
   race1.tech = 50.0;
   race1.IQ = 120;
   race1.password = "secret1";
-  race1.governor[0].password = "govsec1";
+  race1.leader().password = "govsec1";
 
   Race race2{};
   race2.Playernum = 2;
@@ -41,7 +41,7 @@ void test_victory_dispatch() {
   race2.tech = 80.0;
   race2.IQ = 140;
   race2.password = "secret2";
-  race2.governor[0].password = "govsec2";
+  race2.leader().password = "govsec2";
 
   RaceRepository races(store);
   races.save(race1);

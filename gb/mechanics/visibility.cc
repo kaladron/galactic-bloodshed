@@ -56,7 +56,7 @@ LandedShipGrid scan_planet_ships_for_map(EntityManager& em, starnum_t snum,
                                          governor_t governor,
                                          const Race& race) {
   LandedShipGrid grid{};
-  if (race.governor[governor.value].toggle.geography) {
+  if (race.governor(governor).toggle.geography) {
     return grid;
   }
   grid.has_visual_iq = p.info(playernum).numsectsowned > 0;
@@ -76,7 +76,7 @@ LandedShipGrid scan_planet_ships_for_map(EntityManager& em, starnum_t snum,
 void output_map_sector_cell(GameObj& g, player_t playernum, governor_t governor,
                             const Race& race, const Sector& sector,
                             char ship_char, bool has_visual_iq) {
-  const auto& toggle = race.governor[governor.value].toggle;
+  const auto& toggle = race.governor(governor).toggle;
   const char display_char = (ship_char != '\0' && has_visual_iq)
                                 ? ship_char
                                 : desshow(playernum, governor, race, sector);
@@ -175,7 +175,7 @@ void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
 
 char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
              const Sector& s) {
-  const auto& gov = r.governor[Governor.value];
+  const auto& gov = r.governor(Governor);
   if (s.get_troops() && !gov.toggle.geography) {
     return format_troop_sector_char(Playernum, r, s);
   }

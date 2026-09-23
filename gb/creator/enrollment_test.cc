@@ -241,9 +241,9 @@ void test_enroll_first_race_god_success() {
     test::expect_eq(race->conditions[OXYGEN], 21);
     test::expect_eq(race->likesbest, SectorType::SEC_LAND);
     test::expect_eq(race->likes[SectorType::SEC_LAND], 1.0);
-    test::expect_eq(race->governor[0].homesystem, starnum_t{1});
-    test::expect_eq(race->governor[0].homeplanetnum, planetnum_t{1});
-    test::expect_eq(race->governor[0].active, true);
+    test::expect_eq(race->leader().homesystem, starnum_t{1});
+    test::expect_eq(race->leader().homeplanetnum, planetnum_t{1});
+    test::expect_eq(race->leader().active, true);
     test::expect_eq(race->translate[player_t{1}], 100);
   }
 

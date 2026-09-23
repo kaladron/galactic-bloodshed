@@ -308,8 +308,7 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
                     (stand ? Psymbol[p.type()] : '?'));
   stand = p.info(g.player()).numsectsowned ? 1 : 0;
   ss << std::format("{} {}", stand, name);
-  if (r.governor[g.governor().value].toggle.compat &&
-      p.info(g.player()).explored) {
+  if (r.governor(g.governor()).toggle.compat && p.info(g.player()).explored) {
     ss << std::format("({})", (int)p.compatibility(r));
   }
   ss << ";";
@@ -380,7 +379,7 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
 
   if (screen_coords.x >= 0 && screen_coords.y >= 0) {
     const bool stand =
-        (ship.owner() == r.governor[g.governor().value].toggle.highlight);
+        (ship.owner() == r.governor(g.governor()).toggle.highlight);
     return std::format("{} {} {} {} {} {} {};", stand, screen_coords.x,
                        screen_coords.y, mirror_heading, ship.type_letter(),
                        stand, ship.number().value);

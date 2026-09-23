@@ -20,7 +20,7 @@ void setup_test_world(TestContext& ctx) {
     r.mass = 1.0;
     r.morale = 100;
     r.likes[SectorType::SEC_LAND] = 50;
-    r.governor[1].active = true;
+    r.appoint_governor(1);
   });
 
   ctx.em.mutate_race(2, [](Race& r) {

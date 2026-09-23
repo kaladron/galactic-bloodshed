@@ -18,13 +18,13 @@ void setup_test_world(TestContext& ctx) {
 
   ctx.em.mutate_race(1, [](Race& r) {
     r.God = false;
-    r.governor[0].name = "TestGovernor";
+    r.leader().name = "TestGovernor";
     r.translate[player_t{1}] = 50;
   });
 
   ctx.em.mutate_race(2, [](Race& r) {
-    r.governor[0].active = true;
-    r.governor[0].name = "TargetGovernor";
+    r.leader().active = true;
+    r.leader().name = "TargetGovernor";
     r.translate[player_t{1}] = 50;
   });
 

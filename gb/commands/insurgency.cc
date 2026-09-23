@@ -71,7 +71,7 @@ bool insurgency(const command_t& argv, GameObj& g) {
       g.out << "You have to use a positive amount of money.\n";
       return;
     }
-    if (g.race->governor[Governor.value].money < amount) {
+    if (g.current_governor().money < amount) {
       g.out << "Nice try.\n";
       return;
     }
@@ -133,7 +133,7 @@ bool insurgency(const command_t& argv, GameObj& g) {
     }
     // Need mutable access for money deduction
     g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-      race.governor[Governor.value].money -= amount;
+      race.governor(Governor).money -= amount;
     });
     ok = true;
   });

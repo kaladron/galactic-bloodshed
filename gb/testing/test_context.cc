@@ -23,7 +23,6 @@ TestContext::TestContext() : db(":memory:"), em(db) {
   Race default_race{};
   default_race.Playernum = 1;
   default_race.name = "TestRace";
-  default_race.governor[0].active = true;
   RaceRepository race_repo(store);
   race_repo.save(default_race);
 }
@@ -182,7 +181,7 @@ TestContext& TestContext::with_standard_universe() {
   r1.tech = 100.0;
   r1.Guest = false;
   r1.init_leader(1, 1);
-  r1.governor[0].money = 10'000;
+  r1.leader().money = 10'000;
   r1.Gov_ship = std::nullopt;
   r1.mass = 1.0;
   r1.metabolism = 1.0;
@@ -194,7 +193,7 @@ TestContext& TestContext::with_standard_universe() {
   r2.tech = 100.0;
   r2.Guest = false;
   r2.init_leader(2, 1);
-  r2.governor[0].money = 10'000;
+  r2.leader().money = 10'000;
   r2.mass = 1.0;
   r2.metabolism = 1.0;
   em.create_race(r2);
@@ -399,8 +398,7 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
   r1.name = "Federation";
   r1.tech = 100.0;
   r1.Guest = false;
-  r1.governor[0].active = true;
-  r1.governor[0].money = 10'000;
+  r1.leader().money = 10'000;
   r1.Gov_ship = std::nullopt;
   r1.mass = 1.0;
   r1.metabolism = 1.0;
@@ -411,8 +409,7 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
   r2.name = "Klingons";
   r2.tech = 100.0;
   r2.Guest = false;
-  r2.governor[0].active = true;
-  r2.governor[0].money = 10'000;
+  r2.leader().money = 10'000;
   r2.mass = 1.0;
   r2.metabolism = 1.0;
   race_repo.save(r2);

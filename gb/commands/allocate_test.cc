@@ -19,7 +19,7 @@ int main() {
   race.Playernum = 1;
   race.name = "Spenders";
   race.Guest = false;
-  race.governor[0].active = true;
+  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);

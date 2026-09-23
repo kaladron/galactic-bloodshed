@@ -23,7 +23,7 @@ int main() {
   race.Playernum = 1;
   race.name = "TestRace";
   race.Guest = false;
-  race.governor[0].money = 1000;
+  race.leader().money = 1000;
 
   RaceRepository races(store);
   races.save(race);

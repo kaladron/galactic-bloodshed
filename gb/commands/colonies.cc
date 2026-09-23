@@ -22,7 +22,7 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
   for (const auto& pl :
        PlanetList::readonly(g.entity_manager, star, star_ref.numplanets())) {
     if (!pl.info(Playernum).explored || !pl.info(Playernum).numsectsowned ||
-        (Governor != 0 && star_ref.governor(Playernum) != Governor)) {
+        !star_ref.control(Playernum, Governor)) {
       continue;
     }
 

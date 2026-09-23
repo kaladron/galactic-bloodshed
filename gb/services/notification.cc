@@ -88,8 +88,10 @@ void warn_player(SessionRegistry& registry, EntityManager& em, player_t who,
   // Try real-time delivery to the specific governor
   if (registry.notify_player(who, gov, message)) return;
 
-  // Fall back to governor 0 if different
-  if (gov != 0 && registry.notify_player(who, 0, message)) return;
+  // Fall back to leader if different
+  if (!Race::is_leader(gov) &&
+      registry.notify_player(who, Race::leader_id, message))
+    return;
 
   // No one connected, use telegram
   push_telegram(em, who, gov, message);
@@ -114,7 +116,7 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
   const bool in_update = registry.update_in_progress();
   for (const Race& race : RaceList::readonly(em)) {
     const player_t p = race.Playernum;
-    if (p == sender && sender_gov == 0) continue;
+    if (p == sender && Race::is_leader(sender_gov)) continue;
     if (!star_ptr->is_inhabited_by(p)) continue;
 
     for (auto [g, gov] : race.active_governors()) {

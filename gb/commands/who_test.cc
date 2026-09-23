@@ -21,25 +21,25 @@ void test_who_matrix() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Federation";
-  race1.governor[0].active = true;
-  race1.governor[0].name = "Kirk";
-  race1.governor[0].toggle.invisible = false;
-  race1.governor[0].toggle.gag = false;
+  race1.leader().active = true;
+  race1.leader().name = "Kirk";
+  race1.leader().toggle.invisible = false;
+  race1.leader().toggle.gag = false;
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "Klingons";
-  race2.governor[0].active = true;
-  race2.governor[0].name = "Kang";
-  race2.governor[0].toggle.invisible = true;  // invisible player
-  race2.governor[0].toggle.gag = true;
+  race2.leader().active = true;
+  race2.leader().name = "Kang";
+  race2.leader().toggle.invisible = true;  // invisible player
+  race2.leader().toggle.gag = true;
 
   Race god_race{};
   god_race.Playernum = 3;
   god_race.name = "Deity";
   god_race.God = true;
-  god_race.governor[0].active = true;
-  god_race.governor[0].name = "Admin";
+  god_race.leader().active = true;
+  god_race.leader().name = "Admin";
 
   {
     JsonStore store(ctx.db);

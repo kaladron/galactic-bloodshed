@@ -69,12 +69,12 @@ int main() {
   test_race.likesbest = SectorType::SEC_SEA;
 
   // Initialize governor data
-  test_race.governor[0].name = "Governor Zero";
-  test_race.governor[0].password = "gov0pass";
-  test_race.governor[0].active = true;
-  test_race.governor[0].money = 10000;
-  test_race.governor[0].income = 5000;
-  test_race.governor[0].newspos = {
+  test_race.leader().name = "Governor Zero";
+  test_race.leader().password = "gov0pass";
+  test_race.leader().active = true;
+  test_race.leader().money = 10000;
+  test_race.leader().income = 5000;
+  test_race.leader().newspos = {
       .announce = 10, .combat = 20, .declaration = 30, .transfer = 40};
 
   // Save race
@@ -127,10 +127,9 @@ int main() {
                   test_race.translate[player_t{2}]);
   test::expect_eq(retrieved->points[player_t{2}],
                   test_race.points[player_t{2}]);
-  test::expect_eq(retrieved->governor[0].name, test_race.governor[0].name);
-  test::expect_eq(retrieved->governor[0].money, test_race.governor[0].money);
-  test::expect_true(retrieved->governor[0].newspos ==
-                    test_race.governor[0].newspos);
+  test::expect_eq(retrieved->leader().name, test_race.leader().name);
+  test::expect_eq(retrieved->leader().money, test_race.leader().money);
+  test::expect_true(retrieved->leader().newspos == test_race.leader().newspos);
   std::println(std::cout, "  ✓ All fields match original");
 
   // Update race

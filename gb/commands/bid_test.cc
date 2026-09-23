@@ -19,15 +19,15 @@ int main() {
   race1.Playernum = 1;
   race1.name = "Bidder";
   race1.Guest = false;
-  race1.governor[0].active = true;
-  race1.governor[0].money = 10000;
+  race1.leader().active = true;
+  race1.leader().money = 10000;
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "Seller";
   race2.Guest = false;
-  race2.governor[0].active = true;
-  race2.governor[0].money = 5000;
+  race2.leader().active = true;
+  race2.leader().money = 5000;
 
   RaceRepository races(store);
   races.save(race1);

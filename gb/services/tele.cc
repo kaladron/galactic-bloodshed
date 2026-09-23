@@ -157,7 +157,7 @@ void teleg_read(GameObj& g) {
 void news_read(NewsType type, GameObj& g) {
   int last_read_id = 0;
   g.entity_manager.with_race(g.player(), [&](const Race& race) {
-    last_read_id = race.governor[g.governor().value].newspos[type];
+    last_read_id = race.governor(g.governor()).newspos[type];
   });
 
   // Get all news since last read
@@ -176,7 +176,7 @@ void news_read(NewsType type, GameObj& g) {
   // Update the last read position to the latest ID
   int latest_id = g.entity_manager.get_latest_news_id(type);
   g.entity_manager.mutate_race(g.player(), [&](Race& race) {
-    race.governor[g.governor().value].newspos[type] = latest_id;
+    race.governor(g.governor()).newspos[type] = latest_id;
   });
 }
 

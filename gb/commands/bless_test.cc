@@ -81,7 +81,7 @@ void test_bless_race_characteristics() {
 
   // Integer attributes
   ctx.assert_dispatch_success(g, {"bless", "2", "money", "500"});
-  test::expect_eq(ctx.em.peek_race(2)->governor[0].money, 10500);
+  test::expect_eq(ctx.em.peek_race(2)->leader().money, 10500);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "morale", "15"});
   test::expect_eq(ctx.em.peek_race(2)->morale, 15);

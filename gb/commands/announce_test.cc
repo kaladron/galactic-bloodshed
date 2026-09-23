@@ -17,12 +17,11 @@ void setup_test_world(TestContext& ctx) {
 
   // Setup governors and names
   ctx.em.mutate_race(1, [](Race& r) {
-    r.governor[0].name = "President";
-    r.governor[1].active = true;
-    r.governor[1].name = "VicePresident";
+    r.leader().name = "President";
+    r.appoint_governor(1, {.name = "VicePresident"});
   });
 
-  ctx.em.mutate_race(2, [](Race& r) { r.governor[0].name = "Emperor"; });
+  ctx.em.mutate_race(2, [](Race& r) { r.leader().name = "Emperor"; });
 }
 
 void test_announce_dispatch() {

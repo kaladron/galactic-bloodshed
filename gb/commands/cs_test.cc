@@ -15,9 +15,9 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
   ctx.em.mutate_race(1, [](Race& r) {
-    r.governor[0].deflevel = ScopeLevel::LEVEL_STAR;
-    r.governor[0].defsystem = 1;
-    r.governor[0].defplanetnum = 1;
+    r.leader().deflevel = ScopeLevel::LEVEL_STAR;
+    r.leader().defsystem = 1;
+    r.leader().defplanetnum = 1;
   });
 }
 
@@ -58,9 +58,9 @@ void test_cs_happy_paths() {
   // 6. Default cs clamps out-of-bounds defsystem/defplanetnum to last star and
   // planet
   ctx.em.mutate_race(1, [](Race& r) {
-    r.governor[0].deflevel = ScopeLevel::LEVEL_PLAN;
-    r.governor[0].defsystem = 99;
-    r.governor[0].defplanetnum = 5;
+    r.leader().deflevel = ScopeLevel::LEVEL_PLAN;
+    r.leader().defsystem = 99;
+    r.leader().defplanetnum = 5;
   });
   ctx.setup_game_obj(g, 1, 0);
   ctx.assert_dispatch_success(g, {"cs"}, 0);

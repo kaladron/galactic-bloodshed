@@ -24,7 +24,7 @@ bool change_to_default_scope(GameObj& g) {
     return false;
   }
 
-  const auto& gov = g.race->governor[g.governor().value];
+  const auto& gov = g.current_governor();
   g.set_level(gov.deflevel);
   g.set_snum(gov.defsystem);
   if (g.snum() < 1 || g.snum() > numstars) {
@@ -133,9 +133,10 @@ bool change_default_home_scope(GameObj& g, std::string_view target_arg) {
   const player_t playernum = g.player();
   const governor_t governor = g.governor();
   g.entity_manager.mutate_race(playernum, [&](Race& race) {
-    race.governor[governor.value].deflevel = where.level;
-    race.governor[governor.value].defsystem = where.snum;
-    race.governor[governor.value].defplanetnum = where.pnum;
+    auto& gov = race.governor(governor);
+    gov.deflevel = where.level;
+    gov.defsystem = where.snum;
+    gov.defplanetnum = where.pnum;
   });
 
   g.out << std::format("New home system is {}\n", where.to_string());

@@ -28,11 +28,11 @@ void setup_test_world(TestContext& ctx) {
   race.Guest = false;
   race.God = false;
   race.tech = 50.0;
-  race.governor[0].active = true;
-  race.governor[0].toggle.geography = false;
-  race.governor[0].toggle.inverse = false;
-  race.governor[0].toggle.double_digits = false;
-  race.governor[0].toggle.highlight = 1;
+  race.leader().active = true;
+  race.leader().toggle.geography = false;
+  race.leader().toggle.inverse = false;
+  race.leader().toggle.double_digits = false;
+  race.leader().toggle.highlight = 1;
   race.discoveries.crystal = true;
 
   RaceRepository races(store);
@@ -216,18 +216,18 @@ void test_sector_char_and_desshow_branches() {
   // inverse highlight, color toggle, geography toggle)
   s.set_troops_exact(0);
   s.set_owner(12);
-  r.governor[0].toggle.double_digits = false;
+  r.leader().toggle.double_digits = false;
   test::expect_eq(desshow(1, 0, r, s), '2');
 
-  r.governor[0].toggle.double_digits = true;
+  r.leader().toggle.double_digits = true;
   s.set_coords({0, 0});  // Even x -> tens digit ('1')
   test::expect_eq(desshow(1, 0, r, s), '1');
   s.set_coords({1, 0});  // Odd x -> ones digit ('2')
   test::expect_eq(desshow(1, 0, r, s), '2');
 
   // Inverse highlight on owner 12 falls through to crystal / terrain char
-  r.governor[0].toggle.inverse = true;
-  r.governor[0].toggle.highlight = 12;
+  r.leader().toggle.inverse = true;
+  r.leader().toggle.highlight = 12;
   s.set_crystals(true);
   r.discoveries.crystal = false;
   r.God = true;
@@ -273,8 +273,8 @@ void test_show_map_rendering_options() {
 
   // Test inverse highlight and unexplored planet ("Aliens:???")
   ctx.em.mutate_race(1, [](Race& r) {
-    r.governor[0].toggle.inverse = true;
-    r.governor[0].toggle.highlight = 1;
+    r.leader().toggle.inverse = true;
+    r.leader().toggle.highlight = 1;
     r.tech = 0.0;
   });
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.explored() = false; });

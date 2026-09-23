@@ -107,9 +107,9 @@ int main() {
   race4.Playernum = 4;
   race4.name = "Test Race";
   race4.Guest = false;
-  race4.governor[0].active = true;
-  race4.governor[1].active = true;
-  race4.governor[2].active = true;
+  race4.leader().active = true;
+  race4.appoint_governor(1);
+  race4.appoint_governor(2);
   race_repo.save(race4);
 
   push_telegram_race(em, 4, "Broadcast to all governors\n");

@@ -77,7 +77,7 @@ void update_population_and_owner(EntityManager& entity_manager, Sector& s,
   // Handle troops maintenance costs - mutate race for governor update
   if (s.get_troops()) {
     entity_manager.mutate_race(s.get_owner(), [&](Race& r) {
-      r.governor[star.governor(s.get_owner()).value].maintain +=
+      r.governor(star.governor(s.get_owner())).maintain +=
           UPDATE_TROOP_COST * s.get_troops();
     });
   }

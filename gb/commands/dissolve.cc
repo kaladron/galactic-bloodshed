@@ -88,12 +88,12 @@ bool dissolve(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  if (governor != 0) {
+  if (!g.is_leader()) {
     g.out << "Only the leader may dissolve the race. The "
              "leader has been notified of your "
              "attempt!!!\n";
     g.session_registry.notify_player(
-        playernum, 0,
+        playernum, Race::leader_id,
         std::format("Governor #{} has attempted to dissolve this race.\n",
                     governor));
     return false;
@@ -113,7 +113,7 @@ bool dissolve(const command_t& argv, GameObj& g) {
   const bool waste = (argv.size() > 3 && argv[3].starts_with('w'));
   const auto [auth_player, auth_gov] =
       getracenum(g.entity_manager, argv[1], argv[2]);
-  if (auth_player != playernum || auth_gov != 0) {
+  if (auth_player != playernum || !Race::is_leader(auth_gov)) {
     g.out << "Password mismatch, self-destruct not initiated!\n";
     return false;
   }

@@ -19,14 +19,14 @@ void setup_test_world(TestContext& ctx) {
   race1.Playernum = 1;
   race1.name = "Trader";
   race1.Guest = false;
-  race1.governor[0].active = true;
-  race1.governor[1].active = true;
+  race1.leader().active = true;
+  race1.appoint_governor(1);
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "GuestTrader";
   race2.Guest = true;
-  race2.governor[0].active = true;
+  race2.leader().active = true;
 
   RaceRepository races(store);
   races.save(race1);

@@ -22,12 +22,12 @@ void test_relation_dispatch() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Federation";
-  race1.governor[0].active = true;
+  race1.leader().active = true;
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "Klingons";
-  race2.governor[0].active = true;
+  race2.leader().active = true;
   race2.translate[player_t{1}] = 50;  // Know 50% about player 1
 
   // Set diplomatic states

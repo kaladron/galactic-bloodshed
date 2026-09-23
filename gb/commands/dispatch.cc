@@ -28,7 +28,7 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     g.out << "Guest races cannot use this command.\n";
     return false;
   }
-  if (desc.roles.leader_only && g.governor() != 0) {
+  if (desc.roles.leader_only && !g.is_leader()) {
     g.out << "Only the leader (Governor 0) may use this command.\n";
     return false;
   }

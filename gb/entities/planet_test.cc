@@ -346,27 +346,27 @@ int main() {
 
     Race race{};
     race.Gov_ship = 100;
-    race.governor[0].money = 0;
-    race.governor[0].income = 0;
+    race.leader().money = 0;
+    race.leader().income = 0;
 
-    const money_t revenue = info.collect_tax(race.governor[0], race);
+    const money_t revenue = info.collect_tax(race.leader(), race);
     test::expect_gt(revenue, 0);
     test::expect_eq(info.prod_money, revenue);
-    test::expect_eq(race.governor[0].money, revenue);
-    test::expect_eq(race.governor[0].income, revenue);
+    test::expect_eq(race.leader().money, revenue);
+    test::expect_eq(race.leader().income, revenue);
     test::expect_eq(info.tax, 15U);  // 10 + 5 max increase
 
     // Case B: Tax rate decrease applies immediately
     info.newtax = 5;
-    info.collect_tax(race.governor[0], race);
+    info.collect_tax(race.leader(), race);
     test::expect_eq(info.tax, 5U);
 
     // Case C: No government center disables tax collection
     Race anarchic_race{};
     anarchic_race.Gov_ship = std::nullopt;
-    info.collect_tax(anarchic_race.governor[0], anarchic_race);
+    info.collect_tax(anarchic_race.leader(), anarchic_race);
     test::expect_eq(info.prod_money, 0);
-    test::expect_eq(anarchic_race.governor[0].money, 0);
+    test::expect_eq(anarchic_race.leader().money, 0);
   }
 
   // Test 15: plinfo::invest_tech
@@ -377,33 +377,33 @@ int main() {
 
     Race race{};
     race.Gov_ship = 100;
-    race.governor[0].money = 500;
-    race.governor[0].cost_tech = 0;
+    race.leader().money = 500;
+    race.leader().cost_tech = 0;
     race.tech = 10.0;
 
     // Case A: Sufficient treasury with active government center
-    const double tech_gain = info.invest_tech(race.governor[0], race);
+    const double tech_gain = info.invest_tech(race.leader(), race);
     test::expect_gt(tech_gain, 0.0);
-    test::expect_eq(race.governor[0].money, 400);
-    test::expect_eq(race.governor[0].cost_tech, 100UL);
+    test::expect_eq(race.leader().money, 400);
+    test::expect_eq(race.leader().cost_tech, 100UL);
     test::expect_gt(race.tech, 10.0);
     test::expect_eq(info.prod_tech, tech_gain);
 
     // Case B: Insufficient funds in treasury
-    race.governor[0].money = 50;  // Less than 100 needed
-    const double zero_gain = info.invest_tech(race.governor[0], race);
+    race.leader().money = 50;  // Less than 100 needed
+    const double zero_gain = info.invest_tech(race.leader(), race);
     test::expect_eq(zero_gain, 0.0);
-    test::expect_eq(race.governor[0].money, 50);
+    test::expect_eq(race.leader().money, 50);
     test::expect_eq(info.prod_tech, 0.0);
 
     // Case C: No government center
     Race anarchic_race{};
     anarchic_race.Gov_ship = std::nullopt;
-    anarchic_race.governor[0].money = 500;
+    anarchic_race.leader().money = 500;
     const double no_gov_gain =
-        info.invest_tech(anarchic_race.governor[0], anarchic_race);
+        info.invest_tech(anarchic_race.leader(), anarchic_race);
     test::expect_eq(no_gov_gain, 0.0);
-    test::expect_eq(anarchic_race.governor[0].money, 500);
+    test::expect_eq(anarchic_race.leader().money, 500);
   }
 
   // Test 16: plinfo::update_combat_readiness & Percentage clamping

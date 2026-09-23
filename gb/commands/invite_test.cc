@@ -19,13 +19,13 @@ int main() {
   race1.Playernum = 1;
   race1.name = "LeaderRace";
   race1.Guest = false;
-  race1.governor[0].active = true;
+  race1.leader().active = true;
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "AlienRace";
   race2.Guest = false;
-  race2.governor[0].active = true;
+  race2.leader().active = true;
 
   RaceRepository races(store);
   races.save(race1);

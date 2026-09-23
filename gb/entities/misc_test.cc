@@ -58,7 +58,7 @@ void test_telegram_star() {
 
   // 3. Sender with non-zero governor sends telegram:
   // Activate Gov 1 on Player 1
-  ctx.em.mutate_race(1, [](Race& r) { r.governor[1].active = true; });
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(1); });
 
   telegram_star(ctx.em, 1, 1, 1, "Notice from Gov 1\n");
 

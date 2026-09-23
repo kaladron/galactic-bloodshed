@@ -267,8 +267,7 @@ void test_entity_manager_singleton_universe() {
       "when uninitialized");
 
   universe_struct univ{};
-  univ.id = 1;
-  univ.numstars = 50;
+  univ.AP[player_t{1}] = 50;
   JsonStore store(db);
   UniverseRepository univ_repo(store);
   univ_repo.save(univ);
@@ -276,13 +275,13 @@ void test_entity_manager_singleton_universe() {
   const auto* u1 = em.peek_universe();
   const auto* u2 = em.peek_universe();
   test::expect_eq(u1, u2);
-  test::expect_eq(u1->numstars, 50);
+  test::expect_eq(u1->AP[player_t{1}], 50);
 
-  em.mutate_universe([](universe_struct& u) { u.numstars = 75; });
+  em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 75; });
 
   const auto* peek = em.peek_universe();
   test::expect_ne(peek, nullptr);
-  test::expect_eq(peek->numstars, 75);
+  test::expect_eq(peek->AP[player_t{1}], 75);
   std::println(std::cout, "  ✓ Singleton universe_struct works correctly");
 }
 
@@ -294,7 +293,6 @@ void test_entity_manager_singleton_server_state() {
   std::println(std::cout, "Test: EntityManager singleton (ServerState)");
 
   ServerState state{};
-  state.id = 1;
   state.segments = 10;
   state.nsegments_done = 3;
   JsonStore store(db);
@@ -423,7 +421,6 @@ void test_entity_manager_kill_ship() {
   ships.save(vn_ship);
 
   universe_struct univ_data{};
-  univ_data.id = 1;
   univ_data.VN_hitlist[player_t{1}] = 5;
   UniverseRepository univ_repo(store);
   univ_repo.save(univ_data);
@@ -904,18 +901,16 @@ void test_entity_manager_with_scoped_peeks() {
 
   // 6. with_universe
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 10;
+  u.AP[player_t{1}] = 10;
   UniverseRepository u_repo(store);
   u_repo.save(u);
 
-  auto numstars = em.with_universe(
-      [](const universe_struct& univ) { return univ.numstars; });
-  test::expect_eq(numstars, 10);
+  auto univ_ap = em.with_universe(
+      [](const universe_struct& univ) { return univ.AP[player_t{1}]; });
+  test::expect_eq(univ_ap, 10);
 
   // 7. with_server_state
   ServerState state{};
-  state.id = 1;
   state.welcome_message = "Welcome to GB!";
   ServerStateRepository state_repo(store);
   state_repo.save(state);

@@ -97,8 +97,6 @@ int main() {
     // Star 3 at (25, 0) -> dist to Star 1 is 25
     // Star 4 at (100, 0) -> dist to Star 1 is 100
     universe_struct udata{};
-    udata.id = 1;
-    udata.numstars = 4;
     universe_repo.save(udata);
 
     star_struct s0{};

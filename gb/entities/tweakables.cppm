@@ -165,8 +165,6 @@ export constexpr auto all_players() {
 }
 
 export constexpr int NAMESIZE = 18;
-export constexpr int NUMSTARS = 256;
-export constexpr int MAXPLANETS = 10;
 export constexpr int MAXGOVERNORS = 5u;
 
 export constexpr double TECH_INVEST = 0.01;  // invest factor

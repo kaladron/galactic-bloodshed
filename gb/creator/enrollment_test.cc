@@ -18,8 +18,6 @@ void setup_test_universe(Database& db) {
   JsonStore store(db);
 
   universe_struct us{};
-  us.id = 1;
-  us.numstars = 3;
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 

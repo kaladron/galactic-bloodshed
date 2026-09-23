@@ -41,7 +41,6 @@ int main() {
   // Create universe data for VN testing
   UniverseRepository universe_repo(store);
   universe_struct u{};
-  u.id = 1;
   universe_repo.save(u);
 
   // Now EntityManager can access it

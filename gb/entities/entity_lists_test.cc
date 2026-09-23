@@ -26,8 +26,6 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
 
   UniverseRepository universe_repo(store);
   universe_struct ud{};
-  ud.id = 1;
-  ud.numstars = 2;
   universe_repo.save(ud);
 
   StarRepository star_repo(store);
@@ -167,6 +165,13 @@ void test_planet_list_readonly(EntityManager& em) {
     }
 
     test::expect_eq(star_planet_count, static_cast<int>(star_id.value));
+
+    int convenience_count = 0;
+    for (const Planet& planet : PlanetList::readonly(em, star_id)) {
+      convenience_count++;
+      test::expect_eq(planet.star_id(), star_id);
+    }
+    test::expect_eq(convenience_count, star_planet_count);
   }
 
   test::expect_eq(total_planets, 3);
@@ -216,7 +221,7 @@ void test_planet_list_shuffle(EntityManager& em) {
     auto star_id = star.get_struct().star_id;
 
     std::vector<planetnum_t> seen_planets;
-    for (const Planet& planet : PlanetList::shuffle(em, star_id, star)) {
+    for (const Planet& planet : PlanetList::shuffle(em, star_id)) {
       static_assert(std::is_same_v<decltype(planet), const Planet&>,
                     "PlanetList::shuffle() should yield const Planet&");
 

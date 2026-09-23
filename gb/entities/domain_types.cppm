@@ -860,7 +860,6 @@ export [[nodiscard]] inline std::string format_timestamp(std::time_t t) {
 }
 
 export struct ServerState {
-  int id{1};                         // Always 1 - singleton entity
   segments_t segments{1};            // Number of movement segments
   std::time_t next_update_time{0};   // Next update timestamp
   std::time_t next_segment_time{0};  // Next segment timestamp

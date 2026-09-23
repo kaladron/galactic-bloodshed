@@ -14,8 +14,6 @@ import std;
 // This was previously called "stardata" but that name was confusing
 // as it contains universe-wide data, not star-specific data
 export struct universe_struct {
-  int id{0};  // Universe ID for database persistence (always 1 for singleton)
-  std::uint32_t numstars{0}; /* Total # of stars in universe */
   PlayerVector<ap_t, MAXPLAYERS> AP;
   PlayerVector<std::uint32_t, MAXPLAYERS> VN_hitlist;
   /* # of ships destroyed by each player */
@@ -31,14 +29,6 @@ export class Universe {
 
 public:
   explicit Universe(universe_struct& raw_data) : data(raw_data) {}
-
-  // Basic accessors
-  [[nodiscard]] std::uint32_t numstars() const {
-    return data.numstars;
-  }
-  void set_numstars(std::uint32_t value) {
-    data.numstars = value;
-  }
 
   // Action Point (AP) methods
   [[nodiscard]] ap_t get_AP(player_t p) const {

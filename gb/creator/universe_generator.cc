@@ -253,8 +253,6 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
   result.num_stars = config_.num_stars;
 
   universe_struct universe_data{};
-  universe_data.id = 1;
-  universe_data.numstars = static_cast<int>(config_.num_stars.value);
 
   JsonStore store(db);
   UniverseRepository universe_repo(store);

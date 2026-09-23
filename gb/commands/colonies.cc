@@ -19,9 +19,8 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
   const auto& star_ref = *g.entity_manager.peek_star(star);
   if (!star_ref.is_explored_by(Playernum)) return;
 
-  for (planetnum_t i = 1; i <= star_ref.numplanets(); i++) {
-    const auto& pl = *g.entity_manager.peek_planet(star, i);
-
+  for (const auto& pl :
+       PlanetList::readonly(g.entity_manager, star, star_ref.numplanets())) {
     if (!pl.info(Playernum).explored || !pl.info(Playernum).numsectsowned ||
         (Governor != 0 && star_ref.governor(Playernum) != Governor)) {
       continue;
@@ -30,7 +29,8 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
     auto formatted = std::format(
         " {:c} {:4.4}/{:<4.4}{:c}{:4d}{:3d}{:5d}{:8d}{:3d}{:6d}{:5d}{:6d} "
         "{:3d}/{:<3d}{:3.0f}/{:<3d}{:3d}/{:<3d}",
-        Psymbol[pl.type()], star_ref.get_name(), star_ref.get_planet_name(i),
+        Psymbol[pl.type()], star_ref.get_name(),
+        star_ref.get_planet_name(pl.planet_order()),
         (pl.info(Playernum).autorep ? '*' : ' '), star_ref.governor(Playernum),
         pl.info(Playernum).numsectsowned, pl.info(Playernum).tech_invest,
         pl.info(Playernum).popn, pl.info(Playernum).crystals,

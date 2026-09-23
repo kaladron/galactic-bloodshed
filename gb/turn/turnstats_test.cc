@@ -20,13 +20,13 @@ void test_turnstats_defaults() {
   test::expect_false(stats.is_inhabited(starnum_t{1}, planetnum_t{1}));
   test::expect_false(stats.has_alien_colony(starnum_t{1}, planetnum_t{1}));
 
-  // Maximum valid indices
-  const starnum_t max_star{NUMSTARS};
-  const planetnum_t max_planet{MAXPLANETS};
-  test::expect_eq(stats.temp_add(max_star, max_planet), 0);
-  test::expect_false(stats.is_intimidated(max_star, max_planet));
-  test::expect_false(stats.is_inhabited(max_star, max_planet));
-  test::expect_false(stats.has_alien_colony(max_star, max_planet));
+  // Arbitrary high valid indices work without fixed compile-time bounds
+  const starnum_t high_star{500};
+  const planetnum_t high_planet{50};
+  test::expect_eq(stats.temp_add(high_star, high_planet), 0);
+  test::expect_false(stats.is_intimidated(high_star, high_planet));
+  test::expect_false(stats.is_inhabited(high_star, high_planet));
+  test::expect_false(stats.has_alien_colony(high_star, high_planet));
 }
 
 void test_turnstats_temperature_operations() {
@@ -77,55 +77,49 @@ void test_turnstats_status_flags() {
 void test_turnstats_bounds_checking() {
   TurnStats stats{};
   const starnum_t zero_star{0};
-  const starnum_t out_star{NUMSTARS + 1};
   const planetnum_t valid_planet{1};
   const starnum_t valid_star{1};
   const planetnum_t zero_planet{0};
-  const planetnum_t out_planet{MAXPLANETS + 1};
 
-  // Star out of bounds (0 and NUMSTARS + 1)
+  // Star out of bounds (0 is invalid 1-based star ID)
   test::expect_throws<std::out_of_range>(
       [&]() { (void)stats.temp_add(zero_star, valid_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.temp_add(out_star, valid_planet); });
+      [&]() { stats.set_temp_add(zero_star, valid_planet, 10); });
   test::expect_throws<std::out_of_range>(
-      [&]() { stats.set_temp_add(out_star, valid_planet, 10); });
+      [&]() { stats.add_temp(zero_star, valid_planet, 10); });
   test::expect_throws<std::out_of_range>(
-      [&]() { stats.add_temp(out_star, valid_planet, 10); });
+      [&]() { (void)stats.is_intimidated(zero_star, valid_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.is_intimidated(out_star, valid_planet); });
+      [&]() { stats.set_intimidated(zero_star, valid_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { stats.set_intimidated(out_star, valid_planet); });
+      [&]() { (void)stats.is_inhabited(zero_star, valid_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.is_inhabited(out_star, valid_planet); });
+      [&]() { stats.mark_inhabited(zero_star, valid_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { stats.mark_inhabited(out_star, valid_planet); });
+      [&]() { (void)stats.has_alien_colony(zero_star, valid_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.has_alien_colony(out_star, valid_planet); });
-  test::expect_throws<std::out_of_range>(
-      [&]() { stats.set_alien_colony(out_star, valid_planet); });
+      [&]() { stats.set_alien_colony(zero_star, valid_planet); });
 
-  // Planet out of bounds (0 and MAXPLANETS + 1)
+  // Planet out of bounds (0 is invalid 1-based planet ID)
   test::expect_throws<std::out_of_range>(
       [&]() { (void)stats.temp_add(valid_star, zero_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.temp_add(valid_star, out_planet); });
+      [&]() { stats.set_temp_add(valid_star, zero_planet, 10); });
   test::expect_throws<std::out_of_range>(
-      [&]() { stats.set_temp_add(valid_star, out_planet, 10); });
+      [&]() { stats.add_temp(valid_star, zero_planet, 10); });
   test::expect_throws<std::out_of_range>(
-      [&]() { stats.add_temp(valid_star, out_planet, 10); });
+      [&]() { (void)stats.is_intimidated(valid_star, zero_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.is_intimidated(valid_star, out_planet); });
+      [&]() { stats.set_intimidated(valid_star, zero_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { stats.set_intimidated(valid_star, out_planet); });
+      [&]() { (void)stats.is_inhabited(valid_star, zero_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.is_inhabited(valid_star, out_planet); });
+      [&]() { stats.mark_inhabited(valid_star, zero_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { stats.mark_inhabited(valid_star, out_planet); });
+      [&]() { (void)stats.has_alien_colony(valid_star, zero_planet); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.has_alien_colony(valid_star, out_planet); });
-  test::expect_throws<std::out_of_range>(
-      [&]() { stats.set_alien_colony(valid_star, out_planet); });
+      [&]() { stats.set_alien_colony(valid_star, zero_planet); });
 }
 
 void test_turnstats_record_production() {

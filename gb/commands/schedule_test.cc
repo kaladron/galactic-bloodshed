@@ -28,7 +28,6 @@ void test_schedule_display() {
 
   // Setup server state
   ServerState state{};
-  state.id = 1;
   state.update_time_minutes = 30;
   state.segments = 5;
   state.nsegments_done = 2;
@@ -67,14 +66,11 @@ void test_do_next_thing_branching() {
   races.save(race);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
   // Case A: nsegments_done < segments -> advances segment
   ServerState state{};
-  state.id = 1;
   state.update_time_minutes = 30;
   state.segments = 5;
   state.nsegments_done = 2;

@@ -86,14 +86,11 @@ void test_do_turn_segment_vs_update() {
   JsonStore store(db);
 
   ServerState state{};
-  state.id = 1;
   state.segments = 2;
   ServerStateRepository state_repo(store);
   state_repo.save(state);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -152,8 +149,6 @@ void test_do_turn_market_and_maintenance() {
   JsonStore store(db);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 2;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -234,8 +229,6 @@ void test_do_turn_victory_scores_and_discoveries() {
   JsonStore store(db);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -284,8 +277,6 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   JsonStore store(db);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -530,8 +521,6 @@ void test_action_points_computation_and_distribution() {
 
   // 3. Universe Action Point Distribution
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   u.AP[player_t{1}] = 100;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
@@ -564,8 +553,6 @@ void test_output_ground_attacks() {
   star_repo.save(star);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -639,8 +626,6 @@ void test_update_von_neumann_target() {
   race_repo.save(race2);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -695,8 +680,6 @@ void test_calculate_victory_scores_isolated() {
   race_repo.save(race1);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -734,13 +717,10 @@ void test_do_update_voting_reset_and_scheduling() {
   race_repo.save(race2);
 
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
   ServerState sstate{};
-  sstate.id = 1;
   sstate.segments = 1;
   sstate.update_time_minutes = 60;
   ServerStateRepository state_repo(store);

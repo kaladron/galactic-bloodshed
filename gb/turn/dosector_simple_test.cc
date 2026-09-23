@@ -420,8 +420,7 @@ void test_data_consistency() {
   test::expect_le(planet.dimensions().x, 100);
   test::expect_ge(planet.dimensions().y, 1);
   test::expect_le(planet.dimensions().y, 100);
-  test::expect_ge(star.numplanets(), 0);
-  test::expect_le(star.numplanets(), MAXPLANETS);
+  test::expect_eq(star.numplanets(), 1);
 }
 
 void test_produce_and_troop_maintenance() {

@@ -41,9 +41,11 @@ void dissolve_empire_colonies(GameObj& g, player_t playernum, bool waste) {
       continue;
     }
 
-    for (planetnum_t pnum = 1; pnum <= star.numplanets(); ++pnum) {
+    for (const auto& planet : PlanetList::readonly(
+             g.entity_manager, star.star_id(), star.numplanets())) {
       g.entity_manager.mutate_planet_and_sectors(
-          star.star_id(), pnum, [&](Planet& pl, SectorMap& smap) {
+          star.star_id(), planet.planet_order(),
+          [&](Planet& pl, SectorMap& smap) {
             auto& pinfo = pl.info(playernum);
             pinfo.fuel = 0;
             pinfo.destruct = 0;

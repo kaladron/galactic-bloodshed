@@ -53,8 +53,7 @@ EnrollmentService::find_suitable_planet(PlanetType ppref,
     return std::nullopt;
   }
 
-  const auto* univ = entity_manager_.peek_universe();
-  int numstars = univ->numstars;
+  const starnum_t numstars = entity_manager_.num_stars();
 
   for (auto star : star_order) {
     if (star < 1 || star > numstars) continue;

@@ -921,7 +921,6 @@ void test_execute_berserker_bombardment() {
 
   // Initialize Universe with VN hitlist for Player 2
   universe_struct udata{};
-  udata.id = 1;
   udata.VN_hitlist[player_t{2}] = 5;  // Player 2 hitlist entry = 5
   UniverseRepository univ_repo(store);
   univ_repo.save(udata);

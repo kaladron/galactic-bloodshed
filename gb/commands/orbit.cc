@@ -139,15 +139,16 @@ bool orbit(const command_t& argv, GameObj& g) {
           DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars);
       system_map_text += star;
 
-      for (planetnum_t i = 1; i <= star_ptr->numplanets(); i++)
-        if (DontDispNum != i) {
-          const auto* p = g.entity_manager.peek_planet(where->snum, i);
-          if (!p) continue;
+      for (const auto& p : PlanetList::readonly(g.entity_manager, where->snum,
+                                                star_ptr->numplanets())) {
+        if (DontDispNum != p.planet_order()) {
           std::string planet =
-              DispPlanet(g, ScopeLevel::LEVEL_STAR, *p,
-                         star_ptr->get_planet_name(i), DontDispPlanets, Race);
+              DispPlanet(g, ScopeLevel::LEVEL_STAR, p,
+                         star_ptr->get_planet_name(p.planet_order()),
+                         DontDispPlanets, Race);
           system_map_text += planet;
         }
+      }
       /* check to see if you have ships at orbiting the star, if so you can
          see enemy ships */
       bool iq = false;

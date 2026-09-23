@@ -12,31 +12,10 @@ import gb.services;
 import test;
 import std;
 
-void test_universe_wrapper_accessors() {
-  std::println(std::cout, "Test: Universe wrapper accessors");
-
-  universe_struct u_data{};
-  u_data.id = 1;
-  u_data.numstars = 100;
-
-  Universe universe(u_data);
-
-  // Test basic accessors
-  test::expect_eq(universe.numstars(), 100);
-
-  // Test setters
-  universe.set_numstars(150);
-  test::expect_eq(universe.numstars(), 150);
-  test::expect_eq(u_data.numstars, 150);  // Verify underlying data changed
-
-  std::println(std::cout, "  ✓ Basic accessors work");
-}
-
 void test_universe_AP_methods() {
   std::println(std::cout, "Test: Universe AP (Action Points) methods");
 
   universe_struct u_data{};
-  u_data.id = 1;
 
   Universe universe(u_data);
 
@@ -78,7 +57,6 @@ void test_universe_VN_methods() {
   std::println(std::cout, "Test: Universe VN (Von Neumann) tracking methods");
 
   universe_struct u_data{};
-  u_data.id = 1;
 
   Universe universe(u_data);
 
@@ -122,26 +100,25 @@ void test_universe_direct_access() {
   std::println(std::cout, "Test: Universe direct access operators");
 
   universe_struct u_data{};
-  u_data.id = 1;
-  u_data.numstars = 50;
+  u_data.AP[player_t{1}] = 50;
 
   Universe universe(u_data);
 
   // Test operator->
-  test::expect_eq(universe->numstars, 50);
+  test::expect_eq(universe->AP[player_t{1}], 50);
 
   // Test operator*
   universe_struct& ref = *universe;
-  ref.numstars = 75;
-  test::expect_eq(universe.numstars(), 75);
+  ref.AP[player_t{1}] = 75;
+  test::expect_eq(universe.get_AP(1), 75);
 
   // Test const operator->
   const Universe const_universe(u_data);
-  test::expect_eq(const_universe->numstars, 75);
+  test::expect_eq(const_universe->AP[player_t{1}], 75);
 
   // Test const operator*
   const universe_struct& const_ref = *const_universe;
-  test::expect_eq(const_ref.numstars, 75);
+  test::expect_eq(const_ref.AP[player_t{1}], 75);
 
   std::println(std::cout, "  ✓ Direct access operators work correctly");
 }
@@ -158,8 +135,6 @@ void test_universe_persistence() {
     UniverseRepository repo(store);
 
     universe_struct u{};
-    u.id = 1;
-    u.numstars = 200;
     u.AP[player_t{1}] = 1000;
     u.AP[player_t{2}] = 2000;
     u.VN_hitlist[player_t{1}] = 5;
@@ -171,14 +146,14 @@ void test_universe_persistence() {
   EntityManager em(db);
   const auto* universe = em.peek_universe();
   test::expect_ne(universe, nullptr);
-  test::expect_eq(universe->numstars, 200);
   test::expect_eq(universe->AP[player_t{1}], 1000);
   test::expect_eq(universe->AP[player_t{2}], 2000);
   test::expect_eq(universe->VN_hitlist[player_t{1}], 5);
 
   // Modify via EntityManager
-  em.mutate_universe(
-      [](universe_struct& universe_mut) { universe_mut.numstars = 250; });
+  em.mutate_universe([](universe_struct& universe_mut) {
+    universe_mut.AP[player_t{1}] = 1500;
+  });
 
   // Clear cache to force reload from DB
   em.clear_cache();
@@ -186,8 +161,7 @@ void test_universe_persistence() {
   // Retrieve and verify modification
   const auto* universe2 = em.peek_universe();
   test::expect_ne(universe2, nullptr);
-  test::expect_eq(universe2->numstars, 250);
-  test::expect_eq(universe2->AP[player_t{1}], 1000);
+  test::expect_eq(universe2->AP[player_t{1}], 1500);
   test::expect_eq(universe2->AP[player_t{2}], 2000);
   test::expect_eq(universe2->VN_hitlist[player_t{1}], 5);
 
@@ -195,7 +169,6 @@ void test_universe_persistence() {
 }
 
 int main() {
-  test_universe_wrapper_accessors();
   test_universe_AP_methods();
   test_universe_VN_methods();
   test_universe_direct_access();

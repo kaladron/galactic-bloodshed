@@ -33,9 +33,9 @@ struct meta<Commod> {
 template <>
 struct meta<universe_struct> {
   using T = universe_struct;
-  static constexpr auto value = object(
-      "id", &T::id, "numstars", &T::numstars, "AP", &T::AP, "VN_hitlist",
-      &T::VN_hitlist, "VN_index1", &T::VN_index1, "VN_index2", &T::VN_index2);
+  static constexpr auto value =
+      object("AP", &T::AP, "VN_hitlist", &T::VN_hitlist, "VN_index1",
+             &T::VN_index1, "VN_index2", &T::VN_index2);
 };
 
 template <>
@@ -62,13 +62,13 @@ template <>
 struct meta<ServerState> {
   using T = ServerState;
   static constexpr auto value =
-      object("id", &T::id, "segments", &T::segments, "next_update_time",
-             &T::next_update_time, "next_segment_time", &T::next_segment_time,
-             "update_time_minutes", &T::update_time_minutes, "nsegments_done",
-             &T::nsegments_done, "nupdates_done", &T::nupdates_done,
-             "server_start_time", &T::server_start_time, "last_update_time",
-             &T::last_update_time, "last_segment_time", &T::last_segment_time,
-             "welcome_message", &T::welcome_message);
+      object("segments", &T::segments, "next_update_time", &T::next_update_time,
+             "next_segment_time", &T::next_segment_time, "update_time_minutes",
+             &T::update_time_minutes, "nsegments_done", &T::nsegments_done,
+             "nupdates_done", &T::nupdates_done, "server_start_time",
+             &T::server_start_time, "last_update_time", &T::last_update_time,
+             "last_segment_time", &T::last_segment_time, "welcome_message",
+             &T::welcome_message);
 };
 
 template <>

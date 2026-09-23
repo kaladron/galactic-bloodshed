@@ -113,12 +113,10 @@ void check_connect(Session& session, std::string_view message) {
       session.set_shipno(0);
 
       // Validate and clamp star number
-      session.entity_manager().with_universe(
-          [&](const universe_struct& universe) {
-            if (session.snum() < 1 || session.snum() > universe.numstars) {
-              session.set_snum(1);  // Default to first star if invalid
-            }
-          });
+      const starnum_t numstars = session.entity_manager().num_stars();
+      if (session.snum() < 1 || session.snum() > numstars) {
+        session.set_snum(1);  // Default to first star if invalid
+      }
 
       // Validate and clamp planet number
       session.entity_manager().with_star(

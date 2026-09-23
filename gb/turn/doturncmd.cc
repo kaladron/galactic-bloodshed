@@ -25,16 +25,6 @@ struct TurnState {
 
   // Constructor requires EntityManager reference
   explicit TurnState(EntityManager& em) : entity_manager(em) {}
-
-  // Bounds-checked accessors for star population data (delegate to stats)
-  population_t& star_popn(starnum_t star, player_t player) {
-    return stats.starpopns.at(star.value)[player];
-  }
-
-  [[nodiscard]] const population_t& star_popn(starnum_t star,
-                                              player_t player) const {
-    return stats.starpopns.at(star.value)[player];
-  }
 };
 
 }  // anonymous namespace
@@ -303,11 +293,9 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
     }
   }
 
-  // Local inhabited bitmap - tracks which players inhabit each star this turn
-  std::array<PlayerBitset<MAXPLAYERS>, NUMSTARS + 1> inhabited{};
-
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;
+    PlayerBitset<MAXPLAYERS> star_inhabited{};
 
     for (auto planet_handle :
          PlanetList(state.entity_manager, star, *star_handle)) {
@@ -315,7 +303,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         const player_t player = race_handle->Playernum;
 
         if (planet_handle->info(player).numsectsowned) {
-          inhabited[star.value].set(player);
+          star_inhabited.set(player);
         }
 
         if (planet_handle->type() != PlanetType::ASTEROID &&
@@ -340,25 +328,25 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
       for (const Race& race : RaceList::readonly(state.entity_manager)) {
         const player_t player = race.Playernum;
 
-        if (state.stats.starpopns[star.value][player]) {
+        if (state.stats.starpopns[star][player]) {
           star_handle->mark_inhabited_by(player);
 
-          ap_t APs = star_handle->AP(player) +
-                     compute_star_action_points(
-                         static_cast<int>(
-                             state.stats.starnumships[star.value][player]),
-                         state.stats.starpopns[star.value][player], race,
-                         state.entity_manager);
+          ap_t APs =
+              star_handle->AP(player) +
+              compute_star_action_points(
+                  static_cast<int>(state.stats.starnumships[star][player]),
+                  state.stats.starpopns[star][player], race,
+                  state.entity_manager);
           star_handle->AP(player) = std::min(APs, LIMIT_APs);
         }
         // Compute victory points for the block
-        if (inhabited[star.value].any()) {
+        if (star_inhabited.any()) {
           try {
             const auto* block_player =
                 state.entity_manager.peek_block(player.value);
             const PlayerBitset<MAXPLAYERS> allied_members =
                 block_player->member_mask();
-            if ((inhabited[star.value] | allied_members) == allied_members) {
+            if ((star_inhabited | allied_members) == allied_members) {
               state.entity_manager.mutate_block(
                   player.value, [](struct block& b) { b.systems_owned++; });
             }

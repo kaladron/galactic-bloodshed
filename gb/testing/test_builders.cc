@@ -402,14 +402,6 @@ TestWorldBuilder::add_star(std::string_view name, ap_t initial_ap,
   StarRepository(store_).save(star);
   registered_stars_.push_back(snum);
 
-  UniverseRepository univ_repo(store_);
-  auto u = univ_repo.find(1);
-  if (u) {
-    if (snum.value > u->numstars) {
-      u->numstars = snum.value;
-      univ_repo.save(*u);
-    }
-  }
   return *this;
 }
 

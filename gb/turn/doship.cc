@@ -410,8 +410,8 @@ void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
   }
 
   if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
-    stats.starnumships[ship.storbits().value][ship.owner()]++;
-    stats.starpopns[ship.storbits().value][ship.owner()] += ship.popn();
+    stats.starnumships[ship.storbits()][ship.owner()]++;
+    stats.starpopns[ship.storbits()][ship.owner()] += ship.popn();
   }
 }
 

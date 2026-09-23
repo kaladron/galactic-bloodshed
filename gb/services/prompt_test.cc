@@ -18,7 +18,6 @@ void test_prompt_universe_scope() {
     JsonStore store(ctx.db);
     UniverseRepository universe_repo(store);
     universe_struct u{};
-    u.id = 1;
     u.AP[player_t{1}] = 100;
     universe_repo.save(u);
   }
@@ -86,7 +85,6 @@ void test_prompt_ship_orbiting_scopes() {
     JsonStore store(ctx.db);
     UniverseRepository universe_repo(store);
     universe_struct u{};
-    u.id = 1;
     u.AP[player_t{1}] = 100;
     universe_repo.save(u);
 
@@ -155,7 +153,6 @@ void test_prompt_nested_docked_ships() {
     JsonStore store(ctx.db);
     UniverseRepository universe_repo(store);
     universe_struct u{};
-    u.id = 1;
     u.AP[player_t{1}] = 100;
     universe_repo.save(u);
 

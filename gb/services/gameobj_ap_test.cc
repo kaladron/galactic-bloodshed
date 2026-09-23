@@ -61,7 +61,6 @@ void test_deduct_univ_ap() {
   UniverseRepository universe_repo(store);
 
   universe_struct u{};
-  u.id = 1;
   u.AP[player_t{1}] = 25;  // Player 1 has 25 Univ AP
   universe_repo.save(u);
 

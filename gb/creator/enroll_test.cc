@@ -76,8 +76,6 @@ void test_enroll_no_free_planet_type() {
   JsonStore store(db);
 
   universe_struct us{};
-  us.id = 1;
-  us.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
@@ -121,8 +119,6 @@ void test_find_suitable_planet_deterministic_search() {
   JsonStore store(db);
 
   universe_struct us{};
-  us.id = 1;
-  us.numstars = 6;
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
@@ -275,8 +271,6 @@ void test_enroll_valid_race_success() {
   JsonStore store(db);
 
   universe_struct us{};
-  us.id = 1;
-  us.numstars = 1;
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 

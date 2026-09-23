@@ -711,7 +711,7 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
   }
 
   const auto toxic = planet.toxic();
-  const auto star_id = star.star_id().value;
+  const auto star_id = star.star_id();
 
   for (const Sector& s : smap) {
     planet.total_resources() += s.get_resource();

@@ -272,7 +272,6 @@ void test_fixed_univ_ap_transactions() {
   UniverseRepository universe_repo(store);
 
   universe_struct u{};
-  u.id = 1;
   u.AP[player_t{1}] = 10;
   universe_repo.save(u);
 

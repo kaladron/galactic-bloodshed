@@ -31,28 +31,27 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
     return;
   };
 
-  for (planetnum_t i = 1; i <= star.numplanets(); i++) {
-    const auto* pl = g.entity_manager.peek_planet(snum, i);
-    if (!pl || !pl->info(Playernum).explored ||
-        !pl->info(Playernum).numsectsowned) {
+  for (const auto& pl :
+       PlanetList::readonly(g.entity_manager, snum, star.numplanets())) {
+    if (!pl.info(Playernum).explored || !pl.info(Playernum).numsectsowned) {
       continue;
     }
 
-    std::string location =
-        std::format("{}/{}{}", star.get_name(), star.get_planet_name(i),
-                    (pl->info(Playernum).autorep ? "*" : ""));
+    std::string location = std::format("{}/{}{}", star.get_name(),
+                                       star.get_planet_name(pl.planet_order()),
+                                       (pl.info(Playernum).autorep ? "*" : ""));
 
     auto gain =
-        tech_prod(pl->info(Playernum).tech_invest, pl->info(Playernum).popn);
+        tech_prod(pl.info(Playernum).tech_invest, pl.info(Playernum).popn);
     auto max_gain =
-        tech_prod(pl->info(Playernum).prod_res, pl->info(Playernum).popn);
+        tech_prod(pl.info(Playernum).prod_res, pl.info(Playernum).popn);
 
-    table.add_row({location, std::format("{}", pl->info(Playernum).popn),
-                   std::format("{}", pl->info(Playernum).tech_invest),
+    table.add_row({location, std::format("{}", pl.info(Playernum).popn),
+                   std::format("{}", pl.info(Playernum).tech_invest),
                    std::format("{:.3f}", gain),
                    std::format("{:.3f}", max_gain)});
 
-    totals.invest += pl->info(Playernum).tech_invest;
+    totals.invest += pl.info(Playernum).tech_invest;
     totals.gain += gain;
     totals.max_gain += max_gain;
   }

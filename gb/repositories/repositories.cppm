@@ -310,7 +310,7 @@ public:
     return find(1);
   }
   bool save(const universe_struct& universe) {
-    return Repository<universe_struct>::save(universe.id, universe);
+    return Repository<universe_struct>::save(1, universe);
   }
 
 protected:
@@ -334,7 +334,7 @@ public:
     return find(1);
   }
   bool save(const ServerState& state) {
-    return Repository<ServerState>::save(state.id, state);
+    return Repository<ServerState>::save(1, state);
   }
 
 protected:

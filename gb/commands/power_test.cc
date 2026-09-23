@@ -21,7 +21,6 @@ void test_power_dispatch() {
 
   // Setup: Create universe
   universe_struct us{};
-  us.id = 1;
   us.VN_hitlist[player_t{1}] = 3;
   us.VN_hitlist[player_t{2}] = 7;
   UniverseRepository universe_repo(store);

@@ -20,14 +20,13 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
   const auto& star_ref = *g.entity_manager.peek_star(star);
   if (!star_ref.is_explored_by(Playernum)) return;
 
-  for (planetnum_t i = 1; i <= star_ref.numplanets(); i++) {
-    const auto& pl = *g.entity_manager.peek_planet(star, i);
-
+  for (const auto& pl :
+       PlanetList::readonly(g.entity_manager, star, star_ref.numplanets())) {
     if (pl.info(Playernum).explored && pl.info(Playernum).numsectsowned &&
         (Governor == 0 || star_ref.governor(Playernum) == Governor)) {
       const auto star4 = std::string(star_ref.get_name()).substr(0, 4);
       const auto planet4 =
-          std::string(star_ref.get_planet_name(i)).substr(0, 4);
+          std::string(star_ref.get_planet_name(pl.planet_order())).substr(0, 4);
 
       std::string autorep = pl.info(Playernum).autorep ? "*" : " ";
 

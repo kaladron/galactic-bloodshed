@@ -114,7 +114,11 @@ public:
           star_struct.name, star_struct.pnames.size()));
     }
     return !star_struct.pnames[pnum.value - 1].empty();
-  };
+  }
+
+  [[nodiscard]] const std::vector<std::string>& planet_names() const noexcept {
+    return star_struct.pnames;
+  }
 
   PlayerBitset<MAXPLAYERS>& explored() noexcept {
     return star_struct.explored;

@@ -22,7 +22,6 @@ int main() {
   // Create ServerState with 1 segment for REPAIR_RATE division
   {
     ServerState state{};
-    state.id = 1;
     state.segments = 1;
 
     JsonStore store(db);

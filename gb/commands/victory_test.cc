@@ -21,7 +21,6 @@ void test_victory_dispatch() {
 
   // Setup: Create universe
   universe_struct us{};
-  us.id = 1;
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
 

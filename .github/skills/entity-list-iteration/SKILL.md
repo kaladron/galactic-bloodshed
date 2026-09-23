@@ -41,18 +41,19 @@ Each iteration yields a fresh `EntityHandle<T>`. Modifications go through `handl
 
 ## Composite-Key Lists (Planets)
 
-`PlanetList` iterates over the planets of a specific star:
+`PlanetList` iterates over the planets of a specific star (by `starnum_t`, or with a pre-fetched `Star`):
 
 ```cpp
-const auto* star = em.peek_star(snum);
-for (auto planet_handle : PlanetList(em, snum, *star)) {
-  planet_handle->popn += migrants;
+for (auto planet_handle : PlanetList(em, snum)) {
+  planet_handle->popn() += migrants;
 }
 // Read-only equivalent:
-for (const Planet* p : PlanetList::readonly(em, snum, *star)) {
+for (const Planet* p : PlanetList::readonly(em, snum)) {
   observe(*p);
 }
 ```
+
+When only planet names (and not `Planet` entities) are needed, iterate over `star.planet_names()`.
 
 ## ShipList Iteration Modes
 
@@ -72,7 +73,7 @@ Read-only equivalent uses `ShipList::readonly(em, IterationType::AllAlive)`.
 
 ## When To Keep a Numeric Loop
 
-Use `for (starnum_t s{0}; s < em.num_stars(); ++s)` only when the **index itself** is needed — for example to look up parallel arrays, to print "system %d", or to seed RNGs deterministically. If the loop body just touches the entity, switch to a list.
+Use `for (starnum_t s{1}; s <= em.num_stars(); ++s)` only when the **index itself** is needed and cannot be read from `star.star_id()` or `planet->planet_order()`. If the loop body touches the entity, switch to `StarList` or `PlanetList`.
 
 ## Migration Recipe
 
@@ -80,7 +81,7 @@ To migrate a loop:
 
 1. Identify whether the body mutates (write to fields, call `put*`, mark dirty) or only reads.
 2. Pick the matching list and mode.
-3. Drop the index variable unless it is referenced inside the body.
+3. Drop the index variable unless it is referenced inside the body (note: `star.star_id()` and `planet->planet_order()` provide the 1-based ID directly on the entity).
 4. Remove manual `peek_xxx`/`get_xxx` calls — the list does the lookup.
 5. Build and run tests.
 
@@ -92,7 +93,7 @@ To migrate a loop:
 
 ## Anti-Patterns
 
-- ❌ `for (int i = 0; i < em.num_races(); ++i) { auto* r = em.peek_race(i); ... }` for read-only loops — use `RaceList::readonly`.
+- ❌ `for (player_t i = 1; i <= em.num_races(); ++i) { auto* r = em.peek_race(i); ... }` for read-only loops — use `RaceList::readonly`.
 - ❌ Assigning `RaceList::readonly(em)` to a `RaceList` (non-const) variable.
 - ❌ Iterating mutable when only reading — extra refcount/save cost and misleading.
 - ❌ Calling `em.get_xxx(i)` inside a numeric loop just to mutate — use the mutable list and let the handle auto-save.
@@ -103,5 +104,5 @@ To migrate a loop:
 - [ ] Mutable loops use `XxxList(...)` and operate through the handle
 - [ ] Numeric loops kept only when the index is genuinely needed
 - [ ] No handles stored beyond the loop iteration
-- [ ] PlanetList uses the composite (star number, star) signature
+- [ ] PlanetList uses `(em, snum)` (or `(em, snum, *star)` if `star` is already loaded)
 - [ ] ShipList passes the right `IterationType`

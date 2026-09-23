@@ -16,7 +16,6 @@ import std;
 TestContext::TestContext() : db(":memory:"), em(db) {
   initialize_schema(db);
   universe_struct u{};
-  u.id = 1;
   JsonStore store(db);
   UniverseRepository universe_repo(store);
   universe_repo.save(u);
@@ -306,18 +305,15 @@ TestContext& TestContext::with_standard_universe() {
     p.info(player_t{2}).newtax = 10;
   });
 
-  // 8. Setup Universe record with numstars = 3, 100 AP for both races
+  // 8. Setup Universe record with 100 AP for both races
   UniverseRepository univ_repo(store);
   auto u = univ_repo.find(1);
   if (!u) {
     universe_struct new_u{};
-    new_u.id = 1;
-    new_u.numstars = 3;
     new_u.AP[player_t{1}] = 100;
     new_u.AP[player_t{2}] = 100;
     univ_repo.save(new_u);
   } else {
-    u->numstars = std::max(u->numstars, 3u);
     u->AP[player_t{1}] = 100;
     u->AP[player_t{2}] = 100;
     univ_repo.save(*u);

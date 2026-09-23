@@ -416,6 +416,8 @@ public:
   int max_commod_id();
   player_t num_races();
   player_t max_race_player();
+  starnum_t num_stars();
+  starnum_t max_star_id();
   shipnum_t num_ships();
   shipnum_t max_ship_number();
   blocknum_t num_blocks();

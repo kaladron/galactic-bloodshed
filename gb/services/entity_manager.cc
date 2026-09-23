@@ -716,6 +716,18 @@ player_t EntityManager::max_race_player() {
   return ids.empty() ? player_t{0} : player_t{ids.back()};
 }
 
+starnum_t EntityManager::num_stars() {
+  return starnum_t{static_cast<starnum_t::value_type>(
+      storage_->store.list_ids("tbl_star").size())};
+}
+
+starnum_t EntityManager::max_star_id() {
+  auto ids = storage_->store.list_ids("tbl_star");
+  return ids.empty()
+             ? starnum_t{0}
+             : starnum_t{static_cast<starnum_t::value_type>(ids.back())};
+}
+
 shipnum_t EntityManager::num_ships() {
   // Count ships by listing all IDs in the database
   return storage_->store.list_ids("tbl_ship").size();

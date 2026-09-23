@@ -260,8 +260,11 @@ void star_get_tactical_items(GameObj& g,
       add_tactical_ship(items, &ship);
     }
 
-    for (planetnum_t i = 1; i <= star->numplanets(); i++)
-      plan_get_tactical_items(g, items, player_num, snum, i);
+    for (const auto& planet :
+         PlanetList::readonly(g.entity_manager, snum, star->numplanets())) {
+      plan_get_tactical_items(g, items, player_num, snum,
+                              planet.planet_order());
+    }
   }
 }
 

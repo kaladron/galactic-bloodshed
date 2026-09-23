@@ -19,10 +19,8 @@ int main() {
   initialize_schema(db);
 
   universe_struct test_stardata{};
-  test_stardata.id = 1;  // CRITICAL: Universe is a singleton with id=1
 
   // Initialize some basic fields for testing
-  test_stardata.numstars = 100;
   test_stardata.AP[player_t{1}] = 10;
   test_stardata.AP[player_t{2}] = 20;
   test_stardata.VN_hitlist[player_t{1}] = 3;
@@ -41,7 +39,6 @@ int main() {
   test::expect_ne(retrieved, nullptr);
 
   // Verify key fields
-  test::expect_eq(retrieved->numstars, test_stardata.numstars);
   test::expect_eq(retrieved->AP[player_t{1}], test_stardata.AP[player_t{1}]);
   test::expect_eq(retrieved->AP[player_t{2}], test_stardata.AP[player_t{2}]);
   test::expect_eq(retrieved->VN_hitlist[player_t{1}],

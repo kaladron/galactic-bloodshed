@@ -102,7 +102,6 @@ void test_test_context_dispatch_helpers() {
     JsonStore store(ctx.db);
     UniverseRepository universe_repo(store);
     universe_struct u{};
-    u.id = 1;
     u.AP[player_t{1}] = 30;
     universe_repo.save(u);
   }
@@ -623,7 +622,7 @@ void test_standard_universe_fixture() {
   // 4. Verify Universe AP and invariants
   const auto* univ = ctx.em.peek_universe();
   test::expect_true(univ != nullptr, "Universe must exist");
-  test::expect_eq(univ->numstars, 3);
+  test::expect_eq(ctx.em.num_stars(), 3);
   test::expect_eq(univ->AP[player_t{1}], 100);
   test::expect_eq(univ->AP[player_t{2}], 100);
 
@@ -671,7 +670,7 @@ void test_procedural_universe_fixture() {
 
   const auto* univ = ctx.em.peek_universe();
   test::expect_true(univ != nullptr, "Universe must exist");
-  test::expect_eq(univ->numstars, 3);
+  test::expect_eq(ctx.em.num_stars(), 3);
   test::expect_eq(univ->AP[player_t{1}], 100);
   test::expect_eq(univ->AP[player_t{2}], 100);
 

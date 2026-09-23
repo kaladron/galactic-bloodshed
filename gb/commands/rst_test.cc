@@ -18,8 +18,6 @@ void setup_test_world(TestContext& ctx) {
 
   // Universe
   universe_struct us{};
-  us.id = 1;
-  us.numstars = 1;
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
 

@@ -81,13 +81,10 @@ void test_unanimous_vote_lifecycle() {
   {
     JsonStore store(ctx.db);
     universe_struct u{};
-    u.id = 1;
-    u.numstars = 1;
     UniverseRepository univs(store);
     univs.save(u);
 
     ServerState state{};
-    state.id = 1;
     state.segments = 1;
     state.nsegments_done = 1;
     state.update_time_minutes = 60;

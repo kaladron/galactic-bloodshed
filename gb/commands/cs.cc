@@ -18,8 +18,8 @@ namespace {
  * scope.
  */
 bool change_to_default_scope(GameObj& g) {
-  const auto* universe = g.entity_manager.peek_universe();
-  if (!universe) {
+  const starnum_t numstars = g.entity_manager.num_stars();
+  if (numstars == 0) {
     g.out << "cs: Universe data not available.\n";
     return false;
   }
@@ -27,8 +27,8 @@ bool change_to_default_scope(GameObj& g) {
   const auto& gov = g.race->governor[g.governor().value];
   g.set_level(gov.deflevel);
   g.set_snum(gov.defsystem);
-  if (g.snum() < 1 || g.snum() > universe->numstars) {
-    g.set_snum(universe->numstars);
+  if (g.snum() < 1 || g.snum() > numstars) {
+    g.set_snum(numstars);
   }
 
   const auto& star = *g.entity_manager.peek_star(g.snum());

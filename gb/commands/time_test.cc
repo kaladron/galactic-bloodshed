@@ -26,7 +26,6 @@ int main() {
 
   // Setup server state
   ServerState state{};
-  state.id = 1;
   state.update_time_minutes = 60;
   state.segments = 4;
   state.nsegments_done = 1;

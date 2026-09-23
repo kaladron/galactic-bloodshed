@@ -75,13 +75,10 @@ void setup_test_universe(TestContext& ctx) {
 
   UniverseRepository univ_repo(store);
   universe_struct u{};
-  u.id = 1;
-  u.numstars = 1;
   univ_repo.save(u);
 
   ServerStateRepository state_repo(store);
   ServerState state{};
-  state.id = 1;
   state.next_update_time = std::time(nullptr) + 3600;
   state.next_segment_time = std::time(nullptr) + 1800;
   state.segments = 3;

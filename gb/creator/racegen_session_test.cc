@@ -396,8 +396,6 @@ void test_enroll_with_service_success() {
   JsonStore store(db);
 
   universe_struct us{};
-  us.id = 1;
-  us.numstars = 1;
   UniverseRepository(store).save(us);
 
   star_struct ss{};

@@ -157,8 +157,6 @@ void test_check_connect_success_and_clamping() {
 
     UniverseRepository univ_repo(store);
     universe_struct u{};
-    u.id = 1;
-    u.numstars = 1;
     univ_repo.save(u);
   }
 

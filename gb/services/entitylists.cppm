@@ -70,7 +70,7 @@ struct EntityListTraits<Star> {
   using index_type = starnum_t;
 
   static index_type count(EntityManager& em) {
-    return em.peek_universe()->numstars;
+    return em.max_star_id();
   }
 
   static constexpr index_type first_index() {
@@ -94,8 +94,8 @@ struct EntityListTraits<Star> {
     return em.peek_star(index);
   }
 
-  static bool is_valid([[maybe_unused]] const Star* entity) {
-    return true;
+  static bool is_valid(const Star* entity) {
+    return entity != nullptr;
   }
 };
 
@@ -553,7 +553,7 @@ public:
 };
 
 /**
- * Iterator class for stars (1-indexed, 1..numstars).
+ * Iterator class for stars (1-indexed, 1..max_star_id).
  * Returns EntityHandle<Star> for RAII auto-save behavior.
  */
 export class StarList : public SimpleEntityList<Star, StarList> {
@@ -566,11 +566,16 @@ public:
 
   template <typename URBG = std::mt19937>
   [[nodiscard]] static auto shuffle(EntityManager& em, URBG& g) {
-    const auto* univ = em.peek_universe();
-    std::vector<starnum_t> indices(static_cast<std::size_t>(univ->numstars));
-    for (unsigned int i = 0; i < static_cast<unsigned int>(univ->numstars);
-         ++i) {
-      indices[i] = starnum_t{i + 1};
+    const auto max_star = em.max_star_id();
+    std::vector<starnum_t> indices;
+    indices.reserve(max_star.value);
+    for (starnum_t s = 1; s <= max_star; ++s) {
+      try {
+        if (em.peek_star(s) != nullptr) {
+          indices.push_back(s);
+        }
+      } catch (const EntityNotFoundError&) {
+      }
     }
     std::ranges::shuffle(indices, g);
 
@@ -609,6 +614,9 @@ public:
   PlanetList(EntityManager& em, starnum_t star, const Star& star_data)
       : Base(em, star, star_data.numplanets()) {}
 
+  PlanetList(EntityManager& em, starnum_t star)
+      : Base(em, star, em.peek_star(star)->numplanets()) {}
+
   template <typename URBG = std::mt19937>
   [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
                                     planetnum_t numplanets, URBG& g) {
@@ -639,6 +647,16 @@ public:
   [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
                                     const Star& star_data) {
     return shuffle(em, star, star_data.numplanets(), game_rng());
+  }
+
+  template <typename URBG = std::mt19937>
+  [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
+                                    URBG& g) {
+    return shuffle(em, star, em.peek_star(star)->numplanets(), g);
+  }
+
+  [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star) {
+    return shuffle(em, star, em.peek_star(star)->numplanets(), game_rng());
   }
 
   template <typename URBG = std::mt19937>

@@ -191,8 +191,6 @@ void test_universe_repository() {
 
   // Test data - universe_struct is typically a singleton
   universe_struct sd{};
-  sd.id = 1;  // Stardata is a singleton with id=1
-  sd.numstars = 50;
   ap_t ap_val = 0;
   for (auto& ap : sd.AP) {
     ap = ap_val;
@@ -210,17 +208,16 @@ void test_universe_repository() {
   test::expect_true(repo.save(sd));
   auto retrieved = repo.get_global_data();
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->numstars, 50);
   test::expect_eq(retrieved->AP[player_t{1}], 0);
   test::expect_eq(retrieved->AP[player_t{6}], 50);
   test::expect_eq(retrieved->VN_index1[player_t{1}], starnum_t{5});
 
   // Update global data
-  sd.numstars = 75;
+  sd.VN_hitlist[player_t{1}] = 9;
   test::expect_true(repo.save(sd));
   retrieved = repo.get_global_data();
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->numstars, 75);
+  test::expect_eq(retrieved->VN_hitlist[player_t{1}], 9);
 
   // Array preservation
   ap_t expected_ap = 0;
@@ -230,7 +227,6 @@ void test_universe_repository() {
   }
 
   // VN arrays preserved
-  test::expect_eq(retrieved->VN_hitlist[player_t{1}], 1);
   test::expect_eq(retrieved->VN_hitlist[player_t{2}], 2);
   test::expect_eq(retrieved->VN_index1[player_t{1}], starnum_t{5});
   test::expect_eq(retrieved->VN_index1[player_t{2}], std::nullopt);
@@ -249,7 +245,6 @@ void test_server_state_repository() {
 
   // Test data - ServerState is a singleton with id=1
   ServerState state{};
-  state.id = 1;
   state.segments = 10;
   state.next_update_time = 1735000000;   // Some future timestamp
   state.next_segment_time = 1734900000;  // Earlier timestamp
@@ -261,7 +256,6 @@ void test_server_state_repository() {
   test::expect_true(repo.save(state));
   auto retrieved = repo.get_state();
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->id, 1);
   test::expect_eq(retrieved->segments, 10);
   test::expect_eq(retrieved->next_update_time, 1735000000);
   test::expect_eq(retrieved->next_segment_time, 1734900000);
@@ -285,9 +279,6 @@ void test_server_state_repository() {
   // Timestamps are preserved
   test::expect_eq(retrieved->next_update_time, 1735000000);
   test::expect_eq(retrieved->next_segment_time, 1734900000);
-
-  // ID remains 1 (singleton)
-  test::expect_eq(retrieved->id, 1);
 
   std::println(std::cout, "✓ All ServerStateRepository tests passed");
 }

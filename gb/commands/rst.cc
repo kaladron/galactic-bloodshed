@@ -463,8 +463,11 @@ void report_star_ships(GameObj& g, RstContext& ctx, player_t player_num,
       ship_report(g, ctx, ship, rep_on);
     }
 
-    for (planetnum_t i = 1; i <= star->numplanets(); i++)
-      report_planet_ships(g, ctx, player_num, snum, i, rep_on);
+    for (const auto& planet :
+         PlanetList::readonly(g.entity_manager, snum, star->numplanets())) {
+      report_planet_ships(g, ctx, player_num, snum, planet.planet_order(),
+                          rep_on);
+    }
   }
 }
 

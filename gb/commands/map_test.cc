@@ -15,10 +15,8 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
-  // Create universe with 2 stars
+  // Create universe
   universe_struct us{};
-  us.id = 1;
-  us.numstars = 2;
 
   UniverseRepository universe_repo(store);
   universe_repo.save(us);

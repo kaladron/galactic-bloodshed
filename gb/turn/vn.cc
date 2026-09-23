@@ -20,8 +20,7 @@ module gb.turn;
 /// starnum_t.
 StarTargetResult find_closest_stars(EntityManager& em, starnum_t current_star,
                                     UniverseCoordinates origin) {
-  const auto& universe = *em.peek_universe();
-  if (universe.numstars <= 1) {
+  if (em.num_stars() <= 1) {
     return StarTargetResult{.closest = current_star,
                             .second_closest = current_star};
   }
@@ -78,6 +77,7 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
   const auto target = ship.mind().target;
 
   const auto& universe = *em.peek_universe();
+  const int numstars = static_cast<int>(em.num_stars().value);
 
   // Route toward the offending player if valid, flipping a coin between
   // primary and secondary target stars recorded in the universe index.
@@ -86,9 +86,9 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
     const auto secondary = universe.VN_index2[*target];
     const auto chosen = bool_rand() ? (primary ? primary : secondary)
                                     : (secondary ? secondary : primary);
-    ship.deststar() = chosen.value_or(int_rand(1, universe.numstars));
+    ship.deststar() = chosen.value_or(int_rand(1, numstars));
   } else {
-    ship.deststar() = int_rand(1, universe.numstars);
+    ship.deststar() = int_rand(1, numstars);
   }
 
   const auto& star = *em.peek_star(ship.deststar());
@@ -110,8 +110,6 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
 /// \param em Entity manager for entity queries and mutations.
 /// \param ship Autonomous Von Neumann machine to assign orders to.
 void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
-  const auto& universe = *em.peek_universe();
-
   auto [closest, second_closest] =
       find_closest_stars(em, ship.storbits(), ship.coordinates());
 
@@ -122,7 +120,7 @@ void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
   // occupied, pick a random star.
   if (star_min.is_inhabited_by(player_t{1})) {
     if (star_min2.is_inhabited_by(player_t{1})) {
-      ship.deststar() = int_rand(1, universe.numstars);
+      ship.deststar() = int_rand(1, static_cast<int>(em.num_stars().value));
     } else {
       ship.deststar() = second_closest;
     }

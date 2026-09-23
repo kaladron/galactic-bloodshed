@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-module;
-
-#include <sqlite3.h>
-#undef stdout
-#undef stdin
-#undef stderr
+/// \file dallib.cppm
+/// \brief Data Access Layer module interface encapsulating SQLite persistence.
 
 export module dallib;
 
@@ -24,8 +20,17 @@ public:
   }
 };
 
+struct DatabaseImpl;
+export class Database;
+export void initialize_schema(Database& db);
+
 export class Database {
-  sqlite3* conn = nullptr;
+  std::unique_ptr<DatabaseImpl> impl_;
+
+  friend class JsonStore;
+  friend void initialize_schema(Database& db);
+
+  void execute_sql(const char* sql, const char* action_name);
 
 public:
   // Constructor: opens database connection
@@ -51,15 +56,7 @@ public:
   void optimize();
 
   // Check if database is open
-  [[nodiscard]] bool is_open() const {
-    return conn != nullptr;
-  }
-
-  // Internal access for JsonStore only
-  // Note: This should only be used by DAL components
-  sqlite3* connection() {
-    return conn;
-  }
+  [[nodiscard]] bool is_open() const noexcept;
 
   // News operations - SQL queries encapsulated in DAL
   std::optional<int> news_add(int type, const std::string& message,

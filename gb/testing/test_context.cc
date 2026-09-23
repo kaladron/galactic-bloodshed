@@ -182,7 +182,7 @@ TestContext& TestContext::with_standard_universe() {
   r1.Guest = false;
   r1.governor[0].active = true;
   r1.governor[0].money = 10'000;
-  r1.Gov_ship = 100;
+  r1.Gov_ship = std::nullopt;
   r1.mass = 1.0;
   r1.metabolism = 1.0;
   em.create_race(r1);
@@ -321,13 +321,15 @@ TestContext& TestContext::with_standard_universe() {
     univ_repo.save(*u);
   }
 
-  // 9. Setup Player 1 Government Center (Ship #100) landed on Earth
+  // 9. Setup Player 1 Government Center (Ship #100) landed on Earth, then link
+  // Race::Gov_ship
   TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
       .owned_by(1, 0)
       .landed_on(0, 0, Coordinates{0, 0})
       .with_crew(100, 0)
       .with_alive(true)
       .build();
+  em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
 
   return *this;
 }
@@ -401,7 +403,7 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
   r1.Guest = false;
   r1.governor[0].active = true;
   r1.governor[0].money = 10'000;
-  r1.Gov_ship = 100;
+  r1.Gov_ship = std::nullopt;
   r1.mass = 1.0;
   r1.metabolism = 1.0;
   race_repo.save(r1);
@@ -439,6 +441,17 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
     u->AP[player_t{1}] = 100;
     u->AP[player_t{2}] = 100;
     univ_repo.save(*u);
+  }
+
+  if (auto star0_opt = star_repo.find(0);
+      star0_opt && star0_opt->numplanets() > 0) {
+    TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
+        .owned_by(1, 0)
+        .landed_on(0, 0, Coordinates{0, 0})
+        .with_crew(100, 0)
+        .with_alive(true)
+        .build();
+    em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
   }
 
   return *this;

@@ -220,37 +220,47 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   race.atwar.reset();
   race.points.fill(0);
 
-  // 6. Build and dock capital government ship
-  auto ship_handle =
-      entity_manager_.create_ship(ShipType::OTYPE_GOV, playernum);
-  Ship& ss = *ship_handle;
-  entity_manager_.with_star(star, [&](const Star& s) {
-    entity_manager_.with_planet(star, pnum, [&](const Planet& p) {
-      ss.set_coordinates(p.absolute_coordinates(s));
+  // 6. Persist race first (with Gov_ship = std::nullopt) so parent tbl_race(id)
+  // exists before child ship and sector foreign keys are inserted.
+  race.Gov_ship = std::nullopt;
+  entity_manager_.create_race(race);
+
+  // 7. Build and dock capital government ship, then link Race::Gov_ship
+  shipnum_t shipno{0};
+  {
+    auto ship_handle =
+        entity_manager_.create_ship(ShipType::OTYPE_GOV, playernum);
+    Ship& ss = *ship_handle;
+    entity_manager_.with_star(star, [&](const Star& s) {
+      entity_manager_.with_planet(star, pnum, [&](const Planet& p) {
+        ss.set_coordinates(p.absolute_coordinates(s));
+      });
     });
-  });
-  ss.set_land_coords(capital_coords);
-  ss.race() = playernum;
-  ss.tech() = 100.0;
+    ss.set_land_coords(capital_coords);
+    ss.race() = playernum;
+    ss.tech() = 100.0;
 
-  const auto& gov_tmpl = ship_template(ShipType::OTYPE_GOV);
-  ss.set_secondary_battery(gov_tmpl.max_guns,
-                           shipdata_secondary(ShipType::OTYPE_GOV));
-  ss.shipclass() = "Standard";
-  ss.popn() = gov_tmpl.max_crew;
-  ss.set_mass(ss.base_mass() + gov_tmpl.max_crew * race.mass);
-  ss.protect().retaliate = true;
-  ss.land_on_planet();
-  ss.deststar() = star;
-  ss.destpnum() = pnum;
-  ss.storbits() = star;
-  ss.pnumorbits() = pnum;
-  ss.on() = 1;
+    const auto& gov_tmpl = ship_template(ShipType::OTYPE_GOV);
+    ss.set_secondary_battery(gov_tmpl.max_guns,
+                             shipdata_secondary(ShipType::OTYPE_GOV));
+    ss.shipclass() = "Standard";
+    ss.popn() = gov_tmpl.max_crew;
+    ss.set_mass(ss.base_mass() + gov_tmpl.max_crew * race.mass);
+    ss.protect().retaliate = true;
+    ss.land_on_planet();
+    ss.deststar() = star;
+    ss.destpnum() = pnum;
+    ss.storbits() = star;
+    ss.pnumorbits() = pnum;
+    ss.on() = 1;
 
-  shipnum_t shipno = ss.number();
+    shipno = ss.number();
+  }
+
   race.Gov_ship = shipno;
+  entity_manager_.mutate_race(playernum, [&](Race& r) { r.Gov_ship = shipno; });
 
-  // 7. Mutate Sector and Planet
+  // 8. Mutate Sector and Planet
   entity_manager_.mutate_sectormap(star, pnum, [&](SectorMap& smap) {
     entity_manager_.mutate_planet(star, pnum, [&](Planet& planet) {
       auto& sect = smap.get(capital_coords);
@@ -268,9 +278,6 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
           maxsupport(race, sect, 100.0, 0) * planet.num_sectors() / 2;
     });
   });
-
-  // 8. Save race and auto-seed baseline alliance block and power records
-  entity_manager_.create_race(race);
 
   // 9. Mutate star
   entity_manager_.mutate_star(star, [&](Star& s) {

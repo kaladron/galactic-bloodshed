@@ -9,6 +9,8 @@ import std;
 
 module dallib;
 
+import :impl;
+
 namespace {
 void bind_key(sqlite3_stmt* stmt, const KeyValue& key, int idx = 1) {
   std::visit(
@@ -46,13 +48,15 @@ bool JsonStore::store(const std::string& table, const KeyValue& id,
   }
 
   std::string sql =
-      std::format("REPLACE INTO {} (id, data) VALUES (?, ?)", table);
+      std::format("INSERT INTO {} (id, data) VALUES (?, ?) "
+                  "ON CONFLICT(id) DO UPDATE SET data = excluded.data",
+                  table);
 
   sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) {
     throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -64,7 +68,7 @@ bool JsonStore::store(const std::string& table, const KeyValue& id,
 
   if (rc != SQLITE_DONE) {
     throw SqliteError(std::format("SQLite step error storing to table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -80,10 +84,10 @@ std::optional<std::string> JsonStore::retrieve(const std::string& table,
   std::string sql = std::format("SELECT data FROM {} WHERE id = ?", table);
 
   sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) {
     throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -101,7 +105,7 @@ std::optional<std::string> JsonStore::retrieve(const std::string& table,
   } else if (step_rc != SQLITE_DONE) {
     sqlite3_finalize(stmt);
     throw SqliteError(std::format("SQLite step error querying table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       step_rc);
   }
 
@@ -117,10 +121,10 @@ bool JsonStore::remove(const std::string& table, const KeyValue& id) {
   std::string sql = std::format("DELETE FROM {} WHERE id = ?", table);
 
   sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) {
     throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -132,7 +136,7 @@ bool JsonStore::remove(const std::string& table, const KeyValue& id) {
   if (rc != SQLITE_DONE) {
     throw SqliteError(
         std::format("SQLite step error deleting from table '{}': {}", table,
-                    sqlite3_errmsg(db.connection())),
+                    sqlite3_errmsg(db.impl_->conn)),
         rc);
   }
 
@@ -148,10 +152,10 @@ std::vector<int> JsonStore::list_ids(const std::string& table) {
   std::string sql = std::format("SELECT id FROM {} ORDER BY id", table);
 
   sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) {
     throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -164,7 +168,7 @@ std::vector<int> JsonStore::list_ids(const std::string& table) {
     sqlite3_finalize(stmt);
     throw SqliteError(
         std::format("SQLite step error listing IDs in table '{}': {}", table,
-                    sqlite3_errmsg(db.connection())),
+                    sqlite3_errmsg(db.impl_->conn)),
         step_rc);
   }
 
@@ -192,10 +196,10 @@ int JsonStore::find_next_available_id(const std::string& table) {
                                 table, table);
 
   sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) {
     throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -208,7 +212,7 @@ int JsonStore::find_next_available_id(const std::string& table) {
     throw SqliteError(
         std::format(
             "SQLite step error in find_next_available_id for table '{}': {}",
-            table, sqlite3_errmsg(db.connection())),
+            table, sqlite3_errmsg(db.impl_->conn)),
         step_rc);
   }
 
@@ -225,27 +229,29 @@ bool JsonStore::store_multi(
   }
   if (keys.empty()) return false;
 
-  std::string columns;
+  std::string key_columns;
   std::string placeholders;
   for (std::size_t i = 0; i < keys.size(); ++i) {
     if (i > 0) {
-      columns += ", ";
+      key_columns += ", ";
       placeholders += ", ";
     }
-    columns += keys[i].first;
+    key_columns += keys[i].first;
     placeholders += "?";
   }
-  columns += ", data";
+  std::string columns = key_columns + ", data";
   placeholders += ", ?";
 
-  std::string sql = std::format("REPLACE INTO {} ({}) VALUES ({})", table,
-                                columns, placeholders);
+  std::string sql =
+      std::format("INSERT INTO {} ({}) VALUES ({}) "
+                  "ON CONFLICT({}) DO UPDATE SET data = excluded.data",
+                  table, columns, placeholders, key_columns);
 
   sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) {
     throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -259,7 +265,7 @@ bool JsonStore::store_multi(
   if (rc != SQLITE_DONE) {
     throw SqliteError(
         std::format("SQLite step error storing multi to table '{}': {}", table,
-                    sqlite3_errmsg(db.connection())),
+                    sqlite3_errmsg(db.impl_->conn)),
         rc);
   }
 
@@ -283,10 +289,10 @@ std::optional<std::string> JsonStore::retrieve_multi(
   std::string sql = std::format("SELECT data FROM {} WHERE {}", table, where);
 
   sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) {
     throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -304,7 +310,7 @@ std::optional<std::string> JsonStore::retrieve_multi(
   } else if (step_rc != SQLITE_DONE) {
     sqlite3_finalize(stmt);
     throw SqliteError(std::format("SQLite step error querying table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       step_rc);
   }
 
@@ -323,10 +329,10 @@ std::vector<int> JsonStore::query_ids(const std::string& table,
       std::format("SELECT id FROM {} WHERE {}", table, where_clause);
 
   sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.connection(), sql.c_str(), -1, &stmt, nullptr);
+  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
   if (rc != SQLITE_OK) {
     throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.connection())),
+                                  table, sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
@@ -342,7 +348,7 @@ std::vector<int> JsonStore::query_ids(const std::string& table,
   if (rc != SQLITE_DONE) {
     sqlite3_finalize(stmt);
     throw SqliteError(std::format("SQLite step error in table '{}': {}", table,
-                                  sqlite3_errmsg(db.connection())),
+                                  sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 

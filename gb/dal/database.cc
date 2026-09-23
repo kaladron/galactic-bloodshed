@@ -9,6 +9,8 @@ import std;
 
 module dallib;
 
+import :impl;
+
 namespace {
 struct SqliteDeleter {
   void operator()(char* ptr) const {
@@ -57,95 +59,89 @@ void apply_pragmas(sqlite3* db) {
 }
 }  // namespace
 
-Database::Database(const std::string& path) {
-  int rc = sqlite3_open(path.c_str(), &conn);
+Database::Database(const std::string& path)
+    : impl_(std::make_unique<DatabaseImpl>()) {
+  int rc = sqlite3_open(path.c_str(), &impl_->conn);
   if (rc != SQLITE_OK) {
-    std::string error = conn ? sqlite3_errmsg(conn) : "Unknown error";
-    if (conn) {
-      sqlite3_close(conn);
-      conn = nullptr;
-    }
+    std::string error =
+        impl_->conn ? sqlite3_errmsg(impl_->conn) : "Unknown error";
+    impl_.reset();
     throw SqliteError(
         std::format("Failed to open database '{}': {}", path, error), rc);
   }
 
   // Apply SQLite pragmas for performance and safety
   try {
-    apply_pragmas(conn);
+    apply_pragmas(impl_->conn);
   } catch (...) {
-    sqlite3_close(conn);
-    conn = nullptr;
+    impl_.reset();
     throw;
   }
 }
 
-Database::~Database() {
-  if (conn) {
-    sqlite3_close(conn);
-    conn = nullptr;
-  }
+Database::~Database() = default;
+
+Database::Database(Database&& other) noexcept = default;
+
+Database& Database::operator=(Database&& other) noexcept = default;
+
+bool Database::is_open() const noexcept {
+  return impl_ && impl_->conn != nullptr;
 }
 
-Database::Database(Database&& other) noexcept : conn(other.conn) {
-  other.conn = nullptr;
-}
-
-Database& Database::operator=(Database&& other) noexcept {
-  if (this != &other) {
-    if (conn) {
-      sqlite3_close(conn);
-    }
-    conn = other.conn;
-    other.conn = nullptr;
+void Database::execute_sql(const char* sql, const char* action_name) {
+  if (!is_open()) {
+    throw SqliteError("Database connection is not open");
   }
-  return *this;
+  exec_sql(impl_->conn, sql, action_name);
 }
 
 void Database::begin_transaction() {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database not open");
   }
   if (is_in_transaction()) {
     throw SqliteError(
         "Transaction already active (transactions are not reentrant)");
   }
-  exec_sql(conn, "BEGIN TRANSACTION", "Failed to begin transaction");
+  exec_sql(impl_->conn, "BEGIN TRANSACTION", "Failed to begin transaction");
 }
 
 void Database::commit() {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database not open");
   }
-  exec_sql(conn, "COMMIT", "Failed to commit transaction");
+  exec_sql(impl_->conn, "COMMIT", "Failed to commit transaction");
 }
 
 void Database::rollback() {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database not open");
   }
-  exec_sql(conn, "ROLLBACK", "Failed to rollback transaction");
+  exec_sql(impl_->conn, "ROLLBACK", "Failed to rollback transaction");
 }
 
 bool Database::is_in_transaction() const {
-  if (!conn) {
+  if (!is_open()) {
     return false;
   }
-  return sqlite3_get_autocommit(conn) == 0;
+  return sqlite3_get_autocommit(impl_->conn) == 0;
 }
 
 void Database::optimize() {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database not open");
   }
-  exec_sql(conn, "PRAGMA optimize;", "Failed to optimize database");
+  exec_sql(impl_->conn, "PRAGMA optimize;", "Failed to optimize database");
 }
 
 // News operations implementation
 std::optional<int> Database::news_add(int type, const std::string& message,
                                       std::int64_t timestamp) {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = R"(
     INSERT INTO tbl_news (type, message, timestamp)
@@ -170,9 +166,10 @@ std::optional<int> Database::news_add(int type, const std::string& message,
 
 std::vector<std::tuple<int, int, std::string, std::int64_t>>
 Database::news_get_since(int type, int since_id) {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   std::vector<std::tuple<int, int, std::string, std::int64_t>> items;
 
@@ -209,9 +206,10 @@ Database::news_get_since(int type, int since_id) {
 }
 
 int Database::news_get_latest_id(int type) {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = R"(
     SELECT MAX(id) FROM tbl_news WHERE type = ?
@@ -236,9 +234,10 @@ int Database::news_get_latest_id(int type) {
 }
 
 bool Database::news_purge_type(int type) {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = "DELETE FROM tbl_news WHERE type = ?";
 
@@ -256,9 +255,10 @@ bool Database::news_purge_type(int type) {
 }
 
 bool Database::news_purge_all() {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = "DELETE FROM tbl_news";
   exec_sql(conn, sql, "Failed to purge news");
@@ -269,9 +269,10 @@ bool Database::news_purge_all() {
 std::optional<int> Database::telegram_add(player_t player, governor_t governor,
                                           const std::string& message,
                                           std::int64_t timestamp) {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = R"(
     INSERT INTO tbl_telegram (recipient_player, recipient_governor, message, timestamp)
@@ -297,9 +298,10 @@ std::optional<int> Database::telegram_add(player_t player, governor_t governor,
 
 std::vector<std::tuple<int, int, int, std::string, std::int64_t>>
 Database::telegram_get(player_t player, governor_t governor) {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   std::vector<std::tuple<int, int, int, std::string, std::int64_t>> items;
 
@@ -338,9 +340,10 @@ Database::telegram_get(player_t player, governor_t governor) {
 
 bool Database::telegram_delete_for_governor(player_t player,
                                             governor_t governor) {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = R"(
     DELETE FROM tbl_telegram
@@ -362,9 +365,10 @@ bool Database::telegram_delete_for_governor(player_t player,
 }
 
 int Database::telegram_count(player_t player, governor_t governor) {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = R"(
     SELECT COUNT(*) FROM tbl_telegram
@@ -390,9 +394,10 @@ int Database::telegram_count(player_t player, governor_t governor) {
 }
 
 bool Database::telegram_purge_all() {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = "DELETE FROM tbl_telegram";
   exec_sql(conn, sql, "Failed to purge telegrams");
@@ -400,9 +405,10 @@ bool Database::telegram_purge_all() {
 }
 
 int Database::count_non_asteroid_planets() {
-  if (!conn) {
+  if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  sqlite3* conn = impl_->conn;
 
   const char* sql = "SELECT COUNT(*) FROM tbl_planet WHERE "
                     "json_extract(data, '$.type') != 1";

@@ -85,8 +85,9 @@ add_library(dallib)
 target_sources(
   dallib
   PUBLIC FILE_SET CXX_MODULES FILES dal/dallib.cppm
+  PRIVATE FILE_SET internal_modules TYPE CXX_MODULES FILES dal/database_impl.cppm
   PRIVATE dal/database.cc dal/json_store.cc dal/schema.cc)
-target_link_libraries(dallib PUBLIC SQLite::SQLite3 types_module)
+target_link_libraries(dallib PUBLIC types_module PRIVATE SQLite::SQLite3)
 
 # Standalone Tier-1 Domain Entities Library (Zero DB, Glaze, or Service Dependencies)
 add_library(gb_entities)
@@ -366,7 +367,7 @@ target_sources(
           commands/who.cc
           commands/whois.cc
           commands/zoom.cc)
-target_link_libraries(commands PRIVATE gb_turn gb_mechanics gb_entities gb_services session notification SQLite::SQLite3 glaze::glaze
+target_link_libraries(commands PRIVATE gb_turn gb_mechanics gb_entities gb_services session notification glaze::glaze
                                        scnlib_module tabulate_module)
 
 # Create test utilities module
@@ -383,16 +384,16 @@ target_link_libraries(test_module PUBLIC gb_entities gb_repositories gb_services
 
 # Executable targets
 add_executable(makeuniv creator/makeuniv.cc)
-target_link_libraries(makeuniv PRIVATE gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(makeuniv PRIVATE gb_entities gb_services gb_creator dallib glaze::glaze)
 
 add_executable(enrol creator/enrol.cc)
-target_link_libraries(enrol PRIVATE gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze scnlib_module tabulate_module)
+target_link_libraries(enrol PRIVATE gb_entities gb_services gb_creator dallib glaze::glaze scnlib_module tabulate_module)
 
 add_executable(racegen creator/racegen.cc)
-target_link_libraries(racegen PRIVATE gb_entities gb_services gb_creator dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(racegen PRIVATE gb_entities gb_services gb_creator dallib glaze::glaze)
 
 add_executable(GB server/GB_server.cc)
-target_link_libraries(GB PRIVATE gb_turn gb_mechanics gb_entities gb_services gb_server commands asio_module dallib SQLite::SQLite3 glaze::glaze)
+target_link_libraries(GB PRIVATE gb_turn gb_mechanics gb_entities gb_services gb_server commands asio_module dallib glaze::glaze)
 install(TARGETS GB makeuniv enrol racegen)
 
 # Test helper function
@@ -403,7 +404,7 @@ function(gb_add_test name)
   endif()
   add_executable(${name} ${ARG_SOURCES})
   target_link_libraries(${name} PRIVATE
-    test_module dallib gb_entities gb_repositories gb_services gb_mechanics gb_turn gb_server commands SQLite::SQLite3 glaze::glaze ${ARG_EXTRA_LIBS}
+    test_module dallib gb_entities gb_repositories gb_services gb_mechanics gb_turn gb_server commands glaze::glaze ${ARG_EXTRA_LIBS}
   )
   add_test(NAME GB_${name} COMMAND ${name})
   set_tests_properties(GB_${name} PROPERTIES ENVIRONMENT

@@ -77,7 +77,7 @@ Specialized development skills are located in `.github/skills/` and provide comp
 - **Clean numeric literals**: Rely on implicit conversion for strong ID types (e.g., `race.Playernum = 1;`, `ctx.setup_game_obj(g, 1, 0);`) instead of verbose explicit casts (`player_t{1}`, `governor_t{0}`).
 - **No Hungarian / `k` prefixes**: Use standard snake_case naming for constants and descriptors (e.g. `capital_cmd`, not `kCapitalCmd`).
 - **No migration comments**: Never leave temporary migration commentary in production code (e.g. state preconditions cleanly rather than documenting past refactors).
-- **Fail-fast on database corruption (no defensive try/catch on internal IDs)**: `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError` to indicate programming bugs or data corruption. Never wrap internal/validated ID lookups (`g.snum()`, `where.snum`, `Place` parsed values) in defensive `try/catch` or null checks that silence errors; let the exceptions propagate so the server fails fast. Wrap in `try/catch` **strictly** when looking up untrusted user-supplied raw IDs (e.g. arbitrary command argument strings like `#123`).
+- **Fail-fast on database corruption and relational constraint violations (no defensive try/catch)**: `peek_star()`, `peek_planet()`, and `peek_sectormap()` throw `EntityNotFoundError`, and `JsonStore` / `Database` operations throw `SqliteError` (`SQLITE_CONSTRAINT_FOREIGNKEY`, `SQLITE_CONSTRAINT_CHECK`, etc.) to indicate programming bugs or data corruption. Never wrap internal/validated ID lookups (`g.snum()`, `where.snum`, `Place` parsed values) or entity persistence/deletion calls (`mutate_*`, `kill_ship`, `delete_ship`) in defensive `try/catch` blocks that silence errors; let the exceptions propagate (and roll back active transactions) so the server fails fast. Wrap in `try/catch` **strictly** when looking up untrusted user-supplied raw IDs (e.g. arbitrary command argument strings like `#123`).
 - **Code formatting scope**: Run `clang-format -i` strictly on C++ files (`.cc`, `.cppm`, `.h`, `.hpp`). **NEVER** run `clang-format` on CMake files (`CMakeLists.txt`, `*.cmake`) or JSON data files.
 
 ### 8. Pair Programming Discipline & Mandatory Technical Critique
@@ -277,7 +277,7 @@ g.entity_manager.mutate_planet(g.snum(), g.pnum(), [](Planet& planet) {
 #### Error Handling
 - Use early returns with clear error messages
 - Use `std::optional` for maybe-values and always check `.has_value()` before dereferencing
-- `EntityNotFoundError` exceptions from `peek_star()`, `peek_planet()`, and `peek_sectormap()` indicate programming errors or data corruption and should propagate for admin investigation
+- `EntityNotFoundError` exceptions from `peek_star()`, `peek_planet()`, and `peek_sectormap()`, as well as `SqliteError` exceptions from relational constraint violations (`SQLITE_CONSTRAINT_FOREIGNKEY`, `SQLITE_CONSTRAINT_CHECK`), indicate programming errors or data corruption and must propagate without being caught or silenced in domain/command code
 
 #### Output Formatting
 ```cpp

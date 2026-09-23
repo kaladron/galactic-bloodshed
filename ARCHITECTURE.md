@@ -17,6 +17,7 @@ These are the architectural guarantees the project is converging toward. Some ar
 5. **Read-only access is explicit.** `peek_*()`, `with_*()`, and readonly iterators (`RaceList::readonly`, `StarList::readonly`, etc.) exist so callers can traverse and inspect state without paying writable-handle overhead or implying mutation.
 6. **Lookup semantics are consistent.** The target API is that entity lookup failures are treated as service-layer errors, with user-input paths translating those errors into clear command output.
 7. **Iteration semantics are consistent.** Read-only loops use explicit readonly patterns (`XxxList::readonly`); mutable loops use handle-based iterators or scoped monadic mutations.
+8. **Relational integrity and fail-fast persistence.** Database connections run with `PRAGMA foreign_keys = ON`. `JsonStore` updates existing rows in-place (`INSERT INTO ... ON CONFLICT(...) DO UPDATE SET data = excluded.data`) rather than using `REPLACE INTO` (`DELETE` + `INSERT`), preserving parent rows referenced by child foreign keys. Parent rows (`Star`, `Planet`, `Race`) are always persisted before child rows (`Planet`, `Sector`, `Ship`), and any `SqliteError` (`SQLITE_CONSTRAINT_FOREIGNKEY`, `SQLITE_CONSTRAINT_CHECK`) or `EntityNotFoundError` propagates immediately without defensive `try`/`catch` silencing.
 
 ## Layer Responsibilities
 
@@ -200,7 +201,7 @@ public:
                              const std::vector<KeyValue>& params = {});
 };
 ```
-- Generic CRUD operations for JSON data
+- Generic CRUD operations for JSON data using in-place `ON CONFLICT(...) DO UPDATE SET data = excluded.data` upserts (preventing false `ON DELETE` foreign-key violations when updating parent entities)
 - Table-agnostic storage interface
 - Parameterized WHERE queries returning matched IDs without exposing SQLite statements
 - Gap-finding for ID allocation

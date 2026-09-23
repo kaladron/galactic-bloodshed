@@ -177,6 +177,13 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
     num_planets = 0;
   }
   star.pnames.reserve(num_planets);
+  for (int i = 0; i < num_planets; ++i) {
+    star.pnames.push_back(next_planet_name(static_cast<planetnum_t>(i)));
+  }
+
+  JsonStore store(db);
+  Star star_entity{star};
+  StarRepository(store).save(star_entity);
 
   double distmin = PLANET_DIST_MIN;
   for (int i = 0; i < num_planets; ++i) {
@@ -191,8 +198,6 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
     double angle = 2.0 * std::numbers::pi * double_rand();
     const SystemCoordinates sys_pos{dist * std::sin(angle),
                                     dist * std::cos(angle)};
-
-    star.pnames.push_back(next_planet_name(static_cast<planetnum_t>(i)));
 
     PlanetType type = roll_planet_type(temperature);
 
@@ -232,12 +237,11 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
       result.total_resources += sect.get_resource();
     }
 
-    JsonStore store(db);
-    SectorRepository(store).save_map(smap);
     PlanetRepository(store).save(planet);
+    SectorRepository(store).save_map(smap);
   }
 
-  return star;
+  return star_entity;
 }
 
 UniverseGenerationResult UniverseGenerator::generate(Database& db) {
@@ -251,6 +255,10 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
   universe_data.id = 1;
   universe_data.numstars = static_cast<int>(config_.num_stars.value);
 
+  JsonStore store(db);
+  UniverseRepository universe_repo(store);
+  universe_repo.save(universe_data);
+
   std::vector<Star> stars;
   stars.reserve(config_.num_stars.value);
 
@@ -259,15 +267,6 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
   }
 
   result.planet_count = db.count_non_asteroid_planets();
-
-  JsonStore store(db);
-  UniverseRepository universe_repo(store);
-  universe_repo.save(universe_data);
-
-  StarRepository star_repo(store);
-  for (starnum_t snum = 0; snum < config_.num_stars; ++snum) {
-    star_repo.save(stars[snum.value]);
-  }
 
   BlockRepository block_repo(store);
   PowerRepository power_repo(store);

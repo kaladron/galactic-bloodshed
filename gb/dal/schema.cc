@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file schema.cc
+/// \brief SQLite schema initialization for all persistent game tables.
+
 module;
 
-#include <sqlite3.h>
-
-#include <cstdio>
-
 import std;
-#undef stdout
 
 module dallib;
 
@@ -93,13 +91,5 @@ void initialize_schema(Database& db) {
   CREATE INDEX idx_telegram_recipient ON tbl_telegram(recipient_player, recipient_governor);
 )";
 
-  char* raw_err = nullptr;
-  int err =
-      sqlite3_exec(db.connection(), tbl_create, nullptr, nullptr, &raw_err);
-  std::unique_ptr<char, decltype(&sqlite3_free)> err_msg(raw_err, sqlite3_free);
-  if (err != SQLITE_OK) {
-    throw SqliteError(std::format("Failed to initialize database schema: {}",
-                                  err_msg ? err_msg.get() : "Unknown error"),
-                      err);
-  }
+  db.execute_sql(tbl_create, "Failed to initialize database schema");
 }

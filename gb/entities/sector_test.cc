@@ -21,7 +21,6 @@ void test_sector_devastate() {
       .popn = 1500,
       .troops = 200,
       .owner = player_t{1},
-      .race = player_t{1},
       .type = SectorType::SEC_LAND,
       .condition = SectorType::SEC_LAND,
   });
@@ -34,6 +33,7 @@ void test_sector_devastate() {
 
   test::expect_eq(sector.get_condition(), SectorType::SEC_WASTED);
   test::expect_true(sector.is_wasted());
+  test::expect_eq(sector.owner(), std::nullopt);
   test::expect_eq(sector.get_owner(), player_t{0});
   test::expect_eq(sector.get_popn(), 0);
   test::expect_eq(sector.get_troops(), 0);
@@ -81,6 +81,7 @@ void test_sector_apply_supernova() {
   test::expect_eq(dying_sector.get_fert(), 64);
   test::expect_eq(dying_sector.get_popn(), 0);
   test::expect_eq(dying_sector.get_troops(), 0);
+  test::expect_eq(dying_sector.owner(), std::nullopt);
   test::expect_eq(dying_sector.get_owner(), player_t{0});
   test::expect_true(dying_sector.is_empty());
 }
@@ -118,6 +119,7 @@ void test_sector_plating_and_ownership() {
       .owner = player_t{1},
   });
   empty.clear_owner_if_empty();
+  test::expect_eq(empty.owner(), std::nullopt);
   test::expect_eq(empty.get_owner(), player_t{0});
 }
 
@@ -188,7 +190,6 @@ void test_sector_terraform() {
       .popn = 1000,
       .troops = 100,
       .owner = player_t{1},
-      .race = player_t{1},
       .type = SectorType::SEC_SEA,
       .condition = SectorType::SEC_ICE,
   });
@@ -200,6 +201,7 @@ void test_sector_terraform() {
   test::expect_eq(sector.get_mobilization(), 0);
   test::expect_eq(sector.get_popn(), 0);
   test::expect_eq(sector.get_troops(), 0);
+  test::expect_eq(sector.owner(), std::nullopt);
   test::expect_eq(sector.get_owner(), player_t{0});
   test::expect_true(sector.is_empty());
 }
@@ -209,16 +211,19 @@ void test_sector_colonize_and_claim() {
       .condition = SectorType::SEC_FOREST,
   });
 
-  sector.colonize(player_t{2}, 2, player_t{2});
+  sector.colonize(player_t{2}, 2);
   test::expect_eq(sector.get_owner(), player_t{2});
-  test::expect_eq(sector.get_race(), player_t{2});
   test::expect_eq(sector.get_popn(), 2);
   test::expect_eq(sector.get_troops(), 0);
   test::expect_true(sector.is_owned());
 
   sector.claim(player_t{3});
   test::expect_eq(sector.get_owner(), player_t{3});
-  test::expect_eq(sector.get_race(), player_t{3});
+
+  sector.clear_colony();
+  test::expect_false(sector.is_owned());
+  test::expect_eq(sector.owner(), std::nullopt);
+  test::expect_eq(sector.get_popn(), 0);
 }
 
 void test_sector_troops_and_mobilization() {
@@ -237,6 +242,8 @@ void test_sector_troops_and_mobilization() {
 
   sector.set_mobilization_bounded(45);
   test::expect_eq(sector.get_mobilization(), 45);
+  sector.clear_mobilization();
+  test::expect_eq(sector.get_mobilization(), 0);
   sector.set_mobilization_bounded(200);  // Clamps to 100
   test::expect_eq(sector.get_mobilization(), 100);
   sector.set_mobilization_bounded(-10);  // Clamps to 0
@@ -260,18 +267,15 @@ void test_sector_transfer_autoclaim() {
   Sector source(sector_struct{
       .popn = 100,
       .owner = player_t{1},
-      .race = player_t{1},
   });
   Sector target(sector_struct{
       .popn = 0,
-      .owner = player_t{0},
   });
 
   source.transfer_popn_to(target, 40);
   test::expect_eq(source.get_popn(), 60);
   test::expect_eq(target.get_popn(), 40);
   test::expect_eq(target.get_owner(), player_t{1});
-  test::expect_eq(target.get_race(), player_t{1});
 }
 
 void test_sectormap_range_views() {
@@ -294,7 +298,7 @@ void test_sectormap_range_views() {
   smap.get(Coordinates{0, 1}).set_owner(2);
   smap.get(Coordinates{0, 1}).set_popn_exact(50);
 
-  smap.get(Coordinates{1, 1}).set_owner(0);
+  smap.get(Coordinates{1, 1}).clear_owner();
   smap.get(Coordinates{1, 1}).set_popn_exact(0);
 
   // 1. Direct SectorMap iteration
@@ -385,7 +389,6 @@ void test_sector_colonizable_predicates() {
 
   // 1. Unowned, non-wasted, matching climate -> colonizable
   Sector candidate(sector_struct{
-      .owner = player_t{0},
       .condition = SectorType::SEC_FOREST,
   });
   test::expect_true(candidate.is_colonizable_by(race));
@@ -401,7 +404,6 @@ void test_sector_colonizable_predicates() {
 
   // 3. Wasted -> not colonizable
   Sector wasted(sector_struct{
-      .owner = player_t{0},
       .condition = SectorType::SEC_WASTED,
   });
   test::expect_false(wasted.is_colonizable_by(race));
@@ -409,7 +411,6 @@ void test_sector_colonizable_predicates() {
 
   // 4. Unowned, non-wasted, different climate -> not colonizable
   Sector desert(sector_struct{
-      .owner = player_t{0},
       .condition = SectorType::SEC_DESERT,
   });
   test::expect_false(desert.is_colonizable_by(race));
@@ -431,12 +432,11 @@ void test_sector_bombardable_and_ownership_predicates() {
 
   // 3. Unowned -> not bombardable
   Sector unowned_sector(sector_struct{
-      .owner = player_t{0},
       .condition = SectorType::SEC_LAND,
   });
   test::expect_false(unowned_sector.is_bombardable_by(player_t{1}));
   test::expect_false(unowned_sector.is_owned_by(player_t{1}));
-  test::expect_true(unowned_sector.is_owned_by(player_t{0}));
+  test::expect_false(unowned_sector.is_owned_by(player_t{0}));
 
   // 4. Owned by enemy, but wasted -> not bombardable
   Sector wasted_enemy_sector(sector_struct{
@@ -505,7 +505,6 @@ void test_sector_update_efficiency() {
   // 1. Unowned sector does not mutate or throw
   Sector unowned(sector_struct{
       .eff = 50,
-      .owner = player_t{0},
       .condition = SectorType::SEC_LAND,
   });
   unowned.update_efficiency(race, planet);
@@ -562,7 +561,6 @@ void test_sector_produce_resources() {
   Sector unowned(sector_struct{
       .eff = 100,
       .resource = 500,
-      .owner = player_t{0},
       .condition = SectorType::SEC_LAND,
   });
   const Stockpile unowned_prod = unowned.produce_resources(race);
@@ -668,7 +666,6 @@ void test_sector_mine_crystals() {
   Sector unowned(sector_struct{
       .eff = 100,
       .crystals = 5,
-      .owner = player_t{0},
   });
   test::expect_false(unowned.mine_crystals(race));
   test::expect_eq(unowned.get_crystals(), 5);

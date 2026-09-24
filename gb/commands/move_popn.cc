@@ -219,8 +219,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
                                  astrength, dstrength);
 
             if (sect2.is_empty()) { /* we got 'em */
-              sect2.set_owner(Playernum);
-              sect2.set_race(Playernum);
+              sect2.claim(Playernum);
               /* mesomorphs absorb the bodies of their victims */
               absorbed = 0;
               if (race.absorb) {
@@ -301,14 +300,10 @@ bool move_popn(const command_t& argv, GameObj& g) {
                 what == PopulationType::CIV ? "civ" : "mil", casualties2,
                 casualties3);
 
-            if (sect.is_empty()) {
-              sect.set_owner(0);
-              sect.set_race(0);
-            }
+            sect.clear_owner_if_empty();
 
             if (sect2.is_empty()) {
-              sect2.set_owner(0);
-              sect2.set_race(0);
+              sect2.clear_owner();
               done = 1;
             }
 

@@ -364,8 +364,8 @@ export struct AimedAtData {
 
 /// Brain parameters for Von Neumann machines and Berserkers.
 export struct MindData {
-  player_t progenitor{0};  ///< Original race that created this strain
-  std::optional<player_t> target{
+  player_t progenitor{1};  ///< Original race that created this strain
+  std::optional<player_t> target_player{
       std::nullopt};            ///< Target player to destroy (for Berserkers)
   std::uint32_t generation{0};  ///< Reproduction generation counter
   bool busy{false};      ///< Whether machine is currently occupied with a task
@@ -397,7 +397,7 @@ export struct TerraformData {
 };
 
 export struct TransportData {
-  std::optional<shipnum_t> target{std::nullopt};
+  std::optional<shipnum_t> target_ship{std::nullopt};
 };
 
 export struct WasteData {
@@ -423,12 +423,12 @@ export using SpecialData =
 /// ShipType and owner. Intentionally omits a `default:` label so the compiler
 /// enforces exhaustive coverage across all ShipType enumerators.
 export [[nodiscard]] constexpr SpecialData
-default_special_data(ShipType type, player_t owner = 0) noexcept {
+default_special_data(ShipType type, player_t owner = 1) noexcept {
   switch (type) {
     case ShipType::OTYPE_VN:
     case ShipType::OTYPE_BERS:
-      return MindData{.progenitor = owner,
-                      .target = std::nullopt,
+      return MindData{.progenitor = (owner > 0) ? owner : player_t{1},
+                      .target_player = std::nullopt,
                       .generation = 1,
                       .busy = true,
                       .tampered = false,
@@ -538,8 +538,6 @@ export struct ship_struct {
   std::string name;        ///< Name of ship (optional)
   std::string shipclass;   ///< Ship class designated by player
 
-  player_t race{0};  ///< Race type (usually equal to owner, distinct after
-                     ///< capture/revolt)
   UniverseCoordinates coordinates{};  ///< Continuous universe coordinates
   double fuel{0.0};                   ///< Current stored fuel
   double mass{0.0};                   ///< Current total mass

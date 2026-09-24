@@ -36,7 +36,6 @@ int main() {
   test_data.popn = 10000;
   test_data.troops = 250;
   test_data.owner = 1;
-  test_data.race = 1;
   test_data.type = SectorType::SEC_LAND;
   test_data.condition = SectorType::SEC_LAND;
 
@@ -66,8 +65,7 @@ int main() {
   test::expect_eq(retrieved->get_resource(), test_data.resource);
   test::expect_eq(retrieved->get_popn(), test_data.popn);
   test::expect_eq(retrieved->get_troops(), test_data.troops);
-  test::expect_eq(retrieved->get_owner(), test_data.owner);
-  test::expect_eq(retrieved->get_race(), test_data.race);
+  test::expect_eq(retrieved->owner(), test_data.owner);
   test::expect_eq(retrieved->get_type(), test_data.type);
   test::expect_eq(retrieved->get_condition(), test_data.condition);
   std::println(std::cout, "  ✓ All fields match original");
@@ -260,7 +258,6 @@ int main() {
   new_struct.popn = 20000;
   new_struct.troops = 500;
   new_struct.owner = 1;
-  new_struct.race = 1;
   new_struct.type = SectorType::SEC_LAND;
   new_struct.condition = SectorType::SEC_LAND;
 
@@ -281,7 +278,6 @@ int main() {
   test::expect_eq(verified.popn, new_struct.popn);
   test::expect_eq(verified.troops, new_struct.troops);
   test::expect_eq(verified.owner, new_struct.owner);
-  test::expect_eq(verified.race, new_struct.race);
   test::expect_eq(verified.type, new_struct.type);
   test::expect_eq(verified.condition, new_struct.condition);
   std::println(std::cout, "  ✓ Data persisted and retrieved correctly");
@@ -292,9 +288,25 @@ int main() {
       repo.load(test_planet.star_id(), test_planet.planet_order(), 99, 99);
   // Default-constructed sector_struct should have zero/default values
   test::expect_eq(empty.popn, 0);
-  test::expect_eq(empty.owner, 0);
+  test::expect_eq(empty.owner, std::nullopt);
   std::println(std::cout,
                "  ✓ load() returns default sector_struct for non-existent");
+
+  // Verify unowned Sector omits null optional owner and round-trips as
+  // std::nullopt
+  Sector unowned_sec{};
+  unowned_sec.set_coords({0, 0});
+  test::expect_true(repo.save_sector(unowned_sec, test_planet.star_id(),
+                                     test_planet.planet_order(), 0, 0));
+  auto unowned_json = store.retrieve_multi(
+      "tbl_sector",
+      {{"star_id", 5}, {"planet_order", 1}, {"xpos", 0}, {"ypos", 0}});
+  test::expect_true(unowned_json.has_value());
+  test::expect_false(unowned_json->contains("\"owner\":"));
+  auto reloaded_unowned =
+      repo.find_sector(test_planet.star_id(), test_planet.planet_order(), 0, 0);
+  test::expect_true(reloaded_unowned.has_value());
+  test::expect_eq(reloaded_unowned->owner(), std::nullopt);
 
   // Round-trip test with both new methods
   std::println(std::cout, "Round-trip test (save then load)...");

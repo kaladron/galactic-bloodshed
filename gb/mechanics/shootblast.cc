@@ -245,8 +245,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
           if (s.get_owner() != 0) nuked[s.get_owner()] = true;
           s.clear_popn();
           s.set_troops(int_rand(0, (int)s.get_troops()));
-          if (!s.get_troops()) /* troops may survive this */
-            s.set_owner(0);
+          s.clear_owner_if_empty(); /* troops may survive this */
           s.clear_efficiency();
           s.set_resource(s.get_resource() / ((int)fac + 1));
           s.set_mobilization(0);

@@ -12,14 +12,13 @@ The possible scopes are sector, planet, and star.
 
 Census on sector
 
->  x,y cond/type  owner race eff mob frt  res  mil popn ^popn xtals
->  0,0   o   #        2    0  15  10  34  205    0  517     0 
+>  x,y cond/type  owner eff mob frt  res  mil popn ^popn xtals
+>  0,0   o   #        2  15  10  34  205    0  517     0 
 
   x,y: map coordinates on sector
- cond: desicnation of sector appearance (after terraforming, nukeing etc.)
+ cond: designation of sector appearance (after terraforming, nuking etc.)
  type: designation of sector (land, water, etc)
 owner: owner of sector
- race: original owner (startingsectors only)
   eff: efficiency (%age it is built up) of the sector
   mob: % mobilization of the citizens in that sector
   frt: fertility of the sector (supports people)

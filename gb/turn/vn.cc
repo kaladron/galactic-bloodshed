@@ -73,8 +73,8 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
   ship.bombard() = true;
   ship.whatdest() = ScopeLevel::LEVEL_PLAN;
 
-  ship.mind().target = stats.VN_brain.most_mad;
-  const auto target = ship.mind().target;
+  ship.set_target(stats.VN_brain.most_mad);
+  const auto target = ship.target();
 
   const auto& universe = *em.peek_universe();
   const int numstars = static_cast<int>(em.num_stars().value);
@@ -253,15 +253,6 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
   const auto& tmpl = ship_template(ShipType::OTYPE_VN);
   parent.consume_resource(tmpl.build_cost);
 
-  MindData child_mind{
-      .progenitor = parent.mind().progenitor,
-      .target = parent.mind().target,
-      .generation = parent.mind().generation + 1,
-      .busy = false,
-      .tampered = parent.mind().tampered,
-      .who_killed = parent.mind().who_killed,
-  };
-
   auto ship_handle = em.create_ship(ShipType::OTYPE_VN, 1);
   Ship& s2 = *ship_handle;
   s2.name() = AutonomousShip::generate_binary_name();
@@ -271,7 +262,7 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
   s2.armor() = parent.armor() + 1;
   s2.tech() = parent.tech() + 20.0;
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
-    auto_ship->mind() = child_mind;
+    auto_ship->inherit_vn_mind_from(parent);
   }
   s2.storbits() = planet.star_id();
   s2.deststar() = parent.deststar();
@@ -300,15 +291,6 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   const auto& tmpl = ship_template(ShipType::OTYPE_BERS);
   parent.consume_resource(tmpl.build_cost);
 
-  MindData bers_mind{
-      .progenitor = parent.mind().progenitor,
-      .target = stats.VN_brain.most_mad,
-      .generation = parent.mind().generation,
-      .busy = false,
-      .tampered = false,
-      .who_killed = parent.mind().who_killed,
-  };
-
   auto ship_handle = em.create_ship(ShipType::OTYPE_BERS, 1);
   Ship& s2 = *ship_handle;
   s2.set_coordinates(parent.coordinates());
@@ -319,7 +301,7 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   s2.tech() = parent.tech() + 100.0;
   s2.add_destruct(500);
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
-    auto_ship->mind() = bers_mind;
+    auto_ship->inherit_berserker_mind_from(parent, stats.VN_brain.most_mad);
   }
   s2.protect() = ProtectData{.planet = true, .retaliate = true};
   s2.hyper_drive() = HyperDriveData{
@@ -364,7 +346,7 @@ int replicate_machines(EntityManager& em, AutonomousShip& parent,
     } else {
       construct_replicated_vn(em, parent, planet);
     }
-    parent.mind().busy = bool_rand();
+    parent.set_busy(bool_rand());
   }
   return static_cast<int>(count);
 }

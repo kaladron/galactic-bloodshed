@@ -31,9 +31,9 @@ template <>
 struct meta<MindData> {
   using T = MindData;
   static constexpr auto value =
-      object("progenitor", &T::progenitor, "target", &T::target, "generation",
-             &T::generation, "busy", &T::busy, "tampered", &T::tampered,
-             "who_killed", &T::who_killed);
+      object("progenitor", &T::progenitor, "target_player", &T::target_player,
+             "generation", &T::generation, "busy", &T::busy, "tampered",
+             &T::tampered, "who_killed", &T::who_killed);
 };
 
 template <>
@@ -71,7 +71,7 @@ struct meta<TerraformData> {
 template <>
 struct meta<TransportData> {
   using T = TransportData;
-  static constexpr auto value = object("target", &T::target);
+  static constexpr auto value = object("target_ship", &T::target_ship);
 };
 
 template <>
@@ -115,29 +115,29 @@ struct meta<ship_struct> {
   using T = ship_struct;
   static constexpr auto value = object(
       "number", &T::number, "owner", &T::owner, "governor", &T::governor,
-      "name", &T::name, "shipclass", &T::shipclass, "race", &T::race,
-      "coordinates", &T::coordinates, "fuel", &T::fuel, "mass", &T::mass,
-      "land_coords", &T::land_coords, "destshipno", &T::destshipno, "armor",
-      &T::armor, "size", &T::size, "max_crew", &T::max_crew, "max_resource",
-      &T::max_resource, "max_destruct", &T::max_destruct, "max_fuel",
-      &T::max_fuel, "max_speed", &T::max_speed, "build_type", &T::build_type,
-      "build_cost", &T::build_cost, "base_mass", &T::base_mass, "tech",
-      &T::tech, "complexity", &T::complexity, "destruct", &T::destruct,
-      "resource", &T::resource, "popn", &T::popn, "troops", &T::troops,
-      "crystals", &T::crystals, "special", &T::special, "navigate",
-      &T::navigate, "protect", &T::protect, "mount", &T::mount, "hyper_drive",
-      &T::hyper_drive, "cew", &T::cew, "cew_range", &T::cew_range, "cloak",
-      &T::cloak, "laser", &T::laser, "focus", &T::focus, "fire_laser",
-      &T::fire_laser, "storbits", &T::storbits, "deststar", &T::deststar,
-      "destpnum", &T::destpnum, "pnumorbits", &T::pnumorbits, "whatdest",
-      &T::whatdest, "whatorbits", &T::whatorbits, "damage", &T::damage, "rad",
-      &T::rad, "retaliate", &T::retaliate, "type", &T::type, "speed", &T::speed,
-      "active", &T::active, "alive", &T::alive, "mode", &T::mode, "bombard",
-      &T::bombard, "mounted", &T::mounted, "dock_state", &T::dock_state,
-      "notified", &T::notified, "examined", &T::examined, "on", &T::on,
-      "merchant", &T::merchant, "guns", &T::guns, "primary_battery",
-      &T::primary_battery, "secondary_battery", &T::secondary_battery, "hanger",
-      &T::hanger, "max_hanger", &T::max_hanger);
+      "name", &T::name, "shipclass", &T::shipclass, "coordinates",
+      &T::coordinates, "fuel", &T::fuel, "mass", &T::mass, "land_coords",
+      &T::land_coords, "destshipno", &T::destshipno, "armor", &T::armor, "size",
+      &T::size, "max_crew", &T::max_crew, "max_resource", &T::max_resource,
+      "max_destruct", &T::max_destruct, "max_fuel", &T::max_fuel, "max_speed",
+      &T::max_speed, "build_type", &T::build_type, "build_cost", &T::build_cost,
+      "base_mass", &T::base_mass, "tech", &T::tech, "complexity",
+      &T::complexity, "destruct", &T::destruct, "resource", &T::resource,
+      "popn", &T::popn, "troops", &T::troops, "crystals", &T::crystals,
+      "special", &T::special, "navigate", &T::navigate, "protect", &T::protect,
+      "mount", &T::mount, "hyper_drive", &T::hyper_drive, "cew", &T::cew,
+      "cew_range", &T::cew_range, "cloak", &T::cloak, "laser", &T::laser,
+      "focus", &T::focus, "fire_laser", &T::fire_laser, "storbits",
+      &T::storbits, "deststar", &T::deststar, "destpnum", &T::destpnum,
+      "pnumorbits", &T::pnumorbits, "whatdest", &T::whatdest, "whatorbits",
+      &T::whatorbits, "damage", &T::damage, "rad", &T::rad, "retaliate",
+      &T::retaliate, "type", &T::type, "speed", &T::speed, "active", &T::active,
+      "alive", &T::alive, "mode", &T::mode, "bombard", &T::bombard, "mounted",
+      &T::mounted, "dock_state", &T::dock_state, "notified", &T::notified,
+      "examined", &T::examined, "on", &T::on, "merchant", &T::merchant, "guns",
+      &T::guns, "primary_battery", &T::primary_battery, "secondary_battery",
+      &T::secondary_battery, "hanger", &T::hanger, "max_hanger",
+      &T::max_hanger);
 };
 
 }  // namespace glz

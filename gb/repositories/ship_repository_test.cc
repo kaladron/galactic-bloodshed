@@ -27,7 +27,6 @@ int main() {
   test_data.governor = 1;
   test_data.name = "USS Enterprise";
   test_data.shipclass = "Cruiser";
-  test_data.race = 2;
   test_data.coordinates = UniverseCoordinates{100.5, 200.7};
   test_data.fuel = 5000.0;
   test_data.mass = 1500.0;
@@ -105,7 +104,6 @@ int main() {
   test::expect_eq(retrieved->governor(), test_ship.governor());
   test::expect_eq(retrieved->name(), test_ship.name());
   test::expect_eq(retrieved->shipclass(), test_ship.shipclass());
-  test::expect_eq(retrieved->race(), test_ship.race());
   test::expect_eq(retrieved->coordinates(), test_ship.coordinates());
   test::expect_eq(retrieved->fuel(), test_ship.fuel());
   test::expect_eq(retrieved->mass(), test_ship.mass());
@@ -388,6 +386,9 @@ int main() {
     // 4. Glaze serialization / deserialization roundtrip via repository
     bool saved = repo.save(*vn_ship);
     test::expect_true(saved);
+    auto vn_json = store.retrieve("tbl_ship", 100);
+    test::expect_true(vn_json.has_value());
+    test::expect_contains(*vn_json, "\"target_player\":4");
 
     auto deserialized = repo.find_ship(shipnum_t{100});
     test::expect_true(deserialized != nullptr);
@@ -539,9 +540,13 @@ int main() {
     ship_struct trans_data{};
     trans_data.number = 208;
     trans_data.type = ShipType::OTYPE_TRANSDEV;
-    trans_data.special = TransportData{.target = 42};
+    trans_data.special = TransportData{.target_ship = 42};
     auto trans_ship = ShipFactory::create(trans_data);
     test::expect_true(trans_ship != nullptr);
+    test::expect_true(repo.save(*trans_ship));
+    auto trans_json = store.retrieve("tbl_ship", 208);
+    test::expect_true(trans_json.has_value());
+    test::expect_contains(*trans_json, "\"target_ship\":42");
     auto* trans = trans_ship->as<TransporterShip>();
     test::expect_true(trans != nullptr);
     test::expect_eq(trans->target_ship(), shipnum_t{42});

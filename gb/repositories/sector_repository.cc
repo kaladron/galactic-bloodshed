@@ -22,11 +22,11 @@ namespace glz {
 template <>
 struct meta<sector_struct> {
   using T = sector_struct;
-  static constexpr auto value = object(
-      "coords", &T::coords, "eff", &T::eff, "fert", &T::fert, "mobilization",
-      &T::mobilization, "crystals", &T::crystals, "resource", &T::resource,
-      "popn", &T::popn, "troops", &T::troops, "owner", &T::owner, "race",
-      &T::race, "type", &T::type, "condition", &T::condition);
+  static constexpr auto value =
+      object("coords", &T::coords, "eff", &T::eff, "fert", &T::fert,
+             "mobilization", &T::mobilization, "crystals", &T::crystals,
+             "resource", &T::resource, "popn", &T::popn, "troops", &T::troops,
+             "owner", &T::owner, "type", &T::type, "condition", &T::condition);
 };
 
 }  // namespace glz

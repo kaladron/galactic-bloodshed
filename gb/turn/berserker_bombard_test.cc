@@ -279,7 +279,7 @@ int main() {
     auto prog_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 402)
                          .owned_by(1)
                          .in_planet_orbit(1, 4)
-                         .with_special(MindData{.target = player_t{3}})
+                         .with_special(MindData{.target_player = player_t{3}})
                          .build_handle();
 
     auto prog_target = find_bombardment_target(ctx.em, *prog_ship, race1);

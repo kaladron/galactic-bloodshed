@@ -76,6 +76,7 @@ flowchart LR
 Terraform Devices are autonomous ground vehicles programmed with sequential movement routes across the planetary grid:
 - **Surface Conditioning**: As the device traverses sectors, it systematically terraforms hostile biomes (deserts, glaciers, volcanic crags) into the owning species' preferred habitat classification (`likesbest`).
 - **Wasteland Reclamation**: Converts radioactive wastelands into clean, habitable landmasses.
+- **Colony Reset**: Terraforming a sector completely clears any existing colony, resetting ownership, population, troops, sector efficiency, and mobilization to zero.
 
 ### Space Plows (`K`)
 Space Plows are specialized agricultural engineering vehicles that cultivate surface topsoil:

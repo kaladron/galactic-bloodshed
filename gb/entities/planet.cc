@@ -148,8 +148,7 @@ void abandon_sector_if_empty(Sector& sect, planet_struct& data,
   if (owner == 0 || !sect.is_empty()) {
     return;
   }
-  sect.set_owner(0);
-  sect.set_race(0);
+  sect.clear_owner();
   auto& pinfo = data.info[owner];
   if (pinfo.numsectsowned > 0) {
     pinfo.numsectsowned -= 1;
@@ -166,8 +165,7 @@ void Planet::adjust_sector_population(Sector& sect, player_t player,
                                       population_t mil_delta) noexcept {
   // Colonization transition: unowned sector gains population
   if (!sect.is_owned() && player != 0 && (civ_delta > 0 || mil_delta > 0)) {
-    sect.set_owner(player);
-    sect.set_race(player);
+    sect.claim(player);
     data_.info[player].numsectsowned += 1;
     data_.info[player].mob_points += sect.get_mobilization();
   }

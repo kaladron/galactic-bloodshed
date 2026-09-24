@@ -231,16 +231,17 @@ void test_load_transporter() {
                              .build();
 
   // Source transmitter transporter ship 3
-  const auto trans1_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 3)
-                             .owned_by(1)
-                             .named("TransporterSender")
-                             .with_alive(true)
-                             .with_active(true)
-                             .with_on(true)
-                             .landed_on(1, 1, {5, 5})
-                             .with_max_resource(1000)
-                             .with_special(TransportData{.target = trans2_id})
-                             .build();
+  const auto trans1_id =
+      TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 3)
+          .owned_by(1)
+          .named("TransporterSender")
+          .with_alive(true)
+          .with_active(true)
+          .with_on(true)
+          .landed_on(1, 1, {5, 5})
+          .with_max_resource(1000)
+          .with_special(TransportData{.target_ship = trans2_id})
+          .build();
 
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -687,7 +688,7 @@ void test_transporter_edge_cases() {
                            .with_crystals(0)
                            .with_crew(0, 0)
                            .with_max_crew(100)
-                           .with_special(TransportData{.target = recv_id})
+                           .with_special(TransportData{.target_ship = recv_id})
                            .build();
 
   // 1. Target device damaged
@@ -727,7 +728,7 @@ void test_transporter_edge_cases() {
   // 5a. Hopper blocked (target ship == std::nullopt)
   ctx.em.mutate_ship(recv_id, [](Ship& s) { s.land_on_planet(); });
   ctx.em.mutate_ship(send_id, [](Ship& s) {
-    static_cast<TransporterShip&>(s).transport().target = std::nullopt;
+    static_cast<TransporterShip&>(s).set_target_ship(std::nullopt);
   });
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -736,7 +737,7 @@ void test_transporter_edge_cases() {
 
   // 5b. Hopper blocked (target ship doesn't exist)
   ctx.em.mutate_ship(send_id, [](Ship& s) {
-    static_cast<TransporterShip&>(s).transport().target = 9999;
+    static_cast<TransporterShip&>(s).set_target_ship(9999);
   });
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -746,7 +747,7 @@ void test_transporter_edge_cases() {
   // 6. Successful multi-commodity transfer to another player's receiver (sends
   // telegram)
   ctx.em.mutate_ship(send_id, [&](Ship& s) {
-    static_cast<TransporterShip&>(s).transport().target = recv_id;
+    static_cast<TransporterShip&>(s).set_target_ship(recv_id);
     s.add_fuel(30.0);
     s.destruct() = 15;
     s.add_crystals(5);

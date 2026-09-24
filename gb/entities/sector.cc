@@ -18,7 +18,6 @@ std::ostream& operator<<(std::ostream& os, const Sector& s) {
   os << "Population: " << s.get_popn() << std::endl;
   os << "Troops: " << s.get_troops() << std::endl;
   os << "Owner: " << s.get_owner() << std::endl;
-  os << "Race: " << s.get_race() << std::endl;
   os << "Type: " << s.get_type() << std::endl;
   os << "Condition: " << s.get_condition() << std::endl;
   return os;
@@ -75,9 +74,8 @@ void Sector::transfer_popn_to(Sector& dest, population_t amount) noexcept {
   // Perform atomic transfer
   data_.popn -= amount;
   dest.add_popn(amount);
-  if (dest.data_.owner == 0 && dest.data_.popn > 0) {
-    dest.data_.owner = data_.owner;
-    dest.data_.race = (data_.race != 0) ? data_.race : data_.owner;
+  if (!dest.is_owned() && dest.data_.popn > 0 && is_owned()) {
+    dest.claim(*data_.owner);
   }
 }
 
@@ -211,8 +209,8 @@ void Sector::apply_supernova(int stage) noexcept {
   // all life.
   if (stage >= terminal_nova_stage) {
     clear_popn();
-    data_.owner = 0;
-    data_.troops = 0;
+    clear_troops();
+    clear_owner();
   } else {
     // Active nova radiation: kills approximately 50% of the living population
     // per turn.
@@ -240,9 +238,9 @@ void Sector::update_efficiency(const Race& race,
   if (!is_owned()) return;
 
   if (data_.eff < 100) {
-    const int chance =
-        round_rand((100.0 - static_cast<double>(planet.info(data_.owner).tax)) *
-                   race.sector_compatibility(*this));
+    const int chance = round_rand(
+        (100.0 - static_cast<double>(planet.info(*data_.owner).tax)) *
+        race.sector_compatibility(*this));
     if (success(chance)) {
       improve_efficiency(round_rand(race.metabolism));
       if (data_.eff >= 100) {

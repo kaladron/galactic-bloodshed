@@ -473,7 +473,7 @@ void dispatch_ship_subsystems(Ship& ship, bool update,
         if (auto* auto_ship = ship.as<AutonomousShip>()) {
           if (auto_ship->progenitor() == 0) {
             // TODO(jeffbailey): Why is setting this to 1 correct?
-            auto_ship->mind().progenitor = 1;
+            auto_ship->set_progenitor(1);
           }
           do_VN(entity_manager, *auto_ship, stats);
         }

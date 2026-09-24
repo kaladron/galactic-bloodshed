@@ -175,7 +175,7 @@ int main() {
     test::expect_true(bers->bombard());
     test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
     test::expect_eq(bers->deststar(), starnum_t{2});
-    test::expect_eq(bers->mind().target, player_t{2});
+    test::expect_eq(bers->target(), player_t{2});
     test::expect_true(bers->is_busy());
     test::expect_true(bers->hyper_drive().on);
     test::expect_eq(bers->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
@@ -419,7 +419,7 @@ int main() {
     vn_data.fuel = 60.0;
     vn_data.special = MindData{
         .progenitor = player_t{1},
-        .target = player_t{2},
+        .target_player = player_t{2},
         .generation = 2,
         .busy = true,
         .tampered = false,
@@ -477,7 +477,7 @@ int main() {
     vn_data.fuel = 40.0;
     vn_data.special = MindData{
         .progenitor = player_t{1},
-        .target = std::nullopt,
+        .target_player = std::nullopt,
         .generation = 2,
         .busy = true,
         .tampered = false,
@@ -589,7 +589,7 @@ int main() {
     vn_data.fuel = 50.0;  // Partial fuel
     vn_data.special = MindData{
         .progenitor = player_t{1},
-        .target = std::nullopt,
+        .target_player = std::nullopt,
         .generation = 1,
         .busy = true,
         .tampered = false,
@@ -656,7 +656,7 @@ int main() {
     vn_data.dock_state = DockState::Spaceborne;
     vn_data.special = MindData{
         .progenitor = player_t{1},
-        .target = std::nullopt,
+        .target_player = std::nullopt,
         .generation = 1,
         .busy = true,
         .tampered = false,
@@ -740,7 +740,7 @@ int main() {
     bers_data.hyper_drive.has = true;
     bers_data.mounted = true;
     bers_data.special = MindData{
-        .target = player_t{0},
+        .target_player = std::nullopt,
         .generation = 1,
         .busy = true,
     };

@@ -100,13 +100,6 @@ public:
     return data_.shipclass;
   }
 
-  [[nodiscard]] player_t race() const {
-    return data_.race;
-  }
-  player_t& race() {
-    return data_.race;
-  }
-
   // Position
   /// \brief Returns continuous position in universe coordinates.
   [[nodiscard]] constexpr UniverseCoordinates coordinates() const noexcept {

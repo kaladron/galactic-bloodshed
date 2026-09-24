@@ -26,7 +26,6 @@ void populate_sectormap(SectorMap& smap, const Planet& planet, int base_eff,
       sector.set_popn_exact(base_popn * (x + 1) * (y + 1));
       sector.set_troops(x + y);
       sector.set_owner((x + y) % 2 + 1);
-      sector.set_race(sector.get_owner());
 
       // Vary sector types
       if (x == 0 || x == planet.dimensions().x - 1 || y == 0 ||
@@ -64,7 +63,6 @@ void verify_sectormap_equal(const SectorMap& original,
       test::expect_eq(retr.get_popn(), orig.get_popn());
       test::expect_eq(retr.get_troops(), orig.get_troops());
       test::expect_eq(retr.get_owner(), orig.get_owner());
-      test::expect_eq(retr.get_race(), orig.get_race());
       test::expect_eq(retr.get_type(), orig.get_type());
       test::expect_eq(retr.get_condition(), orig.get_condition());
     }

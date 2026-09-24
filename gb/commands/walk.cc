@@ -212,7 +212,7 @@ void engage_sector_defenders(GameObj& g, Ship& ship, const Star& star,
     if (sect.is_empty()) {
       planet.info(oldowner).mob_points -=
           static_cast<int>(sect.get_mobilization());
-      sect.set_owner(0);
+      sect.clear_owner();
     }
   }
 }

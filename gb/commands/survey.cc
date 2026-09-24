@@ -73,28 +73,26 @@ void render_human_survey(std::ostream& out, const Race& race,
   table.column(1).format().width(9);  // cond/type
   table.column(2).format().width(5).font_align(
       tabulate::FontAlign::right);  // owner
-  table.column(3).format().width(4).font_align(
-      tabulate::FontAlign::right);  // race
-  table.column(4).format().width(3).font_align(
+  table.column(3).format().width(3).font_align(
       tabulate::FontAlign::right);  // eff
-  table.column(5).format().width(3).font_align(
+  table.column(4).format().width(3).font_align(
       tabulate::FontAlign::right);  // mob
-  table.column(6).format().width(3).font_align(
+  table.column(5).format().width(3).font_align(
       tabulate::FontAlign::right);  // frt
-  table.column(7).format().width(4).font_align(
+  table.column(6).format().width(4).font_align(
       tabulate::FontAlign::right);  // res
-  table.column(8).format().width(4).font_align(
+  table.column(7).format().width(4).font_align(
       tabulate::FontAlign::right);  // mil
-  table.column(9).format().width(4).font_align(
+  table.column(8).format().width(4).font_align(
       tabulate::FontAlign::right);  // popn
-  table.column(10).format().width(5).font_align(
+  table.column(9).format().width(5).font_align(
       tabulate::FontAlign::right);  // ^popn
-  table.column(11).format().width(5).font_align(
+  table.column(10).format().width(5).font_align(
       tabulate::FontAlign::right);  // xtals
 
   // Add header row
-  table.add_row({"x,y", "cond/type", "owner", "race", "eff", "mob", "frt",
-                 "res", "mil", "popn", "^popn", "xtals"});
+  table.add_row({"x,y", "cond/type", "owner", "eff", "mob", "frt", "res", "mil",
+                 "popn", "^popn", "xtals"});
   table[0].format().font_style({tabulate::FontStyle::bold});
 
   // Add data rows
@@ -102,7 +100,7 @@ void render_human_survey(std::ostream& out, const Race& race,
     const auto& s = *row.sector;
     if (row.desshow_char == CHAR_CLOAKED) {
       table.add_row({std::format("{}", row.coords), "?  (    ?)", "", "", "",
-                     "", "", "", "", "", "", ""});
+                     "", "", "", "", "", ""});
     } else {
       std::string cond_type =
           std::format(" {}   {}", s.condition_symbol(), s.type_symbol());
@@ -111,8 +109,7 @@ void render_human_survey(std::ostream& out, const Race& race,
                                                                        : "";
       table.add_row(
           {std::format("{}", row.coords), cond_type,
-           std::format("{}", s.get_owner()), std::format("{}", s.get_race()),
-           std::format("{}", s.get_eff()),
+           std::format("{}", s.get_owner()), std::format("{}", s.get_eff()),
            std::format("{}", s.get_mobilization()),
            std::format("{}", s.get_fert()), std::format("{}", s.get_resource()),
            std::format("{}", s.get_troops()), std::format("{}", s.get_popn()),

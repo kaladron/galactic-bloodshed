@@ -273,7 +273,6 @@ void test_enroll_first_race_god_success() {
   em.with_sectormap(starnum_t{1}, planetnum_t{1}, [&](const SectorMap& smap) {
     const auto& capital_sect = smap.get(result.capital_coords);
     test::expect_eq(capital_sect.get_owner(), player_t{1});
-    test::expect_eq(capital_sect.get_race(), player_t{1});
     test::expect_eq(capital_sect.get_popn(), 2);
     test::expect_eq(capital_sect.get_fert(), 100);
     test::expect_eq(capital_sect.get_eff(), 10);

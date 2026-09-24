@@ -344,12 +344,13 @@ int main() {
                                .build_handle();
       mirror_id = mirror_handle->number();
 
-      auto trans_handle = TestShipBuilder(em, ShipType::OTYPE_TRANSDEV)
-                              .owned_by(1)
-                              .with_alive(true)
-                              .landed_on(1, 1, {1, 1})
-                              .with_special(TransportData{.target = target_id})
-                              .build_handle();
+      auto trans_handle =
+          TestShipBuilder(em, ShipType::OTYPE_TRANSDEV)
+              .owned_by(1)
+              .with_alive(true)
+              .landed_on(1, 1, {1, 1})
+              .with_special(TransportData{.target_ship = target_id})
+              .build_handle();
       trans_id = trans_handle->number();
 
       auto escort_handle = TestShipBuilder(em, ShipType::STYPE_CRUISER)

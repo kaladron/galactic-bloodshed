@@ -82,13 +82,9 @@ export struct sector_struct {
   population_t popn{0};
   population_t troops{0}; /* troops (additional combat value) */
 
-  player_t owner{0};                         /* owner of place */
-  player_t race{0};                          /* race type occupying sector
-                                 (usually==owner) - makes things more
-                                 realistic when alien races revolt and
-                                 you gain control of them! */
-  SectorType type{SectorType::SEC_SEA};      /* underlying sector geology */
-  SectorType condition{SectorType::SEC_SEA}; /* environmental effects */
+  std::optional<player_t> owner{std::nullopt}; /* owner of place */
+  SectorType type{SectorType::SEC_SEA};        /* underlying sector geology */
+  SectorType condition{SectorType::SEC_SEA};   /* environmental effects */
 };
 
 export class Sector {
@@ -101,10 +97,11 @@ public:
 
   Sector(Coordinates coords_, Percentage eff_, Percentage fert_,
          Percentage mobilization_, unsigned int crystals_, resource_t resource_,
-         population_t popn_, population_t troops_, player_t owner_,
-         player_t race_, SectorType type_, SectorType condition_)
+         population_t popn_, population_t troops_,
+         std::optional<player_t> owner_, SectorType type_,
+         SectorType condition_)
       : data_{coords_, eff_,    fert_,  mobilization_, crystals_, resource_,
-              popn_,   troops_, owner_, race_,         type_,     condition_} {}
+              popn_,   troops_, owner_, type_,         condition_} {}
 
   Sector() = default;
   ~Sector() = default;
@@ -150,11 +147,11 @@ public:
   [[nodiscard]] population_t get_troops() const noexcept {
     return data_.troops;
   }
-  [[nodiscard]] player_t get_owner() const noexcept {
+  [[nodiscard]] constexpr std::optional<player_t> owner() const noexcept {
     return data_.owner;
   }
-  [[nodiscard]] player_t get_race() const noexcept {
-    return data_.race;
+  [[nodiscard]] constexpr player_t get_owner() const noexcept {
+    return data_.owner.value_or(player_t{0});
   }
   [[nodiscard]] SectorType get_type() const noexcept {
     return data_.type;
@@ -225,7 +222,7 @@ public:
   void degrade_efficiency(int delta) noexcept;
 
   /// Clear efficiency to 0 (e.g., after terraforming or devastation)
-  void clear_efficiency() noexcept {
+  constexpr void clear_efficiency() noexcept {
     data_.eff = 0;
   }
 
@@ -236,10 +233,15 @@ public:
     set_mobilization_bounded(val);
   }
 
+  /// Clear mobilization to 0 (e.g., after terraforming or devastation)
+  constexpr void clear_mobilization() noexcept {
+    data_.mobilization = 0;
+  }
+
   /// Troops operations with invariant protection
   void add_troops(population_t amount) noexcept;
   void subtract_troops(population_t amount) noexcept;
-  void clear_troops() noexcept {
+  constexpr void clear_troops() noexcept {
     data_.troops = 0;
   }
   void set_troops_exact(population_t val) noexcept {
@@ -249,25 +251,29 @@ public:
     data_.troops = val;
   }
 
-  void set_owner(player_t val) noexcept {
-    data_.owner = val;
+  constexpr void clear_owner() noexcept {
+    data_.owner = std::nullopt;
   }
-  void set_race(player_t val) noexcept {
-    data_.race = val;
+  constexpr void set_owner(player_t val) noexcept {
+    if (val <= 0) {
+      clear_owner();
+      return;
+    }
+    data_.owner = val;
   }
   void set_type(SectorType val) noexcept {
     data_.type = val;
   }
-  void set_condition(SectorType val) noexcept {
+  constexpr void set_condition(SectorType val) noexcept {
     data_.condition = val;
   }
 
   // State predicates - commonly used checks encapsulated as methods
   [[nodiscard]] constexpr bool is_owned() const noexcept {
-    return data_.owner != 0;
+    return data_.owner.has_value();
   }
   [[nodiscard]] constexpr bool is_owned_by(player_t player) const noexcept {
-    return data_.owner == player;
+    return player > 0 && data_.owner == player;
   }
   [[nodiscard]] constexpr bool is_empty() const noexcept {
     return data_.popn == 0 && data_.troops == 0;
@@ -306,47 +312,46 @@ public:
   /// Plate the sector - set efficiency to 100 and condition to SEC_PLATED
   /// (unless it's a gas sector)
   void plate() noexcept {
-    data_.eff = 100;
+    set_efficiency_bounded(100);
     if (data_.condition != SectorType::SEC_GAS) {
-      data_.condition = SectorType::SEC_PLATED;
+      set_condition(SectorType::SEC_PLATED);
     }
+  }
+
+  /// \brief Clears all colony presence and infrastructure (owner,
+  /// population, troops, efficiency, and mobilization) from the sector.
+  constexpr void clear_colony() noexcept {
+    clear_owner();
+    clear_popn();
+    clear_troops();
+    clear_efficiency();
+    clear_mobilization();
   }
 
   /// \brief Devastates a sector: resets condition to SEC_WASTED, and clears
   /// owner, population, troops, mobilization, and efficiency.
-  void devastate() noexcept {
-    data_.condition = SectorType::SEC_WASTED;
-    data_.owner = 0;
-    data_.popn = 0;
-    data_.troops = 0;
-    data_.mobilization = 0;
-    data_.eff = 0;
+  constexpr void devastate() noexcept {
+    set_condition(SectorType::SEC_WASTED);
+    clear_colony();
   }
 
   /// \brief Terraforms sector to new condition, clearing efficiency,
   /// mobilization, population, troops, and owner.
-  void terraform(SectorType new_condition) noexcept {
-    data_.condition = new_condition;
-    data_.eff = 0;
-    data_.mobilization = 0;
-    data_.popn = 0;
-    data_.troops = 0;
-    data_.owner = 0;
+  constexpr void terraform(SectorType new_condition) noexcept {
+    set_condition(new_condition);
+    clear_colony();
   }
 
   /// \brief Colonizes an unowned sector with an initial population and owner.
-  void colonize(player_t new_owner, population_t initial_popn,
-                player_t race_id = player_t{0}) noexcept {
-    data_.owner = new_owner;
-    data_.race = (race_id != 0) ? race_id : new_owner;
-    data_.popn = initial_popn;
-    data_.troops = 0;
+  void colonize(player_t new_owner, population_t initial_popn) noexcept {
+    set_owner(new_owner);
+    set_popn_exact(initial_popn);
+    clear_troops();
   }
 
-  /// \brief Sets sector owner and race.
-  void claim(player_t new_owner, player_t race_id = player_t{0}) noexcept {
-    data_.owner = new_owner;
-    data_.race = (race_id != 0) ? race_id : new_owner;
+  /// \brief Sets sector owner.
+  constexpr void claim(player_t new_owner) noexcept {
+    set_owner(new_owner);
   }
 
   /// \brief Applies supernova radiation damage to the sector based on the
@@ -373,7 +378,7 @@ public:
 
   /// Clear ownership if sector is empty (no popn or troops)
   void clear_owner_if_empty() noexcept {
-    if (is_empty()) data_.owner = 0;
+    if (is_empty()) clear_owner();
   }
 
   /// Population operations with invariant protection
@@ -394,7 +399,7 @@ public:
   }
 
   /// Clear all population from sector
-  void clear_popn() noexcept {
+  constexpr void clear_popn() noexcept {
     data_.popn = 0;
   }
 
@@ -405,14 +410,10 @@ public:
     data_.popn = val;
   }
 
-  // Struct conversion methods - FOR SERIALIZATION USE ONLY
-  // These methods expose the underlying POD struct for
-  // serialization/deserialization. Regular code should use the accessor methods
-  // above instead.
+  // Struct conversion method - FOR SERIALIZATION USE ONLY
+  // Exposes read-only underlying POD struct for serialization. Regular code
+  // should use the accessor methods above instead.
   [[nodiscard]] const sector_struct& to_struct() const noexcept {
-    return data_;
-  }
-  [[nodiscard]] sector_struct& to_struct() noexcept {
     return data_;
   }
 

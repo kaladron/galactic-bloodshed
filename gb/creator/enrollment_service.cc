@@ -226,7 +226,6 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
       });
     });
     ss.set_land_coords(capital_coords);
-    ss.race() = playernum;
     ss.tech() = 100.0;
 
     const auto& gov_tmpl = ship_template(ShipType::OTYPE_GOV);
@@ -253,7 +252,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   entity_manager_.mutate_sectormap(star, pnum, [&](SectorMap& smap) {
     entity_manager_.mutate_planet(star, pnum, [&](Planet& planet) {
       auto& sect = smap.get(capital_coords);
-      sect.colonize(playernum, race.number_sexes, playernum);
+      sect.colonize(playernum, race.number_sexes);
       sect.set_fert(100);
       sect.set_efficiency_bounded(10);
       sect.set_troops(0);

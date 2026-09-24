@@ -378,42 +378,6 @@ export constexpr char TELEG_DELIM = '~';
 
 export constexpr const char* CUTE_MESSAGE = "\nThe Galactic News\n\n";
 
-// Planet type symbols and names
-export constexpr PlanetValues<char> Psymbol = {
-    .earth = '@',
-    .asteroid = 'o',
-    .mars = 'O',
-    .iceball = '#',
-    .gasgiant = '~',
-    .water = '.',
-    .forest = ')',
-    .desert = '-',
-};
-
-export constexpr PlanetValues<const char*> Planet_types = {
-    .earth = "Class M",
-    .asteroid = "Asteroid",
-    .mars = "Airless",
-    .iceball = "Iceball",
-    .gasgiant = "Jovian",
-    .water = "Waterball",
-    .forest = "Forest",
-    .desert = "Desert",
-};
-
-// Sector type names
-export constexpr SectorValues<const char*> Desnames = {
-    .sea = "ocean",
-    .land = "land",
-    .mount = "mountainous",
-    .gas = "gaseous",
-    .ice = "ice",
-    .forest = "forest",
-    .desert = "desert",
-    .plated = "plated",
-    .wasted = "wasted",
-};
-
 // Natural defenses for each sector type (maps to SectorType)
 export constexpr SectorValues<int> sector_defense_bonus = {
     .sea = 1,

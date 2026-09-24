@@ -29,7 +29,7 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
     auto formatted = std::format(
         " {:c} {:4.4}/{:<4.4}{:c}{:4d}{:3d}{:5d}{:8d}{:3d}{:6d}{:5d}{:6d} "
         "{:3d}/{:<3d}{:3.0f}/{:<3d}{:3d}/{:<3d}",
-        Psymbol[pl.type()], star_ref.get_name(),
+        pl.type_symbol(), star_ref.get_name(),
         star_ref.get_planet_name(pl.planet_order()),
         (pl.info(Playernum).autorep ? '*' : ' '), star_ref.governor(Playernum),
         pl.info(Playernum).numsectsowned, pl.info(Playernum).tech_invest,

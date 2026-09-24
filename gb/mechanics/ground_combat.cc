@@ -158,8 +158,8 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
       std::format("\tBattle at {} {}: {} guns fired on {} civ/{} mil\n"
                   "\tAttack: {:.3f}   Defense: {:.3f}.\n"
                   "\t{} civ/{} mil killed.\n",
-                  sect.coords(), Desnames[sect.get_condition()], strength,
-                  oldciv, oldmil, astrength, dstrength, cas_civ, cas_mil);
+                  sect.coords(), sect.condition_name(), strength, oldciv,
+                  oldmil, astrength, dstrength, cas_civ, cas_mil);
   return std::make_tuple(short_msg, long_msg);
 }
 
@@ -195,7 +195,7 @@ people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
                   "\tAttack: {:.3f}   Defense: {:.3f}.\n"
                   "\t{}% damage inflicted for a total of {}%\n"
                   "\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",
-                  target_coords, Desnames[sect.get_condition()], civ, mil,
+                  target_coords, sect.condition_name(), civ, mil,
                   ship.type_name(), astrength, dstrength, damage, ship.damage(),
                   cas_civ, cas_mil, pdam, sdam);
   return std::make_tuple(short_msg, long_msg);

@@ -40,6 +40,36 @@ export template <typename T>
   requires(!std::same_as<T, SectorType>)
 constexpr char get_sector_char(T) = delete;
 
+/// Returns the human-readable terrain name for a SectorType.
+export constexpr std::string_view
+sector_type_name(SectorType condition) noexcept {
+  switch (condition) {
+    case SectorType::SEC_SEA:
+      return "ocean";
+    case SectorType::SEC_LAND:
+      return "land";
+    case SectorType::SEC_MOUNT:
+      return "mountainous";
+    case SectorType::SEC_GAS:
+      return "gaseous";
+    case SectorType::SEC_ICE:
+      return "ice";
+    case SectorType::SEC_FOREST:
+      return "forest";
+    case SectorType::SEC_DESERT:
+      return "desert";
+    case SectorType::SEC_PLATED:
+      return "plated";
+    case SectorType::SEC_WASTED:
+      return "wasted";
+  }
+  std::unreachable();
+}
+
+export template <typename T>
+  requires(!std::same_as<T, SectorType>)
+constexpr std::string_view sector_type_name(T) = delete;
+
 // POD struct containing all Sector data fields
 export struct sector_struct {
   Coordinates coords;
@@ -137,6 +167,12 @@ public:
   }
   [[nodiscard]] constexpr char condition_symbol() const {
     return get_sector_char(data_.condition);
+  }
+  [[nodiscard]] constexpr std::string_view type_name() const noexcept {
+    return sector_type_name(data_.type);
+  }
+  [[nodiscard]] constexpr std::string_view condition_name() const noexcept {
+    return sector_type_name(data_.condition);
   }
 
   /// Returns the natural terrain defense bonus for this sector's current

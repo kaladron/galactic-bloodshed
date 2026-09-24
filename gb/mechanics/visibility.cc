@@ -108,7 +108,7 @@ void show_planet_stats(GameObj& g, const Planet& p, player_t playernum,
                        const Race& race) {
   const auto& pinfo = p.info(playernum);
   g.out << std::format(
-      "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", Planet_types[p.type()],
+      "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", p.type_name(),
       race.Metamorph ? "covered" : "owned", pinfo.numsectsowned);
   show_planet_aliens(g, p, playernum, race);
   g.out << "\n";

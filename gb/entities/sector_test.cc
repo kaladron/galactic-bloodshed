@@ -766,6 +766,27 @@ void test_sector_defense_bonus() {
       [&]() { (void)invalid.combat_defense_factor(); });
 }
 
+void test_sector_type_and_condition_names() {
+  static_assert(sector_type_name(SectorType::SEC_SEA) == "ocean");
+  static_assert(sector_type_name(SectorType::SEC_LAND) == "land");
+  static_assert(sector_type_name(SectorType::SEC_MOUNT) == "mountainous");
+  static_assert(sector_type_name(SectorType::SEC_GAS) == "gaseous");
+  static_assert(sector_type_name(SectorType::SEC_ICE) == "ice");
+  static_assert(sector_type_name(SectorType::SEC_FOREST) == "forest");
+  static_assert(sector_type_name(SectorType::SEC_DESERT) == "desert");
+  static_assert(sector_type_name(SectorType::SEC_PLATED) == "plated");
+  static_assert(sector_type_name(SectorType::SEC_WASTED) == "wasted");
+
+  Sector s{};
+  s.set_type(SectorType::SEC_MOUNT);
+  s.set_condition(SectorType::SEC_PLATED);
+  test::expect_eq(s.type_name(), "mountainous");
+  test::expect_eq(s.condition_name(), "plated");
+
+  s.set_condition(SectorType::SEC_WASTED);
+  test::expect_eq(s.condition_name(), "wasted");
+}
+
 }  // namespace
 
 int main() {
@@ -787,5 +808,6 @@ int main() {
   test_sector_mine_crystals();
   test_sector_deplete_resource();
   test_sector_defense_bonus();
+  test_sector_type_and_condition_names();
   return 0;
 }

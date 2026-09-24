@@ -116,7 +116,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
           .success = false,
           .message = std::format(
               "Didn't find any free {}; choose another home planet type.",
-              Planet_types[spec.home_planet_type]),
+              planet_type_name(spec.home_planet_type)),
       };
     }
     star = found_loc->first;

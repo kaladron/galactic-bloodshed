@@ -76,50 +76,53 @@ bool profile(const command_t& argv, GameObj& g) {
     race_table.add_row(
         {"Rate:", std::format("{:.2f}", race.birthrate), "",
          "methane:", std::format("{}%", race.conditions[METHANE]), "",
-         Desnames[SectorType::SEC_SEA], std::format("{}", CHAR_SEA),
+         sector_type_name(SectorType::SEC_SEA), std::format("{}", CHAR_SEA),
          std::format("{:.0f}", fraction_to_percent(race.sector_compatibility(
                                    SectorType::SEC_SEA)))});
     race_table.add_row(
         {"Mass:", std::format("{:.3f}", race.mass), "",
          "oxygen:", std::format("{}%", race.conditions[OXYGEN]), "",
-         Desnames[SectorType::SEC_GAS], std::format("{}", CHAR_GAS),
+         sector_type_name(SectorType::SEC_GAS), std::format("{}", CHAR_GAS),
          std::format("{:.0f}", fraction_to_percent(race.sector_compatibility(
                                    SectorType::SEC_GAS)))});
     race_table.add_row(
         {"Fight:", std::format("{}", race.fighters), "",
          "helium:", std::format("{}%", race.conditions[HELIUM]), "",
-         Desnames[SectorType::SEC_ICE], std::format("{}", CHAR_ICE),
+         sector_type_name(SectorType::SEC_ICE), std::format("{}", CHAR_ICE),
          std::format("{:.0f}", fraction_to_percent(race.sector_compatibility(
                                    SectorType::SEC_ICE)))});
     race_table.add_row(
         {"Metab:", std::format("{:.2f}", race.metabolism), "",
          "nitrogen:", std::format("{}%", race.conditions[NITROGEN]), "",
-         Desnames[SectorType::SEC_MOUNT], std::format("{}", CHAR_MOUNT),
+         sector_type_name(SectorType::SEC_MOUNT), std::format("{}", CHAR_MOUNT),
          std::format("{:.0f}", fraction_to_percent(race.sector_compatibility(
                                    SectorType::SEC_MOUNT)))});
     race_table.add_row(
         {"Sexes:", std::format("{}", race.number_sexes), "",
          "CO2:", std::format("{}%", race.conditions[CO2]), "",
-         Desnames[SectorType::SEC_LAND], std::format("{}", CHAR_LAND),
+         sector_type_name(SectorType::SEC_LAND), std::format("{}", CHAR_LAND),
          std::format("{:.0f}", fraction_to_percent(race.sector_compatibility(
                                    SectorType::SEC_LAND)))});
     race_table.add_row(
         {"Explore:",
          std::format("{:.0f}%", fraction_to_percent(race.adventurism)), "",
          "hydrogen:", std::format("{}%", race.conditions[HYDROGEN]), "",
-         Desnames[SectorType::SEC_DESERT], std::format("{}", CHAR_DESERT),
+         sector_type_name(SectorType::SEC_DESERT),
+         std::format("{}", CHAR_DESERT),
          std::format("{:.0f}", fraction_to_percent(race.sector_compatibility(
                                    SectorType::SEC_DESERT)))});
     race_table.add_row(
         {"Avg Int:", std::format("{}", race.IQ), "",
          "sulfur:", std::format("{}%", race.conditions[SULFUR]), "",
-         Desnames[SectorType::SEC_FOREST], std::format("{}", CHAR_FOREST),
+         sector_type_name(SectorType::SEC_FOREST),
+         std::format("{}", CHAR_FOREST),
          std::format("{:.0f}", fraction_to_percent(race.sector_compatibility(
                                    SectorType::SEC_FOREST)))});
     race_table.add_row(
         {"Tech:", std::format("{:.2f}", race.tech), "",
          "other:", std::format("{}%", race.conditions[OTHER]), "",
-         Desnames[SectorType::SEC_PLATED], std::format("{}", CHAR_PLATED),
+         sector_type_name(SectorType::SEC_PLATED),
+         std::format("{}", CHAR_PLATED),
          std::format("{:.0f}", fraction_to_percent(race.sector_compatibility(
                                    SectorType::SEC_PLATED)))});
 
@@ -201,9 +204,9 @@ bool profile(const command_t& argv, GameObj& g) {
       g.out << std::format("\t\t  other    {}%",
                            race.estimate(r.conditions[OTHER], p));
       g.out << std::format("\t\tMorale:   {}\n", race.estimate(r.morale, p));
-      g.out << std::format("Sector type preference : {}\n",
-                           race.translate[p] > 80 ? Desnames[r.likesbest]
-                                                  : " ? ");
+      g.out << std::format(
+          "Sector type preference : {}\n",
+          race.translate[p] > 80 ? sector_type_name(r.likesbest) : " ? ");
     });
   } catch (const EntityNotFoundError&) {
     g.out << "Race not found.\n";

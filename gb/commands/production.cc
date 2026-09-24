@@ -31,7 +31,7 @@ void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
       std::string autorep = pl.info(Playernum).autorep ? "*" : " ";
 
       table.add_row(
-          {std::string(1, Psymbol[pl.type()]),
+          {std::string(1, pl.type_symbol()),
            std::format("{}/{}", star4, planet4), autorep,
            std::format("{}", star_ref.governor(Playernum)),
            std::format("{:.4f}", pl.info(Playernum).prod_tech),

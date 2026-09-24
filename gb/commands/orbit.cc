@@ -305,7 +305,7 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
 
   int stand = p.info(g.player()).explored ? 1 : 0;
   ss << std::format("{} {} {} 0 {} ", stand, screen_coords.x, screen_coords.y,
-                    (stand ? Psymbol[p.type()] : '?'));
+                    (stand ? p.type_symbol() : '?'));
   stand = p.info(g.player()).numsectsowned ? 1 : 0;
   ss << std::format("{} {}", stand, name);
   if (r.governor(g.governor()).toggle.compat && p.info(g.player()).explored) {

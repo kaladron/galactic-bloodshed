@@ -845,6 +845,35 @@ int main() {
     test::expect_eq(delta, -100);
   }
 
+  // Test 29: Planet type symbols and classification names
+  {
+    static_assert(planet_type_symbol(PlanetType::EARTH) == '@');
+    static_assert(planet_type_symbol(PlanetType::ASTEROID) == 'o');
+    static_assert(planet_type_symbol(PlanetType::MARS) == 'O');
+    static_assert(planet_type_symbol(PlanetType::ICEBALL) == '#');
+    static_assert(planet_type_symbol(PlanetType::GASGIANT) == '~');
+    static_assert(planet_type_symbol(PlanetType::WATER) == '.');
+    static_assert(planet_type_symbol(PlanetType::FOREST) == ')');
+    static_assert(planet_type_symbol(PlanetType::DESERT) == '-');
+
+    static_assert(planet_type_name(PlanetType::EARTH) == "Class M");
+    static_assert(planet_type_name(PlanetType::ASTEROID) == "Asteroid");
+    static_assert(planet_type_name(PlanetType::MARS) == "Airless");
+    static_assert(planet_type_name(PlanetType::ICEBALL) == "Iceball");
+    static_assert(planet_type_name(PlanetType::GASGIANT) == "Jovian");
+    static_assert(planet_type_name(PlanetType::WATER) == "Waterball");
+    static_assert(planet_type_name(PlanetType::FOREST) == "Forest");
+    static_assert(planet_type_name(PlanetType::DESERT) == "Desert");
+
+    Planet planet(PlanetType::GASGIANT, Coordinates{5, 5});
+    test::expect_eq(planet.type_symbol(), '~');
+    test::expect_eq(planet.type_name(), "Jovian");
+
+    planet.type() = PlanetType::FOREST;
+    test::expect_eq(planet.type_symbol(), ')');
+    test::expect_eq(planet.type_name(), "Forest");
+  }
+
   std::println("Planet unit tests passed successfully!");
   return 0;
 }

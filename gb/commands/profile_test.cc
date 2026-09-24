@@ -88,7 +88,7 @@ void test_profile_dispatch() {
   test::expect_contains(out, "Race report on Klingons");
   test::expect_contains(out, "Personal: Warrior empire");
   test::expect_contains(out, "Normal Race");
-  test::expect_contains(out, Desnames[SectorType::SEC_MOUNT]);
+  test::expect_contains(out, sector_type_name(SectorType::SEC_MOUNT));
   std::println(std::cout,
                "    ✓ Other player profile (translate > 80) verified");
 

@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
     std::print(
         "\nLive on what type planet (default: {}):\n     (e)arth, (g)asgiant, "
         "(m)ars, (i)ce, (w)ater, (d)esert, (f)orest? ",
-        Planet_types[archetype.default_planet]);
+        planet_type_name(archetype.default_planet));
     std::string planet_line;
     std::getline(std::cin, planet_line);
     char c = (!planet_line.empty()) ? planet_line[0] : '\0';
@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::println(std::cout, "Looking for type {} planet...",
-                 Planet_types[ppref]);
+                 planet_type_name(ppref));
 
     found = false;
     if (auto found_loc = service.find_suitable_planet(ppref)) {
@@ -265,14 +265,14 @@ int main(int argc, char* argv[]) {
     std::println(std::cout, "            Mass: {:.2f}", spec.mass);
     std::println(std::cout, " Number of sexes: {} (min req'd for colonization)",
                  spec.number_sexes);
-    std::println(std::cout, "     Home Planet: {}", Planet_types[ppref]);
+    std::println(std::cout, "     Home Planet: {}", planet_type_name(ppref));
 
     std::print("  Sector Compats: ");
     bool first = true;
     for (auto [st, compat] : spec.sector_compatibilities.settleable()) {
       if (compat > 0.0) {
         if (!first) std::print(", ");
-        std::print("{} {:.0f}%", Desnames[st], compat * 100.0);
+        std::print("{} {:.0f}%", sector_type_name(st), compat * 100.0);
         first = false;
       }
     }

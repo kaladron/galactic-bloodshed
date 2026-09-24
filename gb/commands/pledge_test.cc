@@ -24,12 +24,10 @@ void test_pledge_and_unpledge_dispatch() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Federation";
-  race1.leader().active = true;
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "AllianceLeader";
-  race2.leader().active = true;
 
   RaceRepository races(store);
   races.save(race1);
@@ -44,7 +42,7 @@ void test_pledge_and_unpledge_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Pledge to block 2
   ctx.assert_dispatch_success(g, {"pledge", "2"});
@@ -72,19 +70,19 @@ void test_pledge_and_unpledge_dispatch() {
   std::println(std::cout, "    ✓ Self unpledge rejection verified");
 
   // 5. Role check: Governor cannot pledge or unpledge
-  g.set_governor(1);
+  g.set_governor(2);
   ctx.assert_dispatch_rejected(g, {"pledge", "2"});
   test::expect_contains(g.out.str(),
-                        "Only the leader (Governor 0) may use this command.");
+                        "Only the leader (Governor 1) may use this command.");
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"unpledge", "2"});
   test::expect_contains(g.out.str(),
-                        "Only the leader (Governor 0) may use this command.");
+                        "Only the leader (Governor 1) may use this command.");
   std::println(std::cout,
                "    ✓ Governor rejection verified for pledge and unpledge");
 
   // 6. Invalid target player rejection
-  g.set_governor(0);
+  g.set_governor(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pledge", "99"});
   test::expect_contains(g.out.str(), "No such player.");

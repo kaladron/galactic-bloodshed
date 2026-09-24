@@ -80,7 +80,7 @@ void test_name_race_persistence() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_governor(0);  // Must be leader (governor 0)
+  g.set_governor(1);  // Must be leader (governor 1)
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.race =
       ctx.em.peek_race(g.player());  // Set race pointer like production does
@@ -272,10 +272,10 @@ void test_name_governor() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_governor(0);
+  g.set_governor(1);
   g.race = ctx.em.peek_race(g.player());
 
-  // TEST: Rename governor 0 to 'Grand Moff'
+  // TEST: Rename governor 1 to 'Grand Moff'
   {
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "governor", "Grand", "Moff"});
@@ -317,9 +317,9 @@ void test_name_block() {
   ctx.setup_game_obj(g);
   g.race = ctx.em.peek_race(g.player());
 
-  // TEST: Leader (governor 0) can rename alliance block
+  // TEST: Leader (governor 1) can rename alliance block
   {
-    g.set_governor(0);
+    g.set_governor(1);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "block", "United", "Federation"});
     test::expect_contains(g.out.str(), "Done.");
@@ -330,9 +330,9 @@ void test_name_block() {
     test::expect_eq(saved->name, "United Federation");
   }
 
-  // TEST: Non-leader governor (governor 1) is rejected
+  // TEST: Non-leader governor (governor 2) is rejected
   {
-    g.set_governor(1);
+    g.set_governor(2);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "block", "Rebel", "Alliance"});
     test::expect_contains(g.out.str(), "You are not authorized to do this.");

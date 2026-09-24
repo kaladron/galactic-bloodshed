@@ -21,13 +21,11 @@ void test_update_matrix() {
   deity_race.Playernum = 1;
   deity_race.name = "DeityRace";
   deity_race.God = true;
-  deity_race.leader().active = true;
 
   Race mortal_race{};
   mortal_race.Playernum = 2;
   mortal_race.name = "MortalRace";
   mortal_race.God = false;
-  mortal_race.leader().active = true;
 
   {
     JsonStore store(ctx.db);
@@ -43,7 +41,7 @@ void test_update_matrix() {
   }
 
   // --- Case 1: Happy Path (God user runs @@update) ---
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.out.str("");
 
@@ -54,7 +52,7 @@ void test_update_matrix() {
   test::expect_contains(out, "Update completed.");
 
   // --- Case 2: Role Rejection (Mortal player cannot run @@update) ---
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 2, 1);
   g.set_god(false);
   g.out.str("");
 
@@ -63,7 +61,7 @@ void test_update_matrix() {
   test::expect_contains(g.out.str(), "Only deity can use this command.");
 
   // --- Case 3: Scope Testing (Valid in all scopes) ---
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   for (auto scope : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
                      ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {
@@ -89,7 +87,7 @@ void test_update_population_growth_persistence() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
 
   // Initial population before @@update

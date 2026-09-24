@@ -17,7 +17,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Ship 1: Player 1 Fighter
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Docker")
       .in_star_orbit(1, 100.0, 200.0)
       .with_crew(0, 10)
@@ -26,7 +26,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Ship 2: Player 1 Carrier (close to ship 1)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Carrier")
       .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
@@ -34,7 +34,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Ship 3: Player 2 Cargo Ship (target for assault)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .named("Target")
       .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
@@ -42,7 +42,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Ship 4: Far away ship
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("FarTarget")
       .in_star_orbit(1, 500.0, 500.0)
       .with_fuel(100.0)
@@ -55,7 +55,7 @@ void test_dock_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -97,7 +97,7 @@ void test_assault_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -114,7 +114,7 @@ void test_assault_guest_rejection() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 2, 0);  // Player 2 is guest
+  ctx.setup_game_obj(g, 2, 1);  // Player 2 is guest
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -130,7 +130,7 @@ void test_dock_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -213,7 +213,7 @@ void test_assault_validation_and_ap_invariants() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -228,7 +228,7 @@ void test_assault_validation_and_ap_invariants() {
 
   // 2. Pods cannot assault
   shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                         .owned_by(1, 0)
+                         .owned_by(1, 1)
                          .named("SporePod")
                          .in_star_orbit(1, 100.0, 200.0)
                          .with_crew(0, 5)
@@ -258,7 +258,7 @@ void test_assault_validation_and_ap_invariants() {
 
   // 5. Cannot assault Von Neumann machines
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
-                        .owned_by(2, 0)
+                        .owned_by(2, 1)
                         .named("VNProbe")
                         .in_star_orbit(1, 100.0, 200.0)
                         .build();
@@ -293,7 +293,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -316,7 +316,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.popn() = 20;
   });
   shipnum_t doomed_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                            .owned_by(1, 0)
+                            .owned_by(1, 1)
                             .named("DoomedFighter")
                             .in_star_orbit(1, 100.0, 200.0)
                             .with_crew(0, 2)
@@ -330,7 +330,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
 
   // 2. Assaulting spaceborne-moored ship unmoors it first
   shipnum_t partner_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                             .owned_by(2, 0)
+                             .owned_by(2, 1)
                              .named("MooredPartner")
                              .in_star_orbit(1, 100.0, 200.0)
                              .build();
@@ -355,7 +355,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                          .owned_by(2, 0)
+                          .owned_by(2, 1)
                           .named("BoobyMine")
                           .in_star_orbit(1, 100.0, 200.0)
                           .with_max_crew(0)
@@ -374,7 +374,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t univ_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 0)
+                              .owned_by(2, 1)
                               .named("UnivCargo")
                               .in_star_orbit(1, 100.0, 200.0)
                               .build();
@@ -403,7 +403,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 0;
   });
   shipnum_t civ_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                             .owned_by(2, 0)
+                             .owned_by(2, 1)
                              .named("CivTarget")
                              .in_star_orbit(1, 100.0, 200.0)
                              .with_crew(2, 0)
@@ -423,7 +423,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t zero_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 0)
+                              .owned_by(2, 1)
                               .named("ZeroTarget")
                               .in_star_orbit(1, 100.0, 200.0)
                               .with_crew(5, 5)
@@ -453,7 +453,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t landed_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                .owned_by(2, 0)
+                                .owned_by(2, 1)
                                 .named("LandedTarget")
                                 .landed_on(1, 1, {1, 1})
                                 .build();

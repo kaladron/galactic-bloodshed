@@ -25,7 +25,6 @@ void setup_test_world(TestContext& ctx) {
   race.Playernum = 1;
   race.name = "Researchers";
   race.Guest = false;
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -44,7 +43,7 @@ void setup_test_world(TestContext& ctx) {
   ss0.coordinates = {0.0, 0.0};
   ss0.explored.set(player_t{1});
   ss0.inhabited.set(player_t{1});
-  ss0.governor[player_t{1}] = 0;
+  ss0.governor[player_t{1}] = 1;
   ss0.pnames.push_back("Earth");
   Star star0(ss0);
 
@@ -71,7 +70,7 @@ void test_status_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   // 1. Happy path: status without arguments

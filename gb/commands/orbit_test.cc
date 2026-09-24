@@ -25,7 +25,6 @@ void setup_test_world(TestContext& ctx) {
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -57,7 +56,7 @@ void setup_test_world(TestContext& ctx) {
   Ship ship1{};
   ship1.number() = 1;
   ship1.owner() = 1;
-  ship1.governor() = 0;
+  ship1.governor() = 1;
   ship1.alive() = true;
   ship1.active() = true;
   ship1.type() = ShipType::STYPE_FIGHTER;
@@ -69,7 +68,7 @@ void setup_test_world(TestContext& ctx) {
   Ship ship2{};
   ship2.number() = 2;
   ship2.owner() = 1;
-  ship2.governor() = 0;
+  ship2.governor() = 1;
   ship2.alive() = true;
   ship2.active() = true;
   ship2.type() = ShipType::STYPE_CRUISER;
@@ -80,7 +79,7 @@ void setup_test_world(TestContext& ctx) {
   Ship ship3{};
   ship3.number() = 3;
   ship3.owner() = 1;
-  ship3.governor() = 0;
+  ship3.governor() = 1;
   ship3.alive() = true;
   ship3.active() = true;
   ship3.type() = ShipType::STYPE_SHUTTLE;
@@ -102,7 +101,7 @@ void test_orbit_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // TEST: Orbit display at star level
   std::println(std::cout, "Orbit command displays ship at star");
@@ -193,7 +192,7 @@ void test_orbit_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -258,7 +257,7 @@ void test_orbit_space_mirror_aiming() {
   // 3. Verify orbit command includes the mirror in system view
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 

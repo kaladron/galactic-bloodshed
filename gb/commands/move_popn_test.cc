@@ -45,7 +45,7 @@ void test_move_popn_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -85,7 +85,7 @@ void test_move_popn_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -104,17 +104,18 @@ void test_move_popn_role_and_scope_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Scope rejection (LEVEL_UNIV is not allowed for move/deploy)
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "500"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
-  // 2. Star control rejection
+  // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   ctx.em.mutate_star(1, [](Star& s) {
-    s.governor(1) = 2;  // Player 1, Star governed by Gov 2
+    s.governor(1) = 1;  // Player 1, Star governed by Gov 1
   });
-  ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
+  ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -131,7 +132,7 @@ void test_move_popn_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -206,7 +207,7 @@ void test_move_popn_assault_and_unowned() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -231,7 +232,7 @@ void test_move_popn_negative_and_default_counts() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -283,7 +284,7 @@ void test_move_popn_multistep_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -305,7 +306,7 @@ void test_move_popn_enslaved_and_origin_validations() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -380,7 +381,7 @@ void test_move_popn_assault_metamorph_and_wiped() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -433,7 +434,7 @@ void test_move_popn_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -500,7 +501,7 @@ void test_move_popn_military_assault() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);

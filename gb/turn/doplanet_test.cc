@@ -551,7 +551,7 @@ void test_process_plow_turn() {
   // 2. Not landed telegram
   ship.launch_to_orbit();
   process_plow_turn(em, ship, planet, smap);
-  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_landed.empty());
   test::expect_true(tele_landed.back().message.contains("is not landed"));
 
@@ -559,7 +559,7 @@ void test_process_plow_turn() {
   ship.land_on_planet();
   ship.on() = 0;
   process_plow_turn(em, ship, planet, smap);
-  auto tele_on = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_on = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_on.empty());
   test::expect_true(tele_on.back().message.contains("is not switched on"));
 }
@@ -677,7 +677,7 @@ void test_process_dome_turn() {
   // 2. Insufficient resources telegram
   ship.resource() = 0;
   process_dome_turn(em, ship, smap);
-  auto tele_res = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_res = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_res.empty());
   test::expect_true(
       tele_res.back().message.contains("does not have enough resources"));
@@ -686,7 +686,7 @@ void test_process_dome_turn() {
   ship.resource() = 50;
   ship.launch_to_orbit();
   process_dome_turn(em, ship, smap);
-  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_landed.empty());
   test::expect_true(tele_landed.back().message.contains("is not landed"));
 
@@ -694,7 +694,7 @@ void test_process_dome_turn() {
   ship.land_on_planet();
   ship.on() = 0;
   process_dome_turn(em, ship, smap);
-  auto tele_on = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_on = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_on.empty());
   test::expect_true(tele_on.back().message.contains("is not switched on"));
 }
@@ -825,7 +825,7 @@ void test_process_quarry_turn() {
   // 2. Not switched on telegram
   ship.on() = 0;
   process_quarry_turn(em, ship, planet, smap, stats);
-  auto tele_on = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_on = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_on.empty());
   test::expect_true(tele_on.back().message.contains("is not switched on"));
 
@@ -833,7 +833,7 @@ void test_process_quarry_turn() {
   ship.on() = 1;
   ship.launch_to_orbit();
   process_quarry_turn(em, ship, planet, smap, stats);
-  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_landed.empty());
   test::expect_true(tele_landed.back().message.contains("is not landed"));
 
@@ -841,7 +841,7 @@ void test_process_quarry_turn() {
   ship.land_on_planet();
   ship.popn() = 0;
   process_quarry_turn(em, ship, planet, smap, stats);
-  auto tele_crew = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_crew = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_crew.empty());
   test::expect_true(
       tele_crew.back().message.contains("does not have workers aboard"));
@@ -882,7 +882,7 @@ void test_process_weapon_plant_turn() {
   // 2. Not landed telegram
   ship.launch_to_orbit();
   process_weapon_plant_turn(em, ship, stats);
-  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_landed = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_landed.empty());
   test::expect_true(tele_landed.back().message.contains("is not landed"));
 
@@ -890,7 +890,7 @@ void test_process_weapon_plant_turn() {
   ship.land_on_planet();
   ship.resource() = 0;
   process_weapon_plant_turn(em, ship, stats);
-  auto tele_res = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_res = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_res.empty());
   test::expect_true(
       tele_res.back().message.contains("does not have enough resources"));
@@ -899,7 +899,7 @@ void test_process_weapon_plant_turn() {
   ship.resource() = 50;
   ship.consume_fuel(ship.fuel());
   process_weapon_plant_turn(em, ship, stats);
-  auto tele_fuel = em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele_fuel = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_fuel.empty());
   test::expect_true(
       tele_fuel.back().message.contains("does not have enough fuel"));
@@ -2152,7 +2152,7 @@ void test_process_enslavement_and_revolts() {
   test::expect_eq(planet.slaved_to(), std::nullopt);
 
   // Verify telegram was pushed to slave player
-  auto telegrams = em.get_telegrams(player_t{2}, governor_t{0});
+  auto telegrams = em.get_telegrams(player_t{2}, governor_t{1});
   test::expect_false(telegrams.empty());
   test::expect_true(telegrams[0].message.contains("SLAVE REVOLT"));
 }
@@ -2213,7 +2213,7 @@ void test_notify_slave_revolt() {
   notify_slave_revolt(em, star, planet, player_t{1});
 
   // Verify telegram was pushed to player 2
-  auto telegrams = em.get_telegrams(player_t{2}, governor_t{0});
+  auto telegrams = em.get_telegrams(player_t{2}, governor_t{1});
   test::expect_false(telegrams.empty());
   test::expect_true(telegrams[0].message.contains("SLAVE REVOLT"));
 }
@@ -2265,11 +2265,11 @@ void test_execute_slave_revolt() {
     test::expect_false(planet.is_enslaved());
     test::expect_eq(planet.slaved_to(), std::nullopt);
 
-    auto tele1 = em.get_telegrams(player_t{1}, governor_t{0});
+    auto tele1 = em.get_telegrams(player_t{1}, governor_t{1});
     test::expect_false(tele1.empty());
     test::expect_true(tele1.back().message.contains("SLAVE REVOLT"));
 
-    auto tele2 = em.get_telegrams(player_t{2}, governor_t{0});
+    auto tele2 = em.get_telegrams(player_t{2}, governor_t{1});
     test::expect_false(tele2.empty());
     test::expect_true(tele2.back().message.contains("SLAVE REVOLT"));
   }
@@ -2661,7 +2661,7 @@ void test_send_planet_turn_telegrams() {
   send_planet_turn_telegrams(em, star, planet, Coordinates{1, 1}, stats);
 
   test::expect_eq(planet.info(player_t{1}).autorep, 1);
-  auto telegrams = em.get_telegrams(1, 0);
+  auto telegrams = em.get_telegrams(1, 1);
   test::expect_eq(telegrams.size(), 1);
   test::expect_true(
       telegrams[0].message.contains("Total      Prod: 40r 20f 10d"));
@@ -2705,7 +2705,7 @@ void test_send_planet_turn_telegrams_nova() {
     TurnStats stats{};
     send_planet_turn_telegrams(em, star, planet, std::nullopt, stats);
 
-    auto tele1 = em.get_telegrams(player_t{1}, governor_t{0});
+    auto tele1 = em.get_telegrams(player_t{1}, governor_t{1});
     test::expect_false(tele1.empty());
     test::expect_true(tele1.back().message.contains("BULLETIN from /"));
     test::expect_true(
@@ -2714,7 +2714,7 @@ void test_send_planet_turn_telegrams_nova() {
         "This planet must be evacuated immediately!"));
 
     // Race 2 has 0 sectors owned -> no telegram received
-    auto tele2 = em.get_telegrams(player_t{2}, governor_t{0});
+    auto tele2 = em.get_telegrams(player_t{2}, governor_t{1});
     test::expect_true(tele2.empty());
   }
 
@@ -2730,7 +2730,7 @@ void test_send_planet_turn_telegrams_nova() {
     TurnStats stats{};
     send_planet_turn_telegrams(em, star, planet_water, std::nullopt, stats);
 
-    auto tele = em.get_telegrams(player_t{1}, governor_t{0});
+    auto tele = em.get_telegrams(player_t{1}, governor_t{1});
     test::expect_true(
         tele.back().message.contains("Seas and rivers are boiling!"));
 
@@ -2741,7 +2741,7 @@ void test_send_planet_turn_telegrams_nova() {
     planet_forest.info(player_t{1}).numsectsowned = 3;
 
     send_planet_turn_telegrams(em, star, planet_forest, std::nullopt, stats);
-    auto tele_f = em.get_telegrams(player_t{1}, governor_t{0});
+    auto tele_f = em.get_telegrams(player_t{1}, governor_t{1});
     test::expect_true(
         tele_f.back().message.contains("Seas and rivers are boiling!"));
   }
@@ -2757,7 +2757,7 @@ void test_send_planet_turn_telegrams_nova() {
     TurnStats stats{};
     send_planet_turn_telegrams(em, star, planet_desert, std::nullopt, stats);
 
-    auto tele = em.get_telegrams(player_t{1}, governor_t{0});
+    auto tele = em.get_telegrams(player_t{1}, governor_t{1});
     test::expect_true(tele.back().message.contains("BULLETIN from /"));
     test::expect_false(
         tele.back().message.contains("Seas and rivers are boiling!"));

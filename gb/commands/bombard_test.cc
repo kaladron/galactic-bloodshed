@@ -30,7 +30,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create attacker ship in orbit with guns and ammo
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Battleship")
       .in_planet_orbit(1, 1)
       .with_guns(guntype_t::LIGHT, 10)
@@ -46,7 +46,7 @@ void test_bombard_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -81,7 +81,7 @@ void test_bombard_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -104,7 +104,7 @@ void test_bombard_role_and_scope_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Guest race rejection
-  ctx.setup_game_obj(g, 3, 0);
+  ctx.setup_game_obj(g, 3, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -113,7 +113,7 @@ void test_bombard_role_and_scope_rejections() {
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Scope rejection (LEVEL_UNIV is not allowed for bombard)
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
@@ -128,7 +128,7 @@ void test_bombard_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -152,7 +152,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -179,7 +179,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
 
   // 3. Spaceborne AFV cannot bombard
   const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                          .owned_by(1, 0)
+                          .owned_by(1, 1)
                           .in_planet_orbit(1, 1)
                           .with_guns(guntype_t::LIGHT, 5)
                           .with_destruct(20)
@@ -200,7 +200,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
 
   // 5. Planetary defense network blocks orbital bombardment without AP loss
   const auto pdef_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
-                           .owned_by(2, 0)
+                           .owned_by(2, 1)
                            .landed_on(1, 1, {5, 5})
                            .with_guns(guntype_t::MEDIUM, 5)
                            .with_destruct(20)
@@ -240,7 +240,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
     p.info(2).destruct = 5;
   });
   const auto protector_id = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                                .owned_by(2, 0)
+                                .owned_by(2, 1)
                                 .in_planet_orbit(1, 1)
                                 .with_guns(guntype_t::LIGHT, 5)
                                 .with_destruct(50)

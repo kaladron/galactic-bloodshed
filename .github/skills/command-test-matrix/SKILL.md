@@ -14,7 +14,7 @@ Every player command test in `gb/commands/*_test.cc` must implement the **4-Way 
 | :--- | :--- | :--- | :--- |
 | **1. Happy Path** | Valid scope, valid role, sufficient AP, valid arguments | Command succeeds, returns `true`, state updated | Star/Univ AP decreased by exact cost |
 | **2. Insufficient AP** | Star/Univ AP set to `< cost` (e.g. `0`) | Dispatcher rejects, returns `false`, state untouched | Star/Univ AP remains unchanged |
-| **3. Scope / Role Rejection** | Scope set to invalid level (e.g. `LEVEL_UNIV`) or unauthorized role (e.g. `Guest = true`, `governor = 1`) | Dispatcher rejects, returns `false`, state untouched | Star/Univ AP remains unchanged |
+| **3. Scope / Role Rejection** | Scope set to invalid level (e.g. `LEVEL_UNIV`) or unauthorized role (e.g. `Guest = true`, `governor = 2`) | Dispatcher rejects, returns `false`, state untouched | Star/Univ AP remains unchanged |
 | **4. Domain Error** | Bad arguments (e.g. invalid target, ship not landed) | Handler returns `false`, state untouched | Star/Univ AP remains unchanged |
 
 ## Test Implementation Template
@@ -38,7 +38,7 @@ void test_command_matrix() {
   GameObj g(ctx.em, registry);
 
   // 1. Setup entities (Race, Star, Planet, Ship)
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);

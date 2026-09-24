@@ -31,7 +31,7 @@ void test_dump_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -63,7 +63,7 @@ void test_dump_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -81,7 +81,7 @@ void test_dump_role_rejections() {
 
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 2, 0);
+    ctx.setup_game_obj(g, 2, 1);
     g.set_level(ScopeLevel::LEVEL_STAR);
     g.set_snum(1);
 
@@ -89,17 +89,17 @@ void test_dump_role_rejections() {
     test::expect_contains(g.out.str(), "Guest races cannot use this command.");
   }
 
-  // 2. Leader-only rejection (Governor > 0)
+  // 2. Leader-only rejection (Governor > 1)
   {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 1);
+    ctx.setup_game_obj(g, 1, 2);
     g.set_level(ScopeLevel::LEVEL_STAR);
     g.set_snum(1);
 
     ctx.assert_dispatch_rejected(g, {"dump", "Klingons"});
     test::expect_contains(g.out.str(),
-                          "Only the leader (Governor 0) may use this command.");
+                          "Only the leader (Governor 1) may use this command.");
   }
 }
 
@@ -109,7 +109,7 @@ void test_dump_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -129,7 +129,7 @@ void test_dump_specific_places() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -168,7 +168,7 @@ void test_dump_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 

@@ -24,7 +24,7 @@ void test_survey_no_args_planet_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -46,7 +46,7 @@ void test_survey_sector_range_with_header() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -70,7 +70,7 @@ void test_survey_star_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(2);
 
@@ -94,7 +94,7 @@ void test_survey_universe_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   ctx.assert_dispatch_success(g, {"survey"});
@@ -110,7 +110,7 @@ void test_client_survey_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);

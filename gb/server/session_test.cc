@@ -83,7 +83,7 @@ int main() {
   // SessionRegistry::notify_player returns false when no sessions
   {
     MockSessionRegistry registry;
-    bool delivered = registry.notify_player(1, 0, "Hello");
+    bool delivered = registry.notify_player(1, 1, "Hello");
     test::expect_false(delivered);
     std::println(std::cout, "✓ notify_player returns false with no sessions");
   }
@@ -99,12 +99,12 @@ int main() {
   {
     MockSessionRegistry registry;
     registry.update_flag = true;
-    bool delivered = registry.notify_player(1, 0, "Hello");
+    bool delivered = registry.notify_player(1, 1, "Hello");
     test::expect_false(delivered);
 
     // Also test with mock data
-    registry.sessions.push_back({true, 1, 0, {}});
-    delivered = registry.test_notify_player(1, 0, "Hello");
+    registry.sessions.push_back({true, 1, 1, {}});
+    delivered = registry.test_notify_player(1, 1, "Hello");
     test::expect_false(delivered);  // Should still be false due to update flag
 
     std::println(std::cout, "✓ notify_player returns false during update");
@@ -114,7 +114,7 @@ int main() {
   {
     MockSessionRegistry registry;
     registry.sessions.push_back(
-        {.connected = true, .player = 1, .governor = 0, .output = {}});
+        {.connected = true, .player = 1, .governor = 1, .output = {}});
 
     registry.update_flag = true;
     registry.test_notify_race(1, "Test message");
@@ -131,23 +131,23 @@ int main() {
     // Create multiple sessions
     registry.sessions.push_back({.connected = true,
                                  .player = 1,
-                                 .governor = 0,
+                                 .governor = 1,
                                  .output = {}});  // Match
     registry.sessions.push_back({.connected = true,
                                  .player = 1,
-                                 .governor = 1,
+                                 .governor = 2,
                                  .output = {}});  // Different governor
     registry.sessions.push_back({.connected = true,
                                  .player = 2,
-                                 .governor = 0,
+                                 .governor = 1,
                                  .output = {}});  // Different player
 
-    // Send to player 1, governor 0
-    bool delivered = registry.test_notify_player(1, 0, "Message for P1G0\n");
+    // Send to player 1, governor 1
+    bool delivered = registry.test_notify_player(1, 1, "Message for P1G1\n");
     test::expect_true(delivered);
 
     // Check only first session received the message
-    test::expect_eq(registry.sessions[0].output.str(), "Message for P1G0\n");
+    test::expect_eq(registry.sessions[0].output.str(), "Message for P1G1\n");
     test::expect_true(registry.sessions[1].output.str().empty());
     test::expect_true(registry.sessions[2].output.str().empty());
 
@@ -159,11 +159,11 @@ int main() {
     MockSessionRegistry registry;
 
     registry.sessions.push_back(
-        {.connected = true, .player = 1, .governor = 0, .output = {}});
-    registry.sessions.push_back(
         {.connected = true, .player = 1, .governor = 1, .output = {}});
     registry.sessions.push_back(
-        {.connected = true, .player = 2, .governor = 0, .output = {}});
+        {.connected = true, .player = 1, .governor = 2, .output = {}});
+    registry.sessions.push_back(
+        {.connected = true, .player = 2, .governor = 1, .output = {}});
 
     // Broadcast to race 1
     registry.test_notify_race(1, "Race 1 broadcast\n");
@@ -182,15 +182,15 @@ int main() {
 
     registry.sessions.push_back({.connected = false,
                                  .player = 1,
-                                 .governor = 0,
+                                 .governor = 1,
                                  .output = {}});  // Disconnected
     registry.sessions.push_back({.connected = true,
                                  .player = 1,
-                                 .governor = 0,
+                                 .governor = 1,
                                  .output = {}});  // Connected
 
-    // Send to player 1, governor 0
-    bool delivered = registry.test_notify_player(1, 0, "Test\n");
+    // Send to player 1, governor 1
+    bool delivered = registry.test_notify_player(1, 1, "Test\n");
     test::expect_true(delivered);  // Should deliver to session 1
 
     // Only connected session should receive message
@@ -206,12 +206,12 @@ int main() {
     MockSessionRegistry registry;
 
     registry.sessions.push_back(
-        {.connected = true, .player = 1, .governor = 0, .output = {}});
+        {.connected = true, .player = 1, .governor = 1, .output = {}});
     registry.sessions.push_back(
-        {.connected = true, .player = 2, .governor = 1, .output = {}});
+        {.connected = true, .player = 2, .governor = 2, .output = {}});
 
-    // Try to send to player 3, governor 0 (no matching session)
-    bool delivered = registry.test_notify_player(3, 0, "Test\n");
+    // Try to send to player 3, governor 1 (no matching session)
+    bool delivered = registry.test_notify_player(3, 1, "Test\n");
     test::expect_false(delivered);
 
     // No sessions should have received message
@@ -227,9 +227,9 @@ int main() {
     MockSessionRegistry registry;
 
     registry.sessions.push_back(
-        {.connected = true, .player = 1, .governor = 0, .output = {}});
+        {.connected = true, .player = 1, .governor = 1, .output = {}});
     registry.sessions.push_back(
-        {.connected = true, .player = 2, .governor = 0, .output = {}});
+        {.connected = true, .player = 2, .governor = 1, .output = {}});
 
     // Broadcast to race 3 (no sessions)
     registry.test_notify_race(3, "Nobody home\n");
@@ -247,11 +247,11 @@ int main() {
     MockSessionRegistry registry;
 
     registry.sessions.push_back(
-        {.connected = true, .player = 1, .governor = 0, .output = {}});
+        {.connected = true, .player = 1, .governor = 1, .output = {}});
 
     // Send multiple messages
-    registry.test_notify_player(1, 0, "Message 1\n");
-    registry.test_notify_player(1, 0, "Message 2\n");
+    registry.test_notify_player(1, 1, "Message 1\n");
+    registry.test_notify_player(1, 1, "Message 2\n");
     registry.test_notify_race(1, "Broadcast\n");
 
     // All messages should be in the buffer
@@ -267,18 +267,18 @@ int main() {
     MockSessionRegistry registry;
 
     registry.sessions.push_back(
-        {.connected = true, .player = 1, .governor = 0, .output = {}});
+        {.connected = true, .player = 1, .governor = 1, .output = {}});
     registry.sessions.push_back({.connected = true,
                                  .player = 1,
-                                 .governor = 0,
+                                 .governor = 1,
                                  .output = {}});  // Same player/governor
     registry.sessions.push_back(
-        {.connected = true, .player = 2, .governor = 0, .output = {}});
+        {.connected = true, .player = 2, .governor = 1, .output = {}});
 
-    bool delivered = registry.test_notify_player(1, 0, "Duplicate login\n");
+    bool delivered = registry.test_notify_player(1, 1, "Duplicate login\n");
     test::expect_true(delivered);
 
-    // Both sessions with player 1, governor 0 should receive message
+    // Both sessions with player 1, governor 1 should receive message
     test::expect_eq(registry.sessions[0].output.str(), "Duplicate login\n");
     test::expect_eq(registry.sessions[1].output.str(), "Duplicate login\n");
     test::expect_true(registry.sessions[2].output.str().empty());
@@ -292,9 +292,9 @@ int main() {
     MockSessionRegistry registry;
 
     registry.sessions.push_back(
-        {.connected = true, .player = 1, .governor = 0, .output = {}});
+        {.connected = true, .player = 1, .governor = 1, .output = {}});
 
-    bool delivered = registry.test_notify_player(1, 0, "");
+    bool delivered = registry.test_notify_player(1, 1, "");
     test::expect_true(delivered);  // Delivery succeeds even with empty message
 
     // Buffer should be empty but delivery still succeeded
@@ -323,12 +323,12 @@ int main() {
     MockSessionRegistry registry;
 
     registry.sessions.push_back(
-        {.connected = true, .player = 1, .governor = 0, .output = {}});
+        {.connected = true, .player = 1, .governor = 1, .output = {}});
 
     std::string long_message(1000, 'X');
     long_message += "\n";
 
-    bool delivered = registry.test_notify_player(1, 0, long_message);
+    bool delivered = registry.test_notify_player(1, 1, long_message);
     test::expect_true(delivered);
     test::expect_eq(registry.sessions[0].output.str(), long_message);
 
@@ -353,7 +353,7 @@ int main() {
     // Initial state
     test::expect_false(session->connected());
     test::expect_eq(session->player().value, 0);
-    test::expect_eq(session->governor().value, 0);
+    test::expect_eq(session->governor().value, 1);
     test::expect_false(session->god());
     test::expect_eq(session->snum(), 0);
     test::expect_eq(session->pnum(), 0);

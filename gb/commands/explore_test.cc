@@ -27,7 +27,6 @@ void setup_test_world(TestContext& ctx) {
   race.name = "Explorers";
   race.Guest = false;
   race.tech = 60.0;
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -70,7 +69,7 @@ void test_explore_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   // 1. Happy path: explore without arguments (all explored stars)

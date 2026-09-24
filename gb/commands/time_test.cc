@@ -19,7 +19,6 @@ int main() {
   race.Playernum = 1;
   race.name = "TimeWatchers";
   race.Guest = false;
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);

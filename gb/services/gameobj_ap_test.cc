@@ -25,7 +25,7 @@ void test_deduct_ap_star() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
 
   // 1. Zero amount deduction succeeds without changing AP
   test::expect_true(g.deduct_ap(starnum_t{1}, 0));
@@ -66,7 +66,7 @@ void test_deduct_univ_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
 
   // 1. Zero amount deduction succeeds
   test::expect_true(g.deduct_univ_ap(0));

@@ -21,13 +21,11 @@ void test_whois_dispatch() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Federation";
-  race1.leader().active = true;
   race1.leader().name = "Kirk";
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "Klingons";
-  race2.leader().active = true;
   race2.leader().name = "Kang";
 
   RaceRepository races(store);
@@ -36,7 +34,7 @@ void test_whois_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Self identification (no args)
   ctx.assert_dispatch_success(g, {"whois"});

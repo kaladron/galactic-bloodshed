@@ -20,7 +20,7 @@ void test_autoreport_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Happy path: toggle autoreport ON at planet scope without args
   g.set_level(ScopeLevel::LEVEL_PLAN);

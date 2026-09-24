@@ -32,7 +32,7 @@ the game.  Things that can be "grant"ed include:
              Syntax:   "grant <governor #> money <amount>"
 
    To take any of these items back from the governor, the <governor #> can be
-specified as "0".
+specified as "1" (the race leader).
 
 ## See Also
    appoint, governors, revoke

@@ -21,7 +21,6 @@ void test_who_matrix() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Federation";
-  race1.leader().active = true;
   race1.leader().name = "Kirk";
   race1.leader().toggle.invisible = false;
   race1.leader().toggle.gag = false;
@@ -29,7 +28,6 @@ void test_who_matrix() {
   Race race2{};
   race2.Playernum = 2;
   race2.name = "Klingons";
-  race2.leader().active = true;
   race2.leader().name = "Kang";
   race2.leader().toggle.invisible = true;  // invisible player
   race2.leader().toggle.gag = true;
@@ -38,7 +36,6 @@ void test_who_matrix() {
   god_race.Playernum = 3;
   god_race.name = "Deity";
   god_race.God = true;
-  god_race.leader().active = true;
   god_race.leader().name = "Admin";
 
   {
@@ -50,7 +47,7 @@ void test_who_matrix() {
 
     StarRepository stars(store);
     star_struct sdata{};
-    sdata.star_id = 0;
+    sdata.star_id = 1;
     sdata.name = "Sol";
     Star star{sdata};
     stars.save(star);
@@ -59,27 +56,27 @@ void test_who_matrix() {
   std::time_t now = std::time(nullptr);
   mock_registry.sessions = {
       SessionInfo{.player = 1,
-                  .governor = 0,
-                  .snum = 0,
+                  .governor = 1,
+                  .snum = 1,
                   .connected = true,
                   .god = false,
                   .last_time = now - 10},
       SessionInfo{.player = 2,
-                  .governor = 0,
-                  .snum = 0,
+                  .governor = 1,
+                  .snum = 1,
                   .connected = true,
                   .god = false,
                   .last_time = now - 5},
       SessionInfo{.player = 3,
-                  .governor = 0,
-                  .snum = 0,
+                  .governor = 1,
+                  .snum = 1,
                   .connected = true,
                   .god = true,
                   .last_time = now - 1},  // God session: should be skipped
   };
 
   // --- Case 1: Happy Path (Normal player viewing who) ---
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(false);
   g.set_level(ScopeLevel::LEVEL_PLAN);
 
@@ -89,7 +86,7 @@ void test_who_matrix() {
   test::expect_contains(out, "Current Players:");
   test::expect_contains(out, "Federation");
   test::expect_contains(out, "\"Kirk\"");
-  test::expect_contains(out, "[1,0]");
+  test::expect_contains(out, "[1,1]");
   // Player 2 is invisible, so non-god Player 1 should not see "Klingons" in
   // table
   test::expect_false(out.contains("Klingons"));
@@ -103,7 +100,7 @@ void test_who_matrix() {
   }
 
   // --- Case 2: Invisible player viewing who sees themselves ---
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 2, 1);
   g.set_god(false);
 
   test::expect_true(
@@ -116,7 +113,7 @@ void test_who_matrix() {
   test::expect_true(out.contains("0 cowards") || out.contains("Finished."));
 
   // --- Case 3: God viewing who sees all and star names ---
-  ctx.setup_game_obj(g, 3, 0);
+  ctx.setup_game_obj(g, 3, 1);
   g.set_god(true);
 
   test::expect_true(

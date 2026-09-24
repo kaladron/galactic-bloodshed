@@ -20,7 +20,7 @@ void setup_test_world(TestContext& ctx) {
     r.mass = 1.0;
     r.morale = 100;
     r.likes[SectorType::SEC_LAND] = 50;
-    r.appoint_governor(1);
+    r.appoint_governor(2);
   });
 
   ctx.em.mutate_race(2, [](Race& r) {
@@ -46,7 +46,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create defender's ship (landed on planet at 5, 5)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .named("Cargo")
       .landed_on(1, 1, Coordinates(5, 5))
       .with_crew(10, 5)
@@ -60,7 +60,7 @@ void test_capture_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -94,7 +94,7 @@ void test_capture_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -113,16 +113,16 @@ void test_capture_role_and_scope_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Scope rejection (LEVEL_UNIV)
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
-  // 2. Star control rejection
+  // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
   ctx.em.mutate_star(1, [](Star& s) {
-    s.governor(1) = 2;  // Star governed by Gov 2
+    s.governor(1) = 1;  // Star governed by Gov 1
   });
-  ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
+  ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -138,7 +138,7 @@ void test_capture_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -164,7 +164,7 @@ void test_capture_domain_errors() {
 
   // 4. Von Neumann machine rejection
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
-                        .owned_by(2, 0)
+                        .owned_by(2, 1)
                         .landed_on(1, 1, Coordinates(5, 5))
                         .build();
   g.out.str("");
@@ -175,7 +175,7 @@ void test_capture_domain_errors() {
   ctx.em.mutate_sectormap(
       1, 1, [](SectorMap& smap) { smap.get(Coordinates{2, 2}).set_owner(0); });
   shipnum_t unowned_sect_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                    .owned_by(2, 0)
+                                    .owned_by(2, 1)
                                     .landed_on(1, 1, Coordinates(2, 2))
                                     .build();
   g.out.str("");
@@ -202,7 +202,7 @@ void test_capture_civilian_victory() {
 
   // Setup empty enemy cargo ship with no crew
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 0)
+                              .owned_by(2, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(0)
@@ -210,7 +210,7 @@ void test_capture_civilian_victory() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -240,7 +240,7 @@ void test_capture_default_boarders_and_allied_ship() {
   ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(player_t{2}); });
 
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 0)
+                              .owned_by(2, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(0)
@@ -248,7 +248,7 @@ void test_capture_default_boarders_and_allied_ship() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -271,7 +271,7 @@ void test_capture_booby_trap_robot_ship() {
 
   // Create booby-trapped robot cargo ship (destruct > 0, crew == 0)
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 0)
+                              .owned_by(2, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(5)
@@ -279,7 +279,7 @@ void test_capture_booby_trap_robot_ship() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -296,7 +296,7 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
 
   // Strong defender ship
   shipnum_t dreadnought = TestShipBuilder(ctx.em, ShipType::STYPE_DREADNT)
-                              .owned_by(2, 0)
+                              .owned_by(2, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(500, 200)
                               .with_armor(100)
@@ -310,7 +310,7 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -329,7 +329,7 @@ void test_capture_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);

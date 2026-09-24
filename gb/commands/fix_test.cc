@@ -21,7 +21,7 @@ void test_fix_ship_fuel_persistence() {
 
   // Create a ship with low fuel
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .with_max_fuel(200.0)
       .with_fuel(50.0)
       .build();
@@ -59,7 +59,7 @@ void test_fix_ship_damage_persistence() {
   Ship ship{};
   ship.number() = 1;
   ship.owner() = 1;
-  ship.governor() = 0;
+  ship.governor() = 1;
   ship.type() = ShipType::STYPE_SHUTTLE;
   ship.alive() = true;
   ship.admin_override_damage(75);
@@ -98,7 +98,7 @@ void test_fix_ship_alive_persistence() {
   Ship ship{};
   ship.number() = 1;
   ship.owner() = 1;
-  ship.governor() = 0;
+  ship.governor() = 1;
   ship.type() = ShipType::STYPE_SHUTTLE;
   ship.alive() = false;
   ship.admin_override_damage(100);
@@ -281,7 +281,7 @@ void test_fix_command_dispatch() {
 
   // Create ship
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .with_max_fuel(200.0)
       .with_fuel(50.0)
       .build();
@@ -290,12 +290,12 @@ void test_fix_command_dispatch() {
   GameObj g(ctx.em, registry);
 
   // 1. Mortal rejection
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 2, 1);
   ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "100"});
   test::expect_contains(g.out.str(), "Only deity can use this command");
 
   // 2. Deity happy path - planet fix
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);

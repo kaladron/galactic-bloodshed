@@ -87,7 +87,7 @@ void test_tactical_planet_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g_tactical(ctx.em, registry);
-  ctx.setup_game_obj(g_tactical, 1, 0);
+  ctx.setup_game_obj(g_tactical, 1, 1);
   g_tactical.set_level(ScopeLevel::LEVEL_PLAN);
   g_tactical.set_snum(1);
   g_tactical.set_pnum(1);
@@ -126,7 +126,7 @@ void test_tactical_ship_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g_tactical(ctx.em, registry);
-  ctx.setup_game_obj(g_tactical, 1, 0);
+  ctx.setup_game_obj(g_tactical, 1, 1);
   g_tactical.set_level(ScopeLevel::LEVEL_SHIP);
   g_tactical.set_snum(1);
   g_tactical.set_pnum(1);
@@ -164,7 +164,7 @@ void test_tactical_star_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g_tactical(ctx.em, registry);
-  ctx.setup_game_obj(g_tactical, 1, 0);
+  ctx.setup_game_obj(g_tactical, 1, 1);
   g_tactical.set_level(ScopeLevel::LEVEL_STAR);
   g_tactical.set_snum(1);
   g_tactical.set_pnum(1);
@@ -190,7 +190,7 @@ void test_tactical_explicit_ship_and_filters() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -237,7 +237,7 @@ void test_tactical_scope_rejection() {
 
   auto& registry = get_test_session_registry();
   GameObj g_tactical(ctx.em, registry);
-  ctx.setup_game_obj(g_tactical, 1, 0);
+  ctx.setup_game_obj(g_tactical, 1, 1);
   g_tactical.set_level(ScopeLevel::LEVEL_UNIV);
 
   ctx.assert_dispatch_rejected(g_tactical, {"tactical"});

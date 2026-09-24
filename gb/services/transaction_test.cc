@@ -133,7 +133,7 @@ void test_dispatch_command_transaction_success(TestContext& ctx) {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 3, 0);
+  ctx.setup_game_obj(g, 3, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -197,7 +197,7 @@ void test_dispatch_command_transaction_failure(TestContext& ctx) {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 4, 0);
+  ctx.setup_game_obj(g, 4, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(2);
 

@@ -1131,7 +1131,7 @@ void test_ship_moor_together_and_commandability() {
                         .in_star_orbit(1)
                         .build();
   shipnum_t s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                        .owned_by(1, 0)
+                        .owned_by(1, 1)
                         .in_star_orbit(1)
                         .build();
 
@@ -1147,35 +1147,40 @@ void test_ship_moor_together_and_commandability() {
   test::expect_eq(s1_peek->destshipno(), s2_id);
   test::expect_eq(s2_peek->destshipno(), s1_id);
 
-  // Authorization checks: governor 0 or matching governor
-  test::expect_true(s1_peek->is_authorized_for(0));
+  // Authorization checks: leader (governor 1) or matching governor (2)
+  test::expect_true(s1_peek->is_authorized_for(1));
   test::expect_true(s1_peek->is_authorized_for(2));
-  test::expect_false(s1_peek->is_authorized_for(1));
+  test::expect_false(s1_peek->is_authorized_for(3));
 
   // Commandability checks
-  test::expect_true(s1_peek->is_commandable_by(1, 0));
+  test::expect_true(s1_peek->is_commandable_by(1, 1));
   test::expect_true(s1_peek->is_commandable_by(1, 2));
-  test::expect_false(s1_peek->is_commandable_by(2, 0));
-  test::expect_false(s1_peek->is_commandable_by(1, 1));
+  test::expect_false(s1_peek->is_commandable_by(2, 1));
+  test::expect_false(s1_peek->is_commandable_by(1, 3));
+
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.appoint_governor(2);
+    r.appoint_governor(3);
+  });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 2);
   test::expect_true(g.check_commandable(*s1_peek));
 
-  // Unauthorized governor fails check_commandable and receives telegram via
+  // Unauthorized governor (3) fails check_commandable and receives telegram via
   // notify_dont_own_ship
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, 1, 3);
   test::expect_false(g.check_commandable(*s1_peek));
-  auto t_p1g1 = ctx.em.get_telegrams(1, 1);
-  test::expect_eq(t_p1g1.size(), 1u);
-  test::expect_true(t_p1g1[0].message.find("don't own") != std::string::npos);
+  auto t_p1g3 = ctx.em.get_telegrams(1, 3);
+  test::expect_eq(t_p1g3.size(), 1u);
+  test::expect_true(t_p1g3[0].message.find("don't own") != std::string::npos);
 
   // Wrong player fails check_commandable and receives telegram via
   // notify_dont_own_ship
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 2, 1);
   test::expect_false(g.check_commandable(*s1_peek));
-  auto t_p2g0 = ctx.em.get_telegrams(2, 0);
+  auto t_p2g0 = ctx.em.get_telegrams(2, 1);
   test::expect_eq(t_p2g0.size(), 1u);
   test::expect_true(t_p2g0[0].message.find("don't own") != std::string::npos);
 
@@ -1184,7 +1189,7 @@ void test_ship_moor_together_and_commandability() {
     s1.active() = false;
     s1.apply_radiation(100);
   });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.out.str("");
   test::expect_false(g.check_commandable(*ctx.em.peek_ship(s1_id)));
   test::expect_true(g.out.str().find("irradiated") != std::string::npos);
@@ -1319,7 +1324,7 @@ void test_blueprint_complexity_defense_and_capture() {
   ctx.with_standard_universe();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // Blueprint and constructed state initialization for VN, Berserker, Mine,
   // Transdev, and specialty ships
@@ -1404,7 +1409,7 @@ void test_blueprint_complexity_defense_and_capture() {
 
   // getdefense() spaceborne vs landed
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 10)
-                              .owned_by(1, 0)
+                              .owned_by(1, 1)
                               .in_planet_orbit(1, 1)
                               .build();
   test::expect_eq(getdefense(ctx.em, *ctx.em.peek_ship(carrier_id)), 0);
@@ -1436,7 +1441,7 @@ void test_moveship_and_followable() {
 
   // 1. followable() checks: alive, active, carrier-docked, same owner, range
   const auto s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 20)
-                         .owned_by(1, 0)
+                         .owned_by(1, 1)
                          .in_star_orbit(1)
                          .with_crew(50, 0)
                          .with_fuel(500.0)
@@ -1444,7 +1449,7 @@ void test_moveship_and_followable() {
                          .with_tech(100.0)
                          .build();
   const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 21)
-                         .owned_by(2, 0)
+                         .owned_by(2, 1)
                          .in_star_orbit(1)
                          .with_crew(50, 0)
                          .with_fuel(500.0)
@@ -1588,7 +1593,7 @@ void test_moveship_and_followable() {
 
   // 6. Deep space out-of-fuel loss for cheap / probe ship
   const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 22)
-                            .owned_by(1, 0)
+                            .owned_by(1, 1)
                             .with_fuel(0.0)
                             .with_speed(9)
                             .build();

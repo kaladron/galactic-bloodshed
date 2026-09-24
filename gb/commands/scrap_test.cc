@@ -16,7 +16,7 @@ void setup_test_world(TestContext& ctx) {
                                                      Coordinates{5, 5});
 
   auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                        .owned_by(player_t{1}, governor_t{0})
+                        .owned_by(player_t{1}, governor_t{1})
                         .named("Carrier")
                         .in_star_orbit(1)
                         .with_crew(10, 0)
@@ -25,7 +25,7 @@ void setup_test_world(TestContext& ctx) {
                         .build();
 
   auto fighter_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                        .owned_by(player_t{1}, governor_t{0})
+                        .owned_by(player_t{1}, governor_t{1})
                         .named("ToScrap")
                         .in_star_orbit(1)
                         .with_crew(5, 0)
@@ -48,7 +48,7 @@ void test_scrap_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -77,7 +77,7 @@ void test_scrap_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -91,7 +91,7 @@ void test_scrap_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -112,14 +112,14 @@ void test_scrap_toxic_waste_warning() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
 
   // Create Toxic Waste Canister landed on planet
   auto tox_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
-                    .owned_by(player_t{1}, governor_t{0})
+                    .owned_by(player_t{1}, governor_t{1})
                     .named("HazMat")
                     .landed_on(1, 1, Coordinates{5, 5})
                     .with_crew(1, 0)

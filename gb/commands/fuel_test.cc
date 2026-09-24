@@ -16,7 +16,7 @@ void test_fuel_matrix() {
   ctx.with_standard_universe();
 
   shipnum_t ship_num = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                           .owned_by(1, 0)
+                           .owned_by(1, 1)
                            .named("Explorer")
                            .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                            .with_speed(2)
@@ -25,7 +25,7 @@ void test_fuel_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -58,7 +58,7 @@ void test_fuel_matrix() {
 
   // 5. Unowned ship, landed ship without destination, stationary ship, factory
   shipnum_t enemy_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                             .owned_by(2, 0)
+                             .owned_by(2, 1)
                              .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                              .with_speed(2)
                              .build();
@@ -68,7 +68,7 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(), "You do not own this ship.");
 
   shipnum_t landed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                              .owned_by(1, 0)
+                              .owned_by(1, 1)
                               .landed_on(1, 1, Coordinates(1, 1))
                               .with_speed(2)
                               .with_fuel(200.0)
@@ -88,7 +88,7 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(), "FUEL ESTIMATES");
 
   shipnum_t stopped_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                               .owned_by(1, 0)
+                               .owned_by(1, 1)
                                .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                .with_speed(0)
                                .build();
@@ -98,7 +98,7 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(), "That ship is not moving!");
 
   shipnum_t factory_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                               .owned_by(1, 0)
+                               .owned_by(1, 1)
                                .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                .with_speed(1)
                                .build();
@@ -147,7 +147,7 @@ void test_fuel_output_and_do_trip_branches() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. fuel_output with grav == 0 and segments == 1
   ctx.em.mutate_server_state([](ServerState& st) {
@@ -186,11 +186,11 @@ void test_fuel_output_and_do_trip_branches() {
     st.nsegments_done = 1;
   });
   const auto target_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .in_star_orbit(1, SystemCoordinates{25.0, 0.0})
                              .build();
   const auto runner_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                              .with_speed(9)
                              .build();

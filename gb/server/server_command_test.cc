@@ -92,14 +92,14 @@ void test_emulation_privilege_drop_and_guest_restrictions() {
   GameObj g(ctx.em, registry);
 
   // 1. Guest race cannot execute commands restricted with no_guests = true
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 2, 1);
   g.set_god(false);
   ctx.assert_dispatch_rejected(g, no_guest_cmd, {"mock_no_guest"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Normal non-guest race executes standard command successfully
   g.out.str("");
-  ctx.setup_game_obj(g, 3, 0);
+  ctx.setup_game_obj(g, 3, 1);
   g.set_god(false);
   ctx.assert_dispatch_success(g, no_guest_cmd, {"mock_no_guest"});
   test::expect_contains(g.out.str(), "Mortal command executed.");

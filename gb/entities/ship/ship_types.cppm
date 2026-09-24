@@ -534,7 +534,7 @@ export struct HyperDriveData {
 export struct ship_struct {
   shipnum_t number{0};     ///< Ship's unique identification number
   player_t owner{0};       ///< Owner player ID
-  governor_t governor{0};  ///< Governor controlling the ship
+  governor_t governor{1};  ///< Governor controlling the ship
   std::string name;        ///< Name of ship (optional)
   std::string shipclass;   ///< Ship class designated by player
 

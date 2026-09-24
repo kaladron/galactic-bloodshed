@@ -19,14 +19,12 @@ int main() {
   race1.Playernum = 1;
   race1.name = "Bidder";
   race1.Guest = false;
-  race1.leader().active = true;
   race1.leader().money = 10000;
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "Seller";
   race2.Guest = false;
-  race2.leader().active = true;
   race2.leader().money = 5000;
 
   RaceRepository races(store);
@@ -39,7 +37,7 @@ int main() {
   ss.name = "MarketHub";
   ss.coordinates = {100.0, 200.0};
   ss.AP[player_t{1}] = 100;
-  ss.governor[player_t{1}] = 0;
+  ss.governor[player_t{1}] = 1;
   ss.pnames.emplace_back("MarketPlanet");
   Star star(ss);
 
@@ -63,7 +61,7 @@ int main() {
   Ship port{};
   port.number() = 1;
   port.owner() = 1;
-  port.governor() = 0;
+  port.governor() = 1;
   port.alive() = true;
   port.active() = true;
   port.type() = ShipType::OTYPE_GOV;  // Has ABIL_PORT capability
@@ -80,7 +78,7 @@ int main() {
     Commod commod{};
     commod.id = 1;
     commod.owner = 2;  // Player 2 is selling
-    commod.governor = 0;
+    commod.governor = 1;
     commod.type = CommodType::RESOURCE;
     commod.amount = 100;
     commod.deliver = false;
@@ -133,7 +131,7 @@ int main() {
                  c_after->bidder.value_or(0));
     test::expect_eq(c_after->bid, 1000);
     test::expect_eq(c_after->bidder, player_t{1});
-    test::expect_eq(c_after->bidder_gov, 0);
+    test::expect_eq(c_after->bidder_gov, 1);
     test::expect_eq(c_after->star_to, 0);
     test::expect_eq(c_after->planet_to, 0);
     std::println(std::cout, "✓ Initial bid placed successfully");

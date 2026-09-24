@@ -49,7 +49,7 @@ int main() {
     Ship ship{};
     ship.number() = 1;
     ship.owner() = player_t{1};
-    ship.governor() = 0;
+    ship.governor() = 1;
     ship.name() = "Scout1";
     ship.type() = ShipType::STYPE_SHUTTLE;  // Has crew, no ABIL_REPAIR
     ship.alive() = 1;
@@ -103,7 +103,7 @@ int main() {
     Ship ship{};
     ship.number() = 2;
     ship.owner() = player_t{1};
-    ship.governor() = 0;
+    ship.governor() = 1;
     ship.name() = "Scout2";
     ship.type() = ShipType::STYPE_SHUTTLE;
     ship.alive() = 1;
@@ -158,7 +158,7 @@ int main() {
     Ship ship{};
     ship.number() = 3;
     ship.owner() = player_t{1};
-    ship.governor() = 0;
+    ship.governor() = 1;
     ship.name() = "Scout3";
     ship.type() = ShipType::STYPE_SHUTTLE;
     ship.alive() = 1;
@@ -209,7 +209,7 @@ int main() {
     Ship ship{};
     ship.number() = 4;
     ship.owner() = player_t{1};
-    ship.governor() = 0;
+    ship.governor() = 1;
     ship.name() = "Factory1";
     ship.type() = ShipType::OTYPE_FACTORY;  // Has ABIL_REPAIR
     ship.alive() = 1;

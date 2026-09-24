@@ -461,7 +461,7 @@ The application layer handles player interaction, input parsing, command dispatc
 
 1. **Declarative Command Metadata (`CommandDescriptor`)**:
    Instead of writing manual permission and scope checks inside each command handler, commands declare their requirements up front:
-   - **Role & Privilege Rules**: Restricts execution based on player roles (e.g. deity-only, prohibiting guest races, leader-only Governor 0, or star system control).
+   - **Role & Privilege Rules**: Restricts execution based on player roles (e.g. deity-only, prohibiting guest races, leader-only Governor 1, or star system control).
    - **Allowed Scopes**: Restricts execution to valid game scopes (Universe, Star, Planet, Ship, or combinations).
    - **Action Point (AP) Costs**: Specifies whether a command is free, costs fixed AP (deducted from Star or Universe), or computes dynamic costs per action.
    - **Syntax & Argument Requirements**: Defines minimum argument counts and usage syntax strings.
@@ -874,7 +874,7 @@ Command unit tests use `TestContext` to verify player commands across four stand
 TestContext ctx;
 auto& registry = get_test_session_registry();
 GameObj g(ctx.em, registry);
-ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+ctx.setup_game_obj(g, player_t{1}, governor_t{1});
 
 // Happy Path: Executes and verifies AP deduction
 ctx.assert_dispatch_success(g, tax_cmd, {"tax", "15"}, /*expected_star_ap_deducted=*/1);

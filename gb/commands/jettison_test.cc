@@ -20,7 +20,6 @@ void setup_test_world(TestContext& ctx) {
   race.Playernum = 1;
   race.name = "Jettisoner";
   race.Guest = false;
-  race.leader().active = true;
   race.mass = 1.0;  // Used for crew/troop mass calculations
 
   RaceRepository races(store);
@@ -39,7 +38,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create a ship with cargo
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("CargoShip")
       .in_star_orbit(0)
       .with_fuel(100.0)
@@ -56,7 +55,7 @@ void test_jettison_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
   g.set_shipno(1);
@@ -156,7 +155,7 @@ void test_jettison_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
   g.set_shipno(1);

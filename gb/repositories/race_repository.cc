@@ -32,14 +32,14 @@ struct meta<TechDiscoveries> {
 template <>
 struct meta<Race::gov> {
   using T = Race::gov;
-  static constexpr auto value = object(
-      "name", &T::name, "password", &T::password, "active", &T::active,
-      "deflevel", &T::deflevel, "defsystem", &T::defsystem, "defplanetnum",
-      &T::defplanetnum, "homesystem", &T::homesystem, "homeplanetnum",
-      &T::homeplanetnum, "newspos", &T::newspos, "toggle", &T::toggle, "money",
-      &T::money, "income", &T::income, "maintain", &T::maintain, "cost_tech",
-      &T::cost_tech, "cost_market", &T::cost_market, "profit_market",
-      &T::profit_market, "login", &T::login);
+  static constexpr auto value =
+      object("name", &T::name, "password", &T::password, "deflevel",
+             &T::deflevel, "defsystem", &T::defsystem, "defplanetnum",
+             &T::defplanetnum, "homesystem", &T::homesystem, "homeplanetnum",
+             &T::homeplanetnum, "newspos", &T::newspos, "toggle", &T::toggle,
+             "money", &T::money, "income", &T::income, "maintain", &T::maintain,
+             "cost_tech", &T::cost_tech, "cost_market", &T::cost_market,
+             "profit_market", &T::profit_market, "login", &T::login);
 };
 
 template <>
@@ -82,6 +82,9 @@ RaceRepository::deserialize(const std::string& json_str) const {
   Race race{};
   auto result = glz::read_json(race, json_str);
   if (!result) {
+    if (!race.has_governor(Race::leader_id)) {
+      race.init_leader();
+    }
     return race;
   }
   return std::nullopt;

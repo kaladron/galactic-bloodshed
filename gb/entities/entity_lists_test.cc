@@ -59,7 +59,7 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     Commod commod{};
     commod.id = 1;
     commod.owner = 1;
-    commod.governor = 0;
+    commod.governor = 1;
     commod.type = CommodType::RESOURCE;
     commod.amount = 100;
     commod_repo.save(commod);
@@ -68,7 +68,7 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     Commod commod{};
     commod.id = 2;
     commod.owner = 0;
-    commod.governor = 0;
+    commod.governor = 1;
     commod.type = CommodType::DESTRUCT;
     commod.amount = 250;
     commod_repo.save(commod);
@@ -77,7 +77,7 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     Commod commod{};
     commod.id = 3;
     commod.owner = 2;
-    commod.governor = 0;
+    commod.governor = 1;
     commod.type = CommodType::FUEL;
     commod.amount = 0;
     commod_repo.save(commod);
@@ -86,7 +86,7 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     Commod commod{};
     commod.id = 4;
     commod.owner = 3;
-    commod.governor = 0;
+    commod.governor = 1;
     commod.type = CommodType::CRYSTAL;
     commod.amount = 400;
     commod_repo.save(commod);
@@ -288,7 +288,7 @@ void populate_ships(EntityManager& em, JsonStore&) {
   for (shipnum_t i = 1; i <= 3; i++) {
     TestShipBuilder(em, ShipType::STYPE_SHUTTLE, i)
         .named(std::format("Ship{}", i))
-        .owned_by(1, 0)
+        .owned_by(1, 1)
         .in_star_orbit(1)
         .with_max_fuel(500.0)
         .with_fuel(100.0 * static_cast<double>(i.value))

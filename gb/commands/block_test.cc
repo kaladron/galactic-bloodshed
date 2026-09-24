@@ -20,7 +20,6 @@ void test_block_dispatch() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "TestRace1";
-  race1.leader().active = true;
   race1.translate[player_t{1}] = 100;
   race1.translate[player_t{2}] = 50;
   race1.translate[player_t{3}] = 75;
@@ -28,12 +27,10 @@ void test_block_dispatch() {
   Race race2{};
   race2.Playernum = 2;
   race2.name = "TestRace2";
-  race2.leader().active = true;
 
   Race race3{};
   race3.Playernum = 3;
   race3.name = "TestRace3";
-  race3.leader().active = true;
 
   RaceRepository races(store);
   races.save(race1);
@@ -90,7 +87,7 @@ void test_block_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   // 1. List all alliance blocks

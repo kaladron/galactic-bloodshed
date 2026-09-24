@@ -24,7 +24,7 @@ int main() {
   ship_struct test_data{};
   test_data.number = 1;
   test_data.owner = 2;
-  test_data.governor = 0;
+  test_data.governor = 1;
   test_data.name = "USS Enterprise";
   test_data.shipclass = "Cruiser";
   test_data.race = 2;

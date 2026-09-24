@@ -27,7 +27,7 @@ void test_cs_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Switch to universe scope (free AP)
   g.set_level(ScopeLevel::LEVEL_STAR);
@@ -62,7 +62,7 @@ void test_cs_happy_paths() {
     r.leader().defsystem = 99;
     r.leader().defplanetnum = 5;
   });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_success(g, {"cs"}, 0);
   test::expect_eq(g.snum(), 3);
   test::expect_eq(g.pnum(), 1);
@@ -74,7 +74,7 @@ void test_cs_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   // 1. Invalid star name
@@ -89,7 +89,7 @@ void test_cs_domain_errors() {
 
   // 3. Ship scope rejected as default home system
   shipnum_t snum =
-      TestShipBuilder(ctx.em, ShipType::STYPE_POD).owned_by(1, 0).build();
+      TestShipBuilder(ctx.em, ShipType::STYPE_POD).owned_by(1, 1).build();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"cs", "-d", std::format("#{}", snum)});
   test::expect_contains(g.out.str(), "cs: bad home system");
@@ -106,7 +106,7 @@ void test_cs_viewport_coordinates() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Planet to star and universe viewport coordinates
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -137,7 +137,7 @@ void test_cs_viewport_coordinates() {
 
   // 2. Ship orbiting star viewport coordinates
   shipnum_t ship_star = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                            .owned_by(1, 0)
+                            .owned_by(1, 1)
                             .in_star_orbit(1, UniverseCoordinates{15.0, 25.0})
                             .build();
 
@@ -155,7 +155,7 @@ void test_cs_viewport_coordinates() {
 
   // 3. Ship orbiting planet viewport coordinates
   shipnum_t ship_plan = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                            .owned_by(1, 0)
+                            .owned_by(1, 1)
                             .in_planet_orbit(1, 1,
                                              earth->absolute_coordinates(*sol) +
                                                  SystemCoordinates{2.0, 3.0})

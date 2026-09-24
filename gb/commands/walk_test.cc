@@ -33,7 +33,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create AFV ship landed at (5, 5)
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("AFV")
       .landed_on(1, 1, Coordinates(5, 5))
       .with_crew(10, 0)
@@ -73,7 +73,7 @@ void test_walk_role_and_domain_errors() {
 
   // 3. Unowned ship rejection
   shipnum_t enemy_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                            .owned_by(2, 0)
+                            .owned_by(2, 1)
                             .landed_on(1, 1, Coordinates(4, 4))
                             .with_crew(10, 0)
                             .with_fuel(100.0)
@@ -85,7 +85,7 @@ void test_walk_role_and_domain_errors() {
 
   // 4. Non-AFV ship rejection
   shipnum_t pod_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                           .owned_by(1, 0)
+                           .owned_by(1, 1)
                            .landed_on(1, 1, Coordinates(4, 5))
                            .with_crew(5, 0)
                            .with_fuel(100.0)
@@ -97,7 +97,7 @@ void test_walk_role_and_domain_errors() {
 
   // 5. Unlanded AFV rejection
   shipnum_t orbiting_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                               .owned_by(1, 0)
+                               .owned_by(1, 1)
                                .in_planet_orbit(1, 1)
                                .with_crew(10, 0)
                                .with_fuel(100.0)
@@ -109,7 +109,7 @@ void test_walk_role_and_domain_errors() {
 
   // 6. Crewless AFV rejection
   shipnum_t crewless_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                               .owned_by(1, 0)
+                               .owned_by(1, 1)
                                .landed_on(1, 1, Coordinates(3, 3))
                                .with_crew(0, 0)
                                .with_fuel(100.0)
@@ -121,7 +121,7 @@ void test_walk_role_and_domain_errors() {
 
   // 7. Insufficient fuel rejection
   shipnum_t empty_fuel_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                                 .owned_by(1, 0)
+                                 .owned_by(1, 1)
                                  .landed_on(1, 1, Coordinates(3, 4))
                                  .with_crew(10, 0)
                                  .with_fuel(0.0)
@@ -188,7 +188,7 @@ void test_walk_afv_and_sector_combat() {
 
   // Create an armed Player 1 AFV at (5, 5)
   shipnum_t armed_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                            .owned_by(1, 0)
+                            .owned_by(1, 1)
                             .named("HeavyAFV")
                             .landed_on(1, 1, Coordinates(5, 5))
                             .with_guns(guntype_t::LIGHT, 2)
@@ -201,7 +201,7 @@ void test_walk_afv_and_sector_combat() {
   // Place a hostile Player 2 AFV with 1 destruct and hostile civilians/troops
   // at (5, 6)
   shipnum_t enemy_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                            .owned_by(2, 0)
+                            .owned_by(2, 1)
                             .named("EnemyTank")
                             .landed_on(1, 1, Coordinates(5, 6))
                             .with_guns(guntype_t::LIGHT, 1)
@@ -221,7 +221,7 @@ void test_walk_afv_and_sector_combat() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -234,7 +234,7 @@ void test_walk_afv_and_sector_combat() {
 
   // Also test unarmed AFV walking onto a hostile populated sector
   shipnum_t unarmed_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                              .owned_by(1, 0)
+                              .owned_by(1, 1)
                               .landed_on(1, 1, Coordinates(2, 2))
                               .with_crew(10, 0)
                               .with_fuel(50.0)

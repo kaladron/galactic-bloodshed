@@ -15,23 +15,23 @@ void test_capital_matrix() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(1); });
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
 
   // Landed government center ship on Earth (1, 1)
   shipnum_t landed_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .landed_on(1, 1, Coordinates{10, 10})
                              .build();
 
   // Orbiting non-landed government center ship around Sol (1)
   shipnum_t orbit_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                            .owned_by(1, 0)
+                            .owned_by(1, 1)
                             .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
                             .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_snum(1);
 
   // 1. 4-Way Command Matrix runner on capital designation
@@ -49,13 +49,13 @@ void test_capital_matrix() {
   ctx.assert_dispatch_success(g, {"capital"}, /*expected_star_ap_deducted=*/0);
   test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 50);
 
-  // 3. Role Rejection: Governor 1 cannot designate capital
-  ctx.setup_game_obj(g, 1, 1);
+  // 3. Role Rejection: Governor 2 cannot designate capital
+  ctx.setup_game_obj(g, 1, 2);
   g.set_snum(1);
   ctx.assert_dispatch_rejected(g,
                                {"capital", std::to_string(landed_gov.value)});
   test::expect_contains(g.out.str(),
-                        "Only the leader (Governor 0) may use this command.");
+                        "Only the leader (Governor 1) may use this command.");
 
   ctx.verify_universe_invariants();
 }

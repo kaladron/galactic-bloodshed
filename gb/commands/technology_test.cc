@@ -23,7 +23,7 @@ void test_technology_happy_paths() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[player_t{1}] = 0;  // Player 1, Governor 0 controls star
+  star.governor[player_t{1}] = 1;  // Player 1, Governor 1 controls star
   star.AP[player_t{1}] = 10;
 
   Planet planet{};
@@ -44,7 +44,7 @@ void test_technology_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
@@ -77,7 +77,7 @@ void test_technology_insufficient_ap() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[player_t{1}] = 0;
+  star.governor[player_t{1}] = 1;
   star.AP[player_t{1}] = 0;  // 0 AP (needs 1)
 
   Planet planet{};
@@ -98,7 +98,7 @@ void test_technology_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
@@ -152,7 +152,7 @@ void test_technology_role_and_scope_rejections() {
 
   // 2. Scope rejection (ScopeLevel::LEVEL_UNIV)
   g.out.str("");
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"technology", "200"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -169,7 +169,7 @@ void test_technology_domain_errors() {
   star_struct star{};
   star.star_id = 1;
   star.name = "TestStar";
-  star.governor[player_t{1}] = 0;
+  star.governor[player_t{1}] = 1;
   star.AP[player_t{1}] = 10;
 
   Planet planet{};
@@ -190,7 +190,7 @@ void test_technology_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);

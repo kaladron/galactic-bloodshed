@@ -20,7 +20,7 @@ void test_bless_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
@@ -47,7 +47,7 @@ void test_bless_role_and_scope_rejection() {
   GameObj g(ctx.em, registry);
 
   // 1. Role Rejection: Mortal player 2 is rejected
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 2, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -57,7 +57,7 @@ void test_bless_role_and_scope_rejection() {
 
   // 2. Scope Rejection: Deity at LEVEL_UNIV scope is rejected
   ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"bless", "2", "technology", "5"});
@@ -73,7 +73,7 @@ void test_bless_race_characteristics() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
@@ -177,7 +177,7 @@ void test_bless_planet_and_star() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
@@ -214,7 +214,7 @@ void test_bless_commodities() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
@@ -260,7 +260,7 @@ void test_bless_error_handling() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);

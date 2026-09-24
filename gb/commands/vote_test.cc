@@ -24,7 +24,7 @@ void test_vote_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Inspect current vote status (no args)
   ctx.assert_dispatch_success(g, {"vote"});
@@ -95,10 +95,10 @@ void test_unanimous_vote_lifecycle() {
   auto& registry = get_test_session_registry();
   registry.clear_pending_turn();
   GameObj g1(ctx.em, registry);
-  ctx.setup_game_obj(g1, 1, 0);
+  ctx.setup_game_obj(g1, 1, 1);
 
   GameObj g2(ctx.em, registry);
-  ctx.setup_game_obj(g2, 2, 0);
+  ctx.setup_game_obj(g2, 2, 1);
 
   // 1. Initial inspection: both mortals are in 'wait' state
   ctx.assert_dispatch_success(g1, {"vote"});

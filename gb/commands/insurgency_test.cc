@@ -50,7 +50,7 @@ void test_insurgency_happy_path_success() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -92,7 +92,7 @@ void test_insurgency_failed_revolt() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -111,7 +111,7 @@ void test_insurgency_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -134,17 +134,18 @@ void test_insurgency_role_and_scope_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Scope rejection (LEVEL_UNIV)
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
-  // 2. Star control rejection
+  // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   ctx.em.mutate_star(1, [](Star& s) {
-    s.governor(player_t{1}) = 2;  // Star governed by Gov 2
+    s.governor(player_t{1}) = 1;  // Star governed by Gov 1
   });
   g.out.str("");
-  ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
+  ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -159,7 +160,7 @@ void test_insurgency_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);

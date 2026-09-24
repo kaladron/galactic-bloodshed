@@ -108,7 +108,7 @@ void test_test_context_dispatch_helpers() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_snum(1);
 
   GB::commands::CommandDescriptor star_cost_cmd{
@@ -420,7 +420,7 @@ void test_recording_session_registry() {
 
   // 2. Notification recording
   registry.notify_race(player_t{1}, "Planetary invasion detected!");
-  registry.notify_player(player_t{2}, governor_t{0},
+  registry.notify_player(player_t{2}, governor_t{1},
                          "Your treasury balance is low.");
 
   test::expect_eq(registry.notifications.size(), 2);
@@ -439,13 +439,13 @@ void test_recording_session_registry() {
 
   // 3. Connected session queries
   registry.sessions = {
-      SessionInfo{.player = 1, .governor = 0, .connected = true},
-      SessionInfo{.player = 2, .governor = 1, .connected = false},
+      SessionInfo{.player = 1, .governor = 1, .connected = true},
+      SessionInfo{.player = 2, .governor = 2, .connected = false},
   };
 
-  test::expect_true(registry.is_connected(player_t{1}, governor_t{0}));
-  test::expect_false(registry.is_connected(player_t{2}, governor_t{1}));
-  test::expect_false(registry.is_connected(player_t{3}, governor_t{0}));
+  test::expect_true(registry.is_connected(player_t{1}, governor_t{1}));
+  test::expect_false(registry.is_connected(player_t{2}, governor_t{2}));
+  test::expect_false(registry.is_connected(player_t{3}, governor_t{1}));
   test::expect_eq(registry.get_connected_sessions().size(), 2);
 
   // 4. Update in progress flag
@@ -462,7 +462,7 @@ void test_test_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_snum(1);
   g.set_pnum(1);
 
@@ -505,7 +505,7 @@ void test_universe_invariants() {
 
   // Add a ship using TestShipBuilder
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-      .owned_by(player_t{1}, governor_t{0})
+      .owned_by(player_t{1}, governor_t{1})
       .named("Enterprise")
       .in_star_orbit(starnum_t{1}, 0.0, 0.0)
       .build();
@@ -550,7 +550,7 @@ void test_standard_universe_fixture() {
   test::expect_eq(r1->tech, 100.0);
   test::expect_eq(r1->Gov_ship, shipnum_t{100});
   test::expect_false(r1->Guest);
-  test::expect_true(r1->leader().active);
+  test::expect_true(r1->has_governor(Race::leader_id));
   test::expect_eq(r1->leader().money, 10'000);
 
   const auto* r2 = ctx.em.peek_race(2);

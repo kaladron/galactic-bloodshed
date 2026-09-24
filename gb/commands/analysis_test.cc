@@ -27,7 +27,6 @@ int main() {
   race.name = "TestRace";
   race.Guest = false;
   race.tech = 100.0;  // High tech to see crystals
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -37,7 +36,6 @@ int main() {
   race2.Playernum = 2;
   race2.name = "EnemyRace";
   race2.Guest = false;
-  race2.leader().active = true;
   races.save(race2);
 
   // Create test star

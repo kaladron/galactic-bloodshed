@@ -21,7 +21,6 @@ void test_schedule_display() {
   race.Playernum = 1;
   race.name = "Schedulers";
   race.Guest = false;
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -61,7 +60,6 @@ void test_do_next_thing_branching() {
   race.Playernum = 1;
   race.name = "Schedulers";
   race.Guest = false;
-  race.leader().active = true;
   RaceRepository races(store);
   races.save(race);
 

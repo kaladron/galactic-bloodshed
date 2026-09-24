@@ -38,9 +38,8 @@ bool emulate(const command_t& argv, GameObj& g) {
     g.out << std::format("Player {} does not exist.\n", new_player);
     return false;
   }
-  if (new_gov < 0 || new_gov > MAXGOVERNORS) {
-    g.out << std::format("Invalid governor {}. Must be 0-{}.\n", new_gov,
-                         MAXGOVERNORS);
+  if (new_gov < 1) {
+    g.out << std::format("Invalid governor {}. Must be >= 1.\n", new_gov);
     return false;
   }
   if (!race->has_governor(new_gov)) {

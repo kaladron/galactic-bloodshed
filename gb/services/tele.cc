@@ -102,7 +102,8 @@ void telegram_star(EntityManager& em, starnum_t star, player_t sender,
   if (!star_ptr) return;
 
   for (player_t p = 1; p <= em.num_races(); p++) {
-    if ((p != sender || sender_gov != 0) && star_ptr->is_inhabited_by(p)) {
+    if ((p != sender || !Race::is_leader(sender_gov)) &&
+        star_ptr->is_inhabited_by(p)) {
       const auto* race = em.peek_race(p);
       if (race) {
         for (auto [i, gov] : race->active_governors()) {

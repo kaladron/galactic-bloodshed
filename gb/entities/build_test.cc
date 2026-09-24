@@ -322,7 +322,7 @@ int main() {
     ctx.with_standard_universe();
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 0);
+    ctx.setup_game_obj(g, 1, 1);
     const auto& r1 = *ctx.em.peek_race(1);
 
     // VN Ship
@@ -399,7 +399,7 @@ int main() {
     ctx.with_standard_universe();
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 0);
+    ctx.setup_game_obj(g, 1, 1);
     const auto& r1 = *ctx.em.peek_race(1);
 
     // can_build_at_planet: enslaved planet
@@ -412,7 +412,7 @@ int main() {
     ctx.setup_game_obj(g, 1, 2);
     test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(1),
                                            *ctx.em.peek_planet(1, 1)));
-    ctx.setup_game_obj(g, 1, 0);
+    ctx.setup_game_obj(g, 1, 1);
 
     // can_build_on_ship
     auto probe = getship(ShipType::OTYPE_PROBE, r1);

@@ -20,14 +20,13 @@ void test_toxicity_dispatch() {
   Race race{};
   race.Playernum = 1;
   race.name = "Toxicologists";
-  race.leader().active = true;
   RaceRepository races(store);
   races.save(race);
 
   // Setup: Create a star with AP
   star_struct star_data{};
   star_data.star_id = 1;
-  star_data.governor[player_t{1}] = 0;
+  star_data.governor[player_t{1}] = 1;
   star_data.AP[player_t{1}] = 10;
   Star star{star_data};
   StarRepository stars(store);
@@ -43,7 +42,7 @@ void test_toxicity_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);

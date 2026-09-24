@@ -170,26 +170,26 @@ int main() {
     s.name = "SectorGovStar";
     Star star(s);
 
-    // Governor 0 (primary race leader) always has administrative control
-    test::expect_true(star.control(1, 0));
-    test::expect_true(star.control(2, 0));
+    // Governor 1 (primary race leader) always has administrative control
+    test::expect_true(star.control(1, 1));
+    test::expect_true(star.control(2, 1));
 
-    // Default governor is 0, so any governor query for non-assigned player
-    // fails if non-zero
-    test::expect_false(star.control(1, 1));
+    // Default governor is 1, so any subordinate governor query for non-assigned
+    // player fails
     test::expect_false(star.control(1, 2));
+    test::expect_false(star.control(1, 3));
 
     // Assign specific governor for player 1
-    star.governor(1) = 2;
-    test::expect_true(star.control(1, 0));   // Primary leader still controls
-    test::expect_true(star.control(1, 2));   // Assigned governor has control
-    test::expect_false(star.control(1, 1));  // Other governors do not
+    star.governor(1) = 3;
+    test::expect_true(star.control(1, 1));   // Primary leader still controls
+    test::expect_true(star.control(1, 3));   // Assigned governor has control
+    test::expect_false(star.control(1, 2));  // Other governors do not
 
     // Player 2's assignment is isolated
-    star.governor(2) = 3;
-    test::expect_true(star.control(2, 3));
-    test::expect_false(star.control(2, 2));
-    test::expect_false(star.control(1, 3));
+    star.governor(2) = 4;
+    test::expect_true(star.control(2, 4));
+    test::expect_false(star.control(2, 3));
+    test::expect_false(star.control(1, 4));
     std::println(std::cout, "  ✓ Star::control correctly authorizes governors");
   }
 

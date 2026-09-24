@@ -25,7 +25,7 @@ void test_server_initialization_and_registry_primitives() {
   Server server(io, 0, ctx.em);
 
   test::expect_eq(server.session_count(), 0u);
-  test::expect_false(server.is_connected(1, 0));
+  test::expect_false(server.is_connected(1, 1));
   test::expect_true(server.get_connected_sessions().empty());
   test::expect_false(server.update_in_progress());
   test::expect_true(&server.entity_manager() == &ctx.em);
@@ -43,7 +43,7 @@ void test_server_initialization_and_registry_primitives() {
 
   // Notification methods should safely handle empty session list
   server.notify_race(1, "Broadcast message\n");
-  test::expect_false(server.notify_player(1, 0, "Personal message\n"));
+  test::expect_false(server.notify_player(1, 1, "Personal message\n"));
   server.flush_all();
 
   server.shutdown();
@@ -55,8 +55,7 @@ void setup_test_universe(TestContext& ctx) {
   race.name = "ServerTestRace";
   race.password = "raceword";
   race.God = true;
-  race.leader().active = true;
-  race.leader().name = "Gov0";
+  race.leader().name = "Gov1";
   race.leader().password = "govword";
   race.leader().deflevel = ScopeLevel::LEVEL_UNIV;
   race.leader().defsystem = 1;
@@ -152,25 +151,25 @@ void test_server_network_lifecycle_and_session_handling() {
   server.on_timer();
   io.poll();
 
-  test::expect_true(server.is_connected(1, 0));
-  test::expect_false(server.is_connected(1, 1));
+  test::expect_true(server.is_connected(1, 1));
+  test::expect_false(server.is_connected(1, 2));
   auto connected = server.get_connected_sessions();
   test::expect_eq(connected.size(), 1u);
   test::expect_eq(connected[0].player.value, 1);
-  test::expect_eq(connected[0].governor.value, 0);
+  test::expect_eq(connected[0].governor.value, 1);
   test::expect_true(connected[0].god);
 
   std::string login_reply = drain_socket(client_socket);
   test::expect_contains(login_reply, "ServerTestRace");
 
   // Test notify_player and notify_race with connected session
-  test::expect_true(server.notify_player(1, 0, "Direct alert\n"));
-  test::expect_false(server.notify_player(2, 0, "Other race alert\n"));
+  test::expect_true(server.notify_player(1, 1, "Direct alert\n"));
+  test::expect_false(server.notify_player(2, 1, "Other race alert\n"));
   server.notify_race(1, "Race announcement\n");
 
   // Suppressed while update_in_progress is true
   server.set_update_in_progress(true);
-  test::expect_false(server.notify_player(1, 0, "Suppressed direct\n"));
+  test::expect_false(server.notify_player(1, 1, "Suppressed direct\n"));
   server.notify_race(1, "Suppressed race\n");
   server.set_update_in_progress(false);
 
@@ -202,7 +201,7 @@ void test_server_network_lifecycle_and_session_handling() {
   std::string quit_reply = drain_socket(client_socket);
   test::expect_eq(quit_reply, "Goodbye!\n");
   test::expect_eq(server.session_count(), 0u);
-  test::expect_false(server.is_connected(1, 0));
+  test::expect_false(server.is_connected(1, 1));
 
   server.shutdown();
 }
@@ -229,7 +228,7 @@ void test_server_quotas_idle_timeout_and_turn_events() {
   io.poll();
   (void)drain_socket(client_socket);
 
-  test::expect_true(server.is_connected(1, 0));
+  test::expect_true(server.is_connected(1, 1));
 
   // Replenish command quotas across slices
   server.update_quotas(std::chrono::steady_clock::now() +

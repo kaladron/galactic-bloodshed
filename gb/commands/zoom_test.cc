@@ -19,7 +19,6 @@ void setup_test_world(TestContext& ctx) {
   race.Playernum = 1;
   race.name = "Zoomers";
   race.Guest = false;
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -31,7 +30,7 @@ void test_zoom_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
 
   // 1. Query current zoom
@@ -64,7 +63,7 @@ void test_zoom_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
 
   // Division by zero denominator

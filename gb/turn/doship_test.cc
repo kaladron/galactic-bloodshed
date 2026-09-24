@@ -74,7 +74,7 @@ void test_do_habitat() {
                           .owned_by(1)
                           .in_star_orbit(1)
                           .with_fuel(100.0)
-                          .with_crew(1000, 0)
+                          .with_crew(1000, 1)
                           .with_resource(10)
                           .with_on(true)
                           .build();
@@ -95,7 +95,7 @@ void test_do_weapon_plant() {
                           .owned_by(1)
                           .in_star_orbit(1)
                           .with_fuel(100.0)
-                          .with_crew(100, 0)
+                          .with_crew(100, 1)
                           .with_resource(500)
                           .build();
 
@@ -116,7 +116,7 @@ void test_do_habitat_zero_rate_and_offline() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(100.0)
-                       .with_crew(1000, 0)
+                       .with_crew(1000, 1)
                        .with_resource(10)
                        .with_on(false)
                        .build();
@@ -134,7 +134,7 @@ void test_do_habitat_zero_rate_and_offline() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(100.0)
-                       .with_crew(0, 0)
+                       .with_crew(0, 1)
                        .with_resource(10)
                        .with_on(true)
                        .build();
@@ -152,7 +152,7 @@ void test_do_habitat_zero_rate_and_offline() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(100.0)
-                       .with_crew(1000, 0)
+                       .with_crew(1000, 1)
                        .with_resource(10)
                        .with_damage(100)
                        .with_on(true)
@@ -176,7 +176,7 @@ void test_do_habitat_capacity_capped() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(100.0)
-                       .with_crew(2000, 0)
+                       .with_crew(2000, 1)
                        .with_resource(5000)
                        .with_on(true)
                        .build();
@@ -194,7 +194,7 @@ void test_do_habitat_capacity_capped() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(100.0)
-                       .with_crew(2000, 0)
+                       .with_crew(2000, 1)
                        .with_resource(4999)
                        .with_on(true)
                        .build();
@@ -219,7 +219,7 @@ void test_do_habitat_nested_weapon_plant() {
                          .owned_by(1)
                          .in_star_orbit(1)
                          .with_fuel(100.0)
-                         .with_crew(100, 0)
+                         .with_crew(100, 1)
                          .with_resource(500)
                          .with_destruct(0)
                          .with_on(true)
@@ -253,7 +253,7 @@ void test_do_weapon_plant_zero_rate_and_shortages() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(100.0)
-                       .with_crew(100, 0)
+                       .with_crew(100, 1)
                        .with_resource(500)
                        .with_damage(100)
                        .build();
@@ -272,7 +272,7 @@ void test_do_weapon_plant_zero_rate_and_shortages() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(100.0)
-                       .with_crew(0, 0)
+                       .with_crew(0, 1)
                        .with_resource(500)
                        .build();
 
@@ -290,7 +290,7 @@ void test_do_weapon_plant_zero_rate_and_shortages() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(0.0)
-                       .with_crew(100, 0)
+                       .with_crew(100, 1)
                        .with_resource(500)
                        .build();
 
@@ -307,7 +307,7 @@ void test_do_weapon_plant_zero_rate_and_shortages() {
                        .owned_by(1)
                        .in_star_orbit(1)
                        .with_fuel(100.0)
-                       .with_crew(100, 0)
+                       .with_crew(100, 1)
                        .with_resource(0)
                        .build();
 
@@ -328,7 +328,7 @@ void test_do_weapon_plant_tech_capping_and_consumption() {
                      .owned_by(1)
                      .in_star_orbit(1)
                      .with_fuel(100.0)
-                     .with_crew(100, 0)
+                     .with_crew(100, 1)
                      .with_resource(500)
                      .build();
 
@@ -965,7 +965,7 @@ void test_doabm_intercept() {
                         .with_max_crew(10)
                         .with_tech(10.0)
                         .with_destruct(50)
-                        .with_crew(10, 0)
+                        .with_crew(10, 1)
                         .in_planet_orbit(1, 1)
                         .targeting_planet(1, 1)
                         .with_retaliate(50)
@@ -1231,7 +1231,7 @@ void test_do_pod() {
   shipnum_t warming_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                                  .owned_by(1)
                                  .in_star_orbit(1)
-                                 .with_pod(10, 0)
+                                 .with_pod(10, 1)
                                  .build();
 
   ctx.em.mutate_as<SporePodShip>(warming_pod_id, [&](SporePodShip& pod) {
@@ -1245,7 +1245,7 @@ void test_do_pod() {
   shipnum_t exploding_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                                    .owned_by(1)
                                    .in_star_orbit(1)
-                                   .with_pod(POD_THRESHOLD + 10, 0)
+                                   .with_pod(POD_THRESHOLD + 10, 1)
                                    .build();
 
   ctx.em.mutate_as<SporePodShip>(exploding_pod_id, [&](SporePodShip& pod) {
@@ -1459,7 +1459,7 @@ void test_do_repair() {
   shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                              .owned_by(1)
                              .in_star_orbit(1)
-                             .with_crew(10, 0)
+                             .with_crew(10, 1)
                              .with_resource(100)
                              .with_damage(50)
                              .build();
@@ -1629,7 +1629,7 @@ void test_update_ship_inhabited_and_exploration() {
   // 1. Probe in star orbit explores star
   auto probe_handle = TestShipBuilder(em, ShipType::OTYPE_PROBE)
                           .owned_by(1)
-                          .with_crew(0, 0)
+                          .with_crew(0, 1)
                           .in_star_orbit(1)
                           .with_alive(true)
                           .build_handle();
@@ -1641,7 +1641,7 @@ void test_update_ship_inhabited_and_exploration() {
   // 2. Manned ship in planet orbit explores star & planet
   auto manned_handle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
                            .owned_by(1)
-                           .with_crew(10, 0)
+                           .with_crew(10, 1)
                            .in_planet_orbit(1, 1)
                            .with_alive(true)
                            .build_handle();
@@ -1658,7 +1658,7 @@ void test_update_ship_inhabited_and_exploration() {
 
   auto cargo_handle = TestShipBuilder(em, ShipType::STYPE_CARGO)
                           .owned_by(2)
-                          .with_crew(0, 0)
+                          .with_crew(0, 1)
                           .in_planet_orbit(1, 2)
                           .with_alive(true)
                           .build_handle();
@@ -1858,7 +1858,7 @@ void test_prepare_ship_for_flight() {
   shipnum_t derelict_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                               .owned_by(1)
                               .in_star_orbit(1)
-                              .with_crew(0, 0)
+                              .with_crew(0, 1)
                               .build();
   ctx.em.mutate_ship(derelict_id, [&](Ship& s) {
     s.whatdest() = ScopeLevel::LEVEL_PLAN;
@@ -2016,7 +2016,7 @@ void test_doship_pipeline_types() {
   shipnum_t habitat_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                              .owned_by(1)
                              .in_star_orbit(1)
-                             .with_crew(100, 0)
+                             .with_crew(100, 1)
                              .with_fuel(50.0)
                              .with_on(true)
                              .build();
@@ -2028,7 +2028,7 @@ void test_doship_pipeline_types() {
   shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                          .owned_by(1)
                          .in_star_orbit(1)
-                         .with_pod(10, 0)
+                         .with_pod(10, 1)
                          .build();
   ctx.em.mutate_ship(pod_id, [&](Ship& s) {
     doship(s, true, ctx.em, stats);

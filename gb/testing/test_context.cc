@@ -321,7 +321,7 @@ TestContext& TestContext::with_standard_universe() {
   // 9. Setup Player 1 Government Center (Ship #100) landed on Earth, then link
   // Race::Gov_ship
   TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .landed_on(1, 1, Coordinates{0, 0})
       .with_crew(100, 0)
       .with_alive(true)
@@ -441,7 +441,7 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
   if (auto star1_opt = star_repo.find(1);
       star1_opt && star1_opt->numplanets() > 0) {
     TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
-        .owned_by(1, 0)
+        .owned_by(1, 1)
         .landed_on(1, 1, Coordinates{0, 0})
         .with_crew(100, 0)
         .with_alive(true)

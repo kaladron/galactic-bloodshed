@@ -94,7 +94,7 @@ export struct NewsItem {
 export struct TelegramItem {
   int id{0};
   player_t recipient_player{0};
-  governor_t recipient_governor{0};
+  governor_t recipient_governor{1};
   std::string message;
   std::int64_t timestamp{0};
 };

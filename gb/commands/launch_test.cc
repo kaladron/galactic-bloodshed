@@ -17,7 +17,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create test shuttle landed on the planet at (5, 5)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("TestShuttle")
       .landed_on(1, 1, Coordinates(5, 5))
       .with_fuel(20.0)
@@ -30,7 +30,7 @@ void test_launch_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -71,7 +71,7 @@ void test_launch_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -88,7 +88,7 @@ void test_launch_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -114,7 +114,7 @@ void test_launch_canister_ships() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -164,13 +164,13 @@ void test_launch_from_carrier_all_scopes() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_snum(1);
   g.set_pnum(1);
 
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                              .owned_by(1, 0)
+                              .owned_by(1, 1)
                               .named("MotherCarrier")
                               .landed_on(1, 1, {5, 5})
                               .with_max_hanger(100)
@@ -178,7 +178,7 @@ void test_launch_from_carrier_all_scopes() {
 
   // 1. Online factory berthed in carrier cannot be launched
   const auto fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                          .owned_by(1, 0)
+                          .owned_by(1, 1)
                           .with_on(true)
                           .build();
   ctx.em.mutate_ship(fac_id, [&](Ship& f) { f.dock_into_carrier(carrier_id); });
@@ -240,7 +240,7 @@ void test_launch_from_carrier_all_scopes() {
 
   // 6. Nested carrier (s2.whatorbits() == LEVEL_SHIP) rejected
   const auto super_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                            .owned_by(1, 0)
+                            .owned_by(1, 1)
                             .in_star_orbit(1)
                             .build();
   ctx.em.mutate_ship(carrier_id,
@@ -257,13 +257,13 @@ void test_launch_planet_fuel_precheck_preserves_ap_and_coords() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
 
   const auto no_fuel_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                              .owned_by(1, 0)
+                              .owned_by(1, 1)
                               .landed_on(1, 1, {5, 5})
                               .with_fuel(0.0)
                               .build();
@@ -289,7 +289,7 @@ void test_launch_planet_fuel_precheck_preserves_ap_and_coords() {
   test::expect_contains(g.out.str(), "too overloaded to launch");
 
   const auto zero_speed_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                                 .owned_by(1, 0)
+                                 .owned_by(1, 1)
                                  .landed_on(1, 1, {5, 5})
                                  .with_max_speed(0)
                                  .build();

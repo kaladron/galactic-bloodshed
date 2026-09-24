@@ -19,14 +19,12 @@ void setup_test_world(TestContext& ctx) {
   race1.Playernum = 1;
   race1.name = "Trader";
   race1.Guest = false;
-  race1.leader().active = true;
-  race1.appoint_governor(1);
+  race1.appoint_governor(2);
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "GuestTrader";
   race2.Guest = true;
-  race2.leader().active = true;
 
   RaceRepository races(store);
   races.save(race1);
@@ -64,7 +62,7 @@ void setup_test_world(TestContext& ctx) {
   Ship port{};
   port.number() = 1;
   port.owner() = 1;
-  port.governor() = 0;
+  port.governor() = 1;
   port.alive() = true;
   port.active() = true;
   port.type() = ShipType::OTYPE_GOV;
@@ -82,7 +80,7 @@ void test_sell_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
@@ -120,7 +118,7 @@ void test_sell_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);
@@ -137,7 +135,7 @@ void test_sell_role_rejections() {
   {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 2, 0);  // Player 2 is guest
+    ctx.setup_game_obj(g, 2, 1);  // Player 2 is guest
     g.set_level(ScopeLevel::LEVEL_PLAN);
     g.set_snum(1);
     g.set_pnum(0);
@@ -167,7 +165,7 @@ void test_sell_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);

@@ -636,7 +636,7 @@ void test_entity_manager_commods() {
   Commod c{};
   c.id = 1;
   c.owner = 2;
-  c.governor = 0;
+  c.governor = 1;
   c.type = CommodType::FUEL;
   c.amount = 500;
   c.bid = 100;

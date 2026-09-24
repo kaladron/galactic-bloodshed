@@ -20,7 +20,6 @@ void setup_test_world(TestContext& ctx) {
   race.Playernum = 1;
   race.name = "LoadTester";
   race.Guest = false;
-  race.leader().active = true;
   race.mass = 1.0;
   race.absorb = false;
   race.Metamorph = false;
@@ -56,7 +55,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create a landed ship to load cargo onto
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("CargoHauler")
       .landed_on(1, 1, {5, 5})
       .with_fuel(100.0)
@@ -72,7 +71,7 @@ void test_load_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -167,7 +166,7 @@ void test_unload_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -188,7 +187,7 @@ void test_load_syntax_and_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -215,7 +214,7 @@ void test_load_transporter() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -263,7 +262,7 @@ void test_load_ship_to_ship() {
 
   // Create carrier/mothership (s2) in star orbit
   shipnum_t s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                        .owned_by(1, 0)
+                        .owned_by(1, 1)
                         .named("Mothership")
                         .in_star_orbit(1)
                         .with_fuel(200.0)
@@ -278,7 +277,7 @@ void test_load_ship_to_ship() {
 
   // Create tender/cargo ship (s1) docked to s2
   shipnum_t s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                        .owned_by(1, 0)
+                        .owned_by(1, 1)
                         .named("Tender")
                         .docked_to(s2_id, 1)
                         .with_fuel(50.0)
@@ -296,7 +295,7 @@ void test_load_ship_to_ship() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -412,7 +411,7 @@ void test_load_ship_to_ship() {
 
   // C. Alien ship transfer rules (can give goods to alien, cannot take)
   shipnum_t alien_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                           .owned_by(2, 0)
+                           .owned_by(2, 1)
                            .named("KlingonFreighter")
                            .in_star_orbit(1)
                            .with_resource(100)
@@ -448,7 +447,7 @@ void test_planet_crew_load_and_unload() {
 
   // Create landed cargo ship with crew capacity and initial crew/troops
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                          .owned_by(1, 0)
+                          .owned_by(1, 1)
                           .named("ColonyShip")
                           .landed_on(1, 1, {5, 5})
                           .with_crew(50, 20)
@@ -467,7 +466,7 @@ void test_planet_crew_load_and_unload() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -532,7 +531,7 @@ void test_unload_onto_alien_sector() {
 
   // Create assault transport for Player 1 landed at (2, 2)
   shipnum_t assault_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .named("DropShip")
                              .landed_on(1, 1, {2, 2})
                              .with_crew(100, 100)
@@ -552,7 +551,7 @@ void test_unload_onto_alien_sector() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -642,7 +641,7 @@ void test_transporter_edge_cases() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -655,7 +654,7 @@ void test_transporter_edge_cases() {
   RaceRepository(store).save(r2);
 
   const auto recv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 10)
-                           .owned_by(2, 0)
+                           .owned_by(2, 1)
                            .named("AlienReceiver")
                            .with_alive(true)
                            .with_active(true)
@@ -673,7 +672,7 @@ void test_transporter_edge_cases() {
                            .build();
 
   const auto send_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 11)
-                           .owned_by(1, 0)
+                           .owned_by(1, 1)
                            .named("SenderDevice")
                            .with_alive(true)
                            .with_active(true)
@@ -774,14 +773,14 @@ void test_docking_and_validation_edge_cases() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
 
   // 1. Irradiated and inactive ship rejection
   shipnum_t rad_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                         .owned_by(1, 0)
+                         .owned_by(1, 1)
                          .named("RadShip")
                          .landed_on(1, 1, {1, 1})
                          .with_active(false)
@@ -793,7 +792,7 @@ void test_docking_and_validation_edge_cases() {
 
   // 2. Un-docked ship in orbit rejection
   shipnum_t orb_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                         .owned_by(1, 0)
+                         .owned_by(1, 1)
                          .named("OrbitShip")
                          .in_star_orbit(1)
                          .build();
@@ -807,7 +806,7 @@ void test_docking_and_validation_edge_cases() {
   // 3. Wrong planet scope rejection (attempting to load landed ship from star
   // scope)
   shipnum_t wrong_plan_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                .owned_by(1, 0)
+                                .owned_by(1, 1)
                                 .named("OtherPlanetShip")
                                 .landed_on(1, 1, {1, 1})
                                 .build();
@@ -821,7 +820,7 @@ void test_docking_and_validation_edge_cases() {
 
   // 4. Von Neumann machine unload rejection
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
-                        .owned_by(1, 0)
+                        .owned_by(1, 1)
                         .named("VNProbe")
                         .landed_on(1, 1, {1, 1})
                         .with_resource(50)
@@ -833,7 +832,7 @@ void test_docking_and_validation_edge_cases() {
 
   // 5. Invalid non-numeric amount argument and empty commodity
   shipnum_t cargo_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                           .owned_by(1, 0)
+                           .owned_by(1, 1)
                            .named("GoodCargo")
                            .landed_on(1, 1, {1, 1})
                            .with_max_resource(500)
@@ -857,7 +856,7 @@ void test_docking_and_validation_edge_cases() {
   // 7. Boobytrap message when loading/unloading destruct on robot ship
   // (max_crew == 0)
   shipnum_t robot_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                           .owned_by(1, 0)
+                           .owned_by(1, 1)
                            .named("MineShip")
                            .landed_on(1, 1, {1, 1})
                            .with_max_crew(0)
@@ -879,14 +878,14 @@ void test_docking_and_validation_edge_cases() {
   // 8. Shuttle ship-to-ship resource load/unload (external hull strapping
   // beyond standard internal max_resource = 25)
   shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .named("ShuttleCraft")
                              .in_star_orbit(1)
                              .with_resource(10)
                              .with_max_resource(25)
                              .build();
   shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .named("CarrierShip")
                              .in_star_orbit(1)
                              .with_resource(100)

@@ -12,8 +12,8 @@ import std;
 
 export struct star_struct {
   std::string name; /* name of star */
-  PlayerVector<governor_t, MAXPLAYERS>
-      governor; /* which subordinate maintains the system */
+  PlayerVector<governor_t, MAXPLAYERS> governor{
+      Race::leader_id}; /* which subordinate maintains the system */
   PlayerVector<ap_t, MAXPLAYERS> AP;  /* action pts alotted */
   PlayerBitset<MAXPLAYERS> explored;  /* who's been here */
   PlayerBitset<MAXPLAYERS> inhabited; /* who lives here now */

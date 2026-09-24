@@ -23,7 +23,6 @@ void setup_test_world(TestContext& ctx) {
   });
 
   ctx.em.mutate_race(2, [](Race& r) {
-    r.leader().active = true;
     r.leader().name = "TargetGovernor";
     r.translate[player_t{1}] = 50;
   });
@@ -53,7 +52,7 @@ void test_send_message_and_translation_cap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
   g.set_god(false);
@@ -81,13 +80,13 @@ void test_send_to_governor_and_self() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
   g.set_god(false);
 
-  // Send to specific governor 0 of player 2 (costs 1 AP)
-  ctx.assert_dispatch_success(g, {"send", "2", "0", "Direct", "Order"}, 1);
+  // Send to specific governor 1 of player 2 (costs 1 AP)
+  ctx.assert_dispatch_success(g, {"send", "2", "1", "Direct", "Order"}, 1);
   test::expect_contains(g.out.str(), "Message sent.");
 
   // Sending to oneself costs 0 AP
@@ -104,7 +103,7 @@ void test_send_block_star_and_post() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
   g.set_god(false);
@@ -138,7 +137,7 @@ void test_send_validation_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
   g.set_god(false);
@@ -152,7 +151,7 @@ void test_send_validation_errors() {
   test::expect_contains(g.out.str(), "Syntax: send star");
 
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"send", "2", "0"});
+  ctx.assert_dispatch_rejected(g, {"send", "2", "1"});
   test::expect_contains(g.out.str(), "Syntax: send <race>");
 
   // Invalid block, player, governor, and star targets

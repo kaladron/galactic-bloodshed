@@ -197,17 +197,17 @@ void process_market_transactions(EntityManager& entity_manager) {
             c.type, bidder_race->name, bidder, c.bid);
         push_telegram(entity_manager, c.owner, c.governor, sold_msg);
         c.owner = 0;
-        c.governor = 0;
+        c.governor = Race::leader_id;
         c.bidder = std::nullopt;
-        c.bidder_gov = 0;
+        c.bidder_gov = Race::leader_id;
       } else {
         c.bidder = std::nullopt;
-        c.bidder_gov = 0;
+        c.bidder_gov = Race::leader_id;
         c.bid = 0;
       }
     } else {
       c.bidder = std::nullopt;
-      c.bidder_gov = 0;
+      c.bidder_gov = Race::leader_id;
       c.bid = 0;
     }
     if (c.owner == player_t{0}) {

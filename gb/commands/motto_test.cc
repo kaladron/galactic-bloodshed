@@ -30,7 +30,7 @@ void test_motto_database_persistence() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_governor(0);  // Must be governor 0 to set motto
+  g.set_governor(1);  // Must be governor 1 to set motto
 
   // TEST 1: Set a motto
   std::println(std::cout, "  Testing: Set motto");
@@ -77,7 +77,7 @@ void test_motto_database_persistence() {
   // TEST 4: Non-governor should be rejected
   std::println(std::cout, "  Testing: Non-governor authorization check");
   {
-    g.set_governor(1);  // Change to non-zero governor
+    g.set_governor(2);  // Change to non-leader governor
     ctx.assert_dispatch_rejected(g, {"motto", "Should", "Fail"});
 
     std::string out_str = g.out.str();

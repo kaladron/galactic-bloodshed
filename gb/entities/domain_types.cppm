@@ -910,13 +910,13 @@ export struct ServerState {
 export struct Commod {
   int id{0};  // Commodity ID for database persistence
   player_t owner{0};
-  governor_t governor{0};
+  governor_t governor{1};
   CommodType type{CommodType::RESOURCE};
   std::uint64_t amount{0};
   bool deliver{false}; /* whether the lot is ready for shipping or not */
   money_t bid{0};
   std::optional<player_t> bidder{std::nullopt};
-  governor_t bidder_gov{0};
+  governor_t bidder_gov{1};
   starnum_t star_from{0}; /* where the stuff originated from */
   planetnum_t planet_from{0};
   starnum_t star_to{0}; /* where it goes to */
@@ -1207,6 +1207,10 @@ public:
   using const_iterator = typename std::array<T, N>::const_iterator;
 
   constexpr PlayerVector() = default;
+
+  constexpr explicit PlayerVector(const T& initial_value) {
+    data_.fill(initial_value);
+  }
 
   /// \brief Assigns the given value to all elements.
   constexpr void fill(const T& value) {

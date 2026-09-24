@@ -162,10 +162,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   race.password = spec.password;
   race.info = spec.address;
 
-  // Governor 0 is designated as the race Leader.
-  // Note: Governors 1 through MAXGOVERNORS are value-initialized to inactive
-  // (active = false) by Race::gov in-class member initializers on `Race
-  // race{};`.
+  // Governor 1 (Race::leader_id) is designated as the race Leader.
   race.turn = 0;
   race.init_leader(star, pnum, spec.governor_password);
 

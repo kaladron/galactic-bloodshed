@@ -23,21 +23,21 @@ void test_give_dispatch() {
   ctx.em.mutate_race(2, [](Race& r) { r.declare_alliance_with(player_t{1}); });
 
   const shipnum_t ship_plan = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                  .owned_by(1, 0)
+                                  .owned_by(1, 1)
                                   .in_planet_orbit(1, 1)
                                   .build();
 
   const shipnum_t ship_star = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                  .owned_by(1, 0)
+                                  .owned_by(1, 1)
                                   .in_star_orbit(1)
                                   .build();
 
   const shipnum_t ship_univ =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(1, 0).build();
+      TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(1, 1).build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -52,7 +52,7 @@ void test_give_dispatch() {
   const auto* transferred = ctx.em.peek_ship(ship_plan);
   test::expect_ne(transferred, nullptr);
   test::expect_eq(transferred->owner(), 2);
-  test::expect_eq(transferred->governor(), 0);
+  test::expect_eq(transferred->governor(), 1);
 
   const auto* planet_verify = ctx.em.peek_planet(1, 1);
   test::expect_ne(planet_verify, nullptr);
@@ -79,7 +79,7 @@ void test_give_dispatch() {
 
   // 4. Insufficient AP in star system
   const shipnum_t ship_no_ap = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                   .owned_by(1, 0)
+                                   .owned_by(1, 1)
                                    .in_star_orbit(1)
                                    .build();
   ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 0; });
@@ -91,7 +91,7 @@ void test_give_dispatch() {
 
   // 5. Insufficient AP in universe
   const shipnum_t ship_no_uap =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(1, 0).build();
+      TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(1, 1).build();
   ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(
@@ -136,7 +136,7 @@ void test_give_dispatch() {
 
   // 11. Ship not owned by donor
   const shipnum_t ship_p2 = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                .owned_by(2, 0)
+                                .owned_by(2, 1)
                                 .in_star_orbit(1)
                                 .build();
   g.out.str("");
@@ -145,7 +145,7 @@ void test_give_dispatch() {
 
   // 12. Spore pod rejection
   const shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                               .owned_by(1, 0)
+                               .owned_by(1, 1)
                                .in_star_orbit(1)
                                .build();
   g.out.str("");
@@ -156,7 +156,7 @@ void test_give_dispatch() {
 
   // 13. Crewed ship cannot be given away
   const shipnum_t crewed_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                  .owned_by(1, 0)
+                                  .owned_by(1, 1)
                                   .in_star_orbit(1)
                                   .with_crew(10, 0)
                                   .build();
@@ -167,11 +167,11 @@ void test_give_dispatch() {
 
   // 14. Carrier with loaded ships
   const shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                                   .owned_by(1, 0)
+                                   .owned_by(1, 1)
                                    .in_star_orbit(1)
                                    .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .docked_to(carrier_id, 1)
       .build();
   g.out.str("");

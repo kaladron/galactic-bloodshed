@@ -34,7 +34,7 @@ struct BuildTestFixture {
   void init_game_obj(GameObj& g, ScopeLevel level = ScopeLevel::LEVEL_PLAN,
                      shipnum_t shipno = 0) {
     g.set_player(1);
-    g.set_governor(0);
+    g.set_governor(1);
     g.race = em.peek_race(1);
     g.set_level(level);
     g.set_snum(star_id);
@@ -104,7 +104,7 @@ void test_factory_multiple_builds() {
   // Create a factory ship landed at 5,5 configured to build probes
   shipnum_t factory_num =
       TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
-          .owned_by(1, 0)
+          .owned_by(1, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(10000)
           .with_crew(100, 0)
@@ -239,7 +239,7 @@ void test_insufficient_hanger_space() {
   // Create a small ship with limited hanger space
   shipnum_t builder_num =
       TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT, 1)
-          .owned_by(1, 0)
+          .owned_by(1, 1)
           .in_star_orbit(fixture.star_id)
           .with_resource(10000)
           .with_max_hanger(1)
@@ -266,7 +266,7 @@ void test_ship_build_error_paths() {
   // 1. Unlanded factory cannot build
   shipnum_t factory_id =
       TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY, 10)
-          .owned_by(1, 0)
+          .owned_by(1, 1)
           .in_star_orbit(fixture.star_id)
           .with_resource(1000)
           .with_crew(100, 0)
@@ -282,7 +282,7 @@ void test_ship_build_error_paths() {
   // 2. Landed shuttle cannot build
   shipnum_t shuttle_id =
       TestShipBuilder(fixture.em, ShipType::STYPE_SHUTTLE, 11)
-          .owned_by(1, 0)
+          .owned_by(1, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(1000)
           .with_crew(50, 0)
@@ -295,7 +295,7 @@ void test_ship_build_error_paths() {
 
   // 3. Habitat ship build with autoload enabled and low tech error
   shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT, 12)
-                         .owned_by(1, 0)
+                         .owned_by(1, 1)
                          .in_star_orbit(fixture.star_id)
                          .with_resource(50000)
                          .with_max_hanger(500)

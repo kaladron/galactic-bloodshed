@@ -122,7 +122,7 @@ bool send_to_alliance_block(const command_t& argv, GameObj& g) {
       increment_translation_skill(g.entity_manager, i, playernum);
       g.session_registry.notify_race(i, block_msg);
       g.session_registry.notify_race(i, notice);
-      push_telegram(g.entity_manager, i, 0, msg);
+      push_telegram(g.entity_manager, i, Race::leader_id, msg);
     }
   }
 
@@ -167,7 +167,7 @@ bool send_to_star_system(const command_t& argv, GameObj& g) {
       increment_translation_skill(g.entity_manager, i, playernum);
       g.session_registry.notify_race(i, star_msg);
       g.session_registry.notify_race(i, notice);
-      push_telegram(g.entity_manager, i, 0, msg);
+      push_telegram(g.entity_manager, i, Race::leader_id, msg);
     }
   }
 
@@ -190,7 +190,7 @@ bool send_to_player(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  int gov = 0;
+  std::optional<governor_t> target_gov = std::nullopt;
   std::size_t start = 2;
   if (std::isdigit(static_cast<unsigned char>(argv[2][0]))) {
     if (argv.size() < 4) {
@@ -198,12 +198,12 @@ bool send_to_player(const command_t& argv, GameObj& g) {
       return false;
     }
     auto parsed_gov = scn::scan<int>(argv[2], "{}");
-    if (!parsed_gov || parsed_gov->value() < 0 ||
-        parsed_gov->value() > MAXGOVERNORS) {
+    if (!parsed_gov || parsed_gov->value() < 1 ||
+        !alien->has_governor(governor_t{parsed_gov->value()})) {
       g.out << "No such governor.\n";
       return false;
     }
-    gov = parsed_gov->value();
+    target_gov = governor_t{parsed_gov->value()};
     start = 3;
   }
 
@@ -221,13 +221,13 @@ bool send_to_player(const command_t& argv, GameObj& g) {
       "{} has sent you a telegram. Use `read' to read it.\n", sender_tag);
 
   increment_translation_skill(g.entity_manager, who, playernum);
-  if (gov != 0) {
-    g.session_registry.notify_player(
-        who, governor_t{static_cast<unsigned char>(gov)}, notice);
+  if (target_gov) {
+    g.session_registry.notify_player(who, *target_gov, notice);
   } else {
     g.session_registry.notify_race(who, notice);
   }
-  push_telegram(g.entity_manager, who, gov, msg);
+  push_telegram(g.entity_manager, who, target_gov.value_or(Race::leader_id),
+                msg);
 
   g.out << "Message sent.\n";
   return true;

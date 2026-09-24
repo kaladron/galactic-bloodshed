@@ -4,28 +4,21 @@
    appoint [0] -- initialize governor position and assign a password
 
 ## Syntax
-   appoint <governor #> <password>  <rank>
+   appoint [<governor #>] <password>
 
 ## Description
-    This command initializes and assigns a password for a new governor for 
-your race. The governor number must be a currently inactive spot. Use the
-governors command to check the status of your governor positions. If 
-a position is labeled ACTIVE, but is not in use anymore and you wish to 
-re-initialize the spot, use the revoke command to free the position before 
-executing appoint for a new governor.
-
- Rank is one of these: 
-
-novice  - can communicate and gets general game info (post, victory..)
-private - like novice + general race info (power, colonies..) 
-captain - like private + ship and combat commands (build, fire, assault..)
-general	- almost as powerful as leader
-
- If rank is not specified, governor will be private.
+    This command initializes and assigns a password for a new governor for
+your race. If a governor number (>= 2) is omitted, the lowest available
+unassigned governor number is automatically selected. Use the governors
+command to check the status of your appointed governors. If a governor slot
+is currently appointed and you wish to reuse that number, use the revoke
+command to remove the governor first.
 
 ## Example
-appoint 1 blahblah general (appoint a new general governor to position 1 with 
-                        password 'blahblah')
+appoint blahblah (appoint a new governor to the next available slot with
+                  password 'blahblah')
+appoint 2 blahblah (appoint a new governor to position 2 with password
+                    'blahblah')
 
 ## See Also
-	governors, revoke, grant, rank, promote
+	governors, revoke, grant

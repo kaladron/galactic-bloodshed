@@ -371,7 +371,7 @@ export SessionRegistry& get_test_session_registry();
 /// Recorded notification structure for test assertion
 export struct SentNotification {
   player_t player{0};
-  governor_t governor{0};
+  governor_t governor{1};
   std::string message;
   bool is_broadcast{false};
 };
@@ -434,7 +434,7 @@ public:
 
   /// Setup a GameObj for testing.
   /// Automatically sets up player, governor, and race pointer.
-  void setup_game_obj(GameObj& g, player_t player = 1, governor_t gov = 0);
+  void setup_game_obj(GameObj& g, player_t player = 1, governor_t gov = 1);
 
   /// Dispatch a command using an explicit CommandDescriptor.
   /// Automatically clears g.out buffer before executing.
@@ -555,7 +555,7 @@ public:
       EntityManager& em, ShipType type = ShipType::STYPE_BATTLE,
       std::optional<shipnum_t> explicit_number = std::nullopt);
 
-  TestShipBuilder& owned_by(player_t owner, governor_t gov = 0);
+  TestShipBuilder& owned_by(player_t owner, governor_t gov = 1);
   TestShipBuilder& named(std::string_view name);
   TestShipBuilder& with_tech(double tech);
   TestShipBuilder& with_alive(bool alive);

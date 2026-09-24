@@ -24,7 +24,6 @@ void test_pay_dispatch() {
   payer.name = "Payer";
   payer.Guest = false;
   payer.leader().money = 10000;
-  payer.leader().active = true;
 
   // Create payee race via repository
   Race payee{};
@@ -32,7 +31,6 @@ void test_pay_dispatch() {
   payee.name = "Payee";
   payee.Guest = false;
   payee.leader().money = 1000;
-  payee.leader().active = true;
 
   RaceRepository races(store);
   races.save(payer);
@@ -40,7 +38,7 @@ void test_pay_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Pay 500 from player 1 to player 2
   ctx.assert_dispatch_success(g, {"pay", "2", "500"});
@@ -52,16 +50,16 @@ void test_pay_dispatch() {
   test::expect_eq(saved_payee->leader().money, 1500);
   std::println(std::cout, "    ✓ Money transfer saved correctly");
 
-  // 2. Role check: Governor != 0 cannot pay
-  g.set_governor(1);
+  // 2. Role check: Governor != 1 cannot pay
+  g.set_governor(2);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "2", "500"});
   test::expect_contains(g.out.str(),
-                        "Only the leader (Governor 0) may use this command.");
+                        "Only the leader (Governor 1) may use this command.");
   std::println(std::cout, "    ✓ Governor rejection verified");
 
   // 3. Insufficient funds rejection
-  g.set_governor(0);
+  g.set_governor(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "2", "999999"});
   test::expect_contains(g.out.str(), "You don't have that much money to give!");

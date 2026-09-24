@@ -137,7 +137,7 @@ public:
 private:
   // All state stored locally
   player_t player_ = 0;
-  governor_t governor_ = 0;
+  governor_t governor_ = Race::leader_id;
   bool god_ = false;
   bool disconnect_requested_ = false;
   bool shutdown_requested_ = false;

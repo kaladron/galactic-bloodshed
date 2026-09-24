@@ -23,7 +23,7 @@ Empires configure their official diplomatic posture toward foreign powers using 
 declare <race> <alliance|neutral|war> [<modifier>]
 ```
 
-Diplomatic declarations are restricted to Imperial Leaders (Governor 0) and cost **1 Universe Action Point**. An empire cannot declare a stance on itself.
+Diplomatic declarations are restricted to Imperial Leaders (Governor 1) and cost **1 Universe Action Point**. An empire cannot declare a stance on itself.
 
 ```mermaid
 stateDiagram-v2
@@ -55,7 +55,7 @@ $$\text{Knowledge}_{\text{alien}\to\text{declarant}} = \min(\text{Knowledge} + \
 
 ## 2. Imperial Delegations and Provincial Grants
 
-Imperial Leaders (Governor 0) can delegate star systems, naval vessels, and imperial treasury funds to subordinate provincial governors using the `grant` command:
+Imperial Leaders (Governor 1) can delegate star systems, naval vessels, and imperial treasury funds to subordinate provincial governors using the `grant` command:
 
 ```text
 grant <governor #> <star|ship|money> [<shiplist|amount>]
@@ -98,7 +98,7 @@ flowchart TD
 
 ### Transfer Prerequisites & Restrictions
 
-1. **Leader Role**: Only the Imperial Leader (Governor 0) may gift naval vessels.
+1. **Leader Role**: Only the Imperial Leader (Governor 1) may gift naval vessels.
 2. **Mutual Alliance Required**: Both the donor and recipient empires must have formally declared an alliance with each other (`declare <race> allied`). Unilateral alliances are insufficient.
 3. **No Guest Recipients**: Vessels cannot be gifted to temporary guest accounts.
 4. **Vessel Invariants**:

@@ -21,7 +21,7 @@ int main() {
   Ship test_ship1{};
   test_ship1.number() = 1;
   test_ship1.owner() = 1;
-  test_ship1.governor() = 0;
+  test_ship1.governor() = 1;
   test_ship1.name() = "TestShip1";
   test_ship1.type() = ShipType::STYPE_SHUTTLE;
   test_ship1.alive() = 1;
@@ -30,7 +30,7 @@ int main() {
   Ship test_ship2{};
   test_ship2.number() = 2;
   test_ship2.owner() = 1;
-  test_ship2.governor() = 0;
+  test_ship2.governor() = 1;
   test_ship2.name() = "TestShip2";
   test_ship2.type() = ShipType::STYPE_CARGO;
   test_ship2.alive() = 1;
@@ -39,7 +39,7 @@ int main() {
   Ship test_ship3{};
   test_ship3.number() = 3;
   test_ship3.owner() = 2;
-  test_ship3.governor() = 0;
+  test_ship3.governor() = 1;
   test_ship3.name() = "TestShip3";
   test_ship3.type() = ShipType::STYPE_FIGHTER;
   test_ship3.alive() = 1;

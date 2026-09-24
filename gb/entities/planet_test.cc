@@ -777,7 +777,7 @@ int main() {
     ctx.with_standard_universe();
 
     const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .in_planet_orbit(1, 1)
                              .build();
 

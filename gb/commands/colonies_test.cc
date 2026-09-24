@@ -23,7 +23,7 @@ void test_colonies_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Colonization report all stars
   ctx.assert_dispatch_success(g, {"colonies"});

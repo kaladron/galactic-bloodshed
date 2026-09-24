@@ -33,7 +33,7 @@ void test_build_happy_paths() {
   // Create GameObj for testing
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -74,7 +74,7 @@ void test_build_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -89,7 +89,7 @@ void test_build_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -119,7 +119,7 @@ void test_build_info_queries() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // Specific ship type query (":" = Space Probe)
   g.out.str("");
@@ -139,13 +139,13 @@ void test_build_from_ships() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   shipnum_t initial_ships = ctx.em.num_ships();
 
   // 1. Factory building with 0 args ("build") and 2 args ("build 2")
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .landed_on(1, 1, {5, 5})
                              .with_resource(5000)
                              .with_crew(100, 0)
@@ -170,7 +170,7 @@ void test_build_from_ships() {
 
   // 2. Shuttle building outside in star orbit ("build H 1")
   shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .in_star_orbit(1)
                              .with_resource(50000)
                              .with_crew(50, 0)
@@ -183,7 +183,7 @@ void test_build_from_ships() {
 
   // 3. Habitat building inside hangar in universe orbit
   shipnum_t hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                         .owned_by(1, 0)
+                         .owned_by(1, 1)
                          .in_deep_space()
                          .with_resource(5000)
                          .with_max_hanger(500)

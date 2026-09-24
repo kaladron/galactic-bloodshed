@@ -88,7 +88,7 @@ void test_star_spatial_parity(TestContext& ctx) {
   // 4. Verify GameObj Star ScopeLevel matches
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(0);
 
@@ -166,7 +166,7 @@ void test_planet_spatial_parity(TestContext& ctx) {
   // 4. Verify ShipList Scope iteration at planet scope
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(0);

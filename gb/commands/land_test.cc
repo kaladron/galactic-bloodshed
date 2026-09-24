@@ -17,7 +17,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create a ship that can land (shuttle)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("TestShuttle")
       .in_planet_orbit(1, 1)
       .with_crew(2, 0)
@@ -32,7 +32,7 @@ void test_land_on_planet() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -60,7 +60,7 @@ void test_cannot_land_docked_ship() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -95,14 +95,14 @@ void test_land_on_friendly_carrier() {
 
   // Create a carrier landed at (5, 5)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("TestCarrier")
       .landed_on(1, 1, Coordinates(5, 5))
       .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -129,7 +129,7 @@ void test_land_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -147,7 +147,7 @@ void test_land_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -169,14 +169,14 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
 
   // Carrier in planet orbit at same coordinates as shuttle #1
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                              .owned_by(1, 0)
+                              .owned_by(1, 1)
                               .named("OrbitCarrier")
                               .in_planet_orbit(1, 1)
                               .with_max_hanger(100)
@@ -192,7 +192,7 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
 
   // 3. Factory target rejected
   const auto factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                              .owned_by(1, 0)
+                              .owned_by(1, 1)
                               .in_planet_orbit(1, 1)
                               .build();
   ctx.assert_dispatch_rejected(
@@ -201,7 +201,7 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
 
   // 4. Foreign carrier rejected
   const auto enemy_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                                 .owned_by(2, 0)
+                                 .owned_by(2, 1)
                                  .in_planet_orbit(1, 1)
                                  .build();
   ctx.assert_dispatch_rejected(
@@ -270,7 +270,7 @@ void test_land_mothership_loading_edge_cases() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -279,7 +279,7 @@ void test_land_mothership_loading_edge_cases() {
   ctx.assert_dispatch_success(g, {"land", "#1", "5,5"}, 1);
 
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                              .owned_by(1, 0)
+                              .owned_by(1, 1)
                               .named("GroundCarrier")
                               .in_planet_orbit(1, 1)
                               .with_max_hanger(100)
@@ -341,7 +341,7 @@ void test_land_mothership_loading_edge_cases() {
   test::expect_contains(g.out.str(), "too overloaded to land");
 
   const auto quarry_id = TestShipBuilder(ctx.em, ShipType::OTYPE_QUARRY)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .landed_on(1, 1, {5, 5})
                              .build();
   ctx.assert_dispatch_rejected(g, {"land", std::format("#{}", quarry_id.value),
@@ -355,7 +355,7 @@ void test_land_planet_preconditions_and_crashes() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -423,7 +423,7 @@ void test_land_planet_preconditions_and_crashes() {
 
   // 4. Crash from insufficient fuel (persists ship destruction & deducts 1 AP)
   const auto crash_fuel_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                                 .owned_by(1, 0)
+                                 .owned_by(1, 1)
                                  .in_planet_orbit(1, 1)
                                  .with_fuel(0.0)
                                  .build();
@@ -434,7 +434,7 @@ void test_land_planet_preconditions_and_crashes() {
 
   // 5. Crash from 100% hull damage (persists ship destruction & deducts 1 AP)
   const auto crash_dmg_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                                .owned_by(1, 0)
+                                .owned_by(1, 1)
                                 .in_planet_orbit(1, 1)
                                 .with_fuel(20.0)
                                 .with_damage(100)

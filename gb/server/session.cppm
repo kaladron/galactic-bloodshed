@@ -162,7 +162,7 @@ private:
 
   // Player state (was in GameObj, now directly in Session)
   player_t player_ = 0;
-  governor_t governor_ = 0;
+  governor_t governor_ = Race::leader_id;
   bool god_ = false;
   starnum_t snum_{};
   planetnum_t pnum_{};

@@ -16,7 +16,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create mine ship (activated)
   TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Mine")
       .in_star_orbit(1, SystemCoordinates{100.0, 100.0})
       .with_destruct(10)
@@ -27,7 +27,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create target ship nearby
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .named("Target")
       .in_star_orbit(1, SystemCoordinates{105.0, 105.0})
       .with_armor(10)
@@ -44,7 +44,7 @@ void test_detonate_happy_path() {
   // Create GameObj
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -83,7 +83,7 @@ void test_detonate_role_rejection() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 3, 0);
+  ctx.setup_game_obj(g, 3, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -99,7 +99,7 @@ void test_detonate_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 

@@ -102,7 +102,7 @@ void test_check_connect_duplicate_session_rejection() {
   race.Playernum = 1;
   race.name = "TestRace";
   race.password = "raceword";
-  race.leader().name = "Gov0";
+  race.leader().name = "Gov1";
   race.leader().password = "govword";
   {
     JsonStore store(ctx.db);
@@ -111,10 +111,10 @@ void test_check_connect_duplicate_session_rejection() {
   }
 
   // Use RecordingSessionRegistry configured with active session for player 1
-  // governor 0
+  // governor 1
   RecordingSessionRegistry busy_registry;
   busy_registry.sessions = {
-      SessionInfo{.player = 1, .governor = 0, .connected = true},
+      SessionInfo{.player = 1, .governor = 1, .connected = true},
   };
 
   asio::io_context io;
@@ -136,7 +136,7 @@ void test_check_connect_success_and_clamping() {
   race.password = "raceword";
   race.morale = 100;
   race.Gov_ship = 42;
-  race.leader().name = "Gov0";
+  race.leader().name = "Gov1";
   race.leader().password = "govword";
   race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
   race.leader().defsystem = 999;     // Out of bounds -> should clamp to 1
@@ -170,7 +170,7 @@ void test_check_connect_success_and_clamping() {
 
   test::expect_true(session->connected());
   test::expect_eq(session->player(), player_t{1});
-  test::expect_eq(session->governor(), governor_t{0});
+  test::expect_eq(session->governor(), governor_t{1});
   test::expect_eq(session->snum(), starnum_t{1});    // Clamped from 999
   test::expect_eq(session->pnum(), planetnum_t{1});  // Clamped from 999
 
@@ -182,7 +182,7 @@ void test_check_connect_success_and_clamping() {
   // Verify login output
   auto& out_stream = static_cast<std::ostringstream&>(session->out());
   std::string output = out_stream.str();
-  test::expect_contains(output, "TestRace \"Gov0\" [1,0] logged on.");
+  test::expect_contains(output, "TestRace \"Gov1\" [1,1] logged on.");
   test::expect_contains(output, "Government Center #42 is active.");
   test::expect_contains(output, "Morale: 100");
   test::expect_contains(output, "You have:");

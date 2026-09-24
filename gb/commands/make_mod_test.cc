@@ -18,7 +18,7 @@ void test_make_mod_command_matrix() {
   ctx.with_standard_universe();
 
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .named("Factory")
                              .in_star_orbit(0)
                              .with_fuel(100.0)
@@ -30,7 +30,7 @@ void test_make_mod_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_shipno(factory_id);
   g.set_snum(0);
 
@@ -70,7 +70,7 @@ void test_make_designations_and_errors() {
   });
 
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .named("Factory")
                              .in_star_orbit(0)
                              .with_fuel(100.0)
@@ -81,14 +81,14 @@ void test_make_designations_and_errors() {
                              .build();
 
   shipnum_t non_factory_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                                 .owned_by(1, 0)
+                                 .owned_by(1, 1)
                                  .in_star_orbit(0)
                                  .with_crew(10, 0)
                                  .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_snum(0);
 
@@ -127,7 +127,7 @@ void test_make_designations_and_errors() {
 
   // 8. Low tech warning on display and designate
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 1.0; });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_success(g, {"make", "C"});
   test::expect_contains(g.out.str(), "You can't produce this design yet!");
   ctx.assert_dispatch_success(g, {"make"});
@@ -136,7 +136,7 @@ void test_make_designations_and_errors() {
 
   // Restore tech
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 100.0; });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 9. Factory already online rejects make <shiptype>
   ctx.em.mutate_ship(factory_id, [](Ship& s) { s.on() = true; });
@@ -158,7 +158,7 @@ void test_modify_attributes_and_batteries() {
   });
 
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 0)
+                             .owned_by(1, 1)
                              .named("Factory")
                              .in_star_orbit(0)
                              .with_fuel(100.0)
@@ -170,7 +170,7 @@ void test_modify_attributes_and_batteries() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_snum(0);
   g.set_shipno(factory_id);
@@ -222,7 +222,7 @@ void test_modify_attributes_and_batteries() {
 
   // Enable laser discovery and toggle
   ctx.em.mutate_race(1, [](Race& r) { r.discoveries.laser = true; });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_success(g, {"modify", "laser"});
   test::expect_true(ctx.em.peek_ship(factory_id)->laser());
 
@@ -259,7 +259,7 @@ void test_modify_attributes_and_batteries() {
       g.out.str(), "Your race does not understand confined energy weapons.");
 
   ctx.em.mutate_race(1, [](Race& r) { r.discoveries.cew = true; });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   ctx.assert_dispatch_rejected(g, {"modify", "cew"});
   test::expect_contains(g.out.str(), "No such option for CEWs.");
@@ -311,7 +311,7 @@ void test_modify_attributes_and_batteries() {
   ctx.assert_dispatch_success(g, {"modify", "hyperdrive"});
 
   ctx.em.mutate_race(1, [](Race& r) { r.discoveries.hyperdrive = false; });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_rejected(g, {"modify", "armor", "10"});
   test::expect_contains(g.out.str(),
                         "Sorry, but you can't modify this ship right now.");

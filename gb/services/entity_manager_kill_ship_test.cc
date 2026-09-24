@@ -49,7 +49,7 @@ int main() {
 
   // Create a test star
   star_struct star_data{};
-  star_data.star_id = 0;
+  star_data.star_id = 1;
   star_data.coordinates = {100.0, 100.0};
   Star star{star_data};
   StarRepository star_repo(store);
@@ -57,8 +57,8 @@ int main() {
 
   // Create a test planet
   Planet planet{};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
+  planet.star_id() = 1;
+  planet.planet_order() = 1;
   planet.set_system_coordinates({10.0, 10.0});
   planet.toxic() = 10;
   PlanetRepository planet_repo(store);
@@ -151,7 +151,7 @@ int main() {
     auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_VN)
                            .owned_by(2)
                            .with_alive(true)
-                           .in_star_orbit(0)
+                           .in_star_orbit(1)
                            .with_special(MindData{.who_killed = 1})
                            .build_handle();
     auto& ship = *ship_handle;
@@ -162,8 +162,8 @@ int main() {
     const auto* universe_after = em.peek_universe();
     test::expect_ne(universe_after, nullptr);
     test::expect_gt(universe_after->VN_hitlist[player_t{1}], 0);
-    test::expect_true(universe_after->VN_index1[player_t{1}] == starnum_t{0} ||
-                      universe_after->VN_index2[player_t{1}] == starnum_t{0});
+    test::expect_true(universe_after->VN_index1[player_t{1}] == starnum_t{1} ||
+                      universe_after->VN_index2[player_t{1}] == starnum_t{1});
     std::println(std::cout, "✓ VN hitlist tracking works");
   }
 
@@ -172,7 +172,7 @@ int main() {
     auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_TOXWC)
                            .owned_by(2)
                            .with_alive(true)
-                           .in_planet_orbit(0, 0)
+                           .in_planet_orbit(1, 1)
                            .with_special(WasteData{.toxic = 20})
                            .build_handle();
     auto& ship = *ship_handle;
@@ -180,7 +180,7 @@ int main() {
     em.kill_ship(1, ship);
 
     // Check planet toxicity increased
-    const auto* planet_after = em.peek_planet(0, 0);
+    const auto* planet_after = em.peek_planet(1, 1);
     test::expect_ne(planet_after, nullptr);
     test::expect_ge(planet_after->toxic(), 30);  // Was 10, added 20
     std::println(std::cout, "✓ TOXWC increases planet toxicity on death");
@@ -196,14 +196,14 @@ int main() {
       auto ship1_handle = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                               .owned_by(1)
                               .with_alive(true)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .build_handle();
       ship1_num = ship1_handle->number();
 
       auto ship2_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                               .owned_by(1)
                               .with_alive(true)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .build_handle();
       ship2_num = ship2_handle->number();
 
@@ -240,7 +240,7 @@ int main() {
       auto carrier_handle = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                                 .owned_by(1)
                                 .with_alive(true)
-                                .in_star_orbit(0)
+                                .in_star_orbit(1)
                                 .build_handle();
       carrier_num = carrier_handle->number();
 
@@ -248,7 +248,7 @@ int main() {
       auto fighter1_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                                  .owned_by(1)
                                  .with_alive(true)
-                                 .docked_to(carrier_num, 0)
+                                 .docked_to(carrier_num, 1)
                                  .build_handle();
       fighter1_num = fighter1_handle->number();
 
@@ -256,7 +256,7 @@ int main() {
       auto fighter2_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                                  .owned_by(1)
                                  .with_alive(true)
-                                 .docked_to(carrier_num, 0)
+                                 .docked_to(carrier_num, 1)
                                  .build_handle();
       fighter2_num = fighter2_handle->number();
 
@@ -327,17 +327,17 @@ int main() {
       auto target_handle = TestShipBuilder(em, ShipType::STYPE_DESTROYER)
                                .owned_by(2)
                                .with_alive(true)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .build_handle();
       target_id = target_handle->number();
 
       auto mirror_handle = TestShipBuilder(em, ShipType::STYPE_MIRROR)
                                .owned_by(1)
                                .with_alive(true)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .with_aim(AimedAtData{
                                    .shipno = target_id,
-                                   .snum = starnum_t{0},
+                                   .snum = starnum_t{1},
                                    .intensity = 75,
                                    .level = ScopeLevel::LEVEL_SHIP,
                                })
@@ -347,7 +347,7 @@ int main() {
       auto trans_handle = TestShipBuilder(em, ShipType::OTYPE_TRANSDEV)
                               .owned_by(1)
                               .with_alive(true)
-                              .landed_on(0, 0, {1, 1})
+                              .landed_on(1, 1, {1, 1})
                               .with_special(TransportData{.target = target_id})
                               .build_handle();
       trans_id = trans_handle->number();
@@ -355,7 +355,7 @@ int main() {
       auto escort_handle = TestShipBuilder(em, ShipType::STYPE_CRUISER)
                                .owned_by(1)
                                .with_alive(true)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .build_handle();
       escort_handle->protect().on = true;
       escort_handle->protect().ship = target_id;
@@ -364,7 +364,7 @@ int main() {
       auto chaser_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                                .owned_by(1)
                                .with_alive(true)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .build_handle();
       chaser_handle->whatdest() = ScopeLevel::LEVEL_SHIP;
       chaser_handle->destshipno() = target_id;

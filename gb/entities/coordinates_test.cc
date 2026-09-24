@@ -384,7 +384,7 @@ int main() {
     ctx.with_standard_universe();
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 0);
+    ctx.setup_game_obj(g, 1, 1);
 
     // 1. Direct constructors and to_string()
     Place p_3arg(ScopeLevel::LEVEL_SHIP, 1, 1);
@@ -431,12 +431,12 @@ int main() {
     // 4. Ascending from LEVEL_SHIP (docked inside carrier & orbiting planet)
     const shipnum_t carrier_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-            .owned_by(1, 0)
+            .owned_by(1, 1)
             .in_planet_orbit(1, 1, UniverseCoordinates{0.0, 0.0})
             .build();
     const shipnum_t fighter_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-            .owned_by(1, 0)
+            .owned_by(1, 1)
             .in_planet_orbit(1, 1, UniverseCoordinates{0.0, 0.0})
             .build();
     ctx.em.mutate_ship(fighter_id,
@@ -517,7 +517,7 @@ int main() {
 
     const shipnum_t alien_ship_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-            .owned_by(2, 0)
+            .owned_by(2, 1)
             .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
             .build();
     Place p_alien_ship(g, std::format("#{}", alien_ship_id));

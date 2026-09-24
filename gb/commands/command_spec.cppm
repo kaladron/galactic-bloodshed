@@ -12,7 +12,7 @@ namespace GB::commands {
 export struct RoleRequirements {
   bool god_only = false;      ///< Must have active deity/god privileges
   bool no_guests = false;     ///< Guest races are prohibited
-  bool leader_only = false;   ///< Only Governor 0 (leader)
+  bool leader_only = false;   ///< Only Governor 1 (leader)
   bool star_control = false;  ///< Must control the current star system
 };
 

@@ -112,8 +112,7 @@ Race create_race(player_t player, bool god = false) {
   race.Playernum = player;
   race.Guest = false;
   race.God = god;
-  // Note: Manual loop for modification - iterator returns const references
-  for (governor_t i{0}; i <= MAXGOVERNORS; ++i) {
+  for (governor_t i{2}; i <= 5; ++i) {
     race.appoint_governor(i);
   }
   return race;
@@ -136,34 +135,34 @@ void test_notify_player_basic() {
   std::println(std::cout, "Testing notify_player basic functionality...");
 
   MockRegistry registry;
-  auto session1 = std::make_shared<MockSession>(1, 0, 1, true, false);
-  auto session2 = std::make_shared<MockSession>(1, 1, 1, true, false);
-  auto session3 = std::make_shared<MockSession>(2, 0, 1, true, false);
+  auto session1 = std::make_shared<MockSession>(1, 1, 1, true, false);
+  auto session2 = std::make_shared<MockSession>(1, 2, 1, true, false);
+  auto session3 = std::make_shared<MockSession>(2, 1, 1, true, false);
 
   registry.add_session(session1);
   registry.add_session(session2);
   registry.add_session(session3);
 
-  // Test: Message to player 1, governor 0
-  bool delivered = registry.notify_player(1, 0, "Message to 1/0\n");
+  // Test: Message to player 1, governor 1
+  bool delivered = registry.notify_player(1, 1, "Message to 1/1\n");
   test::expect_true(delivered);
-  test::expect_eq(session1->get_output(), "Message to 1/0\n");
+  test::expect_eq(session1->get_output(), "Message to 1/1\n");
   test::expect_true(session2->get_output().empty());
   test::expect_true(session3->get_output().empty());
 
   session1->clear_output();
 
-  // Test: Message to player 1, governor 1
-  delivered = registry.notify_player(1, 1, "Message to 1/1\n");
+  // Test: Message to player 1, governor 2
+  delivered = registry.notify_player(1, 2, "Message to 1/2\n");
   test::expect_true(delivered);
   test::expect_true(session1->get_output().empty());
-  test::expect_eq(session2->get_output(), "Message to 1/1\n");
+  test::expect_eq(session2->get_output(), "Message to 1/2\n");
   test::expect_true(session3->get_output().empty());
 
   session2->clear_output();
 
   // Test: Message to non-existent player
-  delivered = registry.notify_player(99, 0, "No one here\n");
+  delivered = registry.notify_player(99, 1, "No one here\n");
   test::expect_false(delivered);
 
   std::println(std::cout, "  ✓ notify_player basic tests passed");
@@ -173,9 +172,9 @@ void test_notify_race_basic() {
   std::println(std::cout, "Testing notify_race basic functionality...");
 
   MockRegistry registry;
-  auto session1 = std::make_shared<MockSession>(1, 0, 1, true, false);
-  auto session2 = std::make_shared<MockSession>(1, 1, 1, true, false);
-  auto session3 = std::make_shared<MockSession>(2, 0, 1, true, false);
+  auto session1 = std::make_shared<MockSession>(1, 1, 1, true, false);
+  auto session2 = std::make_shared<MockSession>(1, 2, 1, true, false);
+  auto session3 = std::make_shared<MockSession>(2, 1, 1, true, false);
 
   registry.add_session(session1);
   registry.add_session(session2);
@@ -204,9 +203,9 @@ void test_disconnected_sessions() {
 
   MockRegistry registry;
   auto session1 =
-      std::make_shared<MockSession>(1, 0, 1, true, false);  // connected
+      std::make_shared<MockSession>(1, 1, 1, true, false);  // connected
   auto session2 =
-      std::make_shared<MockSession>(1, 1, 1, false, false);  // disconnected
+      std::make_shared<MockSession>(1, 2, 1, false, false);  // disconnected
 
   registry.add_session(session1);
   registry.add_session(session2);
@@ -229,7 +228,7 @@ void test_d_broadcast_gag_filtering() {
   // Create races with different gag settings
   auto race1 = create_race(1);
   race1.leader().toggle.gag = false;    // Not gagged
-  race1.governor(1).toggle.gag = true;  // Gagged
+  race1.governor(2).toggle.gag = true;  // Gagged
 
   auto race2 = create_race(2);
   race2.leader().toggle.gag = false;
@@ -240,9 +239,9 @@ void test_d_broadcast_gag_filtering() {
   races.save(race2);
 
   MockRegistry registry;
-  auto sender = std::make_shared<MockSession>(1, 0, 1, true, false);
-  auto gagged = std::make_shared<MockSession>(1, 1, 1, true, true);
-  auto receiver = std::make_shared<MockSession>(2, 0, 1, true, false);
+  auto sender = std::make_shared<MockSession>(1, 1, 1, true, false);
+  auto gagged = std::make_shared<MockSession>(1, 2, 1, true, true);
+  auto receiver = std::make_shared<MockSession>(2, 1, 1, true, false);
 
   registry.add_session(sender);
   registry.add_session(gagged);
@@ -272,12 +271,12 @@ void test_warn_player_update_suppression() {
 
   // Track telegrams (we need to mock push_telegram, but it's a free function)
   // For now, we'll verify the function doesn't crash and moves on
-  warn_player(registry, em, 1, 0, "Update in progress message\n");
+  warn_player(registry, em, 1, 1, "Update in progress message\n");
 
   // When update is NOT in progress, should try real-time
   registry.set_update_in_progress(false);
 
-  auto session1 = std::make_shared<MockSession>(1, 0, 1, true, false);
+  auto session1 = std::make_shared<MockSession>(1, 1, 1, true, false);
   registry.add_session(session1);
 
   std::println(std::cout,
@@ -293,11 +292,11 @@ void test_warn_race_all_governors() {
   initialize_schema(db);
   EntityManager em(db);
 
-  // Create race with 2 active governors
-  auto race1 = create_race(1);
-  race1.leader().active = true;
-  race1.appoint_governor(1);
-  race1.governor(2).active = false;  // Inactive
+  // Create race with 2 active governors (1 and 2)
+  Race race1{};
+  race1.Playernum = 1;
+  race1.Guest = false;
+  race1.appoint_governor(2);
 
   JsonStore store(db);
   RaceRepository races(store);
@@ -306,11 +305,11 @@ void test_warn_race_all_governors() {
   MockRegistry registry(false);  // Not in update mode
 
   // Add sessions for both active governors
-  auto session0 = std::make_shared<MockSession>(1, 0, 1, true, false);
   auto session1 = std::make_shared<MockSession>(1, 1, 1, true, false);
+  auto session2 = std::make_shared<MockSession>(1, 2, 1, true, false);
 
-  registry.add_session(session0);
   registry.add_session(session1);
+  registry.add_session(session2);
 
   // Call warn_race - should send to all active governors
   warn_race(registry, em, 1, "Warning to all governors\n");
@@ -345,19 +344,19 @@ void test_notify_star() {
   stars.save(star);
 
   MockRegistry registry(false);  // Not in update mode
-  auto session1_0 = std::make_shared<MockSession>(1, 0, 5, true, false);
   auto session1_1 = std::make_shared<MockSession>(1, 1, 5, true, false);
-  auto session2_0 = std::make_shared<MockSession>(2, 0, 5, true, false);
-  auto session3_0 = std::make_shared<MockSession>(3, 0, 5, true, false);
+  auto session1_2 = std::make_shared<MockSession>(1, 2, 5, true, false);
+  auto session2_1 = std::make_shared<MockSession>(2, 1, 5, true, false);
+  auto session3_1 = std::make_shared<MockSession>(3, 1, 5, true, false);
 
-  registry.add_session(session1_0);
   registry.add_session(session1_1);
-  registry.add_session(session2_0);
-  registry.add_session(session3_0);
+  registry.add_session(session1_2);
+  registry.add_session(session2_1);
+  registry.add_session(session3_1);
 
-  // Notify star from player 1, governor 0
+  // Notify star from player 1, governor 1
   // Just verify it doesn't crash - telegram verification not yet implemented
-  notify_star(registry, em, 1, 0, 5, "Test message\n");
+  notify_star(registry, em, 1, 1, 5, "Test message\n");
 
   std::println(std::cout, "  ✓ notify_star executes without crashing");
 }
@@ -382,8 +381,8 @@ void test_warn_star() {
   Star star{create_star(7)};
   star.mark_inhabited_by(player_t{1});
   star.mark_inhabited_by(player_t{2});
-  star.governor(player_t{1}) = 0;  // Player 1 default governor
-  star.governor(player_t{2}) = 0;  // Player 2 default governor
+  star.governor(player_t{1}) = 1;  // Player 1 default governor
+  star.governor(player_t{2}) = 1;  // Player 2 default governor
 
   StarRepository stars(store);
   stars.save(star);
@@ -406,14 +405,15 @@ void test_telegram_star() {
   JsonStore store(db);
 
   // Create races with multiple governors
-  Race race1 = create_race(1);
-  race1.leader().active = true;
-  race1.appoint_governor(1);
-  race1.governor(2).active = false;  // Inactive
+  Race race1{};
+  race1.Playernum = 1;
+  race1.Guest = false;
+  race1.appoint_governor(2);
 
-  Race race2 = create_race(2);
-  race2.leader().active = true;
-  race2.appoint_governor(1);
+  Race race2{};
+  race2.Playernum = 2;
+  race2.Guest = false;
+  race2.appoint_governor(2);
 
   RaceRepository races(store);
   races.save(race1);
@@ -427,10 +427,10 @@ void test_telegram_star() {
   StarRepository stars(store);
   stars.save(star);
 
-  // Send telegram from player 1, governor 0
+  // Send telegram from player 1, governor 1
   // Just verify it doesn't crash - telegram files written to disk, not testable
   // yet
-  telegram_star(em, 10, 1, 0, "Telegram from P1G0\n");
+  telegram_star(em, 10, 1, 1, "Telegram from P1G1\n");
 
   std::println(std::cout, "  ✓ telegram_star executes without crashing");
   std::println(

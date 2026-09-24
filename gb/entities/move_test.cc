@@ -253,14 +253,14 @@ int main() {
 
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 0);
+    ctx.setup_game_obj(g, 1, 1);
     g.set_level(ScopeLevel::LEVEL_PLAN);
     g.set_snum(1);
     g.set_pnum(1);
 
     // Create a hostile Player 2 AFV landed at (3, 3) with 1 destruct
     const shipnum_t afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                                 .owned_by(2, 0)
+                                 .owned_by(2, 1)
                                  .landed_on(1, 1, Coordinates{3, 3})
                                  .with_crew(1, 0)
                                  .with_guns(guntype_t::MEDIUM, 2)
@@ -276,7 +276,7 @@ int main() {
     // 1. Allied AFVs do not fire on allied troops
     ctx.em.mutate_race(1, [](Race& r) { r.allied.set(player_t{2}); });
     ctx.em.mutate_race(2, [](Race& r) { r.allied.set(player_t{1}); });
-    ctx.setup_game_obj(g, 1, 0);
+    ctx.setup_game_obj(g, 1, 1);
     population_t entering_troops = 1000;
     mech_defend(g, &entering_troops, PopulationType::MIL, *p_earth,
                 Coordinates{3, 3}, target_sect);
@@ -286,7 +286,7 @@ int main() {
     // even when its destruct drops to 0 after firing its last shell
     ctx.em.mutate_race(1, [](Race& r) { r.allied.reset(player_t{2}); });
     ctx.em.mutate_race(2, [](Race& r) { r.allied.reset(player_t{1}); });
-    ctx.setup_game_obj(g, 1, 0);
+    ctx.setup_game_obj(g, 1, 1);
     seed_rand(42);
     mech_defend(g, &entering_troops, PopulationType::MIL, *p_earth,
                 Coordinates{3, 3}, target_sect);

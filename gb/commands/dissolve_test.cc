@@ -18,7 +18,7 @@ void setup_test_world(TestContext& ctx) {
   ctx.em.mutate_race(1, [](Race& race) {
     race.password = "testpass";
     race.leader().password = "govpass";
-    race.appoint_governor(1, {.password = "subpass"});
+    race.appoint_governor(2, {.password = "subpass"});
     race.dissolved = false;
   });
 
@@ -28,11 +28,11 @@ void setup_test_world(TestContext& ctx) {
   });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .in_planet_orbit(1, 1)
       .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .in_planet_orbit(1, 1)
       .build();
 
@@ -50,7 +50,7 @@ void test_dissolve_happy_path() {
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::println(std::cout, "Dissolve race with correct passwords and waste");
@@ -110,7 +110,6 @@ void test_dissolve_role_rejections() {
   guest_race.name = "GuestRace";
   guest_race.password = "guestpass";
   guest_race.Guest = true;
-  guest_race.leader().active = true;
   guest_race.leader().password = "guestgov";
   {
     JsonStore store(ctx.db);
@@ -122,19 +121,19 @@ void test_dissolve_role_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Guest race rejection
-  ctx.setup_game_obj(g, 3, 0);
+  ctx.setup_game_obj(g, 3, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"dissolve", "guestpass", "guestgov"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
-  // 2. Leader-only rejection (Governor 1 via dispatcher)
+  // 2. Leader-only rejection (Governor 2 via dispatcher)
   g.out.str("");
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, 1, 2);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"dissolve", "testpass", "subpass"});
-  test::expect_contains(g.out.str(), "leader (Governor 0)");
+  test::expect_contains(g.out.str(), "leader (Governor 1)");
 
-  // 3. Direct handler governor != 0 leader notification check
+  // 3. Direct handler governor != 1 leader notification check
   g.out.str("");
   test::expect_false(
       GB::commands::dissolve({"dissolve", "testpass", "subpass"}, g));
@@ -147,7 +146,7 @@ void test_dissolve_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   // 1. Min args (< 3 args via dispatcher and direct handler)
@@ -173,7 +172,7 @@ void test_dissolve_domain_errors() {
   test::expect_false(ctx.em.peek_race(1)->dissolved);
 
   // 4. Subordinate governor password rejection (Player 1 supplying their own
-  // Governor 1 password instead of Governor 0 leader password)
+  // Governor 2 password instead of Governor 1 leader password)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"dissolve", "testpass", "subpass"});
   test::expect_contains(g.out.str(), "Password mismatch");

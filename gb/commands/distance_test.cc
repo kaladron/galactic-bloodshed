@@ -23,19 +23,19 @@ void setup_distance_ships(TestContext& ctx) {
 
   // Ship 1: Player 1 at (0, 0)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
       .build();
 
   // Ship 2: Player 1 at (30, 40) -> distance to ship 1 should be 50
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .in_star_orbit(1, UniverseCoordinates{30.0, 40.0})
       .build();
 
   // Ship 3: Player 2 (enemy)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 3)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .in_star_orbit(1, UniverseCoordinates{100.0, 100.0})
       .build();
 }
@@ -46,7 +46,7 @@ void test_distance_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   // 1. Min args check: rejected when fewer than 3 args
@@ -156,7 +156,7 @@ void test_distance_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   TestCommandMatrix(ctx, "distance")

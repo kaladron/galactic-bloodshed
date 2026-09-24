@@ -19,13 +19,11 @@ int main() {
   race1.Playernum = 1;
   race1.name = "LeaderRace";
   race1.Guest = false;
-  race1.leader().active = true;
 
   Race race2{};
   race2.Playernum = 2;
   race2.name = "AlienRace";
   race2.Guest = false;
-  race2.leader().active = true;
 
   RaceRepository races(store);
   races.save(race1);
@@ -59,16 +57,16 @@ int main() {
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
   ctx.setup_game_obj(g);
 
-  // 2. Non-leader (governor != 0) rejection
-  ctx.setup_game_obj(g, 1, 1);
+  // 2. Non-leader (governor != 1) rejection
+  ctx.setup_game_obj(g, 1, 2);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"invite", "AlienRace"});
   test::expect_contains(g.out.str(),
-                        "Only the leader (Governor 0) may use this command.");
+                        "Only the leader (Governor 1) may use this command.");
   std::println(std::cout, "    ✓ Governor rejection verified");
 
-  // Reset to governor 0
-  ctx.setup_game_obj(g, 1, 0);
+  // Reset to governor 1
+  ctx.setup_game_obj(g, 1, 1);
 
   // 3. Self-invite rejection
   g.out.str("");

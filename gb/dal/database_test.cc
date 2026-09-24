@@ -136,55 +136,55 @@ int main() {
 
     player_t p1{1};
     player_t p2{2};
-    governor_t g0{0};
     governor_t g1{1};
+    governor_t g2{2};
 
     // Test telegram_count on empty
-    test::expect_eq(db.telegram_count(p1, g0), 0);
+    test::expect_eq(db.telegram_count(p1, g1), 0);
 
     // Test telegram_add
-    auto t1 = db.telegram_add(p1, g0, "Hello Governor 0", 1000);
-    auto t2 = db.telegram_add(p1, g0, "Fleet arriving soon", 1050);
-    auto t3 = db.telegram_add(p1, g1, "Governor 1 secret dispatch", 1100);
-    auto t4 = db.telegram_add(p2, g0, "Message for Player 2", 1200);
+    auto t1 = db.telegram_add(p1, g1, "Hello Governor 1", 1000);
+    auto t2 = db.telegram_add(p1, g1, "Fleet arriving soon", 1050);
+    auto t3 = db.telegram_add(p1, g2, "Governor 2 secret dispatch", 1100);
+    auto t4 = db.telegram_add(p2, g1, "Message for Player 2", 1200);
     test::expect_true(t1.has_value() && t2.has_value() && t3.has_value() &&
                       t4.has_value());
     std::println(std::cout, "✓ telegram_add successfully stores messages");
 
     // Test telegram_count
-    test::expect_eq(db.telegram_count(p1, g0), 2);
-    test::expect_eq(db.telegram_count(p1, g1), 1);
-    test::expect_eq(db.telegram_count(p2, g0), 1);
-    test::expect_eq(db.telegram_count(player_t{99}, g0), 0);
+    test::expect_eq(db.telegram_count(p1, g1), 2);
+    test::expect_eq(db.telegram_count(p1, g2), 1);
+    test::expect_eq(db.telegram_count(p2, g1), 1);
+    test::expect_eq(db.telegram_count(player_t{99}, g1), 0);
     std::println(std::cout,
                  "✓ telegram_count returns correct counts per recipient");
 
     // Test telegram_get
-    auto p1_g0_msgs = db.telegram_get(p1, g0);
-    test::expect_eq(p1_g0_msgs.size(), 2);
-    test::expect_eq(std::get<0>(p1_g0_msgs[0]), *t1);
-    test::expect_eq(std::get<1>(p1_g0_msgs[0]), p1.value);
-    test::expect_eq(std::get<2>(p1_g0_msgs[0]), g0.value);
-    test::expect_eq(std::get<3>(p1_g0_msgs[0]), "Hello Governor 0");
-    test::expect_eq(std::get<4>(p1_g0_msgs[0]), 1000);
+    auto p1_g1_msgs = db.telegram_get(p1, g1);
+    test::expect_eq(p1_g1_msgs.size(), 2);
+    test::expect_eq(std::get<0>(p1_g1_msgs[0]), *t1);
+    test::expect_eq(std::get<1>(p1_g1_msgs[0]), p1.value);
+    test::expect_eq(std::get<2>(p1_g1_msgs[0]), g1.value);
+    test::expect_eq(std::get<3>(p1_g1_msgs[0]), "Hello Governor 1");
+    test::expect_eq(std::get<4>(p1_g1_msgs[0]), 1000);
 
-    test::expect_eq(std::get<0>(p1_g0_msgs[1]), *t2);
-    test::expect_eq(std::get<3>(p1_g0_msgs[1]), "Fleet arriving soon");
+    test::expect_eq(std::get<0>(p1_g1_msgs[1]), *t2);
+    test::expect_eq(std::get<3>(p1_g1_msgs[1]), "Fleet arriving soon");
     std::println(std::cout,
                  "✓ telegram_get retrieves messages in chronological order");
 
     // Test telegram_delete_for_governor
-    test::expect_true(db.telegram_delete_for_governor(p1, g0));
-    test::expect_eq(db.telegram_count(p1, g0), 0);
-    test::expect_eq(db.telegram_count(p1, g1), 1);  // Other governor untouched
-    test::expect_eq(db.telegram_count(p2, g0), 1);  // Other player untouched
+    test::expect_true(db.telegram_delete_for_governor(p1, g1));
+    test::expect_eq(db.telegram_count(p1, g1), 0);
+    test::expect_eq(db.telegram_count(p1, g2), 1);  // Other governor untouched
+    test::expect_eq(db.telegram_count(p2, g1), 1);  // Other player untouched
     std::println(std::cout, "✓ telegram_delete_for_governor removes only "
                             "target recipient messages");
 
     // Test telegram_purge_all
     test::expect_true(db.telegram_purge_all());
-    test::expect_eq(db.telegram_count(p1, g1), 0);
-    test::expect_eq(db.telegram_count(p2, g0), 0);
+    test::expect_eq(db.telegram_count(p1, g2), 0);
+    test::expect_eq(db.telegram_count(p2, g1), 0);
     std::println(std::cout, "✓ telegram_purge_all purges all messages");
   }
 

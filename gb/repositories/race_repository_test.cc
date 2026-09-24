@@ -69,9 +69,8 @@ int main() {
   test_race.likesbest = SectorType::SEC_SEA;
 
   // Initialize governor data
-  test_race.leader().name = "Governor Zero";
-  test_race.leader().password = "gov0pass";
-  test_race.leader().active = true;
+  test_race.leader().name = "Governor One";
+  test_race.leader().password = "gov1pass";
   test_race.leader().money = 10000;
   test_race.leader().income = 5000;
   test_race.leader().newspos = {

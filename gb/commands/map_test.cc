@@ -28,7 +28,6 @@ void setup_test_world(TestContext& ctx) {
   race.Guest = false;
   race.God = false;
   race.tech = 50.0;
-  race.leader().active = true;
   race.leader().toggle.geography = false;
   race.leader().toggle.inverse = false;
   race.leader().toggle.double_digits = false;
@@ -135,7 +134,7 @@ void test_map_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Happy path: Map at planet scope (stable star)
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -204,26 +203,26 @@ void test_sector_char_and_desshow_branches() {
   s.set_troops_exact(10);
 
   s.set_owner(1);
-  test::expect_eq(desshow(1, 0, r, s), CHAR_MY_TROOPS);
+  test::expect_eq(desshow(1, 1, r, s), CHAR_MY_TROOPS);
   s.set_owner(2);
-  test::expect_eq(desshow(1, 0, r, s), CHAR_ALLIED_TROOPS);
+  test::expect_eq(desshow(1, 1, r, s), CHAR_ALLIED_TROOPS);
   s.set_owner(3);
-  test::expect_eq(desshow(1, 0, r, s), CHAR_ATWAR_TROOPS);
+  test::expect_eq(desshow(1, 1, r, s), CHAR_ATWAR_TROOPS);
   s.set_owner(4);
-  test::expect_eq(desshow(1, 0, r, s), CHAR_NEUTRAL_TROOPS);
+  test::expect_eq(desshow(1, 1, r, s), CHAR_NEUTRAL_TROOPS);
 
   // 3. desshow() owned digits (single digit, double digits on even/odd x,
   // inverse highlight, color toggle, geography toggle)
   s.set_troops_exact(0);
   s.set_owner(12);
   r.leader().toggle.double_digits = false;
-  test::expect_eq(desshow(1, 0, r, s), '2');
+  test::expect_eq(desshow(1, 1, r, s), '2');
 
   r.leader().toggle.double_digits = true;
   s.set_coords({0, 0});  // Even x -> tens digit ('1')
-  test::expect_eq(desshow(1, 0, r, s), '1');
+  test::expect_eq(desshow(1, 1, r, s), '1');
   s.set_coords({1, 0});  // Odd x -> ones digit ('2')
-  test::expect_eq(desshow(1, 0, r, s), '2');
+  test::expect_eq(desshow(1, 1, r, s), '2');
 
   // Inverse highlight on owner 12 falls through to crystal / terrain char
   r.leader().toggle.inverse = true;
@@ -231,9 +230,9 @@ void test_sector_char_and_desshow_branches() {
   s.set_crystals(true);
   r.discoveries.crystal = false;
   r.God = true;
-  test::expect_eq(desshow(1, 0, r, s), CHAR_CRYSTAL);
+  test::expect_eq(desshow(1, 1, r, s), CHAR_CRYSTAL);
   r.God = false;
-  test::expect_eq(desshow(1, 0, r, s), CHAR_LAND);
+  test::expect_eq(desshow(1, 1, r, s), CHAR_LAND);
 }
 
 void test_show_map_rendering_options() {
@@ -242,12 +241,12 @@ void test_show_map_rendering_options() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // Land a probe on planet 1 at (0,0) and configure color/inverse, high
   // toxicity, Metamorph, enslaved status, and alien war/peace presence
   const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                            .owned_by(1, 0)
+                            .owned_by(1, 1)
                             .landed_on(1, 1, Coordinates{0, 0})
                             .build();
   (void)probe_id;
@@ -262,7 +261,7 @@ void test_show_map_rendering_options() {
     p.info(player_t{2}).numsectsowned = 1;
     p.info(player_t{3}).numsectsowned = 1;
   });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   g.out.str("");
   show_map(g, 1, 1, *ctx.em.peek_planet(1, 1));
@@ -278,7 +277,7 @@ void test_show_map_rendering_options() {
     r.tech = 0.0;
   });
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.explored() = false; });
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   g.out.str("");
   show_map(g, 1, 1, *ctx.em.peek_planet(1, 1));

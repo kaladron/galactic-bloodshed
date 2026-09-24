@@ -16,7 +16,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create attacker ship - armed with guns
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Battleship")
       .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
       .with_guns(guntype_t::LIGHT, 10)
@@ -27,7 +27,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create target ship
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .named("Target")
       .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
       .with_armor(10)
@@ -36,7 +36,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create CEW equipped ship
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("CEWBattleship")
       .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
       .with_cew(20, 1000)
@@ -51,7 +51,7 @@ void test_fire_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -92,7 +92,7 @@ void test_fire_universe_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   bool ok = ctx.dispatch(g, {"fire", "#1", "#2", "10"});
@@ -111,7 +111,7 @@ void test_fire_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -132,7 +132,7 @@ void test_fire_role_and_guest_rejections() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
 
-  ctx.setup_game_obj(g, 3, 0);
+  ctx.setup_game_obj(g, 3, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -153,7 +153,7 @@ void test_fire_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -180,7 +180,7 @@ void test_protecting_ship_retaliation() {
 
   // Create an escort ship protecting Target (Ship #2)
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .named("Escort")
       .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
       .with_guns(guntype_t::LIGHT, 1)
@@ -197,7 +197,7 @@ void test_protecting_ship_retaliation() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -236,7 +236,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -277,7 +277,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
 
   // 4. AFV and surface combat geometry checks
   const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                          .owned_by(1, 0)
+                          .owned_by(1, 1)
                           .in_planet_orbit(1, 1)
                           .with_guns(guntype_t::LIGHT, 5)
                           .with_destruct(20)

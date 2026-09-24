@@ -17,7 +17,7 @@ void test_help_matrix() {
   ctx.with_standard_universe();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   TestCommandMatrix(ctx, "help")
       .with_valid_argv({"help"})
@@ -33,7 +33,7 @@ void test_help_command_dispatch() {
   ctx.with_standard_universe();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Happy Path: General help success
   ctx.assert_dispatch_success(g, {"help"});

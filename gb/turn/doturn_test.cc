@@ -182,7 +182,7 @@ void test_do_turn_market_and_maintenance() {
   Commod commod{};
   commod.id = 1;
   commod.owner = player_t{1};
-  commod.governor = governor_t{0};
+  commod.governor = governor_t{1};
   commod.type = CommodType::RESOURCE;
   commod.amount = 100;
   commod.star_from = starnum_t{1};
@@ -190,7 +190,7 @@ void test_do_turn_market_and_maintenance() {
   commod.star_to = starnum_t{2};
   commod.planet_to = planetnum_t{1};
   commod.bidder = player_t{2};
-  commod.bidder_gov = governor_t{0};
+  commod.bidder_gov = governor_t{1};
   commod.bid = 500;
   commod.deliver = false;
   CommodRepository commod_repo(store);
@@ -283,7 +283,7 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   Race race1 = createTestRace(player_t{1});
   race1.morale = 100;
   race1.leader().money = 1000;
-  race1.appoint_governor(1, {.money = 500});
+  race1.appoint_governor(2, {.money = 500});
   RaceRepository race_repo(store);
   race_repo.save(race1);
 
@@ -394,7 +394,7 @@ void test_process_market_transactions_isolated() {
   Commod lot1{};
   lot1.id = 1;
   lot1.owner = player_t{1};
-  lot1.governor = governor_t{0};
+  lot1.governor = governor_t{1};
   lot1.type = CommodType::FUEL;
   lot1.amount = 50;
   lot1.star_from = starnum_t{1};
@@ -402,7 +402,7 @@ void test_process_market_transactions_isolated() {
   lot1.star_to = starnum_t{2};
   lot1.planet_to = planetnum_t{1};
   lot1.bidder = player_t{2};
-  lot1.bidder_gov = governor_t{0};
+  lot1.bidder_gov = governor_t{1};
   lot1.bid = 200;
   lot1.deliver = false;
   commod_repo.save(lot1);
@@ -428,7 +428,7 @@ void test_process_market_transactions_isolated() {
   // deleted
   em.mutate_commod(1, [](Commod& c) {
     c.bidder = player_t{2};
-    c.bidder_gov = governor_t{0};
+    c.bidder_gov = governor_t{1};
     c.bid = 300;
   });
 
@@ -567,7 +567,6 @@ void test_race_turn_accounting_and_maintenance() {
   Race race = createTestRace(player_t{1});
   race.controlled_planets = 5;
   race.planet_points = 20;
-  race.leader().active = true;
   race.leader().maintain = 100;
   race.leader().income = 50;
   race.leader().cost_market = 30;
@@ -588,19 +587,19 @@ void test_race_turn_accounting_and_maintenance() {
 
   // 2. Deduct maintenance with sufficient funds
   race.leader().money = 500;
-  race.deduct_maintenance(governor_t{0}, 200);
+  race.deduct_maintenance(Race::leader_id, 200);
   test::expect_eq(race.leader().money, 300);
   test::expect_eq(race.morale, 80);
 
   // 3. Deduct maintenance with deficit: deducts remaining money, applies morale
   // penalty clamped to [0, 100]
-  race.deduct_maintenance(governor_t{0},
+  race.deduct_maintenance(Race::leader_id,
                           500);  // Deficit of 200 -> penalty of 20
   test::expect_eq(race.leader().money, 0);
   test::expect_eq(race.morale, 60);
 
   // Deficit clamping: large deficit clamps morale to 0
-  race.deduct_maintenance(governor_t{0},
+  race.deduct_maintenance(Race::leader_id,
                           10000);  // Deficit of 10000 -> morale 0
   test::expect_eq(race.morale, 0);
 
@@ -758,7 +757,7 @@ void test_handle_victory_disabled() {
   test::expect_false(result.game_over);
   test::expect_true(result.big_winners.empty());
   test::expect_true(result.lesser_winners.empty());
-  test::expect_false(ctx.em.has_telegrams(player_t{1}, governor_t{0}));
+  test::expect_false(ctx.em.has_telegrams(player_t{1}, Race::leader_id));
 }
 
 void test_handle_victory_single_winner() {
@@ -768,12 +767,10 @@ void test_handle_victory_single_winner() {
   ctx.em.mutate_race(player_t{1}, [](Race& race) {
     race.name = "GloriousEmpire";
     race.victory_turns = VICTORY_UPDATES;
-    race.leader().active = true;
   });
   ctx.em.mutate_race(player_t{2}, [](Race& race) {
     race.name = "OtherEmpire";
     race.victory_turns = 0;
-    race.leader().active = true;
   });
 
   auto result = handle_victory(ctx.em, true);
@@ -783,10 +780,10 @@ void test_handle_victory_single_winner() {
   test::expect_true(result.lesser_winners.empty());
 
   // Both players receive victory broadcast telegrams
-  test::expect_true(ctx.em.has_telegrams(player_t{1}, governor_t{0}));
-  test::expect_true(ctx.em.has_telegrams(player_t{2}, governor_t{0}));
+  test::expect_true(ctx.em.has_telegrams(player_t{1}, Race::leader_id));
+  test::expect_true(ctx.em.has_telegrams(player_t{2}, Race::leader_id));
 
-  auto tele1 = ctx.em.get_telegrams(player_t{1}, governor_t{0});
+  auto tele1 = ctx.em.get_telegrams(player_t{1}, Race::leader_id);
   bool found_announcement = false;
   bool found_winner = false;
   for (const auto& t : tele1) {
@@ -812,12 +809,10 @@ void test_handle_victory_multiple_winners_and_lesser_winners() {
   ctx.em.mutate_race(player_t{1}, [](Race& race) {
     race.name = "EmpireAlpha";
     race.victory_turns = VICTORY_UPDATES;
-    race.leader().active = true;
   });
   ctx.em.mutate_race(player_t{2}, [](Race& race) {
     race.name = "EmpireBeta";
     race.victory_turns = VICTORY_UPDATES;
-    race.leader().active = true;
   });
 
   // Player 3 is lesser winner (controlled_planets >= 1, but victory_turns <
@@ -827,7 +822,6 @@ void test_handle_victory_multiple_winners_and_lesser_winners() {
   race3.name = "EmpireGamma";
   race3.controlled_planets = 1;
   race3.victory_turns = 1;
-  race3.leader().active = true;
   RaceRepository(store).save(race3);
 
   auto result = handle_victory(ctx.em, true);
@@ -838,7 +832,7 @@ void test_handle_victory_multiple_winners_and_lesser_winners() {
   test::expect_eq(result.lesser_winners.size(), 1U);
   test::expect_eq(result.lesser_winners[0], player_t{3});
 
-  auto tele3 = ctx.em.get_telegrams(player_t{3}, governor_t{0});
+  auto tele3 = ctx.em.get_telegrams(player_t{3}, Race::leader_id);
   bool found_plural_winners = false;
   bool found_lesser_winner = false;
   for (const auto& t : tele3) {
@@ -1041,7 +1035,6 @@ void test_advance_race_technology() {
     r.tech = 49.5;
     r.morale = 10;
     r.turn = 5;
-    r.leader().active = true;
     r.leader().maintain = 100;
     r.leader().money = 1000;
   });
@@ -1133,10 +1126,7 @@ void test_sync_power_ratings() {
   stats.Power[player_t{1}].popn = 5000;
   stats.Power[player_t{1}].planets_owned = 1;
 
-  ctx.em.mutate_race(player_t{1}, [](Race& r) {
-    r.leader().active = true;
-    r.leader().money = 12'345;
-  });
+  ctx.em.mutate_race(player_t{1}, [](Race& r) { r.leader().money = 12'345; });
 
   sync_power_ratings(ctx.em, stats);
 

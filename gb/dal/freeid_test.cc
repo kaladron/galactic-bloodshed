@@ -26,21 +26,21 @@ int main() {
   Ship ship1{};
   ship1.number() = 1;
   ship1.owner() = 1;
-  ship1.governor() = 0;
+  ship1.governor() = 1;
   ship1.name() = "Ship1";
   ship_repo.save(ship1);
 
   Ship ship2{};
   ship2.number() = 2;
   ship2.owner() = 1;
-  ship2.governor() = 0;
+  ship2.governor() = 1;
   ship2.name() = "Ship2";
   ship_repo.save(ship2);
 
   Ship ship3{};
   ship3.number() = 3;
   ship3.owner() = 1;
-  ship3.governor() = 0;
+  ship3.governor() = 1;
   ship3.name() = "Ship3";
   ship_repo.save(ship3);
 
@@ -58,7 +58,7 @@ int main() {
   Ship ship2b{};
   ship2b.number() = 2;
   ship2b.owner() = 1;
-  ship2b.governor() = 0;
+  ship2b.governor() = 1;
   ship2b.name() = "Ship2B";
   ship_repo.save(ship2b);
 
@@ -86,7 +86,7 @@ int main() {
   Commod c1{};
   c1.id = 1;
   c1.owner = 1;
-  c1.governor = 0;
+  c1.governor = 1;
   c1.type = CommodType::RESOURCE;
   c1.amount = 100;
   c1.deliver = true;
@@ -95,7 +95,7 @@ int main() {
   Commod c2{};
   c2.id = 2;
   c2.owner = 1;
-  c2.governor = 0;
+  c2.governor = 1;
   c2.type = CommodType::FUEL;
   c2.amount = 200;
   c2.deliver = true;
@@ -104,7 +104,7 @@ int main() {
   Commod c4{};
   c4.id = 4;
   c4.owner = 1;
-  c4.governor = 0;
+  c4.governor = 1;
   c4.type = CommodType::CRYSTAL;
   c4.amount = 300;
   c4.deliver = true;

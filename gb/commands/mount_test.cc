@@ -18,7 +18,6 @@ void setup_test_race(TestContext& ctx) {
   race.Playernum = 1;
   race.name = "Crystallines";
   race.Guest = false;
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -36,7 +35,7 @@ void test_mount_persistence() {
   Ship ship{};
   ship.number() = 1;
   ship.owner() = 1;
-  ship.governor() = 0;
+  ship.governor() = 1;
   ship.type() = ShipType::STYPE_HABITAT;  // Has crystal mount
   ship.alive() = true;
   ship.active() = true;
@@ -47,7 +46,7 @@ void test_mount_persistence() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
 
@@ -74,7 +73,7 @@ void test_dismount_persistence() {
   Ship ship{};
   ship.number() = 1;
   ship.owner() = 1;
-  ship.governor() = 0;
+  ship.governor() = 1;
   ship.type() = ShipType::STYPE_HABITAT;
   ship.alive() = true;
   ship.active() = true;
@@ -86,7 +85,7 @@ void test_dismount_persistence() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
 
@@ -114,14 +113,14 @@ void test_mount_no_crystals() {
 
   // Create a ship without crystals
   TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .with_mount(1)
       .with_crystals(0)
       .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
 
@@ -146,7 +145,7 @@ void test_dismount_full_storage() {
 
   // Create a ship with max crystals and one mounted
   TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .with_mount(1)
       .with_crystals(127)
       .build();
@@ -154,7 +153,7 @@ void test_dismount_full_storage() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
 
@@ -176,7 +175,7 @@ void test_mount_syntax_and_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"mount"});

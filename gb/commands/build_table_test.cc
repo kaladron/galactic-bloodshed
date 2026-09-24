@@ -17,7 +17,6 @@ int main() {
   // Create a test race
   Race race{};
   race.Playernum = 1;
-  race.leader().active = true;
   race.name = "TestRace";
   race.Guest = false;
   race.God = false;

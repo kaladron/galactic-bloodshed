@@ -170,13 +170,12 @@ public:
   struct gov {
     std::string name;
     std::string password;
-    bool active{false};
     ScopeLevel deflevel{ScopeLevel::LEVEL_UNIV};
-    starnum_t defsystem{};
-    planetnum_t defplanetnum{}; /* current default */
-    starnum_t homesystem{};
-    planetnum_t homeplanetnum{}; /* home place */
-    NewsValues<int> newspos{};   /* last-read news database IDs per NewsType */
+    starnum_t defsystem{1};
+    planetnum_t defplanetnum{1}; /* current default */
+    starnum_t homesystem{1};
+    planetnum_t homeplanetnum{1}; /* home place */
+    NewsValues<int> newspos{};    /* last-read news database IDs per NewsType */
     toggletype toggle{};
     money_t money{0};
     unsigned long income{0};
@@ -187,7 +186,7 @@ public:
     std::time_t login{0}; /* last login for this governor */
   };
   /// Canonical governor ID of the race leader.
-  static constexpr governor_t leader_id{0};
+  static constexpr governor_t leader_id{1};
 
   /// Returns true if the given governor ID is the race leader.
   [[nodiscard]] static constexpr bool is_leader(governor_t id) noexcept {
@@ -195,43 +194,40 @@ public:
   }
 
   /// Returns a mutable reference to the race leader's governor entry.
-  [[nodiscard]] constexpr gov& leader() noexcept {
-    return governors_[leader_id.value];
+  [[nodiscard]] gov& leader() {
+    return governors_.at(leader_id);
   }
 
   /// Returns a read-only reference to the race leader's governor entry.
-  [[nodiscard]] constexpr const gov& leader() const noexcept {
-    return governors_[leader_id.value];
+  [[nodiscard]] const gov& leader() const {
+    return governors_.at(leader_id);
   }
 
-  /// Returns whether the given governor ID is in range and active for this
-  /// race.
-  [[nodiscard]] constexpr bool has_governor(governor_t id) const noexcept {
-    return id.value >= 0 &&
-           static_cast<std::size_t>(id.value) < governors_.size() &&
-           governors_[id.value].active;
+  /// Returns whether the given governor ID is appointed for this race.
+  [[nodiscard]] bool has_governor(governor_t id) const noexcept {
+    return governors_.contains(id);
   }
 
   /// Returns a mutable reference to the governor entry for `id`.
-  /// Throws `std::out_of_range` if `id` is out of bounds.
-  [[nodiscard]] constexpr gov& governor(governor_t id) {
-    if (id.value < 0 ||
-        static_cast<std::size_t>(id.value) >= governors_.size()) {
+  /// Throws `std::out_of_range` if `id` is not appointed for this race.
+  [[nodiscard]] gov& governor(governor_t id) {
+    auto it = governors_.find(id);
+    if (it == governors_.end()) {
       throw std::out_of_range(
           std::format("Governor ID {} out of range", id.value));
     }
-    return governors_[id.value];
+    return it->second;
   }
 
   /// Returns a read-only reference to the governor entry for `id`.
-  /// Throws `std::out_of_range` if `id` is out of bounds.
-  [[nodiscard]] constexpr const gov& governor(governor_t id) const {
-    if (id.value < 0 ||
-        static_cast<std::size_t>(id.value) >= governors_.size()) {
+  /// Throws `std::out_of_range` if `id` is not appointed for this race.
+  [[nodiscard]] const gov& governor(governor_t id) const {
+    auto it = governors_.find(id);
+    if (it == governors_.end()) {
       throw std::out_of_range(
           std::format("Governor ID {} out of range", id.value));
     }
-    return governors_[id.value];
+    return it->second;
   }
 
   /// Specification for appointing or configuring a governor via designated
@@ -246,21 +242,48 @@ public:
     std::optional<toggletype> toggle{std::nullopt};
   };
 
-  std::array<gov, MAXGOVERNORS + 1> governors_{};
+  std::flat_map<governor_t, gov> governors_{};
+
+  /// \brief Appoints a new governor at the next available ID (>= 2) with
+  /// default settings, returning the assigned governor ID.
+  governor_t appoint_governor() {
+    return appoint_governor(GovernorSpec{});
+  }
+
+  /// \brief Appoints a new governor at the next available ID (>= 2),
+  /// inheriting default home scope from the race leader unless overridden in
+  /// `spec`, and returns the assigned governor ID.
+  governor_t appoint_governor(GovernorSpec spec) {
+    const int max_id =
+        governors_.empty() ? leader_id.value : governors_.rbegin()->first.value;
+    const governor_t next_id{std::max(leader_id.value + 1, max_id + 1)};
+    appoint_governor(next_id, std::move(spec));
+    return next_id;
+  }
 
   /// \brief Appoints and activates a governor slot with default settings,
   /// inheriting default home scope from the race leader.
+  /// Throws `std::out_of_range` if `id < 1` or `std::invalid_argument` if
+  /// `is_leader(id)`.
   gov& appoint_governor(governor_t id) {
     return appoint_governor(id, GovernorSpec{});
   }
 
   /// \brief Appoints and activates a governor slot, inheriting default home
   /// scope from the race leader unless overridden in `spec`.
+  /// Throws `std::out_of_range` if `id < 1` or `std::invalid_argument` if
+  /// `is_leader(id)`.
   gov& appoint_governor(governor_t id, GovernorSpec spec) {
-    auto& target = governor(id);
+    if (id.value < 1) {
+      throw std::out_of_range(
+          std::format("Governor ID {} out of range", id.value));
+    }
+    if (is_leader(id)) {
+      throw std::invalid_argument("Cannot appoint the race leader slot");
+    }
     const auto ldr = leader();
+    auto& target = governors_[id];
     target = gov{};
-    target.active = true;
     target.name = std::move(spec.name);
     target.password = std::move(spec.password);
     target.money = spec.money;
@@ -279,26 +302,34 @@ public:
   }
 
   /// \brief Revokes a governor slot, transferring its treasury to `tgt_id` and
-  /// resetting the revoked slot to an inactive state.
+  /// removing the revoked governor entry.
+  /// Throws `std::invalid_argument` if `is_leader(src_id)` or `src_id ==
+  /// tgt_id`, or `std::out_of_range` if `src_id` or `tgt_id` is not an active
+  /// governor.
   /// \return The amount of money transferred to `tgt_id`.
   money_t revoke_governor(governor_t src_id, governor_t tgt_id = leader_id) {
+    if (is_leader(src_id)) {
+      throw std::invalid_argument("Cannot revoke the race leader");
+    }
+    if (src_id == tgt_id) {
+      throw std::invalid_argument(
+          "Cannot transfer revoked governor treasury to itself");
+    }
     auto& src = governor(src_id);
     auto& tgt = governor(tgt_id);
     const money_t transferred = src.money;
     tgt.money += transferred;
-    src = gov{};
+    governors_.erase(src_id);
     return transferred;
   }
 
-  /// \brief Initializes the Race Leader with active status and 1-based
-  /// home/default coordinates.
+  /// \brief Initializes the Race Leader with 1-based home/default coordinates.
   void init_leader(starnum_t home_star = 1, planetnum_t home_planet = 1,
                    std::string gov_password = "",
                    ScopeLevel level = ScopeLevel::LEVEL_PLAN) {
-    auto& ldr = leader();
+    auto& ldr = governors_[leader_id];
     ldr.name = "Leader";
     ldr.password = std::move(gov_password);
-    ldr.active = true;
     ldr.deflevel = level;
     ldr.homesystem = ldr.defsystem = home_star;
     ldr.homeplanetnum = ldr.defplanetnum = home_planet;
@@ -316,21 +347,19 @@ public:
     controlled_planets = 0;
     planet_points = 0;
     votes = false;
-    for (auto& gov : governors_) {
-      if (gov.active) {
-        gov.maintain = 0;
-        gov.cost_market = 0;
-        gov.profit_market = 0;
-        gov.cost_tech = 0;
-        gov.income = 0;
-      }
+    for (auto [_, gov] : governors_) {
+      gov.maintain = 0;
+      gov.cost_market = 0;
+      gov.profit_market = 0;
+      gov.cost_tech = 0;
+      gov.income = 0;
     }
   }
 
   /// \brief Deducts treasury funds for maintenance costs, deducting morale
   /// (clamped to [0, 100]) if treasury funds are insufficient to cover costs.
-  void deduct_maintenance(governor_t gov_num, money_t amount) noexcept {
-    deduct_maintenance(governors_[gov_num.value], amount);
+  void deduct_maintenance(governor_t gov_num, money_t amount) {
+    deduct_maintenance(governor(gov_num), amount);
   }
 
   /// \brief Deducts treasury funds for maintenance costs, deducting morale
@@ -348,10 +377,8 @@ public:
 
   /// \brief Deducts accumulated maintenance costs for all active governors.
   void deduct_all_maintenance() noexcept {
-    for (auto& gov : governors_) {
-      if (gov.active) {
-        deduct_maintenance(gov, gov.maintain);
-      }
+    for (auto [_, gov] : governors_) {
+      deduct_maintenance(gov, gov.maintain);
     }
   }
 
@@ -366,11 +393,11 @@ public:
     }
   }
 
-  // Iterate over active governors only
-  [[nodiscard]] auto active_governors() const;
-
-  // Iterate over all governors (active or not)
-  [[nodiscard]] auto all_governors() const;
+  /// \brief Returns a read-only view of all active governors.
+  [[nodiscard]] const std::flat_map<governor_t, gov>&
+  active_governors() const noexcept {
+    return governors_;
+  }
 
   /**
    * Provides translated estimates of numeric values based on this race's
@@ -404,114 +431,6 @@ public:
     return estimate(data, target.Playernum);
   }
 };
-
-// Entry returned when iterating over governors (const version)
-export struct GovernorEntry {
-  governor_t id;
-  const Race::gov& data;
-};
-
-// Range class for iterating over active governors only
-export class ActiveGovernorRange {
-  const Race* race_;
-
-public:
-  explicit ActiveGovernorRange(const Race* r) : race_(r) {}
-
-  class Iterator {
-    const Race* race_;
-    int current_;  // Use int internally for array access
-
-    void advance_to_active() {
-      while (current_ <= MAXGOVERNORS && !race_->governors_[current_].active) {
-        ++current_;
-      }
-    }
-
-  public:
-    using iterator_category = std::forward_iterator_tag;
-    using value_type = GovernorEntry;
-    using difference_type = std::ptrdiff_t;
-
-    Iterator(const Race* r, int start) : race_(r), current_(start) {
-      advance_to_active();
-    }
-
-    GovernorEntry operator*() const {
-      return {static_cast<governor_t>(current_), race_->governors_[current_]};
-    }
-
-    Iterator& operator++() {
-      ++current_;
-      advance_to_active();
-      return *this;
-    }
-
-    bool operator==(const Iterator& other) const {
-      return current_ == other.current_;
-    }
-    bool operator!=(const Iterator& other) const {
-      return current_ != other.current_;
-    }
-  };
-
-  [[nodiscard]] Iterator begin() const {
-    return Iterator(race_, 0);
-  }
-  [[nodiscard]] Iterator end() const {
-    return Iterator(race_, MAXGOVERNORS + 1);
-  }
-};
-
-// Range class for iterating over ALL governors (active or not)
-export class AllGovernorRange {
-  const Race* race_;
-
-public:
-  explicit AllGovernorRange(const Race* r) : race_(r) {}
-
-  class Iterator {
-    const Race* race_;
-    int current_;
-
-  public:
-    using iterator_category = std::forward_iterator_tag;
-    using value_type = GovernorEntry;
-    using difference_type = std::ptrdiff_t;
-
-    Iterator(const Race* r, int start) : race_(r), current_(start) {}
-
-    GovernorEntry operator*() const {
-      return {static_cast<governor_t>(current_), race_->governors_[current_]};
-    }
-
-    Iterator& operator++() {
-      ++current_;
-      return *this;
-    }
-    bool operator==(const Iterator& other) const {
-      return current_ == other.current_;
-    }
-    bool operator!=(const Iterator& other) const {
-      return current_ != other.current_;
-    }
-  };
-
-  [[nodiscard]] Iterator begin() const {
-    return Iterator(race_, 0);
-  }
-  [[nodiscard]] Iterator end() const {
-    return Iterator(race_, MAXGOVERNORS + 1);
-  }
-};
-
-inline auto Race::active_governors() const {
-  return ActiveGovernorRange(this);
-}
-
-inline auto Race::all_governors() const {
-  return AllGovernorRange(this);
-}
 
 export struct power {
   int id{0};                   // Power entry ID for database persistence

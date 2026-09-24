@@ -21,12 +21,11 @@ bool grant(const command_t& argv, GameObj& g) {
   governor_t Governor = g.governor();
 
   auto parsed_gov = scn::scan<int>(argv[1], "{}");
-  if (!parsed_gov || parsed_gov->value() < 0 ||
-      parsed_gov->value() > MAXGOVERNORS) {
+  if (!parsed_gov || parsed_gov->value() < 1) {
     g.out << "Bad governor number.\n";
     return false;
   }
-  governor_t gov{static_cast<unsigned char>(parsed_gov->value())};
+  governor_t gov{static_cast<governor_t::value_type>(parsed_gov->value())};
 
   if (!g.race->has_governor(gov)) {
     g.out << "That governor is not active.\n";

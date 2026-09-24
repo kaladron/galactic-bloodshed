@@ -26,7 +26,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create OAP ship in planet orbit
   TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Observer")
       .in_planet_orbit(1, 1)
       .build();
@@ -38,7 +38,7 @@ void test_enslave_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.set_snum(1);
   g.set_pnum(1);
@@ -64,7 +64,7 @@ void test_enslave_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.set_snum(1);
   g.set_pnum(1);
@@ -84,7 +84,7 @@ void test_enslave_role_rejection() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 3, 0);
+  ctx.setup_game_obj(g, 3, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
@@ -99,7 +99,7 @@ void test_enslave_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.set_snum(1);
   g.set_pnum(1);
@@ -134,14 +134,14 @@ void test_enslave_maxplayers_boundary() {
   });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Observer")
       .in_planet_orbit(1, 1)
       .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.set_snum(1);
   g.set_pnum(1);

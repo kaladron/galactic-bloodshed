@@ -46,6 +46,17 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
     });
   }
 
+  /*  Transfer commodity market lots and bids....  */
+  for (auto commod_handle : CommodList(entity_manager)) {
+    auto& c = *commod_handle;
+    if (c.owner == race.Playernum && c.governor == src_gov) {
+      c.governor = tgt_gov;
+    }
+    if (c.bidder == race.Playernum && c.bidder_gov == src_gov) {
+      c.bidder_gov = tgt_gov;
+    }
+  }
+
   /*  And money too....  */
   const money_t transferred = race.revoke_governor(src_gov, tgt_gov);
   outmsg = std::format("Transferring {0} money...\n", transferred);
@@ -72,7 +83,7 @@ bool governors(const command_t& argv, GameObj& g) {
         g.out << "No such governor.\n";
         return false;
       }
-      if (raw_gov < 0 || raw_gov > MAXGOVERNORS) {
+      if (raw_gov < 1) {
         g.out << "No such governor.\n";
         return false;
       }
@@ -106,20 +117,17 @@ bool governors(const command_t& argv, GameObj& g) {
       // Configure columns - password at end, only shown to leader
       table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
       table.column(1).format().width(15);
-      table.column(2).format().width(8);
-      table.column(3).format().width(10).font_align(tabulate::FontAlign::right);
-      table.column(4).format().width(24);
+      table.column(2).format().width(10).font_align(tabulate::FontAlign::right);
+      table.column(3).format().width(24);
       if (g.is_leader()) {
-        table.column(5).format().width(10);
-        table.add_row(
-            {"#", "Name", "Status", "Money", "Last Login", "Password"});
+        table.column(4).format().width(10);
+        table.add_row({"#", "Name", "Money", "Last Login", "Password"});
       } else {
-        table.add_row({"#", "Name", "Status", "Money", "Last Login"});
+        table.add_row({"#", "Name", "Money", "Last Login"});
       }
       table[0].format().font_style({tabulate::FontStyle::bold});
 
-      for (auto [i, g_entry] : race.all_governors()) {
-        std::string status = g_entry.active ? "ACTIVE" : "INACTIVE";
+      for (auto [i, g_entry] : race.active_governors()) {
         std::string login_time = std::ctime(&g_entry.login);
         // Remove trailing newline from ctime
         if (!login_time.empty() && login_time.back() == '\n') {
@@ -127,7 +135,7 @@ bool governors(const command_t& argv, GameObj& g) {
         }
 
         std::vector<std::string> row = {
-            std::format("{}", i.value), std::string(g_entry.name), status,
+            std::format("{}", i.value), std::string(g_entry.name),
             std::format("{}", g_entry.money), login_time};
         if (g.is_leader()) {
           row.emplace_back(g_entry.password);
@@ -144,9 +152,16 @@ bool governors(const command_t& argv, GameObj& g) {
       g.out << "Only the race leader may appoint governors.\n";
       return false;
     }
-    if (argv.size() < 3) {
-      g.out << "Syntax: appoint <gov> <password>\n";
+    if (argv.size() < 2) {
+      g.out << "Syntax: appoint [<gov>] <password>\n";
       return false;
+    }
+    if (argv.size() == 2) {
+      g.entity_manager.mutate_race(Playernum, [&](Race& race) {
+        const governor_t gov = race.appoint_governor({.password = argv[1]});
+        g.out << std::format("Governor {} activated.\n", gov);
+      });
+      return true;
     }
     int raw_gov = 0;
     try {
@@ -155,7 +170,7 @@ bool governors(const command_t& argv, GameObj& g) {
       g.out << "No such governor.\n";
       return false;
     }
-    if (raw_gov < 0 || raw_gov > MAXGOVERNORS) {
+    if (raw_gov < 1) {
       g.out << "No such governor.\n";
       return false;
     }
@@ -191,7 +206,7 @@ bool governors(const command_t& argv, GameObj& g) {
       g.out << "No such governor.\n";
       return false;
     }
-    if (raw_gov < 0 || raw_gov > MAXGOVERNORS) {
+    if (raw_gov < 1) {
       g.out << "No such governor.\n";
       return false;
     }
@@ -205,7 +220,7 @@ bool governors(const command_t& argv, GameObj& g) {
     if (argv.size() >= 4) {
       try {
         int raw_j = std::stoi(argv[3]);
-        if (raw_j < 0 || raw_j > MAXGOVERNORS) {
+        if (raw_j < 1) {
           g.out << "You can't give stuff to that governor!\n";
           return false;
         }

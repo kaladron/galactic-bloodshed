@@ -41,7 +41,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create first attacking enemy ship in planet orbit
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 1)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .named("Factory")
       .in_planet_orbit(1, 1)
       .with_armor(100)
@@ -49,7 +49,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create second attacking enemy ship in planet orbit
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 2)
-      .owned_by(2, 0)
+      .owned_by(2, 1)
       .named("Cargo")
       .in_planet_orbit(1, 1)
       .with_armor(100)
@@ -62,7 +62,7 @@ void test_defend_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -98,7 +98,7 @@ void test_defend_retaliation_and_escort() {
 
   // Target ship with guns, destruct, and self-retaliation enabled
   const shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                  .owned_by(2, 0)
+                                  .owned_by(2, 1)
                                   .named("Attacker")
                                   .in_planet_orbit(1, 1)
                                   .with_guns(guntype_t::HEAVY, 10)
@@ -110,7 +110,7 @@ void test_defend_retaliation_and_escort() {
 
   // Escort ship on planet protecting target_id
   const shipnum_t escort_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                                  .owned_by(2, 0)
+                                  .owned_by(2, 1)
                                   .named("Escort")
                                   .in_planet_orbit(1, 1)
                                   .with_guns(guntype_t::LIGHT, 5)
@@ -124,7 +124,7 @@ void test_defend_retaliation_and_escort() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -146,14 +146,14 @@ void test_defend_target_scope_validations() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
 
   // 1. Ship in star orbit (not planet orbit)
   const shipnum_t star_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                  .owned_by(2, 0)
+                                  .owned_by(2, 1)
                                   .in_star_orbit(1)
                                   .build();
   g.out.str("");
@@ -164,7 +164,7 @@ void test_defend_target_scope_validations() {
   // 2. Ship in orbit around different planet (Planet 2 instead of Planet 1)
   const shipnum_t other_planet_ship =
       TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-          .owned_by(2, 0)
+          .owned_by(2, 1)
           .in_planet_orbit(1, 2)
           .build();
   g.out.str("");
@@ -175,7 +175,7 @@ void test_defend_target_scope_validations() {
 
   // 3. Ship is landed on planet
   const shipnum_t landed_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                    .owned_by(2, 0)
+                                    .owned_by(2, 1)
                                     .landed_on(1, 1, Coordinates{0, 0})
                                     .build();
   g.out.str("");
@@ -197,7 +197,7 @@ void test_defend_planetary_validations() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -247,7 +247,7 @@ void test_defend_insufficient_ap() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -266,16 +266,17 @@ void test_defend_role_and_scope_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Scope rejection (LEVEL_UNIV)
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
-  // 2. Star control rejection
+  // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   ctx.em.mutate_star(1, [](Star& s) {
-    s.governor(player_t{1}) = 2;  // Star governed by Gov 2
+    s.governor(player_t{1}) = 1;  // Star governed by Gov 1
   });
-  ctx.setup_game_obj(g, 1, 1);  // Player 1, Gov 1
+  ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -291,7 +292,7 @@ void test_defend_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);

@@ -30,7 +30,7 @@ void test_read_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   TestCommandMatrix(ctx, "read")
       .with_valid_argv({"read"})
@@ -46,7 +46,7 @@ void test_read_telegrams() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // Initially empty mailbox
   check_for_telegrams(g);
@@ -61,9 +61,9 @@ void test_read_telegrams() {
   test::expect_contains(g.out.str(), "Telegrams:\n None.\n");
   g.out.str("");
 
-  // Post telegrams to Player 1, Governor 0
-  push_telegram(ctx.em, 1, 0, "First telegram with newline\n");
-  push_telegram(ctx.em, 1, 0, "Second telegram without newline");
+  // Post telegrams to Player 1, Governor 1
+  push_telegram(ctx.em, 1, 1, "First telegram with newline\n");
+  push_telegram(ctx.em, 1, 1, "Second telegram without newline");
 
   // Check notification prompt
   check_for_telegrams(g);
@@ -80,7 +80,7 @@ void test_read_telegrams() {
   g.out.str("");
 
   // Verify delete-on-read behavior
-  test::expect_false(ctx.em.has_telegrams(1, 0));
+  test::expect_false(ctx.em.has_telegrams(1, 1));
 
   ctx.assert_dispatch_success(g, {"read"});
   test::expect_contains(g.out.str(), "Telegrams:\n None.\n");
@@ -96,37 +96,37 @@ void test_read_telegrams_governor_isolation() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  ctx.em.mutate_race(1, [](Race& race) { race.appoint_governor(1); });
+  ctx.em.mutate_race(1, [](Race& race) { race.appoint_governor(2); });
 
   auto& registry = get_test_session_registry();
-  GameObj g0(ctx.em, registry);
-  ctx.setup_game_obj(g0, 1, 0);
-
   GameObj g1(ctx.em, registry);
   ctx.setup_game_obj(g1, 1, 1);
 
-  // Send separate telegrams to Gov 0 and Gov 1
-  push_telegram(ctx.em, 1, 0, "Confidential for Governor 0\n");
+  GameObj g2(ctx.em, registry);
+  ctx.setup_game_obj(g2, 1, 2);
+
+  // Send separate telegrams to Gov 1 and Gov 2
   push_telegram(ctx.em, 1, 1, "Confidential for Governor 1\n");
+  push_telegram(ctx.em, 1, 2, "Confidential for Governor 2\n");
 
-  test::expect_true(ctx.em.has_telegrams(1, 0));
   test::expect_true(ctx.em.has_telegrams(1, 1));
-
-  // Governor 0 reads messages
-  ctx.assert_dispatch_success(g0, {"read"});
-  test::expect_contains(g0.out.str(), "Confidential for Governor 0");
-  test::expect_false(g0.out.str().contains("Confidential for Governor 1"));
-
-  // Governor 0's mailbox is now empty, but Governor 1's is untouched
-  test::expect_false(ctx.em.has_telegrams(1, 0));
-  test::expect_true(ctx.em.has_telegrams(1, 1));
+  test::expect_true(ctx.em.has_telegrams(1, 2));
 
   // Governor 1 reads messages
   ctx.assert_dispatch_success(g1, {"read"});
   test::expect_contains(g1.out.str(), "Confidential for Governor 1");
-  test::expect_false(g1.out.str().contains("Confidential for Governor 0"));
+  test::expect_false(g1.out.str().contains("Confidential for Governor 2"));
 
+  // Governor 1's mailbox is now empty, but Governor 2's is untouched
   test::expect_false(ctx.em.has_telegrams(1, 1));
+  test::expect_true(ctx.em.has_telegrams(1, 2));
+
+  // Governor 2 reads messages
+  ctx.assert_dispatch_success(g2, {"read"});
+  test::expect_contains(g2.out.str(), "Confidential for Governor 2");
+  test::expect_false(g2.out.str().contains("Confidential for Governor 1"));
+
+  test::expect_false(ctx.em.has_telegrams(1, 2));
 
   ctx.verify_universe_invariants();
 }
@@ -137,7 +137,7 @@ void test_read_news() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // Initially empty news feed
   ctx.assert_dispatch_success(g, {"read", "news"});
@@ -212,7 +212,7 @@ void test_read_invalid_arguments() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   ctx.assert_dispatch_rejected(g, {"read", "invalid_topic"});
   test::expect_contains(g.out.str(), "Read what?\n");

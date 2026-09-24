@@ -24,7 +24,7 @@ void test_prompt_universe_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
   std::string prompt = do_prompt(g);
@@ -46,7 +46,7 @@ void test_prompt_star_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
@@ -70,7 +70,7 @@ void test_prompt_planet_scope() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
@@ -126,7 +126,7 @@ void test_prompt_ship_orbiting_scopes() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_level(ScopeLevel::LEVEL_SHIP);
 
   // Missing ship throws EntityNotFoundError (database corruption / invalid ID)
@@ -344,7 +344,7 @@ void test_prompt_nested_docked_ships() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_level(ScopeLevel::LEVEL_SHIP);
 
   // 2-level nested prompts

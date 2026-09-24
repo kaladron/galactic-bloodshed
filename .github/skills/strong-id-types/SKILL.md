@@ -19,7 +19,7 @@ notify_player(governor, player, msg);  // swapped args — should not compile
 ```cpp
 // Strong IDs (ID<"brand", T>):
 export using player_t    = ID<"player">;                // 1-based (1..MAXPLAYERS)
-export using governor_t  = ID<"governor">;              // 0-based (0..MAXGOVERNORS, 0 = Leader)
+export using governor_t  = ID<"governor">;              // 1-based (>= 1, 1 = Leader)
 export using starnum_t   = ID<"star", std::uint32_t>;   // 1-based (1..numstars)
 export using planetnum_t = ID<"planet", std::uint32_t>; // 1-based (1..numplanets)
 export using shipnum_t   = ID<"ship", std::uint64_t>;   // 1-based (>= 1)
@@ -43,18 +43,17 @@ export using weapon_power_t = std::uint32_t;  ///< Concentrated energy weapon / 
 export using weapon_range_t = std::uint32_t;  ///< Tactical weapon or mine proximity trigger range
 ```
 
-All top-level database entity primary keys (`player_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`) are uniformly **1-based (`>= 1`)**; `0` is never a valid entity ID (and serves as an unassigned sentinel in raw storage where `std::optional` is not yet used). Sub-entity array/grid indices (`governor_t` `0..MAXGOVERNORS` and sector `(x, y)` coordinates) are 0-based.
+All entity and governor identifiers (`player_t`, `governor_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`) are uniformly **1-based (`>= 1`)**; `0` is never a valid entity or governor ID (and serves as an unassigned sentinel in raw storage where `std::optional` is not yet used). Sector `(x, y)` grid coordinates are 0-based.
 
 ## Always Use the Typed Name
 
 ```cpp
 // ❌ Hides intent and breaks if int width changes
-int player = g.player;
-for (int i = 0; i <= MAXGOVERNORS; ++i) { ... }
+int player = g.player();
 
 // ✅ Tells the compiler — and the reader — what the value means
-player_t player = g.player;
-for (governor_t gov{0}; gov <= MAXGOVERNORS; ++gov) { ... }
+player_t player = g.player();
+for (auto [gov_id, gov_data] : race.active_governors()) { ... }
 ```
 
 Function signatures, struct fields, loop variables, and locals that hold an identifier must use the typed name.
@@ -64,10 +63,9 @@ Function signatures, struct fields, loop variables, and locals that hold an iden
 `ID<...>` defines `operator<=>`, so comparisons against integer literals and the typed constants work directly:
 
 ```cpp
-governor_t gov = g.governor;
-if (gov <= MAXGOVERNORS) { ... }       // ✅ ok
-if (gov > 0) { ... }                   // ✅ ok
-if (new_gov < 0 || new_gov > MAXGOVERNORS) { ... }  // ✅ ok
+governor_t gov = g.governor();
+if (gov >= 1) { ... }                  // ✅ ok
+if (new_gov < 1 || !race.has_governor(new_gov)) { ... }  // ✅ ok
 ```
 
 Do not reach for `gov.value` to "make it compile" — if a comparison fails, you have crossed type boundaries.
@@ -76,7 +74,7 @@ Do not reach for `gov.value` to "make it compile" — if a comparison fails, you
 
 ```cpp
 player_t p{1};                 // explicit construction from int
-governor_t gov = governor_t{0};
+governor_t gov = governor_t::leader();
 
 player_t bad = 1;              // ❌ implicit conversion is rejected
 governor_t mixed = player_id;  // ❌ cannot cross ID brands
@@ -142,7 +140,7 @@ If you find a function still typed `int player, int gov`, fix the signature; tha
 - ❌ Using `int` / `unsigned` to hold IDs.
 - ❌ `static_cast<int>(gov)` or `gov.value` just to compile a comparison.
 - ❌ Implicit construction (`player_t p = 1;`).
-- ❌ Mixing brands (`player_t = governor_t{0};`).
+- ❌ Mixing brands (`player_t = governor_t{1};`).
 - ❌ Custom JSON meta for ID fields — Glaze already handles it.
 - ❌ Reintroducing `int` parameters in new APIs that take an identifier.
 

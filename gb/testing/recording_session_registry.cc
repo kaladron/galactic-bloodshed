@@ -35,7 +35,7 @@ void RecordingSessionRegistry::notify_race(player_t race,
                                            const std::string& message) {
   notifications.push_back({
       .player = race,
-      .governor = 0,
+      .governor = 1,
       .message = message,
       .is_broadcast = true,
   });

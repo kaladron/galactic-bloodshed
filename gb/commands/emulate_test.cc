@@ -22,17 +22,14 @@ void test_emulate_matrix() {
   deity_race.Playernum = 1;
   deity_race.name = "DeityRace";
   deity_race.God = true;
-  deity_race.leader().active = true;
   deity_race.leader().name = "Supreme";
 
   Race target_race{};
   target_race.Playernum = 2;
   target_race.name = "Klingons";
   target_race.God = false;
-  target_race.leader().active = true;
   target_race.leader().name = "Leader";
-  target_race.appoint_governor(1, {.name = "Governor1"});
-  target_race.governor(2).active = false;
+  target_race.appoint_governor(2, {.name = "Governor2"});
 
   {
     JsonStore store(ctx.db);
@@ -41,31 +38,31 @@ void test_emulate_matrix() {
     races.save(target_race);
   }
 
-  // --- Case 1: Happy Path (God user emulating player 2 governor 1) ---
-  ctx.setup_game_obj(g, 1, 0);
+  // --- Case 1: Happy Path (God user emulating player 2 governor 2) ---
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.out.str("");
 
   test::expect_true(GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
-                                                   {"emulate", "2", "1"}));
-  test::expect_contains(g.out.str(), "Emulating Klingons \"Governor1\" [2,1]");
+                                                   {"emulate", "2", "2"}));
+  test::expect_contains(g.out.str(), "Emulating Klingons \"Governor2\" [2,2]");
   test::expect_eq(g.player(), 2);
-  test::expect_eq(g.governor(), 1);
+  test::expect_eq(g.governor(), 2);
   test::expect_false(g.god());  // Emulated session drops god privileges
 
   // --- Case 2: Role Rejection (Mortal player cannot emulate) ---
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 2, 1);
   g.set_god(false);
   g.out.str("");
 
   test::expect_false(GB::commands::dispatch_command(
-      g, GB::commands::emulate_cmd, {"emulate", "1", "0"}));
+      g, GB::commands::emulate_cmd, {"emulate", "1", "1"}));
   test::expect_contains(g.out.str(), "Only deity can use this command.");
   test::expect_eq(g.player(), 2);
-  test::expect_eq(g.governor(), 0);
+  test::expect_eq(g.governor(), 1);
 
   // --- Case 3: Argument count checks ---
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.out.str("");
 
@@ -82,26 +79,26 @@ void test_emulate_matrix() {
   // Non-numeric args
   g.out.str("");
   test::expect_false(GB::commands::dispatch_command(
-      g, GB::commands::emulate_cmd, {"emulate", "abc", "0"}));
+      g, GB::commands::emulate_cmd, {"emulate", "abc", "1"}));
   test::expect_contains(g.out.str(), "Invalid player or governor number.");
 
   // Non-existent player
   g.out.str("");
   test::expect_false(GB::commands::dispatch_command(
-      g, GB::commands::emulate_cmd, {"emulate", "99", "0"}));
+      g, GB::commands::emulate_cmd, {"emulate", "99", "1"}));
   test::expect_contains(g.out.str(), "Player 99 does not exist.");
 
-  // Out of range governor
+  // Invalid governor (< 1)
   g.out.str("");
   test::expect_false(GB::commands::dispatch_command(
-      g, GB::commands::emulate_cmd, {"emulate", "2", "99"}));
-  test::expect_contains(g.out.str(), "Invalid governor 99.");
+      g, GB::commands::emulate_cmd, {"emulate", "2", "0"}));
+  test::expect_contains(g.out.str(), "Invalid governor 0.");
 
   // Inactive governor
   g.out.str("");
   test::expect_false(GB::commands::dispatch_command(
-      g, GB::commands::emulate_cmd, {"emulate", "2", "2"}));
-  test::expect_contains(g.out.str(), "Governor 2 is not active.");
+      g, GB::commands::emulate_cmd, {"emulate", "2", "3"}));
+  test::expect_contains(g.out.str(), "Governor 3 is not active.");
 }
 
 }  // namespace

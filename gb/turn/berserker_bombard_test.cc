@@ -18,20 +18,17 @@ int main() {
   Race race1{};
   race1.Playernum = 1;
   race1.Guest = false;
-  race1.leader().active = true;
   race1.declare_war_on(player_t{2});  // At war with Race 2
 
   // Create Race 2 (Target 1 - At War)
   Race race2{};
   race2.Playernum = 2;
   race2.Guest = false;
-  race2.leader().active = true;
 
   // Create Race 3 (Target 2 - Not At War)
   Race race3{};
   race3.Playernum = 3;
   race3.Guest = false;
-  race3.leader().active = true;
 
   JsonStore store(ctx.db);
   RaceRepository races(store);
@@ -330,9 +327,9 @@ int main() {
                                 player_t{2}, 3, result);
 
     // Attacker (Player 1) received bombardment report
-    test::expect_true(ctx.em.has_telegrams(player_t{1}, governor_t{0}));
+    test::expect_true(ctx.em.has_telegrams(player_t{1}, governor_t{1}));
     const auto attacker_telegrams =
-        ctx.em.get_telegrams(player_t{1}, governor_t{0});
+        ctx.em.get_telegrams(player_t{1}, governor_t{1});
     test::expect_false(attacker_telegrams.empty());
     test::expect_true(attacker_telegrams[0].message.contains(
         std::format("REPORT from ship #{}", alert_ship->number())));
@@ -340,9 +337,9 @@ int main() {
         attacker_telegrams[0].message.contains("3 sectors destroyed"));
 
     // Victim (Player 2) received alert
-    test::expect_true(ctx.em.has_telegrams(player_t{2}, governor_t{0}));
+    test::expect_true(ctx.em.has_telegrams(player_t{2}, governor_t{1}));
     const auto victim_telegrams =
-        ctx.em.get_telegrams(player_t{2}, governor_t{0});
+        ctx.em.get_telegrams(player_t{2}, governor_t{1});
     test::expect_false(victim_telegrams.empty());
     test::expect_true(
         victim_telegrams[0].message.contains("ALERT from planet"));

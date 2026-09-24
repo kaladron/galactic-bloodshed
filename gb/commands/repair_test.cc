@@ -70,7 +70,7 @@ void test_repair_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(0);
   g.set_pnum(0);
@@ -108,7 +108,7 @@ void test_repair_scope_and_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
   // 1. Scope rejection at UNIV level
   g.set_level(ScopeLevel::LEVEL_UNIV);

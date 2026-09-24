@@ -19,7 +19,6 @@ int main() {
   race.Playernum = 1;
   race.name = "Spenders";
   race.Guest = false;
-  race.leader().active = true;
 
   RaceRepository races(store);
   races.save(race);
@@ -39,7 +38,7 @@ int main() {
   // Create GameObj
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
 
   // 1. Scope rejection at universe level
   g.set_level(ScopeLevel::LEVEL_UNIV);
@@ -86,7 +85,7 @@ int main() {
 
   // 6. Guest race rejection
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "5"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");

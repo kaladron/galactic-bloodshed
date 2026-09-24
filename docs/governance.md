@@ -6,7 +6,7 @@ In **Galactic Bloodshed**, imperial governance links high-level strategic comman
 
 ```mermaid
 flowchart TD
-    Leader["Supreme Ruler / Prime Governor (Governor 0)\nControls Imperial Home System & Global Diplomacy"] --> Gov1["System Governor Alpha\nAdministers Star System 1"]
+    Leader["Supreme Ruler / Prime Governor (Governor 1)\nControls Imperial Home System & Global Diplomacy"] --> Gov1["System Governor Alpha\nAdministers Star System 1"]
     Leader --> Gov2["System Governor Beta\nAdministers Star System 2"]
     Leader --> GovN["System Governor N\nAdministers Star System N"]
 
@@ -47,8 +47,8 @@ $$\text{Efficiency} = \left(\frac{\text{Current Staffing Crew}}{\text{Maximum Cr
 
 Empires are divided administratively into distinct star systems overseen by appointed governors:
 
-- **Supreme Leader / Prime Governor (Governor 0)**: The imperial leader who directly commands the empire's home star system, sets global diplomatic stances, oversees unassigned star systems, and controls central diplomacy.
-- **System Governors (Governors 1..N)**: Appointed administrators assigned to manage specific star systems. Each governor exercises local authority over planetary taxes, military mobilization, defensive gun batteries, technology research budgets, and naval orders within their star system.
+- **Supreme Leader / Prime Governor (Governor 1)**: The imperial leader who directly commands the empire's home star system, sets global diplomatic stances, oversees unassigned star systems, and controls central diplomacy.
+- **System Governors (Governors $\ge 2$)**: Dynamically appointed administrators assigned to manage specific star systems (`appoint [<gov>] <password>`). Each governor exercises local authority over planetary taxes, military mobilization, defensive gun batteries, technology research budgets, and naval orders within their star system.
 - **Independent Treasuries**: System governors maintain independent treasury accounts, receiving tax revenues from local worlds and paying upkeep expenses for stationed ships and garrisons.
 
 ---
@@ -248,7 +248,7 @@ Game administrators and deities wield absolute administrative power via the `ble
 
 #### 1. Racial Characteristics and Governance Attributes
 Deities can grant or adjust core racial statistics:
-- **Treasury Capital (`money`)**: Deposits treasury funds directly into the target race's Prime Governor (Governor 0) treasury.
+- **Treasury Capital (`money`)**: Deposits treasury funds directly into the target race's Prime Governor (Governor 1) treasury.
 - **Morale (`morale`)**: Adds or subtracts racial morale points.
 - **Scientific Progress (`technology`)**: Advances technological research levels.
 - **Combat & Biological Attributes**: Sets racial fighting prowess (`fight`), intelligence (`IQ`), maximum IQ threshold (`maxiq`), and fertilization speed (`fertility`).

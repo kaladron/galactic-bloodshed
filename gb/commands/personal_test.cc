@@ -23,7 +23,6 @@ void test_personal_dispatch() {
   Race race1{};
   race1.Playernum = 1;
   race1.name = "Federation";
-  race1.leader().active = true;
   race1.info = "Old description";
 
   RaceRepository races(store);
@@ -31,9 +30,9 @@ void test_personal_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
 
-  // 1. Leader (governor 0) sets personal info
+  // 1. Leader (governor 1) sets personal info
   ctx.assert_dispatch_success(
       g, {"personal", "Peaceful", "explorers", "of", "the", "galaxy"});
   const auto* updated_race = ctx.em.peek_race(1);
@@ -41,13 +40,13 @@ void test_personal_dispatch() {
   test::expect_contains(updated_race->info, "Peaceful explorers of the galaxy");
   std::println(std::cout, "    ✓ Leader successfully set personal info");
 
-  // 2. Non-leader governor (governor 1) is rejected by leader_only role
+  // 2. Non-leader governor (governor 2) is rejected by leader_only role
   // requirement
-  g.set_governor(1);
+  g.set_governor(2);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"personal", "Unauthorized", "update"});
   test::expect_true(g.out.str().contains("Only the leader") ||
-                    g.out.str().contains("Governor 0"));
+                    g.out.str().contains("Governor 1"));
   std::println(std::cout,
                "    ✓ Non-leader rejected by leader_only requirement");
 }

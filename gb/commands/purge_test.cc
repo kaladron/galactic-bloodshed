@@ -30,7 +30,7 @@ void test_purge_as_god() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
 
   // 1. Happy Path: Deity successfully purges news
@@ -53,7 +53,7 @@ void test_purge_as_mortal() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 2, 0);
+  ctx.setup_game_obj(g, 2, 1);
   g.set_god(false);
 
   // 2. Role Rejection: Mortal player is rejected

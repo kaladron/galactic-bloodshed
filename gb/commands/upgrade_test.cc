@@ -20,7 +20,6 @@ void test_upgrade_command() {
   Race race{};
   race.Playernum = 1;
   race.name = "TestRace";
-  race.leader().active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
   race.tech = 500.0;  // High tech to allow upgrades
@@ -47,7 +46,7 @@ void test_upgrade_command() {
 
   const auto type = ShipType::STYPE_FIGHTER;
   TestShipBuilder(ctx.em, type, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Upgradeable")
       .in_star_orbit(0, 100.0, 200.0)
       .with_fuel(10.0)
@@ -200,7 +199,6 @@ void test_upgrade_numeric_attributes_and_validations() {
   Race race{};
   race.Playernum = 1;
   race.name = "BuilderRace";
-  race.leader().active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
   race.tech = 500.0;
@@ -219,7 +217,7 @@ void test_upgrade_numeric_attributes_and_validations() {
   // cew, laser, jump, mount.
   const auto type = ShipType::STYPE_CRUISER;
   TestShipBuilder(ctx.em, type, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("CruiserOne")
       .in_star_orbit(0, 100.0, 200.0)
       .with_fuel(100.0)
@@ -304,7 +302,6 @@ void test_upgrade_weapons_and_systems() {
   Race race{};
   race.Playernum = 1;
   race.name = "WeaponRace";
-  race.leader().active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
   race.tech = 25000.0;
@@ -321,7 +318,7 @@ void test_upgrade_weapons_and_systems() {
 
   const auto type = ShipType::STYPE_CRUISER;
   TestShipBuilder(ctx.em, type, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("CruiserWeapons")
       .in_star_orbit(0, 100.0, 200.0)
       .with_fuel(100.0)
@@ -453,7 +450,6 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   Race race{};
   race.Playernum = 1;
   race.name = "CarrierRace";
-  race.leader().active = true;
   race.mass = 1.0;
   race.fighters = 1.0;
   race.tech = 25000.0;
@@ -470,7 +466,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
 
   // Ship 1: Carrier in star orbit
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 1)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("FleetCarrier")
       .in_star_orbit(0, 100.0, 200.0)
       .with_resource(1000)
@@ -479,7 +475,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   // Ship 2: Cruiser berthed inside Carrier (Ship 1)
   const auto ctype = ShipType::STYPE_CRUISER;
   TestShipBuilder(ctx.em, ctype, 2)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("DockedCruiser")
       .with_resource(2000)
       .with_armor(ship_template(ctype).base_armor)
@@ -504,14 +500,14 @@ void test_upgrade_preconditions_and_carrier_hangar() {
 
   // Ship 3: Factory (cannot upgrade)
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 3)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Factory")
       .in_star_orbit(0, 100.0, 200.0)
       .build();
 
   // Ship 4: Spore Pod (not modifiable)
   TestShipBuilder(ctx.em, ShipType::STYPE_POD, 4)
-      .owned_by(1, 0)
+      .owned_by(1, 1)
       .named("Pod")
       .in_star_orbit(0, 100.0, 200.0)
       .build();

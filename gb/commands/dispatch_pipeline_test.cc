@@ -90,7 +90,7 @@ void test_role_leader_only() {
   TestContext ctx;
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
+  ctx.setup_game_obj(g, 1, 2);
 
   GB::commands::CommandDescriptor desc{
       .name = "mock_leader",
@@ -99,14 +99,14 @@ void test_role_leader_only() {
       .handler = &mock_success_handler,
   };
 
-  // Governor 1 is rejected
+  // Governor 2 is rejected
   g.out.str("");
   test::expect_false(GB::commands::dispatch_command(g, desc, {"mock_leader"}));
   test::expect_contains(g.out.str(),
-                        "Only the leader (Governor 0) may use this command");
+                        "Only the leader (Governor 1) may use this command");
 
-  // Governor 0 is allowed
-  g.set_governor(0);
+  // Governor 1 is allowed
+  g.set_governor(1);
   g.out.str("");
   test::expect_true(GB::commands::dispatch_command(g, desc, {"mock_leader"}));
   test::expect_contains(g.out.str(), "handler executed successfully");
@@ -121,13 +121,13 @@ void test_role_star_control() {
 
   star_struct sdata{};
   sdata.star_id = 1;
-  sdata.governor[player_t{1}] = 0;  // controlled by player 1 gov 0
+  sdata.governor[player_t{1}] = 1;  // controlled by player 1 gov 1
   Star star{sdata};
   stars.save(star);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
+  ctx.setup_game_obj(g, 1, 2);
   g.set_snum(1);
 
   GB::commands::CommandDescriptor desc{
@@ -137,15 +137,15 @@ void test_role_star_control() {
       .handler = &mock_success_handler,
   };
 
-  // Gov 1 does not control system
+  // Gov 2 does not control system
   g.out.str("");
   test::expect_false(
       GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
   test::expect_contains(g.out.str(),
                         "You are not authorized to do that in this system");
 
-  // Gov 0 controls system
-  g.set_governor(0);
+  // Gov 1 controls system
+  g.set_governor(1);
   g.out.str("");
   test::expect_true(
       GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
@@ -225,7 +225,7 @@ void test_fixed_star_ap_transactions() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, 1, 1);
   g.set_snum(1);
 
   GB::commands::CommandDescriptor success_desc{
@@ -277,7 +277,7 @@ void test_fixed_univ_ap_transactions() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{0});
+  ctx.setup_game_obj(g, 1, 1);
 
   GB::commands::CommandDescriptor success_desc{
       .name = "mock_univ_cost",

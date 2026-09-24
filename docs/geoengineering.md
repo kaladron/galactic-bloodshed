@@ -29,10 +29,9 @@ flowchart LR
 ```
 
 ### Orbital Space Mirrors (`+`)
-Space Mirrors are massive orbital reflector arrays designed to capture and redirect stellar radiation:
-- **Heating Mode**: Positioned in low orbit and aimed directly at a freezing or glaciated world, mirrors focus concentrated solar energy into the upper atmosphere to warm surface temperatures and melt ice sheets.
-- **Cooling / Shading Mode**: Angled away from the sun, mirrors cast permanent orbital shadows over volcanic or scorched worlds, shielding the biosphere from blistering stellar heat.
-- **Thermal Redirection Formula**: $\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$.
+Space Mirrors are massive orbital reflector arrays designed to capture and redirect stellar radiation within their star system:
+- **Planetary Heating**: Aimed directly at a planet in the same star system (`order <ship> aim <planet>`, `order <ship> intensity <0..100>`), mirrors focus concentrated solar energy into the upper atmosphere to warm surface temperatures and melt ice sheets (cooling requires dust canisters `g`).
+- **Thermal Redirection Formula**: Within planetary orbit range ($\text{Range} \le 50$), effective intensity equals $\text{Intensity}$; beyond $\text{Range} > 50$, $I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor$. Accounting for hull damage, $\Delta T = \text{round\_rand}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)$.
 
 ### Atmospheric Aerosol Canisters
 - **Greenhouse Gas Canisters (`h`)**: Injected into the troposphere to trap infrared radiation, raising global planetary temperatures.

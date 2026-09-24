@@ -83,8 +83,8 @@ flowchart TD
    - **Surface Sterilization**: Planetary biospheres suffer severe agricultural degradation, scorching fertile sectors into barren wasteland.
 3. **Stage 15 Re-stabilization**: After progressing through Stage 14, the nova storm subsides. Scientists broadcast a galactic notice confirming the star has restabilized, resetting stability to $20\%$.
 
-### Artificial Stellar Engineering
-Empires equipped with space mirrors and harmonic energy emitters can focus stabilizing energy beams into the stellar core, restoring stability and preventing catastrophic nova collapse.
+### Artificial Stellar Destabilization
+Empires equipped with space mirrors can aim focused thermal beams directly into their host star's core, increasing stellar instability by $0$ or $1$ each turn update to artificially induce catastrophic nova collapse.
 
 ---
 

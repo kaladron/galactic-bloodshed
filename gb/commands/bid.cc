@@ -53,15 +53,19 @@ tabulate::Table create_commodity_table() {
 // Helper function to add commodity row to table
 void add_commodity_row(tabulate::Table& table, const Commod* c, GameObj& g) {
   auto rate = static_cast<double>(c->bid) / static_cast<double>(c->amount);
-  const auto* star_to = g.entity_manager.peek_star(c->star_to);
-  std::string player_details =
-      (c->bidder == g.player())
-          ? std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
-                        star_to->get_planet_name(c->planet_to))
-          : "";
+  std::string player_details;
+  if (c->has_bid() && c->bidder == g.player()) {
+    const auto* star_to = g.entity_manager.peek_star(*c->star_to);
+    player_details = std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
+                                 star_to->get_planet_name(*c->planet_to));
+  }
 
-  auto [cost, dist] =
-      shipping_cost(g.entity_manager, c->star_from, g.snum(), c->bid);
+  money_t cost = 0;
+  if (g.level() == ScopeLevel::LEVEL_STAR ||
+      g.level() == ScopeLevel::LEVEL_PLAN) {
+    std::tie(cost, std::ignore) =
+        shipping_cost(g.entity_manager, c->star_from, g.snum(), c->bid);
+  }
 
   table.add_row({std::format("{}", c->id), c->deliver ? "*" : "",
                  std::format("{}", c->amount), std::format("{}", c->type),
@@ -210,13 +214,9 @@ bool place_bid(const command_t& argv, GameObj& g) {
           c.amount, c.type, bid0, g.race->name, g.player());
       g.session_registry.notify_player(*c.bidder, c.bidder_gov, bid_message);
     }
-    c.bid = bid0;
-    c.bidder = g.player();
-    c.bidder_gov = g.governor();
-    c.star_to = snum;
-    c.planet_to = pnum;
+    c.place_bid(g.player(), g.governor(), bid0, snum, pnum);
     auto [ship_cost, dist] =
-        shipping_cost(g.entity_manager, c.star_to, c.star_from, c.bid);
+        shipping_cost(g.entity_manager, *c.star_to, c.star_from, c.bid);
     shipping = ship_cost;
   });
 

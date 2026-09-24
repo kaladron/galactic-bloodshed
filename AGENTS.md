@@ -365,9 +365,10 @@ Rules:
 - **Use `num_sectors()` helper**: Prefer `planet.num_sectors()` and `smap.num_sectors()` over raw multiplication (`dimensions().x * dimensions().y`).
 - **Use `smap.get_random()`**: When selecting a random sector coordinate on a world, call `smap.get_random().coords()` or `smap.get_random(rng)` instead of computing `int_rand(0, p.dimensions().x - 1)` manually.
 
-#### Multi-Player Simulation Arrays (`PlayerVector<T, N>`)
+#### Multi-Player Simulation Arrays (`PlayerVector<T, N>`) & Nullable Foreign Keys (`std::optional<ID>`)
 
 - **Strong `player_t` Indexing**: Use `PlayerVector<T, MAXPLAYERS>` (`gb.entities`) for multi-player simulation metrics (`TurnStats`, colony arrays, power tallies) to ensure 1-based indexing, bounds safety, and Glaze JSON serialization support without raw C-arrays.
+- **Nullable Foreign Keys (`std::optional<ID>`)**: Because all entity and governor IDs (`player_t`, `governor_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`) are strictly 1-based (`>= 1`), every optional/nullable foreign key reference on an entity or sub-struct (e.g. `Sector::owner`, `Commod::bidder`, `Commod::star_to`, `Commod::planet_to`, `plroute::dest_star`, `plroute::dest_planet`, `AimedAtData::snum`, `AimedAtData::pnum`, `AimedAtData::shipno`, `Ship::destshipno`) MUST be typed as `std::optional<ID>` so that absent references serialize as JSON `null` / SQL `NULL` rather than a magic `0` sentinel.
 
 #### Domain Documentation in `docs/`
 

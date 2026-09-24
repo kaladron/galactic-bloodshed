@@ -110,12 +110,31 @@ export struct CommodityManifest {
 
 /// Merchant shipping route parameters.
 export struct plroute {
-  bool set{false};                ///< Whether this merchant route is active
-  starnum_t dest_star{0};         ///< Destination star system ID
-  planetnum_t dest_planet{0};     ///< Destination planet number
+  bool set{false};  ///< Whether this merchant route is active
+  std::optional<starnum_t> dest_star{
+      std::nullopt};  ///< Destination star system ID
+  std::optional<planetnum_t> dest_planet{
+      std::nullopt};              ///< Destination planet number
   CommodityManifest load{};       ///< Commodities to load at destination
   CommodityManifest unload{};     ///< Commodities to unload at destination
   Coordinates dest_coords{0, 0};  ///< Landing coordinates on destination planet
+
+  /// Returns whether both destination star and planet are configured.
+  [[nodiscard]] constexpr bool has_destination() const noexcept {
+    return dest_star.has_value() && dest_planet.has_value();
+  }
+
+  /// Atomically configures the destination planet for this shipping route.
+  constexpr void set_destination(starnum_t star, planetnum_t planet) noexcept {
+    dest_star = star;
+    dest_planet = planet;
+  }
+
+  /// Clears the destination planet for this shipping route.
+  constexpr void clear_destination() noexcept {
+    dest_star = std::nullopt;
+    dest_planet = std::nullopt;
+  }
 
   [[nodiscard]] bool operator==(const plroute&) const noexcept = default;
 };

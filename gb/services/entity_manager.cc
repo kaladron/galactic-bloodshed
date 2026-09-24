@@ -972,9 +972,8 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     if (const auto* mirror = other->as<SpaceMirrorShip>()) {
       if (mirror->aimed_level() == ScopeLevel::LEVEL_SHIP &&
           mirror->aimed_ship() == ship.number()) {
-        mutate_as<SpaceMirrorShip>(other_id, [](SpaceMirrorShip& m) {
-          m.aim() = {.level = ScopeLevel::LEVEL_UNIV};
-        });
+        mutate_as<SpaceMirrorShip>(other_id,
+                                   [](SpaceMirrorShip& m) { m.clear_aim(); });
       }
     } else if (const auto* trans = other->as<TransporterShip>()) {
       if (trans->target_ship() == ship.number()) {
@@ -1474,11 +1473,13 @@ EntityManager::resolve_mirror_target_coordinates(
     const SpaceMirrorShip& mirror) {
   switch (mirror.aimed_level()) {
     case ScopeLevel::LEVEL_STAR:
-      return peek_star(mirror.aimed_star())->coordinates();
+      if (!mirror.aimed_star()) return std::nullopt;
+      return peek_star(*mirror.aimed_star())->coordinates();
     case ScopeLevel::LEVEL_PLAN: {
-      const auto& star = *peek_star(mirror.aimed_star());
+      if (!mirror.aimed_star() || !mirror.aimed_planet()) return std::nullopt;
+      const auto& star = *peek_star(*mirror.aimed_star());
       const auto& planet =
-          *peek_planet(mirror.aimed_star(), mirror.aimed_planet());
+          *peek_planet(*mirror.aimed_star(), *mirror.aimed_planet());
       return planet.absolute_coordinates(star);
     }
     case ScopeLevel::LEVEL_SHIP: {

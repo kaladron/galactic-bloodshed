@@ -45,7 +45,7 @@ void setup_test_world(TestContext& ctx) {
 
   planet_struct ps{};
   ps.star_id = 1;
-  ps.planet_order = 0;
+  ps.planet_order = 1;
   ps.type = PlanetType::EARTH;
   ps.dimensions = {10, 10};
   ps.info[player_t{1}].explored = true;
@@ -68,7 +68,7 @@ void setup_test_world(TestContext& ctx) {
   port.type() = ShipType::OTYPE_GOV;
   port.whatorbits() = ScopeLevel::LEVEL_PLAN;
   port.storbits() = 1;
-  port.pnumorbits() = 0;
+  port.pnumorbits() = 1;
 
   ShipRepository ships_repo(store);
   ships_repo.save(port);
@@ -83,29 +83,35 @@ void test_sell_happy_paths() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
-  g.set_pnum(0);
+  g.set_pnum(1);
 
   // 1. Sell resources (min(20, 100) = 20 AP deducted)
   ctx.assert_dispatch_success(g, {"sell", "r", "100"}, 20);
-  const auto* p1 = ctx.em.peek_planet(1, 0);
+  const auto* p1 = ctx.em.peek_planet(1, 1);
   test::expect_eq(p1->info(player_t{1}).resource, 900);
+  const auto* lot1 = ctx.em.peek_commod(1);
+  test::expect_ne(lot1, nullptr);
+  test::expect_eq(lot1->star_from, starnum_t{1});
+  test::expect_eq(lot1->planet_from, planetnum_t{1});
+  test::expect_eq(lot1->star_to, std::nullopt);
+  test::expect_eq(lot1->planet_to, std::nullopt);
 
   // 2. Sell fuel (min(20, 50) = 20 AP)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"sell", "f", "50"}, 20);
-  const auto* p2 = ctx.em.peek_planet(1, 0);
+  const auto* p2 = ctx.em.peek_planet(1, 1);
   test::expect_eq(p2->info(player_t{1}).fuel, 450);
 
   // 3. Sell destruct (min(20, 25) = 20 AP)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"sell", "d", "25"}, 20);
-  const auto* p3 = ctx.em.peek_planet(1, 0);
+  const auto* p3 = ctx.em.peek_planet(1, 1);
   test::expect_eq(p3->info(player_t{1}).destruct, 175);
 
   // 4. Sell crystals (min(20, 10) = 10 AP)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"sell", "x", "10"}, 10);
-  const auto* p4 = ctx.em.peek_planet(1, 0);
+  const auto* p4 = ctx.em.peek_planet(1, 1);
   test::expect_eq(p4->info(player_t{1}).crystals, 40);
 }
 
@@ -121,7 +127,7 @@ void test_sell_insufficient_ap() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
-  g.set_pnum(0);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
   test::expect_contains(g.out.str(), "action points");
@@ -138,7 +144,7 @@ void test_sell_role_rejections() {
     ctx.setup_game_obj(g, 2, 1);  // Player 2 is guest
     g.set_level(ScopeLevel::LEVEL_PLAN);
     g.set_snum(1);
-    g.set_pnum(0);
+    g.set_pnum(1);
 
     ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
     test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -151,7 +157,7 @@ void test_sell_role_rejections() {
     ctx.setup_game_obj(g, 1, 2);  // Governor 2
     g.set_level(ScopeLevel::LEVEL_PLAN);
     g.set_snum(1);
-    g.set_pnum(0);
+    g.set_pnum(1);
 
     ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
     test::expect_contains(g.out.str(),
@@ -168,7 +174,7 @@ void test_sell_domain_errors() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
-  g.set_pnum(0);
+  g.set_pnum(1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"sell", "r"});

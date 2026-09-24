@@ -158,14 +158,17 @@ void merchant_unload_cargo(Ship& s, plinfo& pinfo, const auto& unload,
 void merchant_launch_to_next_stop(EntityManager& em, Ship& s, const Planet& p,
                                   const plroute& route,
                                   std::stringstream& telegram) {
+  if (!route.has_destination()) {
+    return;
+  }
   const double fuel = s.mass() * p.gravity() * LAUNCH_GRAV_MASS_FACTOR;
   if (s.fuel() < fuel) {
     telegram << "\t\tNot enough fuel to launch!\n";
     return;
   }
   s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-  s.deststar() = route.dest_star;
-  s.destpnum() = route.dest_planet;
+  s.deststar() = *route.dest_star;
+  s.destpnum() = *route.dest_planet;
   s.consume_fuel(fuel);
   telegram << std::format("\t\tDestination set to {}\n",
                           format_ship_dest(em, s));

@@ -41,12 +41,12 @@ tabulate::Table create_routes_table() {
 
 void append_route_row(tabulate::Table& table, EntityManager& em, int route_num,
                       const plroute& rt) {
-  const auto* dest_star = em.peek_star(rt.dest_star);
+  const auto* dest_star = rt.dest_star ? em.peek_star(*rt.dest_star) : nullptr;
   const std::string star_name = dest_star ? dest_star->get_name() : "???";
   const std::string planet_name =
-      (dest_star && rt.dest_planet >= 1 &&
-       rt.dest_planet <= dest_star->numplanets())
-          ? dest_star->get_planet_name(rt.dest_planet)
+      (dest_star && rt.dest_planet && *rt.dest_planet >= 1 &&
+       *rt.dest_planet <= dest_star->numplanets())
+          ? dest_star->get_planet_name(*rt.dest_planet)
           : "???";
 
   table.add_row({
@@ -124,9 +124,8 @@ bool configure_route_target(GameObj& g, int route_num,
     return false;
   }
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-    auto& rt = p.info(playernum).route_at(route_num);
-    rt.dest_star = where.snum;
-    rt.dest_planet = where.pnum;
+    p.info(playernum).route_at(route_num).set_destination(where.snum,
+                                                          where.pnum);
   });
   g.out << "Set.\n";
   return true;

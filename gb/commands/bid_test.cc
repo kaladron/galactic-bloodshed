@@ -33,7 +33,7 @@ int main() {
 
   // Create test star
   star_struct ss{};
-  ss.star_id = 0;
+  ss.star_id = 1;
   ss.name = "MarketHub";
   ss.coordinates = {100.0, 200.0};
   ss.AP[player_t{1}] = 100;
@@ -46,8 +46,8 @@ int main() {
 
   // Create test planet
   planet_struct ps{};
-  ps.star_id = 0;
-  ps.planet_order = 0;
+  ps.star_id = 1;
+  ps.planet_order = 1;
   ps.type = PlanetType::EARTH;
   ps.dimensions = {10, 10};
   ps.info[player_t{1}].explored = true;
@@ -66,13 +66,14 @@ int main() {
   port.active() = true;
   port.type() = ShipType::OTYPE_GOV;  // Has ABIL_PORT capability
   port.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  port.storbits() = 0;
-  port.pnumorbits() = 0;
+  port.storbits() = 1;
+  port.pnumorbits() = 1;
 
   ShipRepository ships_repo(store);
   ships_repo.save(port);
 
-  // Create a commodity lot for sale using Repository
+  // Create a commodity lot for sale using Repository (unbid: star_to/planet_to
+  // are nullopt)
   CommodRepository commod_repo(store);
   {
     Commod commod{};
@@ -84,10 +85,10 @@ int main() {
     commod.deliver = false;
     commod.bid = 500;  // Minimum bid
     commod.bidder = std::nullopt;
-    commod.star_from = 0;
-    commod.planet_from = 0;
-    commod.star_to = 0;
-    commod.planet_to = 0;
+    commod.star_from = 1;
+    commod.planet_from = 1;
+    commod.star_to = std::nullopt;
+    commod.planet_to = std::nullopt;
     commod_repo.save(commod);
   }
 
@@ -95,11 +96,25 @@ int main() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
   g.set_snum(0);
   g.set_pnum(0);
 
-  std::println(std::cout, "List all commodities");
+  std::println(std::cout,
+               "List all commodities at UNIV scope (unbid lot on market)");
+  {
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"bid"});
+    test::expect_contains(g.out.str(), "Galactic Bloodshed Commodities Market");
+    std::println(std::cout,
+                 "✓ Listing all commodities at UNIV scope succeeded");
+  }
+
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  std::println(std::cout, "List all commodities at PLAN scope");
   {
     g.out.str("");
     ctx.assert_dispatch_success(g, {"bid"});
@@ -132,8 +147,8 @@ int main() {
     test::expect_eq(c_after->bid, 1000);
     test::expect_eq(c_after->bidder, player_t{1});
     test::expect_eq(c_after->bidder_gov, 1);
-    test::expect_eq(c_after->star_to, 0);
-    test::expect_eq(c_after->planet_to, 0);
+    test::expect_eq(c_after->star_to, starnum_t{1});
+    test::expect_eq(c_after->planet_to, planetnum_t{1});
     std::println(std::cout, "✓ Initial bid placed successfully");
   }
 
@@ -182,8 +197,8 @@ int main() {
     GameObj g2(ctx.em, registry);
     ctx.setup_game_obj(g2);
     g2.set_level(ScopeLevel::LEVEL_PLAN);
-    g2.set_snum(0);
-    g2.set_pnum(0);
+    g2.set_snum(1);
+    g2.set_pnum(1);
 
     g2.out.str("");
     ctx.assert_dispatch_rejected(g2, {"bid", "1", "5000"});

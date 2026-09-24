@@ -1296,11 +1296,7 @@ void test_do_mirror() {
   shipnum_t mirror_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                                  .owned_by(1)
                                  .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
-                                 .with_aim(AimedAtData{
-                                     .shipno = target_id,
-                                     .intensity = 100,
-                                     .level = ScopeLevel::LEVEL_SHIP,
-                                 })
+                                 .with_aim(AimedAtData::at_ship(target_id, 100))
                                  .build();
 
   ctx.em.mutate_as<SpaceMirrorShip>(
@@ -1310,32 +1306,34 @@ void test_do_mirror() {
   test::expect_ge(target->damage(), 0);
 
   // 2. Space mirror aimed at planet (verifies
-  // planet.absolute_coordinates(star))
+  // planet.absolute_coordinates(star) and same-system requirement)
   shipnum_t mirror_plan_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                                  .owned_by(1)
                                  .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
-                                 .with_aim(AimedAtData{
-                                     .intensity = 50,
-                                     .pnum = 1,
-                                     .level = ScopeLevel::LEVEL_PLAN,
-                                 })
+                                 .with_aim(AimedAtData::at_planet(1, 1, 50))
                                  .build();
 
   ctx.em.mutate_as<SpaceMirrorShip>(
       mirror_plan_id,
       [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
-  test::expect_gt(stats.temp_add(1, 1), 0);
+  const auto temp_after_same_system = stats.temp_add(1, 1);
+  test::expect_gt(temp_after_same_system, 0);
+
+  // Aimed at a planet in a different star system does not heat local planet
+  ctx.em.mutate_as<SpaceMirrorShip>(mirror_plan_id,
+                                    [&](SpaceMirrorShip& mirror) {
+                                      mirror.aim_at_planet(2, 1);
+                                      mirror.set_intensity(50);
+                                      do_mirror(mirror, ctx.em, stats);
+                                    });
+  test::expect_eq(stats.temp_add(1, 1), temp_after_same_system);
 
   // 3. Space mirror aimed at star
   int initial_stability = ctx.em.peek_star(1)->stability();
   shipnum_t mirror_star_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                                  .owned_by(1)
                                  .in_star_orbit(1)
-                                 .with_aim(AimedAtData{
-                                     .snum = 1,
-                                     .intensity = 50,
-                                     .level = ScopeLevel::LEVEL_STAR,
-                                 })
+                                 .with_aim(AimedAtData::at_star(1, 50))
                                  .build();
 
   ctx.em.mutate_as<SpaceMirrorShip>(
@@ -1344,12 +1342,11 @@ void test_do_mirror() {
   test::expect_ge(ctx.em.peek_star(1)->stability(), initial_stability);
 
   // 4. Unaimed mirror (LEVEL_UNIV) does nothing
-  shipnum_t mirror_unaimed_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
-          .owned_by(1)
-          .in_star_orbit(1)
-          .with_aim(AimedAtData{.level = ScopeLevel::LEVEL_UNIV})
-          .build();
+  shipnum_t mirror_unaimed_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
+                                    .owned_by(1)
+                                    .in_star_orbit(1)
+                                    .with_aim(AimedAtData::unaimed())
+                                    .build();
 
   auto temp_before = stats.temp_add(1, 1);
   ctx.em.mutate_as<SpaceMirrorShip>(
@@ -1823,9 +1820,8 @@ void test_special_subsystems_extended() {
                            .with_alive(true)
                            .build_handle();
   auto* mirror_ship = mirror_handle->as<SpaceMirrorShip>();
-  mirror_ship->aim().level = ScopeLevel::LEVEL_SHIP;
-  mirror_ship->aim().shipno = target_handle->number();
-  mirror_ship->aim().intensity = 100;
+  mirror_ship->aim_at_ship(target_handle->number());
+  mirror_ship->set_intensity(100);
 
   do_mirror(*mirror_ship, em, stats);
   const auto* target_after = em.peek_ship(target_handle->number());

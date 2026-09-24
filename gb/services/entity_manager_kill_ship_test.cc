@@ -335,12 +335,7 @@ int main() {
                                .owned_by(1)
                                .with_alive(true)
                                .in_star_orbit(1)
-                               .with_aim(AimedAtData{
-                                   .shipno = target_id,
-                                   .snum = starnum_t{1},
-                                   .intensity = 75,
-                                   .level = ScopeLevel::LEVEL_SHIP,
-                               })
+                               .with_aim(AimedAtData::at_ship(target_id, 75))
                                .build_handle();
       mirror_id = mirror_handle->number();
 

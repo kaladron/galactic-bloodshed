@@ -917,10 +917,36 @@ export struct Commod {
   money_t bid{0};
   std::optional<player_t> bidder{std::nullopt};
   governor_t bidder_gov{1};
-  starnum_t star_from{0}; /* where the stuff originated from */
-  planetnum_t planet_from{0};
-  starnum_t star_to{0}; /* where it goes to */
-  planetnum_t planet_to{0};
+  starnum_t star_from{1}; /* where the stuff originated from */
+  planetnum_t planet_from{1};
+  std::optional<starnum_t> star_to{std::nullopt}; /* where it goes to */
+  std::optional<planetnum_t> planet_to{std::nullopt};
+
+  /// Returns whether this commodity lot has a complete active bid.
+  [[nodiscard]] constexpr bool has_bid() const noexcept {
+    return bidder.has_value() && star_to.has_value() && planet_to.has_value();
+  }
+
+  /// Places or raises a bid on this commodity lot, atomically recording the
+  /// bidder, governor, bid amount, and destination planet.
+  constexpr void place_bid(player_t new_bidder, governor_t gov, money_t amount,
+                           starnum_t dest_star,
+                           planetnum_t dest_planet) noexcept {
+    bid = amount;
+    bidder = new_bidder;
+    bidder_gov = gov;
+    star_to = dest_star;
+    planet_to = dest_planet;
+  }
+
+  /// Clears any active bid and destination on this commodity lot.
+  constexpr void clear_bid() noexcept {
+    bid = 0;
+    bidder = std::nullopt;
+    bidder_gov = 1;
+    star_to = std::nullopt;
+    planet_to = std::nullopt;
+  }
 };
 
 export struct Victory {

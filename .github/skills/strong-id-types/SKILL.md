@@ -43,7 +43,7 @@ export using weapon_power_t = std::uint32_t;  ///< Concentrated energy weapon / 
 export using weapon_range_t = std::uint32_t;  ///< Tactical weapon or mine proximity trigger range
 ```
 
-All entity and governor identifiers (`player_t`, `governor_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`) are uniformly **1-based (`>= 1`)**; `0` is never a valid entity or governor ID (and serves as an unassigned sentinel in raw storage where `std::optional` is not yet used). Sector `(x, y)` grid coordinates are 0-based.
+All entity and governor identifiers (`player_t`, `governor_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`) are uniformly **1-based (`>= 1`)**; `0` is never a valid entity or governor ID. Any nullable foreign key reference MUST be wrapped in `std::optional<ID>` so that absent references serialize as JSON `null` and SQL `NULL`. Sector `(x, y)` grid coordinates are 0-based.
 
 ## Always Use the Typed Name
 

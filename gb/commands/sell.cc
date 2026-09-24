@@ -140,8 +140,8 @@ bool sell(const command_t& argv, GameObj& g) {
   c.bidder = std::nullopt;
   c.star_from = snum;
   c.planet_from = pnum;
-  c.star_to = 0;
-  c.planet_to = 0;
+  c.star_to = std::nullopt;
+  c.planet_to = std::nullopt;
 
   auto commod_handle = g.entity_manager.create_commod(c);
   return true;

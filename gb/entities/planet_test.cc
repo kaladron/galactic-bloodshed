@@ -129,7 +129,7 @@ int main() {
     test::expect_true(planet.is_adjacent({5, 5}, random_neighbor));
   }
 
-  // Test 5b: CommodityManifest & plroute defaults
+  // Test 5b: CommodityManifest, plroute, and Commod domain methods
   {
     CommodityManifest manifest{};
     test::expect_false(manifest.any());
@@ -140,8 +140,37 @@ int main() {
     test::expect_false(route.set);
     test::expect_false(route.load.any());
     test::expect_false(route.unload.any());
-    test::expect_eq(route.dest_star, starnum_t{0});
-    test::expect_eq(route.dest_planet, planetnum_t{0});
+    test::expect_eq(route.dest_star, std::nullopt);
+    test::expect_eq(route.dest_planet, std::nullopt);
+    test::expect_false(route.has_destination());
+    route.dest_star = starnum_t{1};
+    test::expect_false(route.has_destination());
+    route.set_destination(starnum_t{2}, planetnum_t{3});
+    test::expect_true(route.has_destination());
+    test::expect_eq(route.dest_star, starnum_t{2});
+    test::expect_eq(route.dest_planet, planetnum_t{3});
+    route.clear_destination();
+    test::expect_false(route.has_destination());
+    test::expect_eq(route.dest_star, std::nullopt);
+    test::expect_eq(route.dest_planet, std::nullopt);
+
+    Commod lot{};
+    test::expect_false(lot.has_bid());
+    lot.place_bid(player_t{2}, governor_t{1}, 500, starnum_t{3},
+                  planetnum_t{2});
+    test::expect_true(lot.has_bid());
+    test::expect_eq(lot.bidder, player_t{2});
+    test::expect_eq(lot.bidder_gov, governor_t{1});
+    test::expect_eq(lot.bid, 500);
+    test::expect_eq(lot.star_to, starnum_t{3});
+    test::expect_eq(lot.planet_to, planetnum_t{2});
+    lot.clear_bid();
+    test::expect_false(lot.has_bid());
+    test::expect_eq(lot.bidder, std::nullopt);
+    test::expect_eq(lot.bidder_gov, governor_t{1});
+    test::expect_eq(lot.bid, 0);
+    test::expect_eq(lot.star_to, std::nullopt);
+    test::expect_eq(lot.planet_to, std::nullopt);
   }
 
   // Test 6: Planet compatibility with race conditions

@@ -147,7 +147,7 @@ During each full turn update, surface temperature evolves according to:
 $$T_{\text{surface}} = T_{\text{base}} + \Delta T_{\text{mirrors}} \pm 5^{\circ}\text{C}$$
 
 - **Seasonal Atmospheric Drift**: Natural stochastic fluctuations of $\pm 5^{\circ}\text{C}$ simulate seasonal weather shifts and atmospheric turbulence.
-- **Orbital Space Mirrors**: Giant orbital reflector arrays stationed in orbit focus stellar energy into the upper atmosphere to warm freezing worlds, melt glaciated biospheres, or shade overheated planets: $`\Delta T_{\text{mirrors}} = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Target Planet Radius})} \right\rfloor`$.
+- **Orbital Space Mirrors**: Giant orbital reflector arrays in the same star system aimed at a planet focus stellar energy into the upper atmosphere to warm freezing worlds and melt glaciated biospheres (with intensity $\in [0, 100]$ attenuating as $I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor$ when $\text{Range} > 50$): $`\Delta T_{\text{mirrors}} = \text{round\_rand}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$.
 
 ---
 

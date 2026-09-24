@@ -356,10 +356,44 @@ export struct ShipExam {
 // Special ship function data structures (converted from union members)
 export struct AimedAtData {
   std::optional<shipnum_t> shipno{std::nullopt}; /* aimed at what ship */
-  starnum_t snum{0};                             /* aimed at what star */
-  int intensity{0};                              /* intensity of aiming */
-  planetnum_t pnum{0};                           /* aimed at what planet */
+  std::optional<starnum_t> snum{std::nullopt};   /* aimed at what star */
+  Percentage intensity{0}; /* beam focus percentage (0-100) */
+  std::optional<planetnum_t> pnum{std::nullopt}; /* aimed at what planet */
   ScopeLevel level{ScopeLevel::LEVEL_UNIV};      /* aimed at what level */
+
+  [[nodiscard]] static constexpr AimedAtData
+  unaimed(Percentage intensity = Percentage{0}) noexcept {
+    return AimedAtData{
+        .intensity = intensity,
+        .level = ScopeLevel::LEVEL_UNIV,
+    };
+  }
+  [[nodiscard]] static constexpr AimedAtData
+  at_star(starnum_t star, Percentage intensity = Percentage{0}) noexcept {
+    return AimedAtData{
+        .snum = star,
+        .intensity = intensity,
+        .level = ScopeLevel::LEVEL_STAR,
+    };
+  }
+  [[nodiscard]] static constexpr AimedAtData
+  at_planet(starnum_t star, planetnum_t planet,
+            Percentage intensity = Percentage{0}) noexcept {
+    return AimedAtData{
+        .snum = star,
+        .intensity = intensity,
+        .pnum = planet,
+        .level = ScopeLevel::LEVEL_PLAN,
+    };
+  }
+  [[nodiscard]] static constexpr AimedAtData
+  at_ship(shipnum_t ship, Percentage intensity = Percentage{0}) noexcept {
+    return AimedAtData{
+        .shipno = ship,
+        .intensity = intensity,
+        .level = ScopeLevel::LEVEL_SHIP,
+    };
+  }
 };
 
 /// Brain parameters for Von Neumann machines and Berserkers.
@@ -401,7 +435,7 @@ export struct TransportData {
 };
 
 export struct WasteData {
-  int toxic{0};
+  Percentage toxic{0};
 };
 
 // Variant type for special ship functions (std::monostate is index 0 for

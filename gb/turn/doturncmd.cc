@@ -159,15 +159,17 @@ void process_market_transactions(EntityManager& entity_manager) {
       continue;
     }
 
-    if (c.owner != 0 && c.bidder) {
+    if (c.owner != 0 && c.has_bid()) {
       const player_t bidder = *c.bidder;
+      const starnum_t star_to = *c.star_to;
+      const planetnum_t planet_to = *c.planet_to;
       const auto* bidder_race = entity_manager.peek_race(bidder);
       const auto* owner_race = entity_manager.peek_race(c.owner);
 
       if (bidder_race && owner_race &&
           (bidder_race->governor(c.bidder_gov).money >= c.bid)) {
         auto [cost, dist] =
-            shipping_cost(entity_manager, c.star_to, c.star_from, c.bid);
+            shipping_cost(entity_manager, star_to, c.star_from, c.bid);
 
         entity_manager.mutate_race(bidder, [&](Race& b_race) {
           b_race.governor(c.bidder_gov).money -= c.bid;
@@ -179,18 +181,17 @@ void process_market_transactions(EntityManager& entity_manager) {
           o_race.governor(c.governor).profit_market += c.bid;
         });
 
-        entity_manager.mutate_planet(
-            c.star_to, c.planet_to, [&](Planet& planet) {
-              planet.deposit_commodity(c.type, c.amount, bidder);
-            });
+        entity_manager.mutate_planet(star_to, planet_to, [&](Planet& planet) {
+          planet.deposit_commodity(c.type, c.amount, bidder);
+        });
 
-        const auto* star = entity_manager.peek_star(c.star_to);
+        const auto* star = entity_manager.peek_star(star_to);
         std::string purchased_msg = std::format(
             "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
             "arrived at /{}/{}\n",
             c.id, owner_race->name, c.owner, c.bid, c.amount, c.type,
             star ? star->get_name() : "unknown",
-            star ? star->get_planet_name(c.planet_to) : "unknown");
+            star ? star->get_planet_name(planet_to) : "unknown");
         push_telegram(entity_manager, bidder, c.bidder_gov, purchased_msg);
         std::string sold_msg = std::format(
             "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
@@ -198,17 +199,12 @@ void process_market_transactions(EntityManager& entity_manager) {
         push_telegram(entity_manager, c.owner, c.governor, sold_msg);
         c.owner = 0;
         c.governor = Race::leader_id;
-        c.bidder = std::nullopt;
-        c.bidder_gov = Race::leader_id;
+        c.clear_bid();
       } else {
-        c.bidder = std::nullopt;
-        c.bidder_gov = Race::leader_id;
-        c.bid = 0;
+        c.clear_bid();
       }
     } else {
-      c.bidder = std::nullopt;
-      c.bidder_gov = Race::leader_id;
-      c.bid = 0;
+      c.clear_bid();
     }
     if (c.owner == player_t{0}) {
       entity_manager.delete_commod(c.id);

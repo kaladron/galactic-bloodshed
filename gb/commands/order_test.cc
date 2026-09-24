@@ -303,14 +303,20 @@ void test_order_specialty_ships() {
   ctx.em.clear_cache();
   const auto* mirror = ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
   test::expect_eq(mirror->intensity(), 85);
+  test::expect_eq(mirror->aimed_level(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(mirror->aimed_star(), starnum_t{1});
+  test::expect_eq(mirror->aimed_planet(), planetnum_t{1});
   test::expect_eq(mirror->aimed_ship(), std::nullopt);
 
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", mirror_id.value), "aim", "#1"});
   ctx.em.clear_cache();
-  test::expect_eq(
-      ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>()->aimed_ship(),
-      shipnum_t{1});
+  const auto* mirror_ship_aim =
+      ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
+  test::expect_eq(mirror_ship_aim->aimed_level(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(mirror_ship_aim->aimed_ship(), shipnum_t{1});
+  test::expect_eq(mirror_ship_aim->aimed_star(), std::nullopt);
+  test::expect_eq(mirror_ship_aim->aimed_planet(), std::nullopt);
 
   const auto tele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_STELE, 45)
                            .owned_by(1)
@@ -324,6 +330,21 @@ void test_order_specialty_ships() {
       g, {"order", std::format("#{}", tele_id.value), "aim", "/Sol/Earth"});
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", tele_id.value), "aim", "/Sol"});
+  // Aim telescope at ship and universe while in UNIV scope (snum == 0)
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.set_pnum(0);
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", tele_id.value), "aim", "#1"});
+  test::expect_contains(g.out.str(), "You can't see anything of use there.");
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", tele_id.value), "aim", "/"});
+  test::expect_contains(g.out.str(), "There is nothing out here to aim at.");
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   // 5. Terraformer move sequence (valid, cycling, truncation, invalid)
   const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA, 50)

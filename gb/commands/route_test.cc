@@ -23,8 +23,7 @@ void test_route_persistence() {
   // Test: Set route destination
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.info(player_t{1}).route[0].set = true;
-    p.info(player_t{1}).route[0].dest_star = 2;
-    p.info(player_t{1}).route[0].dest_planet = 1;
+    p.info(player_t{1}).route[0].set_destination(2, 1);
     p.info(player_t{1}).route[0].dest_coords = {5, 5};
     p.info(player_t{1}).route[0].load =
         CommodityManifest{.fuel = true, .resources = true};
@@ -64,8 +63,7 @@ void test_route_persistence() {
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
     for (int i = 0; i < MAX_ROUTES; i++) {
       p.info(player_t{1}).route[i].set = true;
-      p.info(player_t{1}).route[i].dest_star = 2;
-      p.info(player_t{1}).route[i].dest_planet = 1;
+      p.info(player_t{1}).route[i].set_destination(2, 1);
       p.info(player_t{1}).route[i].load = CommodityManifest{.fuel = true};
     }
   });
@@ -104,6 +102,11 @@ void test_route_command_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "activate"});
   test::expect_true(ctx.em.peek_planet(1, 1)->info(player_t{1}).route[0].set);
+
+  // Viewing an active route before a destination is configured displays ???/???
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route"});
+  test::expect_contains(g.out.str(), R"(???/???)");
 
   // Set destination
   g.out.str("");

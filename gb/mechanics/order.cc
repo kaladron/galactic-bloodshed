@@ -17,22 +17,25 @@ std::string format_aim_target(EntityManager& em, const Ship& ship) {
   if (!mirror) {
     return "Not aimed";
   }
-  const auto& aimed_at = mirror->aim();
-  switch (aimed_at.level) {
+  switch (mirror->aimed_level()) {
     case ScopeLevel::LEVEL_UNIV:
       return "";
     case ScopeLevel::LEVEL_STAR: {
-      const auto* star = em.peek_star(aimed_at.snum);
+      if (!mirror->aimed_star()) return "/Unknown";
+      const auto* star = em.peek_star(*mirror->aimed_star());
       return std::format("/{}", star ? star->get_name() : "Unknown");
     }
     case ScopeLevel::LEVEL_PLAN: {
-      const auto* star = em.peek_star(aimed_at.snum);
+      if (!mirror->aimed_star() || !mirror->aimed_planet()) {
+        return "/Unknown/Unknown";
+      }
+      const auto* star = em.peek_star(*mirror->aimed_star());
       return std::format("/{}/{}", star ? star->get_name() : "Unknown",
-                         star ? star->get_planet_name(aimed_at.pnum)
+                         star ? star->get_planet_name(*mirror->aimed_planet())
                               : "Unknown");
     }
     case ScopeLevel::LEVEL_SHIP:
-      return std::format("#{}", aimed_at.shipno.value_or(0));
+      return std::format("#{}", mirror->aimed_ship().value_or(0));
   }
   return "";
 }
@@ -46,46 +49,50 @@ void survey_aim_target(GameObj& g, const Ship& s) {
     g.out << "Ship is not aimed.\n";
     return;
   }
-  const auto& aimed_at = mirror->aim();
-  const auto& str = *g.entity_manager.peek_star(aimed_at.snum);
   const auto coords = s.coordinates();
 
-  switch (aimed_at.level) {
+  switch (mirror->aimed_level()) {
     case ScopeLevel::LEVEL_UNIV:
       g.out << "There is nothing out here to aim at.\n";
       break;
-    case ScopeLevel::LEVEL_STAR:
+    case ScopeLevel::LEVEL_STAR: {
+      if (!mirror->aimed_star()) break;
+      const starnum_t aimed_star = *mirror->aimed_star();
+      const auto& str = *g.entity_manager.peek_star(aimed_star);
       g.out << std::format("Star {}\n", format_aim_target(g.entity_manager, s));
       if (auto dist = coords.distance_to(str.coordinates());
           dist <= s.tele_range()) {
-        g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
-          star.mark_explored_by(g.player());
-        });
+        g.entity_manager.mutate_star(
+            aimed_star, [&](Star& star) { star.mark_explored_by(g.player()); });
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
                              s.tele_range());
       }
       break;
+    }
     case ScopeLevel::LEVEL_PLAN: {
+      if (!mirror->aimed_star() || !mirror->aimed_planet()) break;
+      const starnum_t aimed_star = *mirror->aimed_star();
+      const planetnum_t aimed_planet = *mirror->aimed_planet();
+      const auto& str = *g.entity_manager.peek_star(aimed_star);
       g.out << std::format("Planet {}\n",
                            format_aim_target(g.entity_manager, s));
-      const auto& p =
-          *g.entity_manager.peek_planet(aimed_at.snum, aimed_at.pnum);
+      const auto& p = *g.entity_manager.peek_planet(aimed_star, aimed_planet);
       if (auto dist = coords.distance_to(p.absolute_coordinates(str));
           dist <= s.tele_range()) {
-        g.entity_manager.mutate_star(aimed_at.snum, [&](Star& star) {
-          star.mark_explored_by(g.player());
-        });
+        g.entity_manager.mutate_star(
+            aimed_star, [&](Star& star) { star.mark_explored_by(g.player()); });
         g.entity_manager.mutate_planet(
-            aimed_at.snum, aimed_at.pnum,
+            aimed_star, aimed_planet,
             [&](Planet& planet) { planet.info(g.player()).explored = 1; });
         g.out << std::format("Surveyed, distance {}.\n", dist);
       } else {
         g.out << std::format("Too far to see ({}, max {}).\n", dist,
                              s.tele_range());
       }
-    } break;
+      break;
+    }
     case ScopeLevel::LEVEL_SHIP:
       g.out << "You can't see anything of use there.\n";
       break;
@@ -557,14 +564,20 @@ void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
     return;
   }
   if (auto* mirror = ship.as<SpaceMirrorShip>()) {
-    mirror->aim() =
-        AimedAtData{.shipno = (pl.level == ScopeLevel::LEVEL_SHIP)
-                                  ? std::optional<shipnum_t>{pl.shipno}
-                                  : std::nullopt,
-                    .snum = pl.snum,
-                    .intensity = 0,
-                    .pnum = pl.pnum,
-                    .level = pl.level};
+    switch (pl.level) {
+      case ScopeLevel::LEVEL_UNIV:
+        mirror->clear_aim();
+        break;
+      case ScopeLevel::LEVEL_STAR:
+        mirror->aim_at_star(pl.snum);
+        break;
+      case ScopeLevel::LEVEL_PLAN:
+        mirror->aim_at_planet(pl.snum, pl.pnum);
+        break;
+      case ScopeLevel::LEVEL_SHIP:
+        mirror->aim_at_ship(pl.shipno);
+        break;
+    }
   }
   if (requires_maneuver_fuel_to_aim(ship)) {
     ship.consume_fuel(FUEL_MANEUVER);

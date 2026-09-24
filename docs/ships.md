@@ -244,9 +244,12 @@ Harvested fuel increases the vessel's operational mass dynamically ($+0.05\text{
 Certain starship classes are equipped with advanced scientific, industrial, or biological subsystems that alter planetary environments, manufacture munitions, or incubate populations during turn updates.
 
 ### Space Mirrors and Solar Redirection
-Space Mirrors are massive orbital reflector arrays designed to redirect stellar radiation onto planetary biospheres for terraforming, heating, or climate stabilization:
-- **Stellar Alignment**: A space mirror must be actively aimed at its host star to function. Mirrors in an unaimed standby mode do not redirect energy.
-- **Planetary Thermal Modification**: When stationed in planetary orbit, the mirror focuses stellar energy into the target world's upper atmosphere: $\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Target Planet Radius})} \right\rfloor$. Mirrors can be configured to heat freezing worlds or shaded to cool overheated greenhouse planets toward species-compatible equilibrium temperatures.
+Space Mirrors (`+`) are massive orbital reflector arrays capable of heating planetary biospheres, damaging enemy vessels with focused thermal beams, or destabilizing stars during full turn updates:
+- **Aiming and Intensity**: Aiming a space mirror (`order <ship> aim <target>`) consumes $0.3$ maneuvering fuel and resets beam intensity to $0$. Beam intensity is configured within $[0, 100]$ via `order <ship> intensity <0..100>`. The mirror must be in the same star system as its target to take effect.
+- **Planetary Thermal Modification**: When aimed at a planet in the same star system, the mirror focuses stellar energy into the target world's atmosphere to raise surface temperature (cooling requires dust canisters `g`, as mirror intensity is non-negative). Within planetary orbit range ($\text{Range} \le 50$), effective intensity equals $\text{Intensity}$; beyond $\text{Range} > 50$, it attenuates inversely with distance ($I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor$). Hull damage reduces mirror efficiency:
+  $$\Delta T = \text{round\_rand}\!\left(\left(1 - 0.01 \times \text{Damage}\right) \times I_{\text{effective}}\right)$$
+- **Thermal Beam Weapon (Aimed at Ship)**: When aimed at a vessel in the same star system, maximum hull damage is $\text{Max Damage} = \text{round\_rand}\!\left(\frac{2}{\max(1, \text{Target Body Size})} \times \frac{\text{Intensity}}{\text{Range}/50 + 1}\right)$, and actual damage applied is drawn uniformly from $[0, \text{Max Damage}]$.
+- **Stellar Destabilization (Aimed at Star)**: When aimed at its host star, a space mirror reflects concentrated radiation back into the stellar core, increasing stellar instability by $0$ or $1$ per turn update toward the $> 15$ nova threshold.
 
 ### Atmosphere Processors
 Atmosphere Processors perform large-scale planetary geoengineering by converting ambient gases into breathable atmosphere:

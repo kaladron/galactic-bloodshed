@@ -1266,21 +1266,37 @@ void test_mirror_aim_and_formatting_helpers() {
     test::expect_ne(mirror, nullptr);
 
     // Unaimed (LEVEL_UNIV)
-    mirror->aim() = {.level = ScopeLevel::LEVEL_UNIV};
+    mirror->clear_aim();
+    test::expect_eq(mirror->aimed_level(), ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(mirror->aimed_star(), std::nullopt);
+    test::expect_eq(mirror->aimed_planet(), std::nullopt);
+    test::expect_eq(mirror->aimed_ship(), std::nullopt);
     test::expect_false(
         ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
     test::expect_eq(ctx.em.resolve_mirror_aim_direction(*mirror), 0);
 
     // Aimed at star 1 and planet (1,1)
-    mirror->aim() = {.snum = 1, .level = ScopeLevel::LEVEL_STAR};
+    mirror->aim_at_star(1);
+    test::expect_eq(mirror->aimed_level(), ScopeLevel::LEVEL_STAR);
+    test::expect_eq(mirror->aimed_star(), starnum_t{1});
+    test::expect_eq(mirror->aimed_planet(), std::nullopt);
+    test::expect_eq(mirror->aimed_ship(), std::nullopt);
     test::expect_true(
         ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
-    mirror->aim() = {.snum = 1, .pnum = 1, .level = ScopeLevel::LEVEL_PLAN};
+    mirror->aim_at_planet(1, 1);
+    test::expect_eq(mirror->aimed_level(), ScopeLevel::LEVEL_PLAN);
+    test::expect_eq(mirror->aimed_star(), starnum_t{1});
+    test::expect_eq(mirror->aimed_planet(), planetnum_t{1});
+    test::expect_eq(mirror->aimed_ship(), std::nullopt);
     test::expect_true(
         ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
 
     // Aimed at target_ship_id across all 8 compass headings and axes
-    mirror->aim() = {.shipno = target_ship_id, .level = ScopeLevel::LEVEL_SHIP};
+    mirror->aim_at_ship(target_ship_id);
+    test::expect_eq(mirror->aimed_level(), ScopeLevel::LEVEL_SHIP);
+    test::expect_eq(mirror->aimed_star(), std::nullopt);
+    test::expect_eq(mirror->aimed_planet(), std::nullopt);
+    test::expect_eq(mirror->aimed_ship(), target_ship_id);
     const auto check_heading = [&](double tx, double ty) {
       ctx.em.mutate_ship(target_ship_id, [&](Ship& t) {
         t.set_coordinates(UniverseCoordinates{tx, ty});

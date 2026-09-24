@@ -136,17 +136,7 @@ public:
 };
 
 export class SpaceMirrorShip : public Ship {
-public:
-  SpaceMirrorShip() {
-    data_.type = ShipType::STYPE_MIRROR;
-    ensure_valid_special_data();
-  }
-  explicit SpaceMirrorShip(ship_struct in) : Ship(std::move(in)) {
-    if (!std::holds_alternative<AimedAtData>(data_.special)) {
-      data_.special = AimedAtData{};
-    }
-  }
-
+private:
   [[nodiscard]] AimedAtData& aim() noexcept {
     if (!std::holds_alternative<AimedAtData>(data_.special)) {
       data_.special = AimedAtData{};
@@ -159,16 +149,28 @@ public:
     }
     return std::get<AimedAtData>(data_.special);
   }
-  [[nodiscard]] int intensity() const noexcept {
+
+public:
+  SpaceMirrorShip() {
+    data_.type = ShipType::STYPE_MIRROR;
+    ensure_valid_special_data();
+  }
+  explicit SpaceMirrorShip(ship_struct in) : Ship(std::move(in)) {
+    if (!std::holds_alternative<AimedAtData>(data_.special)) {
+      data_.special = AimedAtData{};
+    }
+  }
+
+  [[nodiscard]] Percentage intensity() const noexcept {
     return aim().intensity;
   }
   void set_intensity(int intensity) noexcept {
-    aim().intensity = std::clamp(intensity, 0, 100);
+    aim().intensity = Percentage{std::clamp(intensity, 0, 100)};
   }
-  [[nodiscard]] starnum_t aimed_star() const noexcept {
+  [[nodiscard]] std::optional<starnum_t> aimed_star() const noexcept {
     return aim().snum;
   }
-  [[nodiscard]] planetnum_t aimed_planet() const noexcept {
+  [[nodiscard]] std::optional<planetnum_t> aimed_planet() const noexcept {
     return aim().pnum;
   }
   [[nodiscard]] std::optional<shipnum_t> aimed_ship() const noexcept {
@@ -176,6 +178,19 @@ public:
   }
   [[nodiscard]] ScopeLevel aimed_level() const noexcept {
     return aim().level;
+  }
+
+  void clear_aim() noexcept {
+    aim() = AimedAtData::unaimed();
+  }
+  void aim_at_star(starnum_t star) noexcept {
+    aim() = AimedAtData::at_star(star);
+  }
+  void aim_at_planet(starnum_t star, planetnum_t planet) noexcept {
+    aim() = AimedAtData::at_planet(star, planet);
+  }
+  void aim_at_ship(shipnum_t target_ship) noexcept {
+    aim() = AimedAtData::at_ship(target_ship);
   }
 
   /// Calculates the 0..7 compass aim direction heading toward the given target
@@ -446,11 +461,11 @@ public:
     }
   }
 
-  [[nodiscard]] int toxic_level() const noexcept {
+  [[nodiscard]] Percentage toxic_level() const noexcept {
     return waste().toxic;
   }
   void set_toxic_level(int toxic) noexcept {
-    waste().toxic = std::clamp(toxic, 0, 100);
+    waste().toxic = Percentage{std::clamp(toxic, 0, 100)};
   }
 };
 

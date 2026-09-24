@@ -187,11 +187,8 @@ void test_do_turn_market_and_maintenance() {
   commod.amount = 100;
   commod.star_from = starnum_t{1};
   commod.planet_from = planetnum_t{1};
-  commod.star_to = starnum_t{2};
-  commod.planet_to = planetnum_t{1};
-  commod.bidder = player_t{2};
-  commod.bidder_gov = governor_t{1};
-  commod.bid = 500;
+  commod.place_bid(player_t{2}, governor_t{1}, 500, starnum_t{2},
+                   planetnum_t{1});
   commod.deliver = false;
   CommodRepository commod_repo(store);
   commod_repo.save(commod);
@@ -399,11 +396,7 @@ void test_process_market_transactions_isolated() {
   lot1.amount = 50;
   lot1.star_from = starnum_t{1};
   lot1.planet_from = planetnum_t{1};
-  lot1.star_to = starnum_t{2};
-  lot1.planet_to = planetnum_t{1};
-  lot1.bidder = player_t{2};
-  lot1.bidder_gov = governor_t{1};
-  lot1.bid = 200;
+  lot1.place_bid(player_t{2}, governor_t{1}, 200, starnum_t{2}, planetnum_t{1});
   lot1.deliver = false;
   commod_repo.save(lot1);
 
@@ -423,13 +416,13 @@ void test_process_market_transactions_isolated() {
   test::expect_ne(lot1_cleared, nullptr);
   test::expect_eq(lot1_cleared->bid, 0);
   test::expect_eq(lot1_cleared->bidder, std::nullopt);
+  test::expect_eq(lot1_cleared->star_to, std::nullopt);
+  test::expect_eq(lot1_cleared->planet_to, std::nullopt);
 
   // 3. Successful transaction: Valid bid executed, money transferred, lot
   // deleted
   em.mutate_commod(1, [](Commod& c) {
-    c.bidder = player_t{2};
-    c.bidder_gov = governor_t{1};
-    c.bid = 300;
+    c.place_bid(player_t{2}, governor_t{1}, 300, starnum_t{2}, planetnum_t{1});
   });
 
   process_market_transactions(em);

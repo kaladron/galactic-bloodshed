@@ -239,10 +239,8 @@ void test_orbit_space_mirror_aiming() {
   test::expect_eq(coords->y, 200.0);
 
   // 2. Aim at a ship located at (150.0, 250.0) -> south-east heading
-  ctx.em.mutate_as<SpaceMirrorShip>(mirror_id, [](SpaceMirrorShip& m) {
-    m.aim().level = ScopeLevel::LEVEL_SHIP;
-    m.aim().shipno = 2;
-  });
+  ctx.em.mutate_as<SpaceMirrorShip>(
+      mirror_id, [](SpaceMirrorShip& m) { m.aim_at_ship(2); });
 
   const auto* updated_mirror =
       ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();

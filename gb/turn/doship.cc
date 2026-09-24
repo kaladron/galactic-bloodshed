@@ -270,22 +270,26 @@ void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
       break;
     }
     case ScopeLevel::LEVEL_PLAN: {
-      if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+      if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV ||
+          ship.aimed_star() != ship.storbits() || !ship.aimed_planet()) {
         break;
       }
+      const planetnum_t target_planet = *ship.aimed_planet();
       const auto& star = *entity_manager.peek_star(ship.storbits());
       const auto& planet =
-          *entity_manager.peek_planet(ship.storbits(), ship.aimed_planet());
+          *entity_manager.peek_planet(ship.storbits(), target_planet);
 
       double range =
           ship.coordinates().distance_to(planet.absolute_coordinates(star));
 
-      int i = range > PLORBITSIZE
-                  ? static_cast<int>(PLORBITSIZE * ship.intensity() / range)
-                  : ship.intensity();
+      int temp_increase =
+          range > PLORBITSIZE
+              ? static_cast<int>(PLORBITSIZE * ship.intensity() / range)
+              : static_cast<int>(ship.intensity());
 
-      i = round_rand(ship.hull_efficiency() * static_cast<double>(i));
-      stats.add_temp(ship.storbits(), ship.aimed_planet(), i);
+      temp_increase = round_rand(ship.hull_efficiency() *
+                                 static_cast<double>(temp_increase));
+      stats.add_temp(ship.storbits(), target_planet, temp_increase);
       break;
     }
     case ScopeLevel::LEVEL_STAR:

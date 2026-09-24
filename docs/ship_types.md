@@ -153,7 +153,7 @@ Large orbital structures acting as regional command centers, industrial shipyard
 ### Tactical Notes
 - **Habitat (`H`)**: Massive space colony housing up to $2000$ colonists in orbit. Acts as an operational starport and internal shipyard capable of manufacturing factories, pods, and light craft. Automatically scoops $+200.0\text{ fuel}$ per update when orbiting gas giants.
 - **Space Port (`J`)**: Essential planetary infrastructure for market bidding, merchant shipping, commodity trading, and off-world exports.
-- **Space Mirror (`+`)**: Orbiting solar reflector array. Must be actively aligned with its host star. Stationed in planetary orbit, it redirects stellar energy to alter atmospheric temperature ($`\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor`$). It can also be aimed at specific hostile vessels or planetary sectors to focus destructive radiant thermal beams.
+- **Space Mirror (`+`)**: Orbiting solar reflector array operating within its current star system. When aimed at a planet with configured intensity $\in [0, 100]$, it redirects stellar energy to raise atmospheric temperature ($`\Delta T = \text{round\_rand}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$). It can also be aimed at hostile vessels in the same system as a thermal weapon or aimed at its host star to increase stellar instability toward nova collapse.
 - **Orbital Assault Platform (`O`)**: Formidable heavy fortress armed with $50$ heavy guns and concentrated energy weapons. In planetary orbit, it projects a continuous intimidation aura over the colony below, blockading merchant trade and demoralizing defending populations.
 
 ---

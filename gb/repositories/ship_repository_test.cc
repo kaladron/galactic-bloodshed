@@ -444,13 +444,8 @@ int main() {
     ship_struct mirror_data{};
     mirror_data.number = 201;
     mirror_data.type = ShipType::STYPE_MIRROR;
-    mirror_data.special = AimedAtData{
-        .shipno = std::nullopt,
-        .snum = starnum_t{3},
-        .intensity = 85,
-        .pnum = planetnum_t{2},
-        .level = ScopeLevel::LEVEL_PLAN,
-    };
+    mirror_data.special =
+        AimedAtData::at_planet(starnum_t{3}, planetnum_t{2}, 85);
     auto mirror_ship = ShipFactory::create(mirror_data);
     test::expect_true(mirror_ship != nullptr);
     test::expect_true(repo.save(*mirror_ship));

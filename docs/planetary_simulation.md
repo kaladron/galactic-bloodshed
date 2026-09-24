@@ -63,11 +63,11 @@ flowchart LR
 ```
 
 - **Natural Seasonal Drift**: Planetary surface temperatures experience natural atmospheric fluctuations of $\pm 5^{\circ}\text{C}$ around their stellar baseline.
-- **Orbital Space Mirrors (`+`)**: Giant orbital reflector arrays aimed at the host star focus solar energy into the upper atmosphere to warm freezing worlds or shade overheated biospheres:
+- **Orbital Space Mirrors (`+`)**: Giant orbital reflector arrays in the same star system aimed at a planet focus solar energy into the upper atmosphere to warm freezing worlds (with beam intensity $\in [0, 100]$ attenuating as $I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor$ beyond planetary orbit range $\text{Range} > 50$):
 
-$$\Delta T = \left\lfloor \frac{\text{Solar Radiation} \times \text{Mirror Efficiency}}{\max(1, \text{Planet Radius})} \right\rfloor$$
+$$\Delta T = \text{round\_rand}\!\left(\left(1 - 0.01 \times \text{Damage}\right) \times I_{\text{effective}}\right)$$
 
-Thermal modifications are clamped to a maximum shift of $\pm 100^{\circ}\text{C}$ to preserve thermodynamic stability.
+Mirror intensity is clamped to $[0, 100]$.
 
 ---
 

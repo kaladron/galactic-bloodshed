@@ -365,18 +365,30 @@ public:
 
   // Location
   [[nodiscard]] starnum_t storbits() const noexcept {
+    return data_.storbits.value_or(0);
+  }
+  [[nodiscard]] std::optional<starnum_t> orbited_star() const noexcept {
     return data_.storbits;
   }
 
   [[nodiscard]] starnum_t deststar() const noexcept {
+    return data_.deststar.value_or(0);
+  }
+  [[nodiscard]] std::optional<starnum_t> destination_star() const noexcept {
     return data_.deststar;
   }
 
   [[nodiscard]] planetnum_t destpnum() const noexcept {
+    return data_.destpnum.value_or(0);
+  }
+  [[nodiscard]] std::optional<planetnum_t> destination_planet() const noexcept {
     return data_.destpnum;
   }
 
   [[nodiscard]] planetnum_t pnumorbits() const noexcept {
+    return data_.pnumorbits.value_or(0);
+  }
+  [[nodiscard]] std::optional<planetnum_t> orbited_planet() const noexcept {
     return data_.pnumorbits;
   }
 
@@ -691,7 +703,7 @@ public:
       data_.destshipno = std::nullopt;
     }
     data_.whatorbits = ScopeLevel::LEVEL_UNIV;
-    data_.pnumorbits = 0;
+    data_.pnumorbits = std::nullopt;
   }
 
   /// Places the ship into orbit around its current star system, clearing any
@@ -702,7 +714,7 @@ public:
       data_.destshipno = std::nullopt;
     }
     data_.whatorbits = ScopeLevel::LEVEL_STAR;
-    data_.pnumorbits = 0;
+    data_.pnumorbits = std::nullopt;
   }
 
   /// Places the ship into orbit around the specified star system.
@@ -776,10 +788,10 @@ public:
   /// coordinates with the carrier.
   void dock_into_carrier(const Ship& carrier) noexcept {
     dock_into_carrier(carrier.number());
-    data_.storbits = carrier.storbits();
-    data_.pnumorbits = carrier.pnumorbits();
-    data_.deststar = carrier.deststar();
-    data_.destpnum = carrier.destpnum();
+    data_.storbits = carrier.data_.storbits;
+    data_.pnumorbits = carrier.data_.pnumorbits;
+    data_.deststar = carrier.data_.deststar;
+    data_.destpnum = carrier.data_.destpnum;
   }
 
   /// Moors the ship to another spaceborne ship (ship-to-ship docking).
@@ -821,8 +833,8 @@ public:
   /// and clearing destshipno and any active hyperdrive jump order.
   void clear_destination() noexcept {
     data_.whatdest = ScopeLevel::LEVEL_UNIV;
-    data_.deststar = 0;
-    data_.destpnum = 0;
+    data_.deststar = std::nullopt;
+    data_.destpnum = std::nullopt;
     data_.destshipno = std::nullopt;
     data_.hyper_drive.on = false;
   }
@@ -832,7 +844,7 @@ public:
   void set_star_destination(starnum_t star) noexcept {
     data_.whatdest = ScopeLevel::LEVEL_STAR;
     data_.deststar = star;
-    data_.destpnum = 0;
+    data_.destpnum = std::nullopt;
     data_.destshipno = std::nullopt;
   }
 
@@ -848,15 +860,41 @@ public:
   /// any active hyperdrive jump order.
   void set_ship_destination(shipnum_t target_ship) noexcept {
     data_.whatdest = ScopeLevel::LEVEL_SHIP;
+    data_.deststar = std::nullopt;
+    data_.destpnum = std::nullopt;
     data_.destshipno = target_ship;
     data_.hyper_drive.on = false;
+  }
+
+  /// Sets navigation destination from a ScopeLevel and target IDs.
+  void
+  set_destination(ScopeLevel level, starnum_t snum, planetnum_t pnum,
+                  std::optional<shipnum_t> shipno = std::nullopt) noexcept {
+    switch (level) {
+      case ScopeLevel::LEVEL_STAR:
+        set_star_destination(snum);
+        break;
+      case ScopeLevel::LEVEL_PLAN:
+        set_planet_destination(snum, pnum);
+        break;
+      case ScopeLevel::LEVEL_SHIP:
+        if (shipno) {
+          set_ship_destination(*shipno);
+        } else {
+          clear_destination();
+        }
+        break;
+      case ScopeLevel::LEVEL_UNIV:
+        clear_destination();
+        break;
+    }
   }
 
   /// Synchronizes tracked star and planet coordinates from the target ship
   /// being followed.
   void sync_followed_ship_orbit(const Ship& target) noexcept {
-    data_.deststar = target.storbits();
-    data_.destpnum = target.pnumorbits();
+    data_.deststar = target.data_.storbits;
+    data_.destpnum = target.data_.pnumorbits;
   }
 
   /// Returns true if governor is authorized to command this ship (the race
@@ -905,6 +943,9 @@ public:
     data_.hyper_drive.on = false;
     if (orbit_level != ScopeLevel::LEVEL_SHIP) {
       data_.whatorbits = orbit_level;
+      if (orbit_level != ScopeLevel::LEVEL_PLAN) {
+        data_.pnumorbits = std::nullopt;
+      }
     }
   }
 
@@ -913,10 +954,10 @@ public:
   void launch_from_carrier_to_orbit(const Ship& carrier) noexcept {
     set_coordinates(carrier.coordinates());
     launch_to_orbit(carrier.whatorbits());
-    data_.storbits = carrier.storbits();
-    data_.pnumorbits = carrier.pnumorbits();
-    data_.deststar = carrier.deststar();
-    data_.destpnum = carrier.destpnum();
+    data_.storbits = carrier.data_.storbits;
+    data_.pnumorbits = carrier.data_.pnumorbits;
+    data_.deststar = carrier.data_.deststar;
+    data_.destpnum = carrier.data_.destpnum;
   }
 
   /// \brief Returns true if a craft of the given physical size can fit inside

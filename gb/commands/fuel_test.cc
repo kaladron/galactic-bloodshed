@@ -212,6 +212,30 @@ void test_fuel_output_and_do_trip_branches() {
     test::expect_false(ok);
     test::expect_eq(segs, 1U);
   }
+  {
+    // Landed ship deducts launch gravity fuel before flying to destination
+    const auto orbit_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                                   .owned_by(1, 1)
+                                   .in_planet_orbit(1, 1)
+                                   .with_speed(9)
+                                   .build();
+    const auto landed_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                                    .owned_by(1, 1)
+                                    .landed_on(1, 1, {0, 0})
+                                    .with_speed(9)
+                                    .build();
+
+    SimulatedShip sim_orbit{*ctx.em.peek_ship(orbit_ship_id)};
+    const auto [ok_orbit, segs_orbit] =
+        do_trip(ship_dest, sim_orbit, 500.0, 0.0, target_coords, ctx.em);
+    test::expect_true(ok_orbit);
+
+    SimulatedShip sim_landed{*ctx.em.peek_ship(landed_ship_id)};
+    const auto [ok_landed, segs_landed] =
+        do_trip(ship_dest, sim_landed, 500.0, 1.0, target_coords, ctx.em);
+    test::expect_true(ok_landed);
+    test::expect_lt(sim_landed.fuel(), sim_orbit.fuel());
+  }
 }
 
 }  // namespace

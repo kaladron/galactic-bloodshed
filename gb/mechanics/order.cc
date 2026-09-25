@@ -247,13 +247,7 @@ void set_celestial_destination(GameObj& g, Ship& ship, const Place& where) {
     g.out << "You haven't explored this system.\n";
     return;
   }
-  if (where.level == ScopeLevel::LEVEL_PLAN) {
-    ship.set_planet_destination(where.snum, where.pnum);
-  } else if (where.level == ScopeLevel::LEVEL_STAR) {
-    ship.set_star_destination(where.snum);
-  } else {
-    ship.clear_destination();
-  }
+  ship.set_destination(where.level, where.snum, where.pnum);
 }
 
 void order_destination(GameObj& g, const command_t& argv, Ship& ship) {

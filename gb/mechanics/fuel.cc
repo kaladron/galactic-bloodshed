@@ -113,20 +113,22 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
   tmpship.set_simulated_fuel(fuel); /* load up the pseudo-ship */
   segments_t effective_segment_number = state->nsegments_done;
 
-  /* Set our temporary destination.... */
-  tmpship.set_simulated_destination(tmpdest.level, tmpdest.snum, tmpdest.pnum,
-                                    tmpdest.shipno);
-
-  bool trip_resolved = false;
-  segments_t number_segments = 0; /* Reset counter. */
-
-  /* Launch the ship if it's on a planet. */
+  /* Launch or undock the ship before setting its destination. */
   if (tmpship.is_landed()) {
     const double gravity_fuel =
         gravity_factor * tmpship.mass() * LAUNCH_GRAV_MASS_FACTOR;
     tmpship.consume_fuel(gravity_fuel);
     tmpship.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+  } else if (tmpship.is_docked()) {
+    tmpship.undock_from_ship();
   }
+
+  /* Set our temporary destination.... */
+  tmpship.set_destination(tmpdest.level, tmpdest.snum, tmpdest.pnum,
+                          tmpdest.shipno);
+
+  bool trip_resolved = false;
+  segments_t number_segments = 0; /* Reset counter. */
 
   while (!trip_resolved) {
     domass(tmpship, entity_manager);

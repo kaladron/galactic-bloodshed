@@ -616,10 +616,13 @@ export struct ship_struct {
   bool focus{false};             ///< Laser focus mode enabled
   weapon_power_t fire_laser{0};  ///< Armed combat laser firing strength
 
-  starnum_t storbits{0};      ///< Star system currently orbited
-  starnum_t deststar{0};      ///< Destination star system
-  planetnum_t destpnum{0};    ///< Destination planet number
-  planetnum_t pnumorbits{0};  ///< Planet currently orbited
+  std::optional<starnum_t> storbits{
+      std::nullopt};  ///< Star system currently orbited
+  std::optional<starnum_t> deststar{std::nullopt};  ///< Destination star system
+  std::optional<planetnum_t> destpnum{
+      std::nullopt};  ///< Destination planet number
+  std::optional<planetnum_t> pnumorbits{
+      std::nullopt};                            ///< Planet currently orbited
   ScopeLevel whatdest{ScopeLevel::LEVEL_UNIV};  ///< Destination scope level
   ScopeLevel whatorbits{
       ScopeLevel::LEVEL_UNIV};  ///< Current orbit / location scope level

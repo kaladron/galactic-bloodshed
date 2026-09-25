@@ -13,34 +13,13 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
-
-  // Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Jettisoner";
-  race.Guest = false;
-  race.mass = 1.0;  // Used for crew/troop mass calculations
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create test star
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "JettisonStar";
-  ss.coordinates = {100.0, 200.0};
-  ss.AP[player_t{1}] = 10;
-  Star star(ss);
-
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
+  TestWorldBuilder(ctx).add_race("Jettisoner").add_star("JettisonStar", 10);
 
   // Create a ship with cargo
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
       .owned_by(1, 1)
       .named("CargoShip")
-      .in_star_orbit(0)
+      .in_star_orbit(1)
       .with_fuel(100.0)
       .with_resource(50)
       .with_destruct(20)
@@ -57,7 +36,7 @@ void test_jettison_happy_path() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.set_shipno(1);
 
   std::println(std::cout, "Jettison crystals");
@@ -157,7 +136,7 @@ void test_jettison_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.set_shipno(1);
 
   // 1. Min args check (< 3 args)

@@ -221,18 +221,15 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
   test::expect_contains(g.out.str(), "Illegal format.");
 
   // 5. Different scope rejected
-  ctx.em.mutate_ship(
-      carrier_id, [](Ship& c) { c.launch_to_orbit(ScopeLevel::LEVEL_STAR); });
+  ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.enter_star_orbit(1); });
   ctx.assert_dispatch_rejected(
       g, {"land", "#1", std::format("#{}", carrier_id.value)});
   test::expect_contains(g.out.str(), "not in the same scope");
 
   // 6. Universe scope rejected WITHOUT losing fuel
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  ctx.em.mutate_ship(
-      1, [](Ship& s) { s.launch_to_orbit(ScopeLevel::LEVEL_UNIV); });
-  ctx.em.mutate_ship(
-      carrier_id, [](Ship& c) { c.launch_to_orbit(ScopeLevel::LEVEL_UNIV); });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.enter_deep_space(); });
+  ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.enter_deep_space(); });
   const double fuel_before = ctx.em.peek_ship(1)->fuel();
   ctx.assert_dispatch_rejected(
       g, {"land", "#1", std::format("#{}", carrier_id.value)});
@@ -242,11 +239,11 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
   // Restore both to planet orbit, test distance > DIST_TO_DOCK
   g.set_level(ScopeLevel::LEVEL_PLAN);
   ctx.em.mutate_ship(1, [&](Ship& s) {
-    s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+    s.enter_planet_orbit(1, 1);
     s.set_coordinates({0.0, 0.0});
   });
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
-    c.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+    c.enter_planet_orbit(1, 1);
     c.set_coordinates({50.0, 0.0});
   });
   ctx.assert_dispatch_rejected(

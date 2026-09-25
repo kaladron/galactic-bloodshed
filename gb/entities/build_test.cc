@@ -28,8 +28,11 @@ int main() {
   race.tech = 50.0;
 
   // Create a test planet with sectors
-  Planet planet{};
-  planet.dimensions() = Coordinates{10, 10};
+  Planet planet{planet_struct{
+      .dimensions = {10, 10},
+      .star_id = 1,
+      .planet_order = 1,
+  }};
 
   // Create a normal sector owned by the race with population
   Sector good_sector{};

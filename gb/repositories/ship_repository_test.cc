@@ -647,6 +647,55 @@ int main() {
         "  ✓ ShipFactory::create_from_template canonical construction passed");
   }
 
+  // Test 12: Optional star and planet foreign keys omit nullopt in JSON
+  std::println(std::cout,
+               "\nTest 12: Optional star/planet FKs omit nullopt in JSON...");
+  {
+    Ship deep_space{};
+    deep_space.number() = 50;
+    deep_space.owner() = 1;
+    deep_space.alive() = true;
+    deep_space.enter_deep_space();
+    test::expect_true(repo.save(deep_space));
+
+    auto raw_deep = store.retrieve("tbl_ship", 50);
+    test::expect_true(raw_deep.has_value());
+    test::expect_false(raw_deep->contains("\"storbits\":"));
+    test::expect_false(raw_deep->contains("\"pnumorbits\":"));
+    test::expect_false(raw_deep->contains("\"deststar\":"));
+    test::expect_false(raw_deep->contains("\"destpnum\":"));
+
+    auto loaded_deep = repo.find_by_number(50);
+    test::expect_true(loaded_deep.has_value());
+    test::expect_eq(loaded_deep->orbited_star(), std::nullopt);
+    test::expect_eq(loaded_deep->orbited_planet(), std::nullopt);
+
+    Ship star_orbiter{};
+    star_orbiter.number() = 51;
+    star_orbiter.owner() = 1;
+    star_orbiter.alive() = true;
+    star_orbiter.enter_star_orbit(3);
+    star_orbiter.set_star_destination(4);
+    test::expect_true(repo.save(star_orbiter));
+
+    auto raw_star = store.retrieve("tbl_ship", 51);
+    test::expect_true(raw_star.has_value());
+    test::expect_contains(*raw_star, "\"storbits\":3");
+    test::expect_false(raw_star->contains("\"pnumorbits\":"));
+    test::expect_contains(*raw_star, "\"deststar\":4");
+    test::expect_false(raw_star->contains("\"destpnum\":"));
+
+    auto loaded_star = repo.find_by_number(51);
+    test::expect_true(loaded_star.has_value());
+    test::expect_eq(loaded_star->orbited_star(), std::optional<starnum_t>{3});
+    test::expect_eq(loaded_star->orbited_planet(), std::nullopt);
+    test::expect_eq(loaded_star->destination_star(),
+                    std::optional<starnum_t>{4});
+    test::expect_eq(loaded_star->destination_planet(), std::nullopt);
+    std::println(std::cout,
+                 "  ✓ Optional star/planet FKs JSON omission passed");
+  }
+
   std::println(std::cout, "\nAll ShipRepository tests passed!");
   return 0;
 }

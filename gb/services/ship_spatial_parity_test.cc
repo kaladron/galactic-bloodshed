@@ -18,9 +18,9 @@ void test_empty_universe_parity(TestContext& ctx) {
 
   // When no ships exist, all spatial queries return empty vectors matching
   // empty lists
-  test::expect_true(ships_repo.find_in_star(starnum_t{0}).empty());
+  test::expect_true(ships_repo.find_in_star(starnum_t{1}).empty());
   test::expect_true(
-      ships_repo.find_on_planet(starnum_t{0}, planetnum_t{0}).empty());
+      ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1}).empty());
   test::expect_true(ships_repo.find_in_hangar(shipnum_t{1}).empty());
   test::expect_true(ships_repo.find_by_owner(player_t{1}).empty());
   test::expect_true(ships_repo.find_alive().empty());
@@ -31,40 +31,31 @@ void test_empty_universe_parity(TestContext& ctx) {
 void test_star_spatial_parity(TestContext& ctx) {
   JsonStore store(ctx.db);
   ShipRepository ships_repo(store);
-  StarRepository stars_repo(store);
 
-  // Setup Star 0 with 3 ships in orbit
-  star_struct star_data{};
-  Star star(star_data);
-  stars_repo.save(star);
+  // Setup Star 1 with 3 ships in orbit
+  TestWorldBuilder(ctx).add_star("Star1", 100, starnum_t{1});
 
-  ship_struct s1_data{};
-  s1_data.number = 1;
-  s1_data.owner = 1;
-  s1_data.storbits = 0;
-  s1_data.whatorbits = ScopeLevel::LEVEL_STAR;
-  s1_data.alive = true;
-  ships_repo.save(Ship(s1_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 1)
+      .owned_by(1)
+      .in_star_orbit(1)
+      .with_alive(true)
+      .build();
 
-  ship_struct s2_data{};
-  s2_data.number = 2;
-  s2_data.owner = 1;
-  s2_data.storbits = 0;
-  s2_data.whatorbits = ScopeLevel::LEVEL_STAR;
-  s2_data.alive = false;  // Dead ship in star list
-  ships_repo.save(Ship(s2_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 2)
+      .owned_by(1)
+      .in_star_orbit(1)
+      .with_alive(false)  // Dead ship in star list
+      .build();
 
-  ship_struct s3_data{};
-  s3_data.number = 3;
-  s3_data.owner = 2;
-  s3_data.storbits = 0;
-  s3_data.whatorbits = ScopeLevel::LEVEL_STAR;
-  s3_data.alive = true;
-  ships_repo.save(Ship(s3_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 3)
+      .owned_by(2)
+      .in_star_orbit(1)
+      .with_alive(true)
+      .build();
 
   // 1. Query via ShipRepository indexed spatial queries
-  auto indexed_alive = ships_repo.find_in_star(starnum_t{0}, true);
-  auto indexed_all = ships_repo.find_in_star(starnum_t{0}, false);
+  auto indexed_alive = ships_repo.find_in_star(starnum_t{1}, true);
+  auto indexed_all = ships_repo.find_in_star(starnum_t{1}, false);
 
   test::expect_eq(indexed_alive.size(), 2);
   test::expect_eq(indexed_alive, (std::vector<shipnum_t>{1, 3}));
@@ -73,14 +64,14 @@ void test_star_spatial_parity(TestContext& ctx) {
 
   // 2. Query via ShipList::readonly_in_star
   std::vector<shipnum_t> shiplist_in_star_alive;
-  for (const Ship& s : ShipList::readonly_in_star(ctx.em, starnum_t{0})) {
+  for (const Ship& s : ShipList::readonly_in_star(ctx.em, starnum_t{1})) {
     shiplist_in_star_alive.push_back(s.number());
   }
   test::expect_eq(indexed_alive, shiplist_in_star_alive);
 
   // 3. Query via ShipList::in_star (mutable)
   std::vector<shipnum_t> shiplist_in_star_mutable;
-  for (auto handle : ShipList::in_star(ctx.em, starnum_t{0})) {
+  for (auto handle : ShipList::in_star(ctx.em, starnum_t{1})) {
     shiplist_in_star_mutable.push_back(handle->number());
   }
   test::expect_eq(indexed_alive, shiplist_in_star_mutable);
@@ -90,7 +81,7 @@ void test_star_spatial_parity(TestContext& ctx) {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   std::vector<shipnum_t> shiplist_scope_alive;
   for (const Ship& s :
@@ -107,46 +98,34 @@ void test_star_spatial_parity(TestContext& ctx) {
 void test_planet_spatial_parity(TestContext& ctx) {
   JsonStore store(ctx.db);
   ShipRepository ships_repo(store);
-  PlanetRepository planets_repo(store);
 
-  // Setup Planet (Star 1, Planet 0) with 2 ships in orbit
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planets_repo.save(planet);
+  // Setup Planet (Star 1, Planet 1) with 2 ships in orbit
+  TestPlanetBuilder(ctx, 1, PlanetType::EARTH, {10, 10}, planetnum_t{1})
+      .build();
 
-  ship_struct s10_data{};
-  s10_data.number = 10;
-  s10_data.owner = 1;
-  s10_data.storbits = 1;
-  s10_data.pnumorbits = 0;
-  s10_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  s10_data.alive = true;
-  ships_repo.save(Ship(s10_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 10)
+      .owned_by(1)
+      .in_planet_orbit(1, 1)
+      .with_alive(true)
+      .build();
 
-  ship_struct s11_data{};
-  s11_data.number = 11;
-  s11_data.owner = 1;
-  s11_data.storbits = 1;
-  s11_data.pnumorbits = 0;
-  s11_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  s11_data.alive = true;
-  ships_repo.save(Ship(s11_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 11)
+      .owned_by(1)
+      .in_planet_orbit(1, 1)
+      .with_alive(true)
+      .build();
 
   // Dead ship on same planet (should be excluded by default)
-  ship_struct s12_data{};
-  s12_data.number = 12;
-  s12_data.owner = 1;
-  s12_data.storbits = 1;
-  s12_data.pnumorbits = 0;
-  s12_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-  s12_data.alive = false;
-  ships_repo.save(Ship(s12_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 12)
+      .owned_by(1)
+      .in_planet_orbit(1, 1)
+      .with_alive(false)
+      .build();
 
   // 1. Query via ShipRepository indexed spatial query
-  auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{0},
+  auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1},
                                                  /*alive_only=*/true);
-  auto indexed_all = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{0},
+  auto indexed_all = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1},
                                                /*alive_only=*/false);
 
   // 2. Verify results
@@ -158,7 +137,7 @@ void test_planet_spatial_parity(TestContext& ctx) {
   // 3. Query via ShipList::readonly_on_planet
   std::vector<shipnum_t> shiplist_on_planet;
   for (const Ship& s :
-       ShipList::readonly_on_planet(ctx.em, starnum_t{1}, planetnum_t{0})) {
+       ShipList::readonly_on_planet(ctx.em, starnum_t{1}, planetnum_t{1})) {
     shiplist_on_planet.push_back(s.number());
   }
   test::expect_eq(indexed_alive, shiplist_on_planet);
@@ -169,7 +148,7 @@ void test_planet_spatial_parity(TestContext& ctx) {
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
-  g.set_pnum(0);
+  g.set_pnum(1);
 
   std::vector<shipnum_t> shiplist_scope_alive;
   for (const Ship& s :
@@ -188,29 +167,23 @@ void test_hangar_docked_parity(TestContext& ctx) {
   ShipRepository ships_repo(store);
 
   // Carrier ship 20 contains docked fighters s21 and s22
-  ship_struct carrier_data{};
-  carrier_data.number = 20;
-  carrier_data.owner = 1;
-  carrier_data.storbits = 0;
-  carrier_data.whatorbits = ScopeLevel::LEVEL_STAR;
-  carrier_data.alive = true;
-  ships_repo.save(Ship(carrier_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 20)
+      .owned_by(1)
+      .in_star_orbit(1)
+      .with_alive(true)
+      .build();
 
-  ship_struct s21_data{};
-  s21_data.number = 21;
-  s21_data.owner = 1;
-  s21_data.destshipno = 20;
-  s21_data.whatorbits = ScopeLevel::LEVEL_SHIP;
-  s21_data.alive = true;
-  ships_repo.save(Ship(s21_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 21)
+      .owned_by(1)
+      .docked_to(20, 1)
+      .with_alive(true)
+      .build();
 
-  ship_struct s22_data{};
-  s22_data.number = 22;
-  s22_data.owner = 1;
-  s22_data.destshipno = 20;
-  s22_data.whatorbits = ScopeLevel::LEVEL_SHIP;
-  s22_data.alive = true;
-  ships_repo.save(Ship(s22_data));
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 22)
+      .owned_by(1)
+      .docked_to(20, 1)
+      .with_alive(true)
+      .build();
 
   // 1. Query via ShipRepository indexed hangar query
   auto indexed_hangar = ships_repo.find_in_hangar(shipnum_t{20}, true);

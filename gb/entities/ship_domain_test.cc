@@ -684,16 +684,6 @@ void test_simulated_ship() {
   // Clamping to max capacity
   sim.set_simulated_fuel(500.0, 1.0);
   expect_near(sim.fuel(), 200.0);
-
-  // Test set_simulated_destination
-  sim.land_on_planet();
-  test::expect_true(sim.is_landed());
-  sim.set_simulated_destination(ScopeLevel::LEVEL_PLAN, 3, 2, 0);
-  test::expect_eq(sim.whatdest(), ScopeLevel::LEVEL_PLAN);
-  test::expect_eq(sim.deststar(), 3);
-  test::expect_eq(sim.destpnum(), 2);
-  test::expect_eq(sim.dock_state(), DockState::Spaceborne);
-  test::expect_false(sim.docked());
 }
 
 void test_ship_joint_crew_capacity() {
@@ -1593,20 +1583,43 @@ void test_moveship_and_followable() {
     test::expect_true(s1.hyper_drive().on);
   });
 
-  // 5. Sublight LEVEL_SHIP following and losing sight when out of range
+  // 5. Sublight LEVEL_SHIP following (including same-system LEVEL_PLAN ->
+  // LEVEL_STAR pursuit) and losing sight when out of range
   ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
     s2.enter_star_orbit(1);
-    s2.set_coordinates(star0_coords + SystemCoordinates{1.0, 0.0});
+    s2.set_coordinates(p0_coords + SystemCoordinates{0.0, 30.0});
   });
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.hyper_drive().on = false;
-    s1.enter_star_orbit(1);
-    s1.set_coordinates(star0_coords + SystemCoordinates{5.0, 0.0});
+    s1.enter_planet_orbit(1, 1);
+    s1.set_coordinates(p0_coords);
     s1.set_ship_destination(s2_id);
     s1.admin_override_fuel(500.0);
     moveship(ctx.em, s1, true, true, false);
+    // Flies directly south toward s2 (y > 0, x unchanged at 100.0) instead of
+    // detouring west toward Star 1's center (0, 0)
+    expect_near(s1.coordinates().x, p0_coords.x);
+    test::expect_gt(s1.coordinates().y, 0.0);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
   });
+
+  // Cross-system pursuit where both ships orbit planet #1 of different stars
+  // routes via destination star approach first
+  const auto star2_coords = ctx.em.peek_star(2)->coordinates();
+  ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
+    s2.owner() = 1;
+    s2.enter_planet_orbit(2, 1);
+    s2.set_coordinates(star2_coords + SystemCoordinates{0.0, 200.0});
+  });
+  ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
+    s1.enter_planet_orbit(1, 1);
+    s1.set_coordinates(star2_coords + SystemCoordinates{-10.0, 0.0});
+    s1.set_ship_destination(s2_id);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
+    test::expect_eq(s1.storbits(), starnum_t{2});
+  });
+  ctx.em.mutate_ship(s2_id, [](Ship& s2) { s2.owner() = 2; });
 
   // Move target ship out of range so follower loses sight
   ctx.em.mutate_ship(
@@ -1684,6 +1697,32 @@ void test_orbital_and_destination_transitions() {
   test::expect_false(s.hyper_drive().on);
   test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_SHIP);
   test::expect_eq(s.destshipno(), shipnum_t{42});
+
+  // Generic set_destination(ScopeLevel, ...) dispatches cleanly across levels
+  s.set_destination(ScopeLevel::LEVEL_STAR, 4, 2);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(s.destination_star(), std::optional<starnum_t>{4});
+  test::expect_eq(s.destination_planet(), std::nullopt);
+  test::expect_eq(s.destshipno(), std::nullopt);
+
+  s.set_destination(ScopeLevel::LEVEL_PLAN, 4, 2);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(s.destination_star(), std::optional<starnum_t>{4});
+  test::expect_eq(s.destination_planet(), std::optional<planetnum_t>{2});
+
+  s.hyper_drive().on = true;
+  s.set_destination(ScopeLevel::LEVEL_SHIP, 4, 2, shipnum_t{77});
+  test::expect_false(s.hyper_drive().on);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(s.destination_star(), std::nullopt);
+  test::expect_eq(s.destination_planet(), std::nullopt);
+  test::expect_eq(s.destshipno(), shipnum_t{77});
+
+  s.set_destination(ScopeLevel::LEVEL_UNIV, 4, 2);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
+  test::expect_eq(s.destination_star(), std::nullopt);
+  test::expect_eq(s.destination_planet(), std::nullopt);
+  test::expect_eq(s.destshipno(), std::nullopt);
 
   // 2. Orbital transitions and landing synchronization
   s.enter_planet_orbit(2, 3);
@@ -1781,11 +1820,16 @@ void test_orbital_and_destination_transitions() {
   s.sync_followed_ship_orbit(leader);
   test::expect_eq(s.deststar(), starnum_t{8});
   test::expect_eq(s.destpnum(), planetnum_t{3});
+  test::expect_eq(s.destination_star(), std::optional<starnum_t>{8});
+  test::expect_eq(s.destination_planet(), std::optional<planetnum_t>{3});
 
   leader.enter_star_orbit(9);
   s.sync_followed_ship_orbit(leader);
   test::expect_eq(s.deststar(), starnum_t{9});
   test::expect_eq(s.destpnum(), planetnum_t{0});
+  test::expect_eq(s.destination_star(), std::optional<starnum_t>{9});
+  test::expect_eq(s.destination_planet(), std::nullopt);
+  test::expect_false(s.to_struct().destpnum.has_value());
 }
 
 void test_subclass_special_data_clamping() {

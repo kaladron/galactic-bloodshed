@@ -33,7 +33,7 @@ int main() {
   ship1.number() = 1;
   ship1.owner() = 1;
   ship1.alive() = true;
-  ship1.enter_star_orbit(0);
+  ship1.enter_star_orbit(1);
   ship1.type() = ShipType::OTYPE_FACTORY;
   ship1.max_fuel() = 1000.0;
 
@@ -41,7 +41,7 @@ int main() {
   ship2.number() = 2;
   ship2.owner() = 1;
   ship2.alive() = true;
-  ship2.enter_star_orbit(0);
+  ship2.enter_star_orbit(1);
   ship2.type() = ShipType::OTYPE_PROBE;
   ship2.max_fuel() = 1000.0;
 
@@ -49,7 +49,7 @@ int main() {
   ship3.number() = 3;
   ship3.owner() = 1;
   ship3.alive() = true;
-  ship3.enter_star_orbit(0);
+  ship3.enter_star_orbit(1);
   ship3.type() = ShipType::STYPE_CARGO;
   ship3.max_fuel() = 1000.0;
 
@@ -60,7 +60,7 @@ int main() {
 
   // Test 1: Star-scoped iteration via ShipList::in_star
   {
-    auto list = ShipList::in_star(ctx.em, starnum_t{0});
+    auto list = ShipList::in_star(ctx.em, starnum_t{1});
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -81,7 +81,7 @@ int main() {
     cargo.number() = 4;  // Use contiguous numbering
     cargo.owner() = 1;
     cargo.alive() = true;
-    cargo.enter_star_orbit(0);
+    cargo.enter_star_orbit(1);
     cargo.type() = ShipType::STYPE_CARGO;
     cargo.max_fuel() = 1000.0;
 
@@ -246,7 +246,7 @@ int main() {
 
   // Modify ship via handle
   {
-    auto list = ShipList::in_star(ctx.em, starnum_t{0});
+    auto list = ShipList::in_star(ctx.em, starnum_t{1});
     auto it = list.begin();
     ShipHandle handle = *it;
     Ship& ship = *handle;
@@ -265,7 +265,7 @@ int main() {
 
   // Test 3b: Multiple ships modified in sequence
   {
-    auto list = ShipList::in_star(ctx.em, starnum_t{0});
+    auto list = ShipList::in_star(ctx.em, starnum_t{1});
     for (auto handle : list) {
       Ship& ship = *handle;
       ship.add_fuel(50.0);
@@ -291,7 +291,7 @@ int main() {
 
   // Test 3c: Read-only access via peek()
   {
-    auto list = ShipList::in_star(ctx.em, starnum_t{0});
+    auto list = ShipList::in_star(ctx.em, starnum_t{1});
     auto it = list.begin();
     ShipHandle handle = *it;
 
@@ -379,7 +379,7 @@ int main() {
 
   // Test 4d: Filtering during iteration
   {
-    auto list = ShipList::in_star(ctx.em, starnum_t{0});
+    auto list = ShipList::in_star(ctx.em, starnum_t{1});
     int factory_count = 0;
     int probe_count = 0;
 
@@ -401,7 +401,7 @@ int main() {
     std::println(std::cout, "\nTest 5: Const iteration (read-only)");
 
     // Create a const ShipList using readonly_in_star
-    const auto ships_const = ShipList::readonly_in_star(ctx.em, starnum_t{0});
+    const auto ships_const = ShipList::readonly_in_star(ctx.em, starnum_t{1});
 
     // Iterate with const iterators - should use peek_ship internally
     int count = 0;
@@ -431,7 +431,7 @@ int main() {
     // Do another const iteration - fuel should remain unchanged
     {
       const auto ships_const2 =
-          ShipList::readonly_in_star(ctx.em, starnum_t{0});
+          ShipList::readonly_in_star(ctx.em, starnum_t{1});
       for (const Ship& ship : ships_const2) {
         [[maybe_unused]] auto fuel = ship.fuel();
       }
@@ -459,7 +459,7 @@ int main() {
 
     // First, use const iteration - should NOT mark dirty
     {
-      const auto ships_const = ShipList::readonly_in_star(ctx.em, starnum_t{0});
+      const auto ships_const = ShipList::readonly_in_star(ctx.em, starnum_t{1});
       for (const Ship& ship : ships_const) {
         // Just reading data
         [[maybe_unused]] auto fuel = ship.fuel();
@@ -474,7 +474,7 @@ int main() {
 
     // Now use mutable iteration and actually modify
     {
-      auto ships_mutable = ShipList::in_star(ctx.em, starnum_t{0});
+      auto ships_mutable = ShipList::in_star(ctx.em, starnum_t{1});
       for (auto ship_handle : ships_mutable) {
         Ship& ship = *ship_handle;
         ship.add_fuel(50.0);  // Modify ship
@@ -536,7 +536,7 @@ int main() {
     dead_ship.number() = 10;
     dead_ship.owner() = 1;
     dead_ship.alive() = false;  // This ship is dead
-    dead_ship.enter_star_orbit(0);
+    dead_ship.enter_star_orbit(1);
     dead_ship.type() = ShipType::OTYPE_FACTORY;
     ships_repo.save(dead_ship);
 
@@ -628,7 +628,7 @@ int main() {
     s1.number() = 1;
     s1.owner() = 1;
     s1.alive() = true;
-    s1.enter_star_orbit(0);
+    s1.enter_star_orbit(1);
     s1.type() = ShipType::OTYPE_PROBE;
     sparse_repo.save(s1);
 
@@ -636,7 +636,7 @@ int main() {
     s5.number() = 5;
     s5.owner() = 1;
     s5.alive() = true;
-    s5.enter_star_orbit(0);
+    s5.enter_star_orbit(1);
     s5.type() = ShipType::OTYPE_FACTORY;
     sparse_repo.save(s5);
 

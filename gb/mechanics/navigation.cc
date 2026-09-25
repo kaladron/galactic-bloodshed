@@ -448,10 +448,11 @@ void resolve_ship_destination_target(EntityManager& em, Ship& s,
   const ScopeLevel dsh_orbit = res.target_ship->whatorbits();
   if (dsh_orbit == ScopeLevel::LEVEL_PLAN &&
       (s.whatorbits() != ScopeLevel::LEVEL_PLAN ||
+       s.storbits() != res.target_ship->storbits() ||
        s.pnumorbits() != res.target_ship->pnumorbits())) {
     res.level = ScopeLevel::LEVEL_PLAN;
   } else if (dsh_orbit == ScopeLevel::LEVEL_STAR &&
-             (s.whatorbits() != ScopeLevel::LEVEL_STAR ||
+             (s.whatorbits() == ScopeLevel::LEVEL_UNIV ||
               s.storbits() != res.target_ship->storbits())) {
     res.level = ScopeLevel::LEVEL_STAR;
   }

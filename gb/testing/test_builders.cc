@@ -27,8 +27,8 @@ void TestShipBuilder::init(ShipType type,
   ship_.destruct = ship_.max_destruct;
   ship_.storbits = 1;
   ship_.pnumorbits = 1;
-  ship_.deststar = 1;
-  ship_.destpnum = 1;
+  ship_.deststar = std::nullopt;
+  ship_.destpnum = std::nullopt;
 
   Ship temp_ship{ship_};
   ship_.mass = temp_ship.local_mass(1.0);
@@ -71,7 +71,7 @@ TestShipBuilder::in_star_orbit(starnum_t snum,
                                std::optional<UniverseCoordinates> coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_STAR;
   ship_.storbits = snum;
-  ship_.pnumorbits = 0;
+  ship_.pnumorbits = std::nullopt;
   ship_.dock_state = DockState::Spaceborne;
   if (coords) {
     ship_.coordinates = *coords;
@@ -90,6 +90,7 @@ TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum,
                                                 SystemCoordinates coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_STAR;
   ship_.storbits = snum;
+  ship_.pnumorbits = std::nullopt;
   ship_.dock_state = DockState::Spaceborne;
   try {
     const auto* star = em_.peek_star(snum);
@@ -148,6 +149,8 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
   ship_.whatdest = ScopeLevel::LEVEL_PLAN;
   ship_.storbits = snum;
   ship_.pnumorbits = pnum;
+  ship_.deststar = snum;
+  ship_.destpnum = pnum;
   ship_.dock_state = DockState::Landed;
   ship_.land_coords = coords;
   try {
@@ -162,6 +165,8 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
 
 TestShipBuilder& TestShipBuilder::in_deep_space(UniverseCoordinates coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_UNIV;
+  ship_.storbits = std::nullopt;
+  ship_.pnumorbits = std::nullopt;
   ship_.dock_state = DockState::Spaceborne;
   ship_.coordinates = coords;
   return *this;
@@ -173,6 +178,9 @@ TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
   ship_.whatdest = ScopeLevel::LEVEL_SHIP;
   ship_.destshipno = dest_ship;
   ship_.storbits = snum;
+  ship_.pnumorbits = std::nullopt;
+  ship_.deststar = std::nullopt;
+  ship_.destpnum = std::nullopt;
   ship_.dock_state = DockState::Docked;
   return *this;
 }
@@ -333,6 +341,8 @@ TestShipBuilder& TestShipBuilder::targeting_planet(starnum_t snum,
 
 TestShipBuilder& TestShipBuilder::targeting_ship(shipnum_t target_ship) {
   ship_.whatdest = ScopeLevel::LEVEL_SHIP;
+  ship_.deststar = std::nullopt;
+  ship_.destpnum = std::nullopt;
   ship_.destshipno = target_ship;
   return *this;
 }

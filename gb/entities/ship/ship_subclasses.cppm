@@ -490,17 +490,6 @@ public:
     data_.fuel = std::clamp(fuel, 0.0, max_cap);
     data_.mass = local_mass(race_mass);
   }
-
-  /// \brief Sets simulated temporary flight destination and undocks.
-  void set_simulated_destination(
-      ScopeLevel level, starnum_t snum, planetnum_t pnum,
-      std::optional<shipnum_t> shipno = std::nullopt) noexcept {
-    data_.dock_state = DockState::Spaceborne;
-    data_.destshipno = (shipno && *shipno > 0) ? shipno : std::nullopt;
-    data_.whatdest = level;
-    data_.deststar = snum;
-    data_.destpnum = pnum;
-  }
 };
 
 static_assert(sizeof(AutonomousShip) == sizeof(Ship));

@@ -24,7 +24,7 @@ void test_shoot_planet_to_ship_invalid_cases() {
   Ship ship{};
   ship.number() = 1;
   ship.owner() = player_t{2};
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
 
   // Test 1: Zero strength -> returns std::nullopt
@@ -38,7 +38,7 @@ void test_shoot_planet_to_ship_invalid_cases() {
 
   // Test 3: Wrong orbit level -> returns std::nullopt
   ship.alive() = true;
-  ship.whatorbits() = ScopeLevel::LEVEL_STAR;
+  ship.enter_star_orbit(1);
   auto dam3 = shoot_planet_to_ship(em, race, ship, 10);
   test::expect_false(dam3.has_value());
 
@@ -87,9 +87,7 @@ void test_shoot_planet_to_ship_valid_attack() {
   ship.number() = 1;
   ship.owner() = player_t{2};
   ship.type() = ShipType::OTYPE_CANIST;
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = 1;
-  ship.pnumorbits() = 1;
+  ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;
@@ -126,7 +124,7 @@ void test_shoot_ship_to_planet_invalid_cases() {
   Ship ship{};
   ship.number() = 1;
   ship.owner() = player_t{1};
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
   ship.on() = true;
 
@@ -194,9 +192,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   ship.number() = 1;
   ship.owner() = player_t{1};
   ship.type() = ShipType::OTYPE_CANIST;
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = 1;
-  ship.pnumorbits() = 1;
+  ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;
@@ -277,9 +273,7 @@ void test_zero_body_ship_combat() {
   ship.number() = 1;
   ship.owner() = player_t{2};
   ship.type() = ShipType::OTYPE_CANIST;
-  ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  ship.storbits() = 1;
-  ship.pnumorbits() = 1;
+  ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;

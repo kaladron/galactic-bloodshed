@@ -43,17 +43,8 @@ bool launch_from_carrier(GameObj& g, Ship& s) {
 
     if (s2.is_landed()) {
       g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
-        s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-        s.storbits() = s2.storbits();
-        s.land_on_planet();
-        s.pnumorbits() = s2.pnumorbits();
-        s.destpnum() = s2.pnumorbits();
-        s.deststar() = s2.deststar();
-        s.destshipno() = std::nullopt;
-        s.set_coordinates(s2.coordinates());
-        s.set_land_coords(s2.land_coords());
-        s2.set_mass(s2.mass() - s.mass());
-        s2.hanger() -= s.size();
+        s.land_on_planet(s2);
+        s2.unload_docked_craft(s);
         g.out << std::format("Landed on {}/{}.\n", star.get_name(),
                              star.get_planet_name(s.pnumorbits()));
       });
@@ -69,21 +60,15 @@ bool launch_from_carrier(GameObj& g, Ship& s) {
     }
 
     g.out << std::format("{} launched from {}.\n", s, s2);
-    s.launch_to_orbit(s2.whatorbits());
-    s.set_coordinates(s2.coordinates());
-    s.whatdest() = ScopeLevel::LEVEL_UNIV;
-    s2.set_mass(s2.mass() - s.mass());
-    s2.hanger() -= s.size();
+    s.launch_from_carrier_to_orbit(s2);
+    s2.unload_docked_craft(s);
 
     if (s2.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-      s.storbits() = s2.storbits();
-      s.pnumorbits() = s2.pnumorbits();
       g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
         g.out << std::format("Orbiting {}/{}.\n", star.get_name(),
                              star.get_planet_name(s.pnumorbits()));
       });
     } else if (s2.whatorbits() == ScopeLevel::LEVEL_STAR) {
-      s.storbits() = s2.storbits();
       g.entity_manager.with_star(s2.storbits(), [&](const Star& star) {
         g.out << std::format("Orbiting {}.\n", star.get_name());
       });
@@ -169,7 +154,6 @@ bool launch_from_planet(GameObj& g, Ship& s) {
 
           s.consume_fuel(fuel);
           s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-          s.whatdest() = ScopeLevel::LEVEL_UNIV;
           if (auto* canist = s.as<CanisterShip>()) {
             canist->reset_timer();
           }

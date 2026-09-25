@@ -362,8 +362,7 @@ int main() {
                                .with_alive(true)
                                .in_star_orbit(1)
                                .build_handle();
-      chaser_handle->whatdest() = ScopeLevel::LEVEL_SHIP;
-      chaser_handle->destshipno() = target_id;
+      chaser_handle->set_ship_destination(target_id);
       chaser_id = chaser_handle->number();
     }
 

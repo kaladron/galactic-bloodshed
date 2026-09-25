@@ -134,9 +134,6 @@ public:
   [[nodiscard]] std::optional<shipnum_t> destshipno() const noexcept {
     return data_.destshipno;
   }
-  std::optional<shipnum_t>& destshipno() noexcept {
-    return data_.destshipno;
-  }
 
   // Stats
   [[nodiscard]] constexpr armor_t armor() const noexcept {
@@ -367,45 +364,27 @@ public:
   }
 
   // Location
-  [[nodiscard]] starnum_t storbits() const {
-    return data_.storbits;
-  }
-  starnum_t& storbits() {
+  [[nodiscard]] starnum_t storbits() const noexcept {
     return data_.storbits;
   }
 
-  [[nodiscard]] starnum_t deststar() const {
-    return data_.deststar;
-  }
-  starnum_t& deststar() {
+  [[nodiscard]] starnum_t deststar() const noexcept {
     return data_.deststar;
   }
 
-  [[nodiscard]] planetnum_t destpnum() const {
-    return data_.destpnum;
-  }
-  planetnum_t& destpnum() {
+  [[nodiscard]] planetnum_t destpnum() const noexcept {
     return data_.destpnum;
   }
 
-  [[nodiscard]] planetnum_t pnumorbits() const {
-    return data_.pnumorbits;
-  }
-  planetnum_t& pnumorbits() {
+  [[nodiscard]] planetnum_t pnumorbits() const noexcept {
     return data_.pnumorbits;
   }
 
-  [[nodiscard]] ScopeLevel whatdest() const {
-    return data_.whatdest;
-  }
-  ScopeLevel& whatdest() {
+  [[nodiscard]] ScopeLevel whatdest() const noexcept {
     return data_.whatdest;
   }
 
-  [[nodiscard]] ScopeLevel whatorbits() const {
-    return data_.whatorbits;
-  }
-  ScopeLevel& whatorbits() {
+  [[nodiscard]] ScopeLevel whatorbits() const noexcept {
     return data_.whatorbits;
   }
 
@@ -704,11 +683,84 @@ public:
     return std::nullopt;
   }
 
-  /// Lands the ship on a planet surface.
+  /// Places the ship into deep space (universe scope), undocking if berthed in
+  /// a carrier and clearing any planet orbit field.
+  void enter_deep_space() noexcept {
+    data_.dock_state = DockState::Spaceborne;
+    if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
+      data_.destshipno = std::nullopt;
+    }
+    data_.whatorbits = ScopeLevel::LEVEL_UNIV;
+    data_.pnumorbits = 0;
+  }
+
+  /// Places the ship into orbit around its current star system, clearing any
+  /// planet orbit field.
+  void enter_star_orbit() noexcept {
+    data_.dock_state = DockState::Spaceborne;
+    if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
+      data_.destshipno = std::nullopt;
+    }
+    data_.whatorbits = ScopeLevel::LEVEL_STAR;
+    data_.pnumorbits = 0;
+  }
+
+  /// Places the ship into orbit around the specified star system.
+  void enter_star_orbit(starnum_t star) noexcept {
+    data_.storbits = star;
+    enter_star_orbit();
+  }
+
+  /// Places the ship into orbit around the specified planet in its current star
+  /// system.
+  void enter_planet_orbit(planetnum_t planet) noexcept {
+    data_.dock_state = DockState::Spaceborne;
+    if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
+      data_.destshipno = std::nullopt;
+    }
+    data_.whatorbits = ScopeLevel::LEVEL_PLAN;
+    data_.pnumorbits = planet;
+  }
+
+  /// Places the ship into orbit around the specified planet in the specified
+  /// star system.
+  void enter_planet_orbit(starnum_t star, planetnum_t planet) noexcept {
+    data_.storbits = star;
+    enter_planet_orbit(planet);
+  }
+
+  /// Lands the ship on its currently orbited planet surface, synchronizing
+  /// destination fields and clearing any ship destination.
   void land_on_planet() noexcept {
     data_.dock_state = DockState::Landed;
     data_.whatorbits = ScopeLevel::LEVEL_PLAN;
     data_.whatdest = ScopeLevel::LEVEL_PLAN;
+    data_.deststar = data_.storbits;
+    data_.destpnum = data_.pnumorbits;
+    data_.destshipno = std::nullopt;
+    data_.hyper_drive.on = false;
+  }
+
+  /// Lands the ship on the specified planet surface.
+  void land_on_planet(starnum_t star, planetnum_t planet) noexcept {
+    data_.storbits = star;
+    data_.pnumorbits = planet;
+    land_on_planet();
+  }
+
+  /// Lands the ship on a specific sector of the specified planet surface.
+  void land_on_planet(starnum_t star, planetnum_t planet,
+                      Coordinates coords) noexcept {
+    set_land_coords(coords);
+    land_on_planet(star, planet);
+  }
+
+  /// Deploys a carried craft from a landed carrier onto the same planetary
+  /// surface sector and coordinates.
+  void land_on_planet(const Ship& carrier) noexcept {
+    set_coordinates(carrier.coordinates());
+    land_on_planet(carrier.storbits(), carrier.pnumorbits(),
+                   carrier.land_coords());
   }
 
   /// Docks the ship inside a carrier ship's hangar.
@@ -717,6 +769,17 @@ public:
     data_.destshipno = carrier;
     data_.whatorbits = ScopeLevel::LEVEL_SHIP;
     data_.whatdest = ScopeLevel::LEVEL_SHIP;
+    data_.hyper_drive.on = false;
+  }
+
+  /// Docks the ship inside a carrier ship's hangar and synchronizes orbital
+  /// coordinates with the carrier.
+  void dock_into_carrier(const Ship& carrier) noexcept {
+    dock_into_carrier(carrier.number());
+    data_.storbits = carrier.storbits();
+    data_.pnumorbits = carrier.pnumorbits();
+    data_.deststar = carrier.deststar();
+    data_.destpnum = carrier.destpnum();
   }
 
   /// Moors the ship to another spaceborne ship (ship-to-ship docking).
@@ -727,6 +790,7 @@ public:
     data_.dock_state = DockState::Docked;
     data_.destshipno = other_ship;
     data_.whatdest = ScopeLevel::LEVEL_SHIP;
+    data_.hyper_drive.on = false;
   }
 
   /// Moors the ship to another spaceborne ship (overload taking Ship
@@ -739,6 +803,60 @@ public:
   void moor_together(Ship& other) noexcept {
     dock_with_ship(other);
     other.dock_with_ship(*this);
+  }
+
+  /// Whether the ship has an active navigation destination (star, planet, or
+  /// ship).
+  [[nodiscard]] bool has_destination() const noexcept {
+    return data_.whatdest != ScopeLevel::LEVEL_UNIV;
+  }
+
+  /// Whether the ship has a celestial navigation destination (star or planet).
+  [[nodiscard]] bool has_celestial_destination() const noexcept {
+    return data_.whatdest == ScopeLevel::LEVEL_STAR ||
+           data_.whatdest == ScopeLevel::LEVEL_PLAN;
+  }
+
+  /// Clears any active navigation destination, returning whatdest to LEVEL_UNIV
+  /// and clearing destshipno and any active hyperdrive jump order.
+  void clear_destination() noexcept {
+    data_.whatdest = ScopeLevel::LEVEL_UNIV;
+    data_.deststar = 0;
+    data_.destpnum = 0;
+    data_.destshipno = std::nullopt;
+    data_.hyper_drive.on = false;
+  }
+
+  /// Sets navigation destination to a star system, clearing any planet or ship
+  /// destination.
+  void set_star_destination(starnum_t star) noexcept {
+    data_.whatdest = ScopeLevel::LEVEL_STAR;
+    data_.deststar = star;
+    data_.destpnum = 0;
+    data_.destshipno = std::nullopt;
+  }
+
+  /// Sets navigation destination to a planet, clearing any ship destination.
+  void set_planet_destination(starnum_t star, planetnum_t planet) noexcept {
+    data_.whatdest = ScopeLevel::LEVEL_PLAN;
+    data_.deststar = star;
+    data_.destpnum = planet;
+    data_.destshipno = std::nullopt;
+  }
+
+  /// Sets navigation destination to follow or intercept another ship, disabling
+  /// any active hyperdrive jump order.
+  void set_ship_destination(shipnum_t target_ship) noexcept {
+    data_.whatdest = ScopeLevel::LEVEL_SHIP;
+    data_.destshipno = target_ship;
+    data_.hyper_drive.on = false;
+  }
+
+  /// Synchronizes tracked star and planet coordinates from the target ship
+  /// being followed.
+  void sync_followed_ship_orbit(const Ship& target) noexcept {
+    data_.deststar = target.storbits();
+    data_.destpnum = target.pnumorbits();
   }
 
   /// Returns true if governor is authorized to command this ship (the race
@@ -774,18 +892,31 @@ public:
     data_.dock_state = DockState::Spaceborne;
     data_.destshipno = std::nullopt;
     data_.whatdest = ScopeLevel::LEVEL_UNIV;
+    data_.hyper_drive.on = false;
   }
 
-  /// Launches the ship into orbit or deep space.
+  /// Launches the ship into orbit or deep space, clearing any active
+  /// destination.
   void
   launch_to_orbit(ScopeLevel orbit_level = ScopeLevel::LEVEL_PLAN) noexcept {
     data_.dock_state = DockState::Spaceborne;
-    if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
-      data_.destshipno = std::nullopt;
-    }
+    data_.destshipno = std::nullopt;
+    data_.whatdest = ScopeLevel::LEVEL_UNIV;
+    data_.hyper_drive.on = false;
     if (orbit_level != ScopeLevel::LEVEL_SHIP) {
       data_.whatorbits = orbit_level;
     }
+  }
+
+  /// Launches a ship into its carrier's orbital scope, synchronizing orbital
+  /// coordinates.
+  void launch_from_carrier_to_orbit(const Ship& carrier) noexcept {
+    set_coordinates(carrier.coordinates());
+    launch_to_orbit(carrier.whatorbits());
+    data_.storbits = carrier.storbits();
+    data_.pnumorbits = carrier.pnumorbits();
+    data_.deststar = carrier.deststar();
+    data_.destpnum = carrier.destpnum();
   }
 
   /// \brief Returns true if a craft of the given physical size can fit inside

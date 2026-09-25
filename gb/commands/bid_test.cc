@@ -58,19 +58,10 @@ int main() {
   planets_repo.save(planet);
 
   // Create a space port for bidding
-  Ship port{};
-  port.number() = 1;
-  port.owner() = 1;
-  port.governor() = 1;
-  port.alive() = true;
-  port.active() = true;
-  port.type() = ShipType::OTYPE_GOV;  // Has ABIL_PORT capability
-  port.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  port.storbits() = 1;
-  port.pnumorbits() = 1;
-
-  ShipRepository ships_repo(store);
-  ships_repo.save(port);
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+      .owned_by(1, 1)
+      .in_planet_orbit(1, 1)
+      .build();
 
   // Create a commodity lot for sale using Repository (unbid: star_to/planet_to
   // are nullopt)

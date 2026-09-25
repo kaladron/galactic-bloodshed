@@ -420,7 +420,7 @@ void test_load_ship_to_ship() {
                            .build();
 
   // Dock s1 with alien ship
-  ctx.em.mutate_ship(s1_id, [&](Ship& s1) { s1.destshipno() = alien_id; });
+  ctx.em.mutate_ship(s1_id, [&](Ship& s1) { s1.dock_with_ship(alien_id); });
   ctx.em.mutate_ship(alien_id,
                      [&](Ship& alien) { alien.dock_with_ship(s1_id); });
 
@@ -922,39 +922,31 @@ void test_docking_and_validation_edge_cases() {
   // 9. Overloaded destination ship, destshipno == 0, bogus destination ship,
   // and un-docked destination ship
   ctx.em.mutate_ship(carrier_id,
-                     [&](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_SHIP; });
-  ctx.em.mutate_ship(carrier_id,
-                     [&](Ship& s) { s.dock_with_ship(shuttle_id); });
-  ctx.em.mutate_ship(shuttle_id, [&](Ship& s) {
-    s.dock_with_ship(carrier_id);
-    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
-  });
+                     [&](Ship& s) { s.dock_into_carrier(shuttle_id); });
+  ctx.em.mutate_ship(shuttle_id,
+                     [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", carrier_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "is overloaded!");
 
-  ctx.em.mutate_ship(shuttle_id, [](Ship& s) {
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = std::nullopt;
-  });
+  ctx.em.mutate_ship(shuttle_id, [](Ship& s) { s.set_star_destination(1); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "is not docked");
 
-  ctx.em.mutate_ship(shuttle_id, [](Ship& s) { s.destshipno() = 9999; });
+  ctx.em.mutate_ship(shuttle_id, [](Ship& s) { s.dock_with_ship(9999); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "Destination ship is bogus");
 
   ctx.em.mutate_ship(shuttle_id, [&](Ship& s) {
-    s.whatorbits() = ScopeLevel::LEVEL_STAR;
-    s.destshipno() = carrier_id;
+    s.enter_star_orbit(1);
+    s.dock_with_ship(carrier_id);
   });
-  ctx.em.mutate_ship(carrier_id,
-                     [](Ship& s) { s.destshipno() = std::nullopt; });
+  ctx.em.mutate_ship(carrier_id, [](Ship& s) { s.undock_from_ship(); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});

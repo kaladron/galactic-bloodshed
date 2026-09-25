@@ -538,9 +538,8 @@ bool intercept_missile_by_pdn(Ship& missile, EntityManager& entity_manager) {
   for (const Ship& s : scoped_ships) {
     if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF) {
       /* attack the PDN instead */
-      missile.whatdest() = ScopeLevel::LEVEL_SHIP;
       missile.set_coordinates(s.coordinates());
-      missile.destshipno() = s.number();
+      missile.set_ship_destination(s.number());
       return true;
     }
   }

@@ -318,7 +318,6 @@ std::optional<DockingContext> validate_ship_docking(Ship& s, GameObj& g) {
                               s2.destshipno() == s.number());
       if (!s2.alive() || !mutually_docked) {
         s.launch_to_orbit(s.whatorbits());
-        s.whatdest() = ScopeLevel::LEVEL_UNIV;
         g.out << std::format("{} is not docked.\n", s2);
         return;
       }

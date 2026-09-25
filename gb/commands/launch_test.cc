@@ -98,10 +98,8 @@ void test_launch_domain_errors() {
   test::expect_contains(g.out.str(), "Syntax: launch <ship>");
 
   // 2. Launch non-docked/non-landed ship
-  ctx.em.mutate_ship(1, [](Ship& s) {
-    s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-    s.whatdest() = ScopeLevel::LEVEL_UNIV;
-  });
+  ctx.em.mutate_ship(
+      1, [](Ship& s) { s.launch_to_orbit(ScopeLevel::LEVEL_PLAN); });
   ctx.assert_dispatch_rejected(g, {"launch", "#1"});
   test::expect_contains(g.out.str(), "is not landed or docked");
 
@@ -186,35 +184,58 @@ void test_launch_from_carrier_all_scopes() {
   test::expect_contains(g.out.str(),
                         "Factories cannot be launched once turned on.");
 
-  // 2. Dock shuttle #1 into landed carrier and launch onto planet surface
+  // 2. Dock shuttle #1 into carrier at (1, 1), then move carrier to landed on
+  // Star 2 Planet 1 (Vega/Prime) at sector (7, 8) and launch onto planet
+  // surface
   test::expect_true(ctx.em.dock_carrier(1, carrier_id).has_value());
-  ctx.em.mutate_ship(1, [&](Ship& s) { s.dock_into_carrier(carrier_id); });
-  ctx.assert_dispatch_success(g, {"launch", "#1"}, 0);
-  test::expect_contains(g.out.str(), "Landed on Sol/Earth.");
-  test::expect_true(ctx.em.peek_ship(1)->is_landed());
-
-  // 3. Carrier in LEVEL_PLAN -> shuttle launches into LEVEL_PLAN
   ctx.em.mutate_ship(
-      carrier_id, [](Ship& c) { c.launch_to_orbit(ScopeLevel::LEVEL_PLAN); });
-  ctx.em.mutate_ship(1, [&](Ship& s) {
-    s.dock_into_carrier(carrier_id);
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-  });
+      1, [&](Ship& s) { s.dock_into_carrier(*ctx.em.peek_ship(carrier_id)); });
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
+    c.set_coordinates({200.0, 300.0});
+    c.land_on_planet(2, 1, {7, 8});
+  });
+  ctx.assert_dispatch_success(g, {"launch", "#1"}, 0);
+  test::expect_contains(g.out.str(), "Landed on Vega/Vega Prime.");
+  const auto* deployed = ctx.em.peek_ship(1);
+  test::expect_true(deployed->is_landed());
+  test::expect_eq(deployed->whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(deployed->whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(deployed->storbits(), starnum_t{2});
+  test::expect_eq(deployed->pnumorbits(), planetnum_t{1});
+  test::expect_eq(deployed->deststar(), starnum_t{2});
+  test::expect_eq(deployed->destpnum(), planetnum_t{1});
+  test::expect_eq(deployed->destshipno(), std::nullopt);
+  test::expect_eq(deployed->land_coords(), (Coordinates{7, 8}));
+  test::expect_eq(deployed->coordinates(), (UniverseCoordinates{200.0, 300.0}));
+
+  // 3. Dock shuttle #1 at (1, 1), move carrier to LEVEL_PLAN orbit at Star 2
+  // Planet 1 (Vega/Vega Prime) -> shuttle launches into LEVEL_PLAN at (2, 1)
+  ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.enter_planet_orbit(1, 1); });
+  ctx.em.mutate_ship(
+      1, [&](Ship& s) { s.dock_into_carrier(*ctx.em.peek_ship(carrier_id)); });
+  ctx.em.mutate_ship(carrier_id, [](Ship& c) {
+    c.enter_planet_orbit(2, 1);
+    c.set_coordinates({210.0, 310.0});
     c.hanger() += 10;
     c.set_mass(c.mass() + 10.0);
   });
   ctx.assert_dispatch_success(g, {"launch", "#1"}, 0);
-  test::expect_contains(g.out.str(), "Orbiting Sol/Earth.");
-  test::expect_eq(ctx.em.peek_ship(1)->whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_contains(g.out.str(), "Orbiting Vega/Vega Prime.");
+  const auto* orbiter = ctx.em.peek_ship(1);
+  test::expect_eq(orbiter->whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(orbiter->storbits(), starnum_t{2});
+  test::expect_eq(orbiter->pnumorbits(), planetnum_t{1});
+  test::expect_eq(orbiter->whatdest(), ScopeLevel::LEVEL_UNIV);
+  test::expect_eq(orbiter->destshipno(), std::nullopt);
+  test::expect_eq(orbiter->coordinates(), (UniverseCoordinates{210.0, 310.0}));
+
+  // Restore carrier to Star 1 for LEVEL_STAR test
+  ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.enter_star_orbit(1); });
 
   // 4. Carrier in LEVEL_STAR -> shuttle launches into LEVEL_STAR
   ctx.em.mutate_ship(
       carrier_id, [](Ship& c) { c.launch_to_orbit(ScopeLevel::LEVEL_STAR); });
-  ctx.em.mutate_ship(1, [&](Ship& s) {
-    s.dock_into_carrier(carrier_id);
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-  });
+  ctx.em.mutate_ship(1, [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
     c.hanger() += 10;
     c.set_mass(c.mass() + 10.0);
@@ -226,10 +247,7 @@ void test_launch_from_carrier_all_scopes() {
   // 5. Carrier in LEVEL_UNIV -> shuttle launches into LEVEL_UNIV
   ctx.em.mutate_ship(
       carrier_id, [](Ship& c) { c.launch_to_orbit(ScopeLevel::LEVEL_UNIV); });
-  ctx.em.mutate_ship(1, [&](Ship& s) {
-    s.dock_into_carrier(carrier_id);
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
-  });
+  ctx.em.mutate_ship(1, [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
     c.hanger() += 10;
     c.set_mass(c.mass() + 10.0);

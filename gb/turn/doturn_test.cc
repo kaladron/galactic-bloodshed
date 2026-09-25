@@ -477,7 +477,7 @@ void test_compute_governed_status() {
   habitat.owner() = player_t{1};
   habitat.alive() = true;
   habitat.type() = ShipType::STYPE_HABITAT;
-  habitat.whatorbits() = ScopeLevel::LEVEL_PLAN;
+  habitat.enter_planet_orbit(1, 1);
   ship_repo.save(habitat);
 
   em.mutate_ship(1, [](Ship& s) { s.dock_into_carrier(2); });

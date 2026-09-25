@@ -211,8 +211,9 @@ shipnum_t ShipRepository::count_all_ships() {
 
 std::vector<shipnum_t> ShipRepository::find_in_star_system(starnum_t star_id,
                                                            bool alive_only) {
-  std::string where = "storbits = ?";
-  std::vector<KeyValue> params{star_id.value};
+  std::string where = "storbits = ? AND whatorbits != ?";
+  std::vector<KeyValue> params{star_id.value,
+                               static_cast<int>(ScopeLevel::LEVEL_UNIV)};
   if (alive_only) {
     where += " AND alive = 1";
   }

@@ -82,10 +82,8 @@ void test_fire_universe_ap() {
   setup_test_world(ctx);
 
   // Move attacker ship to Universe scope and target at Star scope
-  ctx.em.mutate_ship(
-      1, [](Ship& s1) { s1.whatorbits() = ScopeLevel::LEVEL_UNIV; });
-  ctx.em.mutate_ship(
-      2, [](Ship& s2) { s2.whatorbits() = ScopeLevel::LEVEL_STAR; });
+  ctx.em.mutate_ship(1, [](Ship& s1) { s1.enter_deep_space(); });
+  ctx.em.mutate_ship(2, [](Ship& s2) { s2.enter_star_orbit(1); });
 
   // Set universe AP
   ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 50; });
@@ -267,8 +265,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_pnum(1);
   ctx.em.mutate_ship(3, [](Ship& s) {
-    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s.pnumorbits() = 1;
+    s.enter_planet_orbit(1, 1);
     s.land_on_planet();
     s.add_fuel(100.0);
   });
@@ -297,8 +294,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
 
   // Land target #2 on non-adjacent sector (5, 5) -> rejected
   ctx.em.mutate_ship(2, [](Ship& s) {
-    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s.pnumorbits() = 1;
+    s.enter_planet_orbit(1, 1);
     s.land_on_planet();
     s.set_land_coords({5, 5});
   });

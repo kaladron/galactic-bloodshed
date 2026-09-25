@@ -963,7 +963,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     kill_ship(Playernum, s);  // Recursive call to member function
   }
 
-  ship.destshipno() = std::nullopt;
+  ship.clear_destination();
 
   /* clear any foreign key references to this ship on other alive ships */
   for (shipnum_t other_id : ships_alive()) {
@@ -993,10 +993,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
         if (s.is_docked()) {
           s.undock_from_ship();
         } else {
-          s.destshipno() = std::nullopt;
-          if (s.whatdest() == ScopeLevel::LEVEL_SHIP) {
-            s.whatdest() = ScopeLevel::LEVEL_UNIV;
-          }
+          s.clear_destination();
         }
       });
     }

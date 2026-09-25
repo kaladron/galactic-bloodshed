@@ -507,7 +507,8 @@ int main() {
     test::expect_eq(bers->fuel(), 200.0);  // 5 * 40
     test::expect_eq(bers->destruct(), 500);
     test::expect_true(bers->hyper_drive().has);
-    test::expect_true(bers->hyper_drive().on);
+    test::expect_eq(bers->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
+    test::expect_false(bers->hyper_drive().on);
     test::expect_eq(bers->bombard(), 1);
 
     auto* bers_ship = bers->as<BerserkerShip>();
@@ -749,6 +750,8 @@ int main() {
     order_berserker(em, *bers, stats);
     test::expect_eq(bers->deststar(), starnum_t{2});
     test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
+    test::expect_true(bers->hyper_drive().on);
+    test::expect_eq(bers->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
     test::expect_true(bers->as<AutonomousShip>()->is_busy());
 
     std::println(std::cout,

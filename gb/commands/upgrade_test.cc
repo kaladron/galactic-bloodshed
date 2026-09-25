@@ -482,8 +482,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
       .build();
 
   ctx.em.mutate_ship(2, [](Ship& s) {
-    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
-    s.destshipno() = 1;
+    s.dock_into_carrier(1);
     s.max_resource() = 5000;
     s.build_cost() = static_cast<resource_t>(cost(s));
     s.size() = s.calculate_size();

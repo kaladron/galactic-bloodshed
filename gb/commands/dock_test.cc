@@ -164,13 +164,11 @@ void test_dock_domain_errors() {
   test::expect_contains(g.out.str(), "Invalid ship number.");
 
   // 7. Ships in different scopes
-  ctx.em.mutate_ship(2,
-                     [](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_UNIV; });
+  ctx.em.mutate_ship(2, [](Ship& s) { s.enter_deep_space(); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"dock", "#1", "#2"});
   test::expect_contains(g.out.str(), "Those ships are not in the same scope.");
-  ctx.em.mutate_ship(2,
-                     [](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_STAR; });
+  ctx.em.mutate_ship(2, [](Ship& s) { s.enter_star_orbit(1); });
 
   // 8. Insufficient fuel
   ctx.em.mutate_ship(1, [](Ship& s) { s.admin_override_fuel(0.0); });
@@ -274,14 +272,13 @@ void test_assault_validation_and_ap_invariants() {
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "Your ship is already docked.");
   ctx.em.mutate_ship(1, [](Ship& s) {
+    s.dock_into_carrier(2);
     s.undock_from_ship();
-    s.whatorbits() = ScopeLevel::LEVEL_SHIP;
   });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "Your ship is landed on another ship.");
-  ctx.em.mutate_ship(1,
-                     [](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_STAR; });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.enter_star_orbit(1); });
   test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
 
   ctx.verify_universe_invariants();
@@ -370,7 +367,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   // 4. Universe scope assault (deducts Universe AP)
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.undock_from_ship();
-    s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+    s.enter_deep_space();
     s.troops() = 20;
   });
   shipnum_t univ_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
@@ -378,8 +375,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
                               .named("UnivCargo")
                               .in_star_orbit(1, 100.0, 200.0)
                               .build();
-  ctx.em.mutate_ship(univ_target,
-                     [](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_UNIV; });
+  ctx.em.mutate_ship(univ_target, [](Ship& s) { s.enter_deep_space(); });
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.em.mutate_universe([](universe_struct& u) { u.AP[1] = 0; });
   g.out.str("");
@@ -398,7 +394,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   g.set_snum(1);
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.undock_from_ship();
-    s.whatorbits() = ScopeLevel::LEVEL_STAR;
+    s.enter_star_orbit(1);
     s.popn() = 30;
     s.troops() = 0;
   });
@@ -448,8 +444,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   // 8. Target ship already landed/in hangar cannot be assaulted
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.undock_from_ship();
-    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s.pnumorbits() = 1;
+    s.enter_planet_orbit(1, 1);
     s.troops() = 20;
   });
   shipnum_t landed_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)

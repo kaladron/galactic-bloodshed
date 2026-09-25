@@ -33,9 +33,7 @@ int main() {
   ship1.number() = 1;
   ship1.owner() = 1;
   ship1.alive() = true;
-  ship1.storbits() = 0;
-  ship1.pnumorbits() = 0;
-  ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
+  ship1.enter_star_orbit(0);
   ship1.type() = ShipType::OTYPE_FACTORY;
   ship1.max_fuel() = 1000.0;
 
@@ -43,9 +41,7 @@ int main() {
   ship2.number() = 2;
   ship2.owner() = 1;
   ship2.alive() = true;
-  ship2.storbits() = 0;
-  ship2.pnumorbits() = 0;
-  ship2.whatorbits() = ScopeLevel::LEVEL_STAR;
+  ship2.enter_star_orbit(0);
   ship2.type() = ShipType::OTYPE_PROBE;
   ship2.max_fuel() = 1000.0;
 
@@ -53,9 +49,7 @@ int main() {
   ship3.number() = 3;
   ship3.owner() = 1;
   ship3.alive() = true;
-  ship3.storbits() = 0;
-  ship3.pnumorbits() = 0;
-  ship3.whatorbits() = ScopeLevel::LEVEL_STAR;
+  ship3.enter_star_orbit(0);
   ship3.type() = ShipType::STYPE_CARGO;
   ship3.max_fuel() = 1000.0;
 
@@ -87,9 +81,7 @@ int main() {
     cargo.number() = 4;  // Use contiguous numbering
     cargo.owner() = 1;
     cargo.alive() = true;
-    cargo.storbits() = 0;
-    cargo.pnumorbits() = 0;
-    cargo.whatorbits() = ScopeLevel::LEVEL_STAR;
+    cargo.enter_star_orbit(0);
     cargo.type() = ShipType::STYPE_CARGO;
     cargo.max_fuel() = 1000.0;
 
@@ -97,16 +89,14 @@ int main() {
     inner1.number() = 5;
     inner1.owner() = 1;
     inner1.alive() = true;
-    inner1.destshipno() = 4;
-    inner1.whatorbits() = ScopeLevel::LEVEL_SHIP;
+    inner1.dock_into_carrier(cargo);
     inner1.type() = ShipType::OTYPE_PROBE;
 
     Ship inner2{};
     inner2.number() = 6;
     inner2.owner() = 1;
     inner2.alive() = true;
-    inner2.destshipno() = 4;
-    inner2.whatorbits() = ScopeLevel::LEVEL_SHIP;
+    inner2.dock_into_carrier(cargo);
     inner2.type() = ShipType::OTYPE_PROBE;
 
     ships_repo.save(cargo);
@@ -185,18 +175,14 @@ int main() {
     star_ship1.number() = 7;
     star_ship1.owner() = 1;
     star_ship1.alive() = true;
-    star_ship1.storbits() = 5;  // At star 5
-    star_ship1.pnumorbits() = -1;
-    star_ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
+    star_ship1.enter_star_orbit(5);  // At star 5
     star_ship1.type() = ShipType::OTYPE_FACTORY;
 
     Ship star_ship2{};
     star_ship2.number() = 8;
     star_ship2.owner() = 1;
     star_ship2.alive() = true;
-    star_ship2.storbits() = 5;  // Also at star 5
-    star_ship2.pnumorbits() = -1;
-    star_ship2.whatorbits() = ScopeLevel::LEVEL_STAR;
+    star_ship2.enter_star_orbit(5);  // Also at star 5
     star_ship2.type() = ShipType::OTYPE_PROBE;
 
     ships_repo.save(star_ship1);
@@ -230,9 +216,7 @@ int main() {
     planet_ship.number() = 9;
     planet_ship.owner() = 1;
     planet_ship.alive() = true;
-    planet_ship.storbits() = 10;
-    planet_ship.pnumorbits() = 3;  // At planet 3 of star 10
-    planet_ship.whatorbits() = ScopeLevel::LEVEL_PLAN;
+    planet_ship.enter_planet_orbit(10, 3);  // At planet 3 of star 10
     planet_ship.type() = ShipType::STYPE_CARGO;
 
     ships_repo.save(planet_ship);
@@ -552,9 +536,7 @@ int main() {
     dead_ship.number() = 10;
     dead_ship.owner() = 1;
     dead_ship.alive() = false;  // This ship is dead
-    dead_ship.storbits() = 0;
-    dead_ship.pnumorbits() = 0;
-    dead_ship.whatorbits() = ScopeLevel::LEVEL_STAR;
+    dead_ship.enter_star_orbit(0);
     dead_ship.type() = ShipType::OTYPE_FACTORY;
     ships_repo.save(dead_ship);
 
@@ -646,8 +628,7 @@ int main() {
     s1.number() = 1;
     s1.owner() = 1;
     s1.alive() = true;
-    s1.storbits() = 0;
-    s1.pnumorbits() = 0;
+    s1.enter_star_orbit(0);
     s1.type() = ShipType::OTYPE_PROBE;
     sparse_repo.save(s1);
 
@@ -655,8 +636,7 @@ int main() {
     s5.number() = 5;
     s5.owner() = 1;
     s5.alive() = true;
-    s5.storbits() = 0;
-    s5.pnumorbits() = 0;
+    s5.enter_star_orbit(0);
     s5.type() = ShipType::OTYPE_FACTORY;
     sparse_repo.save(s5);
 
@@ -683,6 +663,24 @@ int main() {
     std::println(
         std::cout,
         "✓ Test 8 passed: Sparse ship IDs iteration visited ships #1 and #5");
+  }
+
+  // Test 9: ShipList::in_star excludes ships that break orbit into deep space
+  {
+    std::println(
+        std::cout,
+        "\nTest 9: ShipList::in_star excludes deep-space (LEVEL_UNIV) ships");
+    ctx.em.mutate_ship(7, [](Ship& s) { s.enter_deep_space(); });
+
+    int star5_count = 0;
+    for (const Ship& ship : ShipList::readonly_in_star(ctx.em, starnum_t{5})) {
+      test::expect_eq(ship.number(), shipnum_t{8});
+      star5_count++;
+    }
+    test::expect_eq(star5_count, 1);
+    std::println(
+        std::cout,
+        "✓ Test 9 passed: Deep-space ship excluded from ShipList::in_star");
   }
 
   std::println(std::cout, "\nAll ShipList tests passed!");

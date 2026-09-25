@@ -971,6 +971,7 @@ void test_execute_berserker_bombardment() {
   ship.land_on_planet();
   test::expect_false(execute_berserker_bombardment(em, ship, planet));
   ship.launch_to_orbit();
+  ship.set_planet_destination(1, 1);
 
   // 2. Successful bombardment decrements VN_hitlist
   test::expect_true(execute_berserker_bombardment(em, ship, planet));

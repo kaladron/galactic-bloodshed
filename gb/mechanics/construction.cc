@@ -243,16 +243,11 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   newship.tech() = race.tech;
   const auto& star = *entity_manager.peek_star(snum);
   newship.set_coordinates(planet.absolute_coordinates(star));
-  newship.set_land_coords(land_coords);
   newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
                           (newship.type() == ShipType::OTYPE_PLOW))
                              ? "5"
                              : "Standard");
-  newship.land_on_planet();
-  newship.deststar() = snum;
-  newship.destpnum() = pnum;
-  newship.storbits() = snum;
-  newship.pnumorbits() = pnum;
+  newship.land_on_planet(snum, pnum, land_coords);
   planet.info(Playernum).resource -= newship.build_cost();
 
   // Ship number will be assigned by EntityManager when created
@@ -291,18 +286,9 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
   newship.owner() = Playernum;
   newship.governor() = Governor;
   if (outside) {
-    newship.launch_to_orbit(builder.whatorbits());
-    newship.whatdest() = ScopeLevel::LEVEL_UNIV;
-    newship.deststar() = builder.deststar();
-    newship.destpnum() = builder.destpnum();
-    newship.storbits() = builder.storbits();
-    newship.pnumorbits() = builder.pnumorbits();
+    newship.launch_from_carrier_to_orbit(builder);
   } else {
-    newship.dock_into_carrier(builder.number());
-    newship.deststar() = builder.deststar();
-    newship.destpnum() = builder.destpnum();
-    newship.storbits() = builder.storbits();
-    newship.pnumorbits() = builder.pnumorbits();
+    newship.dock_into_carrier(builder);
   }
   newship.tech() = race.tech;
   newship.set_coordinates(builder.coordinates());

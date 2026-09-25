@@ -314,7 +314,8 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
   int destroyed = berserker_bombard(entity_manager, ship, planet, race);
   if (destroyed == 0) {
     const auto& dest_star = *entity_manager.peek_star(ship.storbits());
-    ship.destpnum() = dest_star.get_random_planet_index();
+    ship.set_planet_destination(ship.storbits(),
+                                dest_star.get_random_planet_index());
     return false;
   }
 
@@ -533,16 +534,11 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
   Ship& ship = *ship_handle;
   ship.governor() = star.governor(player);
   ship.set_coordinates(coords);
-  ship.set_land_coords(smap.get_random().coords());
   ship.build_cost() = Shipcost(ShipType::OTYPE_TOXWC, race);
   if (auto* waste = ship.as<ToxicWasteShip>()) {
     waste->set_toxic_level(t);
   }
-  ship.storbits() = starnum;
-  ship.deststar() = starnum;
-  ship.destpnum() = planetnum;
-  ship.pnumorbits() = planetnum;
-  ship.land_on_planet();
+  ship.land_on_planet(starnum, planetnum, smap.get_random().coords());
   ship.name() = std::format("Scum{:04d}", ship.number());
   return ship.number();
 }

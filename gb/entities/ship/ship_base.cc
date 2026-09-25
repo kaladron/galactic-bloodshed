@@ -381,7 +381,7 @@ bool Ship::prepare_for_flight(bool update) {
   active() = process_radiation(update);
 
   if (!popn() && max_crew_capacity() && !docked()) {
-    whatdest() = ScopeLevel::LEVEL_UNIV;
+    clear_destination();
   }
 
   return true;

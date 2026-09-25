@@ -1247,10 +1247,9 @@ void test_mirror_aim_and_formatting_helpers() {
   test::expect_eq(dispshiploc(ctx.em, *ctx.em.peek_ship(child_ship_id)), "#2");
 
   ctx.em.mutate_ship(mirror_id, [](Ship& m) {
-    m.whatorbits() = ScopeLevel::LEVEL_UNIV;
+    m.enter_deep_space();
     m.set_coordinates({0.0, 0.0});
-    m.whatdest() = ScopeLevel::LEVEL_STAR;
-    m.deststar() = 2;
+    m.set_star_destination(2);
   });
   test::expect_eq(dispshiploc_brief(ctx.em, *ctx.em.peek_ship(mirror_id)), "/");
   test::expect_eq(dispshiploc(ctx.em, *ctx.em.peek_ship(mirror_id)), "/");
@@ -1495,7 +1494,7 @@ void test_moveship_and_followable() {
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.hyper_drive() = {.charge = 0, .on = true, .has = true};
     s1.mounted() = false;
-    s1.deststar() = 2;
+    s1.set_star_destination(2);
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.hyper_drive().charge, 1);
 
@@ -1518,13 +1517,31 @@ void test_moveship_and_followable() {
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
     test::expect_eq(s1.storbits(), starnum_t{2});
     test::expect_false(s1.hyper_drive().on);
+
+    // Hyperdrive guard: if hyper_drive.on is set while landed/docked or
+    // without a celestial destination, moveship disables it without jumping or
+    // consuming fuel
+    s1.admin_override_fuel(s1.max_fuel_capacity());
+    const double initial_fuel = s1.fuel();
+    s1.clear_destination();
+    s1.hyper_drive().on = true;
+    s1.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_false(s1.hyper_drive().on);
+    test::expect_eq(s1.fuel(), initial_fuel);
+
+    s1.land_on_planet(1, 1);
+    s1.hyper_drive().on = true;
+    s1.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_true(s1.is_landed());
+    test::expect_false(s1.hyper_drive().on);
+    test::expect_eq(s1.fuel(), initial_fuel);
   });
 
   // 3. Sublight navigation step and orbit breaking (PLAN -> STAR -> UNIV) + OOF
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
-    s1.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s1.storbits() = 1;
-    s1.pnumorbits() = 1;
+    s1.enter_planet_orbit(1, 1);
     s1.set_coordinates(p0_coords + SystemCoordinates{PLORBITSIZE + 5.0, 0.0});
     s1.navigate() = {.on = true, .turns = 1, .bearing = 90};
     moveship(ctx.em, s1, true, true, false);
@@ -1540,8 +1557,7 @@ void test_moveship_and_followable() {
 
     // Sublight arrival at star 1
     s1.set_coordinates(star0_coords + SystemCoordinates{SYSTEMSIZE * 0.5, 0.0});
-    s1.whatdest() = ScopeLevel::LEVEL_STAR;
-    s1.deststar() = 1;
+    s1.set_star_destination(1);
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
     test::expect_eq(s1.storbits(), starnum_t{1});
@@ -1565,13 +1581,9 @@ void test_moveship_and_followable() {
   });
 
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
-    s1.whatorbits() = ScopeLevel::LEVEL_STAR;
-    s1.storbits() = 1;
-    s1.pnumorbits() = 1;
+    s1.enter_star_orbit(1);
     s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
-    s1.whatdest() = ScopeLevel::LEVEL_PLAN;
-    s1.deststar() = 1;
-    s1.destpnum() = 1;
+    s1.set_planet_destination(1, 1);
     s1.merchant() = 1;
     s1.admin_override_fuel(500.0);
     moveship(ctx.em, s1, true, true, false);
@@ -1583,17 +1595,14 @@ void test_moveship_and_followable() {
 
   // 5. Sublight LEVEL_SHIP following and losing sight when out of range
   ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
-    s2.whatorbits() = ScopeLevel::LEVEL_STAR;
-    s2.storbits() = 1;
+    s2.enter_star_orbit(1);
     s2.set_coordinates(star0_coords + SystemCoordinates{1.0, 0.0});
   });
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.hyper_drive().on = false;
-    s1.whatorbits() = ScopeLevel::LEVEL_STAR;
-    s1.storbits() = 1;
+    s1.enter_star_orbit(1);
     s1.set_coordinates(star0_coords + SystemCoordinates{5.0, 0.0});
-    s1.whatdest() = ScopeLevel::LEVEL_SHIP;
-    s1.destshipno() = s2_id;
+    s1.set_ship_destination(s2_id);
     s1.admin_override_fuel(500.0);
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
@@ -1615,12 +1624,168 @@ void test_moveship_and_followable() {
                             .build();
   ctx.em.mutate_ship(probe_id, [&](Ship& probe) {
     probe.set_coordinates({50000.0, 50000.0});
-    probe.whatorbits() = ScopeLevel::LEVEL_UNIV;
-    probe.whatdest() = ScopeLevel::LEVEL_STAR;
-    probe.deststar() = 1;
+    probe.enter_deep_space();
+    probe.set_star_destination(1);
     moveship(ctx.em, probe, true, true, false);
     test::expect_false(probe.alive());
   });
+}
+
+void test_orbital_and_destination_transitions() {
+  std::println(std::cout,
+               "Testing Ship orbital and destination transition methods...");
+
+  Ship s{};
+  s.number() = 10;
+  s.owner() = 1;
+  s.alive() = true;
+  s.max_crew() = 10;
+  s.popn() = 10;
+
+  // 1. Destination transitions from LEVEL_SHIP must always clear destshipno
+  s.set_ship_destination(42);
+  test::expect_true(s.has_destination());
+  test::expect_false(s.has_celestial_destination());
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(s.destshipno(), shipnum_t{42});
+
+  s.set_star_destination(2);
+  test::expect_true(s.has_destination());
+  test::expect_true(s.has_celestial_destination());
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(s.deststar(), starnum_t{2});
+  test::expect_eq(s.destpnum(), planetnum_t{0});
+  test::expect_eq(s.destshipno(), std::nullopt);
+
+  s.set_ship_destination(42);
+  s.set_planet_destination(3, 4);
+  test::expect_true(s.has_destination());
+  test::expect_true(s.has_celestial_destination());
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(s.deststar(), starnum_t{3});
+  test::expect_eq(s.destpnum(), planetnum_t{4});
+  test::expect_eq(s.destshipno(), std::nullopt);
+
+  // Turning on hyperdrive jump, then clearing destination or setting ship
+  // destination must automatically disable hyperdrive jump
+  s.hyper_drive().on = true;
+  s.clear_destination();
+  test::expect_false(s.has_destination());
+  test::expect_false(s.has_celestial_destination());
+  test::expect_false(s.hyper_drive().on);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
+  test::expect_eq(s.deststar(), starnum_t{0});
+  test::expect_eq(s.destpnum(), planetnum_t{0});
+  test::expect_eq(s.destshipno(), std::nullopt);
+
+  s.set_star_destination(5);
+  s.hyper_drive().on = true;
+  s.set_ship_destination(42);
+  test::expect_false(s.hyper_drive().on);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(s.destshipno(), shipnum_t{42});
+
+  // 2. Orbital transitions and landing synchronization
+  s.enter_planet_orbit(2, 3);
+  test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(s.storbits(), starnum_t{2});
+  test::expect_eq(s.pnumorbits(), planetnum_t{3});
+
+  // Landing on a planet while chasing a ship or with hyperdrive engaged
+  // synchronizes deststar/destpnum, clears destshipno, and disables hyperdrive
+  s.set_ship_destination(42);
+  s.hyper_drive().on = true;
+  s.land_on_planet();
+  test::expect_true(s.is_landed());
+  test::expect_false(s.hyper_drive().on);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(s.deststar(), starnum_t{2});
+  test::expect_eq(s.destpnum(), planetnum_t{3});
+  test::expect_eq(s.destshipno(), std::nullopt);
+
+  s.hyper_drive().on = true;
+  s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+  test::expect_false(s.hyper_drive().on);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
+
+  s.enter_star_orbit(4);
+  test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(s.storbits(), starnum_t{4});
+  test::expect_eq(s.pnumorbits(), planetnum_t{0});
+
+  s.enter_planet_orbit(4, 2);
+  s.enter_deep_space();
+  test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_UNIV);
+  test::expect_eq(s.storbits(), starnum_t{4});
+  test::expect_eq(s.pnumorbits(), planetnum_t{0});
+
+  // 3. Carrier docking and launching (both to orbit and onto a landed planet)
+  Ship carrier{};
+  carrier.number() = 99;
+  carrier.enter_planet_orbit(6, 2);
+  carrier.set_coordinates({123.0, 456.0});
+
+  s.hyper_drive().on = true;
+  s.dock_into_carrier(carrier);
+  test::expect_false(s.hyper_drive().on);
+  test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(s.destshipno(), shipnum_t{99});
+  test::expect_eq(s.storbits(), starnum_t{6});
+  test::expect_eq(s.pnumorbits(), planetnum_t{2});
+
+  // Carrier moves to star 7 before launching carried craft
+  carrier.enter_star_orbit(7);
+  carrier.set_coordinates({700.0, 800.0});
+  s.launch_from_carrier_to_orbit(carrier);
+  test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(s.storbits(), starnum_t{7});
+  test::expect_eq(s.pnumorbits(), planetnum_t{0});
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
+  test::expect_eq(s.destshipno(), std::nullopt);
+  test::expect_eq(s.dock_state(), DockState::Spaceborne);
+  test::expect_eq(s.coordinates().x, 700.0);
+  test::expect_eq(s.coordinates().y, 800.0);
+
+  // Spaceborne ship-to-ship mooring and undocking also disables hyperdrive
+  s.hyper_drive().on = true;
+  s.dock_with_ship(carrier);
+  test::expect_false(s.hyper_drive().on);
+  s.hyper_drive().on = true;
+  s.undock_from_ship();
+  test::expect_false(s.hyper_drive().on);
+
+  // Carrier lands on planet (7, 1) at sector (4, 5) and deploys carried craft
+  carrier.set_coordinates({710.0, 810.0});
+  carrier.land_on_planet(7, 1, {4, 5});
+  s.dock_into_carrier(carrier);
+  s.land_on_planet(carrier);
+  test::expect_true(s.is_landed());
+  test::expect_false(s.hyper_drive().on);
+  test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(s.storbits(), starnum_t{7});
+  test::expect_eq(s.pnumorbits(), planetnum_t{1});
+  test::expect_eq(s.deststar(), starnum_t{7});
+  test::expect_eq(s.destpnum(), planetnum_t{1});
+  test::expect_eq(s.destshipno(), std::nullopt);
+  test::expect_eq(s.land_coords().x, 4);
+  test::expect_eq(s.land_coords().y, 5);
+  test::expect_eq(s.coordinates().x, 710.0);
+  test::expect_eq(s.coordinates().y, 810.0);
+
+  // 4. Following ship orbital synchronization
+  Ship leader{};
+  leader.number() = 50;
+  leader.enter_planet_orbit(8, 3);
+  s.sync_followed_ship_orbit(leader);
+  test::expect_eq(s.deststar(), starnum_t{8});
+  test::expect_eq(s.destpnum(), planetnum_t{3});
+
+  leader.enter_star_orbit(9);
+  s.sync_followed_ship_orbit(leader);
+  test::expect_eq(s.deststar(), starnum_t{9});
+  test::expect_eq(s.destpnum(), planetnum_t{0});
 }
 
 void test_subclass_special_data_clamping() {
@@ -1698,6 +1863,7 @@ int main() {
   test_mirror_aim_and_formatting_helpers();
   test_blueprint_complexity_defense_and_capture();
   test_moveship_and_followable();
+  test_orbital_and_destination_transitions();
   test_subclass_special_data_clamping();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;

@@ -135,9 +135,7 @@ int main() {
     probe1.type() = ShipType::OTYPE_PROBE;
     probe1.owner() = 1;
     probe1.alive() = true;
-    probe1.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    probe1.storbits() = planet.star_id();
-    probe1.pnumorbits() = planet.planet_order();
+    probe1.enter_planet_orbit(planet.star_id(), planet.planet_order());
     probe1.set_land_coords({1, 1});
 
     // Create second ship - another probe at different location
@@ -146,9 +144,7 @@ int main() {
     probe2.type() = ShipType::OTYPE_PROBE;
     probe2.owner() = 1;
     probe2.alive() = true;
-    probe2.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    probe2.storbits() = planet.star_id();
-    probe2.pnumorbits() = planet.planet_order();
+    probe2.enter_planet_orbit(planet.star_id(), planet.planet_order());
     probe2.set_land_coords({2, 2});
 
     // Create third ship - a quarry at coordinates (3, 3)
@@ -157,9 +153,7 @@ int main() {
     quarry.type() = ShipType::OTYPE_QUARRY;
     quarry.owner() = 1;
     quarry.alive() = true;
-    quarry.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    quarry.storbits() = planet.star_id();
-    quarry.pnumorbits() = planet.planet_order();
+    quarry.enter_planet_orbit(planet.star_id(), planet.planet_order());
     quarry.set_land_coords({3, 3});
 
     // Add all ships to repository
@@ -199,9 +193,7 @@ int main() {
     dead_quarry.type() = ShipType::OTYPE_QUARRY;
     dead_quarry.owner() = 1;
     dead_quarry.alive() = false;  // Dead
-    dead_quarry.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    dead_quarry.storbits() = planet.star_id();
-    dead_quarry.pnumorbits() = planet.planet_order();
+    dead_quarry.enter_planet_orbit(planet.star_id(), planet.planet_order());
     dead_quarry.set_land_coords({7, 7});
 
     JsonStore store(db);

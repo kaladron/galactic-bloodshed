@@ -179,11 +179,46 @@ void test_order_combat_and_movement_options() {
   test::expect_true(ctx.em.peek_ship(1)->protect().on);
   test::expect_eq(ctx.em.peek_ship(1)->protect().ship, s2_id);
 
-  // Follow ship destination
+  // Follow ship destination, then redirect to a star or planet and verify
+  // destshipno is cleared
   ctx.assert_dispatch_success(g, {"order", "#1", "destination", "#2"});
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_SHIP);
   test::expect_eq(ctx.em.peek_ship(1)->destshipno(), s2_id);
+
+  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "/Sol/Earth"});
+  ctx.em.clear_cache();
+  test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(ctx.em.peek_ship(1)->deststar(), starnum_t{1});
+  test::expect_eq(ctx.em.peek_ship(1)->destpnum(), planetnum_t{1});
+  test::expect_eq(ctx.em.peek_ship(1)->destshipno(), std::nullopt);
+
+  // Enable jump toward /Vega, then switch destination to follow #2 and
+  // verify jump is deactivated
+  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "/Vega"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "jump", "on"});
+  test::expect_true(ctx.em.peek_ship(1)->hyper_drive().on);
+  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "#2"});
+  ctx.em.clear_cache();
+  test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(ctx.em.peek_ship(1)->destshipno(), s2_id);
+  test::expect_false(ctx.em.peek_ship(1)->hyper_drive().on);
+
+  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "/Vega"});
+  ctx.em.clear_cache();
+  test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(ctx.em.peek_ship(1)->deststar(), starnum_t{2});
+  test::expect_eq(ctx.em.peek_ship(1)->destpnum(), planetnum_t{0});
+  test::expect_eq(ctx.em.peek_ship(1)->destshipno(), std::nullopt);
+
+  // Enable jump toward /Vega, then clear destination ("-") and verify jump is
+  // deactivated and display_orders does not look up star 0
+  ctx.assert_dispatch_success(g, {"order", "#1", "jump", "on"});
+  test::expect_true(ctx.em.peek_ship(1)->hyper_drive().on);
+  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "-"});
+  ctx.em.clear_cache();
+  test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_UNIV);
+  test::expect_false(ctx.em.peek_ship(1)->hyper_drive().on);
 
   // Self-protect rejection
   g.out.str("");
@@ -400,8 +435,6 @@ void test_order_factory_activation_and_errors() {
                 .with_on(false)
                 .build_handle();
   f1->build_cost() = 50;
-  f1->deststar() = 1;
-  f1->destpnum() = 1;
 
   const auto initial_res = ctx.em.peek_planet(1, 1)->info(1).resource;
   g.out.str("");

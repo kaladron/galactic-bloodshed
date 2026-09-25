@@ -71,7 +71,6 @@ StarTargetResult find_closest_stars(EntityManager& em, starnum_t current_star,
 void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
                                   const TurnStats& stats) {
   ship.bombard() = true;
-  ship.whatdest() = ScopeLevel::LEVEL_PLAN;
 
   ship.set_target(stats.VN_brain.most_mad);
   const auto target = ship.target();
@@ -81,18 +80,19 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
 
   // Route toward the offending player if valid, flipping a coin between
   // primary and secondary target stars recorded in the universe index.
+  starnum_t dest_star_id = 1;
   if (target && is_valid_player(*target)) {
     const auto primary = universe.VN_index1[*target];
     const auto secondary = universe.VN_index2[*target];
     const auto chosen = bool_rand() ? (primary ? primary : secondary)
                                     : (secondary ? secondary : primary);
-    ship.deststar() = chosen.value_or(int_rand(1, numstars));
+    dest_star_id = chosen.value_or(int_rand(1, numstars));
   } else {
-    ship.deststar() = int_rand(1, numstars);
+    dest_star_id = int_rand(1, numstars);
   }
 
-  const auto& star = *em.peek_star(ship.deststar());
-  ship.destpnum() = star.get_random_planet_index();
+  const auto& star = *em.peek_star(dest_star_id);
+  ship.set_planet_destination(dest_star_id, star.get_random_planet_index());
 
   if (ship.hyper_drive().has && ship.mounted()) {
     ship.hyper_drive().on = true;
@@ -118,19 +118,18 @@ void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
 
   // Avoid stars already occupied by VN (Player 1); if both nearest are
   // occupied, pick a random star.
+  starnum_t dest_star_id = closest;
   if (star_min.is_inhabited_by(player_t{1})) {
     if (star_min2.is_inhabited_by(player_t{1})) {
-      ship.deststar() = int_rand(1, static_cast<int>(em.num_stars().value));
+      dest_star_id = int_rand(1, static_cast<int>(em.num_stars().value));
     } else {
-      ship.deststar() = second_closest;
+      dest_star_id = second_closest;
     }
-  } else {
-    ship.deststar() = closest;
   }
 
-  const auto& dest_star = *em.peek_star(ship.deststar());
-  ship.destpnum() = dest_star.get_random_planet_index();
-  ship.whatdest() = ScopeLevel::LEVEL_PLAN;
+  const auto& dest_star = *em.peek_star(dest_star_id);
+  ship.set_planet_destination(dest_star_id,
+                              dest_star.get_random_planet_index());
   ship.set_busy(true);
   ship.speed() = ship_template(ShipType::OTYPE_VN).base_speed;
 }
@@ -213,7 +212,6 @@ bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
                                         double_rand(-10.0, 10.0)};
   ship.set_coordinates(planet.absolute_coordinates(star) + launch_offset);
   ship.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-  ship.whatdest() = ScopeLevel::LEVEL_UNIV;
   return true;
 }
 
@@ -258,18 +256,13 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
   s2.name() = AutonomousShip::generate_binary_name();
   s2.set_coordinates(parent.coordinates());
   s2.add_fuel(0.5 * parent.fuel());
-  s2.set_land_coords(parent.land_coords());
   s2.armor() = parent.armor() + 1;
   s2.tech() = parent.tech() + 20.0;
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
     auto_ship->inherit_vn_mind_from(parent);
   }
-  s2.storbits() = planet.star_id();
-  s2.deststar() = parent.deststar();
-  s2.destpnum() = parent.destpnum();
-  s2.pnumorbits() = planet.planet_order();
-  s2.whatdest() = parent.whatdest();
-  s2.land_on_planet();
+  s2.land_on_planet(planet.star_id(), planet.planet_order(),
+                    parent.land_coords());
 
   parent.consume_fuel(parent.fuel() * 0.5);
 
@@ -282,7 +275,7 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
 /// \param em Entity manager for entity persistence and notifications.
 /// \param parent Autonomous parent machine providing resources, lineage, and
 /// fuel.
-/// \param planet Planet where construction is occurring.
+/// \param planet Planet where replication is occurring.
 /// \param stats Turn statistics containing retaliation target data.
 /// \return Ship number of the newly constructed Berserker.
 shipnum_t construct_replicated_berserker(EntityManager& em,
@@ -296,7 +289,6 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   s2.set_coordinates(parent.coordinates());
   s2.add_fuel(5.0 * parent.fuel());
   parent.consume_fuel(parent.fuel() * 0.5);
-  s2.set_land_coords(parent.land_coords());
   s2.armor() = parent.armor() + 11;
   s2.tech() = parent.tech() + 100.0;
   s2.add_destruct(500);
@@ -305,13 +297,9 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   }
   s2.protect() = ProtectData{.planet = true, .retaliate = true};
   s2.hyper_drive() = HyperDriveData{
-      .charge = HYPER_DRIVE_READY_CHARGE, .on = true, .has = true};
-  s2.storbits() = planet.star_id();
-  s2.deststar() = parent.deststar();
-  s2.destpnum() = parent.destpnum();
-  s2.pnumorbits() = planet.planet_order();
-  s2.whatdest() = parent.whatdest();
-  s2.land_on_planet();
+      .charge = HYPER_DRIVE_READY_CHARGE, .on = false, .has = true};
+  s2.land_on_planet(planet.star_id(), planet.planet_order(),
+                    parent.land_coords());
   s2.bombard() = true;
   s2.mounted() = true;
 
@@ -376,8 +364,6 @@ bool attempt_planet_landing(EntityManager& em, AutonomousShip& ship,
   for (Sector& sect :
        smap.shuffle() | std::views::filter(&Sector::has_resource)) {
     ship.land_on_planet();
-    ship.deststar() = ship.storbits();
-    ship.destpnum() = ship.pnumorbits();
     const auto& star = *em.peek_star(ship.storbits());
     ship.set_coordinates(planet.absolute_coordinates(star));
     ship.set_land_coords(sect.coords());

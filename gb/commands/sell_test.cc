@@ -59,19 +59,10 @@ void setup_test_world(TestContext& ctx) {
   PlanetRepository planets_repo(store);
   planets_repo.save(planet);
 
-  Ship port{};
-  port.number() = 1;
-  port.owner() = 1;
-  port.governor() = 1;
-  port.alive() = true;
-  port.active() = true;
-  port.type() = ShipType::OTYPE_GOV;
-  port.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  port.storbits() = 1;
-  port.pnumorbits() = 1;
-
-  ShipRepository ships_repo(store);
-  ships_repo.save(port);
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+      .owned_by(1, 1)
+      .in_planet_orbit(1, 1)
+      .build();
 }
 
 void test_sell_happy_paths() {

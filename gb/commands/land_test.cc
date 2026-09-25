@@ -38,16 +38,28 @@ void test_land_on_planet() {
   g.set_pnum(1);
   g.set_shipno(1);
 
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.set_ship_destination(1);
+    s.hyper_drive().has = true;
+    s.hyper_drive().on = true;
+  });
+
   // Land on planet coordinates (1 AP deducted via dynamic AP)
   ctx.assert_dispatch_success(g, {"land", "#1", "5,5"}, 1);
   test::expect_contains(g.out.str(), "landed on planet");
 
   const auto* s = ctx.em.peek_ship(1);
   test::expect_true(s != nullptr);
-  // Ship should be docked and landed after landing
+  // Ship should be docked and landed after landing, with hyperdrive disabled
+  // and destination synchronized to the planet
   test::expect_true(s->docked());
   test::expect_true(s->is_landed());
   test::expect_false(s->is_docked());
+  test::expect_false(s->hyper_drive().on);
+  test::expect_eq(s->whatdest(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(s->deststar(), starnum_t{1});
+  test::expect_eq(s->destpnum(), planetnum_t{1});
+  test::expect_eq(s->destshipno(), std::nullopt);
   test::expect_eq(s->land_coords(), Coordinates(5, 5));
 
   ctx.verify_universe_invariants();
@@ -256,12 +268,19 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
       g, {"land", "#1", std::format("#{}", carrier_id.value)});
   test::expect_contains(g.out.str(), "hanger space");
 
-  // Restore hangar space and succeed
+  // Restore hangar space, arm hyperdrive, and succeed
   ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.max_hanger() = 100; });
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.hyper_drive().has = true;
+    s.hyper_drive().on = true;
+  });
   ctx.assert_dispatch_success(
       g, {"land", "#1", std::format("#{}", carrier_id.value)}, 0);
   test::expect_contains(g.out.str(), "landed on");
   test::expect_eq(ctx.em.peek_ship(1)->whatorbits(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(ctx.em.peek_ship(1)->destshipno(), carrier_id);
+  test::expect_false(ctx.em.peek_ship(1)->hyper_drive().on);
 }
 
 void test_land_mothership_loading_edge_cases() {
@@ -292,9 +311,8 @@ void test_land_mothership_loading_edge_cases() {
 
   // 2. Different star system
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
+    c.enter_planet_orbit(2, 1);
     c.land_on_planet();
-    c.storbits() = 2;
-    c.pnumorbits() = 1;
     c.set_land_coords({5, 5});
   });
   ctx.assert_dispatch_rejected(
@@ -303,8 +321,8 @@ void test_land_mothership_loading_edge_cases() {
 
   // 3. Different planet
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
-    c.storbits() = 1;
-    c.pnumorbits() = 2;
+    c.enter_planet_orbit(1, 2);
+    c.land_on_planet();
   });
   ctx.assert_dispatch_rejected(
       g, {"land", "#1", std::format("#{}", carrier_id.value)});
@@ -312,7 +330,8 @@ void test_land_mothership_loading_edge_cases() {
 
   // 4. Different sector
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
-    c.pnumorbits() = 1;
+    c.enter_planet_orbit(1, 1);
+    c.land_on_planet();
     c.set_land_coords({4, 4});
   });
   ctx.assert_dispatch_rejected(

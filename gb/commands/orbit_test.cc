@@ -53,46 +53,23 @@ void setup_test_world(TestContext& ctx) {
   planets_repo.save(planet);
 
   // Setup: Create test ships at different scope levels
-  Ship ship1{};
-  ship1.number() = 1;
-  ship1.owner() = 1;
-  ship1.governor() = 1;
-  ship1.alive() = true;
-  ship1.active() = true;
-  ship1.type() = ShipType::STYPE_FIGHTER;
-  ship1.name() = "TestFighter";
-  ship1.whatorbits() = ScopeLevel::LEVEL_STAR;
-  ship1.storbits() = 1;
-  ship1.set_coordinates(UniverseCoordinates{100.0, 200.0});
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+      .owned_by(1, 1)
+      .named("TestFighter")
+      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+      .build();
 
-  Ship ship2{};
-  ship2.number() = 2;
-  ship2.owner() = 1;
-  ship2.governor() = 1;
-  ship2.alive() = true;
-  ship2.active() = true;
-  ship2.type() = ShipType::STYPE_CRUISER;
-  ship2.name() = "Voyager";
-  ship2.whatorbits() = ScopeLevel::LEVEL_UNIV;
-  ship2.set_coordinates(UniverseCoordinates{150.0, 250.0});
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+      .owned_by(1, 1)
+      .named("Voyager")
+      .in_deep_space(UniverseCoordinates{150.0, 250.0})
+      .build();
 
-  Ship ship3{};
-  ship3.number() = 3;
-  ship3.owner() = 1;
-  ship3.governor() = 1;
-  ship3.alive() = true;
-  ship3.active() = true;
-  ship3.type() = ShipType::STYPE_SHUTTLE;
-  ship3.name() = "OrbitShuttle";
-  ship3.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-  ship3.storbits() = 1;
-  ship3.pnumorbits() = 1;
-  ship3.set_coordinates(UniverseCoordinates{105.0, 205.0});
-
-  ShipRepository ships_repo(store);
-  ships_repo.save(ship1);
-  ships_repo.save(ship2);
-  ships_repo.save(ship3);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(1, 1)
+      .named("OrbitShuttle")
+      .in_planet_orbit(1, 1, UniverseCoordinates{105.0, 205.0})
+      .build();
 }
 
 void test_orbit_happy_path() {

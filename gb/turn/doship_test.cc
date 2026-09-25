@@ -1857,9 +1857,10 @@ void test_prepare_ship_for_flight() {
                               .with_crew(0, 1)
                               .build();
   ctx.em.mutate_ship(derelict_id, [&](Ship& s) {
-    s.whatdest() = ScopeLevel::LEVEL_PLAN;
+    s.set_ship_destination(1);
     test::expect_true(s.prepare_for_flight(true));
     test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(s.destshipno(), std::nullopt);
   });
 
   // 4. Docked uncrewed manned ship is NOT redirected to LEVEL_UNIV
@@ -1874,9 +1875,10 @@ void test_prepare_ship_for_flight() {
                             .with_crew(0, 0)
                             .build();
   ctx.em.mutate_ship(docked_id, [&](Ship& s) {
-    s.whatdest() = ScopeLevel::LEVEL_SHIP;
+    s.dock_with_ship(station_id);
     test::expect_true(s.prepare_for_flight(true));
     test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_SHIP);
+    test::expect_eq(s.destshipno(), station_id);
   });
 }
 
@@ -1891,7 +1893,7 @@ void test_evaluate_ship_hazards() {
   shipnum_t deep_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(1).build();
   ctx.em.mutate_ship(deep_id, [&](Ship& s) {
-    s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+    s.enter_deep_space();
     test::expect_true(evaluate_ship_hazards(s, ctx.em));
   });
 
@@ -1943,9 +1945,7 @@ void test_dispatch_ship_subsystems() {
                                 .in_planet_orbit(1, 1)
                                 .build();
   ctx.em.mutate_ship(bombardier_id, [&](Ship& s) {
-    s.whatdest() = ScopeLevel::LEVEL_PLAN;
-    s.deststar() = 1;
-    s.destpnum() = 1;
+    s.set_planet_destination(1, 1);
     s.bombard() = 1;
     dispatch_ship_subsystems(s, true, ctx.em, stats);
     test::expect_true(stats.is_inhabited(1, 1));

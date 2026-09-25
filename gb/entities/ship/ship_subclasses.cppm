@@ -496,10 +496,10 @@ public:
       ScopeLevel level, starnum_t snum, planetnum_t pnum,
       std::optional<shipnum_t> shipno = std::nullopt) noexcept {
     data_.dock_state = DockState::Spaceborne;
-    destshipno() = (shipno && *shipno > 0) ? shipno : std::nullopt;
-    whatdest() = level;
-    deststar() = snum;
-    destpnum() = pnum;
+    data_.destshipno = (shipno && *shipno > 0) ? shipno : std::nullopt;
+    data_.whatdest = level;
+    data_.deststar = snum;
+    data_.destpnum = pnum;
   }
 };
 

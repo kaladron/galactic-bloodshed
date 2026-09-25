@@ -72,7 +72,7 @@ namespace {
 
   const double fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
   if (s.fuel() < fuel) {
-    s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    s.clear_destination();
     telegram << "\t\tNot enough fuel to land!\n";
     return false;
   }
@@ -82,8 +82,6 @@ namespace {
   s.set_coordinates(p.absolute_coordinates(star));
   s.consume_fuel(fuel);
   s.land_on_planet();
-  s.deststar() = s.storbits();
-  s.destpnum() = s.pnumorbits();
   return true;
 }
 
@@ -167,8 +165,7 @@ void merchant_launch_to_next_stop(EntityManager& em, Ship& s, const Planet& p,
     return;
   }
   s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-  s.deststar() = *route.dest_star;
-  s.destpnum() = *route.dest_planet;
+  s.set_planet_destination(*route.dest_star, *route.dest_planet);
   s.consume_fuel(fuel);
   telegram << std::format("\t\tDestination set to {}\n",
                           format_ship_dest(em, s));
@@ -319,6 +316,11 @@ void execute_hyperdrive_jump(EntityManager& em, Ship& s, bool is_update,
                              bool send_messages) {
   if (!is_update) return; /* we're not ready to jump until the update */
 
+  if (s.docked() || !s.has_celestial_destination()) {
+    s.hyper_drive().on = false;
+    return;
+  }
+
   if (!s.hyper_drive().is_ready()) {
     charge_hyperdrive_capacitor(s);
     return;
@@ -349,8 +351,7 @@ void execute_hyperdrive_jump(EntityManager& em, Ship& s, bool is_update,
   s.set_coordinates(
       UniverseCoordinates{dest_star->coordinates().x - sn * 0.9 * SYSTEMSIZE,
                           dest_star->coordinates().y - cs * 0.9 * SYSTEMSIZE});
-  s.whatorbits() = ScopeLevel::LEVEL_STAR;
-  s.storbits() = s.deststar();
+  s.enter_star_orbit(s.deststar());
   s.protect().planet = false;
   s.hyper_drive().on = false;
   s.hyper_drive().charge = 0;
@@ -385,13 +386,13 @@ void check_and_break_orbit(EntityManager& em, Ship& s) {
     if (ost && opl &&
         s.coordinates().distance_to(opl->absolute_coordinates(*ost)) >
             PLORBITSIZE) {
-      s.whatorbits() = ScopeLevel::LEVEL_STAR;
+      s.enter_star_orbit();
       s.protect().planet = false;
     }
   } else if (s.whatorbits() == ScopeLevel::LEVEL_STAR) {
     const auto* ost = em.peek_star(s.storbits());
     if (ost && s.coordinates().distance_to(ost->coordinates()) > SYSTEMSIZE) {
-      s.whatorbits() = ScopeLevel::LEVEL_UNIV;
+      s.enter_deep_space();
       s.protect().evade = false;
       s.protect().planet = false;
     }
@@ -434,14 +435,12 @@ void resolve_ship_destination_target(EntityManager& em, Ship& s,
                                      ResolvedDestination& res) {
   res.target_ship = s.destshipno() ? em.peek_ship(*s.destshipno()) : nullptr;
   if (!res.target_ship) {
-    s.whatdest() = ScopeLevel::LEVEL_UNIV;
-    s.destshipno() = std::nullopt;
+    s.clear_destination();
     s.protect().evade = false;
     res.valid = false;
     return;
   }
-  s.deststar() = res.target_ship->storbits();
-  s.destpnum() = res.target_ship->pnumorbits();
+  s.sync_followed_ship_orbit(*res.target_ship);
   res.star = s.deststar();
   res.pnum = s.destpnum();
   res.coords = res.target_ship->coordinates();
@@ -519,9 +518,8 @@ void handle_star_arrival(EntityManager& em, Ship& s, starnum_t deststar,
     return;
   }
 
-  s.whatorbits() = ScopeLevel::LEVEL_STAR;
+  s.enter_star_orbit(deststar);
   s.protect().planet = false;
-  s.storbits() = deststar;
   if (can_ship_explore(s, checking_fuel)) {
     explore_arrived_star(em, s, deststar);
   }
@@ -530,7 +528,7 @@ void handle_star_arrival(EntityManager& em, Ship& s, starnum_t deststar,
                   std::format("{} arrived at {}.", s, prin_ship_orbits(em, s)));
   }
   if (s.whatdest() == ScopeLevel::LEVEL_STAR) {
-    s.whatdest() = ScopeLevel::LEVEL_UNIV;
+    s.clear_destination();
   }
 }
 
@@ -554,7 +552,7 @@ void handle_planet_landing_distance(EntityManager& em, Ship& s,
     const bool merch =
         checking_fuel ? false : do_merchant(em, s, dpl_planet, telegram);
     if (!merch && s.whatdest() == ScopeLevel::LEVEL_PLAN) {
-      s.whatdest() = ScopeLevel::LEVEL_UNIV;
+      s.clear_destination();
     }
   });
 }
@@ -571,8 +569,7 @@ void handle_planet_arrival(EntityManager& em, Ship& s, starnum_t deststar,
   if (can_ship_explore(s, checking_fuel)) {
     explore_arrived_planet(em, s, deststar, destpnum);
   }
-  s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-  s.pnumorbits() = destpnum;
+  s.enter_planet_orbit(destpnum);
 
   std::stringstream telegram;
   if (dist <= static_cast<double>(DIST_TO_LAND)) {
@@ -593,12 +590,9 @@ void handle_ship_arrival(Ship& s, const Ship& dsh) {
   if (s.coordinates().distance_to(dsh.coordinates()) > PLORBITSIZE) return;
 
   if (dsh.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    s.whatorbits() = ScopeLevel::LEVEL_PLAN;
-    s.storbits() = dsh.storbits();
-    s.pnumorbits() = dsh.pnumorbits();
+    s.enter_planet_orbit(dsh.storbits(), dsh.pnumorbits());
   } else if (dsh.whatorbits() == ScopeLevel::LEVEL_STAR) {
-    s.whatorbits() = ScopeLevel::LEVEL_STAR;
-    s.storbits() = dsh.storbits();
+    s.enter_star_orbit(dsh.storbits());
     s.protect().planet = false;
   }
 }
@@ -654,8 +648,7 @@ void execute_destination_step(EntityManager& em, Ship& s, double fuse,
   if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
       (!dest.target_ship || !followable(em, s, *dest.target_ship))) {
     const auto lost_dest = s.destshipno().value_or(0);
-    s.whatdest() = ScopeLevel::LEVEL_UNIV;
-    s.destshipno() = std::nullopt;
+    s.clear_destination();
     s.protect().evade = false;
     if (send_messages) {
       push_telegram(em, s.owner(), s.governor(),

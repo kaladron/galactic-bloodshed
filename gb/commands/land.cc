@@ -334,8 +334,6 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
     s.set_coordinates(p.absolute_coordinates(star));
     s.consume_fuel(fuel);
     s.land_on_planet();
-    s.deststar() = s.storbits();
-    s.destpnum() = s.pnumorbits();
 
     report_landing_sector_status(g, s, star, p, target_coords);
   });

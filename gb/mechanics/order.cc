@@ -236,8 +236,7 @@ void set_ship_follow_destination(GameObj& g, Ship& ship,
     g.out << "Warning: that ship is out of range.\n";
     return;
   }
-  ship.destshipno() = target_ship;
-  ship.whatdest() = ScopeLevel::LEVEL_SHIP;
+  ship.set_ship_destination(target_ship);
 }
 
 void set_celestial_destination(GameObj& g, Ship& ship, const Place& where) {
@@ -248,9 +247,13 @@ void set_celestial_destination(GameObj& g, Ship& ship, const Place& where) {
     g.out << "You haven't explored this system.\n";
     return;
   }
-  ship.whatdest() = where.level;
-  ship.deststar() = where.snum;
-  ship.destpnum() = where.pnum;
+  if (where.level == ScopeLevel::LEVEL_PLAN) {
+    ship.set_planet_destination(where.snum, where.pnum);
+  } else if (where.level == ScopeLevel::LEVEL_STAR) {
+    ship.set_star_destination(where.snum);
+  } else {
+    ship.clear_destination();
+  }
 }
 
 void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
@@ -846,7 +849,7 @@ std::string format_specialty_options(EntityManager& em, const Ship& ship) {
 
 std::string format_hyperdrive_jump_summary(EntityManager& em,
                                            const Ship& ship) {
-  if (!ship.hyper_drive().on) {
+  if (!ship.hyper_drive().on || !ship.has_celestial_destination()) {
     return "";
   }
   const auto* dest_star = em.peek_star(ship.deststar());

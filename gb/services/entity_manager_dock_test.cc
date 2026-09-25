@@ -247,13 +247,11 @@ void test_moor_and_unmoor_ships() {
   test::expect_eq(self_res.error(), DockError::SelfDocking);
 
   // Scope mismatch rejected
-  em.mutate_ship(s2_id,
-                 [](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_UNIV; });
+  em.mutate_ship(s2_id, [](Ship& s) { s.enter_deep_space(); });
   auto scope_res = em.moor_ships(s1_id, s2_id);
   test::expect_false(scope_res.has_value());
   test::expect_eq(scope_res.error(), DockError::ScopeMismatch);
-  em.mutate_ship(s2_id,
-                 [](Ship& s) { s.whatorbits() = ScopeLevel::LEVEL_STAR; });
+  em.mutate_ship(s2_id, [](Ship& s) { s.enter_star_orbit(0); });
 
   // Successful mooring
   auto moor_res = em.moor_ships(s1_id, s2_id);

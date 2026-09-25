@@ -111,8 +111,8 @@ int main() {
     }
     smap_repo.save_map(wasted_smap);
 
-    ship.pnumorbits() = 2;
-    ship.destpnum() = 2;
+    ship.enter_planet_orbit(1, 2);
+    ship.set_planet_destination(1, 2);
     ship.notified() = 0;
     int wasted_destroyed =
         berserker_bombard(ctx.em, ship, peaceful_planet, race1);
@@ -123,8 +123,8 @@ int main() {
   // Test 4: Ship with no weapons (destruct == 0) notifies player of lack of
   // weapons
   {
-    ship.pnumorbits() = 1;
-    ship.destpnum() = 1;
+    ship.enter_planet_orbit(1, 1);
+    ship.set_planet_destination(1, 1);
     ship.notified() = 0;
     ship.destruct() = 0;
     // Disable PDN defense

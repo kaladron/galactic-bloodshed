@@ -76,10 +76,18 @@ int main() {
   test_race.leader().newspos = {
       .announce = 10, .combat = 20, .declaration = 30, .transfer = 40};
 
-  // Save race
+  // Save race and seed Gov_ship #100
   std::println(std::cout, "Save race...");
+  test_race.Gov_ship = std::nullopt;
   bool saved = repo.save(test_race);
   test::expect_true(saved, "Failed to save race");
+  Ship gov_ship{};
+  gov_ship.number() = 100;
+  gov_ship.owner() = 1;
+  ShipRepository(store).save(gov_ship);
+  test_race.Gov_ship = 100;
+  saved = repo.save(test_race);
+  test::expect_true(saved, "Failed to save race with Gov_ship");
   auto race_json = store.retrieve("tbl_race", 1);
   test::expect_true(race_json.has_value());
   test::expect_true(

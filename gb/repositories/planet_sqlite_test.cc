@@ -12,12 +12,8 @@ import test;
 import std;
 
 int main() {
-  // CRITICAL: Always create in-memory database BEFORE calling
-  // initialize_schema()
-  Database db(":memory:");
-
-  // Initialize database tables - this creates all required tables
-  initialize_schema(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
   // Create a test Planet
   Planet test_planet{1, 2, PlanetType::EARTH, Coordinates{20, 20}};
@@ -98,33 +94,14 @@ int main() {
   test_planet.info(2).troops = 1000;
   test_planet.info(2).crystals = 20;
 
-  // Use Repository to create new objects - this is the DAL layer
-  JsonStore store(db);
-
-  // Create a test Star (needed for planet storage)
-  star_struct test_star_data{};
-  test_star_data.star_id = 1;
-  test_star_data.name = "TestStar";
-  // Initialize with 5 empty planet names
-  for (int i = 0; i < 5; i++) {
-    test_star_data.pnames.push_back("");
-  }
-  Star test_star(test_star_data);
-
-  // Save star using repository
-  StarRepository star_repo(store);
-  star_repo.save(test_star);
-
   // Save planet using repository
+  JsonStore store(ctx.db);
   PlanetRepository planet_repo(store);
   planet_repo.save(test_planet);
 
-  // Create EntityManager to test retrieval
-  EntityManager em(db);
-
   // Test EntityManager peek - reads from SQLite
   const auto* retrieved_ptr =
-      em.peek_planet(1, 2);  // star_id = 1, planet_order = 2
+      ctx.em.peek_planet(1, 2);  // star_id = 1, planet_order = 2
   test::expect_ne(retrieved_ptr, nullptr);
   const Planet& retrieved = *retrieved_ptr;
 

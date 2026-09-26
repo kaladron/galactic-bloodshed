@@ -11,12 +11,19 @@ import test;
 import std;
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.create_star("Star5", 5).build();
+  ctx.create_star("Star9", 9).build();
+  ctx.create_star("Star10", 10).build();
 
   // Create JsonStore and SectorRepository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
+  PlanetRepository planets(store);
+  planets.save(Planet{5, 1, PlanetType::EARTH, Coordinates{10, 10}});
+  planets.save(Planet{5, 2, PlanetType::EARTH, Coordinates{10, 10}});
+  planets.save(Planet{9, 1, PlanetType::EARTH, Coordinates{4, 4}});
+  planets.save(Planet{10, 3, PlanetType::EARTH, Coordinates{3, 3}});
   SectorRepository repo(store);
 
   // Create a test planet to associate sectors with

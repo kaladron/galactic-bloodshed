@@ -11,12 +11,14 @@ import test;
 import std;
 
 int main() {
-  // Create in-memory database and initialize schema
-  Database db(":memory:");
-  initialize_schema(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  for (starnum_t s = 4; s <= 6; ++s) {
+    ctx.create_star(std::format("Star{}", s), s).build();
+  }
 
   // Create JsonStore and PlanetRepository
-  JsonStore store(db);
+  JsonStore store(ctx.db);
   PlanetRepository repo(store);
 
   // Create and save a basic planet

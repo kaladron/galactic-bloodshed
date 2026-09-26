@@ -16,9 +16,9 @@ import std;
 
 void test_commod_repository() {
   // Setup
-  Database db(":memory:");
-  initialize_schema(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  JsonStore store(ctx.db);
   CommodRepository repo(store);
 
   // Test data
@@ -32,10 +32,10 @@ void test_commod_repository() {
   c1.bid = 75;
   c1.bidder = 4;
   c1.bidder_gov = 5;
-  c1.star_from = 6;
-  c1.planet_from = 7;
-  c1.star_to = 8;
-  c1.planet_to = 9;
+  c1.star_from = 1;
+  c1.planet_from = 1;
+  c1.star_to = 2;
+  c1.planet_to = 1;
 
   // Save and retrieve
   test::expect_true(repo.save(c1));
@@ -56,8 +56,10 @@ void test_commod_repository() {
   // Multiple commods
   Commod c2{};
   c2.id = 5;
-  c2.owner = 10;
+  c2.owner = 2;
   c2.amount = 500;
+  c2.star_from = 3;
+  c2.planet_from = 1;
   test::expect_true(repo.save(c2));
   test::expect_true(repo.find_by_id(1).has_value());
   test::expect_true(repo.find_by_id(5).has_value());
@@ -79,6 +81,12 @@ void test_block_repository() {
   Database db(":memory:");
   initialize_schema(db);
   JsonStore store(db);
+  RaceRepository races(store);
+  for (player_t p : {player_t{1}, player_t{3}}) {
+    Race r{};
+    r.Playernum = p;
+    races.save(r);
+  }
   BlockRepository repo(store);
 
   // Test data
@@ -131,6 +139,12 @@ void test_power_repository() {
   Database db(":memory:");
   initialize_schema(db);
   JsonStore store(db);
+  RaceRepository races(store);
+  for (player_t p : {player_t{1}, player_t{2}, player_t{5}}) {
+    Race r{};
+    r.Playernum = p;
+    races.save(r);
+  }
   PowerRepository repo(store);
 
   // Test data

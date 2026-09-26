@@ -11,9 +11,9 @@ import test;
 import std;
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
-  JsonStore store(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  JsonStore store(ctx.db);
   ShipRepository ship_repo(store);
 
   std::println(std::cout, "Testing monotonic ship ID management...");
@@ -88,6 +88,8 @@ int main() {
   c1.type = CommodType::RESOURCE;
   c1.amount = 100;
   c1.deliver = true;
+  c1.star_from = 1;
+  c1.planet_from = 1;
   commod_repo.save(c1);
 
   Commod c2{};
@@ -97,6 +99,8 @@ int main() {
   c2.type = CommodType::FUEL;
   c2.amount = 200;
   c2.deliver = true;
+  c2.star_from = 1;
+  c2.planet_from = 1;
   commod_repo.save(c2);
 
   Commod c4{};
@@ -106,6 +110,8 @@ int main() {
   c4.type = CommodType::CRYSTAL;
   c4.amount = 300;
   c4.deliver = true;
+  c4.star_from = 1;
+  c4.planet_from = 1;
   commod_repo.save(c4);
 
   int cid2 = commod_repo.next_available_id();

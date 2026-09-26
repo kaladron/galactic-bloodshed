@@ -6,6 +6,7 @@
 
 import dallib;
 import gb.entities;
+import gb.repositories;
 import gb.services;
 import gb.turn;
 import test;
@@ -18,67 +19,58 @@ int main() {
   // Initialize database tables - this will create the tbl_power table
   initialize_schema(db);
 
-  power test_power[MAXPLAYERS];
+  PlayerVector<power, MAXPLAYERS> test_power;
 
   // Initialize some test data for a few players
-  test_power[0].id = 1;  // CRITICAL: Set power id
-  test_power[0].troops = 1000;
-  test_power[0].popn = 50000;
-  test_power[0].resource = 25000;
-  test_power[0].fuel = 10000;
-  test_power[0].destruct = 500;
-  test_power[0].ships_owned = 20;
-  test_power[0].planets_owned = 3;
-  test_power[0].money = 100000;
+  test_power[1].id = 1;  // CRITICAL: Set power id
+  test_power[1].troops = 1000;
+  test_power[1].popn = 50000;
+  test_power[1].resource = 25000;
+  test_power[1].fuel = 10000;
+  test_power[1].destruct = 500;
+  test_power[1].ships_owned = 20;
+  test_power[1].planets_owned = 3;
+  test_power[1].money = 100000;
 
-  test_power[1].id = 2;  // CRITICAL: Set power id
-  test_power[1].troops = 800;
-  test_power[1].popn = 40000;
-  test_power[1].resource = 20000;
-  test_power[1].fuel = 8000;
-  test_power[1].destruct = 400;
-  test_power[1].ships_owned = 15;
-  test_power[1].planets_owned = 2;
-  test_power[1].money = 80000;
+  test_power[2].id = 2;  // CRITICAL: Set power id
+  test_power[2].troops = 800;
+  test_power[2].popn = 40000;
+  test_power[2].resource = 20000;
+  test_power[2].fuel = 8000;
+  test_power[2].destruct = 400;
+  test_power[2].ships_owned = 15;
+  test_power[2].planets_owned = 2;
+  test_power[2].money = 80000;
 
-  // Initialize remaining power entries to zero (but with id set!)
-  for (int i = 2; i < MAXPLAYERS; i++) {
-    test_power[i] = power{};
-    test_power[i].id = i + 1;  // CRITICAL: Set id for power records
+  // Initialize remaining power entries to zero (but with id set)
+  for (player_t p = 3; p <= MAXPLAYERS; ++p) {
+    test_power[p] = power{.id = p.value};
   }
 
   // Test EntityManager - stores and retrieves power data
   // First save using repository
   JsonStore store(db);
+  RaceRepository race_repo(store);
   PowerRepository power_repo(store);
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    power_repo.save(test_power[i]);
+  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+    Race r{};
+    r.Playernum = p;
+    race_repo.save(r);
+    power_repo.save(test_power[p]);
   }
 
   // Now use EntityManager to retrieve
   EntityManager em(db);
-  power loaded_power[MAXPLAYERS];
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    loaded_power[i] = power{};
-  }
+  PlayerVector<power, MAXPLAYERS> loaded_power;
 
   // Retrieve from EntityManager
-  for (int i = 0; i < MAXPLAYERS; i++) {
-    const auto* power_ptr = em.peek_power(powernum_t{i + 1});
+  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+    const auto* power_ptr = em.peek_power(powernum_t{p.value});
     test::expect_ne(power_ptr, nullptr);  // Should exist now
-    loaded_power[i] = *power_ptr;
+    loaded_power[p] = *power_ptr;
   }
 
   // Verify the data matches
-  test::expect_eq(loaded_power[0].troops, test_power[0].troops);
-  test::expect_eq(loaded_power[0].popn, test_power[0].popn);
-  test::expect_eq(loaded_power[0].resource, test_power[0].resource);
-  test::expect_eq(loaded_power[0].fuel, test_power[0].fuel);
-  test::expect_eq(loaded_power[0].destruct, test_power[0].destruct);
-  test::expect_eq(loaded_power[0].ships_owned, test_power[0].ships_owned);
-  test::expect_eq(loaded_power[0].planets_owned, test_power[0].planets_owned);
-  test::expect_eq(loaded_power[0].money, test_power[0].money);
-
   test::expect_eq(loaded_power[1].troops, test_power[1].troops);
   test::expect_eq(loaded_power[1].popn, test_power[1].popn);
   test::expect_eq(loaded_power[1].resource, test_power[1].resource);
@@ -87,6 +79,15 @@ int main() {
   test::expect_eq(loaded_power[1].ships_owned, test_power[1].ships_owned);
   test::expect_eq(loaded_power[1].planets_owned, test_power[1].planets_owned);
   test::expect_eq(loaded_power[1].money, test_power[1].money);
+
+  test::expect_eq(loaded_power[2].troops, test_power[2].troops);
+  test::expect_eq(loaded_power[2].popn, test_power[2].popn);
+  test::expect_eq(loaded_power[2].resource, test_power[2].resource);
+  test::expect_eq(loaded_power[2].fuel, test_power[2].fuel);
+  test::expect_eq(loaded_power[2].destruct, test_power[2].destruct);
+  test::expect_eq(loaded_power[2].ships_owned, test_power[2].ships_owned);
+  test::expect_eq(loaded_power[2].planets_owned, test_power[2].planets_owned);
+  test::expect_eq(loaded_power[2].money, test_power[2].money);
 
   std::println(std::cout, "All power JSON serialization tests passed!");
   return 0;

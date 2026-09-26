@@ -133,11 +133,14 @@ int main() {
   {
     Database db(":memory:");
     initialize_schema(db);
+    JsonStore store(db);
 
     player_t p1{1};
     player_t p2{2};
     governor_t g1{1};
     governor_t g2{2};
+    store.store("tbl_race", p1.value, "{}");
+    store.store("tbl_race", p2.value, "{}");
 
     // Test telegram_count on empty
     test::expect_eq(db.telegram_count(p1, g1), 0);
@@ -263,21 +266,27 @@ int main() {
     initialize_schema(db);
     JsonStore store(db);
 
+    store.store("tbl_race", 1, "{}");
+    store.store("tbl_race", 2, "{}");
+    store.store("tbl_star", 2, "{}");
+    store.store("tbl_star", 5, "{}");
+    PlanetRepository(store).save(
+        Planet{2, 3, PlanetType::EARTH, Coordinates{5, 5}});
+
     // Ship 1: Player 1, orbiting star 2 planet 3 (LEVEL_PLAN = 2), alive = 1,
     // destshipno = null
     store.store(
         "tbl_ship", 1,
-        R"({"owner":1,"storbits":2,"pnumorbits":3,"whatorbits":2,"destshipno":null,"alive":1})");
-    // Ship 2: Player 1, orbiting star 2 planet 3, alive = 0 (dead), destshipno
-    // = null
+        R"({"owner":1,"storbits":2,"pnumorbits":3,"whatorbits":2,"whatdest":0,"destshipno":null,"alive":1})");
+    // Ship 2: Player 1, orbiting star 2 planet 3, alive = 1, destshipno = null
     store.store(
         "tbl_ship", 2,
-        R"({"owner":1,"storbits":2,"pnumorbits":3,"whatorbits":2,"destshipno":null,"alive":0})");
-    // Ship 3: Player 2, orbiting star 5 planet 0 (LEVEL_STAR = 1), alive = 1,
-    // destshipno = 10
+        R"({"owner":1,"storbits":2,"pnumorbits":3,"whatorbits":2,"whatdest":0,"destshipno":null,"alive":1})");
+    // Ship 3: Player 2, orbiting star 5 (LEVEL_STAR = 1), alive = 1,
+    // destshipno = 1 (whatdest = 3 = LEVEL_SHIP)
     store.store(
         "tbl_ship", 3,
-        R"({"owner":2,"storbits":5,"pnumorbits":0,"whatorbits":1,"destshipno":10,"alive":1})");
+        R"({"owner":2,"storbits":5,"pnumorbits":null,"whatorbits":1,"whatdest":3,"destshipno":1,"alive":1})");
 
     // Verify generated columns extraction for Ship 1 via JsonStore::query_ids
     auto ship1_match = store.query_ids(
@@ -292,8 +301,9 @@ int main() {
     // Verify index by owner and alive
     auto owner1_alive =
         store.query_ids("tbl_ship", "owner = ? AND alive = ?", {1, 1});
-    test::expect_eq(owner1_alive.size(), 1u);
+    test::expect_eq(owner1_alive.size(), 2u);
     test::expect_eq(owner1_alive[0], 1);
+    test::expect_eq(owner1_alive[1], 2);
     std::println(
         std::cout,
         "✓ idx_ship_owner and idx_ship_alive queries match expected rows");
@@ -309,7 +319,7 @@ int main() {
                  "✓ idx_ship_orbit query returns matching spatial rows");
 
     // Verify index by destshipno
-    auto destship_matches = store.query_ids("tbl_ship", "destshipno = ?", {10});
+    auto destship_matches = store.query_ids("tbl_ship", "destshipno = ?", {1});
     test::expect_eq(destship_matches.size(), 1u);
     test::expect_eq(destship_matches[0], 3);
     std::println(

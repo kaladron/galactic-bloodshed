@@ -6,23 +6,20 @@
 
 import dallib;
 import gb.entities;
+import gb.repositories;
 import gb.services;
 import gb.turn;
 import test;
 import std;
 
 int main() {
-  // Initialize database using Database class (in-memory for testing)
-  Database db(":memory:");
-
-  // Initialize database tables - this will create the tbl_commod table
-  initialize_schema(db);
-
-  // Create EntityManager for accessing commodities
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
   // Create JsonStore and Repository for initial save
-  JsonStore store(db);
+  JsonStore store(ctx.db);
+  PlanetRepository(store).save(Planet{1, 2});
+  PlanetRepository(store).save(Planet{2, 3});
   CommodRepository commod_repo(store);
 
   Commod test_commod{};
@@ -37,9 +34,9 @@ int main() {
   test_commod.bid = 100;
   test_commod.bidder = 3;
   test_commod.bidder_gov = 4;
-  test_commod.star_from = 10;
+  test_commod.star_from = 1;
   test_commod.planet_from = 2;
-  test_commod.star_to = 15;
+  test_commod.star_to = 2;
   test_commod.planet_to = 3;
 
   int commodnum = 42;
@@ -48,7 +45,7 @@ int main() {
   commod_repo.save(test_commod);
 
   // Test EntityManager::peek_commod - reads from SQLite
-  const auto* retrieved_commod = em.peek_commod(commodnum);
+  const auto* retrieved_commod = ctx.em.peek_commod(commodnum);
   test::expect_ne(retrieved_commod, nullptr);
 
   // Verify key fields

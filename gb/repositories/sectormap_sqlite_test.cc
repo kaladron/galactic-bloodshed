@@ -369,21 +369,17 @@ void test_sectormap_dirty_tracking_views_persistence(EntityManager& em,
 }
 
 int main() {
-  // CRITICAL: Always create in-memory database BEFORE calling
-  // initialize_schema()
-  Database db(":memory:");
-
-  // Initialize database tables - this creates all required tables
-  initialize_schema(db);
-
-  // Create EntityManager for EntityManager-based tests
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.create_star("Star5", 5).build();
+  ctx.create_star("Star7", 7).build();
+  ctx.create_star("Star9", 9).build();
 
   // Run all tests
-  test_entitymanager_sectormap(em, db);
-  test_multiple_planets_isolation(em, db);
+  test_entitymanager_sectormap(ctx.em, ctx.db);
+  test_multiple_planets_isolation(ctx.em, ctx.db);
   test_sectormap_random_and_shuffle();
-  test_sectormap_dirty_tracking_views_persistence(em, db);
+  test_sectormap_dirty_tracking_views_persistence(ctx.em, ctx.db);
 
   std::println(std::cout, "\nAll SectorMap tests passed!");
   return 0;

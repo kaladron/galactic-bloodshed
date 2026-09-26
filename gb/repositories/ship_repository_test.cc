@@ -18,6 +18,19 @@ int main() {
 
   // Create JsonStore and ShipRepository
   JsonStore store(db);
+  RaceRepository races(store);
+  for (player_t p = 1; p <= 5; ++p) {
+    Race r{};
+    r.Playernum = p;
+    races.save(r);
+  }
+  StarRepository stars(store);
+  stars.save(Star{1, "Star1"});
+  stars.save(Star{3, "Star3"});
+  stars.save(Star{4, "Star4"});
+  PlanetRepository planets(store);
+  planets.save(Planet{1, 2});
+  planets.save(Planet{3, 2});
   ShipRepository repo(store);
 
   // Create a test ship using ship_struct (POD, copyable)
@@ -74,7 +87,7 @@ int main() {
   test_data.protect.planet = true;
   test_data.protect.retaliate = true;
   test_data.protect.evade = false;
-  test_data.protect.ship = shipnum_t{42};
+  test_data.protect.ship = shipnum_t{1};
 
   test_data.hyper_drive.has = true;
   test_data.hyper_drive.on = true;
@@ -139,7 +152,7 @@ int main() {
   test::expect_true(retrieved->protect().planet);
   test::expect_true(retrieved->protect().retaliate);
   test::expect_false(retrieved->protect().evade);
-  test::expect_eq(retrieved->protect().ship, shipnum_t{42});
+  test::expect_eq(retrieved->protect().ship, shipnum_t{1});
 
   // Verify HyperDriveData and computed is_ready() integrity
   test::expect_true(retrieved->hyper_drive().has);
@@ -230,8 +243,8 @@ int main() {
   std::println(std::cout, "Testing spatial and indexed queries...");
   {
     // Clear out earlier test ships
-    repo.delete_ship(1);
     repo.delete_ship(5);
+    repo.delete_ship(1);
 
     // Setup test fleet:
     // Ship 1: Owner 1, Star 1, LEVEL_STAR, alive = true
@@ -243,15 +256,6 @@ int main() {
     s1.alive = true;
     repo.save(Ship(s1));
 
-    // Ship 2: Owner 1, Star 1, LEVEL_STAR, alive = false (dead)
-    ship_struct s2{};
-    s2.number = 2;
-    s2.owner = 1;
-    s2.storbits = 1;
-    s2.whatorbits = ScopeLevel::LEVEL_STAR;
-    s2.alive = false;
-    repo.save(Ship(s2));
-
     // Ship 3: Owner 2, Star 1, Planet 2, LEVEL_PLAN, alive = true
     ship_struct s3{};
     s3.number = 3;
@@ -261,16 +265,6 @@ int main() {
     s3.whatorbits = ScopeLevel::LEVEL_PLAN;
     s3.alive = true;
     repo.save(Ship(s3));
-
-    // Ship 4: Owner 2, Star 1, Planet 2, LEVEL_PLAN, alive = false (dead)
-    ship_struct s4{};
-    s4.number = 4;
-    s4.owner = 2;
-    s4.storbits = 1;
-    s4.pnumorbits = 2;
-    s4.whatorbits = ScopeLevel::LEVEL_PLAN;
-    s4.alive = false;
-    repo.save(Ship(s4));
 
     // Ship 5: Owner 1, Carrier Hangar (destshipno = 1), LEVEL_SHIP, alive =
     // true
@@ -426,6 +420,7 @@ int main() {
     // SpaceMirrorShip
     ship_struct mirror_data{};
     mirror_data.number = 201;
+    mirror_data.owner = 1;
     mirror_data.type = ShipType::STYPE_MIRROR;
     mirror_data.special =
         AimedAtData::at_planet(starnum_t{3}, planetnum_t{2}, 85);
@@ -514,9 +509,15 @@ int main() {
     test::expect_eq(plow->index(), 5);
     test::expect_true(plow_ship->as<TerraformerShip>() != nullptr);
 
-    // TransporterShip
+    // TransporterShip (seed target ship #42 first)
+    ship_struct target42{};
+    target42.number = 42;
+    target42.owner = 1;
+    repo.save(Ship(target42));
+
     ship_struct trans_data{};
     trans_data.number = 208;
+    trans_data.owner = 1;
     trans_data.type = ShipType::OTYPE_TRANSDEV;
     trans_data.special = TransportData{.target_ship = 42};
     auto trans_ship = ShipFactory::create(trans_data);
@@ -543,6 +544,7 @@ int main() {
     // Standard ship (STYPE_CRUISER) serializes std::monostate as "special":null
     ship_struct std_cruiser_data{};
     std_cruiser_data.number = 210;
+    std_cruiser_data.owner = 1;
     std_cruiser_data.type = ShipType::STYPE_CRUISER;
     std_cruiser_data.build_type = ShipType::STYPE_CRUISER;
     auto std_cruiser = ShipFactory::create(std_cruiser_data);

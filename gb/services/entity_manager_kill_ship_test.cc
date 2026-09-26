@@ -56,9 +56,7 @@ int main() {
   star_repo.save(star);
 
   // Create a test planet
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1};
   planet.set_system_coordinates({10.0, 10.0});
   planet.toxic() = 10;
   PlanetRepository planet_repo(store);

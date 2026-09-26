@@ -41,17 +41,9 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
   }
 
   PlanetRepository planet_repo(store);
-  {
-    Planet p{};
-    p.star_id() = 1;
-    p.planet_order() = 1;
-    planet_repo.save(p);
-  }
+  planet_repo.save(Planet{1, 1});
   for (planetnum_t pn = 1; pn <= 2; pn++) {
-    Planet p{};
-    p.star_id() = 2;
-    p.planet_order() = pn;
-    planet_repo.save(p);
+    planet_repo.save(Planet{2, pn});
   }
 
   CommodRepository commod_repo(store);

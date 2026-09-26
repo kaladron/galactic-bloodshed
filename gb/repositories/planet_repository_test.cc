@@ -21,9 +21,7 @@ int main() {
 
   // Create and save a basic planet
   std::println(std::cout, "Save and retrieve basic planet...");
-  Planet planet1(PlanetType::EARTH, Coordinates{20, 20});
-  planet1.star_id() = 1;       // Star 1
-  planet1.planet_order() = 2;  // Planet 2
+  Planet planet1{1, 2, PlanetType::EARTH, Coordinates{20, 20}};
   planet1.set_system_coordinates({100.5, 200.7});
   planet1.popn() = 100000;
   planet1.troops() = 5000;
@@ -57,9 +55,7 @@ int main() {
   // Save planet with conditions
   std::println(std::cout,
                "\nTest 2: Save planet with atmospheric conditions...");
-  Planet planet2(PlanetType::ICEBALL, Coordinates{15, 15});
-  planet2.star_id() = 2;       // Star 2
-  planet2.planet_order() = 1;  // Planet 1
+  Planet planet2{2, 1, PlanetType::ICEBALL, Coordinates{15, 15}};
   planet2.set_system_coordinates({50.0, 75.0});
   planet2.rtemp() = 45;
   planet2.temp() = 50;
@@ -93,9 +89,7 @@ int main() {
 
   // Save planet with player info
   std::println(std::cout, "\nTest 3: Save planet with player info...");
-  Planet planet3(PlanetType::ASTEROID, Coordinates{25, 25});
-  planet3.star_id() = 3;       // Star 3
-  planet3.planet_order() = 0;  // Planet 0
+  Planet planet3{3, 1, PlanetType::ASTEROID, Coordinates{25, 25}};
   planet3.set_system_coordinates({123.4, 567.8});
 
   // Initialize plinfo for player 1
@@ -126,9 +120,9 @@ int main() {
 
   test::expect_true(repo.save(planet3));
 
-  auto retrieved3 = repo.find_by_location(3, 0);
+  auto retrieved3 = repo.find_by_location(3, 1);
   test::expect_true(retrieved3.has_value());
-  test::expect_eq(retrieved3->planet_order(), 0);
+  test::expect_eq(retrieved3->planet_order(), 1);
   test::expect_eq(retrieved3->info(1).fuel, 500);
   test::expect_eq(retrieved3->info(1).destruct, 250);
   test::expect_eq(retrieved3->info(1).resource, 10000);
@@ -158,9 +152,7 @@ int main() {
 
   // Save planet with routes
   std::println(std::cout, "\nTest 4: Save planet with shipping routes...");
-  Planet planet4(PlanetType::EARTH, Coordinates{30, 30});
-  planet4.star_id() = 4;       // Star 4
-  planet4.planet_order() = 3;  // Planet 3
+  Planet planet4{4, 3, PlanetType::EARTH, Coordinates{30, 30}};
   planet4.set_system_coordinates({10.0, 20.0});
 
   // Initialize routes for player 1
@@ -221,26 +213,22 @@ int main() {
 
   // Multiple planets in same star system
   std::println(std::cout, "\nTest 6: Multiple planets in same star...");
-  Planet planet5(PlanetType::GASGIANT, Coordinates{10, 10});
-  planet5.star_id() = 5;       // Star 5
-  planet5.planet_order() = 0;  // Planet 0
+  Planet planet5{5, 1, PlanetType::GASGIANT, Coordinates{10, 10}};
   planet5.set_system_coordinates({200.0, 300.0});
 
-  Planet planet6(PlanetType::WATER, Coordinates{12, 12});
-  planet6.star_id() = 5;       // Star 5
-  planet6.planet_order() = 1;  // Planet 1
+  Planet planet6{5, 2, PlanetType::WATER, Coordinates{12, 12}};
   planet6.set_system_coordinates({250.0, 350.0});
 
   // Save both to star 5
   test::expect_true(repo.save(planet5));
   test::expect_true(repo.save(planet6));
 
-  auto p5 = repo.find_by_location(5, 0);
-  auto p6 = repo.find_by_location(5, 1);
+  auto p5 = repo.find_by_location(5, 1);
+  auto p6 = repo.find_by_location(5, 2);
   test::expect_true(p5.has_value());
   test::expect_true(p6.has_value());
-  test::expect_eq(p5->planet_order(), 0);
-  test::expect_eq(p6->planet_order(), 1);
+  test::expect_eq(p5->planet_order(), 1);
+  test::expect_eq(p6->planet_order(), 2);
   test::expect_eq(p5->type(), PlanetType::GASGIANT);
   test::expect_eq(p6->type(), PlanetType::WATER);
   std::println(std::cout, "✓ Multiple planets per star works correctly");
@@ -253,9 +241,7 @@ int main() {
 
   // Multiple players on same planet
   std::println(std::cout, "\nTest 8: Multiple players on same planet...");
-  Planet planet7(PlanetType::EARTH, Coordinates{20, 20});
-  planet7.star_id() = 6;       // Star 6
-  planet7.planet_order() = 1;  // Planet 1
+  Planet planet7{6, 1, PlanetType::EARTH, Coordinates{20, 20}};
   planet7.set_system_coordinates({111.1, 222.2});
 
   planet7.info(1).fuel = 1000;

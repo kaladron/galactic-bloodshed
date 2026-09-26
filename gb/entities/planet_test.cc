@@ -23,6 +23,8 @@ int main() {
         []() { (void)Planet{starnum_t{0}, planetnum_t{1}}; });
     test::expect_throws<std::invalid_argument>(
         []() { (void)Planet{starnum_t{1}, planetnum_t{0}}; });
+    test::expect_throws<std::invalid_argument>(
+        []() { (void)Planet{planet_struct{}}; });
 
     Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     test::expect_eq(planet.star_id(), starnum_t{1});
@@ -41,7 +43,7 @@ int main() {
 
   // Test 2: Bounds checking with is_valid
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     planet.dimensions() = Coordinates(10, 8);
 
     test::expect_true(planet.is_valid({0, 0}));
@@ -57,7 +59,7 @@ int main() {
 
   // Test 3: Toroidal coordinate wrapping
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     planet.dimensions() = Coordinates(10, 8);
 
     // Within bounds: unchanged
@@ -74,13 +76,13 @@ int main() {
     test::expect_eq(planet.wrap({-11, 3}), Coordinates(9, 3));
 
     // Zero width safety check
-    Planet uninit_planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet uninit_planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     test::expect_eq(uninit_planet.wrap({5, 3}), Coordinates(5, 3));
   }
 
   // Test 4: Planet gravity calculation
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     planet.dimensions() = Coordinates(20, 10);
     const double expected_gravity = 20.0 * 10.0 * GRAV_FACTOR;
     test::expect_true(std::abs(planet.gravity() - expected_gravity) < 1e-6);
@@ -88,7 +90,7 @@ int main() {
 
   // Test 5: Coordinate adjacency on planet surface
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     planet.dimensions() = Coordinates(10, 8);
 
     // Direct and diagonal neighbors
@@ -188,7 +190,7 @@ int main() {
 
   // Test 6: Planet compatibility with race conditions
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     for (AtmosphereConditions c : all_atmosphere_conditions) {
       planet.conditions(c) = 50;
     }
@@ -207,7 +209,7 @@ int main() {
 
   // Test 7: plinfo defaults and optional tox_thresh behavior
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     auto& info = planet.info(player_t{1});
 
     // Verify initial default states
@@ -263,7 +265,7 @@ int main() {
 
   // Test 8: Planet exploration timer and explored flag
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     test::expect_eq(planet.expltimer(), 0U);
     test::expect_false(planet.explored());
 
@@ -309,7 +311,7 @@ int main() {
 
   // Test 10: Planet::info bounds checking
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     planet.info(player_t{1}).popn = 5000;
     planet.info(player_t{MAXPLAYERS}).popn = 9999;
 
@@ -324,7 +326,7 @@ int main() {
 
   // Test 11: Planet::update_climate
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     planet.rtemp() = 75;
 
     planet.update_climate(10);
@@ -336,7 +338,7 @@ int main() {
 
   // Test 12: Enslavement, revolt threshold, and slave liberation
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     test::expect_false(planet.is_enslaved());
     test::expect_false(planet.is_slave_revolt_triggered());
 
@@ -530,7 +532,7 @@ int main() {
 
   // Test 20: Planet system_coordinates and absolute_coordinates
   {
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
     planet.set_system_coordinates({-120.0, 250.0});
     test::expect_eq(planet.system_coordinates(),
                     SystemCoordinates(-120.0, 250.0));
@@ -553,7 +555,7 @@ int main() {
 
   // Test 21: Planet is_common_sector native terrain queries
   {
-    Planet earth(PlanetType::EARTH, Coordinates{10, 10});
+    Planet earth{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
     test::expect_true(earth.is_common_sector(SectorType::SEC_SEA));
     test::expect_true(earth.is_common_sector(SectorType::SEC_LAND));
     test::expect_false(earth.is_common_sector(SectorType::SEC_GAS));
@@ -591,7 +593,7 @@ int main() {
 
   // Test 22: is_enslaved_to_foreign predicate
   {
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
     test::expect_false(planet.is_enslaved());
     test::expect_false(planet.is_enslaved_to_foreign(player_t{1}));
     test::expect_false(planet.is_enslaved_to_foreign(player_t{2}));
@@ -609,7 +611,7 @@ int main() {
 
   // Test 23: adjust_sector_population colonization and abandonment
   {
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
     Sector sect{};
     sect.set_mobilization(25);
     test::expect_false(sect.is_owned());
@@ -661,7 +663,7 @@ int main() {
 
   // Test 24: move_sector_population between friendly and empty sectors
   {
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
     Sector from_sect{};
     from_sect.set_mobilization(30);
     Sector to_sect{};
@@ -699,7 +701,7 @@ int main() {
 
   // Test 25: sync_demographics full reconciliation from SectorMap
   {
-    Planet planet(PlanetType::EARTH, Coordinates{5, 5});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
     SectorMap smap(planet);
 
     // Setup 2 sectors for player 1, 1 sector for player 2
@@ -746,12 +748,12 @@ int main() {
   // Test 26: Zero-dimension adjacent_coordinates and non-positive
   // move_sector_population
   {
-    Planet zero_planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet zero_planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
     test::expect_true(zero_planet.adjacent_coordinates({2, 2}).empty());
     test::expect_eq(zero_planet.random_adjacent_coordinates({2, 2}),
                     Coordinates(2, 2));
 
-    Planet planet(PlanetType::EARTH, Coordinates{5, 5});
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
     Sector s1{};
     Sector s2{};
     planet.adjust_sector_population(s1, player_t{1}, 100, 0);
@@ -844,7 +846,7 @@ int main() {
                         p.system_coordinates().y != old_py);
 
       // Corrupted zero orbital radius fails fast instead of producing NaN
-      Planet zero_p(PlanetType::EARTH, Coordinates{5, 5});
+      Planet zero_p{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
       zero_p.set_system_coordinates({0.0, 0.0});
       test::expect_throws<std::domain_error>(
           [&]() { moveplanet(ctx.em, *star0, zero_p); });
@@ -863,7 +865,7 @@ int main() {
   // Test 28: temperature_t (Temperature) absolute-zero floor and affine delta
   // arithmetic
   {
-    Planet planet(PlanetType::ICEBALL, Coordinates{5, 5});
+    Planet planet{1, 1, PlanetType::ICEBALL, Coordinates{5, 5}};
     planet.rtemp() = -200;
     planet.temp() = -260;
     test::expect_eq(planet.rtemp().value(), -200);
@@ -905,7 +907,7 @@ int main() {
     static_assert(planet_type_name(PlanetType::FOREST) == "Forest");
     static_assert(planet_type_name(PlanetType::DESERT) == "Desert");
 
-    Planet planet(PlanetType::GASGIANT, Coordinates{5, 5});
+    Planet planet{1, 1, PlanetType::GASGIANT, Coordinates{5, 5}};
     test::expect_eq(planet.type_symbol(), '~');
     test::expect_eq(planet.type_name(), "Jovian");
 

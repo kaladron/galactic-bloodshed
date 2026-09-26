@@ -321,11 +321,12 @@ export struct planet_struct {
 export class Planet {
 public:
   // Constructors
-  Planet() = default;
-  Planet(planet_struct in) : data_(in) {}
-  Planet(PlanetType type, Coordinates dimensions) {
-    data_.type = type;
-    data_.dimensions = dimensions;
+  Planet(const planet_struct& in) : data_(in) {
+    if (data_.star_id < 1 || data_.planet_order < 1) {
+      throw std::invalid_argument(std::format(
+          "Planet (star_id, planet_order) must be >= (1, 1) (got ({}, {}))",
+          data_.star_id, data_.planet_order));
+    }
   }
   Planet(starnum_t star_id, planetnum_t planet_order,
          PlanetType type = PlanetType::EARTH,
@@ -501,14 +502,8 @@ public:
   [[nodiscard]] starnum_t star_id() const {
     return data_.star_id;
   }
-  starnum_t& star_id() {
-    return data_.star_id;
-  }
 
   [[nodiscard]] planetnum_t planet_order() const {
-    return data_.planet_order;
-  }
-  planetnum_t& planet_order() {
     return data_.planet_order;
   }
 

@@ -33,9 +33,7 @@ void setup_test_universe(Database& db) {
   Star star0(ss0);
   star_repo.save(star0);
 
-  Planet p0_0{PlanetType::EARTH, Coordinates{5, 5}};
-  p0_0.star_id() = 1;
-  p0_0.planet_order() = 1;
+  Planet p0_0{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
   p0_0.rtemp() = 20;
   p0_0.conditions().oxygen = 21;
   planet_repo.save(p0_0);
@@ -48,9 +46,7 @@ void setup_test_universe(Database& db) {
   }
   sector_repo.save_map(smap0_0);
 
-  Planet p0_1{PlanetType::GASGIANT, Coordinates{5, 5}};
-  p0_1.star_id() = 1;
-  p0_1.planet_order() = 2;
+  Planet p0_1{1, 2, PlanetType::GASGIANT, Coordinates{5, 5}};
   p0_1.rtemp() = -80;
   p0_1.conditions().methane = 90;
   planet_repo.save(p0_1);
@@ -71,9 +67,7 @@ void setup_test_universe(Database& db) {
   Star star1(ss1);
   star_repo.save(star1);
 
-  Planet p1_0{PlanetType::MARS, Coordinates{5, 5}};
-  p1_0.star_id() = 2;
-  p1_0.planet_order() = 1;
+  Planet p1_0{2, 1, PlanetType::MARS, Coordinates{5, 5}};
   planet_repo.save(p1_0);
 
   // Star 3: 2 planets (Iceball, Desert)
@@ -84,9 +78,7 @@ void setup_test_universe(Database& db) {
   Star star2(ss2);
   star_repo.save(star2);
 
-  Planet p2_0{PlanetType::ICEBALL, Coordinates{5, 5}};
-  p2_0.star_id() = 3;
-  p2_0.planet_order() = 1;
+  Planet p2_0{3, 1, PlanetType::ICEBALL, Coordinates{5, 5}};
   p2_0.rtemp() = -120;
   planet_repo.save(p2_0);
 
@@ -98,9 +90,7 @@ void setup_test_universe(Database& db) {
   }
   sector_repo.save_map(smap2_0);
 
-  Planet p2_1{PlanetType::DESERT, Coordinates{5, 5}};
-  p2_1.star_id() = 3;
-  p2_1.planet_order() = 2;
+  Planet p2_1{3, 2, PlanetType::DESERT, Coordinates{5, 5}};
   p2_1.rtemp() = 140;
   planet_repo.save(p2_1);
 

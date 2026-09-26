@@ -24,9 +24,7 @@ int main() {
   // 1. select_victim_to_steal_from candidate priority ordering tests
   // =========================================================================
   {
-    Planet planet{};
-    planet.star_id() = 1;
-    planet.planet_order() = 1;
+    Planet planet{1, 1};
 
     // Set up resources on planet info for various players
     planet.info(player_t{1}).resource = 0;
@@ -307,7 +305,7 @@ int main() {
   {
     std::println(std::cout, "\nTest: roam_to_adjacent_sector");
 
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
     ship_struct vn_data{};
     vn_data.number = 303;
@@ -405,9 +403,7 @@ int main() {
   {
     std::println(std::cout, "\nTest: construct_replicated_vn");
 
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-    planet.star_id() = 1;
-    planet.planet_order() = 1;
+    Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
     ship_struct vn_data{};
     vn_data.number = 401;
@@ -463,9 +459,7 @@ int main() {
   {
     std::println(std::cout, "\nTest: construct_replicated_berserker");
 
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-    planet.star_id() = 1;
-    planet.planet_order() = 1;
+    Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
     ship_struct vn_data{};
     vn_data.number = 402;
@@ -528,9 +522,7 @@ int main() {
   {
     std::println(std::cout, "\nTest: replicate_machines");
 
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-    planet.star_id() = 1;
-    planet.planet_order() = 1;
+    Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
     const auto vn_cost = ship_template(ShipType::OTYPE_VN).build_cost;
     ship_struct vn_data{};
@@ -628,12 +620,8 @@ int main() {
   {
     std::println(std::cout, "\nTest: attempt_planet_landing");
 
-    Planet gas_giant(PlanetType::GASGIANT, Coordinates{5, 5});
-    gas_giant.star_id() = 1;
-    gas_giant.planet_order() = 1;
-    Planet rocky_planet(PlanetType::EARTH, Coordinates{5, 5});
-    rocky_planet.star_id() = 1;
-    rocky_planet.planet_order() = 1;
+    Planet gas_giant(1, 1, PlanetType::GASGIANT, Coordinates{5, 5});
+    Planet rocky_planet(1, 1, PlanetType::EARTH, Coordinates{5, 5});
 
     SectorMap empty_smap(rocky_planet);
     for (Sector& s : empty_smap) {
@@ -870,9 +858,7 @@ int main() {
     std::println(std::cout, "\nTest: planet_doVN");
 
     TurnStats stats{};
-    Planet planet(PlanetType::EARTH, Coordinates{5, 5});
-    planet.star_id() = 1;
-    planet.planet_order() = 1;
+    Planet planet(1, 1, PlanetType::EARTH, Coordinates{5, 5});
     SectorMap smap(planet);
     for (Sector& s : smap) {
       s.set_resource(0);

@@ -20,10 +20,7 @@ int main() {
   SectorRepository repo(store);
 
   // Create a test planet to associate sectors with
-  Planet test_planet{};
-  test_planet.star_id() = 5;
-  test_planet.planet_order() = 1;
-  test_planet.dimensions() = Coordinates{10, 10};
+  Planet test_planet{5, 1, PlanetType::EARTH, Coordinates{10, 10}};
 
   // Create a test sector using NEW PATTERN
   sector_struct test_data{};
@@ -139,10 +136,7 @@ int main() {
 
   // Sectors on different planets don't interfere
   std::println(std::cout, "Different planets...");
-  Planet planet2{};
-  planet2.star_id() = 5;
-  planet2.planet_order() = 2;
-  planet2.dimensions() = Coordinates{10, 10};
+  Planet planet2{5, 2, PlanetType::EARTH, Coordinates{10, 10}};
 
   sector_struct data_p2{};
   data_p2.coords = {5, 7};  // Same coordinates as sector on planet 1
@@ -166,10 +160,7 @@ int main() {
 
   // Save and load SectorMap (bulk operation)
   std::println(std::cout, "Save and load SectorMap (bulk)...");
-  Planet small_planet{};
-  small_planet.star_id() = 10;
-  small_planet.planet_order() = 3;
-  small_planet.dimensions() = Coordinates{3, 3};
+  Planet small_planet{10, 3, PlanetType::EARTH, Coordinates{3, 3}};
 
   // Create a sector map with all sectors initialized
   SectorMap test_map(small_planet);  // true = initialize all sectors
@@ -332,10 +323,7 @@ int main() {
 
   // Test SectorMap dirty tracking and partial save
   std::println(std::cout, "Test SectorMap dirty tracking and partial save...");
-  Planet dp_planet;
-  dp_planet.star_id() = 9;
-  dp_planet.planet_order() = 0;
-  dp_planet.dimensions() = Coordinates{4, 4};
+  Planet dp_planet{9, 1, PlanetType::EARTH, Coordinates{4, 4}};
 
   // Initialize and save 4x4 (16 sectors) map
   SectorMap dirty_test_map(dp_planet);

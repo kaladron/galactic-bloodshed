@@ -13,7 +13,7 @@ import std;
 
 int main() {
   // Create a test planet with known dimensions
-  Planet planet(PlanetType::EARTH, Coordinates{10, 8});
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 8}};
 
   // Test numeric direction mappings (1-9, excluding 5)
 
@@ -180,7 +180,7 @@ int main() {
   // Test edge cases with different planet sizes
 
   // Test with minimal planet size
-  Planet small_planet(PlanetType::ASTEROID, Coordinates{2, 3});
+  Planet small_planet{1, 2, PlanetType::ASTEROID, Coordinates{2, 3}};
 
   {
     // Test wrapping on small planet

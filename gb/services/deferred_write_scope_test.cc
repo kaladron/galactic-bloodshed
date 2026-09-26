@@ -132,7 +132,7 @@ void test_deferred_write_raii_rollback_on_exception(TestContext& ctx) {
 }
 
 void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
-  // Setup Race 4, Ship 10, Star 2, Planet (2, 0)
+  // Setup Race 4, Ship 10, Star 2, Planet (2, 1)
   Race r{};
   r.Playernum = 4;
   r.name = "MultiRace";
@@ -166,7 +166,7 @@ void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
 
   planet_struct p_data{};
   p_data.star_id = 2;
-  p_data.planet_order = 0;
+  p_data.planet_order = 1;
   p_data.popn = 1000;
   {
     JsonStore store(ctx.db);
@@ -188,7 +188,7 @@ void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
     ctx.em.mutate_star(starnum_t{2}, [](Star& s) { s.AP(player_t{4}) += 5; });
 
     // 4. Planet population grows
-    ctx.em.mutate_planet(starnum_t{2}, planetnum_t{0},
+    ctx.em.mutate_planet(starnum_t{2}, planetnum_t{1},
                          [](Planet& p) { p.popn() += 200; });
   }
 
@@ -207,7 +207,7 @@ void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
   test::expect_true(star_peek != nullptr);
   test::expect_eq(star_peek->AP(player_t{4}), 5);
 
-  const auto* planet_peek = ctx.em.peek_planet(starnum_t{2}, planetnum_t{0});
+  const auto* planet_peek = ctx.em.peek_planet(starnum_t{2}, planetnum_t{1});
   test::expect_true(planet_peek != nullptr);
   test::expect_eq(planet_peek->popn(), 1200);
 

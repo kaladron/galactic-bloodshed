@@ -97,9 +97,7 @@ int main() {
   test::expect_eq(formatted, "5,10");
 
   // --- Planet is_valid & wrap tests ---
-  planet_struct pdata{};
-  pdata.dimensions = {10, 8};
-  Planet planet(pdata);
+  Planet planet{1, 1, PlanetType::EARTH, {10, 8}};
 
   test::expect_true(planet.is_valid({0, 0}));
   test::expect_true(planet.is_valid({9, 7}));
@@ -342,7 +340,7 @@ int main() {
     test::expect_eq(star.coordinates(), UniverseCoordinates(2500.0, 5000.0));
 
     // Planet in-system and absolute coordinates
-    Planet planet(PlanetType::EARTH, Coordinates{10, 10});
+    Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
     planet.set_system_coordinates({150.0, -200.0});
     test::expect_eq(planet.system_coordinates(),
                     SystemCoordinates(150.0, -200.0));

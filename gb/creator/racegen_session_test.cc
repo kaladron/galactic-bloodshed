@@ -404,9 +404,7 @@ void test_enroll_with_service_success() {
   ss.pnames = {"Earth", "Mars"};
   StarRepository(store).save(Star(ss));
 
-  Planet p0{PlanetType::EARTH, Coordinates{5, 5}};
-  p0.star_id() = 1;
-  p0.planet_order() = 1;
+  Planet p0{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
   p0.rtemp() = 20;
   PlanetRepository(store).save(p0);
 

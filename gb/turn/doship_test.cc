@@ -362,9 +362,7 @@ void test_do_meta_infect() {
   Star star = createTestStar(starnum_t{1});
   StarRepository(store).save(star);
 
-  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
   PlanetRepository(store).save(planet);
 
   SectorMap smap(planet);
@@ -934,9 +932,7 @@ void test_doabm_intercept() {
   Star star = createTestStar(starnum_t{1});
   StarRepository(store).save(star);
 
-  Planet planet{PlanetType::EARTH, Coordinates{4, 4}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{4, 4}};
   PlanetRepository(store).save(planet);
 
   // 1. Hostile enemy missile in orbit
@@ -1600,7 +1596,7 @@ void test_exploration_domain_methods() {
   test::expect_false(uncrewed.is_exploration_capable());
 
   // Planet exploration
-  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
   test::expect_false(planet.is_explored_by(player_t{1}));
   planet.mark_explored_by(player_t{1});
   test::expect_true(planet.is_explored_by(player_t{1}));
@@ -1618,9 +1614,7 @@ void test_update_ship_inhabited_and_exploration() {
   Star star = createTestStar(starnum_t{1});
   StarRepository(store).save(star);
 
-  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
   PlanetRepository(store).save(planet);
 
   // 1. Probe in star orbit explores star
@@ -1648,9 +1642,7 @@ void test_update_ship_inhabited_and_exploration() {
   test::expect_true(planet_after_manned.is_explored_by(player_t{1}));
 
   // 3. Uncrewed cargo ship does not explore
-  Planet planet2{PlanetType::EARTH, Coordinates{2, 2}};
-  planet2.star_id() = 1;
-  planet2.planet_order() = 2;
+  Planet planet2{1, 2, PlanetType::EARTH, Coordinates{2, 2}};
   PlanetRepository(store).save(planet2);
 
   auto cargo_handle = TestShipBuilder(em, ShipType::STYPE_CARGO)
@@ -1753,9 +1745,7 @@ void test_special_subsystems_extended() {
   Star star = createTestStar(starnum_t{1});
   StarRepository(store).save(star);
 
-  Planet planet{PlanetType::EARTH, Coordinates{2, 2}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
   planet.rtemp() = 10;
   planet.conditions().oxygen = 10;
   PlanetRepository(store).save(planet);

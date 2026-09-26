@@ -47,10 +47,7 @@ int main() {
   star_repo.save(ss);
 
   // Create Planet
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
-  planet.dimensions() = Coordinates{10, 10};
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
   SectorRepository smap_repo(store);
@@ -98,10 +95,7 @@ int main() {
 
   // Test 3: Planet with only wasted sectors has no valid targets
   {
-    Planet peaceful_planet{};
-    peaceful_planet.star_id() = 1;
-    peaceful_planet.planet_order() = 2;
-    peaceful_planet.dimensions() = Coordinates{5, 5};
+    Planet peaceful_planet{1, 2, PlanetType::EARTH, Coordinates{5, 5}};
     planet_repo.save(peaceful_planet);
 
     SectorMap wasted_smap(peaceful_planet);
@@ -139,10 +133,7 @@ int main() {
   // Test 5: check_orbital_pdn_defense unit tests
   // =========================================================================
   {
-    Planet orbit_planet{};
-    orbit_planet.star_id() = 1;
-    orbit_planet.planet_order() = 3;
-    orbit_planet.dimensions() = Coordinates{5, 5};
+    Planet orbit_planet{1, 3, PlanetType::EARTH, Coordinates{5, 5}};
     planet_repo.save(orbit_planet);
 
     // 1. Empty orbit has no PDN defense
@@ -236,10 +227,7 @@ int main() {
   // Test 7: find_bombardment_target unit tests
   // =========================================================================
   {
-    Planet target_planet{};
-    target_planet.star_id() = 1;
-    target_planet.planet_order() = 4;
-    target_planet.dimensions() = Coordinates{5, 5};
+    Planet target_planet{1, 4, PlanetType::EARTH, Coordinates{5, 5}};
     planet_repo.save(target_planet);
 
     // Setup sectors on planet 4:

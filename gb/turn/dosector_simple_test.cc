@@ -60,9 +60,7 @@ Race createTestRace(player_t playernum = 1) {
 
 // Helper function to create a test planet
 Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
-  Planet planet(PlanetType::EARTH, Coordinates{maxx, maxy});
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet(1, 1, PlanetType::EARTH, Coordinates{maxx, maxy});
   planet.free_slaves();
 
   // Initialize conditions
@@ -229,13 +227,13 @@ void test_planet_creation() {
   test::expect_eq(planet.toxic(), 0);
 
   // Test different planet types
-  Planet earth_planet(PlanetType::EARTH, Coordinates{10, 10});
+  Planet earth_planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
   test::expect_eq(earth_planet.type(), PlanetType::EARTH);
 
-  Planet gas_planet(PlanetType::GASGIANT, Coordinates{10, 10});
+  Planet gas_planet(1, 2, PlanetType::GASGIANT, Coordinates{10, 10});
   test::expect_eq(gas_planet.type(), PlanetType::GASGIANT);
 
-  Planet asteroid(PlanetType::ASTEROID, Coordinates{10, 10});
+  Planet asteroid(1, 3, PlanetType::ASTEROID, Coordinates{10, 10});
   test::expect_eq(asteroid.type(), PlanetType::ASTEROID);
 
   // Test player info initialization

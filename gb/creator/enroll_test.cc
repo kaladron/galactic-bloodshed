@@ -87,9 +87,7 @@ void test_enroll_no_free_planet_type() {
   StarRepository star_repo(store);
   star_repo.save(star);
 
-  Planet planet{PlanetType::MARS, Coordinates{10, 10}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::MARS, Coordinates{10, 10}};
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -147,14 +145,10 @@ void test_find_suitable_planet_deterministic_search() {
   Star star3(ss3);
   star_repo.save(star3);
 
-  Planet p3_1{PlanetType::MARS, Coordinates{10, 10}};
-  p3_1.star_id() = 3;
-  p3_1.planet_order() = 1;
+  Planet p3_1{3, 1, PlanetType::MARS, Coordinates{10, 10}};
   planet_repo.save(p3_1);
 
-  Planet p3_2{PlanetType::EARTH, Coordinates{10, 10}};
-  p3_2.star_id() = 3;
-  p3_2.planet_order() = 2;
+  Planet p3_2{3, 2, PlanetType::EARTH, Coordinates{10, 10}};
   p3_2.rtemp() = 20;
   planet_repo.save(p3_2);
 
@@ -165,15 +159,11 @@ void test_find_suitable_planet_deterministic_search() {
   Star star4(ss4);
   star_repo.save(star4);
 
-  Planet p4_1{PlanetType::EARTH, Coordinates{10, 10}};
-  p4_1.star_id() = 4;
-  p4_1.planet_order() = 1;
+  Planet p4_1{4, 1, PlanetType::EARTH, Coordinates{10, 10}};
   p4_1.rtemp() = 15;
   planet_repo.save(p4_1);
 
-  Planet p4_2{PlanetType::MARS, Coordinates{10, 10}};
-  p4_2.star_id() = 4;
-  p4_2.planet_order() = 2;
+  Planet p4_2{4, 2, PlanetType::MARS, Coordinates{10, 10}};
   planet_repo.save(p4_2);
 
   // Star 5: 2 planets, candidate Gas Giant at pnum 2 (cold: rtemp = -80)
@@ -183,14 +173,10 @@ void test_find_suitable_planet_deterministic_search() {
   Star star5(ss5);
   star_repo.save(star5);
 
-  Planet p5_1{PlanetType::MARS, Coordinates{10, 10}};
-  p5_1.star_id() = 5;
-  p5_1.planet_order() = 1;
+  Planet p5_1{5, 1, PlanetType::MARS, Coordinates{10, 10}};
   planet_repo.save(p5_1);
 
-  Planet p5_2{PlanetType::GASGIANT, Coordinates{10, 10}};
-  p5_2.star_id() = 5;
-  p5_2.planet_order() = 2;
+  Planet p5_2{5, 2, PlanetType::GASGIANT, Coordinates{10, 10}};
   p5_2.rtemp() = -80;
   planet_repo.save(p5_2);
 
@@ -202,15 +188,11 @@ void test_find_suitable_planet_deterministic_search() {
   Star star6(ss6);
   star_repo.save(star6);
 
-  Planet p6_1{PlanetType::ICEBALL, Coordinates{10, 10}};
-  p6_1.star_id() = 6;
-  p6_1.planet_order() = 1;
+  Planet p6_1{6, 1, PlanetType::ICEBALL, Coordinates{10, 10}};
   p6_1.rtemp() = -120;
   planet_repo.save(p6_1);
 
-  Planet p6_2{PlanetType::DESERT, Coordinates{10, 10}};
-  p6_2.star_id() = 6;
-  p6_2.planet_order() = 2;
+  Planet p6_2{6, 2, PlanetType::DESERT, Coordinates{10, 10}};
   p6_2.rtemp() = 150;
   planet_repo.save(p6_2);
 
@@ -283,14 +265,10 @@ void test_enroll_valid_race_success() {
   star_repo.save(star1);
 
   PlanetRepository planet_repo(store);
-  Planet p1{PlanetType::MARS, Coordinates{5, 5}};
-  p1.star_id() = 1;
-  p1.planet_order() = 1;
+  Planet p1{1, 1, PlanetType::MARS, Coordinates{5, 5}};
   planet_repo.save(p1);
 
-  Planet p2{PlanetType::GASGIANT, Coordinates{5, 5}};
-  p2.star_id() = 1;
-  p2.planet_order() = 2;
+  Planet p2{1, 2, PlanetType::GASGIANT, Coordinates{5, 5}};
   p2.rtemp() = -80;
   planet_repo.save(p2);
 

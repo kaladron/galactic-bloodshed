@@ -77,9 +77,7 @@ void test_entitymanager_sectormap(EntityManager& em, Database& db) {
   JsonStore store(db);
   PlanetRepository planets(store);
 
-  Planet test_planet{PlanetType::WATER, Coordinates{8, 6}};
-  test_planet.star_id() = 5;
-  test_planet.planet_order() = 1;
+  Planet test_planet{5, 1, PlanetType::WATER, Coordinates{8, 6}};
   planets.save(test_planet);
 
   // Create initial sector data using Repository (DAL layer)
@@ -171,14 +169,10 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   JsonStore store(db);
   PlanetRepository planets(store);
 
-  Planet planet1{PlanetType::EARTH, Coordinates{6, 6}};
-  planet1.star_id() = 7;
-  planet1.planet_order() = 0;
+  Planet planet1{7, 1, PlanetType::EARTH, Coordinates{6, 6}};
   planets.save(planet1);
 
-  Planet planet2{PlanetType::WATER, Coordinates{4, 4}};
-  planet2.star_id() = 7;       // Same star
-  planet2.planet_order() = 1;  // Different planet order
+  Planet planet2{7, 2, PlanetType::WATER, Coordinates{4, 4}};
   planets.save(planet2);
 
   // Create different sector maps for each planet using Repository
@@ -201,8 +195,8 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
   sectors.save_map(smap2);
 
   // Load both via EntityManager and verify they're different
-  const SectorMap* reload1 = em.peek_sectormap(7, 0);
-  const SectorMap* reload2 = em.peek_sectormap(7, 1);
+  const SectorMap* reload1 = em.peek_sectormap(7, 1);
+  const SectorMap* reload2 = em.peek_sectormap(7, 2);
 
   test::expect_ne(reload1, nullptr);
   test::expect_ne(reload2, nullptr);
@@ -222,9 +216,7 @@ void test_multiple_planets_isolation(EntityManager& em, Database& db) {
 void test_sectormap_random_and_shuffle() {
   std::println(std::cout, "=== Testing SectorMap shuffle and get_random ===");
 
-  Planet test_planet{PlanetType::EARTH, Coordinates{5, 4}};
-  test_planet.star_id() = 1;
-  test_planet.planet_order() = 0;
+  Planet test_planet{1, 1, PlanetType::EARTH, Coordinates{5, 4}};
 
   SectorMap smap(test_planet);
   populate_sectormap(smap, test_planet, 10, 100);
@@ -299,9 +291,7 @@ void test_sectormap_dirty_tracking_views_persistence(EntityManager& em,
   PlanetRepository planets(store);
   SectorRepository sectors(store);
 
-  Planet test_planet{PlanetType::EARTH, Coordinates{4, 4}};
-  test_planet.star_id() = 9;
-  test_planet.planet_order() = 0;
+  Planet test_planet{9, 1, PlanetType::EARTH, Coordinates{4, 4}};
   planets.save(test_planet);
 
   SectorMap initial_smap(test_planet);

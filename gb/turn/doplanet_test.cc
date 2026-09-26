@@ -30,9 +30,7 @@ Race createTestRace(player_t playernum = player_t{1}) {
 }
 
 Planet createTestPlanet(Coordinates dimensions = Coordinates{10, 10}) {
-  Planet planet(PlanetType::EARTH, dimensions);
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet(1, 1, PlanetType::EARTH, dimensions);
   planet.free_slaves();
   planet.toxic() = 0;
   planet.rtemp() = 50;
@@ -935,8 +933,6 @@ void test_execute_berserker_bombardment() {
 
   // Planet 1
   Planet planet = createTestPlanet();
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -995,8 +991,8 @@ void test_refuel_gasgiant_orbiters() {
   initialize_schema(db);
   EntityManager em(db);
 
-  Planet gas_giant(PlanetType::GASGIANT, Coordinates{0, 0});
-  Planet earth(PlanetType::EARTH, Coordinates{0, 0});
+  Planet gas_giant(1, 1, PlanetType::GASGIANT, Coordinates{0, 0});
+  Planet earth(1, 2, PlanetType::EARTH, Coordinates{0, 0});
 
   auto tanker_handle = TestShipBuilder(em, ShipType::STYPE_TANKER)
                            .owned_by(1)
@@ -1066,8 +1062,6 @@ void test_process_planetary_ships() {
 
   Planet planet = createTestPlanet();
   planet.type() = PlanetType::GASGIANT;
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
 
   SectorMap smap(planet);
   smap.get(Coordinates{1, 1}).set_condition(SectorType::SEC_WASTED);
@@ -1180,8 +1174,6 @@ void test_doplanet_full_cycle() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -1227,8 +1219,6 @@ void test_exploration_island_discovery() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.expltimer() = 0;  // Trigger exploration check this cycle
   PlanetRepository planets(store);
   planets.save(planet);
@@ -1291,8 +1281,6 @@ void test_64bit_production_and_stockpiles() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.info(player_t{1}).numsectsowned = 5;
   planet.info(player_t{1}).resource = 100'000;
   planet.info(player_t{1}).fuel = 200'000;
@@ -1378,9 +1366,7 @@ void test_process_planet_climate() {
   ss.star_id = 3;
   Star star(ss);
 
-  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-  planet.star_id() = 3;
-  planet.planet_order() = 1;
+  Planet planet(3, 1, PlanetType::EARTH, Coordinates{10, 10});
   planet.temp() = 20;
   planet.rtemp() = 20;
 
@@ -1394,9 +1380,7 @@ void test_process_planet_climate() {
 }
 
 void test_process_toxic_environmental_damage() {
-  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
   SectorMap smap(planet);
   for (int y = 0; y < planet.dimensions().y; ++y) {
@@ -1426,9 +1410,7 @@ void test_process_toxic_environmental_damage() {
 }
 
 void test_process_supernova_sector_devastation() {
-  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
   SectorMap smap(planet);
   for (int y = 0; y < planet.dimensions().y; ++y) {
@@ -1478,8 +1460,6 @@ void test_build_automated_waste_can() {
 
   Star star = createTestStar();
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.toxic() = 80;
 
   SectorMap smap(planet);
@@ -1997,8 +1977,6 @@ void test_process_island_exploration() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.expltimer() = 3;
   PlanetRepository planets(store);
   planets.save(planet);
@@ -2079,8 +2057,6 @@ void test_process_enslavement_and_revolts() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -2240,8 +2216,6 @@ void test_execute_slave_revolt() {
   // colonies, and frees slaves.
   {
     Planet planet = createTestPlanet(Coordinates{5, 5});
-    planet.star_id() = star.star_id();
-    planet.planet_order() = 1;
     planet.enslave_to(1);
     planet.popn() = 4000;
     planet.info(player_t{1}).numsectsowned = 5;
@@ -2277,8 +2251,6 @@ void test_execute_slave_revolt() {
   // devastation.
   {
     Planet planet = createTestPlanet(Coordinates{5, 5});
-    planet.star_id() = star.star_id();
-    planet.planet_order() = 1;
     planet.enslave_to(1);
     planet.popn() = 0;
     planet.info(player_t{1}).numsectsowned = 25;
@@ -2320,8 +2292,6 @@ void test_recalculate_census() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{2, 2};
   planet.toxic() = 10;
   PlanetRepository planets(store);
@@ -2441,8 +2411,6 @@ void test_process_planet_economy() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{2, 2};
   planet.toxic() = 5;
   planet.popn() = 200;
@@ -2505,8 +2473,6 @@ void test_process_planet_economy_automated_waste_can() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{2, 2};
   planet.toxic() = 50;
   planet.popn() = 100;
@@ -2602,8 +2568,6 @@ void test_process_planet_production() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.dimensions() = Coordinates{2, 2};
   PlanetRepository planets(store);
   planets.save(planet);
@@ -2641,8 +2605,6 @@ void test_send_planet_turn_telegrams() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
-  planet.star_id() = star.star_id();
-  planet.planet_order() = 1;
   planet.rtemp() = 200;
   planet.temp() = 250;
   planet.enslave_to(2);
@@ -2694,8 +2656,6 @@ void test_send_planet_turn_telegrams_nova() {
   // 1. Earth planet in Stage 1 nova -> "Seas and rivers are boiling!"
   {
     Planet planet = createTestPlanet();
-    planet.star_id() = star.star_id();
-    planet.planet_order() = 1;
     planet.type() = PlanetType::EARTH;
     planet.info(player_t{1}).numsectsowned = 5;
     planet.info(player_t{2}).numsectsowned = 0;
@@ -2720,8 +2680,6 @@ void test_send_planet_turn_telegrams_nova() {
   // boiling!"
   {
     Planet planet_water = createTestPlanet();
-    planet_water.star_id() = star.star_id();
-    planet_water.planet_order() = 1;
     planet_water.type() = PlanetType::WATER;
     planet_water.info(player_t{1}).numsectsowned = 3;
 
@@ -2733,8 +2691,6 @@ void test_send_planet_turn_telegrams_nova() {
         tele.back().message.contains("Seas and rivers are boiling!"));
 
     Planet planet_forest = createTestPlanet();
-    planet_forest.star_id() = star.star_id();
-    planet_forest.planet_order() = 1;
     planet_forest.type() = PlanetType::FOREST;
     planet_forest.info(player_t{1}).numsectsowned = 3;
 
@@ -2747,8 +2703,6 @@ void test_send_planet_turn_telegrams_nova() {
   // 3. Desert planet in Stage 1 nova -> no "Seas and rivers are boiling!"
   {
     Planet planet_desert = createTestPlanet();
-    planet_desert.star_id() = star.star_id();
-    planet_desert.planet_order() = 1;
     planet_desert.type() = PlanetType::DESERT;
     planet_desert.info(player_t{1}).numsectsowned = 5;
 

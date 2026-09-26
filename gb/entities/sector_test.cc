@@ -279,9 +279,7 @@ void test_sector_transfer_autoclaim() {
 }
 
 void test_sectormap_range_views() {
-  Planet planet(planet_struct{
-      .dimensions = Coordinates{2, 2},
-  });
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
   SectorMap smap(planet);
 
   // Setup sectors:
@@ -499,7 +497,7 @@ void test_sector_update_efficiency() {
   race.likes[SectorType::SEC_LAND] = 1.0;
   race.likes[SectorType::SEC_GAS] = 1.0;
 
-  Planet planet{};
+  Planet planet{1, 1};
   planet.info(player_t{1}).tax = 0;  // 100% chance of development
 
   // 1. Unowned sector does not mutate or throw

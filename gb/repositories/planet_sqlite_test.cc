@@ -20,11 +20,9 @@ int main() {
   initialize_schema(db);
 
   // Create a test Planet
-  Planet test_planet(PlanetType::EARTH, Coordinates{20, 20});
+  Planet test_planet{1, 2, PlanetType::EARTH, Coordinates{20, 20}};
 
   // Initialize scalar fields
-  test_planet.star_id() = 1;  // Match the star we'll create below
-  test_planet.planet_order() = 2;
   test_planet.set_system_coordinates({100.5, 200.7});
   test_planet.popn() = 100000;
   test_planet.troops() = 5000;

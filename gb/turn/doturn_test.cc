@@ -43,9 +43,7 @@ Star createTestStar(starnum_t id = 1) {
 }
 
 Planet createTestPlanet(starnum_t star_id = 1, planetnum_t pnum = 1) {
-  Planet planet(PlanetType::EARTH, Coordinates{5, 5});
-  planet.star_id() = star_id;
-  planet.planet_order() = pnum;
+  Planet planet(star_id, pnum, PlanetType::EARTH, Coordinates{5, 5});
   planet.set_system_coordinates({1000.0, 1000.0});
   planet.free_slaves();
   planet.toxic() = 0;
@@ -341,7 +339,7 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
 }
 
 void test_planet_deposit_commodity() {
-  Planet planet(PlanetType::EARTH, Coordinates{5, 5});
+  Planet planet(1, 1, PlanetType::EARTH, Coordinates{5, 5});
   const player_t p{1};
 
   planet.deposit_commodity(CommodType::RESOURCE, 150, p);

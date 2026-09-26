@@ -62,9 +62,7 @@ void test_shoot_planet_to_ship_valid_attack() {
   StarRepository star_repo(store);
   star_repo.save(star);
 
-  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -115,9 +113,7 @@ void test_shoot_ship_to_planet_invalid_cases() {
   initialize_schema(db);
   EntityManager em(db);
 
-  Planet planet{PlanetType::EARTH, Coordinates{5, 5}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
 
   SectorMap smap(planet);
 
@@ -175,9 +171,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   race2.name = "Target";
   race_repo.save(race2);
 
-  Planet planet{PlanetType::EARTH, Coordinates{4, 4}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{4, 4}};
   PlanetRepository planet_repo(store);
   planet_repo.save(planet);
 
@@ -256,9 +250,7 @@ void test_zero_body_ship_combat() {
   Star star(ss);
   StarRepository(store).save(star);
 
-  Planet planet{PlanetType::EARTH, Coordinates{10, 10}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
   PlanetRepository(store).save(planet);
 
   Race race{};

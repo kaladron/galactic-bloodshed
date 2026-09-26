@@ -78,9 +78,7 @@ void test_entity_manager_composite_keys() {
 
   std::println(std::cout, "Test: EntityManager composite keys (Planet)");
 
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 2;
+  Planet planet{1, 2};
   planet.popn() = 10000;
   JsonStore store(db);
   PlanetRepository planets(store);
@@ -865,9 +863,7 @@ void test_entity_manager_with_scoped_peeks() {
   test::expect_eq(star_name, "AlphaCentauri");
 
   // 3. with_planet
-  Planet p{PlanetType::EARTH, Coordinates{5, 5}};
-  p.star_id() = 1;
-  p.planet_order() = 1;
+  Planet p{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
   p.popn() = 5000;
   PlanetRepository planets(store);
   planets.save(p);
@@ -1102,27 +1098,18 @@ void test_entity_manager_count_non_asteroid_planets() {
 
   test::expect_eq(em.count_non_asteroid_planets(), 0);
 
-  Planet earth{};
-  earth.star_id() = 1;
-  earth.planet_order() = 1;
-  earth.type() = PlanetType::EARTH;
+  Planet earth{1, 1, PlanetType::EARTH};
   planets.save(earth);
 
   test::expect_eq(em.count_non_asteroid_planets(), 1);
 
-  Planet asteroid{};
-  asteroid.star_id() = 1;
-  asteroid.planet_order() = 2;
-  asteroid.type() = PlanetType::ASTEROID;
+  Planet asteroid{1, 2, PlanetType::ASTEROID};
   planets.save(asteroid);
 
   // Asteroid must not increment the non-asteroid count
   test::expect_eq(em.count_non_asteroid_planets(), 1);
 
-  Planet gas_giant{};
-  gas_giant.star_id() = 2;
-  gas_giant.planet_order() = 1;
-  gas_giant.type() = PlanetType::GASGIANT;
+  Planet gas_giant{2, 1, PlanetType::GASGIANT};
   planets.save(gas_giant);
 
   test::expect_eq(em.count_non_asteroid_planets(), 2);

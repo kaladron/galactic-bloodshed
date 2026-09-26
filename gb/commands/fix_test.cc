@@ -139,6 +139,7 @@ void test_fix_planet_temp_persistence() {
 
   // 2. Create test entities via Repository
   JsonStore store(ctx.db);
+  StarRepository(store).save(Star{1, "TestStar"});
   PlanetRepository planets(store);
 
   // Create planet
@@ -173,6 +174,7 @@ void test_fix_planet_oxygen_persistence() {
 
   // 2. Create test entities via Repository
   JsonStore store(ctx.db);
+  StarRepository(store).save(Star{1, "TestStar"});
   PlanetRepository planets(store);
 
   // Create planet
@@ -207,6 +209,7 @@ void test_fix_planet_position_persistence() {
 
   // 2. Create test entities via Repository
   JsonStore store(ctx.db);
+  StarRepository(store).save(Star{1, "TestStar"});
   PlanetRepository planets(store);
 
   // Create planet

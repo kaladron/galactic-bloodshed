@@ -271,10 +271,7 @@ void test_assault_validation_and_ap_invariants() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "Your ship is already docked.");
-  ctx.em.mutate_ship(1, [](Ship& s) {
-    s.dock_into_carrier(2);
-    s.undock_from_ship();
-  });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.dock_into_carrier(2); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "Your ship is landed on another ship.");

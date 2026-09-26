@@ -195,17 +195,16 @@ void process_market_transactions(EntityManager& entity_manager) {
             "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
             c.type, bidder_race->name, bidder, c.bid);
         push_telegram(entity_manager, c.owner, c.governor, sold_msg);
-        c.owner = 0;
-        c.governor = Race::leader_id;
         c.clear_bid();
+        entity_manager.delete_commod(c.id);
       } else {
         c.clear_bid();
       }
     } else {
       c.clear_bid();
-    }
-    if (c.owner == player_t{0}) {
-      entity_manager.delete_commod(c.id);
+      if (c.owner == player_t{0}) {
+        entity_manager.delete_commod(c.id);
+      }
     }
   }
 }

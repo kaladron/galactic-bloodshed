@@ -37,6 +37,16 @@ void setup_test_world(TestContext& ctx) {
   RaceRepository races(store);
   races.save(race);
 
+  Race race2{};
+  race2.Playernum = 2;
+  race2.name = "EnemyRace";
+  races.save(race2);
+
+  Race race3{};
+  race3.Playernum = 3;
+  race3.name = "NeutralRace";
+  races.save(race3);
+
   // Create stable star
   Star star0{1, "TestStar", {100.0, 200.0}};
   star0.stability() = 40;  // Stable star (< 50)

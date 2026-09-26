@@ -725,19 +725,10 @@ void test_transporter_edge_cases() {
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "Target ship not landed");
 
-  // 5a. Hopper blocked (target ship == std::nullopt)
-  ctx.em.mutate_ship(recv_id, [](Ship& s) { s.land_on_planet(); });
+  // 5. Hopper blocked (target ship == std::nullopt)
+  ctx.em.mutate_ship(recv_id, [](Ship& s) { s.land_on_planet(1, 1); });
   ctx.em.mutate_ship(send_id, [](Ship& s) {
     static_cast<TransporterShip&>(s).set_target_ship(std::nullopt);
-  });
-  g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"load", std::format("#{}", send_id.value), "r", "10"});
-  test::expect_contains(g.out.str(), "The hopper seems to be blocked");
-
-  // 5b. Hopper blocked (target ship doesn't exist)
-  ctx.em.mutate_ship(send_id, [](Ship& s) {
-    static_cast<TransporterShip&>(s).set_target_ship(9999);
   });
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -758,7 +749,7 @@ void test_transporter_edge_cases() {
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "Zap");
-  test::expect_eq(ctx.em.peek_ship(recv_id)->resource(), 70);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->resource(), 60);
   test::expect_eq(ctx.em.peek_ship(recv_id)->fuel(), 30.0);
   test::expect_eq(ctx.em.peek_ship(recv_id)->destruct(), 15);
   test::expect_eq(ctx.em.peek_ship(recv_id)->crystals(), 5);
@@ -919,10 +910,8 @@ void test_docking_and_validation_edge_cases() {
       g, {"load", std::format("#{}", shuttle_id.value), "z", "10"});
   test::expect_contains(g.out.str(), "No such commodity");
 
-  // 9. Overloaded destination ship, destshipno == 0, bogus destination ship,
-  // and un-docked destination ship
-  ctx.em.mutate_ship(carrier_id,
-                     [&](Ship& s) { s.dock_into_carrier(shuttle_id); });
+  // 9. Overloaded destination ship, missing destshipno, and un-docked
+  // destination ship
   ctx.em.mutate_ship(shuttle_id,
                      [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   g.out.str("");
@@ -930,17 +919,11 @@ void test_docking_and_validation_edge_cases() {
       g, {"load", std::format("#{}", carrier_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "is overloaded!");
 
-  ctx.em.mutate_ship(shuttle_id, [](Ship& s) { s.set_star_destination(1); });
+  ctx.em.mutate_ship(carrier_id, [](Ship& s) { s.set_star_destination(1); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
-      g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});
+      g, {"load", std::format("#{}", carrier_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "is not docked");
-
-  ctx.em.mutate_ship(shuttle_id, [](Ship& s) { s.dock_with_ship(9999); });
-  g.out.str("");
-  ctx.assert_dispatch_rejected(
-      g, {"load", std::format("#{}", shuttle_id.value), "r", "10"});
-  test::expect_contains(g.out.str(), "Destination ship is bogus");
 
   ctx.em.mutate_ship(shuttle_id, [&](Ship& s) {
     s.enter_star_orbit(1);

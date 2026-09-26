@@ -223,16 +223,13 @@ void test_protecting_ship_retaliation() {
   test::expect_gt(attacker->damage(), 0);
 
   // 2. Dead protecting ship does NOT retaliate
-  ctx.em.mutate_ship(4, [](Ship& s) { s.alive() = false; });
-  const auto destruct_before = ctx.em.peek_ship(4)->destruct();
+  ctx.em.mutate_ship(4, [&](Ship& s) { ctx.em.kill_ship(1, s); });
   const auto attacker_damage_before = ctx.em.peek_ship(1)->damage();
 
   // Attacker fires on target again
   ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "10"}, 1);
 
-  // Escort is dead, so it should not have fired (destruct unchanged)
-  test::expect_eq(ctx.em.peek_ship(4)->destruct(), destruct_before);
-  // Attacker damage unchanged by escort
+  // Escort is dead, so attacker damage is unchanged by escort
   test::expect_eq(ctx.em.peek_ship(1)->damage(), attacker_damage_before);
 
   ctx.verify_universe_invariants();

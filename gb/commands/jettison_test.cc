@@ -13,7 +13,10 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  TestWorldBuilder(ctx).add_race("Jettisoner").add_star("JettisonStar", 10);
+  TestWorldBuilder(ctx)
+      .add_race("Jettisoner")
+      .add_star("JettisonStar", 10)
+      .add_planet(1, PlanetType::EARTH);
 
   // Create a ship with cargo
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
@@ -150,7 +153,7 @@ void test_jettison_domain_errors() {
   test::expect_contains(g.out.str(), "No such commodity valid");
 
   // 3. Jettison when landed
-  ctx.em.mutate_ship(1, [](Ship& s) { s.land_on_planet(); });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.land_on_planet(1, 1); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "10"});
   test::expect_contains(g.out.str(), "Ship is landed, cannot jettison");

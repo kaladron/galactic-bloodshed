@@ -78,7 +78,15 @@ int main() {
   r2.name = "Terran";
   race_repo.save(r2);
 
-  planet_repo.save(Planet{1, 1});
+  Race r3{};
+  r3.Playernum = 3;
+  r3.name = "Martian";
+  race_repo.save(r3);
+
+  Race r4{};
+  r4.Playernum = 4;
+  r4.name = "Jovian";
+  race_repo.save(r4);
 
   // =========================================================================
   // 2. find_closest_stars tests (including Bug 1: Star 1 Orbit Search Fix)
@@ -110,6 +118,13 @@ int main() {
         .with_position(100.0, 0.0)
         .with_planet_names({"P1"})
         .build();
+
+    planet_repo.save(Planet{1, 1});
+    planet_repo.save(Planet{1, 2});
+    planet_repo.save(Planet{2, 1});
+    planet_repo.save(Planet{2, 2});
+    planet_repo.save(Planet{3, 1});
+    planet_repo.save(Planet{4, 1});
 
     // Test search from Star 1: Closest is Star 2 (dist 10), second closest is
     // Star 3 (dist 25)

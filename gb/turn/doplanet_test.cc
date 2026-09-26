@@ -336,6 +336,8 @@ void test_execute_terraforming() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
   SectorMap smap(planet);
 
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_TERRA)
@@ -414,6 +416,8 @@ void test_execute_plowing() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
   SectorMap smap(planet);
 
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_PLOW)
@@ -516,7 +520,13 @@ void test_process_plow_turn() {
   RaceRepository races(store);
   races.save(race);
 
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
   Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
   SectorMap smap(planet);
   smap.get(Coordinates{1, 1}).set_condition(SectorType::SEC_LAND);
   smap.get(Coordinates{1, 2}).set_condition(SectorType::SEC_LAND);
@@ -571,7 +581,13 @@ void test_upgrade_sector_dome() {
   RaceRepository races(store);
   races.save(race);
 
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
   Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
   SectorMap smap(planet);
 
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_DOME)
@@ -648,7 +664,13 @@ void test_process_dome_turn() {
   RaceRepository races(store);
   races.save(race);
 
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
   Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
   SectorMap smap(planet);
   smap.get(Coordinates{2, 2}).set_efficiency_bounded(50);
 
@@ -712,6 +734,8 @@ void test_strip_mine_quarry() {
   stars.save(star);
 
   Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
   SectorMap smap(planet);
 
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_QUARRY)
@@ -791,7 +815,13 @@ void test_process_quarry_turn() {
   RaceRepository races(store);
   races.save(race);
 
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
   Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
   SectorMap smap(planet);
   smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
   smap.get(Coordinates{3, 3}).set_fert(50);
@@ -853,6 +883,14 @@ void test_process_weapon_plant_turn() {
   race.tech = 50.0;
   RaceRepository races(store);
   races.save(race);
+
+  Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
+  Planet planet = createTestPlanet();
+  PlanetRepository planets(store);
+  planets.save(planet);
 
   auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_WPLANT, 99)
                          .owned_by(1)
@@ -976,9 +1014,22 @@ void test_refuel_gasgiant_orbiters() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
+  JsonStore store(db);
+
+  Race race = createTestRace(player_t{1});
+  RaceRepository races(store);
+  races.save(race);
+
+  Star star = createTestStar();
+  star.set_planet_name(2, "Earth2");
+  StarRepository stars(store);
+  stars.save(star);
 
   Planet gas_giant(1, 1, PlanetType::GASGIANT, Coordinates{0, 0});
   Planet earth(1, 2, PlanetType::EARTH, Coordinates{0, 0});
+  PlanetRepository planets(store);
+  planets.save(gas_giant);
+  planets.save(earth);
 
   auto tanker_handle = TestShipBuilder(em, ShipType::STYPE_TANKER)
                            .owned_by(1)
@@ -1048,6 +1099,8 @@ void test_process_planetary_ships() {
 
   Planet planet = createTestPlanet();
   planet.type() = PlanetType::GASGIANT;
+  PlanetRepository planet_repo(store);
+  planet_repo.save(planet);
 
   SectorMap smap(planet);
   smap.get(Coordinates{1, 1}).set_condition(SectorType::SEC_WASTED);
@@ -1057,13 +1110,14 @@ void test_process_planetary_ships() {
   TurnStats stats{};
 
   // 1. Dead plow ship (should be skipped)
-  TestShipBuilder(em, ShipType::OTYPE_PLOW)
-      .owned_by(1)
-      .landed_on(star.star_id(), 1, {0, 0})
-      .with_active(true)
-      .with_alive(false)
-      .with_on(true)
-      .build_handle();
+  shipnum_t dead_plow_id = TestShipBuilder(em, ShipType::OTYPE_PLOW)
+                               .owned_by(1)
+                               .landed_on(star.star_id(), 1, {0, 0})
+                               .with_active(true)
+                               .with_alive(true)
+                               .with_on(true)
+                               .build();
+  em.mutate_ship(dead_plow_id, [&](Ship& s) { em.kill_ship(1, s); });
 
   // 2. Active Landed Plow on (1, 1) moving South to (1, 2)
   auto plow_handle = TestShipBuilder(em, ShipType::OTYPE_PLOW)
@@ -1441,10 +1495,16 @@ void test_build_automated_waste_can() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
+  JsonStore store(db);
 
   Star star = createTestStar();
+  StarRepository stars(store);
+  stars.save(star);
+
   Planet planet = createTestPlanet();
   planet.toxic() = 80;
+  PlanetRepository planets(store);
+  planets.save(planet);
 
   SectorMap smap(planet);
   for (int y = 0; y < planet.dimensions().y; ++y) {
@@ -1456,6 +1516,8 @@ void test_build_automated_waste_can() {
   }
 
   Race race = createTestRace(player_t{1});
+  RaceRepository races(store);
+  races.save(race);
 
   // 1. No threshold set -> returns nullopt, toxicity unmodified
   planet.info(race).tox_thresh = std::nullopt;

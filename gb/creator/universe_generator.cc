@@ -246,18 +246,6 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
 
   result.planet_count = db.count_non_asteroid_planets();
 
-  BlockRepository block_repo(store);
-  PowerRepository power_repo(store);
-  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
-    power p{};
-    p.id = i;
-    power_repo.save(p);
-
-    block b{};
-    b.Playernum = i;
-    block_repo.save(b);
-  }
-
   ShipExamRepository exam_repo(store);
   exam_repo.seed_from_file(config_.exam_file);
 

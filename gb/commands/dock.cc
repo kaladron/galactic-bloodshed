@@ -61,12 +61,12 @@ bool validate_boarding_ship(const Ship& s, bool is_assault, PopulationType what,
     }
     return true;
   }
-  if (s.docked()) {
-    g.out << "Your ship is already docked.\n";
-    return false;
-  }
   if (s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
     g.out << "Your ship is landed on another ship.\n";
+    return false;
+  }
+  if (s.docked()) {
+    g.out << "Your ship is already docked.\n";
     return false;
   }
   if (what == PopulationType::CIV && !s.popn()) {

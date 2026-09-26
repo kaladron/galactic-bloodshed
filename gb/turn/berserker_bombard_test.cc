@@ -62,12 +62,12 @@ int main() {
   test::expect_gt(destroyed, 0);
 
   // Test 2: PDN presence prevents bombardment
-  auto pdn_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 2)
-                        .owned_by(2)
-                        .with_alive(true)
-                        .with_on(true)
-                        .in_planet_orbit(1, 1)
-                        .build_handle();
+  TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 2)
+      .owned_by(2)
+      .with_alive(true)
+      .with_on(true)
+      .in_planet_orbit(1, 1)
+      .build();
 
   int pdn_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
   test::expect_eq(pdn_destroyed, 0);
@@ -97,7 +97,7 @@ int main() {
     ship.notified() = 0;
     ship.destruct() = 0;
     // Disable PDN defense
-    pdn_handle->alive() = false;
+    ctx.em.mutate_ship(2, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
     int no_weapon_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
     test::expect_eq(no_weapon_destroyed, 0);
@@ -138,11 +138,12 @@ int main() {
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
 
     // 4. Dead enemy PDN does not block bombardment
-    auto d_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 203)
-                        .owned_by(2)
-                        .with_alive(false)
-                        .in_planet_orbit(1, 3)
-                        .build_handle();
+    TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 203)
+        .owned_by(2)
+        .with_alive(true)
+        .in_planet_orbit(1, 3)
+        .build();
+    ctx.em.mutate_ship(203, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
     test::expect_false(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));

@@ -464,7 +464,11 @@ EntityHandle<Commod> EntityManager::get_commod(int id) {
   auto handle = get_entity_impl<Commod>(
       this, id, commod_cache, commod_refcount,
       [this](int i) { return storage_->commods.find_by_id(i); },
-      [this](const Commod& c) { storage_->commods.save(c); },
+      [this](const Commod& c) {
+        if (!std::ranges::contains(pending_commod_deletions_, c.id)) {
+          storage_->commods.save(c);
+        }
+      },
       [this](int i) { release_commod(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Commodity not found: id={}", id));
@@ -876,8 +880,11 @@ void EntityManager::flush_all() {
   flush_cache_impl<SectorMap>(sectormap_cache, [this](const SectorMap& sm) {
     storage_->sectors.save_map(sm);
   });
-  flush_cache_impl<Commod>(
-      commod_cache, [this](const Commod& c) { storage_->commods.save(c); });
+  flush_cache_impl<Commod>(commod_cache, [this](const Commod& c) {
+    if (!std::ranges::contains(pending_commod_deletions_, c.id)) {
+      storage_->commods.save(c);
+    }
+  });
   flush_cache_impl<block>(block_cache,
                           [this](const block& b) { storage_->blocks.save(b); });
   flush_cache_impl<power>(power_cache,

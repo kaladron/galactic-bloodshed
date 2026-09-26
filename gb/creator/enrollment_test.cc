@@ -192,6 +192,13 @@ void test_enroll_first_race_god_success() {
     test::expect_eq(race->translate[player_t{1}], 100);
   }
 
+  // Verify Block and Power entities created on race enrollment
+  const auto* blk = em.peek_block(blocknum_t{1});
+  test::expect_true(blk != nullptr);
+  test::expect_eq(blk->name, std::string("Terrans"));
+  const auto* pwr = em.peek_power(powernum_t{1});
+  test::expect_true(pwr != nullptr);
+
   // Verify Capital Ship entity
   const auto* ship = em.peek_ship(result.gov_ship);
   test::expect_true(ship != nullptr);

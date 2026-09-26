@@ -135,7 +135,6 @@ void test_check_connect_success_and_clamping() {
   race.name = "TestRace";
   race.password = "raceword";
   race.morale = 100;
-  race.Gov_ship = 42;
   race.leader().name = "Gov1";
   race.leader().password = "govword";
   race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
@@ -154,6 +153,23 @@ void test_check_connect_success_and_clamping() {
     sdata.pnames = {"FirstPlanet"};
     Star star{sdata};
     star_repo.save(star);
+
+    PlanetRepository planet_repo(store);
+    Planet planet{1, 1};
+    planet_repo.save(planet);
+
+    ShipRepository ship_repo(store);
+    Ship gov_ship{};
+    gov_ship.number() = 42;
+    gov_ship.owner() = 1;
+    gov_ship.governor() = 1;
+    gov_ship.alive() = true;
+    gov_ship.type() = ShipType::OTYPE_GOV;
+    gov_ship.land_on_planet(1, 1);
+    ship_repo.save(gov_ship);
+
+    race.Gov_ship = 42;
+    races.save(race);
 
     UniverseRepository univ_repo(store);
     universe_struct u{};

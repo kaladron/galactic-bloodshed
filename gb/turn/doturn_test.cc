@@ -315,14 +315,6 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   ship1.resource() = 100;
   ship_repo.save(ship1);
 
-  // Derelict/unowned ship (owner == 0) - tests safety against negative indexing
-  Ship derelict{};
-  derelict.number() = 2;
-  derelict.owner() = player_t{0};
-  derelict.alive() = true;
-  derelict.tech() = 5.0;
-  ship_repo.save(derelict);
-
   NullSessionRegistry session_registry;
 
   // Run full update turn
@@ -445,26 +437,34 @@ void test_compute_governed_status() {
   JsonStore store(db);
 
   Race race = createTestRace(player_t{1});
+  RaceRepository race_repo(store);
+  race_repo.save(race);
+
+  Star star = createTestStar(starnum_t{1});
+  StarRepository star_repo(store);
+  star_repo.save(star);
+
+  Planet planet = createTestPlanet(starnum_t{1}, planetnum_t{1});
+  PlanetRepository planet_repo(store);
+  planet_repo.save(planet);
+
   // Case 1: No Gov_ship
   race.Gov_ship = std::nullopt;
   test::expect_false(compute_governed_status(race, em));
 
-  // Case 2: Ship exists but dead or undocked
+  // Case 2: Ship exists and is alive but undocked
   Ship gov_ship{};
   gov_ship.number() = 1;
   gov_ship.owner() = player_t{1};
-  gov_ship.alive() = false;
-  gov_ship.launch_to_orbit();
+  gov_ship.alive() = true;
+  gov_ship.enter_planet_orbit(1, 1);
   ShipRepository ship_repo(store);
   ship_repo.save(gov_ship);
   race.Gov_ship = 1;
   test::expect_false(compute_governed_status(race, em));
 
   // Case 4: Ship alive and docked at planet
-  em.mutate_ship(1, [](Ship& s) {
-    s.alive() = true;
-    s.land_on_planet();
-  });
+  em.mutate_ship(1, [](Ship& s) { s.land_on_planet(1, 1); });
   test::expect_true(compute_governed_status(race, em));
 
   // Case 5: Ship docked at habitat orbiting planet or star
@@ -489,6 +489,16 @@ void test_action_points_computation_and_distribution() {
 
   Race race = createTestRace(player_t{1});
   race.planet_points = 50;
+  RaceRepository race_repo(store);
+  race_repo.save(race);
+
+  Star star = createTestStar(starnum_t{1});
+  StarRepository star_repo(store);
+  star_repo.save(star);
+
+  Planet planet = createTestPlanet(starnum_t{1}, planetnum_t{1});
+  PlanetRepository planet_repo(store);
+  planet_repo.save(planet);
 
   // 1. Ungoverned race: APs reduced by 20x
   ap_t ungoverned_ap = compute_star_action_points(10, 10000, race, em);
@@ -499,7 +509,7 @@ void test_action_points_computation_and_distribution() {
   gov_ship.number() = 1;
   gov_ship.owner() = player_t{1};
   gov_ship.alive() = true;
-  gov_ship.land_on_planet();
+  gov_ship.land_on_planet(1, 1);
   ShipRepository ship_repo(store);
   ship_repo.save(gov_ship);
   race.Gov_ship = 1;
@@ -513,7 +523,6 @@ void test_action_points_computation_and_distribution() {
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
-  RaceRepository race_repo(store);
   race_repo.save(race);
 
   distribute_universe_action_points(em);

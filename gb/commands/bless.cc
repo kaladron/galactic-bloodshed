@@ -163,7 +163,7 @@ std::optional<bool> bless_race_flags(player_t who, std::string_view prop,
     if (entry.name == prop) {
       g.entity_manager.mutate_race(who, [&](Race& race) {
         entry.apply(race);
-        warn_player(g.session_registry, g.entity_manager, who, 0,
+        warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                     std::string(entry.message));
       });
       return true;
@@ -183,7 +183,7 @@ std::optional<bool> bless_race_floats(player_t who, std::string_view prop,
       }
       g.entity_manager.mutate_race(who, [&](Race& race) {
         entry.apply(race, val->value());
-        warn_player(g.session_registry, g.entity_manager, who, 0,
+        warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                     entry.message(race));
       });
       return true;
@@ -203,7 +203,7 @@ std::optional<bool> bless_race_ints(player_t who, std::string_view prop,
       }
       g.entity_manager.mutate_race(who, [&](Race& race) {
         entry.apply(race, val->value());
-        warn_player(g.session_registry, g.entity_manager, who, 0,
+        warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                     entry.message(race, val->value()));
       });
       return true;
@@ -223,7 +223,7 @@ std::optional<bool> bless_race_prefs(player_t who, std::string_view prop,
       }
       g.entity_manager.mutate_race(who, [&](Race& race) {
         race.likes[entry.type] = 0.01 * static_cast<double>(val->value());
-        warn_player(g.session_registry, g.entity_manager, who, 0,
+        warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                     std::format("Deity set your {} preference to {}%\n",
                                 entry.name, val->value()));
       });
@@ -239,7 +239,7 @@ std::optional<bool> bless_race_property(player_t who, std::string_view prop,
     g.entity_manager.mutate_race(who, [&](Race& race) {
       race.password = std::string(val_str);
       warn_player(
-          g.session_registry, g.entity_manager, who, 0,
+          g.session_registry, g.entity_manager, who, Race::leader_id,
           std::format("Deity changed your race password to `{}`\n", val_str));
     });
     return true;
@@ -265,7 +265,7 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
     });
     g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
       star.mark_explored_by(who);
-      warn_player(g.session_registry, g.entity_manager, who, 0,
+      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                   std::format("Deity set your explored bit at /{}/{}.\n",
                               star.get_name(), star.get_planet_name(g.pnum())));
     });
@@ -277,7 +277,7 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
       planet.info(who).explored = 0;
     });
     const auto& star = *g.entity_manager.peek_star(g.snum());
-    warn_player(g.session_registry, g.entity_manager, who, 0,
+    warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                 std::format("Deity reset your explored bit at /{}/{}.\n",
                             star.get_name(), star.get_planet_name(g.pnum())));
     return true;
@@ -294,7 +294,7 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
     });
     const auto& star = *g.entity_manager.peek_star(g.snum());
     warn_player(
-        g.session_registry, g.entity_manager, who, 0,
+        g.session_registry, g.entity_manager, who, Race::leader_id,
         std::format("Deity set your population variable to {} at /{}/{}.\n",
                     val->value(), star.get_name(),
                     star.get_planet_name(g.pnum())));
@@ -304,7 +304,7 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
   if (prop == "inhabited") {
     g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
       star.mark_inhabited_by(who);
-      warn_player(g.session_registry, g.entity_manager, who, 0,
+      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                   std::format("Deity has set your inhabited bit for /{}/{}.\n",
                               star.get_name(), star.get_planet_name(g.pnum())));
     });
@@ -322,7 +322,7 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
     });
     const auto& star = *g.entity_manager.peek_star(g.snum());
     warn_player(
-        g.session_registry, g.entity_manager, who, 0,
+        g.session_registry, g.entity_manager, who, Race::leader_id,
         std::format(
             "Deity set your \"numsectsowned\" variable at /{}/{} to {}.\n",
             star.get_name(), star.get_planet_name(g.pnum()), val->value()));
@@ -348,7 +348,7 @@ bool bless_commodity(player_t who, char commod, int amount, GameObj& g) {
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
         planet.info(who).resource += amount;
       });
-      warn_player(g.session_registry, g.entity_manager, who, 0,
+      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                   std::format("Deity gave you {} resources at {}/{}.\n", amount,
                               star.get_name(), star.get_planet_name(g.pnum())));
       return true;
@@ -356,7 +356,7 @@ bool bless_commodity(player_t who, char commod, int amount, GameObj& g) {
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
         planet.info(who).destruct += amount;
       });
-      warn_player(g.session_registry, g.entity_manager, who, 0,
+      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                   std::format("Deity gave you {} destruct at {}/{}.\n", amount,
                               star.get_name(), star.get_planet_name(g.pnum())));
       return true;
@@ -364,7 +364,7 @@ bool bless_commodity(player_t who, char commod, int amount, GameObj& g) {
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
         planet.info(who).fuel += amount;
       });
-      warn_player(g.session_registry, g.entity_manager, who, 0,
+      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                   std::format("Deity gave you {} fuel at {}/{}.\n", amount,
                               star.get_name(), star.get_planet_name(g.pnum())));
       return true;
@@ -372,14 +372,14 @@ bool bless_commodity(player_t who, char commod, int amount, GameObj& g) {
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
         planet.info(who).crystals += amount;
       });
-      warn_player(g.session_registry, g.entity_manager, who, 0,
+      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                   std::format("Deity gave you {} crystals at {}/{}.\n", amount,
                               star.get_name(), star.get_planet_name(g.pnum())));
       return true;
     case 'a':
       g.entity_manager.mutate_star(g.snum(),
                                    [&](Star& s) { s.AP(who) += amount; });
-      warn_player(g.session_registry, g.entity_manager, who, 0,
+      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
                   std::format("Deity gave you {} action points at {}.\n",
                               amount, star.get_name()));
       return true;

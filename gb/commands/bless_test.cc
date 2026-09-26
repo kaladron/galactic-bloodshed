@@ -82,6 +82,7 @@ void test_bless_race_characteristics() {
   // Integer attributes
   ctx.assert_dispatch_success(g, {"bless", "2", "money", "500"});
   test::expect_eq(ctx.em.peek_race(2)->leader().money, 10500);
+  test::expect_true(ctx.em.has_telegrams(2, Race::leader_id));
 
   ctx.assert_dispatch_success(g, {"bless", "2", "morale", "15"});
   test::expect_eq(ctx.em.peek_race(2)->morale, 15);

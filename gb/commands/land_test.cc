@@ -317,6 +317,9 @@ void test_land_mothership_loading_edge_cases() {
   test::expect_contains(g.out.str(), "not in the same star system");
 
   // 3. Different planet
+  TestPlanetBuilder(ctx.em, ctx.db, 1, PlanetType::MARS, {5, 5}, 2)
+      .named("Mars")
+      .build();
   ctx.em.mutate_ship(carrier_id, [](Ship& c) {
     c.enter_planet_orbit(1, 2);
     c.land_on_planet();

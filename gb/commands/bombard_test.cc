@@ -211,7 +211,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
   test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
 
   // Remove planetary defense network
-  ctx.em.mutate_ship(pdef_id, [](Ship& s) { s.alive() = false; });
+  ctx.em.mutate_ship(pdef_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
   // 6. Laser bombardment + planetary defense gun retaliation + orbital
   // protector ship retaliation + random sector selection

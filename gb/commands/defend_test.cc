@@ -162,6 +162,9 @@ void test_defend_target_scope_validations() {
   test::expect_contains(g.out.str(), "The ship is not in planet orbit.");
 
   // 2. Ship in orbit around different planet (Planet 2 instead of Planet 1)
+  TestPlanetBuilder(ctx.em, ctx.db, 1, PlanetType::MARS, {5, 5}, 2)
+      .named("Mars")
+      .build();
   const shipnum_t other_planet_ship =
       TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
           .owned_by(2, 1)

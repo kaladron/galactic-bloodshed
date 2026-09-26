@@ -405,11 +405,11 @@ void test_intercept_missile_by_pdn() {
   });
 
   // 2. Dead PDN does not intercept
-  TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
-      .owned_by(2)
-      .in_planet_orbit(1, 1)
-      .with_alive(false)
-      .build();
+  shipnum_t dead_pdn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
+                              .owned_by(2)
+                              .in_planet_orbit(1, 1)
+                              .build();
+  ctx.em.mutate_ship(dead_pdn_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
   ctx.em.mutate_ship(missile_id, [&](Ship& m) {
     test::expect_false(intercept_missile_by_pdn(m, ctx.em));
@@ -590,8 +590,10 @@ void test_domissile_integration() {
     test::expect_eq(m.destshipno(), pdn_id);
   });
 
-  // Remove PDN for subsequent tests
-  ctx.em.mutate_ship(pdn_id, [](Ship& s) { s.alive() = false; });
+  // Remove PDN for subsequent tests (clear m1's destshipno first so FK isn't
+  // violated)
+  ctx.em.mutate_ship(m1_id, [&](Ship& m) { ctx.em.kill_ship(1, m); });
+  ctx.em.mutate_ship(pdn_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
   // 2. Missile arrives at planet without PDN -> strikes planet surface
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
@@ -644,6 +646,10 @@ void test_check_mine_proximity_trigger() {
   TestContext ctx;
   ctx.with_standard_universe();
   TestWorldBuilder(ctx).add_race("Vulcans", 100.0, false, player_t{3});
+  TestPlanetBuilder(ctx.em, ctx.db, 1, PlanetType::EARTH, Coordinates{10, 10},
+                    2)
+      .named("Terra2")
+      .build();
   ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(3); });
   ctx.em.mutate_race(3, [](Race& r) { r.declare_alliance_with(1); });
 
@@ -706,13 +712,10 @@ void test_check_mine_proximity_trigger() {
   });
 
   // 6. Dead mine (alive = false) does not trigger
-  ctx.em.mutate_ship(mine_id, [](Ship& m) {
-    m.on() = true;
-    m.alive() = false;
-  });
-  ctx.em.with_ship(mine_id, [&](const Ship& mine) {
-    test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
-  });
+  Ship dead_mine{ctx.em.peek_ship(mine_id)->get_struct()};
+  dead_mine.on() = true;
+  dead_mine.alive() = false;
+  test::expect_false(check_mine_proximity_trigger(dead_mine, ctx.em));
 
   // 7. Planet-orbit mine triggers only on ships orbiting the same planet
   shipnum_t plan_mine_id =
@@ -765,7 +768,7 @@ void test_detonate_mine_against_ships() {
                           .owned_by(2)
                           .in_star_orbit(1)
                           .build();
-  ctx.em.mutate_ship(dead_id, [](Ship& s) { s.alive() = false; });
+  ctx.em.mutate_ship(dead_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
   shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
                          .owned_by(2)
@@ -778,8 +781,8 @@ void test_detonate_mine_against_ships() {
   test::expect_throws<EntityNotFoundError>(
       [&] { (void)ctx.em.peek_ship(target_id); });
 
-  const auto* dead = ctx.em.peek_ship(dead_id);
-  test::expect_false(dead->alive());
+  test::expect_throws<EntityNotFoundError>(
+      [&] { (void)ctx.em.peek_ship(dead_id); });
 
   const auto* can = ctx.em.peek_ship(can_id);
   test::expect_eq(can->damage(), 0);
@@ -1528,6 +1531,9 @@ void test_process_ship_supernova() {
 
   Star star{1, "NovaStar"};
   star.nova_stage() = 2;
+  StarRepository(store).save(star);
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
+  PlanetRepository(store).save(planet);
   ServerState state{.segments = 1};
 
   // 1. Surviving ship
@@ -1604,9 +1610,12 @@ void test_update_ship_inhabited_and_exploration() {
   JsonStore store(db);
 
   Race race = createTestRace(player_t{1});
+  Race race2 = createTestRace(player_t{2});
   RaceRepository(store).save(race);
+  RaceRepository(store).save(race2);
 
   Star star = createTestStar(starnum_t{1});
+  star.set_planet_name(2, "Planet2");
   StarRepository(store).save(star);
 
   Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
@@ -1661,6 +1670,11 @@ void test_synchronize_docked_carrier_ownership() {
   Race race2 = createTestRace(player_t{2});
   RaceRepository(store).save(race1);
   RaceRepository(store).save(race2);
+
+  Star star = createTestStar(starnum_t{1});
+  StarRepository(store).save(star);
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
+  PlanetRepository(store).save(planet);
 
   // Carrier owned by Player 1
   auto carrier_handle = TestShipBuilder(em, ShipType::STYPE_CARRIER)
@@ -1819,21 +1833,17 @@ void test_prepare_ship_for_flight() {
   ctx.with_standard_universe();
 
   // 1. Dead ship returns false
-  shipnum_t dead_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                          .owned_by(1)
-                          .with_alive(false)
-                          .build();
-  ctx.em.mutate_ship(dead_id, [&](Ship& s) {
-    test::expect_false(s.prepare_for_flight(true));
-  });
+  Ship dead_ship{};
+  dead_ship.owner() = 1;
+  dead_ship.alive() = false;
+  test::expect_false(dead_ship.prepare_for_flight(true));
 
   // 2. Unowned ship (owner == 0) is marked dead and returns false
-  shipnum_t unowned_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(0).build();
-  ctx.em.mutate_ship(unowned_id, [&](Ship& s) {
-    test::expect_false(s.prepare_for_flight(true));
-    test::expect_false(s.alive());
-  });
+  Ship unowned_ship{};
+  unowned_ship.owner() = 0;
+  unowned_ship.alive() = true;
+  test::expect_false(unowned_ship.prepare_for_flight(true));
+  test::expect_false(unowned_ship.alive());
 
   // 3. Derelict uncrewed manned ship gets redirected to LEVEL_UNIV
   shipnum_t derelict_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)

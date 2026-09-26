@@ -80,13 +80,14 @@ void test_universe_generator_in_memory() {
     }
   }
 
-  // Verify victory/player tables initialized
+  // Verify victory/player tables are not pre-populated with orphan rows before
+  // race enrollment
   BlockRepository block_repo(store);
   PowerRepository power_repo(store);
   for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
-    test::expect_true(
+    test::expect_false(
         block_repo.find_by_id(static_cast<blocknum_t>(i)).has_value());
-    test::expect_true(
+    test::expect_false(
         power_repo.find_by_id(static_cast<powernum_t>(i)).has_value());
   }
 

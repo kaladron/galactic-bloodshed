@@ -701,6 +701,9 @@ public:
     data_.dock_state = DockState::Spaceborne;
     if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
       data_.destshipno = std::nullopt;
+      if (data_.whatdest == ScopeLevel::LEVEL_SHIP) {
+        clear_destination();
+      }
     }
     data_.whatorbits = ScopeLevel::LEVEL_UNIV;
     data_.storbits = std::nullopt;
@@ -713,6 +716,9 @@ public:
     data_.dock_state = DockState::Spaceborne;
     if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
       data_.destshipno = std::nullopt;
+      if (data_.whatdest == ScopeLevel::LEVEL_SHIP) {
+        clear_destination();
+      }
     }
     data_.whatorbits = ScopeLevel::LEVEL_STAR;
     data_.pnumorbits = std::nullopt;
@@ -730,6 +736,9 @@ public:
     data_.dock_state = DockState::Spaceborne;
     if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
       data_.destshipno = std::nullopt;
+      if (data_.whatdest == ScopeLevel::LEVEL_SHIP) {
+        clear_destination();
+      }
     }
     data_.whatorbits = ScopeLevel::LEVEL_PLAN;
     data_.pnumorbits = planet;

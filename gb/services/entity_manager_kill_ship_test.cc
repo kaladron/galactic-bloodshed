@@ -31,7 +31,7 @@ int main() {
   victim_race.Guest = false;
   victim_race.God = false;
   victim_race.morale = 100;
-  victim_race.Gov_ship = 5;  // Will be cleared when Gov_ship is killed
+  victim_race.Gov_ship = std::nullopt;
 
   JsonStore store(db);
   RaceRepository races(store);
@@ -377,6 +377,32 @@ int main() {
     std::println(std::cout,
                  "✓ kill_ship clears SpaceMirrorShip, TransporterShip, "
                  "ProtectData, and destshipno references");
+  }
+
+  // kill_ship inside DeferredWriteScope records pending deletion for commit()
+  {
+    shipnum_t deferred_ship_id{};
+    {
+      auto ship_handle = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                             .owned_by(2)
+                             .in_star_orbit(1)
+                             .build_handle();
+      deferred_ship_id = ship_handle->number();
+    }
+
+    {
+      auto scope = em.create_deferred_write_scope();
+      em.mutate_ship(deferred_ship_id,
+                     [&](Ship& target) { em.kill_ship(1, target); });
+      scope.commit();
+    }
+
+    em.clear_cache();
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { em.peek_ship(deferred_ship_id); });
+    std::println(std::cout,
+                 "✓ kill_ship inside DeferredWriteScope deletes ship on "
+                 "commit()");
   }
 
   std::println(std::cout, "\n✅ All EntityManager::kill_ship() tests passed!");

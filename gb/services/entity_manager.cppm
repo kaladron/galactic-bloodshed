@@ -80,15 +80,11 @@ public:
         release_fn(std::move(release)), dirty(initial_dirty) {}
 
   ~EntityHandle() {
-    try {
-      if (dirty && entity && save_fn) {
-        save_fn(*entity);
-      }
-      if (entity && release_fn) {
-        release_fn();
-      }
-    } catch (...) {
-      // Destructors must not throw exceptions
+    if (dirty && entity && save_fn && std::uncaught_exceptions() == 0) {
+      save_fn(*entity);
+    }
+    if (entity && release_fn) {
+      release_fn();
     }
   }
 

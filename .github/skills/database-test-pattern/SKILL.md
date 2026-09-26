@@ -25,13 +25,14 @@ import std;
 
 void test_something() {
   TestContext ctx;
-  ctx.with_standard_universe();  // Provisions Sol (Star 1), Earth (Planet 1), Vega (Star 2),
-                                 // Vega Prime (Planet 1), Federation (Player 1), Klingons (Player 2),
-                                 // 100 AP each, and alliance blocks
+  ctx.with_standard_universe();  // Provisions Sol (Star 1), Vega (Star 2), Antares (Star 3),
+                                 // and 4 standard races (1: Federation, 2: Klingons,
+                                 // 3: Romulans, 4: Cardassians) via EnrollmentService::build_race()
+                                 // and EntityManager::create_race() (auto-seeding blocks & powers)
 
   // Create test ships using the fluent builder populated with canonical ShipTemplate defaults
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                          .owned_by(1, 0)
+                          .owned_by(1, 1)
                           .in_star_orbit(1)
                           .with_fuel(100.0)
                           .build();
@@ -52,7 +53,7 @@ void test_something() {
 
 ### What `TestContext` Provides:
 - **Automatic DB & Schema**: Creates `Database db(":memory:")` and runs `initialize_schema(db)` automatically.
-- **Default Universe**: `ctx.with_standard_universe()` provisions a canonical 2-player solar system with Sol and Vega systems, populated Earth and Vega Prime, 100 AP, and alliance blocks.
+- **Default Universe**: `ctx.with_standard_universe()` provisions a canonical 4-player universe with Sol, Vega, and Antares star systems, populated Earth, Vega Prime, and Antares Prime, 100 AP, and 4 standard races (`1: Federation`, `2: Klingons`, `3: Romulans`, `4: Cardassians`) constructed via `EnrollmentService::build_race()` and persisted via `EntityManager::create_race()` (which auto-seeds matching `block` and `power` entries).
 - **Populated Planets**: `ctx.with_populated_planet(snum, pnum, owner, popn)` colonizes and seeds population on a planet sector while keeping planet and sectormap populations synchronized.
 - **`TestShipBuilder`**: Fluent builder with canonical `ShipTemplate` defaults (armor, crew capacity, cargo, weapons, speed), eliminating magic numbers in test setups.
 - **`ctx.setup_game_obj(g, player, gov)`**: Sets player, governor, and automatically assigns `g.race = ctx.em.peek_race(player)`.

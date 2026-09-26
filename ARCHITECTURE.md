@@ -872,6 +872,7 @@ Command unit tests use `TestContext` to verify player commands across four stand
 
 ```cpp
 TestContext ctx;
+ctx.with_standard_universe();  // Seeds Sol, Vega, Antares, and 4 standard races (Players 1..4)
 auto& registry = get_test_session_registry();
 GameObj g(ctx.em, registry);
 ctx.setup_game_obj(g, player_t{1}, governor_t{1});

@@ -65,6 +65,78 @@ EnrollmentService::find_suitable_planet(PlanetType ppref,
   return std::nullopt;
 }
 
+Race EnrollmentService::build_race(player_t playernum,
+                                   const RaceEnrollmentSpec& spec,
+                                   starnum_t home_star,
+                                   planetnum_t home_planet) {
+  auto [default_pref, default_compat] =
+      default_sector_compatibilities_for_planet(spec.home_planet_type);
+  SectorType pref =
+      spec.likesbest.value_or(spec.preferred_sector.value_or(default_pref));
+
+  Race race{};
+  race.Playernum = playernum;
+  race.God = spec.is_god;
+  race.Guest = spec.is_guest;
+  race.name = spec.name;
+  race.password = spec.password;
+  race.info = spec.address;
+
+  // Governor 1 (Race::leader_id) is designated as the race Leader.
+  race.turn = 0;
+  race.init_leader(home_star, home_planet, spec.governor_password);
+
+  // Conditions copied from home planet if present in EntityManager
+  try {
+    entity_manager_.with_planet(home_star, home_planet, [&](const Planet& p) {
+      race.temp = p.rtemp();
+      for (AtmosphereConditions c : all_atmosphere_conditions) {
+        race.conditions[c] = p.conditions(c);
+      }
+    });
+  } catch (const EntityNotFoundError&) {
+  }
+
+  // Translation matrix
+  for (player_t p : all_players()) {
+    if (p == playernum || race.God) {
+      race.translate[p] = 100;
+    } else {
+      race.translate[p] = 1;
+    }
+  }
+
+  // Racial characteristics
+  race.mass = spec.mass;
+  race.birthrate = spec.birthrate;
+  race.fighters = spec.fighters;
+  race.IQ = spec.iq;
+  race.IQ_limit = spec.iq_limit;
+  race.Metamorph = spec.metamorph;
+  race.absorb = spec.absorb;
+  race.collective_iq = spec.collective_iq;
+  race.pods = spec.pods;
+  race.adventurism = spec.adventurism;
+  race.number_sexes = spec.number_sexes;
+  race.metabolism = spec.metabolism;
+  race.fertilize = spec.fertilize;
+
+  // Sector preferences
+  race.likes = (spec.sector_compatibilities == SectorCompatibilities{})
+                   ? default_compat
+                   : spec.sector_compatibilities;
+  race.likesbest = pref;
+
+  race.discoveries = {};
+  race.tech = 0.0;
+  race.morale = 0;
+  race.allied.reset();
+  race.atwar.reset();
+  race.points.fill(0);
+  race.Gov_ship = std::nullopt;
+  return race;
+}
+
 EnrollmentResult
 EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   // 1. Check player count limit
@@ -153,65 +225,9 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
     });
   }
 
-  // 5. Build race entity
-  Race race{};
-  race.Playernum = playernum;
-  race.God = spec.is_god;
-  race.Guest = spec.is_guest;
-  race.name = spec.name;
-  race.password = spec.password;
-  race.info = spec.address;
-
-  // Governor 1 (Race::leader_id) is designated as the race Leader.
-  race.turn = 0;
-  race.init_leader(star, pnum, spec.governor_password);
-
-  // Conditions copied from home planet
-  entity_manager_.with_planet(star, pnum, [&](const Planet& p) {
-    race.temp = p.rtemp();
-    for (AtmosphereConditions c : all_atmosphere_conditions) {
-      race.conditions[c] = p.conditions(c);
-    }
-  });
-
-  // Translation matrix
-  for (player_t p : all_players()) {
-    if (p == playernum || playernum == 1 || race.God) {
-      race.translate[p] = 100;
-    } else {
-      race.translate[p] = 1;
-    }
-  }
-
-  // Racial characteristics
-  race.mass = spec.mass;
-  race.birthrate = spec.birthrate;
-  race.fighters = spec.fighters;
-  race.IQ = spec.iq;
-  race.IQ_limit = spec.iq_limit;
-  race.Metamorph = spec.metamorph;
-  race.absorb = spec.absorb;
-  race.collective_iq = spec.collective_iq;
-  race.pods = spec.pods;
-  race.adventurism = spec.adventurism;
-  race.number_sexes = spec.number_sexes;
-  race.metabolism = spec.metabolism;
-  race.fertilize = spec.fertilize;
-
-  // Sector preferences
-  race.likes = spec.sector_compatibilities;
-  race.likesbest = pref;
-
-  race.discoveries = {};
-  race.tech = 0.0;
-  race.morale = 0;
-  race.allied.reset();
-  race.atwar.reset();
-  race.points.fill(0);
-
-  // 6. Persist race first (with Gov_ship = std::nullopt) so parent tbl_race(id)
-  // exists before child ship and sector foreign keys are inserted.
-  race.Gov_ship = std::nullopt;
+  // 5. Build and persist race first (with Gov_ship = std::nullopt) so parent
+  // tbl_race(id) exists before child ship and sector foreign keys are inserted.
+  Race race = build_race(playernum, spec, star, pnum);
   entity_manager_.create_race(race);
 
   // 7. Build and dock capital government ship, then link Race::Gov_ship

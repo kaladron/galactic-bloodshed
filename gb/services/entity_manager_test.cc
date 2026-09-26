@@ -1115,8 +1115,8 @@ void test_entity_manager_create_race() {
 
   std::println(std::cout, "Test: EntityManager create_race auto-seeding");
 
-  // Verify standard universe races (players 1 & 2) auto-seeded blocks & powers
-  for (player_t pid : {player_t{1}, player_t{2}}) {
+  // Verify standard universe races (players 1..4) auto-seeded blocks & powers
+  for (player_t pid : {player_t{1}, player_t{2}, player_t{3}, player_t{4}}) {
     const auto* r = ctx.em.peek_race(pid);
     test::expect_ne(r, nullptr);
     const auto* b = ctx.em.peek_block(blocknum_t{pid.value});
@@ -1128,44 +1128,44 @@ void test_entity_manager_create_race() {
     test::expect_eq(p->id, pid.value);
   }
 
-  // Create an additional race (Player 3)
+  // Create an additional race (Player 5)
   Race race{};
   race.name = "Martians";
 
   auto race_handle = ctx.em.create_race(race);
-  player_t p3 = race_handle->Playernum;
-  test::expect_eq(p3, 3);
+  player_t p5 = race_handle->Playernum;
+  test::expect_eq(p5, 5);
 
-  const auto* created_race = ctx.em.peek_race(p3);
+  const auto* created_race = ctx.em.peek_race(p5);
   test::expect_ne(created_race, nullptr);
   test::expect_eq(created_race->name, "Martians");
-  test::expect_eq(created_race->Playernum, p3);
+  test::expect_eq(created_race->Playernum, p5);
 
   // Auto-seeded block and power checks in cache
-  const auto* created_block = ctx.em.peek_block(blocknum_t{p3.value});
+  const auto* created_block = ctx.em.peek_block(blocknum_t{p5.value});
   test::expect_ne(created_block, nullptr);
-  test::expect_eq(created_block->Playernum, p3);
+  test::expect_eq(created_block->Playernum, p5);
   test::expect_eq(created_block->name, "Martians");
 
-  const auto* created_power = ctx.em.peek_power(powernum_t{p3.value});
+  const auto* created_power = ctx.em.peek_power(powernum_t{p5.value});
   test::expect_ne(created_power, nullptr);
-  test::expect_eq(created_power->id, p3.value);
+  test::expect_eq(created_power->id, p5.value);
 
   // Persistence check across cache flush/clear
   ctx.em.clear_cache();
 
-  const auto* persisted_race = ctx.em.peek_race(p3);
+  const auto* persisted_race = ctx.em.peek_race(p5);
   test::expect_ne(persisted_race, nullptr);
   test::expect_eq(persisted_race->name, "Martians");
 
-  const auto* persisted_block = ctx.em.peek_block(blocknum_t{p3.value});
+  const auto* persisted_block = ctx.em.peek_block(blocknum_t{p5.value});
   test::expect_ne(persisted_block, nullptr);
-  test::expect_eq(persisted_block->Playernum, p3);
+  test::expect_eq(persisted_block->Playernum, p5);
   test::expect_eq(persisted_block->name, "Martians");
 
-  const auto* persisted_power = ctx.em.peek_power(powernum_t{p3.value});
+  const auto* persisted_power = ctx.em.peek_power(powernum_t{p5.value});
   test::expect_ne(persisted_power, nullptr);
-  test::expect_eq(persisted_power->id, p3.value);
+  test::expect_eq(persisted_power->id, p5.value);
 
   std::println(
       std::cout,

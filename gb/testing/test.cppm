@@ -470,9 +470,11 @@ public:
   void verify_universe_invariants(
       std::source_location loc = std::source_location::current());
 
-  /// Initializes a standard 2-player solar system with Sol (Star 1) and
-  /// Earth (Planet 1 on Star 1), populated by Federation (Player 1) and
-  /// Klingons (Player 2) with 100 AP each. Enables fluent chaining.
+  /// Initializes a standard 4-player solar system with Sol (Star 1), Vega
+  /// (Star 2), and Antares (Star 3), populated by Federation (Player 1),
+  /// Klingons (Player 2), Romulans (Player 3), and Cardassians (Player 4)
+  /// constructed via EnrollmentService::build_race() and registered via
+  /// EntityManager::create_race(). Enables fluent chaining.
   TestContext& with_standard_universe();
 
   /// Colonizes and seeds population on a planet sector, keeping planet and

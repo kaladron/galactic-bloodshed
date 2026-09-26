@@ -13,6 +13,34 @@ import gb.repositories;
 import gb.creator;
 import std;
 
+namespace {
+
+void seed_standard_races(EntityManager& em) {
+  GB::creator::EnrollmentService enrollment(em);
+  struct StandardRaceDef {
+    player_t id;
+    std::string_view name;
+    starnum_t home_star;
+  };
+  constexpr std::array<StandardRaceDef, 4> standard_races = {{
+      {1, "Federation", 1},
+      {2, "Klingons", 2},
+      {3, "Romulans", 3},
+      {4, "Cardassians", 1},
+  }};
+
+  for (const auto& def : standard_races) {
+    GB::creator::RaceEnrollmentSpec spec{};
+    spec.name = std::string(def.name);
+    Race r = enrollment.build_race(def.id, spec, def.home_star, 1);
+    r.tech = 100.0;
+    r.leader().money = 10'000;
+    em.create_race(r);
+  }
+}
+
+}  // namespace
+
 TestContext::TestContext() : db(":memory:"), em(db) {
   initialize_schema(db);
   universe_struct u{};
@@ -20,11 +48,11 @@ TestContext::TestContext() : db(":memory:"), em(db) {
   UniverseRepository universe_repo(store);
   universe_repo.save(u);
 
-  Race default_race{};
-  default_race.Playernum = 1;
-  default_race.name = "TestRace";
-  RaceRepository race_repo(store);
-  race_repo.save(default_race);
+  GB::creator::EnrollmentService enrollment(em);
+  GB::creator::RaceEnrollmentSpec spec{};
+  spec.name = "TestRace";
+  em.create_race(enrollment.build_race(1, spec));
+  em.clear_cache();
 }
 
 void TestContext::setup_game_obj(GameObj& g, player_t player, governor_t gov) {
@@ -174,31 +202,12 @@ void TestContext::verify_universe_invariants(std::source_location loc) {
 TestContext& TestContext::with_standard_universe() {
   JsonStore store(db);
 
-  // 1. Setup standard races: Player 1 (Federation) and Player 2 (Klingons)
-  Race r1{};
-  r1.Playernum = 1;
-  r1.name = "Federation";
-  r1.tech = 100.0;
-  r1.Guest = false;
-  r1.init_leader(1, 1);
-  r1.leader().money = 10'000;
-  r1.Gov_ship = std::nullopt;
-  r1.mass = 1.0;
-  r1.metabolism = 1.0;
-  em.create_race(r1);
+  // 1. Setup 4 standard races via EnrollmentService::build_race:
+  // Player 1 (Federation), Player 2 (Klingons), Player 3 (Romulans),
+  // Player 4 (Cardassians)
+  seed_standard_races(em);
 
-  Race r2{};
-  r2.Playernum = 2;
-  r2.name = "Klingons";
-  r2.tech = 100.0;
-  r2.Guest = false;
-  r2.init_leader(2, 1);
-  r2.leader().money = 10'000;
-  r2.mass = 1.0;
-  r2.metabolism = 1.0;
-  em.create_race(r2);
-
-  // 2. Setup Star 1 (Sol) with 100 AP for both races, explored and inhabited
+  // 2. Setup Star 1 (Sol) with 100 AP for all 4 races, explored and inhabited
   create_star("Sol", 1)
       .with_position({0.0, 0.0})
       .with_stability(15)
@@ -206,10 +215,16 @@ TestContext& TestContext::with_standard_universe() {
       .with_temperature(50)
       .with_ap(1, 100)
       .with_ap(2, 100)
+      .with_ap(3, 100)
+      .with_ap(4, 100)
       .with_explored(1)
       .with_explored(2)
+      .with_explored(3)
+      .with_explored(4)
       .with_inhabited(1)
       .with_inhabited(2)
+      .with_inhabited(3)
+      .with_inhabited(4)
       .build();
 
   // 3. Setup Planet 1 on Star 1 (Earth)
@@ -218,10 +233,16 @@ TestContext& TestContext::with_standard_universe() {
       .with_position(SystemCoordinates{100.0, 0.0})
       .with_stockpiles(1, 1000, 1000, 1000)
       .with_stockpiles(2, 1000, 1000, 1000)
+      .with_stockpiles(3, 1000, 1000, 1000)
+      .with_stockpiles(4, 1000, 1000, 1000)
       .with_tax(1, 10)
       .with_tax(2, 10)
+      .with_tax(3, 10)
+      .with_tax(4, 10)
       .with_explored(1, true)
       .with_explored(2, true)
+      .with_explored(3, true)
+      .with_explored(4, true)
       .with_colony(1, 1000, Coordinates{0, 0})
       .build();
 
@@ -233,10 +254,16 @@ TestContext& TestContext::with_standard_universe() {
       .with_temperature(40)
       .with_ap(1, 100)
       .with_ap(2, 100)
+      .with_ap(3, 100)
+      .with_ap(4, 100)
       .with_explored(1)
       .with_explored(2)
+      .with_explored(3)
+      .with_explored(4)
       .with_inhabited(1)
       .with_inhabited(2)
+      .with_inhabited(3)
+      .with_inhabited(4)
       .build();
 
   // 5. Setup Planet 1 on Star 2 (Vega Prime)
@@ -245,10 +272,16 @@ TestContext& TestContext::with_standard_universe() {
       .with_position(SystemCoordinates{100.0, 0.0})
       .with_stockpiles(1, 1000, 1000, 1000)
       .with_stockpiles(2, 1000, 1000, 1000)
+      .with_stockpiles(3, 1000, 1000, 1000)
+      .with_stockpiles(4, 1000, 1000, 1000)
       .with_tax(1, 10)
       .with_tax(2, 10)
+      .with_tax(3, 10)
+      .with_tax(4, 10)
       .with_explored(1, true)
       .with_explored(2, true)
+      .with_explored(3, true)
+      .with_explored(4, true)
       .with_colony(2, 1000, Coordinates{0, 0})
       .build();
 
@@ -261,10 +294,16 @@ TestContext& TestContext::with_standard_universe() {
       .with_temperature(60)
       .with_ap(1, 100)
       .with_ap(2, 100)
+      .with_ap(3, 100)
+      .with_ap(4, 100)
       .with_explored(1)
       .with_explored(2)
+      .with_explored(3)
+      .with_explored(4)
       .with_inhabited(1)
       .with_inhabited(2)
+      .with_inhabited(3)
+      .with_inhabited(4)
       .build();
 
   // 7. Setup Planet 1 on Star 3 (Antares Prime)
@@ -273,27 +312,36 @@ TestContext& TestContext::with_standard_universe() {
       .with_position(SystemCoordinates{100.0, 0.0})
       .with_stockpiles(1, 1000, 1000, 1000)
       .with_stockpiles(2, 1000, 1000, 1000)
+      .with_stockpiles(3, 1000, 1000, 1000)
+      .with_stockpiles(4, 1000, 1000, 1000)
       .with_tax(1, 10)
       .with_tax(2, 10)
+      .with_tax(3, 10)
+      .with_tax(4, 10)
       .with_explored(1, true)
       .with_explored(2, true)
+      .with_explored(3, true)
+      .with_explored(4, true)
       .with_colony(1, 1000, Coordinates{0, 0})
       .build();
 
-  // 8. Setup Universe record with 100 AP for both races
+  // 8. Setup Universe record with 100 AP for all 4 races
   UniverseRepository univ_repo(store);
   auto u = univ_repo.find(1);
   if (!u) {
     universe_struct new_u{};
-    new_u.AP[player_t{1}] = 100;
-    new_u.AP[player_t{2}] = 100;
+    for (player_t p = 1; p <= 4; ++p) {
+      new_u.AP[p] = 100;
+    }
     univ_repo.save(new_u);
   } else {
-    u->AP[player_t{1}] = 100;
-    u->AP[player_t{2}] = 100;
+    for (player_t p = 1; p <= 4; ++p) {
+      u->AP[p] = 100;
+    }
     univ_repo.save(*u);
   }
 
+  em.clear_cache();
   return *this;
 }
 
@@ -349,40 +397,19 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
 
   JsonStore store(db);
 
-  // Setup standard races
-  RaceRepository race_repo(store);
-  Race r1{};
-  r1.Playernum = 1;
-  r1.name = "Federation";
-  r1.tech = 100.0;
-  r1.Guest = false;
-  r1.leader().money = 10'000;
-  r1.Gov_ship = std::nullopt;
-  r1.mass = 1.0;
-  r1.metabolism = 1.0;
-  race_repo.save(r1);
-
-  Race r2{};
-  r2.Playernum = 2;
-  r2.name = "Klingons";
-  r2.tech = 100.0;
-  r2.Guest = false;
-  r2.leader().money = 10'000;
-  r2.mass = 1.0;
-  r2.metabolism = 1.0;
-  race_repo.save(r2);
+  // Setup standard races via EnrollmentService::build_race
+  seed_standard_races(em);
 
   // Mark all generated stars explored and with 100 AP
   StarRepository star_repo(store);
   for (starnum_t snum = 1; snum <= cfg.num_stars; ++snum) {
     auto star_opt = star_repo.find(snum);
     if (star_opt) {
-      star_opt->mark_explored_by(player_t{1});
-      star_opt->mark_explored_by(player_t{2});
-      star_opt->mark_inhabited_by(player_t{1});
-      star_opt->mark_inhabited_by(player_t{2});
-      star_opt->AP(player_t{1}) = 100;
-      star_opt->AP(player_t{2}) = 100;
+      for (player_t p = 1; p <= 4; ++p) {
+        star_opt->mark_explored_by(p);
+        star_opt->mark_inhabited_by(p);
+        star_opt->AP(p) = 100;
+      }
       star_repo.save(*star_opt);
     }
   }
@@ -391,10 +418,12 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
   UniverseRepository univ_repo(store);
   auto u = univ_repo.find(1);
   if (u) {
-    u->AP[player_t{1}] = 100;
-    u->AP[player_t{2}] = 100;
+    for (player_t p = 1; p <= 4; ++p) {
+      u->AP[p] = 100;
+    }
     univ_repo.save(*u);
   }
 
+  em.clear_cache();
   return *this;
 }

@@ -635,7 +635,7 @@ export struct ship_struct {
   speed_t speed{0};                    ///< Current impulse speed throttle
 
   bool active{false};  ///< Operational / crewed status
-  bool alive{false};   ///< Ship hull intact / not destroyed
+  bool alive{true};    ///< Ship hull intact / not destroyed
   bool mode{
       false};  ///< Warhead detonation mode (false: explosive, true: radiative)
   bool bombard{false};  ///< Planetary bombardment enabled

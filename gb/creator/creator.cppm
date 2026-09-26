@@ -366,6 +366,13 @@ public:
   /// Enrolls a new player empire using the provided specification.
   EnrollmentResult enroll_player(const RaceEnrollmentSpec& spec);
 
+  /// Constructs a Race entity from an enrollment specification and home
+  /// planet coordinates without persisting it or commissioning a flagship.
+  [[nodiscard]] Race build_race(player_t playernum,
+                                const RaceEnrollmentSpec& spec,
+                                starnum_t home_star = 1,
+                                planetnum_t home_planet = 1);
+
   /// Discovers a vacant candidate planet of the requested type in an
   /// uninhabited multi-planet system.
   std::optional<std::pair<starnum_t, planetnum_t>>

@@ -25,8 +25,8 @@ void TestShipBuilder::init(ShipType type,
   ship_.tech = 100.0;
   ship_.fuel = ship_.max_fuel;
   ship_.destruct = ship_.max_destruct;
-  ship_.storbits = 1;
-  ship_.pnumorbits = 1;
+  ship_.storbits = std::nullopt;
+  ship_.pnumorbits = std::nullopt;
   ship_.deststar = std::nullopt;
   ship_.destpnum = std::nullopt;
 

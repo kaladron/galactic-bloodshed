@@ -417,8 +417,10 @@ void report_boarding_outcome(const Ship& s, const Ship& s2, PopulationType what,
   if (s2.owner() == Playernum || !s2.alive()) {
     post(g.entity_manager, news, NewsType::COMBAT);
   }
-  notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-              s.storbits(), news);
+  if (s.whatorbits() != ScopeLevel::LEVEL_UNIV) {
+    notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
+                s.storbits(), news);
+  }
 }
 
 bool process_single_ship_dock(const command_t& argv, Ship& s, bool is_assault,

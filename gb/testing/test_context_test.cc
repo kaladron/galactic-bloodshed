@@ -561,6 +561,8 @@ void test_universe_invariants() {
   commod.id = 1;
   commod.owner = player_t{1};
   commod.amount = 500;
+  commod.star_from = 1;
+  commod.planet_from = 1;
   JsonStore store(ctx.db);
   CommodRepository(store).save(commod);
 
@@ -588,22 +590,39 @@ void test_standard_universe_fixture() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  // 1. Verify standard races
-  const auto* r1 = ctx.em.peek_race(1);
-  test::expect_true(r1 != nullptr, "Race 1 must exist");
-  test::expect_eq(r1->name, "Federation");
-  test::expect_eq(r1->Playernum, player_t{1});
-  test::expect_eq(r1->tech, 100.0);
-  test::expect_eq(r1->Gov_ship, std::nullopt);
-  test::expect_false(r1->Guest);
-  test::expect_true(r1->has_governor(Race::leader_id));
-  test::expect_eq(r1->leader().money, 10'000);
+  // 1. Verify all 4 standard races (built via EnrollmentService::build_race and
+  // persisted via EntityManager::create_race, auto-seeding blocks and powers)
+  constexpr std::array<std::pair<player_t, std::string_view>, 4> expected_races{
+      {{1, "Federation"},
+       {2, "Klingons"},
+       {3, "Romulans"},
+       {4, "Cardassians"}}};
 
-  const auto* r2 = ctx.em.peek_race(2);
-  test::expect_true(r2 != nullptr, "Race 2 must exist");
-  test::expect_eq(r2->name, "Klingons");
-  test::expect_eq(r2->Playernum, player_t{2});
-  test::expect_eq(r2->tech, 100.0);
+  for (const auto& [pid, name] : expected_races) {
+    const auto* r = ctx.em.peek_race(pid);
+    test::expect_true(r != nullptr, "Standard race must exist");
+    test::expect_eq(r->name, name);
+    test::expect_eq(r->Playernum, pid);
+    test::expect_eq(r->tech, 100.0);
+    test::expect_eq(r->IQ, 150);
+    test::expect_eq(r->fighters, 4);
+    test::expect_eq(r->metabolism, 1.0);
+    test::expect_eq(r->mass, 1.0);
+    test::expect_eq(r->Gov_ship, std::nullopt);
+    test::expect_false(r->Guest);
+    test::expect_true(r->has_governor(Race::leader_id));
+    test::expect_eq(r->leader().money, 10'000);
+    test::expect_eq(r->translate[pid], 100);
+
+    const auto* blk = ctx.em.peek_block(blocknum_t{pid.value});
+    test::expect_true(blk != nullptr, "Auto-seeded block must exist");
+    test::expect_eq(blk->Playernum, pid);
+    test::expect_eq(blk->name, name);
+
+    const auto* pwr = ctx.em.peek_power(powernum_t{pid.value});
+    test::expect_true(pwr != nullptr, "Auto-seeded power must exist");
+    test::expect_eq(pwr->id, pid.value);
+  }
 
   // 2. Verify Star 1 (Sol)
   const auto* star0 = ctx.em.peek_star(1);
@@ -707,17 +726,21 @@ void test_procedural_universe_fixture() {
   const auto* univ = ctx.em.peek_universe();
   test::expect_true(univ != nullptr, "Universe must exist");
   test::expect_eq(ctx.em.num_stars(), 3);
-  test::expect_eq(univ->AP[player_t{1}], 100);
-  test::expect_eq(univ->AP[player_t{2}], 100);
+  for (player_t pid = 1; pid <= 4; ++pid) {
+    test::expect_eq(univ->AP[pid], 100);
+    test::expect_ne(ctx.em.peek_race(pid), nullptr);
+    test::expect_ne(ctx.em.peek_block(blocknum_t{pid.value}), nullptr);
+    test::expect_ne(ctx.em.peek_power(powernum_t{pid.value}), nullptr);
+  }
 
   // Verify all stars explored with 100 AP
   for (starnum_t snum = 1; snum <= 3; ++snum) {
     const auto* star = ctx.em.peek_star(snum);
     test::expect_true(star != nullptr, "Generated star must exist");
-    test::expect_true(star->is_explored_by(player_t{1}));
-    test::expect_true(star->is_explored_by(player_t{2}));
-    test::expect_eq(star->AP(player_t{1}), 100);
-    test::expect_eq(star->AP(player_t{2}), 100);
+    for (player_t pid = 1; pid <= 4; ++pid) {
+      test::expect_true(star->is_explored_by(pid));
+      test::expect_eq(star->AP(pid), 100);
+    }
   }
 
   // Verify races exist

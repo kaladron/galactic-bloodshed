@@ -100,25 +100,40 @@ compute_fire_strength(const command_t& argv, GameObj& g, const Ship& from,
 }
 
 /**
- * @brief Deduct 1 Universe or Star AP for firing from a ship (unless invoked
- * internally via `fire-from-dock`).
+ * @brief Verify that the player has sufficient Universe or Star AP to fire
+ * from a ship (unless invoked internally via `fire-from-dock`).
  */
-bool deduct_fire_ap(const command_t& argv, GameObj& g, const Ship& from) {
+bool has_fire_ap(const command_t& argv, GameObj& g, const Ship& from) {
   if (argv[0] == "fire-from-dock") {
     return true;
   }
   if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-    if (!g.deduct_univ_ap(1)) {
+    if (g.entity_manager.peek_universe()->AP[g.player()] < 1) {
       g.out << "You need 1 universe action points.\n";
       return false;
     }
     return true;
   }
-  if (!g.deduct_ap(from.storbits(), 1)) {
+  if (g.entity_manager.peek_star(from.storbits())->AP(g.player()) < 1) {
     g.out << "You don't have 1 action points there.\n";
     return false;
   }
   return true;
+}
+
+/**
+ * @brief Deduct 1 Universe or Star AP after firing from a ship (unless invoked
+ * internally via `fire-from-dock`).
+ */
+void deduct_fire_ap(const command_t& argv, GameObj& g, const Ship& from) {
+  if (argv[0] == "fire-from-dock") {
+    return;
+  }
+  if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    g.deduct_univ_ap(1);
+    return;
+  }
+  g.deduct_ap(from.storbits(), 1);
 }
 
 /**
@@ -235,7 +250,7 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
   }
   auto strength = *strength_opt;
 
-  if (!deduct_fire_ap(argv, g, from)) {
+  if (!has_fire_ap(argv, g, from)) {
     return false;
   }
 
@@ -281,6 +296,10 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
 
     resolve_target_self_retaliation(g, from, to_ship, retal, damage);
   });
+
+  if (fired) {
+    deduct_fire_ap(argv, g, from);
+  }
 
   if (damage > 0) {
     resolve_escort_retaliation(g, from, *to, toship);

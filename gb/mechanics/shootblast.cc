@@ -52,7 +52,7 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
 
   if (!(attacker.alive() || ignore) || !target.alive()) return std::nullopt;
   if (attacker.whatorbits() == ScopeLevel::LEVEL_SHIP ||
-      target.whatorbits() == ScopeLevel::LEVEL_UNIV)
+      attacker.whatorbits() == ScopeLevel::LEVEL_UNIV)
     return std::nullopt;
   if (target.whatorbits() == ScopeLevel::LEVEL_SHIP ||
       target.whatorbits() == ScopeLevel::LEVEL_UNIV)

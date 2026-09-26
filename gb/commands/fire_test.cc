@@ -81,21 +81,31 @@ void test_fire_universe_ap() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  // Move attacker ship to Universe scope and target at Star scope
-  ctx.em.mutate_ship(1, [](Ship& s1) { s1.enter_deep_space(); });
-  ctx.em.mutate_ship(2, [](Ship& s2) { s2.enter_star_orbit(1); });
-
-  // Set universe AP
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 50; });
-
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
+  // 1. Firing from Universe command scope with ships in Star 1 orbit succeeds
+  // and deducts 1 Star AP from Star 1.
+  const ap_t star_ap_before = ctx.em.peek_star(1)->AP(1);
   bool ok = ctx.dispatch(g, {"fire", "#1", "#2", "10"});
   test::expect_true(ok);
-  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 49);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), star_ap_before - 1);
+
+  // 2. A ship in deep space (LEVEL_UNIV) checks Universe AP first, and is
+  // rejected as an illegal attack by shoot_ship_to_ship without deducting AP.
+  ctx.em.mutate_ship(1, [](Ship& s1) { s1.enter_deep_space(); });
+  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 0; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
+  test::expect_contains(g.out.str(), "You need 1 universe action points.");
+
+  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 50; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
+  test::expect_contains(g.out.str(), "Illegal attack.");
+  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 50);
 
   ctx.verify_universe_invariants();
 }

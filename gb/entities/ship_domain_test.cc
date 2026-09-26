@@ -1181,9 +1181,10 @@ void test_ship_moor_together_and_commandability() {
   test::expect_true(g.out.str().find("irradiated") != std::string::npos);
 
   // Destroyed ship fails check_commandable
-  ctx.em.mutate_ship(s1_id, [](Ship& s1) { s1.alive() = false; });
+  Ship dead_s1{ctx.em.peek_ship(s1_id)->to_struct()};
+  dead_s1.alive() = false;
   g.out.str("");
-  test::expect_false(g.check_commandable(*ctx.em.peek_ship(s1_id)));
+  test::expect_false(g.check_commandable(dead_s1));
   test::expect_true(g.out.str().find("destroyed") != std::string::npos);
 }
 
@@ -1467,13 +1468,11 @@ void test_moveship_and_followable() {
       followable(ctx.em, *ctx.em.peek_ship(s1_id), *ctx.em.peek_ship(s2_id)));
 
   // Dead target is NOT followable
-  ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
-    s2.set_coordinates(star0_coords);
-    s2.alive() = false;
-  });
-  test::expect_false(
-      followable(ctx.em, *ctx.em.peek_ship(s1_id), *ctx.em.peek_ship(s2_id)));
-  ctx.em.mutate_ship(s2_id, [](Ship& s2) { s2.alive() = true; });
+  ctx.em.mutate_ship(s2_id,
+                     [&](Ship& s2) { s2.set_coordinates(star0_coords); });
+  Ship dead_s2{ctx.em.peek_ship(s2_id)->to_struct()};
+  dead_s2.alive() = false;
+  test::expect_false(followable(ctx.em, *ctx.em.peek_ship(s1_id), dead_s2));
 
   // 2. Hyperdrive charging (unmounted vs mounted), jump insufficient fuel, jump
   // arrival
@@ -1742,6 +1741,10 @@ void test_orbital_and_destination_transitions() {
   s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
   test::expect_false(s.hyper_drive().on);
   test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
+  test::expect_eq(s.destination_star(), std::nullopt);
+  test::expect_eq(s.destination_planet(), std::nullopt);
+  test::expect_false(s.to_struct().deststar.has_value());
+  test::expect_false(s.to_struct().destpnum.has_value());
 
   s.enter_star_orbit(4);
   test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_STAR);
@@ -1751,8 +1754,13 @@ void test_orbital_and_destination_transitions() {
   s.enter_planet_orbit(4, 2);
   s.enter_deep_space();
   test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_UNIV);
-  test::expect_eq(s.storbits(), starnum_t{4});
+  test::expect_eq(s.orbited_star(), std::nullopt);
+  test::expect_eq(s.orbited_planet(), std::nullopt);
+  test::expect_eq(s.storbits(), starnum_t{0});
   test::expect_eq(s.pnumorbits(), planetnum_t{0});
+  test::expect_false(s.to_struct().storbits.has_value());
+  test::expect_false(s.to_struct().pnumorbits.has_value());
+  test::expect_true(Ship{}.alive());
 
   // 3. Carrier docking and launching (both to orbit and onto a landed planet)
   Ship carrier{};

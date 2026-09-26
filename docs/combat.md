@@ -65,6 +65,8 @@ flowchart TD
 ```
 
 ### Effective Distance and Weapon Range
+Both the attacking and target vessels must be located within the same star system (in stellar orbit or planetary orbit/surface; vessels in interstellar deep space or berthed inside a carrier hangar cannot fire or be targeted by naval batteries). Action Points ($1\text{ Star AP}$ per firing ship) are deducted only when a valid attack executes.
+
 Attacks succeed only if the target is within the maximum effective range of the active weapon system:
 
 $$D = \sqrt{(x_{\text{target}} - x_{\text{attacker}})^2 + (y_{\text{target}} - y_{\text{attacker}})^2}$$

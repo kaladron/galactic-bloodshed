@@ -55,8 +55,10 @@ void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
     *strength = 0;
     push_telegram(entity_manager, ship.owner(), ship.governor(), message);
     post(entity_manager, message, NewsType::COMBAT);
-    telegram_star(entity_manager, ship.storbits(), ship.owner(),
-                  ship.governor(), message);
+    if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
+      telegram_star(entity_manager, ship.storbits(), ship.owner(),
+                    ship.governor(), message);
+    }
   } else if (int_rand(0, *strength) >
              (int)((1.0 - .01 * ship.damage()) * ship.tech() / 4.0)) {
     std::string message =

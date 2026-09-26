@@ -703,6 +703,7 @@ public:
       data_.destshipno = std::nullopt;
     }
     data_.whatorbits = ScopeLevel::LEVEL_UNIV;
+    data_.storbits = std::nullopt;
     data_.pnumorbits = std::nullopt;
   }
 
@@ -930,6 +931,8 @@ public:
     data_.dock_state = DockState::Spaceborne;
     data_.destshipno = std::nullopt;
     data_.whatdest = ScopeLevel::LEVEL_UNIV;
+    data_.deststar = std::nullopt;
+    data_.destpnum = std::nullopt;
     data_.hyper_drive.on = false;
   }
 
@@ -940,9 +943,14 @@ public:
     data_.dock_state = DockState::Spaceborne;
     data_.destshipno = std::nullopt;
     data_.whatdest = ScopeLevel::LEVEL_UNIV;
+    data_.deststar = std::nullopt;
+    data_.destpnum = std::nullopt;
     data_.hyper_drive.on = false;
     if (orbit_level != ScopeLevel::LEVEL_SHIP) {
       data_.whatorbits = orbit_level;
+      if (orbit_level == ScopeLevel::LEVEL_UNIV) {
+        data_.storbits = std::nullopt;
+      }
       if (orbit_level != ScopeLevel::LEVEL_PLAN) {
         data_.pnumorbits = std::nullopt;
       }
@@ -956,8 +964,6 @@ public:
     launch_to_orbit(carrier.whatorbits());
     data_.storbits = carrier.data_.storbits;
     data_.pnumorbits = carrier.data_.pnumorbits;
-    data_.deststar = carrier.data_.deststar;
-    data_.destpnum = carrier.data_.destpnum;
   }
 
   /// \brief Returns true if a craft of the given physical size can fit inside

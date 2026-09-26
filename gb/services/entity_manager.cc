@@ -192,12 +192,18 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
   // Save through repository (DAL)
   storage_->races.save(new_race);
 
-  // Auto-seed baseline block if not existing
-  if (!storage_->blocks.find_by_id(blocknum_t{player.value})) {
+  // Auto-seed baseline block if not existing (or update name if uncustomized)
+  if (auto existing_block =
+          storage_->blocks.find_by_id(blocknum_t{player.value});
+      !existing_block) {
     block b{};
     b.Playernum = player;
     b.name = new_race.name;
     storage_->blocks.save(b);
+  } else if (existing_block->motto.empty() && existing_block->invited.none() &&
+             existing_block->pledged.none()) {
+    existing_block->name = new_race.name;
+    storage_->blocks.save(*existing_block);
   }
 
   // Auto-seed baseline power if not existing
@@ -945,6 +951,10 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
   ship.alive() = 0;
   ship.notified() = 0; /* prepare the ship for recycling */
+  if (ship.number() != 0 &&
+      !std::ranges::contains(pending_ship_deletions_, ship.number())) {
+    pending_ship_deletions_.push_back(ship.number());
+  }
 
   if (ship.owner() != 0 && ship.type() != ShipType::STYPE_POD &&
       ship.type() != ShipType::OTYPE_FACTORY) {

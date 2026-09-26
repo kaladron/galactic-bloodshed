@@ -327,6 +327,132 @@ int main() {
         "✓ idx_ship_destship query returns matching docked/carrier rows");
   }
 
+  // Strict SQLite CHECK and FOREIGN KEY (REFERENCES) constraint enforcement
+  {
+    Database db(":memory:");
+    initialize_schema(db);
+    JsonStore store(db);
+
+    // 1. CHECK (id >= 1) and CHECK (json_valid(data))
+    test::expect_throws<SqliteError>([&] { store.store("tbl_star", 0, "{}"); });
+    test::expect_throws<SqliteError>([&] { store.store("tbl_race", 0, "{}"); });
+    test::expect_throws<SqliteError>(
+        [&] { store.store("tbl_star", 1, "not-valid-json"); });
+    test::expect_throws<SqliteError>(
+        [&] { store.store("tbl_universe", 2, "{}"); });
+    test::expect_throws<SqliteError>(
+        [&] { store.store("tbl_server_state", 2, "{}"); });
+    std::println(std::cout,
+                 "✓ CHECK (id >= 1), CHECK (id = 1), and CHECK (json_valid) "
+                 "reject invalid rows");
+
+    // 2. FOREIGN KEY enforcement on tbl_planet, tbl_sector, tbl_block,
+    // tbl_power, tbl_commod, tbl_telegram, and tbl_race
+    test::expect_throws<SqliteError>([&] {
+      store.store_multi("tbl_planet", {{"star_id", 99}, {"planet_order", 1}},
+                        "{}");
+    });
+    store.store("tbl_star", 1, "{}");
+    test::expect_throws<SqliteError>([&] {
+      store.store_multi("tbl_planet", {{"star_id", 1}, {"planet_order", 1}},
+                        R"({"slaved_to":99})");
+    });
+    store.store("tbl_race", 1, "{}");
+    store.store_multi("tbl_planet", {{"star_id", 1}, {"planet_order", 1}},
+                      R"({"slaved_to":1})");
+
+    test::expect_throws<SqliteError>([&] {
+      store.store_multi(
+          "tbl_sector",
+          {{"star_id", 1}, {"planet_order", 99}, {"xpos", 0}, {"ypos", 0}},
+          "{}");
+    });
+    test::expect_throws<SqliteError>([&] {
+      store.store_multi(
+          "tbl_sector",
+          {{"star_id", 1}, {"planet_order", 1}, {"xpos", 0}, {"ypos", 0}},
+          R"({"owner":99})");
+    });
+
+    test::expect_throws<SqliteError>(
+        [&] { store.store("tbl_block", 99, "{}"); });
+    test::expect_throws<SqliteError>(
+        [&] { store.store("tbl_power", 99, "{}"); });
+    test::expect_throws<SqliteError>(
+        [&] { db.telegram_add(player_t{99}, governor_t{1}, "Hi", 100); });
+    test::expect_throws<SqliteError>(
+        [&] { db.telegram_add(player_t{1}, governor_t{0}, "Hi", 100); });
+
+    test::expect_throws<SqliteError>([&] {
+      store.store("tbl_commod", 1,
+                  R"({"owner":99,"star_from":1,"planet_from":1})");
+    });
+    test::expect_throws<SqliteError>([&] {
+      store.store("tbl_commod", 1,
+                  R"({"owner":1,"star_from":1,"planet_from":99})");
+    });
+    test::expect_throws<SqliteError>(
+        [&] { store.store("tbl_race", 2, R"({"Gov_ship":999})"); });
+    std::println(
+        std::cout,
+        "✓ FOREIGN KEY constraints reject orphan references across tables");
+
+    // 3. tbl_ship CHECK (alive = 1), orbital/destination scope CHECK, and FKs
+    // Dead ship rejected
+    test::expect_throws<SqliteError>([&] {
+      store.store("tbl_ship", 1,
+                  R"({"owner":1,"whatorbits":0,"whatdest":0,"alive":0})");
+    });
+    // LEVEL_UNIV (whatorbits = 0) with non-null storbits rejected
+    test::expect_throws<SqliteError>([&] {
+      store.store(
+          "tbl_ship", 1,
+          R"({"owner":1,"whatorbits":0,"storbits":1,"whatdest":0,"alive":1})");
+    });
+    // LEVEL_STAR (whatorbits = 1) with null storbits or non-null pnumorbits
+    // rejected
+    test::expect_throws<SqliteError>([&] {
+      store.store("tbl_ship", 1,
+                  R"({"owner":1,"whatorbits":1,"whatdest":0,"alive":1})");
+    });
+    test::expect_throws<SqliteError>([&] {
+      store.store(
+          "tbl_ship", 1,
+          R"({"owner":1,"whatorbits":1,"storbits":1,"pnumorbits":1,"whatdest":0,"alive":1})");
+    });
+    // LEVEL_PLAN (whatorbits = 2) with null pnumorbits or nonexistent planet
+    // rejected
+    test::expect_throws<SqliteError>([&] {
+      store.store(
+          "tbl_ship", 1,
+          R"({"owner":1,"whatorbits":2,"storbits":1,"whatdest":0,"alive":1})");
+    });
+    test::expect_throws<SqliteError>([&] {
+      store.store(
+          "tbl_ship", 1,
+          R"({"owner":1,"whatorbits":2,"storbits":1,"pnumorbits":99,"whatdest":0,"alive":1})");
+    });
+    // LEVEL_SHIP (whatorbits = 3) with null destshipno rejected
+    test::expect_throws<SqliteError>([&] {
+      store.store("tbl_ship", 1,
+                  R"({"owner":1,"whatorbits":3,"whatdest":0,"alive":1})");
+    });
+    // Destination scope CHECK and FK violations rejected
+    test::expect_throws<SqliteError>([&] {
+      store.store(
+          "tbl_ship", 1,
+          R"({"owner":1,"whatorbits":0,"whatdest":0,"deststar":1,"alive":1})");
+    });
+    test::expect_throws<SqliteError>([&] {
+      store.store(
+          "tbl_ship", 1,
+          R"({"owner":1,"whatorbits":0,"whatdest":3,"destshipno":999,"alive":1})");
+    });
+    std::println(std::cout,
+                 "✓ tbl_ship CHECK (alive = 1), scope CHECKs, and FKs "
+                 "enforced");
+  }
+
   // Test SqliteError and KeyValue helpers from dallib
   {
     SqliteError err("Custom error", 42);

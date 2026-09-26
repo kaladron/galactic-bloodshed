@@ -211,8 +211,9 @@ public:
 ```cpp
 export void initialize_schema(Database& db);
 ```
-- Creates all database tables
-- Configures STORED generated columns (e.g. `storbits`, `whatorbits`, `destshipno`, `owner`, `alive`) for JSON field extraction
+- Creates all database tables with `CHECK (json_valid(data))` and 1-based primary key constraints (`CHECK (id >= 1)`, `CHECK (star_id >= 1)`, `CHECK (planet_order >= 1)`, singleton `CHECK (id = 1)` on `tbl_universe` and `tbl_server_state`)
+- Configures `STORED` generated columns extracting relational foreign keys and spatial fields from JSON documents (`tbl_race.gov_ship`, `tbl_planet.slaved_to`, `tbl_sector.owner`, `tbl_commod` owner/bidder/origin/destination planets, and `tbl_ship` orbital, destination, protection, aiming, autonomous mind, and transporter target references)
+- Enforces `FOREIGN KEY (...) REFERENCES ...` across all entity tables (`PRAGMA foreign_keys = ON`), plus `CHECK (alive = 1)` and scope-conditional `CHECK` constraints on `tbl_ship` (`whatorbits` and `whatdest` vs. `storbits`, `pnumorbits`, `deststar`, `destpnum`, and `destshipno`)
 - Sets up B-Tree indexes on generated columns for high-speed spatial queries
 - Configures SQLite pragmas
 

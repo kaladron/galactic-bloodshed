@@ -12,21 +12,16 @@ import test;
 import std;
 
 int main() {
-  // Create test context
+  // Create test context with standard universe (stars 1..2, races 1..4)
   TestContext ctx;
+  ctx.with_standard_universe();
 
   // Create JsonStore for repository operations
   JsonStore store(ctx.db);
-
-  // Create a test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.Guest = false;
-  race.leader().money = 1000;
-
-  RaceRepository races(store);
-  races.save(race);
+  StarRepository stars(store);
+  stars.save(Star{5, "Star5"});
+  stars.save(Star{10, "Star10"});
+  PlanetRepository(store).save(Planet{10, 3});
 
   // Create test ships
   Ship ship1{};
@@ -511,16 +506,15 @@ int main() {
       count++;
     }
 
-    test::expect_eq(count, 2);  // ship4 and ship5 are at star 5
+    test::expect_eq(count, 2);  // ship7 and ship8 are at star 5
     std::println(std::cout,
                  "✓ Test 5c passed: Const scope-based iteration works");
   }
 
-  // IterationType::All - iterates all ships including dead
+  // IterationType::All - iterates all ships
   {
     std::println(std::cout, "\nTest 6: IterationType::All");
 
-    // Get count of all ships before adding dead ones
     int alive_count = 0;
     {
       ShipList alive_ships(ctx.em, ShipList::IterationType::AllAlive);
@@ -528,37 +522,36 @@ int main() {
         alive_count++;
       }
     }
-    std::println(std::cout, "  Found {} alive ships before adding dead ship",
+    std::println(std::cout, "  Found {} alive ships before adding ship #10",
                  alive_count);
 
-    // Create a dead ship
-    Ship dead_ship{};
-    dead_ship.number() = 10;
-    dead_ship.owner() = 1;
-    dead_ship.alive() = false;  // This ship is dead
-    dead_ship.enter_star_orbit(1);
-    dead_ship.type() = ShipType::OTYPE_FACTORY;
-    ships_repo.save(dead_ship);
+    // Create ship #10
+    Ship ship10{};
+    ship10.number() = 10;
+    ship10.owner() = 1;
+    ship10.alive() = true;
+    ship10.enter_star_orbit(1);
+    ship10.type() = ShipType::OTYPE_FACTORY;
+    ships_repo.save(ship10);
 
-    // All iteration should include dead ships
     ShipList all_ships(ctx.em, ShipList::IterationType::All);
     int all_count = 0;
-    bool found_dead = false;
+    bool found_ship10 = false;
     for (auto handle : all_ships) {
       all_count++;
       Ship& ship = *handle;
-      if (ship.number() == 10 && !ship.alive()) {
-        found_dead = true;
+      if (ship.number() == 10) {
+        found_ship10 = true;
       }
     }
 
-    test::expect_eq(all_count,
-                    alive_count + 1);  // Should include the dead ship
-    test::expect_true(found_dead);
-    std::println(
-        std::cout,
-        "✓ Test 6 passed: All iteration found {} ships (including dead)",
-        all_count);
+    test::expect_eq(all_count, alive_count + 1);
+    test::expect_true(found_ship10);
+    std::println(std::cout, "✓ Test 6 passed: All iteration found {} ships",
+                 all_count);
+
+    // Destroy ship #10 via kill_ship (hard-deleted from tbl_ship)
+    ctx.em.mutate_ship(10, [&](Ship& s) { ctx.em.kill_ship(1, s); });
   }
 
   // IterationType::AllAlive - iterates only alive ships
@@ -593,10 +586,10 @@ int main() {
     const ShipList all_const(ctx.em, ShipList::IterationType::All);
     int all_count = 0;
     for (const Ship& ship : all_const) {
-      (void)ship;
+      test::expect_true(ship.alive());
       all_count++;
     }
-    test::expect_eq(all_count, 10);  // 9 alive + 1 dead from Test 6
+    test::expect_eq(all_count, 9);
     std::println(std::cout, "  Const All iteration found {} ships", all_count);
 
     // Const AllAlive iteration
@@ -608,9 +601,7 @@ int main() {
     }
     std::println(std::cout, "  Const AllAlive iteration found {} ships",
                  alive_count);
-    std::println(std::cout, "  Expected alive_count ({}) == all_count - 1 ({})",
-                 alive_count, all_count - 1);
-    test::expect_eq(alive_count, all_count - 1);  // One dead ship
+    test::expect_eq(alive_count, all_count);
 
     std::println(std::cout,
                  "✓ Test 7b passed: Const All/AllAlive iteration works");
@@ -620,6 +611,7 @@ int main() {
   {
     std::println(std::cout, "\nTest 8: Sparse ship IDs iteration");
     TestContext sparse_ctx;
+    sparse_ctx.with_standard_universe();
     JsonStore sparse_store(sparse_ctx.db);
     ShipRepository sparse_repo(sparse_store);
 
@@ -689,14 +681,9 @@ int main() {
         std::cout,
         "\nTest 10: Mid-loop hard-deletion skips destroyed subsequent ships");
     TestContext kill_ctx;
+    kill_ctx.with_standard_universe();
     JsonStore kill_store(kill_ctx.db);
-    RaceRepository kill_races(kill_store);
     ShipRepository kill_repo(kill_store);
-
-    Race r1{};
-    r1.Playernum = 1;
-    r1.name = "Tester";
-    kill_races.save(r1);
 
     for (shipnum_t num : {shipnum_t{1}, shipnum_t{2}, shipnum_t{3}}) {
       Ship s{};

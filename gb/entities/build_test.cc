@@ -33,6 +33,12 @@ int main() {
       .star_id = 1,
       .planet_order = 1,
   }};
+  {
+    JsonStore store(db);
+    RaceRepository(store).save(race);
+    StarRepository(store).save(Star{1, "Sol"});
+    PlanetRepository(store).save(planet);
+  }
 
   // Create a normal sector owned by the race with population
   Sector good_sector{};
@@ -188,22 +194,23 @@ int main() {
         "Test 9 passed: Can build quarry at different location than existing");
   }
 
-  // Success - dead quarry at location doesn't block
+  // Success - destroyed quarry at location doesn't block
   {
-    // Create a dead quarry at (7, 7)
+    // Create and then destroy a quarry at (7, 7)
     Ship dead_quarry{};
     dead_quarry.number() = 2;
     dead_quarry.type() = ShipType::OTYPE_QUARRY;
     dead_quarry.owner() = 1;
-    dead_quarry.alive() = false;  // Dead
+    dead_quarry.alive() = true;
     dead_quarry.enter_planet_orbit(planet.star_id(), planet.planet_order());
     dead_quarry.set_land_coords({7, 7});
 
     JsonStore store(db);
     ShipRepository ships(store);
     ships.save(dead_quarry);
+    em.kill_ship(1, dead_quarry);
 
-    // Should be able to build at (7,7) since existing quarry is dead
+    // Should be able to build at (7,7) since existing quarry is destroyed
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
                                       good_sector, {7, 7});
     test::expect_true(result.has_value());
@@ -373,7 +380,7 @@ int main() {
 
     auto tox_ship = getship(ShipType::OTYPE_TOXWC, r1);
     ctx.em.mutate_planet(1, 1, [&](Planet& p) {
-      create_ship_by_planet(ctx.em, 1, 0, r1, *tox_ship, p, 1, 1,
+      create_ship_by_planet(ctx.em, 1, 1, r1, *tox_ship, p, 1, 1,
                             Coordinates{2, 2});
     });
 
@@ -462,14 +469,19 @@ int main() {
     shuttle->number() = 10;
     shuttle->resource() = 1000;
     auto built_station = getship(ShipType::STYPE_STATION, r1);
-    create_ship_by_ship(ctx.em, 1, 0, r1, true, *built_station, *shuttle);
+    create_ship_by_ship(ctx.em, 1, 1, r1, true, *built_station, *shuttle);
     test::expect_true(built_station->is_spaceborne());
 
     auto carrier = getship(ShipType::STYPE_CARRIER, r1);
     carrier->number() = 11;
+    carrier->owner() = 1;
     carrier->resource() = 1000;
+    {
+      JsonStore store(ctx.db);
+      ShipRepository(store).save(*carrier);
+    }
     auto built_fighter = getship(ShipType::STYPE_FIGHTER, r1);
-    create_ship_by_ship(ctx.em, 1, 0, r1, false, *built_fighter, *carrier);
+    create_ship_by_ship(ctx.em, 1, 1, r1, false, *built_fighter, *carrier);
     test::expect_true(built_fighter->is_docked());
     std::println(std::cout,
                  "Test 16 passed: build_at_ship, create_ship_by_ship, and "

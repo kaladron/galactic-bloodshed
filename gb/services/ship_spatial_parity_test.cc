@@ -32,9 +32,7 @@ void test_star_spatial_parity(TestContext& ctx) {
   JsonStore store(ctx.db);
   ShipRepository ships_repo(store);
 
-  // Setup Star 1 with 3 ships in orbit
-  TestWorldBuilder(ctx).add_star("Star1", 100, starnum_t{1});
-
+  // Star 1 already exists in with_standard_universe(); add ships in orbit
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 1)
       .owned_by(1)
       .in_star_orbit(1)
@@ -44,8 +42,9 @@ void test_star_spatial_parity(TestContext& ctx) {
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 2)
       .owned_by(1)
       .in_star_orbit(1)
-      .with_alive(false)  // Dead ship in star list
+      .with_alive(true)
       .build();
+  ctx.em.mutate_ship(2, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 3)
       .owned_by(2)
@@ -96,10 +95,7 @@ void test_planet_spatial_parity(TestContext& ctx) {
   JsonStore store(ctx.db);
   ShipRepository ships_repo(store);
 
-  // Setup Planet (Star 1, Planet 1) with 2 ships in orbit
-  TestPlanetBuilder(ctx, 1, PlanetType::EARTH, {10, 10}, planetnum_t{1})
-      .build();
-
+  // Planet (Star 1, Planet 1) already exists in with_standard_universe()
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 10)
       .owned_by(1)
       .in_planet_orbit(1, 1)
@@ -112,12 +108,13 @@ void test_planet_spatial_parity(TestContext& ctx) {
       .with_alive(true)
       .build();
 
-  // Dead ship on same planet (should be excluded)
+  // Destroyed ship on same planet (should be excluded)
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 12)
       .owned_by(1)
       .in_planet_orbit(1, 1)
-      .with_alive(false)
+      .with_alive(true)
       .build();
+  ctx.em.mutate_ship(12, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
   // 1. Query via ShipRepository indexed spatial query
   auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1});
@@ -238,6 +235,7 @@ int main() {
   std::println(std::cout, "Running Ship spatial parity tests...");
 
   TestContext ctx;
+  ctx.with_standard_universe();
   test_empty_universe_parity(ctx);
   test_star_spatial_parity(ctx);
   test_planet_spatial_parity(ctx);

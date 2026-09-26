@@ -54,15 +54,19 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     commod.governor = 1;
     commod.type = CommodType::RESOURCE;
     commod.amount = 100;
+    commod.star_from = 1;
+    commod.planet_from = 1;
     commod_repo.save(commod);
   }
   {
     Commod commod{};
     commod.id = 2;
-    commod.owner = 0;
+    commod.owner = 1;
     commod.governor = 1;
     commod.type = CommodType::DESTRUCT;
-    commod.amount = 250;
+    commod.amount = 0;
+    commod.star_from = 1;
+    commod.planet_from = 1;
     commod_repo.save(commod);
   }
   {
@@ -72,6 +76,8 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     commod.governor = 1;
     commod.type = CommodType::FUEL;
     commod.amount = 0;
+    commod.star_from = 1;
+    commod.planet_from = 1;
     commod_repo.save(commod);
   }
   {
@@ -81,6 +87,8 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
     commod.governor = 1;
     commod.type = CommodType::CRYSTAL;
     commod.amount = 400;
+    commod.star_from = 2;
+    commod.planet_from = 1;
     commod_repo.save(commod);
   }
 
@@ -400,12 +408,16 @@ void test_sparse_entity_lists() {
 
   // 2. Sparse commods: lot 1 and lot 6 (gaps at 2, 3, 4, 5)
   {
+    StarRepository(store).save(Star{1, "Star1"});
+    PlanetRepository(store).save(Planet{1, 1});
     CommodRepository commods(store);
     Commod c1{};
     c1.id = 1;
     c1.owner = 1;
     c1.amount = 50;
     c1.type = CommodType::RESOURCE;
+    c1.star_from = 1;
+    c1.planet_from = 1;
     commods.save(c1);
 
     Commod c6{};
@@ -413,6 +425,8 @@ void test_sparse_entity_lists() {
     c6.owner = 4;
     c6.amount = 200;
     c6.type = CommodType::CRYSTAL;
+    c6.star_from = 1;
+    c6.planet_from = 1;
     commods.save(c6);
 
     std::vector<int> visited_commods;

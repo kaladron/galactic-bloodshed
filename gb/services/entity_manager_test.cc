@@ -81,6 +81,7 @@ void test_entity_manager_composite_keys() {
   Planet planet{1, 2};
   planet.popn() = 10000;
   JsonStore store(db);
+  StarRepository(store).save(Star{1, "Sol"});
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -107,9 +108,8 @@ void test_entity_manager_composite_keys() {
 }
 
 void test_entity_manager_create_delete() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  EntityManager& em = ctx.em;
 
   std::println(std::cout, "Test: EntityManager create/delete");
 
@@ -407,9 +407,10 @@ void test_entity_manager_kill_ship() {
   em.with_race(2, [](const Race& k) { test::expect_gt(k.morale, 1000); });
   std::println(std::cout, "  ✓ Morale adjustments persisted for both races");
 
+  StarRepository(store).save(Star{5, "Star5"});
   ship_struct vn_data{};
   vn_data.number = 200;
-  vn_data.owner = 0;
+  vn_data.owner = 1;
   vn_data.type = ShipType::OTYPE_VN;
   vn_data.alive = 1;
   vn_data.whatorbits = ScopeLevel::LEVEL_STAR;
@@ -459,7 +460,6 @@ void test_entity_manager_kill_ship_gov_ship() {
   Race victim{};
   victim.Playernum = 1;
   victim.name = "Victim";
-  victim.Gov_ship = shipnum_t{100};
   Race killer{};
   killer.Playernum = 2;
   killer.name = "Killer";
@@ -479,6 +479,9 @@ void test_entity_manager_kill_ship_gov_ship() {
   Ship ship(ship_data);
   ShipRepository ships(store);
   ships.save(ship);
+
+  victim.Gov_ship = shipnum_t{100};
+  races.save(victim);
 
   em.kill_ship(2, ship);
   std::println(std::cout, "  ✓ Government ship killed");
@@ -618,9 +621,10 @@ void test_peek_caching_and_clear_cache() {
 }
 
 void test_entity_manager_commods() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  Database& db = ctx.db;
+  EntityManager& em = ctx.em;
 
   std::println(std::cout, "Test: EntityManager commod management");
 
@@ -634,6 +638,9 @@ void test_entity_manager_commods() {
   c.type = CommodType::FUEL;
   c.amount = 500;
   c.bid = 100;
+  c.bidder = 1;
+  c.star_from = 1;
+  c.planet_from = 1;
   repo.save(c);
 
   const auto* peek = em.peek_commod(1);
@@ -668,9 +675,10 @@ void test_entity_manager_commods() {
 }
 
 void test_entity_manager_blocks() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  Database& db = ctx.db;
+  EntityManager& em = ctx.em;
+  em.clear_cache();
 
   std::println(std::cout, "Test: EntityManager block management");
 
@@ -711,9 +719,10 @@ void test_entity_manager_blocks() {
 }
 
 void test_entity_manager_powers() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  Database& db = ctx.db;
+  EntityManager& em = ctx.em;
+  em.clear_cache();
 
   std::println(std::cout, "Test: EntityManager power management");
 
@@ -754,9 +763,9 @@ void test_entity_manager_powers() {
 }
 
 void test_entity_manager_create_ship() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  EntityManager& em = ctx.em;
 
   std::println(std::cout, "Test: EntityManager create_ship");
 
@@ -957,9 +966,9 @@ void test_entity_manager_mutate_planet_and_sectors() {
 }
 
 void test_deletion_barrier() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  EntityManager& em = ctx.em;
 
   std::println(std::cout, "Test: EntityManager DeletionBarrier");
 
@@ -1009,9 +1018,14 @@ void test_deletion_barrier() {
   // 4. Deferred commodity deletion
   int commod_id;
   {
-    auto new_commod = em.create_commod();
+    Commod init_commod{};
+    init_commod.owner = 1;
+    init_commod.governor = 1;
+    init_commod.amount = 123;
+    init_commod.star_from = 1;
+    init_commod.planet_from = 1;
+    auto new_commod = em.create_commod(init_commod);
     commod_id = new_commod->id;
-    new_commod->amount = 123;
   }
   {
     auto barrier = em.create_deletion_barrier();
@@ -1033,7 +1047,7 @@ void test_deletion_barrier() {
   // 5. Active handle at drain time throws EntityInUseError
   shipnum_t handle_ship_id;
   {
-    auto new_ship = em.create_ship(ShipType::STYPE_SHUTTLE);
+    auto new_ship = em.create_ship(ShipType::STYPE_SHUTTLE, player_t{1});
     handle_ship_id = new_ship->number();
   }
   em.mutate_ship(handle_ship_id, [&](Ship&) {
@@ -1051,22 +1065,19 @@ void test_deletion_barrier() {
   // 6. Safe inline deletion during ShipList iteration
   shipnum_t s1, s2, s3;
   {
-    auto ship1 = em.create_ship(ShipType::STYPE_SHUTTLE);
+    auto ship1 = em.create_ship(ShipType::STYPE_SHUTTLE, player_t{1});
     s1 = ship1->number();
-    ship1->alive() = true;
 
-    auto ship2 = em.create_ship(ShipType::STYPE_SHUTTLE);
+    auto ship2 = em.create_ship(ShipType::STYPE_SHUTTLE, player_t{1});
     s2 = ship2->number();
-    ship2->alive() = false;
 
-    auto ship3 = em.create_ship(ShipType::STYPE_SHUTTLE);
+    auto ship3 = em.create_ship(ShipType::STYPE_SHUTTLE, player_t{1});
     s3 = ship3->number();
-    ship3->alive() = true;
   }
   {
     auto barrier = em.create_deletion_barrier();
     for (const Ship& s : ShipList::readonly(em, ShipList::IterationType::All)) {
-      if (!s.alive()) {
+      if (s.number() == s2) {
         em.delete_ship(s.number());
       }
     }
@@ -1075,8 +1086,7 @@ void test_deletion_barrier() {
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(s2); });
   test::expect_ne(em.peek_ship(s3), nullptr);
   std::println(std::cout, "  ✓ inline deletion during ShipList iteration "
-                          "successfully cleans up dead "
-                          "ships");
+                          "successfully cleans up ships");
 }
 
 void test_entity_manager_count_non_asteroid_planets() {
@@ -1084,6 +1094,9 @@ void test_entity_manager_count_non_asteroid_planets() {
   initialize_schema(db);
   EntityManager em(db);
   JsonStore store(db);
+  StarRepository stars(store);
+  stars.save(Star{1, "Star1"});
+  stars.save(Star{2, "Star2"});
   PlanetRepository planets(store);
 
   std::println(std::cout, "Test: EntityManager count_non_asteroid_planets");

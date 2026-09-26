@@ -20,14 +20,14 @@ void expect_near(double actual, double expected, double eps = 1e-5) {
 }
 
 void test_dock_carrier_happy_path() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  auto& em = ctx.em;
 
   const auto carrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                               .owned_by(1)
                               .with_alive(true)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .with_hanger(0)
                               .with_max_hanger(50)
                               .build();
@@ -36,7 +36,7 @@ void test_dock_carrier_happy_path() {
   const auto fighter_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                               .owned_by(1)
                               .with_alive(true)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .with_size(10)
                               .with_hanger(0)
                               .with_max_hanger(0)
@@ -65,14 +65,14 @@ void test_dock_carrier_happy_path() {
 }
 
 void test_dock_carrier_errors_and_nested_hierarchy() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  auto& em = ctx.em;
 
   const auto supercarrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                                    .owned_by(1)
                                    .with_alive(true)
-                                   .in_star_orbit(0)
+                                   .in_star_orbit(1)
                                    .with_hanger(0)
                                    .with_max_hanger(100)
                                    .build();
@@ -81,7 +81,7 @@ void test_dock_carrier_errors_and_nested_hierarchy() {
   const auto subcarrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                                  .owned_by(1)
                                  .with_alive(true)
-                                 .in_star_orbit(0)
+                                 .in_star_orbit(1)
                                  .with_size(15)
                                  .with_hanger(0)
                                  .with_max_hanger(10)
@@ -91,7 +91,7 @@ void test_dock_carrier_errors_and_nested_hierarchy() {
   const auto fighter1_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                                .owned_by(1)
                                .with_alive(true)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .with_size(5)
                                .with_hanger(0)
                                .with_max_hanger(0)
@@ -101,7 +101,7 @@ void test_dock_carrier_errors_and_nested_hierarchy() {
   const auto fighter2_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                                .owned_by(1)
                                .with_alive(true)
-                               .in_star_orbit(0)
+                               .in_star_orbit(1)
                                .with_size(4)
                                .with_hanger(0)
                                .with_max_hanger(0)
@@ -177,14 +177,14 @@ void test_dock_carrier_errors_and_nested_hierarchy() {
 }
 
 void test_undock_carrier() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  auto& em = ctx.em;
 
   const auto carrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                               .owned_by(1)
                               .with_alive(true)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .with_hanger(0)
                               .with_max_hanger(50)
                               .build();
@@ -193,7 +193,7 @@ void test_undock_carrier() {
   const auto fighter_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                               .owned_by(1)
                               .with_alive(true)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .with_size(10)
                               .with_hanger(0)
                               .with_max_hanger(0)
@@ -226,19 +226,19 @@ void test_undock_carrier() {
 }
 
 void test_moor_and_unmoor_ships() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  auto& em = ctx.em;
 
   const auto s1_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                          .owned_by(1)
                          .with_alive(true)
-                         .in_star_orbit(0)
+                         .in_star_orbit(1)
                          .build();
   const auto s2_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                          .owned_by(1)
                          .with_alive(true)
-                         .in_star_orbit(0)
+                         .in_star_orbit(1)
                          .build();
 
   // Self mooring rejected
@@ -251,7 +251,7 @@ void test_moor_and_unmoor_ships() {
   auto scope_res = em.moor_ships(s1_id, s2_id);
   test::expect_false(scope_res.has_value());
   test::expect_eq(scope_res.error(), DockError::ScopeMismatch);
-  em.mutate_ship(s2_id, [](Ship& s) { s.enter_star_orbit(0); });
+  em.mutate_ship(s2_id, [](Ship& s) { s.enter_star_orbit(1); });
 
   // Successful mooring
   auto moor_res = em.moor_ships(s1_id, s2_id);
@@ -286,21 +286,14 @@ void test_moor_and_unmoor_ships() {
 }
 
 void test_kill_ship_carrier_and_child_accounting() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Tester";
-  JsonStore store(db);
-  RaceRepository races(store);
-  races.save(race);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  auto& em = ctx.em;
 
   const auto carrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                               .owned_by(1)
                               .with_alive(true)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .with_hanger(0)
                               .with_max_hanger(50)
                               .build();
@@ -309,7 +302,7 @@ void test_kill_ship_carrier_and_child_accounting() {
   const auto fighter_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                               .owned_by(1)
                               .with_alive(true)
-                              .in_star_orbit(0)
+                              .in_star_orbit(1)
                               .with_size(10)
                               .with_hanger(0)
                               .with_max_hanger(0)
@@ -335,20 +328,20 @@ void test_kill_ship_carrier_and_child_accounting() {
   const auto super_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                             .owned_by(1)
                             .with_alive(true)
-                            .in_star_orbit(0)
+                            .in_star_orbit(1)
                             .with_max_hanger(50)
                             .build();
   const auto sub_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                           .owned_by(1)
                           .with_alive(true)
-                          .in_star_orbit(0)
+                          .in_star_orbit(1)
                           .with_size(15)
                           .with_max_hanger(10)
                           .build();
   const auto craft_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
                             .owned_by(1)
                             .with_alive(true)
-                            .in_star_orbit(0)
+                            .in_star_orbit(1)
                             .with_size(5)
                             .build();
 

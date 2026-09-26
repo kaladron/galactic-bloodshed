@@ -71,6 +71,7 @@ void test_prompt_ship_orbiting_scopes() {
       .build();
   {
     JsonStore store(ctx.db);
+    PlanetRepository(store).save(Planet{1, 1});
     UniverseRepository universe_repo(store);
     universe_struct u{};
     u.AP[player_t{1}] = 100;
@@ -81,6 +82,7 @@ void test_prompt_ship_orbiting_scopes() {
     // Ship 10: in universe scope
     ship_struct s10{};
     s10.number = 10;
+    s10.owner = 1;
     s10.whatorbits = ScopeLevel::LEVEL_UNIV;
     Ship ship10{s10};
     ship_repo.save(ship10);
@@ -88,6 +90,7 @@ void test_prompt_ship_orbiting_scopes() {
     // Ship 11: orbiting star
     ship_struct s11{};
     s11.number = 11;
+    s11.owner = 1;
     s11.whatorbits = ScopeLevel::LEVEL_STAR;
     s11.storbits = 1;
     Ship ship11{s11};
@@ -96,6 +99,7 @@ void test_prompt_ship_orbiting_scopes() {
     // Ship 12: orbiting planet
     ship_struct s12{};
     s12.number = 12;
+    s12.owner = 1;
     s12.whatorbits = ScopeLevel::LEVEL_PLAN;
     s12.storbits = 1;
     s12.pnumorbits = 1;
@@ -134,6 +138,7 @@ void test_prompt_nested_docked_ships() {
       .build();
   {
     JsonStore store(ctx.db);
+    PlanetRepository(store).save(Planet{1, 1});
     UniverseRepository universe_repo(store);
     universe_struct u{};
     u.AP[player_t{1}] = 100;
@@ -144,12 +149,14 @@ void test_prompt_nested_docked_ships() {
     // Level 2 nest: Carrier 21 (in universe) -> Fighter 20 (docked in 21)
     ship_struct s21{};
     s21.number = 21;
+    s21.owner = 1;
     s21.whatorbits = ScopeLevel::LEVEL_UNIV;
     Ship ship21{s21};
     ship_repo.save(ship21);
 
     ship_struct s20{};
     s20.number = 20;
+    s20.owner = 1;
     s20.whatorbits = ScopeLevel::LEVEL_SHIP;
     s20.destshipno = 21;
     Ship ship20{s20};
@@ -158,6 +165,7 @@ void test_prompt_nested_docked_ships() {
     // Level 2 nest: Carrier 23 (in star) -> Fighter 22 (docked in 23)
     ship_struct s23{};
     s23.number = 23;
+    s23.owner = 1;
     s23.whatorbits = ScopeLevel::LEVEL_STAR;
     s23.storbits = 1;
     Ship ship23{s23};
@@ -165,6 +173,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s22{};
     s22.number = 22;
+    s22.owner = 1;
     s22.whatorbits = ScopeLevel::LEVEL_SHIP;
     s22.destshipno = 23;
     s22.storbits = 1;
@@ -174,6 +183,7 @@ void test_prompt_nested_docked_ships() {
     // Level 2 nest: Carrier 25 (in planet) -> Fighter 24 (docked in 25)
     ship_struct s25{};
     s25.number = 25;
+    s25.owner = 1;
     s25.whatorbits = ScopeLevel::LEVEL_PLAN;
     s25.storbits = 1;
     s25.pnumorbits = 1;
@@ -182,6 +192,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s24{};
     s24.number = 24;
+    s24.owner = 1;
     s24.whatorbits = ScopeLevel::LEVEL_SHIP;
     s24.destshipno = 25;
     s24.storbits = 1;
@@ -189,23 +200,17 @@ void test_prompt_nested_docked_ships() {
     Ship ship24{s24};
     ship_repo.save(ship24);
 
-    // Level 2 nest with missing parent: Ship 26 -> non-existent 27
-    ship_struct s26{};
-    s26.number = 26;
-    s26.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s26.destshipno = 27;
-    Ship ship26{s26};
-    ship_repo.save(ship26);
-
     // Level 3 nest: Station 32 (univ) -> Carrier 31 -> Fighter 30
     ship_struct s32{};
     s32.number = 32;
+    s32.owner = 1;
     s32.whatorbits = ScopeLevel::LEVEL_UNIV;
     Ship ship32{s32};
     ship_repo.save(ship32);
 
     ship_struct s31{};
     s31.number = 31;
+    s31.owner = 1;
     s31.whatorbits = ScopeLevel::LEVEL_SHIP;
     s31.destshipno = 32;
     Ship ship31{s31};
@@ -213,6 +218,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s30{};
     s30.number = 30;
+    s30.owner = 1;
     s30.whatorbits = ScopeLevel::LEVEL_SHIP;
     s30.destshipno = 31;
     Ship ship30{s30};
@@ -221,6 +227,7 @@ void test_prompt_nested_docked_ships() {
     // Level 3 nest: Station 35 (star) -> Carrier 34 -> Fighter 33
     ship_struct s35{};
     s35.number = 35;
+    s35.owner = 1;
     s35.whatorbits = ScopeLevel::LEVEL_STAR;
     s35.storbits = 1;
     Ship ship35{s35};
@@ -228,6 +235,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s34{};
     s34.number = 34;
+    s34.owner = 1;
     s34.whatorbits = ScopeLevel::LEVEL_SHIP;
     s34.destshipno = 35;
     s34.storbits = 1;
@@ -236,6 +244,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s33{};
     s33.number = 33;
+    s33.owner = 1;
     s33.whatorbits = ScopeLevel::LEVEL_SHIP;
     s33.destshipno = 34;
     s33.storbits = 1;
@@ -245,6 +254,7 @@ void test_prompt_nested_docked_ships() {
     // Level 3 nest: Station 38 (plan) -> Carrier 37 -> Fighter 36
     ship_struct s38{};
     s38.number = 38;
+    s38.owner = 1;
     s38.whatorbits = ScopeLevel::LEVEL_PLAN;
     s38.storbits = 1;
     s38.pnumorbits = 1;
@@ -253,6 +263,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s37{};
     s37.number = 37;
+    s37.owner = 1;
     s37.whatorbits = ScopeLevel::LEVEL_SHIP;
     s37.destshipno = 38;
     s37.storbits = 1;
@@ -262,6 +273,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s36{};
     s36.number = 36;
+    s36.owner = 1;
     s36.whatorbits = ScopeLevel::LEVEL_SHIP;
     s36.destshipno = 37;
     s36.storbits = 1;
@@ -273,6 +285,7 @@ void test_prompt_nested_docked_ships() {
     // -> Drone 40
     ship_struct s44{};
     s44.number = 44;
+    s44.owner = 1;
     s44.whatorbits = ScopeLevel::LEVEL_PLAN;
     s44.storbits = 1;
     s44.pnumorbits = 1;
@@ -281,6 +294,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s43{};
     s43.number = 43;
+    s43.owner = 1;
     s43.whatorbits = ScopeLevel::LEVEL_SHIP;
     s43.destshipno = 44;
     s43.storbits = 1;
@@ -290,6 +304,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s42{};
     s42.number = 42;
+    s42.owner = 1;
     s42.whatorbits = ScopeLevel::LEVEL_SHIP;
     s42.destshipno = 43;
     s42.storbits = 1;
@@ -299,6 +314,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s41{};
     s41.number = 41;
+    s41.owner = 1;
     s41.whatorbits = ScopeLevel::LEVEL_SHIP;
     s41.destshipno = 42;
     s41.storbits = 1;
@@ -308,6 +324,7 @@ void test_prompt_nested_docked_ships() {
 
     ship_struct s40{};
     s40.number = 40;
+    s40.owner = 1;
     s40.whatorbits = ScopeLevel::LEVEL_SHIP;
     s40.destshipno = 41;
     s40.storbits = 1;
@@ -330,10 +347,6 @@ void test_prompt_nested_docked_ships() {
 
   g.set_shipno(24);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#25/#24 )\n");
-
-  // Missing parent ship throws EntityNotFoundError
-  g.set_shipno(26);
-  test::expect_throws<EntityNotFoundError>([&]() { do_prompt(g); });
 
   // 3-level nested prompts
   g.set_shipno(30);

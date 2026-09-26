@@ -11,14 +11,20 @@ import test;
 import std;
 
 int main() {
-  // Create in-memory database BEFORE calling initialize_schema()
-  Database db(":memory:");
-
-  // Initialize database tables
-  initialize_schema(db);
-
-  // Create EntityManager for accessing telegrams
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
+  Database& db = ctx.db;
+  EntityManager& em = ctx.em;
+  {
+    JsonStore store(db);
+    RaceRepository races(store);
+    for (player_t p = 5; p <= 9; ++p) {
+      Race r{};
+      r.Playernum = p;
+      r.name = std::format("Race{}", p);
+      races.save(r);
+    }
+  }
 
   std::println(std::cout, "Running telegram system tests...\n");
 

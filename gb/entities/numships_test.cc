@@ -11,11 +11,14 @@ import test;
 import std;
 
 int main() {
-  // Initialize database using Database class (in-memory for testing)
-  Database db(":memory:");
+  TestContext ctx;
+  ctx.with_standard_universe();
+  Database& db = ctx.db;
+  EntityManager& entity_manager = ctx.em;
 
-  // Initialize database tables - this will create the ship tables
-  initialize_schema(db);
+  // Get initial count (should be 0 before ships are added)
+  shipnum_t initial_count = entity_manager.num_ships();
+  test::expect_eq(initial_count, 0);
 
   // Create test ships
   Ship test_ship1{};
@@ -51,12 +54,6 @@ int main() {
   ship_repo.save(test_ship1);
   ship_repo.save(test_ship2);
   ship_repo.save(test_ship3);
-
-  // Create EntityManager
-  EntityManager entity_manager(db);
-
-  // Get initial count (should be 3)
-  shipnum_t initial_count = entity_manager.num_ships();
 
   // Test that num_ships() returns the correct count
   shipnum_t count_after_inserts = entity_manager.num_ships();

@@ -543,7 +543,7 @@ int main() {
     test::expect_eq(bers_count, 1);
     test::expect_eq(parent->resource(), 0);
     auto replicated_ships =
-        em.ships_on_planet(planet.star_id(), planet.planet_order(), true);
+        em.ships_on_planet(planet.star_id(), planet.planet_order());
     test::expect_false(replicated_ships.empty());
     const auto* newly_replicated = em.peek_ship(replicated_ships.back());
     test::expect_ne(newly_replicated, nullptr);

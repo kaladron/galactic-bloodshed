@@ -70,23 +70,26 @@ class EntityHandle {
   EntityManager* manager;
   T* entity;
   std::function<void(const T&)> save_fn;
+  std::function<void()> release_fn;
   bool dirty = false;
 
 public:
   EntityHandle(EntityManager* mgr, T* ent, std::function<void(const T&)> save,
-               bool initial_dirty = false)
+               std::function<void()> release = {}, bool initial_dirty = false)
       : manager(mgr), entity(ent), save_fn(std::move(save)),
-        dirty(initial_dirty) {}
+        release_fn(std::move(release)), dirty(initial_dirty) {}
 
   ~EntityHandle() {
     try {
       if (dirty && entity && save_fn) {
         save_fn(*entity);
       }
+      if (entity && release_fn) {
+        release_fn();
+      }
     } catch (...) {
       // Destructors must not throw exceptions
     }
-    // Note: EntityManager will be notified via release mechanism
   }
 
   // Delete copy, allow move with proper nulling of moved-from source
@@ -95,15 +98,20 @@ public:
   EntityHandle(EntityHandle&& other) noexcept
       : manager(other.manager), entity(std::exchange(other.entity, nullptr)),
         save_fn(std::move(other.save_fn)),
+        release_fn(std::move(other.release_fn)),
         dirty(std::exchange(other.dirty, false)) {}
   EntityHandle& operator=(EntityHandle&& other) noexcept {
     if (this != &other) {
-      if (dirty && entity) {
+      if (dirty && entity && save_fn) {
         save_fn(*entity);
+      }
+      if (entity && release_fn) {
+        release_fn();
       }
       manager = other.manager;
       entity = std::exchange(other.entity, nullptr);
       save_fn = std::move(other.save_fn);
+      release_fn = std::move(other.release_fn);
       dirty = std::exchange(other.dirty, false);
     }
     return *this;
@@ -141,7 +149,7 @@ public:
 
   // Force save without waiting for destructor
   void save() {
-    if (entity && dirty) {
+    if (entity && dirty && save_fn) {
       save_fn(*entity);
       dirty = false;
     }
@@ -426,19 +434,13 @@ public:
   powernum_t max_power_id();
 
   // Ship spatial query operations
-  [[nodiscard]] std::vector<shipnum_t>
-  ships_in_star_system(starnum_t star_id, bool alive_only = true);
-  [[nodiscard]] std::vector<shipnum_t> ships_in_star(starnum_t star_id,
-                                                     bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> ships_in_star_system(starnum_t star_id);
+  [[nodiscard]] std::vector<shipnum_t> ships_in_star(starnum_t star_id);
   [[nodiscard]] std::vector<shipnum_t> ships_on_planet(starnum_t star_id,
-                                                       planetnum_t planet_id,
-                                                       bool alive_only = true);
-  [[nodiscard]] std::vector<shipnum_t> ships_in_hangar(shipnum_t carrier_id,
-                                                       bool alive_only = true);
-  [[nodiscard]] std::vector<shipnum_t> ships_by_owner(player_t owner_id,
-                                                      bool alive_only = true);
-  [[nodiscard]] std::vector<shipnum_t> ships_at_scope(ScopeLevel scope,
-                                                      bool alive_only = true);
+                                                       planetnum_t planet_id);
+  [[nodiscard]] std::vector<shipnum_t> ships_in_hangar(shipnum_t carrier_id);
+  [[nodiscard]] std::vector<shipnum_t> ships_by_owner(player_t owner_id);
+  [[nodiscard]] std::vector<shipnum_t> ships_at_scope(ScopeLevel scope);
   [[nodiscard]] std::vector<shipnum_t> ships_alive();
   [[nodiscard]] std::vector<shipnum_t> ships_all();
 
@@ -567,6 +569,8 @@ private:
   void release_sectormap(starnum_t star, planetnum_t pnum);
   void release_ship_exam(ShipType ship_type);
 
+  [[nodiscard]] std::vector<shipnum_t>
+  filter_alive_ships(std::vector<shipnum_t> ids) const;
   void drain_pending_deletions();
   void propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
                                      double delta_mass);

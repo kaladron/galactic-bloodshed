@@ -294,16 +294,6 @@ TestContext& TestContext::with_standard_universe() {
     univ_repo.save(*u);
   }
 
-  // 9. Setup Player 1 Government Center (Ship #100) landed on Earth, then link
-  // Race::Gov_ship
-  TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
-      .owned_by(1, 1)
-      .landed_on(1, 1, Coordinates{0, 0})
-      .with_crew(100, 0)
-      .with_alive(true)
-      .build();
-  em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
-
   return *this;
 }
 
@@ -404,17 +394,6 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
     u->AP[player_t{1}] = 100;
     u->AP[player_t{2}] = 100;
     univ_repo.save(*u);
-  }
-
-  if (auto star1_opt = star_repo.find(1);
-      star1_opt && star1_opt->numplanets() > 0) {
-    TestShipBuilder(em, ShipType::OTYPE_GOV, 100)
-        .owned_by(1, 1)
-        .landed_on(1, 1, Coordinates{0, 0})
-        .with_crew(100, 0)
-        .with_alive(true)
-        .build();
-    em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
   }
 
   return *this;

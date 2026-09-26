@@ -446,7 +446,8 @@ void test_land_planet_preconditions_and_crashes() {
   ctx.assert_dispatch_success(
       g, {"land", std::format("#{}", crash_fuel_id.value), "5,5"}, 1);
   test::expect_contains(g.out.str(), "while the landing required");
-  test::expect_false(ctx.em.peek_ship(crash_fuel_id)->alive());
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(crash_fuel_id); });
 
   // 5. Crash from 100% hull damage (persists ship destruction & deducts 1 AP)
   const auto crash_dmg_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
@@ -458,7 +459,8 @@ void test_land_planet_preconditions_and_crashes() {
   ctx.assert_dispatch_success(
       g, {"land", std::format("#{}", crash_dmg_id.value), "5,5"}, 1);
   test::expect_contains(g.out.str(), "Ship damage 100%");
-  test::expect_false(ctx.em.peek_ship(crash_dmg_id)->alive());
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(crash_dmg_id); });
 }
 
 }  // namespace

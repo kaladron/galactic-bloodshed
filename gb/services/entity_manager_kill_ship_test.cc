@@ -260,18 +260,14 @@ int main() {
     em.mutate_ship(carrier_num,
                    [&](Ship& carrier) { em.kill_ship(1, carrier); });
 
-    // Phase 4: Verify all ships are dead
+    // Phase 4: Verify all ships are hard-deleted from database
     em.clear_cache();
-    const auto* carrier_after = em.peek_ship(carrier_num);
-    const auto* fighter1_after = em.peek_ship(fighter1_num);
-    const auto* fighter2_after = em.peek_ship(fighter2_num);
-
-    test::expect_ne(carrier_after, nullptr);
-    test::expect_ne(fighter1_after, nullptr);
-    test::expect_ne(fighter2_after, nullptr);
-    test::expect_eq(carrier_after->alive(), 0);
-    test::expect_eq(fighter1_after->alive(), 0);
-    test::expect_eq(fighter2_after->alive(), 0);
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { em.peek_ship(carrier_num); });
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { em.peek_ship(fighter1_num); });
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { em.peek_ship(fighter2_num); });
     std::println(std::cout, "✓ Recursive killing of landed ships works");
   }
 

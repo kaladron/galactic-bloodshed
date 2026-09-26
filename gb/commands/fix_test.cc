@@ -85,23 +85,29 @@ void test_fix_ship_damage_persistence() {
   std::println(std::cout, "✓ fix ship damage persistence test passed");
 }
 
-// Database persistence for fixing ship alive status
-void test_fix_ship_alive_persistence() {
+// Database persistence for fixing ship dead status (hard-deletes ship)
+void test_fix_ship_dead_persistence() {
   // 1. Create in-memory database
   TestContext ctx;
 
   // 2. Create test entities via Repository
   JsonStore store(ctx.db);
+  RaceRepository races(store);
   ShipRepository ships(store);
 
-  // Create a dead ship
+  Race race{};
+  race.Playernum = 1;
+  race.name = "Tester";
+  races.save(race);
+
+  // Create a living ship
   Ship ship{};
   ship.number() = 1;
   ship.owner() = 1;
   ship.governor() = 1;
   ship.type() = ShipType::STYPE_SHUTTLE;
-  ship.alive() = false;
-  ship.admin_override_damage(100);
+  ship.alive() = true;
+  ship.admin_override_damage(0);
   ships.save(ship);
 
   // 3. Verify initial state via EntityManager
@@ -109,24 +115,21 @@ void test_fix_ship_alive_persistence() {
   {
     const auto* s = ctx.em.peek_ship(1);
     test::expect_ne(s, nullptr);
-    test::expect_eq(s->alive(), 0);
-    test::expect_eq(s->damage(), 100);
+    test::expect_true(s->alive());
+    test::expect_eq(s->damage(), 0);
   }
 
-  // 4. Simulate resurrecting ship via EntityManager
-  ctx.em.mutate_ship(1, [](Ship& s) {
-    s.alive() = 1;
-    s.admin_override_damage(0);
+  // 4. Simulate destroying ship via EntityManager
+  ctx.em.mutate_ship(1, [&](Ship& s) {
+    s.admin_destroy();
+    ctx.em.kill_ship(1, s);
   });
 
-  // 5. Verify changes persisted after cache clear
+  // 5. Verify ship was hard-deleted from database
   ctx.em.clear_cache();
-  const auto* final_ship = ctx.em.peek_ship(1);
-  test::expect_ne(final_ship, nullptr);
-  test::expect_eq(final_ship->alive(), 1);
-  test::expect_eq(final_ship->damage(), 0);
+  test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });
 
-  std::println(std::cout, "✓ fix ship alive persistence test passed");
+  std::println(std::cout, "✓ fix ship dead persistence test passed");
 }
 
 // Database persistence for fixing planet temperature
@@ -386,19 +389,13 @@ void test_fix_command_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
   test::expect_contains(g.out.str(), "destroyed");
-  test::expect_false(ctx.em.peek_ship(1)->alive());
-
-  g.out.str("");
-  ctx.assert_dispatch_success(g, {"fix", "ship", "alive"});
-  test::expect_contains(g.out.str(), "resurrected");
-  test::expect_true(ctx.em.peek_ship(1)->alive());
-  test::expect_eq(ctx.em.peek_ship(1)->damage(), 0);
+  test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });
 }
 
 int main() {
   test_fix_ship_fuel_persistence();
   test_fix_ship_damage_persistence();
-  test_fix_ship_alive_persistence();
+  test_fix_ship_dead_persistence();
   test_fix_planet_temp_persistence();
   test_fix_planet_oxygen_persistence();
   test_fix_planet_position_persistence();

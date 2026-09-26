@@ -105,19 +105,13 @@ public:
   shipnum_t count_all_ships();
 
   // Spatial and indexed query methods
-  [[nodiscard]] std::vector<shipnum_t>
-  find_in_star_system(starnum_t star_id, bool alive_only = true);
-  [[nodiscard]] std::vector<shipnum_t> find_in_star(starnum_t star_id,
-                                                    bool alive_only = true);
+  [[nodiscard]] std::vector<shipnum_t> find_in_star_system(starnum_t star_id);
+  [[nodiscard]] std::vector<shipnum_t> find_in_star(starnum_t star_id);
   [[nodiscard]] std::vector<shipnum_t> find_on_planet(starnum_t star_id,
-                                                      planetnum_t planet_id,
-                                                      bool alive_only = true);
-  [[nodiscard]] std::vector<shipnum_t> find_in_hangar(shipnum_t carrier_id,
-                                                      bool alive_only = true);
-  [[nodiscard]] std::vector<shipnum_t> find_by_owner(player_t owner_id,
-                                                     bool alive_only = true);
-  [[nodiscard]] std::vector<shipnum_t> find_at_scope(ScopeLevel scope,
-                                                     bool alive_only = true);
+                                                      planetnum_t planet_id);
+  [[nodiscard]] std::vector<shipnum_t> find_in_hangar(shipnum_t carrier_id);
+  [[nodiscard]] std::vector<shipnum_t> find_by_owner(player_t owner_id);
+  [[nodiscard]] std::vector<shipnum_t> find_at_scope(ScopeLevel scope);
   [[nodiscard]] std::vector<shipnum_t> find_alive();
 
 protected:

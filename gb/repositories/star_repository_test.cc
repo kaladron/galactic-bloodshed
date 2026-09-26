@@ -155,10 +155,10 @@ int main() {
                   UniverseCoordinates(200.0, 150.0));
   std::println(std::cout, "  ✓ Third star retrieved correctly");
 
-  // Next available star number (should find gap at 3)
+  // Next available star number (monotonic max + 1)
   std::println(std::cout, "Next available star number...");
   int next_id = repo.next_available_id();
-  test::expect_eq(next_id, 3, "Should return 3 (first gap)");
+  test::expect_eq(next_id, 6, "Should return 6 (max + 1)");
   std::println(std::cout, "  ✓ Next star number is: {}", next_id);
 
   // Remove a star

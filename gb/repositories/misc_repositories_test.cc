@@ -173,11 +173,11 @@ void test_power_repository() {
   test::expect_true(repo.find_by_id(powernum_t{1}).has_value());
   test::expect_true(repo.find_by_id(powernum_t{2}).has_value());
 
-  // Gap finding
+  // Monotonic next available ID
   p1.id = 5;
   test::expect_true(repo.save(p1));
   int next_id = repo.next_available_id();
-  test::expect_eq(next_id, 3);  // Should find gap at 3
+  test::expect_eq(next_id, 6);  // Should return max + 1 (6)
 
   std::println(std::cout, "✓ All PowerRepository tests passed");
 }

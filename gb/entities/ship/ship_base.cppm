@@ -1341,14 +1341,6 @@ public:
     data_.max_fuel = std::max(0.0, amt);
   }
 
-  /// \brief Deity override: resurrects a destroyed ship to full operational
-  /// health.
-  void admin_resurrect() noexcept {
-    data_.alive = true;
-    data_.active = true;
-    data_.damage = 0;
-  }
-
   /// \brief Deity override: marks a ship as destroyed.
   void admin_destroy() noexcept {
     data_.alive = false;

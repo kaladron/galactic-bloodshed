@@ -204,7 +204,7 @@ public:
 - Generic CRUD operations for JSON data using in-place `ON CONFLICT(...) DO UPDATE SET data = excluded.data` upserts (preventing false `ON DELETE` foreign-key violations when updating parent entities)
 - Table-agnostic storage interface
 - Parameterized WHERE queries returning matched IDs without exposing SQLite statements
-- Gap-finding for ID allocation
+- Monotonic high-water-mark ID allocation (`MAX(id)` and `sqlite_sequence` for `AUTOINCREMENT` tables)
 - Error handling
 
 **Schema Management**
@@ -289,10 +289,10 @@ public:
   shipnum_t count_all_ships();
   
   // Spatial and indexed queries
-  std::vector<shipnum_t> find_in_star(starnum_t star_id, bool alive_only = true);
-  std::vector<shipnum_t> find_on_planet(starnum_t star_id, planetnum_t planet_id, bool alive_only = true);
-  std::vector<shipnum_t> find_in_hangar(shipnum_t carrier_id, bool alive_only = true);
-  std::vector<shipnum_t> find_by_owner(player_t owner_id, bool alive_only = true);
+  std::vector<shipnum_t> find_in_star(starnum_t star_id);
+  std::vector<shipnum_t> find_on_planet(starnum_t star_id, planetnum_t planet_id);
+  std::vector<shipnum_t> find_in_hangar(shipnum_t carrier_id);
+  std::vector<shipnum_t> find_by_owner(player_t owner_id);
   std::vector<shipnum_t> find_alive();
   
 protected:

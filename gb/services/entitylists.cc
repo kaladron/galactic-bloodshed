@@ -12,7 +12,7 @@ module gb.services;
 // ShipList constructors
 
 ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
-    : em_(&em) {
+    : em_(&em), alive_only_(type != IterationType::All) {
   if (type == IterationType::All) {
     ship_ids_ = em.ships_all();
   } else if (type == IterationType::AllAlive) {
@@ -23,13 +23,13 @@ ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
         ship_ids_ = em.ships_alive();
         break;
       case ScopeLevel::LEVEL_STAR:
-        ship_ids_ = em.ships_in_star_system(g.snum(), /*alive_only=*/true);
+        ship_ids_ = em.ships_in_star_system(g.snum());
         break;
       case ScopeLevel::LEVEL_PLAN:
-        ship_ids_ = em.ships_on_planet(g.snum(), g.pnum(), /*alive_only=*/true);
+        ship_ids_ = em.ships_on_planet(g.snum(), g.pnum());
         break;
       case ScopeLevel::LEVEL_SHIP:
-        ship_ids_ = em.ships_by_owner(g.player(), /*alive_only=*/true);
+        ship_ids_ = em.ships_by_owner(g.player());
         break;
     }
   }
@@ -38,17 +38,17 @@ ShipList::ShipList(EntityManager& em, const GameObj& g, IterationType type)
 ShipList::ShipList(const GameObj& g, IterationType type)
     : ShipList(g.entity_manager, g, type) {}
 
-ShipList::ShipList(EntityManager& em, ScopeLevel scope, bool alive_only)
-    : em_(&em), ship_ids_(em.ships_at_scope(scope, alive_only)) {}
+ShipList::ShipList(EntityManager& em, ScopeLevel scope)
+    : em_(&em), ship_ids_(em.ships_at_scope(scope)) {}
 
-ShipList::ShipList(EntityManager& em, starnum_t star_id, bool alive_only)
-    : em_(&em), ship_ids_(em.ships_in_star(star_id, alive_only)) {}
+ShipList::ShipList(EntityManager& em, starnum_t star_id)
+    : em_(&em), ship_ids_(em.ships_in_star(star_id)) {}
 
-ShipList::ShipList(EntityManager& em, starnum_t star_id, planetnum_t planet_id,
-                   bool alive_only)
-    : em_(&em), ship_ids_(em.ships_on_planet(star_id, planet_id, alive_only)) {}
+ShipList::ShipList(EntityManager& em, starnum_t star_id, planetnum_t planet_id)
+    : em_(&em), ship_ids_(em.ships_on_planet(star_id, planet_id)) {}
 
-ShipList::ShipList(EntityManager& em, IterationType type) : em_(&em) {
+ShipList::ShipList(EntityManager& em, IterationType type)
+    : em_(&em), alive_only_(type != IterationType::All) {
   if (type == IterationType::All) {
     ship_ids_ = em.ships_all();
   } else {
@@ -56,36 +56,35 @@ ShipList::ShipList(EntityManager& em, IterationType type) : em_(&em) {
   }
 }
 
-ShipList::ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids)
-    : em_(&em), ship_ids_(std::move(ship_ids)) {}
+ShipList::ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids,
+                   bool alive_only)
+    : em_(&em), ship_ids_(std::move(ship_ids)), alive_only_(alive_only) {}
 
-ShipList ShipList::in_carrier(EntityManager& em, shipnum_t carrier_id,
-                              bool alive_only) {
-  return ShipList(em, em.ships_in_hangar(carrier_id, alive_only));
+ShipList ShipList::in_carrier(EntityManager& em, shipnum_t carrier_id) {
+  return ShipList(em, em.ships_in_hangar(carrier_id));
 }
 
 const ShipList ShipList::readonly_in_carrier(EntityManager& em,
-                                             shipnum_t carrier_id,
-                                             bool alive_only) {
-  return ShipList(em, em.ships_in_hangar(carrier_id, alive_only));
+                                             shipnum_t carrier_id) {
+  return ShipList(em, em.ships_in_hangar(carrier_id));
 }
 
 // ShipList iterator methods
 
 ShipList::MutableIterator ShipList::begin() {
-  return MutableIterator(*em_, ship_ids_.begin());
+  return MutableIterator(*em_, ship_ids_.begin(), ship_ids_.end(), alive_only_);
 }
 
 ShipList::MutableIterator ShipList::end() {
-  return MutableIterator(*em_, ship_ids_.end());
+  return MutableIterator(*em_, ship_ids_.end(), ship_ids_.end(), alive_only_);
 }
 
 ShipList::ConstIterator ShipList::begin() const {
-  return ConstIterator(*em_, ship_ids_.begin());
+  return ConstIterator(*em_, ship_ids_.begin(), ship_ids_.end(), alive_only_);
 }
 
 ShipList::ConstIterator ShipList::end() const {
-  return ConstIterator(*em_, ship_ids_.end());
+  return ConstIterator(*em_, ship_ids_.end(), ship_ids_.end(), alive_only_);
 }
 
 ShipList::ConstIterator ShipList::cbegin() const {
@@ -99,17 +98,35 @@ ShipList::ConstIterator ShipList::cend() const {
 // MutableIterator implementation
 
 ShipList::MutableIterator::MutableIterator(
-    EntityManager& em, std::vector<shipnum_t>::const_iterator it)
-    : em_(&em), it_(it) {}
+    EntityManager& em, std::vector<shipnum_t>::const_iterator it,
+    std::vector<shipnum_t>::const_iterator end, bool alive_only)
+    : em_(&em), it_(it), end_(end), alive_only_(alive_only) {
+  advance_to_valid();
+}
+
+void ShipList::MutableIterator::advance_to_valid() {
+  while (it_ != end_) {
+    try {
+      const Ship* ship = em_->peek_ship(*it_);
+      if (ship && (!alive_only_ || ship->alive())) {
+        return;
+      }
+    } catch (const EntityNotFoundError&) {
+      // Ship was hard-deleted mid-iteration; skip it
+    }
+    ++it_;
+  }
+}
 
 ShipList::MutableIterator& ShipList::MutableIterator::operator++() {
   ++it_;
+  advance_to_valid();
   return *this;
 }
 
 ShipList::MutableIterator ShipList::MutableIterator::operator++(int) {
   MutableIterator tmp = *this;
-  ++it_;
+  ++(*this);
   return tmp;
 }
 
@@ -128,17 +145,35 @@ bool ShipList::MutableIterator::operator!=(const MutableIterator& other) const {
 // ConstIterator implementation
 
 ShipList::ConstIterator::ConstIterator(
-    EntityManager& em, std::vector<shipnum_t>::const_iterator it)
-    : em_(&em), it_(it) {}
+    EntityManager& em, std::vector<shipnum_t>::const_iterator it,
+    std::vector<shipnum_t>::const_iterator end, bool alive_only)
+    : em_(&em), it_(it), end_(end), alive_only_(alive_only) {
+  advance_to_valid();
+}
+
+void ShipList::ConstIterator::advance_to_valid() {
+  while (it_ != end_) {
+    try {
+      const Ship* ship = em_->peek_ship(*it_);
+      if (ship && (!alive_only_ || ship->alive())) {
+        return;
+      }
+    } catch (const EntityNotFoundError&) {
+      // Ship was hard-deleted mid-iteration; skip it
+    }
+    ++it_;
+  }
+}
 
 ShipList::ConstIterator& ShipList::ConstIterator::operator++() {
   ++it_;
+  advance_to_valid();
   return *this;
 }
 
 ShipList::ConstIterator ShipList::ConstIterator::operator++(int) {
   ConstIterator tmp = *this;
-  ++it_;
+  ++(*this);
   return tmp;
 }
 

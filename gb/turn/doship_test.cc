@@ -561,8 +561,8 @@ void test_execute_missile_ship_strike() {
     execute_missile_ship_strike(m, ctx.em);
     test::expect_false(m.alive());
   });
-  const auto* target_after = ctx.em.peek_ship(target_id);
-  test::expect_gt(target_after->damage(), 0);
+  test::expect_throws<EntityNotFoundError>(
+      [&] { (void)ctx.em.peek_ship(target_id); });
 }
 
 void test_domissile_integration() {
@@ -636,8 +636,8 @@ void test_domissile_integration() {
     domissile(m, ctx.em);
     test::expect_false(m.alive());
   });
-  const auto* victim = ctx.em.peek_ship(victim_id);
-  test::expect_gt(victim->damage(), 0);
+  test::expect_throws<EntityNotFoundError>(
+      [&] { (void)ctx.em.peek_ship(victim_id); });
 }
 
 void test_check_mine_proximity_trigger() {
@@ -775,8 +775,8 @@ void test_detonate_mine_against_ships() {
   ctx.em.mutate_ship(
       mine_id, [&](Ship& mine) { detonate_mine_against_ships(mine, ctx.em); });
 
-  const auto* target = ctx.em.peek_ship(target_id);
-  test::expect_gt(target->damage(), 0);
+  test::expect_throws<EntityNotFoundError>(
+      [&] { (void)ctx.em.peek_ship(target_id); });
 
   const auto* dead = ctx.em.peek_ship(dead_id);
   test::expect_false(dead->alive());
@@ -880,8 +880,8 @@ void test_domine_trigger_and_detonation() {
     test::expect_false(m.alive());
   });
 
-  const auto* enemy_after = ctx.em.peek_ship(enemy_id);
-  test::expect_gt(enemy_after->damage(), 0);
+  test::expect_throws<EntityNotFoundError>(
+      [&] { (void)ctx.em.peek_ship(enemy_id); });
 
   // 3. Forced detonation (detonate = true) in planet orbit detonates without
   // proximity
@@ -907,8 +907,8 @@ void test_domine_trigger_and_detonation() {
     test::expect_false(m.alive());
   });
 
-  const auto* plan_target_after = ctx.em.peek_ship(plan_target_id);
-  test::expect_gt(plan_target_after->damage(), 0);
+  test::expect_throws<EntityNotFoundError>(
+      [&] { (void)ctx.em.peek_ship(plan_target_id); });
 }
 
 void test_doabm_intercept() {
@@ -972,8 +972,9 @@ void test_doabm_intercept() {
 
   doabm(abm, em);
   test::expect_lt(abm.destruct(), 50);
-  const auto* updated_hostile = em.peek_ship(hostile_handle->number());
-  test::expect_gt(updated_hostile->damage(), 0);
+  em.with_ship(hostile_handle->number(), [](const Ship& updated_hostile) {
+    test::expect_gt(updated_hostile.damage(), 0);
+  });
 
   const auto* updated_allied = em.peek_ship(allied_handle->number());
   test::expect_eq(updated_allied->damage(), 0);
@@ -1295,8 +1296,9 @@ void test_do_mirror() {
   ctx.em.mutate_as<SpaceMirrorShip>(
       mirror_ship_id,
       [&](SpaceMirrorShip& mirror) { do_mirror(mirror, ctx.em, stats); });
-  const auto* target = ctx.em.peek_ship(target_id);
-  test::expect_ge(target->damage(), 0);
+  ctx.em.with_ship(target_id, [](const Ship& target) {
+    test::expect_ge(target.damage(), 0);
+  });
 
   // 2. Space mirror aimed at planet (verifies
   // planet.absolute_coordinates(star) and same-system requirement)

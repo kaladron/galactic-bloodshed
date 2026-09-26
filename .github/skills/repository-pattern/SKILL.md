@@ -1,6 +1,6 @@
 ---
 name: repository-pattern
-description: 'Implement or extend a repository in dallib/gblib for an entity persisted as JSON in SQLite. Use when adding a new entity type to the database, adding fields that need to round-trip through JSON, or wiring a new repository into EntityManager. Covers Glaze meta specialization, JsonStore CRUD, composite-key repositories, and gap-finding ID allocation.'
+description: 'Implement or extend a repository in dallib/gblib for an entity persisted as JSON in SQLite. Use when adding a new entity type to the database, adding fields that need to round-trip through JSON, or wiring a new repository into EntityManager. Covers Glaze meta specialization, JsonStore CRUD, composite-key repositories, and monotonic ID allocation.'
 user-invocable: false
 ---
 
@@ -79,9 +79,9 @@ std::optional<Planet> find(starnum_t star, planetnum_t order) {
 
 Mirror an existing composite repository (`PlanetRepository`, `SectorRepository`) — don't invent a new layout.
 
-## Gap-Finding ID Allocation
+## Monotonic High-Water-Mark ID Allocation
 
-`ShipRepository` (and similar) allocate dense IDs by scanning for the first unused row. New repositories that need a similar guarantee should call into the existing `JsonStore` helper rather than reimplementing the scan.
+`ShipRepository` (and similar) allocate monotonically increasing IDs (`MAX(id) + 1` or `sqlite_sequence.seq + 1` for `AUTOINCREMENT` tables) so deleted entity IDs are never reused. New repositories should call into `Repository::next_available_id()` / `JsonStore::find_next_available_id()` rather than reimplementing ID allocation.
 
 ## Schema Registration
 

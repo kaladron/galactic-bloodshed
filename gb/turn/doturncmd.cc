@@ -35,7 +35,6 @@ static void process_stars_and_planets(TurnState& state, bool update);
 static void process_races(TurnState& state, bool update);
 static void process_ship_masses_and_ownership(TurnState& state);
 static void process_ship_turns(TurnState& state, bool update);
-static void prepare_dead_ships(TurnState& state);
 static void process_abms_and_missiles(TurnState& state, bool update);
 static void finalize_turn(TurnState& state, bool update);
 
@@ -70,7 +69,6 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
     }
     process_ship_masses_and_ownership(state);
     process_ship_turns(state, update);
-    prepare_dead_ships(state);
     process_abms_and_missiles(state, update);
     if (update) {
       calculate_victory_scores(state.entity_manager);
@@ -89,7 +87,7 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
 static void process_ships(TurnState& state) {
   // Process mine detonation for each ship
   for (auto ship_handle :
-       ShipList(state.entity_manager, ShipList::IterationType::All)) {
+       ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
     domine(*ship_handle, /*detonate=*/false, state.entity_manager);
   }
 }
@@ -256,17 +254,6 @@ static void process_ship_turns(TurnState& state, bool update) {
           });
         }
       }
-    }
-  }
-}
-
-static void prepare_dead_ships(TurnState& state) {
-  /* prepare dead ships for recycling */
-  auto barrier = state.entity_manager.create_deletion_barrier();
-  for (const Ship& ship :
-       ShipList::readonly(state.entity_manager, ShipList::IterationType::All)) {
-    if (!ship.alive()) {
-      state.entity_manager.delete_ship(ship.number());
     }
   }
 }

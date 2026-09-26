@@ -57,20 +57,18 @@ int main() {
     std::println(std::cout, "✓ Can list all IDs");
   }
 
-  // Find next available ID (gap-finding)
+  // Find next available ID (monotonic high-water-mark)
   {
     int next_id = store.find_next_available_id("tbl_star");
-    test::expect_eq(next_id, 4);  // Should find the gap
-    std::println(std::cout, "✓ Gap-finding returns correct ID (4)");
+    test::expect_eq(next_id, 6);  // Next ID after max (5), ignoring gap at 4
+    std::println(std::cout, "✓ Monotonic ID allocation returns max + 1 (6)");
 
-    // Fill the gap
-    store.store("tbl_star", 4, R"({"id": 4})");
+    store.store("tbl_star", 6, R"({"id": 6})");
 
-    // Now should return 6 (next after max)
     next_id = store.find_next_available_id("tbl_star");
-    test::expect_eq(next_id, 6);
+    test::expect_eq(next_id, 7);
     std::println(std::cout,
-                 "✓ After filling gap, returns next ID after max (6)");
+                 "✓ After inserting 6, returns next ID after max (7)");
   }
 
   // Remove entry
@@ -82,10 +80,11 @@ int main() {
     test::expect_false(retrieved.has_value());
     std::println(std::cout, "✓ Can remove entry");
 
-    // Gap-finding should now return 2
+    // Monotonic allocation does not reuse deleted gap at 2
     int next_id = store.find_next_available_id("tbl_star");
-    test::expect_eq(next_id, 2);
-    std::println(std::cout, "✓ Gap-finding finds removed entry slot (2)");
+    test::expect_eq(next_id, 7);
+    std::println(std::cout,
+                 "✓ Monotonic ID allocation does not reuse removed slot (7)");
   }
 
   // Multi-key operations (composite keys)

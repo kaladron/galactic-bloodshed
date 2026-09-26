@@ -683,6 +683,65 @@ int main() {
         "✓ Test 9 passed: Deep-space ship excluded from ShipList::in_star");
   }
 
+  // Test 10: Mid-loop hard-deletion safety when a ship kills a subsequent ship
+  {
+    std::println(
+        std::cout,
+        "\nTest 10: Mid-loop hard-deletion skips destroyed subsequent ships");
+    TestContext kill_ctx;
+    JsonStore kill_store(kill_ctx.db);
+    RaceRepository kill_races(kill_store);
+    ShipRepository kill_repo(kill_store);
+
+    Race r1{};
+    r1.Playernum = 1;
+    r1.name = "Tester";
+    kill_races.save(r1);
+
+    for (shipnum_t num : {shipnum_t{1}, shipnum_t{2}, shipnum_t{3}}) {
+      Ship s{};
+      s.number() = num;
+      s.owner() = 1;
+      s.alive() = true;
+      s.enter_star_orbit(1);
+      s.type() = ShipType::STYPE_FIGHTER;
+      kill_repo.save(s);
+    }
+
+    // Mutable iteration: when visiting ship 1, kill ship 2.
+    // ShipList iterator must skip deleted ship 2 and advance cleanly to ship 3.
+    std::vector<shipnum_t> visited_mutable;
+    for (auto handle :
+         ShipList(kill_ctx.em, ShipList::IterationType::AllAlive)) {
+      visited_mutable.push_back(handle->number());
+      if (handle->number() == 1) {
+        kill_ctx.em.mutate_ship(
+            2, [&](Ship& target) { kill_ctx.em.kill_ship(1, target); });
+      }
+    }
+    test::expect_eq(visited_mutable, (std::vector<shipnum_t>{1, 3}));
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { kill_ctx.em.peek_ship(2); });
+
+    // Readonly iteration: when visiting ship 1, kill ship 3.
+    std::vector<shipnum_t> visited_readonly;
+    for (const Ship& ship :
+         ShipList::readonly(kill_ctx.em, ShipList::IterationType::AllAlive)) {
+      visited_readonly.push_back(ship.number());
+      if (ship.number() == 1) {
+        kill_ctx.em.mutate_ship(
+            3, [&](Ship& target) { kill_ctx.em.kill_ship(1, target); });
+      }
+    }
+    test::expect_eq(visited_readonly, (std::vector<shipnum_t>{1}));
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { kill_ctx.em.peek_ship(3); });
+
+    std::println(
+        std::cout,
+        "✓ Test 10 passed: Mid-loop hard-deletion safely skipped killed ships");
+  }
+
   std::println(std::cout, "\nAll ShipList tests passed!");
   return 0;
 }

@@ -54,13 +54,10 @@ void test_star_spatial_parity(TestContext& ctx) {
       .build();
 
   // 1. Query via ShipRepository indexed spatial queries
-  auto indexed_alive = ships_repo.find_in_star(starnum_t{1}, true);
-  auto indexed_all = ships_repo.find_in_star(starnum_t{1}, false);
+  auto indexed_alive = ships_repo.find_in_star(starnum_t{1});
 
   test::expect_eq(indexed_alive.size(), 2);
   test::expect_eq(indexed_alive, (std::vector<shipnum_t>{1, 3}));
-  test::expect_eq(indexed_all.size(), 3);
-  test::expect_eq(indexed_all, (std::vector<shipnum_t>{1, 2, 3}));
 
   // 2. Query via ShipList::readonly_in_star
   std::vector<shipnum_t> shiplist_in_star_alive;
@@ -115,7 +112,7 @@ void test_planet_spatial_parity(TestContext& ctx) {
       .with_alive(true)
       .build();
 
-  // Dead ship on same planet (should be excluded by default)
+  // Dead ship on same planet (should be excluded)
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 12)
       .owned_by(1)
       .in_planet_orbit(1, 1)
@@ -123,16 +120,11 @@ void test_planet_spatial_parity(TestContext& ctx) {
       .build();
 
   // 1. Query via ShipRepository indexed spatial query
-  auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1},
-                                                 /*alive_only=*/true);
-  auto indexed_all = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1},
-                                               /*alive_only=*/false);
+  auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1});
 
   // 2. Verify results
   test::expect_eq(indexed_alive.size(), 2);
   test::expect_eq(indexed_alive, (std::vector<shipnum_t>{10, 11}));
-  test::expect_eq(indexed_all.size(), 3);
-  test::expect_eq(indexed_all, (std::vector<shipnum_t>{10, 11, 12}));
 
   // 3. Query via ShipList::readonly_on_planet
   std::vector<shipnum_t> shiplist_on_planet;
@@ -186,7 +178,7 @@ void test_hangar_docked_parity(TestContext& ctx) {
       .build();
 
   // 1. Query via ShipRepository indexed hangar query
-  auto indexed_hangar = ships_repo.find_in_hangar(shipnum_t{20}, true);
+  auto indexed_hangar = ships_repo.find_in_hangar(shipnum_t{20});
 
   // 2. Verify results
   test::expect_eq(indexed_hangar.size(), 2);
@@ -214,7 +206,7 @@ void test_empire_and_global_parity(TestContext& ctx) {
   ShipRepository ships_repo(store);
 
   // Query player 1 ships via index
-  auto p1_indexed = ships_repo.find_by_owner(player_t{1}, true);
+  auto p1_indexed = ships_repo.find_by_owner(player_t{1});
 
   // Collect player 1 ships via ShipList AllAlive
   std::vector<shipnum_t> p1_shiplist;

@@ -53,19 +53,13 @@ void test_detonate_happy_path() {
 
   std::println(std::cout, "Command output: {}", g.out.str());
 
-  // Verify mine was detonated (destroyed)
-  const auto* detonated_mine = ctx.em.peek_ship(1);
+  // Verify mine was detonated (hard-deleted)
+  test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });
 
-  // Mine should be destroyed after detonation
-  if (detonated_mine) {
-    test::expect_false(detonated_mine->alive());
-  }
-
-  // Target ship should be affected by the detonation
-  const auto* affected_target = ctx.em.peek_ship(2);
-  test::expect_ne(affected_target, nullptr);
-  // Target should either be destroyed or damaged
-  test::expect_true(!affected_target->alive() || affected_target->damage() > 0);
+  // Target ship should either be destroyed (hard-deleted) or damaged
+  ctx.em.with_ship(2, [](const Ship& affected_target) {
+    test::expect_gt(affected_target.damage(), 0);
+  });
 
   std::println(std::cout,
                "✓ detonate command: Mine detonation persisted to database");

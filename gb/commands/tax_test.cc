@@ -15,6 +15,12 @@ namespace {
 void test_tax_happy_paths() {
   TestContext ctx;
   ctx.with_standard_universe();
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
+      .owned_by(1, 1)
+      .landed_on(1, 1, Coordinates{0, 0})
+      .with_crew(100, 0)
+      .build();
+  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -51,6 +57,12 @@ void test_tax_happy_paths() {
 void test_tax_role_and_scope_rejections() {
   TestContext ctx;
   ctx.with_standard_universe();
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
+      .owned_by(1, 1)
+      .landed_on(1, 1, Coordinates{0, 0})
+      .with_crew(100, 0)
+      .build();
+  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
 
   // Make player 2 a guest race
   ctx.em.mutate_race(2, [](Race& r) {
@@ -92,8 +104,13 @@ void test_tax_role_and_scope_rejections() {
 void test_tax_domain_errors() {
   TestContext ctx;
   ctx.with_standard_universe();
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
+      .owned_by(1, 1)
+      .landed_on(1, 1, Coordinates{0, 0})
+      .with_crew(100, 0)
+      .build();
 
-  // Reset Gov_ship to std::nullopt (no government center active)
+  // Ensure Gov_ship is std::nullopt (no government center active)
   ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = std::nullopt; });
 
   auto& registry = get_test_session_registry();

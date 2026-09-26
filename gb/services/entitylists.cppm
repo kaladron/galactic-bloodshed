@@ -794,37 +794,32 @@ public:
            IterationType type = IterationType::Scope);
   explicit ShipList(const GameObj& g,
                     IterationType type = IterationType::Scope);
-  ShipList(EntityManager& em, ScopeLevel scope, bool alive_only = true);
-  ShipList(EntityManager& em, starnum_t star_id, bool alive_only = true);
-  ShipList(EntityManager& em, starnum_t star_id, planetnum_t planet_id,
-           bool alive_only = true);
+  ShipList(EntityManager& em, ScopeLevel scope);
+  ShipList(EntityManager& em, starnum_t star_id);
+  ShipList(EntityManager& em, starnum_t star_id, planetnum_t planet_id);
   ShipList(EntityManager& em, IterationType type);
-  explicit ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids);
+  explicit ShipList(EntityManager& em, std::vector<shipnum_t> ship_ids,
+                    bool alive_only = true);
 
   // Static factory methods for scoped iteration
-  static ShipList in_star(EntityManager& em, starnum_t star_id,
-                          bool alive_only = true) {
-    return ShipList(em, star_id, alive_only);
+  static ShipList in_star(EntityManager& em, starnum_t star_id) {
+    return ShipList(em, star_id);
   }
   static ShipList on_planet(EntityManager& em, starnum_t star_id,
-                            planetnum_t planet_id, bool alive_only = true) {
-    return ShipList(em, star_id, planet_id, alive_only);
+                            planetnum_t planet_id) {
+    return ShipList(em, star_id, planet_id);
   }
-  static ShipList in_carrier(EntityManager& em, shipnum_t carrier_id,
-                             bool alive_only = true);
+  static ShipList in_carrier(EntityManager& em, shipnum_t carrier_id);
 
-  static const ShipList readonly_in_star(EntityManager& em, starnum_t star_id,
-                                         bool alive_only = true) {
-    return ShipList(em, star_id, alive_only);
+  static const ShipList readonly_in_star(EntityManager& em, starnum_t star_id) {
+    return ShipList(em, star_id);
   }
   static const ShipList readonly_on_planet(EntityManager& em, starnum_t star_id,
-                                           planetnum_t planet_id,
-                                           bool alive_only = true) {
-    return ShipList(em, star_id, planet_id, alive_only);
+                                           planetnum_t planet_id) {
+    return ShipList(em, star_id, planet_id);
   }
   static const ShipList readonly_in_carrier(EntityManager& em,
-                                            shipnum_t carrier_id,
-                                            bool alive_only = true);
+                                            shipnum_t carrier_id);
 
   // Forward declaration for iterators
   class MutableIterator;
@@ -850,6 +845,7 @@ public:
 private:
   EntityManager* em_{nullptr};
   std::vector<shipnum_t> ship_ids_;
+  bool alive_only_{true};
 };
 
 // Iterator classes
@@ -867,7 +863,8 @@ public:
   using reference = ShipHandle;
 
   MutableIterator() = default;
-  MutableIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it);
+  MutableIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it,
+                  std::vector<shipnum_t>::const_iterator end, bool alive_only);
 
   MutableIterator& operator++();
   MutableIterator operator++(int);
@@ -876,8 +873,12 @@ public:
   [[nodiscard]] bool operator!=(const MutableIterator& other) const;
 
 private:
+  void advance_to_valid();
+
   EntityManager* em_{nullptr};
   std::vector<shipnum_t>::const_iterator it_;
+  std::vector<shipnum_t>::const_iterator end_;
+  bool alive_only_{true};
 };
 
 /**
@@ -895,7 +896,8 @@ public:
   using reference = const Ship&;
 
   ConstIterator() = default;
-  ConstIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it);
+  ConstIterator(EntityManager& em, std::vector<shipnum_t>::const_iterator it,
+                std::vector<shipnum_t>::const_iterator end, bool alive_only);
 
   ConstIterator& operator++();
   ConstIterator operator++(int);
@@ -905,6 +907,10 @@ public:
   [[nodiscard]] bool operator!=(const ConstIterator& other) const;
 
 private:
+  void advance_to_valid();
+
   EntityManager* em_{nullptr};
   std::vector<shipnum_t>::const_iterator it_;
+  std::vector<shipnum_t>::const_iterator end_;
+  bool alive_only_{true};
 };

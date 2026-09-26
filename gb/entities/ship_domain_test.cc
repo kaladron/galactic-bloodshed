@@ -174,16 +174,6 @@ void test_admin_overrides() {
   ship.admin_override_max_fuel(-50.0);
   expect_near(ship.max_fuel_capacity(), 0.0);
 
-  // admin_resurrect and admin_destroy
-  ship.admin_destroy();
-  test::expect_false(ship.alive());
-  test::expect_false(ship.active());
-  test::expect_eq(ship.damage(), 100);
-  ship.admin_resurrect();
-  test::expect_true(ship.alive());
-  test::expect_true(ship.active());
-  test::expect_eq(ship.damage(), 0);
-
   // clear_crew (surrender / capture)
   ship.add_popn(30, 2.0);
   ship.add_troops(20, 2.0);
@@ -194,6 +184,12 @@ void test_admin_overrides() {
   test::expect_eq(ship.popn(), 0);
   test::expect_eq(ship.troops(), 0);
   expect_near(ship.mass(), crew_mass - 50 * 2.0);
+
+  // admin_destroy
+  ship.admin_destroy();
+  test::expect_false(ship.alive());
+  test::expect_false(ship.active());
+  test::expect_eq(ship.damage(), 100);
 }
 
 void test_fuel_consumption() {

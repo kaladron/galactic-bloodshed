@@ -191,10 +191,10 @@ int main() {
   test::expect_eq(count, 3, "Should have 3 ships");
   std::println(std::cout, "  ✓ Ship count correct: {}", count);
 
-  // Next available ship number (should find gap at 3)
+  // Next available ship number (monotonic high-water mark + 1)
   std::println(std::cout, "Next available ship number...");
   shipnum_t next_id = repo.next_ship_number();
-  test::expect_eq(next_id, 3, "Should return 3 (first gap)");
+  test::expect_eq(next_id, 6, "Should return 6 (max + 1)");
   std::println(std::cout, "  ✓ Next ship number is: {}", next_id);
 
   // Delete a ship
@@ -283,45 +283,28 @@ int main() {
     repo.save(Ship(s5));
 
     // Test find_in_star
-    auto star1_alive = repo.find_in_star(starnum_t{1}, true);
+    auto star1_alive = repo.find_in_star(starnum_t{1});
     test::expect_eq(star1_alive.size(), 1);
     test::expect_eq(star1_alive[0], 1);
-
-    auto star1_all = repo.find_in_star(starnum_t{1}, false);
-    test::expect_eq(star1_all.size(), 2);
-    test::expect_eq(star1_all[0], 1);
-    test::expect_eq(star1_all[1], 2);
     std::println(std::cout, "  ✓ find_in_star matches star-level ships");
 
     // Test find_on_planet
-    auto planet2_alive =
-        repo.find_on_planet(starnum_t{1}, planetnum_t{2}, true);
+    auto planet2_alive = repo.find_on_planet(starnum_t{1}, planetnum_t{2});
     test::expect_eq(planet2_alive.size(), 1);
     test::expect_eq(planet2_alive[0], 3);
-
-    auto planet2_all = repo.find_on_planet(starnum_t{1}, planetnum_t{2}, false);
-    test::expect_eq(planet2_all.size(), 2);
-    test::expect_eq(planet2_all[0], 3);
-    test::expect_eq(planet2_all[1], 4);
     std::println(std::cout, "  ✓ find_on_planet matches planet-level ships");
 
     // Test find_in_hangar
-    auto hangar_alive = repo.find_in_hangar(shipnum_t{1}, true);
+    auto hangar_alive = repo.find_in_hangar(shipnum_t{1});
     test::expect_eq(hangar_alive.size(), 1);
     test::expect_eq(hangar_alive[0], 5);
     std::println(std::cout, "  ✓ find_in_hangar matches carrier docked ships");
 
     // Test find_by_owner
-    auto p1_alive = repo.find_by_owner(player_t{1}, true);
+    auto p1_alive = repo.find_by_owner(player_t{1});
     test::expect_eq(p1_alive.size(), 2);
     test::expect_eq(p1_alive[0], 1);
     test::expect_eq(p1_alive[1], 5);
-
-    auto p1_all = repo.find_by_owner(player_t{1}, false);
-    test::expect_eq(p1_all.size(), 3);
-    test::expect_eq(p1_all[0], 1);
-    test::expect_eq(p1_all[1], 2);
-    test::expect_eq(p1_all[2], 5);
     std::println(std::cout, "  ✓ find_by_owner matches player ships");
 
     // Test find_alive

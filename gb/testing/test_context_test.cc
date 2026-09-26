@@ -594,7 +594,7 @@ void test_standard_universe_fixture() {
   test::expect_eq(r1->name, "Federation");
   test::expect_eq(r1->Playernum, player_t{1});
   test::expect_eq(r1->tech, 100.0);
-  test::expect_eq(r1->Gov_ship, shipnum_t{100});
+  test::expect_eq(r1->Gov_ship, std::nullopt);
   test::expect_false(r1->Guest);
   test::expect_true(r1->has_governor(Race::leader_id));
   test::expect_eq(r1->leader().money, 10'000);
@@ -675,16 +675,6 @@ void test_standard_universe_fixture() {
   test::expect_no_throw(
       [&]() { ctx.verify_universe_invariants(); },
       "with_standard_universe must satisfy universe invariants");
-
-  // Verify Player 1 Government Center (Ship #100)
-  const auto* gov_ship = ctx.em.peek_ship(100);
-  test::expect_true(gov_ship != nullptr, "Government center #100 must exist");
-  test::expect_eq(gov_ship->number(), shipnum_t{100});
-  test::expect_eq(gov_ship->type(), ShipType::OTYPE_GOV);
-  test::expect_eq(gov_ship->owner(), player_t{1});
-  test::expect_true(gov_ship->alive());
-  test::expect_true(gov_ship->docked());
-  test::expect_eq(gov_ship->whatdest(), ScopeLevel::LEVEL_PLAN);
 
   // 5. Test with_populated_planet fluent chaining
   ctx.with_populated_planet(1, 1, player_t{1}, 1500, Coordinates{2, 3});

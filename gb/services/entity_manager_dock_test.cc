@@ -329,9 +329,7 @@ void test_kill_ship_carrier_and_child_accounting() {
   test::expect_eq(carrier_after->hanger(), 0);
   test::expect_eq(carrier_after->mass(), carrier_initial_mass);
 
-  const auto* fighter_after = em.peek_ship(fighter_id);
-  test::expect_ne(fighter_after, nullptr);
-  test::expect_false(fighter_after->alive());
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(fighter_id); });
 
   // 3-tier cascade test: Supercarrier -> Subcarrier -> Fighter
   const auto super_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
@@ -361,9 +359,9 @@ void test_kill_ship_carrier_and_child_accounting() {
   em.mutate_ship(super_id, [&](Ship& s) { em.kill_ship(1, s); });
 
   em.clear_cache();
-  test::expect_false(em.peek_ship(super_id)->alive());
-  test::expect_false(em.peek_ship(sub_id)->alive());
-  test::expect_false(em.peek_ship(craft_id)->alive());
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(super_id); });
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(sub_id); });
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(craft_id); });
 }
 
 }  // namespace

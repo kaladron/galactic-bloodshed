@@ -56,9 +56,7 @@ void test_scrap_happy_paths() {
   ctx.assert_dispatch_success(g, {"scrap", "#2"}, 1);
 
   ctx.em.clear_cache();
-  const auto* scrapped = ctx.em.peek_ship(2);
-  test::expect_ne(scrapped, nullptr);
-  test::expect_eq(scrapped->alive(), 0);
+  test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(2); });
 
   const auto* carrier_after = ctx.em.peek_ship(1);
   test::expect_ne(carrier_after, nullptr);
@@ -132,8 +130,7 @@ void test_scrap_toxic_waste_warning() {
                         "WARNING: This will release 25 toxin points");
 
   ctx.em.clear_cache();
-  const auto* scrapped = ctx.em.peek_ship(tox_id);
-  test::expect_eq(scrapped->alive(), 0);
+  test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(tox_id); });
 
   ctx.verify_universe_invariants();
 }

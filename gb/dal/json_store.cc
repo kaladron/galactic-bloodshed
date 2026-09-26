@@ -182,16 +182,10 @@ int JsonStore::find_next_available_id(const std::string& table) {
   }
 
   std::string sql = std::format(R"(
-    WITH RECURSIVE cnt(x) AS (
-      SELECT 1
-      UNION ALL
-      SELECT x+1 FROM cnt
-      LIMIT (SELECT IFNULL(MAX(id), 0) + 1 FROM {})
-    )
-    SELECT x FROM cnt
-    WHERE x NOT IN (SELECT id FROM {})
-    ORDER BY x
-    LIMIT 1
+    SELECT MAX(
+      IFNULL((SELECT MAX(id) FROM {}), 0),
+      IFNULL((SELECT seq FROM sqlite_sequence WHERE name = '{}'), 0)
+    ) + 1
   )",
                                 table, table);
 

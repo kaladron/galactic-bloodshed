@@ -30,12 +30,12 @@ get_entity_impl(EntityManager* manager, Key key,
   if (it != cache.end()) {
     refcount[key]++;
     return {manager, it->second.get(),
-            [manager, save_fn, release_fn, key](const Entity& e) {
+            [manager, save_fn](const Entity& e) {
               if (!manager || !manager->is_deferred_write()) {
                 save_fn(e);
               }
-              release_fn(key);
-            }};
+            },
+            [release_fn, key]() { release_fn(key); }};
   }
 
   // Load from repository
@@ -51,12 +51,12 @@ get_entity_impl(EntityManager* manager, Key key,
 
   return EntityHandle<Entity>(
       manager, iter->second.get(),
-      [manager, save_fn, release_fn, key](const Entity& e) {
+      [manager, save_fn](const Entity& e) {
         if (!manager || !manager->is_deferred_write()) {
           save_fn(e);
         }
-        release_fn(key);
-      });
+      },
+      [release_fn, key]() { release_fn(key); });
 }
 
 template <typename Entity, typename Key, typename FindFn>
@@ -212,12 +212,13 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
       race_cache.insert_or_assign(player, std::make_unique<Race>(new_race));
   race_refcount[player] = 1;
 
-  return {this, iter->second.get(), [this, player](const Race& r) {
+  return {this, iter->second.get(),
+          [this](const Race& r) {
             if (!is_deferred_write()) {
               storage_->races.save(r);
             }
-            release_race(player);
-          }};
+          },
+          [this, player]() { release_race(player); }};
 }
 
 // Ship entity methods
@@ -225,12 +226,14 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
   auto it = ship_cache.find(num);
   if (it != ship_cache.end()) {
     ship_refcount[num]++;
-    return {this, it->second.get(), [this, num](const Ship& s) {
-              if (!is_deferred_write()) {
+    return {this, it->second.get(),
+            [this](const Ship& s) {
+              if (!is_deferred_write() &&
+                  !std::ranges::contains(pending_ship_deletions_, s.number())) {
                 storage_->ships.save(s);
               }
-              release_ship(num);
-            }};
+            },
+            [this, num]() { release_ship(num); }};
   }
 
   auto ship_ptr = storage_->ships.find_ship(num);
@@ -240,12 +243,14 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
 
   auto [iter, inserted] = ship_cache.emplace(num, std::move(ship_ptr));
   ship_refcount[num] = 1;
-  return {this, iter->second.get(), [this, num](const Ship& s) {
-            if (!is_deferred_write()) {
+  return {this, iter->second.get(),
+          [this](const Ship& s) {
+            if (!is_deferred_write() &&
+                !std::ranges::contains(pending_ship_deletions_, s.number())) {
               storage_->ships.save(s);
             }
-            release_ship(num);
-          }};
+          },
+          [this, num]() { release_ship(num); }};
 }
 
 const Ship* EntityManager::peek_ship(shipnum_t num) {
@@ -265,6 +270,24 @@ const Ship* EntityManager::peek_ship(shipnum_t num) {
 
 void EntityManager::release_ship(shipnum_t num) {
   release_entity_impl<Ship>(num, ship_cache, ship_refcount);
+  if (!deletion_barrier_active_ && !ship_refcount.contains(num)) {
+    auto it = std::ranges::find(pending_ship_deletions_, num);
+    if (it != pending_ship_deletions_.end()) {
+      pending_ship_deletions_.erase(it);
+      if (is_deferred_write()) {
+        flush_cache_impl<Race>(
+            race_cache, [this](const Race& r) { storage_->races.save(r); });
+        for (const auto& [id, s] : ship_cache) {
+          if (id != num &&
+              !std::ranges::contains(pending_ship_deletions_, id)) {
+            storage_->ships.save(*s);
+          }
+        }
+      }
+      ship_cache.erase(num);
+      storage_->ships.delete_ship(num);
+    }
+  }
 }
 
 EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
@@ -284,12 +307,14 @@ EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
   auto [iter, inserted] = ship_cache.emplace(num, std::move(ship));
   ship_refcount[num] = 1;
 
-  return {this, iter->second.get(), [this, num](const Ship& s) {
-            if (!is_deferred_write()) {
+  return {this, iter->second.get(),
+          [this](const Ship& s) {
+            if (!is_deferred_write() &&
+                !std::ranges::contains(pending_ship_deletions_, s.number())) {
               storage_->ships.save(s);
             }
-            release_ship(num);
-          }};
+          },
+          [this, num]() { release_ship(num); }};
 }
 
 EntityHandle<Ship> EntityManager::create_ship(ShipType type, player_t owner) {
@@ -328,10 +353,13 @@ EntityHandle<Commod> EntityManager::create_commod(const Commod& init_data) {
       commod_cache.emplace(id, std::make_unique<Commod>(new_commod));
   commod_refcount[id] = 1;
 
-  return {this, iter->second.get(), [this, id](const Commod& c) {
-            storage_->commods.save(c);
-            release_commod(id);
-          }};
+  return {this, iter->second.get(),
+          [this](const Commod& c) {
+            if (!is_deferred_write()) {
+              storage_->commods.save(c);
+            }
+          },
+          [this, id]() { release_commod(id); }};
 }
 
 // Planet entity methods
@@ -343,12 +371,13 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
   auto it = planet_cache.find(key);
   if (it != planet_cache.end()) {
     planet_refcount[key]++;
-    return {this, it->second.get(), [this, star, pnum](const Planet& p) {
+    return {this, it->second.get(),
+            [this](const Planet& p) {
               if (!is_deferred_write()) {
                 storage_->planets.save(p);
               }
-              release_planet(star, pnum);
-            }};
+            },
+            [this, star, pnum]() { release_planet(star, pnum); }};
   }
 
   // Load from repository
@@ -363,12 +392,13 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
       key, std::make_unique<Planet>(std::move(*planet_opt)));
   planet_refcount[key] = 1;
 
-  return {this, iter->second.get(), [this, star, pnum](const Planet& p) {
+  return {this, iter->second.get(),
+          [this](const Planet& p) {
             if (!is_deferred_write()) {
               storage_->planets.save(p);
             }
-            release_planet(star, pnum);
-          }};
+          },
+          [this, star, pnum]() { release_planet(star, pnum); }};
 }
 
 const Planet* EntityManager::peek_planet(starnum_t star, planetnum_t pnum) {
@@ -516,8 +546,8 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
               if (!is_deferred_write()) {
                 storage_->universe_repo.save(sd);
               }
-              release_universe();
-            }};
+            },
+            [this]() { release_universe(); }};
   }
 
   auto universe_opt = storage_->universe_repo.get_global_data();
@@ -528,12 +558,13 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
   global_universe_cache = std::make_unique<universe_struct>(*universe_opt);
   global_universe_refcount = 1;
 
-  return {this, global_universe_cache.get(), [this](const universe_struct& sd) {
+  return {this, global_universe_cache.get(),
+          [this](const universe_struct& sd) {
             if (!is_deferred_write()) {
               storage_->universe_repo.save(sd);
             }
-            release_universe();
-          }};
+          },
+          [this]() { release_universe(); }};
 }
 
 const universe_struct* EntityManager::peek_universe() {
@@ -569,12 +600,13 @@ void EntityManager::release_universe() {
 EntityHandle<ServerState> EntityManager::get_server_state() {
   if (server_state_cache) {
     server_state_refcount++;
-    return {this, server_state_cache.get(), [this](const ServerState& state) {
+    return {this, server_state_cache.get(),
+            [this](const ServerState& state) {
               if (!is_deferred_write()) {
                 storage_->server_state_repo.save(state);
               }
-              release_server_state();
-            }};
+            },
+            [this]() { release_server_state(); }};
   }
 
   auto state_opt = storage_->server_state_repo.get_state();
@@ -589,20 +621,21 @@ EntityHandle<ServerState> EntityManager::get_server_state() {
               if (!is_deferred_write()) {
                 storage_->server_state_repo.save(state);
               }
-              release_server_state();
             },
+            [this]() { release_server_state(); },
             true};  // Mark dirty so it gets saved
   }
 
   server_state_cache = std::make_unique<ServerState>(*state_opt);
   server_state_refcount = 1;
 
-  return {this, server_state_cache.get(), [this](const ServerState& state) {
+  return {this, server_state_cache.get(),
+          [this](const ServerState& state) {
             if (!is_deferred_write()) {
               storage_->server_state_repo.save(state);
             }
-            release_server_state();
-          }};
+          },
+          [this]() { release_server_state(); }};
 }
 
 const ServerState* EntityManager::peek_server_state() {
@@ -764,39 +797,47 @@ powernum_t EntityManager::max_power_id() {
   return ids.empty() ? powernum_t{0} : powernum_t{ids.back()};
 }
 
-std::vector<shipnum_t> EntityManager::ships_in_star_system(starnum_t star_id,
-                                                           bool alive_only) {
-  return storage_->ships.find_in_star_system(star_id, alive_only);
+std::vector<shipnum_t>
+EntityManager::filter_alive_ships(std::vector<shipnum_t> ids) const {
+  std::erase_if(ids, [this](shipnum_t id) {
+    if (std::ranges::contains(pending_ship_deletions_, id)) {
+      return true;
+    }
+    if (auto it = ship_cache.find(id); it != ship_cache.end()) {
+      return !it->second->alive();
+    }
+    return false;
+  });
+  return ids;
 }
 
-std::vector<shipnum_t> EntityManager::ships_in_star(starnum_t star_id,
-                                                    bool alive_only) {
-  return storage_->ships.find_in_star(star_id, alive_only);
+std::vector<shipnum_t> EntityManager::ships_in_star_system(starnum_t star_id) {
+  return filter_alive_ships(storage_->ships.find_in_star_system(star_id));
+}
+
+std::vector<shipnum_t> EntityManager::ships_in_star(starnum_t star_id) {
+  return filter_alive_ships(storage_->ships.find_in_star(star_id));
 }
 
 std::vector<shipnum_t> EntityManager::ships_on_planet(starnum_t star_id,
-                                                      planetnum_t planet_id,
-                                                      bool alive_only) {
-  return storage_->ships.find_on_planet(star_id, planet_id, alive_only);
+                                                      planetnum_t planet_id) {
+  return filter_alive_ships(storage_->ships.find_on_planet(star_id, planet_id));
 }
 
-std::vector<shipnum_t> EntityManager::ships_in_hangar(shipnum_t carrier_id,
-                                                      bool alive_only) {
-  return storage_->ships.find_in_hangar(carrier_id, alive_only);
+std::vector<shipnum_t> EntityManager::ships_in_hangar(shipnum_t carrier_id) {
+  return filter_alive_ships(storage_->ships.find_in_hangar(carrier_id));
 }
 
-std::vector<shipnum_t> EntityManager::ships_by_owner(player_t owner_id,
-                                                     bool alive_only) {
-  return storage_->ships.find_by_owner(owner_id, alive_only);
+std::vector<shipnum_t> EntityManager::ships_by_owner(player_t owner_id) {
+  return filter_alive_ships(storage_->ships.find_by_owner(owner_id));
 }
 
-std::vector<shipnum_t> EntityManager::ships_at_scope(ScopeLevel scope,
-                                                     bool alive_only) {
-  return storage_->ships.find_at_scope(scope, alive_only);
+std::vector<shipnum_t> EntityManager::ships_at_scope(ScopeLevel scope) {
+  return filter_alive_ships(storage_->ships.find_at_scope(scope));
 }
 
 std::vector<shipnum_t> EntityManager::ships_alive() {
-  return storage_->ships.find_alive();
+  return filter_alive_ships(storage_->ships.find_alive());
 }
 
 std::vector<shipnum_t> EntityManager::ships_all() {
@@ -804,7 +845,10 @@ std::vector<shipnum_t> EntityManager::ships_all() {
   std::vector<shipnum_t> result;
   result.reserve(ids.size());
   for (int id : ids) {
-    result.emplace_back(id);
+    shipnum_t snum = id;
+    if (!std::ranges::contains(pending_ship_deletions_, snum)) {
+      result.push_back(snum);
+    }
   }
   return result;
 }
@@ -814,8 +858,11 @@ void EntityManager::flush_all() {
   // Save all cached entities - entities now contain their own IDs
   flush_cache_impl<Race>(race_cache,
                          [this](const Race& r) { storage_->races.save(r); });
-  flush_cache_impl<Ship>(ship_cache,
-                         [this](const Ship& s) { storage_->ships.save(s); });
+  flush_cache_impl<Ship>(ship_cache, [this](const Ship& s) {
+    if (!std::ranges::contains(pending_ship_deletions_, s.number())) {
+      storage_->ships.save(s);
+    }
+  });
   flush_cache_impl<Planet>(
       planet_cache, [this](const Planet& p) { storage_->planets.save(p); });
   flush_cache_impl<Star>(star_cache,
@@ -969,6 +1016,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   for (shipnum_t other_id : ships_alive()) {
     if (other_id == ship.number()) continue;
     const auto* other = peek_ship(other_id);
+    if (!other || !other->alive()) continue;
     if (const auto* mirror = other->as<SpaceMirrorShip>()) {
       if (mirror->aimed_level() == ScopeLevel::LEVEL_SHIP &&
           mirror->aimed_ship() == ship.number()) {
@@ -996,6 +1044,28 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
           s.clear_destination();
         }
       });
+    }
+  }
+
+  if (ship.number() != 0) {
+    if (!std::ranges::contains(pending_ship_deletions_, ship.number())) {
+      pending_ship_deletions_.push_back(ship.number());
+    }
+    if (!deletion_barrier_active_ && !ship_refcount.contains(ship.number())) {
+      const shipnum_t num = ship.number();
+      std::erase(pending_ship_deletions_, num);
+      if (is_deferred_write()) {
+        flush_cache_impl<Race>(
+            race_cache, [this](const Race& r) { storage_->races.save(r); });
+        for (const auto& [id, s] : ship_cache) {
+          if (id != num && s->alive() &&
+              !std::ranges::contains(pending_ship_deletions_, id)) {
+            storage_->ships.save(*s);
+          }
+        }
+      }
+      ship_cache.erase(num);
+      storage_->ships.delete_ship(num);
     }
   }
 }
@@ -1162,12 +1232,13 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
   auto it = sectormap_cache.find(key);
   if (it != sectormap_cache.end()) {
     sectormap_refcount[key]++;
-    return {this, it->second.get(), [this, star, pnum](const SectorMap& sm) {
+    return {this, it->second.get(),
+            [this](const SectorMap& sm) {
               if (!is_deferred_write()) {
                 storage_->sectors.save_map(sm);
               }
-              release_sectormap(star, pnum);
-            }};
+            },
+            [this, star, pnum]() { release_sectormap(star, pnum); }};
   }
 
   // peek_planet checks cache first, then loads from DB, or throws
@@ -1180,12 +1251,13 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
       key, std::make_unique<SectorMap>(std::move(loaded_map)));
   sectormap_refcount[key] = 1;
 
-  return {this, iter->second.get(), [this, star, pnum](const SectorMap& sm) {
+  return {this, iter->second.get(),
+          [this](const SectorMap& sm) {
             if (!is_deferred_write()) {
               storage_->sectors.save_map(sm);
             }
-            release_sectormap(star, pnum);
-          }};
+          },
+          [this, star, pnum]() { release_sectormap(star, pnum); }};
 }
 
 const SectorMap* EntityManager::peek_sectormap(starnum_t star,
@@ -1387,6 +1459,15 @@ EntityManager::DeferredWriteScope EntityManager::create_deferred_write_scope() {
 }
 
 void EntityManager::drain_pending_deletions() {
+  if (!pending_ship_deletions_.empty() && is_deferred_write()) {
+    flush_cache_impl<Race>(race_cache,
+                           [this](const Race& r) { storage_->races.save(r); });
+    for (const auto& [id, s] : ship_cache) {
+      if (s->alive() && !std::ranges::contains(pending_ship_deletions_, id)) {
+        storage_->ships.save(*s);
+      }
+    }
+  }
   for (shipnum_t num : pending_ship_deletions_) {
     auto ref_it = ship_refcount.find(num);
     if (ref_it != ship_refcount.end() && ref_it->second > 0) {

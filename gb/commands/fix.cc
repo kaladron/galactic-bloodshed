@@ -102,8 +102,7 @@ bool fix_ship(const command_t& argv, GameObj& g) {
   }
 
   std::optional<int> opt_val;
-  if (argv[2] != "alive" && argv[2] != "dead" &&
-      !parse_optional_int(argv, g, opt_val)) {
+  if (argv[2] != "dead" && !parse_optional_int(argv, g, opt_val)) {
     return false;
   }
 
@@ -125,11 +124,9 @@ bool fix_ship(const command_t& argv, GameObj& g) {
     } else if (argv[2] == "damage") {
       if (opt_val) s.admin_override_damage(*opt_val);
       g.out << std::format("damage = {}\n", s.damage());
-    } else if (argv[2] == "alive") {
-      s.admin_resurrect();
-      g.out << std::format("{} resurrected\n", s);
     } else if (argv[2] == "dead") {
       s.admin_destroy();
+      g.entity_manager.kill_ship(g.player(), s);
       g.out << std::format("{} destroyed\n", s);
     } else {
       g.out << "No such option for 'fix ship'.\n";

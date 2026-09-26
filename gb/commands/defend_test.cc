@@ -82,10 +82,10 @@ void test_defend_happy_path() {
   test::expect_contains(g.out.str(), "Cargo");
   std::println(std::cout, "    ✓ Defend with default strength succeeded");
 
-  // 3. Firing on destroyed ship 1 is rejected
+  // 3. Firing on destroyed (hard-deleted) ship 1 is rejected
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
-  test::expect_contains(g.out.str(), "That ship is already destroyed.");
+  test::expect_contains(g.out.str(), "Ship not found.");
   std::println(std::cout,
                "    ✓ Defend rejected against already destroyed ship");
 

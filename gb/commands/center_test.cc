@@ -70,6 +70,10 @@ void test_center_domain_errors() {
   test::expect_contains(g.out.str(), "center: which star?");
 
   // 3. Ship scope rejection (Ship #100 is Player 1 Government Center)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
+      .owned_by(1, 1)
+      .landed_on(1, 1, Coordinates{0, 0})
+      .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"center", "#100"});
   test::expect_contains(g.out.str(), "CHEATER!!!");

@@ -50,11 +50,11 @@ void initialize_schema(Database& db) {
     data TEXT NOT NULL);
 
   CREATE TABLE tbl_commod(
-    id INT PRIMARY KEY NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     data TEXT NOT NULL);
 
   CREATE TABLE tbl_ship(
-    id INT PRIMARY KEY NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     data TEXT NOT NULL,
     owner INT GENERATED ALWAYS AS (json_extract(data, '$.owner')) STORED,
     storbits INT GENERATED ALWAYS AS (json_extract(data, '$.storbits')) STORED,

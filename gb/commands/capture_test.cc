@@ -69,15 +69,16 @@ void test_capture_happy_path() {
   ctx.assert_dispatch_success(g, {"capture", "#1", "50", "military"});
 
   // Verify changes persisted
-  const auto* captured_ship = ctx.em.peek_ship(1);
-  test::expect_true(captured_ship != nullptr);
-
   const auto* final_smap = ctx.em.peek_sectormap(1, 1);
   test::expect_true(final_smap != nullptr);
   const auto& final_sector = final_smap->get(Coordinates{5, 5});
   test::expect_le(final_sector.get_troops(), 100);
 
-  if (captured_ship->alive()) {
+  if (g.out.str().contains("DESTROYED")) {
+    test::expect_throws<EntityNotFoundError>(
+        [&] { (void)ctx.em.peek_ship(1); });
+  } else {
+    const auto* captured_ship = ctx.em.peek_ship(1);
     test::expect_true(captured_ship->owner() == 1 ||
                       captured_ship->owner() == 2);
   }

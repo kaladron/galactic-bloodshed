@@ -67,10 +67,9 @@ void test_dissolve_happy_path() {
     test::expect_ne(saved_race, nullptr);
     test::expect_true(saved_race->dissolved);
 
-    // Verify ship #1 was destroyed while player 2's ship #2 remains alive
-    const auto* saved_ship1 = ctx.em.peek_ship(1);
-    test::expect_ne(saved_ship1, nullptr);
-    test::expect_false(saved_ship1->alive());
+    // Verify ship #1 was destroyed (hard-deleted) while player 2's ship #2
+    // remains alive
+    test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });
     const auto* saved_ship2 = ctx.em.peek_ship(2);
     test::expect_ne(saved_ship2, nullptr);
     test::expect_true(saved_ship2->alive());

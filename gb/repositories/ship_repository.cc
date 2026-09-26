@@ -209,15 +209,11 @@ shipnum_t ShipRepository::count_all_ships() {
   return static_cast<shipnum_t>(list_ids().size());
 }
 
-std::vector<shipnum_t> ShipRepository::find_in_star_system(starnum_t star_id,
-                                                           bool alive_only) {
-  std::string where = "storbits = ? AND whatorbits != ?";
+std::vector<shipnum_t> ShipRepository::find_in_star_system(starnum_t star_id) {
+  std::string where =
+      "storbits = ? AND whatorbits != ? AND alive = 1 ORDER BY id";
   std::vector<KeyValue> params{star_id.value,
                                static_cast<int>(ScopeLevel::LEVEL_UNIV)};
-  if (alive_only) {
-    where += " AND alive = 1";
-  }
-  where += " ORDER BY id";
   auto ids = store.query_ids(table_name, where, params);
   std::vector<shipnum_t> result;
   result.reserve(ids.size());
@@ -227,15 +223,11 @@ std::vector<shipnum_t> ShipRepository::find_in_star_system(starnum_t star_id,
   return result;
 }
 
-std::vector<shipnum_t> ShipRepository::find_in_star(starnum_t star_id,
-                                                    bool alive_only) {
-  std::string where = "storbits = ? AND whatorbits = ?";
+std::vector<shipnum_t> ShipRepository::find_in_star(starnum_t star_id) {
+  std::string where =
+      "storbits = ? AND whatorbits = ? AND alive = 1 ORDER BY id";
   std::vector<KeyValue> params{star_id.value,
                                static_cast<int>(ScopeLevel::LEVEL_STAR)};
-  if (alive_only) {
-    where += " AND alive = 1";
-  }
-  where += " ORDER BY id";
   auto ids = store.query_ids(table_name, where, params);
   std::vector<shipnum_t> result;
   result.reserve(ids.size());
@@ -246,15 +238,11 @@ std::vector<shipnum_t> ShipRepository::find_in_star(starnum_t star_id,
 }
 
 std::vector<shipnum_t> ShipRepository::find_on_planet(starnum_t star_id,
-                                                      planetnum_t planet_id,
-                                                      bool alive_only) {
-  std::string where = "storbits = ? AND pnumorbits = ? AND whatorbits = ?";
+                                                      planetnum_t planet_id) {
+  std::string where = "storbits = ? AND pnumorbits = ? AND whatorbits = ? AND "
+                      "alive = 1 ORDER BY id";
   std::vector<KeyValue> params{star_id.value, planet_id.value,
                                static_cast<int>(ScopeLevel::LEVEL_PLAN)};
-  if (alive_only) {
-    where += " AND alive = 1";
-  }
-  where += " ORDER BY id";
   auto ids = store.query_ids(table_name, where, params);
   std::vector<shipnum_t> result;
   result.reserve(ids.size());
@@ -264,15 +252,11 @@ std::vector<shipnum_t> ShipRepository::find_on_planet(starnum_t star_id,
   return result;
 }
 
-std::vector<shipnum_t> ShipRepository::find_in_hangar(shipnum_t carrier_id,
-                                                      bool alive_only) {
-  std::string where = "destshipno = ? AND whatorbits = ?";
+std::vector<shipnum_t> ShipRepository::find_in_hangar(shipnum_t carrier_id) {
+  std::string where =
+      "destshipno = ? AND whatorbits = ? AND alive = 1 ORDER BY id";
   std::vector<KeyValue> params{carrier_id.value,
                                static_cast<int>(ScopeLevel::LEVEL_SHIP)};
-  if (alive_only) {
-    where += " AND alive = 1";
-  }
-  where += " ORDER BY id";
   auto ids = store.query_ids(table_name, where, params);
   std::vector<shipnum_t> result;
   result.reserve(ids.size());
@@ -282,14 +266,9 @@ std::vector<shipnum_t> ShipRepository::find_in_hangar(shipnum_t carrier_id,
   return result;
 }
 
-std::vector<shipnum_t> ShipRepository::find_by_owner(player_t owner_id,
-                                                     bool alive_only) {
-  std::string where = "owner = ?";
+std::vector<shipnum_t> ShipRepository::find_by_owner(player_t owner_id) {
+  std::string where = "owner = ? AND alive = 1 ORDER BY id";
   std::vector<KeyValue> params{owner_id.value};
-  if (alive_only) {
-    where += " AND alive = 1";
-  }
-  where += " ORDER BY id";
   auto ids = store.query_ids(table_name, where, params);
   std::vector<shipnum_t> result;
   result.reserve(ids.size());
@@ -299,14 +278,9 @@ std::vector<shipnum_t> ShipRepository::find_by_owner(player_t owner_id,
   return result;
 }
 
-std::vector<shipnum_t> ShipRepository::find_at_scope(ScopeLevel scope,
-                                                     bool alive_only) {
-  std::string where = "whatorbits = ?";
+std::vector<shipnum_t> ShipRepository::find_at_scope(ScopeLevel scope) {
+  std::string where = "whatorbits = ? AND alive = 1 ORDER BY id";
   std::vector<KeyValue> params{static_cast<int>(scope)};
-  if (alive_only) {
-    where += " AND alive = 1";
-  }
-  where += " ORDER BY id";
   auto ids = store.query_ids(table_name, where, params);
   std::vector<shipnum_t> result;
   result.reserve(ids.size());

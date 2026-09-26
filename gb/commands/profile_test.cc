@@ -18,6 +18,12 @@ void test_profile_dispatch() {
 
   TestContext ctx;
   ctx.with_standard_universe();
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
+      .owned_by(1, 1)
+      .landed_on(1, 1, Coordinates{0, 0})
+      .with_crew(100, 0)
+      .build();
+  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

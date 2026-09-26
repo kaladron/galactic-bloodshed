@@ -37,23 +37,17 @@ void setup_test_world(TestContext& ctx) {
   power_repo.save(p);
 
   // Star 1
-  star_struct ss0{};
-  ss0.star_id = 1;
-  ss0.name = "Sol";
-  ss0.coordinates = {0.0, 0.0};
-  ss0.explored.set(player_t{1});
-  ss0.inhabited.set(player_t{1});
-  ss0.governor[player_t{1}] = 1;
-  ss0.pnames.push_back("Earth");
-  Star star0(ss0);
+  Star star0{1, "Sol", {0.0, 0.0}};
+  star0.mark_explored_by(1);
+  star0.mark_inhabited_by(1);
+  star0.governor(1) = 1;
+  star0.set_planet_name(1, "Earth");
 
   StarRepository stars(store);
   stars.save(star0);
 
   // Planet 1 on Star 1
-  Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
-  planet0.star_id() = 1;
-  planet0.planet_order() = 1;
+  Planet planet0{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
   planet0.info(player_t{1}).explored = 1;
   planet0.info(player_t{1}).numsectsowned = 10;
   planet0.info(player_t{1}).popn = 10000;

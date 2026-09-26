@@ -10,16 +10,32 @@ import test;
 import std;
 
 int main() {
+  // Direct Star constructor and primary-key validation
+  std::println(std::cout, "Direct Star constructor and PK validation...");
+  {
+    Star named_star{3, "Sirius", {150.0, -250.0}};
+    test::expect_eq(named_star.star_id(), starnum_t{3});
+    test::expect_eq(named_star.get_name(), "Sirius");
+    test::expect_eq(named_star.coordinates(),
+                    UniverseCoordinates{150.0, -250.0});
+    test::expect_eq(named_star.numplanets(), 0);
+
+    // Constructing a Star with star_id == 0 or uninitialized star_struct throws
+    test::expect_throws<std::invalid_argument>(
+        []() { (void)Star{starnum_t{0}, "Invalid"}; });
+    test::expect_throws<std::invalid_argument>(
+        []() { (void)Star{star_struct{.name = "MissingId"}}; });
+    std::println(std::cout, "  ✓ Direct constructor and PK validation work");
+  }
+
   // Basic star creation with vector of planet names
   std::println(std::cout, "Basic star creation with planet names...");
   {
-    star_struct s{};
-    s.name = "Sol";
-    s.pnames.push_back("Mercury");
-    s.pnames.push_back("Venus");
-    s.pnames.push_back("Earth");
-
-    Star star(s);
+    Star star(star_struct{
+        .name = "Sol",
+        .pnames = {"Mercury", "Venus", "Earth"},
+        .star_id = 1,
+    });
 
     test::expect_eq(star.get_name(), "Sol");
     test::expect_eq(star.numplanets(), 3);
@@ -32,12 +48,11 @@ int main() {
   // Bounds checking on get_planet_name (out of range throws exception)
   std::println(std::cout, "Bounds checking on get_planet_name...");
   {
-    star_struct s{};
-    s.name = "Test";
-    s.pnames.push_back("Planet1");
-    s.pnames.push_back("Planet2");
-
-    Star star(s);
+    Star star(star_struct{
+        .name = "Test",
+        .pnames = {"Planet1", "Planet2"},
+        .star_id = 1,
+    });
 
     // Valid access
     test::expect_eq(star.get_planet_name(1), "Planet1");
@@ -54,13 +69,11 @@ int main() {
   // planet_name_isset bounds checking (throws on out of bounds)
   std::println(std::cout, "planet_name_isset bounds checking...");
   {
-    star_struct s{};
-    s.name = "Test";
-    s.pnames.push_back("Planet1");
-    s.pnames.push_back("");  // Empty name
-    s.pnames.push_back("Planet3");
-
-    Star star(s);
+    Star star(star_struct{
+        .name = "Test",
+        .pnames = {"Planet1", "", "Planet3"},
+        .star_id = 1,
+    });
 
     test::expect_true(star.planet_name_isset(1));   // Has name
     test::expect_false(star.planet_name_isset(2));  // Empty name
@@ -79,11 +92,8 @@ int main() {
   // set_planet_name with auto-resize
   std::println(std::cout, "set_planet_name with auto-resize...");
   {
-    star_struct s{};
-    s.name = "Test";
-    s.pnames.push_back("Planet1");
-
-    Star star(s);
+    Star star{1, "Test"};
+    star.set_planet_name(1, "Planet1");
     test::expect_eq(star.numplanets(), 1);
 
     // Set planet at 1-based index 6 - should auto-resize vector to 6
@@ -105,11 +115,8 @@ int main() {
   // Overwriting existing planet names
   std::println(std::cout, "Overwriting existing planet names...");
   {
-    star_struct s{};
-    s.name = "Test";
-    s.pnames.push_back("OldName");
-
-    Star star(s);
+    Star star{1, "Test"};
+    star.set_planet_name(1, "OldName");
     test::expect_eq(star.get_planet_name(1), "OldName");
 
     star.set_planet_name(1, "NewName");
@@ -121,11 +128,7 @@ int main() {
   // Empty star (no planets, bounds checking throws)
   std::println(std::cout, "Empty star (no planets)...");
   {
-    star_struct s{};
-    s.name = "EmptyStar";
-    // Don't add any planets
-
-    Star star(s);
+    Star star{1, "EmptyStar"};
     test::expect_eq(star.numplanets(), 0);
 
     // Out of bounds access should throw
@@ -144,17 +147,15 @@ int main() {
   // numplanets() reflects vector size
   std::println(std::cout, "numplanets() reflects vector size...");
   {
-    star_struct s{};
-    s.name = "Test";
-
-    Star star(s);
+    Star star{1, "Test"};
     test::expect_eq(star.numplanets(), 0);
 
-    // Modify through struct (simulating direct construction)
-    s.pnames.push_back("P1");
-    s.pnames.push_back("P2");
-    s.pnames.push_back("P3");
-    Star star2(s);
+    // Construct from designated initializer
+    Star star2(star_struct{
+        .name = "Test",
+        .pnames = {"P1", "P2", "P3"},
+        .star_id = 1,
+    });
     test::expect_eq(star2.numplanets(), 3);
 
     // Modify through Star interface
@@ -166,9 +167,7 @@ int main() {
   // Star::control tests
   std::println(std::cout, "Star::control administrative authorization...");
   {
-    star_struct s{};
-    s.name = "SectorGovStar";
-    Star star(s);
+    Star star{1, "SectorGovStar"};
 
     // Governor 1 (primary race leader) always has administrative control
     test::expect_true(star.control(1, 1));
@@ -196,9 +195,7 @@ int main() {
   // Exploration domain methods
   std::println(std::cout, "Star exploration domain methods...");
   {
-    star_struct s{};
-    s.name = "Alpha";
-    Star star(s);
+    Star star{1, "Alpha"};
 
     test::expect_false(star.is_explored());
     test::expect_false(star.is_explored_by(player_t{1}));
@@ -219,9 +216,7 @@ int main() {
   // Inhabitation domain methods
   std::println(std::cout, "Star inhabitation domain methods...");
   {
-    star_struct s{};
-    s.name = "Beta";
-    Star star(s);
+    Star star{1, "Beta"};
 
     test::expect_false(star.is_inhabited());
     test::expect_false(star.is_inhabited_by(player_t{1}));
@@ -256,9 +251,7 @@ int main() {
   // AP and governor PlayerVector tests
   std::println(std::cout, "Star AP and governor PlayerVector accessors...");
   {
-    star_struct s{};
-    s.name = "Gamma";
-    Star star(s);
+    Star star{1, "Gamma"};
 
     star.AP(player_t{1}) = 42;
     star.AP(player_t{2}) = 99;
@@ -284,18 +277,15 @@ int main() {
   std::println(std::cout, "Star get_random_planet_index tests...");
   {
     // Case 1: Single planet system always returns index 1
-    star_struct s1{};
-    s1.name = "Solo";
-    s1.pnames = {"SingleWorld"};
-    Star star1(s1);
+    Star star1(
+        star_struct{.name = "Solo", .pnames = {"SingleWorld"}, .star_id = 1});
     test::expect_eq(star1.get_random_planet_index(), planetnum_t{1});
 
     // Case 2: Multi-planet system returns a valid index in range [1,
     // numplanets]
-    star_struct s3{};
-    s3.name = "Trio";
-    s3.pnames = {"World1", "World2", "World3"};
-    Star star3(s3);
+    Star star3(star_struct{.name = "Trio",
+                           .pnames = {"World1", "World2", "World3"},
+                           .star_id = 1});
     for (int i = 0; i < 20; ++i) {
       planetnum_t p = star3.get_random_planet_index();
       test::expect_true(p >= 1 && p <= star3.numplanets());
@@ -307,9 +297,7 @@ int main() {
   // coordinates tests
   std::println(std::cout, "Star coordinates tests...");
   {
-    star_struct s{};
-    s.coordinates = {450.0, -850.0};
-    Star star(s);
+    Star star{1, "", {450.0, -850.0}};
     test::expect_eq(star.coordinates(), UniverseCoordinates(450.0, -850.0));
     star.set_coordinates(UniverseCoordinates(-100.0, 200.0));
     test::expect_eq(star.coordinates().x, -100.0);

@@ -13,37 +13,18 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
+  TestWorldBuilder(ctx)
+      .add_race("Testers")
+      .add_star("Test Star", 10)
+      .add_planet(1, PlanetType::EARTH, "Test Planet");
 
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Testers";
-  race.Guest = false;
+  ctx.em.mutate_planet(1, 1, [](Planet& planet) {
+    planet.info(player_t{1}).numsectsowned = 5;
+    planet.info(player_t{1}).resource = 1000;
+  });
 
-  RaceRepository races(store);
-  races.save(race);
-
-  star_struct star{};
-  star.star_id = 0;
-  star.name = "Test Star";
-
-  StarRepository stars(store);
-  stars.save(star);
-
-  Planet planet{};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.dimensions() = Coordinates{10, 10};
-  planet.info(player_t{1}).numsectsowned = 5;
-  planet.info(player_t{1}).resource = 1000;
-
-  PlanetRepository planets(store);
-  planets.save(planet);
-
-  // Create test sectormap with wasted sectors
-  {
-    SectorMap smap(planet);
-
+  // Populate test sectormap with wasted sectors
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{3, 3}).set_owner(1);
     smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_WASTED);
     smap.get(Coordinates{3, 3}).set_type(SectorType::SEC_MOUNT);
@@ -58,10 +39,7 @@ void setup_test_world(TestContext& ctx) {
     smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_WASTED);
     smap.get(Coordinates{5, 5}).set_type(SectorType::SEC_SEA);
     smap.get(Coordinates{5, 5}).set_fert(20);
-
-    SectorRepository sectors(store);
-    sectors.save_map(smap);
-  }
+  });
 }
 
 void test_repair_happy_path() {
@@ -72,15 +50,15 @@ void test_repair_happy_path() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   ctx.assert_dispatch_success(g, {"repair", "3:5,3:5"});
   test::expect_contains(g.out.str(), "3 sectors repaired at a cost of");
 
   // Verify sectors were repaired
   ctx.em.clear_cache();
-  const auto* saved_smap = ctx.em.peek_sectormap(0, 0);
+  const auto* saved_smap = ctx.em.peek_sectormap(1, 1);
   test::expect_ne(saved_smap, nullptr);
 
   const auto& sect1 = saved_smap->get(Coordinates{3, 3});
@@ -96,7 +74,7 @@ void test_repair_happy_path() {
   test::expect_false(sect3.is_wasted());
 
   // Verify planet resources decreased
-  const auto* saved_planet = ctx.em.peek_planet(0, 0);
+  const auto* saved_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(saved_planet, nullptr);
   test::expect_eq(saved_planet->info(player_t{1}).resource,
                   1000 - (3 * SECTOR_REPAIR_COST));
@@ -117,10 +95,10 @@ void test_repair_scope_and_domain_errors() {
 
   // 2. Domain error: no sectors owned on planet
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   ctx.em.mutate_planet(
-      0, 0, [](Planet& p) { p.info(player_t{1}).numsectsowned = 0; });
+      1, 1, [](Planet& p) { p.info(player_t{1}).numsectsowned = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"repair", "3:5,3:5"});
   test::expect_contains(g.out.str(),

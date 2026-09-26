@@ -199,21 +199,17 @@ TestContext& TestContext::with_standard_universe() {
   em.create_race(r2);
 
   // 2. Setup Star 1 (Sol) with 100 AP for both races, explored and inhabited
-  star_struct ss1{};
-  ss1.star_id = 1;
-  ss1.name = "Sol";
-  ss1.coordinates = {0.0, 0.0};
-  ss1.stability = 15;
-  ss1.gravity = 1.0;
-  ss1.temperature = 50;
-  ss1.AP[player_t{1}] = 100;
-  ss1.AP[player_t{2}] = 100;
-  ss1.pnames.push_back("Earth");
-  Star star1{ss1};
-  star1.mark_explored_by(player_t{1});
-  star1.mark_explored_by(player_t{2});
-  star1.mark_inhabited_by(player_t{1});
-  star1.mark_inhabited_by(player_t{2});
+  Star star1{1, "Sol", {0.0, 0.0}};
+  star1.stability() = 15;
+  star1.gravity() = 1.0;
+  star1.temperature() = 50;
+  star1.AP(1) = 100;
+  star1.AP(2) = 100;
+  star1.set_planet_name(1, "Earth");
+  star1.mark_explored_by(1);
+  star1.mark_explored_by(2);
+  star1.mark_inhabited_by(1);
+  star1.mark_inhabited_by(2);
   StarRepository(store).save(star1);
 
   // 3. Setup Planet 1 on Star 1 (Earth)
@@ -234,21 +230,17 @@ TestContext& TestContext::with_standard_universe() {
   });
 
   // 4. Setup Star 2 (Vega) at (300, 400) -> distance 500 from Sol
-  star_struct ss2{};
-  ss2.star_id = 2;
-  ss2.name = "Vega";
-  ss2.coordinates = {300.0, 400.0};
-  ss2.stability = 45;
-  ss2.gravity = 1.0;
-  ss2.temperature = 40;
-  ss2.AP[player_t{1}] = 100;
-  ss2.AP[player_t{2}] = 100;
-  ss2.pnames.push_back("Vega Prime");
-  Star star2{ss2};
-  star2.mark_explored_by(player_t{1});
-  star2.mark_explored_by(player_t{2});
-  star2.mark_inhabited_by(player_t{1});
-  star2.mark_inhabited_by(player_t{2});
+  Star star2{2, "Vega", {300.0, 400.0}};
+  star2.stability() = 45;
+  star2.gravity() = 1.0;
+  star2.temperature() = 40;
+  star2.AP(1) = 100;
+  star2.AP(2) = 100;
+  star2.set_planet_name(1, "Vega Prime");
+  star2.mark_explored_by(1);
+  star2.mark_explored_by(2);
+  star2.mark_inhabited_by(1);
+  star2.mark_inhabited_by(2);
   StarRepository(store).save(star2);
 
   // 5. Setup Planet 1 on Star 2 (Vega Prime)
@@ -270,21 +262,17 @@ TestContext& TestContext::with_standard_universe() {
 
   // 6. Setup Star 3 (Antares) at (-300, -400) -> distance 500 from Sol, 1000
   // from Vega
-  star_struct ss3{};
-  ss3.star_id = 3;
-  ss3.name = "Antares";
-  ss3.coordinates = {-300.0, -400.0};
-  ss3.stability = 25;
-  ss3.gravity = 1.2;
-  ss3.temperature = 60;
-  ss3.AP[player_t{1}] = 100;
-  ss3.AP[player_t{2}] = 100;
-  ss3.pnames.push_back("Antares Prime");
-  Star star3{ss3};
-  star3.mark_explored_by(player_t{1});
-  star3.mark_explored_by(player_t{2});
-  star3.mark_inhabited_by(player_t{1});
-  star3.mark_inhabited_by(player_t{2});
+  Star star3{3, "Antares", {-300.0, -400.0}};
+  star3.stability() = 25;
+  star3.gravity() = 1.2;
+  star3.temperature() = 60;
+  star3.AP(1) = 100;
+  star3.AP(2) = 100;
+  star3.set_planet_name(1, "Antares Prime");
+  star3.mark_explored_by(1);
+  star3.mark_explored_by(2);
+  star3.mark_inhabited_by(1);
+  star3.mark_inhabited_by(2);
   StarRepository(store).save(star3);
 
   // 7. Setup Planet 1 on Star 3 (Antares Prime)

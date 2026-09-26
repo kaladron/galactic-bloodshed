@@ -1447,17 +1447,15 @@ void test_process_supernova_sector_devastation() {
   inhabited.set_troops(200);
 
   // 1. Star NOT in supernova (nova_stage = 0) -> no devastation
-  star_struct normal_star_data{};
-  normal_star_data.nova_stage = 0;
-  Star normal_star(normal_star_data);
+  Star normal_star{1};
+  normal_star.nova_stage() = 0;
   test::expect_false(smap.process_supernova_devastation(normal_star));
   test::expect_eq(inhabited.get_popn(), 1000);
 
   // 2. Active radiation stage (nova_stage = 5) -> casualties, mineral deposits,
   // fertility loss
-  star_struct active_star_data{};
-  active_star_data.nova_stage = 5;
-  Star active_star(active_star_data);
+  Star active_star{1};
+  active_star.nova_stage() = 5;
   test::expect_true(smap.process_supernova_devastation(active_star));
   test::expect_lt(inhabited.get_popn(), 1000);
   test::expect_gt(inhabited.get_resource(), 50);
@@ -1465,9 +1463,8 @@ void test_process_supernova_sector_devastation() {
 
   // 3. Terminal explosion (nova_stage = 14) -> total incineration and cleared
   // ownership
-  star_struct terminal_star_data{};
-  terminal_star_data.nova_stage = 14;
-  Star terminal_star(terminal_star_data);
+  Star terminal_star{1};
+  terminal_star.nova_stage() = 14;
   test::expect_true(smap.process_supernova_devastation(terminal_star));
   test::expect_eq(inhabited.get_popn(), 0);
   test::expect_eq(inhabited.get_owner(), player_t{0});

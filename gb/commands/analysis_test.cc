@@ -39,21 +39,16 @@ int main() {
   races.save(race2);
 
   // Create test star
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "TestStar";
-  ss.coordinates = {100.0, 200.0};
-  ss.pnames.emplace_back("TestPlanet");
-  ss.explored.set(player_t{1}).set(player_t{2});
-  Star star(ss);
+  Star star{1, "TestStar", {100.0, 200.0}};
+  star.set_planet_name(1, "TestPlanet");
+  star.mark_explored_by(1);
+  star.mark_explored_by(2);
 
   StarRepository stars_repo(store);
   stars_repo.save(star);
 
   // Create a test planet with a 5x5 grid
-  Planet planet{PlanetType::EARTH, Coordinates{5, 5}};
-  planet.star_id() = 1;
-  planet.planet_order() = 1;
+  Planet planet{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
   planet.explored() = true;
   planet.info(player_t{1}).explored = true;  // Player 1 has explored
   planet.info(player_t{2}).explored = true;  // Player 2 has explored

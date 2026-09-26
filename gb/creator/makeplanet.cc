@@ -248,11 +248,7 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
   if (type == PlanetType::ASTEROID)
     maxy = int_rand(1, 3); /* Asteroids have funny shapes. */
 
-  Planet planet{type, Coordinates{maxx, maxy}};
-
-  // Set location explicitly - no global counter needed
-  planet.star_id() = star_id;
-  planet.planet_order() = planet_order;
+  Planet planet{star_id, planet_order, type, Coordinates{maxx, maxy}};
   planet.expltimer() = 5;
   planet.temp() = planet.rtemp() = calculate_temperature(dist, stemp);
 

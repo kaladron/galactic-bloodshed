@@ -5,16 +5,6 @@
 
 module;
 
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <fstream>
-#include <iostream>
-#include <numbers>
-#include <string>
-#include <utility>
-#include <vector>
-
 import std;
 import dallib;
 import gb.entities;
@@ -28,17 +18,6 @@ namespace GB::creator {
 namespace {
 constexpr double PLANET_DIST_MAX = 1900.0;
 constexpr double PLANET_DIST_MIN = 100.0;
-
-constexpr PlanetValues<const char*> PlanetTypeNames = {
-    .earth = "Earth",
-    .asteroid = "Asteroid",
-    .mars = "Airless",
-    .iceball = "Iceball",
-    .gasgiant = "Gaseous",
-    .water = "Water",
-    .forest = "Forest",
-    .desert = "Desert",
-};
 
 PlanetType roll_planet_type(int temperature) {
   int roll = int_rand(1, 100);
@@ -177,8 +156,8 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
     num_planets = 0;
   }
   star.pnames.reserve(num_planets);
-  for (int i = 0; i < num_planets; ++i) {
-    star.pnames.push_back(next_planet_name(static_cast<planetnum_t>(i + 1)));
+  for (planetnum_t pnum = 1; pnum <= num_planets; ++pnum) {
+    star.pnames.push_back(next_planet_name(pnum));
   }
 
   JsonStore store(db);
@@ -186,10 +165,10 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
   StarRepository(store).save(star_entity);
 
   double distmin = PLANET_DIST_MIN;
-  for (int i = 0; i < num_planets; ++i) {
-    const planetnum_t pnum{static_cast<planetnum_t::value_type>(i + 1)};
+  for (planetnum_t pnum = 1; pnum <= num_planets; ++pnum) {
     double distsep =
-        (PLANET_DIST_MAX - distmin) / static_cast<double>(num_planets - i);
+        (PLANET_DIST_MAX - distmin) /
+        static_cast<double>(num_planets - static_cast<int>(pnum.value) + 1);
     double distmax = distmin + distsep;
     double dist = distmin + double_rand() * (distmax - distmin);
     distmin = dist;
@@ -214,8 +193,8 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
 
     if (config_.print_planet_info) {
       std::println(std::cout, "Planet {}: temp {}, type {} ({})",
-                   star.pnames[i], planet.rtemp(),
-                   PlanetTypeNames[planet.type()],
+                   star_entity.get_planet_name(pnum), planet.rtemp(),
+                   planet.type_name(),
                    static_cast<unsigned int>(planet.type()));
       std::println(
           std::cout,

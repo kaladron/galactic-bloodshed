@@ -622,9 +622,7 @@ public:
                                     planetnum_t numplanets, URBG& g) {
     std::vector<planetnum_t> indices(
         static_cast<std::size_t>(numplanets.value));
-    for (unsigned int i = 0; i < numplanets.value; ++i) {
-      indices[i] = planetnum_t{i + 1};
-    }
+    std::ranges::iota(indices, planetnum_t{1});
     std::ranges::shuffle(indices, g);
 
     return std::views::all(std::move(indices)) |

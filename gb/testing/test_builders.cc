@@ -399,11 +399,10 @@ TestWorldBuilder::add_star(std::string_view name, ap_t initial_ap,
                            std::optional<starnum_t> explicit_snum) {
   starnum_t snum = explicit_snum.value_or(
       starnum_t{static_cast<starnum_t::value_type>(next_star_id_++)});
-  star_struct ss{};
-  ss.star_id = snum;
-  ss.name = name;
-  ss.AP.fill(initial_ap);
-  Star star{ss};
+  Star star{snum, name};
+  for (player_t p : all_players()) {
+    star.AP(p) = initial_ap;
+  }
   for (player_t pid : registered_races_) {
     star.mark_explored_by(pid);
     star.mark_inhabited_by(pid);
@@ -426,9 +425,7 @@ TestWorldBuilder& TestWorldBuilder::add_planet(
     pnum = planetnum_t{static_cast<planetnum_t::value_type>(
         star_opt ? star_opt->numplanets() + 1 : 1)};
   }
-  Planet p(type, Coordinates{maxx, maxy});
-  p.star_id() = snum;
-  p.planet_order() = pnum;
+  Planet p{snum, pnum, type, Coordinates{maxx, maxy}};
   p.explored() = true;
   for (player_t pid : registered_races_) {
     p.info(pid).explored = 1;
@@ -470,20 +467,19 @@ TestPlanetBuilder::TestPlanetBuilder(EntityManager& em, Database& db,
                                      std::optional<planetnum_t> explicit_pnum)
     : em_(em), db_(db), snum_(snum), explicit_pnum_(explicit_pnum),
       planet_([&]() {
-        Planet p{type, dims};
-        p.star_id() = snum;
+        planetnum_t pnum{1};
         if (explicit_pnum) {
-          p.planet_order() = *explicit_pnum;
+          pnum = *explicit_pnum;
         } else {
           try {
             const auto* star = em.peek_star(snum);
-            p.planet_order() = planetnum_t{
+            pnum = planetnum_t{
                 static_cast<planetnum_t::value_type>(star->numplanets() + 1)};
           } catch (const EntityNotFoundError&) {
-            p.planet_order() = planetnum_t{1};
+            pnum = planetnum_t{1};
           }
         }
-        return p;
+        return Planet{snum, pnum, type, dims};
       }()),
       smap_(planet_) {
   for (int y = 0; y < dims.y; ++y) {
@@ -591,56 +587,11 @@ TestPlanetBuilder::with_colony(player_t owner, population_t popn,
 }
 
 planetnum_t TestPlanetBuilder::build() {
-  planetnum_t pnum{1};
-  if (explicit_pnum_) {
-    pnum = *explicit_pnum_;
-  } else {
-    try {
-      const auto* star = em_.peek_star(snum_);
-      pnum = planetnum_t{
-          static_cast<planetnum_t::value_type>(star->numplanets() + 1)};
-    } catch (const EntityNotFoundError&) {
-      pnum = planetnum_t{1};
-    }
-  }
-  planet_.planet_order() = pnum;
-  if (pnum != smap_.planet_order()) {
-    SectorMap updated_smap(planet_);
-    for (Sector& sect : smap_) {
-      updated_smap.get(sect.coords()) = std::move(sect);
-    }
-    smap_ = std::move(updated_smap);
-  }
+  const planetnum_t pnum = planet_.planet_order();
 
-  // Calculate sector-aggregate invariants
-  population_t total_pop = 0;
-  population_t total_troops = 0;
-  PlayerVector<population_t, MAXPLAYERS> player_pop{};
-  PlayerVector<population_t, MAXPLAYERS> player_troops{};
-  PlayerVector<int, MAXPLAYERS> player_sects{};
-
-  for (const auto& sect : smap_) {
-    total_pop += sect.get_popn();
-    total_troops += sect.get_troops();
-    if (sect.get_owner().value > 0) {
-      player_pop[sect.get_owner()] += sect.get_popn();
-      player_troops[sect.get_owner()] += sect.get_troops();
-      if (sect.is_populated() || sect.is_owned()) {
-        player_sects[sect.get_owner()]++;
-      }
-    }
-  }
-
-  planet_.popn() = total_pop;
-  planet_.troops() = total_troops;
-  planet_.maxpopn() = std::max(total_pop, population_t{10000});
-  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
-    if (player_sects[p] > 0 || player_pop[p] > 0) {
-      planet_.info(p).popn = player_pop[p];
-      planet_.info(p).troops = player_troops[p];
-      planet_.info(p).numsectsowned = player_sects[p];
-    }
-  }
+  // Synchronize sector-aggregate demographic invariants
+  planet_.sync_demographics(smap_);
+  planet_.maxpopn() = std::max(planet_.popn(), population_t{10000});
 
   try {
     em_.mutate_star(snum_, [&](Star& s) {

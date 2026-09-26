@@ -31,17 +31,11 @@ void test_temperature_calculation() {
 void test_makeplanet_types() {
   std::println(std::cout, "Test: makeplanet for all PlanetTypes");
 
-  // Setup: Target star ID and list of planet types to test
-  starnum_t star_id{1};
+  // Setup: Target star ID and starting 1-based planet number
+  const starnum_t star_id = 1;
+  planetnum_t pnum = 1;
 
-  std::vector<PlanetType> types = {PlanetType::EARTH,    PlanetType::MARS,
-                                   PlanetType::GASGIANT, PlanetType::DESERT,
-                                   PlanetType::WATER,    PlanetType::ICEBALL,
-                                   PlanetType::ASTEROID};
-
-  for (std::size_t i = 0; i < types.size(); ++i) {
-    PlanetType ptype = types[i];
-    planetnum_t pnum{static_cast<unsigned int>(i)};
+  for (const PlanetType ptype : all_planet_types) {
     std::optional<SectorMap> smap;
 
     // TEST: Generate planet with makeplanet()
@@ -62,7 +56,8 @@ void test_makeplanet_types() {
 
     std::println(
         std::cout, "  ✓ Planet type {} generated with dimensions {}x{}",
-        static_cast<int>(ptype), planet.dimensions().x, planet.dimensions().y);
+        planet.type_name(), planet.dimensions().x, planet.dimensions().y);
+    ++pnum;
   }
 }
 

@@ -32,34 +32,24 @@ void setup_test_world(TestContext& ctx) {
   races.save(race);
 
   // Initialize star 1 (explored)
-  star_struct ss0{};
-  ss0.star_id = 1;
-  ss0.name = "Sol";
-  ss0.coordinates = {0.0, 0.0};
-  ss0.stability = 45;
-  ss0.explored.set(player_t{1});
-  ss0.AP[player_t{1}] = 20;
-  ss0.pnames.push_back("Earth");
-  Star star0(ss0);
+  Star star0{1, "Sol", {0.0, 0.0}};
+  star0.stability() = 45;
+  star0.mark_explored_by(1);
+  star0.AP(1) = 20;
+  star0.set_planet_name(1, "Earth");
   StarRepository stars(store);
   stars.save(star0);
 
   // Initialize planet 1 on star 1
-  Planet planet0{PlanetType::EARTH, Coordinates{10, 10}};
-  planet0.star_id() = 1;
-  planet0.planet_order() = 1;
+  Planet planet0{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
   planet0.info(player_t{1}).explored = 1;
   planet0.info(player_t{1}).numsectsowned = 5;
   PlanetRepository planets(store);
   planets.save(planet0);
 
   // Initialize star 2 (unexplored)
-  star_struct ss1{};
-  ss1.star_id = 2;
-  ss1.name = "Centauri";
-  ss1.coordinates = {500.0, 500.0};
-  ss1.stability = 20;
-  Star star1(ss1);
+  Star star1{2, "Centauri", {500.0, 500.0}};
+  star1.stability() = 20;
   stars.save(star1);
 }
 

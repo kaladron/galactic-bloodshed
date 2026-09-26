@@ -20,7 +20,7 @@ void test_make_mod_command_matrix() {
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                              .owned_by(1, 1)
                              .named("Factory")
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_fuel(100.0)
                              .with_resource(1000)
                              .with_crew(50, 0)
@@ -32,7 +32,7 @@ void test_make_mod_command_matrix() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_shipno(factory_id);
-  g.set_snum(0);
+  g.set_snum(1);
 
   TestCommandMatrix(ctx, GB::commands::make_cmd)
       .with_valid_scope(ScopeLevel::LEVEL_SHIP)
@@ -72,7 +72,7 @@ void test_make_designations_and_errors() {
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                              .owned_by(1, 1)
                              .named("Factory")
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_fuel(100.0)
                              .with_resource(1000)
                              .with_crew(50, 0)
@@ -82,7 +82,7 @@ void test_make_designations_and_errors() {
 
   shipnum_t non_factory_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                                  .owned_by(1, 1)
-                                 .in_star_orbit(0)
+                                 .in_star_orbit(1)
                                  .with_crew(10, 0)
                                  .build();
 
@@ -90,7 +90,7 @@ void test_make_designations_and_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 1. Non-factory ship rejected
   g.set_shipno(non_factory_id);
@@ -160,7 +160,7 @@ void test_modify_attributes_and_batteries() {
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                              .owned_by(1, 1)
                              .named("Factory")
-                             .in_star_orbit(0)
+                             .in_star_orbit(1)
                              .with_fuel(100.0)
                              .with_resource(1000)
                              .with_crew(50, 0)
@@ -172,7 +172,7 @@ void test_modify_attributes_and_batteries() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(0);
+  g.set_snum(1);
   g.set_shipno(factory_id);
 
   // 1. Modify before make

@@ -32,13 +32,9 @@ void test_upgrade_command() {
   races.save(race);
 
   // Create a test star
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "TestStar";
-  ss.coordinates = {100.0, 200.0};
-  ss.explored.set(player_t{1});
-  ss.AP[player_t{1}] = 10;
-  Star star(ss);
+  Star star{1, "TestStar", {100.0, 200.0}};
+  star.mark_explored_by(1);
+  star.AP(1) = 10;
 
   // Save star via repository
   StarRepository stars_repo(store);
@@ -48,7 +44,7 @@ void test_upgrade_command() {
   TestShipBuilder(ctx.em, type, 1)
       .owned_by(1, 1)
       .named("Upgradeable")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(10.0)
       .with_resource(500)
       .with_guns(shipdata_primary(ShipType::STYPE_BATTLE),
@@ -71,7 +67,7 @@ void test_upgrade_command() {
 
   // 2. Scope rejection at STAR scope
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -82,7 +78,7 @@ void test_upgrade_command() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -98,14 +94,14 @@ void test_upgrade_command() {
     ctx.setup_game_obj(g);
     g.set_level(ScopeLevel::LEVEL_SHIP);
     g.set_shipno(1);
-    g.set_snum(0);
+    g.set_snum(1);
 
     const auto* ship_before = ctx.em.peek_ship(1);
     test::expect_ne(ship_before, nullptr);
     int initial_armor = ship_before->armor();
     int target_armor = initial_armor + 2;
     int initial_resource = ship_before->resource();
-    const auto* star_before = ctx.em.peek_star(0);
+    const auto* star_before = ctx.em.peek_star(1);
     test::expect_eq(star_before->AP(1), 10);
     std::println(std::cout, "    Before: armor={}, resource={}, star AP={}",
                  initial_armor, initial_resource, star_before->AP(1));
@@ -119,7 +115,7 @@ void test_upgrade_command() {
 
     const auto* ship_after = ctx.em.peek_ship(1);
     test::expect_ne(ship_after, nullptr);
-    const auto* star_after = ctx.em.peek_star(0);
+    const auto* star_after = ctx.em.peek_star(1);
     test::expect_eq(star_after->AP(1), 9);  // 1 Star AP deducted
     std::println(std::cout, "    After: armor={}, resource={}, star AP={}",
                  ship_after->armor(), ship_after->resource(),
@@ -139,14 +135,14 @@ void test_upgrade_command() {
     ctx.setup_game_obj(g);
     g.set_level(ScopeLevel::LEVEL_SHIP);
     g.set_shipno(1);
-    g.set_snum(0);
+    g.set_snum(1);
 
     const auto* ship_before = ctx.em.peek_ship(1);
     test::expect_ne(ship_before, nullptr);
     int initial_speed = ship_before->max_speed();
     int target_speed = initial_speed + 1;
     int initial_resource = ship_before->resource();
-    const auto* star_before = ctx.em.peek_star(0);
+    const auto* star_before = ctx.em.peek_star(1);
     test::expect_eq(star_before->AP(1), 9);
     std::println(std::cout, "    Before: max_speed={}, resource={}, star AP={}",
                  initial_speed, initial_resource, star_before->AP(1));
@@ -159,7 +155,7 @@ void test_upgrade_command() {
 
     const auto* ship_after = ctx.em.peek_ship(1);
     test::expect_ne(ship_after, nullptr);
-    const auto* star_after = ctx.em.peek_star(0);
+    const auto* star_after = ctx.em.peek_star(1);
     test::expect_eq(star_after->AP(1), 8);  // Another 1 Star AP deducted
     std::println(std::cout, "    After: max_speed={}, resource={}, star AP={}",
                  ship_after->max_speed(), ship_after->resource(),
@@ -206,12 +202,10 @@ void test_upgrade_numeric_attributes_and_validations() {
   race.God = false;
   races.save(race);
 
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "TestStar";
-  ss.explored.set(player_t{1});
-  ss.AP[player_t{1}] = 50;
-  stars_repo.save(Star(ss));
+  Star star{1, "TestStar"};
+  star.mark_explored_by(1);
+  star.AP(1) = 50;
+  stars_repo.save(star);
 
   // Cruiser supports crew, cargo, hanger, fuel, destruct, primary, secondary,
   // cew, laser, jump, mount.
@@ -219,7 +213,7 @@ void test_upgrade_numeric_attributes_and_validations() {
   TestShipBuilder(ctx.em, type, 1)
       .owned_by(1, 1)
       .named("CruiserOne")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
       .with_resource(5000)
       .with_armor(ship_template(type).base_armor)
@@ -238,7 +232,7 @@ void test_upgrade_numeric_attributes_and_validations() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // Negative value rejected
   g.out.str("");
@@ -309,18 +303,16 @@ void test_upgrade_weapons_and_systems() {
   race.God = false;
   races.save(race);
 
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "TestStar";
-  ss.explored.set(player_t{1});
-  ss.AP[player_t{1}] = 50;
-  stars_repo.save(Star(ss));
+  Star star{1, "TestStar"};
+  star.mark_explored_by(1);
+  star.AP(1) = 50;
+  stars_repo.save(star);
 
   const auto type = ShipType::STYPE_CRUISER;
   TestShipBuilder(ctx.em, type, 1)
       .owned_by(1, 1)
       .named("CruiserWeapons")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
       .with_resource(15000)
       .with_armor(ship_template(type).base_armor)
@@ -342,7 +334,7 @@ void test_upgrade_weapons_and_systems() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // Primary battery validation & upgrades
   g.out.str("");
@@ -418,7 +410,7 @@ void test_upgrade_weapons_and_systems() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
-  g.set_snum(0);
+  g.set_snum(1);
 
   ctx.assert_dispatch_success(g, {"upgrade", "mount"}, 1);
   test::expect_true(ctx.em.peek_ship(1)->mount());
@@ -457,18 +449,16 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   race.God = false;
   races.save(race);
 
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "TestStar";
-  ss.explored.set(player_t{1});
-  ss.AP[player_t{1}] = 50;
-  stars_repo.save(Star(ss));
+  Star star{1, "TestStar"};
+  star.mark_explored_by(1);
+  star.AP(1) = 50;
+  stars_repo.save(star);
 
   // Ship 1: Carrier in star orbit
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 1)
       .owned_by(1, 1)
       .named("FleetCarrier")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .with_resource(1000)
       .build();
 
@@ -501,14 +491,14 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 3)
       .owned_by(1, 1)
       .named("Factory")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .build();
 
   // Ship 4: Spore Pod (not modifiable)
   TestShipBuilder(ctx.em, ShipType::STYPE_POD, 4)
       .owned_by(1, 1)
       .named("Pod")
-      .in_star_orbit(0, 100.0, 200.0)
+      .in_star_orbit(1, 100.0, 200.0)
       .build();
 
   auto& registry = get_test_session_registry();
@@ -518,7 +508,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   // Factory rejection
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(3);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
   test::expect_contains(g.out.str(), "You can't upgrade factories.");
@@ -555,7 +545,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(2);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "20"});
   test::expect_contains(g.out.str(),
@@ -567,7 +557,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(2);
-  g.set_snum(0);
+  g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "20"});
   test::expect_contains(g.out.str(),

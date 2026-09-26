@@ -314,8 +314,8 @@ export struct planet_struct {
   std::uint32_t expltimer = 0;
   bool explored = false;
 
-  starnum_t star_id = 0;
-  planetnum_t planet_order = 0;
+  starnum_t star_id{};
+  planetnum_t planet_order{};
 };
 
 export class Planet {
@@ -324,6 +324,19 @@ public:
   Planet() = default;
   Planet(planet_struct in) : data_(in) {}
   Planet(PlanetType type, Coordinates dimensions) {
+    data_.type = type;
+    data_.dimensions = dimensions;
+  }
+  Planet(starnum_t star_id, planetnum_t planet_order,
+         PlanetType type = PlanetType::EARTH,
+         Coordinates dimensions = {10, 10}) {
+    if (star_id < 1 || planet_order < 1) {
+      throw std::invalid_argument(std::format(
+          "Planet (star_id, planet_order) must be >= (1, 1) (got ({}, {}))",
+          star_id, planet_order));
+    }
+    data_.star_id = star_id;
+    data_.planet_order = planet_order;
     data_.type = type;
     data_.dimensions = dimensions;
   }

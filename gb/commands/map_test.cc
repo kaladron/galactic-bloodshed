@@ -38,21 +38,15 @@ void setup_test_world(TestContext& ctx) {
   races.save(race);
 
   // Create stable star
-  star_struct ss0{};
-  ss0.star_id = 1;
-  ss0.name = "TestStar";
-  ss0.coordinates = {100.0, 200.0};
-  ss0.stability = 40;  // Stable star (< 50)
-  ss0.explored.set(player_t{1});
-  ss0.pnames.push_back("TestPlanet");
-  Star star0(ss0);
+  Star star0{1, "TestStar", {100.0, 200.0}};
+  star0.stability() = 40;  // Stable star (< 50)
+  star0.mark_explored_by(1);
+  star0.set_planet_name(1, "TestPlanet");
   StarRepository stars_repo(store);
   stars_repo.save(star0);
 
   // Create planet on star 1
-  Planet planet0{PlanetType::EARTH, Coordinates{5, 5}};
-  planet0.star_id() = 1;
-  planet0.planet_order() = 1;
+  Planet planet0{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
   planet0.explored() = true;
   planet0.info(player_t{1}).numsectsowned = 3;
   planet0.info(player_t{1}).guns = 10;
@@ -103,20 +97,14 @@ void setup_test_world(TestContext& ctx) {
   sector_repo.save_map(smap);
 
   // Create unstable star
-  star_struct ss1{};
-  ss1.star_id = 2;
-  ss1.name = "UnstableStar";
-  ss1.coordinates = {300.0, 400.0};
-  ss1.stability = 75;  // Unstable (> 50)
-  ss1.explored.set(player_t{1});
-  ss1.pnames.push_back("UnstablePlanet");
-  Star star1(ss1);
+  Star star1{2, "UnstableStar", {300.0, 400.0}};
+  star1.stability() = 75;  // Unstable (> 50)
+  star1.mark_explored_by(1);
+  star1.set_planet_name(1, "UnstablePlanet");
   stars_repo.save(star1);
 
   // Create planet on star 2
-  Planet planet1{PlanetType::EARTH, Coordinates{3, 3}};
-  planet1.star_id() = 2;
-  planet1.planet_order() = 1;
+  Planet planet1{2, 1, PlanetType::EARTH, Coordinates{3, 3}};
   planet1.explored() = true;
   planet1.info(player_t{1}).numsectsowned = 1;
   planets_repo.save(planet1);

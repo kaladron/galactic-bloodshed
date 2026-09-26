@@ -14,39 +14,21 @@ namespace {
 
 void test_mobilize_dispatch() {
   TestContext ctx;
-  JsonStore store(ctx.db);
-
-  // Setup: Create a race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Mobilizers";
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup: Create a star
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.governor[player_t{1}] = 1;  // Player 1 governor 1 controls
-  star_data.AP[player_t{1}] = 10;       // Action points
-  Star star{star_data};
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Setup: Create a planet
-  Planet planet(PlanetType::EARTH, Coordinates{10, 10});
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.info(player_t{1}).comread = 20;
-  planet.info(player_t{1}).mob_set = 20;
-  PlanetRepository planets(store);
-  planets.save(planet);
+  TestWorldBuilder(ctx)
+      .add_race("Mobilizers")
+      .add_star("Sol", 10)
+      .add_planet(1, PlanetType::EARTH, "Earth");
+  ctx.em.mutate_planet(1, 1, [](Planet& planet) {
+    planet.info(player_t{1}).comread = 20;
+    planet.info(player_t{1}).mob_set = 20;
+  });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
-  g.set_pnum(0);
+  g.set_pnum(1);
 
   // 1. Query mobilization (no args)
   ctx.assert_dispatch_success(g, {"mobilize"});
@@ -57,7 +39,7 @@ void test_mobilize_dispatch() {
   // 2. Set mobilization to 50%
   g.out.str("");
   ctx.assert_dispatch_success(g, {"mobilize", "50"});
-  auto saved = ctx.em.peek_planet(1, 0);
+  auto saved = ctx.em.peek_planet(1, 1);
   test::expect_ne(saved, nullptr);
   test::expect_eq(saved->info(player_t{1}).mob_set, 50);
   std::println(std::cout, "    ✓ Set mobilization to 50% succeeded");
@@ -65,7 +47,7 @@ void test_mobilize_dispatch() {
   // 3. Set mobilization to 100%
   g.out.str("");
   ctx.assert_dispatch_success(g, {"mobilize", "100"});
-  saved = ctx.em.peek_planet(1, 0);
+  saved = ctx.em.peek_planet(1, 1);
   test::expect_ne(saved, nullptr);
   test::expect_eq(saved->info(player_t{1}).mob_set, 100);
   std::println(std::cout, "    ✓ Set mobilization to 100% succeeded");

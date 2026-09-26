@@ -1081,7 +1081,7 @@ public:
   template <typename URBG>
   [[nodiscard]] ShuffledSectorsView shuffle(URBG& g) {
     std::vector<std::size_t> indices(grid_.size());
-    std::iota(indices.begin(), indices.end(), 0);
+    std::ranges::iota(indices, 0);
     std::ranges::shuffle(indices, g);
     return ShuffledSectorsView(*this, std::move(indices));
   }
@@ -1092,7 +1092,7 @@ public:
   template <typename URBG>
   [[nodiscard]] ConstShuffledSectorsView shuffle(URBG& g) const {
     std::vector<std::size_t> indices(grid_.size());
-    std::iota(indices.begin(), indices.end(), 0);
+    std::ranges::iota(indices, 0);
     std::ranges::shuffle(indices, g);
     return ConstShuffledSectorsView(*this, std::move(indices));
   }
@@ -1119,8 +1119,8 @@ private:
             static_cast<std::size_t>(dimensions_.x));
   }
 
-  starnum_t star_id_{0};
-  planetnum_t planet_order_{0};
+  starnum_t star_id_;
+  planetnum_t planet_order_;
   Coordinates dimensions_{0, 0};
   std::vector<Sector> grid_;
   std::vector<bool> dirty_;

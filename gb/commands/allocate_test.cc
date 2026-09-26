@@ -12,25 +12,7 @@ import std;
 
 int main() {
   TestContext ctx;
-  JsonStore store(ctx.db);
-
-  // Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Spenders";
-  race.Guest = false;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create test star 0
-  star_struct star{};
-  star.star_id = 0;
-  star.name = "Sol";
-  star.AP[player_t{1}] = 20;
-
-  StarRepository stars(store);
-  stars.save(star);
+  TestWorldBuilder(ctx).add_race("Spenders").add_star("Sol", 20);
 
   // Setup Universe APs
   ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 50; });
@@ -49,7 +31,7 @@ int main() {
 
   // Switch to star scope
   g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
+  g.set_snum(1);
 
   // 2. Syntax / argument rejection
   g.out.str("");
@@ -77,7 +59,7 @@ int main() {
   {
     ctx.em.clear_cache();
     const auto* u = ctx.em.peek_universe();
-    const auto* s = ctx.em.peek_star(0);
+    const auto* s = ctx.em.peek_star(1);
     test::expect_eq(u->AP[player_t{1}], 35);
     test::expect_eq(s->AP(1), 35);
   }

@@ -13,8 +13,8 @@ import std;
 
 /// \brief Top two nearest star systems identified by navigation scanning.
 export struct StarTargetResult {
-  starnum_t closest{0};         ///< Primary nearest star system
-  starnum_t second_closest{0};  ///< Secondary nearest star system
+  starnum_t closest;         ///< Primary nearest star system
+  starnum_t second_closest;  ///< Secondary nearest star system
 };
 
 /// \brief Finds the closest and second-closest star systems to the given

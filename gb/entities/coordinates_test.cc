@@ -334,9 +334,7 @@ int main() {
   std::println(std::cout, "--- Testing Entity Continuous Coordinates ---");
   {
     // Star continuous coordinates
-    star_struct sdata{};
-    sdata.coordinates = {1200.0, -3400.0};
-    Star star(sdata);
+    Star star{1, "", {1200.0, -3400.0}};
     test::expect_eq(star.coordinates(), UniverseCoordinates(1200.0, -3400.0));
     star.set_coordinates(UniverseCoordinates(2500.0, 5000.0));
     expect_near(star.coordinates().x, 2500.0);

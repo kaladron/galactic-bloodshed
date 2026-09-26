@@ -139,27 +139,24 @@ void test_fix_planet_temp_persistence() {
   PlanetRepository planets(store);
 
   // Create planet
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.dimensions() = Coordinates{10, 10};
+  Planet planet{1, 1};
   planet.temp() = 50;  // Initial temperature
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
-    const auto* p = ctx.em.peek_planet(1, 0);
+    const auto* p = ctx.em.peek_planet(1, 1);
     test::expect_ne(p, nullptr);
     test::expect_eq(p->temp(), 50);
   }
 
   // 4. Simulate fixing temperature via EntityManager
-  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.temp() = 100; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.temp() = 100; });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
-  const auto* final_planet = ctx.em.peek_planet(1, 0);
+  const auto* final_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(final_planet, nullptr);
   test::expect_eq(final_planet->temp(), 100);
 
@@ -176,27 +173,24 @@ void test_fix_planet_oxygen_persistence() {
   PlanetRepository planets(store);
 
   // Create planet
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.dimensions() = Coordinates{10, 10};
+  Planet planet{1, 1};
   planet.conditions().oxygen = 10;  // Initial oxygen
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
-    const auto* p = ctx.em.peek_planet(1, 0);
+    const auto* p = ctx.em.peek_planet(1, 1);
     test::expect_ne(p, nullptr);
     test::expect_eq(p->conditions(OXYGEN), 10);
   }
 
   // 4. Simulate fixing oxygen via EntityManager
-  ctx.em.mutate_planet(1, 0, [](Planet& p) { p.conditions().oxygen = 50; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.conditions().oxygen = 50; });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
-  const auto* final_planet = ctx.em.peek_planet(1, 0);
+  const auto* final_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(final_planet, nullptr);
   test::expect_eq(final_planet->conditions(OXYGEN), 50);
 
@@ -213,28 +207,25 @@ void test_fix_planet_position_persistence() {
   PlanetRepository planets(store);
 
   // Create planet
-  Planet planet{};
-  planet.star_id() = 1;
-  planet.planet_order() = 0;
-  planet.dimensions() = Coordinates{10, 10};
+  Planet planet{1, 1};
   planet.set_system_coordinates({100.0, 200.0});
   planets.save(planet);
 
   // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
-    const auto* p = ctx.em.peek_planet(1, 0);
+    const auto* p = ctx.em.peek_planet(1, 1);
     test::expect_ne(p, nullptr);
     test::expect_eq(p->system_coordinates(), SystemCoordinates{100.0, 200.0});
   }
 
   // 4. Simulate fixing position via EntityManager
   ctx.em.mutate_planet(
-      1, 0, [](Planet& p) { p.set_system_coordinates({500.0, 600.0}); });
+      1, 1, [](Planet& p) { p.set_system_coordinates({500.0, 600.0}); });
 
   // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
-  const auto* final_planet = ctx.em.peek_planet(1, 0);
+  const auto* final_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(final_planet, nullptr);
   test::expect_eq(final_planet->system_coordinates(),
                   SystemCoordinates{500.0, 600.0});
@@ -265,16 +256,11 @@ void test_fix_command_dispatch() {
   races.save(mortal_race);
 
   // Create star and planet
-  star_struct ss{};
-  ss.star_id = 0;
-  ss.name = "GodStar";
+  Star star{1, "GodStar"};
   StarRepository stars(store);
-  stars.save(ss);
+  stars.save(star);
 
-  Planet planet{};
-  planet.star_id() = 0;
-  planet.planet_order() = 0;
-  planet.dimensions() = Coordinates{10, 10};
+  Planet planet{1, 1};
   planet.temp() = 50;
   PlanetRepository planets(store);
   planets.save(planet);
@@ -298,8 +284,8 @@ void test_fix_command_dispatch() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "planet", "temperature", "100"});
   test::expect_contains(g.out.str(), "temperature = 100");
@@ -329,8 +315,8 @@ void test_fix_command_dispatch() {
   test::expect_contains(g.out.str(), "Change scope to the planet first.");
 
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_snum(1);
+  g.set_pnum(1);
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "abc"});

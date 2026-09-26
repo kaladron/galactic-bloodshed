@@ -11,9 +11,22 @@ import test;
 import std;
 
 int main() {
-  // Test 1: Planet default and mutable dimensions
+  // Test 1: Planet primary-key constructor, validation, and dimensions
   {
-    Planet planet(PlanetType::EARTH, Coordinates{0, 0});
+    Planet pk_planet{3, 2, PlanetType::MARS, Coordinates{16, 8}};
+    test::expect_eq(pk_planet.star_id(), starnum_t{3});
+    test::expect_eq(pk_planet.planet_order(), planetnum_t{2});
+    test::expect_eq(pk_planet.type(), PlanetType::MARS);
+    test::expect_eq(pk_planet.dimensions(), Coordinates{16, 8});
+
+    test::expect_throws<std::invalid_argument>(
+        []() { (void)Planet{starnum_t{0}, planetnum_t{1}}; });
+    test::expect_throws<std::invalid_argument>(
+        []() { (void)Planet{starnum_t{1}, planetnum_t{0}}; });
+
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
+    test::expect_eq(planet.star_id(), starnum_t{1});
+    test::expect_eq(planet.planet_order(), planetnum_t{1});
     test::expect_eq(planet.dimensions(), Coordinates(0, 0));
 
     planet.dimensions() = Coordinates(20, 10);
@@ -528,9 +541,7 @@ int main() {
     test::expect_eq(planet.system_coordinates(),
                     SystemCoordinates(100.0, -200.0));
 
-    star_struct sdata{};
-    sdata.coordinates = {5000.0, 10000.0};
-    Star star(sdata);
+    Star star{1, "", {5000.0, 10000.0}};
 
     UniverseCoordinates abs_via_star = planet.absolute_coordinates(star);
     test::expect_eq(abs_via_star, UniverseCoordinates(5100.0, 9800.0));

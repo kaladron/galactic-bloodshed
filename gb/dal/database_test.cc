@@ -199,26 +199,17 @@ int main() {
     // Store planets using PlanetRepository which serializes via Glaze
     JsonStore store(db);
     StarRepository stars(store);
-    star_struct ss{};
-    ss.star_id = 0;
-    ss.name = "Sol";
-    stars.save(Star{ss});
+    stars.save(Star{1, "Sol"});
 
     PlanetRepository planets(store);
 
-    Planet earth(PlanetType::EARTH, Coordinates{10, 10});
-    earth.star_id() = 0;
-    earth.planet_order() = 0;
+    Planet earth{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
     planets.save(earth);
 
-    Planet asteroid(PlanetType::ASTEROID, Coordinates{5, 5});
-    asteroid.star_id() = 0;
-    asteroid.planet_order() = 1;
+    Planet asteroid{1, 2, PlanetType::ASTEROID, Coordinates{5, 5}};
     planets.save(asteroid);
 
-    Planet forest(PlanetType::FOREST, Coordinates{10, 10});
-    forest.star_id() = 0;
-    forest.planet_order() = 2;
+    Planet forest{1, 3, PlanetType::FOREST, Coordinates{10, 10}};
     planets.save(forest);
 
     test::expect_eq(db.count_non_asteroid_planets(), 2);

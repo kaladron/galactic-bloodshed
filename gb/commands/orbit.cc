@@ -19,9 +19,8 @@ static std::string DispStar(const GameObj&, const ScopeLevel, const Star&, int);
 static std::string DispPlanet(const GameObj&, const ScopeLevel, const Planet&,
                               std::string_view, int, const Race&);
 static std::string DispShip(const GameObj&, EntityManager&, const Place&,
-                            const Ship&, const Race&);
-static std::string DispShip(const GameObj&, EntityManager&, const Place&,
-                            const Ship&, const Race&, const Planet&);
+                            const Ship&, const Race&,
+                            const Planet* pl = nullptr);
 
 namespace GB::commands {
 /* OPTIONS
@@ -209,7 +208,7 @@ bool orbit(const command_t& argv, GameObj& g) {
             if (!s.is_landed()) {
               if ((s.owner() == g.player()) || iq) {
                 system_map_text +=
-                    DispShip(g, g.entity_manager, *where, s, Race, *p);
+                    DispShip(g, g.entity_manager, *where, s, Race, p);
               }
             }
           }
@@ -318,7 +317,7 @@ static std::string DispPlanet(const GameObj& g, const ScopeLevel level,
 
 static std::string DispShip(const GameObj& g, EntityManager& em,
                             const Place& where, const Ship& ship, const Race& r,
-                            const Planet& pl) {
+                            const Planet* pl) {
   if (!ship.alive()) return "";
 
   // Get star position for coordinate calculations
@@ -330,8 +329,8 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
 
   switch (where.level) {
     case ScopeLevel::LEVEL_PLAN: {
-      if (!where_star) return "";
-      const auto pl_coords = pl.absolute_coordinates(*where_star);
+      if (!where_star || !pl) return "";
+      const auto pl_coords = pl->absolute_coordinates(*where_star);
       screen_coords = project_to_screen(
           ship.coordinates().x - pl_coords.x - Lastx,
           ship.coordinates().y - pl_coords.y - Lasty, PLORBITSIZE, Zoom);
@@ -385,11 +384,4 @@ static std::string DispShip(const GameObj& g, EntityManager& em,
                        stand, ship.number().value);
   }
   return "";
-}
-
-static std::string DispShip(const GameObj& g, EntityManager& em,
-                            const Place& where, const Ship& ship,
-                            const Race& r) {
-  static const Planet dummy_planet{};
-  return DispShip(g, em, where, ship, r, dummy_planet);
 }

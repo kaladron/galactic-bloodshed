@@ -542,12 +542,8 @@ void test_peek_caching_and_clear_cache() {
   std::println(std::cout, "Test: peek caching and clear_cache eviction");
 
   JsonStore store(db);
-  star_struct raw_star{};
-  raw_star.star_id = 1;
-  raw_star.name = "TestStar";
-  Star star_data{raw_star};
   StarRepository stars(store);
-  stars.save(star_data);
+  stars.save(Star{1, "TestStar"});
 
   {
     const auto* peek1 = em.peek_star(1);
@@ -852,12 +848,8 @@ void test_entity_manager_with_scoped_peeks() {
   test::expect_eq(morale, 42);
 
   // 2. with_star
-  star_struct raw_star{};
-  raw_star.star_id = 1;
-  raw_star.name = "AlphaCentauri";
-  Star star(raw_star);
   StarRepository stars(store);
-  stars.save(star);
+  stars.save(Star{1, "AlphaCentauri"});
 
   auto star_name = em.with_star(1, [](const Star& s) { return s.get_name(); });
   test::expect_eq(star_name, "AlphaCentauri");

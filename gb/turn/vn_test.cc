@@ -78,10 +78,7 @@ int main() {
   r2.name = "Terran";
   race_repo.save(r2);
 
-  planet_struct p0_data{};
-  p0_data.star_id = 1;
-  p0_data.planet_order = 1;
-  planet_repo.save(Planet{p0_data});
+  planet_repo.save(Planet{1, 1});
 
   // =========================================================================
   // 2. find_closest_stars tests (including Bug 1: Star 1 Orbit Search Fix)
@@ -97,30 +94,22 @@ int main() {
     universe_struct udata{};
     universe_repo.save(udata);
 
-    star_struct s0{};
-    s0.star_id = 1;
-    s0.coordinates = {0.0, 0.0};
-    s0.pnames = {"P1", "P2"};
-
-    star_struct s1{};
-    s1.star_id = 2;
-    s1.coordinates = {10.0, 0.0};
-    s1.pnames = {"P1", "P2"};
-
-    star_struct s2{};
-    s2.star_id = 3;
-    s2.coordinates = {25.0, 0.0};
-    s2.pnames = {"P1"};
-
-    star_struct s3{};
-    s3.star_id = 4;
-    s3.coordinates = {100.0, 0.0};
-    s3.pnames = {"P1"};
-
-    star_repo.save(Star{s0});
-    star_repo.save(Star{s1});
-    star_repo.save(Star{s2});
-    star_repo.save(Star{s3});
+    TestStarBuilder(em, db, "Star1", 1)
+        .with_position(0.0, 0.0)
+        .with_planet_names({"P1", "P2"})
+        .build();
+    TestStarBuilder(em, db, "Star2", 2)
+        .with_position(10.0, 0.0)
+        .with_planet_names({"P1", "P2"})
+        .build();
+    TestStarBuilder(em, db, "Star3", 3)
+        .with_position(25.0, 0.0)
+        .with_planet_names({"P1"})
+        .build();
+    TestStarBuilder(em, db, "Star4", 4)
+        .with_position(100.0, 0.0)
+        .with_planet_names({"P1"})
+        .build();
 
     // Test search from Star 1: Closest is Star 2 (dist 10), second closest is
     // Star 3 (dist 25)

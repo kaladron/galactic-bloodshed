@@ -24,14 +24,7 @@ void test_deferred_write_batch_persistence(TestContext& ctx) {
     repo.save(r);
   }
 
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.name = "Sol";
-  {
-    JsonStore store(ctx.db);
-    StarRepository repo(store);
-    repo.save(Star(star_data));
-  }
+  ctx.create_star("Sol", 1).build();
 
   // Open DeferredWriteScope and perform multi-pass mutations
   {
@@ -154,25 +147,10 @@ void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
     repo.save(Ship(s_data));
   }
 
-  star_struct star_data{};
-  star_data.star_id = 2;
-  Star star(star_data);
-  star.AP(player_t{4}) = 0;
-  {
-    JsonStore store(ctx.db);
-    StarRepository repo(store);
-    repo.save(star);
-  }
-
-  planet_struct p_data{};
-  p_data.star_id = 2;
-  p_data.planet_order = 1;
-  p_data.popn = 1000;
-  {
-    JsonStore store(ctx.db);
-    PlanetRepository repo(store);
-    repo.save(Planet(p_data));
-  }
+  ctx.create_star("Vega", 2).with_ap(4, 0).build();
+  ctx.create_planet(2, PlanetType::EARTH, Coordinates{5, 5}, 1)
+      .with_colony(4, 1000)
+      .build();
 
   // Run multi-entity turn simulation pass in DeferredWriteScope
   {

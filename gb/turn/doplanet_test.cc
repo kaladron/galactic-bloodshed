@@ -45,14 +45,12 @@ Planet createTestPlanet(Coordinates dimensions = Coordinates{10, 10}) {
 }
 
 Star createTestStar() {
-  star_struct star_data{};
-  star_data.name = "TestStar";
-  star_data.star_id = 1;
-  star_data.stability = 50;
-  star_data.nova_stage = 0;
-  star_data.temperature = 100;
-  star_data.pnames.push_back("TestPlanet");
-  return Star(star_data);
+  Star star{1, "TestStar"};
+  star.stability() = 50;
+  star.nova_stage() = 0;
+  star.temperature() = 100;
+  star.set_planet_name(1, "TestPlanet");
+  return star;
 }
 
 void test_moveship_onplanet() {
@@ -923,28 +921,16 @@ void test_execute_berserker_bombardment() {
   UniverseRepository univ_repo(store);
   univ_repo.save(udata);
 
-  // Star system with 2 planets
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.pnames.emplace_back("Planet0");
-  ss.pnames.emplace_back("Planet1");
-  StarRepository star_repo(store);
-  star_repo.save(ss);
-
-  // Planet 1
-  Planet planet = createTestPlanet();
-  PlanetRepository planet_repo(store);
-  planet_repo.save(planet);
-
-  // SectorMap on Planet 1 with enemy population
-  {
-    SectorMap smap(planet);
-    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
-    smap.get(Coordinates{5, 5}).set_popn_exact(100);
-    smap.get(Coordinates{5, 5}).set_owner(2);
-    SectorRepository smap_repo(store);
-    smap_repo.save_map(smap);
-  }
+  // Star system with 2 planets and Planet 1 with enemy population
+  TestStarBuilder(em, db, "Sol", 1)
+      .with_planet_names({"Planet0", "Planet1"})
+      .build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{10, 10}, 1)
+      .named("Planet0")
+      .with_temperature(50)
+      .with_colony(2, 100, Coordinates{5, 5})
+      .build();
+  Planet planet(em.peek_planet(1, 1)->get_struct());
 
   // Berserker ship in orbit
   auto ship_handle =
@@ -1362,9 +1348,7 @@ void test_turnstats_playervector_accumulation() {
 }
 
 void test_process_planet_climate() {
-  star_struct ss{};
-  ss.star_id = 3;
-  Star star(ss);
+  Star star{3};
 
   Planet planet(3, 1, PlanetType::EARTH, Coordinates{10, 10});
   planet.temp() = 20;

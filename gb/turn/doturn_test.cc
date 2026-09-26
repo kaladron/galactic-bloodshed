@@ -31,15 +31,13 @@ Race createTestRace(player_t playernum = player_t{1}) {
 }
 
 Star createTestStar(starnum_t id = 1) {
-  star_struct star_data{};
-  star_data.name = "TestStar";
-  star_data.star_id = id;
-  star_data.stability = 50;
-  star_data.nova_stage = 0;
-  star_data.temperature = 100;
-  star_data.gravity = 100.0;
-  star_data.pnames.push_back("TestPlanet");
-  return Star(star_data);
+  Star star{id, "TestStar"};
+  star.stability() = 50;
+  star.nova_stage() = 0;
+  star.temperature() = 100;
+  star.gravity() = 100.0;
+  star.set_planet_name(1, "TestPlanet");
+  return star;
 }
 
 Planet createTestPlanet(starnum_t star_id = 1, planetnum_t pnum = 1) {

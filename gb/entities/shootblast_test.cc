@@ -54,17 +54,10 @@ void test_shoot_planet_to_ship_valid_attack() {
   EntityManager em(db);
 
   // Create star 1 and planet 1 in db
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "Sol";
-  ss.pnames.emplace_back("Terra");
-  Star star(ss);
-  StarRepository star_repo(store);
-  star_repo.save(star);
-
-  Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
-  PlanetRepository planet_repo(store);
-  planet_repo.save(planet);
+  TestStarBuilder(em, db, "Sol", 1).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{10, 10}, 1)
+      .named("Terra")
+      .build();
 
   RaceRepository race_repo(store);
 
@@ -152,13 +145,11 @@ void test_shoot_ship_to_planet_valid_attack() {
   JsonStore store(db);
   EntityManager em(db);
 
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "Sol";
-  ss.pnames.emplace_back("Terra");
-  Star star(ss);
-  StarRepository star_repo(store);
-  star_repo.save(star);
+  TestStarBuilder(em, db, "Sol", 1).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{4, 4}, 1)
+      .named("Terra")
+      .build();
+  Planet planet(em.peek_planet(1, 1)->get_struct());
 
   RaceRepository race_repo(store);
   Race race1{};
@@ -170,10 +161,6 @@ void test_shoot_ship_to_planet_valid_attack() {
   race2.Playernum = player_t{2};
   race2.name = "Target";
   race_repo.save(race2);
-
-  Planet planet{1, 1, PlanetType::EARTH, Coordinates{4, 4}};
-  PlanetRepository planet_repo(store);
-  planet_repo.save(planet);
 
   SectorMap smap(planet);
   auto& s = smap.get(Coordinates{1, 1});
@@ -243,15 +230,10 @@ void test_zero_body_ship_combat() {
   JsonStore store(db);
   EntityManager em(db);
 
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "Sol";
-  ss.pnames.emplace_back("Terra");
-  Star star(ss);
-  StarRepository(store).save(star);
-
-  Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
-  PlanetRepository(store).save(planet);
+  TestStarBuilder(em, db, "Sol", 1).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{10, 10}, 1)
+      .named("Terra")
+      .build();
 
   Race race{};
   race.Playernum = player_t{1};

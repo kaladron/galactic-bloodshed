@@ -30,12 +30,9 @@ Race createTestRace(player_t playernum = player_t{1}) {
 }
 
 Star createTestStar(starnum_t id = starnum_t{1}) {
-  star_struct sdata{
-      .name = "TestStar",
-      .pnames = {"Earth"},
-      .star_id = id,
-  };
-  return Star{sdata};
+  Star star{id, "TestStar"};
+  star.set_planet_name(1, "Earth");
+  return star;
 }
 
 void test_domass_and_doown() {
@@ -1527,12 +1524,8 @@ void test_process_ship_supernova() {
   Race race = createTestRace(player_t{1});
   RaceRepository(store).save(race);
 
-  star_struct sdata{
-      .name = "NovaStar",
-      .nova_stage = 2,
-      .star_id = starnum_t{1},
-  };
-  Star star{sdata};
+  Star star{1, "NovaStar"};
+  star.nova_stage() = 2;
   ServerState state{.segments = 1};
 
   // 1. Surviving ship

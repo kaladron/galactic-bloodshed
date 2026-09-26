@@ -461,6 +461,116 @@ void TestWorldBuilder::create_standard_solar_system(TestContext& ctx) {
   ctx.with_standard_universe();
 }
 
+TestStarBuilder::TestStarBuilder(EntityManager& em, Database& db,
+                                 std::string_view name,
+                                 std::optional<starnum_t> explicit_snum)
+    : em_(em), db_(db), star_([&]() {
+        starnum_t snum = explicit_snum.value_or([&]() {
+          JsonStore store(db);
+          return starnum_t{static_cast<starnum_t::value_type>(
+              store.find_next_available_id("tbl_star"))};
+        }());
+        return Star{snum, name};
+      }()) {}
+
+TestStarBuilder::TestStarBuilder(TestContext& ctx, std::string_view name,
+                                 std::optional<starnum_t> explicit_snum)
+    : TestStarBuilder(ctx.em, ctx.db, name, explicit_snum) {}
+
+TestStarBuilder& TestStarBuilder::named(std::string_view name) {
+  star_.set_name(name);
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_position(UniverseCoordinates coords) {
+  star_.set_coordinates(coords);
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_position(double x, double y) {
+  star_.set_coordinates(UniverseCoordinates{x, y});
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_stability(int stability) {
+  star_.stability() = stability;
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_nova_stage(int stage) {
+  star_.nova_stage() = stage;
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_temperature(int temp) {
+  star_.temperature() = temp;
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_gravity(double grav) {
+  star_.gravity() = grav;
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_ap(player_t player, ap_t ap) {
+  star_.AP(player) = ap;
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_governor(player_t player,
+                                                governor_t gov) {
+  star_.governor(player) = gov;
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_explored(player_t player,
+                                                bool explored) {
+  if (explored) {
+    star_.mark_explored_by(player);
+  } else {
+    star_.explored().reset(player);
+  }
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_inhabited(player_t player,
+                                                 bool inhabited) {
+  if (inhabited) {
+    star_.mark_inhabited_by(player);
+  } else {
+    star_.clear_inhabited_by(player);
+  }
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_planet_name(planetnum_t pnum,
+                                                   std::string_view name) {
+  star_.set_planet_name(pnum, name);
+  return *this;
+}
+
+TestStarBuilder& TestStarBuilder::with_planet_names(
+    std::initializer_list<std::string_view> names) {
+  planetnum_t pnum{1};
+  for (std::string_view name : names) {
+    star_.set_planet_name(pnum, name);
+    ++pnum;
+  }
+  return *this;
+}
+
+starnum_t TestStarBuilder::build() {
+  JsonStore store(db_);
+  StarRepository(store).save(star_);
+  em_.clear_cache();
+  return star_.star_id();
+}
+
+const Star* TestStarBuilder::build_and_peek() {
+  starnum_t snum = build();
+  return em_.peek_star(snum);
+}
+
 TestPlanetBuilder::TestPlanetBuilder(EntityManager& em, Database& db,
                                      starnum_t snum, PlanetType type,
                                      Coordinates dims,
@@ -527,12 +637,65 @@ TestPlanetBuilder& TestPlanetBuilder::with_toxicity(int toxic) {
 
 TestPlanetBuilder& TestPlanetBuilder::with_temperature(int temp) {
   planet_.temp() = temp;
+  planet_.rtemp() = temp;
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_rtemp(int rtemp) {
+  planet_.rtemp() = rtemp;
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_condition(AtmosphereConditions cond,
+                                                     int pct) {
+  planet_.conditions(cond) = pct;
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_explored(bool explored) {
+  planet_.explored() = explored ? 1 : 0;
   return *this;
 }
 
 TestPlanetBuilder& TestPlanetBuilder::with_explored(player_t player,
                                                     bool explored) {
   planet_.info(player).explored = explored ? 1 : 0;
+  if (explored) {
+    planet_.explored() = 1;
+  }
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_enslaved_to(player_t master) {
+  planet_.enslave_to(master);
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_tax(player_t player, int tax,
+                                               std::optional<int> newtax) {
+  planet_.info(player).tax = tax;
+  planet_.info(player).newtax = newtax.value_or(tax);
+  return *this;
+}
+
+TestPlanetBuilder& TestPlanetBuilder::with_crystals(player_t player,
+                                                    crystal_t crystals) {
+  planet_.info(player).crystals = crystals;
+  return *this;
+}
+
+TestPlanetBuilder&
+TestPlanetBuilder::with_route(player_t player, int route_index,
+                              starnum_t dest_star, planetnum_t dest_planet,
+                              CommodityManifest load, CommodityManifest unload,
+                              Coordinates coords) {
+  auto& r =
+      planet_.info(player).route.at(static_cast<std::size_t>(route_index));
+  r.set = true;
+  r.set_destination(dest_star, dest_planet);
+  r.load = load;
+  r.unload = unload;
+  r.dest_coords = coords;
   return *this;
 }
 
@@ -552,11 +715,16 @@ TestPlanetBuilder::with_sector(Coordinates coords, SectorType type, int fert,
                                population_t popn, population_t troops) {
   auto& sect = smap_.get(coords);
   sect.set_condition(type);
+  sect.set_type(type);
   sect.set_fert(fert);
   sect.set_efficiency_bounded(eff);
   sect.set_resource(res);
-  if (owner.value > 0 && (popn > 0 || troops > 0)) {
-    sect.colonize(owner, popn);
+  if (owner.value > 0) {
+    if (popn > 0) {
+      sect.colonize(owner, popn);
+    } else {
+      sect.set_owner(owner);
+    }
     if (troops > 0) {
       sect.set_troops(troops);
     }
@@ -566,12 +734,17 @@ TestPlanetBuilder::with_sector(Coordinates coords, SectorType type, int fert,
 
 TestPlanetBuilder& TestPlanetBuilder::with_all_sectors(SectorType type,
                                                        int fert, int eff,
-                                                       resource_t res) {
+                                                       resource_t res,
+                                                       player_t owner) {
   for (auto& sect : smap_) {
     sect.set_condition(type);
+    sect.set_type(type);
     sect.set_fert(fert);
     sect.set_efficiency_bounded(eff);
     sect.set_resource(res);
+    if (owner.value > 0) {
+      sect.set_owner(owner);
+    }
   }
   return *this;
 }

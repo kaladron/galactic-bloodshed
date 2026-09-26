@@ -79,19 +79,12 @@ void test_enroll_no_free_planet_type() {
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "Sol";
-  ss.pnames = {"MarsPlanet"};
-  Star star(ss);
-  StarRepository star_repo(store);
-  star_repo.save(star);
-
-  Planet planet{1, 1, PlanetType::MARS, Coordinates{10, 10}};
-  PlanetRepository planet_repo(store);
-  planet_repo.save(planet);
-
   EntityManager em(db);
+  TestStarBuilder(em, db, "Sol", 1).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::MARS, Coordinates{10, 10}, 1)
+      .named("MarsPlanet")
+      .build();
+
   GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
@@ -120,83 +113,59 @@ void test_find_suitable_planet_deterministic_search() {
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
-  StarRepository star_repo(store);
-  PlanetRepository planet_repo(store);
+  EntityManager em(db);
 
   // Star 1: Inhabited -> skip
-  star_struct ss1{};
-  ss1.star_id = 1;
-  ss1.inhabited.set(player_t{1});
-  ss1.pnames = {"P1", "P2"};
-  Star star1(ss1);
-  star_repo.save(star1);
+  TestStarBuilder(em, db, "Star1", 1)
+      .with_inhabited(player_t{1})
+      .with_planet_names({"P1", "P2"})
+      .build();
 
   // Star 2: Only 1 planet -> skip
-  star_struct ss2{};
-  ss2.star_id = 2;
-  ss2.pnames = {"P1"};
-  Star star2(ss2);
-  star_repo.save(star2);
+  TestStarBuilder(em, db, "Star2", 2).with_planet_names({"P1"}).build();
 
   // Star 3: 2 planets, candidate Earth planet at pnum 2 (valid)
-  star_struct ss3{};
-  ss3.star_id = 3;
-  ss3.pnames = {"P1", "P2"};
-  Star star3(ss3);
-  star_repo.save(star3);
-
-  Planet p3_1{3, 1, PlanetType::MARS, Coordinates{10, 10}};
-  planet_repo.save(p3_1);
-
-  Planet p3_2{3, 2, PlanetType::EARTH, Coordinates{10, 10}};
-  p3_2.rtemp() = 20;
-  planet_repo.save(p3_2);
+  TestStarBuilder(em, db, "Star3", 3).build();
+  TestPlanetBuilder(em, db, 3, PlanetType::MARS, Coordinates{10, 10}, 1)
+      .named("P1")
+      .build();
+  TestPlanetBuilder(em, db, 3, PlanetType::EARTH, Coordinates{10, 10}, 2)
+      .named("P2")
+      .with_temperature(20)
+      .build();
 
   // Star 4: 2 planets, candidate Earth planet at pnum 1 (valid)
-  star_struct ss4{};
-  ss4.star_id = 4;
-  ss4.pnames = {"P1", "P2"};
-  Star star4(ss4);
-  star_repo.save(star4);
-
-  Planet p4_1{4, 1, PlanetType::EARTH, Coordinates{10, 10}};
-  p4_1.rtemp() = 15;
-  planet_repo.save(p4_1);
-
-  Planet p4_2{4, 2, PlanetType::MARS, Coordinates{10, 10}};
-  planet_repo.save(p4_2);
+  TestStarBuilder(em, db, "Star4", 4).build();
+  TestPlanetBuilder(em, db, 4, PlanetType::EARTH, Coordinates{10, 10}, 1)
+      .named("P1")
+      .with_temperature(15)
+      .build();
+  TestPlanetBuilder(em, db, 4, PlanetType::MARS, Coordinates{10, 10}, 2)
+      .named("P2")
+      .build();
 
   // Star 5: 2 planets, candidate Gas Giant at pnum 2 (cold: rtemp = -80)
-  star_struct ss5{};
-  ss5.star_id = 5;
-  ss5.pnames = {"P1", "P2"};
-  Star star5(ss5);
-  star_repo.save(star5);
-
-  Planet p5_1{5, 1, PlanetType::MARS, Coordinates{10, 10}};
-  planet_repo.save(p5_1);
-
-  Planet p5_2{5, 2, PlanetType::GASGIANT, Coordinates{10, 10}};
-  p5_2.rtemp() = -80;
-  planet_repo.save(p5_2);
+  TestStarBuilder(em, db, "Star5", 5).build();
+  TestPlanetBuilder(em, db, 5, PlanetType::MARS, Coordinates{10, 10}, 1)
+      .named("P1")
+      .build();
+  TestPlanetBuilder(em, db, 5, PlanetType::GASGIANT, Coordinates{10, 10}, 2)
+      .named("P2")
+      .with_temperature(-80)
+      .build();
 
   // Star 6: 2 planets, cryogenic Iceball at pnum 1 (rtemp = -120), hot Desert
   // at pnum 2 (rtemp = 150)
-  star_struct ss6{};
-  ss6.star_id = 6;
-  ss6.pnames = {"P1", "P2"};
-  Star star6(ss6);
-  star_repo.save(star6);
+  TestStarBuilder(em, db, "Star6", 6).build();
+  TestPlanetBuilder(em, db, 6, PlanetType::ICEBALL, Coordinates{10, 10}, 1)
+      .named("P1")
+      .with_temperature(-120)
+      .build();
+  TestPlanetBuilder(em, db, 6, PlanetType::DESERT, Coordinates{10, 10}, 2)
+      .named("P2")
+      .with_temperature(150)
+      .build();
 
-  Planet p6_1{6, 1, PlanetType::ICEBALL, Coordinates{10, 10}};
-  p6_1.rtemp() = -120;
-  planet_repo.save(p6_1);
-
-  Planet p6_2{6, 2, PlanetType::DESERT, Coordinates{10, 10}};
-  p6_2.rtemp() = 150;
-  planet_repo.save(p6_2);
-
-  EntityManager em(db);
   GB::creator::EnrollmentService service(em);
 
   // Test 1: Given order [1, 2, 4, 3, 5, 6], should skip 1 and 2, and select
@@ -256,32 +225,19 @@ void test_enroll_valid_race_success() {
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
-  // Star 1 has 2 planets: Planet 1 is MARS, Planet 2 is GASGIANT
-  star_struct ss1{};
-  ss1.star_id = 1;
-  ss1.pnames = {"Ares", "Jupiter"};
-  Star star1(ss1);
-  StarRepository star_repo(store);
-  star_repo.save(star1);
-
-  PlanetRepository planet_repo(store);
-  Planet p1{1, 1, PlanetType::MARS, Coordinates{5, 5}};
-  planet_repo.save(p1);
-
-  Planet p2{1, 2, PlanetType::GASGIANT, Coordinates{5, 5}};
-  p2.rtemp() = -80;
-  planet_repo.save(p2);
-
-  SectorRepository sector_repo(store);
-  SectorMap smap(p2);
-  for (int y = 0; y < 5; ++y) {
-    for (int x = 0; x < 5; ++x) {
-      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_GAS);
-    }
-  }
-  sector_repo.save_map(smap);
-
   EntityManager em(db);
+
+  // Star 1 has 2 planets: Planet 1 is MARS, Planet 2 is GASGIANT
+  TestStarBuilder(em, db, "Sol", 1).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::MARS, Coordinates{5, 5}, 1)
+      .named("Ares")
+      .build();
+  TestPlanetBuilder(em, db, 1, PlanetType::GASGIANT, Coordinates{5, 5}, 2)
+      .named("Jupiter")
+      .with_temperature(-80)
+      .with_all_sectors(SectorType::SEC_GAS)
+      .build();
+
   GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{

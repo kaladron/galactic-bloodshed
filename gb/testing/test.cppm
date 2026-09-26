@@ -412,6 +412,7 @@ public:
   void clear_notifications();
 };
 
+export class TestStarBuilder;
 export class TestPlanetBuilder;
 
 /// Test context providing database, entity manager, GameObj setup, and
@@ -480,6 +481,11 @@ public:
                                      player_t owner = 1,
                                      population_t popn = 1000,
                                      Coordinates capital_coords = {0, 0});
+
+  /// Constructs a fluent TestStarBuilder targeting this TestContext.
+  TestStarBuilder
+  create_star(std::string_view name = "Sol",
+              std::optional<starnum_t> explicit_snum = std::nullopt);
 
   /// Constructs a fluent TestPlanetBuilder targeting this TestContext.
   TestPlanetBuilder
@@ -619,6 +625,40 @@ private:
   ship_struct ship_{};
 };
 
+/// Fluent fixture builder for constructing consistent test star entities.
+export class TestStarBuilder {
+public:
+  explicit TestStarBuilder(
+      EntityManager& em, Database& db, std::string_view name = "Sol",
+      std::optional<starnum_t> explicit_snum = std::nullopt);
+  explicit TestStarBuilder(
+      TestContext& ctx, std::string_view name = "Sol",
+      std::optional<starnum_t> explicit_snum = std::nullopt);
+
+  TestStarBuilder& named(std::string_view name);
+  TestStarBuilder& with_position(UniverseCoordinates coords);
+  TestStarBuilder& with_position(double x, double y);
+  TestStarBuilder& with_stability(int stability);
+  TestStarBuilder& with_nova_stage(int stage);
+  TestStarBuilder& with_temperature(int temp);
+  TestStarBuilder& with_gravity(double grav);
+  TestStarBuilder& with_ap(player_t player, ap_t ap);
+  TestStarBuilder& with_governor(player_t player, governor_t gov);
+  TestStarBuilder& with_explored(player_t player, bool explored = true);
+  TestStarBuilder& with_inhabited(player_t player, bool inhabited = true);
+  TestStarBuilder& with_planet_name(planetnum_t pnum, std::string_view name);
+  TestStarBuilder&
+  with_planet_names(std::initializer_list<std::string_view> names);
+
+  starnum_t build();
+  const Star* build_and_peek();
+
+private:
+  EntityManager& em_;
+  Database& db_;
+  Star star_;
+};
+
 /// Fluent fixture builder for constructing consistent test planet entities and
 /// their associated SectorMap with verified cross-entity invariants.
 export class TestPlanetBuilder {
@@ -638,7 +678,19 @@ public:
   TestPlanetBuilder& with_position(SystemCoordinates coords);
   TestPlanetBuilder& with_toxicity(int toxic);
   TestPlanetBuilder& with_temperature(int temp);
+  TestPlanetBuilder& with_rtemp(int rtemp);
+  TestPlanetBuilder& with_condition(AtmosphereConditions cond, int pct);
+  TestPlanetBuilder& with_explored(bool explored = true);
   TestPlanetBuilder& with_explored(player_t player, bool explored = true);
+  TestPlanetBuilder& with_enslaved_to(player_t master);
+  TestPlanetBuilder& with_tax(player_t player, int tax,
+                              std::optional<int> newtax = std::nullopt);
+  TestPlanetBuilder& with_crystals(player_t player, crystal_t crystals);
+  TestPlanetBuilder& with_route(player_t player, int route_index,
+                                starnum_t dest_star, planetnum_t dest_planet,
+                                CommodityManifest load = {},
+                                CommodityManifest unload = {},
+                                Coordinates coords = {0, 0});
   TestPlanetBuilder& with_stockpiles(player_t player, resource_t res = 1000,
                                      resource_t fuel = 1000,
                                      resource_t destruct = 1000);
@@ -648,7 +700,8 @@ public:
                                  population_t popn = 0,
                                  population_t troops = 0);
   TestPlanetBuilder& with_all_sectors(SectorType type, int fert = 100,
-                                      int eff = 100, resource_t res = 100);
+                                      int eff = 100, resource_t res = 100,
+                                      player_t owner = 0);
   TestPlanetBuilder& with_colony(player_t owner, population_t popn,
                                  Coordinates capital_coords = {0, 0},
                                  int fert = 100, int eff = 100,

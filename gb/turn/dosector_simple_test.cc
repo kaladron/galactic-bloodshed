@@ -78,17 +78,13 @@ Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
 
 // Helper function to create a test star
 Star createTestStar() {
-  star_struct star_data{};
-  star_data.name = "TestStar";
-  star_data.coordinates = {0.0, 0.0};
-  star_data.stability = 50;
-  star_data.nova_stage = 0;
-  star_data.temperature = 100;
-  star_data.gravity = 1.0;
-  star_data.star_id = 1;
-  star_data.pnames.push_back("TestPlanet");
-
-  return Star(star_data);
+  Star star{1, "TestStar", {0.0, 0.0}};
+  star.stability() = 50;
+  star.nova_stage() = 0;
+  star.temperature() = 100;
+  star.gravity() = 1.0;
+  star.set_planet_name(1, "TestPlanet");
+  return star;
 }
 
 // Test Sector data structure functionality

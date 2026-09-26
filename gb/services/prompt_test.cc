@@ -33,16 +33,7 @@ void test_prompt_universe_scope() {
 
 void test_prompt_star_scope() {
   TestContext ctx;
-  {
-    JsonStore store(ctx.db);
-    StarRepository star_repo(store);
-    star_struct sdata{};
-    sdata.star_id = 1;
-    sdata.name = "Sol";
-    sdata.AP[player_t{1}] = 50;
-    Star star{sdata};
-    star_repo.save(star);
-  }
+  ctx.create_star("Sol", 1).with_ap(player_t{1}, 50).build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -56,17 +47,10 @@ void test_prompt_star_scope() {
 
 void test_prompt_planet_scope() {
   TestContext ctx;
-  {
-    JsonStore store(ctx.db);
-    StarRepository star_repo(store);
-    star_struct sdata{};
-    sdata.star_id = 1;
-    sdata.name = "Sol";
-    sdata.AP[player_t{1}] = 50;
-    sdata.pnames = {"Earth", "Mars"};
-    Star star{sdata};
-    star_repo.save(star);
-  }
+  ctx.create_star("Sol", 1)
+      .with_ap(player_t{1}, 50)
+      .with_planet_names({"Earth", "Mars"})
+      .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -81,21 +65,16 @@ void test_prompt_planet_scope() {
 
 void test_prompt_ship_orbiting_scopes() {
   TestContext ctx;
+  ctx.create_star("Sol", 1)
+      .with_ap(player_t{1}, 50)
+      .with_planet_names({"Earth"})
+      .build();
   {
     JsonStore store(ctx.db);
     UniverseRepository universe_repo(store);
     universe_struct u{};
     u.AP[player_t{1}] = 100;
     universe_repo.save(u);
-
-    StarRepository star_repo(store);
-    star_struct sdata{};
-    sdata.star_id = 1;
-    sdata.name = "Sol";
-    sdata.AP[player_t{1}] = 50;
-    sdata.pnames = {"Earth"};
-    Star star{sdata};
-    star_repo.save(star);
 
     ShipRepository ship_repo(store);
 
@@ -149,21 +128,16 @@ void test_prompt_ship_orbiting_scopes() {
 
 void test_prompt_nested_docked_ships() {
   TestContext ctx;
+  ctx.create_star("Sol", 1)
+      .with_ap(player_t{1}, 50)
+      .with_planet_names({"Earth"})
+      .build();
   {
     JsonStore store(ctx.db);
     UniverseRepository universe_repo(store);
     universe_struct u{};
     u.AP[player_t{1}] = 100;
     universe_repo.save(u);
-
-    StarRepository star_repo(store);
-    star_struct sdata{};
-    sdata.star_id = 1;
-    sdata.name = "Sol";
-    sdata.AP[player_t{1}] = 50;
-    sdata.pnames = {"Earth"};
-    Star star{sdata};
-    star_repo.save(star);
 
     ShipRepository ship_repo(store);
 

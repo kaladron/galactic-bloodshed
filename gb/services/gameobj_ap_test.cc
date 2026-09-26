@@ -14,14 +14,7 @@ namespace {
 
 void test_deduct_ap_star() {
   TestContext ctx;
-  JsonStore store(ctx.db);
-  StarRepository star_repo(store);
-
-  star_struct sdata{};
-  sdata.star_id = 1;
-  sdata.AP[player_t{1}] = 20;  // Player 1 has 20 AP
-  Star star{sdata};
-  star_repo.save(star);
+  ctx.create_star("Sol", 1).with_ap(player_t{1}, 20).build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

@@ -87,15 +87,7 @@ void test_test_context_dispatch_helpers() {
   TestContext ctx;
 
   // Setup Star 1 with 20 AP
-  {
-    JsonStore store(ctx.db);
-    StarRepository star_repo(store);
-    star_struct sdata{};
-    sdata.star_id = 1;
-    sdata.AP[player_t{1}] = 20;
-    Star star{sdata};
-    star_repo.save(star);
-  }
+  ctx.create_star("Sol", 1).with_ap(1, 20).build();
 
   // Setup Universe with 30 AP
   {
@@ -352,6 +344,13 @@ void test_test_planet_builder() {
           .with_position(SystemCoordinates{200.0, 150.0})
           .with_toxicity(25)
           .with_temperature(65)
+          .with_rtemp(60)
+          .with_condition(AtmosphereConditions::CO2, 85)
+          .with_tax(1, 15, 20)
+          .with_crystals(1, 7)
+          .with_enslaved_to(2)
+          .with_route(1, 0, 2, 1, CommodityManifest::parse("fr"), {},
+                      Coordinates{1, 1})
           .with_stockpiles(1, 500, 300, 100)
           .with_explored(1, true)
           .with_all_sectors(SectorType::SEC_DESERT, 40, 60, 80)
@@ -368,6 +367,15 @@ void test_test_planet_builder() {
   test::expect_eq(mars->system_coordinates(), SystemCoordinates{200.0, 150.0});
   test::expect_eq(mars->toxic(), 25);
   test::expect_eq(mars->temp(), 65);
+  test::expect_eq(mars->rtemp(), 60);
+  test::expect_eq(mars->conditions(AtmosphereConditions::CO2), 85);
+  test::expect_eq(mars->slaved_to(), player_t{2});
+  test::expect_eq(mars->info(player_t{1}).tax, 15);
+  test::expect_eq(mars->info(player_t{1}).newtax, 20);
+  test::expect_eq(mars->info(player_t{1}).crystals, 7);
+  test::expect_true(mars->info(player_t{1}).route[0].has_destination());
+  test::expect_eq(mars->info(player_t{1}).route[0].dest_star, starnum_t{2});
+  test::expect_eq(mars->info(player_t{1}).route[0].dest_planet, planetnum_t{1});
   test::expect_eq(mars->info(player_t{1}).explored, 1);
   test::expect_eq(mars->info(player_t{1}).resource, 500);
   test::expect_eq(mars->info(player_t{1}).fuel, 300);
@@ -399,6 +407,44 @@ void test_test_planet_builder() {
   // Verify star planet name synchronized
   const auto* star = ctx.em.peek_star(1);
   test::expect_eq(star->get_planet_name(mars_id), "Mars");
+
+  // Verify TestStarBuilder fluent construction
+  const auto* sirius = ctx.create_star("Sirius")
+                           .with_position(500.0, -250.0)
+                           .with_stability(80)
+                           .with_nova_stage(2)
+                           .with_temperature(120)
+                           .with_gravity(2.5)
+                           .with_ap(1, 45)
+                           .with_governor(1, 2)
+                           .with_explored(1, true)
+                           .with_inhabited(2, true)
+                           .with_planet_names({"Sirius A", "Sirius B"})
+                           .build_and_peek();
+  test::expect_true(sirius != nullptr, "Sirius must exist");
+  test::expect_eq(sirius->star_id(), starnum_t{4});
+  test::expect_eq(sirius->get_name(), "Sirius");
+  test::expect_eq(sirius->coordinates(), UniverseCoordinates{500.0, -250.0});
+  test::expect_eq(sirius->stability(), 80);
+  test::expect_eq(sirius->nova_stage(), 2);
+  test::expect_eq(sirius->temperature(), 120);
+  test::expect_eq(sirius->gravity(), 2.5);
+  test::expect_eq(sirius->AP(player_t{1}), 45);
+  test::expect_eq(sirius->governor(player_t{1}), governor_t{2});
+  test::expect_true(sirius->is_explored_by(player_t{1}));
+  test::expect_true(sirius->is_inhabited_by(player_t{2}));
+  test::expect_eq(sirius->numplanets(), 2);
+  test::expect_eq(sirius->get_planet_name(1), "Sirius A");
+  test::expect_eq(sirius->get_planet_name(2), "Sirius B");
+
+  // Create planets for Sirius so universe invariants pass
+  ctx.create_planet(4, PlanetType::GASGIANT, Coordinates{4, 4}, 1)
+      .named("Sirius A")
+      .build();
+  ctx.create_planet(4, PlanetType::ICEBALL, Coordinates{4, 4}, 2)
+      .named("Sirius B")
+      .with_colony(2, 100)
+      .build();
 
   // Invariant verification across the universe
   test::expect_no_throw([&]() { ctx.verify_universe_invariants(); },

@@ -199,98 +199,86 @@ TestContext& TestContext::with_standard_universe() {
   em.create_race(r2);
 
   // 2. Setup Star 1 (Sol) with 100 AP for both races, explored and inhabited
-  Star star1{1, "Sol", {0.0, 0.0}};
-  star1.stability() = 15;
-  star1.gravity() = 1.0;
-  star1.temperature() = 50;
-  star1.AP(1) = 100;
-  star1.AP(2) = 100;
-  star1.set_planet_name(1, "Earth");
-  star1.mark_explored_by(1);
-  star1.mark_explored_by(2);
-  star1.mark_inhabited_by(1);
-  star1.mark_inhabited_by(2);
-  StarRepository(store).save(star1);
+  create_star("Sol", 1)
+      .with_position({0.0, 0.0})
+      .with_stability(15)
+      .with_gravity(1.0)
+      .with_temperature(50)
+      .with_ap(1, 100)
+      .with_ap(2, 100)
+      .with_explored(1)
+      .with_explored(2)
+      .with_inhabited(1)
+      .with_inhabited(2)
+      .build();
 
   // 3. Setup Planet 1 on Star 1 (Earth)
-  TestPlanetBuilder(*this, 1, PlanetType::EARTH, Coordinates{10, 10}, 1)
+  create_planet(1, PlanetType::EARTH, Coordinates{10, 10}, 1)
       .named("Earth")
       .with_position(SystemCoordinates{100.0, 0.0})
       .with_stockpiles(1, 1000, 1000, 1000)
       .with_stockpiles(2, 1000, 1000, 1000)
+      .with_tax(1, 10)
+      .with_tax(2, 10)
       .with_explored(1, true)
       .with_explored(2, true)
       .with_colony(1, 1000, Coordinates{0, 0})
       .build();
-  em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{1}).tax = 10;
-    p.info(player_t{1}).newtax = 10;
-    p.info(player_t{2}).tax = 10;
-    p.info(player_t{2}).newtax = 10;
-  });
 
   // 4. Setup Star 2 (Vega) at (300, 400) -> distance 500 from Sol
-  Star star2{2, "Vega", {300.0, 400.0}};
-  star2.stability() = 45;
-  star2.gravity() = 1.0;
-  star2.temperature() = 40;
-  star2.AP(1) = 100;
-  star2.AP(2) = 100;
-  star2.set_planet_name(1, "Vega Prime");
-  star2.mark_explored_by(1);
-  star2.mark_explored_by(2);
-  star2.mark_inhabited_by(1);
-  star2.mark_inhabited_by(2);
-  StarRepository(store).save(star2);
+  create_star("Vega", 2)
+      .with_position({300.0, 400.0})
+      .with_stability(45)
+      .with_gravity(1.0)
+      .with_temperature(40)
+      .with_ap(1, 100)
+      .with_ap(2, 100)
+      .with_explored(1)
+      .with_explored(2)
+      .with_inhabited(1)
+      .with_inhabited(2)
+      .build();
 
   // 5. Setup Planet 1 on Star 2 (Vega Prime)
-  TestPlanetBuilder(*this, 2, PlanetType::EARTH, Coordinates{10, 10}, 1)
+  create_planet(2, PlanetType::EARTH, Coordinates{10, 10}, 1)
       .named("Vega Prime")
       .with_position(SystemCoordinates{100.0, 0.0})
       .with_stockpiles(1, 1000, 1000, 1000)
       .with_stockpiles(2, 1000, 1000, 1000)
+      .with_tax(1, 10)
+      .with_tax(2, 10)
       .with_explored(1, true)
       .with_explored(2, true)
       .with_colony(2, 1000, Coordinates{0, 0})
       .build();
-  em.mutate_planet(2, 1, [](Planet& p) {
-    p.info(player_t{1}).tax = 10;
-    p.info(player_t{1}).newtax = 10;
-    p.info(player_t{2}).tax = 10;
-    p.info(player_t{2}).newtax = 10;
-  });
 
   // 6. Setup Star 3 (Antares) at (-300, -400) -> distance 500 from Sol, 1000
   // from Vega
-  Star star3{3, "Antares", {-300.0, -400.0}};
-  star3.stability() = 25;
-  star3.gravity() = 1.2;
-  star3.temperature() = 60;
-  star3.AP(1) = 100;
-  star3.AP(2) = 100;
-  star3.set_planet_name(1, "Antares Prime");
-  star3.mark_explored_by(1);
-  star3.mark_explored_by(2);
-  star3.mark_inhabited_by(1);
-  star3.mark_inhabited_by(2);
-  StarRepository(store).save(star3);
+  create_star("Antares", 3)
+      .with_position({-300.0, -400.0})
+      .with_stability(25)
+      .with_gravity(1.2)
+      .with_temperature(60)
+      .with_ap(1, 100)
+      .with_ap(2, 100)
+      .with_explored(1)
+      .with_explored(2)
+      .with_inhabited(1)
+      .with_inhabited(2)
+      .build();
 
   // 7. Setup Planet 1 on Star 3 (Antares Prime)
-  TestPlanetBuilder(*this, 3, PlanetType::EARTH, Coordinates{10, 10}, 1)
+  create_planet(3, PlanetType::EARTH, Coordinates{10, 10}, 1)
       .named("Antares Prime")
       .with_position(SystemCoordinates{100.0, 0.0})
       .with_stockpiles(1, 1000, 1000, 1000)
       .with_stockpiles(2, 1000, 1000, 1000)
+      .with_tax(1, 10)
+      .with_tax(2, 10)
       .with_explored(1, true)
       .with_explored(2, true)
       .with_colony(1, 1000, Coordinates{0, 0})
       .build();
-  em.mutate_planet(3, 1, [](Planet& p) {
-    p.info(player_t{1}).tax = 10;
-    p.info(player_t{1}).newtax = 10;
-    p.info(player_t{2}).tax = 10;
-    p.info(player_t{2}).newtax = 10;
-  });
 
   // 8. Setup Universe record with 100 AP for both races
   UniverseRepository univ_repo(store);
@@ -334,24 +322,16 @@ TestContext& TestContext::with_populated_planet(starnum_t snum,
 
   em.mutate_planet(snum, pnum, [&](Planet& p) {
     const auto* smap = em.peek_sectormap(snum, pnum);
-    population_t total_pop = 0;
-    population_t owner_pop = 0;
-    int sects_owned = 0;
-    for (const Sector& sect : *smap) {
-      total_pop += sect.get_popn();
-      if (sect.get_owner() == owner) {
-        owner_pop += sect.get_popn();
-        if (sect.is_populated() || sect.is_owned()) {
-          sects_owned++;
-        }
-      }
-    }
-    p.popn() = total_pop;
-    p.info(owner).popn = owner_pop;
-    p.info(owner).numsectsowned = sects_owned;
+    p.sync_demographics(*smap);
   });
 
   return *this;
+}
+
+TestStarBuilder
+TestContext::create_star(std::string_view name,
+                         std::optional<starnum_t> explicit_snum) {
+  return TestStarBuilder(*this, name, explicit_snum);
 }
 
 TestPlanetBuilder

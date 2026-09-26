@@ -47,20 +47,12 @@ int main() {
   const auto* universe = em.peek_universe();
   test::expect_ne(universe, nullptr);
 
-  // Create a test star
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.coordinates = {100.0, 100.0};
-  Star star{star_data};
-  StarRepository star_repo(store);
-  star_repo.save(star);
-
-  // Create a test planet
-  Planet planet{1, 1};
-  planet.set_system_coordinates({10.0, 10.0});
-  planet.toxic() = 10;
-  PlanetRepository planet_repo(store);
-  planet_repo.save(planet);
+  // Create a test star and planet
+  TestStarBuilder(em, db, "Sol", 1).with_position(100.0, 100.0).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{5, 5}, 1)
+      .with_position({10.0, 10.0})
+      .with_toxicity(10)
+      .build();
 
   // Basic ship kill
   {

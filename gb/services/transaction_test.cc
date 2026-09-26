@@ -110,15 +110,7 @@ void test_dispatch_command_transaction_success(TestContext& ctx) {
   ctx.em.clear_cache();
 
   // Setup star 1 with AP
-  star_struct star_data{};
-  star_data.star_id = 1;
-  Star star(star_data);
-  star.AP(player_t{3}) = 5;
-  {
-    JsonStore store(ctx.db);
-    StarRepository repo(store);
-    repo.save(star);
-  }
+  ctx.create_star("Sol", 1).with_ap(player_t{3}, 5).build();
 
   // Setup Race 3
   Race r{};
@@ -174,15 +166,7 @@ void test_dispatch_command_transaction_failure(TestContext& ctx) {
   ctx.em.clear_cache();
 
   // Setup star 2 with AP
-  star_struct star_data{};
-  star_data.star_id = 2;
-  Star star(star_data);
-  star.AP(player_t{4}) = 5;
-  {
-    JsonStore store(ctx.db);
-    StarRepository repo(store);
-    repo.save(star);
-  }
+  ctx.create_star("Vega", 2).with_ap(player_t{4}, 5).build();
 
   // Setup Race 4
   Race r{};

@@ -36,35 +36,14 @@ int main() {
   races.save(race2);
   races.save(race3);
 
-  // Create Star system
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.pnames.emplace_back("TestPlanet");
-  ss.pnames.emplace_back("WastedPlanet");
-  ss.pnames.emplace_back("OrbitPlanet");
-  ss.pnames.emplace_back("TargetPlanet");
-  StarRepository star_repo(store);
-  star_repo.save(ss);
-
-  // Create Planet
-  Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
-  PlanetRepository planet_repo(store);
-  planet_repo.save(planet);
-  SectorRepository smap_repo(store);
-
-  // Create Sector Map with sectors for Race 2 and Race 3
-  {
-    SectorMap smap(planet);
-    smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
-    smap.get(Coordinates{3, 3}).set_popn_exact(100);
-    smap.get(Coordinates{3, 3}).set_owner(3);  // Owned by Race 3 (not at war)
-
-    smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
-    smap.get(Coordinates{5, 5}).set_popn_exact(100);
-    smap.get(Coordinates{5, 5}).set_owner(2);  // Owned by Race 2 (at war)
-
-    smap_repo.save_map(smap);
-  }
+  // Create Star system and Planet with sectors for Race 2 and Race 3
+  ctx.create_star("Sol", 1).build();
+  ctx.create_planet(1, PlanetType::EARTH, Coordinates{10, 10}, 1)
+      .named("TestPlanet")
+      .with_colony(3, 100, Coordinates{3, 3})
+      .with_colony(2, 100, Coordinates{5, 5})
+      .build();
+  Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
 
   // Create Berserker Ship
   auto ship_handle =
@@ -95,15 +74,11 @@ int main() {
 
   // Test 3: Planet with only wasted sectors has no valid targets
   {
-    Planet peaceful_planet{1, 2, PlanetType::EARTH, Coordinates{5, 5}};
-    planet_repo.save(peaceful_planet);
-
-    SectorMap wasted_smap(peaceful_planet);
-    for (Sector& s : wasted_smap) {
-      s.set_condition(SectorType::SEC_WASTED);
-      s.set_owner(2);
-    }
-    smap_repo.save_map(wasted_smap);
+    ctx.create_planet(1, PlanetType::EARTH, Coordinates{5, 5}, 2)
+        .named("WastedPlanet")
+        .with_all_sectors(SectorType::SEC_WASTED, 100, 100, 100, 2)
+        .build();
+    Planet peaceful_planet(ctx.em.peek_planet(1, 2)->get_struct());
 
     ship.enter_planet_orbit(1, 2);
     ship.set_planet_destination(1, 2);
@@ -133,8 +108,10 @@ int main() {
   // Test 5: check_orbital_pdn_defense unit tests
   // =========================================================================
   {
-    Planet orbit_planet{1, 3, PlanetType::EARTH, Coordinates{5, 5}};
-    planet_repo.save(orbit_planet);
+    const auto& orbit_planet =
+        *ctx.create_planet(1, PlanetType::EARTH, Coordinates{5, 5}, 3)
+             .named("OrbitPlanet")
+             .build_and_peek();
 
     // 1. Empty orbit has no PDN defense
     test::expect_false(
@@ -227,29 +204,16 @@ int main() {
   // Test 7: find_bombardment_target unit tests
   // =========================================================================
   {
-    Planet target_planet{1, 4, PlanetType::EARTH, Coordinates{5, 5}};
-    planet_repo.save(target_planet);
-
     // Setup sectors on planet 4:
     // (1, 1) = owned by Race 3 (foreign, peaceful)
     // (2, 2) = owned by Race 2 (at war)
     // (3, 3) = owned by Race 1 (friendly)
-    {
-      SectorMap smap(target_planet);
-      smap.get(Coordinates{1, 1}).set_condition(SectorType::SEC_LAND);
-      smap.get(Coordinates{1, 1}).set_popn_exact(100);
-      smap.get(Coordinates{1, 1}).set_owner(3);
-
-      smap.get(Coordinates{2, 2}).set_condition(SectorType::SEC_LAND);
-      smap.get(Coordinates{2, 2}).set_popn_exact(100);
-      smap.get(Coordinates{2, 2}).set_owner(2);
-
-      smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
-      smap.get(Coordinates{3, 3}).set_popn_exact(100);
-      smap.get(Coordinates{3, 3}).set_owner(1);
-
-      smap_repo.save_map(smap);
-    }
+    ctx.create_planet(1, PlanetType::EARTH, Coordinates{5, 5}, 4)
+        .named("TargetPlanet")
+        .with_colony(3, 100, Coordinates{1, 1})
+        .with_colony(2, 100, Coordinates{2, 2})
+        .with_colony(1, 100, Coordinates{3, 3})
+        .build();
 
     // 1. General berserker prioritizes war target (Race 2 at (2, 2)) over Race
     // 3

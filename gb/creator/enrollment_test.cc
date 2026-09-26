@@ -21,86 +21,41 @@ void setup_test_universe(Database& db) {
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
-  StarRepository star_repo(store);
-  PlanetRepository planet_repo(store);
-  SectorRepository sector_repo(store);
+  EntityManager em(db);
 
   // Star 1: 2 planets (Earth, Gas Giant)
-  star_struct ss0{};
-  ss0.star_id = 1;
-  ss0.name = "Sol";
-  ss0.pnames = {"Earth", "Jupiter"};
-  Star star0(ss0);
-  star_repo.save(star0);
-
-  Planet p0_0{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
-  p0_0.rtemp() = 20;
-  p0_0.conditions().oxygen = 21;
-  planet_repo.save(p0_0);
-
-  SectorMap smap0_0(p0_0);
-  for (int y = 0; y < 5; ++y) {
-    for (int x = 0; x < 5; ++x) {
-      smap0_0.get(Coordinates{x, y}).set_condition(SectorType::SEC_LAND);
-    }
-  }
-  sector_repo.save_map(smap0_0);
-
-  Planet p0_1{1, 2, PlanetType::GASGIANT, Coordinates{5, 5}};
-  p0_1.rtemp() = -80;
-  p0_1.conditions().methane = 90;
-  planet_repo.save(p0_1);
-
-  SectorMap smap0_1(p0_1);
-  for (int y = 0; y < 5; ++y) {
-    for (int x = 0; x < 5; ++x) {
-      smap0_1.get(Coordinates{x, y}).set_condition(SectorType::SEC_GAS);
-    }
-  }
-  sector_repo.save_map(smap0_1);
+  TestStarBuilder(em, db, "Sol", 1).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{5, 5}, 1)
+      .named("Earth")
+      .with_temperature(20)
+      .with_condition(AtmosphereConditions::OXYGEN, 21)
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+  TestPlanetBuilder(em, db, 1, PlanetType::GASGIANT, Coordinates{5, 5}, 2)
+      .named("Jupiter")
+      .with_temperature(-80)
+      .with_condition(AtmosphereConditions::METHANE, 90)
+      .with_all_sectors(SectorType::SEC_GAS)
+      .build();
 
   // Star 2: 1 planet (Mars) -> single planet star should be skipped
-  star_struct ss1{};
-  ss1.star_id = 2;
-  ss1.name = "Alpha";
-  ss1.pnames = {"Mars"};
-  Star star1(ss1);
-  star_repo.save(star1);
-
-  Planet p1_0{2, 1, PlanetType::MARS, Coordinates{5, 5}};
-  planet_repo.save(p1_0);
+  TestStarBuilder(em, db, "Alpha", 2).build();
+  TestPlanetBuilder(em, db, 2, PlanetType::MARS, Coordinates{5, 5}, 1)
+      .named("Mars")
+      .build();
 
   // Star 3: 2 planets (Iceball, Desert)
-  star_struct ss2{};
-  ss2.star_id = 3;
-  ss2.name = "Vega";
-  ss2.pnames = {"Hoth", "Dune"};
-  Star star2(ss2);
-  star_repo.save(star2);
-
-  Planet p2_0{3, 1, PlanetType::ICEBALL, Coordinates{5, 5}};
-  p2_0.rtemp() = -120;
-  planet_repo.save(p2_0);
-
-  SectorMap smap2_0(p2_0);
-  for (int y = 0; y < 5; ++y) {
-    for (int x = 0; x < 5; ++x) {
-      smap2_0.get(Coordinates{x, y}).set_condition(SectorType::SEC_ICE);
-    }
-  }
-  sector_repo.save_map(smap2_0);
-
-  Planet p2_1{3, 2, PlanetType::DESERT, Coordinates{5, 5}};
-  p2_1.rtemp() = 140;
-  planet_repo.save(p2_1);
-
-  SectorMap smap2_1(p2_1);
-  for (int y = 0; y < 5; ++y) {
-    for (int x = 0; x < 5; ++x) {
-      smap2_1.get(Coordinates{x, y}).set_condition(SectorType::SEC_DESERT);
-    }
-  }
-  sector_repo.save_map(smap2_1);
+  TestStarBuilder(em, db, "Vega", 3).build();
+  TestPlanetBuilder(em, db, 3, PlanetType::ICEBALL, Coordinates{5, 5}, 1)
+      .named("Hoth")
+      .with_temperature(-120)
+      .with_all_sectors(SectorType::SEC_ICE)
+      .build();
+  TestPlanetBuilder(em, db, 3, PlanetType::DESERT, Coordinates{5, 5}, 2)
+      .named("Dune")
+      .with_temperature(140)
+      .with_all_sectors(SectorType::SEC_DESERT)
+      .build();
 }
 
 void test_first_race_requires_god() {

@@ -398,25 +398,16 @@ void test_enroll_with_service_success() {
   universe_struct us{};
   UniverseRepository(store).save(us);
 
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "Sol";
-  ss.pnames = {"Earth", "Mars"};
-  StarRepository(store).save(Star(ss));
-
-  Planet p0{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
-  p0.rtemp() = 20;
-  PlanetRepository(store).save(p0);
-
-  SectorMap smap(p0);
-  for (int y = 0; y < 5; ++y) {
-    for (int x = 0; x < 5; ++x) {
-      smap.get(Coordinates{x, y}).set_condition(SectorType::SEC_LAND);
-    }
-  }
-  SectorRepository(store).save_map(smap);
-
   EntityManager em(db);
+  TestStarBuilder(em, db, "Sol", 1)
+      .with_planet_names({"Earth", "Mars"})
+      .build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{5, 5}, 1)
+      .named("Earth")
+      .with_temperature(20)
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+
   GB::creator::EnrollmentService service(em);
 
   std::istringstream in;

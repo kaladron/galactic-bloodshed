@@ -516,7 +516,7 @@ public:
 
   public:
     explicit DeferredWriteScope(EntityManager& em);
-    ~DeferredWriteScope();
+    ~DeferredWriteScope() noexcept(false);
 
     DeferredWriteScope(const DeferredWriteScope&) = delete;
     DeferredWriteScope& operator=(const DeferredWriteScope&) = delete;

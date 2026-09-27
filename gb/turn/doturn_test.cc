@@ -5,6 +5,7 @@
 /// and segment vs update turn execution.
 
 import dallib;
+import gb.creator;
 import gb.entities;
 import gb.repositories;
 import gb.services;
@@ -1183,6 +1184,193 @@ void test_finalize_turn_update_integration() {
   test::expect_eq(r2->translation_for(player_t{1}), 100);
 }
 
+void test_end_to_end_multi_turn_game_lifecycle() {
+  seed_rand(42);
+  Database db(":memory:");
+
+  // 1. Procedurally generate a 6-star universe via UniverseGenerator
+  GB::creator::UniverseConfig config{
+      .num_stars = 6,
+      .min_planets = 3,
+      .max_planets = 4,
+      .planetless_chance_percent = 0,
+      .auto_name_stars = false,
+      .auto_name_planets = false,
+      .print_star_info = false,
+      .print_planet_info = false,
+  };
+  GB::creator::UniverseGenerator generator(config);
+  auto gen_res = generator.generate(db);
+  test::expect_eq(gen_res.num_stars, 6);
+
+  JsonStore store(db);
+  ServerState sstate{};
+  sstate.segments = 2;
+  sstate.update_time_minutes = 60;
+  sstate.nsegments_done = 1;
+  ServerStateRepository(store).save(sstate);
+
+  EntityManager em(db);
+  GB::creator::EnrollmentService enrollment(em);
+
+  // 2. Enroll 5 empires (including Metamorphic Predator #0 and 4 standard
+  // archetypes) on Stars 1..5 via EnrollmentService::enroll_player
+  std::array<GB::creator::EnrollmentResult, 5> enrolled{};
+  for (unsigned int i = 0; i < 5; ++i) {
+    starnum_t home_star = i + 1;
+    const auto* star_ptr = em.peek_star(home_star);
+    test::expect_ne(star_ptr, nullptr);
+
+    planetnum_t home_pnum = 1;
+    const Planet* home_planet = nullptr;
+    for (planetnum_t p = 1; p <= star_ptr->numplanets(); ++p) {
+      const auto* candidate = em.peek_planet(home_star, p);
+      if (candidate != nullptr && candidate->type() != PlanetType::ASTEROID) {
+        home_pnum = p;
+        home_planet = candidate;
+        break;
+      }
+    }
+    test::expect_ne(home_planet, nullptr);
+
+    auto spec = GB::creator::race_archetypes[i].to_enrollment_spec(
+        home_planet->type(), false);
+    spec.name = std::format("Empire{}", i + 1);
+    spec.password = "pass";
+    spec.governor_password = "gov";
+    spec.is_god = (i == 0);
+    spec.target_planet = std::make_pair(home_star, home_pnum);
+
+    enrolled[i] = enrollment.enroll_player(spec);
+    test::expect_true(enrolled[i].success, enrolled[i].message);
+    test::expect_eq(enrolled[i].player_num, player_t{static_cast<int>(i + 1)});
+
+    player_t pid = enrolled[i].player_num;
+    em.mutate_race(pid, [](Race& r) {
+      r.tech = 120.0;
+      r.leader().money = 5000;
+    });
+
+    // Seed initial homeworld colony population, troops, and stockpiles
+    Coordinates cap = enrolled[i].capital_coords;
+    em.mutate_sectormap(home_star, home_pnum, [&](SectorMap& smap) {
+      auto& sect = smap.get(cap);
+      sect.set_popn_exact(500);
+      sect.set_troops(50);
+      sect.set_efficiency_bounded(80);
+    });
+    em.mutate_planet(home_star, home_pnum, [&](Planet& p) {
+      p.info(pid).resource = 1000;
+      p.info(pid).fuel = 1000;
+      p.info(pid).destruct = 500;
+      p.info(pid).tax = 10;
+      p.sync_demographics(*em.peek_sectormap(home_star, home_pnum));
+    });
+  }
+
+  // 3. Form an alliance block on Block 1 with Players 1 and 2
+  em.mutate_block(1, [](block& b) {
+    b.invite(1);
+    b.pledge(1);
+    b.invite(2);
+    b.pledge(2);
+  });
+
+  // 4. Construct a fleet with hierarchical ship relationships
+  shipnum_t carrier_id =
+      TestShipBuilder(em, ShipType::STYPE_CARRIER)
+          .owned_by(1, 1)
+          .named("UNS Valiant")
+          .in_planet_orbit(enrolled[0].star, enrolled[0].pnum)
+          .build();
+  shipnum_t fighter_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                             .owned_by(1, 1)
+                             .named("Viper 1")
+                             .docked_to(carrier_id, enrolled[0].star)
+                             .build();
+  shipnum_t escort_id = TestShipBuilder(em, ShipType::STYPE_CRUISER)
+                            .owned_by(1, 1)
+                            .named("UNS Escort")
+                            .in_star_orbit(enrolled[0].star)
+                            .build();
+  em.mutate_ship(escort_id, [&](Ship& s) { s.protect().ship = carrier_id; });
+
+  TestShipBuilder(em, ShipType::STYPE_DREADNT)
+      .owned_by(2, 1)
+      .named("IKS Negh'Var")
+      .in_star_orbit(enrolled[1].star)
+      .build();
+
+  // 5. Post a market commodity lot from Player 1 with a bid from Player 2
+  Commod lot{};
+  lot.id = 1;
+  lot.owner = 1;
+  lot.governor = 1;
+  lot.type = CommodType::RESOURCE;
+  lot.amount = 200;
+  lot.deliver = false;
+  lot.bid = 300;
+  lot.bidder = 2;
+  lot.bidder_gov = 1;
+  lot.star_from = enrolled[0].star;
+  lot.planet_from = enrolled[0].pnum;
+  lot.star_to = enrolled[1].star;
+  lot.planet_to = enrolled[1].pnum;
+  CommodRepository(store).save(lot);
+
+  em.clear_cache();
+  test::verify_universe_invariants(em);
+
+  // 6. Execute movement segment followed by Turn 1 full update
+  RecordingSessionRegistry reg;
+  do_segment(em, reg, 0, 0);
+  test::verify_universe_invariants(em);
+
+  do_update(em, reg, true);
+  test::verify_universe_invariants(em);
+
+  // Verify market lot marked ready for delivery on Turn 1
+  test::expect_true(em.peek_commod(1)->deliver);
+
+  // Verify all 5 races advanced to Turn 1 and Block 1 aggregated Players 1 & 2
+  for (player_t pid = 1; pid <= 5; ++pid) {
+    const auto* r = em.peek_race(pid);
+    test::expect_ne(r, nullptr);
+    test::expect_eq(r->turn, 1);
+    test::expect_gt(em.peek_power(pid)->popn, 0U);
+  }
+  const auto* blk1 = em.peek_block(1);
+  test::expect_eq(blk1->members, 2U);
+  test::expect_eq(blk1->popn, em.peek_power(1)->popn + em.peek_power(2)->popn);
+  test::expect_gt(blk1->VPs, 0U);
+
+  // 7. Simulate mid-game combat ship destruction (destroying carrier and
+  // Player 3's government ship) and verify FK scrubbing + Turn 2 update
+  em.mutate_ship(carrier_id, [&](Ship& s) { em.kill_ship(2, s); });
+  em.mutate_ship(enrolled[2].gov_ship, [&](Ship& s) { em.kill_ship(2, s); });
+
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { (void)em.peek_ship(carrier_id); });
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { (void)em.peek_ship(fighter_id); });
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { (void)em.peek_ship(enrolled[2].gov_ship); });
+  test::expect_eq(em.peek_ship(escort_id)->protect().ship, std::nullopt);
+  test::expect_eq(em.peek_race(3)->Gov_ship, std::nullopt);
+  test::verify_universe_invariants(em);
+
+  do_update(em, reg, true);
+  em.clear_cache();
+  test::verify_universe_invariants(em);
+
+  // Market lot settled and deleted on Turn 2
+  test::expect_throws<EntityNotFoundError>([&]() { (void)em.peek_commod(1); });
+
+  for (player_t pid = 1; pid <= 5; ++pid) {
+    test::expect_eq(em.peek_race(pid)->turn, 2);
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -1301,6 +1489,10 @@ int main() {
   std::println(std::cout, "  Testing do_turn victory scores with derelict and "
                           "multiple players... ");
   test_do_turn_victory_scores_with_derelict_and_multiple_players();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing end-to-end multi-turn game lifecycle... ");
+  test_end_to_end_multi_turn_game_lifecycle();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doturn tests passed!");

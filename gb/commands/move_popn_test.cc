@@ -20,6 +20,9 @@ void setup_test_world(TestContext& ctx) {
   // Setup sectormap and planet population
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.popn() = 1000;
+    planet.troops() = 500;
+    planet.info(player_t{1}).popn = 1000;
+    planet.info(player_t{1}).troops = 500;
     planet.info(player_t{1}).numsectsowned = 2;
   });
 

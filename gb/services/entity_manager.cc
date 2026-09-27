@@ -241,6 +241,10 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
             [this, num]() { release_ship(num); }};
   }
 
+  if (std::ranges::contains(pending_ship_deletions_, num)) {
+    throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
+  }
+
   auto ship_ptr = storage_->ships.find_ship(num);
   if (!ship_ptr) {
     throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
@@ -264,6 +268,10 @@ const Ship* EntityManager::peek_ship(shipnum_t num) {
     return it->second.get();
   }
 
+  if (std::ranges::contains(pending_ship_deletions_, num)) {
+    throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
+  }
+
   auto ship_ptr = storage_->ships.find_ship(num);
   if (!ship_ptr) {
     throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
@@ -278,19 +286,11 @@ void EntityManager::release_ship(shipnum_t num) {
   if (!deletion_barrier_active_ && !ship_refcount.contains(num)) {
     auto it = std::ranges::find(pending_ship_deletions_, num);
     if (it != pending_ship_deletions_.end()) {
-      pending_ship_deletions_.erase(it);
-      if (is_deferred_write()) {
-        flush_cache_impl<Race>(
-            race_cache, [this](const Race& r) { storage_->races.save(r); });
-        for (const auto& [id, s] : ship_cache) {
-          if (id != num &&
-              !std::ranges::contains(pending_ship_deletions_, id)) {
-            storage_->ships.save(*s);
-          }
-        }
-      }
       ship_cache.erase(num);
-      storage_->ships.delete_ship(num);
+      if (!is_deferred_write()) {
+        pending_ship_deletions_.erase(it);
+        storage_->ships.delete_ship(num);
+      }
     }
   }
 }
@@ -304,6 +304,7 @@ EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
   shipnum_t num =
       ship->number() != 0 ? ship->number() : storage_->ships.next_ship_number();
   ship->number() = num;
+  std::erase(pending_ship_deletions_, num);
 
   // Save immediately to database
   storage_->ships.save(*ship);
@@ -345,6 +346,7 @@ void EntityManager::delete_commod(int id) {
 EntityHandle<Commod> EntityManager::create_commod(const Commod& init_data) {
   // Get next available commod ID
   int id = storage_->commods.next_available_id();
+  std::erase(pending_commod_deletions_, id);
 
   // Create Commod, copying from provided data but overriding id
   Commod new_commod = init_data;
@@ -462,7 +464,12 @@ void EntityManager::release_star(starnum_t num) {
 EntityHandle<Commod> EntityManager::get_commod(int id) {
   auto handle = get_entity_impl<Commod>(
       this, id, commod_cache, commod_refcount,
-      [this](int i) { return storage_->commods.find_by_id(i); },
+      [this](int i) -> std::optional<Commod> {
+        if (std::ranges::contains(pending_commod_deletions_, i)) {
+          return std::nullopt;
+        }
+        return storage_->commods.find_by_id(i);
+      },
       [this](const Commod& c) {
         if (!std::ranges::contains(pending_commod_deletions_, c.id)) {
           storage_->commods.save(c);
@@ -476,8 +483,11 @@ EntityHandle<Commod> EntityManager::get_commod(int id) {
 }
 
 const Commod* EntityManager::peek_commod(int id) {
-  const auto* commod =
-      peek_entity_impl<Commod>(id, commod_cache, [this](int i) {
+  const auto* commod = peek_entity_impl<Commod>(
+      id, commod_cache, [this](int i) -> std::optional<Commod> {
+        if (std::ranges::contains(pending_commod_deletions_, i)) {
+          return std::nullopt;
+        }
         return storage_->commods.find_by_id(i);
       });
   if (!commod) {
@@ -897,6 +907,20 @@ void EntityManager::flush_all() {
   if (server_state_cache) {
     storage_->server_state_repo.save(*server_state_cache);
   }
+
+  for (shipnum_t num : pending_ship_deletions_) {
+    ship_cache.erase(num);
+    ship_refcount.erase(num);
+    storage_->ships.delete_ship(num);
+  }
+  pending_ship_deletions_.clear();
+
+  for (int id : pending_commod_deletions_) {
+    commod_cache.erase(id);
+    commod_refcount.erase(id);
+    storage_->commods.delete_commod(id);
+  }
+  pending_commod_deletions_.clear();
 }
 
 void EntityManager::optimize() {
@@ -1062,24 +1086,15 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 
   if (ship.number() != 0) {
-    if (!std::ranges::contains(pending_ship_deletions_, ship.number())) {
-      pending_ship_deletions_.push_back(ship.number());
-    }
+    std::erase(pending_ship_deletions_, ship.number());
+    pending_ship_deletions_.push_back(ship.number());
     if (!deletion_barrier_active_ && !ship_refcount.contains(ship.number())) {
       const shipnum_t num = ship.number();
-      std::erase(pending_ship_deletions_, num);
-      if (is_deferred_write()) {
-        flush_cache_impl<Race>(
-            race_cache, [this](const Race& r) { storage_->races.save(r); });
-        for (const auto& [id, s] : ship_cache) {
-          if (id != num && s->alive() &&
-              !std::ranges::contains(pending_ship_deletions_, id)) {
-            storage_->ships.save(*s);
-          }
-        }
-      }
       ship_cache.erase(num);
-      storage_->ships.delete_ship(num);
+      if (!is_deferred_write()) {
+        std::erase(pending_ship_deletions_, num);
+        storage_->ships.delete_ship(num);
+      }
     }
   }
 }
@@ -1404,16 +1419,15 @@ EntityManager::DeferredWriteScope::DeferredWriteScope(EntityManager& em)
   em_->deferred_write_depth_++;
 }
 
-EntityManager::DeferredWriteScope::~DeferredWriteScope() {
+EntityManager::DeferredWriteScope::~DeferredWriteScope() noexcept(false) {
   if (!committed_ && em_) {
-    try {
-      if (std::uncaught_exceptions() > 0) {
+    if (std::uncaught_exceptions() > 0) {
+      try {
         rollback();
-      } else {
-        commit();
+      } catch (...) {
       }
-    } catch (...) {
-      // Destructors must not throw exceptions
+    } else {
+      commit();
     }
   }
 }
@@ -1443,6 +1457,7 @@ EntityManager::DeferredWriteScope& EntityManager::DeferredWriteScope::operator=(
 
 void EntityManager::DeferredWriteScope::commit() {
   if (!committed_ && em_) {
+    committed_ = true;
     em_->deferred_write_depth_--;
     em_->storage_->db.begin_transaction();
     try {
@@ -1452,17 +1467,20 @@ void EntityManager::DeferredWriteScope::commit() {
         em_->storage_->db.rollback();
       } catch (...) {
       }
-      committed_ = true;
+      em_->pending_ship_deletions_.clear();
+      em_->pending_commod_deletions_.clear();
+      em_->clear_cache();
       throw;
     }
     em_->storage_->db.commit();
-    committed_ = true;
   }
 }
 
 void EntityManager::DeferredWriteScope::rollback() {
   if (!committed_ && em_) {
     em_->deferred_write_depth_--;
+    em_->pending_ship_deletions_.clear();
+    em_->pending_commod_deletions_.clear();
     em_->clear_cache();
     committed_ = true;
   }
@@ -1473,15 +1491,6 @@ EntityManager::DeferredWriteScope EntityManager::create_deferred_write_scope() {
 }
 
 void EntityManager::drain_pending_deletions() {
-  if (!pending_ship_deletions_.empty() && is_deferred_write()) {
-    flush_cache_impl<Race>(race_cache,
-                           [this](const Race& r) { storage_->races.save(r); });
-    for (const auto& [id, s] : ship_cache) {
-      if (s->alive() && !std::ranges::contains(pending_ship_deletions_, id)) {
-        storage_->ships.save(*s);
-      }
-    }
-  }
   for (shipnum_t num : pending_ship_deletions_) {
     auto ref_it = ship_refcount.find(num);
     if (ref_it != ship_refcount.end() && ref_it->second > 0) {
@@ -1491,9 +1500,13 @@ void EntityManager::drain_pending_deletions() {
     }
     ship_cache.erase(num);
     ship_refcount.erase(num);
-    storage_->ships.delete_ship(num);
+    if (!is_deferred_write()) {
+      storage_->ships.delete_ship(num);
+    }
   }
-  pending_ship_deletions_.clear();
+  if (!is_deferred_write()) {
+    pending_ship_deletions_.clear();
+  }
 
   for (int id : pending_commod_deletions_) {
     auto ref_it = commod_refcount.find(id);
@@ -1505,9 +1518,13 @@ void EntityManager::drain_pending_deletions() {
     }
     commod_cache.erase(id);
     commod_refcount.erase(id);
-    storage_->commods.delete_commod(id);
+    if (!is_deferred_write()) {
+      storage_->commods.delete_commod(id);
+    }
   }
-  pending_commod_deletions_.clear();
+  if (!is_deferred_write()) {
+    pending_commod_deletions_.clear();
+  }
 }
 
 // DeletionBarrier implementation

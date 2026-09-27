@@ -150,7 +150,7 @@ void order_VN(EntityManager& em, Ship& ship) {
 /// \param ship Autonomous ship performing the theft.
 /// \return StealResult containing victim ID and quantity stolen.
 StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
-  auto candidate_ids = shuffled_indices(1, em.num_races().value + 1);
+  auto candidate_ids = shuffled_indices(1, em.max_race_player().value + 1);
   std::vector<player_t> race_order;
   race_order.reserve(candidate_ids.size());
   for (int id : candidate_ids) {

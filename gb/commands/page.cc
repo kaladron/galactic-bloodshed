@@ -62,7 +62,8 @@ bool page(const command_t& argv, GameObj& g) {
       g.out << "Block not found.\n";
       return false;
     }
-    for (player_t i = 1; i <= g.entity_manager.num_races(); i++) {
+    for (const Race& race : RaceList::readonly(g.entity_manager)) {
+      const player_t i = race.Playernum;
       if (block_player->is_member(i) && i != Playernum) {
         g.session_registry.notify_race(i, msg);
       }

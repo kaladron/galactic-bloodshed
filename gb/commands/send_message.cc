@@ -117,7 +117,8 @@ bool send_to_alliance_block(const command_t& argv, GameObj& g) {
       std::format("{} sends a message to {} [{}] alliance block.\n", sender_tag,
                   block_target->name, who);
 
-  for (player_t i = 1; i <= g.entity_manager.num_races(); ++i) {
+  for (const Race& race : RaceList::readonly(g.entity_manager)) {
+    const player_t i = race.Playernum;
     if (block_target->is_member(i) && i != playernum) {
       increment_translation_skill(g.entity_manager, i, playernum);
       g.session_registry.notify_race(i, block_msg);
@@ -162,7 +163,8 @@ bool send_to_star_system(const command_t& argv, GameObj& g) {
   const std::string star_msg = std::format("{} sends a message to {}.\n",
                                            sender_tag, star_ref.get_name());
 
-  for (player_t i = 1; i <= g.entity_manager.num_races(); ++i) {
+  for (const Race& race : RaceList::readonly(g.entity_manager)) {
+    const player_t i = race.Playernum;
     if (star_ref.is_inhabited_by(i) && i != playernum) {
       increment_translation_skill(g.entity_manager, i, playernum);
       g.session_registry.notify_race(i, star_msg);

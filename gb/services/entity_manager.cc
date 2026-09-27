@@ -930,20 +930,26 @@ void EntityManager::clear_cache() {
 // Business logic operations
 std::optional<player_t>
 EntityManager::find_player_by_name(const std::string& name) {
-  player_t rnum = 0;
-
   if (name.empty()) return std::nullopt;
 
-  if (std::isdigit(name[0])) {
-    if ((rnum = std::stoi(name)) < 1 || rnum > num_races()) return std::nullopt;
-    return rnum;
+  if (std::isdigit(static_cast<unsigned char>(name[0]))) {
+    int val = 0;
+    auto [ptr, ec] =
+        std::from_chars(name.data(), name.data() + name.size(), val);
+    if (ec == std::errc{} && ptr == name.data() + name.size()) {
+      if (val < 1) return std::nullopt;
+      player_t candidate{val};
+      if (race_cache.contains(candidate) ||
+          storage_->races.find_by_player(candidate).has_value()) {
+        return candidate;
+      }
+      return std::nullopt;
+    }
   }
 
-  // Iterate through all races using peek_race
-  for (player_t p = 1; p <= num_races(); p++) {
-    const auto* race = peek_race(p);
-    if (race && name == race->name) {
-      return race->Playernum;
+  for (const Race& race : RaceList::readonly(*this)) {
+    if (name == race.name) {
+      return race.Playernum;
     }
   }
   return std::nullopt;

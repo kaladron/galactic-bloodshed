@@ -28,10 +28,10 @@ void test_update_matrix() {
   mortal_race.God = false;
 
   {
+    ctx.em.create_race(deity_race);
+    ctx.em.create_race(mortal_race);
+
     JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(deity_race);
-    races.save(mortal_race);
 
     ServerStateRepository state_repo(store);
     ServerState state{};

@@ -361,6 +361,23 @@ void test_entity_manager_get_player() {
   std::println(
       std::cout,
       "  ✓ find_player_by_name returns nullopt for invalid player number");
+
+  // Sparse player IDs (Race 4 exists, Race 3 does not; num_races() == 3)
+  Race race4{};
+  race4.Playernum = 4;
+  race4.name = "Klingon";
+  races.save(race4);
+
+  auto p4_by_name = em.find_player_by_name("Klingon");
+  test::expect_true(p4_by_name.has_value() && *p4_by_name == 4);
+  auto p4_by_num = em.find_player_by_name("4");
+  test::expect_true(p4_by_num.has_value() && *p4_by_num == 4);
+  test::expect_eq(get_player(em, "4"), player_t{4});
+  test::expect_false(em.find_player_by_name("3").has_value());
+  test::expect_eq(get_player(em, "3"), player_t{0});
+  std::println(std::cout,
+               "  ✓ find_player_by_name and get_player handle sparse player "
+               "IDs and reject missing gap IDs");
 }
 
 void test_entity_manager_kill_ship() {

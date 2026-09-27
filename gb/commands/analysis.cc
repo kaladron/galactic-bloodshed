@@ -419,13 +419,15 @@ bool analysis(const command_t& argv, GameObj& g) {
 
     // Player number
     if (auto player_num = parse_player_number(arg)) {
-      if (*player_num > g.entity_manager.num_races()) {
+      if (*player_num == 0) {
+        filter = PlayerFilter::unoccupied();
+        continue;
+      }
+      if (!g.entity_manager.find_player_by_name(arg)) {
         g.out << "No such player #.\n";
         return false;
       }
-      filter = (*player_num == 0)
-                   ? PlayerFilter::unoccupied()
-                   : PlayerFilter::specific(player_t{*player_num});
+      filter = PlayerFilter::specific(*player_num);
       continue;
     }
 

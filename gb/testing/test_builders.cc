@@ -390,6 +390,19 @@ TestWorldBuilder::add_race(std::string_view name, double tech, bool guest,
   race.mass = 1.0;
   race.metabolism = 1.0;
   RaceRepository(store_).save(race);
+  BlockRepository blocks(store_);
+  if (!blocks.find_by_id(id)) {
+    block b{};
+    b.Playernum = id;
+    b.name = std::string(name);
+    blocks.save(b);
+  }
+  PowerRepository powers(store_);
+  if (!powers.find_by_id(id)) {
+    power p{};
+    p.id = id;
+    powers.save(p);
+  }
   registered_races_.push_back(id);
   return *this;
 }

@@ -80,8 +80,8 @@ bool explore(const command_t& argv, GameObj& g) {
             if (pl.info(Playernum).numsectsowned) attrs += "Inhab ";
             if (pl.is_enslaved()) attrs += "SLAVED ";
 
-            for (player_t j{1}; j <= g.entity_manager.num_races(); ++j) {
-              if (j != Playernum && pl.info(j).numsectsowned) {
+            for (const auto& [j, info] : pl.info_map()) {
+              if (j != Playernum && info.numsectsowned) {
                 attrs += std::format("{} ", j);
               }
             }

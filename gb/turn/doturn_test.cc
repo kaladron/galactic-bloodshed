@@ -93,14 +93,20 @@ void test_do_turn_segment_vs_update() {
   Race race = createTestRace(player_t{1});
   race.tech = 10.0;
   race.turn = 1;
-  RaceRepository races(store);
-  races.save(race);
+  em.create_race(race);
+  em.mutate_block(1, [](block& b) {
+    b.invite(1);
+    b.pledge(1);
+    b.systems_owned = 99;  // Should be reset to 0 and recounted to 1 on update
+  });
 
   Star star = createTestStar(1);
   StarRepository stars(store);
   stars.save(star);
 
   Planet planet = createTestPlanet(1, 1);
+  planet.info(1).numsectsowned = 25;
+  planet.info(1).explored = true;
   PlanetRepository planets(store);
   planets.save(planet);
 
@@ -135,6 +141,14 @@ void test_do_turn_segment_vs_update() {
   const auto* race_after_update = em.peek_race(player_t{1});
   test::expect_ne(race_after_update, nullptr);
   test::expect_eq(race_after_update->turn, 2);
+
+  // Verify block systems_owned was zeroed before star counting, recounted to 1,
+  // converted to 10 VPs, and aggregated current-turn power stats
+  const auto* block_after_update = em.peek_block(1);
+  test::expect_ne(block_after_update, nullptr);
+  test::expect_eq(block_after_update->systems_owned, 1U);
+  test::expect_eq(block_after_update->VPs, 10U);
+  test::expect_gt(block_after_update->popn, 0U);
 }
 
 void test_do_turn_market_and_maintenance() {
@@ -152,9 +166,8 @@ void test_do_turn_market_and_maintenance() {
   race1.leader().money = 1000;
   Race race2 = createTestRace(player_t{2});
   race2.leader().money = 2000;
-  RaceRepository race_repo(store);
-  race_repo.save(race1);
-  race_repo.save(race2);
+  em.create_race(race1);
+  em.create_race(race2);
 
   Star star1 = createTestStar(starnum_t{1});
   Star star2 = createTestStar(starnum_t{2});
@@ -229,8 +242,7 @@ void test_do_turn_victory_scores_and_discoveries() {
   race.tech = 49.5;  // Just below TECH_HYPER_DRIVE (50.0)
   race.IQ = 100;     // Will gain +1.0 tech during turn
   race.leader().money = 500000;
-  RaceRepository race_repo(store);
-  race_repo.save(race);
+  em.create_race(race);
 
   Star star = createTestStar(starnum_t{1});
   StarRepository star_repo(store);
@@ -277,13 +289,12 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   race1.morale = 100;
   race1.leader().money = 1000;
   race1.appoint_governor(2, {.money = 500});
-  RaceRepository race_repo(store);
-  race_repo.save(race1);
+  em.create_race(race1);
 
   Race race2 = createTestRace(player_t{2});
   race2.morale = 100;
   race2.leader().money = 2000;
-  race_repo.save(race2);
+  em.create_race(race2);
 
   Star star = createTestStar(starnum_t{1});
   StarRepository star_repo(store);
@@ -708,9 +719,8 @@ void test_do_update_voting_reset_and_scheduling() {
   race1.votes = true;  // Voted 'go'
   Race race2 = createTestRace(player_t{2});
   race2.votes = true;  // Voted 'go'
-  RaceRepository race_repo(store);
-  race_repo.save(race1);
-  race_repo.save(race2);
+  em.create_race(race1);
+  em.create_race(race2);
 
   universe_struct u{};
   UniverseRepository univ_repo(store);
@@ -1117,17 +1127,15 @@ void test_sync_power_ratings() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  JsonStore store(ctx.db);
-  PowerRepository power_repo(store);
-  power p1{};
-  p1.id = 1;
-  power_repo.save(p1);
-
   TurnStats stats{};
   stats.mutable_power_stats(player_t{1}).popn = 5000;
   stats.mutable_power_stats(player_t{1}).planets_owned = 1;
 
   ctx.em.mutate_race(player_t{1}, [](Race& r) { r.leader().money = 12'345; });
+  ctx.em.mutate_block(1, [](block& b) {
+    b.invite(1);
+    b.pledge(1);
+  });
 
   sync_power_ratings(ctx.em, stats);
 
@@ -1139,17 +1147,19 @@ void test_sync_power_ratings() {
   test::expect_ne(power, nullptr);
   test::expect_eq(power->money, 12'345);
   test::expect_eq(power->popn, 5000);
+
+  // Verified alliance block aggregated this turn's power record (not stale
+  // data)
+  const auto* blk = ctx.em.peek_block(1);
+  test::expect_ne(blk, nullptr);
+  test::expect_eq(blk->members, 1U);
+  test::expect_eq(blk->popn, 5000U);
+  test::expect_eq(blk->money, 12'345U);
 }
 
 void test_finalize_turn_update_integration() {
   TestContext ctx;
   ctx.with_standard_universe();
-
-  JsonStore store(ctx.db);
-  PowerRepository power_repo(store);
-  power p1{};
-  p1.id = 1;
-  power_repo.save(p1);
 
   TurnStats stats{};
   stats.mutable_power_stats(player_t{1}).popn = 1000;

@@ -394,7 +394,7 @@ bool bless_commodity(player_t who, char commod, int amount, GameObj& g) {
 bool bless(const command_t& argv, GameObj& g) {
   auto parsed_who = scn::scan<int>(argv[1], "{}");
   if (!parsed_who || parsed_who->value() < 1 ||
-      parsed_who->value() > g.entity_manager.num_races()) {
+      !g.entity_manager.find_player_by_name(argv[1])) {
     g.out << "No such player number.\n";
     return false;
   }

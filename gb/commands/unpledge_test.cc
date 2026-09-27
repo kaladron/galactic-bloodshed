@@ -28,9 +28,8 @@ void test_unpledge_dispatch() {
   race2.Playernum = 2;
   race2.name = "BlockLeader";
 
-  RaceRepository races(store);
-  races.save(race1);
-  races.save(race2);
+  ctx.em.create_race(race1);
+  ctx.em.create_race(race2);
 
   // Setup alliance block for player 2 with player 1 already pledged
   block block2{};

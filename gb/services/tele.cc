@@ -101,15 +101,13 @@ void telegram_star(EntityManager& em, starnum_t star, player_t sender,
   const auto* star_ptr = em.peek_star(star);
   if (!star_ptr) return;
 
-  for (player_t p = 1; p <= em.num_races(); p++) {
+  for (const Race& race : RaceList::readonly(em)) {
+    const player_t p = race.Playernum;
     if ((p != sender || !Race::is_leader(sender_gov)) &&
         star_ptr->is_inhabited_by(p)) {
-      const auto* race = em.peek_race(p);
-      if (race) {
-        for (auto [i, gov] : race->active_governors()) {
-          if (!(p == sender && i == sender_gov)) {
-            push_telegram(em, p, i, message);
-          }
+      for (auto [i, gov] : race.active_governors()) {
+        if (!(p == sender && i == sender_gov)) {
+          push_telegram(em, p, i, message);
         }
       }
     }

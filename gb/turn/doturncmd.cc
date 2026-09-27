@@ -127,6 +127,8 @@ static void process_races(TurnState& state, bool update) {
 
     for (auto race_handle : RaceList(state.entity_manager)) {
       race_handle->reset_turn_accounting();
+      state.entity_manager.mutate_block(
+          race_handle->Playernum, [](struct block& b) { b.systems_owned = 0; });
     }
   }
 }
@@ -320,15 +322,12 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         }
         // Compute victory points for the block
         if (!star_inhabited.empty()) {
-          try {
-            const auto* block_player = state.entity_manager.peek_block(player);
-            if (std::ranges::all_of(star_inhabited, [&](player_t occupant) {
-                  return block_player->is_member(occupant);
-                })) {
-              state.entity_manager.mutate_block(
-                  player, [](struct block& b) { b.systems_owned++; });
-            }
-          } catch (const EntityNotFoundError&) {
+          const auto* block_player = state.entity_manager.peek_block(player);
+          if (std::ranges::all_of(star_inhabited, [&](player_t occupant) {
+                return block_player->is_member(occupant);
+              })) {
+            state.entity_manager.mutate_block(
+                player, [](struct block& b) { b.systems_owned++; });
           }
         }
       }
@@ -455,15 +454,11 @@ bool check_language_translation_unlock(player_t player, int controlled_planets,
 }
 
 void update_alliance_block_vps(player_t player, EntityManager& entity_manager) {
-  try {
-    entity_manager.mutate_block(
-        player, [](struct block& b) { b.VPs = 10L * b.systems_owned; });
-  } catch (const EntityNotFoundError&) {
-  }
+  entity_manager.mutate_block(
+      player, [](struct block& b) { b.VPs = 10L * b.systems_owned; });
 }
 
 void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {
-  compute_power_blocks(entity_manager);
   for (auto race_handle : RaceList(entity_manager)) {
     const player_t player = race_handle->Playernum;
     auto& pwr = stats.mutable_power_stats(player);
@@ -472,17 +467,15 @@ void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {
       pwr.money += governor.money;
     }
   }
-  // Save power data via EntityManager
+  // Save power data via EntityManager before aggregating alliance blocks
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t i = race.Playernum;
-    try {
-      entity_manager.mutate_power(i, [&](struct power& p) {
-        p = stats.power_stats(i);
-        p.id = i;
-      });
-    } catch (const EntityNotFoundError&) {
-    }
+    entity_manager.mutate_power(i, [&](struct power& p) {
+      p = stats.power_stats(i);
+      p.id = i;
+    });
   }
+  compute_power_blocks(entity_manager);
 }
 
 void finalize_turn_update(EntityManager& entity_manager, TurnStats& stats) {
@@ -553,11 +546,6 @@ void distribute_universe_action_points(EntityManager& entity_manager) {
   entity_manager.mutate_universe([&](universe_struct& sdata) {
     for (const Race& race : RaceList::readonly(entity_manager)) {
       const player_t player = race.Playernum;
-      try {
-        entity_manager.mutate_block(
-            player, [](struct block& b) { b.systems_owned = 0; });
-      } catch (const EntityNotFoundError&) {
-      }
       if (compute_governed_status(race, entity_manager)) {
         ap_t APs = sdata.get_AP(player) + race.planet_points;
         sdata.set_AP(player, std::min(APs, LIMIT_APs));
@@ -569,7 +557,6 @@ void distribute_universe_action_points(EntityManager& entity_manager) {
 /* fix stability for stars */
 void fix_stability(EntityManager& em, Star& s) {
   int a;
-  int i;
 
   if (s.nova_stage() > 0) {
     if (s.nova_stage() > 14) {
@@ -579,8 +566,8 @@ void fix_stability(EntityManager& em, Star& s) {
           "Notice\n\n  Scientists report that star {}\nis no longer undergoing "
           "nova.\n",
           s.get_name());
-      for (i = 1; i <= em.num_races(); i++)
-        push_telegram_race(em, i, telegram_msg);
+      for (const Race& race : RaceList::readonly(em))
+        push_telegram_race(em, race.Playernum, telegram_msg);
 
       /* telegram everyone when nova over? */
     } else
@@ -595,8 +582,8 @@ void fix_stability(EntityManager& em, Star& s) {
           "***** BULLETIN! ******\n\n  Scientists report that star {}\nis "
           "undergoing nova.\n",
           s.get_name());
-      for (i = 1; i <= em.num_races(); i++)
-        push_telegram_race(em, i, telegram_msg);
+      for (const Race& race : RaceList::readonly(em))
+        push_telegram_race(em, race.Playernum, telegram_msg);
     } else
       s.stability() += a;
   } else {
@@ -819,8 +806,8 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
   std::string update_msg =
       std::format("{}\nDOING UPDATE...\n", format_timestamp(clk));
   if (!fakeit) {
-    for (auto i = 1; i <= entity_manager.num_races(); i++)
-      session_registry.notify_race(i, update_msg);
+    for (const Race& race : RaceList::readonly(entity_manager))
+      session_registry.notify_race(race.Playernum, update_msg);
     // Flush immediately so players see the message before long-running
     // do_turn()
     session_registry.flush_all();
@@ -862,8 +849,8 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
                                        format_timestamp(clk), updates_done);
   handle_victory(entity_manager);
   if (!fakeit) {
-    for (auto i = 1; i <= entity_manager.num_races(); i++)
-      session_registry.notify_race(i, finish_msg);
+    for (const Race& race : RaceList::readonly(entity_manager))
+      session_registry.notify_race(race.Playernum, finish_msg);
   }
 }
 
@@ -880,8 +867,8 @@ void do_segment(EntityManager& entity_manager,
   std::string movement_msg =
       std::format("{}\nDOING MOVEMENT...\n", format_timestamp(clk));
   if (!fakeit) {
-    for (auto i = 1; i <= entity_manager.num_races(); i++)
-      session_registry.notify_race(i, movement_msg);
+    for (const Race& race : RaceList::readonly(entity_manager))
+      session_registry.notify_race(race.Playernum, movement_msg);
     // Flush immediately so players see the message before long-running
     // do_turn()
     session_registry.flush_all();
@@ -911,8 +898,8 @@ void do_segment(EntityManager& entity_manager,
   std::string segment_msg =
       std::format("{}\nSegment finished\n", format_timestamp(clk));
   if (!fakeit) {
-    for (auto i = 1; i <= entity_manager.num_races(); i++)
-      session_registry.notify_race(i, segment_msg);
+    for (const Race& race : RaceList::readonly(entity_manager))
+      session_registry.notify_race(race.Playernum, segment_msg);
   }
 }
 

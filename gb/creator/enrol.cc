@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Interactive quick-start enrollment wizard
-  player_t Playernum{entity_manager.num_races().value + 1};
+  player_t Playernum{entity_manager.max_race_player().value + 1};
 
   const auto* universe_ptr = entity_manager.peek_universe();
   if (!universe_ptr) {

@@ -210,17 +210,5 @@ std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
 }
 
 player_t get_player(EntityManager& em, const std::string& name) {
-  player_t rnum = 0;
-
-  if (name.empty()) return 0;
-
-  if (std::isdigit(name[0])) {
-    if ((rnum = std::stoi(name)) < 1 || rnum > em.num_races()) return 0;
-    return rnum;
-  }
-  for (auto race_handle : RaceList(em)) {
-    const auto& race = race_handle.read();
-    if (name == race.name) return race.Playernum;
-  }
-  return 0;
+  return em.find_player_by_name(name).value_or(player_t{0});
 }

@@ -237,9 +237,8 @@ void advance_afv_to_sector(GameObj& g, Ship& ship, const Star& star,
                   new_coords, dispshiploc(g.entity_manager, ship));
   ship.set_land_coords(new_coords);
   ship.consume_fuel(AFV_FUEL_COST);
-  for (player_t i{1}; i <= g.entity_manager.num_races();
-       i = player_t{i.value + 1}) {
-    if (i != playernum && planet.info(i).numsectsowned) {
+  for (const auto& [i, info] : planet.info_map()) {
+    if (i != playernum && info.numsectsowned) {
       g.session_registry.notify_player(i, star.governor(i), moving);
     }
   }

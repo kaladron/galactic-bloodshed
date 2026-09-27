@@ -123,7 +123,7 @@ Race EnrollmentService::build_race(player_t playernum,
 EnrollmentResult
 EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   // 1. Assign next player ID
-  player_t playernum{entity_manager_.num_races().value + 1};
+  player_t playernum{entity_manager_.max_race_player().value + 1};
 
   // 2. Check God requirement for player 1
   if (playernum == 1 && !spec.is_god) {

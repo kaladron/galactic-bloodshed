@@ -472,11 +472,11 @@ void test_block_list(EntityManager& em, JsonStore& store) {
   }
 
   em.clear_cache();
-  const auto* b1_peek = em.peek_block(blocknum_t{1});
+  const auto* b1_peek = em.peek_block(1);
   test::expect_true(b1_peek != nullptr);
   test::expect_eq(b1_peek->VPs, 150);
 
-  const auto* b3_peek = em.peek_block(blocknum_t{3});
+  const auto* b3_peek = em.peek_block(3);
   test::expect_true(b3_peek != nullptr);
   test::expect_eq(b3_peek->VPs, 300);
   std::println(std::cout, "  ✓ Mutable BlockList auto-save passed");
@@ -516,11 +516,11 @@ void test_power_list(EntityManager& em, JsonStore& store) {
   }
 
   em.clear_cache();
-  const auto* p1_peek = em.peek_power(powernum_t{1});
+  const auto* p1_peek = em.peek_power(1);
   test::expect_true(p1_peek != nullptr);
   test::expect_eq(p1_peek->troops, 1500);
 
-  const auto* p2_peek = em.peek_power(powernum_t{2});
+  const auto* p2_peek = em.peek_power(2);
   test::expect_true(p2_peek != nullptr);
   test::expect_eq(p2_peek->troops, 2500);
   std::println(std::cout, "  ✓ Mutable PowerList auto-save passed");

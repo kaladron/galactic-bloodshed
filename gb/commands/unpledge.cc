@@ -27,7 +27,7 @@ bool unpledge(const command_t& argv, GameObj& g) {
   }
 
   try {
-    g.entity_manager.mutate_block(n.value, [&](auto& b) {
+    g.entity_manager.mutate_block(n, [&](auto& b) {
       b.unpledge(Playernum);
       std::string quit_notification = std::format(
           "{} [{}] has quit {} [{}].\n", g.race->name, Playernum, b.name, n);

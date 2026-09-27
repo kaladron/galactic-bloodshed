@@ -193,8 +193,7 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
   storage_->races.save(new_race);
 
   // Auto-seed baseline block if not existing (or update name if uncustomized)
-  if (auto existing_block =
-          storage_->blocks.find_by_id(blocknum_t{player.value});
+  if (auto existing_block = storage_->blocks.find_by_id(player);
       !existing_block) {
     block b{};
     b.Playernum = player;
@@ -207,9 +206,9 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
   }
 
   // Auto-seed baseline power if not existing
-  if (!storage_->powers.find_by_id(powernum_t{player.value})) {
+  if (!storage_->powers.find_by_id(player)) {
     power p{};
-    p.id = player.value;
+    p.id = player;
     storage_->powers.save(p);
   }
 
@@ -492,58 +491,56 @@ void EntityManager::release_commod(int id) {
 }
 
 // Block entity methods
-EntityHandle<block> EntityManager::get_block(blocknum_t id) {
+EntityHandle<block> EntityManager::get_block(player_t id) {
   auto handle = get_entity_impl<block>(
       this, id, block_cache, block_refcount,
-      [this](blocknum_t i) { return storage_->blocks.find_by_id(i); },
+      [this](player_t i) { return storage_->blocks.find_by_id(i); },
       [this](const block& b) { storage_->blocks.save(b); },
-      [this](blocknum_t i) { release_block(i); });
+      [this](player_t i) { release_block(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Block not found: id={}", id));
   }
   return handle;
 }
 
-const block* EntityManager::peek_block(blocknum_t id) {
-  const auto* b =
-      peek_entity_impl<block>(id, block_cache, [this](blocknum_t i) {
-        return storage_->blocks.find_by_id(i);
-      });
+const block* EntityManager::peek_block(player_t id) {
+  const auto* b = peek_entity_impl<block>(id, block_cache, [this](player_t i) {
+    return storage_->blocks.find_by_id(i);
+  });
   if (!b) {
     throw EntityNotFoundError(std::format("Block not found: id={}", id));
   }
   return b;
 }
 
-void EntityManager::release_block(blocknum_t id) {
+void EntityManager::release_block(player_t id) {
   release_entity_impl<block>(id, block_cache, block_refcount);
 }
 
 // Power entity methods
-EntityHandle<power> EntityManager::get_power(powernum_t id) {
+EntityHandle<power> EntityManager::get_power(player_t id) {
   auto handle = get_entity_impl<power>(
       this, id, power_cache, power_refcount,
-      [this](powernum_t i) { return storage_->powers.find_by_id(i); },
+      [this](player_t i) { return storage_->powers.find_by_id(i); },
       [this](const power& p) { storage_->powers.save(p); },
-      [this](powernum_t i) { release_power(i); });
+      [this](player_t i) { release_power(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Power not found: id={}", id));
   }
   return handle;
 }
 
-const power* EntityManager::peek_power(powernum_t id) {
-  const auto* p =
-      peek_entity_impl<power>(id, power_cache, [this](powernum_t i) {
-        return storage_->powers.find_by_id(i);
-      });
+const power* EntityManager::peek_power(player_t id) {
+  const auto* p = peek_entity_impl<power>(id, power_cache, [this](player_t i) {
+    return storage_->powers.find_by_id(i);
+  });
   if (!p) {
     throw EntityNotFoundError(std::format("Power not found: id={}", id));
   }
   return p;
 }
 
-void EntityManager::release_power(powernum_t id) {
+void EntityManager::release_power(player_t id) {
   release_entity_impl<power>(id, power_cache, power_refcount);
 }
 
@@ -787,24 +784,24 @@ shipnum_t EntityManager::max_ship_number() {
              : shipnum_t{static_cast<shipnum_t::value_type>(ids.back())};
 }
 
-blocknum_t EntityManager::num_blocks() {
-  return blocknum_t{
+player_t EntityManager::num_blocks() {
+  return player_t{
       static_cast<int>(storage_->store.list_ids("tbl_block").size())};
 }
 
-blocknum_t EntityManager::max_block_id() {
+player_t EntityManager::max_block_id() {
   auto ids = storage_->store.list_ids("tbl_block");
-  return ids.empty() ? blocknum_t{0} : blocknum_t{ids.back()};
+  return ids.empty() ? player_t{0} : player_t{ids.back()};
 }
 
-powernum_t EntityManager::num_powers() {
-  return powernum_t{
+player_t EntityManager::num_powers() {
+  return player_t{
       static_cast<int>(storage_->store.list_ids("tbl_power").size())};
 }
 
-powernum_t EntityManager::max_power_id() {
+player_t EntityManager::max_power_id() {
   auto ids = storage_->store.list_ids("tbl_power");
-  return ids.empty() ? powernum_t{0} : powernum_t{ids.back()};
+  return ids.empty() ? player_t{0} : player_t{ids.back()};
 }
 
 std::vector<shipnum_t>

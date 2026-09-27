@@ -1135,7 +1135,7 @@ void test_sync_power_ratings() {
   test::expect_eq(stats.power_stats(player_t{1}).money, 12'345);
 
   // Verified persisted power record
-  const auto* power = ctx.em.peek_power(powernum_t{1});
+  const auto* power = ctx.em.peek_power(1);
   test::expect_ne(power, nullptr);
   test::expect_eq(power->money, 12'345);
   test::expect_eq(power->popn, 5000);

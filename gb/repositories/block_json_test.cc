@@ -59,7 +59,7 @@ int main() {
   EntityManager em(db);
   std::flat_map<player_t, block> retrieved_blocks;
   for (player_t p : all_players()) {
-    const auto* block_ptr = em.peek_block(blocknum_t{p.value});
+    const auto* block_ptr = em.peek_block(p);
     test::expect_ne(block_ptr, nullptr);  // Should exist now
     retrieved_blocks[p] = *block_ptr;
   }

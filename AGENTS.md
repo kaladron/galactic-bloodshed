@@ -27,7 +27,7 @@ Specialized development skills are located in `.github/skills/` and provide comp
 - **Entity Manager Access**: `.github/skills/entity-manager-access/SKILL.md` — Scoped monadic mutations (`mutate_*`) and peeks (`with_*`, `peek_*`).
 - **Entity List Iteration**: `.github/skills/entity-list-iteration/SKILL.md` — Readonly and mutable list iteration patterns.
 - **Database Test Pattern**: `.github/skills/database-test-pattern/SKILL.md` — In-memory SQLite testing, `TestContext`, standard universe fixture (`with_standard_universe`), and persistence verification.
-- **Strong ID Types**: `.github/skills/strong-id-types/SKILL.md` — Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`), semantic metric aliases, and `PlayerVector`.
+- **Strong ID Types**: `.github/skills/strong-id-types/SKILL.md` — Type-safe IDs (`player_t`, `governor_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`), semantic metric aliases, and sparse `std::flat_map` / `std::flat_set` containers.
 - **Entity Domain Methods**: `.github/skills/entity-domain-methods/SKILL.md` — Computed predicates, domain methods, and structured manifests on entities.
 - **Repository Pattern**: `.github/skills/repository-pattern/SKILL.md` — DAL and repository implementation patterns.
 - **Module File Template**: `.github/skills/module-file-template/SKILL.md` — Standard C++26 module structure and headers.
@@ -184,7 +184,7 @@ cmake --build build --clean-first
 ### Module Architecture
 The codebase uses a 7-Tier C++26 Module DAG with the following structure:
 - **`dallib`** (Tier 1): Data Access Layer module (`Database`, `JsonStore`, `Schema`, `TelegramItem`)
-- **`gb.entities`** (Tier 1): Pure in-memory domain models (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`), strong IDs, `PlayerVector`, `Coordinates`, `Tweakables`
+- **`gb.entities`** (Tier 1): Pure in-memory domain models (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`), strong IDs, `Coordinates`, `Tweakables`
 - **`gb.repositories`** (Tier 2): Repository DAL adapters (`RaceRepository`, `ShipRepository`, `PlanetRepository`, `StarRepository`, `SectorRepository`, etc.)
 - **`gb.services`** (Tier 3): Core game services (`EntityManager`, `GameObj`, `Place`, `EntityLists`, `do_prompt`, `SessionRegistry`, `DeferredWriteScope`)
 - **`gb.mechanics`** (Tier 4): Shared stateless multi-entity game rules (`:navigation`, `:combat`, `:construction`, `:visibility`, `:victory`)
@@ -355,20 +355,20 @@ Rules:
 - **No End-of-Loop "Mistake Sweeps"**: Do not write catch-all loops at the end of processing passes to fix up incomplete state mutations or clear unowned entities. Fix the state transition atomically within the domain method itself.
 - **Pass Rich Domain References**: Keep local colony state (`plinfo`) distinct from empire-wide state (`Race`). Pass rich domain references (`Race::gov&`, `Race&`, `const Race&`) to domain methods rather than breaking them apart into loose primitive references (`money_t&`, `unsigned long&`, `bool has_gov`).
 
-#### Multi-Player Spatial Grid Tracking & Bitmaps
+#### Multi-Player Spatial Grid Tracking
 
 - **Dynamic Coordinate-Based Spatial Buffers**: When tracking per-sector states across multiple players on a planet grid (such as exploration, sensor visibility, or movement reaches), use `Coordinates` for all spatial coordinates and allocate dynamic buffers sized to `planet.num_sectors()`.
-- **Per-Sector Player Bitmaps**: Use `std::vector<std::bitset<MAXPLAYERS + 1>>` to track multi-player boolean flags across grid cells to prevent cross-player state overwriting and enable fast bitwise testing/operations. Avoid fixed-size static arrays (`Sectinfo[2048]`).
+- **Per-Sector Player Sets**: Use `std::vector<std::flat_set<player_t>>` to track multi-player flags across grid cells to prevent cross-player state overwriting without fixed player caps. Avoid fixed-size static arrays (`Sectinfo[2048]`).
 
 #### Planetary Grid Dimensions & `num_sectors()`
 
 - **Use `num_sectors()` helper**: Prefer `planet.num_sectors()` and `smap.num_sectors()` over raw multiplication (`dimensions().x * dimensions().y`).
 - **Use `smap.get_random()`**: When selecting a random sector coordinate on a world, call `smap.get_random().coords()` or `smap.get_random(rng)` instead of computing `int_rand(0, p.dimensions().x - 1)` manually.
 
-#### Multi-Player Simulation Arrays (`PlayerVector<T, N>`) & Nullable Foreign Keys (`std::optional<ID>`)
+#### Sparse Per-Player Containers (`std::flat_map` / `std::flat_set`) & Nullable Foreign Keys (`std::optional<ID>`)
 
-- **Strong `player_t` Indexing**: Use `PlayerVector<T, MAXPLAYERS>` (`gb.entities`) for multi-player simulation metrics (`TurnStats`, colony arrays, power tallies) to ensure 1-based indexing, bounds safety, and Glaze JSON serialization support without raw C-arrays.
-- **Nullable Foreign Keys (`std::optional<ID>`)**: Because all entity and governor IDs (`player_t`, `governor_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t`) are strictly 1-based (`>= 1`), every optional/nullable foreign key reference on an entity or sub-struct (e.g. `Sector::owner`, `Commod::bidder`, `Commod::star_to`, `Commod::planet_to`, `plroute::dest_star`, `plroute::dest_planet`, `AimedAtData::snum`, `AimedAtData::pnum`, `AimedAtData::shipno`, `Ship::destshipno`) MUST be typed as `std::optional<ID>` so that absent references serialize as JSON `null` / SQL `NULL` rather than a magic `0` sentinel.
+- **Strong `player_t` Indexing**: Use `std::flat_map<player_t, V>` and `std::flat_set<player_t>` for multi-player simulation metrics (`TurnStats`, colony maps, power tallies, block memberships) to ensure type-safe `player_t` keys, no fixed upper player cap, and Glaze JSON serialization support without raw C-arrays.
+- **Nullable Foreign Keys (`std::optional<ID>`)**: Because all entity and governor IDs (`player_t`, `governor_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`) are strictly 1-based (`>= 1`), every optional/nullable foreign key reference on an entity or sub-struct (e.g. `Sector::owner`, `Commod::bidder`, `Commod::star_to`, `Commod::planet_to`, `plroute::dest_star`, `plroute::dest_planet`, `AimedAtData::snum`, `AimedAtData::pnum`, `AimedAtData::shipno`, `Ship::destshipno`) MUST be typed as `std::optional<ID>` so that absent references serialize as JSON `null` / SQL `NULL` rather than a magic `0` sentinel.
 
 #### Domain Documentation in `docs/`
 

@@ -26,7 +26,7 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
 
   const power* power_ptr = nullptr;
   try {
-    power_ptr = em.peek_power(powernum_t{i.value});
+    power_ptr = em.peek_power(i);
   } catch (const EntityNotFoundError&) {
     return;
   }

@@ -85,8 +85,8 @@ void test_universe_generator_in_memory() {
   BlockRepository block_repo(store);
   PowerRepository power_repo(store);
   for (player_t p : all_players()) {
-    test::expect_false(block_repo.find_by_id(p.value).has_value());
-    test::expect_false(power_repo.find_by_id(p.value).has_value());
+    test::expect_false(block_repo.find_by_id(p).has_value());
+    test::expect_false(power_repo.find_by_id(p).has_value());
   }
 
   std::println(

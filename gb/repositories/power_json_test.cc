@@ -21,7 +21,7 @@ int main() {
 
   std::flat_map<player_t, power> test_power;
   for (player_t p : all_players()) {
-    test_power[p] = power{.id = p.value};
+    test_power[p] = power{.id = p};
   }
 
   // Initialize some test data for a few players
@@ -63,7 +63,7 @@ int main() {
 
   // Retrieve from EntityManager
   for (player_t p : all_players()) {
-    const auto* power_ptr = em.peek_power(powernum_t{p.value});
+    const auto* power_ptr = em.peek_power(p);
     test::expect_ne(power_ptr, nullptr);  // Should exist now
     loaded_power[p] = *power_ptr;
   }

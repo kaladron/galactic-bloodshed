@@ -85,7 +85,7 @@ bool name(const command_t& argv, GameObj& g) {
     }
     try {
       g.entity_manager.mutate_block(
-          Playernum.value, [&](struct block& b) { b.name = formatted_name; });
+          Playernum, [&](struct block& b) { b.name = formatted_name; });
     } catch (const EntityNotFoundError&) {
       g.out << "Block not found.\n";
       return false;

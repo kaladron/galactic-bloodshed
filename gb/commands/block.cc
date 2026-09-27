@@ -78,7 +78,7 @@ bool block(const command_t& argv, GameObj& g) {
     /* list the players who are in this alliance block */
     const struct block* block_p = nullptr;
     try {
-      block_p = g.entity_manager.peek_block(p.value);
+      block_p = g.entity_manager.peek_block(p);
     } catch (const EntityNotFoundError&) {
       g.out << "Block not found.\n";
       return false;
@@ -109,20 +109,18 @@ bool block(const command_t& argv, GameObj& g) {
     for (const Race& r : RaceList::readonly(g.entity_manager)) {
       if (!block_p->is_member(r.Playernum) || r.dissolved) continue;
       try {
-        g.entity_manager.with_power(
-            powernum_t{r.Playernum.value}, [&](const auto& p_info) {
-              table.add_row({std::format("{}", r.Playernum),
-                             std::string(r.name),
-                             race->estimate(p_info.troops, r),
-                             race->estimate(p_info.popn, r),
-                             race->estimate(p_info.money, r),
-                             race->estimate(p_info.ships_owned, r),
-                             race->estimate(p_info.planets_owned, r),
-                             race->estimate(p_info.resource, r),
-                             race->estimate(p_info.fuel, r),
-                             race->estimate(p_info.destruct, r),
-                             std::format("{}%", race->translation_for(r))});
-            });
+        g.entity_manager.with_power(r.Playernum, [&](const auto& p_info) {
+          table.add_row({std::format("{}", r.Playernum), std::string(r.name),
+                         race->estimate(p_info.troops, r),
+                         race->estimate(p_info.popn, r),
+                         race->estimate(p_info.money, r),
+                         race->estimate(p_info.ships_owned, r),
+                         race->estimate(p_info.planets_owned, r),
+                         race->estimate(p_info.resource, r),
+                         race->estimate(p_info.fuel, r),
+                         race->estimate(p_info.destruct, r),
+                         std::format("{}%", race->translation_for(r))});
+        });
       } catch (const EntityNotFoundError&) {
         continue;
       }

@@ -134,7 +134,7 @@ struct EntityListTraits<Commod> {
 
 export template <>
 struct EntityListTraits<block> {
-  using index_type = blocknum_t;
+  using index_type = player_t;
 
   static index_type count(EntityManager& em) {
     return em.max_block_id();
@@ -149,7 +149,8 @@ struct EntityListTraits<block> {
   }
 
   static index_type next(index_type current) {
-    return index_type{current.value + 1};
+    ++current;
+    return current;
   }
 
   static EntityHandle<block> get(EntityManager& em, index_type index) {
@@ -167,7 +168,7 @@ struct EntityListTraits<block> {
 
 export template <>
 struct EntityListTraits<power> {
-  using index_type = powernum_t;
+  using index_type = player_t;
 
   static index_type count(EntityManager& em) {
     return em.max_power_id();
@@ -182,7 +183,8 @@ struct EntityListTraits<power> {
   }
 
   static index_type next(index_type current) {
-    return index_type{current.value + 1};
+    ++current;
+    return current;
   }
 
   static EntityHandle<power> get(EntityManager& em, index_type index) {

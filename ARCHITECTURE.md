@@ -90,7 +90,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
     - Geoengineering: `TerraformerShip` $\to$ `GroundPlowShip` (surface order queues and plowing)
     - Cargo Transfer: `TransporterShip` (target recipient vessels)
     - Ecological Containment: `ToxicWasteShip` (planetary toxin harvesting and storage)
-  - Type-safe IDs (`player_t`, `governor_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t` — all entity and governor primary keys are uniformly 1-based `>= 1`, while sector `(x, y)` coordinates remain 0-based), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), sparse `std::flat_map` / `std::flat_set` per-player and per-governor containers, `Coordinates`
+  - Type-safe IDs (`player_t`, `governor_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t` — all entity and governor primary keys are uniformly 1-based `>= 1`, while sector `(x, y)` coordinates remain 0-based), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), sparse `std::flat_map` / `std::flat_set` per-player and per-governor containers, `Coordinates`
   - First-class domain methods and computed predicates (`Ship::is_docked()`, `Ship::refuel_from_gas_giant()`, `Ship::process_radiation()`, `Ship::prepare_for_flight()`, `Planet::update_toxicity()`, `Planet::process_toxic_environmental_damage()`, `Planet::select_victim_to_steal_from()`, `SectorMap::process_supernova_devastation()`, `AutonomousShip::mine_sector()`, `AutonomousShip::roam_to_adjacent_sector()`)
   - Configuration constants (`Tweakables`), random utilities (`rand.cppm`), ship templates (`ship_templates.cppm`), and ship filters (`shipfilter.cppm`)
 
@@ -571,8 +571,8 @@ flowchart TD
    Simulation passes never call `push_telegram()` directly. Instead, passes return structured event records (`RecoveryReport`, `EnslavementResult`, `IslandDiscovery`, `std::optional<Coordinates>`), which presentation helpers format into ASCII bulletins.
 2. **Point-of-Action State Consistency**:
    Domain mutating methods (`Sector::devastate()`, `Sector::terraform()`, `Planet::free_slaves()`, `plinfo::collect_tax()`) leave entities in an invariant-satisfying state atomically at the point of action, eliminating end-of-loop cleanup sweeps.
-3. **`PlayerVector<T, N>` Strong ID Container**:
-   Multi-player metrics are stored in `PlayerVector<T, N>` (`gb.entities`), offering 1-indexed `player_t` bounds checking, container iteration, and zero-allocation JSON serialization via `glz::meta`.
+3. **Sparse Per-Player Containers (`std::flat_map<player_t, V>`)**:
+   Multi-player metrics are stored in `std::flat_map<player_t, V>` and `std::flat_set<player_t>`, offering strong `player_t` indexing without a fixed upper player cap and direct JSON serialization via Glaze.
 4. **Dimensions & `num_sectors()` Encapsulation**:
    Planetary grids are sized by `Coordinates dimensions` (`data_.dimensions.x`, `data_.dimensions.y`) and `num_sectors()` (`dimensions.x * dimensions.y`), providing uniform toroidal wrapping and geometric validation without raw dimensions arithmetic.
 

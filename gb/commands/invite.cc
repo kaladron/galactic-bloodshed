@@ -19,7 +19,7 @@ bool invite(const command_t& argv, GameObj& g) {
   bool mode = argv[0] == "invite";
 
   player_t n = get_player(g.entity_manager, argv[1]);
-  if (n.value == 0) {
+  if (n == 0) {
     g.out << "No such player.\n";
     return false;
   }
@@ -35,7 +35,7 @@ bool invite(const command_t& argv, GameObj& g) {
   }
 
   try {
-    g.entity_manager.mutate_block(g.player().value, [&](auto& b) {
+    g.entity_manager.mutate_block(g.player(), [&](auto& b) {
       std::string buf;
       if (mode) {
         b.invite(n);

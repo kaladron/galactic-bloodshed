@@ -253,11 +253,11 @@ public:
       : Repository<block>(store, "tbl_block") {}
 
   // Domain-specific methods
-  std::optional<block> find_by_id(blocknum_t id) {
+  std::optional<block> find_by_id(player_t id) {
     return find(id);
   }
   bool save(const block& b) {
-    return Repository<block>::save(b.Playernum.value, b);
+    return Repository<block>::save(b.Playernum, b);
   }
 
 protected:
@@ -276,7 +276,7 @@ public:
       : Repository<power>(store, "tbl_power") {}
 
   // Domain-specific methods
-  std::optional<power> find_by_id(powernum_t id) {
+  std::optional<power> find_by_id(player_t id) {
     return find(id);
   }
   bool save(const power& p) {

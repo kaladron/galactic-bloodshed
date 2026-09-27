@@ -107,8 +107,7 @@ bool tech_status(const command_t& argv, GameObj& g) {
 
   g.out << table << "\n";
 
-  const auto* power_ptr =
-      g.entity_manager.peek_power(powernum_t{Playernum.value});
+  const auto* power_ptr = g.entity_manager.peek_power(Playernum);
   if (!power_ptr) {
     g.out << "       Total Popn:  unknown\n";
   } else {

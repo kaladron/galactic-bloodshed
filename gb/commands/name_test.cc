@@ -326,7 +326,7 @@ void test_name_block() {
     test::expect_contains(g.out.str(), "Done.");
 
     // Verify block name updated in database
-    const auto* saved = ctx.em.peek_block(blocknum_t{1});
+    const auto* saved = ctx.em.peek_block(1);
     test::expect_ne(saved, nullptr);
     test::expect_eq(saved->name, "United Federation");
   }

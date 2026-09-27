@@ -36,7 +36,7 @@ void compute_power_blocks(EntityManager& entity_manager) {
     const player_t i = race_i.Playernum;
 
     try {
-      entity_manager.mutate_block(i.value, [&](block& block_i) {
+      entity_manager.mutate_block(i, [&](block& block_i) {
         block_i.clear_power_stats();
 
         for (const Race& race_j : RaceList::readonly(entity_manager)) {
@@ -44,8 +44,7 @@ void compute_power_blocks(EntityManager& entity_manager) {
 
           if (block_i.is_member(j)) {
             try {
-              const auto* power_ptr =
-                  entity_manager.peek_power(powernum_t{j.value});
+              const auto* power_ptr = entity_manager.peek_power(j);
               block_i.accumulate_member_power(*power_ptr);
             } catch (const EntityNotFoundError&) {
               continue;

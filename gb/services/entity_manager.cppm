@@ -177,8 +177,8 @@ export class EntityManager {
                      std::unique_ptr<SectorMap>>
       sectormap_cache;
   std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
-  std::unordered_map<blocknum_t, std::unique_ptr<block>> block_cache;
-  std::unordered_map<powernum_t, std::unique_ptr<power>> power_cache;
+  std::unordered_map<player_t, std::unique_ptr<block>> block_cache;
+  std::unordered_map<player_t, std::unique_ptr<power>> power_cache;
   std::unordered_map<ShipType, std::unique_ptr<ShipExam>> ship_exam_cache;
   std::unique_ptr<universe_struct> global_universe_cache;  // Singleton
   std::unique_ptr<ServerState> server_state_cache;         // Singleton
@@ -190,8 +190,8 @@ export class EntityManager {
   std::unordered_map<starnum_t, int> star_refcount;
   std::unordered_map<std::pair<starnum_t, planetnum_t>, int> sectormap_refcount;
   std::unordered_map<int, int> commod_refcount;
-  std::unordered_map<blocknum_t, int> block_refcount;
-  std::unordered_map<powernum_t, int> power_refcount;
+  std::unordered_map<player_t, int> block_refcount;
+  std::unordered_map<player_t, int> power_refcount;
   std::unordered_map<ShipType, int> ship_exam_refcount;
   int global_universe_refcount = 0;
   int server_state_refcount = 0;
@@ -207,8 +207,8 @@ export class EntityManager {
   EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
   EntityHandle<Star> get_star(starnum_t num);
   EntityHandle<Commod> get_commod(int id);
-  EntityHandle<block> get_block(blocknum_t id);
-  EntityHandle<power> get_power(powernum_t id);
+  EntityHandle<block> get_block(player_t id);
+  EntityHandle<power> get_power(player_t id);
   EntityHandle<universe_struct> get_universe();
   EntityHandle<ServerState> get_server_state();
   EntityHandle<ShipExam> get_ship_exam(ShipType ship_type);
@@ -227,8 +227,8 @@ public:
   const Planet* peek_planet(starnum_t star, planetnum_t pnum);
   const Star* peek_star(starnum_t num);
   const Commod* peek_commod(int id);
-  const block* peek_block(blocknum_t id);
-  const power* peek_power(powernum_t id);
+  const block* peek_block(player_t id);
+  const power* peek_power(player_t id);
   const universe_struct* peek_universe();
   [[nodiscard]] int count_non_asteroid_planets();
   const ServerState* peek_server_state();
@@ -299,13 +299,13 @@ public:
   }
 
   template <typename Fn>
-  decltype(auto) with_block(blocknum_t id, Fn&& fn) {
+  decltype(auto) with_block(player_t id, Fn&& fn) {
     const auto* b = peek_block(id);
     return std::forward<Fn>(fn)(*b);
   }
 
   template <typename Fn>
-  decltype(auto) with_power(powernum_t id, Fn&& fn) {
+  decltype(auto) with_power(player_t id, Fn&& fn) {
     const auto* p = peek_power(id);
     return std::forward<Fn>(fn)(*p);
   }
@@ -376,13 +376,13 @@ public:
   }
 
   template <typename Fn>
-  decltype(auto) mutate_block(blocknum_t id, Fn&& fn) {
+  decltype(auto) mutate_block(player_t id, Fn&& fn) {
     auto handle = get_block(id);
     return std::forward<Fn>(fn)(*handle);
   }
 
   template <typename Fn>
-  decltype(auto) mutate_power(powernum_t id, Fn&& fn) {
+  decltype(auto) mutate_power(player_t id, Fn&& fn) {
     auto handle = get_power(id);
     return std::forward<Fn>(fn)(*handle);
   }
@@ -424,10 +424,10 @@ public:
   starnum_t max_star_id();
   shipnum_t num_ships();
   shipnum_t max_ship_number();
-  blocknum_t num_blocks();
-  blocknum_t max_block_id();
-  powernum_t num_powers();
-  powernum_t max_power_id();
+  player_t num_blocks();
+  player_t max_block_id();
+  player_t num_powers();
+  player_t max_power_id();
 
   // Ship spatial query operations
   [[nodiscard]] std::vector<shipnum_t> ships_in_star_system(starnum_t star_id);
@@ -558,8 +558,8 @@ private:
   void release_planet(starnum_t star, planetnum_t pnum);
   void release_star(starnum_t num);
   void release_commod(int id);
-  void release_block(blocknum_t id);
-  void release_power(powernum_t id);
+  void release_block(player_t id);
+  void release_power(player_t id);
   void release_universe();
   void release_server_state();
   void release_sectormap(starnum_t star, planetnum_t pnum);

@@ -444,7 +444,7 @@ public:
 };
 
 export struct power {
-  int id{0};                    // Power entry ID for database persistence
+  player_t id{0};               // Player ID for database persistence
   population_t troops{0};       /* total troops */
   population_t popn{0};         /* total population */
   resource_t resource{0};       /* total resource in stock */

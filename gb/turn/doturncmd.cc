@@ -321,13 +321,12 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         // Compute victory points for the block
         if (!star_inhabited.empty()) {
           try {
-            const auto* block_player =
-                state.entity_manager.peek_block(player.value);
+            const auto* block_player = state.entity_manager.peek_block(player);
             if (std::ranges::all_of(star_inhabited, [&](player_t occupant) {
                   return block_player->is_member(occupant);
                 })) {
               state.entity_manager.mutate_block(
-                  player.value, [](struct block& b) { b.systems_owned++; });
+                  player, [](struct block& b) { b.systems_owned++; });
             }
           } catch (const EntityNotFoundError&) {
           }
@@ -458,7 +457,7 @@ bool check_language_translation_unlock(player_t player, int controlled_planets,
 void update_alliance_block_vps(player_t player, EntityManager& entity_manager) {
   try {
     entity_manager.mutate_block(
-        player.value, [](struct block& b) { b.VPs = 10L * b.systems_owned; });
+        player, [](struct block& b) { b.VPs = 10L * b.systems_owned; });
   } catch (const EntityNotFoundError&) {
   }
 }
@@ -477,9 +476,9 @@ void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t i = race.Playernum;
     try {
-      entity_manager.mutate_power(powernum_t{i.value}, [&](struct power& p) {
+      entity_manager.mutate_power(i, [&](struct power& p) {
         p = stats.power_stats(i);
-        p.id = i.value;
+        p.id = i;
       });
     } catch (const EntityNotFoundError&) {
     }
@@ -556,7 +555,7 @@ void distribute_universe_action_points(EntityManager& entity_manager) {
       const player_t player = race.Playernum;
       try {
         entity_manager.mutate_block(
-            player.value, [](struct block& b) { b.systems_owned = 0; });
+            player, [](struct block& b) { b.systems_owned = 0; });
       } catch (const EntityNotFoundError&) {
       }
       if (compute_governed_status(race, entity_manager)) {

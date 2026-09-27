@@ -614,14 +614,14 @@ void test_standard_universe_fixture() {
     test::expect_eq(r->leader().money, 10'000);
     test::expect_eq(r->translation_for(pid), 100);
 
-    const auto* blk = ctx.em.peek_block(blocknum_t{pid.value});
+    const auto* blk = ctx.em.peek_block(pid);
     test::expect_true(blk != nullptr, "Auto-seeded block must exist");
     test::expect_eq(blk->Playernum, pid);
     test::expect_eq(blk->name, name);
 
-    const auto* pwr = ctx.em.peek_power(powernum_t{pid.value});
+    const auto* pwr = ctx.em.peek_power(pid);
     test::expect_true(pwr != nullptr, "Auto-seeded power must exist");
-    test::expect_eq(pwr->id, pid.value);
+    test::expect_eq(pwr->id, pid);
   }
 
   // 2. Verify Star 1 (Sol)
@@ -729,8 +729,8 @@ void test_procedural_universe_fixture() {
   for (player_t pid = 1; pid <= 4; ++pid) {
     test::expect_eq(univ->get_AP(pid), 100);
     test::expect_ne(ctx.em.peek_race(pid), nullptr);
-    test::expect_ne(ctx.em.peek_block(blocknum_t{pid.value}), nullptr);
-    test::expect_ne(ctx.em.peek_power(powernum_t{pid.value}), nullptr);
+    test::expect_ne(ctx.em.peek_block(pid), nullptr);
+    test::expect_ne(ctx.em.peek_power(pid), nullptr);
   }
 
   // Verify all stars explored with 100 AP

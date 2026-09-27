@@ -57,7 +57,7 @@ bool page(const command_t& argv, GameObj& g) {
   if (to_block) {
     const struct block* block_player = nullptr;
     try {
-      block_player = g.entity_manager.peek_block(Playernum.value);
+      block_player = g.entity_manager.peek_block(Playernum);
     } catch (const EntityNotFoundError&) {
       g.out << "Block not found.\n";
       return false;

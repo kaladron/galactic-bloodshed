@@ -94,7 +94,7 @@ bool send_to_alliance_block(const command_t& argv, GameObj& g) {
 
   const block* block_target = nullptr;
   try {
-    block_target = g.entity_manager.peek_block(who.value);
+    block_target = g.entity_manager.peek_block(who);
   } catch (const EntityNotFoundError&) {
     g.out << "Block not found.\n";
     return false;

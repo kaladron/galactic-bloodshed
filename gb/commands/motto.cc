@@ -21,7 +21,7 @@ bool motto(const command_t& argv, GameObj& g) {
   std::string message = ss_message.str();
 
   try {
-    g.entity_manager.mutate_block(g.player().value,
+    g.entity_manager.mutate_block(g.player(),
                                   [&](struct block& b) { b.motto = message; });
   } catch (const EntityNotFoundError&) {
     g.out << "Block not found.\n";

@@ -162,8 +162,7 @@ void initialize_block_data(EntityManager& entity_manager) {
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t i = race.Playernum;
     try {
-      entity_manager.mutate_block(i.value,
-                                  [&](struct block& b) { b.add_member(i); });
+      entity_manager.mutate_block(i, [&](struct block& b) { b.add_member(i); });
     } catch (const EntityNotFoundError&) {
     }
   }

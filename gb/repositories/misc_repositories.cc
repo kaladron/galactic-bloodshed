@@ -31,11 +31,18 @@ struct meta<Commod> {
 };
 
 template <>
+struct meta<VnTargetRecord> {
+  using T = VnTargetRecord;
+  static constexpr auto value =
+      object("hits", &T::hits, "primary_star", &T::primary_star,
+             "secondary_star", &T::secondary_star);
+};
+
+template <>
 struct meta<universe_struct> {
   using T = universe_struct;
   static constexpr auto value =
-      object("AP", &T::AP, "VN_hitlist", &T::VN_hitlist, "VN_index1",
-             &T::VN_index1, "VN_index2", &T::VN_index2);
+      object("AP", &T::AP, "vn_targets", &T::vn_targets);
 };
 
 template <>

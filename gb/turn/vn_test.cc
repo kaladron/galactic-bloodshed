@@ -155,10 +155,12 @@ int main() {
     stats.VN_brain.most_mad = player_t{2};
 
     em.mutate_universe([](universe_struct& u) {
-      u.VN_index1[player_t{2}] = 2;
-      u.VN_index2[player_t{2}] = 2;
-      u.VN_index1[player_t{3}] = 4;
-      u.VN_index2[player_t{3}] = 4;
+      u.vn_target(2) = VnTargetRecord{.hits = 2,
+                                      .primary_star = starnum_t{2},
+                                      .secondary_star = starnum_t{2}};
+      u.vn_target(3) = VnTargetRecord{.hits = 2,
+                                      .primary_star = starnum_t{4},
+                                      .secondary_star = starnum_t{4}};
     });
 
     ship_struct bers_data{};
@@ -182,11 +184,11 @@ int main() {
     test::expect_true(bers->hyper_drive().on);
     test::expect_eq(bers->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
 
-    // Test hitlist target routing when only one destruction site is recorded
-    // (VN_index1 set, VN_index2 == std::nullopt)
+    // Test hitlist target routing when only primary_star is recorded
     em.mutate_universe([](universe_struct& u) {
-      u.VN_index1[player_t{3}] = starnum_t{4};
-      u.VN_index2[player_t{3}] = std::nullopt;
+      u.vn_target(3) = VnTargetRecord{.hits = 1,
+                                      .primary_star = starnum_t{4},
+                                      .secondary_star = std::nullopt};
     });
     stats.VN_brain.most_mad = player_t{3};
     for (int i = 0; i < 10; ++i) {
@@ -195,6 +197,30 @@ int main() {
       test::expect_eq(bers->destpnum(), planetnum_t{1});
       test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
     }
+
+    // Test hitlist target routing when only secondary_star is recorded
+    em.mutate_universe([](universe_struct& u) {
+      u.vn_target(3) = VnTargetRecord{.hits = 1,
+                                      .primary_star = std::nullopt,
+                                      .secondary_star = starnum_t{2}};
+    });
+    for (int i = 0; i < 10; ++i) {
+      select_berserker_destination(em, *bers, stats);
+      test::expect_eq(bers->deststar(), starnum_t{2});
+      test::expect_eq(bers->whatdest(), ScopeLevel::LEVEL_PLAN);
+    }
+
+    // Test fallback to random valid star [1, num_stars] when offender only
+    // killed VNs in deep space (both primary_star and secondary_star are
+    // std::nullopt)
+    em.mutate_universe([](universe_struct& u) {
+      u.vn_target(3) = VnTargetRecord{.hits = 3,
+                                      .primary_star = std::nullopt,
+                                      .secondary_star = std::nullopt};
+    });
+    select_berserker_destination(em, *bers, stats);
+    test::expect_ge(bers->deststar(), starnum_t{1});
+    test::expect_le(bers->deststar(), em.num_stars());
 
     std::println(std::cout, "  ✓ select_berserker_destination targets hitlist");
   }

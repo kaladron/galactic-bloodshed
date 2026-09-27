@@ -21,8 +21,8 @@ void test_power_dispatch() {
 
   // Setup: Create universe
   universe_struct us{};
-  us.VN_hitlist[player_t{1}] = 3;
-  us.VN_hitlist[player_t{2}] = 7;
+  us.vn_target(1).hits = 3;
+  us.vn_target(2).hits = 7;
   UniverseRepository universe_repo(store);
   universe_repo.save(us);
 

@@ -73,7 +73,7 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     }
   } else if (desc.ap.model == APModel::FixedUniv) {
     const auto* univ = g.entity_manager.peek_universe();
-    if (!univ || univ->AP[g.player()] < desc.ap.amount) {
+    if (!univ || univ->get_AP(g.player()) < desc.ap.amount) {
       g.out << std::format("You need {} universe action points.\n",
                            desc.ap.amount);
       return false;
@@ -107,7 +107,7 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
           g.snum(), [&](Star& star) { star.AP(g.player()) -= desc.ap.amount; });
     } else if (desc.ap.model == APModel::FixedUniv) {
       g.entity_manager.mutate_universe(
-          [&](universe_struct& u) { u.AP[g.player()] -= desc.ap.amount; });
+          [&](universe_struct& u) { u.deduct_AP(g.player(), desc.ap.amount); });
     }
   }
 

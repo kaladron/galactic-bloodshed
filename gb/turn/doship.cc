@@ -503,7 +503,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
             TurnStats& stats) {
   if (!ship.prepare_for_flight(update)) {
     if (!ship.alive()) {
-      entity_manager.kill_ship(0, ship);
+      entity_manager.kill_ship(ship.owner(), ship);
     }
     return;
   }

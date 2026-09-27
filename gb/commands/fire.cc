@@ -108,7 +108,7 @@ bool has_fire_ap(const command_t& argv, GameObj& g, const Ship& from) {
     return true;
   }
   if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-    if (g.entity_manager.peek_universe()->AP[g.player()] < 1) {
+    if (g.entity_manager.peek_universe()->get_AP(g.player()) < 1) {
       g.out << "You need 1 universe action points.\n";
       return false;
     }

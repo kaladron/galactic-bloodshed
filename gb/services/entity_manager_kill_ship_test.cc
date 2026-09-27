@@ -71,7 +71,8 @@ int main() {
     std::println(std::cout, "✓ Basic ship kill works");
   }
 
-  // AutonomousShip who_killed tracking
+  // AutonomousShip who_killed tracking (deep-space VN kill does not record star
+  // 0)
   {
     auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_VN)
                            .owned_by(2)
@@ -84,6 +85,11 @@ int main() {
     auto* vn = ship.as<VonNeumannShip>();
     test::expect_ne(vn, nullptr);
     test::expect_eq(vn->who_killed(), player_t{1});
+    const auto* universe_after = em.peek_universe();
+    test::expect_ne(universe_after, nullptr);
+    test::expect_eq(universe_after->vn_hits(1), 1U);
+    test::expect_eq(universe_after->vn_target(1).primary_star, std::nullopt);
+    test::expect_eq(universe_after->vn_target(1).secondary_star, std::nullopt);
     std::println(std::cout, "✓ AutonomousShip who_killed tracking works");
   }
 
@@ -151,9 +157,8 @@ int main() {
     // Check VN hitlist was updated
     const auto* universe_after = em.peek_universe();
     test::expect_ne(universe_after, nullptr);
-    test::expect_gt(universe_after->VN_hitlist[player_t{1}], 0);
-    test::expect_true(universe_after->VN_index1[player_t{1}] == starnum_t{1} ||
-                      universe_after->VN_index2[player_t{1}] == starnum_t{1});
+    test::expect_eq(universe_after->vn_hits(1), 2U);
+    test::expect_eq(universe_after->vn_target(1).primary_star, starnum_t{1});
     std::println(std::cout, "✓ VN hitlist tracking works");
   }
 
@@ -271,33 +276,33 @@ int main() {
     std::println(std::cout, "✓ Recursive killing of landed ships works");
   }
 
-  // Deterministic testing of record_vn_destruction_site
+  // Deterministic testing of VnTargetRecord::record_destruction_star
   {
-    std::optional<starnum_t> index1{std::nullopt};
-    std::optional<starnum_t> index2{std::nullopt};
+    VnTargetRecord record{};
 
-    // Slot 1 empty -> recorded in index1
-    record_vn_destruction_site(index1, index2, 10, true);
-    test::expect_eq(index1, starnum_t{10});
-    test::expect_eq(index2, std::nullopt);
+    // Slot 1 empty -> recorded in primary_star
+    record.record_destruction_star(10, true);
+    test::expect_eq(record.primary_star, starnum_t{10});
+    test::expect_eq(record.secondary_star, std::nullopt);
 
-    // Slot 2 empty -> recorded in index2
-    record_vn_destruction_site(index1, index2, 20, false);
-    test::expect_eq(index1, starnum_t{10});
-    test::expect_eq(index2, starnum_t{20});
+    // Slot 2 empty -> recorded in secondary_star
+    record.record_destruction_star(20, false);
+    test::expect_eq(record.primary_star, starnum_t{10});
+    test::expect_eq(record.secondary_star, starnum_t{20});
 
-    // Both slots filled -> supplant slot 1 when supplant_first is true
-    record_vn_destruction_site(index1, index2, 30, true);
-    test::expect_eq(index1, starnum_t{30});
-    test::expect_eq(index2, starnum_t{20});
+    // Both slots filled -> replace primary_star when replace_primary is true
+    record.record_destruction_star(30, true);
+    test::expect_eq(record.primary_star, starnum_t{30});
+    test::expect_eq(record.secondary_star, starnum_t{20});
 
-    // Both slots filled -> supplant slot 2 when supplant_first is false
-    record_vn_destruction_site(index1, index2, 40, false);
-    test::expect_eq(index1, starnum_t{30});
-    test::expect_eq(index2, starnum_t{40});
+    // Both slots filled -> replace secondary_star when replace_primary is false
+    record.record_destruction_star(40, false);
+    test::expect_eq(record.primary_star, starnum_t{30});
+    test::expect_eq(record.secondary_star, starnum_t{40});
 
-    std::println(std::cout,
-                 "✓ record_vn_destruction_site deterministic test works");
+    std::println(
+        std::cout,
+        "✓ VnTargetRecord::record_destruction_star deterministic test works");
   }
 
   // Foreign key referential integrity cleanup on kill_ship (SpaceMirrorShip,

@@ -265,7 +265,7 @@ void test_entity_manager_singleton_universe() {
       "when uninitialized");
 
   universe_struct univ{};
-  univ.AP[player_t{1}] = 50;
+  univ.set_AP(1, 50);
   JsonStore store(db);
   UniverseRepository univ_repo(store);
   univ_repo.save(univ);
@@ -273,13 +273,13 @@ void test_entity_manager_singleton_universe() {
   const auto* u1 = em.peek_universe();
   const auto* u2 = em.peek_universe();
   test::expect_eq(u1, u2);
-  test::expect_eq(u1->AP[player_t{1}], 50);
+  test::expect_eq(u1->get_AP(1), 50);
 
-  em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 75; });
+  em.mutate_universe([](universe_struct& u) { u.set_AP(1, 75); });
 
   const auto* peek = em.peek_universe();
   test::expect_ne(peek, nullptr);
-  test::expect_eq(peek->AP[player_t{1}], 75);
+  test::expect_eq(peek->get_AP(1), 75);
   std::println(std::cout, "  ✓ Singleton universe_struct works correctly");
 }
 
@@ -420,7 +420,7 @@ void test_entity_manager_kill_ship() {
   ships.save(vn_ship);
 
   universe_struct univ_data{};
-  univ_data.VN_hitlist[player_t{1}] = 5;
+  univ_data.vn_target(1).hits = 5;
   UniverseRepository univ_repo(store);
   univ_repo.save(univ_data);
 
@@ -428,10 +428,10 @@ void test_entity_manager_kill_ship() {
   std::println(std::cout, "  ✓ VN ship killed without errors");
 
   em.with_universe([&](const universe_struct& univ) {
-    test::expect_eq(univ.VN_index1[player_t{2}], starnum_t{5});
+    test::expect_eq(univ.vn_hits(2), 1U);
+    test::expect_eq(univ.vn_target(2).primary_star, starnum_t{5});
   });
-  std::println(std::cout,
-               "  ✓ VN tracking (VN_hitlist and VN_index) updated correctly");
+  std::println(std::cout, "  ✓ VN tracking (vn_targets) updated correctly");
 
   ship_struct pod_data{};
   pod_data.number = 300;
@@ -898,12 +898,12 @@ void test_entity_manager_with_scoped_peeks() {
 
   // 6. with_universe
   universe_struct u{};
-  u.AP[player_t{1}] = 10;
+  u.set_AP(1, 10);
   UniverseRepository u_repo(store);
   u_repo.save(u);
 
   auto univ_ap = em.with_universe(
-      [](const universe_struct& univ) { return univ.AP[player_t{1}]; });
+      [](const universe_struct& univ) { return univ.get_AP(1); });
   test::expect_eq(univ_ap, 10);
 
   // 7. with_server_state

@@ -982,15 +982,9 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
 
   if (const auto* auto_ship = ship.as<AutonomousShip>()) {
     mutate_universe([&](universe_struct& Sdata) {
-      /* add ship to VN shit list */
       if (const auto killer = auto_ship->who_killed()) {
-        Sdata.VN_hitlist[*killer] += 1;
+        Sdata.record_vn_kill(*killer, ship.orbited_star(), int_rand(0, 1) == 0);
       }
-
-      /* keep track of where these VN's were shot up */
-      record_vn_destruction_site(Sdata.VN_index1[Playernum],
-                                 Sdata.VN_index2[Playernum], ship.storbits(),
-                                 int_rand(0, 1) == 0);
     });
   }
 

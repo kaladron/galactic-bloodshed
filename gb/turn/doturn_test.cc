@@ -519,7 +519,7 @@ void test_action_points_computation_and_distribution() {
 
   // 3. Universe Action Point Distribution
   universe_struct u{};
-  u.AP[player_t{1}] = 100;
+  u.set_AP(1, 100);
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -529,7 +529,7 @@ void test_action_points_computation_and_distribution() {
 
   const auto* u_after = em.peek_universe();
   test::expect_ne(u_after, nullptr);
-  test::expect_eq(u_after->AP[player_t{1}], 150);  // 100 + 50
+  test::expect_eq(u_after->get_AP(1), 150);  // 100 + 50
 }
 
 void test_output_ground_attacks() {
@@ -628,16 +628,16 @@ void test_update_von_neumann_target() {
   // When no VN machines have been destroyed, most_mad remains std::nullopt
   TurnStats stats{};
   update_von_neumann_target(em, stats);
-  test::expect_eq(stats.VN_brain.total_mad, 0);
+  test::expect_eq(stats.VN_brain.total_mad, 0U);
   test::expect_eq(stats.VN_brain.most_mad, std::nullopt);
 
   em.mutate_universe([](universe_struct& univ) {
-    univ.VN_hitlist[player_t{1}] = 10;
-    univ.VN_hitlist[player_t{2}] = 25;
+    univ.vn_target(1).hits = 10;
+    univ.vn_target(2).hits = 25;
   });
   update_von_neumann_target(em, stats);
 
-  test::expect_eq(stats.VN_brain.total_mad, 35);
+  test::expect_eq(stats.VN_brain.total_mad, 35U);
   test::expect_eq(stats.VN_brain.most_mad, player_t{2});
 }
 

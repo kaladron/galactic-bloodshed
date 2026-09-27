@@ -21,11 +21,10 @@ int main() {
   universe_struct test_stardata{};
 
   // Initialize some basic fields for testing
-  test_stardata.AP[player_t{1}] = 10;
-  test_stardata.AP[player_t{2}] = 20;
-  test_stardata.VN_hitlist[player_t{1}] = 3;
-  test_stardata.VN_index1[player_t{1}] = starnum_t{1};
-  test_stardata.VN_index2[player_t{1}] = starnum_t{2};
+  test_stardata.set_AP(1, 10);
+  test_stardata.set_AP(2, 20);
+  test_stardata.vn_target(1) = VnTargetRecord{
+      .hits = 3, .primary_star = starnum_t{1}, .secondary_star = starnum_t{2}};
 
   // Test EntityManager - stores and retrieves universe data
   // First save using repository to create the database record
@@ -39,14 +38,13 @@ int main() {
   test::expect_ne(retrieved, nullptr);
 
   // Verify key fields
-  test::expect_eq(retrieved->AP[player_t{1}], test_stardata.AP[player_t{1}]);
-  test::expect_eq(retrieved->AP[player_t{2}], test_stardata.AP[player_t{2}]);
-  test::expect_eq(retrieved->VN_hitlist[player_t{1}],
-                  test_stardata.VN_hitlist[player_t{1}]);
-  test::expect_eq(retrieved->VN_index1[player_t{1}],
-                  test_stardata.VN_index1[player_t{1}]);
-  test::expect_eq(retrieved->VN_index2[player_t{1}],
-                  test_stardata.VN_index2[player_t{1}]);
+  test::expect_eq(retrieved->get_AP(1), test_stardata.get_AP(1));
+  test::expect_eq(retrieved->get_AP(2), test_stardata.get_AP(2));
+  test::expect_eq(retrieved->vn_hits(1), test_stardata.vn_hits(1));
+  test::expect_eq(retrieved->vn_target(1).primary_star,
+                  test_stardata.vn_target(1).primary_star);
+  test::expect_eq(retrieved->vn_target(1).secondary_star,
+                  test_stardata.vn_target(1).secondary_star);
 
   // Database connection will be cleaned up automatically by Sql destructor
 

@@ -374,17 +374,17 @@ void test_assault_combat_boobytrap_and_unmooring() {
                               .build();
   ctx.em.mutate_ship(univ_target, [](Ship& s) { s.enter_deep_space(); });
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[1] = 0; });
+  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"assault", "#1", std::format("#{}", univ_target.value)});
   test::expect_contains(g.out.str(), "You need 1 universe action point.");
 
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[1] = 5; });
+  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 5); });
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"assault", "#1", std::format("#{}", univ_target.value)}, 0);
-  test::expect_eq(ctx.em.peek_universe()->AP[1], 4);
+  test::expect_eq(ctx.em.peek_universe()->get_AP(1), 4);
 
   // 5. Civilian boarding assault (victory with casualties and morale gain)
   g.set_level(ScopeLevel::LEVEL_STAR);

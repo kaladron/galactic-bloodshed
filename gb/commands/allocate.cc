@@ -21,7 +21,8 @@ bool allocate(const command_t& argv, GameObj& g) {
   ap_t maxalloc =
       g.entity_manager.with_universe([&](const universe_struct& univ) {
         return g.entity_manager.with_star(g.snum(), [&](const Star& star) {
-          return std::min(univ.AP[Playernum], LIMIT_APs - star.AP(Playernum));
+          return std::min(univ.get_AP(Playernum),
+                          LIMIT_APs - star.AP(Playernum));
         });
       });
 
@@ -31,7 +32,7 @@ bool allocate(const command_t& argv, GameObj& g) {
     return false;
   }
   g.entity_manager.mutate_universe(
-      [&](universe_struct& u) { u.AP[Playernum] -= alloc; });
+      [&](universe_struct& u) { u.deduct_AP(Playernum, alloc); });
   g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
     star.AP(Playernum) = std::min(LIMIT_APs, star.AP(Playernum) + alloc);
   });

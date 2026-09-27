@@ -15,7 +15,7 @@ int main() {
   TestWorldBuilder(ctx).add_race("Spenders").add_star("Sol", 20);
 
   // Setup Universe APs
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 50; });
+  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 50); });
 
   // Create GameObj
   auto& registry = get_test_session_registry();
@@ -60,7 +60,7 @@ int main() {
     ctx.em.clear_cache();
     const auto* u = ctx.em.peek_universe();
     const auto* s = ctx.em.peek_star(1);
-    test::expect_eq(u->AP[player_t{1}], 35);
+    test::expect_eq(u->get_AP(1), 35);
     test::expect_eq(s->AP(1), 35);
   }
   std::println(std::cout, "    ✓ Successful allocation verified");

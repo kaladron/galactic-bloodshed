@@ -7,90 +7,136 @@
 export module gb.entities:universe;
 
 import :types;
-import :tweakables;
 import std;
+
+/// \brief Per-player Von Neumann retaliation telemetry stored in the universe
+/// singleton.
+///
+/// Tracks the number of VN/Berserker machines destroyed by a player alongside
+/// up to two star systems where those machines were destroyed.
+export struct VnTargetRecord {
+  std::uint32_t hits{0};
+  std::optional<starnum_t> primary_star{};
+  std::optional<starnum_t> secondary_star{};
+
+  /// \brief Records a star system where a Von Neumann machine was destroyed.
+  ///
+  /// Populates `primary_star` first, then `secondary_star`. Once both slots
+  /// are occupied, `replace_primary` selects which slot is overwritten.
+  void record_destruction_star(starnum_t star, bool replace_primary = false) {
+    if (star < 1) {
+      throw std::out_of_range(
+          std::format("Star ID {} out of range (must be >= 1)", star.value));
+    }
+    if (!primary_star.has_value()) {
+      primary_star = star;
+    } else if (!secondary_star.has_value()) {
+      secondary_star = star;
+    } else if (replace_primary) {
+      primary_star = star;
+    } else {
+      secondary_star = star;
+    }
+  }
+
+  /// \brief Selects a target star system for Berserker retaliation.
+  ///
+  /// Prefers `primary_star` when `prefer_primary` is true (falling back to
+  /// `secondary_star`), or prefers `secondary_star` when `prefer_primary` is
+  /// false (falling back to `primary_star`).
+  [[nodiscard]] constexpr std::optional<starnum_t>
+  select_retaliation_star(bool prefer_primary) const noexcept {
+    if (prefer_primary) {
+      return primary_star.has_value() ? primary_star : secondary_star;
+    }
+    return secondary_star.has_value() ? secondary_star : primary_star;
+  }
+
+  [[nodiscard]] constexpr bool
+  operator==(const VnTargetRecord&) const noexcept = default;
+};
 
 // Underlying universe-level singleton data structure
 // This was previously called "stardata" but that name was confusing
 // as it contains universe-wide data, not star-specific data
 export struct universe_struct {
-  PlayerVector<ap_t, MAXPLAYERS> AP;
-  PlayerVector<std::uint32_t, MAXPLAYERS> VN_hitlist;
-  /* # of ships destroyed by each player */
-  PlayerVector<std::optional<starnum_t>, MAXPLAYERS> VN_index1;
-  PlayerVector<std::optional<starnum_t>, MAXPLAYERS> VN_index2;
-  /* VN's record of destroyed ships systems where they bought it */
-};
+  std::flat_map<player_t, ap_t> AP{};
+  std::flat_map<player_t, VnTargetRecord> vn_targets{};
 
-// Wrapper class for Universe data (like Star wraps star_struct)
-// Provides type-safe accessor methods instead of raw array access
-export class Universe {
-  universe_struct& data;
-
-public:
-  explicit Universe(universe_struct& raw_data) : data(raw_data) {}
-
-  // Action Point (AP) methods
   [[nodiscard]] ap_t get_AP(player_t p) const {
-    return data.AP[p];
+    if (p < 1) {
+      throw std::out_of_range(
+          std::format("Player ID {} out of range (must be >= 1)", p.value));
+    }
+    if (const auto it = AP.find(p); it != AP.end()) {
+      return it->second;
+    }
+    return 0;
   }
 
-  void set_AP(player_t p, ap_t value) {
-    data.AP[p] = value;
-  }
-
-  void deduct_AP(player_t p, ap_t amount) {
-    data.AP[p] = (data.AP[p] > amount) ? (data.AP[p] - amount) : 0;
+  void set_AP(player_t p, ap_t amount) {
+    if (p < 1) {
+      throw std::out_of_range(
+          std::format("Player ID {} out of range (must be >= 1)", p.value));
+    }
+    if (amount <= 0) {
+      AP.erase(p);
+    } else {
+      AP[p] = amount;
+    }
   }
 
   void add_AP(player_t p, ap_t amount) {
-    data.AP[p] += amount;
+    set_AP(p, get_AP(p) + amount);
   }
 
-  // VN (Von Neumann) tracking methods
-  [[nodiscard]] std::uint32_t get_VN_hitlist(player_t p) const {
-    return data.VN_hitlist[p];
+  void deduct_AP(player_t p, ap_t amount) {
+    const ap_t current = get_AP(p);
+    set_AP(p, (current > amount) ? (current - amount) : 0);
   }
 
-  void set_VN_hitlist(player_t p, std::uint32_t value) {
-    data.VN_hitlist[p] = value;
+  [[nodiscard]] const VnTargetRecord& vn_target(player_t p) const {
+    if (p < 1) {
+      throw std::out_of_range(
+          std::format("Player ID {} out of range (must be >= 1)", p.value));
+    }
+    static constexpr VnTargetRecord default_target{};
+    if (const auto it = vn_targets.find(p); it != vn_targets.end()) {
+      return it->second;
+    }
+    return default_target;
   }
 
-  void increment_VN_hitlist(player_t p) {
-    data.VN_hitlist[p]++;
+  [[nodiscard]] VnTargetRecord& vn_target(player_t p) {
+    if (p < 1) {
+      throw std::out_of_range(
+          std::format("Player ID {} out of range (must be >= 1)", p.value));
+    }
+    return vn_targets[p];
   }
 
-  void decrement_VN_hitlist(player_t p) {
-    if (data.VN_hitlist[p] > 0) data.VN_hitlist[p]--;
+  [[nodiscard]] std::uint32_t vn_hits(player_t p) const {
+    return vn_target(p).hits;
   }
 
-  [[nodiscard]] std::optional<starnum_t> get_VN_index1(player_t p) const {
-    return data.VN_index1[p];
+  void record_vn_kill(player_t killer,
+                      std::optional<starnum_t> star = std::nullopt,
+                      bool replace_primary = false) {
+    auto& record = vn_target(killer);
+    ++record.hits;
+    if (star.has_value()) {
+      record.record_destruction_star(*star, replace_primary);
+    }
   }
 
-  void set_VN_index1(player_t p, std::optional<starnum_t> value) {
-    data.VN_index1[p] = value;
-  }
-
-  [[nodiscard]] std::optional<starnum_t> get_VN_index2(player_t p) const {
-    return data.VN_index2[p];
-  }
-
-  void set_VN_index2(player_t p, std::optional<starnum_t> value) {
-    data.VN_index2[p] = value;
-  }
-
-  // Direct access to underlying struct (for migration compatibility)
-  universe_struct* operator->() {
-    return &data;
-  }
-  const universe_struct* operator->() const {
-    return &data;
-  }
-  universe_struct& operator*() {
-    return data;
-  }
-  const universe_struct& operator*() const {
-    return data;
+  void decrement_vn_hits(player_t p) {
+    if (p < 1) {
+      throw std::out_of_range(
+          std::format("Player ID {} out of range (must be >= 1)", p.value));
+    }
+    if (auto it = vn_targets.find(p);
+        it != vn_targets.end() && it->second.hits > 0) {
+      --it->second.hits;
+    }
   }
 };

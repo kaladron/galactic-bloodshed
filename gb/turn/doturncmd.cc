@@ -561,8 +561,8 @@ void distribute_universe_action_points(EntityManager& entity_manager) {
       } catch (const EntityNotFoundError&) {
       }
       if (compute_governed_status(race, entity_manager)) {
-        ap_t APs = sdata.AP[player] + race.planet_points;
-        sdata.AP[player] = std::min(APs, LIMIT_APs);
+        ap_t APs = sdata.get_AP(player) + race.planet_points;
+        sdata.set_AP(player, std::min(APs, LIMIT_APs));
       }
     }
   });
@@ -616,10 +616,10 @@ void update_von_neumann_target(EntityManager& em, TurnStats& stats) {
 
   for (const Race& race : RaceList::readonly(em)) {
     const player_t player = race.Playernum;
-    const auto hits = sdata->VN_hitlist[player];
+    const std::uint32_t hits = sdata->vn_hits(player);
     stats.VN_brain.total_mad += hits;
     if (hits > 0 && (!stats.VN_brain.most_mad ||
-                     sdata->VN_hitlist[*stats.VN_brain.most_mad] <= hits)) {
+                     sdata->vn_hits(*stats.VN_brain.most_mad) <= hits)) {
       stats.VN_brain.most_mad = player;
     }
   }

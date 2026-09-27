@@ -571,14 +571,3 @@ private:
   void propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
                                      double delta_mass);
 };
-
-export inline void record_vn_destruction_site(std::optional<starnum_t>& index1,
-                                              std::optional<starnum_t>& index2,
-                                              starnum_t star_id,
-                                              bool supplant_first) {
-  if (index1.has_value() && (!index2.has_value() || !supplant_first)) {
-    index2 = star_id;
-  } else {
-    index1 = star_id;
-  }
-}

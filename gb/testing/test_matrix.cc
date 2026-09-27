@@ -80,8 +80,8 @@ void TestCommandMatrix::run_insufficient_ap_check(GameObj& g) const {
   ap_t orig_univ_ap = 0;
   if (expected_univ_ap_ > 0) {
     ctx_.em.mutate_universe([&](universe_struct& u) {
-      orig_univ_ap = u.AP[g.player()];
-      u.AP[g.player()] = 0;
+      orig_univ_ap = u.get_AP(g.player());
+      u.set_AP(g.player(), 0);
     });
   }
 
@@ -96,7 +96,7 @@ void TestCommandMatrix::run_insufficient_ap_check(GameObj& g) const {
   }
   if (expected_univ_ap_ > 0) {
     ctx_.em.mutate_universe(
-        [&](universe_struct& u) { u.AP[g.player()] = orig_univ_ap; });
+        [&](universe_struct& u) { u.set_AP(g.player(), orig_univ_ap); });
   }
 }
 

@@ -205,47 +205,41 @@ void test_universe_repository() {
 
   // Test data - universe_struct is typically a singleton
   universe_struct sd{};
-  ap_t ap_val = 0;
-  for (auto& ap : sd.AP) {
-    ap = ap_val;
-    ap_val += 10;
+  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+    sd.set_AP(p, static_cast<ap_t>((p.value - 1) * 10));
   }
-  sd.VN_hitlist[player_t{1}] = 1;
-  sd.VN_hitlist[player_t{2}] = 2;
-  // VN_index arrays are std::optional<starnum_t> arrays for VN tracking
-  sd.VN_index1[player_t{1}] = starnum_t{5};
-  sd.VN_index1[player_t{2}] = std::nullopt;
-  sd.VN_index2[player_t{1}] = starnum_t{10};
-  sd.VN_index2[player_t{2}] = starnum_t{15};
+  sd.vn_target(1) = VnTargetRecord{
+      .hits = 1, .primary_star = starnum_t{5}, .secondary_star = starnum_t{10}};
+  sd.vn_target(2) = VnTargetRecord{
+      .hits = 2, .primary_star = std::nullopt, .secondary_star = starnum_t{15}};
 
   // Save and retrieve global data
   test::expect_true(repo.save(sd));
   auto retrieved = repo.get_global_data();
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->AP[player_t{1}], 0);
-  test::expect_eq(retrieved->AP[player_t{6}], 50);
-  test::expect_eq(retrieved->VN_index1[player_t{1}], starnum_t{5});
+  test::expect_eq(retrieved->get_AP(1), 0);
+  test::expect_eq(retrieved->get_AP(6), 50);
+  test::expect_eq(retrieved->vn_target(1).primary_star, starnum_t{5});
 
   // Update global data
-  sd.VN_hitlist[player_t{1}] = 9;
+  sd.vn_target(1).hits = 9;
   test::expect_true(repo.save(sd));
   retrieved = repo.get_global_data();
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->VN_hitlist[player_t{1}], 9);
+  test::expect_eq(retrieved->vn_hits(1), 9U);
 
-  // Array preservation
-  ap_t expected_ap = 0;
-  for (const auto& ap : retrieved->AP) {
-    test::expect_eq(ap, expected_ap);
-    expected_ap += 10;
+  // Map preservation
+  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+    test::expect_eq(retrieved->get_AP(p),
+                    static_cast<ap_t>((p.value - 1) * 10));
   }
 
-  // VN arrays preserved
-  test::expect_eq(retrieved->VN_hitlist[player_t{2}], 2);
-  test::expect_eq(retrieved->VN_index1[player_t{1}], starnum_t{5});
-  test::expect_eq(retrieved->VN_index1[player_t{2}], std::nullopt);
-  test::expect_eq(retrieved->VN_index2[player_t{1}], starnum_t{10});
-  test::expect_eq(retrieved->VN_index2[player_t{2}], starnum_t{15});
+  // VN target records preserved
+  test::expect_eq(retrieved->vn_hits(2), 2U);
+  test::expect_eq(retrieved->vn_target(1).primary_star, starnum_t{5});
+  test::expect_eq(retrieved->vn_target(2).primary_star, std::nullopt);
+  test::expect_eq(retrieved->vn_target(1).secondary_star, starnum_t{10});
+  test::expect_eq(retrieved->vn_target(2).secondary_star, starnum_t{15});
 
   std::println(std::cout, "✓ All UniverseRepository tests passed");
 }

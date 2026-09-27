@@ -33,7 +33,7 @@ std::string format_ship_prompt(EntityManager& em, const player_t player,
   switch (current_ship->whatorbits()) {
     case ScopeLevel::LEVEL_UNIV: {
       const auto* universe = em.peek_universe();
-      ap = universe->AP[player];
+      ap = universe->get_AP(player);
       break;
     }
     case ScopeLevel::LEVEL_STAR: {
@@ -71,7 +71,7 @@ std::string do_prompt(const GameObj& g) {
 
   switch (g.level()) {
     case ScopeLevel::LEVEL_UNIV:
-      return std::format(" ( [{}] / )\n", universe->AP[player]);
+      return std::format(" ( [{}] / )\n", universe->get_AP(player));
 
     case ScopeLevel::LEVEL_STAR: {
       const auto* star = g.entity_manager.peek_star(g.snum());

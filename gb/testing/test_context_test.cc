@@ -134,7 +134,7 @@ void test_test_context_dispatch_helpers() {
   ctx.assert_dispatch_success(g, univ_cost_cmd, {"univ_cost"},
                               /*expected_star_ap_deducted=*/0,
                               /*expected_univ_ap_deducted=*/10);
-  test::expect_eq(ctx.em.peek_universe()->AP[player_t{1}], 20);
+  test::expect_eq(ctx.em.peek_universe()->get_AP(1), 20);
 
   // 3. Rejected dispatch due to handler returning false (AP remains 15)
   ctx.assert_dispatch_rejected(g, fail_cmd, {"fail_cmd"});
@@ -688,8 +688,8 @@ void test_standard_universe_fixture() {
   const auto* univ = ctx.em.peek_universe();
   test::expect_true(univ != nullptr, "Universe must exist");
   test::expect_eq(ctx.em.num_stars(), 3);
-  test::expect_eq(univ->AP[player_t{1}], 100);
-  test::expect_eq(univ->AP[player_t{2}], 100);
+  test::expect_eq(univ->get_AP(1), 100);
+  test::expect_eq(univ->get_AP(2), 100);
 
   test::expect_no_throw(
       [&]() { ctx.verify_universe_invariants(); },
@@ -727,7 +727,7 @@ void test_procedural_universe_fixture() {
   test::expect_true(univ != nullptr, "Universe must exist");
   test::expect_eq(ctx.em.num_stars(), 3);
   for (player_t pid = 1; pid <= 4; ++pid) {
-    test::expect_eq(univ->AP[pid], 100);
+    test::expect_eq(univ->get_AP(pid), 100);
     test::expect_ne(ctx.em.peek_race(pid), nullptr);
     test::expect_ne(ctx.em.peek_block(blocknum_t{pid.value}), nullptr);
     test::expect_ne(ctx.em.peek_power(powernum_t{pid.value}), nullptr);
